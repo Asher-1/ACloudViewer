@@ -1,0 +1,44 @@
+//##########################################################################
+//#                                                                        #
+//#                              CLOUDVIEWER                               #
+//#                                                                        #
+//#  This program is free software; you can redistribute it and/or modify  #
+//#  it under the terms of the GNU General Public License as published by  #
+//#  the Free Software Foundation; version 2 or later of the License.      #
+//#                                                                        #
+//#  This program is distributed in the hope that it will be useful,       #
+//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+//#  GNU General Public License for more details.                          #
+//#                                                                        #
+//#                    COPYRIGHT: CLOUDVIEWER  project                     #
+//#                                                                        #
+//##########################################################################
+
+#ifndef ECV_PCD_FILTER_HEADER
+#define ECV_PCD_FILTER_HEADER
+
+// ECV_DB_LIB
+#include <FileIOFilter.h>
+
+//! PCD point cloud I/O filter
+class PcdFilter : public FileIOFilter
+{
+public:
+
+	//static accessors
+	static inline QString GetFileFilter() { return "Point Cloud Library cloud (*.pcd)"; }
+	static inline QString GetDefaultExtension() { return "pcd"; }
+
+	//inherited from FileIOFilter
+	virtual bool importSupported() const { return true; }
+	virtual CC_FILE_ERROR loadFile(const QString& filename, ccHObject& container, LoadParameters& parameters);
+	virtual CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters);
+	virtual QStringList getFileFilters(bool onImport) const { return QStringList(GetFileFilter()); }
+	virtual QString getDefaultExtension() const { return GetDefaultExtension(); }
+	virtual bool canLoadExtension(const QString& upperCaseExt) const;
+	virtual bool canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const;
+
+};
+
+#endif // ECV_PCD_FILTER_HEADER

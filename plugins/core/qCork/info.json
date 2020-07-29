@@ -1,0 +1,36 @@
+{
+  "type": "Standard",
+  "core" : true,
+  "name": "Cork",
+  "icon": ":/CC/plugin/qCork/cork_icon.png",
+  "description": "CSG operations on meshes.",
+  "authors": [
+    {
+      "name": "Gilbert Bernstein, Stanford"
+    },
+    {
+      "name": "Daniel Girardeau-Montaut",
+      "email": "daniel.girardeau@gmail.com"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "Daniel Girardeau-Montaut",
+      "email": "daniel.girardeau@gmail.com"
+    }
+  ],
+  "references": [
+    {
+      "text": "Cork Boolean Library",
+      "url": "https://github.com/gilbo/cork"
+    },
+    {
+      "text": "Gilbert Bernstein",
+      "url": "http://www.gilbertbernstein.com/"
+    },
+    {
+      "text": "Documentation",
+      "url": "http://www.cloudcompare.org/doc/wiki/index.php?title=Cork_(plugin)"
+    }
+  ]
+}

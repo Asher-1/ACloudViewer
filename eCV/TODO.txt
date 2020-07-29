@@ -1,0 +1,51 @@
+/****************************************/
+/********* ECV (Asher) TODO LIST *********/
+/****************************************/
+
+
+File I/O:
+- Export PTX files
+- Generate PDF 3D
+- OpenCTM format (https://github.com/CLOUDVIEWER /trunk/issues/146)
+- Visual SFM format (http://www.CLOUDVIEWER .org/forum/viewtopic.php?t=550)
+- OpenVDB format (http://www.danielgm.net/cc/forum/viewtopic.php?t=3057)
+
+*** And from the forum topic or emails 'recent requests' ***
+
+Big ones:
+
+[*] Out of core support
+	- editable
+	- being able to work on portions of very big clouds while other portions are visible but in 'read-only' mode (http://www.CLOUDVIEWER .org/forum/viewtopic.php?t=1699)
+[*] Undo mechanism
+[*] Command line mode could be extended
+	- label Connected Components tool (http://www.CLOUDVIEWER .org/forum/viewtopic.php?t=933)
+	- use plugins through the command line (M3C2, etc. - see https://github.com/CLOUDVIEWER /trunk/issues/403)
+	- extract a cross section from a point cloud using an existing polyline (loading in .bin or dxf format as in the interface) (http://www.danielgm.net/cc/forum/viewtopic.php?t=1515)
+	- save the plane orientation as a text file after best plane fitting
+	- option to apply the inverse transformation
+	- change the default output directory (http://www.danielgm.net/cc/forum/viewtopic.php?t=1240)
+	- clean filter
+	- let the user specify the precise content of an ASCII file in order to prevent the file opening dialog
+		from appearing (will happen - even in 'silent mode' - if the file has more than 5 columns)
+	- set the output file name (http://www.danielgm.net/cc/forum/viewtopic.php?t=1089)
+	- export the history transformation (or the barycenter translation - see http://www.danielgm.net/cc/forum/viewtopic.php?t=1242)
+	- choose the format of STL output (acsii / binary - see http://www.danielgm.net/cc/forum/viewtopic.php?f=13)
+[*] Point cloud cleanup tools (http://www.CLOUDVIEWER .org/forum/viewtopic.php?t=191)
+[*] Volume calculation
+	- between clouds (from distances)
+	- between meshes (http://www.danielgm.net/cc/forum/viewtopic.php?t=1253)
+[*] Use PDAL instead of libLAS (http://www.CLOUDVIEWER .org/forum/viewtopic.php?t=437)
+
+qAnimation plugin:
+
+[*] It would be great to specify the resolution.  I saw your comment and it just seems to make sense as this way you are not guessing.
+[*] Have different levels of smoothing between each viewport.  This way the turns and translations are not as abrupt.
+[*] Generate side-by-side stereo animations (for Google cardboard, etc.) with the qAnimation plugin
+
+qFacets plugin:
+[*] Option to export 3D polygons (facets) in SHP files
+[*] Add the facet perimeter to the set of exported values
+
+Various:
+[*] Add the options to constrain ICP (rotation and/or translation) via the command line (http://www.CLOUDVIEWER .org/forum/viewtopic.php?t=2920)

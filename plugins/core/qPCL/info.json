@@ -1,0 +1,27 @@
+{
+  "type": "Standard",
+  "core" : true,
+  "name": "PCLAlgorithms",
+  "icon": ":/toolbar/pcl.png",
+  "description": "Point Cloud Library wrapper.",
+  "authors": [
+    {
+      "name": "Asher"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "Asher"
+    }
+  ],
+  "references": [
+    {
+      "text": "PCL library",
+      "url": "http://pointclouds.org/"
+    },
+    {
+      "text": "Documentation",
+      "url": "http://pointclouds.org/documentation/"
+    }
+  ]
+}

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|Win32">
+      <Configuration>Template</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName />
+    <SccLocalPath />
+    <ProjectGuid>{C3455C53-FE35-4E78-AAFA-4A91C4019C95}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\Debug\</OutDir>
+    <IntDir>.\Debug\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\Release\</OutDir>
+    <IntDir>.\Release\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>inc;dll;stl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;DUNORDERED;_DEBUG;_WINDOWS;_USRDLL;LASZIPDLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>.\Debug\LASzip.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\Debug\</ObjectFileName>
+      <ProgramDataBaseFileName>.\Debug\</ProgramDataBaseFileName>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+    </ClCompile>
+    <PostBuildEvent>
+      <Command>copy Debug\LASzip.dll dll\LASzip.dll
+copy Debug\LASzip.dll example\LASzip.dll</Command>
+    </PostBuildEvent>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\Debug\LASzip.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\Debug\LASzip.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LinkDLL>true</LinkDLL>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\Debug\LASzip.dll</OutputFile>
+      <ImportLibrary>.\Debug\LASzip.lib</ImportLibrary>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>inc;dll;stl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;DUNORDERED;NDEBUG;_WINDOWS;_USRDLL;LASZIPDLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>.\Release\LASzip.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\Release\</ObjectFileName>
+      <ProgramDataBaseFileName>.\Release\</ProgramDataBaseFileName>
+    </ClCompile>
+    <PostBuildEvent>
+      <Command>copy Release\LASzip.dll dll\LASzip.dll
+copy  Release\LASzip.dll example\LASzip.dll</Command>
+    </PostBuildEvent>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\Release\LASzip.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\Release\LASzip.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LinkDLL>true</LinkDLL>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\Release\LASzip.dll</OutputFile>
+      <ImportLibrary>.\Release\LASzip.lib</ImportLibrary>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\arithmeticdecoder.cpp" />
+    <ClCompile Include="src\arithmeticencoder.cpp" />
+    <ClCompile Include="src\arithmeticmodel.cpp" />
+    <ClCompile Include="src\integercompressor.cpp" />
+    <ClCompile Include="src\lasindex.cpp" />
+    <ClCompile Include="src\lasinterval.cpp" />
+    <ClCompile Include="src\lasquadtree.cpp" />
+    <ClCompile Include="src\lasreaditemcompressed_v1.cpp" />
+    <ClCompile Include="src\lasreaditemcompressed_v2.cpp" />
+    <ClCompile Include="src\lasreaditemcompressed_v3.cpp" />
+    <ClCompile Include="src\lasreaditemcompressed_v4.cpp" />
+    <ClCompile Include="src\lasreadpoint.cpp" />
+    <ClCompile Include="src\laswriteitemcompressed_v1.cpp" />
+    <ClCompile Include="src\laswriteitemcompressed_v2.cpp" />
+    <ClCompile Include="src\laswriteitemcompressed_v3.cpp" />
+    <ClCompile Include="src\laswriteitemcompressed_v4.cpp" />
+    <ClCompile Include="src\laswritepoint.cpp" />
+    <ClCompile Include="src\laszip.cpp" />
+    <ClCompile Include="src\laszip_dll.cpp" />
+    <ClCompile Include="src\mydefs.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dll\laszip_api.h" />
+    <ClInclude Include="src\arithmeticdecoder.hpp" />
+    <ClInclude Include="src\arithmeticencoder.hpp" />
+    <ClInclude Include="src\arithmeticmodel.hpp" />
+    <ClInclude Include="src\bytestreamin.hpp" />
+    <ClInclude Include="src\bytestreamin_array.hpp" />
+    <ClInclude Include="src\bytestreamin_file.hpp" />
+    <ClInclude Include="src\bytestreamin_istream.hpp" />
+    <ClInclude Include="src\bytestreamout.hpp" />
+    <ClInclude Include="src\bytestreamout_array.hpp" />
+    <ClInclude Include="src\bytestreamout_file.hpp" />
+    <ClInclude Include="src\bytestreamout_nil.hpp" />
+    <ClInclude Include="src\bytestreamout_ostream.hpp" />
+    <ClInclude Include="src\integercompressor.hpp" />
+    <ClInclude Include="src\lasattributer.hpp" />
+    <ClInclude Include="src\lasindex.hpp" />
+    <ClInclude Include="src\lasinterval.hpp" />
+    <ClInclude Include="src\laspoint.hpp" />
+    <ClInclude Include="src\lasquadtree.hpp" />
+    <ClInclude Include="src\lasquantizer.hpp" />
+    <ClInclude Include="src\lasreaditem.hpp" />
+    <ClInclude Include="src\lasreaditemcompressed_v1.hpp" />
+    <ClInclude Include="src\lasreaditemcompressed_v2.hpp" />
+    <ClInclude Include="src\lasreaditemcompressed_v3.hpp" />
+    <ClInclude Include="src\lasreaditemcompressed_v4.hpp" />
+    <ClInclude Include="src\lasreaditemraw.hpp" />
+    <ClInclude Include="src\lasreadpoint.hpp" />
+    <ClInclude Include="src\laswriteitem.hpp" />
+    <ClInclude Include="src\laswriteitemcompressed_v1.hpp" />
+    <ClInclude Include="src\laswriteitemcompressed_v2.hpp" />
+    <ClInclude Include="src\laswriteitemcompressed_v3.hpp" />
+    <ClInclude Include="src\laswriteitemcompressed_v4.hpp" />
+    <ClInclude Include="src\laswriteitemraw.hpp" />
+    <ClInclude Include="src\laswritepoint.hpp" />
+    <ClInclude Include="src\laszip.hpp" />
+    <ClInclude Include="src\laszip_common_v1.hpp" />
+    <ClInclude Include="src\laszip_common_v2.hpp" />
+    <ClInclude Include="src\laszip_common_v3.hpp" />
+    <ClInclude Include="src\laszip_decompress_selective_v3.hpp" />
+    <ClInclude Include="src\mydefs.hpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

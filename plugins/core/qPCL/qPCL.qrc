@@ -1,0 +1,30 @@
+<RCC>
+    <qresource prefix="/toolbar">
+        <file>pcl.png</file>
+        <file>pointcloudlibrary.png</file>
+        <file>info.json</file>
+        <file>PclAlgorithms/icons/convex_concave_hull.png</file>
+        <file>PclAlgorithms/icons/correspondence_grouping.png</file>
+        <file>PclAlgorithms/icons/EuclideanClusterSegmentation.png</file>
+        <file>PclAlgorithms/icons/filter_projection.png</file>
+        <file>PclAlgorithms/icons/greedy_triangulation.png</file>
+        <file>PclAlgorithms/icons/load.png</file>
+        <file>PclAlgorithms/icons/mls_smoothing.png</file>
+        <file>PclAlgorithms/icons/normal_curvature.png</file>
+        <file>PclAlgorithms/icons/pcl.png</file>
+        <file>PclAlgorithms/icons/poisson.png</file>
+        <file>PclAlgorithms/icons/Regiongrowing.png</file>
+        <file>PclAlgorithms/icons/SAC_Segmentation.png</file>
+        <file>PclAlgorithms/icons/save.png</file>
+        <file>PclAlgorithms/icons/sift.png</file>
+        <file>PclAlgorithms/icons/sor_outlier_remover.png</file>
+        <file>PclAlgorithms/icons/templateAlignment.png</file>
+        <file>PclAlgorithms/icons/mincut.png</file>
+        <file>PclAlgorithms/icons/PointPicking.png</file>
+        <file>PclAlgorithms/icons/DoN.png</file>
+        <file>PclAlgorithms/icons/generalFilter.png</file>
+        <file>PclAlgorithms/icons/bspline_curve.png</file>
+        <file>PclAlgorithms/icons/bspline_surface.png</file>
+        <file>PclAlgorithms/icons/MarchingCubeReconstruction.png</file>
+    </qresource>
+</RCC>

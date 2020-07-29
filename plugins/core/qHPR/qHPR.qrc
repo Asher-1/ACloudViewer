@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qHPR" >
+        <file>images/cc_hpr.png</file>
+        <file>info.json</file>
+    </qresource>
+</RCC>
