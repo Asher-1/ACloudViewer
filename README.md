@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/Asher-1/ErowCloudViewer/blob/master/ErowCloudViewer_logo_horizontal.png" width="640" />
+<img src="https://github.com/Asher-1/ErowCloudViewer/blob/master/ErowCloudViewer_logo_horizontal.png" width="512" />
 </p>
 
 # ErowCloudViewer: A Modern Library for 3D Data Processing
