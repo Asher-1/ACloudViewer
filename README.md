@@ -1,8 +1,8 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/intel-isl/Open3D/master/docs/_static/open3d_logo_horizontal.png" width="320" />
+<img src="https://github.com/Asher-1/ErowCloudViewer/blob/master/ErowCloudViewer_logo_horizontal.png" width="320" />
 </p>
-ErowCloudViewer
-============
+
+# ErowCloudViewer: A Modern Library for 3D Data Processing
 
 Homepage: http://www.erow.cn/
 
@@ -26,6 +26,18 @@ clouds (typically more than 10 millions points, and up to 120 millions with 2 Gb
 of memory).
 
 More on ErowCloudViewer [here](http://en.wikipedia.org/wiki/CloudCompare)
+
+**Core features of ErowCloudViewer include:**
+
+* 3D data structures
+* 3D data processing algorithms
+* Scene reconstruction
+* Surface alignment
+* 3D visualization
+* Physically based rendering (PBR)
+* Available in C++ and Python
+
+For more, please visit the [ErowCloudViewer documentation](http://www.erow.cn).
 
 Compilation
 -----------
