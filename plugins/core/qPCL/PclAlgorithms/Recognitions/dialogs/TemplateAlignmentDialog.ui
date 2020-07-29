@@ -1,0 +1,601 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TemplateAlignmentDialog</class>
+ <widget class="QDialog" name="TemplateAlignmentDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>680</width>
+    <height>402</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Template Alignment</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../../../qPCL.qrc">
+    <normaloff>:/toolbar/PclAlgorithms/icons/templateAlignment.png</normaloff>:/toolbar/PclAlgorithms/icons/templateAlignment.png</iconset>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Data</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Role</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Cloud</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>template #1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="template1CloudComboBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Points belonging to class #1 </string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QCheckBox" name="template1checkBox">
+        <property name="text">
+         <string>Template 1</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>template #2</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="template2CloudComboBox">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Points belonging to class #2</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QCheckBox" name="template2checkBox">
+        <property name="text">
+         <string>Template 2</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>target</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QComboBox" name="evaluationCloudComboBox">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Additional points that will be added to the 2D classifier behavior representation</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="scalesGroupBox">
+     <property name="title">
+      <string>Scales</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_2">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="scalesRampRadioButton">
+        <property name="text">
+         <string>ramp</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QFrame" name="scalesRampFrame">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QDoubleSpinBox" name="minScaleDoubleSpinBox">
+           <property name="toolTip">
+            <string>Mininum scale</string>
+           </property>
+           <property name="prefix">
+            <string>Min = </string>
+           </property>
+           <property name="decimals">
+            <number>6</number>
+           </property>
+           <property name="minimum">
+            <double>0.000001000000000</double>
+           </property>
+           <property name="maximum">
+            <double>1000000000.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+           <property name="value">
+            <double>0.500000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="stepScaleDoubleSpinBox">
+           <property name="toolTip">
+            <string>Step</string>
+           </property>
+           <property name="prefix">
+            <string>Step = </string>
+           </property>
+           <property name="decimals">
+            <number>6</number>
+           </property>
+           <property name="minimum">
+            <double>0.000001000000000</double>
+           </property>
+           <property name="maximum">
+            <double>1000000000.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+           <property name="value">
+            <double>0.500000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="maxScaleDoubleSpinBox">
+           <property name="toolTip">
+            <string>Max scale</string>
+           </property>
+           <property name="prefix">
+            <string>Max = </string>
+           </property>
+           <property name="decimals">
+            <number>6</number>
+           </property>
+           <property name="minimum">
+            <double>0.000001000000000</double>
+           </property>
+           <property name="maximum">
+            <double>1000000000.000000000000000</double>
+           </property>
+           <property name="value">
+            <double>1.500000000000000</double>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QRadioButton" name="scalesListRadioButton">
+        <property name="toolTip">
+         <string>Inp</string>
+        </property>
+        <property name="text">
+         <string>list</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="scalesListLineEdit">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>Input scales as a list of values (separated by a space character)</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Advanced</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="1" column="2">
+       <widget class="QDoubleSpinBox" name="normalRadiusSpinBox">
+        <property name="decimals">
+         <number>4</number>
+        </property>
+        <property name="minimum">
+         <double>0.001000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.001000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.020000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="4">
+       <widget class="QLabel" name="label_10">
+        <property name="text">
+         <string>Maximum Iterations</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>Minimum Sample Distance</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="QDoubleSpinBox" name="maxCorrespondenceDistanceSpinBox">
+        <property name="decimals">
+         <number>4</number>
+        </property>
+        <property name="minimum">
+         <double>0.001000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.010000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.010000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="4">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>Feature Radius</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QCheckBox" name="useVoxelGridCheckBox">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Voxel Grid</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="2">
+       <widget class="QLabel" name="label_11">
+        <property name="text">
+         <string>Maximum Correspondence Distance</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="5">
+       <widget class="QDoubleSpinBox" name="featureRadiusSpinBox">
+        <property name="decimals">
+         <number>4</number>
+        </property>
+        <property name="minimum">
+         <double>0.001000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.010000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.020000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QDoubleSpinBox" name="minSampleDistanceSpinBox">
+        <property name="decimals">
+         <number>4</number>
+        </property>
+        <property name="minimum">
+         <double>0.001000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.050000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="2">
+       <widget class="QDoubleSpinBox" name="leafSizeSpinBox">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="prefix">
+         <string>Leaf Size = </string>
+        </property>
+        <property name="decimals">
+         <number>4</number>
+        </property>
+        <property name="minimum">
+         <double>0.001000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.001000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.005000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="3" column="5">
+       <widget class="QSpinBox" name="maxIterationsSpinBox">
+        <property name="toolTip">
+         <string>Maximum number of core points computed on each class</string>
+        </property>
+        <property name="minimum">
+         <number>50</number>
+        </property>
+        <property name="maximum">
+         <number>10000</number>
+        </property>
+        <property name="singleStep">
+         <number>50</number>
+        </property>
+        <property name="value">
+         <number>500</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Normal Radius</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="4">
+       <widget class="QLabel" name="label_8">
+        <property name="text">
+         <string>Max thread count</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="5">
+       <widget class="QSpinBox" name="maxThreadCountSpinBox">
+        <property name="suffix">
+         <string notr="true"> / 8</string>
+        </property>
+        <property name="value">
+         <number>8</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>1</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>template1CloudComboBox</tabstop>
+  <tabstop>template2CloudComboBox</tabstop>
+  <tabstop>scalesRampRadioButton</tabstop>
+  <tabstop>minScaleDoubleSpinBox</tabstop>
+  <tabstop>stepScaleDoubleSpinBox</tabstop>
+  <tabstop>maxScaleDoubleSpinBox</tabstop>
+  <tabstop>scalesListRadioButton</tabstop>
+  <tabstop>scalesListLineEdit</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
+ <resources>
+  <include location="../../../qPCL.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>TemplateAlignmentDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>TemplateAlignmentDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>scalesRampRadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>scalesRampFrame</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>42</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>276</x>
+     <y>171</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>scalesListRadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>scalesListLineEdit</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>36</x>
+     <y>196</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>276</x>
+     <y>197</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>template1checkBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>template1CloudComboBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>680</x>
+     <y>48</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>357</x>
+     <y>49</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>template2checkBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>template2CloudComboBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>680</x>
+     <y>72</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>357</x>
+     <y>73</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useVoxelGridCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>leafSizeSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>391</x>
+     <y>272</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>500</x>
+     <y>273</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

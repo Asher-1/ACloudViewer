@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/CC/pluginManager">
+        <file>images/std_plugin.png</file>
+        <file>images/io_plugin.png</file>
+        <file>images/gl_plugin.png</file>
+        <file>images/noAlgorithm.png</file>
+        <file>images/algorithm_plugin.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>NormalComputationDlg</class>
+ <widget class="QDialog" name="NormalComputationDlg">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>482</width>
+    <height>420</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Compute normals</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
+    <widget class="QGroupBox" name="surfaceGroupBox">
+     <property name="title">
+      <string>Surface approximation</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="leftMargin">
+       <number>30</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Local surface model</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="localModelComboBox">
+        <property name="toolTip">
+         <string>Local surface estimation model</string>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>Plane</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Quadric</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Triangulation</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="neighborsGroupBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Neighbors</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="leftMargin">
+       <number>30</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QCheckBox" name="useScanGridCheckBox">
+          <property name="toolTip">
+           <string>Using scan grid(s) instead of the octree</string>
+          </property>
+          <property name="text">
+           <string>use scan grid(s) whenever possible</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QFrame" name="gridAngleFrame">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_3">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="toolTip">
+              <string>min triangulation angle</string>
+             </property>
+             <property name="text">
+              <string>min angle</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="gridAngleDoubleSpinBox">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="toolTip">
+              <string>Min angle of local triangles (in degrees)</string>
+             </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>90.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.100000000000000</double>
+             </property>
+             <property name="value">
+              <double>1.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QFrame" name="useScanGridsFrame">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_9">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_10">
+        <item>
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Octree</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QFrame" name="localRadiusFrame">
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="toolTip">
+              <string>Radius of the sphere in which the neighbors will be extracted</string>
+             </property>
+             <property name="text">
+              <string>radius</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="radiusDoubleSpinBox">
+             <property name="toolTip">
+              <string>Radius of the sphere in which the neighbors will be extracted</string>
+             </property>
+             <property name="decimals">
+              <number>6</number>
+             </property>
+             <property name="minimum">
+              <double>0.000001000000000</double>
+             </property>
+             <property name="maximum">
+              <double>999999.989999999990687</double>
+             </property>
+             <property name="singleStep">
+              <double>0.100000000000000</double>
+             </property>
+             <property name="value">
+              <double>1.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="autoRadiusToolButton">
+             <property name="text">
+              <string>Auto</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="normalsOrientGroupBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Orientation</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="leftMargin">
+       <number>30</number>
+      </property>
+      <item>
+       <widget class="QCheckBox" name="scanGridsOrientCheckBox">
+        <property name="toolTip">
+         <string>Use scan grid(s) (robust method)</string>
+        </property>
+        <property name="text">
+         <string>Use scan grid(s)  whenever possible</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="sensorOrientCheckBox">
+        <property name="acceptDrops">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>Use sensor position to orient normals (if both grid and sensor are selected, 'grid' has precedence over 'sensor')</string>
+        </property>
+        <property name="text">
+         <string>Use sensor(s) whenever possible</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QRadioButton" name="preferredOrientRadioButton">
+          <property name="toolTip">
+           <string>To give a hint on how to orient normals</string>
+          </property>
+          <property name="text">
+           <string>Use preferred orientation</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QComboBox" name="preferredOrientationComboBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="currentIndex">
+           <number>4</number>
+          </property>
+          <property name="maxVisibleItems">
+           <number>12</number>
+          </property>
+          <item>
+           <property name="text">
+            <string notr="true">+X</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string notr="true">-X</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string notr="true">+Y</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string notr="true">-Y</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string notr="true">+Z</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string notr="true">-Z</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>+ Barycenter</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>- Barycenter</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string notr="true">+ (0,0,0)</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string notr="true">- (0,0,0)</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Use previous normal</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <item>
+         <widget class="QRadioButton" name="mstOrientRadioButton">
+          <property name="toolTip">
+           <string>Generic 3D orientation algorithm</string>
+          </property>
+          <property name="text">
+           <string>Use Minimum Spanning Tree</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="mstNeighborsSpinBox">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Number of neighbors used to build the tree</string>
+          </property>
+          <property name="prefix">
+           <string notr="true">knn = </string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+  <zorder>buttonBox</zorder>
+  <zorder>normalsOrientGroupBox</zorder>
+  <zorder>surfaceGroupBox</zorder>
+  <zorder>neighborsGroupBox</zorder>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>NormalComputationDlg</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>257</x>
+     <y>424</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>NormalComputationDlg</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>325</x>
+     <y>424</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>preferredOrientRadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>preferredOrientationComboBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>188</x>
+     <y>316</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>456</x>
+     <y>317</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mstOrientRadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>mstNeighborsSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>349</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>456</x>
+     <y>351</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useScanGridCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>gridAngleFrame</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>276</x>
+     <y>128</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>388</x>
+     <y>129</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

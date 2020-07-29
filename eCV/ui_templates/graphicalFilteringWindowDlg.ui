@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GraphicalFilteringWindowDlg</class>
+ <widget class="QDialog" name="GraphicalFilteringWindowDlg">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>273</width>
+    <height>30</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Filter</string>
+  </property>
+  <layout class="QHBoxLayout">
+   <property name="spacing">
+    <number>2</number>
+   </property>
+   <property name="leftMargin">
+    <number>2</number>
+   </property>
+   <property name="topMargin">
+    <number>2</number>
+   </property>
+   <property name="rightMargin">
+    <number>2</number>
+   </property>
+   <property name="bottomMargin">
+    <number>2</number>
+   </property>
+   <item>
+    <widget class="QToolButton" name="selectionModelButton">
+     <property name="toolTip">
+      <string>mode</string>
+     </property>
+     <property name="text">
+      <string>mode</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/ecvClippingBox.png</normaloff>:/Resources/images/ecvClippingBox.png</iconset>
+     </property>
+     <property name="popupMode">
+      <enum>QToolButton::MenuButtonPopup</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="exportButton">
+     <property name="toolTip">
+      <string>segment single</string>
+     </property>
+     <property name="statusTip">
+      <string>segment single</string>
+     </property>
+     <property name="text">
+      <string>segment single</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/ecvClippingBoxSingleExport.png</normaloff>:/Resources/images/ecvClippingBoxSingleExport.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="exportMultButton">
+     <property name="toolTip">
+      <string>segment Mult</string>
+     </property>
+     <property name="statusTip">
+      <string>segment Mult</string>
+     </property>
+     <property name="text">
+      <string>segment Mult</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/ecvClippingBoxMultExport.png</normaloff>:/Resources/images/ecvClippingBoxMultExport.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="extractContourToolButton">
+     <property name="toolTip">
+      <string>extract Contour</string>
+     </property>
+     <property name="statusTip">
+      <string>extract Contour</string>
+     </property>
+     <property name="text">
+      <string>extract Contour</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/smallPolygonSelect.png</normaloff>:/Resources/images/smallPolygonSelect.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="removeLastContourToolButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="toolTip">
+      <string>remove Last Contour</string>
+     </property>
+     <property name="statusTip">
+      <string>remove Last Contour</string>
+     </property>
+     <property name="text">
+      <string>remove Last Contour</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/smallRevert.png</normaloff>:/Resources/images/smallRevert.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="resetButton">
+     <property name="toolTip">
+      <string>resetButton</string>
+     </property>
+     <property name="statusTip">
+      <string>resetButton</string>
+     </property>
+     <property name="text">
+      <string>resetButton</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/smallReset.png</normaloff>:/Resources/images/smallReset.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="restoreToolButton">
+     <property name="toolTip">
+      <string>restoreToolButton</string>
+     </property>
+     <property name="statusTip">
+      <string>restoreToolButton</string>
+     </property>
+     <property name="text">
+      <string>restoreToolButton</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/restore.png</normaloff>:/Resources/images/restore.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="cancelButton">
+     <property name="toolTip">
+      <string>Cancel</string>
+     </property>
+     <property name="statusTip">
+      <string>cancelButton</string>
+     </property>
+     <property name="text">
+      <string>Cancel</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
+     </property>
+    </widget>
+   </item>
+  </layout>
+  <action name="actionSegmentationExtraction">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvClippingBox.png</normaloff>:/Resources/images/ecvClippingBox.png</iconset>
+   </property>
+   <property name="text">
+    <string>Segmentation Extraction</string>
+   </property>
+   <property name="toolTip">
+    <string>Segmentation Extraction</string>
+   </property>
+   <property name="statusTip">
+    <string>Segmentation Extraction</string>
+   </property>
+  </action>
+  <action name="actionPolylineExtraction">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/dbPolylineSymbol.png</normaloff>:/Resources/images/dbPolylineSymbol.png</iconset>
+   </property>
+   <property name="text">
+    <string>Polyline Extraction</string>
+   </property>
+   <property name="iconText">
+    <string>Polyline Extraction</string>
+   </property>
+   <property name="toolTip">
+    <string>Polyline Extraction</string>
+   </property>
+   <property name="statusTip">
+    <string>Polyline Extraction</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../MainWindow.qrc"/>
+ </resources>
+ <connections/>
+</ui>

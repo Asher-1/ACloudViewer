@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>cvIsoSurfaceFilterDlg</class>
+ <widget class="QWidget" name="cvIsoSurfaceFilterDlg">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>236</width>
+    <height>156</height>
+   </rect>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>16777215</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>IsoSurface Filter</string>
+  </property>
+  <property name="toolTip">
+   <string>IsoSurface Filter</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <property name="leftMargin">
+    <number>2</number>
+   </property>
+   <property name="topMargin">
+    <number>2</number>
+   </property>
+   <property name="rightMargin">
+    <number>2</number>
+   </property>
+   <property name="bottomMargin">
+    <number>2</number>
+   </property>
+   <property name="spacing">
+    <number>2</number>
+   </property>
+   <item row="0" column="0">
+    <layout class="QGridLayout" name="gridLayout">
+     <property name="spacing">
+      <number>2</number>
+     </property>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>Gradient</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1" colspan="2">
+      <widget class="QDoubleSpinBox" name="minScalarSpinBox">
+       <property name="minimum">
+        <double>-1000000000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>1000000000.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.010000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Scalars</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1" colspan="2">
+      <widget class="QComboBox" name="scalarCombo"/>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Display Effect</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Min Scalar</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1" colspan="2">
+      <widget class="Widgets::GradientComboBox" name="gradientCombo"/>
+     </item>
+     <item row="8" column="0">
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Number of Contours</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1" colspan="2">
+      <widget class="QComboBox" name="displayEffectCombo">
+       <item>
+        <property name="text">
+         <string>Opaque</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Transparent</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Points</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Wireframe</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="5" column="1" colspan="2">
+      <widget class="QDoubleSpinBox" name="maxScalarSpinBox">
+       <property name="minimum">
+        <double>-100000000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>10000000000.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.100000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1" colspan="2">
+      <widget class="QSpinBox" name="numOfContoursSpinBox"/>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Max Scalar</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="QRadioButton" name="polylinesRadioButton">
+       <property name="text">
+        <string>Export Polylines</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1" colspan="2">
+      <widget class="QRadioButton" name="cloudRadioButton">
+       <property name="text">
+        <string>Export Cloud</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Widgets::GradientComboBox</class>
+   <extends>QComboBox</extends>
+   <header location="global">VtkUtils/gradientcombobox.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

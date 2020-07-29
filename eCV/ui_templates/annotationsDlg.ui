@@ -1,0 +1,754 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AnnotationsDlg</class>
+ <widget class="QDialog" name="AnnotationsDlg">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>380</width>
+    <height>214</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Annotations</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QToolButton" name="pauseToolButton">
+       <property name="toolTip">
+        <UInt>0</UInt>
+       </property>
+       <property name="statusTip">
+        <string>Pause Annotation</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../MainWindow.qrc">
+         <normaloff>:/Resources/images/smallPause.png</normaloff>:/Resources/images/smallPause.png</iconset>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="showBoxToolButton">
+       <property name="toolTip">
+        <string>Show/hide bounding box</string>
+       </property>
+       <property name="statusTip">
+        <string>Show Annotations</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../MainWindow.qrc">
+         <normaloff>:/Resources/images/square.png</normaloff>:/Resources/images/square.png</iconset>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="showOriginToolButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../MainWindow.qrc">
+         <normaloff>:/Resources/images/store.png</normaloff>:/Resources/images/store.png</iconset>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_9">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QToolButton" name="resetButton">
+       <property name="minimumSize">
+        <size>
+         <width>25</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>Reset</string>
+       </property>
+       <property name="statusTip">
+        <string>Reset</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../MainWindow.qrc">
+         <normaloff>:/Resources/images/smallReset.png</normaloff>:/Resources/images/smallReset.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="saveButton">
+       <property name="minimumSize">
+        <size>
+         <width>25</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>save annotations</string>
+       </property>
+       <property name="statusTip">
+        <string>save annotations</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../MainWindow.qrc">
+         <normaloff>:/Resources/images/small_save.png</normaloff>:/Resources/images/small_save.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="exportCloudWithAnnotations">
+       <property name="minimumSize">
+        <size>
+         <width>25</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>Export Annotations to SF</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../MainWindow.qrc">
+         <normaloff>:/Resources/images/typeSF.png</normaloff>:/Resources/images/typeSF.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="importClassSetsButton">
+       <property name="minimumSize">
+        <size>
+         <width>25</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>import ClassSets</string>
+       </property>
+       <property name="statusTip">
+        <string>import ClassSets</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../MainWindow.qrc">
+         <normaloff>:/Resources/images/add.png</normaloff>:/Resources/images/add.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="closeButton">
+       <property name="minimumSize">
+        <size>
+         <width>25</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>Close</string>
+       </property>
+       <property name="statusTip">
+        <string>Close</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../MainWindow.qrc">
+         <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <spacer name="horizontalSpacer_7">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="classSetsGroupBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="title">
+        <string>Class Sets</string>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QToolButton" name="editToolButton">
+          <property name="toolTip">
+           <string>Edit Mode（this will change exist annotations）</string>
+          </property>
+          <property name="statusTip">
+           <string>Edit Mode</string>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../MainWindow.qrc">
+            <normaloff>:/Resources/images/edit_48px.png</normaloff>:/Resources/images/edit_48px.png</iconset>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="labelSelectedButton">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>label selected clouds</string>
+          </property>
+          <property name="statusTip">
+           <string>label selected clouds</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../MainWindow.qrc">
+            <normaloff>:/Resources/images/smallValidate.png</normaloff>:/Resources/images/smallValidate.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="labelsComboBox">
+          <property name="statusTip">
+           <string>class sets</string>
+          </property>
+          <property name="editable">
+           <bool>true</bool>
+          </property>
+          <property name="currentText">
+           <string/>
+          </property>
+          <property name="duplicatesEnabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="selectionGroupBox">
+       <property name="title">
+        <string>Selection Mode</string>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QToolButton" name="newModeButton">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Export selection as a new cloud</string>
+          </property>
+          <property name="statusTip">
+           <string>add new selection</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../MainWindow.qrc">
+            <normaloff>:/Resources/images/ecvPlus.png</normaloff>:/Resources/images/ecvPlus.png</iconset>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <property name="autoExclusive">
+           <bool>true</bool>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="unionModeButton">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Export selection as a new cloud</string>
+          </property>
+          <property name="statusTip">
+           <string>union selections</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../MainWindow.qrc">
+            <normaloff>:/Resources/images/ecvUnion.png</normaloff>:/Resources/images/ecvUnion.png</iconset>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="autoExclusive">
+           <bool>true</bool>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="trimModeButton">
+          <property name="toolTip">
+           <string>Export multiple slices by repeating the process along one or several dimensions (+ contour extraction)</string>
+          </property>
+          <property name="statusTip">
+           <string>trim selections</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../MainWindow.qrc">
+            <normaloff>:/Resources/images/ecvMinus.png</normaloff>:/Resources/images/ecvMinus.png</iconset>
+          </property>
+          <property name="shortcut">
+           <string/>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="autoExclusive">
+           <bool>true</bool>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="intersectModeButton">
+          <property name="toolTip">
+           <string>Export multiple slices by repeating the process along one or several dimensions (+ contour extraction)</string>
+          </property>
+          <property name="statusTip">
+           <string>intersect selections</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../MainWindow.qrc">
+            <normaloff>:/Resources/images/ecvIntersection.png</normaloff>:/Resources/images/ecvIntersection.png</iconset>
+          </property>
+          <property name="shortcut">
+           <string/>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="autoExclusive">
+           <bool>true</bool>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_6">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QFrame" name="viewButtonsFrame">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_8">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <spacer name="horizontalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QToolButton" name="viewLeftToolButton">
+        <property name="toolTip">
+         <string>Set 'left' view</string>
+        </property>
+        <property name="statusTip">
+         <string>Set 'left' view</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../MainWindow.qrc">
+          <normaloff>:/Resources/images/ecvViewXpos.png</normaloff>:/Resources/images/ecvViewXpos.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="viewRightToolButton">
+        <property name="toolTip">
+         <string>Set 'right' view</string>
+        </property>
+        <property name="statusTip">
+         <string>Set 'right' view</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../MainWindow.qrc">
+          <normaloff>:/Resources/images/ecvViewXneg.png</normaloff>:/Resources/images/ecvViewXneg.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="viewFrontToolButton">
+        <property name="toolTip">
+         <string>Set 'front' view</string>
+        </property>
+        <property name="statusTip">
+         <string>Set 'front' view</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../MainWindow.qrc">
+          <normaloff>:/Resources/images/ecvViewYpos.png</normaloff>:/Resources/images/ecvViewYpos.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="viewBackToolButton">
+        <property name="toolTip">
+         <string>Set 'back' view</string>
+        </property>
+        <property name="statusTip">
+         <string>Set 'back' view</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../MainWindow.qrc">
+          <normaloff>:/Resources/images/ecvViewYneg.png</normaloff>:/Resources/images/ecvViewYneg.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="viewDownToolButton">
+        <property name="toolTip">
+         <string>Set 'down' view</string>
+        </property>
+        <property name="statusTip">
+         <string>Set 'down' view</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../MainWindow.qrc">
+          <normaloff>:/Resources/images/ecvViewZneg.png</normaloff>:/Resources/images/ecvViewZneg.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="viewUpToolButton">
+        <property name="toolTip">
+         <string>Set 'up' view</string>
+        </property>
+        <property name="statusTip">
+         <string>Set 'up' view</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../MainWindow.qrc">
+          <normaloff>:/Resources/images/ecvViewZpos.png</normaloff>:/Resources/images/ecvViewZpos.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Shift box</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <property name="leftMargin">
+       <number>4</number>
+      </property>
+      <property name="topMargin">
+       <number>4</number>
+      </property>
+      <property name="rightMargin">
+       <number>4</number>
+      </property>
+      <property name="bottomMargin">
+       <number>4</number>
+      </property>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>1</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QToolButton" name="minusXShiftToolButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>25</width>
+          <height>25</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Shift box along its X dimension</string>
+        </property>
+        <property name="text">
+         <string notr="true">-X</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="plusXShiftToolButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>25</width>
+          <height>25</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Shift box along its X dimension</string>
+        </property>
+        <property name="text">
+         <string notr="true">+X</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="minusYShiftToolButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>25</width>
+          <height>25</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Shift box along its Y dimension</string>
+        </property>
+        <property name="text">
+         <string notr="true">-Y</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="plusYShiftToolButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>25</width>
+          <height>25</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Shift box along its Y dimension</string>
+        </property>
+        <property name="text">
+         <string notr="true">+Y</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="minusZShiftToolButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>25</width>
+          <height>25</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Shift box along its Z dimension</string>
+        </property>
+        <property name="text">
+         <string notr="true">-Z</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="plusZShiftToolButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>25</width>
+          <height>25</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Shift box along its Z dimension</string>
+        </property>
+        <property name="text">
+         <string notr="true">+Z</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../MainWindow.qrc"/>
+ </resources>
+ <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroup"/>
+ </buttongroups>
+</ui>

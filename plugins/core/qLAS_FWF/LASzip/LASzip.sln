@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.421
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DEMzip", "DEMzip.vcxproj", "{5C6E91E3-C46D-4B29-98FF-E089EF1B5B4E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LASzip", "LASzip.vcxproj", "{C3455C53-FE35-4E78-AAFA-4A91C4019C95}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "laszipdllexample", "example\laszipdllexample.vcxproj", "{613D3FEF-28D2-49C9-86A4-3ED5FF2832C6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+		Template|x86 = Template|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5C6E91E3-C46D-4B29-98FF-E089EF1B5B4E}.Debug|x86.ActiveCfg = Debug|Win32
+		{5C6E91E3-C46D-4B29-98FF-E089EF1B5B4E}.Debug|x86.Build.0 = Debug|Win32
+		{5C6E91E3-C46D-4B29-98FF-E089EF1B5B4E}.Release|x86.ActiveCfg = Release|Win32
+		{5C6E91E3-C46D-4B29-98FF-E089EF1B5B4E}.Release|x86.Build.0 = Release|Win32
+		{5C6E91E3-C46D-4B29-98FF-E089EF1B5B4E}.Template|x86.ActiveCfg = Release|Win32
+		{5C6E91E3-C46D-4B29-98FF-E089EF1B5B4E}.Template|x86.Build.0 = Release|Win32
+		{C3455C53-FE35-4E78-AAFA-4A91C4019C95}.Debug|x86.ActiveCfg = Debug|Win32
+		{C3455C53-FE35-4E78-AAFA-4A91C4019C95}.Debug|x86.Build.0 = Debug|Win32
+		{C3455C53-FE35-4E78-AAFA-4A91C4019C95}.Release|x86.ActiveCfg = Release|Win32
+		{C3455C53-FE35-4E78-AAFA-4A91C4019C95}.Release|x86.Build.0 = Release|Win32
+		{C3455C53-FE35-4E78-AAFA-4A91C4019C95}.Template|x86.ActiveCfg = Template|Win32
+		{C3455C53-FE35-4E78-AAFA-4A91C4019C95}.Template|x86.Build.0 = Template|Win32
+		{613D3FEF-28D2-49C9-86A4-3ED5FF2832C6}.Debug|x86.ActiveCfg = Debug|Win32
+		{613D3FEF-28D2-49C9-86A4-3ED5FF2832C6}.Debug|x86.Build.0 = Debug|Win32
+		{613D3FEF-28D2-49C9-86A4-3ED5FF2832C6}.Release|x86.ActiveCfg = Release|Win32
+		{613D3FEF-28D2-49C9-86A4-3ED5FF2832C6}.Release|x86.Build.0 = Release|Win32
+		{613D3FEF-28D2-49C9-86A4-3ED5FF2832C6}.Template|x86.ActiveCfg = Template|Win32
+		{613D3FEF-28D2-49C9-86A4-3ED5FF2832C6}.Template|x86.Build.0 = Template|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BDBEFF8E-F810-4161-AA73-021D2F77C2DE}
+	EndGlobalSection
+EndGlobal
