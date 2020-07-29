@@ -12,7 +12,11 @@ Homepage: http://www.erow.cn/
 
 Introduction
 ------------
+ErowCloudViewer is an open-source library that supports rapid development of software
+that deals with 3D data. The ErowCloudViewer frontend exposes a set of carefully selected
+data structures and algorithms in both C++ and Python. The backend is highly optimized and is set up for parallelization. We welcome contributions from the open-source community.
 
+------------
 ErowCloudViewer is a 3D point cloud (and triangular mesh) processing software.
 It was originally designed to perform comparison between two 3D points clouds
 (such as the ones obtained with a laser scanner) or between a point cloud and a
