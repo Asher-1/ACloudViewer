@@ -45,6 +45,8 @@
 
 //Local
 #include "ecvAskTwoDoubleValuesDlg.h"
+#include "ecvAskDoubleIntegerValuesDlg.h"
+#include "ecvRansacSegmentationDlg.h"
 #include "ecvColorGradientDlg.h"
 #include "ecvColorLevelsDlg.h"
 #include "ecvComputeOctreeDlg.h"
@@ -69,6 +71,8 @@
 //	TODO figure out a cleaner way to do this without having to include all of mainwindow.h
 #include "mainwindow.h"
 
+// SYSTEM
+#include <algorithm>
 
 namespace ccEntityAction
 {
@@ -884,6 +888,7 @@ namespace ccEntityAction
 		return true;
 	}
 	
+
 	bool sfConvertToRGB(const ccHObject::Container &selectedEntities, QWidget *parent)
 	{
 		//we first ask the user if the SF colors should be mixed with existing colors
@@ -2535,4 +2540,223 @@ namespace ccEntityAction
 		
 		return true;
 	}
+
+
+	//////////
+	// segmentation
+
+	bool DBScanCluster(const ccHObject::Container &selectedEntities, QWidget *parent)
+	{
+		if (selectedEntities.empty())
+			return false;
+
+		ccPointCloud* pc_test = ccHObjectCaster::ToPointCloud(selectedEntities[0]);
+		double eps = pc_test->computeResolution() * 10;
+		int minPoints = 100;
+		ecvAskDoubleIntegerValuesDlg dlg("density parameter eps",
+			"minimum points",
+			DBL_MIN,
+			1.0e9,
+			1,
+			1000000,
+			eps,
+			minPoints,
+			8,
+			"DBScan Cluster",
+			parent);
+
+		dlg.doubleSpinBox->setStatusTip("Density parameter that is used to find neighbouring points.");
+		dlg.integerSpinBox->setStatusTip("Minimum number of points to form a cluster");
+		if (!dlg.exec())
+			return false;
+
+		//get values
+		eps = dlg.doubleSpinBox->value();
+		minPoints = dlg.integerSpinBox->value();
+
+		ccHObject::Container entities;
+		std::vector< std::vector<int> > clusters;
+		for (ccHObject* ent : selectedEntities)
+		{
+			bool lockedVertices = false;
+			ccPointCloud* pc = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
+			if (!pc || lockedVertices)
+			{
+				ecvUtils::DisplayLockedVerticesWarning(ent->getName(), selectedEntities.size() == 1);
+				continue;
+			}
+			entities.push_back(pc);
+			clusters.emplace_back(pc->clusterDBSCAN(eps, minPoints));
+			vector<int>::iterator itMax = std::max_element(clusters[clusters.size() - 1].begin(),
+														   clusters[clusters.size() - 1].end());
+			int clusterNumber = *itMax + 1;
+			CVLog::Print(QString("%1 has %2 clusters.").arg(pc->getName()).arg(clusterNumber));
+		}
+
+		std::vector< std::vector<ScalarType> > scalarsVector;
+		ccEntityAction::ConvertToScalarType<int>(clusters, scalarsVector);
+		if (!ccEntityAction::importToSF(entities, scalarsVector, "DBSCANClusters"))
+		{
+			CVLog::Error("[ecvEntityAction::DBScanCluster] import sf failed!");
+			return false;
+		}
+		else
+		{
+			CVLog::Print("Clusters information has been imported to scalar field of each cloud.");
+		}
+
+		return true;
+	}
+
+	bool RansacSegmentation(const ccHObject::Container& selectedEntities,
+							ccHObject::Container& outEntities,
+							QWidget * parent)
+	{
+		if (selectedEntities.empty())
+			return false;
+
+		ecvRansacSegmentationDlg dlg(parent);
+		if (!dlg.exec())
+			return false;
+
+		//get values
+		double distanceThreshold = dlg.distanceThresholdSpinbox->value();
+		int ransacN = dlg.ransacNSpinBox->value();
+		int iterations = dlg.iterationsSpinBox->value();
+		bool extractInliers = dlg.inliersCheckBox->isChecked();
+		bool extractOutliers = dlg.outliersCheckBox->isChecked();
+
+		outEntities.clear();
+		for (ccHObject* ent : selectedEntities)
+		{
+			bool lockedVertices = false;
+			ccPointCloud* pc = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
+			if (!pc || lockedVertices)
+			{
+				ecvUtils::DisplayLockedVerticesWarning(ent->getName(), selectedEntities.size() == 1);
+				continue;
+			}
+
+			std::vector<size_t> inliers;
+			Eigen::Vector4d planeModel;
+			std::tie(planeModel, inliers) = 
+				pc->segmentPlane(distanceThreshold, ransacN, iterations);
+
+			CVLog::Print(QString("[%1] Plane model: %2x + %3y + %4z + %5 = 0").arg(ent->getName()).
+				arg(planeModel(0)).arg(planeModel(1)).arg(planeModel(2)).arg(planeModel(3)));
+			if (extractInliers)
+			{
+				ccPointCloud* cloud = ccPointCloud::From(pc, inliers, false);
+				if (pc->getParent())
+				{
+					pc->getParent()->addChild(cloud);
+					pc->setEnabled(false);
+				}
+
+				cloud->setName(QString("%1-plane").arg(pc->getName()));
+				outEntities.push_back(cloud);
+			}
+
+			if (extractOutliers)
+			{
+				ccPointCloud* cloud = ccPointCloud::From(pc, inliers, true);
+				if (pc->getParent())
+				{
+					pc->getParent()->addChild(cloud);
+				}
+				cloud->setName(QString("%1-non-plane").arg(pc->getName()));
+				outEntities.push_back(cloud);
+			}
+		}
+
+		return !outEntities.empty();
+	}
+
+	//////////
+	// convex hull
+	bool ConvexHull(const ccHObject::Container& selectedEntities,
+					ccHObject::Container& outEntities,
+					QWidget * parent)
+	{
+		if (selectedEntities.empty())
+			return false;
+
+		outEntities.clear();
+		for (ccHObject* ent : selectedEntities)
+		{
+			bool lockedVertices = false;
+			ccPointCloud* pc = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
+			if (!pc || lockedVertices)
+			{
+				ecvUtils::DisplayLockedVerticesWarning(ent->getName(), selectedEntities.size() == 1);
+				continue;
+			}
+
+			std::shared_ptr<ccMesh> mesh;
+			std::vector<size_t> pt_map;
+			std::tie(mesh, pt_map) = pc->computeConvexHull();
+			if (!mesh)
+			{
+				CVLog::Warning(QString("[ccEntityAction::ConvexHull] "
+					"computing convex hull failed from cloud [%1]! ").arg(pc->getName()));
+				continue;
+			}
+
+			ccMesh* outMesh = new ccMesh();
+			outMesh->createInternalCloud();
+			*outMesh = *mesh;
+			if (pc->getParent())
+			{
+				pc->getParent()->addChild(outMesh);
+			}
+			outMesh->setName("ConvexHull");
+			outEntities.push_back(outMesh);
+		}
+
+		return !outEntities.empty();
+	}
+
+	//////////
+	// sampling
+
+	bool VoxelSampling(const ccHObject::Container &selectedEntities, QWidget *parent)
+	{
+		if (selectedEntities.empty())
+			return false;
+
+		ccPointCloud* pc_test = ccHObjectCaster::ToPointCloud(selectedEntities[0]);
+		double voxelSize = pc_test->computeResolution();
+
+		bool ok = false;
+		voxelSize = QInputDialog::getDouble(parent,
+			"voxel down sampling",
+			"Voxel Size:",
+			voxelSize,
+			DBL_MIN,
+			1.0e9,
+			8,
+			&ok);
+
+		for (ccHObject* ent : selectedEntities)
+		{
+			bool lockedVertices = false;
+			ccPointCloud* pc = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
+			if (!pc || lockedVertices)
+			{
+				ecvUtils::DisplayLockedVerticesWarning(ent->getName(), selectedEntities.size() == 1);
+				continue;
+			}
+
+			QString originName = pc->getName();
+			unsigned originSize = pc->size();
+			*pc = *pc->voxelDownSample(voxelSize);
+			pc->setName(originName);
+
+			CVLog::Print(QString("%1 down sampled from %2 points to %3 points.").
+				arg(originName).arg(originSize).arg(pc->size()));
+		}
+
+		return true;
+	}
+
 }

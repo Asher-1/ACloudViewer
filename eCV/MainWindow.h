@@ -299,6 +299,7 @@ private slots:
 	// Edit method
 	void doActionComputeMeshAA();
 	void doActionComputeMeshLS();
+	void doActionConvexHull();
 	void doActionPoissonReconstruction();
 	void doMeshTwoPolylines();
 
@@ -442,6 +443,10 @@ private slots:
 	void deactivateSemanticSegmentation(bool);
 
 	// Tools -> Segmentation
+	void doActionDBScanCluster();
+	void doActionPlaneSegmentation();
+
+	// Tools -> Segmentation
 	void activateSegmentationMode();
 	void deactivateSegmentationMode(bool);
 	void activateFilterWindowMode();
@@ -480,6 +485,7 @@ private slots:
 
 	void doActionSORFilter();
 	void doActionFilterNoise();
+	void doActionVoxelSampling();
 
 	void doActionUnroll();
 	void doComputeGeometricFeature();

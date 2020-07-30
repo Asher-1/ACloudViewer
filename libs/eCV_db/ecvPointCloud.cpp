@@ -169,22 +169,31 @@ ccPointCloud* ccPointCloud::From(
 
 ccPointCloud* ccPointCloud::From(
 	const ccPointCloud* sourceCloud, 
-	const std::vector<size_t>& index)
+	const std::vector<size_t>& indices,
+	bool invert/* = false*/)
 {
-	assert(index.size() <= sourceCloud->size());
-
-	unsigned n = static_cast<unsigned>(index.size());
-	if (n == 0)
+	unsigned sourceSize = sourceCloud->size();
+	assert(indices.size() <= sourceSize);
+	if (indices.size() == 0)
 	{
 		CVLog::Warning("[ccPointCloud::From] Input index is empty!");
 		return nullptr;
+	}
+
+	unsigned int out_n = invert ?
+		static_cast<unsigned int>(sourceSize - indices.size()) :
+		static_cast<unsigned int>(indices.size());
+
+	std::vector<bool> mask = std::vector<bool>(sourceSize, invert);
+	for (size_t i : indices) {
+		mask[i] = !invert;
 	}
 
 	//scalar fields (resized)
 	unsigned sfCount = sourceCloud->getNumberOfScalarFields();
 	ccPointCloud* pc = new ccPointCloud("Cloud");
 	{
-		if (!pc->reserveThePointsTable(n))
+		if (!pc->reserveThePointsTable(out_n))
 		{
 			CVLog::Error("[ccPointCloud::From] Not enough memory to duplicate cloud!");
 			delete pc;
@@ -193,64 +202,64 @@ ccPointCloud* ccPointCloud::From(
 		else
 		{
 			//import ccPoint parameters
-			for (unsigned i = 0; i < n; i++)
+			for (unsigned i = 0; i < sourceSize; i++)
 			{
-				// import points
-				CCVector3 P;
-				sourceCloud->getPoint(static_cast<unsigned int>(index[i]), P);
-				pc->addPoint(P);
-
-				//Colors (already reserved)
-				if (sourceCloud->hasColors())
+				if (mask[i])
 				{
-					if (!pc->hasColors())
+					// import points
+					pc->addPoint(*sourceCloud->getPoint(i));
+
+					//Colors (already reserved)
+					if (sourceCloud->hasColors())
 					{
-						if (!pc->reserveTheRGBTable())
+						if (!pc->hasColors())
 						{
-							CVLog::Error("[ccPointCloud::From] Not enough memory to duplicate cloud color!");
-							continue;
+							if (!pc->reserveTheRGBTable())
+							{
+								CVLog::Error("[ccPointCloud::From] Not enough memory to duplicate cloud color!");
+								continue;
+							}
+						}
+						pc->addRGBColor(sourceCloud->getPointColor(i));
+					}
+
+					//normals (reserved)
+					if (sourceCloud->hasNormals())
+					{
+						//we import normals (if necessary)
+						if (!pc->hasNormals())
+						{
+							if (!pc->reserveTheNormsTable())
+							{
+								CVLog::Error("[ccPointCloud::From] Not enough memory to duplicate cloud normal!");
+								continue;
+							}
+						}
+
+						pc->addNormIndex(sourceCloud->getPointNormalIndex(i));
+					}
+
+					// loop existing SF from sourceCloud
+					for (unsigned k = 0; k < sfCount; ++k)
+					{
+						const ccScalarField* sf = static_cast<ccScalarField*>(sourceCloud->getScalarField(static_cast<int>(k)));
+
+						int sfIndex = pc->getScalarFieldIndexByName(sf->getName());
+						if (sfIndex < 0)
+						{
+							sfIndex = pc->addScalarField(sf->getName());
+							assert(sfIndex >= 0);
+							static_cast<ccScalarField*>(pc->getScalarField(sfIndex))->setGlobalShift(sf->getGlobalShift());
+						}
+
+						ccScalarField* sameSF = static_cast<ccScalarField*>(pc->getScalarField(sfIndex));
+						if (sf && sameSF)
+						{
+							// FIXME: we could have accuracy issues here
+							sameSF->addElement(static_cast<ScalarType>(sf->getValue(i)));
 						}
 					}
-					pc->addRGBColor(sourceCloud->getPointColor(static_cast<unsigned int>(index[i])));
 				}
-
-				//normals (reserved)
-				if (sourceCloud->hasNormals())
-				{
-					//we import normals (if necessary)
-					if (!pc->hasNormals())
-					{
-						if (!pc->reserveTheNormsTable())
-						{
-							CVLog::Error("[ccPointCloud::From] Not enough memory to duplicate cloud normal!");
-							continue;
-						}
-					}
-
-					pc->addNormIndex(sourceCloud->getPointNormalIndex(static_cast<unsigned int>(index[i])));
-				}
-
-				// loop existing SF from sourceCloud
-				for (unsigned k = 0; k < sfCount; ++k)
-				{
-					const ccScalarField* sf = static_cast<ccScalarField*>(sourceCloud->getScalarField(static_cast<int>(k)));
-
-					int sfIndex = pc->getScalarFieldIndexByName(sf->getName());
-					if (sfIndex < 0)
-					{
-						sfIndex = pc->addScalarField(sf->getName());
-						assert(sfIndex >= 0);
-						static_cast<ccScalarField*>(pc->getScalarField(sfIndex))->setGlobalShift(sf->getGlobalShift());
-					}
-
-					ccScalarField* sameSF = static_cast<ccScalarField*>(pc->getScalarField(sfIndex));
-					if (sf && sameSF)
-					{
-						// FIXME: we could have accuracy issues here
-						sameSF->addElement(static_cast<ScalarType>(sf->getValue(index[i])));
-					}
-				}
-
 			}
 
 			unsigned sfCount = pc->getNumberOfScalarFields();

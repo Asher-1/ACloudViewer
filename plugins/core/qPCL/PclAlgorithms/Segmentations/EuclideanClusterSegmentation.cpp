@@ -125,7 +125,7 @@ int EuclideanClusterSegmentation::compute()
 		return -53;
 	}
 
-	//for each cluster
+	// for each cluster
 	std::vector< std::vector<size_t> > clusterIndices;
 	for (auto& cluster : cluster_indices)
 	{

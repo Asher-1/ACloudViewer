@@ -111,6 +111,19 @@ namespace ccEntityAction
 	// Stats
 	bool	statisticalTest(const ccHObject::Container &selectedEntities, QWidget *parent);
 	bool	computeStatParams(const ccHObject::Container &selectedEntities, QWidget *parent);
+
+	// segmentation
+	bool	DBScanCluster(const ccHObject::Container &selectedEntities, QWidget *parent);
+	bool	RansacSegmentation(const ccHObject::Container &selectedEntities, 
+							   ccHObject::Container& outEntities, QWidget *parent);
+	
+	// convex hull
+	bool	ConvexHull(const ccHObject::Container &selectedEntities,
+		ccHObject::Container& outEntities, QWidget *parent);
+
+	// sampling
+	bool	VoxelSampling(const ccHObject::Container &selectedEntities, QWidget *parent);
+	
 }
 
 #endif
