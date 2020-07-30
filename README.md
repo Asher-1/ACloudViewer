@@ -25,7 +25,7 @@ this particular use-case. It was also meant to deal with huge point
 clouds (typically more than 10 millions points, and up to 120 millions with 2 Gb
 of memory).
 
-More on ErowCloudViewer [here](http://en.wikipedia.org/wiki/CloudCompare)
+More on ErowCloudViewer [here](http://www.erow.cn)
 
 **Core features of ErowCloudViewer include:**
 
@@ -62,7 +62,7 @@ If you want to help us improve ErowCloudViewer or create a new plugin you can st
 Supporting the project
 ----------------------
 
-If you want to help us in another way, you can make donations via [donorbox](https://donorbox.org/support-cloudcompare)
+If you want to help us in another way, you can make donations via [donorbox](https://www.erow.cn)
 Thanks!
 
 <a href='https://donorbox.org/support-cloudcompare' target="_blank"><img src="https://d1iczxrky3cnb2.cloudfront.net/button-medium-blue.png"></a>
