@@ -285,10 +285,18 @@
      </property>
      <addaction name="actionSemanticSegmentation"/>
     </widget>
+    <widget class="QMenu" name="menuSegmentation">
+     <property name="title">
+      <string>Segmentation</string>
+     </property>
+     <addaction name="actionDBScanCluster"/>
+     <addaction name="actionPlaneSegmentation"/>
+    </widget>
     <addaction name="menuFilters"/>
     <addaction name="menuDistances"/>
     <addaction name="menuAnnotations"/>
     <addaction name="menuRecognition"/>
+    <addaction name="menuSegmentation"/>
     <addaction name="menuRegistration"/>
     <addaction name="menuFit"/>
     <addaction name="menuBatchExport"/>
@@ -424,16 +432,17 @@
       <addaction name="actionSmoothMeshSF"/>
       <addaction name="actionEnhanceMeshSF"/>
      </widget>
+     <addaction name="actionMeshScanGrids"/>
+     <addaction name="actionMeshTwoPolylines"/>
      <addaction name="actionComputeMeshAA"/>
      <addaction name="actionComputeMeshLS"/>
+     <addaction name="actionConvexHull"/>
      <addaction name="actionPoissonReconstruction"/>
-     <addaction name="actionMeshTwoPolylines"/>
-     <addaction name="actionMeshScanGrids"/>
      <addaction name="separator"/>
-     <addaction name="actionConvertTextureToColor"/>
      <addaction name="actionSamplePointsOnMesh"/>
      <addaction name="actionSmoothMeshLaplacian"/>
      <addaction name="actionSubdivideMesh"/>
+     <addaction name="actionConvertTextureToColor"/>
      <addaction name="separator"/>
      <addaction name="actionMeasureMeshSurface"/>
      <addaction name="actionMeasureMeshVolume"/>
@@ -474,6 +483,7 @@
      </property>
      <addaction name="actionSORFilter"/>
      <addaction name="actionNoiseFilter"/>
+     <addaction name="actionVoxelSampling"/>
     </widget>
     <widget class="QMenu" name="menuSensors">
      <property name="title">
@@ -3215,11 +3225,61 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
   </action>
   <action name="actionPoissonReconstruction">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/poisson.png</normaloff>:/Resources/images/poisson.png</iconset>
+   </property>
    <property name="text">
     <string>Poisson Reconstruction</string>
    </property>
    <property name="statusTip">
     <string>Poisson Reconstruction</string>
+   </property>
+  </action>
+  <action name="actionVoxelSampling">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/voxelSampling.jpg</normaloff>:/Resources/images/voxelSampling.jpg</iconset>
+   </property>
+   <property name="text">
+    <string>Voxel Sampling</string>
+   </property>
+   <property name="toolTip">
+    <string>Voxel Down Sampling</string>
+   </property>
+   <property name="statusTip">
+    <string>Voxel Down Sampling</string>
+   </property>
+  </action>
+  <action name="actionConvexHull">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/convex_concave_hull.png</normaloff>:/Resources/images/convex_concave_hull.png</iconset>
+   </property>
+   <property name="text">
+    <string>Convex Hull</string>
+   </property>
+   <property name="statusTip">
+    <string>Convex Hull</string>
+   </property>
+  </action>
+  <action name="actionDBScanCluster">
+   <property name="text">
+    <string>DBScan Cluster</string>
+   </property>
+   <property name="toolTip">
+    <string> a density-based algorithm for discovering clusters in large spatial databases with noise</string>
+   </property>
+   <property name="statusTip">
+    <string> a density-based algorithm for discovering clusters in large spatial databases with noise</string>
+   </property>
+  </action>
+  <action name="actionPlaneSegmentation">
+   <property name="text">
+    <string>Plane Segmentation</string>
+   </property>
+   <property name="statusTip">
+    <string>Plane Segmentation</string>
    </property>
   </action>
  </widget>

@@ -246,5 +246,8 @@
         <file>Resources/images/zoomOut_48px.png</file>
         <file>Resources/images/zoomOut_128px.png</file>
         <file>Resources/images/edit_48px.png</file>
+        <file>Resources/images/voxelSampling.jpg</file>
+        <file>Resources/images/convex_concave_hull.png</file>
+        <file>Resources/images/poisson.png</file>
     </qresource>
 </RCC>

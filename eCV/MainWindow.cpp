@@ -366,6 +366,7 @@ void MainWindow::connectActions()
 	//"Edit > Clean" menu
 	connect(m_ui->actionSORFilter, &QAction::triggered, this, &MainWindow::doActionSORFilter);
 	connect(m_ui->actionNoiseFilter, &QAction::triggered, this, &MainWindow::doActionFilterNoise);
+	connect(m_ui->actionVoxelSampling, &QAction::triggered, this, &MainWindow::doActionVoxelSampling);
 
 	//"Edit" menu
 	connect(m_ui->actionClone, &QAction::triggered, this, &MainWindow::doActionClone);
@@ -394,6 +395,7 @@ void MainWindow::connectActions()
 	// "Edit > Mesh" menu
 	connect(m_ui->actionComputeMeshAA, &QAction::triggered, this, &MainWindow::doActionComputeMeshAA);
 	connect(m_ui->actionComputeMeshLS, &QAction::triggered, this, &MainWindow::doActionComputeMeshLS);
+	connect(m_ui->actionConvexHull, &QAction::triggered, this, &MainWindow::doActionConvexHull);
 	connect(m_ui->actionPoissonReconstruction, &QAction::triggered, this, &MainWindow::doActionPoissonReconstruction);
 	connect(m_ui->actionMeshTwoPolylines, &QAction::triggered, this, &MainWindow::doMeshTwoPolylines);
 	connect(m_ui->actionMeshScanGrids, &QAction::triggered, this, &MainWindow::doActionMeshScanGrids);
@@ -491,6 +493,10 @@ void MainWindow::connectActions()
 
 	//"Tools > Recognition" menu
 	connect(m_ui->actionSemanticSegmentation, &QAction::triggered, this, &MainWindow::doSemanticSegmentation);
+	
+	//"Tools > Segmentation" menu
+	connect(m_ui->actionDBScanCluster, &QAction::triggered, this, &MainWindow::doActionDBScanCluster);
+	connect(m_ui->actionPlaneSegmentation, &QAction::triggered, this, &MainWindow::doActionPlaneSegmentation);
 	
 	//"Tools > Registration" menu
 	connect(m_ui->actionMatchBBCenters, &QAction::triggered, this, &MainWindow::doActionMatchBBCenters);
@@ -2265,6 +2271,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionScalarFieldFromColor->setEnabled(atLeastOneEntity && atLeastOneColor);
 	m_ui->actionComputeMeshAA->setEnabled(atLeastOneCloud);
 	m_ui->actionComputeMeshLS->setEnabled(atLeastOneCloud);
+	m_ui->actionConvexHull->setEnabled(atLeastOneCloud);
 	m_ui->actionPoissonReconstruction->setEnabled(atLeastOneCloud);
 	m_ui->actionMeshScanGrids->setEnabled(atLeastOneGrid);
 	//actionComputeQuadric3D->setEnabled(atLeastOneCloud);
@@ -2352,6 +2359,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionLabelConnectedComponents->setEnabled(atLeastOneCloud);
 	m_ui->actionSORFilter->setEnabled(atLeastOneCloud);
 	m_ui->actionNoiseFilter->setEnabled(atLeastOneCloud);
+	m_ui->actionVoxelSampling->setEnabled(atLeastOneCloud);
 	m_ui->actionUnroll->setEnabled(exactlyOneEntity);
 	//m_ui->actionStatisticalTest->setEnabled(exactlyOneEntity && exactlyOneSF);
 	m_ui->actionAddConstantSF->setEnabled(exactlyOneCloud || exactlyOneMesh);
@@ -2378,6 +2386,8 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionSemanticSegmentation->setEnabled(atLeastOneCloud);
 #endif // ECV_PYTHON_USE_AS_DLL
 
+	m_ui->actionDBScanCluster->setEnabled(atLeastOneCloud);
+	m_ui->actionPlaneSegmentation->setEnabled(atLeastOneCloud);
 	//m_ui->actionExtractSections->setEnabled(atLeastOneCloud);
 	//m_ui->actionRasterize->setEnabled(exactlyOneCloud);
 	m_ui->actionBoxAnnotation->setEnabled(exactlyOneCloud);
@@ -3833,6 +3843,41 @@ void MainWindow::doActionComputeMeshAA()
 void MainWindow::doActionComputeMeshLS()
 {
 	doActionComputeMesh(DELAUNAY_2D_BEST_LS_PLANE);
+}
+
+void MainWindow::doActionConvexHull()
+{
+	if (!haveSelection())
+	{
+		return;
+	}
+
+	ccHObject::Container clouds;
+	for (auto ent : getSelectedEntities())
+	{
+		if (!ent->isKindOf(CV_TYPES::POINT_CLOUD))
+		{
+			CVLog::Warning("only point cloud is supported!");
+			continue;
+		}
+		clouds.push_back(ent);
+	}
+
+	ccHObject::Container meshes;
+	if (ccEntityAction::ConvexHull(clouds, meshes, this))
+	{
+		for (size_t i = 0; i < meshes.size(); ++i)
+		{
+			addToDB(meshes[i]);
+		}
+	}
+	else
+	{
+		ecvConsole::Error(tr("Error(s) occurred! See the Console messages"));
+		return;
+	}
+
+	updateUI();
 }
 
 void MainWindow::doActionPoissonReconstruction()
@@ -5975,6 +6020,35 @@ void MainWindow::doActionFilterNoise()
 
 	updateUI();
 }
+
+void MainWindow::doActionVoxelSampling()
+{
+	if (!haveSelection())
+	{
+		return;
+	}
+
+	ccHObject::Container clouds;
+	for (auto ent : getSelectedEntities())
+	{
+		if (!ent->isKindOf(CV_TYPES::POINT_CLOUD))
+		{
+			ecvConsole::Warning("only point cloud is supported!");
+			continue;
+		}
+		clouds.push_back(ent);
+	}
+
+	if (!ccEntityAction::VoxelSampling(clouds, this))
+	{
+		ecvConsole::Error("[MainWindow::doActionVoxelSampling] voxel sampling failed!");
+		return;
+	}
+
+	refreshSelected();
+	updateUI();
+}
+
 
 void MainWindow::doActionClone()
 {
@@ -8742,6 +8816,69 @@ void MainWindow::deactivateSemanticSegmentation(bool state)
 
 	updateUI();
 #endif // ECV_PYTHON_USE_AS_DLL
+}
+
+void MainWindow::doActionDBScanCluster()
+{
+	if (!haveSelection())
+	{
+		return;
+	}
+
+	ccHObject::Container clouds;
+	for (auto ent : getSelectedEntities())
+	{
+		if (!ent->isKindOf(CV_TYPES::POINT_CLOUD))
+		{
+			CVLog::Warning("only point cloud is supported!");
+			continue;
+		}
+		clouds.push_back(ent);
+	}
+
+	if (!ccEntityAction::DBScanCluster(clouds, this))
+	{
+		ecvConsole::Error(tr("Error(s) occurred! See the Console messages"));
+		return;
+	}
+
+	refreshSelected();
+	updateUI();
+}
+
+void MainWindow::doActionPlaneSegmentation()
+{
+	if (!haveSelection())
+	{
+		return;
+	}
+
+	ccHObject::Container clouds;
+	for (auto ent : getSelectedEntities())
+	{
+		if (!ent->isKindOf(CV_TYPES::POINT_CLOUD))
+		{
+			CVLog::Warning("only point cloud is supported!");
+			continue;
+		}
+		clouds.push_back(ent);
+	}
+
+	ccHObject::Container entities;
+	if (ccEntityAction::RansacSegmentation(clouds, entities, this))
+	{
+		for (size_t i = 0; i < entities.size(); ++i)
+		{
+			addToDB(entities[i]);
+		}
+	}
+	else
+	{
+		ecvConsole::Error(tr("Error(s) occurred! See the Console messages"));
+		return;
+	}
+
+	updateUI();
 }
 
 void MainWindow::activateSegmentationMode()

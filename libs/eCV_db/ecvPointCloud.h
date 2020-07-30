@@ -126,7 +126,15 @@ public: //clone, copy, etc.
 	**/
 	static ccPointCloud* From(CVLib::GenericCloud* cloud, const ccGenericPointCloud* sourceCloud = nullptr);
 
-	static ccPointCloud* From(const ccPointCloud* sourceCloud, const std::vector<size_t>& index);
+	/// \brief Function to select points from \p input ccPointCloud into
+	/// \p output ccPointCloud.
+	///
+	/// Points with indices in \param indices are selected.
+	///
+	/// \param sourceCloud.
+	/// \param indices Indices of points to be selected.
+	/// \param invert Set to `True` to invert the selection of indices.
+	static ccPointCloud* From(const ccPointCloud* sourceCloud, const std::vector<size_t>& indices, bool invert = false);
 
 	//! Warnings for the partialClone method (bit flags)
 	enum CLONE_WARNINGS {	WRN_OUT_OF_MEM_FOR_COLORS		= 1,
