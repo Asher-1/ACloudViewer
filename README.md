@@ -6,9 +6,9 @@
 
 Homepage: http://www.erow.cn/
 
-[![GitHub release](https://img.shields.io/github/release/cloudcompare/trunk.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
-[![Build Status](https://travis-ci.org/CloudCompare/CloudCompare.svg?branch=master)](https://travis-ci.org/CloudCompare/CloudCompare)
-[![Releases](https://coderelease.io/badge/CloudCompare/CloudCompare)](https://coderelease.io/github/repository/CloudCompare/CloudCompare)
+[![GitHub release](https://github.com/Asher-1/ErowCloudViewer/blob/master/doc/version.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
+[![Build Status](https://github.com/Asher-1/ErowCloudViewer/blob/master/doc/ErowCloudViewer.svg?branch=master)](https://github.com/Asher-1/ErowCloudViewer/releases/)
+[![Releases](https://github.com/Asher-1/ErowCloudViewer/blob/master/doc/newRelease.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
 
 Introduction
 ------------
