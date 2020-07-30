@@ -65,7 +65,7 @@ Supporting the project
 If you want to help us in another way, you can make donations via [donorbox](https://www.erow.cn)
 Thanks!
 
-<a href='https://donorbox.org/support-cloudcompare' target="_blank"><img src="https://d1iczxrky3cnb2.cloudfront.net/button-medium-blue.png"></a>
+<a href='https://www.erow.cn' target="_blank"><img src="https://d1iczxrky3cnb2.cloudfront.net/button-medium-blue.png"></a>
 
 有道云翻译：
 应用ID：6a470044a4c9069a
