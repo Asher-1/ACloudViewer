@@ -4,7 +4,7 @@
 *.pydevproject
 .project
 .metadata
-bin/
+node_modules
 tmp/
 *.tmp
 *.bak
@@ -31,13 +31,14 @@ local.properties
 *.user
 *.sln.docstates
 # Build results
-[Dd]ebug/
-[Rr]elease/
+build*/
+cmake-build-debug/
+cmake-build-release/
+docs/_out/
 *_i.c
 *_p.c
 *.ilk
 *.meta
-*.obj
 *.pch
 *.pdb
 *.pgc
@@ -77,8 +78,6 @@ DocProject/Help/html
 # Click-Once directory
 publish
 # Others
-[Bb]in
-[Oo]bj
 sql
 TestResults
 *.Cache
@@ -100,15 +99,20 @@ Thumbs.db
 Desktop.ini
 #############
 ## Python
-*.py[co]
+**/package-lock.json
+*.pyc
+__pycache__
+._*
 # Packages
 *.egg
-*.egg-info
+*.egg-info/
+*.ipynb_checkpoints/
+*.py[cod]
+*.bak
 dist
 build
 eggs
 parts
-bin
 var
 sdist
 develop-eggs
@@ -126,10 +130,7 @@ pip-log.txt
 # Mac crap
 .DS_Store
 /build_64bits_msvc10/
-/test/
 private_plugins
-/data/
-/misc/
 CCCoreLibExport.h
 /.vs/CloudCompare/v15
 /.vs/ProjectSettings.json
