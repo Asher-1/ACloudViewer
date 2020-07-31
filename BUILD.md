@@ -141,6 +141,32 @@ Here’s a list of installation related targets. Please refer to 5. Install for 
 
 4. install-pip-package
 
+### Translations
+
+有道云翻译：
+应用ID：6a470044a4c9069a
+应用秘钥：62EddBoyfG0KXCp5Ih0C100Ir0DNYcId
+
+翻译文件的正则替换：
+ui_(\w+).h
+\1.ui
+
+"(\w+).cpp"
+"../\1.cpp"
+"(\w+).h"
+"../\1.h"
+
+Copy "$(TargetDir)*.*" "$(SolutionDir)\eCV\Debug"
+Copy "$(TargetDir)*.*" "$(SolutionDir)\eCV\Debug\plugins"
+
+Copy "$(TargetDir)*.*" "$(SolutionDir)\eCV\Release"
+Copy "$(TargetDir)*.*" "$(SolutionDir)\eCV\Release\plugins"
+
+Copy "$(TargetDir)*.*" "$(SolutionDir)\qCC\Debug"
+Copy "$(TargetDir)*.*" "$(SolutionDir)\qCC\Debug\plugins"
+Copy "$(TargetDir)*.*" "$(SolutionDir)\qCC\Release"
+Copy "$(TargetDir)*.*" "$(SolutionDir)\qCC\Release\plugins"
+
 # Appendix
 
 ## Additional optional CMake setup steps
