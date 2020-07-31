@@ -83,6 +83,18 @@ ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, const QString &ve
 	setOrganizationName( "ECVCorp" );
 
 	setupPaths();
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+	// supports HDPI
+	//QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+	//QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	////QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
+
+#ifdef Q_OS_WIN
+	//enables automatic scaling based on the monitor's pixel density
+	//setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 		
 #ifdef Q_OS_MAC
 	// Mac OS X apps don't show icons in menus
@@ -105,7 +117,7 @@ ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, const QString &ve
 	ccTranslationManager::get().registerTranslatorFile( QStringLiteral( "ErowCloudViewer" ), m_TranslationPath );
 	ccTranslationManager::get().loadTranslations();
 	
-	//connect( this, &ecvApplicationBase::aboutToQuit, [=](){ ccMaterial::ReleaseTextures(); } );
+	connect( this, &ecvApplicationBase::aboutToQuit, [=](){ ccMaterial::ReleaseTextures(); } );
 }
 
 QString ecvApplicationBase::versionStr() const

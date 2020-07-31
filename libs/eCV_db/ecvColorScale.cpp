@@ -26,12 +26,12 @@
 //Local
 #include "CVLog.h"
 
-ccColorScale::Shared ccColorScale::Create(QString name)
+ccColorScale::Shared ccColorScale::Create(const QString& name)
 {
 	return ccColorScale::Shared(new ccColorScale(name));
 }
 
-ccColorScale::ccColorScale(QString name, QString uuid/*=QString()*/)
+ccColorScale::ccColorScale(const QString& name, const QString& uuid/*=QString()*/)
 	: m_name(name)
 	, m_uuid(uuid)
 	, m_updated(false)

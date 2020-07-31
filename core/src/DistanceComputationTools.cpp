@@ -2151,6 +2151,691 @@ ScalarType DistanceComputationTools::computePoint2PlaneDistance(const CCVector3*
 	return static_cast<ScalarType>((CCVector3::vdot(P->u, planeEquation) - planeEquation[3])/*/CCVector3::vnorm(planeEquation)*/); //norm == 1.0!
 }
 
+
+ScalarType DistanceComputationTools::computePoint2LineSegmentDistSquared(const CCVector3* p, const CCVector3* start, const CCVector3* end)
+{
+	assert(p && start && end);
+	CCVector3 line = *end - *start;
+	CCVector3 vec;
+	ScalarType distSq;
+	PointCoordinateType t = line.dot(*p - *start);
+	PointCoordinateType normSq = line.norm2();
+	if (normSq != 0)
+	{
+		t /= normSq;
+	}
+	if (t < 0)
+	{
+		vec = *p - *start;
+	}
+	else if (t > 1)
+	{
+		vec = *p - *end;
+	}
+	else
+	{
+		CCVector3 pProjectedOnLine = *start + t * line;
+		vec = *p - pProjectedOnLine;
+	}
+
+	distSq = vec.norm2();
+	return distSq;
+}
+
+// This algorithm is a modification of the distance computation between a point and a cone from 
+// Barbier & Galin's Fast Distance Computation Between a Point and Cylinders, Cones, Line Swept Spheres and Cone-Spheres.
+// The modifications from the paper are to compute the closest distance when the point is interior to the cone.
+// http://liris.cnrs.fr/Documents/Liris-1297.pdf
+int DistanceComputationTools::computeCloud2ConeEquation(GenericIndexedCloudPersist* cloud, const CCVector3& coneP1, const CCVector3& coneP2, const PointCoordinateType coneR1, const PointCoordinateType coneR2, bool signedDistances/*=true*/, bool solutionType/*=false*/, double* rms/*=nullptr*/)
+{
+	if (!cloud)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_NULL_COMPAREDCLOUD;
+	}
+	unsigned count = cloud->size();
+	if (count == 0)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_EMPTY_COMPAREDCLOUD;
+	}
+	if (!cloud->enableScalarField())
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_ENABLE_SCALAR_FIELD_FAILURE;
+	}
+	if (coneR1 < coneR2)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_CONE_R1_LT_CONE_R2;
+	}
+	double dSumSq = 0.0;
+
+	CCVector3 coneAxis = coneP2 - coneP1;
+	double axisLength = coneAxis.normd();
+	coneAxis.normalize();
+	double delta = static_cast<double>(coneR2) - coneR1;
+	double rr1 = static_cast<double>(coneR1) * coneR1;
+	double rr2 = static_cast<double>(coneR2) * coneR2;
+	double coneLength = sqrt((axisLength * axisLength) + (delta * delta));
+	CCVector3d side{ axisLength, delta, 0.0 };
+	side /= coneLength;
+
+	for (unsigned i = 0; i < count; ++i)
+	{
+		const CCVector3* P = cloud->getPoint(i);
+		CCVector3 n = *P - coneP1;
+		double x = n.dot(coneAxis);
+		double xx = x * x;
+		double yy = (n.norm2d()) - xx;
+		double y = 0;
+		double d = 0;
+		double rx = 0;
+		double ry = 0;
+		if (yy < 0)
+		{
+			yy = 0;
+		}
+		if (x <= 0) //Below the bottom point
+		{
+			if (yy < rr1)
+			{
+				if (!solutionType)
+				{
+					d = -x; //Below the bottom point within larger disk radius
+				}
+				else
+				{
+					d = 1; //Works
+				}
+			}
+			else
+			{
+				if (!solutionType)
+				{
+					y = sqrt(yy) - coneR1;
+					d = sqrt((y * y) + xx); //Below the bottom point not within larger disk radius
+				}
+				else
+				{
+					d = 2; //Works
+				}
+			}
+
+		}
+		else //Above the bottom point
+		{
+			if (yy < rr2) // within smaller disk radius
+			{
+				if (x > axisLength) //outside cone within smaller disk
+				{
+					if (!solutionType)
+					{
+						d = x - axisLength; // Above the top point within top disk radius
+					}
+					else
+					{
+						d = 3;
+					}
+				}
+				else //inside cone within smaller disk
+				{
+					if (!solutionType)
+					{
+						y = sqrt(yy) - coneR1;
+						ry = y * side[0] - x * side[1]; //rotated y value (distance from the coneside axis)
+						d = std::min(axisLength - x, x); //determine whether closer to either radii 
+						d = std::min(d, static_cast<double>(std::abs(ry))); //or to side
+						d = -d; //negative inside
+					}
+					else
+					{
+						d = 4;
+					}
+				}
+			}
+			else // Outside smaller disk radius
+			{
+				y = sqrt(yy) - coneR1;
+				{
+					rx = y * side[1] + x * side[0]; //rotated x value (distance along the coneside axis)
+					if (rx < 0)
+					{
+						if (!solutionType)
+						{
+							d = sqrt(y * y + xx);
+						}
+						else
+						{
+							d = 7; // point projects onto the large cap
+						}
+					}
+					else
+					{
+						ry = y * side[0] - x * side[1]; //rotated y value (distance from the coneside axis)
+						if (rx > coneLength)
+						{
+							if (!solutionType)
+							{
+								rx -= coneLength;
+								d = sqrt(ry * ry + rx * rx);
+							}
+							else
+							{
+								d = 8; // point projects onto the small cap
+							}
+						}
+						else
+						{
+							if (!solutionType)
+							{
+								d = ry; // point projects onto the side of cone
+								if (ry < 0)
+								{//point is interior to the cone
+									d = std::min(axisLength - x, x); //determine whether closer to either radii 
+									d = std::min(d, static_cast<double>(std::abs(ry))); //or to side
+									d = -d; //negative inside
+								}
+							}
+							else
+							{
+								d = 9;
+							}
+						}
+					}
+
+				}
+			}
+		}
+		if (signedDistances)
+		{
+			cloud->setPointScalarValue(i, static_cast<ScalarType>(d));
+		}
+		else
+		{
+			cloud->setPointScalarValue(i, static_cast<ScalarType>(std::abs(d)));
+		}
+		dSumSq += d * d;
+	}
+	if (rms)
+	{
+		*rms = sqrt(dSumSq / count);
+	}
+	return DISTANCE_COMPUTATION_RESULTS::SUCCESS;
+}
+
+// This algorithm is a modification of the distance computation between a point and a cylinder from 
+// Barbier & Galin's Fast Distance Computation Between a Point and Cylinders, Cones, Line Swept Spheres and Cone-Spheres.
+// The modifications from the paper are to compute the closest distance when the point is interior to the capped cylinder.
+// http://liris.cnrs.fr/Documents/Liris-1297.pdf
+// solutionType 1 = exterior to the cylinder and within the bounds of the axis
+// solutionType 2 = interior to the cylinder and either closer to an end-cap or the cylinder wall
+// solutionType 3 = beyond the bounds of the cylinder's axis and radius
+// solutionType 4 = beyond the bounds of the cylinder's axis but within the bounds of it's radius
+int DistanceComputationTools::computeCloud2CylinderEquation(GenericIndexedCloudPersist* cloud, const CCVector3& cylinderP1, const CCVector3& cylinderP2, const PointCoordinateType cylinderRadius, bool signedDistances/*=true*/, bool solutionType/*=false*/, double* rms/*=0*/)
+{
+	if (!cloud)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_NULL_COMPAREDCLOUD;
+	}
+	unsigned count = cloud->size();
+	if (count == 0)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_EMPTY_COMPAREDCLOUD;
+	}
+	if (!cloud->enableScalarField())
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_ENABLE_SCALAR_FIELD_FAILURE;
+	}
+	double dSumSq = 0.0;
+
+	CCVector3 cylinderCenter = (cylinderP1 + cylinderP2) / 2.;
+
+	CCVector3 cylinderAxis = cylinderP2 - cylinderP1;
+	double h = cylinderAxis.normd() / 2.;
+	cylinderAxis.normalize();
+	double cylinderRadius2 = static_cast<double>(cylinderRadius)* cylinderRadius;
+
+	for (unsigned i = 0; i < count; ++i)
+	{
+		const CCVector3* P = cloud->getPoint(i);
+		CCVector3 n = *P - cylinderCenter;
+
+		double x = std::abs(n.dot(cylinderAxis));
+		double xx = x * x;
+		double yy = (n.norm2d()) - xx;
+		double y = 0;
+		double d = 0;
+		if (x <= h)
+		{
+			if (yy >= cylinderRadius2)
+			{
+				if (!solutionType)
+				{
+					d = sqrt(yy) - cylinderRadius; //exterior to the cylinder and within the bounds of the axis
+				}
+				else
+				{
+					d = 1;
+				}
+			}
+			else
+			{
+				if (!solutionType)
+				{
+					d = -std::min(std::abs(sqrt(yy) - cylinderRadius), std::abs(h - x)); //interior to the cylinder and either closer to an end-cap or the cylinder wall
+				}
+				else
+				{
+					d = 2;
+				}
+			}
+		}
+		else
+		{
+			if (yy >= cylinderRadius2)
+			{
+				if (!solutionType)
+				{
+					y = sqrt(yy);
+					d = sqrt(((y - cylinderRadius) * (y - cylinderRadius)) + ((x - h) * (x - h))); //beyond the bounds of the cylinder's axis and radius
+				}
+				else
+				{
+					d = 3;
+				}
+			}
+			else
+			{
+				if (!solutionType)
+				{
+					d = x - h; //beyond the bounds of the cylinder's axis but within the bounds of it's radius
+				}
+				else
+				{
+					d = 4;
+				}
+			}
+
+		}
+
+		if (signedDistances)
+		{
+			cloud->setPointScalarValue(i, static_cast<ScalarType>(d));
+		}
+		else
+		{
+			cloud->setPointScalarValue(i, static_cast<ScalarType>(std::abs(d)));
+		}
+		dSumSq += d * d;
+	}
+	if (rms)
+	{
+		*rms = sqrt(dSumSq / count);
+	}
+
+	return DISTANCE_COMPUTATION_RESULTS::SUCCESS;
+}
+
+int DistanceComputationTools::computeCloud2SphereEquation(GenericIndexedCloudPersist *cloud, const CCVector3& sphereCenter, const PointCoordinateType sphereRadius, bool signedDistances/*=true*/, double* rms/*=0*/)
+{
+	if (!cloud)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_NULL_COMPAREDCLOUD;
+	}
+	unsigned count = cloud->size();
+	if (count == 0)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_EMPTY_COMPAREDCLOUD;
+	}
+	if (!cloud->enableScalarField())
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_ENABLE_SCALAR_FIELD_FAILURE;
+	}
+	double dSumSq = 0.0;
+	for (unsigned i = 0; i < count; ++i)
+	{
+		const CCVector3* P = cloud->getPoint(i);
+		double d = (*P - sphereCenter).normd() - sphereRadius;
+		if (signedDistances)
+		{
+			cloud->setPointScalarValue(i, static_cast<ScalarType>(d));
+		}
+		else
+		{
+			cloud->setPointScalarValue(i, static_cast<ScalarType>(std::abs(d)));
+		}
+		dSumSq += d * d;
+	}
+	if (rms)
+	{
+		*rms = sqrt(dSumSq / count);
+	}
+
+	return DISTANCE_COMPUTATION_RESULTS::SUCCESS;
+}
+
+int DistanceComputationTools::computeCloud2PlaneEquation(GenericIndexedCloudPersist *cloud, const PointCoordinateType* planeEquation, bool signedDistances/*=true*/, double* rms/*=0*/)
+{
+	assert(cloud && planeEquation);
+	if (!cloud)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_NULL_COMPAREDCLOUD;
+	}
+	if (!planeEquation)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::NULL_PLANE_EQUATION;
+	}
+	unsigned count = cloud->size();
+	if (count == 0)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_EMPTY_COMPAREDCLOUD;
+	}
+	if (!cloud->enableScalarField())
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_ENABLE_SCALAR_FIELD_FAILURE;
+	}
+
+	//point to plane distance: d = std::abs(a0*x+a1*y+a2*z-a3) / sqrt(a0^2+a1^2+a2^2) <-- "norm"
+	//but the norm should always be equal to 1.0!
+	PointCoordinateType norm2 = CCVector3::vnorm2(planeEquation);
+	assert(std::abs(sqrt(norm2) - PC_ONE) <= std::numeric_limits<PointCoordinateType>::epsilon());
+	if (norm2 < ZERO_TOLERANCE)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_PLANE_NORMAL_LT_ZERO;
+	}
+	double dSumSq = 0.0;
+	for (unsigned i = 0; i < count; ++i)
+	{
+		const CCVector3* P = cloud->getPoint(i);
+		double d = static_cast<double>(CCVector3::vdotd(P->u, planeEquation) - planeEquation[3]);
+		if (signedDistances)
+		{
+			cloud->setPointScalarValue(i, static_cast<ScalarType>(d));
+		}
+		else
+		{
+			cloud->setPointScalarValue(i, static_cast<ScalarType>(std::abs(d)));
+		}
+		dSumSq += d * d;
+	}
+	if (rms)
+	{
+		*rms = sqrt(dSumSq / count);
+	}
+
+	return DISTANCE_COMPUTATION_RESULTS::SUCCESS;
+}
+
+int DistanceComputationTools::computeCloud2RectangleEquation(GenericIndexedCloudPersist *cloud, PointCoordinateType widthX, PointCoordinateType widthY, const SquareMatrix& rotationTransform, const CCVector3& center, bool signedDist/*=true*/, double* rms/*= nullptr*/)
+{
+	// p3---------------------p2
+	// ^					  |
+	// |e1					  |
+	// |					  |
+	// |		  e0		  |
+	// p0-------------------->p1
+	//Rect(s,t)=p0 + s*0e + t*e1 
+	//for s,t in {0,1}
+	assert(cloud);
+	if (!cloud)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_NULL_COMPAREDCLOUD;
+	}
+	unsigned count = cloud->size();
+	if (count == 0)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_EMPTY_COMPAREDCLOUD;
+	}
+	if (!cloud->enableScalarField())
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_ENABLE_SCALAR_FIELD_FAILURE;
+	}
+	if (widthX <= 0 || widthY <= 0)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_INVALID_PRIMITIVE_DIMENSIONS;
+	}
+
+	CCVector3 widthXVec(widthX, 0, 0);
+	CCVector3 widthYVec(0, widthY, 0);
+	CCVector3 normalVector(0, 0, 1);
+
+	widthXVec = rotationTransform * widthXVec;
+	widthYVec = rotationTransform * widthYVec;
+	normalVector = rotationTransform * normalVector;
+	PointCoordinateType planeDistance = center.dot(normalVector);
+	PointCoordinateType dSumSq = 0;
+	CCVector3 rectangleP0 = center - (widthXVec / 2) - (widthYVec / 2);
+	CCVector3 rectangleP1 = center + (widthXVec / 2) - (widthYVec / 2);
+	CCVector3 rectangleP3 = center - (widthXVec / 2) + (widthYVec / 2);
+	CCVector3 e0 = rectangleP1 - rectangleP0;
+	CCVector3 e1 = rectangleP3 - rectangleP0;
+
+	for (unsigned i = 0; i < count; ++i)
+	{
+		const CCVector3* pe = cloud->getPoint(i);
+		CCVector3 dist = (*pe - rectangleP0);
+		PointCoordinateType s = e0.dot(dist);
+		if (s > 0)
+		{
+			PointCoordinateType dot0 = e0.norm2();
+			if (s < dot0)
+			{
+				dist -= (s / dot0)*e0;
+			}
+			else
+			{
+				dist -= e0;
+			}
+		}
+
+		PointCoordinateType t = e1.dot(dist);
+		if (t > 0)
+		{
+			PointCoordinateType dot1 = e1.norm2();
+			if (t < dot1)
+			{
+				dist -= (t / dot1)*e1;
+			}
+			else
+			{
+				dist -= e1;
+			}
+		}
+		PointCoordinateType d = static_cast<PointCoordinateType>(dist.normd());
+		dSumSq += d * d;
+		if (signedDist && pe->dot(normalVector) - planeDistance < 0)
+		{
+			d = -d;
+		}
+		cloud->setPointScalarValue(i, static_cast<ScalarType>(d));
+	}
+	if (rms)
+	{
+		*rms = sqrt(dSumSq / count);
+	}
+	return DISTANCE_COMPUTATION_RESULTS::SUCCESS;
+}
+
+int DistanceComputationTools::computeCloud2BoxEquation(GenericIndexedCloudPersist* cloud, const CCVector3& boxDimensions, const SquareMatrix& rotationTransform, const CCVector3& boxCenter, bool signedDist/*=true*/, double* rms/*= nullptr*/)
+{
+	assert(cloud);
+	if (!cloud)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_NULL_COMPAREDCLOUD;
+	}
+	unsigned count = cloud->size();
+	if (count == 0)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_EMPTY_COMPAREDCLOUD;
+	}
+	if (!cloud->enableScalarField())
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_ENABLE_SCALAR_FIELD_FAILURE;
+	}
+	if (boxDimensions.x <= 0 || boxDimensions.y <= 0 || boxDimensions.z <= 0)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_INVALID_PRIMITIVE_DIMENSIONS;
+	}
+	// box half lengths hu hv and hw
+	const PointCoordinateType hu = boxDimensions.x / 2;
+	const PointCoordinateType hv = boxDimensions.y / 2;
+	const PointCoordinateType hw = boxDimensions.z / 2;
+	// box coordinates unit vectors u,v, and w
+	CCVector3 u(1, 0, 0);
+	CCVector3 v(0, 1, 0);
+	CCVector3 w(0, 0, 1);
+	u = rotationTransform * u;
+	v = rotationTransform * v;
+	w = rotationTransform * w;
+	PointCoordinateType dSumSq = 0;
+	for (unsigned i = 0; i < count; ++i)
+	{
+		const CCVector3* p = cloud->getPoint(i);
+		CCVector3 pointCenterDifference = (*p - boxCenter);
+		CCVector3 p_inBoxCoords(pointCenterDifference.dot(u), pointCenterDifference.dot(v), pointCenterDifference.dot(w));
+		bool insideBox = false;
+		if (p_inBoxCoords.x > -hu && p_inBoxCoords.x < hu && p_inBoxCoords.y > -hv && p_inBoxCoords.y < hv && p_inBoxCoords.z > -hw && p_inBoxCoords.z < hw)
+		{
+			insideBox = true;
+		}
+
+		CCVector3 dist(0, 0, 0);
+		if (p_inBoxCoords.x < -hu)
+		{
+			dist.x = -(p_inBoxCoords.x + hu);
+		}
+		else if (p_inBoxCoords.x > hu)
+		{
+			dist.x = p_inBoxCoords.x - hu;
+		}
+		else if (insideBox)
+		{
+			dist.x = std::abs(p_inBoxCoords.x) - hu;
+		}
+
+		if (p_inBoxCoords.y < -hv)
+		{
+			dist.y = -(p_inBoxCoords.y + hv);
+		}
+		else if (p_inBoxCoords.y > hv)
+		{
+			dist.y = p_inBoxCoords.y - hv;
+		}
+		else if (insideBox)
+		{
+			dist.y = std::abs(p_inBoxCoords.y) - hv;
+		}
+
+		if (p_inBoxCoords.z < -hw)
+		{
+			dist.z = -(p_inBoxCoords.z + hw);
+		}
+		else if (p_inBoxCoords.z > hw)
+		{
+			dist.z = p_inBoxCoords.z - hw;
+		}
+		else if (insideBox)
+		{
+			dist.z = std::abs(p_inBoxCoords.z) - hw;
+		}
+
+		if (insideBox)//take min distance inside box
+		{
+			if (dist.x >= dist.y && dist.x >= dist.z)
+			{
+				dist.y = 0;
+				dist.z = 0;
+			}
+			else if (dist.y >= dist.x && dist.y >= dist.z)
+			{
+				dist.x = 0;
+				dist.z = 0;
+			}
+			else if (dist.z >= dist.x && dist.z >= dist.y)
+			{
+				dist.x = 0;
+				dist.y = 0;
+			}
+		}
+		PointCoordinateType d = static_cast<PointCoordinateType>(dist.normd());
+		dSumSq += d * d;
+		if (signedDist && insideBox)
+		{
+			d = -d;
+		}
+		cloud->setPointScalarValue(i, static_cast<ScalarType>(d));
+	}
+	if (rms)
+	{
+		*rms = sqrt(dSumSq / count);
+	}
+	return DISTANCE_COMPUTATION_RESULTS::SUCCESS;
+}
+
+int DistanceComputationTools::computeCloud2PolylineEquation(GenericIndexedCloudPersist* cloud, const Polyline* polyline, double* rms /*= nullptr*/)
+{
+	assert(cloud);
+	if (!cloud)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_NULL_COMPAREDCLOUD;
+	}
+	unsigned count = cloud->size();
+	if (count == 0)
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_EMPTY_COMPAREDCLOUD;
+	}
+	if (!cloud->enableScalarField())
+	{
+		return DISTANCE_COMPUTATION_RESULTS::ERROR_ENABLE_SCALAR_FIELD_FAILURE;
+	}
+	ScalarType d = 0;
+	ScalarType dSumSq = 0;
+	for (unsigned i = 0; i < count; ++i)
+	{
+		ScalarType distSq = NAN_VALUE;
+		const CCVector3* p = cloud->getPoint(i);
+		for (unsigned j = 0; j < polyline->size() - 1; j++)
+		{
+			const CCVector3* start = polyline->getPoint(j);
+			const CCVector3* end = polyline->getPoint(j + 1);
+			PointCoordinateType startXMinusA = start->x - p->x;
+			PointCoordinateType startYMinusB = start->y - p->y;
+			PointCoordinateType startZMinusC = start->z - p->z;
+			PointCoordinateType endXMinusA = end->x - p->x;
+			PointCoordinateType endYMinusB = end->y - p->y;
+			PointCoordinateType endZMinusC = end->z - p->z;
+			PointCoordinateType startXMinusASq = startXMinusA * startXMinusA;
+			PointCoordinateType startYMinusBSq = startYMinusB * startYMinusB;
+			PointCoordinateType startZMinusCSq = startZMinusC * startZMinusC;
+			PointCoordinateType endXMinusASq = endXMinusA * endXMinusA;
+			PointCoordinateType endYMinusBSq = endYMinusB * endYMinusB;
+			PointCoordinateType endZMinusCSq = endZMinusC * endZMinusC;
+
+			//Rejection test
+			if (((startXMinusASq >= distSq) && (endXMinusASq >= distSq) && (startXMinusA * endXMinusA > ZERO_TOLERANCE)) ||
+				((startYMinusBSq >= distSq) && (endYMinusBSq >= distSq) && (startYMinusB * endYMinusB > ZERO_TOLERANCE)) ||
+				((startZMinusCSq >= distSq) && (endZMinusCSq >= distSq) && (startZMinusC * endZMinusC > ZERO_TOLERANCE)))
+			{
+				continue;
+			}
+			if (std::isnan(distSq))
+			{
+				distSq = computePoint2LineSegmentDistSquared(p, start, end);
+			}
+			else
+			{
+				distSq = std::min(distSq, computePoint2LineSegmentDistSquared(p, start, end));
+			}
+		}
+		d = sqrt(distSq);
+		dSumSq += distSq;
+		cloud->setPointScalarValue(i, d);
+	}
+
+	if (rms)
+	{
+		*rms = sqrt(dSumSq / count);
+	}
+	return DISTANCE_COMPUTATION_RESULTS::SUCCESS;
+}
+
 ScalarType DistanceComputationTools::computeCloud2PlaneDistanceRMS(	GenericCloud* cloud,
 																	const PointCoordinateType* planeEquation)
 {

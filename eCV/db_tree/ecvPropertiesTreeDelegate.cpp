@@ -434,8 +434,21 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj)
 
 			//Box center
 			CCVector3 bboxCenter = box.getCenter();
-			appendRow(ITEM(tr("Box center")),
-				ITEM(QString("X: %0\nY: %1\nZ: %2").arg(bboxCenter.x).arg(bboxCenter.y).arg(bboxCenter.z)));
+
+			ccShiftedObject* shiftedObj = ccHObjectCaster::ToShifted(_obj);
+
+			//local bounding box center
+			appendRow(ITEM(shiftedObj ? tr("Shifted box center") : tr("Box center")),
+				ITEM(QStringLiteral("X: %0\nY: %1\nZ: %2").arg(bboxCenter.x).arg(bboxCenter.y).arg(bboxCenter.z)));
+
+			if (shiftedObj)
+			{
+				CCVector3d globalBBoxCenter = shiftedObj->toGlobal3d(bboxCenter);
+
+				//global bounding box center
+				appendRow(ITEM(tr("Global box center")),
+					ITEM(QStringLiteral("X: %0\nY: %1\nZ: %2").arg(globalBBoxCenter.x, 0, 'f').arg(globalBBoxCenter.y, 0, 'f').arg(globalBBoxCenter.z, 0, 'f')));
+			}
 		}
 	}
 

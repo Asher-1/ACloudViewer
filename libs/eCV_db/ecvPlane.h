@@ -96,6 +96,17 @@ public:
 	**/
 	void getEquation(CCVector3& N, PointCoordinateType& constVal) const;
 
+
+	//! Returns the equation of the plane
+	/** Equation:
+		planeEquation plane equation : [a, b, c, d] as 'ax+by+cz=d'
+		Same equation used in Neighbourhood and DistanceComputationTools
+	**/
+	const PointCoordinateType* getEquation();
+
+	//! Flips the plane
+	void flip();
+
 protected:
 
 	//inherited from ccDrawable
@@ -111,6 +122,9 @@ protected:
 
 	//! Width along 'Y' dimension
 	PointCoordinateType m_yWidth;
+
+	// Array [a,b,c,d] such that ax+by+cz = d
+	PointCoordinateType m_PlaneEquation[4];
 };
 
 #endif // ECV_PLANE_PRIMITIVE_HEADER

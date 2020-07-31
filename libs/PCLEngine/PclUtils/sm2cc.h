@@ -15,8 +15,8 @@
 //#                                                                        #
 //##########################################################################
 
-#ifndef Q_PCL_SM2CC_H
-#define Q_PCL_SM2CC_H
+#ifndef Q_PCL_PLUGIN_SM2CC_H
+#define Q_PCL_PLUGIN_SM2CC_H
 
 //Local
 #include "../qPCL.h"
@@ -25,9 +25,9 @@
 //system
 #include <list>
 
+
 class ccMesh;
 class ccPointCloud;
-
 //! PCL to CC cloud converter
 /** NOTE: THIS METHOD HAS SOME PROBLEMS. IT CANNOT CORRECTLY LOAD NON-FLOAT FIELDS!
 	THIS IS DUE TO THE FACT THE POINT TYPE WITH A SCALAR WE USE HERE IS FLOAT

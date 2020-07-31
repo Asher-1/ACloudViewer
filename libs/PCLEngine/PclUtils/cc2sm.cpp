@@ -421,7 +421,8 @@ PCLCloud::Ptr cc2smReader::getFloatScalarField(const std::string& field_name) co
 		if (m_showMode)
 		{
 			// only convert first scalar field to rgb color data
-			if (m_cc_cloud->sfShown() && sfIdx == 0)
+			if (m_cc_cloud->sfShown() && 
+				sfIdx == m_cc_cloud->getCurrentDisplayedScalarFieldIndex())
 			{
 				PointCloud<OnlyRGB>::Ptr pcl_cloud(new PointCloud<OnlyRGB>);
 

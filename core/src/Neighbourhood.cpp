@@ -943,14 +943,23 @@ double Neighbourhood::computeFeature(GeomFeature feature)
 			value = l3 / l1;
 		break;
 	case Verticality:
-	{
-		CCVector3d Z(0, 0, 1);
-		CCVector3d e3(Z);
-		Jacobi<double>::GetEigenVector(eigVectors, 2, e3.u);
+		{
+			CCVector3d Z(0, 0, 1);
+			CCVector3d e3(Z);
+			Jacobi<double>::GetEigenVector(eigVectors, 2, e3.u);
 
-		value = 1.0 - std::abs(Z.dot(e3));
-	}
-	break;
+			value = 1.0 - std::abs(Z.dot(e3));
+		}
+		break;
+	case EigenValue1:
+		value = l1;
+		break;
+	case EigenValue2:
+		value = l2;
+		break;
+	case EigenValue3:
+		value = l3;
+		break;
 	default:
 		assert(false);
 		break;

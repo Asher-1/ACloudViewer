@@ -327,12 +327,17 @@ private slots:
 	void doActionSmoothMeshSF();
 	void doActionEnhanceMeshSF();
 	void doActionSubdivideMesh();
+	void doActionFlipMeshTriangles();
 	void doActionSmoothMeshLaplacian();
 	void doActionFlagMeshVertices();
 	void doActionMeasureMeshVolume();
 	void doActionMeasureMeshSurface();
+
 	void doActionCreatePlane();
 	void doActionEditPlane();
+	void doActionFlipPlane();
+	void doActionComparePlanes();
+
 	//! Clones currently selected entities
 	void doActionClone();
 	void doActionMerge();
@@ -438,6 +443,11 @@ private slots:
 	void activateRegisterPointPairTool();
 	void deactivateRegisterPointPairTool(bool state);
 
+	inline void doActionMoveBBCenterToOrigin() { doActionFastRegistration(MoveBBCenterToOrigin); }
+	inline void doActionMoveBBMinCornerToOrigin() { doActionFastRegistration(MoveBBMinCornerToOrigin); }
+	inline void doActionMoveBBMaxCornerToOrigin() { doActionFastRegistration(MoveBBMaxCornerToOrigin); }
+
+
 	// Tools -> Recognition
 	void doSemanticSegmentation();
 	void deactivateSemanticSegmentation(bool);
@@ -473,6 +483,7 @@ private slots:
 
 	void doActionCloudCloudDist();
 	void doActionCloudMeshDist();
+	void doActionCloudPrimitiveDist();
 	void deactivateComparisonMode(int result);
 	void doActionComputeCPS();
 
@@ -604,6 +615,15 @@ private:
 
 	void toggleSelectedEntitiesProperty(ccEntityAction::TOGGLE_PROPERTY property);
 	void clearSelectedEntitiesProperty(ccEntityAction::CLEAR_PROPERTY property);
+
+	enum FastRegistrationMode
+	{
+		MoveBBCenterToOrigin,
+		MoveBBMinCornerToOrigin,
+		MoveBBMaxCornerToOrigin
+	};
+
+	void doActionFastRegistration(FastRegistrationMode mode);
 
 private:
 	Ui::MainViewerClass *m_ui;

@@ -97,6 +97,26 @@ void ccPlane::getEquation(CCVector3& N, PointCoordinateType& constVal) const
 	constVal = m_transformation.getTranslationAsVec3D().dot(N);
 }
 
+
+const PointCoordinateType* ccPlane::getEquation()
+{
+	CCVector3 N = getNormal();
+	m_PlaneEquation[0] = N.x;
+	m_PlaneEquation[1] = N.y;
+	m_PlaneEquation[2] = N.z;
+	m_PlaneEquation[3] = getCenter().dot(N); //a point on the plane dot the plane normal
+	return m_PlaneEquation;
+}
+
+void ccPlane::flip()
+{
+	ccGLMatrix reverseMat;
+	reverseMat.initFromParameters(static_cast<PointCoordinateType>(M_PI), CCVector3(1, 0, 0), CCVector3(0, 0, 0));
+
+	m_transformation = m_transformation * reverseMat;
+	updateRepresentation();
+}
+
 ccPlane* ccPlane::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/*=0*/)
 {
 	//number of points

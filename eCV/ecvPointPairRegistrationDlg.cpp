@@ -58,9 +58,7 @@ ccPointPairRegistrationDlg::ccPointPairRegistrationDlg(
 	ecvMainAppInterface* app, 
 	QWidget* parent/*=0*/)
 	: ccOverlayDialog(parent)
-	, m_aligned(0)
 	, m_alignedPoints("aligned points")
-	, m_reference(0)
 	, m_refPoints("reference points")
 	, m_refLabels("reference labels")
 	, m_alignedLabels("aligned labels")
@@ -90,8 +88,8 @@ ccPointPairRegistrationDlg::ccPointPairRegistrationDlg(
 		autoZoomCheckBox->setChecked(autoUpdateZoom);
 	}
 
-	connect(showAlignedCheckBox,	SIGNAL(toggled(bool)),				this,	SLOT(showAlignedCloud(bool)));
-	connect(showReferenceCheckBox,	SIGNAL(toggled(bool)),				this,	SLOT(showReferenceCloud(bool)));
+	connect(showAlignedCheckBox,	SIGNAL(toggled(bool)),				this,	SLOT(showAlignedEntities(bool)));
+	connect(showReferenceCheckBox,	SIGNAL(toggled(bool)),				this,	SLOT(showReferenceEntities(bool)));
 
 	connect(typeAlignToolButton,	SIGNAL(clicked()),					this,	SLOT(addManualAlignedPoint()));
 	connect(typeRefToolButton,		SIGNAL(clicked()),					this,	SLOT(addManualRefPoint()));
@@ -141,26 +139,52 @@ void ccPointPairRegistrationDlg::EntityContext::restore()
 	}
 }
 
+void ccPointPairRegistrationDlg::EntityContexts::fill(const ccHObject::Container& entities)
+{
+	clear();
+	isShifted = false;
+
+	for (ccHObject* entity : entities)
+	{
+		if (!entity)
+		{
+			assert(false);
+			continue;
+		}
+
+		if (!isShifted)
+		{
+			ccShiftedObject* shiftedEntity = ccHObjectCaster::ToShifted(entity);
+			if (shiftedEntity && shiftedEntity->isShifted())
+			{
+				isShifted = true;
+				shift = shiftedEntity->getGlobalShift(); //we can only consider the first shift!
+			}
+		}
+
+		insert(entity, EntityContext(entity));
+	}
+}
+
 void ccPointPairRegistrationDlg::clear()
 {
 	alignToolButton->setEnabled(false);
 	validToolButton->setEnabled(false);
-
-	if (m_aligned.entity)
-	{
-		m_aligned.entity->setSelected(true);
-		m_aligned.entity->showSF(false);
-	}
-	if (m_reference.entity)
-	{
-		m_reference.entity->setSelected(true);
-		m_reference.entity->showSF(false);
-	}
-
 	while (alignedPointsTableWidget->rowCount() != 0)
 		alignedPointsTableWidget->removeRow(alignedPointsTableWidget->rowCount() - 1);
 	while (refPointsTableWidget->rowCount() != 0)
 		refPointsTableWidget->removeRow(refPointsTableWidget->rowCount() - 1);
+
+	for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end(); ++it)
+	{
+		it.key()->setSelected(true);
+		it.key()->showSF(false);
+	}	
+	for (auto it = m_referenceEntities.begin(); it != m_referenceEntities.end(); ++it)
+	{
+		it.key()->setSelected(true);
+		it.key()->showSF(false);
+	}
 
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
@@ -199,13 +223,13 @@ void ccPointPairRegistrationDlg::clear()
 	m_alignedPoints.resize(0);
 	m_alignedPoints.setGlobalShift(0, 0, 0);
 	m_alignedPoints.setGlobalScale(1.0);
-	m_aligned.entity = 0;
+	m_alignedEntities.clear();
 	m_refPoints.removeAllChildren();
 	m_refLabels.removeAllChildren();
 	m_refPoints.resize(0);
 	m_refPoints.setGlobalShift(0, 0, 0);
 	m_refPoints.setGlobalScale(1.0);
-	m_reference.entity = 0;
+	m_referenceEntities.clear();
 }
 
 bool ccPointPairRegistrationDlg::linkWith(QWidget* win)
@@ -215,15 +239,15 @@ bool ccPointPairRegistrationDlg::linkWith(QWidget* win)
 		return false;
 	}
 
-	m_aligned.restore();
-	m_reference.restore();
+	m_alignedEntities.restoreAll();
+	m_referenceEntities.restoreAll();
 
 	return true;
 }
 
 bool ccPointPairRegistrationDlg::start()
 {
-	assert(m_aligned.entity);
+	assert(!m_alignedEntities.empty());
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
 		if (!m_pickingHub->addListener(this, true))
@@ -328,20 +352,28 @@ void ccPointPairRegistrationDlg::label2DMove(int x, int y, int dx, int dy)
 	}
 }
 
-bool ccPointPairRegistrationDlg::init(
-	QWidget* win,
-	ccHObject* aligned, 
-	ccHObject* reference/*=0*/)
+bool ccPointPairRegistrationDlg::init(QWidget* win,
+	const ccHObject::Container& alignedEntities,
+	const ccHObject::Container* referenceEntities/*=nullptr*/)
 {
-	assert(win);
-	assert(aligned);
-	
+	if (!win)
+	{
+		assert(false);
+		return false;
+	}
+
 	clear();
 
-	if (!aligned)
+	if (alignedEntities.empty())
 	{
-		CVLog::Error("[PointPairRegistration] Need an aligned entity at least!");
+		CVLog::Error("[PointPairRegistration] Need at least one aligned entity!");
 		return false;
+	}
+
+	m_alignedEntities.fill(alignedEntities);
+	if (referenceEntities)
+	{
+		m_referenceEntities.fill(*referenceEntities);
 	}
 
 	//create dedicated 3D view
@@ -351,41 +383,42 @@ bool ccPointPairRegistrationDlg::init(
 		assert(m_associatedWin);
 	}
 
-	m_aligned = EntityContext(aligned);
-	m_reference = EntityContext(reference);
-
 	//add aligned entity to display
 	ecvViewportParameters originViewportParams;
 	bool hasOriginViewportParams = false;
-	if (aligned)
+	for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end(); ++it)
 	{
-		hasOriginViewportParams = true;
-		originViewportParams = ecvDisplayTools::GetViewportParameters();
-
-		//DGM: it's already in the global DB!
-		aligned->setVisible(true);
-		aligned->setSelected(false);
-		SetEnabled_recursive(aligned);
-		//SetVisible_recursive(aligned);
-	}
-
-	//add reference entity (if any) to display
-	if (reference)
-	{
-		if (!hasOriginViewportParams)
+		ccHObject* aligned = it.key();
+		if (ecvDisplayTools::GetCurrentScreen())
 		{
 			hasOriginViewportParams = true;
 			originViewportParams = ecvDisplayTools::GetViewportParameters();
 		}
 		//DGM: it's already in the global DB!
+		//m_associatedWin->addToOwnDB(aligned);
+		aligned->setVisible(true);
+		SetEnabled_recursive(aligned);
+		//SetVisible_recursive(aligned);
+	}
+
+	//add reference entity (if any) to display
+	for (auto it = m_referenceEntities.begin(); it != m_referenceEntities.end(); ++it)
+	{
+		ccHObject* reference = it.key();
+		if (!hasOriginViewportParams && ecvDisplayTools::GetCurrentScreen())
+		{
+			hasOriginViewportParams = true;
+			originViewportParams = ecvDisplayTools::GetViewportParameters();
+		}
+		//DGM: it's already in the global DB!
+		//m_associatedWin->addToOwnDB(reference);
 		reference->setVisible(true);
-		reference->setSelected(false);
 		SetEnabled_recursive(reference);
 		//SetVisible_recursive(reference);
 	}
 
-	showReferenceCheckBox->setChecked(reference != 0);
-	showReferenceCheckBox->setEnabled(reference != 0);
+	showReferenceCheckBox->setChecked(!m_referenceEntities.empty());
+	showReferenceCheckBox->setEnabled(!m_referenceEntities.empty());
 	showAlignedCheckBox->setChecked(true);
 
 	ecvDisplayTools::GetCurrentScreen()->showMaximized();
@@ -412,20 +445,19 @@ bool ccPointPairRegistrationDlg::init(
 	return true;
 }
 
-static QString s_aligned_tooltip("Whether the point is expressed in the entity original coordinate system (before being shifted by CC) or not");
+static QString s_aligned_tooltip = QObject::tr("Whether the point is expressed in the entity original coordinate system (before being shifted by CV) or not");
 static double  s_last_ax = 0;
 static double  s_last_ay = 0;
 static double  s_last_az = 0;
-static bool    s_last_a_isGlobal = true;
+static bool    s_lastAlignePointIsGlobal = true;
 void ccPointPairRegistrationDlg::addManualAlignedPoint()
 {
 	ccAskThreeDoubleValuesDlg ptsDlg("x", "y", "z", -1.0e12, 1.0e12, s_last_ax, s_last_ay, s_last_az, 8, "Add aligned point", this);
 
 	//if the aligned entity is shifted, the user has the choice to input virtual point either
 	//in the original coordinate system or the shifted one
-	bool alignIsShifted = (m_aligned.entity && ccHObjectCaster::ToGenericPointCloud(m_aligned.entity)->isShifted());
-	if (alignIsShifted)
-		ptsDlg.showCheckbox("Not shifted",s_last_a_isGlobal,s_aligned_tooltip);
+	if (m_alignedEntities.isShifted)
+		ptsDlg.showCheckbox("Not shifted", s_lastAlignePointIsGlobal, s_aligned_tooltip);
 
 	if (!ptsDlg.exec())
 		return;
@@ -435,31 +467,30 @@ void ccPointPairRegistrationDlg::addManualAlignedPoint()
 	s_last_ay = ptsDlg.doubleSpinBox2->value();
 	s_last_az = ptsDlg.doubleSpinBox3->value();
 	bool shifted = true;
-	if (alignIsShifted)
+	if (m_alignedEntities.isShifted)
 	{
-		s_last_a_isGlobal = ptsDlg.getCheckboxState();
-		shifted = !s_last_a_isGlobal;
+		s_lastAlignePointIsGlobal = ptsDlg.getCheckboxState();
+		shifted = !s_lastAlignePointIsGlobal;
 	}
 
 	CCVector3d P(s_last_ax,s_last_ay,s_last_az);
 
-	addAlignedPoint(P,0,shifted);
+	addAlignedPoint(P, nullptr, shifted);
 }
 
 static double s_last_rx = 0;
 static double s_last_ry = 0;
 static double s_last_rz = 0;
-static bool s_last_r_isGlobal = true;
+static bool s_lastRefPointisGlobal = true;
 void ccPointPairRegistrationDlg::addManualRefPoint()
 {
 	ccAskThreeDoubleValuesDlg ptsDlg("x", "y", "z", -1.0e12, 1.0e12, s_last_rx, s_last_ry, s_last_rz, 8, "Add reference point", this);
-
+	
 	//if the reference entity is shifted, the user has the choice to input virtual
 	//points either in the original coordinate system or the shifted one
 	//(if there's no reference entity, we use a 'global'	one by default)
-	bool refIsShifted = (m_reference.entity && ccHObjectCaster::ToGenericPointCloud(m_reference.entity)->isShifted());
-	if (refIsShifted)
-		ptsDlg.showCheckbox("Not shifted", s_last_r_isGlobal, s_aligned_tooltip);
+	if (m_referenceEntities.isShifted)
+		ptsDlg.showCheckbox("Not shifted", s_lastRefPointisGlobal, s_aligned_tooltip);
 
 	if (!ptsDlg.exec())
 		return;
@@ -468,16 +499,16 @@ void ccPointPairRegistrationDlg::addManualRefPoint()
 	s_last_rx = ptsDlg.doubleSpinBox1->value();
 	s_last_ry = ptsDlg.doubleSpinBox2->value();
 	s_last_rz = ptsDlg.doubleSpinBox3->value();
-	bool shifted = (m_reference.entity != 0);
-	if (refIsShifted)
+	bool shifted = (!m_referenceEntities.empty());
+	if (m_referenceEntities.isShifted)
 	{
-		s_last_r_isGlobal = ptsDlg.getCheckboxState();
-		shifted = !s_last_r_isGlobal;
+		s_lastRefPointisGlobal = ptsDlg.getCheckboxState();
+		shifted = !s_lastRefPointisGlobal;
 	}
 
 	CCVector3d P(s_last_rx, s_last_ry, s_last_rz);
 
-	addReferencePoint(P, 0, shifted);
+	addReferencePoint(P, nullptr, shifted);
 }
 
 void ccPointPairRegistrationDlg::pause(bool state)
@@ -583,13 +614,13 @@ void ccPointPairRegistrationDlg::onItemPicked(const PickedItem& pi)
 
 	CCVector3d pin = CCVector3d::fromArray(pi.P3D.u);
 
-	if (pi.entity == m_aligned.entity)
+	if (m_alignedEntities.contains(pi.entity))
 	{
-		addAlignedPoint(pin, m_aligned.entity, true); //picked points are always shifted by default
+		addAlignedPoint(pin, pi.entity, true); //picked points are always shifted by default
 	}
-	else if (pi.entity == m_reference.entity)
+	else if (m_referenceEntities.contains(pi.entity))
 	{
-		addReferencePoint(pin, m_reference.entity, true); //picked points are always shifted by default
+		addReferencePoint(pin, pi.entity, true); //picked points are always shifted by default
 	}
 	else
 	{
@@ -706,16 +737,17 @@ void ccPointPairRegistrationDlg::addPointToTable(QTableWidget* tableWidget, int 
 		//QTableWidgetItem* item = new QTableWidgetItem();
 		//tableWidget->setItem(rowIndex, DEL_BUTTON_COL_INDEX, item);
 		QToolButton* delButton = CreateDeleteButton();
-		connect(delButton, SIGNAL(clicked()), this, SLOT(onDelButtonPushed()));
+		connect(delButton, &QToolButton::clicked, this, &ccPointPairRegistrationDlg::onDelButtonPushed);
 		tableWidget->setCellWidget(rowIndex, DEL_BUTTON_COL_INDEX, delButton);
 	}
 }
 
 bool ccPointPairRegistrationDlg::addReferencePoint(CCVector3d& Pin, ccHObject* entity/*=0*/, bool shifted/*=true*/)
 {
-	assert(entity == 0 || entity == m_reference.entity);
+	assert(entity == nullptr || m_referenceEntities.contains(entity));
 
-	ccGenericPointCloud* cloud = entity ? ccHObjectCaster::ToGenericPointCloud(entity) : 0;
+	ccGenericPointCloud* cloud = entity ? 
+		ccHObjectCaster::ToGenericPointCloud(entity) : nullptr;
 
 	//first point?
 	if (m_refPoints.size() == 0)
@@ -741,7 +773,7 @@ bool ccPointPairRegistrationDlg::addReferencePoint(CCVector3d& Pin, ccHObject* e
 				CCVector3d Pshift(0, 0, 0);
 				double scale = 1.0;
 				//we use the aligned shift by default (if any)
-				ccGenericPointCloud* alignedCloud = m_aligned.entity ? ccHObjectCaster::ToGenericPointCloud(m_aligned.entity) : 0;
+				ccGenericPointCloud* alignedCloud = ccHObjectCaster::ToGenericPointCloud(entity);
 				if (alignedCloud && alignedCloud->isShifted())
 				{
 					Pshift = alignedCloud->getGlobalShift();
@@ -822,14 +854,13 @@ bool ccPointPairRegistrationDlg::addReferencePoint(CCVector3d& Pin, ccHObject* e
 bool ccPointPairRegistrationDlg::addAlignedPoint(CCVector3d& Pin, ccHObject* entity/*=0*/, bool shifted/*=0*/)
 {
 	//if the input point is not shifted, we shift it to the aligned coordinate system
-	assert(entity == 0 || entity == m_aligned.entity);
+	assert(entity == nullptr || m_alignedEntities.contains(entity));
 
 	//first point?
 	if (m_alignedPoints.size() == 0)
 	{
-		assert(m_aligned.entity);
 		//simply copy the cloud global shift/scale
-		ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(m_aligned.entity);
+		ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(entity);
 		if (cloud)
 		{
 			m_alignedPoints.setGlobalScale(cloud->getGlobalScale());
@@ -838,7 +869,7 @@ bool ccPointPairRegistrationDlg::addAlignedPoint(CCVector3d& Pin, ccHObject* ent
 	}
 
 	PointCoordinateType sphereRadius = -PC_ONE;
-	if (!convertToSphereCenter(Pin,entity,sphereRadius))
+	if (!convertToSphereCenter(Pin, entity, sphereRadius))
 		return false;
 
 	//transform the input point in the 'global world' by default
@@ -1153,12 +1184,13 @@ void ccPointPairRegistrationDlg::updateRefMarkers(int index)
 	}
 }
 
-void ccPointPairRegistrationDlg::showAlignedCloud(bool state)
+void ccPointPairRegistrationDlg::showAlignedEntities(bool state)
 {
-	if (!m_aligned.entity)
+	if (m_alignedEntities.empty())
 		return;
 
-	m_aligned.entity->setVisible(state);
+	for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end(); ++it)
+		it.key()->setVisible(state);
 	m_alignedPoints.setEnabled(state);
 
 	for (unsigned i = 0; i < m_alignedLabels.getChildrenNumber(); ++i)
@@ -1188,12 +1220,13 @@ void ccPointPairRegistrationDlg::showAlignedCloud(bool state)
 	}
 }
 
-void ccPointPairRegistrationDlg::showReferenceCloud(bool state)
+void ccPointPairRegistrationDlg::showReferenceEntities(bool state)
 {
-	if (!m_reference.entity)
+	if (m_referenceEntities.empty())
 		return;
 
-	m_reference.entity->setVisible(state);
+	for (auto it = m_referenceEntities.begin(); it != m_referenceEntities.end(); ++it)
+		it.key()->setVisible(state);
 	m_refPoints.setEnabled(state);
 
 	for (unsigned i = 0; i < m_refLabels.getChildrenNumber(); ++i)
@@ -1225,9 +1258,11 @@ void ccPointPairRegistrationDlg::showReferenceCloud(bool state)
 
 bool ccPointPairRegistrationDlg::callHornRegistration(CVLib::PointProjectionTools::Transformation& trans, double& rms, bool autoUpdateTab)
 {
-	assert(m_aligned.entity);
-	if (!m_aligned.entity)
+	if (m_alignedEntities.empty())
+	{
+		assert(false);
 		return false;
+	}
 
 	if (m_alignedPoints.size() != m_refPoints.size() || m_refPoints.size() < MIN_PAIRS_COUNT)
 	{
@@ -1322,8 +1357,11 @@ void ccPointPairRegistrationDlg::clearRMSColumns()
 
 void ccPointPairRegistrationDlg::resetTitle()
 {
-	ecvDisplayTools::DisplayNewMessage(QString(), ecvDisplayTools::UPPER_CENTER_MESSAGE, false);
-	ecvDisplayTools::DisplayNewMessage("[Point-pair registration]", ecvDisplayTools::UPPER_CENTER_MESSAGE, true, 3600);
+	if (ecvDisplayTools::GetCurrentScreen())
+	{
+		ecvDisplayTools::DisplayNewMessage(QString(), ecvDisplayTools::UPPER_CENTER_MESSAGE, false);
+		ecvDisplayTools::DisplayNewMessage("[Point-pair registration]", ecvDisplayTools::UPPER_CENTER_MESSAGE, true, 3600);
+	}
 }
 
 void ccPointPairRegistrationDlg::updateAlignInfo()
@@ -1399,8 +1437,11 @@ void ccPointPairRegistrationDlg::align()
 		//...virtually
 		m_transMatHistory = transMat;
 		transformAlignedEntity(transMat, true);
+
 		ecvDisplayTools::SetRedrawRecursive(false);
-		m_aligned.entity->setRedrawFlagRecursive(true);
+		for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end(); ++it)
+			it.key()->setRedrawFlagRecursive(true);
+
 		// update aligned sphere markers
 		for (unsigned i = 0; i < m_alignedLabels.getChildrenNumber(); ++i)
 		{
@@ -1480,28 +1521,29 @@ void ccPointPairRegistrationDlg::updateAllMarkers(float markerSize)
 
 void ccPointPairRegistrationDlg::transformAlignedEntity(const ccGLMatrix &transMat, bool apply/* = true*/)
 {
-	assert(m_aligned.entity);
+	assert(!m_alignedEntities.empty());
 	//we temporarily detach entity, as it may undergo
 	//"severe" modifications (octree deletion, etc.) --> see ccHObject::applyGLTransformation
-	ecvMainAppInterface::ccHObjectContext objContext;
-
-	if (m_app)
-		objContext = m_app->removeObjectTemporarilyFromDBTree(m_aligned.entity);
-
-	m_aligned.entity->applyGLTransformation_recursive(apply ? &transMat : nullptr);
-	m_alignedPoints.applyGLTransformation_recursive(apply ? &transMat : nullptr);
-	if (m_app)
-		m_app->putObjectBackIntoDBTree(m_aligned.entity, objContext);
-
-	if (!apply)
+	for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end(); ++it)
 	{
-		ecvDisplayTools::RemoveBB(QString::number(m_aligned.entity->getUniqueID()));
+		ecvMainAppInterface::ccHObjectContext objContext;
+		if (m_app)
+			objContext = m_app->removeObjectTemporarilyFromDBTree(it.key());
+		it.key()->applyGLTransformation_recursive(apply ? &transMat : nullptr);
+		if (m_app)
+			m_app->putObjectBackIntoDBTree(it.key(), objContext);
+
+		if (!apply)
+		{
+			ecvDisplayTools::RemoveBB(QString::number(it.key()->getUniqueID()));
+		}
 	}
+	m_alignedPoints.applyGLTransformation_recursive(apply ? &transMat : nullptr);
 }
 
 void ccPointPairRegistrationDlg::reset()
 {
-	if (!m_aligned.entity)
+	if (m_alignedEntities.empty())
 		return;
 
 	transformAlignedEntity(m_transMatHistory.inverse(), true);
@@ -1520,7 +1562,10 @@ void ccPointPairRegistrationDlg::reset()
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
 		ecvDisplayTools::SetRedrawRecursive(false);
-		m_aligned.entity->setRedrawFlagRecursive(true);
+		for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end(); ++it)
+		{
+			it.key()->setRedrawFlagRecursive(true);
+		}
 
 		if (autoZoomCheckBox->isChecked())
 		{
@@ -1540,13 +1585,14 @@ void ccPointPairRegistrationDlg::reset()
 void ccPointPairRegistrationDlg::zoomGlobalOnRegistrationEntities()
 {
 	ccHObject tempGroup("TempGroup");
-	if (m_aligned.entity)
+
+	for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end(); ++it)
 	{
-		tempGroup.addChild(m_aligned.entity, ccHObject::DP_NONE);
+		tempGroup.addChild(it.key(), ccHObject::DP_NONE);
 	}
-	if (m_reference.entity)
+	for (auto it = m_referenceEntities.begin(); it != m_referenceEntities.end(); ++it)
 	{
-		tempGroup.addChild(m_reference.entity, ccHObject::DP_NONE);
+		tempGroup.addChild(it.key(), ccHObject::DP_NONE);
 	}
 
 	ccBBox bbox;
@@ -1583,7 +1629,9 @@ void ccPointPairRegistrationDlg::apply()
 		//apply (scaled) transformation (if not fixed)
 		bool adjustScale = adjustScaleCheckBox->isChecked();
 		if (adjustScale && trans.R.isValid())
+		{
 			trans.R.scale(trans.s);
+		}
 		ccGLMatrix transMat = FromCCLibMatrix<PointCoordinateType,float>(trans.R,trans.T);
 		
 		//...for real this time!
@@ -1613,27 +1661,40 @@ void ccPointPairRegistrationDlg::apply()
 		summary << "Refer to Console (F8) for more details";
 		QMessageBox::information(this, "Align info", summary.join("\n"));
 
-		//don't forget global shift
-		ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(m_aligned.entity);
-		if (cloud)
+		// don't forget global shift
+		bool alwaysDropShift = false;
+		bool firstQuestion = true;
+		for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end(); ++it)
 		{
-			if (m_refPoints.isShifted())
+			ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(it.key());
+			if (cloud)
 			{
-				const CCVector3d& Pshift = m_refPoints.getGlobalShift();
-				const double& scale = m_refPoints.getGlobalScale();
-				cloud->setGlobalShift(Pshift);
-				cloud->setGlobalScale(scale);
-				CVLog::Warning(QString("[PointPairRegistration] Aligned entity global shift has been updated to match the reference: (%1,%2,%3) [x%4]").arg(Pshift.x).arg(Pshift.y).arg(Pshift.z).arg(scale));
-			}
-			else if (cloud->isShifted()) //we'll ask the user first before dropping the shift information on the aligned cloud
-			{
-				if (QMessageBox::question(this, "Drop shift information?", 
-					"Aligned cloud is shifted but reference cloud is not: drop global shift information?", 
-					QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes)
+				if (m_refPoints.isShifted())
 				{
-					cloud->setGlobalShift(0, 0, 0);
-					cloud->setGlobalScale(1.0);
-					CVLog::Warning(QString("[PointPairRegistration] Aligned cloud global shift has been reset to match the reference!"));
+					const CCVector3d& Pshift = m_refPoints.getGlobalShift();
+					const double& scale = m_refPoints.getGlobalScale();
+					cloud->setGlobalShift(Pshift);
+					cloud->setGlobalScale(scale);
+					CVLog::Warning(tr("[PointPairRegistration] Aligned entity global shift has been updated to match the reference: (%1,%2,%3) [x%4]").
+						arg(Pshift.x).arg(Pshift.y).arg(Pshift.z).arg(scale));
+				}
+				else if (cloud->isShifted()) //we'll ask the user first before dropping the shift information on the aligned cloud
+				{
+					if (firstQuestion)
+					{
+						alwaysDropShift = (QMessageBox::question(this, 
+							tr("Drop shift information?"),
+							tr("Aligned cloud is shifted but reference cloud is not: drop global shift information?"), 
+							QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes);
+						firstQuestion = false;
+					}
+
+					if (alwaysDropShift)
+					{
+						cloud->setGlobalShift(0, 0, 0);
+						cloud->setGlobalScale(1.0);
+						CVLog::Warning(tr("[PointPairRegistration] Cloud %1: global shift has been reset to match the reference!").arg(cloud->getName()));
+					}
 				}
 			}
 		}
@@ -1660,12 +1721,14 @@ void ccPointPairRegistrationDlg::apply()
 
 void ccPointPairRegistrationDlg::cancel()
 {
-	if (m_aligned.entity)
-		m_aligned.entity->enableGLTransformation(false);
+	for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end(); ++it)
+		it.key()->enableGLTransformation(false);
 
 	transformAlignedEntity(m_transMatHistory.inverse(), true);
 	ecvDisplayTools::SetRedrawRecursive(false);
-	m_aligned.entity->setRedrawFlagRecursive(true);
+	for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end(); ++it)
+		it.key()->setRedrawFlagRecursive(true);
+
 	ecvDisplayTools::RedrawDisplay();
 	stop(false);
 }

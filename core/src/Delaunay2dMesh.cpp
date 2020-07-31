@@ -422,3 +422,89 @@ void Delaunay2dMesh::getBoundingBox(CCVector3& bbMin, CCVector3& bbMax)
 		bbMin = bbMax = CCVector3(0,0,0);
 	}
 }
+
+
+Delaunay2dMesh* Delaunay2dMesh::TesselateContour(const std::vector<CCVector2>& contourPoints)
+{
+	size_t count = contourPoints.size();
+	if (count < 3)
+	{
+		//not enough points
+		return nullptr;
+	}
+
+	//DGM: we check that last vertex is different from the first one!
+	//(yes it happens ;)
+	if (contourPoints.back().x == contourPoints.front().x &&  contourPoints.back().y == contourPoints.front().y)
+		--count;
+
+	char errorStr[1024];
+	Delaunay2dMesh* mesh = new Delaunay2dMesh();
+	if (!mesh->buildMesh(contourPoints, count, errorStr) || mesh->size() == 0)
+	{
+		//triangulation failed
+		delete mesh;
+		return nullptr;
+	}
+
+	if (!mesh->removeOuterTriangles(contourPoints, contourPoints, true) || mesh->size() == 0)
+	{
+		//an error occurred
+		delete mesh;
+		return nullptr;
+	}
+
+	return mesh;
+}
+
+Delaunay2dMesh* Delaunay2dMesh::TesselateContour(GenericIndexedCloudPersist* contourPoints, int flatDimension/*=-1*/)
+{
+	if (!contourPoints)
+	{
+		assert(false);
+		return nullptr;
+	}
+
+	unsigned count = contourPoints->size();
+	if (count < 3)
+	{
+		//Not enough input points
+		return nullptr;
+	}
+
+	std::vector<CCVector2> contourPoints2D;
+	try
+	{
+		contourPoints2D.reserve(count);
+	}
+	catch (const std::bad_alloc&)
+	{
+		//Not enough memory
+		return nullptr;
+	}
+
+	if (flatDimension >= 0 && flatDimension <= 2) //X, Y or Z
+	{
+		const unsigned char Z = static_cast<unsigned char>(flatDimension);
+		const unsigned char X = (Z == 2 ? 0 : Z + 1);
+		const unsigned char Y = (X == 2 ? 0 : X + 1);
+		for (unsigned i = 0; i < contourPoints->size(); ++i)
+		{
+			const CCVector3* P = contourPoints->getPoint(i);
+			contourPoints2D.push_back(CCVector2(P->u[X], P->u[Y]));
+		}
+	}
+	else
+	{
+		assert(flatDimension < 0);
+		Neighbourhood Yk(contourPoints);
+		if (!Yk.projectPointsOn2DPlane<CCVector2>(contourPoints2D))
+		{
+			//something bad happened
+			return nullptr;
+		}
+	}
+
+	CVLib::Delaunay2dMesh* dMesh = CVLib::Delaunay2dMesh::TesselateContour(contourPoints2D);
+	return dMesh;
+}

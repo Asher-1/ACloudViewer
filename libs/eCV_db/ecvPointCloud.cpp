@@ -3071,6 +3071,7 @@ colorsHaveChanged();
 return true;
 }
 
+#if 0
 ccPointCloud* ccPointCloud::unrollOnCylinder(PointCoordinateType radius,
 	unsigned char coneAxisDim,
 	CCVector3* center,
@@ -3312,23 +3313,36 @@ ccPointCloud* ccPointCloud::unrollOnCylinder(PointCoordinateType radius,
 
 	return clone;
 }
+#endif
 
-static void ProjectOnCone(	const CCVector3& P,
-							const CCVector3& coneApex,
+static void ProjectOnCylinder(  const CCVector3& AP,
+								const Tuple3ub& dim,
+								PointCoordinateType radius,
+								PointCoordinateType& delta,
+								PointCoordinateType& phi_rad)
+{
+	//2D distance to the center (XY plane)
+	PointCoordinateType APnorm_XY = sqrt(AP.u[dim.x] * AP.u[dim.x] + AP.u[dim.y] * AP.u[dim.y]);
+	//longitude (0 = +X = east)
+	phi_rad = atan2(AP.u[dim.y], AP.u[dim.x]);
+	//deviation
+	delta = APnorm_XY - radius;
+}
+
+static void ProjectOnCone(	const CCVector3& AP,
 							PointCoordinateType alpha_rad,
 							const Tuple3ub& dim,
 							PointCoordinateType& s,
 							PointCoordinateType& delta,
 							PointCoordinateType& phi_rad)
 {
-	CCVector3 AP = P - coneApex;
 	//3D distance to the apex
 	PointCoordinateType normAP = AP.norm();
 	//2D distance to the apex (XY plane)
-	PointCoordinateType u = sqrt(AP.u[dim.x] * AP.u[dim.x] + AP.u[dim.y] * AP.u[dim.y]);
+	PointCoordinateType normAP_XY = sqrt(AP.u[dim.x] * AP.u[dim.x] + AP.u[dim.y] * AP.u[dim.y]);
 
 	//angle between +Z and AP
-	PointCoordinateType beta_rad = atan2(u, -AP.u[dim.z]);
+	PointCoordinateType beta_rad = atan2(normAP_XY, -AP.u[dim.z]);
 	//angular deviation
 	PointCoordinateType gamma_rad = beta_rad - alpha_rad; //if gamma_rad > 0, the point is outside the cone
 
@@ -3343,6 +3357,398 @@ static void ProjectOnCone(	const CCVector3& P,
 	}
 }
 
+ccPointCloud* ccPointCloud::unroll(	UnrollMode mode,
+									UnrollBaseParams* params,
+									bool exportDeviationSF/*=false*/,
+									double startAngle_deg/*=0.0*/,
+									double stopAngle_deg/*=360.0*/,
+									CVLib::GenericProgressCallback* progressCb/*=nullptr*/) const
+{
+	if (!params
+		|| params->axisDim > 2
+		|| startAngle_deg >= stopAngle_deg)
+	{
+		//invalid input parameters
+		assert(false);
+		return nullptr;
+	}
+
+	QString modeStr;
+	UnrollCylinderParams* cylParams = nullptr;
+	UnrollConeParams* coneParams = nullptr;
+
+	switch (mode)
+	{
+	case CYLINDER:
+		modeStr = "Cylinder";
+		cylParams = static_cast<UnrollCylinderParams*>(params);
+		break;
+	case CONE:
+		modeStr = "Cone";
+		coneParams = static_cast<UnrollConeParams*>(params);
+		break;
+	case STRAIGHTENED_CONE:
+	case STRAIGHTENED_CONE2:
+		modeStr = "Straightened cone";
+		coneParams = static_cast<UnrollConeParams*>(params);
+		break;
+	default:
+		assert(false);
+		return nullptr;
+	}
+
+	Tuple3ub dim;
+	dim.z = params->axisDim;
+	dim.x = (dim.z < 2 ? dim.z + 1 : 0);
+	dim.y = (dim.x < 2 ? dim.x + 1 : 0);
+
+	unsigned numberOfPoints = size();
+	CVLib::NormalizedProgress nprogress(progressCb, numberOfPoints);
+	if (progressCb)
+	{
+		if (progressCb->textCanBeEdited())
+		{
+			progressCb->setMethodTitle(qPrintable(QString("Unroll (%1)").arg(modeStr)));
+			progressCb->setInfo(qPrintable(QString("Number of points = %1").arg(numberOfPoints)));
+		}
+		progressCb->update(0);
+		progressCb->start();
+	}
+
+	CVLib::ReferenceCloud duplicatedPoints(const_cast<ccPointCloud*>(this));
+	std::vector<CCVector3> unrolledPoints;
+	{
+		//compute an estimate of the final point count
+		unsigned newSize = static_cast<unsigned>(std::ceil((stopAngle_deg - startAngle_deg) / 360.0 * size()));
+		if (!duplicatedPoints.reserve(newSize))
+		{
+			CVLog::Error("Not enough memory");
+			return nullptr;
+		}
+
+		try
+		{
+			unrolledPoints.reserve(newSize);
+		}
+		catch (const std::bad_alloc&)
+		{
+			CVLog::Error("Not enough memory");
+			return nullptr;
+		}
+	}
+
+	std::vector<ScalarType> deviationValues;
+	if (exportDeviationSF)
+		try
+	{
+		deviationValues.resize(size());
+	}
+	catch (const std::bad_alloc&)
+	{
+		//not enough memory
+		return nullptr;
+	}
+
+	std::vector<CCVector3> unrolledNormals;
+	bool withNormals = hasNormals();
+	if (withNormals)
+	{
+		//for normals, we can simply store at most one unrolled normal per original one
+		//same thing for deviation values
+		try
+		{
+			unrolledNormals.resize(size());
+		}
+		catch (const std::bad_alloc&)
+		{
+			//not enough memory
+			return nullptr;
+		}
+	}
+
+	double startAngle_rad = startAngle_deg * CV_DEG_TO_RAD;
+	double stopAngle_rad = stopAngle_deg * CV_DEG_TO_RAD;
+
+	PointCoordinateType alpha_rad = 0;
+	PointCoordinateType sin_alpha = 0;
+	if (mode != CYLINDER)
+	{
+		alpha_rad = coneParams->coneAngle_deg * CV_DEG_TO_RAD;
+		sin_alpha = static_cast<PointCoordinateType>(sin(alpha_rad));
+	}
+
+	for (unsigned i = 0; i < numberOfPoints; i++)
+	{
+		const CCVector3* Pin = getPoint(i);
+
+		//we project the point
+		CCVector3 AP;
+		CCVector3 Pout;
+		PointCoordinateType longitude_rad = 0; //longitude (rad)
+		PointCoordinateType delta = 0; //distance to the cone/cylinder surface
+		PointCoordinateType coneAbscissa = 0;
+
+		switch (mode)
+		{
+		case CYLINDER:
+		{
+			AP = *Pin - cylParams->center;
+			ProjectOnCylinder(AP, dim, params->radius, delta, longitude_rad);
+
+			//we project the point
+			//Pout.u[dim.x] = longitude_rad * radius;
+			Pout.u[dim.y] = -delta;
+			Pout.u[dim.z] = Pin->u[dim.z];
+		}
+		break;
+
+		case STRAIGHTENED_CONE:
+		{
+			AP = *Pin - coneParams->apex;
+			ProjectOnCone(AP, alpha_rad, dim, coneAbscissa, delta, longitude_rad);
+			//we simply develop the cone as a cylinder
+			//Pout.u[dim.x] = phi_rad * params->radius;
+			Pout.u[dim.y] = -delta;
+			//Pout.u[dim.z] = Pin->u[dim.z];
+			Pout.u[dim.z] = coneParams->apex.u[dim.z] - coneAbscissa;
+		}
+		break;
+
+		case STRAIGHTENED_CONE2:
+		{
+			AP = *Pin - coneParams->apex;
+			ProjectOnCone(AP, alpha_rad, dim, coneAbscissa, delta, longitude_rad);
+			//we simply develop the cone as a cylinder
+			//Pout.u[dim.x] = phi_rad * coneAbscissa * sin_alpha;
+			Pout.u[dim.y] = -delta;
+			//Pout.u[dim.z] = Pin->u[dim.z];
+			Pout.u[dim.z] = coneParams->apex.u[dim.z] - coneAbscissa;
+		}
+		break;
+
+		case CONE:
+		{
+			AP = *Pin - coneParams->apex;
+			ProjectOnCone(AP, alpha_rad, dim, coneAbscissa, delta, longitude_rad);
+			//unrolling
+			PointCoordinateType theta_rad = longitude_rad * sin_alpha; //sin_alpha is a bit arbitrary here. The aim is mostly to reduce the angular range
+			//project the point
+			Pout.u[dim.y] = -coneAbscissa * cos(theta_rad);
+			Pout.u[dim.x] = coneAbscissa * sin(theta_rad);
+			Pout.u[dim.z] = delta;
+		}
+		break;
+
+		default:
+			assert(false);
+		}
+
+		// first unroll its normal if necessary
+		if (withNormals)
+		{
+			const CCVector3& N = getPointNormal(i);
+			CCVector3 AP2 = AP + N;
+			CCVector3 N2;
+
+			switch (mode)
+			{
+			case CYLINDER:
+			{
+				PointCoordinateType delta2;
+				PointCoordinateType longitude2_rad;
+				ProjectOnCylinder(AP2, dim, params->radius, delta2, longitude2_rad);
+
+				N2.u[dim.x] = static_cast<PointCoordinateType>((longitude2_rad - longitude_rad) * params->radius);
+				N2.u[dim.y] = -(delta2 - delta);
+				N2.u[dim.z] = N.u[dim.z];
+			}
+			break;
+
+			case STRAIGHTENED_CONE:
+			{
+				PointCoordinateType coneAbscissa2;
+				PointCoordinateType delta2;
+				PointCoordinateType longitude2_rad;
+				ProjectOnCone(AP2, alpha_rad, dim, coneAbscissa2, delta2, longitude2_rad);
+				//we simply develop the cone as a cylinder
+				N2.u[dim.x] = static_cast<PointCoordinateType>((longitude2_rad - longitude_rad) * params->radius);
+				N2.u[dim.y] = -(delta2 - delta);
+				N2.u[dim.z] = coneAbscissa - coneAbscissa2;
+			}
+			break;
+
+			case STRAIGHTENED_CONE2:
+			{
+				PointCoordinateType coneAbscissa2;
+				PointCoordinateType delta2;
+				PointCoordinateType longitude2_rad;
+				ProjectOnCone(AP2, alpha_rad, dim, coneAbscissa2, delta2, longitude2_rad);
+				//we simply develop the cone as a cylinder
+				N2.u[dim.x] = static_cast<PointCoordinateType>((longitude2_rad * coneAbscissa - longitude_rad * coneAbscissa2) * sin_alpha);
+				N2.u[dim.y] = -(delta2 - delta);
+				N2.u[dim.z] = coneAbscissa - coneAbscissa2;
+			}
+			break;
+
+			case CONE:
+			{
+				PointCoordinateType coneAbscissa2;
+				PointCoordinateType delta2;
+				PointCoordinateType longitude2_rad;
+				ProjectOnCone(AP2, alpha_rad, dim, coneAbscissa2, delta2, longitude2_rad);
+				//unrolling
+				PointCoordinateType theta2_rad = longitude2_rad * sin_alpha; //sin_alpha is a bit arbitrary here. The aim is mostly to reduce the angular range
+				//project the point
+				CCVector3 P2out;
+				P2out.u[dim.x] = coneAbscissa2 * sin(theta2_rad);
+				P2out.u[dim.y] = -coneAbscissa2 * cos(theta2_rad);
+				P2out.u[dim.z] = delta2;
+				N2 = P2out - Pout;
+			}
+			break;
+
+			default:
+				assert(false);
+				break;
+			}
+
+			N2.normalize();
+			unrolledNormals[i] = N2;
+		}
+
+		//then compute the deviation (if necessary)
+		if (exportDeviationSF)
+		{
+			deviationValues[i] = static_cast<ScalarType>(delta);
+		}
+
+		//then repeat the unrolling process for the coordinates
+		//1) position the 'point' at the beginning of the angular range
+		double dLongitude_rad = longitude_rad;
+		while (dLongitude_rad >= startAngle_rad)
+		{
+			dLongitude_rad -= 2 * M_PI;
+		}
+		dLongitude_rad += 2 * M_PI;
+
+		//2) repeat the unrolling process
+		for (; dLongitude_rad < stopAngle_rad; dLongitude_rad += 2 * M_PI)
+		{
+			//do we need to reserve more memory?
+			if (duplicatedPoints.size() == duplicatedPoints.capacity())
+			{
+				unsigned newSize = duplicatedPoints.size() + (1 << 20);
+				if (!duplicatedPoints.reserve(newSize))
+				{
+					CVLog::Error("Not enough memory");
+					return nullptr;
+				}
+
+				try
+				{
+					unrolledPoints.reserve(newSize);
+				}
+				catch (const std::bad_alloc&)
+				{
+					CVLog::Error("Not enough memory");
+					return nullptr;
+				}
+			}
+
+			//add the point
+			switch (mode)
+			{
+			case CYLINDER:
+			case STRAIGHTENED_CONE:
+				Pout.u[dim.x] = dLongitude_rad * params->radius;
+				break;
+			case STRAIGHTENED_CONE2:
+				Pout.u[dim.x] = dLongitude_rad * coneAbscissa * sin_alpha;
+				break;
+
+			case CONE:
+				Pout.u[dim.x] = coneAbscissa * sin(dLongitude_rad);
+				Pout.u[dim.y] = -coneAbscissa * cos(dLongitude_rad);
+				//Pout = coneParams->apex + Pout; //nope, this projection is arbitrary and should be centered on (0, 0, 0)
+				break;
+
+			default:
+				assert(false);
+			}
+
+			unrolledPoints.push_back(Pout);
+			duplicatedPoints.addPointIndex(i);
+		}
+
+		//process canceled by user?
+		if (progressCb && !nprogress.oneStep())
+		{
+			CVLog::Warning("Process cancelled by user");
+			return nullptr;
+		}
+	}
+
+	if (progressCb)
+	{
+		progressCb->stop();
+	}
+
+	//now create the real cloud
+	ccPointCloud* clone = partialClone(&duplicatedPoints);
+	if (clone)
+	{
+		CVLib::ScalarField* deviationSF = nullptr;
+		if (exportDeviationSF)
+		{
+			int sfIdx = clone->getScalarFieldIndexByName(s_deviationSFName);
+			if (sfIdx < 0)
+			{
+				sfIdx = clone->addScalarField(s_deviationSFName);
+				if (sfIdx < 0)
+				{
+					CVLog::Warning("[unrollOnCylinder] Not enough memory to init the deviation scalar field");
+				}
+			}
+			if (sfIdx >= 0)
+			{
+				deviationSF = clone->getScalarField(sfIdx);
+				clone->setCurrentDisplayedScalarField(sfIdx);
+				clone->showSF(true);
+			}
+		}
+
+		//update the coordinates, the normals and the deviation SF
+		for (unsigned i = 0; i < duplicatedPoints.size(); ++i)
+		{
+			CCVector3* P = clone->point(i);
+			*P = unrolledPoints[i];
+
+			unsigned globalIndex = duplicatedPoints.getPointGlobalIndex(i);
+			if (withNormals)
+			{
+				clone->setPointNormal(i, unrolledNormals[globalIndex]);
+			}
+			if (deviationSF)
+			{
+				deviationSF->setValue(i, deviationValues[globalIndex]);
+			}
+		}
+
+		if (deviationSF)
+		{
+			deviationSF->computeMinAndMax();
+		}
+
+		clone->setName(getName() + ".unrolled");
+		clone->refreshBB(); //calls notifyGeometryUpdate + releaseVBOs
+	}
+
+	return clone;
+}
+
+
+
+#if 0
 ccPointCloud* ccPointCloud::unrollOnCone(	double coneAngle_deg,
 											const CCVector3& coneApex,
 											unsigned char coneAxisDim,
@@ -3499,6 +3905,7 @@ ccPointCloud* ccPointCloud::unrollOnCone(	double coneAngle_deg,
 
 	return clone;
 }
+#endif
 
 int ccPointCloud::addScalarField(const char* uniqueName)
 {

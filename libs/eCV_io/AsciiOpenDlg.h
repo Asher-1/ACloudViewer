@@ -155,6 +155,9 @@ public:
 	//! Returns user selected separator
 	unsigned char getSeparator() const { return m_separator.cell(); }
 
+	//! Returns whether comma should be used as decimal point
+	bool useCommaAsDecimal() const;
+
 	//! Returns roughly estimated average line size (in bytes)
 	double getAverageLineSize() const { return m_averageLineSize; }
 
@@ -188,6 +191,8 @@ public slots:
 	void updateTable();
 	//! Sets the number of lines to skip
 	void setSkippedLines(int linesCount);
+	//! Slot called when the 'comma as decimal' checkbox is toggled
+	void commaDecimalCheckBoxToggled(bool);
 
 protected slots:
 	bool apply();
@@ -200,6 +205,9 @@ protected:
 
 	//! Tries to guess the best separator automagically
 	void autoFindBestSeparator();
+
+	//! Sets the current separator
+	void setSeparator(QChar);
 
 	//associated UI
 	Ui_AsciiOpenDialog* m_ui;

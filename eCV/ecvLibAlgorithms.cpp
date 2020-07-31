@@ -217,6 +217,15 @@ namespace ccLibAlgorithms
 			case CVLib::Neighbourhood::Verticality:
 				sfName = "Verticality";
 				break;
+			case CVLib::Neighbourhood::EigenValue1:
+				sfName = "1st eigenvalue";
+				break;
+			case CVLib::Neighbourhood::EigenValue2:
+				sfName = "2nd eigenvalue";
+				break;
+			case CVLib::Neighbourhood::EigenValue3:
+				sfName = "3rd eigenvalue";
+				break;
 			default:
 				assert(false);
 				CVLog::Error("Internal error: invalid sub option for Feature computation");
@@ -433,7 +442,7 @@ namespace ccLibAlgorithms
 		for (size_t i = 0; i < selNum; ++i)
 		{
 			//is the ith selected data is eligible for processing?
-			ccGenericPointCloud* cloud = 0;
+			ccGenericPointCloud* cloud = nullptr;
 			switch (algo)
 			{
 				case CCLIB_ALGO_SF_GRADIENT:
@@ -443,7 +452,7 @@ namespace ccLibAlgorithms
 					if (lockedVertices)
 					{
 						ecvUtils::DisplayLockedVerticesWarning(entities[i]->getName(), selNum == 1);
-						cloud = 0;
+						cloud = nullptr;
 					}
 					if (cloud)
 					{
@@ -454,7 +463,7 @@ namespace ccLibAlgorithms
 							int outSfIdx = pc->getCurrentDisplayedScalarFieldIndex();
 							if (outSfIdx < 0)
 							{
-								cloud = 0;
+								cloud = nullptr;
 							}
 							else
 							{
@@ -465,7 +474,7 @@ namespace ccLibAlgorithms
 						}
 						else //if (!cloud->hasDisplayedScalarField()) //TODO: displayed but not necessarily set as OUTPUT!
 						{
-							cloud = 0;
+							cloud = nullptr;
 						}
 					}
 					break;
@@ -479,7 +488,7 @@ namespace ccLibAlgorithms
 			
 			if (cloud)
 			{
-				ccPointCloud* pc = 0;
+				ccPointCloud* pc = nullptr;
 				int sfIdx = -1;
 				if (cloud->isA(CV_TYPES::POINT_CLOUD))
 				{
@@ -642,7 +651,8 @@ namespace ccLibAlgorithms
 						{
 							const CCVector3* X = Yk.getLSPlaneX();
 							const CCVector3* O = Yk.getGravityCenter();
-							double minX = 0,maxX = 0;
+							double minX = 0;
+							double maxX = 0;
 							for (unsigned j=0; j<cloud->size(); ++j)
 							{
 								double x = (*cloud->getPoint(j) - *O).dot(*X);
