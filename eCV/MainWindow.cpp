@@ -76,6 +76,7 @@
 #include <ecvQuadric.h>
 #include <ecvSphere.h>
 #include <ecvSubMesh.h>
+#include <ecvCylinder.h>
 #include <ecvPolyline.h>
 #include <ecvColorScalesManager.h>
 #include <ecvPointCloud.h>
@@ -149,6 +150,7 @@
 #include "ecvGeomFeaturesDlg.h"
 #include "ecvOrderChoiceDlg.h"
 #include "ecvComparisonDlg.h"
+#include "ecvPrimitiveDistanceDlg.h"
 #include "ecvSubsamplingDlg.h"
 #include "ecvShiftAndScaleCloudDlg.h"
 #include "ecvPtsSamplingDlg.h"
@@ -161,6 +163,7 @@
 #include "ecvPrimitiveFactoryDlg.h"
 #include "ecvPointPairRegistrationDlg.h"
 #include "ecvWaveformDialog.h"
+#include "ecvEntitySelectionDlg.h"
 
 // other
 #include "pluginManager/ecvPluginUIManager.h"
@@ -402,6 +405,7 @@ void MainWindow::connectActions()
 	connect(m_ui->actionConvertTextureToColor, &QAction::triggered, this, &MainWindow::doActionConvertTextureToColor);
 	connect(m_ui->actionSamplePointsOnMesh, &QAction::triggered, this, &MainWindow::doActionSamplePointsOnMesh);
 	connect(m_ui->actionSmoothMeshLaplacian, &QAction::triggered, this, &MainWindow::doActionSmoothMeshLaplacian);
+	connect(m_ui->actionFlipMeshTriangles, &QAction::triggered, this, &MainWindow::doActionFlipMeshTriangles);
 	connect(m_ui->actionSubdivideMesh, &QAction::triggered, this, &MainWindow::doActionSubdivideMesh);
 	connect(m_ui->actionMeasureMeshSurface, &QAction::triggered, this, &MainWindow::doActionMeasureMeshSurface);
 	connect(m_ui->actionMeasureMeshVolume, &QAction::triggered, this, &MainWindow::doActionMeasureMeshVolume);
@@ -416,6 +420,8 @@ void MainWindow::connectActions()
 	// "Edit > Plane" menu
 	connect(m_ui->actionCreatePlane, &QAction::triggered, this, &MainWindow::doActionCreatePlane);
 	connect(m_ui->actionEditPlane, &QAction::triggered, this, &MainWindow::doActionEditPlane);
+	connect(m_ui->actionFlipPlane, &QAction::triggered, this, &MainWindow::doActionFlipPlane);
+	connect(m_ui->actionComparePlanes, &QAction::triggered, this, &MainWindow::doActionComparePlanes);
 
 	//"Edit > Scalar fields" menu
 	connect(m_ui->actionShowHistogram, &QAction::triggered, this, &MainWindow::showSelectedEntitiesHistogram);
@@ -483,9 +489,10 @@ void MainWindow::connectActions()
 	connect(m_ui->actionFrontPropagation,		&QAction::triggered, this, &MainWindow::doActionFrontPropagation);
 	
 	// "Tools > Distances" menu
-	connect(m_ui->actionCloudCloudDist, &QAction::triggered, this, &MainWindow::doActionCloudCloudDist);
-	connect(m_ui->actionCloudMeshDist, &QAction::triggered, this, &MainWindow::doActionCloudMeshDist);
-	connect(m_ui->actionCPS, &QAction::triggered, this, &MainWindow::doActionComputeCPS);
+	connect(m_ui->actionCloudCloudDist,			&QAction::triggered, this, &MainWindow::doActionCloudCloudDist);
+	connect(m_ui->actionCloudMeshDist,			&QAction::triggered, this, &MainWindow::doActionCloudMeshDist);
+	connect(m_ui->actionCloudPrimitiveDist,		&QAction::triggered, this, &MainWindow::doActionCloudPrimitiveDist);
+	connect(m_ui->actionCPS,					&QAction::triggered, this, &MainWindow::doActionComputeCPS);
 
 	// "Tools > Annotations" menu
 	connect(m_ui->actionBoxAnnotation, &QAction::triggered, this, &MainWindow::doBoxAnnotation);
@@ -503,6 +510,9 @@ void MainWindow::connectActions()
 	connect(m_ui->actionMatchScales, &QAction::triggered, this, &MainWindow::doActionMatchScales);
 	connect(m_ui->actionRegister, &QAction::triggered, this, &MainWindow::doActionRegister);
 	connect(m_ui->actionPointPairsAlign, &QAction::triggered, this, &MainWindow::activateRegisterPointPairTool);
+	connect(m_ui->actionBBCenterToOrigin, &QAction::triggered, this, &MainWindow::doActionMoveBBCenterToOrigin);
+	connect(m_ui->actionBBMinCornerToOrigin, &QAction::triggered, this, &MainWindow::doActionMoveBBMinCornerToOrigin);
+	connect(m_ui->actionBBMaxCornerToOrigin, &QAction::triggered, this, &MainWindow::doActionMoveBBMaxCornerToOrigin);
 
 	// "Tools > Fit" menu
 	connect(m_ui->actionFitPlane, &QAction::triggered, this, &MainWindow::doActionFitPlane);
@@ -2373,6 +2383,9 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 
 	//actionCreatePlane->setEnabled(true);
 	m_ui->actionEditPlane->setEnabled(selInfo.planeCount == 1);
+	m_ui->actionFlipPlane->setEnabled(selInfo.planeCount != 0);
+	m_ui->actionComparePlanes->setEnabled(selInfo.planeCount == 2);
+
 	m_ui->actionFindBiggestInnerRectangle->setEnabled(exactlyOneCloud);
 
 	//m_ui->menuActiveScalarField->setEnabled((exactlyOneCloud || exactlyOneMesh) && selInfo.sfCount > 0);
@@ -2404,9 +2417,13 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionRegister->setEnabled(exactlyTwoEntities);
 	m_ui->actionInterpolateColors->setEnabled(exactlyTwoEntities && atLeastOneColor);
 	m_ui->actionPointPairsAlign->setEnabled(exactlyOneEntity || exactlyTwoEntities);
+	m_ui->actionBBCenterToOrigin->setEnabled(atLeastOneEntity);
+	m_ui->actionBBMinCornerToOrigin->setEnabled(atLeastOneEntity);
+	m_ui->actionBBMaxCornerToOrigin->setEnabled(atLeastOneEntity);
 	m_ui->actionAlign->setEnabled(exactlyTwoEntities); //Aurelien BEY le 13/11/2008
 	m_ui->actionCloudCloudDist->setEnabled(exactlyTwoClouds);
 	m_ui->actionCloudMeshDist->setEnabled(exactlyTwoEntities && atLeastOneMesh);
+	m_ui->actionCloudPrimitiveDist->setEnabled(atLeastOneCloud && (atLeastOneMesh || atLeastOnePolyline));
 	m_ui->actionCPS->setEnabled(exactlyTwoClouds);
 	m_ui->actionScalarFieldArithmetic->setEnabled(exactlyOneEntity && atLeastOneSF);
 
@@ -5408,6 +5425,32 @@ void MainWindow::doActionSubdivideMesh()
 	updateUI();
 }
 
+void MainWindow::doActionFlipMeshTriangles()
+{
+	bool warningIssued = false;
+	for (ccHObject *entity : getSelectedEntities())
+	{
+		if (entity->isKindOf(CV_TYPES::MESH))
+		{
+			//single mesh?
+			if (entity->isA(CV_TYPES::MESH))
+			{
+				ccMesh* mesh = static_cast<ccMesh*>(entity);
+				mesh->flipTriangles();
+				mesh->setRedrawFlagRecursive(true);
+			}
+			else if (!warningIssued)
+			{
+				CVLog::Warning("[Flip triangles] Works only on real meshes!");
+				warningIssued = true;
+			}
+		}
+	}
+
+	refreshAll();
+}
+
+
 void MainWindow::doActionSmoothMeshLaplacian()
 {
 	static unsigned	s_laplacianSmooth_nbIter = 20;
@@ -5621,6 +5664,81 @@ void MainWindow::doActionEditPlane()
 }
 
 
+void MainWindow::doActionFlipPlane()
+{
+	if (!haveSelection())
+	{
+		assert(false);
+		return;
+	}
+
+	for (ccHObject* entity : m_selectedEntities)
+	{
+		ccPlane* plane = ccHObjectCaster::ToPlane(entity);
+		if (plane)
+		{
+			plane->flip();
+			plane->setRedrawFlagRecursive(true);
+		}
+	}
+
+	refreshAll();
+	updatePropertiesView();
+}
+
+void MainWindow::doActionComparePlanes()
+{
+	if (m_selectedEntities.size() != 2)
+	{
+		ecvConsole::Error("Select 2 planes!");
+		return;
+	}
+
+	if (!m_selectedEntities[0]->isKindOf(CV_TYPES::PLANE) ||
+		!m_selectedEntities[1]->isKindOf(CV_TYPES::PLANE))
+	{
+		ecvConsole::Error("Select 2 planes!");
+		return;
+	}
+
+	ccPlane* p1 = ccHObjectCaster::ToPlane(m_selectedEntities[0]);
+	ccPlane* p2 = ccHObjectCaster::ToPlane(m_selectedEntities[1]);
+
+	QStringList info;
+	info << QString("Plane 1: %1").arg(p1->getName());
+	CVLog::Print(QString("[Compare] ") + info.last());
+
+	info << QString("Plane 2: %1").arg(p2->getName());
+	CVLog::Print(QString("[Compare] ") + info.last());
+
+	CCVector3 N1;
+	CCVector3 N2;
+	PointCoordinateType d1;
+	PointCoordinateType d2;
+	p1->getEquation(N1, d1);
+	p2->getEquation(N2, d2);
+
+	double angle_rad = N1.angle_rad(N2);
+	info << QString("Angle P1/P2: %1 deg.").arg(angle_rad * CV_RAD_TO_DEG);
+	CVLog::Print(QString("[Compare] ") + info.last());
+
+	PointCoordinateType planeEq1[4] = { N1.x, N1.y, N1.z, d1 };
+	PointCoordinateType planeEq2[4] = { N2.x, N2.y, N2.z, d2 };
+	CCVector3 C1 = p1->getCenter();
+	ScalarType distCenter1ToPlane2 = CVLib::DistanceComputationTools::computePoint2PlaneDistance(&C1, planeEq2);
+	info << QString("Distance Center(P1)/P2: %1").arg(distCenter1ToPlane2);
+	CVLog::Print(QString("[Compare] ") + info.last());
+
+	CCVector3 C2 = p2->getCenter();
+	ScalarType distCenter2ToPlane1 = CVLib::DistanceComputationTools::computePoint2PlaneDistance(&C2, planeEq1);
+	info << QString("Distance Center(P2)/P1: %1").arg(distCenter2ToPlane1);
+	CVLog::Print(QString("[Compare] ") + info.last());
+
+	//pop-up summary
+	QMessageBox::information(this, "Plane comparison", info.join("\n"));
+	forceConsoleDisplay();
+}
+
 // help
 void MainWindow::help() {
 	QDesktopServices::openUrl(QUrl(QLatin1String("http://www.erow.cn")));
@@ -5742,6 +5860,63 @@ void MainWindow::clearSelectedEntitiesProperty(ccEntityAction::CLEAR_PROPERTY pr
 	}
 
 	refreshSelected();
+	updateUI();
+}
+
+void MainWindow::doActionFastRegistration(FastRegistrationMode mode)
+{
+	//we need at least 1 entity
+	if (m_selectedEntities.empty())
+		return;
+
+	//we must backup 'm_selectedEntities' as removeObjectTemporarilyFromDBTree can modify it!
+	ccHObject::Container selectedEntities = m_selectedEntities;
+
+	for (ccHObject *entity : selectedEntities)
+	{
+		ccBBox box = entity->getBB_recursive();
+
+		CCVector3 T; //translation
+
+		switch (mode)
+		{
+		case MoveBBCenterToOrigin:
+			T = -box.getCenter();
+			break;
+		case MoveBBMinCornerToOrigin:
+			T = -box.minCorner();
+			break;
+		case MoveBBMaxCornerToOrigin:
+			T = -box.maxCorner();
+			break;
+		default:
+			assert(false);
+			return;
+		}
+
+		//transformation (used only for translation)
+		ccGLMatrix glTrans;
+		glTrans.setTranslation(T);
+
+		forceConsoleDisplay();
+		ecvConsole::Print(QString("[Synchronize] Transformation matrix (%1):").arg(entity->getName()));
+		ecvConsole::Print(glTrans.toString(12, ' ')); //full precision
+		ecvConsole::Print("Hint: copy it (CTRL+C) and apply it - or its inverse - on any entity with the 'Edit > Apply transformation' tool");
+
+		//we temporarily detach entity, as it may undergo
+		//"severe" modifications (octree deletion, etc.) --> see ccHObject::applyGLTransformation
+		ccHObjectContext objContext = removeObjectTemporarilyFromDBTree(entity);
+		entity->applyGLTransformation_recursive(&glTrans);
+		putObjectBackIntoDBTree(entity, objContext);
+	}
+
+	//reselect previously selected entities!
+	if (m_ccRoot)
+		m_ccRoot->selectEntities(selectedEntities);
+
+	refreshSelected();
+	zoomOnSelectedEntities();
+
 	updateUI();
 }
 
@@ -6881,34 +7056,81 @@ void MainWindow::doActionRegister()
 
 void MainWindow::activateRegisterPointPairTool()
 {
-	if (!haveSelection() || m_selectedEntities.size() > 2)
+	if (!haveSelection())
 	{
 		ecvConsole::Error(tr("Select one or two entities (point cloud or mesh)!"));
 		return;
 	}
-	ccHObject::Container selectedEntities = m_selectedEntities;
-	ccHObject* aligned = m_selectedEntities[0];
-	ccHObject* reference = m_selectedEntities.size() > 1 ? m_selectedEntities[1] : nullptr;
 
-	ccGenericPointCloud* cloud1 = ccHObjectCaster::ToGenericPointCloud(aligned);
-	ccGenericPointCloud* cloud2 = (reference ? ccHObjectCaster::ToGenericPointCloud(reference) : nullptr);
-	if (!cloud1 || (m_selectedEntities.size() > 1 && !cloud2))
+	ccHObject::Container alignedEntities;
+	ccHObject::Container refEntities;
+	try
 	{
-		ecvConsole::Error(tr("Select point clouds or meshes only!"));
+		ccHObject::Container entities;
+		entities.reserve(m_selectedEntities.size());
+
+		for (ccHObject* entity : m_selectedEntities)
+		{
+			//for now, we only handle clouds or meshes
+			if (entity->isKindOf(CV_TYPES::POINT_CLOUD) || entity->isKindOf(CV_TYPES::MESH))
+			{
+				entities.push_back(entity);
+			}
+		}
+
+		if (entities.empty())
+		{
+			ecvConsole::Error("Select at least one entity (point cloud or mesh)!");
+			return;
+		}
+		else if (entities.size() == 1)
+		{
+			alignedEntities = entities;
+		}
+		else
+		{
+			std::vector<int> indexes;
+			if (!ecvEntitySelectionDialog::SelectEntities(entities, indexes, this, tr("Select aligned entities")))
+			{
+				//process cancelled by the user
+				return;
+			}
+
+			//add the selected indexes as 'aligned' entities
+			alignedEntities.reserve(indexes.size());
+			for (size_t i = 0; i < indexes.size(); ++i)
+			{
+				alignedEntities.push_back(entities[indexes[i]]);
+			}
+
+			//add the others as 'reference' entities
+			assert(indexes.size() <= entities.size());
+			refEntities.reserve(entities.size() - indexes.size());
+			for (size_t i = 0; i < entities.size(); ++i)
+			{
+				if (std::find(indexes.begin(), indexes.end(), i) == indexes.end())
+				{
+					refEntities.push_back(entities[i]);
+				}
+			}
+		}
+	}
+	catch (const std::bad_alloc&)
+	{
+		CVLog::Error(tr("Not enough memory"));
 		return;
 	}
 
-	//if we have 2 entities, we must ask the user which one is the 'aligned' one and which one is the 'reference' one
-	if (reference)
+	if (alignedEntities.empty())
 	{
-		ccOrderChoiceDlg dlg(m_selectedEntities[0], tr("Aligned"),
-			m_selectedEntities[1], tr("Reference"),
-			this);
-		if (!dlg.exec())
-			return;
+		CVLog::Error(tr("No aligned entity selected"));
+		return;
+	}
 
-		aligned = dlg.getFirstEntity();
-		reference = dlg.getSecondEntity();
+	//deselect all entities
+	if (m_ccRoot)
+	{
+		m_ccRoot->unselectAllEntities();
 	}
 
 	if (!m_pprDlg)
@@ -6925,7 +7147,7 @@ void MainWindow::activateRegisterPointPairTool()
 		return;
 	}
 
-	if (!m_pprDlg->init(ecvDisplayTools::GetCurrentScreen(), aligned, reference))
+	if (!m_pprDlg->init(ecvDisplayTools::GetCurrentScreen(), alignedEntities, &refEntities))
 		deactivateRegisterPointPairTool(false);
 
 	freezeUI(true);
@@ -6935,7 +7157,8 @@ void MainWindow::activateRegisterPointPairTool()
 		//reselect previously selected entities!
 		if (m_ccRoot)
 		{
-			m_ccRoot->selectEntities(selectedEntities);
+			m_ccRoot->selectEntities(alignedEntities);
+			m_ccRoot->selectEntities(refEntities);
 		}
 		if (ecvDisplayTools::GetCurrentScreen())
 		{
@@ -9523,6 +9746,189 @@ void MainWindow::doActionCloudMeshDist()
 	freezeUI(true);
 }
 
+void MainWindow::doActionCloudPrimitiveDist()
+{
+	bool foundPrimitive = false;
+	ccHObject::Container clouds;
+	ccHObject* refEntity = nullptr;
+	CV_CLASS_ENUM entityType = CV_TYPES::OBJECT;
+	const char* errString = "[Compute Primitive Distances] Cloud to %s failed, error code = %i!";
+
+	for (unsigned i = 0; i < getSelectedEntities().size(); ++i)
+	{
+
+		if (m_selectedEntities[i]->isKindOf(CV_TYPES::PRIMITIVE) || m_selectedEntities[i]->isA(CV_TYPES::POLY_LINE))
+		{
+			if (m_selectedEntities[i]->isA(CV_TYPES::PLANE) ||
+				m_selectedEntities[i]->isA(CV_TYPES::SPHERE) ||
+				m_selectedEntities[i]->isA(CV_TYPES::CYLINDER) ||
+				m_selectedEntities[i]->isA(CV_TYPES::CONE) ||
+				m_selectedEntities[i]->isA(CV_TYPES::BOX) ||
+				m_selectedEntities[i]->isA(CV_TYPES::POLY_LINE))
+			{
+				if (foundPrimitive)
+				{
+					ecvConsole::Error("[Compute Primitive Distances] Select only a single Plane/Box/Sphere/Cylinder/Cone/Polyline Primitive");
+					return;
+				}
+				foundPrimitive = true;
+				refEntity = m_selectedEntities[i];
+				entityType = refEntity->getClassID();
+			}
+		}
+		else if (m_selectedEntities[i]->isKindOf(CV_TYPES::POINT_CLOUD))
+		{
+			clouds.push_back(m_selectedEntities[i]);
+		}
+	}
+
+	if (!foundPrimitive)
+	{
+		ecvConsole::Error("[Compute Primitive Distances] Select at least one Plane/Box/Sphere/Cylinder/Cone/Polyline Primitive!");
+		return;
+	}
+	if (clouds.size() <= 0)
+	{
+		ecvConsole::Error("[Compute Primitive Distances] Select at least one cloud!");
+		return;
+	}
+
+	ecvPrimitiveDistanceDlg pDD{ this };
+	if (refEntity->isA(CV_TYPES::PLANE))
+	{
+		pDD.treatPlanesAsBoundedCheckBox->setUpdatesEnabled(true);
+	}
+	bool execute = true;
+	if (!refEntity->isA(CV_TYPES::POLY_LINE))
+	{
+		execute = pDD.exec();
+	}
+	if (execute)
+	{
+		bool signedDist = pDD.signedDistances();
+		bool flippedNormals = signedDist && pDD.flipNormals();
+		bool treatPlanesAsBounded = pDD.treatPlanesAsBounded();
+		for (auto &cloud : clouds)
+		{
+			ccPointCloud* compEnt = ccHObjectCaster::ToPointCloud(cloud);
+			int sfIdx = compEnt->getScalarFieldIndexByName(CC_TEMP_DISTANCES_DEFAULT_SF_NAME);
+			if (sfIdx < 0)
+			{
+				//we need to create a new scalar field
+				sfIdx = compEnt->addScalarField(CC_TEMP_DISTANCES_DEFAULT_SF_NAME);
+				if (sfIdx < 0)
+				{
+					CVLog::Error(QString("[Compute Primitive Distances] [Cloud: %1] Couldn't allocate a new scalar field for computing distances! Try to free some memory ...").arg(compEnt->getName()));
+					continue;
+				}
+			}
+			compEnt->setCurrentScalarField(sfIdx);
+			compEnt->enableScalarField();
+			compEnt->forEach(CVLib::ScalarFieldTools::SetScalarValueToNaN);
+			int returnCode;
+			switch (entityType)
+			{
+			case CV_TYPES::SPHERE:
+			{
+				if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2SphereEquation(compEnt, refEntity->getOwnBB().getCenter(), static_cast<ccSphere*>(refEntity)->getRadius(), signedDist)))
+					ecvConsole::Error(errString, "Sphere", returnCode);
+				break;
+			}
+			case CV_TYPES::PLANE:
+			{
+				ccPlane* plane = static_cast<ccPlane*>(refEntity);
+				if (treatPlanesAsBounded)
+				{
+					CVLib::SquareMatrix rotationTransform(plane->getTransformation().data(), true);
+					if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2RectangleEquation(compEnt, plane->getXWidth(), plane->getYWidth(), rotationTransform, plane->getCenter(), signedDist)))
+						ecvConsole::Error(errString, "Bounded Plane", returnCode);
+				}
+				else
+				{
+					if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2PlaneEquation(compEnt, static_cast<ccPlane*>(refEntity)->getEquation(), signedDist)))
+						ecvConsole::Error(errString, "Infinite Plane", returnCode);
+				}
+				break;
+			}
+			case CV_TYPES::CYLINDER:
+			{
+				if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2CylinderEquation(compEnt, 
+					static_cast<ccCylinder*>(refEntity)->getBottomCenter(), 
+					static_cast<ccCylinder*>(refEntity)->getTopCenter(), 
+					static_cast<ccCylinder*>(refEntity)->getBottomRadius(), signedDist)))
+					ecvConsole::Error(errString, "Cylinder", returnCode);
+				break;
+			}
+			case CV_TYPES::CONE:
+			{
+				if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2ConeEquation(compEnt, static_cast<ccCone*>(refEntity)->getLargeCenter(), static_cast<ccCone*>(refEntity)->getSmallCenter(), static_cast<ccCone*>(refEntity)->getLargeRadius(), static_cast<ccCone*>(refEntity)->getSmallRadius(), signedDist)))
+					ecvConsole::Error(errString, "Cone", returnCode);
+				break;
+			}
+			case CV_TYPES::BOX:
+			{
+				const ccGLMatrix& glTransform = refEntity->getGLTransformationHistory();
+				CVLib::SquareMatrix rotationTransform(glTransform.data(), true);
+				CCVector3 boxCenter = glTransform.getColumnAsVec3D(3);
+				if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2BoxEquation(compEnt, static_cast<ccBox*>(refEntity)->getDimensions(), rotationTransform, boxCenter, signedDist)))
+					ecvConsole::Error(errString, "Box", returnCode);
+				break;
+			}
+			case CV_TYPES::POLY_LINE:
+			{
+				signedDist = false;
+				flippedNormals = false;
+				ccPolyline* line = static_cast<ccPolyline*>(refEntity);
+				returnCode = CVLib::DistanceComputationTools::computeCloud2PolylineEquation(compEnt, line);
+				if (!returnCode)
+				{
+					ecvConsole::Error(errString, "Polyline", returnCode);
+				}
+				break;
+			}
+			default:
+			{
+				ecvConsole::Error("[Compute Primitive Distances] Unsupported primitive type"); //Shouldn't ever reach here...
+				break;
+			}
+			}
+			QString sfName;
+			sfName.clear();
+			sfName = QString(signedDist ? CC_CLOUD2PRIMITIVE_SIGNED_DISTANCES_DEFAULT_SF_NAME : CC_CLOUD2PRIMITIVE_DISTANCES_DEFAULT_SF_NAME);
+			if (flippedNormals)
+			{
+				compEnt->forEach(CVLib::ScalarFieldTools::SetScalarValueInverted);
+				sfName += QString("[-]");
+			}
+
+			int _sfIdx = compEnt->getScalarFieldIndexByName(qPrintable(sfName));
+			if (_sfIdx >= 0)
+			{
+				compEnt->deleteScalarField(_sfIdx);
+				//we update sfIdx because indexes are all messed up after deletion
+				sfIdx = compEnt->getScalarFieldIndexByName(CC_TEMP_DISTANCES_DEFAULT_SF_NAME);
+			}
+			compEnt->renameScalarField(sfIdx, qPrintable(sfName));
+
+			ccScalarField* sf = static_cast<ccScalarField*>(compEnt->getScalarField(sfIdx));
+			if (sf)
+			{
+				ScalarType mean;
+				ScalarType variance;
+				sf->computeMinAndMax();
+				sf->computeMeanAndVariance(mean, &variance);
+				CVLog::Print("[Compute Primitive Distances] [Primitive: %s] [Cloud: %s] [%s] Mean distance = %f / std deviation = %f", qPrintable(refEntity->getName()), qPrintable(compEnt->getName()), qPrintable(sfName), mean, sqrt(variance));
+			}
+			compEnt->setCurrentDisplayedScalarField(sfIdx);
+			compEnt->showSF(sfIdx >= 0);
+			compEnt->setRedrawFlagRecursive(true);
+		}
+
+		refreshAll();
+		MainWindow::UpdateUI();
+	}
+}
+
 void MainWindow::deactivateComparisonMode(int result)
 {
 	//DGM: a bug apperead with recent changes (from CC or QT?)
@@ -10184,52 +10590,51 @@ void MainWindow::doActionUnroll()
 		return;
 	unrollDlg.toPersistentSettings();
 
-	ccUnrollDlg::Type mode = unrollDlg.getType();
+	ccPointCloud::UnrollMode mode = unrollDlg.getType();
 	PointCoordinateType radius = static_cast<PointCoordinateType>(unrollDlg.getRadius());
 	unsigned char dim = static_cast<unsigned char>(unrollDlg.getAxisDimension());
 	bool exportDeviationSF = unrollDlg.exportDeviationSF();
-	CCVector3* pCenter = nullptr;
-	CCVector3 center;
-	if (mode != ccUnrollDlg::CYLINDER || !unrollDlg.isAxisPositionAuto())
-	{
-		//we need the axis center point
-		center = unrollDlg.getAxisPosition();
-		pCenter = &center;
-	}
+	CCVector3 center = unrollDlg.getAxisPosition();
 
 	//let's rock unroll ;)
 	ecvProgressDialog pDlg(true, this);
 
+	double startAngle_deg = 0.0;
+	double stopAngle_deg = 360.0;
+	unrollDlg.getAngleRange(startAngle_deg, stopAngle_deg);
+	if (startAngle_deg >= stopAngle_deg)
+	{
+		QMessageBox::critical(this, "Error", "Invalid angular range");
+		return;
+	}
+
 	ccPointCloud* output = nullptr;
 	switch (mode)
 	{
-	case ccUnrollDlg::CYLINDER:
+	case ccPointCloud::CYLINDER:
 	{
-		double startAngle_deg = 0.0, stopAngle_deg = 360.0;
-		unrollDlg.getAngleRange(startAngle_deg, stopAngle_deg);
-		if (startAngle_deg >= stopAngle_deg)
+		ccPointCloud::UnrollCylinderParams params;
+		params.radius = radius;
+		params.axisDim = dim;
+		if (unrollDlg.isAxisPositionAuto())
 		{
-			QMessageBox::critical(this, tr("Error"), tr("Invalid angular range"));
-			return;
+			center = pc->getOwnBB().getCenter();
 		}
-		output = pc->unrollOnCylinder(radius, dim, pCenter, 
-			exportDeviationSF, startAngle_deg, stopAngle_deg, &pDlg);
+		params.center = center;
+		output = pc->unroll(mode, &params, exportDeviationSF, startAngle_deg, stopAngle_deg, &pDlg);
 	}
 	break;
 
-	case ccUnrollDlg::CONE:
+	case ccPointCloud::CONE:
+	case ccPointCloud::STRAIGHTENED_CONE:
+	case ccPointCloud::STRAIGHTENED_CONE2:
 	{
-		double coneHalfAngle_deg = unrollDlg.getConeHalfAngle();
-		output = pc->unrollOnCone(coneHalfAngle_deg, center, dim, 
-			false, 0, exportDeviationSF, &pDlg);
-	}
-	break;
-
-	case ccUnrollDlg::STRAIGHTENED_CONE:
-	{
-		double coneHalfAngle_deg = unrollDlg.getConeHalfAngle();
-		output = pc->unrollOnCone(coneHalfAngle_deg, center, dim, 
-			true, radius, exportDeviationSF, &pDlg);
+		ccPointCloud::UnrollConeParams params;
+		params.radius = (mode == ccPointCloud::CONE ? 0 : radius);
+		params.apex = center;
+		params.coneAngle_deg = unrollDlg.getConeHalfAngle();
+		params.axisDim = dim;
+		output = pc->unroll(mode, &params, exportDeviationSF, startAngle_deg, stopAngle_deg, &pDlg);
 	}
 	break;
 
@@ -10240,15 +10645,27 @@ void MainWindow::doActionUnroll()
 
 	if (output)
 	{
-		pc->setEnabled(false);
-		ecvConsole::Warning(tr("[Unroll] Original cloud has been automatically hidden"));
-
-		if (pc->getParent())
+		if (m_selectedEntities[0]->isA(CV_TYPES::MESH))
 		{
-			pc->getParent()->addChild(output);
+			ccMesh* mesh = ccHObjectCaster::ToMesh(m_selectedEntities[0]);
+			mesh->setEnabled(false);
+			ecvConsole::Warning("[Unroll] Original mesh has been automatically hidden");
+			ccMesh* outputMesh = mesh->cloneMesh(output);
+			outputMesh->addChild(output);
+			addToDB(outputMesh, true, true, false, true);
+			outputMesh->setEnabled(true);
+			outputMesh->setVisible(true);
 		}
-		addToDB(output, true, true, false, true);
-
+		else
+		{
+			pc->setEnabled(false);
+			ecvConsole::Warning("[Unroll] Original cloud has been automatically hidden");
+			if (pc->getParent())
+			{
+				pc->getParent()->addChild(output);
+			}
+			addToDB(output, true, true, false, true);
+		}
 		updateUI();
 	}
 }

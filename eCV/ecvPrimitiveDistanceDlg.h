@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                              CLOUDVIEWER                               #
+//#                              CLOUDCOMPARE                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -11,51 +11,47 @@
 //#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
 //#  GNU General Public License for more details.                          #
 //#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+//#          COPYRIGHT:  Chris Brown                                       #
 //#                                                                        #
 //##########################################################################
 
-#ifndef ECV_UNROLL_DLG_HEADER
-#define ECV_UNROLL_DLG_HEADER
+#ifndef ECV_PRIMITIVE_DISTANCE_DIALOG_HEADER
+#define ECV_PRIMITIVE_DISTANCE_DIALOG_HEADER
 
-#include <ui_unrollDlg.h>
+//Qt
+#include <QDialog>
+#include <QString>
 
-// CV_CORE_LIB
-#include <CVGeom.h>
+#include <ui_primitiveDistanceDlg.h>
 
-// ECV_DB_LIB
-#include <ecvPointCloud.h>
+class ccHObject;
+class ccPointCloud;
+class ccGenericPointCloud;
+class ccGenericMesh;
 
-//! Dialog: unroll clould on a cylinder or a cone
-class ccUnrollDlg : public QDialog, public Ui::UnrollDialog
+//! Dialog for cloud sphere or cloud plane comparison setting
+class ecvPrimitiveDistanceDlg: public QDialog, public Ui::primitiveDistanceDlg
 {
 	Q_OBJECT
 
 public:
 
 	//! Default constructor
-	explicit ccUnrollDlg(QWidget* parent = 0);
+	ecvPrimitiveDistanceDlg(QWidget* parent = nullptr);
 
-	ccPointCloud::UnrollMode getType() const;
-	int getAxisDimension() const;
-	bool isAxisPositionAuto() const;
-	CCVector3 getAxisPosition() const;
-	void getAngleRange(double& start_deg, double& stop_deg) const;
-	double getRadius() const;
-	double getConeHalfAngle() const;
-	bool exportDeviationSF() const;
+	//! Default destructor
+	~ecvPrimitiveDistanceDlg() = default;
 
-	void toPersistentSettings() const;
-	void fromPersistentSettings();
+	bool signedDistances() { return signedDistCheckBox->isChecked(); }
+	bool flipNormals() { return flipNormalsCheckBox->isChecked(); }
+	bool treatPlanesAsBounded() { return treatPlanesAsBoundedCheckBox->isChecked(); }
+public slots:
+	void applyAndExit();
+	void cancelAndExit();
+
 
 protected slots:
-	void shapeTypeChanged(int index);
-	void axisDimensionChanged(int index);
-	void axisAutoStateChanged(int checkState);
-
-protected:
-	bool coneMode;
-
+	void toggleSigned(bool);
 };
 
-#endif // ECV_UNROLL_DLG_HEADER
+#endif // ECV_PRIMITIVE_DISTANCE_DIALOG_HEADER

@@ -153,6 +153,7 @@ if (WIN32)
     add_definitions(-DWINDOWS)
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)		# suppress C4996 warning
     add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
+	add_compile_options(/wd4819)
 	SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Windows")
     if (MSVC)
@@ -165,7 +166,7 @@ if (WIN32)
         # Ignore certain warnings
         # C4522: multiple assignment operators specified
         set(MSVC_WARNING_IGNORE "/wd4522")
-
+		
         # Multi-thread compile, two ways to enable
         # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
         # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build

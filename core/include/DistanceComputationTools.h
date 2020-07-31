@@ -23,6 +23,8 @@
 #include "CVConst.h"
 #include "CVToolbox.h"
 #include "DgmOctree.h"
+#include "SquareMatrix.h"
+#include "Polyline.h"
 
 namespace CVLib
 {
@@ -263,6 +265,70 @@ public: //distance to simple entities (triangles, planes, etc.)
 	**/
 	static ScalarType computePoint2PlaneDistance(const CCVector3* P, const PointCoordinateType* planeEquation);
 
+	//! Computes the square of the distance between a point and a line segment
+	/** \param point a 3D point
+		\param start the start of line segment
+		\param end the end of line segment
+		\return the distance squared between the point and the line segment
+	**/
+	static ScalarType computePoint2LineSegmentDistSquared(const CCVector3* point, const CCVector3* start, const CCVector3* end);
+
+	//! Computes the distance between each point in a cloud and a cone
+	/** \param cloud a 3D point cloud
+		\param coneP1 center point associated with the larger radii
+		\param coneP2 center point associated with the smaller radii
+		\param coneR1 cone radius at coneP1 (larger)
+		\param coneR2 cone radius at coneP2 (smaller)
+		\param signedDist whether to compute the signed or positive (absolute) distance (optional)
+		\param solutionType if true the scalar field will be set to which solution was selected 1-4 (optional)
+		\param[out] rms will be set with the Root Mean Square (RMS) distance between a cloud and a cylinder (optional)
+		\return negative error code or a positive value in case of success
+	**/
+	static int computeCloud2ConeEquation(GenericIndexedCloudPersist* cloud, const CCVector3& coneP1, const CCVector3& coneP2, const PointCoordinateType coneR1, const PointCoordinateType coneR2, bool signedDistances = true, bool solutionType = false, double* rms = nullptr);
+
+	//! Computes the distance between each point in a cloud and a cylinder
+	/** \param cloud a 3D point cloud
+		\param cylinderP1 center bottom point
+		\param cylinderP2 center top point
+		\param cylinderRadius cylinder radius
+		\param signedDist whether to compute the signed or positive (absolute) distance (optional)
+		\param solutionType if true the scalar field will be set to which solution was selected 1-4 (optional)
+		\param[out] rms will be set with the Root Mean Square (RMS) distance between a cloud and a cylinder (optional)
+		\return negative error code or a positive value in case of success
+	**/
+	static int computeCloud2CylinderEquation(GenericIndexedCloudPersist* cloud, const CCVector3& cylinderP1, const CCVector3& cylinderP2, const PointCoordinateType cylinderRadius, bool signedDistances = true, bool solutionType = false, double* rms = nullptr);
+
+	//! Computes the distance between each point in a cloud and a sphere
+	/** \param cloud a 3D point cloud
+		\param sphereCenter sphere 3d center point
+		\param sphereRadius sphere radius
+		\param signedDist whether to compute the signed or positive (absolute) distance (optional)
+		\param[out] rms will be set with the Root Mean Square (RMS) distance between a cloud and a sphere (optional)
+		\return negative error code or a positive value in case of success
+	**/
+	static int computeCloud2SphereEquation(GenericIndexedCloudPersist *cloud, const CCVector3& sphereCenter, const PointCoordinateType sphereRadius, bool signedDistances = true, double* rms = nullptr);
+
+	//! Computes the distance between each point in a cloud and a plane
+	/** \param cloud a 3D point cloud
+		\param planeEquation plane equation: [a,b,c,d] as 'ax+by+cz=d' with norm(a,bc)==1
+		\param signedDist whether to compute the signed or positive (absolute) distance (optional)
+		\param[out] rms will be set with the Root Mean Square (RMS) distance between a cloud and a plane (optional)
+		\return negative error code or a positive value in case of success
+	**/
+	static int computeCloud2PlaneEquation(GenericIndexedCloudPersist* cloud, const PointCoordinateType* planeEquation, bool signedDistances = true, double * rms = nullptr);
+
+	static int computeCloud2RectangleEquation(GenericIndexedCloudPersist *cloud, PointCoordinateType widthX, PointCoordinateType widthY, const SquareMatrix& rotationTransform, const CCVector3& center, bool signedDist = true, double* rms = nullptr);
+
+	static int computeCloud2BoxEquation(GenericIndexedCloudPersist* cloud, const CCVector3& boxDimensions, const SquareMatrix& rotationTransform, const CCVector3& boxCenter, bool signedDist = true, double* rms = nullptr);
+
+	//! Computes the distance between each point in a cloud and a polyline
+	/** \param cloud a 3D point cloud
+		\param polyline the polyline to measure to
+		\param[out] rms will be set with the Root Mean Square (RMS) distance between a cloud and a plane (optional)
+		\return negative error code or a positive value in case of success
+	**/
+	static int computeCloud2PolylineEquation(GenericIndexedCloudPersist* cloud, const Polyline* polyline, double* rms = nullptr);
+
 	//! Error estimators
 	enum ERROR_MEASURES
 	{
@@ -271,6 +337,49 @@ public: //distance to simple entities (triangles, planes, etc.)
 		MAX_DIST_95_PERCENT,		/**< Max distance @ 98% (2 sigmas) **/
 		MAX_DIST_99_PERCENT,		/**< Max distance @ 99% (3 sigmas) **/
 		MAX_DIST,					/**< Max distance **/
+	};
+
+	enum DISTANCE_COMPUTATION_RESULTS
+	{
+		CANCELED_BY_USER = -1000,
+		ERROR_NULL_COMPAREDCLOUD,
+		ERROR_NULL_COMPAREDOCTREE,
+		ERROR_OUT_OF_MEMORY,
+		ERROR_ENABLE_SCALAR_FIELD_FAILURE,
+		ERROR_EMPTY_COMPAREDCLOUD,
+		ERROR_NULL_REFERENCECLOUD,
+		ERROR_EMPTY_REFERENCECLOUD,
+		ERROR_NULL_REFERENCEMESH,
+		ERROR_EMPTY_REFERENCEMESH,
+		NULL_PLANE_EQUATION,
+		ERROR_NULL_OCTREE,
+		ERROR_NULL_OCTREE_AND_MESH_INTERSECTION,
+		ERROR_CANT_USE_MAX_SEARCH_DIST_AND_CLOSEST_POINT_SET,
+		ERROR_EXECUTE_FUNCTION_FOR_ALL_CELLS_AT_LEVEL_FAILURE,
+		ERROR_EXECUTE_GET_POINTS_IN_CELL_BY_INDEX_FAILURE,
+		ERROR_EXECUTE_CLOUD_MESH_DIST_CELL_FUNC_MT_FAILURE,
+		ERROR_GET_CELL_CODES_FAILURE,
+		ERROR_GET_CELL_CODES_AND_INDEXES_FAILURE,
+		ERROR_GET_CELL_INDEXES_FAILURE,
+		ERROR_PROPAGATE_DISTANCE_FAILURE,
+		ERROR_SEED_POINT_INDEX_GREATER_THAN_COMPAREDCLOUD_SIZE,
+		ERROR_INIT_DISTANCE_TRANSFORM_GRID_FAILURE,
+		ERROR_INIT_PER_CELL_TRIANGLE_LIST_FAILURE,
+		ERROR_INTERSECT_MESH_WITH_OCTREE_FAILURE,
+		ERROR_COMPUTE_CLOUD2_MESH_DISTANCE_WITH_OCTREE_FAILURE,
+		ERROR_COMPUTE_CLOUD2_CLOUD_DISTANCE_FAILURE,
+		ERROR_OCTREE_LEVEL_LT_ONE,
+		ERROR_OCTREE_LEVEL_GT_MAX_OCTREE_LEVEL,
+		ERROR_SYNCHRONIZE_OCTREES_FAILURE,
+		ERROR_PLANE_NORMAL_LT_ZERO,
+		ERROR_INVALID_PRIMITIVE_DIMENSIONS,
+		ERROR_CONE_R1_LT_CONE_R2,
+		ERROR_CONELENGTH_ZERO,
+		ERROR_COULDNOT_SYNCRONIZE_OCTREES,
+		ERROR_BUILD_OCTREE_FAILURE,
+		ERROR_BUILD_FAST_MARCHING_FAILURE,
+		ERROR_UNKOWN_ERRORMEASURES_TYPE,
+		SUCCESS = 1,
 	};
 
 	//! Computes the "distance" (see ERROR_MEASURES) between a point cloud and a plane

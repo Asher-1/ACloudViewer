@@ -20,6 +20,7 @@
 #define DELAUNAY2D_MESH_HEADER
 
 //Local
+#include "GenericIndexedCloudPersist.h"
 #include "GenericIndexedMesh.h"
 #include "SimpleTriangle.h"
 
@@ -114,6 +115,12 @@ public:
 
 	//! Returns associated cloud
 	inline GenericIndexedCloud* getAssociatedCloud() { return m_associatedCloud; }
+
+	//! Tesselates a 2D polyline (shortcut to buildMesh and removeOuterTriangles)
+	static Delaunay2dMesh* TesselateContour(const std::vector<CCVector2>& contourPoints);
+
+	//! Tesselates a 2D polyline (not necessarily axis-aligned)
+	static Delaunay2dMesh* TesselateContour(GenericIndexedCloudPersist* contourPoints, int flatDimension = -1);
 
 protected:
 

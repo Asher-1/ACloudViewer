@@ -428,6 +428,7 @@ CC_FILE_ERROR AsciiFilter::loadFile(const QString& filename,
 
 	AsciiOpenDlg::Sequence openSequence = openDialog->getOpenSequence();
 	char separator = static_cast<char>(openDialog->getSeparator());
+	bool commaAsDecimal = openDialog->useCommaAsDecimal();
 	unsigned maxCloudSize = openDialog->getMaxCloudSize();
 	unsigned skipLineCount = openDialog->getSkippedLinesCount();
 	bool showLabelsIn2D = openDialog->showLabelsIn2D();
@@ -441,6 +442,7 @@ CC_FILE_ERROR AsciiFilter::loadFile(const QString& filename,
 											container,
 											openSequence,
 											separator,
+											commaAsDecimal,
 											approximateNumberOfLines,
 											fileSize,
 											maxCloudSize,
@@ -713,6 +715,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 															ccHObject& container,
 															const AsciiOpenDlg::Sequence& openSequence,
 															char separator,
+															bool commaAsDecimal,
 															unsigned approximateNumberOfLines,
 															qint64 fileSize,
 															unsigned maxCloudSize,
@@ -783,6 +786,8 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 	unsigned pointsRead = 0;
 
 	CC_FILE_ERROR result = CC_FERR_NO_ERROR;
+
+	QLocale locale(commaAsDecimal ? QLocale::French : QLocale::English);
 
 	//main process
 	unsigned nextLimit = /*cloudChunkPos+*/cloudChunkSize;
@@ -879,7 +884,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 		}
 
 		//we split current line
-		QStringList parts = currentLine.split(separator, QString::SkipEmptyParts);
+		QStringList parts = currentLine.simplified().split(separator, QString::SkipEmptyParts);
 
 		int nParts = parts.size();
 		if (nParts > maxPartIndex) //fake loop for easy break
@@ -891,7 +896,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 				bool ok = true;
 				if (cloudDesc.xCoordIndex >= 0)
 				{
-					P.x = parts[cloudDesc.xCoordIndex].toDouble(&ok);
+					P.x = locale.toDouble(parts[cloudDesc.xCoordIndex], &ok);
 					if (!ok)
 					{
 						break;
@@ -899,7 +904,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 				}
 				if (cloudDesc.yCoordIndex >= 0)
 				{
-					P.y = parts[cloudDesc.yCoordIndex].toDouble(&ok);
+					P.y = locale.toDouble(parts[cloudDesc.yCoordIndex], &ok);
 					if (!ok)
 					{
 						break;
@@ -907,7 +912,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 				}
 				if (cloudDesc.zCoordIndex >= 0)
 				{
-					P.z = parts[cloudDesc.zCoordIndex].toDouble(&ok);
+					P.z = locale.toDouble(parts[cloudDesc.zCoordIndex], &ok);
 					if (!ok)
 					{
 						break;
@@ -943,11 +948,11 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 			if (cloudDesc.hasNorms)
 			{
 				if (cloudDesc.xNormIndex >= 0)
-					N.x = static_cast<PointCoordinateType>(parts[cloudDesc.xNormIndex].toDouble());
+					N.x = static_cast<PointCoordinateType>(locale.toDouble(parts[cloudDesc.xNormIndex]));
 				if (cloudDesc.yNormIndex >= 0)
-					N.y = static_cast<PointCoordinateType>(parts[cloudDesc.yNormIndex].toDouble());
+					N.y = static_cast<PointCoordinateType>(locale.toDouble(parts[cloudDesc.yNormIndex]));
 				if (cloudDesc.zNormIndex >= 0)
-					N.z = static_cast<PointCoordinateType>(parts[cloudDesc.zNormIndex].toDouble());
+					N.z = static_cast<PointCoordinateType>(locale.toDouble(parts[cloudDesc.zNormIndex]));
 				cloudDesc.cloud->addNorm(N);
 			}
 
@@ -964,7 +969,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 				}
 				else if (cloudDesc.fRgbaIndex >= 0)
 				{
-					const float rgbf = parts[cloudDesc.fRgbaIndex].toFloat();
+					const float rgbf = locale.toFloat(parts[cloudDesc.fRgbaIndex]);
 					const uint32_t rgb = *(reinterpret_cast<const uint32_t *>(&rgbf));
 					col.r = ((rgb >> 16) & 0x0000ff);
 					col.g = ((rgb >>  8) & 0x0000ff);
@@ -975,17 +980,17 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 					if (cloudDesc.redIndex >= 0)
 					{
 						float multiplier = cloudDesc.hasFloatRGBColors[0] ? static_cast<float>(ecvColor::MAX) : 1.0f;
-						col.r = static_cast<ColorCompType>(parts[cloudDesc.redIndex].toFloat() * multiplier);
+						col.r = static_cast<ColorCompType>(locale.toFloat(parts[cloudDesc.redIndex]) * multiplier);
 					}
 					if (cloudDesc.greenIndex >= 0)
 					{
 						float multiplier = cloudDesc.hasFloatRGBColors[1] ? static_cast<float>(ecvColor::MAX) : 1.0f;
-						col.g = static_cast<ColorCompType>(parts[cloudDesc.greenIndex].toFloat() * multiplier);
+						col.g = static_cast<ColorCompType>(locale.toFloat(parts[cloudDesc.greenIndex]) * multiplier);
 					}
 					if (cloudDesc.blueIndex >= 0)
 					{
 						float multiplier = cloudDesc.hasFloatRGBColors[2] ? static_cast<float>(ecvColor::MAX) : 1.0f;
-						col.b = static_cast<ColorCompType>(parts[cloudDesc.blueIndex].toFloat() * multiplier);
+						col.b = static_cast<ColorCompType>(locale.toFloat(parts[cloudDesc.blueIndex]) * multiplier);
 					}
 				}
 				cloudDesc.cloud->addRGBColor(col);
@@ -1001,7 +1006,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 			{
 				for (size_t j = 0; j < cloudDesc.scalarIndexes.size(); ++j)
 				{
-					D = static_cast<ScalarType>(parts[cloudDesc.scalarIndexes[j]].toDouble());
+					D = static_cast<ScalarType>(locale.toDouble(parts[cloudDesc.scalarIndexes[j]]));
 					cloudDesc.scalarFields[j]->emplace_back(D);
 				}
 			}

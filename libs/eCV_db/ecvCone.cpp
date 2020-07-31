@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                              CLOUDVIEWER                               #
+//#                              EROWCLOUDVIEWER                           #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -252,6 +252,57 @@ void ccCone::setTopRadius(PointCoordinateType radius)
 	
 	buildUp();
 	applyTransformationToVertices();
+}
+
+CCVector3 ccCone::getBottomCenter() const
+{
+	CCVector3 bottomCenter = CCVector3(m_xOff, m_yOff, -m_height) / 2;
+	ccGLMatrix trans = getGLTransformationHistory();
+	trans.apply(bottomCenter);
+	return bottomCenter;
+}
+CCVector3 ccCone::getTopCenter() const
+{
+	CCVector3 topCenter = CCVector3(-m_xOff, -m_yOff, m_height) / 2;
+	ccGLMatrix trans = getGLTransformationHistory();
+	trans.apply(topCenter);
+	return topCenter;
+}
+
+CCVector3 ccCone::getSmallCenter() const
+{
+	if (m_topRadius <= m_bottomRadius)
+	{
+		return getTopCenter();
+	}
+	return getBottomCenter();
+}
+
+CCVector3 ccCone::getLargeCenter() const
+{
+	if (m_topRadius >= m_bottomRadius)
+	{
+		return getTopCenter();
+	}
+	return getBottomCenter();
+}
+
+PointCoordinateType ccCone::getSmallRadius() const
+{
+	if (m_topRadius <= m_bottomRadius)
+	{
+		return m_topRadius;
+	}
+	return m_bottomRadius;
+}
+
+PointCoordinateType ccCone::getLargeRadius() const
+{
+	if (m_topRadius >= m_bottomRadius)
+	{
+		return m_topRadius;
+	}
+	return m_bottomRadius;
 }
 
 bool ccCone::toFile_MeOnly(QFile& out) const

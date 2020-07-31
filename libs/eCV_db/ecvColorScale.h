@@ -91,7 +91,7 @@ public:
 	//! Creates a new color scale (with auto-generated unique id)
 	/** Warning: color scale is relative by default.
 	**/
-	static ccColorScale::Shared Create(QString name); 
+	static ccColorScale::Shared Create(const QString& name);
 
 	//! Default constructor
 	/** \param name scale name
@@ -100,7 +100,7 @@ public:
 		On construction they already have the two extreme steps defined (at position
 		0.0 and 1.0).
 	**/
-	ccColorScale(QString name, QString uuid = QString());
+	ccColorScale(const QString& name, const QString& uuid = QString());
 
 	//! Destructor
 	virtual ~ccColorScale();

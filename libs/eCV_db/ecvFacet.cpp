@@ -204,8 +204,11 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 
 	//we project the input points on a plane
 	std::vector<CVLib::PointProjectionTools::IndexedCCVector2> points2D;
-	CCVector3 X, Y; //local base
-	if (!Yk.projectPointsOn2DPlane<CVLib::PointProjectionTools::IndexedCCVector2>(points2D, 0, &m_center, &X, &Y))
+	//local base
+	CCVector3 X;
+	CCVector3 Y;
+
+	if (!Yk.projectPointsOn2DPlane<CVLib::PointProjectionTools::IndexedCCVector2>(points2D, nullptr, &m_center, &X, &Y))
 	{
 		CVLog::Error("[ccFacet::createInternalRepresentation] Not enough memory!");
 		return false;
@@ -240,7 +243,7 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 			if (!m_contourVertices->reserve(hullPtsCount))
 			{
 				delete m_contourVertices;
-				m_contourVertices = 0;
+				m_contourVertices = nullptr;
 				CVLog::Error("[ccFacet::createInternalRepresentation] Not enough memory!");
 				return false;
 			}
@@ -273,7 +276,7 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 			else
 			{
 				delete m_contourPolyline;
-				m_contourPolyline = 0;
+				m_contourPolyline = nullptr;
 				CVLog::Warning("[ccFacet::createInternalRepresentation] Not enough memory to create the contour polyline!");
 			}
 		}
@@ -348,7 +351,7 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 				else
 				{
 					delete m_polygonMesh;
-					m_polygonMesh = 0;
+					m_polygonMesh = nullptr;
 					CVLog::Warning("[ccFacet::createInternalRepresentation] Not enough memory to create the polygon mesh!");
 				}
 			}

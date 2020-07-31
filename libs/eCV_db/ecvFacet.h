@@ -87,12 +87,23 @@ public:
 
 	//! Returns polygon mesh (if any)
 	inline ccMesh* getPolygon() { return m_polygonMesh; }
+	//! Returns polygon mesh (if any)
+	inline const ccMesh* getPolygon() const { return m_polygonMesh; }
+
 	//! Returns contour polyline (if any)
 	inline ccPolyline* getContour() { return m_contourPolyline; }
+	//! Returns contour polyline (if any)
+	inline const ccPolyline* getContour() const { return m_contourPolyline; }
+
 	//! Returns contour vertices (if any)
 	inline ccPointCloud* getContourVertices() { return m_contourVertices; }
+	//! Returns contour vertices (if any)
+	inline const ccPointCloud* getContourVertices() const { return m_contourVertices; }
+
 	//! Returns origin points (if any)
 	inline ccPointCloud* getOriginPoints() { return m_originPoints; }
+	//! Returns origin points (if any)
+	inline const ccPointCloud* getOriginPoints() const { return m_originPoints; }
 
 	//! Sets polygon mesh
 	inline void setPolygon(ccMesh* mesh) { m_polygonMesh = mesh; }

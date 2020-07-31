@@ -77,6 +77,8 @@ class CV_CORE_LIB_API Neighbourhood
 		//! Fit a quadric on point set (see getQuadric) then triangulates it inside bounding box
 		GenericIndexedMesh* triangulateFromQuadric(unsigned stepsX, unsigned stepsY);
 
+		enum InputVectorsUsage { UseOXYasBase, UseYAsUpDir, None };
+
 		//! Projects points on the best fitting LS plane
 		/** Projected points are stored in the points2D vector.
 			\param points2D output set
@@ -92,7 +94,7 @@ class CV_CORE_LIB_API Neighbourhood
 															CCVector3* O = nullptr,
 															CCVector3* X = nullptr,
 															CCVector3* Y = nullptr,
-															bool useOXYasBase = false)
+															InputVectorsUsage vectorsUsage = None)
 		{
 			//need at least one point ;)
 			unsigned count = (m_associatedCloud ? m_associatedCloud->size() : 0);
@@ -120,7 +122,7 @@ class CV_CORE_LIB_API Neighbourhood
 
 			//we construct the plane local base
 			CCVector3 G(0, 0, 0), u(1, 0, 0), v(0, 1, 0);
-			if (useOXYasBase && O && X && Y)
+			if ((vectorsUsage == UseOXYasBase) && O && X && Y)
 			{
 				G = *O;
 				u = *X;
@@ -129,7 +131,16 @@ class CV_CORE_LIB_API Neighbourhood
 			else
 			{
 				CCVector3 N(planeEquation);
-				CCMiscTools::ComputeBaseVectors(N, u, v);
+				if ((vectorsUsage == UseYAsUpDir) && Y)
+				{
+					v = (*Y - Y->dot(N) * N);
+					v.normalize();
+					u = v.cross(N);
+				}
+				else
+				{
+					CCMiscTools::ComputeBaseVectors(N, u, v);
+				}
 				//get the barycenter
 				const CCVector3* _G = getGravityCenter();
 				assert(_G);
@@ -146,8 +157,9 @@ class CV_CORE_LIB_API Neighbourhood
 				points2D[i] = Vec2D(P.dot(u), P.dot(v));
 			}
 
+
 			//output the local base if necessary
-			if (!useOXYasBase)
+			if (vectorsUsage != UseOXYasBase)
 			{
 				if (O)
 					*O = G;
@@ -176,7 +188,10 @@ class CV_CORE_LIB_API Neighbourhood
 			PCA2,
 			SurfaceVariation,
 			Sphericity,
-			Verticality
+			Verticality,
+			EigenValue1,
+			EigenValue2,
+			EigenValue3
 		};
 
 		//! Computes the given feature on a set of point

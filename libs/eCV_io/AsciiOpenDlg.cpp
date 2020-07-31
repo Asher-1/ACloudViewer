@@ -61,6 +61,7 @@ struct AsciiOpenContext
 		, maxPointCountPerCloud(0)
 		, skipLines(0)
 		, applyAll(false)
+		, commaDecimal(false)
 	{}
 
 	//! Saves state
@@ -70,6 +71,7 @@ struct AsciiOpenContext
 		maxPointCountPerCloud = ui->maxCloudSizeDoubleSpinBox->value();
 		separator = ui->lineEditSeparator->text().at( 0 );
 		skipLines = ui->spinBoxSkipLines->value();
+		commaDecimal = ui->commaDecimalCheckBox->isChecked();
 	}
 
 	//! Restores state
@@ -83,6 +85,10 @@ struct AsciiOpenContext
 		ui->spinBoxSkipLines->blockSignals(true);
 		ui->spinBoxSkipLines->setValue(skipLines);
 		ui->spinBoxSkipLines->blockSignals(false);
+		ui->commaDecimalCheckBox->blockSignals(true);
+		ui->commaDecimalCheckBox->setChecked(commaDecimal);
+		ui->commaDecimalCheckBox->setEnabled(separator != ',');
+		ui->commaDecimalCheckBox->blockSignals(false);
 	}
 
 	AsciiOpenDlg::Sequence sequence;
@@ -91,6 +97,7 @@ struct AsciiOpenContext
 	double maxPointCountPerCloud;
 	int skipLines;
 	bool applyAll;
+	bool commaDecimal;
 };
 //! Semi-persistent loading context
 static AsciiOpenContext s_asciiOpenContext;
@@ -108,17 +115,17 @@ AsciiOpenDlg::AsciiOpenDlg(QWidget* parent)
 	//spinBoxSkipLines->setValue(0);
 	m_ui->commentLinesSkippedLabel->hide();
 
-	connect(m_ui->applyButton,			SIGNAL(clicked()),						this, SLOT(apply()));
-	connect(m_ui->applyAllButton,		SIGNAL(clicked()),						this, SLOT(applyAll()));
-	connect(m_ui->cancelButton,			SIGNAL(clicked()),						this, SLOT(reject()));
-	connect(m_ui->lineEditSeparator,	SIGNAL(textChanged(const QString &)),	this, SLOT(onSeparatorChange(const QString &)));
-	connect(m_ui->spinBoxSkipLines,		SIGNAL(valueChanged(int)),				this, SLOT(setSkippedLines(int)));
+	connect(m_ui->applyButton,				&QPushButton::clicked,		this, &AsciiOpenDlg::apply);
+	connect(m_ui->applyAllButton,			&QPushButton::clicked,		this, &AsciiOpenDlg::applyAll);
+	connect(m_ui->cancelButton,				&QPushButton::clicked,		this, &AsciiOpenDlg::reject);
+	connect(m_ui->lineEditSeparator,		&QLineEdit::textChanged,	this, &AsciiOpenDlg::onSeparatorChange);
+	connect(m_ui->commaDecimalCheckBox,		&QCheckBox::toggled,		this, &AsciiOpenDlg::commaDecimalCheckBoxToggled);
+	connect(m_ui->spinBoxSkipLines, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, &AsciiOpenDlg::setSkippedLines);
 
 	//shortcut buttons
-	connect(m_ui->toolButtonShortcutESP,		SIGNAL(clicked()), this, SLOT(shortcutButtonPressed()));
-	connect(m_ui->toolButtonShortcutTAB,		SIGNAL(clicked()), this, SLOT(shortcutButtonPressed()));
-	connect(m_ui->toolButtonShortcutComma,		SIGNAL(clicked()), this, SLOT(shortcutButtonPressed()));
-	connect(m_ui->toolButtonShortcutDotcomma,	SIGNAL(clicked()), this, SLOT(shortcutButtonPressed()));
+	connect(m_ui->toolButtonShortcutSpace,		&QToolButton::clicked, this, &AsciiOpenDlg::shortcutButtonPressed);
+	connect(m_ui->toolButtonShortcutComma,		&QToolButton::clicked, this, &AsciiOpenDlg::shortcutButtonPressed);
+	connect(m_ui->toolButtonShortcutSemicolon,	&QToolButton::clicked, this, &AsciiOpenDlg::shortcutButtonPressed);
 
 	m_ui->maxCloudSizeDoubleSpinBox->setMaximum(CC_MAX_NUMBER_OF_POINTS_PER_CLOUD / 1.0e6);
 	m_ui->maxCloudSizeDoubleSpinBox->setValue(s_maxCloudSizeDoubleSpinBoxValue);
@@ -145,7 +152,6 @@ void AsciiOpenDlg::setFilename(const QString &filename)
 void AsciiOpenDlg::autoFindBestSeparator()
 {
 	const QList<QChar> separators{	QChar(' '),
-									QChar('\t'),
 									QChar(','),
 									QChar(';'),
 								 };
@@ -155,7 +161,7 @@ void AsciiOpenDlg::autoFindBestSeparator()
 	QChar bestSep = separators.front();
 	for (QChar sep : separators)
 	{
-		m_ui->lineEditSeparator->setText(sep); //this calls 'updateTable'
+		setSeparator(sep); //this eventually calls 'updateTable'
 
 		//...until we find one that gives us at least 3 valid colums
 		size_t validColumnCount = 0;
@@ -180,7 +186,7 @@ void AsciiOpenDlg::autoFindBestSeparator()
 
 	//if we are here, it means that we couldn't find a configuration
 	//with 3 valid columns (we use the best guess in this case)
-	m_ui->lineEditSeparator->setText(bestSep); //this calls 'updateTable'
+	setSeparator(bestSep); //this eventually calls 'updateTable'
 }
 
 void AsciiOpenDlg::setSkippedLines(int linesCount)
@@ -219,16 +225,20 @@ static const unsigned DISPLAYED_LINES = 20;				//number of displayed lines
 static unsigned X_BIT		= 1;
 static unsigned Y_BIT		= 2;
 static unsigned Z_BIT		= 4;
+static unsigned W_BIT		= 8;
 static unsigned XYZ_BITS	= X_BIT | Y_BIT | Z_BIT;
+static unsigned XYZW_BITS	= XYZ_BITS | W_BIT;
 
-static int EnabledBits(unsigned bitField3)
+static int EnabledBits(unsigned bitField)
 {
 	int count = 0;
-	if (bitField3 & X_BIT)
+	if (bitField & X_BIT)
 		++count;
-	if (bitField3 & Y_BIT)
+	if (bitField & Y_BIT)
 		++count;
-	if (bitField3 & Z_BIT)
+	if (bitField & Z_BIT)
+		++count;
+	if (bitField & W_BIT)
 		++count;
 
 	return count;
@@ -254,6 +264,16 @@ void AsciiOpenDlg::onSeparatorChange(const QString& separator)
 	m_columnType.clear();
 
 	updateTable();
+}
+
+bool AsciiOpenDlg::useCommaAsDecimal() const
+{
+	return m_ui->commaDecimalCheckBox->isEnabled() && m_ui->commaDecimalCheckBox->isChecked();
+}
+
+void AsciiOpenDlg::commaDecimalCheckBoxToggled(bool)
+{
+	onSeparatorChange(m_ui->lineEditSeparator->text());
 }
 
 void AsciiOpenDlg::updateTable()
@@ -286,6 +306,11 @@ void AsciiOpenDlg::updateTable()
 		for (unsigned i = 0; i < m_skippedLines;)
 		{
 			QString currentLine = stream.readLine();
+			if (currentLine.isNull())
+			{
+				//end of file reached
+				break;
+			}
 			if (currentLine.isEmpty())
 			{
 				//empty lines are ignored
@@ -295,7 +320,7 @@ void AsciiOpenDlg::updateTable()
 			if (i == 0)
 			{
 				m_headerLine = currentLine;
-			}  
+			}
 			++i;
 		}
 	}
@@ -319,7 +344,9 @@ void AsciiOpenDlg::updateTable()
 	std::vector<bool> valueIsInteger;	//identifies columns with integer values only
 	std::vector<bool> valueIsBelow255;	//identifies columns with integer values between 0 and 255 only
 
-	QChar decimalPoint = QLocale().decimalPoint();
+	bool commaAsDecimal = useCommaAsDecimal();
+	QLocale locale(commaAsDecimal ? QLocale::French : QLocale::English);
+	QChar decimalPoint = commaAsDecimal ? ',' : '.';
 	while (lineCount < LINES_READ_FOR_STATS)
 	{
 		QString currentLine = stream.readLine();
@@ -337,7 +364,7 @@ void AsciiOpenDlg::updateTable()
 		//we recognize "//" as the beginning of a comment
 		if (!currentLine.startsWith("//")/* || !currentLine.startsWith("#")*/)
 		{
-			QStringList parts = currentLine.trimmed().split(m_separator, QString::SkipEmptyParts);
+			QStringList parts = currentLine.simplified().split(m_separator, QString::SkipEmptyParts);
 			
 			if (lineCount < DISPLAYED_LINES)
 			{
@@ -382,7 +409,7 @@ void AsciiOpenDlg::updateTable()
 
 					//test values
 					bool isANumber = false;
-					double value = parts[i].toDouble(&isANumber);
+					double value = locale.toDouble(parts[i], &isANumber);
 					if (!isANumber)
 					{
 						valueIsNumber[i] = false;
@@ -544,7 +571,9 @@ void AsciiOpenDlg::updateTable()
 				columnHeaderWidget->setItemIcon(ASCII_OPEN_DLG_Label, LabelIcon);
 				columnHeaderWidget->setItemIcon(ASCII_OPEN_DLG_Scalar, ScalarIcon);
 
-				connect(columnHeaderWidget, SIGNAL(currentIndexChanged(int)), this, SLOT(columnsTypeHasChanged(int)));
+				connect(columnHeaderWidget, 
+					static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), 
+					this, &AsciiOpenDlg::columnsTypeHasChanged);
 			}
 
 			while (m_columnType.size() <= static_cast<size_t>(i))
@@ -1042,7 +1071,7 @@ AsciiOpenDlg::Sequence AsciiOpenDlg::getOpenSequence() const
 			&& m_ui->extractSFNamesFrom1stLineCheckBox->isEnabled()
 			&& m_ui->extractSFNamesFrom1stLineCheckBox->isChecked())
 		{
-			headerParts = m_headerLine.trimmed().split(m_separator, QString::SkipEmptyParts);
+			headerParts = m_headerLine.simplified().split(m_separator, QString::SkipEmptyParts);
 		}
 
 		seq.reserve(m_columnsCount - 1);
@@ -1070,7 +1099,7 @@ bool AsciiOpenDlg::safeSequence() const
 		return false;
 
 	AsciiOpenDlg::Sequence seq = getOpenSequence();
-	QStringList headerParts = m_headerLine.split(m_separator, QString::SkipEmptyParts);
+	QStringList headerParts = m_headerLine.simplified().split(m_separator, QString::SkipEmptyParts);
 
 	//not enough column headers?
 	if (headerParts.size() < static_cast<int>(seq.size()))
@@ -1259,18 +1288,36 @@ void AsciiOpenDlg::shortcutButtonPressed()
 	QToolButton* shortcutButton = static_cast<QToolButton*>(obj);
 
 	char newSeparator = 0;
-	if (shortcutButton == m_ui->toolButtonShortcutESP)
+	if (shortcutButton == m_ui->toolButtonShortcutSpace)
 		newSeparator = 32;
-	else if (shortcutButton == m_ui->toolButtonShortcutTAB)
-		newSeparator = 9;
 	else if (shortcutButton == m_ui->toolButtonShortcutComma)
 		newSeparator = 44;
-	else if (shortcutButton == m_ui->toolButtonShortcutDotcomma)
+	else if (shortcutButton == m_ui->toolButtonShortcutSemicolon)
 		newSeparator = 59;
 
-	if (newSeparator>0 && getSeparator()!=newSeparator)
-		m_ui->lineEditSeparator->setText(QChar(newSeparator));
+	if (newSeparator != 0 && getSeparator() != newSeparator)
+	{
+		setSeparator(QChar(newSeparator));
+	}
 }
+
+
+void AsciiOpenDlg::setSeparator(QChar sep)
+{
+	m_ui->commaDecimalCheckBox->blockSignals(true);
+	if (sep == 44) //comma
+	{
+		m_ui->commaDecimalCheckBox->setEnabled(false);
+		//m_ui->commaDecimalCheckBox->setChecked(false);
+	}
+	else
+	{
+		m_ui->commaDecimalCheckBox->setEnabled(true);
+	}
+	m_ui->commaDecimalCheckBox->blockSignals(false);
+	m_ui->lineEditSeparator->setText(sep);
+}
+
 
 unsigned AsciiOpenDlg::getMaxCloudSize() const
 {

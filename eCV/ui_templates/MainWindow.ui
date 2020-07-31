@@ -252,6 +252,7 @@
      </property>
      <addaction name="actionCloudCloudDist"/>
      <addaction name="actionCloudMeshDist"/>
+     <addaction name="actionCloudPrimitiveDist"/>
      <addaction name="actionCPS"/>
     </widget>
     <widget class="QMenu" name="menuFit">
@@ -278,6 +279,9 @@
      <addaction name="actionMatchScales"/>
      <addaction name="actionPointPairsAlign"/>
      <addaction name="actionRegister"/>
+     <addaction name="actionBBCenterToOrigin"/>
+     <addaction name="actionBBMinCornerToOrigin"/>
+     <addaction name="actionBBMaxCornerToOrigin"/>
     </widget>
     <widget class="QMenu" name="menuRecognition">
      <property name="title">
@@ -414,6 +418,7 @@
      <addaction name="actionInvertNormals"/>
      <addaction name="menuOrient_normals"/>
      <addaction name="menuConvert_to"/>
+     <addaction name="actionExportNormalToSF"/>
      <addaction name="separator"/>
      <addaction name="actionClearNormals"/>
     </widget>
@@ -439,6 +444,7 @@
      <addaction name="actionConvexHull"/>
      <addaction name="actionPoissonReconstruction"/>
      <addaction name="separator"/>
+     <addaction name="actionFlipMeshTriangles"/>
      <addaction name="actionSamplePointsOnMesh"/>
      <addaction name="actionSmoothMeshLaplacian"/>
      <addaction name="actionSubdivideMesh"/>
@@ -472,6 +478,8 @@
      <addaction name="actionCreatePlane"/>
      <addaction name="actionFitPlaneProxy"/>
      <addaction name="actionEditPlane"/>
+     <addaction name="actionFlipPlane"/>
+     <addaction name="actionComparePlanes"/>
     </widget>
     <widget class="QMenu" name="menuClean">
      <property name="title">
@@ -3280,6 +3288,98 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>Plane Segmentation</string>
+   </property>
+  </action>
+  <action name="actionBBCenterToOrigin">
+   <property name="text">
+    <string>Move bounding-box center to origin</string>
+   </property>
+   <property name="toolTip">
+    <string>Move the bounding-box center to the origin</string>
+   </property>
+   <property name="statusTip">
+    <string>Move the bounding-box center to the origin</string>
+   </property>
+  </action>
+  <action name="actionBBMinCornerToOrigin">
+   <property name="text">
+    <string>Move bounding-box min corner to origin</string>
+   </property>
+   <property name="toolTip">
+    <string>Move the bounding-box min corner to the origin</string>
+   </property>
+   <property name="statusTip">
+    <string>Move the bounding-box min corner to the origin</string>
+   </property>
+  </action>
+  <action name="actionBBMaxCornerToOrigin">
+   <property name="text">
+    <string>Move bounding-box max corner to origin</string>
+   </property>
+   <property name="toolTip">
+    <string>Move the bounding-box max corner to the origin</string>
+   </property>
+   <property name="statusTip">
+    <string>Move the bounding-box max corner to the origin</string>
+   </property>
+  </action>
+  <action name="actionFlipPlane">
+   <property name="text">
+    <string>Flip</string>
+   </property>
+   <property name="toolTip">
+    <string>Flip the selected plane</string>
+   </property>
+   <property name="statusTip">
+    <string>Flip the selected plane</string>
+   </property>
+  </action>
+  <action name="actionComparePlanes">
+   <property name="text">
+    <string>Compare</string>
+   </property>
+   <property name="toolTip">
+    <string>Compare two planes (angle + distance)</string>
+   </property>
+   <property name="statusTip">
+    <string>Compare two planes (angle + distance)</string>
+   </property>
+  </action>
+  <action name="actionFlipMeshTriangles">
+   <property name="text">
+    <string>Flip triangles</string>
+   </property>
+   <property name="toolTip">
+    <string>Flip triangles (if vertices are ordered in the non-direct order)</string>
+   </property>
+   <property name="statusTip">
+    <string>Flip triangles (if vertices are ordered in the non-direct order)</string>
+   </property>
+  </action>
+  <action name="actionCloudPrimitiveDist">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/ecvCloudPrimitiveDistance.png</normaloff>:/Resources/images/ecvCloudPrimitiveDistance.png</iconset>
+   </property>
+   <property name="text">
+    <string>Cloud/Primitive Dist</string>
+   </property>
+   <property name="toolTip">
+    <string>Compute cloud/Primitive distance</string>
+   </property>
+   <property name="statusTip">
+    <string>Compute cloud/Primitive distance</string>
+   </property>
+  </action>
+  <action name="actionExportNormalToSF">
+   <property name="text">
+    <string>Export normals to SF(s)</string>
+   </property>
+   <property name="toolTip">
+    <string>Export normals to one or several scalar fields</string>
+   </property>
+   <property name="statusTip">
+    <string>Export normals to one or several scalar fields</string>
    </property>
   </action>
  </widget>

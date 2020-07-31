@@ -32,6 +32,7 @@ ccGeomFeaturesDlg::ccGeomFeaturesDlg(QWidget* parent/*=nullptr*/)
 	try
 	{
 		m_options.push_back(Option(roughnessCheckBox, CVLib::GeometricalAnalysisTools::Roughness, 0));
+		m_options.push_back(Option(firstOrderMomentCheckBox, CVLib::GeometricalAnalysisTools::MomentOrder1, 0));
 		m_options.push_back(Option(curvMeanCheckBox, CVLib::GeometricalAnalysisTools::Curvature, CVLib::Neighbourhood::MEAN_CURV));
 		m_options.push_back(Option(curvGaussCheckBox, CVLib::GeometricalAnalysisTools::Curvature, CVLib::Neighbourhood::GAUSSIAN_CURV));
 		m_options.push_back(Option(curvNCRCheckBox, CVLib::GeometricalAnalysisTools::Curvature, CVLib::Neighbourhood::NORMAL_CHANGE_RATE));
@@ -49,6 +50,9 @@ ccGeomFeaturesDlg::ccGeomFeaturesDlg(QWidget* parent/*=nullptr*/)
 		m_options.push_back(Option(eigSurfaceVarCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::SurfaceVariation));
 		m_options.push_back(Option(eigSphericityCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::Sphericity));
 		m_options.push_back(Option(eigVerticalityCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::Verticality));
+		m_options.push_back(Option(eigenvalue1CheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::EigenValue1));
+		m_options.push_back(Option(eigenvalue2CheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::EigenValue2));
+		m_options.push_back(Option(eigenvalue3CheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::EigenValue3));
 	}
 	catch (...)
 	{

@@ -707,22 +707,36 @@ ccPolyline* ccContourExtractor::ExtractFlatContour(	CVLib::GenericIndexedCloudPe
 													double maxAngleDeg/*=0.0*/)
 {
 	assert(points);
+
 	if (!points)
-		return 0;
+		return nullptr;
+
 	unsigned ptsCount = points->size();
 	if (ptsCount < 3)
-		return 0;
+		return nullptr;
 
 	CVLib::Neighbourhood Yk(points);
-	CCVector3 O, X, Y; //local base
-	bool useOXYasBase = false;
+	//local base
+	CCVector3 O;
+	CCVector3 X;
+	CCVector3 Y;
+
+	CVLib::Neighbourhood::InputVectorsUsage vectorsUsage = CVLib::Neighbourhood::None;
 
 	//we project the input points on a plane
 	std::vector<Vertex2D> points2D;
-	PointCoordinateType* planeEq = 0;
+	PointCoordinateType* planeEq = nullptr;
+
+	if (preferredUpDir != nullptr)
+	{
+		Y = CCVector3(preferredUpDir);
+		vectorsUsage = CVLib::Neighbourhood::UseYAsUpDir;
+	}
+
 	//if the user has specified a default direction, we'll use it as 'projecting plane'
 	PointCoordinateType preferredPlaneEq[4] = {0, 0, 1, 0};
-	if (preferredNormDim != 0)
+
+	if (preferredNormDim != nullptr)
 	{
 		const CCVector3* G = points->getPoint(0); //any point through which the plane passes is ok
 		preferredPlaneEq[0] = preferredNormDim[0];
@@ -732,16 +746,16 @@ ccPolyline* ccContourExtractor::ExtractFlatContour(	CVLib::GenericIndexedCloudPe
 		preferredPlaneEq[3] = CCVector3::vdot(G->u, preferredPlaneEq);
 		planeEq = preferredPlaneEq;
 
-		if (preferredUpDir != 0)
+		if (preferredUpDir != nullptr)
 		{
 			O = *G;
-			Y = CCVector3(preferredUpDir);
+			//Y = CCVector3(preferredUpDir); //already done above
 			X = Y.cross(CCVector3(preferredNormDim));
-			useOXYasBase = true;
+			vectorsUsage = CVLib::Neighbourhood::UseOXYasBase;
 		}
 	}
 
-	if (!Yk.projectPointsOn2DPlane<Vertex2D>(points2D, planeEq, &O, &X, &Y, useOXYasBase))
+	if (!Yk.projectPointsOn2DPlane<Vertex2D>(points2D, planeEq, &O, &X, &Y, vectorsUsage))
 	{
 		CVLog::Warning("[ExtractFlatContour] Failed to project the points on the LS plane (not enough memory?)!");
 		return 0;
@@ -781,8 +795,11 @@ ccPolyline* ccContourExtractor::ExtractFlatContour(	CVLib::GenericIndexedCloudPe
 		}
 
 		unsigned i=0;
-		for (Hull2D::const_iterator it = hullPoints.begin(); it != hullPoints.end(); ++it, ++i)
+		for (Hull2D::const_iterator it = hullPoints.begin();
+			it != hullPoints.end(); ++it, ++i)
+		{
 			(*originalPointIndexes)[i] = (*it)->index;
+		}
 	}
 
 	unsigned hullPtsCount = static_cast<unsigned>(hullPoints.size());
@@ -793,14 +810,16 @@ ccPolyline* ccContourExtractor::ExtractFlatContour(	CVLib::GenericIndexedCloudPe
 		if (!contourVertices->reserve(hullPtsCount))
 		{
 			delete contourVertices;
-			contourVertices = 0;
+			contourVertices = nullptr;
 			CVLog::Error("[ExtractFlatContour] Not enough memory!");
-			return 0;
+			return nullptr;
 		}
 
 		//projection on the LS plane (in 3D)
 		for (Hull2D::const_iterator it = hullPoints.begin(); it != hullPoints.end(); ++it)
+		{
 			contourVertices->addPoint(O + X*(*it)->x + Y*(*it)->y);
+		}
 		contourVertices->setName("vertices");
 		contourVertices->setEnabled(false);
 	}
@@ -818,7 +837,7 @@ ccPolyline* ccContourExtractor::ExtractFlatContour(	CVLib::GenericIndexedCloudPe
 	else
 	{
 		delete contourPolyline;
-		contourPolyline = 0;
+		contourPolyline = nullptr;
 		CVLog::Warning("[ExtractFlatContour] Not enough memory to create the contour polyline!");
 	}
 

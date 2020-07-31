@@ -28,6 +28,7 @@
 
 // CV_CORE_LIB
 #include <CVLog.h>
+#include <Delaunay2dMesh.h>
 
 // ECV_DB_LIB
 #include <ecvMesh.h>
@@ -92,18 +93,17 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 	if (!file.open(QFile::Text | QFile::WriteOnly))
 		return CC_FERR_WRITING;
 
-	unsigned numberOfTriangles = mesh->size();
-
 	//progress
-	QScopedPointer<ecvProgressDialog> pDlg(0);
+	QScopedPointer<ecvProgressDialog> pDlg(nullptr);
 	if (parameters.parentWidget)
 	{
 		pDlg.reset(new ecvProgressDialog(true, parameters.parentWidget));
 		pDlg->setMethodTitle(QObject::tr("Saving mesh [%1]").arg(mesh->getName()));
-		pDlg->setInfo(QObject::tr("Triangles: %1").arg(numberOfTriangles));
+		pDlg->setInfo(QObject::tr("Writing %1 vertices").arg(nbPoints));
+		pDlg->setAutoClose(false); //don't close dialogue when progress bar is full
 		pDlg->start();
 	}
-	CVLib::NormalizedProgress nprogress(pDlg.data(), numberOfTriangles);
+	CVLib::NormalizedProgress nprogress(pDlg.data(), nbPoints);
 
 	QTextStream stream(&file);
 	stream.setRealNumberNotation(QTextStream::FixedNotation);
@@ -122,6 +122,8 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		stream << "v " << Pglobal.x << " " << Pglobal.y << " " << Pglobal.z << endl;
 		if (file.error() != QFile::NoError)
 			return CC_FERR_WRITING;
+		if (pDlg && !nprogress.oneStep()) //update progress bar, check cancel requested
+			return CC_FERR_CANCELED_BY_USER;
 	}
 
 	//normals
@@ -136,12 +138,23 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 			NormsIndexesTableType* normsTable = mesh->getTriNormsTable();
 			if (normsTable)
 			{
-				for (unsigned i = 0; i < normsTable->currentSize(); ++i)
+				//reset save dialog
+				unsigned numTriangleNormals = normsTable->currentSize();
+				if (pDlg)
+					pDlg->setInfo(QObject::tr("Writing $1 triangle normals").arg(numTriangleNormals));
+				nprogress.scale(numTriangleNormals);
+				nprogress.reset();
+
+				for (unsigned i = 0; i < numTriangleNormals; ++i)
 				{
 					const CCVector3& normalVec = ccNormalVectors::GetNormal(normsTable->getValue(i));
 					stream << "vn " << normalVec.x << " " << normalVec.y << " " << normalVec.z << endl;
 					if (file.error() != QFile::NoError)
 						return CC_FERR_WRITING;
+					
+					//increment progress bar
+					if (pDlg && !nprogress.oneStep()) //cancel requested
+						return CC_FERR_CANCELED_BY_USER;
 				}
 			}
 			else
@@ -153,12 +166,24 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		//per-vertices normals
 		else //if (withVertNormals)
 		{
+			//reset save dialog
+			if (pDlg)
+				pDlg->setInfo(QObject::tr("Writing %1 vertex normals").arg(nbPoints));
+			nprogress.scale(nbPoints);
+			nprogress.reset();
+
 			for (unsigned i = 0; i < nbPoints; ++i)
 			{
 				const CCVector3& normalVec = vertices->getPointNormal(i);
 				stream << "vn " << normalVec.x << " " << normalVec.y << " " << normalVec.z << endl;
 				if (file.error() != QFile::NoError)
 					return CC_FERR_WRITING;
+
+				//increment progress bar
+				if (pDlg && !nprogress.oneStep()) //cancel requested
+				{
+					return CC_FERR_CANCELED_BY_USER;
+				}
 			}
 		}
 	}
@@ -168,6 +193,12 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 	bool withMaterials = (materials && mesh->hasMaterials());
 	if (withMaterials)
 	{
+		//reset save dialog
+		if (pDlg)
+			pDlg->setInfo(QObject::tr("Writing %1 materials").arg(materials->size()));
+		nprogress.scale(1);
+		nprogress.reset();
+
 		//save mtl file
 		QStringList errors;
 		QString baseName = QFileInfo(filename).baseName();
@@ -179,7 +210,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		}
 		else
 		{
-			materials = 0;
+			materials = nullptr;
 			withMaterials = false;
 		}
 
@@ -188,6 +219,10 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		{
 			CVLog::Warning(QString("[OBJ][Material file writer] ")+errors[i]);
 		}
+
+		//increment progress bar
+		if (pDlg && !nprogress.oneStep()) //cancel requested
+			return CC_FERR_CANCELED_BY_USER;
 	}
 
 	//save texture coordinates
@@ -197,12 +232,27 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		TextureCoordsContainer* texCoords = mesh->getTexCoordinatesTable();
 		if (texCoords)
 		{
+			//reset save dialog
+			unsigned numTexCoords = texCoords->currentSize();
+			if (pDlg)
+			{
+				pDlg->setInfo(QObject::tr("Writing %1 texture coordinates").arg(numTexCoords));
+			}
+			nprogress.scale(numTexCoords);
+			nprogress.reset();
+
 			for (unsigned i=0; i<texCoords->currentSize(); ++i)
 			{
 				const TexCoords2D& tc = texCoords->getValue(i);
 				stream << "vt " << tc.tx << " " << tc.ty << endl;
 				if (file.error() != QFile::NoError)
 					return CC_FERR_WRITING;
+
+				//increment progress bar
+				if (pDlg && !nprogress.oneStep()) //cancel requested
+				{
+					return CC_FERR_CANCELED_BY_USER;
+				}
 			}
 		}
 		else
@@ -227,6 +277,16 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 			subMeshes.push_back(mesh);
 		}
 	}
+
+	//reset save dialog for triangles
+	unsigned numTriangles = mesh->size();
+	if (pDlg)
+	{
+		pDlg->setInfo(QObject::tr("Writing %1 triangles").arg(numTriangles));
+		pDlg->setAutoClose(true); //(re-enable) close dialogue when progress bar is full
+	}
+	nprogress.scale(numTriangles);
+	nprogress.reset();
 
 	//mesh or sub-meshes
 	unsigned indexShift = 0;
@@ -442,26 +502,26 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 	std::vector<std::pair<unsigned,QString> > groups;
 
 	//materials
-	ccMaterialSet* materials = 0;
+	ccMaterialSet* materials = nullptr;
 	bool hasMaterial = false;
 	int currentMaterial = -1;
 	bool currentMaterialDefined = false;
 	bool materialsLoadFailed = true;
 
 	//texture coordinates
-	TextureCoordsContainer* texCoords = 0;
+	TextureCoordsContainer* texCoords = nullptr;
 	bool hasTexCoords = false;
 	int texCoordsRead = 0;
 	int maxTexCoordIndex = -1;
 
 	//normals
-	NormsIndexesTableType* normals = 0;
+	NormsIndexesTableType* normals = nullptr;
 	int normsRead = 0;
 	bool normalsPerFacet = false;
 	int maxTriNormIndex = -1;
 
 	//progress dialog
-	QScopedPointer<ecvProgressDialog> pDlg(0);
+	QScopedPointer<ecvProgressDialog> pDlg(nullptr);
 	if (parameters.parentWidget)
 	{
 		pDlg.reset(new ecvProgressDialog(true, parameters.parentWidget));
@@ -500,6 +560,25 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 				}
 				pDlg->setValue(static_cast<int>(file.pos()));
 				QApplication::processEvents();
+			}
+
+			//specific case for weird files
+			while (currentLine.endsWith('\\'))
+			{
+				currentLine.resize(currentLine.length() - 1);
+				currentLine += stream.readLine();
+				++lineCount;
+				if (pDlg && ((lineCount % 2048) == 0))
+				{
+					if (pDlg->wasCanceled())
+					{
+						error = true;
+						objWarnings[CANCELLED_BY_USER] = true;
+						break;
+					}
+					pDlg->setValue(static_cast<int>(file.pos()));
+					QApplication::processEvents();
+				}
 			}
 
 			QStringList tokens = QString(currentLine).split(QRegExp("\\s+"),QString::SkipEmptyParts);
@@ -803,35 +882,144 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 					break;
 
 				//Now, let's tesselate the whole polygon
-				//FIXME: yeah, we do very ulgy tesselation here!
-				std::vector<facetElement>::const_iterator B = A + 1;
-				std::vector<facetElement>::const_iterator C = B + 1;
-				for (; C != currentFace.end(); ++B, ++C)
+				bool shouldTesselate = (currentFace.size() > 4 && vertices);
+				if (shouldTesselate)
 				{
-					//need more space?
-					if (baseMesh->size() == baseMesh->capacity())
+					for (const facetElement& fe : currentFace)
 					{
-						if (!baseMesh->reserve(baseMesh->size() + 4096))
+						if (fe.vIndex < 0 || vertices->size() <= static_cast<unsigned>(fe.vIndex))
 						{
-							objWarnings[NOT_ENOUGH_MEMORY] = true;
-							error = true;
+							//we haven't loaded all the vertices?! Too bad, we can't tesselate properly :(
+							CVLog::Warning("[OBJ] Failed to tesselate face");
+							shouldTesselate = false;
 							break;
 						}
 					}
+				}
+				if (shouldTesselate)
+				{
+					try
+					{
+						CVLib::PointCloud contour;
+						contour.reserve(static_cast<unsigned>(currentFace.size()));
 
-					//push new triangle
-					baseMesh->addTriangle(A->vIndex, B->vIndex, C->vIndex);
-					++facesRead;
-					++totalFacesRead;
+						for (const facetElement& fe : currentFace)
+						{
+							contour.addPoint(*vertices->getPoint(fe.vIndex));
+						}
+						CVLib::Delaunay2dMesh* dMesh = CVLib::Delaunay2dMesh::TesselateContour(&contour);
+						if (dMesh)
+						{
+							//need more space?
+							unsigned triCount = dMesh->size();
+							if (baseMesh->size() + triCount >= baseMesh->capacity())
+							{
+								if (!baseMesh->reserve(baseMesh->size() + std::max(triCount, 4096u)))
+								{
+									objWarnings[NOT_ENOUGH_MEMORY] = true;
+									error = true;
+									break;
+								}
+							}
 
-					if (hasMaterial)
-						baseMesh->addTriangleMtlIndex(currentMaterial);
+							//push new triangle
+							const int* _triIndexes = dMesh->getTriangleVertIndexesArray();
+							//determine if the triangles must be flipped or not
+							bool flip = false;
+							{
+								for (unsigned i = 0; i < triCount; ++i, _triIndexes += 3)
+								{
+									int i1 = _triIndexes[0];
+									int i2 = _triIndexes[1];
+									int i3 = _triIndexes[2];
+									//by definition the first edge of the original polygon
+									//should be in the same 'direction' of the triangle that uses it
+									if ((i1 == 0 || i2 == 0 || i3 == 0)
+										&& (i1 == 1 || i2 == 1 || i3 == 1))
+									{
+										if ((i1 == 1 && i2 == 0)
+											|| (i2 == 1 && i3 == 0)
+											|| (i3 == 1 && i1 == 0))
+										{
+											flip = true;
+										}
+										break;
+									}
+								}
+							}
 
-					if (hasTexCoords)
-						baseMesh->addTriangleTexCoordIndexes(A->tcIndex, B->tcIndex, C->tcIndex);
+							_triIndexes = dMesh->getTriangleVertIndexesArray();
+							for (unsigned i = 0; i < triCount; ++i, _triIndexes += 3)
+							{
+								const facetElement& f1 = currentFace[_triIndexes[0]];
+								facetElement f2 = currentFace[_triIndexes[1]];
+								facetElement f3 = currentFace[_triIndexes[2]];
 
-					if (normalsPerFacet)
-						baseMesh->addTriangleNormalIndexes(A->nIndex, B->nIndex, C->nIndex);
+								if (flip)
+									std::swap(f2, f3);
+
+								baseMesh->addTriangle(f1.vIndex, f2.vIndex, f3.vIndex);
+
+								if (hasMaterial)
+									baseMesh->addTriangleMtlIndex(currentMaterial);
+
+								if (hasTexCoords)
+									baseMesh->addTriangleTexCoordIndexes(f1.tcIndex, f2.tcIndex, f3.tcIndex);
+
+								if (normalsPerFacet)
+									baseMesh->addTriangleNormalIndexes(f1.nIndex, f2.nIndex, f3.nIndex);
+
+								++facesRead;
+								++totalFacesRead;
+							}
+
+							delete dMesh;
+							dMesh = nullptr;
+						}
+						else
+						{
+							CVLog::Warning("[OBJ] Failed to tesselate face");
+							shouldTesselate = false;
+						}
+					}
+					catch (const std::bad_alloc&)
+					{
+						//not enough memory to tesselate!
+						shouldTesselate = false;
+					}
+				}
+
+				if (!shouldTesselate)
+				{
+					std::vector<facetElement>::const_iterator B = A + 1;
+					std::vector<facetElement>::const_iterator C = B + 1;
+					for (; C != currentFace.end(); ++B, ++C)
+					{
+						//need more space?
+						if (baseMesh->size() == baseMesh->capacity())
+						{
+							if (!baseMesh->reserve(baseMesh->size() + 4096))
+							{
+								objWarnings[NOT_ENOUGH_MEMORY] = true;
+								error = true;
+								break;
+							}
+						}
+
+						//push new triangle
+						baseMesh->addTriangle(A->vIndex, B->vIndex, C->vIndex);
+						++facesRead;
+						++totalFacesRead;
+
+						if (hasMaterial)
+							baseMesh->addTriangleMtlIndex(currentMaterial);
+
+						if (hasTexCoords)
+							baseMesh->addTriangleTexCoordIndexes(A->tcIndex, B->tcIndex, C->tcIndex);
+
+						if (normalsPerFacet)
+							baseMesh->addTriangleNormalIndexes(A->nIndex, B->nIndex, C->nIndex);
+					}
 				}
 			}
 			/*** polyline ***/
@@ -852,7 +1040,7 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 					//not enough memory
 					objWarnings[NOT_ENOUGH_MEMORY] = true;
 					delete polyline;
-					polyline = 0;
+					polyline = nullptr;
 					currentLine = stream.readLine();
 					continue;
 				}
@@ -960,7 +1148,7 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 					if (materials->empty())
 					{
 						materials->release();
-						materials = 0;
+						materials = nullptr;
 						materialsLoadFailed = true;
 					}
 				}
@@ -1010,7 +1198,7 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 		if (baseMesh->size() == 0)
 		{
 			delete baseMesh;
-			baseMesh = 0;
+			baseMesh = nullptr;
 		}
 		else
 		{
@@ -1032,15 +1220,24 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 				objWarnings[INVALID_INDEX] = true;
 				if (maxTexCoordIndex >= texCoordsRead)
 				{
-					texCoords->release();
-					texCoords = 0;
-					materials->release();
-					materials = 0;
+					if (texCoords)
+					{
+						texCoords->release();
+						texCoords = nullptr;
+					}
+					if (materials)
+					{
+						materials->release();
+						materials = nullptr;
+					}
 				}
 				if (maxTriNormIndex >= normsRead)
 				{
-					normals->release();
-					normals = 0;
+					if (normals)
+					{
+						normals->release();
+						normals = nullptr;
+					}
 				}
 			}
 		}
@@ -1072,18 +1269,7 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 			//normals: if the obj file doesn't provide any, should we compute them?
 			if (!normals)
 			{
-				//DGM: normals can be per-vertex or per-triangle so it's better to let the user do it himself later
-				//Moreover it's not always good idea if the user doesn't want normals (especially in ccViewer!)
-				//if (!materials && !baseMesh->hasColors()) //yes if no material is available!
-				//{
-				//	CVLog::Print("[OBJ] Mesh has no normal! We will compute them automatically");
-				//	baseMesh->computeNormals();
-				//	baseMesh->showNormals(true);
-				//}
-				//else
-				{
-					CVLog::Warning("[OBJ] Mesh has no normal! You can manually compute them (select it then call \"Tools > Normals > Compute\")");
-				}
+				CVLog::Warning("[OBJ] Mesh has no normal! You can manually compute them (select it then call \"Tools > Normals > Compute\")");
 			}
 
 			//create sub-meshes if necessary
@@ -1116,7 +1302,7 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 					else
 					{
 						delete subTri;
-						subTri = 0;
+						subTri = nullptr;
 						objWarnings[NOT_ENOUGH_MEMORY] = true;
 					}
 				}
@@ -1173,17 +1359,17 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 	if (normals)
 	{
 		normals->release();
-		normals = 0;
+		normals = nullptr;
 	}
 	if (texCoords)
 	{
 		texCoords->release();
-		texCoords = 0;
+		texCoords = nullptr;
 	}
 	if (materials)
 	{
 		materials->release();
-		materials = 0;
+		materials = nullptr;
 	}
 
 	if (pDlg)

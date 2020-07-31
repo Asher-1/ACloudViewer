@@ -87,13 +87,6 @@ void InitEnvironment()
 
 int main(int argc, char *argv[])
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
-	// supports HDPI
-	//QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-	//QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-	////QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
-
 	bool commandLine = (argc > 1) && (argv[1][0] == '-');
 
 	ecvApplication::init(commandLine);

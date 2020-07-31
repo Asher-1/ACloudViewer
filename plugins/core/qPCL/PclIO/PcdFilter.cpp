@@ -27,9 +27,9 @@
 #include <CVTools.h>
 
 // ECV_DB_LIB
+#include <ecvGBLSensor.h>
 #include <ecvPointCloud.h>
 #include <ecvHObjectCaster.h>
-#include <ecvSensor.h>
 
 //Qt
 #include <QSettings>
@@ -289,12 +289,30 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename, ccHObject& container,
 {
 	Eigen::Vector4f origin;
 	Eigen::Quaternionf orientation;
-
+	int pcd_version;
+	int data_type;
+	unsigned int data_idx;
+	size_t pointCount = -1;
 	PCLCloud::Ptr cloud_ptr_in(new PCLCloud);
 	//Load the given file
-	if (pcl::io::loadPCDFile(/*qPrintable*/CVTools::fromQString(filename), *cloud_ptr_in, origin, orientation) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
+	pcl::PCDReader p;
+
+	const std::string& fileName = CVTools::fromQString(filename);
+
+	p.readHeader(fileName, *cloud_ptr_in, origin, orientation, pcd_version, data_type, data_idx);
+	if (cloud_ptr_in)
 	{
-		return CC_FERR_THIRD_PARTY_LIB_FAILURE;
+		pointCount = cloud_ptr_in->width * cloud_ptr_in->height;
+		CVLog::Print(QString("%1: Point Count: %2").arg(fileName.c_str()).arg(pointCount));
+	}
+
+	if (pointCount > 0)
+	{
+		// DGM: warning, toStdString doesn't preserve "local" characters
+		if (pcl::io::loadPCDFile(fileName, *cloud_ptr_in, origin, orientation) < 0) 
+		{
+			return CC_FERR_THIRD_PARTY_LIB_FAILURE;
+		}
 	}
 
 	if (!cloud_ptr_in) //loading failed?
@@ -322,42 +340,42 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename, ccHObject& container,
 		CVLog::Warning("[PCL] An error occurred while converting PCD cloud to CLOUDVIEWER  cloud!");
 		return CC_FERR_CONSOLE_ERROR;
 	}
+	ccCloud->setName(QStringLiteral("unnamed"));
 
-	////now we construct a ccGBLSensor
-	//{
-	//	// get orientation as rot matrix and copy it into a ccGLMatrix
-	//	ccGLMatrix ccRot;
-	//	{
-	//		Eigen::Matrix3f eigrot = orientation.toRotationMatrix();
-	//		float* X = ccRot.getColumn(0);
-	//		float* Y = ccRot.getColumn(1);
-	//		float* Z = ccRot.getColumn(2);
-	//		//Warning: Y and Z are inverted
-	//		X[0] =  eigrot(0,0); X[1] =  eigrot(1,0); X[2] =  eigrot(2,0);
-	//		Y[0] = -eigrot(0,2); Y[1] = -eigrot(1,2); Y[2] = -eigrot(2,2);
-	//		Z[0] =  eigrot(0,1); Z[1] =  eigrot(1,1); Z[2] =  eigrot(2,1);
-	//		ccRot.getColumn(3)[3] = 1.0f;
-	//		ccRot.setTranslation(origin.data());
-	//	}
-	//	ccGBLSensor* sensor = new ccGBLSensor;
-	//	sensor->setRigidTransformation(ccRot);
-	//	sensor->setYawStep(static_cast<PointCoordinateType>(0.05));
-	//	sensor->setPitchStep(static_cast<PointCoordinateType>(0.05));
-	//	sensor->setVisible(true);
-	//	//uncertainty to some default
-	//	sensor->setUncertainty(static_cast<PointCoordinateType>(0.01));
-	//	//graphic scale
-	//	sensor->setGraphicScale(ccCloud->getOwnBB().getDiagNorm() / 10);
-	//	//Compute parameters
-	//	ccGenericPointCloud* pc = ccHObjectCaster::ToGenericPointCloud(ccCloud);
-	//	sensor->computeAutoParameters(pc);
-	//
-	//	sensor->setEnabled(false);
-	//	
-	//	ccCloud->addChild(sensor);
-	//}
+	//now we construct a ccGBLSensor
+	{
+		// get orientation as rot matrix and copy it into a ccGLMatrix
+		ccGLMatrix ccRot;
+		{
+			Eigen::Matrix3f eigrot = orientation.toRotationMatrix();
+			float* X = ccRot.getColumn(0);
+			float* Y = ccRot.getColumn(1);
+			float* Z = ccRot.getColumn(2);
+			//Warning: Y and Z are inverted
+			X[0] =  eigrot(0,0); X[1] =  eigrot(1,0); X[2] =  eigrot(2,0);
+			Y[0] = -eigrot(0,2); Y[1] = -eigrot(1,2); Y[2] = -eigrot(2,2);
+			Z[0] =  eigrot(0,1); Z[1] =  eigrot(1,1); Z[2] =  eigrot(2,1);
+			ccRot.getColumn(3)[3] = 1.0f;
+			ccRot.setTranslation(origin.data());
+		}
+		ccGBLSensor* sensor = new ccGBLSensor;
+		sensor->setRigidTransformation(ccRot);
+		sensor->setYawStep(static_cast<PointCoordinateType>(0.05));
+		sensor->setPitchStep(static_cast<PointCoordinateType>(0.05));
+		sensor->setVisible(true);
+		//uncertainty to some default
+		sensor->setUncertainty(static_cast<PointCoordinateType>(0.01));
+		//graphic scale
+		sensor->setGraphicScale(ccCloud->getOwnBB().getDiagNorm() / 10);
+		//Compute parameters
+		ccGenericPointCloud* pc = ccHObjectCaster::ToGenericPointCloud(ccCloud);
+		sensor->computeAutoParameters(pc);
+	
+		sensor->setEnabled(false);
+		
+		ccCloud->addChild(sensor);
+	}
 
-	ccCloud->setName("unnamed - Cloud");
 	container.addChild(ccCloud);
 
 	return CC_FERR_NO_ERROR;

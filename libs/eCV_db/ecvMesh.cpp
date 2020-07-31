@@ -2839,6 +2839,14 @@ void ccMesh::shiftTriangleIndexes(unsigned shift)
 	}
 }
 
+void ccMesh::flipTriangles()
+{
+	for (CVLib::VerticesIndexes& ti : *m_triVertIndexes)
+	{
+		std::swap(ti.i2, ti.i3);
+	}
+}
+
 /*********************************************************/
 /**************    PER-TRIANGLE NORMALS    ***************/
 /*********************************************************/

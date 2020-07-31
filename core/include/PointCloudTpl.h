@@ -157,9 +157,8 @@ namespace CVLib
 			return m_scalarFields[m_currentOutScalarFieldIndex]->getValue(pointIndex);
 		}
 
-		inline const CCVector3* getPoint(unsigned index) override { return point(index); }
+		inline const CCVector3* getPoint(unsigned index) const override { return point(index); }
 		inline CCVector3* getPointPtr(size_t index) { return point(static_cast<unsigned>(index)); }
-		inline const CCVector3* getPoint(unsigned index) const { return point(index); }
 		inline std::vector<CCVector3>& getPoints() { return m_points; }
 		inline const std::vector<CCVector3>& getPoints() const { return m_points; }
 		inline void getPoint(unsigned index, CCVector3& P) const override { P = *point(index); }

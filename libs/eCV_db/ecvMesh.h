@@ -207,6 +207,11 @@ public:
 	**/
 	void shiftTriangleIndexes(unsigned shift);
 
+	//! Flips the triangle
+	/** Swaps the second and third vertices indexes
+	**/
+	void flipTriangles();
+
 	//! Adds a triangle to the mesh
 	/** \warning Bounding-box validity is broken after a call to this method.
 		However, for the sake of performance, no call to notifyGeometryUpdate

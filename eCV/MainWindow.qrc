@@ -249,5 +249,6 @@
         <file>Resources/images/voxelSampling.jpg</file>
         <file>Resources/images/convex_concave_hull.png</file>
         <file>Resources/images/poisson.png</file>
+        <file>Resources/images/ecvCloudPrimitiveDistance.png</file>
     </qresource>
 </RCC>
