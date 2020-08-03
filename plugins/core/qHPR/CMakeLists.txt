@@ -15,7 +15,7 @@ if (INSTALL_QHPR_PLUGIN)
 	add_subdirectory( ui )
 	
     include( ../../CMakePluginTpl.cmake )
-    
+
     target_link_libraries( ${PROJECT_NAME} qhull )
     include_directories( ${QHULL_LIB_INCLUDE_DIR} )
 endif()

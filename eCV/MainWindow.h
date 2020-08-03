@@ -272,6 +272,7 @@ private slots:
 	void doActionConvertNormalsToHSV();
 	void doActionOrientNormalsFM();
 	void doActionOrientNormalsMST();
+	void doActionExportNormalToSF();
 	void doActionConvertNormalsToDipDir();
 
 	void doActionComputeOctree();

@@ -389,6 +389,7 @@ void MainWindow::connectActions()
 	connect(m_ui->actionInvertNormals, &QAction::triggered, this, &MainWindow::doActionInvertNormals);
 	connect(m_ui->actionConvertNormalToHSV, &QAction::triggered, this, &MainWindow::doActionConvertNormalsToHSV);
 	connect(m_ui->actionConvertNormalToDipDir, &QAction::triggered, this, &MainWindow::doActionConvertNormalsToDipDir);
+	connect(m_ui->actionExportNormalToSF, &QAction::triggered, this, &MainWindow::doActionExportNormalToSF);
 	connect(m_ui->actionOrientNormalsMST, &QAction::triggered, this, &MainWindow::doActionOrientNormalsMST);
 	connect(m_ui->actionOrientNormalsFM, &QAction::triggered, this, &MainWindow::doActionOrientNormalsFM);
 	connect(m_ui->actionClearNormals, &QAction::triggered, this, [=]() {
@@ -2337,6 +2338,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionInvertNormals->setEnabled(atLeastOneNormal);
 	m_ui->actionConvertNormalToHSV->setEnabled(atLeastOneNormal);
 	m_ui->actionConvertNormalToDipDir->setEnabled(atLeastOneNormal);
+	m_ui->actionExportNormalToSF->setEnabled(atLeastOneNormal);
 	m_ui->actionClearColor->setEnabled(atLeastOneColor);
 	m_ui->actionRGBToGreyScale->setEnabled(atLeastOneColor);
 	m_ui->actionEnhanceRGBWithIntensities->setEnabled(atLeastOneColor);
@@ -3660,6 +3662,18 @@ void MainWindow::doActionConvertNormalsToDipDir()
 {
 	if (!ccEntityAction::convertNormalsTo(m_selectedEntities,
 		ccEntityAction::NORMAL_CONVERSION_DEST::DIP_DIR_SFS))
+	{
+		return;
+	}
+
+	refreshAll();
+	updateUI();
+}
+
+
+void MainWindow::doActionExportNormalToSF()
+{
+	if (!ccEntityAction::exportNormalToSF(m_selectedEntities, this))
 	{
 		return;
 	}
@@ -10652,9 +10666,9 @@ void MainWindow::doActionUnroll()
 			ecvConsole::Warning("[Unroll] Original mesh has been automatically hidden");
 			ccMesh* outputMesh = mesh->cloneMesh(output);
 			outputMesh->addChild(output);
-			addToDB(outputMesh, true, true, false, true);
 			outputMesh->setEnabled(true);
 			outputMesh->setVisible(true);
+			addToDB(outputMesh, true, true, false, true);
 		}
 		else
 		{

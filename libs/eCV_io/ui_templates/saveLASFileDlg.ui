@@ -43,7 +43,7 @@
      <item>
       <widget class="QRadioButton" name="bestRadioButton">
        <property name="text">
-        <string>Highest resolution</string>
+        <string>Optimal resolution</string>
        </property>
       </widget>
      </item>

@@ -38,8 +38,8 @@
 #include <QFileInfo>
 
 // LASLib
-#include <lasreader.hpp>
-#include <laswriter.hpp>
+#include <lasreader_las.hpp>
+#include <laswriter_las.hpp>
 #include <laspoint.hpp>
 
 //Qt gui
@@ -48,6 +48,36 @@
 //system
 #include <assert.h>
 #include <string.h>
+
+//! Custom ("Extra bytes") field (EVLR)
+struct ExtraLasField : LasField
+{
+	//! Default constructor
+	ExtraLasField(QString name = "Undefined", ccScalarField* _sf = nullptr)
+		: LasField(LAS_EXTRA, 0.0, 0.0, 0.0)
+		, fieldName(name)
+		, sanitizedName(SanitizeString(name))
+		, isShifted(false)
+		, startIndex(0)
+	{
+		if (fieldName != sanitizedName)
+		{
+			CVLog::Warning(QString("Extra field '%1' renamed '%2' to comply to LAS specifications").arg(fieldName).arg(sanitizedName));
+		}
+
+		sf = _sf;
+		isShifted = (sf && sf->getGlobalShift() != 0.0);
+	}
+
+	typedef QSharedPointer<ExtraLasField> Shared;
+
+	inline QString getName() const override { return fieldName; }
+
+	QString fieldName;
+	QString sanitizedName;
+	bool isShifted;
+	I32 startIndex;
+};
 
 //! LAS Save dialog
 class LASSaveDlg : public QDialog, public Ui::SaveLASFileDialog
@@ -59,10 +89,34 @@ public:
 	{
 		setupUi(this);
 	}
-};
 
-//! Semi persistent save dialog
-QSharedPointer<LASSaveDlg> s_saveDlg(0);
+	void clearEVLRs()
+	{
+		evlrListWidget->clear();
+		extraFieldGroupBox->setEnabled(false);
+		extraFieldGroupBox->setChecked(false);
+	}
+
+	void addEVLR(const QString &description)
+	{
+		QListWidgetItem* item = new QListWidgetItem(description);
+		evlrListWidget->addItem(item);
+		//auto select the entry
+		item->setSelected(true);
+		//auto enable the extraFieldGroupBox
+		extraFieldGroupBox->setEnabled(true);
+		extraFieldGroupBox->setChecked(false);
+	}
+
+	bool doSaveEVLR(size_t index) const
+	{
+		if (!extraFieldGroupBox->isChecked())
+			return false;
+
+		QListWidgetItem* item = evlrListWidget->item(static_cast<int>(index));
+		return item && item->isSelected();
+	}
+};
 
 bool LASFWFFilter::canLoadExtension(const QString& upperCaseExt) const
 {
@@ -98,21 +152,6 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 
 	try
 	{
-		LASwriteOpener laswriteopener;
-		//laswriteopener.set_file_name(qPrintable(filename));
-		laswriteopener.set_file_name(CVTools::fromQString(filename).c_str());
-		assert(laswriteopener.active());
-
-		if (QFileInfo(filename).suffix().endsWith('Z'))
-		{
-			laswriteopener.set_format(LAS_TOOLS_FORMAT_LAZ);
-		}
-		else
-		{
-			laswriteopener.set_format(LAS_TOOLS_FORMAT_LAS);
-		}
-
-		bool hasTime = (cloud->getScalarFieldIndexByName(LAS_FIELD_NAMES[LAS_TIME]) >= 0);
 		bool hasFWF = cloud->hasFWF();
 		bool hasColors = cloud->hasColors();
 		bool hasIntensity = (cloud->getScalarFieldIndexByName(LAS_FIELD_NAMES[LAS_INTENSITY]) >= 0);
@@ -165,6 +204,37 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 			}
 		}
 
+		//match cloud SFs with official LAS fields
+		std::vector<LasField> fieldsToSave;
+		uint8_t minPointFormat = 0;
+		LasField::GetLASFields(cloud, fieldsToSave, minPointFormat);
+
+		//extended fields (i.e. other scalar fields)
+		std::vector<ExtraLasField> extraFieldsToSave;
+		{
+			for (unsigned i = 0; i < cloud->getNumberOfScalarFields(); ++i)
+			{
+				ccScalarField* sf = static_cast<ccScalarField*>(cloud->getScalarField(i));
+
+				//check if this SF is already an official field
+				bool standardField = false;
+				for (const LasField& lf : fieldsToSave)
+				{
+					if (lf.sf == sf)
+					{
+						standardField = true;
+						break;
+					}
+				}
+
+				if (!standardField)
+				{
+					//we can create the corresponding EVLR
+					extraFieldsToSave.emplace_back(ExtraLasField(QString(sf->getName()), sf));
+				}
+			}
+		}
+
 		LASheader lasheader;
 		{
 			//header.SetDataFormatId(liblas::ePointFormat3);
@@ -203,13 +273,16 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 			//optimal scale (for accuracy) --> 1e-9 because the maximum integer is roughly +/-2e+9
 			CCVector3d diag = bbMax - bbMin;
 			CCVector3d optimalScale(1.0e-9 * std::max<double>(diag.x, ZERO_TOLERANCE),
-									1.0e-9 * std::max<double>(diag.y, ZERO_TOLERANCE),
-									1.0e-9 * std::max<double>(diag.z, ZERO_TOLERANCE));
+				1.0e-9 * std::max<double>(diag.y, ZERO_TOLERANCE),
+				1.0e-9 * std::max<double>(diag.z, ZERO_TOLERANCE));
 
 			if (parameters.alwaysDisplaySaveDialog)
 			{
+				//semi persistent save dialog
+				static QSharedPointer<LASSaveDlg> s_saveDlg(nullptr);
 				if (!s_saveDlg)
-					s_saveDlg.reset(new LASSaveDlg(0));
+					s_saveDlg.reset(new LASSaveDlg(nullptr));
+
 				s_saveDlg->bestAccuracyLabel->setText(QString("(%1, %2, %3)").arg(optimalScale.x).arg(optimalScale.y).arg(optimalScale.z));
 
 				if (hasScaleMetaData)
@@ -239,6 +312,19 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 				//{
 				//	lasScale = lasScale;
 				//}
+
+				size_t evlrIndex = 0;
+				for (size_t i = 0; i < extraFieldsToSave.size(); ++i)
+				{
+					const ExtraLasField& f = extraFieldsToSave[i];
+					if (s_saveDlg->doSaveEVLR(i))
+					{
+						if (evlrIndex != i)
+							extraFieldsToSave[evlrIndex] = extraFieldsToSave[i]; //fill in the gaps
+						++evlrIndex;
+					}
+				}
+				extraFieldsToSave.resize(evlrIndex); //can't fail, always smaller
 			}
 			else if (!hasScaleMetaData)
 			{
@@ -248,84 +334,18 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 			lasheader.x_scale_factor = lasScale.x;
 			lasheader.y_scale_factor = lasScale.y;
 			lasheader.z_scale_factor = lasScale.z;
-			
-#ifdef USE_LEGACY_FORMATS //LAS formats up to 5
-			//LAS formats:
-			//0 - base
-			//1 - base + GPS
-			//2 - base + RGB
-			//3 - base + GPS + RGB
-			//4 - base + GPS + FWF
-			//5 - base + GPS + FWF + RGB
-			lasheader.point_data_format = 0;
-			lasheader.point_data_record_length = 20;
-			//GPS time?
-			if (hasTime)
+
+			minPointFormat = LasField::UpdateMinPointFormat(minPointFormat, hasColors, hasFWF, false); //no legacy format with this plugin
+
+			lasheader.point_data_format = minPointFormat;
+			lasheader.version_minor = LasField::VersionMinorForPointFormat(minPointFormat);
+			if (lasheader.version_minor == 4)
 			{
-				lasheader.point_data_format = 1;
-				lasheader.point_data_record_length = 20 + 8;
+				// add the 148 byte difference between LAS 1.4 and LAS 1.2 header sizes
+				lasheader.header_size += 148;
+				lasheader.offset_to_point_data += 148;
 			}
-			//FWF data?
-			if (hasFWF)
-			{
-				//0, 1 --> 4
-				lasheader.point_data_format = 4;
-				lasheader.point_data_record_length = 20 + 8 + 29;
-			}
-			//Colors?
-			if (hasColors)
-			{
-				if (lasheader.point_data_format == 4)
-				{
-					//4 --> 5
-					lasheader.point_data_format = 5;
-				}
-				else
-				{
-					//0 --> 2
-					//1 --> 3
-					lasheader.point_data_format += 2;
-				}
-				lasheader.point_data_record_length += 6;
-			}
-#else
-			//we use extended versions (up to 15 returns, up to 256 classes for classification, higher precision scan angle)
-			//LAS formats:
-			//6  - base (GPS included)
-			//7  - base + RGB
-			//8  - base + RGB + NIR (not used)
-			//9  - base + FWF
-			//10 - base + FWF + RGB + NIR
-			lasheader.point_data_format = 6;
-			lasheader.point_data_record_length = 30;
-			//FWF data?
-			if (hasFWF)
-			{
-				//6 --> 9
-				lasheader.point_data_format = 9;
-				lasheader.point_data_record_length = 30 + 29;
-			}
-			//Colors?
-			if (hasColors)
-			{
-				if (lasheader.point_data_format == 6)
-				{
-					//6 --> 7
-					lasheader.point_data_format = 7;
-					lasheader.point_data_record_length += 6;
-				}
-				else if (lasheader.point_data_format == 9)
-				{
-					//9 --> 10
-					lasheader.point_data_format = 10;
-					lasheader.point_data_record_length += 6 + 2;
-				}
-				else
-				{
-					assert(false);
-				}
-			}
-#endif
+			lasheader.point_data_record_length = LasField::GetFormatRecordLength(lasheader.point_data_format);
 
 			//FWF descriptors and other parameters
 			if (hasFWF)
@@ -353,15 +373,43 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 						d->setDigitizerOffset(static_cast<F64>(it.value().digitizerOffset));
 						d->setNumberOfSamples(static_cast<F64>(it.value().numberOfSamples));
 						d->setTemporalSpacing(static_cast<U32>(it.value().samplingRate_ps));
-					}
+		}
 					//lasheader.vlr_wave_packet_descr[it.key()] = d;
 
-					lasheader.add_vlr(	"LASF_Spec",
-										99 + static_cast<U16>(it.key()),
-										26,
-										(U8*)d,
-										FALSE,
-										"Waveform descriptor");
+					lasheader.add_vlr("LASF_Spec",
+						99 + static_cast<U16>(it.key()),
+						26,
+						(U8*)d,
+						FALSE,
+						"Waveform descriptor");
+	}
+}
+
+			//additional fields
+			{
+				for (ExtraLasField& f : extraFieldsToSave)
+				{
+					assert(f.sf);
+
+					LASattribute attribute(f.isShifted || sizeof(ScalarType) == 8 ? LAS_ATTRIBUTE_F64 : LAS_ATTRIBUTE_F32, qPrintable(f.sanitizedName), "additional attributes");
+					lasheader.point_data_record_length += (attribute.data_type == LAS_ATTRIBUTE_F32 + 1 ? 4 : 8); //strangely, LASlib shifts the official type indexes :|
+					I32 attributeIndex = lasheader.add_attribute(attribute);
+					f.startIndex = lasheader.get_attribute_start(attributeIndex);
+
+					//U8* data = new U8[192];
+					//memset(data, 0, 192);
+					//data[2] = (f.isShifted || sizeof(ScalarType) == 8 ? 10 : 9); //double if shifted or ScalarType is also double, float otherwise
+					//data[3] = 0; //no options
+					//assert(f.sanitizedName.length() <= 32);
+					//strncpy(reinterpret_cast<char*>(data + 4), qPrintable(f.sanitizedName), f.sanitizedName.length()); //name
+					//strncpy(reinterpret_cast<char*>(data + 160), "CloudCompare scalar field", 24); //description
+					//lasheader.add_vlr("LASF_Spec", 4, 192, data, TRUE);
+				}
+
+				// update VLR
+				if (!extraFieldsToSave.empty())
+				{
+					lasheader.update_extra_bytes_vlr(TRUE);
 				}
 			}
 		}
@@ -374,18 +422,13 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 		}
 
 		// open laswriter
-		LASwriter* laswriter = laswriteopener.open(&lasheader);
-		if (laswriter == 0)
+		LASwriterLAS  laswriter;
+		bool useLAZ = QFileInfo(filename).suffix().toUpper().endsWith('Z');
+		if (!laswriter.open(qUtf8Printable(filename), &lasheader, useLAZ ? LASZIP_COMPRESSOR_LAYERED_CHUNKED : LASZIP_COMPRESSOR_NONE))
 		{
 			return CC_FERR_WRITING;
 		}
-		
-		//LASwaveform13writer* fwfWriter = 0;
-		//if (hasFWF)
-		//{
-		//	fwfWriter = laswriteopener.open_waveform13(&lasheader);
-		//}
-		
+
 		//progress dialog
 		QScopedPointer<ecvProgressDialog> progressDialog(0);
 		if (parameters.parentWidget)
@@ -397,10 +440,6 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 			QCoreApplication::processEvents();
 		}
 		CVLib::NormalizedProgress nProgress(progressDialog.data(), cloud->size());
-
-		//match cloud SFs with official LAS fields
-		std::vector<LasField> fieldsToSave;
-		LasField::GetLASFields(cloud, fieldsToSave);
 
 		bool hasReturnNumberField = false;
 		bool hasPlainClassificationField = false;
@@ -551,22 +590,29 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 				}
 			}
 
+			//extra fields
+			for (const ExtraLasField& f : extraFieldsToSave)
+			{
+				ScalarType s = f.sf->getValue(i);
+				if (f.isShifted)
+				{
+					double sd = s + f.sf->getGlobalShift();
+					laspoint.set_attribute(f.startIndex, sd);
+				}
+				else
+				{
+					laspoint.set_attribute(f.startIndex, s);
+				}
+			}
+
 			//write the point
-			laswriter->write_point(&laspoint);
+			laswriter.write_point(&laspoint);
 
 			//add it to the inventory
-			laswriter->update_inventory(&laspoint);
+			laswriter.update_inventory(&laspoint);
 		}
 
-		//if (fwfWriter)
-		//{
-		//	delete fwfWriter;
-		//	fwfWriter = 0;
-		//}
-
-		laswriter->close();
-		delete laswriter;
-		laswriter = 0;
+		laswriter.close();
 
 		//if (lasheader.vlr_wave_packet_descr)
 		//{
@@ -591,30 +637,44 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 	return CC_FERR_NO_ERROR;
 }
 
-bool PrepareLASField(ccScalarField*& field, LAS_FIELDS type, unsigned totalCount, unsigned currentCount, ScalarType defaultValue = 0)
+bool PrepareLASField(ccScalarField*& sf, LasField* lasField, unsigned totalCount, unsigned currentCount, ScalarType defaultValue = 0)
 {
-	if (field)
+	if (sf)
 	{
 		assert(false);
 		return true;
 	}
 
-	//try to reserve the memory to store the field values
-	field = new ccScalarField(LAS_FIELD_NAMES[type]);
-	if (!field->reserveSafe(totalCount))
+	if (!lasField)
 	{
-		CVLog::Warning(QString("[LAS] Not enough memory to load a field: '%1'").arg(LAS_FIELD_NAMES[type]));
-		field->release();
-		field = 0;
+		assert(false);
 		return false;
 	}
-	field->link();
+
+	if (lasField->type == LAS_EXTRA)
+	{
+		sf = new ccScalarField(qPrintable(static_cast<ExtraLasField*>(lasField)->fieldName));
+	}
+	else
+	{
+		sf = new ccScalarField(LAS_FIELD_NAMES[lasField->type]);
+	}
+
+	//try to reserve the memory to store the field values
+	if (!sf->reserveSafe(totalCount))
+	{
+		CVLog::Warning(QString("[LAS] Not enough memory to load a field: '%1'").arg(sf->getName()));
+		sf->release();
+		sf = nullptr;
+		return false;
+	}
+	sf->link();
 
 	//fill the previous points values (if any)
 	for (unsigned i = 0; i < currentCount; ++i)
 	{
 		//set the previous values!
-		field->addElement(defaultValue);
+		sf->addElement(defaultValue);
 	}
 
 	return true;
@@ -623,25 +683,20 @@ bool PrepareLASField(ccScalarField*& field, LAS_FIELDS type, unsigned totalCount
 CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& container, LoadParameters& parameters)
 {
 	CC_FILE_ERROR result = CC_FERR_NO_ERROR;
-	
+
 	//parameters
 	bool ignoreDefaultFields = true;
 
 	try
 	{
-		LASreadOpener lasreadopener;
-		//lasreadopener.set_file_name(qPrintable(filename));
-		lasreadopener.set_file_name(CVTools::fromQString(filename).c_str());
-		assert(lasreadopener.active());
-
-		LASreader* lasreader = lasreadopener.open();
-		if (lasreader == 0)
+		LASreaderLAS lasreader;
+		if (!lasreader.open(qUtf8Printable(filename)))
 		{
 			CVLog::Warning("LASLib", "Failed to open 'lasreader'");
 			return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 		}
 
-		unsigned pointCount = static_cast<unsigned>(lasreader->npoints);
+		unsigned pointCount = static_cast<unsigned>(lasreader.npoints);
 		CVLog::Print(QString("[LASLib] " + QObject::tr("Reading %1 points").arg(pointCount)));
 
 		//progress dialog
@@ -666,8 +721,7 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 		if (!cloud->reserve(pointCount))
 		{
 			//not enough memory
-			lasreader->close();
-			delete lasreader;
+			lasreader.close();
 			delete cloud;
 			return CC_FERR_NOT_ENOUGH_MEMORY;
 		}
@@ -697,10 +751,17 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 			fieldsToLoad.push_back(LasField::Shared(new LasField(LAS_POINT_SOURCE_ID, 0, 0, 65535))); //16 bits: between 0 and 65536
 		}
 
-		bool hasFWF = (lasreader->header.vlr_wave_packet_descr != 0);
-		//QFile fwfFile;
-		//bool hasFWFFile = false;
-		LASwaveform13reader* fwfReader = 0;
+		//now for the extra values
+		for (I32 i = 0; i < lasreader.header.number_attributes; ++i)
+		{
+			const LASattribute& attribute = lasreader.header.attributes[i];
+			ExtraLasField* field = new ExtraLasField(attribute.name);
+			field->startIndex = i; // lasreader.header.attribute_starts[i];
+			field->isShifted = (attribute.data_type == 10);
+			fieldsToLoad.push_back(LasField::Shared(field));
+		}
+
+		bool hasFWF = (lasreader.header.vlr_wave_packet_descr != 0);
 		for (int fakeIteration = 0; hasFWF && fakeIteration < 1; ++fakeIteration)
 		{
 			try
@@ -714,21 +775,13 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 				break;
 			}
 
-			fwfReader = lasreadopener.open_waveform13(&(lasreader->header));
-			if (!fwfReader)
-			{
-				CVLog::Warning(QString("Failed to open/read the associated waveform data packets"));
-				hasFWF = false;
-				break;
-			}
-
 			//determine the total size of the FWF data
 			QFile fwfDataSource;
 			uint64_t fwfDataCount = 0;
-			if (lasreader->header.start_of_waveform_data_packet_record != 0)
+			if (lasreader.header.start_of_waveform_data_packet_record != 0)
 			{
 				//the FWF data is internal
-				assert(lasreader->header.global_encoding & 2);
+				assert(lasreader.header.global_encoding & 2);
 				//open the same file
 				fwfDataSource.setFileName(filename);
 				if (!fwfDataSource.open(QFile::ReadOnly))
@@ -738,7 +791,7 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 					break;
 				}
 				//seek for the waveform EVLR
-				if (!fwfDataSource.seek(lasreader->header.start_of_waveform_data_packet_record))
+				if (!fwfDataSource.seek(lasreader.header.start_of_waveform_data_packet_record))
 				{
 					CVLog::Warning(QString("Failed to find the associated waveform data packets header"));
 					hasFWF = false;
@@ -825,8 +878,8 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 			}
 		}
 
-		CCVector3d lasScale = CCVector3d(lasreader->header.x_scale_factor, lasreader->header.y_scale_factor, lasreader->header.z_scale_factor);
-		CCVector3d lasShift = -CCVector3d(lasreader->header.x_offset, lasreader->header.y_offset, lasreader->header.z_offset);
+		CCVector3d lasScale = CCVector3d(lasreader.header.x_scale_factor, lasreader.header.y_scale_factor, lasreader.header.z_scale_factor);
+		CCVector3d lasShift = -CCVector3d(lasreader.header.x_offset, lasreader.header.y_offset, lasreader.header.z_offset);
 
 		cloud->setMetaData(LAS_SCALE_X_META_DATA, QVariant(lasScale.x));
 		cloud->setMetaData(LAS_SCALE_Y_META_DATA, QVariant(lasScale.y));
@@ -835,23 +888,23 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 		ccPointCloud::FWFDescriptorSet& descriptors = cloud->fwfDescriptors();
 
 		//read the points
-		for (size_t pointIndex = 0; lasreader->read_point(); ++pointIndex)
+		for (size_t pointIndex = 0; lasreader.read_point(); ++pointIndex)
 		{
-			const LASpoint& point = lasreader->point;
+			const LASpoint& point = lasreader.point;
 
-			CCVector3d P(	point.quantizer->get_x(point.X),
-							point.quantizer->get_y(point.Y),
-							point.quantizer->get_z(point.Z));
+			CCVector3d P(point.quantizer->get_x(point.X),
+				point.quantizer->get_y(point.Y),
+				point.quantizer->get_z(point.Z));
 
 			//Waveform
 			if (hasFWF && point.have_wavepacket)
 			{
-				if (fwfReader->read_waveform(&point))
+				//if (fwfReader->read_waveform(&point))
 				{
 					U8 packetIndex = point.wavepacket.getIndex();
 					if (!descriptors.contains(packetIndex))
 					{
-						LASvlr_wave_packet_descr* descriptor = lasreader->header.vlr_wave_packet_descr[packetIndex];
+						LASvlr_wave_packet_descr* descriptor = lasreader.header.vlr_wave_packet_descr[packetIndex];
 						WaveformDescriptor wfd;
 						if (descriptor)
 						{
@@ -872,8 +925,8 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 					ccWaveform& w = cloud->waveforms()[pointIndex];
 					w.setDescriptorID(packetIndex);
 					w.setDataDescription(point.wavepacket.getOffset() - fwfDataOffset, point.wavepacket.getSize());
-					w.setBeamDir(CCVector3f::fromArray(fwfReader->XYZt));
-					w.setEchoTime_ps(fwfReader->location);
+					w.setBeamDir(CCVector3f(point.wavepacket.getXt(), point.wavepacket.getYt(), point.wavepacket.getZt()));
+					w.setEchoTime_ps(point.wavepacket.getLocation());
 					w.setReturnIndex(point.return_number);
 				}
 			}
@@ -888,7 +941,7 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 				{
 					useLasShift = true;
 					Pshift = lasShift;
-					if (	csModeBackup != ecvGlobalShiftManager::NO_DIALOG
+					if (csModeBackup != ecvGlobalShiftManager::NO_DIALOG
 						&&	csModeBackup != ecvGlobalShiftManager::NO_DIALOG_AUTO_SHIFT)
 					{
 						parameters.shiftHandlingMode = ecvGlobalShiftManager::ALWAYS_DISPLAY_DIALOG;
@@ -933,7 +986,7 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 						}
 					}
 				}
-					
+
 				if (hasColors)
 				{
 					if (colorBitDec == 0)
@@ -954,9 +1007,9 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 						}
 					}
 
-					ecvColor::Rgb color(	static_cast<unsigned char>((point.rgb[0] >> colorBitDec) & 255),
-										static_cast<unsigned char>((point.rgb[1] >> colorBitDec) & 255),
-										static_cast<unsigned char>((point.rgb[2] >> colorBitDec) & 255));
+					ecvColor::Rgb color(static_cast<unsigned char>((point.rgb[0] >> colorBitDec) & 255),
+						static_cast<unsigned char>((point.rgb[1] >> colorBitDec) & 255),
+						static_cast<unsigned char>((point.rgb[2] >> colorBitDec) & 255));
 
 					cloud->addRGBColor(color);
 				}
@@ -1015,6 +1068,9 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 				case LAS_CLASSIF_WITHHELD:
 					value = static_cast<double>(point.get_classification() & 128); //bit #8
 					break;
+				case LAS_EXTRA:
+					value = point.get_attribute_as_float(static_cast<ExtraLasField*>(field.data())->startIndex);
+					break;
 				default:
 					//ignored
 					continue;
@@ -1033,13 +1089,13 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 						field->firstValue = value;
 					}
 
-					if (	!ignoreDefaultFields
-						||	value != field->firstValue
-						||	(field->firstValue != field->defaultValue && field->firstValue >= field->minValue))
+					if (!ignoreDefaultFields
+						|| value != field->firstValue
+						|| (field->firstValue != field->defaultValue && field->firstValue >= field->minValue))
 					{
-						if (PrepareLASField(field->sf, field->type, pointCount, cloud->size(), field->firstValue))
+						if (PrepareLASField(field->sf, field.data(), pointCount, cloud->size(), field->firstValue))
 						{
-							if (field->type == LAS_TIME)
+							if (field->type == LAS_TIME || (field->type == LAS_EXTRA && static_cast<ExtraLasField*>(field.data())->isShifted))
 							{
 								//we use the first value as 'global shift' (otherwise we will lose accuracy)
 								field->sf->setGlobalShift(field->firstValue);
@@ -1070,15 +1126,13 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 			}
 		}
 
-		if (fwfReader)
-		{
-			delete fwfReader;
-			fwfReader = 0;
-		}
+		//if (fwfReader)
+		//{
+		//	delete fwfReader;
+		//	fwfReader = 0;
+		//}
 
-		lasreader->close();
-		delete lasreader;
-		lasreader = 0;
+		lasreader.close();
 
 		if (cloud->size() == 0)
 		{
@@ -1094,8 +1148,8 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 			}
 
 			//release the cloud
-			delete cloud;
-			cloud = 0;
+			//delete cloud;
+			//cloud = 0;
 		}
 		else
 		{
@@ -1106,13 +1160,13 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 				{
 					field->sf->computeMinAndMax();
 
-					if (	field->type == LAS_CLASSIFICATION
-						||	field->type == LAS_CLASSIF_VALUE
-						||	field->type == LAS_CLASSIF_SYNTHETIC
-						||	field->type == LAS_CLASSIF_KEYPOINT
-						||	field->type == LAS_CLASSIF_WITHHELD
-						||	field->type == LAS_RETURN_NUMBER
-						||	field->type == LAS_NUMBER_OF_RETURNS)
+					if (field->type == LAS_CLASSIFICATION
+						|| field->type == LAS_CLASSIF_VALUE
+						|| field->type == LAS_CLASSIF_SYNTHETIC
+						|| field->type == LAS_CLASSIF_KEYPOINT
+						|| field->type == LAS_CLASSIF_WITHHELD
+						|| field->type == LAS_RETURN_NUMBER
+						|| field->type == LAS_NUMBER_OF_RETURNS)
 					{
 						int cMin = static_cast<int>(field->sf->getMin());
 						int cMax = static_cast<int>(field->sf->getMax());
