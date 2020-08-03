@@ -836,6 +836,7 @@ QTreeView::branch:open:has-children:has-siblings  {
    <addaction name="separator"/>
    <addaction name="actionCloudCloudDist"/>
    <addaction name="actionCloudMeshDist"/>
+   <addaction name="actionCloudPrimitiveDist"/>
    <addaction name="separator"/>
    <addaction name="actionSegment"/>
    <addaction name="actionTranslateRotate"/>

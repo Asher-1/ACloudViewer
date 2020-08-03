@@ -766,6 +766,9 @@ public: //other methods
 	//! Exports the specified coordinate dimension(s) to scalar field(s)
 	bool exportCoordToSF(bool exportDims[3]);
 
+	//! Exports the specified normal dimension(s) to scalar field(s)
+	bool exportNormalToSF(bool exportDims[3]);
+
 public: // for python interface
 	inline virtual bool isEmpty() const override { return !hasPoints(); }
 

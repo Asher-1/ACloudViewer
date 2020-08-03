@@ -56,18 +56,18 @@ local.properties
 *.userprefs
 
 # Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-[Ww]in32/
-
+#[Dd]ebug/
+#[Dd]ebugPublic/
+#[Rr]elease/
+#[Rr]eleases/
+#x64/
+#x86/
+#bld/
+#[Bb]in/
+#[Oo]bj/
+#[Ll]og/
+#[Ww]in32/
+#
 # Visual Studio 2015 cache/options directory
 .vs/
 # Uncomment if you have tasks that create the project's static files in wwwroot
@@ -100,9 +100,9 @@ artifacts/
 #*_i.h
 *.ilk
 *.meta
-*.obj
+#*.obj
 *.pch
-*.pdb
+#*.pdb
 *.pgc
 *.pgd
 *.rsp
@@ -393,7 +393,7 @@ pip-log.txt
 *.o
 *.a
 *.la
-.libs
+#.libs
 mpn/*.c
 mpn/*.as
 mpn/*.asm
