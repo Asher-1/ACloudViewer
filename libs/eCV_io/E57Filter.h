@@ -27,18 +27,13 @@ class ECV_IO_LIB_API E57Filter : public FileIOFilter
 {
 public:
 	//static accessors
-	static inline QString GetFileFilter() { return "E57 cloud (*.e57)"; }
-	static inline QString GetDefaultExtension() { return "e57"; }
+	E57Filter();
 
 	//inherited from FileIOFilter
-	bool importSupported() const override { return true; }
-	bool exportSupported() const override { return true; }
 	CC_FILE_ERROR loadFile(const QString& filename, ccHObject& container, LoadParameters& parameters) override;
-	CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters) override;
-	QStringList getFileFilters(bool onImport) const override { return QStringList(GetFileFilter()); }
-	QString getDefaultExtension() const override { return GetDefaultExtension(); }
-	bool canLoadExtension(const QString& upperCaseExt) const override;
+	
 	bool canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const override;
+	CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters) override;
 };
 
 #endif // CV_E57_SUPPORT

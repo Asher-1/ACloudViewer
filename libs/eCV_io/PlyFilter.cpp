@@ -31,10 +31,11 @@
 #include <CVLog.h>
 #include <ecvMesh.h>
 #include <ecvMaterial.h>
-#include <ecvMaterialSet.h>
 #include <ecvPointCloud.h>
-#include <ecvProgressDialog.h>
+#include <ecvMaterialSet.h>
 #include <ecvScalarField.h>
+#include <ecvHObjectCaster.h>
+#include <ecvProgressDialog.h>
 
 //System
 #include <string.h>
@@ -48,9 +49,18 @@
 
 using namespace CVLib;
 
-bool PlyFilter::canLoadExtension(const QString& upperCaseExt) const
+
+PlyFilter::PlyFilter()
+	: FileIOFilter({
+					"_PLY Filter",
+					7.0f,	// priority
+					QStringList{ "ply" },
+					"ply",
+					QStringList{ "PLY mesh (*.ply)" },
+					QStringList{ "PLY mesh (*.ply)" },
+					Import | Export | BuiltIn
+		})
 {
-	return (upperCaseExt == "PLY");
 }
 
 bool PlyFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const
@@ -66,6 +76,11 @@ bool PlyFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) con
 }
 
 static e_ply_storage_mode s_defaultOutputFormat = PLY_DEFAULT;
+
+static void errorCallback(p_ply _ply, const char *message) {
+	CVLog::Error("[PLY] '%s'", message);
+}
+
 void PlyFilter::SetDefaultOutputFormat(e_ply_storage_mode format)
 {
 	s_defaultOutputFormat = format;
@@ -108,7 +123,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity, QString filename, e_ply_s
 	if (!vertices)
 		return CC_FERR_BAD_ENTITY_TYPE;
 
-	p_ply ply = ply_create(qPrintable(filename), storageType, nullptr, 0, nullptr);
+	p_ply ply = ply_create(qPrintable(filename), storageType, errorCallback, 0, nullptr);
 	if (!ply)
 		return CC_FERR_WRITING;
 
@@ -127,7 +142,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity, QString filename, e_ply_s
 	}
 	else result = 0;
 
-	ccMaterial::CShared material(0);
+	ccMaterial::CShared material(nullptr);
 	if (mesh && mesh->hasMaterials())
 	{
 		//look for textures/materials in case there's no color
@@ -168,7 +183,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity, QString filename, e_ply_s
 					{
 						if (mesh->isA(CV_TYPES::MESH))
 						{
-							if (QMessageBox::question(	0,
+							if (QMessageBox::question(	nullptr,
 														"Multiple materials, one texture",
 														"This mesh has only one texture but multiple materials. PLY files can only handle one texture.\nShall we drop the materials (yes) or convert all materials and texture to per-vertex RGB colors? (no)",
 														QMessageBox::Yes | QMessageBox::No,
@@ -186,7 +201,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity, QString filename, e_ply_s
 						else if (mesh->isA(CV_TYPES::SUB_MESH))
 						{
 							//we can forget the texture
-							material = ccMaterial::CShared(0);
+							material = ccMaterial::CShared(nullptr);
 							CVLog::Warning("This sub-mesh has one texture and multiple materials. As this is a sub-mesh, we will ignore them...  you should convert the parent mesh textures/materials to RGB colors first");
 						}
 						else
@@ -204,7 +219,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity, QString filename, e_ply_s
 			{
 				assert(materials->size() != 0);
 				//we can forget the (first) texture (if any)
-				material = ccMaterial::CShared(0);
+				material = ccMaterial::CShared(nullptr);
 
 				if (mesh->hasColors())
 				{
@@ -215,7 +230,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity, QString filename, e_ply_s
 					if (mesh->isA(CV_TYPES::MESH))
 					{
 						//we ask the user if he wants to convert them to RGB
-						if (QMessageBox::question(	0,
+						if (QMessageBox::question(	nullptr,
 													"Multiple textures/materials",
 													"PLY files can't handle multiple textures/materials!\nDo you want to convert them to per-vertex RGB colors?",
 													QMessageBox::Yes | QMessageBox::No,
@@ -257,7 +272,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity, QString filename, e_ply_s
 			uniqueColor[1] = static_cast<ColorCompType>(diffuse.g * ecvColor::MAX);
 			uniqueColor[2] = static_cast<ColorCompType>(diffuse.b * ecvColor::MAX);
 			hasUniqueColor = true;
-			material = ccMaterial::CShared(0); //we can forget it!
+			material = ccMaterial::CShared(nullptr); //we can forget it!
 		}
 	}
 
@@ -870,7 +885,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename, const QString& inputT
 	/****************/
 
 	//open a PLY file for reading
-	p_ply ply = ply_open(qPrintable(filename), nullptr, 0, nullptr);
+	p_ply ply = ply_open(qPrintable(filename), errorCallback, 0, nullptr);
 	if (!ply)
 		return CC_FERR_READING;
 

@@ -99,7 +99,7 @@
 #include <ecvPickOneElementDlg.h>
 
 // QPCL_ENGINE_LIB
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 #include <Tools/CurveFitting.h>
 #include <Tools/EditCameraTool.h>
 #include <PclUtils/PCLDisplayTools.h>
@@ -109,7 +109,7 @@
 #endif
 
 // ECV_PYTHON_LIB
-#ifdef ECV_PYTHON_USE_AS_DLL
+#ifdef ECV_PYTHON_LIBRARY_BUILD
 #include "ecvDeepSemanticSegmentationTool.h"
 #endif
 
@@ -128,9 +128,9 @@
 #endif
 
 //Qt UI files
-#include "ui_distanceMapDlg.h"
-#include <ui_globalShiftSettingsDlg.h>
 #include "ui_MainWindow.h"
+#include "ui_distanceMapDlg.h"
+#include "ui_globalShiftSettingsDlg.h"
 
 //dialogs
 #include "ecvAlignDlg.h"
@@ -243,7 +243,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	m_ui->setupUi(this);
 
+	setWindowTitle(QStringLiteral("ErowCloudViewer v") + ecvApp->versionLongStr(false));
+
 	m_pluginUIManager = new ccPluginUIManager( this, this );
+	
 	ccTranslationManager::get().populateMenu( m_ui->langAction, ecvApp->translationPath() );
 
 	// Initialization
@@ -776,7 +779,7 @@ void MainWindow::onMousePosChanged(const QPoint &pos)
 
 void MainWindow::initPlugins()
 {
-	m_pluginUIManager->init(ccPluginManager::pluginList());
+	m_pluginUIManager->init();
 
 	// Set up dynamic tool bars
 	addToolBar(Qt::RightToolBarArea, m_pluginUIManager->glPclToolbar());
@@ -1437,7 +1440,7 @@ void MainWindow::doActionEditCamera()
 	if (!qWin)
 		return;
 
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	if (!m_cpeDlg)
 	{
 		m_cpeDlg = new ecvCameraParamEditDlg(this, qWin, m_pickingHub);
@@ -2118,7 +2121,7 @@ void MainWindow::activateTranslateRotateMode()
 	if (!getActiveWindow())
 		return;
 
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	QvtkTransformTool* qTransTool =
 		new QvtkTransformTool(ecvDisplayTools::GetVisualizer3D());
 	if (!m_transTool)
@@ -2127,7 +2130,7 @@ void MainWindow::activateTranslateRotateMode()
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 
 	if (!m_transTool->setTansformTool(qTransTool) || !m_transTool->linkWith(ecvDisplayTools::GetCurrentScreen()))
 	{
@@ -5329,7 +5332,7 @@ void MainWindow::doConvertPolylinesToMesh()
 
 void MainWindow::doBSplineFittingFromCloud()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	//find candidates
 	std::vector<ccPointCloud*> clouds;
 	{
@@ -8730,106 +8733,106 @@ void MainWindow::deactivateSurfaceWindowMode(bool state)
 
 void MainWindow::activateClippingMode()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::CLIP_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::activateSliceMode()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::SLICE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::activateProbeMode()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::PROBE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::activateDecimateMode()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::DECIMATE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::activateIsoSurfaceMode()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::ISOSURFACE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::activateThresholdMode()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::THRESHOLD_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::activateSmoothMode()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::SMOOTH_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::activateGlyphMode()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::GLYPH_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::activateStreamlineMode()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::STREAMLINE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::doActionFilterMode(int mode)
 {
 	if (!haveOneSelection()) return;
 
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	ecvGenericFiltersTool* filter = new PclFiltersTool(
 		ecvDisplayTools::GetVisualizer3D(), 
 		ecvGenericFiltersTool::FilterType(mode));
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 
 	if (!m_filterTool)
 	{
@@ -8877,22 +8880,22 @@ void MainWindow::doActionFilterMode(int mode)
 
 void MainWindow::doBoxAnnotation()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doAnnotations(ecvGenericAnnotationTool::AnnotationMode::BOUNDINGBOX);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::doSemanticAnnotation()
 {
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	doAnnotations(ecvGenericAnnotationTool::AnnotationMode::SEMANTICS);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 }
 
 void MainWindow::doAnnotations(int mode)
@@ -8911,7 +8914,7 @@ void MainWindow::doAnnotations(int mode)
 		return;
 	}
 
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	PclAnnotationTool* annoTools =
 		new PclAnnotationTool(ecvDisplayTools::GetVisualizer3D(), 
 			ecvGenericAnnotationTool::AnnotationMode(mode));
@@ -8932,7 +8935,7 @@ void MainWindow::doAnnotations(int mode)
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // QPCL_ENGINE_USE_AS_DLL
+#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 
 	if (!m_annoTool->setAnnotationsTool(annoTools) || !m_annoTool->linkWith(ecvDisplayTools::GetCurrentScreen()))
 	{

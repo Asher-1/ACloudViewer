@@ -29,9 +29,18 @@
 //System
 #include <string>
 
-bool OFFFilter::canLoadExtension(const QString& upperCaseExt) const
+
+OFFFilter::OFFFilter()
+	: FileIOFilter({
+					"_OFF Filter",
+					11.0f,	// priority
+					QStringList{ "off" },
+					"off",
+					QStringList{ "OFF mesh (*.off)" },
+					QStringList{ "OFF mesh (*.off)" },
+					Import | Export
+		})
 {
-	return (upperCaseExt == "OFF");
 }
 
 bool OFFFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const

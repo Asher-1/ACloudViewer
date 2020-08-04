@@ -499,6 +499,7 @@ public: //display
 	ccHObject_recursive_call0(toggleActivation, toggleActivation_recursive)
 	ccHObject_recursive_call0(toggleVisibility, toggleVisibility_recursive)
 	ccHObject_recursive_call0(toggleColors, toggleColors_recursive)
+	ccHObject_recursive_call0(resetGLTransformationHistory, resetGLTransformationHistory_recursive)
 	ccHObject_recursive_call0(toggleNormals, toggleNormals_recursive)
 	ccHObject_recursive_call0(toggleSF, toggleSF_recursive)
 	ccHObject_recursive_call0(toggleShowName, toggleShowName_recursive)

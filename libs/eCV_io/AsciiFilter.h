@@ -28,20 +28,16 @@
 class ECV_IO_LIB_API AsciiFilter : public FileIOFilter
 {
 public:
+	AsciiFilter();
 
 	//static accessors
-	static inline QString GetFileFilter() { return "ASCII cloud (*.txt *.asc *.neu *.xyz *.pts *.csv)"; }
-	static inline QString GetDefaultExtension() { return "asc"; }
+	static inline QString GetFileFilter() { return "ASCII cloud (*.txt *.asc *.neu *.xyz *.xyzrgb *.xyzn *.pts *.csv)"; }
 
 	//inherited from FileIOFilter
-	bool importSupported() const override { return true; }
-	bool exportSupported() const override { return true; }
 	CC_FILE_ERROR loadFile(const QString& filename, ccHObject& container, LoadParameters& parameters) override;
-	CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters) override;
-	QStringList getFileFilters(bool onImport) const override { return QStringList(GetFileFilter()); }
-	QString getDefaultExtension() const override { return GetDefaultExtension(); }
-	bool canLoadExtension(const QString& upperCaseExt) const override;
+	
 	bool canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const override;
+	CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters) override;
 
 	//! Loads an ASCII file with a predefined format
 	CC_FILE_ERROR loadCloudFromFormatedAsciiFile(	const QString& filename,

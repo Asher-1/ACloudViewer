@@ -967,8 +967,6 @@ namespace PclUtils
 	{
 		if (tex_mat.tex_file == "")
 		{
-			CVLog::Error("[PCLVis::textureFromTexMaterial] No texture file given for material %s!",
-				tex_mat.tex_name.c_str());
 			return (-1);
 		}
 
@@ -1079,7 +1077,7 @@ namespace PclUtils
 			return (-1);
 		}
 
-		return (0);
+		return (1);
 	}
 
 	bool PCLVis::addTextureMesh(const PCLTextureMesh &mesh, const std::string &id, int viewport)
@@ -1126,6 +1124,7 @@ namespace PclUtils
 		std::size_t nb_coordinates = 0;
 		for (std::size_t i = 0; i < mesh.tex_coordinates.size(); ++i)
 			nb_coordinates += mesh.tex_coordinates[i].size();
+		
 		// no texture coordinates --> exit
 		if (nb_coordinates == 0)
 		{
@@ -1226,10 +1225,8 @@ namespace PclUtils
 			int tu = vtkProperty::VTK_TEXTURE_UNIT_0 + tex_id;
 #endif
 			vtkSmartPointer<vtkTexture> texture = vtkSmartPointer<vtkTexture>::New();
-			if (textureFromTexMaterial(mesh.tex_materials[tex_id], texture))
+			if (!textureFromTexMaterial(mesh.tex_materials[tex_id], texture))
 			{
-				CVLog::Warning("[PCLVis::addTextureMesh] Failed to load texture %s, skipping!",
-					mesh.tex_materials[tex_id].tex_name.c_str());
 				continue;
 			}
 			// the first texture is in REPLACE mode others are in ADD mode

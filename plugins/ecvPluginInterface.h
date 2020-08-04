@@ -58,7 +58,7 @@ public:
 		QString	url;
 	};
 	
-	typedef QList<Reference> ReferenceList;
+	using ReferenceList = QList<Reference>;
 	
 public:
 
@@ -126,7 +126,17 @@ public:
 		\warning: don't use keywords that are already used by the main application or other plugins!
 			(use a unique prefix for all commands if possible)
 	**/
-	virtual void registerCommands(ccCommandLineInterface* cmd) {}
+	virtual void registerCommands(ccCommandLineInterface* cmd) { Q_UNUSED( cmd ); }
+
+protected:	
+	friend class ccPluginManager;
+
+	//! Set the IID of the plugin (which comes from Q_PLUGIN_METADATA).
+	//! It is used to uniquely identify the plugin.
+	virtual void setIID( const QString& iid ) = 0;
+	
+	//! Get the IID of the plugin.
+	virtual const QString& IID() const = 0;
 };
 
 Q_DECLARE_METATYPE(const ccPluginInterface *);

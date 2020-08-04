@@ -353,14 +353,6 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 	endif()
 endif()
 
-
-# Propagate the choice to use doubles for ScalarType
-if ( ${USE_SCALAR_TYPE_DOUBLE} )
-	add_definitions( -DSCALAR_TYPE_DOUBLE )
-else()
-	add_definitions( -DSCALAR_TYPE_FLOAT )
-endif()
-
 # Add external libraries
 include( cmake/CMakeExternalLibs.cmake )
 
@@ -375,6 +367,13 @@ include_directories(
 )
 
 add_subdirectory( core )
+
+# Propagate the choice to use doubles for ScalarType
+if ( ${USE_SCALAR_TYPE_DOUBLE} )
+	add_definitions( -DSCALAR_TYPE_DOUBLE )
+else()
+	add_definitions( -DSCALAR_TYPE_FLOAT )
+endif()
 
 # Libs requested by eCV
 add_subdirectory( libs/eCV_db )

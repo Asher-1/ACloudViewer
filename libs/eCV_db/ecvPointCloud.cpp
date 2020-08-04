@@ -2179,6 +2179,50 @@ bool ccPointCloud::setRGBColorByHeight(unsigned char heightDim, ccColorScale::Sh
 	return true;
 }
 
+bool ccPointCloud::convertCurrentScalarFieldToColors(bool mixWithExistingColor/*=false*/)
+{
+	if (!hasDisplayedScalarField())
+	{
+		CVLog::Warning("[ccPointCloud::setColorWithCurrentScalarField] No active scalar field or color scale!");
+		return false;
+	}
+
+	unsigned count = size();
+
+	if (!mixWithExistingColor || !hasColors())
+	{
+		if (!hasColors() && !resizeTheRGBTable(false))
+		{
+			return false;
+		}
+
+		for (unsigned i = 0; i < count; i++)
+		{
+			const ecvColor::Rgb* col = getPointScalarValueColor(i);
+			setPointColor(i, col ? *col : ecvColor::black);
+		}
+	}
+	else //mix with existing colors
+	{
+		for (unsigned i = 0; i < count; i++)
+		{
+			const ecvColor::Rgb* col = getPointScalarValueColor(i);
+			if (col)
+			{
+				ecvColor::Rgb& _color = m_rgbColors->at(i);
+				_color.r = static_cast<ColorCompType>(_color.r * (static_cast<float>(col->r) / ecvColor::MAX));
+				_color.g = static_cast<ColorCompType>(_color.g * (static_cast<float>(col->g) / ecvColor::MAX));
+				_color.b = static_cast<ColorCompType>(_color.b * (static_cast<float>(col->b) / ecvColor::MAX));
+			}
+		}
+	}
+
+	//We must update the VBOs
+	colorsHaveChanged();
+
+	return true;
+}
+
 bool ccPointCloud::setRGBColor(const ecvColor::Rgb& col)
 {
 	enableTempColor(false);

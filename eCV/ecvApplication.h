@@ -26,7 +26,7 @@ class ecvApplication : public ecvApplicationBase
 	Q_OBJECT
 
 public:
-	ecvApplication( int &argc, char **argv );
+	ecvApplication( int &argc, char **argv, bool isCommandLine);
 	
 protected:
 	bool event( QEvent *inEvent ) override;

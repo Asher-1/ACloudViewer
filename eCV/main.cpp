@@ -68,7 +68,7 @@ void InitEnvironment()
 	ccColorScalesManager::GetUniqueInstance(); 
 
 	//load the plugins
-	ccPluginManager::loadPlugins();
+	ccPluginManager::get().loadPlugins();
 
 	ecvSettingManager::Init(Settings::CONFIG_PATH);  // init setting manager for persistent settings
 	{   // restore some global parameters
@@ -87,11 +87,27 @@ void InitEnvironment()
 
 int main(int argc, char *argv[])
 {
+#ifdef _WIN32 //This will allow printf to function on windows when opened from command line	
+	DWORD stdout_type = GetFileType(GetStdHandle(STD_OUTPUT_HANDLE));
+	if (AttachConsole(ATTACH_PARENT_PROCESS))
+	{
+		if (stdout_type == FILE_TYPE_UNKNOWN) // this will allow std redirection (./executable > out.txt)
+		{
+			freopen("CONOUT$", "w", stdout);
+			freopen("CONOUT$", "w", stderr);
+		}
+	}
+#endif
+
+#ifdef Q_OS_MAC
+	bool commandLine = isatty(fileno(stdin));
+#else
 	bool commandLine = (argc > 1) && (argv[1][0] == '-');
+#endif
 
 	ecvApplication::init(commandLine);
 
-	ecvApplication app(argc, argv);
+	ecvApplication app(argc, argv, commandLine);
 
 	// QApplication docs suggest resetting to "C" after the QApplication is initialized.
 	setlocale(LC_NUMERIC, "C");
@@ -154,7 +170,7 @@ int main(int argc, char *argv[])
 	if (commandLine)
 	{
 		//command line processing (no GUI)
-		result = ccCommandLineParser::Parse(argc, argv, ccPluginManager::pluginList());
+		result = ccCommandLineParser::Parse(argc, argv, ccPluginManager::get().pluginList());
 	}
 	else
 	{
@@ -247,7 +263,7 @@ int main(int argc, char *argv[])
 					QString pluginNameUpper = pluginName.toUpper();
 					//look for this plugin
 					bool found = false;
-					for (ccPluginInterface *plugin : ccPluginManager::pluginList())
+					for (ccPluginInterface *plugin : ccPluginManager::get().pluginList())
 					{
 						if (plugin->getName().replace(' ', '_').toUpper() == pluginNameUpper)
 						{
@@ -284,6 +300,17 @@ int main(int argc, char *argv[])
 
 		//change the default path to the application one (do this AFTER processing the command line)
 		QDir  workingDir = QCoreApplication::applicationDirPath();
+		
+#ifdef Q_OS_MAC
+		// This makes sure that our "working directory" is not within the application bundle	
+		if (workingDir.dirName() == "MacOS")
+		{
+			workingDir.cdUp();
+			workingDir.cdUp();
+			workingDir.cdUp();
+		}
+#endif
+		
 		QDir::setCurrent(workingDir.absolutePath());
 
 		//let's rock!
@@ -302,7 +329,7 @@ int main(int argc, char *argv[])
 		}
 
 		//release the plugins
-		for (ccPluginInterface *plugin : ccPluginManager::pluginList())
+		for (ccPluginInterface *plugin : ccPluginManager::get().pluginList())
 		{
 			plugin->stop(); //just in case
 		}

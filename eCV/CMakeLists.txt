@@ -80,42 +80,36 @@ target_link_libraries( ${PROJECT_NAME} ECV_DB_LIB )
 target_link_libraries( ${PROJECT_NAME} ECV_IO_LIB )
 target_link_libraries( ${PROJECT_NAME} qcustomplot )
 
-if (USE_PCL_BACKEND)
-	link_directories( ${PCL_LIBRARY_DIRS} )
-	link_directories(${VTK_LIBRARIES_DIRS})
-	# PCL
-	target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
-	# VTK
-	target_link_libraries(${PROJECT_NAME} ${VTK_LIBRARIES})
-	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
-endif()	
-
-if (BUILD_PYTHON_MODULE)
-	target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
-	target_link_libraries( ${PROJECT_NAME} ECV_PYTHON_LIB )
-endif()	
-
 # Qt
 target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Widgets Qt5::OpenGL Qt5::PrintSupport Qt5::Svg)
 if (WIN32)
 	target_link_libraries( ${PROJECT_NAME} Qt5::WinMain )
 endif()
 
+if (USE_PCL_BACKEND)
+	link_directories( ${PCL_LIBRARY_DIRS} )
+	link_directories( ${VTK_LIBRARIES_DIRS} )
+	# PCL
+	target_link_libraries( ${PROJECT_NAME} ${PCL_LIBRARIES} )
+	# VTK
+	target_link_libraries( ${PROJECT_NAME} ${VTK_LIBRARIES} )
+	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
+	# Add custom preprocessor definitions
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD )
+	
+endif()	
+
+if (BUILD_PYTHON_MODULE)
+	target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
+	target_link_libraries( ${PROJECT_NAME} ECV_PYTHON_LIB )
+	# Add custom preprocessor definitions
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PYTHON_LIBRARY_BUILD )
+endif()	
 
 # Add custom preprocessor definitions
 if( WIN32 )
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_USE_AS_DLL ECV_IO_USE_AS_DLL)
-	
-	if (BUILD_PYTHON_MODULE)
-		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS ECV_PYTHON_USE_AS_DLL)
-	endif()
-	
-	if (USE_PCL_BACKEND)
-		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS QPCL_ENGINE_USE_AS_DLL)
-	endif()
-	
 	if (MSVC)
-		SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES LINK_FLAGS " /MANIFEST:NO")
+		set_target_properties( ${PROJECT_NAME} PROPERTIES LINK_FLAGS " /MANIFEST:NO" )
 	endif()
 endif()
 
@@ -147,7 +141,7 @@ if( WIN32 )
 endif()
 
 # Install auxiliary files
-if( WIN32)
+if( WIN32 OR APPLE )
 	foreach( filename ${auxFiles} )
 		install_ext( FILES ${filename} ${EROWCLOUDVIEWER_DEST_FOLDER} )
 	endforeach()

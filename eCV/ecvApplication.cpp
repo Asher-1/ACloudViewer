@@ -27,8 +27,8 @@
 #include "ecvApplication.h"
 #include "MainWindow.h"
 
-ecvApplication::ecvApplication(int &argc, char **argv)
-	: ecvApplicationBase( argc, argv, QStringLiteral( "1.0.0 (Asher)" ) )
+ecvApplication::ecvApplication(int &argc, char **argv, bool isCommandLine)
+	: ecvApplicationBase( argc, argv, isCommandLine, QStringLiteral( "3.5.0 (Asher)" ) )
 {
 	setApplicationName( "ErowCloudViewer" );
 	

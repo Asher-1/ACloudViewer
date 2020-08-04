@@ -20,9 +20,9 @@
 
 #include "FileIOFilter.h"
 
-class ccGenericMesh;
 class ccMesh;
 class ccPointCloud;
+class ccGenericMesh;
 
 //! StereoLithography file I/O filter
 /** See http://www.ennex.com/~fabbers/StL.asp
@@ -30,20 +30,13 @@ class ccPointCloud;
 class ECV_IO_LIB_API STLFilter : public FileIOFilter
 {
 public:
-
-	//static accessors
-	static inline QString GetFileFilter() { return "STL mesh (*.stl)"; }
-	static inline QString GetDefaultExtension() { return "stl"; }
+	STLFilter();
 
 	//inherited from FileIOFilter
-	virtual bool importSupported() const override { return true; }
-	virtual bool exportSupported() const override { return true; }
 	virtual CC_FILE_ERROR loadFile(const QString& filename, ccHObject& container, LoadParameters& parameters) override;
-	virtual CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters) override;
-	virtual QStringList getFileFilters(bool onImport) const override { return QStringList(GetFileFilter()); }
-	virtual QString getDefaultExtension() const override { return GetDefaultExtension(); }
-	virtual bool canLoadExtension(const QString& upperCaseExt) const override;
+	
 	virtual bool canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const override;
+	virtual CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters) override;
 
 protected:
 
