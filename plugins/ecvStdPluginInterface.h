@@ -33,7 +33,7 @@
 #define CC_PLUGIN_REFRESH_ENTITY_BROWSER        0x00000002
 #define CC_PLUGIN_EXPAND_DB_TREE                0x00000004
 
-//! Standard CC plugin interface
+//! Standard CV plugin interface
 /** Version 1.5
 	The plugin is now responsible for its own actions (QAction ;)
 	and the associated ecvMainAppInterface member should give it
@@ -51,7 +51,7 @@ public:
 	}
 	
 	//! Destructor
-	virtual ~ccStdPluginInterface() = default;
+	virtual ~ccStdPluginInterface() override = default;
 
 	//inherited from ccPluginInterface
 	virtual CC_PLUGIN_TYPE getType() const override { return ECV_STD_PLUGIN; }

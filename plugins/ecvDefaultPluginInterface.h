@@ -29,8 +29,6 @@ class ccDefaultPluginData;
 class ccDefaultPluginInterface : public ccPluginInterface
 {
 public:
-	ccDefaultPluginInterface( const QString &resourcePath = QString() );
-
 	virtual ~ccDefaultPluginInterface();
 	
 	virtual bool isCore() const override;
@@ -44,7 +42,13 @@ public:
 	virtual ContactList getAuthors() const override;
 	virtual ContactList getMaintainers() const override;
 	
+protected:
+	ccDefaultPluginInterface( const QString &resourcePath = QString() );
+	
 private:
+	void setIID( const QString& iid ) override;
+	const QString& IID() const override;
+
 	ccDefaultPluginData	*m_data;
 };
 

@@ -42,11 +42,20 @@
 #include <ecvChunk.h>
 
 //System
-#include <string.h>
+#include <cstring>
 
-bool ObjFilter::canLoadExtension(const QString& upperCaseExt) const
+
+ObjFilter::ObjFilter()
+	: FileIOFilter({
+					"_OBJ Filter",
+					8.0f,	// priority
+					QStringList{ "obj" },
+					"obj",
+					QStringList{ "OBJ mesh (*.obj)" },
+					QStringList{ "OBJ mesh (*.obj)" },
+					Import | Export
+		})
 {
-	return (upperCaseExt == "OBJ");
 }
 
 bool ObjFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const

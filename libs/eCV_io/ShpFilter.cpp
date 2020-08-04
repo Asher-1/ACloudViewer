@@ -503,9 +503,17 @@ public:
 	}
 };
 
-bool ShpFilter::canLoadExtension(const QString& upperCaseExt) const
+ShpFilter::ShpFilter()
+	: FileIOFilter({
+					"_Shape Filter",
+					14.0f,	// priority
+					QStringList{ "shp" },
+					"shp",
+					QStringList{ "SHP entity (*.shp)" },
+					QStringList{ "SHP entity (*.shp)" },
+					Import | Export | BuiltIn
+		})
 {
-	return (upperCaseExt == "SHP");
 }
 
 bool ShpFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const
@@ -1618,25 +1626,28 @@ CC_FILE_ERROR ShpFilter::saveToFile(ccHObject* entity, const std::vector<Generic
 	}
 
 	bool save3DPolysAs2D = false;
-	int poly2DVertDim = 2;
 	bool save3DPolyHeightInDBF = false;
+	static unsigned char s_poly2DVertDim = 2;
 	if (parameters.alwaysDisplaySaveDialog && inputShapeType == ESRI_SHAPE_TYPE::POLYLINE_Z)
 	{
 		//display SHP save dialog
 		SaveSHPFileDialog ssfDlg(nullptr);
 		ssfDlg.save3DPolyAs2DCheckBox->setChecked(m_save3DPolyAs2D);
 		ssfDlg.save3DPolyHeightInDBFCheckBox->setChecked(m_save3DPolyHeightInDBF);
-		ssfDlg.dimComboBox->setCurrentIndex(m_poly2DVertDim);
+		ssfDlg.dimComboBox->setCurrentIndex(s_poly2DVertDim);
 
 		if (!ssfDlg.exec())
 			return CC_FERR_CANCELED_BY_USER;
 
 		save3DPolysAs2D = ssfDlg.save3DPolyAs2DCheckBox->isChecked();
-		poly2DVertDim = ssfDlg.dimComboBox->currentIndex();
+		int iPoly2DVertDim = ssfDlg.dimComboBox->currentIndex();
+		if (iPoly2DVertDim < 0 || iPoly2DVertDim > 2)
+			return CC_FERR_THIRD_PARTY_LIB_FAILURE;
+		s_poly2DVertDim = static_cast<unsigned char>(iPoly2DVertDim);
+
 		save3DPolyHeightInDBF  = ssfDlg.save3DPolyHeightInDBFCheckBox->isChecked();
 	}
-	assert(poly2DVertDim >= 0 && poly2DVertDim < 3);
-	const auto Z = static_cast<unsigned char>(poly2DVertDim);
+	const unsigned char Z = s_poly2DVertDim;
 	const unsigned char X = Z == 2 ? 0 : Z + 1;
 	const unsigned char Y = X == 2 ? 0 : X + 1;
 
@@ -1743,7 +1754,7 @@ CC_FILE_ERROR ShpFilter::saveToFile(ccHObject* entity, const std::vector<Generic
 			case ESRI_SHAPE_TYPE::POLYGON_M:
 				assert(child->isKindOf(CV_TYPES::POLY_LINE));
 				error = SavePolyline(static_cast<ccPolyline *>(child), shpStream, recordSize, shapeIndex,
-									 outputShapeType, poly2DVertDim);
+									 outputShapeType, s_poly2DVertDim);
 				break;
 			case ESRI_SHAPE_TYPE::MULTI_POINT_Z:
 				assert(child->isKindOf(CV_TYPES::POINT_CLOUD));
@@ -2079,13 +2090,14 @@ CC_FILE_ERROR ShpFilter::loadFile(const QString &filename, ccHObject &container,
 					{
 						lsfDlg.listWidget->addItem(it->second);
 					}
-					lsfDlg.scaleDoubleSpinBox->setValue(m_dbfFieldImportScale);
+					static double s_dbfFieldImportScale = 1.0;
+					lsfDlg.scaleDoubleSpinBox->setValue(s_dbfFieldImportScale);
 					lsfDlg.okPushButton->setVisible(false);
 
 
 					if (lsfDlg.exec())
 					{
-						m_dbfFieldImportScale = lsfDlg.scaleDoubleSpinBox->value();
+						s_dbfFieldImportScale = lsfDlg.scaleDoubleSpinBox->value();
 
 						//look for the selected index
 						int index = -1;
@@ -2105,7 +2117,7 @@ CC_FILE_ERROR ShpFilter::loadFile(const QString &filename, ccHObject &container,
 
 						if (index >= 0)
 						{
-							double scale = m_dbfFieldImportScale;
+							double scale = s_dbfFieldImportScale;
 							//read values
 							DBFFieldType fieldType = DBFGetFieldInfo(dbfHandle, index, nullptr, nullptr, nullptr);
 

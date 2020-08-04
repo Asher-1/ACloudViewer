@@ -23,9 +23,10 @@
 #include "ecvConsole.h"
 #include "ecvDisplayTools.h"
 #include "ecvPclPluginInterface.h"
-#include "ecvIOFilterPluginInterface.h"
+#include "ecvIOPluginInterface.h"
 #include "ecvMainAppInterface.h"
 #include "ecvPluginInfoDlg.h"
+#include "ecvPluginManager.h"
 #include "ecvPluginUIManager.h"
 #include "ecvStdPluginInterface.h"
 
@@ -52,8 +53,10 @@ ccPluginUIManager::~ccPluginUIManager()
 {
 }
 
-void ccPluginUIManager::init( const ccPluginInterfaceList &plugins )
+void ccPluginUIManager::init()
 {	
+	auto plugins = ccPluginManager::get().pluginList();
+
 	m_pluginMenu->setEnabled( false );
 	m_pclAlgorithmMenu->setEnabled(false);
 	
@@ -70,6 +73,13 @@ void ccPluginUIManager::init( const ccPluginInterfaceList &plugins )
 		if ( plugin == nullptr )
 		{
 			Q_ASSERT( false );
+			continue;
+		}
+
+		if (!ccPluginManager::get().isEnabled(plugin))
+		{
+			m_plugins.push_back(plugin);
+
 			continue;
 		}
 		
@@ -143,7 +153,7 @@ void ccPluginUIManager::init( const ccPluginInterfaceList &plugins )
 
 			case ECV_IO_FILTER_PLUGIN:
 			{
-				ccIOFilterPluginInterface *ioPlugin = static_cast<ccIOFilterPluginInterface*>( plugin );
+				ccIOPluginInterface *ioPlugin = static_cast<ccIOPluginInterface*>( plugin );
 
 				// there are no menus or toolbars for I/O plugins
 				m_plugins.push_back( ioPlugin );
@@ -315,7 +325,7 @@ void ccPluginUIManager::showAboutDialog() const
 {
 	ccPluginInfoDlg	about;
 	
-	about.setPluginPaths( ccPluginManager::pluginPaths() );
+	about.setPluginPaths(ccPluginManager::get().pluginPaths());
 	about.setPluginList( m_plugins );
 	
 	about.exec();
@@ -325,7 +335,6 @@ void ccPluginUIManager::setupActions()
 {
 	//m_actionRemovePCLAlgorithm = new QAction(QIcon(":/CC/pluginManager/images/noAlgorithm.png"), tr("Remove Algorithm"), this);
 	//m_actionRemovePCLAlgorithm->setEnabled(false);
-
 	//connect(m_actionRemovePCLAlgorithm, &QAction::triggered, this, &ccPluginUIManager::disablePCLAlgorithm);
 
 	m_showPluginToolbar = new QAction( tr( "Plugins" ), this );

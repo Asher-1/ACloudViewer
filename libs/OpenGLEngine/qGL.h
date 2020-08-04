@@ -16,27 +16,16 @@
 //#                                                                        #
 //##########################################################################
 
-#include <QtCore/qglobal.h>
+#ifndef ECV_OPENGL_ENGINE_HEADER
+#define ECV_OPENGL_ENGINE_HEADER
 
-#ifdef OPENGL_ENGINE_USE_AS_DLL
+#include <QtCore/QtGlobal>
 
-// The following ifdef block is the standard way of creating macros which make exporting
-// from a DLL simpler. All files within this DLL are compiled 
-// with the OPENGL_ENGINE_LIB_EXPORTS
-// symbol defined on the command line. this symbol should not be defined on any project
-// that uses this DLL. This way any other project whose source files include this file see
-// OPENGL_ENGINE_LIB_API functions as being imported from a DLL, 
-// whereas this DLL sees symbols
-// defined with this macro as being exported.
-#ifdef OPENGL_ENGINE_LIB_EXPORTS
+#if defined( ECV_OPENGL_ENGINE_LIBRARY_BUILD )
+#  define OPENGL_ENGINE_LIB_API Q_DECL_EXPORT
+#else
+#  define OPENGL_ENGINE_LIB_API Q_DECL_IMPORT
+#endif
 
-#define OPENGL_ENGINE_LIB_API __declspec(dllexport)
-#else //NOT OPENGL_ENGINE_LIB_EXPORTS
-#define OPENGL_ENGINE_LIB_API __declspec(dllimport)
-#endif //NOT OPENGL_ENGINE_LIB_EXPORTS
+#endif // ECV_OPENGL_ENGINE_HEADER
 
-#else //NOT OPENGL_ENGINE_USE_AS_DLL
-
-#define OPENGL_ENGINE_LIB_API
-
-#endif //NOT OPENGL_ENGINE_USE_AS_DLL

@@ -651,6 +651,11 @@ public: //other methods
 	**/
 	bool setRGBColorByBanding(unsigned char dim, double freq);
 
+	//! Converts current scalar field (values & display parameters) to RGB colors
+	/** \return success
+	**/
+	bool convertCurrentScalarFieldToColors(bool mixWithExistingColor = false);
+
 	//! Sets RGB colors with current scalar field (values & parameters)
 	/** \return success
 	**/

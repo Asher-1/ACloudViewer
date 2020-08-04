@@ -16,23 +16,15 @@
 //#                                                                        #
 //##########################################################################
 
-#ifdef ECV_DB_USE_AS_DLL
+#ifndef ECV_DB_HEADER
+#define ECV_DB_HEADER
 
-// The following ifdef block is the standard way of creating macros which make exporting
-// from a DLL simpler. All files within this DLL are compiled with the ECV_DB_LIB_EXPORTS
-// symbol defined on the command line. this symbol should not be defined on any project
-// that uses this DLL. This way any other project whose source files include this file see
-// ECV_DB_LIB_API functions as being imported from a DLL, whereas this DLL sees symbols
-// defined with this macro as being exported.
-#ifdef ECV_DB_LIB_EXPORTS
+#include <QtCore/QtGlobal>
 
-#define ECV_DB_LIB_API __declspec(dllexport)
-#else //NOT ECV_DB_LIB_EXPORTS
-#define ECV_DB_LIB_API __declspec(dllimport)
-#endif //NOT ECV_DB_LIB_EXPORTS
+#if defined( ECV_DB_LIBRARY_BUILD )
+#  define ECV_DB_LIB_API Q_DECL_EXPORT
+#else
+#  define ECV_DB_LIB_API Q_DECL_IMPORT
+#endif
 
-#else //NOT ECV_DB_USE_AS_DLL
-
-#define ECV_DB_LIB_API
-
-#endif //NOT ECV_DB_USE_AS_DLL
+#endif // ECV_DB_HEADER

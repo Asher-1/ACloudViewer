@@ -26,11 +26,11 @@
 
 //Qt
 #include <QFile>
-#include <QTextStream>
 #include <QDialog>
+#include <QTextStream>
 
 //System
-#include <string.h>
+#include <cstring>
 
 //! Mascaret File Save dialog
 class SaveMascaretFileDlg : public QDialog, public Ui::SaveMascaretFileDlg
@@ -39,13 +39,27 @@ class SaveMascaretFileDlg : public QDialog, public Ui::SaveMascaretFileDlg
 	
 public:
 	//! Default constructor
-	SaveMascaretFileDlg(QWidget* parent = 0)
+	SaveMascaretFileDlg(QWidget* parent = nullptr)
 		: QDialog(parent, Qt::Tool)
 		, Ui::SaveMascaretFileDlg()
 	{
 		setupUi(this);
 	}
 };
+
+
+MascaretFilter::MascaretFilter()
+	: FileIOFilter({
+					"_Mascaret Filter",
+					DEFAULT_PRIORITY,	// priority
+					QStringList(),
+					"georef",
+					QStringList(),
+					QStringList{ "(Geo-)Mascaret profile (*.georef)" },
+					Export
+		})
+{
+}
 
 bool MascaretFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const
 {
@@ -77,6 +91,8 @@ inline void ToLocalAbscissa(const CCVector3& P, const CCVector3& C, const CCVect
 
 CC_FILE_ERROR MascaretFilter::saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters)
 {
+	Q_UNUSED(parameters);
+
 	if (!entity || filename.isEmpty())
 		return CC_FERR_BAD_ARGUMENT;
 

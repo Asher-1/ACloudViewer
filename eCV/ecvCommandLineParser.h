@@ -2,7 +2,7 @@
 #define CC_COMMAND_LINE_PARSER_HEADER
 
 //interface
-#include "../plugins/ecvCommandLineInterface.h"
+#include "ecvCommandLineInterface.h"
 
 //Local
 #include "ecvPluginManager.h"
@@ -25,13 +25,12 @@ public:
 	virtual QString getExportFilename(	const CLEntityDesc& entityDesc,
 										QString extension = QString(),
 										QString suffix = QString(),
-										QString* baseOutputFilename = 0,
+										QString* baseOutputFilename = nullptr,
 										bool forceNoTimestamp = false) const override;
 	virtual QString exportEntity(	CLEntityDesc& entityDesc,
-									QString suffix = QString(),
-									QString* baseOutputFilename = 0,
-									bool forceIsCloud = false,
-									bool forceNoTimestamp = false) override;
+									const QString& suffix = QString(),
+									QString* baseOutputFilename = nullptr,
+									ccCommandLineInterface::ExportOptions options = ExportOption::NoOptions) override;
 	virtual void removeClouds(bool onlyLast = false) override;
 	virtual void removeMeshes(bool onlyLast = false) override;
 	virtual QStringList& arguments() override { return m_arguments; }
@@ -48,8 +47,11 @@ public:
 	virtual QString cloudExportExt() const override { return m_cloudExportExt; }
 	virtual QString meshExportFormat() const override { return m_meshExportFormat; }
 	virtual QString meshExportExt() const override { return m_meshExportExt; }
+	virtual QString hierarchyExportFormat() const override { return m_hierarchyExportFormat; }
+	virtual QString hierarchyExportExt() const override { return m_hierarchyExportExt; }
 	virtual void setCloudExportFormat(QString format, QString ext) override { m_cloudExportFormat = format; m_cloudExportExt = ext; }
 	virtual void setMeshExportFormat(QString format, QString ext) override { m_meshExportFormat = format; m_meshExportExt = ext; }
+	virtual void setHierarchyExportFormat(QString format, QString ext) override { m_hierarchyExportFormat = format; m_hierarchyExportExt = ext; }
 
 protected: //other methods
 
@@ -57,6 +59,10 @@ protected: //other methods
 	/** Shouldn't be called by user.
 	**/
 	ccCommandLineParser();
+
+	void  registerBuiltInCommands();
+
+	void  cleanup();
 
 	//! Parses the command line
 	int start(QDialog* parent = 0);
@@ -71,6 +77,10 @@ private: //members
 	QString m_meshExportFormat;
 	//! Current mesh(es) export extension (warning: can be anything)
 	QString m_meshExportExt;
+	//! Current hierarchy(ies) export format (can be modified with the 'COMMAND_HIERARCHY_EXPORT_FORMAT' option)
+	QString m_hierarchyExportFormat;
+	//! Current hierarchy(ies) export extension (warning: can be anything)
+	QString m_hierarchyExportExt;
 
 	//! Mesh filename
 	QString m_meshFilename;

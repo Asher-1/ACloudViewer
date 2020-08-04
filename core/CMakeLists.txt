@@ -6,6 +6,15 @@ option( COMPILE_CV_CORE_LIB_WITH_CGAL "Check to compile CV_CORE_LIB with CGAL li
 option( COMPILE_CV_CORE_LIB_WITH_TBB " Check to compile CV_CORE_LIB with Intel Threading Building Blocks lib (enables some parallel processing )" OFF )
 option( COMPILE_CV_CORE_LIB_SHARED "Check to compile CV_CORE_LIB as a shared library (DLL/so)" ON )
 
+# ScalarType as float (default) or double
+option( OPTION_SCALAR_DOUBLE "Check to define ScalarType as double" OFF )
+
+if ( OPTION_SCALAR_DOUBLE )
+	add_definitions( -DSCALAR_TYPE_DOUBLE )
+	set (USE_SCALAR_TYPE_DOUBLE ON PARENT_SCOPE)
+else()
+	add_definitions( -DSCALAR_TYPE_FLOAT )
+endif()
 
 # to compile CVLib only! (CMake implicitly imposes to declare a project before anything...)
 project( CV_CORE_LIB VERSION 1.0 )
@@ -36,48 +45,66 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 file( GLOB header_list include/*.h)
 file( GLOB source_list src/*.cpp src/*.h)
 
+if ( WIN32 )
+	# Add Qt5 natvis file
+	if ( COMPILE_CV_CORE_LIB_WITH_QT )
+		list( APPEND header_list ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/windows/qt5.natvis )
+		#message(${header_list})
+	endif()
+endif()
+
 if (COMPILE_CV_CORE_LIB_SHARED)
+	set( CMAKE_CXX_VISIBILITY_PRESET hidden )
+	set( CMAKE_VISIBILITY_INLINES_HIDDEN 1 )
+	
 	add_library( ${PROJECT_NAME} SHARED ${header_list} ${source_list} )
 else()
 	add_library( ${PROJECT_NAME} STATIC ${header_list} ${source_list} )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE CV_CORE_LIB_STATIC_DEFINE )	
 endif()
 
 # Enforce 3rd party dependencies
 add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
 target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
 
+# generate the export header file
+#include( GenerateExportHeader )
+#generate_export_header( ${PROJECT_NAME}
+#	EXPORT_FILE_NAME ${CMAKE_CURRENT_SOURCE_DIR}/include/CVCoreLibExport.h
+#	EXPORT_MACRO_NAME CV_CORE_LIB_API
+#)
+
 if (COMPILE_CV_CORE_LIB_WITH_CGAL)
 	target_link_libraries( ${PROJECT_NAME} ${CGAL_LIBRARIES} )
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS USE_CGAL_LIB )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_CGAL_LIB )
 endif()
 
 if (COMPILE_CV_CORE_LIB_WITH_TBB)
 	include_directories( ${TBB_INCLUDE_DIRS} )
 	target_link_libraries( ${PROJECT_NAME} ${TBB_LIBRARIES} )
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS USE_TBB )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_TBB )
+else()
+	if (NOT WIN32)
+		message( WARNING "CVLib configured without parallel algorithm capabilities - see COMPILE_CV_CORE_LIB_WITH_TBB" )
+	endif()
 endif()
 
 if (BUILD_EIGEN3)
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS USE_EIGEN )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_EIGEN )
 endif()
 
 if ( COMPILE_CV_CORE_LIB_WITH_QT )
 	include_directories( ${Qt5Widgets_INCLUDE_DIRS} ${Qt5Core_INCLUDE_DIRS} )
 	target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Widgets Qt5::Concurrent)
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS USE_QT )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_QT )
 endif()
 
 # Load advanced scripts
 include( ../cmake/CMakeInclude.cmake )
 
 if ( COMPILE_CV_CORE_LIB_SHARED )
-	if (WIN32)
-		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL )
-		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_CORE_LIB_EXPORTS )
-	endif()
-
 	# Install (shared) library to specified destinations
-	if( WIN32)
+	if( WIN32 OR APPLE )
 		foreach( dest ${INSTALL_DESTINATIONS} )
 			install_shared( CV_CORE_LIB ${dest} 1 )
 		endforeach()
@@ -87,7 +114,7 @@ if ( COMPILE_CV_CORE_LIB_SHARED )
 endif()
 
 if (WIN32)
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS )
 endif()
 
 set( CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DCV_DEBUG" )

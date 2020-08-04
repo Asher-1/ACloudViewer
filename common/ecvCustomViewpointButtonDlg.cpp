@@ -8,7 +8,7 @@
 // ECV_DB_TOOL
 #include <ecvDisplayTools.h>
 
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 #include <Tools/EditCameraTool.h>
 #endif
 

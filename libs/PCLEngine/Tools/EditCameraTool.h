@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "qPCL.h"
 #include "ecvGenericCameraTool.h"
 
+#include <QObject>
+
 class QPCL_ENGINE_LIB_API EditCameraTool : public ecvGenericCameraTool
 {
   Q_OBJECT

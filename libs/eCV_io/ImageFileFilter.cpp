@@ -32,32 +32,52 @@
 #include <assert.h>
 
 ImageFileFilter::ImageFileFilter()
-	: FileIOFilter()
+	: FileIOFilter({
+					"_Image Filter",
+					17.0f,	// priority
+					QStringList(),	// set below
+					"png",
+					QStringList(),	// set below
+					QStringList(),	// set below
+					Import | Export | BuiltIn | DynamicInfo
+		})
 {
 	//output filters
 	{
 		//we grab the list of supported image file formats (for writing)
 		QList<QByteArray> formats = QImageWriter::supportedImageFormats();
+
+		QStringList exportFilters;
+
 		//we convert this list into a proper "filters" string
-		for (int i = 0; i < formats.size(); ++i)
+		for (auto &format : formats)
 		{
-			m_outputFilters.append(QString("%1 image (*.%2)").arg(QString(formats[i].data()).toUpper(),formats[i].data()));
+			exportFilters.append(QStringLiteral("%1 image (*.%2)")
+				.arg(QString(format.data()).toUpper(), format.data()));
 		}
+
+		setExportFileFilterStrings(exportFilters);
 	}
 
 	//input filters
 	{
 		//we grab the list of supported image file formats (for reading)
 		QList<QByteArray> formats = QImageReader::supportedImageFormats();
-		QStringList imageExts;
-		for (int i = 0; i < formats.size(); ++i)
+
+		QStringList imageFilters;
+		QStringList importExtensions;
+		for (auto &format : formats)
 		{
-			imageExts.append(QString("*.%1").arg(formats[i].data()));
+			imageFilters.append(QStringLiteral("*.%1").arg(format.data()));
+			importExtensions.append(QStringLiteral("%1").arg(format.data()));
 		}
+		setImportExtensions(importExtensions);
+
 		//we convert this list into a proper "filters" string
-		if (!imageExts.empty())
+		if (!imageFilters.empty())
 		{
-			m_inputFilter = QString("Image (%1)").arg(imageExts.join(" "));
+			QString imageFilter = QString("Image (%1)").arg(imageFilters.join(" "));
+			setImportFileFilterStrings({ imageFilter });
 		}
 	}
 }
@@ -115,23 +135,6 @@ QString ImageFileFilter::GetLoadFilename(const QString& dialogTitle, const QStri
 											dialogTitle,
 											imageLoadPath,
 											imageFilter);
-}
-
-QStringList ImageFileFilter::getFileFilters(bool onImport) const
-{
-	return onImport ? QStringList(m_inputFilter) : m_outputFilters;
-}
-
-bool ImageFileFilter::canLoadExtension(const QString& upperCaseExt) const
-{
-	//we grab the list of supported image file formats (for reading)
-	QList<QByteArray> formats = QImageReader::supportedImageFormats();
-	//we convert this list into a proper "filters" string
-	for (int i=0; i<formats.size(); ++i)
-		if (QString(formats[i].data()).toUpper() == upperCaseExt)
-			return true;
-
-	return false;
 }
 
 bool ImageFileFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const
