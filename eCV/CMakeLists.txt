@@ -108,6 +108,7 @@ endif()
 
 # Add custom preprocessor definitions
 if( WIN32 )
+	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD)
 	if (MSVC)
 		set_target_properties( ${PROJECT_NAME} PROPERTIES LINK_FLAGS " /MANIFEST:NO" )
 	endif()

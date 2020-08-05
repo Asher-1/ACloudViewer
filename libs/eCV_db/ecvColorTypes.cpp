@@ -285,18 +285,18 @@ namespace ecvColor
 	static const size_t COLOR_LUT_SIZE = sizeof(COLOR_LUT) / (sizeof(COLOR_LUT[0]) * 3);
 
 	// Predefined colors (default type)
-	ECV_DB_LIB_API const Rgb white						(MAX, MAX, MAX);
-	ECV_DB_LIB_API const Rgb lightGrey					(static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8));
-	ECV_DB_LIB_API const Rgb darkGrey					(MAX / 2, MAX / 2, MAX / 2);
-	ECV_DB_LIB_API const Rgb red						(MAX, 0, 0);
-	ECV_DB_LIB_API const Rgb green						(0, MAX, 0);
-	ECV_DB_LIB_API const Rgb blue						(0, 0, MAX);
-	ECV_DB_LIB_API const Rgb darkBlue					(0, 0, MAX / 2);
-	ECV_DB_LIB_API const Rgb magenta					(MAX, 0, MAX);
-	ECV_DB_LIB_API const Rgb cyan						(0, MAX, MAX);
-	ECV_DB_LIB_API const Rgb orange						(MAX, MAX / 2, 0);
-	ECV_DB_LIB_API const Rgb black						(0, 0, 0);
-	ECV_DB_LIB_API const Rgb yellow						(MAX, MAX, 0);
+	ECV_DB_LIB_API const Rgb white(MAX, MAX, MAX);
+	ECV_DB_LIB_API const Rgb lightGrey(static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8));
+	ECV_DB_LIB_API const Rgb darkGrey(MAX / 2, MAX / 2, MAX / 2);
+	ECV_DB_LIB_API const Rgb red(MAX, 0, 0);
+	ECV_DB_LIB_API const Rgb green(0, MAX, 0);
+	ECV_DB_LIB_API const Rgb blue(0, 0, MAX);
+	ECV_DB_LIB_API const Rgb darkBlue(0, 0, MAX / 2);
+	ECV_DB_LIB_API const Rgb magenta(MAX, 0, MAX);
+	ECV_DB_LIB_API const Rgb cyan(0, MAX, MAX);
+	ECV_DB_LIB_API const Rgb orange(MAX, MAX / 2, 0);
+	ECV_DB_LIB_API const Rgb black(0, 0, 0);
+	ECV_DB_LIB_API const Rgb yellow(MAX, MAX, 0);
 
 	ECV_DB_LIB_API const Rgba owhite(MAX, MAX, MAX, OPACITY);
 	ECV_DB_LIB_API const Rgba olightGrey(static_cast<ColorCompType>(MAX*0.8), 

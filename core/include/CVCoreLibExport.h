@@ -7,6 +7,7 @@
 #  define CV_CORE_LIB_NO_EXPORT
 #else
 #  ifndef CV_CORE_LIB_API
+/* We are building this library */
 #      define CV_CORE_LIB_API __declspec(dllexport)
 //#    ifdef CV_CORE_LIB_EXPORTS
 //        /* We are building this library */

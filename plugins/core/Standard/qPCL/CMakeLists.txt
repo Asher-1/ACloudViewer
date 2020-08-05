@@ -26,7 +26,7 @@ if (PLUGIN_STANDARD_QPCL)
     
     include( ../../../CMakePluginTpl.cmake )
     
-    target_link_libraries(${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB)
+    target_link_libraries( ${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB )
     
     link_directories( ${PCL_LIBRARY_DIRS} )
     add_definitions( ${PCL_DEFINITIONS} )

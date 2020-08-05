@@ -71,7 +71,11 @@ if (USE_PCL_BACKEND)
 	file( GLOB_RECURSE TransformTools_list 		${QPCL_TOOLS}/TransformTools/*)
 	source_group("Tools\\TransformTools" FILES ${TransformTools_list} )
 	
-	set(Tools_list ${Basic_list} ${AnnotationTools_list} ${FilterTools_list} ${TransformTools_list})
+	set(Tools_list 
+		${Basic_list} 
+		${AnnotationTools_list} 
+		${FilterTools_list} 
+		${TransformTools_list})
 	
 	# PCL VISUALIZATION MODULE
     if( WIN32 OR UNIX)
@@ -105,15 +109,15 @@ if (USE_PCL_BACKEND)
 					${VtkWidgets_surface_list}
 					${VtkWidgets_smallWidgets_list})
 	
-	add_library( ${PROJECT_NAME} SHARED 
-									${header_list} 
-									${ui_list_all} 
-									${VtkUtils_list}
-									${VtkExtensions_list}
-									${Tools_list} 
-									${PclVis_list} 
-									${PclUtils_list} 
-									${Widget_list}
+	add_library(${PROJECT_NAME} SHARED 
+				${header_list} 
+				${ui_list_all} 
+				${VtkUtils_list}
+				${VtkExtensions_list}
+				${Tools_list} 
+				${PclVis_list} 
+				${PclUtils_list} 
+				${Widget_list}
 	)
 
 	#define the PCL_VER_1_6_OR_OLDER preprocessor to compile qPCL with older versions of PCL
@@ -133,17 +137,20 @@ if (USE_PCL_BACKEND)
 	target_link_libraries( ${PROJECT_NAME} qcustomplot )
 	
 	# Qt & PCL & VTK
-	target_link_libraries(${PROJECT_NAME} 
-	Qt5::Core 
-	Qt5::Gui 
-	Qt5::Widgets
-	Qt5::PrintSupport
-	${PCL_LIBRARIES} 
-	${VTK_LIBRARIES}
-	)
+	target_link_libraries(	${PROJECT_NAME} 
+							Qt5::Core 
+							Qt5::Gui 
+							Qt5::Widgets
+							Qt5::PrintSupport
+							${PCL_LIBRARIES} 
+							${VTK_LIBRARIES} )
 
 	# Add custom preprocessor definitions
-	target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD )
+	if (WIN32)
+        set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD ECV_PCL_ENGINE_LIBRARY_BUILD)
+    else()
+        set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD ECV_PCL_ENGINE_LIBRARY_BUILD)
+    endif()
 
 	# install (shared) lib to specified destinations
 	if( WIN32)

@@ -49,7 +49,7 @@ add_library( ${PROJECT_NAME} SHARED ${header_list} ${source_list} ${moc_list} ${
 
 # Plugins need the QT_NO_DEBUG preprocessor in release!
 if( WIN32 )
-    set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_USE_AS_DLL ECV_IO_USE_AS_DLL QPCL_ENGINE_USE_AS_DLL )
+    set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD )
 endif()
 
 # Plugins need the QT_NO_DEBUG preprocessor in release!

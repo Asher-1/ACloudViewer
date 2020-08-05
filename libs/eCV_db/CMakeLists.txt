@@ -28,7 +28,11 @@ target_link_libraries( ${PROJECT_NAME} CV_CORE_LIB )
 target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Widgets Qt5::OpenGL)
 
 # Add custom preprocessor definitions
-target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_DB_LIBRARY_BUILD )
+#target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_DB_LIBRARY_BUILD )
+# Add custom preprocessor definitions
+if (WIN32)
+	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD )
+endif()
 
 # install (shared) lib to specified destinations
 if( WIN32 )

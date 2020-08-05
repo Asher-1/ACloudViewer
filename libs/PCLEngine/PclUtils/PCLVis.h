@@ -330,4 +330,5 @@ namespace PclUtils
 	typedef boost::shared_ptr<PCLVis> PCLVisPtr;
 }
 
+
 #endif // ECV_PCLVIS_HEADER

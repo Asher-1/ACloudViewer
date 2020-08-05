@@ -13,12 +13,11 @@ set( CC_IS_IO_PLUGIN 1 )
 
 include( ../../../../CMakePluginTpl.cmake )
 
-target_link_libraries(${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB)
 link_directories( ${PCL_LIBRARY_DIRS} )
 add_definitions( ${PCL_DEFINITIONS} )
-if (USE_PCL_BACKEND)
-	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
-endif()	
+target_link_libraries(	${PROJECT_NAME} 
+						QPCL_ENGINE_LIB
+						QPCL_PLUGIN_ALGORIGHM_LIB)
 
 #define the PCL_VER_1_6_OR_OLDER preprocessor to compile qPclIO with older versions of PCL
 if ( PCL_VERSION VERSION_LESS  1.7 ) # VERSION_GREATER Works just like "greater or equal"

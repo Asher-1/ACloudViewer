@@ -37,6 +37,8 @@ source_group("Visualization\\Visualizer" FILES 	${visualization_Visualizer} )
 
 set(Visualization_list ${visualization_Shader} ${visualization_Utility} ${visualization_Visualizer})
 
+set( CMAKE_CXX_VISIBILITY_PRESET hidden )
+
 # Install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
@@ -75,9 +77,10 @@ target_link_libraries(${PROJECT_NAME}
                       ${OMP_LIBRARIES})
 
 # INTERNAL LIB
-target_link_libraries( ${PROJECT_NAME} CV_CORE_LIB )
-target_link_libraries( ${PROJECT_NAME} ECV_DB_LIB )
-target_link_libraries( ${PROJECT_NAME} ECV_IO_LIB )
+target_link_libraries(  ${PROJECT_NAME} 
+						CV_CORE_LIB 
+						ECV_DB_LIB
+						ECV_IO_LIB)
 
 # Qt
 target_link_libraries(${PROJECT_NAME} Qt5::Core)
