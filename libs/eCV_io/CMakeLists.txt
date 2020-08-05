@@ -46,9 +46,11 @@ target_link_libraries(${PROJECT_NAME} Qt5::Core)
 target_link_contrib( ${PROJECT_NAME} )
 
 # Add custom preprocessor definitions
-target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_IO_LIBRARY_BUILD )
-
-if( APPLE )
+#target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_IO_LIBRARY_BUILD )
+# Add custom preprocessor definitions
+if (WIN32)
+	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD)
+elseif( APPLE )
 	set_target_properties( ${PROJECT_NAME} PROPERTIES
 		INSTALL_RPATH "." )
 endif()

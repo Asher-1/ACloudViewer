@@ -49,14 +49,12 @@ if ( WIN32 )
 	# Add Qt5 natvis file
 	if ( COMPILE_CV_CORE_LIB_WITH_QT )
 		list( APPEND header_list ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/windows/qt5.natvis )
-		#message(${header_list})
 	endif()
 endif()
 
 if (COMPILE_CV_CORE_LIB_SHARED)
 	set( CMAKE_CXX_VISIBILITY_PRESET hidden )
 	set( CMAKE_VISIBILITY_INLINES_HIDDEN 1 )
-	
 	add_library( ${PROJECT_NAME} SHARED ${header_list} ${source_list} )
 else()
 	add_library( ${PROJECT_NAME} STATIC ${header_list} ${source_list} )
@@ -103,6 +101,10 @@ endif()
 include( ../cmake/CMakeInclude.cmake )
 
 if ( COMPILE_CV_CORE_LIB_SHARED )
+	if (WIN32)
+		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL )
+	endif()
+
 	# Install (shared) library to specified destinations
 	if( WIN32 OR APPLE )
 		foreach( dest ${INSTALL_DESTINATIONS} )

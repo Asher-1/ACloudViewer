@@ -5,7 +5,7 @@ option( PLUGIN_IO_QFBX "Install qFBXIO plugin to read & write AutoDesk FBX files
 if ( PLUGIN_IO_QFBX )
 	project( QFBX_IO_PLUGIN )
 	
-	option( QFBX_SHARED_MODE "Build in shared mode" ON )
+	option( FBX_SDK_SHARED_MODE "Build in shared mode" ON )
 
 	include ( ${ECV_CMAKE_SCRIPTS_DIR}/CMakePolicies.cmake NO_POLICY_SCOPE )
 
@@ -27,7 +27,7 @@ if ( PLUGIN_IO_QFBX )
 		message( SEND_ERROR "No FBX SDK include dir specified (FBX_SDK_INCLUDE_DIR)" )
 	else()
 		include_directories( ${FBX_SDK_INCLUDE_DIR} )
-		if ( QFBX_SHARED_MODE )
+		if ( FBX_SDK_SHARED_MODE )
 			add_definitions( -DFBXSDK_SHARED  )
 		endif()
 	endif()

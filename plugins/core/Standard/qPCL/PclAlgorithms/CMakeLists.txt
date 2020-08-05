@@ -53,25 +53,26 @@ if (USE_PCL_BACKEND)
 	source_group("PclAlgorithms\\Recognitions" FILES ${recognition_list} )
 	
 	# add library
-	add_library(
-	${PROJECT_NAME} STATIC
-	${header_list} 
-	${source_list} 
-	${ui_list_all}
-	${filter_list}
-	${feature_list}
-	${surface_list} 
-	${segment_list}
-	${recognition_list}
-	)
+	add_library(${PROJECT_NAME}
+				${header_list} 
+				${source_list} 
+				${ui_list_all}
+				${filter_list}
+				${feature_list}
+				${surface_list} 
+				${segment_list}
+				${recognition_list})
+
+	# Add custom preprocessor definitions
+	if (WIN32)
+		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_PCL_ENGINE_LIBRARY_BUILD )
+	endif()
 
 	link_directories( ${PCL_LIBRARY_DIRS} )
 	add_definitions( ${PCL_DEFINITIONS} )
-	target_link_libraries( ${PROJECT_NAME} ${PCL_LIBRARIES})
-	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
-	
+	target_link_libraries( ${PROJECT_NAME}
+						   ${PCL_LIBRARIES} 
+						   QPCL_ENGINE_LIB )
+	# Qt
+	target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Widgets)
 endif()	
-
-# Qt
-target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Widgets)
-

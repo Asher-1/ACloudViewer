@@ -3,7 +3,10 @@
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
 cmake_minimum_required(VERSION 3.5)
-set (CMAKE_CXX_STANDARD 11)
+
+list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" )
+include( CMakePolicies )
+include( CMakeSetCompilerOptions )
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
@@ -11,9 +14,6 @@ add_custom_target(build_all_3rd_party_libs
 
 set (ECV_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 option( CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON )
-
-include( cmake/CMakePolicies.cmake )
-include( cmake/CMakeSetCompilerOptions.cmake )
 
 # Default debug suffix for libraries.
 set( CMAKE_DEBUG_POSTFIX "d" )
