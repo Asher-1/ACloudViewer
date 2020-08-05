@@ -76,9 +76,10 @@ void ecvApplicationBase::init(bool noOpenGLSupport)
 	}
 }
 
-ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, const QString &version)
+ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, bool isCommandLine, const QString &version)
 	: QApplication( argc, argv )
 	, c_VersionStr( version )
+	, c_CommandLine(isCommandLine)
 {
 	setOrganizationName( "ECVCorp" );
 
@@ -111,7 +112,7 @@ ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, const QString &ve
 #endif
 	
 	//ccGLWindow::setShaderPath( m_ShaderPath );
-	ccPluginManager::setPaths( m_PluginPaths );
+	ccPluginManager::get().setPaths( m_PluginPaths );
 	
 	ccTranslationManager::get().registerTranslatorFile( QStringLiteral( "qt" ), m_TranslationPath );
 	ccTranslationManager::get().registerTranslatorFile( QStringLiteral( "ErowCloudViewer" ), m_TranslationPath );

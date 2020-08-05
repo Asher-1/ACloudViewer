@@ -29,8 +29,8 @@
 
 class ccHObject;
 class ccPointCloud;
-class ccGenericPointCloud;
 class ccGenericMesh;
+class ccGenericPointCloud;
 
 //! Dialog for cloud/cloud or cloud/mesh comparison setting
 class ccComparisonDlg: public QDialog, public Ui::ComparisonDialog
@@ -55,6 +55,9 @@ public:
 
 	//! Default destructor
 	~ccComparisonDlg();
+
+	//! Should be called once after the dialog is created
+	inline bool initDialog() { return computeApproxDistances(); }
 
 	//! Returns compared entity
 	ccHObject* getComparedEntity() const { return m_compEnt; }

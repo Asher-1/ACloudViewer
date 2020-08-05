@@ -45,6 +45,21 @@ Garbage<QDialog> s_dialogGarbage;
 AsciiSaveDlg* s_saveDialog(nullptr);
 AsciiOpenDlg* s_openDialog(nullptr);
 
+
+AsciiFilter::AsciiFilter()
+	: FileIOFilter({
+					"_ASCII Filter",
+					2.0f,	// priority
+					QStringList{ "txt", "asc", "neu", "xyz", "xyzrgb", "xyzn", "pts", "csv" },
+					"asc",
+					QStringList{ GetFileFilter() },
+					QStringList{ GetFileFilter() },
+					Import | Export | BuiltIn
+		})
+{
+}
+
+
 AsciiSaveDlg* AsciiFilter::GetSaveDialog(QWidget* parentWidget/*=0*/)
 {
 	if (!s_saveDialog)
@@ -67,16 +82,6 @@ AsciiOpenDlg* AsciiFilter::GetOpenDialog(QWidget* parentWidget/*=0*/)
 	}
 
 	return s_openDialog;
-}
-
-bool AsciiFilter::canLoadExtension(const QString& upperCaseExt) const
-{
-	return (	upperCaseExt == "ASC"
-			||	upperCaseExt == "TXT"
-			||	upperCaseExt == "XYZ"
-			||	upperCaseExt == "NEU"
-			||	upperCaseExt == "PTS"
-			||	upperCaseExt == "CSV");
 }
 
 bool AsciiFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const

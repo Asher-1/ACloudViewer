@@ -58,6 +58,8 @@ project( ECV_PYTHON_LIB )
 
 set(PACKAGE_NAME cloudViewer)
 
+set( CMAKE_CXX_VISIBILITY_PRESET hidden )
+
 # CURRENT DIR
 file( GLOB header_list 	*.h)
 file( GLOB_RECURSE PY_ALL_SOURCE_FILES "cloudViewer_pybind/*.cpp" "cloudViewer_pybind/*.h")
@@ -115,11 +117,11 @@ source_group("cloudViewer_pybind\\registration" FILES ${python_registration_list
 file( GLOB_RECURSE python_visualization_list     ${CLOUDVIEWER_PYBIND11}/visualization/*)
 source_group("cloudViewer_pybind\\visualization" FILES ${python_visualization_list} )
 
-target_link_libraries(${PACKAGE_NAME} PRIVATE 
-		${3RDPARTY_LIBRARIES}
-		CV_CORE_LIB
-		ECV_DB_LIB
-		ECV_IO_LIB
+target_link_libraries(	${PACKAGE_NAME} PRIVATE 
+						${3RDPARTY_LIBRARIES}
+						CV_CORE_LIB
+						ECV_DB_LIB
+						ECV_IO_LIB
 )
 target_link_libraries(${PACKAGE_NAME} PRIVATE OPENGL_ENGINE_LIB)
 
@@ -242,16 +244,15 @@ else()
 		${PYBIND11_CPP_STANDARD}
 	)
 
-	target_link_libraries(
-		${PROJECT_NAME}
-		pybind11::embed
-		${PYTHON_LIBRARIES}
-		${3RDPARTY_LIBRARIES}
-		Qt5::Core
-		Qt5::PrintSupport
-		CV_CORE_LIB
-		ECV_DB_LIB
-		ECV_IO_LIB
+	target_link_libraries(	${PROJECT_NAME}
+							pybind11::embed
+							${PYTHON_LIBRARIES}
+							${3RDPARTY_LIBRARIES}
+							Qt5::Core
+							Qt5::PrintSupport
+							CV_CORE_LIB
+							ECV_DB_LIB
+							ECV_IO_LIB
 	)
 
 endif()
@@ -261,12 +262,13 @@ if (WIN32)
 	# Do not treat includes from IMPORTED target as SYSTEM (Python headers in pybind11::embed).
 	# This may be needed to resolve header conflicts, e.g. between Python release and debug headers.
 	set_target_properties(${PROJECT_NAME} PROPERTIES NO_SYSTEM_FROM_IMPORTED ON)
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_USE_AS_DLL ECV_IO_USE_AS_DLL ECV_PYTHON_USE_AS_DLL)
 else()
 	# Do not treat includes from IMPORTED target as SYSTEM (Python headers in pybind11::embed).
 	# This may be needed to resolve header conflicts, e.g. between Python release and debug headers.
-	set_target_properties(${PROJECT_NAME} PROPERTIES NO_SYSTEM_FROM_IMPORTED ON COMPILE_DEFINITIONS ECV_PYTHON_USE_AS_DLL)
+	set_target_properties(${PROJECT_NAME} PROPERTIES NO_SYSTEM_FROM_IMPORTED ON COMPILE_DEFINITIONS ECV_PYTHON_LIBRARY_BUILD)
 endif()
+
+target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PYTHON_LIBRARY_BUILD )
 
 # install (shared) lib to specified destinations
 if( WIN32)

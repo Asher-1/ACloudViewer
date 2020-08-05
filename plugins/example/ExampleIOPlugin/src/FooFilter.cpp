@@ -20,18 +20,26 @@
 #include "FooFilter.h"
 
 
-bool FooFilter::importSupported() const
+FooFilter::FooFilter()
+	: FileIOFilter( {
+					"Foo Filter",
+					DEFAULT_PRIORITY,	// priority
+					QStringList{ "foo", "txt" },
+					"foo",
+					QStringList{ "Foo file (*.foo)", "Text file (*.txt)" },
+					QStringList(),
+					Import
+					} )
 {
-	return true;
 }
 
-bool FooFilter::exportSupported() const
-{
-	return false;
 }
 
 CC_FILE_ERROR FooFilter::loadFile( const QString &fileName, ccHObject &container, LoadParameters &parameters )
 {	
+	Q_UNUSED( container );
+	Q_UNUSED( parameters );
+	
 	QFile file( fileName );
 	
 	if ( !file.open( QIODevice::ReadOnly ) )
@@ -55,45 +63,17 @@ CC_FILE_ERROR FooFilter::loadFile( const QString &fileName, ccHObject &container
 		}
 	}
 	
-	ccLog::Print( QStringLiteral( "[foo] The file %1 has %2 lines containing 'foo'" ).arg( file.fileName(), QString::number( count ) ) );
+	CVLog::Print( QStringLiteral( "[foo] The file %1 has %2 lines containing 'foo'" ).arg( file.fileName(), QString::number( count ) ) );
 	
 	return CC_FERR_NO_ERROR;
 }
 
-QStringList FooFilter::getFileFilters( bool onImport ) const
+bool FooFilter::canSave( CV_CLASS_ENUM type, bool &multiple, bool &exclusive ) const
 {
-	if ( onImport )
-	{
-		// import
-		return QStringList{
-			QStringLiteral( "Foo file (*.foo)" ),
-			QStringLiteral( "Text file (*.txt)" )
-		};
-	}
-	else
-	{
-		// export
-		return {};
-	}
-}
+	Q_UNUSED( type );
+	Q_UNUSED( multiple );
+	Q_UNUSED( exclusive );
 
-QString FooFilter::getDefaultExtension() const
-{
-	return QStringLiteral( "foo" );
-}
-
-bool FooFilter::canLoadExtension( const QString &upperCaseExt ) const
-{
-	const QStringList extensions{
-		"FOO",
-		"TXT"
-	};
-	
-	return extensions.contains( upperCaseExt );
-}
-
-bool FooFilter::canSave( CC_CLASS_ENUM type, bool &multiple, bool &exclusive ) const
-{
 	// ... can we save this?
 	return false;
 }

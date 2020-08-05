@@ -144,12 +144,12 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccMesh* mesh)
 		if (!ecvCloud) return;
 
 		//materials & textures
-		bool applyMaterials = (mesh->hasMaterials() && mesh->materialsShown());
+		//bool applyMaterials = (mesh->hasMaterials() && mesh->materialsShown());
 		//bool lodEnabled = (triNum > context.minLODTriangleCount && context.decimateMeshOnMove && MACRO_LODActivated(context));
 		bool lodEnabled = false;
 		bool showTextures = (mesh->hasTextures() && mesh->materialsShown() && !lodEnabled);
 
-		if (applyMaterials || showTextures)
+		if (showTextures)
 		{
 			PCLTextureMesh::Ptr textureMesh = cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
 			if (!textureMesh)

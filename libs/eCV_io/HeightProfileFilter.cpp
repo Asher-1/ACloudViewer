@@ -24,6 +24,20 @@
 #include <QFile>
 #include <QTextStream>
 
+
+HeightProfileFilter::HeightProfileFilter()
+	: FileIOFilter({
+					"_Height profile Filter",
+					21.0f,	// priority
+					QStringList(),
+					"",
+					QStringList(),
+					QStringList{ "Height profile (*.csv)" },
+					Export
+		})
+{
+}
+
 bool HeightProfileFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const
 {
 	if (type == CV_TYPES::POLY_LINE)

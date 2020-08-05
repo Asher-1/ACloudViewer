@@ -37,6 +37,8 @@ source_group("Visualization\\Visualizer" FILES 	${visualization_Visualizer} )
 
 set(Visualization_list ${visualization_Shader} ${visualization_Utility} ${visualization_Visualizer})
 
+set( CMAKE_CXX_VISIBILITY_PRESET hidden )
+
 # Install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
@@ -75,9 +77,10 @@ target_link_libraries(${PROJECT_NAME}
                       ${OMP_LIBRARIES})
 
 # INTERNAL LIB
-target_link_libraries( ${PROJECT_NAME} CV_CORE_LIB )
-target_link_libraries( ${PROJECT_NAME} ECV_DB_LIB )
-target_link_libraries( ${PROJECT_NAME} ECV_IO_LIB )
+target_link_libraries(  ${PROJECT_NAME} 
+						CV_CORE_LIB 
+						ECV_DB_LIB
+						ECV_IO_LIB)
 
 # Qt
 target_link_libraries(${PROJECT_NAME} Qt5::Core)
@@ -189,11 +192,7 @@ install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJ
 
 
 # Add custom preprocessor definitions
-if (WIN32)
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_USE_AS_DLL ECV_IO_USE_AS_DLL OPENGL_ENGINE_USE_AS_DLL)
-else()
-	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_USE_AS_DLL ECV_IO_USE_AS_DLL OPENGL_ENGINE_USE_AS_DLL)
-endif()
+target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_OPENGL_ENGINE_LIBRARY_BUILD )
 
 # install (shared) lib to specified destinations
 if( WIN32)

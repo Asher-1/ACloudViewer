@@ -15,6 +15,7 @@
 //#                                                                        #
 //##########################################################################
 
+#include "ecvApplicationBase.h"
 #include "ecvPluginManager.h"
 
 // CV_CORE_LIB
@@ -23,50 +24,79 @@
 //ECV_DB_LIB
 #include <ecvExternalFactory.h>
 
-
 // PLUGINS
-#include "ecvIOFilterPluginInterface.h"
+#include "ecvIOPluginInterface.h"
 #include "ecvStdPluginInterface.h"
 
 //Qt
-#include <QCoreApplication>
-#include <QDebug>
 #include <QDir>
-#include <QPluginLoader>
 #include <QSet>
+#include <QDebug>
+#include <QSettings>
+#include <QPluginLoader>
 #include <QStandardPaths>
+#include <QCoreApplication>
 
 
-QStringList ccPluginManager::m_PluginPaths;
-ccPluginInterfaceList ccPluginManager::m_pluginList;
-
-
-// Check for metadata and warn if it's not there
-// This indicates that a plugin hasn't been converted to the new JSON metadata.
-// It is going to be required in a future verison of CLOUDVIEWER .
-static void	sWarnIfNoMetaData( QPluginLoader *loader, const QString &fileName )
+namespace
 {
-	QJsonObject	metaObject = loader->metaData();
-	
-	if ( metaObject.isEmpty() || metaObject["MetaData"].toObject().isEmpty() )
+	// This is used to avoid having to make the ccPluginManager constructor public
+	class PrivatePluginManager : public ccPluginManager {};
+}
+
+Q_GLOBAL_STATIC(PrivatePluginManager, sPluginManager);
+
+// Get the plugin's IID from the meta data
+static QString sPluginIID(QPluginLoader* loader)
+{
+	const QJsonObject metaObject = loader->metaData();
+
+	if (metaObject.isEmpty())
 	{
-		CVLog::Warning( QStringLiteral( "\t%1 does not supply meta data in the Q_PLUGIN_METADATA (see one of the example plugins). This will be required in a future verison of CLOUDVIEWER ." ).arg( fileName ) );				
+		const QString fileName = QFileInfo(loader->fileName()).fileName();
+
+		CVLog::Warning(QStringLiteral("\t%1 does not supply meta data in the Q_PLUGIN_METADATA (see one of the example plugins).").arg(fileName));
+
+		return {};
+	}
+
+	return metaObject["IID"].toString();
+}
+
+// Check for metadata and error if it's not there
+// This indicates that a plugin hasn't been converted to the new JSON metadata.
+static bool	sMetaDataValid(QPluginLoader* loader)
+{
+	const QJsonObject metaObject = loader->metaData();
+
+	const QString fileName = QFileInfo(loader->fileName()).fileName();
+
+	if (metaObject.isEmpty() || metaObject["MetaData"].toObject().isEmpty())
+	{
+		CVLog::Error(QStringLiteral("%1 does not supply meta data in the Q_PLUGIN_METADATA (see one of the example plugins).").arg(fileName));
+
+		return false;
 	}
 	else
 	{
-		QJsonObject	data = metaObject["MetaData"].toObject();
-		
+		const QJsonObject	data = metaObject["MetaData"].toObject();
+
 		// The plugin type is going to be required
-		const QStringList validTypes{"I/O", "Standard" };
-		
-		const QString	pluginType = data["type"].toString();
-		
-		if ( !validTypes.contains( pluginType ) )
+		const QStringList validTypes{ "I/O", "Standard" };
+
+		const QString pluginType = data["type"].toString();
+
+		if (!validTypes.contains(pluginType))
 		{
-			CVLog::Warning( QStringLiteral( "\t%1 does not supply a valid plugin type in its info.json. It must be one of: %2" ).arg( fileName, validTypes.join( ", " ) ) );
+			CVLog::Error(QStringLiteral("%1 does not supply a valid plugin type in its info.json.\n\nFound: %2\n\nIt must be one of: %3")
+				.arg(fileName, pluginType, validTypes.join(", ")));
+
+			return false;
 		}
 	}
-}	
+
+	return true;
+}
 
 
 ccPluginManager::ccPluginManager( QObject *parent ) :
@@ -74,21 +104,26 @@ ccPluginManager::ccPluginManager( QObject *parent ) :
 {
 }
 
+ccPluginManager& ccPluginManager::get()
+{
+	return *sPluginManager;
+}
+
 void ccPluginManager::setPaths( const QStringList &paths )
 {
-	m_PluginPaths = paths;
+	m_pluginPaths = paths;
 }
 
 QStringList ccPluginManager::pluginPaths()
 {
-	return m_PluginPaths;
+	return m_pluginPaths;
 }
 
 void ccPluginManager::loadPlugins()
 {
 	m_pluginList.clear();
 	
-	if ( m_PluginPaths.empty() )
+	if ( m_pluginPaths.empty() )
 	{
 		qWarning() << "There are no plugin paths set. Maybe missing a call to ccPluginManager::setPaths()?";
 	}
@@ -105,7 +140,7 @@ void ccPluginManager::loadPlugins()
 			continue;
 		}
 
-		CVLog::Print(QStringLiteral("[Plugin] Found: %1 (STATIC)").arg(ccPlugin->getName()));
+		CVLog::Print(tr("[Plugin] Found: %1 (STATIC)").arg(ccPlugin->getName()));
 		m_pluginList.push_back(ccPlugin);
 	}
 
@@ -113,11 +148,24 @@ void ccPluginManager::loadPlugins()
 	loadFromPathsAndAddToList();
 
 	// now iterate over plugins and automatically register what we can
+	const auto pluginList = m_pluginList;
+
+	const QStringList disabledList = disabledPluginIIDs();
+
+	// now iterate over plugins and automatically register what we can
 	for ( ccPluginInterface *plugin : m_pluginList )
 	{
 		if ( plugin == nullptr )
 		{
 			Q_ASSERT(false);
+			continue;
+		}
+
+		// Disable if we are not running on the command line and it's in the disabled list
+		if (!ecvApp->isCommandLine() && disabledList.contains(plugin->IID()))
+		{
+			CVLog::Print(tr("[Plugin][%1] Disabled").arg(plugin->getName()));
+
 			continue;
 		}
 
@@ -140,16 +188,28 @@ void ccPluginManager::loadPlugins()
 
 			case ECV_IO_FILTER_PLUGIN: //I/O filter
 			{
-				ccIOFilterPluginInterface* ioPlugin = static_cast<ccIOFilterPluginInterface*>(plugin);
+				ccIOPluginInterface* ioPlugin = static_cast<ccIOPluginInterface*>(plugin);
 				
+				QStringList	ioExtensions;
+
 				for ( auto &filter : ioPlugin->getFilters() )
 				{
 					if (filter)
 					{
 						FileIOFilter::Register(filter);
-						CVLog::Print(QString("[Plugin][%1] New file extension(s) registered: %2").arg(ioPlugin->getName(), filter->getDefaultExtension().toUpper()));
+
+						ioExtensions += filter->getDefaultExtension().toUpper();
 					}
 				}
+
+				if (!ioExtensions.empty())
+				{
+					ioExtensions.sort();
+
+					CVLog::Print(tr("[Plugin][%1] New file extensions registered: %2")
+						.arg(ioPlugin->getName(), ioExtensions.join(' ')));
+				}
+
 			}
 				break;
 
@@ -172,6 +232,39 @@ ccPluginInterfaceList &ccPluginManager::pluginList()
 	return m_pluginList;
 }
 
+void ccPluginManager::setPluginEnabled(const ccPluginInterface* plugin, bool enabled)
+{
+	QStringList list = disabledPluginIIDs();
+
+	const QString &iid = plugin->IID();
+
+	if (enabled)
+	{
+		list.removeAll(iid);
+	}
+	else
+	{
+		if (!list.contains(iid))
+		{
+			list.append(iid);
+		}
+	}
+
+	QSettings settings;
+
+	settings.beginGroup("Plugins");
+
+	settings.setValue("Disabled", list);
+}
+
+bool ccPluginManager::isEnabled(const ccPluginInterface *plugin) const
+{
+	const QString &iid = plugin->IID();
+
+	return !disabledPluginIIDs().contains(iid);
+}
+
+
 void ccPluginManager::loadFromPathsAndAddToList()
 {
 	const QStringList nameFilters{
@@ -186,11 +279,12 @@ void ccPluginManager::loadFromPathsAndAddToList()
 #endif
 	};
 	
-	// Map the plugin file name to its loader so we can unload it if necessary.
+	// Map the plugin's IID to its loader so we can unload it if necessary.
 	//	This lets us override plugins by path.
-	QMap<QString, QPluginLoader *> fileNameToLoaderMap;
+	QMap<QString, QPluginLoader *> pluginIIDToLoaderMap;
 	
-	for ( const QString &path : pluginPaths() )
+	const auto paths = pluginPaths();
+	for ( const QString &path : paths)
 	{
 		CVLog::Print( tr( "[Plugin] Searching: %1" ).arg( path ) );
 		
@@ -206,31 +300,40 @@ void ccPluginManager::loadFromPathsAndAddToList()
 			
 			QPluginLoader *loader = new QPluginLoader( pluginPath );
 			
-			sWarnIfNoMetaData( loader, fileName );
-			
-			QObject *plugin = loader->instance();
+			const QString pluginIID = sPluginIID(loader);
 
-			if ( plugin == nullptr )
+			bool metaDataValid = sMetaDataValid(loader);
+
+			if (!metaDataValid || pluginIID.isNull())
 			{
-				CVLog::Warning( tr( "\t%1 does not seem to be a valid plugin\t(%2)" ).arg( fileName, loader->errorString() ) );
-				
+				CVLog::Warning(tr("\t%1 has invalid meta data\t").arg(fileName));
+
 				delete loader;
-				
+
 				continue;
 			}
 			
-			ccPluginInterface *ccPlugin = dynamic_cast<ccPluginInterface*>(plugin);
+			QObject* plugin = loader->instance();
+			ccPluginInterface* ccPlugin = dynamic_cast<ccPluginInterface*>(plugin);
 
-			if ( ccPlugin == nullptr )
-			{				
-				CVLog::Warning( tr( "\t%1 does not seem to be a valid plugin or it is not supported by this version" ).arg( fileName ) );
+			if ((plugin == nullptr) || (ccPlugin == nullptr))
+			{
+				if (plugin == nullptr)
+				{
+					CVLog::Warning(tr("\t%1 does not seem to be a valid plugin\t(%2)").arg(fileName, loader->errorString()));
+				}
+				else
+				{
+					CVLog::Warning(tr("\t%1 does not seem to be a valid plugin or it is not supported by this version").arg(fileName));
+				}
 
 				loader->unload();
-				
+
 				delete loader;
-				
+
 				continue;
 			}
+
 
 			if ( ccPlugin->getName().isEmpty() )
 			{
@@ -243,8 +346,10 @@ void ccPluginManager::loadFromPathsAndAddToList()
 				continue;
 			}
 			
-			QPluginLoader *previousLoader = fileNameToLoaderMap.value( fileName );
-			
+			ccPlugin->setIID(pluginIID);
+
+			QPluginLoader* previousLoader = pluginIIDToLoaderMap.value(pluginIID);
+
 			// If we have already loaded a plugin with this file name, unload it and replace the interface in the plugin list
 			if ( previousLoader != nullptr )
 			{
@@ -265,14 +370,25 @@ void ccPluginManager::loadFromPathsAndAddToList()
 				m_pluginList.push_back( ccPlugin );
 			}
 
-			fileNameToLoaderMap[fileName] = loader;
+			pluginIIDToLoaderMap[pluginIID] = loader;
 			
 			CVLog::Print( tr( "\tPlugin found: %1 (%2)" ).arg( ccPlugin->getName(), fileName ) );
 		}
 	}
 	
-	for ( QPluginLoader *loader : fileNameToLoaderMap.values() )
+	const auto loaders = pluginIIDToLoaderMap.values();
+
+	for (QPluginLoader* loader : loaders)
 	{
 		delete loader;
 	}
+}
+
+QStringList ccPluginManager::disabledPluginIIDs() const
+{
+	QSettings settings;
+
+	settings.beginGroup("Plugins");
+
+	return settings.value("Disabled").toStringList();
 }

@@ -16,9 +16,23 @@
 //#                                                                        #
 //##########################################################################
 
+//#ifndef ECV_PCL_ENGINE_HEADER
+//#define ECV_PCL_ENGINE_HEADER
+//
+//#include <QtCore/QtGlobal>
+//
+//#if defined( ECV_PCL_ENGINE_LIBRARY_BUILD )
+//#  define QPCL_ENGINE_LIB_API Q_DECL_EXPORT
+//#else
+//#  define QPCL_ENGINE_LIB_API Q_DECL_IMPORT
+//#endif
+//
+//#endif // ECV_PCL_ENGINE_HEADER
+
+
 #include <QtCore/qglobal.h>
 
-#ifdef QPCL_ENGINE_USE_AS_DLL
+#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 
 // The following ifdef block is the standard way of creating macros which make exporting
 // from a DLL simpler. All files within this DLL are compiled with the ECV_DB_LIB_EXPORTS
@@ -33,8 +47,8 @@
 #define QPCL_ENGINE_LIB_API __declspec(dllimport)
 #endif //NOT QPCL_ENGINE_LIB_EXPORTS
 
-#else //NOT QPCL_ENGINE_USE_AS_DLL
+#else //NOT ECV_PCL_ENGINE_LIBRARY_BUILD
 
 #define QPCL_ENGINE_LIB_API
 
-#endif //NOT QPCL_ENGINE_USE_AS_DLL
+#endif //NOT ECV_PCL_ENGINE_LIBRARY_BUILD

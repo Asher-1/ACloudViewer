@@ -32,15 +32,18 @@
 #include <Eigen/Geometry>
 #include <unordered_map>
 
+// CV_CORE_LIB
 #include <Helper.h>
 #include <Console.h>
 #include <FileSystem.h>
 
-#include <ecvMesh.h>
-#include <ecvPointCloud.h>
-#include <ecvHObjectCaster.h>
-
+// LOCAL
 #include "ImageIO.h"
+#include "ecvMesh.h"
+#include "FileIOFilter.h"
+#include "ecvPointCloud.h"
+#include "ecvHObjectCaster.h"
+
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tinyobjloader/tiny_obj_loader.h"
@@ -177,7 +180,7 @@ namespace ply_trianglemesh_reader {
 static const std::unordered_map<
         std::string,
         std::function<bool(
-                const std::string &, ccMesh &, bool)>>
+                const std::string&, ccMesh&, bool)>>
         file_extension_to_trianglemesh_read_function{
                 {"ply", ReadTriangleMeshFromPLY},
                 {"stl", ReadTriangleMeshFromSTL},
@@ -185,6 +188,9 @@ static const std::unordered_map<
                 {"off", ReadTriangleMeshFromOFF},
                 {"gltf", ReadTriangleMeshFromGLTF},
                 {"glb", ReadTriangleMeshFromGLTF},
+                {"vtk", AutoReadEntity},
+                {"bin", AutoReadEntity},
+                {"sbf", AutoReadEntity},
         };
 
 static const std::unordered_map<
@@ -197,13 +203,16 @@ static const std::unordered_map<
                            const bool,
                            const bool,
                            const bool)>>
-        file_extension_to_trianglemesh_write_function{
+        file_extension_to_trianglemesh_write_function {
                 {"ply", WriteTriangleMeshToPLY},
                 {"stl", WriteTriangleMeshToSTL},
                 {"obj", WriteTriangleMeshToOBJ},
                 {"off", WriteTriangleMeshToOFF},
                 {"gltf", WriteTriangleMeshToGLTF},
                 {"glb", WriteTriangleMeshToGLTF},
+				{"vtk", AutoWriteMesh},
+				{"bin", AutoWriteMesh},
+				{"sbf", AutoWriteMesh},
         };
 
 }  // unnamed namespace
