@@ -10,8 +10,6 @@ OPTION( OPTION_SUPPORT_MAC_PDMS_FORMAT "Build with .mac PDMS format" OFF )
 include( contrib/DxfLibSupport.cmake )
 # GDAL support
 include( contrib/GDALSupport.cmake )
-# FBX support
-include( contrib/FBXSupport.cmake )
 # SHP support
 include( contrib/ShapeLibSupport.cmake )
 
@@ -27,8 +25,6 @@ function( target_link_contrib ) # 2 arguments: ARGV0 = project name / ARGV1 = sh
 	target_link_LIBE57FORMAT( ${ARGV0} )
 	#DXF support
 	target_link_DXFLIB( ${ARGV0} )
-	#FBX support
-	target_link_FBX_SDK( ${ARGV0} )
 	#SHP support
 	target_link_SHAPE_LIB( ${ARGV0} )
 	#OCULUS support

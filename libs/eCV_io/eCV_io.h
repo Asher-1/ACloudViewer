@@ -15,7 +15,20 @@
 //#                                                                        #
 //##########################################################################
 
-#ifdef ECV_IO_USE_AS_DLL
+//#ifndef ECV_IO_HEADER
+//#define ECV_IO_HEADER
+//
+#include <QtCore/QtGlobal>
+//
+//#if defined( ECV_IO_LIBRARY_BUILD )
+//#  define ECV_IO_LIB_API Q_DECL_EXPORT
+//#else
+//#  define ECV_IO_LIB_API Q_DECL_IMPORT
+//#endif
+//
+//#endif // ECV_IO_HEADER
+
+#ifdef ECV_IO_LIBRARY_BUILD
 
 // The following ifdef block is the standard way of creating macros which make exporting
 // from a DLL simpler. All files within this DLL are compiled with the ECV_IO_LIB_EXPORTS
@@ -29,8 +42,8 @@
 #define ECV_IO_LIB_API __declspec(dllimport)
 #endif
 
-#else //NOT ECV_IO_USE_AS_DLL
+#else //NOT ECV_IO_LIBRARY_BUILD
 
 #define ECV_IO_LIB_API
 
-#endif //ECV_IO_USE_AS_DLL
+#endif //ECV_IO_LIBRARY_BUILD

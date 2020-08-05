@@ -24,6 +24,7 @@
 // ECV_DB_LIB
 #include <ecvGBLSensor.h>
 #include <ecvPointCloud.h>
+#include <ecvHObjectCaster.h>
 
 //Qt
 #include <QFileInfo>
@@ -32,10 +33,18 @@
 //system
 #include <cassert>
 
-bool DepthMapFileFilter::canLoadExtension(const QString& upperCaseExt) const
+
+DepthMapFileFilter::DepthMapFileFilter()
+	: FileIOFilter({
+					"_Depth Map Filter",
+					DEFAULT_PRIORITY,	// priority
+					QStringList(),
+					"txt",
+					QStringList(),
+					QStringList{ GetFileFilter() },
+					Export | BuiltIn
+		})
 {
-	//import not supported
-	return false;
 }
 
 bool DepthMapFileFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const

@@ -29,7 +29,6 @@
 
 #include <string>
 
-
 class ccPointCloud;
 namespace cloudViewer {
 namespace io {
@@ -61,16 +60,6 @@ bool WritePointCloud(const std::string &filename,
                      bool write_ascii = false,
                      bool compressed = false,
                      bool print_progress = false);
-
-bool AutoReadPointCloud(const std::string &filename,
-						ccPointCloud& pointcloud,
-						bool print_progress = false);
-
-bool AutoWritePointCloud(const std::string &filename,
-						const ccPointCloud &pointcloud,
-						bool write_ascii = false,
-						bool compressed = false,
-						bool print_progress = false);
 
 bool ReadPointCloudFromXYZ(const std::string &filename,
                            ccPointCloud &pointcloud,

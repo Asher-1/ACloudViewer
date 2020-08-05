@@ -20,10 +20,13 @@ if (USE_PCL_BACKEND)
 
 	# PCL ENGINE
 	project( QPCL_ENGINE_LIB )
-	
+
 	# CURRENT DIR
 	file( GLOB header_list 	*.h)
 	file(GLOB_RECURSE ui_list    ${CMAKE_CURRENT_SOURCE_DIR}/*.ui)
+
+	set( CMAKE_CXX_VISIBILITY_PRESET hidden )
+
 	qt5_wrap_ui(ui_list_all ${ui_list})
 	
 	# VTK EXTENSIONS MODULE
@@ -43,6 +46,7 @@ if (USE_PCL_BACKEND)
 	# views module
 	file( GLOB_RECURSE VtkExtensions_views_list ${QVTK_EXTENSIONS}/Views/*)
 	source_group("VTKExtensions\\Views" FILES ${VtkExtensions_views_list} )
+
 	set(VtkExtensions_list 
 		${VtkExtensions_core_list}  
 		${VtkExtensions_extraction_list}  
@@ -67,7 +71,11 @@ if (USE_PCL_BACKEND)
 	file( GLOB_RECURSE TransformTools_list 		${QPCL_TOOLS}/TransformTools/*)
 	source_group("Tools\\TransformTools" FILES ${TransformTools_list} )
 	
-	set(Tools_list ${Basic_list} ${AnnotationTools_list} ${FilterTools_list} ${TransformTools_list})
+	set(Tools_list 
+		${Basic_list} 
+		${AnnotationTools_list} 
+		${FilterTools_list} 
+		${TransformTools_list})
 	
 	# PCL VISUALIZATION MODULE
     if( WIN32 OR UNIX)
@@ -101,21 +109,20 @@ if (USE_PCL_BACKEND)
 					${VtkWidgets_surface_list}
 					${VtkWidgets_smallWidgets_list})
 	
-	add_library( ${PROJECT_NAME} SHARED 
-									${header_list} 
-									${ui_list_all} 
-									${VtkUtils_list}
-									${VtkExtensions_list}
-									${Tools_list} 
-									${PclVis_list} 
-									${PclUtils_list} 
-									${Widget_list}
-									
+	add_library(${PROJECT_NAME} SHARED 
+				${header_list} 
+				${ui_list_all} 
+				${VtkUtils_list}
+				${VtkExtensions_list}
+				${Tools_list} 
+				${PclVis_list} 
+				${PclUtils_list} 
+				${Widget_list}
 	)
 
 	#define the PCL_VER_1_6_OR_OLDER preprocessor to compile qPCL with older versions of PCL
 	if ( PCL_VERSION VERSION_LESS  1.7 ) # VERSION_GREATER Works just like "greater or equal"
-			set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS PCL_VER_1_6_OR_OLDER )
+		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS PCL_VER_1_6_OR_OLDER )
 	endif()
 
 	# Luca's PCL patch support
@@ -130,20 +137,19 @@ if (USE_PCL_BACKEND)
 	target_link_libraries( ${PROJECT_NAME} qcustomplot )
 	
 	# Qt & PCL & VTK
-	target_link_libraries(${PROJECT_NAME} 
-	Qt5::Core 
-	Qt5::Gui 
-	Qt5::Widgets
-	Qt5::PrintSupport
-	${PCL_LIBRARIES} 
-	${VTK_LIBRARIES}
-	)
+	target_link_libraries(	${PROJECT_NAME} 
+							Qt5::Core 
+							Qt5::Gui 
+							Qt5::Widgets
+							Qt5::PrintSupport
+							${PCL_LIBRARIES} 
+							${VTK_LIBRARIES} )
 
 	# Add custom preprocessor definitions
 	if (WIN32)
-        set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_USE_AS_DLL ECV_IO_USE_AS_DLL QPCL_ENGINE_USE_AS_DLL)
+        set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD ECV_PCL_ENGINE_LIBRARY_BUILD)
     else()
-        set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_USE_AS_DLL ECV_IO_USE_AS_DLL QPCL QPCL_ENGINE_USE_AS_DLL)
+        set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD ECV_PCL_ENGINE_LIBRARY_BUILD)
     endif()
 
 	# install (shared) lib to specified destinations
@@ -154,5 +160,4 @@ if (USE_PCL_BACKEND)
 	else()
             install_shared( ${PROJECT_NAME} ${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer 0 ) #default destination: /usr/lib
 	endif()
-
 endif()

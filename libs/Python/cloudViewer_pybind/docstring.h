@@ -34,7 +34,7 @@
 namespace cloudViewer {
 namespace docstring {
 
-class ECV_PYTHON_LIB_API ArgumentDoc {
+class ArgumentDoc {
 public:
     std::string name_ = "";
     std::string type_ = "";
@@ -78,7 +78,7 @@ public:
 /// std::cout << fd.ToGoogleDocString();
 /// ```
 ///
-class ECV_PYTHON_LIB_API FunctionDoc {
+class FunctionDoc {
 public:
     FunctionDoc(const std::string& pybind_doc);
 
@@ -127,7 +127,7 @@ protected:
 
 /// Parse pybind docstring to FunctionDoc and inject argument docstrings for
 /// functions
-void ECV_PYTHON_LIB_API FunctionDocInject(
+void FunctionDocInject(
         py::module& pybind_module,
         const std::string& function_name,
         const std::unordered_map<std::string, std::string>& map_parameter_docs =
@@ -135,7 +135,7 @@ void ECV_PYTHON_LIB_API FunctionDocInject(
 
 /// Parse pybind docstring to FunctionDoc and inject argument docstrings for
 /// class methods
-void ECV_PYTHON_LIB_API ClassMethodDocInject(
+void ClassMethodDocInject(
         py::module& pybind_module,
         const std::string& class_name,
         const std::string& function_name,

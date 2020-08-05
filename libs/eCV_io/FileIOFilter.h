@@ -26,26 +26,28 @@
 #include "ecvGlobalShiftManager.h"
 
 class QWidget;
+class ccHObject;
 
 //! Typical I/O filter errors
-enum CC_FILE_ERROR {CC_FERR_NO_ERROR,
-					CC_FERR_BAD_ARGUMENT,
-					CC_FERR_UNKNOWN_FILE,
-					CC_FERR_WRONG_FILE_TYPE,
-					CC_FERR_WRITING,
-					CC_FERR_READING,
-					CC_FERR_NO_SAVE,
-					CC_FERR_NO_LOAD,
-					CC_FERR_BAD_ENTITY_TYPE,
-					CC_FERR_CANCELED_BY_USER,
-					CC_FERR_NOT_ENOUGH_MEMORY,
-					CC_FERR_MALFORMED_FILE,
-					CC_FERR_CONSOLE_ERROR,
-					CC_FERR_BROKEN_DEPENDENCY_ERROR,
-					CC_FERR_FILE_WAS_WRITTEN_BY_UNKNOWN_PLUGIN,
-					CC_FERR_THIRD_PARTY_LIB_FAILURE,
-					CC_FERR_THIRD_PARTY_LIB_EXCEPTION,
-					CC_FERR_NOT_IMPLEMENTED,
+enum CC_FILE_ERROR {
+	CC_FERR_NO_ERROR,
+	CC_FERR_BAD_ARGUMENT,
+	CC_FERR_UNKNOWN_FILE,
+	CC_FERR_WRONG_FILE_TYPE,
+	CC_FERR_WRITING,
+	CC_FERR_READING,
+	CC_FERR_NO_SAVE,
+	CC_FERR_NO_LOAD,
+	CC_FERR_BAD_ENTITY_TYPE,
+	CC_FERR_CANCELED_BY_USER,
+	CC_FERR_NOT_ENOUGH_MEMORY,
+	CC_FERR_MALFORMED_FILE,
+	CC_FERR_CONSOLE_ERROR,
+	CC_FERR_BROKEN_DEPENDENCY_ERROR,
+	CC_FERR_FILE_WAS_WRITTEN_BY_UNKNOWN_PLUGIN,
+	CC_FERR_THIRD_PARTY_LIB_FAILURE,
+	CC_FERR_THIRD_PARTY_LIB_EXCEPTION,
+	CC_FERR_NOT_IMPLEMENTED,
 };
 
 //! Generic file I/O filter
@@ -54,10 +56,8 @@ enum CC_FILE_ERROR {CC_FERR_NO_ERROR,
 **/
 class FileIOFilter
 {
-public: //initialization
-
-	//! Destructor
-	virtual ~FileIOFilter() {}
+public:
+	virtual ~FileIOFilter() = default;
 
 	//! Generic loading parameters
 	struct LoadParameters
@@ -108,12 +108,27 @@ public: //initialization
 	};
 
 	//! Shared type
-	typedef QSharedPointer<FileIOFilter> Shared;
+	using Shared = QSharedPointer<FileIOFilter>;
 
-public: //public interface (to be reimplemented by each I/O filter)
+public: //public interface
 
 	//! Returns whether this I/O filter can import files
-	virtual bool importSupported() const { return false; }
+	ECV_IO_LIB_API bool importSupported() const;
+
+	//! Returns whether this I/O filter can export files
+	ECV_IO_LIB_API bool exportSupported() const;
+
+	//! Returns the file filter(s) for this I/O filter
+	/** E.g. 'ASCII file (*.asc)'
+		\param onImport whether the requested filters are for import or export
+		\return list of filters
+	**/
+	ECV_IO_LIB_API const QStringList& getFileFilters(bool onImport) const;
+
+	//! Returns the default file extension
+	ECV_IO_LIB_API QString getDefaultExtension() const;
+
+public: //public interface (to be reimplemented by each I/O filter)
 
 	//! Loads one or more entities from a file
 	/** This method must be implemented by children classes.
@@ -122,15 +137,16 @@ public: //public interface (to be reimplemented by each I/O filter)
 		\param parameters generic loading parameters
 		\return error
 	**/
-	virtual CC_FILE_ERROR loadFile(	const QString& filename,
-									ccHObject& container,
-									LoadParameters& parameters)
+	virtual CC_FILE_ERROR loadFile(const QString& filename,
+		ccHObject& container,
+		LoadParameters& parameters)
 	{
-		 return CC_FERR_NOT_IMPLEMENTED;
-	}
+		Q_UNUSED(filename);
+		Q_UNUSED(container);
+		Q_UNUSED(parameters);
 
-	//! Returns whether this I/O filter can export files
-	virtual bool exportSupported() const { return false; }
+		return CC_FERR_NOT_IMPLEMENTED;
+	}
 
 	//! Saves an entity (or a group of) to a file
 	/** This method must be implemented by children classes.
@@ -139,34 +155,16 @@ public: //public interface (to be reimplemented by each I/O filter)
 		\param parameters generic saving parameters
 		\return error
 	**/
-	virtual CC_FILE_ERROR saveToFile(	ccHObject* entity,
-										const QString& filename,
-										const SaveParameters& parameters)
+	virtual CC_FILE_ERROR saveToFile(ccHObject* entity,
+		const QString& filename,
+		const SaveParameters& parameters)
 	{
-		 return CC_FERR_NOT_IMPLEMENTED;
+		Q_UNUSED(entity);
+		Q_UNUSED(filename);
+		Q_UNUSED(parameters);
+
+		return CC_FERR_NOT_IMPLEMENTED;
 	}
-
-	//! Returns the file filter(s) for this I/O filter
-	/** E.g. 'ASCII file (*.asc)'
-		\param onImport whether the requested filters are for import or export
-		\return list of filters
-	**/
-	virtual QStringList getFileFilters(bool onImport) const = 0;
-
-	//! Returns the default file extension
-	virtual QString getDefaultExtension() const = 0;
-
-	//! Returns whether a specific file can be loaded by this filter
-	/** Used when a file is dragged over the application window for instance.
-		Should remain simple (guess based on the file extension, etc.)
-	**/
-	//virtual bool canLoad(QString filename) const = 0;
-
-	//! Returns whether a specific extension can be loaded by this filter
-	/** \param upperCaseExt upper case extension
-		\return whether the extension is (theoretically) handled by this filter
-	**/
-	virtual bool canLoadExtension(const QString& upperCaseExt) const = 0;
 
 	//! Returns whether this I/O filter can save the specified type of entity
 	/** \param type entity type
@@ -174,9 +172,19 @@ public: //public interface (to be reimplemented by each I/O filter)
 		\param exclusive whether the filter can only save this type of entity if selected or if it can be mixed with other types
 		\return whether the entity type can be saved
 	**/
-	virtual bool canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const = 0;
+	virtual bool canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const
+	{
+		Q_UNUSED(type);
+		Q_UNUSED(multiple);
+		Q_UNUSED(exclusive);
+
+		return false;
+	}
 
 public: //static methods
+	//! Get a list of all the available importer filter strings for use in a drop down menu.
+	//! Includes "All (*.)" as the first item in the list.
+	ECV_IO_LIB_API static QStringList ImportFilterList();
 
 	//! Loads one or more entities from a file with a known filter
 	/** Shortcut to FileIOFilter::loadFile
@@ -186,10 +194,10 @@ public: //static methods
 		\param[out] result file error code
 		\return loaded entities (or 0 if an error occurred)
 	**/
-	ECV_IO_LIB_API static ccHObject* LoadFromFile(	const QString& filename,
-													LoadParameters& parameters,
-													Shared filter,
-													CC_FILE_ERROR& result);
+	ECV_IO_LIB_API static ccHObject* LoadFromFile(const QString& filename,
+		LoadParameters& parameters,
+		Shared filter,
+		CC_FILE_ERROR& result);
 
 	//! Loads one or more entities from a file with known type
 	/** Shortcut to the other version of FileIOFilter::LoadFromFile
@@ -199,10 +207,10 @@ public: //static methods
 		\param fileFilter input filter 'file filter' (if empty, the best I/O filter will be guessed from the file extension)
 		\return loaded entities (or 0 if an error occurred)
 	**/
-	ECV_IO_LIB_API static ccHObject* LoadFromFile(	const QString& filename,
-													LoadParameters& parameters,
-													CC_FILE_ERROR& result,
-													QString fileFilter = QString());
+	ECV_IO_LIB_API static ccHObject* LoadFromFile(const QString& filename,
+		LoadParameters& parameters,
+		CC_FILE_ERROR& result,
+		const QString& fileFilter = QString());
 
 	//! Saves an entity (or a group of) to a specific file thanks to a given filter
 	/** Shortcut to FileIOFilter::saveFile
@@ -212,10 +220,10 @@ public: //static methods
 		\param filter output filter
 		\return error type (if any)
 	**/
-	ECV_IO_LIB_API static CC_FILE_ERROR SaveToFile(	ccHObject* entities,
-													const QString& filename,
-													const SaveParameters& parameters,
-													Shared filter);
+	ECV_IO_LIB_API static CC_FILE_ERROR SaveToFile(ccHObject* entities,
+		const QString& filename,
+		const SaveParameters& parameters,
+		Shared filter);
 
 	//! Saves an entity (or a group of) to a specific file thanks to a given filter
 	/** Shortcut to the other version of FileIOFilter::SaveToFile
@@ -225,10 +233,10 @@ public: //static methods
 		\param fileFilter output filter 'file filter'
 		\return error type (if any)
 	**/
-	ECV_IO_LIB_API static CC_FILE_ERROR SaveToFile(	ccHObject* entities,
-													const QString& filename,
-													const SaveParameters& parameters,
-													const QString& fileFilter);
+	ECV_IO_LIB_API static CC_FILE_ERROR SaveToFile(ccHObject* entities,
+		const QString& filename,
+		const SaveParameters& parameters,
+		const QString& fileFilter);
 
 	//! Shortcut to the ccGlobalShiftManager mechanism specific for files
 	/** \param[in] P sample point (typically the first loaded)
@@ -238,11 +246,11 @@ public: //static methods
 		\param[in] useInputCoordinatesShiftIfPossible whether to use the input 'PShift' vector if possible
 		\return whether global shift has been defined/enabled
 	**/
-	ECV_IO_LIB_API static bool HandleGlobalShift(	const CCVector3d& P,
-													CCVector3d& Pshift,
-													bool& preserveCoordinateShift,
-													LoadParameters& loadParameters,
-													bool useInputCoordinatesShiftIfPossible = false);
+	ECV_IO_LIB_API static bool HandleGlobalShift(const CCVector3d& P,
+		CCVector3d& Pshift,
+		bool& preserveCoordinateShift,
+		LoadParameters& loadParameters,
+		bool useInputCoordinatesShiftIfPossible = false);
 
 	//! Displays (to console) the message corresponding to a given error code
 	/** \param err error code
@@ -250,8 +258,8 @@ public: //static methods
 		\param filename corresponding file
 	**/
 	ECV_IO_LIB_API static void DisplayErrorMessage(CC_FILE_ERROR err,
-									const QString& action,
-									const QString& filename);
+		const QString& action,
+		const QString& filename);
 
 	//! Returns whether special characters are present in the input string
 	ECV_IO_LIB_API static bool CheckForSpecialChars(const QString& filename);
@@ -281,7 +289,7 @@ public: //global filters registration mechanism
 	ECV_IO_LIB_API static Shared FindBestFilterForExtension(const QString& ext);
 
 	//! Type of a I/O filters container
-	typedef std::vector< FileIOFilter::Shared > FilterContainer;
+	using FilterContainer = std::vector<FileIOFilter::Shared>;
 
 	//! Returns the set of all registered filters
 	ECV_IO_LIB_API static const FilterContainer& GetFilters();
@@ -295,6 +303,99 @@ public: //global filters registration mechanism
 	/** Does nothing by default **/
 	virtual void unregister() {}
 
+public:
+	enum FilterFeature
+	{
+		NoFeatures = 0x0000,
+
+		Import = 0x00001,	//< Imports data
+		Export = 0x0002,	//< Exports data
+
+		BuiltIn = 0x0004,	//< Implemented in the core
+
+		DynamicInfo = 0x0008,	//< FilterInfo cannot be set statically (this is used for internal consistency checking)
+	};
+	Q_DECLARE_FLAGS(FilterFeatures, FilterFeature)
+
+protected:
+	static constexpr float DEFAULT_PRIORITY = 25.0f;
+
+	struct FilterInfo
+	{
+		//! ID used to uniquely identify the filter (not user-visible)
+		QString id;
+
+		//! Priority used to determine sort order and which one is the default in the
+		//! case of multiple FileIOFilters registering the same extension.
+		//! Default is 25.0 /see DEFAULT_PRIORITY.
+		float priority;
+
+		//! List of extensions this filter can read (lowercase)
+		//! e.g. "txt", "foo", "bin"
+		//! This is used in FindBestFilterForExtension()
+		QStringList importExtensions;
+
+		//! The default file extension (for export)
+		QString defaultExtension;
+
+		//! List of file filters for import (e.g. "Test (*.txt)", "Foo (*.foo))
+		QStringList	importFileFilterStrings;
+
+		//! List of file filters for export (e.g. "Test (*.txt)", "Foo (*.foo))
+		QStringList	exportFileFilterStrings;
+
+		//! Supported features \see FilterFeature
+		FilterFeatures features;
+	};
+
+	ECV_IO_LIB_API explicit FileIOFilter(const FilterInfo &info);
+
+	//! Allow import extensions to be set after construction
+	//! (e.g. for ImageFileFilter & QImageReader::supportedImageFormats())
+	void setImportExtensions(const QStringList &extensions);
+
+	//! Allow import filter strings to be set after construction
+	//! (e.g. for ImageFileFilter & QImageReader::supportedImageFormats())
+	void setImportFileFilterStrings(const QStringList &filterStrings);
+
+	//! Allow export filter strings to be set after construction
+	//! (e.g. for ImageFileFilter & QImageReader::supportedImageFormats())
+	void setExportFileFilterStrings(const QStringList &filterStrings);
+
+private:
+	void checkFilterInfo() const;
+
+	FilterInfo m_filterInfo;
 };
+
+//! Generic file read and write utility for python interface
+/** Gives static access to file loader and writer
+**/
+namespace cloudViewer
+{
+	namespace io
+	{
+		bool AutoReadEntity(const std::string &filename,
+							ccHObject& entity,
+							bool print_progress = false);
+
+		bool AutoWriteMesh( const std::string &filename,
+							const ccHObject& entity,
+							bool write_ascii = false,
+							bool compressed = false,
+							bool write_vertex_normals = true,
+							bool write_vertex_colors = true,
+							bool write_triangle_uvs = true,
+							bool print_progress = false);
+
+		bool AutoWriteEntity(const std::string &filename,
+							 const ccHObject& entity,
+							 bool write_ascii = false,
+							 bool compressed = false,
+							 bool print_progress = false);
+	}
+}
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(FileIOFilter::FilterFeatures)
 
 #endif

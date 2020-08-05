@@ -36,7 +36,7 @@
 #include <iostream>
 
 //! Default color components type (R,G and B)
-typedef unsigned char ColorCompType;
+using ColorCompType = unsigned char;
 
 //! Colors namespace
 namespace ecvColor
@@ -140,11 +140,11 @@ namespace ecvColor
 	};
 
 	//! 3 components, float type
-	typedef RgbTpl<float> Rgbf;
+	using Rgbf = RgbTpl<float>;
 	//! 3 components, unsigned byte type
-	typedef RgbTpl<unsigned char> Rgbub;
+	using Rgbub = RgbTpl<unsigned char>;
 	//! 3 components, default type
-	typedef RgbTpl<ColorCompType> Rgb;
+	using Rgb = RgbTpl<ColorCompType>;
 
 	//! RGBA color structure
 	template <class Type> class RgbaTpl
@@ -187,25 +187,25 @@ namespace ecvColor
 	};
 
 	//! 4 components, float type
-	typedef RgbaTpl<float> Rgbaf;
+	using Rgbaf = RgbaTpl<float>;
 	//! 4 components, unsigned byte type
-	typedef RgbaTpl<unsigned char> Rgbaub;
+	using Rgbaub = RgbaTpl<unsigned char>;
 	//! 4 components, default type
-	typedef RgbaTpl<ColorCompType> Rgba;
+	using Rgba = RgbaTpl<ColorCompType>;
 
 	// Predefined colors (default type)
-	ECV_DB_LIB_API extern const Rgb white;
+	ECV_DB_LIB_API extern const Rgb white;	
 	ECV_DB_LIB_API extern const Rgb lightGrey;
 	ECV_DB_LIB_API extern const Rgb darkGrey;
-	ECV_DB_LIB_API extern const Rgb red;
-	ECV_DB_LIB_API extern const Rgb green;
-	ECV_DB_LIB_API extern const Rgb blue;
+	ECV_DB_LIB_API extern const Rgb red;	
+	ECV_DB_LIB_API extern const Rgb green;	
+	ECV_DB_LIB_API extern const Rgb blue;	
 	ECV_DB_LIB_API extern const Rgb darkBlue;
 	ECV_DB_LIB_API extern const Rgb magenta;
-	ECV_DB_LIB_API extern const Rgb cyan;
-	ECV_DB_LIB_API extern const Rgb orange;
-	ECV_DB_LIB_API extern const Rgb black;
-	ECV_DB_LIB_API extern const Rgb yellow;
+	ECV_DB_LIB_API extern const Rgb cyan;	
+	ECV_DB_LIB_API extern const Rgb orange;	
+	ECV_DB_LIB_API extern const Rgb black;	
+	ECV_DB_LIB_API extern const Rgb yellow;	
 
 	ECV_DB_LIB_API extern const Rgba owhite;
 	ECV_DB_LIB_API extern const Rgba olightGrey;
@@ -239,15 +239,13 @@ namespace ecvColor
 	ECV_DB_LIB_API extern const Rgbub defaultLabelBkgColor;		//white
 	ECV_DB_LIB_API extern const Rgbub defaultLabelMarkerColor;	//magenta
 
-
-
 	//! Colors generator
 	class Generator
 	{
 	public:
 		
 		//! Generates a random color
-		static Rgb Random(bool lightOnly = true)
+		ECV_DB_LIB_API static Rgb Random(bool lightOnly = true)
 		{
 			std::random_device rd;   // non-deterministic generator
 			std::mt19937 gen(rd());  // to seed mersenne twister.
@@ -280,7 +278,7 @@ namespace ecvColor
 			\param L [out] light [0;1]
 			\return RGB color (unsigned byte)
 		**/
-		static Rgb hsl2rgb(float H, float S, float L)
+		ECV_DB_LIB_API static Rgb hsl2rgb(float H, float S, float L)
 		{
 			H /= 360;
 			float q = L < 0.5f ? L * (1.0f + S) : L + S - L * S;
@@ -302,7 +300,7 @@ namespace ecvColor
 			\param V [out] value [0;1]
 			\return RGB color (unsigned byte)
 		**/
-		static Rgb hsv2rgb(float H, float S, float V)
+		ECV_DB_LIB_API static Rgb hsv2rgb(float H, float S, float V)
 		{
 			float hi = 0;
 			float f = std::modf(H / 60.0f, &hi);
@@ -388,11 +386,10 @@ namespace ecvColor
 															static_cast<float>(1.0 * color.g / MAX),
 															static_cast<float>(1.0 * color.b / MAX),
 															static_cast<float>(1.0 * color.a / MAX)); }
-	inline Rgbaf FromRgbub(const Rgbub& color) {
-		return Rgbaf(static_cast<float>(1.0 * color.r / MAX),
-			static_cast<float>(1.0 * color.g / MAX),
-			static_cast<float>(1.0 * color.b / MAX),
-			1.0f);
+	inline Rgbaf FromRgbub(const Rgbub& color) { return Rgbaf(static_cast<float>(1.0 * color.r / MAX),
+															  static_cast<float>(1.0 * color.g / MAX),
+															  static_cast<float>(1.0 * color.b / MAX),
+															  1.0f);
 	}
 
 	//! Conversion from QRgb

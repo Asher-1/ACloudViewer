@@ -41,7 +41,7 @@ namespace PclUtils
 {
 	class QPCL_ENGINE_LIB_API ImageVis : public ecvGenericVisualizer2D, public pcl::visualization::ImageViewer
 	{
-		Q_OBJECT
+		//Q_OBJECT
 	public:
 		//! Default constructor
 		/** Constructor is protected to avoid using this object as a non static class.

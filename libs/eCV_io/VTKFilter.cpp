@@ -30,9 +30,18 @@
 //System
 #include <string.h>
 
-bool VTKFilter::canLoadExtension(const QString& upperCaseExt) const
+
+VTKFilter::VTKFilter()
+	: FileIOFilter({
+					"_VTK Filter",
+					9.0f,	// priority
+					QStringList{ "vtk" },
+					"vtk",
+					QStringList{ "VTK cloud or mesh (*.vtk)" },
+					QStringList{ "VTK cloud or mesh (*.vtk)" },
+					Import | Export
+		})
 {
-	return (upperCaseExt == "VTK");
 }
 
 bool VTKFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const
@@ -237,7 +246,7 @@ CC_FILE_ERROR VTKFilter::loadFile(const QString& filename, ccHObject& container,
 	ccMesh* mesh = 0;
 	ccPointCloud* vertices = 0;
 
-	std::vector<int> indexes; //global so as to avoid unnecessary mem. allocations
+	std::vector<int> indexes; //global so as to avoid unnecessary memory. allocations
 	QString lastSfName;
 	bool acceptLookupTables = true;
 	unsigned lastDataSize = 0;

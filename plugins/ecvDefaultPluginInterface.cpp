@@ -72,6 +72,7 @@ public:
 		return list;
 	}
 	
+	QString	m_IID;
 	QJsonDocument	doc;
 };
 
@@ -109,6 +110,16 @@ ccDefaultPluginInterface::ccDefaultPluginInterface( const QString &resourcePath 
 ccDefaultPluginInterface::~ccDefaultPluginInterface()
 {
 	delete m_data;
+}
+
+const QString &ccDefaultPluginInterface::IID() const
+{
+	return m_data->m_IID;
+}
+
+void ccDefaultPluginInterface::setIID(const QString &iid)
+{
+	m_data->m_IID = iid;
 }
 
 bool ccDefaultPluginInterface::isCore() const

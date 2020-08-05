@@ -44,7 +44,7 @@ public:
 	ccPluginUIManager( ecvMainAppInterface *appInterface, QWidget *parent );
 	~ccPluginUIManager();
 	
-	void	init( const ccPluginInterfaceList &plugins );
+	void	init();
 	
 	QMenu	*pluginMenu() const;
 	QMenu	*pclAlgorithmMenu() const;

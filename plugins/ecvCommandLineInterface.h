@@ -224,13 +224,13 @@ public: //virtual methods
 										bool forceNoTimestamp = false) const = 0;
 
 	//! Exports a cloud or a mesh
+	//! Exports a cloud or a mesh
 	/** \return error string (if any)
 	**/
-	virtual QString exportEntity(	CLEntityDesc& entityDesc,
-									QString suffix = QString(),
-									QString* outputFilename = nullptr,
-									bool forceIsCloud = false,
-									bool forceNoTimestamp = false) = 0;
+	virtual QString exportEntity(CLEntityDesc& entityDesc,
+		const QString &suffix = QString(),
+		QString* outputFilename = nullptr,
+		ccCommandLineInterface::ExportOptions options = ExportOption::NoOptions) = 0;
 
 	//! Saves all clouds
 	/** \param suffix optional suffix
@@ -299,12 +299,18 @@ public: //file I/O
 	virtual QString meshExportFormat() const = 0;
 	//! Returs the current mesh(es) export extension (warning: can be anything)
 	virtual QString meshExportExt() const = 0;
+		//! Returns the current hierarchy(ies) export format
+	virtual QString hierarchyExportFormat() const = 0;
+	//! Returns the current hierarchy(ies) export extension (warning: can be anything)
+	virtual QString hierarchyExportExt() const = 0;
 
 	//! Sets the current cloud(s) export format and extension
 	virtual void setCloudExportFormat(QString format, QString ext) = 0;
 	//! Sets the current mesh(es) export format and extension
 	virtual void setMeshExportFormat(QString format, QString ext) = 0;
-
+	//! Sets the current hierarchy(ies) export format and extension
+	virtual void setHierarchyExportFormat(QString format, QString ext) = 0;
+	
 public: //logging
 
 	//logging
@@ -359,8 +365,8 @@ public: //Global shift management
 	}
 
 	static const char* COMMAND_OPEN_SHIFT_ON_LOAD() { return "GLOBAL_SHIFT"; }	//!< Global shift
-	static const char* COMMAND_OPEN_SHIFT_ON_LOAD_AUTO() { return "AUTO"; }			//!< "AUTO" keyword
-	static const char* COMMAND_OPEN_SHIFT_ON_LOAD_FIRST() { return "FIRST"; }			//!< "FIRST" keyword
+	static const char* COMMAND_OPEN_SHIFT_ON_LOAD_AUTO() { return "AUTO"; }		//!< "AUTO" keyword
+	static const char* COMMAND_OPEN_SHIFT_ON_LOAD_FIRST() { return "FIRST"; }	//!< "FIRST" keyword
 
 	bool nextCommandIsGlobalShift() const { return !arguments().empty() && IsCommand(arguments().front(), COMMAND_OPEN_SHIFT_ON_LOAD()); }
 

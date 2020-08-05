@@ -26,18 +26,10 @@
 class ECV_IO_LIB_API PDMSFilter : public FileIOFilter
 {
 public:
-
-	//static accessors
-	static inline QString GetFileFilter() { return "PDMS primitives (*.pdms *.pdmsmac *.mac)"; }
-	static inline QString GetDefaultExtension() { return "pdms"; }
+	PDMSFilter();
 
 	//inherited from FileIOFilter
-	virtual bool importSupported() const override { return true; }
 	virtual CC_FILE_ERROR loadFile(const QString& filename, ccHObject& container, LoadParameters& parameters) override;
-	virtual QStringList getFileFilters(bool onImport) const override { return QStringList(GetFileFilter()); }
-	virtual QString getDefaultExtension() const override { return GetDefaultExtension(); }
-	virtual bool canLoadExtension(const QString& upperCaseExt) const override;
-	virtual bool canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const override;
 
 };
 

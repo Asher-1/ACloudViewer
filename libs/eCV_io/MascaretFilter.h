@@ -26,19 +26,11 @@
 class ECV_IO_LIB_API MascaretFilter : public FileIOFilter
 {
 public:
-
-	//static accessors
-	static inline QString GetFileFilter() { return "(Geo-)Mascaret profile (*.georef)"; }
-	static inline QString GetDefaultExtension() { return "georef"; }
+	MascaretFilter();
 
 	//inherited from FileIOFilter
-	virtual bool importSupported() const override { return false; }
-	virtual bool exportSupported() const override { return true; }
-	virtual CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters) override;
-	virtual QStringList getFileFilters(bool onImport) const override { return QStringList(GetFileFilter()); }
-	virtual QString getDefaultExtension() const override { return GetDefaultExtension(); }
-	virtual bool canLoadExtension(const QString& upperCaseExt) const override { return false; }
 	virtual bool canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const override;
+	virtual CC_FILE_ERROR saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters) override;
 };
 
 #endif // ECV_MASCARET_FILTER_HEADER

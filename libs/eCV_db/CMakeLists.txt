@@ -2,12 +2,14 @@ cmake_minimum_required(VERSION 3.0)
 
 include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
 
-project(ECV_DB_LIB )
+project( ECV_DB_LIB )
 
 file( GLOB header_list *.h)
 file( GLOB source_list *.cpp)
 file(GLOB         RPLY_SOURCE_FILES "../../3rdparty/rply/rply/*.c")
 file(GLOB         LIBLZF_SOURCE_FILES "../../3rdparty/liblzf/liblzf/*.c")
+
+set( CMAKE_CXX_VISIBILITY_PRESET hidden )
 
 add_library(${PROJECT_NAME} SHARED 
 			${header_list} 
@@ -26,8 +28,10 @@ target_link_libraries( ${PROJECT_NAME} CV_CORE_LIB )
 target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Widgets Qt5::OpenGL)
 
 # Add custom preprocessor definitions
+#target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_DB_LIBRARY_BUILD )
+# Add custom preprocessor definitions
 if (WIN32)
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_USE_AS_DLL )
+	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD )
 endif()
 
 # install (shared) lib to specified destinations

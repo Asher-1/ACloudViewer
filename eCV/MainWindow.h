@@ -69,9 +69,9 @@ using std::string;
 using std::map;
 
 class ccHObject;
+class ccPickingHub;
 class ccOverlayDialog;
 class ccPluginUIManager;
-class ccPickingHub;
 
 class ecvFilterTool;
 class ecvRecentFiles;
@@ -82,13 +82,13 @@ class ecvCameraParamEditDlg;
 class ecvPrimitiveFactoryDlg;
 class ecvDeepSemanticSegmentationTool;
 
+class ccComparisonDlg;
 class ccTracePolylineTool;
+class ccPointPropertiesDlg;
 class ccPointListPickingDlg;
 class ccPointPairRegistrationDlg;
-class ccPointPropertiesDlg;
-class ccComparisonDlg;
-class ccGraphicalTransformationTool;
 class ccGraphicalSegmentationTool;
+class ccGraphicalTransformationTool;
 
 class QMdiArea;
 class QMdiSubWindow;

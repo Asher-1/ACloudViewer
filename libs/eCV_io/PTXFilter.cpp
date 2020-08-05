@@ -17,8 +17,10 @@
 
 #include "PTXFilter.h"
 
-//ECV_DB_LIB
+// CV_CORE_LIB
 #include <CVLog.h>
+
+//ECV_DB_LIB
 #include <ecvGriddedTools.h>
 #include <ecvGBLSensor.h>
 #include <ecvPointCloud.h>
@@ -36,15 +38,17 @@
 
 const char CC_PTX_INTENSITY_FIELD_NAME[] = "Intensity";
 
-bool PTXFilter::canLoadExtension(const QString& upperCaseExt) const
+PTXFilter::PTXFilter()
+	: FileIOFilter({
+					"_PTX Filter",
+					5.0f,	// priority
+					QStringList{ "ptx" },
+					"ptx",
+					QStringList{ "PTX cloud (*.ptx)" },
+					QStringList(),
+					Import
+		})
 {
-	return (upperCaseExt == "PTX");
-}
-
-bool PTXFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) const
-{
-	//not supported yet
-	return false;
 }
 
 void CleanMatrix(ccGLMatrixd& mat)

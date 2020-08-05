@@ -16,7 +16,20 @@
 //#                                                                        #
 //##########################################################################
 
-#ifdef ECV_DB_USE_AS_DLL
+//#ifndef ECV_DB_HEADER
+//#define ECV_DB_HEADER
+//
+//#include <QtCore/QtGlobal>
+//
+//#if defined( ECV_DB_LIBRARY_BUILD )
+//#  define ECV_DB_LIB_API Q_DECL_EXPORT
+//#else
+//#  define ECV_DB_LIB_API Q_DECL_IMPORT
+//#endif
+//
+//#endif // ECV_DB_HEADER
+
+#ifdef ECV_DB_LIBRARY_BUILD
 
 // The following ifdef block is the standard way of creating macros which make exporting
 // from a DLL simpler. All files within this DLL are compiled with the ECV_DB_LIB_EXPORTS
@@ -31,8 +44,8 @@
 #define ECV_DB_LIB_API __declspec(dllimport)
 #endif //NOT ECV_DB_LIB_EXPORTS
 
-#else //NOT ECV_DB_USE_AS_DLL
+#else //NOT ECV_DB_LIBRARY_BUILD
 
 #define ECV_DB_LIB_API
 
-#endif //NOT ECV_DB_USE_AS_DLL
+#endif //NOT ECV_DB_LIBRARY_BUILD

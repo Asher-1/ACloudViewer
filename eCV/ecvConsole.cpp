@@ -48,7 +48,9 @@
 //unique console instance
 static ecvSingleton<ecvConsole> s_console;
 
+bool ecvConsole::s_redirectToStdOut = false;
 bool ecvConsole::s_showQtMessagesInConsole = false;
+
 
 // ecvCustomQListWidget
 ecvCustomQListWidget::ecvCustomQListWidget(QWidget *parent)
@@ -185,7 +187,8 @@ void ecvConsole::EnableQtMessages(bool state)
 
 void ecvConsole::Init(	QListWidget* textDisplay/*=0*/,
 						QWidget* parentWidget/*=0*/,
-						MainWindow* parentWindow/*=0*/)
+						MainWindow* parentWindow/*=0*/,
+						bool redirectToStdOut/*=false*/)
 {
 	//should be called only once!
 	if (s_console.instance)
@@ -198,6 +201,7 @@ void ecvConsole::Init(	QListWidget* textDisplay/*=0*/,
 	s_console.instance->m_textDisplay = textDisplay;
 	s_console.instance->m_parentWidget = parentWidget;
 	s_console.instance->m_parentWindow = parentWindow;
+	s_redirectToStdOut = redirectToStdOut;
 
 	//auto-start
 	if (textDisplay)
@@ -317,6 +321,10 @@ void ecvConsole::logMessage(const QString& message, int level)
 
 	QString formatedMessage = QStringLiteral("[") + DATETIME + QStringLiteral("] ") + message;
 
+	if (s_redirectToStdOut)
+	{
+		printf("%s\n", qPrintable(message));
+	}
 	if (m_textDisplay || m_logStream)
 	{
 		m_mutex.lock();
