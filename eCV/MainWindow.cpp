@@ -2422,7 +2422,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 
 	m_ui->actionRegister->setEnabled(exactlyTwoEntities);
 	m_ui->actionInterpolateColors->setEnabled(exactlyTwoEntities && atLeastOneColor);
-	m_ui->actionPointPairsAlign->setEnabled(exactlyOneEntity || exactlyTwoEntities);
+	m_ui->actionPointPairsAlign->setEnabled(atLeastOneEntity);
 	m_ui->actionBBCenterToOrigin->setEnabled(atLeastOneEntity);
 	m_ui->actionBBMinCornerToOrigin->setEnabled(atLeastOneEntity);
 	m_ui->actionBBMaxCornerToOrigin->setEnabled(atLeastOneEntity);
