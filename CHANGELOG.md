@@ -1,7 +1,174 @@
 ErowCloudViewer Version History
 ============================
 
-v2.10.3 (Zephyrus) - (in development)
+v3.5.0 (Asher) - 06/08/2020
+----------------------
+
+- New features
+	- Headless rendering
+	- Non-blocking visualization
+	- Docker for cloudViewer
+	- Refined build system
+	- Fast global registration
+	- Color map optimization
+	- PyPi support
+	- Changing Python package name: py3d -> cloudViewer
+	- Many bug fixes
+	- support jupyter interface in python mode
+	- 3 methods to quickly change the coordinate system of one or several entities
+		- Tools > Registration > Move bounding-box center to origin
+		- Tools > Registration > Move bounding-box min corner to origin
+		- Tools > Registration > Move bounding-box max corner to origin
+	- Edit > Plane > Flip: to flip the selected planes
+	- Edit > Plane > Compare: to compare the two selected planes (angle and relative distances)
+	- Edit > Mesh > Flip triangles: to flip the triangles (vertices) in case they are defined in the wrong order
+	- Tools > Distances > Cloud/Primitive Dist
+		- Used to calculate distance to primitive shape (supports spheres, planes, cylinders, cones and boxes) rather than the mesh of that shape (more accurate results for spheres)
+		planes are now optionally treated as bounded or unbounded.
+		for cones this will not work with Snout mode cones.
+	- New tool:
+		- Edit > Normals > Export normals to SF(s) (or equivalently Edit > Scalar fields > Export normals to SF(s))
+		- Command line argument: -NORMALS_TO_SFS (all dimensions are exported by default as 3 scalar fields)
+	- Command line:
+		- '-H_EXPORT_FMT' added to select format for hierarchy objects exported
+		- The PCV tool can now be accessed via the command line:
+			- Option '-PCV' (see https://www.cloudcompare.org/doc/wiki/index.php?title=Command_line_mode for sub-options)
+			- Can be called on any number of clouds or meshes
+			- (the tool was already accessible in V2.10, but in a very limited way)
+		- RANSAC plugin support added, all parameters below are optional and can be added in any order, and will work on all clouds opened and already loaded when called
+			- '-RANSAC' (main command)
+				- EPSILON_ABSOLUTE - max distance to primitive
+				- EPSILON_PERCENTAGE_OF_SCALE - max distance to primitive as a percentage of cloud scale 0.0-1.0 exclusive
+				- BITMAP_EPSILON_PERCENTAGE_OF_SCALE - sampling resolution as a percentage of cloud scale 0.0-1.0 exclusive
+				- BITMAP_EPSILON_ABSOLUTE - sampling resolution
+				- SUPPORT_POINTS - min Support points per primitive
+				- MAX_NORMAL_DEV - max normal deviation from the ideal shape normal vector [in Degrees]
+				- PROBABILITY - probability that no better candidate was overlooked during sampling, the lower the better!
+				- OUT_CLOUD_DIR - path to save detected shapes clouds to, current dir if unspecified
+				- OUT_MESH_DIR - path to save detected shapes meshes to, current dir if unspecified
+				- OUT_PAIR_DIR - path to save detected shapes clouds & meshes to, current dir if unspecified
+				- OUT_GROUP_DIR - path to save all shapes and primitives to as a single file, current dir if unspecified
+				- OUTPUT_INDIVIDUAL_SUBCLOUDS - output detected shapes clouds
+				- OUTPUT_INDIVIDUAL_PRIMITIVES - output detected shapes meshes
+				- OUTPUT_INDIVIDUAL_PAIRED_CLOUD_PRIMITIVE - output detected shapes clouds & meshes
+				- OUTPUT_GROUPED - output all detected shapes clouds & meshes as single file
+				- ENABLE_PRIMITIVE - each shape listed after this option will be searched for
+					- Shapes are: PLANE, SPHERE, CYLINDER, CONE, TORUS
+	    - '-NORMALS_TO_DIP': converts the loaded cloud normals to dip and dip direction (scalar fields)
+	    - '-NORMALS_TO_SFS': converts the loaded cloud normals to 3 scalar fields (Nx, Ny and Nz)
+		- '-REMOVE_RGB': to remove RGB colors (from all loaded entities, i.e. clouds or meshes)
+		- '-REMOVE_Normals': to remove normals (from all loaded entities, i.e. clouds or meshes)
+	    - The 1st Order Moment tool (Tools > Other > Compute geometric features) can now be accessed via
+	    	the command line mode with option -MOMENT {kernel size}
+	    	- Computes 1st order moment on all opened clouds and auto saved by default.
+	    - The Feature tools (Tools > Other > Compute geometric features) can now be accessed via
+    		the command line mode with option -FEATURE {type} {kernel size}
+	    	- type is one of the following: SUM_OF_EIGENVALUES, OMNIVARIANCE, EIGENTROPY, ANISOTROPY, PLANARITY, LINEARITY, PCA1, PCA2, SURFACE_VARIATION, SPHERICITY, VERTICALITY, EIGENVALUE1, EIGENVALUE2, EIGENVALUE3.
+	- 4 new default color scales:
+		- Brown > Yellow
+		- Yellow > Brown
+		- Topo Landserf
+		- High contrast
+
+- Improvements
+	- Better support for High DPI screens (4K) on Windows
+	- Both the local and global bounding-box centers are now displayed in the cloud properties (if the cloud has been shifted)
+	- The PoissonRecon plugin now relies on the PoissonRecon V12 library
+		- new algorithm
+		- option to set the final 'resolution' instead of the octree depth
+	- Align (Point-pair based registration) tool
+		- can now be used with several entities (both several aligned and several reference entities)
+		- option to pick the center of sphere entities as registration point(CC will ask whether to use the sphere center or not when picking a point anywhere on a sphere entity)
+	- All parameters should now be properly remembered from one call to the other (during the same session)
+	- The current box/slice position can now be exported (resp. imported) to (resp. from) the clipboard via the 'Advanced' menu
+	- Command line tool:
+		- The C2M_DIST command (Cloud-to-Mesh distances) can now be called with 2 meshes as input. In this case the first mesh vertices are used as compared cloud.
+		- New suboption for the -O -GLOBAL_SHIFT option: 'FIRST'
+			To use the first encountered (non null) global shift for all loaded entities (must be defined for all entities nevertheless ;)
+		- The CROP command will now remove the input cloud if it's totally 'cropped out' (instead of leaving the full original cloud loaded)
+		- The 'FWF_O' command (to load LAS files with associated waveform data) now properly supports the '-GLOBAL_SHIFT' option
+		- No more popup will appear when loading a raster file via the command line mode in SILENT mode (raster is never loaded as a textured quad, and invalid points are always ignored and not loaded)
+		- One can now use the 'auto' value for the radius value input after -OCTREE_NORMALS to automatically guess the normal computation radius
+	- Graphical segmentation:
+		- points are now exclusively segmented inside/outside the frustum
+	- Plugins:
+		- plugins may now be enabled/disabled in the plugin info window
+		- to take effect, ErowCloudViewer must be restarted
+		- all plugins are still available on the command line
+	- PCD now supports loading more field types (16 bit signed and unsigned, 32 bit unsigned, 64 bit floating point)
+	- OBJ files:
+		- we now correctly handle faces with more than 4 vertices! (they should be properly tessellated)
+		- support of escaped lines ('\' at the end of the line)
+		- now accepts MTL files with the 'Tf' keyword (well, CC just ignores it and doesn't complain about a wrong MTL file anymore ;)
+		- enhanced progress report (thanks to https://gitlab.com/Epic_Wink)
+	- M3C2:
+		- the computation speed should be improved when using a small projection radius (smarter selection of the octree level)
+	- LAS files:
+		- the standard LAS Filter now handles the OVERLAP classification bit (for point format >= 6)
+		- improved/fixed management of classification and classification flags
+		- LAS offset (chosen at saving time) should be a little bit smarter:
+			- CC will try to keep the previous one, or use the bounding-box min corner ONLY if the coordinates are too large
+			- CC won't use the previous scale if it is too small for the current cloud
+			- the 'optimal' scale is simpler (round values + the same for all dimensions)
+		- The LAS 1.3/1.4 filter (Windows only) has been improved:
+			- option to save any scalar field as extra bytes (and load extra bytes as scalar fields)
+			- proper minor version setting
+			- proper header size
+			- using the latest version of LASlib with proper management of UTF8/UTF16 ('foreign') characters
+	- ASCII files:
+		- now allows mixed white space (spaces / tabs)
+		- the ASCII load dialog option has now an option to load numerical values with a comma as digit separator ('use comma as decimal character' checkbox)
+	- Unroll
+		- ability to set the start and stop angles for the cone unrolling options
+		- ability to unroll meshes
+		- new unrolling mode: 'Straightened cone' (the previous one has been renamed 'Straightened cone (fixed radius)'). This new mode unrolls the cone as a cylinder but with a varying radius.
+	- The 'Straightened cone' options are now using the real curvilinear abscissa (0 = cone apex)
+	- Tools > Others > Compute geometric features
+		- option to compute the 1st moment added
+		- option to compute the 1st, 2nd and 3rd eigenvalues added
+	- SBF files
+		- format slightly updated to accommodate with scalar fields 'shift' (backward compatibility maintained)
+		- format description is here: https://www.cloudcompare.org/doc/wiki/index.php?title=SBF
+
+- Changes
+	- Command line tool:
+		- The `-FBX_EXPORT_FMT` command is now split. Use `-FBX -EXPORT_FMT`.
+	- Plugins:
+		- The I/O plugin interface has changed, so if you have your own I/O plugins, you will need to update them.
+			- The interface name changed from `ccIOFilterPluginInterface` to `ccIOPluginInterface`.
+			- The `ccIOPluginInterface::getFilter()` method was removed in favour of `ccIOPluginInterface::getFilters()`.
+			- The `FileIOFilter` base class now takes a struct as an argument containing all the static info about a filter - extensions, features (import/export), etc.. See `FooFilter` in the `ExampleIOPlugin` and the comments in `FileIOFilter::FilterInfo`.
+			- The use of `FileIOFilter::FilterInfo` means that the following virtual functions in I/O filters are no longer virtual/required:
+				- importSupported
+				- exportSupported
+				- getFileFilters
+				- getDefaultExtension
+				- canLoadExtension
+		- The GL plugin interface has changed, so if you have your own GL plugins, you will need to update them.
+			- The interface name changed from `ccGLFilterPluginInterface` to `ccGLPluginInterface`.
+	- CC will now handle external matrices (loaded or input via the 'Edit > Apply Transformation' tool) with a 16th component different than 0
+		(this 16th component will be considered as the inverse scale)
+	- Attempt to improve gamepads detection/connection
+
+- Bug fixes:
+	- repair ccPlane Entity bounding box showing bugs and normal vector showing bugs
+	- LAS classification flags were not always properly extracted/saved by the standard LAS filter (depending on the point format)
+	- Trace Polyline tool: when changing the OpenGL camera position while tracing a polyline AND using oversampling, strange spikes could appear
+	- The Unroll dialog was not enabling all the apex coordinate fields after switching from Cylinder to Cone mode
+	- The Clipping-box tool 'edit' dialog would sometimes move the box in an unexpected way when opening and closing it without making any change
+	- M3C2: the 'subsampling' option was not properly restored when loading the parameters from a file (if 'SubsampleEnabled = false')
+	- Orienting normals with a sensor position could lead to a crash
+	- Shapefile: at export time, the SHX file (created next to the SHP file) was malformed
+		- this prevented loading the file in most GIS tools
+		- polylines were mistakenly exported as polygons
+	- SRS (Spatial Reference System) information could be lost when loading LAS files
+	- The cartesian bounding-box of exported E57 files was wrongly expressed in the file-level coordinate system (instead of the local one)
+	- Data could be lost when merging two clouds with FWF data
+	- When VBOs were activated with an ATI card, ErowCloudViewer could crash (because ATI only supports 32bit aligned VBOs :p)
+	- The LAS 1.3/1.4 filter was not compressing files with a minor case 'laz' extension :(
+	- The iteration stop criteria has been changed in the CSF plugin to fix a small bug
+
+v3.4.0 (Asher) - (in development)
 ----------------------
 
 - Enhancements
@@ -29,7 +196,7 @@ v2.10.3 (Zephyrus) - (in development)
   - Some points were incorrectly removed by the 'Clean > Noise filer' method (parallelism issue)
   - The radius was not updated during the refinement pass of the Sphere fitting algorithm  (i.e. the final radius was not optimal)
 
-v2.10.2 (Zephyrus) - 24/02/2019
+v3.3.0 (Asher) - 24/02/2019
 ----------------------
 
 - Bug fixes
@@ -58,7 +225,7 @@ v2.10.2 (Zephyrus) - 24/02/2019
   - I (Andy) had to update ffmpeg, which is used by the animation plugin, for this patch release. Normally I would wait for 2.11, but homebrew changed their policies and started including everything in their build, so I can no longer use it. The good news is that compiling ffmpeg myself and statically linking shaves about 30 MB off the size of ErowCloudViewer.app...
   - it has been reported that this fixes a potential crash in ffmpeg's libavutil.56.dylib
 
-v2.10.1 (Zephyrus) - 01/16/2019
+v3.2.0 (Asher) - 01/16/2019
 ----------------------
 
 - Bug fixes:
@@ -66,7 +233,7 @@ v2.10.1 (Zephyrus) - 01/16/2019
   - writing E57 files was broken
   - an exception was being thrown when you close CC after saving an ASCII file (#834)
 
-v2.10 (Zephyrus) - 01/06/2019
+v3.1.0 (Asher) - 01/06/2019
 ----------------------
 
 - new features:
@@ -259,7 +426,7 @@ v2.10 (Zephyrus) - 01/06/2019
 	* for a mysterious reason, the FWF_SAVE_CLOUDS command was not accessible anymore...
 	* when computing C2C distances, and using both a 2.5D Triangulation local model and the 'split distances along X, Y and Z' option, the split distances could be wrong in some times
 
-v2.9.1 (Omnia) - 11/03/2019
+v2.0.0 (Asher) - 11/03/2019
 ----------------------
 
 - enhancements:
@@ -272,7 +439,7 @@ v2.9.1 (Omnia) - 11/03/2019
 	* DXF export was broken (styles table was not properly declared)
 	* PLY files with texture indexes were not correctly read
 
-v2.9 (Omnia) - 10/22/2019
+v1.0.0 (Asher) - 10/22/2019
 ----------------------
 
 - New features:
@@ -314,7 +481,7 @@ v2.9 (Omnia) - 10/22/2019
 	* When a picking operation is active, the ESC key will cancel it.
 
 	* qBroom plugin:
-		- now has a wiki documentation: http://www.CLOUDVIEWER .org/doc/wiki/index.php?title=Virtual_broom_(plugin)
+		- now has a wiki documentation: http://www.CLOUDVIEWER.org/doc/wiki/index.php?title=Virtual_broom_(plugin)
 
 	* qAnimation plugin:
 		- new output option 'zoom' (alternative to the existing 'super resolution' option)
