@@ -464,7 +464,7 @@ void ecvAnnotationsTool::updateLabelsCombox(const std::vector<std::string>& labe
 		}
 		ecvColor::Rgb col = ecvColor::LookUpTable::at(i);
 		QColor backColor(col.r, col.g, col.b);
-		labelsComboBox->setItemData(static_cast<int>(i), backColor, Qt::BackgroundColorRole);
+		labelsComboBox->setItemData(static_cast<int>(i), backColor, Qt::BackgroundRole);
 	}
 
 	QPalette pal = labelsComboBox->palette();
