@@ -39,10 +39,11 @@
 #include <list>
 #include <unordered_set>
 
-class QMainWindow;
-class ccInteractor;
 class QObject;
 class ccPolyline;
+class QMainWindow;
+class ccInteractor;
+class ecvOrientedBBox;
 class ecvMainAppInterface;
 
 class ecvGenericVisualizer;
@@ -355,6 +356,8 @@ public: //! Draws the main 3D layer
 	inline virtual void draw(CC_DRAW_CONTEXT& context, const ccHObject * obj) { /* do nothing */ }
 	inline static void DrawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox) { TheInstance()->drawBBox(context, bbox); }
 	inline virtual void drawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox) { /* do nothing */ }
+	inline static void DrawOrientedBBox(CC_DRAW_CONTEXT& context, const ecvOrientedBBox * obb) { TheInstance()->drawOrientedBBox(context, obb); }
+	inline virtual void drawOrientedBBox(CC_DRAW_CONTEXT& context, const ecvOrientedBBox * obb) { /* do nothing */ }
 	static void RemoveBB(CC_DRAW_CONTEXT context);
 	static void RemoveBB(const QString& viewId);
 	static void ChangeEntityProperties(PROPERTY_PARAM& propertyParam, bool autoUpdate = true);

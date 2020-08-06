@@ -275,13 +275,13 @@ void PCLDisplayTools::draw(CC_DRAW_CONTEXT& CONTEXT, const ccHObject* obj)
 	}
 }
 
-void PCLDisplayTools::drawBBox(CC_DRAW_CONTEXT& CONTEXT, const ccBBox * bbox)
+void PCLDisplayTools::drawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox)
 {
-	ecvColor::Rgbf colf = ecvTools::TransFormRGB(CONTEXT.bbDefaultCol);
-	int viewPort = CONTEXT.defaultViewPort;
+	ecvColor::Rgbf colf = ecvTools::TransFormRGB(context.bbDefaultCol);
+	int viewPort = context.defaultViewPort;
 	if (m_visualizer3D)
 	{
-		std::string bboxID = CVTools::fromQString(CONTEXT.viewID);
+		std::string bboxID = CVTools::fromQString(context.viewID);
 		if (!m_visualizer3D->contains(bboxID))
 		{
 			m_visualizer3D->addCube(
@@ -293,10 +293,39 @@ void PCLDisplayTools::drawBBox(CC_DRAW_CONTEXT& CONTEXT, const ccBBox * bbox)
 				bbox->maxCorner().z,
 				colf.r, colf.g, colf.b, bboxID, viewPort);
 
+			//m_visualizer3D->setMeshRenderingMode(context.meshRenderingMode, bboxID, viewPort);
+			m_visualizer3D->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
+				pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, bboxID, viewPort);
+			m_visualizer3D->setLineWidth(context.defaultLineWidth, bboxID, viewPort);
+			m_visualizer3D->setLightMode(bboxID, viewPort);
+		}
+	}
+}
+
+void PCLDisplayTools::drawOrientedBBox(CC_DRAW_CONTEXT & context, const ecvOrientedBBox * obb)
+{
+	int viewPort = context.defaultViewPort;
+	if (m_visualizer3D)
+	{
+		std::string bboxID = CVTools::fromQString(context.viewID);
+		if (!m_visualizer3D->contains(bboxID))
+		{
+			const Eigen::Matrix3d& rotation_OBB = obb->getRotation();
+			Eigen::Matrix3f rotation = rotation_OBB.cast<float>();
+			Eigen::Quaternionf quat(rotation);
+			const Eigen::Vector3d& position_OBB = obb->getPosition();
+			Eigen::Vector3f position(position_OBB(0), position_OBB(1), position_OBB(2));
+			const Eigen::Vector3d& extent = obb->getExtent();
+			const Eigen::Vector3d& color = obb->getColor();
+
+			m_visualizer3D->addOrientedCube(
+				position, quat, extent(0), extent(1), extent(2),
+				color(0), color(1), color(2), bboxID, viewPort);
+
 			//m_visualizer3D->setMeshRenderingMode(CONTEXT.meshRenderingMode, bboxID, viewPort);
 			m_visualizer3D->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
 				pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, bboxID, viewPort);
-			m_visualizer3D->setLineWidth(CONTEXT.defaultLineWidth, bboxID, viewPort);
+			m_visualizer3D->setLineWidth(context.defaultLineWidth, bboxID, viewPort);
 			m_visualizer3D->setLightMode(bboxID, viewPort);
 		}
 	}

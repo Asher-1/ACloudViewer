@@ -105,10 +105,10 @@ bool Torus::Init(const MiscLib::Vector< Vec3f > &samples)
 		return false;
 	if(rt < 0)
 		rt = 0;
-	double t1 = -p + std::sqrt(rt);
-	double t2 = -p - std::sqrt(rt);
-	double s1 = c * t1 + d;
-	double s2 = c * t2 + d;
+	float t1 = static_cast<float>(-p + std::sqrt(rt));
+	float t2 = static_cast<float>(-p - std::sqrt(rt));
+	float s1 = static_cast<float>(c * t1 + d);
+	float s2 = static_cast<float>(c * t2 + d);
 
 	Vec3f pos1 = samples[0] + s1 * samples[k];
 	Vec3f normal1 = pos1 - (samples[1] + t1 * samples[k + 1]);
@@ -133,18 +133,22 @@ bool Torus::Init(const MiscLib::Vector< Vec3f > &samples)
 		majorRadius1 = minorCenter1[0];
 		// compute the distance of the points to the torus
 		distSum1 = 0;
-		for(size_t i = 3; i < spin1.size(); ++i)
-			distSum1 += (tmp = ((spin1[i] - minorCenter1).Length()
-				- minorRadius1)) * tmp;
+		for (size_t i = 3; i < spin1.size(); ++i)
+		{
+			tmp = ((spin1[i] - minorCenter1).Length() - minorRadius1);
+			distSum1 += tmp * tmp;
+		}
 	}
 	if(CircleFrom3Points(spin2.begin(), &minorRadius2, &minorCenter2))
 	{
 		majorRadius2 = minorCenter2[0];
 		// compute the distance of the points to the torus
 		distSum2 = 0;
-		for(size_t i = 3; i < spin2.size(); ++i)
-			distSum2 += (tmp = ((spin2[i] - minorCenter2).Length()
-				- minorRadius2)) * tmp;
+		for (size_t i = 3; i < spin2.size(); ++i)
+		{
+			tmp = ((spin2[i] - minorCenter2).Length() - minorRadius2);
+			distSum2 += tmp * tmp;
+		}
 	}
 	if(distSum1 != std::numeric_limits< float >::infinity()
 		&& distSum1 < distSum2)
@@ -228,10 +232,10 @@ bool Torus::InitAverage(const MiscLib::Vector< Vec3f > &samples)
 						continue;
 					if(rt < 0)
 						rt = 0;
-					double t1 = -p + std::sqrt(rt);
-					double t2 = -p - std::sqrt(rt);
-					double s1 = c * t1 + d;
-					double s2 = c * t2 + d;
+					float t1 = static_cast<float>(-p + std::sqrt(rt));
+					float t2 = static_cast<float>(-p - std::sqrt(rt));
+					float s1 = static_cast<float>(c * t1 + d);
+					float s2 = static_cast<float>(c * t2 + d);
 					pos1 = samples[w] + s1 * samples[k + w];
 					normal1 = pos1 - (samples[x] + t1 * samples[k + x]);
 					normal1.normalize();
@@ -262,18 +266,22 @@ foundAxis:
 		majorRadius1 = minorCenter1[0];
 		// compute the distance of the points to the torus
 		distSum1 = 0;
-		for(size_t i = 3; i < spin1.size(); ++i)
-			distSum1 += (tmp = ((spin1[i] - minorCenter1).Length()
-				- minorRadius1)) * tmp;
+		for (size_t i = 3; i < spin1.size(); ++i)
+		{
+			tmp = ((spin1[i] - minorCenter1).Length() - minorRadius1);
+			distSum1 += tmp * tmp;
+		}
 	}
 	if(CircleFrom3Points(spin2.begin(), &minorRadius2, &minorCenter2))
 	{
 		majorRadius2 = minorCenter2[0];
 		// compute the distance of the points to the torus
 		distSum2 = 0;
-		for(size_t i = 3; i < spin2.size(); ++i)
-			distSum2 += (tmp = ((spin2[i] - minorCenter2).Length()
-				- minorRadius2)) * tmp;
+		for (size_t i = 3; i < spin2.size(); ++i)
+		{
+			tmp = ((spin2[i] - minorCenter2).Length() - minorRadius2);
+			distSum2 += tmp * tmp;
+		}
 	}
 	if(distSum1 != std::numeric_limits< float >::infinity()
 		&& distSum1 < distSum2)
@@ -323,11 +331,12 @@ bool Torus::Init(bool binary, std::istream *i)
 void Torus::Init(FILE *i)
 {
 	float rot; // dummy rotation placeholder
-	fread(&m_normal, sizeof(m_normal), 1, i);
-	fread(&m_center, sizeof(m_center), 1, i);
-	fread(&m_rminor, sizeof(m_rminor), 1, i);
-	fread(&m_rmajor, sizeof(m_rmajor), 1, i);
-	fread(&rot, sizeof(rot), 1, i);
+	size_t readrtn; //unused return warning suppresion
+	readrtn = fread(&m_normal, sizeof(m_normal), 1, i);
+	readrtn = fread(&m_center, sizeof(m_center), 1, i);
+	readrtn = fread(&m_rminor, sizeof(m_rminor), 1, i);
+	readrtn = fread(&m_rmajor, sizeof(m_rmajor), 1, i);
+	readrtn = fread(&rot, sizeof(rot), 1, i);
 	m_appleShaped = m_rmajor < m_rminor;
 	ComputeAppleParams();
 }
@@ -366,7 +375,8 @@ float TorusDistance(const float *param,	const float *x)
 	f += v * v;
 	f = std::sqrt(f);
 	float tmp;
-	return std::sqrt(g * g + ((tmp = (f - param[6])) * tmp)) - param[7];
+	tmp = (f - param[6]);
+	return std::sqrt(g * g + (tmp * tmp)) - param[7];
 }
 
 void TorusDistanceDerivatives(const float *param, const float *x,
@@ -399,7 +409,8 @@ void TorusDistanceDerivatives(const float *param, const float *x,
 	df[4] = g * df[1];
 	df[5] = g * df[2];
 	float tmp;
-	float d = std::sqrt(g * g + ((tmp = (f - param[6])) * tmp)) - param[7];
+	tmp = (f - param[6]);
+	float d = std::sqrt(g * g + (tmp * tmp)) - param[7];
 	float dr = d + param[7];
 	float fr = f - param[6];
 	for(unsigned int i = 0; i < 6; ++i)
@@ -429,7 +440,7 @@ public:
 		ScalarType *values, ScalarType *temp) const
 	{
 		ScalarType chi = 0;
-		int size = end - begin;
+		size_t size = end - begin;
 #ifdef DOPARALLEL
 		#pragma omp parallel for schedule(static) reduction(+:chi)
 #endif
@@ -449,8 +460,9 @@ public:
 			f = std::sqrt(f);
 			temp[idx] = f;
 			ScalarType tmp;
+			tmp = (f - params[6]);
 			chi += (values[idx] = WeightT::Weigh(
-				std::sqrt(g * g + ((tmp = (f - params[6])) * tmp)) - params[7]))
+				std::sqrt(g * g + (tmp * tmp)) - params[7]))
 				* values[idx];;
 		}
 		return chi;
@@ -460,7 +472,7 @@ public:
 	void Derivatives(const ScalarType *params, IteratorT begin, IteratorT end,
 		const ScalarType *values, const ScalarType *temp, ScalarType *matrix) const
 	{
-		int size = end - begin;
+		size_t size = end - begin;
 #ifdef DOPARALLEL
 		#pragma omp parallel for schedule(static)
 #endif
@@ -487,7 +499,8 @@ public:
 			df[4] = g * df[1];
 			df[5] = g * df[2];
 			ScalarType tmp;
-			ScalarType d = std::sqrt(g * g + ((tmp = (temp[idx] - params[6])) * tmp)) - params[7];
+			tmp = (temp[idx] - params[6]);
+			ScalarType d = std::sqrt(g * g + (tmp * tmp)) - params[7];
 			ScalarType dr = d + params[7];
 			ScalarType fr = temp[idx] - params[6];
 			for(unsigned int j = 0; j < 6; ++j)
@@ -592,6 +605,6 @@ void Torus::ComputeAppleParams()
 		m_appleHeight = 0;
 		return;
 	}
-	m_cutOffAngle = std::acos((2 * m_rmajor - m_rminor) / m_rminor) + M_PI / 2.f;
+	m_cutOffAngle = static_cast<float>(std::acos((2 * m_rmajor - m_rminor) / m_rminor) + M_PI / 2);
 	m_appleHeight = std::sin(m_cutOffAngle) * m_rminor;
 }

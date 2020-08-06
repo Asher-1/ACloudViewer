@@ -402,4 +402,4 @@ namespace MiscLib
 	};
 };
 
-#endif // MiscLib__NOSHRINKVECTOR_HEADER__
+#endif

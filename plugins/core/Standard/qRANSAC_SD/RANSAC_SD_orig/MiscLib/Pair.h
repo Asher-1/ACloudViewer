@@ -60,4 +60,4 @@ namespace MiscLib
 	}
 };
 
-#endif // MiscLib__PAIR_HEADER__
+#endif

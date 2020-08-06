@@ -69,4 +69,4 @@ namespace MiscLib
 	};
 };
 
-#endif // MiscLib__REFCOUNTED_HEADER__
+#endif

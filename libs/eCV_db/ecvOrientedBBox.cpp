@@ -32,6 +32,18 @@
 // SYSTEM
 #include <numeric>
 
+void ecvOrientedBBox::draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col)
+{
+	if (!ecvDisplayTools::GetMainWindow())
+	{
+		return;
+	}
+
+	context.viewID = QString("BBox-") + context.viewID;
+	setColor(ecvColor::Rgb::ToEigen(col));
+	ecvDisplayTools::DrawOrientedBBox(context, this);
+}
+
 Eigen::Vector3d ecvOrientedBBox::getMinBound() const {
 	auto points = getBoxPoints();
 	return ComputeMinBound(points);
@@ -92,19 +104,31 @@ ecvOrientedBBox& ecvOrientedBBox::rotate(const Eigen::Matrix3d& R,
 
 const ecvOrientedBBox ecvOrientedBBox::operator * (const ccGLMatrix& mat)
 {
+	CCVector3 t3D;
+	float phi_rad, theta_rad, psi_rad;
+	mat.getParameters(phi_rad, theta_rad, psi_rad, t3D);
+
 	ecvOrientedBBox rotatedBox(*this);
-	Eigen::Vector3d center;
-	mat.applyRotation(center.data());
-	rotatedBox.rotate(ccGLMatrixd::ToEigenMatrix3(mat), center);
+	rotatedBox.translate(CCVector3d::fromArray(t3D), true);
+	Eigen::Matrix3d matrix = ccHObject::GetRotationMatrixFromEulerAngle(
+							 Eigen::Vector3d(phi_rad, theta_rad, psi_rad));
+
+	rotatedBox.setRotation(matrix);
 	return rotatedBox;
 }
 
 const ecvOrientedBBox ecvOrientedBBox::operator * (const ccGLMatrixd& mat)
 {
+	CCVector3d t3D;
+	double phi_rad, theta_rad, psi_rad;
+	mat.getParameters(phi_rad, theta_rad, psi_rad, t3D);
+
 	ecvOrientedBBox rotatedBox(*this);
-	Eigen::Vector3d center;
-	mat.applyRotation(center.data());
-	rotatedBox.rotate(ccGLMatrixd::ToEigenMatrix3(mat), center);
+	rotatedBox.translate(CCVector3d::fromArray(t3D), true);
+	Eigen::Matrix3d matrix = ccHObject::GetRotationMatrixFromEulerAngle(
+		Eigen::Vector3d(phi_rad, theta_rad, psi_rad));
+
+	rotatedBox.setRotation(matrix);
 	return rotatedBox;
 }
 

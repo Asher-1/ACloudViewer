@@ -153,4 +153,4 @@ namespace MiscLib
 	};
 };
 
-#endif // MiscLib__REFCOUNTPTR_HEADER__
+#endif

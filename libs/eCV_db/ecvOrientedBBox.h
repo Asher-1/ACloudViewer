@@ -70,6 +70,12 @@ public:
 	// Returns the entity's own bounding-box
 	virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
 
+	//! Draws oriented bounding box (OpenGL)
+	/** \param context OpenGL context
+	 *  \param col (R,G,B) color
+	**/
+	void draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col);
+
 	inline virtual bool isEmpty() const override { return volume() <= 0; }
 	virtual Eigen::Vector3d getMinBound() const override;
 	virtual Eigen::Vector3d getMaxBound() const override;

@@ -733,15 +733,22 @@ namespace PclUtils
 				CCVector3 transVecStart = transInfo.transVecStart;
 				CCVector3 transVecEnd = transInfo.transVecEnd;
 				CCVector3 scaleXYZ = transInfo.scaleXYZ;
-				CCVector3 position = transInfo.position;
+				CCVector3d position = CCVector3d::fromArray(transInfo.position.u);
 				ccGLMatrixd rotMat = transInfo.rotMat;
 
 				vtkSmartPointer<vtkTransform> trans = vtkSmartPointer<vtkTransform>::New();
+				if (transInfo.isPositionChanged)
+				{
+					actor->AddPosition(position.u);
+				}
 
 				double * origin = actor->GetOrigin();
 
 				trans->PostMultiply();
 				trans->Translate(-origin[0], -origin[1], -origin[2]);
+
+				if (transInfo.isScale)
+					trans->Scale(scaleXYZ.u);
 
 				if (transInfo.isRotate && transInfo.RotMatrixMode)
 				{
@@ -753,9 +760,6 @@ namespace PclUtils
 						transInfo.rotateParam.angle,
 						transInfo.rotateParam.rotAxis.u);
 				}
-
-				if (transInfo.isScale)
-					trans->Scale(scaleXYZ.u);
 
 				trans->Translate(origin);
 
@@ -1278,6 +1282,35 @@ namespace PclUtils
 		return (true);
 	}
 
+	bool PCLVis::addOrientedCube(
+			const Eigen::Vector3f &translation, const Eigen::Quaternionf &rotation,
+			double width, double height, double depth, double r, double g, double b,
+			const std::string &id, int viewport)
+	{
+		// Check to see if this ID entry already exists (has it been already added to the visualizer?)
+		pcl::visualization::ShapeActorMap::iterator am_it = getShapeActorMap()->find(id);
+		if (am_it != getShapeActorMap()->end())
+		{
+			CVLog::Error("[PCLVis::addCube] A shape with id <%s> already exists!"
+				" Please choose a different id and retry.",
+				id.c_str());
+			return (false);
+		}
+		
+		vtkSmartPointer<vtkDataSet> data = pcl::visualization::createCube(translation, rotation, width, height, depth);
+
+		// Create an Actor
+		vtkSmartPointer<vtkLODActor> actor;
+		PclTools::CreateActorFromVTKDataSet(data, actor);
+		actor->GetProperty()->SetRepresentationToSurface();
+		actor->GetProperty()->SetColor(r, g, b);
+		addActorToRenderer(actor, viewport);
+
+		// Save the pointer/ID pair to the global actor map
+		(*getShapeActorMap())[id] = actor;
+
+		return (true);
+	}
 	/********************************Draw Entities*********************************/
 
 	/******************************** Entities Removement *********************************/

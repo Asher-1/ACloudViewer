@@ -324,7 +324,7 @@ struct ECV_DB_LIB_API TransformInfo
 		isRotate = true; 
 		RotMatrixMode = false; 
 		rotateParam.angle = angle;
-		rotateParam.rotAxis.fromArray(axis.u);
+		rotateParam.rotAxis = CCVector3::fromArray(axis.u);
 	}
 
 	void setScale(const CCVector3& scale) { isScale = true; scaleXYZ = scale; }

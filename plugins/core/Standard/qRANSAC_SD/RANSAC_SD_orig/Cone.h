@@ -101,7 +101,7 @@ private:
 			ScalarType chi = 0;
 			ScalarType cosPhi = std::cos(params[6]);
 			ScalarType sinPhi = std::sin(params[6]);
-			int size = end - begin;
+			size_t size = end - begin;
 #ifdef DOPARALLEL
 			#pragma omp parallel for schedule(static) reduction(+:chi)
 #endif
@@ -129,7 +129,7 @@ private:
 		{
 			ScalarType sinPhi = -std::sin(params[6]);
 			ScalarType cosPhi = std::cos(params[6]);
-			int size = end - begin;
+			size_t size = end - begin;
 #ifdef DOPARALLEL
 			#pragma omp parallel for schedule(static)
 #endif
@@ -400,7 +400,8 @@ inline unsigned int Cone::Intersect(const Vec3f &p, const Vec3f &r,
     // Q(t) = 0 must be tested for Dot(A,L(t)-V) >= 0.
 	using namespace std;
     float fAdD = m_axisDir.dot(r);
-    float tmp, fCosSqr = (tmp = cos(m_angle)) * tmp;
+	float tmp = cos(m_angle);
+	float fCosSqr = tmp*tmp;
     Vec3f kE = p - m_center;
     float fAdE = m_axisDir.dot(kE);
     float fDdE = r.dot(kE);

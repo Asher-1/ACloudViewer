@@ -60,64 +60,45 @@ template <typename T> class ccGLMatrixTpl : public ccSerializableObject
 {
 public:
 
-#ifdef USE_EIGEN
-
-#endif // USE_EIGEN
-
-	//static inline ccGLMatrixTpl<T>
-	//	FromEigenMatrix(const Eigen::Matrix<float, 4, 4>& mat)
-	//{
-	//	return ccGLMatrixTpl<T>(mat.data());
-	//}
-
 	static inline ccGLMatrixTpl<T>
 		FromEigenMatrix(const Eigen::Matrix<double, 4, 4>& mat)
 	{
 		return ccGLMatrixTpl<T>(mat.data());
 	}
 
-	//static inline ccGLMatrixTpl<T>
-	//	FromEigenMatrix(const Eigen::Matrix<double, 3, 3>& mat)
-	//{
-	//	ccGLMatrixTpl<T> m;
-	//	const T * data = mat.data();
-	//	T* dest = m.data();
-	//	dest[0] = data[0];  dest[1] = data[1];  dest[2] = data[2];
-	//	dest[4] = data[3];  dest[5] = data[4];  dest[6] = data[5];
-	//	dest[8] = data[6];  dest[9] = data[7];  dest[10] = data[8];
-	//	return m;
-	//}
-
 	static inline Eigen::Matrix<T, 4, 4> 
 		ToEigenMatrix4(const ccGLMatrixTpl<float>& mat)
 	{ 
-		return Eigen::Matrix<T, 4, 4>(reinterpret_cast<const T*>(mat.data()));
+		Eigen::Matrix4f matrix = Eigen::Matrix<float, 4, 4>(mat.data());
+		return matrix.cast<T>();
 	}
 	static inline Eigen::Matrix<T, 4, 4>
 		ToEigenMatrix4(const ccGLMatrixTpl<double>& mat)
 	{
-		return Eigen::Matrix<T, 4, 4>(reinterpret_cast<const T*>(mat.data()));
+		Eigen::Matrix4d matrix = Eigen::Matrix<double, 4, 4>(mat.data());
+		return matrix.cast<T>();
 	}
+
 	static inline Eigen::Matrix<T, 3, 3>
 		ToEigenMatrix3(const ccGLMatrixTpl<float>& mat)
 	{
-		Eigen::Matrix<T, 3, 3> m;
-		const T* data = reinterpret_cast<const T*>(mat.data());
+		Eigen::Matrix<T, 3, 3> m = Eigen::Matrix<T, 3, 3>::Zero();
+		const float* data = mat.data();
 
-		m << data[0], data[1], data[2],
-			 data[4], data[5], data[6],
-			 data[8], data[9], data[10];
+		m << data[0], data[4], data[8],
+			 data[1], data[5], data[9],
+			 data[2], data[6], data[10];
 		return m;
 	}
 	static inline Eigen::Matrix<T, 3, 3>
 		ToEigenMatrix3(const ccGLMatrixTpl<double>& mat)
 	{
-		Eigen::Matrix<T, 3, 3> m;
-		const T* data = reinterpret_cast<const T*>(mat.data());
+		Eigen::Matrix<T, 3, 3> m = Eigen::Matrix<T, 3, 3>::Zero();
+		const double* data = mat.data();
 
-		m << data[0], data[1], data[2],
-			data[4], data[5], data[6],
-			data[8], data[9], data[10];
+		m << data[0], data[4], data[8],  
+			 data[1], data[5], data[9],
+			 data[2], data[6], data[10];
 		return m;
 	}
 
@@ -537,8 +518,8 @@ public:
 	//! Clears translation
 	/** Translation is set to (0,0,0).
 	**/
-	inline void clearTranslation() { CC_MAT_R14 = CC_MAT_R24 = CC_MAT_R34 = 0; }
 
+	inline void clearTranslation() { CC_MAT_R14 = CC_MAT_R24 = CC_MAT_R34 = 0; }
 	//! Inits transformation from a rotation axis, an angle and a translation
 	/** \param[in] alpha_rad rotation angle (in radians)
 		\param[in] axis3D rotation axis

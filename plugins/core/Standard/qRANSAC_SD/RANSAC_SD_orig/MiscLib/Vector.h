@@ -474,4 +474,4 @@ namespace MiscLib
 	};
 };
 
-#endif // MiscLib__VECTOR_HEADER__
+#endif
