@@ -102,19 +102,13 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 	c_unitNormalSymbol->setRedraw(true);
 	c_unitNormalHeadSymbol->setRedraw(true);
 
-	CCVector3 normalVec = getNormal();
-	normalVec.z *= -1;
-
 	CCVector3 posVec(pos.x, pos.y, pos.z);
-	CCVector3 direction(0, PC_ONE * scale, 0);
-
-	//ccGL::Translate(glFunc, pos.x, pos.y, pos.z);
 	normalContext.transformInfo.setTranslationStart(posVec);
+	CCVector3 direction(0, 0, PC_ONE * scale);
 
 	ccGLMatrixd mat = ccGLMatrixd(
-		ccGLMatrix::FromToRotation(CCVector3(0, 0, -PC_ONE), normalVec).data());
-	normalContext.transformInfo.setRotMat(mat);
-#if 0
+		ccGLMatrix::FromToRotation(CCVector3(0, 0, PC_ONE), getNormal()).data());
+	mat.applyRotation(direction);
 	{
 		double angle_rad;
 		CCVector3d axis, trans;
@@ -122,9 +116,6 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 		double angle_deg = angle_rad * static_cast<PointCoordinateType>(CV_RAD_TO_DEG);
 		normalContext.transformInfo.setRotation(angle_deg, axis);
 	}
-#endif
-
-	mat.applyRotation(direction);
 
 	//ccGL::Scale(glFunc, scale, scale, scale);
 	normalContext.transformInfo.setScale(CCVector3(scale, scale, scale));
@@ -135,7 +126,7 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 	c_unitNormalSymbol->draw(normalContext);
 
 	// glFunc->glTranslatef(0, 0, 0.45f);
-	normalContext.transformInfo.setTranslationEnd(0.45f * direction);
+	normalContext.transformInfo.setTranslationEnd(0.9f * direction);
 	normalContext.viewID = m_headId;
 	c_unitNormalHeadSymbol->draw(normalContext);
 }

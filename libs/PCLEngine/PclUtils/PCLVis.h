@@ -203,6 +203,10 @@ namespace PclUtils
 			double r, double g, double b, float width = 1.0f,
 			const std::string &id = "multiline", int viewport = 0);
 		bool addTextureMesh(const PCLTextureMesh &mesh, const std::string &id, int viewport);
+		bool addOrientedCube(
+				const Eigen::Vector3f &translation, const Eigen::Quaternionf &rotation,
+				double width, double height, double depth, double r = 1.0, double g = 1.0, double b = 1.0, 
+				const std::string &id = "cube", int viewport = 0);
 		int textureFromTexMaterial(const pcl::TexMaterial& tex_mat, vtkTexture* vtk_tex) const;
 		void displayText(const CC_DRAW_CONTEXT&  CONTEXT);
 		

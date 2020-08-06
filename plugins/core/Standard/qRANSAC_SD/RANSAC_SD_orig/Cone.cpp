@@ -126,9 +126,9 @@ bool Cone::InitAverage(const MiscLib::Vector< Vec3f > &samples)
 	a[2 + 3 * 3] = d3;
 	if(dmat_solve(3, 1, a))
 		return false;
-	m_center[0] = a[0 + 3 * 3];
-	m_center[1] = a[1 + 3 * 3];
-	m_center[2] = a[2 + 3 * 3];
+	m_center[0] = static_cast<float>(a[0 + 3 * 3]);
+	m_center[1] = static_cast<float>(a[1 + 3 * 3]);
+	m_center[2] = static_cast<float>(a[2 + 3 * 3]);
 
 	LevMarPlaneDistance planeDistance;
 	LevMar(planes.begin(), planes.end(), planeDistance,
@@ -237,9 +237,9 @@ bool Cone::Init(const Vec3f &p1, const Vec3f &p2, const Vec3f &p3,
 	a[2 + 3 * 3] = d3;
 	if(dmat_solve(3, 1, a))
 		return false;
-	m_center[0] = a[0 + 3 * 3];
-	m_center[1] = a[1 + 3 * 3];
-	m_center[2] = a[2 + 3 * 3];
+	m_center[0] = static_cast<float>(a[0 + 3 * 3]);
+	m_center[1] = static_cast<float>(a[1 + 3 * 3]);
+	m_center[2] = static_cast<float>(a[2 + 3 * 3]);
 
 	// compute axisDir
 	Vec3f s1 = p1 - m_center;
@@ -359,10 +359,11 @@ void Cone::Init(float *array)
 void Cone::Init(FILE *i)
 {
 	float rotate = 0;
-	fread(&m_center, sizeof(m_center), 1, i);
-	fread(&m_axisDir, sizeof(m_axisDir), 1, i);
-	fread(&m_angle, sizeof(m_angle), 1, i);
-	fread(&rotate, sizeof(rotate), 1, i);
+	size_t readrtn; //unused return warning suppresion
+	readrtn = fread(&m_center, sizeof(m_center), 1, i);
+	readrtn = fread(&m_axisDir, sizeof(m_axisDir), 1, i);
+	readrtn = fread(&m_angle, sizeof(m_angle), 1, i);
+	readrtn = fread(&rotate, sizeof(rotate), 1, i);
 	m_normal = Vec3f(std::cos(-m_angle), std::sin(-m_angle), 0);
 	m_normalY = m_normal[1] * m_axisDir;
 	m_n2d[0] = std::cos(m_angle);

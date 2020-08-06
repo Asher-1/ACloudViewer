@@ -429,6 +429,16 @@ Eigen::Matrix3d ccHObject::GetRotationMatrixFromQuaternion(
 		.toRotationMatrix();
 }
 
+Eigen::Matrix3d ccHObject::GetRotationMatrixFromEulerAngle(const Eigen::Vector3d& rotation)
+{
+	Eigen::AngleAxisd rollAngle(Eigen::AngleAxisd(rotation(2), Eigen::Vector3d::UnitX()));
+	Eigen::AngleAxisd pitchAngle(Eigen::AngleAxisd(rotation(1), Eigen::Vector3d::UnitY()));
+	Eigen::AngleAxisd yawAngle(Eigen::AngleAxisd(rotation(0), Eigen::Vector3d::UnitZ()));
+	Eigen::Matrix3d rotation_matrix;
+	rotation_matrix = yawAngle * pitchAngle * rollAngle;
+	return rotation_matrix;
+}
+
 ccBBox ccHObject::getAxisAlignedBoundingBox() const
 {
 	return ccBBox();
@@ -1057,10 +1067,12 @@ void ccHObject::drawBB(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col)
 	{
 		ccGLMatrix trans;
 		ccBBox box = getOwnFitBB(trans);
-		box *= trans.data();
 		if (box.isValid())
 		{
-			box.draw(context, col);
+			box += trans.getTranslationAsVec3D();
+			ecvOrientedBBox obb = ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(box);
+			obb.setRotation(ccGLMatrixd::ToEigenMatrix3(trans));
+			obb.draw(context, col);
 		}
 	}
 	break;

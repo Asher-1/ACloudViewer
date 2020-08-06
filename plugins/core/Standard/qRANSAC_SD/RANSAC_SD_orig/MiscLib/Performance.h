@@ -33,4 +33,4 @@ inline double GetPerformanceFreq() { return double(CLOCKS_PER_SEC); }
 #endif
 };
 
-#endif // MiscLib__PERFORMANCE_HEADER__
+#endif

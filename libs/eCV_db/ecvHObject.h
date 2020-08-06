@@ -209,6 +209,9 @@ public: //construction
 	/// Get Rotation Matrix from Quaternion.
 	static Eigen::Matrix3d GetRotationMatrixFromQuaternion(
 		const Eigen::Vector4d& rotation);
+	/// Get Rotation Matrix from Euler angle.
+	static Eigen::Matrix3d GetRotationMatrixFromEulerAngle(
+		const Eigen::Vector3d& rotation);
 	/////////////////////// for python interface /////////////////////////////////
 
 public: //base members access

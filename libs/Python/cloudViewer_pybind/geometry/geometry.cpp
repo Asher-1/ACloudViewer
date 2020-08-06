@@ -52,6 +52,8 @@ void pybind_geometry_classes(py::module &m) {
 		&ccHObject::GetRotationMatrixFromYXZ, "rotation"_a);
 	m.def("get_rotation_matrix_from_axis_angle",
 		&ccHObject::GetRotationMatrixFromAxisAngle, "rotation"_a);
+	m.def("get_rotation_matrix_from_euler_angle",
+		&ccHObject::GetRotationMatrixFromEulerAngle, "rotation"_a);
 	m.def("get_rotation_matrix_from_quaternion",
 		&ccHObject::GetRotationMatrixFromQuaternion, "rotation"_a);
 
@@ -225,6 +227,9 @@ void pybind_geometry_classes(py::module &m) {
 			"rotation"_a)
 		.def_static("get_rotation_matrix_from_axis_angle",
 			&ccHObject::GetRotationMatrixFromAxisAngle,
+			"rotation"_a)
+		.def_static("get_rotation_matrix_from_euler_angle",
+			&ccHObject::GetRotationMatrixFromEulerAngle,
 			"rotation"_a)
 		.def_static("get_rotation_matrix_from_quaternion",
 			&ccHObject::GetRotationMatrixFromQuaternion,

@@ -2294,6 +2294,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionSurface->setEnabled(atLeastOneCloud || atLeastOneMesh || atLeastOnePolyline);
 	m_ui->actionRemoveDuplicatePoints->setEnabled(atLeastOneCloud);
 	m_ui->actionFitPlane->setEnabled(atLeastOneEntity);
+	m_ui->actionFitPlaneProxy->setEnabled(atLeastOneEntity);
 	m_ui->actionFitSphere->setEnabled(atLeastOneCloud);
 	//m_ui->actionLevel->setEnabled(atLeastOneEntity);
 	m_ui->actionFitFacet->setEnabled(atLeastOneEntity);

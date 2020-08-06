@@ -37,6 +37,7 @@ class ccHObject;
 class ImageVis;
 class ccMesh;
 class ccImage;
+class ecvOrientedBBox;
 class ccPointCloud;
 class QMainWindow;
 class ecvMainAppInterface;
@@ -84,7 +85,9 @@ public: // inherit from ecvDisplayTools
 
 	//virtual void redrawDisplay(CC_DRAW_CONTEXT& CONTEXT) override;
 
-	virtual void drawBBox(CC_DRAW_CONTEXT& CONTEXT, const ccBBox * bbox) override;
+	virtual void drawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox) override;
+
+	virtual void drawOrientedBBox(CC_DRAW_CONTEXT& context, const ecvOrientedBBox * obb) override;
 
 	virtual void toggleOrientationMarker(bool state) override;
 

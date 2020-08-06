@@ -33,4 +33,4 @@ namespace MiscLib
 	}
 };
 
-#endif // MiscLib__RANDOM_HEADER__
+#endif
