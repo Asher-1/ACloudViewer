@@ -109,9 +109,6 @@ void ecvFilterByLabelDlg::createCheckboxesWithLabels()
 	if (gridLayout && !gridLayout->isEmpty())
 	{
 		clearLayoutWidgets(gridLayout);
-		this->update();
-		labelGroupBox->update();
-		gridLayout->update();
 	}
 
 	for (size_t i = 0; i < m_labels.size(); ++i)
@@ -138,10 +135,13 @@ void ecvFilterByLabelDlg::createCheckboxesWithLabels()
 			col = ecvColor::LookUpTable::at(label);
 		}
 
-		QColor backColor(col.r, col.g, col.b);
-		QPalette pal = labelCheckBox->palette();
-		pal.setColor(QPalette::Base, backColor);
-		labelCheckBox->setPalette(pal);
+		QString styleSheet = QString("background-color: rgb(%1, %2, %3, %4)").arg(col.r).arg(col.g).arg(col.b).arg(125);
+		labelCheckBox->setStyleSheet(styleSheet);
+		//labelCheckBox->setAutoFillBackground(true);
+		//QPalette pal = labelCheckBox->palette();
+		//QColor backColor(col.r, col.g, col.b);
+		//pal.setColor(QPalette::Base, backColor);
+		//labelCheckBox->setPalette(pal);
 
 		int rowIndex = static_cast<int>(i / 2);
 		int colIndex = static_cast<int>(i % 2);

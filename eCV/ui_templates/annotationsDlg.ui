@@ -270,7 +270,7 @@
            <string>class sets</string>
           </property>
           <property name="styleSheet">
-           <string notr="true">font: 12pt &quot;Adobe 黑体 Std R&quot;;
+           <string notr="true">font: 75 12pt &quot;微软雅黑&quot;;
 
 </string>
           </property>
