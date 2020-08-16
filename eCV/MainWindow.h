@@ -78,6 +78,7 @@ class ecvRecentFiles;
 class ecvAnnotationsTool;
 class ecvFilterWindowTool;
 class ecvRenderSurfaceTool;
+class ecvFilterByLabelDlg;
 class ecvCameraParamEditDlg;
 class ecvPrimitiveFactoryDlg;
 class ecvDeepSemanticSegmentationTool;
@@ -419,6 +420,7 @@ private slots:
 	void doActionOpenColorScalesManager();
 	void doActionSFGaussianFilter();
 	void doActionSFBilateralFilter();
+	void doActionFilterByLabel();
 	void doActionFilterByValue();
 
 	void doActionScalarFieldFromColor();
@@ -572,6 +574,9 @@ private:
 
 	//! Deep Semantic Segmentation tool dialog
 	ecvDeepSemanticSegmentationTool* m_dssTool;
+
+	//! Filter Label Tool dialog
+	ecvFilterByLabelDlg* m_filterLabelTool;
 
 	//! Filter Window tool
 	ecvFilterWindowTool* m_filterWindowTool;	

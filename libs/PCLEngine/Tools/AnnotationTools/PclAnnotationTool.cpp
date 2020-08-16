@@ -28,6 +28,7 @@
 #include <CVLog.h>
 #include <CVGeom.h>
 #include <CVTools.h>
+#include <ClassMap.h>
 
 // CV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -642,29 +643,11 @@ void PclAnnotationTool::updateCloudLabel(const std::string& type)
 void PclAnnotationTool::loadDefaultClasses()
 {
 	std::vector<std::string> labels;
-	{
-		labels.push_back("unlabeled");
-		labels.push_back("man-made-Terrain");
-		labels.push_back("natural-Terrain");
-		labels.push_back("high-Vegetation");
-		labels.push_back("low-Vegetation");
-		labels.push_back("buildings");
-		labels.push_back("hard-Scape");
-		labels.push_back("scanning-Artifacts");
-		labels.push_back("cars");
-		labels.push_back("utility-Pole");
-		labels.push_back("insulator");
-		labels.push_back("electrical-Wire");
-		labels.push_back("cross-Bar");
-		labels.push_back("stick");
-		labels.push_back("fuse");
-		labels.push_back("wire-clip");
-		labels.push_back("linker-insulator");
-		labels.push_back("persons");
-		labels.push_back("traffic-Sign");
-		labels.push_back("traffic-Light");
-		initAnnotationLabels(labels);
+	for (auto it : ClassMap::SemanticMap) {
+		labels.push_back(it.second);
 	}
+
+	initAnnotationLabels(labels);
 }
 ///////////////////////////////////////////////////////////////
 

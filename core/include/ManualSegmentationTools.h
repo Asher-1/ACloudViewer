@@ -59,6 +59,15 @@ public:
 		\return a new cloud structure containing the extracted points (references to - no duplication)
 	**/
 	static ReferenceCloud* segment(GenericIndexedCloudPersist* cloud, ScalarType minDist, ScalarType maxDist, bool outside = false);
+	
+	//! Selects the points which associated scalar value fall inside or outside a specified interval
+	/** \warning: be sure to activate an OUTPUT scalar field on the input cloud
+		\param cloud the cloud to segment
+		\param values scalar values
+		\param outside whether to select the points inside or outside
+		\return a new cloud structure containing the extracted points (references to - no duplication)
+	**/
+	static ReferenceCloud* segment(GenericIndexedCloudPersist* cloud, std::vector<ScalarType> values, bool outside = false);
 
 
 	//! Tests if a point is inside a polygon (2D)

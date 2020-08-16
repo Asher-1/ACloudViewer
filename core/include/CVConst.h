@@ -89,7 +89,6 @@ const unsigned char POINT_HIDDEN				=	 1;				/**< Point visibility state: hidden
 const unsigned char POINT_OUT_OF_RANGE			=	 2;				/**< Point visibility state: out of range **/
 const unsigned char POINT_OUT_OF_FOV			=	 4;				/**< Point visibility state: out of field of view **/
 
-
 	//! View orientation
 enum CC_VIEW_ORIENTATION {
 	CC_TOP_VIEW,	/**< Top view (eye: +Z) **/

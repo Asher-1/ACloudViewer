@@ -166,6 +166,48 @@ ReferenceCloud* ManualSegmentationTools::segment(	GenericIndexedCloudPersist* cl
 	return Y;
 }
 
+ReferenceCloud * CVLib::ManualSegmentationTools::segment(	GenericIndexedCloudPersist * cloud, 
+															std::vector<ScalarType> values, 
+															bool outside/*=false*/)
+{
+	if (!cloud)
+	{
+		assert(false);
+		return nullptr;
+	}
+
+	ReferenceCloud* Y = new ReferenceCloud(cloud);
+
+	//for each point
+	for (unsigned i = 0; i < cloud->size(); ++i)
+	{
+		const ScalarType dist = cloud->getPointScalarValue(i);
+		bool find_flag = false;
+		for (auto label : values)
+		{
+			if (std::abs(label - dist) < EPSILON_VALUE)
+			{
+				find_flag = true;
+				break;
+			}
+		}
+
+		//we test if its associated scalar value falls inside the specified interval
+		if (find_flag ^ outside)
+		{
+			if (!Y->addPointIndex(i))
+			{
+				//not engouh memory
+				delete Y;
+				Y = nullptr;
+				break;
+			}
+		}
+	}
+
+	return Y;
+}
+
 GenericIndexedMesh* ManualSegmentationTools::segmentMesh(GenericIndexedMesh* theMesh, ReferenceCloud* pointIndexes, bool pointsWillBeInside, GenericProgressCallback* progressCb, GenericIndexedCloud* destCloud, unsigned indexShift)
 {
 	if (!theMesh || !pointIndexes || !pointIndexes->getAssociatedCloud())

@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 
-// type caster: utility::Matrix <-> NumPy-array
 namespace ClassMap {
 	static std::map<size_t, std::string> SemanticMap = {
 			{0 , "Unlabeled" },

@@ -156,6 +156,7 @@
 #include "ecvPtsSamplingDlg.h"
 #include "ecvPlaneEditDlg.h"
 #include "ecvFilterByValueDlg.h"
+#include "ecvFilterByLabelDlg.h"
 #include "ecvColorScaleEditorDlg.h"
 #include "ecvItemSelectionDlg.h"
 #include "ecvPointListPickingDlg.h"
@@ -233,6 +234,7 @@ MainWindow::MainWindow(QWidget *parent)
 	, m_filterTool(nullptr)
 	, m_annoTool(nullptr)
 	, m_dssTool(nullptr)
+	, m_filterLabelTool(nullptr)
 	, m_filterWindowTool(nullptr)
 	, m_surfaceTool(nullptr)
 	, m_ppDlg(nullptr)
@@ -322,7 +324,7 @@ MainWindow::MainWindow(QWidget *parent)
 	doActionToggleOrientationMarker(true);
 #endif // QT_DEBUG
 
-#ifdef ECV_PYTHON_USE_AS_DLL
+#ifdef ECV_PYTHON_LIBRARY_BUILD
 	QString applicationPath = QCoreApplication::applicationDirPath();
 	QString pyHome = applicationPath + "/python36";
 	if (!PythonInterface::SetPythonHome(CVTools::fromQString(pyHome).c_str()))
@@ -434,6 +436,7 @@ void MainWindow::connectActions()
 	connect(m_ui->actionOpenColorScalesManager, &QAction::triggered, this, &MainWindow::doActionOpenColorScalesManager);
 	connect(m_ui->actionGaussianFilter, &QAction::triggered, this, &MainWindow::doActionSFGaussianFilter);
 	connect(m_ui->actionBilateralFilter, &QAction::triggered, this, &MainWindow::doActionSFBilateralFilter);
+	connect(m_ui->actionFilterByLabel, &QAction::triggered, this, &MainWindow::doActionFilterByLabel);
 	connect(m_ui->actionFilterByValue, &QAction::triggered, this, &MainWindow::doActionFilterByValue);
 	connect(m_ui->actionScalarFieldFromColor, &QAction::triggered, this, &MainWindow::doActionScalarFieldFromColor);
 	connect(m_ui->actionConvertToRGB, &QAction::triggered, this, &MainWindow::doActionSFConvertToRGB);
@@ -840,6 +843,7 @@ MainWindow::~MainWindow() {
 	m_filterTool = nullptr;
 	m_annoTool = nullptr;
 	m_dssTool = nullptr;
+	m_filterLabelTool = nullptr;
 	m_compDlg = nullptr;
 	m_ppDlg = nullptr;
 	m_plpDlg = nullptr;
@@ -2263,6 +2267,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionSave->setEnabled(atLeastOneEntity);
 	m_ui->actionClone->setEnabled(atLeastOneEntity);
 	m_ui->actionDelete->setEnabled(atLeastOneEntity);
+	m_ui->actionImportSFFromFile->setEnabled(atLeastOneEntity);
 	m_ui->actionExportCoordToSF->setEnabled(atLeastOneEntity);
 	m_ui->actionSegment->setEnabled(atLeastOneEntity);
 	m_ui->actionFilterSection->setEnabled(atLeastOneEntity);
@@ -2277,7 +2282,6 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionComputeNormals->setEnabled(atLeastOneCloud || atLeastOneMesh);
 	m_ui->actionChangeColorLevels->setEnabled(atLeastOneCloud || atLeastOneMesh);
 	m_ui->actionEditGlobalShiftAndScale->setEnabled(atLeastOneCloud || atLeastOneMesh || atLeastOnePolyline);
-	//m_ui->actionCrop->setEnabled(atLeastOneCloud || atLeastOneMesh);
 	m_ui->actionSetUniqueColor->setEnabled(atLeastOneEntity/*atLeastOneCloud || atLeastOneMesh*/); //DGM: we can set color to a group now!
 	m_ui->actionColorize->setEnabled(atLeastOneEntity/*atLeastOneCloud || atLeastOneMesh*/); //DGM: we can set color to a group now!
 	//m_ui->actionDeleteScanGrid->setEnabled(atLeastOneGrid);
@@ -2305,6 +2309,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionExportCloudInfo->setEnabled(atLeastOneEntity);
 	m_ui->actionExportPlaneInfo->setEnabled(atLeastOneEntity);
 
+	m_ui->actionFilterByLabel->setEnabled(atLeastOneSF);
 	m_ui->actionFilterByValue->setEnabled(atLeastOneSF);
 	m_ui->actionConvertToRGB->setEnabled(atLeastOneSF);
 	m_ui->actionConvertToRandomRGB->setEnabled(atLeastOneSF);
@@ -2333,8 +2338,8 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionDistanceMap->setEnabled(atLeastOneMesh || atLeastOneCloud);
 
 	//m_ui->menuMeshScalarField->setEnabled(atLeastOneSF && atLeastOneMesh);
-	////actionSmoothMeshSF->setEnabled(atLeastOneSF && atLeastOneMesh);
-	////actionEnhanceMeshSF->setEnabled(atLeastOneSF && atLeastOneMesh);
+	//actionSmoothMeshSF->setEnabled(atLeastOneSF && atLeastOneMesh);
+	//actionEnhanceMeshSF->setEnabled(atLeastOneSF && atLeastOneMesh);
 
 	m_ui->actionOrientNormalsMST->setEnabled(atLeastOneCloud && atLeastOneNormal);
 	m_ui->actionOrientNormalsFM->setEnabled(atLeastOneCloud && atLeastOneNormal);
@@ -2401,9 +2406,9 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionStreamlineFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
 	m_ui->actionThresholdFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
 	
-#ifdef ECV_PYTHON_USE_AS_DLL
+#ifdef ECV_PYTHON_LIBRARY_BUILD
 	m_ui->actionSemanticSegmentation->setEnabled(atLeastOneCloud);
-#endif // ECV_PYTHON_USE_AS_DLL
+#endif // ECV_PYTHON_LIBRARY_BUILD
 
 	m_ui->actionDBScanCluster->setEnabled(atLeastOneCloud);
 	m_ui->actionPlaneSegmentation->setEnabled(atLeastOneCloud);
@@ -2440,7 +2445,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionMatchBBCenters->setEnabled(atLeastTwoEntities);
 	m_ui->actionMatchScales->setEnabled(atLeastTwoEntities);
 
-	////standard plugins
+	// standard plugins
 	m_pluginUIManager->handleSelectionChanged();
 }
 
@@ -7844,6 +7849,59 @@ void MainWindow::doActionSFBilateralFilter()
 	updateUI();
 }
 
+void MainWindow::doActionFilterByLabel()
+{
+	if (!haveOneSelection())
+	{
+		ecvConsole::Warning(tr("Select one and only one entity!"));
+		return;
+	}
+
+	ccHObject *entity = m_selectedEntities[0];
+	ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(entity);
+	if (!cloud || !cloud->isKindOf(CV_TYPES::POINT_CLOUD))
+	{
+		ecvConsole::Warning(tr("only cloud is supported!"));
+		return;
+	}
+
+	if (!m_filterLabelTool)
+	{
+		m_filterLabelTool = new ecvFilterByLabelDlg(this);
+		connect(m_filterLabelTool,
+			&ccOverlayDialog::processFinished,
+			this, [=]() {
+			ecvDisplayTools::UpdateScreen();
+			freezeUI(false);
+			updateUI();
+		});
+		registerOverlayDialog(m_filterLabelTool, Qt::TopRightCorner);
+	}
+
+	if (!m_filterLabelTool->linkWith(ecvDisplayTools::GetCurrentScreen()))
+	{
+		CVLog::Warning("[MainWindow::doSemanticSegmentation] Initialization failed!");
+		return;
+	}
+
+	if (!m_filterLabelTool->setInputEntity(entity))
+	{
+		return;
+	}
+
+	if (m_filterLabelTool->start())
+	{
+		freezeUI(true);
+		updateOverlayDialogsPlacement();
+	}
+	else
+	{
+		freezeUI(false);
+		updateUI();
+		ecvConsole::Error(tr("Unexpected error!")); //indeed...
+	}
+}
+
 void MainWindow::doActionFilterByValue()
 {
 	typedef std::pair<ccHObject*, ccPointCloud*> EntityAndVerticesType;
@@ -7855,7 +7913,6 @@ void MainWindow::doActionFilterByValue()
 		if (cloud && cloud->isA(CV_TYPES::POINT_CLOUD))
 		{
 			ccPointCloud* pc = static_cast<ccPointCloud*>(cloud);
-			//la methode est activee sur le champ scalaire affiche
 			CVLib::ScalarField* sf = pc->getCurrentDisplayedScalarField();
 			if (sf)
 			{
@@ -7913,9 +7970,6 @@ void MainWindow::doActionFilterByValue()
 		{
 			ccHObject* ent = item.first;
 			ccPointCloud* pc = item.second;
-			//CVLib::ScalarField* sf = pc->getCurrentDisplayedScalarField();
-			//assert(sf);
-
 			//we set as output (OUT) the currently displayed scalar field
 			int outSfIdx = pc->getCurrentDisplayedScalarFieldIndex();
 			assert(outSfIdx >= 0);
@@ -7977,7 +8031,6 @@ void MainWindow::doActionFilterByValue()
 
 				results.push_back(resultOutside);
 			}
-			//*/
 		}
 	}
 
@@ -8976,7 +9029,7 @@ void MainWindow::doAnnotations(int mode)
 
 void MainWindow::doSemanticSegmentation()
 {
-#ifdef ECV_PYTHON_USE_AS_DLL
+#ifdef ECV_PYTHON_LIBRARY_BUILD
 	if (!haveSelection())
 		return;
 
@@ -9023,13 +9076,13 @@ void MainWindow::doSemanticSegmentation()
 #else
 	CVLog::Warning("python interface library has not been compiled!");
 	return;
-#endif // ECV_PYTHON_USE_AS_DLL
+#endif // ECV_PYTHON_LIBRARY_BUILD
 
 }
 
 void MainWindow::deactivateSemanticSegmentation(bool state)
 {
-#ifdef ECV_PYTHON_USE_AS_DLL
+#ifdef ECV_PYTHON_LIBRARY_BUILD
 	if (m_dssTool && state)
 	{
 		ccHObject::Container result;
@@ -9056,7 +9109,7 @@ void MainWindow::deactivateSemanticSegmentation(bool state)
 	freezeUI(false);
 
 	updateUI();
-#endif // ECV_PYTHON_USE_AS_DLL
+#endif // ECV_PYTHON_LIBRARY_BUILD
 }
 
 void MainWindow::doActionDBScanCluster()
