@@ -689,12 +689,27 @@ public: //other methods
 	**/
 	ccPointCloud* filterPointsByScalarValue(ScalarType minVal, ScalarType maxVal, bool outside = false);
 
+
+	//! Filters out points whose scalar values falls into an interval
+	/** Threshold values should be expressed relatively to the current displayed scalar field.
+		\param values filter scalar values
+		\param outside whether to select the points inside or outside of the specified interval
+		\return resulting cloud (remaining points)
+	**/
+	ccPointCloud* filterPointsByScalarValue(std::vector<ScalarType> values, bool outside = false);
+
 	//! Hides points whose scalar values falls into an interval
 	/** Values are taken from the current OUTPUT scalar field.
 		\param minVal minimum value (below, points are hidden)
 		\param maxVal maximum value (above, points are hidden)
 	**/
 	void hidePointsByScalarValue(ScalarType minVal, ScalarType maxVal);
+
+	//! Hides points whose scalar values falls into an interval
+	/** Values are taken from the current OUTPUT scalar field.
+		\param values scalar values (equal, points are hidden)
+	**/
+	void hidePointsByScalarValue(std::vector<ScalarType> values);
 
 	enum UnrollMode { CYLINDER = 0, CONE = 1, STRAIGHTENED_CONE = 2, STRAIGHTENED_CONE2 = 3 };
 

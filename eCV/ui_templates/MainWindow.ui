@@ -67,7 +67,7 @@
      <x>0</x>
      <y>0</y>
      <width>1136</width>
-     <height>23</height>
+     <height>20</height>
     </rect>
    </property>
    <property name="font">
@@ -364,6 +364,7 @@
      <addaction name="actionSFGradient"/>
      <addaction name="actionGaussianFilter"/>
      <addaction name="actionBilateralFilter"/>
+     <addaction name="actionFilterByLabel"/>
      <addaction name="actionFilterByValue"/>
      <addaction name="actionConvertToRGB"/>
      <addaction name="actionConvertToRandomRGB"/>
@@ -3381,6 +3382,17 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>Export normals to one or several scalar fields</string>
+   </property>
+  </action>
+  <action name="actionFilterByLabel">
+   <property name="text">
+    <string>Filter By Label</string>
+   </property>
+   <property name="toolTip">
+    <string>Filter points by label</string>
+   </property>
+   <property name="statusTip">
+    <string>Filter points by label</string>
    </property>
   </action>
  </widget>

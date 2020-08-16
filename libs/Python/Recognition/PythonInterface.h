@@ -26,8 +26,10 @@
 
 #pragma once
 
+// CV_CORE_LIB
+#include <ClassMap.h>
+
 // LOCAL
-#include "Utility/ClassMap.h"
 #include "Utility/PythonModules.h"
 #include "Recognition/DeepSemanticSegmentation.h"
 

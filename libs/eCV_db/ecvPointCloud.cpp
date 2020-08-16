@@ -2789,6 +2789,18 @@ ccPointCloud* ccPointCloud::filterPointsByScalarValue(ScalarType minVal, ScalarT
 	return (c ? partialClone(c.data()) : nullptr);
 }
 
+ccPointCloud * ccPointCloud::filterPointsByScalarValue(std::vector<ScalarType> values, bool outside)
+{
+	if (!getCurrentOutScalarField())
+	{
+		return nullptr;
+	}
+
+	QSharedPointer<CVLib::ReferenceCloud> c(CVLib::ManualSegmentationTools::segment(this, values, outside));
+
+	return (c ? partialClone(c.data()) : nullptr);
+}
+
 void ccPointCloud::hidePointsByScalarValue(ScalarType minVal, ScalarType maxVal)
 {
 	if (!resetVisibilityArray())
@@ -2810,6 +2822,43 @@ void ccPointCloud::hidePointsByScalarValue(ScalarType minVal, ScalarType maxVal)
 	{
 		const ScalarType& val = sf->getValue(i);
 		if (val < minVal || val > maxVal || val != val) //handle NaN values!
+		{
+			m_pointsVisibility[i] = POINT_HIDDEN;
+		}
+	}
+}
+
+void ccPointCloud::hidePointsByScalarValue(std::vector<ScalarType> values)
+{
+	if (!resetVisibilityArray())
+	{
+		CVLog::Error(QString("[Cloud %1] Visibility table could not be instantiated!").arg(getName()));
+		return;
+	}
+
+	CVLib::ScalarField* sf = getCurrentOutScalarField();
+	if (!sf)
+	{
+		CVLog::Error(QString("[Cloud %1] Internal error: no activated output scalar field!").arg(getName()));
+		return;
+	}
+
+	//we use the visibility table to tag the points to filter out
+	unsigned count = size();
+	for (unsigned i = 0; i < count; ++i)
+	{
+		const ScalarType& val = sf->getValue(i);
+		bool find_flag = false;
+		for (auto label : values)
+		{
+			if (std::abs(label-val) < EPSILON_VALUE)
+			{
+				find_flag = true;
+				break;
+			}
+		}
+
+		if (!find_flag || val != val) //handle NaN values!
 		{
 			m_pointsVisibility[i] = POINT_HIDDEN;
 		}

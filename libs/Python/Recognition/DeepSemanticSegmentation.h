@@ -27,7 +27,7 @@
 #pragma once
 
 #include "eCV_python.h"
-#include "Utility/ClassMap.h"
+#include <ClassMap.h>
 
 class ccHObject;
 namespace cloudViewer {

@@ -250,5 +250,6 @@
         <file>Resources/images/convex_concave_hull.png</file>
         <file>Resources/images/poisson.png</file>
         <file>Resources/images/ecvCloudPrimitiveDistance.png</file>
+        <file>Resources/images/smallSplit.png</file>
     </qresource>
 </RCC>

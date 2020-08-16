@@ -24,11 +24,14 @@
 // GUI
 #include <ui_deepSemanticSegmentationDlg.h>
 
+// CV_CORE_LIB
+#include <ClassMap.h>
+
 // ECV_DB_LIB
 #include <ecvHObject.h>
 
 // ECV_PYTHON_LIB
-#ifdef ECV_PYTHON_USE_AS_DLL
+#ifdef ECV_PYTHON_LIBRARY_BUILD
 #include <Recognition/PythonInterface.h>
 
 class ecvDeepSemanticSegmentationTool : public ccOverlayDialog, public Ui::DeepSemanticSegmentationDlg
@@ -72,23 +75,19 @@ protected:
 
 	std::vector< std::vector<size_t> > m_clusters;
 
-#ifdef ECV_PYTHON_USE_AS_DLL
 	std::vector<ClassMap::ClusterMap> m_clusters_map;
-#endif
 
 private:
 	void doCompute();
 	int checkSelected();
 	int startDetection();
+	void selectAllClasses();
 	int performSegmentation();
 	void updateSelectedEntity();
 	void refreshSelectedClouds();
 	void exportClustersToSF();
 	void exportClustersToEntities(ccHObject::Container &result);
-
 	void getSelectedFilterClasses(std::vector<size_t> &filteredClasses);
-
-	void selectAllClasses();
 };
 
 #endif
