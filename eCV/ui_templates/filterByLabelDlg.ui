@@ -19,6 +19,9 @@
   <property name="windowTitle">
    <string>Filter by label</string>
   </property>
+  <property name="autoFillBackground">
+   <bool>true</bool>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -116,6 +119,12 @@
    </item>
    <item>
     <widget class="QGroupBox" name="labelGroupBox">
+     <property name="autoFillBackground">
+      <bool>true</bool>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font: 75 8pt &quot;微软雅黑&quot;;</string>
+     </property>
      <property name="title">
       <string>Labels</string>
      </property>
