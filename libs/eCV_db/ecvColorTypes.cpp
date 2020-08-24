@@ -30,19 +30,21 @@ namespace ecvColor
 		247, 129, 191,
 		0  , 255, 248,
 		96 , 0  , 41 ,
-		0  , 101, 255,
+		0  , 0  , 255,
 		52 , 68 , 1  ,
 		158, 147, 0  ,
 		116, 0  , 185,
 		0  , 255, 0  ,
 		255, 183, 156,
 		240, 0  , 174,
-		160, 135, 255,
+		132, 177, 185,
 		105, 86 , 121,
 		0,   191, 255,
 		0  , 97 , 109,
-		76 , 109, 80 ,
+		159, 206, 110,
+		203, 151, 0  ,
 		0  , 141, 255,
+		76 , 109, 80 ,
 		1  , 238, 98 ,
 		81 , 0  , 78 ,
 		128, 103, 66 ,
@@ -281,6 +283,14 @@ namespace ecvColor
 		237, 161, 77 ,
 	};
 
+	ECV_DB_LIB_API Rgb LookUpTable::at(size_t color_id)
+	{
+		assert(color_id < COLOR_LUT_SIZE);
+		return Rgb(static_cast<ColorCompType>(COLOR_LUT[color_id * 3 + 0]),
+			static_cast<ColorCompType>(COLOR_LUT[color_id * 3 + 1]),
+			static_cast<ColorCompType>(COLOR_LUT[color_id * 3 + 2]));
+	}
+
 	/// Number of colors in Glasbey lookup table
 	static const size_t COLOR_LUT_SIZE = sizeof(COLOR_LUT) / (sizeof(COLOR_LUT[0]) * 3);
 
@@ -333,12 +343,5 @@ namespace ecvColor
 	ECV_DB_LIB_API const Rgbub defaultLabelBkgColor		(255, 255, 255); //white
 	ECV_DB_LIB_API const Rgbub defaultLabelMarkerColor	(255,   0, 255); //magenta
 
-	ECV_DB_LIB_API Rgb LookUpTable::at(size_t color_id)
-	{
-		assert(color_id < COLOR_LUT_SIZE);
-		return Rgb(static_cast<ColorCompType>(COLOR_LUT[color_id * 3 + 0]),
-					static_cast<ColorCompType>(COLOR_LUT[color_id * 3 + 1]),
-					static_cast<ColorCompType>(COLOR_LUT[color_id * 3 + 2]));
-	}
 };
 

@@ -8,8 +8,6 @@ static const unsigned char CloudLUT[] =
 {
   255 , 255, 255 , // default
   255,  0,   0   , // highted
-  0  ,  0,   255   // ground
-
 };
 
 
@@ -21,9 +19,9 @@ PclCloudLUT::at (int color_id)
 {
   //assert (color_id < CloudLUT_SIZE);
 	pcl::RGB color;
-	if (color_id == -1 || color_id == -2)
+	if (color_id == -1)
 	{
-		color_id += 3;
+		color_id = -color_id;
 		color.r = CloudLUT[color_id * 3 + 0];
 		color.g = CloudLUT[color_id * 3 + 1];
 		color.b = CloudLUT[color_id * 3 + 2];
@@ -41,9 +39,6 @@ PclCloudLUT::at (int color_id)
 		color.r = col.r;
 		color.g = col.g;
 		color.b = col.b;
-		//color.r = COLOR_LUT[color_id * 3 + 0];
-		//color.g = COLOR_LUT[color_id * 3 + 1];
-		//color.b = COLOR_LUT[color_id * 3 + 2];
 	}
 
 	return (color);

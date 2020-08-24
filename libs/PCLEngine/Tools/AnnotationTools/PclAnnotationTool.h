@@ -105,7 +105,6 @@ private:
 	void setPointSize(const std::string & viewID, int viewPort = 0);
 	void highlightPoint(std::vector<int>& slice);
 	void defaultColorPoint(std::vector<int>& slice);
-	void groundColorPoint(std::vector<int>& slice);
 	void createAnnotationFromSelectPoints(std::string type = "unknown");
 
 	void labelCloudByAnnotations();
