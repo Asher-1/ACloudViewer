@@ -45,8 +45,7 @@
 #include <QFileInfo>
 
 #define DEFAULT_POINT 0
-#define SELECTED_POINT -2
-#define GROUND_POINT -1
+#define SELECTED_POINT -1
 
 using namespace PclUtils;
 
@@ -673,13 +672,6 @@ void PclAnnotationTool::defaultColorPoint(std::vector<int>& slice)
 	}
 
 	fastLabelCloud(slice, DEFAULT_POINT);
-}
-
-void PclAnnotationTool::groundColorPoint(std::vector<int>& slice)
-{
-	if (slice.size() < 1) return;
-
-	fastLabelCloud(slice, GROUND_POINT);
 }
 
 void PclAnnotationTool::updateCloud()
