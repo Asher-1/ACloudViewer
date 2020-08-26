@@ -54,8 +54,7 @@ void pybind_trianglemesh(py::module &m) {
             .def("__repr__",
                  [](const ccMesh &mesh) {
                      std::string info = fmt::format(
-                             "ccMesh with {} points and {} "
-                             "triangles",
+                             "ccMesh with {} points and {} triangles",
                              mesh.getVerticeSize(), mesh.size());
 
                      if (mesh.hasEigenTextures()) {
@@ -71,6 +70,10 @@ void pybind_trianglemesh(py::module &m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
+			.def("size", &ccMesh::size,
+				"Returns triangles number.")
+			.def("vertice_size", &ccMesh::getVerticeSize,
+				"Returns vertices number.")
 			.def("set_associated_cloud",
 				&ccMesh::setAssociatedCloud,
 				"Sets the associated vertices cloud (warning)", 
@@ -538,6 +541,10 @@ void pybind_trianglemesh(py::module &m) {
                            "the triangle.")
             .def_readwrite("textures", &ccMesh::textures_,
                            "cloudViewer.geometry.Image: The texture images.");
+    docstring::ClassMethodDocInject(m, "ccMesh", "size");
+    docstring::ClassMethodDocInject(m, "ccMesh", "vertice_size");
+    docstring::ClassMethodDocInject(m, "ccMesh", "create_internal_cloud");
+    docstring::ClassMethodDocInject(m, "ccMesh", "set_associated_cloud");
     docstring::ClassMethodDocInject(m, "ccMesh", "compute_adjacency_list");
     docstring::ClassMethodDocInject(m, "ccMesh", "compute_triangle_normals");
     docstring::ClassMethodDocInject(m, "ccMesh", "compute_vertex_normals");

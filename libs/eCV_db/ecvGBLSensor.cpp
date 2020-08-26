@@ -286,7 +286,7 @@ ccGBLSensor::NormalGrid* ccGBLSensor::projectNormals(	CVLib::GenericCloud* cloud
 
 					//deduce other normals components
 					assert(S.x != 0 || S.y != 0);
-					PointCoordinateType coef = sqrt((1 - S.z*S.z) / (S.x*S.x + S.y*S.y));
+					PointCoordinateType coef = sqrt((1 - S.z*S.z) / (S.x*S.x + S.y*S.y + ZERO_TOLERANCE));
 					S.x = coef * (S2.x - Q.x);
 					S.y = coef * (S2.y - Q.y);
 				}

@@ -206,7 +206,6 @@ void qRansacSD::doAction()
 	if (group)
 	{
 		m_app->addToDB(group);
-		//m_app->refreshAll();
 	}
 
 }
@@ -481,7 +480,7 @@ ccHObject* qRansacSD::executeRANSAC(ccPointCloud* ccPC, const RansacParams& para
 
 			if (shapePointsCount < params.supportPoints)
 			{
-				CVLog::Warning("[qRansacSD] Skipping shape, did not meet minimum point requirement");
+				CVLog::Warning("[qRansacSD] Skipping shape, %d did not meet minimum point requirement", shapePointsCount);
 				count -= shapePointsCount;
 				continue;
 			}

@@ -504,28 +504,27 @@ void PclAnnotationTool::changeAnnotationType(const std::string& type)
 		if (m_annotationMode == AnnotationMode::BOUNDINGBOX)
 		{
 			if (m_currPickedAnnotation) {
-				CVLog::Print(tr("change current picked annotation type from [%1] to [%2].").
+				CVLog::Print(tr("Change current picked annotation type from [%1] to [%2].").
 					arg(m_currPickedAnnotation->getType().c_str(), type.c_str()));
 				changeAnnotationType(m_currPickedAnnotation, type);
 			}
 			else
 			{
-				CVLog::Warning(tr("no box picked now! please pick one box and try again!"));
+				CVLog::Warning(tr("No box picked now! Please pick one box and try again!"));
 			}
 		}
 		else if (m_annotationMode == AnnotationMode::SEMANTICS)
 		{
 			vector<Annotation *>& annos = m_annoManager->getAnnotations();
-			if (!annos.empty() &&
-				annos.back()->getType() != type)
+			if (!annos.empty() && annos.back()->getType() != type)
 			{
-				CVLog::Print(tr("change last annotation type from [%1] to [%2]").
+				CVLog::Print(tr("Change last annotation type from [%1] to [%2]").
 					arg(annos.back()->getType().c_str(), type.c_str()));
 				changeAnnotationType(annos.back(), type);
 			}
 			else
 			{
-				CVLog::Warning(tr("no annotation exists now! please create one and try again!"));
+				CVLog::Warning(tr("No annotation exists now! Please create one and try again!"));
 			}
 		}
 	}
@@ -540,7 +539,7 @@ void PclAnnotationTool::selectExistedAnnotation(const std::string & type)
 		m_annoManager->getAnnotations(type, m_lastSelectedAnnotations);
 		if (m_lastSelectedAnnotations.empty())
 		{
-			CVLog::Warning(tr("cannot find annotation type [%1], ignore it!").arg(type.c_str()));
+			CVLog::Warning(tr("Cannot find annotation type [%1], ignore it!").arg(type.c_str()));
 			return;
 		}
 		else
@@ -573,6 +572,7 @@ void PclAnnotationTool::changeAnnotationType(Annotation* anno, const std::string
 
 	anno->setType(type);
 	m_annoManager->updateBalloonByAnno(anno);
+	m_annoManager->updateLabels(anno, false);
 	showAnnotation(anno);
 	updateCloud();
 }
@@ -580,7 +580,7 @@ void PclAnnotationTool::changeAnnotationType(Annotation* anno, const std::string
 void PclAnnotationTool::exportAnnotations()
 {
 	m_annoManager->saveAnnotations(m_annotationFileName, int(m_annotationMode));
-	CVLog::Print(tr("annotations file has been saved to %1").arg(CVTools::toQString(m_annotationFileName)));
+	CVLog::Print(tr("Annotations file has been saved to %1").arg(CVTools::toQString(m_annotationFileName)));
 }
 
 void PclAnnotationTool::createAnnotationFromSelectPoints(std::string type)
@@ -602,7 +602,7 @@ void PclAnnotationTool::createAnnotationFromSelectPoints(std::string type)
 		updateCloud();
 	}
 	else {
-		CVLog::Warning(tr("no points selected or selected points number is less than 3"));
+		CVLog::Warning(tr("No points selected or selected points number is less than 3"));
 	}
 }
 

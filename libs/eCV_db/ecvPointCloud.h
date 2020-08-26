@@ -50,7 +50,66 @@ namespace cloudViewer
 		class Image;
 		class RGBDImage;
 		class VoxelGrid;
+
+		//! RANSAC_SD
+		class RansacParams
+		{
+		public:
+			enum RANSAC_PRIMITIVE_TYPES
+			{
+				RPT_PLANE = 0,
+				RPT_SPHERE = 1,
+				RPT_CYLINDER = 2,
+				RPT_CONE = 3,
+				RPT_TORUS = 4,
+			};
+
+		public:
+			float epsilon;	// distance threshold
+			float bitmapEpsilon; //bitmap resolution
+			unsigned supportPoints;	// this is the minimal numer of points required for a primitive
+			float maxNormalDev_deg;	// maximal normal deviation from ideal shape (in degrees)
+			float probability;	// probability that no better candidate was overlooked during sampling
+			bool randomColor; // should the resulting detected shapes sub point cloud be colored randomly
+			std::vector<RANSAC_PRIMITIVE_TYPES> primEnabled; // RANSAC_PRIMITIVE_TYPES
+			float minRadius; // minimum radius threshold
+			float maxRadius; // maximum radius threshold
+			RansacParams() : epsilon(0.005f), bitmapEpsilon(0.01f),
+				supportPoints(500), maxNormalDev_deg(25.0f), probability(0.01f),
+				randomColor(true), minRadius(0.0000001f), maxRadius(1000000.0f)
+			{
+				primEnabled.push_back(RPT_PLANE);
+				primEnabled.push_back(RPT_SPHERE);
+				primEnabled.push_back(RPT_CYLINDER);
+			};
+
+			RansacParams(float scale) : epsilon(0.005f * scale),
+				bitmapEpsilon(0.01f * scale), supportPoints(500),
+				maxNormalDev_deg(25.0f), probability(0.01f), randomColor(true),
+				minRadius(0.0000001f), maxRadius(1000000.0f)
+			{
+				primEnabled.push_back(RPT_PLANE);
+				primEnabled.push_back(RPT_SPHERE);
+				primEnabled.push_back(RPT_CYLINDER);
+			};
+
+		};
+
+		class RansacResult
+		{
+		public:
+			std::string getTypeName() const;
+			unsigned getDrawingPrecision() const;
+			bool setDrawingPrecision(unsigned steps);
+		public:
+			std::vector<size_t> indices;
+			std::shared_ptr<ccMesh> primitive = nullptr;
+		};
+
+		using RansacResults = std::vector<RansacResult>;
+
 	}
+
 	namespace camera
 	{
 		class PinholeCameraIntrinsic;
@@ -218,14 +277,14 @@ public: //features allocation/resize
 		be sure to reserve the necessary amount of memory
 		with this method. This method reserves memory for as
 		many colors as the number of points in the cloud
-		(effictively stored or reserved).
+		(effectively stored or reserved).
 		\return true if ok, false if there's not enough memory
 	**/
 	bool reserveTheRGBTable();
 
 	//! Resizes the RGB colors array
 	/** If possible, the colors array is resized to fit exactly the number
-		of points in the cloud (effictively stored or reserved). If the
+		of points in the cloud (effectively stored or reserved). If the
 		new size is inferior to the actual one, the last elements will be
 		deleted. Otherwise, the array is filled with zeros (default behavior)
 		or "white" colors (is fillWithWhite).
@@ -264,7 +323,7 @@ public: //features allocation/resize
 
 	//! Resizes all the active features arrays
 	/** This method is meant to be called after having increased the cloud
-		population (if the final number of insterted point is lower than the
+		population (if the final number of inserted point is lower than the
 		reserved size). Otherwise, it fills all new elements with blank values.
 		\return true if ok, false if there's not enough memory
 	**/
@@ -978,6 +1037,20 @@ public: // for python interface
 	std::vector<int> clusterDBSCAN(double eps,
 								   size_t min_points,
 								   bool print_progress = false) const;
+
+	/// \brief Cluster ccPointCloud using the RANSAC algorithm
+	/// Wrapper to Schnabel et al. library for automatic shape detection in point cloud
+	/// "Efficient RANSAC for Point-Cloud Shape Detection", Ruwen Schnabel, Roland Wahl, 
+	/// and Reinhard Klein, in Computer Graphics Forum(June 2007), 26:2(214 - 226)
+	/// http://cg.cs.uni-bonn.de/en/publications/paper-details/schnabel-2007-efficient/
+	/// Returns a list of ransac point labels and shape entity(ccGenericPrimitive)
+	///
+	/// \param params Shape detection parameters.
+	/// \param print_progress If `true` the progress is visualized in the
+	/// console.
+	cloudViewer::geometry::RansacResults executeRANSAC(
+			const cloudViewer::geometry::RansacParams& params =
+			cloudViewer::geometry::RansacParams(), bool print_progress = false);
 
 	/// \brief Segment ccPointCloud plane using the RANSAC algorithm.
 	///

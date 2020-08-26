@@ -10,15 +10,17 @@ if (PLUGIN_STANDARD_QRANSAC_SD)
 	
 	include ( ${ECV_CMAKE_SCRIPTS_DIR}/CMakePolicies.cmake NO_POLICY_SCOPE )
 
-	add_subdirectory (RANSAC_SD_orig)
+	#add_subdirectory (RANSAC_SD_orig)
 
 	include( ../../../CMakePluginTpl.cmake )
+	
+	add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
+	target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
 
-	target_link_libraries( ${PROJECT_NAME} QRANSAC_SD_PRIM_SHAPES_LIB QRANSAC_SD_MISC_LIB )
-
-	include_directories( ${QRANSAC_SD_MISC_LIB_SOURCE_DIR} )
-	include_directories( ${QRANSAC_SD_PRIM_SHAPES_LIB_SOURCE_DIR} )
-	include_directories( ${QRANSAC_SD_PRIM_SHAPES_LIB_SOURCE_DIR}/GfxTL )
+	# target_link_libraries( ${PROJECT_NAME} QRANSAC_SD_PRIM_SHAPES_LIB QRANSAC_SD_MISC_LIB )
+	# include_directories( ${QRANSAC_SD_MISC_LIB_SOURCE_DIR} )
+	# include_directories( ${QRANSAC_SD_PRIM_SHAPES_LIB_SOURCE_DIR} )
+	# include_directories( ${QRANSAC_SD_PRIM_SHAPES_LIB_SOURCE_DIR}/GfxTL )
 
 if (OPENMP_FOUND AND NOT WIN32) #DGM: OpenMP doesn't work with Visual at least (the process loops infinitely)
 	target_compile_definitions( ${PROJECT_NAME} PRIVATE DOPARALLEL )

@@ -63,10 +63,10 @@ void pybind_geometry_classes(py::module &m) {
 		"Returns object unique ID.")
 		.def("set_uniqueID", &ccObject::setUniqueID,
 			"Changes unique ID.")
-		.def("get_name", &ccObject::getName,
-			"Returns object name.")
-		.def("set_name", &ccObject::setName,
-			"Sets object name.")
+		.def("get_name", [](const ccObject& obj) {
+			return obj.getName().toStdString(); }, "Returns object name.")
+		.def("set_name", [](ccObject& obj, const std::string& name) {
+				obj.setName(name.c_str()); }, "Sets object name.")
 		.def("is_leaf", &ccObject::isLeaf,
 			"Returns whether the geometry is leaf.")
 		.def("is_custom", &ccObject::isCustom,
@@ -166,8 +166,7 @@ void pybind_geometry_classes(py::module &m) {
 			"translation"_a, "relative"_a = true)
 		.def("scale", py::overload_cast<double>(&ccHObject::scale),
 			"Apply scaling to the geometry coordinates.", "s"_a)
-		.def("scale", py::overload_cast<double, 
-										const Eigen::Vector3d &>(&ccHObject::scale),
+		.def("scale", py::overload_cast<double, const Eigen::Vector3d &>(&ccHObject::scale),
 			"Apply scaling to the geometry coordinates.", "s"_a,
 			"center"_a)
 		.def("rotate",

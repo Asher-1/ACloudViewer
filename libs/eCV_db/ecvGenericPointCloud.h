@@ -57,7 +57,6 @@ class ccOctreeProxy;
 class ECV_DB_LIB_API ccGenericPointCloud : public ccShiftedObject,  public CVLib::GenericIndexedCloudPersist
 {
 	friend class ccMesh;
-
 public:
 
 	//! Default constructor

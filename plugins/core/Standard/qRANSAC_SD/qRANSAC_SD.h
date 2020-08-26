@@ -52,7 +52,7 @@ public:
 		bool primEnabled[5]; //RANSAC_PRIMITIVE_TYPES
 		float minRadius;
 		float maxRadius;
-		RansacParams() : epsilon(0.005f), bitmapEpsilon(0.001f), supportPoints(500), maxNormalDev_deg(25.0f), probability(0.01f), randomColor(true), minRadius(0.0000001f), maxRadius(1000000.0f)
+		RansacParams() : epsilon(0.005f), bitmapEpsilon(0.01f), supportPoints(500), maxNormalDev_deg(25.0f), probability(0.01f), randomColor(true), minRadius(0.0000001f), maxRadius(1000000.0f)
 		{
 			primEnabled[RPT_PLANE] = true;
 			primEnabled[RPT_SPHERE] = true;
@@ -61,7 +61,7 @@ public:
 			primEnabled[RPT_TORUS] = false;
 		};
 
-		RansacParams(float scale) : epsilon(0.005f * scale), bitmapEpsilon(0.001f * scale), supportPoints(500), maxNormalDev_deg(25.0f), probability(0.01f), randomColor(true), minRadius(0.0000001f), maxRadius(1000000.0f)
+		RansacParams(float scale) : epsilon(0.005f * scale), bitmapEpsilon(0.01f * scale), supportPoints(500), maxNormalDev_deg(25.0f), probability(0.01f), randomColor(true), minRadius(0.0000001f), maxRadius(1000000.0f)
 		{
 			primEnabled[RPT_PLANE] = true;
 			primEnabled[RPT_SPHERE] = true;

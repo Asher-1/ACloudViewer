@@ -38,6 +38,106 @@
 using namespace cloudViewer;
 
 void pybind_pointcloud(py::module &m) {
+
+	py::class_<geometry::RansacResult> ransacResult(
+		m, "RansacResult", "Ransac result.");
+	py::detail::bind_default_constructor<geometry::RansacResult>(
+		ransacResult);
+	py::detail::bind_copy_functions<geometry::RansacResult>(
+		ransacResult);
+	ransacResult.def(py::init<>())
+		.def("__repr__",
+			[](const geometry::RansacResult &result) {
+		return std::string(
+			"geometry::RansacResult with "
+			"points indices size = ") + std::to_string(result.indices.size()) +
+			" and drawing precision = " + std::to_string(result.getDrawingPrecision()) +
+			" and primitive type = " + result.getTypeName();
+			})
+		.def("get_type_name",
+			&geometry::RansacResult::getTypeName,
+			"Returns type name (sphere, cylinder, etc.).")
+		.def("get_drawing_Precision",
+			&geometry::RansacResult::getDrawingPrecision,
+			"Returns drawing precision (or 0 if feature is not supported).")
+		.def("set_drawing_Precision",
+			&geometry::RansacResult::setDrawingPrecision,
+			"Sets drawing precision." 
+			"Warning: steps should always be >= "
+			"ccGenericPrimitive::MIN_DRAWING_PRECISION = 4",
+			"steps"_a)
+		.def_readwrite("indices",
+			&geometry::RansacResult::indices,
+			"points indices.")
+		.def_readwrite("primitive",
+			&geometry::RansacResult::primitive,
+			"The ransac primitive mesh shape.");
+		docstring::ClassMethodDocInject(m, "RansacResult", "get_type_name");
+		docstring::ClassMethodDocInject(m, "RansacResult", "get_drawing_Precision");
+		docstring::ClassMethodDocInject(m, "RansacResult", "set_drawing_Precision",
+			{ {"steps", "The steps drawing precision."} });
+
+	// ccPointCloud::RansacParams
+	py::class_<geometry::RansacParams> ransacParam(
+		m, "RansacParams", "Ransac SD Parameters.");
+	py::detail::bind_default_constructor<geometry::RansacParams>(ransacParam);
+	py::detail::bind_copy_functions<geometry::RansacParams>(ransacParam);
+	ransacParam.def(py::init<float>(), "scale"_a)
+		.def("__repr__", [](const geometry::RansacParams &param) {
+			return std::string(
+			"geometry::RansacParams with "
+			"epsilon = ") + std::to_string(param.epsilon) +
+			" and bitmapEpsilon = " + std::to_string(param.bitmapEpsilon) +
+			" and supportPoints = " + std::to_string(param.supportPoints) +
+			" and maxNormalDev_deg = " + std::to_string(param.maxNormalDev_deg) +
+			" and probability = " + std::to_string(param.probability) +
+			" and randomColor = " + std::to_string(param.randomColor) +
+			" and minRadius = " + std::to_string(param.minRadius) +
+			" and maxRadius = " + std::to_string(param.maxRadius);
+		})
+		.def_readwrite("epsilon",
+			&geometry::RansacParams::epsilon,
+			"Distance threshold.")
+		.def_readwrite("bit_map_epsilon",
+			&geometry::RansacParams::bitmapEpsilon,
+			"Bitmap resolution.")
+		.def_readwrite("support_points",
+			&geometry::RansacParams::supportPoints,
+			"This is the minimal numer of points required for a primitive.")
+		.def_readwrite("max_normal_deviation_deg",
+			&geometry::RansacParams::maxNormalDev_deg,
+			"Maximal normal deviation from ideal shape (in degrees).")
+		.def_readwrite("probability",
+			&geometry::RansacParams::probability,
+			"Probability that no better candidate was overlooked during sampling.")
+		.def_readwrite("random_color",
+			&geometry::RansacParams::randomColor,
+			"Should the resulting detected shapes sub point cloud be colored randomly.")
+		.def_readwrite("prim_enabled_list",
+			&geometry::RansacParams::primEnabled,
+			"RANSAC PRIMITIVE TYPES.")
+		.def_readwrite("min_radius",
+			&geometry::RansacParams::minRadius,
+			"Minimum radius threshold.")
+		.def_readwrite(
+			"max_radius", &geometry::RansacParams::maxRadius,
+			"Maximum radius threshold.");
+
+	// ccPointCloud::RansacParams::RANSAC_PRIMITIVE_TYPES
+	py::enum_<geometry::RansacParams::RANSAC_PRIMITIVE_TYPES>
+		ransac_primitive_type(ransacParam, "RANSAC_PRIMITIVE_TYPES", py::arithmetic());
+	ransac_primitive_type
+		.value("Plane", geometry::RansacParams::RPT_PLANE)
+		.value("Sphere", geometry::RansacParams::RPT_SPHERE)
+		.value("Cylinder", geometry::RansacParams::RPT_CYLINDER)
+		.value("Cone", geometry::RansacParams::RPT_CONE)
+		.value("Torus", geometry::RansacParams::RPT_TORUS)
+		.export_values();
+	ransac_primitive_type.attr("__doc__") = docstring::static_property(
+		py::cpp_function([](py::handle arg) -> std::string {
+			return "Enum class for Ransac Primitive types.";
+		}), py::none(), py::none(), "");
+
 	py::class_<ccPointCloud, PyGeometry<ccPointCloud>,
 		std::shared_ptr<ccPointCloud>, ccHObject>
 		pointcloud(m, "ccPointCloud", py::multiple_inheritance(),
@@ -47,15 +147,19 @@ void pybind_pointcloud(py::module &m) {
 	py::detail::bind_default_constructor<ccPointCloud>(pointcloud);
 	py::detail::bind_copy_functions<ccPointCloud>(pointcloud);
 	pointcloud
-		.def(py::init<const std::vector<Eigen::Vector3d> &>(),
-			"Create a PointCloud from points", "points"_a)
-		.def("__repr__",
-			[](const ccPointCloud &pcd) {
+		.def(py::init([](const std::string& name) {
+				return new ccPointCloud(name.c_str());
+			}), "name"_a = "cloud")
+		.def(py::init<const std::vector<Eigen::Vector3d>&, const std::string&>(),
+			"Create a PointCloud from points", "points"_a, "name"_a = "cloud")
+		.def("__repr__", [](const ccPointCloud &pcd) {
 		return std::string("ccPointCloud with ") +
 			std::to_string(pcd.size()) + " points.";
-	})
+		})
 		.def(py::self + py::self)
 		.def(py::self += py::self)
+		.def("size", &ccPointCloud::size,
+			"Returns points number.")
 		.def("has_points", &ccPointCloud::hasPoints,
 			"Returns ``True`` if the point cloud contains points.")
 		.def("has_normals", &ccPointCloud::hasNormals,
@@ -91,14 +195,12 @@ void pybind_pointcloud(py::module &m) {
 			"points with "
 			"the 0-th point always chosen, not at random.",
 			"every_k_points"_a)
-		.def("crop",
-		(std::shared_ptr<ccPointCloud>(ccPointCloud::*)(
+		.def("crop", (std::shared_ptr<ccPointCloud>(ccPointCloud::*)(
 			const ccBBox &) const) &
 			ccPointCloud::Crop,
 			"Function to crop input pointcloud into output pointcloud",
 			"bounding_box"_a)
-		.def("crop",
-		(std::shared_ptr<ccPointCloud>(ccPointCloud::*)(
+		.def("crop", (std::shared_ptr<ccPointCloud>(ccPointCloud::*)(
 			const ecvOrientedBBox &) const) &
 			ccPointCloud::Crop,
 			"Function to crop input pointcloud into output pointcloud",
@@ -173,6 +275,14 @@ void pybind_pointcloud(py::module &m) {
 			"Spatial Databases with Noise', 1996. Returns a list of point "
 			"labels, -1 indicates noise according to the algorithm.",
 			"eps"_a, "min_points"_a, "print_progress"_a = false)
+		.def("execute_ransac", &ccPointCloud::executeRANSAC,
+			"Cluster ccPointCloud using the RANSAC algorithm, "
+			"Wrapper to Schnabel et al. library for automatic"
+			" shape detection in point cloud ,Efficient RANSAC"
+			" for Point - Cloud Shape Detection, Ruwen Schnabel, "
+			"Roland Wahl, Returns a list of ransac point labels"
+			" and shape entity(ccGenericPrimitive)",
+			"params"_a = geometry::RansacParams(), "print_progress"_a = false)
 		.def("segment_plane", &ccPointCloud::segmentPlane,
 			"Segments a plane in the point cloud using the RANSAC "
 			"algorithm.",
@@ -249,6 +359,7 @@ void pybind_pointcloud(py::module &m) {
 			"image"_a, "intrinsic"_a,
 			"extrinsic"_a = Eigen::Matrix4d::Identity(),
 			"project_valid_depth_only"_a = true);
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "size");
 	docstring::ClassMethodDocInject(m, "ccPointCloud", "has_colors");
 	docstring::ClassMethodDocInject(m, "ccPointCloud", "has_normals");
 	docstring::ClassMethodDocInject(m, "ccPointCloud", "has_points");
