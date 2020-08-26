@@ -18,6 +18,7 @@ add_library(${PROJECT_NAME} SHARED
 			${LIBLZF_SOURCE_FILES})
 
 # Enforce 3rd party dependencies
+add_definitions( -DPOINTSWITHINDEX )
 add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
 target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
 

@@ -291,7 +291,7 @@ void ecvAnnotationsTool::toggleBox(bool state)
 {
 	if (!m_annotationTool)
 	{
-		CVLog::Warning("[ecvAnnotationsTool::toggleBox] annotations tool has not been initialized!");
+		CVLog::Warning("[ecvAnnotationsTool::toggleBox] Annotations tool has not been initialized!");
 		return;
 	}
 
@@ -310,7 +310,7 @@ void ecvAnnotationsTool::toggleOrigin(bool dummy)
 {
 	if (!m_annotationTool)
 	{
-		CVLog::Warning("[ecvAnnotationsTool::toggleBox] annotations tool has not been initialized!");
+		CVLog::Warning("[ecvAnnotationsTool::toggleBox] Annotations tool has not been initialized!");
 		return;
 	}
 
@@ -507,7 +507,7 @@ void ecvAnnotationsTool::exportAnnotationToSF()
 		std::vector<int> annotations;
 		if (!m_annotationTool->getCurrentAnnotations(annotations))
 		{
-			CVLog::Warning("[ecvAnnotationsTool::exportAnnotationToSF] export Annotation To SF failed!");
+			CVLog::Warning("[ecvAnnotationsTool::exportAnnotationToSF] Export Annotation To SF failed!");
 			return;
 		}
 		std::vector<std::vector<int>> annosVector;
@@ -519,7 +519,7 @@ void ecvAnnotationsTool::exportAnnotationToSF()
 		container.push_back(m_entityContainer.getFirstChild());
 		if (!ccEntityAction::importToSF(container, scalarsVector, "Clusters"))
 		{
-			CVLog::Error("[ecvAnnotationsTool::exportAnnotationToSF] import sf failed!");
+			CVLog::Error("[ecvAnnotationsTool::exportAnnotationToSF] Import sf failed!");
 		}
 		else
 		{

@@ -312,6 +312,11 @@ set(BUILD_FMT ON)
 # PoissonRecon
 set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/PoissonRecon)
 
+# QRANSAC_SD
+#Causes the sub clouds to be generated as partial clones of original cloud
+add_definitions( -DPOINTSWITHINDEX )
+add_subdirectory (RANSAC_SD_orig)
+
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${dirent_INCLUDE_DIRS}
 	 ${EIGEN3_INCLUDE_DIRS}
@@ -333,6 +338,9 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${fmt_INCLUDE_DIRS}
      ${k4a_INCLUDE_DIRS}
      ${poisson_INCLUDE_DIRS}
+	 ${QRANSAC_SD_MISC_LIB_SOURCE_DIR}
+	 ${QRANSAC_SD_PRIM_SHAPES_LIB_SOURCE_DIR}
+	 ${QRANSAC_SD_PRIM_SHAPES_LIB_SOURCE_DIR}/GfxTL
 )
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
@@ -367,6 +375,8 @@ list(APPEND 3RDPARTY_LIBRARIES
 	 ${qhull_LIBRARIES}
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
+	 ${QRANSAC_SD_MISC_LIB_LIBRARIES}
+	 ${QRANSAC_SD_PRIM_SHAPES_LIB_LIBRARIES}
 )
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building cloudViewer as shared library,
