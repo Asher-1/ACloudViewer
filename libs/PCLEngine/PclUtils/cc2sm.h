@@ -55,6 +55,7 @@ public:
 	pcl::PointCloud<pcl::PointXYZ>::Ptr getXYZ2() const;
 
 	PCLCloud::Ptr getNormals() const;
+	PCLCloud::Ptr getPointNormals() const;
 
 	PCLCloud::Ptr getColors() const;
 

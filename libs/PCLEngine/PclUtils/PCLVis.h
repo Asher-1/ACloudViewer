@@ -175,6 +175,7 @@ namespace PclUtils
 		void expandBounds(double bounds[6], vtkMatrix4x4* matrix);
 
 		void draw(CC_DRAW_CONTEXT& CONTEXT, PCLCloud::Ptr smCloud);
+		void updateNormals(CC_DRAW_CONTEXT& CONTEXT, PCLCloud::Ptr smCloud);
 		void draw(CC_DRAW_CONTEXT& CONTEXT, PCLMesh::Ptr pclMesh);
 		void draw(CC_DRAW_CONTEXT& CONTEXT, PCLTextureMesh::Ptr textureMesh);
 		void draw(const CC_DRAW_CONTEXT& CONTEXT, PCLPolygon::Ptr pclPolygon, bool closed);

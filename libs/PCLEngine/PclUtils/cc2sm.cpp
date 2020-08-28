@@ -355,6 +355,22 @@ PCLCloud::Ptr cc2smReader::getNormals() const
 	return sm_cloud;
 }
 
+PCLCloud::Ptr cc2smReader::getPointNormals() const
+{
+	PCLCloud::Ptr normals = getNormals();
+	if (!normals)
+	{
+		return normals;
+	}
+	PCLCloud::Ptr xyzCloud = getXYZ();
+	PCLCloud::Ptr sm_tmp(new PCLCloud); //temporary cloud
+	if (xyzCloud)
+	{
+		pcl::concatenateFields(*normals, *xyzCloud, *sm_tmp);
+	}
+	return sm_tmp;
+}
+
 PCLCloud::Ptr cc2smReader::getColors() const
 {
 	if (!m_cc_cloud || !m_cc_cloud->hasColors())
