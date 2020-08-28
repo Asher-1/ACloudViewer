@@ -1150,7 +1150,6 @@ void ccDBRoot::redrawCCObject(ccHObject* object, bool forceRedraw/* = true*/)
 void ccDBRoot::redrawCCObjectAndChildren(ccHObject* object, bool forceRedraw/* = true*/)
 {
 	assert(object);
-
 	object->redrawDisplay(forceRedraw);
 }
 

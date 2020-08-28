@@ -139,9 +139,8 @@ namespace PclUtils
 		// Forwarded to vtkPVInteractorStyle if present on local processes.
 		virtual void setCamera2DManipulators(const int manipulators[9]);
 		virtual void setCamera3DManipulators(const int manipulators[9]);
-		void setCameraManipulators(
-			VTKExtensions::vtkCustomInteractorStyle* style,
-			const int manipulators[9]);
+		void setCameraManipulators(VTKExtensions::vtkCustomInteractorStyle* style, 
+								   const int manipulators[9]);
 		virtual void setCamera2DMouseWheelMotionFactor(double factor);
 		virtual void setCamera3DMouseWheelMotionFactor(double factor);
 		/**

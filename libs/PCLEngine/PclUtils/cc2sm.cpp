@@ -126,6 +126,11 @@ PCLCloud::Ptr cc2smReader::getGenericField(std::string field_name) const
 	return sm_cloud;
 }
 
+unsigned cc2smReader::getvisibilityNum() const
+{
+	return m_partialVisibility ? m_visibilityNum : m_cc_cloud->size();
+}
+
 PCLCloud::Ptr cc2smReader::getOneOf(Fields field) const
 {
 	assert(m_cc_cloud);
@@ -396,6 +401,87 @@ PCLCloud::Ptr cc2smReader::getColors() const
 	}
 
 	return sm_cloud;
+}
+
+/** \brief Obtain the actual color for the input dataset as vtk scalars.
+  * \param[out] scalars the output scalars containing the color for the dataset
+  * \return true if the operation was successful (the handler is capable and
+  * the input cloud was given as a valid pointer), false otherwise
+  */
+bool cc2smReader::getvtkScalars(vtkSmartPointer<vtkDataArray> &scalars, bool sfColors) const
+{
+	if (!m_cc_cloud) return false;
+
+	if (!scalars)
+		scalars = vtkSmartPointer<vtkUnsignedCharArray>::New();
+	scalars->SetNumberOfComponents(3);
+	unsigned nr_points = m_partialVisibility ? m_visibilityNum : m_cc_cloud->size();
+	reinterpret_cast<vtkUnsignedCharArray*>(&(*scalars))->SetNumberOfTuples(static_cast<vtkIdType>(nr_points));
+	unsigned char* colors = reinterpret_cast<vtkUnsignedCharArray*>(&(*scalars))->GetPointer(0);
+	int j = 0;
+	if (m_cc_cloud->hasScalarFields() && sfColors)
+	{
+		int sfIdx = m_cc_cloud->getCurrentDisplayedScalarFieldIndex();
+		if (sfIdx < 0) return false;
+		CVLib::ScalarField* scalar_field = m_cc_cloud->getScalarField(sfIdx);
+		if (!scalar_field) return false;
+		for (unsigned cp = 0; cp < nr_points; ++cp)
+		{
+			const ecvColor::Rgb* rgb =
+				m_cc_cloud->geScalarValueColor(scalar_field->getValue(cp));
+
+			if (m_partialVisibility)
+			{
+				if (m_cc_cloud->getTheVisibilityArray().at(cp) != POINT_VISIBLE)
+					continue;
+
+				colors[j] = static_cast<uint8_t>(rgb->r);
+				colors[j + 1] = static_cast<uint8_t>(rgb->g);
+				colors[j + 2] = static_cast<uint8_t>(rgb->b);
+				j += 3;
+			}
+			else
+			{
+				int idx = static_cast<int> (cp) * 3;
+				colors[idx] = static_cast<uint8_t>(rgb->r);
+				colors[idx + 1] = static_cast<uint8_t>(rgb->g);
+				colors[idx + 2] = static_cast<uint8_t>(rgb->b);
+			}
+		}
+
+	}
+	else if (m_cc_cloud->hasColors())
+	{
+		for (unsigned cp = 0; cp < nr_points; ++cp)
+		{
+			// Color every point
+			const ecvColor::Rgb& rgb = m_cc_cloud->getPointColor(cp);
+			if (m_partialVisibility)
+			{
+				if (m_cc_cloud->getTheVisibilityArray().at(cp) != POINT_VISIBLE)
+					continue;
+
+				colors[j] = static_cast<uint8_t>(rgb.r);
+				colors[j + 1] = static_cast<uint8_t>(rgb.g);
+				colors[j + 2] = static_cast<uint8_t>(rgb.b);
+				j += 3;
+			
+			}
+			else
+			{
+				int idx = static_cast<int> (cp) * 3;
+				colors[idx] = static_cast<uint8_t>(rgb.r);
+				colors[idx + 1] = static_cast<uint8_t>(rgb.g);
+				colors[idx + 2] = static_cast<uint8_t>(rgb.b);
+			}
+		}
+	}
+	else
+	{
+		return false;
+	}
+
+	return true;
 }
 
 std::string cc2smReader::GetSimplifiedSFName(const std::string& ccSfName)
@@ -744,7 +830,6 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccMesh * mesh)
 
 	//materials & textures
 	bool applyMaterials = (mesh->hasMaterials() && mesh->materialsShown());
-	//bool lodEnabled = (triNum > context.minLODTriangleCount && context.decimateMeshOnMove && MACRO_LODActivated(context));
 	bool lodEnabled = false;
 	bool showTextures = (mesh->hasTextures() && mesh->materialsShown() && !lodEnabled);
 

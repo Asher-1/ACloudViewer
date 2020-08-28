@@ -2411,7 +2411,7 @@ void ecvDisplayTools::SetViewportParameters(const ecvViewportParameters& params)
 	}
 
 	SetCameraPosition(params.cameraCenter.u, params.focal.u, params.up.u);
-	Update();
+	//Update();
 
 	InvalidateViewport();
 	InvalidateVisualization();
@@ -2869,7 +2869,7 @@ void ecvDisplayTools::RedrawDisplay(bool only2D/*=false*/, bool forceRedraw/* = 
 	}
 
 	// update canvas
-	Update();
+	UpdateScreen();
 }
 
 void ecvDisplayTools::SetGLViewport(const QRect& rect)

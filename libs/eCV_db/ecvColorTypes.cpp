@@ -288,6 +288,10 @@ namespace ecvColor
 		237, 161, 77 ,
 	};
 
+	/// Number of colors in Glasbey lookup table
+	static const size_t COLOR_LUT_SIZE = sizeof(COLOR_LUT) / (sizeof(COLOR_LUT[0]) * 3);
+
+
 	ECV_DB_LIB_API Rgb LookUpTable::at(size_t color_id)
 	{
 		assert(color_id < COLOR_LUT_SIZE);
@@ -296,8 +300,6 @@ namespace ecvColor
 			static_cast<ColorCompType>(COLOR_LUT[color_id * 3 + 2]));
 	}
 
-	/// Number of colors in Glasbey lookup table
-	static const size_t COLOR_LUT_SIZE = sizeof(COLOR_LUT) / (sizeof(COLOR_LUT[0]) * 3);
 
 	// Predefined colors (default type)
 	ECV_DB_LIB_API const Rgb white(MAX, MAX, MAX);
