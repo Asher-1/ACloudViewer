@@ -2679,7 +2679,7 @@ void MainWindow::toggleExclusiveFullScreen(bool state)
 				showFullScreen();
 
 			onExclusiveFullScreenToggled(state);
-			ecvDisplayTools::DisplayNewMessage("Press F11 or ESC to disable full-screen mode", ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 360000, ecvDisplayTools::FULL_SCREEN_MESSAGE);
+			ecvDisplayTools::DisplayNewMessage("Press F11 or ESC to disable full-screen mode", ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 30, ecvDisplayTools::FULL_SCREEN_MESSAGE);
 		}
 	}
 	else
@@ -2713,7 +2713,6 @@ void MainWindow::toggleExclusiveFullScreen(bool state)
 		}
 	}
 
-	
 
 	QCoreApplication::processEvents();
 	if (m_currentFullWidget)

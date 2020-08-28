@@ -76,9 +76,9 @@ public:
 	explicit qRansacSD(QObject* parent = nullptr);
 
 	//inherited from ccStdPluginInterface
-	virtual void onNewSelection(const ccHObject::Container& selectedEntities);
 	virtual QList<QAction *> getActions() override;
 	virtual void registerCommands(ccCommandLineInterface* cmd) override;
+	virtual void onNewSelection(const ccHObject::Container& selectedEntities) override;
 
 	static ccHObject* executeRANSAC(ccPointCloud* ccPC, const RansacParams& params, bool silent = false);
 protected slots:

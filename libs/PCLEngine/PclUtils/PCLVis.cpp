@@ -80,6 +80,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/visualization/common/actor_map.h>
 #include <pcl/visualization/point_cloud_color_handlers.h>
+#include <pcl/visualization/point_cloud_geometry_handlers.h>
 
 // Support for VTK 7.1 upwards
 #ifdef vtkGenericDataArray_h
@@ -616,23 +617,27 @@ namespace PclUtils
 
 			if (cloud_rgb)
 			{
-				if (CONTEXT.transformInfo.isApplyTransform())
+				if (!updatePointCloud(cloud_rgb, viewID))
 				{
-					if (contains(viewID))
-					{
-						removePointClouds(viewID);
-					}
 					addPointCloud(cloud_rgb, viewID, viewPort);
 				}
-				else
-				{
-					if (!updatePointCloud(cloud_rgb, viewID))
-					{
-						addPointCloud(cloud_rgb, viewID, viewPort);
-					}
-				}
-
 			}
+
+#if 0
+			CVTools::TimeStart();
+			pcl::visualization::PointCloudGeometryHandlerXYZ<PCLCloud>::Ptr
+				geometry_handler(new pcl::visualization::PointCloudGeometryHandlerXYZ<PCLCloud>(smCloud));
+			pcl::visualization::PointCloudColorHandlerRGBField<PCLCloud>::Ptr color_handler(new pcl::visualization::PointCloudColorHandlerRGBField<PCLCloud>(smCloud));
+			
+			if (contains(viewID))
+			{
+				removePointClouds(viewID, viewPort);
+			}
+			addPointCloud(smCloud, geometry_handler, color_handler,
+				Eigen::Vector4f::Zero(), Eigen::Quaternionf::Identity(),
+				viewID, viewPort);
+			CVLog::Print(QString("addPointCloud: finish cost %1 s").arg(CVTools::TimeOff()));
+#endif
 		}
 		else
 		{
@@ -642,23 +647,26 @@ namespace PclUtils
 			{
 				ecvColor::Rgbub col = CONTEXT.pointsDefaultCol;
 				pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud_xyz, col.r, col.g, col.b);
-
-				if (CONTEXT.transformInfo.isApplyTransform())
+				if (!updatePointCloud<pcl::PointXYZ>(cloud_xyz, single_color, viewID))
 				{
-					if (contains(viewID))
-					{
-						removePointClouds(viewID);
-					}
 					addPointCloud<pcl::PointXYZ>(cloud_xyz, single_color, viewID, viewPort);
 				}
-				else
-				{
-					if (!updatePointCloud<pcl::PointXYZ>(cloud_xyz, single_color, viewID))
-					{
-						addPointCloud<pcl::PointXYZ>(cloud_xyz, single_color, viewID, viewPort);
-					}
-				}
 			}
+#if 0
+			ecvColor::Rgbub col = CONTEXT.pointsDefaultCol;
+			pcl::visualization::PointCloudGeometryHandlerXYZ<PCLCloud>::Ptr
+				geometry_handler(new pcl::visualization::PointCloudGeometryHandlerXYZ<PCLCloud>(smCloud));
+			pcl::visualization::PointCloudColorHandlerCustom<PCLCloud>::Ptr
+				color_handler(new pcl::visualization::PointCloudColorHandlerCustom<PCLCloud>(smCloud, col.r, col.g, col.b));
+			if (contains(viewID))
+			{
+				removePointClouds(viewID, viewPort);
+			}
+
+			addPointCloud(smCloud, geometry_handler, color_handler,
+				Eigen::Vector4f::Zero(), Eigen::Quaternionf::Identity(),
+				viewID, viewPort);
+#endif
 		}
 
 		if (CONTEXT.drawParam.showNorms)

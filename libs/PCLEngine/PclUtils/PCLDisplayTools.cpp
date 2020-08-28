@@ -103,16 +103,24 @@ void PCLDisplayTools::drawPointCloud(CC_DRAW_CONTEXT & CONTEXT, ccPointCloud * e
 
 	if (ecvCloud->isRedraw() ||  firstShow)
 	{
-		PCLCloud::Ptr pclCloud = cc2smReader(ecvCloud, true).getAsSM(!CONTEXT.drawParam.showSF);
-		if (!pclCloud) { return; }
-
-		if (!firstShow)
+		if (firstShow)
+		{
+			PCLCloud::Ptr pclCloud = cc2smReader(ecvCloud, true).getAsSM(!CONTEXT.drawParam.showSF);
+			if (!pclCloud) { return; }
+			m_visualizer3D->draw(CONTEXT, pclCloud);
+			//m_visualizer3D->transformEntities(CONTEXT);
+		}
+		else
 		{
 			m_visualizer3D->resetScalarColor(viewID, true, viewPort);
+			if (!updateEntityColor(CONTEXT, ecvCloud))
+			{
+				PCLCloud::Ptr pclCloud = cc2smReader(ecvCloud, true).getAsSM(!CONTEXT.drawParam.showSF);
+				if (!pclCloud) { return; }
+				m_visualizer3D->draw(CONTEXT, pclCloud);
+			}
 		}
-		
-		m_visualizer3D->draw(CONTEXT, pclCloud);
-		//m_visualizer3D->transformEntities(CONTEXT);
+
 	}
 
 	if (m_visualizer3D->contains(viewID))
@@ -136,16 +144,15 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccMesh* mesh)
 {
 	std::string viewID = CVTools::fromQString(CONTEXT.viewID);
 	int viewPort = CONTEXT.defaultViewPort;
-	CONTEXT.visFiltering = true;
+	const ccGenericPointCloud::VisibilityTableType& verticesVisibility = mesh->getAssociatedCloud()->getTheVisibilityArray();
+	CONTEXT.visFiltering = (verticesVisibility.size() >= mesh->getAssociatedCloud()->size());
 	bool firstShow = !m_visualizer3D->contains(viewID);
 	if (mesh->isRedraw() || firstShow)
 	{
-		ccPointCloud* ecvCloud = ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud());
+		ccPointCloud* ecvCloud = ccHObjectCaster::ToPointCloud(mesh);
 		if (!ecvCloud) return;
 
 		//materials & textures
-		//bool applyMaterials = (mesh->hasMaterials() && mesh->materialsShown());
-		//bool lodEnabled = (triNum > context.minLODTriangleCount && context.decimateMeshOnMove && MACRO_LODActivated(context));
 		bool lodEnabled = false;
 		bool showTextures = (mesh->hasTextures() && mesh->materialsShown() && !lodEnabled);
 
@@ -167,10 +174,25 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccMesh* mesh)
 		}
 		else
 		{
-			PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
-			if (!pclMesh) return;
+			if (firstShow)
+			{
+				PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
+				if (!pclMesh) return;
 
-			m_visualizer3D->draw(CONTEXT, pclMesh);
+				m_visualizer3D->draw(CONTEXT, pclMesh);
+			}
+			else
+			{
+				m_visualizer3D->resetScalarColor(viewID, true, viewPort);
+				if (!updateEntityColor(CONTEXT, ecvCloud))
+				{
+					PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
+					if (!pclMesh) return;
+
+					m_visualizer3D->draw(CONTEXT, pclMesh);
+				}
+			}
+
 		}
 		m_visualizer3D->transformEntities(CONTEXT);
 	}
@@ -185,10 +207,6 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccMesh* mesh)
 			ecvColor::Rgbf meshColor = ecvTools::TransFormRGB(CONTEXT.defaultMeshColor);
 			m_visualizer3D->setPointCloudUniqueColor(meshColor.r, meshColor.g, meshColor.b, viewID, viewPort);
 		}
-		//if (!firstShow)
-		//{
-			//m_visualizer3D->resetScalarColor(viewID, true, viewPort);
-		//}
 		m_visualizer3D->setPointCloudOpacity(CONTEXT.opacity, viewID, viewPort);
 	}
 }
@@ -231,6 +249,75 @@ void PCLDisplayTools::drawImage(CC_DRAW_CONTEXT & CONTEXT, ccImage * image)
 #else
 	CVLog::Warning(QString("Image showing has not been supported!"));
 #endif
+}
+
+bool PCLDisplayTools::updateEntityColor(CC_DRAW_CONTEXT & CONTEXT, ccHObject * ent)
+{
+#ifdef _DEBUG
+	CVTools::TimeStart();
+#endif // _DEBUG
+	ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(ent);
+	if (!cloud)
+	{
+		return false;
+	}
+
+	std::string viewID = CVTools::fromQString(CONTEXT.viewID);
+	vtkActor* modelActor = m_visualizer3D->getActorById(viewID);
+	if (!modelActor)
+	{
+		return false;
+	}
+
+	// Get the current poly data
+	vtkSmartPointer<vtkPolyData> polydata = reinterpret_cast<vtkPolyDataMapper*>(modelActor->GetMapper())->GetInput();
+	if (!polydata)
+		return (false);
+
+	// Get the colors from the handler
+	bool has_colors = false;
+	double minmax[2];
+	vtkSmartPointer<vtkDataArray> scalars;
+	cc2smReader converter(cloud, true);
+	unsigned old_points_num = static_cast<unsigned>(polydata->GetNumberOfPoints());
+	unsigned new_points_num = converter.getvisibilityNum();
+	if (old_points_num != new_points_num)
+	{
+		return false;
+	}
+
+	if (!CONTEXT.drawParam.showColors && !CONTEXT.drawParam.showSF)
+	{
+		return false;
+	}
+
+	if (converter.getvtkScalars(scalars, CONTEXT.drawParam.showSF))
+	{
+		// Update the data
+		polydata->GetPointData()->SetScalars(scalars);
+		scalars->GetRange(minmax);
+		has_colors = true;
+	}
+
+	if (has_colors)
+	{
+#if VTK_RENDERING_BACKEND_OPENGL_VERSION < 2
+		modelActor->GetMapper()->ImmediateModeRenderingOff();
+#endif
+		modelActor->GetMapper()->SetScalarRange(minmax);
+		// Update the mapper
+#if VTK_MAJOR_VERSION < 6
+		reinterpret_cast<vtkPolyDataMapper*>(modelActor->GetMapper())->SetInput(polydata);
+#else
+		reinterpret_cast<vtkPolyDataMapper*> (modelActor->GetMapper())->SetInputData(polydata);
+#endif
+	}
+
+#ifdef _DEBUG
+	CVLog::Print(QString("updateEntityColor: finish cost %1 s").arg(CVTools::TimeOff()));
+#endif // _DEBUG
+	
+	return (true);
 }
 
 void PCLDisplayTools::draw(CC_DRAW_CONTEXT& CONTEXT, const ccHObject* obj)
@@ -818,6 +905,7 @@ void PCLDisplayTools::setViewMatrix(double* viewArray, int viewPort/* = 0*/)
 	//vtkSmartPointer<vtkTransform> trans = vtkSmartPointer<vtkTransform>::New();
 	//trans->SetMatrix(viewArray);
 	//cam->SetUserViewTransform();
+	CVLog::Warning("[PCLDisplayTools::setViewMatrix] has been deprecated, and do nothing!");
 }
 
 void PCLDisplayTools::changeEntityProperties(PROPERTY_PARAM & param)

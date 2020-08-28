@@ -26,6 +26,9 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+// VTK
+#include <vtkSmartPointer.h>
+
 //system
 #include <list>
 #include <string>
@@ -35,6 +38,7 @@ class ccMesh;
 class ccPolyline;
 
 class vtkPolyData;
+class vtkDataArray;
 
 //! CC to PCL cloud converter
 class QPCL_ENGINE_LIB_API cc2smReader
@@ -45,12 +49,16 @@ public:
 
 	PCLCloud::Ptr getGenericField(std::string field_name) const;
 
+	unsigned getvisibilityNum() const;
+
 	PCLCloud::Ptr getXYZ() const;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr getXYZ2() const;
 
 	PCLCloud::Ptr getNormals() const;
 
 	PCLCloud::Ptr getColors() const;
+
+	bool getvtkScalars(vtkSmartPointer<vtkDataArray> &scalars, bool sfColors) const;
 
 	enum Fields { COORD_X, COORD_Y, COORD_Z, NORM_X, NORM_Y, NORM_Z };
 	PCLCloud::Ptr getOneOf(Fields field) const;

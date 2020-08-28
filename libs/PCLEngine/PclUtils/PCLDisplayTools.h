@@ -392,6 +392,8 @@ private:
 	void drawPolygon(CC_DRAW_CONTEXT& CONTEXT, ccPolyline* polyline);
 	void drawImage(CC_DRAW_CONTEXT& CONTEXT, ccImage* image);
 
+	bool updateEntityColor(CC_DRAW_CONTEXT& CONTEXT, ccHObject* ent);
+
 protected:
 	// QVTKWidget
 	ecvQVTKWidget* m_vtkWidget = nullptr;
