@@ -669,6 +669,13 @@ namespace PclUtils
 #endif
 		}
 
+	}
+
+	void PCLVis::updateNormals(CC_DRAW_CONTEXT& CONTEXT, PCLCloud::Ptr smCloud)
+	{	
+		const std::string viewID = CVTools::fromQString(CONTEXT.viewID);
+		int viewPort = CONTEXT.defaultViewPort;
+
 		if (CONTEXT.drawParam.showNorms)
 		{
 			const std::string normalID = viewID + "-normal";

@@ -108,7 +108,7 @@ void PCLDisplayTools::drawPointCloud(CC_DRAW_CONTEXT & CONTEXT, ccPointCloud * e
 			PCLCloud::Ptr pclCloud = cc2smReader(ecvCloud, true).getAsSM(!CONTEXT.drawParam.showSF);
 			if (!pclCloud) { return; }
 			m_visualizer3D->draw(CONTEXT, pclCloud);
-			//m_visualizer3D->transformEntities(CONTEXT);
+			m_visualizer3D->updateNormals(CONTEXT, pclCloud);
 		}
 		else
 		{
@@ -118,9 +118,22 @@ void PCLDisplayTools::drawPointCloud(CC_DRAW_CONTEXT & CONTEXT, ccPointCloud * e
 				PCLCloud::Ptr pclCloud = cc2smReader(ecvCloud, true).getAsSM(!CONTEXT.drawParam.showSF);
 				if (!pclCloud) { return; }
 				m_visualizer3D->draw(CONTEXT, pclCloud);
+				m_visualizer3D->updateNormals(CONTEXT, pclCloud);
+			}
+			else
+			{
+				if (CONTEXT.drawParam.showNorms)
+				{
+					PCLCloud::Ptr pointNormals = cc2smReader(ecvCloud).getPointNormals();
+					m_visualizer3D->updateNormals(CONTEXT, pointNormals);
+				}
+				else
+				{
+					m_visualizer3D->updateNormals(CONTEXT, nullptr);
+				}
+
 			}
 		}
-
 	}
 
 	if (m_visualizer3D->contains(viewID))
