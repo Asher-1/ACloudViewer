@@ -5,6 +5,9 @@
 
 // CV_CORE_LIB
 #include <CVGeom.h>
+// CV_CORE_LIB
+#include <CVLog.h>
+#include <CVTools.h>
 
 // VTK
 #include <vtkSmartPointer.h>
@@ -56,11 +59,11 @@ public:
 	//! Shifts the current interactor
 	virtual void shift(const CCVector3d& v) { /* not impl */ }
 
+	virtual void updateUi() { /* not impl */ }
 	virtual void showInteractor(bool state) { /* not impl */ }
 	virtual void getInteractorInfos(ccBBox& bbox, ccGLMatrixd& trans);
 	virtual void getInteractorTransformation(ccGLMatrixd& trans) { /* not impl */ }
 	virtual void getInteractorBounds(ccBBox& bbox) { /* not impl */ }
-
 	virtual void clearAllActor();
 
 protected:
@@ -132,6 +135,9 @@ protected:
 	void setResultData(vtkSmartPointer<vtkDataObject> data);
 	vtkSmartPointer<vtkDataObject> resultData() const;
 
+protected slots:
+	void onDoubleClick(int x, int y);
+
 protected:
 	Ui::GenericFilterDlg* m_ui = nullptr;
 
@@ -139,9 +145,10 @@ protected:
 	vtkDataObject* m_dataObject = nullptr;
 	vtkSmartPointer<vtkDataObject> m_resultData;
 
-	bool m_keepMode = false;
-	bool m_negative = false;
-	bool m_meshMode = false;
+	bool m_keepMode;
+	bool m_negative;
+	bool m_meshMode;
+	bool m_preview;
 	std::string m_id;
 	ccHObject* m_entity = nullptr;
 	PclUtils::PCLVis* m_viewer = nullptr;
@@ -156,6 +163,7 @@ protected:
 	QColor m_color2 = Qt::red;
 	double m_scalarMin = 0.0;
 	double m_scalarMax = 1.0;
+	static const int MAX_PREVIEW_NUMBER = 20e4;
 };
 
 #endif // TOOLS_GENERIC_FILTER_H

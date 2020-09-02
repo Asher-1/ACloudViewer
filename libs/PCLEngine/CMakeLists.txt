@@ -34,9 +34,15 @@ if (USE_PCL_BACKEND)
 	# core module
 	file( GLOB_RECURSE VtkExtensions_core_list ${QVTK_EXTENSIONS}/Core/*)
 	source_group("VTKExtensions\\Core" FILES ${VtkExtensions_core_list} )
-	# Extraction module
-	file( GLOB_RECURSE VtkExtensions_extraction_list ${QVTK_EXTENSIONS}/Extraction/*)
-	source_group("VTKExtensions\\Extraction" FILES ${VtkExtensions_extraction_list} )
+	# points module
+	file( GLOB_RECURSE VtkExtensions_points_list ${QVTK_EXTENSIONS}/Points/*)
+	source_group("VTKExtensions\\Points" FILES ${VtkExtensions_points_list} )
+	# widgets module
+	file( GLOB_RECURSE VtkExtensions_widgets_list ${QVTK_EXTENSIONS}/Widgets/*)
+	source_group("VTKExtensions\\Widgets" FILES ${VtkExtensions_widgets_list} )
+	# CallbackTools module
+	file( GLOB_RECURSE VtkExtensions_CallbackTools_list ${QVTK_EXTENSIONS}/CallbackTools/*)
+	source_group("VTKExtensions\\CallbackTools" FILES ${VtkExtensions_CallbackTools_list} )
 	# CosmoTools module
 	file( GLOB_RECURSE VtkExtensions_cosmoTools_list ${QVTK_EXTENSIONS}/CosmoTools/*)
 	source_group("VTKExtensions\\CosmoTools" FILES ${VtkExtensions_cosmoTools_list} )
@@ -49,7 +55,9 @@ if (USE_PCL_BACKEND)
 
 	set(VtkExtensions_list 
 		${VtkExtensions_core_list}  
-		${VtkExtensions_extraction_list}  
+		${VtkExtensions_points_list}  
+		${VtkExtensions_widgets_list}  
+		${VtkExtensions_CallbackTools_list}  
 		${VtkExtensions_cosmoTools_list}  
 		${VtkExtensions_interactionStyle_list}  
 		${VtkExtensions_views_list}

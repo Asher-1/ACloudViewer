@@ -2,12 +2,6 @@
 #define vtkBoxWidgetRestricted_h
 
 #include <vtkBoxWidget.h>
-#include <vtkMath.h>
-#include <vtkTransform.h>
-#include <vtkDoubleArray.h>
-#include <vtkPoints.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkRenderer.h>
 
 /**
  * @brief The vtkBoxWidgetRestricted class

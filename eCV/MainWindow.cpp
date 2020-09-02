@@ -570,7 +570,7 @@ void MainWindow::connectActions()
 	connect(m_ui->actionAutoPickPivot, &QAction::toggled, this, &MainWindow::toggleActiveWindowAutoPickRotCenter);
 	connect(m_ui->actionShowPivot, &QAction::toggled, this, &MainWindow::toggleRotationCenterVisibility);
 	connect(m_ui->actionResetPivot, &QAction::triggered, this, &MainWindow::doActionResetRotCenter);
-	connect(m_ui->actionPerspectiveProjection, &QAction::triggered, this, &MainWindow::doActionPerpectiveProjection);
+	connect(m_ui->actionPerspectiveProjection, &QAction::triggered, this, &MainWindow::doActionPerspectiveProjection);
 	connect(m_ui->actionOrthogonalProjection, &QAction::triggered, this, &MainWindow::doActionOrthogonalProjection);
 
 	connect(m_ui->actionEditCamera, &QAction::triggered, this, &MainWindow::doActionEditCamera);
@@ -3335,7 +3335,7 @@ void MainWindow::showDisplayOptions()
 	disconnect(&displayOptionsDlg);
 }
 
-void MainWindow::doActionPerpectiveProjection()
+void MainWindow::doActionPerspectiveProjection()
 {
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
@@ -6225,7 +6225,7 @@ void MainWindow::doActionVoxelSampling()
 		return;
 	}
 
-	ccHObject::Container clouds;
+	ccHObject::Container selectedClouds;
 	for (auto ent : getSelectedEntities())
 	{
 		if (!ent->isKindOf(CV_TYPES::POINT_CLOUD))
@@ -6233,16 +6233,55 @@ void MainWindow::doActionVoxelSampling()
 			ecvConsole::Warning("only point cloud is supported!");
 			continue;
 		}
-		clouds.push_back(ent);
+
+		bool lockedVertices = false;
+		ccPointCloud* pc = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
+		if (!pc || lockedVertices)
+		{
+			continue;
+		}
+
+		selectedClouds.push_back(ent);
 	}
 
-	if (!ccEntityAction::VoxelSampling(clouds, this))
+	ccHObject::Container outClouds;
+	if (!ccEntityAction::VoxelSampling(selectedClouds, outClouds, this))
 	{
 		ecvConsole::Error("[MainWindow::doActionVoxelSampling] voxel sampling failed!");
 		return;
 	}
 
-	refreshSelected();
+	assert(outClouds.size() == selectedClouds.size());
+
+	bool firstCloud = true;
+	for (size_t i = 0; i < outClouds.size(); ++i)
+	{
+		ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(selectedClouds[i]);
+		ccPointCloud* cleanCloud = ccHObjectCaster::ToPointCloud(outClouds[i]);
+		if (cleanCloud)
+		{
+			cleanCloud->setName(cloud->getName() + QString(".clean"));
+			if (cloud->getParent())
+				cloud->getParent()->addChild(cleanCloud);
+			addToDB(cleanCloud);
+
+			CVLog::Print(QString("%1 down sampled from %2 points to %3 points.").
+				arg(cloud->getName()).arg(cloud->size()).arg(cleanCloud->size()));
+
+			cloud->setEnabled(false);
+			if (firstCloud)
+			{
+				ecvConsole::Warning("Previously selected entities (sources) have been hidden!");
+				firstCloud = false;
+				m_ccRoot->selectEntity(cleanCloud, true);
+			}
+		}
+		else
+		{
+			ecvConsole::Warning(QString("[doActionSORFilter] Not enough memory to create a clean version of cloud '%1'!").arg(cloud->getName()));
+		}
+	}
+
 	updateUI();
 }
 
@@ -8887,11 +8926,31 @@ void MainWindow::doActionFilterMode(int mode)
 	return;
 #endif // ECV_PCL_ENGINE_LIBRARY_BUILD
 
+	// we have to use a local copy: 'unselectEntity' will change the set of currently selected entities!
+	ccHObject::Container selectedEntities = getSelectedEntities(); 
 	if (!m_filterTool)
 	{
 		m_filterTool = new ecvFilterTool(this);
 		connect(m_filterTool, &ccOverlayDialog::processFinished,
 			this, [=]() {
+
+			for (ccHObject *entity : selectedEntities)
+			{
+				entity->setEnabled(false);
+			}
+
+			ccHObject::Container outs = m_filterTool->getOutputs();
+			for (ccHObject *entity : outs)
+			{
+				entity->setEnabled(true);
+			}
+
+			if (!outs.empty())
+			{
+				m_ccRoot->selectEntities(outs);
+				refreshSelected();
+			}
+			
 			freezeUI(false);
 			updateUI();
 		});
@@ -8900,7 +8959,6 @@ void MainWindow::doActionFilterMode(int mode)
 	m_filterTool->setFilter(filter);
 	m_filterTool->linkWith(ecvDisplayTools::GetCurrentScreen());
 
-	ccHObject::Container selectedEntities = getSelectedEntities(); //we have to use a local copy: 'unselectEntity' will change the set of currently selected entities!
 	for (ccHObject *entity : selectedEntities)
 	{
 		if (m_filterTool->addAssociatedEntity(entity))
@@ -9213,7 +9271,7 @@ void MainWindow::activateSegmentationMode()
 		bool perspectiveEnabled = ecvDisplayTools::GetPerspectiveState();
 		if (!perspectiveEnabled) // segmentation must work in perspective mode
 		{
-			doActionPerpectiveProjection();
+			doActionPerspectiveProjection();
 			m_lastViewMode = VIEWMODE::ORTHOGONAL;
 		}
 		else
@@ -9425,7 +9483,7 @@ void MainWindow::deactivateSegmentationMode(bool state)
 		}
 		else if (m_lastViewMode == VIEWMODE::PERSPECTIVE)
 		{
-			doActionPerpectiveProjection();
+			doActionPerspectiveProjection();
 		}
 
 		ecvDisplayTools::DisplayNewMessage(QString(), ecvDisplayTools::UPPER_CENTER_MESSAGE); //clear the area

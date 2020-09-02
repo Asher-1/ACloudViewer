@@ -2782,11 +2782,12 @@ namespace ccEntityAction
 	//////////
 	// sampling
 
-	bool VoxelSampling(const ccHObject::Container &selectedEntities, QWidget *parent)
+	bool VoxelSampling(const ccHObject::Container &selectedEntities, ccHObject::Container& outEntities, QWidget *parent)
 	{
 		if (selectedEntities.empty())
 			return false;
 
+		outEntities.clear();
 		ccPointCloud* pc_test = ccHObjectCaster::ToPointCloud(selectedEntities[0]);
 		double voxelSize = pc_test->computeResolution();
 
@@ -2810,13 +2811,9 @@ namespace ccEntityAction
 				continue;
 			}
 
-			QString originName = pc->getName();
-			unsigned originSize = pc->size();
-			*pc = *pc->voxelDownSample(voxelSize);
-			pc->setName(originName);
-
-			CVLog::Print(QString("%1 down sampled from %2 points to %3 points.").
-				arg(originName).arg(originSize).arg(pc->size()));
+			ccPointCloud* out = new ccPointCloud();
+			*out = *pc->voxelDownSample(voxelSize);
+			outEntities.push_back(out);
 		}
 
 		return true;

@@ -1,4 +1,4 @@
-#include <Tools/AnnotationTools/vtkBoxWidgetCallback.h>
+#include <Tools/AnnotationTools/vtkBoxWidgetAnnotationCallback.h>
 #include <Tools/AnnotationTools/Annotaion.h>
 #include <vtkBoxWidget.h>
 #include <vtkTransform.h>

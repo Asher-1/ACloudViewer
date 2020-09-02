@@ -363,7 +363,7 @@ private slots:
 	void toggleRotationCenterVisibility(bool state);
 	void doActionResetRotCenter();
 
-	void doActionPerpectiveProjection();
+	void doActionPerspectiveProjection();
 	void doActionOrthogonalProjection();
 	void doActionEditCamera();
 	void doActionScreenShot();

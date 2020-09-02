@@ -772,7 +772,7 @@ PCLMesh::Ptr cc2smReader::getPclMesh(ccMesh * mesh)
 	if (!mesh) return nullptr;
 
 	const ccGenericPointCloud::VisibilityTableType& verticesVisibility = mesh->getAssociatedCloud()->getTheVisibilityArray();
-	bool visFiltering = (verticesVisibility.size() >= mesh->getAssociatedCloud()->size());
+	bool visFiltering = (verticesVisibility.size() >= mesh->getVerticeSize());
 	bool showColor = mesh->colorsShown();
 	PCLMesh::Ptr pclMesh(new PCLMesh);
 

@@ -103,7 +103,7 @@ void PCLDisplayTools::drawPointCloud(CC_DRAW_CONTEXT & CONTEXT, ccPointCloud * e
 
 	if (ecvCloud->isRedraw() ||  firstShow)
 	{
-		if (firstShow)
+		if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud))
 		{
 			PCLCloud::Ptr pclCloud = cc2smReader(ecvCloud, true).getAsSM(!CONTEXT.drawParam.showSF);
 			if (!pclCloud) { return; }
@@ -187,7 +187,7 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccMesh* mesh)
 		}
 		else
 		{
-			if (firstShow)
+			if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud))
 			{
 				PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
 				if (!pclMesh) return;
@@ -373,6 +373,58 @@ void PCLDisplayTools::draw(CC_DRAW_CONTEXT& CONTEXT, const ccHObject* obj)
 	{
 		m_visualizer3D->synchronizeGeometryBounds();
 	}
+}
+
+bool PCLDisplayTools::checkEntityNeedUpdate(std::string& viewID, const ccHObject * obj)
+{
+	bool firstShow = !m_visualizer3D->contains(viewID);
+	if (firstShow) return true;
+
+	ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(const_cast<ccHObject*>(obj));
+	if (!cloud)
+	{
+		return true;
+	}
+
+	vtkActor* modelActor = m_visualizer3D->getActorById(viewID);
+	if (!modelActor)
+	{
+		return true;
+	}
+
+	// Get the current poly data
+	vtkSmartPointer<vtkPolyData> polydata = reinterpret_cast<vtkPolyDataMapper*>(modelActor->GetMapper())->GetInput();
+	if (!polydata)
+	{
+		return true;
+	}
+
+	cc2smReader converter(cloud);
+	unsigned old_points_num = static_cast<unsigned>(polydata->GetNumberOfPoints());
+	unsigned new_points_num = converter.getvisibilityNum();
+	if (old_points_num != new_points_num)
+	{
+		return true;
+	}
+
+	double bounds[6];
+	polydata->GetBounds(bounds);
+	CCVector3 minCorner(bounds[0], bounds[2], bounds[4]);
+	CCVector3 maxCorner(bounds[1], bounds[3], bounds[5]);
+	ccBBox oldBBox(minCorner, maxCorner);
+	ccBBox newBBox = cloud->getOwnBB();
+
+	if (abs((oldBBox.minCorner() - newBBox.minCorner()).normd()) > EPSILON_VALUE)
+	{
+		return true;
+	}
+
+	if (abs((oldBBox.maxCorner() - newBBox.maxCorner()).normd()) > EPSILON_VALUE)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 void PCLDisplayTools::drawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox)
@@ -910,6 +962,54 @@ double PCLDisplayTools::getParallelScale(int viewPort)
 	}
 	
 	return -1;
+}
+
+inline void PCLDisplayTools::getProjectionMatrix(double * projArray, int viewPort)
+{
+	Eigen::Matrix4d projMat;
+	m_visualizer3D->getCamera(viewPort).computeProjectionMatrix(projMat);
+	//m_visualizer3D->getProjectionTransformMatrix(projMat);
+	double *tempArray = projMat.data();
+	projArray[0] = tempArray[0];
+	projArray[1] = tempArray[1];
+	projArray[2] = tempArray[2];
+	projArray[3] = tempArray[3];
+	projArray[4] = tempArray[4];
+	projArray[5] = tempArray[5];
+	projArray[6] = tempArray[6];
+	projArray[7] = tempArray[7];
+	projArray[8] = tempArray[8];
+	projArray[9] = tempArray[9];
+	projArray[10] = tempArray[10];
+	projArray[11] = tempArray[11];
+	projArray[12] = tempArray[12];
+	projArray[13] = tempArray[13];
+	projArray[14] = tempArray[14];
+	projArray[15] = tempArray[15];
+}
+
+inline void PCLDisplayTools::getViewMatrix(double * ViewArray, int viewPort)
+{
+	Eigen::Matrix4d viewMat;
+	m_visualizer3D->getCamera(viewPort).computeViewMatrix(viewMat);
+	//m_visualizer3D->getModelViewTransformMatrix(viewMat);
+	double *tempArray = viewMat.data();
+	ViewArray[0] = tempArray[0];
+	ViewArray[1] = tempArray[1];
+	ViewArray[2] = tempArray[2];
+	ViewArray[3] = tempArray[3];
+	ViewArray[4] = tempArray[4];
+	ViewArray[5] = tempArray[5];
+	ViewArray[6] = tempArray[6];
+	ViewArray[7] = tempArray[7];
+	ViewArray[8] = tempArray[8];
+	ViewArray[9] = tempArray[9];
+	ViewArray[10] = tempArray[10];
+	ViewArray[11] = tempArray[11];
+	ViewArray[12] = tempArray[12];
+	ViewArray[13] = tempArray[13];
+	ViewArray[14] = tempArray[14];
+	ViewArray[15] = tempArray[15];
 }
 
 void PCLDisplayTools::setViewMatrix(double* viewArray, int viewPort/* = 0*/)

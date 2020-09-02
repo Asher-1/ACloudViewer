@@ -16,9 +16,9 @@
 //##########################################################################
 
 #include "ecvQVTKWidget.h"
-#include "utils.h"
-#include "vtkutils.h"
-#include "rendererslayoutalgo.h"
+#include "VtkUtils/utils.h"
+#include "VtkUtils/vtkutils.h"
+#include "VtkUtils/rendererslayoutalgo.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -596,6 +596,8 @@ void ecvQVTKWidget::mouseDoubleClickEvent(QMouseEvent *event)
 	{
 		ecvDisplayTools::SetPivotPoint(P, true, true);
 	}
+
+	emit m_tools->doubleButtonClicked(event->x(), event->y());
 
 	QVTKWidget::mouseDoubleClickEvent(event);
 }
