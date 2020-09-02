@@ -33,6 +33,43 @@ void cvClipFilter::apply()
 	if (!m_dataObject || m_keepMode)
 		return;
 
+	if (!m_preview)
+	{
+		if (isValidPolyData())
+		{
+			VTK_CREATE(vtkPolyDataMapper, mapper);
+			mapper->SetInputData(vtkPolyData::SafeDownCast(m_dataObject));
+			if (!m_filterActor)
+			{
+				VtkUtils::vtkInitOnce(m_filterActor);
+				m_filterActor->SetMapper(mapper);
+				addActor(m_filterActor);
+			}
+			else
+			{
+				m_filterActor->SetMapper(mapper);
+			}
+		}
+		else if (isValidDataSet())
+		{
+			VTK_CREATE(vtkDataSetMapper, mapper);
+			mapper->SetInputData(vtkDataSet::SafeDownCast(m_dataObject));
+			if (!m_filterActor)
+			{
+				VtkUtils::vtkInitOnce(m_filterActor);
+				m_filterActor->SetMapper(mapper);
+				addActor(m_filterActor);
+			}
+			else
+			{
+				m_filterActor->SetMapper(mapper);
+			}
+		}
+		applyDisplayEffect();
+
+		return;
+	}
+
 	if (isValidPolyData()) {
 
 		VtkUtils::vtkInitOnce(m_PolyClip);
@@ -75,6 +112,12 @@ void cvClipFilter::apply()
 			m_filterActor->SetMapper(mapper);
 			addActor(m_filterActor);
 		}
+		else
+		{
+			VTK_CREATE(vtkPolyDataMapper, mapper);
+			mapper->SetInputConnection(m_PolyClip->GetOutputPort());
+			m_filterActor->SetMapper(mapper);
+		}
 	}
 	else if (isValidDataSet()) {
 
@@ -107,6 +150,7 @@ void cvClipFilter::apply()
 		break;
 		}
 
+		m_negative ? m_DataSetClip->InsideOutOn() : m_DataSetClip->InsideOutOff();
 		m_DataSetClip->Update();
 
 		if (!m_filterActor)
@@ -117,6 +161,12 @@ void cvClipFilter::apply()
 			m_filterActor->SetMapper(mapper);
 			addActor(m_filterActor);
 		}
+		else
+		{
+			VTK_CREATE(vtkDataSetMapper, mapper);
+			mapper->SetInputConnection(m_DataSetClip->GetOutputPort());
+			m_filterActor->SetMapper(mapper);
+		}
 	}
 	
 	applyDisplayEffect();
@@ -124,8 +174,18 @@ void cvClipFilter::apply()
 
 ccHObject * cvClipFilter::getOutput()
 {
-	if (isValidPolyData() && m_PolyClip)
+	bool old_preview = m_preview;
+	m_preview = true;
+	apply();
+	m_preview = old_preview;
+
+	if (isValidPolyData())
 	{
+		if (!m_PolyClip)
+		{
+			return nullptr;
+		}
+
 		// set exported polydata
 		setResultData(m_PolyClip->GetOutput());
 
@@ -141,8 +201,13 @@ ccHObject * cvClipFilter::getOutput()
 		m_PolyClip->GenerateClippedOutputOff();
 
 	}
-	else if (isValidDataSet() && m_DataSetClip)
+	else if (isValidDataSet())
 	{
+		if (!m_DataSetClip)
+		{
+			return nullptr;
+		}
+
 		// set exported DataSet
 		setResultData((vtkDataObject*)m_DataSetClip->GetOutput());
 
@@ -160,4 +225,5 @@ ccHObject * cvClipFilter::getOutput()
 
 	// export clipping data
 	return cvGenericFilter::getOutput();
+
 }

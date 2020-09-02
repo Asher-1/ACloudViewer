@@ -9,11 +9,12 @@ namespace Ui
 	class CutFilterDlg;
 }
 
+class vtkPlanes;
+class vtk3DWidget;
 class vtkBoxWidget;
 class vtkSphereWidget;
 class vtkImplicitPlaneWidget;
-class vtk3DWidget;
-class vtkPlanes;
+class vtkBoxWidgetCustomCallback;
 
 class cvCutFilter : public cvGenericFilter
 {
@@ -46,6 +47,7 @@ protected slots:
 	void onRadiusChanged(double radius);
 	void onPlanesChanged(vtkPlanes* planes);
 	void showContourLines(bool show = true);
+	void onPreview(bool dummy);
 
 private slots:
 	void on_cutTypeCombo_currentIndexChanged(int index);
@@ -68,6 +70,7 @@ protected:
 	virtual void clearAllActor() override;
 	virtual void modelReady() override;
 	virtual void dataChanged() override;
+	virtual void updateUi() override;
 
 	void createUi();
 

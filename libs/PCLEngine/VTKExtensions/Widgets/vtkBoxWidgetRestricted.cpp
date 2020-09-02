@@ -1,4 +1,10 @@
-#include <Tools/AnnotationTools/vtkBoxWidgetRestricted.h>
+#include "vtkBoxWidgetRestricted.h"
+#include <vtkMath.h>
+#include <vtkTransform.h>
+#include <vtkDoubleArray.h>
+#include <vtkPoints.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkRenderer.h>
 
 vtkStandardNewMacro(vtkBoxWidgetRestricted);
 

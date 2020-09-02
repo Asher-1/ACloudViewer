@@ -183,7 +183,7 @@ public: //GLU equivalent methods
 	}
 
 	template <typename iType, typename oType>
-	static bool Project(const Vector3Tpl<iType>& input3D, const oType* modelview, const oType* projection, const int* viewport, Vector3Tpl<oType>& output2D)
+	static bool Project(const Vector3Tpl<iType>& input3D, const oType* modelview, const oType* projection, const int* viewport, Vector3Tpl<oType>& output2D, bool* inFrustum = nullptr)
 	{
 		if (s_genericTools && !GetPerspectiveState())
 		{
@@ -191,7 +191,7 @@ public: //GLU equivalent methods
 			return true;
 		}
 
-		//Modelview transform
+		// Modelview transform
 		Tuple4Tpl<oType> Pm;
 		{
 			Pm.x = static_cast<oType>(modelview[0] * input3D.x + modelview[4] * input3D.y + modelview[8] * input3D.z + modelview[12]);
@@ -200,7 +200,7 @@ public: //GLU equivalent methods
 			Pm.w = static_cast<oType>(modelview[3] * input3D.x + modelview[7] * input3D.y + modelview[11] * input3D.z + modelview[15]);
 		};
 
-		//Projection transform
+		// Projection transform
 		Tuple4Tpl<oType> Pp;
 		{
 			Pp.x = static_cast<oType>(projection[0] * Pm.x + projection[4] * Pm.y + projection[8] * Pm.z + projection[12] * Pm.w);
@@ -209,22 +209,27 @@ public: //GLU equivalent methods
 			Pp.w = static_cast<oType>(projection[3] * Pm.x + projection[7] * Pm.y + projection[11] * Pm.z + projection[15] * Pm.w);
 		};
 
-		//The result normalizes between -1 and 1
+		// The result normalizes between -1 and 1
 		if (Pp.w == 0.0)
 		{
 			return false;
 		}
-		//Perspective division
+
+		if (inFrustum)
+		{
+			//Check if the point is inside the frustum
+			*inFrustum = (std::abs(Pp.x) <= Pp.w && std::abs(Pp.y) <= Pp.w && std::abs(Pp.z) <= Pp.w);
+		}
+
+		// Perspective division
 		Pp.x /= Pp.w;
 		Pp.y /= Pp.w;
 		Pp.z /= Pp.w;
-		//Window coordinates
-		//Map x, y to range 0-1
+		// Window coordinates
+		// Map x, y to range 0-1
 		output2D.x = (1.0 + Pp.x) / 2 * viewport[2] + viewport[0];
 		output2D.y = (1.0 + Pp.y) / 2 * viewport[3] + viewport[1];		
-		//output2D.x = Pp.x + viewport[0];
-		//output2D.y = Pp.y + viewport[1];
-		//This is only correct when glDepthRange(0.0, 1.0)
+		// This is only correct when glDepthRange(0.0, 1.0)
 		output2D.z = (1.0 + Pp.z) / 2;	//Between 0 and 1
 
 		return true;
@@ -485,9 +490,9 @@ struct ECV_DB_LIB_API ccGLCameraParameters
 	}
 
 	//! Projects a 3D point in 2D (+ normalized 'z' coordinate)
-	inline bool project(const CCVector3d& input3D, CCVector3d& output2D) const { return GenericDispalyTools::Project<double, double>(input3D, modelViewMat.data(), projectionMat.data(), viewport, output2D); }
+	inline bool project(const CCVector3d& input3D, CCVector3d& output2D, bool* inFrustum = nullptr) const { return GenericDispalyTools::Project<double, double>(input3D, modelViewMat.data(), projectionMat.data(), viewport, output2D, inFrustum); }
 	//! Projects a 3D point in 2D (+ normalized 'z' coordinate)
-	inline bool project(const CCVector3& input3D, CCVector3d& output2D) const { return GenericDispalyTools::Project<PointCoordinateType, double>(input3D, modelViewMat.data(), projectionMat.data(), viewport, output2D); }
+	inline bool project(const CCVector3& input3D, CCVector3d& output2D, bool* inFrustum = nullptr) const { return GenericDispalyTools::Project<PointCoordinateType, double>(input3D, modelViewMat.data(), projectionMat.data(), viewport, output2D, inFrustum); }
 
 	//! Unprojects a 2D point (+ normalized 'z' coordinate) in 3D
 	inline bool unproject(const CCVector3d& input2D, CCVector3d& output3D) const { return GenericDispalyTools::Unproject<double, double>(input2D, modelViewMat.data(), projectionMat.data(), viewport, output3D); }

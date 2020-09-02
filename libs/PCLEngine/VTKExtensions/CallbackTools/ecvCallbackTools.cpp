@@ -17,15 +17,15 @@
 
 #include "ecvCallbackTools.h"
 
+// LOCAL
+#include "VTKExtensions/Widgets/CustomVtkBoxWidget.h"
+
 // CV_CORE_LIB
 #include <CVLog.h>
 #include <CVGeom.h>
 
 // ECV_DB_LIB
 #include <ecvColorTypes.h>
-
-// LOCAL
-#include "VtkUtils/CustomVtkBoxWidget.h"
 
 // VTK
 #include <vtkAssembly.h>

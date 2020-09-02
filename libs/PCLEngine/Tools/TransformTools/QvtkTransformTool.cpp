@@ -21,8 +21,8 @@
 #include "PclUtils/PCLVis.h"
 #include "PclUtils/vtk2cc.h"
 #include "VtkUtils/vtkutils.h"
-#include "Tools/ecvCallbackTools.h"
-#include "VtkUtils/CustomVtkBoxWidget.h"
+#include "VTKExtensions/CallbackTools/ecvCallbackTools.h"
+#include "VTKExtensions/Widgets/CustomVtkBoxWidget.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>

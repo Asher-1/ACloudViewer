@@ -157,6 +157,10 @@ namespace PclUtils
 
 		double getGLDepth(int x, int y);
 
+		void getProjectionTransformMatrix(Eigen::Matrix4d& proj);
+
+		void getModelViewTransformMatrix(Eigen::Matrix4d& view);
+
 		/**
 		   * Automatically set up the camera based on a specified bounding box
 		   * (xmin, xmax, ymin, ymax, zmin, zmax). Camera will reposition itself so

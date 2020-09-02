@@ -158,6 +158,7 @@ bool ecvFilterTool::start()
 	m_filter->setInputData(m_entityContainer.getFirstChild());
 	m_filter->start();
 	m_filter->showOutline(false);
+	m_out_entities.clear();
 
 	return ccOverlayDialog::start();
 }
@@ -244,6 +245,7 @@ void ecvFilterTool::exportSlice()
 			ccHObject* result = getSlice(false);
 			if (result)
 			{
+				m_out_entities.push_back(result);
 				result->setEnabled(false);
 				result->setName(obj->getName() + QString(".section"));
 				if (obj->getParent())

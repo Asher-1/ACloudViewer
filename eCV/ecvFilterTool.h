@@ -64,6 +64,8 @@ public:
 	//! Returns the current number of associated entities
 	unsigned getNumberOfAssociatedEntity() const;
 
+	inline ccHObject::Container getOutputs() const { return m_out_entities; }
+
 protected slots:
 
 	void toggleInteractors(bool);
@@ -112,6 +114,8 @@ protected:
 
 	//! Associated entities container
 	ccHObject m_entityContainer;
+
+	ccHObject::Container m_out_entities;
 
 };
 

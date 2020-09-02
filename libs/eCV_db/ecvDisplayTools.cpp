@@ -944,6 +944,8 @@ void ecvDisplayTools::StartCPUBasedPointPicking(const PickingParameters& params)
 							}
 							else if (clickedButton == no)
 							{
+								CVLog::Warning("now only support octree picking, please don't select no!");
+								continue;
 								autoComputeOctree = false;
 								autoComputeOctreeThisSession = ecvGui::ParamStruct::NEVER;
 							}
@@ -1487,7 +1489,7 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(const CCVector3d& cameraCen
 		MP = std::max(MP, distToCustomLight);
 	}
 
-	if (s_tools.instance->m_viewportParams.perspectiveView)
+	if (GetPerspectiveState())
 	{
 		//we deduce zNear et zFar
 		//DGM: the 'zNearCoef' must not be too small, otherwise the loss in accuracy
@@ -1613,7 +1615,7 @@ ccGLMatrixd ecvDisplayTools::ComputeModelViewMatrix(const CCVector3d& cameraCent
 
 	ccGLMatrixd scaleMatd;
 	scaleMatd.toIdentity();
-	if (s_tools.instance->m_viewportParams.perspectiveView) //perspective mode
+	if (GetPerspectiveState()) //perspective mode
 	{
 		//for proper aspect ratio handling
 		if (s_tools.instance->m_glViewport.height() != 0)
@@ -2325,7 +2327,7 @@ void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters & params)
 	//get/compute the modelview matrix
 	{
 		//params.modelViewMat = GetModelViewMatrix();
-		 GetViewMatrix(params.modelViewMat.data());
+		GetViewMatrix(params.modelViewMat.data());
 	}
 
 	//get/compute the projection matrix

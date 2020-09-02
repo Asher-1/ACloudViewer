@@ -38,14 +38,25 @@
 cvGenericFilter::cvGenericFilter(QWidget *parent) 
 	: QWidget(parent)
 	, m_ui(new Ui::GenericFilterDlg)
+	, m_keepMode(false)
+	, m_negative(false)
+	, m_meshMode(false)
+	, m_preview(true)
 {
 	setWindowTitle(tr("GenericFilter"));
+	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::doubleButtonClicked,
+			this, &cvGenericFilter::onDoubleClick);
 }
 
 cvGenericFilter::~cvGenericFilter()
 {
 	VtkUtils::vtkSafeDelete(m_dataObject);
 	delete m_ui;
+}
+
+void cvGenericFilter::onDoubleClick(int x, int y)
+{
+	applyDisplayEffect();
 }
 
 ////////////////////Initialization///////////////////////////
@@ -83,7 +94,12 @@ bool cvGenericFilter::setInput(ccHObject * obj)
 		return false;
 	}
 
-	if (!initModel()) return false;
+	if (!initModel())
+	{
+		return false;
+	}
+
+	updateUi();
 	return true;
 }
 
@@ -101,6 +117,20 @@ bool cvGenericFilter::initModel()
 	}
 
 	vtkPolyData* polydata = reinterpret_cast<vtkPolyDataMapper*>(m_modelActor->GetMapper())->GetInput();
+	if (!polydata)
+	{
+		return false;
+	}
+
+	int npoints = static_cast<int>(polydata->GetNumberOfPoints());
+	if (npoints > MAX_PREVIEW_NUMBER)
+	{
+		m_preview = false;
+	}
+	else
+	{
+		m_preview = true;
+	}
 
 	if (!m_dataObject)
 	{

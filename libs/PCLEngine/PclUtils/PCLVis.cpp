@@ -31,7 +31,7 @@
 // VTK Extension
 #include "VTKExtensions/Core/vtkMemberFunctionCommand.h"
 #include "VTKExtensions/Views/vtkPVCenterAxesActor.h"
-
+#include <VTKExtensions/Widgets/CustomVtkCaptionWidget.h>
 #include "VTKExtensions/InteractionStyle/vtkPVTrackballMultiRotate.h"
 #include "VTKExtensions/InteractionStyle/vtkPVTrackballRoll.h"
 #include "VTKExtensions/InteractionStyle/vtkPVTrackballRotate.h"
@@ -53,7 +53,6 @@
 
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
-#include <VtkUtils/CustomVtkCaptionWidget.h>
 #include <vtkCaptionActor2D.h>
 #include <vtkCaptionRepresentation.h>
 #include <vtkOrientationMarkerWidget.h>
@@ -397,6 +396,20 @@ namespace PclUtils
 		}
 		
 		return z;
+	}
+
+	void PCLVis::getProjectionTransformMatrix(Eigen::Matrix4d& proj)
+	{
+		vtkMatrix4x4 * pMat = getVtkCamera()->GetProjectionTransformMatrix(getCurrentRenderer());
+		proj = Eigen::Matrix4d(pMat->GetData());
+		proj.transposeInPlace();
+	}
+
+	void PCLVis::getModelViewTransformMatrix(Eigen::Matrix4d& view)
+	{
+		vtkMatrix4x4 * vMat = getVtkCamera()->GetModelViewTransformMatrix();
+		view = Eigen::Matrix4d(vMat->GetData());
+		view.transposeInPlace();
 	}
 
 	void PCLVis::resetCamera(const ccBBox * bbox)

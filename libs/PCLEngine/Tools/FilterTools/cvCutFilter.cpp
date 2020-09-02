@@ -7,9 +7,9 @@
 #include <VtkUtils/signalblocker.h>
 
 #include <VtkUtils/vtkutils.h>
+#include <VtkUtils/boxwidgetobserver.h>
 #include <VtkUtils/spherewidgetobserver.h>
 #include <VtkUtils/implicitplanewidgetobserver.h>
-#include <VtkUtils/boxwidgetobserver.h>
 
 #include <vtkBoxWidget.h>
 #include <vtkImplicitPlaneWidget.h>
@@ -76,8 +76,19 @@ void cvCutFilter::createUi()
 	m_configUi->planeGroupBox->hide();
 	m_configUi->sphereGroupBox->show();
 	setNegative(m_configUi->negativeCheckBox->isChecked());
+	m_preview = m_configUi->previewCheckBox->isChecked();
+	connect(m_configUi->previewCheckBox, &QCheckBox::toggled, this, &cvCutFilter::onPreview);
 }
 
+void cvCutFilter::updateUi()
+{
+	if (m_configUi)
+	{
+		m_configUi->previewCheckBox->blockSignals(true);
+		m_configUi->previewCheckBox->setChecked(m_preview);
+		m_configUi->previewCheckBox->blockSignals(false);
+	}
+}
 
 void cvCutFilter::showInteractor(bool state)
 {
@@ -289,7 +300,6 @@ void cvCutFilter::updateCutWidget()
 			VtkUtils::vtkInitOnce(m_boxWidget);
 			m_boxWidget->SetInteractor(getInteractor());
 			m_boxWidget->SetPlaceFactor(1.0);
-
 			m_boxWidget->SetProp3D(m_modelActor);
 			m_boxWidget->PlaceWidget();
 
@@ -353,7 +363,7 @@ void cvCutFilter::initFilter()
 
 	if (!m_configUi) return;
 
-	m_meshMode ?  m_configUi->displayEffectCombo->setCurrentIndex(DisplayEffect::Transparent) :
+	m_meshMode && m_preview ?  m_configUi->displayEffectCombo->setCurrentIndex(DisplayEffect::Transparent) :
 				  m_configUi->displayEffectCombo->setCurrentIndex(DisplayEffect::Opaque);
 }
 
@@ -549,6 +559,12 @@ void cvCutFilter::showContourLines(bool show)
 	update();
 }
 
+void cvCutFilter::onPreview(bool dummy)
+{
+	m_preview = m_configUi->previewCheckBox->isChecked();
+	apply();
+}
+
 void cvCutFilter::modelReady()
 {
 	// initialize vars
@@ -637,7 +653,9 @@ void cvCutFilter::dataChanged()
 		break;
 
 	case Box:
+	{
 		resetBoxWidget();
+	}
 		break;
 	}
 

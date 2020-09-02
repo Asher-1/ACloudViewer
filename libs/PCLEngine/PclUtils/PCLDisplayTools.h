@@ -24,7 +24,7 @@
 #include "PCLVis.h"
 #include "ImageVis.h"
 #include "Tools/ecvTools.h"
-#include "VtkUtils/ecvQVTKWidget.h"
+#include "VTKExtensions/Widgets/ecvQVTKWidget.h"
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -83,7 +83,7 @@ public: // inherit from ecvDisplayTools
 
 	virtual void draw(CC_DRAW_CONTEXT& CONTEXT, const ccHObject * obj) override;
 
-	//virtual void redrawDisplay(CC_DRAW_CONTEXT& CONTEXT) override;
+	bool checkEntityNeedUpdate(std::string& viewID, const ccHObject* obj);
 
 	virtual void drawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox) override;
 
@@ -333,49 +333,8 @@ public:
 	  * The look up table is displayed by pressing 'u' in the PCLVisualizer */
 	inline virtual void setLookUpTableID(const std::string & viewID) override { m_visualizer3D->setLookUpTableID(viewID); }
 
-	inline virtual void getProjectionMatrix(double * projArray, int viewPort = 0) override {
-		Eigen::Matrix4d projMat;
-		m_visualizer3D->getCamera(viewPort).computeProjectionMatrix(projMat);
-		double *tempArray = projMat.data();
-		projArray[0] = tempArray[0];
-		projArray[1] = tempArray[1];
-		projArray[2] = tempArray[2];
-		projArray[3] = tempArray[3];
-		projArray[4] = tempArray[4];
-		projArray[5] = tempArray[5];
-		projArray[6] = tempArray[6];
-		projArray[7] = tempArray[7];
-		projArray[8] = tempArray[8];
-		projArray[9] = tempArray[9];
-		projArray[10] = tempArray[10];
-		projArray[11] = tempArray[11];
-		projArray[12] = tempArray[12];
-		projArray[13] = tempArray[13];
-		projArray[14] = tempArray[14];
-		projArray[15] = tempArray[15];
-	}
-	inline virtual void getViewMatrix(double * ViewArray, int viewPort = 0) override
-	{
-		Eigen::Matrix4d viewMat;
-		m_visualizer3D->getCamera(viewPort).computeViewMatrix(viewMat);
-		double *tempArray = viewMat.data();
-		ViewArray[0] = tempArray[0];
-		ViewArray[1] = tempArray[1];
-		ViewArray[2] = tempArray[2];
-		ViewArray[3] = tempArray[3];
-		ViewArray[4] = tempArray[4];
-		ViewArray[5] = tempArray[5];
-		ViewArray[6] = tempArray[6];
-		ViewArray[7] = tempArray[7];
-		ViewArray[8] = tempArray[8];
-		ViewArray[9] = tempArray[9];
-		ViewArray[10] = tempArray[10];
-		ViewArray[11] = tempArray[11];
-		ViewArray[12] = tempArray[12];
-		ViewArray[13] = tempArray[13];
-		ViewArray[14] = tempArray[14];
-		ViewArray[15] = tempArray[15];
-	}
+	inline virtual void getProjectionMatrix(double * projArray, int viewPort = 0) override;
+	inline virtual void getViewMatrix(double * ViewArray, int viewPort = 0) override;
 
 	virtual void setViewMatrix(double* viewArray, int viewPort = 0);
 

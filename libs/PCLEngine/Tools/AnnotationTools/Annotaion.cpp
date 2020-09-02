@@ -1,11 +1,12 @@
 #include <Tools/AnnotationTools/Annotaion.h>
-#include <Tools/AnnotationTools/vtkAnnotationBoxSource.h>
-#include <Tools/AnnotationTools/vtkBoxWidgetRestricted.h>
-#include <Tools/AnnotationTools/vtkBoxWidgetCallback.h>
+#include <Tools/AnnotationTools/vtkBoxWidgetAnnotationCallback.h>
+#include <VTKExtensions/Points/vtkAnnotationBoxSource.h>
+#include <VTKExtensions/Widgets/vtkBoxWidgetRestricted.h>
 
+#include <vtkActor.h>
 #include <vtkBalloonWidget.h>
 #include <vtkBalloonRepresentation.h>
-
+#include <vtkTransform.h>
 #include <vtkLookupTable.h>
 #include <vtkFloatArray.h>
 #include <vtkProperty.h>

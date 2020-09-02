@@ -123,7 +123,7 @@ namespace ccEntityAction
 		ccHObject::Container& outEntities, QWidget *parent);
 
 	// sampling
-	bool	VoxelSampling(const ccHObject::Container &selectedEntities, QWidget *parent);
+	bool	VoxelSampling(const ccHObject::Container &selectedEntities, ccHObject::Container& outEntities, QWidget *parent);
 	
 }
 

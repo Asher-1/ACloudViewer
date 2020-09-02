@@ -351,7 +351,6 @@ public: //! Draws the main 3D layer
 	static void RefreshDisplay(bool only2D = false, bool forceRedraw = true);
 	static void RedrawDisplay(bool only2D = false, bool forceRedraw = true);
 	static void CheckIfRemove();
-	inline virtual void redrawDisplay(CC_DRAW_CONTEXT& context) { /* do nothing */ }
 	inline static void Draw(CC_DRAW_CONTEXT& context, const ccHObject * obj) { TheInstance()->draw(context, obj); }
 	inline virtual void draw(CC_DRAW_CONTEXT& context, const ccHObject * obj) { /* do nothing */ }
 	inline static void DrawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox) { TheInstance()->drawBBox(context, bbox); }
@@ -576,9 +575,13 @@ public: // main interface
 	inline static void SetLookUpTableID(const std::string & viewID) { TheInstance()->setLookUpTableID(viewID); }
 	inline virtual void setLookUpTableID(const std::string & viewID) { /* do nothing */ }
 
-	inline static void GetProjectionMatrix(double * projArray, int viewPort = 0) { TheInstance()->getProjectionMatrix(projArray, viewPort); }
+	inline static void GetProjectionMatrix(double * projArray, int viewPort = 0) {
+		TheInstance()->getProjectionMatrix(projArray, viewPort);
+	}
 	inline virtual void getProjectionMatrix(double * projArray, int viewPort = 0) { /* do nothing */ }
-	inline static void GetViewMatrix(double * viewArray, int viewPort = 0) { TheInstance()->getViewMatrix(viewArray, viewPort); }
+	inline static void GetViewMatrix(double * viewArray, int viewPort = 0) { 
+		TheInstance()->getViewMatrix(viewArray, viewPort);
+	}
 	inline virtual void getViewMatrix(double * viewArray, int viewPort = 0) { /* do nothing */ }
 
 	inline static bool HideShowEntities(CC_DRAW_CONTEXT& CONTEXT) { return TheInstance()->hideShowEntities(CONTEXT); }
@@ -1373,6 +1376,13 @@ signals:
 		pixels relative to the window corner!
 	**/
 	void rightButtonClicked(int x, int y);
+
+	//! Signal emitted when the double mouse button is cliked on the window
+	/** See INTERACT_SIG_LB_CLICKED.
+		Arguments correspond to the clicked point coordinates (x,y) in
+		pixels relative to the window corner!
+	**/
+	void doubleButtonClicked(int x, int y);
 
 	//! Signal emitted when the mouse is moved
 	/** See INTERACT_SIG_MOUSE_MOVED.

@@ -30,10 +30,6 @@
 #include <pcl/io/vtk_lib_io.h>
 #include <pcl/io/impl/vtk_lib_io.hpp>
 
-// VTK
-#include <vtkPolyData.h>
-#include <vtkFloatArray.h>
-
 // CV_CORE_LIB
 #include <CVGeom.h>
 
@@ -45,6 +41,17 @@
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
+// VTK
+#include <vtkPolyData.h>
+#include <vtkFloatArray.h>
+
+// Support for VTK 7.1 upwards
+#ifdef vtkGenericDataArray_h
+#define SetTupleValue SetTypedTuple
+#define InsertNextTupleValue InsertNextTypedTuple
+#define GetTupleValue GetTypedTuple
+#endif
+
 vtk2ccConverter::vtk2ccConverter()
 {
 }
@@ -53,6 +60,86 @@ ccPointCloud* vtk2ccConverter::getPointCloudFromPolyData(vtkPolyData* polydata, 
 {
 	if (!polydata) return nullptr;
 
+	// Set the colors of the pcl::PointCloud (if the pcl::PointCloud supports colors and the input vtkPolyData has colors)
+	vtkUnsignedCharArray* colors = vtkUnsignedCharArray::SafeDownCast(polydata->GetPointData()->GetScalars());
+
+	// Set the normals of the pcl::PointCloud (if the pcl::PointCloud supports normals and the input vtkPolyData has normals)
+	vtkFloatArray* normals = vtkFloatArray::SafeDownCast(polydata->GetPointData()->GetNormals());
+
+	//create cloud
+	ccPointCloud* cloud = new ccPointCloud("vertices");
+
+	size_t pointCount = static_cast<size_t>(polydata->GetNumberOfPoints());
+	if (!cloud->resize(static_cast<unsigned>(pointCount)))
+	{
+		if (!silent)
+		{
+			CVLog::Warning(QString("[getPointCloudFromPolyData] not enough memory!"));
+		}
+		delete cloud;
+		cloud = nullptr;
+		return nullptr;
+	}
+
+	if (normals && !cloud->reserveTheNormsTable())
+	{
+		if (!silent)
+		{
+			CVLog::Warning(QString("[getPointCloudFromPolyData] not enough memory!"));
+		}
+		delete cloud;
+		cloud = nullptr;
+		return nullptr;
+	}
+
+	if (colors && !cloud->reserveTheRGBTable())
+	{
+		if (!silent)
+		{
+			CVLog::Warning(QString("[getPointCloudFromPolyData] not enough memory!"));
+		}
+		delete cloud;
+		cloud = nullptr;
+		return nullptr;
+	}
+	
+	for (size_t i = 0; i < pointCount; ++i)
+	{
+		double coordinate[3];
+		polydata->GetPoint(i, coordinate);
+		cloud->setPoint(i, CCVector3::fromArray(coordinate));
+		if (normals)
+		{
+			float normal[3];
+			normals->GetTupleValue(i, normal);
+			CCVector3 N(static_cast<PointCoordinateType>(normal[0]),
+						static_cast<PointCoordinateType>(normal[1]),
+						static_cast<PointCoordinateType>(normal[2]));
+			cloud->addNorm(N);
+		}
+		if (colors)
+		{
+			unsigned char color[3];
+			colors->GetTupleValue(i, color);
+			ecvColor::Rgb C(static_cast<ColorCompType>(color[0]),
+							static_cast<ColorCompType>(color[1]),
+							static_cast<ColorCompType>(color[2]));
+			cloud->addRGBColor(C);
+		}
+	}
+
+	if (normals)
+	{
+		cloud->showNormals(true);
+	}
+	if (colors)
+	{
+		cloud->showColors(true);
+	}
+
+	return cloud;
+
+#if 0
 	PCLCloud::Ptr smCloud = cc2smReader().getVtkPolyDataAsSM(polydata);
 	if (!smCloud)
 	{
@@ -72,13 +159,87 @@ ccPointCloud* vtk2ccConverter::getPointCloudFromPolyData(vtkPolyData* polydata, 
 		
 		return nullptr;
 	}
-
 	return sm2ccConverter(smCloud).getCloud();
+#endif
+
 }
 
 ccMesh* vtk2ccConverter::getMeshFromPolyData(vtkPolyData* polydata, bool silent)
 {
+	vtkSmartPointer<vtkPoints> mesh_points = polydata->GetPoints();
+	unsigned nr_points = static_cast<unsigned>(mesh_points->GetNumberOfPoints());
+	unsigned nr_polygons = static_cast<unsigned>(polydata->GetNumberOfPolys());
+	if (nr_points == 0)
+	{
+		if (!silent)
+		{
+			CVLog::Warning(QString("[getMeshFromPolyData] cannot find points data!"));
+		}
+		return nullptr;
+	}
+
+	ccPointCloud* vertices = getPointCloudFromPolyData(polydata, silent);
+	if (!vertices)
+	{
+		return nullptr;
+	}
+	vertices->setEnabled(false);
+	// DGM: no need to lock it as it is only used by one mesh!
+	vertices->setLocked(false);
+
+	// mesh
+	ccMesh* mesh = new ccMesh(vertices);
+	mesh->setName("Mesh");
+	mesh->addChild(vertices);
+
+	if (!mesh->reserve(nr_polygons))
+	{
+		if (!silent)
+		{
+			CVLog::Warning(QString("[getMeshFromPolyData] not enough memory!"));
+		}
+		return nullptr;
+	}
+
+	vtkIdType* cell_points;
+	vtkIdType nr_cell_points;
+	vtkCellArray * mesh_polygons = polydata->GetPolys();
+	mesh_polygons->InitTraversal();
+	int id_poly = 0;
+	while (mesh_polygons->GetNextCell(nr_cell_points, cell_points))
+	{
+		if (nr_cell_points != 3)
+		{
+			if (!silent)
+			{
+				CVLog::Warning(QString("[getMeshFromPolyData] only support triangles!"));
+			}
+			break;
+		}
+
+		mesh->addTriangle(static_cast<int>(cell_points[0]), 
+						  static_cast<int>(cell_points[1]), 
+						  static_cast<int>(cell_points[2]));
+		++id_poly;
+	}
+
+	//do some cleaning
+	{
+		vertices->shrinkToFit();
+		mesh->shrinkToFit();
+		NormsIndexesTableType* normals = mesh->getTriNormsTable();
+		if (normals)
+		{
+			normals->shrink_to_fit();
+		}
+	}
+
+	return mesh;
+
+
+#if 0
 	PCLMesh::Ptr pclMesh = cc2smReader().getVtkPolyDataAsPclMesh(polydata);
+	
 	if (!pclMesh)
 	{
 		if (!silent)
@@ -97,8 +258,9 @@ ccMesh* vtk2ccConverter::getMeshFromPolyData(vtkPolyData* polydata, bool silent)
 		}
 		return nullptr;
 	}
-
 	return sm2ccConverter(pclMesh->cloud).getMesh(pclMesh->polygons);
+#endif
+	
 }
 
 ccPolyline* vtk2ccConverter::getPolylineFromPolyData(vtkPolyData* polydata, bool silent)
