@@ -1,0 +1,27 @@
+{
+	"type" : "Standard",
+	"core" : true,
+	"name" : "Facet/fracture detection",
+	"icon" : ":/CC/plugin/qFacets/images/qFacets.png",
+	"description": "BRGM Fracture detection plugin",
+	"authors" : [
+		{
+			"name" : "Thomas Dewez, BRGM"
+		}
+	],
+	"maintainers" : [
+    {
+      "name": "Thomas Dewez, BRGM"
+    }
+	],
+  "references": [
+    {
+      "text": "Bureau de Recherches Geologiques et Minieres",
+      "url": "http://www.brgm.fr/"
+    },
+    {
+      "text": "Documentation",
+      "url": "http://www.CLOUDVIEWER .org/doc/wiki/index.php?title=Facets_(plugin)"
+    }
+  ]
+}

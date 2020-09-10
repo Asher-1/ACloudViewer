@@ -1,0 +1,132 @@
+//##########################################################################
+//#                                                                        #
+//#                              CLOUDVIEWER                               #
+//#                                                                        #
+//#  This program is free software; you can redistribute it and/or modify  #
+//#  it under the terms of the GNU General Public License as published by  #
+//#  the Free Software Foundation; version 2 or later of the License.      #
+//#                                                                        #
+//#  This program is distributed in the hope that it will be useful,       #
+//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+//#  GNU General Public License for more details.                          #
+//#                                                                        #
+//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+//#                                                                        #
+//##########################################################################
+
+#ifndef SETTING_MANAGER_H
+#define SETTING_MANAGER_H
+
+#include <QSettings>
+#include <QSharedPointer>
+#include <QTextCodec>
+#include <QCoreApplication>
+
+//! ecvSettingManager
+class QDialog;
+class QMainWindow;
+class QDockWidget;
+class ecvSettingManager : public QSettings
+{
+Q_OBJECT
+	typedef QSettings Superclass;
+public:
+
+	//! Destructor
+	~ecvSettingManager() override {};
+
+	//! Returns the (unique) static instance
+	/** \param autoInit automatically initialize the console instance (with no widget!) if not done already
+	**/
+	static ecvSettingManager* TheInstance(bool autoInit = true);
+
+	//! Releases unique instance
+	static void ReleaseInstance();
+
+	static void Init(const QString &path); // 初始化QSettings对象，并读取ini配置文件,如果不存在配置文件，则创建
+	static void setValue(const QString &section, const QString &key, const QVariant &value); //写入配置项（section:节点，key:键名，value:键值）
+	static void removeNode(const QString &section);                           //移除节点(包括其中所有的键值)
+	static void removeKey(const QString &section, const QString &key);               //移除节点中的某个键值
+	static QVariant getValue(const QString &section, const QString &key, const QVariant &defaultValue=QVariant());  //读配置项
+
+	virtual void saveState(const QMainWindow& window, const QString& key);
+	virtual void saveState(const QDialog& dialog, const QString& key);
+
+	virtual void restoreState(const QString& key, QMainWindow& window);
+	virtual void restoreState(const QString& key, QDialog& dialog);
+	
+	/**
+	* Calling this method will cause the modified signal to be emitted.
+	*/
+	virtual void alertSettingsModified();
+
+	/**
+	 * Creates a new backup file for the current settings.
+	 * If `filename` is empty, then a backup file name will automatically be
+	 * picked. On success returns the backup file name, on failure an empty string
+	 * is returned.
+	 */
+	QString backup(const QString& filename = QString());
+
+public:
+	virtual void clear();
+	virtual void sync();
+	virtual Status status() const;
+	virtual bool isAtomicSyncRequired() const;
+	virtual void setAtomicSyncRequired(bool enable);
+
+	virtual void beginGroup(const QString &prefix);
+	virtual void endGroup();
+	virtual QString group() const;
+
+	virtual int beginReadArray(const QString &prefix);
+	virtual void beginWriteArray(const QString &prefix, int size = -1);
+	virtual void endArray();
+	virtual void setArrayIndex(int i);
+
+	virtual QStringList allKeys() const;
+	virtual QStringList childKeys() const;
+	virtual QStringList childGroups() const;
+	virtual bool isWritable() const;
+
+	virtual void setValue(const QString &key, const QVariant &value);
+	virtual QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
+
+	virtual void remove(const QString &key);
+	virtual bool contains(const QString &key) const;
+
+	virtual void setFallbacksEnabled(bool b);
+	virtual bool fallbacksEnabled() const;
+
+	virtual QString fileName() const;
+	virtual Format format() const;
+	virtual Scope scope() const;
+	virtual QString organizationName() const;
+	virtual QString applicationName() const;
+
+#if QT_CONFIG(textcodec)
+	void setIniCodec(QTextCodec *codec);
+	void setIniCodec(const char *codecName);
+	QTextCodec *iniCoxdec() const;
+#endif
+protected:
+	/**
+	* ensure that when window state is being loaded, if dock windows are
+	* beyond the viewport, we correct them.
+	*/
+	virtual void sanityCheckDock(QDockWidget* docke_widget);
+
+private:
+	//! Default constructor
+	/** Constructor is protected to avoid using this object as a non static class.
+	**/
+	ecvSettingManager() {};
+
+	QSharedPointer<QSettings> m_iniFile;
+
+signals:
+	void modified();
+};
+
+#endif
