@@ -1,0 +1,22 @@
+{
+  "type": "I/O",
+  "name": "PCD file I/O",
+  "icon": ":/toolbar/pcl.png",
+  "description": "Open PCD files (PCL library).",
+  "authors": [
+    {
+      "name": "Asher"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "Asher"
+    }
+  ],
+  "references": [
+    {
+      "text": "PCL library",
+      "url": "http://pointclouds.org/"
+    }
+  ]
+}

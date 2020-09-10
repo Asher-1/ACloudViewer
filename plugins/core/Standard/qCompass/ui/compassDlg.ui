@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>compassDlg</class>
+ <widget class="QDialog" name="compassDlg">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>745</width>
+    <height>36</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Compass</string>
+  </property>
+  <layout class="QHBoxLayout">
+   <property name="leftMargin">
+    <number>2</number>
+   </property>
+   <property name="topMargin">
+    <number>2</number>
+   </property>
+   <property name="rightMargin">
+    <number>2</number>
+   </property>
+   <property name="bottomMargin">
+    <number>2</number>
+   </property>
+   <item>
+    <widget class="QLabel" name="modeLabel_2">
+     <property name="text">
+      <string>Mode:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="compassMode">
+     <property name="toolTip">
+      <string>Activate compass mode to make structural measurements</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../ccCompass.qrc">
+       <normaloff>:/CC/plugin/qCompass/images/icon.png</normaloff>:/CC/plugin/qCompass/images/icon.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+     <property name="default">
+      <bool>false</bool>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="mapMode">
+     <property name="toolTip">
+      <string>Activate map mode to define geological features</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../ccCompass.qrc">
+       <normaloff>:/CC/plugin/qCompass/images/mapIcon.png</normaloff>:/CC/plugin/qCompass/images/mapIcon.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line_4">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="modeLabel">
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="text">
+      <string>Tool:</string>
+     </property>
+     <property name="scaledContents">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="pickModeButton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string>Picking Tool. Use this to select GeoObjects or measurements.</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/dbGBLSensorSymbol.png</normaloff>:/Resources/images/dbGBLSensorSymbol.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="planeModeButton">
+     <property name="toolTip">
+      <string>Plane Tool: Measure surface orientations</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/ecvSamplePoints.png</normaloff>:/Resources/images/ecvSamplePoints.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
+     </property>
+     <property name="default">
+      <bool>false</bool>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="traceModeButton">
+     <property name="toolTip">
+      <string>Trace Tool: Measure orientation from structure trace</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/orthoSections.png</normaloff>:/Resources/images/orthoSections.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="pairModeButton">
+     <property name="toolTip">
+      <string>Lineation Tool: Measure distances and directions</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/smallPointDistance.png</normaloff>:/Resources/images/smallPointDistance.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="extraModeButton">
+     <property name="toolTip">
+      <string>Other Tools</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/ecvAddConstSF.png</normaloff>:/Resources/images/ecvAddConstSF.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="algorithmButton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string>Change tool and visibility settings</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/ecvGear128.png</normaloff>:/Resources/images/ecvGear128.png</iconset>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <property name="popupMode">
+      <enum>QToolButton::InstantPopup</enum>
+     </property>
+     <property name="autoRaise">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="undoButton">
+     <property name="toolTip">
+      <string>Undo last action</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/smallRevert.png</normaloff>:/Resources/images/smallRevert.png</iconset>
+     </property>
+     <property name="shortcut">
+      <string>Ctrl+Z</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="saveButton">
+     <property name="toolTip">
+      <string>Export interpretation and measurements</string>
+     </property>
+     <property name="statusTip">
+      <string>Save current label (added to cloud children)</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/save.png</normaloff>:/Resources/images/save.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="infoButton">
+     <property name="toolTip">
+      <string>Show readme and help information</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/ecvConsole.png</normaloff>:/Resources/images/ecvConsole.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="acceptButton">
+     <property name="toolTip">
+      <string>Accept latest changes</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/smallValidate.png</normaloff>:/Resources/images/smallValidate.png</iconset>
+     </property>
+     <property name="shortcut">
+      <string>Return</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="closeButton">
+     <property name="toolTip">
+      <string>Exit ccCompass plugin. Thanks for visiting :)</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../../../eCV/MainWindow.qrc">
+       <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
+     </property>
+     <property name="shortcut">
+      <string>Esc</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../ccCompass.qrc"/>
+  <include location="../../../../eCV/MainWindow.qrc"/>
+ </resources>
+ <connections/>
+</ui>
