@@ -1,6 +1,5 @@
-<p align="center">
-<img src="./doc/ErowCloudViewer_logo_horizontal.png" width="512" />
-</p>
+
+![](./doc/ErowCloudViewer_logo_horizontal.png)
 
 # ErowCloudViewer: A Modern System for 3D Data Processing
 
