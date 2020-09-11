@@ -1,14 +1,13 @@
-<p align="center">
-<img src="https://github.com/Asher-1/ErowCloudViewer/blob/master/doc/ErowCloudViewer_logo_horizontal.png" width="512" />
-</p>
+
+![](./doc/ErowCloudViewer_logo_horizontal.png)
 
 # ErowCloudViewer: A Modern System for 3D Data Processing
 
 Homepage: http://www.erow.cn/
 
-[![GitHub release](https://github.com/Asher-1/ErowCloudViewer/blob/master/doc/version.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
-[![Build Status](https://github.com/Asher-1/ErowCloudViewer/blob/master/doc/ErowCloudViewer.svg?branch=master)](https://github.com/Asher-1/ErowCloudViewer/releases/)
-[![Releases](https://github.com/Asher-1/ErowCloudViewer/blob/master/doc/newRelease.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
+[![GitHub release](./doc/version.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
+[![Build Status](./doc/ErowCloudViewer.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
+[![Releases](./doc/newRelease.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
 
 Introduction
 ------------
@@ -65,4 +64,4 @@ Supporting the project
 If you want to help us in another way, you can make donations via [donorbox](https://www.erow.cn)
 Thanks!
 
-[![donorbox](https://d1iczxrky3cnb2.cloudfront.net/button-medium-blue.png)](https://www.erow.cn)
+[![donorbox](./doc/button-medium-blue.png)](https://www.erow.cn)
