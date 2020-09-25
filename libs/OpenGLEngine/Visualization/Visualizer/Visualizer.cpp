@@ -331,7 +331,17 @@ bool Visualizer::AddGeometry(
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
-    } else if (geometry_ptr->isKindOf(CV_TYPES::MESH)) {
+    } else if (geometry_ptr->isKindOf(CV_TYPES::POLY_LINE)) {
+		renderer_ptr = std::make_shared<glsl::PolylineRenderer>();
+		if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+			return false;
+		}
+	} else if (geometry_ptr->isKindOf(CV_TYPES::FACET)) {
+		renderer_ptr = std::make_shared<glsl::FacetRenderer>();
+		if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+			return false;
+		}
+	} else if (geometry_ptr->isKindOf(CV_TYPES::MESH)) {
         renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;

@@ -170,7 +170,7 @@ public: //Temporary color
 		m_colorIsOverriden = state;  
 	}
 
-	// get opacity
+	// Get opacity
 	inline virtual float getOpacity() const { return m_opacity; }
 
 	//! Set opacity activation state
@@ -212,7 +212,7 @@ public: //Transformation matrix management (for display only)
 	**/
 	virtual void resetGLTransformation();
 
-	//! Mutliplies (left) current GL transformation by a rotation matrix
+	//! Multiplies (left) current GL transformation by a rotation matrix
 	/** 'GLtrans = M * GLtrans'
 		Note: GL transformation is automatically enabled.
 		See ccDrawableObject::setGLTransformation.
@@ -237,7 +237,7 @@ public: //clipping planes
 	virtual bool addClipPlanes(const ccClipPlane& plane);
 
 	//! Enables or disables clipping planes (OpenGL)
-	/** \warning If enabling the clipping planes, be sure to call this method AFTER the modelview matrix has been set.
+	/** \warning If enabling the clipping planes, be sure to call this method AFTER the model view matrix has been set.
 	**/
 	virtual void toggleClipPlanes(CC_DRAW_CONTEXT& context, bool enable);
 

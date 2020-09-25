@@ -63,6 +63,7 @@ bool OPENGL_ENGINE_LIB_API DrawGeometries(
 	bool point_show_normal = false,
 	bool mesh_show_wireframe = false,
 	bool mesh_show_back_face = false,
+	bool show_coordinate_frame = false,
 	Eigen::Vector3d *lookat = nullptr,
 	Eigen::Vector3d *up = nullptr,
 	Eigen::Vector3d *front = nullptr,

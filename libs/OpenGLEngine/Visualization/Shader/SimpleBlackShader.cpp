@@ -126,9 +126,8 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
         PrintShaderWarning("Rendering type is not ccPointCloud.");
         return false;
     }
-    const ccPointCloud &pointcloud =
-            (const ccPointCloud &)geometry;
-    if (pointcloud.hasPoints() == false) {
+    const ccPointCloud &pointcloud = (const ccPointCloud &)geometry;
+    if (!pointcloud.hasPoints()) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }

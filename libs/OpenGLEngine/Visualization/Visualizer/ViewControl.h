@@ -144,6 +144,8 @@ public:
 			geometry.isKindOf(CV_TYPES::MESH) ||
 			geometry.isKindOf(CV_TYPES::TETRA_MESH) ||
 			geometry.isKindOf(CV_TYPES::LINESET) ||
+			geometry.isKindOf(CV_TYPES::POLY_LINE) ||
+			geometry.isKindOf(CV_TYPES::FACET) ||
 			geometry.isKindOf(CV_TYPES::POINT_OCTREE2) ||
 			geometry.isKindOf(CV_TYPES::VOXEL_GRID) ||
 			geometry.isKindOf(CV_TYPES::RGBD_IMAGE) ||

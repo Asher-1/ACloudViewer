@@ -4,10 +4,12 @@
 
 # examples/Python/Misc/sampling.py
 
-import cloudViewer as cv3d
 import os, sys
+import cloudViewer as cv3d
+
 sys.path.append("../Utility")
-from common import *
+from file import *
+
 sys.path.append("../Advanced")
 from trajectory_io import *
 from shutil import copyfile
@@ -23,10 +25,8 @@ if __name__ == "__main__":
     make_clean_folder(os.path.join(out_path, "scene/"))
     sampling_rate = 30
 
-    depth_image_path = get_file_list(os.path.join(path, "depth/"),
-                                     extension=".png")
-    color_image_path = get_file_list(os.path.join(path, "image/"),
-                                     extension=".jpg")
+    depth_image_path = get_file_list(os.path.join(path, "depth/"), extension=".png")
+    color_image_path = get_file_list(os.path.join(path, "image/"), extension=".jpg")
     pose_graph_global = cv3d.io.read_pose_graph(
         os.path.join(path, template_global_posegraph_optimized))
     n_fragments = len(depth_image_path) // n_frames_per_fragment + 1
@@ -51,12 +51,11 @@ if __name__ == "__main__":
                     metadata,
                     np.dot(
                         pose_graph_global.nodes[fragment_id].pose,
-                        pose_graph_fragments[fragment_id].nodes[local_frame_id].
-                        pose)))
+                        pose_graph_fragments[fragment_id].nodes[local_frame_id].pose)))
             copyfile(depth_image_path[i], os.path.join(out_path, "depth/", \
-                    os.path.basename(depth_image_path[i])))
+                                                       os.path.basename(depth_image_path[i])))
             copyfile(color_image_path[i], os.path.join(out_path, "image/", \
-                    os.path.basename(color_image_path[i])))
+                                                       os.path.basename(color_image_path[i])))
             cnt += 1
     copyfile(os.path.join(path, "/scene/cropped.ply"),
              os.path.join(out_path, "/scene/integrated.ply"))

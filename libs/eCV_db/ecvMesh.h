@@ -497,7 +497,7 @@ public:
 	//! Transforms the mesh per-triangle normals
 	void transformTriNormals(const ccGLMatrix& trans);
 
-public: // some open3D interface
+public: // some cloudViewer interface
 
 	/// The set adjacency_list[i] contains the indices of adjacent vertices of
 	/// vertex i.
@@ -745,14 +745,14 @@ public: // some open3D interface
 		CVLib::utility::hash_eigen::hash<Eigen::Vector2i>>
 		getEdgeToVerticesMap() const;
 
+	/// Function that computes the area of a mesh triangle identified by the
+	/// triangle index
+	double getTriangleArea(size_t triangle_idx) const;
+
 	/// Function that computes the area of a mesh triangle
 	static double ComputeTriangleArea(const Eigen::Vector3d &p0,
 		const Eigen::Vector3d &p1,
 		const Eigen::Vector3d &p2);
-
-	/// Function that computes the area of a mesh triangle identified by the
-	/// triangle index
-	double getTriangleArea(size_t triangle_idx) const;
 
 	static inline Eigen::Vector3i GetEigneOrderedTriangle(
 		int vidx0, int vidx1, int vidx2) {

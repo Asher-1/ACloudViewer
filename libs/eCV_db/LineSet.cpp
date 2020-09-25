@@ -34,7 +34,7 @@
 namespace cloudViewer {
 namespace geometry {
 
-LineSet &LineSet::Clear() {
+LineSet &LineSet::clear() {
     points_.clear();
     lines_.clear();
     colors_.clear();
@@ -93,7 +93,7 @@ LineSet &LineSet::operator+=(const LineSet &lineset) {
     size_t add_line_num = lineset.lines_.size();
     size_t new_line_num = old_line_num + add_line_num;
 
-    if ((!HasLines() || HasColors()) && lineset.HasColors()) {
+    if ((!hasLines() || hasColors()) && lineset.hasColors()) {
         colors_.resize(new_line_num);
         for (size_t i = 0; i < add_line_num; i++) {
             colors_[old_line_num + i] = lineset.colors_[i];

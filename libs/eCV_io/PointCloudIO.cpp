@@ -25,14 +25,20 @@
 // ----------------------------------------------------------------------------
 
 #include "PointCloudIO.h"
-#include <iostream>
-#include <unordered_map>
 
+// CV_CORE_LIB
 #include <Console.h>
 #include <FileSystem.h>
 
-#include "FileIOFilter.h"
-#include "ecvPointCloud.h"
+// ECV_DB_LIB
+#include <ecvPointCloud.h>
+
+// ECV_IO_LIB
+#include <AutoIO.h>
+
+// SYSTEM
+#include <iostream>
+#include <unordered_map>
 
 namespace cloudViewer {
 

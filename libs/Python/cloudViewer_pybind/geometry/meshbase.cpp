@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <GenericMesh.h>
-
+#include <ecvPointCloud.h>
 #include "cloudViewer_pybind/docstring.h"
 #include "cloudViewer_pybind/geometry/geometry.h"
 #include "cloudViewer_pybind/geometry/geometry_trampoline.h"
@@ -33,6 +33,12 @@
 using namespace CVLib;
 
 void pybind_meshbase(py::module &m) {
+	py::enum_<CC_TRIANGULATION_TYPES>(m, "TriangulationType")
+		.value("DELAUNAY_2D_AXIS_ALIGNED", CC_TRIANGULATION_TYPES::DELAUNAY_2D_AXIS_ALIGNED,
+			"Triangulation types.")
+		.value("DELAUNAY_2D_BEST_LS_PLANE", CC_TRIANGULATION_TYPES::DELAUNAY_2D_BEST_LS_PLANE,
+			"Triangulation types.")
+		.export_values();
     py::class_<GenericMesh, PyGenericMesh<GenericMesh>, std::shared_ptr<GenericMesh>>
             meshbase(m, "GenericMesh",
                      "GenericMesh class. Triangle mesh contains vertices. "
@@ -78,10 +84,218 @@ void pybind_meshbase(py::module &m) {
 	.def("size", &GenericMesh::size,
 		"Returns the number of triangles.")
 	.def("has_triangles", &GenericMesh::hasTriangles,
-		"Returns whether triangles are empty.");
+		"Returns whether triangles are empty.")
+	.def("get_bbox_corner", [](GenericMesh& mesh) {
+			CCVector3 bbMin, bbMax;
+			mesh.getBoundingBox(bbMin, bbMax);
+			return std::make_tuple(CCVector3d::fromArray(bbMin), CCVector3d::fromArray(bbMax));
+		}, "Returns the mesh bounding-box.")
+	.def("get_next_triangle", [](GenericMesh& mesh) {
+			return std::shared_ptr<GenericTriangle>(mesh._getNextTriangle());
+		}, "Returns the next triangle (relatively to the global iterator position).")
+	.def("place_iterator_at_beginning", &GenericMesh::placeIteratorAtBeginning,
+		"Places the mesh iterator at the beginning.");
 
     docstring::ClassMethodDocInject(m, "GenericMesh", "size");
     docstring::ClassMethodDocInject(m, "GenericMesh", "has_triangles");
+    docstring::ClassMethodDocInject(m, "GenericMesh", "get_bbox_corner");
+    docstring::ClassMethodDocInject(m, "GenericMesh", "get_next_triangle");
+    docstring::ClassMethodDocInject(m, "GenericMesh", "place_iterator_at_beginning");
+
+	py::class_<GenericTriangle, std::shared_ptr<GenericTriangle>>
+		genericTriangle(m, "GenericTriangle", "GenericTriangle, a generic triangle interface.");
+	genericTriangle.def("get_A", [](const GenericTriangle& triangle) {
+		return CCVector3d::fromArray(*triangle._getA());
+	}, "Returns the first vertex (A).")
+	.def("get_B", [](const GenericTriangle& triangle) {
+		return CCVector3d::fromArray(*triangle._getB());
+	}, "Returns second vertex (B).")
+	.def("get_C", [](const GenericTriangle& triangle) {
+		return CCVector3d::fromArray(*triangle._getC());
+	}, "Returns the third vertex (C).");
+
+	docstring::ClassMethodDocInject(m, "GenericTriangle", "get_A");
+	docstring::ClassMethodDocInject(m, "GenericTriangle", "get_B");
+	docstring::ClassMethodDocInject(m, "GenericTriangle", "get_C");
+
+	py::class_<CVLib::VerticesIndexes, std::shared_ptr<CVLib::VerticesIndexes>>
+		verticesindexes(m, "VerticesIndexes",
+			"VerticesIndexes, Triangle described by the indexes of its 3 vertices.");
+		py::detail::bind_default_constructor<CVLib::VerticesIndexes>(verticesindexes);
+		py::detail::bind_copy_functions<CVLib::VerticesIndexes>(verticesindexes);
+		verticesindexes.def(py::init<>())
+		.def(py::init([](unsigned i1, unsigned i2, unsigned i3) {
+			return new CVLib::VerticesIndexes(i1, i2, i3);
+		}), "Constructor with specified indexes", "i1"_a, "i2"_a, "i3"_a);
+
+	py::class_<CVLib::GenericIndexedMesh, PyGenericIndexedMesh<CVLib::GenericIndexedMesh>,
+		std::shared_ptr<CVLib::GenericIndexedMesh>, CVLib::GenericMesh>
+		genericIndexedMesh(m, "GenericIndexedMesh",
+			"GenericIndexedMesh with index-based vertex access.");
+	genericIndexedMesh.def("__repr__", [](const CVLib::GenericIndexedMesh &mesh) {
+		return std::string("GenericIndexedMesh with ") +
+			std::to_string(mesh.size()) + " triangles";
+	})
+	.def("get_triangle", [](CVLib::GenericIndexedMesh& mesh, size_t triangle_index) {
+		return std::shared_ptr<CVLib::GenericTriangle>(
+			mesh._getTriangle(static_cast<unsigned>(triangle_index)));
+		}, "Returns the ith triangle.", "triangle_index"_a)
+	.def("get_vertices_indexes", [](CVLib::GenericIndexedMesh& mesh, size_t triangle_index) {
+		return std::shared_ptr<CVLib::VerticesIndexes>(
+			mesh.getTriangleVertIndexes(static_cast<unsigned>(triangle_index)));
+		}, "Returns the indexes of the vertices of a given triangle.", "triangle_index"_a)
+	.def("get_triangle_vertices", [](const CVLib::GenericIndexedMesh& mesh, size_t triangle_index) {
+			CCVector3 A, B, C;
+			mesh.getTriangleVertices(static_cast<unsigned>(triangle_index), A, B, C);
+			return std::make_tuple(CCVector3d::fromArray(A), CCVector3d::fromArray(B), CCVector3d::fromArray(C));
+		}, "Returns the vertices of a given triangle.", "triangle_index"_a)
+	.def("get_next_vertices_indexes", [](CVLib::GenericIndexedMesh& mesh) {
+		return std::shared_ptr<CVLib::VerticesIndexes>(
+			mesh.getNextTriangleVertIndexes());
+		}, "Returns the indexes of the vertices of the next triangle (relatively to the global iterator position).");
+
+	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_triangle");
+	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_triangle_vertices");
+	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_vertices_indexes");
+	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_next_vertices_indexes");
+
+	py::class_<ccGenericMesh, PyGeometry<ccGenericMesh>,
+		std::shared_ptr<ccGenericMesh>, CVLib::GenericIndexedMesh, ccHObject>
+	genericMesh(m, "ccGenericMesh", py::multiple_inheritance(),
+			"ccGenericMesh class. Generic mesh interface.");
+	genericMesh.def("__repr__",
+		[](const ccGenericMesh &mesh) {
+		return std::string("ccGenericMesh with ") +
+			std::to_string(mesh.size()) + " triangles";
+	})
+	.def("get_associated_cloud", [](const ccGenericMesh& mesh) {
+			return std::shared_ptr<ccGenericPointCloud>(mesh.getAssociatedCloud());
+		}, "Returns the vertices cloud.")
+	.def("refresh_bbox", &ccGenericMesh::refreshBB, "Forces bounding-box update.")
+	.def("capacity", &ccGenericMesh::capacity, "Returns max capacity.")
+	.def("has_materials", &ccGenericMesh::hasMaterials, "Returns whether the mesh has materials/textures.")
+	.def("has_textures", &ccGenericMesh::hasTextures, "Returns whether textures are available for this mesh.")
+	.def("has_triangle_normals", &ccGenericMesh::hasTriNormals, "Returns whether the mesh has per-triangle normals.")
+	.def("get_triangle_normal_indexes", [](const ccGenericMesh& mesh, unsigned triangle_index) {
+			int i1, i2, i3;
+			mesh.getTriangleNormalIndexes(triangle_index, i1, i2, i3);
+			return std::make_tuple(i1, i2, i3);
+		}, "Returns a triplet of normal indexes for a given triangle (if any).", "triangle_index"_a)
+	.def("get_triangle_normals", [](const ccGenericMesh& mesh, unsigned triangle_index) {
+			Eigen::Vector3d Na, Nb, Nc;
+			mesh.getTriangleNormals(triangle_index, Na, Nb, Nc);
+			return std::make_tuple(Na, Nb, Nc);
+		}, "Returns a given triangle normal.", "triangle_index"_a)
+	.def("interpolate_normals", [](ccGenericMesh& mesh,
+			unsigned triangle_index, const Eigen::Vector3d& point) {
+			CCVector3 normal;
+			mesh.interpolateNormals(triangle_index, point, normal);
+			return CCVector3d::fromArray(normal);
+		}, "Interpolates normal(s) inside a given triangle.",
+		"triangle_index"_a, "point"_a)
+	.def("compute_interpolation_weights", [](const ccGenericMesh& mesh, 
+			unsigned triangle_index, const Eigen::Vector3d& point) {
+			CCVector3d weights;
+			mesh.computeInterpolationWeights(triangle_index, point, weights);
+			return CCVector3d::fromArray(weights);
+		}, 
+		"Returns the (barycentric) interpolation weights for a given triangle.",
+		"triangle_index"_a, "point"_a)
+	.def("interpolate_colors", [](ccGenericMesh& mesh, 
+			unsigned triangle_index, const Eigen::Vector3d& point) {
+			ecvColor::Rgb color;
+			bool success = mesh.interpolateColors(triangle_index, point, color);
+			return std::make_tuple(success, ecvColor::Rgb::ToEigen(color));
+		}, 
+		"Interpolates RGB colors inside a given triangle.",
+		"triangle_index"_a, "point"_a)
+	.def("get_color_from_material", [](ccGenericMesh& mesh, 
+			unsigned triangle_index, const Eigen::Vector3d& point, bool interpolate_color_if_no_texture) {
+			ecvColor::Rgb color;
+			bool success = mesh.getColorFromMaterial(triangle_index, point, color, interpolate_color_if_no_texture);
+			return std::make_tuple(success, ecvColor::Rgb::ToEigen(color));
+		}, "Returns RGB color from a given triangle material/texture.",
+		"triangle_index"_a, "point"_a, "interpolate_color_if_no_texture"_a)
+	.def("get_vertex_color_from_material", [](ccGenericMesh& mesh, 
+			unsigned triangle_index, unsigned char vertex_index, bool return_color_if_no_texture) {
+			ecvColor::Rgb color;
+			bool success = mesh.getVertexColorFromMaterial(triangle_index, vertex_index, color, return_color_if_no_texture);
+			return std::make_tuple(success, ecvColor::Rgb::ToEigen(color));
+		}, "Returns RGB color of a vertex from a given triangle material/texture.",
+		"triangle_index"_a, "vertex_index"_a, "return_color_if_no_texture"_a)
+	.def("is_shown_as_wire", &ccGenericMesh::isShownAsWire, 
+		"Returns whether the mesh is displayed as wired or with plain facets.")
+	.def("show_wired", &ccGenericMesh::showWired,
+		"Sets whether mesh should be displayed as a wire or with plain facets.", "state"_a)
+	.def("is_shown_as_points", &ccGenericMesh::isShownAsPoints,
+		"Returns whether the mesh is displayed as wired or with plain facets.")
+	.def("show_points", &ccGenericMesh::showPoints,
+		"Sets whether mesh should be displayed as a point cloud or with plain facets.", "state"_a)
+	.def("triangle_norms_shown", &ccGenericMesh::triNormsShown,
+		"Returns whether per-triangle normals are shown or not .")
+	.def("show_triangle_norms", &ccGenericMesh::showTriNorms,
+		"Sets whether to show or not per-triangle normals.", "state"_a)
+	.def("materials_shown", &ccGenericMesh::materialsShown,
+		"Sets whether textures/material should be displayed or not.")
+	.def("show_materials", &ccGenericMesh::showMaterials,
+		"Sets whether textures should be displayed or not.", "state"_a)
+	.def("stippling_enabled", &ccGenericMesh::stipplingEnabled,
+		"Returns whether polygon stippling is enabled or not.")
+	.def("enable_stippling", &ccGenericMesh::enableStippling,
+		"Enables polygon stippling.", "state"_a)
+	.def("sample_points", [](ccGenericMesh& mesh, bool density_based,
+							double sampling_parameter,
+							bool with_normals,
+							bool with_rgb,
+							bool with_texture) {
+			ccPointCloud* cloud = mesh.samplePoints(density_based,
+				sampling_parameter, with_normals, with_rgb, with_texture, nullptr);
+			return std::shared_ptr<ccPointCloud>(cloud);
+		}, "Samples points on a mesh.", "density_based"_a, 
+			"sampling_parameter"_a, "with_normals"_a, 
+			"with_rgb"_a, "with_texture"_a)
+	.def("import_parameters_from", [](ccGenericMesh& mesh, const ccGenericMesh& source) {
+			mesh.importParametersFrom(&source);
+		}, "Imports the parameters from another mesh.", "source"_a);
+
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "get_associated_cloud");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "refresh_bbox");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "capacity");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "has_materials");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "has_textures");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "has_triangle_normals");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "get_triangle_normals");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "get_triangle_normal_indexes",
+		{{"triangle_index", "triIndex triangle index"}});
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "interpolate_normals",
+		{	{"triangle_index", "triIndex triangle index"},
+			{"point", "point where to interpolate (should be inside the triangle!)"} });
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "interpolate_colors",
+		{	{"triangle_index", "triIndex triangle index"},
+			{"point", "point where to interpolate (should be inside the triangle!)"} });
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "compute_interpolation_weights");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "get_color_from_material",
+		{	{"triangle_index", "triIndex triangle index"},
+			{"point", "point where to grab color (should be inside the triangle!)"},
+			{"interpolate_color_if_no_texture",
+		"whether to return the color interpolated from the RGB field if no texture/material is associated to the given triangles"} });
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "get_vertex_color_from_material",
+		{	{"triangle_index", "triIndex triangle index"},
+			{"vertex_index", "vertex index inside triangle (i.e. 0, 1 or 2!)"},
+			{"return_color_if_no_texture", 
+		"whether to return the color from the vertex RGB field if no texture/material is associated to the given triangle"} });
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "is_shown_as_wire");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "show_wired");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "is_shown_as_points");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "show_points");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "triangle_norms_shown");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "show_triangle_norms");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "materials_shown");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "show_materials");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "stippling_enabled");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "enable_stippling");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "sample_points");
+	docstring::ClassMethodDocInject(m, "ccGenericMesh", "import_parameters_from");
 }
 
 void pybind_meshbase_methods(py::module &m) {}

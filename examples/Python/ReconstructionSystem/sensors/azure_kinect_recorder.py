@@ -6,7 +6,7 @@
 
 import argparse
 import datetime
-import open3d as o3d
+import cloudViewer as cv3d
 
 
 class RecorderWithCallback:
@@ -18,7 +18,7 @@ class RecorderWithCallback:
         self.filename = filename
 
         self.align_depth_to_color = align_depth_to_color
-        self.recorder = o3d.io.AzureKinectRecorder(config, device)
+        self.recorder = cv3d.io.AzureKinectRecorder(config, device)
         if not self.recorder.init_sensor():
             raise RuntimeError('Failed to connect to sensor')
 
@@ -55,7 +55,7 @@ class RecorderWithCallback:
     def run(self):
         glfw_key_escape = 256
         glfw_key_space = 32
-        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis = cv3d.visualization.VisualizerWithKeyCallback()
         vis.register_key_callback(glfw_key_escape, self.escape_callback)
         vis.register_key_callback(glfw_key_space, self.space_callback)
 
@@ -99,13 +99,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.list:
-        o3d.io.AzureKinectSensor.list_devices()
+        cv3d.io.AzureKinectSensor.list_devices()
         exit()
 
     if args.config is not None:
-        config = o3d.io.read_azure_kinect_sensor_config(args.config)
+        config = cv3d.io.read_azure_kinect_sensor_config(args.config)
     else:
-        config = o3d.io.AzureKinectSensorConfig()
+        config = cv3d.io.AzureKinectSensorConfig()
 
     if args.output is not None:
         filename = args.output
