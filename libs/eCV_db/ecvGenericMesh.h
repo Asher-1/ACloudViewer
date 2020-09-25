@@ -134,19 +134,19 @@ public:
 	**/
 	virtual bool interpolateColors(unsigned triIndex, const CCVector3& P, ecvColor::Rgb& C) = 0;
 
-	////! Returns RGB color fom a given triangle material/texture
+	////! Returns RGB color from a given triangle material/texture
 	///** \param triIndex triangle index
 	//	\param P point where to grab color (should be inside the triangle!)
-	//	\param[out] C texel color
+	//	\param[out] C vertex color
 	//	\param interpolateColorIfNoTexture whether to return the color interpolated from the RGB field if no texture/material is associated to the given triangles
 	//	\return success
 	//**/
 	virtual bool getColorFromMaterial(unsigned triIndex, const CCVector3& P, ecvColor::Rgb& C, bool interpolateColorIfNoTexture) = 0;
 
-	////! Returns RGB color of a vertex fom a given triangle material/texture
+	////! Returns RGB color of a vertex from a given triangle material/texture
 	///** \param triIndex triangle index
 	//	\param vertIndex vertex index inside triangle (i.e. 0, 1 or 2!)
-	//	\param[out] C texel color
+	//	\param[out] C vertex color
 	//	\param returnColorIfNoTexture whether to return the color from the vertex RGB field if no texture/material is associated to the given triangle
 	//	\return success
 	//**/

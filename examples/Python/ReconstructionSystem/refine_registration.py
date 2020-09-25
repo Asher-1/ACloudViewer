@@ -7,9 +7,11 @@
 import numpy as np
 import cloudViewer as cv3d
 import sys
+
 sys.path.append("../Utility")
 from file import join, get_file_list
 from visualization import draw_registration_result_original_color
+
 sys.path.append(".")
 from optimize_posegraph import optimize_posegraph_for_refined_scene
 
@@ -21,18 +23,16 @@ def update_posegrph_for_scene(s, t, transformation, information, odometry,
         odometry_inv = np.linalg.inv(odometry)
         pose_graph.nodes.append(cv3d.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
-            cv3d.registration.PoseGraphEdge(s,
-                                           t,
-                                           transformation,
-                                           information,
-                                           uncertain=False))
+            cv3d.registration.PoseGraphEdge(s, t,
+                                            transformation,
+                                            information,
+                                            uncertain=False))
     else:  # loop closure case
         pose_graph.edges.append(
-            cv3d.registration.PoseGraphEdge(s,
-                                           t,
-                                           transformation,
-                                           information,
-                                           uncertain=True))
+            cv3d.registration.PoseGraphEdge(s, t,
+                                            transformation,
+                                            information,
+                                            uncertain=True))
     return (odometry, pose_graph)
 
 
@@ -57,13 +57,9 @@ def multiscale_icp(source,
                 cv3d.registration.ICPConvergenceCriteria(max_iteration=iter))
         else:
             source_down.estimate_normals(
-                cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
-                                                     2.0,
-                                                     max_nn=30))
+                cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] * 2.0, max_nn=30))
             target_down.estimate_normals(
-                cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
-                                                     2.0,
-                                                     max_nn=30))
+                cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] * 2.0, max_nn=30))
             if config["icp_method"] == "point_to_plane":
                 result_icp = cv3d.registration.registration_icp(
                     source_down, target_down, distance_threshold,
@@ -85,17 +81,16 @@ def multiscale_icp(source,
                 result_icp.transformation)
 
     if config["debug_mode"]:
-        draw_registration_result_original_color(source, target,
-                                                result_icp.transformation)
+        draw_registration_result_original_color(source, target, result_icp.transformation)
     return (result_icp.transformation, information_matrix)
 
 
 def local_refinement(source, target, transformation_init, config):
     voxel_size = config["voxel_size"]
     (transformation, information) = \
-            multiscale_icp(
+        multiscale_icp(
             source, target,
-            [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
+            [voxel_size, voxel_size / 2.0, voxel_size / 4.0], [50, 30, 14],
             config, transformation_init)
     if config["debug_mode"]:
         draw_registration_result_original_color(source, target, transformation)
@@ -109,7 +104,7 @@ def register_point_cloud_pair(ply_file_names, s, t, transformation_init,
     print("reading %s ..." % ply_file_names[t])
     target = cv3d.io.read_point_cloud(ply_file_names[t])
     (transformation, information) = \
-            local_refinement(source, target, transformation_init, config)
+        local_refinement(source, target, transformation_init, config)
     if config["debug_mode"]:
         print(transformation)
         print(information)
@@ -138,7 +133,7 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
         s = edge.source_node_id
         t = edge.target_node_id
         matching_results[s * n_files + t] = \
-                matching_result(s, t, edge.transformation)
+            matching_result(s, t, edge.transformation)
 
     if config["python_multi_threading"]:
         from joblib import Parallel, delayed
@@ -157,10 +152,10 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
     else:
         for r in matching_results:
             (matching_results[r].transformation,
-                    matching_results[r].information) = \
-                    register_point_cloud_pair(ply_file_names,
-                    matching_results[r].s, matching_results[r].t,
-                    matching_results[r].transformation, config)
+             matching_results[r].information) = \
+                register_point_cloud_pair(ply_file_names,
+                                          matching_results[r].s, matching_results[r].t,
+                                          matching_results[r].transformation, config)
 
     pose_graph_new = cv3d.registration.PoseGraph()
     odometry = np.identity(4)

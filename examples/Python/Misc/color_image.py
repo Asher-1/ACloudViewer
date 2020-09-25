@@ -7,9 +7,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+# conda install pillow matplotlib
 
 import cloudViewer as cv3d
-#conda install pillow matplotlib
 
 if __name__ == "__main__":
 

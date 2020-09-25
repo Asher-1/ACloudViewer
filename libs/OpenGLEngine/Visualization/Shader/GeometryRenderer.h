@@ -127,6 +127,35 @@ protected:
     SimpleShaderForLineSet simple_lineset_shader_;
 };
 
+class PolylineRenderer : public GeometryRenderer {
+public:
+	~PolylineRenderer() override {}
+
+public:
+	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
+	bool UpdateGeometry() override;
+
+protected:
+	SimpleShaderForPolyline simple_polyline_shader_;
+};
+
+class FacetRenderer : public GeometryRenderer {
+public:
+	~FacetRenderer() override {}
+
+public:
+	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(
+		std::shared_ptr<const ccHObject> geometry_ptr) override;
+	bool UpdateGeometry() override;
+
+protected:
+	PhongShaderForTriangleMesh phong_shader_;
+	SimpleShaderForTriangleMesh simple_mesh_shader_;
+	SimpleShaderForPolyline simple_polyline_shader_;
+};
+
 class TetraMeshRenderer : public GeometryRenderer {
 public:
     ~TetraMeshRenderer() override {}

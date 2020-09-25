@@ -37,33 +37,37 @@ namespace visualization {
 
 namespace glsl {
 
-class SimpleShader : public ShaderWrapper {
-public:
-    ~SimpleShader() override { Release(); }
+	class SimpleShader : public ShaderWrapper {
+	public:
+		~SimpleShader() override { Release(); }
 
-protected:
-    SimpleShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
+	protected:
+		SimpleShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
-protected:
-    bool Compile() final;
-    void Release() final;
-    bool BindGeometry(const ccHObject &geometry,
-                      const RenderOption &option,
-                      const ViewControl &view) final;
-    bool RenderGeometry(const ccHObject &geometry,
-                        const RenderOption &option,
-                        const ViewControl &view) final;
-    void UnbindGeometry() final;
+	protected:
+		bool Compile() final;
+		void Release() final;
+		bool BindGeometry(const ccHObject &geometry,
+			const RenderOption &option,
+			const ViewControl &view) final;
+		bool RenderGeometry(const ccHObject &geometry,
+			const RenderOption &option,
+			const ViewControl &view) final;
+		void UnbindGeometry() final;
 
-protected:
-    virtual bool PrepareRendering(const ccHObject &geometry,
-                                  const RenderOption &option,
-                                  const ViewControl &view) = 0;
-    virtual bool PrepareBinding(const ccHObject &geometry,
-                                const RenderOption &option,
-                                const ViewControl &view,
-                                std::vector<Eigen::Vector3f> &points,
-                                std::vector<Eigen::Vector3f> &colors) = 0;
+	protected:
+		virtual bool PrepareRendering(const ccHObject &geometry,
+			const RenderOption &option,
+			const ViewControl &view) = 0;
+		virtual bool PrepareBinding(const ccHObject &geometry,
+			const RenderOption &option,
+			const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points,
+			std::vector<Eigen::Vector3f> &colors) = 0;
+
+		virtual bool AdditionalRendering(const ccHObject &geometry,
+			const RenderOption &option,
+			const ViewControl &view) { return true; }
 
 protected:
     GLuint vertex_position_;
@@ -101,6 +105,24 @@ protected:
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
                         std::vector<Eigen::Vector3f> &colors) final;
+};
+
+class SimpleShaderForPolyline : public SimpleShader {
+public:
+	SimpleShaderForPolyline() : SimpleShader("SimpleShaderForPolyline") {}
+
+protected:
+	bool AdditionalRendering(const ccHObject &geometry,
+		const RenderOption &option,
+		const ViewControl &view) final;
+	bool PrepareRendering(const ccHObject &geometry,
+		const RenderOption &option,
+		const ViewControl &view) final;
+	bool PrepareBinding(const ccHObject &geometry,
+		const RenderOption &option,
+		const ViewControl &view,
+		std::vector<Eigen::Vector3f> &points,
+		std::vector<Eigen::Vector3f> &colors) final;
 };
 
 class SimpleShaderForTetraMesh : public SimpleShader {

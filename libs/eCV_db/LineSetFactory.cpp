@@ -108,7 +108,7 @@ LineSet::CreateFromOrientedBoundingBox(const ecvOrientedBBox &box)
     line_set->lines_.push_back(Eigen::Vector2i(1, 6));
     line_set->lines_.push_back(Eigen::Vector2i(7, 4));
     line_set->lines_.push_back(Eigen::Vector2i(2, 5));
-    line_set->PaintUniformColor(box.getColor());
+    line_set->paintUniformColor(box.getColor());
     return line_set;
 }
 
@@ -129,7 +129,7 @@ LineSet::CreateFromAxisAlignedBoundingBox(const ccBBox &box)
     line_set->lines_.push_back(Eigen::Vector2i(1, 6));
     line_set->lines_.push_back(Eigen::Vector2i(7, 4));
     line_set->lines_.push_back(Eigen::Vector2i(2, 5));
-    line_set->PaintUniformColor(box.getColor());
+    line_set->paintUniformColor(box.getColor());
     return line_set;
 }
 

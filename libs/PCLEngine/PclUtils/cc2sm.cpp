@@ -444,7 +444,7 @@ bool cc2smReader::getvtkScalars(vtkSmartPointer<vtkDataArray> &scalars, bool sfC
 		for (unsigned cp = 0; cp < nr_points; ++cp)
 		{
 			const ecvColor::Rgb* rgb =
-				m_cc_cloud->geScalarValueColor(scalar_field->getValue(cp));
+				m_cc_cloud->getScalarValueColor(scalar_field->getValue(cp));
 
 			if (m_partialVisibility)
 			{
@@ -541,7 +541,7 @@ PCLCloud::Ptr cc2smReader::getFloatScalarField(const std::string& field_name) co
 						{
 							ScalarType scalar = scalar_field->getValue(i);
 							//pcl_cloud->at(index).S5c4laR = static_cast<float>(scalar);
-							const ecvColor::Rgb* col = m_cc_cloud->geScalarValueColor(scalar);
+							const ecvColor::Rgb* col = m_cc_cloud->getScalarValueColor(scalar);
 							pcl_cloud->at(index).r = static_cast<uint8_t>(col->r);
 							pcl_cloud->at(index).g = static_cast<uint8_t>(col->g);
 							pcl_cloud->at(index).b = static_cast<uint8_t>(col->b);
@@ -552,7 +552,7 @@ PCLCloud::Ptr cc2smReader::getFloatScalarField(const std::string& field_name) co
 					{
 						ScalarType scalar = scalar_field->getValue(i);
 						//pcl_cloud->at(i).S5c4laR = static_cast<float>(scalar);
-						const ecvColor::Rgb* col = m_cc_cloud->geScalarValueColor(scalar);
+						const ecvColor::Rgb* col = m_cc_cloud->getScalarValueColor(scalar);
 						pcl_cloud->at(i).r = static_cast<uint8_t>(col->r);
 						pcl_cloud->at(i).g = static_cast<uint8_t>(col->g);
 						pcl_cloud->at(i).b = static_cast<uint8_t>(col->b);

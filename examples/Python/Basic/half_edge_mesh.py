@@ -20,9 +20,9 @@ def draw_geometries_with_back_face(geometries):
 
 
 if __name__ == "__main__":
-    # Initialize a HalfEdgeTriangleMesh from ccMesh
+    # Initialize a HalfEdgeTriangleMesh from TriangleMesh
     mesh = cv3d.io.read_triangle_mesh("../../TestData/sphere.ply")
-    bbox = cv3d.geometry.ccBBox()
+    bbox = cv3d.geometry.AxisAlignedBoundingBox()
     bbox.min_bound = [-1, -1, -1]
     bbox.max_bound = [1, 0.6, 1]
     mesh = mesh.crop(bbox)
