@@ -38,6 +38,7 @@ public:
 	/** \param associatedCloud the associated point cloud (i.e. the vertices)
 	**/
 	explicit ccPolyline(GenericIndexedCloudPersist* associatedCloud);
+	explicit ccPolyline(ccPointCloud& associatedCloud);
 
 	//! Copy constructor
 	/** \param poly polyline to clone
@@ -50,13 +51,15 @@ public:
 	//! Returns class ID
 	virtual CV_CLASS_ENUM getClassID() const override {return CV_TYPES::POLY_LINE;}
 
-	//inherited methods (ccHObject)
+	// inherited methods (ccHObject)
 	virtual bool isSerializable() const override { return true; }
-	virtual bool hasColors() const override;
 	virtual void applyGLTransformation(const ccGLMatrix& trans) override;
 	virtual unsigned getUniqueIDForDisplay() const override;
+	
+	// inherited methods (ccDrawableObject)
+	virtual bool hasColors() const override;
 
-	//inherited methods (ccShiftedObject)
+	// inherited methods (ccShiftedObject)
 	virtual void setGlobalShift(const CCVector3d& shift) override;
 	virtual void setGlobalScale(double scale) override;
 
@@ -84,7 +87,7 @@ public:
 	//! Sets the polyline color
 	/** \param col RGB color
 	**/
-	inline void setColor(const ecvColor::Rgb& col) { m_rgbColor = col; }
+	inline void setColor(const ecvColor::Rgb& col) { enableTempColor(false); m_rgbColor = col; }
 
 	//! Sets the width of the line
 	/**  \param width the desired width
@@ -120,6 +123,13 @@ public:
 	bool split(	PointCoordinateType maxEdgeLength,
 				std::vector<ccPolyline*>& parts );
 
+	//! Add another reference cloud
+	/** \warning Both clouds should have the same reference cloud!
+		\warning No verification for duplicates!
+		Thread safe.
+	**/
+	bool add(const ccPointCloud& cloud);
+
 	//! Computes the polyline length
 	PointCoordinateType computeLength() const;
 
@@ -142,7 +152,7 @@ public:
 		\param poly polyline
 		\return success
 	**/
-	bool initWith(ccPointCloud*& vertices, const ccPolyline& poly);
+	bool initWith(ccPointCloud* vertices, const ccPolyline& poly);
 
 	//! Copy the parameters from another polyline
 	void importParametersFrom(const ccPolyline& poly);
@@ -157,6 +167,30 @@ public:
 	ccPointCloud* samplePoints(	bool densityBased,
 								double samplingParameter,
 								bool withRGB);
+
+	inline virtual bool isEmpty() const override { return !hasPoints(); }
+	virtual Eigen::Vector3d getMinBound() const override;
+	virtual Eigen::Vector3d getMaxBound() const override;
+	virtual Eigen::Vector3d getGeometryCenter() const override;
+	virtual ccBBox getAxisAlignedBoundingBox() const override;
+	virtual ecvOrientedBBox getOrientedBoundingBox() const override;
+	virtual ccPolyline& transform(const Eigen::Matrix4d &transformation) override;
+	virtual ccPolyline& translate(const Eigen::Vector3d &translation,
+		bool relative = true) override;
+	virtual ccPolyline& scale(const double s, const Eigen::Vector3d &center) override;
+	virtual ccPolyline& rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) override;
+
+	ccPolyline &operator+=(const ccPolyline &polyline);
+	ccPolyline &operator=(const ccPolyline &polyline);
+	ccPolyline operator+(const ccPolyline &polyline) const;
+
+	/// \brief Assigns each line in the LineSet the same color.
+	///
+	/// \param color Specifies the color to be applied.
+	ccPolyline &paintUniformColor(const Eigen::Vector3d &color) {
+		setColor(ecvColor::Rgb::FromEigen(color));
+		return *this;
+	}
 
 public: //meta-data keys
 	

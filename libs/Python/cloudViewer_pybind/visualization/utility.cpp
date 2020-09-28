@@ -115,40 +115,40 @@ void pybind_visualization_utility_methods(py::module &m) {
           [](const std::vector<std::shared_ptr<const ccHObject>> &geometry_list,
              const std::string &window_name, int width, int height, int left,
 			 int top, bool point_show_normal, bool mesh_show_wireframe,
-			 bool mesh_show_back_face) {
+			 bool mesh_show_back_face, bool show_coordinate_frame) {
               std::string current_dir =
                       CVLib::utility::filesystem::GetWorkingDirectory();
               visualization::DrawGeometries(
 				  geometry_list, window_name, width,
 				  height, left, top, point_show_normal, 
-				  mesh_show_wireframe, mesh_show_back_face);
+				  mesh_show_wireframe, mesh_show_back_face, show_coordinate_frame);
               CVLib::utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of ccHObject objects",
           "geometry_list"_a, "window_name"_a = "cloudViewer", "width"_a = 1920,
           "height"_a = 1080, "left"_a = 50, "top"_a = 50,
 		  "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
-		  "mesh_show_back_face"_a = false);
+		  "mesh_show_back_face"_a = false, "show_coordinate_frame"_a = false);
 	m.def("draw_geometries",
 		[](const std::vector<std::shared_ptr<const ccHObject>> &geometry_list,
 			const std::string &window_name, int width, int height, int left,
 			int top, bool point_show_normal, bool mesh_show_wireframe,
-			bool mesh_show_back_face, Eigen::Vector3d lookat,
+			bool mesh_show_back_face, bool show_coordinate_frame, Eigen::Vector3d lookat,
 			Eigen::Vector3d up, Eigen::Vector3d front, double zoom) {
 		std::string current_dir =
 			CVLib::utility::filesystem::GetWorkingDirectory();
 		visualization::DrawGeometries(
 			geometry_list, window_name, width, height, left, top,
 			point_show_normal, mesh_show_wireframe,
-			mesh_show_back_face, &lookat, &up, &front, &zoom);
+			mesh_show_back_face, show_coordinate_frame, &lookat, &up, &front, &zoom);
 		CVLib::utility::filesystem::ChangeWorkingDirectory(current_dir);
 		},
 		"Function to draw a list of ccHObject objects",
 		"geometry_list"_a, "window_name"_a = "cloudViewer", "width"_a = 1920,
 		"height"_a = 1080, "left"_a = 50, "top"_a = 50,
 		"point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
-		"mesh_show_back_face"_a = false, "lookat"_a, "up"_a, "front"_a,
-		"zoom"_a);
+		"mesh_show_back_face"_a = false, "show_coordinate_frame"_a = false, 
+		"lookat"_a, "up"_a, "front"_a, "zoom"_a);
     docstring::FunctionDocInject(m, "draw_geometries",
                                  map_shared_argument_docstrings);
 

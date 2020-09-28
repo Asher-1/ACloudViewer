@@ -7,7 +7,7 @@
 import argparse
 import json
 import sys
-import open3d as o3d
+import cloudViewer as cv3d
 sys.path.append("../Utility")
 from file import *
 from visualization import *
@@ -37,9 +37,9 @@ if __name__ == "__main__":
                                        extension='.ply')
         for i in range(args.start_id, len(fragment_files)):
             print(fragment_files[i])
-            pcd = o3d.io.read_point_cloud(fragment_files[i])
+            pcd = cv3d.io.read_point_cloud(fragment_files[i])
             if (args.estimate_normal):
                 pcd.estimate_normals(
-                    o3d.geometry.KDTreeSearchParamHybrid(
+                    cv3d.geometry.KDTreeSearchParamHybrid(
                         radius=config["voxel_size"] * 2.0, max_nn=30))
             draw_geometries_flip([pcd])

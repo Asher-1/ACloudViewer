@@ -50,6 +50,23 @@ class ccShiftedObject;
 class ccSphere;
 class ccSubMesh;
 class ccTorus;
+class ccQuadric;
+class ccBox;
+class ccBBox;
+class ecvOrientedBBox;
+
+namespace cloudViewer
+{
+	namespace geometry {
+		class Image;
+		class RGBDImage;
+		class VoxelGrid;
+		class LineSet;
+		//class Octree;
+	}
+}
+
+#include "Octree.h"
 
 //! Useful class to (try to) statically cast a basic ccHObject to a given type
 class ECV_DB_LIB_API ccHObjectCaster
@@ -102,6 +119,10 @@ public:
 	static ccCone* ToCone(ccHObject* obj);
 	//! Converts current object to ccPlane (if possible)
 	static ccPlane* ToPlane(ccHObject* obj);
+	//! Converts current object to ccQuadric (if possible)
+	static ccQuadric* ToQuadric(ccHObject* obj);
+	//! Converts current object to ccBox (if possible)
+	static ccBox* ToBox(ccHObject* obj);
 	//! Converts current object to ccDish (if possible)
 	static ccDish* ToDish(ccHObject* obj);
 	//! Converts current object to ccExtru (if possible)
@@ -140,6 +161,27 @@ public:
 
 	//! Converts current object to ccIndexedTransformationBuffer (if possible)
 	static ccIndexedTransformationBuffer* ToTransBuffer(ccHObject* obj);
+
+	////! Converts current object to Image (if possible)
+	static cloudViewer::geometry::Image* ToImage2(ccHObject* obj);
+
+	////! Converts current object to RGBDImage (if possible)
+	static cloudViewer::geometry::RGBDImage* ToRGBDImage(ccHObject* obj);
+
+	////! Converts current object to VoxelGrid (if possible)
+	static cloudViewer::geometry::VoxelGrid* ToVoxelGrid(ccHObject* obj);
+
+	////! Converts current object to LineSet (if possible)
+	static cloudViewer::geometry::LineSet* ToLineSet(ccHObject* obj);
+
+	////! Converts current object to Octree (if possible)
+	static cloudViewer::geometry::Octree* ToOctree2(ccHObject* obj);
+
+	////! Converts current object to ccBBox (if possible)
+	static ccBBox* ToBBox(ccHObject* obj);
+
+	////! Converts current object to ecvOrientedBBox (if possible)
+	static ecvOrientedBBox* ToOrientedBBox(ccHObject* obj);
 
 };
 

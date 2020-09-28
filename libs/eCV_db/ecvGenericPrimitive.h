@@ -82,8 +82,9 @@ public:
 	//! Returns the transformation that is currently applied to the vertices (const version)
 	virtual inline const ccGLMatrix& getTransformation() const { return m_transformation; }
 
-	//inherited methods (ccHObject)
+	//! inherited methods (ccHObject)
 	const ccGLMatrix& getGLTransformationHistory() const override;
+
 
 protected:
 

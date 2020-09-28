@@ -7,9 +7,9 @@
 import numpy as np
 import cloudViewer as cv3d
 import time
-
 import os
 import sys
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, '../Misc'))
 import meshes
@@ -26,11 +26,10 @@ def knn_generator():
 def pointcloud_generator():
     pts = np.random.uniform(-30, 30, size=(int(1e5), 3))
     pcl = cv3d.geometry.ccPointCloud()
-    pcl.points = cv3d.utility.Vector3dVector(pts)
+    pcl.set_points(cv3d.utility.Vector3dVector(pts))
     yield 'uniform', pcl
 
-    yield 'moebius', cv3d.geometry.ccMesh.create_moebius(
-    ).sample_points_uniformly(int(1e5))
+    yield 'moebius', cv3d.geometry.ccMesh.create_moebius().sample_points_uniformly(int(1e5))
 
     yield 'bunny', meshes.bunny().scale(10).sample_points_uniformly(int(1e5))
 
@@ -57,9 +56,9 @@ if __name__ == "__main__":
     for pcl_name, pcl in pointcloud_generator():
         for knn_name, knn in knn_generator():
             pcl.estimate_normals(knn, True)
-            normals_fast = np.asarray(pcl.normals)
+            normals_fast = np.asarray(pcl.get_normals())
             pcl.estimate_normals(knn, False)
-            normals_eigen = np.asarray(pcl.normals)
+            normals_eigen = np.asarray(pcl.get_normals())
             test = (normals_eigen * normals_fast).sum(axis=1)
             print('normals agree: {}'.format(np.all(test - 1 < 1e-9)))
 
@@ -73,15 +72,13 @@ if __name__ == "__main__":
     pts[1] = Y
 
     shape = cv3d.geometry.ccPointCloud()
-    shape.points = cv3d.utility.Vector3dVector(pts.T)
+    shape.set_points(cv3d.utility.Vector3dVector(pts.T))
     shape.paint_uniform_color([0, 0.651, 0.929])  # blue
 
-    shape.estimate_normals(cv3d.geometry.KDTreeSearchParamHybrid(radius=0.5,
-                                                                max_nn=30),
+    shape.estimate_normals(cv3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30),
                            fast_normal_computation=True)
     cv3d.visualization.draw_geometries([shape])
 
-    shape.estimate_normals(cv3d.geometry.KDTreeSearchParamHybrid(radius=0.5,
-                                                                max_nn=30),
+    shape.estimate_normals(cv3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30),
                            fast_normal_computation=False)
     cv3d.visualization.draw_geometries([shape])

@@ -20,7 +20,6 @@
 
 //Local
 #include "ecvObject.h"
-//#include "ecvBBox.h"
 
 #include "ecvGLMatrix.h"
 #include "ecvColorTypes.h"

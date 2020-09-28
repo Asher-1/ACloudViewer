@@ -245,12 +245,16 @@ bool PhongShaderForPointCloud::PrepareBinding(
             case RenderOption::PointColorOption::Color:
             case RenderOption::PointColorOption::Default:
             default:
-                if (pointcloud.hasColors()) {
+				if (pointcloud.isColorOverriden()) {
+					color = ecvColor::Rgb::ToEigen(pointcloud.getTempColor());
+				}
+				else if (pointcloud.hasColors()) {
 					color = pointcloud.getEigenColor(i);
-                } else {
-                    color = global_color_map.GetColor(
-                            view.GetBoundingBox().getZPercentage(point(2)));
-                }
+				}
+				else {
+					color = global_color_map.GetColor(
+						view.GetBoundingBox().getZPercentage(point(2)));
+				}
                 break;
         }
         colors[i] = color.cast<float>();
@@ -338,10 +342,14 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
                             view.GetBoundingBox().getZPercentage(vertex(2)));
                     break;
                 case RenderOption::MeshColorOption::Color:
-                    if (mesh.hasColors()) {
+					if (mesh.isColorOverriden()) {
+						color = ecvColor::Rgb::ToEigen(mesh.getTempColor());
+						break;
+					}
+					else if (mesh.hasColors()) {
 						color = mesh.getVertexColor(vi);
-                        break;
-                    }
+						break;
+					}
                 case RenderOption::MeshColorOption::Default:
                 default:
                     color = option.default_mesh_color_;

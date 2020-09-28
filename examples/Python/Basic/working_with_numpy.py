@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # Pass xyz to cloudViewer.cv3d.geometry.ccPointCloud and visualize
     pcd = cv3d.geometry.ccPointCloud()
-    pcd.points = cv3d.utility.Vector3dVector(xyz)
+    pcd.set_points(cv3d.utility.Vector3dVector(xyz))
     cv3d.io.write_point_cloud("../../TestData/sync.ply", pcd)
 
     # Load saved point cloud and visualize it
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     cv3d.visualization.draw_geometries([pcd_load])
 
     # convert cloudViewer.cv3d.geometry.ccPointCloud to numpy array
-    xyz_load = np.asarray(pcd_load.points)
+    xyz_load = np.asarray(pcd_load.get_points())
     print('xyz_load')
     print(xyz_load)
 

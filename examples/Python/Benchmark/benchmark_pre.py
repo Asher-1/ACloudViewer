@@ -17,7 +17,7 @@ from trajectory_io import *
 
 import pickle
 
-do_visualization = False
+do_visualization = True
 
 
 def get_ply_path(dataset_name, id):

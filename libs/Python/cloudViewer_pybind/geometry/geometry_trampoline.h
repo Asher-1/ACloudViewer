@@ -36,7 +36,8 @@
 
 #include <ecvMesh.h>
 #include <ecvHObject.h>
-#include <ecvPointCloud.h>
+#include <ecvGenericPrimitive.h>
+#include <ecvPlanarEntityInterface.h>
 #include "cloudViewer_pybind/geometry/geometry.h"
 #include "cloudViewer_pybind/cloudViewer_pybind.h"
 
@@ -62,11 +63,9 @@ public:
 
 template <class GeometryBase = ccHObject>
 class PyGeometry : public PyObjectBase<GeometryBase>
-	//public PyDrawableObjectBase<GeometryBase> 
 {
 public:
     using PyObjectBase<GeometryBase>::PyObjectBase;
-    //using PyDrawableObjectBase<GeometryBase>::PyDrawableObjectBase;
 
 	bool isEmpty() const override {
 		PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
@@ -95,129 +94,6 @@ public:
 	}
 	GeometryBase& transform(const Eigen::Matrix4d& transformation) override {
 		PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, transformation);
-	}
-};
-
-// PointCloud
-template <class GenericCloudBase = CVLib::GenericCloud>
-class PyGenericCloud : public GenericCloudBase {
-public:
-	using GenericCloudBase::GenericCloudBase;
-
-	unsigned size() const override {
-		PYBIND11_OVERLOAD_PURE(unsigned, GenericCloudBase, );
-	}
-	void forEach() override {
-		PYBIND11_OVERLOAD_PURE(void, GenericCloudBase, );
-	}
-	void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) override {
-		PYBIND11_OVERLOAD_PURE(void, GenericCloudBase, bbMin, bbMax);
-	}
-	void placeIteratorAtBeginning() override {
-		PYBIND11_OVERLOAD_PURE(void, GenericCloudBase, );
-	}
-	const CCVector3* getNextPoint() override {
-		PYBIND11_OVERLOAD_PURE(const CCVector3*, GenericCloudBase, );
-	}
-	bool enableScalarField() override {
-		PYBIND11_OVERLOAD_PURE(bool, GenericCloudBase, );
-	}
-	bool isScalarFieldEnabled() const override {
-		PYBIND11_OVERLOAD_PURE(bool, GenericCloudBase, );
-	}
-	void setPointScalarValue(unsigned pointIndex, ScalarType value) override {
-		PYBIND11_OVERLOAD_PURE(void, GenericCloudBase, pointIndex, value);
-	}
-	ScalarType getPointScalarValue(unsigned pointIndex) const override {
-		PYBIND11_OVERLOAD_PURE(ScalarType, GenericCloudBase, pointIndex);
-	}
-
-};
-
-template <class GenericIndexedCloudBase = CVLib::GenericIndexedCloud>
-class PyGenericIndexedCloud : public PyGenericCloud<GenericIndexedCloudBase> {
-public:
-	using PyGenericCloud<GenericIndexedCloudBase>::PyGenericCloud;
-
-	const CCVector3* getPoint(unsigned index) override {
-		PYBIND11_OVERLOAD_PURE(const CCVector3*, GenericIndexedCloudBase, index);
-	}
-	void getPoint(unsigned index, CCVector3& P) const override {
-		PYBIND11_OVERLOAD_PURE(void, GenericIndexedCloudBase, index, P);
-	}
-	void getPoint(unsigned index, double P[3]) const override {
-		PYBIND11_OVERLOAD_PURE(void, GenericIndexedCloudBase, index, P);
-	}
-};
-
-template <class GenericIndexedCloudPersistBase = CVLib::GenericIndexedCloudPersist>
-class PyGenericIndexedCloudPersist : public PyGenericIndexedCloud<GenericIndexedCloudPersistBase> 
-{
-public:
-	using PyGenericIndexedCloud<GenericIndexedCloudPersistBase>::PyGenericIndexedCloud;
-
-	const CCVector3* getPointPersistentPtr(unsigned index) override {
-		PYBIND11_OVERLOAD_PURE(const CCVector3*, GenericIndexedCloudPersistBase, index);
-	}
-};
-
-template <class GenericPointCloudBase = ccGenericPointCloud>
-class PyGenericPointCloud : 
-	public PyGeometry<GenericPointCloudBase>,
-	public PyGenericIndexedCloudPersist<GenericPointCloudBase>
-{
-public:
-    using PyGeometry<GenericPointCloudBase>::PyGeometry;
-    //using PyGenericIndexedCloudPersist<GenericPointCloudBase>::PyGenericIndexedCloudPersist;
-    
-	ccGenericPointCloud* clone(
-		ccGenericPointCloud* destCloud = nullptr,
-		bool ignoreChildren = false) override {
-        PYBIND11_OVERLOAD_PURE(ccGenericPointCloud*, GenericPointCloudBase, destCloud, ignoreChildren);
-    }
-	const ecvColor::Rgb* geScalarValueColor(ScalarType d) const override {
-		PYBIND11_OVERLOAD_PURE(const ecvColor::Rgb*, GenericPointCloudBase, d);
-	}
-	const ecvColor::Rgb* getPointScalarValueColor(unsigned pointIndex) const override {
-		PYBIND11_OVERLOAD_PURE(const ecvColor::Rgb*, GenericPointCloudBase, pointIndex);
-	}
-	ScalarType getPointDisplayedDistance(unsigned pointIndex) const override {
-		PYBIND11_OVERLOAD_PURE(ScalarType, GenericPointCloudBase, pointIndex);
-	}
-	const ecvColor::Rgb& getPointColor(unsigned pointIndex) const override {
-		PYBIND11_OVERLOAD_PURE(const ecvColor::Rgb&, GenericPointCloudBase, pointIndex);
-	}
-	const CompressedNormType& getPointNormalIndex(unsigned pointIndex) const override {
-		PYBIND11_OVERLOAD_PURE(const CompressedNormType&, GenericPointCloudBase, pointIndex);
-	}
-	const CCVector3& getPointNormal(unsigned pointIndex) const override {
-		PYBIND11_OVERLOAD_PURE(const CCVector3&, GenericPointCloudBase, pointIndex);
-	}
-	void refreshBB() override {
-		PYBIND11_OVERLOAD_PURE(void, GenericPointCloudBase, );
-	}
-	//ccGenericPointCloud* createNewCloudFromVisibilitySelection(
-	//	bool removeSelectedPoints = false, 
-	//	VisibilityTableType* visTable = nullptr, 
-	//	bool silent = false) override {
-	//	PYBIND11_OVERLOAD_PURE(ccGenericPointCloud*, GenericPointCloudBase, 
-	//		removeSelectedPoints, visTable, silent);
-	//}
-	void applyRigidTransformation(const ccGLMatrix& trans) override {
-		PYBIND11_OVERLOAD_PURE(void, GenericPointCloudBase, trans);
-	}
-	CVLib::ReferenceCloud* crop(const ccBBox& box, bool inside = true) override {
-		PYBIND11_OVERLOAD_PURE(CVLib::ReferenceCloud*, GenericPointCloudBase, box, inside);
-	}
-	CVLib::ReferenceCloud* crop(const ecvOrientedBBox& box) override {
-		PYBIND11_OVERLOAD_PURE(CVLib::ReferenceCloud*, GenericPointCloudBase, box);
-	}
-	void removePoints(size_t index) override {
-		PYBIND11_OVERLOAD_PURE(void, GenericPointCloudBase, index);
-	}
-	void scale(PointCoordinateType fx, PointCoordinateType fy,
-		PointCoordinateType fz, CCVector3 center = CCVector3(0, 0, 0)) override {
-		PYBIND11_OVERLOAD_PURE(void, GenericPointCloudBase, fx, fy, fz, center);
 	}
 };
 
@@ -329,14 +205,40 @@ public:
 	bool getColorFromMaterial(unsigned triIndex, const CCVector3& P, ecvColor::Rgb& C, bool interpolateColorIfNoTexture) override {
 		PYBIND11_OVERLOAD_PURE(bool, GenericTriangleMesh, triIndex, P, C, interpolateColorIfNoTexture);
 	}
-	bool getVertexColorFromMaterial(unsigned triIndex, 
-		unsigned char vertIndex, ecvColor::Rgb& C,
-		bool returnColorIfNoTexture) override {
+	bool getVertexColorFromMaterial(unsigned triIndex, unsigned char vertIndex, ecvColor::Rgb& C, bool returnColorIfNoTexture) override {
 		PYBIND11_OVERLOAD_PURE(bool, GenericTriangleMesh, triIndex, vertIndex, C, returnColorIfNoTexture);
 	}
 
 };
 
+template <class GenericPrimitive = ccGenericPrimitive>
+class PyGenericPrimitive : public GenericPrimitive
+{
+public:
+	using GenericPrimitive::GenericPrimitive;
+
+	//! Returns type name (sphere, cylinder, etc.)
+	QString getTypeName() const override {
+		PYBIND11_OVERLOAD_PURE(QString, GenericPrimitive, );
+	}
+
+	//! Clones primitive
+	ccGenericPrimitive* clone() const override {
+		PYBIND11_OVERLOAD_PURE(ccGenericPrimitive*, GenericPrimitive, );
+	}
+};
+
+template <class GenericPlanarEntityInterface = ccPlanarEntityInterface>
+class PyPlanarEntityInterface : public GenericPlanarEntityInterface
+{
+public:
+	using GenericPlanarEntityInterface::GenericPlanarEntityInterface;
+
+	//! Returns the entity normal
+	CCVector3 getNormal() const override {
+		PYBIND11_OVERLOAD_PURE(CCVector3, GenericPlanarEntityInterface, );
+	}
+};
 
 template <class AxisBBoxBase = CVLib::BoundingBox>
 class PyAxisBBoxBase : public AxisBBoxBase {
