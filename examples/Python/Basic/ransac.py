@@ -74,8 +74,23 @@ if __name__ == "__main__":
             out_points = cv3d.geometry.ccPointCloud("group")
             for res in ransac_result:
                 prim = res.primitive
+                print(prim)
                 print(prim.get_name())
-                print(res)
+                if prim.is_kind_of(cv3d.geometry.ccObject.CYLINDER):
+                    cylinder = cv3d.geometry.ToCylinder(prim)
+                    print(cylinder.get_bottom_radius())
+                elif prim.is_kind_of(cv3d.geometry.ccObject.PLANE):
+                    plane = cv3d.geometry.ToPlane(prim)
+                    print(plane.get_width())
+                elif prim.is_kind_of(cv3d.geometry.ccObject.SPHERE):
+                    sphere = cv3d.geometry.ToSphere(prim)
+                    print(sphere.get_radius())
+                elif prim.is_kind_of(cv3d.geometry.ccObject.CONE):
+                    cone = cv3d.geometry.ToCone(prim)
+                    print(cone.get_bottom_radius())
+                elif prim.is_kind_of(cv3d.geometry.ccObject.TORUS):
+                    torus = cv3d.geometry.ToTorus(prim)
+                    print(torus.get_inside_radius())
                 cloud = pcl.select_by_index(res.indices)
                 if random_color:
                     color = np.random.uniform(0, 1, size=(3,))

@@ -38,6 +38,8 @@
 #include "cloudViewer_pybind/geometry/geometry.h"
 #include "cloudViewer_pybind/geometry/geometry_trampoline.h"
 
+#pragma warning(disable:4715)
+
 using namespace CVLib;
 
 void pybind_cloudbase(py::module &m) {
@@ -132,11 +134,19 @@ void pybind_cloudbase(py::module &m) {
 			return CCVector3d::fromArray(*obj.getCurrentPointCoordinates());
 		}, "Returns the coordinates of the point pointed by the current element.")
 	.def("get_associated_cloud", [](ReferenceCloud& obj) {
-			return std::shared_ptr<GenericIndexedCloudPersist>(obj.getAssociatedCloud());
+			if (obj.getAssociatedCloud()) {
+				return std::ref(*obj.getAssociatedCloud());
+			}
+			else {
+				CVLib::utility::LogWarning("[CVLib::ReferenceCloud] does not have associated cloud!");
+			}
 		}, "Returns the associated (source) cloud.")
 	.def("get_associated_cloud", [](const ReferenceCloud& obj) {
-			const GenericIndexedCloudPersist* cloudPersist = obj.getAssociatedCloud();
-			return std::shared_ptr<const GenericIndexedCloudPersist>(cloudPersist);
+			if (obj.getAssociatedCloud()) {
+				return std::ref(*obj.getAssociatedCloud());
+			} else {
+				CVLib::utility::LogWarning("[CVLib::ReferenceCloud] does not have associated cloud!");
+			}
 		}, "Returns the associated (source) cloud (const version).")
 	.def("set_associated_cloud", [](ReferenceCloud& obj, 
 			std::shared_ptr<GenericIndexedCloudPersist> cloud) {

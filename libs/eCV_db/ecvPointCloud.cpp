@@ -4673,7 +4673,7 @@ CVLib::ReferenceCloud* ccPointCloud::crop2D(const ccPolyline* poly, unsigned cha
 	}
 	if (orthoDim > 2)
 	{
-		CVLog::Warning("[ccPointCloud::crop2D] Invalid input polyline");
+		CVLog::Warning("[ccPointCloud::crop2D] Invalid input orthoDim");
 		return nullptr;
 	}
 
