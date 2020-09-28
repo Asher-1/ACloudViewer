@@ -30,6 +30,7 @@
 #include <ecvPolyline.h>
 #include <ecvTetraMesh.h>
 #include <ecvPointCloud.h>
+#include <ecvHObjectCaster.h>
 
 #include "cloudViewer_pybind/docstring.h"
 #include "cloudViewer_pybind/geometry/geometry.h"
@@ -58,16 +59,21 @@ void pybind_trianglemesh(py::module &m) {
                           const std::vector<Eigen::Vector3i> &>(),
                  "Create a triangle mesh from vertices and triangle indices",
                  "vertices"_a, "triangles"_a)
-		.def(py::init([](std::shared_ptr<ccPointCloud> cloud) {
+		.def(py::init([](std::shared_ptr<ccGenericPointCloud> cloud) {
 				if (cloud) {
-					return new ccMesh(cloud->cloneThis());
+					if (!cloud->isKindOf(CV_TYPES::POINT_CLOUD))
+					{
+						return new ccMesh(nullptr);
+					}
+					ccPointCloud* vertices = ccHObjectCaster::ToPointCloud(cloud.get());
+					return new ccMesh(vertices->cloneThis());
 				} else {
 					return new ccMesh(nullptr);
 				}
 				
 			}), "Create a triangle mesh from vertices", "cloud"_a = nullptr)
 		.def(py::init([](std::shared_ptr<CVLib::GenericIndexedMesh> index_mesh,
-			std::shared_ptr<ccPointCloud> cloud) {
+			std::shared_ptr<ccGenericPointCloud> cloud) {
 				CVLib::GenericIndexedMesh* indexMesh = nullptr;
 				if (index_mesh)
 				{
@@ -75,9 +81,13 @@ void pybind_trianglemesh(py::module &m) {
 				}
 
 				if (cloud) {
-					return new ccMesh(indexMesh, cloud->cloneThis());
-				} else
-				{
+					if (!cloud->isKindOf(CV_TYPES::POINT_CLOUD))
+					{
+						return new ccMesh(indexMesh, nullptr);
+					}
+					ccPointCloud* vertices = ccHObjectCaster::ToPointCloud(cloud.get());
+					return new ccMesh(indexMesh, vertices->cloneThis());
+				} else {
 					return new ccMesh(indexMesh, nullptr);
 				}
 				
@@ -102,7 +112,7 @@ void pybind_trianglemesh(py::module &m) {
 		.def(py::self + py::self)
 		.def(py::self += py::self)
 
-		.def("clone_mesh", [](ccMesh& mesh, std::shared_ptr<ccPointCloud> cloud) {
+		.def("clone_mesh", [](ccMesh& mesh, std::shared_ptr<ccGenericPointCloud> cloud) {
 				if (!cloud)
 				{
 					return std::shared_ptr<ccMesh>(mesh.cloneMesh());
@@ -216,8 +226,12 @@ void pybind_trianglemesh(py::module &m) {
 
 
 		.def("vertice_size", &ccMesh::getVerticeSize, "Returns vertices number.")
-		.def("set_associated_cloud", [](ccMesh& mesh, ccPointCloud& cloud) {
-				mesh.setAssociatedCloud(cloud.cloneThis());
+		.def("set_associated_cloud", [](ccMesh& mesh, ccGenericPointCloud& cloud) {
+				if (cloud.isKindOf(CV_TYPES::POINT_CLOUD))
+				{
+					ccPointCloud* vertices = ccHObjectCaster::ToPointCloud(&cloud);
+					mesh.setAssociatedCloud(vertices->cloneThis());
+				}
 			}, "Sets the associated vertices cloud (warning)", "cloud"_a)
 		.def("create_internal_cloud",
 			&ccMesh::createInternalCloud,
@@ -560,7 +574,7 @@ void pybind_trianglemesh(py::module &m) {
 		.def_static("get_eigne_ordered_triangle", &ccMesh::GetEigneOrderedTriangle,
 					"Returns eigne ordered triangle.", "vidx0"_a, "vidx1"_a, "vidx2"_a)
         .def_static("triangulate",
-                    [](ccPointCloud &cloud, CC_TRIANGULATION_TYPES type, 
+                    [](ccGenericPointCloud &cloud, CC_TRIANGULATION_TYPES type, 
 						bool update_normals, PointCoordinateType max_edge_length,
 						unsigned char dim) {
                         return std::shared_ptr<ccMesh>(

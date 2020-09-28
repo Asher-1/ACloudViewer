@@ -207,17 +207,30 @@ bool FacetRenderer::Render( const RenderOption &option,
 	if (!is_visible_ || geometry_ptr_->isEmpty()) return true;
 	auto &facet = (ccFacet &)(*geometry_ptr_);
 
-	// Normal
+	// Normal Vector
 	if (facet.normalVectorIsShown())
 	{
-		if(!phong_shader_.Render(*facet.getNormalVectorMesh(), option, view)) return false;
+		if(!simple_shader_for_normal_.Render(*facet.getNormalVectorMesh(), option, view)) return false;
 	}
 
 	// Contour
 	if (!simple_polyline_shader_.Render(*facet.getContour(), option, view)) return false;
 
 	// Polygon
-	return simple_mesh_shader_.Render(*facet.getPolygon(), option, view);
+	bool success = true;
+	if (facet.getPolygon())
+	{
+		if (facet.getPolygon()->hasTriNormals() && facet.getPolygon()->hasNormals())
+		{
+			phong_shader_for_polygon_.Render(*facet.getPolygon(), option, view);
+		}
+		else
+		{
+			simple_shader_for_polygon_.Render(*facet.getPolygon(), option, view);
+		}
+	}
+
+	return success;
 }
 
 bool FacetRenderer::AddGeometry(
@@ -230,8 +243,9 @@ bool FacetRenderer::AddGeometry(
 }
 
 bool FacetRenderer::UpdateGeometry() {
-	phong_shader_.InvalidateGeometry();
-	simple_mesh_shader_.InvalidateGeometry();
+	simple_shader_for_normal_.InvalidateGeometry();
+	phong_shader_for_polygon_.InvalidateGeometry();
+	simple_shader_for_polygon_.InvalidateGeometry();
 	simple_polyline_shader_.InvalidateGeometry();
 	return true;
 }

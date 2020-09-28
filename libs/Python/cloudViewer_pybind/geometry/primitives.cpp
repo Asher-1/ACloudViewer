@@ -419,7 +419,7 @@ void pybind_primitives(py::module &m) {
 		PointCoordinateType elevation = quadric.projectOnQuadric(P, Q);
 		return std::make_tuple(elevation, CCVector3d::fromArray(point));
 	}, "Returns the quadric equation coefficients as a string.")
-	.def_static("fit", [](ccPointCloud& cloud) {
+	.def_static("fit", [](CVLib::GenericIndexedCloudPersist& cloud) {
 		CVLib::GenericIndexedCloudPersist* persistCloud = static_cast<CVLib::GenericIndexedCloudPersist*>(&cloud);
 		if (!persistCloud)
 		{

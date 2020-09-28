@@ -1,0 +1,11 @@
+
+# target_sources( ${PROJECT_NAME}
+	# PRIVATE
+		# ${CMAKE_CURRENT_LIST_DIR}/qHoughNormalsDlg.ui
+# )
+
+set( ECV_PLUGIN_CUSTOM_UI_LIST
+	${ECV_PLUGIN_CUSTOM_UI_LIST} 
+	${CMAKE_CURRENT_SOURCE_DIR}/qHoughNormalsDlg.ui
+	PARENT_SCOPE
+)

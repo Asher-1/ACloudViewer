@@ -53,7 +53,7 @@ ccTracePolylineTool::SegmentGLParams::SegmentGLParams(int x , int y)
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
 		ecvDisplayTools::GetGLCameraParameters(params);
-		CCVector3d pos2D = ecvDisplayTools::ToVtkWorldCoordinates(x, y);
+		CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(x, y);
 		clickPos = CCVector2d(pos2D.x, pos2D.y);
 	}
 }
@@ -392,7 +392,7 @@ void ccTracePolylineTool::updatePolyLineTip(int x, int y, Qt::MouseButtons butto
 
 	//we replace the last point by the new one
 	{
-		CCVector3d pos2D = ecvDisplayTools::ToVtkWorldCoordinates(x, y);
+		CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(x, y);
 		CCVector3 P2D(	static_cast<PointCoordinateType>(pos2D.x),
 						static_cast<PointCoordinateType>(pos2D.y),
 						0);
@@ -492,7 +492,7 @@ void ccTracePolylineTool::onItemPicked(const PickedItem& pi)
 
 	//we replace the first point of the tip by this new point
 	{
-		CCVector3d pos2D = ecvDisplayTools::ToVtkWorldCoordinates(pi.clickPoint.x(), pi.clickPoint.y());
+		CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(pi.clickPoint.x(), pi.clickPoint.y());
 		CCVector3 P2D(	static_cast<PointCoordinateType>(pos2D.x),
 						static_cast<PointCoordinateType>(pos2D.y),
 						0);
