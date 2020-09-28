@@ -899,7 +899,7 @@ void ecvQVTKWidget::mouseMoveEvent(QMouseEvent *event)
 						m_tools->m_rectPickingPoly->set2DMode(true);
 						m_tools->m_rectPickingPoly->setVisible(true);
 						//QPointF posA = ecvDisplayTools::ToCenteredGLCoordinates(m_tools->m_lastMousePos.x(), m_tools->m_lastMousePos.y());
-						CCVector3d pos3D = ecvDisplayTools::ToVtkWorldCoordinates(m_tools->m_lastMousePos.x(), m_tools->m_lastMousePos.y());
+						CCVector3d pos3D = ecvDisplayTools::ToVtkCoordinates(m_tools->m_lastMousePos.x(), m_tools->m_lastMousePos.y());
 
 						CCVector3 A(static_cast<PointCoordinateType>(pos3D.x),
 							static_cast<PointCoordinateType>(pos3D.y), pos3D.z);
@@ -929,7 +929,7 @@ void ecvQVTKWidget::mouseMoveEvent(QMouseEvent *event)
 					CCVector3* C = const_cast<CCVector3*>(vertices->getPointPersistentPtr(2));
 					CCVector3* D = const_cast<CCVector3*>(vertices->getPointPersistentPtr(3));
 					//QPointF posD = ecvDisplayTools::ToCenteredGLCoordinates(event->x(), event->y());
-					CCVector3d pos2D = ecvDisplayTools::ToVtkWorldCoordinates(event->x(), event->y());
+					CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(event->x(), event->y());
 					B->x = C->x = static_cast<PointCoordinateType>(pos2D.x);
 					C->y = D->y = static_cast<PointCoordinateType>(pos2D.y);
 				}

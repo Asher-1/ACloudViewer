@@ -206,12 +206,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 	geometry::RansacResults group;
 	//consistency check
 	{
-		size_t primCount = 0;
-		for (size_t k = 0; k < params.primEnabled.size(); ++k)
-		{
-			primCount += static_cast<size_t>(params.primEnabled[k]);
-		}
-		if (primCount == 0)
+		if (params.primEnabled.size() == 0)
 		{
 			CVLib::utility::LogError("[ccPointCloud::executeRANSAC] No primitive type selected!");
 			return group;

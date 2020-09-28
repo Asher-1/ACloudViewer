@@ -54,7 +54,7 @@ void pybind_pointcloud(py::module &m) {
 		return std::string(
 			"geometry::RansacResult with "
 			"points indices size = ") + std::to_string(result.indices.size()) +
-			" and drawing precision = " + std::to_string(result.getDrawingPrecision()) +
+			" , drawing precision = " + std::to_string(result.getDrawingPrecision()) +
 			" and primitive type = " + result.getTypeName();
 			})
 		.def("get_type_name",
@@ -177,7 +177,7 @@ void pybind_pointcloud(py::module &m) {
 			&ccPointCloud::voxelDownSampleAndTrace,
 			"Function to downsample using "
 			"ccPointCloud::VoxelDownSample. Also records point "
-			"cloud index before downsampling",
+			"cloud index before down sampling",
 			"voxel_size"_a, "min_bound"_a, "max_bound"_a,
 			"approximate_class"_a = false)
 		.def("uniform_down_sample",
@@ -433,7 +433,7 @@ void pybind_pointcloud(py::module &m) {
 					}
 					if (ortho_dim > 2)
 					{
-						CVLib::utility::LogWarning("[ccPointCloud::crop2D] Invalid input polyline");
+						CVLib::utility::LogWarning("[ccPointCloud::crop2D] Invalid input ortho_dim");
 					}
 					if (cloud.isEmpty())
 					{
@@ -447,10 +447,10 @@ void pybind_pointcloud(py::module &m) {
 				{
 					delete ref;
 					ref = nullptr;
-					CVLib::utility::LogWarning("[ccPointCloud::crop2D] Not enough memory!");
 				}
 				if (!croppedCloud)
 				{
+					CVLib::utility::LogWarning("[ccPointCloud::crop2D] Not enough memory!");
 					return std::ref(cloud);
 				} 
 				

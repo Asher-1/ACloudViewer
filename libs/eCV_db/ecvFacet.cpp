@@ -452,7 +452,7 @@ std::shared_ptr<ccMesh> ccFacet::getNormalVectorMesh(bool update)
 			scale = sqrt(m_contourPolyline->computeLength());
 		}
 		m_arrow = ccMesh::CreateArrow(0.02 * scale, 0.05 * scale, 0.9 * scale, 0.1 * scale);
-		m_arrow->computeVertexNormals();
+		//m_arrow->computeVertexNormals();
 		m_arrow->setTempColor(m_contourPolyline->getColor());
 		m_arrow->showColors(true);
 

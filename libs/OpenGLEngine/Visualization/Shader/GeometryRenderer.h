@@ -151,8 +151,9 @@ public:
 	bool UpdateGeometry() override;
 
 protected:
-	PhongShaderForTriangleMesh phong_shader_;
-	SimpleShaderForTriangleMesh simple_mesh_shader_;
+	SimpleShaderForTriangleMesh simple_shader_for_normal_;
+	PhongShaderForTriangleMesh phong_shader_for_polygon_;
+	SimpleShaderForTriangleMesh simple_shader_for_polygon_;
 	SimpleShaderForPolyline simple_polyline_shader_;
 };
 
