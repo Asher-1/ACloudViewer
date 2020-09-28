@@ -355,7 +355,7 @@ void pybind_geometry_classes(py::module &m) {
 			"Returns whether the geometry is custom.")
 		.def("is_hierarchy", &ccObject::isHierarchy,
 			"Returns whether the geometry is hierarchy.")
-		.def("is_kindOf", &ccObject::isKindOf,
+		.def("is_kind_of", &ccObject::isKindOf,
 			"Returns whether the geometry is kind of the type pointed.",
 			"type"_a)
 		.def("is_a", &ccObject::isA,
@@ -368,7 +368,7 @@ void pybind_geometry_classes(py::module &m) {
 	docstring::ClassMethodDocInject(m, "ccObject", "is_leaf");
 	docstring::ClassMethodDocInject(m, "ccObject", "is_custom");
 	docstring::ClassMethodDocInject(m, "ccObject", "is_hierarchy");
-	docstring::ClassMethodDocInject(m, "ccObject", "is_kindOf");
+	docstring::ClassMethodDocInject(m, "ccObject", "is_kind_of");
 	docstring::ClassMethodDocInject(m, "ccObject", "is_a");
 
 	// cloudViewer.geometry.Geometry.Type
@@ -592,7 +592,7 @@ void pybind_geometry_classes(py::module &m) {
 		.def("reset_glTransformation_history", &ccHObject::resetGLTransformationHistory,
 			"Resets the transformation 'history' matrix.")
 		.def("find", &ccHObject::find,
-			"Finds an entity in this object hierarchy.", "uniqueID"_a)
+			"Finds an entity in this object hierarchy.", "unique_id"_a)
 		.def("get_children_number", &ccHObject::getChildrenNumber,
 			"Returns the number of children.")
 		.def("filter_children", [](const ccHObject& entity, bool recursive/*=false*/,

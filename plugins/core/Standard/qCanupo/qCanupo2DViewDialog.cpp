@@ -461,7 +461,7 @@ CCVector3 qCanupo2DViewDialog::getClickPos(int x, int y) const
 	ccGLCameraParameters camera;
 	ecvDisplayTools::GetGLCameraParameters(camera);
 
-	CCVector3d pos2D = ecvDisplayTools::ToVtkWorldCoordinates(x, y);
+	CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(x, y);
 	CCVector3 P2D(pos2D.x, pos2D.y, 0);
 
 	CCVector3d P3D;
