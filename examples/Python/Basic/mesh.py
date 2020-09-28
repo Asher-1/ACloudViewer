@@ -17,6 +17,22 @@ if __name__ == "__main__":
     print(np.asarray(mesh.get_triangles()))
     print("")
 
+    # triangulation
+    # DELAUNAY_2D_AXIS_ALIGNED or DELAUNAY_2D_BEST_LS_PLANE.
+    triangulation_type = cv3d.geometry.DELAUNAY_2D_BEST_LS_PLANE
+    new_mesh = cv3d.geometry.ccMesh.triangulate(cloud=mesh.get_associated_cloud(), type=triangulation_type)
+    new_mesh.compute_vertex_normals()
+    cv3d.visualization.draw_geometries([new_mesh])
+
+    # triangulation between with two polylines
+    entity = cv3d.io.read_entity("../../TestData/polylines/polylines.bin")
+    polylines = entity.filter_children(recursive=False, filter=cv3d.geometry.ccHObject.POLY_LINE)
+    print(polylines)
+    assert len(polylines) > 1
+    mesh_polys = cv3d.geometry.ccMesh.triangulate_two_polylines(poly1=polylines[0], poly2=polylines[1])
+    mesh_polys.compute_vertex_normals()
+    cv3d.visualization.draw_geometries(polylines + [mesh_polys])
+
     print("Try to render a mesh with normals (exist: " +
           str(mesh.has_vertex_normals()) + ") and colors (exist: " +
           str(mesh.has_vertex_colors()) + ")")

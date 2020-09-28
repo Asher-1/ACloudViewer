@@ -374,7 +374,7 @@ void ccGraphicalSegmentationTool::updatePolyLine(int x, int y, Qt::MouseButtons 
 	unsigned vertCount = m_polyVertices->size();
 
 	//new point (expressed relatively to the screen center)
-	CCVector3d pos2D = ecvDisplayTools::ToVtkWorldCoordinates(x, y);
+	CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(x, y);
 	CCVector3 P(static_cast<PointCoordinateType>(pos2D.x),
 				static_cast<PointCoordinateType>(pos2D.y),
 				0);
@@ -434,7 +434,7 @@ void ccGraphicalSegmentationTool::addPointToPolyline(int x, int y)
 
 	//new point
 	//QPointF pos2D = ecvDisplayTools::ToCenteredGLCoordinates(x, y);
-	CCVector3d pos2D = ecvDisplayTools::ToVtkWorldCoordinates(x, y, 0);
+	CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(x, y, 0);
 	CCVector3 P(static_cast<PointCoordinateType>(pos2D.x),
 				static_cast<PointCoordinateType>(pos2D.y),
 				0);
@@ -800,8 +800,8 @@ void ccGraphicalSegmentationTool::doActionUseExistingPolyline()
 			//viewing parameters (for conversion from 3D to 2D)
 			ccGLCameraParameters camera;
 			ecvDisplayTools::GetGLCameraParameters(camera);
-			const double half_w = camera.viewport[2] / 2.0;
-			const double half_h = camera.viewport[3] / 2.0;
+			//const double half_w = camera.viewport[2] / 2.0;
+			//const double half_h = camera.viewport[3] / 2.0;
 
 			//force polygonal selection mode
 			doSetPolylineSelection();
@@ -821,8 +821,8 @@ void ccGraphicalSegmentationTool::doActionUseExistingPolyline()
 						CCVector3d Q2D;
 						camera.project(P, Q2D);
 
-						P.x = static_cast<PointCoordinateType>(Q2D.x - half_w);
-						P.y = static_cast<PointCoordinateType>(Q2D.y - half_h);
+						P.x = static_cast<PointCoordinateType>(Q2D.x);
+						P.y = static_cast<PointCoordinateType>(Q2D.y);
 						P.z = 0;
 					}
 					m_polyVertices->addPoint(P);
@@ -851,9 +851,7 @@ void ccGraphicalSegmentationTool::doActionUseExistingPolyline()
 				}
 				
 				m_rectangularSelection = false;
-				//m_associatedWin->redraw(true, false);
-				ecvDisplayTools::SetRedrawRecursive(false);
-				ecvDisplayTools::RedrawDisplay(true);
+				updateSegmentation();
 			}
 			else
 			{
@@ -874,7 +872,7 @@ void ccGraphicalSegmentationTool::doExportSegmentationPolyline()
 	if (mainWindow && m_segmentationPoly)
 	{
 		bool mode2D = false;
-#ifdef ALLOW_2D_OR_3D_EXPORT
+//#ifdef ALLOW_2D_OR_3D_EXPORT
 		QMessageBox messageBox(0);
 		messageBox.setWindowTitle("Choose export type");
 		messageBox.setText("Export polyline in:\n - 2D (with coordinates relative to the screen)\n - 3D (with coordinates relative to the segmented entities)");
@@ -891,7 +889,7 @@ void ccGraphicalSegmentationTool::doExportSegmentationPolyline()
 			return;
 		}
 		mode2D = (messageBox.clickedButton() == button2D);
-#endif
+//#endif
 
 		ccPolyline* poly = new ccPolyline(*m_segmentationPoly);
 
@@ -901,8 +899,7 @@ void ccGraphicalSegmentationTool::doExportSegmentationPolyline()
 			//get current display parameters
 			ccGLCameraParameters camera;
 			ecvDisplayTools::GetGLCameraParameters(camera);
-			const double half_w = camera.viewport[2] / 2.0;
-			const double half_h = camera.viewport[3] / 2.0;
+			const int height = camera.viewport[3];
 
 			//project the 2D polyline in 3D
 			CVLib::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
@@ -912,9 +909,9 @@ void ccGraphicalSegmentationTool::doExportSegmentationPolyline()
 				for (unsigned i = 0; i < vertices->size(); ++i)
 				{
 					CCVector3* Pscreen = const_cast<CCVector3*>(verticesPC->getPoint(i));
-					CCVector3d Pd(half_w + Pscreen->x, half_h + Pscreen->y, 0/*Pscreen->z*/);
 					CCVector3d Q3D;
-					camera.unproject(Pd, Q3D);
+					ecvDisplayTools::GetClick3DPos(
+						(int)Pscreen->x, height - (int)Pscreen->y, Q3D);
 					*Pscreen = CCVector3::fromArray(Q3D.u);
 				}
 				verticesPC->invalidateBoundingBox();
@@ -947,7 +944,10 @@ void ccGraphicalSegmentationTool::doExportSegmentationPolyline()
 
 			if (hasGlobalShift && m_toSegment.size() != 1)
 			{
-				hasGlobalShift = (QMessageBox::question(MainWindow::TheInstance(), "Apply Global Shift", "At least one of the segmented entity has been shifted. Apply the same shift to the polyline?", QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes);
+				hasGlobalShift = (QMessageBox::question(MainWindow::TheInstance(), 
+					"Apply Global Shift", 
+					"At least one of the segmented entity has been shifted. Apply the same shift to the polyline?",
+					QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes);
 			}
 
 			if (hasGlobalShift)

@@ -407,8 +407,8 @@ public: // main interface
 	inline static void SetMainWindow(QMainWindow* win) { TheInstance()->m_win = win; }
 
 	static QPointF ToCenteredGLCoordinates(int x, int y);
-	static CCVector3d ToVtkWorldCoordinates(int x, int y, int z = 0);
-	static void ToVtkWorldCoordinates(CCVector3d & sP);
+	static CCVector3d ToVtkCoordinates(int x, int y, int z = 0);
+	static void ToVtkCoordinates(CCVector3d & sP);
 
 	//! Returns window own DB
 	inline static ccHObject* GetOwnDB() { return TheInstance()->m_winDBRoot; }

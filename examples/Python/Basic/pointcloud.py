@@ -8,7 +8,7 @@ import numpy as np
 import cloudViewer as cv3d
 
 if __name__ == "__main__":
-
+    cv3d.utility.set_verbosity_level(cv3d.utility.Debug)
     print("Load a ply point cloud, print it, and render it")
     pcd = cv3d.io.read_point_cloud("../../TestData/fragment.ply")
     print(pcd)

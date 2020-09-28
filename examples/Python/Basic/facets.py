@@ -14,6 +14,8 @@ def generate_from_point_cloud():
     facet = cv3d.geometry.ccFacet.Create(cloud=pc, max_edge_length=0)
     facet.get_polygon().set_temp_color([0, 0, 0.5])
     facet.get_polygon().set_opacity(0.5)
+    facet.get_polygon().clear_triangle_normals()
+    facet.get_polygon().compute_vertex_normals()
     facet.get_contour().set_color([1, 0, 1])
     facet.get_contour().set_width(9)
     facet.show_normal_vector(True)
@@ -28,11 +30,11 @@ def generate_from_file():
     for facet in facets:
         facet.get_polygon().set_temp_color([0.5, 0, 0])
         facet.get_polygon().set_opacity(0.5)
+        facet.get_polygon().clear_triangle_normals()
+        facet.get_polygon().compute_vertex_normals()
         facet.get_contour().set_color([0, 1, 0])
         facet.get_contour().set_width(9)
         facet.show_normal_vector(True)
-        # fs = facet.get_origin_points()
-        # print(fs)
     return facets
 
 
