@@ -67,6 +67,17 @@ public:
 	virtual bool hasDrawingPrecision() const override { return true; }
 	virtual ccGenericPrimitive* clone() const override;
 
+	//! Returns the torus inside radius
+	inline PointCoordinateType getInsideRadius() const { return m_insideRadius; }
+	//! Returns the torus outside radius
+	inline PointCoordinateType getOutsideRadius() const { return m_outsideRadius; }
+	//! Returns the torus rectangular section height (along Y-axis) if applicable
+	inline PointCoordinateType getRectSectionHeight() const { return m_rectSectionHeight; }
+	//! Returns whether torus has a rectangular (true) or circular (false) section
+	inline bool getRectSection() const { return m_rectSection; }
+	//! Returns the torus subtended angle (in radians)
+	inline double getAngleRad() const { return m_angle_rad; }
+
 protected:
 
 	//inherited from ccGenericPrimitive
@@ -77,7 +88,7 @@ protected:
 	//! Inside radius
 	PointCoordinateType m_insideRadius;
 
-	//! Outisde radius
+	//! Outside radius
 	PointCoordinateType m_outsideRadius;
 
 	//! Whether torus has a rectangular (true) or circular (false) section

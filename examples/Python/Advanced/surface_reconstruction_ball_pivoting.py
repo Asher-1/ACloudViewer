@@ -27,8 +27,8 @@ def problem_generator():
     points = np.array(points, dtype=np.float64)
     normals = np.array(normals, dtype=np.float64)
     pcd = cv3d.geometry.ccPointCloud()
-    pcd.points = cv3d.utility.Vector3dVector(points)
-    pcd.normals = cv3d.utility.Vector3dVector(normals)
+    pcd.set_points(cv3d.utility.Vector3dVector(points))
+    pcd.set_normals(cv3d.utility.Vector3dVector(normals))
     radii = [1, 2]
     yield pcd, radii
 

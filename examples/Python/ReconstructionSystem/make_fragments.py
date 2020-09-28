@@ -8,9 +8,11 @@ import numpy as np
 import math
 import cloudViewer as cv3d
 import sys
+
 sys.path.append("../Utility")
 from file import join, make_clean_folder, get_rgbd_file_lists
 from opencv import initialize_opencv
+
 sys.path.append(".")
 from optimize_posegraph import optimize_posegraph_for_fragment
 
@@ -73,19 +75,17 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files,
                 print(
                     "Fragment %03d / %03d :: RGBD matching between frame : %d and %d"
                     % (fragment_id, n_fragments - 1, s, t))
-                [success, trans,
-                 info] = register_one_rgbd_pair(s, t, color_files, depth_files,
-                                                intrinsic, with_opencv, config)
+                [success, trans, info] = register_one_rgbd_pair(s, t, color_files, depth_files,
+                                                                intrinsic, with_opencv, config)
                 trans_odometry = np.dot(trans, trans_odometry)
                 trans_odometry_inv = np.linalg.inv(trans_odometry)
-                pose_graph.nodes.append(
-                    cv3d.registration.PoseGraphNode(trans_odometry_inv))
+                pose_graph.nodes.append(cv3d.registration.PoseGraphNode(trans_odometry_inv))
                 pose_graph.edges.append(
                     cv3d.registration.PoseGraphEdge(s - sid,
-                                                   t - sid,
-                                                   trans,
-                                                   info,
-                                                   uncertain=False))
+                                                    t - sid,
+                                                    trans,
+                                                    info,
+                                                    uncertain=False))
 
             # keyframe loop closure
             if s % config['n_keyframes_per_n_frame'] == 0 \
@@ -99,10 +99,10 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files,
                 if success:
                     pose_graph.edges.append(
                         cv3d.registration.PoseGraphEdge(s - sid,
-                                                       t - sid,
-                                                       trans,
-                                                       info,
-                                                       uncertain=True))
+                                                        t - sid,
+                                                        trans,
+                                                        info,
+                                                        uncertain=True))
     cv3d.io.write_pose_graph(
         join(path_dataset, config["template_fragment_posegraph"] % fragment_id),
         pose_graph)
@@ -134,14 +134,12 @@ def make_pointcloud_for_fragment(path_dataset, color_files, depth_files,
                                  fragment_id, n_fragments, intrinsic, config):
     mesh = integrate_rgb_frames_for_fragment(
         color_files, depth_files, fragment_id, n_fragments,
-        join(path_dataset,
-             config["template_fragment_posegraph_optimized"] % fragment_id),
+        join(path_dataset, config["template_fragment_posegraph_optimized"] % fragment_id),
         intrinsic, config)
     pcd = cv3d.geometry.ccPointCloud()
-    pcd.points = mesh.vertices
-    pcd.colors = mesh.vertex_colors
-    pcd_name = join(path_dataset,
-                    config["template_fragment_pointcloud"] % fragment_id)
+    pcd.set_points(mesh.get_vertices())
+    pcd.set_colors(mesh.get_vertex_colors())
+    pcd_name = join(path_dataset, config["template_fragment_pointcloud"] % fragment_id)
     cv3d.io.write_point_cloud(pcd_name, pcd, False, True)
 
 
@@ -171,7 +169,7 @@ def run(config):
     [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
     n_files = len(color_files)
     n_fragments = int(math.ceil(float(n_files) / \
-            config['n_frames_per_fragment']))
+                                config['n_frames_per_fragment']))
 
     if config["python_multi_threading"]:
         from joblib import Parallel, delayed

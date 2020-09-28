@@ -10,6 +10,8 @@ import time
 import os
 import sys
 
+do_visualization = False
+
 pwd = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(pwd, '..', 'Advanced'))
 from trajectory_io import read_trajectory
@@ -45,10 +47,15 @@ def run_benchmark():
     s = time.time()
     mesh = volume.extract_triangle_mesh()
     time_extract_mesh = time.time() - s
+    if do_visualization:
+        cv3d.visualization.draw_geometries([mesh])
 
     s = time.time()
     pcd = volume.extract_point_cloud()
     time_extract_pcd = time.time() - s
+
+    if do_visualization:
+        cv3d.visualization.draw_geometries([pcd])
 
     return time_integrate, time_extract_mesh, time_extract_pcd
 

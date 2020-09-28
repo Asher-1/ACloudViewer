@@ -64,9 +64,8 @@ if __name__ == "__main__":
         result_icp = cv3d.registration.registration_colored_icp(
             source_down, target_down, radius, current_transformation,
             cv3d.registration.ICPConvergenceCriteria(relative_fitness=1e-6,
-                                                    relative_rmse=1e-6,
-                                                    max_iteration=iter))
+                                                     relative_rmse=1e-6,
+                                                     max_iteration=iter))
         current_transformation = result_icp.transformation
         print(result_icp)
-    draw_registration_result_original_color(source, target,
-                                            result_icp.transformation)
+    draw_registration_result_original_color(source, target, result_icp.transformation)

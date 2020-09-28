@@ -29,7 +29,7 @@
 #include "cloudViewer_pybind/cloudViewer_pybind.h"
 
 void pybind_utility(py::module &m);
-
+void pybind_scalarfield(py::module &m);
 void pybind_matrix(py::module &m);
 void pybind_console(py::module &m);
 void pybind_eigen(py::module &m);

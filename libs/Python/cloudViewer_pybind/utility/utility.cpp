@@ -31,6 +31,7 @@ using namespace cloudViewer;
 
 void pybind_utility(py::module &m) {
     py::module m_submodule = m.def_submodule("utility");
+	pybind_scalarfield(m_submodule);
     pybind_matrix(m_submodule);
     pybind_console(m_submodule);
     pybind_eigen(m_submodule);

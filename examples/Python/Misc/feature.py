@@ -23,11 +23,11 @@ if __name__ == "__main__":
     feature1 = cv3d.io.read_feature(
         "../../TestData/Feature/cloud_bin_1.fpfh.bin")
     fpfh_tree = cv3d.geometry.KDTreeFlann(feature1)
-    for i in range(len(pcd0.points)):
+    for i in range(len(pcd0.get_points())):
         [_, idx, _] = fpfh_tree.search_knn_vector_xd(feature0.data[:, i], 1)
-        dis = np.linalg.norm(pcd0.points[i] - pcd1.points[idx[0]])
+        dis = np.linalg.norm(pcd0.get_point(i) - pcd1.get_point(idx[0]))
         c = (0.2 - np.fmin(dis, 0.2)) / 0.2
-        pcd0.colors[i] = [c, c, c]
+        pcd0.set_color(i, [c, c, c])
     cv3d.visualization.draw_geometries([pcd0])
     print("")
 
@@ -37,10 +37,10 @@ if __name__ == "__main__":
     feature0 = cv3d.io.read_feature("../../TestData/Feature/cloud_bin_0.d32.bin")
     feature1 = cv3d.io.read_feature("../../TestData/Feature/cloud_bin_1.d32.bin")
     fpfh_tree = cv3d.geometry.KDTreeFlann(feature1)
-    for i in range(len(pcd0.points)):
+    for i in range(len(pcd0.get_points())):
         [_, idx, _] = fpfh_tree.search_knn_vector_xd(feature0.data[:, i], 1)
-        dis = np.linalg.norm(pcd0.points[i] - pcd1.points[idx[0]])
+        dis = np.linalg.norm(pcd0.get_point(i) - pcd1.get_point(idx[0]))
         c = (0.2 - np.fmin(dis, 0.2)) / 0.2
-        pcd0.colors[i] = [c, c, c]
+        pcd0.set_color(i, [c, c, c])
     cv3d.visualization.draw_geometries([pcd0])
     print("")

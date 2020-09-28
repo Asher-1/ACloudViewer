@@ -25,8 +25,10 @@ if __name__ == "__main__":
                                write_triangle_uvs=True)
     copy_textured_mesh = cv3d.io.read_triangle_mesh('copy_of_crate.obj')
     print(copy_textured_mesh)
+    cv3d.visualization.draw_geometries([copy_textured_mesh])
 
     print("Testing IO for images ...")
     img = cv3d.io.read_image("../../TestData/lena_color.jpg")
     print(img)
+    cv3d.visualization.draw_geometries([img])
     cv3d.io.write_image("copy_of_lena_color.jpg", img)

@@ -291,8 +291,7 @@ namespace ecvColor
 	/// Number of colors in Glasbey lookup table
 	static const size_t COLOR_LUT_SIZE = sizeof(COLOR_LUT) / (sizeof(COLOR_LUT[0]) * 3);
 
-
-	ECV_DB_LIB_API Rgb LookUpTable::at(size_t color_id)
+	Rgb LookUpTable::at(size_t color_id)
 	{
 		assert(color_id < COLOR_LUT_SIZE);
 		return Rgb(static_cast<ColorCompType>(COLOR_LUT[color_id * 3 + 0]),
@@ -300,55 +299,25 @@ namespace ecvColor
 			static_cast<ColorCompType>(COLOR_LUT[color_id * 3 + 2]));
 	}
 
+	Rgb Generator::Random(bool lightOnly)
+	{
+		std::random_device rd;   // non-deterministic generator
+		std::mt19937 gen(rd());  // to seed mersenne twister.
+		std::uniform_int_distribution<uint16_t> dist(0, MAX); //1-byte types are not allowed
 
-	// Predefined colors (default type)
-	ECV_DB_LIB_API const Rgb white(MAX, MAX, MAX);
-	ECV_DB_LIB_API const Rgb lightGrey(static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8));
-	ECV_DB_LIB_API const Rgb darkGrey(MAX / 2, MAX / 2, MAX / 2);
-	ECV_DB_LIB_API const Rgb red(MAX, 0, 0);
-	ECV_DB_LIB_API const Rgb green(0, MAX, 0);
-	ECV_DB_LIB_API const Rgb blue(0, 0, MAX);
-	ECV_DB_LIB_API const Rgb darkBlue(0, 0, MAX / 2);
-	ECV_DB_LIB_API const Rgb magenta(MAX, 0, MAX);
-	ECV_DB_LIB_API const Rgb cyan(0, MAX, MAX);
-	ECV_DB_LIB_API const Rgb orange(MAX, MAX / 2, 0);
-	ECV_DB_LIB_API const Rgb black(0, 0, 0);
-	ECV_DB_LIB_API const Rgb yellow(MAX, MAX, 0);
+		Rgb col;
+		col.r = static_cast<unsigned char>(dist(gen));
+		col.g = static_cast<unsigned char>(dist(gen));
+		if (lightOnly)
+		{
+			col.b = MAX - static_cast<ColorCompType>((static_cast<double>(col.r) + static_cast<double>(col.g)) / 2); //cast to double to avoid overflow (whatever the type of ColorCompType!!!)
+		}
+		else
+		{
+			col.b = static_cast<unsigned char>(dist(gen));
+		}
 
-	ECV_DB_LIB_API const Rgba owhite(MAX, MAX, MAX, OPACITY);
-	ECV_DB_LIB_API const Rgba olightGrey(static_cast<ColorCompType>(MAX*0.8), 
-		static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8), OPACITY);
-	ECV_DB_LIB_API const Rgba odarkGrey(MAX / 2, MAX / 2, MAX / 2, OPACITY);
-	ECV_DB_LIB_API const Rgba ored(MAX, 0, 0, OPACITY);
-	ECV_DB_LIB_API const Rgba ogreen(0, MAX, 0, OPACITY);
-	ECV_DB_LIB_API const Rgba oblue(0, 0, MAX, OPACITY);
-	ECV_DB_LIB_API const Rgba odarkBlue(0, 0, MAX / 2, OPACITY);
-	ECV_DB_LIB_API const Rgba omagenta(MAX, 0, MAX, OPACITY);
-	ECV_DB_LIB_API const Rgba ocyan(0, MAX, MAX, OPACITY);
-	ECV_DB_LIB_API const Rgba oorange(MAX, MAX / 2, 0, OPACITY);
-	ECV_DB_LIB_API const Rgba oblack(0, 0, 0, OPACITY);
-	ECV_DB_LIB_API const Rgba oyellow(MAX, MAX, 0, OPACITY);
-
-	// Predefined materials (float)
-	ECV_DB_LIB_API const Rgbaf bright					(1.00f, 1.00f, 1.00f, 1.00f);
-	ECV_DB_LIB_API const Rgbaf lighter					(0.83f, 0.83f, 0.83f, 1.00f);
-	ECV_DB_LIB_API const Rgbaf light					(0.66f, 0.66f, 0.66f, 1.00f);
-	ECV_DB_LIB_API const Rgbaf middle					(0.50f, 0.50f, 0.50f, 1.00f);
-	ECV_DB_LIB_API const Rgbaf dark						(0.34f, 0.34f, 0.34f, 1.00f);
-	ECV_DB_LIB_API const Rgbaf darker					(0.17f, 0.17f, 0.17f, 1.00f);
-	ECV_DB_LIB_API const Rgbaf darkest					(0.08f, 0.08f, 0.08f, 1.00f);
-	ECV_DB_LIB_API const Rgbaf night					(0.00f, 0.00f, 0.00f, 1.00F);
-	ECV_DB_LIB_API const Rgbaf defaultMeshFrontDiff		(0.00f, 0.90f, 0.27f, 1.00f);
-	ECV_DB_LIB_API const Rgbaf defaultMeshBackDiff		(0.27f, 0.90f, 0.90f, 1.00f);
-
-	ECV_DB_LIB_API const Rgbf defaultViewBkgColor       (10 / 255.0f, 102 / 255.0f, 151 / 255.0f); 
-
-	// Default foreground color (unsigned byte)
-	//ECV_DB_LIB_API const Rgbub defaultBkgColor			( 10, 102, 151); //dark blue
-	ECV_DB_LIB_API const Rgbub defaultBkgColor			( 134.895, 205.989, 235.00035); // sky blue
-	ECV_DB_LIB_API const Rgbub defaultColor				(255, 255, 255); //white
-	ECV_DB_LIB_API const Rgbub defaultLabelBkgColor		(255, 255, 255); //white
-	ECV_DB_LIB_API const Rgbub defaultLabelMarkerColor	(255,   0, 255); //magenta
-
+		return col;
+	}
 };
 
