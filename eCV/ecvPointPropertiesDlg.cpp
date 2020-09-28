@@ -298,7 +298,7 @@ void ccPointPropertiesDlg::processClickedPoint(int x, int y)
 		return;
 	}
 
-	CCVector3d pos2D = ecvDisplayTools::ToVtkWorldCoordinates(x, y);
+	CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(x, y);
 
 	if (m_rect2DLabel->isSelected()) //already closed? we start a new label
 	{
@@ -350,7 +350,7 @@ void ccPointPropertiesDlg::update2DZone(int x, int y, Qt::MouseButtons buttons)
 		return;
 	}
 
-	CCVector3d pos2D = ecvDisplayTools::ToVtkWorldCoordinates(x, y);
+	CCVector3d pos2D = ecvDisplayTools::ToVtkCoordinates(x, y);
 
 	float roi[4] = {	m_rect2DLabel->roi()[0],
 						m_rect2DLabel->roi()[1],

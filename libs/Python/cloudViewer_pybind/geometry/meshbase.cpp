@@ -30,6 +30,8 @@
 #include "cloudViewer_pybind/geometry/geometry.h"
 #include "cloudViewer_pybind/geometry/geometry_trampoline.h"
 
+#pragma warning(disable:4715)
+
 using namespace CVLib;
 
 void pybind_meshbase(py::module &m) {
@@ -91,7 +93,12 @@ void pybind_meshbase(py::module &m) {
 			return std::make_tuple(CCVector3d::fromArray(bbMin), CCVector3d::fromArray(bbMax));
 		}, "Returns the mesh bounding-box.")
 	.def("get_next_triangle", [](GenericMesh& mesh) {
-			return std::shared_ptr<GenericTriangle>(mesh._getNextTriangle());
+			if (mesh._getNextTriangle()) {
+				return std::ref(*mesh._getNextTriangle());
+			}
+			else {
+				CVLib::utility::LogWarning("[GenericMesh] does not have next triangle!");
+			}
 		}, "Returns the next triangle (relatively to the global iterator position).")
 	.def("place_iterator_at_beginning", &GenericMesh::placeIteratorAtBeginning,
 		"Places the mesh iterator at the beginning.");
@@ -137,27 +144,39 @@ void pybind_meshbase(py::module &m) {
 			std::to_string(mesh.size()) + " triangles";
 	})
 	.def("get_triangle", [](CVLib::GenericIndexedMesh& mesh, size_t triangle_index) {
-		return std::shared_ptr<CVLib::GenericTriangle>(
-			mesh._getTriangle(static_cast<unsigned>(triangle_index)));
+			if (mesh._getTriangle(static_cast<unsigned>(triangle_index))) {
+				return std::ref(*mesh._getTriangle(static_cast<unsigned>(triangle_index)));
+			}
+			else {
+				CVLib::utility::LogWarning("[CVLib::GenericIndexedMesh] does not have triangle!");
+			}
 		}, "Returns the ith triangle.", "triangle_index"_a)
-	.def("get_vertices_indexes", [](CVLib::GenericIndexedMesh& mesh, size_t triangle_index) {
-		return std::shared_ptr<CVLib::VerticesIndexes>(
-			mesh.getTriangleVertIndexes(static_cast<unsigned>(triangle_index)));
+	.def("get_vertice_indexes", [](CVLib::GenericIndexedMesh& mesh, size_t triangle_index) {
+			if (mesh.getTriangleVertIndexes(static_cast<unsigned>(triangle_index))) {
+				return std::ref(*mesh.getTriangleVertIndexes(static_cast<unsigned>(triangle_index)));
+			}
+			else {
+				CVLib::utility::LogWarning("[CVLib::GenericIndexedMesh] does not have vertice indexes!");
+			}
 		}, "Returns the indexes of the vertices of a given triangle.", "triangle_index"_a)
 	.def("get_triangle_vertices", [](const CVLib::GenericIndexedMesh& mesh, size_t triangle_index) {
 			CCVector3 A, B, C;
 			mesh.getTriangleVertices(static_cast<unsigned>(triangle_index), A, B, C);
 			return std::make_tuple(CCVector3d::fromArray(A), CCVector3d::fromArray(B), CCVector3d::fromArray(C));
 		}, "Returns the vertices of a given triangle.", "triangle_index"_a)
-	.def("get_next_vertices_indexes", [](CVLib::GenericIndexedMesh& mesh) {
-		return std::shared_ptr<CVLib::VerticesIndexes>(
-			mesh.getNextTriangleVertIndexes());
+	.def("get_next_vertice_indexes", [](CVLib::GenericIndexedMesh& mesh) {
+			if (mesh.getNextTriangleVertIndexes()) {
+				return std::ref(*mesh.getNextTriangleVertIndexes());
+			}
+			else {
+				CVLib::utility::LogWarning("[CVLib::GenericIndexedMesh] does not have next vertice indexes!");
+			}
 		}, "Returns the indexes of the vertices of the next triangle (relatively to the global iterator position).");
 
 	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_triangle");
 	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_triangle_vertices");
-	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_vertices_indexes");
-	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_next_vertices_indexes");
+	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_vertice_indexes");
+	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_next_vertice_indexes");
 
 	py::class_<ccGenericMesh, PyGeometry<ccGenericMesh>,
 		std::shared_ptr<ccGenericMesh>, CVLib::GenericIndexedMesh, ccHObject>
@@ -169,8 +188,13 @@ void pybind_meshbase(py::module &m) {
 			std::to_string(mesh.size()) + " triangles";
 	})
 	.def("get_associated_cloud", [](const ccGenericMesh& mesh) {
-			return std::shared_ptr<ccGenericPointCloud>(mesh.getAssociatedCloud());
-		}, "Returns the vertices cloud.")
+			if (mesh.getAssociatedCloud()) {
+				return std::ref(*mesh.getAssociatedCloud());
+			}
+			else {
+				CVLib::utility::LogWarning("[ccGenericMesh] does not have associated cloud!");
+			}
+		}, "Returns the associated cloud.")
 	.def("refresh_bbox", &ccGenericMesh::refreshBB, "Forces bounding-box update.")
 	.def("capacity", &ccGenericMesh::capacity, "Returns max capacity.")
 	.def("has_materials", &ccGenericMesh::hasMaterials, "Returns whether the mesh has materials/textures.")

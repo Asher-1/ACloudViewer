@@ -1081,18 +1081,17 @@ QPointF ecvDisplayTools::ToCenteredGLCoordinates(int x, int y)
 	return QPointF(x - Width() / 2, Height() / 2 - y)/* * GetDevicePixelRatio()*/;
 }
 
-CCVector3d ecvDisplayTools::ToVtkWorldCoordinates(int x, int y, int z)
+CCVector3d ecvDisplayTools::ToVtkCoordinates(int x, int y, int z)
 {
 	CCVector3d p = CCVector3d(x*1.0, y*1.0, z*1.0);
-	ToVtkWorldCoordinates(p);
+	ToVtkCoordinates(p);
 	return p;
 }
 
-void ecvDisplayTools::ToVtkWorldCoordinates(CCVector3d & sP)
+void ecvDisplayTools::ToVtkCoordinates(CCVector3d & sP)
 {
 	sP.y = Height() - sP.y; // for vtk coordinates
 	sP *= GetDevicePixelRatio();
-	//ToWorldPoint(sP);
 }
 
 void ecvDisplayTools::SetPivotVisibility(PivotVisibility vis)
