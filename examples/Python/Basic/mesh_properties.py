@@ -17,11 +17,10 @@ import meshes
 
 
 def mesh_generator(edge_cases=True):
-    yield "box", cv3d.geometry.ccMesh.create_box()
-    yield "sphere", cv3d.geometry.ccMesh.create_sphere()
-    yield "cone", cv3d.geometry.ccMesh.create_cone()
-    yield "torus", cv3d.geometry.ccMesh.create_torus(radial_resolution=30,
-                                                          tubular_resolution=20)
+    # yield "box", cv3d.geometry.ccMesh.create_box()
+    # yield "sphere", cv3d.geometry.ccMesh.create_sphere()
+    # yield "cone", cv3d.geometry.ccMesh.create_cone()
+    # yield "torus", cv3d.geometry.ccMesh.create_torus(radial_resolution=30, tubular_resolution=20)
     yield "moebius (twists=1)", cv3d.geometry.ccMesh.create_moebius(
         twists=1)
     yield "moebius (twists=2)", cv3d.geometry.ccMesh.create_moebius(
@@ -39,7 +38,6 @@ def mesh_generator(edge_cases=True):
 
 
 def check_properties(name, mesh):
-
     def fmt_bool(b):
         return "yes" if b else "no"
 
@@ -73,7 +71,7 @@ def check_properties(name, mesh):
         verts = np.asarray(mesh.get_non_manifold_vertices())
         print("  # visualize non-manifold vertices")
         pcl = cv3d.geometry.ccPointCloud(
-            points=cv3d.utility.Vector3dVector(np.asarray(mesh.vertices)[verts]))
+            points=cv3d.utility.Vector3dVector(np.asarray(mesh.get_vertices())[verts]))
         pcl.paint_uniform_color((0, 0, 1))
         cv3d.visualization.draw_geometries([mesh, pcl])
     if self_intersecting:
@@ -82,7 +80,7 @@ def check_properties(name, mesh):
         intersecting_triangles = intersecting_triangles[0:1]
         intersecting_triangles = np.unique(intersecting_triangles)
         print("  # visualize self-intersecting triangles")
-        triangles = np.asarray(mesh.triangles)[intersecting_triangles]
+        triangles = np.asarray(mesh.get_triangles())[intersecting_triangles]
         edges = [
             np.vstack((triangles[:, i], triangles[:, j]))
             for i, j in [(0, 1), (1, 2), (2, 0)]
@@ -117,54 +115,12 @@ if __name__ == "__main__":
     print("#" * 80)
     for name, mesh in mesh_generator(edge_cases=False):
         mesh.compute_vertex_normals()
-        triangles = np.asarray(mesh.triangles)
+        triangles = np.asarray(mesh.get_triangles())
         rnd_idx = np.random.rand(*triangles.shape).argsort(axis=1)
         rnd_idx[0] = (0, 1, 2)
         triangles = np.take_along_axis(triangles, rnd_idx, axis=1)
-        mesh.triangles = cv3d.utility.Vector3iVector(triangles)
+        mesh.set_triangles(cv3d.utility.Vector3iVector(triangles))
         cv3d.visualization.draw_geometries([mesh])
         sucess = mesh.orient_triangles()
         print("%s orientated: %s" % (name, "yes" if sucess else "no"))
         cv3d.visualization.draw_geometries([mesh])
-
-    # intersection tests
-    print("#" * 80)
-    print("Intersection tests")
-    print("#" * 80)
-    np.random.seed(30)
-    bbox = cv3d.geometry.ccMesh.create_box(20, 20, 20).translate(
-        (-10, -10, -10))
-    meshes = [cv3d.geometry.ccMesh.create_box() for _ in range(20)]
-    meshes.append(cv3d.geometry.ccMesh.create_sphere())
-    meshes.append(cv3d.geometry.ccMesh.create_cone())
-    meshes.append(cv3d.geometry.ccMesh.create_torus())
-    dirs = [np.random.uniform(-0.1, 0.1, size=(3,)) for _ in meshes]
-    for mesh in meshes:
-        mesh.compute_vertex_normals()
-        mesh.paint_uniform_color((0.5, 0.5, 0.5))
-        mesh.translate(np.random.uniform(-7.5, 7.5, size=(3,)))
-    vis = cv3d.visualization.Visualizer()
-    vis.create_window()
-    for mesh in meshes:
-        vis.add_geometry(mesh)
-    for iter in range(1000):
-        for mesh, dir in zip(meshes, dirs):
-            mesh.paint_uniform_color((0.5, 0.5, 0.5))
-            mesh.translate(dir)
-        for idx0, mesh0 in enumerate(meshes):
-            collision = False
-            collision = collision or mesh0.is_intersecting(bbox)
-            for idx1, mesh1 in enumerate(meshes):
-                if collision:
-                    break
-                if idx0 == idx1:
-                    continue
-                collision = collision or mesh0.is_intersecting(mesh1)
-            if collision:
-                mesh0.paint_uniform_color((1, 0, 0))
-                dirs[idx0] *= -1
-            vis.update_geometry(mesh0)
-        vis.poll_events()
-        vis.update_renderer()
-        time.sleep(0.05)
-    vis.destroy_window()

@@ -25,7 +25,7 @@ if __name__ == "__main__":
     mesh = mesh.subdivide_midpoint(number_of_iterations=2)
     print(mesh)
 
-    vert = np.asarray(mesh.vertices)
+    vert = np.asarray(mesh.get_vertices())
     min_vert, max_vert = vert.min(axis=0), vert.max(axis=0)
     for _ in range(30):
         cube = cv3d.geometry.ccMesh.create_box()

@@ -37,13 +37,14 @@
 #include <Console.h>
 #include <FileSystem.h>
 
-// LOCAL
-#include "ImageIO.h"
-#include "ecvMesh.h"
-#include "FileIOFilter.h"
-#include "ecvPointCloud.h"
-#include "ecvHObjectCaster.h"
+// ECV_DB_LIB
+#include <ecvMesh.h>
+#include <ecvPointCloud.h>
+#include <ecvHObjectCaster.h>
 
+// ECV_IO_LIB
+#include <AutoIO.h>
+#include <ImageIO.h>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tinyobjloader/tiny_obj_loader.h"
@@ -573,8 +574,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
 }
 
 bool ReadTriangleMeshFromSTL(const std::string &filename,
-	ccMesh &mesh,
-	bool print_progress) {
+	ccMesh &mesh, bool print_progress) {
 	FILE *myFile = CVLib::utility::filesystem::FOpen(filename.c_str(), "rb");
 
 	if (!myFile) {

@@ -29,7 +29,7 @@
 #include <cstddef>
 #include <memory>
 #include <vector>
-
+#include "eCV_db.h"
 #include "ecvHObject.h"
 #include <IJsonConvertible.h>
 
@@ -40,8 +40,6 @@ class ecvOrientedBBox;
 namespace cloudViewer {
 namespace geometry {
 
-using namespace CVLib;
-
 class VoxelGrid;
 
 /// \class OctreeNodeInfo
@@ -49,7 +47,7 @@ class VoxelGrid;
 /// \brief OctreeNode's information.
 ///
 /// OctreeNodeInfo is computed on the fly, not stored with the Node.
-class OctreeNodeInfo {
+class ECV_DB_LIB_API OctreeNodeInfo {
 public:
     /// \brief Default Constructor.
     ///
@@ -91,7 +89,7 @@ public:
 /// Design decision: do not store origin and size of a node
 ///     - Good: better space efficiency.
 ///     - Bad: need to recompute origin and size when traversing.
-class OctreeNode : public utility::IJsonConvertible {
+class ECV_DB_LIB_API OctreeNode : public CVLib::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     ///
@@ -120,7 +118,7 @@ public:
 /// - children_[5]: origin == (1, 0, 1), size == 1, in X-Z plane
 /// - children_[6]: origin == (0, 1, 1), size == 1, in Y-Z plane
 /// - children_[7]: origin == (1, 1, 1), size == 1, furthest from child 0
-class OctreeInternalNode : public OctreeNode {
+class ECV_DB_LIB_API OctreeInternalNode : public OctreeNode {
 public:
     /// \brief Default Constructor.
     ///
@@ -143,7 +141,7 @@ public:
 /// \class OctreeLeafNode
 ///
 /// \brief OctreeLeafNode base class.
-class OctreeLeafNode : public OctreeNode {
+class ECV_DB_LIB_API OctreeLeafNode : public OctreeNode {
 public:
     virtual bool operator==(const OctreeLeafNode& other) const = 0;
     /// Clone this OctreeLeafNode.
@@ -153,7 +151,7 @@ public:
 /// \class OctreeColorLeafNode
 ///
 /// \brief OctreeColorLeafNode class is an OctreeLeafNode containing color.
-class OctreeColorLeafNode : public OctreeLeafNode {
+class ECV_DB_LIB_API OctreeColorLeafNode : public OctreeLeafNode {
 public:
     bool operator==(const OctreeLeafNode& other) const override;
     /// Clone this OctreeLeafNode.
@@ -182,7 +180,7 @@ public:
 /// \class Octree
 ///
 /// \brief Octree datastructure.
-class Octree : public ccHObject, public utility::IJsonConvertible {
+class ECV_DB_LIB_API Octree : public ccHObject, public CVLib::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     Octree(const char* name = "Octree2")
@@ -232,8 +230,7 @@ public:
 	virtual ccBBox getAxisAlignedBoundingBox() const override;
 	virtual ecvOrientedBBox getOrientedBoundingBox() const override;
     virtual Octree& transform(const Eigen::Matrix4d& transformation) override;
-    virtual Octree& translate(const Eigen::Vector3d& translation,
-		bool relative = true) override;
+    virtual Octree& translate(const Eigen::Vector3d& translation, bool relative = true) override;
     virtual Octree& scale(const double s, const Eigen::Vector3d& center) override;
     virtual Octree& rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& center) override;
     bool ConvertToJsonValue(Json::Value& value) const;
@@ -284,8 +281,7 @@ public:
     /// with callback function called for each node.
     void Traverse(
             const std::function<void(const std::shared_ptr<OctreeNode>&,
-                                     const std::shared_ptr<OctreeNodeInfo>&)>&
-                    f) const;
+                                     const std::shared_ptr<OctreeNodeInfo>&)>& f) const;
 
     std::pair<std::shared_ptr<OctreeLeafNode>, std::shared_ptr<OctreeNodeInfo>>
 

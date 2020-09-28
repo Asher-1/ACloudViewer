@@ -1604,7 +1604,7 @@ ccPointCloud::getPointScalarValueColor(unsigned pointIndex) const
 	return m_currentDisplayedScalarField->getValueColor(pointIndex);
 }
 
-const ecvColor::Rgb* ccPointCloud::geScalarValueColor(ScalarType d) const
+const ecvColor::Rgb* ccPointCloud::getScalarValueColor(ScalarType d) const
 {
 	assert(m_currentDisplayedScalarField && m_currentDisplayedScalarField->getColorScale());
 
@@ -2400,7 +2400,6 @@ ccPointCloud& ccPointCloud::translate(const Eigen::Vector3d& translation, bool r
 
 ccPointCloud& ccPointCloud::scale(const double s, const Eigen::Vector3d &center)
 {
-
 	scale(static_cast<PointCoordinateType>(s),
 		static_cast<PointCoordinateType>(s),
 		static_cast<PointCoordinateType>(s), 

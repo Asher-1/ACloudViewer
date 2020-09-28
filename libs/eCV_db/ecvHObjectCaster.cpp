@@ -27,6 +27,8 @@
 #include "ecvDish.h"
 #include "ecvExtru.h"
 #include "ecvFacet.h"
+#include "ecvBox.h"
+#include "ecvQuadric.h"
 #include "ecvGBLSensor.h"
 #include "ecvGenericMesh.h"
 #include "ecvGenericPointCloud.h"
@@ -46,6 +48,14 @@
 #include "ecvTorus.h"
 #include "ecvIndexedTransformationBuffer.h"
 #include "ecvSensor.h"
+
+#include "Image.h"
+#include "Octree.h"
+#include "LineSet.h"
+#include "RGBDImage.h"
+#include "VoxelGrid.h"
+#include "ecvBBox.h"
+#include "ecvOrientedBBox.h"
 
 /*** helpers ***/
 
@@ -188,6 +198,16 @@ ccCone*		ccHObjectCaster::ToCone(ccHObject* obj)
 	return obj && obj->isKindOf(CV_TYPES::CONE) ? static_cast<ccCone*>(obj) : nullptr;
 }
 
+ccQuadric*	ccHObjectCaster::ToQuadric(ccHObject* obj)
+{
+	return obj && obj->isKindOf(CV_TYPES::QUADRIC) ? static_cast<ccQuadric*>(obj) : nullptr;
+}
+
+ccBox*		ccHObjectCaster::ToBox(ccHObject* obj)
+{
+	return obj && obj->isKindOf(CV_TYPES::BOX) ? static_cast<ccBox*>(obj) : nullptr;
+}
+
 ccPlane*	ccHObjectCaster::ToPlane(ccHObject* obj)
 {
 	return obj && obj->isA(CV_TYPES::PLANE) ? static_cast<ccPlane*>(obj) : nullptr;
@@ -262,4 +282,41 @@ cc2DViewportObject* ccHObjectCaster::To2DViewportObject(ccHObject* obj)
 ccIndexedTransformationBuffer* ccHObjectCaster::ToTransBuffer(ccHObject* obj)
 {
 	return obj && obj->isKindOf(CV_TYPES::TRANS_BUFFER) ? static_cast<ccIndexedTransformationBuffer*>(obj) : nullptr;
+}
+
+using namespace cloudViewer;
+
+geometry::Image* ccHObjectCaster::ToImage2(ccHObject* obj)
+{
+	return obj && obj->isKindOf(CV_TYPES::IMAGE2) ? static_cast<geometry::Image*>(obj) : nullptr;
+}
+
+geometry::RGBDImage * ccHObjectCaster::ToRGBDImage(ccHObject * obj)
+{
+	return obj && obj->isKindOf(CV_TYPES::RGBD_IMAGE) ? static_cast<geometry::RGBDImage*>(obj) : nullptr;
+}
+
+geometry::VoxelGrid * ccHObjectCaster::ToVoxelGrid(ccHObject * obj)
+{
+	return obj && obj->isKindOf(CV_TYPES::VOXEL_GRID) ? static_cast<geometry::VoxelGrid*>(obj) : nullptr;
+}
+
+geometry::LineSet * ccHObjectCaster::ToLineSet(ccHObject * obj)
+{
+	return obj && obj->isKindOf(CV_TYPES::LINESET) ? static_cast<geometry::LineSet*>(obj) : nullptr;
+}
+
+geometry::Octree * ccHObjectCaster::ToOctree2(ccHObject * obj)
+{
+	return obj && obj->isKindOf(CV_TYPES::POINT_OCTREE2) ? static_cast<geometry::Octree*>(obj) : nullptr;
+}
+
+ccBBox * ccHObjectCaster::ToBBox(ccHObject * obj)
+{
+	return obj && obj->isKindOf(CV_TYPES::BBOX) ? static_cast<ccBBox*>(obj) : nullptr;
+}
+
+ecvOrientedBBox * ccHObjectCaster::ToOrientedBBox(ccHObject * obj)
+{
+	return obj && obj->isKindOf(CV_TYPES::ORIENTED_BBOX) ? static_cast<ecvOrientedBBox*>(obj) : nullptr;
 }

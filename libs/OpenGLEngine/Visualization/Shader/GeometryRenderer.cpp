@@ -29,6 +29,8 @@
 #include <Image.h>
 #include <ecvMesh.h>
 #include <ecvBBox.h>
+#include <ecvFacet.h>
+#include <ecvPolyline.h>
 #include <LineSet.h>
 #include <ecvPointCloud.h>
 #include <ecvOrientedBBox.h>
@@ -180,6 +182,60 @@ bool LineSetRenderer::UpdateGeometry() {
     return true;
 }
 
+bool PolylineRenderer::Render(const RenderOption &option,
+	const ViewControl &view) {
+	if (!is_visible_ || geometry_ptr_->isEmpty()) return true;
+	return simple_polyline_shader_.Render(*geometry_ptr_, option, view);
+}
+
+bool PolylineRenderer::AddGeometry(
+	std::shared_ptr<const ccHObject> geometry_ptr) {
+	if (!geometry_ptr->isKindOf(CV_TYPES::POLY_LINE)) {
+		return false;
+	}
+	geometry_ptr_ = geometry_ptr;
+	return UpdateGeometry();
+}
+
+bool PolylineRenderer::UpdateGeometry() {
+	simple_polyline_shader_.InvalidateGeometry();
+	return true;
+}
+
+bool FacetRenderer::Render( const RenderOption &option,
+							const ViewControl &view) {
+	if (!is_visible_ || geometry_ptr_->isEmpty()) return true;
+	auto &facet = (ccFacet &)(*geometry_ptr_);
+
+	// Normal
+	if (facet.normalVectorIsShown())
+	{
+		if(!phong_shader_.Render(*facet.getNormalVectorMesh(), option, view)) return false;
+	}
+
+	// Contour
+	if (!simple_polyline_shader_.Render(*facet.getContour(), option, view)) return false;
+
+	// Polygon
+	return simple_mesh_shader_.Render(*facet.getPolygon(), option, view);
+}
+
+bool FacetRenderer::AddGeometry(
+	std::shared_ptr<const ccHObject> geometry_ptr) {
+	if (!geometry_ptr->isKindOf(CV_TYPES::FACET)) {
+		return false;
+	}
+	geometry_ptr_ = geometry_ptr;
+	return UpdateGeometry();
+}
+
+bool FacetRenderer::UpdateGeometry() {
+	phong_shader_.InvalidateGeometry();
+	simple_mesh_shader_.InvalidateGeometry();
+	simple_polyline_shader_.InvalidateGeometry();
+	return true;
+}
+
 bool TetraMeshRenderer::Render(const RenderOption &option,
                                const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->isEmpty()) return true;
@@ -203,8 +259,7 @@ bool TetraMeshRenderer::UpdateGeometry() {
 bool OrientedBoundingBoxRenderer::Render(const RenderOption &option,
                                          const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->isEmpty()) return true;
-    return simple_oriented_bounding_box_shader_.Render(*geometry_ptr_, option,
-                                                       view);
+    return simple_oriented_bounding_box_shader_.Render(*geometry_ptr_, option, view);
 }
 
 bool OrientedBoundingBoxRenderer::AddGeometry(
@@ -334,7 +389,7 @@ bool RGBDImageRenderer::UpdateGeometry() {
 bool CoordinateFrameRenderer::Render(const RenderOption &option,
                                      const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->isEmpty()) return true;
-    if (option.show_coordinate_frame_ == false) return true;
+    if (!option.show_coordinate_frame_) return true;
     const auto &mesh = (const ccMesh &)(*geometry_ptr_);
     return phong_shader_.Render(mesh, option, view);
 }

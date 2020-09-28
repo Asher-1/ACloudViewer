@@ -669,6 +669,8 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 			if (prim)
 			{
 				cloudViewer::geometry::RansacResult result;
+				// for solving phongShader bugs
+				prim->clearTriNormals();
 				prim->applyGLTransformation_recursive();
 				prim->setVisible(true);
 				if (params.randomColor)

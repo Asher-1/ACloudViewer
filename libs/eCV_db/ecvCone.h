@@ -46,13 +46,13 @@ public:
 		\param precision drawing precision (angular step = 360/precision)
 	**/
 	ccCone(PointCoordinateType bottomRadius,
-				PointCoordinateType topRadius,
-				PointCoordinateType height,
-				PointCoordinateType xOff = 0,
-				PointCoordinateType yOff = 0,
-				const ccGLMatrix* transMat = 0,
-				QString name = QString("Cone"),
-				unsigned precision = DEFAULT_DRAWING_PRECISION);
+		   PointCoordinateType topRadius,
+		   PointCoordinateType height,
+		   PointCoordinateType xOff = 0,
+		   PointCoordinateType yOff = 0,
+		   const ccGLMatrix* transMat = 0,
+		   QString name = QString("Cone"),
+		   unsigned precision = DEFAULT_DRAWING_PRECISION);
 
 	//! Simplified constructor
 	/** For ccHObject factory only!

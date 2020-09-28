@@ -43,7 +43,7 @@ class CV_CORE_LIB_API Polyline : public ReferenceCloud
 		//! Sets whether the polyline is closed or not
 		inline void setClosed(bool state) { m_isClosed = state; }
 
-		//inherited from ReferenceCloud
+		// inherited from ReferenceCloud
 		void clear(bool unusedParam = true) override;
 
 	protected:

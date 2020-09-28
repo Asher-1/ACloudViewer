@@ -20,7 +20,8 @@
 #include "ecvPolyline.h"
 #include "ecvPointCloud.h"
 
-//CVLib
+// CORE_DB_LIB
+#include <Console.h>
 #include <PointProjectionTools.h>
 #include <Delaunay2dMesh.h>
 #include <DistanceComputationTools.h>
@@ -35,10 +36,11 @@ ccFacet::ccFacet(	PointCoordinateType maxEdgeLength/*=0*/,
 					QString name/*=QString("Facet")*/ )
 	: ccHObject(name)
 	, ccPlanarEntityInterface(getUniqueID())
-	, m_polygonMesh(0)
-	, m_contourPolyline(0)
-	, m_contourVertices(0)
-	, m_originPoints(0)
+	, m_arrow(nullptr)
+	, m_polygonMesh(nullptr)
+	, m_contourPolyline(nullptr)
+	, m_contourVertices(nullptr)
+	, m_originPoints(nullptr)
 	, m_center(0,0,0)
 	, m_rms(0.0)
 	, m_surface(0.0)
@@ -53,6 +55,22 @@ ccFacet::ccFacet(	PointCoordinateType maxEdgeLength/*=0*/,
 	lockVisibility(false);
 }
 
+ccFacet::ccFacet(const ccFacet & poly)
+	: ccHObject(poly.getName())
+	, ccPlanarEntityInterface(getUniqueID())
+	, m_arrow(nullptr)
+	, m_polygonMesh(nullptr)
+	, m_contourPolyline(nullptr)
+	, m_contourVertices(nullptr)
+	, m_originPoints(nullptr)
+	, m_center(0, 0, 0)
+	, m_rms(0.0)
+	, m_surface(0.0)
+	, m_maxEdgeLength(0)
+{
+	poly.clone(this);
+}
+
 ccFacet::~ccFacet()
 {
 }
@@ -60,6 +78,21 @@ ccFacet::~ccFacet()
 ccFacet* ccFacet::clone() const
 {
 	ccFacet* facet = new ccFacet(m_maxEdgeLength, m_name);
+
+	if (!clone(facet))
+	{
+		return nullptr;
+	}
+	
+	return facet;
+}
+
+bool ccFacet::clone(ccFacet* facet) const
+{
+	if (!facet || this->isEmpty())
+	{
+		return false;
+	}
 
 	//clone contour
 	if (m_contourPolyline)
@@ -73,10 +106,10 @@ ccFacet* ccFacet::clone() const
 			//not enough memory?!
 			CVLog::Warning(QString("[ccFacet::clone][%1] Failed to clone countour!").arg(getName()));
 			delete facet;
-			return 0;
+			return false;
 		}
 
-		//the copy constructor of ccPolyline creates a new cloud (the copy of this facet's 'contour points')
+		//the copy constructor of ccFacet creates a new cloud (the copy of this facet's 'contour points')
 		//but set it by default as a child of the polyline (while we want the opposite in a facet)
 		facet->m_contourPolyline->detachChild(facet->m_contourVertices);
 
@@ -98,9 +131,9 @@ ccFacet* ccFacet::clone() const
 			//not enough memory?!
 			CVLog::Warning(QString("[ccFacet::clone][%1] Failed to clone polygon!").arg(getName()));
 			delete facet;
-			return 0;
+			return false;
 		}
-		
+
 		facet->m_polygonMesh->setLocked(m_polygonMesh->isLocked());
 		facet->m_polygonMesh->setName(m_polygonMesh->getName());
 		if (facet->m_contourVertices)
@@ -108,7 +141,6 @@ ccFacet* ccFacet::clone() const
 		else
 			facet->addChild(facet->m_polygonMesh);
 	}
-
 
 	if (m_originPoints)
 	{
@@ -127,16 +159,25 @@ ccFacet* ccFacet::clone() const
 		}
 	}
 
+	if (m_arrow)
+	{
+		if (!facet->m_arrow)
+		{
+			facet->m_arrow = std::shared_ptr<ccMesh>();
+			facet->m_arrow->createInternalCloud();
+		}
+		*facet->m_arrow = *m_arrow;
+	}
+
 	facet->m_center = m_center;
 	facet->m_rms = m_rms;
 	facet->m_surface = m_surface;
 	facet->m_showNormalVector = m_showNormalVector;
-	memcpy(facet->m_planeEquation, m_planeEquation, sizeof(PointCoordinateType)*4);
+	memcpy(facet->m_planeEquation, m_planeEquation, sizeof(PointCoordinateType) * 4);
 	facet->setVisible(isVisible());
 	facet->lockVisibility(isVisiblityLocked());
-	//facet->setDisplay_recursive(getDisplay());
 
-	return facet;
+	return true;
 }
 
 ccFacet* ccFacet::Create(	CVLib::GenericIndexedCloudPersist* cloud,
@@ -164,7 +205,19 @@ ccFacet* ccFacet::Create(	CVLib::GenericIndexedCloudPersist* cloud,
 	ccPointCloud* pc = dynamic_cast<ccPointCloud*>(cloud);
 	if (pc)
 	{
+
 		facet->setName(pc->getName() + QString(".facet"));
+		if (facet->getPolygon())
+		{
+			facet->getPolygon()->setOpacity(0.5f);
+			facet->getPolygon()->setTempColor(ecvColor::darkGrey);
+		}
+		if (facet->getContour())
+		{
+			facet->getContour()->setColor(ecvColor::green);
+			facet->getContour()->showColors(true);
+		}
+
 		if (transferOwnership)
 		{
 			pc->setName(DEFAULT_ORIGIN_POINTS_NAME);
@@ -382,6 +435,40 @@ void ccFacet::setColor(const ecvColor::Rgb& rgb)
 	showColors(true);
 }
 
+std::shared_ptr<ccMesh> ccFacet::getNormalVectorMesh(bool update)
+{
+	//const auto boundingbox = getAxisAlignedBoundingBox();
+	//double scale = std::max(0.01, boundingbox.getMaxExtent() * 0.2);
+	if (normalVectorIsShown() && update || !m_arrow)
+	{
+		PointCoordinateType scale = 1.0;
+		// the surface might be 0 if Delaunay 2.5D triangulation is not supported
+		if (m_surface > 0) 
+		{
+			scale = sqrt(m_surface);
+		}
+		else
+		{
+			scale = sqrt(m_contourPolyline->computeLength());
+		}
+		m_arrow = ccMesh::CreateArrow(0.02 * scale, 0.05 * scale, 0.9 * scale, 0.1 * scale);
+		m_arrow->computeVertexNormals();
+		m_arrow->setTempColor(m_contourPolyline->getColor());
+		m_arrow->showColors(true);
+
+		Eigen::Matrix4d transformation;
+		ccGLMatrix mat = ccGLMatrix::FromToRotation(CCVector3(0, 0, PC_ONE), getNormal());
+		transformation = ccGLMatrixd::ToEigenMatrix4(mat);
+		m_arrow->transform(transformation);
+
+		transformation = Eigen::Matrix4d::Identity();
+		transformation.block<3, 1>(0, 3) = CCVector3d::fromArray(getCenter());
+		m_arrow->transform(transformation);
+	}
+
+	return m_arrow;
+}
+
 void ccFacet::drawMeOnly(CC_DRAW_CONTEXT& context)
 {
 	if (!MACRO_Draw3D(context))
@@ -572,4 +659,125 @@ void ccFacet::invertNormal()
 	{
 		m_planeEquation[i] = -m_planeEquation[i];
 	}
+}
+
+bool ccFacet::isEmpty() const {
+	return (!m_polygonMesh || m_polygonMesh->size() == 0 ||
+		!m_contourPolyline || m_contourPolyline->size() == 0);
+}
+
+Eigen::Vector3d ccFacet::getMinBound() const {
+	if (getPolygon())
+	{
+		return getPolygon()->getMinBound();
+	}
+	else
+	{
+		return Eigen::Vector3d();
+	}
+}
+
+Eigen::Vector3d ccFacet::getMaxBound() const {
+	if (getPolygon())
+	{
+		return getPolygon()->getMaxBound();
+	}
+	else
+	{
+		return Eigen::Vector3d();
+	}
+}
+
+Eigen::Vector3d ccFacet::getGeometryCenter() const {
+	if (getPolygon())
+	{
+		return getPolygon()->getGeometryCenter();
+	}
+	else
+	{
+		return Eigen::Vector3d();
+	}
+}
+
+ccBBox ccFacet::getAxisAlignedBoundingBox() const {
+	if (getPolygon())
+	{
+		return getPolygon()->getAxisAlignedBoundingBox();
+	}
+	else
+	{
+		return ccBBox();
+	}
+}
+
+ecvOrientedBBox ccFacet::getOrientedBoundingBox() const {
+	if (getPolygon())
+	{
+		return getPolygon()->getOrientedBoundingBox();
+	}
+	else
+	{
+		return ecvOrientedBBox();
+	}
+}
+
+ccFacet &ccFacet::transform(const Eigen::Matrix4d &transformation) {
+	if (!getPolygon())
+	{
+		return *this;
+	}
+
+	getPolygon()->transform(transformation);
+	return *this;
+}
+
+ccFacet &ccFacet::translate(const Eigen::Vector3d &translation, bool relative) {
+	if (!getPolygon())
+	{
+		return *this;
+	}
+
+	getPolygon()->translate(translation, relative);
+	return *this;
+}
+
+ccFacet &ccFacet::scale(const double s, const Eigen::Vector3d &center) {
+	if (!getPolygon())
+	{
+		return *this;
+	}
+
+	getPolygon()->scale(s, center);
+	return *this;
+}
+
+ccFacet &ccFacet::rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) {
+	if (!getPolygon())
+	{
+		return *this;
+	}
+
+	getPolygon()->rotate(R, center);
+	return *this;
+}
+
+ccFacet &ccFacet::operator+=(const ccFacet &facet) {
+	CVLib::utility::LogWarning("ccFace does not support '+=' operator!");
+	return (*this);
+}
+
+ccFacet &ccFacet::operator=(const ccFacet &facet) {
+	if (facet.isEmpty()) return (*this);
+	if (this == &facet)
+	{
+		return (*this);
+	}
+
+	facet.clone(this);
+	return (*this);
+}
+
+ccFacet ccFacet::operator+(const ccFacet &facet) const {
+	CVLib::utility::LogWarning("ccFace does not support '=' operator!");
+	return ccFacet();
 }

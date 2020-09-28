@@ -42,8 +42,8 @@ using ColorCompType = unsigned char;
 namespace ecvColor
 {
 	//! Max value of a single color component (default type)
-	const ColorCompType MAX = 255;
-	const ColorCompType OPACITY = 255;
+	constexpr ColorCompType MAX = 255;
+	constexpr ColorCompType OPACITY = 255;
 
 	template<typename T1, typename T2>
 	struct is_same_type
@@ -81,15 +81,15 @@ namespace ecvColor
 		//! Default constructor
 		/** Inits color to (0,0,0).
 		**/
-		inline RgbTpl() : r(0), g(0), b(0) {}
+		constexpr inline RgbTpl() : r(0), g(0), b(0) {}
 
 		//! Constructor from a triplet of r,g,b values
-		explicit inline RgbTpl(Type red, Type green, Type blue) : r(red), g(green), b(blue) {}
+		explicit constexpr inline RgbTpl(Type red, Type green, Type blue) : r(red), g(green), b(blue) {}
 
 		//! Constructor from an array of 3 values
-		explicit inline RgbTpl(const Type col[3]) : r(col[0]), g(col[1]), b(col[2]) {}
+		explicit constexpr inline RgbTpl(const Type col[3]) : r(col[0]), g(col[1]), b(col[2]) {}
 
-		inline static Eigen::Vector3d ToEigen(const Type col[3]) { 
+		constexpr inline static Eigen::Vector3d ToEigen(const Type col[3]) { 
 			if (is_same_type<Type, float>())
 			{
 				return Eigen::Vector3d(col[0], col[1], col[2]);
@@ -101,8 +101,8 @@ namespace ecvColor
 				return Eigen::Vector3d(col[0] / 255.0, col[1] / 255.0, col[2] / 255.0);
 			}
 		}
-		inline static Eigen::Vector3d ToEigen(const RgbTpl<Type>& t) { return ToEigen(t.rgb); }
-		inline static RgbTpl FromEigen(const Eigen::Vector3d& t) {
+		constexpr inline static Eigen::Vector3d ToEigen(const RgbTpl<Type>& t) { return ToEigen(t.rgb); }
+		constexpr inline static RgbTpl FromEigen(const Eigen::Vector3d& t) {
 			Type newCol[3];
 			if (is_same_type<Type, float>())
 			{
@@ -127,14 +127,14 @@ namespace ecvColor
 		}
 
 		//! Direct coordinate access
-		inline Type& operator () (unsigned i) { return rgb[i]; }
+		constexpr inline Type& operator () (unsigned i) { return rgb[i]; }
 		//! Direct coordinate access (const)
-		inline const Type& operator () (unsigned i) const { return rgb[i]; }
+		constexpr inline Type& operator () (unsigned i) const { return rgb[i]; }
 
 		//! In-place addition operator
-		inline RgbTpl& operator += (const RgbTpl<Type>& c) { r += c.r; g += c.g; b += c.b; return *this; }
+		constexpr inline RgbTpl& operator += (const RgbTpl<Type>& c) { r += c.r; g += c.g; b += c.b; return *this; }
 		//! In-place subtraction operator
-		inline RgbTpl& operator -= (const RgbTpl<Type>& c) { r -= c.r; g -= c.g; b -= c.b; return *this; }
+		constexpr inline RgbTpl& operator -= (const RgbTpl<Type>& c) { r -= c.r; g -= c.g; b -= c.b; return *this; }
 		//! Comparison operator
 		inline bool operator != (const RgbTpl<Type>& t) const { return (r != t.r || g != t.g || b != t.b); }
 	};
@@ -164,23 +164,23 @@ namespace ecvColor
 		//! Default constructor
 		/** Inits color to (0,0,0,0).
 		**/
-		inline RgbaTpl() : r(0), g(0), b(0), a(0) {}
+		constexpr inline RgbaTpl() : r(0), g(0), b(0), a(0) {}
 
 		//! Constructor from a triplet of r,g,b values and a transparency value
-		explicit inline RgbaTpl(Type red, Type green, Type blue, Type alpha) : r(red), g(green), b(blue), a(alpha) {}
+		explicit constexpr inline RgbaTpl(Type red, Type green, Type blue, Type alpha) : r(red), g(green), b(blue), a(alpha) {}
 
 		//! RgbaTpl from an array of 4 values
-		explicit inline RgbaTpl(const Type col[4]) : r(col[0]), g(col[1]), b(col[2]), a(col[3]) {}
+		explicit constexpr inline RgbaTpl(const Type col[4]) : r(col[0]), g(col[1]), b(col[2]), a(col[3]) {}
 		//! RgbaTpl from an array of 3 values and a transparency value
-		explicit inline RgbaTpl(const Type col[3], Type alpha) : r(col[0]), g(col[1]), b(col[2]), a(alpha) {}
+		explicit constexpr inline RgbaTpl(const Type col[3], Type alpha) : r(col[0]), g(col[1]), b(col[2]), a(alpha) {}
 	
 		//! Copy constructor
-		inline RgbaTpl(const RgbTpl<Type>& c, Type alpha) : r(c.r), g(c.g), b(c.b), a(alpha) {}
+		constexpr inline RgbaTpl(const RgbTpl<Type>& c, Type alpha) : r(c.r), g(c.g), b(c.b), a(alpha) {}
 
 		//! Cast operator
-		inline operator RgbTpl<Type>() const { return RgbTpl<Type>(rgba); }
+		constexpr inline operator RgbTpl<Type>() const { return RgbTpl<Type>(rgba); }
 		//! Cast operator (const version)
-		//inline operator const Type*() const { return rgba; }
+		//constexpr inline operator const Type*() const { return rgba; }
 
 		//! Comparison operator
 		inline bool operator != (const RgbaTpl<Type>& t) const { return (r != t.r || g != t.g || b != t.b || a != t.a); }
@@ -194,50 +194,51 @@ namespace ecvColor
 	using Rgba = RgbaTpl<ColorCompType>;
 
 	// Predefined colors (default type)
-	ECV_DB_LIB_API extern const Rgb white;	
-	ECV_DB_LIB_API extern const Rgb lightGrey;
-	ECV_DB_LIB_API extern const Rgb darkGrey;
-	ECV_DB_LIB_API extern const Rgb red;	
-	ECV_DB_LIB_API extern const Rgb green;	
-	ECV_DB_LIB_API extern const Rgb blue;	
-	ECV_DB_LIB_API extern const Rgb darkBlue;
-	ECV_DB_LIB_API extern const Rgb magenta;
-	ECV_DB_LIB_API extern const Rgb cyan;	
-	ECV_DB_LIB_API extern const Rgb orange;	
-	ECV_DB_LIB_API extern const Rgb black;	
-	ECV_DB_LIB_API extern const Rgb yellow;	
+	constexpr Rgb white						(MAX, MAX, MAX);
+	constexpr Rgb lightGrey					(static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8));
+	constexpr Rgb darkGrey					(MAX / 2, MAX / 2, MAX / 2);
+	constexpr Rgb red						(MAX, 0, 0);
+	constexpr Rgb green						(0, MAX, 0);
+	constexpr Rgb blue						(0, 0, MAX);
+	constexpr Rgb darkBlue					(0, 0, MAX / 2);
+	constexpr Rgb magenta					(MAX, 0, MAX);
+	constexpr Rgb cyan						(0, MAX, MAX);
+	constexpr Rgb orange					(MAX, MAX / 2, 0);
+	constexpr Rgb black						(0, 0, 0);
+	constexpr Rgb yellow					(MAX, MAX, 0);
 
-	ECV_DB_LIB_API extern const Rgba owhite;
-	ECV_DB_LIB_API extern const Rgba olightGrey;
-	ECV_DB_LIB_API extern const Rgba odarkGrey;
-	ECV_DB_LIB_API extern const Rgba ored;
-	ECV_DB_LIB_API extern const Rgba ogreen;
-	ECV_DB_LIB_API extern const Rgba oblue;
-	ECV_DB_LIB_API extern const Rgba odarkBlue;
-	ECV_DB_LIB_API extern const Rgba omagenta;
-	ECV_DB_LIB_API extern const Rgba ocyan;
-	ECV_DB_LIB_API extern const Rgba oorange;
-	ECV_DB_LIB_API extern const Rgba oblack;
-	ECV_DB_LIB_API extern const Rgba oyellow;
+	constexpr Rgba owhite					(MAX, MAX, MAX, OPACITY);
+	constexpr Rgba olightGrey				(static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8), static_cast<ColorCompType>(MAX*0.8), OPACITY);
+	constexpr Rgba odarkGrey				(MAX / 2, MAX / 2, MAX / 2, OPACITY);
+	constexpr Rgba ored						(MAX, 0, 0, OPACITY);
+	constexpr Rgba ogreen					(0, MAX, 0, OPACITY);
+	constexpr Rgba oblue					(0, 0, MAX, OPACITY);
+	constexpr Rgba odarkBlue				(0, 0, MAX / 2, OPACITY);
+	constexpr Rgba omagenta					(MAX, 0, MAX, OPACITY);
+	constexpr Rgba ocyan					(0, MAX, MAX, OPACITY);
+	constexpr Rgba oorange					(MAX, MAX / 2, 0, OPACITY);
+	constexpr Rgba oblack					(0, 0, 0, OPACITY);
+	constexpr Rgba oyellow					(MAX, MAX, 0, OPACITY);
 
 	// Predefined materials (float)
-	ECV_DB_LIB_API extern const Rgbaf bright;
-	ECV_DB_LIB_API extern const Rgbaf lighter;
-	ECV_DB_LIB_API extern const Rgbaf light;
-	ECV_DB_LIB_API extern const Rgbaf middle;
-	ECV_DB_LIB_API extern const Rgbaf dark;
-	ECV_DB_LIB_API extern const Rgbaf darker;
-	ECV_DB_LIB_API extern const Rgbaf darkest;
-	ECV_DB_LIB_API extern const Rgbaf night;
-	ECV_DB_LIB_API extern const Rgbaf defaultMeshFrontDiff;
-	ECV_DB_LIB_API extern const Rgbaf defaultMeshBackDiff;
-	ECV_DB_LIB_API extern const Rgbf defaultViewBkgColor;
+	constexpr Rgbaf bright					(1.00f, 1.00f, 1.00f, 1.00f);
+	constexpr Rgbaf lighter					(0.83f, 0.83f, 0.83f, 1.00f);
+	constexpr Rgbaf light					(0.66f, 0.66f, 0.66f, 1.00f);
+	constexpr Rgbaf middle					(0.50f, 0.50f, 0.50f, 1.00f);
+	constexpr Rgbaf dark					(0.34f, 0.34f, 0.34f, 1.00f);
+	constexpr Rgbaf darker					(0.17f, 0.17f, 0.17f, 1.00f);
+	constexpr Rgbaf darkest					(0.08f, 0.08f, 0.08f, 1.00f);
+	constexpr Rgbaf night					(0.00f, 0.00f, 0.00f, 1.00F);
+	constexpr Rgbaf defaultMeshFrontDiff	(0.00f, 0.90f, 0.27f, 1.00f);
+	constexpr Rgbaf defaultMeshBackDiff		(0.27f, 0.90f, 0.90f, 1.00f);
+	constexpr Rgbf defaultViewBkgColor		(10 / 255.0f, 102 / 255.0f, 151 / 255.0f);
 
 	// Default foreground color (unsigned byte)
-	ECV_DB_LIB_API extern const Rgbub defaultColor;				//white
-	ECV_DB_LIB_API extern const Rgbub defaultBkgColor;			//dark blue
-	ECV_DB_LIB_API extern const Rgbub defaultLabelBkgColor;		//white
-	ECV_DB_LIB_API extern const Rgbub defaultLabelMarkerColor;	//magenta
+	//constexpr Rgbub defaultBkgColor		( 10, 102, 151); //dark blue
+	constexpr Rgbub defaultBkgColor			(134.895, 205.989, 235.00035); // sky blue
+	constexpr Rgbub defaultColor			(MAX, MAX, MAX); //white
+	constexpr Rgbub defaultLabelBkgColor	(MAX, MAX, MAX); //white
+	constexpr Rgbub defaultLabelMarkerColor	(MAX, 0, MAX); //magenta
 
 	//! Colors generator
 	class Generator
@@ -245,26 +246,8 @@ namespace ecvColor
 	public:
 		
 		//! Generates a random color
-		ECV_DB_LIB_API static Rgb Random(bool lightOnly = true)
-		{
-			std::random_device rd;   // non-deterministic generator
-			std::mt19937 gen(rd());  // to seed mersenne twister.
-			std::uniform_int_distribution<unsigned> dist(0, MAX);
-
-			Rgb col;
-			col.r = dist(gen);
-			col.g = dist(gen);
-			if (lightOnly)
-			{
-				col.b = MAX - static_cast<ColorCompType>((static_cast<double>(col.r) + static_cast<double>(col.g)) / 2); //cast to double to avoid overflow (whatever the type of ColorCompType!!!)
-			}
-			else
-			{
-				col.b = dist(gen);
-			}
-
-			return col;
-		}
+		ECV_DB_LIB_API static Rgb Random(bool lightOnly = true);
+		
 	};
 
 	//! Color space conversion
@@ -389,11 +372,10 @@ namespace ecvColor
 	inline Rgbaf FromRgbub(const Rgbub& color) { return Rgbaf(static_cast<float>(1.0 * color.r / MAX),
 															  static_cast<float>(1.0 * color.g / MAX),
 															  static_cast<float>(1.0 * color.b / MAX),
-															  1.0f);
-	}
+															  1.0f); }
 
 	//! Conversion from QRgb
-	inline Rgb FromQRgb(QRgb qColor) { return Rgb(	static_cast<unsigned char>(qRed(qColor)),
+	inline Rgb FromQRgb(QRgb qColor) { return Rgb(  static_cast<unsigned char>(qRed(qColor)),
 													static_cast<unsigned char>(qGreen(qColor)),
 													static_cast<unsigned char>(qBlue(qColor))); }
 
@@ -404,7 +386,7 @@ namespace ecvColor
 														static_cast<unsigned char>(qAlpha(qColor))); }
 
 	//! Conversion from QColor
-	inline Rgb FromQColor(QColor qColor) { return Rgb(	static_cast<unsigned char>(qColor.red()),
+	inline Rgb FromQColor(QColor qColor) { return Rgb(  static_cast<unsigned char>(qColor.red()),
 														static_cast<unsigned char>(qColor.green()),
 														static_cast<unsigned char>(qColor.blue())); }
 

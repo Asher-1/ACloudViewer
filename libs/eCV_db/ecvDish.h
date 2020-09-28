@@ -58,10 +58,17 @@ public:
 	//! Returns class ID
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::DISH; }
 
-	//inherited from ccGenericPrimitive
+	//! inherited from ccGenericPrimitive
 	virtual QString getTypeName() const override { return "Dish"; }
 	virtual bool hasDrawingPrecision() const override { return true; }
 	virtual ccGenericPrimitive* clone() const override;
+
+	//! Returns the dish base radius
+	inline PointCoordinateType getBaseRadius() const { return m_baseRadius; }
+	//! Returns the dish second radius
+	inline PointCoordinateType getSecondRadius() const { return m_secondRadius; }
+	//! Returns the dish height
+	inline PointCoordinateType getHeight() const { return m_height; }
 
 protected:
 

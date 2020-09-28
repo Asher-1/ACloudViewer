@@ -139,10 +139,10 @@ public:
 	//! Shortcut to getColor
 	inline const ecvColor::Rgb* getValueColor(unsigned index) const { return getColor(getValue(index)); }
 
-	//! Sets whether NaN/out of displayed range values should be displayed in grey or hidden
+	//! Sets whether NaN/out of displayed range values should be displayed in gray or hidden
 	ECV_DB_LIB_API void showNaNValuesInGrey(bool state);
 
-	//! Returns whether NaN values are displayed in grey or hidden
+	//! Returns whether NaN values are displayed in gray or hidden
 	inline bool areNaNValuesShownInGrey() const { return m_showNaNValuesInGrey; }
 
 	//! Sets whether 0 should always appear in associated color ramp or not

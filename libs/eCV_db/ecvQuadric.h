@@ -41,7 +41,7 @@ public:
 		\param dims optional dimension indexes
 		\param transMat optional 3D transformation (can be set afterwards with ccDrawableObject::setGLTransformation)
 		\param name name
-		\param precision drawing precision
+		\param precision drawing precision (angular step = 360/precision)
 	**/
 	ccQuadric(	CCVector2 minCorner,
 				CCVector2 maxCorner,
@@ -54,7 +54,7 @@ public:
 	//! Simplified constructor
 	/** For ccHObject factory only!
 	**/
-	ccQuadric(QString name = QString("Plane"));
+	ccQuadric(QString name = QString("Quadric"));
 
 	//! Returns class ID
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::QUADRIC; }
@@ -67,15 +67,15 @@ public:
 	//inherited from ccHObject
 	virtual ccBBox getOwnFitBB(ccGLMatrix& trans) override;
 
-	//! Returns min corner
+	//! Returns the quadric min corner
 	const CCVector2& getMinCorner() const { return m_minCorner; }
-	//! Returns max corner
+	//! Returns the quadric max corner
 	const CCVector2& getMaxCorner() const { return m_maxCorner; }
 
-	//! Returns the equation coefficients
+	//! Returns the quadric equation coefficients
 	inline const PointCoordinateType* getEquationCoefs() const { return m_eq; }
 
-	//! Returns the equation 'coordinate system' (X,Y,Z dimensions indexes)
+	//! Returns the quadric equation 'coordinate system' (X,Y,Z dimensions indexes)
 	inline const Tuple3ub& getEquationDims() const { return m_dims; }
 
 	//! Projects a 3D point in the quadric coordinate system
@@ -85,7 +85,7 @@ public:
 	**/
 	PointCoordinateType projectOnQuadric(const CCVector3& P, CCVector3& Q) const;
 
-	//! Returns the equation coefficients as a string
+	//! Returns the quadric equation coefficients as a string
 	QString getEquationString() const;
 
 	//! Fits a quadric primitive on a cloud
