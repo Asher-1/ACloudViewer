@@ -76,7 +76,7 @@ public:
 
 	//! Returns associated RMS
 	inline double getRMS() const { return m_rms; }
-	//! Returns associated surface
+	//! Returns associated surface area
 	inline double getSurface() const { return m_surface; }
 	//! Returns plane equation
 	inline const PointCoordinateType* getPlaneEquation() const { return m_planeEquation; }
@@ -114,8 +114,40 @@ public:
 	//! Sets origin points
 	inline void setOriginPoints(ccPointCloud* cloud) { m_originPoints = cloud; }
 
+	//! Gets normal vector mesh
+	std::shared_ptr<ccMesh> getNormalVectorMesh(bool update = false);
+
 	//! Clones this facet
 	ccFacet* clone() const;
+	bool clone(ccFacet* facet) const;
+
+	virtual bool isEmpty() const override;
+	virtual Eigen::Vector3d getMinBound() const override;
+	virtual Eigen::Vector3d getMaxBound() const override;
+	virtual Eigen::Vector3d getGeometryCenter() const override;
+	virtual ccBBox getAxisAlignedBoundingBox() const override;
+	virtual ecvOrientedBBox getOrientedBoundingBox() const override;
+	virtual ccFacet& transform(const Eigen::Matrix4d &transformation) override;
+	virtual ccFacet& translate(const Eigen::Vector3d &translation, bool relative = true) override;
+	virtual ccFacet& scale(const double s, const Eigen::Vector3d &center) override;
+	virtual ccFacet& rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) override;
+
+	//! Copy constructor
+	/** \param poly polyline to clone
+	**/
+	ccFacet(const ccFacet& poly);
+
+	ccFacet &operator+=(const ccFacet &polyline);
+	ccFacet &operator=(const ccFacet &polyline);
+	ccFacet operator+(const ccFacet &polyline) const;
+
+	/// \brief Assigns each line in the LineSet the same color.
+	///
+	/// \param color Specifies the color to be applied.
+	ccFacet &paintUniformColor(const Eigen::Vector3d &color) {
+		setColor(ecvColor::Rgb::FromEigen(color));
+		return (*this);
+	}
 
 protected:
 
@@ -149,6 +181,8 @@ protected:
 
 	//! Max length
 	PointCoordinateType m_maxEdgeLength;
+
+	std::shared_ptr<ccMesh> m_arrow;
 
 	//inherited from ccHObject
 	virtual bool toFile_MeOnly(QFile& out) const override;

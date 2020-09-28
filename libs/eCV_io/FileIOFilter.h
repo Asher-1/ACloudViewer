@@ -368,34 +368,6 @@ private:
 	FilterInfo m_filterInfo;
 };
 
-//! Generic file read and write utility for python interface
-/** Gives static access to file loader and writer
-**/
-namespace cloudViewer
-{
-	namespace io
-	{
-		bool AutoReadEntity(const std::string &filename,
-							ccHObject& entity,
-							bool print_progress = false);
-
-		bool AutoWriteMesh( const std::string &filename,
-							const ccHObject& entity,
-							bool write_ascii = false,
-							bool compressed = false,
-							bool write_vertex_normals = true,
-							bool write_vertex_colors = true,
-							bool write_triangle_uvs = true,
-							bool print_progress = false);
-
-		bool AutoWriteEntity(const std::string &filename,
-							 const ccHObject& entity,
-							 bool write_ascii = false,
-							 bool compressed = false,
-							 bool print_progress = false);
-	}
-}
-
 Q_DECLARE_OPERATORS_FOR_FLAGS(FileIOFilter::FilterFeatures)
 
 #endif

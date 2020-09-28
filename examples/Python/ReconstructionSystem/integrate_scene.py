@@ -8,8 +8,10 @@ import numpy as np
 import math
 import sys
 import cloudViewer as cv3d
+
 sys.path.append("../Utility")
 from file import *
+
 sys.path.append(".")
 from make_fragments import read_rgbd_image
 
@@ -18,8 +20,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     poses = []
     [color_files, depth_files] = get_rgbd_file_lists(path_dataset)
     n_files = len(color_files)
-    n_fragments = int(math.ceil(float(n_files) / \
-            config['n_frames_per_fragment']))
+    n_fragments = int(math.ceil(float(n_files) / config['n_frames_per_fragment']))
     volume = cv3d.integration.ScalableTSDFVolume(
         voxel_length=config["tsdf_cubic_size"] / 512.0,
         sdf_trunc=0.04,
@@ -30,12 +31,10 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
 
     for fragment_id in range(len(pose_graph_fragment.nodes)):
         pose_graph_rgbd = cv3d.io.read_pose_graph(
-            join(path_dataset,
-                 config["template_fragment_posegraph_optimized"] % fragment_id))
+            join(path_dataset, config["template_fragment_posegraph_optimized"] % fragment_id))
 
         for frame_id in range(len(pose_graph_rgbd.nodes)):
-            frame_id_abs = fragment_id * \
-                    config['n_frames_per_fragment'] + frame_id
+            frame_id_abs = fragment_id * config['n_frames_per_fragment'] + frame_id
             print(
                 "Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)." %
                 (fragment_id, n_fragments - 1, frame_id_abs, frame_id + 1,

@@ -39,6 +39,7 @@ class ccMesh;
 class QGLBuffer;
 class ccPolyline;
 class ccScalarField;
+class ccGenericPrimitive;
 class ecvOrientedBBox;
 class ccPointCloudLOD;
 class ecvProgressDialog;
@@ -103,7 +104,7 @@ namespace cloudViewer
 			bool setDrawingPrecision(unsigned steps);
 		public:
 			std::vector<size_t> indices;
-			std::shared_ptr<ccMesh> primitive = nullptr;
+			std::shared_ptr<ccGenericPrimitive> primitive = nullptr;
 		};
 
 		using RansacResults = std::vector<RansacResult>;
@@ -261,6 +262,12 @@ public: //features deletion/clearing
 	inline void pointsHaveChanged() { m_vboManager.updateFlags |= vboSet::UPDATE_POINTS; }
 
 public: //features allocation/resize
+	//! Reserves memory for all the active features
+	/** This method is meant to be called before increasing the cloud
+		population. Only the already allocated features will be re-reserved.
+		\return true if ok, false if there's not enough memory
+	**/
+	bool reserve(unsigned numberOfPoints) override;
 
 	//! Reserves memory to store the points coordinates
 	/** Before adding points to the cloud (with addPoint())
@@ -282,6 +289,24 @@ public: //features allocation/resize
 	**/
 	bool reserveTheRGBTable();
 
+	//! Reserves memory to store the compressed normals
+	/** Before adding normals to the cloud (with addNorm())
+		be sure to reserve the necessary amount of memory
+		with this method. This method reserves memory for as
+		many normals as the number of points in the cloud
+		(effectively stored or reserved).
+		\return true if ok, false if there's not enough memory
+	**/
+	bool reserveTheNormsTable();
+
+	//! Resizes all the active features arrays
+	/** This method is meant to be called after having increased the cloud
+		population (if the final number of inserted point is lower than the
+		reserved size). Otherwise, it fills all new elements with blank values.
+		\return true if ok, false if there's not enough memory
+	**/
+	bool resize(unsigned numberOfPoints) override;
+
 	//! Resizes the RGB colors array
 	/** If possible, the colors array is resized to fit exactly the number
 		of points in the cloud (effectively stored or reserved). If the
@@ -294,16 +319,6 @@ public: //features allocation/resize
 	**/
 	bool resizeTheRGBTable(bool fillWithWhite = false);
 
-	//! Reserves memory to store the compressed normals
-	/** Before adding normals to the cloud (with addNorm())
-		be sure to reserve the necessary amount of memory
-		with this method. This method reserves memory for as
-		many normals as the number of points in the cloud
-		(effictively stored or reserved).
-		\return true if ok, false if there's not enough memory
-	**/
-	bool reserveTheNormsTable();
-
 	//! Resizes the compressed normals array
 	/** If possible, the normals array is resized to fit exactly the number
 		of points in the cloud (effictively stored or reserved). If the
@@ -313,21 +328,6 @@ public: //features allocation/resize
 		\return true if ok, false if there's not enough memory
 	**/
 	bool resizeTheNormsTable();
-
-	//! Reserves memory for all the active features
-	/** This method is meant to be called before increasing the cloud
-		population. Only the already allocated features will be re-reserved.
-		\return true if ok, false if there's not enough memory
-	**/
-	bool reserve(unsigned numberOfPoints) override;
-
-	//! Resizes all the active features arrays
-	/** This method is meant to be called after having increased the cloud
-		population (if the final number of inserted point is lower than the
-		reserved size). Otherwise, it fills all new elements with blank values.
-		\return true if ok, false if there's not enough memory
-	**/
-	bool resize(unsigned numberOfPoints) override;
 
 	//! Removes unused capacity
 	inline void shrinkToFit() { if (size() < capacity()) resize(size()); }
@@ -546,7 +546,7 @@ public: //other methods
 	unsigned char testVisibility(const CCVector3& P) const override;
 
 	//inherited from ccGenericPointCloud
-	const ecvColor::Rgb* geScalarValueColor(ScalarType d) const override;
+	const ecvColor::Rgb* getScalarValueColor(ScalarType d) const override;
 	const ecvColor::Rgb* getPointScalarValueColor(unsigned pointIndex) const override;
 	ScalarType getPointDisplayedDistance(unsigned pointIndex) const override;
 	
@@ -583,7 +583,7 @@ public: //other methods
 	//! Returns whether the mesh as an associated sensor or not
 	bool hasSensor() const;
 
-	//! Comptes the closest point of this cloud relatively to another cloud
+	//! Computes the closest point of this cloud relatively to another cloud
 	/** The output (reference) clouds will have as many points as this cloud
 		(with the indexes pointing on the closest point in the other cloud)
 	**/

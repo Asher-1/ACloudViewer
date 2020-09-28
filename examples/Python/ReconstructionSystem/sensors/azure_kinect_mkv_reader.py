@@ -5,7 +5,7 @@
 # examples/Python/ReconstructionSystem/sensors/azure_kinect_mkv_reader.py
 
 import argparse
-import open3d as o3d
+import cloudViewer as cv3d
 import os
 import json
 import sys
@@ -23,7 +23,7 @@ class ReaderWithCallback:
         self.input = input
         self.output = output
 
-        self.reader = o3d.io.AzureKinectMKVReader()
+        self.reader = cv3d.io.AzureKinectMKVReader()
         self.reader.open(self.input)
         if not self.reader.is_opened():
             raise RuntimeError("Unable to open file {}".format(args.input))
@@ -43,7 +43,7 @@ class ReaderWithCallback:
     def run(self):
         glfw_key_escape = 256
         glfw_key_space = 32
-        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis = cv3d.visualization.VisualizerWithKeyCallback()
         vis.register_key_callback(glfw_key_escape, self.escape_callback)
         vis.register_key_callback(glfw_key_space, self.space_callback)
 
@@ -57,7 +57,7 @@ class ReaderWithCallback:
         if self.output is not None:
             abspath = os.path.abspath(self.output)
             metadata = self.reader.get_metadata()
-            o3d.io.write_azure_kinect_mkv_metadata(
+            cv3d.io.write_azure_kinect_mkv_metadata(
                 '{}/intrinsic.json'.format(abspath), metadata)
 
             config = {
@@ -83,12 +83,12 @@ class ReaderWithCallback:
                     color_filename = '{0}/color/{1:05d}.jpg'.format(
                         self.output, idx)
                     print('Writing to {}'.format(color_filename))
-                    o3d.io.write_image(color_filename, rgbd.color)
+                    cv3d.io.write_image(color_filename, rgbd.color)
 
                     depth_filename = '{0}/depth/{1:05d}.png'.format(
                         self.output, idx)
                     print('Writing to {}'.format(depth_filename))
-                    o3d.io.write_image(depth_filename, rgbd.depth)
+                    cv3d.io.write_image(depth_filename, rgbd.depth)
                     idx += 1
 
             try:

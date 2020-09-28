@@ -28,13 +28,16 @@
 
 #include <Image.h>
 #include <RGBDImage.h>
+#include <ecvPolyline.h>
 #include <ecvPointCloud.h>
 #include <Camera/PinholeCameraIntrinsic.h>
 
 #include "cloudViewer_pybind/docstring.h"
+#include "cloudViewer_pybind/geometry/cloudbase.h"
 #include "cloudViewer_pybind/geometry/geometry.h"
 #include "cloudViewer_pybind/geometry/geometry_trampoline.h"
 
+#pragma warning(disable:4715)
 using namespace cloudViewer;
 
 void pybind_pointcloud(py::module &m) {
@@ -139,15 +142,13 @@ void pybind_pointcloud(py::module &m) {
 		}), py::none(), py::none(), "");
 
 	py::class_<ccPointCloud, PyGeometry<ccPointCloud>,
-		std::shared_ptr<ccPointCloud>, ccHObject>
+		std::shared_ptr<ccPointCloud>, ccGenericPointCloud, ccHObject>
 		pointcloud(m, "ccPointCloud", py::multiple_inheritance(),
 			"ccPointCloud class. A point cloud consists of point "
-			"coordinates, and optionally point colors and point "
-			"normals.");
+			"coordinates, and optionally point colors and point normals.");
 	py::detail::bind_default_constructor<ccPointCloud>(pointcloud);
 	py::detail::bind_copy_functions<ccPointCloud>(pointcloud);
-	pointcloud
-		.def(py::init([](const std::string& name) {
+	pointcloud.def(py::init([](const std::string& name) {
 				return new ccPointCloud(name.c_str());
 			}), "name"_a = "cloud")
 		.def(py::init<const std::vector<Eigen::Vector3d>&, const std::string&>(),
@@ -158,14 +159,6 @@ void pybind_pointcloud(py::module &m) {
 		})
 		.def(py::self + py::self)
 		.def(py::self += py::self)
-		.def("size", &ccPointCloud::size,
-			"Returns points number.")
-		.def("has_points", &ccPointCloud::hasPoints,
-			"Returns ``True`` if the point cloud contains points.")
-		.def("has_normals", &ccPointCloud::hasNormals,
-			"Returns ``True`` if the point cloud contains point normals.")
-		.def("has_colors", &ccPointCloud::hasColors,
-			"Returns ``True`` if the point cloud contains point colors.")
 		.def("normalize_normals", &ccPointCloud::normalizeNormals,
 			"Normalize point normals to length 1.")
 		.def("paint_uniform_color",
@@ -239,11 +232,6 @@ void pybind_pointcloud(py::module &m) {
 			"distance to "
 			"the target point cloud.",
 			"target"_a)
-		.def("compute_mean_and_covariance",
-			&ccPointCloud::computeMeanAndCovariance,
-			"Function to compute the mean and covariance matrix of a "
-			"point "
-			"cloud.")
 		.def("compute_mahalanobis_distance",
 			&ccPointCloud::computeMahalanobisDistance,
 			"Function to compute the Mahalanobis distance for points in a "
@@ -326,20 +314,266 @@ void pybind_pointcloud(py::module &m) {
 			"index"_a)
 		.def("set_normals", &ccPointCloud::addEigenNorms,
 			"``float64`` array of shape ``(num_points, 3)``, "
-			"use ``numpy.asarray()`` to access data: Points "
-			"normals.",
+			"use ``numpy.asarray()`` to access data: Points normals.",
 			"normals"_a)
 		.def("get_normals", &ccPointCloud::getEigenNormals,
 			"``float64`` array of shape ``(num_points, 3)``, "
-			"use ``numpy.asarray()`` to access data: Points "
-			"normals.")
-		.def_static(
-			"create_from_depth_image",
+			"use ``numpy.asarray()`` to access data: Points normals.")
+
+		.def("unalloacte_points",	&ccPointCloud::unalloactePoints, "Erases the cloud points.")
+		.def("unalloacte_colors",	&ccPointCloud::unallocateColors, "Erases the cloud colors.")
+		.def("unalloacte_norms",	&ccPointCloud::unallocateNorms, "Erases the cloud normals.")
+		.def("colors_have_changed", &ccPointCloud::colorsHaveChanged,
+			R"(Notify a modification of color/scalar field display parameters or contents.)")
+		.def("normals_have_changed", &ccPointCloud::normalsHaveChanged,
+			"Notify a modification of normals display parameters or contents.")
+		.def("points_have_changed", &ccPointCloud::pointsHaveChanged,
+			"Notify a modification of points display parameters or contents.")
+		.def("reserve", &ccPointCloud::reserve,
+			"Reserves memory for all the active features.", "points_number"_a)
+		.def("reserve_points", &ccPointCloud::reserveThePointsTable,
+			"Reserves memory to store the points coordinates.", "points_number"_a)
+		.def("reserve_colors", &ccPointCloud::reserveTheRGBTable, 
+			"Reserves memory to store the RGB colors.")
+		.def("reserve_norms", &ccPointCloud::reserveTheNormsTable, 
+			"Reserves memory to store the compressed normals.")
+		.def("resize", &ccPointCloud::resize,
+			"Resizes all the active features arrays.", "points_number"_a)
+		.def("resize_colors", &ccPointCloud::resizeTheRGBTable,
+			"Resizes the RGB colors array.", "fill_with_white"_a = false)
+		.def("resize_norms", &ccPointCloud::reserveTheNormsTable, 
+			"Resizes the compressed normals array.")
+		.def("shrink", &ccPointCloud::shrinkToFit, "Removes unused capacity.")
+		.def("reset", &ccPointCloud::reset, " Clears the cloud database.")
+		.def("capacity", &ccPointCloud::capacity, "Returns cloud capacity (i.e. reserved size).")
+		.def("invalidate_bbox", &ccPointCloud::invalidateBoundingBox, "Invalidates bounding box.")
+		.def("set_current_input_sf_index", &ccPointCloud::setCurrentInScalarField,
+			" Sets the INPUT scalar field index (or -1 if none).", "index"_a)
+		.def("get_current_input_sf_index", &ccPointCloud::getCurrentInScalarFieldIndex, 
+			"Returns current INPUT scalar field index (or -1 if none).")
+		.def("set_current_output_sf_index", &ccPointCloud::setCurrentOutScalarField,
+			" Sets the OUTPUT scalar field index (or -1 if none).", "index"_a)
+		.def("get_current_output_sf_index", &ccPointCloud::getCurrentOutScalarFieldIndex,
+			"Returns current OUTPUT scalar field index (or -1 if none).")
+		.def("set_current_sf", &ccPointCloud::setCurrentScalarField,
+			" Sets both the INPUT & OUTPUT scalar field.", "index"_a)
+		.def("sfs_count", &ccPointCloud::getNumberOfScalarFields, 
+			"Returns the number of associated (and active) scalar fields.")
+		.def("get_sf_by_index", [](const ccPointCloud& cloud, std::size_t index) {
+			if (cloud.getScalarField(static_cast<int>(index))) {
+				return std::ref(*cloud.getScalarField(static_cast<int>(index)));
+			} else {
+				CVLib::utility::LogWarning("[ccPointCloud] Do not have any scalar field!");
+			}
+		}, "Returns a pointer to a specific scalar field.", "index"_a)
+		.def("get_sf_name", [](const ccPointCloud& cloud, std::size_t index) {
+			return std::string(cloud.getScalarFieldName(static_cast<int>(index)));
+		}, "Returns the name of a specific scalar field.", "index"_a)
+		.def("get_sf_index_by_name", [](const ccPointCloud& cloud, const std::string& name) {
+			return cloud.getScalarFieldIndexByName(name.c_str());
+		}, "Returns the index of a scalar field represented by its name.", "name"_a)
+		.def("get_current_input_sf", [](const ccPointCloud& cloud) {
+			if (cloud.getCurrentInScalarField()) {
+				return std::ref(*cloud.getCurrentInScalarField());
+			} else {
+				CVLib::utility::LogWarning("[ccPointCloud] cloud input does not have any scalar field!");
+			}
+		}, "Returns the scalar field currently associated to the cloud input.")
+		.def("get_current_output_sf", [](const ccPointCloud& cloud) {
+			if (cloud.getCurrentOutScalarField()) {
+				return std::ref(*cloud.getCurrentOutScalarField());
+			} else {
+				CVLib::utility::LogWarning("[ccPointCloud] cloud output does not have any scalar field!");
+			}
+		}, "Returns the scalar field currently associated to the cloud output.")
+		.def("rename_sf", [](ccPointCloud& cloud, std::size_t index, const std::string& name) {
+			return cloud.renameScalarField(static_cast<int>(index), name.c_str());
+		}, "Renames a specific scalar field.", "index"_a, "name"_a)
+		.def("get_current_displayed_sf", [](const ccPointCloud& cloud) {
+				if (cloud.getCurrentDisplayedScalarField()) {
+					return std::ref(*cloud.getCurrentDisplayedScalarField());
+				} else {
+					CVLib::utility::LogWarning("[ccPointCloud] Do not have scalar fields!");
+				}
+			}, "Returns the currently displayed scalar (or 0 if none).")
+		.def("set_current_displayed_sf", &ccPointCloud::setCurrentDisplayedScalarField,
+			"Sets the currently displayed scalar field.", "index"_a)
+		.def("get_current_sf_index", &ccPointCloud::getCurrentDisplayedScalarFieldIndex, 
+			"Returns the currently displayed scalar field index (or -1 if none).")
+		.def("delete_sf", &ccPointCloud::deleteScalarField,
+			"Deletes a specific scalar field.", "index"_a)
+		.def("delete_all_sfs", &ccPointCloud::deleteAllScalarFields,
+			"Deletes all scalar fields associated to this cloud.")
+		.def("add_sf", [](ccPointCloud& cloud, const std::string& unique_name) {
+				return cloud.addScalarField(unique_name.c_str());
+			}, "Creates a new scalar field and registers it.", "unique_name"_a)
+		.def("add_sf", [](ccPointCloud& cloud, ccScalarField& sf) {
+				return cloud.addScalarField(&sf);
+			}, "Creates a new scalar field and registers it.", "sf"_a)
+		.def("sf_color_scale_shown", &ccPointCloud::sfColorScaleShown,
+			"Returns whether color scale should be displayed or not.")
+		.def("show_sf_color_scale", &ccPointCloud::showSFColorsScale,
+			"Sets whether color scale should be displayed or not.", "state"_a)
+		.def("compute_gravity_center", [](ccPointCloud& cloud) {
+				return CCVector3d::fromArray(cloud.computeGravityCenter());
+			}, "Returns the cloud gravity center")
+		.def("crop_2d", [](ccPointCloud& cloud, const ccPolyline& polyline, 
+										unsigned char ortho_dim, bool inside) {
+				CVLib::ReferenceCloud* ref = cloud.crop2D(&polyline, ortho_dim, inside);
+				if (!ref || ref->size() == 0)
+				{
+					if (ref)
+					{
+						delete ref;
+					}
+					ref = nullptr;
+					if (polyline.isEmpty())
+					{
+						CVLib::utility::LogWarning("[ccPointCloud::crop2D] Invalid input polyline");
+					}
+					if (ortho_dim > 2)
+					{
+						CVLib::utility::LogWarning("[ccPointCloud::crop2D] Invalid input polyline");
+					}
+					if (cloud.isEmpty())
+					{
+						CVLib::utility::LogWarning("[ccPointCloud::crop2D] Cloud is empty!");
+					}
+					
+					return std::ref(cloud);
+				}
+
+				ccPointCloud* croppedCloud = cloud.partialClone(ref);
+				{
+					delete ref;
+					ref = nullptr;
+					CVLib::utility::LogWarning("[ccPointCloud::crop2D] Not enough memory!");
+				}
+				if (!croppedCloud)
+				{
+					return std::ref(cloud);
+				} 
+				
+				return std::ref(*croppedCloud);
+			}, "Crops the cloud inside (or outside) a 2D polyline", 
+			"polyline"_a, "ortho_dim"_a, "inside"_a = true)
+		.def("compute_closest_points", [](ccPointCloud& cloud,
+			ccGenericPointCloud& other_cloud, unsigned char octree_level) {
+				return std::ref(*cloud.computeCPSet(other_cloud, nullptr, octree_level));
+			}, "Computes the closest point of this cloud relatively to another cloud",
+			"other_cloud"_a, "octree_level"_a = 0)
+		.def("append", [](ccPointCloud& cloud, ccPointCloud& input_cloud, 
+						unsigned start_count, bool ignore_children) {
+				return cloud.append(&input_cloud, start_count, ignore_children);
+			}, "Appends a cloud to this one",
+			"input_cloud"_a, "start_count"_a, "ignore_children"_a = false)
+		.def("interpolate_colors_from", [](ccPointCloud& pc, 
+			ccPointCloud& other_cloud, unsigned char octree_level) {
+				return pc.interpolateColorsFrom(&other_cloud, nullptr, octree_level);
+			}, "Interpolate colors from another cloud (nearest neighbor only)",
+			"other_cloud"_a, "octree_level"_a = 0)
+		.def("convert_normal_to_rgb", &ccPointCloud::convertNormalToRGB, "Converts normals to RGB colors.")
+		.def("convert_rgb_to_grey_scale", &ccPointCloud::convertRGBToGreyScale, "Converts RGB to grey scale colors.")
+		.def("add_grey_color", &ccPointCloud::addGreyColor, "Pushes a grey color on stack (shortcut).", "grey"_a)
+		.def("colorize", &ccPointCloud::colorize,
+			"Multiplies all color components of all points by coefficients.", "r"_a, "g"_a, "b"_a)
+		.def("set_color_by_banding", &ccPointCloud::setRGBColorByBanding,
+			"Assigns color to points by 'banding'.", "dim"_a, "frequency"_a)
+		.def("has_sensor", &ccPointCloud::hasSensor, "Returns whether the mesh as an associated sensor or not.")
+		.def("invert_normals", &ccPointCloud::invertNormals, "Inverts normals (if any).")
+		.def("convert_current_sf_to_colors", &ccPointCloud::convertCurrentScalarFieldToColors,
+			"Converts current scalar field (values & display parameters) to RGB colors.",
+			"mix_with_existing_color"_a = false)
+		.def("set_color_with_current_sf", &ccPointCloud::setRGBColorWithCurrentScalarField,
+			"Sets RGB colors with current scalar field (values & parameters).",
+			"mix_with_existing_color"_a = false)
+		.def("hide_points_by_sf", [](ccPointCloud& cloud, ScalarType min_val, ScalarType max_val) {
+				cloud.hidePointsByScalarValue(min_val, max_val);
+			}, "Hides points whose scalar values falls into an interval.",
+			"min_val"_a, "max_val"_a)
+		.def("hide_points_by_sf", [](ccPointCloud& cloud, std::vector<ScalarType> values) {
+				cloud.hidePointsByScalarValue(values);
+			}, "Hides points whose scalar values falls into an interval.", "values"_a)
+		.def("filter_points_by_sf", [](ccPointCloud& cloud,
+				ScalarType min_val, ScalarType max_val, bool outside) {
+				return std::shared_ptr<ccPointCloud>(
+					cloud.filterPointsByScalarValue(min_val, max_val, outside));
+			}, "Filters out points whose scalar values falls into an interval.",
+			"min_val"_a, "max_val"_a, "outside"_a = false)
+		.def("filter_points_by_sf", [](ccPointCloud& cloud, 
+										std::vector<ScalarType> values, bool outside) {
+				return std::shared_ptr<ccPointCloud>(
+					cloud.filterPointsByScalarValue(values, outside));
+			}, "Filters out points whose scalar values falls into an interval.",
+			"values"_a, "outside"_a = false)
+		.def("convert_normal_to_dipdir_sfs", [](ccPointCloud& cloud) {
+				auto dipSF = new ccScalarField("Dip");
+				auto dipDirSF = new ccScalarField("DipDir");
+				if (!cloud.convertNormalToDipDirSFs(dipSF, dipDirSF))
+				{
+					CVLib::utility::LogWarning("[ccPointCloud] Failed to convert normal to Dip and DipDir scalar fields!");
+				}
+				return std::make_tuple(std::unique_ptr<ccScalarField, py::nodelete>(dipSF),
+					std::unique_ptr<ccScalarField, py::nodelete>(dipDirSF));
+			}, "Converts normals to two scalar fields: 'dip' and 'dip direction'.")
+		.def("clone_this", [](ccPointCloud& cloud, bool ignore_children) {
+				return std::shared_ptr<ccPointCloud>(cloud.cloneThis(nullptr, ignore_children));
+			}, "All the main features of the entity are cloned, except from the octree and"
+			" the points visibility information.", "ignore_children"_a = true)
+		.def("partial_clone", [](const ccPointCloud& cloud, std::shared_ptr<CVLib::ReferenceCloud> selection) {
+				return std::shared_ptr<ccPointCloud>(cloud.partialClone(selection.get(), nullptr));
+			}, "Creates a new point cloud object from a ReferenceCloud (selection).", 
+			"selection"_a)
+		.def("enhance_rgb_with_intensity_sf", [](ccPointCloud& cloud, 
+			int sf_index, bool use_intensity_range, 
+			double min_intensity, double max_intensity) {
+				return cloud.enhanceRGBWithIntensitySF(sf_index, use_intensity_range, min_intensity, max_intensity);
+			}, "Enhances the RGB colors with the current scalar field (assuming it's intensities).", 
+			"sf_index"_a, "use_intensity_range"_a = false, "min_intensity"_a = 0.0, "max_intensity"_a = 1.0)
+		.def("export_coord_to_sf", 
+			[](ccPointCloud& cloud, bool export_x, bool export_y, bool export_z) {
+				bool exportDims[3];
+				exportDims[0] = export_x;
+				exportDims[1] = export_y;
+				exportDims[2] = export_z;
+				return cloud.exportCoordToSF(exportDims);
+			}, "Exports the specified coordinate dimension(s) to scalar field(s).", 
+			"export_x"_a = false, "export_y"_a = false, "export_z"_a = false)
+		.def("export_normal_to_sf",
+			[](ccPointCloud& cloud, bool export_x, bool export_y, bool export_z) {
+				bool exportDims[3];
+				exportDims[0] = export_x;
+				exportDims[1] = export_y;
+				exportDims[2] = export_z;
+				return cloud.exportCoordToSF(exportDims);
+			}, "Exports the specified normal dimension(s) to scalar field(s).", 
+			"export_x"_a = false, "export_y"_a = false, "export_z"_a = false)
+		.def_static("from",
+			[](const CVLib::GenericIndexedCloud& cloud, 
+				std::shared_ptr<const ccGenericPointCloud> source_cloud) {
+				return std::shared_ptr<ccPointCloud>(ccPointCloud::From(&cloud, source_cloud.get()));
+			},
+			"'GenericCloud' is a very simple and light interface from CVLib. It is"
+			"meant to give access to points coordinates of any cloud(on the "
+			"condition it implements the GenericCloud interface of course). "
+			"See CVLib documentation for more information about GenericClouds."
+			"As the GenericCloud interface is very simple, only points are imported."
+			"Note : throws an 'int' exception in case of error(see CTOR_ERRORS)"
+			"-param cloud a GenericCloud structure"
+			"-param source_cloud cloud from which main parameters will be imported(optional)",
+			"cloud"_a, "source_cloud"_a = nullptr)
+		.def_static("from",
+			[](const ccPointCloud& source_cloud, const std::vector<size_t>& indices) {
+				return std::shared_ptr<ccPointCloud>(ccPointCloud::From(&source_cloud, indices));
+			},
+			"Function to select points from input ccPointCloud into output ccPointCloud."
+			"Points with indices in param indices are selected",
+			"source_cloud"_a, "indices"_a)
+		.def_static("create_from_depth_image",
 			&ccPointCloud::CreateFromDepthImage,
 			R"(Factory function to create a pointcloud from a depth image and a
 			camera. Given depth value d at (u, v) image coordinate, the corresponding 3d
 			point is:
-
 				  - z = d / depth_scale
 				  - x = (u - cx) * z / fx
 				  - y = (v - cy) * z / fy
@@ -359,10 +593,7 @@ void pybind_pointcloud(py::module &m) {
 			"image"_a, "intrinsic"_a,
 			"extrinsic"_a = Eigen::Matrix4d::Identity(),
 			"project_valid_depth_only"_a = true);
-	docstring::ClassMethodDocInject(m, "ccPointCloud", "size");
-	docstring::ClassMethodDocInject(m, "ccPointCloud", "has_colors");
-	docstring::ClassMethodDocInject(m, "ccPointCloud", "has_normals");
-	docstring::ClassMethodDocInject(m, "ccPointCloud", "has_points");
+
 	docstring::ClassMethodDocInject(m, "ccPointCloud", "set_point");
 	docstring::ClassMethodDocInject(m, "ccPointCloud", "set_points");
 	docstring::ClassMethodDocInject(m, "ccPointCloud", "get_point");
@@ -433,8 +664,6 @@ void pybind_pointcloud(py::module &m) {
 		"compute_point_cloud_distance",
 		{ {"target", "The target point cloud."} });
 	docstring::ClassMethodDocInject(m, "ccPointCloud",
-		"compute_mean_and_covariance");
-	docstring::ClassMethodDocInject(m, "ccPointCloud",
 		"compute_mahalanobis_distance");
 	docstring::ClassMethodDocInject(m, "ccPointCloud",
 		"compute_nearest_neighbor_distance");
@@ -445,12 +674,12 @@ void pybind_pointcloud(py::module &m) {
 		m, "ccPointCloud", "hidden_point_removal",
 		{ {"input", "The input point cloud."},
 		 {"camera_location",
-		  "All points not visible from that location will be reomved"},
+		  "All points not visible from that location will be removed"},
 		 {"radius", "The radius of the sperical projection"} });
 	docstring::ClassMethodDocInject(
 		m, "ccPointCloud", "cluster_dbscan",
 		{ {"eps",
-		  "Density parameter that is used to find neighbouring points."},
+		  "Density parameter that is used to find neighboring points."},
 		 {"min_points", "Minimum number of points to form a cluster."},
 		 {"print_progress",
 		  "If true the progress is visualized in the console."} });
@@ -479,6 +708,65 @@ void pybind_pointcloud(py::module &m) {
 		{ {"image", "The input image."},
 		 {"intrinsic", "Intrinsic parameters of the camera."},
 		 {"extrnsic", "Extrinsic parameters of the camera."} });
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "unalloacte_points");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "unalloacte_colors");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "unalloacte_norms");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "colors_have_changed");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "normals_have_changed");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "points_have_changed");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "reserve");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "reserve_points");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "reserve_colors");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "reserve_norms");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "resize");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "resize_colors");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "resize_norms");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "shrink");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "reset");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "capacity");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "invalidate_bbox");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "set_current_input_sf_index");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "get_current_input_sf_index");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "set_current_output_sf_index");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "get_current_output_sf_index");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "sfs_count");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "get_sf_by_index");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "get_sf_name");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "get_sf_index_by_name");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "get_current_input_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "get_current_output_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "rename_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "set_current_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "set_current_displayed_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "get_current_displayed_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "get_current_sf_index");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "delete_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "delete_all_sfs");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "add_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "sf_color_scale_shown");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "show_sf_color_scale");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "compute_gravity_center");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "crop_2d");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "compute_closest_points");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "append");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "interpolate_colors_from");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "convert_normal_to_rgb");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "convert_rgb_to_grey_scale");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "add_grey_color");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "colorize");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "set_color_by_banding");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "has_sensor");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "invert_normals");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "convert_current_sf_to_colors");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "set_color_with_current_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "hide_points_by_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "filter_points_by_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "convert_normal_to_dipdir_sfs");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "clone_this");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "partial_clone");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "enhance_rgb_with_intensity_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "export_coord_to_sf");
+	docstring::ClassMethodDocInject(m, "ccPointCloud", "export_normal_to_sf");
 }
 
 void pybind_pointcloud_methods(py::module &m) {}

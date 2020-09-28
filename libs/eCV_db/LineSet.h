@@ -74,8 +74,8 @@ public:
 	virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
 
 public:
-    LineSet &Clear();
-	inline virtual bool isEmpty() const override { return !HasPoints(); }
+    LineSet &clear();
+	inline virtual bool isEmpty() const override { return !hasPoints(); }
     virtual Eigen::Vector3d getMinBound() const override;
     virtual Eigen::Vector3d getMaxBound() const override;
     virtual Eigen::Vector3d getGeometryCenter() const override;
@@ -91,20 +91,20 @@ public:
     LineSet operator+(const LineSet &lineset) const;
 
     /// Returns `true` if the object contains points.
-    bool HasPoints() const { return points_.size() > 0; }
+    bool hasPoints() const { return points_.size() > 0; }
 
     /// Returns `true` if the object contains lines.
-    bool HasLines() const { return HasPoints() && lines_.size() > 0; }
+    bool hasLines() const { return hasPoints() && lines_.size() > 0; }
 
     /// Returns `true` if the objects lines contains colors.
-    bool HasColors() const {
-        return HasLines() && colors_.size() == lines_.size();
+    bool hasColors() const {
+        return hasLines() && colors_.size() == lines_.size();
     }
 
     /// \brief Returns the coordinates of the line at the given index.
     ///
     /// \param line_index Index of the line.
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> getLineCoordinate(
             size_t line_index) const {
         return std::make_pair(points_[lines_[line_index][0]],
                               points_[lines_[line_index][1]]);
@@ -113,7 +113,7 @@ public:
     /// \brief Assigns each line in the LineSet the same color.
     ///
     /// \param color Specifies the color to be applied.
-    LineSet &PaintUniformColor(const Eigen::Vector3d &color) {
+    LineSet &paintUniformColor(const Eigen::Vector3d &color) {
         ResizeAndPaintUniformColor(colors_, lines_.size(), color);
         return *this;
     }

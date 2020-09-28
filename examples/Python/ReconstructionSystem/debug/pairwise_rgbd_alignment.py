@@ -7,7 +7,7 @@
 import argparse
 import json
 import sys
-import open3d as o3d
+import cloudViewer as cv3d
 sys.path.append("../Utility")
 from file import *
 from visualization import *
@@ -18,7 +18,7 @@ from make_fragments import *
 
 def test_single_pair(s, t, color_files, depth_files, intrinsic, with_opencv,
                      config):
-    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
+    cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
     [success, trans,
      info] = register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
                                     with_opencv, config)
@@ -29,9 +29,9 @@ def test_single_pair(s, t, color_files, depth_files, intrinsic, with_opencv,
                                         config)
     target_rgbd_image = read_rgbd_image(color_files[t], depth_files[t], False,
                                         config)
-    source = o3d.geometry.PointCloud.create_from_rgbd_image(
+    source = cv3d.geometry.PointCloud.create_from_rgbd_image(
         source_rgbd_image, intrinsic)
-    target = o3d.geometry.PointCloud.create_from_rgbd_image(
+    target = cv3d.geometry.PointCloud.create_from_rgbd_image(
         target_rgbd_image, intrinsic)
     draw_geometries_flip([source, target])
 
@@ -55,10 +55,10 @@ if __name__ == "__main__":
 
         [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
         if args.path_intrinsic:
-            intrinsic = o3d.io.read_pinhole_camera_intrinsic(
+            intrinsic = cv3d.io.read_pinhole_camera_intrinsic(
                 args.path_intrinsic)
         else:
-            intrinsic = o3d.camera.PinholeCameraIntrinsic(
-                o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+            intrinsic = cv3d.camera.PinholeCameraIntrinsic(
+                cv3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
         test_single_pair(args.source_id, args.target_id, color_files,
                          depth_files, intrinsic, with_opencv, config)

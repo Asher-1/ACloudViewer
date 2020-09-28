@@ -13,8 +13,7 @@ if __name__ == "__main__":
         "../../TestData/RGBD/other_formats/TUM_color.png")
     depth_raw = cv3d.io.read_image(
         "../../TestData/RGBD/other_formats/TUM_depth.png")
-    rgbd_image = cv3d.geometry.RGBDImage.create_from_tum_format(
-        color_raw, depth_raw)
+    rgbd_image = cv3d.geometry.RGBDImage.create_from_tum_format(color_raw, depth_raw)
     print(rgbd_image)
     plt.subplot(1, 2, 1)
     plt.title('TUM grayscale image')

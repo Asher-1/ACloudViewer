@@ -45,15 +45,57 @@ ccPolyline::ccPolyline(GenericIndexedCloudPersist* associatedCloud)
 	}
 }
 
+ccPolyline::ccPolyline(ccPointCloud& associatedCloud)
+	: Polyline(associatedCloud.cloneThis(nullptr))
+	, ccShiftedObject("Polyline")
+{
+	this->set2DMode(false);
+	this->setTransformFlag(true);
+	this->setForeground(true);
+	this->setVisible(true);
+	this->lockVisibility(false);
+	this->setColor(ecvColor::white);
+	this->showColors(true);
+	this->showVertices(false);
+	this->setVertexMarkerWidth(3);
+	this->setWidth(2);
+	this->showArrow(false, 0, 0);
+
+	int verticesCount = getAssociatedCloud()->size();
+	if (this->reserve(verticesCount))
+	{
+		this->addPointIndex(0, verticesCount);
+		this->setVisible(true);
+
+		bool closed = false;
+		CCVector3 start = CCVector3::fromArray(getAssociatedCloud()->getPoint(0)->u);
+		CCVector3 end = CCVector3::fromArray(getAssociatedCloud()->getPoint(verticesCount - 1)->u);
+		if ((end - start).norm() < ZERO_TOLERANCE)
+		{
+			closed = true;
+		} else {
+			closed = false;
+		}
+
+		this->setClosed(closed);
+		
+		setGlobalScale(associatedCloud.getGlobalScale());
+		setGlobalShift(associatedCloud.getGlobalShift());
+	}
+	else
+	{
+		CVLib::utility::LogError("[ccPolyline] not enough memory!");
+	}
+}
+
 ccPolyline::ccPolyline(const ccPolyline& poly)
 	: Polyline(0)
 	, ccShiftedObject(poly)
 {
-	ccPointCloud* clone = 0;
-	initWith(clone, poly);
+	initWith(nullptr, poly);
 }
 
-bool ccPolyline::initWith(ccPointCloud*& vertices, const ccPolyline& poly)
+bool ccPolyline::initWith(ccPointCloud* vertices, const ccPolyline& poly)
 {
 	bool success = true;
 	if (!vertices)
@@ -496,6 +538,43 @@ bool ccPolyline::split(	PointCoordinateType maxEdgeLength,
 	return true;
 }
 
+bool ccPolyline::add(const ccPointCloud& cloud)
+{
+	if (cloud.isEmpty())
+	{
+		return false;
+	}
+
+	if (!this->getAssociatedCloud())
+	{
+		ccPointCloud* vertices = const_cast<ccPointCloud &>(cloud).cloneThis(nullptr);
+		return initWith(vertices, *this);
+	}
+
+	ccPointCloud* oldCloud = static_cast<ccPointCloud*>(m_theAssociatedCloud);
+	if (!oldCloud)
+	{
+		CVLib::utility::LogWarning("[ccPolyline::add] invalid associated cloud!");
+		return false;
+	}
+	unsigned int newCount = cloud.size();
+	unsigned int currentSize = oldCloud->size();
+	if (!oldCloud->reserve(currentSize + newCount))
+	{
+		CVLib::utility::LogWarning("[ccPolyline] Not enough memory!");
+		return false;
+	}
+
+	//copy new indexes (warning: no duplicate check!)
+	for (unsigned i = 0; i < newCount; ++i)
+	{
+		oldCloud->addPoint(*cloud.getPoint(i));
+	}
+	addPointIndex(currentSize, currentSize + newCount);
+
+	return true;
+}
+
 PointCoordinateType ccPolyline::computeLength() const
 {
 	PointCoordinateType length = 0;
@@ -661,4 +740,142 @@ ccPointCloud* ccPolyline::samplePoints(	bool densityBased,
 	cloud->setGLTransformationHistory(getGLTransformationHistory());
 
 	return cloud;
+}
+
+Eigen::Vector3d ccPolyline::getMinBound() const {
+	return CCVector3d::fromArray(m_bbox.minCorner());
+}
+
+Eigen::Vector3d ccPolyline::getMaxBound() const {
+	return CCVector3d::fromArray(m_bbox.maxCorner());
+}
+
+Eigen::Vector3d ccPolyline::getGeometryCenter() const {
+	return CCVector3d::fromArray(m_bbox.getCenter());
+}
+
+ccBBox ccPolyline::getAxisAlignedBoundingBox() const {
+	std::vector<CCVector3> points;
+	for (unsigned index : m_theIndexes)
+	{
+		points.push_back(*m_theAssociatedCloud->getPoint(index));
+	}
+	return ccBBox::CreateFromPoints(points);
+}
+
+ecvOrientedBBox ccPolyline::getOrientedBoundingBox() const {
+	if (!m_theAssociatedCloud)
+	{
+		return ecvOrientedBBox();
+	}
+
+	std::vector<CCVector3> points;
+	for (unsigned index : m_theIndexes)
+	{
+		points.push_back(*m_theAssociatedCloud->getPoint(index));
+	}
+	return ecvOrientedBBox::CreateFromPoints(points);
+}
+
+ccPolyline &ccPolyline::transform(const Eigen::Matrix4d &transformation) {
+	GenericIndexedCloudPersist* asCloud = getAssociatedCloud();
+	if (!asCloud)
+	{
+		return *this;
+	}
+	ccPointCloud* cloud = static_cast<ccPointCloud*>(asCloud);
+	if (cloud)
+	{
+		cloud->transform(transformation);
+	}
+	
+	return *this;
+}
+
+ccPolyline &ccPolyline::translate(const Eigen::Vector3d &translation, bool relative) {
+	GenericIndexedCloudPersist* asCloud = getAssociatedCloud();
+	if (!asCloud)
+	{
+		return *this;
+	}
+	ccPointCloud* cloud = static_cast<ccPointCloud*>(asCloud);
+	if (cloud)
+	{
+		cloud->translate(translation, relative);
+	}
+	return *this;
+}
+
+ccPolyline &ccPolyline::scale(const double s, const Eigen::Vector3d &center) {
+	GenericIndexedCloudPersist* asCloud = getAssociatedCloud();
+	if (!asCloud)
+	{
+		return *this;
+	}
+	ccPointCloud* cloud = static_cast<ccPointCloud*>(asCloud);
+	if (cloud)
+	{
+		cloud->scale(s, center);
+	}
+	return *this;
+}
+
+ccPolyline &ccPolyline::rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) {
+	GenericIndexedCloudPersist* asCloud = getAssociatedCloud();
+	if (!asCloud)
+	{
+		return *this;
+	}
+	ccPointCloud* cloud = static_cast<ccPointCloud*>(asCloud);
+	if (cloud)
+	{
+		cloud->rotate(R, center);
+	}
+	return *this;
+}
+
+ccPolyline &ccPolyline::operator+=(const ccPolyline &polyline) {
+	if (polyline.isEmpty()) return (*this);
+	if (!polyline.getAssociatedCloud())
+	{
+		CVLib::utility::LogError("[ccPolyline] Cannot find associated cloud in polyline!");
+		return (*this);
+	}
+
+	if (m_theAssociatedCloud == polyline.getAssociatedCloud())
+	{
+		if (!CVLib::ReferenceCloud::add(polyline))
+		{
+			CVLib::utility::LogError("[ccPolyline] Not enough memory!");
+			return (*this);
+		}
+	}
+	else
+	{
+		const ccPointCloud* cloud = static_cast<const ccPointCloud*>(
+			polyline.getAssociatedCloud());
+		if (!cloud || !add(*cloud))
+		{
+			CVLib::utility::LogWarning("[ccPolyline] adding ccPolyline failed!");
+		}
+	}
+
+	return (*this);
+}
+
+ccPolyline &ccPolyline::operator=(const ccPolyline &polyline) {
+	if (this == &polyline)
+	{
+		return (*this);
+	}
+
+	this->clear();
+	*this += polyline;
+	//import other parameters
+	this->importParametersFrom(polyline);
+	return (*this);
+}
+
+ccPolyline ccPolyline::operator+(const ccPolyline &polyline) const {
+	return (ccPolyline(*this) += polyline);
 }
