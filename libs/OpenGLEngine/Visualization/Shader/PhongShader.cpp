@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualization/Shader/PhongShader.h"
+#include "PhongShader.h"
 #include <ecvPointCloud.h>
 #include <ecvMesh.h>
-#include "Visualization/Shader/Shader.h"
-#include "Visualization/Utility/ColorMap.h"
+#include "Shader.h"
+#include "../Utility/ColorMap.h"
 
 namespace cloudViewer {
 namespace visualization {

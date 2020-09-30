@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ class GlobalOptimizationOption;
 /// \class GlobalOptimizationMethod
 ///
 /// \brief Base class for global optimization method.
-class OPENGL_ENGINE_LIB_API GlobalOptimizationMethod {
+class GlobalOptimizationMethod {
 public:
     /// \brief Default Constructor.
     GlobalOptimizationMethod() {}
@@ -63,7 +63,7 @@ public:
 /// \class GlobalOptimizationGaussNewton
 ///
 /// \brief Global optimization with Gauss-Newton algorithm.
-class OPENGL_ENGINE_LIB_API GlobalOptimizationGaussNewton : public GlobalOptimizationMethod {
+class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod {
 public:
     /// \brief Default Constructor.
     GlobalOptimizationGaussNewton() {}
@@ -82,7 +82,7 @@ public:
 ///
 /// Recommended over the Gauss-Newton method since the LM has better convergence
 /// characteristics.
-class OPENGL_ENGINE_LIB_API GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod {
+class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod {
 public:
     /// \brief Default Constructor.
     GlobalOptimizationLevenbergMarquardt() {}

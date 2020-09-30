@@ -10,8 +10,6 @@ if (PLUGIN_STANDARD_QRANSAC_SD)
 	
 	include ( ${ECV_CMAKE_SCRIPTS_DIR}/CMakePolicies.cmake NO_POLICY_SCOPE )
 
-	#add_subdirectory (RANSAC_SD_orig)
-
 	include( ../../../CMakePluginTpl.cmake )
 	
 	add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)

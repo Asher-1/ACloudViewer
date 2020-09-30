@@ -35,17 +35,17 @@ class QCPBarsWithText : public QCPBars
 
 public:
 
-	QCPBarsWithText(QCPAxis* keyAxis, QCPAxis* valueAxis) : QCPBars(keyAxis,valueAxis), m_textOnTheLeft(false) {}
+	QCPBarsWithText(QCPAxis* keyAxis, QCPAxis* valueAxis) : QCPBars(keyAxis, valueAxis), m_textOnTheLeft(false) {}
 
 	void setText(QString text) { m_text = QStringList(text); }
 	void appendText(QString text) { m_text.append(text); }
 	void setTextAlignment(bool left) { m_textOnTheLeft = left; }
 
 protected:
-	
+
 	QStringList m_text;
 	bool m_textOnTheLeft;
-	
+
 	// reimplemented virtual draw method
 	virtual void draw(QCPPainter *painter)
 	{
@@ -56,10 +56,10 @@ protected:
 
 		int fontHeight = painter->fontMetrics().height();
 
-		if (!mData->isEmpty())
+		if (!data()->isEmpty())
 		{
-			double& key = mData->begin()->key;
-			double& value = mData->begin()->value;
+			double& key = data()->begin()->key;
+			double& value = data()->begin()->value;
 			QPointF P = coordsToPixels(key, value);
 			//apply a small shift
 			int margin = 5; //in pixels
@@ -69,12 +69,12 @@ protected:
 			//we draw at the 'base' line
 			P.setY(P.y() + fontHeight);
 
-			for (int i=0; i<m_text.size(); ++i)
+			for (int i = 0; i < m_text.size(); ++i)
 			{
 				QPointF Pstart = P;
 				if (m_textOnTheLeft)
 					Pstart.setX(P.x() - painter->fontMetrics().horizontalAdvance(m_text[i]));
-				painter->drawText(Pstart,m_text[i]);
+				painter->drawText(Pstart, m_text[i]);
 				P.setY(P.y() + fontHeight);
 			}
 		}
@@ -89,36 +89,35 @@ class QCPColoredBars : public QCPBars
 
 public:
 
-	class QCPColoredBarData : public QCPBarData
+	class QCPColoredBarData : public QCPBarsData
 	{
 	public:
 		QCPColoredBarData()
-			: QCPBarData()
-			, color(Qt::blue)
+			: color(Qt::blue)
 		{}
 
 		QColor color;
 	};
 	typedef QMap<double, QCPColoredBarData> QCPColoredBarDataMap;
 
-	QCPColoredBars(QCPAxis *keyAxis, QCPAxis *valueAxis) : QCPBars(keyAxis,valueAxis) {}
-	
+	QCPColoredBars(QCPAxis *keyAxis, QCPAxis *valueAxis) : QCPBars(keyAxis, valueAxis) {}
+
 	void setData(const QVector<double> &key, const QVector<double> &value)
 	{
 		//no colors? we switch to the standard QCPBars object
 		m_coloredData.clear();
-		QCPBars::setData(key,value);
+		QCPBars::setData(key, value);
 	}
 
 	void setData(const QVector<double> &key, const QVector<double> &value, const QVector<QColor>& colors)
 	{
 		Q_ASSERT(colors.size() == key.size());
 
-		mData->clear(); //we duplicate the structures so that other stuff in QCPBarData works!
+		data()->clear(); //we duplicate the structures so that other stuff in QCPBarData works!
 
 		int n = qMin(key.size(), value.size());
 
-		for (int i=0; i<n; ++i)
+		for (int i = 0; i < n; ++i)
 		{
 			QCPColoredBarData newData;
 			newData.key = key[i];
@@ -126,14 +125,14 @@ public:
 			if (colors.size() > i)
 				newData.color = colors[i];
 			m_coloredData.insertMulti(newData.key, newData);
-			mData->insertMulti(newData.key, newData);
+			QCPBars::addData(newData.key, newData.value);
 		}
 	}
 
 	inline QRect rect() const { return clipRect(); }
 
 	// reimplemented virtual methods:
-	virtual void clearData() { QCPBars::clearData(); m_coloredData.clear(); }
+	virtual void clearData() { QCPBars::data().clear(); m_coloredData.clear(); }
 
 protected:
 
@@ -153,31 +152,31 @@ protected:
 		for (it = m_coloredData.constBegin(); it != m_coloredData.constEnd(); ++it)
 		{
 			// skip bar if not visible in key axis range:
-			if (it.key()+mWidth*0.5 < mKeyAxis.data()->range().lower || it.key()-mWidth*0.5 > mKeyAxis.data()->range().upper)
+			if (it.key() + mWidth * 0.5 < mKeyAxis.data()->range().lower || it.key() - mWidth * 0.5 > mKeyAxis.data()->range().upper)
 				continue;
 
-			QPolygonF barPolygon = getBarPolygon(it.key(), it.value().value);
+			QRectF barRect = getBarRect(it.key(), it.value().value);
 			// draw bar fill:
-			if (mainBrush().style() != Qt::NoBrush && mainBrush().color().alpha() != 0)
+			if (brush().style() != Qt::NoBrush && brush().color().alpha() != 0)
 			{
-				QBrush brush = mainBrush();
-				brush.setColor(it.value().color);
-				
+				QBrush theBrush = brush();
+				theBrush.setColor(it.value().color);
+
 				applyFillAntialiasingHint(painter);
 				painter->setPen(Qt::NoPen);
-				painter->setBrush(brush);
-				painter->drawPolygon(barPolygon);
+				painter->setBrush(theBrush);
+				painter->drawRect(barRect);
 			}
 			// draw bar line:
-			if (mainPen().style() != Qt::NoPen && mainPen().color().alpha() != 0)
+			if (pen().style() != Qt::NoPen && pen().color().alpha() != 0)
 			{
-				QPen pen = mainPen();
-				pen.setColor(it.value().color);
+				QPen thePen = pen();
+				thePen.setColor(it.value().color);
 
 				applyDefaultAntialiasingHint(painter);
-				painter->setPen(pen);
+				painter->setPen(thePen);
 				painter->setBrush(Qt::NoBrush);
-				painter->drawPolyline(barPolygon);
+				painter->drawPolyline(barRect);
 			}
 		}
 	}
@@ -191,14 +190,14 @@ class QCPSelectableCursor : public QCPAbstractPlottable
 	Q_OBJECT
 
 public:
-	
+
 	//! Default constructor
 	explicit QCPSelectableCursor(QCPAxis *keyAxis, QCPAxis *valueAxis)
 		: QCPAbstractPlottable(keyAxis, valueAxis)
 		, mCurrentVal(0)
 		, mMinVal(0)
 		, mMaxVal(0)
-		, mLastPos(-1,-1)
+		, mLastPos(-1, -1)
 		, mLastRadius(0)
 	{}
 
@@ -208,7 +207,7 @@ public:
 		if (mLastPos.x() < 0 || mLastPos.y() < 0)
 			return false;
 		QPoint d = mLastPos - click;
-		return (d.x()*d.x() + d.y()*d.y() <= mLastRadius*mLastRadius);
+		return (d.x()*d.x() + d.y()*d.y() <= mLastRadius * mLastRadius);
 	}
 
 	// getters
@@ -218,7 +217,7 @@ public:
 	inline void range(double& minVal, double& maxVal) const { minVal = mMinVal; maxVal = mMaxVal; }
 
 	// setters
-	inline void setCurrentVal(double val) { mCurrentVal = std::max(std::min(val,mMaxVal),mMinVal); }
+	inline void setCurrentVal(double val) { mCurrentVal = std::max(std::min(val, mMaxVal), mMinVal); }
 	inline void setRange(double minVal, double maxVal) { mMinVal = minVal; mMaxVal = maxVal; }
 
 	//! Converts a pixel value (X) to the equivalent key
@@ -229,17 +228,17 @@ public:
 
 	// reimplemented virtual methods:
 	virtual void clearData() {}
-	virtual double selectTest(const QPointF &pos, bool onlySelectable, QVariant *details=0) const { return -1; } //we don't use the QCP internal selection mechanism!
+	double selectTest(const QPointF &pos, bool onlySelectable, QVariant *details = 0) const override { return -1; } //we don't use the QCP internal selection mechanism!
 
 protected:
 	// reimplemented virtual methods:
-	virtual void drawLegendIcon(QCPPainter *painter, const QRectF &rect) const {}
-	virtual QCPRange getKeyRange(bool &foundRange, SignDomain inSignDomain=sdBoth) const { foundRange = false; return QCPRange(); }
-	virtual QCPRange getValueRange(bool &foundRange, SignDomain inSignDomain=sdBoth) const { foundRange = false; return QCPRange(); }
+	void drawLegendIcon(QCPPainter *painter, const QRectF &rect) const override {}
+	QCPRange getKeyRange(bool &foundRange, QCP::SignDomain inSignDomain = QCP::sdBoth) const override { foundRange = false; return QCPRange(); }
+	QCPRange getValueRange(bool &foundRange, QCP::SignDomain inSignDomain = QCP::sdBoth, const QCPRange &inKeyRange = QCPRange()) const override { foundRange = false; return QCPRange(); }
 
 	// property members:
 	double mCurrentVal;
-	double mMinVal,mMaxVal;
+	double mMinVal, mMaxVal;
 	QPoint mLastPos;
 	int mLastRadius;
 };
@@ -254,12 +253,12 @@ public:
 		: QCPSelectableCursor(keyAxis, valueAxis)
 		, mLeftSide(leftSide)
 	{
-		mPen = QPen(QColor(80, 80, 80),Qt::SolidLine); // dark grey
+		mPen = QPen(QColor(80, 80, 80), Qt::SolidLine); // dark grey
 		mPen.setWidth(2);
-		mSelectedPen = mPen;
-		
-		mBrush = QBrush(Qt::white,Qt::SolidPattern); // white
-		mSelectedBrush = mBrush;
+		setPen(mPen);
+
+		mBrush = QBrush(Qt::white, Qt::SolidPattern); // white
+		setBrush(mBrush);
 	}
 
 protected:
@@ -276,41 +275,45 @@ protected:
 		if (mLeftSide)
 		{
 			int x2 = static_cast<int>(ceil(currentPosd));
-			assert(x2 >= rect.x());
+			//assert(x2 >= rect.x());
+			if (x2 < rect.x())
+				return;
 			rect.setWidth(x2 - rect.x());
 		}
 		else
 		{
 			int x1 = static_cast<int>(floor(currentPosd));
-			assert(x1 >= rect.x());
+			//assert(x1 >= rect.x());
+			if (x1 < rect.x())
+				return;
 			int newWidth = rect.width() - (x1 - rect.x());
 			rect.setX(x1);
 			rect.setWidth(newWidth);
 		}
 
 		// draw greyed rect
-		if (	(mLeftSide && mCurrentVal > mMinVal)
-			||	(!mLeftSide && mCurrentVal < mMaxVal) )
+		if ((mLeftSide && mCurrentVal > mMinVal)
+			|| (!mLeftSide && mCurrentVal < mMaxVal))
 		{
 			applyFillAntialiasingHint(painter);
 			painter->setPen(Qt::NoPen);
-			painter->setBrush(QBrush(QColor(128, 128, 128, 128),Qt::SolidPattern)); // semi-transparent grey
+			painter->setBrush(QBrush(QColor(128, 128, 128, 128), Qt::SolidPattern)); // semi-transparent grey
 			painter->drawPolygon(rect);
 		}
 
 		//draw circle (handle)
-		if (mainPen().style() != Qt::NoPen && mainPen().color().alpha() != 0)
+		if (pen().style() != Qt::NoPen && pen().color().alpha() != 0)
 		{
 			//circle
-			QPoint C(mLeftSide ? rect.x()+rect.width() : rect.x(), rect.y()+rect.height()/2);
+			QPoint C(mLeftSide ? rect.x() + rect.width() : rect.x(), rect.y() + rect.height() / 2);
 			int r = rect.height() / 10;
 
-			painter->setPen(mainPen());
-			painter->setBrush(mainBrush());
-			painter->drawEllipse(C,r,r);
+			painter->setPen(pen());
+			painter->setBrush(brush());
+			painter->drawEllipse(C, r, r);
 
-			painter->setPen(QPen(QColor(128, 128, 128, 128),Qt::SolidLine)); // semi-transparent grey
-			painter->drawLine(C+QPoint(0,r),C-QPoint(0,r));
+			painter->setPen(QPen(QColor(128, 128, 128, 128), Qt::SolidLine)); // semi-transparent grey
+			painter->drawLine(C + QPoint(0, r), C - QPoint(0, r));
 
 			//save last circle position
 			mLastPos = C;
@@ -319,7 +322,7 @@ protected:
 		else
 		{
 			//no circle
-			mLastPos = QPoint(-1,-1);
+			mLastPos = QPoint(-1, -1);
 			mLastRadius = 0;
 		}
 	}
@@ -340,20 +343,20 @@ public:
 		mPen.setColor(QColor(128, 128, 0)); // dark yellow
 		mPen.setStyle(Qt::SolidLine);
 		mPen.setWidth(2);
-		mSelectedPen = mPen;
-		
+		setPen(mPen);
+
 		mBrush.setColor(QColor(255, 255, 0, 196)); // semi-transparent yellow
 		mBrush.setStyle(Qt::SolidPattern);
-		mSelectedBrush = mBrush;
+		setBrush(mBrush);
 	}
 
 	//! Sets triangle 'inside' color
 	void setColor(int r, int g, int b)
 	{
 		mBrush.setColor(QColor(r, g, b, 196)); // semi-transparent color
-		mSelectedBrush = mBrush;
+		setBrush(mBrush);
 	}
-	
+
 protected:
 
 	// reimplemented virtual methods:
@@ -370,24 +373,24 @@ protected:
 
 		// draw dashed line
 		{
-			QPen pen(QColor(128, 128, 128, 128),Qt::DashLine);
+			QPen pen(QColor(128, 128, 128, 128), Qt::DashLine);
 			pen.setWidth(1);
 			painter->setPen(pen); // semi-transparent grey
-			painter->drawLine(QPoint(currentPos,rect.y()+2*r), QPoint(currentPos,rect.y()+rect.height()));
+			painter->drawLine(QPoint(currentPos, rect.y() + 2 * r), QPoint(currentPos, rect.y() + rect.height()));
 		}
 
 		//draw triangle(handle)
-		if (mainPen().style() != Qt::NoPen && mainPen().color().alpha() != 0)
+		if (pen().style() != Qt::NoPen && pen().color().alpha() != 0)
 		{
 			//QPoint O(currentPos,rect.y() + rect.height() - r);
 			//QPoint T[3] = { O - QPoint(0,r), O + QPoint(r,r), O + QPoint(-r,r) };
 
-			QPoint O(currentPos,rect.y() + r);
+			QPoint O(currentPos, rect.y() + r);
 			QPoint T[3] = { O + QPoint(0,r), O - QPoint(r,r), O - QPoint(-r,r) };
 
-			painter->setPen(mainPen());
-			painter->setBrush(mainBrush());
-			painter->drawPolygon(T,3);
+			painter->setPen(pen());
+			painter->setBrush(brush());
+			painter->drawPolygon(T, 3);
 
 			//save last circle position
 			mLastPos = O;
@@ -396,11 +399,10 @@ protected:
 		else
 		{
 			//no circle
-			mLastPos = QPoint(-1,-1);
+			mLastPos = QPoint(-1, -1);
 			mLastRadius = 0;
 		}
 	}
 };
 
-
-#endif //CC_QCUSTOMPLOT_HEADER
+#endif // ECV_QCUSTOMPLOT_HEADER

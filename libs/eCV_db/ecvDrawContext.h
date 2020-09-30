@@ -18,16 +18,16 @@
 #ifndef ECV_GL_DRAW_CONTEXT_HEADER
 #define ECV_GL_DRAW_CONTEXT_HEADER
 
-#include "ecvColorTypes.h"
 #include <CVGeom.h>
-#include <ecvGLMatrix.h>
 
 #include <QFont>
 #include <QRect>
 #include <QPoint>
 #include <QImage>
 
+#include "ecvGLMatrix.h"
 #include "ecvMaterial.h"
+#include "ecvColorTypes.h"
 
 class ccHObject;
 class ccScalarField;

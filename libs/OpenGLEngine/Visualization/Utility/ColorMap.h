@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 namespace cloudViewer {
 namespace visualization {
 
-class OPENGL_ENGINE_LIB_API ColorMap {
+class ColorMap {
 public:
     enum class ColorMapOption {
         Gray = 0,
@@ -68,13 +68,13 @@ protected:
     }
 };
 
-class OPENGL_ENGINE_LIB_API ColorMapGray final : public ColorMap {
+class ColorMapGray final : public ColorMap {
 public:
     Eigen::Vector3d GetColor(double value) const final;
 };
 
 /// See Matlab's Jet colormap
-class OPENGL_ENGINE_LIB_API ColorMapJet final : public ColorMap {
+class ColorMapJet final : public ColorMap {
 public:
     Eigen::Vector3d GetColor(double value) const final;
 
@@ -95,25 +95,25 @@ protected:
 };
 
 /// See Matlab's Summer colormap
-class OPENGL_ENGINE_LIB_API ColorMapSummer final : public ColorMap {
+class ColorMapSummer final : public ColorMap {
 public:
     Eigen::Vector3d GetColor(double value) const final;
 };
 
 /// See Matlab's Winter colormap
-class OPENGL_ENGINE_LIB_API ColorMapWinter final : public ColorMap {
+class ColorMapWinter final : public ColorMap {
 public:
     Eigen::Vector3d GetColor(double value) const final;
 };
 
-class OPENGL_ENGINE_LIB_API ColorMapHot final : public ColorMap {
+class ColorMapHot final : public ColorMap {
 public:
     Eigen::Vector3d GetColor(double value) const final;
 };
 
 /// Interface functions
-const std::shared_ptr<const ColorMap> OPENGL_ENGINE_LIB_API GetGlobalColorMap();
-void OPENGL_ENGINE_LIB_API SetGlobalColorMap(ColorMap::ColorMapOption option);
+const std::shared_ptr<const ColorMap> GetGlobalColorMap();
+void SetGlobalColorMap(ColorMap::ColorMapOption option);
 
 }  // namespace visualization
 }  // namespace cloudViewer

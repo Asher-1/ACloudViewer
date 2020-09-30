@@ -17,9 +17,9 @@
 
 #include "ecvPointCloudInterpolator.h"
 
-//ECV_DB_LIB
+// ECV_DB_LIB
 #include "ecvPointCloud.h"
-#include <ecvScalarField.h>
+#include "ecvScalarField.h"
 
 //CVLib
 #include <DgmOctree.h>

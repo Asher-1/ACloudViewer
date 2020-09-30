@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,7 @@ namespace color_map {
 /// \class ColorMapOptimizationOption
 ///
 /// \brief Defines options for color map optimization.
-class OPENGL_ENGINE_LIB_API ColorMapOptimizationOption {
+class ColorMapOptimizationOption {
 public:
     ColorMapOptimizationOption(
             // Attention: when you update the defaults, update the docstrings in
@@ -143,7 +143,7 @@ public:
 /// \param camera Cameras' parameters.
 /// \param option Color map optimization options. Takes the original
 /// ColorMapOptimizationOption values by default.
-void OPENGL_ENGINE_LIB_API ColorMapOptimization(
+void ColorMapOptimization(
         ccMesh& mesh,
         const std::vector<std::shared_ptr<geometry::RGBDImage>>& imgs_rgbd,
         camera::PinholeCameraTrajectory& camera,

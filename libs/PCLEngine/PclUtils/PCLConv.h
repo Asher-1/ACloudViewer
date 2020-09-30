@@ -21,9 +21,9 @@
 //PCL V1.6 or older
 #ifdef PCL_VER_1_6_OR_OLDER
 
-#include <pcl/ros/conversions.h>
-#define FROM_PCL_CLOUD pcl::fromROSMsg
-#define TO_PCL_CLOUD pcl::toROSMsg
+//#include <pcl/ros/conversions.h>
+//#define FROM_PCL_CLOUD pcl::fromROSMsg
+//#define TO_PCL_CLOUD pcl::toROSMsg
 
 #else //Version 1.7 or newer
 

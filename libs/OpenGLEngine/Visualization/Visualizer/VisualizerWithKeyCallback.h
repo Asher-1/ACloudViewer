@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 
 #include <map>
 
-#include "Visualization/Visualizer/Visualizer.h"
+#include "Visualizer.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -36,7 +36,7 @@ namespace visualization {
 /// \class VisualizerWithKeyCallback
 ///
 /// \brief Visualizer with custom key callack capabilities.
-class OPENGL_ENGINE_LIB_API VisualizerWithKeyCallback : public Visualizer {
+class VisualizerWithKeyCallback : public Visualizer {
 public:
     typedef std::pair<int, std::function<bool(Visualizer *)>> KeyCallbackPair;
 
