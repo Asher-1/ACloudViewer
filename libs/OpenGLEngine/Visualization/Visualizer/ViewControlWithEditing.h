@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include "Visualization/Visualizer/ViewControl.h"
+#include "ViewControl.h"
 
 namespace cloudViewer {
 namespace visualization {
 
-class OPENGL_ENGINE_LIB_API ViewControlWithEditing : public ViewControl {
+class ViewControlWithEditing : public ViewControl {
 public:
     enum EditingMode {
         FreeMode = 0,

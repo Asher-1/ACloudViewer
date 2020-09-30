@@ -31,9 +31,6 @@
 #include "ecvMaterialSet.h"
 #include "ecvCameraSensor.h"
 #include "ecvPointCloud.h"
-#include "ecvDish.h"
-#include "ecvExternalFactory.h"
-#include "ecvIndexedTransformationBuffer.h"
 #include "ecvExtru.h"
 #include "ecvMeshGroup.h"
 #include "ecvPlane.h"
@@ -43,6 +40,10 @@
 #include "ecvTorus.h"
 #include "ecvKdTree.h"
 #include "ecvDisplayTools.h"
+#include "ecvDish.h"
+#include "ecvHObjectCaster.h"
+#include "ecvExternalFactory.h"
+#include "ecvIndexedTransformationBuffer.h"
 
 // CV_CORE_LIB
 #include <Eigen.h>

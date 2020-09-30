@@ -20,7 +20,7 @@
 
 #include "eCV_db.h"
 
-#include <ecvBBox.h>
+#include "ecvBBox.h"
 
 // QT
 #include <QFile>

@@ -47,9 +47,9 @@
 //system
 #include <assert.h>
 
-void PCLDisplayTools::registerVisualizer(QMainWindow * win, ecvMainAppInterface * app)
+void PCLDisplayTools::registerVisualizer(QMainWindow * win)
 {
-	this->m_vtkWidget = new ecvQVTKWidget(win, app, this);
+	this->m_vtkWidget = new ecvQVTKWidget(win, this);
 	this->m_currentScreen = getQVtkWidget();
 	this->m_mainScreen = getQVtkWidget();
 

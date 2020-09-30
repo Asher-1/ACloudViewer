@@ -18,13 +18,13 @@
 #include "matrixDisplayDlg.h"
 
 //local
-#include "../ecvPersistentSettings.h"
+#include "ecvPersistentSettings.h"
 
 // ECV_DB_LIB
+#include <ecvFileUtils.h>
 #include <ecvGuiParameters.h>
-#include "ecvFileUtils.h"
 
-//Qt
+// Qt
 #include <QFileDialog>
 #include <QSettings>
 #include <QClipboard>

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Visualization/Visualizer/Visualizer.h" // must include first
+#include "Visualizer.h" // must include first
 
 namespace cloudViewer {
 
@@ -37,7 +37,7 @@ class PointCloudPicker;
 /// \class VisualizerWithEditing
 ///
 /// \brief Visualizer with editing capabilities.
-class OPENGL_ENGINE_LIB_API VisualizerWithEditing : public Visualizer {
+class VisualizerWithEditing : public Visualizer {
 public:
     enum class SelectionMode {
         None = 0,

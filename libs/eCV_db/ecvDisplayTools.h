@@ -23,10 +23,7 @@
 #include "ecvHObject.h"
 #include "ecvGuiParameters.h"
 #include "ecvViewportParameters.h"
-#include "ecvMainAppInterface.h"
-
-// CV_CORE_LIB
-#include <ecvGenericDisplayTools.h>
+#include "ecvGenericDisplayTools.h"
 
 // QT
 #include <QMainWindow>
@@ -44,7 +41,6 @@ class ccPolyline;
 class QMainWindow;
 class ccInteractor;
 class ecvOrientedBBox;
-class ecvMainAppInterface;
 
 class ecvGenericVisualizer;
 class ecvGenericVisualizer2D;
@@ -57,7 +53,7 @@ public:
 	/**
 	\param mainWidget MainWindow widget (optional)
 	**/
-	static void Init(ecvDisplayTools* displayTools, ecvMainAppInterface* app, QMainWindow* win);
+	static void Init(ecvDisplayTools* displayTools, QMainWindow* win);
 	static ecvDisplayTools* TheInstance();
 
 	static void ReleaseInstance();
@@ -401,8 +397,6 @@ public: // main interface
 	}
 	inline static void SetMainScreen(QWidget* widget) { TheInstance()->m_mainScreen = widget; }
 
-	inline static ecvMainAppInterface* GetApp() { return TheInstance()->m_app; }
-	inline static void SetApp(ecvMainAppInterface* app) { TheInstance()->m_app = app; }
 	inline static QMainWindow* GetMainWindow() { return TheInstance()->m_win; }
 	inline static void SetMainWindow(QMainWindow* win) { TheInstance()->m_win = win; }
 
@@ -938,6 +932,7 @@ public: // visualization matrix transformation
 
 	//! Toggles the automatic setting of the pivot point at the center of the screen
 	static void SetAutoPickPivotAtCenter(bool state);
+	static void SendAutoPickPivotAtCenter(bool state) { emit TheInstance()->autoPickPivot(state); }
 	//! Whether the pivot point is automatically set at the center of the screen
 	inline static bool AutoPickPivotAtCenter() { return TheInstance()->m_autoPickPivotAtCenter; }
 
@@ -1052,12 +1047,11 @@ public: // visualization matrix transformation
 protected:
 	ecvDisplayTools() = default;
 	//! register visualizer callback function
-	virtual void registerVisualizer(QMainWindow * win, ecvMainAppInterface * app) = 0;
+	virtual void registerVisualizer(QMainWindow * win) = 0;
 
 	QWidget* m_currentScreen;
 	QWidget* m_mainScreen;
 	QMainWindow* m_win;
-	ecvMainAppInterface* m_app;
 public:
 	//! Viewport parameters (zoom, etc.)
 	ecvViewportParameters m_viewportParams;
@@ -1410,6 +1404,7 @@ signals:
 
 	//! Signal emitted when the exclusive fullscreen is toggled
 	void exclusiveFullScreenToggled(bool exclusive);
+	void autoPickPivot(bool state);
 
 	void labelmove2D(int x, int y, int dx, int dy);
 

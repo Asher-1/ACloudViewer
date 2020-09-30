@@ -45,7 +45,6 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 #include <assert.h>
 
 class QMainWindow;
-class ecvMainAppInterface;
 class ecvDisplayTools;
 
 class vtkCamera;
@@ -65,7 +64,7 @@ class ecvQVTKWidget : public QVTKWidget
 
 public:
 
-	explicit ecvQVTKWidget(QMainWindow* parentWindow, ecvMainAppInterface* app, ecvDisplayTools* tools);
+	explicit ecvQVTKWidget(QMainWindow* parentWindow, ecvDisplayTools* tools);
 	virtual ~ecvQVTKWidget();
 
 	inline vtkRenderer* getVtkRender() { return this->m_render; }
@@ -116,7 +115,6 @@ public:
 	vtkSmartPointer<vtkLookupTable> createLookupTable(double min, double max);
 
 	QMainWindow* getWin() { return m_win; }
-	ecvMainAppInterface* getApp() { return m_app; }
 
 protected:
 	//events handling
@@ -140,7 +138,6 @@ protected:
 	bool m_useVBO = false;
 	vtkRenderer* m_render;
 	QMainWindow* m_win;
-	ecvMainAppInterface* m_app;
 	ecvDisplayTools * m_tools;
 
 	vtkDataObject* m_dataObject;

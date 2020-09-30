@@ -197,6 +197,7 @@ bool ecvRenderSurfaceTool::linkWidgets()
 		return false;
 	}
 	ecvWidgetsInterface::SetInput(getOutput(), m_currentMode);
+	MainWindow::TheInstance()->addWidgetToQMdiArea(widget);
 	ecvDisplayTools::SetCurrentScreen(widget);
 	return true;
 }
@@ -204,6 +205,7 @@ bool ecvRenderSurfaceTool::linkWidgets()
 void ecvRenderSurfaceTool::stop(bool accepted)
 {
 	reset();
+	MainWindow::TheInstance()->addWidgetToQMdiArea(ecvDisplayTools::GetMainScreen());
 	ecvDisplayTools::SetCurrentScreen(ecvDisplayTools::GetMainScreen());
 	releaseAssociatedEntities();
 	ccOverlayDialog::stop(accepted);

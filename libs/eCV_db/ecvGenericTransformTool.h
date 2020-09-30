@@ -20,8 +20,10 @@
 
 #include "eCV_db.h"
 
+#include "ecvGLMatrix.h"
+
+// QT
 #include <QFile>
-#include <ecvGLMatrix.h>
 
 class ccHObject;
 class ecvGenericVisualizer3D;

@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                              CLOUDCOMPARE                              #
+//#                              CLOUDVIEWER                               #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -19,11 +19,11 @@
 
 
 // ECV_DB_LIB
-#include <ecvColorScalesManager.h>
-#include <ecvGBLSensor.h>
-#include <ecvGenericPointCloud.h>
-#include <ecvScalarField.h>
-#include <ecvDisplayTools.h>
+#include "ecvColorScalesManager.h"
+#include "ecvGBLSensor.h"
+#include "ecvGenericPointCloud.h"
+#include "ecvScalarField.h"
+#include "ecvDisplayTools.h"
 
 //Qt
 #include <QDialog>
