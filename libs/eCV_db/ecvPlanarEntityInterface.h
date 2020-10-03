@@ -1,10 +1,12 @@
 #ifndef PLANAR_ENTITY_INTERFACE_HEADER
 #define PLANAR_ENTITY_INTERFACE_HEADER
 
-//CVLib
+// CV_CORE_LIB
 #include <CVGeom.h>
-#include <ecvColorTypes.h>
-#include <ecvDrawContext.h>
+
+// LOCAL
+#include "ecvColorTypes.h"
+#include "ecvDrawContext.h"
 
 //! Interface for a planar entity
 class ccPlanarEntityInterface

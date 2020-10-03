@@ -24,9 +24,7 @@
 #include "ecvGLMatrix.h"
 #include "ecvColorTypes.h"
 #include "ecvDrawableObject.h"
-
-// CV_CORE_LIB
-#include <ecvGenericDisplayTools.h>
+#include "ecvGenericDisplayTools.h"
 
 class QIcon;
 class ccBBox;

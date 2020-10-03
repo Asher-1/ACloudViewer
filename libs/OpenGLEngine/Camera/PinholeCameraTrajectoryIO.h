@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 #include "qGL.h"
 #include <string>
 
-#include "Camera/PinholeCameraTrajectory.h"
+#include "PinholeCameraTrajectory.h"
 
 namespace cloudViewer {
 namespace io {
@@ -38,35 +38,34 @@ namespace io {
 /// (PinholeCameraTrajectoryFactory.cpp)
 /// Return an empty PinholeCameraTrajectory if fail to read the file.
 std::shared_ptr<camera::PinholeCameraTrajectory>
-OPENGL_ENGINE_LIB_API
 CreatePinholeCameraTrajectoryFromFile(const std::string &filename);
 
 /// The general entrance for reading a PinholeCameraTrajectory from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return If the read function is successful.
-bool OPENGL_ENGINE_LIB_API ReadPinholeCameraTrajectory(const std::string &filename,
+bool ReadPinholeCameraTrajectory(const std::string &filename,
                                  camera::PinholeCameraTrajectory &trajectory);
 
 /// The general entrance for writing a PinholeCameraTrajectory to a file
 /// The function calls write functions based on the extension name of filename.
 /// \return If the write function is successful.
-bool OPENGL_ENGINE_LIB_API WritePinholeCameraTrajectory(
+bool WritePinholeCameraTrajectory(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory);
 
-bool OPENGL_ENGINE_LIB_API ReadPinholeCameraTrajectoryFromLOG(
+bool ReadPinholeCameraTrajectoryFromLOG(
         const std::string &filename,
         camera::PinholeCameraTrajectory &trajectory);
 
-bool OPENGL_ENGINE_LIB_API WritePinholeCameraTrajectoryToLOG(
+bool WritePinholeCameraTrajectoryToLOG(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory);
 
-bool OPENGL_ENGINE_LIB_API ReadPinholeCameraTrajectoryFromTUM(
+bool ReadPinholeCameraTrajectoryFromTUM(
         const std::string &filename,
         camera::PinholeCameraTrajectory &trajectory);
 
-bool OPENGL_ENGINE_LIB_API WritePinholeCameraTrajectoryToTUM(
+bool WritePinholeCameraTrajectoryToTUM(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory);
 

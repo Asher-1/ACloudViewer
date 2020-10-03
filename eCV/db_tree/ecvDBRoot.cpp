@@ -367,7 +367,7 @@ void ccDBRoot::unloadAll()
 
 	//MainWindow::RefreshAllGLWindow(false);
 	ecvDisplayTools::SetRemoveAllFlag(true);
-	ecvDisplayTools::GetApp()->refreshAll();
+	MainWindow::TheInstance()->refreshAll();
 }
 
 ccHObject* ccDBRoot::getRootEntity()
@@ -627,7 +627,7 @@ void ccDBRoot::deleteSelectedEntities()
 
 	ecvDisplayTools::SetRemoveViewIDs(toBeDeletedInfos);
 	ecvDisplayTools::SetRedrawRecursive(false);
-	ecvDisplayTools::GetApp()->refreshAll(false);
+	MainWindow::TheInstance()->refreshAll(false);
 }
 
 QVariant ccDBRoot::data(const QModelIndex &index, int role) const
@@ -925,7 +925,7 @@ void ccDBRoot::changeSelection(const QItemSelection & selected, const QItemSelec
 	updatePropertiesView();
 
 	//MainWindow::RefreshAllGLWindow();
-	ecvDisplayTools::GetApp()->refreshAll(false, false);
+	MainWindow::TheInstance()->refreshAll(false, false);
 
 	emit selectionChanged();
 }
@@ -1490,7 +1490,7 @@ bool ccDBRoot::dropMimeData(const QMimeData* data, Qt::DropAction action, int de
 	}
 
 	//MainWindow::RefreshAllGLWindow(false);
-	ecvDisplayTools::GetApp()->refreshAll(false, false);
+	MainWindow::TheInstance()->refreshAll(false, false);
 	return true;
 }
 
@@ -2050,11 +2050,11 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop)
 	if (TG_ENABLE == prop || TG_VISIBLE == prop || TG_3D_NAME == prop)
 	{
 		// draw 3D and no need to forceredraw
-		ecvDisplayTools::GetApp()->refreshAll(true, false);
+		MainWindow::TheInstance()->refreshAll(true, false);
 	}
 	else
 	{
-		ecvDisplayTools::GetApp()->refreshAll();
+		MainWindow::TheInstance()->refreshAll();
 	}
 }
 
@@ -2094,7 +2094,7 @@ void ccDBRoot::enableBubbleViewMode()
 	}
 
 	//MainWindow::RefreshAllGLWindow(false);
-	ecvDisplayTools::GetApp()->refreshAll();
+	MainWindow::TheInstance()->refreshAll();
 }
 
 void ccDBRoot::editLabelScalarValue()

@@ -20,7 +20,7 @@
 
 #include "BasePclModule.h"
 
-#include "PclUtils/PCLCloud.h"
+#include <PclUtils/PCLCloud.h>
 
 // QT
 #include <QString>

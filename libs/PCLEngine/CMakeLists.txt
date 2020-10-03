@@ -1,8 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
-
-# if( MSVC )
-    # add_compile_options(-bigobj)
-# endif()
+cmake_minimum_required( VERSION 3.10 )
 
 # PCL ENGINE BACKEND
 if (USE_PCL_BACKEND)
@@ -17,6 +13,10 @@ if (USE_PCL_BACKEND)
 	endif()
 	include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
 	include_directories( ${qcustomplot_SOURCE_DIR} )
+	
+	if (CVCORELIB_USE_TBB)
+		include_directories( ${TBB_INCLUDE_DIRS})
+	endif()
 
 	# PCL ENGINE
 	project( QPCL_ENGINE_LIB )
@@ -130,19 +130,19 @@ if (USE_PCL_BACKEND)
 
 	#define the PCL_VER_1_6_OR_OLDER preprocessor to compile qPCL with older versions of PCL
 	if ( PCL_VERSION VERSION_LESS  1.7 ) # VERSION_GREATER Works just like "greater or equal"
-		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS PCL_VER_1_6_OR_OLDER )
+		target_compile_definitions( ${PROJECT_NAME} PUBLIC PCL_VER_1_6_OR_OLDER )
 	endif()
 
 	# Luca's PCL patch support
 	if( PCL_VERSION VERSION_GREATER  1.7 ) #from 1.7 the patch was merged
-		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS LP_PCL_PATCH_ENABLED )
+		target_compile_definitions( ${PROJECT_NAME} PUBLIC LP_PCL_PATCH_ENABLED )
+		#set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS LP_PCL_PATCH_ENABLED )
 	endif()
 
 	# INTERNAL LIB
 	target_link_libraries( ${PROJECT_NAME} CV_CORE_LIB )
 	target_link_libraries( ${PROJECT_NAME} ECV_DB_LIB )
 	target_link_libraries( ${PROJECT_NAME} ECV_IO_LIB )
-	target_link_libraries( ${PROJECT_NAME} qcustomplot )
 	
 	# Qt & PCL & VTK
 	target_link_libraries(	${PROJECT_NAME} 
@@ -153,19 +153,12 @@ if (USE_PCL_BACKEND)
 							${PCL_LIBRARIES} 
 							${VTK_LIBRARIES} )
 
-	# Add custom preprocessor definitions
-	if (WIN32)
-        set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD ECV_PCL_ENGINE_LIBRARY_BUILD)
-    else()
-        set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD ECV_PCL_ENGINE_LIBRARY_BUILD)
-    endif()
+	target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_USE_AS_DLL )
+	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_DB_LIBRARY_BUILD )
+	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_IO_LIBRARY_BUILD )
+	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_PCL_ENGINE_LIBRARY_BUILD )
 
 	# install (shared) lib to specified destinations
-	if( WIN32)
-            foreach( dest ${INSTALL_DESTINATIONS} )
-                    install_shared( ${PROJECT_NAME} ${dest} 1 )
-            endforeach()
-	else()
-            install_shared( ${PROJECT_NAME} ${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer 0 ) #default destination: /usr/lib
-	endif()
+	InstallSharedLibrary( TARGET ${PROJECT_NAME} )
+
 endif()

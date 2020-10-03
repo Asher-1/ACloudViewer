@@ -28,7 +28,7 @@
 **/
 
 // LOCAL
-#include <ecvColorTypes.h>
+#include "ecvColorTypes.h"
 
 //Qt
 #include <QString>

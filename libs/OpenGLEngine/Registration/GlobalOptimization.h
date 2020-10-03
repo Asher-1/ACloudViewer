@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,8 @@
 
 #include <memory>
 
-#include "Registration/GlobalOptimizationConvergenceCriteria.h"
-#include "Registration/GlobalOptimizationMethod.h"
+#include "GlobalOptimizationConvergenceCriteria.h"
+#include "GlobalOptimizationMethod.h"
 
 namespace cloudViewer {
 namespace registration {
@@ -48,7 +48,7 @@ class PoseGraph;
 ///    M. Lourakis,
 ///    SBA: A Software Package for Generic Sparse Bundle Adjustment,
 ///    Transactions on Mathematical Software, 2009
-void OPENGL_ENGINE_LIB_API GlobalOptimization(
+void GlobalOptimization(
         PoseGraph &pose_graph,
         const GlobalOptimizationMethod &method =
                 GlobalOptimizationLevenbergMarquardt(),
@@ -58,7 +58,7 @@ void OPENGL_ENGINE_LIB_API GlobalOptimization(
 
 /// Function to prune out uncertain edges having
 /// confidence_ < .edge_prune_threshold_
-std::shared_ptr<PoseGraph> OPENGL_ENGINE_LIB_API CreatePoseGraphWithoutInvalidEdges(
+std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
         const PoseGraph &pose_graph, const GlobalOptimizationOption &option);
 
 }  // namespace registration

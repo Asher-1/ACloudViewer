@@ -21,9 +21,9 @@
 #include <CVMiscTools.h>
 
 //ECV_DB_LIB
-#include <ecvBBox.h>
-#include <ecvOctree.h>
-#include <ecvGenericPointCloud.h>
+#include "ecvBBox.h"
+#include "ecvOctree.h"
+#include "ecvGenericPointCloud.h"
 
 ccOctreeSpinBox::ccOctreeSpinBox(QWidget* parent/*=0*/)
 	: QSpinBox(parent)

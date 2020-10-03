@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,13 +50,13 @@ namespace color_map {
 class ImageWarpingField;
 class ColorMapOptimizationOption;
 
-inline std::tuple<float, float, float> OPENGL_ENGINE_LIB_API Project3DPointAndGetUVDepth(
+inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
         const Eigen::Vector3d X,
         const camera::PinholeCameraTrajectory& camera,
         int camid);
 
 std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
-OPENGL_ENGINE_LIB_API CreateVertexAndImageVisibility(
+ CreateVertexAndImageVisibility(
         const ccMesh& mesh,
         const std::vector<std::shared_ptr<geometry::Image>>& images_rgbd,
         const std::vector<std::shared_ptr<geometry::Image>>& images_mask,
@@ -83,7 +83,7 @@ std::tuple<bool, T> QueryImageIntensity(
         int ch = -1,
         int image_boundary_margin = 10);
 
-void OPENGL_ENGINE_LIB_API SetProxyIntensityForVertex(
+void SetProxyIntensityForVertex(
         const ccMesh& mesh,
         const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
         const std::vector<ImageWarpingField>& warping_field,
@@ -92,7 +92,7 @@ void OPENGL_ENGINE_LIB_API SetProxyIntensityForVertex(
         std::vector<double>& proxy_intensity,
         int image_boundary_margin);
 
-void OPENGL_ENGINE_LIB_API SetProxyIntensityForVertex(
+void SetProxyIntensityForVertex(
         const ccMesh& mesh,
         const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
         const camera::PinholeCameraTrajectory& camera,
@@ -100,7 +100,7 @@ void OPENGL_ENGINE_LIB_API SetProxyIntensityForVertex(
         std::vector<double>& proxy_intensity,
         int image_boundary_margin);
 
-void OPENGL_ENGINE_LIB_API SetGeometryColorAverage(
+void SetGeometryColorAverage(
         ccMesh& mesh,
         const std::vector<std::shared_ptr<geometry::Image>>& images_rgbd,
         const camera::PinholeCameraTrajectory& camera,
@@ -108,7 +108,7 @@ void OPENGL_ENGINE_LIB_API SetGeometryColorAverage(
         int image_boundary_margin = 10,
         int invisible_vertex_color_knn = 3);
 
-void OPENGL_ENGINE_LIB_API SetGeometryColorAverage(
+void SetGeometryColorAverage(
         ccMesh& mesh,
         const std::vector<std::shared_ptr<geometry::Image>>& images_rgbd,
         const std::vector<ImageWarpingField>& warping_fields,

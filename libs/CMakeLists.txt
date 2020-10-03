@@ -1,0 +1,48 @@
+if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
+	if( MSVC )
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
+	else()
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
+	endif()
+endif()
+
+add_subdirectory( eCV_db )
+add_subdirectory( eCV_io )
+
+if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
+	if( MSVC )
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/examples/Debug)
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/examples/Release)
+	else()
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
+	endif()
+endif()
+add_subdirectory( OpenGLEngine )
+
+if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
+	if( MSVC )
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
+	else()
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
+	endif()
+endif()
+
+# PCL ENGINE LIB
+if (USE_PCL_BACKEND) 
+	include( CMakePCLLibs )
+	add_subdirectory( PCLEngine ) # must always be included after eCV_db and eCV_io (dependency)
+endif()
+
+# ECV PYTHON LIB
+if (BUILD_PYTHON_MODULE)
+    add_subdirectory( Python )
+endif()
+
+add_subdirectory( CVAppCommon)
+add_subdirectory( CVPluginStub )    # Must come before CCPluginAPI
+add_subdirectory( CVPluginAPI )

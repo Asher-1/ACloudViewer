@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@ namespace registration {
 
 typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
 
-enum class OPENGL_ENGINE_LIB_API TransformationEstimationType {
+enum class TransformationEstimationType {
     Unspecified = 0,
     PointToPoint = 1,
     PointToPlane = 2,
@@ -51,7 +51,7 @@ enum class OPENGL_ENGINE_LIB_API TransformationEstimationType {
 /// Base class that estimates a transformation between two point clouds
 /// The virtual function ComputeTransformation() must be implemented in
 /// subclasses.
-class OPENGL_ENGINE_LIB_API TransformationEstimation {
+class TransformationEstimation {
 public:
     /// \brief Default Constructor.
     TransformationEstimation() {}
@@ -84,7 +84,7 @@ public:
 /// \class TransformationEstimationPointToPoint
 ///
 /// Estimate a transformation for point to point distance.
-class OPENGL_ENGINE_LIB_API TransformationEstimationPointToPoint : public TransformationEstimation {
+class TransformationEstimationPointToPoint : public TransformationEstimation {
 public:
     /// \brief Parameterized Constructor.
     ///
@@ -124,7 +124,7 @@ private:
 /// \class TransformationEstimationPointToPlane
 ///
 /// Class to estimate a transformation for point to plane distance.
-class OPENGL_ENGINE_LIB_API TransformationEstimationPointToPlane : public TransformationEstimation {
+class TransformationEstimationPointToPlane : public TransformationEstimation {
 public:
     /// \brief Default Constructor.
     TransformationEstimationPointToPlane() {}

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualization/Visualizer/VisualizerWithEditing.h"
+#include "VisualizerWithEditing.h"
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
 #include <FileSystem.h>
@@ -38,12 +38,12 @@
 #include <TriangleMeshIO.h>
 #include <IJsonConvertibleIO.h>
 
-#include "Visualization/Utility/GLHelper.h"
-#include "Visualization/Utility/PointCloudPicker.h"
-#include "Visualization/Utility/SelectionPolygon.h"
-#include "Visualization/Utility/SelectionPolygonVolume.h"
-#include "Visualization/Visualizer/RenderOptionWithEditing.h"
-#include "Visualization/Visualizer/ViewControlWithEditing.h"
+#include "../Utility/GLHelper.h"
+#include "../Utility/PointCloudPicker.h"
+#include "../Utility/SelectionPolygon.h"
+#include "../Utility/SelectionPolygonVolume.h"
+#include "RenderOptionWithEditing.h"
+#include "ViewControlWithEditing.h"
 
 namespace cloudViewer {
 namespace visualization {

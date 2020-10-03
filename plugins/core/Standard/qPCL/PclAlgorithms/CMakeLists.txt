@@ -20,7 +20,7 @@ endif()
 
 project( QPCL_PLUGIN_ALGORIGHM_LIB )
 
-include ( ${ECV_CMAKE_SCRIPTS_DIR}/CMakePolicies.cmake NO_POLICY_SCOPE )
+find_package( Qt5 COMPONENTS Widgets REQUIRED )
 
 if (USE_PCL_BACKEND) 
 	include_directories( ${PCL_INCLUDE_DIRS} )
@@ -72,7 +72,8 @@ if (USE_PCL_BACKEND)
 	add_definitions( ${PCL_DEFINITIONS} )
 	target_link_libraries( ${PROJECT_NAME}
 						   ${PCL_LIBRARIES} 
+						   CVPluginAPI
 						   QPCL_ENGINE_LIB )
 	# Qt
-	target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Widgets)
+	#target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Widgets)
 endif()	

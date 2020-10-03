@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                              CLOUDCOMPARE                              #
+//#                              CLOUDVIEWER                               #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -18,7 +18,7 @@
 #ifndef ECV_RENDERING_TOOLS_HEADER
 #define ECV_RENDERING_TOOLS_HEADER
 
-#include <ecvDrawableObject.h>
+#include "ecvDrawableObject.h"
 
 class QWidget;
 class ccGBLSensor;

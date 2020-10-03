@@ -35,6 +35,7 @@ class ecvProgressDialog;
 class ccHObject;
 class ccPolyline;
 class ccBBox;
+class ccPointCloud;
 
 //! Dialog for managing a clipping box
 class ecvFilterWindowTool : public ccOverlayDialog, public Ui::GraphicalFilteringWindowDlg
