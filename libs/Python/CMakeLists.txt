@@ -19,11 +19,11 @@ endif()
 # Option 2: You can also define `cmake -DPYTHON_EXECUTABLE` to specify a python
 #           executable.
 if (NOT PYTHON_EXECUTABLE)
-	# find_program will returns the python executable in current PATH, which
-	# works with virtualenv
-	find_program(PYTHON_IN_PATH "python")
-	set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
 endif()
+# find_program will returns the python executable in current PATH, which
+# works with virtualenv
+find_program(PYTHON_IN_PATH "python")
+set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
 message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")
 
 # Detect whether `npm` is installed. Jupyter support will only be enabled if
