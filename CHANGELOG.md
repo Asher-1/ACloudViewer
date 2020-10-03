@@ -481,7 +481,7 @@ v1.0.0 (Asher) - 10/22/2019
 	* When a picking operation is active, the ESC key will cancel it.
 
 	* qBroom plugin:
-		- now has a wiki documentation: http://www.CLOUDVIEWER.org/doc/wiki/index.php?title=Virtual_broom_(plugin)
+		- now has a wiki documentation: http://www.erow.cn/doc/wiki/index.php?title=Virtual_broom_(plugin)
 
 	* qAnimation plugin:
 		- new output option 'zoom' (alternative to the existing 'super resolution' option)

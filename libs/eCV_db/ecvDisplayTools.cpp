@@ -90,7 +90,7 @@ static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 //Unique GL window ID
 static int s_GlWindowNumber = 0;
 
-void ecvDisplayTools::Init(ecvDisplayTools* displayTools, ecvMainAppInterface* app, QMainWindow* win)
+void ecvDisplayTools::Init(ecvDisplayTools* displayTools, QMainWindow* win)
 {
 	//should be called only once!
 	if (s_tools.instance)
@@ -105,10 +105,9 @@ void ecvDisplayTools::Init(ecvDisplayTools* displayTools, ecvMainAppInterface* a
 	//start internal timer
 	s_tools.instance->m_timer.start();
 
-	SetApp(app);
 	SetMainWindow(win);
 	// register current instance visualizer only once
-	s_tools.instance->registerVisualizer(win, app);
+	s_tools.instance->registerVisualizer(win);
 
 	s_tools.instance->m_uniqueID = ++s_GlWindowNumber; //GL window unique ID
 	s_tools.instance->m_lastMousePos = QPoint(-1, -1);
@@ -473,10 +472,10 @@ bool ecvDisplayTools::ProcessClickableItems(int x, int y)
 
 	case ClickableItem::LEAVE_FULLSCREEN_MODE:
 	{
-		if (s_tools.instance->m_app)
+		if (s_tools.instance->m_win)
 		{
 			SetExclusiveFullScreenFlage(false);
-			s_tools.instance->m_app->toggleExclusiveFullScreen(false);
+			//s_tools.instance->m_win->toggleExclusiveFullScreen(false);
 		}
 		
 	}
@@ -4102,6 +4101,5 @@ void ecvDisplayTools::DrawPivot()
 
 void ecvDisplayTools::SetCurrentScreen(QWidget* widget) {
 	s_tools.instance->m_currentScreen = widget;
-	s_tools.instance->m_app->addWidgetToQMdiArea(widget);
 	widget->update();
 }

@@ -18,8 +18,8 @@
 #include "ecvGuiParameters.h"
 
 // LOCAL
-#include <ecvBasicTypes.h>
-#include <ecvSingleton.h>
+#include "ecvBasicTypes.h"
+#include "ecvSingleton.h"
 
 //Qt
 #include <QSettings>

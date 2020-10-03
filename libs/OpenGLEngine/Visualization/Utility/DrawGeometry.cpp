@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualization/Visualizer/Visualizer.h" // must include first
-#include "Visualization/Utility/DrawGeometry.h"
+#include "../Visualizer/Visualizer.h" // must include first
+#include "DrawGeometry.h"
 #include <Console.h>
 
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-#include "Visualization/Visualizer/ViewControlWithCustomAnimation.h"
-#include "Visualization/Visualizer/ViewControlWithEditing.h"
-#include "Visualization/Visualizer/VisualizerWithCustomAnimation.h"
-#include "Visualization/Visualizer/VisualizerWithEditing.h"
-#include "Visualization/Visualizer/VisualizerWithKeyCallback.h"
-#include "Visualization/Visualizer/VisualizerWithVertexSelection.h"
+#include "../Visualizer/ViewControlWithCustomAnimation.h"
+#include "../Visualizer/ViewControlWithEditing.h"
+#include "../Visualizer/VisualizerWithCustomAnimation.h"
+#include "../Visualizer/VisualizerWithEditing.h"
+#include "../Visualizer/VisualizerWithKeyCallback.h"
+#include "../Visualizer/VisualizerWithVertexSelection.h"
 
 namespace cloudViewer {
 namespace visualization {

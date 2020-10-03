@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 # PYTHON ENGINE BACKEND
 include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
@@ -271,10 +271,11 @@ endif()
 target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PYTHON_LIBRARY_BUILD )
 
 # install (shared) lib to specified destinations
-if( WIN32)
-	foreach( dest ${INSTALL_DESTINATIONS} )
-		install_shared( ${PROJECT_NAME} ${dest} 1 )
-	endforeach()
-else()
-	 install_shared( ${PROJECT_NAME} ${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer 0 ) #default destination: /usr/lib
-endif()
+InstallSharedLibrary( TARGET ${PROJECT_NAME} )
+# if( WIN32)
+	# foreach( dest ${INSTALL_DESTINATIONS} )
+		# install_shared( ${PROJECT_NAME} ${dest} 1 )
+	# endforeach()
+# else()
+	 # install_shared( ${PROJECT_NAME} ${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer 0 ) #default destination: /usr/lib
+# endif()

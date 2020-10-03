@@ -1,9 +1,9 @@
 #include "ecvPlanarEntityInterface.h"
 
 //Local
-#include <ecvCylinder.h>
-#include <ecvCone.h>
-#include <ecvDisplayTools.h>
+#include "ecvCone.h"
+#include "ecvCylinder.h"
+#include "ecvDisplayTools.h"
 
 //Qt
 #include <QSharedPointer>

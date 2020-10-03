@@ -1,7 +1,7 @@
 <RCC>
     <qresource prefix="/toolbar">
-        <file>pcl.png</file>
-        <file>pointcloudlibrary.png</file>
+        <file>images/pcl.png</file>
+        <file>images/pointcloudlibrary.png</file>
         <file>info.json</file>
         <file>PclAlgorithms/icons/convex_concave_hull.png</file>
         <file>PclAlgorithms/icons/correspondence_grouping.png</file>

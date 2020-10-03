@@ -20,9 +20,7 @@
 
 //Local
 #include "ecvHObject.h"
-
-//CVLib
-#include <ecvOctree.h>
+#include "ecvOctree.h"
 
 //! Octree structure proxy
 /** Implements ccHObject while holding a (shared) pointer on the octree instance (--> safer)

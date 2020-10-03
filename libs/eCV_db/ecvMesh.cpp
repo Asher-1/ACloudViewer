@@ -29,6 +29,7 @@
 #include "ecvSubMesh.h"
 #include "ecvScalarField.h"
 #include "ecvDisplayTools.h"
+#include "ecvHObjectCaster.h"
 #include "ecvProgressDialog.h"
 #include "ecvGenericPointCloud.h"
 #include "ecvColorScalesManager.h"

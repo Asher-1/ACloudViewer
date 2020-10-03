@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required( VERSION 3.10 )
 
 include ( ${ECV_CMAKE_SCRIPTS_DIR}/CMakePolicies.cmake NO_POLICY_SCOPE )
 
@@ -46,23 +46,14 @@ target_link_libraries(${PROJECT_NAME} Qt5::Core)
 target_link_contrib( ${PROJECT_NAME} )
 
 # Add custom preprocessor definitions
-#target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_IO_LIBRARY_BUILD )
+#
 # Add custom preprocessor definitions
-if (WIN32)
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD)
-elseif( APPLE )
-	set_target_properties( ${PROJECT_NAME} PROPERTIES
-		INSTALL_RPATH "." )
-endif()
+target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_USE_AS_DLL )
+target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_DB_LIBRARY_BUILD )
+target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_IO_LIBRARY_BUILD )
 
 # install (shared) lib to specified destinations
-if( WIN32 OR APPLE )
-	foreach( dest ${INSTALL_DESTINATIONS} )
-		install_shared( ${PROJECT_NAME} ${dest} 1 )
-	endforeach()
-else()
-	install_shared( ${PROJECT_NAME} ${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer 0 ) #default destination: /usr/lib
-endif()
+InstallSharedLibrary( TARGET ${PROJECT_NAME} )
 
 if(BUILD_TESTING)
 	add_subdirectory(Tests)

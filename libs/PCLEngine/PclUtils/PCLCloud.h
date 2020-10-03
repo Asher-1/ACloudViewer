@@ -21,8 +21,8 @@
 //PCL V1.6 or older
 #ifdef PCL_VER_1_6_OR_OLDER
 
-#include <sensor_msgs/PointCloud2.h>
-typedef sensor_msgs::PointCloud2 PCLCloud;
+//#include <sensor_msgs/PointCloud2.h>
+//typedef sensor_msgs::PointCloud2 PCLCloud;
 
 #else //Version 1.7 or newer
 

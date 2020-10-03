@@ -19,8 +19,8 @@
 #define ECV_POINT_CLOUD_LOD
 
 //ECV_DB_LIB
-#include <ecvOctree.h>
-#include <ecvFrustum.h>
+#include "ecvOctree.h"
+#include "ecvFrustum.h"
 
 //Qt
 #include <QMutex>

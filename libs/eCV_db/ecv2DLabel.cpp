@@ -18,13 +18,14 @@
 //Local
 #include "ecv2DLabel.h"
 #include "ecvBasicTypes.h"
-#include "ecvGenericPointCloud.h"
 #include "ecvPointCloud.h"
 #include "ecvScalarField.h"
 #include "ecvSphere.h"
 #include "ecvFacet.h"
 #include "ecvPolyline.h"
 #include "ecvDisplayTools.h"
+#include "ecvHObjectCaster.h"
+#include "ecvGenericPointCloud.h"
 
 //Qt
 #include <QSharedPointer>

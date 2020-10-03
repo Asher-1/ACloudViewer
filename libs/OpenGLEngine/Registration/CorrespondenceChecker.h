@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 
-#include "Registration/TransformationEstimation.h"
+#include "TransformationEstimation.h"
 
 class ccPointCloud;
 namespace cloudViewer {
@@ -45,7 +45,7 @@ namespace registration {
 /// This class is used in feature based matching algorithms (such as RANSAC and
 /// FastGlobalRegistration) to prune out outlier correspondences.
 /// The virtual function Check() must be implemented in subclasses.
-class OPENGL_ENGINE_LIB_API CorrespondenceChecker {
+class CorrespondenceChecker {
 public:
     /// \brief Default Constructor.
     ///
@@ -84,7 +84,7 @@ public:
 /// two vertices) individually drawn withinin source point cloud and within the
 /// target point cloud with correspondences are similar. The only parameter
 /// similarity_threshold is a number between 0 (loose) and 1 (strict).
-class OPENGL_ENGINE_LIB_API CorrespondenceCheckerBasedOnEdgeLength : public CorrespondenceChecker {
+class CorrespondenceCheckerBasedOnEdgeLength : public CorrespondenceChecker {
 public:
     /// \brief Default Constructor.
     ///
@@ -112,7 +112,7 @@ public:
 /// \class CorrespondenceCheckerBasedOnDistance
 ///
 /// \brief Check if two aligned point clouds are close.
-class OPENGL_ENGINE_LIB_API CorrespondenceCheckerBasedOnDistance : public CorrespondenceChecker {
+class CorrespondenceCheckerBasedOnDistance : public CorrespondenceChecker {
 public:
     /// \brief Default Constructor.
     ///
@@ -139,7 +139,7 @@ public:
 ///
 /// It considers vertex normal affinity of any correspondences. It computes dot
 /// product of two normal vectors. It takes radian value for the threshold.
-class OPENGL_ENGINE_LIB_API CorrespondenceCheckerBasedOnNormal : public CorrespondenceChecker {
+class CorrespondenceCheckerBasedOnNormal : public CorrespondenceChecker {
 public:
     /// \brief Parameterized Constructor.
     ///

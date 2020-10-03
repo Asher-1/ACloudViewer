@@ -603,6 +603,8 @@ void MainWindow::connectActions()
 	connect(m_ui->actionEnableVisualDebugTraces, &QAction::triggered, this, &MainWindow::toggleVisualDebugTraces);
 
 	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::newLabel, this, &MainWindow::handleNewLabel);
+	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::autoPickPivot, this, &MainWindow::setAutoPickPivot);
+	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::exclusiveFullScreenToggled, this, &MainWindow::toggleExclusiveFullScreen);
 
 	// Set up dynamic menus
 	m_ui->menuFile->insertMenu(m_ui->actionSave, m_recentFiles->menu());
@@ -710,7 +712,7 @@ void MainWindow::initial() {
 		m_mdiArea->installEventFilter(this);
 	}
 
-	ecvDisplayTools::Init(new PCLDisplayTools(), this, this);
+	ecvDisplayTools::Init(new PCLDisplayTools(), this);
 
 	initConsole();
 
@@ -1447,7 +1449,7 @@ void MainWindow::doActionEditCamera()
 #ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	if (!m_cpeDlg)
 	{
-		m_cpeDlg = new ecvCameraParamEditDlg(this, qWin, m_pickingHub);
+		m_cpeDlg = new ecvCameraParamEditDlg(qWin, m_pickingHub);
 		EditCameraTool * tool = new EditCameraTool(ecvDisplayTools::GetVisualizer3D());
 		m_cpeDlg->setCameraTool(tool);
 
