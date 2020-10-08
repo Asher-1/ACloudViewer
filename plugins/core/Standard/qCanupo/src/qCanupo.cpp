@@ -81,7 +81,7 @@ QList<QAction*> qCanupoPlugin::getActions()
 	{
 		m_trainAction = new QAction(tr("Train classifier"), this);
 		m_trainAction->setToolTip(tr("Train classifier"));
-		m_trainAction->setIcon(QIcon(QString::fromUtf8(":/CC/plugin/qCanupoPlugin/iconCreate.png")));
+		m_trainAction->setIcon(QIcon(QString::fromUtf8(":/CC/plugin/qCanupoPlugin/images/iconCreate.png")));
 		connect(m_trainAction, SIGNAL(triggered()), this, SLOT(doTrainAction()));
 	}
 	group.push_back(m_trainAction);
@@ -90,7 +90,7 @@ QList<QAction*> qCanupoPlugin::getActions()
 	{
 		m_classifyAction = new QAction(tr("Classify"), this);
 		m_classifyAction->setToolTip(tr("Classify cloud"));
-		m_classifyAction->setIcon(QIcon(QString::fromUtf8(":/CC/plugin/qCanupoPlugin/iconClassify.png")));
+		m_classifyAction->setIcon(QIcon(QString::fromUtf8(":/CC/plugin/qCanupoPlugin/images/iconClassify.png")));
 		connect(m_classifyAction, SIGNAL(triggered()), this, SLOT(doClassifyAction()));
 	}
 	group.push_back(m_classifyAction);

@@ -1,12 +1,5 @@
 cmake_minimum_required( VERSION 3.10 )
 
-include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-if( MSVC )
-   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-endif()
-include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
-
 project( OPENGL_ENGINE_LIB )
 
 add_subdirectory(Visualization)
@@ -78,7 +71,6 @@ target_link_libraries(${PROJECT_NAME}
 
 # INTERNAL LIB
 target_link_libraries(  ${PROJECT_NAME} 
-						CV_CORE_LIB 
 						ECV_DB_LIB
 						ECV_IO_LIB)
 

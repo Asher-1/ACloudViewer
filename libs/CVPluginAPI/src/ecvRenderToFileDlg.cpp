@@ -16,6 +16,7 @@
 //##########################################################################
 
 #include "ecvRenderToFileDlg.h"
+#include "ui_renderToFileDialog.h"
 
 // ECV_DB_LIB
 #include <CVLog.h>
@@ -28,15 +29,20 @@
 #include <QSettings>
 #include <QStandardPaths>
 
-//we keep track of the zoom for the session only!
-static double s_renderZoom = 1.0;
+namespace
+{
+	//we keep track of the zoom for the session only!
+	double s_renderZoom = 1.0;
+}
+
 
 ccRenderToFileDlg::ccRenderToFileDlg(unsigned baseWidth, unsigned baseHeight, QWidget* parent/*=0*/)
 	: QDialog(parent)
 	, w(baseWidth)
 	, h(baseHeight)
+	, m_ui(new Ui::RenderToFileDialog)
 {
-	setupUi(this);
+	m_ui->setupUi(this);
 
 	//we grab the list of supported image file formats (output)
 	QList<QByteArray> list = QImageWriter::supportedImageFormats();
@@ -69,15 +75,15 @@ ccRenderToFileDlg::ccRenderToFileDlg(unsigned baseWidth, unsigned baseHeight, QW
 	bool doRenderOverlayItems	= settings.value("renderOverlayItems", renderOverlayItems()).toBool();
 	settings.endGroup();
 
-	dontScaleFeaturesCheckBox->setChecked(dontScale);
-	renderOverlayItemsCheckBox->setChecked(doRenderOverlayItems);
-	filenameLineEdit->setText(currentPath + QString("/") + baseFilename + QString(".") + selectedExtension);
+	m_ui->dontScaleFeaturesCheckBox->setChecked(dontScale);
+	m_ui->renderOverlayItemsCheckBox->setChecked(doRenderOverlayItems);
+	m_ui->filenameLineEdit->setText(currentPath + QString("/") + baseFilename + QString(".") + selectedExtension);
 
-	zoomDoubleSpinBox->setValue(s_renderZoom);
+	m_ui->zoomDoubleSpinBox->setValue(s_renderZoom);
 
-	connect(chooseFileButton,		SIGNAL(clicked()),				this, SLOT(chooseFile()));
-	connect(zoomDoubleSpinBox,		SIGNAL(valueChanged(double)),	this, SLOT(updateInfo()));
-	connect(buttonBox,				SIGNAL(accepted()),				this, SLOT(saveSettings()));
+	connect(m_ui->chooseFileButton,			SIGNAL(clicked()),				this, SLOT(chooseFile()));
+	connect(m_ui->zoomDoubleSpinBox,		SIGNAL(valueChanged(double)),	this, SLOT(updateInfo()));
+	connect(m_ui->buttonBox,				SIGNAL(accepted()),				this, SLOT(saveSettings()));
 
 	updateInfo();
 }
@@ -85,7 +91,7 @@ ccRenderToFileDlg::ccRenderToFileDlg(unsigned baseWidth, unsigned baseHeight, QW
 void ccRenderToFileDlg::saveSettings()
 {
 	//we update current file path
-	QFileInfo fi(filenameLineEdit->text());
+	QFileInfo fi(m_ui->filenameLineEdit->text());
 	QString currentPath = fi.absolutePath();
 	QString selectedExtension = fi.suffix();
 	QString baseFilename = fi.completeBaseName();
@@ -105,7 +111,7 @@ void ccRenderToFileDlg::chooseFile()
 {
 	QString selectedFileName = QFileDialog::getSaveFileName(this,
 															tr("Save Image"),
-															filenameLineEdit->text(),
+															m_ui->filenameLineEdit->text(),
 															filters,
 															&selectedFilter);
 
@@ -113,27 +119,40 @@ void ccRenderToFileDlg::chooseFile()
 	if (selectedFileName.size() < 1)
 		return;
 
-	filenameLineEdit->setText(selectedFileName);
+	m_ui->filenameLineEdit->setText(selectedFileName);
+}
+
+ccRenderToFileDlg::~ccRenderToFileDlg()
+{
+	delete m_ui;
+}
+
+void ccRenderToFileDlg::hideOptions()
+{
+	m_ui->dontScaleFeaturesCheckBox->setChecked(false);
+	m_ui->dontScaleFeaturesCheckBox->setVisible(false);
+	m_ui->renderOverlayItemsCheckBox->setChecked(false);
+	m_ui->renderOverlayItemsCheckBox->setVisible(false);
 }
 
 float ccRenderToFileDlg::getZoom() const
 {
-	return static_cast<float>(zoomDoubleSpinBox->value());
+	return static_cast<float>(m_ui->zoomDoubleSpinBox->value());
 }
 
 QString ccRenderToFileDlg::getFilename() const
 {
-	return filenameLineEdit->text();
+	return m_ui->filenameLineEdit->text();
 }
 
 bool ccRenderToFileDlg::dontScalePoints() const
 {
-	return dontScaleFeaturesCheckBox->isChecked();
+	return m_ui->dontScaleFeaturesCheckBox->isChecked();
 }
 
 bool ccRenderToFileDlg::renderOverlayItems() const
 {
-	return renderOverlayItemsCheckBox->isChecked();
+	return m_ui->renderOverlayItemsCheckBox->isChecked();
 }
 
 void ccRenderToFileDlg::updateInfo()
@@ -143,5 +162,5 @@ void ccRenderToFileDlg::updateInfo()
 	unsigned w2 = static_cast<unsigned>(w*s_renderZoom);
 	unsigned h2 = static_cast<unsigned>(h*s_renderZoom);
 
-	finalSizeLabel->setText(QString("(%1 x %2)").arg(w2).arg(h2));
+	m_ui->finalSizeLabel->setText(QString("(%1 x %2)").arg(w2).arg(h2));
 }

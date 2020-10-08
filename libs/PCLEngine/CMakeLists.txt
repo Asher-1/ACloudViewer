@@ -6,14 +6,7 @@ if (USE_PCL_BACKEND)
 	link_directories( ${PCL_LIBRARY_DIRS} )
 	link_directories( ${VTK_LIBRARIES_DIRS} )
 
-	include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-	include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-	if( MSVC )
-	   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-	endif()
-	include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
-	include_directories( ${qcustomplot_SOURCE_DIR} )
-	
+	# TBB
 	if (CVCORELIB_USE_TBB)
 		include_directories( ${TBB_INCLUDE_DIRS})
 	endif()
@@ -140,9 +133,9 @@ if (USE_PCL_BACKEND)
 	endif()
 
 	# INTERNAL LIB
-	target_link_libraries( ${PROJECT_NAME} CV_CORE_LIB )
-	target_link_libraries( ${PROJECT_NAME} ECV_DB_LIB )
-	target_link_libraries( ${PROJECT_NAME} ECV_IO_LIB )
+	target_link_libraries( ${PROJECT_NAME}
+							ECV_DB_LIB 
+							ECV_IO_LIB )
 	
 	# Qt & PCL & VTK
 	target_link_libraries(	${PROJECT_NAME} 
@@ -153,7 +146,6 @@ if (USE_PCL_BACKEND)
 							${PCL_LIBRARIES} 
 							${VTK_LIBRARIES} )
 
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_USE_AS_DLL )
 	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_DB_LIBRARY_BUILD )
 	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_IO_LIBRARY_BUILD )
 	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_PCL_ENGINE_LIBRARY_BUILD )

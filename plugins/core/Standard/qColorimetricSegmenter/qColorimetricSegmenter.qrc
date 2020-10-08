@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="/CC/plugin/ColorimetricSegmenter" >
+    <file>images/icon.png</file>
+    <file>images/icon_rgb.png</file>
+    <file>images/icon_hsv.png</file>
+    <file>images/icon_scalar.png</file>
+    <file>images/icon_quantif_h.png</file>
+    <file>images/icon_quantif_k.png</file>
+    <file>info.json</file>
+  </qresource>
+</RCC>

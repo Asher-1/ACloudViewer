@@ -1,13 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 
-# PYTHON ENGINE BACKEND
-include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-if( MSVC )
-	   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-endif()
-include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
-
 include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
 if( MSVC )
    include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc )
@@ -119,7 +111,6 @@ source_group("cloudViewer_pybind\\visualization" FILES ${python_visualization_li
 
 target_link_libraries(	${PACKAGE_NAME} PRIVATE 
 						${3RDPARTY_LIBRARIES}
-						CV_CORE_LIB
 						ECV_DB_LIB
 						ECV_IO_LIB
 )
@@ -228,7 +219,6 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.0)
 		${3RDPARTY_LIBRARIES}
 		Qt5::Core
 		Qt5::PrintSupport
-		CV_CORE_LIB
 		ECV_DB_LIB
 		ECV_IO_LIB
 	)
@@ -250,7 +240,6 @@ else()
 							${3RDPARTY_LIBRARIES}
 							Qt5::Core
 							Qt5::PrintSupport
-							CV_CORE_LIB
 							ECV_DB_LIB
 							ECV_IO_LIB
 	)
@@ -272,10 +261,3 @@ target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PYTHON_LIBRARY_BUILD )
 
 # install (shared) lib to specified destinations
 InstallSharedLibrary( TARGET ${PROJECT_NAME} )
-# if( WIN32)
-	# foreach( dest ${INSTALL_DESTINATIONS} )
-		# install_shared( ${PROJECT_NAME} ${dest} 1 )
-	# endforeach()
-# else()
-	 # install_shared( ${PROJECT_NAME} ${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer 0 ) #default destination: /usr/lib
-# endif()

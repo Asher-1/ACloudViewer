@@ -228,7 +228,7 @@ void ccPointListPickingDlg::exportToNewCloud()
 			cloud->setName("Picking list");
 			for (unsigned i = 0; i < count; ++i)
 			{
-				const cc2DLabel::PickedPoint& PP = labels[i]->getPoint(0);
+				const cc2DLabel::PickedPoint& PP = labels[i]->getPickedPoint(0);
 				const CCVector3* P = PP.cloud->getPoint(PP.index);
 				cloud->addPoint(*P);
 			}
@@ -275,7 +275,7 @@ void ccPointListPickingDlg::exportToNewPolyline()
 
 		for (unsigned i = 0; i < count; ++i)
 		{
-			const cc2DLabel::PickedPoint& PP = labels[i]->getPoint(0);
+			const cc2DLabel::PickedPoint& PP = labels[i]->getPickedPoint(0);
 			vertices->addPoint(*PP.cloud->getPoint(PP.index));
 		}
 		polyline->addPointIndex(0, count);
@@ -468,7 +468,7 @@ void ccPointListPickingDlg::exportToASCII(ExportFormat format)
 	for (unsigned i = 0; i < count; ++i)
 	{
 		assert(labels[i]->size() == 1);
-		const cc2DLabel::PickedPoint& PP = labels[i]->getPoint(0);
+		const cc2DLabel::PickedPoint& PP = labels[i]->getPickedPoint(0);
 		const CCVector3* P = PP.cloud->getPoint(PP.index);
 
 		switch (format)
@@ -522,7 +522,7 @@ void ccPointListPickingDlg::updateList()
 
 	for (unsigned i = 0; i < count; ++i)
 	{
-		const cc2DLabel::PickedPoint& PP = labels[i]->getPoint(0);
+		const cc2DLabel::PickedPoint& PP = labels[i]->getPickedPoint(0);
 		const CCVector3* P = PP.cloud->getPoint(PP.index);
 		CCVector3d Pd = (showAbsolute ? PP.cloud->toGlobal3d(*P) : CCVector3d::fromArray(P->u));
 
@@ -551,7 +551,7 @@ void ccPointListPickingDlg::processPickedPoint(ccPointCloud* cloud, unsigned poi
 		return;
 
 	cc2DLabel* newLabel = new cc2DLabel();
-	newLabel->addPoint(cloud,pointIndex);
+	newLabel->addPickedPoint(cloud,pointIndex);
 	newLabel->setVisible(true);
 	newLabel->setDisplayedIn2D(false);
 	newLabel->displayPointLegend(true);

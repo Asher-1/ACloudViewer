@@ -483,7 +483,7 @@ void PCLDisplayTools::drawOrientedBBox(CC_DRAW_CONTEXT & context, const ecvOrien
 	}
 }
 
-inline void PCLDisplayTools::toggleOrientationMarker(bool state)
+void PCLDisplayTools::toggleOrientationMarker(bool state)
 {
 	if (state) {
 		m_visualizer3D->showPclMarkerAxes(m_visualizer3D->getRenderWindowInteractor());
@@ -964,7 +964,7 @@ double PCLDisplayTools::getParallelScale(int viewPort)
 	return -1;
 }
 
-inline void PCLDisplayTools::getProjectionMatrix(double * projArray, int viewPort)
+void PCLDisplayTools::getProjectionMatrix(double * projArray, int viewPort)
 {
 	Eigen::Matrix4d projMat;
 	m_visualizer3D->getCamera(viewPort).computeProjectionMatrix(projMat);
@@ -988,7 +988,7 @@ inline void PCLDisplayTools::getProjectionMatrix(double * projArray, int viewPor
 	projArray[15] = tempArray[15];
 }
 
-inline void PCLDisplayTools::getViewMatrix(double * ViewArray, int viewPort)
+void PCLDisplayTools::getViewMatrix(double * ViewArray, int viewPort)
 {
 	Eigen::Matrix4d viewMat;
 	m_visualizer3D->getCamera(viewPort).computeViewMatrix(viewMat);

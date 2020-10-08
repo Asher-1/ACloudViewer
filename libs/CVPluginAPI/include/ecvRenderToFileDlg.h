@@ -22,10 +22,13 @@
 
 #include <QDialog>
 
-#include <ui_renderToFileDialog.h>
+namespace Ui
+{
+	class RenderToFileDialog;
+}
 
 //! Dialog for screen to file rendering
-class CVPLUGIN_LIB_API ccRenderToFileDlg : public QDialog, public Ui::RenderToFileDialog
+class CVPLUGIN_LIB_API ccRenderToFileDlg : public QDialog
 {
 	Q_OBJECT
 
@@ -33,6 +36,11 @@ public:
 
 	//! Default constructor
 	ccRenderToFileDlg(unsigned baseWidth, unsigned baseHeight, QWidget* parent = 0);
+
+	~ccRenderToFileDlg() override;
+
+	//! Disable and hide the scale and overlay checkboxes
+	void hideOptions();
 
 	//! On dialog acceptance, returns requested zoom
 	float getZoom() const;
@@ -51,13 +59,14 @@ public:
 		void saveSettings();
 
 protected:
-
 	unsigned w;
 	unsigned h;
 
 	QString selectedFilter;
 	QString currentPath;
 	QString filters;
+
+	Ui::RenderToFileDialog* m_ui;
 };
 
 #endif //CC_RENDER_TO_FILE_DLG_HEADER

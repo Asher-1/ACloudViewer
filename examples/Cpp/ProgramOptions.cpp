@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <CloudViewer.h>
+#include "CloudViewer.h"
 
 
 void PrintHelp() {

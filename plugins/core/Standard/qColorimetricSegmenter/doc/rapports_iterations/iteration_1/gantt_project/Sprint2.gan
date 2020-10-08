@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="Ptrans" company="" webLink="http://" view-date="2019-12-17" view-index="0" gantt-divider-location="646" resource-divider-location="300" version="2.8.10" locale="fr">
+    <description/>
+    <view zooming-state="default:3" id="gantt-chart">
+        <field id="tpd3" name="Nom" width="292" order="0"/>
+        <field id="tpd13" name="Ressources" width="149" order="1"/>
+        <field id="tpd4" name="Date de début" width="103" order="2"/>
+        <field id="tpd5" name="Date de fin" width="98" order="3"/>
+        <option id="color.recent"><![CDATA[#ff9900 #ff3300 #00cc00 #ff0000 #00cc33 #00ffff #999999 #666666]]></option>
+    </view>
+    <view id="resource-table">
+        <field id="0" name="Nom" width="210" order="0"/>
+        <field id="1" name="Rôle par défaut" width="86" order="1"/>
+    </view>
+    <!-- -->
+    <calendars base-id="france">
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <default-week id="1" name="default" sun="0" mon="0" tue="0" wed="0" thu="0" fri="0" sat="0"/>
+            <only-show-weekends value="true"/>
+            <overriden-day-types/>
+            <days/>
+        </day-types>
+        <date year="" month="1" date="1" type="HOLIDAY"><![CDATA[New Year's Day]]></date>
+        <date year="" month="5" date="1" type="HOLIDAY"><![CDATA[Labour Day]]></date>
+        <date year="" month="5" date="8" type="HOLIDAY"><![CDATA[V-E Day]]></date>
+        <date year="" month="7" date="14" type="HOLIDAY"><![CDATA[Bastille Day]]></date>
+        <date year="" month="8" date="15" type="HOLIDAY"><![CDATA[Assumption Day]]></date>
+        <date year="" month="11" date="1" type="HOLIDAY"><![CDATA[All Saints Day]]></date>
+        <date year="" month="11" date="11" type="HOLIDAY"><![CDATA[Armistice Day]]></date>
+        <date year="" month="12" date="25" type="HOLIDAY"><![CDATA[Christmas Day]]></date>
+        <date year="2008" month="5" date="12" type="HOLIDAY"><![CDATA[Whitmonday]]></date>
+        <date year="2009" month="6" date="1" type="HOLIDAY"><![CDATA[Whitmonday]]></date>
+        <date year="2009" month="7" date="13" type="NEUTRAL"><![CDATA[Bastille Day]]></date>
+        <date year="2010" month="4" date="5" type="HOLIDAY"><![CDATA[Easter Monday]]></date>
+        <date year="2010" month="5" date="13" type="HOLIDAY"><![CDATA[Ascension Day]]></date>
+        <date year="2010" month="5" date="24" type="HOLIDAY"><![CDATA[Whitmonday]]></date>
+        <date year="2011" month="4" date="25" type="HOLIDAY"><![CDATA[Easter Monday]]></date>
+        <date year="2011" month="5" date="29" type="NEUTRAL"><![CDATA[Mothers Day]]></date>
+        <date year="2011" month="6" date="2" type="HOLIDAY"><![CDATA[Ascension Day]]></date>
+        <date year="2011" month="6" date="13" type="HOLIDAY"><![CDATA[Whitmonday]]></date>
+        <date year="2011" month="6" date="19" type="NEUTRAL"><![CDATA[Fathers Day]]></date>
+        <date year="2012" month="1" date="2" type="HOLIDAY"><![CDATA[New Years Day (in lieu)]]></date>
+        <date year="2012" month="4" date="9" type="HOLIDAY"><![CDATA[Easter Monday]]></date>
+        <date year="2012" month="5" date="17" type="HOLIDAY"><![CDATA[Ascension Day]]></date>
+        <date year="2012" month="5" date="28" type="HOLIDAY"><![CDATA[Whitmonday]]></date>
+        <date year="2012" month="6" date="3" type="NEUTRAL"><![CDATA[Mothers Day]]></date>
+        <date year="2012" month="6" date="17" type="NEUTRAL"><![CDATA[Fathers Day]]></date>
+        <date year="2012" month="11" date="12" type="HOLIDAY"><![CDATA[Armistice Day (in Lieu)]]></date>
+        <date year="2012" month="12" date="25" type="HOLIDAY"><![CDATA[Christmas Day]]></date>
+        <date year="2013" month="4" date="1" type="HOLIDAY"><![CDATA[Easter Monday]]></date>
+        <date year="2013" month="5" date="9" type="HOLIDAY"><![CDATA[Ascension Day]]></date>
+        <date year="2013" month="5" date="20" type="HOLIDAY"><![CDATA[Whitmonday]]></date>
+        <date year="2013" month="5" date="26" type="NEUTRAL"><![CDATA[Mothers Day]]></date>
+        <date year="2013" month="6" date="16" type="NEUTRAL"><![CDATA[Fathers Day]]></date>
+        <date year="2014" month="4" date="21" type="HOLIDAY"><![CDATA[Easter Monday]]></date>
+        <date year="2014" month="5" date="25" type="NEUTRAL"><![CDATA[Mothers Day]]></date>
+        <date year="2014" month="5" date="29" type="NEUTRAL"><![CDATA[Ascension Day]]></date>
+        <date year="2014" month="6" date="9" type="HOLIDAY"><![CDATA[Whitmonday]]></date>
+        <date year="2014" month="6" date="15" type="HOLIDAY"><![CDATA[Fathers Day]]></date>
+        <date year="2015" month="4" date="6" type="HOLIDAY"><![CDATA[Easter Monday]]></date>
+        <date year="2015" month="5" date="14" type="HOLIDAY"><![CDATA[Ascension Day]]></date>
+        <date year="2015" month="5" date="24" type="NEUTRAL"><![CDATA[Mothers Day]]></date>
+        <date year="2015" month="5" date="25" type="HOLIDAY"><![CDATA[Whitmonday]]></date>
+        <date year="2015" month="6" date="21" type="NEUTRAL"><![CDATA[Fathers Day]]></date>
+        <date year="2016" month="3" date="28" type="HOLIDAY"><![CDATA[Easter Monday]]></date>
+        <date year="2016" month="5" date="5" type="HOLIDAY"><![CDATA[Ascension Day]]></date>
+        <date year="2016" month="5" date="16" type="HOLIDAY"><![CDATA[Whitmonday]]></date>
+        <date year="2016" month="5" date="29" type="NEUTRAL"><![CDATA[Mothers Day]]></date>
+        <date year="2016" month="6" date="19" type="NEUTRAL"><![CDATA[Fathers Day]]></date>
+        <date year="2016" month="12" date="26" type="HOLIDAY"><![CDATA[Christmas Day (observed)]]></date>
+        <date year="2017" month="4" date="17" type="HOLIDAY"><![CDATA[Easter Monday]]></date>
+        <date year="2017" month="5" date="25" type="HOLIDAY"><![CDATA[Ascension Day]]></date>
+        <date year="2017" month="5" date="28" type="NEUTRAL"><![CDATA[Mother's Day]]></date>
+        <date year="2017" month="6" date="5" type="HOLIDAY"><![CDATA[Whitmonday]]></date>
+        <date year="2017" month="6" date="18" type="NEUTRAL"><![CDATA[Father's Day]]></date>
+        <date year="2018" month="4" date="2" type="HOLIDAY"><![CDATA[Easter Monday]]></date>
+        <date year="2018" month="5" date="10" type="HOLIDAY"><![CDATA[Ascension Day]]></date>
+        <date year="2018" month="5" date="21" type="HOLIDAY"><![CDATA[Whit Monday]]></date>
+        <date year="2018" month="5" date="27" type="NEUTRAL"><![CDATA[Mother's Day]]></date>
+        <date year="2018" month="6" date="17" type="NEUTRAL"><![CDATA[Father's Day]]></date>
+        <date year="2019" month="4" date="22" type="HOLIDAY"><![CDATA[Easter Monday]]></date>
+        <date year="2019" month="5" date="30" type="HOLIDAY"><![CDATA[Ascension Day]]></date>
+        <date year="2019" month="6" date="10" type="HOLIDAY"><![CDATA[Whit Monday]]></date>
+        <date year="2019" month="5" date="26" type="NEUTRAL"><![CDATA[Mother's Day]]></date>
+        <date year="2019" month="6" date="16" type="NEUTRAL"><![CDATA[Father's Day]]></date>
+        <date year="2019" month="12" date="24" type="HOLIDAY"><![CDATA[Vacances sur 24/12/19 00:00]]></date>
+        <date year="2019" month="12" date="26" type="HOLIDAY"><![CDATA[Vacances sur 26/12/19 00:00]]></date>
+        <date year="2019" month="12" date="27" type="HOLIDAY"><![CDATA[Vacances sur 27/12/19 00:00]]></date>
+        <date year="2019" month="12" date="28" type="HOLIDAY"><![CDATA[Vacances sur 28/12/19 00:00]]></date>
+        <date year="2019" month="12" date="29" type="HOLIDAY"><![CDATA[Vacances sur 29/12/19 00:00]]></date>
+        <date year="2019" month="12" date="30" type="HOLIDAY"><![CDATA[Vacances sur 30/12/19 00:00]]></date>
+        <date year="2019" month="12" date="31" type="HOLIDAY"><![CDATA[Vacances sur 31/12/19 00:00]]></date>
+        <date year="2020" month="1" date="2" type="HOLIDAY"><![CDATA[Vacances sur 02/01/20 00:00]]></date>
+        <date year="2020" month="1" date="3" type="HOLIDAY"><![CDATA[Vacances sur 03/01/20 00:00]]></date>
+    </calendars>
+    <tasks empty-milestones="true">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="11" name="Sprint 2" color="#8cb6ce" meeting="false" start="2019-12-21" duration="14" complete="0" thirdDate="2019-10-07" thirdDate-constraint="0" expand="true">
+            <task id="55" name="interfacage avec CloudCompare" color="#8cb6ce" meeting="false" start="2019-12-21" duration="8" complete="0" thirdDate="2019-09-02" thirdDate-constraint="0" expand="true">
+                <depend id="358" type="2" difference="0" hardness="Strong"/>
+                <task id="287" name="Création du plugin" color="#8cb6ce" meeting="false" start="2019-12-21" duration="6" complete="0" thirdDate="2019-07-01" thirdDate-constraint="0" expand="true">
+                    <depend id="334" type="2" difference="0" hardness="Strong"/>
+                    <depend id="360" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="334" name="Tests de fonctionnement" color="#8cb6ce" meeting="false" start="2020-01-07" duration="2" complete="0" thirdDate="2019-04-01" thirdDate-constraint="0" expand="true">
+                    <depend id="358" type="2" difference="0" hardness="Strong"/>
+                </task>
+            </task>
+            <task id="46" name="Développement de la segmentation" color="#8cb6ce" meeting="false" start="2019-12-21" duration="8" complete="0" thirdDate="2019-09-02" thirdDate-constraint="0" expand="true">
+                <depend id="358" type="2" difference="0" hardness="Strong"/>
+                <task id="296" name="Sélection par couleur en RGB" color="#8cb6ce" meeting="false" start="2019-12-21" duration="5" complete="0" thirdDate="2019-07-02" thirdDate-constraint="0" expand="true">
+                    <depend id="345" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="345" name="Sélection par couleur en CIElab" color="#8cb6ce" meeting="false" start="2020-01-06" duration="3" complete="0" thirdDate="2019-11-21" thirdDate-constraint="0" expand="true"/>
+            </task>
+            <task id="346" name="Méthode d'extraction de points" color="#8cb6ce" meeting="false" start="2019-12-21" duration="8" complete="0" thirdDate="2019-11-22" thirdDate-constraint="0" expand="true">
+                <depend id="358" type="2" difference="0" hardness="Strong"/>
+                <task id="359" name="Extraction simple de points donnés" color="#8cb6ce" meeting="false" start="2019-12-21" duration="6" complete="0" thirdDate="2019-12-17" thirdDate-constraint="0" expand="true">
+                    <depend id="360" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="360" name="Création de sous-scans CloudCompare" color="#8cb6ce" meeting="false" start="2020-01-07" duration="2" complete="0" thirdDate="2020-01-07" thirdDate-constraint="0" expand="true"/>
+            </task>
+            <task id="358" name="Mise en commun du code" color="#8cb6ce" meeting="false" start="2020-01-09" duration="3" complete="0" thirdDate="2019-11-15" thirdDate-constraint="0" expand="true">
+                <depend id="44" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="44" name="Rédaction rapport sprint 2/sprint review" color="#8cb6ce" meeting="false" start="2020-01-12" duration="3" complete="0" thirdDate="2019-09-02" thirdDate-constraint="0" expand="true">
+                <depend id="242" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="242" name="Rendu rapport sprint 2" color="#ff9900" meeting="true" start="2020-01-15" duration="0" complete="0" thirdDate="2019-11-19" thirdDate-constraint="0" expand="true"/>
+        </task>
+    </tasks>
+    <resources>
+        <resource id="0" name="Tri-Thien" function="Default:0" contacts="" phone=""/>
+        <resource id="1" name="Mathieu" function="Default:0" contacts="" phone=""/>
+        <resource id="2" name="Ronan" function="Default:0" contacts="" phone=""/>
+    </resources>
+    <allocations>
+        <allocation task-id="44" resource-id="0" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="346" resource-id="0" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="358" resource-id="0" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="44" resource-id="1" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="55" resource-id="1" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="358" resource-id="1" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="44" resource-id="2" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="46" resource-id="2" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="358" resource-id="2" function="Default:0" responsible="false" load="100.0"/>
+    </allocations>
+    <vacations/>
+    <previous/>
+    <roles roleset-name="Default"/>
+</project>

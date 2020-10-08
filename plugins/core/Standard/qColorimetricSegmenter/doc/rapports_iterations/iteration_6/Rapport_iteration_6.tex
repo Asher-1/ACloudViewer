@@ -1,0 +1,280 @@
+\documentclass[12pt,titlepage,french]{article}
+\usepackage{babel}
+\usepackage{graphicx}
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\pagestyle{plain}
+
+\usepackage{booktabs,makecell,tabu}
+\usepackage{comment}
+\renewcommand\theadfont{\bfseries}
+
+\linespread{1.5}
+
+\newcounter{firstbib}
+
+\begin{document}
+%\renewcommand{\thesection}{\arabic{section}} % utilisé pour spécifier la numérotation des sections
+
+\begin{titlepage}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\center
+
+  \includegraphics[width=0.45\textwidth]{../../ressources/img_logos/logo_polytech.png}\\[1cm]
+
+  \includegraphics[width=0.45\textwidth]{../../ressources/img_logos/logo_taglabs.png}
+
+
+\HRule \\[0.4cm]
+{ \huge \bfseries Rapport itération 6\\[0.15cm] }
+Classification colorimétrique de nuages de points 3D\\
+Version 1.0\\
+Le \today \\
+\HRule \\[1.5cm]
+Ronan Collier,
+Mathieu Letrone,
+Tri-Thien Truong
+\\[1cm]
+\end{titlepage}
+
+\tableofcontents % table des matières
+\newpage
+\listoffigures  % table des figures
+\newpage
+
+\section{Rappel des objectifs de l'itération}
+Cette itération étant la dernière du projet, nous devions finaliser les fonctionnalités et corriger les derniers bugs relevés via le feedback. Il nous fallait aussi nous concentrer sur la réalisation de différents rapports, notamment le rapport de description du système beta et le rapport de recette.
+
+Les tâches que nous nous sommes fixées sont les suivantes :
+
+\begin{itemize}
+    \item Désactivation des filtrages selon le nuage sélectionné
+    \item Redéfinir les bornes RGB
+    \item Implémentation du filtrage scalaire
+    \item Réaliser les tâches du feedback (points externes/internes, indications, icônes)
+    \item Finir algo k-means/autre algorithme
+    \item Terminer algorithme sélection de points
+    \item Faire le lien entre tone mapping et filtrage
+\end{itemize}
+
+
+\section{Production / réalisation durant l'itération}
+
+Nous développerons ici chaque objectif que nous nous sommes fixé pour cette itération.
+
+
+\subsection{Désactivation des filtrages selon le nuage}
+
+Lors du test de notre plugin par le client et le créateur de CloudCompare, M. Daniel Girardeau-Montaut, un problème a été remonté notamment lorsque l'on utilisait un type de filtrage, pour un nuage de points qui ne le concernait pas. Par exemple, il était possible jusqu'au début d'itération de pouvoir appliquer le filtrage RGB pour un nuage de points en valeurs scalaires. Ce problème a été corrigé en désactivant les filtrages selon le nuage sélectionné. \newline
+
+Pour faire cela, nous avons deux booléens : un pour vérifier si le/les nuages sélectionnés sont en couleurs, et l'autre booléen pour les valeurs scalaires. \newline
+
+Il est possible ensuite de vérifier via la méthode "hasColors" et "hasDisplayedScalarField" d'un objet "ccHObject" nos conditions. Il nous suffit ensuite d'activer ou non les boutons permettant aux filtrages, grâce à nos deux booléens. \newline
+
+Nous avons aussi défini que si un nuage en couleurs et un nuage en valeurs scalaires sont sélectionnés, nous n'activons aucun bouton.
+
+\begin{figure}[H]
+ \caption{\label{} Exemple d'un nuage en couleurs}
+ \begin{center}
+ \includegraphics[width=1\textwidth]{./img/color_cloud.PNG}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+ \caption{\label{} Exemple d'un nuage en gris}
+ \begin{center}
+ \includegraphics[width=1\textwidth]{./img/grey_cloud.PNG}
+  \end{center}
+\end{figure}
+
+\subsection{Redéfinir les bornes RGB}
+
+Lors de l'itération précédente, nous avons voulu réfléchir à un moyen pour détecter automatiquement les bornes minimum et maximum du filtrage RGB. En effet, lorsque l'utilisateur choisissait un point avec des valeurs élevées en tant que premier point, et des valeurs faibles pour le second, notre filtrage ne pouvait pas bien fonctionner. \newline
+
+Nous avons essayé d'utiliser l'espace colorimétrique HSV pour déterminer quel point était plus sombre que l'autre, notamment avec la Saturation et la Valeur, mais nous nous sommes rendu compte que cela était trop complexe et pas forcément viable. \newline
+
+La dernière solution qui a été retenue, et la plus simple à implémenter, est le fait de déterminer la valeur minimum et maximum pour chaque composante RGB entre les deux points. On aurait alors deux potentielles nouvelles couleurs, selon les valeurs des points sélectionnés.
+
+\begin{figure}[H]
+ \caption{\label{} Exemple filtrage RGB}
+ \begin{center}
+ \includegraphics[width=1\textwidth]{./img/rgb_ui.PNG}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+ \caption{\label{} Résultat des bornes du filtrage RGB}
+ \begin{center}
+ \includegraphics[width=1\textwidth]{./img/rgb_res.PNG}
+  \end{center}
+\end{figure}
+
+Dans cet exemple, nous pouvons constater que dans le premier point sélectionné, les valeurs des composantes Rouge et Vert sont supérieures que dans le deuxième point. \newline
+
+Dans le résultat, nous avons utilisé les valeurs Rouge et Vert du deuxième point, en tant que borne minimum. La nouvelle couleur qui servira de borne inférieure est donc "100/100/200" et supérieure "200/150/230".
+
+\subsection{Implémentation du filtrage scalaire}
+
+Notre plugin gérait très bien les nuages de points RGB. Cependant, nous n'avions aucune fonctionnalité permettant de gérer les nuages de points en intensité de gris. Étant donné que Cloud Compare gère nativement la fausse couleur pour ce type de nuage, nous n'avions plus la nécessité de développer une telle fonctionnalité. Nous avons donc pu nous accorder du temps afin de développer une méthode de filtrage par valeurs scalaires. \newline
+
+Cette méthode a le même fonctionnement que les filtrages précédents, la seule différence est que ce filtrage s'effectue seulement entre deux valeurs : la plus haute (plus proche de 1) et la plus basse (plus proche de 0). Au niveau de l'interface, nous reprenons le travail effectué sur le RGB. L'utilisateur n'a cependant plus qu'une seule valeur à remplir pour chaque point. \newline
+
+\begin{figure}[H]
+\center \includegraphics[width=0.6\textwidth]{./img/scalar_menu.png}
+  \caption{\label{} Interface filtrage scalaire}
+\end{figure}
+
+\begin{figure}[H]
+\center
+\includegraphics[width=0.9\textwidth]{./img/scalaire_avant_apres.png}
+\caption{\label{} Filtrage scalaire : avant}
+\end{figure}
+
+Afin de pouvoir distinguer les intensités plus facilement sur l'exemple, nous avons choisi d'appliquer une fausse couleur. Les points de fortes intensités tendent vers le rouge, les plus faible, vers le vert.
+
+\subsection{Tâches du feedback : points externes/internes}
+
+Nous avons ajouté une fonctionnalité qui est maintenant disponible pour tous les types de filtrages, qui est le choix des points à garder. En effet, précédemment, nous gardions uniquement les points qui respecte les bornes définies par l'utilisateur, donc nous gardions uniquement les points similaires au choix de l'utilisateur. Maintenant, il est possible de choisir si l'utilisateur veut garder ces points, ou les points qui sont hors des bornes. Cela permet à l'utilisateur de supprimer certains points, en utilisant nos filtrages. \newline
+
+\begin{figure}[H]
+ \caption{\label{} Choix des points à garder}
+ \begin{center}
+ \includegraphics[width=1\textwidth]{./img/choix.PNG}
+  \end{center}
+\end{figure}
+
+Ici, nous pouvons voir que nous avons trois choix.  Le choix de l'option "Retain" permet à l'utilisateur de créer un sous-scan où les points affichés seront les points qui sont à l'intérieurs des bornes. Inversement, l'option "Exclude" va permettre de créer un sous-scan avec les points qui seront hors de l'intervalle choisi. Enfin, la dernière option "Both" va permettre de réaliser les deux options. Nous aurons donc à la fin, deux sous-scans où la somme va permettre de retrouver le scan original.
+
+\begin{figure}[H]
+ \caption{\label{} Résultat du scan pour les points du choix "Retain"}
+ \begin{center}
+ \includegraphics[width=1\textwidth]{./img/choix_ex_1.PNG}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+ \caption{\label{}  Résultat du scan pour les points du choix "Exclude"}
+ \begin{center}
+ \includegraphics[width=1\textwidth]{./img/choix_ex_2.PNG}
+  \end{center}
+\end{figure}
+
+\subsection{Tâches du feedback : icônes}
+
+Pour pouvoir déployer notre plugin, nous devions donner une identité graphique à notre plugin. Jusqu'alors, il n'en avait aucune, nous utilisions l'icône du plugin d'exemple pour toutes les fonctions ajoutées à la barre de menu. Suite au retour du client, nous avons créé des icônes pour chacune de nos fonctions ainsi qu'une icône générale pour notre plugin. \newline
+
+\begin{figure}[H]
+ \caption{\label{} Icônes lors de la sélection d'un nuage RGB}
+ \begin{center}
+ \includegraphics[width=0.7\textwidth]{./img/icones_rgb.png}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+ \caption{\label{} Icônes lors de la sélection d'un nuage scalaire}
+ \begin{center}
+ \includegraphics[width=0.7\textwidth]{./img/icones_scal.png}
+  \end{center}
+\end{figure}
+
+On peut voir sur les images que les icônes gardent une certaine ressemblance. On retrouve la forme du nuage dans toutes les icônes. \newline
+Nous avons essayé de faire en sorte de rendre les icônes les plus explicites possibles pour l'utilisateur. Pour les fonctions de filtrage, un gradient de couleur marqué par deux séparations ainsi qu'une flèche signifie à l'utilisateur que la fonction extrait une partie du nuage d'une plage de couleur précise. Afin de mieux différencier les filtrages RGB et HSV, nous avons jouté leur sigle à l'icône. Nous avons gardé le même principe pour les fonctions de quantification. Ainsi, on retrouve un nuage séparé en 3 couleurs franches, signifiant que l'on souhaite réduire le nombre de couleurs. \newline
+
+\subsection{Tone Mapping}
+
+\subsubsection{Amélioration de l'interface : segmentation par l'histogramme}
+
+La première interface était précaire.
+Le nombre de couleurs dans la palette après le traitement était inconnu par l'utilisateur à moins que celui-ci connaisse le fonctionnement de l'algorithme.
+Ainsi, un champ texte mis à jour en fonction de l'indice saisi par l'utilisateur a été ajouté, ce champ explicite le nombre de couleurs.
+L'utilisateur peut visualiser l'indice qu'il sélectionnera suivant le nombre de couleurs dont il a besoin.
+
+\begin{figure}[H]
+ \caption{\label{} Nouvelle interface : segmentation par histogramme}
+ \begin{center}
+ \includegraphics[width=0.7\textwidth]{./img/HistogramDialog.PNG}
+  \end{center}
+\end{figure}
+
+\subsubsection{Algorithme K-means}
+
+L'algorithme K-means est connu dans la quantification d'images.
+Le fonctionnement de l'algorithme est assez simple.
+
+L'utilisateur saisi le nombre de classe de couleurs qu'il souhaite.
+On initialise K centres (centroïdes), on affecte chaque point au centre qui est le plus proche de lui.
+Pour les K groupes formés, on recalcule le centre. On répète ces tâches d'affectation et de recalculs jusqu'à convergence.
+
+Bien que l'algorithme K-means doit se terminer lorsqu'il n'y a plus de variation entre deux itérations,
+une limite d'itérations saisie par l'utilisateur a été mise afin qu'il puisse obtenir un résultat dans un temps modéré, même s'il n'y a pas eu stabilisation.
+
+L'algorithme k-means contrairement à la segmentation de l'histogramme, est dépendant des centroïdes à l'initialisation. Et nécessite plus de temps d'exécution.
+Voici un exemple de résultat :
+
+\begin{figure}[H]
+ \caption{\label{} Exemple de résultats K-means (k=10)}
+ \begin{center}
+ \includegraphics[width=1\textwidth]{./img/kmeans_It.PNG}
+  \end{center}
+\end{figure}
+
+\subsection{Fin de l'implémentation de l'algorithme de sélection de points}
+Nous avons corrigé tous les problèmes qui empêchaient l'exécution de l'algorithme. Cependant, nous n'avons pu obtenir de résultats satisfaisants. Sa complexité étant en $O(n^{2})$, le temps de calcul sur plusieurs millions de points est considérable. Ce problème est dû aux multiples recherches de voisinages de points. Nous avons fait le choix de ne pas le présenter dans la version finale de notre programme. L'implémentation restera malgré tout présente dans les sources pour d'éventuels repreneurs. \newline
+
+\subsection{Lien Tone mapping et filtrages}
+Après avoir développé le Tone mapping, il nous fallait faire des tests avec nos algorithmes de filtrages, et ainsi voir les résultats obtenus.
+
+\begin{figure}[H]
+ \caption{\label{}  Exemple d'application du tone mapping : scan original}
+ \begin{center}
+ \includegraphics[width=0.8\textwidth]{./img/tm_example_1.PNG}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+ \caption{\label{}  Exemple d'application du tone mapping : scan avec tone mapping}
+ \begin{center}
+ \includegraphics[width=0.8\textwidth]{./img/tm_example_2.PNG}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+ \caption{\label{}  Exemple d'application du tone mapping : scan filtré}
+ \begin{center}
+ \includegraphics[width=0.8\textwidth]{./img/tm_example_3.PNG}
+  \end{center}
+\end{figure}
+
+Nous avons appliqué sur le scan original, du tone mapping avec 8 couleurs. Nous pouvons voir qu'une partie des points jaunâtres à été considéré comme du blanc, car les points étaient très claires. Après filtrage, nous avons voulu gardé que les points blancs, afin de mettre en valeur les tuyaux blancs. Nous avons des bons résultats, puisque nous avons même les points gris des tuyaux qui sont cachés, mais nous avons aussi du résidu, comme les points blancs de l'escalier jaunâtre.
+
+\section{Risques éliminés durant l'itération}
+
+Durant cette dernière itération, nous avons pu terminer de nombreux bugs qui pouvait faire planter l'application. Malheureusement, nous n'avons pas pu obtenir des résultats satisfaisants pour l'algorithme de sélection de points, que nous avons donc arrêté par manque de temps.
+
+\section{Feedback}
+
+Le feedback de cette dernière itération est très important, car celui-ci nous permettrait de corriger et de peaufiner les certains aspects des composants. Globalement, le client était satisfait de la solution fournie.
+
+Cependant, après avoir essayé sur des données plus significatives.
+Le client a remarqué que les algorithmes de Tone Mapping avaient un biais.
+Suivant la proportion et la population dans l'histogramme, certaines couleurs se retrouvaient atténuer et se rapprochaient du gris dans le cas d'une segmentation trop large (faible indice de quantification).
+Ainsi, une réflexion sur ces algorithmes afin de les corriger ou faire appel à autre algorithme (median cut ou octree) pourrait être envisager dans une reprise du projet
+
+\section{Commentaires sur l'itération}
+
+Cette section va présenter nos ressentis sur notre itération. Cela peut correspondre à la façon dont nous avons pu gérer la charge de travail que nous avions prévu en début d'itération, des potentiels imprévus, points positifs/négatifs, et autres.
+
+\subsection{Commentaires sur l'itération de façon générale}
+
+Cette itération s'est plutôt bien déroulé de façon générale. Nous avons eu du temps pour travailler sur le projet. Nous avons quand même accordé beaucoup de temps sur la mise au propre du code et des différents rapports, afin de préparer le rendu final du projet transversal.
+
+\subsection{Commentaires sur les méthodes de travail/changements de méthode}
+
+Nos méthodes de travail ont été les mêmes que pour les autres itérations.
+
+\end{document}

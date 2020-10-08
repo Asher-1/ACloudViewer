@@ -1,18 +1,11 @@
-cmake_minimum_required(VERSION 3.0)
+option( PLUGIN_STANDARD_QM3C2 "Install qM3C2 plugin" OFF )
 
-option( PLUGIN_STANDARD_QM3C2 "Check to install qM3C2 plugin" OFF )
-
-if (PLUGIN_STANDARD_QM3C2)
-
+if( PLUGIN_STANDARD_QM3C2 )
 	project( QM3C2_PLUGIN )
-	
-	include ( ${ECV_CMAKE_SCRIPTS_DIR}/CMakePolicies.cmake NO_POLICY_SCOPE )
 
-	include_directories( src )
+	AddPlugin( NAME ${PROJECT_NAME} )
 
+	add_subdirectory( include )
 	add_subdirectory( src )
 	add_subdirectory( ui )
-
-	include( ../../../CMakePluginTpl.cmake )
-
 endif()

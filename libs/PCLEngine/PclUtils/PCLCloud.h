@@ -26,6 +26,8 @@
 
 #else //Version 1.7 or newer
 
+#endif
+
 #include <pcl/point_types.h>
 #include <pcl/PolygonMesh.h>
 #include <pcl/TextureMesh.h>
@@ -53,7 +55,5 @@ typedef pcl::TextureMesh PCLTextureMesh;
 typedef pcl::PCLPointCloud2 PCLCloud;
 typedef pcl::PointCloud<PointT> PCLPolyLine;
 typedef pcl::PlanarPolygon<PointT> PCLPolygon;
-
-#endif
 
 #endif // PCL_CLOUD_H

@@ -94,6 +94,7 @@ function( AddPlugin )
    
 	# Link to required libraries
 	target_link_libraries( ${PLUGIN_TARGET}
+		CVCoreLib
 		CVPluginAPI
 		CVPluginStub
 	)

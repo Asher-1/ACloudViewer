@@ -279,9 +279,9 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 
 			//optimal scale (for accuracy) --> 1e-9 because the maximum integer is roughly +/-2e+9
 			CCVector3d diag = bbMax - bbMin;
-			CCVector3d optimalScale(1.0e-9 * std::max<double>(diag.x, ZERO_TOLERANCE),
-				1.0e-9 * std::max<double>(diag.y, ZERO_TOLERANCE),
-				1.0e-9 * std::max<double>(diag.z, ZERO_TOLERANCE));
+			CCVector3d optimalScale(1.0e-9 * std::max<double>(diag.x, ZERO_TOLERANCE_D),
+				1.0e-9 * std::max<double>(diag.y, ZERO_TOLERANCE_D),
+				1.0e-9 * std::max<double>(diag.z, ZERO_TOLERANCE_D));
 
 			if (parameters.alwaysDisplaySaveDialog)
 			{

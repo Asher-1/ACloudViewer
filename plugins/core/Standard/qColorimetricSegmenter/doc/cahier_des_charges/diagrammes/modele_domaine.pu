@@ -1,0 +1,37 @@
+@startuml
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "Nuage" as n {
+
+}
+
+entity "Point" as p {
+  x : number
+  y : number
+  z : number
+
+}
+
+entity "Couleur" as c {
+  r : number
+  g : number
+  b : number
+
+}
+
+entity "Utilisateur" as u {
+
+}
+
+p "1" --- "1" c
+n "1" --- "1..*" p
+u "1" - "*" n : segmente, 
+(u, n) .. c : choisis
+
+
+@enduml

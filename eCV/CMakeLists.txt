@@ -1,19 +1,8 @@
-cmake_minimum_required( VERSION 3.10 )
-
 project(ErowCloudViewer VERSION ${PROJECT_VERSION})
 
 OPTION( UPDATE_TRANSLATION_FILES "Generate or update ts files" OFF )
 
-include ( ${ECV_CMAKE_SCRIPTS_DIR}/CMakePolicies.cmake NO_POLICY_SCOPE )
-
-include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-
-include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-if( MSVC )
-   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-endif()
-
-include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
+include( CMakePolicies NO_POLICY_SCOPE )
 
 if (CVCORELIB_USE_TBB)
 	include_directories( ${TBB_INCLUDE_DIRS})
@@ -85,10 +74,6 @@ endif()
 		# ${PROJECT_NAME}
 # )
 
-target_link_libraries( ${PROJECT_NAME} CV_CORE_LIB )
-target_link_libraries( ${PROJECT_NAME} ECV_DB_LIB )
-target_link_libraries( ${PROJECT_NAME} ECV_IO_LIB )
-
 target_link_libraries( ${PROJECT_NAME}
     CVAppCommon
     QCustomPlot
@@ -125,7 +110,7 @@ endif()
 
 # Add custom preprocessor definitions
 if( WIN32 )
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD)
+	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD)
 	if (MSVC)
 		set_target_properties( ${PROJECT_NAME} PROPERTIES LINK_FLAGS " /MANIFEST:NO" )
 	endif()
