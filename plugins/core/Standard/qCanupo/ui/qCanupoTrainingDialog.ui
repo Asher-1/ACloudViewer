@@ -14,8 +14,8 @@
    <string>CANUPO Training</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="qCanupo.qrc">
-    <normaloff>:/CC/plugin/qCanupoPlugin/iconCreate.png</normaloff>:/CC/plugin/qCanupoPlugin/iconCreate.png</iconset>
+   <iconset resource="../qCanupo.qrc">
+    <normaloff>:/CC/plugin/qCanupoPlugin/images/iconCreate.png</normaloff>:/CC/plugin/qCanupoPlugin/images/iconCreate.png</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -433,7 +433,7 @@
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources>
-  <include location="qCanupo.qrc"/>
+  <include location="../qCanupo.qrc"/>
  </resources>
  <connections>
   <connection>

@@ -27,10 +27,10 @@
 
 #else //Version 1.7 or newer
 
+#endif
+
 #include <pcl/PCLPointCloud2.h>
 #define FROM_PCL_CLOUD pcl::fromPCLPointCloud2
 #define TO_PCL_CLOUD pcl::toPCLPointCloud2
-
-#endif
 
 #endif // PCL_CONVERSIONS_H

@@ -1,23 +1,20 @@
-cmake_minimum_required(VERSION 3.0)
+option( PLUGIN_STANDARD_QPCV "Install qPCV plugin" OFF )
 
-option( PLUGIN_STANDARD_QPCV "Check to install qPCV plugin" OFF )
-
-# CLOUDVIEWER  'PCV' plugin
-if (PLUGIN_STANDARD_QPCV)
-	add_subdirectory (PCV)
-
+if( PLUGIN_STANDARD_QPCV )
 	project( QPCV_PLUGIN )
 	
 	find_package( OpenGL REQUIRED )
 	if( NOT OPENGL_FOUND )
-		message( SEND_ERROR "OpenGL required, but not found with 'find_package()'" )
+		message( FATAL_ERROR "OpenGL required by PCV plugin" )
 	endif()
+	
+	AddPlugin( NAME ${PROJECT_NAME} )
 
-	include( ../../../CMakePluginTpl.cmake )
+	add_subdirectory( include )
+	add_subdirectory( src )
+	add_subdirectory( ui )
 	
-	include_directories( ${OpenGL_INCLUDE_DIR} )
-	include_directories( ${PCV_LIB_SOURCE_DIR} )
+	target_include_directories( ${PROJECT_NAME} PRIVATE ${OpenGL_INCLUDE_DIR} )
 	
-	target_link_libraries( ${PROJECT_NAME} PCV_LIB )
 	target_link_libraries( ${PROJECT_NAME} ${OPENGL_LIBRARIES} )
 endif()

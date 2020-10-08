@@ -1,8 +1,4 @@
 set_property(GLOBAL PROPERTY USE_FOLDERS On)
-cmake_minimum_required (VERSION 3.0)
-
-# https://cmake.org/cmake/help/git-stage/policy/CMP0074.html
-# cmake_policy(SET CMP0074 OLD)
 
 if( NOT MSVC )
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -lpthread" )
@@ -12,11 +8,11 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 include_directories( ${ErowCloudViewerPlugins_SOURCE_DIR} )
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 include_directories( ${EXTERNAL_LIBS_INCLUDE_DIR} )
-include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-if( MSVC )
-  include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-endif()
+#include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
+#include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
+#if( MSVC )
+#  include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
+#endif()
 
 project( QPCL_PLUGIN_ALGORIGHM_LIB )
 
@@ -65,7 +61,7 @@ if (USE_PCL_BACKEND)
 
 	# Add custom preprocessor definitions
 	if (WIN32)
-		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_PCL_ENGINE_LIBRARY_BUILD )
+		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS ECV_PCL_ENGINE_LIBRARY_BUILD )
 	endif()
 
 	link_directories( ${PCL_LIBRARY_DIRS} )
@@ -74,6 +70,4 @@ if (USE_PCL_BACKEND)
 						   ${PCL_LIBRARIES} 
 						   CVPluginAPI
 						   QPCL_ENGINE_LIB )
-	# Qt
-	#target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Widgets)
 endif()	

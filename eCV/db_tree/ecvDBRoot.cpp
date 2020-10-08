@@ -1575,11 +1575,11 @@ void ccDBRoot::alignCameraWithEntity(bool reverse)
 		//work only with labels with 3 points!
 		if (label->size() == 3)
 		{
-			const cc2DLabel::PickedPoint& A = label->getPoint(0);
+			const cc2DLabel::PickedPoint& A = label->getPickedPoint(0);
 			const CCVector3* _A = A.cloud->getPoint(A.index);
-			const cc2DLabel::PickedPoint& B = label->getPoint(1);
+			const cc2DLabel::PickedPoint& B = label->getPickedPoint(1);
 			const CCVector3* _B = B.cloud->getPoint(B.index);
-			const cc2DLabel::PickedPoint& C = label->getPoint(2);
+			const cc2DLabel::PickedPoint& C = label->getPickedPoint(2);
 			const CCVector3* _C = C.cloud->getPoint(C.index);
 			CCVector3 N = (*_B - *_A).cross(*_C - *_A);
 			planeNormal = CCVector3d::fromArray(N.u);
@@ -2114,7 +2114,7 @@ void ccDBRoot::editLabelScalarValue()
 		return;
 	}
 
-	const cc2DLabel::PickedPoint& P = label->getPoint(0);
+	const cc2DLabel::PickedPoint& P = label->getPickedPoint(0);
 	if (!P.cloud)
 	{
 		assert(false);
@@ -2215,10 +2215,10 @@ void ccDBRoot::showContextMenu(const QPoint& menuPos)
 							if (label)
 							{
 								canEditLabelScalarValue = (	label->size() == 1
-														&&	label->getPoint(0).cloud
-														&&	label->getPoint(0).cloud->hasScalarFields()
-														&&	label->getPoint(0).cloud->isA(CV_TYPES::POINT_CLOUD)
-														&&	static_cast<ccPointCloud*>(label->getPoint(0).cloud)->getCurrentDisplayedScalarField() != 0
+														&&	label->getPickedPoint(0).cloud
+														&&	label->getPickedPoint(0).cloud->hasScalarFields()
+														&&	label->getPickedPoint(0).cloud->isA(CV_TYPES::POINT_CLOUD)
+														&&	static_cast<ccPointCloud*>(label->getPickedPoint(0).cloud)->getCurrentDisplayedScalarField() != 0
 														);
 							}
 							else

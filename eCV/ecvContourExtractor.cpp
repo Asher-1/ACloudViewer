@@ -480,15 +480,15 @@ bool ccContourExtractor::ExtractConcaveHull2D(	std::vector<Vertex2D>& points,
 						if (&P == *itB)
 							indexB = static_cast<unsigned>(i);
 					}
-					edgeLabel->addPoint(debugCloud,indexA);
-					edgeLabel->addPoint(debugCloud,indexB);
+					edgeLabel->addPickedPoint(debugCloud,indexA);
+					edgeLabel->addPickedPoint(debugCloud,indexB);
 					edgeLabel->setVisible(true);
 					edgeLabel->setDisplayedIn2D(false);
 					debugDialog.addToDisplay(edgeLabel);
 					debugDialog.refresh();
 
 					label = new cc2DLabel("nearest point");
-					label->addPoint(debugCloud,e.nearestPointIndex);
+					label->addPickedPoint(debugCloud,e.nearestPointIndex);
 					label->setVisible(true);
 					label->setSelected(true);
 					debugDialog.addToDisplay(label);

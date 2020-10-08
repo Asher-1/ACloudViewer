@@ -3,57 +3,103 @@
 
 cmake_minimum_required( VERSION 3.10 )
 
-# Options
-option( CVCORELIB_USE_CGAL "Check to compile CV_CORE_LIB with CGAL lib. (to enable Delaunay 2.5D triangulation with a GPL compliant licence)" OFF )
-option( CVCORELIB_USE_TBB " Check to compile CV_CORE_LIB with Intel Threading Building Blocks lib (enables some parallel processing )" OFF )
-option( CVCORELIB_SHARED "Check to compile CV_CORE_LIB as a shared library (DLL/so)" ON )
-option( CVCORELIB_USE_QT_CONCURRENT "Compile CCCoreLib with QtConcurrent (to enable parallel processing)" ON)
-# ScalarType as float (default) or double
-option( CVCORELIB_SCALAR_DOUBLE "Check to define ScalarType as double" OFF )
-
-if ( CVCORELIB_SCALAR_DOUBLE )
-	add_definitions( -DSCALAR_TYPE_DOUBLE )
-	set (USE_SCALAR_TYPE_DOUBLE ON PARENT_SCOPE)
-else()
-	add_definitions( -DSCALAR_TYPE_FLOAT )
-endif()
-
-# to compile CVLib only! (CMake implicitly imposes to declare a project before anything...)
-project( CV_CORE_LIB 	
+project( CVCoreLib
 	DESCRIPTION
-		"Core CloudCompare data structures & algorithms for handling point clouds"
+		"Core CloudViewer data structures & algorithms for handling point clouds"
 	LANGUAGES
 		CXX
 	VERSION
 		1.0
 )
 
-# CGAL takes precedence over triangle
-if (CVCORELIB_USE_CGAL)
-	include( cmake/CGALSupport.cmake )
-endif()
+# Options
+option( CVCORELIB_USE_CGAL
+	"Compile ${PROJECT_NAME} with CGAL (to enable Delaunay 2.5D triangulation with a GPL-compliant licence)"
+	OFF
+)
+option( CVCORELIB_USE_TBB
+	"Compile ${PROJECT_NAME} with Intel Threading Building Blocks lib (enables some parallel processing )"
+	OFF
+)
+option( CVCORELIB_USE_QT_CONCURRENT
+	"Compile ${PROJECT_NAME} with QtConcurrent (to enable parallel processing)"
+	ON
+)
+option( CVCORELIB_SHARED
+	"Compile ${PROJECT_NAME} as a shared library"
+	ON
+)
+option( CVCORELIB_SCALAR_DOUBLE
+	"Define ScalarType as double (instead of float)"
+	OFF
+)
 
-if (CVCORELIB_USE_TBB)
-	include( cmake/FindTBB.cmake )
+# Add the library (shared or static)
+if ( CVCORELIB_SHARED )
+	add_library( ${PROJECT_NAME} SHARED )
+
+	set_target_properties( ${PROJECT_NAME}
+		PROPERTIES
+			CXX_VISIBILITY_PRESET hidden
+			VISIBILITY_INLINES_HIDDEN 1
+	)
 else()
-	if (NOT WIN32)
-		message( WARNING "CVLib configured without parallel algorithm capabilities - see CVCORELIB_USE_TBB" )
-	endif()
+	add_library( ${PROJECT_NAME} STATIC )
+
+	target_compile_definitions( ${PROJECT_NAME}
+		PRIVATE
+			CV_CORE_LIB_STATIC_DEFINE
+	)
 endif()
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
+set_target_properties( ${PROJECT_NAME}
+	PROPERTIES
+		DEBUG_POSTFIX d
+)
 
-file( GLOB header_list include/*.h)
-file( GLOB source_list src/*.cpp src/*.h)
+add_library( ${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME} )
 
-if (CVCORELIB_SHARED)
-	set( CMAKE_CXX_VISIBILITY_PRESET hidden )
-	set( CMAKE_VISIBILITY_INLINES_HIDDEN 1 )
-	add_library( ${PROJECT_NAME} SHARED ${header_list} ${source_list} )
-else()
-	add_library( ${PROJECT_NAME} STATIC ${header_list} ${source_list} )
-	target_compile_definitions( ${PROJECT_NAME} PRIVATE CV_CORE_LIB_STATIC_DEFINE )	
+# Generate the export header file
+include( GenerateExportHeader )
+
+generate_export_header( ${PROJECT_NAME}
+	EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
+	EXPORT_MACRO_NAME CV_CORE_LIB_API
+)
+
+target_sources( ${PROJECT_NAME}
+	PRIVATE
+		${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
+)
+
+install(
+	FILES
+		${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
+	DESTINATION
+		include/${PROJECT_NAME}
+)
+
+target_include_directories( ${PROJECT_NAME}
+	PUBLIC
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports>
+		$<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
+# ccache
+# https://crascit.com/2016/04/09/using-ccache-with-cmake/
+find_program( CCACHE_PROGRAM ccache )
+
+if ( CCACHE_PROGRAM )
+	set_target_properties( ${PROJECT_NAME}
+		PROPERTIES
+			CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}"
+			C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}"
+	)
 endif()
+
+# Main sources and includes
+add_subdirectory( include )
+add_subdirectory( src )
 
 # Compiler & definitions
 target_compile_features( ${PROJECT_NAME}
@@ -70,24 +116,83 @@ set_target_properties( ${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
 target_link_libraries( ${PROJECT_NAME} PUBLIC ${3RDPARTY_LIBRARIES} )
 
+target_compile_definitions( ${PROJECT_NAME}
+	PRIVATE
+		"$<$<CONFIG:DEBUG>:CV_DEBUG>"
+)
 
-if (CVCORELIB_USE_CGAL)
-	target_link_libraries( ${PROJECT_NAME} PUBLIC ${CGAL_LIBRARIES} )
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_CGAL_LIB )
+if ( CVCORELIB_SCALAR_DOUBLE )
+	target_compile_definitions( ${PROJECT_NAME}
+		PUBLIC
+			CV_CORE_LIB_USES_DOUBLE
+	)
+else()
+	target_compile_definitions( ${PROJECT_NAME}
+		PUBLIC
+			CV_CORE_LIB_USES_FLOAT
+	)
 endif()
 
-if (CVCORELIB_USE_TBB)
-	include_directories( ${TBB_INCLUDE_DIRS} )
-	target_link_libraries( ${PROJECT_NAME} PUBLIC ${TBB_LIBRARIES} )
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
-else()
-	if (NOT WIN32)
-		message( WARNING "CVLib configured without parallel algorithm capabilities - see CVCORELIB_USE_TBB" )
+# Windows-specific flags
+if ( WIN32 )
+	# Disable SECURE_SCL
+	# See https://channel9.msdn.com/shows/Going+Deep/STL-Iterator-Debugging-and-Secure-SCL/
+	target_compile_definitions( ${PROJECT_NAME}
+		PRIVATE
+			"$<$<CONFIG:RELEASE>:_SECURE_SCL=0>"
+	)
+
+	target_compile_definitions( ${PROJECT_NAME}
+		PRIVATE
+			_CRT_SECURE_NO_WARNINGS
+			__STDC_LIMIT_MACROS
+			NOMINMAX
+	)
+endif()
+
+# TBB (optional)
+# Must come before CGAL so it can use TBB properly
+if ( CVCORELIB_USE_TBB )
+	include( cmake/FindTBB.cmake )
+	if ( TBB_FOUND )
+		include_directories( ${TBB_INCLUDE_DIRS} )
+		target_link_libraries( ${PROJECT_NAME} PUBLIC ${TBB_LIBRARIES} )
+		target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
+		target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_TBB )
 	endif()
 endif()
 
-if (BUILD_EIGEN3)
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_EIGEN )
+# CGAL (optional)
+if ( CVCORELIB_USE_CGAL )
+	include( cmake/CGALSupport.cmake )
+
+	if( WIN32 )
+		# Need to force the visibility of these variables so that we can use them later
+		set (GMP_LIBRARIES ${GMP_LIBRARIES} PARENT_SCOPE) 
+		set (MPFR_LIBRARIES ${MPFR_LIBRARIES} PARENT_SCOPE) 
+	endif()
+
+	if ( CVCORELIB_USE_TBB )
+		if ( TBB_FOUND )
+			# Once Linux libcgal-dev >= 5.0, target_compile_definitions replaced by:
+			#  CGAL_target_use_TBB( ${PROJECT_NAME} )
+
+			target_compile_definitions( ${PROJECT_NAME}
+				PRIVATE
+					CGAL_LINKED_WITH_TBB
+					NOMINMAX
+			)
+		else()
+			message( WARNING "CGAL cannot compile with TBB (TBB not found)" )
+		endif()
+	endif()
+
+	target_link_libraries( ${PROJECT_NAME}
+		PUBLIC
+			CGAL::CGAL
+	)
+	#target_link_libraries( ${PROJECT_NAME} PUBLIC ${CGAL_LIBRARIES} )
+	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_CGAL_LIB )
 endif()
 
 # QT (optional)
@@ -106,16 +211,40 @@ if ( CVCORELIB_USE_QT_CONCURRENT )
 
 	target_link_libraries( ${PROJECT_NAME}
 		PUBLIC
-			Qt5::Concurrent
+            Qt5::Concurrent
 	)
 
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_QT )
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_QT_CONCURRENT )
-
+	target_compile_definitions( ${PROJECT_NAME}
+		PUBLIC
+			CV_CORE_LIB_USES_QT_CONCURRENT
+	)
 endif()
 
-# Load advanced scripts
-include( ../cmake/CMakeInclude.cmake )
+# Enforce 3rd party dependencies
+add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
+target_link_libraries( ${PROJECT_NAME} PUBLIC ${3RDPARTY_LIBRARIES} )
+
+if (BUILD_EIGEN3)
+	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_EIGEN )
+endif()
+
+
+# CMake Package Files
+include( CMakePackageConfigHelpers )
+
+write_basic_package_version_file( ${PROJECT_NAME}ConfigVersion.cmake
+	VERSION
+		${PACKAGE_VERSION}
+	COMPATIBILITY
+		AnyNewerVersion
+)
+
+install(
+	FILES
+		"${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+	DESTINATION
+		cmake/${PROJECT_NAME}
+)
 
 if ( CVCORELIB_SHARED )
 	InstallSharedLibrary( TARGET ${PROJECT_NAME} )

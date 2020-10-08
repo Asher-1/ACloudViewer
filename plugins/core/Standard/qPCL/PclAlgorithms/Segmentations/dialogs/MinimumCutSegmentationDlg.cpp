@@ -89,7 +89,7 @@ void MinimumCutSegmentationDlg::updateForeGroundPoint()
 	{
 		return;
 	}
-	const CCVector3* center = label->getPoint(0).cloud->getPoint(label->getPoint(0).index);
+	const CCVector3* center = label->getPickedPoint(0).cloud->getPoint(label->getPickedPoint(0).index);
 	if (!center)
 	{
 		return;

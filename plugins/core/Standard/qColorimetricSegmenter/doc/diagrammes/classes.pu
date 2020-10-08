@@ -1,0 +1,53 @@
+@startuml
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+class "Nuage" as n {
+
+}
+
+class "Point" as p {
+    x : number
+    y : number
+    z : number
+
+}
+
+class "ColorRepresentation" as cr {
+
+}
+
+class "RGB" as rgb {
+    r : number
+    g : number
+    b : number
+}
+
+class "HSI" as hsi {
+    h : number
+    s : number
+    i : number
+}
+
+class "CIEL" as ciel {
+    a : number
+    b : number
+}
+
+rgb --|> cr
+hsi --|> cr
+ciel --|> cr
+
+
+class "Preprocessor" as pp {
+    equalizeHisogram()
+}
+
+
+p "1" --- "1" cr
+n "1" --- "1..*" p
+n --- pp
+
+
+@enduml

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>602</width>
+    <width>604</width>
     <height>526</height>
    </rect>
   </property>
@@ -14,8 +14,8 @@
    <string>CANUPO training (result)</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="qCanupo.qrc">
-    <normaloff>:/CC/plugin/qCanupoPlugin/iconCreate.png</normaloff>:/CC/plugin/qCanupoPlugin/iconCreate.png</iconset>
+   <iconset resource="../qCanupo.qrc">
+    <normaloff>:/CC/plugin/qCanupoPlugin/images/iconCreate.png</normaloff>:/CC/plugin/qCanupoPlugin/images/iconCreate.png</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -202,7 +202,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="qCanupo.qrc"/>
+  <include location="../qCanupo.qrc"/>
  </resources>
  <connections/>
 </ui>

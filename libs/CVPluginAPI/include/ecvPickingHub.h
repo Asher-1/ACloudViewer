@@ -78,6 +78,9 @@ public:
 	//! Manual start / stop of the picking mode on the active window
 	void togglePickingMode(bool state);
 
+	//! Returns the currently active window
+	QWidget* activeWindow() const { return m_activeWindow; }
+
 	//! Returns whether the picking mechanism is currently locked (i.e. an exclusive listener is registered)
 	bool isLocked() const { return m_exclusive && !m_listeners.empty(); }
 

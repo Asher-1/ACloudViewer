@@ -10,7 +10,6 @@ endif()
 
 # Add our cmake module path so we don't need relative paths for these
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" )
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/contrib/" )
 set (ECV_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 add_custom_target(build_all_3rd_party_libs
@@ -403,7 +402,7 @@ endif()
 add_subdirectory( core )
 
 # Propagate the choice to use doubles for ScalarType
-if ( ${USE_SCALAR_TYPE_DOUBLE} )
+if ( ${CV_CORE_LIB_USES_DOUBLE} )
 	add_definitions( -DSCALAR_TYPE_DOUBLE )
 else()
 	add_definitions( -DSCALAR_TYPE_FLOAT )
