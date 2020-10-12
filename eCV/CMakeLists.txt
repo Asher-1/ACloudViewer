@@ -67,12 +67,19 @@ else()
 	add_executable( ${PROJECT_NAME} ${header_list} ${source_list} ${generated_ui_list} ${generated_qrc_list} ${rc_list} ${txt_list} )
 endif()
 
-# DeployQt(
-	# TARGET
-		# ${PROJECT_NAME}
-	# DEPLOY_PATH
-		# ${PROJECT_NAME}
-# )
+add_custom_command(
+	TARGET ${PROJECT_NAME}
+	POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/ErowCloudViewer.exe ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/ErowCloudViewer.exe
+	VERBATIM
+)
+
+DeployQt(
+	TARGET
+		${PROJECT_NAME}
+	DEPLOY_PATH
+		${PROJECT_NAME}
+)
 
 target_link_libraries( ${PROJECT_NAME}
     CVAppCommon
@@ -127,7 +134,7 @@ if( WIN32 )
 endif()
 
 # install program
-install_ext( TARGETS ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} )
+install_ext( TARGETS ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
 
 # Auxiliary files
 set( auxFiles  ${ErowCloudViewerProjects_SOURCE_DIR}/CHANGELOG.md bin_other/license.txt bin_other/global_shift_list_template.txt )
@@ -141,11 +148,11 @@ endif()
 # Install auxiliary files
 if( WIN32 OR APPLE )
 	foreach( filename ${auxFiles} )
-		install_ext( FILES ${filename} ${EROWCLOUDVIEWER_DEST_FOLDER} )
+		install_ext( FILES ${filename} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
 	endforeach()
 else( UNIX )
 	foreach( filename ${auxFiles} )
-		install_ext( FILES ${filename} share/ErowCloudViewer )
+		install_ext( FILES ${filename} share/ErowCloudViewer "" )
 	endforeach()
 endif()
 
