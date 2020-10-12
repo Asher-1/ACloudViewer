@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Advanced/interactive_visualization.py
 
@@ -67,8 +67,7 @@ def demo_manual_registration():
     # estimate rough transformation using correspondences
     print("Compute a rough transform using the correspondences given by user")
     p2p = cv3d.registration.TransformationEstimationPointToPoint()
-    trans_init = p2p.compute_transformation(source, target,
-                                            cv3d.utility.Vector2iVector(corr))
+    trans_init = p2p.compute_transformation(source, target, cv3d.utility.Vector2iVector(corr))
 
     # point-to-point ICP for refinement
     print("Perform point-to-point ICP refinement")

@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Misc/pose_graph_optimization.py
 
@@ -24,22 +24,18 @@ if __name__ == "__main__":
 
     print("Optimizing Fragment cv3d.registration.PoseGraph using cloudViewer ...")
     data_path = "../../TestData/GraphOptimization/"
-    pose_graph_fragment = cv3d.io.read_pose_graph(
-        data_path + "pose_graph_example_fragment.json")
+    pose_graph_fragment = cv3d.io.read_pose_graph(data_path + "pose_graph_example_fragment.json")
     print(pose_graph_fragment)
-    cv3d.registration.global_optimization(pose_graph_fragment, method, criteria,
-                                         option)
+    cv3d.registration.global_optimization(pose_graph_fragment, method, criteria, option)
     cv3d.io.write_pose_graph(
         data_path + "pose_graph_example_fragment_optimized.json",
         pose_graph_fragment)
     print("")
 
     print("Optimizing Global cv3d.registration.PoseGraph using cloudViewer ...")
-    pose_graph_global = cv3d.io.read_pose_graph(data_path +
-                                               "pose_graph_example_global.json")
+    pose_graph_global = cv3d.io.read_pose_graph(data_path + "pose_graph_example_global.json")
     print(pose_graph_global)
-    cv3d.registration.global_optimization(pose_graph_global, method, criteria,
-                                         option)
+    cv3d.registration.global_optimization(pose_graph_global, method, criteria, option)
     cv3d.io.write_pose_graph(
         data_path + "pose_graph_example_global_optimized.json",
         pose_graph_global)

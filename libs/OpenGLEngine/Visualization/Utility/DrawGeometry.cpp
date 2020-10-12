@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualization/Visualizer/Visualizer.h" // must include first
-#include "Visualization/Utility/DrawGeometry.h"
+#include "../Visualizer/Visualizer.h" // must include first
+#include "DrawGeometry.h"
 #include <Console.h>
 
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-#include "Visualization/Visualizer/ViewControlWithCustomAnimation.h"
-#include "Visualization/Visualizer/ViewControlWithEditing.h"
-#include "Visualization/Visualizer/VisualizerWithCustomAnimation.h"
-#include "Visualization/Visualizer/VisualizerWithEditing.h"
-#include "Visualization/Visualizer/VisualizerWithKeyCallback.h"
-#include "Visualization/Visualizer/VisualizerWithVertexSelection.h"
+#include "../Visualizer/ViewControlWithCustomAnimation.h"
+#include "../Visualizer/ViewControlWithEditing.h"
+#include "../Visualizer/VisualizerWithCustomAnimation.h"
+#include "../Visualizer/VisualizerWithEditing.h"
+#include "../Visualizer/VisualizerWithKeyCallback.h"
+#include "../Visualizer/VisualizerWithVertexSelection.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -50,6 +50,7 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const ccHObject>> &geometr
 					bool point_show_normal /* = false */,
 					bool mesh_show_wireframe /* = false */,
 					bool mesh_show_back_face /* = false */,
+					bool show_coordinate_frame /* = false */,
 					Eigen::Vector3d *lookat /* = nullptr */,
 					Eigen::Vector3d *up /* = nullptr */,
 					Eigen::Vector3d *front /* = nullptr */,
@@ -62,6 +63,7 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const ccHObject>> &geometr
     visualizer.GetRenderOption().point_show_normal_ = point_show_normal;
 	visualizer.GetRenderOption().mesh_show_wireframe_ = mesh_show_wireframe;
 	visualizer.GetRenderOption().mesh_show_back_face_ = mesh_show_back_face;
+	visualizer.GetRenderOption().show_coordinate_frame_ = show_coordinate_frame;
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning("[DrawGeometries] Failed adding geometry.");

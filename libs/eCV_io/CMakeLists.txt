@@ -1,69 +1,51 @@
-cmake_minimum_required(VERSION 3.0)
-
-include ( ${ECV_CMAKE_SCRIPTS_DIR}/CMakePolicies.cmake NO_POLICY_SCOPE )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-include_directories(${ECV_DB_LIB_SOURCE_DIR})
-if( MSVC )
-   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-endif()
-include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-
 project( ECV_IO_LIB )
+			
+add_library(${PROJECT_NAME} SHARED )
 
-file( GLOB header_list *.h)
-file( GLOB source_list *.cpp *.c)
-file( GLOB ui_list ui_templates/*.ui )
+include( cmake/GDALSupport.cmake )
 
-set( CMAKE_CXX_VISIBILITY_PRESET hidden )
+add_subdirectory( include )
+add_subdirectory( src )
+add_subdirectory( ui )
 
-# PDMS support
-if( ${OPTION_SUPPORT_MAC_PDMS_FORMAT} )
-	file( GLOB PDMS_header_list PDMS/*.h )
-	file( GLOB PDMS_source_list PDMS/*.cpp )
-	list( APPEND header_list ${PDMS_header_list} )
-	list( APPEND source_list ${PDMS_source_list} )
+option( OPTION_USE_DXF_LIB "Build with Ribbonsoft's DXF Lib (AutoCAD DXF files support)" ON )
+if( ${OPTION_USE_DXF_LIB} )
+	set( DXF_LIB_DIR "extern/dxflib" CACHE PATH "DXF lib path" )
+	add_subdirectory( "${DXF_LIB_DIR}" )
+	target_link_libraries( ${PROJECT_NAME} dxflib )	
 endif()
 
-qt5_wrap_ui( generated_ui_list ${ui_list} )
-add_library( ${PROJECT_NAME} SHARED ${header_list} ${source_list} ${generated_ui_list} )
+option( OPTION_USE_SHAPE_LIB "Build with ShapeLib (SHP files support)" ON )
+if( ${OPTION_USE_SHAPE_LIB} )
+    set( SHAPELIB_LIB_DIR "extern/shapelib" CACHE PATH "shapelib lib path" )
+	add_subdirectory( "${SHAPELIB_LIB_DIR}" )
+	target_link_libraries( ${PROJECT_NAME} shapelib )	
+endif()
 
 # Enforce 3rd party dependencies
-file(GLOB         RPLY_SOURCE_FILES "../../../3rdparty/rply/rply/*.c")
-file(GLOB         LIBLZF_SOURCE_FILES "../../../3rdparty/liblzf/liblzf/*.c")
 add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
 target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
 
 # INTERNAL LIB
-target_link_libraries( ${PROJECT_NAME} CV_CORE_LIB )
 target_link_libraries( ${PROJECT_NAME} ECV_DB_LIB )
 
-# Qt
-target_link_libraries(${PROJECT_NAME} Qt5::Core)
+if( OPTION_USE_GDAL )
+	target_link_GDAL( ${PROJECT_NAME} )
+endif()
 
 # contrib. libraries support
 target_link_contrib( ${PROJECT_NAME} )
 
 # Add custom preprocessor definitions
-#target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_IO_LIBRARY_BUILD )
-# Add custom preprocessor definitions
-if (WIN32)
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD)
-elseif( APPLE )
-	set_target_properties( ${PROJECT_NAME} PROPERTIES
-		INSTALL_RPATH "." )
+target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_IO_LIBRARY_BUILD )
+
+set_target_properties( ${PROJECT_NAME} PROPERTIES
+    AUTOUIC ON # FIXME Remove after everything has moved to targets and we can set it globally
+	CXX_VISIBILITY_PRESET hidden
+)
+
+if ( BUILD_TESTING )
+	add_subdirectory( test ) 
 endif()
 
-# install (shared) lib to specified destinations
-if( WIN32 OR APPLE )
-	foreach( dest ${INSTALL_DESTINATIONS} )
-		install_shared( ${PROJECT_NAME} ${dest} 1 )
-	endforeach()
-else()
-	install_shared( ${PROJECT_NAME} ${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer 0 ) #default destination: /usr/lib
-endif()
-
-if(BUILD_TESTING)
-	add_subdirectory(Tests)
-endif()
+InstallSharedLibrary( TARGET ${PROJECT_NAME} )

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +29,9 @@
 #include <ecvBBox.h>
 #include <ecvHObject.h>
 #include <ecvOrientedBBox.h>
-#include "Camera/PinholeCameraParameters.h"
-#include "Visualization/Utility/GLHelper.h"
-#include "Visualization/Visualizer/ViewParameters.h"
+#include "../../Camera/PinholeCameraParameters.h"
+#include "../Utility/GLHelper.h"
+#include "ViewParameters.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -39,7 +39,7 @@ namespace visualization {
 /// \class ViewControl
 ///
 /// \brief View controller for visualizer.
-class OPENGL_ENGINE_LIB_API ViewControl {
+class ViewControl {
 public:
     static const double FIELD_OF_VIEW_MAX;
     static const double FIELD_OF_VIEW_MIN;
@@ -144,6 +144,8 @@ public:
 			geometry.isKindOf(CV_TYPES::MESH) ||
 			geometry.isKindOf(CV_TYPES::TETRA_MESH) ||
 			geometry.isKindOf(CV_TYPES::LINESET) ||
+			geometry.isKindOf(CV_TYPES::POLY_LINE) ||
+			geometry.isKindOf(CV_TYPES::FACET) ||
 			geometry.isKindOf(CV_TYPES::POINT_OCTREE2) ||
 			geometry.isKindOf(CV_TYPES::VOXEL_GRID) ||
 			geometry.isKindOf(CV_TYPES::RGBD_IMAGE) ||

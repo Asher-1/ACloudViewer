@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Basic/file_io.py
 
@@ -25,8 +25,10 @@ if __name__ == "__main__":
                                write_triangle_uvs=True)
     copy_textured_mesh = cv3d.io.read_triangle_mesh('copy_of_crate.obj')
     print(copy_textured_mesh)
+    cv3d.visualization.draw_geometries([copy_textured_mesh])
 
     print("Testing IO for images ...")
     img = cv3d.io.read_image("../../TestData/lena_color.jpg")
     print(img)
+    cv3d.visualization.draw_geometries([img])
     cv3d.io.write_image("copy_of_lena_color.jpg", img)

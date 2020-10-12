@@ -38,6 +38,7 @@
 #include "ecvEntityAction.h"
 
 //Qt
+#include <QFileInfo>
 #include <QDateTime>
 
 //commands

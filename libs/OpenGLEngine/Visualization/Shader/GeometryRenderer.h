@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,17 +26,17 @@
 
 #pragma once
 
-#include "Visualization/Shader/ImageMaskShader.h"
-#include "Visualization/Shader/ImageShader.h"
-#include "Visualization/Shader/NormalShader.h"
-#include "Visualization/Shader/PhongShader.h"
-#include "Visualization/Shader/PickingShader.h"
-#include "Visualization/Shader/RGBDImageShader.h"
-#include "Visualization/Shader/Simple2DShader.h"
-#include "Visualization/Shader/SimpleBlackShader.h"
-#include "Visualization/Shader/SimpleShader.h"
-#include "Visualization/Shader/TexturePhongShader.h"
-#include "Visualization/Shader/TextureSimpleShader.h"
+#include "ImageMaskShader.h"
+#include "ImageShader.h"
+#include "NormalShader.h"
+#include "PhongShader.h"
+#include "PickingShader.h"
+#include "RGBDImageShader.h"
+#include "Simple2DShader.h"
+#include "SimpleBlackShader.h"
+#include "SimpleShader.h"
+#include "TexturePhongShader.h"
+#include "TextureSimpleShader.h"
 
 class ccHObject;
 namespace cloudViewer {
@@ -125,6 +125,36 @@ public:
 
 protected:
     SimpleShaderForLineSet simple_lineset_shader_;
+};
+
+class PolylineRenderer : public GeometryRenderer {
+public:
+	~PolylineRenderer() override {}
+
+public:
+	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
+	bool UpdateGeometry() override;
+
+protected:
+	SimpleShaderForPolyline simple_polyline_shader_;
+};
+
+class FacetRenderer : public GeometryRenderer {
+public:
+	~FacetRenderer() override {}
+
+public:
+	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(
+		std::shared_ptr<const ccHObject> geometry_ptr) override;
+	bool UpdateGeometry() override;
+
+protected:
+	SimpleShaderForTriangleMesh simple_shader_for_normal_;
+	PhongShaderForTriangleMesh phong_shader_for_polygon_;
+	SimpleShaderForTriangleMesh simple_shader_for_polygon_;
+	SimpleShaderForPolyline simple_polyline_shader_;
 };
 
 class TetraMeshRenderer : public GeometryRenderer {

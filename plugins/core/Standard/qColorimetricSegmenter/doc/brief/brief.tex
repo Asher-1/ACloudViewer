@@ -1,0 +1,155 @@
+\documentclass[12pt,titlepage,french]{article}
+\usepackage{babel}
+\usepackage{graphicx}
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage[hidelinks]{hyperref}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\pagestyle{plain}
+
+\usepackage{booktabs,makecell,tabu}
+\renewcommand\theadfont{\bfseries}
+
+\linespread{1.5}
+
+\begin{document}
+%\renewcommand{\thesection}{\arabic{section}} % utilisé pour spécifier la numérotation des sections
+
+\begin{titlepage}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\center
+
+  \includegraphics[width=0.45\textwidth]{../ressources/img_logos/logo_polytech.png}\\[1cm]
+   
+  \includegraphics[width=0.45\textwidth]{../ressources/img_logos/logo_taglabs.png}
+
+
+\HRule \\[0.4cm]
+{ \huge \bfseries Rapport de brief \\[0.15cm] }
+Classification colorimétrique de nuages de points 3D
+\HRule \\[1.5cm]
+Ronan Collier,
+Mathieu Letrone,
+Tri-Thien Truong
+\\[1cm]
+\today \\ [1cm]
+Version 1.1
+\end{titlepage}
+
+\section{Contexte general du projet dans l'entreprise}
+
+Taglabs est une jeune entreprise créée il y a deux ans par Yan Koch. L'entreprise s'inscrit dans le domaine de la modélisation 3D d'ouvrages. Ils proposent la modélisation et l'exploitation de nuages de points. Mais, ils travaillent surtout en interne sur un logiciel « ScanSap », le but de ce logiciel est d'exploiter les nuages de points 3D avec efficacité et simplicité inégalées.
+
+Ainsi, le sujet qui nous est confié s'inscrit dans leur vision R\&D sur leur logiciel en y implémentant des fonctionnalités.
+
+
+\section{Section "quoi"}
+
+\begin{itemize}
+  \item La solution devra permettre d'isoler, classifier un élément dans le nuage de points pour une meilleure visibilité et compréhension. Pour cela, la classification se basera selon la plage de couleur.
+  \item S'il est déjà en couleur: on applique le filtre de plage colorimétrique pour isoler les éléments (exemple: isoler les tubes proches du blanc).
+  \item S'il est en intensité de gris, on passe d'abord par de la fausse couleur, étape qui permet à l'utilisateur de mieux percevoir le nuage, puis on applique le filtre par plage colorimétrique.
+\end{itemize}
+
+\section{Liste des besoins par ordre de priorité}
+
+Besoin numéro 1: Isoler un élément dans un nuage de points donné, selon sa plage de couleur
+
+Besoin numéro 2: Faire apparaître des couleurs sur des nuages de points en intensité de gris
+
+Besoin numéro 3: Traitement des problèmes de <<\,mouchetage\,>>
+
+
+\section{Planning du projet dans son ensemble}
+
+\subsection*{Grandes échéances chronologiques}
+
+\begin{itemize}
+  \item Brief
+  \item Cahier des charges
+  \item Rapport Sprint review
+  \item Rapport réalisation (alpha)
+  \item Rapport réalisation (béta)
+  \item Rapport réalisation (final)
+\end{itemize}
+
+\subsection*{Rencontres}
+
+\begin{itemize}
+  \item Mercredi 23 Octobre 2019 à 10 h
+  \item Jeudi 07 Novembre 2019 à 14 h
+  \item Les autres rendez-vous seront pris à l'issue de ceux déjà établis, car il est difficile de planifier les rendez-vous selon les créneaux des clients, du professeur et des étudiants.
+\end{itemize}
+
+
+\section{Organisation du projet et répartition des rôles}
+
+\subsection*{MOA}
+
+\noindent\begin{tabu} to \textwidth {X[c]X[c]X[c]X[c]}\toprule
+   \thead{Qui}&\thead{Rôle}&        \thead{Mail}&\thead{Mobile}\\\toprule
+      Yan Koch&   Président&  yankoch@taglabs.fr&    0660239733\\\midrule
+Robin Kervadec&   Ingénieur&rkervadec@taglabs.fr&    0619656021\\\bottomrule
+\end{tabu}
+
+
+%%%%%%%%%%%%%%%%%%%% Table No: 2 ends here %%%%%%%%%%%%%%%%%%%%
+
+
+\subsubsection*{Engagements de la MOA}
+
+\noindent\begin{tabu} to \textwidth {X[c]X[c2]X[c2]}\toprule
+\thead{Qui}&                    \thead{Quoi}&\thead{Quand}\\\toprule
+      Yan Koch& Des exemples de nuages de points&\\\midrule
+      Yan Koch&Fournir de l'aide ou des conseils&Quand il est nécessaire\\\midrule
+Robin Kervadec&Fournir de l'aide ou des conseils&\\\bottomrule
+\end{tabu}
+
+\subsection*{MOE}
+
+\noindent\begin{tabu} to \textwidth {X[c2]X[c]X[c3]X[c]}\toprule
+     \thead{Qui}&\thead{Rôle}&                       \thead{Mail}&\thead{Mobile}\\\toprule
+Tri-thien Truong& Développeur&tri-thien.truong@etu.univ-nantes.fr&    0631193663\\\midrule
+   Ronan Collier& Développeur&   ronan.collier@etu.univ-nantes.fr&    0666847162\\\midrule
+ Mathieu Letrone& Développeur& mathieu.letrone@etu.univ-nantes.fr&    0789662916\\\bottomrule
+\end{tabu}
+
+\subsubsection*{Engagements de la MOE}
+
+
+\noindent\begin{tabu} to \textwidth {X[c]X[c2]X[c]}\toprule
+\thead{Qui}&\thead{Quoi}&\thead{Quand}\\\toprule
+\makecell{%
+  Tri-Thien Truong\\%
+  Ronan Collier\\%
+  Mathieu Letrone%
+} &%
+\makecell{%
+  Fournir un suivi de l'évolution du projet\\%
+  Fournir des rapports / prototypes%
+} &%
+\makecell{
+  Pour la fin des\\
+  grandes étapes\\
+  ou sprints%
+}\\\bottomrule
+\end{tabu}
+
+\section{Hexamètre quintilien (QQOPCQ)}
+
+Dans le cadre de nos études en quatrième année du cursus d'ingénieur informatique à Polytech Nantes, nous sommes amenés à réaliser un projet transversal. Ce projet intitulé <<\,Classification colorimétrique de nuages de points 3D\,>>  est réalisé par notre groupe de trois personnes: Ronan Collier, Mathieu Letrone et Tri-Thien Truong. 
+
+
+Le client, nommé <<\,Taglabs\,>>, est une entreprise récente qui offre une solution basée sur la modélisation de nuages de points en 3D. Dirigée par le président Yan Koch, cette entreprise cherche à innover dans ce domaine. Elle développe un logiciel <<\,ScanSap\,>>, qui permet de représenter un espace sous forme de nuage de points en 3D. Le logiciel peut, par exemple, représenter l'intérieur d'une usine et des éléments présents (tuyaux, meubles, machines, etc.). Ces points sont réalisés grâce à des faisceaux lumineux et de leurs réflection. Plus l'intensité de la réflection sera forte, plus le point sera éclairé (et inversement).
+
+
+Maintenant, l'entreprise cherche à améliorer sa solution en allant plus loin que la seule représentation d'un espace voulu. Elle aimerait apporter plus de visibilité sur leurs nuages de points, en permettant de se focaliser sur un seul élément de la modélisation pour une meilleure exploitation. Leur besoin prioritaire ici est donc de permettre d'isoler, classifier un élément dans un nuage de points donné.
+
+De plus, l'entreprise a également besoin de mettre en avant des éléments sur une map d'intensité à partir de fausses couleurs, c'est-à-dire de pouvoir passer d'un nuage de points avec une nuance de gris, à un nuage avec des couleurs. Au vu des nombreux éléments présents sur le nuage de points, l'entreprise veut avoir la possibilité de récupérer certains éléments (par exemple, récupérer tous les objets métalliques ou encore récupérer des anomalies sur des tuyaux comme de la rouille).
+
+Afin de permettre le suivi du projet par la MOE, des rendez-vous ont été placés pour les deux semaines suivant la réalisation du présent brief. La première entrevue future permettra la validation du cahier des charges par la MOE, tandis que la seconde permettra d'évaluer la réponse apportée au cahier des charges par un premier prototype. 
+
+Quatre autres rendez-vous seront à prévoir afin de valider les prototypes des sprints agiles suivants. Ils n'ont cependant pas été planifiés, car étant très éloignées et donc difficilement prévisibles à l'heure actuelle. Les lieux de rendez-vous entre la MOA et MOE se feront à Polytech, dans une salle réservée préalablement chaque entrevue.
+\end{document}

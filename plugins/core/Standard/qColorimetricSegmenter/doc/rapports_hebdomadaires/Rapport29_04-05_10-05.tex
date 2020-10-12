@@ -1,0 +1,92 @@
+\documentclass[12pt,titlepage,french]{article}
+\usepackage{babel}
+\usepackage{graphicx}
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{tabularx}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\pagestyle{plain}
+
+\usepackage{booktabs,makecell,tabu}
+\renewcommand\theadfont{\bfseries}
+
+\linespread{1.5}
+
+\begin{document}
+%\renewcommand{\thesection}{\arabic{section}} % utilisé pour spécifier la numérotation des sections
+
+\begin{titlepage}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\center
+
+  \includegraphics[width=0.45\textwidth]{../ressources/img_logos/logo_polytech.png}\\[1cm]
+   
+  \includegraphics[width=0.45\textwidth]{../ressources/img_logos/logo_taglabs.png}
+
+
+\HRule \\[0.4cm]
+{ \huge \bfseries Rapport hebdomadaire\\[0.15cm] }
+Classification colorimétrique de nuages de points 3D\\
+Semaine du 04/05 au 10/05
+\HRule \\[1.5cm]
+Ronan Collier,
+Mathieu Letrone,
+Tri-Thien Truong
+\\[1cm]
+\end{titlepage}
+
+\section{Travail effectué}
+
+\noindent\begin{tabularx}{17cm}{|p{2.5cm}|p{2.5cm}|p{1cm}|p{1.5cm}|p{2.5cm}|X|}
+    \hline
+    \textbf{Tâche} & \textbf{Nature} & \textbf{Qui} & \textbf{Temps} & \textbf{Réalisation} & \textbf{Commentaire} \\
+    \hline
+    Lien Tone mapping/filtrages & Production & ML & 1h & Fin & \\
+    \hline
+    Préparer nouveau release et correction bugs & Production & TT/ RC/ ML & 3h/p & Fin & \\
+    \hline
+    Rédaction rapport de recette & Production & TT/ RC/ ML & 3h/p & Fin & \\
+    \hline
+\end{tabularx} \\
+
+\section{Prévision des tâches pour la suite de l'itération par ordre de réalisation :}
+
+\noindent\begin{tabularx}{17cm}{|p{2.5cm}|p{2.5cm}|p{1cm}|p{1.5cm}|p{2.5cm}|X|}
+    \hline
+    \textbf{Tâche} & \textbf{Nature} & \textbf{Qui} & \textbf{Temps} & \textbf{Réalisation} & \textbf{Commentaire} \\
+    \hline
+    Sprint review & Production & TT/ RC/ ML & 2h/p & Fin & \\
+    \hline
+    Correction rapport de description systeme & Production & TT/ RC/ ML & 2h/p & Fin & \\
+    \hline
+    Préparation soutenance & Production & TT/ RC/ ML & 5h/p & Fin & \\
+    \hline
+\end{tabularx} \\
+
+\section{Nouvelles complémentaires}
+
+\noindent\begin{tabularx}{17cm}{|p{5cm}|X|}
+\hline
+   \begin{minipage}{.3\textwidth}
+      \includegraphics[width=\linewidth]{img/smhappy.jpg}
+    \end{minipage}
+    & 
+    Les choses positives de la semaine :\\
+\hline
+     \begin{minipage}{.3\textwidth}
+      \includegraphics[width=\linewidth]{img/smneutral.jpg}
+    \end{minipage}
+    &
+    Les inquiètudes de la semaine :\\
+\hline
+     \begin{minipage}{.3\textwidth}
+      \includegraphics[width=\linewidth]{img/smsad.jpg}
+    \end{minipage}
+    &
+    Les problèmes importants de la semaine : \\
+\hline
+\end{tabularx}
+
+\end{document}

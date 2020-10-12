@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="Ptrans" company="" webLink="http://" view-date="2019-09-01" view-index="0" gantt-divider-location="720" resource-divider-location="300" version="2.8.10" locale="fr">
+    <description/>
+    <view zooming-state="default:9" id="gantt-chart">
+        <field id="tpd3" name="Nom" width="400" order="0"/>
+        <field id="tpd4" name="Date de début" width="159" order="1"/>
+        <field id="tpd5" name="Date de fin" width="142" order="2"/>
+        <option id="taskLabelUp" value=""/>
+        <option id="color.recent"><![CDATA[#ff9900 #ff3300 #00cc00 #ff0000 #00cc33 #00ffff #999999 #666666]]></option>
+    </view>
+    <view id="resource-table">
+        <field id="0" name="Nom" width="210" order="0"/>
+        <field id="1" name="Rôle par défaut" width="86" order="1"/>
+    </view>
+    <!-- -->
+    <calendars base-id="Aucun">
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <default-week id="1" name="default" sun="0" mon="0" tue="0" wed="0" thu="0" fri="0" sat="0"/>
+            <only-show-weekends value="true"/>
+            <overriden-day-types/>
+            <days/>
+        </day-types>
+    </calendars>
+    <tasks empty-milestones="true">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="0" name="Réalisation du cahier des charges" color="#8cb6ce" meeting="false" start="2019-10-15" duration="35" complete="0" thirdDate="2019-10-28" thirdDate-constraint="0" expand="true">
+            <depend id="11" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="239" name="Rendu cahier des charges" color="#ff9900" meeting="true" start="2019-11-18" duration="0" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+        <task id="4" name="Préparation soutenance 1" color="#8cb6ce" meeting="false" start="2019-11-13" duration="6" complete="0" thirdDate="2019-10-07" thirdDate-constraint="0" expand="true"/>
+        <task id="207" name="Soutenance 1" color="#ff3300" meeting="true" start="2019-11-19" duration="0" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+        <task id="11" name="Sprint 1" color="#8cb6ce" meeting="false" start="2019-11-19" duration="29" complete="0" thirdDate="2019-10-07" thirdDate-constraint="0" expand="true">
+            <depend id="14" type="2" difference="0" hardness="Strong"/>
+            <task id="55" name="Prise en main des outils" color="#8cb6ce" meeting="false" start="2019-11-19" duration="7" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true">
+                <depend id="46" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="46" name="Recherches sur les solutions" color="#8cb6ce" meeting="false" start="2019-11-26" duration="15" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true">
+                <depend id="44" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="44" name="Préparation rapport sprint 1" color="#8cb6ce" meeting="false" start="2019-12-11" duration="7" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+            <task id="242" name="Rendu rapport sprint 1" color="#ff9900" meeting="true" start="2019-12-17" duration="0" complete="0" thirdDate="2019-11-19" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="14" name="Sprint 2" color="#8cb6ce" meeting="false" start="2019-12-18" duration="28" complete="0" thirdDate="2019-10-07" thirdDate-constraint="0" expand="true">
+            <depend id="16" type="2" difference="0" hardness="Strong"/>
+            <task id="56" name="Développement de la sélection de points selon la couleur" color="#8cb6ce" meeting="false" start="2019-12-18" duration="7" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+            <task id="57" name="Développement de suppression de points" color="#8cb6ce" meeting="false" start="2019-12-18" duration="7" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+            <task id="223" name="Vacances" color="#00cc00" meeting="false" start="2019-12-25" duration="10" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+            <task id="58" name="Développement du lien entre sélection et suppression" color="#8cb6ce" meeting="false" start="2020-01-03" duration="6" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true">
+                <depend id="66" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="66" name="Préparation sprint review + rapport 2" color="#8cb6ce" meeting="false" start="2020-01-09" duration="6" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+            <task id="250" name="Rendu rapport sprint review" color="#ff9900" meeting="true" start="2020-01-14" duration="0" complete="0" thirdDate="2019-12-18" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="16" name="Sprint 3" color="#8cb6ce" meeting="false" start="2020-01-17" duration="28" complete="0" thirdDate="2019-10-07" thirdDate-constraint="0" expand="true">
+            <depend id="18" type="2" difference="0" hardness="Strong"/>
+            <task id="114" name="Revue sur l'algo, réflexion sur la complexité + amélioration" color="#8cb6ce" meeting="false" start="2020-01-17" duration="22" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true">
+                <depend id="115" type="2" difference="0" hardness="Strong"/>
+                <depend id="175" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="115" name="Préparation rapport sprint 3" color="#8cb6ce" meeting="false" start="2020-02-08" duration="4" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+            <task id="255" name="Rendu rapport sprint 3" color="#ff9900" meeting="true" start="2020-02-11" duration="0" complete="0" thirdDate="2020-01-15" thirdDate-constraint="0" expand="true"/>
+            <task id="175" name="Préparation soutenance 2" color="#8cb6ce" meeting="false" start="2020-02-08" duration="6" complete="0" thirdDate="2019-12-18" thirdDate-constraint="0" expand="true"/>
+            <task id="211" name="Soutenance 2 : Premières solutions" color="#ff3300" meeting="true" start="2020-02-14" duration="0" complete="0" thirdDate="2020-01-15" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="18" name="Sprint 4" color="#8cb6ce" meeting="false" start="2020-02-14" duration="26" complete="0" thirdDate="2019-10-07" thirdDate-constraint="0" expand="true">
+            <depend id="40" type="2" difference="0" hardness="Strong"/>
+            <task id="134" name="Développement d'interface pour l'utilisateur" color="#8cb6ce" meeting="false" start="2020-02-14" duration="20" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true">
+                <depend id="137" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="216" name="Intégration de fausses couleurs" color="#8cb6ce" meeting="false" start="2020-02-14" duration="20" complete="0" thirdDate="2020-02-14" thirdDate-constraint="0" expand="true">
+                <depend id="137" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="137" name="Préparation rapport sprint 4" color="#8cb6ce" meeting="false" start="2020-03-05" duration="6" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+            <task id="269" name="Rendu rapport sprint 4" color="#ff9900" meeting="true" start="2020-03-10" duration="0" complete="0" thirdDate="2020-02-14" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="142" name="Indisponibilité (projet iCreate)" color="#ff0000" meeting="false" start="2020-03-16" duration="12" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true">
+            <depend id="143" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="40" name="Sprint 5" color="#8cb6ce" meeting="false" start="2020-03-28" duration="11" complete="0" thirdDate="2019-10-07" thirdDate-constraint="0" expand="true">
+            <depend id="43" type="2" difference="0" hardness="Strong"/>
+            <task id="143" name="Lien avec l'isolation de points" color="#8cb6ce" meeting="false" start="2020-03-28" duration="8" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true">
+                <depend id="144" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="144" name="Préparation rapport sprint 5" color="#8cb6ce" meeting="false" start="2020-04-05" duration="3" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+            <task id="276" name="Rendu rapport sprint 5" color="#ff9900" meeting="true" start="2020-04-07" duration="0" complete="0" thirdDate="2020-03-11" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="43" name="Sprint 6" color="#8cb6ce" meeting="false" start="2020-04-10" duration="28" complete="0" thirdDate="2019-10-07" thirdDate-constraint="0" expand="true">
+            <depend id="158" type="2" difference="0" hardness="Strong"/>
+            <task id="153" name="Réflexion sur le problème du mouchetage" color="#8cb6ce" meeting="false" start="2020-04-10" duration="20" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true">
+                <depend id="154" type="2" difference="0" hardness="Strong"/>
+                <depend id="205" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="229" name="Réflexion sur les résidus de points après filtrage" color="#8cb6ce" meeting="false" start="2020-04-10" duration="20" complete="0" thirdDate="2020-04-10" thirdDate-constraint="0" expand="true">
+                <depend id="154" type="2" difference="0" hardness="Strong"/>
+                <depend id="205" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="154" name="Prépration rapport sprint 6" color="#8cb6ce" meeting="false" start="2020-04-30" duration="6" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+            <task id="284" name="Rendu rapport sprint 6" color="#ff9900" meeting="true" start="2020-05-05" duration="0" complete="0" thirdDate="2020-04-08" thirdDate-constraint="0" expand="true"/>
+            <task id="205" name="Préparation soutenance 3" color="#8cb6ce" meeting="false" start="2020-04-30" duration="6" complete="0" thirdDate="2020-04-08" thirdDate-constraint="0" expand="true"/>
+            <task id="215" name="Soutenance 3 : Système réalisé" color="#ff3300" meeting="true" start="2020-05-08" duration="0" complete="0" thirdDate="2020-04-10" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="158" name="Recette" color="#8cb6ce" meeting="false" start="2020-05-08" duration="11" complete="0" thirdDate="2020-05-06" thirdDate-constraint="0" expand="true">
+            <task id="159" name="Mise au propre du code + finalisation du projet" color="#8cb6ce" meeting="false" start="2020-05-08" duration="11" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+            <task id="160" name="Rapport Description du système" color="#8cb6ce" meeting="false" start="2020-05-08" duration="11" complete="0" thirdDate="2019-09-01" thirdDate-constraint="0" expand="true"/>
+        </task>
+    </tasks>
+    <resources/>
+    <allocations/>
+    <vacations/>
+    <previous/>
+    <roles roleset-name="Default"/>
+</project>

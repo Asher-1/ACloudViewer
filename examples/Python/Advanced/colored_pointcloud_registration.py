@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Advanced/colored_pointcloud_registration.py
 
@@ -64,9 +64,8 @@ if __name__ == "__main__":
         result_icp = cv3d.registration.registration_colored_icp(
             source_down, target_down, radius, current_transformation,
             cv3d.registration.ICPConvergenceCriteria(relative_fitness=1e-6,
-                                                    relative_rmse=1e-6,
-                                                    max_iteration=iter))
+                                                     relative_rmse=1e-6,
+                                                     max_iteration=iter))
         current_transformation = result_icp.transformation
         print(result_icp)
-    draw_registration_result_original_color(source, target,
-                                            result_icp.transformation)
+    draw_registration_result_original_color(source, target, result_icp.transformation)

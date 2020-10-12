@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Misc/evaluate_geometric_feature.py
 
@@ -10,12 +10,10 @@ import numpy as np
 
 def evaluate(pcd_target, pcd_source, feature_target, feature_source):
     tree_target = cv3d.geometry.KDTreeFlann(feature_target)
-    pt_dis = np.zeros(len(pcd_source.points))
-    for i in range(len(pcd_source.points)):
-        [_, idx,
-         _] = tree_target.search_knn_vector_xd(feature_source.data[:, i], 1)
-        pt_dis[i] = np.linalg.norm(pcd_source.points[i] -
-                                   pcd_target.points[idx[0]])
+    pt_dis = np.zeros(len(pcd_source.get_points()))
+    for i in range(len(pcd_source.get_points())):
+        [_, idx, _] = tree_target.search_knn_vector_xd(feature_source.data[:, i], 1)
+        pt_dis[i] = np.linalg.norm(pcd_source.get_point(i) - pcd_target.get_point(idx[0]))
     return pt_dis
 
 
@@ -32,4 +30,4 @@ if __name__ == "__main__":
     num_good = sum(pt_dis < 0.075)
     print(
         "{:.2f}% points in source ccPointCloud successfully found their correspondence."
-        .format(num_good * 100.0 / len(pcd_source.points)))
+        .format(num_good * 100.0 / len(pcd_source.get_points())))

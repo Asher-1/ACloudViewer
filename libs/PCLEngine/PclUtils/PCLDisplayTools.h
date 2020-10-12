@@ -40,7 +40,6 @@ class ccImage;
 class ecvOrientedBBox;
 class ccPointCloud;
 class QMainWindow;
-class ecvMainAppInterface;
 
 //! CC to PCL cloud converter
 class QPCL_ENGINE_LIB_API PCLDisplayTools : public ecvDisplayTools
@@ -361,7 +360,7 @@ protected:
 
 	PclUtils::PCLVisPtr m_visualizer3D = nullptr;
 
-	virtual void registerVisualizer(QMainWindow * widget, ecvMainAppInterface * app) override;
+	virtual void registerVisualizer(QMainWindow * widget) override;
 };
 
 #endif // QPCL_DISPLAY_TOOLS_HEADER

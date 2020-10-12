@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Basic/kdtree.py
 
@@ -16,15 +16,21 @@ if __name__ == "__main__":
     pcd_tree = cv3d.geometry.KDTreeFlann(pcd)
 
     print("Paint the 1500th point red.")
-    pcd.colors[1500] = [1, 0, 0]
+    pcd.set_color(1500, [1, 0, 0])
+
+    pcd_tree.search_vector_3d(pcd.get_point(10), cv3d.geometry.KDTreeSearchParam.KNNSearch)
 
     print("Find its 200 nearest neighbors, paint blue.")
-    [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[1500], 200)
-    np.asarray(pcd.colors)[idx[1:], :] = [0, 0, 1]
+    [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.get_point(1500), 200)
+    colors = np.asarray(pcd.get_colors())
+    colors[idx[1:], :] = [0, 0, 1]
+    pcd.set_colors(cv3d.utility.Vector3dVector(colors))
 
     print("Find its neighbors with distance less than 0.2, paint green.")
-    [k, idx, _] = pcd_tree.search_radius_vector_3d(pcd.points[1500], 0.2)
-    np.asarray(pcd.colors)[idx[1:], :] = [0, 1, 0]
+    [k, idx, _] = pcd_tree.search_radius_vector_3d(pcd.get_point(1500), 0.2)
+    colors = np.asarray(pcd.get_colors())
+    colors[idx[1:], :] = [0, 1, 0]
+    pcd.set_colors(cv3d.utility.Vector3dVector(colors))
 
     print("Visualize the point cloud.")
     cv3d.visualization.draw_geometries([pcd])

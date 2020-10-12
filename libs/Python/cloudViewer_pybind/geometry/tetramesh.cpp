@@ -35,10 +35,10 @@ using namespace cloudViewer;
 
 void pybind_tetramesh(py::module &m) {
     py::class_<geometry::TetraMesh, PyGeometry<geometry::TetraMesh>,
-               std::shared_ptr<geometry::TetraMesh>, ccHObject>
+               std::shared_ptr<geometry::TetraMesh>, CVLib::GenericMesh, ccHObject>
             trianglemesh(m, "TetraMesh", py::multiple_inheritance(),
                          "TetraMesh class. Tetra mesh contains vertices "
-                         "and tetrahedra represented by the indices to the "
+                         "and Tetrahedra represented by the indices to the "
                          "vertices.");
     py::detail::bind_default_constructor<geometry::TetraMesh>(trianglemesh);
     py::detail::bind_copy_functions<geometry::TetraMesh>(trianglemesh);

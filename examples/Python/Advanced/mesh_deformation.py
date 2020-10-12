@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Advanced/mesh_deformation.py
 
@@ -18,7 +18,7 @@ import meshes
 def problem0():
     mesh = meshes.plane(height=1, width=1)
     mesh = mesh.subdivide_midpoint(3)
-    vertices = np.asarray(mesh.vertices)
+    vertices = np.asarray(mesh.get_vertices())
     static_ids = [
         1, 46, 47, 48, 16, 51, 49, 50, 6, 31, 33, 32, 11, 26, 27, 25, 0, 64, 65,
         20, 66, 68, 67, 7, 69, 71, 70, 22, 72, 74, 73, 3, 15, 44, 43, 45, 5, 41,
@@ -36,7 +36,7 @@ def problem0():
 def problem1():
     mesh = meshes.plane(height=1, width=1)
     mesh = mesh.subdivide_midpoint(3)
-    vertices = np.asarray(mesh.vertices)
+    vertices = np.asarray(mesh.get_vertices())
     static_ids = [
         1, 46, 15, 43, 5, 40, 13, 38, 2, 56, 37, 39, 42, 41, 45, 44, 48, 47
     ]
@@ -51,7 +51,7 @@ def problem1():
 
 def problem2():
     mesh = meshes.armadillo()
-    vertices = np.asarray(mesh.vertices)
+    vertices = np.asarray(mesh.get_vertices())
     static_ids = [idx for idx in np.where(vertices[:, 1] < -30)[0]]
     static_positions = []
     for id in static_ids:
@@ -78,6 +78,6 @@ if __name__ == "__main__":
 
         mesh.paint_uniform_color((1, 0, 0))
         handles = cv3d.geometry.ccPointCloud()
-        handles.points = constraint_pos
+        handles.set_points(constraint_pos)
         handles.paint_uniform_color((0, 1, 0))
         cv3d.visualization.draw_geometries([mesh, mesh_prime, handles])

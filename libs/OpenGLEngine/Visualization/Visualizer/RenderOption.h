@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ namespace visualization {
 /// \class RenderOption
 ///
 /// \brief Defines rendering options for visualizer.
-class OPENGL_ENGINE_LIB_API RenderOption : public CVLib::utility::IJsonConvertible {
+class RenderOption : public CVLib::utility::IJsonConvertible {
 public:
     // Global options
     enum class TextureInterpolationOption {
@@ -154,8 +154,7 @@ public:
     }
     void ChangeLineWidth(double change) {
         line_width_ = std::max(std::min(line_width_ + change * LINE_WIDTH_STEP,
-                                        LINE_WIDTH_MAX),
-                               LINE_WIDTH_MIN);
+                                        LINE_WIDTH_MAX), LINE_WIDTH_MIN);
     }
     void TogglePointShowNormal() { point_show_normal_ = !point_show_normal_; }
     void ToggleShadingOption() {
@@ -221,7 +220,7 @@ public:
     bool mesh_show_wireframe_ = false;
     Eigen::Vector3d default_mesh_color_ = Eigen::Vector3d(0.7, 0.7, 0.7);
 
-    // LineSet options
+    // LineSet or polyline options
     /// Line width for LineSet.
     double line_width_ = LINE_WIDTH_DEFAULT;
 

@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Advanced/customized_visualization.py
 
@@ -39,8 +39,7 @@ def custom_draw_geometry_with_rotation(pcd):
         ctr.rotate(10.0, 0.0)
         return False
 
-    cv3d.visualization.draw_geometries_with_animation_callback([pcd],
-                                                              rotate_view)
+    cv3d.visualization.draw_geometries_with_animation_callback([pcd], rotate_view)
 
 
 def custom_draw_geometry_load_option(pcd):
@@ -89,8 +88,7 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
     custom_draw_geometry_with_camera_trajectory.trajectory =\
             cv3d.io.read_pinhole_camera_trajectory(
                     "../../TestData/camera_trajectory.json")
-    custom_draw_geometry_with_camera_trajectory.vis = cv3d.visualization.Visualizer(
-    )
+    custom_draw_geometry_with_camera_trajectory.vis = cv3d.visualization.Visualizer()
     if not os.path.exists("../../TestData/image/"):
         os.makedirs("../../TestData/image/")
     if not os.path.exists("../../TestData/depth/"):

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualization/Shader/PhongShader.h"
+#include "PhongShader.h"
 #include <ecvPointCloud.h>
 #include <ecvMesh.h>
-#include "Visualization/Shader/Shader.h"
-#include "Visualization/Utility/ColorMap.h"
+#include "Shader.h"
+#include "../Utility/ColorMap.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -245,12 +245,16 @@ bool PhongShaderForPointCloud::PrepareBinding(
             case RenderOption::PointColorOption::Color:
             case RenderOption::PointColorOption::Default:
             default:
-                if (pointcloud.hasColors()) {
+				if (pointcloud.isColorOverriden()) {
+					color = ecvColor::Rgb::ToEigen(pointcloud.getTempColor());
+				}
+				else if (pointcloud.hasColors()) {
 					color = pointcloud.getEigenColor(i);
-                } else {
-                    color = global_color_map.GetColor(
-                            view.GetBoundingBox().getZPercentage(point(2)));
-                }
+				}
+				else {
+					color = global_color_map.GetColor(
+						view.GetBoundingBox().getZPercentage(point(2)));
+				}
                 break;
         }
         colors[i] = color.cast<float>();
@@ -338,10 +342,14 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
                             view.GetBoundingBox().getZPercentage(vertex(2)));
                     break;
                 case RenderOption::MeshColorOption::Color:
-                    if (mesh.hasColors()) {
+					if (mesh.isColorOverriden()) {
+						color = ecvColor::Rgb::ToEigen(mesh.getTempColor());
+						break;
+					}
+					else if (mesh.hasColors()) {
 						color = mesh.getVertexColor(vi);
-                        break;
-                    }
+						break;
+					}
                 case RenderOption::MeshColorOption::Default:
                 default:
                     color = option.default_mesh_color_;

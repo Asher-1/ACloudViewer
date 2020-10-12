@@ -138,30 +138,6 @@ ccPointCloud* vtk2ccConverter::getPointCloudFromPolyData(vtkPolyData* polydata, 
 	}
 
 	return cloud;
-
-#if 0
-	PCLCloud::Ptr smCloud = cc2smReader().getVtkPolyDataAsSM(polydata);
-	if (!smCloud)
-	{
-		if (!silent)
-		{
-			CVLog::Error(QString("[getPointCloudFromPolyData] failed to convert vtkPolyData to pcl::PCLPointCloud2"));
-		}
-		return nullptr;
-	}
-
-	if (smCloud->width * smCloud->height == 0)
-	{
-		if (!silent)
-		{
-			CVLog::Warning(QString("[getPointCloudFromPolyData] pcl::PCLPointCloud2 is empty!"));
-		}
-		
-		return nullptr;
-	}
-	return sm2ccConverter(smCloud).getCloud();
-#endif
-
 }
 
 ccMesh* vtk2ccConverter::getMeshFromPolyData(vtkPolyData* polydata, bool silent)
@@ -235,32 +211,6 @@ ccMesh* vtk2ccConverter::getMeshFromPolyData(vtkPolyData* polydata, bool silent)
 	}
 
 	return mesh;
-
-
-#if 0
-	PCLMesh::Ptr pclMesh = cc2smReader().getVtkPolyDataAsPclMesh(polydata);
-	
-	if (!pclMesh)
-	{
-		if (!silent)
-		{
-			CVLog::Warning(QString("[getMeshFromPolyData] failed to convert vtkPolyData to pcl::PolygonMesh"));
-		}
-		
-		return nullptr;
-	}
-
-	if (pclMesh->cloud.width * pclMesh->cloud.height == 0)
-	{
-		if (!silent)
-		{
-			CVLog::Warning(QString("[getMeshFromPolyData] pcl::polygonMesh is empty!"));
-		}
-		return nullptr;
-	}
-	return sm2ccConverter(pclMesh->cloud).getMesh(pclMesh->polygons);
-#endif
-	
 }
 
 ccPolyline* vtk2ccConverter::getPolylineFromPolyData(vtkPolyData* polydata, bool silent)

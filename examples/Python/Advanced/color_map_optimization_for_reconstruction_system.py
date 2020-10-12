@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Advanced/color_map_optimization_for_reconstruction_system.py
 
@@ -74,13 +74,11 @@ def main(config, keys):
             "The number of color images {} must equal to the number of camera parameters {}."
             .format(len(color_files), len(depth_files)))
 
-    color_files, depth_files = collect_keyframe_rgbd(color_files, depth_files,
-                                                     keys)
+    color_files, depth_files = collect_keyframe_rgbd(color_files, depth_files, keys)
 
     # Read camera poses
     if config["path_intrinsic"]:
-        intrinsic = cv3d.io.read_pinhole_camera_intrinsic(
-            config["path_intrinsic"])
+        intrinsic = cv3d.io.read_pinhole_camera_intrinsic(config["path_intrinsic"])
     else:
         intrinsic = cv3d.camera.PinholeCameraIntrinsic(
             cv3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
@@ -132,10 +130,9 @@ if __name__ == "__main__":
                         required=True,
                         help='path to the config for the dataset '
                         'preprocessed by the Reconstruction System')
-    parser.add_argument(
-        '--keys',
-        type=str,
-        help='txt file that contains the indices of the keyframes')
+    parser.add_argument('--keys',
+                        type=str,
+                        help='txt file that contains the indices of the keyframes')
     parser.add_argument('--sample_rate',
                         type=int,
                         default=10,

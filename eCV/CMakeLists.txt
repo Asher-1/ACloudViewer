@@ -1,19 +1,12 @@
-cmake_minimum_required(VERSION 3.5)
-
 project(ErowCloudViewer VERSION ${PROJECT_VERSION})
 
 OPTION( UPDATE_TRANSLATION_FILES "Generate or update ts files" OFF )
 
-include ( ${ECV_CMAKE_SCRIPTS_DIR}/CMakePolicies.cmake NO_POLICY_SCOPE )
+include( CMakePolicies NO_POLICY_SCOPE )
 
-include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-
-include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-if( MSVC )
-   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
+if (CVCORELIB_USE_TBB)
+	include_directories( ${TBB_INCLUDE_DIRS})
 endif()
-
-include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
 
 if (USE_PCL_BACKEND) 
 	include_directories( ${PCL_INCLUDE_DIRS} )
@@ -26,10 +19,8 @@ endif()
 
 include_directories( ${ErowCloudViewerPlugins_SOURCE_DIR} )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../common )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/db_tree )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/ui_templates )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../libs/qcustomplot )
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 file( GLOB header_list *.h  )
@@ -40,9 +31,10 @@ file( GLOB qrc_list *.qrc Resources/themes/*.qrc )
 
 file( GLOB txt_list TODO.txt ${ErowCloudViewerProjects_SOURCE_DIR}/CHANGELOG.md )
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../common ${CMAKE_CURRENT_BINARY_DIR}/common)
 add_subdirectory( db_tree )
 add_subdirectory( pluginManager )
+
+add_subdirectory( extern/QCustomPlot EXCLUDE_FROM_ALL )
 
 qt5_wrap_ui( generated_ui_list ${ui_list} )
 qt5_add_resources( generated_qrc_list ${qrc_list} )
@@ -75,15 +67,32 @@ else()
 	add_executable( ${PROJECT_NAME} ${header_list} ${source_list} ${generated_ui_list} ${generated_qrc_list} ${rc_list} ${txt_list} )
 endif()
 
-target_link_libraries( ${PROJECT_NAME} CV_CORE_LIB )
-target_link_libraries( ${PROJECT_NAME} ECV_DB_LIB )
-target_link_libraries( ${PROJECT_NAME} ECV_IO_LIB )
-target_link_libraries( ${PROJECT_NAME} qcustomplot )
+add_custom_command(
+	TARGET ${PROJECT_NAME}
+	POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/ErowCloudViewer.exe ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/ErowCloudViewer.exe
+	VERBATIM
+)
 
-# Qt
-target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Widgets Qt5::OpenGL Qt5::PrintSupport Qt5::Svg)
-if (WIN32)
-	target_link_libraries( ${PROJECT_NAME} Qt5::WinMain )
+DeployQt(
+	TARGET
+		${PROJECT_NAME}
+	DEPLOY_PATH
+		${PROJECT_NAME}
+)
+
+target_link_libraries( ${PROJECT_NAME}
+    CVAppCommon
+    QCustomPlot
+    Qt5::PrintSupport
+)
+
+if( CVCORELIB_USE_QT_CONCURRENT )
+	# We want *deployqt to handle this dependency, so instead of just copying the file
+	# link to the target.
+	target_link_libraries( ${PROJECT_NAME}
+		Qt5::Concurrent
+	)
 endif()
 
 if (USE_PCL_BACKEND)
@@ -108,7 +117,7 @@ endif()
 
 # Add custom preprocessor definitions
 if( WIN32 )
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS CV_USE_AS_DLL ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD)
+	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD)
 	if (MSVC)
 		set_target_properties( ${PROJECT_NAME} PROPERTIES LINK_FLAGS " /MANIFEST:NO" )
 	endif()
@@ -125,17 +134,12 @@ if( WIN32 )
 endif()
 
 # install program
-install_ext( TARGETS ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} )
+install_ext( TARGETS ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
 
 # Auxiliary files
 set( auxFiles  ${ErowCloudViewerProjects_SOURCE_DIR}/CHANGELOG.md bin_other/license.txt bin_other/global_shift_list_template.txt )
 
 if( WIN32 )
-	# Export Qt dlls
-	install_Qt_Dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} ${OPTION_SUPPORT_GAMEPADS} )
-	install_Qt_ImageFormats( ${EROWCLOUDVIEWER_DEST_FOLDER} )
-	install_Qt5_plugins( ${EROWCLOUDVIEWER_DEST_FOLDER} )
-
 	# Additional auxiliary file(s)
 	file( GLOB batch_list bin_other/*.bat )
 	list( APPEND auxFiles ${batch_list} )
@@ -144,13 +148,38 @@ endif()
 # Install auxiliary files
 if( WIN32 OR APPLE )
 	foreach( filename ${auxFiles} )
-		install_ext( FILES ${filename} ${EROWCLOUDVIEWER_DEST_FOLDER} )
+		install_ext( FILES ${filename} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
 	endforeach()
 else( UNIX )
 	foreach( filename ${auxFiles} )
-		install_ext( FILES ${filename} share/ErowCloudViewer )
+		install_ext( FILES ${filename} share/ErowCloudViewer "" )
 	endforeach()
 endif()
 
 # Translation
 add_subdirectory( translations )
+
+# Put together our Application bundle on macOS
+if( APPLE )    
+    add_subdirectory( Mac )
+endif()
+
+# Install plugins and shaders in the correct folder for each platform
+if( APPLE )	
+	InstallPlugins(
+		DEST_PATH "${EROWCLOUDVIEWER_MAC_PLUGIN_DIR}"
+		SHADER_DEST_PATH "${EROWCLOUDVIEWER_MAC_BASE_DIR}/Contents/Shaders"
+	)
+elseif( UNIX )
+	InstallPlugins(
+		DEST_PATH "${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer/plugins"
+		SHADER_DEST_PATH share/ErowCloudViewer/shaders
+	)
+else()
+	InstallPlugins(
+		DEST_PATH "${EROWCLOUDVIEWER_DEST_FOLDER}"
+		DEST_FOLDER "plugins"
+		SHADER_DEST_PATH "${EROWCLOUDVIEWER_DEST_FOLDER}"
+		SHADER_DEST_FOLDER "shaders"
+	)
+endif()

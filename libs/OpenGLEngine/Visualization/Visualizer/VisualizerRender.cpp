@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualization/Visualizer/Visualizer.h" // must include first
-#include "Camera/PinholeCameraTrajectory.h"
+#include "Visualizer.h" // must include first
+#include "../../Camera/PinholeCameraTrajectory.h"
 
 #include <Console.h>
 #include <ecvMesh.h>
@@ -35,9 +35,9 @@
 #include <PointCloudIO.h>
 #include <IJsonConvertibleIO.h>
 
-#include "Visualization/Utility/GLHelper.h"
-#include "Visualization/Visualizer/ViewParameters.h"
-#include "Visualization/Visualizer/ViewTrajectory.h"
+#include "../Utility/GLHelper.h"
+#include "ViewParameters.h"
+#include "ViewTrajectory.h"
 
 namespace cloudViewer {
 namespace visualization {
