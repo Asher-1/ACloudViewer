@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ namespace camera {
 /// \enum PinholeCameraIntrinsicParameters
 ///
 /// \brief Sets default camera intrinsic parameters for sensors.
-enum class OPENGL_ENGINE_LIB_API PinholeCameraIntrinsicParameters {
+enum class PinholeCameraIntrinsicParameters {
     /// Default settings for PrimeSense camera sensor.
     PrimeSenseDefault = 0,
     /// Default settings for Kinect2 depth camera.
@@ -49,7 +49,7 @@ enum class OPENGL_ENGINE_LIB_API PinholeCameraIntrinsicParameters {
 /// \class PinholeCameraIntrinsic
 ///
 /// \brief Contains the pinhole camera intrinsic parameters.
-class OPENGL_ENGINE_LIB_API PinholeCameraIntrinsic : 
+class PinholeCameraIntrinsic : 
 	public CVLib::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +26,14 @@
 
 #pragma once
 
-#include "Camera/PinholeCameraTrajectory.h"
-#include "Visualization/Visualizer/ViewControl.h"
-#include "Visualization/Visualizer/ViewTrajectory.h"
+#include "../../Camera/PinholeCameraTrajectory.h"
+#include "ViewControl.h"
+#include "ViewTrajectory.h"
 
 namespace cloudViewer {
 namespace visualization {
 
-class OPENGL_ENGINE_LIB_API ViewControlWithCustomAnimation : public ViewControl {
+class ViewControlWithCustomAnimation : public ViewControl {
 public:
     enum AnimationMode {
         FreeMode = 0,

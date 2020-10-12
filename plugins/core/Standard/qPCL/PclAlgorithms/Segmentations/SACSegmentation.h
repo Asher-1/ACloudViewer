@@ -20,8 +20,6 @@
 
 #include "BasePclModule.h"
 
-#include "PclUtils/PCLCloud.h"
-
 // QT
 #include <QString>
 
@@ -45,11 +43,12 @@ protected:
 	virtual int checkParameters();
 	virtual QString getErrorMessage(int errorCode);
 
-	int extractRecursive(
-		PointCloudT::Ptr xyzCloud,
-		PointCloudT::Ptr cloudRemained,
-		std::vector<PointCloudT::Ptr> &cloudExtractions,
-		bool recursive/* = false*/);
+	//int extractRecursive(
+	//	PointCloudT::Ptr xyzCloud,
+	//	PointCloudT::Ptr cloudRemained,
+	//	std::vector<PointCloudT::Ptr> &cloudExtractions,
+	//	bool recursive = false);
+
 
 	SACSegmentationDlg* m_dialog;
 
@@ -70,9 +69,9 @@ protected:
 	bool m_useVoxelGrid;
 	float m_leafSize;
 	bool m_recursiveMode;
+	float m_normalDisWeight;
 	float m_maxRemainingRatio;
 
-	float m_normalDisWeight;
 };
 
 #endif // Q_PCL_PLUGIN_SACSEGMENTATION_HEADER

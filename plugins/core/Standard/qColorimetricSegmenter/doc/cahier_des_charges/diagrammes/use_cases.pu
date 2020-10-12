@@ -1,0 +1,22 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+actor utilisateur
+rectangle systeme {
+    (Lire un fichier de données \ncontenant un nuage de points) as (1)
+    (Selectionner la plage \nde couleur à extraire) as (2)
+    (Réaliser de la fausse \ncouleur sur un nuage de points \nen intensité de gris) as (3)
+    (Isoler un élément dans \nun nuage de points donné, \nselon sa plage de couleur) as (4)
+    (Exporter le nuage de points) as (5)
+    (Régler les seuils des fausses couleurs) as (6)
+
+    utilisateur -- 1
+    utilisateur -- 2
+    utilisateur -- 6
+    utilisateur -- 5
+    1 .> 2 : include
+    1 .> 5 : include
+    :2: -down.> 4 : include
+    6 -down.> 3 : include
+}
+@enduml"

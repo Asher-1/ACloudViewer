@@ -33,8 +33,6 @@ FooFilter::FooFilter()
 {
 }
 
-}
-
 CC_FILE_ERROR FooFilter::loadFile( const QString &fileName, ccHObject &container, LoadParameters &parameters )
 {	
 	Q_UNUSED( container );

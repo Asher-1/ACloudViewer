@@ -35,6 +35,9 @@
 #include <ecvNormalVectors.h>
 #include <ecvScalarField.h>
 
+// ECV_PLUGINS
+#include <ecvMainAppInterface.h>
+
 //Qt
 #include <QtGui>
 #include <QtCore>

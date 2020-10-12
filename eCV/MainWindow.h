@@ -187,6 +187,8 @@ public:  // inherited from ecvMainAppInterface
 	void spawnHistogramDialog(const std::vector<unsigned>& histoValues,
 		double minVal, double maxVal,
 		QString title, QString xAxisLabel) override;
+	ccPickingHub* pickingHub() override { return m_pickingHub; }
+
 	virtual void toggleExclusiveFullScreen(bool state) override;
 	virtual void toggle3DView(bool state) override;
 	virtual void forceConsoleDisplay() override;
@@ -239,6 +241,12 @@ private:
 	void initStatusBar();
 	void initDBRoot();
 	void initConsole();
+
+	//! Adds the "Edit Plane" action to the given menu.
+	/**
+	 * This is the only MainWindow UI action used externally (by ccDBRoot).
+	**/
+	void  addEditPlaneAction(QMenu &menu) const;
 
 	//! Makes the window including an entity zoom on it (helper)
 	void zoomOn(ccHObject* object);

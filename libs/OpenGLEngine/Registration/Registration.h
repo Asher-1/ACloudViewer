@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,8 @@
 #include <vector>
 #include <Eigen.h>
 
-#include "Registration/CorrespondenceChecker.h"
-#include "Registration/TransformationEstimation.h"
+#include "CorrespondenceChecker.h"
+#include "TransformationEstimation.h"
 
 class ccPointCloud;
 namespace cloudViewer {
@@ -51,7 +51,7 @@ namespace registration {
 /// ICP algorithm stops if the relative change of fitness and rmse hit
 /// \p relative_fitness_ and \p relative_rmse_ individually, or the iteration
 /// number exceeds \p max_iteration_.
-class OPENGL_ENGINE_LIB_API ICPConvergenceCriteria {
+class ICPConvergenceCriteria {
 public:
     /// \brief Parameterized Constructor.
     ///
@@ -88,7 +88,7 @@ public:
 /// Note that the validation is the most computational expensive operator in an
 /// iteration. Most iterations do not do full validation. It is crucial to
 /// control max_validation_ so that the computation time is acceptable.
-class OPENGL_ENGINE_LIB_API RANSACConvergenceCriteria {
+class RANSACConvergenceCriteria {
 public:
     /// \brief Parameterized Constructor.
     ///
@@ -110,7 +110,7 @@ public:
 /// \class RegistrationResult
 ///
 /// Class that contains the registration results.
-class OPENGL_ENGINE_LIB_API RegistrationResult {
+class RegistrationResult {
 public:
     /// \brief Parameterized Constructor.
     ///
@@ -140,7 +140,7 @@ public:
 /// distance. \param transformation The 4x4 transformation matrix to transform
 /// source to target. Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.],
 /// [0., 0., 1., 0.], [0., 0., 0., 1.]]).
-RegistrationResult OPENGL_ENGINE_LIB_API EvaluateRegistration(
+RegistrationResult EvaluateRegistration(
         const ccPointCloud &source,
         const ccPointCloud &target,
         double max_correspondence_distance,
@@ -156,7 +156,7 @@ RegistrationResult OPENGL_ENGINE_LIB_API EvaluateRegistration(
 ///  [0., 0., 0., 1.]])
 /// \param estimation Estimation method.
 /// \param criteria Convergence criteria.
-RegistrationResult OPENGL_ENGINE_LIB_API RegistrationICP(
+RegistrationResult RegistrationICP(
         const ccPointCloud &source,
         const ccPointCloud &target,
         double max_correspondence_distance,
@@ -174,7 +174,7 @@ RegistrationResult OPENGL_ENGINE_LIB_API RegistrationICP(
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance. \param estimation Estimation method. \param ransac_n Fit ransac
 /// with `ransac_n` correspondences. \param criteria Convergence criteria.
-RegistrationResult OPENGL_ENGINE_LIB_API RegistrationRANSACBasedOnCorrespondence(
+RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const ccPointCloud &source,
         const ccPointCloud &target,
         const CorrespondenceSet &corres,
@@ -194,7 +194,7 @@ RegistrationResult OPENGL_ENGINE_LIB_API RegistrationRANSACBasedOnCorrespondence
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance. \param ransac_n Fit ransac with `ransac_n` correspondences. \param
 /// checkers Correspondence checker. \param criteria Convergence criteria.
-RegistrationResult OPENGL_ENGINE_LIB_API RegistrationRANSACBasedOnFeatureMatching(
+RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const ccPointCloud &source,
         const ccPointCloud &target,
         const utility::Feature &source_feature,
@@ -212,7 +212,7 @@ RegistrationResult OPENGL_ENGINE_LIB_API RegistrationRANSACBasedOnFeatureMatchin
 /// \param max_correspondence_distance Maximum correspondence points-pair
 /// distance. \param transformation The 4x4 transformation matrix to transform
 /// `source` to `target`.
-Eigen::Matrix6d OPENGL_ENGINE_LIB_API GetInformationMatrixFromPointClouds(
+Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         const ccPointCloud &source,
         const ccPointCloud &target,
         double max_correspondence_distance,

@@ -1,11 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
-
-include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-if( MSVC )
-   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-endif()
-include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
+cmake_minimum_required( VERSION 3.10 )
 
 project( OPENGL_ENGINE_LIB )
 
@@ -37,7 +30,7 @@ source_group("Visualization\\Visualizer" FILES 	${visualization_Visualizer} )
 
 set(Visualization_list ${visualization_Shader} ${visualization_Utility} ${visualization_Visualizer})
 
-set( CMAKE_CXX_VISIBILITY_PRESET hidden )
+#set( CMAKE_CXX_VISIBILITY_PRESET hidden )
 
 # Install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -78,7 +71,6 @@ target_link_libraries(${PROJECT_NAME}
 
 # INTERNAL LIB
 target_link_libraries(  ${PROJECT_NAME} 
-						CV_CORE_LIB 
 						ECV_DB_LIB
 						ECV_IO_LIB)
 
@@ -195,10 +187,4 @@ install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJ
 target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_OPENGL_ENGINE_LIBRARY_BUILD )
 
 # install (shared) lib to specified destinations
-if( WIN32)
-		foreach( dest ${INSTALL_DESTINATIONS} )
-				install_shared( ${PROJECT_NAME} ${dest} 1 )
-		endforeach()
-else()
-		install_shared( ${PROJECT_NAME} ${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer 0 ) #default destination: /usr/lib
-endif()
+InstallSharedLibrary( TARGET ${PROJECT_NAME} )

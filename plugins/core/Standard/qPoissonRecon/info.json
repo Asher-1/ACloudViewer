@@ -2,7 +2,7 @@
   "type": "Standard",
   "core" : true,
   "name": "PoissonRecon",
-  "icon": ":/CC/plugin/qPoissonRecon/qPoissonRecon.png",
+  "icon": ":/CC/plugin/qPoissonRecon/images/qPoissonRecon.png",
   "description": "Poisson Surface Reconstruction.",
   "authors": [
     {
@@ -26,7 +26,7 @@
     },
     {
       "text": "Documentation",
-      "url": "http://www.CLOUDVIEWER .org/doc/wiki/index.php?title=Poisson_Surface_Reconstruction_(plugin)"
+      "url": "http://www.cloudcompare.org/doc/wiki/index.php?title=Poisson_Surface_Reconstruction_(plugin)"
     }
   ]
 }

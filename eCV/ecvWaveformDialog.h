@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                              CLOUDCOMPARE                              #
+//#                              CLOUDVIEWER                               #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -23,15 +23,16 @@
 
 //Qt
 #include <QDialog>
-#include <QFont>
 
 //QCustomPlot
 #include <qcustomplot.h>
 
-class QCPBarsWithText;
-class QCPHiddenArea;
-class QCPGraph;
 class QCPArrow;
+class QCPBarsWithText;
+class QCPColoredBars;
+class QCPHiddenArea;
+class QCPTextElement;
+
 class Ui_WaveDialog;
 class ccPointCloud;
 class ccPickingHub;
@@ -44,10 +45,10 @@ class ccWaveWidget : public QCustomPlot
 public:
 
 	//! Default constructor
-	explicit ccWaveWidget(QWidget *parent = 0);
+	explicit ccWaveWidget(QWidget *parent = nullptr);
 
 	//! Destructor
-	virtual ~ccWaveWidget();
+	~ccWaveWidget() override;
 
 	//! Sets title
 	void setTitle(const QString& str);
@@ -65,11 +66,10 @@ public:
 protected: //methods
 
 	//mouse events handling
-	void mousePressEvent(QMouseEvent *event);
-	void mouseMoveEvent(QMouseEvent *event);
-	//void wheelEvent(QWheelEvent* event);
-	void resizeEvent(QResizeEvent * event);
-	
+	void mousePressEvent(QMouseEvent *event) override;
+	void mouseMoveEvent(QMouseEvent *event) override;
+	void resizeEvent(QResizeEvent * event) override;
+
 	//! Clears internal structures
 	void clearInternal();
 
@@ -80,7 +80,7 @@ protected: //attributes
 
 	//Title
 	QString m_titleStr;
-	QCPPlotTitle* m_titlePlot;
+	QCPTextElement* m_titlePlot;
 
 	//! Wave curve
 	QCPGraph* m_curve;
@@ -111,17 +111,17 @@ class ccWaveDialog : public QDialog, public ccPickingListener
 
 public:
 	//! Default constructor
-	explicit ccWaveDialog(ccPointCloud* cloud, ccPickingHub* pickingHub, QWidget* parent = 0);
+	explicit ccWaveDialog(ccPointCloud* cloud, ccPickingHub* pickingHub, QWidget* parent = nullptr);
 	//! Destructor
-	virtual ~ccWaveDialog();
+	~ccWaveDialog() override;
 
 	//! Returns the encapsulated widget
 	inline ccWaveWidget* waveWidget() { return m_widget; }
 
 	//inherited from ccPickingListener
-	virtual void onItemPicked(const PickedItem& pi);
+	virtual void onItemPicked(const PickedItem& pi) override;
 
-protected slots:
+protected:
 
 	void onPointIndexChanged(int);
 	void updateCurrentWaveform();
@@ -144,7 +144,5 @@ protected: //members
 
 	//! Maximum wave amplitude (for all points)
 	double m_waveMax;
-
 };
-
 #endif // ECV_WAVEFORM_DIALOG_HEADER

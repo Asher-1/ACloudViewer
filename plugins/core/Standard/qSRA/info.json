@@ -2,7 +2,7 @@
   "type": "Standard",
   "core" : true,
   "name": "Surface of Revolution Analysis",
-  "icon": ":/CC/plugin/qSRA/qSRA.png",
+  "icon": ":/CC/plugin/qSRA/images/qSRA.png",
   "description": "Comparison between a point cloud and a surface of revolution.",
   "authors": [
     {
@@ -18,7 +18,7 @@
   "references": [
     {
       "text": "Documentation",
-      "url": "http://www.CLOUDVIEWER .org/doc/wiki/index.php?title=Surface_of_Revolution_Analysis_(plugin)"
+      "url": "http://www.cloudcompare.org/doc/wiki/index.php?title=Surface_of_Revolution_Analysis_(plugin)"
     }
   ]
 }

@@ -1,0 +1,101 @@
+\documentclass[12pt,titlepage,french]{article}
+\usepackage{babel}
+\usepackage{graphicx}
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{tabularx}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\pagestyle{plain}
+
+\usepackage{booktabs,makecell,tabu}
+\renewcommand\theadfont{\bfseries}
+
+\linespread{1.5}
+
+\begin{document}
+%\renewcommand{\thesection}{\arabic{section}} % utilisé pour spécifier la numérotation des sections
+
+\begin{titlepage}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\center
+
+  \includegraphics[width=0.45\textwidth]{../ressources/img_logos/logo_polytech.png}\\[1cm]
+   
+  \includegraphics[width=0.45\textwidth]{../ressources/img_logos/logo_taglabs.png}
+
+
+\HRule \\[0.4cm]
+{ \huge \bfseries Rapport hebdomadaire\\[0.15cm] }
+Classification colorimétrique de nuages de points 3D\\
+Semaine du 13/04 au 19/04
+\HRule \\[1.5cm]
+Ronan Collier,
+Mathieu Letrone,
+Tri-Thien Truong
+\\[1cm]
+\end{titlepage}
+
+\section{Travail effectué}
+
+\noindent\begin{tabularx}{17cm}{|p{2.5cm}|p{2.5cm}|p{1cm}|p{1.5cm}|p{2.5cm}|X|}
+    \hline
+    \textbf{Tâche} & \textbf{Nature} & \textbf{Qui} & \textbf{Temps} & \textbf{Réalisation} & \textbf{Commentaire} \\
+    \hline
+    Réunion avec client & Production & TT/  RC/  ML & 1h/p & Fin & \\
+    \hline
+    Correction filtrage RGB & Production & TTL & 7h & En cours & \\
+    \hline
+    Terminer algo sélection de points  & Production &  RC\ & 4h& Fin & \\
+    \hline
+    Création d'icônes & Production & RC & 4h & En cours & \\
+    \hline
+    Algorithme K-means & Production & ML & 8h & En cours & \\
+    \hline
+
+\end{tabularx} \\
+
+\section{Prévision des tâches pour la suite de l'itération par ordre de réalisation :}
+
+\noindent\begin{tabularx}{17cm}{|p{2.5cm}|p{2.5cm}|p{1cm}|p{1.5cm}|p{2.5cm}|X|}
+    \hline
+    \textbf{Tâche} & \textbf{Nature} & \textbf{Qui} & \textbf{Temps} & \textbf{Réalisation} & \textbf{Commentaire} \\
+    \hline
+    Correction filtrage RGB & Production & TT & 2h & Fin & \\
+    \hline
+    Proposer filtrage externe/interne & Production & TT & 3h & Fin & \\
+    \hline
+    Indications sur valeurs min/max & Production & TT & 0h & Fin & \\
+    \hline
+    Création d'icônes & Production & RC & 4h & En cours & \\
+    \hline
+    Algorithme K-means & Production & ML & 3h & Fin & \\
+    \hline
+\end{tabularx} \\
+
+\section{Nouvelles complémentaires}
+
+\noindent\begin{tabularx}{17cm}{|p{5cm}|X|}
+\hline
+   \begin{minipage}{.3\textwidth}
+      \includegraphics[width=\linewidth]{img/smhappy.jpg}
+    \end{minipage}
+    & 
+    Les choses positives de la semaine :\\
+\hline
+     \begin{minipage}{.3\textwidth}
+      \includegraphics[width=\linewidth]{img/smneutral.jpg}
+    \end{minipage}
+    &
+    Les inquiètudes de la semaine :\\
+\hline
+     \begin{minipage}{.3\textwidth}
+      \includegraphics[width=\linewidth]{img/smsad.jpg}
+    \end{minipage}
+    &
+    Les problèmes importants de la semaine : \\
+\hline
+\end{tabularx}
+
+\end{document}
