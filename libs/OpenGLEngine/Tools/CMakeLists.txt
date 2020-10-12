@@ -1,15 +1,6 @@
 add_subdirectory(ManuallyAlignPointCloud)
 
 macro(TOOL TOOL_NAME)
-	include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-
-	include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-	if( MSVC )
-	   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-	endif()
-
-	include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
-
 	include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
 	if( MSVC )
 	   include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc )
@@ -25,7 +16,6 @@ macro(TOOL TOOL_NAME)
         target_link_libraries(${TOOL_NAME} ${DEPENDENCY})
     endforeach()
 	
-	target_link_libraries( ${TOOL_NAME} CV_CORE_LIB )
 	target_link_libraries( ${TOOL_NAME} ECV_DB_LIB )
 	target_link_libraries( ${TOOL_NAME} ECV_IO_LIB )
 	

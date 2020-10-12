@@ -23,6 +23,7 @@
 // Qt
 #include <QPainter>
 #include <QMainWindow>
+#include <QMouseEvent>
 #include <QSpacerItem>
 
 // ECV_PLUGINS

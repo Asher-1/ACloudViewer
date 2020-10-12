@@ -34,10 +34,15 @@
 //#define COMPUTE_NN_SEARCH_STATISTICS
 //#define ADAPTATIVE_BINARY_SEARCH
 
-#ifdef USE_QT
+
+#ifdef CV_CORE_LIB_USES_QT_CONCURRENT
 #ifndef CV_DEBUG
 //enables multi-threading handling
 #define ENABLE_MT_OCTREE
+
+#include <QtConcurrentMap>
+#include <QtCore>
+#include <QThreadPool>
 #endif
 #endif
 
@@ -3252,10 +3257,6 @@ DgmOctree::octreeCell::~octreeCell()
 
 #ifdef ENABLE_MT_OCTREE
 
-#include <QtCore>
-#include <QApplication>
-#include <QtConcurrentMap>
-#include <QThreadPool>
 
 /*** FOR THE MULTI THREADING WRAPPER ***/
 struct octreeCellDesc

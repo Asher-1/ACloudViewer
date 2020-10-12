@@ -19,15 +19,15 @@
 #ifndef CV_TYPES_HEADER
 #define CV_TYPES_HEADER
 
-#include "CVConst.h"
+#include <stdint.h>
 
 //! Type of the coordinates of a (N-D) point
 using PointCoordinateType = float;
 
 //! Type of a single scalar field value
-#if defined SCALAR_TYPE_DOUBLE
+#if defined CV_CORE_LIB_USES_DOUBLE
 using ScalarType = double;
-#elif defined SCALAR_TYPE_FLOAT
+#elif defined CV_CORE_LIB_USES_FLOAT
 using ScalarType = float;
 #else
 static_assert(false, "type for ScalarType has not been declared");
@@ -38,6 +38,52 @@ enum CV_OBJECT_FLAG {	//CC_UNUSED			= 1, //DGM: not used anymore (former CC_FATH
 	CC_ENABLED = 2,
 	CC_LOCKED = 4,
 };
+
+//Bits for object type flags (64 bits)
+#define CC_HIERARCH_BIT					0x00000000000001	//Hierarchical object
+#define CC_LEAF_BIT						0x00000000000002	//Tree leaf (no children)
+#define CC_GROUP_BIT					0x00000000000004	//Group (no data, aggregation only)
+#define CC_PRIMITIVE_BIT				0x00000000000008	//Primitive (sphere, plane, torus, cylinder, etc.)
+#define CC_ARRAY_BIT					0x00000000000010	//Array
+#define CC_LABEL_BIT					0x00000000000020	//2D label
+#define CC_VIEWPORT_BIT					0x00000000000040	//2D viewport
+#define CC_CUSTOM_BIT					0x00000000000080	//For custom (plugin defined) objects
+#define CC_CLOUD_BIT					0x00000000000100	//Point Cloud
+#define CC_MESH_BIT						0x00000000000200	//Mesh
+#define CC_OCTREE_BIT					0x00000000000400	//Octree
+#define CC_POLYLINE_BIT					0x00000000000800	//Polyline
+#define CC_IMAGE_BIT					0x00000000001000	//Picture
+#define CC_SENSOR_BIT					0x00000000002000	//Sensor def.
+#define CC_PLANE_BIT					0x00000000004000	//Plane (primitive)
+#define CC_SPHERE_BIT					0x00000000008000	//Sphere (primitive)
+#define CC_TORUS_BIT					0x00000000010000	//Torus (primitive)
+#define CC_CYLINDER_BIT					0x00000000020000	//Cylinder (primitive)
+#define CC_CONE_BIT						0x00000000040000	//Cone (primitive)
+#define CC_BOX_BIT						0x00000000080000	//Box (primitive)
+#define CC_DISH_BIT						0x00000000100000	//Dish (primitive)
+#define CC_EXTRU_BIT					0x00000000200000	//Extrusion (primitive)
+#define CC_KDTREE_BIT					0x00000000400000	//Kd-tree
+#define CC_FACET_BIT					0x00000000800000	//Facet (composite object: cloud + 2D1/2 mesh + 2D1/2 polyline)
+#define CC_MATERIAL_BIT					0x00000001000000	//Material
+#define CC_CLIP_BOX_BIT					0x00000002000000	//Clipping box
+#define CC_TRANS_BUFFER_BIT				0x00000004000000	//Indexed transformation buffer
+#define CC_GROUND_BASED_BIT				0x00000008000000	//For Ground Based Lidar Sensors
+#define CC_RGB_COLOR_BIT				0x00000010000000	//Color (R,G,B)
+#define CC_NORMAL_BIT					0x00000020000000	//Normal (Nx,Ny,Nz)
+#define CC_COMPRESSED_NORMAL_BIT		0x00000040000000	//Compressed normal (index)
+#define CC_TEX_COORDS_BIT				0x00000080000000	//Texture coordinates (u,v)
+#define CC_CAMERA_BIT					0x00000100000000	//For camera sensors (projective sensors)
+#define CC_QUADRIC_BIT					0x00000200000000	//Quadric (primitive)
+#define CC_VOXEL_GRID_BIT				0x00000800000000
+#define CC_OCTREE2_BIT					0x00000400000000
+#define CC_IMAGE2_BIT					0x00001000000000
+#define CC_RGBD_IMAGE_BIT				0x00002000000000
+#define CC_TETRA_MESH_BIT				0x00004000000000
+#define CC_LINESET_BIT					0x00008000000000
+#define CC_BBOX_BIT						0x00800000000000
+#define CC_ORIENTED_BBOX_BIT			0x00080000000000
+//#define CC_FREE_BIT					0x00008000000000
+//#define CC_FREE_BIT					...
 
 //! Type of object type flags (64 bits)
 using CV_CLASS_ENUM = int64_t;

@@ -53,7 +53,6 @@
 #include <pcl/visualization/vtk/vtkVertexBufferObjectMapper.h>
 
 // ECV_DB_LIB
-#include <ecvMainAppInterface.h>
 #include <ecvDisplayTools.h>
 #include <ecvInteractor.h>
 #include <ecvPolyline.h>
@@ -192,7 +191,7 @@ void VtkWidgetPrivate::init()
 //Max click duration for enabling picking mode (in ms)
 //static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 static const int CC_MAX_PICKING_CLICK_DURATION_MS = 350;
-ecvQVTKWidget::ecvQVTKWidget(QMainWindow* parentWindow, ecvMainAppInterface* app, ecvDisplayTools* tools)
+ecvQVTKWidget::ecvQVTKWidget(QMainWindow* parentWindow, ecvDisplayTools* tools)
 	: QVTKWidget(parentWindow)
 	, m_axesWidget(nullptr)
 	, m_logoWidget(nullptr)
@@ -201,7 +200,6 @@ ecvQVTKWidget::ecvQVTKWidget(QMainWindow* parentWindow, ecvMainAppInterface* app
 	, m_dataObject(nullptr)
 	, m_modelActor(nullptr)
 	, m_win(parentWindow)
-	, m_app(app)
 	, m_tools(tools)
 {
 	this->setWindowTitle("3D View");
@@ -827,6 +825,7 @@ void ecvQVTKWidget::mouseMoveEvent(QMouseEvent *event)
 
 		if (abs(dx) > 0 || abs(dy) > 0)
 		{
+			m_tools->Update2DLabel(true);
 			emit m_tools->labelmove2D(x, y, dx, dy);
 			ecvDisplayTools::UpdateNamePoseRecursive();
 			//specific case: move active item(s)
@@ -880,6 +879,19 @@ void ecvQVTKWidget::mouseMoveEvent(QMouseEvent *event)
 		}
 		else
 		{
+			if (abs(dx) > 0 || abs(dy) > 0)
+			{
+				m_tools->Update2DLabel(true);
+				emit m_tools->labelmove2D(x, y, dx, dy);
+				ecvDisplayTools::UpdateNamePoseRecursive();
+				//specific case: move active item(s)
+				if (!m_tools->m_activeItems.empty())
+				{
+					updateActivateditems(x, y, dx, dy, !ecvDisplayTools::USE_2D);
+				}
+				m_tools->m_activeItems.clear();
+			}
+
 			//specific case: rectangular polyline drawing (for rectangular area selection mode)
 			if (m_tools->m_allowRectangularEntityPicking
 				&& (m_tools->m_pickingMode == ecvDisplayTools::ENTITY_PICKING || m_tools->m_pickingMode == ecvDisplayTools::ENTITY_RECT_PICKING)
@@ -1372,7 +1384,8 @@ void ecvQVTKWidget::keyPressEvent(QKeyEvent *event)
 	{
 	case Qt::Key_Escape:
 	{
-		m_app->toggleExclusiveFullScreen(false);
+		//m_app->toggleExclusiveFullScreen(false);
+		emit m_tools->exclusiveFullScreenToggled(false);
 		break;
 	}
 

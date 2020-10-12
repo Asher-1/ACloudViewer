@@ -1,30 +1,22 @@
-# References:
-# https://cmake.org/cmake/help/v3.1/
-# https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
+cmake_minimum_required(VERSION 3.10)
 
-cmake_minimum_required(VERSION 3.5)
+# One shouldn't generate the BUILD project directly in the SOURCES folder!
+if ( ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
+	if ( NOT SAME_BUILD_AND_SOURCE_FOLDER_WARNING_ALREADY_ISSUED )
+		message(FATAL_ERROR "It is not advised to BUILD the binaries directly in the SOURCE folder!\n If you want to proceed with this option, just CONFIGURE the project once again" )
+		set( SAME_BUILD_AND_SOURCE_FOLDER_WARNING_ALREADY_ISSUED TRUE )
+	endif()
+endif()
 
+# Add our cmake module path so we don't need relative paths for these
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" )
-include( CMakePolicies )
-include( CMakeSetCompilerOptions )
+set (ECV_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
 )
 
-set (ECV_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 option( CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON )
-
-# Default debug suffix for libraries.
-set( CMAKE_DEBUG_POSTFIX "d" )
-
-# One shouldn't generate the BUILD project directly in the SOURCES folder!
-if ( ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
-        if ( NOT SAME_BUILD_AND_SOURCE_FOLDER_WARNING_ALREADY_ISSUED )
-                message(FATAL_ERROR "It is not advised to BUILD the binaries directly in the SOURCE folder!\n If you want to proceed with this option, just CONFIGURE the project once again" )
-                set( SAME_BUILD_AND_SOURCE_FOLDER_WARNING_ALREADY_ISSUED TRUE )
-        endif()
-endif()
 
 # central location for specifying the CloudViewer version
 file(STRINGS "version.txt" CLOUDVIEWER_VERSION_READ)
@@ -39,6 +31,13 @@ string(CONCAT CLOUDVIEWER_VERSION "${CLOUDVIEWER_VERSION_MAJOR}"
                              ".${CLOUDVIEWER_VERSION_TWEAK}")
 
 project(ErowCloudViewerProjects VERSION ${CLOUDVIEWER_VERSION} LANGUAGES C CXX)
+
+include( CMakePolicies )
+include( CMakeSetCompilerOptions )
+include( DeployQt )
+
+# Default debug suffix for libraries.
+set( CMAKE_DEBUG_POSTFIX "d" )
 message(STATUS "ErowCloudViewerProjects ${PROJECT_VERSION}")
 
 # npm version has to be MAJOR.MINOR.PATCH
@@ -283,6 +282,39 @@ function(ShowAndAbortOnWarning trgt)
   endif()
 endfunction()
 
+function(ChangeOutputDIR dir)
+	if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
+		if ("${dir}" STREQUAL "main")
+			set(Debug_Dir "Debug")
+			set(Release_Dir "Release")
+		elseif("${dir}" STREQUAL "examples")
+			set(Debug_Dir "examples/Debug")
+			set(Release_Dir "examples/Release")		
+		elseif("${dir}" STREQUAL "plugins")
+			set(Debug_Dir "Debug/plugins")
+			set(Release_Dir "Release/plugins")
+		else()
+			set(Debug_Dir "")
+			set(Release_Dir "")
+		endif()
+		
+		if ( NOT MSVC )
+			if ("${dir}" STREQUAL "plugins")
+				set(Debug_Dir "plugins")
+				set(Release_Dir "plugins")
+			else()
+				set(Debug_Dir "")
+				set(Release_Dir "")
+			endif()
+		endif()
+			
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/${Debug_Dir})
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/${Release_Dir})
+		# message(${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG})
+		# message(${CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE})
+	endif()
+endfunction()
+
 macro(ADD_SOURCE_GROUP MODULE_NAME)
     file(GLOB MODULE_HEADER_FILES "${MODULE_NAME}/*.h")
     source_group("Header Files\\${MODULE_NAME}" FILES ${MODULE_HEADER_FILES})
@@ -341,7 +373,21 @@ elseif( UNIX )
 endif()
 
 # Load advanced scripts
-include( cmake/CMakeInclude.cmake )
+include( CMakeInclude )
+include( Install )
+
+# Add external libraries
+include( CMakeExternalLibs )
+
+# Contrib. libraries (mainly for I/O)
+include( AllSupport )
+
+# Suppress 3rdparty header warnings with SYSTEM
+include_directories(
+    SYSTEM
+    ${3RDPARTY_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
+)
 
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 	if( MSVC )
@@ -353,33 +399,23 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 	endif()
 endif()
 
-# Add external libraries
-include( cmake/CMakeExternalLibs.cmake )
-
-# Contrib. libraries (mainly for I/O)
-include( contrib/AllSupport.cmake )
-
-# Suppress 3rdparty header warnings with SYSTEM
-include_directories(
-    SYSTEM
-    ${3RDPARTY_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
-)
-
 add_subdirectory( core )
 
 # Propagate the choice to use doubles for ScalarType
-if ( ${USE_SCALAR_TYPE_DOUBLE} )
+if ( ${CV_CORE_LIB_USES_DOUBLE} )
 	add_definitions( -DSCALAR_TYPE_DOUBLE )
 else()
 	add_definitions( -DSCALAR_TYPE_FLOAT )
 endif()
 
-# Libs requested by eCV
-add_subdirectory( libs/eCV_db )
-add_subdirectory( libs/eCV_io ) # must always be included after eCV_db (dependency)
-add_subdirectory( libs/qcustomplot )
+# Internal libs used by both ErowCloudViewer and cloudViewer python package
+add_subdirectory( libs )
 
+# Configure a header file to pass the version settings to the source code
+configure_file("${PROJECT_SOURCE_DIR}/examples/Cpp/CloudViewer.h.in"
+               "${PROJECT_SOURCE_DIR}/examples/Cpp/CloudViewer.h")
+			  
+# Examples
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 	if( MSVC )
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/examples/Debug)
@@ -389,37 +425,9 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
 	endif()
 endif()
-
-add_subdirectory( libs/OpenGLEngine )
-
-# Configure a header file to pass the version settings to the source code
-configure_file("${PROJECT_SOURCE_DIR}/examples/Cpp/CloudViewer.h.in"
-               "${PROJECT_SOURCE_DIR}/examples/Cpp/CloudViewer.h")
-			  
-# Examples
 add_subdirectory(examples)
 
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-	if( MSVC )
-		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
-		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
-	else()
-		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
-		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
-	endif()
-endif()
-
-# PCL ENGINE LIB
-if (USE_PCL_BACKEND) 
-	include( cmake/CMakePCLLibs.cmake )
-	add_subdirectory( libs/PCLEngine ) # must always be included after eCV_db and eCV_io (dependency)
-endif()
-
-# ECV PYTHON LIB
-if (BUILD_PYTHON_MODULE)
-    add_subdirectory( libs/Python )
-endif()
-
+# load plugins (potentially used by eCV)
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 	if( MSVC )
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug/plugins)
@@ -429,10 +437,9 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/plugins)
 	endif()
 endif()
-
-# load plugins (potentially used by eCV)
 add_subdirectory( plugins )
 
+# eCV
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 	if( MSVC )
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
@@ -442,8 +449,6 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
 	endif()
 endif()
-
-# eCV
 add_subdirectory( eCV )
 
 # print configurations info

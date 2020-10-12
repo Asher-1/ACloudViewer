@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,9 @@
 #include <tuple>
 #include <vector>
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Odometry/OdometryOption.h"
-#include "Odometry/RGBDOdometryJacobian.h"
+#include "../Camera/PinholeCameraIntrinsic.h"
+#include "OdometryOption.h"
+#include "RGBDOdometryJacobian.h"
 #include <Console.h>
 #include <Eigen.h>
 
@@ -55,7 +55,7 @@ namespace odometry {
 /// \param option Odometry hyper parameteres.
 /// \return is_success, 4x4 motion matrix, 6x6 information matrix.
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> 
-OPENGL_ENGINE_LIB_API ComputeRGBDOdometry(
+ComputeRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic =

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ class RegistrationResult;
 /// \class FastGlobalRegistrationOption
 ///
 /// \brief Options for FastGlobalRegistration.
-class OPENGL_ENGINE_LIB_API FastGlobalRegistrationOption {
+class FastGlobalRegistrationOption {
 public:
     /// \brief Parameterized Constructor.
     ///
@@ -99,7 +99,7 @@ public:
     int maximum_tuple_count_;
 };
 
-RegistrationResult OPENGL_ENGINE_LIB_API FastGlobalRegistration(
+RegistrationResult FastGlobalRegistration(
         const ccPointCloud &source,
         const ccPointCloud &target,
         const utility::Feature &source_feature,

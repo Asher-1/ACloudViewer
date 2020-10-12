@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,8 @@
 #include "TriangleMeshAndImageUtilities.h"
 #include "ImageWarpingField.h"
 
-#include "Camera/PinholeCameraTrajectory.h"
+#include "../Camera/PinholeCameraTrajectory.h"
+
 
 #include <Console.h>
 #include <Image.h>

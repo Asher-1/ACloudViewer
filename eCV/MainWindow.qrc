@@ -251,5 +251,8 @@
         <file>Resources/images/poisson.png</file>
         <file>Resources/images/ecvCloudPrimitiveDistance.png</file>
         <file>Resources/images/smallSplit.png</file>
+        <file>Resources/images/electrical_sensor.png</file>
+        <file>Resources/images/integrated_sensor.png</file>
+        <file>Resources/images/Wavefrom.png</file>
     </qresource>
 </RCC>

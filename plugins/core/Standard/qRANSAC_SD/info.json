@@ -1,8 +1,8 @@
 {
   "type": "Standard",
-  "core" : true,
+  "core": true,
   "name": "RANSAC Shape Detection",
-  "icon": ":/CC/plugin/qRANSAC_SD/qRANSAC_SD.png",
+  "icon": ":/CC/plugin/qRANSAC_SD/images/qRANSAC_SD.png",
   "description": "Automatic RANSAC Shape Detection.",
   "authors": [
     {
@@ -26,7 +26,7 @@
     },
     {
       "text": "Documentation",
-      "url": "http://www.CLOUDVIEWER .org/doc/wiki/index.php?title=RANSAC_Shape_Detection_(plugin)"
+      "url": "http://www.erow.cn/doc/wiki/index.php?title=RANSAC_Shape_Detection_(plugin)"
     }
   ]
 }

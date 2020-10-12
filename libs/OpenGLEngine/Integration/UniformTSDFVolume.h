@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,13 +27,13 @@
 #pragma once
 
 #include <VoxelGrid.h>
-#include "Integration/TSDFVolume.h"
+#include "TSDFVolume.h"
 
 namespace cloudViewer {
 
 namespace geometry {
 
-class OPENGL_ENGINE_LIB_API TSDFVoxel : public Voxel {
+class TSDFVoxel : public Voxel {
 public:
     TSDFVoxel() : Voxel() {}
     TSDFVoxel(const Eigen::Vector3i &grid_index) : Voxel(grid_index) {}
@@ -54,7 +54,7 @@ namespace integration {
 ///
 /// \brief UniformTSDFVolume implements the classic TSDF volume with uniform
 /// voxel grid (Curless and Levoy 1996).
-class OPENGL_ENGINE_LIB_API UniformTSDFVolume : public TSDFVolume {
+class UniformTSDFVolume : public TSDFVolume {
 public:
     UniformTSDFVolume(double length,
                       int resolution,
