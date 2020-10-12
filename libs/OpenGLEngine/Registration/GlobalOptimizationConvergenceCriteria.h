@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ namespace registration {
 /// \class GlobalOptimizationOption
 ///
 /// \brief Option for GlobalOptimization.
-class OPENGL_ENGINE_LIB_API GlobalOptimizationOption {
+class GlobalOptimizationOption {
 public:
     /// \brief Parameterized Constructor.
     ///
@@ -88,7 +88,7 @@ public:
 /// \class GlobalOptimizationConvergenceCriteria
 ///
 ///  \brief Convergence criteria of GlobalOptimization.
-class OPENGL_ENGINE_LIB_API GlobalOptimizationConvergenceCriteria {
+class GlobalOptimizationConvergenceCriteria {
 public:
     /// \brief Parameterized Constructor.
     ///

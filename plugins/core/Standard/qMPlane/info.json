@@ -1,0 +1,30 @@
+{
+	"type" : "Standard",
+	"name" : "MPlane",
+	"icon" : ":/CC/plugin/qMPlane/images/icon.png",
+	"description": "Perform normal distance measurements against a plane",
+	"authors" : [
+    {
+      "name": "AIT Austrian Institute of Technology GmbH"
+    },
+    {
+      "name": "Philip Klaus",
+      "email":  "philip.klaus@ait.ac.at"
+    }
+	],
+	"maintainers" : [
+		{
+      "name": "AIT Austrian Institute of Technology GmbH"
+    },
+    {
+      "name": "Philip Klaus",
+      "email":  "philip.klaus@ait.ac.at"
+    }
+	],
+	"references" : [
+		{
+			"text" : "AIT Austrian Institute of Technology GmbH",
+			"url" : "https://www.ait.ac.at/"
+		}
+	]
+}

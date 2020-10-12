@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@
 #include <unordered_map>
 
 #include <Helper.h>
-#include "Integration/TSDFVolume.h"
+#include "TSDFVolume.h"
 
 namespace cloudViewer {
 namespace integration {
@@ -55,7 +55,7 @@ class UniformTSDFVolume;
 /// normal and producing a smooth surface output. The carving is great in
 /// removing outlier structures like floating noise pixels and bumps along
 /// structure edges.
-class OPENGL_ENGINE_LIB_API ScalableTSDFVolume : public TSDFVolume {
+class ScalableTSDFVolume : public TSDFVolume {
 public:
     struct VolumeUnit {
     public:

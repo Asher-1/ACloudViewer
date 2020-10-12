@@ -1,0 +1,235 @@
+\documentclass[12pt,titlepage,french]{article}
+\usepackage{babel}
+\usepackage{graphicx}
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{tabularx}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\pagestyle{plain}
+
+\usepackage{booktabs,makecell,tabu}
+\renewcommand\theadfont{\bfseries}
+
+\linespread{1.5}
+
+\newcounter{firstbib}
+
+\begin{document}
+%\renewcommand{\thesection}{\arabic{section}} % utilisé pour spécifier la numérotation des sections
+
+\begin{titlepage}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\center
+
+  \includegraphics[width=0.45\textwidth]{../../ressources/img_logos/logo_polytech.png}\\[1cm]
+
+  \includegraphics[width=0.45\textwidth]{../../ressources/img_logos/logo_taglabs.png}
+
+
+\HRule \\[0.4cm]
+{ \huge \bfseries Rapport de Sprint review\\[0.15cm] }
+Classification colorimétrique de nuages de points 3D\\
+Version 1.0\\
+Le \today \\
+\HRule \\[1.5cm]
+Ronan Collier,
+Mathieu Letrone,
+Tri-Thien Truong
+\\[1cm]
+\end{titlepage}
+
+\tableofcontents % table des matières
+\newpage
+
+\section{Rappel de l'objectif de l'itération}
+
+Suite à notre première itération qui était dédié à de la recherche permettant de faire nos choix d'implémentations, cette itération avait pour objectif de commencer à développer notre solution. En effet, le principal objectif était de développer nos premières méthodes de filtrage d'un nuage de points, et de les intégrer au logiciel CloudCompare sous forme de plugin.
+
+Pour cela, il nous fallait, d'une part, développer nos traitements sur les nuages de points via la bibliothèque PCL. D'autre part, nous devions installer l'environnement permettant le développement du plugin CloudCompare, c'est-à-dire, pouvoir utiliser le projet git CloudCompare et d'y intégrer nos filtres.
+
+\section{Rappel du sprint backlog}
+
+Les User stories sélectionnés pour atteindre l'objectif de l'itération, sont les suivants :
+
+\begin{itemize}
+  \item US1 : Lire un fichier de données contenant un nuage de points
+  \item US2 : Isoler un élément dans le nuage de points, selon sa plage de couleur
+  \item US3 : Exporter le nuage de points
+\end{itemize}
+
+Comme nous avons fait un changement par rapport à nos choix de conception du projet lors de la première itération, les User stories sont aussi amenés à être modifié. Lors de la réalisation du cahier des charges, nous pensions qu'il fallait développer nous même la lecture d'un fichier avec un nuage de points, et l'exportation du nuage. Suite à la première itération, nous avons décidé de réaliser un plugin sur le logiciel CloudCompare, donc ces tâches étaient déjà effectuées directement sur ce dernier. \\
+Ces deux User stories ont été modifié par : 
+\begin{itemize}
+  \item US1 : Intégrer un plugin CloudCompare
+  \item US2 : Isoler un élément dans le nuage de points, selon sa plage de couleur
+  \item US3 : Créer des sous-scans suite au filtrage\\
+\end{itemize}
+
+Les modifications des User stories impliquent donc des modifications par rapport aux tests d'acceptations. Nous les avons donc redéfinies pour qu'ils correspondent mieux par rapport à la solution voulue par le client.
+
+\textbf{\og US1 : Intégrer un plugin CloudCompare\fg{}}
+
+En tant qu'utilisateur du logiciel CloudCompare, je souhaite voir dans la liste des plugins, un nouveau filtre personnalisé afin d'y ajouter un nouvel algorithme de segmentation.
+
+\textbf{Tests d'acceptation :}
+
+\begin{enumerate}
+    \item \textbf{Scénario 1}
+
+Étant donné que je suis sur le logiciel CloudCompare\\
+Quand j'affiche la liste des plugins\\
+Alors un nouveau bouton du filtre personnalisé apparaît\\
+Alors les fonctionnalités dans le plugin sont désactivées\\
+
+    \item \textbf{Scénario 2}
+
+Étant donné que je suis sur le logiciel CloudCompare\\
+Quand j'importe un nuage de points \\
+Quand je sélectionne le scan correspondant \\
+Quand j'affiche la liste des plugins\\
+Alors les fonctionnalités dans le plugin sont activées\\
+\end{enumerate}
+
+\textbf{\og US2 : Isoler un élément dans le nuage de points, selon sa plage de couleur\fg{}}
+
+En tant qu'utilisateur du logiciel, je souhaite isoler un élément dans le nuage de points afin d'afficher à l'écran uniquement l'élément voulu selon sa couleur.
+
+\textbf{Tests d'acceptation :}
+\begin{enumerate}
+
+    \item \textbf{Scénario 1}
+
+Étant donné que j'ai affiché un nuage de points via un fichier\\
+Quand je clique sur l'option pour isoler un élément\\
+Alors une interface avec un color picker apparaît\\
+Quand je sélectionne une plage de couleur\\
+Et que je clique sur le bouton de validation\\
+Alors l'interface disparaît\\
+Et le nuage de points n'affiche uniquement que les points respectant la plage d'intensité de couleur.
+
+    \item \textbf{Scénario 2}
+
+Étant donné que j'ai affiché un nuage de points via un fichier\\
+Quand je clique sur l'option pour isoler un élément\\
+Alors une interface avec un color picker apparaît\\
+Quand je sélectionne une plage de couleur\\
+Et que je clique sur le bouton d'annulation\\
+Alors l'interface disparaît\\
+\end{enumerate}
+
+\textbf{\og US3 : Créer des sous-scans suite au filtrage\fg{}}
+
+En tant qu'utilisateur du logiciel, je souhaite créer des sous-scans après filtrage, afin de séparer les points externes et les points internes à la sélection.
+
+\textbf{Tests d'acceptation :}
+\begin{enumerate}
+
+    \item \textbf{Scénario 1}
+
+Étant donné que j'ai affiché un nuage de points via un fichier\\
+Quand je clique sur le bouton pour filtrer mon nuage de points\\
+Alors une interface de paramètres apparaît\\
+Quand je valide les paramètres\\
+Alors l'interface disparaît\\
+Alors des sous-scans s'affichent dans la liste des scans
+\end{enumerate}
+
+\section{Problèmes rencontrés et imprévus \label{PB}}
+
+Durant cette itération, nous avons rencontrés de nombreux problèmes, surtout par rapport à l'installation du projet source CloudCompare. Nous avions mal prévu la durée d'installation de notre environnement afin de développer nos filtrages sur les nuages de points CloudCompare.
+
+En effet, nous pensions qu'en suivant le tutoriel fournit dans le git, il allait être rapide et aisé de l'installer sur nos machines. Cependant, nous nous sommes rendu compte qu'il y avait des logiciels très volumineux à installer au préalable, et des instructions qui n'étaient pas forcément expliqué dans le tutoriel.
+
+Nous pouvons par exemple, citer l'installation de Qt, une API en C++, permettant la réalisation d'interface graphique et autres. Cette application, d'une taille de 52 Go à télécharger et installer, nous a fait perdre beaucoup de temps, surtout lorsque nous étions limités par nos connexions internet respectives.
+
+Ensuite, c'était la première fois pour nous, que nous installions un projet C++ avec CMake (via le logiciel CMake GUI dans notre cas). Il nous fallait alors nous renseigner sur le fonctionnement de ce type de projet, et comment gérer les différentes dépendances, chemins à renseigner pour configurer et générer le projet.
+
+Ces problèmes nous ont fait apprendre qu'il faut davantage réfléchir sur l'estimation du temps de travail pour chacune des tâches à réaliser, et que nous ne sommes pas à l'abri d'imprévus pour chacune d'entre elles. Malgré cela, nous avons pu réaliser nos principales tâches, et maintenant nous savons comment résoudre ce type de problème grâce à des documentations que nous avons écrits.
+
+\section{Items réalisés / terminés\label{US}}
+
+Cette partie va résumer les tâches que nous avons pu réaliser pendant cette itération.
+
+\begin{itemize}
+  \item US1 - Intégrer un plugin CloudCompare : Terminé
+  \begin{itemize}
+    \item Scénario 1 : OK
+    \item Scénario 2 : OK
+  \end{itemize}
+  \item US2 - Isoler un élément dans le nuage de points, selon sa plage de couleur : Terminé
+  \begin{itemize}
+    \item Scénario 1 : OK. Cependant, le color picker n'est pas encore présent. Il est, pour l'instant, remplacé par des champs de texte à remplir.
+    \item Scénario 2 : OK
+  \end{itemize}
+  \item US3 - Créer des sous-scans suite au filtrage : Terminé
+  \begin{itemize}
+    \item Scénario 1 : OK
+  \end{itemize}
+\end{itemize}
+
+\section{Démonstration}
+
+Au cours de la réunion de sprint review de cette deuxième itération, nous avons pu faire une démonstration du développement du projet. Celle-ci s'est déroulée en trois principales parties :
+
+\begin{itemize}
+  \item Lancement du logiciel CloudCompare modifié
+  \item Affichage du plugin QPCL, et du filtre personnalisé
+  \item Chargement d'un fichier NDP, lancement du filtre, et de ses paramètres
+\end{itemize}
+
+Cette démonstration a eu pour but de valider les User stories présentés dans la section~\ref{US}. Les cas d'utilisation présentés ici sont sur la sélection d'une plage de couleur à extraire, et la création des sous-scans. Nous n'avons toutefois pas eu le temps nécessaire pour implémenter la segmentation via l'espace colorimétrique CIELAB, mais uniquement par le RGB (dû aux difficultés rencontrées de la section~\ref{PB}).
+
+\textbf{Lancement du logiciel CloudCompare modifié}
+
+Dans cette première partie, nous avons présenté le fonctionnement du projet git CloudCompare, et des ajouts que nous avons fait dans le code source. Nous avons ensuite lancé le logiciel avec nos ajouts.
+
+\textbf{Affichage du plugin QPCL, et du filtre personnalisé}
+
+Ensuite, nous avons parlé du plugin sur lequel nous nous sommes basé pour ajouter nos méthodes de segmentation. Il s'agit du plugin QPCL, qui nous permet d'utiliser la bibliothèque PCL (offrant des méthodes pour traiter des nuages de points) sur le logiciel CloudCompare, en C++. Puis, nous avons montré la première méthode de segmentation en RGB, et son fonctionnement.
+
+\textbf{Affichage du plugin QPCL, et du filtre personnalisé}
+
+Enfin, nous avons simulé une utilisation réelle du filtre, avec un fichier d'exemple qui nous avait été fourni par le client. Nous avons donc paramétré la plage RGB pour récupérer une certaine partie du nuage de points, caractérisée par une intensité de couleur particulière (ici, une surface rouge), et nous l'avons appliqué sur le fichier chargé sur CloudCompare. Le résultat obtenu était deux sous-scans, avec l'un qui prenait uniquement les points sélectionnés, et l'autre, les points externes à la sélection.
+
+\section{Retours du client (feedback)}
+
+Suite à notre présentation, nous avons pu avoir des retours du client. Tout d'abord, l'objectif de l'itération a bien été atteint. Nous avons donc maintenant, notre filtrage en place sur CloudCompare, et la possibilité d'y ajouter nos méthodes de segmentation.
+
+Cette version reste toutefois perfectible. En effet, nous sommes restés sur une version très simple pour permettre d'avoir une base, et de par la suite, se concentrer sur nos algorithmes de segmentation, et d'enrichir notre interface. Le client nous a donc partagé ses remarques concernant des potentielles améliorations, en plus de celles que nous nous sommes fixées dans le planning du cahier des charges.
+
+La première remarque concerne l'interface. En effet, nous avons, pour l'instant, uniquement des champs textes à remplir par l'utilisateur, pour faire son choix d'intensité de couleur en RGB. L'amélioration ici est à faire surtout par rapport à l'utilisation de cette interface. Au lieu d'avoir ces champs textes à écrire manuellement, il serait mieux d'avoir à choisir un ou plusieurs points directement sur le nuage de points, pour établir le champ de points que l'utilisateur veut filtrer.
+
+Ensuite, une remarque a été notée par rapport à la porte de l'application du filtre. Pour l'instant, nous appliquons notre filtre en sélectionnant un nuage de point chargé sur CloudCompare (il est donc sous forme de scan dans le logiciel). Il serait intéressant de savoir s'il est possible de sélectionner un ensemble de scans, et d'y appliquer le filtre sur chacun d'entre eux. Dans une situation réelle, l'entreprise possède plusieurs scans du même endroit via leurs stations. Pour une simplicité d'utilisation, au lieu d'appliquer le filtrage un par un, nous pourrions réfléchir à la possibilité de tous les filtrer d'un coup.
+
+Enfin, la possibilité d'avoir un système de "preview dynamique" pourrait être utile. En effet, lors d'une situation réelle, l'entreprise a des nuages de points très volumineux. Nous pourrions donc réfléchir au fait de pouvoir afficher un post filtrage avant la validation, afin d'avoir une idée des points qui seront retirés/gardés.\\
+
+Ces remarques sont intéressantes, car elles nous permettront d'affiner la qualité de notre projet. Ce ne sont pas des tâches qui seront forcément implémentées dans le projet, puisqu'il nous faut d'abord réfléchir à la possibilité de les faire, en plus des tâches fixées de base sur le projet. Elles restent néanmoins pertinentes et la possibilité d'implémentation reste dans notre backlog.
+
+\section{Vision pour la suite}
+
+%En anticipation du sprint planning, expliquer ci-dessous la vision et l’orientation pour le prochain sprint. Vous pourriez expliciter les items / fonctionnalités / User Stories qui pourraient être l’objet du sprint suivant, en quoi est ce que cette vision serait en cohérence avec l’objectif du projet, la vision du client et du travail déjà accompli.
+%Vous êtes encouragés à utiliser des schémas et des diagrammes pour expliquer votre vision.
+
+En cette fin de deuxième itération, nous avons posé les bases de notre solution. Il faut maintenant aller plus loin et améliorer les méthodes de segmentation.
+
+Au niveau des User stories, nous avons complété la plupart des fonctionnalités de base. Il reste encore l'implémentation de la fausse couleur, que nous n'avons pas encore prévue jusqu'à maintenant. Nous pensons qu'il faut d'abord que l'on se concentre sur la segmentation, et d'y améliorer son utilisation, avant de commencer le développement d'une nouvelle fonctionnalité. Même si nous avons validé les tests d'acceptation des User stories énoncés précédemment, nous allons améliorer les solutions que nous avons proposé.
+
+Tout d'abord, nous allons faire du refactoring afin de rendre le code plus facile à maintenir, et de séparer notre code ajouté, au code déjà présent dans le projet CloudCompare et du plugin QPCL. Nous allons aussi améliorer nos méthodes sur la sélection/isolation des points dans un nuage, et comparant le temps d'exécution.
+
+De plus, nous allons pousser plus loin le moyen pour réaliser le filtrage du nuage. L'idée du client par rapport à l'utilisation du "point picking", c'est-à-dire de cliquer directement sur les points qui nous intéresse à filtrer, est très intéressant. Cela pourra rendre le filtrage RGB plus intuitif, en indiquant à l'utilisateur qu'il peut directement sélectionner les points voulus en cliquant dessus, au lieu de devoir récupérer les valeurs RGB avant de les noter dans les champs textes.
+
+Enfin, il nous faudra aussi implémenter l'autre type de segmentation que nous avons définis dans la première itération, avec l'espace chromatique CIELAB, et de l'intégrer dans un nouveau type de filtrage dans CloudCompare. Cette méthode de segmentation va nous servir à comparer l'utilisation de différents espaces colorimétriques, et de voir la performance sur le filtrage des points dans le nuage.\\
+
+
+\noindent\begin{tabularx}{\textwidth}{|X|X|X|}
+    \hline
+    \textbf{Signature du chef de projet du groupe étudiant :} & \textbf{Signature du tuteur académique :} & \textbf{Signature du tuteur industriel}\\
+    \hline
+   \rule{0pt}{3cm} &
+    &\\
+    \hline
+\end{tabularx}
+
+\end{document}
