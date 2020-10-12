@@ -222,7 +222,7 @@ void ccPointPropertiesDlg::exportCurrentLabel()
 	else
 	{
 		//attach old label to first point cloud by default
-		m_label->getPoint(0).cloud->addChild(labelObject);
+		m_label->getPickedPoint(0).cloud->addChild(labelObject);
 		newLabelObject = m_label = new cc2DLabel();
 		m_label->setSelected(true);
 	}
@@ -260,7 +260,7 @@ void ccPointPropertiesDlg::processPickedPoint(ccPointCloud* cloud, unsigned poin
 		return; //we don't use this slot for 2D mode
 	}
 
-	m_label->addPoint(cloud, pointIndex);
+	m_label->addPickedPoint(cloud, pointIndex);
 	m_label->setVisible(true);
 	m_label->displayPointLegend(m_label->size() == 3); //we need to display 'A', 'B' and 'C' for 3-points labels
 	if (m_label->size() == 1 && ecvDisplayTools::GetCurrentScreen())

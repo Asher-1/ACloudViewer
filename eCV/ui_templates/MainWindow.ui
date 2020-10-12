@@ -498,6 +498,10 @@
      <property name="title">
       <string>Sensors</string>
      </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/integrated_sensor.png</normaloff>:/Resources/images/integrated_sensor.png</iconset>
+     </property>
      <widget class="QMenu" name="menuTLS_GBL">
       <property name="toolTip">
        <string>Terrestrial Laser Sensor = Ground Based Lidar</string>
@@ -540,6 +544,10 @@
      <property name="title">
       <string>Waveform</string>
      </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/Wavefrom.png</normaloff>:/Resources/images/Wavefrom.png</iconset>
+     </property>
      <addaction name="actionShowWaveDialog"/>
      <addaction name="actionCompressFWFData"/>
     </widget>
@@ -553,7 +561,6 @@
     <addaction name="menuScalarFields"/>
     <addaction name="menuSensors"/>
     <addaction name="menuWaveform"/>
-    <addaction name="actionRemoveDuplicatePoints"/>
     <addaction name="separator"/>
     <addaction name="actionSegment"/>
     <addaction name="actionClone"/>
@@ -565,6 +572,7 @@
     <addaction name="actionTranslateRotate"/>
     <addaction name="actionApplyTransformation"/>
     <addaction name="separator"/>
+    <addaction name="actionRemoveDuplicatePoints"/>
     <addaction name="actionEditGlobalShiftAndScale"/>
    </widget>
    <addaction name="menuFile"/>
@@ -3017,6 +3025,10 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
   </action>
   <action name="actionModifySensor">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqWrench.png</normaloff>:/Resources/images/svg/pqWrench.png</iconset>
+   </property>
    <property name="text">
     <string>Edit</string>
    </property>

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include <tuple>
 #include <vector>
 
-#include "Odometry/OdometryOption.h"
+#include "OdometryOption.h"
 #include <Eigen.h>
 
 namespace cloudViewer {
@@ -52,7 +52,7 @@ typedef std::vector<Eigen::Vector4i, CVLib::utility::Vector4i_allocator>
 /// \class RGBDOdometryJacobian
 ///
 /// \brief Base class that computes Jacobian from two RGB-D images.
-class OPENGL_ENGINE_LIB_API RGBDOdometryJacobian {
+class RGBDOdometryJacobian {
 public:
     /// \brief Default Constructor.
     RGBDOdometryJacobian() {}
@@ -86,7 +86,7 @@ public:
 /// F. Steinbrucker, J. Sturm, and D. Cremers.
 /// Real-time visual odometry from dense RGB-D images.
 /// In ICCV Workshops, 2011.
-class OPENGL_ENGINE_LIB_API RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian {
+class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian {
 public:
     /// \brief Default Constructor.
     RGBDOdometryJacobianFromColorTerm() {}
@@ -116,7 +116,7 @@ public:
 /// reference:
 /// J. Park, Q.-Y. Zhou, and V. Koltun
 /// anonymous submission.
-class OPENGL_ENGINE_LIB_API RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
+class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
 public:
     /// \brief Default Constructor.
     RGBDOdometryJacobianFromHybridTerm() {}

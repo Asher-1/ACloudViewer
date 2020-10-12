@@ -1,6 +1,53 @@
 ErowCloudViewer Version History
 ============================
 
+v3.6.0 (Asher) - 12/10/2020
+----------------------
+
+- New features
+	- Edit > Clean > Voxel Sampling: to voxel sample point cloud with voxel size given by users.
+	- Edit > Mesh > Convex Hull: to compute convex hull for point cloud.
+	- Edit > Mesh > Poisson Reconstruction: to triangulation on point cloud given by users with poisson algorithm
+	- Edit > Scalar Field > Import SF from file: to import scalar field data from file.
+	- Edit > Scalar Field > Filter by lables: to filter point clouds by labels in scalar field mode imported from file or exported from semantic annotation tools.
+	- New tool:
+		- Tools > Segmentation > DBSCan Cluster
+			- Cluster ccPointCloud using the RANSAC algorithm. Wrapper to Schnabel et al. library for automatic shape detection in point cloud, "Efficient RANSAC for Point-Cloud Shape Detection", Ruwen Schnabel, Roland Wahl and Reinhard Klein, in Computer Graphics Forum(June 2007), 26:2(214 - 226) http://cg.cs.uni-bonn.de/en/publications/paper-details/schnabel-2007-efficient/. 
+			- Returns a list of ransac point labels and shape entity(ccGenericPrimitive).
+		- Tools > Segmentation > Plane Segmentation
+			- Segment ccPointCloud plane using the RANSAC algorithm.
+			- Returns the plane model ax + by + cz + d = 0 and the indices of the plane inliers.
+	- New Plugins:
+		- qColorimetricSegmenter, The purpose of the plugin is to perform color segmentation.
+			The available filters are RGB, HSV and scalar value filtering.
+		- qHoughNormals, Normal Estimation in Unstructured Point Clouds with Hough transform.
+		- qMPlane, MPlane is to perform normal distance measurements against a defined plane.
+			- Fit a plane through a point cloud by selecting at minimum 3 reference points. A scalarfield for visualizing the normal distance is created and applied automatically.
+			- Perform normal distance measurements against the plane.
+			- Save measurements as a .csv file.
+		- qMasonry, enables the segmentation of dense point clouds (principally from laser scanning) of masonry structures into their individual stones. The plugin contains two tools: one is for the automated segmentation of the point cloud into the wall's constitutive stones. The other one is to conduct this process manually either from scratch or (most commonly) to correct the errors of the automated tool (it's hard to create a perfect tool!).
+			- qAutoSeg. The objective of this plugin is to automatically detect stones and mortar joints within a masonry wall, segmenting and saving the outcomes as distinct entities that can be later exploited independently. More information on the segmentation algorithm can be found in Valero et al.
+			- qManualSeg. This plugin can be used to manually segment a point cloud of a masonry wall, or to correct and edit the segmentation of one that has been already subject to a previous segmentation process.
+
+- Improvements
+	- More efficient scalar field rendering strategies.
+	- Update rendering window when call removeFromDB function.
+
+- Changes
+	- Reconstruct CVCoreLib, ECV_DB_LIB, ECV_IO_DB direction structure.
+	- Add CVAppCommon, CVPluginAPI and CVPluginStub modules.
+	- Reconstruct plugin Standard and IO module direction structure.
+	- Remove Contribs directory and put some third parties into plugins itself.
+	- add more python interfaces for custom geometry like primitives and some generic mesh and cloud geometry.
+
+- Bug fixes:
+	- Repair primitives normals showing mode in OpenGL mode for python interface.
+	- Remove some dummy cmake steps and clearn cmakelist files.
+	- Auto seg plugin or manual seg plugin: at log time, the log file should not be created in software directory. should be as follows:
+		- APS_log_timestamp_random.txt for auto seg plugin
+		- MSP_log_timestamp_random.txt for manual seg plugin
+
+
 v3.5.0 (Asher) - 06/08/2020
 ----------------------
 
@@ -481,7 +528,7 @@ v1.0.0 (Asher) - 10/22/2019
 	* When a picking operation is active, the ESC key will cancel it.
 
 	* qBroom plugin:
-		- now has a wiki documentation: http://www.CLOUDVIEWER.org/doc/wiki/index.php?title=Virtual_broom_(plugin)
+		- now has a wiki documentation: http://www.erow.cn/doc/wiki/index.php?title=Virtual_broom_(plugin)
 
 	* qAnimation plugin:
 		- new output option 'zoom' (alternative to the existing 'super resolution' option)

@@ -54,39 +54,40 @@
 #include <WeibullDistribution.h>
 
 //for tests
-//#include <ChamferDistanceTransform.h>
+#include <ChamferDistanceTransform.h>
 #include <SaitoSquaredDistanceTransform.h>
 
 // ECV_DB_LIB
-#include <ecvGenericPointCloud.h>
-#include <ecv2DLabel.h>
-#include <ecv2DViewportObject.h>
 #include <ecvImage.h>
+#include <ecv2DLabel.h>
 #include <ecvGBLSensor.h>
 #include <ecvCameraSensor.h>
+#include <ecv2DViewportObject.h>
+#include <ecvGenericPointCloud.h>
 #include <ecvColorScalesManager.h>
-#include <ecvScalarField.h>
-#include <ecvDisplayTools.h>
-#include <ecvRenderingTools.h>
+
 #include <ecvFacet.h>
-#include <ecvFileUtils.h>
-#include <ecvKdTree.h>
 #include <ecvPlane.h>
-#include <ecvProgressDialog.h>
-#include <ecvQuadric.h>
+#include <ecvKdTree.h>
 #include <ecvSphere.h>
+#include <ecvQuadric.h>
 #include <ecvSubMesh.h>
 #include <ecvCylinder.h>
 #include <ecvPolyline.h>
-#include <ecvColorScalesManager.h>
+#include <ecvFileUtils.h>
 #include <ecvPointCloud.h>
+#include <ecvScalarField.h>
+#include <ecvDisplayTools.h>
+#include <ecvProgressDialog.h>
+#include <ecvRenderingTools.h>
+#include <ecvColorScalesManager.h>
 
 // ECV_IO_LIB
+#include <BinFilter.h>
+#include <AsciiFilter.h>
+#include <DepthMapFileFilter.h>
 #include <ecvGlobalShiftManager.h>
 #include <ecvShiftAndScaleCloudDlg.h>
-#include <AsciiFilter.h>
-#include <BinFilter.h>
-#include <DepthMapFileFilter.h>
 
 //common
 #include <ecvCommon.h>
@@ -111,6 +112,7 @@
 // ECV_PYTHON_LIB
 #ifdef ECV_PYTHON_LIBRARY_BUILD
 #include "ecvDeepSemanticSegmentationTool.h"
+#include <Recognition/PythonInterface.h>
 #endif
 
 // SYSTEM
@@ -603,6 +605,8 @@ void MainWindow::connectActions()
 	connect(m_ui->actionEnableVisualDebugTraces, &QAction::triggered, this, &MainWindow::toggleVisualDebugTraces);
 
 	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::newLabel, this, &MainWindow::handleNewLabel);
+	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::autoPickPivot, this, &MainWindow::setAutoPickPivot);
+	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::exclusiveFullScreenToggled, this, &MainWindow::toggleExclusiveFullScreen);
 
 	// Set up dynamic menus
 	m_ui->menuFile->insertMenu(m_ui->actionSave, m_recentFiles->menu());
@@ -710,7 +714,7 @@ void MainWindow::initial() {
 		m_mdiArea->installEventFilter(this);
 	}
 
-	ecvDisplayTools::Init(new PCLDisplayTools(), this, this);
+	ecvDisplayTools::Init(new PCLDisplayTools(), this);
 
 	initConsole();
 
@@ -1447,7 +1451,7 @@ void MainWindow::doActionEditCamera()
 #ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
 	if (!m_cpeDlg)
 	{
-		m_cpeDlg = new ecvCameraParamEditDlg(this, qWin, m_pickingHub);
+		m_cpeDlg = new ecvCameraParamEditDlg(qWin, m_pickingHub);
 		EditCameraTool * tool = new EditCameraTool(ecvDisplayTools::GetVisualizer3D());
 		m_cpeDlg->setCameraTool(tool);
 
@@ -2517,6 +2521,11 @@ ccBBox MainWindow::getSelectedEntityBbox()
 	return box;
 }
 
+void MainWindow::addEditPlaneAction(QMenu & menu) const
+{
+	menu.addAction(m_ui->actionEditPlane);
+}
+
 void MainWindow::zoomOn(ccHObject* object)
 {
 	if (ecvDisplayTools::GetCurrentScreen())
@@ -2604,7 +2613,7 @@ MainWindow::ccHObjectContext MainWindow::removeObjectTemporarilyFromDBTree(ccHOb
 
 	//mandatory (to call putObjectBackIntoDBTree)
 	context.parent = obj->getParent();
-
+	
 	//remove the object's dependency to its father (in case it undergoes "severe" modifications)
 	if (context.parent)
 	{
@@ -3233,6 +3242,8 @@ void MainWindow::removeFromDB(ccHObject * obj, bool autoDelete)
 	if (!obj)
 		return;
 
+	obj->removeFromRenderScreen(true);
+
 	//remove dependency to avoid deleting the object when removing it from DB tree
 	if (!autoDelete && obj->getParent())
 		obj->getParent()->removeDependencyWith(obj);
@@ -3472,7 +3483,7 @@ void MainWindow::onItemPicked(const PickedItem & pi)
 		s_levelMarkersCloud->addPoint(pickedPoint);
 		unsigned markerCount = s_levelMarkersCloud->size();
 		cc2DLabel* label = new cc2DLabel();
-		label->addPoint(s_levelMarkersCloud, markerCount - 1);
+		label->addPickedPoint(s_levelMarkersCloud, markerCount - 1);
 		label->setName(tr("P#%1").arg(markerCount));
 		label->setDisplayedIn2D(false);
 		//label->setDisplay(s_pickingWindow);
@@ -9324,7 +9335,7 @@ void MainWindow::deactivateSegmentationMode(bool state)
 							bool removeLabel = false;
 							for (unsigned i = 0; i < label->size(); ++i)
 							{
-								if (label->getPoint(i).cloud == entity)
+								if (label->getPickedPoint(i).cloud == entity)
 								{
 									removeLabel = true;
 									break;

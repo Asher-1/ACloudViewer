@@ -1,21 +1,20 @@
 #include "ecvCommandLineParser.h"
 
 // LOCAL
+#include "ecvConsole.h"
+#include <ui_commandLineDlg.h>
 #include "ecvCommandLineCommands.h"
 #include "ecvCommandCrossSection.h"
 #include "ecvCommandRaster.h"
 #include "ecvPluginInterface.h"
 
 // ECV_DB_LIB
+#include <ecvGenericMesh.h>
 #include <ecvProgressDialog.h>
 
 // ECV_IO_LIB
 #include <AsciiFilter.h>
 #include <BinFilter.h>
-
-// ECV
-#include "ecvConsole.h"
-#include <ui_commandLineDlg.h>
 
 // Qt
 #include <QDateTime>

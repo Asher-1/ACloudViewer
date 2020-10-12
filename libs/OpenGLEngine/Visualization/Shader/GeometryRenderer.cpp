@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualization/Shader/GeometryRenderer.h"
+#include "GeometryRenderer.h"
 
 #include <Image.h>
 #include <ecvMesh.h>
@@ -36,9 +36,9 @@
 #include <ecvOrientedBBox.h>
 #include <ecvHObjectCaster.h>
 
-#include "Visualization/Utility/PointCloudPicker.h"
-#include "Visualization/Utility/SelectionPolygon.h"
-#include "Visualization/Visualizer/RenderOptionWithEditing.h"
+#include "../Utility/PointCloudPicker.h"
+#include "../Utility/SelectionPolygon.h"
+#include "../Visualizer/RenderOptionWithEditing.h"
 
 namespace cloudViewer {
 namespace visualization {
