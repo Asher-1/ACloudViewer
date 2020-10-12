@@ -102,6 +102,7 @@ void ccMeasurementDevice::setupPlaneUiDisplay(ccPlane * plane, const QString pla
 	plane->setName(planeName);
 	plane->enableStippling(true);
 	plane->showColors(true);
+	plane->setOpacity(0.5);
 	plane->applyGLTransformation_recursive();
 	plane->setVisible(true);
 	plane->setSelectionBehavior(ccHObject::SELECTION_IGNORED);

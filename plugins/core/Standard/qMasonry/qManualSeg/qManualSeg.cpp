@@ -48,6 +48,7 @@
 
 // CVCoreLib
 #include <CVConst.h>
+#include <CVTools.h>
 #include <SquareMatrix.h>
 #include <CloudSamplingTools.h>
 #include <ManualSegmentationTools.h>
@@ -852,9 +853,7 @@ void ccManualSeg::doAction()
 	string filename("MSP_log_");
 	filename += str;
 	filename += ".txt";
-
 	ofstream auto_seg_log;
-	auto_seg_log.open(filename);
 
 	string stamp;
 
@@ -874,13 +873,12 @@ void ccManualSeg::doAction()
 	int cnt = 0;
 	int cnt2 = 0;
 
-	//Dialog showing message. 31/10/2018
+	// Dialog showing message. 31/10/2018
 	ProfileImportDlg piDlg(m_app->getMainWindow());
 
-	//Check loaded point clouds (there should be 2: base and segmented)
+	// Check loaded point clouds (there should be 2: base and segmented)
 	ccHObject* root = m_app->dbRootObject();
 	ccPointCloud* segmentCloud;
-
 
 	std::vector<int> idxPoly;
 	int idxStone = -1;
@@ -919,10 +917,8 @@ void ccManualSeg::doAction()
 			}
 		}
 
-
 		if (oldMortarMaps.size() >= 0)
 		{
-
 			for (int i = 0; i < contourfolder.size(); ++i)
 			{
 				ccHObject* Maps = contourfolder[i];
@@ -951,146 +947,145 @@ void ccManualSeg::doAction()
 
 	if (root)
 	{
-
 		int sizeClouds = 1000000000;
-
-			root->filterChildren(pcs, true, CV_TYPES::POINT_CLOUD);
-			root->filterChildren(polys, true, CV_TYPES::POLY_LINE);
+		root->filterChildren(pcs, true, CV_TYPES::POINT_CLOUD);
+		root->filterChildren(polys, true, CV_TYPES::POLY_LINE);
 			
-			int t = pcs.size();
-			int n = polys.size();
+		int t = pcs.size();
+		int n = polys.size();
 
-			if (t >= 2 ) { 
-				for (int i = 0; i < pcs.size(); ++i)
+		if (t >= 2 ) { 
+			QFileInfo fileInfo(pcs.front()->getFullPath());
+			QDir dir(fileInfo.absolutePath());
+			QString autoSegLogFile = dir.absoluteFilePath(filename.c_str());
+			filename = CVTools::fromQString(autoSegLogFile);
+			auto_seg_log.open(filename);
+			for (int i = 0; i < pcs.size(); ++i)
+			{
+				ccPointCloud* cl = static_cast<ccPointCloud*>(pcs.at(i));
+				QString s = cl->getName();
+				string  s0 = s.toStdString();
+				string s1 = "tone";
+				string s2 = "ortar";
+				string s3 = "ref";
+
+				if ((s0.find(s3) != std::string::npos)&& (s0.find(s1) != std::string::npos))
 				{
-					ccPointCloud* cl = static_cast<ccPointCloud*>(pcs.at(i));
-					QString s = cl->getName();
-					string  s0 = s.toStdString();
-					string s1 = "tone";
-					string s2 = "ortar";
-					string s3 = "ref";
+					refStone = i;
+					string cComment = "reference stone cloud found!";
+					QString qComment = QString::fromUtf8(cComment.c_str());
+					m_app->dispToConsole(qComment, ecvMainAppInterface::STD_CONSOLE_MESSAGE);
 
-					if ((s0.find(s3) != std::string::npos)&& (s0.find(s1) != std::string::npos))
-					{
-						refStone = i;
-						string cComment = "reference stone cloud found!";
-						QString qComment = QString::fromUtf8(cComment.c_str());
-						m_app->dispToConsole(qComment, ecvMainAppInterface::STD_CONSOLE_MESSAGE);
-
-						stamp = dateStamp();
-						auto_seg_log << stamp << " Reference stone cloud found" << endl;
-					}
-
-					if ((s0.find(s3) != std::string::npos) && (s0.find(s2) != std::string::npos))
-					{
-						refMortar = i;
-						string cComment = "reference mortar cloud found!";
-						QString qComment = QString::fromUtf8(cComment.c_str());
-						m_app->dispToConsole(qComment, ecvMainAppInterface::STD_CONSOLE_MESSAGE);
-						
-						stamp = dateStamp();
-						auto_seg_log << stamp << " Reference mortar cloud found" << endl;
-					}
-
-					if (!(s0.find(s3) != std::string::npos) && (s0.find(s1) != std::string::npos))
-					{
-						idxStone = i;
-						string cComment = "Stone cloud found!";
-						QString qComment = QString::fromUtf8(cComment.c_str());
-						m_app->dispToConsole(qComment, ecvMainAppInterface::STD_CONSOLE_MESSAGE);
-						
-						stamp = dateStamp();
-						auto_seg_log << stamp << " Stone cloud found" << endl;
-					}
-
-					if (!(s0.find(s3) != std::string::npos) && (s0.find(s2) != std::string::npos))
-					{
-						idxMortar = i;
-						string cComment = "Mortar cloud found!";
-						QString qComment = QString::fromUtf8(cComment.c_str());
-						m_app->dispToConsole(qComment, ecvMainAppInterface::STD_CONSOLE_MESSAGE);
-
-						stamp = dateStamp();
-						auto_seg_log << stamp << " Mortar cloud found" << endl;
-					}
-
-					// For Bench
-
-					if (n == 0 && refStone != -1 && idxStone != -1 && refMortar != -1 && idxMortar!= -1 )
-					{
-						bench = true;
-						
-						refStoneCloud = static_cast<ccPointCloud*>(pcs.at(refStone));
-						refMortarCloud = static_cast<ccPointCloud*>(pcs.at(refMortar));
-						cloudStone = static_cast<ccPointCloud*>(pcs.at(idxStone));
-						cloudMortar = static_cast<ccPointCloud*>(pcs.at(idxMortar));
-
-					}
-
-					//
+					stamp = dateStamp();
+					auto_seg_log << stamp << " Reference stone cloud found" << endl;
 				}
 
-			} else {
-
-					m_app->dispToConsole("At least one cloud and a polyline are required", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
-					return;
-			}
-			
-			if (!bench)
-			{
-
-				if (idxMortar != -1 && idxStone != -1 )
+				if ((s0.find(s3) != std::string::npos) && (s0.find(s2) != std::string::npos))
 				{
+					refMortar = i;
+					string cComment = "reference mortar cloud found!";
+					QString qComment = QString::fromUtf8(cComment.c_str());
+					m_app->dispToConsole(qComment, ecvMainAppInterface::STD_CONSOLE_MESSAGE);
+						
+					stamp = dateStamp();
+					auto_seg_log << stamp << " Reference mortar cloud found" << endl;
+				}
+
+				if (!(s0.find(s3) != std::string::npos) && (s0.find(s1) != std::string::npos))
+				{
+					idxStone = i;
+					string cComment = "Stone cloud found!";
+					QString qComment = QString::fromUtf8(cComment.c_str());
+					m_app->dispToConsole(qComment, ecvMainAppInterface::STD_CONSOLE_MESSAGE);
+						
+					stamp = dateStamp();
+					auto_seg_log << stamp << " Stone cloud found" << endl;
+				}
+
+				if (!(s0.find(s3) != std::string::npos) && (s0.find(s2) != std::string::npos))
+				{
+					idxMortar = i;
+					string cComment = "Mortar cloud found!";
+					QString qComment = QString::fromUtf8(cComment.c_str());
+					m_app->dispToConsole(qComment, ecvMainAppInterface::STD_CONSOLE_MESSAGE);
+
+					stamp = dateStamp();
+					auto_seg_log << stamp << " Mortar cloud found" << endl;
+				}
+
+				// For Bench
+
+				if (n == 0 && refStone != -1 && idxStone != -1 && refMortar != -1 && idxMortar!= -1 )
+				{
+					bench = true;
+						
+					refStoneCloud = static_cast<ccPointCloud*>(pcs.at(refStone));
+					refMortarCloud = static_cast<ccPointCloud*>(pcs.at(refMortar));
 					cloudStone = static_cast<ccPointCloud*>(pcs.at(idxStone));
 					cloudMortar = static_cast<ccPointCloud*>(pcs.at(idxMortar));
+
+				}
+			}
+
+		} else {
+
+				m_app->dispToConsole("At least one cloud and a polyline are required", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+				return;
+		}
+			
+		if (!bench)
+		{
+			if (idxMortar != -1 && idxStone != -1 )
+			{
+				cloudStone = static_cast<ccPointCloud*>(pcs.at(idxStone));
+				cloudMortar = static_cast<ccPointCloud*>(pcs.at(idxMortar));
+			}
+			else
+			{
+
+				if (idxMortar == -1 && idxStone == -1)
+				{
+
+					int cnt = 0;
+
+					for (int i = 0; i < pcs.size(); ++i)
+					{
+						ccPointCloud* cl = static_cast<ccPointCloud*>(pcs.at(i));
+
+						if (cl->size() > 100)
+						{
+							idxMortar = i;
+							cnt++;
+						}
+
+
+					}
+
+					if (cnt > 1)
+					{
+						m_app->dispToConsole("For manual segmentation leave only one cloud in DB", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+						return;
+					}
+
+
+					cloudMortar = static_cast<ccPointCloud*>(pcs.at(idxMortar));
+
+						
+					cloudMortar->getBoundingBox(minBox0, maxBox0);
+
 				}
 
 				else
 				{
+					m_app->dispToConsole("Only one cloud has been foud", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
 
-					if (idxMortar == -1 && idxStone == -1)
-					{
+					m_app->dispToConsole("for manual segmentation please change it's name so that it doesn't contain the sequence 'stone' or 'mortar'", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
 
-						int cnt = 0;
+					return;
 
-						for (int i = 0; i < pcs.size(); ++i)
-						{
-							ccPointCloud* cl = static_cast<ccPointCloud*>(pcs.at(i));
-
-							if (cl->size() > 100)
-							{
-								idxMortar = i;
-								cnt++;
-							}
-
-
-						}
-
-						if (cnt > 1)
-						{
-							m_app->dispToConsole("For manual segmentation leave only one cloud in DB", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
-							return;
-						}
-
-
-						cloudMortar = static_cast<ccPointCloud*>(pcs.at(idxMortar));
-
-						
-						cloudMortar->getBoundingBox(minBox0, maxBox0);
-
-					}
-
-					else
-					{
-						m_app->dispToConsole("Only one cloud has been foud", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
-
-						m_app->dispToConsole("for manual segmentation please change it's name so that it doesn't contain the sequence 'stone' or 'mortar'", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
-
-						return;
-
-					}
 				}
 			}
+		}
 	}
 	else
 	{
@@ -1100,7 +1095,6 @@ void ccManualSeg::doAction()
 	if (!bench)
 	{
 		// saving point size
-
 		unsigned pointSizeMortar = cloudMortar->getPointSize();
 
 		std::vector<int> recIdx;
@@ -1588,7 +1582,7 @@ void ccManualSeg::doAction()
 
 		sort(nstonePairs.begin(), nstonePairs.end(), [](auto &left, auto &right) {return left.first < right.first;});
 
-		//shuffling scalarfield for better visuals
+		// shuffling scalar field for better visuals
 		vector <int> stIdShuffle;
 		for (auto e : nstonePairs)
 		{

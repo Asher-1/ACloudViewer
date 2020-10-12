@@ -106,6 +106,10 @@ void ccMPlaneDlgController::onNormalCheckBoxClicked(bool checked)
 {
 	m_showNormal = checked;
 	m_data->getPlane()->showNormalVector(checked);
+	ecvDisplayTools::SetRedrawRecursive(false);
+	m_data->getPlane()->setRedrawFlagRecursive(true);
+	m_data->getPlane()->redrawDisplay();
+
 	//m_selectedCloud->prepareDisplayForRefresh();
 	//m_selectedCloud->refreshDisplay();
 }

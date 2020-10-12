@@ -721,6 +721,29 @@ bool ccHObject::isAncestorOf(const ccHObject *anObject) const
 	return isAncestorOf(parent);
 }
 
+void ccHObject::removeFromRenderScreen(bool recursive)
+{
+	CC_DRAW_CONTEXT context;
+	context.removeViewID = QString::number(getUniqueID(), 10);
+	context.removeEntityType = getEntityType();
+	ecvDisplayTools::RemoveEntities(context);
+
+	if (this->isKindOf(CV_TYPES::FACET) || this->isKindOf(CV_TYPES::PLANE))
+	{
+		ccPlanarEntityInterface* plane = ccHObjectCaster::ToPlanarEntity(this);
+		plane->showNormalVector(false);
+		plane->clearNormalVector();
+	}
+
+	if (recursive)
+	{
+		for (auto child : m_children)
+		{
+			child->removeFromRenderScreen(true);
+		}
+	}
+}
+
 bool ccHObject::getAbsoluteGLTransformation(ccGLMatrix& trans) const
 {
 	trans.toIdentity();

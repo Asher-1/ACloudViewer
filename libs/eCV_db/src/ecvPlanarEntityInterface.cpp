@@ -33,19 +33,7 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 		return;
 
 	// delete history
-	{
-		context.removeEntityType = ENTITY_TYPE::ECV_MESH;
-		if (c_unitNormalSymbol)
-		{
-			context.removeViewID = m_bodyId;
-			ecvDisplayTools::RemoveEntities(context);
-		}
-		if (c_unitNormalHeadSymbol)
-		{
-			context.removeViewID = m_headId;
-			ecvDisplayTools::RemoveEntities(context);
-		}
-	}
+	clearNormalVector();
 
 	if (!normalVectorIsShown())
 	{
@@ -129,4 +117,19 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 	normalContext.transformInfo.setTranslationEnd(0.9f * direction);
 	normalContext.viewID = m_headId;
 	c_unitNormalHeadSymbol->draw(normalContext);
+}
+
+void ccPlanarEntityInterface::clearNormalVector(CC_DRAW_CONTEXT& context)
+{
+	context.removeEntityType = ENTITY_TYPE::ECV_MESH;
+	if (c_unitNormalSymbol)
+	{
+		context.removeViewID = m_bodyId;
+		ecvDisplayTools::RemoveEntities(context);
+	}
+	if (c_unitNormalHeadSymbol)
+	{
+		context.removeViewID = m_headId;
+		ecvDisplayTools::RemoveEntities(context);
+	}
 }

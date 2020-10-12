@@ -2613,7 +2613,7 @@ MainWindow::ccHObjectContext MainWindow::removeObjectTemporarilyFromDBTree(ccHOb
 
 	//mandatory (to call putObjectBackIntoDBTree)
 	context.parent = obj->getParent();
-
+	
 	//remove the object's dependency to its father (in case it undergoes "severe" modifications)
 	if (context.parent)
 	{
@@ -3241,6 +3241,8 @@ void MainWindow::removeFromDB(ccHObject * obj, bool autoDelete)
 {
 	if (!obj)
 		return;
+
+	obj->removeFromRenderScreen(true);
 
 	//remove dependency to avoid deleting the object when removing it from DB tree
 	if (!autoDelete && obj->getParent())

@@ -335,6 +335,7 @@ void ecvDisplayTools::doPicking()
 				cc2DLabel* label = dynamic_cast<cc2DLabel*>(pickedObj);
 				if (label && !label->isSelected())
 				{
+					// warning deprecated!
 					emit s_tools.instance->entitySelectionChanged(label);
 					QApplication::processEvents();
 				}
@@ -1166,7 +1167,43 @@ void ecvDisplayTools::UpdateActiveItemsList(int x, int y, bool extendToSelectedL
 
 	StartPicking(params);
 
-	Update2DLabel();
+	if (s_tools.instance->m_activeItems.size() == 1)
+	{
+		ccInteractor* pickedObj = s_tools.instance->m_activeItems.front();
+		cc2DLabel* label = dynamic_cast<cc2DLabel*>(pickedObj);
+		if (label)
+		{
+			if (!label->isSelected() || !extendToSelectedLabels)
+			{
+				//select it?
+				//emit entitySelectionChanged(label);
+				//QApplication::processEvents();
+			}
+			else
+			{
+				//we get the other selected labels as well!
+				ccHObject::Container labels;
+				if (s_tools.instance->m_globalDBRoot)
+					s_tools.instance->m_globalDBRoot->filterChildren(labels, true, CV_TYPES::LABEL_2D);
+				if (s_tools.instance->m_winDBRoot)
+					s_tools.instance->m_winDBRoot->filterChildren(labels, true, CV_TYPES::LABEL_2D);
+
+				for (auto & label : labels)
+				{
+					if (label->isA(CV_TYPES::LABEL_2D) && label->isVisible()) //Warning: cc2DViewportLabel is also a kind of 'CC_TYPES::LABEL_2D'!
+					{
+						cc2DLabel* l = static_cast<cc2DLabel*>(label);
+						if (l != label && l->isSelected())
+						{
+							s_tools.instance->m_activeItems.push_back(l);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//Update2DLabel();
 }
 
 void ecvDisplayTools::onItemPickedFast(ccHObject* pickedEntity, int pickedItemIndex, int x, int y)

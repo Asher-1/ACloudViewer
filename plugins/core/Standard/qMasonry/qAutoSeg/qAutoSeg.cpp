@@ -44,7 +44,7 @@
 
 #include <unordered_set>
 
-//qCC_db
+// ECV_DB_LIB
 #include <ecvFileUtils.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>
@@ -60,7 +60,7 @@
 #include <GenericIndexedCloudPersist.h>
 
 
-//IO
+// ECV_IO_LIB
 #include <PlyFilter.h>
 
 //CWT
@@ -80,7 +80,7 @@
 #include <vector>
 
 
-//Subsampling pointclouds
+// Subsampling pointclouds
 #include <CloudSamplingTools.h>
 #include <DistanceComputationTools.h>
 #include <DgmOctreeReferenceCloud.h>
@@ -91,7 +91,7 @@
 #include <ScalarField.h>
 #include <ScalarFieldTools.h>
 #include <SimpleMesh.h>
-
+#include <CVTools.h>
 #include <kdtree.h>
 
 #include <ctime>
@@ -267,7 +267,7 @@ void rotY(ccPointCloud *&cloud, double th0) {
 
 }
 
-void cloud2binary(ccPointCloud* cloud, Mat &corrMatS, vector<Point> &idxPxS, vector<int> &idxPx1DS, Mat &imageBWS) {
+void cloud2binary(ccPointCloud* cloud, cv::Mat &corrMatS, std::vector<cv::Point> &idxPxS, std::vector<int> &idxPx1DS, cv::Mat &imageBWS) {
 
 	//Correspondence 2D->1D. Each px has an index instead of two coords
 	int cntC = 0;
@@ -298,8 +298,8 @@ void cloud2binary(ccPointCloud* cloud, Mat &corrMatS, vector<Point> &idxPxS, vec
 }
 
 //Extract Skeleton from Binary (CV_8U)
-Mat skeleton(Mat I, bool flagInv) {
-	Mat toSkel;
+cv::Mat skeleton(cv::Mat I, bool flagInv) {
+	cv::Mat toSkel;
 	if (flagInv) { //If black-white inversion is required
 		toSkel = 255 * cv::Mat::ones(I.rows, I.cols, CV_8U) - I;
 	}
@@ -307,8 +307,6 @@ Mat skeleton(Mat I, bool flagInv) {
 		toSkel = I;
 	}
 		
-
-
 	cv::Mat skel(toSkel.size(), CV_8U, cv::Scalar(0));
 	cv::Mat temp;
 	cv::Mat eroded;
@@ -334,8 +332,8 @@ Mat skeleton(Mat I, bool flagInv) {
 
 
 //Extract elements of a vector given the indices
-vector<Point> extractVectorFromIdx(vector<Point> v, vector<int> idx) {
-	vector<Point> subset;
+std::vector<cv::Point> extractVectorFromIdx(std::vector<cv::Point> v, vector<int> idx) {
+	std::vector<cv::Point> subset;
 
 	for (int i = 0; i<idx.size(); i++) {
 		Point x(v.at(idx.at(i)).x, v.at(idx.at(i)).y);
@@ -345,15 +343,15 @@ vector<Point> extractVectorFromIdx(vector<Point> v, vector<int> idx) {
 }
 
 //Populate a matrix with a given value
-void populateMat(Mat &populated, vector<Point> pixList, int value) {
+void populateMat(cv::Mat &populated, std::vector<cv::Point> pixList, int value) {
 	for (int i = 0; i < pixList.size(); i++) {
 		populated.at<uchar>((pixList.at(i).x), (pixList.at(i).y)) = value;
 	}
 }
 
 //Calculate difference set in two pixel lists (Matlab setdiff equivalent). Returns pixels in listOld that are not in listNew
-vector<Point> setdiffPixs(vector<Point> listNew, vector<Point> listOld) {
-	vector<Point> setdiffList;
+std::vector<cv::Point> setdiffPixs(std::vector<cv::Point> listNew, std::vector<cv::Point> listOld) {
+	std::vector<cv::Point> setdiffList;
 	int cnt;
 	for (int i = 0; i < listOld.size(); i++) {
 		cnt = 0;
@@ -372,8 +370,8 @@ vector<Point> setdiffPixs(vector<Point> listNew, vector<Point> listOld) {
 }
 
 //Calculate intersection set in two pixel lists. Returns idx pixels in listNew that are in listOld
-vector<int> setIntersectIdxPixs(vector<Point> listNew, vector<Point> listOld) {
-	vector<int> commonList;
+std::vector<int> setIntersectIdxPixs(std::vector<cv::Point> listNew, std::vector<cv::Point> listOld) {
+	std::vector<int> commonList;
 
 	//Common
 	for (int i = 0; i < listNew.size(); i++) {
@@ -388,8 +386,8 @@ vector<int> setIntersectIdxPixs(vector<Point> listNew, vector<Point> listOld) {
 }
 
 
-vector<int> setIntersectIdxPixs1D(vector<int> listNew, vector<int> listOld) {
-	vector<int> commonList;
+std::vector<int> setIntersectIdxPixs1D(std::vector<int> listNew, std::vector<int> listOld) {
+	std::vector<int> commonList;
 
 	//Common
 	int cnt = 0;
@@ -408,7 +406,7 @@ vector<int> setIntersectIdxPixs1D(vector<int> listNew, vector<int> listOld) {
 
 
 //Calculate exclusive OR in two pixel lists (Matlab setxor equivalent)
-vector<Point> setxorPixs(vector<Point> listNew, vector<Point> listOld) {
+std::vector<cv::Point> setxorPixs(std::vector<cv::Point> listNew, std::vector<cv::Point> listOld) {
 	vector<Point> setxorList;
 	vector<int> commonList;
 
@@ -439,9 +437,9 @@ vector<Point> setxorPixs(vector<Point> listNew, vector<Point> listOld) {
 	return setxorList;
 }
 
-//Extract values of pixels per labelled segment in a binary image
-vector<int> pixelValues(Mat inputM, vector<Point> &pixelList) {
-	vector<int> pixelV;
+//Extract values of pixels per labeled segment in a binary image
+std::vector<int> pixelValues(cv::Mat inputM, std::vector<cv::Point> &pixelList) {
+	std::vector<int> pixelV;
 	for (int i = 0; i < pixelList.size(); i++) {
 		int val = inputM.at<uchar>(pixelList.at(i).x, pixelList.at(i).y);
 		pixelV.push_back(val);
@@ -449,26 +447,26 @@ vector<int> pixelValues(Mat inputM, vector<Point> &pixelList) {
 	return pixelV;
 }
 
-//Extract pixels per labelled segment in a binary image
-vector<vector<Point> > pixelListMat(Mat inputM, int nLabels) {
-	vector<vector<Point> > pixelSegments(nLabels);
-		for (int i = 0; i < inputM.rows; i++) {
-			for (int j = 0; j < inputM.cols; j++) {
-				int pixelValue = inputM.at<int>(i, j);
-				if (pixelValue > 0) {
-					Point x(i, j);
-					pixelSegments[pixelValue-1].push_back(x); //-1 to correct value 0 for background
-				}
-
+//Extract pixels per labeled segment in a binary image
+std::vector< std::vector<cv::Point> > pixelListMat(cv::Mat inputM, int nLabels) {
+	std::vector< std::vector<cv::Point> > pixelSegments(nLabels);
+	for (int i = 0; i < inputM.rows; i++) {
+		for (int j = 0; j < inputM.cols; j++) {
+			int pixelValue = inputM.at<int>(i, j);
+			if (pixelValue > 0) {
+				cv::Point x(i, j);
+				pixelSegments[pixelValue-1].push_back(x); //-1 to correct value 0 for background
 			}
+
 		}
+	}
 	return pixelSegments;
 }
 
 //Find values over/under a value in an array. op = 1: lt; op = 2: leq; op = 3: gt; op = 4: geq; op = 5: eq
-vector<int> findMatlab(vector<double> inputV, int op, double thres)
+std::vector<int> findMatlab(std::vector<double> inputV, int op, double thres)
 {
-	vector<int> indices;
+	std::vector<int> indices;
 
 	if (op == 1){
 		for (int i = 0; i < inputV.size(); i++) {
@@ -504,56 +502,56 @@ vector<int> findMatlab(vector<double> inputV, int op, double thres)
 }
 
 
-vector<int> findIdx(vector<int> inputV, int thres)
+std::vector<int> findIdx(std::vector<int> inputV, int thres)
 {
-	vector<int> indices;
+	std::vector<int> indices;
 
-		for (int i = 0; i < inputV.size(); i++) {
-			if (inputV.at(i) == thres)
-				indices.push_back(i);
-		}
-	
+	for (int i = 0; i < inputV.size(); i++) {
+		if (inputV.at(i) == thres)
+			indices.push_back(i);
+	}
+
 	return indices;
 }
 
 //Dilation
-void dilationCC(int dilation_elem, int dilation_size, Mat &src, Mat &dilation_dst)
+void dilationCC(int dilation_elem, int dilation_size, cv::Mat &src, cv::Mat &dilation_dst)
 {
 	int dilation_type = 0;
 	if (dilation_elem == 0) { dilation_type = MORPH_RECT; }
 	else if (dilation_elem == 1) { dilation_type = MORPH_CROSS; }
 	else if (dilation_elem == 2) { dilation_type = MORPH_ELLIPSE; }
-	Mat element = getStructuringElement(dilation_type,
+	cv::Mat element = cv::getStructuringElement(dilation_type,
 		Size(2 * dilation_size + 1, 2 * dilation_size + 1),
-		Point(dilation_size, dilation_size));
-	dilate(src, dilation_dst, element);
+		cv::Point(dilation_size, dilation_size));
+	cv::dilate(src, dilation_dst, element);
 }
 
 // Erosion
-void erosionCC(int erosion_elem, int erosion_size, Mat &src, Mat &erosion_dst){
+void erosionCC(int erosion_elem, int erosion_size, cv::Mat &src, cv::Mat &erosion_dst){
 	int erosion_type = 0;
 	if (erosion_elem == 0) { erosion_type = MORPH_RECT; }
 	else if (erosion_elem == 1) { erosion_type = MORPH_CROSS; }
 	else if (erosion_elem == 2) { erosion_type = MORPH_ELLIPSE; }
-	Mat element = getStructuringElement(erosion_type,
+	cv::Mat element = cv::getStructuringElement(erosion_type,
 		Size(2 * erosion_size + 1, 2 * erosion_size + 1),
-		Point(erosion_size, erosion_size));
-	erode(src, erosion_dst, element);
+		cv::Point(erosion_size, erosion_size));
+	cv::erode(src, erosion_dst, element);
 }
 
 
 //Stones division in smaller segments (when joint by narrow areas)
-Mat stonesDivision(vector<vector<Point>> pixsLabel, Mat labels, vector<int> bigStones){
+cv::Mat stonesDivision(std::vector< std::vector<cv::Point> > pixsLabel, cv::Mat labels, std::vector<int> bigStones){
 	//smallIndices
 	int nLabels = pixsLabel.size();
-	vector<int> v(nLabels); 
-	iota(std::begin(v), std::end(v), 0); 
+	std::vector<int> v(nLabels); 
+	std::iota(std::begin(v), std::end(v), 0); 
 
 	std::vector<int> noBigStones;
 	std::set_difference(std::begin(v), std::end(v),std::begin(bigStones), std::end(bigStones),std::back_inserter(noBigStones));
 	
 	//smallMatrix
-	Mat smallStones = Mat::zeros(labels.size(), CV_8U);
+	cv::Mat smallStones = cv::Mat::zeros(labels.size(), CV_8U);
 	for (int i = 0; i < noBigStones.size(); i++) {
 		for (int j = 0; j < pixsLabel[noBigStones.at(i)].size(); j++) {
 			smallStones.at<uchar>(pixsLabel[noBigStones.at(i)].at(j).x, pixsLabel[noBigStones.at(i)].at(j).y) = 255;
@@ -561,7 +559,7 @@ Mat stonesDivision(vector<vector<Point>> pixsLabel, Mat labels, vector<int> bigS
 	}
 
 	//bigMatrix
-	Mat input = Mat::zeros(labels.size(), CV_8U);
+	cv::Mat input = cv::Mat::zeros(labels.size(), CV_8U);
 	for (int i = 0; i < bigStones.size(); i++) {
 		for (int j = 0; j < pixsLabel[bigStones.at(i)].size(); j++) {
 					input.at<uchar>(pixsLabel[bigStones.at(i)].at(j).x, pixsLabel[bigStones.at(i)].at(j).y) = 255;
@@ -571,39 +569,39 @@ Mat stonesDivision(vector<vector<Point>> pixsLabel, Mat labels, vector<int> bigS
 	//Erosion of big stones (in matlab was open: erosion + dilation, but here we dilated before) 
 	int erosion_elem = 2;
 	int erosion_size = 1;
-	Mat output;
+	cv::Mat output;
 	erosionCC(erosion_elem, erosion_size, input, output);
 
 
 	//Combine small + eroded big stones
-	Mat combined = output+smallStones;
+	cv::Mat combined = output+smallStones;
 
 	return combined; //new segments
 
 }
 
 // Gets only the biggest segments
-Mat threshSegments(Mat &src, double threshSize) {
+cv::Mat threshSegments(cv::Mat &src, double threshSize) {
 	// FindContours:
-	vector<vector<Point> > contours;
-	vector<Vec4i> hierarchy;
-	Mat srcBuffer, output;
+	std::vector< std::vector<cv::Point> > contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::Mat srcBuffer, output;
 	src.copyTo(srcBuffer);
-	findContours(srcBuffer, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_TC89_KCOS);
+	cv::findContours(srcBuffer, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_TC89_KCOS);
 
-	vector<vector<Point> > allSegments;
+	std::vector< std::vector<cv::Point> > allSegments;
 
 	// For each segment:
 	for (size_t i = 0; i < contours.size(); ++i) {
-		cv::drawContours(srcBuffer, contours, i, Scalar(200, 0, 0), 1, 8, hierarchy, 0, Point());
+		cv::drawContours(srcBuffer, contours, i, cv::Scalar(200, 0, 0), 1, 8, hierarchy, 0, Point());
 		cv::Rect brect = cv::boundingRect(contours[i]);
-		cv::rectangle(srcBuffer, brect, Scalar(255, 0, 0));
+		cv::rectangle(srcBuffer, brect, cv::Scalar(255, 0, 0));
 
 		int result;
-		vector<Point> segment;
+		std::vector<cv::Point> segment;
 		for (unsigned int row = brect.y; row < brect.y + brect.height; ++row) {
 			for (unsigned int col = brect.x; col < brect.x + brect.width; ++col) {
-				result = pointPolygonTest(contours[i], Point(col, row), false);
+				result = cv::pointPolygonTest(contours[i], Point(col, row), false);
 				if (result == 1 || result == 0) {
 					segment.push_back(Point(col, row));
 				}
@@ -612,10 +610,10 @@ Mat threshSegments(Mat &src, double threshSize) {
 		allSegments.push_back(segment);
 	}
 
-	output = Mat::zeros(src.size(), CV_8U);
+	output = cv::Mat::zeros(src.size(), CV_8U);
 	int totalSize = output.rows*output.cols;
 	for (int segmentCount = 0; segmentCount < allSegments.size(); ++segmentCount) {
-		vector<Point> segment = allSegments[segmentCount];
+		std::vector< cv::Point > segment = allSegments[segmentCount];
 		if (segment.size() > threshSize) {
 			for (int idx = 0; idx < segment.size(); ++idx) {
 				output.at<uchar>(segment[idx].y, segment[idx].x) = 255;
@@ -651,18 +649,18 @@ string type2str(int type) {
 }
 
 // Get stats and additional info from a binary matrix
-void extractInfo(Mat &input, vector<vector<Point> > &pixsLabel, Mat &labels, Mat &stats, vector<vector<Point> > &contours0) {
+void extractInfo(cv::Mat &input, std::vector< std::vector<cv::Point> > &pixsLabel, cv::Mat &labels, cv::Mat &stats, std::vector< std::vector<Point> > &contours0) {
 	//Get connected components and stats
 	const int connectivity_8 = 8;
-	Mat centroids;
+	cv::Mat centroids;
 
 	int nLabels = connectedComponentsWithStats(input, labels, stats, centroids, connectivity_8, CV_32S); //Note that component 0 is the background (i.e. nLabels = nsegments+1)
 
 
 	//Extract the contours 
-	vector<vector<Point> > contours;
-	vector<Vec4i> hierarchy;
-	findContours(input, contours0, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
+	std::vector< std::vector<cv::Point> > contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours(input, contours0, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
 
 	string ty = type2str(labels.type());
 	pixsLabel = pixelListMat(labels, nLabels - 1);
@@ -676,17 +674,15 @@ void fillEdgeImage(cv::Mat edgesIn, cv::Mat& filledEdgesOut, int z) {
 	string hola = type2str(edgesNeg.type());
 
 	////////Check that seed is in mortar joints and not inside a stone
-	Mat labels, stats;
+	cv::Mat labels, stats;
 	const int connectivity_8 = 8;
-	Mat centroids;
+	cv::Mat centroids;
 	//invert 1s and 0s to label black areas from CWT instead of whites. In this way, we know that label 1 (the bigger segment) corresponds to mortar joints
-	bitwise_not(edgesIn, edgesIn);
+	cv::bitwise_not(edgesIn, edgesIn);
 
-	int nLabels = connectedComponentsWithStats(edgesIn, labels, stats, centroids, connectivity_8, CV_32S); //Note that component 0 is the background (i.e. nLabels = nsegments+1)
-
+	int nLabels = cv::connectedComponentsWithStats(edgesIn, labels, stats, centroids, connectivity_8, CV_32S); //Note that component 0 is the background (i.e. nLabels = nsegments+1)
 	
-	bitwise_not(edgesIn, edgesIn);
-
+	cv::bitwise_not(edgesIn, edgesIn);
 
 	int stSize = (int)stats.at<int>(1, 4); //0 is stone area, largest (not considering that one) is continuous mortar
 	int	cntBiggestSize = 1;
@@ -716,33 +712,29 @@ void fillEdgeImage(cv::Mat edgesIn, cv::Mat& filledEdgesOut, int z) {
 
 stop:
 
-		
-
 	cv::floodFill(edgesNeg, cv::Point(c, f), CV_RGB(255, 255, 255)); //The seed must be a black pixel
 ;
-	bitwise_not(edgesNeg, edgesNeg);
+	cv::bitwise_not(edgesNeg, edgesNeg);
 
 	filledEdgesOut = (edgesNeg | edgesIn);
 
 	return;
 }
 
-
-
 // Calculates the fft2
-void fft2(const Mat in, Mat &complexI) {
-	Mat padded;
+void fft2(const cv::Mat in, cv::Mat &complexI) {
+	cv::Mat padded;
 	int m = getOptimalDFTSize(in.rows);
 	int n = getOptimalDFTSize(in.cols);
-	copyMakeBorder(in, padded, 0, m - in.rows, 0, n - in.cols, BORDER_CONSTANT, Scalar::all(0));
+	copyMakeBorder(in, padded, 0, m - in.rows, 0, n - in.cols, BORDER_CONSTANT, cv::Scalar::all(0));
 
-	Mat planes[] = { Mat_<float>(padded), Mat::zeros(padded.size(), CV_32F) };
-	merge(planes, 2, complexI);
-	dft(complexI, complexI);
+	cv::Mat planes[] = { cv::Mat_<float>(padded), cv::Mat::zeros(padded.size(), CV_32F) };
+	cv::merge(planes, 2, complexI);
+	cv::dft(complexI, complexI);
 }
 
 //Calculates the conjugate of a complex matrix
-Mat conjugate(Mat_<std::complex<double>> M1, bool *flag)
+cv::Mat conjugate(cv::Mat_<std::complex<double>> M1, bool *flag)
 {
 	using CP = std::complex<double>;
 	cv::Mat_<CP> M3(M1.rows, M1.cols);
@@ -768,7 +760,7 @@ Mat conjugate(Mat_<std::complex<double>> M1, bool *flag)
 }
 
 // Multiplies two complex matrices
-Mat multiplicationCC(Mat_<std::complex<double>> M1, Mat_<std::complex<double>> M2)
+cv::Mat multiplicationCC(cv::Mat_<std::complex<double>> M1, cv::Mat_<std::complex<double>> M2)
 {
 	using CP = std::complex<double>;
 	cv::Mat_<CP> M3(M1.rows, M1.cols);
@@ -781,7 +773,7 @@ Mat multiplicationCC(Mat_<std::complex<double>> M1, Mat_<std::complex<double>> M
 }
 
 //Calculates the Continuous Wavelet Transform
-void cwt2d(double sca, Mat image, Mat &cwtcfs, Mat &bincfs)
+void cwt2d(double sca, cv::Mat image, cv::Mat &cwtcfs, cv::Mat &bincfs)
 {
 	cv::Mat I = imread("depthMap.bmp", cv::IMREAD_GRAYSCALE);
 	cv::Mat fImage = image; //(if there is 'image' matrix)
@@ -829,8 +821,8 @@ void cwt2d(double sca, Mat image, Mat &cwtcfs, Mat &bincfs)
 	std::transform(v2.begin(), v2.end(), H_puls.begin(),
 		[H](int i) { return i * 2 * M_PI / H; });
 
-	Mat matW = Mat(W_puls);
-	Mat matH = Mat(H_puls);
+	cv::Mat matW = cv::Mat(W_puls);
+	cv::Mat matH = cv::Mat(H_puls);
 
 	cv::Mat1d xx, yy;
 	cv::repeat(matW.reshape(1, 1), matH.total(), 1, xx); //Matlab's Meshgrid equivalent
@@ -843,37 +835,37 @@ void cwt2d(double sca, Mat image, Mat &cwtcfs, Mat &bincfs)
 	
 	double ang = 0;
 
-	Mat nxx = sca * (cos(ang)*xx - sin(ang)*yy);
-	Mat nyy = sca * (sin(ang)*xx + cos(ang)*yy);
+	cv::Mat nxx = sca * (cos(ang)*xx - sin(ang)*yy);
+	cv::Mat nyy = sca * (sin(ang)*xx + cos(ang)*yy);
 
 
 	int sigmax = 1;
 	int sigmay = 1;
 	int order = 2;
 
-	Mat nxx2;
+	cv::Mat nxx2;
 	pow(nxx, 2, nxx2);
-	Mat nyy2;
+	cv::Mat nyy2;
 	pow(nyy, 2, nyy2);
 
-	Mat sum = nxx2 + nyy2;
-	Mat sumPow;
+	cv::Mat sum = nxx2 + nyy2;
+	cv::Mat sumPow;
 	pow(sum, order / 2, sumPow);
 
 
 
-	Mat prod1 = sigmax * nxx;
-	Mat prod12;
-	pow(prod1, 2, prod12);
-	Mat prod2 = sigmay * nyy;
-	Mat prod22;
-	pow(prod2, 2, prod22);
+	cv::Mat prod1 = sigmax * nxx;
+	cv::Mat prod12;
+	cv::pow(prod1, 2, prod12);
+	cv::Mat prod2 = sigmay * nyy;
+	cv::Mat prod22;
+	cv::pow(prod2, 2, prod22);
 
-	Mat ex = -(prod12 + prod22) / 2;
-	Mat ex2;
+	cv::Mat ex = -(prod12 + prod22) / 2;
+	cv::Mat ex2;
 	cv::exp(ex, ex2);
 
-	Mat waveft2 = -(2 * M_PI) * sumPow.mul(ex2);
+	cv::Mat waveft2 = -(2 * M_PI) * sumPow.mul(ex2);
 
 	//Complex mask
 	using CP = std::complex<double>;
@@ -881,33 +873,32 @@ void cwt2d(double sca, Mat image, Mat &cwtcfs, Mat &bincfs)
 	mask = sca * waveft2;
 
 	bool flag = false;
-	Mat mask_conj = mask;
+	cv::Mat mask_conj = mask;
 
 	mask.convertTo(mask_conj, CV_32F);
 
-	Mat g, mask2;
-	vector<Mat> channels;
+	cv::Mat g, mask2;
+	std::vector<cv::Mat> channels;
 	if (flag) { //Mask is complex. TBC if there is the case
 
 	}
 	else {
-		g = Mat::zeros(Size(mask_conj.cols, mask_conj.rows), CV_32FC1);
-		mask2 = Mat::zeros(Size(mask_conj.cols, mask_conj.rows), CV_32FC2);
+		g = cv::Mat::zeros(Size(mask_conj.cols, mask_conj.rows), CV_32FC1);
+		mask2 = cv::Mat::zeros(Size(mask_conj.cols, mask_conj.rows), CV_32FC2);
 
 		channels.push_back(mask_conj);
 		channels.push_back(g);
 
-		merge(channels, mask2);
+		cv::merge(channels, mask2);
 	}
 
 	//Matrices product
-	Mat M3;
+	cv::Mat M3;
 	M3 = multiplicationCC(fourierTransform, mask2);
 
 	// IFFT
 	std::cout << "Inverse transform...\n";
 	cv::dft(M3, cwtcfs, cv::DFT_INVERSE | cv::DFT_REAL_OUTPUT);
-
 
 	// Back to 8-bits. angle values in Matlab code
 	cwtcfs.convertTo(bincfs, CV_8U);
@@ -1352,12 +1343,7 @@ void ccAutoSeg::doAction()
 	filename += str;
 	filename += ".txt";
 
-	ofstream auto_seg_log;
-	auto_seg_log.open(filename);
-	
-
 	time_t my_time = time(NULL);
-
 
 	//Create pop-up window
 	ProfileImportDlg piDlg(m_app->getMainWindow());
@@ -1387,6 +1373,13 @@ void ccAutoSeg::doAction()
 		m_app->dispToConsole("Select one cloud!", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
 		return;
 	}
+
+	QFileInfo fileInfo(selectedEntities.front()->getFullPath());
+	QDir dir(fileInfo.absolutePath());
+	QString autoSegLogFile = dir.absoluteFilePath(filename.c_str());
+	filename = CVTools::fromQString(autoSegLogFile);
+	ofstream auto_seg_log;
+	auto_seg_log.open(filename);
 
 	string stamp;
 	stamp = dateStamp();
@@ -1433,10 +1426,10 @@ void ccAutoSeg::doAction()
 	CCVector3 a2(0, 1, 0);
 	ccGLMatrix R2 = ccGLMatrix::FromToRotation(nrm2, a2);
 
-	cloud0->applyRigidTransformation(R2); //Another rotation to aligned boundaries of the wall to axes X and Z is needed (rotate in Y axis and take angle linked to smallest bounding box)
+	//Another rotation to aligned boundaries of the wall to axes X and Z is needed (rotate in Y axis and take angle linked to smallest bounding box)
+	cloud0->applyRigidTransformation(R2); 
 
 	//Subsample cloud0 to obtain optimal rotY if size is over a threshold
-	
 	ccPointCloud* cloud2Rot = new ccPointCloud("cloud2Rot"); //Kike
 
 	std::vector<int> v2(cloud0->size());
@@ -1667,7 +1660,7 @@ void ccAutoSeg::doAction()
 				int z = floor(pointC->z);
 				int x = floor(pointC->x);
 				image.at<float>(z, x) = pointC->y;
-				//colour
+				// color
 				const ecvColor::Rgb colorC = cloud->getPointColor(i);
 				imageR.at<uchar>(z, x) = colorC.r;
 				imageG.at<uchar>(z, x) = colorC.g;
@@ -1680,14 +1673,14 @@ void ccAutoSeg::doAction()
 			}
 
 
-			Mat imageC;
-			vector<Mat> channels;
+			cv::Mat imageC;
+			std::vector<cv::Mat> channels;
 
 			channels.push_back(imageR);
 			channels.push_back(imageG);
 			channels.push_back(imageB);
 
-			merge(channels, imageC);
+			cv::merge(channels, imageC);
 
 			//Median filter to fill holes
 			cv::Mat imageFilt = cv::Mat::zeros(rows, cols, CV_32F);
@@ -1704,7 +1697,7 @@ void ccAutoSeg::doAction()
 			}
 
 			//Check for black areas after filling holes. These are structural holes (windows, doors)
-			vector<int> nullCols, nullRows;
+			std::vector<int> nullCols, nullRows;
 
 			for (int y = 0; y < image.rows; y++) {
 				for (int x = 0; x < image.cols; x++)
@@ -1727,8 +1720,8 @@ void ccAutoSeg::doAction()
 
 			//CWT
 			double scaleCWT = joints*0.254;//1.27 for 5cm
-			Mat cwtcfs;
-			Mat bincfs = cv::Mat::zeros(cwtcfs.size(), CV_8UC1);
+			cv::Mat cwtcfs;
+			cv::Mat bincfs = cv::Mat::zeros(cwtcfs.size(), CV_8UC1);
 		
 			cwt2d(scaleCWT, image, cwtcfs, bincfs);
 
@@ -1738,7 +1731,7 @@ void ccAutoSeg::doAction()
 			cv::Rect myROI(0, 0, image.cols, image.rows);
 			bincfs = bincfs(myROI);
 
-			Mat hola;
+			cv::Mat hola;
 
 			stamp = dateStamp();
 			auto_seg_log << stamp << " CWT calculated" << endl;
@@ -1752,18 +1745,18 @@ void ccAutoSeg::doAction()
 			fillEdgeImage(bincfs, hola, z);
 
 			//Remove small segments
-			Mat output = threshSegments(hola, 20);
+			cv::Mat output = threshSegments(hola, 20);
 
 			//Erosion + Dilation
 			int erosion_elem = 2; //0 = morph_rect, 1 = morph_cross, 2 = morph_ellipse (I think Matlab uses 0)
 			int erosion_size = 1;
-			Mat erodedM;
+			cv::Mat erodedM;
 			erosionCC(erosion_elem, erosion_size, output, erodedM);
 
 			///This has been added here (not in matlab)
 			int dilation_elem = 2; //0 = morph_rect, 1 = morph_cross, 2 = morph_ellipse
 			int dilation_size = 1;
-			Mat dilatedM;
+			cv::Mat dilatedM;
 			dilationCC(dilation_elem, dilation_size, erodedM, dilatedM);
 
 			stamp = dateStamp();
@@ -1793,60 +1786,57 @@ void ccAutoSeg::doAction()
 
 			int op = 3; //op = 1: lt; op = 2: leq; op = 3: gt; op = 4: geq;
 			double thres = meanArea + stdevArea; //meanArea + 5*stdevArea
-			vector<int> bigStones = findMatlab(area, op, thres);
+			std::vector<int> bigStones = findMatlab(area, op, thres);
 
 
 			//Divide big stones. Erode big > new segments. New matrix (from dilateM) without big ones but adding new segments 
-			Mat firstSegmentation;
+			cv::Mat firstSegmentation;
 			firstSegmentation = stonesDivision(pixsLabel, labels, bigStones);
 
-			vector<vector<Point> > pixsLabel2, contours2;
-			Mat labels2, stats2;
+			std::vector< std::vector<Point> > pixsLabel2, contours2;
+			cv::Mat labels2, stats2;
 			extractInfo(firstSegmentation, pixsLabel2, labels2, stats2, contours2); //Extract info after big stone division
-
 
 			stamp = dateStamp();
 			auto_seg_log << stamp << " Big stones divided" << endl;
 
-
-			Mat skel = skeleton(firstSegmentation, 1);
+			cv::Mat skel = skeleton(firstSegmentation, 1);
 
 			//CONVEX IMAGES
-
-			vector<Mat> channelsC(3);
-			split(imageC, channelsC);
-			Mat mapB = channelsC[0]; //3channel matrices are BGR
-			Mat mapG = channelsC[1];
-			Mat mapR = channelsC[2];
+			std::vector<Mat> channelsC(3);
+			cv::split(imageC, channelsC);
+			cv::Mat mapB = channelsC[0]; //3channel matrices are BGR
+			cv::Mat mapG = channelsC[1];
+			cv::Mat mapR = channelsC[2];
 
 			// Find the convex hull object for each contour
-			vector<vector<Point> >hull(contours2.size());
+			std::vector< std::vector<Point> >hull(contours2.size());
 			for (int i = 0; i < contours2.size(); i++)
 			{
-				convexHull(Mat(contours2[i]), hull[i], false);
+				convexHull(cv::Mat(contours2[i]), hull[i], false);
 			}
-			vector<vector<Point> > hull0;
+			std::vector< std::vector<Point> > hull0;
 
 			// Draw contours + hull results
 			RNG rng(12345);
-			vector<vector<Point> > pixsHull, contoursHull;
-			vector<vector<Point> > pixsHullSt(contours2.size());
-			Mat labelsHull, statsHull;
-			Mat drawingAll = Mat::zeros(firstSegmentation.size(), CV_8UC3);
+			std::vector< std::vector<Point> > pixsHull, contoursHull;
+			std::vector< std::vector<Point> > pixsHullSt(contours2.size());
+			cv::Mat labelsHull, statsHull;
+			cv::Mat drawingAll = cv::Mat::zeros(firstSegmentation.size(), CV_8UC3);
 
 			// Segments growth
-			vector<vector<Point>> segmentsColor;
-			vector<Mat> matConvexSt;
-			vector<int> pixsLabels(firstSegmentation.cols*firstSegmentation.rows, -1); //Store idxs in a vector instead of vector of vectors //FK2310
-			vector<int> pixsLabels2(firstSegmentation.cols*firstSegmentation.rows, -1); //Store idxs in a vector instead of vector of vectors. Consider overlapping //FK2310
+			std::vector< std::vector<Point>> segmentsColor;
+			std::vector<cv::Mat> matConvexSt;
+			std::vector<int> pixsLabels(firstSegmentation.cols*firstSegmentation.rows, -1); //Store idxs in a vector instead of vector of vectors //FK2310
+			std::vector<int> pixsLabels2(firstSegmentation.cols*firstSegmentation.rows, -1); //Store idxs in a vector instead of vector of vectors. Consider overlapping //FK2310
 			for (int i = 0; i < contours2.size(); i++) //
 			{
-				Mat drawing = Mat::zeros(firstSegmentation.size(), CV_8UC1);
+				cv::Mat drawing = cv::Mat::zeros(firstSegmentation.size(), CV_8UC1);
 
 				Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
 				Scalar color2 = Scalar(255, 255, 255);
-				drawContours(drawing, hull, i, color2, -1, 8, vector<Vec4i>(), 0, Point()); //5th input param to -1 to colour segments
-				drawContours(drawingAll, hull, i, color, -1, 8, vector<Vec4i>(), 0, Point()); //To plot
+				drawContours(drawing, hull, i, color2, -1, 8, std::vector<Vec4i>(), 0, cv::Point()); //5th input param to -1 to colour segments
+				drawContours(drawingAll, hull, i, color, -1, 8, std::vector<Vec4i>(), 0, cv::Point()); //To plot
 
 				extractInfo(drawing, pixsHull, labelsHull, statsHull, contoursHull); //Extract info from individual convex hulls
 
@@ -1858,26 +1848,25 @@ void ccAutoSeg::doAction()
 						// Stones inside each other not considered as duplicated
 						pixsLabels.at(idx) = i;
 					}
-					else {// Additional vector to consider pixels labelled as part of two stones (due to convex hull operation, for example)
+					else {// Additional vector to consider pixels labeled as part of two stones (due to convex hull operation, for example)
 						pixsLabels2.at(idx) = i;
 					}
 				}
 
-				vector<Point> pixelsH = pixsHull[0]; //Segments base
-
-				vector<int> coeffB = pixelValues(mapB, pixelsH);
-				vector<int> coeffG = pixelValues(mapG, pixelsH);
-				vector<int> coeffR = pixelValues(mapR, pixelsH);
+				std::vector<Point> pixelsH = pixsHull[0]; //Segments base
+				std::vector<int> coeffB = pixelValues(mapB, pixelsH);
+				std::vector<int> coeffG = pixelValues(mapG, pixelsH);
+				std::vector<int> coeffR = pixelValues(mapR, pixelsH);
 
 				sort(coeffB.begin(), coeffB.end());		double medB = coeffB[coeffB.size() / 2];
 				sort(coeffG.begin(), coeffG.end());		double medG = coeffG[coeffG.size() / 2];
 				sort(coeffR.begin(), coeffR.end());		double medR = coeffR[coeffR.size() / 2];
-				vector<double> coeff0 = { medB, medG, medR };
+				std::vector<double> coeff0 = { medB, medG, medR };
 
 				int j = 1;
 				int noPix = 0;
 				double growthRate = 1000;
-				Mat convexM, matNew;
+				cv::Mat convexM, matNew;
 				int dSize = 1;
 			}
 
@@ -1887,10 +1876,10 @@ void ccAutoSeg::doAction()
 			// EXTRACT 3D POINTS PER SEGMENT
 			for (int i = 0; i < contours2.size(); i++) //
 			{
-				vector<Point> pixels = pixsHullSt[i];
+				std::vector<cv::Point> pixels = pixsHullSt[i];
 		
 				////////// New 1D
-				vector<int> pixels1d;
+				std::vector<int> pixels1d;
 				for (auto e : pixels)
 				{
 					int idx = corrMat.at<int>(e.x, e.y);
@@ -1898,7 +1887,7 @@ void ccAutoSeg::doAction()
 				}
 
 			
-				vector<int> idxCloud;
+				std::vector<int> idxCloud;
 				for (int j = 0; j<idxPx.size(); j++) {
 					if(pixsLabels.at(idxPx1D.at(j)) == i)
 						idxCloud.push_back(j);
@@ -1906,7 +1895,7 @@ void ccAutoSeg::doAction()
 						idxCloud.push_back(j);
 				}
 
-				vector<pair<int, int>> global_SglStoneIdx;
+				std::vector<std::pair<int, int>> global_SglStoneIdx;
 
 				int max_size = cloud->size() /1; // maximum size per single stone 
 				float density = getDensity(cloud, idxCloud);

@@ -525,7 +525,7 @@ void PCLDisplayTools::removeEntities(CC_DRAW_CONTEXT& CONTEXT)
 			}
 		}
 
-		if (m_visualizer3D->removeEntities(CONTEXT) && m_visualizer3D)
+		if (m_visualizer3D && m_visualizer3D->removeEntities(CONTEXT))
 		{
 			m_visualizer3D->synchronizeGeometryBounds();
 		}
