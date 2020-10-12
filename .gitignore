@@ -139,4 +139,4 @@ CCCoreLibExport.h
 #VS2019 default cmake build & install paths
 /out/
 
-libs/Python/js/node_modules/
+libs/Python/js/node_modules/*
