@@ -2,7 +2,7 @@
 ; 有关创建 Inno Setup 脚本文件的详细资料请查阅帮助文档！
 
 #define MyAppName "ErowCloudViewer"
-#define MyAppVersion "3.5.0"
+#define MyAppVersion "3.6.0"
 #define MyAppPublisher "逸舟信息科技有限公司"
 #define MyAppURL "http://www.erow.cn/"
 #define MyAppExeName "ErowCloudViewer.exe"
@@ -29,10 +29,10 @@ InfoAfterFile=G:\develop\pcl_projects\ErowCloudViewer\install\ErowCloudViewer\gl
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=C:\Users\Administrator\Desktop
-OutputBaseFilename=ErowCloudViewer-3.5.0-2020-08-06-win-amd64
+OutputBaseFilename=ErowCloudViewer-3.6.0-2020-10-12-win-amd64
 SetupIconFile=G:\develop\pcl_projects\ErowCloudViewer\ErowCloudViewer\eCV\Resources\images\icon\ecv_128.ico
-Password=erow2020
-Encryption=yes
+Password=
+Encryption=no
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
