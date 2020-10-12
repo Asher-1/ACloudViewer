@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Advanced/surface_reconstruction_ball_pivoting.py
 
@@ -27,8 +27,8 @@ def problem_generator():
     points = np.array(points, dtype=np.float64)
     normals = np.array(normals, dtype=np.float64)
     pcd = cv3d.geometry.ccPointCloud()
-    pcd.points = cv3d.utility.Vector3dVector(points)
-    pcd.normals = cv3d.utility.Vector3dVector(normals)
+    pcd.set_points(cv3d.utility.Vector3dVector(points))
+    pcd.set_normals(cv3d.utility.Vector3dVector(normals))
     radii = [1, 2]
     yield pcd, radii
 

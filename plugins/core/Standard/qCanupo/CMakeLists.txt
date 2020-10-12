@@ -1,13 +1,9 @@
-cmake_minimum_required(VERSION 3.0)
-
 option( PLUGIN_STANDARD_QCANUPO "Check to install qCanupo plugin" OFF )
 
-if (PLUGIN_STANDARD_QCANUPO)
-
-	#CLOUDVIEWER  'Canupo' plugin
+if( PLUGIN_STANDARD_QCANUPO )
 	project( QCANUPO_PLUGIN )
-
-	include ( ${ECV_CMAKE_SCRIPTS_DIR}/CMakePolicies.cmake NO_POLICY_SCOPE )
+	
+	AddPlugin( NAME ${PROJECT_NAME} )
 
 	include_directories( DLIB_ROOT )
 
@@ -17,12 +13,14 @@ if (PLUGIN_STANDARD_QCANUPO)
 	# else()
 		# include_directories( ${DLIB_ROOT} )
 	# endif()
-
-	include( ../../../CMakePluginTpl.cmake )
-
-	option( COMPILE_QCANUPO_WITH_PRIVATE_PARTS "Check to compile qCanupo plugin with private methods (CNRS/UEB only)" OFF )
-	if ( COMPILE_QCANUPO_WITH_PRIVATE_PARTS )
+	
+	option( QCANUPO_COMPILE_PRIVATE_METHODS "Compile qCanupo plugin with private methods (CNRS/UEB only)" OFF )
+	if( QCANUPO_COMPILE_PRIVATE_METHODS )
 		target_compile_definitions( ${PROJECT_NAME} PRIVATE COMPILE_PRIVATE_CANUPO )
 	endif()
+	
+	add_subdirectory( include )
+	add_subdirectory( src )
+	add_subdirectory( ui )
 
 endif()

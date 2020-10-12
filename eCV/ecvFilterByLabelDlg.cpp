@@ -128,7 +128,7 @@ void ecvFilterByLabelDlg::createCheckboxesWithLabels()
 		ecvColor::Rgb col;
 		if (m_toFilter.second)
 		{
-			col = *m_toFilter.second->geScalarValueColor(static_cast<ScalarType>(label));
+			col = *m_toFilter.second->getScalarValueColor(static_cast<ScalarType>(label));
 		}
 		else
 		{

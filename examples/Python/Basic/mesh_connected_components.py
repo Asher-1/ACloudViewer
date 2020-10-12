@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Basic/mesh_connected_components.py
 
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     mesh = mesh.subdivide_midpoint(number_of_iterations=2)
     print(mesh)
 
-    vert = np.asarray(mesh.vertices)
+    vert = np.asarray(mesh.get_vertices())
     min_vert, max_vert = vert.min(axis=0), vert.max(axis=0)
     for _ in range(30):
         cube = cv3d.geometry.ccMesh.create_box()

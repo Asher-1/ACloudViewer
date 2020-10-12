@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Basic/rgbd_redwood.py
 
@@ -11,8 +11,7 @@ if __name__ == "__main__":
     print("Read Redwood dataset")
     color_raw = cv3d.io.read_image("../../TestData/RGBD/color/00000.jpg")
     depth_raw = cv3d.io.read_image("../../TestData/RGBD/depth/00000.png")
-    rgbd_image = cv3d.geometry.RGBDImage.create_from_color_and_depth(
-        color_raw, depth_raw)
+    rgbd_image = cv3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw)
     print(rgbd_image)
 
     plt.subplot(1, 2, 1)

@@ -1,0 +1,53 @@
+{
+	"type": "Standard",
+	"name": "Colorimetric Segmenter",
+	"icon": ":/CC/plugin/ColorimetricSegmenter/images/icon.png",
+  "description": "Plugin developed in the framework of a transversal project with Polytech Nantes, the Graduate School of Engineering of the University of Nantes, and the company Taglabs. The purpose of the plugin is to perform color segmentation. The available filters are RGB, HSV and scalar value filtering. Date : 2020",
+  "authors": [
+    {
+      "name": "Ronan COLLIER",
+      "email": "ronan.collier@etu.univ-nantes.fr"
+    },
+    {
+      "name": "Tri-thien TRUONG",
+      "email": "tri-thien.truong@etu.univ-nantes.fr"
+    },
+    {
+      "name": "Mathieu LETRONE",
+      "email": "mathieu.letrone@etu.univ-nantes.fr"
+    },
+    {
+      "name": "Nicolas Normand",
+      "email": "nicolas.normand@univ-nantes.fr"
+    },
+    {
+      "name": "Yan Koch",
+      "email": "yankoch@taglabs.fr"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "Ronan COLLIER",
+      "email": "ronan.collier@etu.univ-nantes.fr"
+    },
+    {
+      "name": "Tri-thien TRUONG",
+      "email": "tri-thien.truong@etu.univ-nantes.fr"
+    },
+    {
+      "name": "Mathieu LETRONE",
+      "email": "mathieu.letrone@etu.univ-nantes.fr"
+    },
+    {
+      "name": "Nicolas Normand",
+      "email": "nicolas.normand@univ-nantes.fr"
+    },
+    {
+      "name": "Yan Koch",
+      "email": "yankoch@taglabs.fr"
+    }
+  ],
+	"references": [
+
+	]
+}

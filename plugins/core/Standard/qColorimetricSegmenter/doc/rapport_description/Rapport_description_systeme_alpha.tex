@@ -1,0 +1,321 @@
+\documentclass[12pt,titlepage,french]{article}
+\usepackage{babel}
+\usepackage{graphicx}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{tabularx}
+\usepackage[hidelinks]{hyperref}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\pagestyle{plain}
+
+\usepackage{booktabs,makecell,tabu}
+\usepackage{float}
+\renewcommand\theadfont{\bfseries}
+
+\linespread{1.5}
+
+\begin{document}
+
+\begin{titlepage}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\center
+
+  \includegraphics[width=0.45\textwidth]{../ressources/img_logos/logo_polytech.png}\\[1cm]
+
+  \includegraphics[width=0.45\textwidth]{../ressources/img_logos/logo_taglabs.png}
+
+
+\HRule \\[0.4cm]
+{ \huge \bfseries Description du système \\[0.15cm] }
+Classification colorimétrique de nuages de points 3D
+\HRule \\[1.5cm]
+Ronan Collier,
+Mathieu Letrone,
+Tri-Thien Truong
+\\[1cm]
+\today \\ [1cm]
+Version 1.1 - Alpha
+\end{titlepage}
+
+\tableofcontents % table des matières
+\newpage
+\listoffigures  % table des figures
+\newpage
+\section{Contexte et problème}
+
+Taglabs est une jeune entreprise créée il y a deux ans par Yan Koch. L’entreprise s’inscrit dans le domaine de la modélisation 3D d’ouvrages. Ils proposent la modélisation et l’exploitation de nuages de points. Toutefois, ils travaillent surtout en interne sur un logiciel « ScanSap », le but de ce logiciel est d’exploiter les nuages de points 3D avec efficacité et simplicité inégalées. \newline
+
+L’entreprise travaille principalement avec les acteurs du BTP et de l’industrie sur des opérations de rénovation et de modernisation des ouvrages. Ces opérations nécessitent de s’appuyer sur des plans qui vont servir aux divers corps d’état pour préparer les travaux.\newline
+
+Par le passé, les plans étaient physiques (plans papier), et sont désormais numériques (plans 2D et maquettes 3D). Ces plans sont malheureusement souvent obsolètes, ce qui est lié aux nombreux petits travaux réalisés au cours de la vie des bâtiments, et qui ne font pas l’objet de mise à jour documentaire. Ceci conduit les entreprises à faire des erreurs dans leurs études techniques, puis des reprises sur site chronophages et coûteuses.\newline
+
+Depuis quelques années, il est possible de faire scanner les bâtiments en 3D et ainsi obtenir un relevé précis sous forme de nuages de points. Le problème rencontré par les entreprises réside dans la difficulté d’exploitation de ces relevés.\newline
+
+TagLabs travaille sur 2 volets :
+
+\begin{itemize}
+    \item la conversion du nuage en maquette numérique (CAO / BIM),
+    \item l’exploitation du nuage de points tel quel par le biais de fonctionnalités avancées de mesure et de segmentation. \newline
+\end{itemize}
+
+C’est ce second volet qui est abordé dans ce projet. \newline
+
+Dans cette optique, l'entreprise souhaite pouvoir intégrer plusieurs fonctionnalités à son système. D'une part, une solution permettant une segmentation basée sur la couleur au sein du ou des nuages de points manipulés. Cette segmentation a pour but de mettre en évidence, isoler les éléments du nuage de point répondant à une plage de couleur demandée. D'autre part, une solution mettant en place une fausse couleur sur un scan (nuage de points) en intensité. Le rôle de la fausse couleur est de mettre en lumière des caractéristiques issu des éléments scannés, et de faciliter la compréhension générale du nuage en y mettant des couleurs. \newline
+
+L'ensemble des fonctionnalités demandées par le client est une demande de recherche algorithmique sur l'implémentation des solutions.
+
+\section{Solution mise en place : vue globale}
+
+Dans cette partie, nous allons présenter l'ensemble des choix que nous avons fait afin de répondre au mieux aux besoins demandés par le client. De plus, nous présenterons la description de la solution conçue pour satisfaire ces besoins.
+
+\subsection{Choix principaux}
+
+Afin de répondre aux besoins, qui sont de pouvoir :
+\begin{itemize}
+    \item Lire un fichier de données contenant un nuage de point.
+    \item Isoler un élément dans le nuage de points, selon sa plage de couleur.
+    \item Réaliser de la fausse couleur sur un nuage de points en intensité de gris.
+    \item Exporter le nuage de points. \newline
+\end{itemize}
+
+Le service proposé doit permettre aux utilisateurs de réaliser ces tâches. Nous avons d'abord défini en tant qu'utilisateurs de la solution, ceux qui utiliseront "ScanSap" qu'il s'agisse de client ou de membre de l'entreprise TagLabs. Ainsi, nous visons des utilisateurs voulant manipuler des nuages de point en 3D. Ces personnes sont équipés de matériels puissants pour faire cela.\newline
+
+
+N'existant pas d'outil permettant l'ajout direct de fonctionnalités extérieures au sein du logiciel "ScanSap", nous avons décidé avec l'entreprise de réaliser un plugin sur autre logiciel de manipulation de nuages de points. Le logiciel en question est CloudCompare. Il permet la manipulation et le traitement des nuages. De plus, sa licence open source autorise l'ajout de fonctionnalités tant que nous les livrons aussi en open source. \newline
+
+Cette décision fut prise pour répondre non seulement à l'ensemble des besoins, mais aussi car CloudCompare prend déjà en charge deux besoins, la lecture et l'exportation des scans. En faisant ce choix, nous pouvons nous consacrer à la recherche et la réalisation des autres besoins de la segmentation et de la fausse couleur demandés par l'entreprise.
+
+\subsection{Description de la solution}
+
+Comme dit précédemment, la solution proposée pour répondre à la problématique s'articule autour d'un service de type plugin utilisateur. Le plugin est intégré dans les composants tiers de CloudCompare, il comprend (comprendra) les fonctionnalités de segmentation suivant la plage colorimétrique et la génération de fausses couleurs sur un scan en intensité. \newline
+
+Les utilisateurs pourront y accéder en les sélectionnant dans le menu défilant qui liste les différents plugins présents. Les diagrammes de séquence qui suivent, détaillent et illustrent le fonctionnement de l'expérience utilisateur. \newline
+
+La figure 1 montre la démarche que doit suivre l'utilisateur pour avoir accès au plugin.
+
+\begin{figure}[H]
+\center
+\includegraphics[width=0.65\textwidth]{./img/sequDiagPlugin.PNG}
+    \caption{\label{} Diagramme de séquence sur l'accès au plugin}
+\end{figure}
+
+La marche à suivre est relativement simple puisque notre plugin s'intègre dans le menu défilant qui répertorie l'ensemble des autres plugins accessibles de CloudCompare. De cette manière, l'utilisateur n'a qu'à le sélectionner et pourra l'utiliser si un ou des nuages ont été choisis pour être traités. \newline
+
+La figure 2, quant à elle, illustre l'utilisation du plugin, plus particulièrement la segmentation colorimétrique.
+
+\begin{figure}[H]
+\center
+  \includegraphics[width=0.65\textwidth]{./img/sequDiagrSegmentation.PNG}
+  \caption{\label{} Diagramme de séquence sur l'utilisation de la segmentation}
+\end{figure}
+
+L'expérience utilisateur a été revue et s'améliore au fil des retours client à chaque itération. Ainsi, ce diagramme prend en compte les feedbacks de la dernière itération en date, mais sont encore susceptibles d'évoluer jusqu'à la recette. Une fois les étapes de la figure 1 réalisés, une fenêtre apparaît et permet à l'utilisateur de choisir deux points dans le nuage via le point picking de CloudCompare. Ces points serviront pour définir les bornes de la plage colorimétrique des élément qu'il souhaite isoler. Une fois fait, il peut valider son choix via un bouton ou annuler l'opération. \newline
+
+Le tableau ci-dessous présente l'état d'avancement des composants de la solution, en mettant en évidence leur état via un code couleur :
+\begin{itemize}
+    \item Vert : composant réalisé
+    \item Orange : composant en cours de réalisation
+    \item Rouge : composant pas encore réalisé
+\end{itemize}
+
+\begin{figure}[H]
+\center \includegraphics[width=0.5\textwidth]{./img/avancement.png}
+  \caption{\label{} Tableau d'avancement global}
+\end{figure}
+
+Nous pouvons observer que notre avancement est en bonne voie. Étant à la moitié du projet, nous avons réalisé la moité des tâches. Il faut aussi noter que les composants sont amenés à évoluer, avec le feedback du client à nos fins d'itérations. Par exemple, la tâche du point picking, ou encore le toon mapping sont des composants qui ont été soulevé suite à nos réunions et discussions avec le client et notre tuteur académique.
+
+\section{Description technologique de la solution}
+
+Dans cette partie, nous présenterons les différents composants de l'architecture qui composent notre projet. Nous présenterons également la structure du code, et des différents éléments qui intéragissent sur le projet.
+
+Notre solution étant un plugin pour CloudCompare, la principale difficulté technique est la compréhension de la structure de ce logiciel et de son API. \newline
+
+En effet, CloudCompare possède une structuration complexe pour toute personne qui n'est pas habituée à travailler sur des projets C++ d'une telle envergure.
+
+De plus, la documentation possède de nombreuses lacunes, ne présentant pas toutes les classes et n'étant pas à jour.
+Il est donc conseillé de regarder le fonctionnement de l'API en naviguant dans les sources du projet.
+
+\subsection{Structure du code source CloudCompare}
+
+Nous présenterons ici la structure du projet CloudCompare, et de l'implémentation de notre plugin.
+
+\begin{figure}[H]
+\center
+  \includegraphics[width=0.9\textwidth]{./img/structure_code.PNG}
+  \caption{\label{} Code source du projet CloudCompare}
+\end{figure}
+
+Le code source du projet se trouve aux côtés de celui des autres plugins, dans le dossier "plugins" situé à la racine du dossier des sources de CloudCompare (représenté en vert sur la figure ci-dessus). Chaque sous-dossier de ce dossier représente un plugin. \newline
+
+Pour représenter comment les différents composants sont liés ensemble au sein du projet, nous avons utilisé un diagramme de composants. Le plugin se trouve parmi les autres composants tiers à CloudCompare, mais utilise toutes les librairies du cœur de CloudCompare et interface avec le client en passant par le logiciel.
+
+\begin{figure}[H]
+\center
+  \includegraphics[width=0.9\textwidth]{./img/component_diagr.png}
+  \caption{\label{} Diagramme de composants du projet CloudCompare}
+\end{figure}
+
+La structure du code source de CloudCompare est organisée pour éviter d'avoir du code éparpillé partout dans le projet original. Nous avons juste à insérer notre code et développer notre propre plugin dans le dossier plugins.
+
+\subsubsection{Projet Cmake}
+
+Le fichier le plus important pour la compilation du projet est le "CMakeLists.txt". En effet, il contient le nom de la classe principale du projet ainsi que tous les fichiers à inclure lors de la compilation.
+Si la structure du projet est correcte, et les fichiers correctement configurés, une option sélectionnable apparaît dans CMake.
+Il est alors possible de construire le projet pour qu'il soit éditable à l'aide de QtCreator tout autre IDE (tel que Visual Studio, en sélectionnant l'option appropriée).
+
+\subsubsection{Intégration du nouveau plugin dans le projet CloudCompare}
+
+Pour chaque plugin, il faut respecter une certaine structure. Dans le projet CloudCompare, il existe une classe template, qui nous a servi pour la création de notre propre plugin. Il est important de bien le construire, afin de pouvoir interagir avec les éléments du logiciel (graphiquement, et sur les données). \newline
+
+Nous avons représenté la structure globale du plugin, avec ce schéma ci-dessous.
+
+\begin{figure}[H]
+\center
+  \includegraphics[width=0.9\textwidth]{./img/architecture_plugin.PNG}
+  \caption{\label{} Structure de notre plugin}
+\end{figure}
+
+Nous pouvons observer que le plugin se compose de deux principales classes. La première, ColorimetricSegmenter, est la classe qui va permettre le traitement des données, et la classe RgbDialog est la classe pour créer l'interface sur CloudCompare.
+
+\subsubsection{Classe de traitement : ColorimetricSegmenter}
+
+Notre classe principale est ainsi nommée "ColorimetricSegmenter". Étant donné que notre projet est en C++, la classe est d'abord représentée sous la forme d'un fichier de type "header", contenant simplement les signatures des méthodes. \newline
+
+Afin de pouvoir interagir avec l'environnement de CloudCompare, il a fallu faire hériter notre classe de la classe "ccStdPluginInterface". Cette dernière est déjà présente dans le projet de base de CloudCompare, et permet de faciliter l'implémentation d'un nouveau plugin. En effet, elle nous permet d'avoir un objet de type "ccMainAppInterface", qui regroupe tous les éléments de la fenêtre, et tous les éléments nécessaires pour interagir sur l'interface. \newline
+
+Cette classe "ColorimetricSegmenter" contient donc tous nos types de filtrage sur le nuage de points. Il contient donc le code permettant d'effecter les actions que l'on veut dans le nuage de points au moment où on valide la fenêtre de paramétrage d'un filtrage. \newline
+
+Afin de faire le lien avec l'interface graphique sur CloudCompare (car dans ce fichier, nous avons uniquement la partie "traitement"), il faut aussi penser à initialiser l'attribut de la classe qui correspond à l'objet de l'interface, dans notre cas, c'est l'attribut de type "RgbDialog".
+
+Cette classe contient un algorithme de filtrage des points amélioré grâce à une segmentation. Cet algorithme est séparé en deux étapes. Une première consistant à parcourir le nuage de point afin de créer des régions de couleurs similaires, et une seconde étape dite de "raffinement" afin de réunir les régions similaires.
+
+Ainsi, pour chaque point, on regarde ses voisins en ne gardant que ses voisins les plus proches (en terme colorimétrique) afin de former une région. L'algorithme complet est décrit dans une publication de l'université de \cite{B01} Whuan. 
+
+\subsubsection{Classe d'interface : RgbDialog}
+
+L'interface graphique de CloudCompare se base sur la bibliothèque Qt. Cette bibliothèque offre plusieurs moyens afin de créer de nouveaux panneaux d'interface, de les intégrer à l'environnement existant, et de les lier à des actions. \newline
+
+QtCreator permet de concevoir graphiquement un panneau au travers d'une interface intuitive en drag\&drop. Le panneau nouvellement créé peut être enregistré au format XML avec l'extension ".ui". \newline
+
+Lors de la génération du projet, des fichiers ".h" et ".cpp" sont automatiquement créés par CloudCompare afin de pouvoir ouvrir la fenêtre et manipuler ses champs. \newline
+
+Concrètement, nous avons donc un fichier "RgbDialog.ui", créé avec le logiciel Qt Creator. Grâce à ce fichier, en générant le projet, les fichiers "RgbDialog.h" et "RgbDialog.c" se créent. Il est ensuite possible d'ajouter des méthodes dans le fichier "RgbDialog.c" afin d'ajouter des traitements.
+
+\subsubsection{Gestion des actions sur l'interface}
+
+Les actions utilisateurs sont gérées grâce à Qt au travers de la mécanique des signaux et des slots. Chaque événement, tel que l'ajout d'un nuage de points, est représenté par un slot et un signal. \newline
+
+Notre plugin peut ainsi savoir si l'utilisateur a sélectionné un nuage de points ou non, ou encore s'il clique sur un point. Il est également tout à fait possible de créer des signaux et slots personnalisés. \newline
+
+Chaque action de notre plugin doit être référencée en la déclarant en tant qu'attribut de notre classe, et également dans l'implémentation de la fonction "getActions" de la classe. Un bouton sera alors généré dans l'interface pour chacune de ces actions. La fonction "getActions" permet ici d'établir des conditions préalables sur l'état des boutons, en déterminant par exemple sous quelles conditions ils sont activés ou utilisables. \newline
+
+Dans notre cas, nous avons par exemple ajouté des signaux sur référençant le clic d'un bouton, pour activer un point picking, c'est-à-dire pour activer le mode de sélection de points dans le nuage.
+
+\section{Conclusion et perspectives}
+
+Nous avons jusqu'à maintenant réalisé la moitié du projet, au niveau du temps. En effet, nous avons maintenant passé trois itérations sur l'élaboration de notre solution. \newline
+
+Pour conclure sur ces itérations, de façon générale, nous avons pu suivre en grande partie ce que nous avions prévu sur le cahier des charges. La majorité des Users Stories ont été développés et validés par le client. Toutefois, le projet est loin d'être terminé, et il nous reste encore beaucoup d'améliorations/implémentation de fonctionnalités à faire.
+
+La première itération nous a permis de nous conforter sur le développement futur de notre solution, et les deux autres nous ont permit de poser les bases, et de commencer à donner une solution viable.
+
+Durant la première itération, nous avons de nombreuses questions sur le développement de notre projet. Nous avions notamment le choix du langage, la façon de développer nos algorithmes, l'implémentation, etc. C'était une itération où nous n'avions pas produit de contenu direct pour le client, mais nous avions pu partager nos recherches et de nos choix. Nous avions donc décidé de développer notre solution en C++, avec un plugin CloudCompare.
+
+La recherche d'algorithmes de segmentation nous a permis de gagner du temps sur l'implémentation, afin d'éviter de changer entre phases de recherche, et phases de d'implémentation, sur une même itération. Ainsi, cela nous permettait de mieux se concentrer sur la phase d'implémentation.
+
+Toutefois, nous avons quand même pris du retard notamment sur la deuxième et troisième itération. Lors de la deuxième itération, nous pensions que nous pourrions avoir une meilleure base de notre plugin sur CloudCompare, afin de pousser l'implémentation des algorithmes de segmentation. Malheureusement, nous avions rencontré des difficultés par rapport à la création d'un nouveau plugin. Ce temps perdu a donc impacté le développement de la troisième itération, qui consistait à l'amélioration de ce que nous avions développé, et l'implémentation de nouveaux algorithmes.
+
+Lors de la troisième itération, nous avions préféré se concentrer sur l'amélioration de notre code par rapport à l'implémentation de nouvelles fonctionnalités, car il nous semblait important d'avoir une structure stable et facile à maintenir, pour la suite du projet. Grâce à cela, nous avons maintenant un plugin indépendant aux autres, qui est totalement fonctionnel, et qui peut facilement ajouter des nouveaux algorithmes de segmentation.
+
+De plus, nous avons quand même pris en compte le feedback du client, afin d'améliorer notre solution, par rapport à son utilisation. Ici, c'était principalement lié à l'interface des algorithmes de segmentation. Nous avons apporté des modifications notamment sur le point picking, très important pour faciliter l'utilisation de notre plugin (au lieu de rentrer manuellement les valeurs à filtrer), ou encore des changements sur la plage de couleur à prendre, etc. \newline
+
+Maintenant, nous devons réfléchir aux perspectives d'évolution du projet. Il nous reste maintenant trois itérations à planifier, pour finaliser notre solution. \newline
+
+Nous avions encore des tâches non terminées, que nous devons finir. Ces tâches sont le développement d'un nouvel algorithme pour réaliser le filtrage des points, et d'améliorer le filtrage via l'espace de couleur CieLAB, afin de voir si cette solution est viable. Ces deux tâches sont donc à prioriser dans le développement, qui seront donc dans notre quatrième itération.
+
+De plus, nous devons prendre en compte les retours du client. Ici, le principal retour a été par rapport à la marge d'erreur, que l'utilisateur se fixe afin de créer ses plages de couleurs à filtrer. Ce système de marge d'erreur est à revoir. Il est en effet peu parlant pour un utilisateur et peu pertinent suivant les cas d'utilisations. Si les valeurs sont faibles, "la marge" en sera impactée et réduite. Au lieu, d'avoir cette marge, il serait mieux de choisir/sélectionner deux points dans le nuage, l'un serait la borne "basse" et l'autre la borne "haute". On choisirait ainsi, l'espace de couleur qu'on choisit de segmenter.
+
+Ensuite, la possibilité de réaliser un premier process sur le nuage avant la segmentation, permettrait de discrétiser l'histogramme des couleurs, pour obtenir un effet cartoonesque. De ce fait, le problème des contrastes et différentes luminosités seraient déjà grandement palliés en plus de donner une meilleure idée des éléments gardés après la segmentation.
+
+Ces retours sont très intéressants, et nous pensons que ces tâches sont aussi importantes à prendre en compte pour l'amélioration de notre solution. \newline
+
+D'autres tâches sont encore en suspens, que nous avions planifié dans le cahier des charges. La principale tâche est la fausse couleur, que nous avions planifié pour la quatrième itération. Nous voulons le faire assez tôt afin d'avoir le feedback du client, et de l'améliorer sur les futures itérations.
+
+L'autre tâche est de potentiellement traiter le problème du mouchetage, que l'on peut rencontrer lors de fusion de nuage de points. Comme cette tâche n'était pas la priorité du client, nous ne savons pas encore si nous allons faire des recherches sur ce cas. Toutefois, elle reste dans notre backlog et pourra être traité dans nos futures itérations.
+
+\newpage
+\section{Annexes}
+
+\subsection{Déroulement du projet}
+
+Il est important de faire un retour sur le déroulement du projet, afin de savoir ce que nous avons bien réalisé, les difficultés que nous avons rencontrés, nos méthodes de travail, etc. En effet, cela nous permettra d'améliorer nos démarches pour mener à bien ce projet. 
+
+\subsubsection{Vision globale du projet}
+
+D'un point de vu global sur le projet, sur ces trois premières itérations, nous avons rencontré certaines difficultés, mais aussi appris beaucoup par rapport au fonctionnement d'un projet agile.
+
+Tout d'abord, il a été difficile d'estimer notre charge de travail. Comme c'était notre premier vrai projet en lien avec une autre entreprise, et d'une aussi grande envergure (durée d'un an), il nous fallait en quelque sorte expérimenter notre capacité de travail et d'évaluer les tâches à réaliser.
+
+Certaines tâches furent plus difficiles à réaliser, par rapport à nos prévisions. Par exemple, nous pouvons citer l'implémentation d'un nouvel algorithme de segmentation, plus complexe, ou encore l'implémentation d'un point picking. Le temps prévu à consacrer sur ces types de tâches n'était pas assez important, car nous avions mal pris en compte les autres tâches en parallèle, hors projet. Ces autres tâches était notamment d'autres projets sur de courtes durées, devoir surveillées, oraux, etc. \newline
+
+Nous nous sommes aussi rendu compte que les itérations se déroulent très vite. Pour chaque itération, nous étions surpris par le fait qu'un mois s'était passé. Grâce aux réunions planifiées avec le client et le tuteur académique, nous pouvions quand même garder une bonne dynamique pour respecter les deadlines. \newline
+
+De plus, la mise en situation d'un projet agile nous a fait prendre conscience de l'importance de garder le client au courant, afin d'avancer correctement par rapport aux besoin de celui-ci. Mais pour cela, il faut rédiger de nombreux rapports. Ce sont des tâches qu'il ne faut pas sous-estimer, puisque cela demande beaucoup de temps. Même si les réunions aident à transmettre l'avancement du projet et des tâches réalisées, il faut aussi écrire formellement dans un rapport l'avancement pour garder une trace de ce qui a été fait.
+
+La rédaction des rapports d'itération, et des rapports hebdomadaires, sont difficiles à maintenir. En effet, nous avions eu parfois des difficultés à suivre le rythme des rapports hebdomadaires. Malgré tout, cela reste nécessaire notamment pour avoir un historique de l'avancement des tâches, et des heures passées sur chacune d'entre elles.
+
+\subsubsection{Comparaison de la planification des itérations}
+
+Nous avons aussi réalisé un comparatif de la planification de nos itérations, avec ce qu'il s'est réellement passé. Nous avons donc comparé le temps passé sur chacune des tâches, entre nos prévisions et la réalité. Cela nous permettra d'analyser les problèmes rencontrés, et d'améliorer par la suite notre capacité à évaluer notre charge de travail. \newline
+
+Afin de faire ressortir les tâches qui nous ont pris plus ou moins de temps que prévues, nous avons utilisé un code couleur, disponible ci-dessous :
+
+\begin{figure}[H]
+\makebox[\textwidth][c]{\includegraphics[width=0.4\textwidth]{./img/legende.PNG}}
+    \caption{\label{} Légende tableaux Gantt}
+\end{figure}
+
+
+\begin{figure}[H]
+\makebox[\textwidth][c]{\includegraphics[width=1.2\textwidth]{./img/gantt_1.PNG}}
+    \caption{\label{} Comparaison Gantt de l'itération 1}
+\end{figure}
+
+Ce premier tableau nous montre les tâches que nous avions prévues pour notre première itération, représentées du côté gauche, avec la tâche prévue, le temps estimé et le responsable de la tâche. De l'autre côté, nous pouvons observer les mêmes tâches, avec le temps réellement passé pour les réaliser. \newline
+
+Nous pouvons voir que le temps réellement passé ne correspond pas du tout à ce que nous avions prévu. En effet, comme c'était notre première itération, il nous a été difficile d'estimer notre capacité de travail, et du temps à passer sur chacune de nos tâches. \newline
+
+Nous pouvons aussi observer que sur la tâche des recherches sur les espaces colorimétriques, le responsable a été changé, de même que pour le choix du langage. Pendant notre avancée sur l'itération, nous nous sommes rendu compte que certaines tâches étaient plus rapide à réaliser que d'autres, par exemple sur la prise en main de CloudCompare, ou encore sur les méthodes de segmentation. Ce gain de temps nous a permis d'attribuer la responsabilité de travailler sur les espaces colorimétriques à Mathieu L, et libérer du temps à Tri-Thien T. pour se concentrer sur d'autres tâches. Ce dernier a eu beaucoup de temps supplémentaires à attribuer sur ses tâches, notamment car c'est un travail de recherches, donc cela nécessite beaucoup de documentations, donc beaucoup de temps. De plus, il fallait ensuite produire un rapport facile à comprendre pour les autres membres du groupe, et pour le client. \newline
+
+De plus, nous avions des tâches qui n'étaient pas prévues dans nos prévisions, mais qui étaient présentes en réalité. Nous pouvons citer la préparation du Sprint review, ou encore le sprint planning. C'est pour cela que ces tâches n'apparaissent pas dans les tâches prévues, mais uniquement dans les tâches réalisées.
+
+\begin{figure}[!hbtp]
+\makebox[\textwidth][c]{\includegraphics[width=1.2\textwidth]{./img/gantt_2.PNG}}
+    \caption{\label{} Comparaison Gantt de l'itération 2}
+\end{figure}
+
+Pour la deuxième itération, les prévisions du nombre d'heures par tâches ont plutôt bien été respectées, sauf pour la partie sur l'interfaçage avec CloudCompare. En effet, cette partie était concentrée sur l'implémentation d'un nouveau plugin sur le logiciel CloudCompare. Nous avions un tutoriel à notre disposition pour l'installation, mais nous avions rencontré beaucoup de problèmes. Nous pouvons par exemple citer les différents logiciels à installer au préalable (QT, PCL...), qui sont très volumineux et prennent beaucoup de temps à installer. Ensuite, il faut savoir comment les utiliser, ce qui demande une phase de formation sur les outils. \newline
+
+Une fois ceci fait, il fallait ensuite créer notre propre interface et nos propres algorithmes de traitement sur le nuage de points. Une fois encore, il fallait que l'on se forme sur comment un plugin CloudCompare fonctionne, sa structure et comment ajouter notre propre code.
+
+\begin{figure}[!hbtp]
+\makebox[\textwidth][c]{\includegraphics[width=1.2\textwidth]{./img/gantt_3.PNG}}
+    \caption{\label{} Comparaison Gantt de l'itération 3}
+\end{figure}
+
+Cette troisième itération était dédiée à l'amélioration de notre solution, et surtout de revoir la structure de notre code pour avoir une meilleure organisation. De même que pour la première itération, nous avons eu ici du mal à bien estimer la durée de nos tâches. Les principales différences entre le prévisionnel et le réalisé est le fait que nous ne connaissons pas encore assez le code du projet CloudCompare, donc ne savons pas vraiment ce qui est possible de faire avec les outils du projet ou non. \newline
+
+De plus, nous avons rencontré des difficultés pour obtenir des résultats satisfaisants, notamment pour la conversion LAB, et des difficultés à comprendre le fonctionnement d'un plugin sur le logiciel CloudCompare, notamment le principe des signaux et des slots en C++ (pour l'implémentation d'un point picking). \newline
+
+Il faut aussi noter que pour le développement d'un nouvel algorithme de sélection de points dans le nuage, la durée indiquée ici ne veut pas dire que la tâche est terminée. En effet, la tâche est plus compliquée que prévu, et malgré le temps donné à cette tâche, il faut encore y attribuer du temps pour la finaliser.
+
+\subsection{Rapport de recette}
+
+Cette section sera présente pour le rapport final de la description du système (version beta).
+\begin{thebibliography}{3}
+
+  \bibitem{B01} Qingming Zhan, Yubin Liang, Yinghui Xiao, \textit{Color-based segmentation of point clouds}, 2009
+\end{thebibliography}
+\end{document}

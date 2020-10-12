@@ -1,7 +1,7 @@
 #include "probewindow.h"
 #include "ui_generalfilterwindow.h"
 #include "ui_probeconfig.h"
-#include <qcustomplot.h>
+#include "Tools/qcustomplot.h"
 
 #include <VtkUtils/signalblocker.h>
 #include <VtkUtils/utils.h>

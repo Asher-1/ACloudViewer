@@ -21,9 +21,9 @@
 #include "sfEditDlg.h"
 #include "matrixDisplayDlg.h"
 #include "../MainWindow.h"
-#include "../common/CommonSettings.h"
-#include "../ecvColorScaleEditorDlg.h"
-#include "../ecvColorScaleSelector.h"
+#include "CommonSettings.h"
+#include "ecvColorScaleEditorDlg.h"
+#include "ecvColorScaleSelector.h"
 
 
 // ECV_DB_LIB
@@ -2427,7 +2427,7 @@ void ccPropertiesTreeDelegate::objectDisplayChanged(const QString& newDisplayTit
 		//	win->zoomGlobal();
 		//}
 
-		//ecvDisplayTools::GetApp()->refreshAll();
+		//MainWindow::TheInstance()->refreshAll();
 	}
 }
 

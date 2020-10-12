@@ -219,7 +219,7 @@ bool PclAnnotationTool::setInputCloud(ccPointCloud* cloud, int viewPort)
 	
 	QDir dir(fileInfo.absolutePath());
 
-	// 1. load classes file if exists in curren file path
+	// 1. load classes file if exists in current file path
 	QString classesFile = dir.absoluteFilePath("Classets.classes");
 	if (!(QFile::exists(classesFile) && loadClassesFromFile(CVTools::fromQString(classesFile))))
 	{

@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Basic/mesh_io.py
 
@@ -16,12 +16,12 @@ import meshes
 if __name__ == "__main__":
     mesh = meshes.bunny()
     mesh.remove_unreferenced_vertices()
-    triangles = np.asarray(mesh.triangles)
-    vertices = np.asarray(mesh.vertices)
-    vertex_normals = np.asarray(mesh.vertex_normals)
+    triangles = np.asarray(mesh.get_triangles())
+    vertices = np.asarray(mesh.get_vertices())
+    vertex_normals = np.asarray(mesh.get_vertex_normals())
     n_vertices = vertices.shape[0]
     vertex_colors = np.random.uniform(0, 1, size=(n_vertices, 3))
-    mesh.vertex_colors = cv3d.utility.Vector3dVector(vertex_colors)
+    mesh.set_vertex_colors(cv3d.utility.Vector3dVector(vertex_colors))
 
     def test_float_array(array_a, array_b, eps=1e-6):
         diff = array_a - array_b
@@ -34,18 +34,16 @@ if __name__ == "__main__":
 
     def compare_mesh(mesh):
         success = True
-        if not test_float_array(vertices, np.asarray(mesh.vertices)):
+        if not test_float_array(vertices, np.asarray(mesh.get_vertices())):
             success = False
             print('[WARNING] vertices are not the same')
-        if not test_float_array(vertex_normals, np.asarray(
-                mesh.vertex_normals)):
+        if not test_float_array(vertex_normals, np.asarray(mesh.get_vertex_normals())):
             success = False
             print('[WARNING] vertex_normals are not the same')
-        if not test_float_array(
-                vertex_colors, np.asarray(mesh.vertex_colors), eps=1e-2):
+        if not test_float_array(vertex_colors, np.asarray(mesh.get_vertex_colors()), eps=1e-2):
             success = False
             print('[WARNING] vertex_colors are not the same')
-        if not test_int_array(triangles, np.asarray(mesh.triangles)):
+        if not test_int_array(triangles, np.asarray(mesh.get_triangles())):
             success = False
             print('[WARNING] triangles are not the same')
         if success:

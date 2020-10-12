@@ -58,6 +58,10 @@ else ()
 endif ()
 message(STATUS "Flann includes ${FLANN_INCLUDE_DIRS}")
 
+# nanoflann
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/nanoflann"  NANO_FLANN_INCLUDE_DIRS)
+message(STATUS "Nanoflann includes ${NANO_FLANN_INCLUDE_DIRS}")
+
 # GLEW
 if (BUILD_GLEW)
     message(STATUS "Building GLEW from source (BUILD_GLEW=ON)")
@@ -321,6 +325,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${dirent_INCLUDE_DIRS}
 	 ${EIGEN3_INCLUDE_DIRS}
 	 ${FLANN_INCLUDE_DIRS}
+	 ${NANO_FLANN_INCLUDE_DIRS}
 	 ${GLEW_INCLUDE_DIRS}
      ${GLFW_INCLUDE_DIRS}
      ${JPEG_TURBO_INCLUDE_DIRS}

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ class Visualizer;
 /// \param left margin of the visualization window.
 /// \param top The top margin of the visualization window.
 /// \param point_show_normal visualize point normals if set to true.
-bool OPENGL_ENGINE_LIB_API DrawGeometries(
+bool DrawGeometries(
 	const std::vector<std::shared_ptr<const ccHObject>> &geometry_ptrs,
 	const std::string &window_name = "cloudViewer",
 	int width = 640,
@@ -63,6 +63,7 @@ bool OPENGL_ENGINE_LIB_API DrawGeometries(
 	bool point_show_normal = false,
 	bool mesh_show_wireframe = false,
 	bool mesh_show_back_face = false,
+	bool show_coordinate_frame = false,
 	Eigen::Vector3d *lookat = nullptr,
 	Eigen::Vector3d *up = nullptr,
 	Eigen::Vector3d *front = nullptr,
@@ -79,7 +80,7 @@ bool OPENGL_ENGINE_LIB_API DrawGeometries(
 /// \param top The top margin of the visualization window.
 /// \param optional_view_trajectory_json_file Camera trajectory json file path
 /// for custom animation.
-bool OPENGL_ENGINE_LIB_API DrawGeometriesWithCustomAnimation(
+bool DrawGeometriesWithCustomAnimation(
         const std::vector<std::shared_ptr<const ccHObject>>
                 &geometry_ptrs,
         const std::string &window_name = "cloudViewer",
@@ -99,7 +100,7 @@ bool OPENGL_ENGINE_LIB_API DrawGeometriesWithCustomAnimation(
 /// \param height The height of the visualization window.
 /// \param left margin of the visualization window.
 /// \param top The top margin of the visualization window.
-bool OPENGL_ENGINE_LIB_API DrawGeometriesWithAnimationCallback(
+bool DrawGeometriesWithAnimationCallback(
         const std::vector<std::shared_ptr<const ccHObject>>
                 &geometry_ptrs,
         std::function<bool(Visualizer *)> callback_func,
@@ -120,7 +121,7 @@ bool OPENGL_ENGINE_LIB_API DrawGeometriesWithAnimationCallback(
 /// \param height The height of the visualization window.
 /// \param left margin of the visualization window.
 /// \param top The top margin of the visualization window.
-bool OPENGL_ENGINE_LIB_API DrawGeometriesWithKeyCallbacks(
+bool DrawGeometriesWithKeyCallbacks(
         const std::vector<std::shared_ptr<const ccHObject>>
                 &geometry_ptrs,
         const std::map<int, std::function<bool(Visualizer *)>> &key_to_callback,
@@ -140,7 +141,7 @@ bool OPENGL_ENGINE_LIB_API DrawGeometriesWithKeyCallbacks(
 /// \param height The height of the visualization window.
 /// \param left margin of the visualization window.
 /// \param top The top margin of the visualization window.
-bool OPENGL_ENGINE_LIB_API DrawGeometriesWithEditing(
+bool DrawGeometriesWithEditing(
         const std::vector<std::shared_ptr<const ccHObject>>
                 &geometry_ptrs,
         const std::string &window_name = "cloudViewer",
@@ -149,7 +150,7 @@ bool OPENGL_ENGINE_LIB_API DrawGeometriesWithEditing(
         int left = 50,
         int top = 50);
 
-bool OPENGL_ENGINE_LIB_API DrawGeometriesWithVertexSelection(
+bool DrawGeometriesWithVertexSelection(
         const std::vector<std::shared_ptr<const ccHObject>>
                 &geometry_ptrs,
         const std::string &window_name = "cloudViewer",

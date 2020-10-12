@@ -6,9 +6,10 @@
 
 #include "ecvCropTool.h"
 
+// QT
+#include <QDir>
 //to read the 'Cross Section' tool XML parameters file
 #include <QXmlStreamReader>
-
 
 constexpr char COMMAND_CROSS_SECTION[] = "CROSS_SECTION";
 

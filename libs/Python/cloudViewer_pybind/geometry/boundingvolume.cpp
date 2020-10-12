@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -118,9 +118,15 @@ void pybind_boundingvolume(py::module &m) {
                 "in x, y and z "
                 "direction",
                 "center"_a, "R"_a, "extent"_a, "name"_a = "ecvOrientedBBox")
-        .def("__repr__",
-                [](const ecvOrientedBBox &box) {
-                    return std::string("ecvOrientedBBox"); } )
+        .def("__repr__", [](const ecvOrientedBBox &box) {
+			return std::string("ecvOrientedBBox with extent (") +
+				std::to_string(box.getExtent()(0)) + ", " +
+				std::to_string(box.getExtent()(1)) + ", " +
+				std::to_string(box.getExtent()(2)) + "), center (" +
+				std::to_string(box.getPosition()(0)) + ", " +
+				std::to_string(box.getPosition()(1)) + ", " +
+				std::to_string(box.getPosition()(2)) + ")";
+			})
 		.def_static(
 			"create_from_points",
 			py::overload_cast<const std::vector<Eigen::Vector3d> &>(
@@ -237,15 +243,24 @@ void pybind_boundingvolume(py::module &m) {
     py::detail::bind_default_constructor<ccBBox>(axis_aligned_bounding_box);
     py::detail::bind_copy_functions<ccBBox>(axis_aligned_bounding_box);
     axis_aligned_bounding_box
-            .def(py::init<const Eigen::Vector3d &, 
-						  const Eigen::Vector3d &,
-						  const std::string &>(),
-                 "Create an ccBBox from min bounds and max "
-                 "bounds in x, y and z",
-                 "min_bound"_a, "max_bound"_a, "name"_a = "ccBBox")
-            .def("__repr__",
-                 [](const ccBBox &box) {
-                     return std::string("ccBBox");})
+		.def(py::init<const Eigen::Vector3d &,
+			const Eigen::Vector3d &,
+			const std::string &>(),
+			"Create an ccBBox from min bounds and max "
+			"bounds in x, y and z",
+			"min_bound"_a, "max_bound"_a, "name"_a = "ccBBox")
+		.def("__repr__",
+			[](const ccBBox &box) {
+			CCVector3 extent = box.getDiagVec();
+			CCVector3 center = box.getCenter();
+			return std::string("ccBBox with dimensions (") +
+				std::to_string(extent.x) + ", " +
+				std::to_string(extent.y) + ", " +
+				std::to_string(extent.z) + "), center (" +
+				std::to_string(center.x) + ", " + 
+				std::to_string(center.y) + ", " + 
+				std::to_string(center.z) + ")";
+			})
 		.def("get_box_points", &ccBBox::getBoxPoints,
 		"Returns the eight points that define the bounding box.")
 		.def("get_extent", &ccBBox::getExtent,

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@ using namespace cloudViewer;
 
 void pybind_utility(py::module &m) {
     py::module m_submodule = m.def_submodule("utility");
+	pybind_scalarfield(m_submodule);
     pybind_matrix(m_submodule);
     pybind_console(m_submodule);
     pybind_eigen(m_submodule);

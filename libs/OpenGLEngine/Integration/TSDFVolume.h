@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Camera/PinholeCameraIntrinsic.h"
+#include "../Camera/PinholeCameraIntrinsic.h"
 #include <RGBDImage.h>
 
 #include <ecvMesh.h>
@@ -38,7 +38,7 @@ namespace integration {
 /// \enum TSDFVolumeColorType
 ///
 /// Enum class for TSDFVolumeColorType
-enum class OPENGL_ENGINE_LIB_API TSDFVolumeColorType {
+enum class TSDFVolumeColorType {
     /// No color.
     NoColor = 0,
     /// 8 bit RGB.
@@ -58,7 +58,7 @@ enum class OPENGL_ENGINE_LIB_API TSDFVolumeColorType {
 /// B. Curless and M. Levoy
 /// A volumetric method for building complex models from range images
 /// In SIGGRAPH, 1996
-class OPENGL_ENGINE_LIB_API TSDFVolume {
+class TSDFVolume {
 public:
     /// \brief Default Constructor.
     ///

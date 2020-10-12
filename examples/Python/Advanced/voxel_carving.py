@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Advanced/voxel_carving.py
 
@@ -9,6 +9,7 @@ import numpy as np
 import os
 
 import sys
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, '../Misc'))
 import meshes
@@ -47,9 +48,9 @@ def preprocess(model):
     max_bound = model.get_max_bound()
     center = min_bound + (max_bound - min_bound) / 2.0
     scale = np.linalg.norm(max_bound - min_bound) / 2.0
-    vertices = np.asarray(model.vertices)
+    vertices = np.asarray(model.get_vertices())
     vertices -= center
-    model.vertices = cv3d.utility.Vector3dVector(vertices / scale)
+    model.set_vertices(cv3d.utility.Vector3dVector(vertices / scale))
     return model
 
 
@@ -63,7 +64,6 @@ def voxel_carving(mesh,
                   use_depth=True,
                   surface_method='ccPointCloud',
                   visualization=False):
-
     mesh.compute_vertex_normals()
     camera_sphere = cv3d.io.read_triangle_mesh(camera_path)
 
@@ -87,9 +87,9 @@ def voxel_carving(mesh,
     param = ctr.convert_to_pinhole_camera_parameters()
 
     pcd_agg = cv3d.geometry.ccPointCloud()
-    centers_pts = np.zeros((len(camera_sphere.vertices), 3))
+    centers_pts = np.zeros((len(camera_sphere.get_vertices()), 3))
     i = 0
-    for cid, xyz in enumerate(camera_sphere.vertices):
+    for cid, xyz in enumerate(camera_sphere.get_vertices()):
         # get new camera pose
         trans = get_extrinsic(xyz)
         param.extrinsic = trans
@@ -113,7 +113,7 @@ def voxel_carving(mesh,
             voxel_carving.carve_depth_map(cv3d.geometry.Image(depth), param)
         else:
             voxel_carving.carve_silhouette(cv3d.geometry.Image(depth), param)
-        print("Carve view %03d/%03d" % (cid + 1, len(camera_sphere.vertices)))
+        print("Carve view %03d/%03d" % (cid + 1, len(camera_sphere.get_vertices())))
 
     vis.destroy_window()
 
@@ -135,10 +135,10 @@ def voxel_carving(mesh,
 
     voxel_carving_surface = voxel_surface + voxel_carving
 
-    if (visualization):
+    if visualization:
         print("visualize camera center")
         centers = cv3d.geometry.ccPointCloud()
-        centers.points = cv3d.utility.Vector3dVector(centers_pts)
+        centers.set_points(cv3d.utility.Vector3dVector(centers_pts))
         cv3d.visualization.draw_geometries([centers, mesh])
 
         print("surface voxels from %s" % surface_method)
@@ -149,8 +149,7 @@ def voxel_carving(mesh,
         print(voxel_carving)
         cv3d.visualization.draw_geometries([voxel_carving])
 
-        print("combined voxels (carved + surface from %s) together with mesh" %
-              surface_method)
+        print("combined voxels (carved + surface from %s) together with mesh" % surface_method)
         print(voxel_carving_surface)
         cv3d.visualization.draw_geometries([voxel_carving_surface, mesh])
 

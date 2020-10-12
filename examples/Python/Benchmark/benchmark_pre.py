@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Benchmark/benchmark_pre.py
 
@@ -17,7 +17,7 @@ from trajectory_io import *
 
 import pickle
 
-do_visualization = False
+do_visualization = True
 
 
 def get_ply_path(dataset_name, id):

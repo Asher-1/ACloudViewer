@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Advanced/mesh_voxelization.py
 
@@ -32,9 +32,9 @@ def preprocess(model):
     max_bound = model.get_max_bound()
     center = min_bound + (max_bound - min_bound) / 2.0
     scale = np.linalg.norm(max_bound - min_bound) / 2.0
-    vertices = np.asarray(model.vertices)
-    vertices -= np.matlib.repmat(center, len(model.vertices), 1)
-    model.vertices = cv3d.utility.Vector3dVector(vertices / scale)
+    vertices = np.asarray(model.get_vertices())
+    vertices -= np.matlib.repmat(center, len(model.get_vertices()), 1)
+    model.set_vertices(cv3d.utility.Vector3dVector(vertices / scale))
 
     ## Paint uniform color for pleasing visualization
     model.paint_uniform_color(np.array([1, 0.7, 0]))
@@ -70,8 +70,7 @@ if __name__ == "__main__":
 
         print("Voxelize point cloud")
         start = time.time()
-        voxel = cv3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
-                                                               voxel_size=0.05)
+        voxel = cv3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size=0.05)
         print("took %.2f milliseconds" % ((time.time() - start) * 1000.0))
         print("")
 
@@ -91,7 +90,7 @@ if __name__ == "__main__":
         print("")
 
         print("Element-wise check if points belong to voxel grid")
-        queries = np.asarray(pcd.points)
+        queries = np.asarray(pcd.get_points())
         start = time.time()
         output = voxel_load.check_if_included(
             cv3d.utility.Vector3dVector(queries))
@@ -102,7 +101,7 @@ if __name__ == "__main__":
         print(
             "Element-wise check if points with additive Gaussian noise belong to voxel grid"
         )
-        queries_noise = queries + np.random.normal(0, 0.1, (len(pcd.points), 3))
+        queries_noise = queries + np.random.normal(0, 0.1, (len(pcd.get_points()), 3))
         start = time.time()
         output_noise = voxel_load.check_if_included(
             cv3d.utility.Vector3dVector(queries_noise))

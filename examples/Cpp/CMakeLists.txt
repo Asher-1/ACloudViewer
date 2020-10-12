@@ -1,16 +1,4 @@
 macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
-	include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-
-	include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-	if( MSVC )
-	   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-	endif()
-
-	include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
-
-	include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-	include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-	
 	include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
 	if( MSVC )
 	   include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc )
@@ -26,10 +14,10 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
         target_link_libraries(${EXAMPLE_CPP_NAME} ${DEPENDENCY})
     endforeach()
 	
-	target_link_libraries( ${EXAMPLE_CPP_NAME} CV_CORE_LIB )
-	target_link_libraries( ${EXAMPLE_CPP_NAME} ECV_DB_LIB )
-	target_link_libraries( ${EXAMPLE_CPP_NAME} ECV_IO_LIB )
-	target_link_libraries( ${EXAMPLE_CPP_NAME} OPENGL_ENGINE_LIB )
+	target_link_libraries( ${EXAMPLE_CPP_NAME} 
+							ECV_DB_LIB
+							ECV_IO_LIB
+							OPENGL_ENGINE_LIB)
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
             FOLDER "examples/Cpp/"
@@ -41,12 +29,15 @@ EXAMPLE_CPP(ColorMapOptimization)
 EXAMPLE_CPP(DepthCapture)
 EXAMPLE_CPP(EvaluateFeatureMatch)
 EXAMPLE_CPP(EvaluatePCDMatch)
-EXAMPLE_CPP(FileDialog                	tinyfiledialogs)
+EXAMPLE_CPP(FileDialog  tinyfiledialogs)
 EXAMPLE_CPP(FileSystem)
 EXAMPLE_CPP(Flann)
 EXAMPLE_CPP(Image)
 EXAMPLE_CPP(IntegrateRGBD)
 EXAMPLE_CPP(LineSet      )
+EXAMPLE_CPP(Polylines      )
+EXAMPLE_CPP(Primitives      )
+EXAMPLE_CPP(Facets      )
 EXAMPLE_CPP(Log          )
 EXAMPLE_CPP(OdometryRGBD)
 if (WITH_OPENMP)

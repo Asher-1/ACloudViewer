@@ -1,15 +1,15 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Misc/color_image.py
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+# conda install pillow matplotlib
 
 import cloudViewer as cv3d
-#conda install pillow matplotlib
 
 if __name__ == "__main__":
 

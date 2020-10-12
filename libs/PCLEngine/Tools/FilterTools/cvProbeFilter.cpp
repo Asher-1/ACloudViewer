@@ -2,7 +2,7 @@
 #include "ui_cvGenericFilterDlg.h"
 #include "ui_cvProbeFilterDlg.h"
 
-#include <qcustomplot.h>
+#include "Tools/qcustomplot.h"
 
 #include <VtkUtils/utils.h>
 #include <VtkUtils/vtkutils.h>

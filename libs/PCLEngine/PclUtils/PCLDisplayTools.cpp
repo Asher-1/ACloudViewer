@@ -47,9 +47,9 @@
 //system
 #include <assert.h>
 
-void PCLDisplayTools::registerVisualizer(QMainWindow * win, ecvMainAppInterface * app)
+void PCLDisplayTools::registerVisualizer(QMainWindow * win)
 {
-	this->m_vtkWidget = new ecvQVTKWidget(win, app, this);
+	this->m_vtkWidget = new ecvQVTKWidget(win, this);
 	this->m_currentScreen = getQVtkWidget();
 	this->m_mainScreen = getQVtkWidget();
 
@@ -483,7 +483,7 @@ void PCLDisplayTools::drawOrientedBBox(CC_DRAW_CONTEXT & context, const ecvOrien
 	}
 }
 
-inline void PCLDisplayTools::toggleOrientationMarker(bool state)
+void PCLDisplayTools::toggleOrientationMarker(bool state)
 {
 	if (state) {
 		m_visualizer3D->showPclMarkerAxes(m_visualizer3D->getRenderWindowInteractor());
@@ -525,7 +525,7 @@ void PCLDisplayTools::removeEntities(CC_DRAW_CONTEXT& CONTEXT)
 			}
 		}
 
-		if (m_visualizer3D->removeEntities(CONTEXT) && m_visualizer3D)
+		if (m_visualizer3D && m_visualizer3D->removeEntities(CONTEXT))
 		{
 			m_visualizer3D->synchronizeGeometryBounds();
 		}
@@ -964,7 +964,7 @@ double PCLDisplayTools::getParallelScale(int viewPort)
 	return -1;
 }
 
-inline void PCLDisplayTools::getProjectionMatrix(double * projArray, int viewPort)
+void PCLDisplayTools::getProjectionMatrix(double * projArray, int viewPort)
 {
 	Eigen::Matrix4d projMat;
 	m_visualizer3D->getCamera(viewPort).computeProjectionMatrix(projMat);
@@ -988,7 +988,7 @@ inline void PCLDisplayTools::getProjectionMatrix(double * projArray, int viewPor
 	projArray[15] = tempArray[15];
 }
 
-inline void PCLDisplayTools::getViewMatrix(double * ViewArray, int viewPort)
+void PCLDisplayTools::getViewMatrix(double * ViewArray, int viewPort)
 {
 	Eigen::Matrix4d viewMat;
 	m_visualizer3D->getCamera(viewPort).computeViewMatrix(viewMat);

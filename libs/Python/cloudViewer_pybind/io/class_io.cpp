@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@
 #include <IJsonConvertibleIO.h>
 #include <FeatureIO.h>
 #include <ImageIO.h>
+#include <AutoIO.h>
 #include <LineSetIO.h>
 #include <FeatureIO.h>
 #include <PointCloudIO.h>
@@ -79,8 +80,9 @@ map_shared_argument_docstrings = {
 			"present on the mesh"},
 	// Entities
 	{"config", "AzureKinectSensor's config file."},
-	{"pointcloud", "The ``PointCloud`` object for I/O"},
-	{"mesh", "The ``TriangleMesh`` object for I/O"},
+	{"entity", "The ``ccHObject`` object for I/O"},
+	{"mesh", "The ``ccMesh`` object for I/O"},
+	{"pointcloud", "The ``ccPointcloud`` object for I/O"},
 	{"line_set", "The ``LineSet`` object for I/O"},
 	{"image", "The ``Image`` object for I/O"},
 	{"voxel_grid", "The ``VoxelGrid`` object for I/O"},
@@ -96,6 +98,31 @@ map_shared_argument_docstrings = {
 };
 
 void pybind_class_io(py::module &m_io) {
+	// ccHObject
+	m_io.def("read_entity",
+		[](const std::string &filename, const std::string &format,
+			bool print_progress) {
+		auto entity = std::make_shared<ccHObject>("group");
+		io::ReadEntity(filename, *entity, format, print_progress);
+		return entity;
+	},
+		"Function to read entity from file", "filename"_a,
+		"format"_a = "auto", "print_progress"_a = false);
+	docstring::FunctionDocInject(m_io, "read_entity",
+		map_shared_argument_docstrings);
+
+	m_io.def("write_entity",
+		[](const std::string &filename, const ccHObject &entity,
+			bool write_ascii, bool compressed, bool print_progress) {
+		return io::WriteEntity(filename, entity, write_ascii,
+			compressed, print_progress);
+	},
+		"Function to write entity to file", "filename"_a, "entity"_a,
+		"write_ascii"_a = false, "compressed"_a = false,
+		"print_progress"_a = false);
+	docstring::FunctionDocInject(m_io, "write_entity",
+		map_shared_argument_docstrings);
+
 	// cloudViewer::geometry::Image
 	m_io.def("read_image",
 		[](const std::string &filename) {

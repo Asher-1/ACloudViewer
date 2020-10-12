@@ -4,7 +4,6 @@
 *.pydevproject
 .project
 .metadata
-node_modules
 tmp/
 *.tmp
 *.bak
@@ -139,3 +138,5 @@ CCCoreLibExport.h
 /CMakeSettings.json
 #VS2019 default cmake build & install paths
 /out/
+
+libs/Python/js/node_modules/*

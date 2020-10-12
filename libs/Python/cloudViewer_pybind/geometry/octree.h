@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,25 +28,35 @@
 
 #include "Octree.h"
 
+namespace cloudViewer
+{
+	namespace geometry
+	{
+		class OctreeNode;
+		class OctreeLeafNode;
+	}
+}
+
+
 // Trampoline classes for octree data structures
-template <class OctreeNodeBase = geometry::OctreeNode>
+template <class OctreeNodeBase = cloudViewer::geometry::OctreeNode>
 class PyOctreeNode : public OctreeNodeBase {
 public:
     using OctreeNodeBase::OctreeNodeBase;
 };
 
 // Trampoline classes for octree data structures
-template <class OctreeLeafNodeBase = geometry::OctreeLeafNode>
+template <class OctreeLeafNodeBase = cloudViewer::geometry::OctreeLeafNode>
 class PyOctreeLeafNode : public PyOctreeNode<OctreeLeafNodeBase> {
 public:
     using PyOctreeNode<OctreeLeafNodeBase>::PyOctreeNode;
 
-    bool operator==(const geometry::OctreeLeafNode& other) const override {
+    bool operator==(const cloudViewer::geometry::OctreeLeafNode& other) const override {
         PYBIND11_OVERLOAD_PURE(bool, OctreeLeafNodeBase, other);
     };
 
-    std::shared_ptr<geometry::OctreeLeafNode> Clone() const override {
-        PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::OctreeLeafNode>,
+    std::shared_ptr<cloudViewer::geometry::OctreeLeafNode> Clone() const override {
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<cloudViewer::geometry::OctreeLeafNode>,
                                OctreeLeafNodeBase, );
     };
 };

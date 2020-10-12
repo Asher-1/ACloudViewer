@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualization/Visualizer/Visualizer.h"
+#include "Visualizer.h"
 
 #include <Console.h>
 #include <ecvBBox.h>
@@ -331,7 +331,17 @@ bool Visualizer::AddGeometry(
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
-    } else if (geometry_ptr->isKindOf(CV_TYPES::MESH)) {
+    } else if (geometry_ptr->isKindOf(CV_TYPES::POLY_LINE)) {
+		renderer_ptr = std::make_shared<glsl::PolylineRenderer>();
+		if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+			return false;
+		}
+	} else if (geometry_ptr->isKindOf(CV_TYPES::FACET)) {
+		renderer_ptr = std::make_shared<glsl::FacetRenderer>();
+		if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+			return false;
+		}
+	} else if (geometry_ptr->isKindOf(CV_TYPES::MESH)) {
         renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;

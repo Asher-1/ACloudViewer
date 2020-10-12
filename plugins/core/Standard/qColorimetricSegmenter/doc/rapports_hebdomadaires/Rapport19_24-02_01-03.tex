@@ -1,0 +1,96 @@
+\documentclass[12pt,titlepage,french]{article}
+\usepackage{babel}
+\usepackage{graphicx}
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{tabularx}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\pagestyle{plain}
+
+\usepackage{booktabs,makecell,tabu}
+\renewcommand\theadfont{\bfseries}
+
+\linespread{1.5}
+
+\begin{document}
+%\renewcommand{\thesection}{\arabic{section}} % utilisé pour spécifier la numérotation des sections
+
+\begin{titlepage}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\center
+
+  \includegraphics[width=0.45\textwidth]{../ressources/img_logos/logo_polytech.png}\\[1cm]
+   
+  \includegraphics[width=0.45\textwidth]{../ressources/img_logos/logo_taglabs.png}
+
+
+\HRule \\[0.4cm]
+{ \huge \bfseries Rapport hebdomadaire\\[0.15cm] }
+Classification colorimétrique de nuages de points 3D\\
+Semaine du 24/02 au 01/03
+\HRule \\[1.5cm]
+Ronan Collier,
+Mathieu Letrone,
+Tri-Thien Truong
+\\[1cm]
+\end{titlepage}
+
+\section{Travail effectué}
+
+\noindent\begin{tabularx}{17cm}{|p{2.5cm}|p{2.5cm}|p{1cm}|p{1.5cm}|p{2.5cm}|X|}
+    \hline
+    \textbf{Tâche} & \textbf{Nature} & \textbf{Qui} & \textbf{Temps} & \textbf{Réalisation} & \textbf{Commentaire} \\
+    \hline
+    Finir l'interface RGB & Production & TT & 6 h & Fin & \\
+    \hline
+    Implémentation HSV & Production & TT & 15 h & Fin & Normalement, développement de fausses couleurs, mais tâche à revoir avec le client, donc développement HSV\\
+    \hline
+    Terminer la nouvelle méthode de segmentation & Production & RC & 10 h & En cours & \\
+    \hline
+    Toon mapping & Production & ML & 10 h & En cours & \\
+    \hline
+\end{tabularx} \\
+
+\section{Prévision des tâches pour la suite de l'itération par ordre de réalisation :}
+
+\noindent\begin{tabularx}{17cm}{|p{2.5cm}|p{2.5cm}|p{1cm}|p{1.5cm}|p{2.5cm}|X|}
+    \hline
+    \textbf{Tâche} & \textbf{Nature} & \textbf{Qui} & \textbf{Temps} & \textbf{Réalisation} & \textbf{Commentaire} \\
+    \hline
+    Préparation soutenance & Production & TT/ ML/ RC & 7 h & Début & \\
+    \hline
+    Comparer filtrage RGB / HSV & Production & TT & 7 h & Début & \\
+    \hline
+    Terminer la nouvelle méthode de segmentation & Production & RC & 5 h & En cours & \\
+    \hline
+    Toon mapping & Production & ML & 5 h & En cours & \\
+    \hline
+\end{tabularx} \\
+
+\section{Nouvelles complémentaires}
+
+\noindent\begin{tabularx}{17cm}{|p{5cm}|X|}
+\hline
+   \begin{minipage}{.3\textwidth}
+      \includegraphics[width=\linewidth]{img/smhappy.jpg}
+    \end{minipage}
+    & 
+    Les choses positives de la semaine : Bon avancement grâce à la semaine de vacances.\\
+\hline
+     \begin{minipage}{.3\textwidth}
+      \includegraphics[width=\linewidth]{img/smneutral.jpg}
+    \end{minipage}
+    &
+    Les inquiètudes de la semaine :\\
+\hline
+     \begin{minipage}{.3\textwidth}
+      \includegraphics[width=\linewidth]{img/smsad.jpg}
+    \end{minipage}
+    &
+    Les problèmes importants de la semaine : \\
+\hline
+\end{tabularx}
+
+\end{document}

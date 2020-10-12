@@ -19,6 +19,7 @@
 // LOCAL
 #include "SACSegmentation.h"
 #include "dialogs/SACSegmentationDlg.h"
+#include "PclUtils/PCLCloud.h"
 #include "PclUtils/PCLModules.h"
 #include "PclUtils/cc2sm.h"
 #include "PclUtils/sm2cc.h"
@@ -36,6 +37,23 @@
 // SYSTEM
 #include <iostream>
 #include <sstream>
+
+int extractRecursive(
+	PointCloudT::Ptr xyzCloud,
+	PointCloudT::Ptr cloudRemained,
+	std::vector<PointCloudT::Ptr> &cloudExtractions,
+	int maxIterations,
+	float probability,
+	float minRadiusLimits,
+	float maxRadiusLimits,
+	float distanceThreshold,
+	int methodType,
+	int modelType,
+	float normalDisWeight,
+	float maxRemainingRatio,
+	bool exportExtraction,
+	bool recursive = false,
+	ecvMainAppInterface* app = nullptr);
 
 SACSegmentation::SACSegmentation()
 	: BasePclModule(PclModuleDescription(tr("SAC Segmentation"),
@@ -154,7 +172,10 @@ int SACSegmentation::compute()
 	PointCloudT::Ptr cloudRemained(new PointCloudT());
 	std::vector<PointCloudT::Ptr> cloudExtractions;
 
-	if (!extractRecursive(cloudFiltered, cloudRemained, cloudExtractions, m_recursiveMode))
+	if (!extractRecursive(cloudFiltered, cloudRemained, cloudExtractions, 
+		m_maxIterations, m_probability, m_minRadiusLimits, m_maxRadiusLimits, m_distanceThreshold,
+		m_methodType, m_modelType, m_normalDisWeight, m_maxRemainingRatio, m_exportExtraction,
+		m_recursiveMode, m_app))
 	{
 		return -53;
 	}
@@ -209,25 +230,36 @@ int SACSegmentation::compute()
 }
 
 // DGM this function will modify the cloudFiltered
-int SACSegmentation::extractRecursive(
+int extractRecursive(
 	PointCloudT::Ptr cloudFilterd,
 	PointCloudT::Ptr cloudRemained,
 	std::vector<PointCloudT::Ptr> &cloudExtractions,
-	bool recursive/* = false*/)
+	int maxIterations,
+	float probability,
+	float minRadiusLimits,
+	float maxRadiusLimits,
+	float distanceThreshold,
+	int methodType,
+	int modelType,
+	float normalDisWeight,
+	float maxRemainingRatio,
+	bool exportExtraction,
+	bool recursive,
+	ecvMainAppInterface* app)
 {
 	pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
 	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients());
 
 	int i = 0, nr_points = (int)cloudFilterd->points.size();
-	while (cloudFilterd->points.size() > m_maxRemainingRatio * nr_points)
+	while (cloudFilterd->points.size() > maxRemainingRatio * nr_points)
 	{
 		// Segment the largest planar component from the remaining cloud
 		if (!PCLModules::GetSACSegmentation(
-			cloudFilterd, inliers, coefficients, m_methodType, m_modelType,
-			m_distanceThreshold, m_probability, m_maxIterations,
-			m_minRadiusLimits, m_maxRadiusLimits, m_normalDisWeight))
+			cloudFilterd, inliers, coefficients, methodType, modelType,
+			distanceThreshold, probability, maxIterations,
+			minRadiusLimits, maxRadiusLimits, normalDisWeight))
 		{
-			m_app->dispToConsole(tr("PCLModules::GetSACSegmentation failed"),
+			app->dispToConsole("PCLModules::GetSACSegmentation failed",
 								ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
 			return -1;
 		}
@@ -242,12 +274,12 @@ int SACSegmentation::extractRecursive(
 		if (!PCLModules::ExtractIndicesFilter<PointT>(
 			cloudFilterd, inliers, cloudExtracted, cloudRemained))
 		{
-			m_app->dispToConsole(tr("PCLModules::ExtractIndicesFilter failed"),
+			app->dispToConsole("PCLModules::ExtractIndicesFilter failed",
 				ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
 			return -1;
 		}
 
-		if (m_exportExtraction) 
+		if (exportExtraction)
 		{
 			cloudExtractions.push_back(cloudExtracted);
 		}
