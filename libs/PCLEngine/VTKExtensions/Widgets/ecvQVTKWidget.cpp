@@ -825,6 +825,7 @@ void ecvQVTKWidget::mouseMoveEvent(QMouseEvent *event)
 
 		if (abs(dx) > 0 || abs(dy) > 0)
 		{
+			m_tools->Update2DLabel(true);
 			emit m_tools->labelmove2D(x, y, dx, dy);
 			ecvDisplayTools::UpdateNamePoseRecursive();
 			//specific case: move active item(s)
@@ -878,6 +879,19 @@ void ecvQVTKWidget::mouseMoveEvent(QMouseEvent *event)
 		}
 		else
 		{
+			if (abs(dx) > 0 || abs(dy) > 0)
+			{
+				m_tools->Update2DLabel(true);
+				emit m_tools->labelmove2D(x, y, dx, dy);
+				ecvDisplayTools::UpdateNamePoseRecursive();
+				//specific case: move active item(s)
+				if (!m_tools->m_activeItems.empty())
+				{
+					updateActivateditems(x, y, dx, dy, !ecvDisplayTools::USE_2D);
+				}
+				m_tools->m_activeItems.clear();
+			}
+
 			//specific case: rectangular polyline drawing (for rectangular area selection mode)
 			if (m_tools->m_allowRectangularEntityPicking
 				&& (m_tools->m_pickingMode == ecvDisplayTools::ENTITY_PICKING || m_tools->m_pickingMode == ecvDisplayTools::ENTITY_RECT_PICKING)

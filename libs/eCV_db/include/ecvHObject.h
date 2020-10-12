@@ -368,6 +368,8 @@ public: //children management
 	//! Returns true if the current object is an ancestor of the specified one
 	bool isAncestorOf(const ccHObject *anObject) const;
 
+	void removeFromRenderScreen(bool recursive = true);
+
 public: //bounding-box
 
 	void hideObject_recursive(bool recursive);

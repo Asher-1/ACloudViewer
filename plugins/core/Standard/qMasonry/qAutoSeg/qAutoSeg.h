@@ -41,7 +41,6 @@ private:
 
 	void doAction();
 
-	
 	QAction* m_action;
 
 };

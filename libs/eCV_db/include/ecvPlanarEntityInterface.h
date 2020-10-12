@@ -28,6 +28,7 @@ public:
 	//! Draws a normal vector (OpenGL)
 	void glDrawNormal(CC_DRAW_CONTEXT& context, const CCVector3& pos, float scale, const ecvColor::Rgb* color = 0);
 
+	void clearNormalVector(CC_DRAW_CONTEXT& context = CC_DRAW_CONTEXT());
 protected: //members
 	//! Whether the facet normal vector should be displayed or not
 	bool m_showNormalVector;
