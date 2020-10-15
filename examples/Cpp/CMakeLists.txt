@@ -22,6 +22,7 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
             FOLDER "examples/Cpp/"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples")
+	InstallSharedLibrary( TARGET ${EXAMPLE_CPP_NAME} )
 endmacro(EXAMPLE_CPP)
 
 EXAMPLE_CPP(CameraPoseTrajectory)

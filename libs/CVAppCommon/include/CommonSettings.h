@@ -48,7 +48,7 @@ namespace Settings {
 	static const char * CODING			= "UTF8";
 
 	// application information
-	static const QString APP_VERSION	= "v3.6.0";
+	static const QString APP_VERSION	= "v3.7.0";
 	static const QString TITLE			= QObject::tr("ErowCloudViewer");
 	static const QString APP_TITLE		= TITLE + " " + versionLongStr(true, APP_VERSION);
 
