@@ -15,7 +15,7 @@
 //#                                                                        #
 //##########################################################################
 
-#include "ecvQVTKWidget.h"
+#include "QVTKWidgetCustom.h"
 #include "VtkUtils/utils.h"
 #include "VtkUtils/vtkutils.h"
 #include "VtkUtils/rendererslayoutalgo.h"
@@ -84,14 +84,14 @@
 class VtkWidgetPrivate
 {
 public:
-	VtkWidgetPrivate(ecvQVTKWidget* q);
+	VtkWidgetPrivate(QVTKWidgetCustom* q);
 	~VtkWidgetPrivate();
 
 	void init();
 	void configRenderer(vtkRenderer* renderer);
 	void layoutRenderers();
 
-	ecvQVTKWidget* q_ptr;
+	QVTKWidgetCustom* q_ptr;
 	QColor backgroundColor = Qt::black;
 	bool multiViewports = false;
 	vtkRenderer* defaultRenderer = nullptr;
@@ -104,7 +104,7 @@ public:
 	double bounds[6];
 };
 
-VtkWidgetPrivate::VtkWidgetPrivate(ecvQVTKWidget *q) : q_ptr(q)
+VtkWidgetPrivate::VtkWidgetPrivate(QVTKWidgetCustom *q) : q_ptr(q)
 {
 	init();
 }
@@ -191,7 +191,7 @@ void VtkWidgetPrivate::init()
 //Max click duration for enabling picking mode (in ms)
 //static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 static const int CC_MAX_PICKING_CLICK_DURATION_MS = 350;
-ecvQVTKWidget::ecvQVTKWidget(QMainWindow* parentWindow, ecvDisplayTools* tools)
+QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* tools)
 	: QVTKWidget(parentWindow)
 	, m_axesWidget(nullptr)
 	, m_logoWidget(nullptr)
@@ -212,7 +212,7 @@ ecvQVTKWidget::ecvQVTKWidget(QMainWindow* parentWindow, ecvDisplayTools* tools)
 	d_ptr = new VtkWidgetPrivate(this);
 }
 
-ecvQVTKWidget::~ecvQVTKWidget()
+QVTKWidgetCustom::~QVTKWidgetCustom()
 {
 	if (d_ptr)
 	{
@@ -221,7 +221,7 @@ ecvQVTKWidget::~ecvQVTKWidget()
 	}
 }
 
-vtkSmartPointer<vtkLookupTable> ecvQVTKWidget::createLookupTable(double min, double max)
+vtkSmartPointer<vtkLookupTable> QVTKWidgetCustom::createLookupTable(double min, double max)
 {
 	double hsv1[3];
 	double hsv2[3];
@@ -238,7 +238,7 @@ vtkSmartPointer<vtkLookupTable> ecvQVTKWidget::createLookupTable(double min, dou
 	return lut;
 }
 
-void ecvQVTKWidget::initVtk(vtkSmartPointer<vtkRenderWindowInteractor> interactor, bool useVBO)
+void QVTKWidgetCustom::initVtk(vtkSmartPointer<vtkRenderWindowInteractor> interactor, bool useVBO)
 {
 	this->m_useVBO = useVBO;
 	this->m_interactor = interactor;
@@ -248,7 +248,7 @@ void ecvQVTKWidget::initVtk(vtkSmartPointer<vtkRenderWindowInteractor> interacto
 	this->m_renders = this->GetRenderWindow()->GetRenderers();
 }
 
-void ecvQVTKWidget::transformCameraView(const double * viewMat)
+void QVTKWidgetCustom::transformCameraView(const double * viewMat)
 {
 	vtkSmartPointer<vtkTransform> viewTransform = vtkSmartPointer<vtkTransform>::New();
 	viewTransform->SetMatrix(viewMat);
@@ -258,14 +258,14 @@ void ecvQVTKWidget::transformCameraView(const double * viewMat)
 	this->m_render->Render();
 }
 
-void ecvQVTKWidget::transformCameraProjection(const double * projMat)
+void QVTKWidgetCustom::transformCameraProjection(const double * projMat)
 {
 	vtkSmartPointer<vtkMatrix4x4> ProjTransform = vtkSmartPointer<vtkMatrix4x4>::New();
 	ProjTransform->Determinant(projMat);
 	this->m_camera->SetExplicitProjectionTransformMatrix(ProjTransform);
 }
 
-void ecvQVTKWidget::toWorldPoint(const CCVector3d& input2D, CCVector3d& output3D)
+void QVTKWidgetCustom::toWorldPoint(const CCVector3d& input2D, CCVector3d& output3D)
 {
 	m_render->SetDisplayPoint(input2D.x, input2D.y, input2D.z);
 	m_render->DisplayToWorld();
@@ -276,12 +276,12 @@ void ecvQVTKWidget::toWorldPoint(const CCVector3d& input2D, CCVector3d& output3D
 	}
 }
 
-void ecvQVTKWidget::toWorldPoint(const CCVector3& input2D, CCVector3d& output3D)
+void QVTKWidgetCustom::toWorldPoint(const CCVector3& input2D, CCVector3d& output3D)
 {
 	toWorldPoint(CCVector3d::fromArray(input2D.u), output3D);
 }
 
-void ecvQVTKWidget::toDisplayPoint(const CCVector3d & worldPos, CCVector3d & displayPos)
+void QVTKWidgetCustom::toDisplayPoint(const CCVector3d & worldPos, CCVector3d & displayPos)
 {
 	m_render->SetWorldPoint(worldPos.x, worldPos.y, worldPos.z, 1.0);
 	m_render->WorldToDisplay();
@@ -290,7 +290,7 @@ void ecvQVTKWidget::toDisplayPoint(const CCVector3d & worldPos, CCVector3d & dis
 	displayPos.z = (m_render->GetDisplayPoint())[2];
 }
 
-void ecvQVTKWidget::toDisplayPoint(const CCVector3 & worldPos, CCVector3d & displayPos)
+void QVTKWidgetCustom::toDisplayPoint(const CCVector3 & worldPos, CCVector3d & displayPos)
 {
 	m_render->SetWorldPoint(worldPos.x, worldPos.y, worldPos.z, 1.0);
 	m_render->WorldToDisplay();
@@ -299,7 +299,7 @@ void ecvQVTKWidget::toDisplayPoint(const CCVector3 & worldPos, CCVector3d & disp
 	displayPos.z = (m_render->GetDisplayPoint())[2];
 }
 
-void ecvQVTKWidget::setCameraPosition(const CCVector3d & pos)
+void QVTKWidgetCustom::setCameraPosition(const CCVector3d & pos)
 {
 	vtkSmartPointer<vtkCamera> cam = this->m_render->GetActiveCamera();
 	cam->SetPosition(pos.x, pos.y, pos.z);
@@ -307,7 +307,7 @@ void ecvQVTKWidget::setCameraPosition(const CCVector3d & pos)
 	this->m_render->Render();
 }
 
-void ecvQVTKWidget::setCameraFocalPoint(const CCVector3d & pos)
+void QVTKWidgetCustom::setCameraFocalPoint(const CCVector3d & pos)
 {
 	vtkSmartPointer<vtkCamera> cam = this->m_render->GetActiveCamera();
 	cam->SetFocalPoint(pos.x, pos.y, pos.z);
@@ -315,7 +315,7 @@ void ecvQVTKWidget::setCameraFocalPoint(const CCVector3d & pos)
 	this->m_render->Render();
 }
 
-void ecvQVTKWidget::setCameraViewUp(const CCVector3d & pos)
+void QVTKWidgetCustom::setCameraViewUp(const CCVector3d & pos)
 {
 	vtkSmartPointer<vtkCamera> cam = this->m_render->GetActiveCamera();
 	cam->SetViewUp(pos.x, pos.y, pos.z);
@@ -323,26 +323,26 @@ void ecvQVTKWidget::setCameraViewUp(const CCVector3d & pos)
 	this->m_render->Render();
 }
 
-void ecvQVTKWidget::setBackgroundColor(const ecvColor::Rgbf & bkg1, const ecvColor::Rgbf & bkg2, bool gradient)
+void QVTKWidgetCustom::setBackgroundColor(const ecvColor::Rgbf & bkg1, const ecvColor::Rgbf & bkg2, bool gradient)
 {
 	m_render->SetBackground2(bkg2.r, bkg2.g, bkg2.b);
 	m_render->SetBackground(bkg1.r, bkg1.g, bkg1.b);
 	m_render->SetGradientBackground(gradient);
 }
 
-void ecvQVTKWidget::setMultiViewports(bool multi)
+void QVTKWidgetCustom::setMultiViewports(bool multi)
 {
 	if (d_ptr->multiViewports != multi) {
 		d_ptr->multiViewports = multi;
 	}
 }
 
-bool ecvQVTKWidget::multiViewports() const
+bool QVTKWidgetCustom::multiViewports() const
 {
 	return d_ptr->multiViewports;
 }
 
-void ecvQVTKWidget::addActor(vtkProp* actor, const QColor& clr)
+void QVTKWidgetCustom::addActor(vtkProp* actor, const QColor& clr)
 {
 	if (!actor || d_ptr->actors.contains(actor))
 		return;
@@ -385,7 +385,7 @@ void ecvQVTKWidget::addActor(vtkProp* actor, const QColor& clr)
 	}
 }
 
-void ecvQVTKWidget::addViewProp(vtkProp* prop)
+void QVTKWidgetCustom::addViewProp(vtkProp* prop)
 {
 	if (!prop || d_ptr->props.contains(prop))
 		return;
@@ -422,28 +422,28 @@ void ecvQVTKWidget::addViewProp(vtkProp* prop)
 	}
 }
 
-QList<vtkProp*> ecvQVTKWidget::actors() const
+QList<vtkProp*> QVTKWidgetCustom::actors() const
 {
 	return d_ptr->actors;
 }
 
-void ecvQVTKWidget::setActorsVisible(bool visible)
+void QVTKWidgetCustom::setActorsVisible(bool visible)
 {
 	foreach(auto actor, d_ptr->actors)
 		actor->SetVisibility(visible);
 }
 
-void ecvQVTKWidget::setActorVisible(vtkProp* actor, bool visible)
+void QVTKWidgetCustom::setActorVisible(vtkProp* actor, bool visible)
 {
 	actor->SetVisibility(visible);
 }
 
-bool ecvQVTKWidget::actorVisible(vtkProp* actor)
+bool QVTKWidgetCustom::actorVisible(vtkProp* actor)
 {
 	return actor->GetVisibility();
 }
 
-void ecvQVTKWidget::setBackgroundColor(const QColor& clr)
+void QVTKWidgetCustom::setBackgroundColor(const QColor& clr)
 {
 	if (d_ptr->backgroundColor != clr) {
 		d_ptr->backgroundColor = clr;
@@ -462,12 +462,12 @@ void ecvQVTKWidget::setBackgroundColor(const QColor& clr)
 	}
 }
 
-QColor ecvQVTKWidget::backgroundColor() const
+QColor QVTKWidgetCustom::backgroundColor() const
 {
 	return d_ptr->backgroundColor;
 }
 
-vtkRenderer* ecvQVTKWidget::defaultRenderer()
+vtkRenderer* QVTKWidgetCustom::defaultRenderer()
 {
 	VtkUtils::vtkInitOnce(&d_ptr->defaultRenderer);
 	GetRenderWindow()->AddRenderer(d_ptr->defaultRenderer);
@@ -476,51 +476,51 @@ vtkRenderer* ecvQVTKWidget::defaultRenderer()
 	return d_ptr->defaultRenderer;
 }
 
-bool ecvQVTKWidget::defaultRendererTaken() const
+bool QVTKWidgetCustom::defaultRendererTaken() const
 {
 	if (!d_ptr->defaultRenderer)
 		return false;
 	return d_ptr->defaultRenderer->GetActors()->GetNumberOfItems() != 0;
 }
 
-void ecvQVTKWidget::setBounds(double* bounds)
+void QVTKWidgetCustom::setBounds(double* bounds)
 {
 	Utils::ArrayAssigner<double, 6> aa;
 	aa(bounds, d_ptr->bounds);
 }
 
-double ecvQVTKWidget::xMin() const
+double QVTKWidgetCustom::xMin() const
 {
 	return d_ptr->bounds[0];
 }
 
-double ecvQVTKWidget::xMax() const
+double QVTKWidgetCustom::xMax() const
 {
 	return d_ptr->bounds[1];
 }
 
-double ecvQVTKWidget::yMin() const
+double QVTKWidgetCustom::yMin() const
 {
 	return d_ptr->bounds[2];
 }
 
-double ecvQVTKWidget::yMax() const
+double QVTKWidgetCustom::yMax() const
 {
 	return d_ptr->bounds[3];
 }
 
-double ecvQVTKWidget::zMin() const
+double QVTKWidgetCustom::zMin() const
 {
 	return d_ptr->bounds[4];
 }
 
-double ecvQVTKWidget::zMax() const
+double QVTKWidgetCustom::zMax() const
 {
 	return d_ptr->bounds[5];
 }
 
 // event processing
-void ecvQVTKWidget::mousePressEvent(QMouseEvent *event)
+void QVTKWidgetCustom::mousePressEvent(QMouseEvent *event)
 {
 	m_tools->m_mouseMoved = false;
 	m_tools->m_mouseButtonPressed = true;
@@ -581,7 +581,7 @@ void ecvQVTKWidget::mousePressEvent(QMouseEvent *event)
 	QVTKWidget::mousePressEvent(event);
 }
 
-void ecvQVTKWidget::mouseDoubleClickEvent(QMouseEvent *event)
+void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent *event)
 {
 	m_tools->m_deferredPickingTimer.stop(); //prevent the picking process from starting
 	m_tools->m_ignoreMouseReleaseEvent = true;
@@ -600,7 +600,7 @@ void ecvQVTKWidget::mouseDoubleClickEvent(QMouseEvent *event)
 	QVTKWidget::mouseDoubleClickEvent(event);
 }
 
-void ecvQVTKWidget::wheelEvent(QWheelEvent * event)
+void QVTKWidgetCustom::wheelEvent(QWheelEvent * event)
 {
 	bool doRedraw = false;
 	Qt::KeyboardModifiers keyboardModifiers = QApplication::keyboardModifiers();
@@ -676,7 +676,7 @@ void ecvQVTKWidget::wheelEvent(QWheelEvent * event)
 	}
 }
 
-void ecvQVTKWidget::mouseMoveEvent(QMouseEvent *event)
+void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 {
 	if (!((m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_ROTATE) &&
 		(m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES)))
@@ -719,7 +719,7 @@ void ecvQVTKWidget::mouseMoveEvent(QMouseEvent *event)
 			if (inZone != m_tools->m_clickableItemsVisible)
 			{
 				m_tools->m_clickableItemsVisible = inZone;
-				ecvDisplayTools::RedrawDisplay(true, false);
+				ecvDisplayTools::RedrawDisplay(true, true);
 			}
 
 			event->accept();
@@ -925,7 +925,7 @@ void ecvQVTKWidget::mouseMoveEvent(QMouseEvent *event)
 					}
 					else
 					{
-						CVLog::Warning("[ ecvQVTKWidget::mouseMoveEvent] Failed to create seleciton polyline! Not enough memory!");
+						CVLog::Warning("[ QVTKWidgetCustom::mouseMoveEvent] Failed to create seleciton polyline! Not enough memory!");
 						delete m_tools->m_rectPickingPoly;
 						m_tools->m_rectPickingPoly = nullptr;
 						vertices = nullptr;
@@ -1111,7 +1111,7 @@ void ecvQVTKWidget::mouseMoveEvent(QMouseEvent *event)
 	event->accept();
 }
 
-void ecvQVTKWidget::updateActivateditems(int x, int y, int dx, int dy, bool updatePosition)
+void QVTKWidgetCustom::updateActivateditems(int x, int y, int dx, int dy, bool updatePosition)
 {
 	if (updatePosition)
 	{
@@ -1145,7 +1145,7 @@ void ecvQVTKWidget::updateActivateditems(int x, int y, int dx, int dy, bool upda
 	ecvDisplayTools::Redraw2DLabel();
 }
 
-void ecvQVTKWidget::mouseReleaseEvent(QMouseEvent *event)
+void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent *event)
 {
 	if (m_tools->m_interactionFlags & ecvDisplayTools::TRANSFORM_CAMERA())
 	{
@@ -1257,7 +1257,7 @@ void ecvQVTKWidget::mouseReleaseEvent(QMouseEvent *event)
 	ecvDisplayTools::RefreshDisplay(true);
 }
 
-void ecvQVTKWidget::dragEnterEvent(QDragEnterEvent * event)
+void QVTKWidgetCustom::dragEnterEvent(QDragEnterEvent * event)
 {
 	const QMimeData* mimeData = event->mimeData();
 	if (mimeData->hasFormat("text/uri-list"))
@@ -1266,7 +1266,7 @@ void ecvQVTKWidget::dragEnterEvent(QDragEnterEvent * event)
 	QVTKWidget::dragEnterEvent(event);
 }
 
-void ecvQVTKWidget::dropEvent(QDropEvent * event)
+void QVTKWidgetCustom::dropEvent(QDropEvent * event)
 {
 	const QMimeData* mimeData = event->mimeData();
 
@@ -1293,7 +1293,7 @@ void ecvQVTKWidget::dropEvent(QDropEvent * event)
 	event->ignore();
 }
 
-bool ecvQVTKWidget::event(QEvent* evt)
+bool QVTKWidgetCustom::event(QEvent* evt)
 {
 	switch (evt->type())
 	{
@@ -1378,7 +1378,7 @@ bool ecvQVTKWidget::event(QEvent* evt)
 	return QVTKWidget::event(evt);
 }
 
-void ecvQVTKWidget::keyPressEvent(QKeyEvent *event)
+void QVTKWidgetCustom::keyPressEvent(QKeyEvent *event)
 {
 	switch (event->key())
 	{

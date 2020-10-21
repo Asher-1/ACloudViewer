@@ -924,8 +924,8 @@ void ccDBRoot::changeSelection(const QItemSelection & selected, const QItemSelec
 
 	updatePropertiesView();
 
-	//MainWindow::RefreshAllGLWindow();
-	MainWindow::TheInstance()->refreshAll(false, false);
+	ecvDisplayTools::SetRedrawRecursive(false);
+	MainWindow::TheInstance()->refreshAll(false, true);
 
 	emit selectionChanged();
 }

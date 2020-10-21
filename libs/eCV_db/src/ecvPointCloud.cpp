@@ -2765,6 +2765,17 @@ void ccPointCloud::drawMeOnly(CC_DRAW_CONTEXT& context)
 		// main display procedure
 		ecvDisplayTools::Draw(context, this);
 	}
+	else if (MACRO_Draw2D(context))
+	{
+		if (MACRO_Foreground(context) && !context.sfColorScaleToDisplay)
+		{
+			if (sfColorScaleShown() && sfShown())
+			{
+				//drawScale(context);
+				addColorRampInfo(context);
+			}
+		}
+	}
 }
 
 void ccPointCloud::addColorRampInfo(CC_DRAW_CONTEXT& context)

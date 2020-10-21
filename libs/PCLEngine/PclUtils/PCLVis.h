@@ -56,7 +56,8 @@ namespace VTKExtensions
 
 namespace PclUtils
 {
-	class QPCL_ENGINE_LIB_API PCLVis : public ecvGenericVisualizer3D, public pcl::visualization::PCLVisualizer
+	class QPCL_ENGINE_LIB_API PCLVis : public ecvGenericVisualizer3D, 
+									   public pcl::visualization::PCLVisualizer
 	{
 		Q_OBJECT
 	public:
@@ -187,6 +188,8 @@ namespace PclUtils
 		void hideShowActors(bool visibility, const std::string & viewID, int viewport = 0);
 		void hideShowWidgets(bool visibility, const std::string & viewID, int viewport = 0);
 		
+		bool addScalarBar(const CC_DRAW_CONTEXT& CONTEXT);
+		bool updateScalarBar(const CC_DRAW_CONTEXT& CONTEXT);
 		bool addCaption(const std::string& text,
 			const CCVector2& pos2D,
 			const CCVector3& anchorPos,

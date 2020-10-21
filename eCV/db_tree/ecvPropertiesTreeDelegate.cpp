@@ -1796,8 +1796,9 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem * item)
 		cloud->showSFColorsScale(item->checkState() == Qt::Checked);
 		ecvDisplayTools::SetRedrawRecursive(false);
 		cloud->setRedrawFlagRecursive(true);
+		ecvDisplayTools::RedrawDisplay(true);
 	}
-	redraw = true;
+	redraw = false;
 	break;
 	case OBJECT_FACET_CONTOUR:
 	{
