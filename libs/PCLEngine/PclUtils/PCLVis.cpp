@@ -21,17 +21,23 @@
 #include "../Tools/ecvTools.h"
 #include "../Tools/PclTools.h"
 
+#include "VtkUtils/vtkutils.h"
+
 // CV_CORE_LIB
 #include <CVTools.h>
 #include <ecvGLMatrix.h>
 
 // ECV_DB_LIB
 #include <ecvBBox.h>
+#include <ecvColorScale.h>
+#include <ecvScalarField.h>
+#include <ecvDisplayTools.h>
 
 // VTK Extension
-#include "VTKExtensions/Core/vtkMemberFunctionCommand.h"
-#include "VTKExtensions/Views/vtkPVCenterAxesActor.h"
+#include <VTKExtensions/Views/vtkPVCenterAxesActor.h>
+#include <VTKExtensions/Core/vtkMemberFunctionCommand.h>
 #include <VTKExtensions/Widgets/CustomVtkCaptionWidget.h>
+#include <VTKExtensions/Widgets/vtkScalarBarWidgetCustom.h>
 #include "VTKExtensions/InteractionStyle/vtkPVTrackballMultiRotate.h"
 #include "VTKExtensions/InteractionStyle/vtkPVTrackballRoll.h"
 #include "VTKExtensions/InteractionStyle/vtkPVTrackballRotate.h"
@@ -424,9 +430,13 @@ namespace PclUtils
 	{
 		if (this->GeometryBounds.IsValid())
 		{
+			double originBounds[6];
+			this->GeometryBounds.GetBounds(originBounds);
+			this->GeometryBounds.Scale(1.1, 1.1, 1.1);
 			double bounds[6];
 			this->GeometryBounds.GetBounds(bounds);
 			this->getCurrentRenderer()->ResetCameraClippingRange(bounds);
+			this->GeometryBounds.SetBounds(originBounds);
 		}
 	}
 
@@ -819,6 +829,42 @@ namespace PclUtils
 		{
 			addPolyline(pclPolygon, polygonColor.r, polygonColor.g, polygonColor.b, CONTEXT.defaultLineWidth, viewID, viewPort);
 		}
+	}
+
+	bool PCLVis::updateScalarBar(const CC_DRAW_CONTEXT& CONTEXT)
+	{
+		std::string viewID = CVTools::fromQString(CONTEXT.viewID);
+		int viewPort = CONTEXT.defaultViewPort;
+		vtkAbstractWidget* widget = getWidgetById(viewID);
+		if (!widget || !PclTools::UpdateScalarBar(widget, CONTEXT))
+		{
+			this->removeWidgets(viewID, viewPort);
+			return false;
+		}
+		
+		return true;
+	}
+	
+	bool PCLVis::addScalarBar(const CC_DRAW_CONTEXT& CONTEXT)
+	{
+		std::string viewID = CVTools::fromQString(CONTEXT.viewID);
+		if (containWidget(viewID))
+		{
+			CVLog::Warning("[PCLVis::addScalarBar] The id <%s> already exists! Please choose a different id and retry.", viewID.c_str());
+			return false;
+		}
+
+		vtkSmartPointer<vtkScalarBarWidgetCustom> scalarBarWidget =
+			vtkSmartPointer<vtkScalarBarWidgetCustom>::New();
+		scalarBarWidget->SetInteractor(getRenderWindowInteractor());
+		scalarBarWidget->CreateDefaultRepresentation();
+		scalarBarWidget->CreateDefaultScalarBarActor();
+		scalarBarWidget->On();
+
+		// Save the pointer/ID pair to the global actor map
+		(*m_widget_map)[viewID].widget = scalarBarWidget;
+
+		return updateScalarBar(CONTEXT);
 	}
 
 	bool PCLVis::updateCaption(
@@ -1407,6 +1453,7 @@ namespace PclUtils
 			break;
 		}
 		case ENTITY_TYPE::ECV_CAPTION:
+		case ENTITY_TYPE::ECV_SCALAR_BAR:
 		{
 			removeWidgets(removeViewID, viewPort);
 		}

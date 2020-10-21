@@ -24,7 +24,7 @@
 #include "PCLVis.h"
 #include "ImageVis.h"
 #include "Tools/ecvTools.h"
-#include "VTKExtensions/Widgets/ecvQVTKWidget.h"
+#include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -56,7 +56,7 @@ public: // inherit from ecvDisplayTools
 	inline virtual ecvGenericVisualizer3D* getVisualizer3D() override { return get3DViewer(); }
 	inline virtual ecvGenericVisualizer2D* getVisualizer2D() override { return get2DViewer(); }
 
-	inline ecvQVTKWidget * getQVtkWidget() { return this->m_vtkWidget; }
+	inline QVTKWidgetCustom * getQVtkWidget() { return this->m_vtkWidget; }
 
 	inline virtual void toWorldPoint(const CCVector3d& input2D, CCVector3d& output3D) override { getQVtkWidget()->toWorldPoint(input2D, output3D); }
 	inline virtual void toWorldPoint(const CCVector3& input2D, CCVector3d& output3D) override { getQVtkWidget()->toWorldPoint(input2D, output3D); }
@@ -354,7 +354,7 @@ private:
 
 protected:
 	// QVTKWidget
-	ecvQVTKWidget* m_vtkWidget = nullptr;
+	QVTKWidgetCustom* m_vtkWidget = nullptr;
 
 	PclUtils::ImageVisPtr m_visualizer2D = nullptr;
 

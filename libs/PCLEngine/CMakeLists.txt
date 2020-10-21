@@ -24,36 +24,40 @@ if (USE_PCL_BACKEND)
 	
 	# VTK EXTENSIONS MODULE
 	SET( QVTK_EXTENSIONS ${CMAKE_CURRENT_SOURCE_DIR}/VTKExtensions )
-	# core module
-	file( GLOB_RECURSE VtkExtensions_core_list ${QVTK_EXTENSIONS}/Core/*)
-	source_group("VTKExtensions\\Core" FILES ${VtkExtensions_core_list} )
-	# points module
-	file( GLOB_RECURSE VtkExtensions_points_list ${QVTK_EXTENSIONS}/Points/*)
-	source_group("VTKExtensions\\Points" FILES ${VtkExtensions_points_list} )
-	# widgets module
-	file( GLOB_RECURSE VtkExtensions_widgets_list ${QVTK_EXTENSIONS}/Widgets/*)
-	source_group("VTKExtensions\\Widgets" FILES ${VtkExtensions_widgets_list} )
+	# Core module
+	file( GLOB_RECURSE VtkExtensions_Core_List ${QVTK_EXTENSIONS}/Core/*)
+	source_group("VTKExtensions\\Core" FILES ${VtkExtensions_Core_List} )
+	# Points module
+	file( GLOB_RECURSE VtkExtensions_Points_List ${QVTK_EXTENSIONS}/Points/*)
+	source_group("VTKExtensions\\Points" FILES ${VtkExtensions_Points_List} )
+	# Widgets module
+	file( GLOB_RECURSE VtkExtensions_Widgets_List ${QVTK_EXTENSIONS}/Widgets/*)
+	source_group("VTKExtensions\\Widgets" FILES ${VtkExtensions_Widgets_List} )
 	# CallbackTools module
-	file( GLOB_RECURSE VtkExtensions_CallbackTools_list ${QVTK_EXTENSIONS}/CallbackTools/*)
-	source_group("VTKExtensions\\CallbackTools" FILES ${VtkExtensions_CallbackTools_list} )
+	file( GLOB_RECURSE VtkExtensions_CallbackTools_List ${QVTK_EXTENSIONS}/CallbackTools/*)
+	source_group("VTKExtensions\\CallbackTools" FILES ${VtkExtensions_CallbackTools_List} )
 	# CosmoTools module
-	file( GLOB_RECURSE VtkExtensions_cosmoTools_list ${QVTK_EXTENSIONS}/CosmoTools/*)
-	source_group("VTKExtensions\\CosmoTools" FILES ${VtkExtensions_cosmoTools_list} )
-	# interaction style module
-	file( GLOB_RECURSE VtkExtensions_interactionStyle_list ${QVTK_EXTENSIONS}/InteractionStyle/*)
-	source_group("VTKExtensions\\InteractionStyle" FILES ${VtkExtensions_interactionStyle_list} )
-	# views module
-	file( GLOB_RECURSE VtkExtensions_views_list ${QVTK_EXTENSIONS}/Views/*)
-	source_group("VTKExtensions\\Views" FILES ${VtkExtensions_views_list} )
+	file( GLOB_RECURSE VtkExtensions_CosmoTools_List ${QVTK_EXTENSIONS}/CosmoTools/*)
+	source_group("VTKExtensions\\CosmoTools" FILES ${VtkExtensions_CosmoTools_List} )
+	# Interaction style module
+	file( GLOB_RECURSE VtkExtensions_InteractionStyle_List ${QVTK_EXTENSIONS}/InteractionStyle/*)
+	source_group("VTKExtensions\\InteractionStyle" FILES ${VtkExtensions_InteractionStyle_List} )
+	# Views module
+	file( GLOB_RECURSE VtkExtensions_Views_List ${QVTK_EXTENSIONS}/Views/*)
+	source_group("VTKExtensions\\Views" FILES ${VtkExtensions_Views_List} )
+	# Utility module
+	file( GLOB_RECURSE VtkExtensions_Utility_List ${QVTK_EXTENSIONS}/Utility/*)
+	source_group("VTKExtensions\\Utility" FILES ${VtkExtensions_Utility_List} )
 
 	set(VtkExtensions_list 
-		${VtkExtensions_core_list}  
-		${VtkExtensions_points_list}  
-		${VtkExtensions_widgets_list}  
-		${VtkExtensions_CallbackTools_list}  
-		${VtkExtensions_cosmoTools_list}  
-		${VtkExtensions_interactionStyle_list}  
-		${VtkExtensions_views_list}
+		${VtkExtensions_Core_List}  
+		${VtkExtensions_Points_List}  
+		${VtkExtensions_Widgets_List}  
+		${VtkExtensions_CallbackTools_List}  
+		${VtkExtensions_CosmoTools_List}  
+		${VtkExtensions_InteractionStyle_List}  
+		${VtkExtensions_Views_List}
+		${VtkExtensions_Utility_List}
 	)
 	
 	# VTK UTILS MODULE

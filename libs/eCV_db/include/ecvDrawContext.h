@@ -78,6 +78,7 @@ enum ENTITY_TYPE
 	ECV_2DLABLE,
 	ECV_2DLABLE_VIEWPORT,
 	ECV_CAPTION,
+	ECV_SCALAR_BAR,
 	ECV_TEXT3D,
 	ECV_TEXT2D,
 	ECV_IMAGE,
@@ -102,6 +103,7 @@ enum WIDGETS_TYPE
 	WIDGET_LINE_3D,
 	WIDGET_SPHERE,
 	WIDGET_CAPTION,
+	WIDGET_SCALAR_BAR,
 	WIDGET_T3D,
 	WIDGET_T2D,
 };
@@ -192,65 +194,6 @@ struct ECV_DB_LIB_API LineWidget {
 		, lineColor(color)
 		, valid(true)
 	{}
-};
-
-struct ECV_DB_LIB_API WIDGETS_PARAMETER
-{
-public: 
-	/*for general*/
-	int viewPort = 0;
-	QString viewID;
-	WIDGETS_TYPE type;
-	ccHObject* entity;
-	ecvColor::Rgbaf color;
-
-	int fontSize = 10;
-
-	/*for image*/
-	QImage image;
-	double opacity = 1.0;
-
-	/*for text*/
-	QString text;
-
-	/*for rectangle*/
-	bool filled = true;
-	QRect rect;
-
-	/*for 2D line or triangle*/
-	QPoint p1;
-	QPoint p2;
-	QPoint p3;
-	QPoint p4 = QPoint(-1, -1);
-
-	/*for circle, sphere or mark point*/
-	float radius;
-	CCVector3 center;
-	CCVector2 pos;
-	bool handleEnabled = false;
-
-	/*for 3D line*/
-	LineWidget lineWidget;
-
-	//Default constructor
-	WIDGETS_PARAMETER(WIDGETS_TYPE t, QString id = "id", int port = 0)
-		: viewID(id)
-		, type(t)
-		, viewPort(port)
-	{}
-
-	WIDGETS_PARAMETER(ccHObject* obj, WIDGETS_TYPE t, QString id = "id", int port = 0)
-		: entity(obj)
-		, viewID(id)
-		, type(t)
-		, viewPort(port)
-	{
-	}
-
-	void setLineWidget(const LineWidget& line) 
-	{
-		lineWidget = line;
-	}
 };
 
 //! to be removed structure
@@ -543,5 +486,70 @@ struct ECV_DB_LIB_API ccGLDrawContext
 };
 
 using CC_DRAW_CONTEXT = ccGLDrawContext;
+
+
+struct ECV_DB_LIB_API WIDGETS_PARAMETER
+{
+public:
+	/*for general*/
+	int viewPort = 0;
+	QString viewID;
+	WIDGETS_TYPE type;
+	ccHObject* entity;
+	ecvColor::Rgbaf color;
+
+	CC_DRAW_CONTEXT context;
+
+	int fontSize = 10;
+
+	/*for image*/
+	QImage image;
+	double opacity = 1.0;
+
+	/*for text*/
+	QString text;
+
+	/*for rectangle*/
+	bool filled = true;
+	QRect rect;
+
+	/*for 2D line or triangle*/
+	QPoint p1;
+	QPoint p2;
+	QPoint p3;
+	QPoint p4 = QPoint(-1, -1);
+
+	/*for circle, sphere or mark point*/
+	float radius;
+	CCVector3 center;
+	CCVector2 pos;
+	bool handleEnabled = false;
+
+	/*for 3D line*/
+	LineWidget lineWidget;
+
+	//Default constructor
+	WIDGETS_PARAMETER(WIDGETS_TYPE t, QString id = "id", int port = 0)
+		: viewID(id)
+		, type(t)
+		, viewPort(port)
+	{
+		context.viewID = viewID;
+	}
+
+	WIDGETS_PARAMETER(ccHObject* obj, WIDGETS_TYPE t, QString id = "id", int port = 0)
+		: entity(obj)
+		, viewID(id)
+		, type(t)
+		, viewPort(port)
+	{
+		context.viewID = viewID;
+	}
+
+	void setLineWidget(const LineWidget& line)
+	{
+		lineWidget = line;
+	}
+};
 
 #endif // ECV_GL_DRAW_CONTEXT_HEADER

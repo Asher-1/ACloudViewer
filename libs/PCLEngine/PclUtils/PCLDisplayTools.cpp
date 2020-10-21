@@ -49,7 +49,7 @@
 
 void PCLDisplayTools::registerVisualizer(QMainWindow * win)
 {
-	this->m_vtkWidget = new ecvQVTKWidget(win, this);
+	this->m_vtkWidget = new QVTKWidgetCustom(win, this);
 	this->m_currentScreen = getQVtkWidget();
 	this->m_mainScreen = getQVtkWidget();
 
@@ -609,7 +609,7 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER & param)
 		}
 		else
 		{
-			CC_DRAW_CONTEXT context;
+			CC_DRAW_CONTEXT context = param.context;
 			ecvDisplayTools::GetContext(context);
 			ecvTextParam tParam;
 			tParam.display3D = false;
@@ -649,6 +649,13 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER & param)
 			center.z = param.center.z;
 			m_visualizer3D->addSphere(center, param.radius, 
 				param.color.r, param.color.g, param.color.b, viewID, viewPort);
+		}
+		break;
+
+	case WIDGETS_TYPE::WIDGET_SCALAR_BAR:
+		if (!m_visualizer3D->updateScalarBar(param.context))
+		{
+			m_visualizer3D->addScalarBar(param.context);
 		}
 		break;
 	case WIDGETS_TYPE::WIDGET_CAPTION:
