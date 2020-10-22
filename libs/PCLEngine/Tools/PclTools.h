@@ -27,6 +27,9 @@
 #include <CVLog.h>
 #include <vector>
 
+// ECV_DB_LIB
+#include <ecvDrawContext.h>
+
 // PCL COMMON
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_cloud.h>
@@ -38,6 +41,7 @@ class vtkDataSet;
 class vtkActor;
 class vtkLODActor;
 class vtkPoints;
+class vtkAbstractWidget;
 class vtkUnstructuredGrid;
 
 namespace PclTools
@@ -78,6 +82,8 @@ namespace PclTools
 	void AllocVtkUnstructuredGrid(vtkSmartPointer<vtkUnstructuredGrid> &polydata);
 
 	vtkSmartPointer<vtkDataSet> CreateLine(vtkSmartPointer<vtkPoints> points);
+
+	bool UpdateScalarBar(vtkAbstractWidget* widget, const CC_DRAW_CONTEXT& CONTEXT);
 };
 
 #endif // QPCL_PCLTOOLS_HEADER

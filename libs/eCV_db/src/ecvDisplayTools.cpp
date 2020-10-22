@@ -24,8 +24,9 @@
 #include <CVTools.h>
 
 // LOCAL
-#include "ecvDisplayTools.h"
 #include "ecvBBox.h"
+#include "ecvRenderingTools.h"
+#include "ecvDisplayTools.h"
 #include "ecvSingleton.h"
 #include "ecvClipBox.h"
 #include "ecvPointCloud.h"
@@ -3030,7 +3031,6 @@ void ecvDisplayTools::DrawBackground(CC_DRAW_CONTEXT& CONTEXT)
 		CONTEXT.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
 	}
 
-
 	//clear background
 	{
 		if (CONTEXT.clearDepthLayer)
@@ -3100,6 +3100,8 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT)
 	if (s_tools.instance->m_winDBRoot)
 		s_tools.instance->m_winDBRoot->draw(CONTEXT);
 
+	//current displayed scalar field color ramp (if any)
+	ccRenderingTools::DrawColorRamp(CONTEXT);
 
 	s_tools.instance->m_clickableItems.clear();
 
@@ -3867,10 +3869,11 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param, bool update/* 
 	}
 		break;
 	case WIDGETS_TYPE::WIDGET_IMAGE:
-	case WIDGETS_TYPE::WIDGET_CIRCLE_2D:
 	case WIDGETS_TYPE::WIDGET_LINE_2D:
-	case WIDGETS_TYPE::WIDGET_POLYLINE_2D:
+	case WIDGETS_TYPE::WIDGET_CIRCLE_2D:
 	case WIDGETS_TYPE::WIDGET_POINTS_2D:
+	case WIDGETS_TYPE::WIDGET_SCALAR_BAR:
+	case WIDGETS_TYPE::WIDGET_POLYLINE_2D:
 	case WIDGETS_TYPE::WIDGET_TRIANGLE_2D:
 	case WIDGETS_TYPE::WIDGET_RECTANGLE_2D:
 		s_tools.instance->drawWidgets(param);
@@ -3956,6 +3959,14 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	case WIDGETS_TYPE::WIDGET_CAPTION:
 	{
 		context.removeEntityType = ENTITY_TYPE::ECV_CAPTION;
+		context.defaultViewPort = param.viewPort;
+		context.removeViewID = param.viewID;
+		RemoveEntities(context);
+	}
+	break;
+	case WIDGETS_TYPE::WIDGET_SCALAR_BAR:
+	{
+		context.removeEntityType = ENTITY_TYPE::ECV_SCALAR_BAR;
 		context.defaultViewPort = param.viewPort;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
