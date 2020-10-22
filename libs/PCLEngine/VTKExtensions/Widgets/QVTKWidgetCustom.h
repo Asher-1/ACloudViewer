@@ -58,14 +58,14 @@ class vtkOrientationMarkerWidget;
 class VtkWidgetPrivate;
 
 //! Container widget for ccGLWindow
-class ecvQVTKWidget : public QVTKWidget
+class QVTKWidgetCustom : public QVTKWidget
 {
 	Q_OBJECT
 
 public:
 
-	explicit ecvQVTKWidget(QMainWindow* parentWindow, ecvDisplayTools* tools);
-	virtual ~ecvQVTKWidget();
+	explicit QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* tools);
+	virtual ~QVTKWidgetCustom();
 
 	inline vtkRenderer* getVtkRender() { return this->m_render; }
 	inline vtkRenderWindowInteractor* getVtkInteractor() { return this->m_interactor; }
@@ -165,6 +165,6 @@ protected:
 	vtkSmartPointer<vtkOrientationMarkerWidget> m_axesWidget;
 
 	VtkWidgetPrivate* d_ptr;
-	Q_DISABLE_COPY(ecvQVTKWidget);
+	Q_DISABLE_COPY(QVTKWidgetCustom);
 };
 #endif // QPCL_VTK_WIDGET_HEADER
