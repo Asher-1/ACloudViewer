@@ -29,6 +29,7 @@
 #include <vtkCamera.h>
 #include <vtkRenderer.h>
 #include <vtkTransform.h>
+#include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkRendererCollection.h>
 #include <vtkProperty2D.h>
 #include <vtkRenderWindow.h>
@@ -50,7 +51,7 @@
 #include <vtkDelaunay2D.h>
 #include <vtkAngleRepresentation2D.h>
 
-#include <pcl/visualization/vtk/vtkVertexBufferObjectMapper.h>
+//#include <pcl/visualization/vtk/vtkVertexBufferObjectMapper.h>
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -192,10 +193,11 @@ void VtkWidgetPrivate::init()
 //static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 static const int CC_MAX_PICKING_CLICK_DURATION_MS = 350;
 QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* tools)
-	: QVTKWidget(parentWindow)
+	: QVTKOpenGLNativeWidget(parentWindow)
 	, m_axesWidget(nullptr)
 	, m_logoWidget(nullptr)
 	, m_interactor(nullptr)
+	, m_render(nullptr)
 	, m_scalarbarWidget(nullptr)
 	, m_dataObject(nullptr)
 	, m_modelActor(nullptr)
@@ -203,6 +205,17 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* t
 	, m_tools(tools)
 {
 	this->setWindowTitle("3D View");
+
+	auto renderer = vtkSmartPointer<vtkRenderer>::New();
+	auto window = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+	this->SetRenderWindow(window.Get());
+	window->AddRenderer(renderer);
+
+	QSurfaceFormat surfaceFormat = QSurfaceFormat();
+	surfaceFormat.setSamples(4);
+	setFormat(surfaceFormat);
+
+	this->setEnableHiDPI(true);
 
 	//drag & drop handling
 	setAcceptDrops(true);
@@ -578,7 +591,7 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent *event)
 	{
 	}
 
-	QVTKWidget::mousePressEvent(event);
+	QVTKOpenGLNativeWidget::mousePressEvent(event);
 }
 
 void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent *event)
@@ -597,7 +610,7 @@ void QVTKWidgetCustom::mouseDoubleClickEvent(QMouseEvent *event)
 
 	emit m_tools->doubleButtonClicked(event->x(), event->y());
 
-	QVTKWidget::mouseDoubleClickEvent(event);
+	QVTKOpenGLNativeWidget::mouseDoubleClickEvent(event);
 }
 
 void QVTKWidgetCustom::wheelEvent(QWheelEvent * event)
@@ -654,7 +667,7 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent * event)
 	}
 	else if (m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_ZOOM_CAMERA)
 	{
-		QVTKWidget::wheelEvent(event);
+		QVTKOpenGLNativeWidget::wheelEvent(event);
 
 		//see QWheelEvent documentation ("distance that the wheel is rotated, in eighths of a degree")
 		float wheelDelta_deg = static_cast<float>(event->delta()) / 8;
@@ -683,7 +696,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 	{
 		if ((m_tools->m_interactionFlags & ecvDisplayTools::TRANSFORM_CAMERA()))
 		{
-			QVTKWidget::mouseMoveEvent(event);
+			QVTKOpenGLNativeWidget::mouseMoveEvent(event);
 			m_tools->UpdateDisplayParameters();
 		}
 	}
@@ -1149,7 +1162,7 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent *event)
 {
 	if (m_tools->m_interactionFlags & ecvDisplayTools::TRANSFORM_CAMERA())
 	{
-		QVTKWidget::mouseReleaseEvent(event);
+		QVTKOpenGLNativeWidget::mouseReleaseEvent(event);
 	}
 
 	if (m_tools->m_ignoreMouseReleaseEvent)
@@ -1263,7 +1276,7 @@ void QVTKWidgetCustom::dragEnterEvent(QDragEnterEvent * event)
 	if (mimeData->hasFormat("text/uri-list"))
 		event->acceptProposedAction();
 
-	QVTKWidget::dragEnterEvent(event);
+	QVTKOpenGLNativeWidget::dragEnterEvent(event);
 }
 
 void QVTKWidgetCustom::dropEvent(QDropEvent * event)
@@ -1289,7 +1302,7 @@ void QVTKWidgetCustom::dropEvent(QDropEvent * event)
 		event->acceptProposedAction();
 	}
 
-	QVTKWidget::dropEvent(event);
+	QVTKOpenGLNativeWidget::dropEvent(event);
 	event->ignore();
 }
 
@@ -1375,7 +1388,7 @@ bool QVTKWidgetCustom::event(QEvent* evt)
 
 	}
 
-	return QVTKWidget::event(evt);
+	return QVTKOpenGLNativeWidget::event(evt);
 }
 
 void QVTKWidgetCustom::keyPressEvent(QKeyEvent *event)
@@ -1390,6 +1403,6 @@ void QVTKWidgetCustom::keyPressEvent(QKeyEvent *event)
 	}
 
 	default:
-		QVTKWidget::keyPressEvent(event);
+		QVTKOpenGLNativeWidget::keyPressEvent(event);
 	}
 }

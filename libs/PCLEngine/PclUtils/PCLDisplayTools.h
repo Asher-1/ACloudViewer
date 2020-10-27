@@ -353,7 +353,7 @@ private:
 	bool updateEntityColor(CC_DRAW_CONTEXT& CONTEXT, ccHObject* ent);
 
 protected:
-	// QVTKWidget
+	// QVTKOpenGLNativeWidget
 	QVTKWidgetCustom* m_vtkWidget = nullptr;
 
 	PclUtils::ImageVisPtr m_visualizer2D = nullptr;

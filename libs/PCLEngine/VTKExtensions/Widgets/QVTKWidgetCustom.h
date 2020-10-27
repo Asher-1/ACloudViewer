@@ -18,10 +18,15 @@
 #ifndef QPCL_VTK_WIDGET_HEADER
 #define QPCL_VTK_WIDGET_HEADER
 
-#include <vtkAutoInit.h> 
-VTK_MODULE_INIT(vtkRenderingFreeType)
-VTK_MODULE_INIT(vtkRenderingOpenGL);
+#ifdef _MSC_VER
+/* The below is MANDATORY for Windows builds or you will take an exception in vtkRenderer::SetRenderWindow(vtkRenderWindow *renwin) */
+#include <vtkAutoInit.h>
+VTK_MODULE_INIT(vtkRenderingOpenGL2); /* VTK was built with vtkRenderingOpenGL2 */
 VTK_MODULE_INIT(vtkInteractionStyle);
+
+#endif
+
+#include "../../qPCL.h"
 
 // CV_CORE_LIB
 #include <CVGeom.h>
@@ -30,7 +35,8 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 #include <ecvColorTypes.h>
 
 // VTK
-#include <QVTKWidget.h>
+//#include <QVTKWidget.h>
+#include <QVTKOpenGLNativeWidget.h>
 #include <vtkSmartPointer.h>
 #include <vtkRenderWindow.h>
 #include <vtkDataSet.h>
@@ -58,7 +64,8 @@ class vtkOrientationMarkerWidget;
 class VtkWidgetPrivate;
 
 //! Container widget for ccGLWindow
-class QVTKWidgetCustom : public QVTKWidget
+//class QPCL_ENGINE_LIB_API QVTKWidgetCustom : public QVTKOpenGLNativeWidget
+class QVTKWidgetCustom : public QVTKOpenGLNativeWidget
 {
 	Q_OBJECT
 
@@ -118,20 +125,17 @@ public:
 
 protected:
 	//events handling
-	void mousePressEvent(QMouseEvent* event) override;
-	void mouseMoveEvent(QMouseEvent* event) override;
-	void updateActivateditems(int x, int y, int dx, int dy, bool updatePosition = false);
-	void mouseDoubleClickEvent(QMouseEvent* event) override;
-	void wheelEvent(QWheelEvent* event) override;
-	void mouseReleaseEvent(QMouseEvent* event) override;
 	bool event(QEvent* evt) override;
+	void wheelEvent(QWheelEvent* event) override;
 	void keyPressEvent(QKeyEvent *event) override;
+	void mouseMoveEvent(QMouseEvent* event) override;
+	void mousePressEvent(QMouseEvent* event) override;
+	void mouseReleaseEvent(QMouseEvent* event) override;
+	void mouseDoubleClickEvent(QMouseEvent* event) override;
+	void updateActivateditems(int x, int y, int dx, int dy, bool updatePosition = false);
 
-	virtual void dragEnterEvent(QDragEnterEvent* event);
-	virtual void dropEvent(QDropEvent* event);
-
-
-public slots:
+	virtual void dragEnterEvent(QDragEnterEvent* event) override;
+	virtual void dropEvent(QDropEvent* event) override;
 
 protected:
 	bool m_unclosable = true;
@@ -165,6 +169,6 @@ protected:
 	vtkSmartPointer<vtkOrientationMarkerWidget> m_axesWidget;
 
 	VtkWidgetPrivate* d_ptr;
-	Q_DISABLE_COPY(QVTKWidgetCustom);
+	//Q_DISABLE_COPY(QVTKWidgetCustom);
 };
 #endif // QPCL_VTK_WIDGET_HEADER

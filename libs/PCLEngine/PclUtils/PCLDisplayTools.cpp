@@ -47,15 +47,19 @@
 //system
 #include <assert.h>
 
+#include <vtkGenericOpenGLRenderWindow.h>
+
 void PCLDisplayTools::registerVisualizer(QMainWindow * win)
 {
 	this->m_vtkWidget = new QVTKWidgetCustom(win, this);
-	this->m_currentScreen = getQVtkWidget();
 	this->m_mainScreen = getQVtkWidget();
+	this->m_currentScreen = getQVtkWidget();
 
 	if (!m_visualizer3D)
 	{
-		m_visualizer3D.reset(new PclUtils::PCLVis("3Dviewer", false));
+		auto renderer = vtkSmartPointer<vtkRenderer>::New();
+		auto window = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+		m_visualizer3D.reset(new PclUtils::PCLVis(renderer, window, "3Dviewer", false));
 	}
 
 	getQVtkWidget()->SetRenderWindow(m_visualizer3D->getRenderWindow());

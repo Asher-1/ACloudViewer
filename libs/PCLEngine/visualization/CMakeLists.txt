@@ -29,20 +29,8 @@ endif()
 
 if(build)
     set(srcs
-        src/point_picking_event.cpp
-        src/interactor_style.cpp
-        src/point_cloud_handlers.cpp
         src/pcl_visualizer.cpp
-        src/histogram_visualizer.cpp
-        src/common/common.cpp
-        src/common/io.cpp
-        src/common/shapes.cpp
-        src/common/ren_win_interact_map.cpp
-        src/cloud_viewer.cpp
         src/image_viewer.cpp
-        src/window.cpp
-        src/range_image_visualizer.cpp
-        src/common/float_image_utils.cpp
         src/vtk/pcl_image_canvas_source_2d.cpp
         src/vtk/pcl_context_item.cpp
         src/vtk/vtkRenderWindowInteractorFix.cpp
@@ -54,88 +42,37 @@ if(build)
     
     if("${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" VERSION_GREATER "5.6")
         # PCLPainter2D uses some functions not present in vtk 5.6
-        list(APPEND srcs
-            src/pcl_painter2D.cpp
-            src/pcl_plotter.cpp
-            )
+        # list(APPEND srcs
+            # src/pcl_painter2D.cpp
+            # src/pcl_plotter.cpp
+            # )
     endif("${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" VERSION_GREATER "5.6")
-
-    if(VTK_RENDERING_BACKEND_OPENGL_VERSION VERSION_LESS 2)
-      list(APPEND srcs
-        "src/vtk/vtkVertexBufferObject.cxx"
-        "src/vtk/vtkVertexBufferObjectMapper.cxx"
-      )
-    endif()
 
     set(incs 
-        "include/pcl/${SUBSYS_NAME}/eigen.h"
-        "include/pcl/${SUBSYS_NAME}/boost.h"
-        "include/pcl/${SUBSYS_NAME}/cloud_viewer.h"
-        "include/pcl/${SUBSYS_NAME}/histogram_visualizer.h"
         "include/pcl/${SUBSYS_NAME}/image_viewer.h"
-        "include/pcl/${SUBSYS_NAME}/interactor_style.h"
         "include/pcl/${SUBSYS_NAME}/pcl_visualizer.h"
-        "include/pcl/${SUBSYS_NAME}/pcl_painter2D.h"
-        "include/pcl/${SUBSYS_NAME}/registration_visualizer.h"
-        "include/pcl/${SUBSYS_NAME}/point_cloud_handlers.h"
-        "include/pcl/${SUBSYS_NAME}/point_cloud_color_handlers.h"
-        "include/pcl/${SUBSYS_NAME}/point_cloud_geometry_handlers.h"
-        "include/pcl/${SUBSYS_NAME}/keyboard_event.h"
-        "include/pcl/${SUBSYS_NAME}/point_picking_event.h"
-        "include/pcl/${SUBSYS_NAME}/area_picking_event.h"
-        "include/pcl/${SUBSYS_NAME}/mouse_event.h"
-        "include/pcl/${SUBSYS_NAME}/window.h"
-        "include/pcl/${SUBSYS_NAME}/range_image_visualizer.h"
-        "include/pcl/${SUBSYS_NAME}/interactor.h"
-        "include/pcl/${SUBSYS_NAME}/vtk.h"
-        "include/pcl/${SUBSYS_NAME}/simple_buffer_visualizer.h"
         )
     if("${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" VERSION_GREATER "5.6")
-        list(APPEND incs
-            "include/pcl/${SUBSYS_NAME}/pcl_plotter.h"
-            )
+        # list(APPEND incs
+            # "include/pcl/${SUBSYS_NAME}/pcl_plotter.h"
+            # )
     endif("${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" VERSION_GREATER "5.6")
-
-    set(common_incs 
-        "include/pcl/${SUBSYS_NAME}/common/actor_map.h"
-        "include/pcl/${SUBSYS_NAME}/common/common.h"
-        "include/pcl/${SUBSYS_NAME}/common/io.h"
-        "include/pcl/${SUBSYS_NAME}/common/ren_win_interact_map.h"
-        "include/pcl/${SUBSYS_NAME}/common/shapes.h"
-        "include/pcl/${SUBSYS_NAME}/common/float_image_utils.h"
-        )
 
     set(impl_incs 
-        "include/pcl/${SUBSYS_NAME}/impl/histogram_visualizer.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/pcl_visualizer.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/image_viewer.hpp"
-        "include/pcl/${SUBSYS_NAME}/impl/registration_visualizer.hpp"
-        "include/pcl/${SUBSYS_NAME}/impl/point_cloud_handlers.hpp"
-        "include/pcl/${SUBSYS_NAME}/impl/point_cloud_color_handlers.hpp"
-        "include/pcl/${SUBSYS_NAME}/impl/point_cloud_geometry_handlers.hpp"
         )
     if("${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" VERSION_GREATER "5.6")
-        list(APPEND impl_incs
-            "include/pcl/${SUBSYS_NAME}/impl/pcl_plotter.hpp"
-            )
+        # list(APPEND impl_incs
+            # "include/pcl/${SUBSYS_NAME}/impl/pcl_plotter.hpp"
+            # )
     endif("${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" VERSION_GREATER "5.6")
-
-
-    set(common_impl_incs "include/pcl/${SUBSYS_NAME}/common/impl/shapes.hpp"
-                         "include/pcl/${SUBSYS_NAME}/common/impl/common.hpp")
 
     set(vtk_incs 
         "include/pcl/${SUBSYS_NAME}/vtk/pcl_image_canvas_source_2d.h"
         "include/pcl/${SUBSYS_NAME}/vtk/pcl_context_item.h"
         "include/pcl/${SUBSYS_NAME}/vtk/vtkRenderWindowInteractorFix.h"
         )
-
-    if(VTK_RENDERING_BACKEND_OPENGL_VERSION VERSION_LESS 2)
-      list(APPEND vtk_incs
-        "include/pcl/${SUBSYS_NAME}/vtk/vtkVertexBufferObject.h"
-        "include/pcl/${SUBSYS_NAME}/vtk/vtkVertexBufferObjectMapper.h"
-      )
-    endif()
 
     # on apple, a workaround is used for the cocoa render window interactor
     if(APPLE)
@@ -144,7 +81,7 @@ if(build)
     endif()
 
     set(LIB_NAME "pcl_${SUBSYS_NAME}")
-    PCL_ADD_LIBRARY("${LIB_NAME}" "${SUBSYS_NAME}" ${srcs} ${incs} ${common_incs} ${impl_incs} ${common_impl_incs} ${vtk_incs})
+    PCL_ADD_LIBRARY("${LIB_NAME}" "${SUBSYS_NAME}" ${srcs} ${incs} ${impl_incs} ${vtk_incs})
 
     target_include_directories("${LIB_NAME}" PUBLIC ${VTK_INCLUDE_DIRS})
 
@@ -183,11 +120,7 @@ if(build)
 
     # Install include files
     PCL_ADD_INCLUDES("${SUBSYS_NAME}" "${SUBSYS_NAME}" ${incs})
-    PCL_ADD_INCLUDES("${SUBSYS_NAME}" "${SUBSYS_NAME}/common" ${common_incs})
     PCL_ADD_INCLUDES("${SUBSYS_NAME}" "${SUBSYS_NAME}/impl" ${impl_incs})
-    PCL_ADD_INCLUDES("${SUBSYS_NAME}" "${SUBSYS_NAME}/common/impl" ${common_impl_incs})
     PCL_ADD_INCLUDES("${SUBSYS_NAME}" "${SUBSYS_NAME}/vtk" ${vtk_incs})
-
-	add_subdirectory(tools)
 	
 endif(build)

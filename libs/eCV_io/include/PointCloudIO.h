@@ -27,6 +27,7 @@
 #ifndef ECV_POINTCLOUD_IO_HEADER
 #define ECV_POINTCLOUD_IO_HEADER
 
+#include <memory>
 #include <string>
 
 class ccPointCloud;

@@ -29,6 +29,7 @@
 
 // PCL
 #include <visualization/include/pcl/visualization/image_viewer.h>
+//#include <pcl/visualization/image_viewer.h>
 
 // VTK
 #include <vtkSmartPointer.h>

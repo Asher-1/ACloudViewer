@@ -35,15 +35,17 @@
 #include <vtkBoundingBox.h> // needed for iVar
 
 // PCL
-//#include <pcl/visualization/pcl_visualizer.h>
-#include <visualization/include/pcl/visualization/pcl_visualizer.h>
+#include <pcl/visualization/pcl_visualizer.h>
+//#include <visualization/include/pcl/visualization/pcl_visualizer.h>
 
 class vtkLODActor;
 class vtkCamera;
+class vtkRender;
 class vtkPointPicker;
 class vtkAreaPicker;
 class vtkPropPicker;
 class vtkAbstractWidget;
+class vtkRenderWindow;
 
 class ccBBox;
 class ecvPointpickingTools;
@@ -63,6 +65,7 @@ namespace PclUtils
 	public:
 		//! Default constructor
 		PCLVis(const std::string &viewerName, bool initIterator);
+		PCLVis(vtkSmartPointer<vtkRenderer> ren, vtkSmartPointer<vtkRenderWindow> wind, const std::string& viewerName, bool initIterator);
 		virtual ~PCLVis();
 
 		// do some initialization jobs

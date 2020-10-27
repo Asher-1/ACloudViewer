@@ -65,6 +65,7 @@
 #include <vtkWidgetEvent.h>
 #include <vtkWidgetEventTranslator.h>
 
+#include <vtkTexture.h>
 #include <vtkAxesActor.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkProperty.h>
@@ -121,12 +122,44 @@ namespace PclUtils
 		this->TwoDInteractorStyle = vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
 		this->m_interactorStyle = this->ThreeDInteractorStyle =
 			vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
-		setInteractorStyle(this->ThreeDInteractorStyle);
-		this->updateStyle();
+		//setInteractorStyle(this->ThreeDInteractorStyle);
+		getInteractorStyle() = this->ThreeDInteractorStyle;
+		//this->updateStyle();
 
 		// add some default manipulators. Applications can override them without much ado.
 		registerInteractorStyle(false);
 		//getInteractorStyle()->setKeyboardModifier(pcl::visualization::INTERACTOR_KB_MOD_SHIFT);
+	}
+
+	PCLVis::PCLVis(vtkSmartPointer<vtkRenderer> ren, vtkSmartPointer<vtkRenderWindow> wind, const string& viewerName, bool initIterator)
+		: pcl::visualization::PCLVisualizer(ren, wind, viewerName, initIterator)
+		, m_widget_map(new WidgetActorMap)
+		, m_prop_map(new PropActorMap)
+		, m_x_pressNum(0)
+		, m_currentMode(ORIENT_MODE)
+		, m_autoUpdateCameraPos(false)
+		, m_pointPickingEnabled(true)
+		, m_areaPickingEnabled(false)
+		, m_actorPickingEnabled(false)
+	{
+		getRenderWindow()->GlobalWarningDisplayOff();
+
+		this->m_centerAxes = VTKExtensions::vtkPVCenterAxesActor::New();
+		this->m_centerAxes->SetComputeNormals(0);
+		this->m_centerAxes->SetPickable(0);
+		this->m_centerAxes->SetScale(0.25, 0.25, 0.25);
+		addActorToRenderer(this->m_centerAxes);
+
+		this->TwoDInteractorStyle = vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
+		this->m_interactorStyle = this->ThreeDInteractorStyle =
+			vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
+		// setInteractorStyle(this->ThreeDInteractorStyle);
+		getInteractorStyle() = this->ThreeDInteractorStyle;
+		// this->updateStyle();
+
+		// add some default manipulators. Applications can override them without much ado.
+		registerInteractorStyle(false);
+		// getInteractorStyle()->setKeyboardModifier(pcl::visualization::INTERACTOR_KB_MOD_SHIFT);
 	}
 
 	PCLVis::~PCLVis()
@@ -1259,14 +1292,13 @@ namespace PclUtils
 
 		//create polys from polyMesh.tex_polygons
 		vtkSmartPointer<vtkCellArray> polys = vtkSmartPointer<vtkCellArray>::New();
-		for (std::size_t i = 0; i < mesh.tex_polygons.size(); i++)
+		for (const auto& tex_polygon : mesh.tex_polygons)
 		{
-			for (std::size_t j = 0; j < mesh.tex_polygons[i].size(); j++)
+			for (const auto& vertex : tex_polygon)
 			{
-				std::size_t n_points = mesh.tex_polygons[i][j].vertices.size();
-				polys->InsertNextCell(int(n_points));
-				for (std::size_t k = 0; k < n_points; k++)
-					polys->InsertCellPoint(mesh.tex_polygons[i][j].vertices[k]);
+				polys->InsertNextCell(static_cast<int> (vertex.vertices.size()));
+				for (const auto& point : vertex.vertices)
+					polys->InsertCellPoint(point);
 			}
 		}
 
@@ -1277,11 +1309,7 @@ namespace PclUtils
 			polydata->GetPointData()->SetScalars(colors);
 
 		vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-#if VTK_MAJOR_VERSION < 6
-		mapper->SetInput(polydata);
-#else
 		mapper->SetInputData(polydata);
-#endif
 
 		vtkSmartPointer<vtkLODActor> actor = vtkSmartPointer<vtkLODActor>::New();
 		vtkTextureUnitManager* tex_manager = vtkOpenGLRenderWindow::SafeDownCast(getRenderWindow())->GetTextureUnitManager();
@@ -1305,6 +1333,8 @@ namespace PclUtils
 			vtkSmartPointer<vtkTexture> texture = vtkSmartPointer<vtkTexture>::New();
 			if (!textureFromTexMaterial(mesh.tex_materials[tex_id], texture))
 			{
+				CVLog::Warning("[PCLVisualizer::addTextureMesh] Failed to load texture %s, skipping!\n",
+					mesh.tex_materials[tex_id].tex_name.c_str());
 				continue;
 			}
 			// the first texture is in REPLACE mode others are in ADD mode
@@ -1691,7 +1721,7 @@ namespace PclUtils
 		{
 			cam->SetParallelProjection(true);
 			getCurrentRenderer()->SetActiveCamera(cam);
-			getCurrentRenderer()->Render();
+			//getCurrentRenderer()->Render();
 		}
 	}
 

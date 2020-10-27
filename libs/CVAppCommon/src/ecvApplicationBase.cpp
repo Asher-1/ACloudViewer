@@ -94,7 +94,7 @@ ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, bool isCommandLin
 
 #ifdef Q_OS_WIN
 	//enables automatic scaling based on the monitor's pixel density
-	//setAttribute(Qt::AA_EnableHighDpiScaling);
+	setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 		
 #ifdef Q_OS_MAC
