@@ -137,7 +137,7 @@ void VtkWidgetPrivate::init()
 	layoutRenderers();
 }
 
-VtkWidget::VtkWidget(QWidget* parent) : QVTKWidget(parent)
+VtkWidget::VtkWidget(QWidget* parent) : QVTKOpenGLNativeWidget(parent)
 {
 	vtkObject::GlobalWarningDisplayOff();
 	d_ptr = new VtkWidgetPrivate(this);
@@ -201,7 +201,7 @@ void VtkWidget::createActorFromVTKDataSet(
 				mapper->ScalarVisibilityOn();
 			}
 		}
-		mapper->ImmediateModeRenderingOff();
+		//mapper->ImmediateModeRenderingOff();
 
 		actor->SetNumberOfCloudPoints(int(std::max<vtkIdType>(1, data->GetNumberOfPoints() / 10)));
 		actor->GetProperty()->SetInterpolationToFlat();

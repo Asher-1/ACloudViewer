@@ -26,14 +26,14 @@
 #endif
 
 class vtkImageData;
-class QVTKWidget;
+class QVTKOpenGLNativeWidget;
 class vtkPolyDataAlgorithm;
 namespace VtkUtils
 {
 
 QImage QPCL_ENGINE_LIB_API vtkImageDataToQImage(vtkImageData* imageData);
 void QPCL_ENGINE_LIB_API qImageToVtkImage(QImage& img, vtkImageData* imageData);
-QImage QPCL_ENGINE_LIB_API vtkWidgetSnapshot(QVTKWidget* widget);
+QImage QPCL_ENGINE_LIB_API vtkWidgetSnapshot(QVTKOpenGLNativeWidget* widget);
 
 template <class T>
 void vtkInitOnce(T** obj)

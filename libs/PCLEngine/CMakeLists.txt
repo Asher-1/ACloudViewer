@@ -1,15 +1,8 @@
-cmake_minimum_required( VERSION 3.10 )
+cmake_minimum_required( VERSION 3.18 )
 
 # PCL ENGINE BACKEND
 if (USE_PCL_BACKEND)
 	# find package
-	link_directories( ${PCL_LIBRARY_DIRS} )
-	link_directories( ${VTK_LIBRARIES_DIRS} )
-
-	# TBB
-	if (CVCORELIB_USE_TBB)
-		include_directories( ${TBB_INCLUDE_DIRS})
-	endif()
 
 	# PCL ENGINE
 	project( QPCL_ENGINE_LIB )
@@ -125,6 +118,27 @@ if (USE_PCL_BACKEND)
 				${Widget_list}
 	)
 
+	target_include_directories( ${PROJECT_NAME}
+		PUBLIC
+			${PCL_INCLUDE_DIRS}
+	)
+
+	if( CMAKE_VERSION VERSION_LESS 3.13 )
+		link_directories( ${PCL_LIBRARY_DIRS} )
+		link_directories( ${VTK_LIBRARIES_DIRS} )
+	else()
+		target_link_directories( ${PROJECT_NAME}
+			PUBLIC
+				${PCL_LIBRARY_DIRS}
+				${VTK_LIBRARIES_DIRS}
+		)
+	endif()
+
+	# TBB
+	if (CVCORELIB_USE_TBB)
+		include_directories( ${TBB_INCLUDE_DIRS})
+	endif()
+
 	#define the PCL_VER_1_6_OR_OLDER preprocessor to compile qPCL with older versions of PCL
 	if ( PCL_VERSION VERSION_LESS  1.7 ) # VERSION_GREATER Works just like "greater or equal"
 		target_compile_definitions( ${PROJECT_NAME} PUBLIC PCL_VER_1_6_OR_OLDER )
@@ -147,6 +161,7 @@ if (USE_PCL_BACKEND)
 							Qt5::Gui 
 							Qt5::Widgets
 							Qt5::PrintSupport
+							Qt5::OpenGL
 							${PCL_LIBRARIES} 
 							${VTK_LIBRARIES} )
 

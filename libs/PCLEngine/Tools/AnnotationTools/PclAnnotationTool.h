@@ -29,6 +29,8 @@
 // QT
 #include <QObject>
 
+#include <memory>
+
 namespace PclUtils
 {
 	class PCLVis;
@@ -149,7 +151,7 @@ private:
 	std::vector<int> m_last_selected_slice;
 
 	// manage annotations
-	boost::shared_ptr<Annotaions> m_annoManager;
+	std::shared_ptr<Annotaions> m_annoManager;
 
 	// for pick
 	Annotation *m_currPickedAnnotation;

@@ -46,7 +46,10 @@
 #include <vtkTextProperty.h>
 #include <vtkDataSetMapper.h>
 #include <vtkUnstructuredGrid.h>
+
+#if VTK_RENDERING_BACKEND_OPENGL_VERSION < 2
 #include <pcl/visualization/vtk/vtkVertexBufferObjectMapper.h>
+#endif
 
 #include <VTKExtensions/Views/vtkScalarBarActorCustom.h>
 #include <VTKExtensions/Utility/vtkDiscretizableColorTransferFunctionCustom.h>

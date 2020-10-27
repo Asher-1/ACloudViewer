@@ -134,7 +134,7 @@ int MinimumCutSegmentation::compute()
 
 	if (m_colored) // XYZRGB
 	{
-		PointRGB foregroundPoint(255, 255, 255);
+		PointRGB foregroundPoint(0.0f, 0.0f, 0.0f, 255, 255, 255);
 		foregroundPoint.x = m_cx;
 		foregroundPoint.y = m_cy;
 		foregroundPoint.z = m_cz;
