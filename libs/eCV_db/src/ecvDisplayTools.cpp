@@ -91,7 +91,7 @@ static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 //Unique GL window ID
 static int s_GlWindowNumber = 0;
 
-void ecvDisplayTools::Init(ecvDisplayTools* displayTools, QMainWindow* win)
+void ecvDisplayTools::Init(ecvDisplayTools* displayTools, QMainWindow* win, bool stereoMode)
 {
 	//should be called only once!
 	if (s_tools.instance)
@@ -108,7 +108,7 @@ void ecvDisplayTools::Init(ecvDisplayTools* displayTools, QMainWindow* win)
 
 	SetMainWindow(win);
 	// register current instance visualizer only once
-	s_tools.instance->registerVisualizer(win);
+	s_tools.instance->registerVisualizer(win, stereoMode);
 
 	s_tools.instance->m_uniqueID = ++s_GlWindowNumber; //GL window unique ID
 	s_tools.instance->m_lastMousePos = QPoint(-1, -1);

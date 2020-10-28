@@ -678,22 +678,6 @@ namespace PclUtils
 					addPointCloud(cloud_rgb, viewID, viewPort);
 				}
 			}
-
-#if 0
-			CVTools::TimeStart();
-			pcl::visualization::PointCloudGeometryHandlerXYZ<PCLCloud>::Ptr
-				geometry_handler(new pcl::visualization::PointCloudGeometryHandlerXYZ<PCLCloud>(smCloud));
-			pcl::visualization::PointCloudColorHandlerRGBField<PCLCloud>::Ptr color_handler(new pcl::visualization::PointCloudColorHandlerRGBField<PCLCloud>(smCloud));
-			
-			if (contains(viewID))
-			{
-				removePointClouds(viewID, viewPort);
-			}
-			addPointCloud(smCloud, geometry_handler, color_handler,
-				Eigen::Vector4f::Zero(), Eigen::Quaternionf::Identity(),
-				viewID, viewPort);
-			CVLog::Print(QString("addPointCloud: finish cost %1 s").arg(CVTools::TimeOff()));
-#endif
 		}
 		else
 		{
@@ -708,23 +692,7 @@ namespace PclUtils
 					addPointCloud<pcl::PointXYZ>(cloud_xyz, single_color, viewID, viewPort);
 				}
 			}
-#if 0
-			ecvColor::Rgbub col = CONTEXT.pointsDefaultCol;
-			pcl::visualization::PointCloudGeometryHandlerXYZ<PCLCloud>::Ptr
-				geometry_handler(new pcl::visualization::PointCloudGeometryHandlerXYZ<PCLCloud>(smCloud));
-			pcl::visualization::PointCloudColorHandlerCustom<PCLCloud>::Ptr
-				color_handler(new pcl::visualization::PointCloudColorHandlerCustom<PCLCloud>(smCloud, col.r, col.g, col.b));
-			if (contains(viewID))
-			{
-				removePointClouds(viewID, viewPort);
-			}
-
-			addPointCloud(smCloud, geometry_handler, color_handler,
-				Eigen::Vector4f::Zero(), Eigen::Quaternionf::Identity(),
-				viewID, viewPort);
-#endif
 		}
-
 	}
 
 	void PCLVis::updateNormals(CC_DRAW_CONTEXT& CONTEXT, PCLCloud::Ptr smCloud)
@@ -1721,7 +1689,7 @@ namespace PclUtils
 		{
 			cam->SetParallelProjection(true);
 			getCurrentRenderer()->SetActiveCamera(cam);
-			//getCurrentRenderer()->Render();
+			getRenderWindow()->Render();
 		}
 	}
 
@@ -1733,7 +1701,7 @@ namespace PclUtils
 		{
 			cam->SetParallelProjection(false);
 			getCurrentRenderer()->SetActiveCamera(cam);
-			getCurrentRenderer()->Render();
+			getRenderWindow()->Render();
 		}
 	}
 

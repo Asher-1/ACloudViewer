@@ -192,7 +192,7 @@ void VtkWidgetPrivate::init()
 //Max click duration for enabling picking mode (in ms)
 //static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 static const int CC_MAX_PICKING_CLICK_DURATION_MS = 350;
-QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* tools)
+QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* tools, bool stereoMode)
 	: QVTKOpenGLNativeWidget(parentWindow)
 	, m_axesWidget(nullptr)
 	, m_logoWidget(nullptr)
@@ -211,9 +211,9 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* t
 	this->SetRenderWindow(window.Get());
 	window->AddRenderer(renderer);
 
-	QSurfaceFormat surfaceFormat = QSurfaceFormat();
-	surfaceFormat.setSamples(4);
-	setFormat(surfaceFormat);
+	QSurfaceFormat fmt = QVTKOpenGLNativeWidget::defaultFormat();
+	fmt.setStereo(stereoMode);
+	setFormat(fmt);
 
 	this->setEnableHiDPI(true);
 

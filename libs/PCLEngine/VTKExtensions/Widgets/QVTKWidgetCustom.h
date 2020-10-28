@@ -71,7 +71,7 @@ class QVTKWidgetCustom : public QVTKOpenGLNativeWidget
 
 public:
 
-	explicit QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* tools);
+	explicit QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* tools, bool stereoMode = false);
 	virtual ~QVTKWidgetCustom();
 
 	inline vtkRenderer* getVtkRender() { return this->m_render; }
@@ -97,6 +97,8 @@ public:
 
 	void transformCameraView(const double * viewMat);
 	void transformCameraProjection(const double * projMat);
+
+	inline void updateScene() { this->GetRenderWindow()->Render(); }
 
 protected:
 	void setBounds(double* bounds);
@@ -125,17 +127,17 @@ public:
 
 protected:
 	//events handling
-	bool event(QEvent* evt) override;
-	void wheelEvent(QWheelEvent* event) override;
-	void keyPressEvent(QKeyEvent *event) override;
-	void mouseMoveEvent(QMouseEvent* event) override;
-	void mousePressEvent(QMouseEvent* event) override;
-	void mouseReleaseEvent(QMouseEvent* event) override;
-	void mouseDoubleClickEvent(QMouseEvent* event) override;
-	void updateActivateditems(int x, int y, int dx, int dy, bool updatePosition = false);
-
+	virtual bool event(QEvent* evt) override;
+	virtual void wheelEvent(QWheelEvent* event) override;
+	virtual void keyPressEvent(QKeyEvent *event) override;
+	virtual void mouseMoveEvent(QMouseEvent* event) override;
+	virtual void mousePressEvent(QMouseEvent* event) override;
+	virtual void mouseReleaseEvent(QMouseEvent* event) override;
+	virtual void mouseDoubleClickEvent(QMouseEvent* event) override;
 	virtual void dragEnterEvent(QDragEnterEvent* event) override;
 	virtual void dropEvent(QDropEvent* event) override;
+
+	virtual void updateActivateditems(int x, int y, int dx, int dy, bool updatePosition = false);
 
 protected:
 	bool m_unclosable = true;

@@ -14,7 +14,7 @@ using pcl::visualization::PointCloudColorHandler;
 
 template <typename PointT>
 class PclPointCloudColorHandlerLUT : public PointCloudColorHandler<PointT> {
-
+    
 public:
     typedef pcl::PointCloud<PointT> PointCloud;
     typedef typename PointCloud::Ptr PointCloudPtr;

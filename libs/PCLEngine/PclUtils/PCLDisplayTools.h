@@ -136,6 +136,8 @@ public:
 	}
 	inline virtual void updateCamera() override { m_visualizer3D->updateCamera(); }
 
+	inline virtual void updateScene() override { getQVtkWidget()->updateScene(); }
+
 	inline virtual void setAutoUpateCameraPos(bool state) override
 	{ 
 		if (this->m_visualizer3D)
@@ -360,7 +362,7 @@ protected:
 
 	PclUtils::PCLVisPtr m_visualizer3D = nullptr;
 
-	virtual void registerVisualizer(QMainWindow * widget) override;
+	virtual void registerVisualizer(QMainWindow * widget, bool stereoMode = false) override;
 };
 
 #endif // QPCL_DISPLAY_TOOLS_HEADER

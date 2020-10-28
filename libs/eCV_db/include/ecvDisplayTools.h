@@ -52,7 +52,7 @@ public:
 	/**
 	\param mainWidget MainWindow widget (optional)
 	**/
-	static void Init(ecvDisplayTools* displayTools, QMainWindow* win);
+	static void Init(ecvDisplayTools* displayTools, QMainWindow* win, bool stereoMode = false);
 	static ecvDisplayTools* TheInstance();
 
 	static void ReleaseInstance();
@@ -443,8 +443,6 @@ public: // main interface
 	inline static void TransformCameraProjection(const ccGLMatrixd & projMat) { TheInstance()->transformCameraProjection(projMat); }
 	inline virtual void transformCameraProjection(const ccGLMatrixd & projMat) { /* do nothing */ };
 
-	inline static void UpdateScreen() { GetCurrentScreen()->update(); };
-	inline static void Update() { UpdateCamera(); UpdateScreen(); };
 	static inline int GetDevicePixelRatio() { 
 		//return TheInstance()->getDevicePixelRatio(); 
 		return GetMainWindow()->devicePixelRatio();
@@ -669,12 +667,17 @@ public: // visualization matrix transformation
 	**/
 	static void ResizeGL(int w, int h);
 	static void UpdateScreenSize();
-	inline static void ResetCamera(const ccBBox * bbox)  { TheInstance()->resetCamera(bbox); }
+	inline static void Update() { GetCurrentScreen()->update(); UpdateCamera(); };
+	inline static void UpdateScreen() { GetCurrentScreen()->update(); UpdateScene(); };
+	inline static void ResetCamera(const ccBBox * bbox)  { TheInstance()->resetCamera(bbox);  UpdateScreen(); }
 	inline virtual void resetCamera(const ccBBox * bbox) { /* do nothing */ }
-	inline static void ResetCamera() { TheInstance()->resetCamera(); }
+	inline static void ResetCamera() { TheInstance()->resetCamera(); UpdateScreen(); }
 	inline virtual void resetCamera() { /* do nothing */ }
-	inline static void UpdateCamera() { TheInstance()->updateCamera(); }
+	inline static void UpdateCamera() { TheInstance()->updateCamera(); UpdateScreen(); }
 	inline virtual void updateCamera() { /* do nothing */ }
+
+	inline static void UpdateScene() { TheInstance()->updateScene(); }
+	inline virtual void updateScene() { /* do nothing */ }
 
 	inline static void SetAutoUpateCameraPos(bool state) { TheInstance()->setAutoUpateCameraPos(state); }
 	inline virtual void setAutoUpateCameraPos(bool state) { /* do nothing */ }
@@ -1046,7 +1049,7 @@ public: // visualization matrix transformation
 protected:
 	ecvDisplayTools() = default;
 	//! register visualizer callback function
-	virtual void registerVisualizer(QMainWindow * win) = 0;
+	virtual void registerVisualizer(QMainWindow * win, bool stereoMode = false) = 0;
 
 	QWidget* m_currentScreen;
 	QWidget* m_mainScreen;

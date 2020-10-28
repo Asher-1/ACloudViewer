@@ -56,7 +56,9 @@ void ecvApplicationBase::init(bool noOpenGLSupport)
 			format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
 			format.setStencilBufferSize(0);
 
+#ifdef CV_GL_WINDOW_USE_QWINDOW
 			format.setStereo(true);
+#endif
 
 #ifdef Q_OS_MAC
 			format.setVersion(2, 1);	// must be 2.1 - see ccGLWindow::functions()
