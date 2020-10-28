@@ -292,7 +292,7 @@ MainWindow::MainWindow(QWidget *parent)
 		// orthogonal projection mode (default)
 		{
 			m_ui->actionOrthogonalProjection->trigger();
-			CVLog::Print("Perspective off!");
+			ecvConsole::Print("Perspective off!");
 		}
 	}
 
@@ -714,7 +714,8 @@ void MainWindow::initial() {
 		m_mdiArea->installEventFilter(this);
 	}
 
-	ecvDisplayTools::Init(new PCLDisplayTools(), this);
+	bool stereoMode = QSurfaceFormat::defaultFormat().stereo();
+	ecvDisplayTools::Init(new PCLDisplayTools(), this, stereoMode);
 
 	initConsole();
 

@@ -49,11 +49,11 @@
 
 #include <vtkGenericOpenGLRenderWindow.h>
 
-void PCLDisplayTools::registerVisualizer(QMainWindow * win)
+void PCLDisplayTools::registerVisualizer(QMainWindow * win, bool stereoMode)
 {
-	this->m_vtkWidget = new QVTKWidgetCustom(win, this);
-	this->m_mainScreen = getQVtkWidget();
-	this->m_currentScreen = getQVtkWidget();
+	this->m_vtkWidget = new QVTKWidgetCustom(win, this, stereoMode);
+	SetMainScreen(this->m_vtkWidget);
+	SetCurrentScreen(this->m_vtkWidget);
 
 	if (!m_visualizer3D)
 	{
