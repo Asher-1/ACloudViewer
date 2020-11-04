@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewControlWithEditing.h"
+#include "visualization/visualizer/ViewControlWithEditing.h"
 
 namespace cloudViewer {
 namespace visualization {

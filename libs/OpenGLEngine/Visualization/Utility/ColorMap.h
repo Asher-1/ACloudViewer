@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "qGL.h"
+
 #include <Eigen/Core>
 #include <memory>
 

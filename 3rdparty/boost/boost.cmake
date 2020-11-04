@@ -16,7 +16,7 @@ ExternalProject_Add(
     ext_boost
     PREFIX boost
     GIT_REPOSITORY https://github.com/boostorg/boost.git
-    GIT_TAG boost-1.73.0
+    GIT_TAG boost-1.74.0
     GIT_SUBMODULES tools/boostdep libs/predef # Only need a subset of boost
     GIT_SHALLOW ON                            # git clone --depth 1
     GIT_SUBMODULES_RECURSE OFF

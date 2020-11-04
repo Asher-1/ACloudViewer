@@ -23,7 +23,7 @@
 #include <ConjugateGradient.h>
 #include <Delaunay2dMesh.h>
 #include <DistanceComputationTools.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <SimpleMesh.h>
 
 //System

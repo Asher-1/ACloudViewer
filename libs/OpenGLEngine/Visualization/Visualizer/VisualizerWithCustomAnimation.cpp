@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "VisualizerWithCustomAnimation.h"
-#include "ViewControlWithCustomAnimation.h"
-#include "../../Camera/PinholeCameraTrajectory.h"
+#include "visualization/visualizer/VisualizerWithCustomAnimation.h"
 
 #include <thread>
+
+#include "camera/PinholeCameraTrajectory.h"
 #include <Console.h>
 #include <FileSystem.h>
 #include <IJsonConvertibleIO.h>
-
+#include "visualization/visualizer/ViewControlWithCustomAnimation.h"
 
 namespace cloudViewer {
 namespace visualization {

@@ -26,17 +26,17 @@
 
 #pragma once
 
-#include "ImageMaskShader.h"
-#include "ImageShader.h"
-#include "NormalShader.h"
-#include "PhongShader.h"
-#include "PickingShader.h"
-#include "RGBDImageShader.h"
-#include "Simple2DShader.h"
-#include "SimpleBlackShader.h"
-#include "SimpleShader.h"
-#include "TexturePhongShader.h"
-#include "TextureSimpleShader.h"
+#include "visualization/shader/ImageMaskShader.h"
+#include "visualization/shader/ImageShader.h"
+#include "visualization/shader/NormalShader.h"
+#include "visualization/shader/PhongShader.h"
+#include "visualization/shader/PickingShader.h"
+#include "visualization/shader/RGBDImageShader.h"
+#include "visualization/shader/Simple2DShader.h"
+#include "visualization/shader/SimpleBlackShader.h"
+#include "visualization/shader/SimpleShader.h"
+#include "visualization/shader/TexturePhongShader.h"
+#include "visualization/shader/TextureSimpleShader.h"
 
 class ccHObject;
 namespace cloudViewer {

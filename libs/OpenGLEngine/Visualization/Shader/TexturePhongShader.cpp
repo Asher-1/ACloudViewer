@@ -24,13 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TexturePhongShader.h"
+#include "visualization/shader/TexturePhongShader.h"
+
 #include <Console.h>
 #include <Image.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-#include "Shader.h"
-#include "../Utility/ColorMap.h"
+#include "visualization/shader/Shader.h"
+#include "visualization/utility/ColorMap.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -39,8 +40,8 @@ namespace glsl {
 using namespace CVLib;
 
 bool TexturePhongShader::Compile() {
-    if (CompileShaders(TexturePhongVertexShader, NULL,
-                       TexturePhongFragmentShader) == false) {
+    if (!CompileShaders(TexturePhongVertexShader, NULL,
+                       TexturePhongFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -219,10 +220,10 @@ void TexturePhongShader::SetLighting(const ViewControl &view,
                 option.light_ambient_color_.cast<GLfloat>();
         light_ambient_data_(3) = 1.0f;
     } else {
-        light_diffuse_power_data_ = GLHelper::GLVector4f::Zero();
-        light_specular_power_data_ = GLHelper::GLVector4f::Zero();
-        light_specular_shininess_data_ = GLHelper::GLVector4f::Ones();
-        light_ambient_data_ = GLHelper::GLVector4f(1.0f, 1.0f, 1.0f, 1.0f);
+        light_diffuse_power_data_ = gl_util::GLVector4f::Zero();
+        light_specular_power_data_ = gl_util::GLVector4f::Zero();
+        light_specular_shininess_data_ = gl_util::GLVector4f::Ones();
+        light_ambient_data_ = gl_util::GLVector4f(1.0f, 1.0f, 1.0f, 1.0f);
     }
 }
 
@@ -272,7 +273,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
     if (mesh.hasTriNormals() == false ||
         mesh.getAssociatedCloud()->hasNormals() == false) {
         PrintShaderWarning("Binding failed because mesh has no normals.");
-        PrintShaderWarning("Call ComputeVertexNormals() before binding.");
+        PrintShaderWarning("Call computeVertexNormals() before binding.");
         return false;
     }
     std::vector<std::vector<Eigen::Vector3f>> tmp_points;
@@ -319,17 +320,17 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
         glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffers_[mi]);
 
         GLenum format, type;
-        auto it = GLHelper::GetTextureFormatMap().find(
+        auto it = gl_util::GetTextureFormatMap().find(
                 mesh.textures_[mi].num_of_channels_);
-        if (it == GLHelper::GetTextureFormatMap().end()) {
+        if (it == gl_util::GetTextureFormatMap().end()) {
             utility::LogWarning("Unknown texture format, abort!");
             return false;
         }
         format = it->second;
 
-        it = GLHelper::GetTextureTypeMap().find(
+        it = gl_util::GetTextureTypeMap().find(
                 mesh.textures_[mi].bytes_per_channel_);
-        if (it == GLHelper::GetTextureTypeMap().end()) {
+        if (it == gl_util::GetTextureTypeMap().end()) {
             utility::LogWarning("Unknown texture type, abort!");
             return false;
         }

@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PickingShader.h"
+#include "visualization/shader/PickingShader.h"
 
 #include <ecvPointCloud.h>
-#include "Shader.h"
-#include "../Utility/ColorMap.h"
-#include "../Utility/GLHelper.h"
+#include "visualization/shader/Shader.h"
+#include "visualization/utility/ColorMap.h"
+#include "visualization/utility/GLHelper.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -67,7 +67,7 @@ bool PickingShader::BindGeometry(const ccHObject &geometry,
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
     std::vector<float> indices;
-    if (PrepareBinding(geometry, option, view, points, indices) == false) {
+    if (!PrepareBinding(geometry, option, view, points, indices)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -89,7 +89,7 @@ bool PickingShader::BindGeometry(const ccHObject &geometry,
 bool PickingShader::RenderGeometry(const ccHObject &geometry,
                                    const RenderOption &option,
                                    const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
@@ -141,7 +141,7 @@ bool PickingShaderForPointCloud::PrepareBinding(
     }
     const ccPointCloud &pointcloud =
             (const ccPointCloud &)geometry;
-    if (pointcloud.hasPoints() == false) {
+    if (!pointcloud.hasPoints()) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }

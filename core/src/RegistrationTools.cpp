@@ -29,7 +29,7 @@
 #include <ManualSegmentationTools.h>
 #include <NormalDistribution.h>
 #include <ParallelSort.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <ReferenceCloud.h>
 #include <ScalarFieldTools.h>
 

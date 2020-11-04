@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "VisualizerWithKeyCallback.h"
+#include "visualization/visualizer/VisualizerWithKeyCallback.h"
 #include <Console.h>
 
 namespace cloudViewer {

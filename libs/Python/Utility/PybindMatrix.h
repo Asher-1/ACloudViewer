@@ -6,7 +6,7 @@
 
 #include "Utility/Matrix.h"
 
-#include "cloudViewer_pybind/cloudViewer_pybind.h"
+#include "pybind/cloudViewer_pybind.h"
 
 namespace py = pybind11;
 using namespace cloudViewer;

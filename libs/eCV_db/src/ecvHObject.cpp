@@ -261,7 +261,7 @@ void ccHObject::ResizeAndPaintUniformColor(
 	Eigen::Vector3d clipped_color = color;
 	if (color.minCoeff() < 0 || color.maxCoeff() > 1) {
 		CVLib::utility::LogWarning(
-			"[ccHObject::ResizeAndPaintUniformColor] invalid color in PaintUniformColor, clipping to [0, 1]");
+			"[ccHObject::ResizeAndPaintUniformColor] invalid color in paintUniformColor, clipping to [0, 1]");
 		clipped_color = clipped_color.array()
 			.max(Eigen::Vector3d(0, 0, 0).array())
 			.matrix();

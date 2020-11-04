@@ -22,7 +22,7 @@
 #include <GenericIndexedMesh.h>
 #include <GenericProgressCallback.h>
 #include <GenericTriangle.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <ScalarField.h>
 
 //system

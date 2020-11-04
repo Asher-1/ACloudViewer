@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "SimpleShader.h"
+#include "visualization/shader/SimpleShader.h"
 
 #include <GenericIndexedMesh.h>
 
@@ -40,8 +40,8 @@
 #include <ecvPolyline.h>
 #include <ecvTetraMesh.h>
 #include <ecvPointCloud.h>
-#include "Shader.h"
-#include "../Utility/ColorMap.h"
+#include "visualization/shader/Shader.h"
+#include "visualization/utility/ColorMap.h"
 
 // SYSTEM
 #include <unordered_set>
@@ -632,7 +632,7 @@ bool SimpleShader::BindGeometry(const ccHObject &geometry,
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3f> colors;
-    if (PrepareBinding(geometry, option, view, points, colors) == false) {
+    if (!PrepareBinding(geometry, option, view, points, colors)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -708,7 +708,7 @@ bool SimpleShaderForPointCloud::PrepareBinding(
     }
     const ccPointCloud &pointcloud =
             (const ccPointCloud &)geometry;
-    if (pointcloud.hasPoints() == false) {
+    if (!pointcloud.hasPoints()) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
@@ -777,7 +777,7 @@ bool SimpleShaderForLineSet::PrepareBinding(
         return false;
     }
     const geometry::LineSet &lineset = (const geometry::LineSet &)geometry;
-    if (lineset.hasLines() == false) {
+    if (!lineset.hasLines()) {
         PrintShaderWarning("Binding failed with empty geometry::LineSet.");
         return false;
     }
@@ -978,7 +978,7 @@ bool SimpleShaderForTetraMesh::PrepareBinding(
     }
     const geometry::TetraMesh &tetramesh =
             (const geometry::TetraMesh &)geometry;
-    if (tetramesh.hasTetras() == false) {
+    if (!tetramesh.hasTetras()) {
         PrintShaderWarning("Binding failed with empty geometry::TetraMesh.");
         return false;
     }
@@ -1064,7 +1064,7 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareRendering(
         const ViewControl &view) {
     if (!geometry.isKindOf(CV_TYPES::BBOX)) {
         PrintShaderWarning(
-                "Rendering type is not geometry::AxisAlignedBoundingBox.");
+                "Rendering type is not ecvOrientedBBox.");
         return false;
     }
     glLineWidth(GLfloat(option.line_width_));
@@ -1141,7 +1141,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
         return false;
     }
     const ccMesh &mesh = (const ccMesh &)geometry;
-    if (mesh.hasTriangles() == false) {
+    if (!mesh.hasTriangles()) {
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
@@ -1219,7 +1219,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
     }
     const geometry::VoxelGrid &voxel_grid =
             (const geometry::VoxelGrid &)geometry;
-    if (voxel_grid.HasVoxels() == false) {
+    if (!voxel_grid.HasVoxels()) {
         PrintShaderWarning("Binding failed with empty voxel grid.");
         return false;
     }
@@ -1307,7 +1307,7 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
     }
     const geometry::VoxelGrid &voxel_grid =
             (const geometry::VoxelGrid &)geometry;
-    if (voxel_grid.HasVoxels() == false) {
+    if (!voxel_grid.HasVoxels()) {
         PrintShaderWarning("Binding failed with empty voxel grid.");
         return false;
     }

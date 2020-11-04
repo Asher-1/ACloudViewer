@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PhongShader.h"
+#include "visualization/shader/PhongShader.h"
 #include <ecvPointCloud.h>
 #include <ecvMesh.h>
-#include "Shader.h"
-#include "../Utility/ColorMap.h"
+#include "visualization/shader/Shader.h"
+#include "visualization/utility/ColorMap.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -36,7 +36,7 @@ namespace visualization {
 namespace glsl {
 
 bool PhongShader::Compile() {
-    if (CompileShaders(PhongVertexShader, NULL, PhongFragmentShader) == false) {
+    if (!CompileShaders(PhongVertexShader, NULL, PhongFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -105,7 +105,7 @@ bool PhongShader::BindGeometry(const ccHObject &geometry,
 bool PhongShader::RenderGeometry(const ccHObject &geometry,
                                  const RenderOption &option,
                                  const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
@@ -176,10 +176,10 @@ void PhongShader::SetLighting(const ViewControl &view,
                 option.light_ambient_color_.cast<GLfloat>();
         light_ambient_data_(3) = 1.0f;
     } else {
-        light_diffuse_power_data_ = GLHelper::GLVector4f::Zero();
-        light_specular_power_data_ = GLHelper::GLVector4f::Zero();
-        light_specular_shininess_data_ = GLHelper::GLVector4f::Ones();
-        light_ambient_data_ = GLHelper::GLVector4f(1.0f, 1.0f, 1.0f, 1.0f);
+        light_diffuse_power_data_ = gl_util::GLVector4f::Zero();
+        light_specular_power_data_ = gl_util::GLVector4f::Zero();
+        light_specular_shininess_data_ = gl_util::GLVector4f::Ones();
+        light_ambient_data_ = gl_util::GLVector4f(1.0f, 1.0f, 1.0f, 1.0f);
     }
 }
 
@@ -211,11 +211,11 @@ bool PhongShaderForPointCloud::PrepareBinding(
     }
     const ccPointCloud &pointcloud =
             (const ccPointCloud &)geometry;
-    if (pointcloud.hasPoints() == false) {
+    if (!pointcloud.hasPoints()) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
-    if (pointcloud.hasNormals() == false) {
+    if (!pointcloud.hasNormals()) {
         PrintShaderWarning("Binding failed with pointcloud with no normals.");
         return false;
     }
@@ -302,14 +302,13 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
         return false;
     }
     const ccMesh &mesh = (const ccMesh &)geometry;
-    if (mesh.hasTriangles() == false) {
+    if (!mesh.hasTriangles()) {
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    if (mesh.hasTriNormals() == false ||
-        mesh.hasNormals() == false) {
+    if (!mesh.hasTriNormals() || !mesh.hasNormals()) {
         PrintShaderWarning("Binding failed because mesh has no normals.");
-        PrintShaderWarning("Call ComputeVertexNormals() before binding.");
+        PrintShaderWarning("Call computeVertexNormals() before binding.");
         return false;
     }
     const ColorMap &global_color_map = *GetGlobalColorMap();

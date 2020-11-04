@@ -42,7 +42,7 @@
 // CV_CORE_LIB
 #include <Jacobi.h>
 #include <ParallelSort.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <Delaunay2dMesh.h>
 #include <NormalDistribution.h>
 #include <ecvVolumeCalcTool.h>

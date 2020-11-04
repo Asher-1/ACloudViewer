@@ -165,18 +165,21 @@ public:
 
 	Eigen::Vector3d getVertice(size_t index) const;
 	void setVertice(size_t index, const Eigen::Vector3d& vertice);
+	void addVertice(const Eigen::Vector3d& vertice);
 	std::vector<Eigen::Vector3d> getEigenVertices() const;
 	void addEigenVertices(const std::vector<Eigen::Vector3d>& vertices);
 	void setEigenVertices(const std::vector<Eigen::Vector3d>& vertices);
 
 	Eigen::Vector3d getVertexNormal(size_t index) const;
 	void setVertexNormal(size_t index, const Eigen::Vector3d& normal);
+	void addVertexNormal(const Eigen::Vector3d& normal);
 	std::vector<Eigen::Vector3d> getVertexNormals() const;
 	void addVertexNormals(const std::vector<Eigen::Vector3d>& normals);
 	void setVertexNormals(const std::vector<Eigen::Vector3d>& normals);
 
 	Eigen::Vector3d getVertexColor(size_t index) const;
 	void setVertexColor(size_t index, const Eigen::Vector3d& color);
+	void addVertexColor(const Eigen::Vector3d& color);
 	std::vector<Eigen::Vector3d> getVertexColors() const;
 	ColorsTableType* getVertexColorsPtr();
 	void addVertexColors(const std::vector<Eigen::Vector3d>& colors);
@@ -505,6 +508,85 @@ public: // some cloudViewer interface
 
 	/// List of uv coordinates per triangle.
 	std::vector<Eigen::Vector2d> triangle_uvs_;
+
+	struct Material {
+		struct MaterialParameter {
+			float f4[4] = { 0 };
+
+			MaterialParameter() {
+				f4[0] = 0;
+				f4[1] = 0;
+				f4[2] = 0;
+				f4[3] = 0;
+			}
+
+			MaterialParameter(const float v1,
+				const float v2,
+				const float v3,
+				const float v4) {
+				f4[0] = v1;
+				f4[1] = v2;
+				f4[2] = v3;
+				f4[3] = v4;
+			}
+
+			MaterialParameter(const float v1, const float v2, const float v3) {
+				f4[0] = v1;
+				f4[1] = v2;
+				f4[2] = v3;
+				f4[3] = 1;
+			}
+
+			MaterialParameter(const float v1, const float v2) {
+				f4[0] = v1;
+				f4[1] = v2;
+				f4[2] = 0;
+				f4[3] = 0;
+			}
+
+			explicit MaterialParameter(const float v1) {
+				f4[0] = v1;
+				f4[1] = 0;
+				f4[2] = 0;
+				f4[3] = 0;
+			}
+
+			static MaterialParameter CreateRGB(const float r,
+				const float g,
+				const float b) {
+				return { r, g, b, 1.f };
+			}
+
+			float r() const { return f4[0]; }
+			float g() const { return f4[1]; }
+			float b() const { return f4[2]; }
+			float a() const { return f4[3]; }
+		};
+
+		MaterialParameter baseColor;
+		float baseMetallic = 0.f;
+		float baseRoughness = 1.f;
+		float baseReflectance = 0.5f;
+		float baseClearCoat = 0.f;
+		float baseClearCoatRoughness = 0.f;
+		float baseAnisotropy = 0.f;
+
+		std::shared_ptr<cloudViewer::geometry::Image> albedo;
+		std::shared_ptr<cloudViewer::geometry::Image> normalMap;
+		std::shared_ptr<cloudViewer::geometry::Image> ambientOcclusion;
+		std::shared_ptr<cloudViewer::geometry::Image> metallic;
+		std::shared_ptr<cloudViewer::geometry::Image> roughness;
+		std::shared_ptr<cloudViewer::geometry::Image> reflectance;
+		std::shared_ptr<cloudViewer::geometry::Image> clearCoat;
+		std::shared_ptr<cloudViewer::geometry::Image> clearCoatRoughness;
+		std::shared_ptr<cloudViewer::geometry::Image> anisotropy;
+
+		std::unordered_map<std::string, MaterialParameter> floatParameters;
+		std::unordered_map<std::string, cloudViewer::geometry::Image> additionalMaps;
+	};
+
+	std::unordered_map<std::string, Material> materials_;
+
 	/// List of material ids.
 	std::vector<int> triangle_material_ids_;
 	/// Textures of the image.

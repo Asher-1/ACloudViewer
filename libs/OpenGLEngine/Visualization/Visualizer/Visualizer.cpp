@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualizer.h"
+#include "visualization/visualizer/Visualizer.h"
 
 #include <Console.h>
 #include <ecvBBox.h>

@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloudPicker.h"
+#include "visualization/utility/PointCloudPicker.h"
 
-#include <ecvBBox.h>
-#include <ecvOrientedBBox.h>
-#include <ecvPointCloud.h>
 #include <Console.h>
+#include <ecvBBox.h>
+#include <ecvPointCloud.h>
+#include <ecvOrientedBBox.h>
 
 namespace cloudViewer {
 namespace visualization {

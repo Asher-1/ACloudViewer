@@ -22,7 +22,7 @@
 #include <DgmOctreeReferenceCloud.h>
 #include <FastMarchingForPropagation.h>
 #include <LocalModel.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <Polyline.h>
 #include <ReferenceCloud.h>
 #include <SaitoSquaredDistanceTransform.h>

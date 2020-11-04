@@ -29,7 +29,7 @@
 #include <vector>
 #include <Eigen/Core>
 
-#include "ShaderWrapper.h"
+#include "visualization/shader/ShaderWrapper.h"
 
 class ccHObject;
 namespace cloudViewer {

@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TextureSimpleShader.h"
+#include "visualization/shader/TextureSimpleShader.h"
 
 #include <ecvMesh.h>
 #include <Console.h>
 
-#include "Shader.h"
-#include "../Utility/ColorMap.h"
+#include "visualization/shader/Shader.h"
+#include "visualization/utility/ColorMap.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -221,17 +221,17 @@ bool TextureSimpleShaderForTriangleMesh::PrepareBinding(
         glBindTexture(GL_TEXTURE_2D, texture_buffers_[mi]);
 
         GLenum format, type;
-        auto it = GLHelper::GetTextureFormatMap().find(
+        auto it = gl_util::GetTextureFormatMap().find(
                 mesh.textures_[mi].num_of_channels_);
-        if (it == GLHelper::GetTextureFormatMap().end()) {
+        if (it == gl_util::GetTextureFormatMap().end()) {
             utility::LogWarning("Unknown texture format, abort!");
             return false;
         }
         format = it->second;
 
-        it = GLHelper::GetTextureTypeMap().find(
+        it = gl_util::GetTextureTypeMap().find(
                 mesh.textures_[mi].bytes_per_channel_);
-        if (it == GLHelper::GetTextureTypeMap().end()) {
+        if (it == gl_util::GetTextureTypeMap().end()) {
             utility::LogWarning("Unknown texture type, abort!");
             return false;
         }

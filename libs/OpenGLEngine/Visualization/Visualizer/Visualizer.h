@@ -32,17 +32,18 @@
 #include <windows.h>
 #endif
 
-#include <GL/glew.h>
+#include <GL/glew.h> // Make sure glew.h is included before gl.h
 #include <GLFW/glfw3.h>
+
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
-#include "../Utility/ColorMap.h"
-#include "../Shader/GeometryRenderer.h"
-#include "RenderOption.h"
-#include "ViewControl.h"
+#include "visualization/shader/GeometryRenderer.h"
+#include "visualization/utility/ColorMap.h"
+#include "visualization/visualizer/RenderOption.h"
+#include "visualization/visualizer/ViewControl.h"
 
 class ccMesh;
 class ccHObject;

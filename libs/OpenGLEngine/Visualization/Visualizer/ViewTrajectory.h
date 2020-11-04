@@ -31,7 +31,7 @@
 #include <vector>
 
 #include <IJsonConvertible.h>
-#include "ViewParameters.h"
+#include "visualization/visualizer/ViewParameters.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -69,8 +69,8 @@ public:
         if (view_status_.empty()) {
             return 0;
         } else {
-            return is_loop_ ? (interval_ + 1) * view_status_.size()
-                            : (interval_ + 1) * (view_status_.size() - 1) + 1;
+            return is_loop_ ? (static_cast<size_t>(interval_) + 1) * view_status_.size()
+                            : (static_cast<size_t>(interval_) + 1) * (view_status_.size() - 1) + 1;
         }
     }
 

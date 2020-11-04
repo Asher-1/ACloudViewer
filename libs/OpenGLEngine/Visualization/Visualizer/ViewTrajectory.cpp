@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewTrajectory.h"
+#include "visualization/visualizer/ViewTrajectory.h"
 
 #include <json/json.h>
 #include <Eigen/Dense>

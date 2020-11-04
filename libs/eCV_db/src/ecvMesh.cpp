@@ -1802,6 +1802,12 @@ void ccMesh::clear()
 	
 	resize(0);
 	clearTriNormals();
+
+	adjacency_list_.clear();
+	triangle_uvs_.clear();
+	materials_.clear();
+	triangle_material_ids_.clear();
+	textures_.clear();
 }
 
 unsigned ccMesh::size() const
@@ -1895,12 +1901,30 @@ void ccMesh::setVertice(size_t index, const Eigen::Vector3d& vertice)
 	ccHObjectCaster::ToPointCloud(getAssociatedCloud())->setEigenPoint(index, vertice);
 }
 
+void ccMesh::addVertice(const Eigen::Vector3d& vertice)
+{
+	if (!getAssociatedCloud())
+	{
+		return;
+	}
+	ccHObjectCaster::ToPointCloud(getAssociatedCloud())->addEigenPoint(vertice);
+}
+
 void ccMesh::setVertexNormal(size_t index, const Eigen::Vector3d& normal)
 {
 	if (m_associatedCloud)
 	{
 		ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
 		cloud->setPointNormal(index, normal);
+	}
+}
+
+void ccMesh::addVertexNormal(const Eigen::Vector3d& normal)
+{
+	if (m_associatedCloud)
+	{
+		ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
+		cloud->addEigenNorm(normal);
 	}
 }
 
@@ -1948,6 +1972,14 @@ void ccMesh::setVertexColor(size_t index, const Eigen::Vector3d& color)
 	if (m_associatedCloud)
 	{
 		ccHObjectCaster::ToPointCloud(m_associatedCloud)->setPointColor(index, color);
+	}
+}
+
+void ccMesh::addVertexColor(const Eigen::Vector3d& color)
+{
+	if (m_associatedCloud)
+	{
+		ccHObjectCaster::ToPointCloud(m_associatedCloud)->addEigenColor(color);
 	}
 }
 

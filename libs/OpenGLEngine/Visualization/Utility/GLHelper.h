@@ -32,13 +32,16 @@
 #include <windows.h>
 #endif
 
+#include <GL/glew.h>  // Make sure glew.h is included before gl.h
+#include <GLFW/glfw3.h>
+
 #include <Eigen/Core>
 #include <string>
 #include <unordered_map>
 
 namespace cloudViewer {
 namespace visualization {
-namespace GLHelper {
+namespace gl_util {
 
 //static std::unordered_map<int, unsigned int> GetTextureFormatMap();
 //static std::unordered_map<int, unsigned int> GetTextureTypeMap();
@@ -78,6 +81,6 @@ Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
 
 int ColorCodeToPickIndex(const Eigen::Vector4i &color);
 
-}  // namespace GLHelper
+}  // namespace gl_util
 }  // namespace visualization
 }  // namespace cloudViewer

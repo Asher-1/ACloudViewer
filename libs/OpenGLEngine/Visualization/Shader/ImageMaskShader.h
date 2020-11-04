@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include "ShaderWrapper.h"
+#include "visualization/shader/ShaderWrapper.h"
 
 class ccHObject;
 namespace cloudViewer {
@@ -79,7 +79,7 @@ protected:
     GLuint mask_color_;
     GLuint mask_alpha_;
 
-    GLHelper::GLVector3f mask_color_data_;
+    gl_util::GLVector3f mask_color_data_;
     GLfloat mask_alpha_data_;
 };
 

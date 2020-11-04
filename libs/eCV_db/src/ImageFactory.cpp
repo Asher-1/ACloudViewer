@@ -27,10 +27,41 @@
 #include "Image.h"
 
 #include <Console.h>
+#include "camera/PinholeCameraIntrinsic.h"
 
 namespace cloudViewer {
 namespace geometry {
 	using namespace CVLib;
+
+std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
+    const camera::PinholeCameraIntrinsic& intrinsic) {
+    auto fimage = std::make_shared<Image>();
+    fimage->Prepare(intrinsic.width_, intrinsic.height_, 1, 4);
+    float ffl_inv[2] = {
+            1.0f / (float)intrinsic.GetFocalLength().first,
+            1.0f / (float)intrinsic.GetFocalLength().second,
+    };
+    float fpp[2] = {
+            (float)intrinsic.GetPrincipalPoint().first,
+            (float)intrinsic.GetPrincipalPoint().second,
+    };
+    std::vector<float> xx(intrinsic.width_);
+    std::vector<float> yy(intrinsic.height_);
+    for (int j = 0; j < intrinsic.width_; j++) {
+        xx[j] = (j - fpp[0]) * ffl_inv[0];
+    }
+    for (int i = 0; i < intrinsic.height_; i++) {
+        yy[i] = (i - fpp[1]) * ffl_inv[1];
+    }
+    for (int i = 0; i < intrinsic.height_; i++) {
+        float* fp =
+            (float*)(fimage->data_.data() + i * fimage->BytesPerLine());
+        for (int j = 0; j < intrinsic.width_; j++, fp++) {
+            *fp = sqrtf(xx[j] * xx[j] + yy[i] * yy[i] + 1.0f);
+        }
+    }
+    return fimage;
+}
 
 std::shared_ptr<Image> Image::CreateFloatImage(
         Image::ColorToIntensityConversionType type /* = WEIGHTED*/) const {

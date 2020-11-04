@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "SimpleBlackShader.h"
+#include "visualization/shader/SimpleBlackShader.h"
 
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-#include "Shader.h"
-#include "../Utility/ColorMap.h"
+#include "visualization/shader/Shader.h"
+#include "visualization/utility/ColorMap.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -37,8 +37,8 @@ namespace visualization {
 namespace glsl {
 
 bool SimpleBlackShader::Compile() {
-    if (CompileShaders(SimpleBlackVertexShader, NULL,
-                       SimpleBlackFragmentShader) == false) {
+    if (!CompileShaders(SimpleBlackVertexShader, NULL,
+                       SimpleBlackFragmentShader)) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -65,7 +65,7 @@ bool SimpleBlackShader::BindGeometry(const ccHObject &geometry,
 
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
-    if (PrepareBinding(geometry, option, view, points) == false) {
+    if (!PrepareBinding(geometry, option, view, points)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -83,7 +83,7 @@ bool SimpleBlackShader::BindGeometry(const ccHObject &geometry,
 bool SimpleBlackShader::RenderGeometry(const ccHObject &geometry,
                                        const RenderOption &option,
                                        const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
@@ -172,7 +172,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
     }
     const ccMesh &mesh =
             (const ccMesh &)geometry;
-    if (mesh.hasTriangles() == false) {
+    if (!mesh.hasTriangles()) {
         PrintShaderWarning("Binding failed with empty ccMesh.");
         return false;
     }

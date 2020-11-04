@@ -31,8 +31,10 @@
 #include <Octree.h>
 
 namespace cloudViewer {
-namespace io {
+    namespace geometry {
 
+    }
+namespace io {
 /// Factory function to create a octree from a file.
 /// \return return an empty octree if fail to read the file.
 std::shared_ptr<geometry::Octree> CreateOctreeFromFile(

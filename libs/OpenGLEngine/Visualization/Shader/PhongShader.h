@@ -29,7 +29,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "ShaderWrapper.h"
+#include "visualization/shader/ShaderWrapper.h"
 
 class ccHObject;
 namespace cloudViewer {
@@ -87,12 +87,12 @@ protected:
     GLuint light_ambient_;
 
     // At most support 4 lights
-    GLHelper::GLMatrix4f light_position_world_data_;
-    GLHelper::GLMatrix4f light_color_data_;
-    GLHelper::GLVector4f light_diffuse_power_data_;
-    GLHelper::GLVector4f light_specular_power_data_;
-    GLHelper::GLVector4f light_specular_shininess_data_;
-    GLHelper::GLVector4f light_ambient_data_;
+    gl_util::GLMatrix4f light_position_world_data_;
+    gl_util::GLMatrix4f light_color_data_;
+    gl_util::GLVector4f light_diffuse_power_data_;
+    gl_util::GLVector4f light_specular_power_data_;
+    gl_util::GLVector4f light_specular_shininess_data_;
+    gl_util::GLVector4f light_ambient_data_;
 };
 
 class PhongShaderForPointCloud : public PhongShader {

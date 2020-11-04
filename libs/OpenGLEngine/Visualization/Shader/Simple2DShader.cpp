@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Simple2DShader.h"
+#include "visualization/shader/Simple2DShader.h"
 
 #include <ecvHObject.h>
-#include "Shader.h"
-#include "../Utility/SelectionPolygon.h"
-#include "../Visualizer/RenderOptionWithEditing.h"
+#include "visualization/shader/Shader.h"
+#include "visualization/utility/SelectionPolygon.h"
+#include "visualization/visualizer/RenderOptionWithEditing.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -66,7 +66,7 @@ bool Simple2DShader::BindGeometry(const ccHObject &geometry,
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3f> colors;
-    if (PrepareBinding(geometry, option, view, points, colors) == false) {
+    if (!PrepareBinding(geometry, option, view, points, colors)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -88,7 +88,7 @@ bool Simple2DShader::BindGeometry(const ccHObject &geometry,
 bool Simple2DShader::RenderGeometry(const ccHObject &geometry,
                                     const RenderOption &option,
                                     const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }

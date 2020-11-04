@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualizer.h" // must include first
-#include "../../Camera/PinholeCameraTrajectory.h"
+#include "visualization/visualizer/Visualizer.h" // must include first
+#include "camera/PinholeCameraTrajectory.h"
 
 #include <Console.h>
 #include <ecvMesh.h>
@@ -35,9 +35,9 @@
 #include <PointCloudIO.h>
 #include <IJsonConvertibleIO.h>
 
-#include "../Utility/GLHelper.h"
-#include "ViewParameters.h"
-#include "ViewTrajectory.h"
+#include "visualization/utility/GLHelper.h"
+#include "visualization/visualizer/ViewParameters.h"
+#include "visualization/visualizer/ViewTrajectory.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -417,7 +417,7 @@ void Visualizer::CaptureDepthPointCloud(
                  GL_DEPTH_COMPONENT, GL_FLOAT, depth_image.data_.data());
 #endif  //__APPLE__
 
-    GLHelper::GLMatrix4f mvp_matrix;
+    gl_util::GLMatrix4f mvp_matrix;
     if (convert_to_world_coordinate) {
         mvp_matrix = view_control_ptr_->GetMVPMatrix();
     } else {
@@ -434,7 +434,7 @@ void Visualizer::CaptureDepthPointCloud(
             if (p_depth[j] == 1.0) {
                 continue;
             }
-            depth_pointcloud.addPoint(GLHelper::Unproject(
+            depth_pointcloud.addPoint(gl_util::Unproject(
                     Eigen::Vector3d(j + 0.5, i + 0.5, p_depth[j]), mvp_matrix,
                     view_control_ptr_->GetWindowWidth(),
                     view_control_ptr_->GetWindowHeight()));
@@ -443,7 +443,7 @@ void Visualizer::CaptureDepthPointCloud(
 
     utility::LogDebug("[Visualizer] Depth point cloud capture to {}",
                       ply_filename.c_str());
-    io::WritePointCloud(ply_filename, depth_pointcloud);
+    io::WritePointCloud(ply_filename, depth_pointcloud, {});
     if (!camera_filename.empty()) {
         utility::LogDebug("[Visualizer] Depth camera capture to {}",
                           camera_filename.c_str());

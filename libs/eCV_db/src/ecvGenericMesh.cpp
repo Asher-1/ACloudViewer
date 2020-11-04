@@ -32,7 +32,7 @@
 #include <GenericProgressCallback.h>
 #include <GenericTriangle.h>
 #include <MeshSamplingTools.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <ReferenceCloud.h>
 
 //system
