@@ -128,7 +128,7 @@ function( InstallPlugins )
 	endif()
 	
 	# Install the requested plugins in the DEST_FOLDER
-	foreach( plugin_target ${CC_PLUGIN_TARGET_LIST} )
+	foreach( plugin_target ${CV_PLUGIN_TARGET_LIST} )
 		get_target_property( plugin_type ${plugin_target} PLUGIN_TYPE )
 		
 		if( "${plugin_type}" IN_LIST INSTALL_PLUGINS_TYPES )

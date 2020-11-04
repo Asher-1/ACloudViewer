@@ -96,4 +96,8 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/TriangleMeshSubdivide.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/VoxelGrid.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/VoxelGridFactory.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ISSKeypoint.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraIntrinsic.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraParameters.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraTrajectory.cpp
 )

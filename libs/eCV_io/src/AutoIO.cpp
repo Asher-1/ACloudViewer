@@ -31,10 +31,11 @@
 #include <Console.h>
 #include <CVTools.h>
 #include <FileSystem.h>
+#include <ProgressReporters.h>
 
 // ECV_DB_LIB
-#include <ecvHObject.h>
 #include <ecvMesh.h>
+#include <ecvHObject.h>
 #include <ecvPointCloud.h>
 
 // ECV_IO_LIB
@@ -47,64 +48,54 @@
 #include <QFileInfo>
 
 namespace cloudViewer {
-
-namespace {
-using namespace io;
-
-static const std::unordered_map<
-        std::string,
-        std::function<bool(const std::string &, ccHObject &, bool)>>
-        file_extension_to_entity_read_function{
-                {"bin", AutoReadEntity},
-                {"ply", AutoReadEntity},
-                {"vtk", AutoReadEntity},
-                {"stl", AutoReadEntity},
-                {"pcd", AutoReadEntity},
-                {"off", AutoReadEntity},
-                {"dxf", AutoReadEntity},
-                {"txt", AutoReadEntity},
-                {"las", AutoReadEntity},
-                {"laz", AutoReadEntity},
-                {"mat", AutoReadEntity},
-                {"obj", AutoReadEntity},
-                {"ptx", AutoReadEntity},
-                {"pt",	AutoReadEntity},
-                {"poly",AutoReadEntity},
-                {"shp", AutoReadEntity},
-                {"sbf", AutoReadEntity},
-        };
-
-static const std::unordered_map<std::string,
-                                std::function<bool(const std::string &,
-                                                   const ccHObject &,
-                                                   const bool,
-                                                   const bool,
-                                                   const bool)>>
-        file_extension_to_entity_write_function{
-				{"bin", AutoWriteEntity},
-				{"ply", AutoWriteEntity},
-				{"vtk", AutoWriteEntity},
-				{"stl", AutoWriteEntity},
-				{"pcd", AutoWriteEntity},
-				{"off", AutoWriteEntity},
-				{"dxf", AutoWriteEntity},
-				{"txt", AutoWriteEntity},
-				{"las", AutoWriteEntity},
-				{"laz", AutoWriteEntity},
-				{"mat", AutoWriteEntity},
-				{"obj", AutoWriteEntity},
-				{"ptx", AutoWriteEntity},
-				{"pt",	AutoWriteEntity},
-				{"poly",AutoWriteEntity},
-				{"shp", AutoWriteEntity},
-				{"sbf", AutoWriteEntity},
-        };
-}  // unnamed namespace
-
 namespace io {
 
-	bool AutoReadEntity(const std::string & filename,
-		ccHObject& entity, bool print_progress)
+	static const std::unordered_map<std::string,
+    std::function<bool(const std::string &, ccHObject &, const ReadPointCloudOption&)>>
+    file_extension_to_entity_read_function{
+            {"bin", AutoReadEntity},
+            {"ply", AutoReadEntity},
+            {"vtk", AutoReadEntity},
+            {"stl", AutoReadEntity},
+            {"pcd", AutoReadEntity},
+            {"off", AutoReadEntity},
+            {"dxf", AutoReadEntity},
+            {"txt", AutoReadEntity},
+            {"las", AutoReadEntity},
+            {"laz", AutoReadEntity},
+            {"mat", AutoReadEntity},
+            {"obj", AutoReadEntity},
+            {"ptx", AutoReadEntity},
+            {"pt",	AutoReadEntity},
+            {"poly",AutoReadEntity},
+            {"shp", AutoReadEntity},
+            {"sbf", AutoReadEntity},
+    };
+
+	static const std::unordered_map<std::string,
+    std::function<bool(const std::string &, const ccHObject &, const WritePointCloudOption&)>>
+    file_extension_to_entity_write_function{
+			{"bin", AutoWriteEntity},
+			{"ply", AutoWriteEntity},
+			{"vtk", AutoWriteEntity},
+			{"stl", AutoWriteEntity},
+			{"pcd", AutoWriteEntity},
+			{"off", AutoWriteEntity},
+			{"dxf", AutoWriteEntity},
+			{"txt", AutoWriteEntity},
+			{"las", AutoWriteEntity},
+			{"laz", AutoWriteEntity},
+			{"mat", AutoWriteEntity},
+			{"obj", AutoWriteEntity},
+			{"ptx", AutoWriteEntity},
+			{"pt",	AutoWriteEntity},
+			{"poly",AutoWriteEntity},
+			{"shp", AutoWriteEntity},
+			{"sbf", AutoWriteEntity},
+    };
+
+	bool AutoReadEntity(const std::string& filename,
+		ccHObject& entity, const ReadPointCloudOption& params)
 	{
 		//to use the same 'global shift' for multiple files
 		CCVector3d loadCoordinatesShift(0, 0, 0);
@@ -112,7 +103,7 @@ namespace io {
 
 		FileIOFilter::LoadParameters parameters;
 		{
-			parameters.alwaysDisplayLoadDialog = print_progress;
+			parameters.alwaysDisplayLoadDialog = params.print_progress;
 			parameters.shiftHandlingMode = ecvGlobalShiftManager::NO_DIALOG;
 			parameters.coordinatesShift = &loadCoordinatesShift;
 			parameters.coordinatesShiftEnabled = &loadCoordinatesTransEnabled;
@@ -293,25 +284,12 @@ namespace io {
 		return successFlag;
 	}
 
-	bool AutoWriteMesh(const std::string& filename,
-		const ccHObject& entity,
-		bool write_ascii /* = false*/,
-		bool compressed /* = false*/,
-		bool write_vertex_normals /* = true*/,
-		bool write_vertex_colors /* = true*/,
-		bool write_triangle_uvs /* = true*/,
-		bool print_progress) {
-		return AutoWriteEntity(filename, entity, write_ascii, compressed, print_progress);
-	}
-
 	bool AutoWriteEntity(const std::string& filename,
 		const ccHObject& entity,
-		bool write_ascii,
-		bool compressed,
-		bool print_progress) {
+		const WritePointCloudOption& params) {
 		FileIOFilter::SaveParameters parameters;
 		{
-			parameters.alwaysDisplaySaveDialog = print_progress;
+			parameters.alwaysDisplaySaveDialog = params.print_progress;
 			parameters.parentWidget = nullptr;
 		}
 
@@ -378,6 +356,28 @@ namespace io {
 
 	}
 
+	bool AutoReadMesh(const std::string& filename, ccMesh& mesh, bool print_progress)
+	{
+		ReadPointCloudOption p;
+		p.print_progress = print_progress;
+		return AutoReadEntity(filename, mesh, p);
+	}
+
+	bool AutoWriteMesh(const std::string& filename,
+		const ccMesh& mesh,
+		bool write_ascii /* = false*/,
+		bool compressed /* = false*/,
+		bool write_vertex_normals /* = true*/,
+		bool write_vertex_colors /* = true*/,
+		bool write_triangle_uvs /* = true*/,
+		bool print_progress) {
+		WritePointCloudOption params;
+		params.write_ascii = WritePointCloudOption::IsAscii(write_ascii);
+		params.compressed = WritePointCloudOption::Compressed(compressed);
+		params.print_progress = print_progress;
+		return AutoWriteEntity(filename, mesh, params);
+	}
+
 using namespace CVLib;
 std::shared_ptr<ccHObject> CreateEntityFromFile(
         const std::string &filename,
@@ -409,7 +409,16 @@ bool ReadEntity(const std::string &filename,
         utility::LogWarning("Read entity failed: unknown file extension.");
         return false;
     }
-    bool success = map_itr->second(filename, entity, print_progress);
+
+	ReadPointCloudOption p;
+	p.format = format;
+	utility::ConsoleProgressUpdater progress_updater(
+		std::string("Reading ") + utility::ToUpper(filename_ext) +
+		" file: " + filename,
+		print_progress);
+	p.update_progress = progress_updater;
+
+    bool success = map_itr->second(filename, entity, p);
     utility::LogDebug("[ReadEntity] load {:d} entities.",
                       (int)entity.getChildrenNumber());
     return success;
@@ -431,8 +440,16 @@ bool WriteEntity(const std::string &filename,
         utility::LogWarning("Write entity failed: unknown file extension.");
         return false;
     }
-    bool success = map_itr->second(filename, entity, write_ascii, compressed,
-                                   print_progress);
+
+	WritePointCloudOption p;
+	p.write_ascii = WritePointCloudOption::IsAscii(write_ascii);
+	p.compressed = WritePointCloudOption::Compressed(compressed);
+	utility::ConsoleProgressUpdater progress_updater(
+		std::string("Writing ") + utility::ToUpper(filename_ext) +
+		" file: " + filename, print_progress);
+	p.update_progress = progress_updater;
+
+    bool success = map_itr->second(filename, entity, p);
     utility::LogDebug("[WriteEntity] Write {:d} entities.",
                       (int)entity.getChildrenNumber());
     return success;

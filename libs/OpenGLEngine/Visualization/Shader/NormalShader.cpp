@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "NormalShader.h"
+#include "visualization/shader/NormalShader.h"
+#include "visualization/shader/Shader.h"
 
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-#include "Shader.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -68,7 +68,7 @@ bool NormalShader::BindGeometry(const ccHObject &geometry,
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3f> normals;
-    if (PrepareBinding(geometry, option, view, points, normals) == false) {
+    if (!PrepareBinding(geometry, option, view, points, normals)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -89,7 +89,7 @@ bool NormalShader::BindGeometry(const ccHObject &geometry,
 bool NormalShader::RenderGeometry(const ccHObject &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) {
-    if (PrepareRendering(geometry, option, view) == false) {
+    if (!PrepareRendering(geometry, option, view)) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
@@ -207,10 +207,9 @@ bool NormalShaderForTriangleMesh::PrepareBinding(
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    if (mesh.hasTriNormals() == false ||
-        mesh.hasNormals() == false) {
+    if (!mesh.hasTriNormals() || !mesh.hasNormals()) {
         PrintShaderWarning("Binding failed because mesh has no normals.");
-        PrintShaderWarning("Call ComputeVertexNormals() before binding.");
+        PrintShaderWarning("Call computeVertexNormals() before binding.");
         return false;
     }
     points.resize(mesh.size() * 3);

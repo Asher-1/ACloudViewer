@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "qGL.h"
 
 #include <Eigen/Core>
 #include <memory>
@@ -37,10 +36,6 @@ class ccBBox;
 class ecvOrientedBBox;
 
 namespace cloudViewer {
-
-namespace geometry {
-class PointCloud;
-}
 namespace visualization {
 
 /// A utility class to store picked points of a pointcloud

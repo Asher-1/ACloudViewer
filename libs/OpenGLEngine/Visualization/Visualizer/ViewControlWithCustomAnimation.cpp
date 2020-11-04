@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewControlWithCustomAnimation.h"
+#include "visualization/visualizer/ViewControlWithCustomAnimation.h"
 #include <Console.h>
 
 #include <IJsonConvertibleIO.h>

@@ -31,7 +31,7 @@
 #include <Console.h>
 #include <FileSystem.h>
 
-#include <rply/rply.h>
+#include <rply.h>
 
 namespace cloudViewer {
 

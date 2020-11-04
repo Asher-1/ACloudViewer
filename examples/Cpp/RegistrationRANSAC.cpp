@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -79,15 +79,15 @@ int main(int argc, char *argv[]) {
 			0.487, 0.255, 0.835, -1.4, 0.0, 0.0, 0.0, 1.0;
 		VisualizeRegistration(*source_pcd, *target_pcd, transInit);
 
-		registration::RegistrationResult regP2P = 
-			registration::RegistrationICP(*source_pcd, *target_pcd, threshold, transInit, 
-				registration::TransformationEstimationPointToPoint());
+		pipelines::registration::RegistrationResult regP2P = 
+            pipelines::registration::RegistrationICP(*source_pcd, *target_pcd, threshold, transInit,
+                pipelines::registration::TransformationEstimationPointToPoint());
 		std::cout << regP2P.transformation_ << std::endl;
 		VisualizeRegistration(*source_pcd, *target_pcd, regP2P.transformation_);
 
-		registration::RegistrationResult regP2L =
-			registration::RegistrationICP(*source_pcd, *target_pcd, threshold, transInit,
-				registration::TransformationEstimationPointToPlane());
+        pipelines::registration::RegistrationResult regP2L =
+            pipelines::registration::RegistrationICP(*source_pcd, *target_pcd, threshold, transInit,
+                pipelines::registration::TransformationEstimationPointToPlane());
 		std::cout << regP2L.transformation_ << std::endl;
 		VisualizeRegistration(*source_pcd, *target_pcd, regP2L.transformation_);
 	}
@@ -98,24 +98,24 @@ int main(int argc, char *argv[]) {
     std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);
 
     std::vector<
-            std::reference_wrapper<const registration::CorrespondenceChecker>>
+            std::reference_wrapper<const pipelines::registration::CorrespondenceChecker>>
             correspondence_checker;
     auto correspondence_checker_edge_length =
-            registration::CorrespondenceCheckerBasedOnEdgeLength(0.9);
+        pipelines::registration::CorrespondenceCheckerBasedOnEdgeLength(0.9);
     auto correspondence_checker_distance =
-            registration::CorrespondenceCheckerBasedOnDistance(0.075);
+        pipelines::registration::CorrespondenceCheckerBasedOnDistance(0.075);
     auto correspondence_checker_normal =
-            registration::CorrespondenceCheckerBasedOnNormal(0.52359878);
+        pipelines::registration::CorrespondenceCheckerBasedOnNormal(0.52359878);
 
     correspondence_checker.push_back(correspondence_checker_edge_length);
     correspondence_checker.push_back(correspondence_checker_distance);
     correspondence_checker.push_back(correspondence_checker_normal);
     auto registration_result =
-            registration::RegistrationRANSACBasedOnFeatureMatching(
+        pipelines::registration::RegistrationRANSACBasedOnFeatureMatching(
                     *source, *target, *source_fpfh, *target_fpfh, 0.075,
-                    registration::TransformationEstimationPointToPoint(false),
+            pipelines::registration::TransformationEstimationPointToPoint(false),
                     4, correspondence_checker,
-                    registration::RANSACConvergenceCriteria(4000000, 1000));
+            pipelines::registration::RANSACConvergenceCriteria(4000000, 1000));
 
     if (visualize)
         VisualizeRegistration(*source, *target,

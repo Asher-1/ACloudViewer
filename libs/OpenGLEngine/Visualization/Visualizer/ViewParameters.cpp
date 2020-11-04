@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewParameters.h"
+#include "visualization/visualizer/ViewParameters.h"
 
 #include <json/json.h>
 #include <Eigen/Dense>

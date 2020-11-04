@@ -24,26 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "VisualizerWithEditing.h"
+#include "visualization/visualizer/VisualizerWithEditing.h"
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
-#include <FileSystem.h>
 
-#include <Console.h>
+#include <PointCloudIO.h>
+#include <TriangleMeshIO.h>
+#include <IJsonConvertibleIO.h>
 #include <Image.h>
 #include <ecvMesh.h>
 #include <LineSet.h>
 #include <ecvPointCloud.h>
-#include <PointCloudIO.h>
-#include <TriangleMeshIO.h>
-#include <IJsonConvertibleIO.h>
 
-#include "../Utility/GLHelper.h"
-#include "../Utility/PointCloudPicker.h"
-#include "../Utility/SelectionPolygon.h"
-#include "../Utility/SelectionPolygonVolume.h"
-#include "RenderOptionWithEditing.h"
-#include "ViewControlWithEditing.h"
+#include <Console.h>
+#include <FileSystem.h>
+
+#include "visualization/utility/GLHelper.h"
+#include "visualization/utility/PointCloudPicker.h"
+#include "visualization/utility/SelectionPolygon.h"
+#include "visualization/utility/SelectionPolygonVolume.h"
+#include "visualization/visualizer/RenderOptionWithEditing.h"
+#include "visualization/visualizer/ViewControlWithEditing.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -243,7 +244,7 @@ int VisualizerWithEditing::PickPoint(double x, double y) {
     uint8_t rgba[4];
     glReadPixels((int)(x + 0.5), (int)(view.GetWindowHeight() - y + 0.5), 1, 1,
                  GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-    int index = GLHelper::ColorCodeToPickIndex(
+    int index = gl_util::ColorCodeToPickIndex(
             Eigen::Vector4i(rgba[0], rgba[1], rgba[2], rgba[3]));
     // Recover rendering state
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -644,15 +645,12 @@ void VisualizerWithEditing::SaveCroppingResult(
             utility::filesystem::GetFileNameWithoutExtension(filename) +
             ".json";
     if (editing_geometry_ptr_->isKindOf(CV_TYPES::POINT_CLOUD))
-        io::WritePointCloud(
-                ply_filename,
-                (const ccPointCloud &)(*editing_geometry_ptr_));
+        io::WritePointCloud(ply_filename,
+            (const ccPointCloud&)(*editing_geometry_ptr_), {});
     else if (editing_geometry_ptr_->isKindOf(CV_TYPES::MESH))
-		io::WriteTriangleMesh(
-			ply_filename,
+		io::WriteTriangleMesh(ply_filename,
 			(const ccMesh &)(*editing_geometry_ptr_));
-    io::WriteIJsonConvertible(
-            volume_filename,
+    io::WriteIJsonConvertible(volume_filename,
             *selection_polygon_ptr_->CreateSelectionPolygonVolume(
                     GetViewControl()));
 }

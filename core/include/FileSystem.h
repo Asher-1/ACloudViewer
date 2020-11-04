@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.CVLib.org                            -
+// -                        CVLib: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.CVLib.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,8 @@ std::string CV_CORE_LIB_API GetRegularizedDirectoryName(const std::string &direc
 
 std::string CV_CORE_LIB_API GetWorkingDirectory();
 
+std::vector<std::string> CV_CORE_LIB_API GetPathComponents(const std::string& path);
+
 bool CV_CORE_LIB_API ChangeWorkingDirectory(const std::string &directory);
 
 bool CV_CORE_LIB_API DirectoryExists(const std::string &directory);
@@ -61,15 +63,61 @@ bool CV_CORE_LIB_API FileExists(const std::string &filename);
 
 bool CV_CORE_LIB_API RemoveFile(const std::string &filename);
 
+bool CV_CORE_LIB_API ListDirectory(const std::string& directory,
+                                   std::vector<std::string>& subdirs,
+                                   std::vector<std::string>& filenames);
+
 bool CV_CORE_LIB_API ListFilesInDirectory(const std::string &directory,
-                          std::vector<std::string> &filenames);
+                                          std::vector<std::string> &filenames);
 
 bool CV_CORE_LIB_API ListFilesInDirectoryWithExtension(const std::string &directory,
-                                       const std::string &extname,
-                                       std::vector<std::string> &filenames);
+                                                       const std::string &extname,
+                                                       std::vector<std::string> &filenames);
 
 // wrapper for fopen that enables unicode paths on Windows
 CV_CORE_LIB_API FILE* FOpen(const std::string &filename, const std::string &mode);
+std::string CV_CORE_LIB_API GetIOErrorString(const int errnoVal);
+bool CV_CORE_LIB_API FReadToBuffer(const std::string& path,
+    std::vector<char>& bytes,
+    std::string* errorStr);
+
+/// RAII Wrapper for C FILE*
+/// Throws exceptions in situations where the caller is not usually going to
+/// have proper handling code:
+/// - using an unopened CFile
+/// - errors and ferror from underlying calls (fclose, ftell, fseek, fread,
+///   fwrite, fgetpos, fsetpos)
+/// - reading a line that is too long, caller is unlikely to have proper code to
+///   handle a partial next line
+/// If you would like to handle any of these issues by not having your code
+/// throw, use try/catch (const std::exception &e) { ... }
+class CV_CORE_LIB_API CFile {
+public:
+    ~CFile();
+    bool Open(const std::string& filename, const std::string& mode);
+    /// return last encountered error for this file
+    std::string GetError();
+    void Close();
+    /// return current position in the file (ftell)
+    int64_t CurPos();
+    int64_t GetFileSize();
+    /// Throws if we hit buffer maximum.  In most cases, calling code is only
+    /// capable of processing a complete line, if it receives a partial line it
+    /// will probably fail and it is very likely to fail/corrupt on the next
+    /// call that receives the remainder of the line
+    const char* ReadLine();
+    template <class T>
+    size_t ReadData(T* data, size_t num_elems) {
+        return ReadData(data, sizeof(T), num_elems);
+    }
+    size_t ReadData(void* data, size_t elem_size, size_t num_elems);
+    FILE* GetFILE() { return file_; }
+
+private:
+    FILE* file_ = nullptr;
+    int error_code_ = 0;
+    std::vector<char> line_buffer_;
+};
 
 }  // namespace filesystem
 }  // namespace utility

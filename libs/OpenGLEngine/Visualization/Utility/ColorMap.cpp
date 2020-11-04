@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ColorMap.h"
+#include "visualization/utility/ColorMap.h"
 
 #include <Console.h>
 

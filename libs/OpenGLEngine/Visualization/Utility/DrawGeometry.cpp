@@ -24,18 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "../Visualizer/Visualizer.h" // must include first
-#include "DrawGeometry.h"
-#include <Console.h>
+#include "visualization/utility/DrawGeometry.h"
 
+#include "visualization/visualizer/Visualizer.h"
+#include "visualization/gui/Application.h"
+#include "visualization/visualizer/GuiVisualizer.h"
+#include "visualization/visualizer/ViewControlWithCustomAnimation.h"
+#include "visualization/visualizer/ViewControlWithEditing.h"
+#include "visualization/visualizer/VisualizerWithCustomAnimation.h"
+#include "visualization/visualizer/VisualizerWithEditing.h"
+#include "visualization/visualizer/VisualizerWithKeyCallback.h"
+#include "visualization/visualizer/VisualizerWithVertexSelection.h"
+
+#include <Console.h>
+#include <Eigen/Core>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-#include "../Visualizer/ViewControlWithCustomAnimation.h"
-#include "../Visualizer/ViewControlWithEditing.h"
-#include "../Visualizer/VisualizerWithCustomAnimation.h"
-#include "../Visualizer/VisualizerWithEditing.h"
-#include "../Visualizer/VisualizerWithKeyCallback.h"
-#include "../Visualizer/VisualizerWithVertexSelection.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -104,15 +108,14 @@ bool DrawGeometriesWithCustomAnimation(
         int top /* = 50*/,
         const std::string &json_filename /* = ""*/) {
     VisualizerWithCustomAnimation visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left, top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithCustomAnimation] Failed creating OpenGL "
                 "window.");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed adding "
                     "geometry.");
@@ -124,8 +127,8 @@ bool DrawGeometriesWithCustomAnimation(
     }
     auto &view_control =
             (ViewControlWithCustomAnimation &)visualizer.GetViewControl();
-    if (json_filename.empty() == false) {
-        if (view_control.LoadTrajectoryFromJsonFile(json_filename) == false) {
+    if (!json_filename.empty()) {
+        if (!view_control.LoadTrajectoryFromJsonFile(json_filename)) {
             utility::LogWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed loading json "
                     "file.");
@@ -150,15 +153,14 @@ bool DrawGeometriesWithAnimationCallback(
         int left /* = 50*/,
         int top /* = 50*/) {
     Visualizer visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left, top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithAnimationCallback] Failed creating OpenGL "
                 "window.");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithAnimationCallback] Failed adding "
                     "geometry.");
@@ -183,15 +185,14 @@ bool DrawGeometriesWithKeyCallbacks(
         int left /* = 50*/,
         int top /* = 50*/) {
     VisualizerWithKeyCallback visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left, top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithKeyCallbacks] Failed creating OpenGL "
                 "window.");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithKeyCallbacks] Failed adding "
                     "geometry.");
@@ -218,14 +219,13 @@ bool DrawGeometriesWithEditing(
         int left /* = 50*/,
         int top /* = 50*/) {
     VisualizerWithEditing visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left, top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithEditing] Failed creating OpenGL window.");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithEditing] Failed adding geometry.");
             utility::LogWarning(
@@ -248,15 +248,14 @@ bool DrawGeometriesWithVertexSelection(
         int left /* = 50*/,
         int top /* = 50*/) {
     VisualizerWithVertexSelection visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left, top)) {
         utility::LogWarning(
                 "[DrawGeometriesWithVertexSelection] Failed creating OpenGL "
                 "window.");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (visualizer.AddGeometry(geometry_ptr) == false) {
+        if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithVertexSelection] Failed adding "
                     "geometry.");

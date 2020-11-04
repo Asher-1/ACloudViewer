@@ -6,6 +6,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/AsciiOpenDlg.cpp
 		${CMAKE_CURRENT_LIST_DIR}/AsciiSaveDlg.cpp
 		${CMAKE_CURRENT_LIST_DIR}/AutoIO.cpp
+		${CMAKE_CURRENT_LIST_DIR}/FileFormatIO.cpp
 		${CMAKE_CURRENT_LIST_DIR}/BinFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/DepthMapFileFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/DxfFilter.cpp
@@ -37,5 +38,6 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/TriangleMeshIO.cpp
 		${CMAKE_CURRENT_LIST_DIR}/VoxelGridIO.cpp
 		${CMAKE_CURRENT_LIST_DIR}/VTKFilter.cpp
+		${CMAKE_CURRENT_LIST_DIR}/PinholeCameraTrajectoryIO.cpp
 
 )

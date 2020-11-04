@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewControl.h"
-#include <Console.h>
+#include "visualization/visualizer/ViewControl.h"
 
 // Avoid warning caused by redefinition of APIENTRY macro
 // defined also in glfw3.h
@@ -34,6 +33,8 @@
 #endif
 
 #include <GLFW/glfw3.h>
+
+#include <Console.h>
 #include <Eigen/Dense>
 #include <cmath>  // jspark
 
@@ -75,7 +76,7 @@ void ViewControl::SetViewMatrices(
                          ? constant_z_far_
                          : distance_ + 3.0 * bounding_box_.getMaxExtent();
         projection_matrix_ =
-                GLHelper::Perspective(field_of_view_, aspect_, z_near_, z_far_);
+                gl_util::Perspective(field_of_view_, aspect_, z_near_, z_far_);
     } else {
         // Orthogonal projection
         // We use some black magic to support distance_ in orthogonal view
@@ -86,10 +87,10 @@ void ViewControl::SetViewMatrices(
                          ? constant_z_far_
                          : distance_ + 3.0 * bounding_box_.getMaxExtent();
         projection_matrix_ =
-                GLHelper::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
+            gl_util::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
                                 -view_ratio_, view_ratio_, z_near_, z_far_);
     }
-    view_matrix_ = GLHelper::LookAt(eye_, lookat_, up_);
+    view_matrix_ = gl_util::LookAt(eye_, lookat_, up_);
     model_matrix_ = model_matrix.cast<GLfloat>();
     MVP_matrix_ = projection_matrix_ * view_matrix_ * model_matrix_;
 

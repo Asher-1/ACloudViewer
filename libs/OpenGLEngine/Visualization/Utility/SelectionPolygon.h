@@ -25,14 +25,13 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "qGL.h"
 
 #include <Eigen/Core>
 #include <memory>
 #include <vector>
 
-#include <ecvHObject.h>
 #include <Image.h>
+#include <ecvHObject.h>
 
 class ccMesh;
 class ccPointCloud;

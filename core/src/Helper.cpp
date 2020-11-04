@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.CVLib.org                            -
+// -                        CVLib: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.CVLib.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 
 #include <cctype>
 #include <random>
+#include <algorithm>
 #include <unordered_set>
 
 #ifdef _WIN32
@@ -66,6 +67,20 @@ std::string& RightStripString(std::string& str, const std::string& chars) {
 
 std::string& StripString(std::string& str, const std::string& chars) {
     return LeftStripString(RightStripString(str, chars), chars);
+}
+
+std::string ToLower(const std::string& str) {
+    std::string out = str;
+    std::transform(str.begin(), str.end(), out.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+    return out;
+}
+
+std::string ToUpper(const std::string& str) {
+    std::string out = str;
+    std::transform(str.begin(), str.end(), out.begin(),
+        [](unsigned char c) { return std::toupper(c); });
+    return out;
 }
 
 // Count the length of current word starting from start_pos

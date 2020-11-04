@@ -24,17 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "GLHelper.h"
-
-#include <GL/glew.h>  // Make sure glew.h is included before gl.h
-#include <GLFW/glfw3.h>
+#include "visualization/utility/GLHelper.h"
 
 #include <Eigen/Dense>
 #include <cmath>
 
 namespace cloudViewer {
 namespace visualization {
-namespace GLHelper {
+namespace gl_util {
 
 static const std::unordered_map<int, unsigned int> texture_format_map_ = {
 		{1, GL_RED}, {3, GL_RGB}, {4, GL_RGBA} };
@@ -142,6 +139,6 @@ int ColorCodeToPickIndex(const Eigen::Vector4i &color) {
     }
 }
 
-}  // namespace GLHelper
+}  // namespace gl_util
 }  // namespace visualization
 }  // namespace cloudViewer

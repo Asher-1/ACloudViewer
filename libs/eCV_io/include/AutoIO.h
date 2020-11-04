@@ -29,66 +29,63 @@
 #include <memory>
 #include <string>
 
+#include "FileIO.h"
+
+class ccMesh;
 class ccHObject;
 
 //! Generic file read and write utility for python interface
 /** Gives static access to file loader and writer
 **/
-namespace cloudViewer
-{
-	namespace io
-	{
-		bool AutoReadEntity(const std::string &filename,
-			ccHObject& entity,
-			bool print_progress = false);
-
-		bool AutoWriteMesh(const std::string &filename,
-			const ccHObject& entity,
-			bool write_ascii = false,
-			bool compressed = false,
-			bool write_vertex_normals = true,
-			bool write_vertex_colors = true,
-			bool write_triangle_uvs = true,
-			bool print_progress = false);
-
-		bool AutoWriteEntity(const std::string &filename,
-			const ccHObject& entity,
-			bool write_ascii = false,
-			bool compressed = false,
-			bool print_progress = false);
-	}
-}
-
-
 namespace cloudViewer {
 namespace io {
 
-/// Factory function to create a ccHObject from a file.
-/// \return return an empty ccHObject if fail to read the file.
-std::shared_ptr<ccHObject> CreateEntityFromFile(
-        const std::string &filename,
-        const std::string &format = "auto",
-        bool print_progress = false);
+	/// Factory function to create a ccHObject from a file.
+	/// \return return an empty ccHObject if fail to read the file.
+	std::shared_ptr<ccHObject> CreateEntityFromFile(
+		const std::string& filename,
+		const std::string& format = "auto",
+		bool print_progress = false);
 
-/// The general entrance for reading a ccHObject from a file
-/// The function calls read functions based on the extension name of filename.
-/// \return return true if the read function is successful, false otherwise.
-bool ReadEntity(const std::string &filename,
-				 ccHObject &obj,
-                 const std::string &format = "auto",
-                 bool print_progress = false);
+	/// The general entrance for reading a ccHObject from a file
+	/// The function calls read functions based on the extension name of filename.
+	/// \return return true if the read function is successful, false otherwise.
+	bool ReadEntity(const std::string& filename,
+		ccHObject& obj,
+		const std::string& format = "auto",
+		bool print_progress = false);
 
-/// The general entrance for writing a ccHObject to a file
-/// The function calls write functions based on the extension name of filename.
-/// If the write function supports binary encoding and compression, the later
-/// two parameters will be used. Otherwise they will be ignored.
-/// \return return true if the write function is successful, false otherwise.
-bool WriteEntity(const std::string &filename,
-                  const ccHObject &obj,
-                  bool write_ascii = false,
-                  bool compressed = false,
-                  bool print_progress = false);
+	/// The general entrance for writing a ccHObject to a file
+	/// The function calls write functions based on the extension name of filename.
+	/// If the write function supports binary encoding and compression, the later
+	/// two parameters will be used. Otherwise they will be ignored.
+	/// \return return true if the write function is successful, false otherwise.
+	bool WriteEntity(const std::string& filename,
+		const ccHObject& obj,
+		bool write_ascii = false,
+		bool compressed = false,
+		bool print_progress = false);
 
+	bool AutoReadEntity(const std::string& filename,
+		ccHObject& entity,
+		const ReadPointCloudOption& params);
+
+	bool AutoWriteEntity(const std::string& filename,
+		const ccHObject& entity,
+		const WritePointCloudOption& params);
+
+	bool AutoReadMesh(const std::string& filename,
+		ccMesh& mesh,
+		bool print_progress = false);
+
+	bool AutoWriteMesh(const std::string &filename,
+		const ccMesh& mesh,
+		bool write_ascii = false,
+		bool compressed = false,
+		bool write_vertex_normals = true,
+		bool write_vertex_colors = true,
+		bool write_triangle_uvs = true,
+		bool print_progress = false);
 
 }  // namespace io
 }  // namespace cloudViewer

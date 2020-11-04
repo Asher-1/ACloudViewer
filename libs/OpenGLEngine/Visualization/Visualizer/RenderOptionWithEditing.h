@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -28,7 +28,7 @@
 
 #include <Eigen/Core>
 
-#include "RenderOption.h"
+#include "visualization/visualizer/RenderOption.h"
 
 namespace cloudViewer {
 namespace visualization {

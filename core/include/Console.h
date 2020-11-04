@@ -29,11 +29,16 @@
 #include "CVCoreLib.h"
 
 #include <Eigen/Core>
+#include <iostream>
 #include <string>
 #include <vector>
 
+#ifndef FMT_HEADER_ONLY
 #define FMT_HEADER_ONLY 1
+#endif
+#ifndef FMT_STRING_ALIAS
 #define FMT_STRING_ALIAS 1
+#endif
 #include <fmt/format.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
@@ -186,6 +191,8 @@ protected:
 
 public:
     VerbosityLevel verbosity_level_;
+    std::function<void(const std::string&)> print_fcn_ =
+        [](const std::string& msg) { std::cout << msg << std::endl; };
 };
 
 /// Set global verbosity level of cloudViewer
@@ -240,6 +247,23 @@ template <typename... Args>
 inline void CV_CORE_LIB_API LogDebugf(const char *format, const Args &... args) {
     Logger::i().Debugf(format, args...);
 }
+
+class CV_CORE_LIB_API VerbosityContextManager {
+public:
+    VerbosityContextManager(VerbosityLevel level) : 
+        level_(level), level_backup_(VerbosityLevel::Error) {}
+
+    void enter() {
+        level_backup_ = Logger::i().verbosity_level_;
+        Logger::i().verbosity_level_ = level_;
+    }
+
+    void exit() { Logger::i().verbosity_level_ = level_backup_; }
+
+private:
+    VerbosityLevel level_;
+    VerbosityLevel level_backup_;
+};
 
 class CV_CORE_LIB_API ConsoleProgressBar {
 public:

@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Visualizer.h"
+#include "visualization/visualizer/Visualizer.h"
 
 namespace cloudViewer {
 namespace visualization {

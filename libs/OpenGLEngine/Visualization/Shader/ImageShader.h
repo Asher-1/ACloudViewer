@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "ShaderWrapper.h"
+#include "visualization/shader/ShaderWrapper.h"
 
 namespace cloudViewer {
 	namespace geometry
@@ -74,7 +74,7 @@ protected:
     GLuint image_texture_buffer_;
     GLuint vertex_scale_;
 
-    GLHelper::GLVector3f vertex_scale_data_;
+    gl_util::GLVector3f vertex_scale_data_;
 };
 
 class ImageShaderForImage : public ImageShader {

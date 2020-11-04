@@ -28,7 +28,7 @@
 
 #include <unordered_map>
 
-#include "Visualizer.h"
+#include "visualization/visualizer/Visualizer.h"
 
 class ccHObject;
 class ccPointCloud;

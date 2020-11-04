@@ -24,7 +24,7 @@
 #include <GenericProgressCallback.h>
 #include <Neighbourhood.h>
 #include <ParallelSort.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <SimpleMesh.h>
 
 //system

@@ -65,6 +65,9 @@ namespace CVLib
 		/// in x, y, and z dimension in its frame of reference.
 		inline const Eigen::Vector3d& getExtent() const { return extent_; }
 
+		//! Returns center
+		inline CCVector3 getCenter() const { return center_; }
+
 		/// Returns the half extent of the bounding box in its frame of reference.
 		Eigen::Vector3d getHalfExtent() const { return getExtent() * 0.5; }
 

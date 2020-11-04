@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ShaderWrapper.h"
+#include "visualization/shader/ShaderWrapper.h"
 
 #include <ecvHObject.h>
 #include <Console.h>
@@ -38,13 +38,13 @@ using namespace CVLib;
 bool ShaderWrapper::Render(const ccHObject &geometry,
                            const RenderOption &option,
                            const ViewControl &view) {
-    if (compiled_ == false) {
+    if (!compiled_) {
         Compile();
     }
-    if (bound_ == false) {
+    if (!bound_) {
         BindGeometry(geometry, option, view);
     }
-    if (compiled_ == false || bound_ == false) {
+    if (!compiled_ || !bound_) {
         PrintShaderWarning("Something is wrong in compiling or binding.");
         return false;
     }
@@ -73,7 +73,7 @@ bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
         const GLchar *vertex_shader_code_buffer = vertex_shader_code;
         glShaderSource(vertex_shader_, 1, &vertex_shader_code_buffer, NULL);
         glCompileShader(vertex_shader_);
-        if (ValidateShader(vertex_shader_) == false) {
+        if (!ValidateShader(vertex_shader_)) {
             return false;
         }
     }
@@ -83,7 +83,7 @@ bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
         const GLchar *geometry_shader_code_buffer = geometry_shader_code;
         glShaderSource(geometry_shader_, 1, &geometry_shader_code_buffer, NULL);
         glCompileShader(geometry_shader_);
-        if (ValidateShader(geometry_shader_) == false) {
+        if (!ValidateShader(geometry_shader_)) {
             return false;
         }
     }
@@ -93,7 +93,7 @@ bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
         const GLchar *fragment_shader_code_buffer = fragment_shader_code;
         glShaderSource(fragment_shader_, 1, &fragment_shader_code_buffer, NULL);
         glCompileShader(fragment_shader_);
-        if (ValidateShader(fragment_shader_) == false) {
+        if (!ValidateShader(fragment_shader_)) {
             return false;
         }
     }
@@ -109,7 +109,7 @@ bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
         glAttachShader(program_, fragment_shader_);
     }
     glLinkProgram(program_);
-    if (ValidateProgram(program_) == false) {
+    if (!ValidateProgram(program_)) {
         return false;
     }
 

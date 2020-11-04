@@ -24,14 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "RGBDImageShader.h"
+#include "visualization/shader/RGBDImageShader.h"
+
+//#include "CloudViewer.h"
 
 #include <algorithm>
 
 #include <Image.h>
 #include <RGBDImage.h>
-#include "Shader.h"
-#include "../Utility/ColorMap.h"
+#include "visualization/shader/Shader.h"
+#include "visualization/utility/ColorMap.h"
 
 namespace cloudViewer {
 namespace visualization {

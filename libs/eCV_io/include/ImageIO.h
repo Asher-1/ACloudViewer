@@ -43,6 +43,8 @@ std::shared_ptr<geometry::Image> CreateImageFromFile(
 /// \return return true if the read function is successful, false otherwise.
 bool ReadImage(const std::string &filename, geometry::Image &image);
 
+constexpr int kOpen3DImageIODefaultQuality = -1;
+
 /// The general entrance for writing an Image to a file
 /// The function calls write functions based on the extension name of filename.
 /// If the write function supports quality, the parameter will be used.

@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "SelectionPolygon.h"
+
+#include "visualization/utility/GLHelper.h"  // must include first!
+#include "visualization/utility/SelectionPolygon.h"
 
 #include <ecvMesh.h>
 #include <Console.h>
 #include <ecvPointCloud.h>
-
-#include "GLHelper.h"
-#include "SelectionPolygonVolume.h"
-#include "../Visualizer/ViewControl.h"
-#include "../Visualizer/ViewControlWithEditing.h"
+#include "visualization/utility/SelectionPolygonVolume.h"
+#include "visualization/visualizer/ViewControl.h"
+#include "visualization/visualizer/ViewControlWithEditing.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -169,7 +169,7 @@ std::shared_ptr<SelectionPolygonVolume>
 SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
     auto volume = std::make_shared<SelectionPolygonVolume>();
     const auto &editing_view = (const ViewControlWithEditing &)view;
-    if (editing_view.IsLocked() == false ||
+    if (!editing_view.IsLocked() ||
         editing_view.GetEditingMode() == ViewControlWithEditing::FreeMode) {
         return volume;
     }
@@ -194,7 +194,7 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
             break;
     }
     for (const auto &point : polygon_) {
-        auto point3d = GLHelper::Unproject(
+        auto point3d = gl_util::Unproject(
                 Eigen::Vector3d(point(0), point(1), 1.0), view.GetMVPMatrix(),
                 view.GetWindowWidth(), view.GetWindowHeight());
         point3d(idx) = 0.0;

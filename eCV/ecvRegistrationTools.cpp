@@ -17,7 +17,7 @@
 
 #include "ecvRegistrationTools.h"
 
-//CVLib
+// CV_CORE_LIB
 #include <CVLog.h>
 #include <CloudSamplingTools.h>
 #include <DistanceComputationTools.h>
@@ -25,10 +25,10 @@
 #include <GenericIndexedCloudPersist.h>
 #include <MeshSamplingTools.h>
 #include <ParallelSort.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <RegistrationTools.h>
 
-//ECV_DB_LIB
+// ECV_DB_LIB
 #include <ecvGenericMesh.h>
 #include <ecvHObjectCaster.h>
 #include <ecvPointCloud.h>

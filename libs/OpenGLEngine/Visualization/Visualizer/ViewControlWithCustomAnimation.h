@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "../../Camera/PinholeCameraTrajectory.h"
-#include "ViewControl.h"
-#include "ViewTrajectory.h"
+#include "camera/PinholeCameraTrajectory.h"
+#include "visualization/visualizer/ViewControl.h"
+#include "visualization/visualizer/ViewTrajectory.h"
 
 namespace cloudViewer {
 namespace visualization {

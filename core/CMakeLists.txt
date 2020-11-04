@@ -112,10 +112,6 @@ set_target_properties( ${PROJECT_NAME}
 		CXX_EXTENSIONS OFF
 )
 
-# Enforce 3rd party dependencies
-add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
-target_link_libraries( ${PROJECT_NAME} PUBLIC ${3RDPARTY_LIBRARIES} )
-
 target_compile_definitions( ${PROJECT_NAME}
 	PRIVATE
 		"$<$<CONFIG:DEBUG>:CV_DEBUG>"
@@ -221,13 +217,11 @@ if ( CVCORELIB_USE_QT_CONCURRENT )
 endif()
 
 # Enforce 3rd party dependencies
-add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
-target_link_libraries( ${PROJECT_NAME} PUBLIC ${3RDPARTY_LIBRARIES} )
+cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 
 if (BUILD_EIGEN3)
 	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_EIGEN )
 endif()
-
 
 # CMake Package Files
 include( CMakePackageConfigHelpers )
@@ -238,6 +232,20 @@ write_basic_package_version_file( ${PROJECT_NAME}ConfigVersion.cmake
 	COMPATIBILITY
 		AnyNewerVersion
 )
+
+add_custom_command(OUTPUT MAKE_CLOUVIEWER_DIR 
+	POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E make_directory
+	${CLOUDVIEWER_OUTPUT_DIRECTORY}
+	VERBATIM
+	)
+
+add_custom_command(TARGET ${PROJECT_NAME}
+	POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" ${CLOUDVIEWER_OUTPUT_DIRECTORY}
+	DEPENDS ${MAKE_CLOUVIEWER_DIR}
+	VERBATIM
+	)
 
 install(
 	FILES

@@ -28,8 +28,8 @@
 
 #include <GL/glew.h>
 
-#include "../Visualizer/RenderOption.h"
-#include "../Visualizer/ViewControl.h"
+#include "visualization/visualizer/RenderOption.h"
+#include "visualization/visualizer/ViewControl.h"
 
 
 class ccHObject;

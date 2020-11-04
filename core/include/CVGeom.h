@@ -24,8 +24,6 @@
 #include "CVTypes.h"
 
 #include <Eigen/Core>
-#ifdef USE_EIGEN
-#endif // USE_EIGEN
 
 //system
 #include <cmath>
