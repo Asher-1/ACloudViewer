@@ -45,8 +45,11 @@ cmdclass = {'bdist_wheel': bdist_wheel} if bdist_wheel is not None else dict()
 
 # Read requirements.txt
 with open('requirements.txt', 'r') as f:
-    lines = f.readlines()
-install_requires = [line.strip() for line in lines if line]
+    install_requires = [line.strip() for line in f.readlines() if line]
+# Read requirements for ML
+if '@BUNDLE_CLOUDVIEWER_ML@' == 'ON':
+    with open('@CLOUDVIEWER_ML_ROOT@/requirements.txt', 'r') as f:
+        install_requires += [line.strip() for line in f.readlines() if line]
 
 # Data files for packaging
 data_files = [
@@ -74,12 +77,11 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Programming Language :: C",
         "Programming Language :: C++",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+		"Programming Language :: Python :: 3.8",
         "Topic :: Education",
         "Topic :: Multimedia :: Graphics :: 3D Modeling",
         "Topic :: Multimedia :: Graphics :: 3D Rendering",
@@ -102,10 +104,14 @@ setup(
     keywords="3D reconstruction point cloud mesh RGB-D visualization",
     license="MIT",
     long_description=open('README.rst').read(),
+	long_description_content_type='text/x-rst',
     # Name of the package on PyPI
     name="@PYPI_PACKAGE_NAME@",
     packages=[
         'cloudViewer',
+		'cloudViewer.visualization',
+        'cloudViewer.visualization.rendering',
+        'cloudViewer.visualization.gui',
     ],
     url="@PROJECT_HOME@",
     project_urls={

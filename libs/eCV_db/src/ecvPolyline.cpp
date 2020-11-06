@@ -696,7 +696,7 @@ ccPointCloud* ccPolyline::samplePoints(	bool densityBased,
 			//specific case: last point
 			if (i + 1 == pointCount)
 			{
-				assert(relativePos < lAB * 1.01); //it should only be a rounding issue in the worst case
+				//assert(relativePos < lAB * 1.01); //it should only be a rounding issue in the worst case
 				relativePos = lAB;
 			}
 			else //skip this segment

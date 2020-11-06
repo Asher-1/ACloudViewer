@@ -765,17 +765,20 @@ ccMesh::CreateFromPointCloudPoisson(const ccPointCloud& pcd,
                                     bool linear_fit,
 									float point_weight,
 									float samples_per_node,
-									int boundary_type) {
+									int boundary_type,
+                                    int n_threads) {
     if (!pcd.hasNormals()) {
         utility::LogError("[CreateFromPointCloudPoisson] pcd has no normals");
     }
 
+    if (n_threads <= 0) {
+        n_threads = (int)std::thread::hardware_concurrency();
+    }
+
 #ifdef _OPENMP
-    ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::OPEN_MP,
-                     std::thread::hardware_concurrency());
+    ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::OPEN_MP, n_threads);
 #else
-    ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::THREAD_POOL,
-                     std::thread::hardware_concurrency());
+    ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::THREAD_POOL, n_threads);
 #endif
 
 	auto mesh = std::make_shared<ccMesh>();

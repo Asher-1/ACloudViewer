@@ -30,6 +30,7 @@
 #include <ecvMesh.h>
 #include <ecvBBox.h>
 #include <ecvFacet.h>
+#include <ecvHalfEdgeMesh.h>
 #include <ecvPolyline.h>
 #include <LineSet.h>
 #include <ecvPointCloud.h>
@@ -250,26 +251,6 @@ bool FacetRenderer::UpdateGeometry() {
 	return true;
 }
 
-bool TetraMeshRenderer::Render(const RenderOption &option,
-                               const ViewControl &view) {
-    if (!is_visible_ || geometry_ptr_->isEmpty()) return true;
-    return simple_tetramesh_shader_.Render(*geometry_ptr_, option, view);
-}
-
-bool TetraMeshRenderer::AddGeometry(
-        std::shared_ptr<const ccHObject> geometry_ptr) {
-    if (!geometry_ptr->isKindOf(CV_TYPES::TETRA_MESH)) {
-        return false;
-    }
-    geometry_ptr_ = geometry_ptr;
-    return UpdateGeometry();
-}
-
-bool TetraMeshRenderer::UpdateGeometry() {
-    simple_tetramesh_shader_.InvalidateGeometry();
-    return true;
-}
-
 bool OrientedBoundingBoxRenderer::Render(const RenderOption &option,
                                          const ViewControl &view) {
     if (!is_visible_ || geometry_ptr_->isEmpty()) return true;
@@ -360,6 +341,66 @@ bool TriangleMeshRenderer::UpdateGeometry() {
     return true;
 }
 
+
+bool TetraMeshRenderer::Render(const RenderOption &option,
+                               const ViewControl &view) {
+    if (!is_visible_ || geometry_ptr_->isEmpty()) return true;
+    return simple_tetramesh_shader_.Render(*geometry_ptr_, option, view);
+}
+
+bool TetraMeshRenderer::AddGeometry(
+        std::shared_ptr<const ccHObject> geometry_ptr) {
+    if (!geometry_ptr->isKindOf(CV_TYPES::TETRA_MESH)) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool TetraMeshRenderer::UpdateGeometry() {
+    simple_tetramesh_shader_.InvalidateGeometry();
+    return true;
+}
+
+bool HalfEdgeMeshRenderer::Render(const RenderOption &option,
+                                  const ViewControl &view) {
+    if (!is_visible_ || geometry_ptr_->isEmpty()) return true;
+    const auto &mesh = (const geometry::ecvHalfEdgeMesh &)(*geometry_ptr_);
+    bool success = true;
+    if (mesh.hasVertexNormals()) {
+        if (option.mesh_color_option_ ==
+            RenderOption::MeshColorOption::Normal) {
+            success &= normal_mesh_shader_.Render(mesh, option, view);
+        } else {
+            success &= phong_mesh_shader_.Render(mesh, option, view);
+        }
+    } else {  // if normals are not ready
+        success &= simple_mesh_shader_.Render(mesh, option, view);
+    }
+
+    if (option.mesh_show_wireframe_) {
+        success &= simpleblack_wireframe_shader_.Render(mesh, option, view);
+    }
+    return success;
+}
+
+bool HalfEdgeMeshRenderer::AddGeometry(
+        std::shared_ptr<const ccHObject> geometry_ptr) {
+    if (!geometry_ptr->isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool HalfEdgeMeshRenderer::UpdateGeometry() {
+    simple_mesh_shader_.InvalidateGeometry();
+    phong_mesh_shader_.InvalidateGeometry();
+    normal_mesh_shader_.InvalidateGeometry();
+    simpleblack_wireframe_shader_.InvalidateGeometry();
+    return true;
+}
+
 bool ImageRenderer::Render(const RenderOption &option,
                            const ViewControl &view) {
     if (!is_visible_ || geometry_ptr_->isEmpty()) return true;
@@ -404,13 +445,13 @@ bool CoordinateFrameRenderer::Render(const RenderOption &option,
                                      const ViewControl &view) {
     if (!is_visible_ || geometry_ptr_->isEmpty()) return true;
     if (!option.show_coordinate_frame_) return true;
-    const auto &mesh = (const ccMesh &)(*geometry_ptr_);
-    return phong_shader_.Render(mesh, option, view);
+    return phong_shader_.Render(*geometry_ptr_, option, view);
 }
 
 bool CoordinateFrameRenderer::AddGeometry(
         std::shared_ptr<const ccHObject> geometry_ptr) {
-    if (!geometry_ptr->isKindOf(CV_TYPES::MESH)) {
+    if (!geometry_ptr->isKindOf(CV_TYPES::MESH) &&
+        !geometry_ptr->isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;

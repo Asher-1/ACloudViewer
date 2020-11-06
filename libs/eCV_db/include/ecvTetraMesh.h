@@ -32,19 +32,12 @@
 #include <memory>
 #include <vector>
 
+// LOCAL
+#include "ecvMeshBase.h"
+
 // CV_CORE_LIB
 #include <Eigen.h>
 #include <Helper.h>
-#include <GenericMesh.h>
-
-// LOCAL
-#include "eCV_db.h"
-#include "ecvHObject.h"
-
-class ccMesh;
-class ccBBox;
-class ecvOrientedBBox;
-class ccPointCloud;
 
 namespace cloudViewer {
 namespace geometry {
@@ -53,96 +46,36 @@ namespace geometry {
 ///
 /// \brief Tetra mesh contains vertices and tetrahedra represented by the
 /// indices to the vertices.
-class ECV_DB_LIB_API TetraMesh : public CVLib::GenericMesh, public ccHObject
-{
+class ECV_DB_LIB_API TetraMesh : public ecvMeshBase {
 public:
 	//! Default ccMesh constructor
 	/** \param vertices the vertices cloud
 	**/
-	TetraMesh(const char* name = "TetraMesh") : ccHObject(name) {}
+    TetraMesh(const char *name = "TetraMesh") : ecvMeshBase(name) {}
 
     /// \brief Parameterized Constructor.
     ///
     /// \param vertices Vertex coordinates.
     /// \param tetras List of tetras denoted by the index of points forming the
     /// tetra.
-	TetraMesh(const std::vector<Eigen::Vector3d> &vertices,
-		const std::vector<Eigen::Vector4i,
-		CVLib::utility::Vector4i_allocator> &tetras, 
-		const char* name = "TetraMesh");
+    TetraMesh(const std::vector<Eigen::Vector3d> &vertices,
+              const std::vector<Eigen::Vector4i, CVLib::utility::Vector4i_allocator> &tetras,
+              const char *name = "TetraMesh")
+        : ecvMeshBase(name),
+          tetras_(tetras) {}
 
 	~TetraMesh() override {}
 
 	//inherited methods (ccHObject)
 	virtual bool isSerializable() const override { return true; }
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::TETRA_MESH; }
-	virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
-
-	//inherited methods (GenericMesh)
-	inline virtual unsigned size() const override {
-		return static_cast<unsigned>(tetras_.size());
-	}
-	virtual void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) override;
-
-	// inherited methods (GenericIndexedMesh)
-	virtual void placeIteratorAtBeginning() override {}
-	virtual void forEach(genericTriangleAction action) override {}
-	virtual CVLib::GenericTriangle* _getNextTriangle() override { return nullptr; }
-
 
 public:
-	inline virtual bool isEmpty() const override { return !hasVertices(); }
+    virtual TetraMesh &clear() override;
 
-	virtual Eigen::Vector3d getMinBound() const override;
-	virtual Eigen::Vector3d getMaxBound() const override;
-	virtual Eigen::Vector3d getGeometryCenter() const override;
-	virtual ccBBox getAxisAlignedBoundingBox() const override;
-	virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-	virtual TetraMesh& transform(const Eigen::Matrix4d &transformation) override;
-	virtual TetraMesh& translate(const Eigen::Vector3d &translation,
-		bool relative = true) override;
-	virtual TetraMesh& scale(const double s, const Eigen::Vector3d& center) override;
-	virtual TetraMesh& rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d& center) override;
-
-    TetraMesh &clear();
-	/// Returns `True` if the mesh contains vertices.
-	bool hasVertices() const { return vertices_.size() > 0; }
-
-	/// Returns `True` if the mesh contains vertex normals.
-	bool hasVertexNormals() const {
-		return vertices_.size() > 0 &&
-			vertex_normals_.size() == vertices_.size();
-	}
-
-	/// Returns `True` if the mesh contains vertex colors.
-	bool hasVertexColors() const {
-		return vertices_.size() > 0 &&
-			vertex_colors_.size() == vertices_.size();
-	}
-
-	/// Normalize vertex normals to length 1.
-	TetraMesh &normalizeNormals() {
-		for (size_t i = 0; i < vertex_normals_.size(); i++) {
-			vertex_normals_[i].normalize();
-			if (std::isnan(vertex_normals_[i](0))) {
-				vertex_normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
-			}
-		}
-		return *this;
-	}
-
-	/// \brief Assigns each vertex in the TriangleMesh the same color
-	///
-	/// \param color RGB colors of vertices.
-	TetraMesh &paintUniformColor(const Eigen::Vector3d &color) {
-		ResizeAndPaintUniformColor(vertex_colors_, vertices_.size(), color);
-		return *this;
-	}
-
-	/// Function that computes the convex hull of the triangle mesh using qhull
-	std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
-		computeConvexHull() const;
 public:
+    inline std::size_t tetraSize() const { return tetras_.size(); }
+
     TetraMesh &operator+=(const TetraMesh &mesh);
     TetraMesh operator+(const TetraMesh &mesh) const;
 
@@ -188,13 +121,6 @@ public:
     CreateFromPointCloud(const ccPointCloud &point_cloud);
 
 public:
-	/// Vertex coordinates.
-	std::vector<Eigen::Vector3d> vertices_;
-	/// Vertex normals.
-	std::vector<Eigen::Vector3d> vertex_normals_;
-	/// RGB colors of vertices.
-	std::vector<Eigen::Vector3d> vertex_colors_;
-
 	/// List of tetras denoted by the index of points forming the tetra.
 	std::vector<Eigen::Vector4i, CVLib::utility::Vector4i_allocator> tetras_;
 };

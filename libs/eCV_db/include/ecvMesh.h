@@ -248,7 +248,8 @@ public:
 	/** \param n the number of triangles to reserve
 		\return true if the method succeeds, false otherwise
 	**/
-	bool reserve(size_t n);
+    bool reserve(std::size_t n);
+    bool reserveAssociatedCloud(std::size_t n);
 
 	//! Resizes the array of vertex indexes (3 per triangle)
 	/** If the new number of elements is smaller than the actual size,
@@ -257,6 +258,7 @@ public:
 		\return true if the method succeeds, false otherwise
 	**/
 	bool resize(size_t n);
+    bool resizeAssociatedCloud(std::size_t n);
 
 	//! Removes unused capacity
 	inline void shrinkToFit() { if (size() < capacity()) resize(size()); }
@@ -272,6 +274,7 @@ public:
 	bool getTriangleNormals(unsigned triangleIndex, CCVector3& Na, CCVector3& Nb, CCVector3& Nc) const override;
 	bool getTriangleNormals(unsigned triangleIndex, double Na[3], double Nb[3], double Nc[3]) const override;
 	bool getTriangleNormals(unsigned triangleIndex, Eigen::Vector3d& Na, Eigen::Vector3d& Nb, Eigen::Vector3d& Nc) const override;
+	std::vector<Eigen::Vector3d> getTriangleNormals() const;
 	Eigen::Vector3d getTriangleNorm(size_t index) const;
 	bool setTriangleNorm(size_t index, const Eigen::Vector3d& triangle_normal);
 	bool setTriangleNormalIndexes(size_t triangleIndex, CompressedNormType value);
@@ -627,7 +630,7 @@ public: // some cloudViewer interface
 	virtual ccMesh& scale(const double s, const Eigen::Vector3d& center) override;
 	virtual ccMesh& rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) override;
 
-	/// \brief Assigns each vertex in the TriangleMesh the same color
+	/// \brief Assigns each vertex in the ccMesh the same color
 	///
 	/// \param color RGB colors of vertices.
 	ccMesh &paintUniformColor(const Eigen::Vector3d &color);
@@ -858,6 +861,11 @@ public: // some cloudViewer interface
 	/// the individual triangle surfaces.
 	double getSurfaceArea(std::vector<double> &triangle_areas) const;
 
+    /// Function that computes the volume of the mesh, under the condition
+    /// that it is watertight and orientable. See Zhang and Chen, "Efficient
+    /// feature extraction for 2D/3D objects in mesh representation", 2001.
+    double getVolume() const;
+
 	/// Function that computes the plane equation from the three points.
 	/// If the three points are co-linear, then this function returns the
 	/// invalid plane (0, 0, 0, 0).
@@ -880,39 +888,45 @@ public: // some cloudViewer interface
 		size_t number_of_points,
 		std::vector<double> &triangle_areas,
 		double surface_area,
-		bool use_triangle_normal);
+		bool use_triangle_normal,
+        int seed);
 
-	/// Function to sample \param number_of_points points uniformly from the
-	/// mesh. \param use_triangle_normal Set to true to assign the triangle
-	/// normals to the returned points instead of the interpolated vertex
-	/// normals. The triangle normals will be computed and added to the mesh
-	/// if necessary.
+    /// Function to sample \param number_of_points points uniformly from the
+    /// mesh. \param use_triangle_normal Set to true to assign the triangle
+    /// normals to the returned points instead of the interpolated vertex
+    /// normals. The triangle normals will be computed and added to the mesh
+    /// if necessary. \param seed Sets the seed value used in the random
+    /// generator, set to -1 to use a random seed value with each function
+    /// call.
 	std::shared_ptr<ccPointCloud> samplePointsUniformly(
-		size_t number_of_points, bool use_triangle_normal = false);
+		size_t number_of_points, 
+		bool use_triangle_normal = false,
+        int seed = -1);
 
-	/// Function to sample \param number_of_points points (blue noise).
-	/// Based on the method presented in Yuksel, "Sample Elimination for
-	/// Generating Poisson Disk Sample Sets", EUROGRAPHICS, 2015 The PointCloud
-	/// \param pcl_init is used for sample elimination if given, otherwise a
-	/// PointCloud is first uniformly sampled with \param init_number_of_points
-	/// x \param number_of_points number of points.
-	/// \param use_triangle_normal Set to true to assign the triangle
-	/// normals to the returned points instead of the interpolated vertex
-	/// normals. The triangle normals will be computed and added to the mesh
-	/// if necessary.
+    /// Function to sample \p number_of_points points (blue noise).
+    /// Based on the method presented in Yuksel, "Sample Elimination for
+    /// Generating Poisson Disk Sample Sets", EUROGRAPHICS, 2015 The
+    /// PointCloud \p pcl_init is used for sample elimination if given,
+    /// otherwise a PointCloud is first uniformly sampled with \p
+    /// init_number_of_points x \p number_of_points number of points. \p
+    /// use_triangle_normal Set to true to assign the triangle normals to
+    /// the returned points instead of the interpolated vertex normals. The
+    /// triangle normals will be computed and added to the mesh if
+    /// necessary. \p seed Sets the seed value used in the random generator,
+    /// set to -1 to use a random seed value with each function call.
 	std::shared_ptr<ccPointCloud> samplePointsPoissonDisk(
 		size_t number_of_points,
 		double init_factor = 5,
 		const std::shared_ptr<ccPointCloud> pcl_init = nullptr,
-		bool use_triangle_normal = false);
+        bool use_triangle_normal = false,
+        int seed = -1);
 
 	/// Function to subdivide triangle mesh using the simple midpoint algorithm.
 	/// Each triangle is subdivided into four triangles per iteration and the
 	/// new vertices lie on the midpoint of the triangle edges.
 	/// \param number_of_iterations defines a single iteration splits each
 	/// triangle into four triangles that cover the same surface.
-	std::shared_ptr<ccMesh> subdivideMidpoint(
-		int number_of_iterations) const;
+	std::shared_ptr<ccMesh> subdivideMidpoint(int number_of_iterations) const;
 
 	/// Function to subdivide triangle mesh using Loop's scheme.
 	/// Cf. Charles T. Loop, "Smooth subdivision surfaces based on triangles",
@@ -932,23 +946,27 @@ public: // some cloudViewer interface
 		SimplificationContraction contraction =
 		SimplificationContraction::Average) const;
 
-	/// Function to simplify mesh using Quadric Error Metric Decimation by
-	/// Garland and Heckbert.
-	/// \param target_number_of_triangles defines the number of triangles that
-	/// the simplified mesh should have. It is not guranteed that this number
-	/// will be reached.
+    /// Function to simplify mesh using Quadric Error Metric Decimation by
+    /// Garland and Heckbert.
+    /// \param target_number_of_triangles defines the number of triangles
+    /// that the simplified mesh should have. It is not guaranteed that this
+    /// number will be reached. \param maximum_error defines the maximum
+    /// error where a vertex is allowed to be merged \param boundary_weight
+    /// a weight applied to edge vertices used to preserve boundaries
 	std::shared_ptr<ccMesh> simplifyQuadricDecimation(
-		int target_number_of_triangles) const;
+        int target_number_of_triangles,
+        double maximum_error = std::numeric_limits<double>::infinity(),
+        double boundary_weight = 1.0) const;
 
-	/// Function to select points from \p input TriangleMesh into
-	/// output TriangleMesh
+	/// Function to select points from \p input ccMesh into
+	/// output ccMesh
 	/// Vertices with indices in \p indices are selected.
 	/// \param indices defines Indices of vertices to be selected.
 	/// \param cleanup If true it automatically calls
-	/// TriangleMesh::RemoveDuplicatedVertices,
-	/// TriangleMesh::RemoveDuplicatedTriangles,
-	/// TriangleMesh::RemoveUnreferencedVertices, and
-	/// TriangleMesh::RemoveDegenerateTriangles
+	/// ccMesh::RemoveDuplicatedVertices,
+	/// ccMesh::RemoveDuplicatedTriangles,
+	/// ccMesh::RemoveUnreferencedVertices, and
+	/// ccMesh::RemoveDegenerateTriangles
 	std::shared_ptr<ccMesh> selectByIndex(
 		const std::vector<size_t> &indices, bool cleanup = true) const;
 
@@ -1005,20 +1023,26 @@ public: // some cloudViewer interface
 	/// Should have same size as \ref vertices_.
 	void removeVerticesByMask(const std::vector<bool> &vertex_mask);
 
-	/// \brief This function deforms the mesh using the method by
-	/// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
-	///
-	/// \param constraint_vertex_indices Indices of the triangle vertices that
-	/// should be constrained by the vertex positions in
-	/// constraint_vertex_positions.
-	/// \param constraint_vertex_positions Vertex positions used for the
-	/// constraints.
-	/// \param max_iter maximum number of iterations to minimize energy
-	/// functional. \return The deformed ccMesh
+    /// \brief This function deforms the mesh using the method by
+    /// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
+    ///
+    /// \param constraint_vertex_indices Indices of the triangle vertices
+    /// that should be constrained by the vertex positions in
+    /// constraint_vertex_positions.
+    /// \param constraint_vertex_positions Vertex positions used for the
+    /// constraints.
+    /// \param max_iter maximum number of iterations to minimize energy
+    /// functional.
+    /// \param energy energy model that should be optimized
+    /// \param smoothed_alpha alpha parameter of the smoothed ARAP model
+    /// \return The deformed ccMesh
 	std::shared_ptr<ccMesh> deformAsRigidAsPossible(
 		const std::vector<int> &constraint_vertex_indices,
 		const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
-		size_t max_iter) const;
+        size_t max_iter,
+        DeformAsRigidAsPossibleEnergy energy =
+                DeformAsRigidAsPossibleEnergy::Spokes,
+        double smoothed_alpha = 0.01) const;
 
 	/// \brief Alpha shapes are a generalization of the convex hull. With
 	/// decreasing alpha value the shape schrinks and creates cavities.
@@ -1081,8 +1105,10 @@ public: // some cloudViewer interface
 	/// This parameter specifies the minimum number of points that should fall within an octree node.
 	/// For noise-free samples, small values in the range [1.0 - 5.0] can be used. For more noisy samples, larger values
 	/// in the range [15.0 - 20.0] may be needed to provide a smoother, noise-reduced, reconstruction.
-	/// \param boundary_type Boundary type for the finite elements
-	/// \return The estimated TriangleMesh, and per vertex densitie values that
+	/// \param boundary_type Boundary type for the finite elements \param n_threads Number of threads used for
+    /// reconstruction. Set to -1
+    /// to automatically determine it.
+	/// \return The estimated ccMesh, and per vertex densitie values that
 	/// can be used to to trim the mesh.
 	static std::tuple<std::shared_ptr<ccMesh>, std::vector<double>>
 	CreateFromPointCloudPoisson(const ccPointCloud &pcd,
@@ -1092,7 +1118,8 @@ public: // some cloudViewer interface
 								bool linear_fit = false,
 								float point_weight = 2.f,
 								float samples_per_node = 1.5f,
-								int boundary_type = 2 /*BOUNDARY_NEUMANN*/);
+								int boundary_type = 2 /*BOUNDARY_NEUMANN*/,
+								int n_threads = -1);
 
 	/// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the

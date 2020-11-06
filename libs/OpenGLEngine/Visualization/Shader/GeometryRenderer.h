@@ -157,20 +157,6 @@ protected:
 	SimpleShaderForPolyline simple_polyline_shader_;
 };
 
-class TetraMeshRenderer : public GeometryRenderer {
-public:
-    ~TetraMeshRenderer() override {}
-
-public:
-    bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(
-            std::shared_ptr<const ccHObject> geometry_ptr) override;
-    bool UpdateGeometry() override;
-
-protected:
-    SimpleShaderForTetraMesh simple_tetramesh_shader_;
-};
-
 class OrientedBoundingBoxRenderer : public GeometryRenderer {
 public:
     ~OrientedBoundingBoxRenderer() override {}
@@ -213,6 +199,35 @@ protected:
     TextureSimpleShaderForTriangleMesh texture_simple_mesh_shader_;
     PhongShaderForTriangleMesh phong_mesh_shader_;
     TexturePhongShaderForTriangleMesh texture_phong_mesh_shader_;
+    NormalShaderForTriangleMesh normal_mesh_shader_;
+    SimpleBlackShaderForTriangleMeshWireFrame simpleblack_wireframe_shader_;
+};
+
+class TetraMeshRenderer : public GeometryRenderer {
+public:
+    ~TetraMeshRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForTetraMesh simple_tetramesh_shader_;
+};
+
+class HalfEdgeMeshRenderer : public GeometryRenderer {
+public:
+    ~HalfEdgeMeshRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForTriangleMesh simple_mesh_shader_;
+    PhongShaderForTriangleMesh phong_mesh_shader_;
     NormalShaderForTriangleMesh normal_mesh_shader_;
     SimpleBlackShaderForTriangleMeshWireFrame simpleblack_wireframe_shader_;
 };

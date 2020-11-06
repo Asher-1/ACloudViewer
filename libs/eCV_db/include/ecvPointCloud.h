@@ -873,15 +873,6 @@ public: // for python interface
 	/// Normalize point normals to length 1.`
 	ccPointCloud &normalizeNormals();
 
-	/// \brief Function to compute the point to point distances between point
-	/// clouds.
-	///
-	/// For each point in the \p source point cloud, compute the distance to the
-	/// \p target point cloud.
-	///
-	/// \param target The target point cloud.
-	std::vector<double> computePointCloudDistance(const ccPointCloud &target);
-
 	/// \brief Function to select points from \p input ccPointCloud into
 	/// \p output ccPointCloud.
 	///
@@ -900,7 +891,6 @@ public: // for python interface
 	/// \param remove_nan Remove NaN values from the ccPointCloud.
 	/// \param remove_infinite Remove infinite values from the ccPointCloud.
 	ccPointCloud &removeNonFinitePoints(bool remove_nan = true, bool remove_infinite = true);
-
 
 	/// \brief Function to downsample input ccPointCloud into output ccPointCloud
    /// with a voxel.
@@ -995,6 +985,23 @@ public: // for python interface
 	/// camera_location.
 	bool orientNormalsTowardsCameraLocation(
 		const Eigen::Vector3d &camera_location = Eigen::Vector3d::Zero());
+
+	/// \brief Function to consistently orient estimated normals based on
+    /// consistent tangent planes as described in Hoppe et al., "Surface
+    /// Reconstruction from Unorganized Points", 1992.
+    ///
+    /// \param k k nearest neighbour for graph reconstruction for normal
+    /// propagation.
+    void orientNormalsConsistentTangentPlane(size_t k);
+
+	/// \brief Function to compute the point to point distances between point
+    /// clouds.
+    ///
+    /// For each point in the \p source point cloud, compute the distance to the
+    /// \p target point cloud.
+    ///
+    /// \param target The target point cloud.
+    std::vector<double> computePointCloudDistance(const ccPointCloud& target);
 
 	/// \brief Function to compute the Mahalanobis distance for points
 	/// in an input point cloud.

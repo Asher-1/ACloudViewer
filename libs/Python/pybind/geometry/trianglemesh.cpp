@@ -215,16 +215,6 @@ void pybind_trianglemesh(py::module &m) {
 		.def("get_triangle_plane", &ccMesh::getTrianglePlane,
 			"Function that computes the plane equation of a mesh triangle identified by the triangle index."
 			"triangle_index"_a)
-		.def("sample_points_uniformly_impl", 
-				[](ccMesh& mesh, size_t number_of_points,
-					std::vector<double> &triangle_areas,
-					double surface_area,
-					bool use_triangle_normal) {
-				return mesh.samplePointsUniformlyImpl(
-					number_of_points, triangle_areas, surface_area, use_triangle_normal);
-			}, "Function to sample number_of_points points uniformly from the mesh.", 
-			"number_of_points"_a, "triangle_areas"_a, "surface_area"_a, "use_triangle_normal"_a)
-
 
 		.def("vertice_size", &ccMesh::getVerticeSize, "Returns vertices number.")
 		.def("set_associated_cloud", [](ccMesh& mesh, ccGenericPointCloud& cloud) {
@@ -488,10 +478,15 @@ void pybind_trianglemesh(py::module &m) {
                 py::overload_cast<std::vector<double> &>(&ccMesh::getSurfaceArea, py::const_),
                 "Function that computes the surface area of the mesh, i.e. "
                 "the sum of the individual triangle surfaces.", "triangle_areas"_a)
+        .def("get_volume",
+                (double (ccMesh::*)() const) & ccMesh::getVolume,
+                "Function that computes the volume of the mesh, under the "
+                "condition that it is watertight and orientable.")
         .def("sample_points_uniformly",
                 &ccMesh::samplePointsUniformly,
                 "Function to uniformly sample points from the mesh.",
-                "number_of_points"_a = 100, "use_triangle_normal"_a = false)
+                "number_of_points"_a = 100, "use_triangle_normal"_a = false,
+                 "seed"_a = -1)
         .def("sample_points_poisson_disk",
                 &ccMesh::samplePointsPoissonDisk,
                 "Function to sample points from the mesh, where each point "
@@ -501,7 +496,7 @@ void pybind_trianglemesh(py::module &m) {
                 "noise). Method is based on Yuksel, \"Sample Elimination for "
                 "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
                 "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
-                "use_triangle_normal"_a = false)
+                 "use_triangle_normal"_a = false, "seed"_a = -1)
         .def("subdivide_midpoint",
                 &ccMesh::subdivideMidpoint,
                 "Function subdivide mesh using midpoint algorithm.",
@@ -522,7 +517,9 @@ void pybind_trianglemesh(py::module &m) {
                 "Function to simplify mesh using Quadric Error Metric "
                 "Decimation by "
                 "Garland and Heckbert",
-                "target_number_of_triangles"_a)
+                 "target_number_of_triangles"_a,
+                 "maximum_error"_a = std::numeric_limits<double>::infinity(),
+                 "boundary_weight"_a = 1.0)
         .def("compute_convex_hull",
                 &ccMesh::computeConvexHull,
                 "Computes the convex hull of the triangle mesh.")
@@ -553,18 +550,20 @@ void pybind_trianglemesh(py::module &m) {
                 "the vertices are removed.",
                 "vertex_indices"_a)
         .def("remove_vertices_by_mask",
-                &ccMesh::removeVerticesByMask,
-                "This function removes the vertices that are masked in "
-                "vertex_mask. Note that also all triangles associated with "
-                "the vertices are removed.",
-                "vertex_mask"_a)
+            &ccMesh::removeVerticesByMask,
+            "This function removes the vertices that are masked in "
+            "vertex_mask. Note that also all triangles associated with "
+            "the vertices are removed.",
+            "vertex_mask"_a)
         .def("deform_as_rigid_as_possible",
-                &ccMesh::deformAsRigidAsPossible,
-                "This function deforms the mesh using the method by Sorkine "
-                "and Alexa, "
-                "'As-Rigid-As-Possible Surface Modeling', 2007",
-                "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
-                "max_iter"_a)
+            &ccMesh::deformAsRigidAsPossible,
+            "This function deforms the mesh using the method by Sorkine "
+            "and Alexa, "
+            "'As-Rigid-As-Possible Surface Modeling', 2007",
+            "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
+            "max_iter"_a,
+            "energy"_a = CVLib::GenericMesh::DeformAsRigidAsPossibleEnergy::Spokes,
+            "smoothed_alpha"_a = 0.01)
 		.def_static("compute_triangle_area", &ccMesh::ComputeTriangleArea,
 					"Function that computes the area of a mesh triangle.", "p0"_a, "p1"_a, "p2"_a)
 		.def_static("compute_triangle_plane", &ccMesh::ComputeTrianglePlane,
@@ -634,8 +633,9 @@ void pybind_trianglemesh(py::module &m) {
 					"width"_a = 0, "scale"_a = 1.1,
                     "linear_fit"_a = false, 
 					"point_weight"_a = 2.0,
-					"samples_per_node"_a = 1.5,
-					"boundary_type"_a = 2)
+					"samples_per_node"_a = 1.5, 
+                    "boundary_type"_a = 2,
+                    "n_threads"_a = -1)
         .def_static("create_plane", &ccMesh::CreatePlane,
                     "Factory function to create a plane. The center of  "
                     "the plane will be placed at (0, 0, 0).",
@@ -760,7 +760,6 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "ccMesh", "get_edge_to_triangles_map");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_edge_to_vertices_map");
     docstring::ClassMethodDocInject(m, "ccMesh", "get_triangle_plane");
-    docstring::ClassMethodDocInject(m, "ccMesh", "sample_points_uniformly_impl");
     docstring::ClassMethodDocInject(m, "ccMesh", "vertice_size");
     docstring::ClassMethodDocInject(m, "ccMesh", "create_internal_cloud");
     docstring::ClassMethodDocInject(m, "ccMesh", "set_associated_cloud");
@@ -877,6 +876,7 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "ccMesh", "crop",
             {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
+    docstring::ClassMethodDocInject(m, "ccMesh", "get_volume");
     docstring::ClassMethodDocInject(
             m, "ccMesh", "sample_points_uniformly",
             {{"number_of_points",
@@ -885,7 +885,10 @@ void pybind_trianglemesh(py::module &m) {
               "If True assigns the triangle normals instead of the "
               "interpolated vertex normals to the returned points. The "
               "triangle normals will be computed and added to the mesh if "
-              "necessary."}});
+              "necessary."},
+             {"seed",
+              "Seed value used in the random generator, set to -1 to use a "
+              "random seed value with each function call."}});
     docstring::ClassMethodDocInject(
             m, "ccMesh", "sample_points_poisson_disk",
             {{"number_of_points", "Number of points that should be sampled."},
@@ -899,7 +902,10 @@ void pybind_trianglemesh(py::module &m) {
               "If True assigns the triangle normals instead of the "
               "interpolated vertex normals to the returned points. The "
               "triangle normals will be computed and added to the mesh if "
-              "necessary."}});
+              "necessary."},
+             {"seed",
+              "Seed value used in the random generator, set to -1 to use a "
+              "random seed value with each function call."}});
     docstring::ClassMethodDocInject(
             m, "ccMesh", "subdivide_midpoint",
             {{"number_of_iterations",
@@ -922,7 +928,12 @@ void pybind_trianglemesh(py::module &m) {
             m, "ccMesh", "simplify_quadric_decimation",
             {{"target_number_of_triangles",
               "The number of triangles that the simplified mesh should have. "
-              "It is not guranteed that this number will be reached."}});
+              "It is not guranteed that this number will be reached."},
+             {"maximum_error",
+              "The maximum error where a vertex is allowed to be merged"},
+             {"boundary_weight",
+              "A weight applied to edge vertices used to preserve "
+              "boundaries"}});
     docstring::ClassMethodDocInject(m, "ccMesh", "compute_convex_hull");
     docstring::ClassMethodDocInject(m, "ccMesh",
                                     "cluster_connected_triangles");
@@ -955,7 +966,12 @@ void pybind_trianglemesh(py::module &m) {
              {"constraint_vertex_positions",
               "Vertex positions used for the constraints."},
              {"max_iter",
-              "Maximum number of iterations to minimize energy functional."}});
+              "Maximum number of iterations to minimize energy functional."},
+             {"energy",
+              "Energy model that is minimized in the deformation process"},
+             {"smoothed_alpha",
+              "trade-off parameter for the smoothed energy functional for the "
+              "regularization term."}});
     docstring::ClassMethodDocInject(
             m, "ccMesh", "triangulate",
             {{"cloud", "a point cloud."},
@@ -1017,8 +1033,10 @@ void pybind_trianglemesh(py::module &m) {
 			  "within an octree node. For noise-free samples, small values in the range [1.0 - 5.0]" 
 			  "can be used. For more noisy samples, larger values in the range [15.0 - 20.0]"
 			  "may be needed to provide a smoother, noise-reduced, reconstruction."},
-			 {"boundary_type",
-			  "Boundary type for the finite elements"} });
+			 {"boundary_type", "Boundary type for the finite elements"},
+             {"n_threads",
+              "Number of threads used for reconstruction. Set to -1 to "
+              "automatically determine it."}});
 
     docstring::ClassMethodDocInject(m, "ccMesh", "create_box",
                                     {{"width", "x-directional length."},

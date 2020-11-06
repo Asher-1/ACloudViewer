@@ -22,27 +22,30 @@ If you use CloudViewer in an academic project, please cite our paper:
 Core features
 ======================
 
-* Basic 3D data structures
-* Basic 3D data processing algorithms
+* 3D data structures
+* 3D data processing algorithms
 * Scene reconstruction
 * Surface alignment
 * 3D visualization
-* Python binding
+* Physically based rendering (PBR)
+* 3D machine learning support with PyTorch and TensorFlow
+* GPU acceleration for core 3D operations
+* Available in C++ and Python
 
 Supported platforms
 ======================
 
 The package has been tested on:
 
-* Ubuntu 16.04, Ubuntu 18.04
+* Ubuntu 18.04 and 20.04
 * Windows 10 64-bit
 * macOS High Sierra and above
 
-With Python version:
-* 2.7
+With Python versions:
 * 3.5
 * 3.6
 * 3.7
+* 3.8
 
 Resources
 ======================

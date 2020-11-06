@@ -40,7 +40,9 @@ using namespace CVLib;
 std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
 	const std::vector<int> &constraint_vertex_indices,
 	const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
-	size_t max_iter) const {
+    size_t max_iter,
+    DeformAsRigidAsPossibleEnergy energy_model,
+    double smoothed_alpha) const {
 
 	ccPointCloud* baseVertices = new ccPointCloud("vertices");
 	assert(baseVertices);
@@ -57,8 +59,6 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
 	auto edges_to_vertices = prime->getEdgeToVerticesMap();
 	auto edge_weights =
 		prime->computeEdgeWeightsCot(edges_to_vertices, /*min_weight=*/0);
-	std::vector<Eigen::Matrix3d> Rs(getVerticeSize());
-	utility::LogDebug("[DeformAsRigidAsPossible] done setting up S'");
 
 	std::unordered_map<int, Eigen::Vector3d> constraints;
 	for (size_t idx = 0; idx < constraint_vertex_indices.size() &&
@@ -66,6 +66,16 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
 		constraints[constraint_vertex_indices[idx]] =
 			constraint_vertex_positions[idx];
 	}
+
+    double surface_area = -1;
+    // std::vector<Eigen::Matrix3d> Rs(vertices_.size(),
+    // Eigen::Matrix3d::Identity());
+    std::vector<Eigen::Matrix3d> Rs(getVerticeSize());
+    std::vector<Eigen::Matrix3d> Rs_old;
+    if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
+        surface_area = prime->getSurfaceArea();
+        Rs_old.resize(getVerticeSize());
+    }
 
 	// Build system matrix L and its solver
 	utility::LogDebug("[DeformAsRigidAsPossible] setting up system matrix L");
@@ -93,7 +103,6 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
 
 	utility::LogDebug("[DeformAsRigidAsPossible] setting up sparse solver");
 	Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
-	// Eigen::SuperLU<Eigen::SparseMatrix<double>> solver;
 	solver.analyzePattern(L);
 	solver.factorize(L);
 	if (solver.info() != Eigen::Success) {
@@ -105,17 +114,22 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
 			"[DeformAsRigidAsPossible] done setting up sparse solver");
 	}
 
-	std::vector<Eigen::VectorXd> b = { Eigen::VectorXd(getVerticeSize()),
+	std::vector<Eigen::VectorXd> b = {Eigen::VectorXd(getVerticeSize()),
 									  Eigen::VectorXd(getVerticeSize()),
-									  Eigen::VectorXd(getVerticeSize()) };
+									  Eigen::VectorXd(getVerticeSize())};
 
 	for (size_t iter = 0; iter < max_iter; ++iter) {
+        if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
+            std::swap(Rs, Rs_old);
+        }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
 		for (int i = 0; i < int(getVerticeSize()); ++i) {
 			// Update rotations
 			Eigen::Matrix3d S = Eigen::Matrix3d::Zero();
+            Eigen::Matrix3d R = Eigen::Matrix3d::Zero();
+            int n_nbs = 0;
 			for (int j : prime->adjacency_list_[i]) {
 				Eigen::Vector3d e0 = 
 					getVertice(static_cast<size_t>(i)) - 
@@ -125,7 +139,16 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
 					prime->getVertice(static_cast<size_t>(j));
 				double w = edge_weights[GetOrderedEdge(i, j)];
 				S += w * (e0 * e1.transpose());
+                if (energy_model ==
+                    DeformAsRigidAsPossibleEnergy::Smoothed) {
+                    R += Rs_old[j];
+                }
+                n_nbs++;
 			}
+            if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed &&
+                iter > 0 && n_nbs > 0) {
+                S = 2 * S + (4 * smoothed_alpha * surface_area / n_nbs) * R.transpose();
+            }
 			Eigen::JacobiSVD<Eigen::Matrix3d> svd(
 				S, Eigen::ComputeFullU | Eigen::ComputeFullV);
 			Eigen::Matrix3d U = svd.matrixU();
@@ -180,6 +203,7 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
 
 		// Compute energy and log
 		double energy = 0;
+        double reg = 0;
 		for (int i = 0; i < int(getVerticeSize()); ++i) {
 			for (int j : prime->adjacency_list_[i]) {
 				double w = edge_weights[GetOrderedEdge(i, j)];
@@ -191,8 +215,15 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
 					prime->getVertice(static_cast<size_t>(j));
 				Eigen::Vector3d diff = e1 - Rs[i] * e0;
 				energy += w * diff.squaredNorm();
+                if (energy_model ==
+                    DeformAsRigidAsPossibleEnergy::Smoothed) {
+                    reg += (Rs[i] - Rs[j]).squaredNorm();
+                }
 			}
 		}
+        if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
+            energy = energy + smoothed_alpha * surface_area * reg;
+        }
 		utility::LogDebug("[DeformAsRigidAsPossible] iter={}, energy={:e}",
 			iter, energy);
 	}

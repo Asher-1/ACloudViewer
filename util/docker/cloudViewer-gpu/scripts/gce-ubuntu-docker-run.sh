@@ -42,11 +42,11 @@ NVIDIA_DRIVER_VERSION=440 # Must be present in Ubuntu repos 20.04: {390, 418, 43
 GCE_VM_BASE_OS=ubuntu20.04
 GCE_VM_IMAGE_SPEC=(--image-project=ubuntu-os-cloud --image-family=ubuntu-2004-lts)
 GCE_VM_CUSTOM_IMAGE_FAMILY=ubuntu-os-docker-gpu-2004-lts
-VM_IMAGE=open3d-gpu-ci-base-$(date +%Y%m%d)
+VM_IMAGE=cloudViewer-gpu-ci-base-$(date +%Y%m%d)
 
 # Container configuration
 REGISTRY_HOSTNAME=gcr.io
-DC_IMAGE="$REGISTRY_HOSTNAME/$GCE_PROJECT/open3d-gpu-ci-$UBUNTU_VERSION"
+DC_IMAGE="$REGISTRY_HOSTNAME/$GCE_PROJECT/cloudViewer-gpu-ci-$UBUNTU_VERSION"
 DC_IMAGE_TAG="$DC_IMAGE:$GITHUB_SHA"
 DC_IMAGE_LATEST_TAG="$DC_IMAGE:latest"
 
@@ -63,7 +63,7 @@ docker-build)
     # Pull previous image as cache
     docker pull "$DC_IMAGE_LATEST_TAG" || true
     docker build -t "$DC_IMAGE_TAG" \
-        -f util/docker/open3d-gpu/Dockerfile \
+        -f util/docker/cloudViewer-gpu/Dockerfile \
         --build-arg UBUNTU_VERSION="$UBUNTU_VERSION" \
         --build-arg NVIDIA_DRIVER_VERSION="${NVIDIA_DRIVER_VERSION}" \
         .

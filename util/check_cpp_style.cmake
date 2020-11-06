@@ -49,7 +49,9 @@ endmacro()
 
 # Note: also modify CPP_FORMAT_DIRS in check_style.py.
 set(CPP_FORMAT_DIRS
-    cpp
+    core
+	libs
+	eCV
     examples
     docs/_static
 )

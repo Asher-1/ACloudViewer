@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <GenericMesh.h>
+#include <ecvMeshBase.h>
 #include <ecvPointCloud.h>
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
@@ -322,6 +323,62 @@ void pybind_meshbase(py::module &m) {
 	docstring::ClassMethodDocInject(m, "ccGenericMesh", "enable_stippling");
 	docstring::ClassMethodDocInject(m, "ccGenericMesh", "sample_points");
 	docstring::ClassMethodDocInject(m, "ccGenericMesh", "import_parameters_from");
+
+	py::class_<ecvMeshBase, PyGeometry<ecvMeshBase>,
+                   std::shared_ptr<ecvMeshBase>, CVLib::GenericMesh, ccHObject>
+                meshbase2(m, "ecvMeshBase",
+                         "ecvMeshBase class. Triangle mesh contains vertices. "
+                         "Optionally, the mesh "
+                         "may also contain vertex normals and vertex colors.");
+        py::detail::bind_default_constructor<ecvMeshBase>(meshbase2);
+        py::detail::bind_copy_functions<ecvMeshBase>(meshbase2);
+
+        meshbase2.def("__repr__",
+                     [](const ecvMeshBase& mesh) {
+                         return std::string("ecvMeshBase with ") +
+                                std::to_string(mesh.vertices_.size()) +
+                                " points";
+                     })
+                .def(py::self + py::self)
+                .def(py::self += py::self)
+                .def("has_vertices", &ecvMeshBase::hasVertices,
+                     "Returns ``True`` if the mesh contains vertices.")
+                .def("has_vertex_normals", &ecvMeshBase::hasVertexNormals,
+                     "Returns ``True`` if the mesh contains vertex normals.")
+                .def("has_vertex_colors", &ecvMeshBase::hasVertexColors,
+                     "Returns ``True`` if the mesh contains vertex colors.")
+                .def("normalize_normals", &ecvMeshBase::normalizeNormals,
+                     "Normalize vertex normals to length 1.")
+                .def("paint_uniform_color", &ecvMeshBase::paintUniformColor,
+                     "Assigns each vertex in the ecvMeshBase the same color.",
+                     "color"_a)
+                .def("compute_convex_hull", &ecvMeshBase::computeConvexHull,
+                     "Computes the convex hull of the triangle mesh.")
+                .def_readwrite(
+                        "vertices", &ecvMeshBase::vertices_,
+                        "``float64`` array of shape ``(num_vertices, 3)``, "
+                        "use ``numpy.asarray()`` to access data: Vertex "
+                        "coordinates.")
+                .def_readwrite(
+                        "vertex_normals", &ecvMeshBase::vertex_normals_,
+                        "``float64`` array of shape ``(num_vertices, 3)``, "
+                        "use ``numpy.asarray()`` to access data: Vertex "
+                        "normals.")
+                .def_readwrite(
+                        "vertex_colors", &ecvMeshBase::vertex_colors_,
+                        "``float64`` array of shape ``(num_vertices, 3)``, "
+                        "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
+                        "data: RGB colors of vertices.");
+        docstring::ClassMethodDocInject(m, "ecvMeshBase", "has_vertex_colors");
+        docstring::ClassMethodDocInject(
+                m, "ecvMeshBase", "has_vertex_normals",
+                {{"normalized",
+                  "Set to ``True`` to normalize the normal to length 1."}});
+        docstring::ClassMethodDocInject(m, "ecvMeshBase", "has_vertices");
+        docstring::ClassMethodDocInject(m, "ecvMeshBase", "normalize_normals");
+        docstring::ClassMethodDocInject(m, "ecvMeshBase", "paint_uniform_color",
+                                        {{"color", "RGB colors of vertices."}});
+        docstring::ClassMethodDocInject(m, "ecvMeshBase", "compute_convex_hull");
 }
 
 void pybind_meshbase_methods(py::module &m) {}

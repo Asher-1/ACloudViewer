@@ -25,8 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "visualization/shader/PhongShader.h"
-#include <ecvPointCloud.h>
 #include <ecvMesh.h>
+#include <ecvPointCloud.h>
+#include <ecvHalfEdgeMesh.h>
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"
 
@@ -268,7 +269,8 @@ bool PhongShaderForTriangleMesh::PrepareRendering(
         const ccHObject &geometry,
         const RenderOption &option,
         const ViewControl &view) {
-    if (!geometry.isKindOf(CV_TYPES::MESH)) {
+    if (!geometry.isKindOf(CV_TYPES::MESH) &&
+        !geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
         PrintShaderWarning("Rendering type is not ccMesh.");
         return false;
     }
@@ -297,75 +299,147 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &normals,
         std::vector<Eigen::Vector3f> &colors) {
-    if (!geometry.isKindOf(CV_TYPES::MESH)) {
+    if (!geometry.isKindOf(CV_TYPES::MESH) &&
+        !geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
         PrintShaderWarning("Rendering type is not ccMesh.");
         return false;
     }
-    const ccMesh &mesh = (const ccMesh &)geometry;
-    if (!mesh.hasTriangles()) {
-        PrintShaderWarning("Binding failed with empty triangle mesh.");
-        return false;
-    }
-    if (!mesh.hasTriNormals() || !mesh.hasNormals()) {
-        PrintShaderWarning("Binding failed because mesh has no normals.");
-        PrintShaderWarning("Call computeVertexNormals() before binding.");
-        return false;
-    }
-    const ColorMap &global_color_map = *GetGlobalColorMap();
-    points.resize(mesh.size() * 3);
-    normals.resize(mesh.size() * 3);
-    colors.resize(mesh.size() * 3);
 
-    for (unsigned int i = 0; i < mesh.size(); i++) {
-        const CVLib::VerticesIndexes* triangle = mesh.getTriangleVertIndexes(i);
-		std::vector<Eigen::Vector3d> vN(3);
-		mesh.getTriangleNormals(i, vN[0], vN[1], vN[2]);
-		for (size_t j = 0; j < 3; j++) {
-			size_t idx = i * 3 + j;
-			size_t vi = triangle->i[j];
-            const auto &vertex = mesh.getVertice(vi);
-            points[idx] = vertex.cast<float>();
+    if (geometry.isKindOf(CV_TYPES::MESH)) {
+        const ccMesh &mesh = (const ccMesh &)geometry;
+        if (!mesh.hasTriangles()) {
+            PrintShaderWarning("Binding failed with empty triangle mesh.");
+            return false;
+        }
+        if (!mesh.hasTriNormals() || !mesh.hasNormals()) {
+            PrintShaderWarning("Binding failed because mesh has no normals.");
+            PrintShaderWarning("Call computeVertexNormals() before binding.");
+            return false;
+        }
+        const ColorMap &global_color_map = *GetGlobalColorMap();
+        points.resize(static_cast<std::size_t>(mesh.size()) * 3);
+        normals.resize(static_cast<std::size_t>(mesh.size()) * 3);
+        colors.resize(static_cast<std::size_t>(mesh.size()) * 3);
 
-            Eigen::Vector3d color;
-            switch (option.mesh_color_option_) {
-                case RenderOption::MeshColorOption::XCoordinate:
-                    color = global_color_map.GetColor(
-                            view.GetBoundingBox().getXPercentage(vertex(0)));
-                    break;
-                case RenderOption::MeshColorOption::YCoordinate:
-                    color = global_color_map.GetColor(
-                            view.GetBoundingBox().getYPercentage(vertex(1)));
-                    break;
-                case RenderOption::MeshColorOption::ZCoordinate:
-                    color = global_color_map.GetColor(
-                            view.GetBoundingBox().getZPercentage(vertex(2)));
-                    break;
-                case RenderOption::MeshColorOption::Color:
-					if (mesh.isColorOverriden()) {
-						color = ecvColor::Rgb::ToEigen(mesh.getTempColor());
-						break;
-					}
-					else if (mesh.hasColors()) {
-						color = mesh.getVertexColor(vi);
-						break;
-					}
-                case RenderOption::MeshColorOption::Default:
-                default:
-                    color = option.default_mesh_color_;
-                    break;
-            }
-            colors[idx] = color.cast<float>();
+        for (unsigned int i = 0; i < mesh.size(); i++) {
+            const CVLib::VerticesIndexes *triangle =
+                    mesh.getTriangleVertIndexes(i);
+            std::vector<Eigen::Vector3d> vN(3);
+            mesh.getTriangleNormals(i, vN[0], vN[1], vN[2]);
+            for (size_t j = 0; j < 3; j++) {
+                size_t idx = i * 3 + j;
+                size_t vi = triangle->i[j];
+                const auto &vertex = mesh.getVertice(vi);
+                points[idx] = vertex.cast<float>();
 
-            if (option.mesh_shade_option_ ==
-                RenderOption::MeshShadeOption::FlatShade) {
-                normals[idx] = mesh.getTriangleNorm(i).cast<float>();
-            } else {
-                normals[idx] = vN[j].cast<float>();
+                Eigen::Vector3d color;
+                switch (option.mesh_color_option_) {
+                    case RenderOption::MeshColorOption::XCoordinate:
+                        color = global_color_map.GetColor(
+                                view.GetBoundingBox().getXPercentage(
+                                        vertex(0)));
+                        break;
+                    case RenderOption::MeshColorOption::YCoordinate:
+                        color = global_color_map.GetColor(
+                                view.GetBoundingBox().getYPercentage(
+                                        vertex(1)));
+                        break;
+                    case RenderOption::MeshColorOption::ZCoordinate:
+                        color = global_color_map.GetColor(
+                                view.GetBoundingBox().getZPercentage(
+                                        vertex(2)));
+                        break;
+                    case RenderOption::MeshColorOption::Color:
+                        if (mesh.isColorOverriden()) {
+                            color = ecvColor::Rgb::ToEigen(mesh.getTempColor());
+                            break;
+                        } else if (mesh.hasColors()) {
+                            color = mesh.getVertexColor(vi);
+                            break;
+                        }
+                    case RenderOption::MeshColorOption::Default:
+                    default:
+                        color = option.default_mesh_color_;
+                        break;
+                }
+                colors[idx] = color.cast<float>();
+
+                if (option.mesh_shade_option_ ==
+                    RenderOption::MeshShadeOption::FlatShade) {
+                    normals[idx] = mesh.getTriangleNorm(i).cast<float>();
+                } else {
+                    normals[idx] = vN[j].cast<float>();
+                }
             }
         }
+        draw_arrays_mode_ = GL_TRIANGLES;
+        draw_arrays_size_ = GLsizei(points.size());
+    } else if (geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
+        const geometry::ecvHalfEdgeMesh &mesh =
+                (const geometry::ecvHalfEdgeMesh &)geometry;
+        if (!mesh.hasTriangles()) {
+            PrintShaderWarning("Binding failed with empty triangle mesh.");
+            return false;
+        }
+        if (!mesh.hasTriangleNormals() || !mesh.hasVertexNormals()) {
+            PrintShaderWarning("Binding failed because mesh has no normals.");
+            PrintShaderWarning("Call ComputeVertexNormals() before binding.");
+            return false;
+        }
+        const ColorMap &global_color_map = *GetGlobalColorMap();
+        points.resize(mesh.triangles_.size() * 3);
+        normals.resize(mesh.triangles_.size() * 3);
+        colors.resize(mesh.triangles_.size() * 3);
+
+        for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+            const auto &triangle = mesh.triangles_[i];
+            for (size_t j = 0; j < 3; j++) {
+                size_t idx = i * 3 + j;
+                size_t vi = triangle(j);
+                const auto &vertex = mesh.vertices_[vi];
+                points[idx] = vertex.cast<float>();
+
+                Eigen::Vector3d color;
+                switch (option.mesh_color_option_) {
+                    case RenderOption::MeshColorOption::XCoordinate:
+                        color = global_color_map.GetColor(
+                                view.GetBoundingBox().getXPercentage(
+                                        vertex(0)));
+                        break;
+                    case RenderOption::MeshColorOption::YCoordinate:
+                        color = global_color_map.GetColor(
+                                view.GetBoundingBox().getYPercentage(
+                                        vertex(1)));
+                        break;
+                    case RenderOption::MeshColorOption::ZCoordinate:
+                        color = global_color_map.GetColor(
+                                view.GetBoundingBox().getZPercentage(
+                                        vertex(2)));
+                        break;
+                    case RenderOption::MeshColorOption::Color:
+                        if (mesh.hasVertexColors()) {
+                            color = mesh.vertex_colors_[vi];
+                            break;
+                        }
+                    case RenderOption::MeshColorOption::Default:
+                    default:
+                        color = option.default_mesh_color_;
+                        break;
+                }
+                colors[idx] = color.cast<float>();
+
+                if (option.mesh_shade_option_ ==
+                    RenderOption::MeshShadeOption::FlatShade) {
+                    normals[idx] = mesh.triangle_normals_[i].cast<float>();
+                } else {
+                    normals[idx] = mesh.vertex_normals_[vi].cast<float>();
+                }
+            }
+        }
+        draw_arrays_mode_ = GL_TRIANGLES;
+        draw_arrays_size_ = GLsizei(points.size());
     }
-    draw_arrays_mode_ = GL_TRIANGLES;
-    draw_arrays_size_ = GLsizei(points.size());
+    
     return true;
 }
 

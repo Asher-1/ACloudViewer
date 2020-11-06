@@ -69,7 +69,7 @@ if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/" )
 endif()
 
-if (BUNDLE_OPEN3D_ML)
+if (BUNDLE_CLOUDVIEWER_ML)
     file(COPY "${PYTHON_PACKAGE_DST_DIR}/../../cloudViewer_ml/src/cloudViewer_ml/ml3d"
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/" )
     file(RENAME "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/ml3d" "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/_ml3d")

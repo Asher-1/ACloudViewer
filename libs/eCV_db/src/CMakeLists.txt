@@ -77,14 +77,6 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvViewportParameters.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvWaveform.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvWidgetsInterface.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/Image.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/ImageFactory.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/LineSet.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/LineSetFactory.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/Octree.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/PointCloudCluster.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/PointCloudFactory.cpp
-	    ${CMAKE_CURRENT_LIST_DIR}/PointCloudSegmentation.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/RGBDImage.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/RGBDImageFactory.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/SurfaceReconstructionAlphaShape.cpp
@@ -96,6 +88,17 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/TriangleMeshSubdivide.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/VoxelGrid.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/VoxelGridFactory.cpp
+		${CMAKE_CURRENT_LIST_DIR}/Image.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ImageFactory.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/LineSet.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/LineSetFactory.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/Line3D.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvMeshBase.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvHalfEdgeMesh.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/Octree.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/PointCloudCluster.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/PointCloudFactory.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/PointCloudSegmentation.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ISSKeypoint.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraIntrinsic.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraParameters.cpp

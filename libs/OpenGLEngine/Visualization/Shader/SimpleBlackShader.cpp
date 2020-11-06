@@ -27,6 +27,7 @@
 #include "visualization/shader/SimpleBlackShader.h"
 
 #include <ecvMesh.h>
+#include <ecvHalfEdgeMesh.h>
 #include <ecvPointCloud.h>
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"
@@ -149,7 +150,8 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
         const ccHObject &geometry,
         const RenderOption &option,
         const ViewControl &view) {
-    if (!geometry.isKindOf(CV_TYPES::MESH)) {
+    if (!geometry.isKindOf(CV_TYPES::MESH) &&
+        !geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
         PrintShaderWarning("Rendering type is not ccMesh.");
         return false;
     }
@@ -166,29 +168,53 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points) {
-    if (!geometry.isKindOf(CV_TYPES::MESH)) {
+    if (!geometry.isKindOf(CV_TYPES::MESH) &&
+        !geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
         PrintShaderWarning("Rendering type is not ccMesh.");
         return false;
     }
-    const ccMesh &mesh =
-            (const ccMesh &)geometry;
-    if (!mesh.hasTriangles()) {
-        PrintShaderWarning("Binding failed with empty ccMesh.");
-        return false;
-    }
-    points.resize(mesh.size() * 3);
-    for (unsigned int i = 0; i < mesh.size(); i++) {
-        const CVLib::VerticesIndexes* triangle = 
-			mesh.getTriangleVertIndexes(i);
-        for (unsigned int j = 0; j < 3; j++) {
-            unsigned int idx = i * 3 + j;
-            unsigned int vi = triangle->i[j];
-            const auto &vertex = mesh.getVertice(vi);
-            points[idx] = vertex.cast<float>();
+
+    if (geometry.isKindOf(CV_TYPES::MESH)) {
+        const ccMesh &mesh = (const ccMesh &)geometry;
+        if (!mesh.hasTriangles()) {
+            PrintShaderWarning("Binding failed with empty ccMesh.");
+            return false;
         }
+        points.resize(static_cast<std::size_t>(mesh.size()) * 3);
+        for (unsigned int i = 0; i < mesh.size(); i++) {
+            const CVLib::VerticesIndexes *triangle =
+                    mesh.getTriangleVertIndexes(i);
+            for (unsigned int j = 0; j < 3; j++) {
+                unsigned int idx = i * 3 + j;
+                unsigned int vi = triangle->i[j];
+                const auto &vertex = mesh.getVertice(vi);
+                points[idx] = vertex.cast<float>();
+            }
+        }
+        draw_arrays_mode_ = GL_TRIANGLES;
+        draw_arrays_size_ = GLsizei(points.size());
+    } else if (geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
+        const geometry::ecvHalfEdgeMesh &mesh =
+                (const geometry::ecvHalfEdgeMesh &)geometry;
+        if (!mesh.hasTriangles()) {
+            PrintShaderWarning(
+                    "Binding failed with empty geometry::TriangleMesh.");
+            return false;
+        }
+        points.resize(mesh.triangles_.size() * 3);
+        for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+            const auto &triangle = mesh.triangles_[i];
+            for (size_t j = 0; j < 3; j++) {
+                size_t idx = i * 3 + j;
+                size_t vi = triangle(j);
+                const auto &vertex = mesh.vertices_[vi];
+                points[idx] = vertex.cast<float>();
+            }
+        }
+        draw_arrays_mode_ = GL_TRIANGLES;
+        draw_arrays_size_ = GLsizei(points.size());
     }
-    draw_arrays_mode_ = GL_TRIANGLES;
-    draw_arrays_size_ = GLsizei(points.size());
+
     return true;
 }
 
