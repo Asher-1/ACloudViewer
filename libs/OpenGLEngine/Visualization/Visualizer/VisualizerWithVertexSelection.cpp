@@ -32,6 +32,7 @@
 #include <LineSet.h>
 #include <ecvMesh.h>
 #include <ecvTetraMesh.h>
+#include <ecvHalfEdgeMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvHObjectCaster.h>
 #include <IJsonConvertibleIO.h>
@@ -120,6 +121,10 @@ bool VisualizerWithVertexSelection::AddGeometry(
             geometry_renderer_ptr_ =
                     std::make_shared<glsl::TriangleMeshRenderer>();
             break;
+        case CV_TYPES::HALF_EDGE_MESH:
+            geometry_renderer_ptr_ =
+                    std::make_shared<glsl::HalfEdgeMeshRenderer>();
+            break;
         case CV_TYPES::TETRA_MESH:
             geometry_renderer_ptr_ =
                     std::make_shared<glsl::TetraMeshRenderer>();
@@ -134,6 +139,8 @@ bool VisualizerWithVertexSelection::AddGeometry(
 		case CV_TYPES::POINT_OCTREE2:
         case CV_TYPES::ORIENTED_BBOX:
         case CV_TYPES::BBOX:
+        case CV_TYPES::MESH_BASE:
+            // MeshBase is too general, can't render. Fall-through.
 		case CV_TYPES::CUSTOM_H_OBJECT:
             return false;
     }
@@ -230,8 +237,9 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
 			ui_points_geometry_ptr_->append(cloud, 0);
 			break;
 		}
-        case CV_TYPES::TETRA_MESH: {
-            auto mesh = std::static_pointer_cast<const geometry::TetraMesh>(
+        case CV_TYPES::TETRA_MESH:
+        case CV_TYPES::HALF_EDGE_MESH: {
+            auto mesh = std::static_pointer_cast<const geometry::ecvMeshBase>(
                     geometry_ptr_);
 			if (mesh->vertices_.size() !=
                 GetGeometryEigenPoints(ui_points_geometry_ptr_)->size()) {
@@ -815,9 +823,10 @@ const std::vector<Eigen::Vector3d>
             points = &lines->points_;
             break;
         }
+        case CV_TYPES::HALF_EDGE_MESH:
         case CV_TYPES::TETRA_MESH:
 		{
-            auto mesh = std::static_pointer_cast<const geometry::TetraMesh>(geometry);
+            auto mesh = std::static_pointer_cast<const geometry::ecvMeshBase>(geometry);
             points = &mesh->vertices_;
             break;
         }

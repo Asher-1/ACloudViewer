@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install Open3D build dependencies from Ubuntu repositories
+# Install CloudViewer build dependencies from Ubuntu repositories
 # CUDA (v10.1) and CUDNN (v7.6.5) are optional dependencies and are not
 # installed here
 # Use: install_deps_ubuntu.sh [ assume-yes ]
@@ -14,7 +14,7 @@ else
 fi
 
 dependencies=(
-    # Open3D deps
+    # CloudViewer deps
     xorg-dev
     libglu1-mesa-dev
     python3-dev

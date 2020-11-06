@@ -94,10 +94,13 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvWidgetsInterface.h
 		${CMAKE_CURRENT_LIST_DIR}/Image.h
 		${CMAKE_CURRENT_LIST_DIR}/LineSet.h
+		${CMAKE_CURRENT_LIST_DIR}/Line3D.h
 		${CMAKE_CURRENT_LIST_DIR}/Octree.h
 		${CMAKE_CURRENT_LIST_DIR}/RGBDImage.h
 		${CMAKE_CURRENT_LIST_DIR}/VoxelGrid.h
 		${CMAKE_CURRENT_LIST_DIR}/ISSKeypoint.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvMeshBase.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvHalfEdgeMesh.h
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraIntrinsic.h
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraParameters.h
 		${CMAKE_CURRENT_LIST_DIR}/camera/PinholeCameraTrajectory.h

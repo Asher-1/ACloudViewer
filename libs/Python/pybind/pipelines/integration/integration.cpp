@@ -116,22 +116,19 @@ In SIGGRAPH, 1996)");
     docstring::ClassMethodDocInject(m, "TSDFVolume", "reset");
 
     // cloudViewer.integration.UniformTSDFVolume: cloudViewer.integration.TSDFVolume
-    py::class_<UniformTSDFVolume,
-               PyTSDFVolume<UniformTSDFVolume>,
-               TSDFVolume>
+    py::class_<UniformTSDFVolume, PyTSDFVolume<UniformTSDFVolume>, TSDFVolume>
             uniform_tsdfvolume(
                     m, "UniformTSDFVolume",
                     "UniformTSDFVolume implements the classic TSDF "
                     "volume with uniform voxel grid (Curless and Levoy 1996).");
-    py::detail::bind_copy_functions<UniformTSDFVolume>(
-            uniform_tsdfvolume);
+    py::detail::bind_copy_functions<UniformTSDFVolume>(uniform_tsdfvolume);
     uniform_tsdfvolume
             .def(py::init([](double length, int resolution, double sdf_trunc,
-                             TSDFVolumeColorType color_type) {
+                             TSDFVolumeColorType color_type, Eigen::Vector3d origin) {
                      return new UniformTSDFVolume(
-                             length, resolution, sdf_trunc, color_type);
+                             length, resolution, sdf_trunc, color_type, origin);
                  }),
-                 "length"_a, "resolution"_a, "sdf_trunc"_a, "color_type"_a)
+                 "length"_a, "resolution"_a, "sdf_trunc"_a, "color_type"_a, "origin"_a)
             .def("__repr__",
                  [](const UniformTSDFVolume &vol) {
                      return std::string("UniformTSDFVolume ") +
@@ -158,9 +155,7 @@ In SIGGRAPH, 1996)");
                                     "extract_voxel_point_cloud");
 
     // cloudViewer.integration.ScalableTSDFVolume: cloudViewer.integration.TSDFVolume
-    py::class_<ScalableTSDFVolume,
-               PyTSDFVolume<ScalableTSDFVolume>,
-               TSDFVolume>
+    py::class_<ScalableTSDFVolume, PyTSDFVolume<ScalableTSDFVolume>, TSDFVolume>
             scalable_tsdfvolume(m, "ScalableTSDFVolume", R"(The
 ScalableTSDFVolume implements a more memory efficient data structure for
 volumetric integration.
@@ -198,9 +193,7 @@ In SIGGRAPH, 2013)");
             .def("__repr__",
                  [](const ScalableTSDFVolume &vol) {
                      return std::string("ScalableTSDFVolume ") +
-                            (vol.color_type_ ==
-                                             TSDFVolumeColorType::
-                                                     NoColor
+                            (vol.color_type_ == TSDFVolumeColorType::NoColor
                                      ? std::string("without color.")
                                      : std::string("with color."));
                  })

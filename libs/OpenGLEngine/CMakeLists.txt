@@ -8,21 +8,6 @@ function(cloudViewer_set_cloudViewer_lib_properties target)
     target_compile_definitions(${target} PUBLIC ECV_OPENGL_ENGINE_LIBRARY_BUILD)
 endfunction()
 
-macro(ADD_MODULES MODULE_NAME)
-	# Subdirectories
-	add_subdirectory(${MODULE_NAME})
-	if (MODULE_NAME EQUAL "t/geometry")
-		set(MODULE_NAME "tgeometry")
-	elseif (MODULE_NAME EQUAL "t/io")
-		set(MODULE_NAME "tio")
-	endif()
-	
-	# Source group for Visual Studio
-	ADD_SOURCE_GROUP(${MODULE_NAME})
-	
-    set_target_properties(${MODULE_NAME} PROPERTIES FOLDER "Modules")
-endmacro(ADD_MODULES)
-
 project( OPENGL_ENGINE_LIB )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -34,15 +19,6 @@ configure_file("${PROJECT_SOURCE_DIR}/CloudViewer.h.in"
                "${PROJECT_SOURCE_DIR}/CloudViewer.h")
 configure_file("${PROJECT_SOURCE_DIR}/CloudViewerConfig.h.in"
                "${PROJECT_SOURCE_DIR}/CloudViewerConfig.h")
-			   
-
-# ADD_MODULES(core)
-# ADD_MODULES(t/geometry)
-# ADD_MODULES(t/io)
-# ADD_MODULES(io)
-# ADD_MODULES(ml)
-# ADD_MODULES(pipelines)
-# ADD_MODULES(visualization)
 
 # Subdirectories
 add_subdirectory(core)

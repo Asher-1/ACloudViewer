@@ -29,7 +29,7 @@ import numpy as np
 import time
 import pytest
 import os
-from open3d_test import test_data_dir
+from cloudViewer_test import test_data_dir
 
 _eight_cubes_colors = np.array([
     [0.0, 0.0, 0.0],

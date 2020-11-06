@@ -82,7 +82,7 @@ public:
 };
 
 void pybind_registration_classes(py::module &m) {
-	// cloudViewer.registration.ICPConvergenceCriteria
+	// cloudViewer.pipelines.registration.ICPConvergenceCriteria
 	py::class_<ICPConvergenceCriteria> convergence_criteria(
 		m, "ICPConvergenceCriteria",
 		"Class that defines the convergence criteria of ICP. ICP algorithm "
@@ -93,8 +93,7 @@ void pybind_registration_classes(py::module &m) {
 		convergence_criteria);
 	convergence_criteria
 		.def(py::init([](double fitness, double rmse, int itr) {
-		return new ICPConvergenceCriteria(fitness,
-			rmse, itr);
+		return new ICPConvergenceCriteria(fitness, rmse, itr);
 	}),
 			"relative_fitness"_a = 1e-6, "relative_rmse"_a = 1e-6,
 		"max_iteration"_a = 30)
@@ -121,7 +120,7 @@ void pybind_registration_classes(py::module &m) {
 			c.max_iteration_);
 	});
 
-	// cloudViewer.registration.RANSACConvergenceCriteria
+	// cloudViewer.pipelines.registration.RANSACConvergenceCriteria
 	py::class_<RANSACConvergenceCriteria> ransac_criteria(
 		m, "RANSACConvergenceCriteria",
 		"Class that defines the convergence criteria of RANSAC. RANSAC "
@@ -131,13 +130,11 @@ void pybind_registration_classes(py::module &m) {
 		"in an iteration. Most iterations do not do full validation. It is "
 		"crucial to control ``max_validation`` so that the computation "
 		"time is acceptable.");
-	py::detail::bind_copy_functions<RANSACConvergenceCriteria>(
-		ransac_criteria);
+	py::detail::bind_copy_functions<RANSACConvergenceCriteria>(ransac_criteria);
 	ransac_criteria
 		.def(py::init([](int max_iteration, int max_validation) {
-		return new RANSACConvergenceCriteria(
-			max_iteration, max_validation);
-	}),
+			return new RANSACConvergenceCriteria(max_iteration, max_validation);
+		}),
 			"max_iteration"_a = 1000, "max_validation"_a = 1000)
 		.def_readwrite(
 			"max_iteration",
@@ -150,14 +147,14 @@ void pybind_registration_classes(py::module &m) {
 			"iteration stops.")
 		.def("__repr__",
 			[](const RANSACConvergenceCriteria &c) {
-		return fmt::format(
-			"RANSACConvergenceCriteria "
-			"class with max_iteration={:d}, "
-			"and max_validation={:d}",
-			c.max_iteration_, c.max_validation_);
-	});
+			return fmt::format(
+					"RANSACConvergenceCriteria "
+					"class with max_iteration={:d}, "
+					"and max_validation={:d}",
+					c.max_iteration_, c.max_validation_);
+		});
 
-	// cloudViewer.registration.TransformationEstimation
+	// cloudViewer.pipelines.registration.TransformationEstimation
 	py::class_<
 		TransformationEstimation,
 		PyTransformationEstimation<TransformationEstimation>>
@@ -187,7 +184,7 @@ void pybind_registration_classes(py::module &m) {
 		 {"corres",
 		  "Correspondence set between source and target point cloud."} });
 
-	// cloudViewer.registration.TransformationEstimationPointToPoint:
+	// cloudViewer.pipelines.registration.TransformationEstimationPointToPoint:
 	// TransformationEstimation
 	py::class_<TransformationEstimationPointToPoint,
 		PyTransformationEstimation<
@@ -227,7 +224,7 @@ The homogeneous transformation is given by
 Sets :math:`c = 1` if ``with_scaling`` is ``False``.
 )");
 
-	// cloudViewer.registration.TransformationEstimationPointToPlane:
+	// cloudViewer.pipelines.registration.TransformationEstimationPointToPlane:
 	// TransformationEstimation
 	py::class_<TransformationEstimationPointToPlane,
 		PyTransformationEstimation<
@@ -240,13 +237,63 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
 		TransformationEstimationPointToPlane>(te_p2l);
 	py::detail::bind_copy_functions<
 		TransformationEstimationPointToPlane>(te_p2l);
-	te_p2l.def(
-		"__repr__",
-		[](const TransformationEstimationPointToPlane &te) {
-		return std::string("TransformationEstimationPointToPlane");
-	});
+    te_p2l.def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                    return new TransformationEstimationPointToPlane(
+                            std::move(kernel));
+            }),
+            "kernel"_a)
+        .def("__repr__",
+			[](const TransformationEstimationPointToPlane &te) {
+				return std::string("TransformationEstimationPointToPlane");
+            })
+        .def_readwrite("kernel",
+                        &TransformationEstimationPointToPlane::kernel_,
+                        "Robust Kernel used in the Optimization");
 
-	// cloudViewer.registration.CorrespondenceChecker
+	// cloudViewer.pipelines.registration.TransformationEstimationForColoredICP :
+    py::class_<
+            TransformationEstimationForColoredICP,
+            PyTransformationEstimation<TransformationEstimationForColoredICP>,
+            TransformationEstimation>
+            te_col(m, "TransformationEstimationForColoredICP",
+                   "Class to estimate a transformation between two point "
+                   "clouds using color information");
+    py::detail::bind_default_constructor<TransformationEstimationForColoredICP>(
+            te_col);
+    py::detail::bind_copy_functions<TransformationEstimationForColoredICP>(
+            te_col);
+    te_col.def(py::init([](double lambda_geometric,
+                           std::shared_ptr<RobustKernel> kernel) {
+                   return new TransformationEstimationForColoredICP(
+                           lambda_geometric, std::move(kernel));
+               }),
+               "lambda_geometric"_a, "kernel"_a)
+            .def(py::init([](double lambda_geometric) {
+                     return new TransformationEstimationForColoredICP(
+                             lambda_geometric);
+                 }),
+                 "lambda_geometric"_a)
+            .def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                     auto te = TransformationEstimationForColoredICP();
+                     te.kernel_ = std::move(kernel);
+                     return te;
+                 }),
+                 "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationForColoredICP &te) {
+                     return std::string(
+                                    "TransformationEstimationForColoredICP "
+                                    "with lambda_geometric:") +
+                            std::to_string(te.lambda_geometric_);
+                 })
+            .def_readwrite(
+                    "lambda_geometric",
+                    &TransformationEstimationForColoredICP::lambda_geometric_,
+                    "lambda_geometric")
+            .def_readwrite("kernel",
+                           &TransformationEstimationForColoredICP::kernel_,
+                           "Robust Kernel used in the Optimization");
+	// cloudViewer.pipelines.registration.CorrespondenceChecker
 	py::class_<CorrespondenceChecker,
 		PyCorrespondenceChecker<CorrespondenceChecker>>
 		cc(m, "CorrespondenceChecker",
@@ -273,7 +320,7 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
 		  "Correspondence set between source and target point cloud."},
 		 {"transformation", "The estimated transformation (inplace)."} });
 
-	// cloudViewer.registration.CorrespondenceCheckerBasedOnEdgeLength:
+	// cloudViewer.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength:
 	// CorrespondenceChecker
 	py::class_<CorrespondenceCheckerBasedOnEdgeLength,
 		PyCorrespondenceChecker<
@@ -287,23 +334,19 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
 			"point cloud with correspondences are similar. The only "
 			"parameter similarity_threshold is a number between 0 "
 			"(loose) and 1 (strict)");
-	py::detail::bind_copy_functions<
-		CorrespondenceCheckerBasedOnEdgeLength>(cc_el);
+	py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnEdgeLength>(cc_el);
 	cc_el.def(py::init([](double similarity_threshold) {
-		return new 
-			CorrespondenceCheckerBasedOnEdgeLength(
-				similarity_threshold);
-	}),
+			return new CorrespondenceCheckerBasedOnEdgeLength(similarity_threshold);
+		}),
 		"similarity_threshold"_a = 0.9)
 		.def("__repr__",
-			[](const CorrespondenceCheckerBasedOnEdgeLength
-				&c) {
-		return fmt::format(
-			""
-			"CorrespondenceCheckerBasedOnEdgeLength "
-			"with similarity_threshold={:f}",
-			c.similarity_threshold_);
-	})
+			[](const CorrespondenceCheckerBasedOnEdgeLength &c) {
+				return fmt::format(
+					""
+					"CorrespondenceCheckerBasedOnEdgeLength "
+					"with similarity_threshold={:f}",
+					c.similarity_threshold_);
+			})
 		.def_readwrite(
 			"similarity_threshold",
 			&CorrespondenceCheckerBasedOnEdgeLength::
@@ -317,41 +360,37 @@ check to be true,
 
 must hold true for all edges.)");
 
-	// cloudViewer.registration.CorrespondenceCheckerBasedOnDistance:
+	// cloudViewer.pipelines.registration.CorrespondenceCheckerBasedOnDistance:
 	// CorrespondenceChecker
 	py::class_<CorrespondenceCheckerBasedOnDistance,
-		PyCorrespondenceChecker<
-		CorrespondenceCheckerBasedOnDistance>,
+		PyCorrespondenceChecker<CorrespondenceCheckerBasedOnDistance>,
 		CorrespondenceChecker>
 		cc_d(m, "CorrespondenceCheckerBasedOnDistance",
 			"Class to check if aligned point clouds are close (less than "
 			"specified threshold).");
-	py::detail::bind_copy_functions<
-		CorrespondenceCheckerBasedOnDistance>(cc_d);
+	py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnDistance>(cc_d);
 	cc_d.def(py::init([](double distance_threshold) {
-		return new CorrespondenceCheckerBasedOnDistance(
-			distance_threshold);
-	}),
+				return new CorrespondenceCheckerBasedOnDistance(
+					distance_threshold);
+			}),
 		"distance_threshold"_a)
 		.def("__repr__",
 			[](const CorrespondenceCheckerBasedOnDistance
 				&c) {
-		return fmt::format(
-			""
-			"CorrespondenceCheckerBasedOnDistance with "
-			"distance_threshold={:f}",
-			c.distance_threshold_);
-	})
+				return fmt::format(
+					""
+					"CorrespondenceCheckerBasedOnDistance with "
+					"distance_threshold={:f}",
+					c.distance_threshold_);
+			})
 		.def_readwrite("distance_threshold",
-			&CorrespondenceCheckerBasedOnDistance::
-			distance_threshold_,
+			&CorrespondenceCheckerBasedOnDistance::distance_threshold_,
 			"Distance threashold for the check.");
 
-	// cloudViewer.registration.CorrespondenceCheckerBasedOnNormal:
+	// cloudViewer.pipelines.registration.CorrespondenceCheckerBasedOnNormal:
 	// CorrespondenceChecker
 	py::class_<CorrespondenceCheckerBasedOnNormal,
-		PyCorrespondenceChecker<
-		CorrespondenceCheckerBasedOnNormal>,
+		PyCorrespondenceChecker<CorrespondenceCheckerBasedOnNormal>,
 		CorrespondenceChecker>
 		cc_n(m, "CorrespondenceCheckerBasedOnNormal",
 			"Class to check if two aligned point clouds have similar "
@@ -361,45 +400,45 @@ must hold true for all edges.)");
 	py::detail::bind_copy_functions<
 		CorrespondenceCheckerBasedOnNormal>(cc_n);
 	cc_n.def(py::init([](double normal_angle_threshold) {
-		return new CorrespondenceCheckerBasedOnNormal(
-			normal_angle_threshold);
-	}),
+				return new CorrespondenceCheckerBasedOnNormal(
+					normal_angle_threshold);
+			}),
 		"normal_angle_threshold"_a)
 		.def("__repr__",
 			[](const CorrespondenceCheckerBasedOnNormal &c) {
-		return fmt::format(
-			""
-			"CorrespondenceCheckerBasedOnNormal with "
-			"normal_threshold={:f}",
-			c.normal_angle_threshold_);
-	})
+				return fmt::format(
+					""
+					"CorrespondenceCheckerBasedOnNormal with "
+					"normal_threshold={:f}",
+					c.normal_angle_threshold_);
+			})
 		.def_readwrite("normal_angle_threshold",
 			&CorrespondenceCheckerBasedOnNormal::
 			normal_angle_threshold_,
 			"Radian value for angle threshold.");
 
-	// cloudViewer.registration.FastGlobalRegistrationOption:
+	// cloudViewer.pipelines.registration.FastGlobalRegistrationOption:
 	py::class_<FastGlobalRegistrationOption> fgr_option(
 		m, "FastGlobalRegistrationOption",
 		"Options for FastGlobalRegistration.");
 	py::detail::bind_copy_functions<FastGlobalRegistrationOption>(
 		fgr_option);
 	fgr_option
-		.def(py::init([](double division_factor, bool use_absolute_scale,
-			bool decrease_mu,
-			double maximum_correspondence_distance,
-			int iteration_number, double tuple_scale,
-			int maximum_tuple_count) {
-		return new FastGlobalRegistrationOption(
-			division_factor, use_absolute_scale, decrease_mu,
-			maximum_correspondence_distance, iteration_number,
-			tuple_scale, maximum_tuple_count);
-	}),
+			.def(py::init([](double division_factor, bool use_absolute_scale,
+				bool decrease_mu,
+				double maximum_correspondence_distance,
+				int iteration_number, double tuple_scale,
+				int maximum_tuple_count) {
+			return new FastGlobalRegistrationOption(
+				division_factor, use_absolute_scale, decrease_mu,
+				maximum_correspondence_distance, iteration_number,
+				tuple_scale, maximum_tuple_count);
+			}),
 			"division_factor"_a = 1.4, "use_absolute_scale"_a = false,
-		"decrease_mu"_a = false,
-		"maximum_correspondence_distance"_a = 0.025,
-		"iteration_number"_a = 64, "tuple_scale"_a = 0.95,
-		"maximum_tuple_count"_a = 1000)
+			"decrease_mu"_a = false,
+			"maximum_correspondence_distance"_a = 0.025,
+			"iteration_number"_a = 64, "tuple_scale"_a = 0.95,
+			"maximum_tuple_count"_a = 1000)
 		.def_readwrite(
 			"division_factor",
 			&FastGlobalRegistrationOption::
@@ -451,7 +490,7 @@ must hold true for all edges.)");
 			c.maximum_tuple_count_);
 	});
 
-	// cloudViewer.registration.RegistrationResult
+	// cloudViewer.pipelines.registration.RegistrationResult
 	py::class_<RegistrationResult> registration_result(
 		m, "RegistrationResult",
 		"Class that contains the registration results.");
@@ -491,33 +530,42 @@ must hold true for all edges.)");
 
 // Registration functions have similar arguments, sharing arg docstrings
 static const std::unordered_map<std::string, std::string>
-map_shared_argument_docstrings = {
-		{"checkers", "checkers"},
-		{"corres",
-		 "Checker class to check if two point clouds can be "
-		 "aligned. "
-		 "One of "
-		 "(``CorrespondenceCheckerBasedOnEdgeLength``, "
-		 "``CorrespondenceCheckerBasedOnDistance``, "
-		 "``CorrespondenceCheckerBasedOnNormal``)"},
-		{"criteria", "Convergence criteria"},
-		{"estimation_method",
-		 "Estimation method. One of "
-		 "(``TransformationEstimationPointToPoint``, "
-		 "``TransformationEstimationPointToPlane``)"},
-		{"init", "Initial transformation estimation"},
-		{"lambda_geometric", "lambda_geometric value"},
-		{"max_correspondence_distance",
-		 "Maximum correspondence points-pair distance."},
-		{"option", "Registration option"},
-		{"ransac_n", "Fit ransac with ``ransac_n`` correspondences"},
-		{"source_feature", "Source point cloud feature."},
-		{"source", "The source point cloud."},
-		{"target_feature", "Target point cloud feature."},
-		{"target", "The target point cloud."},
-		{"transformation",
-		 "The 4x4 transformation matrix to transform ``source`` to "
-		 "``target``"} };
+        map_shared_argument_docstrings = {
+                {"checkers",
+                 "Vector of Checker class to check if two point "
+                 "clouds can be aligned. One of "
+                 "(``"
+                 "CorrespondenceCheckerBasedOnEdgeLength``, "
+                 "``"
+                 "CorrespondenceCheckerBasedOnDistance``, "
+                 "``"
+                 "CorrespondenceCheckerBasedOnNormal``)"},
+                {"corres",
+                 "o3d.utility.Vector2iVector that stores indices of "
+                 "corresponding point or feature arrays."},
+                {"criteria", "Convergence criteria"},
+                {"estimation_method",
+                 "Estimation method. One of "
+                 "(``"
+                 "TransformationEstimationPointToPoint``, "
+                 "``"
+                 "TransformationEstimationPointToPlane``, "
+                 "``"
+                 "TransformationEstimationForColoredICP``)"},
+                {"init", "Initial transformation estimation"},
+                {"lambda_geometric", "lambda_geometric value"},
+                {"kernel", "Robust Kernel used in the Optimization"},
+                {"max_correspondence_distance",
+                 "Maximum correspondence points-pair distance."},
+                {"option", "Registration option"},
+                {"ransac_n", "Fit ransac with ``ransac_n`` correspondences"},
+                {"source_feature", "Source point cloud feature."},
+                {"source", "The source point cloud."},
+                {"target_feature", "Target point cloud feature."},
+                {"target", "The target point cloud."},
+                {"transformation",
+                 "The 4x4 transformation matrix to transform ``source`` to "
+                 "``target``"}};
 
 void pybind_registration_methods(py::module &m) {
 	m.def("evaluate_registration", &EvaluateRegistration,
@@ -531,33 +579,30 @@ void pybind_registration_methods(py::module &m) {
 		"Function for ICP registration", "source"_a, "target"_a,
 		"max_correspondence_distance"_a,
 		"init"_a = Eigen::Matrix4d::Identity(),
-		"estimation_method"_a =
-		TransformationEstimationPointToPoint(false),
+		"estimation_method"_a = TransformationEstimationPointToPoint(false),
 		"criteria"_a = ICPConvergenceCriteria());
 	docstring::FunctionDocInject(m, "registration_icp",
-		map_shared_argument_docstrings);
+								 map_shared_argument_docstrings);
 
-	m.def("registration_colored_icp", &RegistrationColoredICP,
-		"Function for Colored ICP registration", "source"_a, "target"_a,
-		"max_correspondence_distance"_a,
-		"init"_a = Eigen::Matrix4d::Identity(),
-		"criteria"_a = ICPConvergenceCriteria(),
-		"lambda_geometric"_a = 0.968);
-	docstring::FunctionDocInject(m, "registration_colored_icp",
-		map_shared_argument_docstrings);
+    m.def("registration_colored_icp", &RegistrationColoredICP,
+        "Function for Colored ICP registration", "source"_a, "target"_a,
+        "max_correspondence_distance"_a,
+        "init"_a = Eigen::Matrix4d::Identity(),
+        "estimation_method"_a = TransformationEstimationForColoredICP(),
+        "criteria"_a = ICPConvergenceCriteria());
+    docstring::FunctionDocInject(m, "registration_colored_icp",
+                                 map_shared_argument_docstrings);
 
 	m.def("registration_ransac_based_on_correspondence",
 		&RegistrationRANSACBasedOnCorrespondence,
 		"Function for global RANSAC registration based on a set of "
 		"correspondences",
 		"source"_a, "target"_a, "corres"_a, "max_correspondence_distance"_a,
-		"estimation_method"_a =
-		TransformationEstimationPointToPoint(false),
-		"ransac_n"_a = 6,
-		"criteria"_a = RANSACConvergenceCriteria());
+		"estimation_method"_a = TransformationEstimationPointToPoint(false),
+		"ransac_n"_a = 6, "criteria"_a = RANSACConvergenceCriteria());
 	docstring::FunctionDocInject(m,
-		"registration_ransac_based_on_correspondence",
-		map_shared_argument_docstrings);
+								 "registration_ransac_based_on_correspondence",
+								 map_shared_argument_docstrings);
 
 	m.def("registration_ransac_based_on_feature_matching",
 		&RegistrationRANSACBasedOnFeatureMatching,

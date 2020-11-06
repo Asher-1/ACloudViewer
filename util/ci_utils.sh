@@ -32,7 +32,7 @@ WHEEL_VER="0.35.1"
 PYTEST_VER="6.0.1"
 SCIPY_VER="1.4.1" # Needed by Tensorflow 2.3.0
 
-OPEN3D_INSTALL_DIR=~/open3d_install
+CLOUDVIEWER_INSTALL_DIR=~/cloudViewer_install
 
 install_cuda_toolkit() {
 
@@ -160,7 +160,7 @@ build_all() {
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
         -DBUILD_RPC_INTERFACE="$BUILD_RPC_INTERFACE"
-        -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
+        -DCMAKE_INSTALL_PREFIX="$CLOUDVIEWER_INSTALL_DIR"
         -DPYTHON_EXECUTABLE="$(which python)"
         -DBUILD_UNIT_TESTS=ON
         -DBUILD_BENCHMARKS=ON
@@ -171,7 +171,7 @@ build_all() {
     echo Running cmake "${cmakeOptions[@]}" ..
     cmake "${cmakeOptions[@]}" ..
     echo
-    echo "build & install Open3D..."
+    echo "build & install CloudViewer..."
     make VERBOSE=1 -j"$NPROC"
     make install -j"$NPROC"
     make VERBOSE=1 install-pip-package -j"$NPROC"
@@ -184,27 +184,27 @@ build_pip_conda_package() {
     #   build_pip_conda_package both       # Build both pip and conda
     #   build_pip_conda_package pip        # Build pip only
     #   build_pip_conda_package conda      # Build conda only
-    echo "Building Open3D wheel"
+    echo "Building CloudViewer wheel"
 
     BUILD_FILAMENT_FROM_SOURCE=OFF
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
-        echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
-        BUNDLE_OPEN3D_ML=ON
+        echo "CloudViewer-ML available at ${OPEN3D_ML_ROOT}. Bundling CloudViewer-ML in wheel."
+        BUNDLE_CLOUDVIEWER_ML=ON
     else
-        BUNDLE_OPEN3D_ML=OFF
+        BUNDLE_CLOUDVIEWER_ML=OFF
     fi
     if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
         DEVELOPER_BUILD="ON"
     else
-        echo "Building for a new Open3D release"
+        echo "Building for a new CloudViewer release"
     fi
     set -u
 
     echo
     echo Building with CPU only...
     mkdir -p build
-    cd build # PWD=Open3D/build
+    cd build # PWD=CloudViewer/build
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF
         -DDEVELOPER_BUILD="$DEVELOPER_BUILD"
         -DBUILD_TENSORFLOW_OPS=ON
@@ -212,16 +212,16 @@ build_pip_conda_package() {
         -DBUILD_RPC_INTERFACE=ON
         -DBUILD_FILAMENT_FROM_SOURCE="$BUILD_FILAMENT_FROM_SOURCE"
         -DBUILD_JUPYTER_EXTENSION=ON
-        -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
+        -DCMAKE_INSTALL_PREFIX="$CLOUDVIEWER_INSTALL_DIR"
         -DPYTHON_EXECUTABLE="$(which python)"
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_UNIT_TESTS=OFF
         -DBUILD_BENCHMARKS=OFF
-        -DBUNDLE_OPEN3D_ML="$BUNDLE_OPEN3D_ML"
+        -DBUNDLE_OPEN3D_ML="$BUNDLE_CLOUDVIEWER_ML"
     )
     cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
     echo
-    make VERBOSE=1 -j"$NPROC" pybind open3d_tf_ops open3d_torch_ops
+    make VERBOSE=1 -j"$NPROC" pybind cloudViewer_tf_ops cloudViewer_torch_ops
 
     if [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
@@ -239,40 +239,40 @@ build_pip_conda_package() {
 
     options="$(echo "$@" | tr ' ' '|')"
     if [[ "pip" =~ ^($options)$ ]]; then
-        echo "Packaging Open3D pip package..."
+        echo "Packaging CloudViewer pip package..."
         make VERBOSE=1 -j"$NPROC" pip-package
     elif [[ "conda" =~ ^($options)$ ]]; then
-        echo "Packaging Open3D conda package..."
+        echo "Packaging CloudViewer conda package..."
         make VERBOSE=1 -j"$NPROC" conda-package
     else
-        echo "Packaging Open3D pip and conda package..."
+        echo "Packaging CloudViewer pip and conda package..."
         make VERBOSE=1 -j"$NPROC" pip-conda-package
     fi
-    cd .. # PWD=Open3D
+    cd .. # PWD=CloudViewer
 }
 
 install_wheel() {
     echo
-    echo "Installing Open3D wheel..."
-    python -m pip install open3d -f lib/python_package/pip_package/
+    echo "Installing CloudViewer wheel..."
+    python -m pip install cloudViewer -f lib/python_package/pip_package/
 }
 
 test_wheel() {
-    python -c "import open3d; print('Installed:', open3d)"
-    python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+    python -c "import cloudViewer; print('Installed:', cloudViewer)"
+    python -c "import cloudViewer; print('CUDA enabled: ', cloudViewer.core.cuda.is_available())"
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
         python -c \
-            "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
+            "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
         python -c \
-            "import open3d.ml.tf.ops; print('Tensorflow Ops library loaded:', open3d.ml.tf.ops)"
+            "import cloudViewer.ml.tf.ops; print('Tensorflow Ops library loaded:', cloudViewer.ml.tf.ops)"
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] && [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         echo "importing in the reversed order"
-        python -c "import tensorflow as tf; import open3d.ml.torch as o3d"
+        python -c "import tensorflow as tf; import cloudViewer.ml.torch as o3d"
         echo "importing in the normal order"
-        python -c "import open3d.ml.torch as o3d; import tensorflow as tf"
+        python -c "import cloudViewer.ml.torch as o3d; import tensorflow as tf"
     fi
 }
 
@@ -294,13 +294,13 @@ run_python_tests() {
 }
 
 # test_cpp_example runExample
-# Need variable OPEN3D_INSTALL_DIR
+# Need variable CLOUDVIEWER_INSTALL_DIR
 test_cpp_example() {
 
     cd ../docs/_static/C++
     mkdir -p build
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
+    cmake -DCMAKE_INSTALL_PREFIX=${CLOUDVIEWER_INSTALL_DIR} ..
     make -j"$NPROC" VERBOSE=1
     runExample="$1"
     if [ "$runExample" == ON ]; then

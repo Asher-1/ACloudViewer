@@ -227,7 +227,12 @@ void pybind_pointcloud(py::module &m) {
 		.def("orient_normals_towards_camera_location",
 			&ccPointCloud::orientNormalsTowardsCameraLocation,
 			"Function to orient the normals of a point cloud",
-			"camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
+            "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
+        .def("orient_normals_consistent_tangent_plane",
+            &ccPointCloud::orientNormalsConsistentTangentPlane,
+            "Function to orient the normals with respect to consistent "
+            "tangent planes",
+            "k"_a)
 		.def("compute_point_cloud_distance",
 			&ccPointCloud::computePointCloudDistance,
 			"For each point in the source point cloud, compute the "
@@ -662,6 +667,11 @@ void pybind_pointcloud(py::module &m) {
 		m, "ccPointCloud", "orient_normals_towards_camera_location",
 		{ {"camera_location",
 		  "Normals are oriented with towards the camera_location."} });
+    docstring::ClassMethodDocInject(
+        m, "ccPointCloud", "orient_normals_consistent_tangent_plane",
+        {{"k",
+        "Number of k nearest neighbors used in constructing the "
+        "Riemannian graph used to propogate normal orientation."}});
 	docstring::ClassMethodDocInject(m, "ccPointCloud",
 		"compute_point_cloud_distance",
 		{ {"target", "The target point cloud."} });

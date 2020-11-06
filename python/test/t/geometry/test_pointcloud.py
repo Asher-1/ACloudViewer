@@ -32,7 +32,7 @@ import pytest
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
-from open3d_test import list_devices
+from cloudViewer_test import list_devices
 
 
 @pytest.mark.parametrize("device", list_devices())

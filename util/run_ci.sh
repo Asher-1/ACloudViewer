@@ -34,17 +34,17 @@ echo "Building examples iteratively..."
 make VERBOSE=1 -j"$NPROC" build-examples-iteratively
 echo
 
-echo "running Open3D C++ unit tests..."
+echo "running CloudViewer C++ unit tests..."
 run_cpp_unit_tests
-echo "try importing Open3D Python package"
+echo "try importing CloudViewer Python package"
 test_wheel
-echo "running Open3D Python tests..."
+echo "running CloudViewer Python tests..."
 run_python_tests
 echo
 
-echo "Test building a C++ example with installed Open3D..."
+echo "Test building a C++ example with installed CloudViewer..."
 test_cpp_example "${runExample:=ON}"
 echo
 
-echo "test uninstalling Open3D..."
+echo "test uninstalling CloudViewer..."
 make uninstall

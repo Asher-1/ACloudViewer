@@ -1482,7 +1482,8 @@ ccMesh::samplePointsPoissonDisk(
 	size_t number_of_points,
 	double init_factor /* = 5 */,
 	const std::shared_ptr<ccPointCloud> pcl_init /* = nullptr */,
-	bool use_triangle_normal /* = false */) {
+    bool use_triangle_normal /* = false */,
+    int seed /* = -1 */) {
 	if (number_of_points <= 0) {
 		utility::LogError("[SamplePointsPoissonDisk] number_of_points <= 0");
 	}
@@ -1510,7 +1511,7 @@ ccMesh::samplePointsPoissonDisk(
 	if (pcl_init == nullptr) {
 		pcl = samplePointsUniformlyImpl(size_t(init_factor * number_of_points),
 			triangle_areas, surface_area,
-			use_triangle_normal);
+			use_triangle_normal, seed);
 	}
 	else {
 		pcl = std::make_shared<ccPointCloud>();
@@ -1706,6 +1707,40 @@ double ccMesh::getSurfaceArea(std::vector<double> &triangle_areas) const {
 	return surface_area;
 }
 
+double ccMesh::getVolume() const {
+    // Computes the signed volume of the tetrahedron defined by
+    // the three triangle vertices and the origin. The sign is determined by
+    // checking if the origin is at the same side as the normal with respect to
+    // the triangle.
+    auto GetSignedVolumeOfTriangle = [&](size_t tidx) {
+        const Eigen::Vector3i &triangle = getTriangle(tidx);
+        const Eigen::Vector3d &vertex0 = getVertice(triangle(0));
+        const Eigen::Vector3d &vertex1 = getVertice(triangle(1));
+        const Eigen::Vector3d &vertex2 = getVertice(triangle(2));
+        return vertex0.dot(vertex1.cross(vertex2)) / 6.0;
+    };
+
+    if (!isWatertight()) {
+        utility::LogError(
+                "The mesh is not watertight, and the volume cannot be "
+                "computed.");
+    }
+    if (!isOrientable()) {
+        utility::LogError(
+                "The mesh is not orientable, and the volume cannot be "
+                "computed.");
+    }
+
+    double volume = 0;
+    std::int64_t num_triangles = static_cast<std::int64_t>(this->size());
+#pragma omp parallel for reduction(+ : volume)
+    for (std::int64_t tidx = 0; tidx < num_triangles; ++tidx) {
+        volume += GetSignedVolumeOfTriangle(tidx);
+    }
+    return std::abs(volume);
+}
+
+
 Eigen::Vector4d ccMesh::ComputeTrianglePlane(const Eigen::Vector3d &p0,
 	const Eigen::Vector3d &p1,
 	const Eigen::Vector3d &p2) {
@@ -1733,7 +1768,8 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformlyImpl(
 	size_t number_of_points,
 	std::vector<double> &triangle_areas,
 	double surface_area,
-	bool use_triangle_normal) {
+    bool use_triangle_normal,
+    int seed) {
 	// triangle areas to cdf
 	triangle_areas[0] /= surface_area;
 	for (size_t tidx = 1; tidx < size(); ++tidx) {
@@ -1744,8 +1780,11 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformlyImpl(
 	// sample point cloud
 	bool has_vert_normal = m_associatedCloud->hasNormals();
 	bool has_vert_color = m_associatedCloud->hasColors();
-	std::random_device rd;
-	std::mt19937 mt(rd());
+    if (seed == -1) {
+        std::random_device rd;
+        seed = rd();
+    }
+    std::mt19937 mt(seed);
 	std::uniform_real_distribution<double> dist(0.0, 1.0);
 	auto pcd = std::make_shared<ccPointCloud>();
 	pcd->resize(static_cast<unsigned>(number_of_points));
@@ -1802,7 +1841,9 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformlyImpl(
 }
 
 std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformly(
-	size_t number_of_points, bool use_triangle_normal /* = false */) {
+	size_t number_of_points,
+	bool use_triangle_normal /* = false */,
+    int seed /* = -1 */) {
 	if (number_of_points <= 0) {
 		utility::LogError("[SamplePointsUniformly] number_of_points <= 0");
 	}
@@ -1816,7 +1857,7 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformly(
 	double surface_area = getSurfaceArea(triangle_areas);
 
 	return samplePointsUniformlyImpl(number_of_points, triangle_areas,
-		surface_area, use_triangle_normal);
+		surface_area, use_triangle_normal, seed);
 }
 
 

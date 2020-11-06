@@ -3,7 +3,7 @@ import numpy as np
 import re
 import os
 import sys
-from open3d_test import download_fountain_dataset
+from cloudViewer_test import download_fountain_dataset
 
 
 def get_file_list(path, extension=None):

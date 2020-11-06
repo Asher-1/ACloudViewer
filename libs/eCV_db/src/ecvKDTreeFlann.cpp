@@ -37,6 +37,7 @@
 
 // LOCAL
 #include "ecvMesh.h"
+#include "ecvHalfEdgeMesh.h"
 #include "ecvKDTreeFlann.h"
 #include "ecvPointCloud.h"
 #include "ecvHObjectCaster.h"
@@ -90,7 +91,6 @@ bool KDTreeFlann::SetGeometry(const ccHObject &geometry) {
 	{
 		const ccPointCloud& cloud = static_cast<const ccPointCloud &>(geometry);
 		std::vector<Eigen::Vector3d> points = cloud.getEigenPoints();
-
 		return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
 			(const double *)points.data(), 3, points.size()));
 	}
@@ -101,6 +101,11 @@ bool KDTreeFlann::SetGeometry(const ccHObject &geometry) {
 		return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
                 (const double *)points.data(), 3, points.size()));
 	}
+    case CV_TYPES::HALF_EDGE_MESH: {
+        const ecvHalfEdgeMesh &mesh = static_cast<const ecvHalfEdgeMesh &>(geometry);
+        return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
+                (const double *)mesh.vertices_.data(), 3, mesh.vertices_.size()));
+    }
     case CV_TYPES::IMAGE:
 	case CV_TYPES::HIERARCHY_OBJECT:
     default:

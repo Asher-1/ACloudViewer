@@ -148,8 +148,16 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
     mesh.clear();
     if (!mesh.getAssociatedCloud())
     {
-        utility::LogWarning("Must call createInternalCloud first!");
-        return false;
+        if (scene->mNumMeshes > 0) {
+            const auto* assimp_mesh = scene->mMeshes[0];
+            mesh.createInternalCloud();
+            if(!mesh.reserveAssociatedCloud(assimp_mesh->mNumVertices)) {
+                return false;
+            }
+        } else {
+            utility::LogWarning("Must call createInternalCloud first!");
+            return false;
+        }
     }
 
     size_t current_vidx = 0;
@@ -287,6 +295,24 @@ bool ReadModelUsingAssimp(const std::string& filename,
         ccPointCloud* baseVertices = new ccPointCloud("vertices");
         assert(baseVertices);
         auto mesh = std::make_shared<ccMesh>(baseVertices);
+
+        if(!baseVertices->reserveThePointsTable(assimp_mesh->mNumVertices)) {
+            utility::LogError("[reserveThePointsTable] Not have enough memory! ");
+            return false;
+        }
+        if (assimp_mesh->mNormals) {
+            if (!baseVertices->reserveTheNormsTable()) {
+                utility::LogError("[reserveTheNormsTable] Not have enough memory! ");
+                return false;
+            }
+        }
+        if (assimp_mesh->HasVertexColors(0)) {
+            if (!baseVertices->reserveTheRGBTable()) {
+                utility::LogError(
+                        "[reserveTheRGBTable] Not have enough memory! ");
+                return false;
+            }
+        }
 
         // copy vertex data
         for (size_t vidx = 0; vidx < assimp_mesh->mNumVertices; ++vidx) {

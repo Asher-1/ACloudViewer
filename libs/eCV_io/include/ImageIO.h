@@ -43,7 +43,7 @@ std::shared_ptr<geometry::Image> CreateImageFromFile(
 /// \return return true if the read function is successful, false otherwise.
 bool ReadImage(const std::string &filename, geometry::Image &image);
 
-constexpr int kOpen3DImageIODefaultQuality = -1;
+constexpr int kCloudViewerImageIODefaultQuality = -1;
 
 /// The general entrance for writing an Image to a file
 /// The function calls write functions based on the extension name of filename.
@@ -52,19 +52,19 @@ constexpr int kOpen3DImageIODefaultQuality = -1;
 /// \return return true if the write function is successful, false otherwise.
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,
-                int quality = 90);
+                int quality = kCloudViewerImageIODefaultQuality);
 
 bool ReadImageFromPNG(const std::string &filename, geometry::Image &image);
 
 bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,
-                     int quality);
+                     int quality = kCloudViewerImageIODefaultQuality);
 
 bool ReadImageFromJPG(const std::string &filename, geometry::Image &image);
 
 bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
-                     int quality = 90);
+                     int quality = kCloudViewerImageIODefaultQuality);
 
 }  // namespace io
 }  // namespace cloudViewer

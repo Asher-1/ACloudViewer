@@ -28,6 +28,7 @@
 #include "visualization/shader/Shader.h"
 
 #include <ecvMesh.h>
+#include <ecvHalfEdgeMesh.h>
 #include <ecvPointCloud.h>
 
 namespace cloudViewer {
@@ -170,7 +171,8 @@ bool NormalShaderForTriangleMesh::PrepareRendering(
         const ccHObject &geometry,
         const RenderOption &option,
         const ViewControl &view) {
-    if (!geometry.isKindOf(CV_TYPES::MESH)) {
+    if (!geometry.isKindOf(CV_TYPES::MESH) && 
+        !geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
         PrintShaderWarning("Rendering type is not ccMesh.");
         return false;
     }
@@ -197,42 +199,79 @@ bool NormalShaderForTriangleMesh::PrepareBinding(
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &normals) {
-    if (!geometry.isKindOf(CV_TYPES::MESH)) {
+    if (!geometry.isKindOf(CV_TYPES::MESH) &&
+        !geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
         PrintShaderWarning("Rendering type is not ccMesh.");
         return false;
     }
-    const ccMesh &mesh =
-            (const ccMesh &)geometry;
-    if (mesh.size() == 0) {
-        PrintShaderWarning("Binding failed with empty triangle mesh.");
-        return false;
-    }
-    if (!mesh.hasTriNormals() || !mesh.hasNormals()) {
-        PrintShaderWarning("Binding failed because mesh has no normals.");
-        PrintShaderWarning("Call computeVertexNormals() before binding.");
-        return false;
-    }
-    points.resize(mesh.size() * 3);
-    normals.resize(mesh.size() * 3);
-    for (unsigned int i = 0; i < mesh.size(); i++) {
-        const auto &triangle = mesh.getTriangleVertIndexes(i);
-		std::vector<Eigen::Vector3d> triNormals(3);
-		mesh.getTriangleNormals(i, triNormals[0], triNormals[1], triNormals[2]);
-        for (unsigned int j = 0; j < 3; j++) {
-            unsigned int idx = i * 3 + j;
-            unsigned int vi = triangle->i[j];
-            const auto &vertex = mesh.getVertice(vi);
-            points[idx] = vertex.cast<float>();
-            if (option.mesh_shade_option_ ==
-                RenderOption::MeshShadeOption::FlatShade) {
-                normals[idx] = mesh.getTriangleNorm(i).cast<float>();
-            } else {
-                normals[idx] = triNormals[j].cast<float>();
+
+    if (geometry.isKindOf(CV_TYPES::MESH)) {
+        const ccMesh &mesh = (const ccMesh &)geometry;
+        if (mesh.size() == 0) {
+            PrintShaderWarning("Binding failed with empty triangle mesh.");
+            return false;
+        }
+        if (!mesh.hasTriNormals() || !mesh.hasNormals()) {
+            PrintShaderWarning("Binding failed because mesh has no normals.");
+            PrintShaderWarning("Call computeVertexNormals() before binding.");
+            return false;
+        }
+        points.resize(static_cast<std::size_t>(mesh.size()) * 3);
+        normals.resize(static_cast<std::size_t>(mesh.size()) * 3);
+        for (unsigned int i = 0; i < mesh.size(); i++) {
+            const auto &triangle = mesh.getTriangleVertIndexes(i);
+            std::vector<Eigen::Vector3d> triNormals(3);
+            mesh.getTriangleNormals(i, triNormals[0], triNormals[1],
+                                    triNormals[2]);
+            for (unsigned int j = 0; j < 3; j++) {
+                unsigned int idx = i * 3 + j;
+                unsigned int vi = triangle->i[j];
+                const auto &vertex = mesh.getVertice(vi);
+                points[idx] = vertex.cast<float>();
+                if (option.mesh_shade_option_ ==
+                    RenderOption::MeshShadeOption::FlatShade) {
+                    normals[idx] = mesh.getTriangleNorm(i).cast<float>();
+                } else {
+                    normals[idx] = triNormals[j].cast<float>();
+                }
             }
         }
+        draw_arrays_mode_ = GL_TRIANGLES;
+        draw_arrays_size_ = GLsizei(points.size());
+    } else if (geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
+        const geometry::ecvHalfEdgeMesh &mesh =
+                (const geometry::ecvHalfEdgeMesh &)geometry;
+        if (!mesh.hasTriangles()) {
+            PrintShaderWarning("Binding failed with empty triangle mesh.");
+            return false;
+        }
+        if (!mesh.hasTriangleNormals() || !mesh.hasVertexNormals()) {
+            PrintShaderWarning("Binding failed because mesh has no normals.");
+            PrintShaderWarning("Call ComputeVertexNormals() before binding.");
+            return false;
+        }
+
+        points.resize(mesh.triangles_.size() * 3);
+        normals.resize(mesh.triangles_.size() * 3);
+        for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+            const auto &triangle = mesh.triangles_[i];
+            for (size_t j = 0; j < 3; j++) {
+                size_t idx = i * 3 + j;
+                size_t vi = triangle(j);
+                const auto &vertex = mesh.vertices_[vi];
+                points[idx] = vertex.cast<float>();
+                if (option.mesh_shade_option_ ==
+                    RenderOption::MeshShadeOption::FlatShade) {
+                    normals[idx] = mesh.triangle_normals_[i].cast<float>();
+                } else {
+                    normals[idx] = mesh.vertex_normals_[vi].cast<float>();
+                }
+            }
+        }
+        draw_arrays_mode_ = GL_TRIANGLES;
+        draw_arrays_size_ = GLsizei(points.size());
     }
-    draw_arrays_mode_ = GL_TRIANGLES;
-    draw_arrays_size_ = GLsizei(points.size());
+
     return true;
 }
 

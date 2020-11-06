@@ -917,7 +917,7 @@ constexpr optional<X&> make_optional(std::reference_wrapper<X> v) {
 }
 
 }  // namespace utility
-}  // namespace open3d
+}  // namespace CVLib
 
 namespace std {
 template <typename T>

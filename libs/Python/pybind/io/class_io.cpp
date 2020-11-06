@@ -83,22 +83,22 @@ map_shared_argument_docstrings = {
 		 "Set to ``False`` to not write any triangle uvs, even if "
 		 "present on the mesh. For ``obj`` format, mtl file is saved "
 		 "only when ``True`` is set"},
-	// Entities
-	{"config", "AzureKinectSensor's config file."},
-	{"pointcloud", "The ``PointCloud`` object for I/O"},
-	{"mesh", "The ``TriangleMesh`` object for I/O"},
-	{"line_set", "The ``LineSet`` object for I/O"},
-	{"image", "The ``Image`` object for I/O"},
-	{"voxel_grid", "The ``VoxelGrid`` object for I/O"},
-	{"trajectory",
-	 "The ``PinholeCameraTrajectory`` object for I/O"},
-	{"intrinsic", "The ``PinholeCameraIntrinsic`` object for I/O"},
-	{"parameters",
-	 "The ``PinholeCameraParameters`` object for I/O"},
-	{"pose_graph", "The ``PoseGraph`` object for I/O"},
-	{"feature", "The ``Feature`` object for I/O"},
-	{"print_progress",
-	 "If set to true a progress bar is visualized in the console"},
+		// Entities
+		{"config", "AzureKinectSensor's config file."},
+		{"pointcloud", "The ``PointCloud`` object for I/O"},
+		{"mesh", "The ``TriangleMesh`` object for I/O"},
+		{"line_set", "The ``LineSet`` object for I/O"},
+		{"image", "The ``Image`` object for I/O"},
+		{"voxel_grid", "The ``VoxelGrid`` object for I/O"},
+		{"trajectory",
+		 "The ``PinholeCameraTrajectory`` object for I/O"},
+		{"intrinsic", "The ``PinholeCameraIntrinsic`` object for I/O"},
+		{"parameters",
+		 "The ``PinholeCameraParameters`` object for I/O"},
+		{"pose_graph", "The ``PoseGraph`` object for I/O"},
+		{"feature", "The ``Feature`` object for I/O"},
+		{"print_progress",
+		 "If set to true a progress bar is visualized in the console"},
 };
 
 void pybind_class_io(py::module &m_io) {
@@ -164,7 +164,7 @@ void pybind_class_io(py::module &m_io) {
 			return io::WriteImage(filename, image, quality);
 		},
 		"Function to write Image to file", "filename"_a, "image"_a,
-		"quality"_a = kOpen3DImageIODefaultQuality);
+		"quality"_a = kCloudViewerImageIODefaultQuality);
 	docstring::FunctionDocInject(m_io, "write_image",
 		map_shared_argument_docstrings);
 

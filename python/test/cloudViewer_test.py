@@ -22,11 +22,11 @@ def torch_available():
 
 def list_devices():
     """
-    If Open3D is built with CUDA support:
+    If CloudViewer is built with CUDA support:
     - If cuda device is available, returns [Device("CPU:0"), Device("CUDA:0")].
     - If cuda device is not available, returns [Device("CPU:0")].
 
-    If Open3D is built without CUDA support:
+    If CloudViewer is built without CUDA support:
     - returns [Device("CPU:0")].
     """
     import cloudViewer as cv3d
@@ -39,7 +39,7 @@ def list_devices():
 def list_devices_with_torch():
     """
     Similar to list_devices(), but take PyTorch available devices into account.
-    The returned devices are compatible on both PyTorch and Open3D.
+    The returned devices are compatible on both PyTorch and CloudViewer.
 
     If PyTorch is not available at all, empty list will be returned, thus the
     test is effectively skipped.

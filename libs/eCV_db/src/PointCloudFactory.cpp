@@ -27,6 +27,7 @@
 #include "ecvPointCloud.h"
 #include "Image.h"
 #include "ecvMesh.h"
+#include "ecvTetraMesh.h"
 #include "RGBDImage.h"
 #include "VoxelGrid.h"
 #include "ecvQhull.h"
@@ -35,6 +36,9 @@
 #include "camera/PinholeCameraIntrinsic.h"
 
 #include <Eigen/Dense>
+#include <Eigen/Eigenvalues>
+#include <queue>
+#include <tuple>
 #include <limits>
 #include <Console.h>
 
@@ -42,115 +46,182 @@ using namespace CVLib;
 
 namespace cloudViewer {
 
-	namespace {
-		using namespace geometry;
+namespace {
+using namespace geometry;
 
-		int CountValidDepthPixels(const Image& depth, int stride) {
-			int num_valid_pixels = 0;
-			for (int i = 0; i < depth.height_; i += stride) {
-				for (int j = 0; j < depth.width_; j += stride) {
-					const float* p = depth.PointerAt<float>(j, i);
-					if (*p > 0) num_valid_pixels += 1;
-				}
-			}
-			return num_valid_pixels;
+int CountValidDepthPixels(const Image& depth, int stride) {
+	int num_valid_pixels = 0;
+	for (int i = 0; i < depth.height_; i += stride) {
+		for (int j = 0; j < depth.width_; j += stride) {
+			const float* p = depth.PointerAt<float>(j, i);
+			if (*p > 0) num_valid_pixels += 1;
 		}
+	}
+	return num_valid_pixels;
+}
 
-		std::shared_ptr<ccPointCloud> CreatePointCloudFromFloatDepthImage(
-			const Image& depth,
-			const camera::PinholeCameraIntrinsic& intrinsic,
-			const Eigen::Matrix4d& extrinsic,
-			int stride,
-			bool project_valid_depth_only) {
-			auto pointcloud = std::make_shared<ccPointCloud>();
-			Eigen::Matrix4d camera_pose = extrinsic.inverse();
-			auto focal_length = intrinsic.GetFocalLength();
-			auto principal_point = intrinsic.GetPrincipalPoint();
-			int num_valid_pixels;
-			if (!project_valid_depth_only) {
-				num_valid_pixels = int(depth.height_ / stride) * int(depth.width_ / stride);
-			}
-			else {
-				num_valid_pixels = CountValidDepthPixels(depth, stride);
-			}
-			pointcloud->resize(num_valid_pixels);
-			int cnt = 0;
-			for (int i = 0; i < depth.height_; i += stride) {
-				for (int j = 0; j < depth.width_; j += stride) {
-					const float* p = depth.PointerAt<float>(j, i);
-					if (*p > 0) {
-						double z = (double)(*p);
-						double x = (j - principal_point.first) * z / focal_length.first;
-						double y =
-							(i - principal_point.second) * z / focal_length.second;
-						Eigen::Vector4d point = camera_pose * Eigen::Vector4d(x, y, z, 1.0);
+std::shared_ptr<ccPointCloud> CreatePointCloudFromFloatDepthImage(
+	const Image& depth,
+	const camera::PinholeCameraIntrinsic& intrinsic,
+	const Eigen::Matrix4d& extrinsic,
+	int stride,
+	bool project_valid_depth_only) {
+	auto pointcloud = std::make_shared<ccPointCloud>();
+	Eigen::Matrix4d camera_pose = extrinsic.inverse();
+	auto focal_length = intrinsic.GetFocalLength();
+	auto principal_point = intrinsic.GetPrincipalPoint();
+	int num_valid_pixels;
+	if (!project_valid_depth_only) {
+		num_valid_pixels = int(depth.height_ / stride) * int(depth.width_ / stride);
+	}
+	else {
+		num_valid_pixels = CountValidDepthPixels(depth, stride);
+	}
+	pointcloud->resize(num_valid_pixels);
+	int cnt = 0;
+	for (int i = 0; i < depth.height_; i += stride) {
+		for (int j = 0; j < depth.width_; j += stride) {
+			const float* p = depth.PointerAt<float>(j, i);
+			if (*p > 0) {
+				double z = (double)(*p);
+				double x = (j - principal_point.first) * z / focal_length.first;
+				double y =
+					(i - principal_point.second) * z / focal_length.second;
+				Eigen::Vector4d point = camera_pose * Eigen::Vector4d(x, y, z, 1.0);
 
-						pointcloud->setEigenPoint(static_cast<size_t>(cnt++), point.block<3, 1>(0, 0));
-					}
-					else if (!project_valid_depth_only) {
-						double z = std::numeric_limits<float>::quiet_NaN();
-						double x = std::numeric_limits<float>::quiet_NaN();
-						double y = std::numeric_limits<float>::quiet_NaN();
-						pointcloud->setEigenPoint(static_cast<size_t>(cnt++), Eigen::Vector3d(x, y, z));
-					}
-				}
+				pointcloud->setEigenPoint(static_cast<size_t>(cnt++), point.block<3, 1>(0, 0));
 			}
-			return pointcloud;
+			else if (!project_valid_depth_only) {
+				double z = std::numeric_limits<float>::quiet_NaN();
+				double x = std::numeric_limits<float>::quiet_NaN();
+				double y = std::numeric_limits<float>::quiet_NaN();
+				pointcloud->setEigenPoint(static_cast<size_t>(cnt++), Eigen::Vector3d(x, y, z));
+			}
 		}
+	}
+	return pointcloud;
+}
 
-		template <typename TC, int NC>
-		std::shared_ptr<ccPointCloud> CreatePointCloudFromRGBDImageT(
-			const RGBDImage& image,
-			const camera::PinholeCameraIntrinsic& intrinsic,
-			const Eigen::Matrix4d& extrinsic,
-			bool project_valid_depth_only) {
-			auto pointcloud = std::make_shared<ccPointCloud>();
-			Eigen::Matrix4d camera_pose = extrinsic.inverse();
-			auto focal_length = intrinsic.GetFocalLength();
-			auto principal_point = intrinsic.GetPrincipalPoint();
-			double scale = (sizeof(TC) == 1) ? 255.0 : 1.0;
-			int num_valid_pixels;
-			if (!project_valid_depth_only) {
-				num_valid_pixels = image.depth_.height_ * image.depth_.width_;
+template <typename TC, int NC>
+std::shared_ptr<ccPointCloud> CreatePointCloudFromRGBDImageT(
+	const RGBDImage& image,
+	const camera::PinholeCameraIntrinsic& intrinsic,
+	const Eigen::Matrix4d& extrinsic,
+	bool project_valid_depth_only) {
+	auto pointcloud = std::make_shared<ccPointCloud>();
+	Eigen::Matrix4d camera_pose = extrinsic.inverse();
+	auto focal_length = intrinsic.GetFocalLength();
+	auto principal_point = intrinsic.GetPrincipalPoint();
+	double scale = (sizeof(TC) == 1) ? 255.0 : 1.0;
+	int num_valid_pixels;
+	if (!project_valid_depth_only) {
+		num_valid_pixels = image.depth_.height_ * image.depth_.width_;
+	}
+	else {
+		num_valid_pixels = CountValidDepthPixels(image.depth_, 1);
+	}
+	pointcloud->resize(num_valid_pixels);
+	pointcloud->resizeTheRGBTable();
+	int cnt = 0;
+	for (int i = 0; i < image.depth_.height_; i++) {
+		float* p = (float*)(image.depth_.data_.data() +
+			i * image.depth_.BytesPerLine());
+		TC* pc = (TC*)(image.color_.data_.data() +
+			i * image.color_.BytesPerLine());
+		for (int j = 0; j < image.depth_.width_; j++, p++, pc += NC) {
+			if (*p > 0) {
+				double z = (double)(*p);
+				double x = (j - principal_point.first) * z / focal_length.first;
+				double y = (i - principal_point.second) * z / focal_length.second;
+				Eigen::Vector4d point = camera_pose * Eigen::Vector4d(x, y, z, 1.0);
+				pointcloud->setEigenPoint(static_cast<size_t>(cnt), point.block<3, 1>(0, 0));
+				pointcloud->setEigenColor(static_cast<size_t>(cnt++),
+					Eigen::Vector3d(pc[0], pc[(NC - 1) / 2], pc[NC - 1]) / scale);
 			}
-			else {
-				num_valid_pixels = CountValidDepthPixels(image.depth_, 1);
+			else if (!project_valid_depth_only) {
+				double z = std::numeric_limits<float>::quiet_NaN();
+				double x = std::numeric_limits<float>::quiet_NaN();
+				double y = std::numeric_limits<float>::quiet_NaN();
+				pointcloud->setEigenPoint(static_cast<size_t>(cnt), Eigen::Vector3d(x, y, z));
+				pointcloud->setEigenColor(static_cast<size_t>(cnt++),
+					Eigen::Vector3d(
+						std::numeric_limits<TC>::quiet_NaN(),
+						std::numeric_limits<TC>::quiet_NaN(),
+						std::numeric_limits<TC>::quiet_NaN()));
 			}
-			pointcloud->resize(num_valid_pixels);
-			pointcloud->resizeTheRGBTable();
-			int cnt = 0;
-			for (int i = 0; i < image.depth_.height_; i++) {
-				float* p = (float*)(image.depth_.data_.data() +
-					i * image.depth_.BytesPerLine());
-				TC* pc = (TC*)(image.color_.data_.data() +
-					i * image.color_.BytesPerLine());
-				for (int j = 0; j < image.depth_.width_; j++, p++, pc += NC) {
-					if (*p > 0) {
-						double z = (double)(*p);
-						double x = (j - principal_point.first) * z / focal_length.first;
-						double y = (i - principal_point.second) * z / focal_length.second;
-						Eigen::Vector4d point = camera_pose * Eigen::Vector4d(x, y, z, 1.0);
-						pointcloud->setEigenPoint(static_cast<size_t>(cnt), point.block<3, 1>(0, 0));
-						pointcloud->setEigenColor(static_cast<size_t>(cnt++),
-							Eigen::Vector3d(pc[0], pc[(NC - 1) / 2], pc[NC - 1]) / scale);
-					}
-					else if (!project_valid_depth_only) {
-						double z = std::numeric_limits<float>::quiet_NaN();
-						double x = std::numeric_limits<float>::quiet_NaN();
-						double y = std::numeric_limits<float>::quiet_NaN();
-						pointcloud->setEigenPoint(static_cast<size_t>(cnt), Eigen::Vector3d(x, y, z));
-						pointcloud->setEigenColor(static_cast<size_t>(cnt++),
-							Eigen::Vector3d(
-								std::numeric_limits<TC>::quiet_NaN(),
-								std::numeric_limits<TC>::quiet_NaN(),
-								std::numeric_limits<TC>::quiet_NaN()));
-					}
-				}
-			}
-			return pointcloud;
 		}
+	}
+	return pointcloud;
+}
 
-	}  // unnamed namespace
+// Disjoint set data structure to find cycles in graphs
+class DisjointSet {
+public:
+    DisjointSet(size_t size) : parent_(size), size_(size) {
+        for (size_t idx = 0; idx < size; idx++) {
+            parent_[idx] = idx;
+            size_[idx] = 0;
+        }
+    }
+
+    // find representative element for given x
+    // using path compression
+    size_t Find(size_t x) {
+        if (x != parent_[x]) {
+            parent_[x] = Find(parent_[x]);
+        }
+        return parent_[x];
+    }
+
+    // combine two sets using size of sets
+    void Union(size_t x, size_t y) {
+        x = Find(x);
+        y = Find(y);
+        if (x != y) {
+            if (size_[x] < size_[y]) {
+                size_[y] += size_[x];
+                parent_[x] = y;
+            } else {
+                size_[x] += size_[y];
+                parent_[y] = x;
+            }
+        }
+    }
+
+private:
+    std::vector<size_t> parent_;
+    std::vector<size_t> size_;
+};
+
+struct WeightedEdge {
+    WeightedEdge(size_t v0, size_t v1, double weight)
+        : v0_(v0), v1_(v1), weight_(weight) {}
+    size_t v0_;
+    size_t v1_;
+    double weight_;
+};
+
+// Minimum Spanning Tree algorithm (Kruskal's algorithm)
+std::vector<WeightedEdge> Kruskal(
+        std::vector<WeightedEdge> &edges, size_t n_vertices) {
+    std::sort(edges.begin(), edges.end(),
+                [](WeightedEdge &e0, WeightedEdge &e1) {
+                    return e0.weight_ < e1.weight_;
+                });
+    DisjointSet disjoint_set(n_vertices);
+    std::vector<WeightedEdge> mst;
+    for (size_t eidx = 0; eidx < edges.size(); ++eidx) {
+        size_t set0 = disjoint_set.Find(edges[eidx].v0_);
+        size_t set1 = disjoint_set.Find(edges[eidx].v1_);
+        if (set0 != set1) {
+            mst.push_back(edges[eidx]);
+            disjoint_set.Union(set0, set1);
+        }
+    }
+    return mst;
+}
+
+}  // unnamed namespace
 }  // namespace cloudViewer
 
 std::shared_ptr<ccPointCloud> ccPointCloud::CreateFromDepthImage(
@@ -1151,6 +1222,120 @@ bool ccPointCloud::orientNormalsTowardsCameraLocation(
 		}
 	}
 	return true;
+}
+
+void ccPointCloud::orientNormalsConsistentTangentPlane(size_t k) {
+    if (!hasNormals()) {
+        utility::LogError(
+                "[orientNormalsConsistentTangentPlane] No normals in the "
+                "ccPointCloud. Call estimateNormals() first.");
+    }
+
+    // Create Riemannian graph (Euclidian MST + kNN)
+    // Euclidian MST is subgraph of Delaunay triangulation
+    std::shared_ptr<cloudViewer::geometry::TetraMesh> delaunay_mesh;
+    std::vector<size_t> pt_map;
+    std::tie(delaunay_mesh, pt_map) = cloudViewer::geometry::TetraMesh::CreateFromPointCloud(*this);
+    std::vector<cloudViewer::WeightedEdge> delaunay_graph;
+    std::unordered_set<size_t> graph_edges;
+    auto EdgeIndex = [&](size_t v0, size_t v1) -> size_t {
+        return std::min(v0, v1) * this->size() + std::max(v0, v1);
+    };
+    auto AddEdgeToDelaunayGraph = [&](size_t v0, size_t v1) {
+        v0 = pt_map[v0];
+        v1 = pt_map[v1];
+        size_t edge = EdgeIndex(v0, v1);
+        if (graph_edges.count(edge) == 0) {
+            double dist = (getEigenPoint(v0) - getEigenPoint(v1)).squaredNorm();
+            delaunay_graph.push_back(cloudViewer::WeightedEdge(v0, v1, dist));
+            graph_edges.insert(edge);
+        }
+    };
+    for (const Eigen::Vector4i &tetra : delaunay_mesh->tetras_) {
+        AddEdgeToDelaunayGraph(tetra[0], tetra[1]);
+        AddEdgeToDelaunayGraph(tetra[0], tetra[2]);
+        AddEdgeToDelaunayGraph(tetra[0], tetra[3]);
+        AddEdgeToDelaunayGraph(tetra[1], tetra[2]);
+        AddEdgeToDelaunayGraph(tetra[1], tetra[3]);
+        AddEdgeToDelaunayGraph(tetra[2], tetra[3]);
+    }
+
+    std::vector<cloudViewer::WeightedEdge> mst =
+            cloudViewer::Kruskal(delaunay_graph, this->size());
+
+    auto NormalWeight = [&](size_t v0, size_t v1) -> double {
+        return 1.0 - std::abs(getEigenNormal(v0).dot(getEigenNormal(v1)));
+    };
+    for (auto &edge : mst) {
+        edge.weight_ = NormalWeight(edge.v0_, edge.v1_);
+    }
+
+    // Add k nearest neighbors to Riemannian graph
+    cloudViewer::geometry::KDTreeFlann kdtree(*this);
+    for (size_t v0 = 0; v0 < this->size(); ++v0) {
+        std::vector<int> neighbors;
+        std::vector<double> dists2;
+        kdtree.SearchKNN(getEigenPoint(v0), int(k), neighbors, dists2);
+        for (size_t vidx1 = 0; vidx1 < neighbors.size(); ++vidx1) {
+            size_t v1 = size_t(neighbors[vidx1]);
+            if (v0 == v1) {
+                continue;
+            }
+            size_t edge = EdgeIndex(v0, v1);
+            if (graph_edges.count(edge) == 0) {
+                double weight = NormalWeight(v0, v1);
+                mst.push_back(cloudViewer::WeightedEdge(v0, v1, weight));
+                graph_edges.insert(edge);
+            }
+        }
+    }
+
+    // extract MST from Riemannian graph
+    mst = cloudViewer::Kruskal(mst, this->size());
+
+    // convert list of edges to graph
+    std::vector<std::unordered_set<size_t>> mst_graph(this->size());
+    for (const auto &edge : mst) {
+        size_t v0 = edge.v0_;
+        size_t v1 = edge.v1_;
+        mst_graph[v0].insert(v1);
+        mst_graph[v1].insert(v0);
+    }
+
+    // find start node for tree traversal
+    // init with node that maximizes z
+    double max_z = std::numeric_limits<double>::lowest();
+    size_t v0;
+    for (size_t vidx = 0; vidx < this->size(); ++vidx) {
+        const Eigen::Vector3d &v = getEigenPoint(vidx);
+        if (v(2) > max_z) {
+            max_z = v(2);
+            v0 = vidx;
+        }
+    }
+
+    // traverse MST and orient normals consistently
+    std::queue<size_t> traversal_queue;
+    std::vector<bool> visited(this->size(), false);
+    traversal_queue.push(v0);
+    auto TestAndOrientNormal = [&](const Eigen::Vector3d &n0,
+                                   Eigen::Vector3d &n1) {
+        if (n0.dot(n1) < 0) {
+            n1 *= -1;
+        }
+    };
+    TestAndOrientNormal(Eigen::Vector3d(0, 0, 1), getEigenNormal(v0));
+    while (!traversal_queue.empty()) {
+        v0 = traversal_queue.front();
+        traversal_queue.pop();
+        visited[v0] = true;
+        for (size_t v1 : mst_graph[v0]) {
+            if (!visited[v1]) {
+                traversal_queue.push(v1);
+                TestAndOrientNormal(getEigenNormal(v0), getEigenNormal(v1));
+            }
+        }
+    }
 }
 
 std::vector<double> ccPointCloud::computeMahalanobisDistance() const

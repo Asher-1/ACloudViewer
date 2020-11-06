@@ -304,7 +304,7 @@ bool Visualizer::PollEvents() {
 bool Visualizer::AddGeometry(
         std::shared_ptr<const ccHObject> geometry_ptr,
         bool reset_bounding_box) {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -313,22 +313,22 @@ bool Visualizer::AddGeometry(
         return false;
     } else if (geometry_ptr->isKindOf(CV_TYPES::POINT_CLOUD)) {
         renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::VOXEL_GRID)) {
         renderer_ptr = std::make_shared<glsl::VoxelGridRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::POINT_OCTREE2)) {
         renderer_ptr = std::make_shared<glsl::OctreeRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::LINESET)) {
         renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::POLY_LINE)) {
@@ -343,34 +343,39 @@ bool Visualizer::AddGeometry(
 		}
 	} else if (geometry_ptr->isKindOf(CV_TYPES::MESH)) {
         renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+            return false;
+        }
+    } else if (geometry_ptr->isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
+        renderer_ptr = std::make_shared<glsl::HalfEdgeMeshRenderer>();
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::IMAGE2)) {
         renderer_ptr = std::make_shared<glsl::ImageRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::RGBD_IMAGE)) {
         renderer_ptr = std::make_shared<glsl::RGBDImageRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::TETRA_MESH)) {
         renderer_ptr = std::make_shared<glsl::TetraMeshRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
 	}
 	else if (geometry_ptr->isKindOf(CV_TYPES::ORIENTED_BBOX)) {
 		renderer_ptr = std::make_shared<glsl::OrientedBoundingBoxRenderer>();
-		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+		if (!renderer_ptr->AddGeometry(geometry_ptr)) {
 			return false;
 		}
 	}
 	else if (geometry_ptr->isKindOf(CV_TYPES::BBOX)) {
 		renderer_ptr = std::make_shared<glsl::AxisAlignedBoundingBoxRenderer>();
-		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+		if (!renderer_ptr->AddGeometry(geometry_ptr)) {
 			return false;
 		}
 	}
@@ -392,7 +397,7 @@ bool Visualizer::AddGeometry(
 bool Visualizer::RemoveGeometry(
         std::shared_ptr<const ccHObject> geometry_ptr,
         bool reset_bounding_box) {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);

@@ -205,7 +205,7 @@ void pybind_cloudbase(py::module &m) {
 		return fmt::format("ccGenericPointCloud with {} points", cloud.size());
 	})
 	.def("clone", [](ccGenericPointCloud& cloud, bool ignore_children) {
-		std::shared_ptr<ccGenericPointCloud>(cloud.clone(nullptr, ignore_children));
+		return std::shared_ptr<ccGenericPointCloud>(cloud.clone(nullptr, ignore_children));
 		}, "Clones this entity.", "ignore_children"_a = false)
 	.def("clear", &ccGenericPointCloud::clear, "Clears the entity from all its points and features.")
 	.def("get_scalar_value_color", [](const ccGenericPointCloud& cloud, ScalarType value) {
@@ -231,14 +231,19 @@ void pybind_cloudbase(py::module &m) {
 		return cloud.getTheVisibilityArray();
 	}, "Returns associated visibility array (const version).")
 	.def("get_visible_points", [](const ccGenericPointCloud& cloud, 
-		const ccGenericPointCloud::VisibilityTableType& vis_table, bool silent) {
-		const ccGenericPointCloud::VisibilityTableType* visTable = nullptr;
+								const std::vector<unsigned char>& vis_table,
+								bool silent) {
+        const std::vector<unsigned char>* visTable = nullptr;
 		if (!vis_table.empty())
 		{
 			visTable = &vis_table;
 		}
-		return std::shared_ptr<CVLib::ReferenceCloud>(cloud.getTheVisiblePoints(visTable, silent));
-	}, "Returns a ReferenceCloud equivalent to the visibility array.", "vis_table"_a = ccGenericPointCloud::VisibilityTableType(), "silent"_a = false)
+		return std::ref(*cloud.getTheVisiblePoints(visTable, silent));
+    },
+    "Returns a ReferenceCloud equivalent to the visibility "
+    "array.",
+    "vis_table"_a,
+    "silent"_a = false)
 	.def("is_visibility_table_instantiated", &ccGenericPointCloud::isVisibilityTableInstantiated, 
 		"Returns whether the visibility array is allocated or not")
 	.def("reset_visibility_array", &ccGenericPointCloud::resetVisibilityArray, "Resets the associated visibility array")

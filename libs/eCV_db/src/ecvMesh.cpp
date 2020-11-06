@@ -175,6 +175,8 @@ ccMesh& ccMesh::operator=(const ccMesh & mesh)
 
 	this->resize(0);
 
+	this->adjacency_list_ = mesh.adjacency_list_;
+
 	this->merge(&mesh, false);
 	return (*this);
 }
@@ -186,6 +188,8 @@ ccMesh& ccMesh::operator+=(const ccMesh & mesh)
 		CVLog::Error("Fusion failed! (not enough memory?)");
 	}
 
+	this->adjacency_list_ = mesh.adjacency_list_;
+
 	return (*this);
 }
 
@@ -193,7 +197,6 @@ ccMesh ccMesh::operator+(const ccMesh & mesh) const
 {
 	return (ccMesh(*this) += mesh);
 }
-
 
 void ccMesh::setAssociatedCloud(ccGenericPointCloud* cloud)
 {
@@ -2211,6 +2214,31 @@ bool ccMesh::reserve(size_t n)
 	return m_triVertIndexes->reserveSafe(n);
 }
 
+bool ccMesh::reserveAssociatedCloud(std::size_t n) {
+    if (!m_associatedCloud) {
+        CVLib::utility::LogWarning("Must call createInternalCloud first!");
+        return false;
+    }
+    ccPointCloud* baseVertices = ccHObjectCaster::ToPointCloud(m_associatedCloud);
+
+    if (!baseVertices->reserveThePointsTable(n)) {
+        CVLib::utility::LogError(
+                "[reserveThePointsTable] Not have enough memory! ");
+        return false;
+    }
+    if (!baseVertices->reserveTheNormsTable()) {
+        CVLib::utility::LogError(
+                "[reserveTheNormsTable] Not have enough memory! ");
+        return false;
+    }
+    if (!baseVertices->reserveTheRGBTable()) {
+        CVLib::utility::LogError(
+                "[reserveTheRGBTable] Not have enough memory! ");
+        return false;
+    }
+    return true;
+}
+
 bool ccMesh::resize(size_t n)
 {
 	m_bBox.setValidity(false);
@@ -2238,6 +2266,32 @@ bool ccMesh::resize(size_t n)
 	}
 
 	return m_triVertIndexes->resizeSafe(n);
+}
+
+bool ccMesh::resizeAssociatedCloud(std::size_t n) {
+    if (!m_associatedCloud) {
+        CVLib::utility::LogWarning("Must call createInternalCloud first!");
+        return false;
+    }
+    ccPointCloud* baseVertices =
+            ccHObjectCaster::ToPointCloud(m_associatedCloud);
+
+    if (!baseVertices->resize(n)) {
+        CVLib::utility::LogError(
+                "[resize] Not have enough memory! ");
+        return false;
+    }
+    if (!baseVertices->resizeTheNormsTable()) {
+        CVLib::utility::LogError(
+                "[resizeTheNormsTable] Not have enough memory! ");
+        return false;
+    }
+    if (!baseVertices->resizeTheRGBTable()) {
+        CVLib::utility::LogError(
+                "[resizeTheRGBTable] Not have enough memory! ");
+        return false;
+    }
+    return true;
 }
 
 inline void ccMesh::shrinkVertexToFit()
@@ -3018,6 +3072,15 @@ bool ccMesh::getTriangleNormals(unsigned triangleIndex, double Na[3], double Nb[
 bool ccMesh::getTriangleNormals(unsigned triangleIndex, Eigen::Vector3d & Na, Eigen::Vector3d & Nb, Eigen::Vector3d & Nc) const
 {
 	return getTriangleNormals(triangleIndex, Na.data(), Nb.data(), Nc.data());
+}
+
+std::vector<Eigen::Vector3d> ccMesh::getTriangleNormals() const {
+    std::vector<Eigen::Vector3d> triangleNormals;
+    triangleNormals.reserve(this->size());
+    for (size_t i = 0; i < this->size(); i++) {
+        triangleNormals.emplace_back(getTriangleNorm(i));
+    }
+    return triangleNormals;
 }
 
 Eigen::Vector3d ccMesh::getTriangleNorm(size_t index) const

@@ -33,6 +33,7 @@
 #include <IJsonConvertibleIO.h>
 #include <Image.h>
 #include <ecvMesh.h>
+#include <ecvHalfEdgeMesh.h>
 #include <LineSet.h>
 #include <ecvPointCloud.h>
 
@@ -86,6 +87,16 @@ bool VisualizerWithEditing::AddGeometry(
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 std::make_shared<glsl::TriangleMeshRenderer>();
+        if (editing_geometry_renderer_ptr_->AddGeometry(
+                    editing_geometry_ptr_) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
+        auto ptr = std::make_shared<geometry::ecvHalfEdgeMesh>();
+        *ptr = (const geometry::ecvHalfEdgeMesh &)*original_geometry_ptr_;
+        editing_geometry_ptr_ = ptr;
+        editing_geometry_renderer_ptr_ =
+                std::make_shared<glsl::HalfEdgeMeshRenderer>();
         if (editing_geometry_renderer_ptr_->AddGeometry(
                     editing_geometry_ptr_) == false) {
             return false;
