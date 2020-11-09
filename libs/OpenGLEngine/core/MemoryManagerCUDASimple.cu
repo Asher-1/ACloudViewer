@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +27,11 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "open3d/core/CUDAState.cuh"
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/MemoryManager.h"
+#include "core/CUDAState.cuh"
+#include "core/CUDAUtils.h"
+#include "core/MemoryManager.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace core {
 
 CUDASimpleMemoryManager::CUDASimpleMemoryManager() {}
@@ -126,4 +126,4 @@ bool CUDASimpleMemoryManager::IsCUDAPointer(const void* ptr) {
 }
 
 }  // namespace core
-}  // namespace open3d
+}  // namespace cloudViewer

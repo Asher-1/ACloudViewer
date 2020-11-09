@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,12 +25,12 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "open3d/ml/pytorch/misc/ReduceSubarraysSumOps.h"
+#include "ml/pytorch/misc/ReduceSubarraysSumOps.h"
 
 #include <vector>
 
-#include "open3d/ml/pytorch/TorchHelper.h"
-#include "open3d/ml/pytorch/misc/ReduceSubarraysSumOpKernel.h"
+#include "ml/pytorch/TorchHelper.h"
+#include "ml/pytorch/misc/ReduceSubarraysSumOpKernel.h"
 #include "torch/script.h"
 
 torch::Tensor ReduceSubarraysSum(torch::Tensor values,
@@ -74,6 +74,6 @@ torch::Tensor ReduceSubarraysSum(torch::Tensor values,
 }
 
 static auto registry = torch::RegisterOperators(
-        "open3d::reduce_subarrays_sum(Tensor values, Tensor row_splits)"
+        "cloudViewer::reduce_subarrays_sum(Tensor values, Tensor row_splits)"
         " -> Tensor sums",
         &ReduceSubarraysSum);

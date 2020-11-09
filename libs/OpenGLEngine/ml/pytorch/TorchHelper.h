@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 #include <sstream>
 #include <type_traits>
 
-#include "open3d/ml/ShapeChecking.h"
+#include "ml/ShapeChecking.h"
 #include "torch/script.h"
 
 // Macros for checking tensor properties
@@ -158,9 +158,9 @@ inline torch::Tensor CreateTempTensor(const int64_t size,
     return tensor;
 }
 
-inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
+inline std::vector<cloudViewer::ml::op_util::DimValue> GetShapeVector(
         torch::Tensor tensor) {
-    using namespace open3d::ml::op_util;
+    using namespace cloudViewer::ml::op_util;
 
     std::vector<DimValue> shape;
     const int rank = tensor.dim();
@@ -170,13 +170,13 @@ inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
     return shape;
 }
 
-template <open3d::ml::op_util::CSOpt Opt = open3d::ml::op_util::CSOpt::NONE,
+template <cloudViewer::ml::op_util::CSOpt Opt = cloudViewer::ml::op_util::CSOpt::NONE,
           class TDimX,
           class... TArgs>
 std::tuple<bool, std::string> CheckShape(torch::Tensor tensor,
                                          TDimX&& dimex,
                                          TArgs&&... args) {
-    return open3d::ml::op_util::CheckShape<Opt>(GetShapeVector(tensor),
+    return cloudViewer::ml::op_util::CheckShape<Opt>(GetShapeVector(tensor),
                                                 std::forward<TDimX>(dimex),
                                                 std::forward<TArgs>(args)...);
 }
@@ -185,7 +185,7 @@ std::tuple<bool, std::string> CheckShape(torch::Tensor tensor,
 // Macros for checking the shape of Tensors.
 // Usage:
 //   {
-//     using namespace open3d::ml::op_util;
+//     using namespace cloudViewer::ml::op_util;
 //     Dim w("w");
 //     Dim h("h");
 //     CHECK_SHAPE(tensor1, 10, w, h); // checks if the first dim is 10

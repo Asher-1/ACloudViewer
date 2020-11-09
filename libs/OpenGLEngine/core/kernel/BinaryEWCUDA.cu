@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/CUDAState.cuh"
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/Dispatch.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/BinaryEW.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
+#include "core/CUDAState.cuh"
+#include "core/CUDAUtils.h"
+#include "core/Dispatch.h"
+#include "core/Tensor.h"
+#include "core/kernel/BinaryEW.h"
+#include "core/kernel/CUDALauncher.cuh"
 
-namespace open3d {
+namespace cloudViewer {
 namespace core {
 namespace kernel {
 
@@ -300,4 +300,4 @@ void BinaryEWCUDA(const Tensor& lhs,
 
 }  // namespace kernel
 }  // namespace core
-}  // namespace open3d
+}  // namespace cloudViewer

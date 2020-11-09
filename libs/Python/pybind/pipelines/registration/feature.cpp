@@ -77,4 +77,4 @@ void pybind_feature_methods(py::module &m) {
 
 }  // namespace registration
 }  // namespace pipelines
-}  // namespace open3d
+}  // namespace cloudViewer

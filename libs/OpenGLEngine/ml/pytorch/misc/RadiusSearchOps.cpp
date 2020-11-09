@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +27,11 @@
 
 #include <vector>
 
-#include "open3d/ml/impl/misc/NeighborSearchCommon.h"
-#include "open3d/ml/pytorch/TorchHelper.h"
+#include "ml/impl/misc/NeighborSearchCommon.h"
+#include "ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace cloudViewer::ml::impl;
 
 template <class T>
 void RadiusSearchCPU(const torch::Tensor& points,
@@ -80,7 +80,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> MultiRadiusSearch(
     queries_row_splits = queries_row_splits.contiguous();
 
     // check input shapes
-    using namespace open3d::ml::op_util;
+    using namespace cloudViewer::ml::op_util;
     Dim num_points("num_points");
     Dim num_queries("num_queries");
     Dim batch_size("batch_size");
@@ -126,7 +126,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> MultiRadiusSearch(
 }
 
 static auto registry = torch::RegisterOperators(
-        "open3d::radius_search(Tensor points, Tensor queries, Tensor radii, "
+        "cloudViewer::radius_search(Tensor points, Tensor queries, Tensor radii, "
         "Tensor points_row_splits, Tensor queries_row_splits,"
         "str metric=\"L2\", bool ignore_query_point=False, bool "
         "return_distances=False, bool normalize_distances=False) -> (Tensor "

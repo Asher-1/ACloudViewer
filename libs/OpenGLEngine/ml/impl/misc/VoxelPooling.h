@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,9 @@
 #include <Eigen/Core>
 #include <unordered_map>
 
-#include "open3d/utility/Helper.h"
+#include <Helper.h>
 
-namespace open3d {
+namespace cloudViewer {
 namespace ml {
 namespace impl {
 
@@ -296,7 +296,7 @@ void _VoxelPooling(size_t num_inp,
     typedef Eigen::Array<TFeat, Eigen::Dynamic, 1> FeatureVec_t;
 
     std::unordered_map<Eigen::Vector3i, ACCUMULATOR,
-                       open3d::utility::hash_eigen<Eigen::Vector3i>>
+                       CVLib::utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_accpoint;
 
     Vec3_t voxel_center;
@@ -364,7 +364,7 @@ void _VoxelPoolingBackprop(TFeat* features_backprop,
     tbb::task_group task_group;
 
     std::unordered_map<Eigen::Vector3i, ACCUMULATOR,
-                       open3d::utility::hash_eigen<Eigen::Vector3i>>
+                       CVLib::utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_accpoint;
 
     task_group.run([&] {
@@ -389,7 +389,7 @@ void _VoxelPoolingBackprop(TFeat* features_backprop,
     });
 
     std::unordered_map<Eigen::Vector3i, size_t,
-                       open3d::utility::hash_eigen<Eigen::Vector3i>>
+                       CVLib::utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_gradindex;
 
     task_group.run([&] {
@@ -582,4 +582,4 @@ void VoxelPoolingBackprop(TFeat* features_backprop,
 
 }  // namespace impl
 }  // namespace ml
-}  // namespace open3d
+}  // namespace cloudViewer

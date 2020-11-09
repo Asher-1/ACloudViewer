@@ -27,8 +27,6 @@
 #ifndef CV_EIGEN_HEADER
 #define CV_EIGEN_HEADER
 
-#include "CVCoreLib.h"
-
 // EIGEN
 #include <Eigen/Core>
 #include <Eigen/StdVector>

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,12 +25,12 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "open3d/ml/pytorch/misc/InvertNeighborsListOps.h"
+#include "ml/pytorch/misc/InvertNeighborsListOps.h"
 
 #include <vector>
 
-#include "open3d/ml/pytorch/TorchHelper.h"
-#include "open3d/ml/pytorch/misc/InvertNeighborsListOpKernel.h"
+#include "ml/pytorch/TorchHelper.h"
+#include "ml/pytorch/misc/InvertNeighborsListOpKernel.h"
 #include "torch/script.h"
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
@@ -45,7 +45,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
 
     // check input shapes
     {
-        using namespace open3d::ml::op_util;
+        using namespace cloudViewer::ml::op_util;
         Dim num_neighbors("num_neighbors");
 
         CHECK_SHAPE(inp_neighbors_index, num_neighbors);
@@ -96,7 +96,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
 }
 
 static auto registry = torch::RegisterOperators(
-        "open3d::invert_neighbors_list(int num_points, Tensor "
+        "cloudViewer::invert_neighbors_list(int num_points, Tensor "
         "inp_neighbors_index, Tensor inp_neighbors_row_splits, Tensor "
         "inp_neighbors_attributes) -> (Tensor neighbors_index, Tensor "
         "neighbors_row_splits, Tensor neighbors_attributes)",

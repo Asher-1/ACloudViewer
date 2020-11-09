@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 
 #include <vector>
 
-#include "open3d/ml/pytorch/TorchHelper.h"
+#include "ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 template <class T>
@@ -60,7 +60,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> BuildSpatialHashTable(
     CHECK_TYPE(points_row_splits, kInt64);
 
     // check input shapes
-    using namespace open3d::ml::op_util;
+    using namespace cloudViewer::ml::op_util;
     Dim num_points("num_points");
     Dim batch_size("batch_size");
 
@@ -126,7 +126,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> BuildSpatialHashTable(
 }
 
 static auto registry = torch::RegisterOperators(
-        "open3d::build_spatial_hash_table(Tensor points, float radius, Tensor "
+        "cloudViewer::build_spatial_hash_table(Tensor points, float radius, Tensor "
         "points_row_splits, float hash_table_size_factor, int "
         "max_hash_table_size=33554432) -> (Tensor hash_table_index, Tensor "
         "hash_table_cell_splits, Tensor hash_table_splits)",

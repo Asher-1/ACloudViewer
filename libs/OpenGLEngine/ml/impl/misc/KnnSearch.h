@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,11 +30,11 @@
 
 #include <mutex>
 
-#include "open3d/core/Atomic.h"
-#include "open3d/ml/impl/misc/NeighborSearchCommon.h"
-#include "open3d/utility/ParallelScan.h"
+#include "core/Atomic.h"
+#include "ml/impl/misc/NeighborSearchCommon.h"
+#include "utility/ParallelScan.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace ml {
 namespace impl {
 
@@ -51,7 +51,7 @@ void _KnnSearchCPU(int64_t* query_neighbors_row_splits,
                    bool ignore_query_point,
                    bool return_distances,
                    OUTPUT_ALLOCATOR& output_allocator) {
-    using namespace open3d::utility;
+    using namespace cloudViewer::utility;
 
     // return empty indices array if there are no points
     if (num_points == 0 || num_queries == 0) {
@@ -251,4 +251,4 @@ void KnnSearchCPU(int64_t* query_neighbors_row_splits,
 
 }  // namespace impl
 }  // namespace ml
-}  // namespace open3d
+}  // namespace cloudViewer

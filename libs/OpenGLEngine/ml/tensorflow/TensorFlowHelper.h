@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,16 +25,16 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "open3d/ml/ShapeChecking.h"
+#include "ml/ShapeChecking.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/lib/core/errors.h"
 
-inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
+inline std::vector<cloudViewer::ml::op_util::DimValue> GetShapeVector(
         ::tensorflow::shape_inference::InferenceContext* c,
         ::tensorflow::shape_inference::ShapeHandle shape_handle) {
-    using namespace open3d::ml::op_util;
+    using namespace cloudViewer::ml::op_util;
     if (!c->RankKnown(shape_handle)) {
         return std::vector<DimValue>();
     }
@@ -52,7 +52,7 @@ inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
     return shape;
 }
 
-template <open3d::ml::op_util::CSOpt Opt = open3d::ml::op_util::CSOpt::NONE,
+template <cloudViewer::ml::op_util::CSOpt Opt = cloudViewer::ml::op_util::CSOpt::NONE,
           class TDimX,
           class... TArgs>
 std::tuple<bool, std::string> CheckShape(
@@ -64,14 +64,14 @@ std::tuple<bool, std::string> CheckShape(
         // without rank we cannot check
         return std::make_tuple(true, std::string());
     }
-    return open3d::ml::op_util::CheckShape<Opt>(GetShapeVector(c, shape_handle),
+    return cloudViewer::ml::op_util::CheckShape<Opt>(GetShapeVector(c, shape_handle),
                                                 std::forward<TDimX>(dimex),
                                                 std::forward<TArgs>(args)...);
 }
 
-inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
+inline std::vector<cloudViewer::ml::op_util::DimValue> GetShapeVector(
         const tensorflow::Tensor& tensor) {
-    using namespace open3d::ml::op_util;
+    using namespace cloudViewer::ml::op_util;
 
     std::vector<DimValue> shape;
     for (int i = 0; i < tensor.dims(); ++i) {
@@ -80,13 +80,13 @@ inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
     return shape;
 }
 
-template <open3d::ml::op_util::CSOpt Opt = open3d::ml::op_util::CSOpt::NONE,
+template <cloudViewer::ml::op_util::CSOpt Opt = cloudViewer::ml::op_util::CSOpt::NONE,
           class TDimX,
           class... TArgs>
 std::tuple<bool, std::string> CheckShape(const tensorflow::Tensor& tensor,
                                          TDimX&& dimex,
                                          TArgs&&... args) {
-    return open3d::ml::op_util::CheckShape<Opt>(GetShapeVector(tensor),
+    return cloudViewer::ml::op_util::CheckShape<Opt>(GetShapeVector(tensor),
                                                 std::forward<TDimX>(dimex),
                                                 std::forward<TArgs>(args)...);
 }
@@ -99,7 +99,7 @@ std::tuple<bool, std::string> CheckShape(const tensorflow::Tensor& tensor,
 // Usage:
 //   // ctx is of type tensorflow::shape_inference::InferenceContext*
 //   {
-//     using namespace open3d::ml::op_util;
+//     using namespace cloudViewer::ml::op_util;
 //     Dim w("w");
 //     Dim h("h");
 //     CHECK_SHAPE_HANDLE(ctx, handle1, 10, w, h); // checks if the first dim is
@@ -125,7 +125,7 @@ template <class TDimX, class... TArgs>
         TDimX&& dimex,
         TArgs&&... args) {
     using namespace tensorflow::shape_inference;
-    using namespace open3d::ml::op_util;
+    using namespace cloudViewer::ml::op_util;
     std::vector<int64_t> shape = CreateDimVector(
             int64_t(InferenceContext::kUnknownDim), dimex, args...);
     std::vector<DimensionHandle> dims;
@@ -141,7 +141,7 @@ template <class TDimX, class... TArgs>
 // Usage:
 //   // ctx is of type tensorflow::shape_inference::InferenceContext*
 //   {
-//     using namespace open3d::ml::op_util;
+//     using namespace cloudViewer::ml::op_util;
 //     Dim w("w");
 //     Dim h("h");
 //     CHECK_SHAPE_HANDLE(ctx, handle1, 10, w, h); // checks if the first dim is
@@ -227,7 +227,7 @@ template <class TDimX, class... TArgs>
 // Usage:
 //   // ctx is of type tensorflow::OpKernelContext*
 //   {
-//     using namespace open3d::ml::op_util;
+//     using namespace cloudViewer::ml::op_util;
 //     Dim w("w");
 //     Dim h("h");
 //     CHECK_SHAPE(ctx, tensor1, 10, w, h); // checks if the first dim is 10

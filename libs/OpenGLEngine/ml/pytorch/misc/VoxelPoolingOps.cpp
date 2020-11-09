@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +27,11 @@
 
 #include <vector>
 
-#include "open3d/ml/impl/misc/VoxelPooling.h"
-#include "open3d/ml/pytorch/TorchHelper.h"
+#include "ml/impl/misc/VoxelPooling.h"
+#include "ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace cloudViewer::ml::impl;
 using torch::autograd::AutogradContext;
 using torch::autograd::Function;
 using torch::autograd::Variable;
@@ -96,7 +96,7 @@ public:
 
         // check input shapes
         {
-            using namespace open3d::ml::op_util;
+            using namespace cloudViewer::ml::op_util;
             Dim num_points("num_points");
             Dim num_channels("num_channels");
 
@@ -240,7 +240,7 @@ std::tuple<torch::Tensor, torch::Tensor> VoxelPooling(
 }
 
 static auto registry = torch::RegisterOperators(
-        "open3d::voxel_pooling(Tensor positions, Tensor features, float "
+        "cloudViewer::voxel_pooling(Tensor positions, Tensor features, float "
         "voxel_size, str position_fn=\"average\", str feature_fn=\"average\", "
         "bool debug=False) -> "
         "(Tensor pooled_positions, Tensor pooled_features)",

@@ -41,6 +41,9 @@ set_target_properties(ml_contrib PROPERTIES FOLDER "Modules")
 
 add_subdirectory(pipelines)
 set_target_properties(pipelines PROPERTIES FOLDER "Modules")
+add_subdirectory(utility)
+set_target_properties(utility PROPERTIES FOLDER "Modules")
+
 add_subdirectory(visualization)
 set_target_properties(visualization PROPERTIES FOLDER "Modules")
 if (BUILD_GUI)
@@ -57,6 +60,7 @@ ADD_SOURCE_GROUP(io)
 ADD_SOURCE_GROUP(tio)
 ADD_SOURCE_GROUP(ml)
 ADD_SOURCE_GROUP(pipelines)
+add_source_group(utility)
 ADD_SOURCE_GROUP(visualization)
 
 # note: adding at least one real source file to any target that references
@@ -69,6 +73,7 @@ add_library(${PROJECT_NAME}
     $<TARGET_OBJECTS:tio>
     $<TARGET_OBJECTS:ml_contrib>
     $<TARGET_OBJECTS:pipelines>
+	$<TARGET_OBJECTS:utility>
     $<TARGET_OBJECTS:visualization>
     ${GUI_OBJECTS}
 )

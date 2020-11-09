@@ -30,7 +30,7 @@
 #include <tuple>
 #include <vector>
 
-namespace open3d {
+namespace cloudViewer {
 namespace ml {
 namespace op_util {
 
@@ -691,4 +691,4 @@ std::tuple<bool, std::string> CheckShape(const std::vector<DimValue>& shape,
 
 }  // namespace op_util
 }  // namespace ml
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -8,7 +8,7 @@ if(NOT CUTLASS_INCLUDE_DIR)
 
   find_path(
     CUTLASS_INCLUDE_DIR cutlass/gemm/gemm.h
-    PATHS ${PROJECT_SOURCE_DIR}/3rdparty/cutlass
+    PATHS ${CloudViewer_3RDPARTY_DIR}/cutlass
     NO_DEFAULT_PATH)
 endif()
 

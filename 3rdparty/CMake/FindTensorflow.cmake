@@ -69,9 +69,9 @@ message(STATUS "           use cxx11 abi: ${Tensorflow_CXX11_ABI}")
 # Check if the c++11 ABI is compatible
 if((Tensorflow_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
    (NOT Tensorflow_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI))
-    message(FATAL_ERROR "TensorFlow and Open3D ABI mismatch: ${Tensorflow_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}")
+    message(FATAL_ERROR "TensorFlow and CloudViewer ABI mismatch: ${Tensorflow_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}")
 else()
-    message(STATUS "TensorFlow matches Open3D ABI: ${Tensorflow_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
+    message(STATUS "TensorFlow matches CloudViewer ABI: ${Tensorflow_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
 endif()
 
 include(FindPackageHandleStandardArgs)

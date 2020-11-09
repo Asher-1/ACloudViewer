@@ -7,7 +7,7 @@
 if(NOT CUB_INCLUDE_DIR)
     find_path(
         CUB_INCLUDE_DIR cub/cub.cuh
-        PATHS ${PROJECT_SOURCE_DIR}/3rdparty/cub
+        PATHS ${CloudViewer_3RDPARTY_DIR}/cub
         NO_DEFAULT_PATH)
 endif()
 
