@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import open3d.visualization.gui as gui
+import cloudViewer.visualization.gui as gui
 import os.path
 
 basedir = os.path.dirname(os.path.realpath(__file__))

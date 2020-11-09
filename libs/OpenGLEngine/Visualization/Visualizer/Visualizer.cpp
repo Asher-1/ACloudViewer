@@ -62,7 +62,7 @@ public:
     }
 
     static void GLFWErrorCallback(int error, const char *description) {
-        utility::LogError("GLFW Error: {}", description);
+        utility::LogWarning("GLFW Error: {}", description);
     }
 };
 
@@ -186,15 +186,15 @@ bool Visualizer::CreateVisualizerWindow(
     glfwMakeContextCurrent(window_);
     glfwSwapInterval(1);
 
-    if (InitOpenGL() == false) {
+    if (!InitOpenGL()) {
         return false;
     }
 
-    if (InitViewControl() == false) {
+    if (!InitViewControl()) {
         return false;
     }
 
-    if (InitRenderOption() == false) {
+    if (!InitRenderOption()) {
         return false;
     }
 
@@ -276,7 +276,7 @@ void Visualizer::Close() {
 }
 
 bool Visualizer::WaitEvents() {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -289,7 +289,7 @@ bool Visualizer::WaitEvents() {
 }
 
 bool Visualizer::PollEvents() {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -419,7 +419,7 @@ bool Visualizer::RemoveGeometry(
 }
 
 bool Visualizer::ClearGeometries() {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);

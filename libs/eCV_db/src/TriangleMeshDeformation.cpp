@@ -59,6 +59,7 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
 	auto edges_to_vertices = prime->getEdgeToVerticesMap();
 	auto edge_weights =
 		prime->computeEdgeWeightsCot(edges_to_vertices, /*min_weight=*/0);
+    utility::LogDebug("[DeformAsRigidAsPossible] done setting up S'");
 
 	std::unordered_map<int, Eigen::Vector3d> constraints;
 	for (size_t idx = 0; idx < constraint_vertex_indices.size() &&

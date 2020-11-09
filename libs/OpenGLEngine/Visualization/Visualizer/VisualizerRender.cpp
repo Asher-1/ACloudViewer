@@ -50,6 +50,8 @@ bool Visualizer::InitOpenGL() {
         return false;
     }
 
+    render_fbo_ = 0;
+
 	glGenVertexArrays(1, &vao_id_);
 	glBindVertexArray(vao_id_);
 
@@ -70,10 +72,40 @@ bool Visualizer::InitOpenGL() {
     return true;
 }
 
-void Visualizer::Render() {
+void Visualizer::Render(bool render_screen) {
     glfwMakeContextCurrent(window_);
 
     view_control_ptr_->SetViewMatrices();
+
+    if (render_screen) {
+        if (render_fbo_ != 0) {
+            utility::LogWarning("Render framebuffer is not released.");
+        }
+
+        glGenFramebuffers(1, &render_fbo_);
+        glBindFramebuffer(GL_FRAMEBUFFER, render_fbo_);
+
+        int tex_w = view_control_ptr_->GetWindowWidth();
+        int tex_h = view_control_ptr_->GetWindowHeight();
+
+        glGenTextures(1, &render_rgb_tex_);
+        glBindTexture(GL_TEXTURE_2D, render_rgb_tex_);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_w, tex_h, 0, GL_RGB,
+                     GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, render_rgb_tex_, 0);
+
+        glGenRenderbuffers(1, &render_depth_stencil_rbo_);
+        glBindRenderbuffer(GL_RENDERBUFFER, render_depth_stencil_rbo_);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, tex_w,
+                              tex_h);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                                  GL_RENDERBUFFER, render_depth_stencil_rbo_);
+    }
+
 
     glEnable(GL_MULTISAMPLE);
     glDisable(GL_BLEND);
@@ -120,14 +152,14 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
 void Visualizer::CopyViewStatusToClipboard() {
     ViewParameters current_status;
     if (view_control_ptr_->ConvertToViewParameters(current_status) == false) {
-        utility::LogError("Something is wrong copying view status.");
+        utility::LogWarning("Something is wrong copying view status.");
     }
     ViewTrajectory trajectory;
     trajectory.view_status_.push_back(current_status);
     std::string clipboard_string;
     if (io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory) ==
         false) {
-        utility::LogError("Something is wrong copying view status.");
+        utility::LogWarning("Something is wrong copying view status.");
     }
     glfwSetClipboardString(window_, clipboard_string.c_str());
 }
@@ -139,10 +171,10 @@ void Visualizer::CopyViewStatusFromClipboard() {
         ViewTrajectory trajectory;
         if (io::ReadIJsonConvertibleFromJSONString(clipboard_string,
                                                    trajectory) == false) {
-            utility::LogError("Something is wrong copying view status.");
+            utility::LogWarning("Something is wrong copying view status.");
         }
         if (trajectory.view_status_.size() != 1) {
-            utility::LogError("Something is wrong copying view status.");
+            utility::LogWarning("Something is wrong copying view status.");
         }
         view_control_ptr_->ConvertFromViewParameters(
                 trajectory.view_status_[0]);

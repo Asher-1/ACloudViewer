@@ -36,7 +36,7 @@ endif()
 target_link_contrib( ${PROJECT_NAME} )
 
 # Add custom preprocessor definitions
-target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_IO_LIBRARY_BUILD )
+target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_IO_LIBRARY_BUILD )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
     AUTOUIC ON # FIXME Remove after everything has moved to targets and we can set it globally

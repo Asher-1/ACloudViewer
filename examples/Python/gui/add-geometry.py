@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import open3d as o3d
-import open3d.visualization.gui as gui
-import open3d.visualization.rendering as rendering
+import cloudViewer as cv3d
+import cloudViewer.visualization.gui as gui
+import cloudViewer.visualization.rendering as rendering
 import platform
 import random
 import threading
@@ -39,8 +39,7 @@ class SpheresApp:
             [1, 1, 1],  # color
             100000)  # intensity
         self.scene.scene.scene.enable_directional_light(True)
-        bbox = o3d.geometry.AxisAlignedBoundingBox([-10, -10, -10],
-                                                   [10, 10, 10])
+        bbox = cv3d.geometry.ccBBox([-10, -10, -10], [10, 10, 10])
         self.scene.setup_camera(60, bbox, [0, 0, 0])
 
         self.window.add_child(self.scene)
@@ -89,7 +88,7 @@ class SpheresApp:
             random.random(), 1.0
         ]
         mat.shader = "defaultLit"
-        sphere = o3d.geometry.TriangleMesh.create_sphere(0.5)
+        sphere = cv3d.geometry.ccMesh.create_sphere(0.5)
         sphere.compute_vertex_normals()
         sphere.translate([
             10.0 * random.uniform(-1.0, 1.0), 10.0 * random.uniform(-1.0, 1.0),

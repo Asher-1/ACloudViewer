@@ -256,19 +256,22 @@ std::shared_ptr<ccPointCloud> ccPointCloud::CreateFromRGBDImage(
 	const cloudViewer::camera::PinholeCameraIntrinsic& intrinsic,
 	const Eigen::Matrix4d& extrinsic/* = Eigen::Matrix4d::Identity()*/,
 	bool project_valid_depth_only/* = true*/) {
-	if (image.depth_.num_of_channels_ == 1 &&
-		image.depth_.bytes_per_channel_ == 4) {
-		if (image.color_.bytes_per_channel_ == 1 &&
-			image.color_.num_of_channels_ == 3) {
-			return cloudViewer::CreatePointCloudFromRGBDImageT<uint8_t, 3>(
-				image, intrinsic, extrinsic, project_valid_depth_only);
-		}
-		else if (image.color_.bytes_per_channel_ == 4 &&
-			image.color_.num_of_channels_ == 1) {
-			return cloudViewer::CreatePointCloudFromRGBDImageT<float, 1>(
-				image, intrinsic, extrinsic, project_valid_depth_only);
-		}
-	}
+    if (image.depth_.num_of_channels_ == 1 &&
+        image.depth_.bytes_per_channel_ == 4) {
+        if (image.color_.bytes_per_channel_ == 1 &&
+            image.color_.num_of_channels_ == 3) {
+            return cloudViewer::CreatePointCloudFromRGBDImageT<uint8_t, 3>(
+                    image, intrinsic, extrinsic, project_valid_depth_only);
+        } else if (image.color_.bytes_per_channel_ == 1 &&
+                   image.color_.num_of_channels_ == 4) {
+            return cloudViewer::CreatePointCloudFromRGBDImageT<uint8_t, 4>(
+                    image, intrinsic, extrinsic, project_valid_depth_only);
+        } else if (image.color_.bytes_per_channel_ == 4 &&
+                   image.color_.num_of_channels_ == 1) {
+            return cloudViewer::CreatePointCloudFromRGBDImageT<float, 1>(
+                    image, intrinsic, extrinsic, project_valid_depth_only);
+        }
+    }
 	CVLib::utility::LogError(
 		"[CreatePointCloudFromRGBDImage] Unsupported image format.");
 	return std::make_shared<ccPointCloud>();
@@ -1135,7 +1138,7 @@ bool ccPointCloud::estimateNormals(
 	const cloudViewer::geometry::KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/,
 	bool fast_normal_computation /* = true */) {
 	bool has_normal = hasNormals();
-	if (hasNormals() == false) {
+	if (!hasNormals()) {
 		resizeTheNormsTable();
 	}
 

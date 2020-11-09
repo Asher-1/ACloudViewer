@@ -209,56 +209,52 @@ inline VerbosityLevel CV_CORE_LIB_API GetVerbosityLevel() {
 }
 
 template <typename... Args>
-inline void CV_CORE_LIB_API LogError[[noreturn]](const char *format, const Args &... args) {
+inline void LogError[[noreturn]](const char *format, const Args &... args) {
     Logger::i().VError(format, fmt::make_format_args(args...));
 }
 
 template <typename... Args>
-inline void CV_CORE_LIB_API LogWarning(const char *format, const Args &... args) {
+inline void LogWarning(const char *format, const Args &... args) {
     Logger::i().VWarning(format, fmt::make_format_args(args...));
 }
 
 template <typename... Args>
-inline void CV_CORE_LIB_API LogInfo(const char *format, const Args &... args) {
+inline void LogInfo(const char *format, const Args &... args) {
     Logger::i().VInfo(format, fmt::make_format_args(args...));
 }
 
 template <typename... Args>
-inline void CV_CORE_LIB_API LogDebug(const char *format, const Args &... args) {
+inline void LogDebug(const char *format, const Args &... args) {
     Logger::i().VDebug(format, fmt::make_format_args(args...));
 }
 
 template <typename... Args>
-inline void CV_CORE_LIB_API LogErrorf[[noreturn]](const char *format, const Args &... args) {
+inline void LogErrorf[[noreturn]](const char *format, const Args &... args) {
     Logger::i().Errorf(format, args...);
 }
 
 template <typename... Args>
-inline void CV_CORE_LIB_API LogWarningf(const char *format, const Args &... args) {
+inline void LogWarningf(const char *format, const Args &... args) {
     Logger::i().Warningf(format, args...);
 }
 
 template <typename... Args>
-inline void CV_CORE_LIB_API LogInfof(const char *format, const Args &... args) {
+inline void LogInfof(const char *format, const Args &... args) {
     Logger::i().Infof(format, args...);
 }
 
 template <typename... Args>
-inline void CV_CORE_LIB_API LogDebugf(const char *format, const Args &... args) {
+inline void LogDebugf(const char *format, const Args &... args) {
     Logger::i().Debugf(format, args...);
 }
 
 class CV_CORE_LIB_API VerbosityContextManager {
 public:
-    VerbosityContextManager(VerbosityLevel level) : 
-        level_(level), level_backup_(VerbosityLevel::Error) {}
+    VerbosityContextManager(VerbosityLevel level);
 
-    void enter() {
-        level_backup_ = Logger::i().verbosity_level_;
-        Logger::i().verbosity_level_ = level_;
-    }
+    void enter();
 
-    void exit() { Logger::i().verbosity_level_ = level_backup_; }
+    void exit();
 
 private:
     VerbosityLevel level_;

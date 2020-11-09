@@ -420,6 +420,7 @@ private slots:
 	void doActionInterpolateColors();
 	void doActionChangeColorLevels();
 	void doActionEnhanceRGBWithIntensities();
+    void doActionColorFromScalars();
 
 	// scalar field menu
 	void showSelectedEntitiesHistogram();

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import glob
 import numpy as np
-import open3d as o3d
-import open3d.visualization.gui as gui
-import open3d.visualization.rendering as rendering
+import cloudViewer as cv3d
+import cloudViewer.visualization.gui as gui
+import cloudViewer.visualization.rendering as rendering
 import os
 import platform
 import sys
@@ -198,7 +198,7 @@ class AppWindow:
         self.settings.new_ibl_name = resource_path + "/" + AppWindow.DEFAULT_IBL
 
         self.window = gui.Application.instance.create_window(
-            "Open3D", width, height)
+            "CloudViewer", width, height)
         w = self.window  # to make the code more concise
 
         # 3D widget
@@ -669,7 +669,7 @@ class AppWindow:
 
         # Add the text
         dlg_layout = gui.Vert(em, gui.Margins(em, em, em, em))
-        dlg_layout.add_child(gui.Label("Open3D GUI Example"))
+        dlg_layout.add_child(gui.Label("CloudViewer GUI Example"))
 
         # Add the Ok button. We need to define a callback function to handle
         # the click.
@@ -696,25 +696,25 @@ class AppWindow:
         self._scene.scene.clear_geometry()
 
         geometry = None
-        geometry_type = o3d.io.read_file_geometry_type(path)
+        geometry_type = cv3d.io.read_file_geometry_type(path)
 
         mesh = None
-        if geometry_type & o3d.io.CONTAINS_TRIANGLES:
-            mesh = o3d.io.read_triangle_mesh(path)
+        if geometry_type & cv3d.io.CONTAINS_TRIANGLES:
+            mesh = cv3d.io.read_triangle_mesh(path)
         if mesh is not None:
-            if len(mesh.triangles) == 0:
+            if mesh.size() == 0:
                 print(
                     "[WARNING] Contains 0 triangles, will read as point cloud")
                 mesh = None
             else:
                 mesh.compute_vertex_normals()
-                if len(mesh.vertex_colors) == 0:
+                if not mesh.has_colors():
                     mesh.paint_uniform_color([1, 1, 1])
                 geometry = mesh
             # Make sure the mesh has texture coordinates
             if not mesh.has_triangle_uvs():
-                uv = np.array([[0.0, 0.0]] * (3 * len(mesh.triangles)))
-                mesh.triangle_uvs = o3d.utility.Vector2dVector(uv)
+                uv = np.array([[0.0, 0.0]] * (3 * mesh.size()))
+                mesh.triangle_uvs = cv3d.utility.Vector2dVector(uv)
         else:
             print("[Info]", path, "appears to be a point cloud")
             mesh = None
@@ -723,7 +723,7 @@ class AppWindow:
             ioProgressAmount = 0.5
             cloud = None
             try:
-                cloud = o3d.io.read_point_cloud(path)
+                cloud = cv3d.io.read_point_cloud(path)
             except:
                 pass
             if cloud is not None:
@@ -751,7 +751,7 @@ class AppWindow:
             quality = 9  # png
             if path.endswith(".jpg"):
                 quality = 100
-            o3d.io.write_image(path, img, quality)
+            cv3d.io.write_image(path, img, quality)
 
         self._scene.scene.scene.render_to_image(on_image)
 

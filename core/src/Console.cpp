@@ -55,6 +55,18 @@ namespace CVLib {
 			return instance;
 		}
 
+		VerbosityContextManager::VerbosityContextManager(
+                        VerbosityLevel level) : level_(level) {}
+
+		void VerbosityContextManager::enter() {
+            level_backup_ = Logger::i().verbosity_level_;
+            Logger::i().verbosity_level_ = level_;
+		}
+
+		void VerbosityContextManager::exit() {
+			Logger::i().verbosity_level_ = level_backup_;
+		}
+
 		void Logger::ChangeConsoleColor(TextColor text_color,
 			int highlight_text) const {
 #ifdef _WIN32

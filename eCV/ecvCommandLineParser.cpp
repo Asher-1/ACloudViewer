@@ -92,7 +92,7 @@ int ccCommandLineParser::Parse(int nargs, char** args, ccPluginInterfaceList& pl
 	}
 	else
 	{
-		//allows ccLog ecvConsole or ccCommandLineParser (print,warning,error) 
+		//allows CVLog ecvConsole or ccCommandLineParser (print,warning,error) 
 		//to output to the console 
 		ecvConsole::Init(nullptr, nullptr, nullptr, true);
 	}

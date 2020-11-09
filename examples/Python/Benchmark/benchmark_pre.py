@@ -1,6 +1,6 @@
-# cloudViewer: www.erow.cn
+# cloudViewer: www.cloudViewer.org
 # The MIT License (MIT)
-# See license file or visit www.erow.cn for details
+# See license file or visit www.cloudViewer.org for details
 
 # examples/Python/Benchmark/benchmark_pre.py
 
