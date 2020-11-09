@@ -21,9 +21,9 @@ ${PY_benchmark_TUTORIAL_FILES}
 ${PY_core_TUTORIAL_FILES} 
 ${PY_geometry_TUTORIAL_FILES} 
 ${PY_gui_TUTORIAL_FILES} 
-${PY_misc_TUTORIAL_FILES})
-${PY_pipelines_TUTORIAL_FILES})
-${PY_reconstruction_system_TUTORIAL_FILES})
-${PY_utility_TUTORIAL_FILES})
+${PY_misc_TUTORIAL_FILES}
+${PY_pipelines_TUTORIAL_FILES}
+${PY_reconstruction_system_TUTORIAL_FILES}
+${PY_utility_TUTORIAL_FILES}
 ${PY_visualization_TUTORIAL_FILES})
 set_target_properties(Python PROPERTIES FOLDER "examples/")
