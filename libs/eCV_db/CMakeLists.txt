@@ -10,9 +10,12 @@ add_library(${PROJECT_NAME} SHARED
 add_subdirectory( include )
 add_subdirectory( src )
 
-if (CVCORELIB_USE_TBB)
-	include_directories( ${TBB_INCLUDE_DIRS})
+if (MSVC)
+	if (CVCORELIB_USE_TBB)
+		include_directories( ${TBB_INCLUDE_DIRS})
+	endif()
 endif()
+
 
 # INTERNAL LIB
 target_link_libraries( ${PROJECT_NAME} PUBLIC CVCoreLib )
@@ -24,7 +27,7 @@ cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} PRIVATE ${QRANSAC_INCLUDE_DIRS})
 
 # Add custom preprocessor definitions
-target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_DB_LIBRARY_BUILD )
+target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_DB_LIBRARY_BUILD )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
 	CXX_VISIBILITY_PRESET hidden

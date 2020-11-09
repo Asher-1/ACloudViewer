@@ -1,13 +1,14 @@
-# cloudViewer: www.erow.cn
+# cloudViewer: www.cloudViewer.org
 # The MIT License (MIT)
-# See license file or visit www.erow.cn for details
+# See license file or visit www.cloudViewer.org for details
 
 # examples/Python/Benchmark/benchmark_fgr.py
 
 import os
 import sys
-sys.path.append("../Advanced")
-sys.path.append("../Utility")
+sys.path.append("../pipelines")
+sys.path.append("../geometry")
+sys.path.append("../utility")
 import numpy as np
 from file import *
 from visualization import *

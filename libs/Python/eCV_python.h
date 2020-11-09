@@ -21,7 +21,7 @@
 
 #include <QtCore/QtGlobal>
 
-#if defined( ECV_PYTHON_LIBRARY_BUILD )
+#if defined(ECV_PYTHON_LIB_LIBRARY_BUILD)
 #  define ECV_PYTHON_LIB_API Q_DECL_EXPORT
 #else
 #  define ECV_PYTHON_LIB_API Q_DECL_IMPORT

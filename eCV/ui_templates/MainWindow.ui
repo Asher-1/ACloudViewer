@@ -67,7 +67,7 @@
      <x>0</x>
      <y>0</y>
      <width>1136</width>
-     <height>20</height>
+     <height>23</height>
     </rect>
    </property>
    <property name="font">
@@ -340,6 +340,7 @@
       <bool>true</bool>
      </property>
      <addaction name="actionSetUniqueColor"/>
+     <addaction name="actionColorFromScalarField"/>
      <addaction name="actionColorize"/>
      <addaction name="actionChangeColorLevels"/>
      <addaction name="actionSetColorGradient"/>
@@ -3405,6 +3406,11 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>Filter points by label</string>
+   </property>
+  </action>
+  <action name="actionColorFromScalarField">
+   <property name="text">
+    <string>From Scalar fields</string>
    </property>
   </action>
  </widget>

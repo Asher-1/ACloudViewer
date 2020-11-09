@@ -79,10 +79,11 @@ if (WIN32)
 else()
 	# Do not treat includes from IMPORTED target as SYSTEM (Python headers in pybind11::embed).
 	# This may be needed to resolve header conflicts, e.g. between Python release and debug headers.
-	set_target_properties(${PROJECT_NAME} PROPERTIES NO_SYSTEM_FROM_IMPORTED ON COMPILE_DEFINITIONS ECV_PYTHON_LIBRARY_BUILD)
+	set_target_properties(${PROJECT_NAME} PROPERTIES NO_SYSTEM_FROM_IMPORTED ON COMPILE_DEFINITIONS ECV_PYTHON_LIB_LIBRARY_BUILD)
 endif()
 
-target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PYTHON_LIBRARY_BUILD )
+target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PYTHON_LIB_LIBRARY_BUILD )
+target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_PYTHON_MODULE )
 
 # install (shared) lib to specified destinations
 InstallSharedLibrary( TARGET ${PROJECT_NAME} )

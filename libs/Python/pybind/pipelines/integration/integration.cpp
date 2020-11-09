@@ -124,6 +124,12 @@ In SIGGRAPH, 1996)");
     py::detail::bind_copy_functions<UniformTSDFVolume>(uniform_tsdfvolume);
     uniform_tsdfvolume
             .def(py::init([](double length, int resolution, double sdf_trunc,
+                             TSDFVolumeColorType color_type) {
+                     return new UniformTSDFVolume(length, resolution, sdf_trunc,
+                                                  color_type);
+                 }),
+                 "length"_a, "resolution"_a, "sdf_trunc"_a, "color_type"_a)
+            .def(py::init([](double length, int resolution, double sdf_trunc,
                              TSDFVolumeColorType color_type, Eigen::Vector3d origin) {
                      return new UniformTSDFVolume(
                              length, resolution, sdf_trunc, color_type, origin);

@@ -22,31 +22,9 @@
 
 #include <QtCore/QtGlobal>
 
-//#if defined( ECV_IO_LIBRARY_BUILD )
-//#  define ECV_IO_LIB_API Q_DECL_EXPORT
-//#else
-//#  define ECV_IO_LIB_API Q_DECL_IMPORT
-//#endif
-//#endif // ECV_IO_HEADER 
-
-#ifdef ECV_IO_LIBRARY_BUILD
-
-// The following ifdef block is the standard way of creating macros which make exporting
-// from a DLL simpler. All files within this DLL are compiled with the ECV_IO_LIB_EXPORTS
-// symbol defined on the command line. this symbol should not be defined on any project
-// that uses this DLL. This way any other project whose source files include this file see
-// QCC_IO_LIB_API functions as being imported from a DLL, whereas this DLL sees symbols
-// defined with this macro as being exported.
-#ifdef ECV_IO_LIB_EXPORTS
-#define ECV_IO_LIB_API __declspec(dllexport)
+#if defined( ECV_IO_LIBRARY_BUILD )
+#  define ECV_IO_LIB_API Q_DECL_EXPORT
 #else
-#define ECV_IO_LIB_API __declspec(dllimport)
+#  define ECV_IO_LIB_API Q_DECL_IMPORT
 #endif
-
-#else //NOT ECV_IO_LIBRARY_BUILD
-
-#define ECV_IO_LIB_API
-
-#endif //ECV_IO_LIBRARY_BUILD
-
-#endif // ECV_IO_HEADER
+#endif // ECV_IO_HEADER 

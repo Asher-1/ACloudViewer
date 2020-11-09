@@ -20,7 +20,7 @@ target_link_libraries( ${PROJECT_NAME}
 
 target_compile_definitions( ${PROJECT_NAME} PRIVATE CVAPPCOMMON_LIBRARY_BUILD )
 # if ( USE_PCL_BACKEND )
-	# target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_PCL_ENGINE_LIBRARY_BUILD )	
+	# target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_PCL_BACKEND )	
 # endif()
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES

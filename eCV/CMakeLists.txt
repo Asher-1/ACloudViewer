@@ -4,8 +4,10 @@ OPTION( UPDATE_TRANSLATION_FILES "Generate or update ts files" OFF )
 
 include( CMakePolicies NO_POLICY_SCOPE )
 
-if (CVCORELIB_USE_TBB)
-	include_directories( ${TBB_INCLUDE_DIRS})
+if (MSVC)
+	if (CVCORELIB_USE_TBB)
+		include_directories( ${TBB_INCLUDE_DIRS})
+	endif()
 endif()
 
 if (USE_PCL_BACKEND) 
@@ -96,28 +98,19 @@ if( CVCORELIB_USE_QT_CONCURRENT )
 endif()
 
 if (USE_PCL_BACKEND)
-	link_directories( ${PCL_LIBRARY_DIRS} )
-	link_directories( ${VTK_LIBRARIES_DIRS} )
-	# PCL
-	target_link_libraries( ${PROJECT_NAME} ${PCL_LIBRARIES} )
-	# VTK
-	target_link_libraries( ${PROJECT_NAME} ${VTK_LIBRARIES} )
 	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
-	# Add custom preprocessor definitions
-	target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD )
-	
 endif()	
 
 if (BUILD_PYTHON_MODULE)
 	target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
 	target_link_libraries( ${PROJECT_NAME} ECV_PYTHON_LIB )
 	# Add custom preprocessor definitions
-	target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PYTHON_LIBRARY_BUILD )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_PYTHON_MODULE )
 endif()	
 
 # Add custom preprocessor definitions
 if( WIN32 )
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD)
+	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS)
 	if (MSVC)
 		set_target_properties( ${PROJECT_NAME} PROPERTIES LINK_FLAGS " /MANIFEST:NO" )
 	endif()

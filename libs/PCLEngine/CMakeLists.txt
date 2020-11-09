@@ -165,9 +165,8 @@ if (USE_PCL_BACKEND)
 							${PCL_LIBRARIES} 
 							${VTK_LIBRARIES} )
 
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_DB_LIBRARY_BUILD )
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_IO_LIBRARY_BUILD )
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_PCL_ENGINE_LIBRARY_BUILD )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD )
+	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_PCL_BACKEND )
 
 	# install (shared) lib to specified destinations
 	InstallSharedLibrary( TARGET ${PROJECT_NAME} )

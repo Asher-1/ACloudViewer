@@ -100,7 +100,7 @@
 #include <ecvPickOneElementDlg.h>
 
 // QPCL_ENGINE_LIB
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 #include <Tools/CurveFitting.h>
 #include <Tools/EditCameraTool.h>
 #include <PclUtils/PCLDisplayTools.h>
@@ -110,7 +110,7 @@
 #endif
 
 // ECV_PYTHON_LIB
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 #include "ecvDeepSemanticSegmentationTool.h"
 #include <Recognition/PythonInterface.h>
 #endif
@@ -142,6 +142,7 @@
 #include "ecvSORFilterDlg.h"
 #include "ecvNoiseFilterDlg.h"
 #include "ecvPoissonReconDlg.h"
+#include "ecvColorFromScalarDlg.h"
 #include "ecvApplyTransformationDlg.h"
 #include "ecvGBLSensorProjectionDlg.h"
 #include "ecvCamSensorProjectionDlg.h"
@@ -326,7 +327,7 @@ MainWindow::MainWindow(QWidget *parent)
 	doActionToggleOrientationMarker(true);
 #endif // QT_DEBUG
 
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 	QString applicationPath = QCoreApplication::applicationDirPath();
 	QString pyHome = applicationPath + "/python36";
 	if (!PythonInterface::SetPythonHome(CVTools::fromQString(pyHome).c_str()))
@@ -369,6 +370,7 @@ void MainWindow::connectActions()
 	connect(m_ui->actionRGBToGreyScale, &QAction::triggered, this, &MainWindow::doActionRGBToGreyScale);
 	connect(m_ui->actionInterpolateColors, &QAction::triggered, this, &MainWindow::doActionInterpolateColors);
 	connect(m_ui->actionEnhanceRGBWithIntensities, &QAction::triggered, this, &MainWindow::doActionEnhanceRGBWithIntensities);
+    connect(m_ui->actionColorFromScalarField, &QAction::triggered, this, &MainWindow::doActionColorFromScalars);
 	connect(m_ui->actionClearColor, &QAction::triggered, this, [=]() {
 		clearSelectedEntitiesProperty(ccEntityAction::CLEAR_PROPERTY::COLORS);
 	});
@@ -1449,7 +1451,7 @@ void MainWindow::doActionEditCamera()
 	if (!qWin)
 		return;
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	if (!m_cpeDlg)
 	{
 		m_cpeDlg = new ecvCameraParamEditDlg(qWin, m_pickingHub);
@@ -2130,7 +2132,7 @@ void MainWindow::activateTranslateRotateMode()
 	if (!getActiveWindow())
 		return;
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	QvtkTransformTool* qTransTool =
 		new QvtkTransformTool(ecvDisplayTools::GetVisualizer3D());
 	if (!m_transTool)
@@ -2139,7 +2141,7 @@ void MainWindow::activateTranslateRotateMode()
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 
 	if (!m_transTool->setTansformTool(qTransTool) || !m_transTool->linkWith(ecvDisplayTools::GetCurrentScreen()))
 	{
@@ -2356,6 +2358,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionClearColor->setEnabled(atLeastOneColor);
 	m_ui->actionRGBToGreyScale->setEnabled(atLeastOneColor);
 	m_ui->actionEnhanceRGBWithIntensities->setEnabled(atLeastOneColor);
+    m_ui->actionColorFromScalarField->setEnabled(atLeastOneSF);
 
 	// == 1
 	bool exactlyOneEntity = (selInfo.selCount == 1);
@@ -2411,9 +2414,9 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionStreamlineFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
 	m_ui->actionThresholdFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
 	
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 	m_ui->actionSemanticSegmentation->setEnabled(atLeastOneCloud);
-#endif // ECV_PYTHON_LIBRARY_BUILD
+#endif // USE_PYTHON_MODULE
 
 	m_ui->actionDBScanCluster->setEnabled(atLeastOneCloud);
 	m_ui->actionPlaneSegmentation->setEnabled(atLeastOneCloud);
@@ -5349,7 +5352,7 @@ void MainWindow::doConvertPolylinesToMesh()
 
 void MainWindow::doBSplineFittingFromCloud()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	//find candidates
 	std::vector<ccPointCloud*> clouds;
 	{
@@ -6016,6 +6019,19 @@ void MainWindow::doActionEnhanceRGBWithIntensities()
 	refreshAll();
 }
 
+void MainWindow::doActionColorFromScalars() {
+    for (ccHObject* entity : getSelectedEntities()) {
+        // for "real" point clouds only
+        ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(entity);
+        if (cloud) {
+            // create color from scalar dialogue
+            ccColorFromScalarDlg* cfsDlg =
+                    new ccColorFromScalarDlg(this, cloud);
+            cfsDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+            cfsDlg->show();
+        }
+    }
+}
 
 void MainWindow::doActionSORFilter()
 {
@@ -8837,106 +8853,106 @@ void MainWindow::deactivateSurfaceWindowMode(bool state)
 
 void MainWindow::activateClippingMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::CLIP_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateSliceMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::SLICE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateProbeMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::PROBE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateDecimateMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::DECIMATE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateIsoSurfaceMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::ISOSURFACE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateThresholdMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::THRESHOLD_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateSmoothMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::SMOOTH_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateGlyphMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::GLYPH_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateStreamlineMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::STREAMLINE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::doActionFilterMode(int mode)
 {
 	if (!haveOneSelection()) return;
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	ecvGenericFiltersTool* filter = new PclFiltersTool(
 		ecvDisplayTools::GetVisualizer3D(), 
 		ecvGenericFiltersTool::FilterType(mode));
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 
 	// we have to use a local copy: 'unselectEntity' will change the set of currently selected entities!
 	ccHObject::Container selectedEntities = getSelectedEntities(); 
@@ -9003,22 +9019,22 @@ void MainWindow::doActionFilterMode(int mode)
 
 void MainWindow::doBoxAnnotation()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doAnnotations(ecvGenericAnnotationTool::AnnotationMode::BOUNDINGBOX);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::doSemanticAnnotation()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doAnnotations(ecvGenericAnnotationTool::AnnotationMode::SEMANTICS);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::doAnnotations(int mode)
@@ -9037,7 +9053,7 @@ void MainWindow::doAnnotations(int mode)
 		return;
 	}
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	PclAnnotationTool* annoTools =
 		new PclAnnotationTool(ecvDisplayTools::GetVisualizer3D(), 
 			ecvGenericAnnotationTool::AnnotationMode(mode));
@@ -9058,7 +9074,7 @@ void MainWindow::doAnnotations(int mode)
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 
 	if (!m_annoTool->setAnnotationsTool(annoTools) || !m_annoTool->linkWith(ecvDisplayTools::GetCurrentScreen()))
 	{
@@ -9098,7 +9114,7 @@ void MainWindow::doAnnotations(int mode)
 
 void MainWindow::doSemanticSegmentation()
 {
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 	if (!haveSelection())
 		return;
 
@@ -9145,13 +9161,13 @@ void MainWindow::doSemanticSegmentation()
 #else
 	CVLog::Warning("python interface library has not been compiled!");
 	return;
-#endif // ECV_PYTHON_LIBRARY_BUILD
+#endif // USE_PYTHON_MODULE
 
 }
 
 void MainWindow::deactivateSemanticSegmentation(bool state)
 {
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 	if (m_dssTool && state)
 	{
 		ccHObject::Container result;
@@ -9178,7 +9194,7 @@ void MainWindow::deactivateSemanticSegmentation(bool state)
 	freezeUI(false);
 
 	updateUI();
-#endif // ECV_PYTHON_LIBRARY_BUILD
+#endif // USE_PYTHON_MODULE
 }
 
 void MainWindow::doActionDBScanCluster()

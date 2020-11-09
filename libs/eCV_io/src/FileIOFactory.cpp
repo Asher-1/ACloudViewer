@@ -364,7 +364,7 @@ PointCoordinateType UnpackBinaryPCDElement(const char *data_ptr,
         }
     } else if (type == 'F') {
         if (size == 4) {
-            std::float_t data;
+            float data;
             memcpy(&data, data_ptr, sizeof(data));
             return static_cast<PointCoordinateType>(data);
         } else {
@@ -414,7 +414,7 @@ ecvColor::Rgb UnpackASCIIPCDColor(const char *data_ptr,
             std::uint32_t value = std::strtoul(data_ptr, &end, 0);
             memcpy(data, &value, 4);
         } else if (type == 'F') {
-            std::float_t value = std::strtof(data_ptr, &end);
+            float value = std::strtof(data_ptr, &end);
             memcpy(data, &value, 4);
         }
         return ecvColor::Rgb(data[2], data[1], data[0]);

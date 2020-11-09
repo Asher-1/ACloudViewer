@@ -60,30 +60,30 @@ set_target_properties( ${PROJECT_NAME}
 add_library( ${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME} )
 
 # Generate the export header file
-include( GenerateExportHeader )
+# include( GenerateExportHeader )
 
-generate_export_header( ${PROJECT_NAME}
-	EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
-	EXPORT_MACRO_NAME CV_CORE_LIB_API
-)
+# generate_export_header( ${PROJECT_NAME}
+	# EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
+	# EXPORT_MACRO_NAME CV_CORE_LIB_API
+# )
 
-target_sources( ${PROJECT_NAME}
-	PRIVATE
-		${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
-)
+# target_sources( ${PROJECT_NAME}
+	# PRIVATE
+		# ${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
+# )
 
-install(
-	FILES
-		${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
-	DESTINATION
-		include/${PROJECT_NAME}
-)
+# install(
+	# FILES
+		# ${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
+	# DESTINATION
+		# include/${PROJECT_NAME}
+# )
 
-target_include_directories( ${PROJECT_NAME}
-	PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports>
-		$<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-)
+# target_include_directories( ${PROJECT_NAME}
+	# PUBLIC
+		# $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports>
+		# $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+# )
 
 # ccache
 # https://crascit.com/2016/04/09/using-ccache-with-cmake/
@@ -117,6 +117,8 @@ target_compile_definitions( ${PROJECT_NAME}
 		"$<$<CONFIG:DEBUG>:CV_DEBUG>"
 )
 
+target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_LIBRARY_BUILD )
+
 if ( CVCORELIB_SCALAR_DOUBLE )
 	target_compile_definitions( ${PROJECT_NAME}
 		PUBLIC
@@ -149,12 +151,28 @@ endif()
 # TBB (optional)
 # Must come before CGAL so it can use TBB properly
 if ( CVCORELIB_USE_TBB )
-	include( cmake/FindTBB.cmake )
-	if ( TBB_FOUND )
-		include_directories( ${TBB_INCLUDE_DIRS} )
-		target_link_libraries( ${PROJECT_NAME} PUBLIC ${ALL_TBB_LIBRARIES} )
-		target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
-		target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_TBB )
+	if (MSVC)
+		include( cmake/FindTBB.cmake )
+		if ( TBB_FOUND )
+			include_directories( ${TBB_INCLUDE_DIRS} )
+			target_link_libraries( ${PROJECT_NAME} PUBLIC ${ALL_TBB_LIBRARIES} )
+			target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
+			target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_TBB )
+		endif()
+	else()
+		find_package( TBB COMPONENTS tbb CONFIG )
+		if ( TBB_FOUND )
+			target_link_libraries( ${PROJECT_NAME}
+				PUBLIC
+					${TBB_IMPORTED_TARGETS}
+			)
+
+			target_compile_definitions( ${PROJECT_NAME}
+				PUBLIC
+					USE_TBB
+					CV_CORE_LIB_USES_TBB
+			)
+		endif()
 	endif()
 endif()
 
@@ -223,16 +241,6 @@ if (BUILD_EIGEN3)
 	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_EIGEN )
 endif()
 
-# CMake Package Files
-include( CMakePackageConfigHelpers )
-
-write_basic_package_version_file( ${PROJECT_NAME}ConfigVersion.cmake
-	VERSION
-		${PACKAGE_VERSION}
-	COMPATIBILITY
-		AnyNewerVersion
-)
-
 add_custom_command(OUTPUT MAKE_CLOUVIEWER_DIR 
 	POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E make_directory
@@ -246,6 +254,16 @@ add_custom_command(TARGET ${PROJECT_NAME}
 	DEPENDS ${MAKE_CLOUVIEWER_DIR}
 	VERBATIM
 	)
+
+# CMake Package Files
+include( CMakePackageConfigHelpers )
+
+write_basic_package_version_file( ${PROJECT_NAME}ConfigVersion.cmake
+	VERSION
+		${PACKAGE_VERSION}
+	COMPATIBILITY
+		AnyNewerVersion
+)
 
 install(
 	FILES

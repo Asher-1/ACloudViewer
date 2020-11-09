@@ -30,12 +30,6 @@ target_link_libraries( ${PROJECT_NAME}
 )
 
 if (USE_PCL_BACKEND)
-	link_directories( ${PCL_LIBRARY_DIRS} )
-	link_directories(${VTK_LIBRARIES_DIRS})
-	# PCL
-	target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
-	# VTK
-	target_link_libraries(${PROJECT_NAME} ${VTK_LIBRARIES})
 	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
 endif()
 

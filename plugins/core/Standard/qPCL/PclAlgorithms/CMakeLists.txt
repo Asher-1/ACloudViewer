@@ -59,11 +59,6 @@ if (USE_PCL_BACKEND)
 				${segment_list}
 				${recognition_list})
 
-	# Add custom preprocessor definitions
-	if (WIN32)
-		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS ECV_PCL_ENGINE_LIBRARY_BUILD )
-	endif()
-
 	link_directories( ${PCL_LIBRARY_DIRS} )
 	add_definitions( ${PCL_DEFINITIONS} )
 	target_link_libraries( ${PROJECT_NAME}
