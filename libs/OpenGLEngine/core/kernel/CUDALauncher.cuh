@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,11 +29,11 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/Indexer.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
+#include "core/AdvancedIndexing.h"
+#include "core/CUDAUtils.h"
+#include "core/Indexer.h"
+#include "core/SizeVector.h"
+#include "core/Tensor.h"
 
 // CUDA kernel launcher's goal is to separate scheduling (looping through each
 // valid element) and computation (operations performed on each element).
@@ -44,7 +44,7 @@
 static constexpr int64_t default_block_size = 128;
 static constexpr int64_t default_thread_size = 4;
 
-namespace open3d {
+namespace cloudViewer {
 namespace core {
 namespace kernel {
 
@@ -134,4 +134,4 @@ public:
 };
 }  // namespace kernel
 }  // namespace core
-}  // namespace open3d
+}  // namespace cloudViewer

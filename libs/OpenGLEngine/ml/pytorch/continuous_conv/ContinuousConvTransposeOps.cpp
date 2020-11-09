@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,16 +27,16 @@
 
 #include <vector>
 
-#include "open3d/ml/pytorch/TorchHelper.h"
-#include "open3d/ml/pytorch/continuous_conv/ContinuousConvHelper.h"
-#include "open3d/ml/pytorch/continuous_conv/ContinuousConvOpKernel.h"
-#include "open3d/ml/pytorch/continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.h"
-#include "open3d/ml/pytorch/continuous_conv/ContinuousConvTransposeOpKernel.h"
-#include "open3d/ml/pytorch/misc/InvertNeighborsListOps.h"
-#include "open3d/ml/pytorch/misc/ReduceSubarraysSumOps.h"
+#include "ml/pytorch/TorchHelper.h"
+#include "ml/pytorch/continuous_conv/ContinuousConvHelper.h"
+#include "ml/pytorch/continuous_conv/ContinuousConvOpKernel.h"
+#include "ml/pytorch/continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.h"
+#include "ml/pytorch/continuous_conv/ContinuousConvTransposeOpKernel.h"
+#include "ml/pytorch/misc/InvertNeighborsListOps.h"
+#include "ml/pytorch/misc/ReduceSubarraysSumOps.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace cloudViewer::ml::impl;
 using torch::autograd::AutogradContext;
 using torch::autograd::Function;
 using torch::autograd::Variable;
@@ -94,7 +94,7 @@ public:
         neighbors_row_splits = neighbors_row_splits.contiguous();
 
         // check input shapes
-        using namespace open3d::ml::op_util;
+        using namespace cloudViewer::ml::op_util;
         Dim kernel_depth("kernel_depth");
         Dim kernel_height("kernel_height");
         Dim kernel_width("kernel_width");
@@ -332,7 +332,7 @@ torch::Tensor ContinuousConvTranspose(
 }
 
 static auto registry = torch::RegisterOperators(
-        "open3d::continuous_conv_transpose(Tensor filters, Tensor "
+        "cloudViewer::continuous_conv_transpose(Tensor filters, Tensor "
         "out_positions, Tensor out_importance, Tensor extents, Tensor offset, "
         "Tensor inp_positions, Tensor inp_features, Tensor "
         "inp_neighbors_index, Tensor inp_neighbors_importance_sum, Tensor "

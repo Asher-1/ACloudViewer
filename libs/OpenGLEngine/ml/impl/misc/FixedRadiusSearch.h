@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,13 +30,13 @@
 
 #include <set>
 
-#include "open3d/core/Atomic.h"
-#include "open3d/ml/impl/misc/NeighborSearchCommon.h"
-#include "open3d/utility/Eigen.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/ParallelScan.h"
+#include "core/Atomic.h"
+#include "ml/impl/misc/NeighborSearchCommon.h"
+#include <Eigen.h>
+#include <Console.h>
+#include "utility/ParallelScan.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace ml {
 namespace impl {
 
@@ -84,7 +84,7 @@ void BuildSpatialHashTableCPU(const size_t num_points,
                               const size_t hash_table_cell_splits_size,
                               TIndex* hash_table_cell_splits,
                               TIndex* hash_table_index) {
-    using namespace open3d::utility;
+    using namespace cloudViewer::utility;
     typedef MiniVec<TReal, 3> Vec3_t;
     // typedef Eigen::Array<TReal, 3, 1> Vec3_t;
 
@@ -210,7 +210,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                            const uint32_t* const hash_table_cell_splits,
                            const uint32_t* const hash_table_index,
                            OUTPUT_ALLOCATOR& output_allocator) {
-    using namespace open3d::utility;
+    using namespace cloudViewer::utility;
 
     // number of elements for vectorization
     const int VECSIZE = 8;
@@ -599,4 +599,4 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 
 }  // namespace impl
 }  // namespace ml
-}  // namespace open3d
+}  // namespace cloudViewer

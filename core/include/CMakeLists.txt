@@ -74,9 +74,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/StatisticalTestingTools.h
 		${CMAKE_CURRENT_LIST_DIR}/Timer.h
 		${CMAKE_CURRENT_LIST_DIR}/TrueKdTree.h
-		${CMAKE_CURRENT_LIST_DIR}/MiniVec.h
 		${CMAKE_CURRENT_LIST_DIR}/Optional.h
-		${CMAKE_CURRENT_LIST_DIR}/ParallelScan.h
 		${CMAKE_CURRENT_LIST_DIR}/ProgressReporters.h
 		${CMAKE_CURRENT_LIST_DIR}/WeibullDistribution.h
 )

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,10 @@
 
 #include <vector>
 
-#include "open3d/ml/impl/continuous_conv/ContinuousConvBackpropFilter.h"
+#include "ml/impl/continuous_conv/ContinuousConvBackpropFilter.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace cloudViewer::ml::impl;
 
 template <class TReal, class TIndex>
 void ContinuousConvBackpropFilterCPU(
@@ -46,9 +46,9 @@ void ContinuousConvBackpropFilterCPU(
         const torch::Tensor& neighbors_row_splits,
         const torch::Tensor& out_features_gradient,
         const bool align_corners,
-        const open3d::ml::impl::CoordinateMapping coordinate_mapping,
+        const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping,
         const bool normalize,
-        const open3d::ml::impl::InterpolationMode interpolation,
+        const cloudViewer::ml::impl::InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
         torch::Tensor& filter_backprop) {
     const bool individual_extents = extents.size(0) > 1;
@@ -85,9 +85,9 @@ void ContinuousConvBackpropFilterCPU(
             const torch::Tensor& neighbors_row_splits,                        \
             const torch::Tensor& out_features_gradient,                       \
             const bool align_corners,                                         \
-            const open3d::ml::impl::CoordinateMapping coordinate_mapping,     \
+            const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping,     \
             const bool normalize,                                             \
-            const open3d::ml::impl::InterpolationMode interpolation,          \
+            const cloudViewer::ml::impl::InterpolationMode interpolation,          \
             const int64_t max_temp_mem_MB, torch::Tensor& filter_backprop);
 
 INSTANTIATE(float, int32_t)

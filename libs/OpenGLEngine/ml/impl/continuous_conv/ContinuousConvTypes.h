@@ -26,7 +26,7 @@
 
 #pragma once
 
-namespace open3d {
+namespace cloudViewer {
 namespace ml {
 namespace impl {
 
@@ -50,4 +50,4 @@ enum class CoordinateMapping {
 
 }  // namespace impl
 }  // namespace ml
-}  // namespace open3d
+}  // namespace cloudViewer

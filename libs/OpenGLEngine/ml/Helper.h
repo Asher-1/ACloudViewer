@@ -36,7 +36,7 @@
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 
-namespace open3d {
+namespace cloudViewer {
 namespace ml {
 
 #ifdef BUILD_CUDA_MODULE
@@ -64,4 +64,4 @@ inline int GetCUDACurrentDeviceTextureAlignment() {
 #endif
 
 }  // namespace ml
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -120,3 +120,7 @@ target_link_libraries(cloudViewer_tf_ops PRIVATE
     ${Tensorflow_FRAMEWORK_LIB}
     ${FMT_TARGET}
 )
+target_link_libraries(cloudViewer_tf_ops PRIVATE
+    ECV_DB_LIB
+	ECV_IO_LIB
+)

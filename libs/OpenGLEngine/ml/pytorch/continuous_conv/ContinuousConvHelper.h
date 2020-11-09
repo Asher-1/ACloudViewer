@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,16 +28,16 @@
 
 #include <string>
 
-#include "open3d/ml/impl/continuous_conv/ContinuousConvTypes.h"
+#include "ml/impl/continuous_conv/ContinuousConvTypes.h"
 #include "torch/script.h"
 
 //
 // helper functions for parsing arguments
 //
 
-inline open3d::ml::impl::CoordinateMapping ParseCoordinateMappingStr(
+inline cloudViewer::ml::impl::CoordinateMapping ParseCoordinateMappingStr(
         const std::string& str) {
-    using open3d::ml::impl::CoordinateMapping;
+    using cloudViewer::ml::impl::CoordinateMapping;
     CoordinateMapping coordinate_mapping =
             CoordinateMapping::BALL_TO_CUBE_RADIAL;
     if (str == "ball_to_cube_radial") {
@@ -55,9 +55,9 @@ inline open3d::ml::impl::CoordinateMapping ParseCoordinateMappingStr(
     return coordinate_mapping;
 }
 
-inline open3d::ml::impl::InterpolationMode ParseInterpolationStr(
+inline cloudViewer::ml::impl::InterpolationMode ParseInterpolationStr(
         const std::string& str) {
-    using open3d::ml::impl::InterpolationMode;
+    using cloudViewer::ml::impl::InterpolationMode;
     InterpolationMode interpolation = InterpolationMode::LINEAR;
     if (str == "linear") {
         interpolation = InterpolationMode::LINEAR;

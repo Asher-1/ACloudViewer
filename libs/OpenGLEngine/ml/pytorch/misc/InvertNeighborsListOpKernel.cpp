@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,10 +25,10 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "open3d/ml/pytorch/misc/InvertNeighborsListOpKernel.h"
+#include "ml/pytorch/misc/InvertNeighborsListOpKernel.h"
 
-#include "open3d/ml/impl/misc/InvertNeighborsList.h"
-#include "open3d/ml/pytorch/TorchHelper.h"
+#include "ml/impl/misc/InvertNeighborsList.h"
+#include "ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 template <class TIndex, class TAttr>
@@ -53,7 +53,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCPU(
             num_attributes *= inp_neighbors_attributes.size(i);
     }
 
-    open3d::ml::impl::InvertNeighborsListCPU(
+    cloudViewer::ml::impl::InvertNeighborsListCPU(
             inp_neighbors_index.data_ptr<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()
                            : nullptr,

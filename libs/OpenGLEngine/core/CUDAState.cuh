@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,11 +36,11 @@
 #include <memory>
 #include <vector>
 
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/Device.h"
-#include "open3d/utility/Console.h"
+#include "core/CUDAUtils.h"
+#include "core/Device.h"
+#include <Console.h>
 
-namespace open3d {
+namespace cloudViewer {
 namespace core {
 
 /// \class CUDADeviceSwitcher
@@ -233,4 +233,4 @@ private:
 };
 
 }  // namespace core
-}  // namespace open3d
+}  // namespace cloudViewer

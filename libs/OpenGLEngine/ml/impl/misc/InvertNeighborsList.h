@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,10 +28,10 @@
 
 #include <tbb/parallel_for.h>
 
-#include "open3d/core/Atomic.h"
-#include "open3d/utility/ParallelScan.h"
+#include "core/Atomic.h"
+#include "utility/ParallelScan.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace ml {
 namespace impl {
 
@@ -97,7 +97,7 @@ void InvertNeighborsListCPU(const TIndex* const inp_neighbors_index,
                             const size_t index_size,
                             int64_t* out_neighbors_row_splits,
                             const size_t out_num_queries) {
-    using namespace open3d::utility;
+    using namespace cloudViewer::utility;
 
     std::vector<uint32_t> tmp_neighbors_count(out_num_queries + 1, 0);
 
@@ -157,4 +157,4 @@ void InvertNeighborsListCPU(const TIndex* const inp_neighbors_index,
 
 }  // namespace impl
 }  // namespace ml
-}  // namespace open3d
+}  // namespace cloudViewer

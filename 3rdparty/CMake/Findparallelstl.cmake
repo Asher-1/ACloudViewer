@@ -7,7 +7,7 @@
 if( NOT parallelstl_INCLUDE_DIR )
 
     find_path( parallelstl_INCLUDE_DIR pstl/execution
-               PATHS ${PROJECT_SOURCE_DIR}/3rdparty/parallelstl/include
+               PATHS ${CloudViewer_3RDPARTY_DIR}/parallelstl/include
                NO_DEFAULT_PATH )
 endif()
 
