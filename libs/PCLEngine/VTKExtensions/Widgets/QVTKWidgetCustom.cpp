@@ -50,8 +50,7 @@
 #include <vtkConeSource.h>
 #include <vtkDelaunay2D.h>
 #include <vtkAngleRepresentation2D.h>
-
-//#include <pcl/visualization/vtk/vtkVertexBufferObjectMapper.h>
+#include <vtkAbstractPicker.h>
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -275,6 +274,10 @@ void QVTKWidgetCustom::transformCameraProjection(const double * projMat)
 
 void QVTKWidgetCustom::toWorldPoint(const CCVector3d& input2D, CCVector3d& output3D)
 {
+    //auto picker = GetInteractor()->GetPicker();
+    //picker->Pick(input2D.x, input2D.y, 0, m_renders->GetFirstRenderer());
+    //picker->GetPickPosition(output3D.u);
+
 	m_render->SetDisplayPoint(input2D.x, input2D.y, input2D.z);
 	m_render->DisplayToWorld();
 	const double* world = m_render->GetWorldPoint();
@@ -300,11 +303,7 @@ void QVTKWidgetCustom::toDisplayPoint(const CCVector3d & worldPos, CCVector3d & 
 
 void QVTKWidgetCustom::toDisplayPoint(const CCVector3 & worldPos, CCVector3d & displayPos)
 {
-	m_render->SetWorldPoint(worldPos.x, worldPos.y, worldPos.z, 1.0);
-	m_render->WorldToDisplay();
-	displayPos.x = (m_render->GetDisplayPoint())[0];
-	displayPos.y = (m_render->GetDisplayPoint())[1];
-	displayPos.z = (m_render->GetDisplayPoint())[2];
+    toDisplayPoint(CCVector3d::fromArray(worldPos.u), displayPos);
 }
 
 void QVTKWidgetCustom::setCameraPosition(const CCVector3d & pos)

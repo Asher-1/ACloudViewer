@@ -302,19 +302,18 @@ MainWindow::MainWindow(QWidget *parent)
 		QSettings settings;
 
 		// auto pick center
-		bool autoPickRotationCenter = settings.value(ecvPS::AutoPickRotationCenter(), true).toBool();
+		bool autoPickRotationCenter = settings.value(ecvPS::AutoPickRotationCenter(), false).toBool();
 		if (autoPickRotationCenter)
 		{
 			m_ui->actionAutoPickPivot->toggle();
 		}
 
 		// show center
-		bool autoShowCenterAxis = settings.value(ecvPS::AutoShowCenter(), false).toBool();
+		bool autoShowCenterAxis = settings.value(ecvPS::AutoShowCenter(), true).toBool();
 		m_ui->actionShowPivot->blockSignals(true);
 		m_ui->actionShowPivot->setChecked(autoShowCenterAxis);
 		m_ui->actionShowPivot->blockSignals(false);
 		toggleRotationCenterVisibility(autoShowCenterAxis);
-
 	}
 
 	refreshAll();
