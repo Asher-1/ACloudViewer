@@ -188,10 +188,9 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 	{
         this->TwoDInteractorStyle = vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
         this->m_interactorStyle = this->ThreeDInteractorStyle = interactor_style;
-        this->updateStyle(interactor_style, false);
+        //this->updateStyle(interactor_style, false);
 
-        // add some default manipulators. Applications can override them without
-        // much ado.
+        // add some default manipulators. Applications can override them without much ado.
         registerInteractorStyle(false);
         // getInteractorStyle()->setKeyboardModifier(pcl::visualization::INTERACTOR_KB_MOD_SHIFT);
 	}
@@ -442,27 +441,18 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
 	double PCLVis::getGLDepth(int x, int y)
 	{
-		/**
-		 * if z is 1.0, we assume the user has picked a point on the
-			screen that has not been rendered into. Use the camera's focal
-			point for the z value. The test value .999999 has to be used
-			instead of 1.0 because for some reason our SGI Infinite Reality
-			engine won't not return a 1.0 from the z buffer
-		 * 
-		 */
-		double z = getCurrentRenderer()->GetZ(x, y);
-		if (std::abs(1.0-z) < EPSILON_VALUE)
-		{
-			double cameraFP[4];
-			getVtkCamera()->GetFocalPoint(cameraFP);
-			cameraFP[3] = 1.0;
-			getCurrentRenderer()->SetWorldPoint(cameraFP);
-			getCurrentRenderer()->WorldToDisplay();
-			double * displayCoord = getCurrentRenderer()->GetDisplayPoint();
-			z = displayCoord[2];
-		}
+		// Get camera focal point and position. Convert to display (screen)
+		// coordinates. We need a depth value for z-buffer.
+		//
+		double cameraFP[4];
+        getVtkCamera()->GetFocalPoint(cameraFP);
+        cameraFP[3] = 1.0;
+        getCurrentRenderer()->SetWorldPoint(cameraFP);
+        getCurrentRenderer()->WorldToDisplay();
+        double* displayCoord = getCurrentRenderer()->GetDisplayPoint();
+        double z_buffer = displayCoord[2];
 		
-		return z;
+		return z_buffer;
 	}
 
 	void PCLVis::getProjectionTransformMatrix(Eigen::Matrix4d& proj)
@@ -2074,7 +2064,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
                 VTKExtensions::vtkCustomInteractorStyle* istyle)
 	{
 		this->interactor_ = iren;
-		pcl::visualization::PCLVisualizer::setupInteractor(iren, win, istyle);
+		pcl::visualization::PCLVisualizer::setupInteractor(iren, win);
 	}
 	/********************************Actor Function*********************************/
 

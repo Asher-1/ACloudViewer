@@ -172,6 +172,7 @@ namespace PclUtils
 		 */
 		void synchronizeGeometryBounds();
 
+		// Return a depth value for z-buffer
 		double getGLDepth(int x, int y);
 
 		void getProjectionTransformMatrix(Eigen::Matrix4d& proj);
