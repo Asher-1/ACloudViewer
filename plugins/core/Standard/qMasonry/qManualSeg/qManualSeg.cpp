@@ -64,7 +64,7 @@
 #include<algorithm>
 #include <math.h>  
 
-#include <kdtree.h>
+#include <CVKdTree.h>
 using namespace std;
 using namespace cv;
 

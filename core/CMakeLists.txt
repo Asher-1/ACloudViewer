@@ -241,19 +241,7 @@ if (BUILD_EIGEN3)
 	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_EIGEN )
 endif()
 
-add_custom_command(OUTPUT MAKE_CLOUVIEWER_DIR 
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E make_directory
-	${CLOUDVIEWER_OUTPUT_DIRECTORY}
-	VERBATIM
-	)
-
-add_custom_command(TARGET ${PROJECT_NAME}
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" ${CLOUDVIEWER_OUTPUT_DIRECTORY}
-	DEPENDS ${MAKE_CLOUVIEWER_DIR}
-	VERBATIM
-	)
+CopyDLLToDirectory(${PROJECT_NAME})
 
 # CMake Package Files
 include( CMakePackageConfigHelpers )

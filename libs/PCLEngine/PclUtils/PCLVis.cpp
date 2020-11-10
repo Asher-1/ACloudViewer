@@ -100,8 +100,12 @@
 
 namespace PclUtils
 {
-	PCLVis::PCLVis(const string &viewerName, bool initIterator)
-		: pcl::visualization::PCLVisualizer(viewerName, initIterator)
+PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style,
+               const std::string& viewerName/* = ""*/,
+               bool initIterator/* = false*/,
+               int argc/* = 0*/,				// unused
+               char** argv/* = nullptr*/ )		// unused
+		: pcl::visualization::PCLVisualizer(argc, argv, viewerName, interactor_style, initIterator)
 		, m_widget_map(new WidgetActorMap)
 		, m_prop_map(new PropActorMap)
 		, m_x_pressNum(0)
@@ -111,28 +115,24 @@ namespace PclUtils
 		, m_areaPickingEnabled(false)
 		, m_actorPickingEnabled(false)
 	{
+		// disable warnings!
 		getRenderWindow()->GlobalWarningDisplayOff();
 
-		this->m_centerAxes = VTKExtensions::vtkPVCenterAxesActor::New();
-		this->m_centerAxes->SetComputeNormals(0);
-		this->m_centerAxes->SetPickable(0);
-		this->m_centerAxes->SetScale(0.25, 0.25, 0.25);
-		addActorToRenderer(this->m_centerAxes);
+		// config center axes!
+		this->configCenterAxes();
 
-		this->TwoDInteractorStyle = vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
-		this->m_interactorStyle = this->ThreeDInteractorStyle =
-			vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
-		//setInteractorStyle(this->ThreeDInteractorStyle);
-		getInteractorStyle() = this->ThreeDInteractorStyle;
-		//this->updateStyle();
-
-		// add some default manipulators. Applications can override them without much ado.
-		registerInteractorStyle(false);
-		//getInteractorStyle()->setKeyboardModifier(pcl::visualization::INTERACTOR_KB_MOD_SHIFT);
+        // config interactor style!
+		this->configInteractorStyle(interactor_style);
 	}
 
-	PCLVis::PCLVis(vtkSmartPointer<vtkRenderer> ren, vtkSmartPointer<vtkRenderWindow> wind, const string& viewerName, bool initIterator)
-		: pcl::visualization::PCLVisualizer(ren, wind, viewerName, initIterator)
+	PCLVis::PCLVis(vtkSmartPointer<vtkRenderer> ren,
+				   vtkSmartPointer<vtkRenderWindow> wind,
+				   vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style,
+				   const std::string& viewerName,
+                   bool initIterator/* = false*/,
+                   int argc /* = 0*/,           // unused
+                   char** argv /* = nullptr*/)  // unused
+        : pcl::visualization::PCLVisualizer(argc, argv, ren, wind, viewerName, interactor_style, initIterator)
 		, m_widget_map(new WidgetActorMap)
 		, m_prop_map(new PropActorMap)
 		, m_x_pressNum(0)
@@ -142,24 +142,14 @@ namespace PclUtils
 		, m_areaPickingEnabled(false)
 		, m_actorPickingEnabled(false)
 	{
+        // disable warnings!
 		getRenderWindow()->GlobalWarningDisplayOff();
 
-		this->m_centerAxes = VTKExtensions::vtkPVCenterAxesActor::New();
-		this->m_centerAxes->SetComputeNormals(0);
-		this->m_centerAxes->SetPickable(0);
-		this->m_centerAxes->SetScale(0.25, 0.25, 0.25);
-		addActorToRenderer(this->m_centerAxes);
+		// config center axes!
+        this->configCenterAxes();
 
-		this->TwoDInteractorStyle = vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
-		this->m_interactorStyle = this->ThreeDInteractorStyle =
-			vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
-		// setInteractorStyle(this->ThreeDInteractorStyle);
-		getInteractorStyle() = this->ThreeDInteractorStyle;
-		// this->updateStyle();
-
-		// add some default manipulators. Applications can override them without much ado.
-		registerInteractorStyle(false);
-		// getInteractorStyle()->setKeyboardModifier(pcl::visualization::INTERACTOR_KB_MOD_SHIFT);
+        // config interactor style!
+        this->configInteractorStyle(interactor_style);
 	}
 
 	PCLVis::~PCLVis()
@@ -185,6 +175,27 @@ namespace PclUtils
 		}
 	}
 
+	void PCLVis::configCenterAxes()
+	{
+        this->m_centerAxes = VTKExtensions::vtkPVCenterAxesActor::New();
+        this->m_centerAxes->SetComputeNormals(0);
+        this->m_centerAxes->SetPickable(0);
+        this->m_centerAxes->SetScale(0.25, 0.25, 0.25);
+        addActorToRenderer(this->m_centerAxes);
+    }
+
+    void PCLVis::configInteractorStyle(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style) 
+	{
+        this->TwoDInteractorStyle = vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
+        this->m_interactorStyle = this->ThreeDInteractorStyle = interactor_style;
+        this->updateStyle(interactor_style, false);
+
+        // add some default manipulators. Applications can override them without
+        // much ado.
+        registerInteractorStyle(false);
+        // getInteractorStyle()->setKeyboardModifier(pcl::visualization::INTERACTOR_KB_MOD_SHIFT);
+	}
+
 	void PCLVis::initialize()
 	{
 		registerMouse();
@@ -197,6 +208,23 @@ namespace PclUtils
 		observer->SetCallback(*this, &PCLVis::resetCameraClippingRange);
 		this->getCurrentRenderer()->AddObserver(vtkCommand::ResetCameraClippingRangeEvent, observer);
 		observer->FastDelete();
+    }
+
+    void PCLVis::updateStyle(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style,
+							bool use_vbos /* = false*/) 
+	{
+        if (!interactor_style) CVLog::Error("Pointer to style is null");
+
+        // Set rend erer window in case no interactor is created
+        interactor_style->setRenderWindow(getRenderWindow());
+
+        // Create the interactor style
+        interactor_style->Initialize();
+        interactor_style->setRendererCollection(getRendererCollection());
+        interactor_style->setCloudActorMap(getCloudActorMap());
+        interactor_style->setShapeActorMap(getShapeActorMap());
+        interactor_style->UseTimersOn();
+        interactor_style->setUseVbos(use_vbos);
 	}
 
 	void PCLVis::getCenterOfRotation(double center[3])
@@ -2040,10 +2068,13 @@ namespace PclUtils
 		}
 	}
 
-	void PCLVis::setupInteractor(vtkRenderWindowInteractor *iren, vtkRenderWindow *win)
+	void PCLVis::setupInteractor(
+                vtkRenderWindowInteractor* iren,
+                vtkRenderWindow* win,
+                VTKExtensions::vtkCustomInteractorStyle* istyle)
 	{
 		this->interactor_ = iren;
-		pcl::visualization::PCLVisualizer::setupInteractor(iren, win);
+		pcl::visualization::PCLVisualizer::setupInteractor(iren, win, istyle);
 	}
 	/********************************Actor Function*********************************/
 

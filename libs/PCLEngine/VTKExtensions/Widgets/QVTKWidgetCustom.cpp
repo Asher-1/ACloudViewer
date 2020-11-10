@@ -206,11 +206,6 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* t
 {
 	this->setWindowTitle("3D View");
 
-	//auto renderer = vtkSmartPointer<vtkRenderer>::New();
-	//auto window = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-	//this->SetRenderWindow(window.Get());
-	//window->AddRenderer(renderer);
-
 	QSurfaceFormat fmt = QVTKOpenGLNativeWidget::defaultFormat();
 	fmt.setStereo(stereoMode);
 	setFormat(fmt);

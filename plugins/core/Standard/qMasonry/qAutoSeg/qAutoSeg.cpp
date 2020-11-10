@@ -53,10 +53,6 @@
 #include <ecvPolyline.h>
 #include <ecvCone.h>
 #include <ecvScalarField.h>
-//#include<C:\CloudCompare\trunk\qCC\ccContourExtractor.h>
-//#include<C:\CloudCompare\trunk\CC\include\GenericIndexedCloudPersist.h>
-//#include <ccContourExtractor.h>
-//#include <ccContourLinesGenerator.h>
 #include <GenericIndexedCloudPersist.h>
 
 
@@ -86,17 +82,15 @@
 #include <DgmOctreeReferenceCloud.h>
 #include <GenericProgressCallback.h>
 #include <Neighbourhood.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <ReferenceCloud.h>
 #include <ScalarField.h>
 #include <ScalarFieldTools.h>
 #include <SimpleMesh.h>
 #include <CVTools.h>
-#include <kdtree.h>
+#include <CVKdTree.h>
 
 #include <ctime>
-
-
 
 ccAutoSeg::ccAutoSeg( QObject *parent )
 	: QObject( parent )
