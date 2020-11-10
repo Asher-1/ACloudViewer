@@ -261,6 +261,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/$<CONFIG>)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/$<CONFIG>)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(CLOUDVIEWER_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/CloudViewer)
+make_directory(${CLOUDVIEWER_OUTPUT_DIRECTORY})
 
 # Build CUDA module by default if CUDA is available
 # Compatible with CMake 3.8+
@@ -492,6 +493,13 @@ function(ShowAndAbortOnWarning trgt)
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall -Werror>>
         $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
     )
+endfunction()
+
+function(CopyDLLToDirectory trgt)
+    add_custom_command(TARGET ${trgt}
+	    POST_BUILD
+	    COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${trgt}>" "${CLOUDVIEWER_OUTPUT_DIRECTORY}/"
+	    VERBATIM)
 endfunction()
 
 macro(ADD_SOURCE_GROUP MODULE_NAME)

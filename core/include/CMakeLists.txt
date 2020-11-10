@@ -50,6 +50,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/IntersectionTest.h
 		${CMAKE_CURRENT_LIST_DIR}/Jacobi.h
 		${CMAKE_CURRENT_LIST_DIR}/CVKdTree.h
+		${CMAKE_CURRENT_LIST_DIR}/TrueKdTree.h
 		${CMAKE_CURRENT_LIST_DIR}/CVLog.h
 		${CMAKE_CURRENT_LIST_DIR}/LocalModel.h
 		${CMAKE_CURRENT_LIST_DIR}/ManualSegmentationTools.h
@@ -73,7 +74,6 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/SquareMatrix.h
 		${CMAKE_CURRENT_LIST_DIR}/StatisticalTestingTools.h
 		${CMAKE_CURRENT_LIST_DIR}/Timer.h
-		${CMAKE_CURRENT_LIST_DIR}/TrueKdTree.h
 		${CMAKE_CURRENT_LIST_DIR}/Optional.h
 		${CMAKE_CURRENT_LIST_DIR}/ProgressReporters.h
 		${CMAKE_CURRENT_LIST_DIR}/WeibullDistribution.h
@@ -149,6 +149,9 @@ install(
 		SimpleTriangle.h
 		SquareMatrix.h
 		StatisticalTestingTools.h
+		TrueKdTree.h
+		Optional.h
+		ProgressReporters.h
 		TrueKdTree.h
 		WeibullDistribution.h
 	DESTINATION

@@ -43,11 +43,7 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 	CXX_VISIBILITY_PRESET hidden
 )
 
-add_custom_command(TARGET ${PROJECT_NAME}
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" ${CLOUDVIEWER_OUTPUT_DIRECTORY}
-	VERBATIM
-	)
+CopyDLLToDirectory(${PROJECT_NAME})
 
 if ( BUILD_TESTING )
 	add_subdirectory( test ) 

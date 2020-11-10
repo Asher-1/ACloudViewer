@@ -36,7 +36,6 @@
 
 // PCL
 #include <pcl/visualization/pcl_visualizer.h>
-//#include <visualization/include/pcl/visualization/pcl_visualizer.h>
 
 class vtkLODActor;
 class vtkCamera;
@@ -64,12 +63,26 @@ namespace PclUtils
 		Q_OBJECT
 	public:
 		//! Default constructor
-		PCLVis(const std::string &viewerName, bool initIterator);
-		PCLVis(vtkSmartPointer<vtkRenderer> ren, vtkSmartPointer<vtkRenderWindow> wind, const std::string& viewerName, bool initIterator);
+        PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style, 
+				const std::string& viewerName = "", bool initIterator = false,
+                int argc = 0, char** argv = nullptr);  // deprecated!
+        PCLVis(vtkSmartPointer<vtkRenderer> ren, vtkSmartPointer<vtkRenderWindow> wind,
+			   vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style,
+                   const std::string& viewerName = "", bool initIterator = false, int argc = 0,
+                   char** argv = nullptr);
+
 		virtual ~PCLVis();
 
 		// do some initialization jobs
 		void initialize();
+
+		// center axes configuration
+        void configCenterAxes();
+
+		void configInteractorStyle(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style);
+
+		virtual void updateStyle(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style,
+								 bool use_vbos = false);
 
 	public:
 		/** \brief Marker Axes.
@@ -93,7 +106,7 @@ namespace PclUtils
 		 * @param iren
 		 * @param win
 		 */
-		void setupInteractor(vtkRenderWindowInteractor *iren, vtkRenderWindow *win);
+        void setupInteractor(vtkRenderWindowInteractor* iren, vtkRenderWindow* win, VTKExtensions::vtkCustomInteractorStyle* istyle);
 
 		/** \brief Get a pointer to the current interactor style used. */
 		inline vtkSmartPointer<vtkRenderWindowInteractor> getRenderWindowInteractor() { return (interactor_); }

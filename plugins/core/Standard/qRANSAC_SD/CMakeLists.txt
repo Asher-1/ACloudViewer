@@ -10,8 +10,8 @@ if( PLUGIN_STANDARD_QRANSAC_SD )
 	add_subdirectory( src )
 	add_subdirectory( ui )
 	
-	add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
-	target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
+	target_include_directories(${PROJECT_NAME} PRIVATE ${QRANSAC_INCLUDE_DIRS})
+	target_link_libraries( ${PROJECT_NAME} ${QRANSAC_LIBRARIES} )
 
 	if (OPENMP_FOUND AND NOT WIN32) #DGM: OpenMP doesn't work with Visual at least (the process loops infinitely)
 		target_compile_definitions( ${PROJECT_NAME} PRIVATE DOPARALLEL )

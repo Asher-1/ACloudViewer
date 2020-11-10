@@ -16,7 +16,6 @@ if (MSVC)
 	endif()
 endif()
 
-
 # INTERNAL LIB
 target_link_libraries( ${PROJECT_NAME} PUBLIC CVCoreLib )
 # Qt
@@ -29,15 +28,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${QRANSAC_INCLUDE_DIRS})
 # Add custom preprocessor definitions
 target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_DB_LIBRARY_BUILD )
 
+CopyDLLToDirectory(${PROJECT_NAME})
+
 set_target_properties( ${PROJECT_NAME} PROPERTIES
 	CXX_VISIBILITY_PRESET hidden
 )
-
-add_custom_command(TARGET ${PROJECT_NAME}
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" ${CLOUDVIEWER_OUTPUT_DIRECTORY}
-	VERBATIM
-	)
 
 # install (shared) lib to specified destinations
 InstallSharedLibrary( TARGET ${PROJECT_NAME} )

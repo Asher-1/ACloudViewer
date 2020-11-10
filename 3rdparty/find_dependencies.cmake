@@ -1136,13 +1136,6 @@ list(APPEND 3RDPARTY_LIBRARIES
 	 #${tinyfiledialogs_LIBRARIES}
 )
 
-
-# add_subdirectory(${CloudViewer_3RDPARTY_DIR}/RANSAC_SD_orig)
-# import_3rdparty_library(3rdparty_ransac_sd INCLUDE_DIRS ${QRANSAC_INCLUDE_DIRS} LIBRARIES ${QRANSAC_LIBRARIES})
-# add_dependencies(3rdparty_ransac_sd ${QRANSAC_LIBRARIES})
-# set(RANSAC_SD_TARGET "3rdparty_ransac_sd")
-# list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${RANSAC_SD_TARGET}")
-
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS})
 set(3RDPARTY_LIBRARY_DIRS ${3RDPARTY_LIBRARY_DIRS})
 set(3RDPARTY_LIBRARIES    ${3RDPARTY_LIBRARIES}   )
