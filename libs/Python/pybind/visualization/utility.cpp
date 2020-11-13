@@ -31,8 +31,8 @@
 #include <ecvPointCloud.h>
 #include <IJsonConvertibleIO.h>
 
-#include "Visualization/Utility/DrawGeometry.h"
-#include "Visualization/Utility/SelectionPolygonVolume.h"
+#include "visualization/utility/DrawGeometry.h"
+#include "visualization/utility/SelectionPolygonVolume.h"
 
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"

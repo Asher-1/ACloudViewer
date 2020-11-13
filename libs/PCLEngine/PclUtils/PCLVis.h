@@ -19,7 +19,7 @@
 #define ECV_PCLVIS_HEADER
 
 // LOCAL
-#include "../qPCL.h"
+#include "qPCL.h"
 #include "PCLCloud.h"
 #include "WidgetMap.h"
 
@@ -81,9 +81,6 @@ namespace PclUtils
 
 		void configInteractorStyle(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style);
 
-		virtual void updateStyle(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style,
-								 bool use_vbos = false);
-
 	public:
 		/** \brief Marker Axes.
 		*/
@@ -106,7 +103,7 @@ namespace PclUtils
 		 * @param iren
 		 * @param win
 		 */
-        void setupInteractor(vtkRenderWindowInteractor* iren, vtkRenderWindow* win, VTKExtensions::vtkCustomInteractorStyle* istyle);
+        void setupInteractor(vtkRenderWindowInteractor* iren, vtkRenderWindow* win);
 
 		/** \brief Get a pointer to the current interactor style used. */
 		inline vtkSmartPointer<vtkRenderWindowInteractor> getRenderWindowInteractor() { return (interactor_); }
@@ -191,7 +188,7 @@ namespace PclUtils
 		void resetCameraClippingRange();
 		void resetCamera(const ccBBox * bbox);
 		void resetCamera(double xMin, double xMax, double yMin, double yMax, double zMin, double zMax);
-		inline void resetCamera() { pcl::visualization::PCLVisualizer::resetCamera(); };
+        inline void resetCamera() { pcl::visualization::PCLVisualizer::resetCamera(); }
 		inline void resetCamera(double bounds[6]) { resetCamera(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]); }
 		void getReasonableClippingRange(double range[2]);
 		void expandBounds(double bounds[6], vtkMatrix4x4* matrix);
@@ -319,12 +316,12 @@ namespace PclUtils
 		inline bool isAreaPickingMode() { return m_x_pressNum % 2 != 0; }
 		inline bool isAreaPickingEnabled() { return m_areaPickingEnabled; }
 		inline void setAreaPickingEnabled(bool state) { m_areaPickingEnabled = state; }
-		inline void toggleAreaPicking();
 
 		inline bool isActorPickingEnabled() { return m_actorPickingEnabled; }
 		inline void setActorPickingEnabled(bool state) { m_actorPickingEnabled = state; }
 		inline void toggleActorPicking() { setActorPickingEnabled(!isActorPickingEnabled()); }
 
+        void toggleAreaPicking();
 		void exitCallbackProcess();
 		void setAreaPickingMode(bool state);
 		std::string pickItem(double x = -1, double y = -1);

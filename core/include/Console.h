@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -68,7 +68,7 @@ enum class CV_CORE_LIB_API VerbosityLevel {
     Debug = 3,
 };
 
-class Logger {
+class CV_CORE_LIB_API Logger {
 public:
     enum class TextColor {
         Black = 0,
@@ -89,7 +89,7 @@ public:
 
     void VError[[noreturn]](const char *format, fmt::format_args args) const {
         std::string err_msg = fmt::vformat(format, args);
-        err_msg = fmt::format("[cloudViewer ERROR] {}", err_msg);
+        err_msg = fmt::format("[CloudViewer ERROR] {}", err_msg);
         err_msg = ColorString(err_msg, TextColor::Red, 1);
         throw std::runtime_error(err_msg);
     }
@@ -97,7 +97,7 @@ public:
     void VWarning(const char *format, fmt::format_args args) const {
         if (verbosity_level_ >= VerbosityLevel::Warning) {
             ChangeConsoleColor(TextColor::Yellow, 1);
-            fmt::print("[cloudViewer WARNING] ");
+            fmt::print("[CloudViewer WARNING] ");
             fmt::vprint(format, args);
             fmt::print("\n");
             ResetConsoleColor();
@@ -106,7 +106,7 @@ public:
 
     void VInfo(const char *format, fmt::format_args args) const {
         if (verbosity_level_ >= VerbosityLevel::Info) {
-            fmt::print("[cloudViewer INFO] ");
+            fmt::print("[CloudViewer INFO] ");
             fmt::vprint(format, args);
             fmt::print("\n");
         }
@@ -114,7 +114,7 @@ public:
 
     void VDebug(const char *format, fmt::format_args args) const {
         if (verbosity_level_ >= VerbosityLevel::Debug) {
-            fmt::print("[cloudViewer DEBUG] ");
+            fmt::print("[CloudViewer DEBUG] ");
             fmt::vprint(format, args);
             fmt::print("\n");
         }
@@ -143,7 +143,7 @@ public:
     template <typename... Args>
     void Errorf[[noreturn]](const char *format, const Args &... args) const {
         std::string err_msg = fmt::sprintf(format, args...);
-        err_msg = fmt::format("[cloudViewer Error] {}", err_msg);
+        err_msg = fmt::format("[CloudViewer Error] {}", err_msg);
         err_msg = ColorString(err_msg, TextColor::Red, 1);
         throw std::runtime_error(err_msg);
     }
@@ -152,7 +152,7 @@ public:
     void Warningf(const char *format, const Args &... args) const {
         if (verbosity_level_ >= VerbosityLevel::Warning) {
             ChangeConsoleColor(TextColor::Yellow, 1);
-            fmt::print("[cloudViewer WARNING] ");
+            fmt::print("[CloudViewer WARNING] ");
             fmt::printf(format, args...);
             ResetConsoleColor();
             fmt::print("\n");
@@ -162,7 +162,7 @@ public:
     template <typename... Args>
     void Infof(const char *format, const Args &... args) const {
         if (verbosity_level_ >= VerbosityLevel::Info) {
-            fmt::print("[cloudViewer INFO] ");
+            fmt::print("[CloudViewer INFO] ");
             fmt::printf(format, args...);
             fmt::print("\n");
         }
@@ -171,7 +171,7 @@ public:
     template <typename... Args>
     void Debugf(const char *format, const Args &... args) const {
         if (verbosity_level_ >= VerbosityLevel::Debug) {
-            fmt::print("[cloudViewer DEBUG] ");
+            fmt::print("[CloudViewer DEBUG] ");
             fmt::printf(format, args...);
             fmt::print("\n");
         }
@@ -195,7 +195,7 @@ public:
         [](const std::string& msg) { std::cout << msg << std::endl; };
 };
 
-/// Set global verbosity level of cloudViewer
+/// Set global verbosity level of CloudViewer
 ///
 /// \param level Messages with equal or less than verbosity_level verbosity will
 /// be printed.
@@ -203,7 +203,7 @@ inline void CV_CORE_LIB_API SetVerbosityLevel(VerbosityLevel level) {
     Logger::i().verbosity_level_ = level;
 }
 
-/// Get global verbosity level of cloudViewer.
+/// Get global verbosity level of CloudViewer.
 inline VerbosityLevel CV_CORE_LIB_API GetVerbosityLevel() {
     return Logger::i().verbosity_level_;
 }
@@ -273,7 +273,7 @@ public:
                const std::string &progress_info,
                bool active) {
         expected_count_ = expected_count;
-        current_count_ = -1;
+        current_count_ = static_cast<size_t>(-1);  // Guaranteed to wraparound
         progress_info_ = progress_info;
         progress_pixel_ = 0;
         active_ = active;
@@ -290,7 +290,7 @@ public:
                        std::string(resolution_, '='));
         } else {
             size_t new_progress_pixel =
-                    int(current_count_ * resolution_ / expected_count_);
+                    static_cast<size_t>(current_count_ * resolution_ / expected_count_);
             if (new_progress_pixel > progress_pixel_) {
                 progress_pixel_ = new_progress_pixel;
                 int percent = int(current_count_ * 100 / expected_count_);

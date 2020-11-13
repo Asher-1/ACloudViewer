@@ -41,7 +41,7 @@
 #include <vtkContextItem.h>
 #include <vector>
 
-template <typename T> class vtkSmartPointer;
+#include<vtkSmartPointer.h>
 class vtkImageData;
 class vtkContext2D;
 

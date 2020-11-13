@@ -20,7 +20,7 @@
 #define CV_ORIENTED_BOUNDING_BOX_HEADER
 
 //Local
-#include "Eigen/core"
+#include "Eigen/Core"
 #include "CVGeom.h"
 
 namespace CVLib

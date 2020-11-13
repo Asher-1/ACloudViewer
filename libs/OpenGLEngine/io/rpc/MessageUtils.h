@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,13 +26,13 @@
 
 #pragma once
 
-#include "open3d/io/rpc/ReceiverBase.h"
+#include "cloudViewer/io/rpc/ReceiverBase.h"
 
 namespace zmq {
 class message_t;
 }
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 namespace rpc {
 
@@ -74,4 +74,4 @@ std::tuple<int32_t, std::string> GetStatusCodeAndStr(
 
 }  // namespace rpc
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -24,23 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Console.h>
-#include <FileSystem.h>
-
-#include <Visualization/visualizer/VisualizerWithCustomAnimation.h>
-#include <Visualization/visualizer/ViewControlWithCustomAnimation.h>
-
-#include <ecvBBox.h>
-#include <ecvMesh.h>
-#include <ecvOrientedBBox.h>
-#include <ecvPointCloud.h>
-#include <PointCloudIO.h>
-#include <ImageIO.h>
-#include <LineSetIO.h>
-#include <VoxelGridIO.h>
-#include <TriangleMeshIO.h>
-#include <IJsonConvertibleIO.h>
-#include <ecvKDTreeFlann.h>
+#include "CloudViewer.h"
 
 void PrintHelp() {
     using namespace CVLib;

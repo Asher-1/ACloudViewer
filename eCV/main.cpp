@@ -146,7 +146,8 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				QMessageBox::warning(0, QObject::tr("Translation"), QObject::tr("Failed to load language file '%1'").arg(langFilename));
+                QMessageBox::warning(nullptr, QObject::tr("Translation"),
+                                     QObject::tr("Failed to load language file '%1'").arg(langFilename));
 			}
 			commandLine = false;
 			lastArgumentIndex += 2;
@@ -161,7 +162,7 @@ int main(int argc, char *argv[])
 	{
 		if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_2_1) == 0)
 		{
-			QMessageBox::critical(0, QObject::tr("Error"),
+            QMessageBox::critical(nullptr, QObject::tr("Error"),
 				QObject::tr("This application needs OpenGL 2.1 at least to run!"));
 			return EXIT_FAILURE;
 		}
@@ -192,7 +193,7 @@ int main(int argc, char *argv[])
 		MainWindow* mainWindow = MainWindow::TheInstance();
 		if (!mainWindow)
 		{
-			QMessageBox::critical(0, QObject::tr("Error"),
+            QMessageBox::critical(nullptr, QObject::tr("Error"),
 				QObject::tr("Failed to initialize the main application window?!"));
 			return EXIT_FAILURE;
 		}
@@ -203,19 +204,19 @@ int main(int argc, char *argv[])
 			// use UIManager instead
 			QUIWidget::setCode();
 			qui = new QUIWidget();
-			//设置主窗体
+			// set main weindow
 			mainWindow->setUiManager(qui);
 			qui->setMainWidget(mainWindow);
 
 			qui->setTitle(Settings::APP_TITLE);
 
-			//设置标题文本居中
+			// set align center
 			qui->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
-			//设置窗体可拖动大小
+			// set dragable
 			qui->setSizeGripEnabled(true);
 
-			//设置换肤下拉菜单可见
+			// set icon visibility
 			qui->setVisible(QUIWidget::Lab_Ico, true);
 			qui->setVisible(QUIWidget::BtnMenu, true);
 
@@ -225,10 +226,8 @@ int main(int argc, char *argv[])
 				Settings::DEFAULT_STYLE).toString();
 			qui->setStyle(qssfile);
 
-			//设置左上角图标-图形字体
 			//qui.setIconMain(QChar(0xf099), 11);
 
-			//设置左上角图标-图片文件
 			qui->setPixmap(QUIWidget::Lab_Ico, Settings::APP_LOGO);
 			qui->setWindowIcon(QIcon(Settings::APP_LOGO));
 
@@ -335,11 +334,13 @@ int main(int argc, char *argv[])
 		}
 		catch (const std::exception& e)
 		{
-			QMessageBox::warning(0, QObject::tr("ECV crashed!"), QObject::tr("Hum, it seems that ECV has crashed... Sorry about that :)\n") + e.what());
+            QMessageBox::warning(nullptr, QObject::tr("ECV crashed!"),
+                                 QObject::tr("Hum, it seems that ECV has crashed... Sorry about that :)\n") + e.what());
 		}
 		catch (...)
 		{
-			QMessageBox::warning(0, QObject::tr("ECV crashed!"), QObject::tr("Hum, it seems that ECV has crashed... Sorry about that :)"));
+            QMessageBox::warning(nullptr, QObject::tr("ECV crashed!"),
+                                 QObject::tr("Hum, it seems that ECV has crashed... Sorry about that :)"));
 		}
 
 		//release the plugins

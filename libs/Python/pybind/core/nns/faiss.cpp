@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #include "pybind/core/nns/faiss.h"
 
-#include "open3d/core/nns/FaissIndex.h"
+#include "core/nns/FaissIndex.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/cloudViewer_pybind.h"

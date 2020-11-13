@@ -18,7 +18,7 @@
 #include "ecvGraphicalSegmentationTool.h"
 
 // LOCAL
-#include "mainwindow.h"
+#include "MainWindow.h"
 #include "ecvItemSelectionDlg.h"
 
 // CV_CORE_LIB

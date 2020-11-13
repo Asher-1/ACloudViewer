@@ -283,7 +283,7 @@ void ecvFilterWindowTool::removeLastContour()
 	{
 		for (size_t i = 0; i < s_lastContourUniqueIDs.size(); ++i)
 		{
-			ccHObject* obj = mainWindow->db()->find(s_lastContourUniqueIDs[i]);
+            ccHObject* obj = mainWindow->db()->find(static_cast<int>(s_lastContourUniqueIDs[i]));
 			if (obj)
 			{
 				//obj->prepareDisplayForRefresh();
@@ -302,7 +302,7 @@ ccHObject* ecvFilterWindowTool::getSlice(ccHObject* obj, bool silent)
 	if (!obj)
 	{
 		assert(false);
-		return 0;
+        return nullptr;
 	}
 
 	if (obj->isKindOf(CV_TYPES::POINT_CLOUD))
@@ -320,7 +320,7 @@ ccHObject* ecvFilterWindowTool::getSlice(ccHObject* obj, bool silent)
 			{
 				CVLog::Error("Not enough memory!");
 			}
-			return 0;
+            return nullptr;
 		}
 		flagPointsInside(inputCloud, &selectionTable);
 		
@@ -339,7 +339,6 @@ ccHObject* ecvFilterWindowTool::getSlice(ccHObject* obj, bool silent)
 	}
 	else if (obj->isKindOf(CV_TYPES::MESH))
 	{
-		const ccGLMatrix* _transformation = 0;
 		ccGLMatrix transformation;
 
 		const ccBBox& cropBox = m_box;
@@ -348,12 +347,12 @@ ccHObject* ecvFilterWindowTool::getSlice(ccHObject* obj, bool silent)
 		{
 			if (!silent)
 				CVLog::Error("Failed to segment the mesh!");
-			return 0;
+            return nullptr;
 		}
 		return mesh;
 	}
 
-	return 0;
+    return nullptr;
 }
 
 void ecvFilterWindowTool::flagPointsInside(
@@ -466,7 +465,7 @@ static unsigned ComputeGridDimensions(	const ccBBox& localBox,
 	{
 		if (processDim[d])
 		{
-			if (cellSizePlusGap.u[d] < ZERO_TOLERANCE)
+            if (CVLib::LessThanEpsilon(cellSizePlusGap.u[d]))
 			{
 				CVLog::Error("Box size (plus gap) is null! Can't apply repetitive process!");
 				return 0;

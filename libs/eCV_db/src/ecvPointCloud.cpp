@@ -2154,7 +2154,7 @@ bool ccPointCloud::setRGBColorByHeight(unsigned char heightDim, ccColorScale::Sh
 
 	double minHeight = getOwnBB().minCorner().u[heightDim];
 	double height = getOwnBB().getDiagVec().u[heightDim];
-	if (fabs(height) < ZERO_TOLERANCE) //flat cloud!
+    if (CVLib::LessThanEpsilon(fabs(height))) //flat cloud!
 	{
 		const ecvColor::Rgb& col = colorScale->getColorByIndex(0);
 		return setRGBColor(col);
@@ -2355,7 +2355,7 @@ ccPointCloud& ccPointCloud::transform(const Eigen::Matrix4d& trans)
 ccPointCloud& ccPointCloud::translate(const Eigen::Vector3d& translation, bool relative)
 {
 	CCVector3 T = translation;
-	if (fabs(T.x) + fabs(T.y) + fabs(T.z) < ZERO_TOLERANCE)
+    if (CVLib::LessThanEpsilon(fabs(T.x) + fabs(T.y) + fabs(T.z)))
 		return *this;
 
 	unsigned count = size();

@@ -1440,11 +1440,11 @@ float ecvDisplayTools::ComputePerspectiveZoom()
 
 	//Camera center to pivot vector
 	double zoomEquivalentDist = (s_tools.instance->m_viewportParams.cameraCenter - s_tools.instance->m_viewportParams.pivotPoint).norm();
-	if (zoomEquivalentDist < ZERO_TOLERANCE)
+    if (CVLib::LessThanEpsilon( zoomEquivalentDist ))
 		return 1.0f;
 
 	float screenSize = std::min(s_tools.instance->m_glViewport.width(), s_tools.instance->m_glViewport.height()) * s_tools.instance->m_viewportParams.pixelSize; //see how pixelSize is computed!
-	return screenSize / static_cast<float>(zoomEquivalentDist * std::tan(currentFov_deg * CV_DEG_TO_RAD));
+    return screenSize / static_cast<float>(zoomEquivalentDist * std::tan(CVLib::DegreesToRadians(currentFov_deg)));
 }
 
 ccGLMatrixd & ecvDisplayTools::GetModelViewMatrix()
@@ -1721,11 +1721,12 @@ void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView)
 			//(i.e. we replace the zoom by setting the camera at the right distance from
 			//the pivot point)
 			double currentFov_deg = static_cast<double>(GetFov());
-			assert(currentFov_deg > ZERO_TOLERANCE);
-			double screenSize = std::min(s_tools.instance->m_glViewport.width(), s_tools.instance->m_glViewport.height()) * s_tools.instance->m_viewportParams.pixelSize; //see how pixelSize is computed!
+            assert(CVLib::GreaterThanEpsilon(currentFov_deg));
+            double screenSize = std::min(s_tools.instance->m_glViewport.width(), s_tools.instance->m_glViewport.height())
+                    * s_tools.instance->m_viewportParams.pixelSize; //see how pixelSize is computed!
 			if (screenSize > 0.0)
 			{
-				PC.z = screenSize / (s_tools.instance->m_viewportParams.zoom*std::tan(currentFov_deg*CV_DEG_TO_RAD));
+                PC.z = screenSize / (s_tools.instance->m_viewportParams.zoom*std::tan(CVLib::DegreesToRadians(currentFov_deg)));
 			}
 		}
 
@@ -1826,7 +1827,7 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox, bool 
 	//we get the bounding-box diagonal length
 	double bbDiag = static_cast<double>(zoomedBox.getDiagNorm());
 
-	if (bbDiag < ZERO_TOLERANCE)
+    if (CVLib::LessThanEpsilon(bbDiag))
 	{
 		CVLog::Warning("[ecvDisplayTools] Entity/DB has a null bounding-box! Can't zoom in...");
 		return;

@@ -19,6 +19,7 @@
 #include <RegistrationTools.h>
 
 //local
+#include <CVMath.h>
 #include <CloudSamplingTools.h>
 #include <DistanceComputationTools.h>
 #include <Garbage.h>
@@ -367,7 +368,7 @@ ICPRegistrationTools::RESULT_TYPE ICPRegistrationTools::Register(	GenericIndexed
 	}
 
 	FILE* fTraceFile = nullptr;
-#ifdef CC_DEBUG
+#ifdef CV_DEBUG
 	fTraceFile = fopen("registration_trace_log.csv","wt");
 	if (fTraceFile)
 		fprintf(fTraceFile,"Iteration; RMS; Point count;\n");
@@ -596,7 +597,7 @@ ICPRegistrationTools::RESULT_TYPE ICPRegistrationTools::Register(	GenericIndexed
 
 			double rms = sqrt(meanSquareError);
 
-#ifdef CC_DEBUG
+#ifdef CV_DEBUG
 			if (fTraceFile)
 				fprintf(fTraceFile, "%u; %f; %u;\n", iteration, rms, data.cloud->size());
 #endif
@@ -620,7 +621,7 @@ ICPRegistrationTools::RESULT_TYPE ICPRegistrationTools::Register(	GenericIndexed
 				finalRMS = rms;
 				finalPointCount = data.cloud->size();
 
-				if (rms < ZERO_TOLERANCE)
+                if ( LessThanEpsilon( rms ) )
 				{
 					//nothing to do
 					result = ICP_NOTHING_TO_DO;
@@ -845,274 +846,283 @@ double HornRegistrationTools::ComputeRMS(GenericCloud* lCloud,
 		const CCVector3* Li = lCloud->getNextPoint();
 		CCVector3 Lit = (trans.R.isValid() ? trans.R * (*Li) : (*Li))*trans.s + trans.T;
 
-//#ifdef CC_DEBUG
+//#ifdef CV_DEBUG
 //		double dist = (*Ri-Lit).norm();
 //#endif
 
-		rms += (*Ri - Lit).norm2();
+        rms += static_cast<double>((*Ri - Lit).norm2());
 	}
 
 	return sqrt(rms / count);
 }
 
 bool RegistrationTools::RegistrationProcedure(	GenericCloud* P, //data
-												GenericCloud* X, //model
-												ScaledTransformation& trans,
-												bool adjustScale/*=false*/,
-												ScalarField* coupleWeights/*=0*/,
-												PointCoordinateType aPrioriScale/*=1.0f*/)
+                                                GenericCloud* X, //model
+                                                ScaledTransformation& trans,
+                                                bool adjustScale/*=false*/,
+                                                ScalarField* coupleWeights/*=0*/,
+                                                PointCoordinateType aPrioriScale/*=1.0f*/)
 {
-	//resulting transformation (R is invalid on initialization, T is (0,0,0) and s==1)
-	trans.R.invalidate();
-	trans.T = CCVector3(0,0,0);
-	trans.s = PC_ONE;
+    //resulting transformation (R is invalid on initialization, T is (0,0,0) and s==1)
+    trans.R.invalidate();
+    trans.T = CCVector3(0, 0, 0);
+    trans.s = PC_ONE;
 
-	if (P == nullptr || X == nullptr || P->size() != X->size() || P->size() < 3)
-		return false;
+    if (P == nullptr || X == nullptr || P->size() != X->size() || P->size() < 3)
+        return false;
 
-	//centers of mass
-	CCVector3 Gp = coupleWeights ? GeometricalAnalysisTools::ComputeWeightedGravityCenter(P, coupleWeights) : GeometricalAnalysisTools::ComputeGravityCenter(P);
-	CCVector3 Gx = coupleWeights ? GeometricalAnalysisTools::ComputeWeightedGravityCenter(X, coupleWeights) : GeometricalAnalysisTools::ComputeGravityCenter(X);
+    //centers of mass
+    CCVector3 Gp = coupleWeights ? GeometricalAnalysisTools::ComputeWeightedGravityCenter(P, coupleWeights) : GeometricalAnalysisTools::ComputeGravityCenter(P);
+    CCVector3 Gx = coupleWeights ? GeometricalAnalysisTools::ComputeWeightedGravityCenter(X, coupleWeights) : GeometricalAnalysisTools::ComputeGravityCenter(X);
 
-	//specific case: 3 points only
-	//See section 5.A in Horn's paper
-	if (P->size() == 3)
-	{
-		//compute the first set normal
-		P->placeIteratorAtBeginning();
-		const CCVector3* Ap = P->getNextPoint();
-		const CCVector3* Bp = P->getNextPoint();
-		const CCVector3* Cp = P->getNextPoint();
-		CCVector3 Np(0,0,1);
-		{
-			Np = (*Bp-*Ap).cross(*Cp-*Ap);
-			double norm = Np.normd();
-			if (norm < ZERO_TOLERANCE)
-				return false;
-			Np /= static_cast<PointCoordinateType>(norm);
-		}
-		//compute the second set normal
-		X->placeIteratorAtBeginning();
-		const CCVector3* Ax = X->getNextPoint();
-		const CCVector3* Bx = X->getNextPoint();
-		const CCVector3* Cx = X->getNextPoint();
-		CCVector3 Nx(0,0,1);
-		{
-			Nx = (*Bx-*Ax).cross(*Cx-*Ax);
-			double norm = Nx.normd();
-			if (norm < ZERO_TOLERANCE)
-				return false;
-			Nx /= static_cast<PointCoordinateType>(norm);
-		}
-		//now the rotation is simply the rotation from Nx to Np, centered on Gx
-		CCVector3 a = Np.cross(Nx);
-		if (a.norm() < ZERO_TOLERANCE)
-		{
-			trans.R = CVLib::SquareMatrix(3);
-			trans.R.toIdentity();
-			if (Np.dot(Nx) < 0)
-			{
-				trans.R.scale(-1);
-			}
-		}
-		else
-		{
-			double cos_t = Np.dot(Nx);
-			assert(cos_t > -1.0 && cos_t < 1.0); //see above
-			double s = sqrt((1+cos_t)*2);
-			double q[4] = { s/2, a.x/s, a.y/s, a.z/s };
-			//don't forget to normalize the quaternion
-			double qnorm = q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3];
-			assert(qnorm >= ZERO_TOLERANCE);
-			qnorm = sqrt(qnorm);
-			q[0] /= qnorm;
-			q[1] /= qnorm;
-			q[2] /= qnorm;
-			q[3] /= qnorm;
-			trans.R.initFromQuaternion(q);
-		}
+    //specific case: 3 points only
+    //See section 5.A in Horn's paper
+    if (P->size() == 3)
+    {
+        //compute the first set normal
+        P->placeIteratorAtBeginning();
+        const CCVector3* Ap = P->getNextPoint();
+        const CCVector3* Bp = P->getNextPoint();
+        const CCVector3* Cp = P->getNextPoint();
+        CCVector3 Np(0, 0, 1);
+        {
+            Np = (*Bp - *Ap).cross(*Cp - *Ap);
+            double norm = Np.normd();
+            if ( LessThanEpsilon( norm ) )
+            {
+                return false;
+            }
+            Np /= static_cast<PointCoordinateType>(norm);
+        }
+        //compute the second set normal
+        X->placeIteratorAtBeginning();
+        const CCVector3* Ax = X->getNextPoint();
+        const CCVector3* Bx = X->getNextPoint();
+        const CCVector3* Cx = X->getNextPoint();
+        CCVector3 Nx(0, 0, 1);
+        {
+            Nx = (*Bx - *Ax).cross(*Cx - *Ax);
+            double norm = Nx.normd();
+            if ( LessThanEpsilon( norm ) )
+            {
+                return false;
+            }
+            Nx /= static_cast<PointCoordinateType>(norm);
+        }
+        //now the rotation is simply the rotation from Nx to Np, centered on Gx
+        CCVector3 a = Np.cross(Nx);
+        if ( LessThanEpsilon( a.norm() ) )
+        {
+            trans.R = SquareMatrix(3);
+            trans.R.toIdentity();
+            if (Np.dot(Nx) < 0)
+            {
+                trans.R.scale(-PC_ONE);
+            }
+        }
+        else
+        {
+            double cos_t = Np.dot(Nx);
+            assert(cos_t > -1.0 && cos_t < 1.0); //see above
+            double s = sqrt((1 + cos_t) * 2);
+            double q[4] = { s / 2, a.x / s, a.y / s, a.z / s }; //don't forget to normalize the quaternion
+            double qnorm = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+            assert( qnorm >= ZERO_TOLERANCE_D );
+            qnorm = sqrt(qnorm);
+            q[0] /= qnorm;
+            q[1] /= qnorm;
+            q[2] /= qnorm;
+            q[3] /= qnorm;
+            trans.R.initFromQuaternion(q);
+        }
 
-		if (adjustScale)
-		{
-			double sumNormP = (*Bp-*Ap).norm() + (*Cp-*Bp).norm() + (*Ap-*Cp).norm();
-			sumNormP *= aPrioriScale;
-			if (sumNormP < ZERO_TOLERANCE)
-				return false;
-			double sumNormX = (*Bx-*Ax).norm() + (*Cx-*Bx).norm() + (*Ax-*Cx).norm();
-			trans.s = static_cast<PointCoordinateType>(sumNormX / sumNormP); //sumNormX / (sumNormP * Sa) in fact
-		}
+        if (adjustScale)
+        {
+            double sumNormP = (*Bp - *Ap).norm() + (*Cp - *Bp).norm() + (*Ap - *Cp).norm();
+            sumNormP *= aPrioriScale;
+            if ( LessThanEpsilon( sumNormP ) )
+            {
+                return false;
+            }
+            double sumNormX = (*Bx - *Ax).norm() + (*Cx - *Bx).norm() + (*Ax - *Cx).norm();
+            trans.s = static_cast<PointCoordinateType>(sumNormX / sumNormP); //sumNormX / (sumNormP * Sa) in fact
+        }
 
-		//we deduce the first translation
-		trans.T = Gx - (trans.R*Gp) * (aPrioriScale*trans.s); //#26 in besl paper, modified with the scale as in jschmidt
+        //we deduce the first translation
+        trans.T = Gx - (trans.R*Gp) * (aPrioriScale*trans.s); //#26 in besl paper, modified with the scale as in jschmidt
 
-		//we need to find the rotation in the (X) plane now
-		{
-			CCVector3 App = trans.apply(*Ap);
-			CCVector3 Bpp = trans.apply(*Bp);
-			CCVector3 Cpp = trans.apply(*Cp);
+        //we need to find the rotation in the (X) plane now
+        {
+            CCVector3 App = trans.apply(*Ap);
+            CCVector3 Bpp = trans.apply(*Bp);
+            CCVector3 Cpp = trans.apply(*Cp);
 
-			double C = 0;
-			double S = 0;
-			CCVector3 Ssum(0,0,0);
-			CCVector3 rx,rp;
-			
-			rx = *Ax - Gx;
-			rp = App - Gx;
-			C = rx.dot(rp);
-			Ssum = rx.cross(rp);
+            double C = 0;
+            double S = 0;
+            CCVector3 Ssum(0, 0, 0);
+            CCVector3 rx;
+            CCVector3 rp;
 
-			rx = *Bx - Gx;
-			rp = Bpp - Gx;
-			C += rx.dot(rp);
-			Ssum += rx.cross(rp);
+            rx = *Ax - Gx;
+            rp = App - Gx;
+            C = rx.dot(rp);
+            Ssum = rx.cross(rp);
 
-			rx = *Cx - Gx;
-			rp = Cpp - Gx;
-			C += rx.dot(rp);
-			Ssum += rx.cross(rp);
+            rx = *Bx - Gx;
+            rp = Bpp - Gx;
+            C += rx.dot(rp);
+            Ssum += rx.cross(rp);
 
-			S = Ssum.dot(Nx);
-			double Q = sqrt(S*S + C*C);
-			if (Q < ZERO_TOLERANCE)
-				return false;
-			
-			PointCoordinateType sin_t = static_cast<PointCoordinateType>(S / Q);
-			PointCoordinateType cos_t = static_cast<PointCoordinateType>(C / Q);
-			PointCoordinateType inv_cos_t = 1 - cos_t;
+            rx = *Cx - Gx;
+            rp = Cpp - Gx;
+            C += rx.dot(rp);
+            Ssum += rx.cross(rp);
 
-			const PointCoordinateType& l1 = Nx.x;
-			const PointCoordinateType& l2 = Nx.y;
-			const PointCoordinateType& l3 = Nx.z;
+            S = Ssum.dot(Nx);
+            double Q = sqrt(S*S + C * C);
+            if ( LessThanEpsilon( Q ) )
+            {
+                return false;
+            }
 
-			PointCoordinateType l1_inv_cos_t = l1*inv_cos_t;
-			PointCoordinateType l3_inv_cos_t = l3*inv_cos_t;
+            PointCoordinateType sin_t = static_cast<PointCoordinateType>(S / Q);
+            PointCoordinateType cos_t = static_cast<PointCoordinateType>(C / Q);
+            PointCoordinateType inv_cos_t = 1 - cos_t;
 
-			SquareMatrix R(3);
-			//1st column
-			R.m_values[0][0] = cos_t + l1*l1_inv_cos_t;
-			R.m_values[0][1] = l2*l1_inv_cos_t+l3*sin_t;
-			R.m_values[0][2] = l3*l1_inv_cos_t-l2*sin_t;
+            const PointCoordinateType& l1 = Nx.x;
+            const PointCoordinateType& l2 = Nx.y;
+            const PointCoordinateType& l3 = Nx.z;
 
-			//2nd column
-			R.m_values[1][0] = l2*l1_inv_cos_t-l3*sin_t;
-			R.m_values[1][1] = cos_t+l2*l2*inv_cos_t;
-			R.m_values[1][2] = l2*l3_inv_cos_t+l1*sin_t;
+            PointCoordinateType l1_inv_cos_t = l1 * inv_cos_t;
+            PointCoordinateType l3_inv_cos_t = l3 * inv_cos_t;
 
-			//3rd column
-			R.m_values[2][0] = l3*l1_inv_cos_t+l2*sin_t;
-			R.m_values[2][1] = l2*l3_inv_cos_t-l1*sin_t;
-			R.m_values[2][2] = cos_t+l3*l3_inv_cos_t;
+            SquareMatrix R(3);
+            //1st column
+            R.m_values[0][0] = cos_t + l1 * l1_inv_cos_t;
+            R.m_values[0][1] = l2 * l1_inv_cos_t + l3 * sin_t;
+            R.m_values[0][2] = l3 * l1_inv_cos_t - l2 * sin_t;
 
-			trans.R = R * trans.R;
-			trans.T = Gx - (trans.R*Gp) * (aPrioriScale*trans.s); //update T as well
-		}
-	}
-	else
-	{
-		CCVector3 bbMin,bbMax;
-		X->getBoundingBox(bbMin,bbMax);
+            //2nd column
+            R.m_values[1][0] = l2 * l1_inv_cos_t - l3 * sin_t;
+            R.m_values[1][1] = cos_t + l2 * l2*inv_cos_t;
+            R.m_values[1][2] = l2 * l3_inv_cos_t + l1 * sin_t;
 
-		//if the data cloud is equivalent to a single point (for instance
-		//it's the case when the two clouds are very far away from
-		//each other in the ICP process) we try to get the two clouds closer
-		CCVector3 diag = bbMax-bbMin;
-		if (std::abs(diag.x) + std::abs(diag.y) + std::abs(diag.z) < ZERO_TOLERANCE)
-		{
-			trans.T = Gx - Gp*aPrioriScale;
-			return true;
-		}
+            //3rd column
+            R.m_values[2][0] = l3 * l1_inv_cos_t + l2 * sin_t;
+            R.m_values[2][1] = l2 * l3_inv_cos_t - l1 * sin_t;
+            R.m_values[2][2] = cos_t + l3 * l3_inv_cos_t;
 
-		//Cross covariance matrix, eq #24 in Besl92 (but with weights, if any)
-		SquareMatrixd Sigma_px = (coupleWeights ? GeometricalAnalysisTools::ComputeWeightedCrossCovarianceMatrix(P, X, Gp, Gx, coupleWeights)
-												: GeometricalAnalysisTools::ComputeCrossCovarianceMatrix(P,X,Gp,Gx) );
-		if (!Sigma_px.isValid())
-			return false;
+            trans.R = R * trans.R;
+            trans.T = Gx - (trans.R*Gp) * (aPrioriScale*trans.s); //update T as well
+        }
+    }
+    else
+    {
+        CCVector3 bbMin;
+        CCVector3 bbMax;
+        X->getBoundingBox(bbMin, bbMax);
 
-		//transpose sigma_px
-		SquareMatrixd Sigma_px_t = Sigma_px.transposed();
+        //if the data cloud is equivalent to a single point (for instance
+        //it's the case when the two clouds are very far away from
+        //each other in the ICP process) we try to get the two clouds closer
+        CCVector3 diag = bbMax - bbMin;
+        if ( LessThanEpsilon( std::abs(diag.x) + std::abs(diag.y) + std::abs(diag.z) ) )
+        {
+            trans.T = Gx - Gp * aPrioriScale;
+            return true;
+        }
 
-		SquareMatrixd Aij = Sigma_px - Sigma_px_t;
+        //Cross covariance matrix, eq #24 in Besl92 (but with weights, if any)
+        SquareMatrixd Sigma_px = (coupleWeights ? GeometricalAnalysisTools::ComputeWeightedCrossCovarianceMatrix(P, X, Gp, Gx, coupleWeights)
+                                                : GeometricalAnalysisTools::ComputeCrossCovarianceMatrix(P, X, Gp, Gx));
+        if (!Sigma_px.isValid())
+            return false;
 
-		double trace = Sigma_px.trace(); //that is the sum of diagonal elements of sigma_px
+        //transpose sigma_px
+        SquareMatrixd Sigma_px_t = Sigma_px.transposed();
 
-		SquareMatrixd traceI3(3); //create the I matrix with eigvals equal to trace
-		traceI3.m_values[0][0] = trace;
-		traceI3.m_values[1][1] = trace;
-		traceI3.m_values[2][2] = trace;
+        SquareMatrixd Aij = Sigma_px - Sigma_px_t;
 
-		SquareMatrixd bottomMat = Sigma_px + Sigma_px_t - traceI3;
+        double trace = Sigma_px.trace(); //that is the sum of diagonal elements of sigma_px
 
-		//we build up the registration matrix (see ICP algorithm)
-		SquareMatrixd QSigma(4); //#25 in the paper (besl)
+        SquareMatrixd traceI3(3); //create the I matrix with eigvals equal to trace
+        traceI3.m_values[0][0] = trace;
+        traceI3.m_values[1][1] = trace;
+        traceI3.m_values[2][2] = trace;
 
-		QSigma.m_values[0][0] = trace;
+        SquareMatrixd bottomMat = Sigma_px + Sigma_px_t - traceI3;
 
-		QSigma.m_values[0][1] = QSigma.m_values[1][0] = Aij.m_values[1][2];
-		QSigma.m_values[0][2] = QSigma.m_values[2][0] = Aij.m_values[2][0];
-		QSigma.m_values[0][3] = QSigma.m_values[3][0] = Aij.m_values[0][1];
+        //we build up the registration matrix (see ICP algorithm)
+        SquareMatrixd QSigma(4); //#25 in the paper (besl)
 
-		QSigma.m_values[1][1] = bottomMat.m_values[0][0];
-		QSigma.m_values[1][2] = bottomMat.m_values[0][1];
-		QSigma.m_values[1][3] = bottomMat.m_values[0][2];
+        QSigma.m_values[0][0] = trace;
 
-		QSigma.m_values[2][1] = bottomMat.m_values[1][0];
-		QSigma.m_values[2][2] = bottomMat.m_values[1][1];
-		QSigma.m_values[2][3] = bottomMat.m_values[1][2];
+        QSigma.m_values[0][1] = QSigma.m_values[1][0] = Aij.m_values[1][2];
+        QSigma.m_values[0][2] = QSigma.m_values[2][0] = Aij.m_values[2][0];
+        QSigma.m_values[0][3] = QSigma.m_values[3][0] = Aij.m_values[0][1];
 
-		QSigma.m_values[3][1] = bottomMat.m_values[2][0];
-		QSigma.m_values[3][2] = bottomMat.m_values[2][1];
-		QSigma.m_values[3][3] = bottomMat.m_values[2][2];
+        QSigma.m_values[1][1] = bottomMat.m_values[0][0];
+        QSigma.m_values[1][2] = bottomMat.m_values[0][1];
+        QSigma.m_values[1][3] = bottomMat.m_values[0][2];
 
-		//we compute its eigenvalues and eigenvectors
-		CVLib::SquareMatrixd eigVectors;
-		std::vector<double> eigValues;
-		if (!Jacobi<double>::ComputeEigenValuesAndVectors(QSigma, eigVectors, eigValues, false))
-		{
-			//failure
-			return false;
-		}
+        QSigma.m_values[2][1] = bottomMat.m_values[1][0];
+        QSigma.m_values[2][2] = bottomMat.m_values[1][1];
+        QSigma.m_values[2][3] = bottomMat.m_values[1][2];
 
-		//as Besl says, the best rotation corresponds to the eigenvector associated to the biggest eigenvalue
-		double qR[4];
-		double maxEigValue = 0;
-		Jacobi<double>::GetMaxEigenValueAndVector(eigVectors, eigValues, maxEigValue, qR);
+        QSigma.m_values[3][1] = bottomMat.m_values[2][0];
+        QSigma.m_values[3][2] = bottomMat.m_values[2][1];
+        QSigma.m_values[3][3] = bottomMat.m_values[2][2];
 
-		//these eigenvalue and eigenvector correspond to a quaternion --> we get the corresponding matrix
-		trans.R.initFromQuaternion(qR);
+        //we compute its eigenvalues and eigenvectors
+        SquareMatrixd eigVectors;
+        std::vector<double> eigValues;
+        if (!Jacobi<double>::ComputeEigenValuesAndVectors(QSigma, eigVectors, eigValues, false))
+        {
+            //failure
+            return false;
+        }
 
-		if (adjustScale)
-		{
-			//two accumulators
-			double acc_num = 0.0;
-			double acc_denom = 0.0;
+        //as Besl says, the best rotation corresponds to the eigenvector associated to the biggest eigenvalue
+        double qR[4];
+        double maxEigValue = 0;
+        Jacobi<double>::GetMaxEigenValueAndVector(eigVectors, eigValues, maxEigValue, qR);
 
-			//now deduce the scale (refer to "Point Set Registration with Integrated Scale Estimation", Zinsser et. al, PRIP 2005)
-			X->placeIteratorAtBeginning();
-			P->placeIteratorAtBeginning();
+        //these eigenvalue and eigenvector correspond to a quaternion --> we get the corresponding matrix
+        trans.R.initFromQuaternion(qR);
 
-			unsigned count = X->size();
-			assert(P->size() == count);
-			for (unsigned i=0; i<count; ++i)
-			{
-				//'a' refers to the data 'A' (moving) = P
-				//'b' refers to the model 'B' (not moving) = X
-				CCVector3 a_tilde = trans.R * (*(P->getNextPoint()) - Gp);	// a_tilde_i = R * (a_i - a_mean)
-				CCVector3 b_tilde = (*(X->getNextPoint()) - Gx);			// b_tilde_j =     (b_j - b_mean)
+        if (adjustScale)
+        {
+            //two accumulators
+            double acc_num = 0.0;
+            double acc_denom = 0.0;
 
-				acc_num += b_tilde.dot(a_tilde);
-				acc_denom += a_tilde.dot(a_tilde);
-			}
+            //now deduce the scale (refer to "Point Set Registration with Integrated Scale Estimation", Zinsser et. al, PRIP 2005)
+            X->placeIteratorAtBeginning();
+            P->placeIteratorAtBeginning();
 
-			//DGM: acc_2 can't be 0 because we already have checked that the bbox is not a single point!
-			assert(acc_denom > 0.0);
-			trans.s = static_cast<PointCoordinateType>(std::abs(acc_num / acc_denom));
-		}
+            unsigned count = X->size();
+            assert(P->size() == count);
+            for (unsigned i = 0; i < count; ++i)
+            {
+                //'a' refers to the data 'A' (moving) = P
+                //'b' refers to the model 'B' (not moving) = X
+                CCVector3 a_tilde = trans.R * (*(P->getNextPoint()) - Gp);	// a_tilde_i = R * (a_i - a_mean)
+                CCVector3 b_tilde = (*(X->getNextPoint()) - Gx);			// b_tilde_j =     (b_j - b_mean)
 
-		//and we deduce the translation
-		trans.T = Gx - (trans.R*Gp) * (aPrioriScale*trans.s); //#26 in besl paper, modified with the scale as in jschmidt
-	}
+                acc_num += b_tilde.dot(a_tilde);
+                acc_denom += a_tilde.dot(a_tilde);
+            }
 
-	return true;
+            //DGM: acc_2 can't be 0 because we already have checked that the bbox is not a single point!
+            assert(acc_denom > 0.0);
+            trans.s = static_cast<PointCoordinateType>(std::abs(acc_num / acc_denom));
+        }
+
+        //and we deduce the translation
+        trans.T = Gx - (trans.R*Gp) * (aPrioriScale*trans.s); //#26 in besl paper, modified with the scale as in jschmidt
+    }
+
+    return true;
 }
 
 bool FPCSRegistrationTools::RegisterClouds(	GenericIndexedCloud* modelCloud,

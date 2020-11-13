@@ -18,7 +18,7 @@
 #include "ecvPointPickingGenericInterface.h"
 
 //Local
-#include "mainwindow.h"
+#include "MainWindow.h"
 #include "db_tree/ecvDBRoot.h"
 
 // CV_CORE_LIB

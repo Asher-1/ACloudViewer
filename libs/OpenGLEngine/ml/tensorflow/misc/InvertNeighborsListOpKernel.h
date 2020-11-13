@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -59,7 +59,7 @@ public:
 
         // check input shapes
         {
-            using namespace open3d::ml::op_util;
+            using namespace cloudViewer::ml::op_util;
             Dim num_neighbors("num_neighbors");
 
             CHECK_SHAPE(context, inp_neighbors_index, num_neighbors);

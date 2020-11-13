@@ -26,14 +26,7 @@
 
 #include <limits>
 
-#include <Console.h>
-#include <FileSystem.h>
-
-#include <ecvBBox.h>
-#include <ecvOrientedBBox.h>
-#include <ecvPointCloud.h>
-#include <PointCloudIO.h>
-#include <ecvKDTreeFlann.h>
+#include "CloudViewer.h"
 
 using namespace CVLib;
 void PrintHelp() {

@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "scalarfield.h"
 #include <ecvScalarField.h>
 #include <ecvPointCloud.h>
 #include "pybind/docstring.h"

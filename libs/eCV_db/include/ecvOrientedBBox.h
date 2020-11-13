@@ -37,14 +37,14 @@
 **/
 class ccGLMatrix;
 class ccGLMatrixd;
-class ECV_DB_LIB_API ecvOrientedBBox : public ccHObject, public CVLib::OrientedBoundingBox
+class ECV_DB_LIB_API ecvOrientedBBox : public CVLib::OrientedBoundingBox, public ccHObject
 {
 public:
 
 	//! Default constructor
-	ecvOrientedBBox() 
-		: CVLib::OrientedBoundingBox() 
-		, ccHObject("ecvOrientedBBox")
+    ecvOrientedBBox()
+        : CVLib::OrientedBoundingBox()
+        , ccHObject("ecvOrientedBBox")
 	{}
 
 		/// \brief Parameterized constructor.
@@ -57,9 +57,9 @@ public:
 		const Eigen::Matrix3d& R,
 		const Eigen::Vector3d& extent,
 		const std::string& name = "ecvOrientedBBox")
-		: CVLib::OrientedBoundingBox(center, R, extent)
-		, ccHObject(name.c_str())
-	{}
+        : CVLib::OrientedBoundingBox(center, R, extent)
+        , ccHObject(name.c_str())
+    {}
 
 	~ecvOrientedBBox() override {}
 
@@ -74,7 +74,7 @@ public:
 	/** \param context OpenGL context
 	 *  \param col (R,G,B) color
 	**/
-	void draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col);
+    void draw (CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col);
 
 	inline virtual bool isEmpty() const override { return volume() <= 0; }
 	virtual Eigen::Vector3d getMinBound() const override;

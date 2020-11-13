@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 #pragma once
 
 #include "../TensorFlowHelper.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.h"
+#include "cloudViewer/ml/impl/misc/FixedRadiusSearch.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -68,7 +68,7 @@ public:
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
         using namespace tensorflow;
-        using namespace open3d::ml::impl;
+        using namespace cloudViewer::ml::impl;
 
         std::string metric_str;
         OP_REQUIRES_OK(construction,
@@ -109,7 +109,7 @@ public:
         const Tensor& hash_table_cell_splits = context->input(7);
 
         {
-            using namespace open3d::ml::op_util;
+            using namespace cloudViewer::ml::op_util;
 
             Dim num_points("num_points");
             Dim num_queries("num_queries");
@@ -147,7 +147,7 @@ public:
                         tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:
-    open3d::ml::impl::Metric metric;
+    cloudViewer::ml::impl::Metric metric;
     bool ignore_query_point;
     bool return_distances;
 };

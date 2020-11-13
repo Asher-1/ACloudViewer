@@ -45,7 +45,7 @@
 #include <vtkRenderer.h>
 #include <vtkVersion.h>
 
-#include <pcl/visualization/image_viewer.h>
+#include <visualization/include/pcl/visualization/image_viewer.h>
 #include <pcl/visualization/common/float_image_utils.h>
 #include <pcl/visualization/keyboard_event.h>
 #include <pcl/visualization/mouse_event.h>

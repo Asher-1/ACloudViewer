@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,13 +30,13 @@
 #include <memory>
 #include <string>
 
-#include "open3d/io/sensor/RGBDRecorder.h"
-#include "open3d/io/sensor/azure_kinect/AzureKinectSensor.h"
-#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+#include "cloudViewer/io/sensor/RGBDRecorder.h"
+#include "cloudViewer/io/sensor/azure_kinect/AzureKinectSensor.h"
+#include "cloudViewer/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
 
 struct _k4a_record_t;  // typedef _k4a_record_t* k4a_record_t;
 
-namespace open3d {
+namespace cloudViewer {
 
 namespace geometry {
 class RGBDImage;
@@ -82,4 +82,4 @@ protected:
 };
 
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

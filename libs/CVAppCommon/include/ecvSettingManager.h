@@ -18,6 +18,8 @@
 #ifndef SETTING_MANAGER_H
 #define SETTING_MANAGER_H
 
+#include "CVAppCommon.h"
+
 #include <QSettings>
 #include <QSharedPointer>
 #include <QTextCodec>
@@ -27,7 +29,7 @@
 class QDialog;
 class QMainWindow;
 class QDockWidget;
-class ecvSettingManager : public QSettings
+class CVAPPCOMMON_LIB_API ecvSettingManager : public QSettings
 {
 Q_OBJECT
 	typedef QSettings Superclass;
@@ -44,11 +46,11 @@ public:
 	//! Releases unique instance
 	static void ReleaseInstance();
 
-	static void Init(const QString &path); // 初始化QSettings对象，并读取ini配置文件,如果不存在配置文件，则创建
-	static void setValue(const QString &section, const QString &key, const QVariant &value); //写入配置项（section:节点，key:键名，value:键值）
-	static void removeNode(const QString &section);                           //移除节点(包括其中所有的键值)
-	static void removeKey(const QString &section, const QString &key);               //移除节点中的某个键值
-	static QVariant getValue(const QString &section, const QString &key, const QVariant &defaultValue=QVariant());  //读配置项
+	static void Init(const QString &path); // 
+	static void setValue(const QString &section, const QString &key, const QVariant &value); //
+	static void removeNode(const QString &section);                           //
+	static void removeKey(const QString &section, const QString &key);               //
+	static QVariant getValue(const QString &section, const QString &key, const QVariant &defaultValue=QVariant());  //
 
 	virtual void saveState(const QMainWindow& window, const QString& key);
 	virtual void saveState(const QDialog& dialog, const QString& key);

@@ -256,11 +256,11 @@ namespace utility {
     }
 
     // clang-format off
-    template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
+    template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> CV_CORE_LIB_API ComputeJTJandJTr(
         std::function<void(int, Eigen::Vector6d&, double&, double&)> f,
         int iteration_num, bool verbose);
 
-    template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
+    template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> CV_CORE_LIB_API ComputeJTJandJTr(
         std::function<void(int,
                            std::vector<Eigen::Vector6d, Vector6d_allocator>&,
                            std::vector<double>&,

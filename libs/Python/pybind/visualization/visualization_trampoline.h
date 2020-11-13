@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "Visualization/Visualizer/Visualizer.h"
-#include "Visualization/Visualizer/ViewControl.h"
+#include "visualization/visualizer/Visualizer.h"
+#include "visualization/visualizer/ViewControl.h"
 
 #include "pybind/cloudViewer_pybind.h"
 

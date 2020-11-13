@@ -5,13 +5,13 @@ OPTION( UPDATE_TRANSLATION_FILES "Generate or update ts files" OFF )
 include( CMakePolicies NO_POLICY_SCOPE )
 
 if (MSVC)
-	if (CVCORELIB_USE_TBB)
+        if (USE_TBB)
 		include_directories( ${TBB_INCLUDE_DIRS})
 	endif()
 endif()
 
 if (USE_PCL_BACKEND) 
-	include_directories( ${PCL_INCLUDE_DIRS} )
+#	include_directories( ${PCL_INCLUDE_DIRS} )
 	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
 endif()
 
@@ -64,17 +64,28 @@ if( MSVC )
 			message("QMs: ${QMs}")
 		endforeach()
 	endif()
-	
+elseif( APPLE )
+        add_executable( ${PROJECT_NAME} MACOSX_BUNDLE ${header_list} ${source_list} ${generated_ui_list} ${generated_qrc_list} ${txt_list} )
 else()
 	add_executable( ${PROJECT_NAME} ${header_list} ${source_list} ${generated_ui_list} ${generated_qrc_list} ${rc_list} ${txt_list} )
 endif()
 
-add_custom_command(
-	TARGET ${PROJECT_NAME}
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/ErowCloudViewer.exe ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/ErowCloudViewer.exe
-	VERBATIM
-)
+if (WIN32)
+    add_custom_command(
+            TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/ErowCloudViewer.exe ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/ErowCloudViewer.exe
+            VERBATIM
+    )
+else()
+    add_custom_command(
+            TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/ErowCloudViewer ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/ErowCloudViewer
+            VERBATIM
+    )
+endif()
+
 
 DeployQt(
 	TARGET
@@ -98,7 +109,8 @@ if( CVCORELIB_USE_QT_CONCURRENT )
 endif()
 
 if (USE_PCL_BACKEND)
-	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
+        target_link_libraries(${PROJECT_NAME} QPCL_ENGINE_LIB )
+        target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES}  ${VTK_LIBRARIES})
 endif()	
 
 if (BUILD_PYTHON_MODULE)

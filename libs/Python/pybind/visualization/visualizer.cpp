@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualization/Visualizer/Visualizer.h"
+#include "visualization/visualizer/Visualizer.h"
 #include <Image.h>
 #include "visualization/visualizer/VisualizerWithEditing.h"
 #include "visualization/visualizer/VisualizerWithKeyCallback.h"

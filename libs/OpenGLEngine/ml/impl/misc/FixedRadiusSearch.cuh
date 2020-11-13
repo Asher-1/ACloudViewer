@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,14 +28,14 @@
 
 #include <cub/cub.cuh>
 
-#include "open3d/ml/impl/misc/MemoryAllocation.h"
-#include "open3d/ml/impl/misc/NeighborSearchCommon.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/MiniVec.h"
+#include "cloudViewer/ml/impl/misc/MemoryAllocation.h"
+#include "cloudViewer/ml/impl/misc/NeighborSearchCommon.h"
+#include "cloudViewer/utility/Helper.h"
+#include "cloudViewer/utility/MiniVec.h"
 
-using namespace open3d::utility;
+using namespace cloudViewer::utility;
 
-namespace open3d {
+namespace cloudViewer {
 namespace ml {
 namespace impl {
 
@@ -907,4 +907,4 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
 
 }  // namespace impl
 }  // namespace ml
-}  // namespace open3d
+}  // namespace cloudViewer

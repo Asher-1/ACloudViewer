@@ -89,19 +89,22 @@ namespace ecvColor
 		//! Constructor from an array of 3 values
 		explicit constexpr inline RgbTpl(const Type col[3]) : r(col[0]), g(col[1]), b(col[2]) {}
 
-		constexpr inline static Eigen::Vector3d ToEigen(const Type col[3]) { 
-			if (is_same_type<Type, float>())
+        inline static Eigen::Vector3d ToEigen(const Type col[3]) {
+            if (is_same_type<Type, float>())
 			{
 				return Eigen::Vector3d(col[0], col[1], col[2]);
 			}
-			else
+            else if(is_same_type<Type, ColorCompType>())
 			{
-				bool sameType = is_same_type<Type, ColorCompType>();
-				assert(sameType);
 				return Eigen::Vector3d(col[0] / 255.0, col[1] / 255.0, col[2] / 255.0);
 			}
+            else
+            {
+                assert(false);
+                return Eigen::Vector3d(col[0], col[1], col[2]);
+            }
 		}
-		constexpr inline static Eigen::Vector3d ToEigen(const RgbTpl<Type>& t) { return ToEigen(t.rgb); }
+        inline static Eigen::Vector3d ToEigen(const RgbTpl<Type>& t) { return ToEigen(t.rgb); }
 		constexpr inline static RgbTpl FromEigen(const Eigen::Vector3d& t) {
 			Type newCol[3];
 			if (is_same_type<Type, float>())

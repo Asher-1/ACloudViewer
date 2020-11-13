@@ -68,7 +68,9 @@ int main(int argc, char *argv[]) {
 
     bool visualize = false;
     if (CVLib::utility::ProgramOptionExists(argc, argv, "--visualize"))
+    {
         visualize = true;
+    }
 
 	{ // ICP registration
 		auto source_pcd = cloudViewer::io::CreatePointCloudFromFile(argv[1]);

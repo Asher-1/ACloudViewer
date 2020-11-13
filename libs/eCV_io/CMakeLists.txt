@@ -9,17 +9,22 @@ add_subdirectory( src )
 add_subdirectory( ui )
 
 option( OPTION_USE_DXF_LIB "Build with Ribbonsoft's DXF Lib (AutoCAD DXF files support)" ON )
+if (UNIX OR APPLE)
+    set( OPTION_USE_DXF_LIB OFF )
+    message("DXF_LIB unsupported in UNIX or APPLE!")
+endif()
+
 if( ${OPTION_USE_DXF_LIB} )
 	set( DXF_LIB_DIR "extern/dxflib" CACHE PATH "DXF lib path" )
 	add_subdirectory( "${DXF_LIB_DIR}" )
-	target_link_libraries( ${PROJECT_NAME} PUBLIC dxflib )	
+        target_link_libraries( ${PROJECT_NAME} PRIVATE dxflib )
 endif()
 
 option( OPTION_USE_SHAPE_LIB "Build with ShapeLib (SHP files support)" ON )
 if( ${OPTION_USE_SHAPE_LIB} )
     set( SHAPELIB_LIB_DIR "extern/shapelib" CACHE PATH "shapelib lib path" )
 	add_subdirectory( "${SHAPELIB_LIB_DIR}" )
-	target_link_libraries( ${PROJECT_NAME} PUBLIC shapelib )	
+        target_link_libraries( ${PROJECT_NAME} PRIVATE shapelib )
 endif()
 
 # Enforce 3rd party dependencies

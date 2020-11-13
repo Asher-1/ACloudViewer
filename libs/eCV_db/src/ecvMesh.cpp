@@ -2294,7 +2294,7 @@ bool ccMesh::resizeAssociatedCloud(std::size_t n) {
     return true;
 }
 
-inline void ccMesh::shrinkVertexToFit()
+void ccMesh::shrinkVertexToFit()
 {
 	if (m_associatedCloud)
 	{
@@ -3828,9 +3828,9 @@ bool ccMesh::getColorFromMaterial(unsigned triIndex, const CCVector3& P, ecvColo
 	CCVector3d w;
 	computeInterpolationWeights(triIndex, P, w);
 
-	if ((!T1 && w.u[0] > ZERO_TOLERANCE)
-		|| (!T2 && w.u[1] > ZERO_TOLERANCE)
-		|| (!T3 && w.u[2] > ZERO_TOLERANCE))
+    if ((   !T1 && w.u[0] > ZERO_TOLERANCE_D)
+        || (!T2 && w.u[1] > ZERO_TOLERANCE_D)
+        || (!T3 && w.u[2] > ZERO_TOLERANCE_D))
 	{
 		//assert(false);
 		if (interpolateColorIfNoTexture)
@@ -3903,7 +3903,7 @@ static qint64 GenerateKey(unsigned edgeIndex1, unsigned edgeIndex2)
 
 bool ccMesh::pushSubdivide(/*PointCoordinateType maxArea, */unsigned indexA, unsigned indexB, unsigned indexC)
 {
-	if (s_maxSubdivideArea/*maxArea*/ <= ZERO_TOLERANCE)
+    if (s_maxSubdivideArea/*maxArea*/ <= ZERO_TOLERANCE_F)
 	{
 		CVLog::Error("[ccMesh::pushSubdivide] Invalid input argument!");
 		return false;
@@ -4068,7 +4068,7 @@ bool ccMesh::pushSubdivide(/*PointCoordinateType maxArea, */unsigned indexA, uns
 
 ccMesh* ccMesh::subdivide(PointCoordinateType maxArea) const
 {
-	if (maxArea <= ZERO_TOLERANCE)
+    if (CVLib::LessThanEpsilon(maxArea))
 	{
 		CVLog::Error("[ccMesh::subdivide] Invalid input argument!");
 		return nullptr;

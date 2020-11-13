@@ -36,6 +36,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QToolBar>
+#include <QToolButton>
 #include <QStatusBar>
 #include <QFileDialog>
 #include <QColorDialog>
@@ -199,7 +200,7 @@ public:  // inherited from ecvMainAppInterface
 	virtual void resetSelectedBBox() override;
 	virtual void removeFromDB(ccHObject* obj, bool autoDelete = true) override;
 	virtual void setSelectedInDB(ccHObject* obj, bool selected) override;
-	virtual void putObjectBackIntoDBTree(ccHObject* obj, const ccHObjectContext& context);
+    virtual void putObjectBackIntoDBTree(ccHObject* obj, const ccHObjectContext& context) override;
 	virtual inline QMainWindow* getMainWindow() override { return this; }
 	virtual inline const ccHObject::Container& getSelectedEntities() const override { return m_selectedEntities; }
 	virtual ccHObjectContext removeObjectTemporarilyFromDBTree(ccHObject* obj) override;
@@ -514,6 +515,19 @@ private slots:
 	void doComputeGeometricFeature();
 
 private:
+    Ui::MainViewerClass *m_ui;
+
+    //! UI frozen state (see freezeUI)
+    bool m_uiFrozen;
+
+    QUIWidget * m_uiManager;
+
+    QVBoxLayout *layout;
+
+    bool enable_console = true; // console status
+    QString timeCostSecond = "0";  // record time span
+
+private:
 	//! Currently selected entities;
 	ccHObject::Container m_selectedEntities;
 
@@ -639,19 +653,6 @@ private:
 	};
 
 	void doActionFastRegistration(FastRegistrationMode mode);
-
-private:
-	Ui::MainViewerClass *m_ui;
-
-	//! UI frozen state (see freezeUI)
-	bool m_uiFrozen;
-
-	QUIWidget * m_uiManager;
-
-	QVBoxLayout *layout;
-
-	bool enable_console = true; // console status
-	QString timeCostSecond = "0";  // record time span
 
 signals:
 	//! Signal emitted when the exclusive full screen is toggled

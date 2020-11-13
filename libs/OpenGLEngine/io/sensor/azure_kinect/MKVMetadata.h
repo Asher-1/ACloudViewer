@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include "open3d/camera/PinholeCameraIntrinsic.h"
-#include "open3d/utility/IJsonConvertible.h"
+#include "cloudViewer/camera/PinholeCameraIntrinsic.h"
+#include "cloudViewer/utility/IJsonConvertible.h"
 
 enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
 
-namespace open3d {
+namespace cloudViewer {
 
 namespace camera {
 class PinholeCameraIntrinsic;
@@ -65,4 +65,4 @@ public:
 };
 
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

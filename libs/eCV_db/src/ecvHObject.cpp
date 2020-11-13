@@ -732,7 +732,7 @@ void ccHObject::removeFromRenderScreen(bool recursive)
 	{
 		ccPlanarEntityInterface* plane = ccHObjectCaster::ToPlanarEntity(this);
 		plane->showNormalVector(false);
-		plane->clearNormalVector();
+        plane->clearNormalVector(context);
 	}
 
 	if (recursive)

@@ -38,7 +38,7 @@
 #include <ecvDisplayTools.h>
 
 //Local
-#include "mainwindow.h"
+#include "MainWindow.h"
 #include "ecvCommon.h"
 #include "ecvHistogramWindow.h"
 

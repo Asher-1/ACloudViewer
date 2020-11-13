@@ -24,10 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef CV_HELPER_HEADER
-#define CV_HELPER_HEADER
+#pragma once
 
 #include "CVCoreLib.h"
+
+#include <cmath>
+#include <cstdlib>
 #include <functional>
 #include <string>
 #include <tuple>
@@ -180,4 +182,3 @@ T UniformRandFloatBinaryFriendly(unsigned int power = 5) {
 }  // namespace utility
 }  // namespace CVLib
 
-#endif // CV_HELPER_HEADER

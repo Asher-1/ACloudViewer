@@ -27,12 +27,14 @@
 #ifndef CV_INTERSECTION_TEST_HEADER
 #define CV_INTERSECTION_TEST_HEADER
 
+#include "CVCoreLib.h"
+
 #include <Eigen/Dense>
 
 namespace CVLib {
 namespace utility {
 
-class IntersectionTest {
+class CV_CORE_LIB_API IntersectionTest {
 public:
     static bool AABBAABB(const Eigen::Vector3d& min0,
                          const Eigen::Vector3d& max0,

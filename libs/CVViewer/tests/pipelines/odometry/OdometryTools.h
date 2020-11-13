@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +26,14 @@
 
 #pragma once
 
-#include "open3d/geometry/Image.h"
+#include "cloudViewer/geometry/Image.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 namespace odometry_tools {
-std::shared_ptr<open3d::geometry::Image> GenerateImage(
+std::shared_ptr<cloudViewer::geometry::Image> GenerateImage(
         const int& width,
         const int& height,
         const int& num_of_channels,
@@ -43,24 +43,24 @@ std::shared_ptr<open3d::geometry::Image> GenerateImage(
         const int& seed);
 
 // Shift the pixels left with a specified step.
-void ShiftLeft(std::shared_ptr<open3d::geometry::Image> image, const int& step);
+void ShiftLeft(std::shared_ptr<cloudViewer::geometry::Image> image, const int& step);
 
 // Shift the pixels up with a specified step.
-void ShiftUp(std::shared_ptr<open3d::geometry::Image> image, const int& step);
+void ShiftUp(std::shared_ptr<cloudViewer::geometry::Image> image, const int& step);
 
 // Create dummy correspondence map object.
-std::shared_ptr<open3d::geometry::Image> CorrespondenceMap(const int& width,
+std::shared_ptr<cloudViewer::geometry::Image> CorrespondenceMap(const int& width,
                                                            const int& height,
                                                            const int& vmin,
                                                            const int& vmax,
                                                            const int& seed);
 
 // Create dummy depth buffer object.
-std::shared_ptr<open3d::geometry::Image> DepthBuffer(const int& width,
+std::shared_ptr<cloudViewer::geometry::Image> DepthBuffer(const int& width,
                                                      const int& height,
                                                      const float& vmin,
                                                      const float& vmax,
                                                      const int& seed);
 }  // namespace odometry_tools
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

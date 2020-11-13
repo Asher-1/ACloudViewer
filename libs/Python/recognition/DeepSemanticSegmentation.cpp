@@ -25,10 +25,10 @@
 // ----------------------------------------------------------------------------
 
 // LOCAL
-#include "Utility/PointsToNumpy.h"
-#include "Utility/PybindMatrix.h"
-#include "Utility/PythonModules.h"
-#include "Recognition/DeepSemanticSegmentation.h"
+#include "utility/PointsToNumpy.h"
+#include "utility/PybindMatrix.h"
+#include "utility/PythonModules.h"
+#include "recognition/DeepSemanticSegmentation.h"
 
 // pybind11
 #include <pybind11/embed.h>
@@ -173,7 +173,7 @@ void DeepSemanticSegmentation::extract(
 	for (size_t i = 0; i < preds.size(); ++i)
 	{
 		ClassMap::ClusterMap clusterMap;
-		int index = 0;
+        std::size_t index = 0;
 		for (std::vector<size_t>::const_iterator it = preds[i].begin(); 
 			it != preds[i].end(); ++it, ++index)
 		{
@@ -185,7 +185,7 @@ void DeepSemanticSegmentation::extract(
 				clusterMap[label] = std::vector<size_t>();
 			}
 
-			clusterMap[label].push_back(index);
+            clusterMap[label].push_back(index);
 		}
 
 		clusters.push_back(clusterMap);

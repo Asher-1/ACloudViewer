@@ -24,21 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Console.h>
-#include <FileSystem.h>
-#include <Visualization/Visualizer/VisualizerWithEditing.h>
+#include "CloudViewer.h"
 
-#include <ecvBBox.h>
-#include <ecvMesh.h>
-#include <ecvOrientedBBox.h>
-#include <ecvPointCloud.h>
-#include <PointCloudIO.h>
-#include <TriangleMeshIO.h>
-#include <ecvKDTreeFlann.h>
-
-
-using namespace CVLib;
 void PrintHelp() {
+    using namespace CVLib;
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]");
@@ -64,7 +53,7 @@ int main(int argc, char **argv) {
     }
 
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
+    utility::SetVerbosityLevel(static_cast<utility::VerbosityLevel>(verbose));
     double voxel_size =
             utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", -1.0);
     bool with_dialog =

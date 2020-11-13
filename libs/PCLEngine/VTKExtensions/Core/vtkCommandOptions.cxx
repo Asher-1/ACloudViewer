@@ -332,7 +332,7 @@ int vtkCommandOptions::GetLastArgument()
 //----------------------------------------------------------------------------
 void vtkCommandOptions::ComputeApplicationPath()
 {
-  this->SetApplicationPath(NULL);
+  this->SetApplicationPath(nullptr);
 
   std::string argv0 = this->GetArgv0();
   if (argv0.size())

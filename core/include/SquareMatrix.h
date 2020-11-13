@@ -106,11 +106,11 @@ namespace CVLib
 		//! Copy Function
 		inline SquareMatrixTpl(const Eigen::Matrix<Scalar, 3, 3>& mat)
 		{
-			*this = v;
+            *this = mat;
 		}
 		inline SquareMatrixTpl(const Eigen::Matrix<Scalar, 4, 4>& mat)
 		{
-			*this = v;
+            *this = mat;
 		}
 
 		//! Assignment Function

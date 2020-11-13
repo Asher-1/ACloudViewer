@@ -42,7 +42,7 @@ namespace io {
 
 	/// Factory function to create a ccHObject from a file.
 	/// \return return an empty ccHObject if fail to read the file.
-	std::shared_ptr<ccHObject> CreateEntityFromFile(
+    std::shared_ptr<ccHObject> ECV_IO_LIB_API CreateEntityFromFile(
 		const std::string& filename,
 		const std::string& format = "auto",
 		bool print_progress = false);
@@ -50,7 +50,7 @@ namespace io {
 	/// The general entrance for reading a ccHObject from a file
 	/// The function calls read functions based on the extension name of filename.
 	/// \return return true if the read function is successful, false otherwise.
-	bool ReadEntity(const std::string& filename,
+    bool ECV_IO_LIB_API ReadEntity(const std::string& filename,
 		ccHObject& obj,
 		const std::string& format = "auto",
 		bool print_progress = false);
@@ -60,25 +60,25 @@ namespace io {
 	/// If the write function supports binary encoding and compression, the later
 	/// two parameters will be used. Otherwise they will be ignored.
 	/// \return return true if the write function is successful, false otherwise.
-	bool WriteEntity(const std::string& filename,
+    bool ECV_IO_LIB_API WriteEntity(const std::string& filename,
 		const ccHObject& obj,
 		bool write_ascii = false,
 		bool compressed = false,
 		bool print_progress = false);
 
-	bool AutoReadEntity(const std::string& filename,
+    bool ECV_IO_LIB_API AutoReadEntity(const std::string& filename,
 		ccHObject& entity,
 		const ReadPointCloudOption& params);
 
-	bool AutoWriteEntity(const std::string& filename,
+    bool ECV_IO_LIB_API AutoWriteEntity(const std::string& filename,
 		const ccHObject& entity,
 		const WritePointCloudOption& params);
 
-	bool AutoReadMesh(const std::string& filename,
+    bool ECV_IO_LIB_API AutoReadMesh(const std::string& filename,
 		ccMesh& mesh,
 		bool print_progress = false);
 
-	bool AutoWriteMesh(const std::string &filename,
+    bool ECV_IO_LIB_API AutoWriteMesh(const std::string &filename,
 		const ccMesh& mesh,
 		bool write_ascii = false,
 		bool compressed = false,

@@ -31,15 +31,15 @@
 
 #include "CloudViewer.h"
 
-#include "cloudViewer/utility/FileSystem.h"
-#include "cloudViewer/visualization/gui/Application.h"
-#include "cloudViewer/visualization/gui/Button.h"
-#include "cloudViewer/visualization/gui/Dialog.h"
-#include "cloudViewer/visualization/gui/Label.h"
-#include "cloudViewer/visualization/gui/Layout.h"
-#include "cloudViewer/visualization/gui/Native.h"
-#include "cloudViewer/visualization/gui/Theme.h"
-#include "cloudViewer/visualization/visualizer/GuiVisualizer.h"
+#include "FileSystem.h"
+#include "visualization/gui/Application.h"
+#include "visualization/gui/Button.h"
+#include "visualization/gui/Dialog.h"
+#include "visualization/gui/Label.h"
+#include "visualization/gui/Layout.h"
+#include "visualization/gui/Native.h"
+#include "visualization/gui/Theme.h"
+#include "visualization/visualizer/GuiVisualizer.h"
 
 // ----------------------------------------------------------------------------
 using namespace cloudViewer::visualization::gui;

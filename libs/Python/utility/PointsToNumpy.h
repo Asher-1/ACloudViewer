@@ -31,7 +31,7 @@
 
 #include <CVConst.h>
 
-#include "Utility/matrix.h"
+#include "utility/Matrix.h"
 
 class ccHObject;
 class ccPointCloud;
@@ -62,4 +62,4 @@ private:
 }  // namespace utility
 }  // namespace cloudViewer
 
-#endif ECV_POINTS_TO_NUMPY_HEADER
+#endif // ECV_POINTS_TO_NUMPY_HEADER

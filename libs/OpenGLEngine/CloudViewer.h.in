@@ -57,6 +57,7 @@
 
 #include "AutoIO.h"
 #include "ImageIO.h"
+#include "LineSetIO.h"
 #include "FeatureIO.h"
 #include "VoxelGridIO.h"
 #include "FileFormatIO.h"

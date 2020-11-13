@@ -107,7 +107,7 @@ bool ReadPointCloud(const std::string &filename,
     }
     bool success = map_itr->second(filename, pointcloud, params);
     CVLib::utility::LogDebug("Read ccPointCloud: {:d} vertices.",
-                      (int)pointcloud.size());
+                             pointcloud.size());
     if (params.remove_nan_points || params.remove_infinite_points) {
         pointcloud.removeNonFinitePoints(params.remove_nan_points,
             params.remove_infinite_points);
@@ -154,7 +154,7 @@ bool WritePointCloud(const std::string& filename,
 
     bool success = map_itr->second(filename, pointcloud, params);
     CVLib::utility::LogDebug("Write ccPointCloud: {:d} vertices.",
-        (int)pointcloud.size());
+                             pointcloud.size());
     return success;
 }
 

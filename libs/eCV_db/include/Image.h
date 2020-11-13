@@ -49,7 +49,7 @@ typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 ///
 /// \brief The Image class stores image with customizable width, height, num of
 /// channels and bytes per channel.
-class Image : public ccHObject {
+class ECV_DB_LIB_API Image : public ccHObject {
 public:
     /// \enum ColorToIntensityConversionType
     ///

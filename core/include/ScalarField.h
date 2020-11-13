@@ -35,7 +35,7 @@ namespace CVLib
 
 	Invalid values can be represented by NAN_VALUE.
 **/
-class ScalarField : public std::vector<ScalarType>, public CCShareable
+class CV_CORE_LIB_API ScalarField : public std::vector<ScalarType>, public CCShareable
 {
 public:
 

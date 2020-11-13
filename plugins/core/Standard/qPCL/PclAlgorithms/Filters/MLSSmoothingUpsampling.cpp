@@ -42,7 +42,7 @@ MLSSmoothingUpsampling::MLSSmoothingUpsampling()
 										 tr("Smooth using MLS, optionally upsample"),
 										 tr("Smooth the cloud using Moving Least Sqares algorithm, estimate normals and optionally upsample"),
 									     ":/toolbar/PclAlgorithms/icons/mls_smoothing.png"))
-	, m_dialog(0)
+    , m_dialog(nullptr)
 	, m_parameters(new PCLModules::MLSParameters)
 {
 }

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,15 +28,15 @@
 
 #include <vector>
 
-#include "open3d/core/Device.h"
-#include "open3d/core/SizeVector.h"
+#include "cloudViewer/core/Device.h"
+#include "cloudViewer/core/SizeVector.h"
 #include "tests/UnitTest.h"
 
 #ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
+#include "cloudViewer/core/CUDAState.cuh"
 #endif
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 class PermuteDevices : public testing::TestWithParam<core::Device> {
@@ -146,4 +146,4 @@ public:
 };
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

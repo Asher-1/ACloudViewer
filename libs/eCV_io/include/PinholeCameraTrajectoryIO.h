@@ -43,29 +43,29 @@ ECV_IO_LIB_API CreatePinholeCameraTrajectoryFromFile(const std::string &filename
 /// The general entrance for reading a PinholeCameraTrajectory from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return If the read function is successful.
-ECV_IO_LIB_API bool ReadPinholeCameraTrajectory(const std::string &filename,
+bool ECV_IO_LIB_API ReadPinholeCameraTrajectory(const std::string &filename,
                                  camera::PinholeCameraTrajectory &trajectory);
 
 /// The general entrance for writing a PinholeCameraTrajectory to a file
 /// The function calls write functions based on the extension name of filename.
 /// \return If the write function is successful.
-ECV_IO_LIB_API bool WritePinholeCameraTrajectory(
+bool ECV_IO_LIB_API WritePinholeCameraTrajectory(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory);
 
-ECV_IO_LIB_API bool ReadPinholeCameraTrajectoryFromLOG(
+bool ECV_IO_LIB_API ReadPinholeCameraTrajectoryFromLOG(
         const std::string &filename,
         camera::PinholeCameraTrajectory &trajectory);
 
-ECV_IO_LIB_API bool WritePinholeCameraTrajectoryToLOG(
+bool ECV_IO_LIB_API WritePinholeCameraTrajectoryToLOG(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory);
 
-ECV_IO_LIB_API bool ReadPinholeCameraTrajectoryFromTUM(
+bool ECV_IO_LIB_API ReadPinholeCameraTrajectoryFromTUM(
         const std::string &filename,
         camera::PinholeCameraTrajectory &trajectory);
 
-ECV_IO_LIB_API bool WritePinholeCameraTrajectoryToTUM(
+bool ECV_IO_LIB_API WritePinholeCameraTrajectoryToTUM(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory);
 

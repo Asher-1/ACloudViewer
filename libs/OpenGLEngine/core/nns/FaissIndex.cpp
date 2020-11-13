@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,7 @@ void TestFaissIntegration() {
     indices.resize(knn * num_query);
     distances.resize(knn * num_query);
 
-    utility::LogInfo("Search Knn on CPU.");
+    CVLib::utility::LogInfo("Search Knn on CPU.");
     index.search(num_query, query.data(), knn, distances.data(),
                  indices.data());
 #ifdef BUILD_CUDA_MODULE

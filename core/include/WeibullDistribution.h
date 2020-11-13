@@ -116,12 +116,12 @@ protected:
 	//! Normal distribution equivalent parameter: variance
 	ScalarType m_sigma2;
 
-	//! internal function for parameters evaluation from sample points
-	/** inverseVmax can be optionally specified for overflow-safe version
-	**/
-	ScalarType computeG(const ScalarContainer& values, ScalarType a, ScalarType* inverseVmax = nullptr) const;
-	//! internal function for parameters evaluation from sample points
-	ScalarType findGRoot(const ScalarContainer& values, ScalarType inverseMaxValue) const;
+    //! internal function for parameters evaluation from sample points
+    /** inverseVmax can be optionally specified for overflow-safe version
+    **/
+    static double ComputeG(const ScalarContainer& values, double a, ScalarType valueShift, double valueRange);
+    //! internal function for parameters evaluation from sample points
+    static double FindGRoot(const ScalarContainer& values, ScalarType valueShift, double valueRange);
 };
 
 }

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,12 +29,12 @@
 #include <string>
 #include <unordered_map>
 
-#include "open3d/io/sensor/RGBDSensorConfig.h"
-#include "open3d/utility/IJsonConvertible.h"
+#include "cloudViewer/io/sensor/RGBDSensorConfig.h"
+#include "cloudViewer/utility/IJsonConvertible.h"
 
 struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 
 // Alternative implementation of _k4a_device_configuration_t with string values
@@ -67,4 +67,4 @@ protected:
 };
 
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

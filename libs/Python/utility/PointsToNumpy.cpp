@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointsToNumpy.h"
+#include "utility/PointsToNumpy.h"
 
 // CV_CORE_LIB
 #include <Eigen.h>
