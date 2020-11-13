@@ -36,6 +36,9 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
         # was working before, so not sure what changed.)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+        set_target_properties(${TARGET_NAME} PROPERTIES
+                        OUTPUT_NAME ${APP_NAME}
+                        )
     else()
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
