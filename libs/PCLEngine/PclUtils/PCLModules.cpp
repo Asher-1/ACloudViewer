@@ -30,6 +30,8 @@
 #include <pcl/features/impl/normal_3d_omp.hpp>
 
 // PCL SEARCH
+#include <pcl/search/impl/search.hpp>
+#include <pcl/impl/instantiate.hpp>
 #include <pcl/kdtree/impl/kdtree_flann.hpp>
 
 // PCL SEGMENTATION
@@ -465,3 +467,481 @@ namespace PCLModules
 	/* ############################## TemplateMatching Class ################################# */
 
 }
+
+
+// Template function instance
+namespace PCLModules {
+// INSTANTIATING TEMPLATED FUNCTIONS
+template int ComputeNormals<PointT, NormalT>(
+        const PointCloudT::ConstPtr inCloud,
+        CloudNormal::Ptr outcloud,
+        const float radius,
+        const bool useKnn,  // true if use knn, false if radius search
+        bool normalConsistency,
+        int maxThreadCount);
+template int ComputeNormals<PointRGB, NormalT>(
+        const PointCloudRGB::ConstPtr inCloud,
+        CloudNormal::Ptr outcloud,
+        const float radius,
+        const bool useKnn,  // true if use knn, false if radius search
+        bool normalConsistency,
+        int maxThreadCount);
+template int ComputeNormals<PointRGBA, NormalT>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        CloudNormal::Ptr outcloud,
+        const float radius,
+        const bool useKnn,  // true if use knn, false if radius search
+        bool normalConsistency,
+        int maxThreadCount);
+template int ComputeNormals<PointT, PointNT>(
+        const PointCloudT::ConstPtr inCloud,
+        PointCloudNormal::Ptr outcloud,
+        const float radius,
+        const bool useKnn,  // true if use knn, false if radius search
+        bool normalConsistency,
+        int maxThreadCount);
+template int ComputeNormals<PointRGB, PointNT>(
+        const PointCloudRGB::ConstPtr inCloud,
+        PointCloudNormal::Ptr outcloud,
+        const float radius,
+        const bool useKnn,  // true if use knn, false if radius search
+        bool normalConsistency,
+        int maxThreadCount);
+template int ComputeNormals<PointRGBA, PointNT>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        PointCloudNormal::Ptr outcloud,
+        const float radius,
+        const bool useKnn,  // true if use knn, false if radius search
+        bool normalConsistency,
+        int maxThreadCount);
+
+template int RemoveOutliersStatistical<PCLCloud>(
+        const PCLCloud::ConstPtr inCloud,
+        PCLCloud::Ptr outCloud,
+        int knn,
+        double nSigma);
+
+template int GetConvexHullReconstruction<PointT>(
+        const PointCloudT::ConstPtr inCloud, PCLMesh &outMesh, int dimension);
+template int GetConvexHullReconstruction<PointRGB>(
+        const PointCloudRGB::ConstPtr inCloud, PCLMesh &outMesh, int dimension);
+template int GetConcaveHullReconstruction<PointT>(
+        const PointCloudT::ConstPtr inCloud,
+        PCLMesh &outMesh,
+        int dimension /* = 3*/,
+        float alpha /* = 0.05*/);
+template int GetConcaveHullReconstruction<PointRGB>(
+        const PointCloudRGB::ConstPtr inCloud,
+        PCLMesh &outMesh,
+        int dimension /* = 3*/,
+        float alpha /* = 0.05*/);
+
+template int CropHullFilter<PointT>(const PointCloudT::ConstPtr inCloud,
+                                    const PointCloudT::ConstPtr boundingBox,
+                                    PointCloudT::Ptr outCloud,
+                                    int dimensions);
+template int CropHullFilter<PointRGB>(const PointCloudRGB::ConstPtr inCloud,
+                                      const PointCloudT::ConstPtr boundingBox,
+                                      PointCloudRGB::Ptr outCloud,
+                                      int dimensions);
+
+template int NurbsSurfaceFitting<PointT>(const PointCloudT::ConstPtr inCloud,
+                                         const NurbsParameters &nurbsParams,
+                                         PCLMesh &outMesh,
+                                         PointCloudRGB::Ptr outCurve);
+template int NurbsSurfaceFitting<PointRGB>(
+        const PointCloudRGB::ConstPtr inCloud,
+        const NurbsParameters &nurbsParams,
+        PCLMesh &outMesh,
+        PointCloudRGB::Ptr outCurve);
+
+template int BSplineCurveFitting3D<PointT>(const PointCloudT::ConstPtr inCloud,
+                                           PointCloudRGB::Ptr outCurve,
+                                           int order,
+                                           int controlPointsNum,
+                                           unsigned curveResolution,
+                                           double smoothness,
+                                           double rScale,
+                                           bool closed);
+template int BSplineCurveFitting3D<PointRGB>(
+        const PointCloudRGB::ConstPtr inCloud,
+        PointCloudRGB::Ptr outCurve,
+        int order,
+        int controlPointsNum,
+        unsigned curveResolution,
+        double smoothness,
+        double rScale,
+        bool closed);
+template int BSplineCurveFitting2D<PointT>(
+        const PointCloudT::ConstPtr inCloud,
+        const CurveFittingMethod &fittingMethod,
+        PointCloudRGB::Ptr outCurve,
+        int order,
+        int controlPointsNum,
+        unsigned curveResolution,
+        double smoothness,
+        double rScale,
+        bool closed);
+template int BSplineCurveFitting2D<PointRGB>(
+        const PointCloudRGB::ConstPtr inCloud,
+        const CurveFittingMethod &fittingMethod,
+        PointCloudRGB::Ptr outCurve,
+        int order,
+        int controlPointsNum,
+        unsigned curveResolution,
+        double smoothness,
+        double rScale,
+        bool closed);
+
+template int EuclideanCluster<PointT>(
+        const PointCloudT::ConstPtr inCloud,
+        std::vector<pcl::PointIndices> &cluster_indices,
+        float clusterTolerance /* = 0.02*/,
+        int minClusterSize /* = 100*/,
+        int maxClusterSize /* = 250000*/);
+template int EuclideanCluster<PointNT>(
+        const PointCloudNormal::ConstPtr inCloud,
+        std::vector<pcl::PointIndices> &cluster_indices,
+        float clusterTolerance /* = 0.02*/,
+        int minClusterSize /* = 100*/,
+        int maxClusterSize /* = 250000*/);
+
+template int ProgressiveMpFilter<PointT>(const PointCloudT::ConstPtr inCloud,
+                                         pcl::PointIndicesPtr groundIndices,
+                                         int maxWindowSize,
+                                         float slope,
+                                         float initialDistance,
+                                         float maxDistance);
+template int ProgressiveMpFilter<PointRGB>(
+        const PointCloudRGB::ConstPtr inCloud,
+        pcl::PointIndicesPtr groundIndices,
+        int maxWindowSize,
+        float slope,
+        float initialDistance,
+        float maxDistance);
+
+template int ConditionalRemovalFilter<PointNT>(
+        const PointCloudNormal::ConstPtr inCloud,
+        const ConditionParameters &params,
+        PointCloudNormal::Ptr outCloud,
+        bool keepOrganized);
+
+template int SmoothMls<PointT, PointNT>(const PointCloudT::ConstPtr &inCloud,
+                                        const MLSParameters &params,
+                                        PointCloudNormal::Ptr &outcloud
+#ifdef LP_PCL_PATCH_ENABLED
+                                        ,
+                                        pcl::PointIndicesPtr &used_ids
+#endif
+);
+
+template int EstimateSIFT<pcl::PointXYZI, PointT>(
+        const pcl::PointCloud<pcl::PointXYZI>::ConstPtr inCloud,
+        PointCloudT::Ptr outcloud,
+        int nr_octaves,
+        float min_scale,
+        int nr_scales_per_octave,
+        float min_contrast);
+template int EstimateSIFT<PointRGB, PointT>(
+        const PointCloudRGB::ConstPtr inCloud,
+        PointCloudT::Ptr outcloud,
+        int nr_octaves,
+        float min_scale,
+        int nr_scales_per_octave,
+        float min_contrast);
+template int EstimateSIFT<PointRGBA, PointT>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        PointCloudT::Ptr outcloud,
+        int nr_octaves,
+        float min_scale,
+        int nr_scales_per_octave,
+        float min_contrast);
+
+template int EstimateShot<PointT, NormalT, pcl::SHOT352>(
+        const PointCloudT::ConstPtr inCloud,
+        const PointCloudT::ConstPtr keyPoints,
+        const CloudNormal::ConstPtr normals,
+        pcl::PointCloud<pcl::SHOT352>::Ptr outDescriptors,
+        float searchRadius,
+        int maxThreadCount);
+template int EstimateShot<PointRGB, NormalT, pcl::SHOT352>(
+        const PointCloudRGB::ConstPtr inCloud,
+        const PointCloudRGB::ConstPtr keyPoints,
+        const CloudNormal::ConstPtr normals,
+        pcl::PointCloud<pcl::SHOT352>::Ptr outDescriptors,
+        float searchRadius,
+        int maxThreadCount);
+template int EstimateShot<PointRGBA, NormalT, pcl::SHOT352>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        const PointCloudRGBA::ConstPtr keyPoints,
+        const CloudNormal::ConstPtr normals,
+        pcl::PointCloud<pcl::SHOT352>::Ptr outDescriptors,
+        float searchRadius,
+        int maxThreadCount);
+
+template int DONEstimation<PointT, PointNT, PointNT>(
+        const PointCloudT::ConstPtr inCloud,
+        const PointCloudNormal::ConstPtr normalsLargeScale,
+        const PointCloudNormal::ConstPtr normalsSmallScale,
+        PointCloudNormal::Ptr outCloud);
+template int DONEstimation<PointRGB, PointNT, PointNT>(
+        const PointCloudRGB::ConstPtr inCloud,
+        const PointCloudNormal::ConstPtr normalsLargeScale,
+        const PointCloudNormal::ConstPtr normalsSmallScale,
+        PointCloudNormal::Ptr outCloud);
+
+template int EstimateLocalReferenceFrame<PointT, NormalT, pcl::ReferenceFrame>(
+        const PointCloudT::ConstPtr inCloud,
+        const PointCloudT::ConstPtr keyPoints,
+        const CloudNormal::ConstPtr normals,
+        pcl::PointCloud<pcl::ReferenceFrame>::Ptr outRF,
+        float searchRadius);
+template int
+EstimateLocalReferenceFrame<PointRGB, NormalT, pcl::ReferenceFrame>(
+        const PointCloudRGB::ConstPtr inCloud,
+        const PointCloudRGB::ConstPtr keyPoints,
+        const CloudNormal::ConstPtr normals,
+        pcl::PointCloud<pcl::ReferenceFrame>::Ptr outRF,
+        float searchRadius);
+template int
+EstimateLocalReferenceFrame<PointRGBA, NormalT, pcl::ReferenceFrame>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        const PointCloudRGBA::ConstPtr keyPoints,
+        const CloudNormal::ConstPtr normals,
+        pcl::PointCloud<pcl::ReferenceFrame>::Ptr outRF,
+        float searchRadius);
+
+template int EstimateHough3DGrouping<PointT,
+                                     PointT,
+                                     pcl::ReferenceFrame,
+                                     pcl::ReferenceFrame>(
+        const PointCloudT::ConstPtr modelKeypoints,
+        const PointCloudT::ConstPtr sceneKeypoints,
+        const pcl::PointCloud<pcl::ReferenceFrame>::ConstPtr modelRF,
+        const pcl::PointCloud<pcl::ReferenceFrame>::ConstPtr sceneRF,
+        const pcl::CorrespondencesConstPtr modelSceneCorrs,
+        std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>
+                &rotoTranslations,
+        std::vector<pcl::Correspondences> &clusteredCorrs,
+        float houghBinSize,
+        float houghThreshold);
+template int EstimateHough3DGrouping<PointRGB,
+                                     PointRGB,
+                                     pcl::ReferenceFrame,
+                                     pcl::ReferenceFrame>(
+        const PointCloudRGB::ConstPtr modelKeypoints,
+        const PointCloudRGB::ConstPtr sceneKeypoints,
+        const pcl::PointCloud<pcl::ReferenceFrame>::ConstPtr modelRF,
+        const pcl::PointCloud<pcl::ReferenceFrame>::ConstPtr sceneRF,
+        const pcl::CorrespondencesConstPtr modelSceneCorrs,
+        std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>
+                &rotoTranslations,
+        std::vector<pcl::Correspondences> &clusteredCorrs,
+        float houghBinSize,
+        float houghThreshold);
+template int EstimateHough3DGrouping<PointRGBA,
+                                     PointRGBA,
+                                     pcl::ReferenceFrame,
+                                     pcl::ReferenceFrame>(
+        const PointCloudRGBA::ConstPtr modelKeypoints,
+        const PointCloudRGBA::ConstPtr sceneKeypoints,
+        const pcl::PointCloud<pcl::ReferenceFrame>::ConstPtr modelRF,
+        const pcl::PointCloud<pcl::ReferenceFrame>::ConstPtr sceneRF,
+        const pcl::CorrespondencesConstPtr modelSceneCorrs,
+        std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>
+                &rotoTranslations,
+        std::vector<pcl::Correspondences> &clusteredCorrs,
+        float houghBinSize,
+        float houghThreshold);
+
+template int EstimateGeometricConsistencyGrouping<PointT, PointT>(
+        const PointCloudT::ConstPtr modelKeypoints,
+        const PointCloudT::ConstPtr sceneKeypoints,
+        const pcl::CorrespondencesConstPtr modelSceneCorrs,
+        std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>
+                &rotoTranslations,
+        std::vector<pcl::Correspondences> &clusteredCorrs,
+        float gcSize,
+        float gcThreshold);
+template int EstimateGeometricConsistencyGrouping<PointRGB, PointRGB>(
+        const PointCloudRGB::ConstPtr modelKeypoints,
+        const PointCloudRGB::ConstPtr sceneKeypoints,
+        const pcl::CorrespondencesConstPtr modelSceneCorrs,
+        std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>
+                &rotoTranslations,
+        std::vector<pcl::Correspondences> &clusteredCorrs,
+        float gcSize,
+        float gcThreshold);
+template int EstimateGeometricConsistencyGrouping<PointRGBA, PointRGBA>(
+        const PointCloudRGBA::ConstPtr modelKeypoints,
+        const PointCloudRGBA::ConstPtr sceneKeypoints,
+        const pcl::CorrespondencesConstPtr modelSceneCorrs,
+        std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>
+                &rotoTranslations,
+        std::vector<pcl::Correspondences> &clusteredCorrs,
+        float gcSize,
+        float gcThreshold);
+
+template int EstimateHarris3D<PointT>(
+        const PointCloudT::ConstPtr inCloud,
+        pcl::PointCloud<pcl::PointXYZI>::Ptr outcloud,
+        float normalRadius,
+        float searchRadius);
+template int EstimateHarris3D<PointRGB>(
+        const PointCloudRGB::ConstPtr inCloud,
+        pcl::PointCloud<pcl::PointXYZI>::Ptr outcloud,
+        float normalRadius,
+        float searchRadius);
+template int EstimateHarris3D<PointRGBA>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        pcl::PointCloud<pcl::PointXYZI>::Ptr outcloud,
+        float normalRadius,
+        float searchRadius);
+
+template int GetUniformSampling<PointT>(const PointCloudT::ConstPtr inCloud,
+                                        PointCloudT::Ptr outcloud,
+                                        const float &searchRadius);
+template int GetUniformSampling<PointRGB>(const PointCloudRGB::ConstPtr inCloud,
+                                          PointCloudRGB::Ptr outcloud,
+                                          const float &searchRadius);
+template int GetUniformSampling<PointRGBA>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        PointCloudRGBA::Ptr outcloud,
+        const float &searchRadius);
+
+template int PassThroughFilter<PointT>(const PointCloudT::ConstPtr inCloud,
+                                       PointCloudT::Ptr outcloud,
+                                       const QString &filterFieldName,
+                                       const float &limit_min,
+                                       const float &limit_max);
+template int PassThroughFilter<PointRGB>(const PointCloudRGB::ConstPtr inCloud,
+                                         PointCloudRGB::Ptr outcloud,
+                                         const QString &filterFieldName,
+                                         const float &limit_min,
+                                         const float &limit_max);
+template int PassThroughFilter<PointRGBA>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        PointCloudRGBA::Ptr outcloud,
+        const QString &filterFieldName,
+        const float &limit_min,
+        const float &limit_max);
+
+template int VoxelGridFilter<PointT>(const PointCloudT::ConstPtr inCloud,
+                                     PointCloudT::Ptr outcloud,
+                                     const float &leafSizeX,
+                                     const float &leafSizeY,
+                                     const float &leafSizeZ);
+template int VoxelGridFilter<PointRGB>(const PointCloudRGB::ConstPtr inCloud,
+                                       PointCloudRGB::Ptr outcloud,
+                                       const float &leafSizeX,
+                                       const float &leafSizeY,
+                                       const float &leafSizeZ);
+template int VoxelGridFilter<PointRGBA>(const PointCloudRGBA::ConstPtr inCloud,
+                                        PointCloudRGBA::Ptr outcloud,
+                                        const float &leafSizeX,
+                                        const float &leafSizeY,
+                                        const float &leafSizeZ);
+
+template int ExtractIndicesFilter<PointT>(
+        const PointCloudT::ConstPtr inCloud,
+        const pcl::PointIndices::ConstPtr inliers,
+        PointCloudT::Ptr outcloud,
+        PointCloudT::Ptr outcloud2);
+template int ExtractIndicesFilter<PointRGB>(
+        const PointCloudRGB::ConstPtr inCloud,
+        const pcl::PointIndices::ConstPtr inliers,
+        PointCloudRGB::Ptr outcloud,
+        PointCloudRGB::Ptr outcloud2);
+template int ExtractIndicesFilter<PointRGBA>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        const pcl::PointIndices::ConstPtr inliers,
+        PointCloudRGBA::Ptr outcloud,
+        PointCloudRGBA::Ptr outcloud2);
+
+template int GetMinCutSegmentation<PointT>(
+        const PointCloudT::ConstPtr inCloud,
+        std::vector<pcl::PointIndices> &outClusters,
+        PointCloudRGB::Ptr cloud_segmented,
+        const PointT foregroundPoint,
+        int neighboursNumber,
+        float smoothSigma,
+        float backWeightRadius,
+        float foreWeight,
+        const pcl::IndicesConstPtr indices);
+
+template int GetMinCutSegmentation<PointRGB>(
+        const PointCloudRGB::ConstPtr inCloud,
+        std::vector<pcl::PointIndices> &outClusters,
+        PointCloudRGB::Ptr cloud_segmented,
+        const PointRGB foregroundPoint,
+        int neighboursNumber,
+        float smoothSigma,
+        float backWeightRadius,
+        float foreWeight,
+        const pcl::IndicesConstPtr indices);
+
+template int GetBoundaryCloud<PointT, NormalT>(
+        const PointCloudT::ConstPtr inCloud,
+        const CloudNormal::ConstPtr normals,
+        PointCloudT::Ptr boundaryCloud,
+        const float angleThreshold,
+        const float radius,
+        const bool useKnn);
+template int GetBoundaryCloud<PointT, PointNT>(
+        const PointCloudT::ConstPtr inCloud,
+        const PointCloudNormal::ConstPtr normals,
+        PointCloudT::Ptr boundaryCloud,
+        const float angleThreshold,
+        const float radius,
+        const bool useKnn);
+template int GetBoundaryCloud<PointRGBA, NormalT>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        const CloudNormal::ConstPtr normals,
+        PointCloudRGBA::Ptr boundaryCloud,
+        const float angleThreshold,
+        const float radius,
+        const bool useKnn);
+template int GetBoundaryCloud<PointRGBA, PointNT>(
+        const PointCloudRGBA::ConstPtr inCloud,
+        const PointCloudNormal::ConstPtr normals,
+        PointCloudRGBA::Ptr boundaryCloud,
+        const float angleThreshold,
+        const float radius,
+        const bool useKnn);
+
+template bool ICPRegistration<PointT, PointT>(
+        const PointCloudT::ConstPtr targetCloud,
+        const PointCloudT::ConstPtr sourceCloud,
+        PointCloudT::Ptr outRegistered,
+        int ipcMaxIterations,
+        float icpCorrDistance);
+template bool ICPRegistration<PointRGB, PointRGB>(
+        const PointCloudRGB::ConstPtr targetCloud,
+        const PointCloudRGB::ConstPtr sourceCloud,
+        PointCloudRGB::Ptr outRegistered,
+        int ipcMaxIterations,
+        float icpCorrDistance);
+
+//	template int GetHypothesesVerification<PointT, PointT>(
+//		const PointCloudT::Ptr sceneCloud,
+//		std::vector<PointCloudT::ConstPtr> modelClouds,
+//		std::vector<bool> &hypothesesMask,
+//		float clusterReg,
+//		float inlierThreshold,
+//		float occlusionThreshold,
+//		float radiusClutter,
+//		float regularizer,
+//		float radiusNormals,
+//		bool detectClutter);
+//	template int GetHypothesesVerification<PointRGB, PointRGB>(
+//		const PointCloudRGB::Ptr sceneCloud,
+//		std::vector<PointCloudRGB::ConstPtr> modelClouds,
+//		std::vector<bool> &hypothesesMask,
+//		float clusterReg,
+//		float inlierThreshold,
+//		float occlusionThreshold,
+//		float radiusClutter,
+//		float regularizer,
+//		float radiusNormals,
+//		bool detectClutter);
+}  // namespace PCLModules

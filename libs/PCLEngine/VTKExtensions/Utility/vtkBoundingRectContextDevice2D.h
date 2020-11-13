@@ -48,13 +48,14 @@
 #ifndef vtkBoundingRectContextDevice2D_h
 #define vtkBoundingRectContextDevice2D_h
 
+#include "qPCL.h"
 
 #include "vtkContextDevice2D.h"
 
 class vtkAbstractContextItem;
 
-class vtkBoundingRectContextDevice2D : public vtkContextDevice2D
-{
+class QPCL_ENGINE_LIB_API vtkBoundingRectContextDevice2D
+    : public vtkContextDevice2D {
 public:
   vtkTypeMacro(vtkBoundingRectContextDevice2D, vtkContextDevice2D) void PrintSelf(
     ostream& os, vtkIndent indent) override;

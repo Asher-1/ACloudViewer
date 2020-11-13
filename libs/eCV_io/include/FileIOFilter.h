@@ -54,7 +54,7 @@ enum CC_FILE_ERROR {
 /** Gives static access to file loader.
 	Must be implemented by any specific I/O filter.
 **/
-class ECV_DB_LIB_API FileIOFilter
+class FileIOFilter
 {
 public:
 	virtual ~FileIOFilter() = default;

@@ -35,6 +35,8 @@
 #ifndef vtkScalarBarActorCustom_h
 #define vtkScalarBarActorCustom_h
 
+#include "qPCL.h"
+
 #include "vtkScalarBarActor.h"
 
 #include "vtkNew.h"          // For ivars
@@ -44,8 +46,7 @@
 class vtkAxis;
 class vtkContextScene;
 
-class vtkScalarBarActorCustom : public vtkScalarBarActor
-{
+class QPCL_ENGINE_LIB_API vtkScalarBarActorCustom : public vtkScalarBarActor {
 public:
   vtkTypeMacro(vtkScalarBarActorCustom, vtkScalarBarActor);
   void PrintSelf(ostream& os, vtkIndent indent) override;

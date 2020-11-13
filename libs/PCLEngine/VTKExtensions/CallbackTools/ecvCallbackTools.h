@@ -18,6 +18,8 @@
 #ifndef QPCL_CALLBACK_TOOLS_HEADER
 #define QPCL_CALLBACK_TOOLS_HEADER
 
+#include "qPCL.h"
+
 // LOCAL
 #include "VtkUtils/abstractwidgetobserver.h"
 
@@ -35,7 +37,7 @@ class vtkTransform;
 // Implicit Plane callback class
 namespace CallbackTools
 {
-	class vtkIPWCallback : public VtkUtils::AbstractWidgetObserver
+	class QPCL_ENGINE_LIB_API vtkIPWCallback : public VtkUtils::AbstractWidgetObserver
 	{
 	public:
 		static vtkIPWCallback *New()
@@ -51,7 +53,7 @@ namespace CallbackTools
 	};
 
 	// box callback class
-	class vtkBoxCallback :public VtkUtils::AbstractWidgetObserver
+	class QPCL_ENGINE_LIB_API vtkBoxCallback : public VtkUtils::AbstractWidgetObserver
 	{
 		Q_OBJECT
 	public:
@@ -72,7 +74,7 @@ namespace CallbackTools
 	};
 
 	// box callback2 class
-	class vtkBoxCallback2 :public VtkUtils::AbstractWidgetObserver
+    class QPCL_ENGINE_LIB_API vtkBoxCallback2 : public VtkUtils::AbstractWidgetObserver
 	{
 	public:
 		static vtkBoxCallback2* New()
@@ -90,9 +92,8 @@ namespace CallbackTools
 		vtkSmartPointer<vtkActor> m_actor;
 	};
 
-
 	// angle callback class
-	class vtkAngleCallBack : public VtkUtils::AbstractWidgetObserver
+    class QPCL_ENGINE_LIB_API vtkAngleCallBack : public VtkUtils::AbstractWidgetObserver
 	{
 	public:
 		static vtkAngleCallBack *New()

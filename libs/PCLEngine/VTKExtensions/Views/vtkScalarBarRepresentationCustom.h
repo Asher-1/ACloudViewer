@@ -33,10 +33,12 @@
 #ifndef vtkScalarBarRepresentationCustom_h
 #define vtkScalarBarRepresentationCustom_h
 
+#include "qPCL.h"
+
 #include "vtkScalarBarRepresentation.h"
 
-class vtkScalarBarRepresentationCustom : public vtkScalarBarRepresentation
-{
+class QPCL_ENGINE_LIB_API vtkScalarBarRepresentationCustom
+    : public vtkScalarBarRepresentation {
 public:
   vtkTypeMacro(vtkScalarBarRepresentationCustom, vtkScalarBarRepresentation) void PrintSelf(
     ostream& os, vtkIndent indent) override;

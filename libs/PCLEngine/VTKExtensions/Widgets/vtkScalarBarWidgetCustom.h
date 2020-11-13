@@ -33,11 +33,12 @@
 #ifndef vtkPVScalarBarRepresentationCustom_h
 #define vtkPVScalarBarRepresentationCustom_h
 
+#include "qPCL.h"
+
 #include "vtkScalarBarWidget.h"
 #include "vtkScalarBarRepresentation.h"
 
-class vtkScalarBarWidgetCustom : public vtkScalarBarWidget
-{
+class QPCL_ENGINE_LIB_API vtkScalarBarWidgetCustom : public vtkScalarBarWidget {
 public:
 	static vtkScalarBarWidgetCustom* New();
 	vtkTypeMacro(vtkScalarBarWidgetCustom, vtkBorderWidget);
