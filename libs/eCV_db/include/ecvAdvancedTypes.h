@@ -29,12 +29,12 @@
 ***************************************************/
 
 //! Array of compressed 3D normals (single index)
-class ECV_DB_LIB_API NormsIndexesTableType : public ccArray<CompressedNormType, 1, CompressedNormType>
+class NormsIndexesTableType : public ccArray<CompressedNormType, 1, CompressedNormType>
 {
 public:
 	//! Default constructor
-	NormsIndexesTableType() : ccArray<CompressedNormType, 1, CompressedNormType>("Compressed normals") {}
-	virtual ~NormsIndexesTableType() = default;
+    ECV_DB_LIB_API NormsIndexesTableType();
+    ~NormsIndexesTableType() override = default;
 	
 	//inherited from ccArray/ccHObject
 	CV_CLASS_ENUM getClassID() const override { return CV_TYPES::NORMAL_INDEXES_ARRAY; }
@@ -54,11 +54,11 @@ public:
 	}
 
 	//inherited from ccHObject/ccArray
-	bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    ECV_DB_LIB_API bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
 };
 
 //! Array of (uncompressed) 3D normals (Nx,Ny,Nz)
-class ECV_DB_LIB_API NormsTableType : public ccArray<CCVector3, 3,PointCoordinateType>
+class NormsTableType : public ccArray<CCVector3, 3,PointCoordinateType>
 {
 public:
 	//! Default constructor
@@ -84,7 +84,7 @@ public:
 };
 
 //! Array of RGB colors for each point
-class ECV_DB_LIB_API ColorsTableType : public ccArray<ecvColor::Rgb, 3, ColorCompType>
+class ColorsTableType : public ccArray<ecvColor::Rgb, 3, ColorCompType>
 {
 public:
 	//! Default constructor
@@ -109,8 +109,36 @@ public:
 	}
 };
 
+//! Array of RGBA colors for each point
+class RGBAColorsTableType : public ccArray<ecvColor::Rgba, 4, ColorCompType> {
+public:
+    //! Default constructor
+    RGBAColorsTableType()
+        : ccArray<ecvColor::Rgba, 4, ColorCompType>("RGBA colors") {}
+    virtual ~RGBAColorsTableType() = default;
+
+    // inherited from ccArray/ccHObject
+    CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::RGBA_COLOR_ARRAY;
+    }
+
+    //! Duplicates array (overloaded from ccArray::clone)
+    RGBAColorsTableType* clone() override {
+        RGBAColorsTableType* cloneArray = new RGBAColorsTableType();
+        if (!copy(*cloneArray)) {
+            CVLog::Warning(
+                    "[RGBAColorsTableType::clone] Failed to clone array (not "
+                    "enough memory)");
+            cloneArray->release();
+            return nullptr;
+        }
+        cloneArray->setName(getName());
+        return cloneArray;
+    }
+};
+
 //! 2D texture coordinates
-struct ECV_DB_LIB_API TexCoords2D
+struct TexCoords2D
 {
 	TexCoords2D() : tx(-1.0f), ty(-1.0f) {}
 	TexCoords2D(float x, float y) : tx(x), ty(y) {}
@@ -126,7 +154,7 @@ struct ECV_DB_LIB_API TexCoords2D
 };
 
 //! Array of 2D texture coordinates
-class ECV_DB_LIB_API TextureCoordsContainer : public ccArray<TexCoords2D, 2, float>
+class TextureCoordsContainer : public ccArray<TexCoords2D, 2, float>
 {
 public:
 	//! Default constructor

@@ -20,7 +20,6 @@
 
 //ECV_DB_LIB
 #include <ecvHObject.h>
-#include <ecvHObjectCaster.h>
 
 //Local
 #include "ecvGlobalShiftManager.h"

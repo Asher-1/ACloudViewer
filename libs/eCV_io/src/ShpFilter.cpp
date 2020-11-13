@@ -25,13 +25,14 @@
 #include "ShpDBFFields.h"
 
 //ECV_DB_LIB
+#include <ecvMesh.h>
 #include <ecvPolyline.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvGenericMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 #include <ecvProgressDialog.h>
-#include <ecvMesh.h>
+#include <ecvHObjectCaster.h>
 
 //Qt
 #include <QFileInfo>

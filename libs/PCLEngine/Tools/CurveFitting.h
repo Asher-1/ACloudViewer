@@ -27,18 +27,14 @@
 #include <CVLog.h>
 #include <CVConst.h>
 
-// ECV_DB_LIB
-#include <ecvPolyline.h>
-#include <ecvPointCloud.h>
-
 #include <vector>
 
-//class ccPolyline;
-//class ccPointCloud;
+class ccPolyline;
+class ccPointCloud;
 
 namespace CurveFittingTool
 {
-    static ccPolyline* BsplineFitting(const ccPointCloud& cloud);
+	ccPolyline * BsplineFitting(const ccPointCloud &cloud);
 
 	class QPCL_ENGINE_LIB_API CurveFitting
 	{

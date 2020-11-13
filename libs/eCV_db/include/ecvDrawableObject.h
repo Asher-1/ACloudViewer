@@ -27,7 +27,7 @@
 
 
 //! Simple (clipping) plane equation
-struct ECV_DB_LIB_API ccClipPlane
+struct ccClipPlane
 {
 	Tuple4Tpl<double> equation;
 };

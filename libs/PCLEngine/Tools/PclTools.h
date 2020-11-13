@@ -19,13 +19,12 @@
 #define QPCL_PCLTOOLS_HEADER
 
 // LOCAL
-#include "../qPCL.h"
-#include "../PclUtils/PCLConv.h"
-#include "../PclUtils/PCLCloud.h"
+#include "qPCL.h"
+#include "PclUtils/PCLConv.h"
+#include "PclUtils/PCLCloud.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
-#include <vector>
 
 // ECV_DB_LIB
 #include <ecvDrawContext.h>
@@ -72,9 +71,9 @@ namespace PclTools
 		* \param[in] use_scalars set scalar properties to the mapper if it exists in the data. Default: true.
 		*/
 	void CreateActorFromVTKDataSet (const vtkSmartPointer<vtkDataSet> &data,
-								vtkSmartPointer<vtkLODActor> &actor,
-								bool use_scalars = true,
-								bool use_vbos = false);
+									vtkSmartPointer<vtkLODActor> &actor,
+									bool use_scalars = true,
+									bool use_vbos = false);
 
 	/** \brief Allocate a new unstructured grid smartpointer. For internal use only.
 	  * \param[out] polydata the resultant unstructured grid.

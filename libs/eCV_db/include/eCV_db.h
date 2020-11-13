@@ -26,4 +26,5 @@
 #else
 #  define ECV_DB_LIB_API Q_DECL_IMPORT
 #endif
+
 #endif // ECV_DB_HEADER

@@ -35,7 +35,7 @@ namespace CVLib
 
 	Invalid values can be represented by NAN_VALUE.
 **/
-class CV_CORE_LIB_API ScalarField : public std::vector<ScalarType>, public CCShareable
+class ScalarField : public std::vector<ScalarType>, public CCShareable
 {
 public:
 
@@ -43,16 +43,16 @@ public:
 	/** [SHAREABLE] Call 'link' when associating this structure to an object.
 		\param name scalar field name
 	**/
-	explicit ScalarField(const char* name = nullptr);
+    CV_CORE_LIB_API explicit ScalarField(const char* name = nullptr);
 
 	//! Copy constructor
 	/** \param sf scalar field to copy
 		\warning May throw a std::bad_alloc exception
 	**/
-	ScalarField(const ScalarField& sf);
+    CV_CORE_LIB_API ScalarField(const ScalarField& sf);
 
 	//! Sets scalar field name
-	void setName(const char* name);
+    CV_CORE_LIB_API void setName(const char* name);
 
 	//! Returns scalar field name
 	inline const char* getName() const { return m_name; }
@@ -64,10 +64,11 @@ public:
 	/** \param mean a field to store the mean value
 		\param variance if not void, the variance will be computed and stored here
 	**/
-	void computeMeanAndVariance(ScalarType &mean, ScalarType* variance = nullptr) const;
+    CV_CORE_LIB_API void computeMeanAndVariance(
+            ScalarType& mean, ScalarType* variance = nullptr) const;
 
 	//! Determines the min and max values
-	virtual void computeMinAndMax();
+    CV_CORE_LIB_API virtual void computeMinAndMax();
 
 	//! Returns whether a scalar value is valid or not
 	static inline bool ValidValue(ScalarType value) { return value == value; } //'value == value' fails for NaN values
@@ -84,9 +85,11 @@ public:
 	inline void fill(ScalarType fillValue = 0) { if (empty()) resize(capacity(), fillValue); else std::fill(begin(), end(), fillValue); }
 
 	//! Reserves memory (no exception thrown)
-	bool reserveSafe(std::size_t count);
+    CV_CORE_LIB_API bool reserveSafe(std::size_t count);
 	//! Resizes memory (no exception thrown)
-	bool resizeSafe(std::size_t count, bool initNewElements = false, ScalarType valueForNewElements = 0);
+    CV_CORE_LIB_API bool resizeSafe(std::size_t count,
+                                    bool initNewElements = false,
+                                    ScalarType valueForNewElements = 0);
 
 	//Shortcuts (for backward compatibility)
 	inline ScalarType& getValue(std::size_t index) { return at(index); }
@@ -101,7 +104,7 @@ public: //methods
 	//! Default destructor
 	/** Call release instead.
 	**/
-	~ScalarField() override = default;
+    CV_CORE_LIB_API ~ScalarField() override = default;
 
 protected: //members
 
@@ -113,6 +116,30 @@ protected: //members
 	//! Maximum value
 	ScalarType m_maxVal;
 };
+
+inline void ScalarField::computeMinAndMax() {
+    if (!empty()) {
+        bool minMaxInitialized = false;
+        for (std::size_t i = 0; i < size(); ++i) {
+            const ScalarType& val = at(i);
+            if (ValidValue(val)) {
+                if (minMaxInitialized) {
+                    if (val < m_minVal)
+                        m_minVal = val;
+                    else if (val > m_maxVal)
+                        m_maxVal = val;
+                } else {
+                    // first valid value is used to init min and max
+                    m_minVal = m_maxVal = val;
+                    minMaxInitialized = true;
+                }
+            }
+        }
+    } else  // particular case: no value
+    {
+        m_minVal = m_maxVal = 0;
+    }
+}
 
 }
 

@@ -18,6 +18,7 @@
 #include <ecvNormalVectors.h>
 #include <ecvProgressDialog.h>
 #include <ecvVolumeCalcTool.h>
+#include <ecvHObjectCaster.h>
 
 //qCC_io
 #include <AsciiFilter.h>
