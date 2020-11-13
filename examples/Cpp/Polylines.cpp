@@ -30,8 +30,9 @@
 
 #include "CloudViewer.h"
 
-#include <FileIOFilter.h>
 #include <ecvPolyline.h>
+#include <FileIOFilter.h>
+#include <ecvHObjectCaster.h>
 
 using namespace cloudViewer;
 void testFromFile(const std::string& filename)

@@ -23,7 +23,6 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/CVTools.h
 		${CMAKE_CURRENT_LIST_DIR}/CVTypes.h
 		${CMAKE_CURRENT_LIST_DIR}/CVPointCloud.h
-		${CMAKE_CURRENT_LIST_DIR}/CVWidgetsInterface.h
 		${CMAKE_CURRENT_LIST_DIR}/Delaunay2dMesh.h
 		${CMAKE_CURRENT_LIST_DIR}/DgmOctree.h
 		${CMAKE_CURRENT_LIST_DIR}/DgmOctreeReferenceCloud.h

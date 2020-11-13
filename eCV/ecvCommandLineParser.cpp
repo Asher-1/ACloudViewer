@@ -11,6 +11,7 @@
 // ECV_DB_LIB
 #include <ecvGenericMesh.h>
 #include <ecvProgressDialog.h>
+#include <ecvHObjectCaster.h>
 
 // ECV_IO_LIB
 #include <AsciiFilter.h>

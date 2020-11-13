@@ -37,6 +37,7 @@
 #include <ecvMesh.h>
 #include <ecvHObject.h>
 #include <ecvPointCloud.h>
+#include <ecvHObjectCaster.h>
 
 // ECV_IO_LIB
 #include <FileIOFilter.h>

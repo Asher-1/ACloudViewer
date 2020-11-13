@@ -33,7 +33,7 @@ class ccHObject;
 class ccScalarField;
 
 //! Display parameters of a 3D entity
-struct ECV_DB_LIB_API glDrawParams
+struct glDrawParams
 {
 	//! Display scalar field (prioritary on colors)
 	bool showSF;
@@ -197,8 +197,7 @@ struct ECV_DB_LIB_API LineWidget {
 };
 
 //! to be removed structure
-struct ECV_DB_LIB_API removeInfo
-{
+struct ECV_DB_LIB_API removeInfo {
 	//! Remove type
 	ENTITY_TYPE removeType;
 	//! Remove viewId
@@ -210,8 +209,7 @@ struct ECV_DB_LIB_API removeInfo
 	}
 };
 
-struct ECV_DB_LIB_API hideInfo
-{
+struct ECV_DB_LIB_API hideInfo {
 	//! Hide type
 	ENTITY_TYPE hideType;
 	//! Hide viewId
@@ -223,8 +221,7 @@ struct ECV_DB_LIB_API hideInfo
 	}
 };
 
-struct ECV_DB_LIB_API TransformInfo
-{
+struct ECV_DB_LIB_API TransformInfo {
 	struct RotateParam {
 		double angle;
 		CCVector3 rotAxis;
@@ -275,8 +272,7 @@ struct ECV_DB_LIB_API TransformInfo
 	void setTranslationEnd(const CCVector3& trans) { isTranslate = true; transVecEnd = trans; }
 };
 
-struct ECV_DB_LIB_API ecvTextParam
-{
+struct ECV_DB_LIB_API ecvTextParam {
 	bool display3D = false;
 	double textScale = 1.0;
 	double opacity = 1.0;
@@ -317,7 +313,7 @@ enum CC_DRAWING_FLAGS
 #define MACRO_VirtualTransEnabled(context) (context.drawingFlags & CC_VIRTUAL_TRANS_ENABLED)
 
 //! Display context
-struct ECV_DB_LIB_API ccGLDrawContext
+struct ccGLDrawContext
 {
 	//! Drawing options (see below)
 	int drawingFlags;
@@ -487,9 +483,7 @@ struct ECV_DB_LIB_API ccGLDrawContext
 
 using CC_DRAW_CONTEXT = ccGLDrawContext;
 
-
-struct ECV_DB_LIB_API WIDGETS_PARAMETER
-{
+struct ECV_DB_LIB_API WIDGETS_PARAMETER {
 public:
 	/*for general*/
     ccHObject* entity;

@@ -38,11 +38,11 @@ option( CVCORELIB_SCALAR_DOUBLE
 if ( CVCORELIB_SHARED )
 	add_library( ${PROJECT_NAME} SHARED )
 
-        set_target_properties( ${PROJECT_NAME}
-                PROPERTIES
-                        CXX_VISIBILITY_PRESET hidden
-                        VISIBILITY_INLINES_HIDDEN 1
-        )
+    set_target_properties( ${PROJECT_NAME}
+            PROPERTIES
+                    CXX_VISIBILITY_PRESET hidden
+                    VISIBILITY_INLINES_HIDDEN 1
+    )
 else()
 	add_library( ${PROJECT_NAME} STATIC )
 
@@ -217,12 +217,7 @@ target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_EIGEN )
 
 CopyDLLToDirectory(${PROJECT_NAME})
 
-if (WIN32)
-    target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_LIBRARY_BUILD )
-else()
-    target_compile_definitions( ${PROJECT_NAME} PRIVATE CV_CORE_LIB_LIBRARY_BUILD )
-endif()
-
+target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_LIBRARY_BUILD )
 
 if ( CVCORELIB_SHARED )
 	InstallSharedLibrary( TARGET ${PROJECT_NAME} )

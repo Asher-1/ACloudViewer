@@ -21,6 +21,7 @@
 #include <CVLog.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
+#include <ecvHObjectCaster.h>
 
 //Qt
 #include <QFile>

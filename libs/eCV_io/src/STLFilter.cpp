@@ -34,6 +34,7 @@
 #include <ecvProgressDialog.h>
 #include <ecvNormalVectors.h>
 #include <ecvOctree.h>
+#include <ecvHObjectCaster.h>
 
 //System
 #include <string.h>
