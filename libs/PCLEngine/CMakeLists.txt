@@ -76,12 +76,12 @@ if (USE_PCL_BACKEND)
 		${TransformTools_list})
 	
 	# PCL VISUALIZATION MODULE
-        if( WIN32 OR UNIX)
-            add_subdirectory(visualization)
-            SET( QPCL_VIS	${CMAKE_CURRENT_SOURCE_DIR}/visualization )
-            file( GLOB_RECURSE PclVis_list 		${QPCL_VIS}/*)
-            source_group("visualization" FILES ${PclVis_list} )
-        endif()
+    if( WIN32 OR UNIX)
+        add_subdirectory(visualization)
+        SET( QPCL_VIS	${CMAKE_CURRENT_SOURCE_DIR}/visualization )
+        file( GLOB_RECURSE PclVis_list 		${QPCL_VIS}/*)
+        source_group("visualization" FILES ${PclVis_list} )
+    endif()
 	
 	# PCL UTILS MODULE
 	SET( QPCL_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/PclUtils )
@@ -120,7 +120,7 @@ if (USE_PCL_BACKEND)
 
 	target_include_directories( ${PROJECT_NAME}
 		PUBLIC
-                    ${PCL_INCLUDE_DIRS}
+            ${PCL_INCLUDE_DIRS}
 	)
 
 	if( CMAKE_VERSION VERSION_LESS 3.13 )
@@ -152,8 +152,8 @@ if (USE_PCL_BACKEND)
 
 	# INTERNAL LIB
 	target_link_libraries( ${PROJECT_NAME}
-                                ECV_DB_LIB
-                                ECV_IO_LIB )
+                            ECV_DB_LIB
+                            ECV_IO_LIB )
 	
 	# Qt & PCL & VTK
 	target_link_libraries(	${PROJECT_NAME} 

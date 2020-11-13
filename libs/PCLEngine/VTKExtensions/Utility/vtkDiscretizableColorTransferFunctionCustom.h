@@ -26,13 +26,15 @@
 #ifndef vtkDiscretizableColorTransferFunctionCustom_h
 #define vtkDiscretizableColorTransferFunctionCustom_h
 
+#include "qPCL.h"
+
 #include "vtkDiscretizableColorTransferFunction.h"
 
 class vtkAbstractArray;
 class vtkDoubleArray;
 class vtkVariantArray;
 
-class vtkDiscretizableColorTransferFunctionCustom
+class QPCL_ENGINE_LIB_API vtkDiscretizableColorTransferFunctionCustom
   : public vtkDiscretizableColorTransferFunction
 {
 public:

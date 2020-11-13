@@ -26,6 +26,7 @@
 #ifndef vtkContext2DScalarBarActor_h
 #define vtkContext2DScalarBarActor_h
 
+#include "qPCL.h"
 #include "vtkScalarBarActor.h"
 
 #include "vtkCoordinate.h"   // for Position and Position 2
@@ -47,8 +48,7 @@ class vtkScalarBarItem;
 class vtkTextProperty;
 class vtkViewport;
 
-class vtkContext2DScalarBarActor : public vtkScalarBarActor
-{
+class QPCL_ENGINE_LIB_API vtkContext2DScalarBarActor : public vtkScalarBarActor {
 public:
   vtkTypeMacro(vtkContext2DScalarBarActor, vtkScalarBarActor);
   void PrintSelf(ostream& os, vtkIndent indent) override;

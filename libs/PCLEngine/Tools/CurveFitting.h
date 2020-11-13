@@ -38,7 +38,7 @@
 
 namespace CurveFittingTool
 {
-    extern ccPolyline* QPCL_ENGINE_LIB_API BsplineFitting(const ccPointCloud& cloud);
+    static ccPolyline* BsplineFitting(const ccPointCloud& cloud);
 
 	class QPCL_ENGINE_LIB_API CurveFitting
 	{

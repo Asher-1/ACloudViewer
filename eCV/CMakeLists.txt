@@ -5,13 +5,13 @@ OPTION( UPDATE_TRANSLATION_FILES "Generate or update ts files" OFF )
 include( CMakePolicies NO_POLICY_SCOPE )
 
 if (MSVC)
-        if (USE_TBB)
+    if (CVCORELIB_USE_TBB)
 		include_directories( ${TBB_INCLUDE_DIRS})
 	endif()
 endif()
 
 if (USE_PCL_BACKEND) 
-#	include_directories( ${PCL_INCLUDE_DIRS} )
+	include_directories( ${PCL_INCLUDE_DIRS} )
 	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
 endif()
 

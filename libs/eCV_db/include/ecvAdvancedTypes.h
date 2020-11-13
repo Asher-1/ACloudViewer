@@ -54,7 +54,7 @@ public:
 	}
 
 	//inherited from ccHObject/ccArray
-	ECV_DB_LIB_API bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+	bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
 };
 
 //! Array of (uncompressed) 3D normals (Nx,Ny,Nz)

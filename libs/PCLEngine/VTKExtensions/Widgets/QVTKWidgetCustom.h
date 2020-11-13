@@ -26,7 +26,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 
 #endif
 
-#include "../../qPCL.h"
+#include "qPCL.h"
 
 // CV_CORE_LIB
 #include <CVGeom.h>
@@ -65,8 +65,7 @@ class VtkWidgetPrivate;
 
 //! Container widget for ccGLWindow
 //class QPCL_ENGINE_LIB_API QVTKWidgetCustom : public QVTKOpenGLNativeWidget
-class QVTKWidgetCustom : public QVTKOpenGLNativeWidget
-{
+class QPCL_ENGINE_LIB_API QVTKWidgetCustom : public QVTKOpenGLNativeWidget {
 	Q_OBJECT
 
 public:
