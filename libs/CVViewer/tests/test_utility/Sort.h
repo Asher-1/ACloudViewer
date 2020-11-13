@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +31,10 @@
 #include <numeric>
 #include <vector>
 
-#include "open3d/utility/Console.h"
+#include "cloudViewer/utility/Console.h"
 #include "tests/test_utility/Compare.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 /// \brief Functor class for comparing Eigen matrices of the same size.
@@ -137,4 +137,4 @@ std::vector<size_t> GetIndicesAToB(
 };
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

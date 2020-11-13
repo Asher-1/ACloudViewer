@@ -36,4 +36,4 @@ void pybind_odometry(py::module &m);
 
 }
 }  // namespace pipelines
-}  // namespace open3d
+}  // namespace cloudViewer

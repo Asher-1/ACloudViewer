@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 // Class for "generating" data.
@@ -93,4 +93,4 @@ template <>
 double Raw::Next();
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

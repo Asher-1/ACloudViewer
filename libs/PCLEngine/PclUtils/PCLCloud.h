@@ -18,16 +18,6 @@
 #ifndef PCL_CLOUD_H
 #define PCL_CLOUD_H
 
-//PCL V1.6 or older
-#ifdef PCL_VER_1_6_OR_OLDER
-
-//#include <sensor_msgs/PointCloud2.h>
-//typedef sensor_msgs::PointCloud2 PCLCloud;
-
-#else //Version 1.7 or newer
-
-#endif
-
 #include <pcl/point_types.h>
 #include <pcl/PolygonMesh.h>
 #include <pcl/TextureMesh.h>

@@ -16,7 +16,7 @@
 //##########################################################################
 
 #include "PcdFilter.h"
-#include "ui_savePcdFileDlg.h"
+#include "ui_savePCDFileDlg.h"
 
 // PclUtils
 #include <PCLConv.h>

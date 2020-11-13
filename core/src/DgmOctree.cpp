@@ -4166,7 +4166,7 @@ bool DgmOctree::rayCast(const CCVector3& rayAxis,
 	//smallest FOV (i.e. nearest point)
 	double smallestOrderDist = -1.0;
 
-#ifdef CC_DEBUG
+#ifdef CV_DEBUG
 	m_theAssociatedCloud->enableScalarField();
 #endif
 
@@ -4234,7 +4234,7 @@ bool DgmOctree::rayCast(const CCVector3& rayAxis,
 			currentBitDec = GET_BIT_SHIFT(level);
 		}
 
-#ifdef CC_DEBUG
+#ifdef CV_DEBUG
 		m_theAssociatedCloud->setPointScalarValue(it->theIndex, level);
 #endif
 
@@ -4253,7 +4253,7 @@ bool DgmOctree::rayCast(const CCVector3& rayAxis,
 				double fov_rad = atan2(sqrt(radialSqDist), sqrt(sqDist));
 				isElligible = (fov_rad <= maxRadiusOrFov);
 				orderDist = fov_rad;
-#ifdef CC_DEBUG
+#ifdef CV_DEBUG
 				//m_theAssociatedCloud->setPointScalarValue(it->theIndex, fov_rad);
 				//m_theAssociatedCloud->setPointScalarValue(it->theIndex, sqrt(sqDist));
 #endif
@@ -4261,7 +4261,7 @@ bool DgmOctree::rayCast(const CCVector3& rayAxis,
 			else
 			{
 				isElligible = (radialSqDist <= maxSqRadius);
-#ifdef CC_DEBUG
+#ifdef CV_DEBUG
 				//m_theAssociatedCloud->setPointScalarValue(it->theIndex, sqrt(radialSqDist));
 #endif
 			}

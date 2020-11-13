@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 // LOCAL
-#include "PythonInterface.h"
+#include "recognition/PythonInterface.h"
 
 // CV_CORE_LIB
 #include <CVTools.h>

@@ -4,7 +4,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
-#include "Utility/Matrix.h"
+#include "utility/Matrix.h"
 
 #include "pybind/cloudViewer_pybind.h"
 

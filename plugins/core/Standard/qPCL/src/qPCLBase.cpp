@@ -15,7 +15,7 @@
 //#                                                                        #
 //##########################################################################
 //
-#include "qPCL.h"
+#include "qPCLBase.h"
 
 // ECV_DB_LIB
 #include <ecvPointCloud.h>

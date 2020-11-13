@@ -105,7 +105,23 @@ public:
 	inline Tuple4Tpl operator * (Type s) const { return Tuple4Tpl(x*s, y*s, z*s, w*s); }
 	//! Division operator
 	inline Tuple4Tpl operator / (Type s) const { return Tuple4Tpl(x/s, y/s, z/s, w/s); }
+
+    //! Direct coordinate access
+    inline Type& operator [] (unsigned i) { return u[i]; }
+    //! Direct coordinate access (const)
+    inline const Type& operator [] (unsigned i) const { return u[i]; }
+    //! Direct coordinate access
+    inline Type& operator () (unsigned i) { return u[i]; }
+    //! Direct coordinate access (const)
+    inline const Type& operator () (unsigned i) const { return u[i]; }
 };
+
+//! Tuple of 4 int values
+using Tuple4i = Tuple4Tpl<int>;
+//! Tuple of 4 float values
+using Tuple4f = Tuple4Tpl<float>;
+//! Tuple of 4 double values
+using Tuple4d = Tuple4Tpl<double>;
 
 //! 3-Tuple structure (templated version)
 template <class Type> class Tuple3Tpl

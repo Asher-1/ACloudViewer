@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "CVCoreLib.h"
+
 #include <cassert>
 #include <functional>
 #include <initializer_list>
@@ -43,7 +45,7 @@
 namespace CVLib {
 namespace utility {
 
-struct in_place_t {
+struct CV_CORE_LIB_API in_place_t {
     explicit in_place_t() = default;
 };
 
@@ -145,18 +147,18 @@ constexpr U convert(U v) {
 
 }  // namespace detail_
 
-constexpr struct trivial_init_t {
+constexpr struct CV_CORE_LIB_API trivial_init_t {
 } trivial_init{};
 
 // 20.5.7, Disengaged state indicator
-struct nullopt_t {
+struct CV_CORE_LIB_API nullopt_t {
     struct init {};
     constexpr explicit nullopt_t(init) {}
 };
 constexpr nullopt_t nullopt{nullopt_t::init()};
 
 // 20.5.8, class bad_optional_access
-class bad_optional_access : public std::logic_error {
+class CV_CORE_LIB_API bad_optional_access : public std::logic_error {
 public:
     explicit bad_optional_access(const std::string& what_arg)
         : logic_error{what_arg} {}

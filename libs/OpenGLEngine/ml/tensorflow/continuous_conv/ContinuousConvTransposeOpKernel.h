@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
-#include "open3d/ml/impl/continuous_conv/ContinuousConvTypes.h"
+#include "cloudViewer/ml/impl/continuous_conv/ContinuousConvTypes.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -34,7 +34,7 @@ public:
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
         using namespace tensorflow;
-        using namespace open3d::ml::impl;
+        using namespace cloudViewer::ml::impl;
         OP_REQUIRES_OK(construction,
                        construction->GetAttr("align_corners", &align_corners));
         OP_REQUIRES_OK(construction,
@@ -228,7 +228,7 @@ public:
 public:
     bool align_corners;
     bool normalize;
-    open3d::ml::impl::InterpolationMode interpolation;
-    open3d::ml::impl::CoordinateMapping coordinate_mapping;
+    cloudViewer::ml::impl::InterpolationMode interpolation;
+    cloudViewer::ml::impl::CoordinateMapping coordinate_mapping;
     int max_temp_mem_MB;
 };

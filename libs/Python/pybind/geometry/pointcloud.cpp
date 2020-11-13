@@ -30,7 +30,7 @@
 #include <RGBDImage.h>
 #include <ecvPolyline.h>
 #include <ecvPointCloud.h>
-#include <Camera/PinholeCameraIntrinsic.h>
+#include <camera/PinholeCameraIntrinsic.h>
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/cloudbase.h"

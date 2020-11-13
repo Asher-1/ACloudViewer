@@ -32,7 +32,7 @@
 
 // ECV_PYTHON_LIB
 #ifdef USE_PYTHON_MODULE
-#include <Recognition/PythonInterface.h>
+#include <recognition/PythonInterface.h>
 
 class ecvDeepSemanticSegmentationTool : public ccOverlayDialog, public Ui::DeepSemanticSegmentationDlg
 {

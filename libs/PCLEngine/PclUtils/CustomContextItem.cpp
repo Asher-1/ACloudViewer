@@ -16,7 +16,7 @@
 //##########################################################################
 //
 
-#include "CustomContextItem.h"
+#include "PclUtils/CustomContextItem.h"
 
 #include <vtkObjectFactory.h>
 #include <vtkSmartPointer.h>

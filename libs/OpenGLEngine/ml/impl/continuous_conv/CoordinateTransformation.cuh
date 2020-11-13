@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "open3d/ml/impl/continuous_conv/ContinuousConvTypes.h"
+#include "cloudViewer/ml/impl/continuous_conv/ContinuousConvTypes.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace ml {
 namespace impl {
 
@@ -394,4 +394,4 @@ inline __device__ void Interpolate(T* w,
 
 }  // namespace impl
 }  // namespace ml
-}  // namespace open3d
+}  // namespace cloudViewer

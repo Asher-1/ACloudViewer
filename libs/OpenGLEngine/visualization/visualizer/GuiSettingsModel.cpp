@@ -142,7 +142,7 @@ const std::vector<GuiSettingsModel::LightingProfile>
 
 const std::map<std::string, const GuiSettingsModel::LitMaterial>
         GuiSettingsModel::prefab_materials_ = {
-                {DEFAULT_MATERIAL_NAME, {}},
+                {"Polished ceramic", {}},
                 {"Metal (rougher)",
                  {{1.0f, 1.0f, 1.0f}, 1.0f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},
                 {"Metal (smoother)",

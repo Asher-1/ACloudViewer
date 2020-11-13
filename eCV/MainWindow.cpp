@@ -40,6 +40,7 @@
 #include "ecvGraphicalSegmentationTool.h"
 
 // CV_CORE_LIB
+#include <CVMath.h>
 #include <Jacobi.h>
 #include <ParallelSort.h>
 #include <CVPointCloud.h>
@@ -112,7 +113,7 @@
 // ECV_PYTHON_LIB
 #ifdef USE_PYTHON_MODULE
 #include "ecvDeepSemanticSegmentationTool.h"
-#include <Recognition/PythonInterface.h>
+#include <recognition/PythonInterface.h>
 #endif
 
 // SYSTEM
@@ -223,18 +224,18 @@ MainWindow::MainWindow(QWidget *parent)
 	, m_systemInfoLabel(nullptr)
 	, m_currentFullWidget(nullptr)
 	, m_recentFiles(new ecvRecentFiles(this))
-	, m_lastViewMode(VIEWMODE::ORTHOGONAL)
-	, m_viewModePopupButton(nullptr)
 	, m_exclusiveFullscreen(false)
+    , m_viewModePopupButton(nullptr)
+    , m_lastViewMode(VIEWMODE::ORTHOGONAL)
 	, m_uiFrozen(false)
-	, m_uiManager(nullptr)
 	, m_pickingHub(nullptr)
-	, m_cpeDlg(nullptr)
+    , m_uiManager(nullptr)
 	, m_transTool(nullptr)
+    , m_cpeDlg(nullptr)
 	, m_gsTool(nullptr)
 	, m_compDlg(nullptr)
-	, m_tplTool(nullptr)
 	, m_filterTool(nullptr)
+    , m_tplTool(nullptr)
 	, m_annoTool(nullptr)
 	, m_dssTool(nullptr)
 	, m_filterLabelTool(nullptr)
@@ -876,7 +877,7 @@ MainWindow::~MainWindow() {
 		m_mdiArea->removeSubWindow(window);
 	}
 
-	ecvDisplayTools::SetSceneDB(0);
+    ecvDisplayTools::SetSceneDB(nullptr);
 	ecvDisplayTools::ReleaseInstance();
 
 	if (ccRoot)
@@ -4289,7 +4290,7 @@ void MainWindow::doActionComputeScatteringAngles()
 		ScalarType theta = std::acos(std::min(std::abs(cosTheta), 1.0f));
 
 		if (toDegreeFlag)
-			theta *= static_cast<ScalarType>(CV_RAD_TO_DEG);
+            theta = CVLib::RadiansToDegrees(theta);
 
 		angles->setValue(i, theta);
 	}
@@ -5371,16 +5372,16 @@ void MainWindow::doBSplineFittingFromCloud()
 		return;
 	}
 
-	ccPolyline* polyLine = CurveFittingTool::BsplineFitting(*clouds[0]);
-	if (polyLine)
-	{
-		addToDB(polyLine);
-	}
+    ccPolyline* polyLine = CurveFittingTool::BsplineFitting(*clouds[0]);
+    if (polyLine)
+    {
+        addToDB(polyLine);
+    }
 
-	if (polyLine && m_ccRoot)
-	{
-		m_ccRoot->selectEntity(polyLine);
-	}
+    if (polyLine && m_ccRoot)
+    {
+        m_ccRoot->selectEntity(polyLine);
+    }
 
 	updateUI();
 
@@ -5755,7 +5756,7 @@ void MainWindow::doActionComparePlanes()
 	p2->getEquation(N2, d2);
 
 	double angle_rad = N1.angle_rad(N2);
-	info << QString("Angle P1/P2: %1 deg.").arg(angle_rad * CV_RAD_TO_DEG);
+    info << QString("Angle P1/P2: %1 deg.").arg(CVLib::RadiansToDegrees(angle_rad));
 	CVLog::Print(QString("[Compare] ") + info.last());
 
 	PointCoordinateType planeEq1[4] = { N1.x, N1.y, N1.z, d1 };
@@ -7570,9 +7571,9 @@ void MainWindow::doActionComputeBestICPRmsMatrix()
 		//init all possible transformations
 		static const double angularStep_deg = 45.0;
 		unsigned phiSteps = static_cast<unsigned>(360.0 / angularStep_deg);
-		assert(std::abs(360.0 - phiSteps * angularStep_deg) < ZERO_TOLERANCE);
-		unsigned thetaSteps = static_cast<unsigned>(180.0 / angularStep_deg);
-		assert(std::abs(180.0 - thetaSteps * angularStep_deg) < ZERO_TOLERANCE);
+        assert( CVLib::LessThanEpsilon( std::abs(360.0 - phiSteps * angularStep_deg) ) );
+        unsigned thetaSteps = static_cast<unsigned>(180.0 / angularStep_deg);
+        assert( CVLib::LessThanEpsilon( std::abs(180.0 - thetaSteps * angularStep_deg) ) );
 		unsigned rotCount = phiSteps * (thetaSteps - 1) + 2;
 		matrices.reserve(rotCount);
 		matrixAngles.reserve(rotCount);
@@ -8627,16 +8628,20 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 			else
 			{
 				globalBBmin = CCVector3d(std::min(globalBBmin.x, Ag.x),
-					std::min(globalBBmin.y, Ag.y),
-					std::min(globalBBmin.z, Ag.z));
+                                         std::min(globalBBmin.y, Ag.y),
+                                         std::min(globalBBmin.z, Ag.z));
 				globalBBmax = CCVector3d(std::max(globalBBmax.x, Bg.x),
-					std::max(globalBBmax.y, Bg.y),
-					std::max(globalBBmax.z, Bg.z));
+                                         std::max(globalBBmax.y, Bg.y),
+                                         std::max(globalBBmax.z, Bg.z));
 
-				if (uniqueShift)
-					uniqueShift = ((shifted->getGlobalShift() - shift).norm() < ZERO_TOLERANCE);
-				if (uniqueScale)
-					uniqueScale = (std::abs(shifted->getGlobalScale() - scale) < ZERO_TOLERANCE);
+                if (uniqueShift)
+                {
+                    uniqueShift = CVLib::LessThanEpsilon( (shifted->getGlobalShift() - shift).norm() );
+                }
+                if (uniqueScale)
+                {
+                    uniqueScale = CVLib::LessThanEpsilon( std::abs(shifted->getGlobalScale() - scale) );
+                }
 			}
 
 			shiftedEntities.emplace_back(shifted, entity);
@@ -8703,7 +8708,7 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 				assert(shifted->getGlobalScale() > 0);
 				double scaleCoef = scale / shifted->getGlobalScale();
 
-				if (T.norm() > ZERO_TOLERANCE || std::abs(scaleCoef - 1.0) > ZERO_TOLERANCE)
+                if (CVLib::GreaterThanEpsilon( T.norm() ) || CVLib::GreaterThanEpsilon( std::abs(scaleCoef - 1.0) ))
 				{
 					ccGLMatrix transMat;
 					transMat.toIdentity();

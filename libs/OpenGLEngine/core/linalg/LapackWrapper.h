@@ -39,7 +39,7 @@ inline CLOUDVIEWER_CPU_LINALG_INT getrf_cpu(int layout,
                                        scalar_t* A_data,
                                        CLOUDVIEWER_CPU_LINALG_INT lda,
                                        CLOUDVIEWER_CPU_LINALG_INT* ipiv_data) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return -1;
 }
 
@@ -49,7 +49,7 @@ inline CLOUDVIEWER_CPU_LINALG_INT getri_cpu(int layout,
                                        scalar_t* A_data,
                                        CLOUDVIEWER_CPU_LINALG_INT lda,
                                        CLOUDVIEWER_CPU_LINALG_INT* ipiv_data) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return -1;
 }
 
@@ -62,7 +62,7 @@ inline CLOUDVIEWER_CPU_LINALG_INT gesv_cpu(int layout,
                                       CLOUDVIEWER_CPU_LINALG_INT* ipiv_data,
                                       scalar_t* B_data,
                                       CLOUDVIEWER_CPU_LINALG_INT ldb) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return -1;
 }
 
@@ -76,7 +76,7 @@ inline CLOUDVIEWER_CPU_LINALG_INT gels_cpu(int matrix_layout,
                                       CLOUDVIEWER_CPU_LINALG_INT lda,
                                       scalar_t* B_data,
                                       CLOUDVIEWER_CPU_LINALG_INT ldb) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return -1;
 }
 
@@ -94,7 +94,7 @@ inline CLOUDVIEWER_CPU_LINALG_INT gesvd_cpu(int matrix_layout,
                                        scalar_t* VT_data,
                                        CLOUDVIEWER_CPU_LINALG_INT ldvt,
                                        scalar_t* superb) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return -1;
 }
 
@@ -229,7 +229,7 @@ inline CLOUDVIEWER_CPU_LINALG_INT gesvd_cpu<double>(int layout,
 template <typename scalar_t>
 inline cusolverStatus_t getrf_cuda_buffersize(
         cusolverDnHandle_t handle, int m, int n, int lda, int* len) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
 
@@ -242,7 +242,7 @@ inline cusolverStatus_t getrf_cuda(cusolverDnHandle_t handle,
                                    scalar_t* workspace,
                                    int* ipiv_data,
                                    int* dinfo) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
 
@@ -257,14 +257,14 @@ inline cusolverStatus_t getrs_cuda(cusolverDnHandle_t handle,
                                    scalar_t* B_data,
                                    int ldb,
                                    int* dinfo) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
 
 template <typename scalar_t>
 inline cusolverStatus_t geqrf_cuda_buffersize(
         cusolverDnHandle_t handle, int m, int n, int lda, int* len) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
 
@@ -278,7 +278,7 @@ inline cusolverStatus_t geqrf_cuda(cusolverDnHandle_t handle,
                                    scalar_t* workspace,
                                    int len,
                                    int* dinfo) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
 
@@ -292,7 +292,7 @@ inline cusolverStatus_t ormqr_cuda_buffersize(cusolverDnHandle_t handle,
                                               int lda,
                                               int ldc,
                                               int* len) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
 
@@ -311,7 +311,7 @@ inline cusolverStatus_t ormqr_cuda(cusolverDnHandle_t handle,
                                    scalar_t* workspace,
                                    int len,
                                    int* dinfo) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
 
@@ -320,7 +320,7 @@ inline cusolverStatus_t gesvd_cuda_buffersize(cusolverDnHandle_t handle,
                                               int m,
                                               int n,
                                               int* len) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
 
@@ -341,7 +341,7 @@ inline cusolverStatus_t gesvd_cuda(cusolverDnHandle_t handle,
                                    int len,
                                    scalar_t* rwork,
                                    int* dinfo) {
-    utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return CUSOLVER_STATUS_INTERNAL_ERROR;
 }
 

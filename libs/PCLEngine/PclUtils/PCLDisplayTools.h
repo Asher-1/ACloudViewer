@@ -19,12 +19,14 @@
 #define QPCL_DISPLAY_TOOLS_HEADER
 
 //Local
-#include "../qPCL.h"
+#include "qPCL.h"
 #include "PCLCloud.h"
 #include "PCLVis.h"
 #include "ImageVis.h"
 #include "Tools/ecvTools.h"
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
+
+#include "CVMath.h"
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -305,8 +307,8 @@ public:
 	}
 
 	// set and get view angle in y direction or zoom factor in perspective mode
-	inline virtual double getCameraFovy(int viewPort = 0) override { return m_visualizer3D->getCamera(viewPort).fovy * CV_RAD_TO_DEG; }
-	inline virtual void setCameraFovy(double fovy, int viewport = 0) override { m_visualizer3D->setCameraFieldOfView(fovy * CV_DEG_TO_RAD, viewport); }
+    inline virtual double getCameraFovy(int viewPort = 0) override { return CVLib::RadiansToDegrees(m_visualizer3D->getCamera(viewPort).fovy); }
+    inline virtual void setCameraFovy(double fovy, int viewport = 0) override { m_visualizer3D->setCameraFieldOfView(CVLib::RadiansToDegrees(fovy), viewport); }
 
 	// get zoom factor in parallel mode
 	virtual double getParallelScale(int viewPort = 0) override;
@@ -323,7 +325,7 @@ public:
 	inline virtual void loadCameraParameters(const std::string &file) override { m_visualizer3D->loadCameraParameters(file); }
 	
 	/** \brief Use Vertex Buffer Objects renderers.
-	  * This is an optimization for the obsolete OpenGL backend. Modern OpenGL2 backend (VTK ¡Ý 6.3) uses vertex
+	  * This is an optimization for the obsolete OpenGL backend. Modern OpenGL2 backend (VTK6.3) uses vertex
 	  * buffer objects by default, transparently for the user.
 	  * \param[in] use_vbos set to true to use VBOs
 	  */

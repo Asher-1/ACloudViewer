@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,16 +26,16 @@
 
 #pragma once
 
-#include "open3d/geometry/RGBDImage.h"
-#include "open3d/io/sensor/azure_kinect/MKVMetadata.h"
-#include "open3d/utility/IJsonConvertible.h"
+#include "cloudViewer/geometry/RGBDImage.h"
+#include "cloudViewer/io/sensor/azure_kinect/MKVMetadata.h"
+#include "cloudViewer/utility/IJsonConvertible.h"
 
 struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 struct _k4a_device_t;                // typedef _k4a_device_t* k4a_device_t;
 struct _k4a_capture_t;               // typedef _k4a_capture_t* k4a_capture_t;
 struct _k4a_record_t;                // typedef _k4a_record_t* k4a_record_t;
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 
 class MKVWriter {
@@ -59,4 +59,4 @@ private:
     MKVMetadata metadata_;
 };
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

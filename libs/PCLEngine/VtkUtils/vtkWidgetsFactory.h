@@ -5,7 +5,7 @@
 #include <ecvWidgetsInterface.h>
 
 
-class VtkWidgetsFactory
+class QPCL_ENGINE_LIB_API VtkWidgetsFactory
 {
 public:
 	VtkWidgetsFactory() = default;

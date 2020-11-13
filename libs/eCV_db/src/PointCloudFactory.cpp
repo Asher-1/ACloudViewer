@@ -1177,7 +1177,7 @@ bool ccPointCloud::estimateNormals(
 bool ccPointCloud::orientNormalsToAlignWithDirection(
 	const Eigen::Vector3d &orientation_reference
 /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/) {
-	if (hasNormals() == false) {
+    if (!hasNormals()) {
 		CVLib::utility::LogWarning(
 			"[OrientNormalsToAlignWithDirection] No normals in the "
 			"ccPointCloud. Call EstimateNormals() first.");
@@ -1185,13 +1185,13 @@ bool ccPointCloud::orientNormalsToAlignWithDirection(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-	for (int i = 0; i < (int)size(); i++) {
-		auto &normal = getEigenNormal(static_cast<size_t>(i));
-		if (normal.norm() == 0.0) {
-			normal = orientation_reference;
+    for (int i = 0; i < (int)this->size(); i++) {
+        auto &normal = getPointNormalPtr(static_cast<size_t>(i));
+        if (normal.norm() == 0.0f) {
+            normal = CCVector3::fromArray(orientation_reference);
 		}
-		else if (normal.dot(orientation_reference) < 0.0) {
-			normal *= -1.0;
+        else if (normal.dot(CCVector3::fromArray(orientation_reference)) < 0.0f) {
+            normal *= -1.0f;
 		}
 	}
 	return true;
@@ -1207,21 +1207,21 @@ bool ccPointCloud::orientNormalsTowardsCameraLocation(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-	for (int i = 0; i < (int)size(); i++) {
+    for (int i = 0; i < (int)this->size(); i++) {
 		Eigen::Vector3d orientation_reference =
 			camera_location - getEigenPoint(static_cast<size_t>(i));
-		auto &normal = getEigenNormal(static_cast<size_t>(i));
-		if (normal.norm() == 0.0) {
+        auto &normal = getPointNormalPtr(static_cast<size_t>(i));
+        if (normal.norm() == 0.0f) {
 			normal = orientation_reference;
-			if (normal.norm() == 0.0) {
-				normal = Eigen::Vector3d(0.0, 0.0, 1.0);
+            if (normal.norm() == 0.0f) {
+                normal = CCVector3(0.0f, 0.0f, 1.0f);
 			}
 			else {
 				normal.normalize();
 			}
 		}
-		else if (normal.dot(orientation_reference) < 0.0) {
-			normal *= -1.0;
+        else if (normal.dot(orientation_reference) < 0.0f) {
+            normal *= -1.0f;
 		}
 	}
 	return true;
@@ -1321,13 +1321,12 @@ void ccPointCloud::orientNormalsConsistentTangentPlane(size_t k) {
     std::queue<size_t> traversal_queue;
     std::vector<bool> visited(this->size(), false);
     traversal_queue.push(v0);
-    auto TestAndOrientNormal = [&](const Eigen::Vector3d &n0,
-                                   Eigen::Vector3d &n1) {
+    auto TestAndOrientNormal = [&](const CCVector3 &n0, CCVector3 &n1) {
         if (n0.dot(n1) < 0) {
             n1 *= -1;
         }
     };
-    TestAndOrientNormal(Eigen::Vector3d(0, 0, 1), getEigenNormal(v0));
+    TestAndOrientNormal(CCVector3(0.0f, 0.0f, 1.0f), getPointNormalPtr(v0));
     while (!traversal_queue.empty()) {
         v0 = traversal_queue.front();
         traversal_queue.pop();
@@ -1335,7 +1334,7 @@ void ccPointCloud::orientNormalsConsistentTangentPlane(size_t k) {
         for (size_t v1 : mst_graph[v0]) {
             if (!visited[v1]) {
                 traversal_queue.push(v1);
-                TestAndOrientNormal(getEigenNormal(v0), getEigenNormal(v1));
+                TestAndOrientNormal(getPointNormalPtr(v0), getPointNormalPtr(v1));
             }
         }
     }

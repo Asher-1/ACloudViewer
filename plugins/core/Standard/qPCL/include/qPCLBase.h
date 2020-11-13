@@ -18,7 +18,6 @@
 #ifndef Q_PCL_PLUGIN_HEADER
 #define Q_PCL_PLUGIN_HEADER
 
-//#include "ecvStdPluginInterface.h"
 #include "ecvPclPluginInterface.h"
 
 //Qt
@@ -38,7 +37,7 @@ public:
 	//! Default constructor
 	qPCL(QObject* parent = nullptr);
 	//! Destructor
-	virtual ~qPCL() = default;
+    virtual ~qPCL() override = default;
 
 	// inherited from ccPclPluginInterface
 	virtual void onNewSelection(const ccHObject::Container& selectedEntities) override;

@@ -45,10 +45,16 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
     endif()
     add_dependencies(${TARGET_NAME} GuiResources)
 	
-	include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
-	if( MSVC )
-	   include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc )
-	endif()
+    include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
+    if( MSVC )
+       include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc )
+    endif()
+
+    set_target_properties( ${TARGET_NAME} PROPERTIES
+        AUTOMOC OFF
+        AUTORCC OFF
+        AUTOUIC OFF
+    )
 	
     set(DEPENDENCIES "${ARGN}")
     foreach(DEPENDENCY IN LISTS DEPENDENCIES)
@@ -83,12 +89,21 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
         )
     else ()
         set(APP_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-        add_custom_command(TARGET "${TARGET_NAME}"
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
-            COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
-            COMMAND ${CMAKE_COMMAND} -E copy "${APP_DIR}/../$<CONFIG>/${TARGET_NAME}.exe" "${APP_DIR}"
-        )
+        if (WIN32)
+            add_custom_command(TARGET "${TARGET_NAME}"
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
+                COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
+                COMMAND ${CMAKE_COMMAND} -E copy "${APP_DIR}/../$<CONFIG>/${APP_NAME}.exe" "${APP_DIR}"
+            )
+        else()
+            add_custom_command(TARGET "${TARGET_NAME}"
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
+                COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
+            )
+        endif()
+
 
         if (UNIX)
             install(DIRECTORY   "${APP_DIR}"
@@ -130,5 +145,5 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
 endmacro(APP)
 
 if (BUILD_GUI)
-    APP(CloudViewer CloudViewer CloudViewer OPENGL_ENGINE_LIB)
+    APP(CloudViewerApp CloudViewer CloudViewerApp OPENGL_ENGINE_LIB)
 endif()

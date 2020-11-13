@@ -55,7 +55,7 @@ class Image;
 /// \class Voxel
 ///
 /// \brief Base Voxel class, containing grid id and color.
-class Voxel {
+class ECV_DB_LIB_API Voxel {
 public:
     /// \brief Default Constructor.
     Voxel() {}
@@ -81,7 +81,7 @@ public:
 /// \class VoxelGrid
 ///
 /// \brief VoxelGrid is a collection of voxels which are aligned in grid.
-class VoxelGrid : public ccHObject {
+class ECV_DB_LIB_API VoxelGrid : public ccHObject {
 public:
     /// \brief Default Constructor.
     VoxelGrid(const char* name = "VoxelGrid") : ccHObject(name) {}
@@ -270,7 +270,7 @@ public:
 ///
 /// \brief Class to aggregate color values from different votes in one voxel
 /// Computes the average color value in the voxel.
-class AvgColorVoxel {
+class ECV_DB_LIB_API AvgColorVoxel {
 public:
     AvgColorVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
 

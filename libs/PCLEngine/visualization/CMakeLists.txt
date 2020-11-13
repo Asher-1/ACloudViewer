@@ -50,7 +50,6 @@ if(build)
 
     set(incs 
         "include/pcl/${SUBSYS_NAME}/image_viewer.h"
-        "include/pcl/${SUBSYS_NAME}/pcl_visualizer.h"
         )
     if("${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" VERSION_GREATER "5.6")
         # list(APPEND incs
@@ -59,7 +58,6 @@ if(build)
     endif("${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" VERSION_GREATER "5.6")
 
     set(impl_incs 
-        "include/pcl/${SUBSYS_NAME}/impl/pcl_visualizer.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/image_viewer.hpp"
         )
     if("${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" VERSION_GREATER "5.6")

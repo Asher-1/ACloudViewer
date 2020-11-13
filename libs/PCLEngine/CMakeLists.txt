@@ -76,12 +76,12 @@ if (USE_PCL_BACKEND)
 		${TransformTools_list})
 	
 	# PCL VISUALIZATION MODULE
-    if( WIN32 OR UNIX)
-        add_subdirectory(visualization)
-        SET( QPCL_VIS	${CMAKE_CURRENT_SOURCE_DIR}/visualization )
-        file( GLOB_RECURSE PclVis_list 		${QPCL_VIS}/*)
-        source_group("visualization" FILES ${PclVis_list} )
-    endif()
+        if( WIN32 OR UNIX)
+            add_subdirectory(visualization)
+            SET( QPCL_VIS	${CMAKE_CURRENT_SOURCE_DIR}/visualization )
+            file( GLOB_RECURSE PclVis_list 		${QPCL_VIS}/*)
+            source_group("visualization" FILES ${PclVis_list} )
+        endif()
 	
 	# PCL UTILS MODULE
 	SET( QPCL_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/PclUtils )
@@ -104,23 +104,23 @@ if (USE_PCL_BACKEND)
 	source_group("VtkWidgets\\smallWidgets" FILES ${VtkWidgets_smallWidgets_list} )
 	
 	set(Widget_list ${VtkWidgets_filters_list} 
-					${VtkWidgets_surface_list}
-					${VtkWidgets_smallWidgets_list})
+                        ${VtkWidgets_surface_list}
+                        ${VtkWidgets_smallWidgets_list})
 	
 	add_library(${PROJECT_NAME} SHARED 
-				${header_list} 
-				${ui_list_all} 
-				${VtkUtils_list}
-				${VtkExtensions_list}
-				${Tools_list} 
-				${PclVis_list} 
-				${PclUtils_list} 
-				${Widget_list}
+                    ${header_list}
+                    ${ui_list_all}
+                    ${VtkUtils_list}
+                    ${VtkExtensions_list}
+                    ${Tools_list}
+                    ${PclVis_list}
+                    ${PclUtils_list}
+                    ${Widget_list}
 	)
 
 	target_include_directories( ${PROJECT_NAME}
 		PUBLIC
-			${PCL_INCLUDE_DIRS}
+                    ${PCL_INCLUDE_DIRS}
 	)
 
 	if( CMAKE_VERSION VERSION_LESS 3.13 )
@@ -152,18 +152,18 @@ if (USE_PCL_BACKEND)
 
 	# INTERNAL LIB
 	target_link_libraries( ${PROJECT_NAME}
-							ECV_DB_LIB 
-							ECV_IO_LIB )
+                                ECV_DB_LIB
+                                ECV_IO_LIB )
 	
 	# Qt & PCL & VTK
 	target_link_libraries(	${PROJECT_NAME} 
-							Qt5::Core 
-							Qt5::Gui 
-							Qt5::Widgets
-							Qt5::PrintSupport
-							Qt5::OpenGL
-							${PCL_LIBRARIES} 
-							${VTK_LIBRARIES} )
+                                Qt5::Core
+                                Qt5::Gui
+                                Qt5::Widgets
+                                Qt5::PrintSupport
+                                Qt5::OpenGL
+                                ${PCL_LIBRARIES}
+                                ${VTK_LIBRARIES} )
 
 	target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD )
 	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_PCL_BACKEND )

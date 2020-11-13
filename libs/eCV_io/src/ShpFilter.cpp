@@ -1147,7 +1147,7 @@ static CC_FILE_ERROR LoadPolyline(QDataStream &shpStream,
 
 		//test if the polyline is closed
 		bool isClosed = false;
-		if (vertCount > 2 && (points[firstIndex] - points[lastIndex]).norm() < ZERO_TOLERANCE)
+        if (vertCount > 2 && CVLib::LessThanEpsilon((points[firstIndex] - points[lastIndex]).norm()))
 		{
 			vertCount--;
 			isClosed = true;

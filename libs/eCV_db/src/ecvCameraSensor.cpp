@@ -369,7 +369,7 @@ bool ccCameraSensor::applyViewport()
 	//aspect ratio
 	float ar = static_cast<float>(m_intrinsicParams.arrayWidth) / m_intrinsicParams.arrayHeight;
 	//fov
-	float fov_deg = static_cast<float>(m_intrinsicParams.vFOV_rad * CV_RAD_TO_DEG);
+    float fov_deg = CVLib::RadiansToDegrees(m_intrinsicParams.vFOV_rad);
 	//camera position/orientation
 	ccGLMatrixd transd(trans.data());
 	ecvDisplayTools::SetupProjectiveViewport(transd, fov_deg, ar);
@@ -758,10 +758,10 @@ bool ccCameraSensor::fromGlobalCoordToImageCoord(const CCVector3& globalCoord, C
 
 bool ccCameraSensor::fromImageCoordToGlobalCoord(const CCVector2& imageCoord, CCVector3& globalCoord, PointCoordinateType z0, bool withLensCorrection/*=true*/) const
 {
-	ccIndexedTransformation trans;
+    ccIndexedTransformation trans;
 
-	if (!getActiveAbsoluteTransformation(trans))
-		return false;
+    if (!getActiveAbsoluteTransformation(trans))
+        return false;
 
 	CCVector3 localCoord;
 	if (!fromImageCoordToLocalCoord(imageCoord, localCoord, PC_ONE, withLensCorrection))
@@ -772,7 +772,7 @@ bool ccCameraSensor::fromImageCoordToGlobalCoord(const CCVector2& imageCoord, CC
 	trans.applyRotation(viewDir);
 	viewDir.normalize();
 
-	if (fabs(viewDir.z) < ZERO_TOLERANCE)
+    if ( CVLib::LessThanEpsilon( fabs(viewDir.z) ) )
 	{
 		//viewing dir is parallel to the plane Z = Z0!
 		return false;

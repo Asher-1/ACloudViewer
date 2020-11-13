@@ -56,17 +56,17 @@ void PCLDisplayTools::registerVisualizer(QMainWindow * win, bool stereoMode)
 	SetMainScreen(this->m_vtkWidget);
 	SetCurrentScreen(this->m_vtkWidget);
 
-	auto interactorStyle = vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
 	if (!m_visualizer3D)
 	{
 		auto renderer = vtkSmartPointer<vtkRenderer>::New();
 		auto window = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+        auto interactorStyle = vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
         m_visualizer3D.reset(new PclUtils::PCLVis(renderer, window, interactorStyle, "3Dviewer", false));
         //m_visualizer3D.reset(new PclUtils::PCLVis(interactorStyle, "3Dviewer", false)); // deprecated!
 	}
 
 	getQVtkWidget()->SetRenderWindow(m_visualizer3D->getRenderWindow());
-    m_visualizer3D->setupInteractor(getQVtkWidget()->GetInteractor(), getQVtkWidget()->GetRenderWindow(), interactorStyle);
+    m_visualizer3D->setupInteractor(getQVtkWidget()->GetInteractor(), getQVtkWidget()->GetRenderWindow());
 	getQVtkWidget()->initVtk(m_visualizer3D->getRenderWindowInteractor(), false);
 	m_visualizer3D->initialize();
 

@@ -211,7 +211,8 @@ void pybind_primitives(py::module &m) {
 			return CCVector3d::fromArray(box.getDimensions());
 		}, "Returns box dimensions.")
 	.def("set_dimensions", [](ccBox& box, const Eigen::Vector3d& dims) {
-			box.setDimensions(CCVector3::fromArray(dims));
+            CCVector3 tempDims = CCVector3::fromArray(dims);
+            box.setDimensions(tempDims);
 		}, "Returns box dimensions.", "dims"_a);
 
 	docstring::ClassMethodDocInject(m, "ccBox", "get_dimensions");

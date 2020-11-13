@@ -30,11 +30,11 @@
 #include <ClassMap.h>
 
 // LOCAL
-#include "Utility/PythonModules.h"
-#include "Recognition/DeepSemanticSegmentation.h"
+#include "utility/PythonModules.h"
+#include "recognition/DeepSemanticSegmentation.h"
 
 namespace PythonInterface
 {
-	bool SetPythonHome(const wchar_t * pyHome);
-	bool SetPythonHome(const char * pyHome);
+    bool ECV_PYTHON_LIB_API SetPythonHome(const wchar_t * pyHome);
+    bool ECV_PYTHON_LIB_API SetPythonHome(const char * pyHome);
 }

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,10 +28,10 @@
 
 #include <cub/cub.cuh>
 
-#include "open3d/ml/impl/misc/MemoryAllocation.h"
-#include "open3d/utility/Helper.h"
+#include "cloudViewer/ml/impl/misc/MemoryAllocation.h"
+#include "cloudViewer/utility/Helper.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace ml {
 namespace impl {
 
@@ -67,7 +67,7 @@ void CountNeighborsCUDA(const cudaStream_t& stream,
                         size_t count_size,
                         const T* const __restrict__ indices,
                         size_t indices_size) {
-    using namespace open3d::utility;
+    using namespace cloudViewer::utility;
 
     cudaMemsetAsync(count, 0, sizeof(uint32_t) * count_size, stream);
 
@@ -151,7 +151,7 @@ void FillNeighborsIndexAndAttributesCUDA(
         size_t inp_num_queries,
         const int64_t* const __restrict__ out_neighbors_row_splits,
         size_t out_num_queries) {
-    using namespace open3d::utility;
+    using namespace cloudViewer::utility;
 
     cudaMemsetAsync(count, 0, sizeof(uint32_t) * count_size, stream);
 
@@ -263,7 +263,7 @@ void InvertNeighborsListCUDA(const cudaStream_t& stream,
                              const size_t index_size,
                              int64_t* out_neighbors_row_splits,
                              const size_t out_num_queries) {
-    using namespace open3d::utility;
+    using namespace cloudViewer::utility;
 
     const bool get_temp_size = !temp;
 
@@ -328,4 +328,4 @@ void InvertNeighborsListCUDA(const cudaStream_t& stream,
 
 }  // namespace impl
 }  // namespace ml
-}  // namespace open3d
+}  // namespace cloudViewer

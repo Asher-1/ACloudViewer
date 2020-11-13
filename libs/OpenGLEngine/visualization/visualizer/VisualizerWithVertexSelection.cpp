@@ -348,7 +348,7 @@ float VisualizerWithVertexSelection::GetDepth(int winX, int winY) {
     glDisable(GL_BLEND);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-    glClearDepth(1.0f);
+    glClearDepth(GLclampd(1.0f));
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     for (auto &renderer : geometry_renderer_ptrs_) {
@@ -395,7 +395,7 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
     glDisable(GL_BLEND);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-    glClearDepth(1.0f);
+    glClearDepth(GLclampd(1.0f));
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Render any triangle meshes to the depth buffer only (so that z-buffer
@@ -731,7 +731,8 @@ void VisualizerWithVertexSelection::AddPickedPoints(
 
 	const std::vector<Eigen::Vector3d> * eigenPoints = nullptr;
 	const std::vector<CCVector3> * points = nullptr;
-	if (geometry_ptr_->isKindOf(CV_TYPES::POINT_CLOUD || CV_TYPES::MESH))
+    if (geometry_ptr_->isKindOf(CV_TYPES::POINT_CLOUD) ||
+        geometry_ptr_->isKindOf(CV_TYPES::MESH))
 	{
 		points = GetGeometryPoints(geometry_ptr_);
 		if (!points) {

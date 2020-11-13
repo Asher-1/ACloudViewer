@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include "open3d/geometry/RGBDImage.h"
-#include "open3d/io/sensor/RGBDSensorConfig.h"
+#include "cloudViewer/geometry/RGBDImage.h"
+#include "cloudViewer/io/sensor/RGBDSensorConfig.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 
 class RGBDRecorder {
@@ -59,4 +59,4 @@ public:
 };
 
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 #include <k4arecord/playback.h>
 #include <k4arecord/record.h>
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 namespace k4a_plugin {
 
@@ -313,4 +313,4 @@ k4a_result_t k4a_transformation_depth_image_to_point_cloud(
 
 }  // namespace k4a_plugin
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

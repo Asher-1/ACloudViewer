@@ -27,6 +27,8 @@
 #ifndef CV_EIGEN_HEADER
 #define CV_EIGEN_HEADER
 
+#include "CVCoreLib.h"
+
 // EIGEN
 #include <Eigen/Core>
 #include <Eigen/StdVector>
@@ -63,17 +65,17 @@ namespace utility {
     /// Function to transform 6D motion vector to 4D motion matrix
     /// Reference:
     /// https://eigen.tuxfamily.org/dox/group__TutorialGeometry.html#TutorialGeoTransform
-    Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d& input);
+    Eigen::Matrix4d CV_CORE_LIB_API TransformVector6dToMatrix4d(const Eigen::Vector6d& input);
 
     /// Function to transform 4D motion matrix to 6D motion vector
     /// this is consistent with the matlab function in
     /// the Aerospace Toolbox
     /// Reference:
     /// https://github.com/qianyizh/ElasticReconstruction/blob/master/Matlab_Toolbox/Core/mrEvaluateRegistration.m
-    Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d& input);
+    Eigen::Vector6d CV_CORE_LIB_API TransformMatrix4dToVector6d(const Eigen::Matrix4d& input);
 
     /// Function to solve Ax=b
-    std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
+    std::tuple<bool, Eigen::VectorXd> CV_CORE_LIB_API SolveLinearSystemPSD(
         const Eigen::MatrixXd& A,
         const Eigen::VectorXd& b,
         bool prefer_sparse = false,
@@ -84,14 +86,14 @@ namespace utility {
     /// Function to solve Jacobian system
     /// Input: 6x6 Jacobian matrix and 6-dim residual vector.
     /// Output: tuple of is_success, 4x4 extrinsic matrices.
-    std::tuple<bool, Eigen::Matrix4d> SolveJacobianSystemAndObtainExtrinsicMatrix(
+    std::tuple<bool, Eigen::Matrix4d> CV_CORE_LIB_API SolveJacobianSystemAndObtainExtrinsicMatrix(
         const Eigen::Matrix6d& JTJ, const Eigen::Vector6d& JTr);
 
     /// Function to solve Jacobian system
     /// Input: 6nx6n Jacobian matrix and 6n-dim residual vector.
     /// Output: tuple of is_success, n 4x4 motion matrices.
     std::tuple<bool, std::vector<Eigen::Matrix4d, Matrix4d_allocator>>
-        SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd& JTJ,
+    CV_CORE_LIB_API SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd& JTJ,
             const Eigen::VectorXd& JTr);
 
     /// Function to compute JTJ and Jtr
@@ -120,25 +122,25 @@ namespace utility {
         int iteration_num,
         bool verbose = true);
 
-    Eigen::Matrix3d RotationMatrixX(double radians);
-    Eigen::Matrix3d RotationMatrixY(double radians);
-    Eigen::Matrix3d RotationMatrixZ(double radians);
+    Eigen::Matrix3d CV_CORE_LIB_API RotationMatrixX(double radians);
+    Eigen::Matrix3d CV_CORE_LIB_API RotationMatrixY(double radians);
+    Eigen::Matrix3d CV_CORE_LIB_API RotationMatrixZ(double radians);
 
     /// Color conversion from double [0,1] to uint8_t 0-255; this does proper
     /// clipping and rounding
-    Eigen::Vector3uint8 ColorToUint8(const Eigen::Vector3d& color);
+    Eigen::Vector3uint8 CV_CORE_LIB_API ColorToUint8(const Eigen::Vector3d& color);
     /// Color conversion from uint8_t 0-255 to double [0,1]
-    Eigen::Vector3d ColorToDouble(uint8_t r, uint8_t g, uint8_t b);
-    Eigen::Vector3d ColorToDouble(const Eigen::Vector3uint8& rgb);
+    Eigen::Vector3d CV_CORE_LIB_API ColorToDouble(uint8_t r, uint8_t g, uint8_t b);
+    Eigen::Vector3d CV_CORE_LIB_API ColorToDouble(const Eigen::Vector3uint8& rgb);
 
     /// Function to compute the covariance matrix of a set of points.
     template <typename IdxType>
-    Eigen::Matrix3d ComputeCovariance(const std::vector<Eigen::Vector3d>& points,
+    Eigen::Matrix3d CV_CORE_LIB_API ComputeCovariance(const std::vector<Eigen::Vector3d>& points,
         const std::vector<IdxType>& indices);
 
     /// Function to compute the mean and covariance matrix of a set of points.
     template <typename IdxType>
-    std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+    std::tuple<Eigen::Vector3d, Eigen::Matrix3d> CV_CORE_LIB_API ComputeMeanAndCovariance(
         const std::vector<Eigen::Vector3d>& points,
         const std::vector<IdxType>& indices);
 

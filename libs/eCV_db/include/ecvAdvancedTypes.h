@@ -29,7 +29,7 @@
 ***************************************************/
 
 //! Array of compressed 3D normals (single index)
-class NormsIndexesTableType : public ccArray<CompressedNormType, 1, CompressedNormType>
+class ECV_DB_LIB_API NormsIndexesTableType : public ccArray<CompressedNormType, 1, CompressedNormType>
 {
 public:
 	//! Default constructor
@@ -58,7 +58,7 @@ public:
 };
 
 //! Array of (uncompressed) 3D normals (Nx,Ny,Nz)
-class NormsTableType : public ccArray<CCVector3, 3,PointCoordinateType>
+class ECV_DB_LIB_API NormsTableType : public ccArray<CCVector3, 3,PointCoordinateType>
 {
 public:
 	//! Default constructor
@@ -84,7 +84,7 @@ public:
 };
 
 //! Array of RGB colors for each point
-class ColorsTableType : public ccArray<ecvColor::Rgb, 3, ColorCompType>
+class ECV_DB_LIB_API ColorsTableType : public ccArray<ecvColor::Rgb, 3, ColorCompType>
 {
 public:
 	//! Default constructor
@@ -110,7 +110,7 @@ public:
 };
 
 //! 2D texture coordinates
-struct TexCoords2D
+struct ECV_DB_LIB_API TexCoords2D
 {
 	TexCoords2D() : tx(-1.0f), ty(-1.0f) {}
 	TexCoords2D(float x, float y) : tx(x), ty(y) {}
@@ -126,7 +126,7 @@ struct TexCoords2D
 };
 
 //! Array of 2D texture coordinates
-class TextureCoordsContainer : public ccArray<TexCoords2D, 2, float>
+class ECV_DB_LIB_API TextureCoordsContainer : public ccArray<TexCoords2D, 2, float>
 {
 public:
 	//! Default constructor

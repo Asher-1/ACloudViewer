@@ -50,8 +50,8 @@ protected:
 		std::vector< ClassMap::ClusterMap > &clusters);
 	
 private:
+    const ccHObject* m_container;
 	bool m_batchMode;
-	const ccHObject* m_container;
 	bool m_useGridSampling;
 	bool m_useVotes;
 };

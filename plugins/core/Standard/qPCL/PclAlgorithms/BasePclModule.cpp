@@ -44,7 +44,7 @@
 #endif
 
 BasePclModule::BasePclModule(PclModuleDescription desc, ccPluginInterface * parent_plugin)
-	: m_action(0)
+    : m_action(nullptr)
 	, m_desc(desc)
 	, m_show_progress(true)
 {

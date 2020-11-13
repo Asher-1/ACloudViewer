@@ -19,7 +19,7 @@
 #define ECV_IMAGE_VIS_HEADER
 
 // LOCAL
-#include "../qPCL.h"
+#include "qPCL.h"
 #include "PCLCloud.h"
 
 // ECV_DB_LIB

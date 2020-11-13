@@ -70,7 +70,7 @@ public:
 ///
 /// \param input The Input point cloud.
 /// \param search_param KDTree KNN search parameter.
-std::shared_ptr<Feature> ComputeFPFHFeature(
+std::shared_ptr<Feature> ECV_DB_LIB_API ComputeFPFHFeature(
         const ccPointCloud &input,
         const geometry::KDTreeSearchParam &search_param =
 		geometry::KDTreeSearchParamKNN());

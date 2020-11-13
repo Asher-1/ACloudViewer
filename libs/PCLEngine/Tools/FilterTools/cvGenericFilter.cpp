@@ -502,10 +502,11 @@ void cvGenericFilter::createActorFromData(vtkDataObject* dataObj)
 	mapper->SetInputData(data);
 	mapper->Update();
 
-	VtkUtils::vtkInitOnce(m_modelActor);
+//	VtkUtils::vtkInitOnce(m_modelActor);
+    m_modelActor = vtkSmartPointer<vtkLODActor>::New();
 	m_modelActor->SetMapper(mapper);
 
-    m_modelActor->SetNumberOfCloudPoints(int(std::max<vtkIdType>(1, data->GetNumberOfPoints() / 10)));
+    static_cast<vtkSmartPointer<vtkLODActor>>(m_modelActor)->SetNumberOfCloudPoints(int(std::max<vtkIdType>(1, data->GetNumberOfPoints() / 10)));
 	m_modelActor->GetProperty()->SetInterpolationToFlat();
 
 	addActor(m_modelActor);

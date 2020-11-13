@@ -13,7 +13,7 @@ class QPCL_ENGINE_LIB_API SmallWidgetsInterface : public QObject, public DBLib::
 	Q_OBJECT
 
 public:
-	virtual ~SmallWidgetsInterface() {}
+    virtual ~SmallWidgetsInterface() override {}
 
 	virtual void initWidgets() override;
 

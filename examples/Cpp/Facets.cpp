@@ -52,6 +52,8 @@ void testFromPointClouds(const std::string& filename)
 		C = facet->getCenter();
 		rms = facet->getRMS();
 
+        CVLib::utility::LogInfo("RMS: {:d}", rms);
+
 		//hack: output the transformation matrix that would make this normal points towards +Z
 		ccGLMatrix makeZPosMatrix = ccGLMatrix::FromToRotation(N, CCVector3(0, 0, PC_ONE));
 		CCVector3 Gt = C;
@@ -87,6 +89,8 @@ void testFromFile(const std::string& filename)
 			N = facet->getNormal();
 			C = facet->getCenter();
 			rms = facet->getRMS();
+
+            CVLib::utility::LogInfo("RMS: {:d}", rms);
 
 			//hack: output the transformation matrix that would make this normal points towards +Z
 			ccGLMatrix makeZPosMatrix = ccGLMatrix::FromToRotation(N, CCVector3(0, 0, PC_ONE));

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,13 +33,13 @@
 #include <string>
 #include <vector>
 
-#include "open3d/Macro.h"
+#include "cloudViewer/Macro.h"
 
 #define ExpectEQ(arg, ...)                                               \
-    ExpectEQInternal(::open3d::tests::LineInfo(__FILE__, __LINE__), arg, \
+    ExpectEQInternal(::cloudViewer::tests::LineInfo(__FILE__, __LINE__), arg, \
                      __VA_ARGS__)
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 // Thresholds for comparing floating point values
@@ -184,4 +184,4 @@ void ExpectEQInternal(const std::string& line_info,
                       double threshold = THRESHOLD_1E_6);
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

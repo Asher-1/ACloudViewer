@@ -18,8 +18,8 @@
 //Local
 #include "PCLVis.h"
 #include "PCLConv.h"
-#include "../Tools/ecvTools.h"
-#include "../Tools/PclTools.h"
+#include "Tools/ecvTools.h"
+#include "Tools/PclTools.h"
 
 #include "VtkUtils/vtkutils.h"
 
@@ -84,6 +84,7 @@
 
 // PCL
 #include <pcl/common/transforms.h>
+#include <pcl/visualization/impl/pcl_visualizer.hpp>
 #include <pcl/visualization/common/actor_map.h>
 #include <pcl/visualization/point_cloud_color_handlers.h>
 #include <pcl/visualization/point_cloud_geometry_handlers.h>
@@ -188,7 +189,6 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 	{
         this->TwoDInteractorStyle = vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
         this->m_interactorStyle = this->ThreeDInteractorStyle = interactor_style;
-        //this->updateStyle(interactor_style, false);
 
         // add some default manipulators. Applications can override them without much ado.
         registerInteractorStyle(false);
@@ -208,23 +208,6 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		this->getCurrentRenderer()->AddObserver(vtkCommand::ResetCameraClippingRangeEvent, observer);
 		observer->FastDelete();
     }
-
-    void PCLVis::updateStyle(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style,
-							bool use_vbos /* = false*/) 
-	{
-        if (!interactor_style) CVLog::Error("Pointer to style is null");
-
-        // Set rend erer window in case no interactor is created
-        interactor_style->setRenderWindow(getRenderWindow());
-
-        // Create the interactor style
-        interactor_style->Initialize();
-        interactor_style->setRendererCollection(getRendererCollection());
-        interactor_style->setCloudActorMap(getCloudActorMap());
-        interactor_style->setShapeActorMap(getShapeActorMap());
-        interactor_style->UseTimersOn();
-        interactor_style->setUseVbos(use_vbos);
-	}
 
 	void PCLVis::getCenterOfRotation(double center[3])
 	{
@@ -1754,7 +1737,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		getInteractorStyle()->GetInteractor()->Render();
 	}
 
-	inline void PCLVis::toggleAreaPicking()
+    void PCLVis::toggleAreaPicking()
 	{
 		setAreaPickingEnabled(!isAreaPickingEnabled());
 		if (this->ThreeDInteractorStyle)
@@ -2058,10 +2041,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		}
 	}
 
-	void PCLVis::setupInteractor(
-                vtkRenderWindowInteractor* iren,
-                vtkRenderWindow* win,
-                VTKExtensions::vtkCustomInteractorStyle* istyle)
+    void PCLVis::setupInteractor(vtkRenderWindowInteractor* iren, vtkRenderWindow* win)
 	{
 		this->interactor_ = iren;
 		pcl::visualization::PCLVisualizer::setupInteractor(iren, win);

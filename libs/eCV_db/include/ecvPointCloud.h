@@ -231,7 +231,7 @@ public: //clone, copy, etc.
 	ccPointCloud& operator=(const ccPointCloud& cloud);
 	const ccPointCloud& operator +=(const ccPointCloud &cloud);
 	const ccPointCloud& operator +=(ccPointCloud*);
-	ccPointCloud ccPointCloud::operator+(const ccPointCloud &cloud) const {
+    ccPointCloud operator+(const ccPointCloud &cloud) const {
 		return (ccPointCloud(*this) += cloud);
 	}
 
@@ -1140,7 +1140,7 @@ public: // for python interface
 protected:
 
 	//inherited from ccHObject
-	void drawMeOnly(CC_DRAW_CONTEXT& context) override;
+    void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 	void applyGLTransformation(const ccGLMatrix& trans) override;
 	bool toFile_MeOnly(QFile& out) const override;
 	bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
