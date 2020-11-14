@@ -40,7 +40,17 @@ using namespace Eigen;
 
 namespace CurveFittingTool
 {
-	ccPolyline* BsplineFitting(const ccPointCloud& cloud)
+
+	CurveFitting::CurveFitting()
+	{
+	}
+
+	CurveFitting::~CurveFitting()
+	{
+		cloud->clear();
+	}
+
+	ccPolyline* CurveFitting::BsplineFitting(const ccPointCloud& cloud)
 	{
 		vtkSmartPointer<vtkPoints> points =
 			vtkSmartPointer<vtkPoints>::New();
@@ -73,15 +83,6 @@ namespace CurveFittingTool
 		if (!result) return nullptr;
 
 		return vtk2ccConverter().getPolylineFromPolyData(result);
-	}
-
-	CurveFitting::CurveFitting()
-	{
-	}
-
-	CurveFitting::~CurveFitting()
-	{
-		cloud->clear();
 	}
 
 	void CurveFitting::setInputcloud(PointCloudT::Ptr input_cloud) {

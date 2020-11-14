@@ -34,13 +34,15 @@ class ccPointCloud;
 
 namespace CurveFittingTool
 {
-	ccPolyline * BsplineFitting(const ccPointCloud &cloud);
 
 	class QPCL_ENGINE_LIB_API CurveFitting
 	{
 	public:
 		CurveFitting();
 		~CurveFitting();
+
+		static ccPolyline * BsplineFitting(const ccPointCloud &cloud);
+		
 		void setInputcloud(PointCloudT::Ptr input_cloud);
 		void grid_mean_xyz(double x_resolution, double y_resolution, std::vector<double>&x_mean, std::vector<double> &y_mean, std::vector<double>&z_mean, PointCloudT::Ptr &new_cloud);
 		void line_fitting(std::vector<double>x, std::vector<double>y, double &k, double &b);//y=kx+b
