@@ -5372,7 +5372,7 @@ void MainWindow::doBSplineFittingFromCloud()
 		return;
 	}
 
-    ccPolyline* polyLine = CurveFittingTool::BsplineFitting(*clouds[0]);
+    ccPolyline* polyLine = CurveFittingTool::CurveFitting::BsplineFitting(*clouds[0]);
     if (polyLine)
     {
         addToDB(polyLine);
