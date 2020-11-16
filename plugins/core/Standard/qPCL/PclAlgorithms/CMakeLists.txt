@@ -14,7 +14,7 @@ project( QPCL_PLUGIN_ALGORIGHM_LIB )
 find_package( Qt5 COMPONENTS Widgets REQUIRED )
 
 if (USE_PCL_BACKEND) 
-        include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
+	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
 
 	# CURRENT DIR
 	file( GLOB header_list *.h)
@@ -53,21 +53,21 @@ if (USE_PCL_BACKEND)
                     ${segment_list}
                     ${recognition_list})
 
-        target_include_directories( ${PROJECT_NAME}
-                PUBLIC
-                    ${PCL_INCLUDE_DIRS}
-        )
-        if( CMAKE_VERSION VERSION_LESS 3.13 )
-                link_directories( ${PCL_LIBRARY_DIRS} )
-        else()
-                target_link_directories( ${PROJECT_NAME}
-                        PUBLIC
-                            ${PCL_LIBRARY_DIRS}
-                )
-        endif()
+	target_include_directories( ${PROJECT_NAME}
+			PUBLIC
+				${PCL_INCLUDE_DIRS}
+	)
+	if( CMAKE_VERSION VERSION_LESS 3.13 )
+			link_directories( ${PCL_LIBRARY_DIRS} )
+	else()
+			target_link_directories( ${PROJECT_NAME}
+					PUBLIC
+						${PCL_LIBRARY_DIRS}
+			)
+	endif()
 	add_definitions( ${PCL_DEFINITIONS} )
 	target_link_libraries( ${PROJECT_NAME}
-                               ${PCL_LIBRARIES}
-                               CVPluginAPI
-                               QPCL_ENGINE_LIB )
+						   ${PCL_LIBRARIES}
+						   CVPluginAPI
+						   QPCL_ENGINE_LIB )
 endif()	

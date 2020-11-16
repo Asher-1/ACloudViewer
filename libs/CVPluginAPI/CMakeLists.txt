@@ -22,10 +22,6 @@ target_link_libraries( ${PROJECT_NAME}
 	ECV_IO_LIB
 )
 
-if (USE_PCL_BACKEND)
-	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
-endif()
-
 target_compile_definitions( ${PROJECT_NAME} PRIVATE CVPLUGIN_API_LIBRARY_BUILD )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES

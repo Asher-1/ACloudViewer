@@ -99,7 +99,6 @@ install(
 		FileSystem.h
 		OrientedBoundingBox.h
 		IntersectionTest.h
-		CVWidgetsInterface.h
 		ChamferDistanceTransform.h
 		CloudSamplingTools.h
 		ConjugateGradient.h
@@ -134,7 +133,7 @@ install(
 		Neighbourhood.h
 		NormalDistribution.h
 		ParallelSort.h
-		PointCloud.h
+		CVPointCloud.h
 		PointCloudTpl.h
 		PointProjectionTools.h
 		Polyline.h
