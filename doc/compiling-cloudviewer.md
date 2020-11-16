@@ -1,92 +1,93 @@
-Build from source in Ubuntu and macOS
+Build from source
 =====================
 
-1. Install dependencies
+System requirements
+-------------------
 
-    # On Ubuntu
-    util/install_deps_ubuntu.sh
+* Ubuntu 18.04+: GCC 5+, Clang 7+
+* macOS 10.14+: XCode 8.0+
+* Windows 10 (64-bit): Visual Studio 2019+
+* CMake: 3.15+ for Ubuntu and macOS, 3.18+ for Windows
 
-    # On macOS
-    # Install Homebrew first: https://brew.sh/
-    util/install_deps_macos.sh
+  * Ubuntu (18.04):
 
-.. _compilation_unix_python:
+    * Install with ``apt-get``: see `official APT repository <https://apt.kitware.com/>`_
+    * Install with ``snap``: ``sudo snap install cmake --classic``
+    * Install with ``pip`` (run inside a Python virtualenv): ``pip install cmake``
 
-2. Setup Python environments
-````````````````````````````
+  * Ubuntu (20.04+): Use the default OS repository: ``sudo apt-get install cmake``
+  * macOS: Install with Homebrew: ``brew install cmake``
+  * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
-Activate the python ``virtualenv`` or Conda ``virtualenv```. Check
-``which python`` to ensure that it shows the desired Python executable.
-Alternatively, set the CMake flag ``-DPYTHON_EXECUTABLE=/path/to/python``
-to specify the python executable.
+* CUDA 10.1 (optional): CloudViewer supports GPU acceleration of an increasing number
+  of operations through CUDA on Linux. Please see the `official documentation
+  <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_ to
+  install the CUDA toolkit from Nvidia.
 
-If Python binding is not needed, you can turn it off by ``-DBUILD_PYTHON_MODULE=OFF``.
 
-.. _compilation_unix_config:
+Cloning CloudViewer
+--------------
 
-3. Config
-`````````
+Make sure to use the ``--recursive`` flag when cloning CloudViewer.
+
 .. code-block:: bash
+
+    git clone --recursive https://github.com/Asher-1/ErowCloudViewer.git
+
+    # You can also update the submodule manually
+    git submodule update --init --recursive
+
+
+
+Ubuntu/macOS
+------------
+
+Refer to the [compiling-cloudviewer-linux.md file](compiling-cloudviewer-linux.md) for compilation Ubuntu/macOS information.
+
+
+Windows
+-------
+
+1. Setup Python binding environments
+````````````````````````````````````
+
+Most steps are the steps for Ubuntu: :ref:`compilation_unix_python`.
+Instead of ``which``, check the Python path with ``where python``
+
+
+2. Config
+`````````
 
     mkdir build
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
 
-The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
-CloudViewer to a user location. In the absence of this argument CloudViewer will be
-installed to a system location where ``sudo`` is required) For more
-options of the build, see :ref:`compilation_options`.
+    :: Specify the generator based on your Visual Studio version
+    :: If CMAKE_INSTALL_PREFIX is a system folder, admin access is needed for installation
+    cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="<cloudViewer_install_directory>" ..
 
-.. _compilation_unix_build:
-
-4. Build
+3. Build
 ````````
 
-    # On Ubuntu
-    make -j$(nproc)
+.. code-block:: bat
 
-    # On macOS
-    make -j$(sysctl -n hw.physicalcpu)
+    cmake --build . --config Release --target ALL_BUILD
 
-.. _compilation_unix_install:
+Alternatively, you can open the ``CloudViewer.sln`` project with Visual Studio and
+build the same target.
 
-5. Install
+4. Install
 ``````````
 
-To install CloudViewer C++ library:
+To install CloudViewer C++ library, build the ``INSTALL`` target in terminal or
+in Visual Studio.
 
-.. code-block:: bash
-
-    make install
+    cmake --build . --config Release --target INSTALL
 
 To link a C++ project against the CloudViewer C++ library, please refer to
 :ref:`create_cplusplus_project`.
 
-
-To install CloudViewer Python library, build one of the following options:
-
-.. code-block:: bash
-
-    # Activate the virtualenv first
-    # Install pip package in the current python environment
-    make install-pip-package
-
-    # Create Python package in build/lib
-    make python-package
-
-    # Create pip wheel in build/lib
-    # This creates a .whl file that you can install manually.
-    make pip-package
-
-    # Create conda package in build/lib
-    # This creates a .tar.bz2 file that you can install manually.
-    make conda-package
-
-Finally, verify the python installation with:
-
-
-	python -c "import cloudViewer"
-
+To install CloudViewer Python library, build the corresponding python installation
+targets in terminal or Visual Studio.
 
     :: Activate the virtualenv first
     :: Install pip package in the current python environment
@@ -107,7 +108,6 @@ Finally, verify the Python installation with:
 
     python -c "import cloudViewer; print(cloudViewer)"
 
-
 Compilation options
 -------------------
 
@@ -122,8 +122,6 @@ The default LLVM compiler on OS X does not support OpenMP.
 A workaround is to install a C++ compiler with OpenMP support, such as ``gcc``,
 then use it to compile CloudViewer. For example, starting from a clean build
 directory, run
-
-.. code-block:: bash
 
     brew install gcc --without-multilib
     cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..
