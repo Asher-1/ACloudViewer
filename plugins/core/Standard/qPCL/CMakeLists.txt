@@ -27,21 +27,8 @@ if (PLUGIN_STANDARD_QPCL)
     include_directories( ${QPCL_PLUGIN_ALGORIGHM_LIB_SOURCE_DIR} )
     include_directories( ${QPCL_PLUGIN_ALGORIGHM_LIB_BINARY_DIR} )
     
-    target_link_libraries( ${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB QPCL_ENGINE_LIB)
-    
-    target_include_directories( ${PROJECT_NAME}
-            PUBLIC
-                ${PCL_INCLUDE_DIRS}
-    )
-    if( CMAKE_VERSION VERSION_LESS 3.13 )
-            link_directories( ${PCL_LIBRARY_DIRS} )
-    else()
-            target_link_directories( ${PROJECT_NAME}
-                    PUBLIC
-                        ${PCL_LIBRARY_DIRS}
-            )
-    endif()
-    
+    target_link_libraries( ${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB)
+
     #import PCL dlls (if any, WIN32 only)
     include( cmake/ExportPCLDlls.cmake )
     export_PCL_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )

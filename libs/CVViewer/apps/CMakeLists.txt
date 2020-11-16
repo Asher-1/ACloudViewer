@@ -36,9 +36,6 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
         # was working before, so not sure what changed.)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
-        set_target_properties(${TARGET_NAME} PROPERTIES
-                        OUTPUT_NAME ${APP_NAME}
-                        )
     else()
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
@@ -97,7 +94,7 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
                 POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
                 COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
-                COMMAND ${CMAKE_COMMAND} -E copy "${APP_DIR}/../$<CONFIG>/${APP_NAME}.exe" "${APP_DIR}"
+                COMMAND ${CMAKE_COMMAND} -E copy "${APP_DIR}/../$<CONFIG>/${TARGET_NAME}.exe" "${APP_DIR}"
             )
         else()
             add_custom_command(TARGET "${TARGET_NAME}"
@@ -131,12 +128,12 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
             # Various caches need to be updated for the app to become visible
             install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
         elseif (WIN32)
-            # MSVC puts the binary in bin/CloudViewer/Release/CloudViewer.exe
+            # MSVC puts the binary in bin/CloudViewer.exe
             # so we can't just install() the build results, and need to do them piecemeal.
             install(DIRECTORY   "${APP_DIR}/resources"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     USE_SOURCE_PERMISSIONS)
-            install(FILES   "${APP_DIR}/$<CONFIG>/${TARGET_NAME}.exe"
+            install(FILES   "${APP_DIR}/${TARGET_NAME}.exe"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     RENAME "${APP_NAME}.exe")
         else()
@@ -145,6 +142,26 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
                     USE_SOURCE_PERMISSIONS)
         endif()
     endif()
+
+    # Auxiliary files
+    set( auxFiles bin_other/license.txt )
+
+    if( WIN32 )
+	    # Additional auxiliary file(s)
+	    list( APPEND auxFiles bin_other/start.bat )
+    endif()
+
+    # Install auxiliary files
+    if(APPLE OR UNIX) # For Linux it's already installed in by qCC
+	    foreach( filename ${auxFiles} )
+		    install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin" "" )
+	    endforeach()
+    else ()
+    	foreach( filename ${auxFiles} )
+		    install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}" "" )
+	    endforeach()
+    endif()
+
 endmacro(APP)
 
 if (BUILD_GUI)

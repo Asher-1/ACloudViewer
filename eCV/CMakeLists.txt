@@ -10,11 +10,6 @@ if (MSVC)
 	endif()
 endif()
 
-if (USE_PCL_BACKEND) 
-	include_directories( ${PCL_INCLUDE_DIRS} )
-	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
-endif()
-
 if (BUILD_PYTHON_MODULE)
 	include_directories( ${ECV_PYTHON_LIB_SOURCE_DIR} )
 endif()
@@ -108,13 +103,7 @@ if( CVCORELIB_USE_QT_CONCURRENT )
 	)
 endif()
 
-if (USE_PCL_BACKEND)
-        target_link_libraries(${PROJECT_NAME} QPCL_ENGINE_LIB )
-        target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES}  ${VTK_LIBRARIES})
-endif()	
-
 if (BUILD_PYTHON_MODULE)
-	target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
 	target_link_libraries( ${PROJECT_NAME} ECV_PYTHON_LIB )
 	# Add custom preprocessor definitions
 	target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_PYTHON_MODULE )

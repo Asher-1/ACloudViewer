@@ -132,6 +132,7 @@ if ( CVCORELIB_USE_TBB )
 		target_link_libraries( ${PROJECT_NAME} PUBLIC ${ALL_TBB_LIBRARIES} )
 		target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
 		target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_TBB )
+		InstallFiles( FILES ${TBB_LIBRARIES} )
 	endif()
 endif()
 

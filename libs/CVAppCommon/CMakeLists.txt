@@ -1,12 +1,5 @@
 project( CVAppCommon )
 
-#include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-#include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-#if( MSVC )
-#   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-#endif()
-#include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
-
 add_library( ${PROJECT_NAME} SHARED )
 
 #add_subdirectory( devices )
@@ -17,6 +10,18 @@ add_subdirectory( ui )
 target_link_libraries( ${PROJECT_NAME}
 	CVPluginAPI
 )
+
+if (USE_PCL_BACKEND)
+	if( CMAKE_VERSION VERSION_LESS 3.13 )
+		link_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR} )
+	else()
+		target_link_directories( ${PROJECT_NAME}
+			PUBLIC ${QPCL_ENGINE_LIB_SOURCE_DIR}
+		)
+	endif()
+	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
+	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
+endif()
 
 target_compile_definitions( ${PROJECT_NAME} PRIVATE CVAPPCOMMON_LIBRARY_BUILD )
 # if ( USE_PCL_BACKEND )
