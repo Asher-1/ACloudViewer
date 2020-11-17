@@ -2226,7 +2226,7 @@ void ccRasterizeTool::generateImage() const
 		}
 
 		double range = maxHeight - minHeight;
-		if (range < ZERO_TOLERANCE)
+        if (CVLib::LessThanEpsilon(range))
 		{
 			range = 1.0;
 		}

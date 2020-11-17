@@ -91,9 +91,9 @@ one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures
 set_property(CACHE CUDA_ARCH PROPERTY STRINGS Auto BasicPTX User)
 set(CUDA_ARCH_USER "" CACHE STRING "User defined list of GPU architectures, e.g. 3.5 5.0+PTX Turing" )
 
-# Default build type
+# Default build type, default to RelWithDebInfo
 if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No CMAKE_BUILD_TYPE specified, default to RelWithDebInfo")
+    message(STATUS "No CMAKE_BUILD_TYPE specified, default to Release")
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
@@ -503,7 +503,6 @@ function(CopyDLLToDirectory trgt)
             VERBATIM)
     if (${BUILD_GUI})
         # Install dependence lib files
-        message("install file: " "$<TARGET_FILE:${trgt}>")
         if(APPLE OR UNIX)
 	        foreach( filename "$<TARGET_FILE:${trgt}>" )
 		        install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin" "" )

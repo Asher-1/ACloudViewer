@@ -103,6 +103,18 @@ if( CVCORELIB_USE_QT_CONCURRENT )
 	)
 endif()
 
+if (USE_PCL_BACKEND)
+        if( CMAKE_VERSION VERSION_LESS 3.13 )
+                link_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR} )
+        else()
+                target_link_directories( ${PROJECT_NAME}
+                        PUBLIC ${QPCL_ENGINE_LIB_SOURCE_DIR}
+                )
+        endif()
+        include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
+        target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
+endif()
+
 if (BUILD_PYTHON_MODULE)
 	target_link_libraries( ${PROJECT_NAME} ECV_PYTHON_LIB )
 	# Add custom preprocessor definitions

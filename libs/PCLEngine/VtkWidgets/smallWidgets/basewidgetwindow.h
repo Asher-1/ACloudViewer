@@ -5,10 +5,12 @@
 
 #include <vtkSmartPointer.h>
 
-namespace Ui
-{
-    class BaseWidgetWindow;
-}
+#include "ui_basewidgetwindow.h"
+
+//namespace Ui
+//{
+//    class BaseWidgetWindow;
+//}
 
 namespace VtkUtils
 {

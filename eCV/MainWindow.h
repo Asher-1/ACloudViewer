@@ -106,7 +106,7 @@ class MainWindow : public QMainWindow, public ecvMainAppInterface, public ccPick
 	Q_OBJECT
 
 protected:
-	MainWindow(QWidget *parent = 0);
+    MainWindow(QWidget *parent = nullptr);
 	~MainWindow() override;
 
 public: // static method

@@ -79,8 +79,8 @@ public: // inherit from ecvDisplayTools
 	virtual void drawWidgets(const WIDGETS_PARAMETER& param) override;
 	virtual void changeEntityProperties(PROPERTY_PARAM& param) override;
 
-	virtual void transformCameraView(const ccGLMatrixd & viewMat);
-	virtual void transformCameraProjection(const ccGLMatrixd & projMat);
+    virtual void transformCameraView(const ccGLMatrixd & viewMat) override;
+    virtual void transformCameraProjection(const ccGLMatrixd & projMat) override;
 
 	virtual void draw(CC_DRAW_CONTEXT& CONTEXT, const ccHObject * obj) override;
 
@@ -235,9 +235,7 @@ public:
 		up[2] = cam.view[2];
 	}
 
-	inline virtual void setCameraPosition(
-		const CCVector3d& pos,
-		int viewPort = 0) override {
+    inline virtual void setCameraPosition( const CCVector3d& pos, int viewPort = 0 ) override {
 		getQVtkWidget()->setCameraPosition(pos);
 	}
 
@@ -263,7 +261,7 @@ public:
 			view_x, view_y, view_z, up_x, up_y, up_z, viewPort);
 	}
 
-	inline virtual void setRenderWindowSize(int xw, int yw)
+    inline virtual void setRenderWindowSize(int xw, int yw) override
 	{
 		getQVtkWidget()->GetRenderWindow()->SetPosition(0, 0);
 		getQVtkWidget()->GetRenderWindow()->SetSize(xw, yw);

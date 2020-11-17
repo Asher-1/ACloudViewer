@@ -422,8 +422,8 @@ namespace VTKExtensions
 					// Get the new color
 					pcl::visualization::PointCloudColorHandler<pcl::PCLPointCloud2>::ConstPtr color_handler = act->color_handlers[index];
 
-					vtkSmartPointer<vtkDataArray> scalars;
-					color_handler->getColor(scalars);
+                    vtkSmartPointer<vtkDataArray> scalars = color_handler->getColor();
+
 					double minmax[2];
 					scalars->GetRange(minmax);
 					// Update the data

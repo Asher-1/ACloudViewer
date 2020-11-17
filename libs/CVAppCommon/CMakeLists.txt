@@ -12,21 +12,11 @@ target_link_libraries( ${PROJECT_NAME}
 )
 
 if (USE_PCL_BACKEND)
-	if( CMAKE_VERSION VERSION_LESS 3.13 )
-		link_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR} )
-	else()
-		target_link_directories( ${PROJECT_NAME}
-			PUBLIC ${QPCL_ENGINE_LIB_SOURCE_DIR}
-		)
-	endif()
 	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
 	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
 endif()
 
 target_compile_definitions( ${PROJECT_NAME} PRIVATE CVAPPCOMMON_LIBRARY_BUILD )
-# if ( USE_PCL_BACKEND )
-	# target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_PCL_BACKEND )	
-# endif()
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
 	AUTOUIC ON # FIXME Remove after everything has moved to targets and we can set it globally

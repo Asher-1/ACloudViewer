@@ -716,8 +716,8 @@ void MainWindow::initial() {
 		m_mdiArea->installEventFilter(this);
 	}
 
-	bool stereoMode = QSurfaceFormat::defaultFormat().stereo();
-	ecvDisplayTools::Init(new PCLDisplayTools(), this, stereoMode);
+    bool stereoMode = QSurfaceFormat::defaultFormat().stereo();
+    ecvDisplayTools::Init(new PCLDisplayTools(), this, stereoMode);
 
 	initConsole();
 
@@ -725,9 +725,9 @@ void MainWindow::initial() {
 
 	initStatusBar();
 
-	QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
-	viewWidget->setMinimumSize(400, 300);
-	m_mdiArea->addSubWindow(viewWidget);
+    QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
+    viewWidget->setMinimumSize(400, 300);
+    m_mdiArea->addSubWindow(viewWidget);
 
 	//picking hub
 	{
@@ -741,8 +741,8 @@ void MainWindow::initial() {
 		connect(this, &QObject::destroyed, m_pickingHub, &ccPickingHub::onActiveWindowDeleted);
 	}
 
-	viewWidget->showMaximized();
-	viewWidget->update();
+    viewWidget->showMaximized();
+    viewWidget->update();
 
 }
 
@@ -865,7 +865,7 @@ MainWindow::~MainWindow() {
 
 		mdiDialog.dialog->disconnect();
 		mdiDialog.dialog->stop(false);
-		mdiDialog.dialog->setParent(0);
+        mdiDialog.dialog->setParent(nullptr);
 		delete mdiDialog.dialog;
 	}
 
@@ -941,7 +941,7 @@ QMdiSubWindow* MainWindow::getMDISubWindow(QWidget* win)
 	}
 
 	//not found!
-	return 0;
+    return nullptr;
 }
 
 void MainWindow::update3DViewsMenu()
@@ -1063,7 +1063,7 @@ QWidget* MainWindow::getWindow(int index) const
 	else
 	{
 		assert(false);
-		return 0;
+        return nullptr;
 	}
 }
 
@@ -1071,7 +1071,7 @@ QWidget* MainWindow::getActiveWindow()
 {
 	if (!m_mdiArea)
 	{
-		return 0;
+        return nullptr;
 	}
 
 	QMdiSubWindow *activeSubWindow = m_mdiArea->activeSubWindow();
@@ -1088,7 +1088,7 @@ QWidget* MainWindow::getActiveWindow()
 		}
 	}
 
-	return 0;
+    return nullptr;
 }
 
 void MainWindow::ChangeStyle(const QString &qssFile)
