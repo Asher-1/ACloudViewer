@@ -91,7 +91,7 @@ ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, bool isCommandLin
 	// supports HDPI
 	//QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	//QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-	////QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    //QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
 #ifdef Q_OS_WIN
@@ -212,16 +212,17 @@ void ecvApplicationBase::setupPaths()
 	{
 		theDir.cdUp();
 
-		m_PluginPaths << (theDir.absolutePath() + "/lib/erowcloudviewer/plugins");
-		m_ShaderPath = (theDir.absolutePath() + "/share/erowcloudviewer/shaders");
-		m_TranslationPath = (theDir.absolutePath() + "/share/erowcloudviewer/translations");
+        m_PluginPaths << (theDir.absolutePath() + "/bin/plugins");
+        m_PluginPaths << (theDir.absolutePath() + "/lib/ErowCloudViewer/plugins");
+        m_ShaderPath = (theDir.absolutePath() + "/share/ErowCloudViewer/shaders");
+        m_TranslationPath = (theDir.absolutePath() + "/share/ErowCloudViewer/translations");
 	}
 	else
 	{
 		// Choose a reasonable default to look in
-		m_PluginPaths << "/usr/lib/erowcloudviewer/plugins";
-		m_ShaderPath = "/usr/share/erowcloudviewer/shaders";
-		m_TranslationPath = "/usr/share/erowcloudviewer/translations";
+        m_PluginPaths << "/usr/lib/ErowCloudViewer/plugins";
+        m_ShaderPath = "/usr/share/ErowCloudViewer/shaders";
+        m_TranslationPath = "/usr/share/ErowCloudViewer/translations";
 	}
 #else
 #warning Need to specify the shader path for this OS.

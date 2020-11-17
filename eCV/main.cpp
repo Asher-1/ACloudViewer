@@ -57,10 +57,10 @@ void InitEnvironment()
 	//global structures initialization
 	FileIOFilter::InitInternalFilters(); //load all known I/O filters
 
-	DBLib::ecvWidgetsInterface::InitInternalInterfaces();
-	DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetFilterWidgetInterface());
-	DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSmallWidgetsInterface());
-	DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSurfaceWidgetsInterface());
+    DBLib::ecvWidgetsInterface::InitInternalInterfaces();
+    DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetFilterWidgetInterface());
+    DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSmallWidgetsInterface());
+    DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSurfaceWidgetsInterface());
 
 	// force pre-computed normals array initialization
 	ccNormalVectors::GetUniqueInstance(); 
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		//main window init.
+        //main window init.
 		MainWindow* mainWindow = MainWindow::TheInstance();
 		if (!mainWindow)
 		{
@@ -237,13 +237,13 @@ int main(int argc, char *argv[])
 		}
 		else {
 			// use default ui
-			mainWindow->setWindowIcon(QIcon(Settings::APP_LOGO));
-			mainWindow->setWindowTitle(Settings::APP_TITLE);
-			//persistent Theme settings
-			QString qssfile = ecvSettingManager::getValue(
-				ecvPS::ThemeSettings(), ecvPS::CurrentTheme(),
-				Settings::DEFAULT_STYLE).toString();
-			MainWindow::ChangeStyle(qssfile);
+            mainWindow->setWindowIcon(QIcon(Settings::APP_LOGO));
+            mainWindow->setWindowTitle(Settings::APP_TITLE);
+            //persistent Theme settings
+            QString qssfile = ecvSettingManager::getValue(
+                ecvPS::ThemeSettings(), ecvPS::CurrentTheme(),
+                Settings::DEFAULT_STYLE).toString();
+            MainWindow::ChangeStyle(qssfile);
 			mainWindow->show();
 		}
 

@@ -262,7 +262,7 @@ public:
 
 	//! Removes unused capacity
 	inline void shrinkToFit() { if (size() < capacity()) resize(size()); }
-	inline void shrinkVertexToFit();
+    void shrinkVertexToFit();
 
 	/*********************************************************/
 	/**************    PER-TRIANGLE NORMALS    ***************/

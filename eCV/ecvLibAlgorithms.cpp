@@ -753,7 +753,7 @@ namespace ccLibAlgorithms
 					continue;
 				
 				CVLog::Print(QString("[Scale Matching] Entity '%1' scale: %2").arg(entities[i]->getName()).arg(scales[i]));
-				if (scales[i] <= ZERO_TOLERANCE)
+                if (scales[i] <= ZERO_TOLERANCE_D)
 				{
 					CVLog::Warning("[Scale Matching] Entity scale is too small!");
 					continue;

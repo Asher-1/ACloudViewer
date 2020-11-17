@@ -193,23 +193,26 @@ void VtkWidgetPrivate::init()
 static const int CC_MAX_PICKING_CLICK_DURATION_MS = 350;
 QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* tools, bool stereoMode)
 	: QVTKOpenGLNativeWidget(parentWindow)
-	, m_axesWidget(nullptr)
-	, m_logoWidget(nullptr)
-	, m_interactor(nullptr)
-	, m_render(nullptr)
-	, m_scalarbarWidget(nullptr)
-	, m_dataObject(nullptr)
-	, m_modelActor(nullptr)
-	, m_win(parentWindow)
-	, m_tools(tools)
+    , m_render(nullptr)
+    , m_win(parentWindow)
+    , m_tools(tools)
+    , m_dataObject(nullptr)
+    , m_modelActor(nullptr)
+    , m_interactor(nullptr)
+    , m_logoWidget(nullptr)
+    , m_scalarbarWidget(nullptr)
+    , m_axesWidget(nullptr)
 {
 	this->setWindowTitle("3D View");
 
 	QSurfaceFormat fmt = QVTKOpenGLNativeWidget::defaultFormat();
 	fmt.setStereo(stereoMode);
 	setFormat(fmt);
+//    vtkGenericOpenGLRenderWindow::SetGlobalMaximumNumberOfMultiSamples(8);
 
-	this->setEnableHiDPI(true);
+#ifdef CV_WINDOWS
+    this->setEnableHiDPI(true);
+#endif
 
 	//drag & drop handling
 	setAcceptDrops(true);

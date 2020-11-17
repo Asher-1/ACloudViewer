@@ -6,10 +6,12 @@
 
 #include <vtkSmartPointer.h>
 
-namespace Ui
-{
-	class GeneralFilterWindow;
-}
+#include "ui_generalfilterwindow.h"
+
+//namespace Ui
+//{
+//	class GeneralFilterWindow;
+//}
 
 namespace VtkUtils
 {

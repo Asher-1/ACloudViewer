@@ -254,7 +254,7 @@ void ecvSettingManager::Init(const QString &fileName)
 	QString configPath;
 	configPath = QCoreApplication::applicationDirPath() + "/";
 	configPath += fileName;
-	s_manager.instance->m_iniFile = QSharedPointer<QSettings>(new QSettings(configPath, QSettings::IniFormat));
+    s_manager.instance->m_iniFile = QSharedPointer<QSettings>(new QSettings(configPath, QSettings::IniFormat));
 	//s_manager.instance->m_iniFile->setIniCodec(QTextCodec::codecForName("System"));
 	s_manager.instance->m_iniFile->setIniCodec("utf8"); // set coding
 	QFile file(configPath);

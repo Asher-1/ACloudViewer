@@ -108,7 +108,7 @@ void ecvDisplayTools::Init(ecvDisplayTools* displayTools, QMainWindow* win, bool
 
 	SetMainWindow(win);
 	// register current instance visualizer only once
-	s_tools.instance->registerVisualizer(win, stereoMode);
+    s_tools.instance->registerVisualizer(win, stereoMode);
 
 	s_tools.instance->m_uniqueID = ++s_GlWindowNumber; //GL window unique ID
 	s_tools.instance->m_lastMousePos = QPoint(-1, -1);

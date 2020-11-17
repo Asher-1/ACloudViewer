@@ -355,9 +355,9 @@ public: //! Draws the main 3D layer
 	static void RemoveBB(CC_DRAW_CONTEXT context);
 	static void RemoveBB(const QString& viewId);
 	static void ChangeEntityProperties(PROPERTY_PARAM& propertyParam, bool autoUpdate = true);
-	inline virtual void changeEntityProperties(PROPERTY_PARAM& propertyParam) { /* do nothing */ };
+    inline virtual void changeEntityProperties(PROPERTY_PARAM& propertyParam) { /* do nothing */ }
 	static void DrawWidgets(const WIDGETS_PARAMETER& param, bool update = false);
-	inline virtual void drawWidgets(const WIDGETS_PARAMETER& param) { /* do nothing */ };
+    inline virtual void drawWidgets(const WIDGETS_PARAMETER& param) { /* do nothing */ }
 	static void RemoveWidgets(const WIDGETS_PARAMETER& param, bool update = false);
 
 	inline static void DrawCoordinates(double scale = 1.0,
@@ -439,9 +439,9 @@ public: // main interface
 	inline static void SetRemoveAllFlag(bool state) { TheInstance()->m_removeAllFlag = state; }
 
 	inline static void TransformCameraView(const ccGLMatrixd & viewMat) { TheInstance()->transformCameraView(viewMat); }
-	inline virtual void transformCameraView(const ccGLMatrixd & viewMat) { /* do nothing */ };
+    inline virtual void transformCameraView(const ccGLMatrixd & viewMat) { /* do nothing */ }
 	inline static void TransformCameraProjection(const ccGLMatrixd & projMat) { TheInstance()->transformCameraProjection(projMat); }
-	inline virtual void transformCameraProjection(const ccGLMatrixd & projMat) { /* do nothing */ };
+    inline virtual void transformCameraProjection(const ccGLMatrixd & projMat) { /* do nothing */ }
 
 	static inline int GetDevicePixelRatio() { 
 		//return TheInstance()->getDevicePixelRatio(); 
@@ -464,21 +464,21 @@ public: // main interface
 	inline virtual void fullScreen(bool state) {/* do nothing */}
 
 	inline static void GetCameraPos(double *pos, int viewPort = 0) { TheInstance()->getCameraPos(pos, viewPort); }
-	inline virtual void getCameraPos(double *pos, int viewPort = 0) { /* do nothing */ };
+    inline virtual void getCameraPos(double *pos, int viewPort = 0) { /* do nothing */ }
 	inline static void GetCameraFocal(double *focal, int viewPort = 0) { TheInstance()->getCameraFocal(focal, viewPort); }
-	inline virtual void getCameraFocal(double *focal, int viewPort = 0) { /* do nothing */ };
+    inline virtual void getCameraFocal(double *focal, int viewPort = 0) { /* do nothing */ }
 	inline static void GetCameraUp(double *up, int viewPort = 0) { TheInstance()->getCameraUp(up, viewPort); }
 	virtual void getCameraUp(double *up, int viewPort = 0) { /* do nothing */ }
 
 	inline static void SetCameraPosition(const CCVector3d& pos, int viewPort = 0) { 
-		TheInstance()->setCameraPosition(pos, viewPort); };
-	inline virtual void setCameraPosition(const CCVector3d& pos, int viewPort = 0) { /* do nothing */ };
+        TheInstance()->setCameraPosition(pos, viewPort); }
+    inline virtual void setCameraPosition(const CCVector3d& pos, int viewPort = 0) { /* do nothing */ }
 	inline static void SetCameraPosition(const double *pos, const double *focal, const double *up, int viewPort = 0) { 
 		TheInstance()->setCameraPosition(pos, focal, up, viewPort); }
-	inline virtual void setCameraPosition(const double *pos, const double *focal, const double *up, int viewPort = 0) { /* do nothing */ };
+    inline virtual void setCameraPosition(const double *pos, const double *focal, const double *up, int viewPort = 0) { /* do nothing */ }
 	inline static void SetCameraPosition(const double *pos, const double *up, int viewPort = 0) { 
 		TheInstance()->setCameraPosition(pos, up, viewPort); }
-	inline virtual void setCameraPosition(const double *pos, const double *up, int viewPort = 0) { /* do nothing */ };
+    inline virtual void setCameraPosition(const double *pos, const double *up, int viewPort = 0) { /* do nothing */ }
 	inline static void SetCameraPosition(double pos_x, double pos_y, double pos_z,
 		double view_x, double view_y, double view_z, double up_x, double up_y, double up_z, int viewPort = 0) {
 		TheInstance()->setCameraPosition(pos_x, pos_y, pos_z,
@@ -667,8 +667,8 @@ public: // visualization matrix transformation
 	**/
 	static void ResizeGL(int w, int h);
 	static void UpdateScreenSize();
-	inline static void Update() { GetCurrentScreen()->update(); UpdateCamera(); };
-	inline static void UpdateScreen() { GetCurrentScreen()->update(); UpdateScene(); };
+    inline static void Update() { GetCurrentScreen()->update(); UpdateCamera(); }
+    inline static void UpdateScreen() { GetCurrentScreen()->update(); UpdateScene(); }
 	inline static void ResetCamera(const ccBBox * bbox)  { TheInstance()->resetCamera(bbox);  UpdateScreen(); }
 	inline virtual void resetCamera(const ccBBox * bbox) { /* do nothing */ }
 	inline static void ResetCamera() { TheInstance()->resetCamera(); UpdateScreen(); }
@@ -767,8 +767,8 @@ public: // visualization matrix transformation
 		QString id = "");
 
 	//! Toggles (exclusive) full-screen mode
-	inline static void ToggleExclusiveFullScreen(bool state) { TheInstance()->toggleExclusiveFullScreen(state); };
-	inline virtual void toggleExclusiveFullScreen(bool state) {/* in this do nothing */};
+    inline static void ToggleExclusiveFullScreen(bool state) { TheInstance()->toggleExclusiveFullScreen(state); }
+    inline virtual void toggleExclusiveFullScreen(bool state) {/* in this do nothing */}
 
 
 	//! Returns whether the window is in exclusive full screen mode or not

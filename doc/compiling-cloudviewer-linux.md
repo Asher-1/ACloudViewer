@@ -4,13 +4,37 @@ Build from source in Ubuntu and macOS
 1. Install dependencies
 
     # On Ubuntu
-    util/install_deps_ubuntu.sh
+    util/install_deps_ubuntu.sh assume-yes
 
     # On macOS
     # Install Homebrew first: https://brew.sh/
     util/install_deps_macos.sh
 
-.. _compilation_unix_python:
+    # configure for vtk(8.2)
+      cmake -DVTK_QT_VERSION:STRING=5 \
+	-DCMAKE_BUILD_TYPE=Release 
+      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/bin/qmake \
+      	-DVTK_Group_Qt:BOOL=ON \
+      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/lib/cmake  \
+      	-DBUILD_SHARED_LIBS:BOOL=ON ..
+
+	make -j 8
+	sudo make install
+    # cofigure for qt VTK PLUGINS
+	sudo find / -name libQVTKWidgetPlugin.so
+	sudo cp /media/yons/data/develop/pcl_projects/VTK-8.2.0/ubuntu_build/lib/libQVTKWidgetPlugin.so /opt/Qt5.13.0/5.13.0/gcc_64/plugins/designer
+	sudo cp /media/yons/data/develop/pcl_projects/VTK-8.2.0/ubuntu_build/lib/libQVTKWidgetPlugin.so /opt/Qt5.13.0/Tools/QtCreator/lib/Qt/plugins/designer
+
+    # cofigure PCL(1.11.1)
+	cmake -DCMAKE_BUILD_TYPE=Release \
+	      -DBUILD_GPU=ON \
+	      -DBUILD_apps=ON \
+	      -DBUILD_examples=ON \
+	      -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/bin/qmake \
+	      -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/lib/cmake ..
+
+	make -j 8
+	sudo make install
 
 2. Setup Python environments
 ````````````````````````````
@@ -22,7 +46,6 @@ to specify the python executable.
 
 If Python binding is not needed, you can turn it off by ``-DBUILD_PYTHON_MODULE=OFF``.
 
-.. _compilation_unix_config:
 
 3. Config
 `````````
@@ -37,7 +60,6 @@ CloudViewer to a user location. In the absence of this argument CloudViewer will
 installed to a system location where ``sudo`` is required) For more
 options of the build, see :ref:`compilation_options`.
 
-.. _compilation_unix_build:
 
 4. Build
 ````````
@@ -48,7 +70,6 @@ options of the build, see :ref:`compilation_options`.
     # On macOS
     make -j$(sysctl -n hw.physicalcpu)
 
-.. _compilation_unix_install:
 
 5. Install
 ``````````
