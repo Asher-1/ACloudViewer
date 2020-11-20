@@ -20,7 +20,7 @@ if(GLIBCXX_USE_CXX11_ABI)
 else()
     add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 endif()
-add_subdirectory(${Open3D_3RDPARTY_DIR}/benchmark ${CMAKE_BINARY_DIR}/3rdparty/benchmark2)
+add_subdirectory(${CloudViewer_3RDPARTY_DIR}/benchmark ${CMAKE_BINARY_DIR}/3rdparty/benchmark2)
 # set the cache vars introduced by the benchmark lib as advanced to not
 # clutter the cmake interfaces
 mark_as_advanced(
@@ -49,9 +49,23 @@ add_executable(benchmarks ${BENCHMARK_SOURCE_FILES})
 add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
 add_definitions(-DBENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
 
-target_link_libraries(benchmarks ${CMAKE_PROJECT_NAME} benchmark::benchmark benchmark::benchmark_main)
-open3d_show_and_abort_on_warning(benchmarks)
-open3d_set_global_properties(benchmarks)
+include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
+if( MSVC )
+	include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc )
+endif()
+
+set_target_properties( benchmarks PROPERTIES
+AUTOMOC OFF
+AUTORCC OFF
+AUTOUIC OFF
+)
+
+target_link_libraries( benchmarks benchmark::benchmark benchmark::benchmark_main )
+target_link_libraries( benchmarks ECV_DB_LIB )
+target_link_libraries( benchmarks ECV_IO_LIB )
+target_link_libraries( benchmarks OPENGL_ENGINE_LIB )
+ShowAndAbortOnWarning(benchmarks)
+cloudViewer_set_global_properties(benchmarks)
 
 if (BUILD_CUDA_MODULE)
     target_include_directories(benchmarks SYSTEM PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})

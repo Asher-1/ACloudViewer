@@ -29,7 +29,7 @@
 #include <memory>
 #include <string>
 
-#include "cloudViewer/io/rpc/ConnectionBase.h"
+#include "io/rpc/ConnectionBase.h"
 
 namespace cloudViewer {
 namespace io {

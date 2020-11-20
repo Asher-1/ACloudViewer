@@ -105,7 +105,7 @@ inline cublasStatus_t gemm_cuda(cublasHandle_t handle,
                                 const scalar_t *beta,
                                 scalar_t *C_data,
                                 int ldc) {
-    CVLib::CVLib::utility::LogError("Unsupported data type.");
+    CVLib::utility::LogError("Unsupported data type.");
     return CUBLAS_STATUS_NOT_SUPPORTED;
 }
 

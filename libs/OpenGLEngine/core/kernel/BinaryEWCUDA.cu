@@ -36,7 +36,7 @@ namespace core {
 namespace kernel {
 
 template <typename scalar_t>
-static OPEN3D_HOST_DEVICE void CUDAAddElementKernel(const void* lhs,
+static CLOUDVIEWER_HOST_DEVICE void CUDAAddElementKernel(const void* lhs,
                                                     const void* rhs,
                                                     void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(lhs) +
@@ -44,7 +44,7 @@ static OPEN3D_HOST_DEVICE void CUDAAddElementKernel(const void* lhs,
 }
 
 template <typename scalar_t>
-static OPEN3D_HOST_DEVICE void CUDASubElementKernel(const void* lhs,
+static CLOUDVIEWER_HOST_DEVICE void CUDASubElementKernel(const void* lhs,
                                                     const void* rhs,
                                                     void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(lhs) -
@@ -52,7 +52,7 @@ static OPEN3D_HOST_DEVICE void CUDASubElementKernel(const void* lhs,
 }
 
 template <typename scalar_t>
-static OPEN3D_HOST_DEVICE void CUDAMulElementKernel(const void* lhs,
+static CLOUDVIEWER_HOST_DEVICE void CUDAMulElementKernel(const void* lhs,
                                                     const void* rhs,
                                                     void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(lhs) *
@@ -60,7 +60,7 @@ static OPEN3D_HOST_DEVICE void CUDAMulElementKernel(const void* lhs,
 }
 
 template <typename scalar_t>
-static OPEN3D_HOST_DEVICE void CUDADivElementKernel(const void* lhs,
+static CLOUDVIEWER_HOST_DEVICE void CUDADivElementKernel(const void* lhs,
                                                     const void* rhs,
                                                     void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(lhs) /
@@ -68,7 +68,7 @@ static OPEN3D_HOST_DEVICE void CUDADivElementKernel(const void* lhs,
 }
 
 template <typename src_t, typename dst_t>
-static OPEN3D_HOST_DEVICE void CUDALogicalAndElementKernel(const void* lhs,
+static CLOUDVIEWER_HOST_DEVICE void CUDALogicalAndElementKernel(const void* lhs,
                                                            const void* rhs,
                                                            void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
@@ -77,7 +77,7 @@ static OPEN3D_HOST_DEVICE void CUDALogicalAndElementKernel(const void* lhs,
 }
 
 template <typename src_t, typename dst_t>
-static OPEN3D_HOST_DEVICE void CUDALogicalOrElementKernel(const void* lhs,
+static CLOUDVIEWER_HOST_DEVICE void CUDALogicalOrElementKernel(const void* lhs,
                                                           const void* rhs,
                                                           void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
@@ -86,7 +86,7 @@ static OPEN3D_HOST_DEVICE void CUDALogicalOrElementKernel(const void* lhs,
 }
 
 template <typename src_t, typename dst_t>
-static OPEN3D_HOST_DEVICE void CUDALogicalXorElementKernel(const void* lhs,
+static CLOUDVIEWER_HOST_DEVICE void CUDALogicalXorElementKernel(const void* lhs,
                                                            const void* rhs,
                                                            void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
@@ -95,7 +95,7 @@ static OPEN3D_HOST_DEVICE void CUDALogicalXorElementKernel(const void* lhs,
 }
 
 template <typename src_t, typename dst_t>
-static OPEN3D_HOST_DEVICE void CUDAGtElementKernel(const void* lhs,
+static CLOUDVIEWER_HOST_DEVICE void CUDAGtElementKernel(const void* lhs,
                                                    const void* rhs,
                                                    void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
@@ -103,7 +103,7 @@ static OPEN3D_HOST_DEVICE void CUDAGtElementKernel(const void* lhs,
 }
 
 template <typename src_t, typename dst_t>
-static OPEN3D_HOST_DEVICE void CUDALtElementKernel(const void* lhs,
+static CLOUDVIEWER_HOST_DEVICE void CUDALtElementKernel(const void* lhs,
                                                    const void* rhs,
                                                    void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
@@ -111,7 +111,7 @@ static OPEN3D_HOST_DEVICE void CUDALtElementKernel(const void* lhs,
 }
 
 template <typename src_t, typename dst_t>
-static void OPEN3D_HOST_DEVICE CUDAGeqElementKernel(const void* lhs,
+static void CLOUDVIEWER_HOST_DEVICE CUDAGeqElementKernel(const void* lhs,
                                                     const void* rhs,
                                                     void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
@@ -119,7 +119,7 @@ static void OPEN3D_HOST_DEVICE CUDAGeqElementKernel(const void* lhs,
 }
 
 template <typename src_t, typename dst_t>
-static void OPEN3D_HOST_DEVICE CUDALeqElementKernel(const void* lhs,
+static void CLOUDVIEWER_HOST_DEVICE CUDALeqElementKernel(const void* lhs,
                                                     const void* rhs,
                                                     void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
@@ -127,7 +127,7 @@ static void OPEN3D_HOST_DEVICE CUDALeqElementKernel(const void* lhs,
 }
 
 template <typename src_t, typename dst_t>
-static void OPEN3D_HOST_DEVICE CUDAEqElementKernel(const void* lhs,
+static void CLOUDVIEWER_HOST_DEVICE CUDAEqElementKernel(const void* lhs,
                                                    const void* rhs,
                                                    void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
@@ -135,7 +135,7 @@ static void OPEN3D_HOST_DEVICE CUDAEqElementKernel(const void* lhs,
 }
 
 template <typename src_t, typename dst_t>
-static void OPEN3D_HOST_DEVICE CUDANeqElementKernel(const void* lhs,
+static void CLOUDVIEWER_HOST_DEVICE CUDANeqElementKernel(const void* lhs,
                                                     const void* rhs,
                                                     void* dst) {
     *static_cast<dst_t*>(dst) = static_cast<dst_t>(
@@ -151,7 +151,7 @@ static void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
     switch (op_code) {
         case BinaryEWOpCode::LogicalAnd:
             CUDALauncher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDALogicalAndElementKernel<src_t, dst_t>(lhs, rhs,
                                                                   dst);
@@ -159,14 +159,14 @@ static void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             break;
         case BinaryEWOpCode::LogicalOr:
             CUDALauncher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDALogicalOrElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::LogicalXor:
             CUDALauncher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDALogicalXorElementKernel<src_t, dst_t>(lhs, rhs,
                                                                   dst);
@@ -174,42 +174,42 @@ static void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
             break;
         case BinaryEWOpCode::Gt:
             CUDALauncher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDAGtElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::Lt:
             CUDALauncher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDALtElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::Ge:
             CUDALauncher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDAGeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::Le:
             CUDALauncher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDALeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::Eq:
             CUDALauncher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDAEqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::Ne:
             CUDALauncher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDANeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
@@ -262,7 +262,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                 case BinaryEWOpCode::Add:
                     CUDALauncher::LaunchBinaryEWKernel(
                             indexer,
-                            [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
                                 CUDAAddElementKernel<scalar_t>(lhs, rhs, dst);
                             });
@@ -270,7 +270,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                 case BinaryEWOpCode::Sub:
                     CUDALauncher::LaunchBinaryEWKernel(
                             indexer,
-                            [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
                                 CUDASubElementKernel<scalar_t>(lhs, rhs, dst);
                             });
@@ -278,7 +278,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                 case BinaryEWOpCode::Mul:
                     CUDALauncher::LaunchBinaryEWKernel(
                             indexer,
-                            [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
                                 CUDAMulElementKernel<scalar_t>(lhs, rhs, dst);
                             });
@@ -286,7 +286,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                 case BinaryEWOpCode::Div:
                     CUDALauncher::LaunchBinaryEWKernel(
                             indexer,
-                            [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                            [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
                                 CUDADivElementKernel<scalar_t>(lhs, rhs, dst);
                             });

@@ -103,6 +103,15 @@ if( CVCORELIB_USE_QT_CONCURRENT )
 	)
 endif()
 
+# contrib. libraries support
+if( APPLE )
+        target_link_contrib( ${PROJECT_NAME} ${EROWCLOUDVIEWER_MAC_FRAMEWORK_DIR} )
+elseif( UNIX )
+        target_link_contrib( ${PROJECT_NAME} lib/erowcloudviewer )
+else()
+        target_link_contrib( ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} )
+endif()
+
 if (USE_PCL_BACKEND)
         if( CMAKE_VERSION VERSION_LESS 3.13 )
                 link_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR} )
@@ -158,7 +167,7 @@ if( WIN32 OR APPLE )
 	endforeach()
 else( UNIX )
 	foreach( filename ${auxFiles} )
-		install_ext( FILES ${filename} share/ErowCloudViewer "" )
+                install_ext( FILES ${filename} share/erowcloudviewer "" )
 	endforeach()
 endif()
 
@@ -178,8 +187,8 @@ if( APPLE )
 	)
 elseif( UNIX )
 	InstallPlugins(
-		DEST_PATH "${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer/plugins"
-		SHADER_DEST_PATH share/ErowCloudViewer/shaders
+                DEST_PATH "${CMAKE_INSTALL_LIBDIR}/erowcloudviewer/plugins"
+                SHADER_DEST_PATH share/erowcloudviewer/shaders
 	)
 else()
 	InstallPlugins(

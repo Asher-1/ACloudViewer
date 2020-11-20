@@ -36,7 +36,7 @@ Q_OBJECT
 public:
 
 	//! Destructor
-	~ecvSettingManager() override {};
+    ~ecvSettingManager() override {}
 
 	//! Returns the (unique) static instance
 	/** \param autoInit automatically initialize the console instance (with no widget!) if not done already
@@ -123,7 +123,7 @@ private:
 	//! Default constructor
 	/** Constructor is protected to avoid using this object as a non static class.
 	**/
-	ecvSettingManager() {};
+    ecvSettingManager() {}
 
 	QSharedPointer<QSettings> m_iniFile;
 

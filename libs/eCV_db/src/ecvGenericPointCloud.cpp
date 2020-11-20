@@ -397,7 +397,10 @@ bool ccGenericPointCloud::pointPicking(	const CCVector2d& clickPos,
 #ifdef USE_TBB
 		tbb::parallel_for( 0, static_cast<int>(size()), [&](int i)
 #else
-		for (int i = 0; i < static_cast<int>(size()); ++i)
+#if defined(_OPENMP)
+#pragma omp parallel for
+#endif
+        for (int i = 0; i < static_cast<int>(size()); ++i)
 #endif
 		{
 			//we shouldn't test points that are actually hidden!

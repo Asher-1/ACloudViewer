@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=ErowCloudViewer
+Comment=3D point cloud and mesh processing software
+Exec=/home/yons/local/ErowCloudViewer/app/ErowCloudViewer
+Terminal=false
+Categories=Graphics;
+Icon=erowcloudviewer
+
+Name[zh_CN]=erowcloudviewer.desktop

@@ -68,7 +68,7 @@ public:
     template <typename func_t>
     static void LaunchUnaryEWKernel(const Indexer& indexer,
                                     func_t element_kernel) {
-        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+        CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
         int64_t n = indexer.NumWorkloads();
         if (n == 0) {
@@ -77,20 +77,20 @@ public:
         int64_t items_per_block = default_block_size * default_thread_size;
         int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+        auto f = [=] CLOUDVIEWER_HOST_DEVICE(int64_t workload_idx) {
             element_kernel(indexer.GetInputPtr(0, workload_idx),
                            indexer.GetOutputPtr(workload_idx));
         };
 
         ElementWiseKernel<default_block_size, default_thread_size>
                 <<<grid_size, default_block_size, 0>>>(n, f);
-        OPEN3D_GET_LAST_CUDA_ERROR("LaunchUnaryEWKernel failed.");
+        CLOUDVIEWER_GET_LAST_CUDA_ERROR("LaunchUnaryEWKernel failed.");
     }
 
     template <typename func_t>
     static void LaunchBinaryEWKernel(const Indexer& indexer,
                                      func_t element_kernel) {
-        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+        CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
         int64_t n = indexer.NumWorkloads();
         if (n == 0) {
@@ -99,7 +99,7 @@ public:
         int64_t items_per_block = default_block_size * default_thread_size;
         int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+        auto f = [=] CLOUDVIEWER_HOST_DEVICE(int64_t workload_idx) {
             element_kernel(indexer.GetInputPtr(0, workload_idx),
                            indexer.GetInputPtr(1, workload_idx),
                            indexer.GetOutputPtr(workload_idx));
@@ -107,13 +107,13 @@ public:
 
         ElementWiseKernel<default_block_size, default_thread_size>
                 <<<grid_size, default_block_size, 0>>>(n, f);
-        OPEN3D_GET_LAST_CUDA_ERROR("LaunchBinaryEWKernel failed.");
+        CLOUDVIEWER_GET_LAST_CUDA_ERROR("LaunchBinaryEWKernel failed.");
     }
 
     template <typename func_t>
     static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
                                             func_t element_kernel) {
-        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+        CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
         int64_t n = indexer.NumWorkloads();
         if (n == 0) {
@@ -122,14 +122,14 @@ public:
         int64_t items_per_block = default_block_size * default_thread_size;
         int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+        auto f = [=] CLOUDVIEWER_HOST_DEVICE(int64_t workload_idx) {
             element_kernel(indexer.GetInputPtr(workload_idx),
                            indexer.GetOutputPtr(workload_idx));
         };
 
         ElementWiseKernel<default_block_size, default_thread_size>
                 <<<grid_size, default_block_size, 0>>>(n, f);
-        OPEN3D_GET_LAST_CUDA_ERROR("LaunchAdvancedIndexerKernel failed.");
+        CLOUDVIEWER_GET_LAST_CUDA_ERROR("LaunchAdvancedIndexerKernel failed.");
     }
 };
 }  // namespace kernel

@@ -7,9 +7,19 @@ if( MSVC )
    include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc )
 endif()
 
-
 if (BUILD_PYTHON_MODULE)
     add_subdirectory(pybind)
+endif()
+
+if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
+        if( MSVC )
+            SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
+            SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
+            SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
+        else()
+            SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+            SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+        endif()
 endif()
 
 project( ECV_PYTHON_LIB )
@@ -62,11 +72,11 @@ else()
 	)
 
 	target_link_libraries(	${PROJECT_NAME}
-							pybind11::embed
-							${PYTHON_LIBRARIES}
-							Qt5::Core
-							Qt5::PrintSupport
-							OPENGL_ENGINE_LIB
+                                pybind11::embed
+                                ${PYTHON_LIBRARIES}
+                                Qt5::Core
+                                Qt5::PrintSupport
+                                OPENGL_ENGINE_LIB
 	)
 
 endif()

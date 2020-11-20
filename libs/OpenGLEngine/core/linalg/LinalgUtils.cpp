@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LinalgUtils.h"
+#include "core/linalg/LinalgUtils.h"
 
 namespace cloudViewer {
 namespace core {

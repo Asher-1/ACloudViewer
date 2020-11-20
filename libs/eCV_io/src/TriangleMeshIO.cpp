@@ -588,8 +588,14 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 	int num_of_triangles;
 	if (myFile) {
 		char header[80] = "";
-		fread(header, sizeof(char), 80, myFile);
-		fread(&num_of_triangles, sizeof(unsigned int), 1, myFile);
+        if(fread(header, sizeof(char), 80, myFile) != 80)
+        {
+            CVLib::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] header IO error!");
+        }
+        if(fread(&num_of_triangles, sizeof(unsigned int), 1, myFile) != 1)
+        {
+            CVLib::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] triangles IO error!");
+        }
 	}
 	else {
 		CVLib::utility::LogWarning("Read STL failed: unable to read header.");
@@ -615,7 +621,10 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 		char buffer[50];
 		float *float_buffer;
 		if (myFile) {
-			fread(buffer, sizeof(char), 50, myFile);
+            if(fread(buffer, sizeof(char), 50, myFile) != 50)
+            {
+                CVLib::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] buffer IO error!");
+            }
 			float_buffer = reinterpret_cast<float *>(buffer);
 			mesh.addTriangleNorm(Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>());
 			for (int j = 0; j < 3; j++) {

@@ -36,7 +36,7 @@ void CVTools::TimeStart()
 QString CVTools::TimeOff()
 {
 	int timediff = s_time.elapsed();
-	float f = timediff / 1000.0;
+    double f = timediff / 1000.0;
 	return QString("%1").arg(f); //float->QString
 }
 
@@ -61,68 +61,23 @@ QString CVTools::toUnicode(const string& cstr)
 
 QString CVTools::toQString(const string& s)
 {
+#if defined(CV_WINDOWS)
 	return toUnicode(s);
+#else // do not support coding in Linux or mac platform!
+    return QString(s.c_str());
+#endif
 }
 
 string CVTools::fromQString(const QString& qs) 
 {
-	return fromUnicode(qs);
-}
 
-bool CVTools::FileMappingWriter(const std::string &filename, void* data, unsigned long size)
-{
 #if defined(CV_WINDOWS)
-	HANDLE hFile = CreateFile(filename.c_str(),
-		GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		CREATE_ALWAYS,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL);
-
-	if (hFile == INVALID_HANDLE_VALUE)
-	{
-		CVLog::Error("FileMappingWriter: %d", GetLastError());
-		CloseHandle(hFile);
-		return false;
-	}
-
-	HANDLE hFileMapping = CreateFileMapping(hFile,
-		NULL,
-		PAGE_READWRITE,
-		0,
-		size,
-		NULL);
-
-	if (hFileMapping == NULL)
-	{
-		CVLog::Error("FileMappingWriter: %d", GetLastError());
-		CloseHandle(hFileMapping);
-		return false;
-	}
-
-	TCHAR* pbFile = (TCHAR*)MapViewOfFile(hFileMapping, FILE_MAP_WRITE, 0, 0, 0);
-	if (pbFile == NULL)
-	{
-		CVLog::Error("FileMappingWriter: %d", GetLastError());
-		UnmapViewOfFile(pbFile);
-		return false;
-	}
-
-	//memcpy(pbFile, data, size);
-	//MoveMemory(pbFile, data, size);
-	CopyMemory(pbFile, data, size);
-
-	UnmapViewOfFile(pbFile);
-	CloseHandle(hFileMapping);
-
-	CloseHandle(hFile);
-	return true;
-#else
-	CVLog::Warning("[FileMappingWriter] only support windows!");
-	return false;
+    return fromUnicode(qs);
+#else // do not support coding in Linux or mac platform!
+    return qs.toStdString();
 #endif
 }
+
 
 bool CVTools::FileMappingReader(const std::string & filename, void * data, unsigned long& size)
 {
@@ -188,6 +143,61 @@ bool CVTools::FileMappingReader(const std::string & filename, void * data, unsig
 #endif
 }
 
+bool CVTools::FileMappingWriter(const std::string &filename, const void* data, unsigned long size)
+{
+#if defined(CV_WINDOWS)
+    HANDLE hFile = CreateFile(filename.c_str(),
+        GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        CREATE_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE)
+    {
+        CVLog::Error("FileMappingWriter: %d", GetLastError());
+        CloseHandle(hFile);
+        return false;
+    }
+
+    HANDLE hFileMapping = CreateFileMapping(hFile,
+        NULL,
+        PAGE_READWRITE,
+        0,
+        size,
+        NULL);
+
+    if (hFileMapping == NULL)
+    {
+        CVLog::Error("FileMappingWriter: %d", GetLastError());
+        CloseHandle(hFileMapping);
+        return false;
+    }
+
+    TCHAR* pbFile = (TCHAR*)MapViewOfFile(hFileMapping, FILE_MAP_WRITE, 0, 0, 0);
+    if (pbFile == NULL)
+    {
+        CVLog::Error("FileMappingWriter: %d", GetLastError());
+        UnmapViewOfFile(pbFile);
+        return false;
+    }
+
+    //memcpy(pbFile, data, size);
+    //MoveMemory(pbFile, data, size);
+    CopyMemory(pbFile, data, size);
+
+    UnmapViewOfFile(pbFile);
+    CloseHandle(hFileMapping);
+
+    CloseHandle(hFile);
+    return true;
+#else
+    CVLog::Warning("[FileMappingWriter] only support windows!");
+    return false;
+#endif
+}
+
 bool CVTools::QMappingReader(const std::string &filename, std::vector<size_t>& indices)
 {
 	indices.clear();
@@ -195,7 +205,7 @@ bool CVTools::QMappingReader(const std::string &filename, std::vector<size_t>& i
 	QFile input(filename.c_str());
 	if (!input.open(QIODevice::ReadOnly))
 	{
-		CVLog::Error(QString("Cannot open file : %1").arg(filename.c_str()));
+        CVLog::Error(QString("[CVTools::QMappingReader] Cannot open file : %1").arg(filename.c_str()));
 		return false;
 	}
 
@@ -204,49 +214,93 @@ bool CVTools::QMappingReader(const std::string &filename, std::vector<size_t>& i
 	uchar* fptr = input.map(0, input.size());
 	if (!fptr)
 	{
-		CVLog::Error(QString("Cannot open file : %1").arg(filename.c_str()));
+        CVLog::Error(QString("[CVTools::QMappingReader] Cannot open file : %1").arg(filename.c_str()));
 		return false;
 	}
 
-	char skipChar1[2] = "\r";
-	char skipChar2[2] = "\n";
-	char* buf = reinterpret_cast<char *>(fptr);
-	std::string currentLine;
-	int value;
-	int index = 0; // line index
-	for (int i = 0; i < size; ++i)
-	{
-		// skip \r if exist
-		if (buf[i] == *skipChar1)
-		{
-			continue;
-		}
-		// detect \n and output current line
-		if (buf[i] == *skipChar2)
-		{
-			value = std::stoi(currentLine);
-			currentLine.clear();
-			if (value < 0)
-			{
-				continue;
-			}
-			indices.push_back(static_cast<size_t>(value));
-			index++;
-			continue;
-		}
+    char skipChar1[2] = "\r";
+    char skipChar2[2] = "\n";
+    char* buf = reinterpret_cast<char *>(fptr);
+    std::string currentLine;
+    int value;
+    int index = 0; // line index
+    for (int i = 0; i < size; ++i)
+    {
+        // skip \r if exist
+        if (buf[i] == *skipChar1)
+        {
+            continue;
+        }
+        // detect \n and output current line
+        if (buf[i] == *skipChar2)
+        {
+            value = std::stoi(currentLine);
+            currentLine.clear();
+            if (value < 0)
+            {
+                continue;
+            }
+            indices.push_back(static_cast<size_t>(value));
+            index++;
+            continue;
+        }
 
-		currentLine += buf[i];
-	}
+        currentLine += buf[i];
+    }
 
 	input.unmap(fptr);
 	input.close();
-	return true;
+    return true;
+}
+
+bool CVTools::QMappingWriter(const std::string &filename, const void *data, std::size_t length)
+{
+    QFile file(filename.c_str());
+    if (!file.exists())
+    {
+        file.open(QIODevice::WriteOnly);
+        file.close();
+    }
+
+    if (!file.resize(static_cast<qint64>(length)))
+    {
+        CVLog::Error("[CVTools::QMappingWriter] Reserve space error! May have not enough space avaliable!");
+        return false;
+    }
+
+    if (!file.open(QIODevice::ReadWrite))
+    {
+        CVLog::Error(QString("[CVTools::QMappingWriter] Cannot open file : %1").arg(filename.c_str()));
+        return false;
+    }
+
+    // memory map
+    uchar* fptr = file.map(0, file.size());
+    if (!fptr)
+    {
+        CVLog::Error(QString("[CVTools::QMappingWriter] Mapping file(%1) failed!").arg(filename.c_str()));
+        fptr = file.map(0, static_cast<qint64>(length));
+        return false;
+    }
+
+    char* buf = reinterpret_cast<char *>(fptr);
+    if (!buf)
+    {
+        CVLog::Error(QString("[CVTools::QMappingWriter] Converting uchar* to char* failed!"));
+        return false;
+    }
+
+    memcpy(buf, data, length);
+
+    file.unmap(fptr);
+    file.close();
+    return true;
 }
 
 string CVTools::joinStrVec(const vector<string>& v, string splitor) {
 	string s = "";
 	if (v.size() == 0) return s;
-	for (int i = 0; i != v.size()  - 1; ++i) {
+    for (std::size_t i = 0; i != v.size()  - 1; ++i) {
 		s += (v[i] + splitor);
 	}
 	s += v[v.size() - 1];

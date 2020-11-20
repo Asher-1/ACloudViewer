@@ -82,7 +82,7 @@ namespace cloudViewer
 				primEnabled.push_back(RPT_PLANE);
 				primEnabled.push_back(RPT_SPHERE);
 				primEnabled.push_back(RPT_CYLINDER);
-			};
+            }
 
 			RansacParams(float scale) : epsilon(0.005f * scale),
 				bitmapEpsilon(0.01f * scale), supportPoints(500),
@@ -92,7 +92,7 @@ namespace cloudViewer
 				primEnabled.push_back(RPT_PLANE);
 				primEnabled.push_back(RPT_SPHERE);
 				primEnabled.push_back(RPT_CYLINDER);
-			};
+            }
 
 		};
 
@@ -559,8 +559,9 @@ public: //other methods
 
 	const CompressedNormType& getPointNormalIndex(unsigned pointIndex) const override;
 	const CCVector3& getPointNormal(unsigned pointIndex) const override;
-	CCVector3& getPointNormalPtr(size_t pointIndex);
+    CCVector3& getPointNormalPtr(size_t pointIndex) const;
 	std::vector<CCVector3> getPointNormals() const;
+    std::vector<CCVector3*> getPointNormalsPtr() const;
 	void setPointNormals(const std::vector<CCVector3>& normals);
 	Eigen::Vector3d getEigenNormal(size_t index) const;
 	std::vector<Eigen::Vector3d> getEigenNormals() const;
@@ -922,7 +923,7 @@ public: // for python interface
 	/// always chosen, not at random.
 	///
 	/// \param every_k_points Sample rate, the selected point indices are [0, k,
-	/// 2k, бн].
+	/// 2k].
 	std::shared_ptr<ccPointCloud> uniformDownSample(size_t every_k_points) const;
 
 	/// \brief Function to crop ccPointCloud into output ccPointCloud

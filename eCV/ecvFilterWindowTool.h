@@ -46,7 +46,7 @@ public:
 	//! Default constructor
 	explicit ecvFilterWindowTool(QMainWindow* parent);
 	//! Default destructor
-	virtual ~ecvFilterWindowTool();
+    virtual ~ecvFilterWindowTool() override;
 
 	//inherited from ccOverlayDialog
 	virtual bool linkWith(QWidget* win) override;
@@ -119,7 +119,7 @@ public:
 		bool projectOnBestFitPlane = false,
 		bool visualDebugMode = false,
 		bool generateRandomColors = false,
-		ecvProgressDialog* progressDialog = 0);
+        ecvProgressDialog* progressDialog = nullptr);
 
 protected slots:
 	void restoreLastBox();
@@ -140,6 +140,8 @@ protected slots:
 	void onShortcutTriggered(int);
 
 protected:
+    //! Parent window
+    QMainWindow* m_win;
 
 	//! Associated entities container
 	ccHObject m_entityContainer;
@@ -159,9 +161,6 @@ protected:
 	bool m_somethingHasChanged;
 
 	DBLib::VTK_WIDGETS_TYPE m_currentMode;
-
-	//! Parent window
-	QMainWindow* m_win;
 
 	//! Extracts slices and/or contours
 	void extractSlicesAndContours(bool extractSlices, bool extractContours, bool singleContourMode);

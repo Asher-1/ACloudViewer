@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DVoxelPooling")
+REGISTER_OP("CloudViewerVoxelPooling")
         .Attr("TReal: {float, double}")  // type for the point positions
         .Attr("TFeat: {float, double, int32, int64}")  // type for the features
         .Attr("position_fn: {'average', 'nearest_neighbor', 'center'} = "
@@ -81,7 +81,7 @@ The voxel grid used for pooling is always aligned to the origin (0,0,0) to
 simplify building voxel grid hierarchies. The order of the returned voxels is
 not defined as can be seen in the following example::
 
-  import open3d.ml.tf as ml3d
+  import cloudViewer.ml.tf as ml3d
 
   positions = [
       [0.1,0.1,0.1], 
@@ -101,7 +101,7 @@ not defined as can be seen in the following example::
 
   # or with pytorch
   import torch
-  import open3d.ml.torch as ml3d
+  import cloudViewer.ml.torch as ml3d
 
   positions = torch.Tensor([
       [0.1,0.1,0.1], 
@@ -153,7 +153,7 @@ pooled_features: The output point features with shape [M,channnels] and M <= N.
 
 )doc");
 
-REGISTER_OP("Open3DVoxelPoolingGrad")
+REGISTER_OP("CloudViewerVoxelPoolingGrad")
         .Attr("TReal: {float, double}")  // type for the point positions
         .Attr("TFeat: {float, double, int32, int64}")  // type for the features
         .Attr("position_fn: {'average', 'nearest_neighbor', 'center'} = "

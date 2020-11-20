@@ -4,6 +4,7 @@
 *.pydevproject
 .project
 .metadata
+CMakeLists.txt.user
 tmp/
 *.tmp
 *.bak

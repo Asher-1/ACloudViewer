@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,27 +26,27 @@
 
 #include <benchmark/benchmark.h>
 
-#include "open3d/geometry/TriangleMesh.h"
-#include "open3d/io/TriangleMeshIO.h"
+#include <ecvMesh.h>
+#include <TriangleMeshIO.h>
 
-namespace open3d {
+namespace cloudViewer {
 namespace benchmarks {
 
 class SamplePointsFixture : public benchmark::Fixture {
 public:
     void SetUp(const benchmark::State& state) {
-        trimesh = open3d::io::CreateMeshFromFile(TEST_DATA_DIR "/knot.ply");
+        trimesh = cloudViewer::io::CreateMeshFromFile(TEST_DATA_DIR "/knot.ply");
     }
 
     void TearDown(const benchmark::State& state) {
         // empty
     }
-    std::shared_ptr<open3d::geometry::TriangleMesh> trimesh;
+    std::shared_ptr<ccMesh> trimesh;
 };
 
 BENCHMARK_DEFINE_F(SamplePointsFixture, Poisson)(benchmark::State& state) {
     for (auto _ : state) {
-        trimesh->SamplePointsPoissonDisk(state.range(0));
+        trimesh->samplePointsPoissonDisk(state.range(0));
     }
 }
 
@@ -54,11 +54,11 @@ BENCHMARK_REGISTER_F(SamplePointsFixture, Poisson)->Args({123})->Args({1000});
 
 BENCHMARK_DEFINE_F(SamplePointsFixture, Uniform)(benchmark::State& state) {
     for (auto _ : state) {
-        trimesh->SamplePointsUniformly(state.range(0));
+        trimesh->samplePointsUniformly(state.range(0));
     }
 }
 
 BENCHMARK_REGISTER_F(SamplePointsFixture, Uniform)->Args({123})->Args({1000});
 
 }  // namespace benchmarks
-}  // namespace open3d
+}  // namespace cloudViewer

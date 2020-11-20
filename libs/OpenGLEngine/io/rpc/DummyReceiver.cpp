@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/DummyReceiver.h"
+#include "io/rpc/DummyReceiver.h"
 
 #include <zmq.hpp>
 
-#include "open3d/io/rpc/Messages.h"
+#include "io/rpc/Messages.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 namespace rpc {
 
@@ -46,4 +46,4 @@ std::shared_ptr<zmq::message_t> DummyReceiver::CreateStatusOKMsg() {
 
 }  // namespace rpc
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -67,7 +67,7 @@
             using scalar_t = uint16_t;                      \
             return __VA_ARGS__();                           \
         } else {                                            \
-            utility::LogError("Unsupported data type.");    \
+            CVLib::utility::LogError("Unsupported data type.");    \
         }                                                   \
     }()
 

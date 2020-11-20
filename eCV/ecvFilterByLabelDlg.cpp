@@ -19,6 +19,7 @@
 
 // LOCAL
 #include "MainWindow.h"
+#include "db_tree/ecvDBRoot.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>

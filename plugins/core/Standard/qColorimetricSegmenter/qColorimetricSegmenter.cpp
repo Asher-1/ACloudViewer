@@ -246,12 +246,12 @@ void ColorimetricSegmenter::filterRgb()
 	auto startTime = std::chrono::high_resolution_clock::now();
 
 	// Get all values to make the color range with RGB values
-	int redInf   = std::min( rgbDlg.red_first->value(),   rgbDlg.red_second->value()   );
-	int redSup   = std::max( rgbDlg.red_first->value(),   rgbDlg.red_second->value()   );
-	int greenInf = std::min( rgbDlg.green_first->value(), rgbDlg.green_second->value() );
-	int greenSup = std::max( rgbDlg.green_first->value(), rgbDlg.green_second->value() );
-	int blueInf  = std::min( rgbDlg.blue_first->value(),  rgbDlg.blue_second->value()  );
-	int blueSup  = std::max( rgbDlg.blue_first->value(),  rgbDlg.blue_second->value()  );
+    int redInf   = static_cast<int>(std::min( rgbDlg.red_first->value(),   rgbDlg.red_second->value()   ));
+    int redSup   = static_cast<int>(std::max( rgbDlg.red_first->value(),   rgbDlg.red_second->value()   ));
+    int greenInf = static_cast<int>(std::min( rgbDlg.green_first->value(), rgbDlg.green_second->value() ));
+    int greenSup = static_cast<int>(std::max( rgbDlg.green_first->value(), rgbDlg.green_second->value() ));
+    int blueInf  = static_cast<int>(std::min( rgbDlg.blue_first->value(),  rgbDlg.blue_second->value()  ));
+    int blueSup  = static_cast<int>(std::max( rgbDlg.blue_first->value(),  rgbDlg.blue_second->value()  ));
 
 	if (rgbDlg.margin->value() > 0)
 	{
@@ -288,9 +288,9 @@ void ColorimetricSegmenter::filterRgb()
 			for (unsigned j = 0; j < cloud->size(); ++j)
 			{
 				const ecvColor::Rgb& rgb = cloud->getPointColor(j);
-				if (	Inside(redInf,   rgb.r, redSup)
-					&&	Inside(greenInf, rgb.g, greenSup)
-					&&	Inside(blueInf,  rgb.b, blueSup)
+                if (	Inside(static_cast<ColorCompType>(redInf),   rgb.r, static_cast<ColorCompType>(redSup))
+                    &&	Inside(static_cast<ColorCompType>(greenInf), rgb.g, static_cast<ColorCompType>(greenSup))
+                    &&	Inside(static_cast<ColorCompType>(blueInf),  rgb.b, static_cast<ColorCompType>(blueSup))
 					)
 				{
 					addPoint(filteredCloudInside, j);
@@ -345,12 +345,12 @@ void ColorimetricSegmenter::filterScalar()
 	// Start timer
 	auto startTime = std::chrono::high_resolution_clock::now();
 
-	double marginError = static_cast<double>(scalarDlg.margin->value()) / 100.0;
-	ScalarType minVal = std::min(scalarDlg.first->value(), scalarDlg.second->value());
-	ScalarType maxVal = std::max(scalarDlg.first->value(), scalarDlg.second->value());
+    ScalarType marginError = scalarDlg.margin->value() / 100.0f;
+    ScalarType minVal = static_cast<ScalarType>(std::min(scalarDlg.first->value(), scalarDlg.second->value()));
+    ScalarType maxVal = static_cast<ScalarType>(std::max(scalarDlg.first->value(), scalarDlg.second->value()));
 	//DGM: this way of applying the error margin is a bit strange
-	minVal -= (marginError * minVal);
-	maxVal += (marginError * maxVal);
+    minVal -= (marginError * minVal);
+    maxVal += (marginError * maxVal);
 
 	std::vector<ccPointCloud*> clouds = getSelectedPointClouds();
 	for (ccPointCloud* cloud : clouds)
@@ -429,14 +429,14 @@ static bool KNNRegions(	ccPointCloud* basePointCloud,
 		int result = CVLib::DistanceComputationTools::computeCloud2CloudDistance(neighbourCloud.data(), regionCloud.data(), params);
 		if (result >= 0)
 		{
-			double meanDistance = 0.0;
+            double meanDistance = 0.0;
 			for (unsigned i = 0; i < neighbourCloud->size(); ++i)
 			{
-				meanDistance += neighbourCloud->getPointScalarValue(i);
+                meanDistance += static_cast<double>(neighbourCloud->getPointScalarValue(i));
 			}
 			meanDistance /= neighbourCloud->size();
 			
-			distancesToCentralRegion.push_back(meanDistance);
+            distancesToCentralRegion.push_back(meanDistance);
 		}
 		else
 		{
@@ -508,7 +508,7 @@ static ecvColor::Rgb ComputeAverageColor(const ccPointCloud& cloud, CVLib::Refer
 	}
 
 	//other formula to compute the average can be used
-	size_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0;
+    size_t redSum = 0, greenSum = 0, blueSum = 0;
 	for (unsigned j = 0; j < subset->size(); ++j)
 	{
 		const ecvColor::Rgb& rgb = cloud.getPointColor(subset->getPointGlobalIndex(j));
@@ -551,7 +551,7 @@ bool ColorimetricSegmenter::RegionGrowing(	RegionSet& regions,
 	if (!pointCloud || pointCloud->size() == 0)
 	{
 		Q_ASSERT(false);
-		return nullptr;
+        return false;
 	}
 	size_t pointCount = pointCloud->size();
 
@@ -599,7 +599,7 @@ bool ColorimetricSegmenter::RegionGrowing(	RegionSet& regions,
 				}
 				octree->findNearestNeighborsStartingFromCell(nNSS);
 			
-				for (int i = 0; i < nNSS.pointsInNeighbourhood.size(); i++)
+                for (std::size_t i = 0; i < nNSS.pointsInNeighbourhood.size(); i++)
 				{
 					unsigned p = nNSS.pointsInNeighbourhood[i].pointIndex;
 					// if p is labelled
@@ -673,7 +673,7 @@ bool ColorimetricSegmenter::RegionMergingAndRefinement(	RegionSet& mergedRegions
 		}
 		else
 		{
-			riSet = &(homogeneous[riSetIndex]);
+            riSet = &(homogeneous[riSetIndex]);
 		}
 
 		// for each region Rj in {KNNTNN2,TD2(Ri)}
@@ -771,12 +771,12 @@ void ColorimetricSegmenter::filterRgbWithSegmentation()
 	double marginError = rgbDlg.margin->value() / 100.0;
 
 	// Get all values to make the color range with RGB values
-	int redInf   = rgbDlg.red_first->value()    - static_cast<int>(marginError * rgbDlg.red_first->value());
-	int redSup   = rgbDlg.red_second->value()   + static_cast<int>(marginError * rgbDlg.red_second->value());
-	int greenInf = rgbDlg.green_first->value()  - static_cast<int>(marginError * rgbDlg.green_first->value());
-	int greenSup = rgbDlg.green_second->value() + static_cast<int>(marginError * rgbDlg.green_second->value());
-	int blueInf  = rgbDlg.blue_first->value()   - static_cast<int>(marginError * rgbDlg.blue_first->value());
-	int blueSup  = rgbDlg.blue_second->value()  + static_cast<int>(marginError * rgbDlg.blue_second->value());
+    int redInf   = static_cast<int>(rgbDlg.red_first->value()    - static_cast<int>(marginError * rgbDlg.red_first->value()));
+    int redSup   = static_cast<int>(rgbDlg.red_second->value()   + static_cast<int>(marginError * rgbDlg.red_second->value()));
+    int greenInf = static_cast<int>(rgbDlg.green_first->value()  - static_cast<int>(marginError * rgbDlg.green_first->value()));
+    int greenSup = static_cast<int>(rgbDlg.green_second->value() + static_cast<int>(marginError * rgbDlg.green_second->value()));
+    int blueInf  = static_cast<int>(rgbDlg.blue_first->value()   - static_cast<int>(marginError * rgbDlg.blue_first->value()));
+    int blueSup  = static_cast<int>(rgbDlg.blue_second->value()  + static_cast<int>(marginError * rgbDlg.blue_second->value()));
 
 	redInf   = std::max(0, redInf);
 	greenInf = std::max(0, greenInf);
@@ -804,10 +804,10 @@ void ColorimetricSegmenter::filterRgbWithSegmentation()
 			for (Region& r : mergedRegions)
 			{
 				ecvColor::Rgb mean = ComputeAverageColor(*cloud, r.data());
-				if (	Inside(redInf,   mean.r, redSup)
-					&&	Inside(greenInf, mean.g, greenSup)
-					&&	Inside(blueInf,  mean.b, blueSup)
-					)
+                if (	Inside(static_cast<ColorCompType>(redInf),   mean.r, static_cast<ColorCompType>(redSup))
+                    &&	Inside(static_cast<ColorCompType>(greenInf), mean.g, static_cast<ColorCompType>(greenSup))
+                    &&	Inside(static_cast<ColorCompType>(blueInf),  mean.b, static_cast<ColorCompType>(blueSup))
+                    )
 				{
 					ccPointCloud* newCloud = cloud->partialClone(r.data());
 					if (newCloud)
@@ -873,9 +873,9 @@ void ColorimetricSegmenter::filterHSV()
 
 	// Get HSV values
 	Hsv hsv_first;
-	hsv_first.h = hsvDlg.hue_first->value();
-	hsv_first.s = hsvDlg.sat_first->value();
-	hsv_first.v = hsvDlg.val_first->value();
+    hsv_first.h = static_cast<uint16_t>(hsvDlg.hue_first->value());
+    hsv_first.s = static_cast<uint16_t>(hsvDlg.sat_first->value());
+    hsv_first.v = static_cast<uint16_t>(hsvDlg.val_first->value());
 
 	// We use look-up tables for faster comparisons
 	static const uint8_t LOW = 0;
@@ -1093,7 +1093,7 @@ static ecvColor::Rgb ComputeAverageColor(const ccPointCloud& cloud, const std::v
 	}
 
 	//other formula to compute the average can be used
-	size_t redSum = 0, greenSum = 0, blueSum = 0, alphaSum = 0;
+    size_t redSum = 0, greenSum = 0, blueSum = 0;
 	for (unsigned pointIndex : bucket)
 	{
 		const ecvColor::Rgb& rgba = cloud.getPointColor(pointIndex);
@@ -1230,7 +1230,7 @@ static ccPointCloud* ComputeKmeansClustering(ccPointCloud* theCloud, unsigned K,
 	try
 	{
 		std::vector<ecvColor::Rgb> clusterCenters;	//K clusters centers
-		std::vector<int> clusterIndex;				//index of the cluster the point belongs to
+        std::vector<std::size_t> clusterIndex;				//index of the cluster the point belongs to
 
 		clusterIndex.resize(pointCount);
 		clusterCenters.resize(K);
@@ -1250,11 +1250,11 @@ static ccPointCloud* ComputeKmeansClustering(ccPointCloud* theCloud, unsigned K,
 			bool meansHaveMoved = false;
 
 			// assign each point (color) to the nearest cluster
-			for (unsigned i = 0; i < pointCount; ++i)
+            for (unsigned i = 0; i < pointCount; ++i)
 			{
 				const ecvColor::Rgb& color = theCloud->getPointColor(i);
 
-				int minK = 0;
+                std::size_t minK = 0;
 				int minDistsToMean = std::abs(ColorDistance(color, clusterCenters[minK]));
 
 				//we look for the nearest cluster center
@@ -1274,9 +1274,9 @@ static ccPointCloud* ComputeKmeansClustering(ccPointCloud* theCloud, unsigned K,
 			//update the clusters centers
 			std::vector< std::vector<unsigned> > clusters;
 			clusters.resize(K);
-			for (unsigned i = 0; i < pointCount; ++i)
+            for (unsigned i = 0; i < pointCount; ++i)
 			{
-				unsigned index = clusterIndex[i];
+                unsigned index = static_cast<unsigned>(clusterIndex[static_cast<std::size_t>(i)]);
 				clusters[index].push_back(i);
 			}
 

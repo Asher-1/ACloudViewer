@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,9 @@
 
 #include "ReduceSubarraysSumOpKernel.h"
 
-#include "open3d/ml/impl/misc/ReduceSubarraysSum.h"
+#include "ml/impl/misc/ReduceSubarraysSum.h"
 
-using namespace open3d::ml::impl;
+using namespace cloudViewer::ml::impl;
 using namespace reduce_subarrays_sum_opkernel;
 using namespace tensorflow;
 
@@ -50,7 +50,7 @@ public:
 };
 
 #define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("Open3DReduceSubarraysSum")    \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerReduceSubarraysSum")    \
                                     .Device(DEVICE_CPU)         \
                                     .TypeConstraint<type>("T"), \
                             ReduceSubarraysSumOpKernelCPU<type>);

@@ -19,7 +19,7 @@
 #define QPCL_ANNOTATION_TOOL_HEADER
 
 // LOCAL
-#include "../../qPCL.h"
+#include "qPCL.h"
 #include "PclUtils/PCLCloud.h"
 #include "Tools/PclPointCloudColorHandlerLUT.h"
 
@@ -47,7 +47,7 @@ class QPCL_ENGINE_LIB_API PclAnnotationTool : public ecvGenericAnnotationTool
 public:
 	explicit PclAnnotationTool(AnnotationMode mode = AnnotationMode::BOUNDINGBOX);
 	explicit PclAnnotationTool(ecvGenericVisualizer3D* viewer, AnnotationMode mode = AnnotationMode::BOUNDINGBOX);
-	~PclAnnotationTool();
+    virtual ~PclAnnotationTool() override;
 
 public: // implemented from ecvGenericAnnotationTool interface
 	virtual void setVisualizer(ecvGenericVisualizer3D* viewer = nullptr) override;

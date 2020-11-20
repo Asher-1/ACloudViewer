@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -60,22 +60,22 @@ constexpr uint32_t CUDA_MAX_THREADS_PER_SM = 2048;
 constexpr uint32_t CUDA_MAX_THREADS_PER_BLOCK = 1024;
 constexpr uint32_t CUDA_THREADS_PER_BLOCK_FALLBACK = 256;
 
-#define OPEN3D_MAX_THREADS_PER_BLOCK(val)          \
+#define CLOUDVIEWER_MAX_THREADS_PER_BLOCK(val)          \
     (((val) <= CUDA_MAX_THREADS_PER_BLOCK) ? (val) \
                                            : CUDA_THREADS_PER_BLOCK_FALLBACK)
-#define OPEN3D_MIN_BLOCKS_PER_SM(threads_per_block, blocks_per_sm)       \
+#define CLOUDVIEWER_MIN_BLOCKS_PER_SM(threads_per_block, blocks_per_sm)       \
     ((((threads_per_block) * (blocks_per_sm) <= CUDA_MAX_THREADS_PER_SM) \
               ? (blocks_per_sm)                                          \
               : ((CUDA_MAX_THREADS_PER_SM + (threads_per_block)-1) /     \
                  (threads_per_block))))
 
-#define OPEN3D_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm)       \
-    __launch_bounds__((OPEN3D_MAX_THREADS_PER_BLOCK((max_threads_per_block))), \
-                      (OPEN3D_MIN_BLOCKS_PER_SM((max_threads_per_block),       \
+#define CLOUDVIEWER_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm)       \
+    __launch_bounds__((CLOUDVIEWER_MAX_THREADS_PER_BLOCK((max_threads_per_block))), \
+                      (CLOUDVIEWER_MIN_BLOCKS_PER_SM((max_threads_per_block),       \
                                                 (min_blocks_per_sm))))
 
 template <typename T>
-OPEN3D_DEVICE __forceinline__ T WARP_SHFL_DOWN(T value,
+CLOUDVIEWER_DEVICE __forceinline__ T WARP_SHFL_DOWN(T value,
                                                unsigned int delta,
                                                int width = warpSize,
                                                unsigned int mask = 0xffffffff) {
@@ -93,7 +93,7 @@ namespace kernel {
 static inline int64_t DivUp(int64_t a, int64_t b) { return (a + b - 1) / b; }
 
 // Returns reduced fraction numerator & denominator
-OPEN3D_HOST_DEVICE static void ReduceFraction(int64_t& numerator,
+CLOUDVIEWER_HOST_DEVICE static void ReduceFraction(int64_t& numerator,
                                               int64_t& denominator) {
     // Get GCD of num and denom using Euclid's algorithm.
     // Can replace this with std::gcd if we ever support c++17.
@@ -255,25 +255,25 @@ public:
         return dim3(DivUp(num_outputs_, step_output_), ctas_per_output_);
     }
 
-    OPEN3D_HOST_DEVICE bool ShouldBlockXReduce() const {
+    CLOUDVIEWER_HOST_DEVICE bool ShouldBlockXReduce() const {
         return input_mult_[BLOCK_X] != 0;
     }
 
-    OPEN3D_HOST_DEVICE bool ShouldBlockYReduce() const {
+    CLOUDVIEWER_HOST_DEVICE bool ShouldBlockYReduce() const {
         return input_mult_[BLOCK_Y] != 0;
     }
 
-    OPEN3D_HOST_DEVICE bool ShouldGlobalReduce() const {
+    CLOUDVIEWER_HOST_DEVICE bool ShouldGlobalReduce() const {
         return input_mult_[CTA] != 0;
     }
 
-    OPEN3D_DEVICE bool ShouldStore(int output_idx) const {
+    CLOUDVIEWER_DEVICE bool ShouldStore(int output_idx) const {
         return output_idx < num_outputs_ &&
                (!ShouldBlockXReduce() || threadIdx.x == 0) &&
                (!ShouldBlockYReduce() || threadIdx.y == 0);
     }
 
-    OPEN3D_HOST_DEVICE int InputIdx() const {
+    CLOUDVIEWER_HOST_DEVICE int InputIdx() const {
         int lane = threadIdx.x;
         int warp = threadIdx.y;
         int cta2 = blockIdx.y;
@@ -281,7 +281,7 @@ public:
                 cta2 * input_mult_[CTA]);
     }
 
-    OPEN3D_HOST_DEVICE int OutputIdx() const {
+    CLOUDVIEWER_HOST_DEVICE int OutputIdx() const {
         int lane = threadIdx.x;
         int warp = threadIdx.y;
         int cta1 = blockIdx.x;
@@ -289,11 +289,11 @@ public:
                 cta1 * step_output_);
     }
 
-    OPEN3D_DEVICE int SharedMemoryOffset(int offset) const {
+    CLOUDVIEWER_DEVICE int SharedMemoryOffset(int offset) const {
         return threadIdx.x + (threadIdx.y + offset) * blockDim.x;
     }
 
-    OPEN3D_DEVICE int StagingMemoryOffset(int cta2) const {
+    CLOUDVIEWER_DEVICE int StagingMemoryOffset(int cta2) const {
         int offset = cta2 + blockIdx.x * gridDim.y;
         if (!ShouldBlockXReduce()) {
             offset = threadIdx.x + offset * blockDim.x;
@@ -357,7 +357,7 @@ public:
 };
 
 template <int nt, typename R>
-OPEN3D_LAUNCH_BOUNDS_2(nt, 4)
+CLOUDVIEWER_LAUNCH_BOUNDS_2(nt, 4)
 __global__ void ReduceKernel(R reduction) {
     reduction.Run();
 }
@@ -387,7 +387,7 @@ static OffsetCalculator<1, index_t> MakeInputCalculator(
 }
 
 template <int vt, typename index_t, typename func_t>
-OPEN3D_DEVICE void StridedIterate(func_t f,
+CLOUDVIEWER_DEVICE void StridedIterate(func_t f,
                                   index_t begin,
                                   index_t end,
                                   index_t stride) {
@@ -416,20 +416,20 @@ class RegularReduceOps {
 public:
     RegularReduceOps(const func_t& op) : reduce_func_(op) {}
 
-    static inline OPEN3D_DEVICE out_scalar_t Project(arg_t arg) {
+    static inline CLOUDVIEWER_DEVICE out_scalar_t Project(arg_t arg) {
         return (out_scalar_t)arg;
     }
 
-    static inline OPEN3D_DEVICE arg_t WarpShflDown(arg_t arg, int offset) {
+    static inline CLOUDVIEWER_DEVICE arg_t WarpShflDown(arg_t arg, int offset) {
         return WARP_SHFL_DOWN(arg, offset);
     }
 
-    OPEN3D_DEVICE inline arg_t Combine(arg_t acc, scalar_t val) const {
+    CLOUDVIEWER_DEVICE inline arg_t Combine(arg_t acc, scalar_t val) const {
         return reduce_func_(acc, val);
     }
 
     /// Idx is ignored for RegularReduceOps.
-    OPEN3D_DEVICE inline arg_t Reduce(arg_t acc,
+    CLOUDVIEWER_DEVICE inline arg_t Reduce(arg_t acc,
                                       scalar_t val,
                                       int64_t idx) const {
         return reduce_func_(acc, val);
@@ -453,9 +453,9 @@ class ArgReduceOps {
 public:
     ArgReduceOps(const func_t comp_func) : comp_func_(comp_func) {}
 
-    static OPEN3D_DEVICE index_t Project(arg_t arg) { return arg.second; }
+    static CLOUDVIEWER_DEVICE index_t Project(arg_t arg) { return arg.second; }
 
-    static OPEN3D_DEVICE arg_t WarpShflDown(arg_t arg, int offset) {
+    static CLOUDVIEWER_DEVICE arg_t WarpShflDown(arg_t arg, int offset) {
         return arg_t(WARP_SHFL_DOWN(arg.first, offset),
                      WARP_SHFL_DOWN(arg.second, offset));
     }
@@ -463,14 +463,14 @@ public:
     /// Combine(pair<val_t, idx_t>, pair<val_t, idx_t>) -> pair<val_t, idx_t>.
     /// Called at subsequent rounds of reduction, when values are already
     /// associated with indices.
-    OPEN3D_DEVICE inline arg_t Combine(arg_t a, arg_t b) const {
+    CLOUDVIEWER_DEVICE inline arg_t Combine(arg_t a, arg_t b) const {
         return comp_func_(a.first, b.first) ? a : b;
     }
 
     /// Reduce(pair<val_t, idx_t>, val_t, idx_t) -> pair<val_t, idx_t>.
     /// Called at the first round of reduction, when values are not yet
     /// associated with indices.
-    OPEN3D_DEVICE inline arg_t Reduce(arg_t arg,
+    CLOUDVIEWER_DEVICE inline arg_t Reduce(arg_t arg,
                                       scalar_t val,
                                       int64_t idx) const {
         return comp_func_(arg.first, val) ? arg : arg_t(val, idx);
@@ -523,7 +523,7 @@ public:
           accumulate_(accumulate),
           final_output_(final_output) {}
 
-    OPEN3D_DEVICE void Run() const {
+    CLOUDVIEWER_DEVICE void Run() const {
         extern __shared__ char shared_memory[];
         index_t output_idx = config_.OutputIdx();
         index_t input_idx = config_.InputIdx();
@@ -580,7 +580,7 @@ public:
         }
     }
 
-    OPEN3D_DEVICE arg_t ThreadReduce(const scalar_t* data) const {
+    CLOUDVIEWER_DEVICE arg_t ThreadReduce(const scalar_t* data) const {
         index_t idx = config_.InputIdx();
         // Multiple accumulators to remove dependency between unrolled loops.
         arg_t value_list[vt0];
@@ -628,7 +628,7 @@ public:
         return value_list[0];
     }
 
-    OPEN3D_DEVICE arg_t BlockXReduce(arg_t value, char* shared_memory) const {
+    CLOUDVIEWER_DEVICE arg_t BlockXReduce(arg_t value, char* shared_memory) const {
         int dim_x = blockDim.x;
         arg_t* shared = (arg_t*)shared_memory;
         if (dim_x > warpSize) {
@@ -654,7 +654,7 @@ public:
         return value;
     }
 
-    OPEN3D_DEVICE arg_t BlockYReduce(arg_t value, char* shared_memory) const {
+    CLOUDVIEWER_DEVICE arg_t BlockYReduce(arg_t value, char* shared_memory) const {
         arg_t* shared = (arg_t*)shared_memory;
         shared[config_.SharedMemoryOffset(0)] = value;
         for (int offset = blockDim.y / 2; offset > 0; offset >>= 1) {
@@ -668,7 +668,7 @@ public:
         return value;
     }
 
-    OPEN3D_DEVICE bool MarkBlockFinished() const {
+    CLOUDVIEWER_DEVICE bool MarkBlockFinished() const {
         __shared__ bool is_last_block_done_shared;
 
         __syncthreads();
@@ -683,7 +683,7 @@ public:
     }
 
     template <bool can_acc>
-    OPEN3D_DEVICE arg_t AccumulateInOutput(
+    CLOUDVIEWER_DEVICE arg_t AccumulateInOutput(
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<can_acc>::type* = nullptr) const {
@@ -694,7 +694,7 @@ public:
     // it's the version of `AccumulateInOutput`
     // when accumulation in the output is not possible.
     template <bool can_acc>
-    OPEN3D_DEVICE arg_t AccumulateInOutput(
+    CLOUDVIEWER_DEVICE arg_t AccumulateInOutput(
             out_scalar_t*,
             arg_t,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
@@ -703,7 +703,7 @@ public:
     }
 
     template <bool can_acc>
-    OPEN3D_DEVICE out_scalar_t GetAccumulatedOutput(
+    CLOUDVIEWER_DEVICE out_scalar_t GetAccumulatedOutput(
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<can_acc>::type* = nullptr) const {
@@ -715,7 +715,7 @@ public:
     // it's the version of `GetAccumulatedOutput`
     // when accumulation in the output is not possible.
     template <bool can_acc>
-    OPEN3D_DEVICE out_scalar_t GetAccumulatedOutput(
+    CLOUDVIEWER_DEVICE out_scalar_t GetAccumulatedOutput(
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
@@ -724,18 +724,18 @@ public:
     }
 
     template <class T>
-    OPEN3D_DEVICE void SetResults(const T x, const index_t base_offset) const {
+    CLOUDVIEWER_DEVICE void SetResults(const T x, const index_t base_offset) const {
         auto res = (out_scalar_t*)((char*)dst_ + base_offset);
         *res = x;
     }
 
-    OPEN3D_DEVICE void SetResultsToOutput(arg_t value,
+    CLOUDVIEWER_DEVICE void SetResultsToOutput(arg_t value,
                                           index_t base_offset) const {
         assert(final_output_);
         SetResults(ops_.Project(value), base_offset);
     }
 
-    OPEN3D_DEVICE arg_t GlobalReduce(arg_t value,
+    CLOUDVIEWER_DEVICE arg_t GlobalReduce(arg_t value,
                                      arg_t* acc,
                                      char* shared_memory) const {
         arg_t* reduce_buffer = (arg_t*)cta_buf_;
@@ -888,7 +888,7 @@ public:
             utility::LogError("Reduction op must have exactly one input.");
         }
 
-        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+        CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(func_t);
         using arg0_t = typename BinaryFunctionTraits<func_t>::arg0_t;
         using arg1_t = typename BinaryFunctionTraits<func_t>::arg1_t;
         if (!std::is_same<scalar_t, arg0_t>::value ||
@@ -974,7 +974,7 @@ private:
 
             buffer = MemoryManager::Malloc(config.GlobalMemorySize(), device);
             semaphores = MemoryManager::Malloc(config.SemaphoreSize(), device);
-            OPEN3D_CUDA_CHECK(
+            CLOUDVIEWER_CUDA_CHECK(
                     cudaMemset(semaphores, 0, config.SemaphoreSize()));
         }
 
@@ -995,8 +995,8 @@ private:
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
                 <<<config.GridDim(), config.BlockDim(), shared_memory>>>(
                         reduce_op);
-        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-        OPEN3D_CUDA_CHECK(cudaGetLastError());
+        CLOUDVIEWER_CUDA_CHECK(cudaDeviceSynchronize());
+        CLOUDVIEWER_CUDA_CHECK(cudaGetLastError());
     }
 
 private:
@@ -1022,7 +1022,7 @@ void ReductionCUDA(const Tensor& src,
                         // E.g. np.sum(np.ones((0, 5)), axis=0).shape == (5,).
                         dst.Fill(0);
                     } else {
-                        re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> scalar_t { return a + b; },
                                static_cast<scalar_t>(0));
                     }
@@ -1031,7 +1031,7 @@ void ReductionCUDA(const Tensor& src,
                     if (indexer.NumWorkloads() == 0) {
                         dst.Fill(1);
                     } else {
-                        re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> scalar_t { return a * b; },
                                static_cast<scalar_t>(1));
                     }
@@ -1041,7 +1041,7 @@ void ReductionCUDA(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport Min.");
                     } else {
-                        re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> scalar_t { return a < b ? a : b; },
                                static_cast<scalar_t>(
                                        std::numeric_limits<scalar_t>::max()));
@@ -1052,7 +1052,7 @@ void ReductionCUDA(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport Max.");
                     } else {
-                        re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> scalar_t { return a > b ? a : b; },
                                static_cast<scalar_t>(std::numeric_limits<
                                                      scalar_t>::lowest()));
@@ -1078,7 +1078,7 @@ void ReductionCUDA(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport ArgMin.");
                     } else {
-                        re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> bool { return a < b; },
                                static_cast<scalar_t>(
                                        std::numeric_limits<scalar_t>::max()));
@@ -1089,7 +1089,7 @@ void ReductionCUDA(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport ArgMax.");
                     } else {
-                        re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                        re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> bool { return a > b; },
                                static_cast<scalar_t>(std::numeric_limits<
                                                      scalar_t>::lowest()));
@@ -1118,7 +1118,7 @@ void ReductionCUDA(const Tensor& src,
                 if (indexer.NumWorkloads() == 0) {
                     dst.Fill(true);
                 } else {
-                    re.Run([] OPEN3D_HOST_DEVICE(uint8_t a, uint8_t b)
+                    re.Run([] CLOUDVIEWER_HOST_DEVICE(uint8_t a, uint8_t b)
                                    -> uint8_t { return a && b; },
                            static_cast<uint8_t>(true));
                 }
@@ -1127,7 +1127,7 @@ void ReductionCUDA(const Tensor& src,
                 if (indexer.NumWorkloads() == 0) {
                     dst.Fill(false);
                 } else {
-                    re.Run([] OPEN3D_HOST_DEVICE(uint8_t a, uint8_t b)
+                    re.Run([] CLOUDVIEWER_HOST_DEVICE(uint8_t a, uint8_t b)
                                    -> uint8_t { return a || b; },
                            static_cast<uint8_t>(false));
                 }

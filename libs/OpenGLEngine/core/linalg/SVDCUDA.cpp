@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LapackWrapper.h"
-#include "open3d/core/linalg/LinalgUtils.h"
-#include "open3d/core/linalg/SVD.h"
+#include "core/linalg/LapackWrapper.h"
+#include "core/linalg/LinalgUtils.h"
+#include "core/linalg/SVD.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace core {
 
 void SVDCUDA(const void* A_data,
@@ -46,13 +46,13 @@ void SVDCUDA(const void* A_data,
         int len;
         int* dinfo =
                 static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
-        OPEN3D_CUSOLVER_CHECK(
+        CLOUDVIEWER_CUSOLVER_CHECK(
                 gesvd_cuda_buffersize<scalar_t>(handle, m, n, &len),
                 "gesvd_buffersize failed in SVDCUDA");
 
         void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
 
-        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+        CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(
                 gesvd_cuda<scalar_t>(
                         handle, 'A', 'A', m, n,
                         const_cast<scalar_t*>(
@@ -68,4 +68,4 @@ void SVDCUDA(const void* A_data,
     });
 }
 }  // namespace core
-}  // namespace open3d
+}  // namespace cloudViewer

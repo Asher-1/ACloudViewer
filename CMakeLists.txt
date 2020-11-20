@@ -231,10 +231,6 @@ set(PROJECT_DOCS    "http://www.erow.cn/docs")
 set(PROJECT_CODE    "https://github.com/intel-isl/CloudViewer")
 set(PROJECT_ISSUES  "https://github.com/intel-isl/CloudViewer/issues")
 
-# Default install folders
-# (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
-set( INSTALL_DESTINATIONS ErowCloudViewer )
-
 include( CMakePolicies )
 include( CMakeSetCompilerOptions )
 include( DeployQt )
@@ -565,12 +561,12 @@ include(3rdparty/find_dependencies.cmake)
 # since they are only used by qCC/ccViewer
 if( UNIX AND NOT APPLE )
 	include( GNUInstallDirs )
-	set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}/cloudViewer")
+        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}/erowcloudviewer")
 endif()
 
 # Define target folders
 # (now that ccViewer can have its own plugins, qCC and ccViewer must fall in separate folders!
-if(WIN32) 
+if(WIN32 OR APPLE)
 	set( EROWCLOUDVIEWER_DEST_FOLDER ErowCloudViewer )
 	if (OPTION_GL_QUAD_BUFFER_SUPPORT)
 		set ( EROWCLOUDVIEWER_DEST_FOLDER ${EROWCLOUDVIEWER_DEST_FOLDER}Stereo )
@@ -583,10 +579,7 @@ endif()
 if( WIN32 )
 	# (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
 	set( INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER} )
-    #if( ${BUILD_GUI} )
-    #    list( APPEND INSTALL_DESTINATIONS ${COLOUDVIEWER_APP_DIR_NAME} )
-	#endif()
-elseif( UNIX )
+elseif( UNIX AND NOT APPLE )
 	set( INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX}/bin )
 endif()
 

@@ -30,7 +30,7 @@
 #include <mutex>
 #include <thread>
 
-#include "cloudViewer/utility/Console.h"
+#include <Console.h>
 
 namespace zmq {
 class message_t;

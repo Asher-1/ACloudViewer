@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1136</width>
-    <height>806</height>
+    <width>1024</width>
+    <height>768</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -36,13 +36,19 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../MainWindow.qrc">
-    <normaloff>:/Resources/images/icon/logo.png</normaloff>:/Resources/images/icon/logo.png</iconset>
+    <normaloff>:/Resources/images/icon/ecv_128.png</normaloff>:/Resources/images/icon/ecv_128.png</iconset>
   </property>
   <property name="autoFillBackground">
    <bool>true</bool>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
+  </property>
+  <property name="iconSize">
+   <size>
+    <width>24</width>
+    <height>24</height>
+   </size>
   </property>
   <property name="animated">
    <bool>true</bool>
@@ -66,8 +72,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1136</width>
-     <height>23</height>
+     <width>1024</width>
+     <height>28</height>
     </rect>
    </property>
    <property name="font">
@@ -90,7 +96,7 @@
      <string>About</string>
     </property>
     <addaction name="helpAction"/>
-    <addaction name="aboutAction"/>
+    <addaction name="actionAbout"/>
     <addaction name="actionAboutPlugins"/>
     <addaction name="actionEnableQtWarnings"/>
    </widget>
@@ -985,7 +991,7 @@ QTreeView::branch:open:has-children:has-siblings  {
     <bool>true</bool>
    </property>
   </action>
-  <action name="aboutAction">
+  <action name="actionAbout">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
      <normaloff>:/Resources/images/about.png</normaloff>:/Resources/images/about.png</iconset>

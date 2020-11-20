@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DContinuousConv")
+REGISTER_OP("CloudViewerContinuousConv")
         .Attr("TReal: {float, double}")
         .Attr("TIndex: {int32, int64}")
         .Attr("align_corners: bool = true")
@@ -161,7 +161,7 @@ This op computes the features for the forward pass.
 This example shows how to use this op::
 
   import tensorflow as tf
-  import open3d.ml.tf as ml3d
+  import cloudViewer.ml.tf as ml3d
 
   filters = tf.random.normal([3,3,3,8,16])
 
@@ -187,7 +187,7 @@ This example shows how to use this op::
 
   # or with pytorch
   import torch
-  import open3d.ml.torch as ml3d
+  import cloudViewer.ml.torch as ml3d
 
   filters = torch.randn([3,3,3,8,16])
 

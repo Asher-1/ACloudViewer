@@ -100,8 +100,7 @@ target_link_libraries(cloudViewer_torch_ops PRIVATE
     ${FMT_TARGET}
 )
 target_link_libraries(cloudViewer_torch_ops PRIVATE
-    ECV_DB_LIB
-	ECV_IO_LIB
+    CVCoreLib
 )
 if( BUILD_CUDA_MODULE )
     target_link_libraries(cloudViewer_torch_ops PRIVATE

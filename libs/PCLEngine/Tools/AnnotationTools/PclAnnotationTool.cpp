@@ -301,7 +301,6 @@ void PclAnnotationTool::stop()
 
 	resetMode();
 	clear();
-	//ecvDisplayTools::SimulateKeyBoardPress(Qt::Key_Q, 3);
 	CVLog::Print("unregister annotations tool successfully");
 }
 

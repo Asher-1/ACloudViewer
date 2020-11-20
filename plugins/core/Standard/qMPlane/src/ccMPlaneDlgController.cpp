@@ -24,7 +24,7 @@
 // Qt
 #include "qfiledialog.h"
 
-constexpr char *MPLANE_PLANE_NAME = "Fitting-plane";
+constexpr char const *MPLANE_PLANE_NAME = "Fitting-plane";
 
 
 ccMPlaneDlgController::ccMPlaneDlgController(ecvMainAppInterface * app) : QObject(), m_app(app)

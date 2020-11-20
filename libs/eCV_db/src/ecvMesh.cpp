@@ -3083,6 +3083,14 @@ std::vector<Eigen::Vector3d> ccMesh::getTriangleNormals() const {
     return triangleNormals;
 }
 
+std::vector<CCVector3 *> ccMesh::getTriangleNormalsPtr() const
+{
+    std::vector<CCVector3 *> triNormals;
+    for (size_t i = 0; i < this->size(); i++) {
+        triNormals.push_back(&ccNormalVectors::GetUniqueInstance()->getNormal(m_triNormals->getValue(i)));
+    }
+}
+
 Eigen::Vector3d ccMesh::getTriangleNorm(size_t index) const
 {
 	if (index >= m_triNormals->size()) 

@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include "cloudViewer/ml/impl/continuous_conv/CoordinateTransformation.cuh"
+#include "ml/impl/continuous_conv/CoordinateTransformation.cuh"
 
 namespace cloudViewer {
 namespace ml {

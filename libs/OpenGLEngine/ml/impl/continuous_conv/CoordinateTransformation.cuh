@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "cloudViewer/ml/impl/continuous_conv/ContinuousConvTypes.h"
+#include "ml/impl/continuous_conv/ContinuousConvTypes.h"
 
 namespace cloudViewer {
 namespace ml {

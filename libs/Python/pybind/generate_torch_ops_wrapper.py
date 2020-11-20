@@ -137,7 +137,7 @@ def main():
             continue
 
         docstring = get_tensorflow_docstring_from_file(
-            find_op_reg_file(args.tensorflow_ops_dir, schema.name[8:]))
+            find_op_reg_file(args.tensorflow_ops_dir, schema.name[13:]))
         if docstring:
             docstring = '"""' + docstring + '\n"""'
             docstring = textwrap.indent(docstring, INDENT_SPACES)
@@ -161,12 +161,12 @@ def main():
             template_str = FN_RETURN_NAMEDTUPLE_TEMPLATE_STR
             fields = ' '.join([x.name for x in schema.returns])
             generated_namedtuple_strs += NAMEDTUPLE_TEMPLATE_STR.format(
-                name=schema.name[8:], fields=fields)
+                name=schema.name[13:], fields=fields)
         else:
             template_str = FN_TEMPLATE_STR
 
         generated_function_strs += template_str.format(
-            fn_name=schema.name[8:],  # remove the 'cloudViewer::'
+            fn_name=schema.name[13:],  # remove the 'cloudViewer::'
             fn_args=fn_args,
             docstring=docstring,
             args_fwd=args_fwd)

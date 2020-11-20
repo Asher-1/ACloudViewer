@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,12 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
-#include "open3d/ml/pytorch/TorchHelper.h"
-#include "open3d/ml/pytorch/misc/NeighborSearchAllocator.h"
+#include "ml/impl/misc/FixedRadiusSearch.cuh"
+#include "ml/pytorch/TorchHelper.h"
+#include "ml/pytorch/misc/NeighborSearchAllocator.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace cloudViewer::ml::impl;
 
 template <class T>
 void FixedRadiusSearchCUDA(const torch::Tensor& points,

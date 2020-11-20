@@ -41,7 +41,7 @@
 
 #define CLOUDVIEWER_HOST_DEVICE __host__ __device__
 #define CLOUDVIEWER_DEVICE __device__
-#define CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
+#define CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(type)                       \
     static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
                   #type " must be a __host__ __device__ lambda")
 #define CLOUDVIEWER_CUDA_CHECK(err) \
@@ -61,7 +61,7 @@
 
 namespace cloudViewer {
 namespace core {
-
+using namespace CVLib;
 #ifdef BUILD_CUDA_MODULE
 inline void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err,
                                 const char* file,

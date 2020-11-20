@@ -61,7 +61,7 @@ def main():
         fn_args = ', '.join(fn_args)
         args_fwd = ', '.join(args_fwd)
         generated_function_strs += FN_TEMPLATE_STR.format(
-            fn_name_short=fn_name[7:],
+            fn_name_short=fn_name[12:],
             fn_name='_lib.' + fn_name,
             fn_args=fn_args,
             docstring=docstring,

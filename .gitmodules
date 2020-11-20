@@ -53,3 +53,6 @@
 [submodule "3rdparty/Eigen"]
 	path = 3rdparty/Eigen
 	url = https://gitlab.com/libeigen/eigen.git
+[submodule "plugins/core/IO/qE57IO/extern/libE57Format"]
+	path = plugins/core/IO/qE57IO/extern/libE57Format
+	url = https://github.com/asmaloney/libE57Format.git

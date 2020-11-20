@@ -139,7 +139,7 @@ struct Array {
     }
 
     // macro for creating the serialization/deserialization code
-    MSGPACK_DEFINE_MAP(type, shape, data);
+    MSGPACK_DEFINE_MAP(type, shape, data)
 };
 
 /// struct for storing MeshData, e.g., PointClouds, TriangleMesh, ..
@@ -182,7 +182,7 @@ struct MeshData {
                        face_attributes,
                        lines,
                        line_attributes,
-                       textures);
+                       textures)
 };
 
 /// struct for defining a "set_mesh_data" message, which adds or replaces mesh
@@ -202,7 +202,7 @@ struct SetMeshData {
     /// The data to be set
     MeshData data;
 
-    MSGPACK_DEFINE_MAP(path, time, layer, data);
+    MSGPACK_DEFINE_MAP(path, time, layer, data)
 };
 
 /// struct for defining a "get_mesh_data" message, which requests mesh data.
@@ -218,7 +218,7 @@ struct GetMeshData {
     /// The layer for which to return the data
     std::string layer;
 
-    MSGPACK_DEFINE_MAP(path, time, layer);
+    MSGPACK_DEFINE_MAP(path, time, layer)
 };
 
 /// struct for storing camera data
@@ -249,7 +249,7 @@ struct CameraData {
     std::map<std::string, Array> images;
 
     MSGPACK_DEFINE_MAP(
-            R, t, intrinsic_model, intrinsic_parameters, width, height, images);
+            R, t, intrinsic_model, intrinsic_parameters, width, height, images)
 };
 
 /// struct for defining a "set_camera_data" message, which adds or replaces a
@@ -269,7 +269,7 @@ struct SetCameraData {
     /// The data to be set
     CameraData data;
 
-    MSGPACK_DEFINE_MAP(path, time, layer, data);
+    MSGPACK_DEFINE_MAP(path, time, layer, data)
 };
 
 /// struct for defining a "set_time" message, which sets the current time
@@ -279,7 +279,7 @@ struct SetTime {
     SetTime() : time(0) {}
     int32_t time;
 
-    MSGPACK_DEFINE_MAP(time);
+    MSGPACK_DEFINE_MAP(time)
 };
 
 /// struct for defining a "set_active_camera" message, which sets the active
@@ -288,7 +288,7 @@ struct SetActiveCamera {
     static std::string MsgId() { return "set_active_camera"; }
     std::string path;
 
-    MSGPACK_DEFINE_MAP(path);
+    MSGPACK_DEFINE_MAP(path)
 };
 
 /// struct for defining a "set_properties" message, which sets properties for
@@ -299,21 +299,21 @@ struct SetProperties {
 
     // application specific members go here.
 
-    MSGPACK_DEFINE_MAP(path);
+    MSGPACK_DEFINE_MAP(path)
 };
 
 /// struct for defining a "request" message, which describes the subsequent
 /// message by storing the msg_id.
 struct Request {
     std::string msg_id;
-    MSGPACK_DEFINE_MAP(msg_id);
+    MSGPACK_DEFINE_MAP(msg_id)
 };
 
 /// struct for defining a "reply" message, which describes the subsequent
 /// message by storing the msg_id.
 struct Reply {
     std::string msg_id;
-    MSGPACK_DEFINE_MAP(msg_id);
+    MSGPACK_DEFINE_MAP(msg_id)
 };
 
 /// struct for defining a "status" message, which will be used for returning
@@ -336,7 +336,7 @@ struct Status {
     /// string representation of the code
     std::string str;
 
-    MSGPACK_DEFINE_MAP(code, str);
+    MSGPACK_DEFINE_MAP(code, str)
 };
 
 }  // namespace messages

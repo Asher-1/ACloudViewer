@@ -25,7 +25,7 @@ class qFBXIO : public QObject, public ccIOPluginInterface
 	Q_OBJECT
 	Q_INTERFACES( ccPluginInterface ccIOPluginInterface )
 
-	Q_PLUGIN_METADATA( IID "cccorp.cloudviewer.plugin.qFBXIO" FILE "../info.json" )
+	Q_PLUGIN_METADATA( IID "ecvcorp.cloudviewer.plugin.qFBXIO" FILE "../info.json" )
 
 public:
 	explicit qFBXIO( QObject *parent = nullptr );

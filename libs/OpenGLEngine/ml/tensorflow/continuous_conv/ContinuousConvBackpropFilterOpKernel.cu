@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,12 @@
 
 #define EIGEN_USE_GPU
 #include "ContinuousConvBackpropFilterOpKernel.h"
-#include "open3d/ml/Helper.h"
-#include "open3d/ml/impl/continuous_conv/ContinuousConvBackpropFilter.cuh"
+#include "ml/Helper.h"
+#include "ml/impl/continuous_conv/ContinuousConvBackpropFilter.cuh"
 
-using namespace open3d;
-using namespace open3d::ml;
-using namespace open3d::ml::impl;
+using namespace cloudViewer;
+using namespace cloudViewer::ml;
+using namespace cloudViewer::ml::impl;
 using namespace tensorflow;
 
 template <class TReal, class TIndex>
@@ -129,12 +129,12 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type, indextype)                           \
-    REGISTER_KERNEL_BUILDER(                              \
-            Name("Open3DContinuousConvBackpropFilter")    \
-                    .Device(DEVICE_GPU)                   \
-                    .TypeConstraint<type>("TReal")        \
-                    .TypeConstraint<indextype>("TIndex"), \
+#define REG_KB(type, indextype)                                 \
+    REGISTER_KERNEL_BUILDER(                                    \
+            Name("CloudViewerContinuousConvBackpropFilter")     \
+                    .Device(DEVICE_GPU)                         \
+                    .TypeConstraint<type>("TReal")              \
+                    .TypeConstraint<indextype>("TIndex"),       \
             ContinuousConvBackpropFilterOpKernelCUDA<type, indextype>);
 REG_KB(float, int32)
 #undef REG_KB

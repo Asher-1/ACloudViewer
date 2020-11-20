@@ -9,11 +9,6 @@ add_subdirectory( src )
 add_subdirectory( ui )
 
 option( OPTION_USE_DXF_LIB "Build with Ribbonsoft's DXF Lib (AutoCAD DXF files support)" ON )
-if (UNIX OR APPLE)
-    set( OPTION_USE_DXF_LIB OFF )
-    message("DXF_LIB unsupported in UNIX or APPLE!")
-endif()
-
 if( ${OPTION_USE_DXF_LIB} )
 	set( DXF_LIB_DIR "extern/dxflib" CACHE PATH "DXF lib path" )
 	add_subdirectory( "${DXF_LIB_DIR}" )

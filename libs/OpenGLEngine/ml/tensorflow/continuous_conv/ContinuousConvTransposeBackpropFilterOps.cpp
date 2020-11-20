@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DContinuousConvTransposeBackpropFilter")
+REGISTER_OP("CloudViewerContinuousConvTransposeBackpropFilter")
         .Attr("TReal: {float, double}")
         .Attr("TIndex: {int32, int64}")
         .Attr("align_corners: bool = true")

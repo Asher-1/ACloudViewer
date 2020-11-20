@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/ZMQContext.h"
+#include "io/rpc/ZMQContext.h"
 
 #include <zmq.hpp>
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 namespace rpc {
 
@@ -39,4 +39,4 @@ zmq::context_t& GetZMQContext() {
 
 }  // namespace rpc
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

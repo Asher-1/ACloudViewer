@@ -24,30 +24,34 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/RemoteFunctions.h"
+#include "io/rpc/RemoteFunctions.h"
 
 #include <Eigen/Geometry>
 #include <zmq.hpp>
 
-#include "open3d/core/Dispatch.h"
-#include "open3d/io/rpc/Connection.h"
-#include "open3d/io/rpc/MessageUtils.h"
-#include "open3d/io/rpc/Messages.h"
-#include "open3d/utility/Console.h"
+#include "core/Dispatch.h"
+#include "io/rpc/Connection.h"
+#include "io/rpc/MessageUtils.h"
+#include "io/rpc/Messages.h"
 
-using namespace open3d::utility;
+#include <Console.h>
 
-namespace open3d {
+#include <ecvPointCloud.h>
+#include <ecvHObjectCaster.h>
+
+using namespace CVLib::utility;
+
+namespace cloudViewer {
 namespace io {
 namespace rpc {
 
-bool SetPointCloud(const geometry::PointCloud& pcd,
+bool SetPointCloud(const ccPointCloud& pcd,
                    const std::string& path,
                    int time,
                    const std::string& layer,
                    std::shared_ptr<ConnectionBase> connection) {
     // TODO use SetMeshData here after switching to the new PointCloud class.
-    if (!pcd.HasPoints()) {
+    if (!pcd.hasPoints()) {
         LogInfo("SetMeshData: point cloud is empty");
         return false;
     }
@@ -58,15 +62,16 @@ bool SetPointCloud(const geometry::PointCloud& pcd,
     msg.layer = layer;
 
     msg.data.vertices = messages::Array::FromPtr(
-            (double*)pcd.points_.data(), {int64_t(pcd.points_.size()), 3});
-    if (pcd.HasNormals()) {
+            (PointCoordinateType*)pcd.getPoints().data(), {int64_t(pcd.size()), 3});
+    if (pcd.hasNormals()) {
+        std::vector<CCVector3 *> normals = pcd.getPointNormalsPtr();
         msg.data.vertex_attributes["normals"] =
-                messages::Array::FromPtr((double*)pcd.normals_.data(),
-                                         {int64_t(pcd.normals_.size()), 3});
+                messages::Array::FromPtr((PointCoordinateType*)(*normals.data()),
+                                         {int64_t(normals.size()), 3});
     }
-    if (pcd.HasColors()) {
+    if (pcd.hasColors()) {
         msg.data.vertex_attributes["colors"] = messages::Array::FromPtr(
-                (double*)pcd.colors_.data(), {int64_t(pcd.colors_.size()), 3});
+                (ColorCompType*)pcd.getPointColors().data(), {int64_t(pcd.getPointColors().size()), 3});
     }
 
     msgpack::sbuffer sbuf;
@@ -82,13 +87,13 @@ bool SetPointCloud(const geometry::PointCloud& pcd,
     return ReplyIsOKStatus(*reply);
 }
 
-bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
+bool SetTriangleMesh(const ccMesh& mesh,
                      const std::string& path,
                      int time,
                      const std::string& layer,
                      std::shared_ptr<ConnectionBase> connection) {
     // TODO use SetMeshData here after switching to the new TriangleMesh class.
-    if (!mesh.HasTriangles()) {
+    if (!mesh.hasTriangles()) {
         LogInfo("SetMeshData: triangle mesh is empty");
         return false;
     }
@@ -98,35 +103,46 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
     msg.time = time;
     msg.layer = layer;
 
+    if (!mesh.getAssociatedCloud())
+    {
+        LogInfo("SetMeshData: triangle vertices is empty");
+        return false;
+    }
+
+    ccPointCloud& associatedCloud = *ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
+
     msg.data.vertices =
-            messages::Array::FromPtr((double*)mesh.vertices_.data(),
-                                     {int64_t(mesh.vertices_.size()), 3});
+            messages::Array::FromPtr((PointCoordinateType*)associatedCloud.getPoints().data(),
+                                     {int64_t(associatedCloud.size()), 3});
+
     msg.data.faces = messages::Array::FromPtr(
-            (int*)mesh.triangles_.data(), {int64_t(mesh.triangles_.size()), 3});
-    if (mesh.HasVertexNormals()) {
+            (unsigned*)(*mesh.getTrianglesPtr()).data(), {int64_t((*mesh.getTrianglesPtr()).size()), 3});
+    if (mesh.hasNormals()) {
+        std::vector<CCVector3 *> normals = associatedCloud.getPointNormalsPtr();
         msg.data.vertex_attributes["normals"] = messages::Array::FromPtr(
-                (double*)mesh.vertex_normals_.data(),
-                {int64_t(mesh.vertex_normals_.size()), 3});
+                (PointCoordinateType*)(*normals.data()),
+                {int64_t(normals.size()), 3});
     }
-    if (mesh.HasVertexColors()) {
+    if (mesh.hasColors()) {
         msg.data.vertex_attributes["colors"] = messages::Array::FromPtr(
-                (double*)mesh.vertex_colors_.data(),
-                {int64_t(mesh.vertex_colors_.size()), 3});
+                (ColorCompType*)associatedCloud.getPointColors().data(),
+                {int64_t(associatedCloud.getPointColors().size()), 3});
     }
-    if (mesh.HasTriangleNormals()) {
+    if (mesh.hasTriNormals()) {
+        std::vector<CCVector3 *> triNormals = mesh.getTriangleNormalsPtr();
         msg.data.face_attributes["normals"] = messages::Array::FromPtr(
-                (double*)mesh.triangle_normals_.data(),
-                {int64_t(mesh.triangle_normals_.size()), 3});
+                (PointCoordinateType*)(*triNormals.data()),
+                {int64_t(triNormals.size()), 3});
     }
-    if (mesh.HasTriangleUvs()) {
+    if (mesh.hasTriangleUvs()) {
         msg.data.face_attributes["uvs"] = messages::Array::FromPtr(
                 (double*)mesh.triangle_uvs_.data(),
                 {int64_t(mesh.triangle_uvs_.size()), 2});
     }
-    if (mesh.HasTextures()) {
+    if (mesh.hasTextures()) {
         int tex_id = 0;
         for (const auto& image : mesh.textures_) {
-            if (!image.IsEmpty()) {
+            if (!image.isEmpty()) {
                 std::vector<int64_t> shape(
                         {image.height_, image.width_, image.num_of_channels_});
                 if (image.bytes_per_channel_ == sizeof(uint8_t)) {
@@ -411,4 +427,4 @@ bool SetActiveCamera(const std::string& path,
 
 }  // namespace rpc
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -190,7 +190,8 @@ int main(int argc, char *argv[])
 	else
 	{
         //main window init.
-		MainWindow* mainWindow = MainWindow::TheInstance();
+        MainWindow* mainWindow = MainWindow::TheInstance();
+
 		if (!mainWindow)
 		{
             QMessageBox::critical(nullptr, QObject::tr("Error"),
@@ -198,42 +199,42 @@ int main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 
-		mainWindow->initPlugins();
+        mainWindow->initPlugins();
 
 		if (Settings::UI_WRAPPER) {
-			// use UIManager instead
-			QUIWidget::setCode();
-			qui = new QUIWidget();
-			// set main weindow
-			mainWindow->setUiManager(qui);
-			qui->setMainWidget(mainWindow);
+            // use UIManager instead
+            QUIWidget::setCode();
+            qui = new QUIWidget();
+            // set main weindow
+            mainWindow->setUiManager(qui);
+            qui->setMainWidget(mainWindow);
 
-			qui->setTitle(Settings::APP_TITLE);
+            qui->setTitle(Settings::APP_TITLE);
 
-			// set align center
-			qui->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            // set align center
+            qui->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
-			// set dragable
-			qui->setSizeGripEnabled(true);
+            // set dragable
+            qui->setSizeGripEnabled(true);
 
-			// set icon visibility
-			qui->setVisible(QUIWidget::Lab_Ico, true);
-			qui->setVisible(QUIWidget::BtnMenu, true);
+            // set icon visibility
+            qui->setVisible(QUIWidget::Lab_Ico, true);
+            qui->setVisible(QUIWidget::BtnMenu, true);
 
-			//persistent Theme settings
-			QString qssfile = ecvSettingManager::getValue(ecvPS::ThemeSettings(),
-				ecvPS::CurrentTheme(),
-				Settings::DEFAULT_STYLE).toString();
-			qui->setStyle(qssfile);
+            //persistent Theme settings
+            QString qssfile = ecvSettingManager::getValue(ecvPS::ThemeSettings(),
+                ecvPS::CurrentTheme(),
+                Settings::DEFAULT_STYLE).toString();
+            qui->setStyle(qssfile);
 
-			//qui.setIconMain(QChar(0xf099), 11);
+            //qui.setIconMain(QChar(0xf099), 11);
 
-			qui->setPixmap(QUIWidget::Lab_Ico, Settings::APP_LOGO);
-			qui->setWindowIcon(QIcon(Settings::APP_LOGO));
+            qui->setPixmap(QUIWidget::Lab_Ico, Settings::APP_LOGO);
+            qui->setWindowIcon(QIcon(Settings::APP_LOGO));
 
-			qui->createTrayMenu();
+            qui->createTrayMenu();
 
-			qui->show();
+            qui->show();
 		}
 		else {
 			// use default ui
@@ -301,7 +302,7 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			mainWindow->addToDB(filenames);
+            mainWindow->addToDB(filenames);
 		}
 		else if (splash)
 		{

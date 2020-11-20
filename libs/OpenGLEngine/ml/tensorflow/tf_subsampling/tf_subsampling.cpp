@@ -22,15 +22,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "open3d/ml/contrib/GridSubsampling.h"
+#include "ml/contrib/GridSubsampling.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
 
 using namespace tensorflow;
-using namespace open3d::ml::contrib;
+using namespace cloudViewer::ml::contrib;
 
-REGISTER_OP("Open3DGridSubsampling")
+REGISTER_OP("CloudViewerGridSubsampling")
         .Input("points: float")
         .Input("dl: float")
         .Output("sub_points: float")
@@ -87,7 +87,7 @@ public:
         output_shape.AddDim(3);
 
         // create output tensor
-        Tensor* output = NULL;
+        Tensor* output = nullptr;
         OP_REQUIRES_OK(context,
                        context->allocate_output(0, output_shape, &output));
         auto output_tensor = output->matrix<float>();
@@ -101,5 +101,5 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("Open3DGridSubsampling").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("CloudViewerGridSubsampling").Device(DEVICE_CPU),
                         GridSubsamplingOp);

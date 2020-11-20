@@ -22,7 +22,7 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
-#include "cloudViewer/ml/impl/misc/VoxelPooling.h"
+#include "ml/impl/misc/VoxelPooling.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
