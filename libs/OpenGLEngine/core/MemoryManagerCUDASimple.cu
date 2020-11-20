@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -40,7 +40,7 @@ void* CUDASimpleMemoryManager::Malloc(size_t byte_size, const Device& device) {
     CUDADeviceSwitcher switcher(device);
     void* ptr;
     if (device.GetType() == Device::DeviceType::CUDA) {
-        OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
+        CLOUDVIEWER_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
     } else {
         utility::LogError(
                 "CUDASimpleMemoryManager::Malloc: Unimplemented device.");
@@ -52,7 +52,7 @@ void CUDASimpleMemoryManager::Free(void* ptr, const Device& device) {
     CUDADeviceSwitcher switcher(device);
     if (device.GetType() == Device::DeviceType::CUDA) {
         if (ptr && IsCUDAPointer(ptr)) {
-            OPEN3D_CUDA_CHECK(cudaFree(ptr));
+            CLOUDVIEWER_CUDA_CHECK(cudaFree(ptr));
         }
     } else {
         utility::LogError(
@@ -71,7 +71,7 @@ void CUDASimpleMemoryManager::Memcpy(void* dst_ptr,
         if (!IsCUDAPointer(dst_ptr)) {
             utility::LogError("dst_ptr is not a CUDA pointer.");
         }
-        OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
+        CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
                                      cudaMemcpyHostToDevice));
     } else if (dst_device.GetType() == Device::DeviceType::CPU &&
                src_device.GetType() == Device::DeviceType::CUDA) {
@@ -79,7 +79,7 @@ void CUDASimpleMemoryManager::Memcpy(void* dst_ptr,
         if (!IsCUDAPointer(src_ptr)) {
             utility::LogError("src_ptr is not a CUDA pointer.");
         }
-        OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
+        CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
                                      cudaMemcpyDeviceToHost));
     } else if (dst_device.GetType() == Device::DeviceType::CUDA &&
                src_device.GetType() == Device::DeviceType::CUDA) {
@@ -94,20 +94,20 @@ void CUDASimpleMemoryManager::Memcpy(void* dst_ptr,
 
         if (dst_device == src_device) {
             CUDADeviceSwitcher switcher(src_device);
-            OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
+            CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
                                          cudaMemcpyDeviceToDevice));
         } else if (CUDAState::GetInstance()->IsP2PEnabled(src_device.GetID(),
                                                           dst_device.GetID())) {
-            OPEN3D_CUDA_CHECK(cudaMemcpyPeer(dst_ptr, dst_device.GetID(),
+            CLOUDVIEWER_CUDA_CHECK(cudaMemcpyPeer(dst_ptr, dst_device.GetID(),
                                              src_ptr, src_device.GetID(),
                                              num_bytes));
         } else {
             void* cpu_buf = MemoryManager::Malloc(num_bytes, Device("CPU:0"));
             CUDADeviceSwitcher switcher(src_device);
-            OPEN3D_CUDA_CHECK(cudaMemcpy(cpu_buf, src_ptr, num_bytes,
+            CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(cpu_buf, src_ptr, num_bytes,
                                          cudaMemcpyDeviceToHost));
             switcher.SwitchTo(dst_device);
-            OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, cpu_buf, num_bytes,
+            CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(dst_ptr, cpu_buf, num_bytes,
                                          cudaMemcpyHostToDevice));
             MemoryManager::Free(cpu_buf, Device("CPU:0"));
         }

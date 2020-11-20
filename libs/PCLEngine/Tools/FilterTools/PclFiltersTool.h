@@ -39,7 +39,7 @@ class QPCL_ENGINE_LIB_API PclFiltersTool : public ecvGenericFiltersTool
 public:
 	explicit PclFiltersTool(FilterType type = FilterType::CLIP_FILTER);
 	explicit PclFiltersTool(ecvGenericVisualizer3D* viewer, FilterType type = FilterType::CLIP_FILTER);
-	~PclFiltersTool();
+    virtual ~PclFiltersTool() override;
 
 	/**
 	 * @brief initialize
@@ -49,7 +49,8 @@ public:
 public: // implemented from ecvGenericFiltersTool interface
 	virtual void showInteractor(bool state) override;
 	virtual ccHObject* getOutput() const override;
-	virtual void getOutput(std::vector<ccHObject*>& outputSlices, std::vector<ccPolyline*>& outputContours) const override;
+    virtual void getOutput(std::vector<ccHObject*>& outputSlices,
+                           std::vector<ccPolyline*>& outputContours) const override;
 
 	virtual void setNegative(bool state) override;
 
@@ -85,16 +86,11 @@ public: // implemented from ecvGenericFiltersTool interface
 	virtual void showOutline(bool state) override;
 
 protected:
-	virtual void registerFilter() override;
 	virtual void unregisterFilter() override;
-
 	virtual void initialize(ecvGenericVisualizer3D* viewer) override;
 
 protected slots:
-	void pointPickingProcess(int index);
 	void areaPickingEventProcess(const std::vector<int>& new_selected_slice);
-	void pickedEventProcess(vtkActor* actor);
-	void keyboardEventProcess(const std::string& symKey);
 
 private:
 	void setPointSize(const std::string & viewID, int viewPort = 0);

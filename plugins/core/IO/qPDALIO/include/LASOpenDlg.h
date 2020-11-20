@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                              CLOUDVIEWER                               #
+//#                              CLOUDCOMPARE                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -11,12 +11,12 @@
 //#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
 //#  GNU General Public License for more details.                          #
 //#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+//#          COPYRIGHT: EDF R&D / TELECOM ParisTech (ENST-TSI)             #
 //#                                                                        #
 //##########################################################################
 
-#ifndef ECV_LAS_OPEN_DIALOG
-#define ECV_LAS_OPEN_DIALOG
+#ifndef PLUGIN_LAS_OPEN_DIALOG
+#define PLUGIN_LAS_OPEN_DIALOG
 
 //Local
 #include "LASFields.h"
@@ -28,7 +28,7 @@
 #include <string.h>
 #include <vector>
 
-// CV_CORE_LIB
+//CVLib
 #include <CVGeom.h>
 
 //! Dialog to choose the LAS fields to load
@@ -71,7 +71,7 @@ public:
 	//! Resets the "apply all" flag (if set)
 	void resetApplyAll();
 
-protected slots:
+protected:
 
 	void onApplyAll();
 	void onBrowse();
@@ -81,4 +81,4 @@ protected:
 	bool m_autoSkip;
 };
 
-#endif // ECV_LAS_OPEN_DIALOG
+#endif // PLUGIN_LAS_OPEN_DIALOG

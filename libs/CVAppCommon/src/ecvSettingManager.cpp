@@ -251,6 +251,7 @@ void ecvSettingManager::Init(const QString &fileName)
 
 	s_manager.instance = new ecvSettingManager();
 
+#ifdef CV_WINDOWS // only support QSettings Writting in file in Windows now!
 	QString configPath;
 	configPath = QCoreApplication::applicationDirPath() + "/";
 	configPath += fileName;
@@ -264,6 +265,11 @@ void ecvSettingManager::Init(const QString &fileName)
 		s_manager.instance->m_iniFile->setValue("status", "false");
 		s_manager.instance->m_iniFile->endGroup();
 	}
+#else
+    s_manager.instance->m_iniFile = QSharedPointer<QSettings>(new QSettings());
+    //s_manager.instance->m_iniFile->setIniCodec(QTextCodec::codecForName("System"));
+    s_manager.instance->m_iniFile->setIniCodec("utf8"); // set coding
+#endif
 }
 
 void ecvSettingManager::setValue(const QString &section, const QString &key, const QVariant &value)

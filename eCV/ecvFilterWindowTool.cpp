@@ -21,6 +21,7 @@
 #include "ecvContourExtractor.h"
 #include "ecvCropTool.h"
 #include "MainWindow.h"
+#include "db_tree/ecvDBRoot.h"
 #include "ecvConsole.h"
 
 // ECV_CORE_LIB
@@ -211,11 +212,6 @@ bool ecvFilterWindowTool::addAssociatedEntity(ccHObject* entity)
 	if (s_lastBoxParams.contains(entity->getUniqueID()))
 	{
 		restoreToolButton->setEnabled(true);
-	}
-
-	if (entity->isKindOf(CV_TYPES::POINT_CLOUD))
-	{
-		//contourGroupBox->setEnabled(true);
 	}
 
 	//no need to reset the clipping box if the entity has not a valid bounding-box

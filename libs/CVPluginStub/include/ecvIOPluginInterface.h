@@ -26,7 +26,7 @@
 #include "ecvDefaultPluginInterface.h"
 
 //! I/O filter plugin interface
-/** Version 1.2
+/** Version 1.3
 **/
 class ccIOPluginInterface : public ccDefaultPluginInterface
 {
@@ -49,6 +49,6 @@ public:
 };
 
 Q_DECLARE_INTERFACE(ccIOPluginInterface,
-                    "edf.rd.CloudViewer.ccIOFilterPluginInterface/1.2")
+                    "edf.rd.cloudviewer.ccIOFilterPluginInterface/1.3")
 
 #endif // ECV_IO_PLUGIN_INTERFACE_HEADER

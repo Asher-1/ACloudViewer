@@ -5,5 +5,5 @@ Icon=CloudViewer
 Comment=Viewer for triangle meshes and point clouds
 Exec=${CMAKE_INSTALL_PREFIX}/bin/CloudViewer/CloudViewer %f
 Terminal=false
-Categories=Graphics
+Categories=Graphics;
 MimeType=model/stl;model/obj;model/fbx;model/gltf-binary;model/gltf+json;model/x.stl-ascii;model/x.stl-binary;model/x-ply;application/x-off;application/x-xyz;application/x-xyzn;application/x-xyzrgb;application/x-pcd;application/x-pts

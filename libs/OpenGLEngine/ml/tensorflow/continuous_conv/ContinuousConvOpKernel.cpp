@@ -26,10 +26,10 @@
 
 #include "ContinuousConvOpKernel.h"
 
-#include "open3d/ml/impl/continuous_conv/ContinuousConv.h"
+#include "ml/impl/continuous_conv/ContinuousConv.h"
 
-using namespace open3d;
-using namespace open3d::ml::impl;
+using namespace cloudViewer;
+using namespace cloudViewer::ml::impl;
 using namespace tensorflow;
 
 template <class TReal, class TIndex>
@@ -78,7 +78,7 @@ public:
 };
 
 #define REG_KB(type, indextype)                                           \
-    REGISTER_KERNEL_BUILDER(Name("Open3DContinuousConv")                  \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerContinuousConv")                  \
                                     .Device(DEVICE_CPU)                   \
                                     .TypeConstraint<type>("TReal")        \
                                     .TypeConstraint<indextype>("TIndex"), \

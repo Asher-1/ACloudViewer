@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/tensorflow/TensorFlowHelper.h"
+#include "ml/tensorflow/TensorFlowHelper.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
@@ -32,7 +32,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DInvertNeighborsList")
+REGISTER_OP("CloudViewerInvertNeighborsList")
         .Attr("TIndex: {int32}")
         .Attr("TAttr: {int32, int64, float, double}")
         .Input("num_points: int64")
@@ -58,7 +58,7 @@ REGISTER_OP("Open3DInvertNeighborsList")
 
             // check input shapes
             {
-                using namespace open3d::ml::op_util;
+                using namespace cloudViewer::ml::op_util;
                 Dim num_neighbors("num_neighbors");
 
                 CHECK_SHAPE_HANDLE(c, inp_neighbors_index, num_neighbors);
@@ -86,7 +86,7 @@ This op inverts the neighbors list as returned from the neighbor search ops.
 The role of query points and input points is reversed in the returned list.
 The following example illustrates this::
 
-  import open3d.ml.tf as ml3d
+  import cloudViewer.ml.tf as ml3d
 
   # in this example we have 4 points and 3 query points with 3, 1, and 2 neighbors
   # the mapping is 0->(0,1,2), 1->(2), 2->(1,3)
@@ -107,7 +107,7 @@ The following example illustrates this::
 
   # or with pytorch
   import torch
-  import open3d.ml.torch as ml3d
+  import cloudViewer.ml.torch as ml3d
 
   # in this example we have 4 points and 3 query points with 3, 1, and 2 neighbors
   # the mapping is 0->(0,1,2), 1->(2), 2->(1,3)

@@ -91,6 +91,8 @@
 #include <ecvShiftAndScaleCloudDlg.h>
 
 //common
+#include <ecvOptions.h>
+#include <CommonSettings.h>
 #include <ecvCommon.h>
 #include <ecvPickingHub.h>
 #include <ecvCustomViewpointsToolbar.h>
@@ -99,36 +101,6 @@
 #include <ecvCameraParamEditDlg.h>
 #include <ecvDisplayOptionsDlg.h>
 #include <ecvPickOneElementDlg.h>
-
-// QPCL_ENGINE_LIB
-#ifdef USE_PCL_BACKEND
-#include <Tools/CurveFitting.h>
-#include <Tools/EditCameraTool.h>
-#include <PclUtils/PCLDisplayTools.h>
-#include <Tools/FilterTools/PclFiltersTool.h>
-#include <Tools/TransformTools/QvtkTransformTool.h>
-#include <Tools/AnnotationTools/PclAnnotationTool.h>
-#endif
-
-// ECV_PYTHON_LIB
-#ifdef USE_PYTHON_MODULE
-#include "ecvDeepSemanticSegmentationTool.h"
-#include <recognition/PythonInterface.h>
-#endif
-
-// SYSTEM
-#ifdef CV_WINDOWS
-#include <omp.h>
-#endif
-
-#ifdef USE_TBB
-#include <tbb/tbb_stddef.h>
-#endif
-
-#ifdef USE_VLD
-//VLD
-#include <vld.h>
-#endif
 
 //Qt UI files
 #include "ui_MainWindow.h"
@@ -171,7 +143,38 @@
 #include "ecvEntitySelectionDlg.h"
 
 // other
+#include "db_tree/ecvDBRoot.h"
 #include "pluginManager/ecvPluginUIManager.h"
+
+// QPCL_ENGINE_LIB
+#ifdef USE_PCL_BACKEND
+#include <Tools/CurveFitting.h>
+#include <Tools/EditCameraTool.h>
+#include <PclUtils/PCLDisplayTools.h>
+#include <Tools/FilterTools/PclFiltersTool.h>
+#include <Tools/TransformTools/QvtkTransformTool.h>
+#include <Tools/AnnotationTools/PclAnnotationTool.h>
+#endif
+
+// ECV_PYTHON_LIB
+#ifdef USE_PYTHON_MODULE
+#include "ecvDeepSemanticSegmentationTool.h"
+#include <recognition/PythonInterface.h>
+#endif
+
+// SYSTEM
+#ifdef CV_WINDOWS
+#include <omp.h>
+#endif
+
+#ifdef USE_VLD
+//VLD
+#include <vld.h>
+#endif
+
+#ifdef USE_TBB
+#include <tbb/tbb_stddef.h>
+#endif
 
 //global static pointer (as there should only be one instance of MainWindow!)
 static MainWindow* s_instance = nullptr;
@@ -216,128 +219,136 @@ static bool IsValidFileName(QString filename)
 	return QRegExp(sPattern).exactMatch(filename);
 }
 
-MainWindow::MainWindow(QWidget *parent)
-	: QMainWindow(parent)
+MainWindow::MainWindow()
+    : m_FirstShow(true)
 	, m_ui( new Ui::MainViewerClass )
 	, m_ccRoot(nullptr)
-	, m_mousePosLabel(nullptr)
+    , m_uiFrozen(false)
+    , m_recentFiles(new ecvRecentFiles(this))
+    , m_viewModePopupButton(nullptr)
+    , m_pickingHub(nullptr)
+    , m_cpeDlg(nullptr)
+    , m_gsTool(nullptr)
+    , m_tplTool(nullptr)
+    , m_transTool(nullptr)
+    , m_compDlg(nullptr)
+    , m_ppDlg(nullptr)
+    , m_plpDlg(nullptr)
+    , m_pprDlg(nullptr)
+    , m_pfDlg(nullptr)
+    , m_filterTool(nullptr)
+    , m_annoTool(nullptr)
+    , m_surfaceTool(nullptr)
+    , m_filterLabelTool(nullptr)
+    , m_filterWindowTool(nullptr)
+    , m_dssTool(nullptr)
+    , m_layout(nullptr)
+    , m_uiManager(nullptr)
+    , m_mousePosLabel(nullptr)
 	, m_systemInfoLabel(nullptr)
 	, m_currentFullWidget(nullptr)
-	, m_recentFiles(new ecvRecentFiles(this))
 	, m_exclusiveFullscreen(false)
-    , m_viewModePopupButton(nullptr)
     , m_lastViewMode(VIEWMODE::ORTHOGONAL)
-	, m_uiFrozen(false)
-	, m_pickingHub(nullptr)
-    , m_uiManager(nullptr)
-	, m_transTool(nullptr)
-    , m_cpeDlg(nullptr)
-	, m_gsTool(nullptr)
-	, m_compDlg(nullptr)
-	, m_filterTool(nullptr)
-    , m_tplTool(nullptr)
-	, m_annoTool(nullptr)
-	, m_dssTool(nullptr)
-	, m_filterLabelTool(nullptr)
-	, m_filterWindowTool(nullptr)
-	, m_surfaceTool(nullptr)
-	, m_ppDlg(nullptr)
-	, m_plpDlg(nullptr)
-	, m_pprDlg(nullptr)
-	, m_pfDlg(nullptr)
-	, m_FirstShow(true)
 {
-	m_ui->setupUi(this);
+    m_ui->setupUi(this);
 
-	setWindowTitle(QStringLiteral("ErowCloudViewer v") + ecvApp->versionLongStr(false));
+    setWindowTitle(QStringLiteral("ErowCloudViewer v") + ecvApp->versionLongStr(false));
 
-	m_pluginUIManager = new ccPluginUIManager( this, this );
+    m_pluginUIManager = new ccPluginUIManager( this, this );
 	
-	ccTranslationManager::get().populateMenu( m_ui->langAction, ecvApp->translationPath() );
+    ccTranslationManager::get().populateMenu( m_ui->langAction, ecvApp->translationPath() );
 
-	// Initialization
-	initial();
+#ifdef Q_OS_MAC
+    m_ui->actionAbout->setMenuRole( QAction::AboutRole );
+    m_ui->actionAboutPlugins->setMenuRole( QAction::ApplicationSpecificRole );
 
-	// connect actions
-	connectActions();
+    m_ui->actionFullScreen->setText( tr( "Enter Full Screen" ) );
+    m_ui->actionFullScreen->setShortcut( QKeySequence( Qt::CTRL + Qt::META + Qt::Key_F ) );
+#endif
 
-	freezeUI(false);
+    // Initialization
+    initial();
 
-	updateUI();
+    // connect actions
+    connectActions();
 
-	//advanced widgets not handled by QDesigner
-	{
-		//view mode pop-up menu
-		{
-			m_viewModePopupButton = new QToolButton();
-			QMenu* menu = new QMenu(m_viewModePopupButton);
-			menu->addAction(m_ui->actionOrthogonalProjection);
-			menu->addAction(m_ui->actionPerspectiveProjection);
+    freezeUI(false);
 
-			m_viewModePopupButton->setMenu(menu);
-			m_viewModePopupButton->setPopupMode(QToolButton::InstantPopup);
-			m_viewModePopupButton->setToolTip("Set current view mode");
-			m_viewModePopupButton->setStatusTip(m_viewModePopupButton->toolTip());
-			m_ui->ViewToolBar->insertWidget(m_ui->actionZoomAndCenter, m_viewModePopupButton);
-			m_viewModePopupButton->setEnabled(false);
-		}
+    updateUI();
 
-		// custom viewports configuration
-		{
-			QToolBar* customViewpointsToolbar = new ecvCustomViewpointsToolbar(this);
-			customViewpointsToolbar->setObjectName("customViewpointsToolbar");
-			customViewpointsToolbar->layout()->setSpacing(0);
-			this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
-			//this->insertToolBar(m_ui->FilterToolBar, customViewpointsToolbar);
-		}
+    //advanced widgets not handled by QDesigner
+    {
+        //view mode pop-up menu
+        {
+            m_viewModePopupButton = new QToolButton();
+            QMenu* menu = new QMenu(m_viewModePopupButton);
+            menu->addAction(m_ui->actionOrthogonalProjection);
+            menu->addAction(m_ui->actionPerspectiveProjection);
 
-		// orthogonal projection mode (default)
-		{
-			m_ui->actionOrthogonalProjection->trigger();
-			ecvConsole::Print("Perspective off!");
-		}
-	}
+            m_viewModePopupButton->setMenu(menu);
+            m_viewModePopupButton->setPopupMode(QToolButton::InstantPopup);
+            m_viewModePopupButton->setToolTip("Set current view mode");
+            m_viewModePopupButton->setStatusTip(m_viewModePopupButton->toolTip());
+            m_ui->ViewToolBar->insertWidget(m_ui->actionZoomAndCenter, m_viewModePopupButton);
+            m_viewModePopupButton->setEnabled(false);
+        }
 
-	//restore options
-	{
-		QSettings settings;
+        // custom viewports configuration
+        {
+            QToolBar* customViewpointsToolbar = new ecvCustomViewpointsToolbar(this);
+            customViewpointsToolbar->setObjectName("customViewpointsToolbar");
+            customViewpointsToolbar->layout()->setSpacing(0);
+            this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
+            //this->insertToolBar(m_ui->FilterToolBar, customViewpointsToolbar);
+        }
 
-		// auto pick center
-		bool autoPickRotationCenter = settings.value(ecvPS::AutoPickRotationCenter(), false).toBool();
-		if (autoPickRotationCenter)
-		{
-			m_ui->actionAutoPickPivot->toggle();
-		}
+        // orthogonal projection mode (default)
+        {
+            m_ui->actionOrthogonalProjection->trigger();
+            ecvConsole::Print("Perspective off!");
+        }
+    }
 
-		// show center
-		bool autoShowCenterAxis = settings.value(ecvPS::AutoShowCenter(), true).toBool();
-		m_ui->actionShowPivot->blockSignals(true);
-		m_ui->actionShowPivot->setChecked(autoShowCenterAxis);
-		m_ui->actionShowPivot->blockSignals(false);
-		toggleRotationCenterVisibility(autoShowCenterAxis);
-	}
+    //restore options
+    {
+        QSettings settings;
 
-	refreshAll();
+        // auto pick center
+        bool autoPickRotationCenter = settings.value(ecvPS::AutoPickRotationCenter(), false).toBool();
+        if (autoPickRotationCenter)
+        {
+            m_ui->actionAutoPickPivot->toggle();
+        }
+
+        // show center
+        bool autoShowCenterAxis = settings.value(ecvPS::AutoShowCenter(), true).toBool();
+        m_ui->actionShowPivot->blockSignals(true);
+        m_ui->actionShowPivot->setChecked(autoShowCenterAxis);
+        m_ui->actionShowPivot->blockSignals(false);
+        toggleRotationCenterVisibility(autoShowCenterAxis);
+    }
+
+    refreshAll();
 
 #ifdef QT_DEBUG
-	// efficiency for debug mode
-	m_ui->actionToggleOrientationMarker->toggle();
-	doActionToggleOrientationMarker(false);
+    // efficiency for debug mode
+    m_ui->actionToggleOrientationMarker->toggle();
+    doActionToggleOrientationMarker(false);
 #else
-	doActionToggleOrientationMarker(true);
+    doActionToggleOrientationMarker(true);
 #endif // QT_DEBUG
 
 #ifdef USE_PYTHON_MODULE
-	QString applicationPath = QCoreApplication::applicationDirPath();
-	QString pyHome = applicationPath + "/python36";
-	if (!PythonInterface::SetPythonHome(CVTools::fromQString(pyHome).c_str()))
-	{
-		CVLog::Warning(QString("Setting python home failed! Invalid path: [%1].").arg(pyHome));
-	}
-	else
-	{
-		CVLog::Print(QString("Setting python home [%1] successfully!").arg(pyHome));
-	}
+    QString applicationPath = QCoreApplication::applicationDirPath();
+    QString pyHome = applicationPath + "/python36";
+    if (!PythonInterface::SetPythonHome(CVTools::fromQString(pyHome).c_str()))
+    {
+        CVLog::Warning(QString("Setting python home failed! Invalid path: [%1].").arg(pyHome));
+    }
+    else
+    {
+        CVLog::Print(QString("Setting python home [%1] successfully!").arg(pyHome));
+    }
 #else
 	m_ui->actionSemanticSegmentation->setEnabled(false);
 #endif
@@ -348,7 +359,128 @@ MainWindow::MainWindow(QWidget *parent)
 #endif
 
 	// print welcome message
-	ecvConsole::Print(tr("[ErowCloudViewer Software start], Welcome to use ErowCloudViewer"));
+    ecvConsole::Print(tr("[ErowCloudViewer Software start], Welcome to use ErowCloudViewer"));
+}
+
+MainWindow::~MainWindow() {
+    cancelPreviousPickingOperation(false); //just in case
+
+    assert(m_ccRoot && m_mdiArea);
+    m_ccRoot->unloadAll();
+    m_ccRoot->disconnect();
+    m_mdiArea->disconnect();
+
+    //we don't want any other dialog/function to use the following structures
+    ccDBRoot* ccRoot = m_ccRoot;
+    m_ccRoot = nullptr;
+
+    m_cpeDlg = nullptr;
+    m_mousePosLabel = nullptr;
+    m_systemInfoLabel = nullptr;
+
+    m_filterWindowTool = nullptr;
+    m_gsTool = nullptr;
+    m_transTool = nullptr;
+    m_filterTool = nullptr;
+    m_annoTool = nullptr;
+    m_dssTool = nullptr;
+    m_filterLabelTool = nullptr;
+    m_compDlg = nullptr;
+    m_ppDlg = nullptr;
+    m_plpDlg = nullptr;
+    m_pprDlg = nullptr;
+    m_pfDlg = nullptr;
+
+    //release all 'overlay' dialogs
+    while (!m_mdiDialogs.empty())
+    {
+        ccMDIDialogs mdiDialog = m_mdiDialogs.back();
+        m_mdiDialogs.pop_back();
+
+        mdiDialog.dialog->disconnect();
+        mdiDialog.dialog->stop(false);
+        mdiDialog.dialog->setParent(nullptr);
+        delete mdiDialog.dialog;
+    }
+
+    //m_mdiDialogs.clear();
+    std::vector<QWidget*> windows;
+    GetRenderWindows(windows);
+    for (QWidget *window : windows)
+    {
+        m_mdiArea->removeSubWindow(window);
+    }
+
+    ecvDisplayTools::SetSceneDB(nullptr);
+    ecvDisplayTools::ReleaseInstance();
+
+    if (ccRoot)
+    {
+        delete ccRoot;
+        ccRoot = nullptr;
+    }
+
+    delete m_ui;
+    m_ui = nullptr;
+
+    // if we flush the console, it will try to display the console window while we are destroying everything!
+    ecvConsole::ReleaseInstance(false);
+}
+
+// MainWindow Initialization
+void MainWindow::initial() {
+    //MDI Area
+    {
+        m_mdiArea = new QMdiArea(this);
+        setCentralWidget(m_mdiArea);
+        connect(m_mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::updateMenus);
+        connect(m_mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::on3DViewActivated);
+        m_mdiArea->installEventFilter(this);
+    }
+
+    bool stereoMode = QSurfaceFormat::defaultFormat().stereo();
+    ecvDisplayTools::Init(new PCLDisplayTools(), this, stereoMode);
+
+    // init themes
+    initThemes();
+
+    // init languages
+    initLanguages();
+
+    // init console
+    initConsole();
+
+    // init db root
+    initDBRoot();
+
+    // init status bar
+    initStatusBar();
+
+    QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
+    viewWidget->setMinimumSize(400, 300);
+    m_mdiArea->addSubWindow(viewWidget);
+
+    //picking hub
+    {
+        m_pickingHub = new ccPickingHub(this, this);
+        connect(m_mdiArea, &QMdiArea::subWindowActivated, m_pickingHub, &ccPickingHub::onActiveWindowChanged);
+    }
+
+    if (m_pickingHub)
+    {
+        //we must notify the picking hub as well if the window is destroyed
+        connect(this, &QObject::destroyed, m_pickingHub, &ccPickingHub::onActiveWindowDeleted);
+    }
+
+    viewWidget->showMaximized();
+    viewWidget->update();
+
+}
+
+void MainWindow::initConsole() {
+    // set Console
+    ecvConsole::Init(m_ui->consoleWidget, this, this);
+    m_ui->actionEnableQtWarnings->setChecked(ecvConsole::QtMessagesEnabled());
 }
 
 void MainWindow::connectActions()
@@ -582,17 +714,11 @@ void MainWindow::connectActions()
 	connect(m_ui->actionToggleOrientationMarker, &QAction::triggered, this, &MainWindow::doActionToggleOrientationMarker);
 	connect(m_ui->actionGlobalShiftSettings, &QAction::triggered, this, &MainWindow::doActionGlobalShiftSeetings);
 
-	// init themes
-	initThemes();
-
-	// init languages
-	initLanguages();
-
 	// About (connect)
 	QObject::connect(m_ui->helpAction, &QAction::triggered, this, &MainWindow::help);
 	connect(m_ui->actionAboutPlugins, &QAction::triggered, m_pluginUIManager, &ccPluginUIManager::showAboutDialog);
 	QObject::connect(m_ui->actionEnableQtWarnings, &QAction::toggled, this, &MainWindow::doEnableQtWarnings);
-	connect(m_ui->aboutAction, &QAction::triggered, this, [this]() {
+    connect(m_ui->actionAbout, &QAction::triggered, this, [this]() {
 		ecvAboutDialog* aboutDialog = new ecvAboutDialog(this);
 		aboutDialog->exec();
 	});
@@ -612,6 +738,125 @@ void MainWindow::connectActions()
 
 	// Set up dynamic menus
 	m_ui->menuFile->insertMenu(m_ui->actionSave, m_recentFiles->menu());
+}
+
+void MainWindow::initThemes()
+{
+    // Option (connect)
+    m_ui->DfaultThemeAction->setData(QVariant(Themes::THEME_DEFAULT));
+    m_ui->BlueThemeAction->setData(QVariant(Themes::THEME_BLUE));
+    m_ui->LightBlueThemeAction->setData(QVariant(Themes::THEME_LIGHTBLUE));
+    m_ui->DarkBlueThemeAction->setData(QVariant(Themes::THEME_DARKBLUE));
+    m_ui->BlackThemeAction->setData(QVariant(Themes::THEME_BLACK));
+    m_ui->LightBlackThemeAction->setData(QVariant(Themes::THEME_LIGHTBLACK));
+    m_ui->FlatBlackThemeAction->setData(QVariant(Themes::THEME_FLATBLACK));
+    m_ui->DarkBlackThemeAction->setData(QVariant(Themes::THEME_DarkBLACK));
+    m_ui->GrayThemeAction->setData(QVariant(Themes::THEME_GRAY));
+    m_ui->LightGrayThemeAction->setData(QVariant(Themes::THEME_LIGHTGRAY));
+    m_ui->DarkGrayThemeAction->setData(QVariant(Themes::THEME_DarkGRAY));
+    m_ui->FlatWhiteThemeAction->setData(QVariant(Themes::THEME_FLATWHITE));
+    m_ui->PsBlackThemeAction->setData(QVariant(Themes::THEME_PSBLACK));
+    m_ui->SilverThemeAction->setData(QVariant(Themes::THEME_SILVER));
+    m_ui->BFThemeAction->setData(QVariant(Themes::THEME_BF));
+    m_ui->TestThemeAction->setData(QVariant(Themes::THEME_TEST));
+    m_ui->ParaviewThemeAction->setData(QVariant(Themes::THEME_PARAVIEW));
+
+    connect(m_ui->DfaultThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->BlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->LightBlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->DarkBlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->BlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->LightBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->FlatBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->DarkBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->GrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->LightGrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->DarkGrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->FlatWhiteThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->PsBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->SilverThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->BFThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->TestThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->ParaviewThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+}
+
+void MainWindow::initLanguages()
+{
+    m_ui->englishAction->setData(QVariant(CLOUDVIEWER_LANG_ENGLISH));
+    m_ui->chineseAction->setData(QVariant(CLOUDVIEWER_LANG_CHINESE));
+    connect(m_ui->englishAction, SIGNAL(triggered()), this, SLOT(changeLanguage()));
+    connect(m_ui->chineseAction, SIGNAL(triggered()), this, SLOT(changeLanguage()));
+}
+
+void MainWindow::initStatusBar()
+{
+    // set mouse position label
+    {
+        m_mousePosLabel = new QLabel(this);
+        QFont ft;
+        ft.setBold(true);
+        m_mousePosLabel->setFont(ft);
+        m_mousePosLabel->setMinimumSize(m_mousePosLabel->sizeHint());
+        m_mousePosLabel->setAlignment(Qt::AlignHCenter);
+        m_ui->statusBar->insertWidget(0, m_mousePosLabel, 3);
+        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mousePosChanged, this, &MainWindow::onMousePosChanged);
+    }
+
+    // set system info label
+    {
+        m_systemInfoLabel = new QLabel(this);
+        m_systemInfoLabel->setMinimumSize(m_systemInfoLabel->sizeHint());
+        m_systemInfoLabel->setAlignment(Qt::AlignHCenter);
+        m_systemInfoLabel->setText(
+            tr("<style> a{text-decoration: none} </style> <a href=\"http://www.erow.cn\">%1 | www.erow.cn</a>").arg(Settings::TITLE + " " + Settings::APP_VERSION));
+        m_systemInfoLabel->setTextFormat(Qt::RichText);
+        m_systemInfoLabel->setOpenExternalLinks(true);
+        m_ui->statusBar->addPermanentWidget(m_systemInfoLabel);
+    }
+
+    //QMainWindow::statusBar()->setStyleSheet(QString("QStatusBar::item{border: 0px}"));
+    QMainWindow::statusBar()->showMessage(tr("Ready"));
+}
+
+void MainWindow::initPlugins()
+{
+    m_pluginUIManager->init();
+
+    // Set up dynamic tool bars
+    addToolBar(Qt::RightToolBarArea, m_pluginUIManager->glPclToolbar());
+    addToolBar(Qt::RightToolBarArea, m_pluginUIManager->mainPluginToolbar());
+
+    for (QToolBar *toolbar : m_pluginUIManager->additionalPluginToolbars())
+    {
+        addToolBar(Qt::TopToolBarArea, toolbar);
+    }
+    // Set up dynamic menus
+    m_ui->menuBar->insertMenu(m_ui->menuOption->menuAction(), m_pluginUIManager->pluginMenu());
+    m_ui->menuBar->insertMenu(m_ui->menuOption->menuAction(), m_pluginUIManager->pclAlgorithmMenu());
+
+    m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowMainPluginToolbar());
+    m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowPCLAlgorithmToolbar());
+}
+
+void MainWindow::initDBRoot()
+{
+    //db-tree
+    {
+        m_ccRoot = new ccDBRoot(m_ui->dbTreeView, m_ui->propertiesTreeView, this);
+        connect(m_ccRoot, &ccDBRoot::selectionChanged, this, &MainWindow::updateUIWithSelection);
+        connect(m_ccRoot, &ccDBRoot::dbIsEmpty, [&]() { updateUIWithSelection(); updateMenus(); }); //we don't call updateUI because there's no need to update the properties dialog
+        connect(m_ccRoot, &ccDBRoot::dbIsNotEmptyAnymore, [&]() { updateUIWithSelection(); updateMenus(); }); //we don't call updateUI because there's no need to update the properties dialog
+    }
+
+    ecvDisplayTools::SetSceneDB(m_ccRoot->getRootEntity());
+    m_ccRoot->updatePropertiesView();
+
+    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::entitySelectionChanged, this, [=](ccHObject *entity) {
+        m_ccRoot->selectEntity(entity);
+    });
+    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::entitiesSelectionChanged, this, [=](std::unordered_set<int> entities) {
+        m_ccRoot->selectEntities(entities);
+    });
 }
 
 void MainWindow::toggleActiveWindowAutoPickRotCenter(bool state)
@@ -657,125 +902,6 @@ void MainWindow::toggleRotationCenterVisibility(bool state)
 	}
 }
 
-void MainWindow::initLanguages()
-{
-	m_ui->englishAction->setData(QVariant(CLOUDVIEWER_LANG_ENGLISH));
-	m_ui->chineseAction->setData(QVariant(CLOUDVIEWER_LANG_CHINESE));
-	connect(m_ui->englishAction, SIGNAL(triggered()), this, SLOT(changeLanguage()));
-	connect(m_ui->chineseAction, SIGNAL(triggered()), this, SLOT(changeLanguage()));
-}
-
-void MainWindow::initThemes()
-{
-	// Option (connect)
-	m_ui->DfaultThemeAction->setData(QVariant(Themes::THEME_DEFAULT));
-	m_ui->BlueThemeAction->setData(QVariant(Themes::THEME_BLUE));
-	m_ui->LightBlueThemeAction->setData(QVariant(Themes::THEME_LIGHTBLUE));
-	m_ui->DarkBlueThemeAction->setData(QVariant(Themes::THEME_DARKBLUE));
-	m_ui->BlackThemeAction->setData(QVariant(Themes::THEME_BLACK));
-	m_ui->LightBlackThemeAction->setData(QVariant(Themes::THEME_LIGHTBLACK));
-	m_ui->FlatBlackThemeAction->setData(QVariant(Themes::THEME_FLATBLACK));
-	m_ui->DarkBlackThemeAction->setData(QVariant(Themes::THEME_DarkBLACK));
-	m_ui->GrayThemeAction->setData(QVariant(Themes::THEME_GRAY));
-	m_ui->LightGrayThemeAction->setData(QVariant(Themes::THEME_LIGHTGRAY));
-	m_ui->DarkGrayThemeAction->setData(QVariant(Themes::THEME_DarkGRAY));
-	m_ui->FlatWhiteThemeAction->setData(QVariant(Themes::THEME_FLATWHITE));
-	m_ui->PsBlackThemeAction->setData(QVariant(Themes::THEME_PSBLACK));
-	m_ui->SilverThemeAction->setData(QVariant(Themes::THEME_SILVER));
-	m_ui->BFThemeAction->setData(QVariant(Themes::THEME_BF));
-	m_ui->TestThemeAction->setData(QVariant(Themes::THEME_TEST));
-	m_ui->ParaviewThemeAction->setData(QVariant(Themes::THEME_PARAVIEW));
-
-	connect(m_ui->DfaultThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->BlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->LightBlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->DarkBlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->BlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->LightBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->FlatBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->DarkBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->GrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->LightGrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->DarkGrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->FlatWhiteThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->PsBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->SilverThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->BFThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->TestThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->ParaviewThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-}
-
-// MainWindow Initialization
-void MainWindow::initial() {
-	//MDI Area
-	{
-		m_mdiArea = new QMdiArea(this);
-		setCentralWidget(m_mdiArea);
-		connect(m_mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::updateMenus);
-		connect(m_mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::on3DViewActivated);
-		m_mdiArea->installEventFilter(this);
-	}
-
-    bool stereoMode = QSurfaceFormat::defaultFormat().stereo();
-    ecvDisplayTools::Init(new PCLDisplayTools(), this, stereoMode);
-
-	initConsole();
-
-	initDBRoot();
-
-	initStatusBar();
-
-    QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
-    viewWidget->setMinimumSize(400, 300);
-    m_mdiArea->addSubWindow(viewWidget);
-
-	//picking hub
-	{
-		m_pickingHub = new ccPickingHub(this, this);
-		connect(m_mdiArea, &QMdiArea::subWindowActivated, m_pickingHub, &ccPickingHub::onActiveWindowChanged);
-	}
-
-	if (m_pickingHub)
-	{
-		//we must notify the picking hub as well if the window is destroyed
-		connect(this, &QObject::destroyed, m_pickingHub, &ccPickingHub::onActiveWindowDeleted);
-	}
-
-    viewWidget->showMaximized();
-    viewWidget->update();
-
-}
-
-void MainWindow::initStatusBar()
-{
-	// set mouse position label
-	{
-		m_mousePosLabel = new QLabel(this);
-		QFont ft;
-		ft.setBold(true);
-		m_mousePosLabel->setFont(ft);
-		m_mousePosLabel->setMinimumSize(m_mousePosLabel->sizeHint());
-		m_mousePosLabel->setAlignment(Qt::AlignHCenter);
-		m_ui->statusBar->insertWidget(0, m_mousePosLabel, 3);
-		connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mousePosChanged, this, &MainWindow::onMousePosChanged);
-	}
-
-	// set system info label
-	{
-		m_systemInfoLabel = new QLabel(this);
-		m_systemInfoLabel->setMinimumSize(m_systemInfoLabel->sizeHint());
-		m_systemInfoLabel->setAlignment(Qt::AlignHCenter);
-		m_systemInfoLabel->setText(
-			tr("<style> a{text-decoration: none} </style> <a href=\"http://www.erow.cn\">%1 | www.erow.cn</a>").arg(Settings::TITLE + " " + Settings::APP_VERSION));
-		m_systemInfoLabel->setTextFormat(Qt::RichText);
-		m_systemInfoLabel->setOpenExternalLinks(true);
-		m_ui->statusBar->addPermanentWidget(m_systemInfoLabel);
-	}
-
-	//QMainWindow::statusBar()->setStyleSheet(QString("QStatusBar::item{border: 0px}"));
-	QMainWindow::statusBar()->showMessage(tr("Ready"));
-}
-
 void MainWindow::onMousePosChanged(const QPoint &pos)
 {
 	if (m_mousePosLabel)
@@ -785,112 +911,6 @@ void MainWindow::onMousePosChanged(const QPoint &pos)
 		QString labelText = QString("Location | (%1, %2)").arg(QString::number(x)).arg(QString::number(y));
 		m_mousePosLabel->setText(labelText);
 	}
-}
-
-void MainWindow::initPlugins()
-{
-	m_pluginUIManager->init();
-
-	// Set up dynamic tool bars
-	addToolBar(Qt::RightToolBarArea, m_pluginUIManager->glPclToolbar());
-	addToolBar(Qt::RightToolBarArea, m_pluginUIManager->mainPluginToolbar());
-
-	for (QToolBar *toolbar : m_pluginUIManager->additionalPluginToolbars())
-	{
-		addToolBar(Qt::TopToolBarArea, toolbar);
-	}
-	// Set up dynamic menus
-	m_ui->menuBar->insertMenu(m_ui->menuOption->menuAction(), m_pluginUIManager->pluginMenu());
-	m_ui->menuBar->insertMenu(m_ui->menuOption->menuAction(), m_pluginUIManager->pclAlgorithmMenu());
-
-	m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowMainPluginToolbar());
-	m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowPCLAlgorithmToolbar());
-}
-
-void MainWindow::initDBRoot()
-{
-	//db-tree
-	{
-		m_ccRoot = new ccDBRoot(m_ui->dbTreeView, m_ui->propertiesTreeView, this);
-		connect(m_ccRoot, &ccDBRoot::selectionChanged, this, &MainWindow::updateUIWithSelection);
-		connect(m_ccRoot, &ccDBRoot::dbIsEmpty, [&]() { updateUIWithSelection(); updateMenus(); }); //we don't call updateUI because there's no need to update the properties dialog
-		connect(m_ccRoot, &ccDBRoot::dbIsNotEmptyAnymore, [&]() { updateUIWithSelection(); updateMenus(); }); //we don't call updateUI because there's no need to update the properties dialog
-	}
-
-	ecvDisplayTools::SetSceneDB(m_ccRoot->getRootEntity());
-	m_ccRoot->updatePropertiesView();
-
-	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::entitySelectionChanged, this, [=](ccHObject *entity) {
-		m_ccRoot->selectEntity(entity);
-	});
-	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::entitiesSelectionChanged, this, [=](std::unordered_set<int> entities) {
-		m_ccRoot->selectEntities(entities);
-	});
-}
-
-MainWindow::~MainWindow() {
-	cancelPreviousPickingOperation(false); //just in case
-
-	assert(m_ccRoot && m_mdiArea);
-	m_ccRoot->unloadAll();
-	m_ccRoot->disconnect();
-	m_mdiArea->disconnect();
-
-	//we don't want any other dialog/function to use the following structures
-	ccDBRoot* ccRoot = m_ccRoot;
-	m_ccRoot = nullptr;
-
-	m_cpeDlg = nullptr;
-	m_mousePosLabel = nullptr;
-	m_systemInfoLabel = nullptr;
-
-	m_filterWindowTool = nullptr;
-	m_gsTool = nullptr;
-	m_transTool = nullptr;
-	m_filterTool = nullptr;
-	m_annoTool = nullptr;
-	m_dssTool = nullptr;
-	m_filterLabelTool = nullptr;
-	m_compDlg = nullptr;
-	m_ppDlg = nullptr;
-	m_plpDlg = nullptr;
-	m_pprDlg = nullptr;
-	m_pfDlg = nullptr;
-
-	//release all 'overlay' dialogs
-	while (!m_mdiDialogs.empty())
-	{
-		ccMDIDialogs mdiDialog = m_mdiDialogs.back();
-		m_mdiDialogs.pop_back();
-
-		mdiDialog.dialog->disconnect();
-		mdiDialog.dialog->stop(false);
-        mdiDialog.dialog->setParent(nullptr);
-		delete mdiDialog.dialog;
-	}
-
-	//m_mdiDialogs.clear();
-	std::vector<QWidget*> windows;
-	GetRenderWindows(windows);
-	for (QWidget *window : windows)
-	{
-		m_mdiArea->removeSubWindow(window);
-	}
-
-    ecvDisplayTools::SetSceneDB(nullptr);
-	ecvDisplayTools::ReleaseInstance();
-
-	if (ccRoot)
-	{
-		delete ccRoot;
-		ccRoot = nullptr;
-	}
-
-	delete m_ui;
-	m_ui = nullptr;
-
-	// if we flush the console, it will try to display the console window while we are destroying everything!
-	ecvConsole::ReleaseInstance(false);
 }
 
 void MainWindow::setAutoPickPivot(bool state)
@@ -2002,9 +2022,9 @@ void MainWindow::doActionApplyScale()
 				CCVector3 bbMin = bbox.minCorner();
 				CCVector3 bbMax = bbox.maxCorner();
 
-				double maxx = std::max(std::abs(bbMin.x), std::abs(bbMax.x));
-				double maxy = std::max(std::abs(bbMin.y), std::abs(bbMax.y));
-				double maxz = std::max(std::abs(bbMin.z), std::abs(bbMax.z));
+                double maxx = static_cast<double>(std::max(std::abs(bbMin.x), std::abs(bbMax.x)));
+                double maxy = static_cast<double>(std::max(std::abs(bbMin.y), std::abs(bbMax.y)));
+                double maxz = static_cast<double>(std::max(std::abs(bbMin.z), std::abs(bbMax.z)));
 
 				const double maxCoord = ecvGlobalShiftManager::MaxCoordinateAbsValue();
 				bool oldCoordsWereTooBig = (maxx > maxCoord
@@ -2013,9 +2033,12 @@ void MainWindow::doActionApplyScale()
 
 				if (!oldCoordsWereTooBig)
 				{
-					maxx = std::max(std::abs((bbMin.x - C.x) * scales.x + C.x), std::abs((bbMax.x - C.x) * scales.x + C.x));
-					maxy = std::max(std::abs((bbMin.y - C.y) * scales.y + C.y), std::abs((bbMax.y - C.y) * scales.y + C.y));
-					maxz = std::max(std::abs((bbMin.z - C.z) * scales.z + C.z), std::abs((bbMax.z - C.z) * scales.z + C.z));
+                    maxx = static_cast<double>(std::max(std::abs((bbMin.x - C.x) * scales.x + C.x),
+                                                        std::abs((bbMax.x - C.x) * scales.x + C.x)));
+                    maxy = static_cast<double>(std::max(std::abs((bbMin.y - C.y) * scales.y + C.y),
+                                                        std::abs((bbMax.y - C.y) * scales.y + C.y)));
+                    maxz = static_cast<double>(std::max(std::abs((bbMin.z - C.z) * scales.z + C.z),
+                                                        std::abs((bbMax.z - C.z) * scales.z + C.z)));
 
 					bool newCoordsAreTooBig = (maxx > maxCoord
 						|| maxy > maxCoord
@@ -2980,13 +3003,13 @@ void MainWindow::repositionOverlayDialog(ccMDIDialogs& mdiDlg)
 void AddToRemoveList(ccHObject* toRemove, ccHObject::Container& toBeRemovedList)
 {
 	//is a parent or sibling already in the "toBeRemoved" list?
-	int j = 0;
-	int count = static_cast<int>(toBeRemovedList.size());
+    std::size_t j = 0;
+    std::size_t  count = toBeRemovedList.size();
 	while (j < count)
 	{
 		if (toBeRemovedList[j]->isAncestorOf(toRemove))
 		{
-			toRemove = 0;
+            toRemove = nullptr;
 			break;
 		}
 		else if (toRemove->isAncestorOf(toBeRemovedList[j]))
@@ -6386,12 +6409,6 @@ void MainWindow::doActionClone()
 	updateUI();
 }
 
-void MainWindow::initConsole() {
-	// set Console
-	ecvConsole::Init(m_ui->consoleWidget, this, this);
-	m_ui->actionEnableQtWarnings->setChecked(ecvConsole::QtMessagesEnabled());
-}
-
 // consoleTable right click envent
 void MainWindow::popMenuInConsole(const QPoint& pos) {
 	QAction clearItemsAction(tr("Clear selected items"), this);
@@ -8966,19 +8983,20 @@ void MainWindow::doActionFilterMode(int mode)
 		connect(m_filterTool, &ccOverlayDialog::processFinished,
 			this, [=]() {
 
-			for (ccHObject *entity : selectedEntities)
-			{
-				entity->setEnabled(false);
-			}
-
-			ccHObject::Container outs = m_filterTool->getOutputs();
-			for (ccHObject *entity : outs)
-			{
-				entity->setEnabled(true);
-			}
+            ccHObject::Container outs = m_filterTool->getOutputs();
+            for (ccHObject *entity : outs)
+            {
+                entity->setEnabled(true);
+            }
 
 			if (!outs.empty())
 			{
+                // hide origin entities.
+                for (ccHObject *entity : selectedEntities)
+                {
+                    entity->setEnabled(false);
+                }
+
 				m_ccRoot->selectEntities(outs);
 				refreshSelected();
 			}

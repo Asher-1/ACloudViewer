@@ -1,0 +1,24 @@
+{
+    "type" : "I/O",
+	"core" : true,
+    "name" : "Photoscan I/O",
+    "description": "Photoscan (PSZ) I/O filter",
+    "authors" : [
+        {
+            "name" : "Daniel Girardeau-Montaut",
+            "email" : "daniel.girardeau@gmail.com"
+        }
+    ],
+    "maintainers" : [
+        {
+            "name" : "Daniel Girardeau-Montaut",
+            "email" : "daniel.girardeau@gmail.com"
+        }
+    ],
+    "references": [
+      {
+        "text": "Agisoft PhotoScan",
+        "url": "http://www.agisoft.com/"
+      }
+    ]
+}

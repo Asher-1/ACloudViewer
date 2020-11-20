@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/linalg/BlasWrapper.h"
-#include "open3d/core/linalg/LapackWrapper.h"
-#include "open3d/core/linalg/LeastSquares.h"
-#include "open3d/core/linalg/LinalgUtils.h"
+#include "core/CUDAUtils.h"
+#include "core/linalg/BlasWrapper.h"
+#include "core/linalg/LapackWrapper.h"
+#include "core/linalg/LeastSquares.h"
+#include "core/linalg/LinalgUtils.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace core {
 
 // cusolverDn<t1><t2>gels() is not supported until CUDA 11.0.
@@ -55,10 +55,10 @@ void LeastSquaresCUDA(void* A_data,
         int* dinfo =
                 static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
 
-        OPEN3D_CUSOLVER_CHECK(geqrf_cuda_buffersize<scalar_t>(
+        CLOUDVIEWER_CUSOLVER_CHECK(geqrf_cuda_buffersize<scalar_t>(
                                       cusolver_handle, m, n, m, &len_geqrf),
                               "geqrf_buffersize failed in LeastSquaresCUDA");
-        OPEN3D_CUSOLVER_CHECK(ormqr_cuda_buffersize<scalar_t>(
+        CLOUDVIEWER_CUSOLVER_CHECK(ormqr_cuda_buffersize<scalar_t>(
                                       cusolver_handle, CUBLAS_SIDE_LEFT,
                                       CUBLAS_OP_T, m, k, n, m, m, &len_ormqr),
                               "ormqr_buffersize failed in LeastSquaresCUDA");
@@ -68,7 +68,7 @@ void LeastSquaresCUDA(void* A_data,
         void* tau = MemoryManager::Malloc(n * sizeof(scalar_t), device);
 
         // Step 1: A = QR
-        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+        CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(
                 geqrf_cuda<scalar_t>(
                         cusolver_handle, m, n, static_cast<scalar_t*>(A_data),
                         m, static_cast<scalar_t*>(tau),
@@ -76,7 +76,7 @@ void LeastSquaresCUDA(void* A_data,
                 "geqrf failed in LeastSquaresCUDA", dinfo, device);
 
         // Step 2: B' = Q^T*B
-        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
+        CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(
                 ormqr_cuda<scalar_t>(
                         cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m, k, n,
                         static_cast<scalar_t*>(A_data), m,
@@ -87,7 +87,7 @@ void LeastSquaresCUDA(void* A_data,
 
         // Step 3: Solve Rx = B'
         scalar_t alpha = 1.0f;
-        OPEN3D_CUBLAS_CHECK(
+        CLOUDVIEWER_CUBLAS_CHECK(
                 trsm_cuda<scalar_t>(cublas_handle, CUBLAS_SIDE_LEFT,
                                     CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N,
                                     CUBLAS_DIAG_NON_UNIT, n, k, &alpha,
@@ -102,4 +102,4 @@ void LeastSquaresCUDA(void* A_data,
 }
 
 }  // namespace core
-}  // namespace open3d
+}  // namespace cloudViewer

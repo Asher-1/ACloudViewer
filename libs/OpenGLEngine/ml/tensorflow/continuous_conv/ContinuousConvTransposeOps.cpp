@@ -31,7 +31,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DContinuousConvTranspose")
+REGISTER_OP("CloudViewerContinuousConvTranspose")
         .Attr("TReal: {float, double}")
         .Attr("TIndex: {int32, int64}")
         .Attr("align_corners: bool = true")

@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/Connection.h"
-#include "open3d/io/rpc/DummyReceiver.h"
-#include "open3d/io/rpc/RemoteFunctions.h"
+#include "io/rpc/Connection.h"
+#include "io/rpc/DummyReceiver.h"
+#include "io/rpc/RemoteFunctions.h"
 #include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
+#include "pybind/cloudViewer_pybind.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 
 void pybind_rpc(py::module& m_io) {
@@ -172,4 +172,4 @@ void pybind_rpc(py::module& m_io) {
 }
 
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

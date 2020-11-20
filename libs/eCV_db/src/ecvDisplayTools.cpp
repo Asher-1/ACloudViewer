@@ -1191,7 +1191,7 @@ void ecvDisplayTools::UpdateActiveItemsList(int x, int y, bool extendToSelectedL
 
 				for (auto & label : labels)
 				{
-					if (label->isA(CV_TYPES::LABEL_2D) && label->isVisible()) //Warning: cc2DViewportLabel is also a kind of 'CC_TYPES::LABEL_2D'!
+					if (label->isA(CV_TYPES::LABEL_2D) && label->isVisible()) //Warning: cc2DViewportLabel is also a kind of 'CV_TYPES::LABEL_2D'!
 					{
 						cc2DLabel* l = static_cast<cc2DLabel*>(label);
 						if (l != label && l->isSelected())
@@ -2682,32 +2682,6 @@ void ecvDisplayTools::SetFocusToScreen()
 			GetCurrentScreen()->parentWidget()->setFocus();
 		}
 	}
-}
-
-void ecvDisplayTools::SimulateKeyBoardPress(Qt::Key key, int loopNum)
-{
-	int keyId = CVTools::TranslateKeyCode(key);
-	if (keyId == 0)
-	{
-		CVLog::Warning("[ecvDisplayTools::SimulateKeyBoardPress] invalid key!");
-		return;
-	}
-
-	SetFocusToScreen();
-
-#ifdef CV_WINDOWS
-	for (int i = 0; i < loopNum; ++i)
-	{
-		//QKeyEvent pressKeyEvent(QEvent::KeyPress, key, Qt::NoModifier);
-		//QCoreApplication::sendEvent(GetCurrentScreen(), &pressKeyEvent);
-
-		::keybd_event(keyId, 0, 0, 0);
-		Sleep(10);
-		::keybd_event(keyId, 0, KEYEVENTF_KEYUP, 0);
-	}
-#else
-	CVLog::Warning(QString("only windows support!"));
-#endif
 }
 
 void ecvDisplayTools::ToBeRefreshed()

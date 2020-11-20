@@ -46,6 +46,12 @@ public:
 		Type u[4];
 	};
 
+    inline std::size_t rows() const {return dimensions();}
+    inline std::size_t dimensions() const {return 4;}
+
+    inline Type* data() { return u; }
+    inline const Type* data() const { return u; }
+
 	//! Default constructor
 	/** Inits tuple to (0, 0, 0, 0).
 	**/
@@ -132,6 +138,12 @@ public:
 		};
 		Type u[3];
 	};
+
+    inline std::size_t rows() const {return dimensions();}
+    inline std::size_t dimensions() const {return 3;}
+
+    inline Type* data() { return u; }
+    inline const Type* data() const { return u; }
 
 	//! Default constructor
 	/** Inits tuple to (0, 0, 0).
@@ -451,6 +463,12 @@ public:
 		};
 		Type u[2];
 	};
+
+    inline std::size_t rows() const {return dimensions();}
+    inline std::size_t dimensions() const {return 2;}
+
+    inline Type* data() { return u; }
+    inline const Type* data() const { return u; }
 
 	//! Default constructor
 	/** Inits vector to (0,0).

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,9 @@
 
 #include "KnnSearchOpKernel.h"
 
-#include "open3d/ml/impl/misc/KnnSearch.h"
+#include "ml/impl/misc/KnnSearch.h"
 
-using namespace open3d::ml::impl;
+using namespace cloudViewer::ml::impl;
 using namespace knn_search_opkernel;
 using namespace tensorflow;
 
@@ -186,7 +186,7 @@ public:
 };
 
 #define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("Open3DKnnSearch")             \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerKnnSearch")             \
                                     .Device(DEVICE_CPU)         \
                                     .TypeConstraint<type>("T"), \
                             KnnSearchOpKernelCPU<type>);

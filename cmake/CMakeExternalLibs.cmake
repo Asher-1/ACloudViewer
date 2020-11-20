@@ -43,6 +43,14 @@ if ( WIN32 )
     get_filename_component( QT5_ROOT_PATH "${Qt5_BIN_DIR}/.." ABSOLUTE )
 endif()
 
+if ( BUILD_CUDA_MODULE )
+    #Warning: convert the fpic option in Qt5::Core over to INTERFACE_POSITION_INDEPENDENT_CODE
+    get_property(core_options TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS)
+    string(REPLACE "-fPIC" "" new_core_options ${core_options})
+    set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS ${new_core_options})
+    set_property(TARGET Qt5::Core PROPERTY INTERFACE_POSITION_INDEPENDENT_CODE "ON")
+endif()
+
 # turn on QStringBuilder for more efficient string construction
 #	see https://doc.qt.io/qt-5/qstring.html#more-efficient-string-construction
 add_definitions( -DQT_USE_QSTRINGBUILDER )

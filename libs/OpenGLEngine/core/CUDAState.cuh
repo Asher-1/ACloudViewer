@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -42,7 +42,7 @@
 
 namespace cloudViewer {
 namespace core {
-
+using namespace CVLib;
 /// \class CUDADeviceSwitcher
 ///
 /// Switch CUDA device id in the current scope. The device id will be resetted
@@ -83,7 +83,7 @@ namespace core {
 class CUDADeviceSwitcher {
 public:
     /// Init CUDADeviceSwitcher class and keep using the current device.
-    CUDADeviceSwitcher() { OPEN3D_CUDA_CHECK(cudaGetDevice(&prev_device_id_)); }
+    CUDADeviceSwitcher() { CLOUDVIEWER_CUDA_CHECK(cudaGetDevice(&prev_device_id_)); }
 
     CUDADeviceSwitcher(int device_id) : CUDADeviceSwitcher() {
         SwitchTo(device_id);
@@ -93,12 +93,12 @@ public:
         : CUDADeviceSwitcher(device.GetID()) {}
 
     void SwitchTo(int device_id) const {
-        OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
+        CLOUDVIEWER_CUDA_CHECK(cudaSetDevice(device_id));
     }
 
     void SwitchTo(const Device& device) const { SwitchTo(device.GetID()); }
 
-    ~CUDADeviceSwitcher() { OPEN3D_CUDA_CHECK(cudaSetDevice(prev_device_id_)); }
+    ~CUDADeviceSwitcher() { CLOUDVIEWER_CUDA_CHECK(cudaSetDevice(prev_device_id_)); }
 
     CUDADeviceSwitcher(CUDADeviceSwitcher const&) = delete;
 
@@ -164,7 +164,7 @@ public:
 
     int GetCurentDeviceID() const {
         int device_id;
-        OPEN3D_CUDA_CHECK(cudaGetDevice(&device_id));
+        CLOUDVIEWER_CUDA_CHECK(cudaGetDevice(&device_id));
         return device_id;
     }
 
@@ -184,7 +184,7 @@ public:
 private:
     CUDAState() {
         CUDADeviceSwitcher switcher;
-        OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&num_devices_));
+        CLOUDVIEWER_CUDA_CHECK(cudaGetDeviceCount(&num_devices_));
 
         // Check and enable all possible peer to peer access.
         p2p_enabled_ = std::vector<std::vector<bool>>(
@@ -198,7 +198,7 @@ private:
                     switcher.SwitchTo(src_id);
                     // Check access.
                     int can_access = 0;
-                    OPEN3D_CUDA_CHECK(cudaDeviceCanAccessPeer(&can_access,
+                    CLOUDVIEWER_CUDA_CHECK(cudaDeviceCanAccessPeer(&can_access,
                                                               src_id, tar_id));
                     // Enable access.
                     if (can_access) {
@@ -208,7 +208,7 @@ private:
                             // Ignore error since p2p is already enabled.
                             cudaGetLastError();
                         } else {
-                            OPEN3D_CUDA_CHECK(err);
+                            CLOUDVIEWER_CUDA_CHECK(err);
                         }
                     } else {
                         p2p_enabled_[src_id][tar_id] = false;
@@ -221,7 +221,7 @@ private:
         warp_sizes_.resize(num_devices_);
         for (int device_id = 0; device_id < num_devices_; ++device_id) {
             cudaDeviceProp device_prop;
-            OPEN3D_CUDA_CHECK(cudaGetDeviceProperties(&device_prop, device_id));
+            CLOUDVIEWER_CUDA_CHECK(cudaGetDeviceProperties(&device_prop, device_id));
             warp_sizes_[device_id] = device_prop.warpSize;
         }
     }

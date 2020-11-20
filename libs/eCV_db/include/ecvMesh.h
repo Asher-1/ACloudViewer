@@ -242,7 +242,9 @@ public:
 	Eigen::Vector3i getTriangle(size_t index) const;
 	std::vector<Eigen::Vector3i> getTriangles() const;
 	
-	inline ccArray<CVLib::VerticesIndexes, 3, unsigned>* getTrianglesPtr() { return m_triVertIndexes; }
+    //! Container of per-triangle vertices indexes (3)
+    using triangleIndexesContainer = ccArray<CVLib::VerticesIndexes, 3, unsigned>;
+    inline triangleIndexesContainer* getTrianglesPtr() const { return m_triVertIndexes; }
 
 	//! Reserves the memory to store the vertex indexes (3 per triangle)
 	/** \param n the number of triangles to reserve
@@ -275,6 +277,7 @@ public:
 	bool getTriangleNormals(unsigned triangleIndex, double Na[3], double Nb[3], double Nc[3]) const override;
 	bool getTriangleNormals(unsigned triangleIndex, Eigen::Vector3d& Na, Eigen::Vector3d& Nb, Eigen::Vector3d& Nc) const override;
 	std::vector<Eigen::Vector3d> getTriangleNormals() const;
+    std::vector<CCVector3*> getTriangleNormalsPtr() const;
 	Eigen::Vector3d getTriangleNorm(size_t index) const;
 	bool setTriangleNorm(size_t index, const Eigen::Vector3d& triangle_normal);
 	bool setTriangleNormalIndexes(size_t triangleIndex, CompressedNormType value);
@@ -1341,8 +1344,6 @@ protected:
 	//! Materials
 	ccMaterialSet* m_materials;
 
-	//! Container of per-triangle vertices indexes (3)
-	using triangleIndexesContainer = ccArray<CVLib::VerticesIndexes, 3, unsigned>;
 	//! Triangles' vertices indexes (3 per triangle)
 	triangleIndexesContainer* m_triVertIndexes;
 

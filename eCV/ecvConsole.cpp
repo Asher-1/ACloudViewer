@@ -19,6 +19,7 @@
 #include "ecvConsole.h"
 #include "ecvHead.h"
 #include "MainWindow.h"
+#include <CommonSettings.h>
 #include "ecvSettingManager.h"
 #include "ecvPersistentSettings.h"
 
@@ -210,8 +211,10 @@ void ecvConsole::Init(	QListWidget* textDisplay/*=0*/,
 		s_showQtMessagesInConsole = ecvSettingManager::getValue(ecvPS::Console(), 
 			"QtMessagesEnabled", false).toBool();
 
+#ifdef CV_WINDOWS // only support Log file in Windows now!
 		// set log file.
 		s_console.instance->setLogFile(Settings::LOGFILE);
+#endif
 
 		//install : set the callback for Qt messages
 		qInstallMessageHandler(myMessageOutput);

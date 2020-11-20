@@ -22,7 +22,7 @@
 #include "ccMeasurementDevice.h"
 #include "ccMPlaneErrors.h"
 
-constexpr char * MPLANE_SCALARFIELD_NAME = "MPlane Distance";
+constexpr char const * MPLANE_SCALARFIELD_NAME = "MPlane Distance";
 
 
 ccPlane* ccMeasurementDevice::fitPlaneToPoints(const std::vector<ccMPlanePoint>& fittingPoints, const QString& planeName) const

@@ -22,15 +22,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "open3d/ml/contrib/neighbors.h"
+#include "ml/contrib/neighbors.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
 
 using namespace tensorflow;
-using namespace open3d::ml::contrib;
+using namespace cloudViewer::ml::contrib;
 
-REGISTER_OP("Open3DBatchOrderedNeighbors")
+REGISTER_OP("CloudViewerBatchOrderedNeighbors")
         .Input("queries: float")
         .Input("supports: float")
         .Input("q_batches: int32")
@@ -138,5 +138,5 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("Open3DBatchOrderedNeighbors").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("CloudViewerBatchOrderedNeighbors").Device(DEVICE_CPU),
                         BatchOrderedNeighborsOp);

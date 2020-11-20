@@ -84,7 +84,6 @@
 
 // PCL
 #include <pcl/common/transforms.h>
-#include <pcl/visualization/impl/pcl_visualizer.hpp>
 #include <pcl/visualization/common/actor_map.h>
 #include <pcl/visualization/point_cloud_color_handlers.h>
 #include <pcl/visualization/point_cloud_geometry_handlers.h>

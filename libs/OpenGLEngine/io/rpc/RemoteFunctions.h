@@ -28,11 +28,12 @@
 
 #include <map>
 
-#include "cloudViewer/camera/PinholeCameraParameters.h"
-#include "cloudViewer/core/Tensor.h"
-#include "cloudViewer/geometry/PointCloud.h"
-#include "cloudViewer/geometry/TriangleMesh.h"
-#include "cloudViewer/io/rpc/ConnectionBase.h"
+#include <ecvMesh.h>
+#include <ecvPointCloud.h>
+
+#include "camera/PinholeCameraParameters.h"
+#include "core/Tensor.h"
+#include "io/rpc/ConnectionBase.h"
 
 namespace zmq {
 class message_t;
@@ -59,7 +60,7 @@ struct Status;
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetPointCloud(const geometry::PointCloud& pcd,
+bool SetPointCloud(const ccPointCloud& pcd,
                    const std::string& path = "",
                    int time = 0,
                    const std::string& layer = "",
@@ -79,7 +80,7 @@ bool SetPointCloud(const geometry::PointCloud& pcd,
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
+bool SetTriangleMesh(const ccMesh& mesh,
                      const std::string& path = "",
                      int time = 0,
                      const std::string& layer = "",

@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "cloudViewer/io/rpc/ReceiverBase.h"
+#include "io/rpc/ReceiverBase.h"
 
 namespace cloudViewer {
 namespace io {

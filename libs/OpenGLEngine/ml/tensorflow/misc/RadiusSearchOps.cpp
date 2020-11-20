@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/tensorflow/TensorFlowHelper.h"
+#include "ml/tensorflow/TensorFlowHelper.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
@@ -32,7 +32,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DRadiusSearch")
+REGISTER_OP("CloudViewerRadiusSearch")
         .Attr("T: {float, double}")
         .Attr("metric: {'L1', 'L2'} = 'L2'")
         .Attr("ignore_query_point: bool = false")
@@ -48,7 +48,7 @@ REGISTER_OP("Open3DRadiusSearch")
         .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
-            using namespace open3d::ml::op_util;
+            using namespace cloudViewer::ml::op_util;
             ShapeHandle points_shape, queries_shape, radii_shape,
                     points_row_splits_shape, queries_row_splits_shape,
                     neighbors_index_shape, neighbors_row_splits_shape,
@@ -98,7 +98,7 @@ individual search radius. Points and queries can be batched with each batch
 item having an individual number of points and queries. The following example
 shows a simple search with just a single batch item::
   
-  import open3d.ml.tf as ml3d
+  import cloudViewer.ml.tf as ml3d
 
   points = [
       [0.1,0.1,0.1], 
@@ -125,7 +125,7 @@ shows a simple search with just a single batch item::
 
   # or with pytorch
   import torch
-  import open3d.ml.torch as ml3d
+  import cloudViewer.ml.torch as ml3d
 
   points = torch.Tensor([
     [0.1,0.1,0.1], 

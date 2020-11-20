@@ -340,7 +340,6 @@ public:
 		const QFont& font = QFont());
 
 public: //! Draws the main 3D layer
-	static void SimulateKeyBoardPress(Qt::Key key, int loopNum = 1);
 	static void SetFocusToScreen();
 	static void ToBeRefreshed();
 	static void RefreshDisplay(bool only2D = false, bool forceRedraw = true);

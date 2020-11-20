@@ -36,10 +36,11 @@ public:
 
 	CV_CORE_LIB_API static int TranslateKeyCode(int key);
 
-	CV_CORE_LIB_API static bool FileMappingWriter(const std::string &filename, void* data, unsigned long size);
-	CV_CORE_LIB_API static bool FileMappingReader(const std::string &filename, void* data, unsigned long& size);
+    CV_CORE_LIB_API static bool FileMappingReader(const std::string &filename, void* data, unsigned long& size);
+    CV_CORE_LIB_API static bool FileMappingWriter(const std::string &filename, const void* data, unsigned long size);
 
 	CV_CORE_LIB_API static bool QMappingReader(const std::string &filename, std::vector<size_t>& indices);
+    CV_CORE_LIB_API static bool QMappingWriter(const std::string &filename, const void* data, std::size_t length);
 	CV_CORE_LIB_API static std::wstring Char2Wchar(const char* szStr);
 	CV_CORE_LIB_API static std::string Wchar2Char(const wchar_t* szStr);
 private:

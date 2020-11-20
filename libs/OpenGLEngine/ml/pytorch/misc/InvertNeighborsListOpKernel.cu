@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,9 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/impl/misc/InvertNeighborsList.cuh"
-#include "open3d/ml/pytorch/TorchHelper.h"
-#include "open3d/ml/pytorch/misc/InvertNeighborsListOpKernel.h"
+#include "ml/impl/misc/InvertNeighborsList.cuh"
+#include "ml/pytorch/TorchHelper.h"
+#include "ml/pytorch/misc/InvertNeighborsListOpKernel.h"
 #include "torch/script.h"
 
 template <class TIndex, class TAttr>
@@ -63,7 +63,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
     size_t temp_size = 0;
 
     // determine temp_size
-    open3d::ml::impl::InvertNeighborsListCUDA(
+    cloudViewer::ml::impl::InvertNeighborsListCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             inp_neighbors_index.data_ptr<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()
@@ -80,7 +80,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
     auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
 
     // actually invert the list
-    open3d::ml::impl::InvertNeighborsListCUDA(
+    cloudViewer::ml::impl::InvertNeighborsListCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             inp_neighbors_index.data_ptr<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()

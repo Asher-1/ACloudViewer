@@ -180,7 +180,7 @@ Copy "$(TargetDir)*.*" "$(SolutionDir)\qCC\Release\plugins"
 
 If you want to compile ErowCloudViewer (and ccViewer) with LAS/LAZ files support, you'll need:
 
-1. [PDAL](https://pdal.io/)
+1. [PDAL](https://pdal.io/) ("sudo apt-get install libpdal-dev libjsoncpp-dev -y" for LINUX) [sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json]
 2. Set `OPTION_PDAL_LAS=TRUE`
 
 If your PDAL installation is not correctly picked up by CMake, 

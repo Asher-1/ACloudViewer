@@ -35,6 +35,7 @@
 namespace cloudViewer {
 namespace core {
 namespace kernel {
+using namespace CVLib;
 
 template <typename T>
 struct NonZeroFunctor {

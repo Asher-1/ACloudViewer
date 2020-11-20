@@ -210,7 +210,7 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* t
 	setFormat(fmt);
 //    vtkGenericOpenGLRenderWindow::SetGlobalMaximumNumberOfMultiSamples(8);
 
-#ifdef CV_WINDOWS
+#ifdef Q_OS_WIN
     this->setEnableHiDPI(true);
 #endif
 

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,12 +27,12 @@
 
 #define EIGEN_USE_GPU
 #include "BuildSpatialHashTableOpKernel.h"
-#include "open3d/ml/Helper.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
+#include "ml/Helper.h"
+#include "ml/impl/misc/FixedRadiusSearch.cuh"
 
-using namespace open3d;
-using namespace open3d::ml;
-using namespace open3d::ml::impl;
+using namespace cloudViewer;
+using namespace cloudViewer::ml;
+using namespace cloudViewer::ml::impl;
 using namespace tensorflow;
 
 template <class T>
@@ -91,7 +91,7 @@ private:
 };
 
 #define REG_KB(type)                                                       \
-    REGISTER_KERNEL_BUILDER(Name("Open3DBuildSpatialHashTable")            \
+    REGISTER_KERNEL_BUILDER(Name("CloudViewerBuildSpatialHashTable")       \
                                     .Device(DEVICE_GPU)                    \
                                     .TypeConstraint<type>("T")             \
                                     .HostMemory("radius")                  \

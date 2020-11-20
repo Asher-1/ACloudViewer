@@ -24,24 +24,26 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/PointCloudIO.h"
 
 #include <benchmark/benchmark.h>
 
-#include "open3d/utility/Console.h"
+#include <Console.h>
 
-namespace open3d {
+#include <PointCloudIO.h>
+#include <ecvPointCloud.h>
+
+namespace cloudViewer {
 namespace benchmarks {
 
-using open3d::io::ReadPointCloud;
-using open3d::io::WritePointCloud;
+using cloudViewer::io::ReadPointCloud;
+using cloudViewer::io::WritePointCloud;
 
 namespace {
 
 template <class T>
 double AverageDistance(const std::vector<T> &a, const std::vector<T> &b) {
     if (a.size() != b.size()) {
-        utility::LogError("vectors different size {} {}", a.size(), b.size());
+        CVLib::utility::LogError("vectors different size {} {}", a.size(), b.size());
     }
     if (a.size() == 0) {
         return 0.;
@@ -91,30 +93,30 @@ std::vector<ReadWritePCArgs> g_pc_args({
 });
 
 class TestPCGrid0 {
-    geometry::PointCloud pc_;
+    ccPointCloud pc_;
     int size_ = 0;
     const bool print_progress = false;
 
 public:
     void Setup(int size) {
         if (size_ == size) return;
-        utility::LogInfo("setup PCGrid size={}", size);
-        pc_.Clear();
+        CVLib::utility::LogInfo("setup PCGrid size={}", size);
+        pc_.clear();
 
         size_ = size;
         for (int i = 0; i < size; ++i) {
             // provide somewhat random numbers everywhere, so compression
             // doesn't get a free pass
-            pc_.points_.push_back({std::sin(i * .8969920581) * 1000.,
-                                   std::sin(i * .3898546778) * 1000.,
-                                   std::sin(i * .2509962463) * 1000.});
-            pc_.normals_.push_back({std::sin(i * .4472367685),
-                                    std::sin(i * .9698787116),
-                                    std::sin(i * .7072878517)});
+            pc_.addEigenPoint({std::sin(i * .8969920581) * 1000.,
+                               std::sin(i * .3898546778) * 1000.,
+                               std::sin(i * .2509962463) * 1000.});
+            pc_.addEigenNorm({std::sin(i * .4472367685),
+                              std::sin(i * .9698787116),
+                              std::sin(i * .7072878517)});
             // color needs to be [0,1]
-            pc_.colors_.push_back({std::fmod(i * .4241490710, 1.0),
-                                   std::fmod(i * .6468026221, 1.0),
-                                   std::fmod(i * .5376722873, 1.0)});
+            pc_.addEigenColor({std::fmod(i * .4241490710, 1.0),
+                               std::fmod(i * .6468026221, 1.0),
+                               std::fmod(i * .5376722873, 1.0)});
         }
     }
 
@@ -125,31 +127,31 @@ public:
         if (!WritePointCloud(args.filename, pc,
                              {bool(args.write_ascii), bool(args.compressed),
                               print_progress})) {
-            utility::LogError("Failed to write to {}", args.filename);
+            CVLib::utility::LogError("Failed to write to {}", args.filename);
         }
-        geometry::PointCloud pc2;
+        ccPointCloud pc2;
         if (!ReadPointCloud(args.filename, pc2,
                             {"auto", false, false, print_progress})) {
-            utility::LogError("Failed to read from {}", args.filename);
+            CVLib::utility::LogError("Failed to read from {}", args.filename);
         }
         auto CheckLE = [](double a, double b) {
             if (a <= b) return;
-            utility::LogError("Error too high: {} {}", a, b);
+            CVLib::utility::LogError("Error too high: {} {}", a, b);
         };
 
         const double pointsMaxError =
                 1e-3;  //.ply ascii has the highest error, others <1e-4
-        CheckLE(AverageDistance(pc.points_, pc2.points_), pointsMaxError);
+        CheckLE(AverageDistance(pc.getEigenPoints(), pc2.getEigenPoints()), pointsMaxError);
         if (int(args.compare) & int(Compare::NORMALS)) {
             const double normalsMaxError =
                     1e-6;  //.ply ascii has the highest error, others <1e-7
-            CheckLE(AverageDistance(pc.normals_, pc2.normals_),
+            CheckLE(AverageDistance(pc.getEigenNormals(), pc2.getEigenNormals()),
                     normalsMaxError);
         }
         if (int(args.compare) & int(Compare::COLORS)) {
             const double colorsMaxError =
                     1e-2;  // colors are saved as uint8_t[3] in a lot of formats
-            CheckLE(AverageDistance(pc.colors_, pc2.colors_), colorsMaxError);
+            CheckLE(AverageDistance(pc.getEigenColors(), pc2.getEigenColors()), colorsMaxError);
         }
     }
 };
@@ -178,4 +180,4 @@ static void BM_TestPCGrid0_Args(benchmark::internal::Benchmark *b) {
 BENCHMARK(BM_TestPCGrid0)->MinTime(0.1)->Apply(BM_TestPCGrid0_Args);
 
 }  // namespace benchmarks
-}  // namespace open3d
+}  // namespace cloudViewer

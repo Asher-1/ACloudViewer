@@ -86,7 +86,7 @@ public:
         } else {
             MemoryManager::Free(data_ptr_, device_);
         }
-    };
+    }
 
     Device GetDevice() const { return device_; }
 

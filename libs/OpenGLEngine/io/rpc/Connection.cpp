@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/Connection.h"
+#include "io/rpc/Connection.h"
+#include "io/rpc/ZMQContext.h"
 
 #include <zmq.hpp>
 
-#include "open3d/io/rpc/ZMQContext.h"
-#include "open3d/utility/Console.h"
+#include <Console.h>
 
-using namespace open3d::utility;
+using namespace CVLib::utility;
 
 namespace {
 
@@ -43,7 +43,7 @@ struct ConnectionDefaults {
 
 }  // namespace
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 namespace rpc {
 
@@ -96,4 +96,4 @@ std::shared_ptr<zmq::message_t> Connection::Send(const void* data,
 
 }  // namespace rpc
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

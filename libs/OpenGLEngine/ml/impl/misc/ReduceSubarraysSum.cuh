@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "cloudViewer/utility/Helper.h"
+#include <Helper.h>
 
-using namespace cloudViewer::utility;
+using namespace CVLib::utility;
 
 namespace cloudViewer {
 namespace ml {

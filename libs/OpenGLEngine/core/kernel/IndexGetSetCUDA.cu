@@ -36,12 +36,12 @@ namespace core {
 namespace kernel {
 
 template <typename scalar_t>
-static OPEN3D_HOST_DEVICE void CUDACopyElementKernel(const void* src,
+static CLOUDVIEWER_HOST_DEVICE void CUDACopyElementKernel(const void* src,
                                                      void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
 }
 
-static OPEN3D_HOST_DEVICE void CUDACopyObjectElementKernel(
+static CLOUDVIEWER_HOST_DEVICE void CUDACopyObjectElementKernel(
         const void* src, void* dst, int64_t object_byte_size) {
     const char* src_bytes = static_cast<const char*>(src);
     char* dst_bytes = static_cast<char*>(dst);
@@ -62,7 +62,7 @@ void IndexGetCUDA(const Tensor& src,
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         CUDALauncher::LaunchAdvancedIndexerKernel(
-                ai, [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                ai, [=] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
@@ -70,7 +70,7 @@ void IndexGetCUDA(const Tensor& src,
             CUDALauncher::LaunchAdvancedIndexerKernel(
                     ai,
                     // Need to wrap as extended CUDA lambda function
-                    [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                    [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
                         CUDACopyElementKernel<scalar_t>(src, dst);
                     });
         });
@@ -89,7 +89,7 @@ void IndexSetCUDA(const Tensor& src,
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         CUDALauncher::LaunchAdvancedIndexerKernel(
-                ai, [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                ai, [=] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
@@ -97,7 +97,7 @@ void IndexSetCUDA(const Tensor& src,
             CUDALauncher::LaunchAdvancedIndexerKernel(
                     ai,
                     // Need to wrap as extended CUDA lambda function
-                    [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                    [] CLOUDVIEWER_HOST_DEVICE(const void* src, void* dst) {
                         CUDACopyElementKernel<scalar_t>(src, dst);
                     });
         });

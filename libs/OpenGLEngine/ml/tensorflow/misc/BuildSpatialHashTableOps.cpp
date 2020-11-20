@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/tensorflow/TensorFlowHelper.h"
+#include "ml/tensorflow/TensorFlowHelper.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
@@ -32,7 +32,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DBuildSpatialHashTable")
+REGISTER_OP("CloudViewerBuildSpatialHashTable")
         .Attr("T: {float, double}")
         .Attr("max_hash_table_size: int = 33554432")
         .Input("points: T")
@@ -44,7 +44,7 @@ REGISTER_OP("Open3DBuildSpatialHashTable")
         .Output("hash_table_splits: uint32")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
-            using namespace open3d::ml::op_util;
+            using namespace cloudViewer::ml::op_util;
             ShapeHandle points_shape, radius_shape, points_row_splits_shape,
                     hash_table_size_factor_shape, hash_table_index_shape,
                     hash_table_cell_splits_shape, hash_table_splits_shape;
@@ -80,7 +80,7 @@ Creates a spatial hash table meant as input for fixed_radius_search
 The following example shows how **build_spatial_hash_table** and 
 **fixed_radius_search** are used together::
 
-  import open3d.ml.tf as ml3d
+  import cloudViewer.ml.tf as ml3d
 
   points = [
     [0.1,0.1,0.1], 
@@ -116,7 +116,7 @@ The following example shows how **build_spatial_hash_table** and
 
   # or with pytorch
   import torch
-  import open3d.ml.torch as ml3d
+  import cloudViewer.ml.torch as ml3d
 
   points = torch.Tensor([
     [0.1,0.1,0.1], 

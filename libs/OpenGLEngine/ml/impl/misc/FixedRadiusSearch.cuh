@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -28,11 +28,12 @@
 
 #include <cub/cub.cuh>
 
-#include "cloudViewer/ml/impl/misc/MemoryAllocation.h"
-#include "cloudViewer/ml/impl/misc/NeighborSearchCommon.h"
-#include "cloudViewer/utility/Helper.h"
-#include "cloudViewer/utility/MiniVec.h"
+#include "ml/impl/misc/MemoryAllocation.h"
+#include "ml/impl/misc/NeighborSearchCommon.h"
+#include <Helper.h>
+#include "utility/MiniVec.h"
 
+using namespace CVLib::utility;
 using namespace cloudViewer::utility;
 
 namespace cloudViewer {

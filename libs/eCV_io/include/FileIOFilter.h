@@ -237,7 +237,7 @@ public: //static methods
 		const SaveParameters& parameters,
 		const QString& fileFilter);
 
-	//! Shortcut to the ccGlobalShiftManager mechanism specific for files
+    //! Shortcut to the ecvGlobalShiftManager mechanism specific for files
 	/** \param[in] P sample point (typically the first loaded)
 		\param[out] Pshift global shift
 		\param[out] preserveCoordinateShift whether shift sould be preserved on save

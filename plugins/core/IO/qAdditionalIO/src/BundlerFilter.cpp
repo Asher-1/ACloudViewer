@@ -277,7 +277,7 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(	const QString& filename,
 					sum += fabs(mat[l]) + fabs(mat[4+l]) + fabs(mat[8+l]);
 				}
 			}
-			if (importImages && sum < ZERO_TOLERANCE)
+            if (importImages && CVLib::LessThanEpsilon(sum))
 			{
 				CVLog::Warning("[Bundler] Camera #%i is invalid!",camIndex+1);
 				it->isValid = false;
@@ -1055,7 +1055,7 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(	const QString& filename,
 
 				//apply bundler equation
 				sensorMatrix.apply(P);
-				if (fabs(P.z) > ZERO_TOLERANCE)
+                if (CVLib::GreaterThanEpsilon(fabs(P.z)))
 				{
 					CCVector3 p(-P.x / P.z, -P.y / P.z, 0.0);
 					//float norm_p2 = p.norm2();

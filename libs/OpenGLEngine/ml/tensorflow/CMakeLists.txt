@@ -121,6 +121,7 @@ target_link_libraries(cloudViewer_tf_ops PRIVATE
     ${FMT_TARGET}
 )
 target_link_libraries(cloudViewer_tf_ops PRIVATE
-    ECV_DB_LIB
-	ECV_IO_LIB
+    CVCoreLib
+#    ECV_DB_LIB
+#    ECV_IO_LIB
 )

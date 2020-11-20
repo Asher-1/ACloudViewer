@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/MessageUtils.h"
+#include "io/rpc/MessageUtils.h"
 
 #include <zmq.hpp>
 
-#include "open3d/io/rpc/Messages.h"
-#include "open3d/utility/Console.h"
+#include "io/rpc/Messages.h"
+#include <Console.h>
 
-using namespace open3d::utility;
+using namespace CVLib::utility;
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 namespace rpc {
 
@@ -99,4 +99,4 @@ std::tuple<int32_t, std::string> GetStatusCodeAndStr(
 
 }  // namespace rpc
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

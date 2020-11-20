@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -28,8 +28,8 @@
 
 #include <cub/cub.cuh>
 
-#include "cloudViewer/ml/impl/misc/MemoryAllocation.h"
-#include "cloudViewer/utility/Helper.h"
+#include "ml/impl/misc/MemoryAllocation.h"
+#include <Helper.h>
 
 namespace cloudViewer {
 namespace ml {
@@ -67,7 +67,7 @@ void CountNeighborsCUDA(const cudaStream_t& stream,
                         size_t count_size,
                         const T* const __restrict__ indices,
                         size_t indices_size) {
-    using namespace cloudViewer::utility;
+    using namespace CVLib::utility;
 
     cudaMemsetAsync(count, 0, sizeof(uint32_t) * count_size, stream);
 
@@ -151,7 +151,7 @@ void FillNeighborsIndexAndAttributesCUDA(
         size_t inp_num_queries,
         const int64_t* const __restrict__ out_neighbors_row_splits,
         size_t out_num_queries) {
-    using namespace cloudViewer::utility;
+    using namespace CVLib::utility;
 
     cudaMemsetAsync(count, 0, sizeof(uint32_t) * count_size, stream);
 
@@ -263,7 +263,7 @@ void InvertNeighborsListCUDA(const cudaStream_t& stream,
                              const size_t index_size,
                              int64_t* out_neighbors_row_splits,
                              const size_t out_num_queries) {
-    using namespace cloudViewer::utility;
+    using namespace CVLib::utility;
 
     const bool get_temp_size = !temp;
 

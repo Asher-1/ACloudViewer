@@ -24,19 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/KDTreeFlann.h"
 
 #include <benchmark/benchmark.h>
 
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/TriangleMesh.h"
+#include <Console.h>
 
-namespace open3d {
+#include <ecvMesh.h>
+#include <ecvPointCloud.h>
+#include <ecvKDTreeFlann.h>
+
+namespace cloudViewer {
 namespace benchmarks {
 
 class TestKDTreeLine0 {
-    constexpr static double step = .139;
-    geometry::PointCloud pc_;
+    constexpr static float step = .139f;
+    ccPointCloud pc_;
     geometry::KDTreeFlann kdtree_;
 
     int pos_ = 0;
@@ -45,15 +47,17 @@ class TestKDTreeLine0 {
 public:
     void setup(int size) {
         if (this->size_ == size) return;
-        utility::LogInfo("setup KDTree size={:d}", size);
-        pc_.Clear();
+        CVLib::utility::LogInfo("setup KDTree size={:d}", size);
+        pc_.clear();
 
         this->size_ = size;
         for (int i = 0; i < size; ++i) {
-            pc_.points_.push_back({double(i) * step, 0., 0.});
+//            pc_.addEigenPoint({double(i) * step, 0., 0.});
+            pc_.addPoint(CCVector3(PointCoordinateType(i) * step, 0.f, 0.f));
         }
 
-        kdtree_.SetGeometry(pc_);
+        kdtree_.SetGeometry(pc_, false); // use fast-float mode
+//        kdtree_.SetGeometry(pc_); // eigen
         pos_ = size / 2;
     }
 
@@ -63,15 +67,16 @@ public:
             pos_ = radiusInSteps;
         }
 
-        Eigen::Vector3d query = {(pos_ + 0.1) * step, 0., 0.};
+        CCVector3 query = CCVector3((pos_ + 0.1f) * step, 0.f, 0.f);
+//        Eigen::Vector3d query = Eigen::Vector3d((pos_ + 0.1) * step, 0., 0.);
         double radius = radiusInSteps * step;
         std::vector<int> indices;
         std::vector<double> distance2;
 
-        int result = kdtree_.SearchRadius<Eigen::Vector3d>(query, radius,
-                                                           indices, distance2);
+        int result = kdtree_.SearchRadius<CCVector3>(query, radius,
+                                                    indices, distance2);
         if (result != radiusInSteps * 2) {
-            utility::LogError("size={:d} radiusInSteps={:d} pos={:d} num={:d}",
+            CVLib::utility::LogError("error! size={:d} radiusInSteps={:d} pos={:d} num={:d}",
                               size_, radiusInSteps, pos_, result);
         }
     }
@@ -97,4 +102,4 @@ BENCHMARK(BM_TestKDTreeLine0)
         ->Ranges({{1 << 0, 1 << 14}, {1 << 16, 1 << 22}});
 
 }  // namespace benchmarks
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +26,10 @@
 
 #include "ContinuousConvTransposeOpKernel.h"
 
-#include "open3d/ml/impl/continuous_conv/ContinuousConvTranspose.h"
+#include "ml/impl/continuous_conv/ContinuousConvTranspose.h"
 
-using namespace open3d;
-using namespace open3d::ml::impl;
+using namespace cloudViewer;
+using namespace cloudViewer::ml::impl;
 using namespace tensorflow;
 
 template <class TReal, class TIndex>
@@ -87,7 +87,7 @@ public:
 
 #define REG_KB(type, indextype)                           \
     REGISTER_KERNEL_BUILDER(                              \
-            Name("Open3DContinuousConvTranspose")         \
+            Name("CloudViewerContinuousConvTranspose")         \
                     .Device(DEVICE_CPU)                   \
                     .TypeConstraint<type>("TReal")        \
                     .TypeConstraint<indextype>("TIndex"), \

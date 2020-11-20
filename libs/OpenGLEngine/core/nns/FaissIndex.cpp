@@ -77,7 +77,7 @@ void TestFaissIntegration() {
     indices.resize(knn * num_query);
     distances.resize(knn * num_query);
 
-    utility::LogInfo("Search Knn on GPU.");
+    CVLib::utility::LogInfo("Search Knn on GPU.");
     gpu_index.search(num_query, query.data(), knn, distances.data(),
                      indices.data());
 #endif

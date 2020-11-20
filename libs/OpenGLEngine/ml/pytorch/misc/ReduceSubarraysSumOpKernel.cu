@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,9 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/impl/misc/ReduceSubarraysSum.cuh"
-#include "open3d/ml/pytorch/TorchHelper.h"
-#include "open3d/ml/pytorch/misc/ReduceSubarraysSumOpKernel.h"
+#include "ml/impl/misc/ReduceSubarraysSum.cuh"
+#include "ml/pytorch/TorchHelper.h"
+#include "ml/pytorch/misc/ReduceSubarraysSumOpKernel.h"
 #include "torch/script.h"
 
 template <class T>
@@ -41,7 +41,7 @@ torch::Tensor ReduceSubarraysSumCUDA(const torch::Tensor& values,
 
     auto stream = at::cuda::getCurrentCUDAStream();
     auto cuda_device_props = at::cuda::getCurrentDeviceProperties();
-    open3d::ml::impl::ReduceSubarraysSumCUDA(
+    cloudViewer::ml::impl::ReduceSubarraysSumCUDA(
             stream, values.data_ptr<T>(), values.size(0),
             row_splits.data_ptr<int64_t>(), row_splits.size(0) - 1,
             sums.data_ptr<T>());

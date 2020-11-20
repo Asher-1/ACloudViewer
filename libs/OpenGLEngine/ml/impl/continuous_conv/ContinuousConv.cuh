@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -31,11 +31,11 @@
 #include <cutlass/gemm/gemm.h>
 #include <cutlass/gemm/sgemm_traits.h>
 
-#include "cloudViewer/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
-#include "cloudViewer/ml/impl/misc/MemoryAllocation.h"
-#include "cloudViewer/utility/Helper.h"
+#include "ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
+#include "ml/impl/misc/MemoryAllocation.h"
+#include <Helper.h>
 
-using cloudViewer::utility::DivUp;
+using CVLib::utility::DivUp;
 
 namespace cloudViewer {
 namespace ml {

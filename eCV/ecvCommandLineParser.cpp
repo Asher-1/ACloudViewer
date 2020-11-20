@@ -674,7 +674,7 @@ int ccCommandLineParser::start(QDialog* parent/*=0*/)
 	m_parentWidget = parent;
 	//if (!m_silentMode)
 	//{
-	//	m_progressDialog = new ccProgressDialog(false, parent);
+	//	m_progressDialog = new ecvProgressDialog(false, parent);
 	//	//m_progressDialog->setAttribute(Qt::WA_DeleteOnClose);
 	//	m_progressDialog->setAutoClose(false);
 	//	m_progressDialog->hide();

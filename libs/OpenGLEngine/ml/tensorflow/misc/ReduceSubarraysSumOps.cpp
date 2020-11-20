@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DReduceSubarraysSum")
+REGISTER_OP("CloudViewerReduceSubarraysSum")
         .Attr("T: {int32, int64, float, double}")
         .Input("values: T")
         .Input("row_splits: int64")
@@ -60,7 +60,7 @@ Computes the sum for each subarray in a flat vector of arrays.
 The start and end of the subarrays are defined by an exclusive prefix sum.
 Zero length subarrays are allowed as shown in the following example::
 
-  import open3d.ml.tf as ml3d
+  import cloudViewer.ml.tf as ml3d
 
   ml3d.ops.reduce_subarrays_sum(
       values = [1,2,3,4],
@@ -71,7 +71,7 @@ Zero length subarrays are allowed as shown in the following example::
 
   # or with pytorch
   import torch
-  import open3d.ml.torch as ml3d
+  import cloudViewer.ml.torch as ml3d
   
   ml3d.ops.reduce_subarrays_sum(
     values = torch.Tensor([1,2,3,4]),

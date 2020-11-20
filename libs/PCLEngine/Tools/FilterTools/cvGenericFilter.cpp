@@ -155,7 +155,7 @@ ccHObject * cvGenericFilter::getOutput()
 	}
 
 	vtkPolyData * polydata = vtkPolyData::SafeDownCast(vtkData);
-	if (NULL == polydata)
+    if (!polydata)
 	{
 		return nullptr;
 	}
@@ -182,12 +182,12 @@ void cvGenericFilter::getOutput(
 	std::vector<ccHObject*>& outputSlices,
 	std::vector<ccPolyline*>& outputContours)
 {
+    outputContours.clear();
 	ccHObject* slices = getOutput();
 	if (slices)
 	{
 		outputSlices.push_back(slices);
 	}
-
 }
 
 void cvGenericFilter::modelReady()
@@ -269,7 +269,6 @@ void cvGenericFilter::updateSize()
 			widget->topLevelWidget()->adjustSize();
 		}
 	}
-
 }
 
 void cvGenericFilter::UpdateScalarRange()

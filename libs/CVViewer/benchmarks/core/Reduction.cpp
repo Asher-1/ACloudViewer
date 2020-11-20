@@ -26,14 +26,14 @@
 
 #include <benchmark/benchmark.h>
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Kernel.h"
+#include "core/AdvancedIndexing.h"
+#include "core/Dtype.h"
+#include "core/MemoryManager.h"
+#include "core/SizeVector.h"
+#include "core/Tensor.h"
+#include "core/kernel/Kernel.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace core {
 
 void Reduction(benchmark::State& state, const Device& device) {
@@ -56,4 +56,4 @@ BENCHMARK_CAPTURE(Reduction, CUDA, Device("CUDA:0"))
 #endif
 
 }  // namespace core
-}  // namespace open3d
+}  // namespace cloudViewer
