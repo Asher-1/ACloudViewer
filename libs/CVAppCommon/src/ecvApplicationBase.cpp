@@ -68,13 +68,12 @@ void ecvApplicationBase::init(bool noOpenGLSupport)
 #ifdef QT_DEBUG
 			format.setOption(QSurfaceFormat::DebugContext, true);
 #endif
-
 			QSurfaceFormat::setDefaultFormat(format);
 		}
 
 #ifdef Q_OS_WIN
-    //enables automatic scaling based on the monitor's pixel density
-    setAttribute(Qt::AA_EnableHighDpiScaling);
+		////enables automatic scaling based on the monitor's pixel density
+		//QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
 		// The 'AA_ShareOpenGLContexts' attribute must be defined BEFORE the creation of the Q(Gui)Application

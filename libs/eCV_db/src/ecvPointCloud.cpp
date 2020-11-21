@@ -1673,6 +1673,8 @@ std::vector<CCVector3 *> ccPointCloud::getPointNormalsPtr() const
     {
         normals.push_back(&getPointNormalPtr(i));
     }
+    return normals;
+
 }
 
 void ccPointCloud::setPointNormals(const std::vector<CCVector3>& normals)

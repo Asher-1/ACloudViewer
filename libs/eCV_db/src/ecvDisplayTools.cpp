@@ -3463,7 +3463,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 	//we init the necessary parameters the first time we need them
 	if (!s_tools.instance->m_hotZone)
 	{
-		s_tools.instance->m_hotZone = new HotZone(ecvDisplayTools::GetCurrentScreen());
+		s_tools.instance->m_hotZone = new HotZone(ecvDisplayTools::GetMainWindow());
 	}
 	// remember the last position of the 'top corner'
 	s_tools.instance->m_hotZone->topCorner = QPoint(xStart0, yStart) + 
