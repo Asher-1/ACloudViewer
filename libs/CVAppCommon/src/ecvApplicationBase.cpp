@@ -74,6 +74,9 @@ void ecvApplicationBase::init(bool noOpenGLSupport)
 #ifdef Q_OS_WIN
 		////enables automatic scaling based on the monitor's pixel density
 		//QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+        //qputenv("QT_ENABLE_HIGHDPI_SCALING", "2");
+        //QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        //        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 #endif
 
 		// The 'AA_ShareOpenGLContexts' attribute must be defined BEFORE the creation of the Q(Gui)Application
@@ -202,7 +205,7 @@ void ecvApplicationBase::setupPaths()
 	m_PluginPaths << (appDir.absolutePath() + "/plugins");
 	m_ShaderPath = (appDir.absolutePath() + "/shaders");
 	m_TranslationPath = (appDir.absolutePath() + "/translations");
-#elif defined(Q_OS_LINUX)
+#elif defined(Q_OS_LINUX)  // Q_OS_LINUX
 	// Shaders & plugins are relative to the bin directory where the executable is found
 	QDir  theDir = appDir;
 
@@ -225,6 +228,16 @@ void ecvApplicationBase::setupPaths()
         m_ShaderPath = "/usr/share/erowcloudviewer/shaders";
         m_TranslationPath = "/usr/share/erowcloudviewer/translations";
 	}
+
+	// check current application translations path whether exists or not
+	// if exist and then overwriter above translation settings.
+	QString translationPath = (theDir.absolutePath() + "/translations");
+    QFile transFile(translationPath);
+    if (transFile.exists())
+	{
+        m_ShaderPath = translationPath;
+    }
+
 #else
 #warning Need to specify the shader path for this OS.
 #endif
