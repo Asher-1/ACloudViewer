@@ -289,7 +289,7 @@ public:
 			maxAreaCorner.setY(maxAreaCorner.y() + (iconSize + margin) * (rowCount - 1));
 
 			QRect areaRect(minAreaCorner - QPoint(margin, margin) / 2,
-				maxAreaCorner + QPoint(margin, margin) / 2);
+						   maxAreaCorner + QPoint(margin, margin) / 2);
 
 			return areaRect;
 		}

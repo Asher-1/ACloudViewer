@@ -253,4 +253,7 @@
         <file>Resources/images/integrated_sensor.png</file>
         <file>Resources/images/Wavefrom.png</file>
     </qresource>
+    <qresource prefix="/qt">
+        <file>etc/qt.conf</file>
+    </qresource>
 </RCC>

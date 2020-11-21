@@ -311,7 +311,7 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename, ccHObject& container,
 	if (cloud_ptr_in)
 	{
 		pointCount = cloud_ptr_in->width * cloud_ptr_in->height;
-		CVLog::Print(QString("%1: Point Count: %2").arg(fileName.c_str()).arg(pointCount));
+        CVLog::Print(QString("%1: Point Count: %2").arg(filename).arg(pointCount));
 	}
 
 	if (pointCount > 0)

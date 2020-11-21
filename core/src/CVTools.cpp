@@ -70,14 +70,12 @@ QString CVTools::toQString(const string& s)
 
 string CVTools::fromQString(const QString& qs) 
 {
-
 #if defined(CV_WINDOWS)
     return fromUnicode(qs);
 #else // do not support coding in Linux or mac platform!
     return qs.toStdString();
 #endif
 }
-
 
 bool CVTools::FileMappingReader(const std::string & filename, void * data, unsigned long& size)
 {
