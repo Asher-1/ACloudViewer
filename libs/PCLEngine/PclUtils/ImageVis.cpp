@@ -356,7 +356,8 @@ namespace PclUtils
 	bool ImageVis::addText(unsigned int x, unsigned int y,
 		const std::string& text_string,
 		double r, double g, double b,
-		const std::string &layer_id, double opacity, int fontSize)
+        const std::string& layer_id,
+        double opacity, int fontSize, bool bold)
 	{
 		//bool sucess = pcl::visualization::ImageViewer::addText(x, y, text_string, r, g, b, layer_id, opacity);
 
@@ -376,10 +377,12 @@ namespace PclUtils
 			static_cast<unsigned char> (255.0 * g),
 			static_cast<unsigned char> (255.0 * b));
 		text->setOpacity(opacity);
+        text->setBold(bold);
+        text->setFontSize(fontSize);
 #if ((VTK_MAJOR_VERSION >= 6) || ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION > 7)))
-		text->set(static_cast<float> (x), static_cast<float> (y), text_string, fontSize);
+		text->set(static_cast<float> (x), static_cast<float> (y), text_string);
 #else
-		text->set(static_cast<float> (x), static_cast<float> (getSize()[1] - y), text_string, fontSize);
+		text->set(static_cast<float> (x), static_cast<float> (getSize()[1] - y), text_string);
 #endif
 		am_it->actor->GetScene()->AddItem(text);
 

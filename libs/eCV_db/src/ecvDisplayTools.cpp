@@ -410,21 +410,19 @@ bool ecvDisplayTools::ProcessClickableItems(int x, int y)
 		return false;
 	}
 
-	//correction for HD screens
-	const int retinaScale = GetDevicePixelRatio();
-	x *= retinaScale;
-	y *= retinaScale;
+		// correction for HD screens
+    const int retinaScale = GetDevicePixelRatio();
+    x *= retinaScale;
+    y *= retinaScale;
 
-	ClickableItem::Role clickedItem = ClickableItem::NO_ROLE;
-	for (std::vector<ClickableItem>::const_iterator it = s_tools.instance->m_clickableItems.begin(); 
-		it != s_tools.instance->m_clickableItems.end(); ++it)
-	{
-		if (it->area.contains(x, y))
-		{
-			clickedItem = it->role;
-			break;
-		}
-	}
+    ClickableItem::Role clickedItem = ClickableItem::NO_ROLE;
+    for (std::vector<ClickableItem>::const_iterator it = s_tools.instance->m_clickableItems.begin();
+         it != s_tools.instance->m_clickableItems.end(); ++it) {
+        if (it->area.contains(x, y)) {
+            clickedItem = it->role;
+            break;
+        }
+    }
 
 	switch (clickedItem)
 	{
@@ -477,8 +475,7 @@ bool ecvDisplayTools::ProcessClickableItems(int x, int y)
 	{
 		if (s_tools.instance->m_win)
 		{
-			SetExclusiveFullScreenFlage(false);
-			//s_tools.instance->m_win->toggleExclusiveFullScreen(false);
+            emit s_tools.instance->exclusiveFullScreenToggled(false);
 		}
 		
 	}
@@ -3460,7 +3457,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 			texParam.color = ecvColor::bright;
 			texParam.text = "Exit";
 			texParam.rect = QRect(x0, fullH - (yStart + 3*iconSize/4), iconSize, iconSize);
-            texParam.fontSize = GetFontPointSize();
+            texParam.fontSize = s_tools.instance->m_hotZone->font.pointSize();
 			DrawWidgets(texParam, false);
 			s_tools.instance->m_clickableItems.emplace_back(ClickableItem::LEAVE_FULLSCREEN_MODE, 
 				QRect(xStart, yStart, iconSize, iconSize));
@@ -3495,8 +3492,9 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 	if (s_tools.instance->m_clickableItemsVisible)
 	{
+        ecvColor::Rgb textColor = ecvColor::Rgb(s_tools.instance->m_hotZone->color);
 		WIDGETS_PARAMETER widgetParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, CLICKED_ITEMS);
-		widgetParam.color = ecvColor::FromRgba(ecvColor::ogreen);
+        widgetParam.color = ecvColor::FromRgba(ecvColor::ogreen);
 		WIDGETS_PARAMETER sepParam(WIDGETS_TYPE::WIDGET_POINTS_2D, CLICKED_ITEMS);
 		sepParam.color = widgetParam.color;
 		sepParam.color.a = 0.5f;
@@ -3507,11 +3505,11 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 			RenderText(xStart, yStart + s_tools.instance->m_hotZone->yTextBottomLineShift, 
 				s_tools.instance->m_hotZone->psi_label, s_tools.instance->m_hotZone->font, 
-				ecvColor::defaultLabelBkgColor, CLICKED_ITEMS);
+				textColor, CLICKED_ITEMS);
 
 			//icons
 			xStart += s_tools.instance->m_hotZone->psi_labelRect.width() + s_tools.instance->m_hotZone->margin;
-			xStart -= iconSize * 2;
+			xStart -= iconSize;
 			//"minus" icon
 			{
 				int x0 = xStart;
@@ -3560,11 +3558,11 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 			RenderText(xStart, yStart + s_tools.instance->m_hotZone->yTextBottomLineShift, 
 				s_tools.instance->m_hotZone->lsi_label, s_tools.instance->m_hotZone->font, 
-				ecvColor::defaultLabelBkgColor, CLICKED_ITEMS);
+				textColor, CLICKED_ITEMS);
 
 			//icons
 			xStart += s_tools.instance->m_hotZone->lsi_labelRect.width() + s_tools.instance->m_hotZone->margin;
-			xStart -= iconSize * 2;
+			xStart -= iconSize;
 
 			//"minus" icon
 			{
@@ -3580,7 +3578,6 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 			//separator
 			{
-
 				sepParam.radius = s_tools.instance->m_viewportParams.defaultLineWidth / 2;
 				int x0 = xStart + s_tools.instance->m_hotZone->margin /*s_tools.instance->m_hotZone->margin / 2*/;
 				int y0 = fullH - (yStart + iconSize / 2);
