@@ -91,7 +91,7 @@ namespace PclUtils
 			const std::string& text_string,
 			double r, double g, double b,
 			const std::string &layer_id = "line", 
-			double opacity = 1.0, int fontSize = 10);
+			double opacity = 1.0, int fontSize = 10, bool bold = false);
 
 	public:
 		void enable2Dviewer(bool state);

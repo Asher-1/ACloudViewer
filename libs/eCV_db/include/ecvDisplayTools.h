@@ -233,14 +233,18 @@ public:
 			, fs_label("fullscreen mode")
 			, psi_label("default point size")
 			, lsi_label("default line width")
-			, margin(10)
-			, iconSize(16)
+			, margin(8) // 16|10
+			, iconSize(10) // 16
 			, topCorner(0, 0)
 		{
 			//default color ("greenish")
-			color[0] = 133;
-			color[1] = 193;
-			color[2] = 39;
+			//color[0] = 133;
+			//color[1] = 193;
+			//color[2] = 39;
+
+			color[0] = ecvColor::defaultLabelBkgColor.r;
+            color[1] = ecvColor::defaultLabelBkgColor.g;
+            color[2] = ecvColor::defaultLabelBkgColor.b;
 
 			if (win)
 			{

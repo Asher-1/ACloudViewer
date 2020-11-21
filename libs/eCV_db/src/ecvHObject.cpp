@@ -1590,7 +1590,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context)
 			//then we can display the name during the 2D pass
 			drawNameIn3D();
 		}
-	}
+	} 
 	else
 	{
 		// label2d name have been managed by itself

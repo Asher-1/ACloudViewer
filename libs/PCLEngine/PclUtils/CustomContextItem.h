@@ -98,8 +98,12 @@ namespace PclUtils
             vtkTypeMacro(Text, PCLContextItem)
 			static Text *New();
             virtual bool Paint(vtkContext2D *painter) override;
-			virtual void set(float x, float y, const std::string& _text, int fontSize = 10);
+			virtual void set(float x, float y, const std::string& _text);
+            inline void setBold(bool state = false) { bold_ = state; }
+            inline void setFontSize(int fontSize = 10) { fontSize_ = fontSize; }
 			std::string text;
+            int fontSize_ = 10;
+            bool bold_ = false;
 		};
 
         struct QPCL_ENGINE_LIB_API Markers : public Points

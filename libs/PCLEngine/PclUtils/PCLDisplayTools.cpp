@@ -930,7 +930,9 @@ void PCLDisplayTools::displayText(const CC_DRAW_CONTEXT& CONTEXT)
 		ecvColor::Rgbf textColor = ecvTools::TransFormRGB(CONTEXT.textDefaultCol);
 		{
 			m_visualizer2D->addText(textParam.textPos.x, textParam.textPos.y, 
-				text, textColor.r, textColor.g, textColor.b, viewID, textParam.opacity, textParam.font.pointSize());
+				text, textColor.r, textColor.g, textColor.b, 
+				viewID, textParam.opacity, textParam.font.pointSize(), 
+				textParam.font.bold());
 		}
 	}
 	else
