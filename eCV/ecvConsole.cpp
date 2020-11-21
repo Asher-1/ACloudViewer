@@ -19,12 +19,14 @@
 #include "ecvConsole.h"
 #include "ecvHead.h"
 #include "MainWindow.h"
-#include <CommonSettings.h>
 #include "ecvSettingManager.h"
 #include "ecvPersistentSettings.h"
 
 // ECV_DB_LIB
 #include <ecvSingleton.h>
+
+// CV_APP_COMMON
+#include <CommonSettings.h>
 
 //Qt
 #include <QApplication>
@@ -80,7 +82,6 @@ void ecvCustomQListWidget::keyPressEvent(QKeyEvent *event)
 		QListWidget::keyPressEvent(event);
 	}
 }
-
 
 // ecvConsole
 ecvConsole* ecvConsole::TheInstance(bool autoInit/*=true*/)

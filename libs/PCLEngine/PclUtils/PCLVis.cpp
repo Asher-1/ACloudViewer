@@ -171,6 +171,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
 		if (m_centerAxes)
 		{
+            removeActorFromRenderer(this->m_centerAxes);
 			this->m_centerAxes->Delete();
 		}
 	}
@@ -1790,6 +1791,12 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 			axes->SetXAxisLabelText("x");
 			axes->SetYAxisLabelText("y");
 			axes->SetZAxisLabelText("z");
+            axes->GetXAxisTipProperty()->SetColor(1.0, 0.0, 0.0);
+            axes->GetXAxisShaftProperty()->SetColor(1.0, 0.0, 0.0);
+            axes->GetYAxisTipProperty()->SetColor(1.0, 1.0, 0.0);
+            axes->GetYAxisShaftProperty()->SetColor(1.0, 1.0, 0.0);
+            axes->GetZAxisTipProperty()->SetColor(0.0, 1.0, 0.0);
+            axes->GetZAxisShaftProperty()->SetColor(0.0, 1.0, 0.0);
 			axes->SetTotalLength(1.5, 1.5, 1.5);
 
 			vtkSmartPointer<vtkAnnotatedCubeActor> cube = vtkSmartPointer<vtkAnnotatedCubeActor>::New();
@@ -1812,17 +1819,17 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 			// since they are overlaid on a surface rendering of the cube's faces
 			vtkMapper::SetResolveCoincidentTopologyToPolygonOffset();
 
-			cube->GetXPlusFaceProperty()->SetColor(1, 0, 0);
+			cube->GetXPlusFaceProperty()->SetColor(1.0, 0.0, 0.0);
 			cube->GetXPlusFaceProperty()->SetInterpolationToFlat();
-			cube->GetXMinusFaceProperty()->SetColor(1, 0, 0);
+			cube->GetXMinusFaceProperty()->SetColor(1.0, 0.0, 0.0);
 			cube->GetXMinusFaceProperty()->SetInterpolationToFlat();
-			cube->GetYPlusFaceProperty()->SetColor(0, 1, 0);
+			cube->GetYPlusFaceProperty()->SetColor(1.0, 1.0, 0.0);
 			cube->GetYPlusFaceProperty()->SetInterpolationToFlat();
-			cube->GetYMinusFaceProperty()->SetColor(0, 1, 0);
+			cube->GetYMinusFaceProperty()->SetColor(1.0, 1.0, 0.0);
 			cube->GetYMinusFaceProperty()->SetInterpolationToFlat();
-			cube->GetZPlusFaceProperty()->SetColor(0, 0, 1);
+			cube->GetZPlusFaceProperty()->SetColor(0.0, 1.0, 0.0);
 			cube->GetZPlusFaceProperty()->SetInterpolationToFlat();
-			cube->GetZMinusFaceProperty()->SetColor(0, 0, 1);
+			cube->GetZMinusFaceProperty()->SetColor(0.0, 1.0, 0.0);
 			cube->GetZMinusFaceProperty()->SetInterpolationToFlat();
 
 			vtkSmartPointer<vtkTextProperty> tprop4 = vtkSmartPointer<vtkTextProperty>::New();
