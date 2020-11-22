@@ -233,8 +233,8 @@ public:
 			, fs_label("fullscreen mode")
 			, psi_label("default point size")
 			, lsi_label("default line width")
-			, margin(8) // 16|10
-			, iconSize(10) // 16
+            , margin(10) // 16|10
+            , iconSize(12) // 16
 			, topCorner(0, 0)
 		{
 			//default color ("greenish")

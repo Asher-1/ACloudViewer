@@ -79,6 +79,11 @@ void ecvApplicationBase::init(bool noOpenGLSupport)
         //        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 #endif
 
+#ifdef Q_OS_UNIX
+        ////enables automatic scaling based on the monitor's pixel density
+        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
+
 		// The 'AA_ShareOpenGLContexts' attribute must be defined BEFORE the creation of the Q(Gui)Application
 		// DGM: this is mandatory to enable exclusive full screen for ccGLWidget (at least on Windows)
 		QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
@@ -94,11 +99,6 @@ ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, bool isCommandLin
 	setOrganizationName( "ECVCorp" );
 
 	setupPaths();
-
-#ifdef Q_OS_WIN
-	//enables automatic scaling based on the monitor's pixel density
-	setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
 		
 #ifdef Q_OS_MAC
 	// Mac OS X apps don't show icons in menus

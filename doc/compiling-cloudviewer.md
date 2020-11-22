@@ -58,8 +58,14 @@ Instead of ``which``, check the Python path with ``where python``
 2. Config
 `````````
 
+.. code-block:: bat
+
     mkdir build
     cd build
+
+    cmake -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
+	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake  \
+      ..
 
     :: Specify the generator based on your Visual Studio version
     :: If CMAKE_INSTALL_PREFIX is a system folder, admin access is needed for installation

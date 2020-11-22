@@ -13,25 +13,26 @@ Build from source in Ubuntu and macOS
     # configure for vtk(8.2)
       cmake -DVTK_QT_VERSION:STRING=5 \
 	-DCMAKE_BUILD_TYPE=Release 
-      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/bin/qmake \
+      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
       	-DVTK_Group_Qt:BOOL=ON \
-      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/lib/cmake  \
+      	-DCMAKE_PREFIX_PATH:PATH=/opt/5.14.2/5.14.2/gcc_64/lib/cmake  \
       	-DBUILD_SHARED_LIBS:BOOL=ON ..
 
 	make -j 8
 	sudo make install
     # cofigure for qt VTK PLUGINS
 	sudo find / -name libQVTKWidgetPlugin.so
-	sudo cp /media/yons/data/develop/pcl_projects/VTK-8.2.0/ubuntu_build/lib/libQVTKWidgetPlugin.so /opt/Qt5.13.0/5.13.0/gcc_64/plugins/designer
-	sudo cp /media/yons/data/develop/pcl_projects/VTK-8.2.0/ubuntu_build/lib/libQVTKWidgetPlugin.so /opt/Qt5.13.0/Tools/QtCreator/lib/Qt/plugins/designer
+	sudo cp lib/libQVTKWidgetPlugin.so /opt/Qt5.14.2/5.14.2/gcc_64/plugins/designer
+	sudo cp lib/libQVTKWidgetPlugin.so /opt/Qt5.14.2/Tools/QtCreator/lib/Qt/plugins/designer
 
     # cofigure PCL(1.11.1)
 	cmake -DCMAKE_BUILD_TYPE=Release \
 	      -DBUILD_GPU=ON \
 	      -DBUILD_apps=ON \
 	      -DBUILD_examples=ON \
-	      -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/bin/qmake \
-	      -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/lib/cmake ..
+	      -DBUILD_surface_on_nurbs=ON \
+	      -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
+	      -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake ..
 
 	make -j 8
 	sudo make install
