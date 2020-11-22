@@ -3509,7 +3509,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 			//icons
 			xStart += s_tools.instance->m_hotZone->psi_labelRect.width() + s_tools.instance->m_hotZone->margin;
-			xStart -= iconSize;
+            xStart -= iconSize;
 			//"minus" icon
 			{
 				int x0 = xStart;
@@ -3562,7 +3562,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 			//icons
 			xStart += s_tools.instance->m_hotZone->lsi_labelRect.width() + s_tools.instance->m_hotZone->margin;
-			xStart -= iconSize;
+            xStart -= iconSize;
 
 			//"minus" icon
 			{

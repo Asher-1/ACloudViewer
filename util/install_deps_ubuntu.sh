@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # Install CloudViewer build dependencies from Ubuntu repositories
 # CUDA (v10.1) and CUDNN (v7.6.5) are optional dependencies and are not
 # installed here
@@ -54,6 +55,7 @@ dependencies=(
 	clang-format 
 	libqhull-dev
 	graphviz
+	nasm
 	mono-complete
 	phonon-backend-gstreamer
 	phonon-backend-vlc
