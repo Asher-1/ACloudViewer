@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        Open3D: www.cloudViewer.org                            -
+# -                        CloudViewer: www.erow.cn                                    -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.cloudViewer.org
+# Copyright (c) 2020 www.erow.cn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,8 @@ from cloudViewer import _build_config
 
 _lib_path = []
 # allow overriding the path to the op library with an env var.
-if 'OPEN3D_TF_OP_LIB' in _os.environ:
-    _lib_path.append(_os.environ['OPEN3D_TF_OP_LIB'])
+if 'CLOUDVIEWER_TF_OP_LIB' in _os.environ:
+    _lib_path.append(_os.environ['CLOUDVIEWER_TF_OP_LIB'])
 
 _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..', '..', '..')
@@ -40,7 +40,7 @@ _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
 _lib_arch = ('cuda', 'cpu') if _build_config["BUILD_CUDA_MODULE"] else ('cpu',)
 _lib_path.extend([
-    _os.path.join(_package_root, la, 'open3d_tf_ops' + _lib_suffix + _lib_ext)
+    _os.path.join(_package_root, la, 'cloudViewer_tf_ops' + _lib_suffix + _lib_ext)
     for la in _lib_arch
 ])
 

@@ -1,6 +1,6 @@
-# Open3D: www.cloudViewer.org
+# CloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.open3d.org for details
 
 # examples/Python/Utility/visualization.py
 

@@ -1,4 +1,4 @@
-# Open3D: www.open3d.org
+# CloudViewer: www.erow.cn
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 

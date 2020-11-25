@@ -49,8 +49,8 @@ set_target_properties(visualization PROPERTIES FOLDER "Modules")
 if (BUILD_GUI)
     add_subdirectory(visualization/gui)
     set(GUI_OBJECTS "$<TARGET_OBJECTS:GUI>")
-	set_target_properties(GUI PROPERTIES FOLDER "Modules")
-	set_target_properties(GuiResources PROPERTIES FOLDER "Modules")
+    set_target_properties(GUI PROPERTIES FOLDER "Modules")
+    set_target_properties(GuiResources PROPERTIES FOLDER "Modules")
 endif()
 
 # Source group for Visual Studio
@@ -73,15 +73,15 @@ add_library(${PROJECT_NAME}
     $<TARGET_OBJECTS:tio>
     $<TARGET_OBJECTS:ml_contrib>
     $<TARGET_OBJECTS:pipelines>
-	$<TARGET_OBJECTS:utility>
+    $<TARGET_OBJECTS:utility>
     $<TARGET_OBJECTS:visualization>
     ${GUI_OBJECTS}
 )
 
 # INTERNAL LIB
 target_link_libraries(  ${PROJECT_NAME} PUBLIC
-						ECV_DB_LIB
-						ECV_IO_LIB)
+                                        ECV_DB_LIB
+                                        ECV_IO_LIB)
 
 # Qt
 #target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Core)

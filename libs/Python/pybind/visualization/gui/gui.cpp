@@ -57,52 +57,16 @@
 #include "visualization/rendering/filament/FilamentEngine.h"
 #include "visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "pybind/docstring.h"
+#include "pybind/visualization/visualization.h"
 #include "pybind11/functional.h"
 
 #include <FileSystem.h>
-
-// We cannot give out a shared_ptr to objects like Window which reference
-// Filament objects, because we cannot guarantee that the Python script is
-// not holding on to a reference when we cleanup Filament. The CloudViewer library
-// will clear its shared_ptrs expecting the dependent object(s) to clean up,
-// but they won't because Python still has a shared_ptr, leading to a crash
-// when the variable goes of scope on the Python side.
-// The following would crash gui.Window's holder is std::shared_ptr:
-//   import CloudViewer.visualization.gui as gui
-//   def main():
-//       gui.Application.instance.initialize()
-//       w = gui.Application.instance.create_window("Crash", 640, 480)
-//       gui.Application.instance.run()
-//   if __name__ == "__main__":
-//       main()
-// However, if remove the 'w = ' part, it would not crash.
-template <typename T>
-class UnownedPointer {
-public:
-    UnownedPointer() : ptr_(nullptr) {}
-    explicit UnownedPointer(T *p) : ptr_(p) {}
-    ~UnownedPointer() {}  // don't delete!
-
-    T *get() { return ptr_; }
-    T &operator*() { return *ptr_; }
-    T *operator->() { return ptr_; }
-    void reset() { ptr_ = nullptr; }  // don't delete!
-
-private:
-    T *ptr_;
-};
-PYBIND11_DECLARE_HOLDER_TYPE(T, UnownedPointer<T>);
 
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
 
-    using namespace CVLib;
-
-template <typename T>
-std::shared_ptr<T> TakeOwnership(UnownedPointer<T> x) {
-    return std::shared_ptr<T>(x.get());
-}
+using namespace CVLib;
 
 class PythonUnlocker : public Application::EnvUnlocker {
 public:
@@ -184,14 +148,14 @@ void install_cleanup_atexit() {
 void InitializeForPython(std::string resource_path /*= ""*/) {
     if (resource_path.empty()) {
         // We need to find the resources directory. Fortunately,
-        // Python knows where the module lives (CloudViewer.__file__
+        // Python knows where the module lives (cloudViewer.__file__
         // is the path to
         // __init__.py), so we can use that to find the
         // resources included in the wheel.
         py::object cv3d = py::module::import("cloudViewer");
-        auto o3d_init_path = cv3d.attr("__file__").cast<std::string>();
+        auto cv3d_init_path = cv3d.attr("__file__").cast<std::string>();
         auto module_path =
-                utility::filesystem::GetFileParentDirectory(o3d_init_path);
+                utility::filesystem::GetFileParentDirectory(cv3d_init_path);
         resource_path = module_path + "/resources";
     }
     Application::GetInstance().Initialize(resource_path.c_str());

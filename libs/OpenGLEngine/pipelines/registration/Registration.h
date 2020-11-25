@@ -31,16 +31,16 @@
 #include <vector>
 #include <Eigen.h>
 
-#include "CorrespondenceChecker.h"
-#include "TransformationEstimation.h"
+#include "pipelines/registration/CorrespondenceChecker.h"
+#include "pipelines/registration/TransformationEstimation.h"
 
 class ccPointCloud;
 namespace cloudViewer {
 
-	namespace utility
-	{
-		class Feature;
-	}
+namespace utility
+{
+    class Feature;
+}
 
 namespace pipelines {
 namespace registration {
@@ -94,18 +94,20 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param max_iteration Maximum iteration before iteration stops.
-    /// \param max_validation Maximum times the validation has been run before
-    /// the iteration stops.
-    RANSACConvergenceCriteria(int max_iteration = 1000,
-                              int max_validation = 1000)
-        : max_iteration_(max_iteration), max_validation_(max_validation) {}
+    /// \param confidence Desired probability of success. Used for estimating
+    /// early termination by k = log(1 - confidence)/log(1 -
+    /// inlier_ratio^{ransac_n}).
+    RANSACConvergenceCriteria(int max_iteration = 100000,
+                              double confidence = 0.999)
+        : max_iteration_(max_iteration), confidence_(confidence) {}
+
     ~RANSACConvergenceCriteria() {}
 
 public:
     /// Maximum iteration before iteration stops.
     int max_iteration_;
-    /// Maximum times the validation has been run before the iteration stops.
-    int max_validation_;
+    /// Desired probability of success.
+    double confidence_;
 };
 
 /// \class RegistrationResult
@@ -120,6 +122,10 @@ public:
             const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity())
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
     ~RegistrationResult() {}
+    bool IsBetterRANSACThan(const RegistrationResult &other) const {
+        return fitness_ > other.fitness_ || (fitness_ == other.fitness_ &&
+                                             inlier_rmse_ < other.inlier_rmse_);
+    }
 
 public:
     /// The estimated transformation matrix.
@@ -128,8 +134,10 @@ public:
     CorrespondenceSet correspondence_set_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
-    /// The overlapping area (# of inlier correspondences / # of points in
-    /// target). Higher is better.
+    /// For ICP: the overlapping area (# of inlier correspondences / # of points
+    /// in target). Higher is better.
+    /// For RANSAC: inlier ratio (# of inlier correspondences / # of
+    /// all correspondences)
     double fitness_;
 };
 
@@ -171,10 +179,13 @@ RegistrationResult RegistrationICP(
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
-/// \param corres Checker class to check if two point clouds can be aligned.
+/// \param corres Correspondence indices between source and target point clouds.
 /// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance. \param estimation Estimation method. \param ransac_n Fit ransac
-/// with `ransac_n` correspondences. \param criteria Convergence criteria.
+/// distance.
+/// \param estimation Estimation method.
+/// \param ransac_n Fit ransac with `ransac_n` correspondences.
+/// \param checkers Correspondence checker.
+/// \param criteria Convergence criteria.
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const ccPointCloud &source,
         const ccPointCloud &target,
@@ -182,7 +193,9 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         double max_correspondence_distance,
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(false),
-        int ransac_n = 6,
+        int ransac_n = 3,
+        const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
+                &checkers = {},
         const RANSACConvergenceCriteria &criteria =
                 RANSACConvergenceCriteria());
 
@@ -192,21 +205,27 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 /// \param target The target point cloud.
 /// \param source_feature Source point cloud feature.
 /// \param target_feature Target point cloud feature.
+/// \param mutual_filter Enables mutual filter such that the correspondence of
+/// the source point's correspondence is itself.
 /// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance. \param ransac_n Fit ransac with `ransac_n` correspondences. \param
-/// checkers Correspondence checker. \param criteria Convergence criteria.
+/// distance.
+/// \param ransac_n Fit ransac with `ransac_n` correspondences.
+/// \param checkers Correspondence checker.
+/// \param criteria Convergence criteria.
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const ccPointCloud &source,
         const ccPointCloud &target,
         const utility::Feature &source_feature,
         const utility::Feature &target_feature,
+        bool mutual_filter,
         double max_correspondence_distance,
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(false),
-        int ransac_n = 4,
+        int ransac_n = 3,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers = {},
-        const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria());
+        const RANSACConvergenceCriteria &criteria =
+                RANSACConvergenceCriteria());
 
 /// \param source The source point cloud.
 /// \param target The target point cloud.

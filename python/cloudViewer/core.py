@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        Open3D: www.cloudViewer.org                            -
+# -                        CloudViewer: www.erow.cn                          -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018 www.cloudViewer.org
+# Copyright (c) 2018 www.erow.cn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -206,7 +206,7 @@ def svd(val):
 
 class Tensor(cv3d.pybind.core.Tensor):
     """
-    Open3D Tensor class. A Tensor is a view of data blob with shape, strides
+    CloudViewer Tensor class. A Tensor is a view of data blob with shape, strides
     and etc. Tensor can be used to perform numerical operations.
     """
 
@@ -950,9 +950,10 @@ class Tensor(cv3d.pybind.core.Tensor):
             raise TypeError("Unspported type when calling item()")
 
 
+
 class Hashmap(cv3d.pybind.core.Hashmap):
     """
-    Open3D Hashmap class. A Hashmap is a map from key to data wrapped by Tensors.
+    CloudViewer Hashmap class. A Hashmap is a map from key to data wrapped by Tensors.
     """
 
     def __init__(self, init_capacity, dtype_key, dtype_value, device=None):
@@ -982,3 +983,53 @@ class Hashmap(cv3d.pybind.core.Hashmap):
     @cast_to_py_tensor
     def assign_iterators(self, iterators, values, masks=Tensor([])):
         return super(Hashmap, self).assign_iterators(iterators, values, masks)
+
+
+
+
+
+class TensorList(cv3d.pybind.core.TensorList):
+    """
+    CloudViewer TensorList class. A TensorList is a view of list of Tensor.
+    """
+
+    def __init__(self, shape, dtype=None, device=None):
+        # input shape is regarded as a single Tensor
+        if isinstance(shape, cv3d.pybind.core.Tensor):
+            shape = [shape]
+
+        # input shape is regarded as a TensorList
+        if isinstance(shape, TensorList):
+            return super(TensorList, self).__init__(shape)
+
+        # input shape is regarded as a list, tuple or np.ndarray of tensors
+        if isinstance(shape, np.ndarray):
+            shape = shape.tolist()
+        if isinstance(shape, (tuple, list)) and len(shape) > 0:
+            if isinstance(shape[0], cv3d.pybind.core.Tensor):
+                return super(TensorList, self).__init__(shape)
+
+        # input shape is regarded as the element shape of Tensorlist
+        shape = self._reduction_shape_to_size_vector(shape)
+        if dtype is None:
+            dtype = _numpy_dtype_to_dtype(np.float32)
+        if device is None:
+            device = Device("CPU:0")
+        super(TensorList, self).__init__(shape, dtype, device)
+
+    @staticmethod
+    def from_tensors(tensors):
+        return TensorList(tensors)
+
+    def _reduction_shape_to_size_vector(self, shape):
+        if shape is None:
+            return SizeVector(list(range(self.ndim)))
+        elif isinstance(shape, SizeVector):
+            return shape
+        elif isinstance(shape, int):
+            return SizeVector([shape])
+        elif isinstance(shape, list) or isinstance(shape, tuple):
+            return SizeVector(shape)
+        else:
+            raise TypeError(
+                "shape must be int, list or tuple, but was {}.".format(type(shape)))

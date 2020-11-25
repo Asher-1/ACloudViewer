@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                            -
+# -                        CloudViewer: www.erow.cn                          -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
@@ -27,7 +27,7 @@
 try:
     # Azure Kinect is not officially supported on Ubuntu 16.04, this is an
     # unofficial workaround. Install the fix package with
-    # `pip install open3d_azure_kinect_ubuntu1604_fix`
+    # `pip install cloudViewer_azure_kinect_ubuntu1604_fix`
     import cloudViewer_azure_kinect_ubuntu1604_fix
 except ImportError:
     pass

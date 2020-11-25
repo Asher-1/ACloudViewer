@@ -35,6 +35,8 @@ def pointcloud_generator():
 
 
 if __name__ == "__main__":
+    # only support on windows platform!!!
+
     np.random.seed(42)
     cv3d.utility.set_verbosity_level(cv3d.utility.Debug)
     random_color = True

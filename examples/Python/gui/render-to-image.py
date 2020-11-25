@@ -2,7 +2,6 @@
 
 import cloudViewer as cv3d
 import cloudViewer.visualization.rendering as rendering
-import cloudViewer.visualization.gui as gui
 
 
 def main():

@@ -23,6 +23,7 @@
 #include "PclUtils/CustomContextItem.h"
 
 // CV_CORE_LIB
+#include <CVPlatform.h>
 #include <CVTools.h>
 #include <ecvGLMatrix.h>
 
@@ -100,6 +101,10 @@ namespace PclUtils
 
 	void ImageVis::enable2Dviewer(bool state)
 	{
+#ifdef CV_LINUX
+        CVLog::Warning("[ImageVis::enable2Dviewer] Do not support 2D viewer on Linux or Mac platform now!");
+        return;
+#endif
 		if (state)
 		{
 			m_mainInteractor = getRenderWindowInteractor();

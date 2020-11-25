@@ -8,7 +8,7 @@
    },
    "outputs": [],
    "source": [
-    "import cloudViewer as o3d\n",
+    "import open3d as o3d\n",
     "import numpy as np\n",
     "import matplotlib.pyplot as plt\n",
     "import copy\n",
@@ -27,7 +27,7 @@
    "metadata": {},
    "source": [
     "# Voxelization\n",
-    "Point clouds and triangle meshes are very flexible, but irregular, geometry types. The voxel grid is another geometry type in 3D that is defined on a regular 3D grid, whereas a voxel can be thought of as the 3D counterpart to the pixel in 2D. Open3D has the geometry type `VoxelGrid` that can be used to work with voxel grids."
+    "Point clouds and triangle meshes are very flexible, but irregular, geometry types. The voxel grid is another geometry type in 3D that is defined on a regular 3D grid, whereas a voxel can be thought of as the 3D counterpart to the pixel in 2D. CloudViewer has the geometry type `VoxelGrid` that can be used to work with voxel grids."
    ]
   },
   {
@@ -35,7 +35,7 @@
    "metadata": {},
    "source": [
     "## From triangle mesh\n",
-    "Open3D provides the method `create_from_triangle_mesh` that creates a voxel grid from a triangle mesh. It returns a voxel grid where all voxels that are intersected by a triangle are set to `1`, all others are set to `0`. The argument `voxel_size` defines the resolution of the voxel grid."
+    "CloudViewer provides the method `create_from_triangle_mesh` that creates a voxel grid from a triangle mesh. It returns a voxel grid where all voxels that are intersected by a triangle are set to `1`, all others are set to `0`. The argument `voxel_size` defines the resolution of the voxel grid."
    ]
   },
   {
@@ -110,7 +110,7 @@
    "metadata": {},
    "source": [
     "## Voxel carving\n",
-    "The methods `create_from_point_cloud` and `create_from_triangle_mesh` create occupied voxels only on the surface of the geometry. It is however possible to carve a voxel grid from a number of depth maps or silhouettes. Open3D provides the methods `carve_depth_map` and `carve_silhouette` for voxel carving.\n",
+    "The methods `create_from_point_cloud` and `create_from_triangle_mesh` create occupied voxels only on the surface of the geometry. It is however possible to carve a voxel grid from a number of depth maps or silhouettes. CloudViewer provides the methods `carve_depth_map` and `carve_silhouette` for voxel carving.\n",
     "\n",
     "The code below demonstrates the usage by first rendering depthmaps from a geometry and using those depthmaps to carve a dense voxel grid. The result is a filled voxel grid of the given shape."
    ]

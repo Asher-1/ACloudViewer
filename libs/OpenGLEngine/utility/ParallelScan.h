@@ -31,15 +31,15 @@
 #include "tbb/parallel_scan.h"
 
 #ifdef CV_WINDOWS
-#if TBB_INTERFACE_VERSION >= 20000
-#include "pstl/execution"
-#include "pstl/numeric"
-#endif
+    #if TBB_INTERFACE_VERSION >= 20000
+    #include "pstl/execution"
+    #include "pstl/numeric"
+    #endif
 #else
-#if TBB_INTERFACE_VERSION >= 10000
-#include "pstl/execution"
-#include "pstl/numeric"
-#endif
+    #if TBB_INTERFACE_VERSION >= 10000
+    #include "pstl/execution"
+    #include "pstl/numeric"
+    #endif
 #endif
 
 namespace cloudViewer {
