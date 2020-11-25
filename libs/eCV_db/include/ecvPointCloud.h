@@ -52,6 +52,7 @@ namespace cloudViewer
 		class RGBDImage;
 		class VoxelGrid;
 
+#ifdef CV_RANSAC_SUPPORT
 		//! RANSAC_SD
 		class RansacParams
 		{
@@ -108,6 +109,7 @@ namespace cloudViewer
 		};
 
 		using RansacResults = std::vector<RansacResult>;
+#endif
 
 	}
 
@@ -1046,6 +1048,7 @@ public: // for python interface
 								   size_t min_points,
 								   bool print_progress = false) const;
 
+#ifdef CV_RANSAC_SUPPORT
 	/// \brief Cluster ccPointCloud using the RANSAC algorithm
 	/// Wrapper to Schnabel et al. library for automatic shape detection in point cloud
 	/// "Efficient RANSAC for Point-Cloud Shape Detection", Ruwen Schnabel, Roland Wahl, 
@@ -1059,6 +1062,7 @@ public: // for python interface
 	cloudViewer::geometry::RansacResults executeRANSAC(
 			const cloudViewer::geometry::RansacParams& params =
 			cloudViewer::geometry::RansacParams(), bool print_progress = false);
+#endif
 
 	/// \brief Segment ccPointCloud plane using the RANSAC algorithm.
 	///

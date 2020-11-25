@@ -23,7 +23,18 @@ target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::OpenGL)
 
 # Enforce 3rd party dependencies
 cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
-target_include_directories(${PROJECT_NAME} PRIVATE ${QRANSAC_INCLUDE_DIRS})
+
+option( OPTION_USE_RANSAC_LIB "Build with Ransac Lib" ON )
+if ( ${OPTION_USE_RANSAC_LIB} )
+	# ransac_sd.
+	#Causes the sub clouds to be generated as partial clones of original cloud
+	add_definitions( -DPOINTSWITHINDEX )
+	set( RANSAC_LIB_DIR "extern/RANSAC_SD_orig" CACHE PATH "RANSAC lib path" )
+	add_subdirectory( "${RANSAC_LIB_DIR}" )
+	target_include_directories(${PROJECT_NAME} PRIVATE ${QRANSAC_INCLUDE_DIRS})
+        target_link_libraries(${PROJECT_NAME} PUBLIC ${QRANSAC_LIBRARIES})
+        target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_RANSAC_SUPPORT )
+endif()
 
 # Add custom preprocessor definitions
 target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_DB_LIBRARY_BUILD )

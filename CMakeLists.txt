@@ -346,8 +346,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 function(cloudViewer_link_3rdparty_libraries target)
     target_link_libraries(${target} PRIVATE ${CloudViewer_3RDPARTY_PRIVATE_TARGETS})
     target_link_libraries(${target} PUBLIC ${CloudViewer_3RDPARTY_PUBLIC_TARGETS})
-    target_link_libraries(${target} PUBLIC ${3RDPARTY_LIBRARIES})
     include_directories(${3RDPARTY_INCLUDE_DIRS})
+    target_link_libraries(${target} PUBLIC ${3RDPARTY_LIBRARIES})
 
     foreach(dep IN LISTS CloudViewer_3RDPARTY_HEADER_TARGETS)
         if(TARGET ${dep})
@@ -475,7 +475,7 @@ endfunction()
 function(ShowAndAbortOnWarning trgt)
     if (BUILD_CUDA_MODULE)
         if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.2")
-            set(CUDA_FLAGS "--compiler-options -Wall --compiler-options -Werror --Werror cross-execution-space-call,reorder,deprecated-declarations")
+            set(CUDA_FLAGS "--compiler-options -Wall --Werror cross-execution-space-call,reorder,deprecated-declarations")
         else()
             set(CUDA_FLAGS "--Werror all-warnings,cross-execution-space-call,reorder,deprecated-declarations")
         endif()
@@ -485,9 +485,9 @@ function(ShowAndAbortOnWarning trgt)
 
     target_compile_options(${trgt} PRIVATE
         $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:MSVC>:/W3>>
-        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall -Werror>>
+        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall>>
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W3>>
-        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall -Werror>>
+        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall>>
         $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
     )
 endfunction()

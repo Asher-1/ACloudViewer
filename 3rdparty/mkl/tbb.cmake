@@ -25,9 +25,7 @@ set(STATIC_TBB_LIBRARIES tbb_static tbbmalloc_static)
 # 1. Checkout to a new branch
 # 2. Make changes, commit
 # 3. git format-patch master
-# 4. Copy the new patch file back to Open3d.
-
-
+# 4. Copy the new patch file back to CloudViewer.
 
 if(MSVC)
     ExternalProject_Add(

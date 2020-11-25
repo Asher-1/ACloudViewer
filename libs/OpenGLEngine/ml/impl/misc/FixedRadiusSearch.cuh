@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.cloudViewer.org
+// Copyright (c) 2020 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -261,7 +261,7 @@ __global__ void CountNeighborsKernel(
 
             Vec3<T> p(&points[idx * 3 + 0]);
             if (IGNORE_QUERY_POINT) {
-                if (query_pos == p) continue;
+                if ((query_pos == p).all()) continue;
             }
 
             T dist;
@@ -412,7 +412,7 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 
             Vec3<T> p(&points[idx * 3 + 0]);
             if (IGNORE_QUERY_POINT) {
-                if (query_pos == p) continue;
+                if ((query_pos == p).all()) continue;
             }
 
             T dist;

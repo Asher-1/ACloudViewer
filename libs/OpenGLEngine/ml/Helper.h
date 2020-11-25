@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.cloudViewer.org
+// Copyright (c) 2020 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,17 @@
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 
+#include <stdio.h>
+
+#include <stdexcept>
+#include <string>
+
+#ifdef BUILD_CUDA_MODULE
+/// TODO: Link CloudViewer and use CLOUDVIEWER_CUDA_CHECK instead.
+#define CLOUDVIEWER_ML_CUDA_CHECK(err) \
+    { cloudViewer::ml::__CLOUDVIEWER_ML_CUDA_CHECK((err), __FILE__, __LINE__); }
+#endif
+
 namespace cloudViewer {
 namespace ml {
 
@@ -60,6 +71,20 @@ inline int GetCUDACurrentDeviceTextureAlignment() {
                 std::string(cudaGetErrorString(err)));
     }
     return value;
+}
+
+/// TODO: Link CloudViewer and use CLOUDVIEWER_CUDA_CHECK instead.
+inline void __CLOUDVIEWER_ML_CUDA_CHECK(cudaError_t err,
+                                   	const char *file,
+                                   	int line,
+                                   	bool abort = true) {
+    if (err != cudaSuccess) {
+        fprintf(stderr, "%s:%d CUDA runtime error: %s\n", file, line,
+                cudaGetErrorString(err));
+        if (abort) {
+            exit(err);
+        }
+    }
 }
 #endif
 

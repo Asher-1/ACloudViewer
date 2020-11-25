@@ -9,6 +9,7 @@ tmp/
 *.tmp
 *.bak
 *.swp
+dist/
 .idea
 local.properties
 .classpath

@@ -1,4 +1,4 @@
-# -                        CloudViewer: www.erow.cn                            -
+# -                        CloudViewer: www.erow.cn                          -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #

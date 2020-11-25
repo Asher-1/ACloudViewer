@@ -1,11 +1,11 @@
-# Open3D: www.cloudViewer.org
+# CloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.open3d.org for details
 
 # examples/python/geometry/half_edge_mesh.py
 
 import numpy as np
-import cloudViewer as o3d
+import open3d as o3d
 
 
 def draw_geometries_with_back_face(geometries):

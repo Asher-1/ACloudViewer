@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.cloudViewer.org
+// Copyright (c) 2020 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -125,9 +125,9 @@ inline bool SameDeviceType(std::initializer_list<torch::Tensor> tensors) {
 // convenience function to check if all tensors have the same dtype
 inline bool SameDtype(std::initializer_list<torch::Tensor> tensors) {
     if (tensors.size()) {
-        auto device_type = tensors.begin()->dtype();
+        auto dtype = tensors.begin()->dtype();
         for (auto t : tensors) {
-            if (device_type != t.dtype()) {
+            if (dtype != t.dtype()) {
                 return false;
             }
         }

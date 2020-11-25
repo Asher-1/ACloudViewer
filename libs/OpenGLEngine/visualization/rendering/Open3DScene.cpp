@@ -59,7 +59,7 @@ std::shared_ptr<ccMesh> CreateAxisGeometry(double axis_length) {
     Eigen::Matrix4d transformation;
 
     mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius,
-                                                     cyl_height, cone_height);
+                                     cyl_height, cone_height);
     mesh_arrow->computeVertexNormals();
     mesh_arrow->paintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
     transformation << 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1;
@@ -67,7 +67,7 @@ std::shared_ptr<ccMesh> CreateAxisGeometry(double axis_length) {
     *mesh_frame += *mesh_arrow;
 
     mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius,
-                                                     cyl_height, cone_height);
+                                     cyl_height, cone_height);
     mesh_arrow->computeVertexNormals();
     mesh_arrow->paintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
     transformation << 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1;
@@ -116,6 +116,7 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
+    scene->SetBackgroundColor({1.0f, 1.0f, 1.0f, 1.0f});
 
     RecreateAxis(scene, bounds_, false);
 }
@@ -139,6 +140,10 @@ void Open3DScene::ShowSkybox(bool enable) {
 
 void Open3DScene::ShowAxes(bool enable) {
     auto scene = renderer_.GetScene(scene_);
+    if (enable && axis_dirty_) {
+        RecreateAxis(scene, bounds_, false);
+        axis_dirty_ = false;
+    }
     scene->ShowGeometry(kAxisObjectName, enable);
 }
 
@@ -160,7 +165,7 @@ void Open3DScene::ClearGeometry() {
     }
     geometries_.clear();
     bounds_ = ccBBox();
-    RecreateAxis(scene, bounds_, false);
+    axis_dirty_ = true;
 }
 
 void Open3DScene::AddGeometry(
@@ -191,8 +196,7 @@ void Open3DScene::AddGeometry(
         SetGeometryToLOD(info, lod_);
     }
 
-    // Bounding box may have changed, force recreation of axes
-    RecreateAxis(scene, bounds_, false);
+   axis_dirty_ = true;
 }
 
 void Open3DScene::AddGeometry(
@@ -232,8 +236,13 @@ void Open3DScene::AddGeometry(
         SetGeometryToLOD(info, lod_);
     }
 
-    // Bounding box may have changed, force recreation of axes
-    RecreateAxis(scene, bounds_, false);
+    // Axes may need to be recreated
+    axis_dirty_ = true;
+}
+
+bool Open3DScene::HasGeometry(const std::string& name) const {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->HasGeometry(name);
 }
 
 void Open3DScene::RemoveGeometry(const std::string& name) {
@@ -248,6 +257,19 @@ void Open3DScene::RemoveGeometry(const std::string& name) {
             scene->RemoveGeometry(g->second.low_name);
         }
         geometries_.erase(name);
+    }
+}
+
+void Open3DScene::ModifyGeometryMaterial(const std::string& name,
+                                         const Material& mat) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->OverrideMaterial(name, mat);
+    auto it = geometries_.find(name);
+    if (it != geometries_.end()) {
+        if (!it->second.fast_name.empty()) {
+            scene->OverrideMaterial(it->second.fast_name, mat);
+        }
+        // Don't want to override low_name, as that is a bounding box.
     }
 }
 
@@ -278,8 +300,7 @@ void Open3DScene::AddModel(const std::string& name,
         scene->ShowGeometry(name, true);
     }
 
-    // Bounding box may have changed, force recreation of axes
-    RecreateAxis(scene, bounds_, false);
+    axis_dirty_ = true;
 }
 
 void Open3DScene::UpdateMaterial(const Material& mat) {

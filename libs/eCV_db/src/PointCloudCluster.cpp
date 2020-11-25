@@ -41,6 +41,7 @@
 #include "ecvCone.h"
 #include "ecvTorus.h"
 
+#ifdef CV_RANSAC_SUPPORT
 // PrimitiveShapes/MiscLib
 #include <RansacShapeDetector.h>
 #include <PlanePrimitiveShapeConstructor.h>
@@ -53,6 +54,7 @@
 #include <CylinderPrimitiveShape.h>
 #include <ConePrimitiveShape.h>
 #include <TorusPrimitiveShape.h>
+#endif
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -145,6 +147,8 @@ std::vector<int> ccPointCloud::clusterDBSCAN(double eps,
 	return labels;
 }
 
+#ifdef CV_RANSAC_SUPPORT
+
 std::string geometry::RansacResult::getTypeName() const
 {
 	if (!this->primitive)
@@ -198,6 +202,7 @@ bool geometry::RansacResult::setDrawingPrecision(unsigned steps)
 
 	return prim->setDrawingPrecision(steps);
 }
+
 
 geometry::RansacResults ccPointCloud::executeRANSAC(
 	const geometry::RansacParams& params,
@@ -707,3 +712,4 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 
 	return group;
 }
+#endif

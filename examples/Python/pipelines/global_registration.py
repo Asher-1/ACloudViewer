@@ -60,12 +60,15 @@ def execute_global_registration(source_down, target_down, source_fpfh,
     print("   Since the downsampling voxel size is %.3f," % voxel_size)
     print("   we use a liberal distance threshold %.3f." % distance_threshold)
     result = cv3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-        source_down, target_down, source_fpfh, target_fpfh, distance_threshold,
-        cv3d.pipelines.registration.TransformationEstimationPointToPoint(False), 4, [
-            cv3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+        source_down, target_down, source_fpfh, target_fpfh, True,
+        distance_threshold,
+        cv3d.pipelines.registration.TransformationEstimationPointToPoint(False),
+        3, [
+            cv3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(
+                0.9),
             cv3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
                 distance_threshold)
-        ], cv3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 500))
+        ], cv3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.999))
     return result
 
 

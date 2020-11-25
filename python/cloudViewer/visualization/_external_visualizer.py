@@ -29,7 +29,7 @@ class ExternalVisualizer:
         self.timeout = timeout
 
     def set(self, obj=None, path='', time=0, layer='', connection=None):
-        """Send Open3D objects for visualization to the visualizer.
+        """Send CloudViewer objects for visualization to the visualizer.
 
         Example:
             To quickly send a single object just write::

@@ -718,8 +718,13 @@ void pybind_trianglemesh(py::module &m) {
                         "``numpy.asarray()`` to access data: List of "
                         "uvs denoted by the index of points forming "
                         "the triangle.")
+        .def_readwrite("triangle_material_ids",
+                   &ccMesh::triangle_material_ids_,
+                   "`int` array of shape ``(num_trianges, 1)``, use "
+                   "``numpy.asarray()`` to access data: material index "
+                   "associated with each triangle")
         .def_readwrite("textures", &ccMesh::textures_,
-                        "cloudViewer.geometry.Image: The texture images.");
+                   "cloudViewer.geometry.Image: The texture images.");
 
     docstring::ClassMethodDocInject(m, "ccMesh", "clone_mesh");
     docstring::ClassMethodDocInject(m, "ccMesh", "merge");

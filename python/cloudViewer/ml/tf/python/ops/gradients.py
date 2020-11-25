@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        Open3D: www.cloudViewer.org                            -
+# -                        CloudViewer: www.erow.cn                          -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.cloudViewer.org
+# Copyright (c) 2020 www.erow.cn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +29,9 @@ import tensorflow as _tf
 from tensorflow.python.framework import ops as _ops
 
 
-@_ops.RegisterGradient("Open3DVoxelPooling")
+@_ops.RegisterGradient("CloudViewerVoxelPooling")
 def _voxel_pooling_grad(op, grad_pos, grad_feat):
-    features_grad = _lib.open3d_voxel_pooling_grad(
+    features_grad = _lib.cloudviewer_voxel_pooling_grad(
         positions=op.inputs[0],
         features=op.inputs[1],
         voxel_size=op.inputs[2],
@@ -43,7 +43,7 @@ def _voxel_pooling_grad(op, grad_pos, grad_feat):
     return [None, features_grad, None]
 
 
-@_ops.RegisterGradient("Open3DContinuousConv")
+@_ops.RegisterGradient("CloudViewerContinuousConv")
 def _continuous_conv_grad(op, grad):
 
     filters = op.inputs[0]
@@ -57,7 +57,7 @@ def _continuous_conv_grad(op, grad):
     neighbors_importance = op.inputs[8]
     neighbors_row_splits = op.inputs[9]
 
-    filter_grad = _lib.open3d_continuous_conv_backprop_filter(
+    filter_grad = _lib.cloudviewer_continuous_conv_backprop_filter(
         align_corners=op.get_attr('align_corners'),
         interpolation=op.get_attr('interpolation'),
         coordinate_mapping=op.get_attr('coordinate_mapping'),
@@ -78,13 +78,13 @@ def _continuous_conv_grad(op, grad):
 
     # invert the neighbors list
     num_points = _tf.shape(inp_positions, out_type=_tf.int64)[0]
-    inv_neighbors_index, inv_neighbors_row_splits, inv_neighbors_importance = _lib.open3d_invert_neighbors_list(
+    inv_neighbors_index, inv_neighbors_row_splits, inv_neighbors_importance = _lib.cloudviewer_invert_neighbors_list(
         num_points, neighbors_index, neighbors_row_splits, neighbors_importance)
 
-    neighbors_importance_sum = _lib.open3d_reduce_subarrays_sum(
+    neighbors_importance_sum = _lib.cloudviewer_reduce_subarrays_sum(
         neighbors_importance, neighbors_row_splits)
 
-    inp_features_grad = _lib.open3d_continuous_conv_transpose(
+    inp_features_grad = _lib.cloudviewer_continuous_conv_transpose(
         align_corners=op.get_attr('align_corners'),
         interpolation=op.get_attr('interpolation'),
         coordinate_mapping=op.get_attr('coordinate_mapping'),
@@ -108,7 +108,7 @@ def _continuous_conv_grad(op, grad):
     return [filter_grad] + [None] * 4 + [inp_features_grad] + [None] * 4
 
 
-@_ops.RegisterGradient("Open3DContinuousConvTranspose")
+@_ops.RegisterGradient("CloudViewerContinuousConvTranspose")
 def _continuous_conv_transpose_grad(op, grad):
 
     filters = op.inputs[0]
@@ -125,7 +125,7 @@ def _continuous_conv_transpose_grad(op, grad):
     neighbors_importance = op.inputs[11]
     neighbors_row_splits = op.inputs[12]
 
-    filter_grad = _lib.open3d_continuous_conv_transpose_backprop_filter(
+    filter_grad = _lib.cloudviewer_continuous_conv_transpose_backprop_filter(
         align_corners=op.get_attr('align_corners'),
         interpolation=op.get_attr('interpolation'),
         coordinate_mapping=op.get_attr('coordinate_mapping'),
@@ -148,10 +148,10 @@ def _continuous_conv_transpose_grad(op, grad):
 
     # invert the neighbors list
     num_points = _tf.shape(inp_positions, out_type=_tf.int64)[0]
-    inv_neighbors_index, _, inv_neighbors_importance = _lib.open3d_invert_neighbors_list(
+    inv_neighbors_index, _, inv_neighbors_importance = _lib.cloudviewer_invert_neighbors_list(
         num_points, neighbors_index, neighbors_row_splits, neighbors_importance)
 
-    inp_features_grad = _lib.open3d_continuous_conv(
+    inp_features_grad = _lib.cloudviewer_continuous_conv(
         align_corners=op.get_attr('align_corners'),
         interpolation=op.get_attr('interpolation'),
         coordinate_mapping=op.get_attr('coordinate_mapping'),

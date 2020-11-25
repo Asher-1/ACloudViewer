@@ -43,7 +43,7 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_pointcloud(py::module &m) {
-
+#ifdef CV_RANSAC_SUPPORT
 	py::class_<geometry::RansacResult> ransacResult(
 		m, "RansacResult", "Ransac result.");
 	py::detail::bind_default_constructor<geometry::RansacResult>(
@@ -142,6 +142,7 @@ void pybind_pointcloud(py::module &m) {
 		py::cpp_function([](py::handle arg) -> std::string {
 			return "Enum class for Ransac Primitive types.";
 		}), py::none(), py::none(), "");
+#endif
 
 	py::class_<ccPointCloud, PyGeometry<ccPointCloud>,
 		std::shared_ptr<ccPointCloud>, ccGenericPointCloud, ccHObject>
@@ -270,6 +271,7 @@ void pybind_pointcloud(py::module &m) {
 			"Spatial Databases with Noise', 1996. Returns a list of point "
 			"labels, -1 indicates noise according to the algorithm.",
 			"eps"_a, "min_points"_a, "print_progress"_a = false)
+#ifdef CV_RANSAC_SUPPORT
 		.def("execute_ransac", &ccPointCloud::executeRANSAC,
 			"Cluster ccPointCloud using the RANSAC algorithm, "
 			"Wrapper to Schnabel et al. library for automatic"
@@ -278,6 +280,7 @@ void pybind_pointcloud(py::module &m) {
 			"Roland Wahl, Returns a list of ransac point labels"
 			" and shape entity(ccGenericPrimitive)",
 			"params"_a = geometry::RansacParams(), "print_progress"_a = false)
+#endif
 		.def("segment_plane", &ccPointCloud::segmentPlane,
 			"Segments a plane in the point cloud using the RANSAC "
 			"algorithm.",
