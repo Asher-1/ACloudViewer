@@ -30,10 +30,11 @@
 #include "core/Tensor.h"
 #include "core/TensorList.h"
 #include "t/io/PointCloudIO.h"
+#include "t/geometry/TensorListMap.h"
 #include <Console.h>
+#include <FileFormatIO.h>
 #include <FileSystem.h>
 #include <ProgressReporters.h>
-#include <FileFormatIO.h>
 
 namespace cloudViewer {
 namespace t {
@@ -258,7 +259,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     pointcloud.Clear();
 
-    // Add base attribtes.
+    // Add base attributes.
     if (state.name_to_attr_state_.count("x") != 0 &&
         state.name_to_attr_state_.count("y") != 0 &&
         state.name_to_attr_state_.count("z") != 0) {
@@ -298,14 +299,177 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     // Add rest of the attributes.
     for (auto const &it : state.name_to_attr_state_) {
-        pointcloud.SetPointAttr(it.second->name_,
-                                core::TensorList::FromTensor(it.second->data_));
+        pointcloud.SetPointAttr(
+                it.second->name_,
+                core::TensorList::FromTensor(
+                        it.second->data_.Reshape({element_size, 1})));
     }
     ply_close(ply_file);
     reporter.Finish();
 
     return true;
 }
+
+static e_ply_type GetPlyType(const core::Dtype &dtype) {
+    if (dtype == core::Dtype::UInt8) {
+        return PLY_UINT8;
+    } else if (dtype == core::Dtype::UInt16) {
+        return PLY_UINT16;
+    } else if (dtype == core::Dtype::Int32) {
+        return PLY_INT32;
+    } else if (dtype == core::Dtype::Float32) {
+        return PLY_FLOAT32;
+    } else if (dtype == core::Dtype::Float64) {
+        return PLY_FLOAT64;
+    } else if (dtype == core::Dtype::UInt8) {
+        return PLY_UCHAR;
+    } else if (dtype == core::Dtype::Int32) {
+        return PLY_INT32;
+    } else if (dtype == core::Dtype::Float32) {
+        return PLY_FLOAT;
+    } else {
+        return PLY_DOUBLE;
+    }
+}
+
+template <typename T>
+static const T *GetValue(core::Tensor t_attr, int pos) {
+    return static_cast<const T *>(t_attr.GetDataPtr());
+}
+
+bool WritePointCloudToPLY(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const cloudViewer::io::WritePointCloudOption &params) {
+    if (pointcloud.IsEmpty()) {
+        utility::LogWarning("Write PLY failed: point cloud has 0 points.");
+        return false;
+    }
+
+    geometry::TensorListMap tl_map = pointcloud.GetPointAttr();
+    long num_points = static_cast<long>(pointcloud.GetPoints().GetSize());
+
+    // Make sure all the attributes have same size.
+    if (!tl_map.IsSizeSynchronized()) {
+        for (auto const &it : tl_map) {
+            if (it.second.GetSize() != num_points) {
+                utility::LogWarning(
+                        "Write PLY failed: Points ({}) and {} ({}) have "
+                        "different lengths.",
+                        num_points, it.first, it.second.GetSize());
+                return false;
+            }
+        }
+    }
+
+    p_ply ply_file =
+            ply_create(filename.c_str(),
+                       bool(params.write_ascii) ? PLY_ASCII : PLY_LITTLE_ENDIAN,
+                       NULL, 0, NULL);
+    if (!ply_file) {
+        utility::LogWarning("Write PLY failed: unable to open file: {}.",
+                            filename);
+        return false;
+    }
+
+    ply_add_comment(ply_file, "Created by CloudViewer");
+    ply_add_element(ply_file, "vertex", num_points);
+
+    e_ply_type pointType = GetPlyType(pointcloud.GetPoints().GetDtype());
+    ply_add_property(ply_file, "x", pointType, pointType, pointType);
+    ply_add_property(ply_file, "y", pointType, pointType, pointType);
+    ply_add_property(ply_file, "z", pointType, pointType, pointType);
+
+    if (pointcloud.HasPointNormals()) {
+        e_ply_type pointNormalsType =
+                GetPlyType(pointcloud.GetPointNormals().GetDtype());
+        ply_add_property(ply_file, "nx", pointNormalsType, pointNormalsType,
+                         pointNormalsType);
+        ply_add_property(ply_file, "ny", pointNormalsType, pointNormalsType,
+                         pointNormalsType);
+        ply_add_property(ply_file, "nz", pointNormalsType, pointNormalsType,
+                         pointNormalsType);
+    }
+
+    if (pointcloud.HasPointColors()) {
+        e_ply_type pointColorType =
+                GetPlyType(pointcloud.GetPointColors().GetDtype());
+        ply_add_property(ply_file, "red", pointColorType, pointColorType,
+                         pointColorType);
+        ply_add_property(ply_file, "green", pointColorType, pointColorType,
+                         pointColorType);
+        ply_add_property(ply_file, "blue", pointColorType, pointColorType,
+                         pointColorType);
+    }
+
+    e_ply_type attributeType;
+    for (auto const &it : tl_map) {
+        if (it.first != "points" && it.first != "colors" &&
+            it.first != "normals") {
+            attributeType = GetPlyType(it.second.GetDtype());
+            ply_add_property(ply_file, it.first.c_str(), attributeType,
+                             attributeType, attributeType);
+        }
+    }
+
+    if (!ply_write_header(ply_file)) {
+        utility::LogWarning("Write PLY failed: unable to write header.");
+        ply_close(ply_file);
+        return false;
+    }
+
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(num_points);
+
+    for (int64_t i = 0; i < num_points; i++) {
+        DISPATCH_DTYPE_TO_TEMPLATE(pointcloud.GetPoints().GetDtype(), [&]() {
+            const scalar_t *data_ptr =
+                    GetValue<scalar_t>(pointcloud.GetPoints()[i], 0);
+            ply_write(ply_file, double(data_ptr[0]));
+            ply_write(ply_file, double(data_ptr[1]));
+            ply_write(ply_file, double(data_ptr[2]));
+        });
+        if (pointcloud.HasPointNormals()) {
+            DISPATCH_DTYPE_TO_TEMPLATE(
+                    pointcloud.GetPointNormals().GetDtype(), [&]() {
+                        const scalar_t *data_ptr = GetValue<scalar_t>(
+                                pointcloud.GetPointNormals()[i], 0);
+                        ply_write(ply_file, double(data_ptr[0]));
+                        ply_write(ply_file, double(data_ptr[1]));
+                        ply_write(ply_file, double(data_ptr[2]));
+                    });
+        }
+        if (pointcloud.HasPointColors()) {
+            DISPATCH_DTYPE_TO_TEMPLATE(
+                    pointcloud.GetPointColors().GetDtype(), [&]() {
+                        const scalar_t *data_ptr = GetValue<scalar_t>(
+                                pointcloud.GetPointColors()[i], 0);
+                        ply_write(ply_file, double(data_ptr[0]));
+                        ply_write(ply_file, double(data_ptr[1]));
+                        ply_write(ply_file, double(data_ptr[2]));
+                    });
+        }
+
+        for (auto const &it : tl_map) {
+            if (it.first != "points" && it.first != "colors" &&
+                it.first != "normals") {
+                DISPATCH_DTYPE_TO_TEMPLATE(it.second.GetDtype(), [&]() {
+                    const scalar_t *data_ptr =
+                            GetValue<scalar_t>(it.second[i], 0);
+                    ply_write(ply_file, double(data_ptr[0]));
+                });
+            }
+        }
+
+        if (i % 1000 == 0) {
+            reporter.Update(i);
+        }
+    }
+
+    reporter.Finish();
+    ply_close(ply_file);
+    return true;
+}
+
 
 }  // namespace io
 }  // namespace t

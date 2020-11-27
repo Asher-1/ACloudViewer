@@ -24,22 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/nns/faiss.h"
+#include "core/nns/NNSIndex.h"
 
-#include "core/nns/FaissIndex.h"
-#include "pybind/core/core.h"
-#include "pybind/docstring.h"
-#include "pybind/cloudViewer_pybind.h"
-#include "pybind/pybind_utils.h"
+#include "core/CoreUtil.h"
+#include <Console.h>
 
 namespace cloudViewer {
 namespace core {
 namespace nns {
 
-void pybind_core_faiss(py::module &m) {
-    py::module m_faiss = m.def_submodule("nns");
-    m_faiss.def("test_faiss_integration", &TestFaissIntegration);
+int NNSIndex::GetDimension() const {
+    SizeVector shape = dataset_points_.GetShape();
+    return static_cast<int>(shape[1]);
 }
+
+size_t NNSIndex::GetDatasetSize() const {
+    SizeVector shape = dataset_points_.GetShape();
+    return static_cast<size_t>(shape[0]);
+}
+
+Dtype NNSIndex::GetDtype() const { return dataset_points_.GetDtype(); }
+
 }  // namespace nns
 }  // namespace core
 }  // namespace cloudViewer
