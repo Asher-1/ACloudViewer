@@ -65,4 +65,4 @@ std::shared_ptr<ccPointCloud> ECV_DB_LIB_API ComputeISSKeypoints(const ccPointCl
 
 }  // namespace keypoint
 }  // namespace geometry
-}  // namespace CloudViewer
+}  // namespace cloudViewer

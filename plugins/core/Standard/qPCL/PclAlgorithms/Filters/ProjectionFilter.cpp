@@ -39,7 +39,7 @@ ProjectionFilter::ProjectionFilter()
 										 tr("Projection Filter"),
 										 tr("Projection Filter for the selected entity"),
 										 ":/toolbar/PclAlgorithms/icons/filter_projection.png"))
-	, m_dialog(0)
+    , m_dialog(nullptr)
 	, m_projectionMode(true)
 	, m_coefficientA(0.0f)
 	, m_coefficientB(0.0f)
@@ -58,7 +58,7 @@ ProjectionFilter::ProjectionFilter()
 ProjectionFilter::~ProjectionFilter()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+    if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

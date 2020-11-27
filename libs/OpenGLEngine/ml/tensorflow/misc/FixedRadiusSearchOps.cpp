@@ -32,7 +32,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudViewerFixedRadiusSearch")
+REGISTER_OP("CloudviewerFixedRadiusSearch")
         .Attr("T: {float, double}")
         .Attr("metric: {'L1', 'L2', 'Linf'} = 'L2'")
         .Attr("ignore_query_point: bool = false")

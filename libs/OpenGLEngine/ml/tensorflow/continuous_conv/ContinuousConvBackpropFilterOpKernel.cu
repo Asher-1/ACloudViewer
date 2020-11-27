@@ -131,7 +131,7 @@ private:
 
 #define REG_KB(type, indextype)                                 \
     REGISTER_KERNEL_BUILDER(                                    \
-            Name("CloudViewerContinuousConvBackpropFilter")     \
+            Name("CloudviewerContinuousConvBackpropFilter")     \
                     .Device(DEVICE_GPU)                         \
                     .TypeConstraint<type>("TReal")              \
                     .TypeConstraint<indextype>("TIndex"),       \

@@ -31,7 +31,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudViewerContinuousConvTransposeBackpropFilter")
+REGISTER_OP("CloudviewerContinuousConvTransposeBackpropFilter")
         .Attr("TReal: {float, double}")
         .Attr("TIndex: {int32, int64}")
         .Attr("align_corners: bool = true")

@@ -418,7 +418,7 @@ vtkSmartPointer<vtkDataArray> cvGenericFilter::getActorScalars(vtkSmartPointer<v
 
 int cvGenericFilter::getDefaultScalarInterpolationForDataSet(vtkDataSet * data)
 {
-	vtkPolyData* polyData = vtkPolyData::SafeDownCast(data); // Check that polyData != NULL in case of segfault
+    vtkPolyData* polyData = vtkPolyData::SafeDownCast(data); // Check that polyData != nullptr in case of segfault
 	return (polyData && polyData->GetNumberOfCells() != polyData->GetNumberOfVerts());
 }
 

@@ -42,7 +42,7 @@ EuclideanClusterSegmentation::EuclideanClusterSegmentation()
 										 tr("EuclideanCluster Segmentation"),
 										 tr("EuclideanCluster Segmentation from clouds"),
 										 ":/toolbar/PclAlgorithms/icons/EuclideanClusterSegmentation.png"))
-	, m_dialog(0)
+	, m_dialog(nullptr)
 	, m_randomClusterColor(false)
 	, m_clusterTolerance(0.02f)
 	, m_minClusterSize(100)
@@ -52,7 +52,7 @@ EuclideanClusterSegmentation::EuclideanClusterSegmentation()
 EuclideanClusterSegmentation::~EuclideanClusterSegmentation()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

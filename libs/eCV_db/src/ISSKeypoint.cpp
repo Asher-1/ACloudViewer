@@ -150,4 +150,4 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
 
 }  // namespace keypoint
 }  // namespace geometry
-}  // namespace CloudViewer
+}  // namespace cloudViewer

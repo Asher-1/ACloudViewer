@@ -99,7 +99,7 @@ private:
 };
 
 #define REG_KB(type)                                                 \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerVoxelize")              \
+    REGISTER_KERNEL_BUILDER(Name("CloudviewerVoxelize")              \
                                     .Device(DEVICE_GPU)              \
                                     .TypeConstraint<type>("T")       \
                                     .HostMemory("voxel_size")        \

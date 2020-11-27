@@ -499,14 +499,10 @@ function(CopyDLLToDirectory trgt)
             VERBATIM)
     if (${BUILD_GUI})
         # Install dependence lib files
-        if(APPLE OR UNIX)
-	        foreach( filename "$<TARGET_FILE:${trgt}>" )
-		        install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin" "" )
-	        endforeach()
-        else ()
+        if(WIN32)
     	    foreach( filename "$<TARGET_FILE:${trgt}>" )
 		        install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin/${COLOUDVIEWER_APP_DIR_NAME}" "" )
-	        endforeach()
+            endforeach()
         endif()
     endif()
 endfunction()
@@ -554,7 +550,7 @@ link_directories(${3RDPARTY_INSTALL_PREFIX}/lib)
 
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the
-# Open3D_3RDPARTY_*_TARGETS variables we use in open3d_link_3rdparty_libraries
+# CloudViewer_3RDPARTY_*_TARGETS variables we use in cloudViewer_link_3rdparty_libraries
 include(3rdparty/find_dependencies.cmake)
 
 # RPATH Linux/Unix: (dynamic) libs are put in a subdir of prefix/lib,
@@ -580,7 +576,7 @@ if( WIN32 )
 	# (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
 	set( INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER} )
 elseif( UNIX AND NOT APPLE )
-	set( INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX}/bin )
+        set( INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX} )
 endif()
 
 # Load advanced scripts

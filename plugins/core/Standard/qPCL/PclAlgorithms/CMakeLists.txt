@@ -54,20 +54,20 @@ if (USE_PCL_BACKEND)
                     ${recognition_list})
 
 	target_include_directories( ${PROJECT_NAME}
-			PUBLIC
-				${PCL_INCLUDE_DIRS}
+                PUBLIC
+                        ${PCL_INCLUDE_DIRS}
 	)
 	if( CMAKE_VERSION VERSION_LESS 3.13 )
-			link_directories( ${PCL_LIBRARY_DIRS} )
+            link_directories( ${PCL_LIBRARY_DIRS} )
 	else()
-			target_link_directories( ${PROJECT_NAME}
-					PUBLIC
-						${PCL_LIBRARY_DIRS}
-			)
+            target_link_directories( ${PROJECT_NAME}
+                            PUBLIC
+                                    ${PCL_LIBRARY_DIRS}
+            )
 	endif()
 	add_definitions( ${PCL_DEFINITIONS} )
 	target_link_libraries( ${PROJECT_NAME}
-						   ${PCL_LIBRARIES}
-						   CVPluginAPI
-						   QPCL_ENGINE_LIB )
+                               ${PCL_LIBRARIES}
+                               CVPluginAPI
+                               QPCL_ENGINE_LIB )
 endif()	

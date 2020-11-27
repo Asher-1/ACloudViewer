@@ -57,7 +57,7 @@ public:
 };
 
 #define REG_KB(type, typefeat)                                          \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerVoxelPoolingGrad")              \
+    REGISTER_KERNEL_BUILDER(Name("CloudviewerVoxelPoolingGrad")              \
                                     .Device(DEVICE_CPU)                 \
                                     .TypeConstraint<type>("TReal")      \
                                     .TypeConstraint<typefeat>("TFeat"), \

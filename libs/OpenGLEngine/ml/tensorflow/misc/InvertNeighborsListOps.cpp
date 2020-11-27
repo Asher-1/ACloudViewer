@@ -32,7 +32,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudViewerInvertNeighborsList")
+REGISTER_OP("CloudviewerInvertNeighborsList")
         .Attr("TIndex: {int32}")
         .Attr("TAttr: {int32, int64, float, double}")
         .Input("num_points: int64")

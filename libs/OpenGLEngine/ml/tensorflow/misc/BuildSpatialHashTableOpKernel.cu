@@ -91,7 +91,7 @@ private:
 };
 
 #define REG_KB(type)                                                       \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerBuildSpatialHashTable")       \
+    REGISTER_KERNEL_BUILDER(Name("CloudviewerBuildSpatialHashTable")       \
                                     .Device(DEVICE_GPU)                    \
                                     .TypeConstraint<type>("T")             \
                                     .HostMemory("radius")                  \

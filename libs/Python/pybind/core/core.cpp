@@ -86,7 +86,7 @@ py::array TensorToPyArray(const Tensor& tensor) {
     // See PyTorch's torch/csrc/Module.cpp
     auto capsule_destructor = [](PyObject* data) {
         Tensor* base_tensor = reinterpret_cast<Tensor*>(
-                PyCapsule_GetPointer(data, "CloudViewer::Tensor"));
+                PyCapsule_GetPointer(data, "cloudViewer::Tensor"));
         if (base_tensor) {
             delete base_tensor;
         } else {
@@ -94,7 +94,7 @@ py::array TensorToPyArray(const Tensor& tensor) {
         }
     };
 
-    py::capsule base_tensor_capsule(base_tensor, "CloudViewer::Tensor",
+    py::capsule base_tensor_capsule(base_tensor, "cloudViewer::Tensor",
                                     capsule_destructor);
     return py::array(py_dtype, py_shape, py_strides, tensor.GetDataPtr(),
                      base_tensor_capsule);

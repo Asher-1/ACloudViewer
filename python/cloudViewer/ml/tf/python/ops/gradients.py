@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                          -
+# -                        Cloudviewer: www.erow.cn                          -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
@@ -29,7 +29,7 @@ import tensorflow as _tf
 from tensorflow.python.framework import ops as _ops
 
 
-@_ops.RegisterGradient("CloudViewerVoxelPooling")
+@_ops.RegisterGradient("CloudviewerVoxelPooling")
 def _voxel_pooling_grad(op, grad_pos, grad_feat):
     features_grad = _lib.cloudviewer_voxel_pooling_grad(
         positions=op.inputs[0],
@@ -43,7 +43,7 @@ def _voxel_pooling_grad(op, grad_pos, grad_feat):
     return [None, features_grad, None]
 
 
-@_ops.RegisterGradient("CloudViewerContinuousConv")
+@_ops.RegisterGradient("CloudviewerContinuousConv")
 def _continuous_conv_grad(op, grad):
 
     filters = op.inputs[0]
@@ -108,7 +108,7 @@ def _continuous_conv_grad(op, grad):
     return [filter_grad] + [None] * 4 + [inp_features_grad] + [None] * 4
 
 
-@_ops.RegisterGradient("CloudViewerContinuousConvTranspose")
+@_ops.RegisterGradient("CloudviewerContinuousConvTranspose")
 def _continuous_conv_transpose_grad(op, grad):
 
     filters = op.inputs[0]

@@ -102,4 +102,4 @@ void pybind_core_hashmap(py::module& m) {
     hashmap.def("size", &Hashmap::Size);
 }
 }  // namespace core
-}  // namespace CloudViewer
+}  // namespace cloudViewer

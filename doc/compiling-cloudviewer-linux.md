@@ -54,7 +54,15 @@ If Python binding is not needed, you can turn it off by ``-DBUILD_PYTHON_MODULE=
 
     mkdir build
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
+    cmake -DCMAKE_BUILD_TYPE=Release \
+      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/bin/qmake \
+      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/lib/cmake  \
+      	../ErowCloudViewer
+
+    cmake -DCMAKE_BUILD_TYPE=Release \
+      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
+      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake  \
+      	-DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
 
 The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
 CloudViewer to a user location. In the absence of this argument CloudViewer will be

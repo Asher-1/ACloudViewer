@@ -30,7 +30,7 @@
 using namespace tensorflow;
 using namespace cloudViewer::ml::contrib;
 
-REGISTER_OP("CloudViewerBatchGridSubsampling")
+REGISTER_OP("CloudviewerBatchGridSubsampling")
         .Input("points: float")
         .Input("batches: int32")
         .Input("dl: float")
@@ -139,5 +139,5 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudViewerBatchGridSubsampling").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("CloudviewerBatchGridSubsampling").Device(DEVICE_CPU),
                         BatchGridSubsamplingOp);

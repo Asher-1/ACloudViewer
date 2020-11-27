@@ -151,7 +151,7 @@ namespace ply_trianglemesh_reader {
 			return 0;
 		}
 
-		ply_get_argument_property(argument, NULL, &length, &index);
+        ply_get_argument_property(argument, nullptr, &length, &index);
 		if (index == -1) {
 			state_ptr->face.clear();
 		}
@@ -388,7 +388,7 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
 							 bool print_progress) {
 	using namespace ply_trianglemesh_reader;
 
-	p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
+    p_ply ply_file = ply_open(filename.c_str(), nullptr, 0, nullptr);
 	if (!ply_file) {
 		utility::LogWarning("Read PLY failed: unable to open file: {}",
 			filename);
@@ -485,7 +485,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
 
 	p_ply ply_file = ply_create(filename.c_str(),
 		write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN,
-		NULL, 0, NULL);
+        nullptr, 0, nullptr);
 	if (!ply_file) {
 		utility::LogWarning("Write PLY failed: unable to open file: {}",
 			filename);
@@ -907,7 +907,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
 		}
 
 		// NOTE: We will unconditionally copy the following parameters because
-		// the TinyObj defaults match Open3D's internal defaults
+        // the TinyObj defaults match CloudViewer's internal defaults
 		meshMaterial.baseClearCoat = material.clearcoat_thickness;
 		meshMaterial.baseClearCoatRoughness = material.clearcoat_roughness;
 		meshMaterial.baseAnisotropy = material.anisotropy;
@@ -1675,7 +1675,7 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
 	size_t num_of_triangles = mesh.size();
 
 	float float_temp;
-	unsigned char* temp = NULL;
+    unsigned char* temp = nullptr;
 
 	tinygltf::BufferView indices_buffer_view_array;
 	bool save_indices_as_uint32 = num_of_vertices > 65536;

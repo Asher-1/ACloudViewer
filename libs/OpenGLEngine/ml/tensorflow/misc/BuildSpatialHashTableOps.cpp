@@ -32,7 +32,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudViewerBuildSpatialHashTable")
+REGISTER_OP("CloudviewerBuildSpatialHashTable")
         .Attr("T: {float, double}")
         .Attr("max_hash_table_size: int = 33554432")
         .Input("points: T")

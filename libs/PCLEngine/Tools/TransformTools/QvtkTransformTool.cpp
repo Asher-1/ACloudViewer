@@ -374,7 +374,7 @@ void QvtkTransformTool::getOutput(std::vector<ccHObject*>& out)
 	for (vtkActor* actor : m_modelActors)
 	{
 		vtkPolyData* polydata = reinterpret_cast<vtkPolyDataMapper*>(actor->GetMapper())->GetInput();
-		if (NULL == polydata)
+        if (nullptr == polydata)
 		{
 			out.push_back(nullptr);
 			index++;

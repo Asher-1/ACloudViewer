@@ -50,7 +50,7 @@ MLSSmoothingUpsampling::MLSSmoothingUpsampling()
 MLSSmoothingUpsampling::~MLSSmoothingUpsampling()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+    if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 
 	if (m_parameters)
@@ -60,7 +60,7 @@ MLSSmoothingUpsampling::~MLSSmoothingUpsampling()
 int MLSSmoothingUpsampling::openInputDialog()
 {
 	if (!m_dialog)
-		m_dialog = new MLSDialog(m_app ? m_app->getMainWindow() : 0);
+        m_dialog = new MLSDialog(m_app ? m_app->getMainWindow() : nullptr);
 
 	return m_dialog->exec() ? 1 : 0;
 }

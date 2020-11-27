@@ -99,7 +99,8 @@ std::string GetRegularizedDirectoryName(const std::string &directory) {
 
 std::string GetWorkingDirectory() {
     char buff[PATH_MAX + 1];
-    getcwd(buff, PATH_MAX + 1);
+    char* info = getcwd(buff, PATH_MAX + 1);
+    CVLib::utility::LogInfo(info);
     return std::string(buff);
 }
 
@@ -250,7 +251,7 @@ bool ListDirectory(const std::string& directory,
         return false;
     }
     filenames.clear();
-    while ((ent = readdir(dir)) != NULL) {
+    while ((ent = readdir(dir)) != nullptr) {
         const std::string file_name = ent->d_name;
         if (file_name[0] == '.') continue;
         std::string full_file_name =
@@ -278,7 +279,7 @@ bool ListFilesInDirectory(const std::string &directory,
         return false;
     }
     filenames.clear();
-    while ((ent = readdir(dir)) != NULL) {
+    while ((ent = readdir(dir)) != nullptr) {
         const std::string file_name = ent->d_name;
         if (file_name[0] == '.') continue;
         std::string full_file_name =
@@ -407,7 +408,7 @@ bool FReadToBuffer(const std::string& path,
         }
     }
 
-    const size_t filesize = ftell(file);
+    const size_t filesize = static_cast<std::size_t>(ftell(file));
     rewind(file);  // reset file pointer back to beginning
 
     bytes.resize(filesize);

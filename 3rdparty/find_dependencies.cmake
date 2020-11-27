@@ -1110,12 +1110,15 @@ if (WITH_FAISS)
 endif()
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
 
+# ransac_sd.
+#Causes the sub clouds to be generated as partial clones of original cloud
+add_definitions( -DPOINTSWITHINDEX )
+set( RANSAC_LIB_DIR "${CloudViewer_3RDPARTY_DIR}/RANSAC_SD_orig" CACHE PATH "RANSAC lib path" )
+add_subdirectory( "${RANSAC_LIB_DIR}" )
+
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${GLFW_INCLUDE_DIRS}
      ${PNG_INCLUDE_DIRS}
-     #${rply_INCLUDE_DIRS}
-	 #${QRANSAC_INCLUDE_DIRS}
-	 #${tinyfiledialogs_INCLUDE_DIRS}
 )
 
 # set 3RDPARTY_LIBRARY_DIRS

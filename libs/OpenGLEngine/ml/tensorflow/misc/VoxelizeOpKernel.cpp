@@ -72,7 +72,7 @@ public:
 };
 
 #define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerVoxelize")         \
+    REGISTER_KERNEL_BUILDER(Name("CloudviewerVoxelize")         \
                                     .Device(DEVICE_CPU)         \
                                     .TypeConstraint<type>("T"), \
                             VoxelizeOpKernelCPU<type>);

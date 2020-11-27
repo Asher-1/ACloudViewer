@@ -59,20 +59,20 @@ vtkCommandOptions::vtkCommandOptions()
 //----------------------------------------------------------------------------
 vtkCommandOptions::~vtkCommandOptions()
 {
-  this->SetXMLConfigFile(0);
+  this->SetXMLConfigFile(nullptr);
 
   // Remove internals
-  this->SetUnknownArgument(0);
-  this->SetErrorMessage(0);
+  this->SetUnknownArgument(nullptr);
+  this->SetErrorMessage(nullptr);
   this->CleanArgcArgv();
   delete this->Internals;
 
-  this->SetApplicationPath(NULL);
+  this->SetApplicationPath(nullptr);
 
   if (this->XMLParser)
   {
     this->XMLParser->Delete();
-    this->XMLParser = 0;
+    this->XMLParser = nullptr;
   }
 }
 

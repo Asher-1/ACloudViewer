@@ -32,7 +32,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudViewerKnnSearch")
+REGISTER_OP("CloudviewerKnnSearch")
         .Attr("T: {float, double}")
         .Attr("metric: {'L1', 'L2'} = 'L2'")
         .Attr("ignore_query_point: bool = false")

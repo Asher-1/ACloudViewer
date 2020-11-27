@@ -31,7 +31,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudViewerVoxelPooling")
+REGISTER_OP("CloudviewerVoxelPooling")
         .Attr("TReal: {float, double}")  // type for the point positions
         .Attr("TFeat: {float, double, int32, int64}")  // type for the features
         .Attr("position_fn: {'average', 'nearest_neighbor', 'center'} = "
@@ -153,7 +153,7 @@ pooled_features: The output point features with shape [M,channnels] and M <= N.
 
 )doc");
 
-REGISTER_OP("CloudViewerVoxelPoolingGrad")
+REGISTER_OP("CloudviewerVoxelPoolingGrad")
         .Attr("TReal: {float, double}")  // type for the point positions
         .Attr("TFeat: {float, double, int32, int64}")  // type for the features
         .Attr("position_fn: {'average', 'nearest_neighbor', 'center'} = "

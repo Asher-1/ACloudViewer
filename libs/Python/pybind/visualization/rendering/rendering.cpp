@@ -233,8 +233,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("shader", &Material::shader);
 
     // ---- Scene ----
-    py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene"
-            "Low-level rendering scene");
+    py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
+                                                   "Low-level rendering scene");
     scene.def("add_camera", &Scene::AddCamera, "Adds a camera to the scene")
             .def("remove_camera", &Scene::RemoveCamera,
                  "Removes the camera with the given name")
@@ -319,9 +319,7 @@ void pybind_rendering_classes(py::module &m) {
                  "Shows or hides the geometry with the given name")
             .def("update_material", &Open3DScene::UpdateMaterial,
                  "Applies the passed material to all the geometries")
-            .def(
-                    "set_view_size",
-                    [](Open3DScene *scene, int width, int height) {
+            .def("set_view_size", [](Open3DScene *scene, int width, int height) {
                         scene->GetView()->SetViewport(0, 0, width, height);
                     },
                     "Sets the view size. This should not be used except for "
