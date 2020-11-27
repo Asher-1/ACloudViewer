@@ -148,6 +148,23 @@ install_python_dependencies() {
     fi
 }
 
+install_azure_kinect_dependencies() {
+
+    echo "Installing Azure Kinect dependencies"
+
+    SUDO=${SUDO:-sudo}
+    curl https://packages.microsoft.com/keys/microsoft.asc | $SUDO apt-key add -
+    $SUDO apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
+
+    # Accept EULA using a workaround
+    # https://github.com/microsoft/Azure-Kinect-Sensor-SDK/issues/1190#issuecomment-618473882
+    echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' | $SUDO debconf-set-selections
+    echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' | $SUDO debconf-set-selections
+
+    $SUDO apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
+}
+
+
 build_all() {
 
     mkdir -p build
@@ -199,6 +216,13 @@ build_pip_conda_package() {
     else
         echo "Building for a new CloudViewer release"
     fi
+    if [[ "build_azure_kinect" =~ ^($options)$ ]]; then
+        echo "Azure Kinect enabled in Python wheel."
+        BUILD_AZURE_KINECT=ON
+    else
+        echo "Azure Kinect disabled in Python wheel."
+        BUILD_AZURE_KINECT=OFF
+    fi
     set -u
 
     echo
@@ -207,6 +231,7 @@ build_pip_conda_package() {
     cd build # PWD=CloudViewer/build
     cmakeOptions=(-DBUILD_SHARED_LIBS=OFF
         -DDEVELOPER_BUILD="$DEVELOPER_BUILD"
+ 	-DBUILD_AZURE_KINECT="$BUILD_AZURE_KINECT"
         -DBUILD_TENSORFLOW_OPS=ON
         -DBUILD_PYTORCH_OPS=ON
         -DBUILD_RPC_INTERFACE=ON

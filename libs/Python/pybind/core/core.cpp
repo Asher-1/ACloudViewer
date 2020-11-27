@@ -29,7 +29,7 @@
 #include <Console.h>
 
 #include "core/Tensor.h"
-#include "pybind/core/nns/faiss.h"
+#include <Console.h>
 #include "pybind/core/nns/nearest_neighbor_search.h"
 #include "pybind/cloudViewer_pybind.h"
 #include "pybind/pybind_utils.h"
@@ -145,9 +145,6 @@ void pybind_core(py::module& m) {
     // opn3d::core::nns namespace.
     nns::pybind_core_nns(m_core);
 
-#ifdef WITH_FAISS
-    nns::pybind_core_faiss(m_core);
-#endif
 }
 
 }  // namespace core
