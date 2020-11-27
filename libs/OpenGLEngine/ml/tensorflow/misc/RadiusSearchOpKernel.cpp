@@ -186,7 +186,7 @@ public:
 };
 
 #define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerRadiusSearch")          \
+    REGISTER_KERNEL_BUILDER(Name("CloudviewerRadiusSearch")          \
                                     .Device(DEVICE_CPU)         \
                                     .TypeConstraint<type>("T"), \
                             RadiusSearchOpKernelCPU<type>);

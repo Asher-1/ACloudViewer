@@ -41,7 +41,7 @@ GreedyTriangulation::GreedyTriangulation()
 										 tr("Greedy Triangulation"),
 										 tr("Greedy Triangulation from clouds"),
 										 ":/toolbar/PclAlgorithms/icons/greedy_triangulation.png"))
-	, m_dialog(0)
+	, m_dialog(nullptr)
 	, m_normalSearchRadius(10)
 	, m_knn_radius(10)
 	, m_useKnn(false)
@@ -58,7 +58,7 @@ GreedyTriangulation::GreedyTriangulation()
 GreedyTriangulation::~GreedyTriangulation()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

@@ -754,7 +754,7 @@ void pybind_geometry(py::module &m) {
 	pybind_primitives(m_submodule);
 	pybind_facet(m_submodule);
 	pybind_polyline(m_submodule);
-	//pybind_halfedgetrianglemesh(m_submodule);
+    pybind_halfedgetrianglemesh(m_submodule);
 	pybind_image(m_submodule);
 	pybind_tetramesh(m_submodule);
 	pybind_cloudbase_methods(m_submodule);

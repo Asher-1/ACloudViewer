@@ -87,7 +87,7 @@ public:
 
 #define REG_KB(type, indextype)                           \
     REGISTER_KERNEL_BUILDER(                              \
-            Name("CloudViewerContinuousConvTranspose")         \
+            Name("CloudviewerContinuousConvTranspose")         \
                     .Device(DEVICE_CPU)                   \
                     .TypeConstraint<type>("TReal")        \
                     .TypeConstraint<indextype>("TIndex"), \

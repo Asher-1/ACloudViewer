@@ -30,7 +30,7 @@
 using namespace tensorflow;
 using namespace cloudViewer::ml::contrib;
 
-REGISTER_OP("CloudViewerOrderedNeighbors")
+REGISTER_OP("CloudviewerOrderedNeighbors")
         .Input("queries: float")
         .Input("supports: float")
         .Input("radius: float")
@@ -106,5 +106,5 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudViewerOrderedNeighbors").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("CloudviewerOrderedNeighbors").Device(DEVICE_CPU),
                         OrderedNeighborsOp);

@@ -114,7 +114,7 @@ bool Visualizer::CreateVisualizerWindow(
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, visible ? 1 : 0);
 
-    window_ = glfwCreateWindow(width, height, window_name_.c_str(), NULL, NULL);
+    window_ = glfwCreateWindow(width, height, window_name_.c_str(), nullptr, nullptr);
     if (!window_) {
         utility::LogWarning("Failed to create window");
         return false;
@@ -231,7 +231,7 @@ bool Visualizer::InitRenderOption() {
 }
 
 void Visualizer::UpdateWindowTitle() {
-    if (window_ != NULL) {
+    if (window_) {
         glfwSetWindowTitle(window_, window_name_.c_str());
     }
 }
@@ -401,7 +401,7 @@ bool Visualizer::RemoveGeometry(
         return false;
     }
     glfwMakeContextCurrent(window_);
-    std::shared_ptr<glsl::GeometryRenderer> geometry_renderer_delete = NULL;
+    std::shared_ptr<glsl::GeometryRenderer> geometry_renderer_delete = nullptr;
     for (auto &geometry_renderer_ptr : geometry_renderer_ptrs_) {
         if (geometry_renderer_ptr->GetGeometry() == geometry_ptr)
             geometry_renderer_delete = geometry_renderer_ptr;

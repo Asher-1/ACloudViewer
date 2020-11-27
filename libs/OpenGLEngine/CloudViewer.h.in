@@ -39,6 +39,7 @@
 #include "CVLog.h"
 
 #include "ecvMesh.h"
+#include "ecvHalfEdgeMesh.h"
 #include "LineSet.h"
 #include "Octree.h"
 #include "Image.h"

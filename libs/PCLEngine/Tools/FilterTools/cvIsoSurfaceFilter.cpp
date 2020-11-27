@@ -118,7 +118,7 @@ ccHObject * cvIsoSurfaceFilter::getOutput()
 		polydata = m_contourFilter->GetOutput();
 	}
 	 
-	if (NULL == polydata) return nullptr;
+    if (nullptr == polydata) return nullptr;
 
 	ccHObject* result = new ccHObject();
 

@@ -35,7 +35,7 @@ struct vtkPVTrivialProducerStaticInternal
 
   bool HasKey(const char* key)
   {
-    if (key == NULL)
+    if (key == nullptr)
     {
       return false;
     }

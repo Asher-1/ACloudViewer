@@ -32,7 +32,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudViewerVoxelize")
+REGISTER_OP("CloudviewerVoxelize")
         .Attr("T: {float, double}")  // type for the point positions
         .Attr("max_points_per_voxel: int = 9223372036854775807")
         .Attr("max_voxels: int = 9223372036854775807")

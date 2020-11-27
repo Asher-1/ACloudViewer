@@ -101,7 +101,7 @@ private:
 };
 
 #define REG_KB(type, attrtype)                                         \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerInvertNeighborsList")          \
+    REGISTER_KERNEL_BUILDER(Name("CloudviewerInvertNeighborsList")          \
                                     .Device(DEVICE_GPU)                \
                                     .TypeConstraint<type>("TIndex")    \
                                     .TypeConstraint<attrtype>("TAttr") \

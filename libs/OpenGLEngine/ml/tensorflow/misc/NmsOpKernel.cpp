@@ -54,7 +54,7 @@ public:
 
 #define REG_KB(type)                                                        \
     REGISTER_KERNEL_BUILDER(                                                \
-            Name("CloudViewerNms").Device(DEVICE_CPU).TypeConstraint<type>("T"), \
+            Name("CloudviewerNms").Device(DEVICE_CPU).TypeConstraint<type>("T"), \
             NmsOpKernelCPU);
 REG_KB(float)
 #undef REG_KB

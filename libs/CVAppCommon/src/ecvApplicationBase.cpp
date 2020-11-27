@@ -235,7 +235,7 @@ void ecvApplicationBase::setupPaths()
     QFile transFile(translationPath);
     if (transFile.exists())
 	{
-        m_ShaderPath = translationPath;
+        m_TranslationPath = translationPath;
     }
 
 #else

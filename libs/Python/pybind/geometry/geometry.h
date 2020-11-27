@@ -42,7 +42,7 @@ void pybind_trianglemesh(py::module &m);
 void pybind_primitives(py::module &m);
 void pybind_facet(py::module &m);
 void pybind_polyline(py::module &m);
-//void pybind_halfedgetrianglemesh(py::module &m);
+void pybind_halfedgetrianglemesh(py::module &m);
 void pybind_image(py::module &m);
 void pybind_tetramesh(py::module &m);
 void pybind_kdtreeflann(py::module &m);

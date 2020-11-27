@@ -31,7 +31,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudViewerReduceSubarraysSum")
+REGISTER_OP("CloudviewerReduceSubarraysSum")
         .Attr("T: {int32, int64, float, double}")
         .Input("values: T")
         .Input("row_splits: int64")

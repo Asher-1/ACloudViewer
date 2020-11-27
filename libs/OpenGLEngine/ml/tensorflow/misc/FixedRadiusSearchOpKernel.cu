@@ -106,7 +106,7 @@ private:
 };
 
 #define REG_KB(type)                                                  \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerFixedRadiusSearch")      \
+    REGISTER_KERNEL_BUILDER(Name("CloudviewerFixedRadiusSearch")      \
                                     .Device(DEVICE_GPU)               \
                                     .TypeConstraint<type>("T")        \
                                     .HostMemory("radius")             \

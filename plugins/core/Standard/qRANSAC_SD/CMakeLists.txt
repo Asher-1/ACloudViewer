@@ -1,12 +1,5 @@
 option( PLUGIN_STANDARD_QRANSAC_SD "Install qRansac_SD (Shape Detection) plugin" OFF )
 
-if (CV_RANSAC_SUPPORT)
-	message("set CV_RANSAC_SUPPORT = ON")
-else ()
-	SET(PLUGIN_STANDARD_QRANSAC_SD OFF)
-	message("Please set CV_RANSAC_SUPPORT = ON, otherwise this plugin is disabled!")
-endif()
-
 if( PLUGIN_STANDARD_QRANSAC_SD )
 	project( QRANSAC_SD_PLUGIN )
 

@@ -42,6 +42,7 @@ except ImportError:
 # https://github.com/dmlc/xgboost/issues/1715
 import os
 import sys
+import platform
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 from ctypes import CDLL as _CDLL
 from ctypes.util import find_library as _find_library
@@ -55,6 +56,25 @@ if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
         _CDLL(next((_Path(__file__).parent).glob('*c++*')))
     except StopIteration:  # Not found: check system paths while loading
         pass
+
+# fix link bugs for qt on Linux platform
+if platform.system() == "Linux":
+    if os.path.exists(_Path(__file__).parent / 'libs'):
+        libicus = (_Path(__file__).parent / 'libs').glob('libicu*')
+        for lib in libicus:
+            _CDLL(lib)
+
+        libqts = (_Path(__file__).parent / 'libs').glob('libQt5*')
+        _CDLL((_Path(__file__).parent / 'libs/libQt5Core.so.5'))
+        _CDLL((_Path(__file__).parent / 'libs/libQt5Gui.so.5'))
+        _CDLL((_Path(__file__).parent / 'libs/libQt5Widgets.so.5'))
+        libqts = sorted(libqts)
+        for lib in libqts:
+            _CDLL(lib)
+
+        _CDLL((_Path(__file__).parent / 'libs/libCVCoreLib.so'))
+        _CDLL((_Path(__file__).parent / 'libs/libECV_DB_LIB.so'))
+        _CDLL((_Path(__file__).parent / 'libs/libECV_IO_LIB.so'))
 
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:

@@ -30,7 +30,7 @@
 using namespace tensorflow;
 using namespace cloudViewer::ml::contrib;
 
-REGISTER_OP("CloudViewerBatchOrderedNeighbors")
+REGISTER_OP("CloudviewerBatchOrderedNeighbors")
         .Input("queries: float")
         .Input("supports: float")
         .Input("q_batches: int32")
@@ -138,5 +138,5 @@ public:
     }
 };
 
-REGISTER_KERNEL_BUILDER(Name("CloudViewerBatchOrderedNeighbors").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("CloudviewerBatchOrderedNeighbors").Device(DEVICE_CPU),
                         BatchOrderedNeighborsOp);

@@ -76,12 +76,12 @@ void pybind_half_edge(py::module &m) {
 void pybind_halfedgetrianglemesh(py::module &m) {
     pybind_half_edge(m);
 
-    // cloudViewer.geometry.ecvHalfEdgeMesh
+    // cloudViewer.geometry.HalfEdgeMesh
     py::class_<ecvHalfEdgeMesh, PyGeometry<ecvHalfEdgeMesh>,
                std::shared_ptr<ecvHalfEdgeMesh>, ecvMeshBase>
             half_edge_triangle_mesh(
-                    m, "ecvHalfEdgeMesh",
-                    "ecvHalfEdgeMesh inherits TriangleMesh class with the "
+                    m, "HalfEdgeMesh",
+                    "HalfEdgeMesh inherits TriangleMesh class with the "
                     "addition of HalfEdge data structure for each half edge in "
                     "the mesh as well as related functions.");
     py::detail::bind_default_constructor<ecvHalfEdgeMesh>(
@@ -91,7 +91,7 @@ void pybind_halfedgetrianglemesh(py::module &m) {
     half_edge_triangle_mesh
             .def("__repr__",
                  [](const ecvHalfEdgeMesh &mesh) {
-                     return std::string("ecvHalfEdgeMesh with ") +
+                     return std::string("HalfEdgeMesh with ") +
                             std::to_string(mesh.vertices_.size()) +
                             " points and " +
                             std::to_string(mesh.half_edges_.size()) +
@@ -136,15 +136,15 @@ void pybind_halfedgetrianglemesh(py::module &m) {
                     &ecvHalfEdgeMesh::ordered_half_edge_from_vertex_,
                     "Counter-clockwise ordered half-edges started from "
                     "each vertex");
-    docstring::ClassMethodDocInject(m, "ecvHalfEdgeMesh",
+    docstring::ClassMethodDocInject(m, "HalfEdgeMesh",
                                     "boundary_half_edges_from_vertex");
-    docstring::ClassMethodDocInject(m, "ecvHalfEdgeMesh",
+    docstring::ClassMethodDocInject(m, "HalfEdgeMesh",
                                     "boundary_vertices_from_vertex");
-    docstring::ClassMethodDocInject(m, "ecvHalfEdgeMesh",
+    docstring::ClassMethodDocInject(m, "HalfEdgeMesh",
                                     "get_boundaries");
-    docstring::ClassMethodDocInject(m, "ecvHalfEdgeMesh",
+    docstring::ClassMethodDocInject(m, "HalfEdgeMesh",
                                     "has_half_edges");
-    docstring::ClassMethodDocInject(m, "ecvHalfEdgeMesh",
+    docstring::ClassMethodDocInject(m, "HalfEdgeMesh",
                                     "create_from_triangle_mesh",
                                     {{"mesh", "The input TriangleMesh"}});
 }

@@ -18,7 +18,7 @@ namespace cloudViewer {
             // default constructor
             // -------------------
 
-            Matrix<T>(){};
+            Matrix<T>(){}
 
             // constructor
             // -----------
@@ -33,7 +33,7 @@ namespace cloudViewer {
 					for (int i = 0; i < size; i++)
 						m_data[i] = data[i];
 				}
-            };
+            }
 
 			/** \brief Resize the matrix
 			  * \param[in] n the new matrix shape
@@ -83,14 +83,14 @@ namespace cloudViewer {
 
             // index operators
             // ---------------
-            T&       operator[](size_t i)       { return m_data[i]; };
-            const T& operator[](size_t i) const { return m_data[i]; };
+            T&       operator[](size_t i)       { return m_data[i]; }
+            const T& operator[](size_t i) const { return m_data[i]; }
 
             T& operator()(size_t h, size_t i=0, size_t j=0)
-            { return m_data[h*m_strides[0]+i*m_strides[1]+j*m_strides[2]]; };
+            { return m_data[h*m_strides[0]+i*m_strides[1]+j*m_strides[2]]; }
 
             const T& operator()(size_t h, size_t i=0, size_t j=0) const
-            { return m_data[h*m_strides[0]+i*m_strides[1]+j*m_strides[2]]; };
+            { return m_data[h*m_strides[0]+i*m_strides[1]+j*m_strides[2]]; }
 
             // iterators
             // ---------
@@ -101,7 +101,7 @@ namespace cloudViewer {
 
             // return pointer to data
             // ----------------------
-            const T* data(void) const { return m_data.data(); };
+            const T* data(void) const { return m_data.data(); }
 
             // return shape array [ndim]
             // -------------------------
@@ -116,7 +116,7 @@ namespace cloudViewer {
                 ret[i] = m_shape[i];
 
               return ret;
-            };
+            }
 
             // return strides array [ndim]
             // ---------------------------
@@ -133,11 +133,11 @@ namespace cloudViewer {
 						ret[i] *= sizeof(T);
 
 				return ret;
-            };
+            }
 
             // return size
             // -----------
-            size_t size ( void ) const { return m_data.size(); };
+            size_t size ( void ) const { return m_data.size(); }
 
             // return number of dimensions
             // ---------------------------
@@ -151,7 +151,7 @@ namespace cloudViewer {
 						  break;
 				  }
 				  return i+1;
-            };
+            }
 
         private:
 

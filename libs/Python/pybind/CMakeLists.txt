@@ -189,6 +189,7 @@ if ( BUNDLE_CLOUDVIEWER_ML )
         cloudViewer_ml
         PREFIX "${CMAKE_BINARY_DIR}/cloudViewer_ml"
         GIT_REPOSITORY "${CLOUDVIEWER_ML_ROOT}"
+        GIT_TAG main
         BUILD_IN_SOURCE ON
         # do not configure
         CONFIGURE_COMMAND ""

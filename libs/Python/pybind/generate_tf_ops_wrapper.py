@@ -37,12 +37,14 @@ def main():
     generated_function_strs = ''
     for fn_name, value in inspect.getmembers(oplib):
         if not inspect.isfunction(value) or not fn_name.startswith(
-                'cloudViewer_') or fn_name.endswith('_eager_fallback'):
+                'cloudviewer_') or fn_name.endswith('_eager_fallback'):
             continue
 
         docstring = getattr(oplib, fn_name).__doc__
         docstring = '"""' + docstring + '\n"""'
         docstring = textwrap.indent(docstring, INDENT_SPACES)
+
+        print("fn_name --> {}\t value --> {}".format(fn_name, value))
 
         signature = inspect.signature(value)
 

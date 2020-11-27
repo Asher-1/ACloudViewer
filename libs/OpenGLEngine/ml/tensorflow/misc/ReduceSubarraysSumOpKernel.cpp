@@ -50,7 +50,7 @@ public:
 };
 
 #define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("CloudViewerReduceSubarraysSum")    \
+    REGISTER_KERNEL_BUILDER(Name("CloudviewerReduceSubarraysSum")    \
                                     .Device(DEVICE_CPU)         \
                                     .TypeConstraint<type>("T"), \
                             ReduceSubarraysSumOpKernelCPU<type>);

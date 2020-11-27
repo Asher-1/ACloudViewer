@@ -32,7 +32,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudViewerNms")
+REGISTER_OP("CloudviewerNms")
         .Attr("T: {float}")  // type for boxes and scores
         .Attr("nms_overlap_thresh: float")
         .Input("boxes: T")

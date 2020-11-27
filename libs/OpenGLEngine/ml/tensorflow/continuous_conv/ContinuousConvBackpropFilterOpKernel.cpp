@@ -80,12 +80,12 @@ public:
     }
 };
 
-#define REG_KB(type, indextype)                           \
-    REGISTER_KERNEL_BUILDER(                              \
-            Name("CloudViewerContinuousConvBackpropFilter")    \
-                    .Device(DEVICE_CPU)                   \
-                    .TypeConstraint<type>("TReal")        \
-                    .TypeConstraint<indextype>("TIndex"), \
+#define REG_KB(type, indextype)                             \
+    REGISTER_KERNEL_BUILDER(                                \
+            Name("CloudviewerContinuousConvBackpropFilter") \
+                    .Device(DEVICE_CPU)                     \
+                    .TypeConstraint<type>("TReal")          \
+                    .TypeConstraint<indextype>("TIndex"),   \
             ContinuousConvBackpropFilterOpKernelCPU<type, indextype>);
 REG_KB(float, int32)
 #undef REG_KB
