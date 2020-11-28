@@ -45,6 +45,7 @@ class vtkAreaPicker;
 class vtkPropPicker;
 class vtkAbstractWidget;
 class vtkRenderWindow;
+class vtkMatrix4x4;
 
 class ccBBox;
 class ecvPointpickingTools;
@@ -129,6 +130,8 @@ namespace PclUtils
 		 * Resets the center of rotation to the focal point.
 		 */
 		void resetCenterOfRotation();
+
+        static void ExpandBounds(double bounds[6], vtkMatrix4x4 *matrix);
 
 		/**
 		 * Set the center of rotation. For this to work,
