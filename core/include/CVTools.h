@@ -46,7 +46,7 @@ public:
 private:
 	CVTools() = delete;
 
-	static QTime s_time;
+    static QTime s_time;
 
 };
 

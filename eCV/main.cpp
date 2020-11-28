@@ -20,7 +20,9 @@
 #include <ecvGlobalShiftManager.h>
 
 // QPCL_ENGINE_LIB
+#ifdef USE_PCL_BACKEND
 #include <VtkUtils/vtkWidgetsFactory.h>
+#endif
 
 // QT
 #include <QDir>
@@ -61,10 +63,12 @@ void InitEnvironment()
 	//global structures initialization
 	FileIOFilter::InitInternalFilters(); //load all known I/O filters
 
+#ifdef USE_PCL_BACKEND
     DBLib::ecvWidgetsInterface::InitInternalInterfaces();
     DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetFilterWidgetInterface());
     DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSmallWidgetsInterface());
     DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSurfaceWidgetsInterface());
+#endif
 
 	// force pre-computed normals array initialization
 	ccNormalVectors::GetUniqueInstance(); 
@@ -362,8 +366,10 @@ int main(int argc, char *argv[])
 	// release main window
 	MainWindow::DestroyInstance();
 
-	// release widgets resource
+#ifdef USE_PCL_BACKEND
+    // release widgets resource
 	DBLib::ecvWidgetsInterface::UnregisterAll();
+#endif
 
 	// release io filters
 	FileIOFilter::UnregisterAll();

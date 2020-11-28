@@ -25,6 +25,7 @@
 // ECV_DB_LIB
 #include <CVConst.h>
 #include <ecvGenericPrimitive.h>
+#include <ecvDisplayTools.h>
 #include <ecvPlane.h>
 #include <ecvBox.h>
 #include <ecvSphere.h>
@@ -123,6 +124,7 @@ void ecvPrimitiveFactoryDlg::createPrimitive()
 	if (primitive)
 	{
 		m_win->addToDB(primitive, true, true, true);
+        ecvDisplayTools::ResetCameraClippingRange();
 	}
 }
 
