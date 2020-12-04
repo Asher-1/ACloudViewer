@@ -138,7 +138,11 @@ endif()
 
 # CGAL (optional)
 if ( CVCORELIB_USE_CGAL )
-	include( cmake/CGALSupport.cmake )
+        if (WIN32)
+            include( cmake/CGALSupport.cmake )
+         else()
+             find_package( CGAL REQUIRED )
+         endif()
 
 	if( WIN32 )
 		# Need to force the visibility of these variables so that we can use them later

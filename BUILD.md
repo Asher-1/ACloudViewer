@@ -182,7 +182,8 @@ If you want to compile ErowCloudViewer (and ccViewer) with LAS/LAZ files support
 
 1. [PDAL](https://pdal.io/) ("sudo apt-get install libjsoncpp-dev -y" for LINUX) [sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json]
 		conda install -c conda-forge pdal python-pdal
-2. Set `OPTION_PDAL_LAS=TRUE`
+2. Note: should fix libtiff.so load order bugs with opencv && pdal version should more than 2.0.0
+3. Set `OPTION_PDAL_LAS=TRUE`
 
 If your PDAL installation is not correctly picked up by CMake, 
 set the `PDAL_DIR` to the path containing `PDALConfig.cmake`.

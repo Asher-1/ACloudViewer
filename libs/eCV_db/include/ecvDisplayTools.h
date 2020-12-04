@@ -1028,7 +1028,7 @@ public: // visualization matrix transformation
 	//takes rendering zoom into account!
 	inline static QFont GetTextDisplayFont() { return TheInstance()->m_font; }
 
-	static ENTITY_TYPE ConVertToEntityType(const CV_CLASS_ENUM & type);
+	static ENTITY_TYPE ConvertToEntityType(const CV_CLASS_ENUM & type);
 
 	//! Default picking radius value
 	static const int DefaultPickRadius = 5;

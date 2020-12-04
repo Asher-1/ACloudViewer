@@ -269,6 +269,8 @@ void ecvSettingManager::Init(const QString &fileName)
 		s_manager.instance->m_iniFile->endGroup();
 	}
 #else
+    Q_UNUSED(fileName)
+    QSettings::setDefaultFormat(QSettings::NativeFormat);
     s_manager.instance->m_iniFile = QSharedPointer<QSettings>(new QSettings());
     //s_manager.instance->m_iniFile->setIniCodec(QTextCodec::codecForName("System"));
     s_manager.instance->m_iniFile->setIniCodec("utf8"); // set coding

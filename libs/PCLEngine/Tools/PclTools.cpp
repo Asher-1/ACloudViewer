@@ -305,7 +305,7 @@ static vlabelPair GetVLabelsAround(int y, vlabelSet& set)
 bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget, const CC_DRAW_CONTEXT & CONTEXT)
 {
 	if (!widget) return false;
-	std::string viewID = CVTools::fromQString(CONTEXT.viewID);
+	std::string viewID = CVTools::FromQString(CONTEXT.viewID);
 	const ccScalarField* sf = CONTEXT.sfColorScaleToDisplay;
 	if (!sf || !sf->getColorScale())
 	{
@@ -609,7 +609,7 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget, const CC_DRAW_CONTEXT 
 		if (logScale)
 			sfTitle += QString("[Log scale]");
 	}
-	lutActor->SetTitle(CVTools::fromQString(sfTitle).c_str());
+	lutActor->SetTitle(CVTools::FromQString(sfTitle).c_str());
 	lutActor->SetLookupTable(lut);
 	lutActor->SetOutlineScalarBar(showHistogram);
 	lutActor->SetScalarBarLength(0.8);

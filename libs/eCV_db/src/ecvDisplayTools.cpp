@@ -1886,8 +1886,7 @@ void ecvDisplayTools::GetVisibleObjectsBB(ccBBox& box)
 	}
 }
 
-ENTITY_TYPE ecvDisplayTools::ConVertToEntityType(const CV_CLASS_ENUM & type)
-{
+ENTITY_TYPE ecvDisplayTools::ConvertToEntityType(const CV_CLASS_ENUM& type) {
 	ENTITY_TYPE entityType = ENTITY_TYPE::ECV_NONE;
 	switch (type)
 	{
@@ -1915,6 +1914,7 @@ ENTITY_TYPE ecvDisplayTools::ConVertToEntityType(const CV_CLASS_ENUM & type)
 	case CV_TYPES::FACET:
 	case CV_TYPES::PRIMITIVE:
 	case CV_TYPES::MESH:
+    case CV_TYPES::SUB_MESH:
 	case CV_TYPES::SPHERE:
 	case CV_TYPES::CONE:
 	case CV_TYPES::PLANE:
@@ -2311,7 +2311,7 @@ bool ecvDisplayTools::RenderToFile(QString filename,
 	}
 	bool success = false;
 
-	SaveScreenshot(CVTools::fromQString(filename));
+	SaveScreenshot(CVTools::FromQString(filename));
 
 #if 0
 	QImage outputImage = renderToImage(zoomFactor, dontScaleFeatures, renderOverlayItems);
@@ -3697,11 +3697,11 @@ void ecvDisplayTools::ChangeEntityProperties(PROPERTY_PARAM & propertyParam, boo
 	{
 		if (propertyParam.entity->isKindOf(CV_TYPES::PRIMITIVE))
 		{
-			propertyParam.entityType = ConVertToEntityType(CV_TYPES::PRIMITIVE);
+            propertyParam.entityType = ConvertToEntityType(CV_TYPES::PRIMITIVE);
 		}
 		else
 		{
-			propertyParam.entityType = ConVertToEntityType(propertyParam.entity->getClassID());
+            propertyParam.entityType = ConvertToEntityType(propertyParam.entity->getClassID());
 		}
 
 		propertyParam.viewId = QString::number(propertyParam.entity->getUniqueID());

@@ -2,7 +2,7 @@
 	"type" : "I/O",
 	"name" : "Mesh I/O",
 	"version" : "0.1.0",
-	"icon" : ":/asmaloney/MeshIO/images/icon.png",
+	"icon" : ":/asmaloney/qMeshIO/images/icon.png",
 	"description": "Import mesh formats using the Open Asset Import Library library. Currently reads glTF, COLLADA, and IFC.",
 	"authors" : [
 		{
@@ -18,7 +18,7 @@
 	],
 	"references" : [
 		{
-			"text" : "MeshIO uses the Open Asset Import Library library",
+			"text" : "qMeshIO uses the Open Asset Import Library library",
 			"url" : "https://github.com/assimp/assimp"
 		},
 		{

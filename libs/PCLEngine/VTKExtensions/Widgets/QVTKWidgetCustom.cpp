@@ -729,7 +729,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 			if (inZone != m_tools->m_clickableItemsVisible)
 			{
 				m_tools->m_clickableItemsVisible = inZone;
-				ecvDisplayTools::RedrawDisplay(true, true);
+				ecvDisplayTools::RedrawDisplay(true, false);
 			}
 
 			event->accept();

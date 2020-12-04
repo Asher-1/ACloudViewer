@@ -1659,17 +1659,17 @@ void ccHObject::updateNameIn3DRecursive()
 
 void ccHObject::setHideShowType(CC_DRAW_CONTEXT & context)
 {
-	context.hideShowEntityType = ecvDisplayTools::ConVertToEntityType(getClassID());
+	context.hideShowEntityType = ecvDisplayTools::ConvertToEntityType(getClassID());
 }
 
 ENTITY_TYPE ccHObject::getEntityType()
 {
-	return ecvDisplayTools::ConVertToEntityType(getClassID());
+	return ecvDisplayTools::ConvertToEntityType(getClassID());
 }
 
 void ccHObject::setRemoveType(CC_DRAW_CONTEXT & context)
 {
-	context.removeEntityType = ecvDisplayTools::ConVertToEntityType(getClassID());
+	context.removeEntityType = ecvDisplayTools::ConvertToEntityType(getClassID());
 }
 
 void ccHObject::hideBB(CC_DRAW_CONTEXT context)

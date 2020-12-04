@@ -36,7 +36,7 @@
 // ECV_DB_LIB
 #include <ecvBBox.h>
 #include <ecvImage.h>
-#include <ecvMesh.h>
+#include <ecvGenericMesh.h>
 #include <ecvPolyline.h>
 #include <ecvSensor.h>
 #include <ecvSingleton.h>
@@ -103,7 +103,7 @@ PCLDisplayTools::~PCLDisplayTools()
 
 void PCLDisplayTools::drawPointCloud(CC_DRAW_CONTEXT & CONTEXT, ccPointCloud * ecvCloud)
 {
-	std::string viewID = CVTools::fromQString(CONTEXT.viewID);
+	std::string viewID = CVTools::FromQString(CONTEXT.viewID);
 	int viewPort = CONTEXT.defaultViewPort;
 	bool firstShow = !m_visualizer3D->contains(viewID);
 
@@ -159,13 +159,13 @@ void PCLDisplayTools::drawPointCloud(CC_DRAW_CONTEXT & CONTEXT, ccPointCloud * e
 
 }
 
-void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccMesh* mesh)
-{
-	std::string viewID = CVTools::fromQString(CONTEXT.viewID);
+void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccGenericMesh* mesh) {
+	std::string viewID = CVTools::FromQString(CONTEXT.viewID);
 	int viewPort = CONTEXT.defaultViewPort;
 	const ccGenericPointCloud::VisibilityTableType& verticesVisibility = mesh->getAssociatedCloud()->getTheVisibilityArray();
 	CONTEXT.visFiltering = (verticesVisibility.size() >= mesh->getAssociatedCloud()->size());
 	bool firstShow = !m_visualizer3D->contains(viewID);
+
 	if (mesh->isRedraw() || firstShow)
 	{
 		ccPointCloud* ecvCloud = ccHObjectCaster::ToPointCloud(mesh);
@@ -175,43 +175,40 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccMesh* mesh)
 		bool lodEnabled = false;
 		bool showTextures = (mesh->hasTextures() && mesh->materialsShown() && !lodEnabled);
 
-		if (showTextures)
-		{
-			PCLTextureMesh::Ptr textureMesh = cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
-			if (!textureMesh)
-			{
-				// try convert to polygonmesh
-				CVLog::Warning("[PCLDisplayTools::drawMesh] try convert to polygonmesh");
-				PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
-				if (!pclMesh) return;
-				m_visualizer3D->draw(CONTEXT, pclMesh);
-			}
-			else
-			{
-				m_visualizer3D->draw(CONTEXT, textureMesh);
-			}
-		}
-		else
-		{
-			if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud))
-			{
-				PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
-				if (!pclMesh) return;
-
-				m_visualizer3D->draw(CONTEXT, pclMesh);
-			}
-			else
-			{
-				m_visualizer3D->resetScalarColor(viewID, true, viewPort);
-				if (!updateEntityColor(CONTEXT, ecvCloud))
-				{
-					PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
-					if (!pclMesh) return;
-
-					m_visualizer3D->draw(CONTEXT, pclMesh);
+		if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud)) {
+            if (showTextures) {
+                PCLTextureMesh::Ptr textureMesh = cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
+                if (textureMesh) {
+                    m_visualizer3D->draw(CONTEXT, textureMesh);
+                } else {
+                    PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
+                    if (!pclMesh) return;
+                    m_visualizer3D->draw(CONTEXT, pclMesh);
 				}
+                
+			} else {
+                PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
+                if (!pclMesh) return;
+                m_visualizer3D->draw(CONTEXT, pclMesh);
+            }
+		} else {
+			m_visualizer3D->resetScalarColor(viewID, true, viewPort);
+			if (!updateEntityColor(CONTEXT, ecvCloud)) {
+                if (showTextures) {
+                    PCLTextureMesh::Ptr textureMesh = cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
+                    if (textureMesh) {
+                        m_visualizer3D->draw(CONTEXT, textureMesh);
+                    } else {
+                        PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
+                        if (!pclMesh) return;
+                        m_visualizer3D->draw(CONTEXT, pclMesh);
+                    }
+                } else {
+                    PCLMesh::Ptr pclMesh = cc2smReader(ecvCloud, true).getPclMesh(mesh);
+                    if (!pclMesh) return;
+                    m_visualizer3D->draw(CONTEXT, pclMesh);
+                }
 			}
-
 		}
 		m_visualizer3D->transformEntities(CONTEXT);
 	}
@@ -232,7 +229,7 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccMesh* mesh)
 
 void PCLDisplayTools::drawPolygon(CC_DRAW_CONTEXT& CONTEXT, ccPolyline* polyline)
 {
-	std::string viewID = CVTools::fromQString(CONTEXT.viewID);
+	std::string viewID = CVTools::FromQString(CONTEXT.viewID);
 	bool firstShow = !m_visualizer3D->contains(viewID);
 	int viewPort = CONTEXT.defaultViewPort;
 
@@ -257,7 +254,7 @@ void PCLDisplayTools::drawImage(CC_DRAW_CONTEXT & CONTEXT, ccImage * image)
 	if (!m_visualizer2D) return;
 
 #if 0
-	std::string viewID = CVTools::fromQString(CONTEXT.viewID);
+	std::string viewID = CVTools::FromQString(CONTEXT.viewID);
 	bool firstShow = !m_visualizer2D->contains(viewID);
 
 	if (image->isRedraw() || firstShow)
@@ -281,7 +278,7 @@ bool PCLDisplayTools::updateEntityColor(CC_DRAW_CONTEXT & CONTEXT, ccHObject * e
 		return false;
 	}
 
-	std::string viewID = CVTools::fromQString(CONTEXT.viewID);
+	std::string viewID = CVTools::FromQString(CONTEXT.viewID);
 	vtkActor* modelActor = m_visualizer3D->getActorById(viewID);
 	if (!modelActor)
 	{
@@ -349,10 +346,11 @@ void PCLDisplayTools::draw(CC_DRAW_CONTEXT& CONTEXT, const ccHObject* obj)
 
 		drawPointCloud(CONTEXT, ecvCloud);
 	}
-	else if (obj->isKindOf(CV_TYPES::MESH))
+	else if (obj->isKindOf(CV_TYPES::MESH) ||
+		obj->isKindOf(CV_TYPES::SUB_MESH))
 	{
 		//the mesh to draw
-		ccMesh* tempMesh = ccHObjectCaster::ToMesh(const_cast<ccHObject *>(obj));
+		ccGenericMesh* tempMesh = ccHObjectCaster::ToGenericMesh(const_cast<ccHObject *>(obj));
 		if (!tempMesh) return;
 		drawMesh(CONTEXT, tempMesh);
 	}
@@ -439,7 +437,7 @@ void PCLDisplayTools::drawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox)
 	int viewPort = context.defaultViewPort;
 	if (m_visualizer3D)
 	{
-		std::string bboxID = CVTools::fromQString(context.viewID);
+		std::string bboxID = CVTools::FromQString(context.viewID);
 		if (!m_visualizer3D->contains(bboxID))
 		{
 			m_visualizer3D->addCube(
@@ -465,7 +463,7 @@ void PCLDisplayTools::drawOrientedBBox(CC_DRAW_CONTEXT & context, const ecvOrien
 	int viewPort = context.defaultViewPort;
 	if (m_visualizer3D)
 	{
-		std::string bboxID = CVTools::fromQString(context.viewID);
+		std::string bboxID = CVTools::FromQString(context.viewID);
 		if (!m_visualizer3D->contains(bboxID))
 		{
 			const Eigen::Matrix3d& rotation_OBB = obb->getRotation();
@@ -510,7 +508,7 @@ void PCLDisplayTools::removeEntities(CC_DRAW_CONTEXT& CONTEXT)
 		CONTEXT.removeEntityType == ENTITY_TYPE::ECV_MARK_POINT)
 	{
 		if (!m_visualizer2D) return;
-		std::string viewId = CVTools::fromQString(CONTEXT.removeViewID);
+		std::string viewId = CVTools::FromQString(CONTEXT.removeViewID);
 		if (m_visualizer2D->contains(viewId))
 		{
 			m_visualizer2D->removeLayer(viewId);
@@ -523,7 +521,7 @@ void PCLDisplayTools::removeEntities(CC_DRAW_CONTEXT& CONTEXT)
 		{
 			if (m_visualizer2D)
 			{
-				std::string viewId = CVTools::fromQString(CONTEXT.removeViewID);
+				std::string viewId = CVTools::FromQString(CONTEXT.removeViewID);
 				if (m_visualizer2D->contains(viewId))
 				{
 					m_visualizer2D->removeLayer(viewId);
@@ -540,7 +538,7 @@ void PCLDisplayTools::removeEntities(CC_DRAW_CONTEXT& CONTEXT)
 
 bool PCLDisplayTools::hideShowEntities(CC_DRAW_CONTEXT & CONTEXT)
 {
-	std::string viewId = CVTools::fromQString(CONTEXT.viewID);
+	std::string viewId = CVTools::FromQString(CONTEXT.viewID);
 
 	if (CONTEXT.hideShowEntityType == ENTITY_TYPE::ECV_IMAGE ||
 		CONTEXT.removeEntityType == ENTITY_TYPE::ECV_LINES_2D ||
@@ -581,7 +579,7 @@ bool PCLDisplayTools::hideShowEntities(CC_DRAW_CONTEXT & CONTEXT)
 		m_visualizer3D->hideShowActors(CONTEXT.visible, viewId, CONTEXT.defaultViewPort);
 
 		// for normals case
-		std::string normalViewId = CVTools::fromQString(CONTEXT.viewID + "-normal");
+		std::string normalViewId = CVTools::FromQString(CONTEXT.viewID + "-normal");
 		if (m_visualizer3D->contains(normalViewId))
 		{
 			m_visualizer3D->hideShowActors(CONTEXT.visible, normalViewId, CONTEXT.defaultViewPort);
@@ -597,7 +595,7 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER & param)
 {
 	ccHObject * entity = param.entity;
 	int viewPort = param.viewPort;
-	std::string viewID = CVTools::fromQString(param.viewID);
+	std::string viewID = CVTools::FromQString(param.viewID);
 	switch (param.type)
 	{
 	case WIDGETS_TYPE::WIDGET_COORDINATE:
@@ -607,7 +605,7 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER & param)
 	case WIDGETS_TYPE::WIDGET_T2D:
 		if (m_visualizer2D)
 		{
-			std::string text = CVTools::fromQString(param.text);
+			std::string text = CVTools::FromQString(param.text);
 			m_visualizer2D->addText(
 				param.rect.x(), param.rect.y(),
 				text, param.color.r, param.color.g, param.color.b,
@@ -666,14 +664,14 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER & param)
 		break;
 	case WIDGETS_TYPE::WIDGET_CAPTION:
 		if (!m_visualizer3D->updateCaption(
-			CVTools::fromQString(param.text), 
+			CVTools::FromQString(param.text), 
 			param.pos, param.center,
 			param.color.r, param.color.g, param.color.b, 
 			param.color.a, param.fontSize,
 			viewID, viewPort)) 
 		{
 			m_visualizer3D->addCaption(
-				CVTools::fromQString(param.text), 
+				CVTools::FromQString(param.text), 
 				param.pos, param.center,
 				param.color.r, param.color.g, param.color.b,
 				param.color.a, param.fontSize, viewID, param.handleEnabled, viewPort);
@@ -711,7 +709,7 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER & param)
 					return;
 				}
 
-				viewID = CVTools::fromQString(QString::number(poly->getUniqueID()));
+				viewID = CVTools::FromQString(QString::number(poly->getUniqueID()));
 
 				ecvColor::Rgbf color =  ecvColor::FromRgb(ecvColor::green);
 				if (poly->isColorOverriden())
@@ -924,8 +922,8 @@ void PCLDisplayTools::displayText(const CC_DRAW_CONTEXT& CONTEXT)
 	if (m_visualizer2D)
 	{
 		ecvTextParam textParam = CONTEXT.textParam;
-		std::string viewID = CVTools::fromQString(CONTEXT.viewID);
-		std::string text = CVTools::fromQString(textParam.text);
+		std::string viewID = CVTools::FromQString(CONTEXT.viewID);
+		std::string text = CVTools::FromQString(textParam.text);
 
 		ecvColor::Rgbf textColor = ecvTools::TransFormRGB(CONTEXT.textDefaultCol);
 		{
@@ -1038,7 +1036,7 @@ void PCLDisplayTools::setViewMatrix(double* viewArray, int viewPort/* = 0*/)
 
 void PCLDisplayTools::changeEntityProperties(PROPERTY_PARAM & param)
 {
-	std::string viewId = CVTools::fromQString(param.viewId);
+	std::string viewId = CVTools::FromQString(param.viewId);
 	int viewPort = param.viewPort;
 	switch (param.property)
 	{

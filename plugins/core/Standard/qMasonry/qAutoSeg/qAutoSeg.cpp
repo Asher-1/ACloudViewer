@@ -1371,7 +1371,7 @@ void ccAutoSeg::doAction()
 	QFileInfo fileInfo(selectedEntities.front()->getFullPath());
 	QDir dir(fileInfo.absolutePath());
 	QString autoSegLogFile = dir.absoluteFilePath(filename.c_str());
-	filename = CVTools::fromQString(autoSegLogFile);
+	filename = CVTools::FromQString(autoSegLogFile);
 	ofstream auto_seg_log;
 	auto_seg_log.open(filename);
 

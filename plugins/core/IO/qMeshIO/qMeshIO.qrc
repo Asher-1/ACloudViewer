@@ -1,5 +1,5 @@
 <RCC>
-  <qresource prefix="/asmaloney/MeshIO" >
+  <qresource prefix="/asmaloney/qMeshIO" >
     <file>images/icon.png</file>
     <file>info.json</file>
   </qresource>

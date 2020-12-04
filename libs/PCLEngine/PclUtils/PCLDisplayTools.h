@@ -37,7 +37,7 @@
 
 class ccHObject;
 class ImageVis;
-class ccMesh;
+class ccGenericMesh;
 class ccImage;
 class ecvOrientedBBox;
 class ccPointCloud;
@@ -348,7 +348,7 @@ public:
 	virtual QString pick3DItem(int x = -1, int y = -1) override;
 private:
 	void drawPointCloud(CC_DRAW_CONTEXT& CONTEXT, ccPointCloud * ecvCloud);
-	void drawMesh(CC_DRAW_CONTEXT & CONTEXT, ccMesh * mesh);
+    void drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccGenericMesh* mesh);
 	void drawPolygon(CC_DRAW_CONTEXT& CONTEXT, ccPolyline* polyline);
 	void drawImage(CC_DRAW_CONTEXT& CONTEXT, ccImage* image);
 

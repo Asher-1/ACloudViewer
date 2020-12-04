@@ -276,7 +276,7 @@ void PclFiltersTool::areaPickingEventProcess(const std::vector<int>& new_selecte
 	int a = m_viewer->getRenderWindowInteractor()->GetControlKey();
 
 	// remove ground points
-	vector<int> selected_slice;
+	std::vector<int> selected_slice;
 	for (auto x : new_selected_slice) {
 		if (m_cloudLabel[x] != GROUND_POINT) {
 			selected_slice.push_back(x);

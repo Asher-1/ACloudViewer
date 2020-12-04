@@ -11,14 +11,14 @@ else()
     if(WIN32)
         set_local_or_remote_url(
             DOWNLOAD_URL_PRIMARY
-            LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/filament-v1.9.5-windows.tgz"
-            REMOTE_URLS "https://github.com/google/filament/releases/download/v1.9.5/filament-v1.9.5-windows.tgz"
+            LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/filament-v1.9.9-windows.tgz"
+            REMOTE_URLS "https://github.com/google/filament/releases/download/v1.9.9/filament-v1.9.9-windows.tgz"
         )
     elseif(APPLE)
         set_local_or_remote_url(
             DOWNLOAD_URL_PRIMARY
-            LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/filament-v1.9.5-mac.tgz"
-            REMOTE_URLS "https://github.com/google/filament/releases/download/v1.9.5/filament-v1.9.5-mac.tgz"
+            LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/filament-v1.9.9-mac.tgz"
+            REMOTE_URLS "https://github.com/google/filament/releases/download/v1.9.9/filament-v1.9.9-mac.tgz"
         )
     else()      # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
         execute_process(COMMAND ldd --version OUTPUT_VARIABLE ldd_version)
@@ -27,15 +27,15 @@ else()
         if(${glibc_version} VERSION_LESS "2.31")
             set_local_or_remote_url(
                 DOWNLOAD_URL_PRIMARY
-                LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/filament-v1.9.5-linux.tgz"
-                REMOTE_URLS "https://github.com/google/filament/releases/download/v1.9.5/filament-v1.9.5-linux.tgz"
+                LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/filament-v1.9.9-linux.tgz"
+                REMOTE_URLS "https://storage.googleapis.com/open3d-releases/filament/filament-v1.9.9-linux.tgz"
             )
             message(STATUS "GLIBC version ${glibc_version} found: Downloading Google Filament binary.")
         else()
             set_local_or_remote_url(
                 DOWNLOAD_URL_PRIMARY
-                LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/filament-v1.9.5-linux.tgz"
-                REMOTE_URLS "https://storage.googleapis.com/open3d-releases/filament/filament-v1.9.5-linux.tgz"
+                LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/filament-v1.9.9-linux-20.04.tgz"
+                REMOTE_URLS "https://storage.googleapis.com/open3d-releases/filament/filament-v1.9.9-linux-20.04.tgz"
             )
             message(STATUS "GLIBC version ${glibc_version} found: Downloading Open3D Filament binary.")
         endif()

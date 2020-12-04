@@ -131,7 +131,7 @@ namespace io {
 		while (true)
 		{
 			//look for file extension (we trust Qt on this task)
-			QString file = CVTools::toQString(filename);
+			QString file = CVTools::ToQString(filename);
 			QString extension = QFileInfo(file).suffix();
 			if (extension.isEmpty())
 			{
@@ -308,7 +308,7 @@ namespace io {
 		while (true)
 		{
 			//look for file extension (we trust Qt on this task)
-			QString completeFileName = CVTools::toQString(filename);
+			QString completeFileName = CVTools::ToQString(filename);
 
 			//if the file name has no extension, we had a default one!
 
@@ -326,7 +326,7 @@ namespace io {
 				{
 					CVLib::utility::LogWarning(
 						"[AutoWriteEntity] Can't guess file format: unhandled file extension '%s'",
-						CVTools::fromQString(extension).c_str());
+						CVTools::FromQString(extension).c_str());
 					result = CC_FERR_CONSOLE_ERROR;
 					break;
 				}
@@ -339,7 +339,7 @@ namespace io {
 				{
 					CVLib::utility::LogWarning(
 						"[AutoWriteEntity] CV has caught an unhandled exception while saving file '%s'",
-						CVTools::fromQString(completeFileName).c_str());
+						CVTools::FromQString(completeFileName).c_str());
 					result = CC_FERR_CONSOLE_ERROR;
 				}
 

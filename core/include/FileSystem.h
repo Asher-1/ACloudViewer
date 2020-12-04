@@ -28,6 +28,8 @@
 #define CV_FILESYSTEM_HEADER
 
 #include "CVCoreLib.h"
+
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -73,6 +75,10 @@ bool CV_CORE_LIB_API ListFilesInDirectory(const std::string &directory,
 bool CV_CORE_LIB_API ListFilesInDirectoryWithExtension(const std::string &directory,
                                                        const std::string &extname,
                                                        std::vector<std::string> &filenames);
+
+CV_CORE_LIB_API std::vector<std::string> FindFilesRecursively(
+                            const std::string &directory,
+                            std::function<bool(const std::string &)> is_match);
 
 // wrapper for fopen that enables unicode paths on Windows
 CV_CORE_LIB_API FILE* FOpen(const std::string &filename, const std::string &mode);

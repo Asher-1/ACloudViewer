@@ -1,4 +1,4 @@
-// MeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
+// qMeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <QCoreApplication>
@@ -13,7 +13,7 @@ IFCFilter::IFCFilter() :
       FileIOFilter::DEFAULT_PRIORITY,
       QStringList{ "ifc", "stp", "step" },
       "ifc",
-      QStringList{ "MeshIO - IFC file (*.ifc *.stp *.step)" },
+      QStringList{ "qMeshIO - IFC file (*.ifc *.stp *.step)" },
       QStringList(),
       Import
    } ),
@@ -38,7 +38,7 @@ void IFCFilter::_recursiveRename( ccHObject *ioContainer )
    
    if ( ioContainer->getName() == QLatin1String( "$RelAggregates" ) )
    {
-      ioContainer->setName( QCoreApplication::translate( "MeshIO", "Unnamed Group" ) );
+      ioContainer->setName( QCoreApplication::translate( "qMeshIO", "Unnamed Group" ) );
    }
    else
    {

@@ -330,7 +330,7 @@ void ecvCustomViewpointButtonDlg::importConfigurations()
 	QString filename;
 	filename = selectedFiles[0];
 
-	ecvDisplayTools::LoadCameraParameters(CVTools::fromQString(filename));
+	ecvDisplayTools::LoadCameraParameters(CVTools::FromQString(filename));
 
 #ifdef USE_PCL_BACKEND
 	EditCameraTool::UpdateCameraInfo();
@@ -372,7 +372,7 @@ void ecvCustomViewpointButtonDlg::exportConfigurations()
 	}
 
 	QString filename = selectedFilename;
-	ecvDisplayTools::SaveCameraParameters(CVTools::fromQString(filename));
+	ecvDisplayTools::SaveCameraParameters(CVTools::FromQString(filename));
 }
 
 //------------------------------------------------------------------------------

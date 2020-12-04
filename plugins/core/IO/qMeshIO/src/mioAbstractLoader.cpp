@@ -1,4 +1,4 @@
-// MeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
+// qMeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <QDebug>
@@ -44,7 +44,7 @@ namespace
             messageLevel = CVLog::LOG_DEBUG;
          }
       
-         message.prepend( "[MeshIO] ai - " );
+         message.prepend( "[qMeshIO] ai - " );
       
          CVLog::LogMessage( message, messageLevel );
       }
@@ -94,14 +94,14 @@ namespace
       {
          if ( cScene->HasMeshes() )
          {
-            CVLog::Print( QStringLiteral( "[MeshIO] The file '%1' has %2 meshes" ).arg(
+            CVLog::Print( QStringLiteral( "[qMeshIO] The file '%1' has %2 meshes" ).arg(
                cFileName,
                QLocale::system().toString( cScene->mNumMeshes ) ) );
          }
       
          if ( cScene->HasCameras() )
          {
-            CVLog::Print( QStringLiteral( "[MeshIO] The file '%1' has %2 cameras" ).arg(
+            CVLog::Print( QStringLiteral( "[qMeshIO] The file '%1' has %2 cameras" ).arg(
                cFileName,
                QLocale::system().toString( cScene->mNumCameras ) ) );
          }
@@ -300,7 +300,7 @@ CC_FILE_ERROR mioAbstractLoader::loadFile( const QString &inFileName, ccHObject 
    const auto	cFileName = QFileInfo( inFileName ).fileName();
    const auto	cPath = QFileInfo( inFileName ).absoluteDir().path();
    
-   CVLog::Print( QStringLiteral( "[MeshIO] Loading file '%1'" ).arg( inFileName ) );
+   CVLog::Print( QStringLiteral( "[qMeshIO] Loading file '%1'" ).arg( inFileName ) );
    
    Assimp::DefaultLogger::create( "", Assimp::Logger::NORMAL, aiDefaultLogStream_STDOUT );
    
@@ -320,9 +320,9 @@ CC_FILE_ERROR mioAbstractLoader::loadFile( const QString &inFileName, ccHObject 
    // removes things we don't care about from the import
    importer.SetPropertyInteger( AI_CONFIG_PP_RVC_FLAGS,
                                 aiComponent_ANIMATIONS |
-                                   aiComponent_BONEWEIGHTS |
-                                   aiComponent_CAMERAS |
-                                   aiComponent_LIGHTS );
+                                aiComponent_BONEWEIGHTS |
+                                aiComponent_CAMERAS |
+                                aiComponent_LIGHTS );
    
    importer.SetPropertyBool( AI_CONFIG_IMPORT_NO_SKELETON_MESHES, true );
    importer.SetPropertyBool( AI_CONFIG_IMPORT_COLLADA_USE_COLLADA_NAMES, true );
@@ -338,7 +338,7 @@ CC_FILE_ERROR mioAbstractLoader::loadFile( const QString &inFileName, ccHObject 
    
    if ( cScene == nullptr )
    {
-      CVLog::Warning( QStringLiteral( "[MeshIO] The file '%1' has errors: %2" ).arg( cFileName, importer.GetErrorString() ) );
+      CVLog::Warning( QStringLiteral( "[qMeshIO] The file '%1' has errors: %2" ).arg( cFileName, importer.GetErrorString() ) );
       
       Assimp::DefaultLogger::kill();
       

@@ -250,7 +250,8 @@ bool ccMaterialSet::ParseMTL(QString path, const QString& filename, ccMaterialSe
 			// illumination type
 			else if (tokens.front() == "illum")
 			{
-				//ignored
+                 if (tokens.size() > 1)
+                	currentMaterial->setIllum(tokens[1].toInt());
 			}
 			// texture map
 			else if (tokens.front() == "map_Ka"
