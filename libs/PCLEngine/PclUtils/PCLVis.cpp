@@ -138,10 +138,10 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		, m_prop_map(new PropActorMap)
 		, m_x_pressNum(0)
 		, m_currentMode(ORIENT_MODE)
-		, m_autoUpdateCameraPos(false)
-		, m_pointPickingEnabled(true)
-		, m_areaPickingEnabled(false)
-		, m_actorPickingEnabled(false)
+        , m_autoUpdateCameraPos(false)
+        , m_pointPickingEnabled(true)
+        , m_areaPickingEnabled(false)
+        , m_actorPickingEnabled(false)
 	{
         // disable warnings!
 		getRenderWindow()->GlobalWarningDisplayOff();
@@ -218,16 +218,81 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		}
 	}
 
+    void PCLVis::ExpandBounds(double bounds[6], vtkMatrix4x4 *matrix)
+    {
+      if(!bounds)
+      {
+        CVLog::Warning("ERROR: Invalid bounds");
+        return;
+      }
+
+      if(!matrix)
+      {
+        CVLog::Warning("ERROR: Invalid matrix");
+        return;
+      }
+
+      // Expand the bounding box by model view transform matrix.
+      double pt[8][4] = {{bounds[0], bounds[2], bounds[5], 1.0},
+                         {bounds[1], bounds[2], bounds[5], 1.0},
+                         {bounds[1], bounds[2], bounds[4], 1.0},
+                         {bounds[0], bounds[2], bounds[4], 1.0},
+                         {bounds[0], bounds[3], bounds[5], 1.0},
+                         {bounds[1], bounds[3], bounds[5], 1.0},
+                         {bounds[1], bounds[3], bounds[4], 1.0},
+                         {bounds[0], bounds[3], bounds[4], 1.0}};
+
+      // \note: Assuming that matrix doesn not have projective component. Hence not
+      // dividing by the homogeneous coordinate after multiplication
+      for (int i = 0; i < 8; ++i)
+      {
+          matrix->MultiplyPoint(pt[i],pt[i]);
+      }
+
+      // min = mpx = pt[0]
+      double min[4], max[4];
+      for (int i = 0; i < 4; ++i)
+      {
+          min[i] = pt[0][i];
+          max[i] = pt[0][i];
+      }
+
+      for (int i = 1; i < 8; ++i)
+      {
+          for (int j = 0; j < 3; ++j)
+          {
+              if(min[j] > pt[i][j])
+                min[j] = pt[i][j];
+              if(max[j] < pt[i][j])
+                max[j] = pt[i][j];
+          }
+      }
+
+      // Copy values back to bounds.
+      bounds[0] = min[0];
+      bounds[2] = min[1];
+      bounds[4] = min[2];
+
+      bounds[1] = max[0];
+      bounds[3] = max[1];
+      bounds[5] = max[2];
+    }
+
 	void PCLVis::resetCenterOfRotation()
-	{
-		double fP[4];
-		double center[3];
-		getVtkCamera()->GetFocalPoint(fP);
-		for (int i = 0; i < 3; ++i)
-		{
-			center[i] = fP[i] / fP[3];
-		}
-		setCenterOfRotation(center[0], center[1], center[2]);
+    {
+        this->synchronizeGeometryBounds();
+        vtkBoundingBox bbox(this->GeometryBounds);
+        double center[3];
+        bbox.GetCenter(center);
+
+//        double fP[4];
+//        double center[3];
+//        getVtkCamera()->GetFocalPoint(fP);
+//        for (int i = 0; i < 3; ++i)
+//        {
+//            center[i] = fP[i] / fP[3];
+//        }
+        setCenterOfRotation(center[0], center[1], center[2]);
 	}
 
 	void PCLVis::setCenterOfRotation(double x, double y, double z)
@@ -552,7 +617,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		double minGap = 0.0;
 		if (getVtkCamera()->GetParallelProjection())
 		{
-			minGap = 0.1 * getVtkCamera()->GetParallelScale();
+            minGap = 0.1 * this->getParallelScale();
 		}
 		else
 		{
@@ -1763,8 +1828,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
 	double PCLVis::getParallelScale()
 	{
-		vtkSmartPointer<vtkCamera> cam = this->getRenderWindow()->GetRenderers()->GetFirstRenderer()->GetActiveCamera();
-		return cam->GetParallelScale();
+        return this->getVtkCamera()->GetParallelScale();
 	}
 
 	void PCLVis::setOrthoProjection(int viewport)
