@@ -107,7 +107,7 @@ void QvtkTransformTool::addActors()
 	for (unsigned i = 0; i < n; ++i)
 	{
 		ccHObject* ent = getAssociatedEntity()->getChild(i);
-		std::string id = CVTools::fromQString(QString::number(ent->getUniqueID()));
+		std::string id = CVTools::FromQString(QString::number(ent->getUniqueID()));
 		if (id == "")
 		{
 			continue;

@@ -8,15 +8,12 @@
 
 include(ExternalProject)
 
-if(WIN32)
-    message(FATAL_ERROR "Win32 not supported.")
-endif()
 
 ExternalProject_Add(
     ext_boost
     PREFIX boost
     GIT_REPOSITORY https://github.com/boostorg/boost.git
-    GIT_TAG boost-1.74.0
+    GIT_TAG boost-1.73.0
     GIT_SUBMODULES tools/boostdep libs/predef # Only need a subset of boost
     GIT_SHALLOW ON                            # git clone --depth 1
     GIT_SUBMODULES_RECURSE OFF
@@ -24,8 +21,8 @@ ExternalProject_Add(
     CONFIGURE_COMMAND ""
     BUILD_COMMAND echo "Running Boost build..."
     COMMAND python tools/boostdep/depinst/depinst.py predef
-    COMMAND ./bootstrap.sh
-    COMMAND ./b2 headers
+    COMMAND $<IF:$<PLATFORM_ID:Windows>,bootstrap.bat,./bootstrap.sh>
+    COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> headers
     UPDATE_COMMAND ""
     INSTALL_COMMAND ""
 )

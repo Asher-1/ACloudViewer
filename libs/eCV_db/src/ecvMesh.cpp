@@ -2380,7 +2380,7 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context)
 
 	handleColorRamp(context);
 
-	if (ecvDisplayTools::GetMainWindow() == nullptr) return;
+	if (!ecvDisplayTools::GetMainWindow()) return;
 
 	//3D pass
 	if (MACRO_Draw3D(context))

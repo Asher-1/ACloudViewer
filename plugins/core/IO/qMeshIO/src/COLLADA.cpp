@@ -1,4 +1,4 @@
-// MeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
+// qMeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "COLLADA.h"
@@ -10,7 +10,7 @@ COLLADAFilter::COLLADAFilter() :
       FileIOFilter::DEFAULT_PRIORITY,	// priority
       QStringList{ "dae" },
       "dae",
-      QStringList{ "MeshIO - COLLADA file (*.dae)" },
+      QStringList{ "qMeshIO - COLLADA file (*.dae)" },
       QStringList(),
       Import
    } ) 

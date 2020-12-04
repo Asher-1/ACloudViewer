@@ -126,7 +126,7 @@ struct Array {
         arr.data.ptr = (const char*)ptr;
         int64_t num = 1;
         for (int64_t n : shape) num *= n;
-        arr.data.size = sizeof(T) * num;
+        arr.data.size = uint32_t(sizeof(T) * num);
         return arr;
     }
     std::string type;
@@ -134,12 +134,112 @@ struct Array {
     msgpack::type::raw_ref data;
 
     template <class T>
-    const T* Ptr() {
+    const T* Ptr() const {
         return (T*)data.ptr;
     }
 
+    /// Checks the rank of the shape.
+    /// Returns false on mismatch and appends an error description to errstr.
+    bool CheckRank(const std::vector<int>& expected_ranks,
+                   std::string& errstr) const {
+        for (auto rank : expected_ranks) {
+            if (shape.size() == size_t(rank)) return true;
+        }
+        errstr += " expected rank to be in (";
+        for (auto rank : expected_ranks) {
+            errstr += std::to_string(rank) + ", ";
+        }
+        errstr += std::string(")") + " but got shape [";
+        for (auto d : shape) {
+            errstr += std::to_string(d) + ", ";
+        }
+        errstr += "]";
+        return false;
+    }
+    bool CheckRank(const std::vector<int>& expected_ranks) const {
+        std::string _;
+        return CheckRank(expected_ranks, _);
+    }
+
+    /// Checks the shape against the expected shape. Use -1 in the expected
+    /// shape to allow arbitrary values.
+    /// Returns false on mismatch and appends an error description to errstr.
+    bool CheckShape(const std::vector<int64_t>& expected_shape,
+                    std::string& errstr) const {
+        if (!CheckRank({int(expected_shape.size())}, errstr)) {
+            return false;
+        }
+
+        for (size_t i = 0; i < expected_shape.size(); ++i) {
+            int64_t d_expected = expected_shape[i];
+            int64_t d = shape[i];
+            if ((d_expected != -1 && d_expected != d) || d < 0) {
+                errstr += " expected shape [";
+                for (auto d : expected_shape) {
+                    if (d != -1) {
+                        errstr += "?, ";
+                    } else {
+                        errstr += std::to_string(d) + ", ";
+                    }
+                }
+                errstr += "] but got [";
+                for (auto d : shape) {
+                    errstr += std::to_string(d) + ", ";
+                }
+                errstr += "]";
+                return false;
+            }
+        }
+        return true;
+    }
+    bool CheckShape(const std::vector<int64_t>& expected_shape) const {
+        std::string _;
+        return CheckShape(expected_shape, _);
+    }
+
+    /// Checks for a non empty array.
+    /// Returns false if the array is empty and appends an error description to
+    /// errstr.
+    bool CheckNonEmpty(std::string& errstr) const {
+        int64_t n = 1;
+        for (auto d : shape) n *= d;
+        if (0 == n || shape.empty()) {
+            errstr += " expected non empty array but got array with shape [";
+            for (auto d : shape) {
+                errstr += std::to_string(d) + ", ";
+            }
+            errstr += "]";
+            return false;
+        }
+        return true;
+    }
+    bool CheckNonEmpty() const {
+        std::string _;
+        return CheckNonEmpty(_);
+    }
+
+    /// Checks the data type of the array.
+    /// Returns false if the type is not in the list of expected types and
+    /// appends an error description to errstr.
+    bool CheckType(const std::vector<std::string>& expected_types,
+                   std::string& errstr) const {
+        for (const auto& t : expected_types) {
+            if (t == type) return true;
+        }
+        errstr += " expected array type to be one of (";
+        for (const auto& t : expected_types) {
+            errstr += t + ", ";
+        }
+        errstr += ") but got " + type;
+        return false;
+    }
+    bool CheckType(const std::vector<std::string>& expected_types) const {
+        std::string _;
+        return CheckType(expected_types, _);
+    }
+
     // macro for creating the serialization/deserialization code
-    MSGPACK_DEFINE_MAP(type, shape, data)
+    MSGPACK_DEFINE_MAP(type, shape, data);
 };
 
 /// struct for storing MeshData, e.g., PointClouds, TriangleMesh, ..
@@ -176,13 +276,66 @@ struct MeshData {
     /// map of arrays that can be interpreted as textures
     std::map<std::string, Array> textures;
 
+    bool CheckVertices(std::string& errstr) const {
+        std::string tmp = "invalid vertices array:";
+        bool status = vertices.CheckNonEmpty(tmp) &&
+                      vertices.CheckShape({-1, 3}, tmp);
+        if (!status) errstr += tmp;
+        return status;
+    }
+
+    bool CheckFaces(std::string& errstr) const {
+        if (faces.shape.empty()) return true;
+
+        std::string tmp = "invalid faces array:";
+
+        bool status = faces.CheckRank({1, 2}, tmp);
+        if (!status) {
+            errstr += tmp;
+            return false;
+        }
+
+        status = faces.CheckType({TypeStr<int32_t>(), TypeStr<int64_t>()}, tmp);
+        if (!status) {
+            errstr += tmp;
+            return false;
+        }
+
+        if (faces.CheckRank({1, 2})) {
+            status = faces.CheckNonEmpty(tmp);
+            if (!status) {
+                errstr += tmp;
+                return false;
+            }
+        }
+
+        if (faces.CheckRank({2})) {
+            status = faces.shape[1] > 2;
+            tmp += " expected shape [?, >2] but got [" +
+                   std::to_string(faces.shape[0]) + ", " +
+                   std::to_string(faces.shape[1]) + "]";
+            if (!status) {
+                errstr += tmp;
+                return false;
+            }
+        }
+        return status;
+    }
+
+    bool CheckMessage(std::string& errstr) const {
+        std::string tmp = "invalid mesh_data message:";
+        bool status = CheckVertices(errstr) && CheckFaces(errstr);
+        if (!status) errstr += tmp;
+        return status;
+    }
+
     MSGPACK_DEFINE_MAP(vertices,
                        vertex_attributes,
                        faces,
                        face_attributes,
                        lines,
                        line_attributes,
-                       textures)
+                       textures);
 };
 
 /// struct for defining a "set_mesh_data" message, which adds or replaces mesh
@@ -202,7 +355,7 @@ struct SetMeshData {
     /// The data to be set
     MeshData data;
 
-    MSGPACK_DEFINE_MAP(path, time, layer, data)
+    MSGPACK_DEFINE_MAP(path, time, layer, data);
 };
 
 /// struct for defining a "get_mesh_data" message, which requests mesh data.
@@ -218,7 +371,7 @@ struct GetMeshData {
     /// The layer for which to return the data
     std::string layer;
 
-    MSGPACK_DEFINE_MAP(path, time, layer)
+    MSGPACK_DEFINE_MAP(path, time, layer);
 };
 
 /// struct for storing camera data
@@ -249,7 +402,7 @@ struct CameraData {
     std::map<std::string, Array> images;
 
     MSGPACK_DEFINE_MAP(
-            R, t, intrinsic_model, intrinsic_parameters, width, height, images)
+            R, t, intrinsic_model, intrinsic_parameters, width, height, images);
 };
 
 /// struct for defining a "set_camera_data" message, which adds or replaces a
@@ -269,7 +422,7 @@ struct SetCameraData {
     /// The data to be set
     CameraData data;
 
-    MSGPACK_DEFINE_MAP(path, time, layer, data)
+    MSGPACK_DEFINE_MAP(path, time, layer, data);
 };
 
 /// struct for defining a "set_time" message, which sets the current time
@@ -279,7 +432,7 @@ struct SetTime {
     SetTime() : time(0) {}
     int32_t time;
 
-    MSGPACK_DEFINE_MAP(time)
+    MSGPACK_DEFINE_MAP(time);
 };
 
 /// struct for defining a "set_active_camera" message, which sets the active
@@ -288,7 +441,7 @@ struct SetActiveCamera {
     static std::string MsgId() { return "set_active_camera"; }
     std::string path;
 
-    MSGPACK_DEFINE_MAP(path)
+    MSGPACK_DEFINE_MAP(path);
 };
 
 /// struct for defining a "set_properties" message, which sets properties for
@@ -299,21 +452,21 @@ struct SetProperties {
 
     // application specific members go here.
 
-    MSGPACK_DEFINE_MAP(path)
+    MSGPACK_DEFINE_MAP(path);
 };
 
 /// struct for defining a "request" message, which describes the subsequent
 /// message by storing the msg_id.
 struct Request {
     std::string msg_id;
-    MSGPACK_DEFINE_MAP(msg_id)
+    MSGPACK_DEFINE_MAP(msg_id);
 };
 
 /// struct for defining a "reply" message, which describes the subsequent
 /// message by storing the msg_id.
 struct Reply {
     std::string msg_id;
-    MSGPACK_DEFINE_MAP(msg_id)
+    MSGPACK_DEFINE_MAP(msg_id);
 };
 
 /// struct for defining a "status" message, which will be used for returning
@@ -330,13 +483,16 @@ struct Status {
     static Status ErrorUnpackingFailed() {
         return Status(2, "error during unpacking");
     }
+    static Status ErrorProcessingMessage() {
+        return Status(3, "error while processing message");
+    }
 
     /// return code. 0 means everything is OK.
     int32_t code;
     /// string representation of the code
     std::string str;
 
-    MSGPACK_DEFINE_MAP(code, str)
+    MSGPACK_DEFINE_MAP(code, str);
 };
 
 }  // namespace messages

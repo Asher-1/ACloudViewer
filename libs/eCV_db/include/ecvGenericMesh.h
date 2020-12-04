@@ -81,7 +81,7 @@ public:
 
 	//! Returns per-triangle texture coordinates (pointer to)
 	virtual void getTriangleTexCoordinates(unsigned triIndex, TexCoords2D* &tx1, TexCoords2D* &tx2, TexCoords2D* &tx3) const = 0;
-	virtual void getTexCoordinates(unsigned index, TexCoords2D* &tx) const {}
+    virtual void getTexCoordinates(unsigned index, TexCoords2D*& tx) const = 0;
 
 	//! Returns whether this mesh as per-triangle triplets of tex coords indexes
 	virtual bool hasPerTriangleTexCoordIndexes() const = 0;

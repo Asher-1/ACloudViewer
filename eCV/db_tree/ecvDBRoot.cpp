@@ -1987,7 +1987,6 @@ void ccDBRoot::selectChildrenByTypeAndName(CV_CLASS_ENUM type,
 
 				if (nameIsRegex) // regex matching
 				{
-
 					QRegularExpression re(name);
 					QRegularExpressionMatch match = re.match(child->getName());
 					bool hasMatch = match.hasMatch(); // true

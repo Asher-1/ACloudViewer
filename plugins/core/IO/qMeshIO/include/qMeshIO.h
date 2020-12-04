@@ -5,7 +5,7 @@
 #include "ecvIOPluginInterface.h"
 
 
-class MeshIO final : public QObject, public ccIOPluginInterface
+class qMeshIO final : public QObject, public ccIOPluginInterface
 {
    Q_OBJECT
    Q_INTERFACES( ccPluginInterface ccIOPluginInterface )
@@ -13,7 +13,7 @@ class MeshIO final : public QObject, public ccIOPluginInterface
    Q_PLUGIN_METADATA( IID "ecvcorp.cloudviewer.plugin.MeshIO" FILE "../info.json" )
 
  public:
-   explicit MeshIO( QObject *parent = nullptr );
+   explicit qMeshIO(QObject *parent = nullptr);
 
  private:
    void registerCommands( ccCommandLineInterface *inCmdLine ) override;

@@ -341,7 +341,7 @@ MainWindow::MainWindow()
 #ifdef USE_PYTHON_MODULE
     QString applicationPath = QCoreApplication::applicationDirPath();
     QString pyHome = applicationPath + "/python36";
-    if (!PythonInterface::SetPythonHome(CVTools::fromQString(pyHome).c_str()))
+    if (!PythonInterface::SetPythonHome(CVTools::FromQString(pyHome).c_str()))
     {
         CVLog::Warning(QString("Setting python home failed! Invalid path: [%1].").arg(pyHome));
     }
@@ -1514,7 +1514,7 @@ void MainWindow::doActionScreenShot()
 		return;
 	}
 
-	ecvDisplayTools::SaveScreenshot(CVTools::fromQString(selectedFilename));
+	ecvDisplayTools::SaveScreenshot(CVTools::FromQString(selectedFilename));
 
 	ecvConsole::Print(tr("Screen Shot has been saved in %1").arg(selectedFilename));
 
@@ -2843,6 +2843,7 @@ void MainWindow::activatePointListPickingMode()
 
 void MainWindow::deactivatePointListPickingMode(bool state)
 {
+    Q_UNUSED(state);
 	if (m_plpDlg)
 	{
 		m_plpDlg->linkWithCloud(nullptr);
@@ -2881,6 +2882,7 @@ void MainWindow::activatePointPickingMode()
 
 void MainWindow::deactivatePointPickingMode(bool state)
 {
+    Q_UNUSED(state);
 	freezeUI(false);
 	updateUI();
 }
@@ -8277,9 +8279,9 @@ void MainWindow::doActionImportSFFromFile()
 	// we update current file path
 	currentPath = QFileInfo(selectedFilename).absolutePath();
 	ecvSettingManager::setValue(ecvPS::LoadFile(), ecvPS::CurrentPath(), currentPath);
-	std::string filename = CVTools::fromQString(selectedFilename);
+	std::string filename = CVTools::FromQString(selectedFilename);
 
-	std::string scalarName = CVTools::fromQString(QFileInfo(selectedFilename).baseName());
+	std::string scalarName = CVTools::FromQString(QFileInfo(selectedFilename).baseName());
 
 	std::vector<size_t> scalars;
 	if (!CVTools::QMappingReader(filename, scalars))

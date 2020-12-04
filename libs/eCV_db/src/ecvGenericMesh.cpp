@@ -178,408 +178,108 @@ void ccGenericMesh::drawMeOnly(CC_DRAW_CONTEXT& context)
 	if (!ecvDisplayTools::GetMainWindow())
 		return;
 
-	//3D pass
-	if (MACRO_Draw3D(context))
-	{
-		//any triangle?
-		unsigned triNum = size();
-		if (triNum == 0)
-			return;
+    // 3D pass
+    if (MACRO_Draw3D(context)) {
+        // any triangle?
+        unsigned triNum = size();
+        if (triNum == 0) return;
 
-		//L.O.D.
-		bool lodEnabled = (triNum > context.minLODTriangleCount && context.decimateMeshOnMove && MACRO_LODActivated(context));
-		unsigned decimStep = (lodEnabled ? static_cast<unsigned>(ceil(static_cast<double>(triNum*3) / context.minLODTriangleCount)) : 1);
-		unsigned displayedTriNum = triNum / decimStep;
+        // L.O.D.
+        bool lodEnabled = (triNum > context.minLODTriangleCount &&
+                 context.decimateMeshOnMove && MACRO_LODActivated(context));
+        unsigned decimStep = (lodEnabled ? static_cast<unsigned>(ceil(static_cast<double>(triNum * 3) /
+                                           context.minLODTriangleCount)) : 1);
+        unsigned displayedTriNum = triNum / decimStep;
 
-		//display parameters
-		glDrawParams glParams;
-		getDrawingParameters(glParams);
-		glParams.showNorms &= bool(MACRO_LightIsEnabled(context));
+        // display parameters
+        glDrawParams glParams;
+        getDrawingParameters(glParams);
+        // no normals shading without light!
+        glParams.showNorms &= bool(MACRO_LightIsEnabled(context));
 
-		//vertices visibility
-		const ccGenericPointCloud::VisibilityTableType& verticesVisibility = vertices->getTheVisibilityArray();
-		bool visFiltering = (verticesVisibility.size() == vertices->size());
+        // vertices visibility
+        const ccGenericPointCloud::VisibilityTableType& verticesVisibility = vertices->getTheVisibilityArray();
+        bool visFiltering = (verticesVisibility.size() == vertices->size());
+        context.visFiltering = visFiltering;
 
-		//wireframe ? (not compatible with LOD)
-		bool showWired = isShownAsWire() && !lodEnabled;
-		bool isShowPoints = isShownAsPoints() && !lodEnabled;
+        // wireframe ? (not compatible with LOD)
+        bool showWired = isShownAsWire() && !lodEnabled;
+        bool isShowPoints = isShownAsPoints() && !lodEnabled;
+        if (showWired) {
+            context.meshRenderingMode =
+                    MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
+        }
 
-		//per-triangle normals?
-		bool showTriNormals = (hasTriNormals() && triNormsShown());
-		//fix 'showNorms'
-		glParams.showNorms = showTriNormals || (vertices->hasNormals() && m_normalsDisplayed);
+        if (isShowPoints) {
+            context.meshRenderingMode =
+                    MESH_RENDERING_MODE::ECV_POINTS_MODE;
+        }
+        if (!showWired && !isShowPoints) {
+            context.meshRenderingMode =
+                    MESH_RENDERING_MODE::ECV_SURFACE_MODE;
+        }
 
-		//materials & textures
-		bool applyMaterials = (hasMaterials() && materialsShown());
-		bool showTextures = (hasTextures() && materialsShown() && !lodEnabled);
+        // per-triangle normals?
+        bool showTriNormals = (hasTriNormals() && triNormsShown());
+        // fix 'showNorms'
+        glParams.showNorms = showTriNormals || (vertices->hasNormals() && m_normalsDisplayed);
 
-		//GL name pushing
-		bool pushName = MACRO_DrawEntityNames(context);
-		if (pushName)
-		{
-			//not fast at all!
-			if (MACRO_DrawFastNamesOnly(context))
-				return;
-			//glFunc->glPushName(getUniqueIDForDisplay());
-			//minimal display for picking mode!
-			glParams.showNorms = false;
-			glParams.showColors = false;
-			//glParams.showSF --> we keep it only if SF 'NaN' values are hidden
-			showTriNormals = false;
-			applyMaterials = false;
-			showTextures = false;
-		}
+        // materials & textures
+        bool applyMaterials = (hasMaterials() && materialsShown());
+        bool showTextures = (hasTextures() && materialsShown() && !lodEnabled);
 
-		//in the case we need to display scalar field colors
-		ccScalarField* currentDisplayedScalarField = nullptr;
-		bool greyForNanScalarValues = true;
-		//unsigned colorRampSteps = 0;
-		ccColorScale::Shared colorScale(nullptr);
+        // GL name pushing
+        bool pushName = MACRO_DrawEntityNames(context);
+        if (pushName) {
+            // not fast at all!
+            if (MACRO_DrawFastNamesOnly(context)) return;
+            // glFunc->glPushName(getUniqueIDForDisplay());
+            // minimal display for picking mode!
+            glParams.showNorms = false;
+            glParams.showColors = false;
+            // glParams.showSF --> we keep it only if SF 'NaN' values are
+            // hidden
+            showTriNormals = false;
+            applyMaterials = false;
+            showTextures = false;
+        }
 
-		if (glParams.showSF)
-		{
-			assert(vertices->isA(CV_TYPES::POINT_CLOUD));
-			ccPointCloud* cloud = static_cast<ccPointCloud*>(vertices);
+        // in the case we need to display scalar field colors
+        ccScalarField* currentDisplayedScalarField = nullptr;
+        bool greyForNanScalarValues = true;
+        // unsigned colorRampSteps = 0;
+        ccColorScale::Shared colorScale(nullptr);
 
-			greyForNanScalarValues = (cloud->getCurrentDisplayedScalarField() && cloud->getCurrentDisplayedScalarField()->areNaNValuesShownInGrey());
-			if (greyForNanScalarValues && pushName)
-			{
-				//in picking mode, no need to take SF into account if we don't hide any points!
-				glParams.showSF = false;
-			}
-			else
-			{
-				currentDisplayedScalarField = cloud->getCurrentDisplayedScalarField();
-				colorScale = currentDisplayedScalarField->getColorScale();
-				//colorRampSteps = currentDisplayedScalarField->getColorRampSteps();
+        if (glParams.showSF) {
+            assert(vertices->isA(CV_TYPES::POINT_CLOUD));
+            ccPointCloud* cloud = static_cast<ccPointCloud*>(vertices);
 
-				assert(colorScale);
-				//get default color ramp if cloud has no scale associated?!
-				if (!colorScale)
-					colorScale = ccColorScalesManager::GetUniqueInstance()->getDefaultScale(ccColorScalesManager::BGYR);
-			}
-		}
+            greyForNanScalarValues =
+                    (cloud->getCurrentDisplayedScalarField() &&
+                        cloud->getCurrentDisplayedScalarField()
+                                ->areNaNValuesShownInGrey());
+            if (greyForNanScalarValues && pushName) {
+                // in picking mode, no need to take SF into account if we
+                // don't hide any points!
+                glParams.showSF = false;
+            }
+        }
 
-		//materials or color?
-		bool colorMaterial = false;
-		if (glParams.showSF || glParams.showColors)
-		{
-			applyMaterials = false;
-			colorMaterial = true;
-			//glFunc->glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
-			//glFunc->glEnable(GL_COLOR_MATERIAL);
-		}
+        if (glParams.showColors) {
+            if (isColorOverriden()) {
+                context.defaultMeshColor = m_tempColor;
+            } else {
+                assert(vertices->isA(CV_TYPES::POINT_CLOUD));
+                context.defaultMeshColor = static_cast<ccPointCloud*>(vertices)->rgbColors()->getValue(0);
+            }
+        } else {
+            context.defaultMeshColor = ecvColor::lightGrey;
+        }
 
-		//in the case we need to display vertex colors
-		ColorsTableType* rgbColorsTable = nullptr;
-		if (glParams.showColors)
-		{
-			if (isColorOverriden())
-			{
-				//ccGL::Color3v(glFunc, m_tempColor.rgb);
-				glParams.showColors = false;
-			}
-			else
-			{
-				assert(vertices->isA(CV_TYPES::POINT_CLOUD));
-				rgbColorsTable = static_cast<ccPointCloud*>(vertices)->rgbColors();
-			}
-		}
-		else
-		{
-			//glFunc->glColor3fv(context.defaultMat->getDiffuseFront().rgba);
-		}
+        context.drawParam = glParams;
 
-		if (glParams.showNorms)
-		{
-			//glFunc->glEnable(GL_RESCALE_NORMAL);
-			//glFunc->glEnable(GL_LIGHTING);
-			//context.defaultMat->applyGL(context.qGLContext, true, colorMaterial);
-		}
-
-		//in the case we need normals (i.e. lighting)
-		NormsIndexesTableType* normalsIndexesTable = nullptr;
-		ccNormalVectors* compressedNormals = nullptr;
-		if (glParams.showNorms)
-		{
-			assert(vertices->isA(CV_TYPES::POINT_CLOUD));
-			normalsIndexesTable = static_cast<ccPointCloud*>(vertices)->normals();
-			compressedNormals = ccNormalVectors::GetUniqueInstance();
-		}
-
-		//stipple mask
-		if (stipplingEnabled())
-		{
-			//EnableGLStippleMask(context.qGLContext, true);
-		}
-
-		if (!visFiltering && !(applyMaterials || showTextures) && (!glParams.showSF || greyForNanScalarValues))
-		{
-			//the GL type depends on the PointCoordinateType 'size' (float or double)
-			//GLenum GL_COORD_TYPE = sizeof(PointCoordinateType) == 4 ? GL_FLOAT : GL_DOUBLE;
-
-			//glFunc->glEnableClientState(GL_VERTEX_ARRAY);
-			//glFunc->glVertexPointer(3, GL_COORD_TYPE, 0, GetVertexBuffer());
-
-			if (glParams.showNorms)
-			{
-				//glFunc->glEnableClientState(GL_NORMAL_ARRAY);
-				//glFunc->glNormalPointer(GL_COORD_TYPE, 0, GetNormalsBuffer());
-			}
-			if (glParams.showSF || glParams.showColors)
-			{
-				//glFunc->glEnableClientState(GL_COLOR_ARRAY);
-				//glFunc->glColorPointer(3, GL_UNSIGNED_BYTE, 0, GetColorsBuffer());
-			}
-
-			//we can scan and process each chunk separately in an optimized way
-			//we mimic the way ccMesh beahves by using virtual chunks!
-			size_t chunkCount = ccChunk::Count(displayedTriNum);
-			size_t chunkStart = 0;
-			for (size_t k = 0; k < chunkCount; ++k, chunkStart += ccChunk::SIZE)
-			{
-				//virtual chunk size
-				const size_t chunkSize = ccChunk::Size(k, displayedTriNum);
-
-				//vertices
-				CCVector3* _vertices = GetVertexBuffer();
-				for (size_t n = 0; n < chunkSize; n += decimStep)
-				{
-					const CVLib::VerticesIndexes* ti = getTriangleVertIndexes(static_cast<unsigned>(chunkStart + n));
-					*_vertices++ = *vertices->getPoint(ti->i1);
-					*_vertices++ = *vertices->getPoint(ti->i2);
-					*_vertices++ = *vertices->getPoint(ti->i3);
-				}
-
-				//scalar field
-				if (glParams.showSF)
-				{
-					ecvColor::Rgb* _rgbColors = GetColorsBuffer();
-					assert(colorScale);
-					for (unsigned n = 0; n < chunkSize; n += decimStep)
-					{
-						const CVLib::VerticesIndexes* ti = getTriangleVertIndexes(static_cast<unsigned>(chunkStart + n));
-						*_rgbColors++ = *currentDisplayedScalarField->getValueColor(ti->i1);
-						*_rgbColors++ = *currentDisplayedScalarField->getValueColor(ti->i2);
-						*_rgbColors++ = *currentDisplayedScalarField->getValueColor(ti->i3);
-					}
-				}
-				//colors
-				else if (glParams.showColors)
-				{
-					ecvColor::Rgb* _rgbColors = GetColorsBuffer();
-
-					for (unsigned n = 0; n < chunkSize; n += decimStep)
-					{
-						const CVLib::VerticesIndexes* ti = getTriangleVertIndexes(static_cast<unsigned>(chunkStart + n));
-						*_rgbColors++ = rgbColorsTable->at(ti->i1);
-						*_rgbColors++ = rgbColorsTable->at(ti->i2);
-						*_rgbColors++ = rgbColorsTable->at(ti->i3);
-					}
-				}
-
-				//normals
-				if (glParams.showNorms)
-				{
-					CCVector3* _normals = GetNormalsBuffer();
-					if (showTriNormals)
-					{
-						for (unsigned n = 0; n < chunkSize; n += decimStep)
-						{
-							CCVector3 Na, Nb, Nc;
-							getTriangleNormals(static_cast<unsigned>(chunkStart + n), Na, Nb, Nc);
-							*_normals++ = Na;
-							*_normals++ = Nb;
-							*_normals++ = Nc;
-						}
-					}
-					else
-					{
-						for (unsigned n = 0; n < chunkSize; n += decimStep)
-						{
-							const CVLib::VerticesIndexes* ti = getTriangleVertIndexes(static_cast<unsigned>(chunkStart + n));
-							*_normals++ = vertices->getPointNormal(ti->i1);
-							*_normals++ = vertices->getPointNormal(ti->i2);
-							*_normals++ = vertices->getPointNormal(ti->i3);
-						}
-					}
-				}
-
-				//if (!showWired)
-				//{
-				//	glFunc->glDrawArrays(lodEnabled ? GL_POINTS : GL_TRIANGLES, 0, (static_cast<int>(chunkSize) / decimStep) * 3);
-				//}
-				//else
-				//{
-				//	glFunc->glDrawElements(GL_LINES, (static_cast<int>(chunkSize) / decimStep) * 6, GL_UNSIGNED_INT, GetWireVertexIndexes());
-				//}
-			}
-
-			////disable arrays
-			//glFunc->glDisableClientState(GL_VERTEX_ARRAY);
-			//if (glParams.showNorms)
-			//	glFunc->glDisableClientState(GL_NORMAL_ARRAY);
-			//if (glParams.showSF || glParams.showColors)
-			//	glFunc->glDisableClientState(GL_COLOR_ARRAY);
-		}
-		else
-		{
-			//current vertex color
-			const ecvColor::Rgb *col1 = nullptr, *col2 = nullptr, *col3 = nullptr;
-			//current vertex normal
-			const PointCoordinateType *N1 = nullptr, *N2 = nullptr, *N3 = nullptr;
-			//current vertex texture coordinates
-			TexCoords2D *Tx1 = nullptr, *Tx2 = nullptr, *Tx3 = nullptr;
-
-			//loop on all triangles
-			int lasMtlIndex = -1;
-
-			if (showTextures)
-			{
-				/*			glFunc->glPushAttrib(GL_ENABLE_BIT);
-							glFunc->glEnable(GL_TEXTURE_2D);*/
-			}
-
-			//GLenum triangleDisplayType = lodEnabled ? GL_POINTS : showWired ? GL_LINE_LOOP : GL_TRIANGLES;
-			//glFunc->glBegin(triangleDisplayType);
-
-			//per-triangle normals
-			const NormsIndexesTableType* triNormals = getTriNormsTable();
-			//materials
-			const ccMaterialSet* materials = getMaterialSet();
-
-			GLuint currentTexID = 0;
-
-			for (unsigned n = 0; n < triNum; ++n)
-			{
-				//current triangle vertices
-				const CVLib::VerticesIndexes* tsi = getTriangleVertIndexes(n);
-
-				//LOD: shall we display this triangle?
-				if (n % decimStep)
-					continue;
-
-				if (visFiltering)
-				{
-					//we skip the triangle if at least one vertex is hidden
-					if ((verticesVisibility[tsi->i1] != POINT_VISIBLE) ||
-						(verticesVisibility[tsi->i2] != POINT_VISIBLE) ||
-						(verticesVisibility[tsi->i3] != POINT_VISIBLE))
-						continue;
-				}
-
-				if (glParams.showSF)
-				{
-					assert(colorScale);
-					col1 = currentDisplayedScalarField->getValueColor(tsi->i1);
-					if (!col1)
-						continue;
-					col2 = currentDisplayedScalarField->getValueColor(tsi->i2);
-					if (!col2)
-						continue;
-					col3 = currentDisplayedScalarField->getValueColor(tsi->i3);
-					if (!col3)
-						continue;
-				}
-				else if (glParams.showColors)
-				{
-					col1 = &rgbColorsTable->at(tsi->i1);
-					col2 = &rgbColorsTable->at(tsi->i2);
-					col3 = &rgbColorsTable->at(tsi->i3);
-				}
-
-				if (glParams.showNorms)
-				{
-					if (showTriNormals)
-					{
-						assert(triNormals);
-						int n1, n2, n3;
-						getTriangleNormalIndexes(n, n1, n2, n3);
-						N1 = (n1 >= 0 ?                 ccNormalVectors::GetNormal(triNormals->at(n1)).u : nullptr);
-						N2 = (n1 == n2 ? N1 : n1 >= 0 ? ccNormalVectors::GetNormal(triNormals->at(n2)).u : nullptr);
-						N3 = (n1 == n3 ? N1 : n3 >= 0 ? ccNormalVectors::GetNormal(triNormals->at(n3)).u : nullptr);
-
-					}
-					else
-					{
-						N1 = compressedNormals->getNormal(normalsIndexesTable->at(tsi->i1)).u;
-						N2 = compressedNormals->getNormal(normalsIndexesTable->at(tsi->i2)).u;
-						N3 = compressedNormals->getNormal(normalsIndexesTable->at(tsi->i3)).u;
-					}
-				}
-
-				if (applyMaterials || showTextures) {
-
-				}
-
-				if (showWired)
-				{
-					//glFunc->glEnd();
-					//glFunc->glBegin(triangleDisplayType);
-				}
-
-				////vertex 1
-				//if (N1)
-				//	ccGL::Normal3v(glFunc, N1);
-				//if (col1)
-				//	glFunc->glColor3ubv(col1->rgb);
-				//if (Tx1)
-				//	glFunc->glTexCoord2fv(Tx1->t);
-				//ccGL::Vertex3v(glFunc, vertices->getPoint(tsi->i1)->u);
-
-				////vertex 2
-				//if (N2)
-				//	ccGL::Normal3v(glFunc, N2);
-				//if (col2)
-				//	glFunc->glColor3ubv(col2->rgb);
-				//if (Tx2)
-				//	glFunc->glTexCoord2fv(Tx2->t);
-				//ccGL::Vertex3v(glFunc, vertices->getPoint(tsi->i2)->u);
-
-				////vertex 3
-				//if (N3)
-				//	ccGL::Normal3v(glFunc, N3);
-				//if (col3)
-				//	glFunc->glColor3ubv(col3->rgb);
-				//if (Tx3)
-				//	glFunc->glTexCoord2fv(Tx3->t);
-				//ccGL::Vertex3v(glFunc, vertices->getPoint(tsi->i3)->u);
-			}
-
-			//glFunc->glEnd();
-
-			if (showTextures)
-			{
-				if (currentTexID)
-				{
-					//glFunc->glBindTexture(GL_TEXTURE_2D, 0);
-					currentTexID = 0;
-				}
-				//glFunc->glPopAttrib();
-			}
-		}
-
-		if (stipplingEnabled())
-		{
-			//EnableGLStippleMask(context.qGLContext, false);
-		}
-
-		if (colorMaterial)
-		{
-			//glFunc->glDisable(GL_COLOR_MATERIAL);
-		}
-
-		if (glParams.showNorms)
-		{
-			//glFunc->glDisable(GL_LIGHTING);
-			//glFunc->glDisable(GL_RESCALE_NORMAL);
-		}
-
-		if (pushName)
-		{
-			//glFunc->glPopName();
-		}
-	}
+        ecvDisplayTools::Draw(context, this);
+    }
 }
 
 bool ccGenericMesh::toFile_MeOnly(QFile& out) const

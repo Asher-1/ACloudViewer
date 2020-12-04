@@ -11,28 +11,28 @@
 #include <QString>
 #include <QTextCodec>
 
-using std::string;
-using std::vector;
-
 class CVTools
 {
 public:
-	CV_CORE_LIB_API static string GetFileName(const string file_name);
+    CV_CORE_LIB_API static std::string GetFileName(const std::string file_name);
 	CV_CORE_LIB_API static void TimeStart();
 	CV_CORE_LIB_API static QString TimeOff();
 
 	// string to QString
-	CV_CORE_LIB_API static QString toQString(const string& s);
+	CV_CORE_LIB_API static QString ToQString(const std::string& s);
 	// QString to string
-	CV_CORE_LIB_API static string fromQString(const QString& qs);
+    CV_CORE_LIB_API static std::string FromQString(const QString& qs);
 
-	CV_CORE_LIB_API static string joinStrVec(const vector<string>& v, string splitor = " ");
+	CV_CORE_LIB_API static std::string JoinStrVec(const std::vector<std::string>& v,
+                                                  std::string splitor = " ");
 
 	// QString(Unicode) -> std::string (GBK)
-	CV_CORE_LIB_API static string fromUnicode(const QString& qstr);
+    CV_CORE_LIB_API static std::string FromUnicode(const QString& qstr);
 
 	// std::string (GBK) -> QString(Unicode)
-	CV_CORE_LIB_API static QString toUnicode(const string& cstr);
+	CV_CORE_LIB_API static QString ToUnicode(const std::string& cstr);
+
+	CV_CORE_LIB_API static std::string ExtractDigitAlpha(const std::string& str);
 
 	CV_CORE_LIB_API static int TranslateKeyCode(int key);
 

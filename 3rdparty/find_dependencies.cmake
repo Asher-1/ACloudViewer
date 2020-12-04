@@ -985,6 +985,9 @@ if(BUILD_RPC_INTERFACE)
     set(ZEROMQ_TARGET "3rdparty_zeromq")
     add_dependencies(${ZEROMQ_TARGET} ext_zeromq)
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${ZEROMQ_TARGET}")
+    if( DEFINED ZEROMQ_ADDITIONAL_LIBS )
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS ${ZEROMQ_ADDITIONAL_LIBS})
+    endif()
 
     # msgpack
     include(${CloudViewer_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)

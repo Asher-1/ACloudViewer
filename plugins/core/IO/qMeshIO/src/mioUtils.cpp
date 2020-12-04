@@ -1,4 +1,4 @@
-// MeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
+// qMeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <QImageReader>
@@ -26,7 +26,7 @@ namespace
       
       if ( inScene->mNumTextures == 0 )
       {
-         CVLog::Warning( QStringLiteral( "[MeshIO] Scene requests embedded texture, but there are none" ) );
+         CVLog::Warning( QStringLiteral( "[qMeshIO] Scene requests embedded texture, but there are none" ) );
          return image;
       }
       
@@ -37,7 +37,7 @@ namespace
       
       if ( !isCompressed )
       {
-         CVLog::Warning( QStringLiteral( "[MeshIO] Uncompressed embedded textures not yet implemented" ) );
+         CVLog::Warning( QStringLiteral( "[qMeshIO] Uncompressed embedded textures not yet implemented" ) );
          return image;
       }
       
@@ -55,7 +55,7 @@ namespace
       
       if ( !QFile::exists( cPath ) )
       {
-         CVLog::Warning( QStringLiteral( "[MeshIO] Material not found: '%1'" ).arg( cPath ) );
+         CVLog::Warning( QStringLiteral( "[qMeshIO] Material not found: '%1'" ).arg( cPath ) );
          return {};
       }
       
@@ -124,7 +124,7 @@ namespace mioUtils
       
       auto newMaterial = ccMaterial::Shared( new ccMaterial( cName.C_Str() ) );
       
-      CVLog::PrintDebug( QStringLiteral( "[MeshIO] Creating material '%1'" ).arg( newMaterial->getName() ) );
+      CVLog::PrintDebug( QStringLiteral( "[qMeshIO] Creating material '%1'" ).arg( newMaterial->getName() ) );
       
       // we only handle the diffuse texture for now
       if ( aiMaterial->GetTextureCount( aiTextureType_DIFFUSE ) > 0 )
@@ -133,7 +133,7 @@ namespace mioUtils
          
          if ( aiMaterial->GetTexture( aiTextureType_DIFFUSE, 0, &texturePath ) != AI_SUCCESS )
          {
-            CVLog::Warning( QStringLiteral( "[MeshIO] Could not get texture path" ) );
+            CVLog::Warning( QStringLiteral( "[qMeshIO] Could not get texture path" ) );
          }
          else
          {
@@ -184,14 +184,14 @@ namespace mioUtils
          name = QStringLiteral( "Mesh" );
       }
       
-      CVLog::Print( QStringLiteral( "[MeshIO] Mesh '%1' has %2 verts & %3 faces" )
+      CVLog::Print( QStringLiteral( "[qMeshIO] Mesh '%1' has %2 verts & %3 faces" )
                        .arg( name,
                              QLocale::system().toString( inMesh->mNumVertices ),
                              QLocale::system().toString( inMesh->mNumFaces ) ) );
       
       if ( !inMesh->HasPositions() || !inMesh->HasFaces() )
       {
-         CVLog::Warning( QStringLiteral( "[MeshIO] Mesh '%1' does not have vertices or faces" ).arg( name ) );
+         CVLog::Warning( QStringLiteral( "[qMeshIO] Mesh '%1' does not have vertices or faces" ).arg( name ) );
          
          delete newPC;
          delete newMesh;
@@ -206,6 +206,17 @@ namespace mioUtils
       {
          newMesh->reserve( inMesh->mNumFaces );
       }
+
+      // vertex colors
+      bool hasVertexColors = inMesh->HasVertexColors(0);
+      if (hasVertexColors)
+      {
+            bool allocated = newPC->reserveTheRGBTable();
+            if ( !allocated )
+            {
+                CVLog::Warning( QStringLiteral( "[qMeshIO] Cannot allocate colors for mesh '%1'" ).arg( name ) );
+            }
+      }
       
       // normals
       if ( inMesh->HasNormals() )
@@ -214,7 +225,7 @@ namespace mioUtils
          
          if ( !allocated )
          {
-            CVLog::Warning( QStringLiteral( "[MeshIO] Cannot allocate normals for mesh '%1'" ).arg( name ) );
+            CVLog::Warning( QStringLiteral( "[qMeshIO] Cannot allocate normals for mesh '%1'" ).arg( name ) );
          }
       }
       
@@ -238,7 +249,7 @@ namespace mioUtils
          {
             delete texCoords;
             hasTextureCoordinates = false;
-            CVLog::Warning( QStringLiteral( "[MeshIO] Cannot allocate texture coordinates for mesh '%1'" ).arg( name ) );
+            CVLog::Warning( QStringLiteral( "[qMeshIO] Cannot allocate texture coordinates for mesh '%1'" ).arg( name ) );
          }
          else
          {
@@ -256,6 +267,18 @@ namespace mioUtils
                            static_cast<PointCoordinateType>( point.z ) );
          
          newPC->addPoint( point2 );
+
+         // colors
+         if (newPC->hasColors()) {
+             const aiColor4D &colors = inMesh->mColors[0][i];
+
+
+             ecvColor::Rgb color(static_cast<ColorCompType>(colors.r * 255),
+                                 static_cast<ColorCompType>(colors.g * 255),
+                                 static_cast<ColorCompType>(colors.b * 255));
+
+             newPC->addRGBColor(color);
+         }
          
          // normals
          if ( newPC->hasNormals() )
@@ -314,7 +337,7 @@ namespace mioUtils
       
       if ( newMesh->size() == 0 )
       {
-         CVLog::Warning( QStringLiteral( "[MeshIO] Mesh '%1' does not have any faces" ).arg( name ) );
+         CVLog::Warning( QStringLiteral( "[qMeshIO] Mesh '%1' does not have any faces" ).arg( name ) );
          
          delete newPC;
          delete newMesh;
@@ -327,12 +350,13 @@ namespace mioUtils
       
       if ( !newPC->hasNormals() )
       {
-         CVLog::Warning( QStringLiteral( "[MeshIO] Mesh '%1' does not have normals - will compute them per vertex" ).arg( name ) );
+         CVLog::Warning( QStringLiteral( "[qMeshIO] Mesh '%1' does not have normals - will compute them per vertex" ).arg( name ) );
          
          newMesh->computeNormals( true );
       }
       
       newMesh->showNormals( true );
+      newMesh->showColors(hasVertexColors);
       newMesh->addChild( newPC );
       
       return newMesh;

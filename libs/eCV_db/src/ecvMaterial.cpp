@@ -31,6 +31,7 @@ static QMap<QString, QSharedPointer<QOpenGLTexture>> s_openGLTextureDB;
 ccMaterial::ccMaterial(QString name)
 	: m_name(name)
 	, m_uniqueID(QUuid::createUuid().toString())
+	, m_illum(2)
 	, m_diffuseFront(ecvColor::bright)
 	, m_diffuseBack(ecvColor::bright)
 	, m_ambient(ecvColor::night)
@@ -44,6 +45,7 @@ ccMaterial::ccMaterial(const ccMaterial& mtl)
 	: m_name(mtl.m_name)
 	, m_textureFilename(mtl.m_textureFilename)
 	, m_uniqueID(mtl.m_uniqueID)
+    , m_illum(2)
 	, m_diffuseFront(mtl.m_diffuseFront)
 	, m_diffuseBack(mtl.m_diffuseBack)
 	, m_ambient(mtl.m_ambient)
@@ -347,9 +349,9 @@ bool ccMaterial::compare(const ccMaterial& mtl) const
 		||	mtl.m_shininessBack != m_shininessBack
 		||	mtl.m_ambient != m_ambient
 		||	mtl.m_specular != m_specular
-		||	mtl.m_emission != m_emission
+		||	mtl.m_emission != m_emission 
+		||  mtl.m_illum != m_illum
 		||	mtl.m_diffuseBack != m_diffuseBack
-		||	mtl.m_diffuseFront != m_diffuseFront
 		||	mtl.m_diffuseFront != m_diffuseFront)
 	{
 		return false;
