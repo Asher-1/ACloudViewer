@@ -12,13 +12,13 @@ if( PLUGIN_IO_QPDAL )
 	add_subdirectory( ui )
 
 	if( PDAL_VERSION LESS 2.0 )
-                set( JSON_ROOT_DIR "" CACHE PATH "jsoncpp root dir (PDAL/vendor/jsoncpp/dist)" )
-		
-                if( NOT JSON_ROOT_DIR )
-                        message( FATAL_ERROR "jsoncpp root dir is not specified (JSON_ROOT_DIR)" )
-                endif()
+		set( JSON_ROOT_DIR "" CACHE PATH "jsoncpp root dir (PDAL/vendor/jsoncpp/dist)" )
 
-#                set (JSON_ROOT_DIR "${CloudViewer_3RDPARTY_DIR}/jsoncpp/include/json")
+		if( NOT JSON_ROOT_DIR )
+				message( FATAL_ERROR "jsoncpp root dir is not specified (JSON_ROOT_DIR)" )
+		endif()
+
+        # set (JSON_ROOT_DIR "${CloudViewer_3RDPARTY_DIR}/jsoncpp/include/json")
 
 		target_include_directories( ${PROJECT_NAME} PRIVATE ${JSON_ROOT_DIR} )
 	endif()
@@ -34,12 +34,8 @@ if( PLUGIN_IO_QPDAL )
 		
 		file( GLOB PDAL_DLL_FILES ${PDAL_DLL_DIR}/pdal*.dll )
 		
-		copy_files( "${PDAL_DLL_FILES}" "${CLOUDCOMPARE_DEST_FOLDER}" )
-		
-		if( ${OPTION_BUILD_CCVIEWER} )
-			copy_files( "${PDAL_DLL_FILES}" "${CCVIEWER_DEST_FOLDER}" )
-		endif()
-		
+		copy_files( "${PDAL_DLL_FILES}" "${EROWCLOUDVIEWER_DEST_FOLDER}" )
+
 		unset( PDAL_DLL_DIR )
 	endif()
 endif()

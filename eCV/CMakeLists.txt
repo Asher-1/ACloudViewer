@@ -7,7 +7,7 @@ include( CMakePolicies NO_POLICY_SCOPE )
 if (MSVC)
     if (CVCORELIB_USE_TBB)
 		include_directories( ${TBB_INCLUDE_DIRS})
-	endif()
+    endif()
 endif()
 
 if (BUILD_PYTHON_MODULE)

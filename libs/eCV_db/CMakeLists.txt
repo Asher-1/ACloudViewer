@@ -12,7 +12,7 @@ add_subdirectory( src )
 
 if (MSVC)
     if (CVCORELIB_USE_TBB)
-            include_directories( ${TBB_INCLUDE_DIRS})
+        include_directories( ${TBB_INCLUDE_DIRS})
     endif()
 endif()
 

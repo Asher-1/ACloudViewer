@@ -353,7 +353,7 @@ bool ccMaterialSet::saveAsMTL(QString path, const QString& baseFilename, QString
 				filenamesUsed.insert(texName);
 
 				QString destFilename = path + QString('/') + texName;
-				if (mtl->getTexture().mirrored().save(destFilename)) //mirrored: see ccMaterial
+                if (mtl->getTexture().save(destFilename)) //mirrored: see ccMaterial
 				{
 					//new absolute filemane
 					absFilenamesSaved[absFilename] = texName;

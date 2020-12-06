@@ -4,13 +4,13 @@
 
 #include <QRegularExpression>
 
-#include "mioAbstractLoader.h"
+#include "IoAbstractLoader.h"
 
 
-class IFCFilter final : public mioAbstractLoader
+class AssimpIfc final : public IoAbstractLoader
 {
  public:
-   IFCFilter();
+   AssimpIfc();
    
  private:
    void _postProcess( ccHObject &ioContainer ) override;

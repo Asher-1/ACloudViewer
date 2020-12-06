@@ -285,13 +285,6 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
         double center[3];
         bbox.GetCenter(center);
 
-//        double fP[4];
-//        double center[3];
-//        getVtkCamera()->GetFocalPoint(fP);
-//        for (int i = 0; i < 3; ++i)
-//        {
-//            center[i] = fP[i] / fP[3];
-//        }
         setCenterOfRotation(center[0], center[1], center[2]);
 	}
 
@@ -810,6 +803,34 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 				addPolygonMesh(*pclMesh, viewID, viewPort);
 			}
 		}
+
+		bool has_normal =	(pcl::getFieldIndex(pclMesh->cloud, "normal_x") != -1) &&
+							(pcl::getFieldIndex(pclMesh->cloud, "normal_y") != -1) &&
+							(pcl::getFieldIndex(pclMesh->cloud, "normal_z") != -1);
+		if (has_normal && contains(viewID))
+		{
+			vtkSmartPointer<vtkFloatArray> normals = vtkSmartPointer<vtkFloatArray>::New();
+			CloudNormal cloud;
+            FROM_PCL_CLOUD(pclMesh->cloud, cloud);
+            if (cloud.points.empty()) {
+                CVLog::Error("[PCLVis::addTextureMesh] Cloud is empty!");
+                return;
+            }
+            normals->SetNumberOfComponents(3);
+            for (std::size_t i = 0; i < cloud.points.size(); ++i) {
+                const NormalT& N = cloud.points[i];
+                const float normal[3] = {N.normal_x, N.normal_y, N.normal_z};
+                normals->InsertNextTupleValue(normal);
+            }
+            auto actor = getActorById(viewID);
+            if (!actor) return;
+            auto polydata = vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
+            if (polydata) {
+                polydata->GetPointData()->SetNormals(normals);
+                actor->GetMapper()->Update();
+                actor->Modified();
+            }
+		}
 	}
 
 	void PCLVis::draw(CC_DRAW_CONTEXT& CONTEXT, PCLTextureMesh::Ptr textureMesh)
@@ -942,6 +963,9 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		double r, double g, double b, double a, 
 		int fontSize, const std::string & viewID, int viewport)
 	{
+        Q_UNUSED(pos2D);
+        Q_UNUSED(a);
+        Q_UNUSED(viewport);
 		vtkAbstractWidget* widget = getWidgetById(viewID);
 		if (!widget) return false;
 
@@ -971,6 +995,8 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		int fontSize, const std::string & viewID,
 		bool anchorDragable, int viewport)
 	{
+        Q_UNUSED(viewport);
+
 		if (containWidget(viewID))
 		{
 			CVLog::Warning("[PCLVis::addCaption] The id <%s> already exists! Please choose a different id and retry.", viewID.c_str());
@@ -1276,16 +1302,6 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 			CVLog::Error("[PCLVis::addTextureMesh] No vertices found!");
 			return (false);
 		}
-		// total number of coordinates
-		std::size_t nb_coordinates = 0;
-        for (const auto& tex_coordinate : mesh.tex_coordinates)
-            nb_coordinates += tex_coordinate.size();
-		// no texture coordinates --> exit
-		if (nb_coordinates == 0)
-		{
-			CVLog::Error("[PCLVis::addTextureMesh] No textures coordinates found!");
-			return (false);
-		}
 
 		// Create points from mesh.cloud
 		vtkSmartPointer<vtkPoints> poly_points = vtkSmartPointer<vtkPoints>::New();
@@ -1405,73 +1421,49 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		mapper->SetInputData(polydata);
 
 		vtkSmartPointer<vtkLODActor> actor = vtkSmartPointer<vtkLODActor>::New();
-		vtkTextureUnitManager* tex_manager = vtkOpenGLRenderWindow::SafeDownCast(getRenderWindow())->GetTextureUnitManager();
-		if (!tex_manager)
-			return (false);
-		// hardware always supports multitexturing of some degree
-		int texture_units = tex_manager->GetNumberOfTextureUnits();
-		if ((size_t)texture_units < mesh.tex_materials.size())
-			CVLog::Warning("[PCLVis::addTextureMesh] GPU texture units %d < mesh textures %d!",
-				texture_units, mesh.tex_materials.size());
-		// Load textures
-		std::size_t last_tex_id = std::min(static_cast<int> (mesh.tex_materials.size()), texture_units);
-		std::size_t tex_id = 0;
-		while (tex_id < last_tex_id)
+		vtkTextureUnitManager* tex_manager = 
+			vtkOpenGLRenderWindow::SafeDownCast(getRenderWindow())->GetTextureUnitManager();
+        if (!tex_manager) return (false);
+        // hardware always supports multitexturing of some degree
+        int texture_units = tex_manager->GetNumberOfTextureUnits();
+        if ((size_t)texture_units < mesh.tex_materials.size())
+            CVLog::Warning("[PCLVis::addTextureMesh] GPU texture units %d < mesh "
+                    "textures %d!", texture_units, mesh.tex_materials.size());
+
+		// total number of coordinates
+        std::size_t nb_coordinates = 0;
+        for (const auto& tex_coordinate : mesh.tex_coordinates)
+            nb_coordinates += tex_coordinate.size();
+
+        // Load textures
+        std::size_t last_tex_id = std::min(
+                static_cast<int>(mesh.tex_materials.size()), texture_units);
+        std::size_t tex_id = 0;
+        while (tex_id < last_tex_id) 
 		{
-#if (VTK_MAJOR_VERSION == 8 && VTK_MINOR_VERSION >= 2) || VTK_MAJOR_VERSION > 8
-			const char *tu = mesh.tex_materials[tex_id].tex_name.c_str();
-#else
-			int tu = vtkProperty::VTK_TEXTURE_UNIT_0 + tex_id;
-#endif
-			vtkSmartPointer<vtkTexture> texture = vtkSmartPointer<vtkTexture>::New();
-			if (textureFromTexMaterial(mesh.tex_materials[tex_id], texture) <= 0)
-			{
-
-				CVLog::Warning("[PCLVisualizer::addTextureMesh] Failed to load texture %s, skipping!\n",
-					mesh.tex_materials[tex_id].tex_name.c_str());
-                ++tex_id;
-				continue;
-			}
-			// the first texture is in REPLACE mode others are in ADD mode
-			if (tex_id == 0)
-				texture->SetBlendingMode(vtkTexture::VTK_TEXTURE_BLENDING_MODE_REPLACE);
-			else
-				texture->SetBlendingMode(vtkTexture::VTK_TEXTURE_BLENDING_MODE_ADD);
-			// add a texture coordinates array per texture
-			vtkSmartPointer<vtkFloatArray> coordinates = vtkSmartPointer<vtkFloatArray>::New();
-			coordinates->SetNumberOfComponents(2);
-			std::stringstream ss; ss << "TCoords" << tex_id;
-			std::string this_coordinates_name = ss.str();
-			coordinates->SetName(this_coordinates_name.c_str());
-
-			for (std::size_t t = 0; t < mesh.tex_coordinates.size(); ++t)
-				if (t == tex_id)
-					for (std::size_t tc = 0; tc < mesh.tex_coordinates[t].size(); ++tc)
-						coordinates->InsertNextTuple2(mesh.tex_coordinates[t][tc][0],
-							mesh.tex_coordinates[t][tc][1]);
-				else
-					for (std::size_t tc = 0; tc < mesh.tex_coordinates[t].size(); ++tc)
-						coordinates->InsertNextTuple2(-1.0, -1.0);
-			mapper->MapDataArrayToMultiTextureAttribute(tu,
-				this_coordinates_name.c_str(),
-				vtkDataObject::FIELD_ASSOCIATION_POINTS);
-
-			polydata->GetPointData()->AddArray(coordinates);
-			actor->GetProperty ()->SetTexture (tu, texture);
-			const PCLMaterial::RGB & ambientColor = mesh.tex_materials[tex_id].tex_Ka;
-			const PCLMaterial::RGB & diffuseColor = mesh.tex_materials[tex_id].tex_Kd;
-			const PCLMaterial::RGB & specularColor = mesh.tex_materials[tex_id].tex_Ks;
-			actor->GetProperty()->SetAmbientColor(ambientColor.r, ambientColor.g, ambientColor.b);
-			actor->GetProperty()->SetDiffuseColor(diffuseColor.r, diffuseColor.g, diffuseColor.b);
-			actor->GetProperty()->SetSpecularColor(specularColor.r, specularColor.g, specularColor.b);
-            actor->GetProperty()->SetMaterialName(mesh.tex_materials[tex_id].tex_name.c_str());
+            // for materials
+            const PCLMaterial::RGB& ambientColor =
+                    mesh.tex_materials[tex_id].tex_Ka;
+            const PCLMaterial::RGB& diffuseColor =
+                    mesh.tex_materials[tex_id].tex_Kd;
+            const PCLMaterial::RGB& specularColor =
+                    mesh.tex_materials[tex_id].tex_Ks;
+            actor->GetProperty()->SetAmbientColor(
+                    ambientColor.r, ambientColor.g, ambientColor.b);
+            actor->GetProperty()->SetDiffuseColor(
+                    diffuseColor.r, diffuseColor.g, diffuseColor.b);
+            actor->GetProperty()->SetSpecularColor(
+                    specularColor.r, specularColor.g, specularColor.b);
+            actor->GetProperty()->SetMaterialName(
+                    mesh.tex_materials[tex_id].tex_name.c_str());
             switch (mesh.tex_materials[tex_id].tex_illum) {
                 case 0:
                     actor->GetProperty()->SetLighting(false);
                     actor->GetProperty()->SetDiffuse(0);
                     actor->GetProperty()->SetSpecular(0);
                     actor->GetProperty()->SetAmbient(1.0);
-                    actor->GetProperty()->SetColor(actor->GetProperty()->GetDiffuseColor());
+                    actor->GetProperty()->SetColor(
+                            actor->GetProperty()->GetDiffuseColor());
                     break;
                 case 1:
                     actor->GetProperty()->SetDiffuse(1.0);
@@ -1484,13 +1476,64 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
                     actor->GetProperty()->SetSpecular(1.0);
                     actor->GetProperty()->SetAmbient(1.0);
                     //// blinn to phong ~= 4.0
-                    //actor->GetProperty()->SetSpecularPower(
+                    // actor->GetProperty()->SetSpecularPower(
                     //        mesh.tex_materials[tex_id]. / 4.0);
                     break;
             }
-			
+            
+			// for textures
+            if (nb_coordinates != 0) 
+			{
+#if (VTK_MAJOR_VERSION == 8 && VTK_MINOR_VERSION >= 2) || VTK_MAJOR_VERSION > 8
+                const char* tu = mesh.tex_materials[tex_id].tex_name.c_str();
+#else
+                int tu = vtkProperty::VTK_TEXTURE_UNIT_0 + tex_id;
+#endif
+                vtkSmartPointer<vtkTexture> texture = vtkSmartPointer<vtkTexture>::New();
+                if (textureFromTexMaterial(mesh.tex_materials[tex_id], texture) <= 0) {
+                    CVLog::Warning("[PCLVisualizer::addTextureMesh] Failed to load "
+                            "texture %s located in %s, skipping!\n",
+                            mesh.tex_materials[tex_id].tex_name.c_str(),
+                            mesh.tex_materials[tex_id].tex_file.c_str());
+                    ++tex_id;
+                    continue;
+                }
+                // the first texture is in REPLACE mode others are in ADD mode
+                if (tex_id == 0)
+                    texture->SetBlendingMode(
+                            vtkTexture::VTK_TEXTURE_BLENDING_MODE_REPLACE);
+                else
+                    texture->SetBlendingMode(
+                            vtkTexture::VTK_TEXTURE_BLENDING_MODE_ADD);
+                // add a texture coordinates array per texture
+                vtkSmartPointer<vtkFloatArray> coordinates =
+                        vtkSmartPointer<vtkFloatArray>::New();
+                coordinates->SetNumberOfComponents(2);
+                std::stringstream ss;
+                ss << "TCoords" << tex_id;
+                std::string this_coordinates_name = ss.str();
+                coordinates->SetName(this_coordinates_name.c_str());
+                for (std::size_t t = 0; t < mesh.tex_coordinates.size(); ++t) {
+                    if (t == tex_id) {
+                        for (std::size_t tc = 0; tc < mesh.tex_coordinates[t].size(); ++tc)
+                            coordinates->InsertNextTuple2(
+                                    mesh.tex_coordinates[t][tc][0],
+                                    mesh.tex_coordinates[t][tc][1]);
+                    } else {
+                        for (std::size_t tc = 0; tc < mesh.tex_coordinates[t].size(); ++tc)
+                            coordinates->InsertNextTuple2(-1.0, -1.0);
+                    }
+				}
+
+                mapper->MapDataArrayToMultiTextureAttribute(
+						tu, this_coordinates_name.c_str(),
+                        vtkDataObject::FIELD_ASSOCIATION_POINTS);
+                polydata->GetPointData()->AddArray(coordinates);
+                actor->GetProperty()->SetTexture(tu, texture);
+            }
+
 			++tex_id;
-		}
+        }
 
 		// set mapper
 		actor->SetMapper(mapper);

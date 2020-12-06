@@ -18,6 +18,8 @@ public:
 	CV_CORE_LIB_API static void TimeStart();
 	CV_CORE_LIB_API static QString TimeOff();
 
+    CV_CORE_LIB_API static QString ToNativeSeparators(const QString& path);
+
 	// string to QString
 	CV_CORE_LIB_API static QString ToQString(const std::string& s);
 	// QString to string

@@ -5,12 +5,12 @@
 
 
 AssimpBlender::AssimpBlender() :
-   mioAbstractLoader( {
+   IoAbstractLoader( {
       "_Blender Filter",
       FileIOFilter::DEFAULT_PRIORITY,	// priority
       QStringList{ "blend" },
       "blend",
-      QStringList{ "qMeshIO - Blender file (*.blend)" },
+      QStringList{ "qMeshIO - Blend file (*.blend)" },
       QStringList(),
       Import
    } )   

@@ -18,7 +18,7 @@ class aiMetadata;
 class aiScene;
 
 
-namespace mioUtils
+namespace IoUtils
 {
    ccMaterialSet    *createMaterialSetForMesh( const aiMesh *inMesh, const QString &inPath, const aiScene *inScene );
    

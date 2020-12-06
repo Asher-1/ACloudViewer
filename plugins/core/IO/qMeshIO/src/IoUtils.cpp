@@ -5,17 +5,21 @@
 #include <QRegularExpression>
 #include <QVector3D>
 
-#include "ecvHObjectCaster.h"
-#include "ecvMaterialSet.h"
+// CV_CORE_LIB
+#include <CVTools.h>
+
+// ECV_DB_LIB
 #include "ecvMesh.h"
 #include "ecvPointCloud.h"
+#include "ecvMaterialSet.h"
+#include "ecvHObjectCaster.h"
 
 #include "assimp/material.h"
 #include "assimp/mesh.h"
 #include "assimp/metadata.h"
 #include "assimp/scene.h"
 
-#include "mioUtils.h"
+#include "IoUtils.h"
 
 
 namespace
@@ -51,7 +55,9 @@ namespace
    
    QImage   _getTextureFromFile( const QString &inPath, const QString &inTexturePath )
    {
-      const QString    cPath = QStringLiteral( "%1/%2" ).arg( inPath, inTexturePath );
+      QString cPath = QStringLiteral( "%1/%2" ).arg( inPath, inTexturePath );
+
+      cPath = CVTools::ToNativeSeparators(cPath);
       
       if ( !QFile::exists( cPath ) )
       {
@@ -60,8 +66,14 @@ namespace
       }
       
       QImageReader  reader( cPath );
-      
-      return reader.read();
+
+      QImage image = reader.read();
+      if (image.isNull())
+      {
+          CVLog::Warning(QString("[_getTextureFromFile] failed to read image %1, %2")
+                         .arg(cPath).arg(reader.errorString()));
+      }
+      return image;
    }
    
    inline ecvColor::Rgbaf   _convertColour( const aiColor4D &inColour )
@@ -108,7 +120,7 @@ namespace
    }
 }
 
-namespace mioUtils
+namespace IoUtils
 {   
    ccMaterialSet *createMaterialSetForMesh( const aiMesh *inMesh, const QString &inPath, const aiScene *inScene )
    {
@@ -143,22 +155,37 @@ namespace mioUtils
             
             QImage  image;
             QString path;
-            
+
+            path = CVTools::ToNativeSeparators(QStringLiteral( "%1/%2" ).arg( inPath, texturePath.C_Str() ));
+
             if ( match.hasMatch() )
             {
                const QString cIndex = match.captured( "index" );
-               
                image = _getEmbeddedTexture( cIndex.toUInt(), inScene );
+            }
+            else if (!QFile::exists(path) && inScene->HasTextures())
+            {
+                // just try loading first embedded texture!
+                unsigned int cIndex = 0;
+                for (unsigned int i = 0; i < inScene->mNumTextures; ++i)
+                {
+                    aiString textureName = inScene->mTextures[i]->mFilename;
+                    if ( textureName ==  texturePath)
+                    {
+                        cIndex = i;
+                        break;
+                    }
+                }
+                image = _getEmbeddedTexture( cIndex, inScene );
             }
             else
             {
                image = _getTextureFromFile( inPath, texturePath.C_Str() );
-               path = QStringLiteral( "%1/%2" ).arg( inPath, texturePath.C_Str() );
             }
             
             if ( !image.isNull() )
             {
-               newMaterial->setTexture( image, path );
+               newMaterial->setTexture( image, path, false );
             }
          }
       }

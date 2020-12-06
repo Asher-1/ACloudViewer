@@ -5,23 +5,19 @@
 
 #include "qMeshIO.h"
 
-#include "COLLADA.h"
-#include "glTF.h"
-#include "IFC.h"
-
-#include "AssimpCommonFilter.h"
-#include "AssimpAC3D.h"
-#include "AssimpBlender.h"
-#include "AssimpDirectX.h"
-#include "AssimpFBX.h"
+#include "AssimpIfc.h"
+#include "AssimpGltf.h"
 #include "Assimp3DMax.h"
+#include "AssimpCollada.h"
+#include "AssimpBlender.h"
+#include "AssimpCommonFilter.h"
 
 
 qMeshIO::qMeshIO(QObject *parent) :
    QObject( parent ),
    ccIOPluginInterface( ":/asmaloney/qMeshIO/info.json" )
 {
-   const QString    cAssimpVer = QStringLiteral( "[qMeshIO] Using Assimp %1.%2 (%3-%4)" )
+   const QString    cAssimpVer = QStringLiteral( "\t[qMeshIO] Using Assimp %1.%2 (%3-%4)" )
                                  .arg( QString::number( aiGetVersionMajor() ),
                                        QString::number( aiGetVersionMinor() ) )
                                  .arg( aiGetVersionRevision(), 0, 16 )
@@ -38,14 +34,11 @@ void qMeshIO::registerCommands( ccCommandLineInterface *inCmdLine )
 ccIOPluginInterface::FilterList qMeshIO::getFilters()
 {
    return {
-        FileIOFilter::Shared( new COLLADAFilter ),
-        FileIOFilter::Shared( new glTFFilter ),
-        FileIOFilter::Shared( new IFCFilter ),
-        FileIOFilter::Shared( new AssimpCommonFilter),
-        FileIOFilter::Shared( new AssimpFBX ),
-        FileIOFilter::Shared( new AssimpAC3D ),
+        FileIOFilter::Shared( new AssimpIfc ),
         FileIOFilter::Shared( new Assimp3DMax ),
+        FileIOFilter::Shared( new AssimpGltf ),
         FileIOFilter::Shared( new AssimpBlender ),
-        FileIOFilter::Shared( new AssimpDirectX ),
+        FileIOFilter::Shared( new AssimpCollada ),
+        FileIOFilter::Shared( new AssimpCommonFilter ),
    };
 }

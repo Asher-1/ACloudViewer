@@ -5,7 +5,7 @@
 #include "FileIOFilter.h"
 
 
-class mioAbstractLoader : public FileIOFilter
+class IoAbstractLoader : public FileIOFilter
 {
  public:
    bool canSave( CV_CLASS_ENUM inType, bool &outMultiple, bool &outExclusive ) const override;
@@ -13,7 +13,7 @@ class mioAbstractLoader : public FileIOFilter
    CC_FILE_ERROR loadFile( const QString &inFileName, ccHObject &ioContainer, LoadParameters &inParameters ) override;   
    
  protected:
-   explicit mioAbstractLoader( const FileIOFilter::FilterInfo &info );
+   explicit IoAbstractLoader(const FileIOFilter::FilterInfo &info);
 
    virtual void _postProcess( ccHObject &ioContainer );
 };

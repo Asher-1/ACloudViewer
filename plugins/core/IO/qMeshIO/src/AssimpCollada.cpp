@@ -1,11 +1,11 @@
 // qMeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "COLLADA.h"
+#include "AssimpCollada.h"
 
 
-COLLADAFilter::COLLADAFilter() :
-   mioAbstractLoader( {
+AssimpCollada::AssimpCollada() :
+   IoAbstractLoader( {
       "_COLLADA Filter",
       FileIOFilter::DEFAULT_PRIORITY,	// priority
       QStringList{ "dae" },

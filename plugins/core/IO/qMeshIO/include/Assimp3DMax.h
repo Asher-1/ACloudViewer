@@ -2,10 +2,10 @@
 // qMeshIO Copyright © 2019 Andy Maloney <asmaloney@gmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "mioAbstractLoader.h"
+#include "IoAbstractLoader.h"
 
 
-class Assimp3DMax final : public mioAbstractLoader {
+class Assimp3DMax final : public IoAbstractLoader {
  public:
     Assimp3DMax();
 };
