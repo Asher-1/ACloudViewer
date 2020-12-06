@@ -36,7 +36,7 @@ namespace Settings {
 	static QString LOGFILE				= "log.log";
 
 	// logos
-    static const QString APP_LOGO		= ":/Resources/images/icon/ecv_128.png";
+    static const QString APP_LOGO		= ":/Resources/images/icon/erow_256.png";
     static const char* APP_START_LOGO	= ":/Resources/images/corp_black.png";
 	static const QString CLOUDFILE_LOGO = ":/Resources/images/dbCloudSymbol.png";
 	static const QString THEME_LOGO		= ":/Resources/images/theme.png";

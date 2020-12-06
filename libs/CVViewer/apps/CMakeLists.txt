@@ -34,8 +34,9 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
         # MSVC started giving LNK:1114, error 5, which appears to be caused by
         # the executable having the same name as the library. (Except that this
         # was working before, so not sure what changed.)
+        set( rc_list ${PROJECT_SOURCE_DIR}/eCV/Resources/images/icon/cloudViewer_icon.rc )
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
-        add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+        add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${rc_list})
     else()
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
