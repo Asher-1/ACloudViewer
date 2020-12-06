@@ -102,7 +102,7 @@ function( AddPlugin )
 	# On macOS, copy the plugin to the ccPlugins directory at the top level
 	# post build so we can find it without installing everything.
 	if( APPLE )
-                set( PLUGINS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/ecvPlugins" )
+		set( PLUGINS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/ecvPlugins" )
 		
 		if( NOT EXISTS PLUGINS_OUTPUT_DIR )
 			file( MAKE_DIRECTORY "${PLUGINS_OUTPUT_DIR}" )

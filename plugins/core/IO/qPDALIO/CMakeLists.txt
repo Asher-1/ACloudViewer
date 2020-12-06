@@ -36,9 +36,7 @@ if( PLUGIN_IO_QPDAL )
 		set (ALL_DLL_FILES ${PDAL_DLL_FILES})
 		file( GLOB GDAL_DLL_FILES ${PDAL_DLL_DIR}/gdal*.dll )
 		
-		
 		list( APPEND ALL_DLL_FILES ${GDAL_DLL_FILES})
-		message("ALL_DLL_FILES: " ${ALL_DLL_FILES})
 		copy_files( "${ALL_DLL_FILES}" "${EROWCLOUDVIEWER_DEST_FOLDER}" )
 
 		unset( ALL_DLL_FILES )

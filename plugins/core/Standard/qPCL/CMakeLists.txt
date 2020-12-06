@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required( VERSION 3.18 )
 
 # https://cmake.org/cmake/help/git-stage/policy/CMP0074.html
 #cmake_policy(SET CMP0074 OLD)
@@ -30,6 +30,6 @@ if (PLUGIN_STANDARD_QPCL)
     target_link_libraries( ${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB)
 
     #import PCL dlls (if any, WIN32 only)
-    include( cmake/ExportPCLDlls.cmake )
-    export_PCL_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
+    #include( cmake/ExportPCLDlls.cmake )
+    #export_PCL_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
 endif()
