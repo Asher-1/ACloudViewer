@@ -173,4 +173,12 @@ if (USE_PCL_BACKEND)
 	# install (shared) lib to specified destinations
 	InstallSharedLibrary( TARGET ${PROJECT_NAME} )
 
+	#import PCL dlls (if any, WIN32 only)
+    include( cmake/ExportPCLDlls.cmake )
+    export_PCL_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
+
+	#import VTK dlls (if any, WIN32 only)
+    include( cmake/ExportVTKDlls.cmake )
+    export_VTK_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
+
 endif()

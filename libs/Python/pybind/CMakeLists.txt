@@ -35,6 +35,13 @@ execute_process(
 )
 message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
 
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d' % (sys.version_info.minor,))"
+    OUTPUT_VARIABLE PYTHON_VERSION_MINOR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS "Using Python version minor: ${PYTHON_VERSION_MINOR}")
+
 set(PACKAGE_NAME pybind)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
