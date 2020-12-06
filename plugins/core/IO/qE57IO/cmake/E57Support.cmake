@@ -54,6 +54,14 @@ if (WIN32)
 	)
 	if ( NOT Xerces_LIBRARY_RELEASE AND NOT Xerces_LIBRARY_DEBUG )
 		message( SEND_ERROR "Cannot find the xerces-c library in ${XERCES_LIB_DIR}" )
+	else()
+		set( XERCES_DLL_DIR ${XERCES_LIB_DIR}/../bin )
+		
+		file( GLOB XERCES_DLL_FILES ${XERCES_DLL_DIR}/xerces-c_3_2.dll )
+		
+		copy_files( "${XERCES_DLL_FILES}" "${EROWCLOUDVIEWER_DEST_FOLDER}" )
+
+		unset( XERCES_DLL_DIR )
 	endif()
 else ()
 	include(FindXercesC)
