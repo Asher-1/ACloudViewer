@@ -18,11 +18,14 @@
 //Local
 #include "ecvMaterial.h"
 
+// CV_CORE_LIB
+#include <CVTools.h>
+
 //Qt
 #include <QMap>
+#include <QUuid>
 #include <QOpenGLTexture>
 #include <QOpenGLContext>
-#include <QUuid>
 
 //Textures DB
 static QMap<QString, QImage> s_textureDB;
@@ -79,6 +82,10 @@ void ccMaterial::setTransparency(float val)
 
 void ccMaterial::applyGL(const QOpenGLContext* context, bool lightEnabled, bool skipDiffuse) const
 {
+    Q_UNUSED(context);
+    Q_UNUSED(lightEnabled);
+    Q_UNUSED(skipDiffuse);
+
 	//get the set of OpenGL functions (version 2.1)
 	//QOpenGLFunctions_2_1* glFunc = context->versionFunctions<QOpenGLFunctions_2_1>();
 	//assert(glFunc != nullptr);
@@ -112,6 +119,10 @@ bool ccMaterial::loadAndSetTexture(QString absoluteFilename)
 		CVLog::Warning(QString("[ccMaterial::loadAndSetTexture] filename can't be empty!"));
 		return false;
 	}
+
+    // fix path separator bug
+    absoluteFilename = CVTools::ToNativeSeparators(absoluteFilename);
+
 	CVLog::PrintDebug(QString("[ccMaterial::loadAndSetTexture] absolute filename = %1").arg(absoluteFilename));
 
 	if (s_textureDB.contains(absoluteFilename))
@@ -130,16 +141,17 @@ bool ccMaterial::loadAndSetTexture(QString absoluteFilename)
 		}
 		else
 		{
-			setTexture(image, absoluteFilename, true);
+            setTexture(image, absoluteFilename, false);
 		}
 	}
 
 	return true;
 }
 
-void ccMaterial::setTexture(QImage image, QString absoluteFilename/*=QString()*/, bool mirrorImage/*=true*/)
+void ccMaterial::setTexture(QImage image, QString absoluteFilename/*=QString()*/, bool mirrorImage/*=false*/)
 {
-	CVLog::PrintDebug(QString("[ccMaterial::setTexture] absoluteFilename = '%1' / size = %2 x %3").arg(absoluteFilename).arg(image.width()).arg(image.height()));
+    CVLog::PrintDebug(QString("[ccMaterial::setTexture] absoluteFilename = '%1' / size = %2 x %3")
+                      .arg(absoluteFilename).arg(image.width()).arg(image.height()));
 
 	if (absoluteFilename.isEmpty())
 	{
@@ -155,7 +167,8 @@ void ccMaterial::setTexture(QImage image, QString absoluteFilename/*=QString()*/
 			//check that the size is compatible at least
 			if (s_textureDB[absoluteFilename].size() != image.size())
 			{
-				CVLog::Warning(QString("[ccMaterial] A texture with the same name (%1) but with a different size has already been loaded!").arg(absoluteFilename));
+                CVLog::Warning(QString("[ccMaterial] A texture with the same name (%1) "
+                                       "but with a different size has already been loaded!").arg(absoluteFilename));
 			}
 			m_textureFilename = absoluteFilename;
 			return;
@@ -209,6 +222,7 @@ bool ccMaterial::hasTexture() const
 
 void ccMaterial::MakeLightsNeutral(const QOpenGLContext* context)
 {
+    Q_UNUSED(context);
 	//get the set of OpenGL functions (version 2.1)
 	//QOpenGLFunctions_2_1* glFunc = context->versionFunctions<QOpenGLFunctions_2_1>();
 	//assert(glFunc != nullptr);
@@ -307,6 +321,8 @@ bool ccMaterial::toFile(QFile& out) const
 
 bool ccMaterial::fromFile(QFile& in, short dataVersion, int flags)
 {
+    Q_UNUSED(flags);
+
 	QDataStream inStream(&in);
 
 	//material name (dataVersion>=20)

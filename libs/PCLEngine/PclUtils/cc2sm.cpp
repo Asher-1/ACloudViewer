@@ -50,7 +50,10 @@
 using namespace pcl;
 
 cc2smReader::cc2smReader(bool showMode/* = false*/):
-	m_showMode(showMode)
+	m_cc_cloud(nullptr),
+	m_showMode(showMode),
+	m_partialVisibility(false),
+	m_visibilityNum(0)
 {
 }
 
@@ -772,19 +775,19 @@ PCLMesh::Ptr cc2smReader::getPclMesh(ccGenericMesh* mesh) {
 
 	const ccGenericPointCloud::VisibilityTableType& verticesVisibility = mesh->getAssociatedCloud()->getTheVisibilityArray();
         bool visFiltering = (verticesVisibility.size() >= mesh->getAssociatedCloud()->size());
-	bool showColor = mesh->colorsShown();
 	PCLMesh::Ptr pclMesh(new PCLMesh);
 
-	// avoid hiding pointCloud
-	m_partialVisibility = false;
-	PCLCloud::Ptr smCloud = getAsSM(!mesh->sfShown());
+    if (!getPclCloud2(mesh, pclMesh->cloud)) {
+        CVLog::Warning("[cc2smReader::getPclMesh] Failed to get pcl::PCLPointCloud2!");
+        return nullptr;
+    }
 
 	//vertices visibility
 	unsigned triNum = mesh->size();
 
-	for (unsigned i = 0; i < triNum; ++i)
+	for (unsigned n = 0; n < triNum; ++n)
 	{
-		const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(i);
+		const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
 		if (visFiltering)
 		{
 			//we skip the triangle if at least one vertex is hidden
@@ -794,14 +797,13 @@ PCLMesh::Ptr cc2smReader::getPclMesh(ccGenericMesh* mesh) {
 				continue;
 		}
 
-		pcl::Vertices tri;
-		tri.vertices.push_back(tsi->i1);
-		tri.vertices.push_back(tsi->i2);
-		tri.vertices.push_back(tsi->i3);
+        pcl::Vertices tri;
+        tri.vertices.push_back(n * 3 + 0);
+        tri.vertices.push_back(n * 3 + 1);
+        tri.vertices.push_back(n * 3 + 2);
 		pclMesh->polygons.push_back(tri);
 	}
 
-	pclMesh->cloud = *smCloud;
 	return pclMesh;
 }
 
@@ -841,6 +843,194 @@ void getMaterial(ccMaterial::CShared inMaterial, PCLMaterial& outMaterial)
 	}
 }
 
+bool cc2smReader::getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const {
+    unsigned int triNum = mesh->size();
+    if (triNum <= 0) {
+        CVLog::Warning("[cc2smReader::getPclCloud2] No triangles found!");
+        return false;
+    }
+
+    std::size_t dimension = static_cast<std::size_t>(
+            mesh->getTriangleVertIndexes(0)->getDimension());
+
+    const ccGenericPointCloud::VisibilityTableType& verticesVisibility =
+            mesh->getAssociatedCloud()->getTheVisibilityArray();
+    bool visFiltering =
+            (verticesVisibility.size() >= mesh->getAssociatedCloud()->size());
+
+    bool showSF = mesh->hasDisplayedScalarField() && mesh->sfShown();
+    bool showColors = showSF || (mesh->hasColors() && mesh->colorsShown());
+
+    // per-triangle normals?
+    bool showTriNormals = (mesh->hasTriNormals() && mesh->triNormsShown());
+    // fix 'showNorms'
+    bool showNorms = showTriNormals || (mesh->hasNormals() && mesh->normalsShown());
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr xyz_cloud(new pcl::PointCloud<pcl::PointXYZ>());
+    {
+        xyz_cloud->points.resize(static_cast<std::size_t>(triNum) * dimension);
+        xyz_cloud->width = xyz_cloud->size();
+        xyz_cloud->height = 1;
+        xyz_cloud->is_dense = true;
+    }
+
+    pcl::PointCloud<pcl::RGB>::Ptr rgb_cloud = nullptr;
+    if (showColors) {
+        rgb_cloud.reset(new pcl::PointCloud<pcl::RGB>());
+        rgb_cloud->points.resize(static_cast<std::size_t>(triNum) * dimension);
+        rgb_cloud->width = rgb_cloud->size();
+        rgb_cloud->height = 1;
+        rgb_cloud->is_dense = true;
+    }
+
+    pcl::PointCloud<pcl::Normal>::Ptr normal_cloud = nullptr;
+    if (showNorms) {
+        normal_cloud.reset(new pcl::PointCloud<pcl::Normal>());
+        normal_cloud->resize(static_cast<std::size_t>(triNum) * dimension);
+        normal_cloud->width = xyz_cloud->size();
+        normal_cloud->height = 1;
+        normal_cloud->is_dense = true;
+    }
+
+    // per-triangle normals
+    const NormsIndexesTableType* triNormals = mesh->getTriNormsTable();
+    // materials
+    const ccMaterialSet* materials = mesh->getMaterialSet();
+
+    // in the case we need normals (i.e. lighting)
+    NormsIndexesTableType* normalsIndexesTable = nullptr;
+    ccNormalVectors* compressedNormals = nullptr;
+    if (showNorms) {
+        //assert(m_cc_cloud->isA(CV_TYPES::POINT_CLOUD));
+        normalsIndexesTable = m_cc_cloud->normals();
+        compressedNormals = ccNormalVectors::GetUniqueInstance();
+    }
+
+    // current vertex normal
+    const PointCoordinateType* N1 = nullptr;
+    const PointCoordinateType* N2 = nullptr;
+    const PointCoordinateType* N3 = nullptr;
+
+    // vertices visibility
+    for (unsigned n = 0; n < triNum; ++n) {
+        const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
+        if (visFiltering) {
+            // we skip the triangle if at least one vertex is hidden
+            if ((verticesVisibility[tsi->i1] != POINT_VISIBLE) ||
+                (verticesVisibility[tsi->i2] != POINT_VISIBLE) ||
+                (verticesVisibility[tsi->i3] != POINT_VISIBLE))
+                continue;
+        }
+
+        // First get the xyz information
+        for (std::size_t vertexIndex = 0; vertexIndex < dimension;
+             vertexIndex++) {
+            (*xyz_cloud)[n * dimension + vertexIndex].x = static_cast<float>(
+                    m_cc_cloud->getPoint(tsi->i[vertexIndex])->x);
+            (*xyz_cloud)[n * dimension + vertexIndex].y = static_cast<float>(
+                    m_cc_cloud->getPoint(tsi->i[vertexIndex])->y);
+            (*xyz_cloud)[n * dimension + vertexIndex].z = static_cast<float>(
+                    m_cc_cloud->getPoint(tsi->i[vertexIndex])->z);
+        }
+
+        // Then the color information, if any
+        if (showSF) {
+            for (std::size_t vertexIndex = 0; vertexIndex < dimension;
+                 vertexIndex++) {
+                // individual component copy due to different memory layout
+                const ecvColor::Rgb* rgb =
+                        m_cc_cloud->getCurrentDisplayedScalarField()
+                                ->getValueColor(tsi->i[vertexIndex]);
+                (*rgb_cloud)[n * dimension + vertexIndex].r = rgb->r;
+                (*rgb_cloud)[n * dimension + vertexIndex].g = rgb->g;
+                (*rgb_cloud)[n * dimension + vertexIndex].b = rgb->b;
+                (*rgb_cloud)[n * dimension + vertexIndex].a = 255;
+            }
+        } else if (showColors) {
+            for (std::size_t vertexIndex = 0; vertexIndex < dimension;
+                 vertexIndex++) {
+                // individual component copy due to different memory layout
+                const ecvColor::Rgb* rgb =
+                        &m_cc_cloud->rgbColors()->at(tsi->i[vertexIndex]);
+                (*rgb_cloud)[n * dimension + vertexIndex].r = rgb->r;
+                (*rgb_cloud)[n * dimension + vertexIndex].g = rgb->g;
+                (*rgb_cloud)[n * dimension + vertexIndex].b = rgb->b;
+                (*rgb_cloud)[n * dimension + vertexIndex].a = 255;
+            }
+        }
+
+        // Then handle the normals, if any
+        if (showNorms) {
+            if (showTriNormals) {
+                assert(triNormals);
+                int n1 = 0;
+                int n2 = 0;
+                int n3 = 0;
+                mesh->getTriangleNormalIndexes(n, n1, n2, n3);
+                N1 = (n1 >= 0 ? ccNormalVectors::GetNormal(triNormals->at(n1)).u
+                              : nullptr);
+                N2 = (n1 == n2 ? N1
+                               : n1 >= 0 ? ccNormalVectors::GetNormal(
+                                                   triNormals->at(n2))
+                                                   .u
+                                         : nullptr);
+                N3 = (n1 == n3 ? N1
+                               : n3 >= 0 ? ccNormalVectors::GetNormal(
+                                                   triNormals->at(n3))
+                                                   .u
+                                         : nullptr);
+            } else {
+                N1 = compressedNormals
+                             ->getNormal(normalsIndexesTable->at(tsi->i1))
+                             .u;
+                N2 = compressedNormals
+                             ->getNormal(normalsIndexesTable->at(tsi->i2))
+                             .u;
+                N3 = compressedNormals
+                             ->getNormal(normalsIndexesTable->at(tsi->i3))
+                             .u;
+            }
+
+            (*normal_cloud)[n * dimension + 0].normal_x = N1[0];
+            (*normal_cloud)[n * dimension + 0].normal_y = N1[1];
+            (*normal_cloud)[n * dimension + 0].normal_z = N1[2];
+            (*normal_cloud)[n * dimension + 1].normal_x = N2[0];
+            (*normal_cloud)[n * dimension + 1].normal_y = N2[1];
+            (*normal_cloud)[n * dimension + 1].normal_z = N2[2];
+            (*normal_cloud)[n * dimension + 2].normal_x = N3[0];
+            (*normal_cloud)[n * dimension + 2].normal_y = N3[1];
+            (*normal_cloud)[n * dimension + 2].normal_z = N3[2];
+        }
+
+    }
+
+    // And put it in the mesh cloud
+    {
+        // points
+        TO_PCL_CLOUD(*xyz_cloud, cloud);
+
+        // colors
+        if (showColors) {
+            PCLCloud rgb_cloud2;
+            TO_PCL_CLOUD(*rgb_cloud, rgb_cloud2);
+            PCLCloud aux;
+            pcl::concatenateFields(rgb_cloud2, cloud, aux);
+            cloud = aux;
+        }
+
+        // normals
+        if (showNorms) {
+            PCLCloud normal_cloud2;
+            TO_PCL_CLOUD(*normal_cloud, normal_cloud2);
+            PCLCloud aux;
+            pcl::concatenateFields(normal_cloud2, cloud, aux);
+            cloud = aux;
+        }
+    }
+
+	return true;
+}
+
 PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
 	if (!mesh) return nullptr;
 
@@ -857,73 +1047,23 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
             return nullptr;
         }
 
-		std::size_t dimension = static_cast<std::size_t>(mesh->getTriangleVertIndexes(0)->getDimension());
+		PCLTextureMesh::Ptr textureMesh(new PCLTextureMesh);
+        if (!getPclCloud2(mesh, textureMesh->cloud)) {
+            CVLog::Warning("[cc2smReader::getPclTextureMesh] Failed to get "
+                    "pcl::PCLPointCloud2!");
+            return nullptr;
+        }
 
 		const ccGenericPointCloud::VisibilityTableType& verticesVisibility = 
 			mesh->getAssociatedCloud()->getTheVisibilityArray();
 		bool visFiltering = (verticesVisibility.size() >= mesh->getAssociatedCloud()->size());
 
-		PCLTextureMesh::Ptr textureMesh(new PCLTextureMesh);
-
-		bool showSF = mesh->hasDisplayedScalarField() && mesh->sfShown();
-		bool showColors = showSF || (mesh->hasColors() && mesh->colorsShown());
-
-		// per-triangle normals?
-        bool showTriNormals = (mesh->hasTriNormals() && mesh->triNormsShown());
-        // fix 'showNorms'
-        bool showNorms = showTriNormals || (mesh->hasNormals() && mesh->normalsShown());
-
-		pcl::PointCloud<pcl::PointXYZ>::Ptr xyz_cloud(new pcl::PointCloud<pcl::PointXYZ>());
-		{
-            xyz_cloud->points.resize(static_cast<std::size_t>(triNum) * dimension);
-            xyz_cloud->width = xyz_cloud->size();
-            xyz_cloud->height = 1;
-            xyz_cloud->is_dense = true;
-		}
-
-        pcl::PointCloud<pcl::RGB>::Ptr rgb_cloud = nullptr;
-        if (showColors) {
-            rgb_cloud.reset(new pcl::PointCloud<pcl::RGB>());
-            rgb_cloud->points.resize(static_cast<std::size_t>(triNum) * dimension);
-            rgb_cloud->width = rgb_cloud->size();
-            rgb_cloud->height = 1;
-            rgb_cloud->is_dense = true;
-        }
-
-		pcl::PointCloud<pcl::Normal>::Ptr normal_cloud = nullptr;
-        if (showNorms) {
-			normal_cloud.reset(new pcl::PointCloud<pcl::Normal> ());
-            normal_cloud->resize(static_cast<std::size_t>(triNum) * dimension);
-			normal_cloud->width = xyz_cloud->size();
-			normal_cloud->height = 1;
-			normal_cloud->is_dense = true;
-        }
-
-		//PCLCloud::Ptr smCloud = getAsSM();
-		//textureMesh->cloud = *smCloud;
-
-		// per-triangle normals
-        const NormsIndexesTableType* triNormals = mesh->getTriNormsTable();
 		// materials
         const ccMaterialSet* materials = mesh->getMaterialSet();
-
-		// in the case we need normals (i.e. lighting)
-        NormsIndexesTableType* normalsIndexesTable = nullptr;
-        ccNormalVectors* compressedNormals = nullptr;
-        if (showNorms) {
-            assert(m_cc_cloud->isA(CV_TYPES::POINT_CLOUD));
-            normalsIndexesTable = m_cc_cloud->normals();
-            compressedNormals = ccNormalVectors::GetUniqueInstance();
-        }
 
         // loop on all triangles
 		int lasMtlIndex = -1;
 		unsigned int currentTexID = 0;
-
-		// current vertex normal
-        const PointCoordinateType* N1 = nullptr;
-        const PointCoordinateType* N2 = nullptr;
-        const PointCoordinateType* N3 = nullptr;
 
 		//vertices visibility
         for (unsigned n = 0; n < triNum; ++n)
@@ -973,70 +1113,8 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
 				lasMtlIndex = newMatlIndex;
 			}
 
-			// First get the xyz information
-			for (std::size_t vertexIndex = 0; vertexIndex < dimension; vertexIndex++) {
-				(*xyz_cloud)[n * dimension + vertexIndex].x =
-					static_cast<float>(m_cc_cloud->getPoint(tsi->i[vertexIndex])->x);
-				(*xyz_cloud)[n * dimension + vertexIndex].y =
-					static_cast<float>(m_cc_cloud->getPoint(tsi->i[vertexIndex])->y);
-				(*xyz_cloud)[n * dimension + vertexIndex].z =
-					static_cast<float>(m_cc_cloud->getPoint(tsi->i[vertexIndex])->z);
-			}
-
-			// Then the color information, if any
-			if (showSF) {
-				for (std::size_t vertexIndex = 0; vertexIndex < dimension; vertexIndex++) {
-					// individual component copy due to different memory layout
-					const ecvColor::Rgb* rgb =
-						m_cc_cloud->getCurrentDisplayedScalarField()->getValueColor(tsi->i[vertexIndex]);
-					(*rgb_cloud)[n * dimension + vertexIndex].r = rgb->r;
-					(*rgb_cloud)[n * dimension + vertexIndex].g = rgb->g;
-					(*rgb_cloud)[n * dimension + vertexIndex].b = rgb->b;
-					(*rgb_cloud)[n * dimension + vertexIndex].a = 255;
-				}
-			}
-			else if (showColors) {
-				for (std::size_t vertexIndex = 0; vertexIndex < dimension; vertexIndex++) {
-					// individual component copy due to different memory layout
-					const ecvColor::Rgb* rgb = &m_cc_cloud->rgbColors()->at(tsi->i[vertexIndex]);
-					(*rgb_cloud)[n * dimension + vertexIndex].r = rgb->r;
-					(*rgb_cloud)[n * dimension + vertexIndex].g = rgb->g;
-					(*rgb_cloud)[n * dimension + vertexIndex].b = rgb->b;
-					(*rgb_cloud)[n * dimension + vertexIndex].a = 255;
-				}
-			}
-
-			// Then handle the normals, if any
-			if (showNorms) {
-				if (showTriNormals) {
-					assert(triNormals);
-					int n1 = 0;
-					int n2 = 0;
-					int n3 = 0;
-					mesh->getTriangleNormalIndexes(n, n1, n2, n3);
-					N1 = (n1 >= 0 ? ccNormalVectors::GetNormal(triNormals->at(n1)).u : nullptr);
-					N2 = (n1 == n2 ? N1 : n1 >= 0 ? ccNormalVectors::GetNormal(triNormals->at(n2)).u : nullptr);
-					N3 = (n1 == n3 ? N1 : n3 >= 0 ? ccNormalVectors::GetNormal(triNormals->at(n3)).u : nullptr);
-				}
-				else {
-					N1 = compressedNormals->getNormal(normalsIndexesTable->at(tsi->i1)).u;
-					N2 = compressedNormals->getNormal(normalsIndexesTable->at(tsi->i2)).u;
-					N3 = compressedNormals->getNormal(normalsIndexesTable->at(tsi->i3)).u;
-				}
-
-				(*normal_cloud)[n * dimension + 0].normal_x = N1[0];
-				(*normal_cloud)[n * dimension + 0].normal_y = N1[1];
-				(*normal_cloud)[n * dimension + 0].normal_z = N1[2];
-				(*normal_cloud)[n * dimension + 1].normal_x = N2[0];
-				(*normal_cloud)[n * dimension + 1].normal_y = N2[1];
-				(*normal_cloud)[n * dimension + 1].normal_z = N2[2];
-				(*normal_cloud)[n * dimension + 2].normal_x = N3[0];
-				(*normal_cloud)[n * dimension + 2].normal_y = N3[1];
-				(*normal_cloud)[n * dimension + 2].normal_z = N3[2];
-			}
-
 			// get the texture coordinates information
-			if ((applyMaterials || showTextures) && !textureMesh->tex_coordinates.empty())
+			if (showTextures && !textureMesh->tex_coordinates.empty())
 			{
 				//current vertex texture coordinates
 				TexCoords2D* Tx1 = nullptr;
@@ -1056,30 +1134,6 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
 			if (!textureMesh->tex_polygons.empty())
 			{
 				textureMesh->tex_polygons.back().push_back(tri);
-			}
-		}
-
-		// And put it in the mesh cloud
-		{
-			// points
-			TO_PCL_CLOUD(*xyz_cloud, textureMesh->cloud);
-
-			// colors
-			if (showColors) {
-				PCLCloud rgb_cloud2;
-				TO_PCL_CLOUD(*rgb_cloud, rgb_cloud2);
-				PCLCloud aux;
-				pcl::concatenateFields(rgb_cloud2, textureMesh->cloud, aux);
-				textureMesh->cloud = aux;
-			}
-
-			// normals
-			if (showNorms) {
-				PCLCloud normal_cloud2;
-				TO_PCL_CLOUD(*normal_cloud, normal_cloud2);
-				PCLCloud aux;
-				pcl::concatenateFields(normal_cloud2, textureMesh->cloud, aux);
-				textureMesh->cloud = aux;
 			}
 		}
 

@@ -5,7 +5,7 @@
 
 
 Assimp3DMax::Assimp3DMax() :
-   mioAbstractLoader( {
+   IoAbstractLoader( {
       "_3DMax Filter",
       FileIOFilter::DEFAULT_PRIORITY,	// priority
       QStringList{ "3ds", "ase" },

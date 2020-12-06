@@ -20,9 +20,9 @@ endif()
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 
 # ErowCloudViewer build options
-option(BUILD_SHARED_LIBS          "Build shared libraries"                   		OFF)
+option(BUILD_SHARED_LIBS          "Build shared libraries"                   		    OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"                          ON )
-option(BUILD_EXAMPLES             "Build CloudViewer example programs"        		ON )
+option(BUILD_EXAMPLES             "Build CloudViewer example programs"        		    ON )
 option(BUILD_UNIT_TESTS           "Build CloudViewer unit tests"                        OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"                          OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                             ON )
@@ -63,7 +63,7 @@ option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                       
 option(BUNDLE_CLOUDVIEWER_ML      "Includes the CloudViewer-ML repo in the wheel"       OFF)
 option(DEVELOPER_BUILD            "Add -dev+commit_hash to the project version number"  ON )
 # PCL ENGINE SUPPORT
-option(USE_PCL_BACKEND           "Check to use pcl library as backend" 			ON )
+option(USE_PCL_BACKEND           "Check to use pcl library as backend" 			        ON )
 
 option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON )
 
@@ -224,8 +224,8 @@ endif()
 set(PROJECT_EMAIL   "dahailu@foxmail.com")
 set(PROJECT_HOME    "http://www.erow.cn")
 set(PROJECT_DOCS    "http://www.erow.cn/docs")
-set(PROJECT_CODE    "https://github.com/intel-isl/CloudViewer")
-set(PROJECT_ISSUES  "https://github.com/intel-isl/CloudViewer/issues")
+set(PROJECT_CODE    "https://github.com/Asher-1/ErowCloudViewer")
+set(PROJECT_ISSUES  "https://github.com/Asher-1/ErowCloudViewer/issues")
 
 include( CMakePolicies )
 include( CMakeSetCompilerOptions )
@@ -528,25 +528,6 @@ if (WITH_OPENMP)
     endif ()
  endif ()
 
-# 3rd-party projects that are added with external_project_add will be installed
-# with this prefix. E.g.
-# - 3RDPARTY_INSTALL_PREFIX: cloudViewer/build/3rdparty_install
-# - Headers: cloudViewer/build/3rdparty_install/include/extern_lib.h
-# - Libraries: cloudViewer/build/3rdparty_install/lib/extern_lib.a
-set(3RDPARTY_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/3rdparty_install")
-
-# 3rd-party libraries using the ExternalProject_Add approach will install
-# headers in cloudViewer/build/3rdparty_install/include. We prioritize this include
-# directory by putting it in front, to avoid mistakenly including other header
-# files of the same name.
-include_directories(${3RDPARTY_INSTALL_PREFIX}/include)
-
-# 3rd-party libraries using the ExternalProject_Add approach will install
-# libs in cloudViewer/build/3rdparty_install/lib.
-# This isn't required for Ubuntu/Mac since the link directory info is propagated
-# with the interface library. We still need this for Windows.
-link_directories(${3RDPARTY_INSTALL_PREFIX}/lib)
-
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the
 # CloudViewer_3RDPARTY_*_TARGETS variables we use in cloudViewer_link_3rdparty_libraries
@@ -560,7 +541,7 @@ if( UNIX AND NOT APPLE )
 endif()
 
 # Define target folders
-# (now that ccViewer can have its own plugins, qCC and ccViewer must fall in separate folders!
+# (now that ccViewer can have its own plugins, ErowCloudViewer and CloudViewer must fall in separate folders!
 if(WIN32 OR APPLE)
 	set( EROWCLOUDVIEWER_DEST_FOLDER ErowCloudViewer )
 	if (OPTION_GL_QUAD_BUFFER_SUPPORT)
@@ -650,6 +631,9 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 endif()
 add_subdirectory( eCV )
 
+# Install CMake configuration files
+install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${CloudViewer_INSTALL_CMAKE_DIR})
+export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
 
 # `make check-style` checks style for c++/cuda/python/ipynb files
 add_custom_target(check-style

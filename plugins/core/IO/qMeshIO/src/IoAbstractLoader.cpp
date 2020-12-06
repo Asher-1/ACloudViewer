@@ -19,8 +19,8 @@
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 
-#include "mioAbstractLoader.h"
-#include "mioUtils.h"
+#include "IoAbstractLoader.h"
+#include "IoUtils.h"
 
 namespace
 {
@@ -142,7 +142,7 @@ namespace
       
          if ( cNodeHasTransform )
          {
-            ccGLMatrix	transform = mioUtils::convertMatrix( inNode->mTransformation );
+            ccGLMatrix	transform = IoUtils::convertMatrix( inNode->mTransformation );
          
             currentObject->setGLTransformation( transform );
          }
@@ -153,14 +153,14 @@ namespace
             const auto	cMeshIndex = inNode->mMeshes[j];
             const auto	mesh = inScene->mMeshes[cMeshIndex];
          
-            ccMesh  *newMesh = mioUtils::newCCMeshFromAIMesh( mesh );
+            ccMesh  *newMesh = IoUtils::newCCMeshFromAIMesh( mesh );
          
             if ( newMesh == nullptr )
             {
                continue;
             }
          
-            auto    materialSet = mioUtils::createMaterialSetForMesh( mesh, cPath, inScene );
+            auto    materialSet = IoUtils::createMaterialSetForMesh( mesh, cPath, inScene );
          
             if ( materialSet != nullptr )
             {
@@ -179,7 +179,7 @@ namespace
             for ( unsigned int i = 0; i < data->mNumProperties; ++i )
             {
                const auto   cMetaKey = data->mKeys[i].C_Str();
-               QVariant     metaValue = mioUtils::convertMetaValueToVariant( data, i );
+               QVariant     metaValue = IoUtils::convertMetaValueToVariant( data, i );
             
    #ifdef QT_DEBUG
                std::cout << "Setting meta: " << cMetaKey << " = " << metaValue.toString().toLatin1().constData() << std::endl;
@@ -279,12 +279,12 @@ namespace
 }
 
 
-mioAbstractLoader::mioAbstractLoader( const FileIOFilter::FilterInfo &info ) :
+IoAbstractLoader::IoAbstractLoader( const FileIOFilter::FilterInfo &info ) :
    FileIOFilter( info )
 {
 }
 
-bool mioAbstractLoader::canSave( CV_CLASS_ENUM type, bool &multiple, bool &exclusive ) const
+bool IoAbstractLoader::canSave( CV_CLASS_ENUM type, bool &multiple, bool &exclusive ) const
 {
    Q_UNUSED( type );
    Q_UNUSED( multiple );
@@ -293,7 +293,7 @@ bool mioAbstractLoader::canSave( CV_CLASS_ENUM type, bool &multiple, bool &exclu
    return false;
 }
 
-CC_FILE_ERROR mioAbstractLoader::loadFile( const QString &inFileName, ccHObject &ioContainer, FileIOFilter::LoadParameters &inParameters )
+CC_FILE_ERROR IoAbstractLoader::loadFile( const QString &inFileName, ccHObject &ioContainer, FileIOFilter::LoadParameters &inParameters )
 {
    Q_UNUSED( inParameters )
 	
@@ -357,7 +357,7 @@ CC_FILE_ERROR mioAbstractLoader::loadFile( const QString &inFileName, ccHObject 
    return CC_FERR_NO_ERROR;
 }
 
-void mioAbstractLoader::_postProcess( ccHObject &ioContainer )
+void IoAbstractLoader::_postProcess( ccHObject &ioContainer )
 {
    Q_UNUSED( ioContainer );
 }

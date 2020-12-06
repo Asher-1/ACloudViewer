@@ -123,17 +123,21 @@ endif()
 if ( CVCORELIB_USE_TBB )
 	if (WIN32)
 		include( cmake/FindTBB.cmake )
+		if ( TBB_FOUND )
+			include_directories( ${TBB_INCLUDE_DIRS} )
+			target_link_libraries( ${PROJECT_NAME} PUBLIC ${ALL_TBB_LIBRARIES} )
+			target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
+			target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_TBB )
+			InstallFiles( FILES ${TBB_LIBRARIES} )
+		endif()
 	elseif (UNIX OR APPLE)
-		include( cmake/FindTBB_linux.cmake )
+		message("Do not recommend using TBB on Unix or Mac platform!")
+		#include( cmake/FindTBB_linux.cmake )
+		include_directories( ${STATIC_TBB_INCLUDE_DIR} )
+        target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
+        target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_TBB )
 	endif()
-	
-	if ( TBB_FOUND )
-		include_directories( ${TBB_INCLUDE_DIRS} )
-		target_link_libraries( ${PROJECT_NAME} PUBLIC ${ALL_TBB_LIBRARIES} )
-		target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
-		target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_TBB )
-		InstallFiles( FILES ${TBB_LIBRARIES} )
-	endif()
+
 endif()
 
 # CGAL (optional)
@@ -151,18 +155,27 @@ if ( CVCORELIB_USE_CGAL )
 	endif()
 
 	if ( CVCORELIB_USE_TBB )
-		if ( TBB_FOUND )
-			# Once Linux libcgal-dev >= 5.0, target_compile_definitions replaced by:
-			#  CGAL_target_use_TBB( ${PROJECT_NAME} )
+		if (WIN32)
+			if ( TBB_FOUND )
+                # Once Linux libcgal-dev >= 5.0, target_compile_definitions replaced by:
+                #  CGAL_target_use_TBB( ${PROJECT_NAME} )
 
-			target_compile_definitions( ${PROJECT_NAME}
-				PRIVATE
-					CGAL_LINKED_WITH_TBB
-					NOMINMAX
-			)
-		else()
-			message( WARNING "CGAL cannot compile with TBB (TBB not found)" )
+                target_compile_definitions( ${PROJECT_NAME}
+                        PRIVATE
+                                CGAL_LINKED_WITH_TBB
+                                NOMINMAX
+                )
+			else()
+				message( WARNING "CGAL cannot compile with TBB (TBB not found)" )
+		    endif()
+		elseif (UNIX OR APPLE)
+                target_compile_definitions( ${PROJECT_NAME}
+                        PRIVATE
+                                CGAL_LINKED_WITH_TBB
+                                NOMINMAX
+                )
 		endif()
+
 	endif()
 
 	target_link_libraries( ${PROJECT_NAME}

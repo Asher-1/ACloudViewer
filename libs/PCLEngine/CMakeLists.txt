@@ -135,9 +135,11 @@ if (USE_PCL_BACKEND)
 	endif()
 
 	# TBB
-	if (CVCORELIB_USE_TBB)
-		include_directories( ${TBB_INCLUDE_DIRS})
-	endif()
+    if (MSVC)
+        if (CVCORELIB_USE_TBB)
+            include_directories( ${TBB_INCLUDE_DIRS})
+        endif()
+    endif()
 
 	#define the PCL_VER_1_6_OR_OLDER preprocessor to compile qPCL with older versions of PCL
 	if ( PCL_VERSION VERSION_LESS  1.7 ) # VERSION_GREATER Works just like "greater or equal"

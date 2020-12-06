@@ -105,7 +105,7 @@ public:
 	//! Sets texture
 	/** If no filename is provided, a random one will be generated.
 	**/
-	void setTexture(QImage image, QString absoluteFilename =  QString(), bool mirrorImage = true);
+    void setTexture(QImage image, QString absoluteFilename =  QString(), bool mirrorImage = false);
 
 	//! Loads texture from file (and set it if successful)
 	/** If the filename is not already in DB, the corresponding file will be loaded.

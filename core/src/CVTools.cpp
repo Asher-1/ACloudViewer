@@ -5,12 +5,13 @@
 #include "CVPlatform.h"
 
 // QT
+#include <QDir>
 #include <QFile>
-#include <locale> 
-#include <codecvt> 
 
 // SYSTEM
 #include <regex>
+#include <locale>
+#include <codecvt>
 #if defined(CV_WINDOWS)
 #include "windows.h"
 #include "stdio.h"
@@ -38,6 +39,19 @@ QString CVTools::TimeOff()
 	int timediff = s_time.elapsed();
     double f = timediff / 1000.0;
 	return QString("%1").arg(f); //float->QString
+}
+
+QString CVTools::ToNativeSeparators(const QString& path)
+{
+    QString newPath = path;
+    if (!QFile::exists(path))
+    {
+        newPath = newPath.replace("\\\\", QDir::separator());
+        newPath = newPath.replace("\\", QDir::separator());
+        newPath = QDir::toNativeSeparators(newPath);
+    }
+
+    return newPath;
 }
 
 std::string CVTools::FromUnicode(const QString& qstr)

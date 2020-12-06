@@ -10,7 +10,7 @@ class qMeshIO final : public QObject, public ccIOPluginInterface
    Q_OBJECT
    Q_INTERFACES( ccPluginInterface ccIOPluginInterface )
 
-   Q_PLUGIN_METADATA( IID "ecvcorp.cloudviewer.plugin.MeshIO" FILE "../info.json" )
+   Q_PLUGIN_METADATA( IID "ecvcorp.cloudviewer.plugin.qMeshIO" FILE "../info.json" )
 
  public:
    explicit qMeshIO(QObject *parent = nullptr);

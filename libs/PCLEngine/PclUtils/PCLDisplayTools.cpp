@@ -162,8 +162,9 @@ void PCLDisplayTools::drawPointCloud(CC_DRAW_CONTEXT & CONTEXT, ccPointCloud * e
 void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccGenericMesh* mesh) {
 	std::string viewID = CVTools::FromQString(CONTEXT.viewID);
 	int viewPort = CONTEXT.defaultViewPort;
-	const ccGenericPointCloud::VisibilityTableType& verticesVisibility = mesh->getAssociatedCloud()->getTheVisibilityArray();
-	CONTEXT.visFiltering = (verticesVisibility.size() >= mesh->getAssociatedCloud()->size());
+//	const ccGenericPointCloud::VisibilityTableType& verticesVisibility = mesh->getAssociatedCloud()->getTheVisibilityArray();
+//	CONTEXT.visFiltering = (verticesVisibility.size() >= mesh->getAssociatedCloud()->size());
+    CONTEXT.visFiltering = true;
 	bool firstShow = !m_visualizer3D->contains(viewID);
 
 	if (mesh->isRedraw() || firstShow)
@@ -172,11 +173,12 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccGenericMesh* mesh) {
 		if (!ecvCloud) return;
 
 		//materials & textures
-		bool lodEnabled = false;
-		bool showTextures = (mesh->hasTextures() && mesh->materialsShown() && !lodEnabled);
+        bool applyMaterials = (mesh->hasMaterials() && mesh->materialsShown());
+        bool lodEnabled = false;
+        bool showTextures = (mesh->hasTextures() && mesh->materialsShown() && !lodEnabled);
 
 		if (firstShow || checkEntityNeedUpdate(viewID, ecvCloud)) {
-            if (showTextures) {
+            if (applyMaterials || showTextures) {
                 PCLTextureMesh::Ptr textureMesh = cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
                 if (textureMesh) {
                     m_visualizer3D->draw(CONTEXT, textureMesh);
@@ -194,7 +196,7 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccGenericMesh* mesh) {
 		} else {
 			m_visualizer3D->resetScalarColor(viewID, true, viewPort);
 			if (!updateEntityColor(CONTEXT, ecvCloud)) {
-                if (showTextures) {
+                if (applyMaterials || showTextures) {
                     PCLTextureMesh::Ptr textureMesh = cc2smReader(ecvCloud, true).getPclTextureMesh(mesh);
                     if (textureMesh) {
                         m_visualizer3D->draw(CONTEXT, textureMesh);
@@ -251,6 +253,9 @@ void PCLDisplayTools::drawPolygon(CC_DRAW_CONTEXT& CONTEXT, ccPolyline* polyline
 
 void PCLDisplayTools::drawImage(CC_DRAW_CONTEXT & CONTEXT, ccImage * image)
 {
+    Q_UNUSED(CONTEXT);
+    Q_UNUSED(image);
+
 	if (!m_visualizer2D) return;
 
 #if 0
@@ -593,7 +598,7 @@ bool PCLDisplayTools::hideShowEntities(CC_DRAW_CONTEXT & CONTEXT)
 
 void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER & param)
 {
-	ccHObject * entity = param.entity;
+//	ccHObject * entity = param.entity;
 	int viewPort = param.viewPort;
 	std::string viewID = CVTools::FromQString(param.viewID);
 	switch (param.type)
@@ -969,6 +974,7 @@ QString PCLDisplayTools::pick3DItem(int x, int y)
 
 double PCLDisplayTools::getParallelScale(int viewPort)
 {
+    Q_UNUSED(viewPort);
 	if (m_visualizer3D)
 	{
 		return m_visualizer3D->getParallelScale() * CV_DEG_TO_RAD;
@@ -1031,6 +1037,8 @@ void PCLDisplayTools::setViewMatrix(double* viewArray, int viewPort/* = 0*/)
 	//vtkSmartPointer<vtkTransform> trans = vtkSmartPointer<vtkTransform>::New();
 	//trans->SetMatrix(viewArray);
 	//cam->SetUserViewTransform();
+    Q_UNUSED(viewArray);
+    Q_UNUSED(viewPort);
 	CVLog::Warning("[PCLDisplayTools::setViewMatrix] has been deprecated, and do nothing!");
 }
 

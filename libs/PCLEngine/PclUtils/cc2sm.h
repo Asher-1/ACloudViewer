@@ -82,6 +82,8 @@ public:
 
 	PCLPolygon::Ptr getPclPolygon(ccPolyline * polyline) const;
 
+	bool getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const;
+
 	static std::string GetSimplifiedSFName(const std::string& ccSfName);
 
 protected:

@@ -4,11 +4,11 @@
 #include <QCoreApplication>
 #include <QString>
 
-#include "IFC.h"
+#include "AssimpIfc.h"
 
 
-IFCFilter::IFCFilter() :
-   mioAbstractLoader( {
+AssimpIfc::AssimpIfc() :
+   IoAbstractLoader( {
       "_IFC Filter",
       FileIOFilter::DEFAULT_PRIORITY,
       QStringList{ "ifc", "stp", "step" },
@@ -22,12 +22,12 @@ IFCFilter::IFCFilter() :
    mNameMatcher.optimize();
 }
 
-void IFCFilter::_postProcess( ccHObject &ioContainer )
+void AssimpIfc::_postProcess( ccHObject &ioContainer )
 {
    _recursiveRename( &ioContainer );
 }
 
-void IFCFilter::_recursiveRename( ccHObject *ioContainer )
+void AssimpIfc::_recursiveRename( ccHObject *ioContainer )
 {
    const auto    cChildCount = ioContainer->getChildrenNumber();
    

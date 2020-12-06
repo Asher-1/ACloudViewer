@@ -8,15 +8,15 @@ if ( PLUGIN_IO_QMESH )
 
 	AddPlugin( NAME ${PROJECT_NAME} TYPE io )
 	
-        target_include_directories( ${PROJECT_NAME} PUBLIC
-                                    ${ASSIMP_INCLUDE_DIR})
+	target_include_directories( ${PROJECT_NAME} PUBLIC
+								${ASSIMP_INCLUDE_DIR})
 
-        if( CMAKE_VERSION VERSION_LESS 3.13 )
-            link_directories( ${ASSIMP_LIB_DIR} )
-        else()
-            target_link_directories( ${PROJECT_NAME} PUBLIC
-                                    ${ASSIMP_LIB_DIR})
-        endif()
+	if( CMAKE_VERSION VERSION_LESS 3.13 )
+		link_directories( ${ASSIMP_LIB_DIR} )
+	else()
+		target_link_directories( ${PROJECT_NAME} PUBLIC
+								${ASSIMP_LIB_DIR})
+	endif()
 
 	add_subdirectory( include )
 	add_subdirectory( src )
