@@ -70,7 +70,6 @@ class ecvFilterTool;
 class ecvRecentFiles;
 class ecvAnnotationsTool;
 class ecvFilterWindowTool;
-class ecvRenderSurfaceTool;
 class ecvFilterByLabelDlg;
 class ecvCameraParamEditDlg;
 class ecvPrimitiveFactoryDlg;
@@ -454,7 +453,6 @@ private slots:
 	inline void doActionMoveBBMinCornerToOrigin() { doActionFastRegistration(MoveBBMinCornerToOrigin); }
 	inline void doActionMoveBBMaxCornerToOrigin() { doActionFastRegistration(MoveBBMaxCornerToOrigin); }
 
-
 	// Tools -> Recognition
 	void doSemanticSegmentation();
 	void deactivateSemanticSegmentation(bool);
@@ -468,8 +466,6 @@ private slots:
 	void deactivateSegmentationMode(bool);
 	void activateFilterWindowMode();
 	void deactivateFilterWindowMode(bool);
-	void activateSurfaceWindowMode();
-	void deactivateSurfaceWindowMode(bool);
 
 	void doActionFilterMode(int mode);
 	void activateClippingMode();
@@ -607,8 +603,6 @@ private:
 	ecvFilterTool* m_filterTool;
 	//! Annotation tool dialog
 	ecvAnnotationsTool* m_annoTool;
-    //! Surface Rendering Window tool
-    ecvRenderSurfaceTool* m_surfaceTool;
     //! Filter Label Tool dialog
     ecvFilterByLabelDlg* m_filterLabelTool;
     //! Filter Window tool

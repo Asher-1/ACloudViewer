@@ -34,7 +34,6 @@
 #include "ecvInnerRect2DFinder.h"
 #include "ecvTracePolylineTool.h"
 #include "ecvFilterWindowTool.h"
-#include "ecvRenderSurfaceTool.h"
 #include "ecvRegistrationTools.h"
 #include "ecvGraphicalTransformationTool.h"
 #include "ecvGraphicalSegmentationTool.h"
@@ -238,7 +237,6 @@ MainWindow::MainWindow()
     , m_pfDlg(nullptr)
     , m_filterTool(nullptr)
     , m_annoTool(nullptr)
-    , m_surfaceTool(nullptr)
     , m_filterLabelTool(nullptr)
     , m_filterWindowTool(nullptr)
     , m_dssTool(nullptr)
@@ -670,7 +668,6 @@ void MainWindow::connectActions()
 	connect(m_ui->actionLabelConnectedComponents, &QAction::triggered, this, &MainWindow::doActionLabelConnectedComponents);
 	connect(m_ui->actionComputeGeometricFeature,  &QAction::triggered, this, &MainWindow::doComputeGeometricFeature);
 	connect(m_ui->actionUnroll,  &QAction::triggered, this, &MainWindow::doActionUnroll);
-	connect(m_ui->actionSurface, &QAction::triggered, this, &MainWindow::activateSurfaceWindowMode);
 	connect(m_ui->actionPointListPicking,	&QAction::triggered, this, &MainWindow::activatePointListPickingMode);
 	connect(m_ui->actionPointPicking,		&QAction::triggered, this, &MainWindow::activatePointPickingMode);
 
@@ -2325,7 +2322,6 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	//actionComputeQuadric3D->setEnabled(atLeastOneCloud);
 	m_ui->actionComputeBestFitBB->setEnabled(atLeastOneEntity);
 	m_ui->actionComputeGeometricFeature->setEnabled(atLeastOneCloud);
-	m_ui->actionSurface->setEnabled(atLeastOneCloud || atLeastOneMesh || atLeastOnePolyline);
 	m_ui->actionRemoveDuplicatePoints->setEnabled(atLeastOneCloud);
 	m_ui->actionFitPlane->setEnabled(atLeastOneEntity);
 	m_ui->actionFitPlaneProxy->setEnabled(atLeastOneEntity);
@@ -8814,66 +8810,6 @@ void MainWindow::deactivateFilterWindowMode(bool state)
 	updateUI();
 }
 
-void MainWindow::activateSurfaceWindowMode()
-{
-	if (!haveSelection())
-	{
-		return;
-	}
-
-	if (!m_surfaceTool)
-	{
-		m_surfaceTool = new ecvRenderSurfaceTool(this);
-		connect(m_surfaceTool, &ccOverlayDialog::processFinished, this, &MainWindow::deactivateSurfaceWindowMode);
-		registerOverlayDialog(m_surfaceTool, Qt::TopRightCorner);
-	}
-	m_surfaceTool->linkWith(ecvDisplayTools::GetCurrentScreen());
-
-	//we have to use a local copy: 'unselectEntity' will change the set of currently selected entities!
-	ccHObject::Container selectedEntities = getSelectedEntities();
-	for (ccHObject *entity : selectedEntities)
-	{
-		if (m_surfaceTool->addAssociatedEntity(entity))
-		{
-			//automatically deselect the entity (to avoid seeing its bounding box ;)
-			m_ccRoot->unselectEntity(entity);
-		}
-	}
-
-	if (m_surfaceTool->getNumberOfAssociatedEntity() == 0)
-	{
-		m_surfaceTool->close();
-		return;
-	}
-
-	freezeUI(true);
-	m_ui->ViewToolBar->hide();
-	m_ui->propertyDock->hide();
-	m_ui->consoleDock->hide();
-
-	if (m_surfaceTool->start())
-	{
-		updateOverlayDialogsPlacement();
-	}
-	else
-	{
-		deactivateFilterWindowMode(false);
-		freezeUI(false);
-		updateUI();
-		ecvConsole::Error(tr("Unexpected error!")); //indeed...
-	}
-}
-
-void MainWindow::deactivateSurfaceWindowMode(bool state)
-{
-	freezeUI(false);
-	m_ui->ViewToolBar->show();
-	m_ui->consoleDock->show();
-	m_ui->propertyDock->show();
-	updateUI();
-}
-
-
 void MainWindow::activateClippingMode()
 {
 #ifdef USE_PCL_BACKEND
@@ -9545,6 +9481,7 @@ void MainWindow::deactivateSegmentationMode(bool state)
 		{
 			ecvDisplayTools::RedrawDisplay();
 		}
+        ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_CAMERA());
 	}
 
 	freezeUI(false);

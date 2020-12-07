@@ -230,6 +230,7 @@ void ccGraphicalSegmentationTool::stop(bool accepted)
 			ecvDisplayTools::MANUAL_SEGMENTATION_MESSAGE);
 
 		ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_CAMERA());
+        ecvDisplayTools::GetCurrentScreen()->setMouseTracking(false);
 		ecvDisplayTools::SetPickingMode(ecvDisplayTools::DEFAULT_PICKING);
 		resetSegmentation();
 		ecvDisplayTools::SetRedrawRecursive(false);
@@ -242,7 +243,7 @@ void ccGraphicalSegmentationTool::setDrawFlag(bool state/* = true*/)
 {
 	for (QSet<ccHObject*>::iterator p = m_toSegment.begin(); p != m_toSegment.end(); ++p)
 	{
-		(*p)->setRedraw(state);
+		(*p)->setRedrawFlagRecursive(state);
 	}
 }
 
@@ -614,8 +615,6 @@ void ccGraphicalSegmentationTool::segment(bool keepPointsInside)
 	//viewing parameters
 	ccGLCameraParameters camera;
 	ecvDisplayTools::GetGLCameraParameters(camera);
-	//const double half_w = camera.viewport[2] / 2.0;
-	//const double half_h = camera.viewport[3] / 2.0;
 
 	//for each selected entity
 	for (QSet<ccHObject*>::const_iterator p = m_toSegment.constBegin(); p != m_toSegment.constEnd(); ++p)
@@ -677,7 +676,7 @@ void ccGraphicalSegmentationTool::pauseSegmentationMode(bool state, bool only2D/
 			allowPolylineExport(false);
 		}
 		ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_CAMERA());
-		ecvDisplayTools::SetFocusToScreen(); // solve mouse focus flow
+        ecvDisplayTools::GetCurrentScreen()->setMouseTracking(false);
 		ecvDisplayTools::DisplayNewMessage("Segmentation [PAUSED]", ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 3600, ecvDisplayTools::MANUAL_SEGMENTATION_MESSAGE);
 		ecvDisplayTools::DisplayNewMessage("Unpause to segment again", ecvDisplayTools::UPPER_CENTER_MESSAGE, true, 3600, ecvDisplayTools::MANUAL_SEGMENTATION_MESSAGE);
 	}
