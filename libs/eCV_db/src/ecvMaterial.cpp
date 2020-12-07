@@ -29,7 +29,7 @@
 
 //Textures DB
 static QMap<QString, QImage> s_textureDB;
-static QMap<QString, QSharedPointer<QOpenGLTexture>> s_openGLTextureDB;
+//static QMap<QString, QSharedPointer<QOpenGLTexture>> s_openGLTextureDB;
 
 ccMaterial::ccMaterial(QString name)
 	: m_name(name)
@@ -191,22 +191,23 @@ GLuint ccMaterial::getTextureID() const
 	if (QOpenGLContext::currentContext())
 	{
 		const QImage image = getTexture();
-		if (image.isNull())
-		{
+        if (image.isNull()) {
 			return 0;
-		}
-		QSharedPointer<QOpenGLTexture> tex = s_openGLTextureDB[m_textureFilename];
-		if (!tex)
-		{
-			tex = QSharedPointer<QOpenGLTexture>::create(QOpenGLTexture::Target2D);
-			tex->setAutoMipMapGenerationEnabled(false);
-			tex->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Linear);
-			tex->setFormat(QOpenGLTexture::RGB8_UNorm);
-			tex->setData(getTexture(), QOpenGLTexture::DontGenerateMipMaps);
-			tex->create();
-			s_openGLTextureDB[m_textureFilename] = tex;
-		}
-		return tex->textureId();
+        } else {
+            return 0;
+        }
+//		QSharedPointer<QOpenGLTexture> tex = s_openGLTextureDB[m_textureFilename];
+//		if (!tex)
+//		{
+//			tex = QSharedPointer<QOpenGLTexture>::create(QOpenGLTexture::Target2D);
+//			tex->setAutoMipMapGenerationEnabled(false);
+//			tex->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Linear);
+//			tex->setFormat(QOpenGLTexture::RGB8_UNorm);
+//			tex->setData(getTexture(), QOpenGLTexture::DontGenerateMipMaps);
+//			tex->create();
+//			s_openGLTextureDB[m_textureFilename] = tex;
+//		}
+//		return tex->textureId();
 	}
 	else
 	{
@@ -274,7 +275,7 @@ void ccMaterial::ReleaseTextures()
 		return;
 	}
 
-	s_openGLTextureDB.clear();
+//	s_openGLTextureDB.clear();
 }
 
 void ccMaterial::releaseTexture()
@@ -288,7 +289,7 @@ void ccMaterial::releaseTexture()
 	assert(QOpenGLContext::currentContext());
 
 	s_textureDB.remove(m_textureFilename);
-	s_openGLTextureDB.remove(m_textureFilename);
+//	s_openGLTextureDB.remove(m_textureFilename);
 	m_textureFilename.clear();
 }
 

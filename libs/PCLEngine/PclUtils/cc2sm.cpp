@@ -1063,7 +1063,6 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
 
         // loop on all triangles
 		int lasMtlIndex = -1;
-		unsigned int currentTexID = 0;
 
 		//vertices visibility
         for (unsigned n = 0; n < triNum; ++n)
@@ -1084,18 +1083,6 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
 			if (lasMtlIndex != newMatlIndex)
 			{
 				assert(newMatlIndex < static_cast<int>(materials->size()));
-				if (showTextures)
-				{
-					if (currentTexID)
-					{
-						currentTexID = 0;
-					}
-
-					if (newMatlIndex >= 0)
-					{
-						currentTexID = materials->at(newMatlIndex)->getTextureID();
-					}
-				}
 
 				if (newMatlIndex >= 0) {
 					textureMesh->tex_polygons.push_back(std::vector<pcl::Vertices>());
