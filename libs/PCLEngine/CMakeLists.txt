@@ -95,17 +95,12 @@ if (USE_PCL_BACKEND)
 	file( GLOB_RECURSE VtkWidgets_filters_list 		${QVTK_WIDGETS}/filters/*)
 	source_group("VtkWidgets\\filters" FILES ${VtkWidgets_filters_list} )
 	
-	# surface module
-	file( GLOB_RECURSE VtkWidgets_surface_list 		${QVTK_WIDGETS}/surface/*)	
-	source_group("VtkWidgets\\surface" FILES ${VtkWidgets_surface_list} )
-	
 	# smallWidgets module
 	file( GLOB_RECURSE VtkWidgets_smallWidgets_list ${QVTK_WIDGETS}/smallWidgets/*)
 	source_group("VtkWidgets\\smallWidgets" FILES ${VtkWidgets_smallWidgets_list} )
 	
 	set(Widget_list ${VtkWidgets_filters_list} 
-                        ${VtkWidgets_surface_list}
-                        ${VtkWidgets_smallWidgets_list})
+                    ${VtkWidgets_smallWidgets_list})
 	
 	add_library(${PROJECT_NAME} SHARED 
                     ${header_list}

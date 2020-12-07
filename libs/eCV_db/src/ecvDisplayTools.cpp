@@ -3217,16 +3217,17 @@ void ecvDisplayTools::RenderText(
 	context.textParam.text = str;
 	context.textParam.display3D = false;
 	context.textParam.font = font;
-	QRect screen = QGuiApplication::primaryScreen()->geometry();
+	context.textParam.font.setPointSize(font.pointSize());
+	//QRect screen = QGuiApplication::primaryScreen()->geometry();
 
-	if (screen.width() > 1920 && GetDevicePixelRatio() == 1)
-	{
-        context.textParam.font.setPointSize(font.pointSize() * 3);
-	}
-	else // for high DPI
-	{
-        context.textParam.font.setPointSize(font.pointSize());
-	}
+	//if (screen.width() > 1920 && GetDevicePixelRatio() == 1)
+	//{
+ //       context.textParam.font.setPointSize(font.pointSize() * 3);
+	//}
+	//else // for high DPI
+	//{
+ //       context.textParam.font.setPointSize(font.pointSize());
+	//}
 	context.textDefaultCol = color;
 	if (context.textParam.display3D)
 	{
@@ -3296,14 +3297,14 @@ void ecvDisplayTools::DisplayText(QString text,
 
 	QFont realFont = (font ? *font : s_tools.instance->m_font);
 	QFont textFont = realFont;
-	QRect screen = QGuiApplication::primaryScreen()->geometry();
+	//QRect screen = QGuiApplication::primaryScreen()->geometry();
 
-	if (screen.width() > 1920 && GetDevicePixelRatio() == 1) // for high DPI
-	{
-		textFont.setPointSize(textFont.pointSize() * 3);
-		int size = textFont.pointSize();
-		textFont.setPointSize(size - 9);
-	}
+	//if (screen.width() > 1920 && GetDevicePixelRatio() == 1) // for high DPI
+	//{
+	//	textFont.setPointSize(textFont.pointSize() * 3);
+	//	int size = textFont.pointSize();
+	//	textFont.setPointSize(size - 9);
+	//}
 
 	QFontMetrics fm(textFont);
 	int margin = fm.height() / 4;
@@ -3728,12 +3729,12 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param, bool update/* 
 	case WIDGETS_TYPE::WIDGET_T2D:
 	{
 		QFont textFont = s_tools.instance->m_font;
-		QRect screen = QGuiApplication::primaryScreen()->geometry();
+		//QRect screen = QGuiApplication::primaryScreen()->geometry();
 
-		if (screen.width() > 1920 && GetDevicePixelRatio() == 1)  // for high DPI
-		{
-			textFont.setPointSize(textFont.pointSize() * 3);
-		}
+		//if (screen.width() > 1920 && GetDevicePixelRatio() == 1)  // for high DPI
+		//{
+		//	textFont.setPointSize(textFont.pointSize() * 3);
+		//}
 
 		const_cast<WIDGETS_PARAMETER*>(&param)->fontSize = textFont.pointSize();
 		

@@ -67,7 +67,6 @@ void InitEnvironment()
     DBLib::ecvWidgetsInterface::InitInternalInterfaces();
     DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetFilterWidgetInterface());
     DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSmallWidgetsInterface());
-    DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSurfaceWidgetsInterface());
 #endif
 
 	// force pre-computed normals array initialization

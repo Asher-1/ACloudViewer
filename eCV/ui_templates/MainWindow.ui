@@ -73,7 +73,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>28</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="font">
@@ -312,7 +312,6 @@
     <addaction name="menuBatchExport"/>
     <addaction name="separator"/>
     <addaction name="actionLabelConnectedComponents"/>
-    <addaction name="actionSurface"/>
     <addaction name="actionUnroll"/>
     <addaction name="actionComputeGeometricFeature"/>
     <addaction name="separator"/>

@@ -173,7 +173,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		if (m_centerAxes)
 		{
             removeActorFromRenderer(this->m_centerAxes);
-			this->m_centerAxes->Delete();
+			//this->m_centerAxes->Delete();
 		}
 	}
 
