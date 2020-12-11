@@ -42,7 +42,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 ecvDeepSemanticSegmentationTool::ecvDeepSemanticSegmentationTool(QWidget* parent)
 	: ccOverlayDialog(parent)
 	, Ui::DeepSemanticSegmentationDlg()
@@ -129,7 +129,7 @@ bool ecvDeepSemanticSegmentationTool::start()
 		selectedTreeWiget->insertTopLevelItem(i, item);
 	}
 
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 	return ccOverlayDialog::start();
 #else
 	return false;
@@ -481,7 +481,7 @@ int ecvDeepSemanticSegmentationTool::startDetection()
 
 void ecvDeepSemanticSegmentationTool::doCompute()
 {
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 	try
 	{
 		cloudViewer::utility::DeepSemanticSegmentation dss;
@@ -542,7 +542,7 @@ void ecvDeepSemanticSegmentationTool::doCompute()
 #else
 	CVLog::Warning("python interface library has not been compiled!");
 	return;
-#endif // ECV_PYTHON_LIBRARY_BUILD
+#endif // USE_PYTHON_MODULE
 }
 
 #endif

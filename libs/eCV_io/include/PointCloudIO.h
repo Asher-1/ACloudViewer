@@ -27,7 +27,10 @@
 #ifndef ECV_POINTCLOUD_IO_HEADER
 #define ECV_POINTCLOUD_IO_HEADER
 
+#include <memory>
 #include <string>
+
+#include <FileIO.h>
 
 class ccPointCloud;
 namespace cloudViewer {
@@ -35,91 +38,86 @@ namespace io {
 
 /// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)
 /// Return an empty pointcloud if fail to read the file.
-std::shared_ptr<ccPointCloud> CreatePointCloudFromFile(
+std::shared_ptr<ccPointCloud> ECV_IO_LIB_API CreatePointCloudFromFile(
         const std::string &filename,
         const std::string &format = "auto",
         bool print_progress = false);
 
 /// The general entrance for reading a PointCloud from a file
 /// The function calls read functions based on the extension name of filename.
+/// See \p ReadPointCloudOption for additional options you can pass.
 /// \return return true if the read function is successful, false otherwise.
-bool ReadPointCloud(const std::string &filename,
-                    ccPointCloud &pointcloud,
-                    const std::string &format = "auto",
-                    bool remove_nan_points = true,
-                    bool remove_infinite_points = true,
-                    bool print_progress = false);
+bool ECV_IO_LIB_API ReadPointCloud(const std::string &filename,
+                                   ccPointCloud &pointcloud,
+                                   const ReadPointCloudOption& params = {});
+//bool ReadPointCloud(const std::string& filename,
+//    ccPointCloud& pointcloud,
+//    const std::string& format = "auto",
+//    bool remove_nan_points = true,
+//    bool remove_infinite_points = true,
+//    bool print_progress = false);
+
 
 /// The general entrance for writing a PointCloud to a file
 /// The function calls write functions based on the extension name of filename.
-/// If the write function supports binary encoding and compression, the later
-/// two parameters will be used. Otherwise they will be ignored.
+/// See \p WritePointCloudOption for additional options you can pass.
 /// \return return true if the write function is successful, false otherwise.
-bool WritePointCloud(const std::string &filename,
-                     const ccPointCloud &pointcloud,
-                     bool write_ascii = false,
-                     bool compressed = false,
-                     bool print_progress = false);
+bool ECV_IO_LIB_API WritePointCloud(const std::string &filename,
+                                    const ccPointCloud &pointcloud,
+                                    const WritePointCloudOption& params = {});
+//bool WritePointCloud(const std::string &filename,
+//                     const ccPointCloud &pointcloud,
+//                     bool write_ascii  = false,
+//                     bool compressed  = false,
+//                     bool print_progress = false);
 
-bool ReadPointCloudFromXYZ(const std::string &filename,
-                           ccPointCloud &pointcloud,
-                           bool print_progress = false);
+bool ECV_IO_LIB_API ReadPointCloudFromXYZ(const std::string &filename,
+                                          ccPointCloud &pointcloud,
+                                          const ReadPointCloudOption& params);
 
-bool WritePointCloudToXYZ(const std::string &filename,
-                          const ccPointCloud &pointcloud,
-                          bool write_ascii = false,
-                          bool compressed = false,
-                          bool print_progress = false);
+bool ECV_IO_LIB_API WritePointCloudToXYZ(const std::string &filename,
+                                         const ccPointCloud &pointcloud,
+                                         const WritePointCloudOption& params);
 
-bool ReadPointCloudFromXYZN(const std::string &filename,
-                            ccPointCloud &pointcloud,
-                            bool print_progress = false);
+bool ECV_IO_LIB_API ReadPointCloudFromXYZN(const std::string &filename,
+                                           ccPointCloud &pointcloud,
+                                           const ReadPointCloudOption& params);
 
-bool WritePointCloudToXYZN(const std::string &filename,
-                           const ccPointCloud &pointcloud,
-                           bool write_ascii = false,
-                           bool compressed = false,
-                           bool print_progress = false);
+bool ECV_IO_LIB_API WritePointCloudToXYZN(const std::string &filename,
+                                          const ccPointCloud &pointcloud,
+                                          const WritePointCloudOption& params);
 
-bool ReadPointCloudFromXYZRGB(const std::string &filename,
-                              ccPointCloud &pointcloud,
-                              bool print_progress);
+bool ECV_IO_LIB_API ReadPointCloudFromXYZRGB(const std::string &filename,
+                                             ccPointCloud &pointcloud,
+                                             const ReadPointCloudOption& params);
 
-bool WritePointCloudToXYZRGB(const std::string &filename,
-                             const ccPointCloud &pointcloud,
-                             bool write_ascii = false,
-                             bool compressed = false,
-                             bool print_progress = false);
+bool ECV_IO_LIB_API WritePointCloudToXYZRGB(const std::string &filename,
+                                            const ccPointCloud &pointcloud,
+                                            const WritePointCloudOption& params);
 
-bool ReadPointCloudFromPLY(const std::string &filename,
-                           ccPointCloud &pointcloud,
-                           bool print_progress = false);
+bool ECV_IO_LIB_API ReadPointCloudFromPLY(const std::string &filename,
+                                          ccPointCloud &pointcloud,
+                                          const ReadPointCloudOption& params);
 
-bool WritePointCloudToPLY(const std::string &filename,
-                          const ccPointCloud &pointcloud,
-                          bool write_ascii = false,
-                          bool compressed = false,
-                          bool print_progress = false);
+bool ECV_IO_LIB_API WritePointCloudToPLY(const std::string &filename,
+                                         const ccPointCloud &pointcloud,
+                                         const WritePointCloudOption& params);
 
-bool ReadPointCloudFromPCD(const std::string &filename,
-                           ccPointCloud &pointcloud,
-                           bool print_progress = false);
+bool ECV_IO_LIB_API ReadPointCloudFromPCD(const std::string &filename,
+                                          ccPointCloud &pointcloud,
+                                          const ReadPointCloudOption& params);
 
-bool WritePointCloudToPCD(const std::string &filename,
-                          const ccPointCloud &pointcloud,
-                          bool write_ascii = false,
-                          bool compressed = false,
-                          bool print_progress = false);
+bool ECV_IO_LIB_API WritePointCloudToPCD(const std::string &filename,
+                                         const ccPointCloud &pointcloud,
+                                         const WritePointCloudOption& params);
 
-bool ReadPointCloudFromPTS(const std::string &filename,
-                           ccPointCloud &pointcloud,
-                           bool print_progress = false);
+bool ECV_IO_LIB_API ReadPointCloudFromPTS(const std::string &filename,
+                                          ccPointCloud &pointcloud,
+                                          const ReadPointCloudOption& params);
 
-bool WritePointCloudToPTS(const std::string &filename,
-                          const ccPointCloud &pointcloud,
-                          bool write_ascii = false,
-                          bool compressed = false,
-                          bool print_progress = false);
+bool ECV_IO_LIB_API WritePointCloudToPTS(const std::string &filename,
+                                         const ccPointCloud &pointcloud,
+                                         const WritePointCloudOption& params);
 
 }  // namespace io
 }  // namespace cloudViewer

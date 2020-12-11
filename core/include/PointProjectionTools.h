@@ -22,7 +22,7 @@
 //Local
 #include "CVConst.h"
 #include "CVToolbox.h"
-#include "PointCloud.h"
+#include "CVPointCloud.h"
 #include "SquareMatrix.h"
 
 //System

@@ -1,6 +1,7 @@
 #ifndef QVTK_CUSTOM_VTKCAPTIONWIDGET_HEADER
 #define QVTK_CUSTOM_VTKCAPTIONWIDGET_HEADER
 
+#include "qPCL.h"
 /**
  * @brief The CustomVtkCaptionWidget class
  * CustomVtkCaptionWidget
@@ -8,7 +9,7 @@
 
 #include <vtkCaptionWidget.h>
 
-class CustomVtkCaptionWidget: public vtkCaptionWidget {
+class QPCL_ENGINE_LIB_API CustomVtkCaptionWidget : public vtkCaptionWidget {
 public:
 	static CustomVtkCaptionWidget *New();
 

@@ -37,8 +37,8 @@ enum  CC_PLUGIN_TYPE {	ECV_STD_PLUGIN               = 1,
 						ECV_IO_FILTER_PLUGIN         = 4,
 };
 
-//! Standard CC plugin interface
-/** Version 3.1
+//! Standard ECV plugin interface
+/** Version 3.2
 **/
 class ccPluginInterface
 {
@@ -141,6 +141,6 @@ protected:
 
 Q_DECLARE_METATYPE(const ccPluginInterface *);
 
-Q_DECLARE_INTERFACE(ccPluginInterface, "edf.rd.CloudViewer.ccPluginInterface/3.1")
+Q_DECLARE_INTERFACE(ccPluginInterface, "edf.rd.cloudviewer.ccPluginInterface/3.2")
 
 #endif // ECV_PLUGIN_INTERFACE_HEADER

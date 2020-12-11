@@ -10,22 +10,31 @@ add_library(${PROJECT_NAME} SHARED
 add_subdirectory( include )
 add_subdirectory( src )
 
-if (CVCORELIB_USE_TBB)
-	include_directories( ${TBB_INCLUDE_DIRS})
+if (MSVC)
+    if (CVCORELIB_USE_TBB)
+        include_directories( ${TBB_INCLUDE_DIRS})
+    endif()
 endif()
 
 # INTERNAL LIB
-target_link_libraries( ${PROJECT_NAME} CVCoreLib )
+target_link_libraries( ${PROJECT_NAME} PUBLIC CVCoreLib )
 # Qt
-target_link_libraries(${PROJECT_NAME} Qt5::OpenGL)
+target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::OpenGL)
 
 # Enforce 3rd party dependencies
-add_definitions( -DPOINTSWITHINDEX )
-add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
-target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
+cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
+
+option( OPTION_USE_RANSAC_LIB "Build with Ransac Lib" ON )
+if ( ${OPTION_USE_RANSAC_LIB} )
+	target_include_directories(${PROJECT_NAME} PRIVATE ${QRANSAC_INCLUDE_DIRS})
+        target_link_libraries(${PROJECT_NAME} PUBLIC ${QRANSAC_LIBRARIES})
+        target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_RANSAC_SUPPORT )
+endif()
 
 # Add custom preprocessor definitions
-target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_DB_LIBRARY_BUILD )
+target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_DB_LIBRARY_BUILD )
+
+CopyDLLToDirectory(${PROJECT_NAME})
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
 	CXX_VISIBILITY_PRESET hidden

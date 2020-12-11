@@ -107,6 +107,11 @@ public: //inherited methods (ccHObject)
 	virtual ccBBox& scale(const double s, const Eigen::Vector3d& center) override;
 	virtual ccBBox& rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& center) override;
 
+	const ccBBox& operator+=(const ccBBox& other);
+
+	//! Shifts the bounding box with a vector
+	const ccBBox& operator += (const CCVector3& aVector);
+
 public:
 	//! Draws bounding box (OpenGL)
 	/** \param context OpenGL context

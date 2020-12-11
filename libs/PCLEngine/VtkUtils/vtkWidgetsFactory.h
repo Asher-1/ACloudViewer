@@ -13,7 +13,6 @@ public:
 
 	static DBLib::ecvWidgetsInterface::Shared GetFilterWidgetInterface();
 	static DBLib::ecvWidgetsInterface::Shared GetSmallWidgetsInterface();
-	static DBLib::ecvWidgetsInterface::Shared GetSurfaceWidgetsInterface();
 
 private:
 

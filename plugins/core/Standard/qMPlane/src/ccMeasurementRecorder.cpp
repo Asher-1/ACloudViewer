@@ -24,11 +24,11 @@
 #include "ecvScalarField.h"
 
 
-constexpr char *ROOT_FOLDER_NAME = "MPlane";
-constexpr char *FITTING_POINT_FOLDER_NAME = "Fitting-points";
-constexpr char *MEASUREMENT_FOLDER_NAME = "Measurements";
-constexpr char *MPLANE_PLANE_NAME = "Fitting-plane";
-constexpr char * MPLANE_SCALARFIELD_NAME = "MPlane Distance";
+constexpr char const *ROOT_FOLDER_NAME = "MPlane";
+constexpr char const *FITTING_POINT_FOLDER_NAME = "Fitting-points";
+constexpr char const *MEASUREMENT_FOLDER_NAME = "Measurements";
+constexpr char const *MPLANE_PLANE_NAME = "Fitting-plane";
+constexpr char const * MPLANE_SCALARFIELD_NAME = "MPlane Distance";
 
 const std::vector<ccMPlanePoint>& ccMeasurementRecorder::getFittingPoints() const
 {

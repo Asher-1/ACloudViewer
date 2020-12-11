@@ -47,6 +47,7 @@ public:
 	virtual int getTriangleMtlIndex(unsigned triangleIndex) const override { return -1; }
 	virtual bool hasTextures() const override { return false; }
 	virtual TextureCoordsContainer* getTexCoordinatesTable() const override { return 0; }
+    virtual void getTexCoordinates(unsigned index, TexCoords2D*& tx) const {}
 	virtual void getTriangleTexCoordinates(unsigned triIndex, TexCoords2D* &tx1, TexCoords2D* &tx2, TexCoords2D* &tx3) const override { tx1 = tx2 = tx3 = nullptr; }
 	virtual bool hasPerTriangleTexCoordIndexes() const override { return false; }
 	virtual void getTriangleTexCoordinatesIndexes(unsigned triangleIndex, int& i1, int& i2, int& i3) const override { i1 = i2 = i3 = -1; }

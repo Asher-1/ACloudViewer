@@ -33,7 +33,7 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 		return;
 
 	// delete history
-	clearNormalVector();
+    clearNormalVector(context);
 
 	if (!normalVectorIsShown())
 	{
@@ -101,7 +101,7 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 		double angle_rad;
 		CCVector3d axis, trans;
 		mat.getParameters(angle_rad, axis, trans);
-		double angle_deg = angle_rad * static_cast<PointCoordinateType>(CV_RAD_TO_DEG);
+        double angle_deg = CVLib::RadiansToDegrees(angle_rad);
 		normalContext.transformInfo.setRotation(angle_deg, axis);
 	}
 

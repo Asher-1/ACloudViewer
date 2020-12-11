@@ -19,13 +19,15 @@
 #define QPCL_PCLTOOLS_HEADER
 
 // LOCAL
-#include "../qPCL.h"
-#include "../PclUtils/PCLConv.h"
-#include "../PclUtils/PCLCloud.h"
+#include "qPCL.h"
+#include "PclUtils/PCLConv.h"
+#include "PclUtils/PCLCloud.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
-#include <vector>
+
+// ECV_DB_LIB
+#include <ecvDrawContext.h>
 
 // PCL COMMON
 #include <pcl/ModelCoefficients.h>
@@ -38,6 +40,7 @@ class vtkDataSet;
 class vtkActor;
 class vtkLODActor;
 class vtkPoints;
+class vtkAbstractWidget;
 class vtkUnstructuredGrid;
 
 namespace PclTools
@@ -48,7 +51,7 @@ namespace PclTools
 	// Return 1, interpolation on, for anything else.
 	inline int GetDefaultScalarInterpolationForDataSet(vtkDataSet* data)
 	{
-		vtkPolyData* polyData = vtkPolyData::SafeDownCast(data); // Check that polyData != NULL in case of segfault
+        vtkPolyData* polyData = vtkPolyData::SafeDownCast(data); // Check that polyData != nullptr in case of segfault
 		return (polyData && polyData->GetNumberOfCells() != polyData->GetNumberOfVerts());
 	}
 
@@ -68,9 +71,9 @@ namespace PclTools
 		* \param[in] use_scalars set scalar properties to the mapper if it exists in the data. Default: true.
 		*/
 	void CreateActorFromVTKDataSet (const vtkSmartPointer<vtkDataSet> &data,
-								vtkSmartPointer<vtkLODActor> &actor,
-								bool use_scalars = true,
-								bool use_vbos = false);
+									vtkSmartPointer<vtkLODActor> &actor,
+									bool use_scalars = true,
+									bool use_vbos = false);
 
 	/** \brief Allocate a new unstructured grid smartpointer. For internal use only.
 	  * \param[out] polydata the resultant unstructured grid.
@@ -78,6 +81,8 @@ namespace PclTools
 	void AllocVtkUnstructuredGrid(vtkSmartPointer<vtkUnstructuredGrid> &polydata);
 
 	vtkSmartPointer<vtkDataSet> CreateLine(vtkSmartPointer<vtkPoints> points);
+
+	bool UpdateScalarBar(vtkAbstractWidget* widget, const CC_DRAW_CONTEXT& CONTEXT);
 };
 
 #endif // QPCL_PCLTOOLS_HEADER

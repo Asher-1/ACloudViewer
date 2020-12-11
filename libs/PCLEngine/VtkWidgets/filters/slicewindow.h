@@ -10,7 +10,7 @@ class SliceWindow : public CutWindow
 public:
     explicit SliceWindow(QWidget* parent = nullptr);
 
-    void apply();
+    virtual void apply() override;
 
 	inline void setOutputMode(bool state) { m_outputMode = state; }
 

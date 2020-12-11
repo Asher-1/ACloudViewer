@@ -42,7 +42,7 @@ MinimumCutSegmentation::MinimumCutSegmentation()
 										 tr("Min Cut Segmentation"),
 										 tr("Min Cut Segmentation from clouds"),
 										 ":/toolbar/PclAlgorithms/icons/mincut.png"))
-	, m_dialog(0)
+	, m_dialog(nullptr)
 	, m_colored(false)
 	, m_neighboursNumber(14)
 	, m_smoothSigma(0.25f)
@@ -57,7 +57,7 @@ MinimumCutSegmentation::MinimumCutSegmentation()
 MinimumCutSegmentation::~MinimumCutSegmentation()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 
@@ -134,7 +134,7 @@ int MinimumCutSegmentation::compute()
 
 	if (m_colored) // XYZRGB
 	{
-		PointRGB foregroundPoint(255, 255, 255);
+		PointRGB foregroundPoint(0.0f, 0.0f, 0.0f, 255, 255, 255);
 		foregroundPoint.x = m_cx;
 		foregroundPoint.y = m_cy;
 		foregroundPoint.z = m_cz;

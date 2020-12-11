@@ -38,6 +38,7 @@
 #include <ecvCameraSensor.h>
 #include <ecvImage.h>
 #include <ecvScalarField.h>
+#include <ecvHObjectCaster.h>
 
 //system
 #include <unordered_set>

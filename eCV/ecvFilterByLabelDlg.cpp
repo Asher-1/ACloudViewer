@@ -19,6 +19,7 @@
 
 // LOCAL
 #include "MainWindow.h"
+#include "db_tree/ecvDBRoot.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -178,7 +179,7 @@ void ecvFilterByLabelDlg::getSelectedFilterClasses(std::vector<ScalarType>& filt
 	{
 		if (ncheckBox && ncheckBox->isChecked())
 		{
-			int index = ClassMap::FindindexByValue(CVTools::fromQString(ncheckBox->text()));
+			int index = ClassMap::FindindexByValue(CVTools::FromQString(ncheckBox->text()));
 			filteredClasses.push_back(static_cast<ScalarType>(index));
 		}
 	}

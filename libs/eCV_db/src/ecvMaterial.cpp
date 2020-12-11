@@ -18,19 +18,23 @@
 //Local
 #include "ecvMaterial.h"
 
+// CV_CORE_LIB
+#include <CVTools.h>
+
 //Qt
 #include <QMap>
+#include <QUuid>
 #include <QOpenGLTexture>
 #include <QOpenGLContext>
-#include <QUuid>
 
 //Textures DB
 static QMap<QString, QImage> s_textureDB;
-static QMap<QString, QSharedPointer<QOpenGLTexture>> s_openGLTextureDB;
+//static QMap<QString, QSharedPointer<QOpenGLTexture>> s_openGLTextureDB;
 
 ccMaterial::ccMaterial(QString name)
 	: m_name(name)
 	, m_uniqueID(QUuid::createUuid().toString())
+	, m_illum(2)
 	, m_diffuseFront(ecvColor::bright)
 	, m_diffuseBack(ecvColor::bright)
 	, m_ambient(ecvColor::night)
@@ -44,6 +48,7 @@ ccMaterial::ccMaterial(const ccMaterial& mtl)
 	: m_name(mtl.m_name)
 	, m_textureFilename(mtl.m_textureFilename)
 	, m_uniqueID(mtl.m_uniqueID)
+    , m_illum(2)
 	, m_diffuseFront(mtl.m_diffuseFront)
 	, m_diffuseBack(mtl.m_diffuseBack)
 	, m_ambient(mtl.m_ambient)
@@ -77,6 +82,10 @@ void ccMaterial::setTransparency(float val)
 
 void ccMaterial::applyGL(const QOpenGLContext* context, bool lightEnabled, bool skipDiffuse) const
 {
+    Q_UNUSED(context);
+    Q_UNUSED(lightEnabled);
+    Q_UNUSED(skipDiffuse);
+
 	//get the set of OpenGL functions (version 2.1)
 	//QOpenGLFunctions_2_1* glFunc = context->versionFunctions<QOpenGLFunctions_2_1>();
 	//assert(glFunc != nullptr);
@@ -110,6 +119,10 @@ bool ccMaterial::loadAndSetTexture(QString absoluteFilename)
 		CVLog::Warning(QString("[ccMaterial::loadAndSetTexture] filename can't be empty!"));
 		return false;
 	}
+
+    // fix path separator bug
+    absoluteFilename = CVTools::ToNativeSeparators(absoluteFilename);
+
 	CVLog::PrintDebug(QString("[ccMaterial::loadAndSetTexture] absolute filename = %1").arg(absoluteFilename));
 
 	if (s_textureDB.contains(absoluteFilename))
@@ -128,16 +141,17 @@ bool ccMaterial::loadAndSetTexture(QString absoluteFilename)
 		}
 		else
 		{
-			setTexture(image, absoluteFilename, true);
+            setTexture(image, absoluteFilename, false);
 		}
 	}
 
 	return true;
 }
 
-void ccMaterial::setTexture(QImage image, QString absoluteFilename/*=QString()*/, bool mirrorImage/*=true*/)
+void ccMaterial::setTexture(QImage image, QString absoluteFilename/*=QString()*/, bool mirrorImage/*=false*/)
 {
-	CVLog::PrintDebug(QString("[ccMaterial::setTexture] absoluteFilename = '%1' / size = %2 x %3").arg(absoluteFilename).arg(image.width()).arg(image.height()));
+    CVLog::PrintDebug(QString("[ccMaterial::setTexture] absoluteFilename = '%1' / size = %2 x %3")
+                      .arg(absoluteFilename).arg(image.width()).arg(image.height()));
 
 	if (absoluteFilename.isEmpty())
 	{
@@ -153,7 +167,8 @@ void ccMaterial::setTexture(QImage image, QString absoluteFilename/*=QString()*/
 			//check that the size is compatible at least
 			if (s_textureDB[absoluteFilename].size() != image.size())
 			{
-				CVLog::Warning(QString("[ccMaterial] A texture with the same name (%1) but with a different size has already been loaded!").arg(absoluteFilename));
+                CVLog::Warning(QString("[ccMaterial] A texture with the same name (%1) "
+                                       "but with a different size has already been loaded!").arg(absoluteFilename));
 			}
 			m_textureFilename = absoluteFilename;
 			return;
@@ -176,22 +191,23 @@ GLuint ccMaterial::getTextureID() const
 	if (QOpenGLContext::currentContext())
 	{
 		const QImage image = getTexture();
-		if (image.isNull())
-		{
+        if (image.isNull()) {
 			return 0;
-		}
-		QSharedPointer<QOpenGLTexture> tex = s_openGLTextureDB[m_textureFilename];
-		if (!tex)
-		{
-			tex = QSharedPointer<QOpenGLTexture>::create(QOpenGLTexture::Target2D);
-			tex->setAutoMipMapGenerationEnabled(false);
-			tex->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Linear);
-			tex->setFormat(QOpenGLTexture::RGB8_UNorm);
-			tex->setData(getTexture(), QOpenGLTexture::DontGenerateMipMaps);
-			tex->create();
-			s_openGLTextureDB[m_textureFilename] = tex;
-		}
-		return tex->textureId();
+        } else {
+            return 0;
+        }
+//		QSharedPointer<QOpenGLTexture> tex = s_openGLTextureDB[m_textureFilename];
+//		if (!tex)
+//		{
+//			tex = QSharedPointer<QOpenGLTexture>::create(QOpenGLTexture::Target2D);
+//			tex->setAutoMipMapGenerationEnabled(false);
+//			tex->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Linear);
+//			tex->setFormat(QOpenGLTexture::RGB8_UNorm);
+//			tex->setData(getTexture(), QOpenGLTexture::DontGenerateMipMaps);
+//			tex->create();
+//			s_openGLTextureDB[m_textureFilename] = tex;
+//		}
+//		return tex->textureId();
 	}
 	else
 	{
@@ -207,6 +223,7 @@ bool ccMaterial::hasTexture() const
 
 void ccMaterial::MakeLightsNeutral(const QOpenGLContext* context)
 {
+    Q_UNUSED(context);
 	//get the set of OpenGL functions (version 2.1)
 	//QOpenGLFunctions_2_1* glFunc = context->versionFunctions<QOpenGLFunctions_2_1>();
 	//assert(glFunc != nullptr);
@@ -258,7 +275,7 @@ void ccMaterial::ReleaseTextures()
 		return;
 	}
 
-	s_openGLTextureDB.clear();
+//	s_openGLTextureDB.clear();
 }
 
 void ccMaterial::releaseTexture()
@@ -272,7 +289,7 @@ void ccMaterial::releaseTexture()
 	assert(QOpenGLContext::currentContext());
 
 	s_textureDB.remove(m_textureFilename);
-	s_openGLTextureDB.remove(m_textureFilename);
+//	s_openGLTextureDB.remove(m_textureFilename);
 	m_textureFilename.clear();
 }
 
@@ -305,6 +322,8 @@ bool ccMaterial::toFile(QFile& out) const
 
 bool ccMaterial::fromFile(QFile& in, short dataVersion, int flags)
 {
+    Q_UNUSED(flags);
+
 	QDataStream inStream(&in);
 
 	//material name (dataVersion>=20)
@@ -347,9 +366,9 @@ bool ccMaterial::compare(const ccMaterial& mtl) const
 		||	mtl.m_shininessBack != m_shininessBack
 		||	mtl.m_ambient != m_ambient
 		||	mtl.m_specular != m_specular
-		||	mtl.m_emission != m_emission
+		||	mtl.m_emission != m_emission 
+		||  mtl.m_illum != m_illum
 		||	mtl.m_diffuseBack != m_diffuseBack
-		||	mtl.m_diffuseFront != m_diffuseFront
 		||	mtl.m_diffuseFront != m_diffuseFront)
 	{
 		return false;

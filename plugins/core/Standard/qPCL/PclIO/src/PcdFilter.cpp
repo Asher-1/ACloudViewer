@@ -16,7 +16,7 @@
 //##########################################################################
 
 #include "PcdFilter.h"
-#include "ui_savePcdFileDlg.h"
+#include "ui_savePCDFileDlg.h"
 
 // PclUtils
 #include <PCLConv.h>
@@ -179,14 +179,14 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		if (compressedMode)
 		{
 			pcl::PCDWriter w;
-			if (w.writeBinaryCompressed( /*qPrintable*/CVTools::fromQString(filename), *pclCloud, pos, ori) < 0)
+			if (w.writeBinaryCompressed( /*qPrintable*/CVTools::FromQString(filename), *pclCloud, pos, ori) < 0)
 			{
 				return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 			}
 		}
 		else
 		{
-			if (pcl::io::savePCDFile( /*qPrintable*/CVTools::fromQString(filename), *pclCloud, pos, ori, saveBinary) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
+			if (pcl::io::savePCDFile( /*qPrintable*/CVTools::FromQString(filename), *pclCloud, pos, ori, saveBinary) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
 			{
 				return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 			}
@@ -206,14 +206,14 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, 
 			}
 			if (compressedMode)
 			{
-				if (pcl::io::savePCDFileBinaryCompressed(CVTools::fromQString(filename), *rgbCloud) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
+				if (pcl::io::savePCDFileBinaryCompressed(CVTools::FromQString(filename), *rgbCloud) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
 				{
 					return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 				}
 			}
 			else
 			{
-				if (pcl::io::savePCDFile(CVTools::fromQString(filename), *rgbCloud, saveBinary) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
+				if (pcl::io::savePCDFile(CVTools::FromQString(filename), *rgbCloud, saveBinary) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
 				{
 					return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 				}
@@ -229,14 +229,14 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, 
 			}
 			if (compressedMode)
 			{
-				if (pcl::io::savePCDFileBinaryCompressed(CVTools::fromQString(filename), *normalCloud) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
+				if (pcl::io::savePCDFileBinaryCompressed(CVTools::FromQString(filename), *normalCloud) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
 				{
 					return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 				}
 			}
 			else
 			{
-				if (pcl::io::savePCDFile(CVTools::fromQString(filename), *normalCloud, saveBinary) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
+				if (pcl::io::savePCDFile(CVTools::FromQString(filename), *normalCloud, saveBinary) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
 				{
 					return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 				}
@@ -252,14 +252,14 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, 
 			}
 			if (compressedMode)
 			{
-				if (pcl::io::savePCDFileBinaryCompressed(CVTools::fromQString(filename), *rgbNormalCloud) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
+				if (pcl::io::savePCDFileBinaryCompressed(CVTools::FromQString(filename), *rgbNormalCloud) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
 				{
 					return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 				}
 			}
 			else
 			{
-				if (pcl::io::savePCDFile(CVTools::fromQString(filename), *rgbNormalCloud, saveBinary) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
+				if (pcl::io::savePCDFile(CVTools::FromQString(filename), *rgbNormalCloud, saveBinary) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
 				{
 					return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 				}
@@ -275,14 +275,14 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, 
 			}
 			if (compressedMode)
 			{
-				if (pcl::io::savePCDFileBinaryCompressed(CVTools::fromQString(filename), *xyzCloud) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
+				if (pcl::io::savePCDFileBinaryCompressed(CVTools::FromQString(filename), *xyzCloud) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
 				{
 					return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 				}
 			}
 			else
 			{
-				if (pcl::io::savePCDFile(CVTools::fromQString(filename), *xyzCloud, saveBinary) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
+				if (pcl::io::savePCDFile(CVTools::FromQString(filename), *xyzCloud, saveBinary) < 0) //DGM: warning, toStdString doesn't preserve "local" characters
 				{
 					return CC_FERR_THIRD_PARTY_LIB_FAILURE;
 				}
@@ -305,13 +305,13 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename, ccHObject& container,
 	//Load the given file
 	pcl::PCDReader p;
 
-	const std::string& fileName = CVTools::fromQString(filename);
+	const std::string& fileName = CVTools::FromQString(filename);
 
 	p.readHeader(fileName, *cloud_ptr_in, origin, orientation, pcd_version, data_type, data_idx);
 	if (cloud_ptr_in)
 	{
 		pointCount = cloud_ptr_in->width * cloud_ptr_in->height;
-		CVLog::Print(QString("%1: Point Count: %2").arg(fileName.c_str()).arg(pointCount));
+        CVLog::Print(QString("%1: Point Count: %2").arg(filename).arg(pointCount));
 	}
 
 	if (pointCount > 0)

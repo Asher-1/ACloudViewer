@@ -122,7 +122,7 @@ ccPropertiesTreeDelegate::ccPropertiesTreeDelegate(QStandardItemModel* model,
 	QAbstractItemView* view,
 	QObject *parent)
 	: QStyledItemDelegate(parent)
-	, m_currentObject(0)
+    , m_currentObject(nullptr)
 	, m_model(model)
 	, m_view(view)
 {
@@ -364,25 +364,23 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj)
 
 	addSeparator(tr("Meta data"));
 
-	for (QVariantMap::ConstIterator it = metaData.constBegin(); it != metaData.constEnd(); ++it)
-	{
-		QString value;
-		if (it.value().canConvert(QVariant::String))
-		{
-			QVariant var = it.value();
-			var.convert(QVariant::String);
-			value = var.toString();
-		}
-		else
-		{
-			value = QString(QVariant::typeToName(it.value().type()));
-		}
-		//switch (var.type())
-		//{
-		//	QVariant::Bool
-		//}
-		appendRow(ITEM(it.key()), ITEM(value));
-	}
+    for (QVariantMap::ConstIterator it = metaData.constBegin(); it != metaData.constEnd(); ++it)
+    {
+        QVariant var = it.value();
+        QString value;
+
+        if (var.canConvert(QVariant::String))
+        {
+            var.convert(QVariant::String);
+            value = var.toString();
+        }
+        else
+        {
+            value = QString(QVariant::typeToName(static_cast<int>(var.type())));
+        }
+
+        appendRow(ITEM(it.key()), ITEM(value));
+    }
 }
 
 void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj)
@@ -428,7 +426,7 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj)
 		if (box.isValid())
 		{
 			//Box dimensions
-			CCVector3 bboxDiag = box.getDiagVec();
+            CCVector3 bboxDiag = box.getDiagVec();
 			appendRow(ITEM(fitBBox ? tr("Local box dimensions") : tr("Box dimensions")),
 				ITEM(QString("X: %0\nY: %1\nZ: %2").arg(bboxDiag.x).arg(bboxDiag.y).arg(bboxDiag.z)));
 
@@ -891,20 +889,20 @@ void ccPropertiesTreeDelegate::fillWithGBLSensor(ccGBLSensor* _obj)
 		//Angular range (yaw)
 		PointCoordinateType yawMin = _obj->getMinYaw();
 		PointCoordinateType yawMax = _obj->getMaxYaw();
-		appendRow(ITEM("Yaw span"), ITEM(QString("[%1 ; %2]").arg(yawMin * CV_RAD_TO_DEG, 0, 'f', 2).arg(yawMax * CV_RAD_TO_DEG, 0, 'f', 2)));
+        appendRow(ITEM("Yaw span"), ITEM(QString("[%1 ; %2]").arg(CVLib::RadiansToDegrees(yawMin), 0, 'f', 2).arg(CVLib::RadiansToDegrees(yawMax), 0, 'f', 2)));
 
 		//Angular steps (yaw)
 		PointCoordinateType yawStep = _obj->getYawStep();
-		appendRow(ITEM("Yaw step"), ITEM(QString("%1").arg(yawStep * CV_RAD_TO_DEG, 0, 'f', 4)));
+        appendRow(ITEM("Yaw step"), ITEM(QString("%1").arg(CVLib::RadiansToDegrees(yawStep), 0, 'f', 4)));
 
 		//Angular range (pitch)
 		PointCoordinateType pitchMin = _obj->getMinPitch();
 		PointCoordinateType pitchMax = _obj->getMaxPitch();
-		appendRow(ITEM("Pitch span"), ITEM(QString("[%1 ; %2]").arg(pitchMin * CV_RAD_TO_DEG, 0, 'f', 2).arg(pitchMax * CV_RAD_TO_DEG, 0, 'f', 2)));
+        appendRow(ITEM("Pitch span"), ITEM(QString("[%1 ; %2]").arg(CVLib::RadiansToDegrees(pitchMin), 0, 'f', 2).arg(CVLib::RadiansToDegrees(pitchMax), 0, 'f', 2)));
 
 		//Angular steps (pitch)
 		PointCoordinateType pitchStep = _obj->getPitchStep();
-		appendRow(ITEM("Pitch step"), ITEM(QString("%1").arg(pitchStep * CV_RAD_TO_DEG, 0, 'f', 4)));
+        appendRow(ITEM("Pitch step"), ITEM(QString("%1").arg(CVLib::RadiansToDegrees(pitchStep), 0, 'f', 4)));
 	}
 
 	//Positions
@@ -935,7 +933,7 @@ void ccPropertiesTreeDelegate::fillWithCameraSensor(ccCameraSensor* _obj)
 	}
 
 	//Field of view
-	appendRow(ITEM("Field of view"), ITEM(QString::number(params.vFOV_rad * CV_RAD_TO_DEG) + " deg."));
+    appendRow(ITEM("Field of view"), ITEM(QString::number(CVLib::RadiansToDegrees(params.vFOV_rad)) + " deg."));
 
 	//Skewness
 	appendRow(ITEM("Skew"), ITEM(QString::number(params.skew)));
@@ -1064,7 +1062,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(QWidget *parent,
 		QComboBox *comboBox = new QComboBox(parent);
 
 		comboBox->addItem(tr("None"));
-		int nsf = cloud->getNumberOfScalarFields();
+        int nsf = static_cast<int>(cloud->getNumberOfScalarFields());
 		for (int i = 0; i < nsf; ++i)
 			comboBox->addItem(QString(cloud->getScalarFieldName(i)));
 
@@ -1504,9 +1502,9 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget *editor, const QModelIndex 
 	{
 		ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_currentObject);
 		assert(cloud);
-		ccScalarField* sf = cloud ? cloud->getCurrentDisplayedScalarField() : 0;
+        ccScalarField* sf = cloud ? cloud->getCurrentDisplayedScalarField() : nullptr;
 		if (sf)
-			SetSpinBoxValue(editor, sf->getColorRampSteps(), true);
+            SetSpinBoxValue(editor, static_cast<int>(sf->getColorRampSteps()), true);
 		break;
 	}
 	case OBJECT_CLOUD_SF_EDITOR:
@@ -1587,35 +1585,35 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget *editor, const QModelIndex 
 	{
 		ccGenericPrimitive* primitive = ccHObjectCaster::ToPrimitive(m_currentObject);
 		assert(primitive);
-		SetSpinBoxValue(editor, primitive ? primitive->getDrawingPrecision() : 0);
+        SetSpinBoxValue(editor, primitive ? static_cast<int>(primitive->getDrawingPrecision()) : 0);
 		break;
 	}
 	case OBJECT_SPHERE_RADIUS:
 	{
 		ccSphere* sphere = ccHObjectCaster::ToSphere(m_currentObject);
 		assert(sphere);
-		SetDoubleSpinBoxValue(editor, sphere ? sphere->getRadius() : 0.0);
+        SetDoubleSpinBoxValue(editor, sphere ? static_cast<double>(sphere->getRadius()) : 0.0);
 		break;
 	}
 	case OBJECT_CONE_HEIGHT:
 	{
 		ccCone* cone = ccHObjectCaster::ToCone(m_currentObject);
 		assert(cone);
-		SetDoubleSpinBoxValue(editor, cone ? cone->getHeight() : 0.0);
+        SetDoubleSpinBoxValue(editor, cone ? static_cast<double>(cone->getHeight()) : 0.0);
 		break;
 	}
 	case OBJECT_CONE_BOTTOM_RADIUS:
 	{
 		ccCone* cone = ccHObjectCaster::ToCone(m_currentObject);
 		assert(cone);
-		SetDoubleSpinBoxValue(editor, cone ? cone->getBottomRadius() : 0.0);
+        SetDoubleSpinBoxValue(editor, cone ? static_cast<double>(cone->getBottomRadius()) : 0.0);
 		break;
 	}
 	case OBJECT_CONE_TOP_RADIUS:
 	{
 		ccCone* cone = ccHObjectCaster::ToCone(m_currentObject);
 		assert(cone);
-		SetDoubleSpinBoxValue(editor, cone ? cone->getTopRadius() : 0.0);
+        SetDoubleSpinBoxValue(editor, cone ? static_cast<double>(cone->getTopRadius()) : 0.0);
 		break;
 	}
 	case OBJECT_IMAGE_ALPHA:
@@ -1645,21 +1643,21 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget *editor, const QModelIndex 
 
 		ccGBLSensor* sensor = ccHObjectCaster::ToGBLSensor(m_currentObject);
 		assert(sensor);
-		lineEdit->setText(QString::number(sensor ? sensor->getUncertainty() : 0, 'g', 8));
+        lineEdit->setText(QString::number(sensor ? static_cast<double>(sensor->getUncertainty()) : 0, 'g', 8));
 		break;
 	}
 	case OBJECT_SENSOR_DISPLAY_SCALE:
 	{
 		ccSensor* sensor = ccHObjectCaster::ToSensor(m_currentObject);
 		assert(sensor);
-		SetDoubleSpinBoxValue(editor, sensor ? sensor->getGraphicScale() : 0.0);
+        SetDoubleSpinBoxValue(editor, sensor ? static_cast<double>(sensor->getGraphicScale()) : 0.0);
 		break;
 	}
 	case OBJECT_TRANS_BUFFER_TRIHDERONS_SCALE:
 	{
 		ccIndexedTransformationBuffer* buffer = ccHObjectCaster::ToTransBuffer(m_currentObject);
 		assert(buffer);
-		SetDoubleSpinBoxValue(editor, buffer ? buffer->triherdonsDisplayScale() : 0.0);
+        SetDoubleSpinBoxValue(editor, buffer ? static_cast<double>(buffer->triherdonsDisplayScale()) : 0.0);
 		break;
 	}
 	case OBJECT_CLOUD_POINT_SIZE:
@@ -1796,8 +1794,9 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem * item)
 		cloud->showSFColorsScale(item->checkState() == Qt::Checked);
 		ecvDisplayTools::SetRedrawRecursive(false);
 		cloud->setRedrawFlagRecursive(true);
+		ecvDisplayTools::RedrawDisplay(true);
 	}
-	redraw = true;
+	redraw = false;
 	break;
 	case OBJECT_FACET_CONTOUR:
 	{
@@ -2015,7 +2014,7 @@ void ccPropertiesTreeDelegate::spawnColorRampEditor()
 
 	ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_currentObject);
 	assert(cloud);
-	ccScalarField* sf = (cloud ? static_cast<ccScalarField*>(cloud->getCurrentDisplayedScalarField()) : 0);
+    ccScalarField* sf = (cloud ? static_cast<ccScalarField*>(cloud->getCurrentDisplayedScalarField()) : nullptr);
 	if (sf)
 	{
 		ccColorScaleEditorDialog* editorDialog = new ccColorScaleEditorDialog(ccColorScalesManager::GetUniqueInstance(),
@@ -2062,7 +2061,7 @@ void ccPropertiesTreeDelegate::colorScaleChanged(int pos)
 	//get current SF
 	ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_currentObject);
 	assert(cloud);
-	ccScalarField* sf = cloud ? static_cast<ccScalarField*>(cloud->getCurrentDisplayedScalarField()) : 0;
+    ccScalarField* sf = cloud ? static_cast<ccScalarField*>(cloud->getCurrentDisplayedScalarField()) : nullptr;
 	if (sf && sf->getColorScale() != colorScale)
 	{
 		sf->setColorScale(colorScale);
@@ -2080,9 +2079,9 @@ void ccPropertiesTreeDelegate::colorRampStepsChanged(int pos)
 	ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_currentObject);
 	assert(cloud);
 	ccScalarField* sf = static_cast<ccScalarField*>(cloud->getCurrentDisplayedScalarField());
-	if (sf && sf->getColorRampSteps() != pos)
+    if (sf && sf->getColorRampSteps() != static_cast<unsigned>(pos))
 	{
-		sf->setColorRampSteps(pos);
+        sf->setColorRampSteps(static_cast<unsigned>(pos));
 		updateCurrentEntity();
 	}
 }
@@ -2141,7 +2140,7 @@ void ccPropertiesTreeDelegate::primitivePrecisionChanged(int val)
 	if (primitive->getDrawingPrecision() != static_cast<unsigned int>(val))
 	{
 		bool wasVisible = primitive->isVisible();
-		primitive->setDrawingPrecision(val);
+        primitive->setDrawingPrecision(static_cast<unsigned>(val));
 		primitive->setVisible(wasVisible);
 
 		updateCurrentEntity();
@@ -2386,7 +2385,7 @@ void ccPropertiesTreeDelegate::cloudPointSizeChanged(int size)
 
 	if (cloud && cloud->getPointSize() != size)
 	{
-		cloud->setPointSize(size);
+        cloud->setPointSize(static_cast<unsigned>(size));
 		updateCurrentEntity(false);
 	}
 }

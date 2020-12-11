@@ -18,6 +18,8 @@
 #ifndef ECV_NORMAL_COMPRESSOR_HEADER
 #define ECV_NORMAL_COMPRESSOR_HEADER
 
+#include "eCV_db.h"
+
 //Local
 #include "ecvBasicTypes.h"
 

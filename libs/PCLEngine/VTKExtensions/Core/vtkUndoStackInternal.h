@@ -15,11 +15,12 @@
 #include "vtkSmartPointer.h"
 #include "vtkUndoSet.h"
 
+#include "qPCL.h"
+
 #include <string>
 #include <vector>
 
-class vtkUndoStackInternal
-{
+class QPCL_ENGINE_LIB_API vtkUndoStackInternal {
 public:
   struct Element
   {

@@ -89,7 +89,7 @@ void ccPluginUIManager::init()
 		
 		if ( pluginName.isEmpty() )
 		{
-			// should be unreachable - we have already checked for this in ccPlugins::Find()
+            // should be unreachable - we have already checked for this in ecvPlugins::Find()
 			continue;
 		}
 		

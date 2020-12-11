@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,11 +65,11 @@ int main(int argc, char *argv[]) {
     // Q.-Y. Zhou and V. Koltun,
     // Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
     // SIGGRAPH 2014
-    cloudViewer::color_map::ColorMapOptimizationOption option;
+    cloudViewer::pipelines::color_map::ColorMapOptimizationOption option;
     //option.maximum_iteration_ = 0;
     option.maximum_iteration_ = 300;
     option.non_rigid_camera_coordinate_ = true;
-    cloudViewer::color_map::ColorMapOptimization(*mesh, rgbd_images, *camera, option);
+    cloudViewer::pipelines::color_map::ColorMapOptimization(*mesh, rgbd_images, *camera, option);
     cloudViewer::io::WriteTriangleMesh("color_map_after_optimization.ply", *mesh);
 
     return 0;

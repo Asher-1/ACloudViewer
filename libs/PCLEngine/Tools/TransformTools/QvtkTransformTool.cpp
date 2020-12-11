@@ -107,7 +107,7 @@ void QvtkTransformTool::addActors()
 	for (unsigned i = 0; i < n; ++i)
 	{
 		ccHObject* ent = getAssociatedEntity()->getChild(i);
-		std::string id = CVTools::fromQString(QString::number(ent->getUniqueID()));
+		std::string id = CVTools::FromQString(QString::number(ent->getUniqueID()));
 		if (id == "")
 		{
 			continue;
@@ -374,7 +374,7 @@ void QvtkTransformTool::getOutput(std::vector<ccHObject*>& out)
 	for (vtkActor* actor : m_modelActors)
 	{
 		vtkPolyData* polydata = reinterpret_cast<vtkPolyDataMapper*>(actor->GetMapper())->GetInput();
-		if (NULL == polydata)
+        if (nullptr == polydata)
 		{
 			out.push_back(nullptr);
 			index++;

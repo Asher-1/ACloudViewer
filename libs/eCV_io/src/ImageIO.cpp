@@ -42,16 +42,25 @@ namespace cloudViewer {
 namespace {
 using namespace io;
 
-void SetPNGImageFromImage(const geometry::Image &image, png_image &pngimage) {
+void SetPNGImageFromImage(const geometry::Image &image, 
+						  int quality,
+                          png_image &pngimage) {
 	pngimage.width = image.width_;
 	pngimage.height = image.height_;
-	pngimage.format = 0;
-	if (image.bytes_per_channel_ == 2) {
-		pngimage.format |= PNG_FORMAT_FLAG_LINEAR;
-	}
-	if (image.num_of_channels_ == 3) {
-		pngimage.format |= PNG_FORMAT_FLAG_COLOR;
-	}
+    pngimage.format = pngimage.flags = 0;
+
+    if (image.bytes_per_channel_ == 2) {
+        pngimage.format |= PNG_FORMAT_FLAG_LINEAR;
+    }
+    if (image.num_of_channels_ >= 3) {
+        pngimage.format |= PNG_FORMAT_FLAG_COLOR;
+    }
+    if (image.num_of_channels_ == 4) {
+        pngimage.format |= PNG_FORMAT_FLAG_ALPHA;
+    }
+    if (quality <= 2) {
+        pngimage.flags |= PNG_IMAGE_FLAG_FAST;
+    }
 }
 
 static const std::unordered_map<
@@ -102,7 +111,7 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
 
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,
-                int quality /* = 90*/) {
+                int quality /* = kOpen3DImageIODefaultQuality*/) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -128,37 +137,50 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
 		return false;
 	}
 
-	// We only support two channel types: gray, and RGB.
-	// There is no alpha channel.
-	// bytes_per_channel is determined by PNG_FORMAT_FLAG_LINEAR flag.
-	image.Prepare(pngimage.width, pngimage.height,
-		(pngimage.format & PNG_FORMAT_FLAG_COLOR) ? 3 : 1,
-		(pngimage.format & PNG_FORMAT_FLAG_LINEAR) ? 2 : 1);
-	SetPNGImageFromImage(image, pngimage);
-	if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 0, NULL) ==
-		0) {
-		utility::LogWarning("Read PNG failed: unable to read file: {}",
-			filename);
-		return false;
-	}
-	return true;
+    // Clear colormap flag if necessary to ensure libpng expands the colo
+    // indexed pixels to full color
+    if (pngimage.format & PNG_FORMAT_FLAG_COLORMAP) {
+        pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
+    }
+
+    image.Prepare(pngimage.width, pngimage.height,
+                  PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
+                  PNG_IMAGE_SAMPLE_COMPONENT_SIZE(pngimage.format));
+
+    if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 0, NULL) ==
+        0) {
+        utility::LogWarning("Read PNG failed: unable to read file: {}",
+                            filename);
+        utility::LogWarning("PNG error: {}", pngimage.message);
+        return false;
+    }
+    return true;
 }
 
 bool WriteImageToPNG(const std::string &filename,
-	const geometry::Image &image,
-	int quality) {
-	if (image.HasData() == false) {
+					 const geometry::Image &image,
+                     int quality /* = kOpen3DImageIODefaultQuality*/) {
+	if (!image.HasData()) {
 		utility::LogWarning("Write PNG failed: image has no data.");
 		return false;
 	}
+    if (quality == kCloudViewerImageIODefaultQuality)  // Set default quality
+        quality = 6;
+    if (quality < 0 || quality > 9) {
+        utility::LogWarning(
+                "Write PNG failed: quality ({}) must be in the range [0,9]",
+                quality);
+        return false;
+    }
+
 	png_image pngimage;
 	memset(&pngimage, 0, sizeof(pngimage));
 	pngimage.version = PNG_IMAGE_VERSION;
-	SetPNGImageFromImage(image, pngimage);
+    SetPNGImageFromImage(image, quality, pngimage);
 	if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
-		image.data_.data(), 0, NULL) == 0) {
+								image.data_.data(), 0, NULL) == 0) {
 		utility::LogWarning("Write PNG failed: unable to write file: {}",
-			filename);
+							filename);
 		return false;
 	}
 	return true;
@@ -223,9 +245,9 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
 }
 
 bool WriteImageToJPG(const std::string &filename,
-	const geometry::Image &image,
-	int quality /* = 90*/) {
-	if (image.HasData() == false) {
+					 const geometry::Image &image,
+                     int quality /* = kOpen3DImageIODefaultQuality*/) {
+	if (!image.HasData()) {
 		utility::LogWarning("Write JPG failed: image has no data.");
 		return false;
 	}
@@ -234,6 +256,15 @@ bool WriteImageToJPG(const std::string &filename,
 		utility::LogWarning("Write JPG failed: unsupported image data.");
 		return false;
 	}
+
+    if (quality == kCloudViewerImageIODefaultQuality)  // Set default quality
+        quality = 90;
+    if (quality < 0 || quality > 100) {
+        utility::LogWarning(
+                "Write JPG failed: image quality should be in the range "
+                "[0,100].");
+        return false;
+    }
 	struct jpeg_compress_struct cinfo;
 	struct jpeg_error_mgr jerr;
 	FILE *file_out;

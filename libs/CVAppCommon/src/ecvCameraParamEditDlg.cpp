@@ -260,7 +260,7 @@ bool ecvCameraParamEditDlg::start()
 void ecvCameraParamEditDlg::linkWith(QMdiSubWindow* qWin)
 {
 	//corresponding ccGLWindow
-	QWidget* associatedWin = (qWin ? (QWidget*)(qWin->widget()) : nullptr);
+    QWidget* associatedWin = (qWin ? static_cast<QWidget*>(qWin->widget()) : nullptr);
 
 	linkWith(associatedWin);
 }
@@ -647,7 +647,7 @@ bool ecvCameraParamEditDlg::ConfigureCustomViewpoints(QWidget* parentWidget)
 
 	// user modifies the configuration
 	QString currentConfig = ecvGenericCameraTool::CurrentCameraParam.toString().c_str();
-	ecvCustomViewpointButtonDlg dialog(parentWidget, 0, toolTips, configs, currentConfig);
+    ecvCustomViewpointButtonDlg dialog(parentWidget, nullptr, toolTips, configs, currentConfig);
 	if (dialog.exec() == QDialog::Accepted)
 	{
 		// save the new configuration into the app wide settings.
@@ -864,7 +864,7 @@ void ecvCameraParamEditDlg::saveCameraConfiguration()
 	}
 
 	QString filename = selectedFilename;
-	m_tool->saveCameraConfiguration(CVTools::fromQString(filename));
+	m_tool->saveCameraConfiguration(CVTools::FromQString(filename));
 }
 
 //-----------------------------------------------------------------------------
@@ -888,7 +888,7 @@ void ecvCameraParamEditDlg::loadCameraConfiguration()
 		return;
 	QString filename;
 	filename = selectedFiles[0];
-	m_tool->loadCameraConfiguration(CVTools::fromQString(filename));
+	m_tool->loadCameraConfiguration(CVTools::FromQString(filename));
 }
 
 void ecvCameraParamEditDlg::pickPointAsPivot(bool state)

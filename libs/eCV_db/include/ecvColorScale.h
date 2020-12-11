@@ -72,10 +72,10 @@ protected:
 
 //! Color scale
 /** A color scale is defined by several 'steps' corresponding to given colors.
-	The color between each step is linearly interpolated. A vald color scale
+	The color between each step is linearly interpolated. A valid color scale
 	must have at least 2 steps, one at relative position 0.0 (scale start) and
 	one at relative position 1.0 (scale end). Steps can't be defined outside
-	this intervale.
+	this interval.
 
 	For faster access, a array of interpolated colors is maintained internally.
 	Be sure that the 'refresh' method has been called after any modification(s)

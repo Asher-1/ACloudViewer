@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 #include <../PCLEngine/Tools/EditCameraTool.h>
 #endif
 
@@ -193,7 +193,7 @@ void ecvCustomViewpointsToolbar::DeleteCustomViewpoint()
 void ecvCustomViewpointsToolbar::addCurrentViewpointToCustomViewpoints()
 {
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD // update camera parameters in case
+#ifdef USE_PCL_BACKEND // update camera parameters in case
 	EditCameraTool::UpdateCameraInfo();
 #endif
 
@@ -203,7 +203,7 @@ void ecvCustomViewpointsToolbar::addCurrentViewpointToCustomViewpoints()
 //-----------------------------------------------------------------------------
 void ecvCustomViewpointsToolbar::ApplyCustomViewpoint()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
 		int customViewpointIndex;

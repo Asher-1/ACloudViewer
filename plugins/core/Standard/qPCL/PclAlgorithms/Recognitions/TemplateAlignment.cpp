@@ -58,7 +58,7 @@ TemplateAlignment::TemplateAlignment()
 TemplateAlignment::~TemplateAlignment()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 	if (m_templateMatch)
 	{

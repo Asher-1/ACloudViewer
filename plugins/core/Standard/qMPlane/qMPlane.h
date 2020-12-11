@@ -39,7 +39,7 @@ class qMPlane : public QObject, public ccStdPluginInterface
 {
 	Q_OBJECT
 	Q_INTERFACES( ccPluginInterface ccStdPluginInterface )
-	Q_PLUGIN_METADATA(IID "cccorp.cloudviewer.plugin.MPlane" FILE "info.json")
+	Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.MPlane" FILE "info.json")
 	
 public:
 	explicit qMPlane( QObject *parent = nullptr );

@@ -45,7 +45,7 @@ class TetraMesh;
 ///
 /// \brief LineSet define a sets of lines in 3D. A typical application is to
 /// display the point cloud correspondence pairs.
-class LineSet : public ccHObject {
+class ECV_DB_LIB_API LineSet : public ccHObject {
 public:
 
 	/// \brief Default Constructor.

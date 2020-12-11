@@ -72,18 +72,18 @@ ccObject::ccObject(QString name)
 	: m_name(name.isEmpty() ? "unnamed" : name)
 	, m_baseName(m_name)
 	, m_filePath(QString(m_baseName) + ".bin")
-	, m_flags(CC_ENABLED)
-	, m_uniqueID(GetNextUniqueID())
 	, m_removeFlag(false)
+    , m_flags(CC_ENABLED)
+    , m_uniqueID(GetNextUniqueID())
 {}
 
 ccObject::ccObject(const ccObject& object)
 	: m_name(object.m_name)
 	, m_baseName(object.m_baseName)
 	, m_filePath(object.m_filePath)
+    , m_removeFlag(false)
 	, m_flags(object.m_flags)
-	, m_uniqueID(GetNextUniqueID())
-	, m_removeFlag(false)
+    , m_uniqueID(GetNextUniqueID())
 {}
 
 void ccObject::setUniqueID(unsigned ID)

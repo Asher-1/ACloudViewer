@@ -261,7 +261,7 @@ void ccHObject::ResizeAndPaintUniformColor(
 	Eigen::Vector3d clipped_color = color;
 	if (color.minCoeff() < 0 || color.maxCoeff() > 1) {
 		CVLib::utility::LogWarning(
-			"[ccHObject::ResizeAndPaintUniformColor] invalid color in PaintUniformColor, clipping to [0, 1]");
+			"[ccHObject::ResizeAndPaintUniformColor] invalid color in paintUniformColor, clipping to [0, 1]");
 		clipped_color = clipped_color.array()
 			.max(Eigen::Vector3d(0, 0, 0).array())
 			.matrix();
@@ -732,7 +732,7 @@ void ccHObject::removeFromRenderScreen(bool recursive)
 	{
 		ccPlanarEntityInterface* plane = ccHObjectCaster::ToPlanarEntity(this);
 		plane->showNormalVector(false);
-		plane->clearNormalVector();
+        plane->clearNormalVector(context);
 	}
 
 	if (recursive)
@@ -1590,7 +1590,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context)
 			//then we can display the name during the 2D pass
 			drawNameIn3D();
 		}
-	}
+	} 
 	else
 	{
 		// label2d name have been managed by itself
@@ -1659,17 +1659,17 @@ void ccHObject::updateNameIn3DRecursive()
 
 void ccHObject::setHideShowType(CC_DRAW_CONTEXT & context)
 {
-	context.hideShowEntityType = ecvDisplayTools::ConVertToEntityType(getClassID());
+	context.hideShowEntityType = ecvDisplayTools::ConvertToEntityType(getClassID());
 }
 
 ENTITY_TYPE ccHObject::getEntityType()
 {
-	return ecvDisplayTools::ConVertToEntityType(getClassID());
+	return ecvDisplayTools::ConvertToEntityType(getClassID());
 }
 
 void ccHObject::setRemoveType(CC_DRAW_CONTEXT & context)
 {
-	context.removeEntityType = ecvDisplayTools::ConVertToEntityType(getClassID());
+	context.removeEntityType = ecvDisplayTools::ConvertToEntityType(getClassID());
 }
 
 void ccHObject::hideBB(CC_DRAW_CONTEXT context)

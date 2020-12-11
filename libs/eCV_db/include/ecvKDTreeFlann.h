@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.CVLib.org                            -
+// -                        CVLib: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.CVLib.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -101,7 +101,7 @@ public:
     /// Sets the data for the KDTree from geometry.
     ///
     /// \param geometry Geometry for KDTree Construction.
-    bool SetGeometry(const ccHObject &geometry);
+    bool SetGeometry(const ccHObject &geometry, bool use_eigen = true);
     /// Sets the data for the KDTree from the feature data.
     ///
     /// \param feature Set of features for KDTree construction.
@@ -144,17 +144,23 @@ private:
     /// Internal method that sets all the members of KDTree by data provided by
     /// features, geometry, etc.
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
+    bool SetRawData(const std::vector<CCVector3> &data);
+    bool SetRawData(const std::vector<const CCVector3*> &data);
 
 public:
 	std::vector<double> data_;
+    std::vector<PointCoordinateType> dataf_;
 	size_t dimension_ = 0;
 	size_t dataset_size_ = 0;
 	size_t leaf_size_ = 15;
 	bool reorder_ = true;
+    bool use_eigen_ = true;
 
 protected:
     std::unique_ptr<flann::Matrix<double>> flann_dataset_;
     std::unique_ptr<flann::Index<flann::L2<double>>> flann_index_;
+    std::unique_ptr<flann::Matrix<PointCoordinateType>> flann_datasetf_;
+    std::unique_ptr<flann::Index<flann::L2<PointCoordinateType>>> flann_indexf_;
 };
 
 }  // namespace geometry

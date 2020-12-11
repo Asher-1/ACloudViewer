@@ -1,15 +1,8 @@
-cmake_minimum_required( VERSION 3.10 )
+cmake_minimum_required( VERSION 3.18 )
 
 # PCL ENGINE BACKEND
 if (USE_PCL_BACKEND)
 	# find package
-	link_directories( ${PCL_LIBRARY_DIRS} )
-	link_directories( ${VTK_LIBRARIES_DIRS} )
-
-	# TBB
-	if (CVCORELIB_USE_TBB)
-		include_directories( ${TBB_INCLUDE_DIRS})
-	endif()
 
 	# PCL ENGINE
 	project( QPCL_ENGINE_LIB )
@@ -24,36 +17,40 @@ if (USE_PCL_BACKEND)
 	
 	# VTK EXTENSIONS MODULE
 	SET( QVTK_EXTENSIONS ${CMAKE_CURRENT_SOURCE_DIR}/VTKExtensions )
-	# core module
-	file( GLOB_RECURSE VtkExtensions_core_list ${QVTK_EXTENSIONS}/Core/*)
-	source_group("VTKExtensions\\Core" FILES ${VtkExtensions_core_list} )
-	# points module
-	file( GLOB_RECURSE VtkExtensions_points_list ${QVTK_EXTENSIONS}/Points/*)
-	source_group("VTKExtensions\\Points" FILES ${VtkExtensions_points_list} )
-	# widgets module
-	file( GLOB_RECURSE VtkExtensions_widgets_list ${QVTK_EXTENSIONS}/Widgets/*)
-	source_group("VTKExtensions\\Widgets" FILES ${VtkExtensions_widgets_list} )
+	# Core module
+	file( GLOB_RECURSE VtkExtensions_Core_List ${QVTK_EXTENSIONS}/Core/*)
+	source_group("VTKExtensions\\Core" FILES ${VtkExtensions_Core_List} )
+	# Points module
+	file( GLOB_RECURSE VtkExtensions_Points_List ${QVTK_EXTENSIONS}/Points/*)
+	source_group("VTKExtensions\\Points" FILES ${VtkExtensions_Points_List} )
+	# Widgets module
+	file( GLOB_RECURSE VtkExtensions_Widgets_List ${QVTK_EXTENSIONS}/Widgets/*)
+	source_group("VTKExtensions\\Widgets" FILES ${VtkExtensions_Widgets_List} )
 	# CallbackTools module
-	file( GLOB_RECURSE VtkExtensions_CallbackTools_list ${QVTK_EXTENSIONS}/CallbackTools/*)
-	source_group("VTKExtensions\\CallbackTools" FILES ${VtkExtensions_CallbackTools_list} )
+	file( GLOB_RECURSE VtkExtensions_CallbackTools_List ${QVTK_EXTENSIONS}/CallbackTools/*)
+	source_group("VTKExtensions\\CallbackTools" FILES ${VtkExtensions_CallbackTools_List} )
 	# CosmoTools module
-	file( GLOB_RECURSE VtkExtensions_cosmoTools_list ${QVTK_EXTENSIONS}/CosmoTools/*)
-	source_group("VTKExtensions\\CosmoTools" FILES ${VtkExtensions_cosmoTools_list} )
-	# interaction style module
-	file( GLOB_RECURSE VtkExtensions_interactionStyle_list ${QVTK_EXTENSIONS}/InteractionStyle/*)
-	source_group("VTKExtensions\\InteractionStyle" FILES ${VtkExtensions_interactionStyle_list} )
-	# views module
-	file( GLOB_RECURSE VtkExtensions_views_list ${QVTK_EXTENSIONS}/Views/*)
-	source_group("VTKExtensions\\Views" FILES ${VtkExtensions_views_list} )
+	file( GLOB_RECURSE VtkExtensions_CosmoTools_List ${QVTK_EXTENSIONS}/CosmoTools/*)
+	source_group("VTKExtensions\\CosmoTools" FILES ${VtkExtensions_CosmoTools_List} )
+	# Interaction style module
+	file( GLOB_RECURSE VtkExtensions_InteractionStyle_List ${QVTK_EXTENSIONS}/InteractionStyle/*)
+	source_group("VTKExtensions\\InteractionStyle" FILES ${VtkExtensions_InteractionStyle_List} )
+	# Views module
+	file( GLOB_RECURSE VtkExtensions_Views_List ${QVTK_EXTENSIONS}/Views/*)
+	source_group("VTKExtensions\\Views" FILES ${VtkExtensions_Views_List} )
+	# Utility module
+	file( GLOB_RECURSE VtkExtensions_Utility_List ${QVTK_EXTENSIONS}/Utility/*)
+	source_group("VTKExtensions\\Utility" FILES ${VtkExtensions_Utility_List} )
 
 	set(VtkExtensions_list 
-		${VtkExtensions_core_list}  
-		${VtkExtensions_points_list}  
-		${VtkExtensions_widgets_list}  
-		${VtkExtensions_CallbackTools_list}  
-		${VtkExtensions_cosmoTools_list}  
-		${VtkExtensions_interactionStyle_list}  
-		${VtkExtensions_views_list}
+		${VtkExtensions_Core_List}  
+		${VtkExtensions_Points_List}  
+		${VtkExtensions_Widgets_List}  
+		${VtkExtensions_CallbackTools_List}  
+		${VtkExtensions_CosmoTools_List}  
+		${VtkExtensions_InteractionStyle_List}  
+		${VtkExtensions_Views_List}
+		${VtkExtensions_Utility_List}
 	)
 	
 	# VTK UTILS MODULE
@@ -98,28 +95,46 @@ if (USE_PCL_BACKEND)
 	file( GLOB_RECURSE VtkWidgets_filters_list 		${QVTK_WIDGETS}/filters/*)
 	source_group("VtkWidgets\\filters" FILES ${VtkWidgets_filters_list} )
 	
-	# surface module
-	file( GLOB_RECURSE VtkWidgets_surface_list 		${QVTK_WIDGETS}/surface/*)	
-	source_group("VtkWidgets\\surface" FILES ${VtkWidgets_surface_list} )
-	
 	# smallWidgets module
 	file( GLOB_RECURSE VtkWidgets_smallWidgets_list ${QVTK_WIDGETS}/smallWidgets/*)
 	source_group("VtkWidgets\\smallWidgets" FILES ${VtkWidgets_smallWidgets_list} )
 	
 	set(Widget_list ${VtkWidgets_filters_list} 
-					${VtkWidgets_surface_list}
-					${VtkWidgets_smallWidgets_list})
+                    ${VtkWidgets_smallWidgets_list})
 	
 	add_library(${PROJECT_NAME} SHARED 
-				${header_list} 
-				${ui_list_all} 
-				${VtkUtils_list}
-				${VtkExtensions_list}
-				${Tools_list} 
-				${PclVis_list} 
-				${PclUtils_list} 
-				${Widget_list}
+                    ${header_list}
+                    ${ui_list_all}
+                    ${VtkUtils_list}
+                    ${VtkExtensions_list}
+                    ${Tools_list}
+                    ${PclVis_list}
+                    ${PclUtils_list}
+                    ${Widget_list}
 	)
+
+	target_include_directories( ${PROJECT_NAME}
+		PUBLIC
+            ${PCL_INCLUDE_DIRS}
+	)
+
+	if( CMAKE_VERSION VERSION_LESS 3.13 )
+		link_directories( ${PCL_LIBRARY_DIRS} )
+		link_directories( ${VTK_LIBRARIES_DIRS} )
+	else()
+		target_link_directories( ${PROJECT_NAME}
+			PUBLIC
+				${PCL_LIBRARY_DIRS}
+				${VTK_LIBRARIES_DIRS}
+		)
+	endif()
+
+	# TBB
+    if (MSVC)
+        if (CVCORELIB_USE_TBB)
+            include_directories( ${TBB_INCLUDE_DIRS})
+        endif()
+    endif()
 
 	#define the PCL_VER_1_6_OR_OLDER preprocessor to compile qPCL with older versions of PCL
 	if ( PCL_VERSION VERSION_LESS  1.7 ) # VERSION_GREATER Works just like "greater or equal"
@@ -134,23 +149,31 @@ if (USE_PCL_BACKEND)
 
 	# INTERNAL LIB
 	target_link_libraries( ${PROJECT_NAME}
-							ECV_DB_LIB 
-							ECV_IO_LIB )
+                            ECV_DB_LIB
+                            ECV_IO_LIB )
 	
 	# Qt & PCL & VTK
 	target_link_libraries(	${PROJECT_NAME} 
-							Qt5::Core 
-							Qt5::Gui 
-							Qt5::Widgets
-							Qt5::PrintSupport
-							${PCL_LIBRARIES} 
-							${VTK_LIBRARIES} )
+                                Qt5::Core
+                                Qt5::Gui
+                                Qt5::Widgets
+                                Qt5::PrintSupport
+                                Qt5::OpenGL
+                                ${PCL_LIBRARIES}
+                                ${VTK_LIBRARIES} )
 
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_DB_LIBRARY_BUILD )
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_IO_LIBRARY_BUILD )
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_PCL_ENGINE_LIBRARY_BUILD )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD )
+	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_PCL_BACKEND )
 
 	# install (shared) lib to specified destinations
 	InstallSharedLibrary( TARGET ${PROJECT_NAME} )
+
+	#import PCL dlls (if any, WIN32 only)
+    include( cmake/ExportPCLDlls.cmake )
+    export_PCL_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
+
+	#import VTK dlls (if any, WIN32 only)
+    include( cmake/ExportVTKDlls.cmake )
+    export_VTK_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
 
 endif()

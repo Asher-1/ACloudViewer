@@ -18,7 +18,7 @@
 #include <vtkVRMLExporter.h>
 #include <vtkRenderer.h>
 
-#include <QVTKWidget.h>
+#include <QVTKOpenGLNativeWidget.h>
 
 #include <QDebug>
 #include <QThreadPool>
@@ -63,11 +63,12 @@ void qImageToVtkImage(QImage& img, vtkImageData* imageData)
     imageData->DeepCopy(qimageToImageSource->GetOutput());
 }
 
-QImage vtkWidgetSnapshot(QVTKWidget* widget)
+QImage vtkWidgetSnapshot(QVTKOpenGLNativeWidget* widget)
 {
     if (!widget)
         return QImage();
-    return vtkImageDataToQImage(widget->cachedImage());
+    //return vtkImageDataToQImage(widget->cachedImage());
+    return vtkImageDataToQImage(nullptr);
 }
 
 void exportActorToFile(vtkActor* actor, const QString& outfile)

@@ -1,6 +1,8 @@
 #ifndef vtkBoxWidgetRestricted_h
 #define vtkBoxWidgetRestricted_h
 
+#include "qPCL.h"
+
 #include <vtkBoxWidget.h>
 
 /**
@@ -10,7 +12,7 @@
  *
  */
 
-class vtkBoxWidgetRestricted: public vtkBoxWidget{
+class QPCL_ENGINE_LIB_API vtkBoxWidgetRestricted : public vtkBoxWidget {
 public:
     static vtkBoxWidgetRestricted *New();
 
