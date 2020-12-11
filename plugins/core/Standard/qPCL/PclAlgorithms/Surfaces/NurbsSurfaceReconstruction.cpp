@@ -43,7 +43,7 @@ NurbsSurfaceReconstruction::NurbsSurfaceReconstruction()
 										 tr("Nurbs Surface Triangulation"),
 										 tr("Nurbs Surface Triangulation from clouds"),
 										 ":/toolbar/PclAlgorithms/icons/bspline_surface.png"))
-	, m_dialog(0)
+	, m_dialog(nullptr)
 	, m_order(3)
 	, m_curveResolution(4)
 	, m_meshResolution(128)
@@ -62,7 +62,7 @@ NurbsSurfaceReconstruction::NurbsSurfaceReconstruction()
 NurbsSurfaceReconstruction::~NurbsSurfaceReconstruction()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

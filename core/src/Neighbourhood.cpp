@@ -20,10 +20,11 @@
 #include <Neighbourhood.h>
 
 //local
+#include <CVMath.h>
 #include <ConjugateGradient.h>
 #include <Delaunay2dMesh.h>
 #include <DistanceComputationTools.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <SimpleMesh.h>
 
 //System
@@ -157,9 +158,9 @@ void Neighbourhood::computeGravityCenter()
 	for (unsigned i = 0; i < count; ++i)
 	{
 		const CCVector3* P = m_associatedCloud->getPoint(i);
-		Psum.x += P->x;
-		Psum.y += P->y;
-		Psum.z += P->z;
+        Psum.x += static_cast<double>(P->x);
+        Psum.y += static_cast<double>(P->y);
+        Psum.z += static_cast<double>(P->z);
 	}
 
 	setGravityCenter({
@@ -192,12 +193,12 @@ CVLib::SquareMatrixd Neighbourhood::computeCovarianceMatrix()
 	{
 		const CCVector3 P = *m_associatedCloud->getPoint(i) - *G;
 
-		mXX += static_cast<double>(P.x)*P.x;
-		mYY += static_cast<double>(P.y)*P.y;
-		mZZ += static_cast<double>(P.z)*P.z;
-		mXY += static_cast<double>(P.x)*P.y;
-		mXZ += static_cast<double>(P.x)*P.z;
-		mYZ += static_cast<double>(P.y)*P.z;
+        mXX += static_cast<double>(P.x)*static_cast<double>(P.x);
+        mYY += static_cast<double>(P.y)*static_cast<double>(P.y);
+        mZZ += static_cast<double>(P.z)*static_cast<double>(P.z);
+        mXY += static_cast<double>(P.x)*static_cast<double>(P.y);
+        mXZ += static_cast<double>(P.x)*static_cast<double>(P.z);
+        mYZ += static_cast<double>(P.y)*static_cast<double>(P.z);
 	}
 
 	//symmetry
@@ -231,7 +232,7 @@ PointCoordinateType Neighbourhood::computeLargestRadius()
 	for (unsigned i = 0; i < pointCount; ++i)
 	{
 		const CCVector3* P = m_associatedCloud->getPoint(i);
-		const double d2 = (*P - *G).norm2();
+        const double d2 = static_cast<double>((*P - *G).norm2());
 		if (d2 > maxSquareDist)
 			maxSquareDist = d2;
 	}
@@ -241,112 +242,99 @@ PointCoordinateType Neighbourhood::computeLargestRadius()
 
 bool Neighbourhood::computeLeastSquareBestFittingPlane()
 {
-	//invalidate previous LS plane (if any)
-	m_structuresValidity &= (~FLAG_LS_PLANE);
+    //invalidate previous LS plane (if any)
+    m_structuresValidity &= (~FLAG_LS_PLANE);
 
-	assert(m_associatedCloud);
-	unsigned pointCount = (m_associatedCloud ? m_associatedCloud->size() : 0);
+    assert(m_associatedCloud);
+    unsigned pointCount = (m_associatedCloud ? m_associatedCloud->size() : 0);
 
-	//we need at least 3 points to compute a plane
-	assert(CV_LOCAL_MODEL_MIN_SIZE[LS] >= 3);
-	if (pointCount < CV_LOCAL_MODEL_MIN_SIZE[LS])
-	{
-		//not enough points!
-		return false;
-	}
+    //we need at least 3 points to compute a plane
+    static_assert(CV_LOCAL_MODEL_MIN_SIZE[LS] >= 3, "Invalid CC_LOCAL_MODEL_MIN_SIZE size");
+    if (pointCount < CV_LOCAL_MODEL_MIN_SIZE[LS])
+    {
+        //not enough points!
+        return false;
+    }
 
-	CCVector3 G(0, 0, 0);
-	if (pointCount > 3)
-	{
-		CVLib::SquareMatrixd covMat = computeCovarianceMatrix();
+    CCVector3 G(0, 0, 0);
+    if (pointCount > 3)
+    {
+        SquareMatrixd covMat = computeCovarianceMatrix();
 
-#ifdef USE_EIGEN
-		Eigen::Matrix3d A = ToEigen(covMat);
-		Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es;
-		es.compute(A);
+        //we determine plane normal by computing the smallest eigen value of M = 1/n * S[(p-µ)*(p-µ)']
+        SquareMatrixd eigVectors;
+        std::vector<double> eigValues;
+        if (!Jacobi<double>::ComputeEigenValuesAndVectors(covMat, eigVectors, eigValues, true))
+        {
+            //failed to compute the eigen values!
+            return false;
+        }
 
-		//eigen values (and vectors) are sorted in ascending order
-		const auto& eVec = es.eigenvectors();
+        //get normal
+        {
+            CCVector3d vec(0, 0, 1);
+            double minEigValue = 0;
+            //the smallest eigen vector corresponds to the "least square best fitting plane" normal
+            Jacobi<double>::GetMinEigenValueAndVector(eigVectors, eigValues, minEigValue, vec.u);
+            m_lsPlaneVectors[2] = CCVector3::fromArray(vec.u);
+        }
 
-		//get normal
-		m_lsPlaneVectors[2] = CCVector3::fromArray(eVec.col(0).data()); //smallest eigenvalue
-		//get also X (Y will be deduced by cross product, see below
-		m_lsPlaneVectors[0] = CCVector3::fromArray(eVec.col(2).data()); //biggest eigenvalue
-#else
-		//we determine plane normal by computing the smallest eigen value of M = 1/n * S[(p-µ)*(p-µ)']
-		CVLib::SquareMatrixd eigVectors;
-		std::vector<double> eigValues;
-		if (!Jacobi<double>::ComputeEigenValuesAndVectors(covMat, eigVectors, eigValues, true))
-		{
-			//failed to compute the eigen values!
-			return false;
-		}
+        //get also X (Y will be deduced by cross product, see below
+        {
+            CCVector3d vec;
+            double maxEigValue = 0;
+            Jacobi<double>::GetMaxEigenValueAndVector(eigVectors, eigValues, maxEigValue, vec.u);
+            m_lsPlaneVectors[0] = CCVector3::fromArray(vec.u);
+        }
 
-		//get normal
-		{
-			CCVector3d vec(0, 0, 1);
-			double minEigValue = 0;
-			//the smallest eigen vector corresponds to the "least square best fitting plane" normal
-			Jacobi<double>::GetMinEigenValueAndVector(eigVectors, eigValues, minEigValue, vec.u);
-			m_lsPlaneVectors[2] = CCVector3::fromArray(vec.u);
-		}
+        //get the centroid (should already be up-to-date - see computeCovarianceMatrix)
+        G = *getGravityCenter();
+    }
+    else
+    {
+        //we simply compute the normal of the 3 points by cross product!
+        const CCVector3* A = m_associatedCloud->getPoint(0);
+        const CCVector3* B = m_associatedCloud->getPoint(1);
+        const CCVector3* C = m_associatedCloud->getPoint(2);
 
-		//get also X (Y will be deduced by cross product, see below
-		{
-			CCVector3d vec;
-			double maxEigValue = 0;
-			Jacobi<double>::GetMaxEigenValueAndVector(eigVectors, eigValues, maxEigValue, vec.u);
-			m_lsPlaneVectors[0] = CCVector3::fromArray(vec.u);
-		}
-#endif
-		//get the centroid (should already be up-to-date - see computeCovarianceMatrix)
-		G = *getGravityCenter();
-	}
-	else
-	{
-		//we simply compute the normal of the 3 points by cross product!
-		const CCVector3* A = m_associatedCloud->getPoint(0);
-		const CCVector3* B = m_associatedCloud->getPoint(1);
-		const CCVector3* C = m_associatedCloud->getPoint(2);
+        //get X (AB by default) and Y (AC - will be updated later) and deduce N = X ^ Y
+        m_lsPlaneVectors[0] = (*B - *A);
+        m_lsPlaneVectors[1] = (*C - *A);
+        m_lsPlaneVectors[2] = m_lsPlaneVectors[0].cross(m_lsPlaneVectors[1]);
 
-		//get X (AB by default) and Y (AC - will be updated later) and deduce N = X ^ Y
-		m_lsPlaneVectors[0] = (*B - *A);
-		m_lsPlaneVectors[1] = (*C - *A);
-		m_lsPlaneVectors[2] = m_lsPlaneVectors[0].cross(m_lsPlaneVectors[1]);
+        //the plane passes through any of the 3 points
+        G = *A;
+    }
 
-		//the plane passes through any of the 3 points
-		G = *A;
-	}
+    //make sure all vectors are unit!
+    if ( LessThanEpsilon( m_lsPlaneVectors[2].norm2() ) )
+    {
+        //this means that the points are colinear!
+        //m_lsPlaneVectors[2] = CCVector3(0,0,1); //any normal will do
+        return false;
+    }
+    else
+    {
+        m_lsPlaneVectors[2].normalize();
+    }
+    //normalize X as well
+    m_lsPlaneVectors[0].normalize();
+    //and update Y
+    m_lsPlaneVectors[1] = m_lsPlaneVectors[2].cross(m_lsPlaneVectors[0]);
 
-	//make sure all vectors are unit!
-	if (m_lsPlaneVectors[2].norm2() < ZERO_TOLERANCE)
-	{
-		//this means that the points are colinear!
-		//m_lsPlaneVectors[2] = CCVector3(0,0,1); //any normal will do
-		return false;
-	}
-	else
-	{
-		m_lsPlaneVectors[2].normalize();
-	}
-	//normalize X as well
-	m_lsPlaneVectors[0].normalize();
-	//and update Y
-	m_lsPlaneVectors[1] = m_lsPlaneVectors[2].cross(m_lsPlaneVectors[0]);
+    //deduce the proper equation
+    m_lsPlaneEquation[0] = m_lsPlaneVectors[2].x;
+    m_lsPlaneEquation[1] = m_lsPlaneVectors[2].y;
+    m_lsPlaneEquation[2] = m_lsPlaneVectors[2].z;
 
-	//deduce the proper equation
-	m_lsPlaneEquation[0] = m_lsPlaneVectors[2].x;
-	m_lsPlaneEquation[1] = m_lsPlaneVectors[2].y;
-	m_lsPlaneEquation[2] = m_lsPlaneVectors[2].z;
+    //eventually we just have to compute the 'constant' coefficient a3
+    //we use the fact that the plane pass through G --> GM.N = 0 (scalar prod)
+    //i.e. a0*G[0]+a1*G[1]+a2*G[2]=a3
+    m_lsPlaneEquation[3] = G.dot(m_lsPlaneVectors[2]);
 
-	//eventually we just have to compute the 'constant' coefficient a3
-	//we use the fact that the plane pass through G --> GM.N = 0 (scalar prod)
-	//i.e. a0*G[0]+a1*G[1]+a2*G[2]=a3
-	m_lsPlaneEquation[3] = G.dot(m_lsPlaneVectors[2]);
+    m_structuresValidity |= FLAG_LS_PLANE;
 
-	m_structuresValidity |= FLAG_LS_PLANE;
-
-	return true;
+    return true;
 }
 
 bool Neighbourhood::computeQuadric()
@@ -552,7 +540,7 @@ bool Neighbourhood::computeQuadric()
 
 	//conjugate gradient iterations
 	{
-		const double convergenceThreshold = lmax2 * 1.0e-8;  //max. error for convergence = 1e-8 of largest cloud dimension (empirical!)
+        const double convergenceThreshold = static_cast<double>(lmax2) * 1.0e-8;  //max. error for convergence = 1e-8 of largest cloud dimension (empirical!)
 		for (unsigned i = 0; i < 1500; ++i)
 		{
 			double lastError = cg.iterConjugateGradient(X0);
@@ -692,7 +680,7 @@ GenericIndexedMesh* Neighbourhood::triangulateOnPlane(bool duplicateVertices/*=f
 	}
 
 	//safety check: Triangle lib will crash if the points are all the same!
-	if (computeLargestRadius() < ZERO_TOLERANCE)
+    if ( LessThanEpsilon( computeLargestRadius() ) )
 	{
 		return nullptr;
 	}
@@ -1033,7 +1021,7 @@ ScalarType Neighbourhood::computeCurvature(const CCVector3& P, CurvatureType cTy
 		case MEAN_CURV:
 		{
 			//to sign the curvature, we need a normal!
-			const PointCoordinateType H2 = std::abs(((1 + fx2)*fyy - 2 * fx*fy*fxy + (1 + fy2)*fxx)) / (2 * sqrt(q)*q);
+            const PointCoordinateType H2 = std::abs(((1 + fx2)*fyy - 2 * fx*fy*fxy + (1 + fy2)*fxx)) / (2 * sqrt(q)*q);
 			return static_cast<ScalarType>(H2);
 		}
 
@@ -1046,51 +1034,41 @@ ScalarType Neighbourhood::computeCurvature(const CCVector3& P, CurvatureType cTy
 
 	case NORMAL_CHANGE_RATE:
 	{
-		assert(m_associatedCloud);
-		unsigned pointCount = (m_associatedCloud ? m_associatedCloud->size() : 0);
+        assert(m_associatedCloud);
+        unsigned pointCount = (m_associatedCloud ? m_associatedCloud->size() : 0);
 
-		//we need at least 4 points
-		if (pointCount < 4)
-		{
-			//not enough points!
-			return pointCount == 3 ? 0 : NAN_VALUE;
-		}
+        //we need at least 4 points
+        if (pointCount < 4)
+        {
+            //not enough points!
+            return pointCount == 3 ? 0 : NAN_VALUE;
+        }
 
-		//we determine plane normal by computing the smallest eigen value of M = 1/n * S[(p-µ)*(p-µ)']
-		CVLib::SquareMatrixd covMat = computeCovarianceMatrix();
-		CCVector3d e(0, 0, 0);
-#ifdef USE_EIGEN
-		Eigen::Matrix3d A = ToEigen(covMat);
-		Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es;
-		es.compute(A);
+        //we determine plane normal by computing the smallest eigen value of M = 1/n * S[(p-µ)*(p-µ)']
+        SquareMatrixd covMat = computeCovarianceMatrix();
+        CCVector3d e(0, 0, 0);
 
-		//eigen values (and vectors) are sorted in ascending order
-		const auto& eVal = es.eigenvalues();
+        SquareMatrixd eigVectors;
+        std::vector<double> eigValues;
+        if (!Jacobi<double>::ComputeEigenValuesAndVectors(covMat, eigVectors, eigValues, true))
+        {
+            //failure
+            return NAN_VALUE;
+        }
 
-		//compute curvature as the rate of change of the surface
-		e = CCVector3d::fromArray(eVal.data());
-#else
-		CVLib::SquareMatrixd eigVectors;
-		std::vector<double> eigValues;
-		if (!Jacobi<double>::ComputeEigenValuesAndVectors(covMat, eigVectors, eigValues, true))
-		{
-			//failure
-			return NAN_VALUE;
-		}
+        //compute curvature as the rate of change of the surface
+        e.x = eigValues[0];
+        e.y = eigValues[1];
+        e.z = eigValues[2];
 
-		//compute curvature as the rate of change of the surface
-		e.x = eigValues[0];
-		e.y = eigValues[1];
-		e.z = eigValues[2];
-#endif
-		const double sum = e.x + e.y + e.z; //we work with absolute values
-		if (sum < ZERO_TOLERANCE)
-		{
-			return NAN_VALUE;
-		}
+        const double sum = e.x + e.y + e.z; //we work with absolute values
+        if ( LessThanEpsilon( sum ) )
+        {
+            return NAN_VALUE;
+        }
 
-		const double eMin = std::min(std::min(e.x, e.y), e.z);
-		return static_cast<ScalarType>(eMin / sum);
+        const double eMin = std::min(std::min(e.x, e.y), e.z);
+        return static_cast<ScalarType>(eMin / sum);
 	}
 	break;
 

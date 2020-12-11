@@ -26,6 +26,7 @@
 #include <ecvProgressDialog.h>
 #include <ecvScalarField.h>
 #include <ecvWaveform.h>
+#include <ecvHObjectCaster.h>
 #include <ecvColorScalesManager.h>
 
 // ECV_IO_LIB

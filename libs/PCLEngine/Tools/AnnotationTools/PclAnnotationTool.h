@@ -19,7 +19,7 @@
 #define QPCL_ANNOTATION_TOOL_HEADER
 
 // LOCAL
-#include "../../qPCL.h"
+#include "qPCL.h"
 #include "PclUtils/PCLCloud.h"
 #include "Tools/PclPointCloudColorHandlerLUT.h"
 
@@ -28,6 +28,8 @@
 
 // QT
 #include <QObject>
+
+#include <memory>
 
 namespace PclUtils
 {
@@ -45,7 +47,7 @@ class QPCL_ENGINE_LIB_API PclAnnotationTool : public ecvGenericAnnotationTool
 public:
 	explicit PclAnnotationTool(AnnotationMode mode = AnnotationMode::BOUNDINGBOX);
 	explicit PclAnnotationTool(ecvGenericVisualizer3D* viewer, AnnotationMode mode = AnnotationMode::BOUNDINGBOX);
-	~PclAnnotationTool();
+    virtual ~PclAnnotationTool() override;
 
 public: // implemented from ecvGenericAnnotationTool interface
 	virtual void setVisualizer(ecvGenericVisualizer3D* viewer = nullptr) override;
@@ -149,7 +151,7 @@ private:
 	std::vector<int> m_last_selected_slice;
 
 	// manage annotations
-	boost::shared_ptr<Annotaions> m_annoManager;
+	std::shared_ptr<Annotaions> m_annoManager;
 
 	// for pick
 	Annotation *m_currPickedAnnotation;

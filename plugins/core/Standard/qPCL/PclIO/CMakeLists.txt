@@ -4,8 +4,8 @@ AddPlugin( NAME ${PROJECT_NAME} TYPE io )
 
 include_directories( ${QPCL_PLUGIN_ALGORIGHM_LIB_SOURCE_DIR}/Filters )
 if (USE_PCL_BACKEND) 
-	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR} )
-	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR}/PclUtils )
+    include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR} )
+    include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR}/PclUtils )
 endif()
 include_directories( ${PCL_INCLUDE_DIRS} )
 

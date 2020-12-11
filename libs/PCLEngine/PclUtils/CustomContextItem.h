@@ -20,8 +20,10 @@
 #define qPCL_CUSTOM_CONTEXT_ITEM_H
 
 //Local
-#include "../qPCL.h"
+#include "qPCL.h"
 #include "PCLCloud.h"
+
+#include <vtkSmartPointer.h>
 
 //PCL
 #include <pcl/visualization/vtk/pcl_context_item.h>
@@ -30,81 +32,85 @@ namespace PclUtils
 {
 	namespace context_items
 	{
-		struct Point : public pcl::visualization::PCLContextItem
+        struct QPCL_ENGINE_LIB_API Point : public pcl::visualization::PCLContextItem
 		{
-			vtkTypeMacro(Point, PCLContextItem);
+            vtkTypeMacro(Point, PCLContextItem)
 			static Point *New();
-			virtual bool Paint(vtkContext2D *painter);
+            virtual bool Paint(vtkContext2D *painter) override;
 			virtual void set(float _x, float _y);
 		};
 
-		struct Line : public pcl::visualization::PCLContextItem
+        struct QPCL_ENGINE_LIB_API Line : public pcl::visualization::PCLContextItem
 		{
-			vtkTypeMacro(Line, PCLContextItem);
+            vtkTypeMacro(Line, PCLContextItem)
 			static Line *New();
-			virtual bool Paint(vtkContext2D *painter);
+            virtual bool Paint(vtkContext2D *painter) override;
 			virtual void set(float _x_1, float _y_1, float _x_2, float _y_2);
 		};
 
-		struct Circle : public pcl::visualization::PCLContextItem
+        struct QPCL_ENGINE_LIB_API Circle : public pcl::visualization::PCLContextItem
 		{
-			vtkTypeMacro(Circle, PCLContextItem);
+            vtkTypeMacro(Circle, PCLContextItem)
 			static Circle *New();
-			virtual bool Paint(vtkContext2D *painter);
+            virtual bool Paint(vtkContext2D *painter) override;
 			virtual void set(float _x, float _y, float _r);
 		};
 
-		struct Disk : public Circle
+        struct QPCL_ENGINE_LIB_API Disk : public Circle
 		{
-			vtkTypeMacro(Disk, Circle);
+            vtkTypeMacro(Disk, Circle)
 			static Disk *New();
-			virtual bool Paint(vtkContext2D *painter);
+            virtual bool Paint(vtkContext2D *painter) override;
 		};
 
-		struct Rectangle : public pcl::visualization::PCLContextItem
+        struct QPCL_ENGINE_LIB_API Rectangle : public pcl::visualization::PCLContextItem
 		{
-			vtkTypeMacro(Rectangle, Point);
+            vtkTypeMacro(Rectangle, Point)
 			static Rectangle *New();
-			virtual bool Paint(vtkContext2D *painter);
+            virtual bool Paint(vtkContext2D *painter) override;
 			virtual void set(float _x, float _y, float _w, float _h);
 		};
 
-		struct FilledRectangle : public Rectangle
+        struct QPCL_ENGINE_LIB_API FilledRectangle : public Rectangle
 		{
-			vtkTypeMacro(FilledRectangle, Rectangle);
+            vtkTypeMacro(FilledRectangle, Rectangle)
 			static FilledRectangle *New();
-			virtual bool Paint(vtkContext2D *painter);
+            virtual bool Paint(vtkContext2D *painter) override;
 		};
 
-		struct Points : public pcl::visualization::PCLContextItem
+        struct QPCL_ENGINE_LIB_API Points : public pcl::visualization::PCLContextItem
 		{
-			vtkTypeMacro(Points, PCLContextItem);
+            vtkTypeMacro(Points, PCLContextItem)
 			static Points *New();
-			virtual bool Paint(vtkContext2D *painter);
+            virtual bool Paint(vtkContext2D *painter) override;
 			void set(const std::vector<float>& _xy) { params = _xy; }
 		};
 
-		struct Polygon : public Points
+        struct QPCL_ENGINE_LIB_API Polygon : public Points
 		{
-			vtkTypeMacro(Polygon, Points);
+            vtkTypeMacro(Polygon, Points)
 			static Polygon *New();
-			virtual bool Paint(vtkContext2D *painter);
+            virtual bool Paint(vtkContext2D *painter) override;
 		};
 
-		struct Text : public pcl::visualization::PCLContextItem
+        struct QPCL_ENGINE_LIB_API Text : public pcl::visualization::PCLContextItem
 		{
-			vtkTypeMacro(Text, PCLContextItem);
+            vtkTypeMacro(Text, PCLContextItem)
 			static Text *New();
-			virtual bool Paint(vtkContext2D *painter);
-			virtual void set(float x, float y, const std::string& _text, int fontSize = 10);
+            virtual bool Paint(vtkContext2D *painter) override;
+			virtual void set(float x, float y, const std::string& _text);
+            inline void setBold(bool state = false) { bold_ = state; }
+            inline void setFontSize(int fontSize = 10) { fontSize_ = fontSize; }
 			std::string text;
+            int fontSize_ = 10;
+            bool bold_ = false;
 		};
 
-		struct Markers : public Points
+        struct QPCL_ENGINE_LIB_API Markers : public Points
 		{
-			vtkTypeMacro(Markers, Points);
+            vtkTypeMacro(Markers, Points)
 			static Markers *New();
-			virtual bool Paint(vtkContext2D *painter);
+            virtual bool Paint(vtkContext2D *painter) override;
 			void setSize(float _size) { size = _size; }
 			void setPointColors(unsigned char r, unsigned char g, unsigned char b);
 			void setPointColors(unsigned char rgb[3]);

@@ -276,7 +276,7 @@ void ecvAnnotationsTool::importClassesFromFile()
 		// we update current file path
 		currentPath = QFileInfo(selectedFilename).absolutePath();
 		ecvSettingManager::setValue(ecvPS::LoadFile(), ecvPS::CurrentPath(), currentPath);
-		if (!m_annotationTool->loadClassesFromFile(CVTools::fromQString(selectedFilename)))
+		if (!m_annotationTool->loadClassesFromFile(CVTools::FromQString(selectedFilename)))
 		{
 			return;
 		}
@@ -456,7 +456,7 @@ void ecvAnnotationsTool::updateLabelsCombox(const std::vector<std::string>& labe
 	labelsComboBox->clear();
 	for (size_t i = 0; i < labels.size(); ++i)
 	{
-		QString name = CVTools::toQString(labels[i]);
+		QString name = CVTools::ToQString(labels[i]);
 		labelsComboBox->addItem(name);
 		if (i == 0)
 		{

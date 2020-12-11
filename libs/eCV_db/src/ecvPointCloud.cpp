@@ -1648,7 +1648,7 @@ const CCVector3& ccPointCloud::getPointNormal(unsigned pointIndex) const
 	return ccNormalVectors::GetNormal(m_normals->getValue(pointIndex));
 }
 
-CCVector3& ccPointCloud::getPointNormalPtr(size_t pointIndex)
+CCVector3& ccPointCloud::getPointNormalPtr(size_t pointIndex) const
 {
 	assert(m_normals && pointIndex < m_normals->currentSize());
 
@@ -1663,7 +1663,18 @@ std::vector<CCVector3> ccPointCloud::getPointNormals() const
 	{
 		normals[i] = getPointNormal(i);
 	}
-	return normals;
+    return normals;
+}
+
+std::vector<CCVector3 *> ccPointCloud::getPointNormalsPtr() const
+{
+    std::vector<CCVector3 *> normals;
+    for (unsigned i = 0; i < this->size(); ++i)
+    {
+        normals.push_back(&getPointNormalPtr(i));
+    }
+    return normals;
+
 }
 
 void ccPointCloud::setPointNormals(const std::vector<CCVector3>& normals)
@@ -2154,7 +2165,7 @@ bool ccPointCloud::setRGBColorByHeight(unsigned char heightDim, ccColorScale::Sh
 
 	double minHeight = getOwnBB().minCorner().u[heightDim];
 	double height = getOwnBB().getDiagVec().u[heightDim];
-	if (fabs(height) < ZERO_TOLERANCE) //flat cloud!
+    if (CVLib::LessThanEpsilon(fabs(height))) //flat cloud!
 	{
 		const ecvColor::Rgb& col = colorScale->getColorByIndex(0);
 		return setRGBColor(col);
@@ -2355,7 +2366,7 @@ ccPointCloud& ccPointCloud::transform(const Eigen::Matrix4d& trans)
 ccPointCloud& ccPointCloud::translate(const Eigen::Vector3d& translation, bool relative)
 {
 	CCVector3 T = translation;
-	if (fabs(T.x) + fabs(T.y) + fabs(T.z) < ZERO_TOLERANCE)
+    if (CVLib::LessThanEpsilon(fabs(T.x) + fabs(T.y) + fabs(T.z)))
 		return *this;
 
 	unsigned count = size();
@@ -2764,6 +2775,17 @@ void ccPointCloud::drawMeOnly(CC_DRAW_CONTEXT& context)
 
 		// main display procedure
 		ecvDisplayTools::Draw(context, this);
+	}
+	else if (MACRO_Draw2D(context))
+	{
+		if (MACRO_Foreground(context) && !context.sfColorScaleToDisplay)
+		{
+			if (sfColorScaleShown() && sfShown())
+			{
+				//drawScale(context);
+				addColorRampInfo(context);
+			}
+		}
 	}
 }
 

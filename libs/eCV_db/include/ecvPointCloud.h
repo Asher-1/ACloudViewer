@@ -52,6 +52,7 @@ namespace cloudViewer
 		class RGBDImage;
 		class VoxelGrid;
 
+#ifdef CV_RANSAC_SUPPORT
 		//! RANSAC_SD
 		class RansacParams
 		{
@@ -82,7 +83,7 @@ namespace cloudViewer
 				primEnabled.push_back(RPT_PLANE);
 				primEnabled.push_back(RPT_SPHERE);
 				primEnabled.push_back(RPT_CYLINDER);
-			};
+            }
 
 			RansacParams(float scale) : epsilon(0.005f * scale),
 				bitmapEpsilon(0.01f * scale), supportPoints(500),
@@ -92,7 +93,7 @@ namespace cloudViewer
 				primEnabled.push_back(RPT_PLANE);
 				primEnabled.push_back(RPT_SPHERE);
 				primEnabled.push_back(RPT_CYLINDER);
-			};
+            }
 
 		};
 
@@ -108,6 +109,7 @@ namespace cloudViewer
 		};
 
 		using RansacResults = std::vector<RansacResult>;
+#endif
 
 	}
 
@@ -231,7 +233,7 @@ public: //clone, copy, etc.
 	ccPointCloud& operator=(const ccPointCloud& cloud);
 	const ccPointCloud& operator +=(const ccPointCloud &cloud);
 	const ccPointCloud& operator +=(ccPointCloud*);
-	ccPointCloud ccPointCloud::operator+(const ccPointCloud &cloud) const {
+    ccPointCloud operator+(const ccPointCloud &cloud) const {
 		return (ccPointCloud(*this) += cloud);
 	}
 
@@ -559,8 +561,9 @@ public: //other methods
 
 	const CompressedNormType& getPointNormalIndex(unsigned pointIndex) const override;
 	const CCVector3& getPointNormal(unsigned pointIndex) const override;
-	CCVector3& getPointNormalPtr(size_t pointIndex);
+    CCVector3& getPointNormalPtr(size_t pointIndex) const;
 	std::vector<CCVector3> getPointNormals() const;
+    std::vector<CCVector3*> getPointNormalsPtr() const;
 	void setPointNormals(const std::vector<CCVector3>& normals);
 	Eigen::Vector3d getEigenNormal(size_t index) const;
 	std::vector<Eigen::Vector3d> getEigenNormals() const;
@@ -873,15 +876,6 @@ public: // for python interface
 	/// Normalize point normals to length 1.`
 	ccPointCloud &normalizeNormals();
 
-	/// \brief Function to compute the point to point distances between point
-	/// clouds.
-	///
-	/// For each point in the \p source point cloud, compute the distance to the
-	/// \p target point cloud.
-	///
-	/// \param target The target point cloud.
-	std::vector<double> computePointCloudDistance(const ccPointCloud &target);
-
 	/// \brief Function to select points from \p input ccPointCloud into
 	/// \p output ccPointCloud.
 	///
@@ -900,7 +894,6 @@ public: // for python interface
 	/// \param remove_nan Remove NaN values from the ccPointCloud.
 	/// \param remove_infinite Remove infinite values from the ccPointCloud.
 	ccPointCloud &removeNonFinitePoints(bool remove_nan = true, bool remove_infinite = true);
-
 
 	/// \brief Function to downsample input ccPointCloud into output ccPointCloud
    /// with a voxel.
@@ -932,7 +925,7 @@ public: // for python interface
 	/// always chosen, not at random.
 	///
 	/// \param every_k_points Sample rate, the selected point indices are [0, k,
-	/// 2k, бн].
+	/// 2k].
 	std::shared_ptr<ccPointCloud> uniformDownSample(size_t every_k_points) const;
 
 	/// \brief Function to crop ccPointCloud into output ccPointCloud
@@ -996,6 +989,23 @@ public: // for python interface
 	bool orientNormalsTowardsCameraLocation(
 		const Eigen::Vector3d &camera_location = Eigen::Vector3d::Zero());
 
+	/// \brief Function to consistently orient estimated normals based on
+    /// consistent tangent planes as described in Hoppe et al., "Surface
+    /// Reconstruction from Unorganized Points", 1992.
+    ///
+    /// \param k k nearest neighbour for graph reconstruction for normal
+    /// propagation.
+    void orientNormalsConsistentTangentPlane(size_t k);
+
+	/// \brief Function to compute the point to point distances between point
+    /// clouds.
+    ///
+    /// For each point in the \p source point cloud, compute the distance to the
+    /// \p target point cloud.
+    ///
+    /// \param target The target point cloud.
+    std::vector<double> computePointCloudDistance(const ccPointCloud& target);
+
 	/// \brief Function to compute the Mahalanobis distance for points
 	/// in an input point cloud.
 	///
@@ -1038,6 +1048,7 @@ public: // for python interface
 								   size_t min_points,
 								   bool print_progress = false) const;
 
+#ifdef CV_RANSAC_SUPPORT
 	/// \brief Cluster ccPointCloud using the RANSAC algorithm
 	/// Wrapper to Schnabel et al. library for automatic shape detection in point cloud
 	/// "Efficient RANSAC for Point-Cloud Shape Detection", Ruwen Schnabel, Roland Wahl, 
@@ -1051,6 +1062,7 @@ public: // for python interface
 	cloudViewer::geometry::RansacResults executeRANSAC(
 			const cloudViewer::geometry::RansacParams& params =
 			cloudViewer::geometry::RansacParams(), bool print_progress = false);
+#endif
 
 	/// \brief Segment ccPointCloud plane using the RANSAC algorithm.
 	///
@@ -1133,7 +1145,7 @@ public: // for python interface
 protected:
 
 	//inherited from ccHObject
-	void drawMeOnly(CC_DRAW_CONTEXT& context) override;
+    void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 	void applyGLTransformation(const ccGLMatrix& trans) override;
 	bool toFile_MeOnly(QFile& out) const override;
 	bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;

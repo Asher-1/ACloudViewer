@@ -24,7 +24,7 @@ class MLSDialog;
 
 namespace PCLModules
 {
-	struct MLSParameters;
+    class MLSParameters;
 }
 
 class MLSSmoothingUpsampling : public BasePclModule

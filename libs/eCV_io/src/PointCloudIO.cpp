@@ -27,8 +27,10 @@
 #include "PointCloudIO.h"
 
 // CV_CORE_LIB
+#include <Helper.h>
 #include <Console.h>
 #include <FileSystem.h>
+#include <ProgressReporters.h>
 
 // ECV_DB_LIB
 #include <ecvPointCloud.h>
@@ -41,13 +43,12 @@
 #include <unordered_map>
 
 namespace cloudViewer {
-
-namespace {
-using namespace io;
-
-static const std::unordered_map<
-        std::string,
-        std::function<bool(const std::string &, ccPointCloud &, bool)>>
+namespace io {
+    using namespace CVLib;
+static const std::unordered_map<std::string,
+        std::function<bool(const std::string &, 
+                           ccPointCloud &, 
+                           const ReadPointCloudOption&)>>
         file_extension_to_pointcloud_read_function{
 				{"xyz", ReadPointCloudFromXYZ},
 				{"txt", ReadPointCloudFromXYZ},
@@ -62,11 +63,9 @@ static const std::unordered_map<
         };
 
 static const std::unordered_map<std::string,
-                                std::function<bool(const std::string &,
-                                                   const ccPointCloud &,
-                                                   const bool,
-                                                   const bool,
-                                                   const bool)>>
+        std::function<bool(const std::string &,
+                           const ccPointCloud &,
+                           const WritePointCloudOption&)>>
         file_extension_to_pointcloud_write_function{
 				{"xyz", WritePointCloudToXYZ},
 				{"txt", WritePointCloudToXYZ},
@@ -79,83 +78,102 @@ static const std::unordered_map<std::string,
                 {"vtk", AutoWriteEntity},
                 {"bin", AutoWriteEntity},
         };
-
-}  // unnamed namespace
-
-namespace io {
-
 std::shared_ptr<ccPointCloud> CreatePointCloudFromFile(
         const std::string &filename,
         const std::string &format,
         bool print_progress) {
     auto pointcloud = std::make_shared<ccPointCloud>("pointCloud");
-    ReadPointCloud(filename, *pointcloud, format, print_progress);
+    ReadPointCloud(filename, *pointcloud, { format, true, true, print_progress });
     return pointcloud;
 }
 
 bool ReadPointCloud(const std::string &filename,
                     ccPointCloud &pointcloud,
-                    const std::string &format,
-                    bool remove_nan_points,
-                    bool remove_infinite_points,
-                    bool print_progress) {
-    std::string filename_ext;
+                    const ReadPointCloudOption& params) {
+    std::string format = params.format;
     if (format == "auto") {
-        filename_ext =
-                CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
-    } else {
-        filename_ext = format;
+        format = CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
     }
 
-    std::cout << "Format = " << format << std::endl;
-    std::cout << "Extension = " << filename_ext << std::endl;
+    utility::LogDebug("Format {} File {}", params.format, filename);
 
-    if (filename_ext.empty()) {
-        CVLib::utility::LogWarning(
-                "Read ccPointCloud failed: unknown file extension.");
-        return false;
-    }
-    auto map_itr =
-            file_extension_to_pointcloud_read_function.find(filename_ext);
+    auto map_itr = file_extension_to_pointcloud_read_function.find(format);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-        CVLib::utility::LogWarning(
-                "Read ccPointCloud failed: unknown file extension.");
+        utility::LogWarning(
+            "Read ccPointCloud failed: unknown file extension for "
+            "{} (format: {}).",
+            filename, params.format);
         return false;
     }
-    bool success = map_itr->second(filename, pointcloud, print_progress);
+    bool success = map_itr->second(filename, pointcloud, params);
     CVLib::utility::LogDebug("Read ccPointCloud: {:d} vertices.",
-                      (int)pointcloud.size());
-    if (remove_nan_points || remove_infinite_points) {
-        pointcloud.removeNonFinitePoints(remove_nan_points,
-                                         remove_infinite_points);
+                             pointcloud.size());
+    if (params.remove_nan_points || params.remove_infinite_points) {
+        pointcloud.removeNonFinitePoints(params.remove_nan_points,
+            params.remove_infinite_points);
     }
     return success;
 }
 
-bool WritePointCloud(const std::string &filename,
-                     const ccPointCloud &pointcloud,
-                     bool write_ascii /* = false*/,
-                     bool compressed /* = false*/,
-                     bool print_progress) {
-    std::string filename_ext =
-            CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
-    if (filename_ext.empty()) {
-        CVLib::utility::LogWarning(
-                "Write ccPointCloud failed: unknown file extension.");
-        return false;
+bool ReadPointCloud(const std::string& filename,
+                    ccPointCloud& pointcloud,
+                    const std::string& file_format,
+                    bool remove_nan_points,
+                    bool remove_infinite_points,
+                    bool print_progress) {
+    std::string format = file_format;
+    if (format == "auto") {
+        format = utility::filesystem::GetFileExtensionInLowerCase(filename);
     }
-    auto map_itr =
-            file_extension_to_pointcloud_write_function.find(filename_ext);
+
+    ReadPointCloudOption p;
+    p.format = format;
+    p.remove_nan_points = remove_nan_points;
+    p.remove_infinite_points = remove_infinite_points;
+    utility::ConsoleProgressUpdater progress_updater(
+        std::string("Reading ") + utility::ToUpper(format) +
+        " file: " + filename,
+        print_progress);
+    p.update_progress = progress_updater;
+    return ReadPointCloud(filename, pointcloud, p);
+}
+
+bool WritePointCloud(const std::string& filename,
+    const ccPointCloud& pointcloud,
+    const WritePointCloudOption& params) {
+    std::string format =
+        utility::filesystem::GetFileExtensionInLowerCase(filename);
+    auto map_itr = file_extension_to_pointcloud_write_function.find(format);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
-        CVLib::utility::LogWarning(
-                "Write ccPointCloud failed: unknown file extension.");
+        utility::LogWarning(
+            "Write ccPointCloud failed: unknown file extension {} "
+            "for file {}.",
+            format, filename);
         return false;
     }
-    bool success = map_itr->second(filename, pointcloud, write_ascii,
-                                   compressed, print_progress);
+
+    bool success = map_itr->second(filename, pointcloud, params);
     CVLib::utility::LogDebug("Write ccPointCloud: {:d} vertices.",
-                      (int)pointcloud.size());
+                             pointcloud.size());
     return success;
+}
+
+bool WritePointCloud(const std::string& filename,
+    const ccPointCloud& pointcloud,
+    bool write_ascii /* = false*/,
+    bool compressed /* = false*/,
+    bool print_progress) {
+    WritePointCloudOption p;
+    p.write_ascii = WritePointCloudOption::IsAscii(write_ascii);
+    p.compressed = WritePointCloudOption::Compressed(compressed);
+    std::string format =
+        utility::filesystem::GetFileExtensionInLowerCase(filename);
+    utility::ConsoleProgressUpdater progress_updater(
+        std::string("Writing ") + utility::ToUpper(format) +
+        " file: " + filename,
+        print_progress);
+    p.update_progress = progress_updater;
+    return WritePointCloud(filename, pointcloud, p);
 }
 
 }  // namespace io

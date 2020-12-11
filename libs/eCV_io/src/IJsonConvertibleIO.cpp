@@ -69,7 +69,7 @@ namespace cloudViewer {
 			JSONCPP_STRING errs;
 			bool is_parse_successful =
 				parseFromStream(builder, json_stream, &root_object, &errs);
-			if (is_parse_successful == false) {
+			if (!is_parse_successful) {
 				CVLog::Warning("Read JSON failed: {}.", errs);
 				return false;
 			}

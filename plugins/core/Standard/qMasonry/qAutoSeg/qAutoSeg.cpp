@@ -53,10 +53,6 @@
 #include <ecvPolyline.h>
 #include <ecvCone.h>
 #include <ecvScalarField.h>
-//#include<C:\CloudCompare\trunk\qCC\ccContourExtractor.h>
-//#include<C:\CloudCompare\trunk\CC\include\GenericIndexedCloudPersist.h>
-//#include <ccContourExtractor.h>
-//#include <ccContourLinesGenerator.h>
 #include <GenericIndexedCloudPersist.h>
 
 
@@ -86,17 +82,15 @@
 #include <DgmOctreeReferenceCloud.h>
 #include <GenericProgressCallback.h>
 #include <Neighbourhood.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <ReferenceCloud.h>
 #include <ScalarField.h>
 #include <ScalarFieldTools.h>
 #include <SimpleMesh.h>
 #include <CVTools.h>
-#include <kdtree.h>
+#include <CVKdTree.h>
 
 #include <ctime>
-
-
 
 ccAutoSeg::ccAutoSeg( QObject *parent )
 	: QObject( parent )
@@ -753,7 +747,7 @@ cv::Mat conjugate(cv::Mat_<std::complex<double>> M1, bool *flag)
 	} //If there is no complex part
 	catch (const std::exception & e) {
 		M3 = M1;
-		flag = false;
+        *flag = false;
 		return M3;
 	}
 
@@ -1377,7 +1371,7 @@ void ccAutoSeg::doAction()
 	QFileInfo fileInfo(selectedEntities.front()->getFullPath());
 	QDir dir(fileInfo.absolutePath());
 	QString autoSegLogFile = dir.absoluteFilePath(filename.c_str());
-	filename = CVTools::fromQString(autoSegLogFile);
+	filename = CVTools::FromQString(autoSegLogFile);
 	ofstream auto_seg_log;
 	auto_seg_log.open(filename);
 

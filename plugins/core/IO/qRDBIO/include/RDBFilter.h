@@ -28,7 +28,7 @@ public:
 	// inherited from FileIOFilter
 	CC_FILE_ERROR loadFile( const QString &fileName, ccHObject &container, LoadParameters &parameters ) override;
 	
-	bool canSave( CC_CLASS_ENUM type, bool &multiple, bool &exclusive ) const override;
+	bool canSave( CV_CLASS_ENUM type, bool &multiple, bool &exclusive ) const override;
 };
 
 #endif //CC_RDB_FILTER_HEADER

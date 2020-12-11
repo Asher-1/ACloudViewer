@@ -24,11 +24,17 @@ function( InstallSharedLibrary )
 
 	message( STATUS "Install shared library: ${shared_lib_target}")
 
-	foreach( destination ${INSTALL_DESTINATIONS} )			
-		_InstallSharedTarget(
-			TARGET ${shared_lib_target}
-			DEST_PATH ${destination}
-		)		
+        foreach( destination ${INSTALL_DESTINATIONS} )
+            if(UNIX AND NOT APPLE)
+                # this is a an hack to restore install ability on linux systems
+                # TODO this should not be the right way for managing install probably
+                set( destination "${destination}/${CMAKE_INSTALL_LIBDIR}/erowcloudviewer")
+            endif()
+
+            _InstallSharedTarget(
+                    TARGET ${shared_lib_target}
+                    DEST_PATH ${destination}
+            )
 	endforeach()
 endfunction()
 
@@ -128,7 +134,7 @@ function( InstallPlugins )
 	endif()
 	
 	# Install the requested plugins in the DEST_FOLDER
-	foreach( plugin_target ${CC_PLUGIN_TARGET_LIST} )
+	foreach( plugin_target ${CV_PLUGIN_TARGET_LIST} )
 		get_target_property( plugin_type ${plugin_target} PLUGIN_TYPE )
 		
 		if( "${plugin_type}" IN_LIST INSTALL_PLUGINS_TYPES )

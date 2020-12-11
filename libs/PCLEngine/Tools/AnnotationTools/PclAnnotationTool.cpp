@@ -128,7 +128,7 @@ void PclAnnotationTool::initAnnotationLabels(const std::vector<std::string>& lab
 	// update existing annotation type
 	int index = -1;
 
-	vector<Annotation *> toBeRemovedAnnotations;
+	std::vector<Annotation*> toBeRemovedAnnotations;
 	for (auto anno : m_annoManager->getAnnotations()) {
 		index++;
 		if (Annotation::GetTypes()->size() - 1 < tempIndex[index])
@@ -204,7 +204,7 @@ bool PclAnnotationTool::setInputCloud(ccPointCloud* cloud, int viewPort)
 
 	m_annoManager->preserve(this->m_baseCloud->size());
 
-	m_pointcloudFileName = CVTools::fromQString(cloud->getFullPath());
+	m_pointcloudFileName = CVTools::FromQString(cloud->getFullPath());
 	QFileInfo fileInfo(cloud->getFullPath());
 
 	QString annoName = fileInfo.baseName();
@@ -221,16 +221,16 @@ bool PclAnnotationTool::setInputCloud(ccPointCloud* cloud, int viewPort)
 
 	// 1. load classes file if exists in current file path
 	QString classesFile = dir.absoluteFilePath("Classets.classes");
-	if (!(QFile::exists(classesFile) && loadClassesFromFile(CVTools::fromQString(classesFile))))
+	if (!(QFile::exists(classesFile) && loadClassesFromFile(CVTools::FromQString(classesFile))))
 	{
 		// load default classes!
 		this->loadDefaultClasses();
 	}
 
 	// 2. load labels or boxes annotaion file if exists in curren file path
-	m_annotationFileName = CVTools::fromQString(dir.absoluteFilePath(annoName));
+	m_annotationFileName = CVTools::FromQString(dir.absoluteFilePath(annoName));
 	{
-		if (QFile::exists(CVTools::toQString(m_annotationFileName))) {
+		if (QFile::exists(CVTools::ToQString(m_annotationFileName))) {
 			m_annoManager->loadAnnotations(m_annotationFileName, m_annotationMode);
 			if (m_annotationMode == AnnotationMode::BOUNDINGBOX)
 			{
@@ -301,7 +301,6 @@ void PclAnnotationTool::stop()
 
 	resetMode();
 	clear();
-	//ecvDisplayTools::SimulateKeyBoardPress(Qt::Key_Q, 3);
 	CVLog::Print("unregister annotations tool successfully");
 }
 
@@ -366,7 +365,7 @@ void PclAnnotationTool::areaPickingEventProcess(const std::vector<int>& new_sele
 	bool skip = a;
 
 	// remove existed annotated points
-	vector<int> selected_slice;
+	std::vector<int> selected_slice;
 	filterPickedSlice(new_selected_slice, selected_slice, skip);
 	if (selected_slice.empty()) return;
 
@@ -515,7 +514,7 @@ void PclAnnotationTool::changeAnnotationType(const std::string& type)
 		}
 		else if (m_annotationMode == AnnotationMode::SEMANTICS)
 		{
-			vector<Annotation *>& annos = m_annoManager->getAnnotations();
+			std::vector<Annotation *>& annos = m_annoManager->getAnnotations();
 			if (!annos.empty() && annos.back()->getType() != type)
 			{
 				CVLog::Print(tr("Change last annotation type from [%1] to [%2]").
@@ -580,7 +579,7 @@ void PclAnnotationTool::changeAnnotationType(Annotation* anno, const std::string
 void PclAnnotationTool::exportAnnotations()
 {
 	m_annoManager->saveAnnotations(m_annotationFileName, int(m_annotationMode));
-	CVLog::Print(tr("Annotations file has been saved to %1").arg(CVTools::toQString(m_annotationFileName)));
+	CVLog::Print(tr("Annotations file has been saved to %1").arg(CVTools::ToQString(m_annotationFileName)));
 }
 
 void PclAnnotationTool::createAnnotationFromSelectPoints(std::string type)

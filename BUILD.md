@@ -180,8 +180,10 @@ Copy "$(TargetDir)*.*" "$(SolutionDir)\qCC\Release\plugins"
 
 If you want to compile ErowCloudViewer (and ccViewer) with LAS/LAZ files support, you'll need:
 
-1. [PDAL](https://pdal.io/)
-2. Set `OPTION_PDAL_LAS=TRUE`
+1. [PDAL](https://pdal.io/) ("sudo apt-get install libjsoncpp-dev -y" for LINUX) [sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json]
+		conda install -c conda-forge pdal python-pdal
+2. Note: should fix libtiff.so load order bugs with opencv && pdal version should more than 2.0.0
+3. Set `OPTION_PDAL_LAS=TRUE`
 
 If your PDAL installation is not correctly picked up by CMake, 
 set the `PDAL_DIR` to the path containing `PDALConfig.cmake`.
@@ -233,6 +235,10 @@ If you want to compile ErowCloudViewer (and ccViewer) with GDAL (raster) files s
 Then, the ErowCloudViewer CMake project will request that you set the 2 following variables:
 1. `GDAL_INCLUDE_DIR`: GDAL include directory (pretty straightforward ;)
 2. `GDAL_LIBRARY`: the static library (e.g. `gdal_i.lib`)
+
+### [Optional] Setup for CGAL support
+1. on Windows just set CGAL_DIR and set CGAL_Boost_USE_STATIC_LIBS = ON for fixing CGAL bugs.
+2. on Linux use [sudo apt install libcgal-dev]
 
 ### [Optional] Setup for Cork + MPIR support (for qCork)
 

@@ -71,7 +71,7 @@ public:
 		\return the mesh size
 	**/
 	virtual unsigned size() const = 0;
-	virtual unsigned hasTriangles() const { return size() != 0; }
+	virtual bool hasTriangles() const { return size() != 0; }
 
 	//! Fast iteration mechanism
 	/**	Virtual method to apply a function to the whole mesh

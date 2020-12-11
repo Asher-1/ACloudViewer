@@ -25,6 +25,7 @@
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
 #include <ecvScalarField.h>
+#include <ecvHObjectCaster.h>
 
 //system
 #include <assert.h>

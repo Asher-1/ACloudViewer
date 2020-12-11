@@ -40,8 +40,8 @@
 #include <QMessageBox>
 
 // This is included only for temporarily removing an object from the tree.
-//	TODO figure out a cleaner way to do this without having to include all of mainwindow.h
-#include "mainwindow.h"
+//	TODO figure out a cleaner way to do this without having to include all of MainWindow.h
+#include "MainWindow.h"
 
 namespace ccLibAlgorithms
 {
@@ -753,7 +753,7 @@ namespace ccLibAlgorithms
 					continue;
 				
 				CVLog::Print(QString("[Scale Matching] Entity '%1' scale: %2").arg(entities[i]->getName()).arg(scales[i]));
-				if (scales[i] <= ZERO_TOLERANCE)
+                if (scales[i] <= ZERO_TOLERANCE_D)
 				{
 					CVLog::Warning("[Scale Matching] Entity scale is too small!");
 					continue;

@@ -30,7 +30,7 @@ class qPoissonRecon : public QObject, public ccStdPluginInterface
 	Q_OBJECT
 	Q_INTERFACES( ccPluginInterface ccStdPluginInterface )
 	
-	Q_PLUGIN_METADATA( IID "cccorp.cloudviewer.plugin.qPoissonRecon" FILE "../info.json" )
+	Q_PLUGIN_METADATA( IID "ecvcorp.cloudviewer.plugin.qPoissonRecon" FILE "../info.json" )
 
 public:
 

@@ -26,7 +26,7 @@ class ccAutoSeg : public QObject, public ccStdPluginInterface
 	Q_OBJECT
 	Q_INTERFACES( ccPluginInterface ccStdPluginInterface )
 	
-	Q_PLUGIN_METADATA(IID "cccorp.cloudviewer.plugin.qAutoSeg" FILE "info.json")
+	Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qAutoSeg" FILE "info.json")
 	
 public:
 	explicit ccAutoSeg( QObject *parent = nullptr );

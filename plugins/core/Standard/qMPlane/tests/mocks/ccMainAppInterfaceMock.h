@@ -1,9 +1,9 @@
 #include "trompeloeil\catch2\trompeloeil.hpp"
 
-#include "ccGLWindow.h"
-#include "ccMainAppInterface.h"
+#include "ecvDisplayTools.h"
+#include "ecvMainAppInterface.h"
 
-class MainAppInterfaceMock : public ccMainAppInterface {
+class MainAppInterfaceMock : public ecvMainAppInterface {
 
 public:
 

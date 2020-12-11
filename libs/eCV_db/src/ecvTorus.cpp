@@ -59,10 +59,13 @@ bool ccTorus::buildUp()
 	if (m_drawPrecision < MIN_DRAWING_PRECISION)
 		return false;
 
-	//invalid parameters?
-	if ((m_rectSection && m_rectSectionHeight < ZERO_TOLERANCE) || m_insideRadius >= m_outsideRadius || m_angle_rad < ZERO_TOLERANCE)
-		return false;
-
+    //invalid parameters?
+    if ((m_rectSection && CVLib::LessThanEpsilon( m_rectSectionHeight ))
+            || m_insideRadius >= m_outsideRadius
+            || CVLib::LessThanEpsilon( m_angle_rad ) )
+    {
+        return false;
+    }
 	//topology
 	bool closed = (m_angle_rad >= 2.0*M_PI);
 

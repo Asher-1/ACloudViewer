@@ -88,9 +88,9 @@ void ccGBLSensorProjectionDlg::initWithGBLSensor(const ccGBLSensor* sensor)
 	/*** Angular steps ***/
 	{
 		//pitch step
-		pitchStepSpinBox->setValue(sensor->getPitchStep() * CV_RAD_TO_DEG);
+        pitchStepSpinBox->setValue(CVLib::RadiansToDegrees(sensor->getPitchStep()));
 		//yaw step
-		yawStepSpinBox->setValue(sensor->getYawStep() * CV_RAD_TO_DEG);
+        yawStepSpinBox->setValue(CVLib::RadiansToDegrees(sensor->getYawStep()));
 	}
 
 	/*** Other ***/
@@ -144,9 +144,9 @@ void ccGBLSensorProjectionDlg::updateGBLSensor(ccGBLSensor* sensor)
 	/*** Angular steps ***/
 	{
 		//pitch step
-		sensor->setPitchStep(static_cast<PointCoordinateType>(pitchStepSpinBox->value() * CV_DEG_TO_RAD));
+        sensor->setPitchStep( static_cast<PointCoordinateType>( CVLib::DegreesToRadians(pitchStepSpinBox->value()) ) );
 		//yax step
-		sensor->setYawStep(static_cast<PointCoordinateType>(yawStepSpinBox->value() * CV_DEG_TO_RAD));
+        sensor->setYawStep( static_cast<PointCoordinateType>( CVLib::DegreesToRadians(yawStepSpinBox->value()) ) );
 	}
 
 	/*** Other ***/

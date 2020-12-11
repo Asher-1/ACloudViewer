@@ -11,6 +11,7 @@
 // ECV_DB_LIB
 #include <ecvGenericMesh.h>
 #include <ecvProgressDialog.h>
+#include <ecvHObjectCaster.h>
 
 // ECV_IO_LIB
 #include <AsciiFilter.h>
@@ -92,7 +93,7 @@ int ccCommandLineParser::Parse(int nargs, char** args, ccPluginInterfaceList& pl
 	}
 	else
 	{
-		//allows ccLog ecvConsole or ccCommandLineParser (print,warning,error) 
+		//allows CVLog ecvConsole or ccCommandLineParser (print,warning,error) 
 		//to output to the console 
 		ecvConsole::Init(nullptr, nullptr, nullptr, true);
 	}
@@ -673,7 +674,7 @@ int ccCommandLineParser::start(QDialog* parent/*=0*/)
 	m_parentWidget = parent;
 	//if (!m_silentMode)
 	//{
-	//	m_progressDialog = new ccProgressDialog(false, parent);
+	//	m_progressDialog = new ecvProgressDialog(false, parent);
 	//	//m_progressDialog->setAttribute(Qt::WA_DeleteOnClose);
 	//	m_progressDialog->setAutoClose(false);
 	//	m_progressDialog->hide();

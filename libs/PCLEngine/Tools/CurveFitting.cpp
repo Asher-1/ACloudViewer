@@ -29,6 +29,11 @@
 #include <vtkParametricSpline.h>
 #include <vtkParametricFunctionSource.h>
 
+// PCL COMMON
+#include <pcl/Vertices.h>
+#include <pcl/common/common.h>
+#include <vtkPolyLine.h>
+
 using namespace std;
 using namespace pcl;
 using namespace Eigen;
@@ -36,7 +41,16 @@ using namespace Eigen;
 namespace CurveFittingTool
 {
 
-	ccPolyline* BsplineFitting(const ccPointCloud& cloud)
+	CurveFitting::CurveFitting()
+	{
+	}
+
+	CurveFitting::~CurveFitting()
+	{
+		cloud->clear();
+	}
+
+	ccPolyline* CurveFitting::BsplineFitting(const ccPointCloud& cloud)
 	{
 		vtkSmartPointer<vtkPoints> points =
 			vtkSmartPointer<vtkPoints>::New();
@@ -69,15 +83,6 @@ namespace CurveFittingTool
 		if (!result) return nullptr;
 
 		return vtk2ccConverter().getPolylineFromPolyData(result);
-	}
-
-	CurveFitting::CurveFitting()
-	{
-	}
-
-	CurveFitting::~CurveFitting()
-	{
-		cloud->clear();
 	}
 
 	void CurveFitting::setInputcloud(PointCloudT::Ptr input_cloud) {
@@ -139,24 +144,6 @@ namespace CurveFittingTool
 				}
 			}
 		}
-	}
-
-	void CurveFitting::grid_mean_xyz_display(PointCloudT::Ptr new_cloud) {
-		visualization::PCLVisualizer::Ptr view(new visualization::PCLVisualizer("分段质心拟合"));
-		visualization::PointCloudColorHandlerCustom<PointT>color_1(new_cloud, 255, 0, 0);
-		view->addPointCloud(new_cloud, color_1, "11");
-		view->setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_POINT_SIZE, 3, "11");
-		PointCloudT::Ptr new_cloud_final(new PointCloudT);
-		for (int i_point = 0; i_point < cloud->size(); i_point++)
-		{
-			PointT tem_point;
-			tem_point.x = cloud->points[i_point].x;
-			tem_point.y = cloud->points[i_point].y;
-			tem_point.z = cloud->points[i_point].z;
-			new_cloud_final->push_back(tem_point);
-		}
-		view->addPointCloud(new_cloud_final, "22");
-		view->spin();
 	}
 
 	void CurveFitting::line_fitting(vector<double> x, vector<double> y, double &k, double &b) {
@@ -236,113 +223,11 @@ namespace CurveFittingTool
 		a_3d = a;
 	}
 
-	void CurveFitting::polynomial3D_fitting_display(double step_) {
-		PointT point_min_, point_max_;
-		getMinMax3D(*cloud, point_min_, point_max_);
-		//利用最小外包框的x值，向拟合的直线做垂足，垂足的交点即为三维曲线的端点值***********
-		int idx_minx, idx_maxy;//x取到最大值和最小值的点号索引
-		for (int i_point = 0; i_point < cloud->size(); i_point++)
-		{
-			if (cloud->points[i_point].x == point_min_.x) idx_minx = i_point;
-			if (cloud->points[i_point].x == point_max_.x) idx_maxy = i_point;
-		}
-		float m_min = cloud->points[idx_minx].x + k_line * cloud->points[idx_minx].y;
-		float m_max = cloud->points[idx_maxy].x + k_line * cloud->points[idx_maxy].y;
-
-		float x_min = (m_min - b_line * k_line) / (1 + k_line * k_line);
-		float x_max = (m_max - b_line * k_line) / (1 + k_line * k_line);
-		//---------------------------------------------------------------------------------------
-		vector<double>xx, yy, zz;
-		int step_num = ceil((x_max - x_min) / step_);
-		vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-		for (int i_ = 0; i_ < step_num + 1; i_++)
-		{
-			double tem_value = x_min + i_ * step_;
-			if (tem_value > x_max)
-			{
-				tem_value = x_max;
-			}
-			xx.push_back(tem_value);
-			yy.push_back(k_line*xx[i_] + b_line);
-			double xxyy = sqrt(pow(xx[i_], 2) + pow(yy[i_], 2));
-			zz.push_back(c_3d + b_3d * xxyy + a_3d * pow(xxyy, 2));
-			points->InsertNextPoint(xx[i_], yy[i_], zz[i_]);
-		}
-		vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
-		vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
-		vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-		polyData->SetPoints(points);
-		polyLine->GetPointIds()->SetNumberOfIds(points->GetNumberOfPoints());
-		for (unsigned int i = 0; i < points->GetNumberOfPoints(); i++)
-			polyLine->GetPointIds()->SetId(i, i);
-		cells->InsertNextCell(polyLine);
-		polyData->SetLines(cells);
-		visualization::PCLVisualizer::Ptr viewer(new visualization::PCLVisualizer("最后拟合的多项式曲线"));
-		viewer->addModelFromPolyData(polyData, "1");
-		//*******************************************
-		PointCloudT::Ptr tem_point(new PointCloudT);
-		for (int i = 0; i < xx.size(); i++)
-		{
-			PointT point_;
-			point_.x = xx[i];
-			point_.y = yy[i];
-			point_.z = zz[i];
-			tem_point->push_back(point_);
-		}
-		visualization::PointCloudColorHandlerCustom<PointT>color1(tem_point, 255, 0, 0);
-		viewer->addPointCloud(tem_point, color1, "point1");
-		viewer->setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_POINT_SIZE, 3, "point1");
-
-		PointCloudT::Ptr tem_point1(new PointCloudT);
-		for (int i = 0; i < cloud->size(); i++)
-		{
-			PointT point_1;
-			point_1.x = cloud->points[i].x;
-			point_1.y = cloud->points[i].y;
-			point_1.z = cloud->points[i].z;
-			tem_point1->push_back(point_1);
-		}
-		viewer->addPointCloud(tem_point1, "orginal");
-		viewer->setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_POINT_SIZE, 2, "orginal");
-		//显示端点
-		PointCloudT::Ptr duandian_point(new PointCloudT);
-		duandian_point->push_back(tem_point->points[0]);
-		duandian_point->push_back(tem_point->points[tem_point->size() - 1]);
-		visualization::PointCloudColorHandlerCustom<PointT>color2(duandian_point, 0, 255, 255);
-		viewer->addPointCloud(duandian_point, color2, "duandian");
-		viewer->setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_POINT_SIZE, 5, "duandian");
-		std::cout << "端点值1为：" << "X1= " << duandian_point->points[0].x << ", " << "Y1= " << duandian_point->points[0].y << ", " << "Z1= " << duandian_point->points[0].z << std::endl;
-		std::cout << "端点值2为：" << "X2= " << duandian_point->points[1].x << ", " << "Y2= " << duandian_point->points[1].y << ", " << "Z2= " << duandian_point->points[1].z << std::endl;
-		std::cout << "空间多项式曲线方程为： " << "z=" << a_3d << "*(x^2+y^2)+" << b_3d << "*sqrt(x^2+y^2)+" << c_3d << std::endl;
-		viewer->spin();
-		//拟合曲线+端点值+散点图二维平面展示，有需要可以取消注释----------------------------------------------------------
-		/*vector<double>vector_1, vector_2, vector_3, vector_4;
-		vector_1.push_back(duandian_point->points[0].x);
-		vector_1.push_back(duandian_point->points[1].x);
-		vector_2.push_back(duandian_point->points[0].y);
-		vector_2.push_back(duandian_point->points[1].y);
-		for (int i = 0; i < cloud->size();i++)
-		{
-			vector_3.push_back(cloud->points[i].x);
-			vector_4.push_back(cloud->points[i].y);
-		}
-		std::vector<double> func1(2, 0);
-		func1[0] = b_line;
-		func1[1] = k_line;
-		visualization::PCLPlotter *plot_line1(new visualization::PCLPlotter);
-		plot_line1->addPlotData(func1, vector_1[0], vector_1[1]);
-		plot_line1->addPlotData(vector_3, vector_4, "display", vtkChart::POINTS);//X,Y均为double型的向量
-		plot_line1->addPlotData(vector_1, vector_2, "display", vtkChart::POINTS);//X,Y均为double型的向量
-		plot_line1->setShowLegend(false);
-		plot_line1->plot();*/
-	}
-
 	void CurveFitting::getPolynomial3D(PointCloudT::Ptr outCurve, double step_)
 	{
 		PointT point_min_, point_max_;
 		getMinMax3D(*cloud, point_min_, point_max_);
-		//利用最小外包框的x值，向拟合的直线做垂足，垂足的交点即为三维曲线的端点值***********
-		int idx_minx, idx_maxy;//x取到最大值和最小值的点号索引
+		int idx_minx, idx_maxy;//x
 		for (int i_point = 0; i_point < cloud->size(); i_point++)
 		{
 			if (cloud->points[i_point].x == point_min_.x) idx_minx = i_point;
@@ -369,25 +254,6 @@ namespace CurveFittingTool
 			point_.z = c_3d + b_3d * xxyy + a_3d * pow(xxyy, 2);
 			outCurve->push_back(point_);
 		}
-	}
-
-	void CurveFitting::display_point(vector<double>vector_1, vector<double>vector_2) {
-		visualization::PCLPlotter *plot_line1(new visualization::PCLPlotter);
-		plot_line1->addPlotData(vector_1, vector_2, "display", vtkChart::POINTS);//X,Y均为double型的向量
-		plot_line1->setShowLegend(false);
-		plot_line1->plot();
-	}
-
-	void CurveFitting::display_line(vector<double>vector_1, vector<double>vector_2, double c, double b, double a) {
-		visualization::PCLPlotter *plot_line1(new visualization::PCLPlotter);
-		std::vector<double> func1(3, 0);
-		func1[0] = c;
-		func1[1] = b;
-		func1[2] = a;
-		plot_line1->addPlotData(func1, point_min.x, point_max.x);
-		plot_line1->addPlotData(vector_1, vector_2, "display", vtkChart::POINTS);//X,Y均为double型的向量
-		plot_line1->setShowLegend(false);
-		plot_line1->plot();
 	}
 
 }

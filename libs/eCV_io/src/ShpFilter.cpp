@@ -25,13 +25,14 @@
 #include "ShpDBFFields.h"
 
 //ECV_DB_LIB
+#include <ecvMesh.h>
 #include <ecvPolyline.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvGenericMesh.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 #include <ecvProgressDialog.h>
-#include <ecvMesh.h>
+#include <ecvHObjectCaster.h>
 
 //Qt
 #include <QFileInfo>
@@ -1147,7 +1148,7 @@ static CC_FILE_ERROR LoadPolyline(QDataStream &shpStream,
 
 		//test if the polyline is closed
 		bool isClosed = false;
-		if (vertCount > 2 && (points[firstIndex] - points[lastIndex]).norm() < ZERO_TOLERANCE)
+        if (vertCount > 2 && CVLib::LessThanEpsilon((points[firstIndex] - points[lastIndex]).norm()))
 		{
 			vertCount--;
 			isClosed = true;

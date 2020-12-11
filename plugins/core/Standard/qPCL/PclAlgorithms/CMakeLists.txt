@@ -8,18 +8,12 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 include_directories( ${ErowCloudViewerPlugins_SOURCE_DIR} )
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 include_directories( ${EXTERNAL_LIBS_INCLUDE_DIR} )
-#include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-#include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-#if( MSVC )
-#  include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-#endif()
 
 project( QPCL_PLUGIN_ALGORIGHM_LIB )
 
 find_package( Qt5 COMPONENTS Widgets REQUIRED )
 
 if (USE_PCL_BACKEND) 
-	include_directories( ${PCL_INCLUDE_DIRS} )
 	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
 
 	# CURRENT DIR
@@ -29,19 +23,19 @@ if (USE_PCL_BACKEND)
 	qt5_wrap_ui(ui_list_all ${ui_list})
 	
 	# PCL FILTERS
-	file( GLOB_RECURSE filter_list 			${CMAKE_CURRENT_SOURCE_DIR}/Filters/*)
+        file( GLOB_RECURSE filter_list 		${CMAKE_CURRENT_SOURCE_DIR}/Filters/*)
 	source_group("PclAlgorithms\\Filters" FILES ${filter_list} )
 
 	# PCL FEATURES
-	file( GLOB_RECURSE feature_list 			${CMAKE_CURRENT_SOURCE_DIR}/Features/*)
+        file( GLOB_RECURSE feature_list 	${CMAKE_CURRENT_SOURCE_DIR}/Features/*)
 	source_group("PclAlgorithms\\Features" FILES ${feature_list} )
 	
 	# PCL SURFACES
-	file( GLOB_RECURSE surface_list 		${CMAKE_CURRENT_SOURCE_DIR}/Surfaces/*)
+        file( GLOB_RECURSE surface_list 	${CMAKE_CURRENT_SOURCE_DIR}/Surfaces/*)
 	source_group("PclAlgorithms\\Surfaces" FILES ${surface_list} )
 
 	# PCL SEGMENTATIONS
-	file( GLOB_RECURSE segment_list 		${CMAKE_CURRENT_SOURCE_DIR}/Segmentations/*)
+        file( GLOB_RECURSE segment_list 	${CMAKE_CURRENT_SOURCE_DIR}/Segmentations/*)
 	source_group("PclAlgorithms\\Segmentations" FILES ${segment_list} )
 
 	# PCL RECOGNITIONS
@@ -50,24 +44,30 @@ if (USE_PCL_BACKEND)
 	
 	# add library
 	add_library(${PROJECT_NAME}
-				${header_list} 
-				${source_list} 
-				${ui_list_all}
-				${filter_list}
-				${feature_list}
-				${surface_list} 
-				${segment_list}
-				${recognition_list})
+                    ${header_list}
+                    ${source_list}
+                    ${ui_list_all}
+                    ${filter_list}
+                    ${feature_list}
+                    ${surface_list}
+                    ${segment_list}
+                    ${recognition_list})
 
-	# Add custom preprocessor definitions
-	if (WIN32)
-		set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS ECV_PCL_ENGINE_LIBRARY_BUILD )
+	target_include_directories( ${PROJECT_NAME}
+                PUBLIC
+                        ${PCL_INCLUDE_DIRS}
+	)
+	if( CMAKE_VERSION VERSION_LESS 3.13 )
+            link_directories( ${PCL_LIBRARY_DIRS} )
+	else()
+            target_link_directories( ${PROJECT_NAME}
+                            PUBLIC
+                                    ${PCL_LIBRARY_DIRS}
+            )
 	endif()
-
-	link_directories( ${PCL_LIBRARY_DIRS} )
 	add_definitions( ${PCL_DEFINITIONS} )
 	target_link_libraries( ${PROJECT_NAME}
-						   ${PCL_LIBRARIES} 
-						   CVPluginAPI
-						   QPCL_ENGINE_LIB )
+                               ${PCL_LIBRARIES}
+                               CVPluginAPI
+                               QPCL_ENGINE_LIB )
 endif()	

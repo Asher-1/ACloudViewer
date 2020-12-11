@@ -103,14 +103,14 @@ ccHObject* FilterWindow::getOutput() const
 		return nullptr;
 	}
 	vtkPolyData * polydata = vtkPolyData::SafeDownCast(vtkData);
-	if (NULL == polydata)
+    if (!polydata)
 	{
 		return nullptr;
 	}
 
 	ccHObject* container = new ccHObject();
-	ccMesh* mesh = 0;
-	ccPointCloud* vertices = 0;
+    ccMesh* mesh = nullptr;
+    ccPointCloud* vertices = nullptr;
 
 	vtkIdType ptsCount = polydata->GetNumberOfPoints();
 	vtkIdType polyCount = polydata->GetNumberOfPolys();
@@ -119,7 +119,7 @@ ccHObject* FilterWindow::getOutput() const
 	if (ptsCount > 0)
 	{
 		vertices = new ccPointCloud("vertices");
-		if (!vertices->reserve(ptsCount))
+        if (!vertices->reserve(static_cast<unsigned>(ptsCount)))
 		{
 			CVLog::Error("not enough memory to allocate vertices...");
 			return nullptr;
@@ -153,7 +153,9 @@ ccHObject* FilterWindow::getOutput() const
 			}
 
 			//triangle or quad
-			mesh->addTriangle(indexes[0], indexes[1], indexes[2]);
+            mesh->addTriangle(static_cast<unsigned>(indexes[0]),
+                              static_cast<unsigned>(indexes[1]),
+                              static_cast<unsigned>(indexes[2]));
 		}
 
 		if (mesh->size() != 0)
@@ -166,13 +168,13 @@ ccHObject* FilterWindow::getOutput() const
 	if (vertices && vertices->size() == 0)
 	{
 		delete vertices;
-		vertices = 0;
+        vertices = nullptr;
 	}
 
-	if (mesh && (mesh->size() == 0 || vertices == 0))
+    if (mesh && (mesh->size() == 0 || !vertices))
 	{
 		delete mesh;
-		mesh = 0;
+        mesh = nullptr;
 	}
 
 	if (mesh)
@@ -601,38 +603,6 @@ void FilterWindow::colorsChanged()
 		m_vtkWidget->update();
 }
 
-template <class DataObject, class Mapper>
-void FilterWindow::createActorFromData(vtkDataObject* dataObj)
-{
-	if (!dataObj)
-		return;
-
-	m_dataObject = dataObj;
-	DataObject* data = DataObject::SafeDownCast(dataObj);
-
-	if (!data) {
-		qDebug() << "ansys parsing: null data set.";
-		return;
-	}
-
-	VTK_CREATE(Mapper, mapper);
-	mapper->SetInputData(data);
-	mapper->Update();
-
-	VtkUtils::vtkInitOnce(m_modelActor);
-	m_modelActor->SetMapper(mapper);
-
-	m_modelActor->SetNumberOfCloudPoints(int(std::max<vtkIdType>(1, data->GetNumberOfPoints() / 10)));
-	m_modelActor->GetProperty()->SetInterpolationToFlat();
-
-	m_vtkWidget->defaultRenderer()->AddActor(m_modelActor);
-	m_vtkWidget->defaultRenderer()->ResetCamera();
-	update();
-
-	modelReady();
-	dataChanged();
-}
-
 void FilterWindow::fireupModelToPointsConverter()
 {
 	VtkUtils::ModelToPointsConverter* converter = new VtkUtils::ModelToPointsConverter(m_tableModel);
@@ -733,4 +703,36 @@ void FilterWindow::onPointsToPolyDataConverterFinished()
 	apply();
 	modelReady();
 	dataChanged();
+}
+
+template <class DataObject, class Mapper>
+void FilterWindow::createActorFromData(vtkDataObject* dataObj)
+{
+    if (!dataObj)
+        return;
+
+    m_dataObject = dataObj;
+    DataObject* data = DataObject::SafeDownCast(dataObj);
+
+    if (!data) {
+        qDebug() << "ansys parsing: null data set.";
+        return;
+    }
+
+    VTK_CREATE(Mapper, mapper);
+    mapper->SetInputData(data);
+    mapper->Update();
+
+    VtkUtils::vtkInitOnce(m_modelActor);
+    m_modelActor->SetMapper(mapper);
+
+    m_modelActor->SetNumberOfCloudPoints(int(std::max<vtkIdType>(1, data->GetNumberOfPoints() / 10)));
+    m_modelActor->GetProperty()->SetInterpolationToFlat();
+
+    m_vtkWidget->defaultRenderer()->AddActor(m_modelActor);
+    m_vtkWidget->defaultRenderer()->ResetCamera();
+    update();
+
+    modelReady();
+    dataChanged();
 }

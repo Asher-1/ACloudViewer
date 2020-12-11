@@ -5,6 +5,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/AsciiOpenDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/AsciiSaveDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/AutoIO.h
+		${CMAKE_CURRENT_LIST_DIR}/FileFormatIO.h
 		${CMAKE_CURRENT_LIST_DIR}/BinFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/DepthMapFileFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/DxfFilter.h
@@ -17,9 +18,6 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/IJsonConvertibleIO.h
 		${CMAKE_CURRENT_LIST_DIR}/ImageFileFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/ImageIO.h
-		${CMAKE_CURRENT_LIST_DIR}/LASFields.h
-		${CMAKE_CURRENT_LIST_DIR}/LASFilter.h
-		${CMAKE_CURRENT_LIST_DIR}/LASOpenDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/LineSetIO.h
 		${CMAKE_CURRENT_LIST_DIR}/ObjFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/OctreeIO.h
@@ -36,6 +34,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/TriangleMeshIO.h
 		${CMAKE_CURRENT_LIST_DIR}/VoxelGridIO.h
 		${CMAKE_CURRENT_LIST_DIR}/VTKFilter.h
+		${CMAKE_CURRENT_LIST_DIR}/PinholeCameraTrajectoryIO.h
 )
 
 target_include_directories( ${PROJECT_NAME}

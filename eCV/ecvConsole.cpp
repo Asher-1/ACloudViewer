@@ -25,6 +25,9 @@
 // ECV_DB_LIB
 #include <ecvSingleton.h>
 
+// CV_APP_COMMON
+#include <CommonSettings.h>
+
 //Qt
 #include <QApplication>
 #include <QClipboard>
@@ -79,7 +82,6 @@ void ecvCustomQListWidget::keyPressEvent(QKeyEvent *event)
 		QListWidget::keyPressEvent(event);
 	}
 }
-
 
 // ecvConsole
 ecvConsole* ecvConsole::TheInstance(bool autoInit/*=true*/)
@@ -210,8 +212,10 @@ void ecvConsole::Init(	QListWidget* textDisplay/*=0*/,
 		s_showQtMessagesInConsole = ecvSettingManager::getValue(ecvPS::Console(), 
 			"QtMessagesEnabled", false).toBool();
 
+#ifdef CV_WINDOWS // only support Log file in Windows now!
 		// set log file.
 		s_console.instance->setLogFile(Settings::LOGFILE);
+#endif
 
 		//install : set the callback for Qt messages
 		qInstallMessageHandler(myMessageOutput);

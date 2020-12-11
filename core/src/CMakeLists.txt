@@ -9,6 +9,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/CloudSamplingTools.cpp
 		${CMAKE_CURRENT_LIST_DIR}/Console.cpp
 		${CMAKE_CURRENT_LIST_DIR}/CVKdTree.cpp
+		${CMAKE_CURRENT_LIST_DIR}/TrueKdTree.cpp
 		${CMAKE_CURRENT_LIST_DIR}/CVLog.cpp
 		${CMAKE_CURRENT_LIST_DIR}/CVMiscTools.cpp
 		${CMAKE_CURRENT_LIST_DIR}/CVShareable.cpp
@@ -43,7 +44,6 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/SimpleMesh.cpp
 		${CMAKE_CURRENT_LIST_DIR}/StatisticalTestingTools.cpp
 		${CMAKE_CURRENT_LIST_DIR}/Timer.cpp
-		${CMAKE_CURRENT_LIST_DIR}/TrueKdTree.cpp
 		${CMAKE_CURRENT_LIST_DIR}/WeibullDistribution.cpp
 )
 

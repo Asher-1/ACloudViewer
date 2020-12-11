@@ -1,5 +1,5 @@
 # CPP examples
-if (BUILD_CPP_EXAMPLES)
+if (BUILD_EXAMPLES)
     add_subdirectory(Cpp)
 endif ()
 

@@ -67,6 +67,11 @@ public:
 	//! Returns ambient color
 	inline const ecvColor::Rgbaf& getAmbient() const { return m_ambient; }
 
+	//! Sets illum mode
+    inline void setIllum(int illum) { m_illum = illum; }
+    //! Returns illum mode
+    inline const int getIllum() const { return m_illum; }
+
 	//! Sets specular color
 	inline void setSpecular(const ecvColor::Rgbaf& color) { m_specular = color; }
 	//! Returns specular color
@@ -100,7 +105,7 @@ public:
 	//! Sets texture
 	/** If no filename is provided, a random one will be generated.
 	**/
-	void setTexture(QImage image, QString absoluteFilename =  QString(), bool mirrorImage = true);
+    void setTexture(QImage image, QString absoluteFilename =  QString(), bool mirrorImage = false);
 
 	//! Loads texture from file (and set it if successful)
 	/** If the filename is not already in DB, the corresponding file will be loaded.
@@ -154,6 +159,7 @@ protected:
 	QString m_name;
 	QString m_textureFilename;
 	QString m_uniqueID;
+	int m_illum;
 
 	ecvColor::Rgbaf m_diffuseFront;
 	ecvColor::Rgbaf m_diffuseBack;
@@ -162,6 +168,7 @@ protected:
 	ecvColor::Rgbaf m_emission;
 	float m_shininessFront;
 	float m_shininessBack;
+
 };
 
 #endif // ECV_MATERIAL_HEADER

@@ -36,18 +36,18 @@ namespace io {
 
 /// The general entrance for reading a Feature from a file
 /// \return If the read function is successful.
-bool ReadFeature(const std::string &filename, utility::Feature &feature);
+bool ECV_IO_LIB_API ReadFeature(const std::string &filename, utility::Feature &feature);
 
 /// The general entrance for writing a Feature to a file
 /// \return If the write function is successful.
-bool WriteFeature(const std::string &filename,
-                  const utility::Feature &feature);
+bool ECV_IO_LIB_API WriteFeature(const std::string &filename,
+                                 const utility::Feature &feature);
 
-bool ReadFeatureFromBIN(const std::string &filename,
-                        utility::Feature &feature);
+bool ECV_IO_LIB_API ReadFeatureFromBIN(const std::string &filename,
+                                       utility::Feature &feature);
 
-bool WriteFeatureToBIN(const std::string &filename,
-                       const utility::Feature &feature);
+bool ECV_IO_LIB_API WriteFeatureToBIN(const std::string &filename,
+                                      const utility::Feature &feature);
 
 }  // namespace io
 }  // namespace cloudViewer

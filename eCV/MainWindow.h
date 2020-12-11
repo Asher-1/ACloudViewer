@@ -21,6 +21,7 @@
 // LOCAL
 #include "ecvEntityAction.h"
 #include "ecvPickingListener.h"
+#include "ecvMainAppInterface.h"
 
 // CV_CORE_LIB
 #include <CVTools.h>
@@ -36,6 +37,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QToolBar>
+#include <QToolButton>
 #include <QStatusBar>
 #include <QFileDialog>
 #include <QColorDialog>
@@ -52,15 +54,6 @@
 #include <map>
 #include <algorithm>
 
-// common
-#include <ecvOptions.h>
-#include <CommonSettings.h>
-
-//internal db
-#include "db_tree/ecvDBRoot.h"
-#include "ecvMainAppInterface.h"
-
-
 const int CLOUDVIEWER_LANG_ENGLISH = 0;
 const int CLOUDVIEWER_LANG_CHINESE = 1;
 
@@ -72,12 +65,11 @@ class ccHObject;
 class ccPickingHub;
 class ccOverlayDialog;
 class ccPluginUIManager;
-
+class ccDBRoot;
 class ecvFilterTool;
 class ecvRecentFiles;
 class ecvAnnotationsTool;
 class ecvFilterWindowTool;
-class ecvRenderSurfaceTool;
 class ecvFilterByLabelDlg;
 class ecvCameraParamEditDlg;
 class ecvPrimitiveFactoryDlg;
@@ -96,6 +88,8 @@ class QMdiSubWindow;
 class QTreeWidgetItem;
 class QUIWidget;
 
+struct dbTreeSelectionInfo;
+
 namespace Ui {
 	class MainViewerClass;
 }
@@ -105,7 +99,7 @@ class MainWindow : public QMainWindow, public ecvMainAppInterface, public ccPick
 	Q_OBJECT
 
 protected:
-	MainWindow(QWidget *parent = 0);
+    MainWindow();
 	~MainWindow() override;
 
 public: // static method
@@ -199,7 +193,7 @@ public:  // inherited from ecvMainAppInterface
 	virtual void resetSelectedBBox() override;
 	virtual void removeFromDB(ccHObject* obj, bool autoDelete = true) override;
 	virtual void setSelectedInDB(ccHObject* obj, bool selected) override;
-	virtual void putObjectBackIntoDBTree(ccHObject* obj, const ccHObjectContext& context);
+    virtual void putObjectBackIntoDBTree(ccHObject* obj, const ccHObjectContext& context) override;
 	virtual inline QMainWindow* getMainWindow() override { return this; }
 	virtual inline const ccHObject::Container& getSelectedEntities() const override { return m_selectedEntities; }
 	virtual ccHObjectContext removeObjectTemporarilyFromDBTree(ccHObject* obj) override;
@@ -420,6 +414,7 @@ private slots:
 	void doActionInterpolateColors();
 	void doActionChangeColorLevels();
 	void doActionEnhanceRGBWithIntensities();
+    void doActionColorFromScalars();
 
 	// scalar field menu
 	void showSelectedEntitiesHistogram();
@@ -458,7 +453,6 @@ private slots:
 	inline void doActionMoveBBMinCornerToOrigin() { doActionFastRegistration(MoveBBMinCornerToOrigin); }
 	inline void doActionMoveBBMaxCornerToOrigin() { doActionFastRegistration(MoveBBMaxCornerToOrigin); }
 
-
 	// Tools -> Recognition
 	void doSemanticSegmentation();
 	void deactivateSemanticSegmentation(bool);
@@ -472,8 +466,6 @@ private slots:
 	void deactivateSegmentationMode(bool);
 	void activateFilterWindowMode();
 	void deactivateFilterWindowMode(bool);
-	void activateSurfaceWindowMode();
-	void deactivateSurfaceWindowMode(bool);
 
 	void doActionFilterMode(int mode);
 	void activateClippingMode();
@@ -513,39 +505,55 @@ private slots:
 	void doComputeGeometricFeature();
 
 private:
-	//! Currently selected entities;
-	ccHObject::Container m_selectedEntities;
+    //! Apply transformation to the selected entities
+    void applyTransformation(const ccGLMatrixd& transMat);
 
-	// DB & DB Tree
-	ccDBRoot* m_ccRoot;
+    //! Enables menu entires based on the current selection
+    void enableUIItems(dbTreeSelectionInfo& selInfo);
 
-	QLabel* m_mousePosLabel;
-	QLabel* m_systemInfoLabel;
+    /***** Slots of QMenuBar and QToolBar *****/
+    void getFileFilltersAndHistory(QStringList &fileFilters,
+        QString &currentOpenDlgFilter);
 
-	// For full screen
-	QWidget* m_currentFullWidget;
-	//! Wether exclusive full screen is enabled or not
-	bool m_exclusiveFullscreen;
-	//! Former geometry (for exclusive full-screen display)
-	QByteArray m_formerGeometry;
+    //! Shortcut: asks the user to select one cloud
+    /** \param defaultCloudEntity a cloud to select by default (optional)
+        \param inviteMessage invite message (default is something like 'Please select an entity:') (optional)
+        \return the selected cloud (or null if the user cancelled the operation)
+    **/
+    ccPointCloud* askUserToSelectACloud(ccHObject* defaultCloudEntity = nullptr, QString inviteMessage = QString());
 
-	//! Recent files menu
-	ecvRecentFiles* m_recentFiles;
+    void toggleSelectedEntitiesProperty(ccEntityAction::TOGGLE_PROPERTY property);
+    void clearSelectedEntitiesProperty(ccEntityAction::CLEAR_PROPERTY property);
 
-	//! View mode pop-up menu button
-	QToolButton* m_viewModePopupButton;
-	enum VIEWMODE
-	{
-		PERSPECTIVE,
-		ORTHOGONAL
-	};
-	VIEWMODE m_lastViewMode;
+    enum FastRegistrationMode
+    {
+        MoveBBCenterToOrigin,
+        MoveBBMinCornerToOrigin,
+        MoveBBMaxCornerToOrigin
+    };
 
-	//! Point picking hub
-	ccPickingHub* m_pickingHub;
+    void doActionFastRegistration(FastRegistrationMode mode);
 
-	//! Graphical transformation dialog
-	ccGraphicalTransformationTool* m_transTool;
+private:
+    Ui::MainViewerClass *m_ui;
+
+    //! DB & DB Tree
+    ccDBRoot* m_ccRoot;
+
+    //! Currently selected entities;
+    ccHObject::Container m_selectedEntities;
+
+    //! UI frozen state (see freezeUI)
+    bool m_uiFrozen;
+
+    //! Recent files menu
+    ecvRecentFiles* m_recentFiles;
+
+    //! View mode pop-up menu button
+    QToolButton* m_viewModePopupButton;
+
+    //! Point picking hub
+    ccPickingHub* m_pickingHub;
 
 	/******************************/
 	/***        MDI AREA        ***/
@@ -574,83 +582,56 @@ private:
 	/*** dialogs ***/
 	//! Camera params dialog
 	ecvCameraParamEditDlg* m_cpeDlg;
+    //! Graphical segmentation dialog
+    ccGraphicalSegmentationTool* m_gsTool;
+    //! Polyline tracing tool
+    ccTracePolylineTool * m_tplTool;
+    //! Graphical transformation dialog
+    ccGraphicalTransformationTool* m_transTool;
+    //! Cloud comparison dialog
+    ccComparisonDlg* m_compDlg;
+    //! Point properties mode dialog
+    ccPointPropertiesDlg* m_ppDlg;
+    //! Point list picking
+    ccPointListPickingDlg* m_plpDlg;
+    //! Point-pair registration
+    ccPointPairRegistrationDlg* m_pprDlg;
+    //! Primitive factory dialog
+    ecvPrimitiveFactoryDlg* m_pfDlg;
+
 	//! filter tool dialog
 	ecvFilterTool* m_filterTool;
-
 	//! Annotation tool dialog
 	ecvAnnotationsTool* m_annoTool;
-
+    //! Filter Label Tool dialog
+    ecvFilterByLabelDlg* m_filterLabelTool;
+    //! Filter Window tool
+    ecvFilterWindowTool* m_filterWindowTool;
 	//! Deep Semantic Segmentation tool dialog
 	ecvDeepSemanticSegmentationTool* m_dssTool;
 
-	//! Filter Label Tool dialog
-	ecvFilterByLabelDlg* m_filterLabelTool;
+    QVBoxLayout *m_layout;
+    QUIWidget * m_uiManager;
+    QLabel* m_mousePosLabel;
+    QLabel* m_systemInfoLabel;
 
-	//! Filter Window tool
-	ecvFilterWindowTool* m_filterWindowTool;	
-	//! Surface Rendering Window tool
-	ecvRenderSurfaceTool* m_surfaceTool;
-	//! Graphical segmentation dialog
-	ccGraphicalSegmentationTool* m_gsTool;
-	//! Cloud comparison dialog
-	ccComparisonDlg* m_compDlg;
-	//! Polyline tracing tool
-	ccTracePolylineTool * m_tplTool;
-	//! Primitive factory dialog
-	ecvPrimitiveFactoryDlg* m_pfDlg;
-	//! Point properties mode dialog
-	ccPointPropertiesDlg* m_ppDlg;
-	//! Point list picking
-	ccPointListPickingDlg* m_plpDlg;
-	//! Point-pair registration
-	ccPointPairRegistrationDlg* m_pprDlg;
+    // For full screen
+    QWidget* m_currentFullWidget;
+    //! Wether exclusive full screen is enabled or not
+    bool m_exclusiveFullscreen;
+    //! Former geometry (for exclusive full-screen display)
+    QByteArray m_formerGeometry;
+
+    enum VIEWMODE
+    {
+        PERSPECTIVE,
+        ORTHOGONAL
+    };
+    VIEWMODE m_lastViewMode;
 
 	/*** plugins ***/
 	//! Manages plugins - menus, toolbars, and the about dialog
 	ccPluginUIManager* m_pluginUIManager;
-
-private:
-	//! Apply transformation to the selected entities
-	void applyTransformation(const ccGLMatrixd& transMat);
-
-	//! Enables menu entires based on the current selection
-	void enableUIItems(dbTreeSelectionInfo& selInfo);
-
-	/***** Slots of QMenuBar and QToolBar *****/
-	void getFileFilltersAndHistory(QStringList &fileFilters,
-		QString &currentOpenDlgFilter);
-
-	//! Shortcut: asks the user to select one cloud
-	/** \param defaultCloudEntity a cloud to select by default (optional)
-		\param inviteMessage invite message (default is something like 'Please select an entity:') (optional)
-		\return the selected cloud (or null if the user cancelled the operation)
-	**/
-	ccPointCloud* askUserToSelectACloud(ccHObject* defaultCloudEntity = nullptr, QString inviteMessage = QString());
-
-	void toggleSelectedEntitiesProperty(ccEntityAction::TOGGLE_PROPERTY property);
-	void clearSelectedEntitiesProperty(ccEntityAction::CLEAR_PROPERTY property);
-
-	enum FastRegistrationMode
-	{
-		MoveBBCenterToOrigin,
-		MoveBBMinCornerToOrigin,
-		MoveBBMaxCornerToOrigin
-	};
-
-	void doActionFastRegistration(FastRegistrationMode mode);
-
-private:
-	Ui::MainViewerClass *m_ui;
-
-	//! UI frozen state (see freezeUI)
-	bool m_uiFrozen;
-
-	QUIWidget * m_uiManager;
-
-	QVBoxLayout *layout;
-
-	bool enable_console = true; // console status
-	QString timeCostSecond = "0";  // record time span
 
 signals:
 	//! Signal emitted when the exclusive full screen is toggled

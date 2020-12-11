@@ -361,7 +361,7 @@ public:
 			\param b second IndexAndCode structure
 			\return whether the code of 'a' is smaller than the code of 'b'
 		**/
-		static bool codeComp(const IndexAndCode& a, const IndexAndCode& b) throw()
+        static bool codeComp(const IndexAndCode& a, const IndexAndCode& b) throw()
 		{
 			return a.theCode < b.theCode;
 		}

@@ -38,11 +38,11 @@ option( CVCORELIB_SCALAR_DOUBLE
 if ( CVCORELIB_SHARED )
 	add_library( ${PROJECT_NAME} SHARED )
 
-	set_target_properties( ${PROJECT_NAME}
-		PROPERTIES
-			CXX_VISIBILITY_PRESET hidden
-			VISIBILITY_INLINES_HIDDEN 1
-	)
+    set_target_properties( ${PROJECT_NAME}
+            PROPERTIES
+                    CXX_VISIBILITY_PRESET hidden
+                    VISIBILITY_INLINES_HIDDEN 1
+    )
 else()
 	add_library( ${PROJECT_NAME} STATIC )
 
@@ -57,44 +57,16 @@ set_target_properties( ${PROJECT_NAME}
 		DEBUG_POSTFIX d
 )
 
-add_library( ${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME} )
-
-# Generate the export header file
-include( GenerateExportHeader )
-
-generate_export_header( ${PROJECT_NAME}
-	EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
-	EXPORT_MACRO_NAME CV_CORE_LIB_API
-)
-
-target_sources( ${PROJECT_NAME}
-	PRIVATE
-		${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
-)
-
-install(
-	FILES
-		${CMAKE_CURRENT_BINARY_DIR}/exports/CVCoreLibExport.h
-	DESTINATION
-		include/${PROJECT_NAME}
-)
-
-target_include_directories( ${PROJECT_NAME}
-	PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports>
-		$<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-)
-
 # ccache
 # https://crascit.com/2016/04/09/using-ccache-with-cmake/
 find_program( CCACHE_PROGRAM ccache )
 
 if ( CCACHE_PROGRAM )
-	set_target_properties( ${PROJECT_NAME}
-		PROPERTIES
-			CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}"
-			C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}"
-	)
+        set_target_properties( ${PROJECT_NAME}
+                PROPERTIES
+                        CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}"
+                        C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}"
+        )
 endif()
 
 # Main sources and includes
@@ -111,10 +83,6 @@ set_target_properties( ${PROJECT_NAME}
 	PROPERTIES
 		CXX_EXTENSIONS OFF
 )
-
-# Enforce 3rd party dependencies
-add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
-target_link_libraries( ${PROJECT_NAME} PUBLIC ${3RDPARTY_LIBRARIES} )
 
 target_compile_definitions( ${PROJECT_NAME}
 	PRIVATE
@@ -153,18 +121,32 @@ endif()
 # TBB (optional)
 # Must come before CGAL so it can use TBB properly
 if ( CVCORELIB_USE_TBB )
-	include( cmake/FindTBB.cmake )
-	if ( TBB_FOUND )
-		include_directories( ${TBB_INCLUDE_DIRS} )
-		target_link_libraries( ${PROJECT_NAME} PUBLIC ${TBB_LIBRARIES} )
-		target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
-		target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_TBB )
+	if (WIN32)
+		include( cmake/FindTBB.cmake )
+		if ( TBB_FOUND )
+			include_directories( ${TBB_INCLUDE_DIRS} )
+			target_link_libraries( ${PROJECT_NAME} PUBLIC ${ALL_TBB_LIBRARIES} )
+			target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
+			target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_TBB )
+			#InstallFiles( FILES ${TBB_LIBRARIES} )
+		endif()
+	elseif (UNIX OR APPLE)
+		message("Do not recommend using TBB on Unix or Mac platform!")
+		#include( cmake/FindTBB_linux.cmake )
+		include_directories( ${STATIC_TBB_INCLUDE_DIR} )
+        target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_TBB )
+        target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_USES_TBB )
 	endif()
+
 endif()
 
 # CGAL (optional)
 if ( CVCORELIB_USE_CGAL )
-	include( cmake/CGALSupport.cmake )
+        if (WIN32)
+            include( cmake/CGALSupport.cmake )
+         else()
+             find_package( CGAL REQUIRED )
+         endif()
 
 	if( WIN32 )
 		# Need to force the visibility of these variables so that we can use them later
@@ -173,18 +155,27 @@ if ( CVCORELIB_USE_CGAL )
 	endif()
 
 	if ( CVCORELIB_USE_TBB )
-		if ( TBB_FOUND )
-			# Once Linux libcgal-dev >= 5.0, target_compile_definitions replaced by:
-			#  CGAL_target_use_TBB( ${PROJECT_NAME} )
+		if (WIN32)
+			if ( TBB_FOUND )
+                # Once Linux libcgal-dev >= 5.0, target_compile_definitions replaced by:
+                #  CGAL_target_use_TBB( ${PROJECT_NAME} )
 
-			target_compile_definitions( ${PROJECT_NAME}
-				PRIVATE
-					CGAL_LINKED_WITH_TBB
-					NOMINMAX
-			)
-		else()
-			message( WARNING "CGAL cannot compile with TBB (TBB not found)" )
+                target_compile_definitions( ${PROJECT_NAME}
+                        PRIVATE
+                                CGAL_LINKED_WITH_TBB
+                                NOMINMAX
+                )
+			else()
+				message( WARNING "CGAL cannot compile with TBB (TBB not found)" )
+		    endif()
+		elseif (UNIX OR APPLE)
+                target_compile_definitions( ${PROJECT_NAME}
+                        PRIVATE
+                                CGAL_LINKED_WITH_TBB
+                                NOMINMAX
+                )
 		endif()
+
 	endif()
 
 	target_link_libraries( ${PROJECT_NAME}
@@ -197,11 +188,11 @@ endif()
 
 # QT (optional)
 if ( CVCORELIB_USE_QT_CONCURRENT )
-	find_package( Qt5
-		COMPONENTS
-			Concurrent
-		REQUIRED
-	)
+    find_package( Qt5
+            COMPONENTS
+                    Concurrent
+            REQUIRED
+    )
 
     set_target_properties( ${PROJECT_NAME} PROPERTIES
         AUTOMOC OFF
@@ -209,42 +200,42 @@ if ( CVCORELIB_USE_QT_CONCURRENT )
         AUTOUIC OFF
     )
 
-	target_link_libraries( ${PROJECT_NAME}
-		PUBLIC
-            Qt5::Concurrent
-	)
+    target_link_libraries( ${PROJECT_NAME}
+            PUBLIC
+        Qt5::Concurrent
+    )
 
-	target_compile_definitions( ${PROJECT_NAME}
-		PUBLIC
-			CV_CORE_LIB_USES_QT_CONCURRENT
-	)
+    target_compile_definitions( ${PROJECT_NAME}
+            PUBLIC
+                    CV_CORE_LIB_USES_QT_CONCURRENT
+    )
 endif()
-
-# Enforce 3rd party dependencies
-add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
-target_link_libraries( ${PROJECT_NAME} PUBLIC ${3RDPARTY_LIBRARIES} )
-
-if (BUILD_EIGEN3)
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_EIGEN )
-endif()
-
 
 # CMake Package Files
-include( CMakePackageConfigHelpers )
+#include( CMakePackageConfigHelpers )
 
-write_basic_package_version_file( ${PROJECT_NAME}ConfigVersion.cmake
-	VERSION
-		${PACKAGE_VERSION}
-	COMPATIBILITY
-		AnyNewerVersion
-)
+#write_basic_package_version_file( CVCoreLibConfigVersion.cmake
+#	VERSION
+#		${PACKAGE_VERSION}
+#	COMPATIBILITY
+#		AnyNewerVersion
+#)
 
-install(
-	FILES
-		"${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-	DESTINATION
-		cmake/${PROJECT_NAME}
-)
+#install(
+#	FILES
+#                "${CMAKE_CURRENT_BINARY_DIR}/CVCoreLibConfigVersion.cmake"
+#	DESTINATION
+#		cmake/${PROJECT_NAME}
+#)
+
+
+# Enforce 3rd party dependencies
+cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
+target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_EIGEN )
+
+CopyDLLToDirectory(${PROJECT_NAME})
+
+target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_CORE_LIB_LIBRARY_BUILD )
 
 if ( CVCORELIB_SHARED )
 	InstallSharedLibrary( TARGET ${PROJECT_NAME} )

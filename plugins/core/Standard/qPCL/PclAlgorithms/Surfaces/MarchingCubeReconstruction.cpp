@@ -41,7 +41,7 @@ MarchingCubeReconstruction::MarchingCubeReconstruction()
 										 tr("Marching Cube Reconstruction"),
 										 tr("Marching Cube Reconstruction from clouds"),
 									     ":/toolbar/PclAlgorithms/icons/MarchingCubeReconstruction.png"))
-	, m_dialog(0)
+	, m_dialog(nullptr)
 	, m_normalSearchRadius(0)
 	, m_knn_radius(20)
 	, m_useKnn(true)
@@ -56,7 +56,7 @@ MarchingCubeReconstruction::MarchingCubeReconstruction()
 MarchingCubeReconstruction::~MarchingCubeReconstruction()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

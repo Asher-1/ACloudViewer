@@ -32,12 +32,12 @@ void copyScalarFields(const ccPointCloud *inCloud, ccPointCloud *outCloud, pcl::
 	unsigned n_out = outCloud->size();
 
 	unsigned sfCount = inCloud->getNumberOfScalarFields();
-	for (unsigned i = 0; i < sfCount; ++i)
+    for (unsigned i = 0; i < sfCount; ++i)
 	{
-		const CVLib::ScalarField* field = inCloud->getScalarField(i);
+        const CVLib::ScalarField* field = inCloud->getScalarField(static_cast<int>(i));
 		const char* name = field->getName();
 
-		ccScalarField* new_field = 0;
+        ccScalarField* new_field = nullptr;
 
 		//we need to verify no scalar field with the same name exists in the output cloud
 		int id = outCloud->getScalarFieldIndexByName(name);
@@ -61,13 +61,13 @@ void copyScalarFields(const ccPointCloud *inCloud, ccPointCloud *outCloud, pcl::
 			{
 				//not enough memory!
 				new_field->release();
-				new_field = 0;
+                new_field = nullptr;
 				continue;
 			}
 		}
 
 		//now perform point to point copy
-		for (unsigned j=0; j<n_out; ++j)
+        for (std::size_t j=0; j<n_out; ++j)
 		{
 			new_field->setValue(j, field->getValue(in2outMapping->indices.at(j)));
 		}

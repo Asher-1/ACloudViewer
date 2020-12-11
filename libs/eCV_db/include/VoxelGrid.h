@@ -55,7 +55,7 @@ class Image;
 /// \class Voxel
 ///
 /// \brief Base Voxel class, containing grid id and color.
-class Voxel {
+class ECV_DB_LIB_API Voxel {
 public:
     /// \brief Default Constructor.
     Voxel() {}
@@ -81,7 +81,7 @@ public:
 /// \class VoxelGrid
 ///
 /// \brief VoxelGrid is a collection of voxels which are aligned in grid.
-class VoxelGrid : public ccHObject {
+class ECV_DB_LIB_API VoxelGrid : public ccHObject {
 public:
     /// \brief Default Constructor.
     VoxelGrid(const char* name = "VoxelGrid") : ccHObject(name) {}
@@ -189,11 +189,13 @@ public:
     /// useful starting point for voxel carving.
     ///
     /// \param origin Coordinate center of the VoxelGrid
+    /// \param color Voxel color for all voxels of the VoxelGrid.
     /// \param voxel_size Voxel size of of the VoxelGrid construction.
     /// \param width Spatial width extend of the VoxelGrid.
     /// \param height Spatial height extend of the VoxelGrid.
     /// \param depth Spatial depth extend of the VoxelGrid.
     static std::shared_ptr<VoxelGrid> CreateDense(const Eigen::Vector3d &origin,
+                                                  const Eigen::Vector3d &color,
                                                   double voxel_size,
                                                   double width,
                                                   double height,
@@ -268,7 +270,7 @@ public:
 ///
 /// \brief Class to aggregate color values from different votes in one voxel
 /// Computes the average color value in the voxel.
-class AvgColorVoxel {
+class ECV_DB_LIB_API AvgColorVoxel {
 public:
     AvgColorVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
 

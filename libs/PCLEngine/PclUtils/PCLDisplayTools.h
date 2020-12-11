@@ -19,12 +19,14 @@
 #define QPCL_DISPLAY_TOOLS_HEADER
 
 //Local
-#include "../qPCL.h"
+#include "qPCL.h"
 #include "PCLCloud.h"
 #include "PCLVis.h"
 #include "ImageVis.h"
 #include "Tools/ecvTools.h"
-#include "VTKExtensions/Widgets/ecvQVTKWidget.h"
+#include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
+
+#include "CVMath.h"
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -35,7 +37,7 @@
 
 class ccHObject;
 class ImageVis;
-class ccMesh;
+class ccGenericMesh;
 class ccImage;
 class ecvOrientedBBox;
 class ccPointCloud;
@@ -56,7 +58,7 @@ public: // inherit from ecvDisplayTools
 	inline virtual ecvGenericVisualizer3D* getVisualizer3D() override { return get3DViewer(); }
 	inline virtual ecvGenericVisualizer2D* getVisualizer2D() override { return get2DViewer(); }
 
-	inline ecvQVTKWidget * getQVtkWidget() { return this->m_vtkWidget; }
+	inline QVTKWidgetCustom * getQVtkWidget() { return this->m_vtkWidget; }
 
 	inline virtual void toWorldPoint(const CCVector3d& input2D, CCVector3d& output3D) override { getQVtkWidget()->toWorldPoint(input2D, output3D); }
 	inline virtual void toWorldPoint(const CCVector3& input2D, CCVector3d& output3D) override { getQVtkWidget()->toWorldPoint(input2D, output3D); }
@@ -77,8 +79,8 @@ public: // inherit from ecvDisplayTools
 	virtual void drawWidgets(const WIDGETS_PARAMETER& param) override;
 	virtual void changeEntityProperties(PROPERTY_PARAM& param) override;
 
-	virtual void transformCameraView(const ccGLMatrixd & viewMat);
-	virtual void transformCameraProjection(const ccGLMatrixd & projMat);
+    virtual void transformCameraView(const ccGLMatrixd & viewMat) override;
+    virtual void transformCameraProjection(const ccGLMatrixd & projMat) override;
 
 	virtual void draw(CC_DRAW_CONTEXT& CONTEXT, const ccHObject * obj) override;
 
@@ -135,6 +137,8 @@ public:
 		m_visualizer3D->resetCamera(bbox);
 	}
 	inline virtual void updateCamera() override { m_visualizer3D->updateCamera(); }
+
+	inline virtual void updateScene() override { getQVtkWidget()->updateScene(); }
 
 	inline virtual void setAutoUpateCameraPos(bool state) override
 	{ 
@@ -231,9 +235,7 @@ public:
 		up[2] = cam.view[2];
 	}
 
-	inline virtual void setCameraPosition(
-		const CCVector3d& pos,
-		int viewPort = 0) override {
+    inline virtual void setCameraPosition( const CCVector3d& pos, int viewPort = 0 ) override {
 		getQVtkWidget()->setCameraPosition(pos);
 	}
 
@@ -259,7 +261,7 @@ public:
 			view_x, view_y, view_z, up_x, up_y, up_z, viewPort);
 	}
 
-	inline virtual void setRenderWindowSize(int xw, int yw)
+    inline virtual void setRenderWindowSize(int xw, int yw) override
 	{
 		getQVtkWidget()->GetRenderWindow()->SetPosition(0, 0);
 		getQVtkWidget()->GetRenderWindow()->SetSize(xw, yw);
@@ -303,8 +305,8 @@ public:
 	}
 
 	// set and get view angle in y direction or zoom factor in perspective mode
-	inline virtual double getCameraFovy(int viewPort = 0) override { return m_visualizer3D->getCamera(viewPort).fovy * CV_RAD_TO_DEG; }
-	inline virtual void setCameraFovy(double fovy, int viewport = 0) override { m_visualizer3D->setCameraFieldOfView(fovy * CV_DEG_TO_RAD, viewport); }
+    inline virtual double getCameraFovy(int viewPort = 0) override { return CVLib::RadiansToDegrees(m_visualizer3D->getCamera(viewPort).fovy); }
+    inline virtual void setCameraFovy(double fovy, int viewport = 0) override { m_visualizer3D->setCameraFieldOfView(CVLib::RadiansToDegrees(fovy), viewport); }
 
 	// get zoom factor in parallel mode
 	virtual double getParallelScale(int viewPort = 0) override;
@@ -321,7 +323,7 @@ public:
 	inline virtual void loadCameraParameters(const std::string &file) override { m_visualizer3D->loadCameraParameters(file); }
 	
 	/** \brief Use Vertex Buffer Objects renderers.
-	  * This is an optimization for the obsolete OpenGL backend. Modern OpenGL2 backend (VTK ¡Ý 6.3) uses vertex
+	  * This is an optimization for the obsolete OpenGL backend. Modern OpenGL2 backend (VTK6.3) uses vertex
 	  * buffer objects by default, transparently for the user.
 	  * \param[in] use_vbos set to true to use VBOs
 	  */
@@ -346,21 +348,21 @@ public:
 	virtual QString pick3DItem(int x = -1, int y = -1) override;
 private:
 	void drawPointCloud(CC_DRAW_CONTEXT& CONTEXT, ccPointCloud * ecvCloud);
-	void drawMesh(CC_DRAW_CONTEXT & CONTEXT, ccMesh * mesh);
+    void drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccGenericMesh* mesh);
 	void drawPolygon(CC_DRAW_CONTEXT& CONTEXT, ccPolyline* polyline);
 	void drawImage(CC_DRAW_CONTEXT& CONTEXT, ccImage* image);
 
 	bool updateEntityColor(CC_DRAW_CONTEXT& CONTEXT, ccHObject* ent);
 
 protected:
-	// QVTKWidget
-	ecvQVTKWidget* m_vtkWidget = nullptr;
+	// QVTKOpenGLNativeWidget
+	QVTKWidgetCustom* m_vtkWidget = nullptr;
 
 	PclUtils::ImageVisPtr m_visualizer2D = nullptr;
 
 	PclUtils::PCLVisPtr m_visualizer3D = nullptr;
 
-	virtual void registerVisualizer(QMainWindow * widget) override;
+	virtual void registerVisualizer(QMainWindow * widget, bool stereoMode = false) override;
 };
 
 #endif // QPCL_DISPLAY_TOOLS_HEADER

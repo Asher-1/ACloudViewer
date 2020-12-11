@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.0 )
+cmake_minimum_required( VERSION 3.18 )
 
 # CloudCompare Masonry Manual Segmentation plugin
 option( PLUGIN_STANDARD_MASONRY_QAUTO_SEG "Check to install QAutoSeg plugin" OFF )
@@ -50,6 +50,10 @@ if ( PLUGIN_STANDARD_MASONRY_QAUTO_SEG )
 	  # [Linker]>[Input]>[Additional Dependencies]
 	  target_link_libraries( QAUTO_SEG_PLUGIN ${PCL_LIBRARIES} )
 	  target_link_libraries( QAUTO_SEG_PLUGIN ${OpenCV_LIBS} )
+	  
+	  #import OpenCV dlls (if any, WIN32 only)
+	  include( ../cmake/ExportOpenCVDlls.cmake )
+	  export_OpenCV_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
 	endif()
 	
 endif()

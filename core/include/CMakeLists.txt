@@ -13,6 +13,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/Console.h
 		${CMAKE_CURRENT_LIST_DIR}/CVConst.h
 		${CMAKE_CURRENT_LIST_DIR}/CVCoreLib.h
+                ${CMAKE_CURRENT_LIST_DIR}/CVCoreLibWin.h
 		${CMAKE_CURRENT_LIST_DIR}/CVGeom.h
 		${CMAKE_CURRENT_LIST_DIR}/CVMath.h
 		${CMAKE_CURRENT_LIST_DIR}/CVMiscTools.h
@@ -21,7 +22,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/CVToolbox.h
 		${CMAKE_CURRENT_LIST_DIR}/CVTools.h
 		${CMAKE_CURRENT_LIST_DIR}/CVTypes.h
-		${CMAKE_CURRENT_LIST_DIR}/CVWidgetsInterface.h
+		${CMAKE_CURRENT_LIST_DIR}/CVPointCloud.h
 		${CMAKE_CURRENT_LIST_DIR}/Delaunay2dMesh.h
 		${CMAKE_CURRENT_LIST_DIR}/DgmOctree.h
 		${CMAKE_CURRENT_LIST_DIR}/DgmOctreeReferenceCloud.h
@@ -48,6 +49,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/IntersectionTest.h
 		${CMAKE_CURRENT_LIST_DIR}/Jacobi.h
 		${CMAKE_CURRENT_LIST_DIR}/CVKdTree.h
+		${CMAKE_CURRENT_LIST_DIR}/TrueKdTree.h
 		${CMAKE_CURRENT_LIST_DIR}/CVLog.h
 		${CMAKE_CURRENT_LIST_DIR}/LocalModel.h
 		${CMAKE_CURRENT_LIST_DIR}/ManualSegmentationTools.h
@@ -57,7 +59,6 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/NormalDistribution.h
 		${CMAKE_CURRENT_LIST_DIR}/OrientedBoundingBox.h
 		${CMAKE_CURRENT_LIST_DIR}/ParallelSort.h
-		${CMAKE_CURRENT_LIST_DIR}/PointCloud.h
 		${CMAKE_CURRENT_LIST_DIR}/PointCloudTpl.h
 		${CMAKE_CURRENT_LIST_DIR}/PointProjectionTools.h
 		${CMAKE_CURRENT_LIST_DIR}/Polyline.h
@@ -72,7 +73,8 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/SquareMatrix.h
 		${CMAKE_CURRENT_LIST_DIR}/StatisticalTestingTools.h
 		${CMAKE_CURRENT_LIST_DIR}/Timer.h
-		${CMAKE_CURRENT_LIST_DIR}/TrueKdTree.h
+		${CMAKE_CURRENT_LIST_DIR}/Optional.h
+		${CMAKE_CURRENT_LIST_DIR}/ProgressReporters.h
 		${CMAKE_CURRENT_LIST_DIR}/WeibullDistribution.h
 )
 
@@ -97,7 +99,6 @@ install(
 		FileSystem.h
 		OrientedBoundingBox.h
 		IntersectionTest.h
-		CVWidgetsInterface.h
 		ChamferDistanceTransform.h
 		CloudSamplingTools.h
 		ConjugateGradient.h
@@ -132,7 +133,7 @@ install(
 		Neighbourhood.h
 		NormalDistribution.h
 		ParallelSort.h
-		PointCloud.h
+		CVPointCloud.h
 		PointCloudTpl.h
 		PointProjectionTools.h
 		Polyline.h
@@ -146,6 +147,9 @@ install(
 		SimpleTriangle.h
 		SquareMatrix.h
 		StatisticalTestingTools.h
+		TrueKdTree.h
+		Optional.h
+		ProgressReporters.h
 		TrueKdTree.h
 		WeibullDistribution.h
 	DESTINATION
