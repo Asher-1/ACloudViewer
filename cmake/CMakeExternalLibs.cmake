@@ -37,11 +37,18 @@ find_package( Qt5
 # Starting with the QtCore lib, find the bin and root directories
 get_target_property( Qt5_LIB_LOCATION Qt5::Core LOCATION_${CMAKE_BUILD_TYPE} )
 get_filename_component( Qt5_LIB_LOCATION ${Qt5_LIB_LOCATION} DIRECTORY )
-
 if ( WIN32 )
     get_target_property( QMAKE_LOCATION Qt5::qmake IMPORTED_LOCATION )
     get_filename_component( Qt5_BIN_DIR ${QMAKE_LOCATION} DIRECTORY )
     get_filename_component( QT5_ROOT_PATH "${Qt5_BIN_DIR}/.." ABSOLUTE )
+endif()
+
+if ( BUILD_CUDA_MODULE )
+    #Warning: convert the fpic option in Qt5::Core over to INTERFACE_POSITION_INDEPENDENT_CODE
+    get_property(core_options TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS)
+    string(REPLACE "-fPIC" "" new_core_options ${core_options})
+    set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS ${new_core_options})
+    set_property(TARGET Qt5::Core PROPERTY INTERFACE_POSITION_INDEPENDENT_CODE "ON")
 endif()
 
 # turn on QStringBuilder for more efficient string construction

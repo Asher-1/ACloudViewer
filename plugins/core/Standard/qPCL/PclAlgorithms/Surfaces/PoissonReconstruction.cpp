@@ -41,7 +41,7 @@ PoissonReconstruction::PoissonReconstruction()
 										 tr("Poisson Reconstruction"),
 										 tr("Poisson Reconstruction from clouds"),
 										 ":/toolbar/PclAlgorithms/icons/poisson.png"))
-	, m_dialog(0)
+	, m_dialog(nullptr)
 	, m_normalSearchRadius(10)
 	, m_knn_radius(10)
 	, m_useKnn(false)
@@ -60,7 +60,7 @@ PoissonReconstruction::PoissonReconstruction()
 PoissonReconstruction::~PoissonReconstruction()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

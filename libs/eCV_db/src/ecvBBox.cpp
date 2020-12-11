@@ -66,6 +66,32 @@ ccBBox& ccBBox::rotate(const Eigen::Matrix3d & R, const Eigen::Vector3d& center)
 	return *this;
 }
 
+const ccBBox& ccBBox::operator+=(const ccBBox& other)
+{
+	if (isEmpty()) {
+		this->m_bbMin = other.minCorner();
+		this->m_bbMax = other.maxCorner();
+		this->setValidity(true);
+	}
+	else if (!other.isEmpty()) {
+		this->add(other.minCorner());
+		this->add(other.maxCorner());
+		this->setValidity(true);
+	}
+	return *this;
+}
+
+const ccBBox& ccBBox::operator+=(const CCVector3& aVector)
+{
+	if (m_valid)
+	{
+		m_bbMin += aVector;
+		m_bbMax += aVector;
+	}
+
+	return *this;
+}
+
 void ccBBox::draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) const
 {
 	if (!ecvDisplayTools::GetMainWindow())
@@ -77,8 +103,7 @@ void ccBBox::draw(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) const
 	ecvDisplayTools::DrawBBox(context, this);
 }
 
-ccBBox ccBBox::CreateFromPoints(
-	const std::vector<CCVector3>& points) {
+ccBBox ccBBox::CreateFromPoints(const std::vector<CCVector3>& points) {
 	ccBBox box;
 	if (points.empty()) {
 		box.minCorner() = CCVector3(0.0f, 0.0f, 0.0f);

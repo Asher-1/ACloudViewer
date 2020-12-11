@@ -61,7 +61,6 @@ PclFiltersTool::PclFiltersTool(FilterType type)
 	: ecvGenericFiltersTool(type)
 	, m_filter(nullptr)
 {
-	//this->registerFilter();
 }
 
 PclFiltersTool::PclFiltersTool(ecvGenericVisualizer3D* viewer, FilterType type)
@@ -69,7 +68,6 @@ PclFiltersTool::PclFiltersTool(ecvGenericVisualizer3D* viewer, FilterType type)
 	, m_filter(nullptr)
 {
 	this->initialize(viewer);
-	//this->registerFilter();
 }
 
 PclFiltersTool::~PclFiltersTool()
@@ -231,28 +229,8 @@ bool PclFiltersTool::start()
 	return true;
 }
 
-void PclFiltersTool::registerFilter()
-{
-	//if (m_viewer)
-	//{
-	//	m_viewer->setInteractorEnabled(true);
-	//	connect(m_viewer, &PCLVis::interactorPickedEvent, this, &PclFiltersTool::pickedEventProcess);
-	//	connect(m_viewer, &PCLVis::interactorKeyboardEvent, this, &PclFiltersTool::keyboardEventProcess);
-	//	connect(m_viewer, &PCLVis::interactorAreaPickedEvent, this, &PclFiltersTool::areaPickingEventProcess);
-	//}
-	
-}
-
 void PclFiltersTool::unregisterFilter()
 {
-	//if (m_viewer)
-	//{
-	//	m_viewer->setInteractorEnabled(false);
-	//	disconnect(m_viewer, &PCLVis::interactorPickedEvent, this, &PclFiltersTool::pickedEventProcess);
-	//	disconnect(m_viewer, &PCLVis::interactorKeyboardEvent, this, &PclFiltersTool::keyboardEventProcess);
-	//	disconnect(m_viewer, &PCLVis::interactorAreaPickedEvent, this, &PclFiltersTool::areaPickingEventProcess);
-	//}
-
 	resetMode();
 	clear();
 	update();
@@ -290,11 +268,6 @@ void PclFiltersTool::resetMode()
 }
 
 ////////////////////Callback function///////////////////////////
-void PclFiltersTool::pointPickingProcess(int index)
-{
-
-}
-
 void PclFiltersTool::areaPickingEventProcess(const std::vector<int>& new_selected_slice)
 {
 	if (new_selected_slice.empty() || !m_viewer) return;
@@ -303,14 +276,14 @@ void PclFiltersTool::areaPickingEventProcess(const std::vector<int>& new_selecte
 	int a = m_viewer->getRenderWindowInteractor()->GetControlKey();
 
 	// remove ground points
-	vector<int> selected_slice;
+	std::vector<int> selected_slice;
 	for (auto x : new_selected_slice) {
 		if (m_cloudLabel[x] != GROUND_POINT) {
 			selected_slice.push_back(x);
 		}
 	}
 
-	if (s && a || m_intersectMode) { // intersection
+    if ((s && a) || m_intersectMode) { // intersection
 		m_last_selected_slice = ecvTools::IntersectionVector(m_last_selected_slice, selected_slice);
 	}
 	else if (s || m_unionMode) { // union
@@ -326,17 +299,6 @@ void PclFiltersTool::areaPickingEventProcess(const std::vector<int>& new_selecte
 	update();
 }
 
-void PclFiltersTool::pickedEventProcess(vtkActor* actor) 
-{
-}
-
-void PclFiltersTool::keyboardEventProcess(const std::string& symKey)
-{
-	// delete annotation
-	if (symKey == "Delete") {
-
-	}
-}
 ///////////////////////////////////////////////////////////////
 
 void PclFiltersTool::setPointSize(const std::string & viewID, int viewPort)

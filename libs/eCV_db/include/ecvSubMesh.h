@@ -55,6 +55,7 @@ public:
 	int getTriangleMtlIndex(unsigned triangleIndex) const override;
 	bool hasTextures() const override;
 	TextureCoordsContainer* getTexCoordinatesTable() const override;
+    void getTexCoordinates(unsigned index, TexCoords2D*& tx) const override;
 	void getTriangleTexCoordinates(unsigned triIndex, TexCoords2D* &tx1, TexCoords2D* &tx2, TexCoords2D* &tx3) const override;
 	bool hasPerTriangleTexCoordIndexes() const override;
 	void getTriangleTexCoordinatesIndexes(unsigned triangleIndex, int& i1, int& i2, int& i3) const override;

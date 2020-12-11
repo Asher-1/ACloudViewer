@@ -1,12 +1,5 @@
 project( CVAppCommon )
 
-#include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-#include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-#if( MSVC )
-#   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-#endif()
-#include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
-
 add_library( ${PROJECT_NAME} SHARED )
 
 #add_subdirectory( devices )
@@ -18,10 +11,12 @@ target_link_libraries( ${PROJECT_NAME}
 	CVPluginAPI
 )
 
+if (USE_PCL_BACKEND)
+	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
+	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
+endif()
+
 target_compile_definitions( ${PROJECT_NAME} PRIVATE CVAPPCOMMON_LIBRARY_BUILD )
-# if ( USE_PCL_BACKEND )
-	# target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_PCL_ENGINE_LIBRARY_BUILD )	
-# endif()
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
 	AUTOUIC ON # FIXME Remove after everything has moved to targets and we can set it globally

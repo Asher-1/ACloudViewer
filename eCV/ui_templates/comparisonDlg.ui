@@ -13,10 +13,6 @@
   <property name="windowTitle">
    <string>Distance computation</string>
   </property>
-  <property name="windowIcon">
-   <iconset>
-    <normaloff>:/CC/Old/images/old_cc/old_cc.gif</normaloff>:/CC/Old/images/old_cc/old_cc.gif</iconset>
-  </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <item>
     <layout class="QHBoxLayout">
@@ -441,7 +437,7 @@ to help you set the general parameters</string>
                   <string notr="true">...</string>
                  </property>
                  <property name="icon">
-                  <iconset resource="../icones.qrc">
+                  <iconset>
                    <normaloff>:/CC/images/ccHistogram.png</normaloff>:/CC/images/ccHistogram.png</iconset>
                  </property>
                 </widget>
@@ -521,10 +517,7 @@ to help you set the general parameters</string>
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="../icones.qrc"/>
-  <include location="../icones.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>maxDistCheckBox</sender>

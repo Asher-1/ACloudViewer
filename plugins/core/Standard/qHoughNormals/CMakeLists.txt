@@ -19,6 +19,5 @@ if( PLUGIN_STANDARD_QHOUGH_NORMALS )
 	add_subdirectory( src )
 	add_subdirectory( ui )
 	
-	add_dependencies(${PROJECT_NAME} build_all_3rd_party_libs)
-	target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
+	target_link_libraries( ${PROJECT_NAME} ${EIGEN3_TARGET} ${NANOFLANN_TARGET})
 endif()

@@ -20,7 +20,7 @@
 
 //local
 #include <ManualSegmentationTools.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <Polyline.h>
 
 #if defined(USE_CGAL_LIB)

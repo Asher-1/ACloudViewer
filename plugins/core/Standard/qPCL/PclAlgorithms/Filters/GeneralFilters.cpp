@@ -40,7 +40,7 @@ GeneralFilters::GeneralFilters()
 										 tr("General Filters"),
 										 tr("General Filters for the selected entity"),
 										 ":/toolbar/PclAlgorithms/icons/generalFilter.png"))
-	, m_dialog(0)
+    , m_dialog(nullptr)
 	, m_polyline(nullptr)
 	, m_dimension(2)
 	, m_keepColors(true)
@@ -62,7 +62,7 @@ GeneralFilters::GeneralFilters()
 GeneralFilters::~GeneralFilters()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+    if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

@@ -24,6 +24,7 @@
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 #include <ecvProgressDialog.h>
+#include <ecvHObjectCaster.h>
 
 //Qt
 #include <QFile>

@@ -21,7 +21,7 @@
 #include "ecvBoundingBoxEditorDlg.h"
 #include "ecvPersistentSettings.h"
 #include "ecvCommon.h"
-#include "mainwindow.h"
+#include "MainWindow.h"
 #include "ecvIsolines.h"
 
 // ECV_DB_LIB

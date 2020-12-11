@@ -99,33 +99,11 @@ namespace VTKExtensions
 		virtual ~vtkCustomInteractorStyle() override;
 
 		void toggleAreaPicking();
-	protected:
-		/** \brief Interactor style internal method. Zoom in. */
-		void zoomIn();
 
-		/** \brief Interactor style internal method. Zoom out. */
-		void zoomOut();
-
-		// Keyboard events
-		virtual void OnKeyDown() override;
-		virtual void OnKeyUp() override;
-
-		/** \brief Interactor style internal method. Gets called whenever a key is pressed. */
-		virtual void OnChar() override;
-
-		// mouse button events
-		virtual void OnMouseMove() override;
-		virtual void OnLeftButtonDown() override;
-		virtual void OnLeftButtonUp() override;
-		virtual void OnMiddleButtonDown() override;
-		virtual void OnMiddleButtonUp() override;
-		virtual void OnRightButtonDown() override;
-		virtual void OnRightButtonUp() override;
-		virtual void OnMouseWheelForward() override;
-		virtual void OnMouseWheelBackward() override;
-
-		friend class PointPickingCallback;
-		friend class PCLVisualizer;
+        /** \brief Set render window. */
+        inline void setRenderWindow(const vtkSmartPointer<vtkRenderWindow>& win) {
+            win_ = win;
+        }
 
 	public:
 		/**
@@ -191,6 +169,34 @@ namespace VTKExtensions
 		using vtkInteractorStyleTrackballCamera::Dolly;
 
 	protected:
+        /** \brief Interactor style internal method. Zoom in. */
+        void zoomIn();
+
+        /** \brief Interactor style internal method. Zoom out. */
+        void zoomOut();
+
+        // Keyboard events
+        virtual void OnKeyDown() override;
+        virtual void OnKeyUp() override;
+
+        /** \brief Interactor style internal method. Gets called
+            * whenever a key is pressed. */
+        virtual void OnChar() override;
+
+        // mouse button events
+        virtual void OnMouseMove() override;
+        virtual void OnLeftButtonDown() override;
+        virtual void OnLeftButtonUp() override;
+        virtual void OnMiddleButtonDown() override;
+        virtual void OnMiddleButtonUp() override;
+        virtual void OnRightButtonDown() override;
+        virtual void OnRightButtonUp() override;
+        virtual void OnMouseWheelForward() override;
+        virtual void OnMouseWheelBackward() override;
+
+        friend class PointPickingCallback;
+        friend class PCLVisualizer;
+
 		void Dolly(double factor) override;
 
 		/** \brief ID used to fetch/display the look up table on the visualizer

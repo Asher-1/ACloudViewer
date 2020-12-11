@@ -59,13 +59,15 @@ bool ccCone::buildUp()
 	if (m_drawPrecision < MIN_DRAWING_PRECISION)
 		return false;
 
-	//invalid dimensions?
-	if (m_height < ZERO_TOLERANCE || m_bottomRadius + m_topRadius < ZERO_TOLERANCE)
-		return false;
+    //invalid dimensions?
+    if ( CVLib::LessThanEpsilon( m_height ) || CVLib::LessThanEpsilon( m_bottomRadius + m_topRadius ) )
+    {
+        return false;
+    }
 
 	//topology
-	bool singlePointBottom = (m_bottomRadius < ZERO_TOLERANCE);
-	bool singlePointTop = (m_topRadius < ZERO_TOLERANCE);
+    bool singlePointBottom = CVLib::LessThanEpsilon( m_bottomRadius );
+    bool singlePointTop = CVLib::LessThanEpsilon( m_topRadius );
 	assert(!singlePointBottom || !singlePointTop);
 
 	unsigned steps = m_drawPrecision;

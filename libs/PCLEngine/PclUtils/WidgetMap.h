@@ -53,7 +53,7 @@ class vtkProp;
 
 namespace PclUtils
 {
-	class WidgetMap
+    class WidgetMap
 	{
 	public:
 		WidgetMap() = default;

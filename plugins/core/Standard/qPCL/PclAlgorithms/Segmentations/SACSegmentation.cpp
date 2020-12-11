@@ -60,7 +60,7 @@ SACSegmentation::SACSegmentation()
 										 tr("SAC Segmentation"),
 										 tr("SAC Segmentation from clouds"),
 										 ":/toolbar/PclAlgorithms/icons/SAC_Segmentation.png"))
-	, m_dialog(0)
+	, m_dialog(nullptr)
 	, m_distanceThreshold(0.01f)
 	, m_normalDisWeight(0.1f)
 	, m_probability(0.95f)
@@ -81,7 +81,7 @@ SACSegmentation::SACSegmentation()
 SACSegmentation::~SACSegmentation()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

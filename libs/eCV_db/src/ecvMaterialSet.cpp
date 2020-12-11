@@ -250,7 +250,8 @@ bool ccMaterialSet::ParseMTL(QString path, const QString& filename, ccMaterialSe
 			// illumination type
 			else if (tokens.front() == "illum")
 			{
-				//ignored
+                 if (tokens.size() > 1)
+                	currentMaterial->setIllum(tokens[1].toInt());
 			}
 			// texture map
 			else if (tokens.front() == "map_Ka"
@@ -352,7 +353,7 @@ bool ccMaterialSet::saveAsMTL(QString path, const QString& baseFilename, QString
 				filenamesUsed.insert(texName);
 
 				QString destFilename = path + QString('/') + texName;
-				if (mtl->getTexture().mirrored().save(destFilename)) //mirrored: see ccMaterial
+                if (mtl->getTexture().save(destFilename)) //mirrored: see ccMaterial
 				{
 					//new absolute filemane
 					absFilenamesSaved[absFilename] = texName;

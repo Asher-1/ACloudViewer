@@ -1,0 +1,8 @@
+add_subdirectory(tools)
+add_subdirectory(apps)
+if (BUILD_UNIT_TESTS)
+    add_subdirectory(tests)
+endif()
+if (BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif()

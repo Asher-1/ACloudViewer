@@ -1,12 +1,5 @@
 project( CVPluginAPI )
 
-#include_directories( ${CV_CORE_LIB_SOURCE_DIR}/include )
-#include_directories( ${ECV_DB_LIB_SOURCE_DIR} )
-#if( MSVC )
-#   include_directories( ${ECV_DB_LIB_SOURCE_DIR}/msvc )
-#endif()
-#include_directories( ${ECV_IO_LIB_SOURCE_DIR} )
-
 add_library( ${PROJECT_NAME} SHARED )
 
 find_package( Qt5
@@ -28,16 +21,6 @@ target_link_libraries( ${PROJECT_NAME}
 	ECV_DB_LIB
 	ECV_IO_LIB
 )
-
-if (USE_PCL_BACKEND)
-	link_directories( ${PCL_LIBRARY_DIRS} )
-	link_directories(${VTK_LIBRARIES_DIRS})
-	# PCL
-	target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
-	# VTK
-	target_link_libraries(${PROJECT_NAME} ${VTK_LIBRARIES})
-	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
-endif()
 
 target_compile_definitions( ${PROJECT_NAME} PRIVATE CVPLUGIN_API_LIBRARY_BUILD )
 

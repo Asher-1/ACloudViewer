@@ -25,7 +25,7 @@
 #endif
 
 // LOCAL
-#include "../qPCL.h"
+#include "qPCL.h"
 #include "PCLConv.h"
 #include "PCLCloud.h"
 
@@ -37,6 +37,7 @@
 #include <pcl/Vertices.h>
 #include <pcl/correspondence.h>
 #include <pcl/common/transforms.h>
+#include <pcl/common/io.h> // for getFieldIndex
 #include <pcl/ModelCoefficients.h>
 
 // PCL KEYPOINTS
@@ -54,7 +55,7 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 
 // PCL RECOGNITION
-#include <pcl/recognition/hv/hv_go.h>
+//#include <pcl/recognition/hv/hv_go.h>
 #include <pcl/recognition/cg/hough_3d.h>
 #include <pcl/recognition/cg/geometric_consistency.h>
 
@@ -63,7 +64,7 @@
 #include <pcl/registration/ia_ransac.h>
 
 // PCL SEARCH
-#include <pcl/search/kdtree.h>
+#include <pcl/search/kdtree.h> // for KdTree
 #include <pcl/kdtree/kdtree_flann.h>
 
 // PCL SURFACE
@@ -167,13 +168,13 @@ namespace PCLModules
 
 	/**
 	  * @brief Basic Region Growing
-	  * @param cloud             原始输入点云
-	  * @param k                 k近邻参数
-	  * @param min_cluster_size  一个region最少点数量
-	  * @param max_cluster_size  一个region最大点数量，通常我们希望无穷大，选一个足够大的值就够了
-	  * @param neighbour_number  多少个点来决定一个平面
-	  * @param smoothness_theta  夹角阈值
-	  * @param curvature         曲率阈值
+	  * @param cloud             
+	  * @param k                 
+	  * @param min_cluster_size
+	  * @param max_cluster_size 
+	  * @param neighbour_number 
+	  * @param smoothness_theta 
+	  * @param curvature         
 	  * @return
 	  */
 	int QPCL_ENGINE_LIB_API GetRegionGrowing(
@@ -185,11 +186,11 @@ namespace PCLModules
 
 	/**
 	 * @brief Color based Region Growing
-	 * @param cloud                 输入RGB点云
-	 * @param min_cluster_size      region的最少点数
-	 * @param neighbors_distance    近邻检测阈值
-	 * @param point_color_diff      两点RGB差别阈值检测
-	 * @param region_color_diff     两域RGB差别阈值检测
+	 * @param cloud                 
+	 * @param min_cluster_size      
+	 * @param neighbors_distance   
+	 * @param point_color_diff      
+	 * @param region_color_diff   
 	 * @return
 	 */
 	int QPCL_ENGINE_LIB_API GetRegionGrowingRGB(
@@ -218,7 +219,7 @@ namespace PCLModules
 {
 	enum MarchingMethod { HOPPE, RBF };
 	template <typename PointInT>
-	inline int GetMarchingCubes(
+    int GetMarchingCubes(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		const MarchingMethod &marchingMethod,
 		PCLMesh &outMesh,
@@ -272,7 +273,7 @@ namespace PCLModules
 namespace PCLModules
 {
 	template <typename PointInOutT>
-	inline int SwapAxis(
+    int SwapAxis(
 		const typename pcl::PointCloud<PointInOutT>::ConstPtr inCloud,
 		typename pcl::PointCloud<PointInOutT>::Ptr outcloud,
 		const std::string &flag
@@ -319,7 +320,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInT>
-	inline int RemoveNaN(
+    int RemoveNaN(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		typename pcl::PointCloud<PointInT>::Ptr outcloud,
         std::vector<int> &index
@@ -351,7 +352,7 @@ namespace PCLModules
 			
 	};
 	template <typename PointInT>
-	inline int NurbsSurfaceFitting(
+    int NurbsSurfaceFitting(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		const NurbsParameters &nurbsParams,
 		PCLMesh &outMesh,
@@ -363,7 +364,7 @@ namespace PCLModules
 		for (unsigned i = 0; i < inCloud->size(); i++)
 		{
 			const PointInT &p = inCloud->at(i);
-			if (!pcl_isnan(p.x) && !pcl_isnan(p.y) && !pcl_isnan(p.z))
+            if (!std::isnan(p.x) && !std::isnan(p.y) && !std::isnan(p.z))
 				data.interior.push_back(Eigen::Vector3d(p.x, p.y, p.z));
 		}
 
@@ -434,7 +435,7 @@ namespace PCLModules
 
     enum CurveFittingMethod { PD, SD, APD, TD, ASD };
     template <typename PointInT>
-    inline int BSplineCurveFitting2D(
+    int BSplineCurveFitting2D(
         const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
         const CurveFittingMethod &fittingMethod,
         PointCloudRGB::Ptr outCurve,
@@ -456,7 +457,7 @@ namespace PCLModules
         for (unsigned i = 0; i < inCloud->size(); i++)
         {
             const PointInT &p = inCloud->at(i);
-            if (!pcl_isnan(p.x) && !pcl_isnan(p.y))
+            if (!std::isnan(p.x) && !std::isnan(p.y))
                 data.interior.push_back(Eigen::Vector2d(p.x, p.y));
         }
 
@@ -564,7 +565,7 @@ namespace PCLModules
 
 	
 	template <typename PointInT>
-	inline int BSplineCurveFitting3D(
+    int BSplineCurveFitting3D(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		PointCloudRGB::Ptr outCurve,
 		int order = 3,
@@ -582,7 +583,7 @@ namespace PCLModules
 			for (unsigned i = 0; i < inCloud->size(); i++)
 			{
 				const PointInT &p = inCloud->at(i);
-				if (!pcl_isnan(p.x) && !pcl_isnan(p.y) && !pcl_isnan(p.z))
+                if (!std::isnan(p.x) && !std::isnan(p.y) && !std::isnan(p.z))
 				{
 					data.interior.push_back(Eigen::Vector3d(p.x, p.y, p.z));
 				}
@@ -660,7 +661,7 @@ namespace PCLModules
 			for (unsigned i = 0; i < xoyCurve->size(); ++i)
 			{
 				const PointRGB &xoy_p = xoyCurve->at(i);
-				if (!pcl_isnan(xoy_p.x) && !pcl_isnan(xoy_p.y))
+                if (!std::isnan(xoy_p.x) && !std::isnan(xoy_p.y))
 				{
 					outCurve->points[i].x = xoy_p.x;
 					outCurve->points[i].y = xoy_p.y;
@@ -689,7 +690,7 @@ namespace PCLModules
 		\note If a PointType with a scale field is passed as output type, scales will be returned together with the return cloud
 	**/
 	template <typename PointInT, typename PointOutT>
-	inline int EstimateSIFT(
+    int EstimateSIFT(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		typename pcl::PointCloud<PointOutT>::Ptr outcloud,
 		int nr_octaves = 0, float min_scale = 0,
@@ -713,7 +714,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInT, typename NormalType, typename DescriptorType = pcl::SHOT352>
-	inline int EstimateShot(
+    int EstimateShot(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		const typename pcl::PointCloud<PointInT>::ConstPtr keyPoints,
 		const typename pcl::PointCloud<NormalType>::ConstPtr normals,
@@ -733,7 +734,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInT>
-	inline double ComputeCloudResolution(
+    double ComputeCloudResolution(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud)
 	{
 		int nres;
@@ -762,7 +763,7 @@ namespace PCLModules
 #endif
 		for (int i = 0; i < size_cloud; ++i)
 		{
-			if (!pcl_isfinite((*inCloud)[i].x))
+            if (!std::isfinite((*inCloud)[i].x))
 			{
 				continue;
 			}
@@ -794,7 +795,7 @@ namespace PCLModules
 	}
 
 	template <typename PointOutT>
-	inline int RemoveOutliersStatistical(
+    int RemoveOutliersStatistical(
 		const typename PointOutT::ConstPtr inCloud,
 		typename PointOutT::Ptr outCloud,
 		int knn, double nSigma)
@@ -808,7 +809,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInT>
-	inline int EuclideanCluster(
+    int EuclideanCluster(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		std::vector<pcl::PointIndices> &cluster_indices,
         float clusterTolerance = 0.02f,
@@ -817,21 +818,21 @@ namespace PCLModules
 	{
 		// Creating the KdTree object for the search method of the extraction
         typename pcl::search::KdTree<PointInT>::Ptr tree(new pcl::search::KdTree<PointInT>);
-		tree->setInputCloud(inCloud); // 创建点云索引向量，用于存储实际的点云信息
+		tree->setInputCloud(inCloud); // 
 
 		pcl::EuclideanClusterExtraction<PointInT> ece;
-		ece.setClusterTolerance(clusterTolerance);	// 设置近邻搜索的搜索半径为2cm
-		ece.setMinClusterSize(minClusterSize);		// 设置一个聚类需要的最少点数目为100
-		ece.setMaxClusterSize(maxClusterSize);		// 设置一个聚类需要的最大点数目为25000
-		ece.setSearchMethod(tree);					// 设置点云的搜索机制
+		ece.setClusterTolerance(clusterTolerance);	// 
+		ece.setMinClusterSize(minClusterSize);		// 
+		ece.setMaxClusterSize(maxClusterSize);		// 
+		ece.setSearchMethod(tree);			// 
 		ece.setInputCloud(inCloud);
-		ece.extract(cluster_indices);				// 从点云中提取聚类，并将点云索引保存在cluster_indices中
+		ece.extract(cluster_indices);			// 
 
 		return 1;
 	}
 
 	template <typename PointInT>
-	inline int ProgressiveMpFilter(
+    int ProgressiveMpFilter(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		pcl::PointIndicesPtr groundIndices,
 		int maxWindowSize = 20,
@@ -853,7 +854,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInT, typename NormalType, typename PointOutT>
-	inline int DONEstimation(
+    int DONEstimation(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		const typename pcl::PointCloud<NormalType>::ConstPtr normalsLargeScale,
 		const typename pcl::PointCloud<NormalType>::ConstPtr normalsSmallScale,
@@ -876,7 +877,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInT, typename NormalType, typename RFType = pcl::ReferenceFrame>
-	inline int EstimateLocalReferenceFrame(
+    int EstimateLocalReferenceFrame(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		const typename pcl::PointCloud<PointInT>::ConstPtr keyPoints,
 		const typename pcl::PointCloud<NormalType>::ConstPtr normals,
@@ -894,7 +895,7 @@ namespace PCLModules
 	}
 
 	template <typename PointModelT, typename PointSceneT, typename PointModelRfT = pcl::ReferenceFrame, typename PointSceneRfT = pcl::ReferenceFrame>
-	inline int EstimateHough3DGrouping(
+    int EstimateHough3DGrouping(
 		const typename pcl::PointCloud<PointModelT>::ConstPtr modelKeypoints,
 		const typename pcl::PointCloud<PointSceneT>::ConstPtr sceneKeypoints,
 		const typename pcl::PointCloud<PointModelRfT>::ConstPtr modelRF,
@@ -906,10 +907,10 @@ namespace PCLModules
 		float houghThreshold = 5.0f)
 	{
 		pcl::Hough3DGrouping<PointModelT, PointSceneT, PointModelRfT, PointSceneRfT> clusterer;
-		clusterer.setHoughBinSize(houghBinSize); // Hough空间的采样间隔
-		clusterer.setHoughThreshold(houghThreshold); // 在Hough空间确定是否有实例存在的最少票数阈值
-		clusterer.setUseInterpolation(true); // 设置是否对投票在Hough空间进行插值计算
-		clusterer.setUseDistanceWeight(false); // 设置在投票时是否将对应点之间的距离作为权重参与计算
+		clusterer.setHoughBinSize(houghBinSize); // 
+		clusterer.setHoughThreshold(houghThreshold); // 
+		clusterer.setUseInterpolation(true); // 
+		clusterer.setUseDistanceWeight(false); // 
 
 		clusterer.setInputCloud(modelKeypoints);
 		clusterer.setInputRf(modelRF);
@@ -924,7 +925,7 @@ namespace PCLModules
 
 
 	template <typename PointModelT, typename PointSceneT>
-	inline int EstimateGeometricConsistencyGrouping(
+    int EstimateGeometricConsistencyGrouping(
 		const typename pcl::PointCloud<PointModelT>::ConstPtr modelKeypoints,
 		const typename pcl::PointCloud<PointSceneT>::ConstPtr sceneKeypoints,
 		const typename pcl::CorrespondencesConstPtr modelSceneCorrs,
@@ -934,8 +935,8 @@ namespace PCLModules
 		float gcThreshold = 20.0f)
 	{
 		pcl::GeometricConsistencyGrouping<PointModelT, PointSceneT> gc_clusterer;
-		gc_clusterer.setGCSize(gcSize); // 设置检查几何一致性时的空间分辨率
-		gc_clusterer.setGCThreshold(gcThreshold); // 设置最小的聚类数量
+		gc_clusterer.setGCSize(gcSize); // 
+		gc_clusterer.setGCThreshold(gcThreshold); // 
 
 		gc_clusterer.setInputCloud(modelKeypoints);
 		gc_clusterer.setSceneCloud(sceneKeypoints);
@@ -948,15 +949,15 @@ namespace PCLModules
 
 
 	template <typename PointInT>
-	inline int EstimateHarris3D(
+    int EstimateHarris3D(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		pcl::PointCloud<pcl::PointXYZI>::Ptr outcloud,
 		float normalRadius = 0.1f, float searchRadius = 0.1f)
 	{
 		pcl::HarrisKeypoint3D< PointInT, pcl::PointXYZI, NormalT > harris_detector;
 
-		harris_detector.setRadius(normalRadius); // 设置法向量估算的半径
-		harris_detector.setRadiusSearch(searchRadius); // 设置关键点估计的近邻搜索半径
+		harris_detector.setRadius(normalRadius); // 
+		harris_detector.setRadiusSearch(searchRadius); // 
 
 		harris_detector.setInputCloud(inCloud);
 		harris_detector.compute(*outcloud);
@@ -964,7 +965,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInOut>
-	inline int GetUniformSampling(
+    int GetUniformSampling(
 		const typename pcl::PointCloud<PointInOut>::ConstPtr inCloud,
 		typename pcl::PointCloud<PointInOut>::Ptr outcloud,
 		const float &searchRadius = -1.0f /*0.03f*/)
@@ -1012,7 +1013,7 @@ namespace PCLModules
 	};
 
 	template <typename PointInOut>
-	inline int ConditionalRemovalFilter(
+    int ConditionalRemovalFilter(
 		const typename pcl::PointCloud<PointInOut>::ConstPtr inCloud,
 		const ConditionParameters &params,
 		typename pcl::PointCloud<PointInOut>::Ptr outCloud,
@@ -1119,7 +1120,7 @@ namespace PCLModules
 
 	// for smooth filter
 	template <typename PointInT, typename PointOutT>
-	inline int SmoothMls(
+    int SmoothMls(
 		const typename pcl::PointCloud<PointInT>::ConstPtr &inCloud,
 		const MLSParameters &params,
 		typename pcl::PointCloud<PointOutT>::Ptr &outcloud
@@ -1130,25 +1131,21 @@ namespace PCLModules
 	{
 		typename pcl::search::KdTree<PointInT>::Ptr tree(new pcl::search::KdTree<PointInT>);
 
-#ifdef _OPENMP
-		//create the smoothing object
-		pcl::MovingLeastSquaresOMP< PointInT, PointOutT > smoother;
-		int n_threads = omp_get_max_threads();
-		smoother.setNumberOfThreads(n_threads);
-#else
-		pcl::MovingLeastSquares< PointInT, PointOutT > smoother;
-#endif
+        //create the smoothing object
+        pcl::MovingLeastSquares< PointInT, PointOutT > smoother;
+        int n_threads = omp_get_max_threads();
+        smoother.setNumberOfThreads(n_threads);
+
 		smoother.setInputCloud(inCloud);
 		smoother.setSearchMethod(tree);
 		smoother.setSearchRadius(params.search_radius_);
 		smoother.setComputeNormals(params.compute_normals_);
-		smoother.setPolynomialFit(params.polynomial_fit_);
-
-		if (params.polynomial_fit_)
-		{
-			smoother.setPolynomialOrder(params.order_);
-			smoother.setSqrGaussParam(params.sqr_gauss_param_);
-		}
+        if (params.polynomial_fit_) {
+            smoother.setPolynomialOrder(params.order_);
+            smoother.setSqrGaussParam(params.sqr_gauss_param_);
+        } else {
+            smoother.setPolynomialOrder(0);
+        }
 
 		switch (params.upsample_method_)
 		{
@@ -1193,7 +1190,7 @@ namespace PCLModules
 
 	// for normal estimation
 	template <typename PointInT, typename PointOutT>
-	inline int ComputeNormals(
+    int ComputeNormals(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		typename pcl::PointCloud<PointOutT>::Ptr outcloud,
 		const float radius = -1.0f /*10.0f*/,
@@ -1244,7 +1241,8 @@ namespace PCLModules
 			 * NOTE: setting viewpoint is very important, so that we can ensure
 			 * normals are all pointed in the same direction!
 			 */
-			normal_estimator.setViewPoint(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+            normal_estimator.setViewPoint(std::numeric_limits<float>::max(),
+                                          std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
 		}
 
 		normal_estimator.setInputCloud(inCloud);
@@ -1255,7 +1253,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInOut>
-	inline int PassThroughFilter(
+    int PassThroughFilter(
 		const typename pcl::PointCloud<PointInOut>::ConstPtr inCloud,
 		typename pcl::PointCloud<PointInOut>::Ptr outcloud,
 		const QString& filterFieldName = "z",
@@ -1271,7 +1269,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInOut>
-	inline int VoxelGridFilter(
+    int VoxelGridFilter(
 		const typename pcl::PointCloud<PointInOut>::ConstPtr inCloud,
 		typename pcl::PointCloud<PointInOut>::Ptr outcloud,
 		const float	&leafSizeX = -0.01f,
@@ -1309,7 +1307,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInOut>
-	inline int ExtractIndicesFilter(
+    int ExtractIndicesFilter(
 		const typename pcl::PointCloud<PointInOut>::ConstPtr inCloud,
 		const pcl::PointIndices::ConstPtr inliers,
 		typename pcl::PointCloud<PointInOut>::Ptr outcloud = nullptr,
@@ -1335,7 +1333,7 @@ namespace PCLModules
 
 	// for convexHull reconstruction
 	template <typename PointInT>
-	inline int GetConvexHullReconstruction(
+    int GetConvexHullReconstruction(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		PCLMesh &outMesh,
 		int dimension = 3
@@ -1359,7 +1357,7 @@ namespace PCLModules
 
 	// for concaveHull reconstruction
 	template <typename PointInT>
-	inline int GetConcaveHullReconstruction(
+    int GetConcaveHullReconstruction(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		PCLMesh &outMesh,
 		int dimension = 3,
@@ -1379,7 +1377,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInT>
-	inline int CropHullFilter(
+    int CropHullFilter(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		const PointCloudT::ConstPtr boundingBox,
 		typename pcl::PointCloud<PointInT>::Ptr outCloud,
@@ -1409,7 +1407,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInT>
-	inline int GetMinCutSegmentation(
+    int GetMinCutSegmentation(
 		const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
 		std::vector <pcl::PointIndices> &outClusters,
 		PointCloudRGB::Ptr cloud_segmented,
@@ -1444,7 +1442,7 @@ namespace PCLModules
 
 
 	template <typename PointInOut, typename NormalType>
-	inline int GetBoundaryCloud(
+    int GetBoundaryCloud(
 		const typename pcl::PointCloud<PointInOut>::ConstPtr inCloud,
 		const typename pcl::PointCloud<NormalType>::ConstPtr normals,
 		typename pcl::PointCloud<PointInOut>::Ptr boundaryCloud,
@@ -1494,7 +1492,7 @@ namespace PCLModules
 	}
 
 	template <typename PointInT, typename PointOutT>
-	inline bool ICPRegistration(
+    bool ICPRegistration(
 		const typename pcl::PointCloud<PointInT>::ConstPtr targetCloud,
 		const typename pcl::PointCloud<PointOutT>::ConstPtr sourceCloud,
 		typename pcl::PointCloud<PointOutT>::Ptr outRegistered,
@@ -1510,9 +1508,9 @@ namespace PCLModules
 
 		return icp.hasConverged();
 	}
-
+#if 0
 	template <typename PointSceneT, typename PointModelT>
-	inline int GetHypothesesVerification(
+    int GetHypothesesVerification(
 		const typename pcl::PointCloud<PointSceneT>::Ptr sceneCloud,
 		std::vector<typename pcl::PointCloud<PointModelT>::ConstPtr> modelClouds,
 		std::vector<bool> &hypothesesMask,
@@ -1541,6 +1539,7 @@ namespace PCLModules
 
 		return 1;
 	}
+#endif
 }
 
 // class
@@ -1562,23 +1561,23 @@ namespace PCLModules
 		void setmaxThreadCount(int maxThreadCount) { m_maxThreadCount = maxThreadCount; }
 
 		// Process the given cloud
-		inline void setInputCloud(PointCloudT::Ptr xyz) { m_xyz = xyz; processInput(); }
+        void setInputCloud(PointCloudT::Ptr xyz) { m_xyz = xyz; processInput(); }
 
 		// Load and process the cloud in the given PCD file
 		void loadInputCloud(const std::string &pcd_file);
 
 		// Get a pointer to the cloud 3D points
-		inline PointCloudT::Ptr getPointCloud() const { return (m_xyz); }
+        PointCloudT::Ptr getPointCloud() const { return (m_xyz); }
 
 		// Get a pointer to the cloud of 3D surface normals
-		inline SurfaceNormals::Ptr getSurfaceNormals() const { return (m_normals); }
+        SurfaceNormals::Ptr getSurfaceNormals() const { return (m_normals); }
 
 		// Get a pointer to the cloud of feature descriptors
-		inline LocalFeatures::Ptr getLocalFeatures() const { return (m_features); }
+        LocalFeatures::Ptr getLocalFeatures() const { return (m_features); }
 
 	protected:
 		// Compute the surface normals and local features
-		inline void processInput()
+        void processInput()
 		{
 			computeSurfaceNormals();
 			computeLocalFeatures();
@@ -1626,10 +1625,10 @@ namespace PCLModules
 		void setTargetCloud(FeatureCloud &target_cloud);
 
 		// Add the given cloud to the list of template clouds
-		inline void addTemplateCloud(FeatureCloud &template_cloud) { m_templates.push_back(template_cloud); }
+        void addTemplateCloud(FeatureCloud &template_cloud) { m_templates.push_back(template_cloud); }
 		
 		// get the template cloud by the given index
-		inline FeatureCloud* getTemplateCloud(int index) {
+        FeatureCloud* getTemplateCloud(int index) {
             if (static_cast<size_t>(index) > m_templates.size())
 				return nullptr;
             return &m_templates[static_cast<size_t>(index)];
@@ -1644,7 +1643,7 @@ namespace PCLModules
 		// Align all of template clouds to the target cloud to find the one with best alignment score
 		int findBestAlignment(TemplateMatching::Result &result);
 
-		inline void clear() { m_templates.clear(); }
+        void clear() { m_templates.clear(); }
 
 	private:
 		// A list of template clouds and the target to which they will be aligned
@@ -1659,6 +1658,5 @@ namespace PCLModules
 	};
 
 }
-
 
 #endif // QPCL_PCLMODULES_HEADER

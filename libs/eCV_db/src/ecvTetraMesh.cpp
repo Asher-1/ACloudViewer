@@ -24,136 +24,47 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// LOCAL
-#include "ecvBBox.h"
-#include "ecvOrientedBBox.h"
-#include "ecvMesh.h"
 #include "ecvTetraMesh.h"
-#include "ecvPointCloud.h"
-#include "ecvHObjectCaster.h"
-
-#include <Console.h>
 
 // EIGEN
 #include <Eigen/Dense>
 
 // SYSTEM
-#include <unordered_map>
 #include <array>
 #include <numeric>
 #include <tuple>
+#include <unordered_map>
+
+// LOCAL
+#include "ecvMesh.h"
+#include "ecvPointCloud.h"
+#include "ecvHObjectCaster.h"
+
+#include <Console.h>
 
 using namespace CVLib;
 namespace cloudViewer {
 namespace geometry {
 
-TetraMesh::TetraMesh(
-	const std::vector<Eigen::Vector3d> &vertices,
-	const std::vector<Eigen::Vector4i,
-	CVLib::utility::Vector4i_allocator> &tetras, 
-	const char* name/* = "TetraMesh"*/)
-	: ccHObject(name)
-	, tetras_(tetras)
-{
-}
-
 TetraMesh &TetraMesh::clear() {
-	vertices_.clear();
-	vertex_normals_.clear();
-	vertex_colors_.clear();
-	tetras_.clear();
-	return *this;
-}
-
-void TetraMesh::getBoundingBox(CCVector3 & bbMin, CCVector3 & bbMax)
-{
-	bbMin = getMinBound();
-	bbMax = getMaxBound();
-}
-
-ccBBox TetraMesh::getOwnBB(bool withGLFeatures)
-{
-	return getAxisAlignedBoundingBox();
-}
-
-Eigen::Vector3d TetraMesh::getMinBound() const {
-	return ComputeMinBound(vertices_);
-}
-
-Eigen::Vector3d TetraMesh::getMaxBound() const {
-	return ComputeMaxBound(vertices_);
-}
-
-Eigen::Vector3d TetraMesh::getGeometryCenter() const { return ComputeCenter(vertices_); }
-
-ccBBox TetraMesh::getAxisAlignedBoundingBox() const {
-	return ccBBox::CreateFromPoints(vertices_);
-}
-
-ecvOrientedBBox TetraMesh::getOrientedBoundingBox() const {
-	return ecvOrientedBBox::CreateFromPoints(vertices_);
-}
-
-TetraMesh &TetraMesh::transform(const Eigen::Matrix4d &transformation) {
-	TransformPoints(transformation, vertices_);
-	TransformNormals(transformation, vertex_normals_);
-	return *this;
-}
-
-TetraMesh &TetraMesh::translate(const Eigen::Vector3d &translation,
-	bool relative) {
-	TranslatePoints(translation, vertices_, relative);
-	return *this;
-}
-
-TetraMesh &TetraMesh::scale(const double s, const Eigen::Vector3d& center) {
-	ScalePoints(s, vertices_, center);
-	return *this;
-}
-
-TetraMesh &TetraMesh::rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d& center) {
-	RotatePoints(R, vertices_, center);
-	RotateNormals(R, vertex_normals_);
-	return *this;
+    ecvMeshBase::clear();
+    tetras_.clear();
+    return *this;
 }
 
 TetraMesh &TetraMesh::operator+=(const TetraMesh &mesh) {
     typedef decltype(tetras_)::value_type Vector4i;
-	if (mesh.isEmpty()) return (*this);
-	size_t old_vert_num = vertices_.size();
-	size_t old_tetra_num = tetras_.size();
-	size_t add_tetra_num = mesh.tetras_.size();
-	
-	{
-		size_t add_vert_num = mesh.vertices_.size();
-		size_t new_vert_num = old_vert_num + add_vert_num;
-		if ((!hasVertices() || hasVertexNormals()) && mesh.hasVertexNormals()) {
-			vertex_normals_.resize(new_vert_num);
-			for (size_t i = 0; i < add_vert_num; i++)
-				vertex_normals_[old_vert_num + i] = mesh.vertex_normals_[i];
-		}
-		else {
-			vertex_normals_.clear();
-		}
-		if ((!hasVertices() || hasVertexColors()) && mesh.hasVertexColors()) {
-			vertex_colors_.resize(new_vert_num);
-			for (size_t i = 0; i < add_vert_num; i++)
-				vertex_colors_[old_vert_num + i] = mesh.vertex_colors_[i];
-		}
-		else {
-			vertex_colors_.clear();
-		}
-		vertices_.resize(new_vert_num);
-		for (size_t i = 0; i < add_vert_num; i++)
-			vertices_[old_vert_num + i] = mesh.vertices_[i];
-	}
-
-	tetras_.resize(tetras_.size() + mesh.tetras_.size());
-	Vector4i index_shift = Vector4i::Constant(static_cast<int>(old_vert_num));
-	for (size_t i = 0; i < add_tetra_num; i++) {
-		tetras_[old_tetra_num + i] = mesh.tetras_[i] + index_shift;
-	}
-	return (*this);
+    if (mesh.isEmpty()) return (*this);
+    size_t old_vert_num = vertices_.size();
+    size_t old_tetra_num = tetras_.size();
+    size_t add_tetra_num = mesh.tetras_.size();
+    ecvMeshBase::operator+=(mesh);
+    tetras_.resize(tetras_.size() + mesh.tetras_.size());
+    Vector4i index_shift = Vector4i::Constant(static_cast<int>(old_vert_num));
+    for (size_t i = 0; i < add_tetra_num; i++) {
+        tetras_[old_tetra_num + i] = mesh.tetras_[i] + index_shift;
+    }
+    return (*this);
 }
 
 TetraMesh TetraMesh::operator+(const TetraMesh &mesh) const {

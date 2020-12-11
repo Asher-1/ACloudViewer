@@ -34,6 +34,10 @@
 
 namespace cloudViewer {
 
+namespace camera {
+    class PinholeCameraIntrinsic;
+}
+
 namespace geometry {
 
 class Image;
@@ -45,7 +49,7 @@ typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 ///
 /// \brief The Image class stores image with customizable width, height, num of
 /// channels and bytes per channel.
-class Image : public ccHObject {
+class ECV_DB_LIB_API Image : public ccHObject {
 public:
     /// \enum ColorToIntensityConversionType
     ///
@@ -144,6 +148,17 @@ public:
     /// are within the image dimensions, and the second double value is the
     /// interpolated pixel value.
     std::pair<bool, double> FloatValueAt(double u, double v) const;
+
+    /// Factory function to create a float image composed of multipliers that
+    /// convert depth values into camera distances (ImageFactory.cpp)
+    /// The multiplier function M(u,v) is defined as:
+    /// M(u, v) = sqrt(1 + ((u - cx) / fx) ^ 2 + ((v - cy) / fy) ^ 2)
+    /// This function is used as a convenient function for performance
+    /// optimization in volumetric integration (see
+    /// Core/Integration/TSDFVolume.h).
+    static std::shared_ptr<Image>
+        CreateDepthToCameraDistanceMultiplierFloatImage(
+            const camera::PinholeCameraIntrinsic& intrinsic);
 
     /// Return a gray scaled float type image.
     std::shared_ptr<Image> CreateFloatImage(

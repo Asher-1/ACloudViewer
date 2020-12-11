@@ -25,4 +25,9 @@ target_include_directories( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+set_target_properties(${PROJECT_NAME} PROPERTIES
+        OUTPUT_NAME ${PROJECT_NAME}
+        FOLDER "3rdparty"
+)
+
 target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_SHP_SUPPORT )

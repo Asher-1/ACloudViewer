@@ -26,7 +26,7 @@
 #include <GeometricalAnalysisTools.h>
 #include <DgmOctree.h>
 #include <ReferenceCloud.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>

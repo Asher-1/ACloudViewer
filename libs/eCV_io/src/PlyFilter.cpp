@@ -360,7 +360,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity, QString filename, e_ply_s
 					defaultTextureName += QString(".png");
 				//try to save the texture!
 				QString textureFilePath = QFileInfo(filename).absolutePath() + QString('/') + defaultTextureName;
-				if (!material->getTexture().mirrored().save(textureFilePath)) //mirrored --> see ccMaterial
+                if (!material->getTexture().save(textureFilePath)) //mirrored --> see ccMaterial
 				{
 					CVLog::Warning(QString("[PLY] Failed to save texture in '%1'!").arg(textureFilePath));
 					material = ccMaterial::CShared(0);

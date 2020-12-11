@@ -68,8 +68,8 @@
 #include "ecvUtils.h"
 
 // This is included only for temporarily removing an object from the tree.
-//	TODO figure out a cleaner way to do this without having to include all of mainwindow.h
-#include "mainwindow.h"
+//	TODO figure out a cleaner way to do this without having to include all of MainWindow.h
+#include "MainWindow.h"
 
 // SYSTEM
 #include <algorithm>
@@ -160,7 +160,8 @@ namespace ccEntityAction
 					cloud->getParent()->showSF(false); //just in case
 				}
 
-				ecvDisplayTools::ChangeEntityProperties(PROPERTY_PARAM(ent, ecvColor::FromQColor(colour)));
+                PROPERTY_PARAM params(ent, ecvColor::FromQColor(colour));
+                ecvDisplayTools::ChangeEntityProperties(params);
 			}
 			else if (ent->isKindOf(CV_TYPES::PRIMITIVE))
 			{
@@ -171,7 +172,8 @@ namespace ccEntityAction
 				prim->setColor(col);
 				ent->showColors(true);
 				ent->showSF(false); //just in case
-				ecvDisplayTools::ChangeEntityProperties(PROPERTY_PARAM(ent, col));
+                PROPERTY_PARAM params(ent, col);
+                ecvDisplayTools::ChangeEntityProperties(params);
 			}
 			else if (ent->isA(CV_TYPES::POLY_LINE))
 			{
@@ -188,7 +190,8 @@ namespace ccEntityAction
 				}
 				else
 				{
-					ecvDisplayTools::ChangeEntityProperties(PROPERTY_PARAM(ent, poly->getColor()));
+                    PROPERTY_PARAM params(ent, poly->getColor());
+                    ecvDisplayTools::ChangeEntityProperties(params);
 				}
 			}
 			else if (ent->isA(CV_TYPES::FACET))

@@ -64,7 +64,7 @@
 #include<algorithm>
 #include <math.h>  
 
-#include <kdtree.h>
+#include <CVKdTree.h>
 using namespace std;
 using namespace cv;
 
@@ -958,7 +958,7 @@ void ccManualSeg::doAction()
 			QFileInfo fileInfo(pcs.front()->getFullPath());
 			QDir dir(fileInfo.absolutePath());
 			QString autoSegLogFile = dir.absoluteFilePath(filename.c_str());
-			filename = CVTools::fromQString(autoSegLogFile);
+			filename = CVTools::FromQString(autoSegLogFile);
 			auto_seg_log.open(filename);
 			for (int i = 0; i < pcs.size(); ++i)
 			{

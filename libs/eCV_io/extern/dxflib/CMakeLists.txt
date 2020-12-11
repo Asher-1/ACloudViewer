@@ -17,4 +17,9 @@ if (WIN32)
 	target_compile_definitions( ${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_DEPRECATE )
 endif()
 
+set_target_properties(${PROJECT_NAME} PROPERTIES
+        OUTPUT_NAME ${PROJECT_NAME}
+        FOLDER "3rdparty"
+)
+
 target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_DXF_SUPPORT )

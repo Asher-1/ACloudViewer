@@ -23,6 +23,7 @@
 #include <CVLog.h>
 
 //ECV_DB_LIB
+#include <ecvHObjectCaster.h>
 #include <ecv2DLabel.h>
 #include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>

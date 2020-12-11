@@ -24,7 +24,7 @@ class qLASFWFIO : public QObject, public ccIOPluginInterface
 {
 	Q_OBJECT
 	Q_INTERFACES( ccPluginInterface ccIOPluginInterface )
-	Q_PLUGIN_METADATA(IID "cccorp.cloudviewer.plugin.qLAS_FWF_IO" FILE "../info.json")
+	Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qLAS_FWF_IO" FILE "../info.json")
 
 public:
 
