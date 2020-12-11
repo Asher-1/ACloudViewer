@@ -15,11 +15,11 @@ We have endowed the new CloudViewer-ML module with a new data viewer tool. Users
 
 This viewer has been built upon the new visualization API, integrating the new Rendering and GUI modules. Thanks to the new visualization API, users can perform advanced rendering, fully programmatically from Python and C++. Users can also create slick GUIs with a few lines of Python code. Check out how to do this here.
 
-The CloudViewer app has also been extended to include the following features:
+- The CloudViewer app has also been extended to include the following features:
 
-Support for FBX and glTF2 assets
-Full support for PBR models.
-CloudViewer 0.3.7 includes for the first time support for Linux ARM (64-bit) platforms. This has been a long-time requested feature that finally made it into the release. You can now enjoy all CloudViewer features, including our new rendering and visualization pipelines in OpenGL-enabled ARM platform.
+	- Support for FBX and glTF2 assets
+	- Full support for PBR models.
+	- CloudViewer 0.3.7 includes for the first time support for Linux ARM (64-bit) platforms. This has been a long-time requested 	feature that finally made it into the release. You can now enjoy all CloudViewer features, including our new rendering and visualization pipelines in OpenGL-enabled ARM platform.
 
 [Breaking] Please, notice that the API and the structure of CloudViewer have changed considerably after an intense refactoring process. You will need to update your code to use the new namespaces. Please, check the full changelog and the documentation for further information.
 
@@ -28,7 +28,9 @@ We hope you find CloudViewer 0.3.7 exciting and useful. Happy coding!
 Remember that you can reach out with questions, requests, or feedback through the following channels:
 
 [e-mail](ludahai19@163.com)
+
 [Discourse forum](https://www.erow.cn)
+
 [Discord network](https://www.erow.cn)
 
 The ErowCloudViewer team
