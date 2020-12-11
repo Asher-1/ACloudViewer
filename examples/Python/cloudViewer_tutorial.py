@@ -16,7 +16,7 @@ interactive = True
 
 def jupyter_draw_geometries(
         geoms,
-        window_name="Open3D",
+        window_name="CloudViewer",
         width=1920,
         height=1080,
         left=50,
@@ -84,8 +84,8 @@ def _relative_path(path):
 
 
 def download_fountain_dataset():
-    fountain_path = _relative_path("../test_data/fountain_small")
-    fountain_zip_path = _relative_path("../test_data/fountain.zip")
+    fountain_path = _relative_path("../TestData/fountain_small")
+    fountain_zip_path = _relative_path("../TestData/fountain.zip")
     if not os.path.exists(fountain_path):
         print("downloading fountain dataset")
         url = "https://storage.googleapis.com/isl-datasets/open3d-dev/fountain.zip"
@@ -104,12 +104,13 @@ def get_non_manifold_edge_mesh():
     )
     triangles = np.array([[0, 1, 3], [1, 2, 3], [1, 3, 4]])
     mesh = cv3d.geometry.ccMesh()
+    mesh.create_internal_cloud()
     mesh.set_vertices(cv3d.utility.Vector3dVector(verts))
     mesh.set_triangles(cv3d.utility.Vector3iVector(triangles))
     mesh.compute_vertex_normals()
     mesh.rotate(
         mesh.get_rotation_matrix_from_xyz((np.pi / 4, 0, np.pi / 4)),
-        center=mesh.get_geometry_center(),
+        center=mesh.get_center(),
     )
     return mesh
 
@@ -138,6 +139,7 @@ def get_non_manifold_vertex_mesh():
         [4, 6, 3],
     ])
     mesh = cv3d.geometry.ccMesh()
+    mesh.create_internal_cloud()
     mesh.set_vertices(cv3d.utility.Vector3dVector(verts))
     mesh.set_triangles(cv3d.utility.Vector3iVector(triangles))
     mesh.compute_vertex_normals()
@@ -175,7 +177,7 @@ def get_intersecting_boxes_mesh():
 
 
 def get_armadillo_mesh():
-    armadillo_path = _relative_path("../test_data/Armadillo.ply")
+    armadillo_path = _relative_path("../TestData/Armadillo.ply")
     if not os.path.exists(armadillo_path):
         print("downloading armadillo mesh")
         url = "http://graphics.stanford.edu/pub/3Dscanrep/armadillo/Armadillo.ply.gz"
@@ -191,7 +193,7 @@ def get_armadillo_mesh():
 
 
 def get_bunny_mesh():
-    bunny_path = _relative_path("../test_data/Bunny.ply")
+    bunny_path = _relative_path("../TestData/Bunny.ply")
     if not os.path.exists(bunny_path):
         print("downloading bunny mesh")
         url = "http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz"
@@ -216,13 +218,13 @@ def get_bunny_mesh():
 
 
 def get_knot_mesh():
-    mesh = cv3d.io.read_triangle_mesh(_relative_path("../test_data/knot.ply"))
+    mesh = cv3d.io.read_triangle_mesh(_relative_path("../TestData/knot.ply"))
     mesh.compute_vertex_normals()
     return mesh
 
 
 def get_eagle_pcd():
-    path = _relative_path("../test_data/eagle.ply")
+    path = _relative_path("../TestData/eagle.ply")
     if not os.path.exists(path):
         print("downloading eagle pcl")
         url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"

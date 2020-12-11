@@ -34,15 +34,15 @@
 #include "ecvInnerRect2DFinder.h"
 #include "ecvTracePolylineTool.h"
 #include "ecvFilterWindowTool.h"
-#include "ecvRenderSurfaceTool.h"
 #include "ecvRegistrationTools.h"
 #include "ecvGraphicalTransformationTool.h"
 #include "ecvGraphicalSegmentationTool.h"
 
 // CV_CORE_LIB
+#include <CVMath.h>
 #include <Jacobi.h>
 #include <ParallelSort.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <Delaunay2dMesh.h>
 #include <NormalDistribution.h>
 #include <ecvVolumeCalcTool.h>
@@ -90,6 +90,8 @@
 #include <ecvShiftAndScaleCloudDlg.h>
 
 //common
+#include <ecvOptions.h>
+#include <CommonSettings.h>
 #include <ecvCommon.h>
 #include <ecvPickingHub.h>
 #include <ecvCustomViewpointsToolbar.h>
@@ -98,36 +100,6 @@
 #include <ecvCameraParamEditDlg.h>
 #include <ecvDisplayOptionsDlg.h>
 #include <ecvPickOneElementDlg.h>
-
-// QPCL_ENGINE_LIB
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
-#include <Tools/CurveFitting.h>
-#include <Tools/EditCameraTool.h>
-#include <PclUtils/PCLDisplayTools.h>
-#include <Tools/FilterTools/PclFiltersTool.h>
-#include <Tools/TransformTools/QvtkTransformTool.h>
-#include <Tools/AnnotationTools/PclAnnotationTool.h>
-#endif
-
-// ECV_PYTHON_LIB
-#ifdef ECV_PYTHON_LIBRARY_BUILD
-#include "ecvDeepSemanticSegmentationTool.h"
-#include <Recognition/PythonInterface.h>
-#endif
-
-// SYSTEM
-#ifdef CV_WINDOWS
-#include <omp.h>
-#endif
-
-#ifdef USE_TBB
-#include <tbb/tbb_stddef.h>
-#endif
-
-#ifdef USE_VLD
-//VLD
-#include <vld.h>
-#endif
 
 //Qt UI files
 #include "ui_MainWindow.h"
@@ -142,6 +114,7 @@
 #include "ecvSORFilterDlg.h"
 #include "ecvNoiseFilterDlg.h"
 #include "ecvPoissonReconDlg.h"
+#include "ecvColorFromScalarDlg.h"
 #include "ecvApplyTransformationDlg.h"
 #include "ecvGBLSensorProjectionDlg.h"
 #include "ecvCamSensorProjectionDlg.h"
@@ -169,7 +142,38 @@
 #include "ecvEntitySelectionDlg.h"
 
 // other
+#include "db_tree/ecvDBRoot.h"
 #include "pluginManager/ecvPluginUIManager.h"
+
+// QPCL_ENGINE_LIB
+#ifdef USE_PCL_BACKEND
+#include <Tools/CurveFitting.h>
+#include <Tools/EditCameraTool.h>
+#include <PclUtils/PCLDisplayTools.h>
+#include <Tools/FilterTools/PclFiltersTool.h>
+#include <Tools/TransformTools/QvtkTransformTool.h>
+#include <Tools/AnnotationTools/PclAnnotationTool.h>
+#endif
+
+// ECV_PYTHON_LIB
+#ifdef USE_PYTHON_MODULE
+#include "ecvDeepSemanticSegmentationTool.h"
+#include <recognition/PythonInterface.h>
+#endif
+
+// SYSTEM
+#ifdef CV_WINDOWS
+#include <omp.h>
+#endif
+
+#ifdef USE_VLD
+//VLD
+#include <vld.h>
+#endif
+
+#ifdef USE_TBB
+#include <tbb/tbb_stddef.h>
+#endif
 
 //global static pointer (as there should only be one instance of MainWindow!)
 static MainWindow* s_instance = nullptr;
@@ -214,129 +218,135 @@ static bool IsValidFileName(QString filename)
 	return QRegExp(sPattern).exactMatch(filename);
 }
 
-MainWindow::MainWindow(QWidget *parent)
-	: QMainWindow(parent)
+MainWindow::MainWindow()
+    : m_FirstShow(true)
 	, m_ui( new Ui::MainViewerClass )
 	, m_ccRoot(nullptr)
-	, m_mousePosLabel(nullptr)
+    , m_uiFrozen(false)
+    , m_recentFiles(new ecvRecentFiles(this))
+    , m_viewModePopupButton(nullptr)
+    , m_pickingHub(nullptr)
+    , m_cpeDlg(nullptr)
+    , m_gsTool(nullptr)
+    , m_tplTool(nullptr)
+    , m_transTool(nullptr)
+    , m_compDlg(nullptr)
+    , m_ppDlg(nullptr)
+    , m_plpDlg(nullptr)
+    , m_pprDlg(nullptr)
+    , m_pfDlg(nullptr)
+    , m_filterTool(nullptr)
+    , m_annoTool(nullptr)
+    , m_filterLabelTool(nullptr)
+    , m_filterWindowTool(nullptr)
+    , m_dssTool(nullptr)
+    , m_layout(nullptr)
+    , m_uiManager(nullptr)
+    , m_mousePosLabel(nullptr)
 	, m_systemInfoLabel(nullptr)
 	, m_currentFullWidget(nullptr)
-	, m_recentFiles(new ecvRecentFiles(this))
-	, m_lastViewMode(VIEWMODE::ORTHOGONAL)
-	, m_viewModePopupButton(nullptr)
 	, m_exclusiveFullscreen(false)
-	, m_uiFrozen(false)
-	, m_uiManager(nullptr)
-	, m_pickingHub(nullptr)
-	, m_cpeDlg(nullptr)
-	, m_transTool(nullptr)
-	, m_gsTool(nullptr)
-	, m_compDlg(nullptr)
-	, m_tplTool(nullptr)
-	, m_filterTool(nullptr)
-	, m_annoTool(nullptr)
-	, m_dssTool(nullptr)
-	, m_filterLabelTool(nullptr)
-	, m_filterWindowTool(nullptr)
-	, m_surfaceTool(nullptr)
-	, m_ppDlg(nullptr)
-	, m_plpDlg(nullptr)
-	, m_pprDlg(nullptr)
-	, m_pfDlg(nullptr)
-	, m_FirstShow(true)
+    , m_lastViewMode(VIEWMODE::ORTHOGONAL)
 {
-	m_ui->setupUi(this);
+    m_ui->setupUi(this);
 
-	setWindowTitle(QStringLiteral("ErowCloudViewer v") + ecvApp->versionLongStr(false));
+    setWindowTitle(QStringLiteral("ErowCloudViewer v") + ecvApp->versionLongStr(false));
 
-	m_pluginUIManager = new ccPluginUIManager( this, this );
+    m_pluginUIManager = new ccPluginUIManager( this, this );
 	
-	ccTranslationManager::get().populateMenu( m_ui->langAction, ecvApp->translationPath() );
+    ccTranslationManager::get().populateMenu( m_ui->langAction, ecvApp->translationPath() );
 
-	// Initialization
-	initial();
+#ifdef Q_OS_MAC
+    m_ui->actionAbout->setMenuRole( QAction::AboutRole );
+    m_ui->actionAboutPlugins->setMenuRole( QAction::ApplicationSpecificRole );
 
-	// connect actions
-	connectActions();
+    m_ui->actionFullScreen->setText( tr( "Enter Full Screen" ) );
+    m_ui->actionFullScreen->setShortcut( QKeySequence( Qt::CTRL + Qt::META + Qt::Key_F ) );
+#endif
 
-	freezeUI(false);
+    // Initialization
+    initial();
 
-	updateUI();
+    // connect actions
+    connectActions();
 
-	//advanced widgets not handled by QDesigner
-	{
-		//view mode pop-up menu
-		{
-			m_viewModePopupButton = new QToolButton();
-			QMenu* menu = new QMenu(m_viewModePopupButton);
-			menu->addAction(m_ui->actionOrthogonalProjection);
-			menu->addAction(m_ui->actionPerspectiveProjection);
+    freezeUI(false);
 
-			m_viewModePopupButton->setMenu(menu);
-			m_viewModePopupButton->setPopupMode(QToolButton::InstantPopup);
-			m_viewModePopupButton->setToolTip("Set current view mode");
-			m_viewModePopupButton->setStatusTip(m_viewModePopupButton->toolTip());
-			m_ui->ViewToolBar->insertWidget(m_ui->actionZoomAndCenter, m_viewModePopupButton);
-			m_viewModePopupButton->setEnabled(false);
-		}
+    updateUI();
 
-		// custom viewports configuration
-		{
-			QToolBar* customViewpointsToolbar = new ecvCustomViewpointsToolbar(this);
-			customViewpointsToolbar->setObjectName("customViewpointsToolbar");
-			customViewpointsToolbar->layout()->setSpacing(0);
-			this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
-			//this->insertToolBar(m_ui->FilterToolBar, customViewpointsToolbar);
-		}
+    //advanced widgets not handled by QDesigner
+    {
+        //view mode pop-up menu
+        {
+            m_viewModePopupButton = new QToolButton();
+            QMenu* menu = new QMenu(m_viewModePopupButton);
+            menu->addAction(m_ui->actionOrthogonalProjection);
+            menu->addAction(m_ui->actionPerspectiveProjection);
 
-		// orthogonal projection mode (default)
-		{
-			m_ui->actionOrthogonalProjection->trigger();
-			CVLog::Print("Perspective off!");
-		}
-	}
+            m_viewModePopupButton->setMenu(menu);
+            m_viewModePopupButton->setPopupMode(QToolButton::InstantPopup);
+            m_viewModePopupButton->setToolTip("Set current view mode");
+            m_viewModePopupButton->setStatusTip(m_viewModePopupButton->toolTip());
+            m_ui->ViewToolBar->insertWidget(m_ui->actionZoomAndCenter, m_viewModePopupButton);
+            m_viewModePopupButton->setEnabled(false);
+        }
 
-	//restore options
-	{
-		QSettings settings;
+        // custom viewports configuration
+        {
+            QToolBar* customViewpointsToolbar = new ecvCustomViewpointsToolbar(this);
+            customViewpointsToolbar->setObjectName("customViewpointsToolbar");
+            customViewpointsToolbar->layout()->setSpacing(0);
+            this->addToolBar(Qt::TopToolBarArea, customViewpointsToolbar);
+            //this->insertToolBar(m_ui->FilterToolBar, customViewpointsToolbar);
+        }
 
-		// auto pick center
-		bool autoPickRotationCenter = settings.value(ecvPS::AutoPickRotationCenter(), true).toBool();
-		if (autoPickRotationCenter)
-		{
-			m_ui->actionAutoPickPivot->toggle();
-		}
+        // orthogonal projection mode (default)
+        {
+            m_ui->actionOrthogonalProjection->trigger();
+            ecvConsole::Print("Perspective off!");
+        }
+    }
 
-		// show center
-		bool autoShowCenterAxis = settings.value(ecvPS::AutoShowCenter(), false).toBool();
-		m_ui->actionShowPivot->blockSignals(true);
-		m_ui->actionShowPivot->setChecked(autoShowCenterAxis);
-		m_ui->actionShowPivot->blockSignals(false);
-		toggleRotationCenterVisibility(autoShowCenterAxis);
+    //restore options
+    {
+        QSettings settings;
 
-	}
+        // auto pick center
+        bool autoPickRotationCenter = settings.value(ecvPS::AutoPickRotationCenter(), false).toBool();
+        if (autoPickRotationCenter)
+        {
+            m_ui->actionAutoPickPivot->toggle();
+        }
 
-	refreshAll();
+        // show center
+        bool autoShowCenterAxis = settings.value(ecvPS::AutoShowCenter(), true).toBool();
+        m_ui->actionShowPivot->blockSignals(true);
+        m_ui->actionShowPivot->setChecked(autoShowCenterAxis);
+        m_ui->actionShowPivot->blockSignals(false);
+        toggleRotationCenterVisibility(autoShowCenterAxis);
+    }
+
+    refreshAll();
 
 #ifdef QT_DEBUG
-	// efficiency for debug mode
-	m_ui->actionToggleOrientationMarker->toggle();
-	doActionToggleOrientationMarker(false);
+    // efficiency for debug mode
+    m_ui->actionToggleOrientationMarker->toggle();
+    doActionToggleOrientationMarker(false);
 #else
-	doActionToggleOrientationMarker(true);
+    doActionToggleOrientationMarker(true);
 #endif // QT_DEBUG
 
-#ifdef ECV_PYTHON_LIBRARY_BUILD
-	QString applicationPath = QCoreApplication::applicationDirPath();
-	QString pyHome = applicationPath + "/python36";
-	if (!PythonInterface::SetPythonHome(CVTools::fromQString(pyHome).c_str()))
-	{
-		CVLog::Warning(QString("Setting python home failed! Invalid path: [%1].").arg(pyHome));
-	}
-	else
-	{
-		CVLog::Print(QString("Setting python home [%1] successfully!").arg(pyHome));
-	}
+#ifdef USE_PYTHON_MODULE
+    QString applicationPath = QCoreApplication::applicationDirPath();
+    QString pyHome = applicationPath + "/python36";
+    if (!PythonInterface::SetPythonHome(CVTools::FromQString(pyHome).c_str()))
+    {
+        CVLog::Warning(QString("Setting python home failed! Invalid path: [%1].").arg(pyHome));
+    }
+    else
+    {
+        CVLog::Print(QString("Setting python home [%1] successfully!").arg(pyHome));
+    }
 #else
 	m_ui->actionSemanticSegmentation->setEnabled(false);
 #endif
@@ -347,7 +357,128 @@ MainWindow::MainWindow(QWidget *parent)
 #endif
 
 	// print welcome message
-	ecvConsole::Print(tr("[ErowCloudViewer Software start], Welcome to use ErowCloudViewer"));
+    ecvConsole::Print(tr("[ErowCloudViewer Software start], Welcome to use ErowCloudViewer"));
+}
+
+MainWindow::~MainWindow() {
+    cancelPreviousPickingOperation(false); //just in case
+
+    assert(m_ccRoot && m_mdiArea);
+    m_ccRoot->unloadAll();
+    m_ccRoot->disconnect();
+    m_mdiArea->disconnect();
+
+    //we don't want any other dialog/function to use the following structures
+    ccDBRoot* ccRoot = m_ccRoot;
+    m_ccRoot = nullptr;
+
+    m_cpeDlg = nullptr;
+    m_mousePosLabel = nullptr;
+    m_systemInfoLabel = nullptr;
+
+    m_filterWindowTool = nullptr;
+    m_gsTool = nullptr;
+    m_transTool = nullptr;
+    m_filterTool = nullptr;
+    m_annoTool = nullptr;
+    m_dssTool = nullptr;
+    m_filterLabelTool = nullptr;
+    m_compDlg = nullptr;
+    m_ppDlg = nullptr;
+    m_plpDlg = nullptr;
+    m_pprDlg = nullptr;
+    m_pfDlg = nullptr;
+
+    //release all 'overlay' dialogs
+    while (!m_mdiDialogs.empty())
+    {
+        ccMDIDialogs mdiDialog = m_mdiDialogs.back();
+        m_mdiDialogs.pop_back();
+
+        mdiDialog.dialog->disconnect();
+        mdiDialog.dialog->stop(false);
+        mdiDialog.dialog->setParent(nullptr);
+        delete mdiDialog.dialog;
+    }
+
+    //m_mdiDialogs.clear();
+    std::vector<QWidget*> windows;
+    GetRenderWindows(windows);
+    for (QWidget *window : windows)
+    {
+        m_mdiArea->removeSubWindow(window);
+    }
+
+    ecvDisplayTools::SetSceneDB(nullptr);
+    ecvDisplayTools::ReleaseInstance();
+
+    if (ccRoot)
+    {
+        delete ccRoot;
+        ccRoot = nullptr;
+    }
+
+    delete m_ui;
+    m_ui = nullptr;
+
+    // if we flush the console, it will try to display the console window while we are destroying everything!
+    ecvConsole::ReleaseInstance(false);
+}
+
+// MainWindow Initialization
+void MainWindow::initial() {
+    //MDI Area
+    {
+        m_mdiArea = new QMdiArea(this);
+        setCentralWidget(m_mdiArea);
+        connect(m_mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::updateMenus);
+        connect(m_mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::on3DViewActivated);
+        m_mdiArea->installEventFilter(this);
+    }
+
+    bool stereoMode = QSurfaceFormat::defaultFormat().stereo();
+    ecvDisplayTools::Init(new PCLDisplayTools(), this, stereoMode);
+
+    // init themes
+    initThemes();
+
+    // init languages
+    initLanguages();
+
+    // init console
+    initConsole();
+
+    // init db root
+    initDBRoot();
+
+    // init status bar
+    initStatusBar();
+
+    QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
+    viewWidget->setMinimumSize(400, 300);
+    m_mdiArea->addSubWindow(viewWidget);
+
+    //picking hub
+    {
+        m_pickingHub = new ccPickingHub(this, this);
+        connect(m_mdiArea, &QMdiArea::subWindowActivated, m_pickingHub, &ccPickingHub::onActiveWindowChanged);
+    }
+
+    if (m_pickingHub)
+    {
+        //we must notify the picking hub as well if the window is destroyed
+        connect(this, &QObject::destroyed, m_pickingHub, &ccPickingHub::onActiveWindowDeleted);
+    }
+
+    viewWidget->showMaximized();
+    viewWidget->update();
+
+}
+
+void MainWindow::initConsole() {
+    // set Console
+    ecvConsole::Init(m_ui->consoleWidget, this, this);
+    m_ui->actionEnableQtWarnings->setChecked(ecvConsole::QtMessagesEnabled());
 }
 
 void MainWindow::connectActions()
@@ -369,6 +500,7 @@ void MainWindow::connectActions()
 	connect(m_ui->actionRGBToGreyScale, &QAction::triggered, this, &MainWindow::doActionRGBToGreyScale);
 	connect(m_ui->actionInterpolateColors, &QAction::triggered, this, &MainWindow::doActionInterpolateColors);
 	connect(m_ui->actionEnhanceRGBWithIntensities, &QAction::triggered, this, &MainWindow::doActionEnhanceRGBWithIntensities);
+    connect(m_ui->actionColorFromScalarField, &QAction::triggered, this, &MainWindow::doActionColorFromScalars);
 	connect(m_ui->actionClearColor, &QAction::triggered, this, [=]() {
 		clearSelectedEntitiesProperty(ccEntityAction::CLEAR_PROPERTY::COLORS);
 	});
@@ -536,7 +668,6 @@ void MainWindow::connectActions()
 	connect(m_ui->actionLabelConnectedComponents, &QAction::triggered, this, &MainWindow::doActionLabelConnectedComponents);
 	connect(m_ui->actionComputeGeometricFeature,  &QAction::triggered, this, &MainWindow::doComputeGeometricFeature);
 	connect(m_ui->actionUnroll,  &QAction::triggered, this, &MainWindow::doActionUnroll);
-	connect(m_ui->actionSurface, &QAction::triggered, this, &MainWindow::activateSurfaceWindowMode);
 	connect(m_ui->actionPointListPicking,	&QAction::triggered, this, &MainWindow::activatePointListPickingMode);
 	connect(m_ui->actionPointPicking,		&QAction::triggered, this, &MainWindow::activatePointPickingMode);
 
@@ -580,17 +711,11 @@ void MainWindow::connectActions()
 	connect(m_ui->actionToggleOrientationMarker, &QAction::triggered, this, &MainWindow::doActionToggleOrientationMarker);
 	connect(m_ui->actionGlobalShiftSettings, &QAction::triggered, this, &MainWindow::doActionGlobalShiftSeetings);
 
-	// init themes
-	initThemes();
-
-	// init languages
-	initLanguages();
-
 	// About (connect)
 	QObject::connect(m_ui->helpAction, &QAction::triggered, this, &MainWindow::help);
 	connect(m_ui->actionAboutPlugins, &QAction::triggered, m_pluginUIManager, &ccPluginUIManager::showAboutDialog);
 	QObject::connect(m_ui->actionEnableQtWarnings, &QAction::toggled, this, &MainWindow::doEnableQtWarnings);
-	connect(m_ui->aboutAction, &QAction::triggered, this, [this]() {
+    connect(m_ui->actionAbout, &QAction::triggered, this, [this]() {
 		ecvAboutDialog* aboutDialog = new ecvAboutDialog(this);
 		aboutDialog->exec();
 	});
@@ -610,6 +735,125 @@ void MainWindow::connectActions()
 
 	// Set up dynamic menus
 	m_ui->menuFile->insertMenu(m_ui->actionSave, m_recentFiles->menu());
+}
+
+void MainWindow::initThemes()
+{
+    // Option (connect)
+    m_ui->DfaultThemeAction->setData(QVariant(Themes::THEME_DEFAULT));
+    m_ui->BlueThemeAction->setData(QVariant(Themes::THEME_BLUE));
+    m_ui->LightBlueThemeAction->setData(QVariant(Themes::THEME_LIGHTBLUE));
+    m_ui->DarkBlueThemeAction->setData(QVariant(Themes::THEME_DARKBLUE));
+    m_ui->BlackThemeAction->setData(QVariant(Themes::THEME_BLACK));
+    m_ui->LightBlackThemeAction->setData(QVariant(Themes::THEME_LIGHTBLACK));
+    m_ui->FlatBlackThemeAction->setData(QVariant(Themes::THEME_FLATBLACK));
+    m_ui->DarkBlackThemeAction->setData(QVariant(Themes::THEME_DarkBLACK));
+    m_ui->GrayThemeAction->setData(QVariant(Themes::THEME_GRAY));
+    m_ui->LightGrayThemeAction->setData(QVariant(Themes::THEME_LIGHTGRAY));
+    m_ui->DarkGrayThemeAction->setData(QVariant(Themes::THEME_DarkGRAY));
+    m_ui->FlatWhiteThemeAction->setData(QVariant(Themes::THEME_FLATWHITE));
+    m_ui->PsBlackThemeAction->setData(QVariant(Themes::THEME_PSBLACK));
+    m_ui->SilverThemeAction->setData(QVariant(Themes::THEME_SILVER));
+    m_ui->BFThemeAction->setData(QVariant(Themes::THEME_BF));
+    m_ui->TestThemeAction->setData(QVariant(Themes::THEME_TEST));
+    m_ui->ParaviewThemeAction->setData(QVariant(Themes::THEME_PARAVIEW));
+
+    connect(m_ui->DfaultThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->BlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->LightBlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->DarkBlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->BlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->LightBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->FlatBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->DarkBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->GrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->LightGrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->DarkGrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->FlatWhiteThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->PsBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->SilverThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->BFThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->TestThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->ParaviewThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+}
+
+void MainWindow::initLanguages()
+{
+    m_ui->englishAction->setData(QVariant(CLOUDVIEWER_LANG_ENGLISH));
+    m_ui->chineseAction->setData(QVariant(CLOUDVIEWER_LANG_CHINESE));
+    connect(m_ui->englishAction, SIGNAL(triggered()), this, SLOT(changeLanguage()));
+    connect(m_ui->chineseAction, SIGNAL(triggered()), this, SLOT(changeLanguage()));
+}
+
+void MainWindow::initStatusBar()
+{
+    // set mouse position label
+    {
+        m_mousePosLabel = new QLabel(this);
+        QFont ft;
+        ft.setBold(true);
+        m_mousePosLabel->setFont(ft);
+        m_mousePosLabel->setMinimumSize(m_mousePosLabel->sizeHint());
+        m_mousePosLabel->setAlignment(Qt::AlignHCenter);
+        m_ui->statusBar->insertWidget(0, m_mousePosLabel, 3);
+        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mousePosChanged, this, &MainWindow::onMousePosChanged);
+    }
+
+    // set system info label
+    {
+        m_systemInfoLabel = new QLabel(this);
+        m_systemInfoLabel->setMinimumSize(m_systemInfoLabel->sizeHint());
+        m_systemInfoLabel->setAlignment(Qt::AlignHCenter);
+        m_systemInfoLabel->setText(
+            tr("<style> a{text-decoration: none} </style> <a href=\"http://www.erow.cn\">%1 | www.erow.cn</a>").arg(Settings::TITLE + " " + Settings::APP_VERSION));
+        m_systemInfoLabel->setTextFormat(Qt::RichText);
+        m_systemInfoLabel->setOpenExternalLinks(true);
+        m_ui->statusBar->addPermanentWidget(m_systemInfoLabel);
+    }
+
+    //QMainWindow::statusBar()->setStyleSheet(QString("QStatusBar::item{border: 0px}"));
+    QMainWindow::statusBar()->showMessage(tr("Ready"));
+}
+
+void MainWindow::initPlugins()
+{
+    m_pluginUIManager->init();
+
+    // Set up dynamic tool bars
+    addToolBar(Qt::RightToolBarArea, m_pluginUIManager->glPclToolbar());
+    addToolBar(Qt::RightToolBarArea, m_pluginUIManager->mainPluginToolbar());
+
+    for (QToolBar *toolbar : m_pluginUIManager->additionalPluginToolbars())
+    {
+        addToolBar(Qt::TopToolBarArea, toolbar);
+    }
+    // Set up dynamic menus
+    m_ui->menuBar->insertMenu(m_ui->menuOption->menuAction(), m_pluginUIManager->pluginMenu());
+    m_ui->menuBar->insertMenu(m_ui->menuOption->menuAction(), m_pluginUIManager->pclAlgorithmMenu());
+
+    m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowMainPluginToolbar());
+    m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowPCLAlgorithmToolbar());
+}
+
+void MainWindow::initDBRoot()
+{
+    //db-tree
+    {
+        m_ccRoot = new ccDBRoot(m_ui->dbTreeView, m_ui->propertiesTreeView, this);
+        connect(m_ccRoot, &ccDBRoot::selectionChanged, this, &MainWindow::updateUIWithSelection);
+        connect(m_ccRoot, &ccDBRoot::dbIsEmpty, [&]() { updateUIWithSelection(); updateMenus(); }); //we don't call updateUI because there's no need to update the properties dialog
+        connect(m_ccRoot, &ccDBRoot::dbIsNotEmptyAnymore, [&]() { updateUIWithSelection(); updateMenus(); }); //we don't call updateUI because there's no need to update the properties dialog
+    }
+
+    ecvDisplayTools::SetSceneDB(m_ccRoot->getRootEntity());
+    m_ccRoot->updatePropertiesView();
+
+    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::entitySelectionChanged, this, [=](ccHObject *entity) {
+        m_ccRoot->selectEntity(entity);
+    });
+    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::entitiesSelectionChanged, this, [=](std::unordered_set<int> entities) {
+        m_ccRoot->selectEntities(entities);
+    });
 }
 
 void MainWindow::toggleActiveWindowAutoPickRotCenter(bool state)
@@ -655,124 +899,6 @@ void MainWindow::toggleRotationCenterVisibility(bool state)
 	}
 }
 
-void MainWindow::initLanguages()
-{
-	m_ui->englishAction->setData(QVariant(CLOUDVIEWER_LANG_ENGLISH));
-	m_ui->chineseAction->setData(QVariant(CLOUDVIEWER_LANG_CHINESE));
-	connect(m_ui->englishAction, SIGNAL(triggered()), this, SLOT(changeLanguage()));
-	connect(m_ui->chineseAction, SIGNAL(triggered()), this, SLOT(changeLanguage()));
-}
-
-void MainWindow::initThemes()
-{
-	// Option (connect)
-	m_ui->DfaultThemeAction->setData(QVariant(Themes::THEME_DEFAULT));
-	m_ui->BlueThemeAction->setData(QVariant(Themes::THEME_BLUE));
-	m_ui->LightBlueThemeAction->setData(QVariant(Themes::THEME_LIGHTBLUE));
-	m_ui->DarkBlueThemeAction->setData(QVariant(Themes::THEME_DARKBLUE));
-	m_ui->BlackThemeAction->setData(QVariant(Themes::THEME_BLACK));
-	m_ui->LightBlackThemeAction->setData(QVariant(Themes::THEME_LIGHTBLACK));
-	m_ui->FlatBlackThemeAction->setData(QVariant(Themes::THEME_FLATBLACK));
-	m_ui->DarkBlackThemeAction->setData(QVariant(Themes::THEME_DarkBLACK));
-	m_ui->GrayThemeAction->setData(QVariant(Themes::THEME_GRAY));
-	m_ui->LightGrayThemeAction->setData(QVariant(Themes::THEME_LIGHTGRAY));
-	m_ui->DarkGrayThemeAction->setData(QVariant(Themes::THEME_DarkGRAY));
-	m_ui->FlatWhiteThemeAction->setData(QVariant(Themes::THEME_FLATWHITE));
-	m_ui->PsBlackThemeAction->setData(QVariant(Themes::THEME_PSBLACK));
-	m_ui->SilverThemeAction->setData(QVariant(Themes::THEME_SILVER));
-	m_ui->BFThemeAction->setData(QVariant(Themes::THEME_BF));
-	m_ui->TestThemeAction->setData(QVariant(Themes::THEME_TEST));
-	m_ui->ParaviewThemeAction->setData(QVariant(Themes::THEME_PARAVIEW));
-
-	connect(m_ui->DfaultThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->BlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->LightBlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->DarkBlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->BlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->LightBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->FlatBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->DarkBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->GrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->LightGrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->DarkGrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->FlatWhiteThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->PsBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->SilverThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->BFThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->TestThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-	connect(m_ui->ParaviewThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-}
-
-// MainWindow Initialization
-void MainWindow::initial() {
-	//MDI Area
-	{
-		m_mdiArea = new QMdiArea(this);
-		setCentralWidget(m_mdiArea);
-		connect(m_mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::updateMenus);
-		connect(m_mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::on3DViewActivated);
-		m_mdiArea->installEventFilter(this);
-	}
-
-	ecvDisplayTools::Init(new PCLDisplayTools(), this);
-
-	initConsole();
-
-	initDBRoot();
-
-	initStatusBar();
-
-	QWidget* viewWidget = ecvDisplayTools::GetMainScreen();
-	viewWidget->setMinimumSize(400, 300);
-	m_mdiArea->addSubWindow(viewWidget);
-
-	//picking hub
-	{
-		m_pickingHub = new ccPickingHub(this, this);
-		connect(m_mdiArea, &QMdiArea::subWindowActivated, m_pickingHub, &ccPickingHub::onActiveWindowChanged);
-	}
-
-	if (m_pickingHub)
-	{
-		//we must notify the picking hub as well if the window is destroyed
-		connect(this, &QObject::destroyed, m_pickingHub, &ccPickingHub::onActiveWindowDeleted);
-	}
-
-	viewWidget->showMaximized();
-	viewWidget->update();
-
-}
-
-void MainWindow::initStatusBar()
-{
-	// set mouse position label
-	{
-		m_mousePosLabel = new QLabel(this);
-		QFont ft;
-		ft.setBold(true);
-		m_mousePosLabel->setFont(ft);
-		m_mousePosLabel->setMinimumSize(m_mousePosLabel->sizeHint());
-		m_mousePosLabel->setAlignment(Qt::AlignHCenter);
-		m_ui->statusBar->insertWidget(0, m_mousePosLabel, 3);
-		connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mousePosChanged, this, &MainWindow::onMousePosChanged);
-	}
-
-	// set system info label
-	{
-		m_systemInfoLabel = new QLabel(this);
-		m_systemInfoLabel->setMinimumSize(m_systemInfoLabel->sizeHint());
-		m_systemInfoLabel->setAlignment(Qt::AlignHCenter);
-		m_systemInfoLabel->setText(
-			tr("<style> a{text-decoration: none} </style> <a href=\"http://www.erow.cn\">%1 | www.erow.cn</a>").arg(Settings::TITLE + " " + Settings::APP_VERSION));
-		m_systemInfoLabel->setTextFormat(Qt::RichText);
-		m_systemInfoLabel->setOpenExternalLinks(true);
-		m_ui->statusBar->addPermanentWidget(m_systemInfoLabel);
-	}
-
-	//QMainWindow::statusBar()->setStyleSheet(QString("QStatusBar::item{border: 0px}"));
-	QMainWindow::statusBar()->showMessage(tr("Ready"));
-}
-
 void MainWindow::onMousePosChanged(const QPoint &pos)
 {
 	if (m_mousePosLabel)
@@ -782,112 +908,6 @@ void MainWindow::onMousePosChanged(const QPoint &pos)
 		QString labelText = QString("Location | (%1, %2)").arg(QString::number(x)).arg(QString::number(y));
 		m_mousePosLabel->setText(labelText);
 	}
-}
-
-void MainWindow::initPlugins()
-{
-	m_pluginUIManager->init();
-
-	// Set up dynamic tool bars
-	addToolBar(Qt::RightToolBarArea, m_pluginUIManager->glPclToolbar());
-	addToolBar(Qt::RightToolBarArea, m_pluginUIManager->mainPluginToolbar());
-
-	for (QToolBar *toolbar : m_pluginUIManager->additionalPluginToolbars())
-	{
-		addToolBar(Qt::TopToolBarArea, toolbar);
-	}
-	// Set up dynamic menus
-	m_ui->menuBar->insertMenu(m_ui->menuOption->menuAction(), m_pluginUIManager->pluginMenu());
-	m_ui->menuBar->insertMenu(m_ui->menuOption->menuAction(), m_pluginUIManager->pclAlgorithmMenu());
-
-	m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowMainPluginToolbar());
-	m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowPCLAlgorithmToolbar());
-}
-
-void MainWindow::initDBRoot()
-{
-	//db-tree
-	{
-		m_ccRoot = new ccDBRoot(m_ui->dbTreeView, m_ui->propertiesTreeView, this);
-		connect(m_ccRoot, &ccDBRoot::selectionChanged, this, &MainWindow::updateUIWithSelection);
-		connect(m_ccRoot, &ccDBRoot::dbIsEmpty, [&]() { updateUIWithSelection(); updateMenus(); }); //we don't call updateUI because there's no need to update the properties dialog
-		connect(m_ccRoot, &ccDBRoot::dbIsNotEmptyAnymore, [&]() { updateUIWithSelection(); updateMenus(); }); //we don't call updateUI because there's no need to update the properties dialog
-	}
-
-	ecvDisplayTools::SetSceneDB(m_ccRoot->getRootEntity());
-	m_ccRoot->updatePropertiesView();
-
-	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::entitySelectionChanged, this, [=](ccHObject *entity) {
-		m_ccRoot->selectEntity(entity);
-	});
-	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::entitiesSelectionChanged, this, [=](std::unordered_set<int> entities) {
-		m_ccRoot->selectEntities(entities);
-	});
-}
-
-MainWindow::~MainWindow() {
-	cancelPreviousPickingOperation(false); //just in case
-
-	assert(m_ccRoot && m_mdiArea);
-	m_ccRoot->unloadAll();
-	m_ccRoot->disconnect();
-	m_mdiArea->disconnect();
-
-	//we don't want any other dialog/function to use the following structures
-	ccDBRoot* ccRoot = m_ccRoot;
-	m_ccRoot = nullptr;
-
-	m_cpeDlg = nullptr;
-	m_mousePosLabel = nullptr;
-	m_systemInfoLabel = nullptr;
-
-	m_filterWindowTool = nullptr;
-	m_gsTool = nullptr;
-	m_transTool = nullptr;
-	m_filterTool = nullptr;
-	m_annoTool = nullptr;
-	m_dssTool = nullptr;
-	m_filterLabelTool = nullptr;
-	m_compDlg = nullptr;
-	m_ppDlg = nullptr;
-	m_plpDlg = nullptr;
-	m_pprDlg = nullptr;
-	m_pfDlg = nullptr;
-
-	//release all 'overlay' dialogs
-	while (!m_mdiDialogs.empty())
-	{
-		ccMDIDialogs mdiDialog = m_mdiDialogs.back();
-		m_mdiDialogs.pop_back();
-
-		mdiDialog.dialog->disconnect();
-		mdiDialog.dialog->stop(false);
-		mdiDialog.dialog->setParent(0);
-		delete mdiDialog.dialog;
-	}
-
-	//m_mdiDialogs.clear();
-	std::vector<QWidget*> windows;
-	GetRenderWindows(windows);
-	for (QWidget *window : windows)
-	{
-		m_mdiArea->removeSubWindow(window);
-	}
-
-	ecvDisplayTools::SetSceneDB(0);
-	ecvDisplayTools::ReleaseInstance();
-
-	if (ccRoot)
-	{
-		delete ccRoot;
-		ccRoot = nullptr;
-	}
-
-	delete m_ui;
-	m_ui = nullptr;
-
-	// if we flush the console, it will try to display the console window while we are destroying everything!
-	ecvConsole::ReleaseInstance(false);
 }
 
 void MainWindow::setAutoPickPivot(bool state)
@@ -938,7 +958,7 @@ QMdiSubWindow* MainWindow::getMDISubWindow(QWidget* win)
 	}
 
 	//not found!
-	return 0;
+    return nullptr;
 }
 
 void MainWindow::update3DViewsMenu()
@@ -1060,7 +1080,7 @@ QWidget* MainWindow::getWindow(int index) const
 	else
 	{
 		assert(false);
-		return 0;
+        return nullptr;
 	}
 }
 
@@ -1068,7 +1088,7 @@ QWidget* MainWindow::getActiveWindow()
 {
 	if (!m_mdiArea)
 	{
-		return 0;
+        return nullptr;
 	}
 
 	QMdiSubWindow *activeSubWindow = m_mdiArea->activeSubWindow();
@@ -1085,7 +1105,7 @@ QWidget* MainWindow::getActiveWindow()
 		}
 	}
 
-	return 0;
+    return nullptr;
 }
 
 void MainWindow::ChangeStyle(const QString &qssFile)
@@ -1448,7 +1468,7 @@ void MainWindow::doActionEditCamera()
 	if (!qWin)
 		return;
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	if (!m_cpeDlg)
 	{
 		m_cpeDlg = new ecvCameraParamEditDlg(qWin, m_pickingHub);
@@ -1491,7 +1511,7 @@ void MainWindow::doActionScreenShot()
 		return;
 	}
 
-	ecvDisplayTools::SaveScreenshot(CVTools::fromQString(selectedFilename));
+	ecvDisplayTools::SaveScreenshot(CVTools::FromQString(selectedFilename));
 
 	ecvConsole::Print(tr("Screen Shot has been saved in %1").arg(selectedFilename));
 
@@ -1999,9 +2019,9 @@ void MainWindow::doActionApplyScale()
 				CCVector3 bbMin = bbox.minCorner();
 				CCVector3 bbMax = bbox.maxCorner();
 
-				double maxx = std::max(std::abs(bbMin.x), std::abs(bbMax.x));
-				double maxy = std::max(std::abs(bbMin.y), std::abs(bbMax.y));
-				double maxz = std::max(std::abs(bbMin.z), std::abs(bbMax.z));
+                double maxx = static_cast<double>(std::max(std::abs(bbMin.x), std::abs(bbMax.x)));
+                double maxy = static_cast<double>(std::max(std::abs(bbMin.y), std::abs(bbMax.y)));
+                double maxz = static_cast<double>(std::max(std::abs(bbMin.z), std::abs(bbMax.z)));
 
 				const double maxCoord = ecvGlobalShiftManager::MaxCoordinateAbsValue();
 				bool oldCoordsWereTooBig = (maxx > maxCoord
@@ -2010,9 +2030,12 @@ void MainWindow::doActionApplyScale()
 
 				if (!oldCoordsWereTooBig)
 				{
-					maxx = std::max(std::abs((bbMin.x - C.x) * scales.x + C.x), std::abs((bbMax.x - C.x) * scales.x + C.x));
-					maxy = std::max(std::abs((bbMin.y - C.y) * scales.y + C.y), std::abs((bbMax.y - C.y) * scales.y + C.y));
-					maxz = std::max(std::abs((bbMin.z - C.z) * scales.z + C.z), std::abs((bbMax.z - C.z) * scales.z + C.z));
+                    maxx = static_cast<double>(std::max(std::abs((bbMin.x - C.x) * scales.x + C.x),
+                                                        std::abs((bbMax.x - C.x) * scales.x + C.x)));
+                    maxy = static_cast<double>(std::max(std::abs((bbMin.y - C.y) * scales.y + C.y),
+                                                        std::abs((bbMax.y - C.y) * scales.y + C.y)));
+                    maxz = static_cast<double>(std::max(std::abs((bbMin.z - C.z) * scales.z + C.z),
+                                                        std::abs((bbMax.z - C.z) * scales.z + C.z)));
 
 					bool newCoordsAreTooBig = (maxx > maxCoord
 						|| maxy > maxCoord
@@ -2129,7 +2152,7 @@ void MainWindow::activateTranslateRotateMode()
 	if (!getActiveWindow())
 		return;
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	QvtkTransformTool* qTransTool =
 		new QvtkTransformTool(ecvDisplayTools::GetVisualizer3D());
 	if (!m_transTool)
@@ -2138,7 +2161,7 @@ void MainWindow::activateTranslateRotateMode()
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 
 	if (!m_transTool->setTansformTool(qTransTool) || !m_transTool->linkWith(ecvDisplayTools::GetCurrentScreen()))
 	{
@@ -2299,7 +2322,6 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	//actionComputeQuadric3D->setEnabled(atLeastOneCloud);
 	m_ui->actionComputeBestFitBB->setEnabled(atLeastOneEntity);
 	m_ui->actionComputeGeometricFeature->setEnabled(atLeastOneCloud);
-	m_ui->actionSurface->setEnabled(atLeastOneCloud || atLeastOneMesh || atLeastOnePolyline);
 	m_ui->actionRemoveDuplicatePoints->setEnabled(atLeastOneCloud);
 	m_ui->actionFitPlane->setEnabled(atLeastOneEntity);
 	m_ui->actionFitPlaneProxy->setEnabled(atLeastOneEntity);
@@ -2355,6 +2377,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionClearColor->setEnabled(atLeastOneColor);
 	m_ui->actionRGBToGreyScale->setEnabled(atLeastOneColor);
 	m_ui->actionEnhanceRGBWithIntensities->setEnabled(atLeastOneColor);
+    m_ui->actionColorFromScalarField->setEnabled(atLeastOneSF);
 
 	// == 1
 	bool exactlyOneEntity = (selInfo.selCount == 1);
@@ -2410,9 +2433,9 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionStreamlineFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
 	m_ui->actionThresholdFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
 	
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 	m_ui->actionSemanticSegmentation->setEnabled(atLeastOneCloud);
-#endif // ECV_PYTHON_LIBRARY_BUILD
+#endif // USE_PYTHON_MODULE
 
 	m_ui->actionDBScanCluster->setEnabled(atLeastOneCloud);
 	m_ui->actionPlaneSegmentation->setEnabled(atLeastOneCloud);
@@ -2816,6 +2839,7 @@ void MainWindow::activatePointListPickingMode()
 
 void MainWindow::deactivatePointListPickingMode(bool state)
 {
+    Q_UNUSED(state);
 	if (m_plpDlg)
 	{
 		m_plpDlg->linkWithCloud(nullptr);
@@ -2854,6 +2878,7 @@ void MainWindow::activatePointPickingMode()
 
 void MainWindow::deactivatePointPickingMode(bool state)
 {
+    Q_UNUSED(state);
 	freezeUI(false);
 	updateUI();
 }
@@ -2976,13 +3001,13 @@ void MainWindow::repositionOverlayDialog(ccMDIDialogs& mdiDlg)
 void AddToRemoveList(ccHObject* toRemove, ccHObject::Container& toBeRemovedList)
 {
 	//is a parent or sibling already in the "toBeRemoved" list?
-	int j = 0;
-	int count = static_cast<int>(toBeRemovedList.size());
+    std::size_t j = 0;
+    std::size_t  count = toBeRemovedList.size();
 	while (j < count)
 	{
 		if (toBeRemovedList[j]->isAncestorOf(toRemove))
 		{
-			toRemove = 0;
+            toRemove = nullptr;
 			break;
 		}
 		else if (toRemove->isAncestorOf(toBeRemovedList[j]))
@@ -4286,7 +4311,7 @@ void MainWindow::doActionComputeScatteringAngles()
 		ScalarType theta = std::acos(std::min(std::abs(cosTheta), 1.0f));
 
 		if (toDegreeFlag)
-			theta *= static_cast<ScalarType>(CV_RAD_TO_DEG);
+            theta = CVLib::RadiansToDegrees(theta);
 
 		angles->setValue(i, theta);
 	}
@@ -5348,7 +5373,7 @@ void MainWindow::doConvertPolylinesToMesh()
 
 void MainWindow::doBSplineFittingFromCloud()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	//find candidates
 	std::vector<ccPointCloud*> clouds;
 	{
@@ -5368,16 +5393,16 @@ void MainWindow::doBSplineFittingFromCloud()
 		return;
 	}
 
-	ccPolyline* polyLine = CurveFittingTool::BsplineFitting(*clouds[0]);
-	if (polyLine)
-	{
-		addToDB(polyLine);
-	}
+    ccPolyline* polyLine = CurveFittingTool::CurveFitting::BsplineFitting(*clouds[0]);
+    if (polyLine)
+    {
+        addToDB(polyLine);
+    }
 
-	if (polyLine && m_ccRoot)
-	{
-		m_ccRoot->selectEntity(polyLine);
-	}
+    if (polyLine && m_ccRoot)
+    {
+        m_ccRoot->selectEntity(polyLine);
+    }
 
 	updateUI();
 
@@ -5752,7 +5777,7 @@ void MainWindow::doActionComparePlanes()
 	p2->getEquation(N2, d2);
 
 	double angle_rad = N1.angle_rad(N2);
-	info << QString("Angle P1/P2: %1 deg.").arg(angle_rad * CV_RAD_TO_DEG);
+    info << QString("Angle P1/P2: %1 deg.").arg(CVLib::RadiansToDegrees(angle_rad));
 	CVLog::Print(QString("[Compare] ") + info.last());
 
 	PointCoordinateType planeEq1[4] = { N1.x, N1.y, N1.z, d1 };
@@ -6015,6 +6040,19 @@ void MainWindow::doActionEnhanceRGBWithIntensities()
 	refreshAll();
 }
 
+void MainWindow::doActionColorFromScalars() {
+    for (ccHObject* entity : getSelectedEntities()) {
+        // for "real" point clouds only
+        ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(entity);
+        if (cloud) {
+            // create color from scalar dialogue
+            ccColorFromScalarDlg* cfsDlg =
+                    new ccColorFromScalarDlg(this, cloud);
+            cfsDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+            cfsDlg->show();
+        }
+    }
+}
 
 void MainWindow::doActionSORFilter()
 {
@@ -6367,12 +6405,6 @@ void MainWindow::doActionClone()
 	}
 
 	updateUI();
-}
-
-void MainWindow::initConsole() {
-	// set Console
-	ecvConsole::Init(m_ui->consoleWidget, this, this);
-	m_ui->actionEnableQtWarnings->setChecked(ecvConsole::QtMessagesEnabled());
 }
 
 // consoleTable right click envent
@@ -7554,9 +7586,9 @@ void MainWindow::doActionComputeBestICPRmsMatrix()
 		//init all possible transformations
 		static const double angularStep_deg = 45.0;
 		unsigned phiSteps = static_cast<unsigned>(360.0 / angularStep_deg);
-		assert(std::abs(360.0 - phiSteps * angularStep_deg) < ZERO_TOLERANCE);
-		unsigned thetaSteps = static_cast<unsigned>(180.0 / angularStep_deg);
-		assert(std::abs(180.0 - thetaSteps * angularStep_deg) < ZERO_TOLERANCE);
+        assert( CVLib::LessThanEpsilon( std::abs(360.0 - phiSteps * angularStep_deg) ) );
+        unsigned thetaSteps = static_cast<unsigned>(180.0 / angularStep_deg);
+        assert( CVLib::LessThanEpsilon( std::abs(180.0 - thetaSteps * angularStep_deg) ) );
 		unsigned rotCount = phiSteps * (thetaSteps - 1) + 2;
 		matrices.reserve(rotCount);
 		matrixAngles.reserve(rotCount);
@@ -8243,9 +8275,9 @@ void MainWindow::doActionImportSFFromFile()
 	// we update current file path
 	currentPath = QFileInfo(selectedFilename).absolutePath();
 	ecvSettingManager::setValue(ecvPS::LoadFile(), ecvPS::CurrentPath(), currentPath);
-	std::string filename = CVTools::fromQString(selectedFilename);
+	std::string filename = CVTools::FromQString(selectedFilename);
 
-	std::string scalarName = CVTools::fromQString(QFileInfo(selectedFilename).baseName());
+	std::string scalarName = CVTools::FromQString(QFileInfo(selectedFilename).baseName());
 
 	std::vector<size_t> scalars;
 	if (!CVTools::QMappingReader(filename, scalars))
@@ -8611,16 +8643,20 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 			else
 			{
 				globalBBmin = CCVector3d(std::min(globalBBmin.x, Ag.x),
-					std::min(globalBBmin.y, Ag.y),
-					std::min(globalBBmin.z, Ag.z));
+                                         std::min(globalBBmin.y, Ag.y),
+                                         std::min(globalBBmin.z, Ag.z));
 				globalBBmax = CCVector3d(std::max(globalBBmax.x, Bg.x),
-					std::max(globalBBmax.y, Bg.y),
-					std::max(globalBBmax.z, Bg.z));
+                                         std::max(globalBBmax.y, Bg.y),
+                                         std::max(globalBBmax.z, Bg.z));
 
-				if (uniqueShift)
-					uniqueShift = ((shifted->getGlobalShift() - shift).norm() < ZERO_TOLERANCE);
-				if (uniqueScale)
-					uniqueScale = (std::abs(shifted->getGlobalScale() - scale) < ZERO_TOLERANCE);
+                if (uniqueShift)
+                {
+                    uniqueShift = CVLib::LessThanEpsilon( (shifted->getGlobalShift() - shift).norm() );
+                }
+                if (uniqueScale)
+                {
+                    uniqueScale = CVLib::LessThanEpsilon( std::abs(shifted->getGlobalScale() - scale) );
+                }
 			}
 
 			shiftedEntities.emplace_back(shifted, entity);
@@ -8687,7 +8723,7 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 				assert(shifted->getGlobalScale() > 0);
 				double scaleCoef = scale / shifted->getGlobalScale();
 
-				if (T.norm() > ZERO_TOLERANCE || std::abs(scaleCoef - 1.0) > ZERO_TOLERANCE)
+                if (CVLib::GreaterThanEpsilon( T.norm() ) || CVLib::GreaterThanEpsilon( std::abs(scaleCoef - 1.0) ))
 				{
 					ccGLMatrix transMat;
 					transMat.toIdentity();
@@ -8774,168 +8810,108 @@ void MainWindow::deactivateFilterWindowMode(bool state)
 	updateUI();
 }
 
-void MainWindow::activateSurfaceWindowMode()
-{
-	if (!haveSelection())
-	{
-		return;
-	}
-
-	if (!m_surfaceTool)
-	{
-		m_surfaceTool = new ecvRenderSurfaceTool(this);
-		connect(m_surfaceTool, &ccOverlayDialog::processFinished, this, &MainWindow::deactivateSurfaceWindowMode);
-		registerOverlayDialog(m_surfaceTool, Qt::TopRightCorner);
-	}
-	m_surfaceTool->linkWith(ecvDisplayTools::GetCurrentScreen());
-
-	//we have to use a local copy: 'unselectEntity' will change the set of currently selected entities!
-	ccHObject::Container selectedEntities = getSelectedEntities();
-	for (ccHObject *entity : selectedEntities)
-	{
-		if (m_surfaceTool->addAssociatedEntity(entity))
-		{
-			//automatically deselect the entity (to avoid seeing its bounding box ;)
-			m_ccRoot->unselectEntity(entity);
-		}
-	}
-
-	if (m_surfaceTool->getNumberOfAssociatedEntity() == 0)
-	{
-		m_surfaceTool->close();
-		return;
-	}
-
-	freezeUI(true);
-	m_ui->ViewToolBar->hide();
-	m_ui->propertyDock->hide();
-	m_ui->consoleDock->hide();
-
-	if (m_surfaceTool->start())
-	{
-		updateOverlayDialogsPlacement();
-	}
-	else
-	{
-		deactivateFilterWindowMode(false);
-		freezeUI(false);
-		updateUI();
-		ecvConsole::Error(tr("Unexpected error!")); //indeed...
-	}
-}
-
-void MainWindow::deactivateSurfaceWindowMode(bool state)
-{
-	freezeUI(false);
-	m_ui->ViewToolBar->show();
-	m_ui->consoleDock->show();
-	m_ui->propertyDock->show();
-	updateUI();
-}
-
-
 void MainWindow::activateClippingMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::CLIP_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateSliceMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::SLICE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateProbeMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::PROBE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateDecimateMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::DECIMATE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateIsoSurfaceMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::ISOSURFACE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateThresholdMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::THRESHOLD_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateSmoothMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::SMOOTH_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateGlyphMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::GLYPH_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::activateStreamlineMode()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doActionFilterMode(ecvGenericFiltersTool::FilterType::STREAMLINE_FILTER);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::doActionFilterMode(int mode)
 {
 	if (!haveOneSelection()) return;
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	ecvGenericFiltersTool* filter = new PclFiltersTool(
 		ecvDisplayTools::GetVisualizer3D(), 
 		ecvGenericFiltersTool::FilterType(mode));
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 
 	// we have to use a local copy: 'unselectEntity' will change the set of currently selected entities!
 	ccHObject::Container selectedEntities = getSelectedEntities(); 
@@ -8945,19 +8921,20 @@ void MainWindow::doActionFilterMode(int mode)
 		connect(m_filterTool, &ccOverlayDialog::processFinished,
 			this, [=]() {
 
-			for (ccHObject *entity : selectedEntities)
-			{
-				entity->setEnabled(false);
-			}
-
-			ccHObject::Container outs = m_filterTool->getOutputs();
-			for (ccHObject *entity : outs)
-			{
-				entity->setEnabled(true);
-			}
+            ccHObject::Container outs = m_filterTool->getOutputs();
+            for (ccHObject *entity : outs)
+            {
+                entity->setEnabled(true);
+            }
 
 			if (!outs.empty())
 			{
+                // hide origin entities.
+                for (ccHObject *entity : selectedEntities)
+                {
+                    entity->setEnabled(false);
+                }
+
 				m_ccRoot->selectEntities(outs);
 				refreshSelected();
 			}
@@ -9002,22 +8979,22 @@ void MainWindow::doActionFilterMode(int mode)
 
 void MainWindow::doBoxAnnotation()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doAnnotations(ecvGenericAnnotationTool::AnnotationMode::BOUNDINGBOX);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::doSemanticAnnotation()
 {
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	doAnnotations(ecvGenericAnnotationTool::AnnotationMode::SEMANTICS);
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 }
 
 void MainWindow::doAnnotations(int mode)
@@ -9036,7 +9013,7 @@ void MainWindow::doAnnotations(int mode)
 		return;
 	}
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	PclAnnotationTool* annoTools =
 		new PclAnnotationTool(ecvDisplayTools::GetVisualizer3D(), 
 			ecvGenericAnnotationTool::AnnotationMode(mode));
@@ -9057,7 +9034,7 @@ void MainWindow::doAnnotations(int mode)
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;
-#endif // ECV_PCL_ENGINE_LIBRARY_BUILD
+#endif // USE_PCL_BACKEND
 
 	if (!m_annoTool->setAnnotationsTool(annoTools) || !m_annoTool->linkWith(ecvDisplayTools::GetCurrentScreen()))
 	{
@@ -9097,7 +9074,7 @@ void MainWindow::doAnnotations(int mode)
 
 void MainWindow::doSemanticSegmentation()
 {
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 	if (!haveSelection())
 		return;
 
@@ -9144,13 +9121,13 @@ void MainWindow::doSemanticSegmentation()
 #else
 	CVLog::Warning("python interface library has not been compiled!");
 	return;
-#endif // ECV_PYTHON_LIBRARY_BUILD
+#endif // USE_PYTHON_MODULE
 
 }
 
 void MainWindow::deactivateSemanticSegmentation(bool state)
 {
-#ifdef ECV_PYTHON_LIBRARY_BUILD
+#ifdef USE_PYTHON_MODULE
 	if (m_dssTool && state)
 	{
 		ccHObject::Container result;
@@ -9177,7 +9154,7 @@ void MainWindow::deactivateSemanticSegmentation(bool state)
 	freezeUI(false);
 
 	updateUI();
-#endif // ECV_PYTHON_LIBRARY_BUILD
+#endif // USE_PYTHON_MODULE
 }
 
 void MainWindow::doActionDBScanCluster()
@@ -9504,6 +9481,7 @@ void MainWindow::deactivateSegmentationMode(bool state)
 		{
 			ecvDisplayTools::RedrawDisplay();
 		}
+        ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_CAMERA());
 	}
 
 	freezeUI(false);

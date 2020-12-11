@@ -1,6 +1,8 @@
 #ifndef QVTK_TRANSFORM_VTKBOXWIDGET_HEADER
 #define QVTK_TRANSFORM_VTKBOXWIDGET_HEADER
 
+#include "qPCL.h"
+
 /**
  * @brief The CustomVtkBoxWidget class
  * CustomVtkBoxWidget restricts the transformation
@@ -8,7 +10,7 @@
 
 #include <vtkBoxWidget.h>
 
-class CustomVtkBoxWidget: public vtkBoxWidget {
+class QPCL_ENGINE_LIB_API CustomVtkBoxWidget : public vtkBoxWidget {
 public:
 	static CustomVtkBoxWidget *New();
 

@@ -56,14 +56,11 @@ constexpr double CV_DEG_TO_RAD = (M_PI / 180.0);
 //! Numerical threshold for considering a value as "zero"
 #ifndef ZERO_TOLERANCE
 [[deprecated( "Use ZERO_TOLERANCE_F/ZERO_TOLERANCE_D or CVLib::LessThanEpsilon()/CVLib::GreaterThanEpsilon()" )]]
-constexpr double ZERO_TOLERANCE = std::numeric_limits<float>::epsilon();
+constexpr double ZERO_TOLERANCE = std::numeric_limits<double>::epsilon();
 #endif
 
 //! ZERO_TOLERANCE_F is used to set or compare a float variable to "close to zero".
-#ifndef ZERO_TOLERANCE_F
-[[deprecated( "Use ZERO_TOLERANCE_F/ZERO_TOLERANCE_D or CVLib::LessThanEpsilon()/CVLib::GreaterThanEpsilon()" )]]
 constexpr float ZERO_TOLERANCE_F = std::numeric_limits<float>::epsilon();
-#endif
 
 //! ZERO_TOLERANCE_D is used to set or compare a double variable to "close to zero".
 //! It is defined as std::numeric_limits<float>::epsilon() because using

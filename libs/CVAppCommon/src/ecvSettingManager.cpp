@@ -18,7 +18,10 @@
 // LOCAL
 #include "ecvSettingManager.h"
 
-//ECV_DB_LIB
+// CV_CORE_LIB
+#include <CVPlatform.h>
+
+// ECV_DB_LIB
 #include <ecvSingleton.h>
 
 // QT
@@ -143,7 +146,7 @@ void ecvSettingManager::sanityCheckDock(QDockWidget* dock_widget)
 	QRect screenRect = desktop.availableGeometry(dock_widget);
 	QRect desktopRect = QGuiApplication::primaryScreen()
 		->availableGeometry(); // Should give us the entire Desktop geometry
-// Ensure the top left corner of the window is on the screen
+	// Ensure the top left corner of the window is on the screen
 	if (!screenRect.contains(dockTopLeft))
 	{
 		// Are we High?
@@ -251,12 +254,13 @@ void ecvSettingManager::Init(const QString &fileName)
 
 	s_manager.instance = new ecvSettingManager();
 
+#ifdef CV_WINDOWS // only support QSettings Writting in file in Windows now!
 	QString configPath;
 	configPath = QCoreApplication::applicationDirPath() + "/";
 	configPath += fileName;
-	s_manager.instance->m_iniFile = QSharedPointer<QSettings>(new QSettings(configPath, QSettings::IniFormat));
-	//s_manager.instance->m_iniFile->setIniCodec(QTextCodec::codecForName("System")); //确保中文能使用
-	s_manager.instance->m_iniFile->setIniCodec("utf8"); //确保中文能使用
+    s_manager.instance->m_iniFile = QSharedPointer<QSettings>(new QSettings(configPath, QSettings::IniFormat));
+	//s_manager.instance->m_iniFile->setIniCodec(QTextCodec::codecForName("System"));
+	s_manager.instance->m_iniFile->setIniCodec("utf8"); // set coding
 	QFile file(configPath);
 	if (false == file.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
@@ -264,13 +268,20 @@ void ecvSettingManager::Init(const QString &fileName)
 		s_manager.instance->m_iniFile->setValue("status", "false");
 		s_manager.instance->m_iniFile->endGroup();
 	}
+#else
+    Q_UNUSED(fileName)
+    QSettings::setDefaultFormat(QSettings::NativeFormat);
+    s_manager.instance->m_iniFile = QSharedPointer<QSettings>(new QSettings());
+    //s_manager.instance->m_iniFile->setIniCodec(QTextCodec::codecForName("System"));
+    s_manager.instance->m_iniFile->setIniCodec("utf8"); // set coding
+#endif
 }
 
 void ecvSettingManager::setValue(const QString &section, const QString &key, const QVariant &value)
 {
-	s_manager.instance->m_iniFile->beginGroup(section);     // 设置节点名
-	s_manager.instance->m_iniFile->setValue(key, value);    //设置键名和键值
-	s_manager.instance->m_iniFile->endGroup();              // 结束当前节的操作
+	s_manager.instance->m_iniFile->beginGroup(section);     // set node name
+	s_manager.instance->m_iniFile->setValue(key, value);    // set key and value according to key
+	s_manager.instance->m_iniFile->endGroup();              // end group
 }
 
 void ecvSettingManager::removeNode(const QString &section)

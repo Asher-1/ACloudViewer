@@ -42,7 +42,7 @@ DONSegmentation::DONSegmentation()
 										 tr("DoN Segmentation"),
 										 tr("DoN Segmentation from clouds"),
 										 ":/toolbar/PclAlgorithms/icons/DoN.png"))
-	, m_dialog(0)
+	, m_dialog(nullptr)
 	, m_comparisonField("curvature")
 	, m_comparisonTypes("GT")
 	, m_smallScale(5.0f)
@@ -59,7 +59,7 @@ DONSegmentation::DONSegmentation()
 DONSegmentation::~DONSegmentation()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

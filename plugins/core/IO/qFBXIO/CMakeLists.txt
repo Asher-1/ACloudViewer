@@ -8,15 +8,16 @@ if ( PLUGIN_IO_QFBX )
 	option( FBX_SDK_SHARED_MODE "Build in shared mode" ON )
 
 	# FBX SDK
+	set( FBX_SDK_LIBRARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FBX-2020.0.1/lib/X64" CACHE INTERNAL "" )
 	set( FBX_SDK_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FBX-2020.0.1/include" CACHE PATH "FBX SDK include directory" )
-	set( FBX_SDK_LIBRARY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/FBX-2020.0.1/lib/X64/release/libfbxsdk.lib" CACHE FILEPATH "FBX SDK static library file" )
-	set( FBX_XML2_LIBRARY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/FBX-2020.0.1/lib/X64/release/libxml2-md.lib" CACHE FILEPATH "FBX XML2 static library file (for the 2019 SDK only)" )
-	set( FBX_ZLIB_LIBRARY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/FBX-2020.0.1/lib/X64/release/zlib-md.lib" CACHE FILEPATH "FBX ZLIB static library file (for the 2019 SDK only)" )
-
+	set( FBX_SDK_LIBRARY_FILE "${FBX_SDK_LIBRARY_DIR}/release/libfbxsdk.lib" CACHE FILEPATH "FBX SDK static library file" )
+	set( FBX_XML2_LIBRARY_FILE "${FBX_SDK_LIBRARY_DIR}/release/libxml2-md.lib" CACHE FILEPATH "FBX XML2 static library file (for the 2019 SDK only)" )
+	set( FBX_ZLIB_LIBRARY_FILE "${FBX_SDK_LIBRARY_DIR}/release/zlib-md.lib" CACHE FILEPATH "FBX ZLIB static library file (for the 2019 SDK only)" )
+    
 	if( CMAKE_CONFIGURATION_TYPES )
-		set( FBX_SDK_LIBRARY_FILE_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/FBX-2020.0.1/lib/X64/debug/libfbxsdk.lib" CACHE FILEPATH "FBX SDK static debug library file" )
-		set( FBX_XML2_LIBRARY_FILE_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/FBX-2020.0.1/lib/X64/debug/libxml2-md.lib" CACHE FILEPATH "FBX XML2 static debug library file (for the 2019 SDK only)" )
-		set( FBX_ZLIB_LIBRARY_FILE_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/FBX-2020.0.1/lib/X64/debug/zlib-md.lib" CACHE FILEPATH "FBX ZLIB static debug library file (for the 2019 SDK only)" )
+		set( FBX_SDK_LIBRARY_FILE_DEBUG "${FBX_SDK_LIBRARY_DIR}/debug/libfbxsdk.lib" CACHE FILEPATH "FBX SDK static debug library file" )
+		set( FBX_XML2_LIBRARY_FILE_DEBUG "${FBX_SDK_LIBRARY_DIR}/debug/libxml2-md.lib" CACHE FILEPATH "FBX XML2 static debug library file (for the 2019 SDK only)" )
+		set( FBX_ZLIB_LIBRARY_FILE_DEBUG "${FBX_SDK_LIBRARY_DIR}/debug/zlib-md.lib" CACHE FILEPATH "FBX ZLIB static debug library file (for the 2019 SDK only)" )
 	endif()
 
 	if ( NOT FBX_SDK_INCLUDE_DIR )
@@ -39,6 +40,9 @@ if ( PLUGIN_IO_QFBX )
 		else()
 			target_link_libraries( ${PROJECT_NAME} ${FBX_SDK_LIBRARY_FILE} )
 		endif()
+		file( GLOB FBX_SDK_DLL_FILES ${FBX_SDK_LIBRARY_DIR}/release/libfbxsdk.dll )
+		
+		copy_files( "${FBX_SDK_DLL_FILES}" "${EROWCLOUDVIEWER_DEST_FOLDER}" )
 	else()
 		message( SEND_ERROR "FBX SDK library not found: can't link" )
 	endif()

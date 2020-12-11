@@ -19,10 +19,11 @@
 #include <MeshSamplingTools.h>
 
 //local
+#include <CVMath.h>
 #include <GenericIndexedMesh.h>
 #include <GenericProgressCallback.h>
 #include <GenericTriangle.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <ScalarField.h>
 
 //system
@@ -245,7 +246,7 @@ PointCloud* MeshSamplingTools::samplePointsOnMesh(	GenericMesh* mesh,
 	//total mesh surface
 	double Stotal = computeMeshArea(mesh);
 
-	if (Stotal < ZERO_TOLERANCE)
+    if ( LessThanEpsilon( Stotal ) )
 		return nullptr;
 
 	double samplingDensity = numberOfPoints / Stotal;

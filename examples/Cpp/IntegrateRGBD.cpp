@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -92,9 +92,9 @@ int main(int argc, char *argv[]) {
     char buffer[DEFAULT_IO_BUFFER_SIZE];
     int index = 0;
     int save_index = 0;
-    integration::ScalableTSDFVolume volume(
+    pipelines::integration::ScalableTSDFVolume volume(
             length / (double)resolution, length * sdf_trunc_percentage,
-            integration::TSDFVolumeColorType::RGB8);
+        pipelines::integration::TSDFVolumeColorType::RGB8);
     CVLib::utility::FPSTimer timer("Process RGBD stream",
                             (int)camera_trajectory->parameters_.size());
     geometry::Image depth, color;

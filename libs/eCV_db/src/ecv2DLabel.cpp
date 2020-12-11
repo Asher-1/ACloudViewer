@@ -166,7 +166,7 @@ static double GetAngle_deg(CCVector3 AB, CCVector3 AC)
 		dotprod = -1.0;
 	else if (dotprod > 1.0)
 		dotprod = 1.0;
-	return acos(dotprod) * CV_RAD_TO_DEG;
+    return CVLib::RadiansToDegrees(acos(dotprod));
 }
 
 cc2DLabel::cc2DLabel(QString name/*=QString()*/)

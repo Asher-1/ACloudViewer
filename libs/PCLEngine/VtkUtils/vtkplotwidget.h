@@ -1,16 +1,21 @@
 #ifndef VTKPLOTWIDGET_H
 #define VTKPLOTWIDGET_H
 
-#define vtkRenderingCore_AUTOINIT 3(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingOpenGL) // opengl2
+//#define vtkRenderingCore_AUTOINIT 3(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingOpenGL) // opengl2
 //#define vtkRenderingVolume_AUTOINIT 1(vtkRenderingVolumeOpenGL) // opengl2
 
-#include <vtkAutoInit.h>
+//#include <vtkAutoInit.h>
 
 //VTK_MODULE_INIT(vtkRenderingOpenGL) // opengl2
 //VTK_MODULE_INIT(vtkInteractionStyle)
 //VTK_MODULE_INIT(vtkRenderingContextOpenGL) // opengl2
 
-#include <QVTKWidget.h>
+//#include <vtkAutoInit.h> 
+//VTK_MODULE_INIT(vtkRenderingFreeType)
+//VTK_MODULE_INIT(vtkRenderingOpenGL2);
+//VTK_MODULE_INIT(vtkInteractionStyle);
+
+#include <QVTKOpenGLNativeWidget.h>
 #include "qPCL.h"
 
 class vtkChartXY;
@@ -20,7 +25,7 @@ namespace VtkUtils
 {
 
 class VtkPlotWidgetPrivate;
-class QPCL_ENGINE_LIB_API VtkPlotWidget : public QVTKWidget
+class VtkPlotWidget : public QVTKOpenGLNativeWidget
 {
     Q_OBJECT
 public:

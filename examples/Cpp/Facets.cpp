@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,8 @@ void testFromPointClouds(const std::string& filename)
 		C = facet->getCenter();
 		rms = facet->getRMS();
 
+        CVLib::utility::LogInfo("RMS: {:d}", rms);
+
 		//hack: output the transformation matrix that would make this normal points towards +Z
 		ccGLMatrix makeZPosMatrix = ccGLMatrix::FromToRotation(N, CCVector3(0, 0, PC_ONE));
 		CCVector3 Gt = C;
@@ -87,6 +89,8 @@ void testFromFile(const std::string& filename)
 			N = facet->getNormal();
 			C = facet->getCenter();
 			rms = facet->getRMS();
+
+            CVLib::utility::LogInfo("RMS: {:d}", rms);
 
 			//hack: output the transformation matrix that would make this normal points towards +Z
 			ccGLMatrix makeZPosMatrix = ccGLMatrix::FromToRotation(N, CCVector3(0, 0, PC_ONE));

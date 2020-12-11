@@ -27,7 +27,6 @@
         <file>Resources/images/dbFileSymbol.png</file>
         <file>Resources/images/dbLabelSymbol.png</file>
         <file>Resources/images/FullScreen.png</file>
-        <file>Resources/images/icon/logo.png</file>
         <file>Resources/images/box.png</file>
         <file>Resources/images/cone.png</file>
         <file>Resources/images/dish.png</file>
@@ -46,7 +45,6 @@
         <file>Resources/images/icon/ecv_64.png</file>
         <file>Resources/images/icon/ecv_128.png</file>
         <file>Resources/images/icon/ecv_icon.rc</file>
-        <file>Resources/images/icon/logo.jpg</file>
         <file>Resources/images/QTreeView/branch-closed.png</file>
         <file>Resources/images/QTreeView/branch-end.png</file>
         <file>Resources/images/QTreeView/branch-more.png</file>
@@ -254,5 +252,8 @@
         <file>Resources/images/electrical_sensor.png</file>
         <file>Resources/images/integrated_sensor.png</file>
         <file>Resources/images/Wavefrom.png</file>
+    </qresource>
+    <qresource prefix="/qt">
+        <file>etc/qt.conf</file>
     </qresource>
 </RCC>

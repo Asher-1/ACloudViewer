@@ -22,6 +22,7 @@
 #include <ecvPointCloud.h>
 #include <ecvMesh.h>
 #include <ecvScalarField.h>
+#include <ecvHObjectCaster.h>
 
 //Qt
 #include <QFile>

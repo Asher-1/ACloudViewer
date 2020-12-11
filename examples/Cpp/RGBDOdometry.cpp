@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -77,10 +77,10 @@ int main(int argc, char* argv[]) {
 
     Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
     std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> rgbd_odo =
-		cloudViewer::odometry::ComputeRGBDOdometry(
+		cloudViewer::pipelines::odometry::ComputeRGBDOdometry(
                     *source, *target, intrinsic, odo_init,
-			cloudViewer::odometry::RGBDOdometryJacobianFromHybridTerm(),
-			cloudViewer::odometry::OdometryOption());
+			cloudViewer::pipelines::odometry::RGBDOdometryJacobianFromHybridTerm(),
+			cloudViewer::pipelines::odometry::OdometryOption());
     std::cout << "RGBD Odometry" << std::endl;
     std::cout << std::get<1>(rgbd_odo) << std::endl;
     return 0;

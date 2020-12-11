@@ -83,7 +83,7 @@ void ccRenderingTools::ShowDepthBuffer(ccGBLSensor* sensor, QWidget* parent/*=0*
 	{
 		ccColorScale::Shared colorScale = ccColorScalesManager::GetDefaultScale();
 		assert(colorScale);
-		ScalarType coef = maxDist - minDist < ZERO_TOLERANCE ? 0 : static_cast<ScalarType>(ccColorScale::MAX_STEPS - 1) / (maxDist - minDist);
+        ScalarType coef = CVLib::LessThanEpsilon( maxDist - minDist ) ? 0 : static_cast<ScalarType>(ccColorScale::MAX_STEPS - 1) / (maxDist - minDist);
 
 		const PointCoordinateType* _zBuff = depthBuffer.zBuff.data();
 		for (unsigned y = 0; y < depthBuffer.height; ++y)
@@ -203,17 +203,18 @@ void ccRenderingTools::DrawColorRamp(const CC_DRAW_CONTEXT& context)
 
 void ccRenderingTools::DrawColorRamp(const CC_DRAW_CONTEXT& context, const ccScalarField* sf, QWidget* win, int glW, int glH, float renderZoom/*=1.0f*/)
 {
+	WIDGETS_PARAMETER params(WIDGETS_TYPE::WIDGET_SCALAR_BAR, "vtkBlockColors");
+	params.context = context;
+	params.context.viewID = "vtkBlockColors";
+
 	if (!sf || !sf->getColorScale() || !win)
 	{
+		ecvDisplayTools::RemoveWidgets(params);
 		return;
 	}
 
-	//get the set of OpenGL functions (version 2.1)
-	/*QOpenGLFunctions_2_1 *glFunc = context.glFunctions<QOpenGLFunctions_2_1>();
-	assert(glFunc != nullptr);
-
-	if (glFunc == nullptr)
-		return;*/
+	ecvDisplayTools::DrawWidgets(params);
+	return;
 
 	bool logScale = sf->logScale();
 	bool symmetricalScale = sf->symmetricalScale();
@@ -221,8 +222,7 @@ void ccRenderingTools::DrawColorRamp(const CC_DRAW_CONTEXT& context, const ccSca
 
 	//set of particular values
 	//DGM: we work with doubles for maximum accuracy
-	#if 0
-ccColorScale::LabelSet keyValues;
+	ccColorScale::LabelSet keyValues;
 	bool customLabels = false;
 	try
 	{
@@ -451,17 +451,17 @@ ccColorScale::LabelSet keyValues;
 			if (logScale)
 				value = exp(value*c_log10);
 			const ecvColor::Rgb* col = sf->getColor(static_cast<ScalarType>(value));
-			glFunc->glColor3ubv(col ? col->rgb : ecvColor::lightGrey.rgb);
-			glFunc->glBegin(GL_POLYGON);
-			glFunc->glVertex2i(x,y);
-			glFunc->glVertex2i(x+scaleWidth,y);
-			glFunc->glVertex2i(x+scaleWidth,y+scaleMaxHeight-1);
-			glFunc->glVertex2i(x,y+scaleMaxHeight-1);
-			glFunc->glEnd();
+			//glFunc->glColor3ubv(col ? col->rgb : ecvColor::lightGrey.rgb);
+			//glFunc->glBegin(GL_POLYGON);
+			//glFunc->glVertex2i(x,y);
+			//glFunc->glVertex2i(x+scaleWidth,y);
+			//glFunc->glVertex2i(x+scaleWidth,y+scaleMaxHeight-1);
+			//glFunc->glVertex2i(x,y+scaleMaxHeight-1);
+			//glFunc->glEnd();
 		}
 
 		//scale border
-		const ecvColor::Rgbub& lineColor = textColor;
+		/*const ecvColor::Rgbub& lineColor = textColor;
 		glFunc->glColor3ubv(lineColor.rgb);
 		glFunc->glLineWidth(2.0f * renderZoom);
 		glFunc->glEnable(GL_LINE_SMOOTH);
@@ -472,7 +472,7 @@ ccColorScale::LabelSet keyValues;
 		glFunc->glVertex2i(x,y+scaleMaxHeight);
 		glFunc->glEnd();
 
-		glFunc->glPopAttrib();
+		glFunc->glPopAttrib();*/
 	}
 
 	//display labels
@@ -545,7 +545,7 @@ ccColorScale::LabelSet keyValues;
 		//display labels
 
 		//Some versions of Qt seem to need glColorf instead of glColorub! (see https://bugreports.qt-project.org/browse/QTBUG-6217)
-		glFunc->glColor3f(textColor.r / 255.0f, textColor.g / 255.0f, textColor.b / 255.0f);
+		//glFunc->glColor3f(textColor.r / 255.0f, textColor.g / 255.0f, textColor.b / 255.0f);
 
 		//Scalar field name
 		const char* sfName = sf->getName();
@@ -558,7 +558,7 @@ ccColorScale::LabelSet keyValues;
 			if (logScale)
 				sfTitle += QString("[Log scale]");
 			//we leave some (vertical) space for the top-most label!
-			win->displayText(sfTitle, glW-xShift, glH-yShift+strHeight, ccGLWindow::ALIGN_HRIGHT | ccGLWindow::ALIGN_VTOP, 0, nullptr, &font);
+			ecvDisplayTools::DisplayText(sfTitle, glW-xShift, glH-yShift+strHeight, ecvDisplayTools::ALIGN_HRIGHT | ecvDisplayTools::ALIGN_VTOP, 0, nullptr, &font);
 		}
 
 		//precision (same as color scale)
@@ -579,26 +579,26 @@ ccColorScale::LabelSet keyValues;
 		{
 			vlabelSet::iterator itNext = it; ++itNext;
 			//position
-			unsigned char align = ccGLWindow::ALIGN_HRIGHT;
+			unsigned char align = ecvDisplayTools::ALIGN_HRIGHT;
 			if (it == drawnLabels.begin())
-				align |= ccGLWindow::ALIGN_VTOP;
+				align |= ecvDisplayTools::ALIGN_VTOP;
 			else if (itNext == drawnLabels.end())
-				align |= ccGLWindow::ALIGN_VBOTTOM;
+				align |= ecvDisplayTools::ALIGN_VBOTTOM;
 			else
-				align |= ccGLWindow::ALIGN_VMIDDLE;
+				align |= ecvDisplayTools::ALIGN_VMIDDLE;
 
 			double value = it->val;
 			if (logScale)
 				value = exp(value*c_log10);
 
-			win->displayText(QString::number(value,format,precision), x, y+it->yPos, align, 0, nullptr, &font);
-			glFunc->glBegin(GL_LINES);
+			ecvDisplayTools::DisplayText(QString::number(value,format,precision), x, y+it->yPos, align, 0, nullptr, &font);
+			/*glFunc->glBegin(GL_LINES);
 			glFunc->glVertex2i(xTick,yTick+it->yPos);
 			glFunc->glVertex2i(xTick+tickSize,yTick+it->yPos);
-			glFunc->glEnd();
+			glFunc->glEnd();*/
 		}
 	}
 
 	//glFunc->glPopAttrib();
-#endif
+
 }

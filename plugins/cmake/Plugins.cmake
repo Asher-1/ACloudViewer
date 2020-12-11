@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-set( CC_PLUGIN_TARGET_LIST "" CACHE INTERNAL "Internal plugin list" )
+set( CV_PLUGIN_TARGET_LIST "" CACHE INTERNAL "Internal plugin list" )
 
 # AddPlugin should be called once for each plugin.
 # This function sets up a target for the plugin, sets up default properties, and sets the target
@@ -22,7 +22,7 @@ function( AddPlugin )
 	# For readability
 	set( PLUGIN_TARGET "${ADD_PLUGIN_NAME}" )
 	
-	set( CC_PLUGIN_TARGET_LIST "${CC_PLUGIN_TARGET_LIST};${PLUGIN_TARGET}" CACHE INTERNAL "Internal plugin list" )
+	set( CV_PLUGIN_TARGET_LIST "${CV_PLUGIN_TARGET_LIST};${PLUGIN_TARGET}" CACHE INTERNAL "Internal plugin list" )
 	
 	# First check our TYPE
 	
@@ -102,7 +102,7 @@ function( AddPlugin )
 	# On macOS, copy the plugin to the ccPlugins directory at the top level
 	# post build so we can find it without installing everything.
 	if( APPLE )
-		set( PLUGINS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/ccPlugins" )
+		set( PLUGINS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/ecvPlugins" )
 		
 		if( NOT EXISTS PLUGINS_OUTPUT_DIR )
 			file( MAKE_DIRECTORY "${PLUGINS_OUTPUT_DIR}" )

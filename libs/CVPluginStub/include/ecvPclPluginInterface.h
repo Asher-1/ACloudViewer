@@ -30,7 +30,7 @@
 #include "ecvMainAppInterface.h"
 
 //! Pcl ECV plugin interface
-/** Version 1.5
+/** Version 1.4
 	The plugin is now responsible for its own actions (QAction ;)
 	and the associated ecvMainAppInterface member should give it
 	access to everything it needs in the main application.
@@ -100,6 +100,6 @@ protected:
 
 Q_DECLARE_METATYPE(ccPclPluginInterface *);
 
-Q_DECLARE_INTERFACE(ccPclPluginInterface, "edf.rd.CloudViewer.ccPclPluginInterface/1.2")
+Q_DECLARE_INTERFACE(ccPclPluginInterface, "edf.rd.cloudviewer.ccPclPluginInterface/1.4")
 
 #endif // ECV_PCL_PLUGIN_INTERFACE_HEADER

@@ -6,10 +6,12 @@
 
 #include <vtkSmartPointer.h>
 
-namespace Ui
-{
-	class GeneralFilterWindow;
-}
+#include "ui_generalfilterwindow.h"
+
+//namespace Ui
+//{
+//	class GeneralFilterWindow;
+//}
 
 namespace VtkUtils
 {
@@ -28,7 +30,7 @@ class FilterWindow : public QWidget
 	Q_OBJECT
 public:
 	enum { DefaultRows = 10 };
-	explicit FilterWindow(QWidget *parent = 0);
+    explicit FilterWindow(QWidget *parent = nullptr);
 	virtual ~FilterWindow();
 
 	void setFileName(const QString& fileName);
@@ -94,13 +96,13 @@ protected:
 	void createActorFromData(vtkDataObject* dataObj);
 
 	template <class ConfigClass>
-	void setupConfigWidget(ConfigClass* cc)
-	{
-		QWidget* configWidget = new QWidget(this);
-		cc->setupUi(configWidget);
-		m_ui->setupUi(this);
-		m_ui->configLayout->addWidget(configWidget);
-	}
+    void setupConfigWidget(ConfigClass* cc)
+    {
+        QWidget* configWidget = new QWidget(this);
+        cc->setupUi(configWidget);
+        m_ui->setupUi(this);
+        m_ui->configLayout->addWidget(configWidget);
+    }
 
 	void initTableModel();
 	bool initTableModel(const ccHObject* obj);

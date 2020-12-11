@@ -43,11 +43,5 @@ TetraMesh::CreateFromPointCloud(const ccPointCloud& point_cloud) {
     return utility::Qhull::ComputeDelaunayTetrahedralization(
 		point_cloud.getPoints());
 }
-
-std::tuple<std::shared_ptr<ccMesh>, std::vector<size_t>>
-TetraMesh::computeConvexHull() const {
-	return utility::Qhull::ComputeConvexHull(vertices_);
-}
-
 }  // namespace geometry
 }  // namespace cloudViewer

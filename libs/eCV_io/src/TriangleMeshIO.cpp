@@ -45,16 +45,12 @@
 // ECV_IO_LIB
 #include <AutoIO.h>
 #include <ImageIO.h>
+#include <FileFormatIO.h>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tinyobjloader/tiny_obj_loader.h"
+#include "tiny_obj_loader.h"
+#include "tiny_gltf.h"
 
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "tinygltf/tiny_gltf.h"
-
-#include <rply/rply.h>
+#include <rply.h>
 
 namespace cloudViewer {
 
@@ -155,7 +151,7 @@ namespace ply_trianglemesh_reader {
 			return 0;
 		}
 
-		ply_get_argument_property(argument, NULL, &length, &index);
+        ply_get_argument_property(argument, nullptr, &length, &index);
 		if (index == -1) {
 			state_ptr->face.clear();
 		}
@@ -189,8 +185,8 @@ static const std::unordered_map<
                 {"off", ReadTriangleMeshFromOFF},
                 {"gltf", ReadTriangleMeshFromGLTF},
                 {"glb", ReadTriangleMeshFromGLTF},
-                {"vtk", AutoReadEntity},
-                {"bin", AutoReadEntity},
+                {"vtk", AutoReadMesh},
+                {"bin", AutoReadMesh},
         };
 
 static const std::unordered_map<
@@ -392,7 +388,7 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
 							 bool print_progress) {
 	using namespace ply_trianglemesh_reader;
 
-	p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
+    p_ply ply_file = ply_open(filename.c_str(), nullptr, 0, nullptr);
 	if (!ply_file) {
 		utility::LogWarning("Read PLY failed: unable to open file: {}",
 			filename);
@@ -489,7 +485,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
 
 	p_ply ply_file = ply_create(filename.c_str(),
 		write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN,
-		NULL, 0, NULL);
+        nullptr, 0, nullptr);
 	if (!ply_file) {
 		utility::LogWarning("Write PLY failed: unable to open file: {}",
 			filename);
@@ -571,6 +567,14 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
 	return true;
 }
 
+FileGeometry ReadFileGeometryTypeFBX(const std::string& path) {
+	return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
+}
+
+FileGeometry ReadFileGeometryTypeSTL(const std::string& path) {
+	return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
+}
+
 bool ReadTriangleMeshFromSTL(const std::string &filename,
 	ccMesh &mesh, bool print_progress) {
 	FILE *myFile = CVLib::utility::filesystem::FOpen(filename.c_str(), "rb");
@@ -584,8 +588,14 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 	int num_of_triangles;
 	if (myFile) {
 		char header[80] = "";
-		fread(header, sizeof(char), 80, myFile);
-		fread(&num_of_triangles, sizeof(unsigned int), 1, myFile);
+        if(fread(header, sizeof(char), 80, myFile) != 80)
+        {
+            CVLib::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] header IO error!");
+        }
+        if(fread(&num_of_triangles, sizeof(unsigned int), 1, myFile) != 1)
+        {
+            CVLib::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] triangles IO error!");
+        }
 	}
 	else {
 		CVLib::utility::LogWarning("Read STL failed: unable to read header.");
@@ -611,7 +621,10 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 		char buffer[50];
 		float *float_buffer;
 		if (myFile) {
-			fread(buffer, sizeof(char), 50, myFile);
+            if(fread(buffer, sizeof(char), 50, myFile) != 50)
+            {
+                CVLib::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] buffer IO error!");
+            }
 			float_buffer = reinterpret_cast<float *>(buffer);
 			mesh.addTriangleNorm(Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>());
 			for (int j = 0; j < 3; j++) {
@@ -705,6 +718,10 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
 		++progress_bar;
 	}
 	return true;
+}
+
+FileGeometry ReadFileGeometryTypeOBJ(const std::string& path) {
+	return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
 }
 
 bool ReadTriangleMeshFromOBJ(const std::string& filename,
@@ -827,15 +844,73 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
 		mesh.triangle_uvs_.clear();
 	}
 
-	// Now we assert only one shape is stored, we only select the first
-	// diffuse material
+	auto textureLoader = [&mtl_base_path](std::string& relativePath) {
+		auto image = io::CreateImageFromFile(mtl_base_path + relativePath);
+		return image->HasData() ? image : std::shared_ptr<geometry::Image>();
+	};
+
+	using MaterialParameter = ccMesh::Material::MaterialParameter;
+
 	for (auto& material : materials) {
-		if (!material.diffuse_texname.empty()) {
-			mesh.textures_.push_back(
-				*(io::CreateImageFromFile(mtl_base_path +
-					material.diffuse_texname)
-					->FlipVertical()));
+		auto& meshMaterial = mesh.materials_[material.name];
+
+		meshMaterial.baseColor = MaterialParameter::CreateRGB(
+			material.diffuse[0], material.diffuse[1], material.diffuse[2]);
+
+		if (!material.normal_texname.empty()) {
+			meshMaterial.normalMap = textureLoader(material.normal_texname);
 		}
+		else if (!material.bump_texname.empty()) {
+			// try bump, because there is often a misunderstanding of
+			// what bump map or normal map is
+			meshMaterial.normalMap = textureLoader(material.bump_texname);
+		}
+
+		if (!material.ambient_texname.empty()) {
+			meshMaterial.ambientOcclusion =
+				textureLoader(material.ambient_texname);
+		}
+
+		if (!material.diffuse_texname.empty()) {
+			meshMaterial.albedo = textureLoader(material.diffuse_texname);
+
+			// Legacy texture map support
+			if (meshMaterial.albedo) {
+				mesh.textures_.push_back(*meshMaterial.albedo->FlipVertical());
+			}
+		}
+
+		if (!material.metallic_texname.empty()) {
+			meshMaterial.metallic = textureLoader(material.metallic_texname);
+		}
+
+		if (!material.roughness_texname.empty()) {
+			meshMaterial.roughness = textureLoader(material.roughness_texname);
+		}
+
+		if (!material.sheen_texname.empty()) {
+			meshMaterial.reflectance = textureLoader(material.sheen_texname);
+		}
+
+		// NOTE: We want defaults of 0.0 and 1.0 for baseMetallic and
+		// baseRoughness respectively but 0.0 is a valid value for both and
+		// tiny_obj_loader defaults to 0.0 for both. So, we will assume that
+		// only if one of the values is greater than 0.0 that there are
+		// non-default values set in the .mtl file
+		if (material.roughness > 0.f || material.metallic > 0.f) {
+			meshMaterial.baseMetallic = material.metallic;
+			meshMaterial.baseRoughness = material.roughness;
+		}
+
+		if (material.sheen > 0.f) {
+			meshMaterial.baseReflectance = material.sheen;
+		}
+
+		// NOTE: We will unconditionally copy the following parameters because
+        // the TinyObj defaults match CloudViewer's internal defaults
+		meshMaterial.baseClearCoat = material.clearcoat_thickness;
+		meshMaterial.baseClearCoatRoughness = material.clearcoat_roughness;
+		meshMaterial.baseAnisotropy = material.anisotropy;
 	}
 
 	return true;
@@ -931,8 +1006,10 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
 	for (auto it = material_id_faces_map.begin();
 		it != material_id_faces_map.end(); ++it) {
 		// write the mtl name
-		std::string mtl_name = object_name + "_" + std::to_string(it->first);
-		file << "usemtl " << mtl_name << std::endl;
+		if (write_triangle_uvs) {
+			std::string mtl_name = object_name + "_" + std::to_string(it->first);
+			file << "usemtl " << mtl_name << std::endl;
+		}
 
 		// write the corresponding faces
 		for (auto tidx : it->second) {
@@ -970,28 +1047,29 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
 
 	//////
 	// start to write to mtl and texture
-	std::string parent_dir =
-		utility::filesystem::GetFileParentDirectory(filename);
-	std::string mtl_filename = parent_dir + object_name + ".mtl";
+	if (write_triangle_uvs) {
+		std::string parent_dir =
+			utility::filesystem::GetFileParentDirectory(filename);
+		std::string mtl_filename = parent_dir + object_name + ".mtl";
 
-	// write headers
-	std::ofstream mtl_file(mtl_filename.c_str(), std::ios::out);
-	if (!mtl_file) {
-		utility::LogWarning(
-			"Write OBJ successful, but failed to write material file.");
-		return true;
-	}
-	mtl_file << "# Created by cloudViewer " << std::endl;
-	mtl_file << "# object name: " << object_name << std::endl;
+		// write headers
+		std::ofstream mtl_file(mtl_filename.c_str(), std::ios::out);
+		if (!mtl_file) {
+			utility::LogWarning(
+				"Write OBJ successful, but failed to write material file.");
+			return true;
+		}
+		mtl_file << "# Created by cloudViewer " << std::endl;
+		mtl_file << "# object name: " << object_name << std::endl;
 
-	// write textures (if existing)
-	for (size_t i = 0; i < mesh.textures_.size(); ++i) {
-		std::string mtl_name = object_name + "_" + std::to_string(i);
-		mtl_file << "newmtl " << mtl_name << std::endl;
-		mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
-		mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
-		mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
-		if (write_triangle_uvs && mesh.hasEigenTextures()) {
+		// write textures (if existing)
+		for (size_t i = 0; i < mesh.textures_.size(); ++i) {
+			std::string mtl_name = object_name + "_" + std::to_string(i);
+			mtl_file << "newmtl " << mtl_name << std::endl;
+			mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
+			mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
+			mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
+
 			std::string tex_filename = parent_dir + mtl_name + ".png";
 			if (!io::WriteImage(tex_filename,
 				*mesh.textures_[i].FlipVertical())) {
@@ -1002,18 +1080,21 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
 			}
 			mtl_file << "map_Kd " << mtl_name << ".png\n";
 		}
-	}
 
-	// write the default material
-	if (!mesh.hasEigenTextures()) {
-		std::string mtl_name = object_name + "_0";
-		mtl_file << "newmtl " << mtl_name << std::endl;
-		mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
-		mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
-		mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
+		// write the default material
+		if (!mesh.hasEigenTextures()) {
+			std::string mtl_name = object_name + "_0";
+			mtl_file << "newmtl " << mtl_name << std::endl;
+			mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
+			mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
+			mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
+		}
 	}
-
 	return true;
+}
+
+FileGeometry ReadFileGeometryTypeOFF(const std::string& path) {
+	return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
 }
 
 bool ReadTriangleMeshFromOFF(const std::string &filename,
@@ -1263,6 +1344,10 @@ struct IntArray : public IntArrayBase {
 
 	size_t size() const override { return adapter.elem_count; }
 };
+
+FileGeometry ReadFileGeometryTypeGLTF(const std::string& path) {
+	return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
+}
 
 bool ReadTriangleMeshFromGLTF(const std::string& filename,
 	ccMesh& mesh, bool print_progress) {
@@ -1590,7 +1675,7 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
 	size_t num_of_triangles = mesh.size();
 
 	float float_temp;
-	unsigned char* temp = NULL;
+    unsigned char* temp = nullptr;
 
 	tinygltf::BufferView indices_buffer_view_array;
 	bool save_indices_as_uint32 = num_of_vertices > 65536;

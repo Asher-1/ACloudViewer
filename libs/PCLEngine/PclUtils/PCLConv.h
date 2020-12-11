@@ -18,17 +18,6 @@
 #ifndef PCL_CONVERSIONS_H
 #define PCL_CONVERSIONS_H
 
-//PCL V1.6 or older
-#ifdef PCL_VER_1_6_OR_OLDER
-
-//#include <pcl/ros/conversions.h>
-//#define FROM_PCL_CLOUD pcl::fromROSMsg
-//#define TO_PCL_CLOUD pcl::toROSMsg
-
-#else //Version 1.7 or newer
-
-#endif
-
 #include <pcl/PCLPointCloud2.h>
 #define FROM_PCL_CLOUD pcl::fromPCLPointCloud2
 #define TO_PCL_CLOUD pcl::toPCLPointCloud2

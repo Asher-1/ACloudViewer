@@ -16,10 +16,13 @@
 //##########################################################################
 
 #include "ImageFileFilter.h"
-#include "FileIO.h"
 
 // ECV_DB_LIB
 #include <ecvImage.h>
+#include <ecvHObjectCaster.h>
+
+// LOCAL
+#include "FileIO.h"
 
 //Qt
 #include <QImageReader>

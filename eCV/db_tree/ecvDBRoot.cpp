@@ -743,16 +743,27 @@ bool ccDBRoot::setData(const QModelIndex &index, const QVariant &value, int role
 			assert(item);
 			if (item)
 			{
+                // particular cases:
+                // - labels name is their title (so we update them)
+                // - name might be displayed in 3D
+                if (item->nameShownIn3D() || item->isKindOf(CV_TYPES::LABEL_2D)) {
+                    if (item->isEnabled() && item->isVisible()) {
+                        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+                                WIDGETS_TYPE::WIDGET_T2D, item->getName()));
+                        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
+                                WIDGETS_TYPE::WIDGET_RECTANGLE_2D, item->getName()));
+                    }
+                }
+
 				item->setName(value.toString());
 
-				//particular cases:
-				// - labels name is their title (so we update them)
-				// - name might be displayed in 3D
-				//if (item->nameShownIn3D() || item->isKindOf(CV_TYPES::LABEL_2D))
-				//	if (item->isEnabled() && item->isVisible() && item->getDisplay())
-				//		item->getDisplay()->redraw();
+				if (item->isEnabled() && item->isVisible()) 
+				{
+                    MainWindow::TheInstance()->refreshAll(true, false);
+                }
 
 				reflectObjectPropChange(item);
+                updatePropertiesView();
 
 				emit dataChanged(index, index);
 			}
@@ -924,8 +935,8 @@ void ccDBRoot::changeSelection(const QItemSelection & selected, const QItemSelec
 
 	updatePropertiesView();
 
-	//MainWindow::RefreshAllGLWindow();
-	MainWindow::TheInstance()->refreshAll(false, false);
+	ecvDisplayTools::SetRedrawRecursive(false);
+	MainWindow::TheInstance()->refreshAll(false, true);
 
 	emit selectionChanged();
 }
@@ -1976,7 +1987,6 @@ void ccDBRoot::selectChildrenByTypeAndName(CV_CLASS_ENUM type,
 
 				if (nameIsRegex) // regex matching
 				{
-
 					QRegularExpression re(name);
 					QRegularExpressionMatch match = re.match(child->getName());
 					bool hasMatch = match.hasMatch(); // true

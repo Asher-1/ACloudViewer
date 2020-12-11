@@ -16,7 +16,7 @@
 //##########################################################################
 //
 
-#include "CustomContextItem.h"
+#include "PclUtils/CustomContextItem.h"
 
 #include <vtkObjectFactory.h>
 #include <vtkSmartPointer.h>
@@ -77,12 +77,11 @@ PclUtils::context_items::Line::set(float start_x, float start_y, float end_x, fl
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 void
-PclUtils::context_items::Text::set(float x, float y, const std::string& _text, int fontSize)
+PclUtils::context_items::Text::set(float x, float y, const std::string& _text)
 {
-	params.resize(3);
+	params.resize(2);
 	params[0] = x; 
 	params[1] = y;
-	params[2] = fontSize;
 	text = _text;
 }
 
@@ -179,9 +178,9 @@ PclUtils::context_items::Text::Paint(vtkContext2D *painter)
 	text_property->SetColor(255.0 * colors[0], 255.0 * colors[1], 255.0 * colors[2]);
 	text_property->SetOpacity(GetOpacity());
 	text_property->SetFontFamilyToArial();
-	text_property->SetFontSize(static_cast<int>(params[2]));
-	text_property->SetJustificationToLeft();
-	text_property->BoldOff();
+	text_property->SetFontSize(fontSize_);
+    text_property->SetJustificationToLeft();
+    bold_ ? text_property->BoldOn() : text_property->BoldOff();
 	text_property->ShadowOff();
 	painter->DrawString(params[0], params[1], text.c_str());
 	return (true);

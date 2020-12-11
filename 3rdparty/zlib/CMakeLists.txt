@@ -99,11 +99,3 @@ set_target_properties(${ZLIB_LIBRARY} PROPERTIES
     )
 
 set(ZLIB_LIBRARY ${ZLIB_LIBRARY} PARENT_SCOPE)
-
-# install
-if (NOT BUILD_SHARED_LIBS)
-    install(TARGETS ${ZLIB_LIBRARY}
-            RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/ErowCloudViewer/bin
-            LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/ErowCloudViewer/lib
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/ErowCloudViewer/lib)
-endif()

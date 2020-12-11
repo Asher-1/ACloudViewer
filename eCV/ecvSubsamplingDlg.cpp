@@ -60,7 +60,7 @@ CVLib::ReferenceCloud* ccSubsamplingDlg::getSampledCloud(ccGenericPointCloud* cl
 	if (!cloud || cloud->size() == 0)
 	{
 		CVLog::Warning("[ccSubsamplingDlg::getSampledCloud] Invalid input cloud!");
-		return 0;
+        return nullptr;
 	}
 
 	switch (samplingMethod->currentIndex())
@@ -87,19 +87,19 @@ CVLib::ReferenceCloud* ccSubsamplingDlg::getSampledCloud(ccGenericPointCloud* cl
 				modParams.enabled = sfGroupBox->isEnabled() && sfGroupBox->isChecked();
 				if (modParams.enabled)
 				{
-					double deltaSF = m_sfMax - m_sfMin;
+                    double deltaSF = static_cast<double>(m_sfMax - m_sfMin);
 					assert(deltaSF >= 0);
-					if (deltaSF > ZERO_TOLERANCE)
+                    if (CVLib::GreaterThanEpsilon(deltaSF))
 					{
 						double sfMinSpacing = minSFSpacingDoubleSpinBox->value();
 						double sfMaxSpacing = maxSFSpacingDoubleSpinBox->value();
 						modParams.a = (sfMaxSpacing - sfMinSpacing) / deltaSF;
-						modParams.b = sfMinSpacing - modParams.a * m_sfMin;
+                        modParams.b = sfMinSpacing - modParams.a * static_cast<double>(m_sfMin);
 					}
 					else
 					{
 						modParams.a = 0.0;
-						modParams.b = m_sfMin;
+                        modParams.b = static_cast<double>(m_sfMin);
 					}
 				}
 				return CVLib::CloudSamplingTools::resampleCloudSpatially(	cloud, 
@@ -139,7 +139,7 @@ CVLib::ReferenceCloud* ccSubsamplingDlg::getSampledCloud(ccGenericPointCloud* cl
 	}
 
 	//something went wrong!
-	return 0;
+    return nullptr;
 }
 
 void ccSubsamplingDlg::updateLabels()

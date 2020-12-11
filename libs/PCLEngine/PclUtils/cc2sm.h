@@ -34,7 +34,7 @@
 #include <string>
 
 class ccPointCloud;
-class ccMesh;
+class ccGenericMesh;
 class ccPolyline;
 
 class vtkPolyData;
@@ -77,10 +77,12 @@ public:
 	PCLCloud::Ptr getVtkPolyDataAsSM(vtkPolyData* const polydata) const;
 	PCLMesh::Ptr getVtkPolyDataAsPclMesh(vtkPolyData* const polydata) const;
 
-	PCLMesh::Ptr getPclMesh(ccMesh * mesh);
-	PCLTextureMesh::Ptr getPclTextureMesh(ccMesh * mesh);
+	PCLMesh::Ptr getPclMesh(ccGenericMesh* mesh);
+    PCLTextureMesh::Ptr getPclTextureMesh(ccGenericMesh* mesh);
 
 	PCLPolygon::Ptr getPclPolygon(ccPolyline * polyline) const;
+
+	bool getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const;
 
 	static std::string GetSimplifiedSFName(const std::string& ccSfName);
 

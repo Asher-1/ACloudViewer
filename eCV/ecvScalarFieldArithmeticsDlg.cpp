@@ -63,7 +63,7 @@ ccScalarFieldArithmeticsDlg::ccScalarFieldArithmeticsDlg(	ccPointCloud* cloud,
 	{
 		for (unsigned i=0; i<sfCount; ++i)
 		{
-			sfLabels << QString(cloud->getScalarFieldName(i));
+            sfLabels << QString(cloud->getScalarFieldName(static_cast<int>(i)));
 		}
 
 		sf1ComboBox->addItems(sfLabels);
@@ -107,7 +107,7 @@ int ccScalarFieldArithmeticsDlg::getSF2Index()
 ccScalarFieldArithmeticsDlg::Operation ccScalarFieldArithmeticsDlg::getOperation() const
 {
 	int opIndex = operationComboBox->currentIndex();
-	if (opIndex < s_opCount)
+    if (opIndex < static_cast<int>(s_opCount))
 	{
 		return static_cast<ccScalarFieldArithmeticsDlg::Operation>(opIndex);
 	}
@@ -206,7 +206,7 @@ bool ccScalarFieldArithmeticsDlg::Apply(ccPointCloud* cloud,
 	}
 
 	unsigned sfCount = cloud->getNumberOfScalarFields();
-	CVLib::ScalarField* sf1 = 0;
+    CVLib::ScalarField* sf1 = nullptr;
 	{
 		if (sf1Idx >= static_cast<int>(sfCount))
 		{
@@ -218,7 +218,7 @@ bool ccScalarFieldArithmeticsDlg::Apply(ccPointCloud* cloud,
 		assert(sf1);
 	}
 
-	CVLib::ScalarField* sf2 = 0;
+    CVLib::ScalarField* sf2 = nullptr;
 	if (op <= DIVIDE)
 	{
 		if (!sf2Desc || (!sf2Desc->isConstantValue && sf2Desc->sfIndex >= static_cast<int>(sfCount)))
@@ -235,7 +235,7 @@ bool ccScalarFieldArithmeticsDlg::Apply(ccPointCloud* cloud,
 				return false;
 			}
 		}
-		sf2 = (!sf2Desc->isConstantValue && sf2Desc->sfIndex >= 0 ? cloud->getScalarField(sf2Desc->sfIndex) : 0);
+        sf2 = (!sf2Desc->isConstantValue && sf2Desc->sfIndex >= 0 ? cloud->getScalarField(sf2Desc->sfIndex) : nullptr);
 	}
 
 	//output SF
@@ -300,7 +300,7 @@ bool ccScalarFieldArithmeticsDlg::Apply(ccPointCloud* cloud,
 	{
 		CVLog::Warning("[ccScalarFieldArithmeticsDlg::apply] Not enough memory!");
 		cloud->deleteScalarField(sfIdx);
-		sfDest = 0;
+        sfDest = nullptr;
 		return false;
 	}
 	assert(valCount == sfDest->currentSize());
@@ -366,7 +366,7 @@ bool ccScalarFieldArithmeticsDlg::Apply(ccPointCloud* cloud,
 					else
 					{
 						const ScalarType& val2 = sf2->getValue(i);
-						if (ccScalarField::ValidValue(val2) && std::abs(val2) > ZERO_TOLERANCE )
+                        if ( ccScalarField::ValidValue(val2) && CVLib::GreaterThanEpsilon(std::abs(val2)) )
 							val = val1 / val2;
 					}
 				}
@@ -416,7 +416,7 @@ bool ccScalarFieldArithmeticsDlg::Apply(ccPointCloud* cloud,
 				val = static_cast<ScalarType>(static_cast<int>(val1)); //integer part ('round' doesn't seem to be available on MSVC?!)
 				break;
 			case INVERSE:
-				val = std::abs(val1) < ZERO_TOLERANCE ? NAN_VALUE : static_cast<ScalarType>(1.0/val1);
+                val = CVLib::LessThanEpsilon(std::abs(val1)) ? NAN_VALUE : static_cast<ScalarType>(1.0f/val1);
 				break;
 			default:
 				assert(false);

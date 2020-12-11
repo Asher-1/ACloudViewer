@@ -19,7 +19,7 @@
 #define ECV_PCLVIS_HEADER
 
 // LOCAL
-#include "../qPCL.h"
+#include "qPCL.h"
 #include "PCLCloud.h"
 #include "WidgetMap.h"
 
@@ -35,15 +35,17 @@
 #include <vtkBoundingBox.h> // needed for iVar
 
 // PCL
-//#include <pcl/visualization/pcl_visualizer.h>
-#include <visualization/include/pcl/visualization/pcl_visualizer.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 class vtkLODActor;
 class vtkCamera;
+class vtkRender;
 class vtkPointPicker;
 class vtkAreaPicker;
 class vtkPropPicker;
 class vtkAbstractWidget;
+class vtkRenderWindow;
+class vtkMatrix4x4;
 
 class ccBBox;
 class ecvPointpickingTools;
@@ -56,16 +58,29 @@ namespace VTKExtensions
 
 namespace PclUtils
 {
-	class QPCL_ENGINE_LIB_API PCLVis : public ecvGenericVisualizer3D, public pcl::visualization::PCLVisualizer
+	class QPCL_ENGINE_LIB_API PCLVis : public ecvGenericVisualizer3D, 
+									   public pcl::visualization::PCLVisualizer
 	{
 		Q_OBJECT
 	public:
 		//! Default constructor
-		PCLVis(const std::string &viewerName, bool initIterator);
+        PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style, 
+				const std::string& viewerName = "", bool initIterator = false,
+                int argc = 0, char** argv = nullptr);  // deprecated!
+        PCLVis(vtkSmartPointer<vtkRenderer> ren, vtkSmartPointer<vtkRenderWindow> wind,
+			   vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style,
+                   const std::string& viewerName = "", bool initIterator = false, int argc = 0,
+                   char** argv = nullptr);
+
 		virtual ~PCLVis();
 
 		// do some initialization jobs
 		void initialize();
+
+		// center axes configuration
+        void configCenterAxes();
+
+		void configInteractorStyle(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style);
 
 	public:
 		/** \brief Marker Axes.
@@ -89,7 +104,7 @@ namespace PclUtils
 		 * @param iren
 		 * @param win
 		 */
-		void setupInteractor(vtkRenderWindowInteractor *iren, vtkRenderWindow *win);
+        void setupInteractor(vtkRenderWindowInteractor* iren, vtkRenderWindow* win);
 
 		/** \brief Get a pointer to the current interactor style used. */
 		inline vtkSmartPointer<vtkRenderWindowInteractor> getRenderWindowInteractor() { return (interactor_); }
@@ -115,6 +130,8 @@ namespace PclUtils
 		 * Resets the center of rotation to the focal point.
 		 */
 		void resetCenterOfRotation();
+
+        static void ExpandBounds(double bounds[6], vtkMatrix4x4 *matrix);
 
 		/**
 		 * Set the center of rotation. For this to work,
@@ -155,6 +172,7 @@ namespace PclUtils
 		 */
 		void synchronizeGeometryBounds();
 
+		// Return a depth value for z-buffer
 		double getGLDepth(int x, int y);
 
 		void getProjectionTransformMatrix(Eigen::Matrix4d& proj);
@@ -173,7 +191,7 @@ namespace PclUtils
 		void resetCameraClippingRange();
 		void resetCamera(const ccBBox * bbox);
 		void resetCamera(double xMin, double xMax, double yMin, double yMax, double zMin, double zMax);
-		inline void resetCamera() { pcl::visualization::PCLVisualizer::resetCamera(); };
+        inline void resetCamera() { pcl::visualization::PCLVisualizer::resetCamera(); }
 		inline void resetCamera(double bounds[6]) { resetCamera(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]); }
 		void getReasonableClippingRange(double range[2]);
 		void expandBounds(double bounds[6], vtkMatrix4x4* matrix);
@@ -187,6 +205,8 @@ namespace PclUtils
 		void hideShowActors(bool visibility, const std::string & viewID, int viewport = 0);
 		void hideShowWidgets(bool visibility, const std::string & viewID, int viewport = 0);
 		
+		bool addScalarBar(const CC_DRAW_CONTEXT& CONTEXT);
+		bool updateScalarBar(const CC_DRAW_CONTEXT& CONTEXT);
 		bool addCaption(const std::string& text,
 			const CCVector2& pos2D,
 			const CCVector3& anchorPos,
@@ -299,12 +319,12 @@ namespace PclUtils
 		inline bool isAreaPickingMode() { return m_x_pressNum % 2 != 0; }
 		inline bool isAreaPickingEnabled() { return m_areaPickingEnabled; }
 		inline void setAreaPickingEnabled(bool state) { m_areaPickingEnabled = state; }
-		inline void toggleAreaPicking();
 
 		inline bool isActorPickingEnabled() { return m_actorPickingEnabled; }
 		inline void setActorPickingEnabled(bool state) { m_actorPickingEnabled = state; }
 		inline void toggleActorPicking() { setActorPickingEnabled(!isActorPickingEnabled()); }
 
+        void toggleAreaPicking();
 		void exitCallbackProcess();
 		void setAreaPickingMode(bool state);
 		std::string pickItem(double x = -1, double y = -1);

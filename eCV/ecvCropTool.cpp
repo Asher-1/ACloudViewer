@@ -380,9 +380,9 @@ ccHObject* ccCropTool::Crop(ccHObject* entity, const ccBBox& box, bool inside/*=
 										{
 											//get the origin triangle
 											unsigned origTriIndex = origTriIndexes[i];
-											TexCoords2D* tx1 = 0;
-											TexCoords2D* tx2 = 0;
-											TexCoords2D* tx3 = 0;
+                                            TexCoords2D* tx1 = nullptr;
+                                            TexCoords2D* tx2 = nullptr;
+                                            TexCoords2D* tx3 = nullptr;
 											mesh->getTriangleTexCoordinates(origTriIndex, tx1, tx2, tx3);
 											//get the new triangle
 											const CVLib::VerticesIndexes* tsic = croppedMesh->getTriangleVertIndexes(i);
@@ -395,9 +395,9 @@ ccHObject* ccCropTool::Crop(ccHObject* entity, const ccBBox& box, bool inside/*=
 												//intepolation weights
 												CCVector3d w;
 												mesh->computeInterpolationWeights(origTriIndex, *Vcj, w);
-												if (	(tx1 || w.u[0] < ZERO_TOLERANCE)
-													&&	(tx2 || w.u[1] < ZERO_TOLERANCE)
-													&&	(tx3 || w.u[2] < ZERO_TOLERANCE) )
+                                                if (	(tx1 || CVLib::LessThanEpsilon( w.u[0] ) )
+                                                    &&	(tx2 || CVLib::LessThanEpsilon( w.u[1] ) )
+                                                    &&	(tx3 || CVLib::LessThanEpsilon( w.u[2] ) ) )
 												{
 													TexCoords2D t(	static_cast<float>((tx1 ? tx1->tx*w.u[0] : 0.0) + (tx2 ? tx2->tx*w.u[1] : 0.0) + (tx3 ? tx3->tx*w.u[2] : 0.0)),
 																	static_cast<float>((tx1 ? tx1->ty*w.u[0] : 0.0) + (tx2 ? tx2->ty*w.u[1] : 0.0) + (tx3 ? tx3->ty*w.u[2] : 0.0)) );

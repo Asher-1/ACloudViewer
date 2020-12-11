@@ -25,8 +25,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-//ECV_DB_LIB
-//#include <CVLog.h>
+// CV_CORE_LIB
+#include <CVMath.h>
 
 using namespace PdmsTools;
 using namespace PdmsCommands;
@@ -1078,7 +1078,7 @@ bool GenericItem::setOrientation(const CCVector3 &x, const CCVector3 &y, const C
 
 bool GenericItem::isOrientationValid(unsigned i) const
 {
-	return (orientation[i].norm2() > ZERO_TOLERANCE);
+    return CVLib::GreaterThanEpsilon( orientation[i].norm2() );
 }
 
 bool GenericItem::completeOrientation()
@@ -1485,16 +1485,16 @@ std::pair<int, int> SCylinder::write(std::ostream &output, int nbtabs) const
 	output << "HEIGHT " << height << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-	output << "XTSHEAR " << (CV_RAD_TO_DEG)*xtshear << std::endl;
+    output << "XTSHEAR " << CVLib::RadiansToDegrees( xtshear ) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-	output << "XBSHEAR " << (CV_RAD_TO_DEG)*xbshear << std::endl;
+    output << "XBSHEAR " << CVLib::RadiansToDegrees( xbshear ) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-	output << "YTSHEAR " << (CV_RAD_TO_DEG)*ytshear << std::endl;
+    output << "YTSHEAR " << CVLib::RadiansToDegrees( ytshear ) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-	output << "YBSHEAR " << (CV_RAD_TO_DEG)*ybshear << std::endl;
+    output << "YBSHEAR " << CVLib::RadiansToDegrees( ybshear ) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
 	output << "AT X " << position[0] << " Y " << position[1] << " Z " << position[2] << std::endl;
@@ -1550,7 +1550,7 @@ std::pair<int, int> CTorus::write(std::ostream &output, int nbtabs) const
 	output << "ROUTSIDE " << outside_radius << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-	output << "ANGLE " << static_cast<PointCoordinateType>(CV_RAD_TO_DEG)*angle << std::endl;
+    output << "ANGLE " << CVLib::RadiansToDegrees(angle) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
 	output << "AT X " << position[0] << " Y " << position[1] << " Z " << position[2] << std::endl;
@@ -1610,7 +1610,7 @@ std::pair<int, int> RTorus::write(std::ostream &output, int nbtabs) const
 	output << "HEIGHT " << height << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-	output << "ANGLE " << static_cast<PointCoordinateType>(CV_RAD_TO_DEG)*angle << std::endl;
+    output << "ANGLE " << CVLib::RadiansToDegrees(angle) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
 	output << "AT X " << position[0] << " Y " << position[1] << " Z " << position[2] << std::endl;
@@ -1648,10 +1648,10 @@ bool Dish::setValue(Token t, PointCoordinateType value)
 
 PointCoordinateType Dish::surface() const
 {
-	if (radius > ZERO_TOLERANCE)
+    if ( CVLib::GreaterThanEpsilon(radius) )
 	{
 		PointCoordinateType r = static_cast<PointCoordinateType>(0.5f*diameter);
-		if (fabs(2 * height - diameter) < ZERO_TOLERANCE)
+        if ( CVLib::LessThanEpsilon( fabs(2 * height - diameter) ) )
 			return static_cast<PointCoordinateType>(2.0*M_PI)*PDMS_SQR(r);
 		if (2 * height > diameter)
 		{

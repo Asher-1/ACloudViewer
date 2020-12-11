@@ -27,8 +27,7 @@ namespace CVLib
 //! Local modelization (generic interface)
 /** Local surface approximation of a point cloud
 **/
-class LocalModel
-{
+class LocalModel {
 public:
 
 	//! Factory
