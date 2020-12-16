@@ -3,66 +3,61 @@ Build from source in Ubuntu and macOS
 
 1. Install dependencies
 
-    # On Ubuntu
-    util/install_deps_ubuntu.sh assume-yes
-
-    # On macOS
-    # Install Homebrew first: https://brew.sh/
-    util/install_deps_macos.sh
-
-    # configure for vtk(8.2)
-      cmake -DVTK_QT_VERSION:STRING=5 \
-	-DCMAKE_BUILD_TYPE=Release 
-      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
-      	-DVTK_Group_Qt:BOOL=ON \
-      	-DCMAKE_PREFIX_PATH:PATH=/opt/5.14.2/5.14.2/gcc_64/lib/cmake  \
-      	-DBUILD_SHARED_LIBS:BOOL=ON ..
-
-	make -j 8
-	sudo make install
-    # cofigure for qt VTK PLUGINS
-	sudo find / -name libQVTKWidgetPlugin.so
-	sudo cp lib/libQVTKWidgetPlugin.so /opt/Qt5.14.2/5.14.2/gcc_64/plugins/designer
-	sudo cp lib/libQVTKWidgetPlugin.so /opt/Qt5.14.2/Tools/QtCreator/lib/Qt/plugins/designer
-
-    # cofigure PCL(1.11.1)
-	cmake -DCMAKE_BUILD_TYPE=Release \
-	      -DBUILD_GPU=ON \
-	      -DBUILD_apps=ON \
-	      -DBUILD_examples=ON \
-	      -DBUILD_surface_on_nurbs=ON \
-	      -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
-	      -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake ..
-
-	make -j 8
-	sudo make install
+	    # On Ubuntu
+	    util/install_deps_ubuntu.sh assume-yes
+	
+	    # On macOS
+	    # Install Homebrew first: https://brew.sh/
+	    util/install_deps_macos.sh
+	
+	    # configure for vtk(8.2)
+	      cmake -DVTK_QT_VERSION:STRING=5 \
+		-DCMAKE_BUILD_TYPE=Release 
+	      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
+	      	-DVTK_Group_Qt:BOOL=ON \
+	      	-DCMAKE_PREFIX_PATH:PATH=/opt/5.14.2/5.14.2/gcc_64/lib/cmake  \
+	      	-DBUILD_SHARED_LIBS:BOOL=ON ..
+	
+		make -j 8
+		sudo make install
+	    # cofigure for qt VTK PLUGINS
+		sudo find / -name libQVTKWidgetPlugin.so
+		sudo cp lib/libQVTKWidgetPlugin.so /opt/Qt5.14.2/5.14.2/gcc_64/plugins/designer
+		sudo cp lib/libQVTKWidgetPlugin.so /opt/Qt5.14.2/Tools/QtCreator/lib/Qt/plugins/designer
+	
+	    # cofigure PCL(1.11.1)
+		cmake -DCMAKE_BUILD_TYPE=Release \
+		      -DBUILD_GPU=ON \
+		      -DBUILD_apps=ON \
+		      -DBUILD_examples=ON \
+		      -DBUILD_surface_on_nurbs=ON \
+		      -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
+		      -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake ..
+	
+		make -j 8
+		sudo make install
 
 2. Setup Python environments
-````````````````````````````
 
 Activate the python ``virtualenv`` or Conda ``virtualenv```. Check
 ``which python`` to ensure that it shows the desired Python executable.
 Alternatively, set the CMake flag ``-DPYTHON_EXECUTABLE=/path/to/python``
 to specify the python executable.
-
 If Python binding is not needed, you can turn it off by ``-DBUILD_PYTHON_MODULE=OFF``.
 
-
 3. Config
-`````````
-.. code-block:: bash
 
-    mkdir build
-    cd build
-    cmake -DCMAKE_BUILD_TYPE=Release \
-      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/bin/qmake \
-      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/lib/cmake  \
-      	../ErowCloudViewer
-
-    cmake -DCMAKE_BUILD_TYPE=Release \
-      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
-      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake  \
-      	-DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
+	    mkdir build
+	    cd build
+	    cmake -DCMAKE_BUILD_TYPE=Release \
+	      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/bin/qmake \
+	      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/lib/cmake  \
+	      	../ErowCloudViewer
+	
+	    cmake -DCMAKE_BUILD_TYPE=Release \
+	      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
+	      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake  \
+	      	-DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
 
 The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
 CloudViewer to a user location. In the absence of this argument CloudViewer will be
@@ -71,31 +66,25 @@ options of the build, see :ref:`compilation_options`.
 
 
 4. Build
-````````
 
-    # On Ubuntu
-    make -j$(nproc)
-
-    # On macOS
-    make -j$(sysctl -n hw.physicalcpu)
+	    # On Ubuntu
+	    make -j$(nproc)
+	
+	    # On macOS
+	    make -j$(sysctl -n hw.physicalcpu)
 
 
 5. Install
-``````````
 
 To install CloudViewer C++ library:
 
-.. code-block:: bash
-
-    make install
+    	make install
 
 To link a C++ project against the CloudViewer C++ library, please refer to
 :ref:`create_cplusplus_project`.
 
 
 To install CloudViewer Python library, build one of the following options:
-
-.. code-block:: bash
 
     # Activate the virtualenv first
     # Install pip package in the current python environment
@@ -114,9 +103,7 @@ To install CloudViewer Python library, build one of the following options:
 
 Finally, verify the python installation with:
 
-
 	python -c "import cloudViewer"
-
 
     :: Activate the virtualenv first
     :: Install pip package in the current python environment
@@ -142,7 +129,6 @@ Compilation options
 -------------------
 
 OpenMP
-``````
 
 We automatically detect if the C++ compiler supports OpenMP and compile CloudViewer
 with it if the compilation option ``WITH_OPENMP`` is ``ON``.
@@ -153,18 +139,15 @@ A workaround is to install a C++ compiler with OpenMP support, such as ``gcc``,
 then use it to compile CloudViewer. For example, starting from a clean build
 directory, run
 
-.. code-block:: bash
-
     brew install gcc --without-multilib
     cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..
     make -j
 
-.. note:: This workaround has some compatibility issues with the source code of
+note:: This workaround has some compatibility issues with the source code of
     GLFW included in ``3rdparty``.
     Make sure CloudViewer is linked against GLFW installed on the OS.
 
 ML Module
-`````````
 
 The ML module consists of primitives like operators and layers as well as high
 level code for models and pipelines. To build the operators and layers, set
@@ -178,8 +161,6 @@ CloudViewer-ML from GitHub during the build with
 The following example shows the command for building the ops with GPU support
 for all supported ML frameworks and bundling the high level CloudViewer-ML code.
 
-.. code-block:: bash
-
     # In the build directory
     cmake -DBUILD_CUDA_MODULE=ON \
           -DBUILD_PYTORCH_OPS=ON \
@@ -190,61 +171,48 @@ for all supported ML frameworks and bundling the high level CloudViewer-ML code.
     # Install the python wheel with pip
     make -j install-pip-package
 
-.. note::
+note::
     Importing Python libraries compiled with different CXX ABI may cause segfaults
     in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
     and TensorFlow Python releases use the older CXX ABI; while when they are
     compiled from source, newer ABI is enabled by default.
-
-    When releasing CloudViewer as a Python package, we set
+	When releasing CloudViewer as a Python package, we set
     ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
     in order to ensure compatibility with PyTorch and TensorFlow Python releases.
-
-    If you build PyTorch or TensorFlow from source or if you run into ABI
+	If you build PyTorch or TensorFlow from source or if you run into ABI
     compatibility issues with them, please:
 
-    1. Check PyTorch and TensorFlow ABI with
+1. Check PyTorch and TensorFlow ABI with
+	
+		python -c "import torch; print(torch._C._GLIBCXX_USE_CXX11_ABI)"
+		python -c "import tensorflow; print(tensorflow.__cxx11_abi_flag__)"
 
-       .. code-block:: bash
+2. Configure CloudViewer to compile all dependencies from source
+   with the corresponding ABI version obtained from step 1.
 
-           python -c "import torch; print(torch._C._GLIBCXX_USE_CXX11_ABI)"
-           python -c "import tensorflow; print(tensorflow.__cxx11_abi_flag__)"
-
-    2. Configure CloudViewer to compile all dependencies from source
-       with the corresponding ABI version obtained from step 1.
-
-    After installation of the Python package, you can check CloudViewer ABI version
-    with:
-
-    .. code-block:: bash
+After installation of the Python package, you can check CloudViewer ABI version
+with:
 
         python -c "import cloudViewer; print(cloudViewer.pybind._GLIBCXX_USE_CXX11_ABI)"
 
-    To build CloudViewer with CUDA support, configure with:
-
-    .. code-block:: bash
+To build CloudViewer with CUDA support, configure with:
 
         cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
 
-    Please note that CUDA support is work in progress and experimental. For building
-    CloudViewer with CUDA support, ensure that CUDA is properly installed by running following commands:
+Please note that CUDA support is work in progress and experimental. For building CloudViewer with CUDA support, ensure that CUDA is properly installed by running following commands:
 
-    .. code-block:: bash
+code-block:: bash
 
         nvidia-smi      # Prints CUDA-enabled GPU information
         nvcc -V         # Prints compiler version
 
-    If you see an output similar to ``command not found``, you can install CUDA toolkit
-    by following the `official
-    documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
+If you see an output similar to ``command not found``, you can install CUDA toolkit by following the `official documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
 
 
 Unit test
 ---------
 
 To build and run C++ unit tests:
-
-.. code-block:: bash
 
     cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
@@ -253,9 +221,13 @@ To build and run C++ unit tests:
 
 To run Python unit tests:
 
-.. code-block:: bash
-
     # Activate virtualenv first
     pip install pytest
     make install-pip-package
     pytest ../python/test
+
+
+Package Linux
+-------------
+
+[package-on-linux.md file](package-on-linux.md)
