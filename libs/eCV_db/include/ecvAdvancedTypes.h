@@ -33,8 +33,8 @@ class NormsIndexesTableType : public ccArray<CompressedNormType, 1, CompressedNo
 {
 public:
 	//! Default constructor
-	NormsIndexesTableType() : ccArray<CompressedNormType, 1, CompressedNormType>("Compressed normals") {}
-	virtual ~NormsIndexesTableType() = default;
+    ECV_DB_LIB_API NormsIndexesTableType();
+    ~NormsIndexesTableType() override = default;
 	
 	//inherited from ccArray/ccHObject
 	CV_CLASS_ENUM getClassID() const override { return CV_TYPES::NORMAL_INDEXES_ARRAY; }
@@ -54,7 +54,7 @@ public:
 	}
 
 	//inherited from ccHObject/ccArray
-	ECV_DB_LIB_API bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    ECV_DB_LIB_API bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
 };
 
 //! Array of (uncompressed) 3D normals (Nx,Ny,Nz)
@@ -107,6 +107,34 @@ public:
 		cloneArray->setName(getName());
 		return cloneArray;
 	}
+};
+
+//! Array of RGBA colors for each point
+class RGBAColorsTableType : public ccArray<ecvColor::Rgba, 4, ColorCompType> {
+public:
+    //! Default constructor
+    RGBAColorsTableType()
+        : ccArray<ecvColor::Rgba, 4, ColorCompType>("RGBA colors") {}
+    virtual ~RGBAColorsTableType() = default;
+
+    // inherited from ccArray/ccHObject
+    CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::RGBA_COLOR_ARRAY;
+    }
+
+    //! Duplicates array (overloaded from ccArray::clone)
+    RGBAColorsTableType* clone() override {
+        RGBAColorsTableType* cloneArray = new RGBAColorsTableType();
+        if (!copy(*cloneArray)) {
+            CVLog::Warning(
+                    "[RGBAColorsTableType::clone] Failed to clone array (not "
+                    "enough memory)");
+            cloneArray->release();
+            return nullptr;
+        }
+        cloneArray->setName(getName());
+        return cloneArray;
+    }
 };
 
 //! 2D texture coordinates

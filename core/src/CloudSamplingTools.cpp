@@ -23,7 +23,7 @@
 #include <DgmOctreeReferenceCloud.h>
 #include <GenericProgressCallback.h>
 #include <Neighbourhood.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <ReferenceCloud.h>
 #include <ScalarField.h>
 #include <ScalarFieldTools.h>

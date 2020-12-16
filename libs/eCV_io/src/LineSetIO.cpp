@@ -26,7 +26,7 @@
 
 #include "LineSetIO.h"
 
-#include <rply/rply.h>
+#include <rply.h>
 
 #include <unordered_map>
 

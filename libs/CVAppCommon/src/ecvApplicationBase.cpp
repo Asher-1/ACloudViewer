@@ -56,7 +56,9 @@ void ecvApplicationBase::init(bool noOpenGLSupport)
 			format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
 			format.setStencilBufferSize(0);
 
+#ifdef CV_GL_WINDOW_USE_QWINDOW
 			format.setStereo(true);
+#endif
 
 #ifdef Q_OS_MAC
 			format.setVersion(2, 1);	// must be 2.1 - see ccGLWindow::functions()
@@ -66,13 +68,26 @@ void ecvApplicationBase::init(bool noOpenGLSupport)
 #ifdef QT_DEBUG
 			format.setOption(QSurfaceFormat::DebugContext, true);
 #endif
-
 			QSurfaceFormat::setDefaultFormat(format);
 		}
+
+#ifdef Q_OS_WIN
+		////enables automatic scaling based on the monitor's pixel density
+		//QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+        //qputenv("QT_ENABLE_HIGHDPI_SCALING", "2");
+        //QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        //        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+#endif
+
+#ifdef Q_OS_UNIX
+        ////enables automatic scaling based on the monitor's pixel density
+        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 
 		// The 'AA_ShareOpenGLContexts' attribute must be defined BEFORE the creation of the Q(Gui)Application
 		// DGM: this is mandatory to enable exclusive full screen for ccGLWidget (at least on Windows)
 		QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+
 	}
 }
 
@@ -84,18 +99,6 @@ ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, bool isCommandLin
 	setOrganizationName( "ECVCorp" );
 
 	setupPaths();
-
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
-	// supports HDPI
-	//QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-	//QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-	////QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
-
-#ifdef Q_OS_WIN
-	//enables automatic scaling based on the monitor's pixel density
-	//setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
 		
 #ifdef Q_OS_MAC
 	// Mac OS X apps don't show icons in menus
@@ -181,7 +184,7 @@ void ecvApplicationBase::setupPaths()
 		bundleDir.cdUp();
 	}
 
-	m_PluginPaths << (bundleDir.absolutePath() + "/PlugIns/ccPlugins");
+    m_PluginPaths << (bundleDir.absolutePath() + "/PlugIns/ecvPlugins");
 
 #if defined(CV_MAC_DEV_PATHS)
 	// Used for development only - this is the path where the plugins are built
@@ -191,9 +194,9 @@ void ecvApplicationBase::setupPaths()
 	bundleDir.cdUp();
 	bundleDir.cdUp();
 
-	m_PluginPaths << (bundleDir.absolutePath() + "/ccPlugins");
+    m_PluginPaths << (bundleDir.absolutePath() + "/ecvPlugins");
 	m_ShaderPath = (bundleDir.absolutePath() + "/shaders");
-	m_TranslationPath = (bundleDir.absolutePath() + "/qCC/translations");
+    m_TranslationPath = (bundleDir.absolutePath() + "/eCV/translations");
 #else
 	m_ShaderPath = (bundleDir.absolutePath() + "/Shaders");
 	m_TranslationPath = (bundleDir.absolutePath() + "/translations");
@@ -202,25 +205,39 @@ void ecvApplicationBase::setupPaths()
 	m_PluginPaths << (appDir.absolutePath() + "/plugins");
 	m_ShaderPath = (appDir.absolutePath() + "/shaders");
 	m_TranslationPath = (appDir.absolutePath() + "/translations");
-#elif defined(Q_OS_LINUX)
+#elif defined(Q_OS_LINUX)  // Q_OS_LINUX
 	// Shaders & plugins are relative to the bin directory where the executable is found
 	QDir  theDir = appDir;
 
 	if ( theDir.dirName() == "bin" )
 	{
 		theDir.cdUp();
-
-		m_PluginPaths << (theDir.absolutePath() + "/lib/erowcloudviewer/plugins");
-		m_ShaderPath = (theDir.absolutePath() + "/share/erowcloudviewer/shaders");
-		m_TranslationPath = (theDir.absolutePath() + "/share/erowcloudviewer/translations");
+        m_PluginPaths << (theDir.absolutePath() + "/plugins");
+        m_PluginPaths << (theDir.absolutePath() + "/bin/plugins");
+        m_PluginPaths << (theDir.absolutePath() + "/lib/erowcloudviewer/plugins");
+        m_ShaderPath = (theDir.absolutePath() + "/share/erowcloudviewer/shaders");
+        m_TranslationPath = (theDir.absolutePath() + "/share/erowcloudviewer/translations");
 	}
 	else
 	{
 		// Choose a reasonable default to look in
-		m_PluginPaths << "/usr/lib/erowcloudviewer/plugins";
-		m_ShaderPath = "/usr/share/erowcloudviewer/shaders";
-		m_TranslationPath = "/usr/share/erowcloudviewer/translations";
+        m_PluginPaths << "/usr/lib/erowcloudviewer/plugins";
+        m_PluginPaths << (theDir.absolutePath() + "/plugins");
+        m_PluginPaths << (theDir.absolutePath() + "/bin/plugins");
+        m_PluginPaths << (theDir.absolutePath() + "/lib/erowcloudviewer/plugins");
+        m_ShaderPath = "/usr/share/erowcloudviewer/shaders";
+        m_TranslationPath = "/usr/share/erowcloudviewer/translations";
 	}
+
+	// check current application translations path whether exists or not
+	// if exist and then overwriter above translation settings.
+	QString translationPath = (theDir.absolutePath() + "/translations");
+    QFile transFile(translationPath);
+    if (transFile.exists())
+	{
+        m_TranslationPath = translationPath;
+    }
+
 #else
 #warning Need to specify the shader path for this OS.
 #endif

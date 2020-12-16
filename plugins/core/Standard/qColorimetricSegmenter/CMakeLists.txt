@@ -8,7 +8,7 @@ if ( PLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER )
 
 	AddPlugin( NAME ${PROJECT_NAME} )
 
-	include_directories( ${CloudCompare_SOURCE_DIR} )
+	include_directories( ${ErowCloudViewer_SOURCE_DIR} )
 	
 	target_sources( ${PROJECT_NAME}
 		PRIVATE

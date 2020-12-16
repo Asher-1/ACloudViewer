@@ -41,7 +41,7 @@ ExtractSIFT::ExtractSIFT()
 										 tr("Extract SIFT Keypoints"),
 										 tr("Extract SIFT keypoints for clouds with intensity/RGB or any scalar field"),
 										 ":/toolbar/PclAlgorithms/icons/sift.png"))
-	, m_dialog(0)
+    , m_dialog(nullptr)
 	, m_nr_octaves(0)
 	, m_min_scale(0)
 	, m_nr_scales_per_octave(0)
@@ -54,7 +54,7 @@ ExtractSIFT::ExtractSIFT()
 ExtractSIFT::~ExtractSIFT()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+    if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 
@@ -94,7 +94,7 @@ int ExtractSIFT::openInputDialog()
 
 	//initialize the dialog object
 	if (!m_dialog)
-		m_dialog = new SIFTExtractDlg(m_app ? m_app->getActiveWindow() : 0);
+        m_dialog = new SIFTExtractDlg(m_app ? m_app->getActiveWindow() : nullptr);
 
 	//update the combo box
 	m_dialog->updateComboBox(fields);

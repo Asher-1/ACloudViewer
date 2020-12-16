@@ -1,7 +1,7 @@
 
 target_sources( ${PROJECT_NAME}
 	PRIVATE
-		${CMAKE_CURRENT_LIST_DIR}/qPCL.h
+		${CMAKE_CURRENT_LIST_DIR}/qPCLBase.h
 )
 
 target_include_directories( ${PROJECT_NAME}

@@ -20,8 +20,8 @@
 
 #include "ccCommandLineInterface.h"
 
-class ccProgressDialog;
-class ccMainAppInterface;
+class ecvProgressDialog;
+class ecvMainAppInterface;
 
 //qCC_db
 #include <ccHObject.h>
@@ -37,8 +37,8 @@ public:
 							const std::vector<CCVector3>& rays,
 							bool meshIsClosed,
 							unsigned resolution,
-							ccProgressDialog* progressDlg = nullptr,
-							ccMainAppInterface* app = nullptr);
+							ecvProgressDialog* progressDlg = nullptr,
+							ecvMainAppInterface* app = nullptr);
 
 	bool process(ccCommandLineInterface& cmd) override;
 };

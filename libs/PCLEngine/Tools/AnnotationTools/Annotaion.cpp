@@ -122,7 +122,7 @@ void Annotation::colorAnnotation(int color_index) {
 	}
 	else {
 		//pcl::RGB c = pcl::GlasbeyLUT::at(color_index);
-		ecvColor::Rgb c = ecvColor::LookUpTable::at(color_index);
+        ecvColor::Rgb c = ecvColor::LookUpTable::at(static_cast<std::size_t>(color_index));
 		lut->SetTableValue(0, c.r / 255.0, c.g / 255.0, c.b / 255.0, 0);
 		lut->SetTableValue(1, c.r / 255.0, c.g / 255.0, c.b / 255.0, 1);
 	}
@@ -160,7 +160,7 @@ void Annotation::setAnchorPoint(const PointCloudI::Ptr cloud, const std::vector<
 
 	int num = static_cast<int>(slice.size());
 	anchorPoints.clear();
-	anchorPoints.resize(num);
+    anchorPoints.resize(slice.size());
 	
 	if (num != 0)
 	{
@@ -175,10 +175,10 @@ void Annotation::setAnchorPoint(const PointCloudI::Ptr cloud, const std::vector<
 #endif
 		{
 			double* p = new double[3];
-			p[0] = cloud->points[slice[dataIndex]].x;
-			p[1] = cloud->points[slice[dataIndex]].y;
-			p[2] = cloud->points[slice[dataIndex]].z;
-			anchorPoints[dataIndex] = p;
+            p[0] = static_cast<double>(cloud->points[static_cast<std::size_t>(slice[static_cast<std::size_t>(dataIndex)])].x);
+            p[1] = static_cast<double>(cloud->points[static_cast<std::size_t>(slice[static_cast<std::size_t>(dataIndex)])].y);
+            p[2] = static_cast<double>(cloud->points[static_cast<std::size_t>(slice[static_cast<std::size_t>(dataIndex)])].z);
+            anchorPoints[static_cast<std::size_t>(dataIndex)] = p;
 		}
 #ifdef USE_TBB
 		);
@@ -346,10 +346,10 @@ std::vector<std::string>* Annotation::GetTypes()
 	return types;
 }
 
-int Annotation::GetTypeIndex(std::string type_) 
+std::size_t Annotation::GetTypeIndex(std::string type_)
 {
 	assert(types);
-	for (int i=0;i<types->size();i++)
+    for (std::size_t i=0;i<types->size();i++)
 	{
 		if (types->at(i)==type_) return i;
 	}
@@ -361,7 +361,7 @@ int Annotation::GetTypeIndex(std::string type_)
 std::string Annotation::GetTypeByIndex(size_t index)
 {
 	assert(types);
-	if (index > types->size() - 1 || index < 0)
+    if (index > types->size() - 1)
 	{
 		return "";
 	}
@@ -380,14 +380,15 @@ void Annotation::ComputeOBB(const  PointCloudI::Ptr cloud, std::vector<int>& sli
 	p2[1]=-std::numeric_limits <double>::max ();
 	p2[2]=-std::numeric_limits <double>::max ();
 
-	for (auto i:slice){
-		p1[0]=std::min(p1[0],(double)cloud->points[i].x);
-		p1[1]=std::min(p1[1],(double)cloud->points[i].y);
-		p1[2]=std::min(p1[2],(double)cloud->points[i].z);
+    for (auto i : slice){
+        std::size_t index = static_cast<std::size_t>(i);
+        p1[0]=std::min(p1[0],static_cast<double>(cloud->points[index].x));
+        p1[1]=std::min(p1[1],static_cast<double>(cloud->points[index].y));
+        p1[2]=std::min(p1[2],static_cast<double>(cloud->points[index].z));
 
-		p2[0]=std::max(p2[0],(double)cloud->points[i].x);
-		p2[1]=std::max(p2[1],(double)cloud->points[i].y);
-		p2[2]=std::max(p2[2],(double)cloud->points[i].z);
+        p2[0]=std::max(p2[0],static_cast<double>(cloud->points[index].x));
+        p2[1]=std::max(p2[1],static_cast<double>(cloud->points[index].y));
+        p2[2]=std::max(p2[2],static_cast<double>(cloud->points[index].z));
 	}
 }
 
@@ -441,7 +442,7 @@ void Annotaions::add(Annotation *anno) {
 	// add balloon tip
 	if (m_balloonWidget)
 	{
-		m_balloonWidget->AddBalloon(anno->getActor(), anno->getType().c_str(), NULL);
+        m_balloonWidget->AddBalloon(anno->getActor(), anno->getType().c_str(), nullptr);
 	}
 	
 	// update internal labels
@@ -472,8 +473,8 @@ void Annotaions::clear(){
 	preserve();
 }
 
-int Annotaions::getSize(){
-	return m_annotations.size();
+std::size_t Annotaions::getSize(){
+    return m_annotations.size();
 }
 
 void Annotaions::updateLabels(Annotation * anno, bool resetFlag)
@@ -481,7 +482,7 @@ void Annotaions::updateLabels(Annotation * anno, bool resetFlag)
 	if (!anno) return;
 
 	int num = static_cast<int>(anno->getSlice().size());
-	int Annotype = Annotation::GetTypeIndex(anno->getType());
+    int Annotype = static_cast<int>(Annotation::GetTypeIndex(anno->getType()));
 	if (m_labeledCloudIndex && num != 0)
 	{
 #ifdef USE_TBB
@@ -496,11 +497,11 @@ void Annotaions::updateLabels(Annotation * anno, bool resetFlag)
 		{
 			if (resetFlag) // reset labels which are related to this annotation
 			{
-				m_labeledCloudIndex[anno->getSlice()[dataIndex]] = 0;
+                m_labeledCloudIndex[anno->getSlice()[static_cast<std::size_t>(dataIndex)]] = 0;
 			}
 			else
 			{
-				m_labeledCloudIndex[anno->getSlice()[dataIndex]] = Annotype;
+                m_labeledCloudIndex[anno->getSlice()[static_cast<std::size_t>(dataIndex)]] = Annotype;
 			}
 
 		}
@@ -581,53 +582,82 @@ void Annotaions::saveAnnotations(string filename, int mode)
 {
 	if (m_annotations.empty()) return;
 
-#ifdef _WIN32
-	CVTools::TimeStart();
-	std::string ss;
-	if (mode == 0) // semantic annotation
-	{
-		for (size_t i = 0; i < m_capacity; ++i)
-		{
-			ss += (std::to_string(m_labeledCloudIndex[i]) + "\n");
-		}
-	}
-	else if (mode == 1) // bbox annotation
-	{
-		for (auto anno : m_annotations) {
-			ss += (anno->getBoxLabel().toString() + "\n");
-		}
-	}
-	else
-	{
-		CVLog::Warning(QString("unknown mode: %1, only semantic and box supported!").arg(mode));
-		return;
-	}
+//#ifdef _WIN32
+//	CVTools::TimeStart();
+//	std::string ss;
+//	if (mode == 0) // semantic annotation
+//	{
+//		for (size_t i = 0; i < m_capacity; ++i)
+//		{
+//			ss += (std::to_string(m_labeledCloudIndex[i]) + "\n");
+//		}
+//	}
+//	else if (mode == 1) // bbox annotation
+//	{
+//		for (auto anno : m_annotations) {
+//			ss += (anno->getBoxLabel().toString() + "\n");
+//		}
+//	}
+//	else
+//	{
+//		CVLog::Warning(QString("unknown mode: %1, only semantic and box supported!").arg(mode));
+//		return;
+//	}
 
-	if (!CVTools::FileMappingWriter(filename, (void*)ss.c_str(), strlen(ss.c_str())))
-	{
-		CVLog::Warning("save annotation file failed!");
-		return;
-	}
-	CVLog::Print(QString("Save annotation file cost %1 s").arg(CVTools::TimeOff()));
+//	if (!CVTools::FileMappingWriter(filename, (void*)ss.c_str(), strlen(ss.c_str())))
+//	{
+//		CVLog::Warning("save annotation file failed!");
+//		return;
+//	}
+//	CVLog::Print(QString("Save annotation file cost %1 s").arg(CVTools::TimeOff()));
 
-#else
-	std::ofstream output(filename.c_str(), std::ios_base::out);
-	if (mode == 0) // semantic annotation
-	{
-		for (size_t i = 0; i < m_capacity; ++i)
-		{
-			output << m_labeledCloudIndex[i] << std::endl;
-		}
-	}
-	else if (mode == 1) // bbox annotation
-	{
-		for (auto anno : m_annotations) {
-			output << anno->getBoxLabel().toString() << std::endl;
-		}
-	}
+//#else
+//	std::ofstream output(filename.c_str(), std::ios_base::out);
+//	if (mode == 0) // semantic annotation
+//	{
+//		for (size_t i = 0; i < m_capacity; ++i)
+//		{
+//			output << m_labeledCloudIndex[i] << std::endl;
+//		}
+//	}
+//	else if (mode == 1) // bbox annotation
+//	{
+//		for (auto anno : m_annotations) {
+//			output << anno->getBoxLabel().toString() << std::endl;
+//		}
+//	}
 
-	output.close();
-#endif
+//	output.close();
+//#endif
+
+    CVTools::TimeStart();
+    std::string ss;
+    if (mode == 0) // semantic annotation
+    {
+        for (size_t i = 0; i < m_capacity; ++i)
+        {
+            ss += (std::to_string(m_labeledCloudIndex[i]) + "\n");
+        }
+    }
+    else if (mode == 1) // bbox annotation
+    {
+        for (auto anno : m_annotations) {
+            ss += (anno->getBoxLabel().toString() + "\n");
+        }
+    }
+    else
+    {
+        CVLog::Warning(QString("unknown mode: %1, only semantic and box supported!").arg(mode));
+        return;
+    }
+
+    if (!CVTools::QMappingWriter(filename, static_cast<const void*>(ss.c_str()), strlen(ss.c_str())))
+    {
+        CVLog::Warning("save annotation file failed!");
+        return;
+    }
+    CVLog::Print(QString("Save annotation file cost %1 s").arg(CVTools::TimeOff()));
+
 }
 
 bool Annotaions::getAnnotations(std::vector<int>& annos) const
@@ -652,7 +682,7 @@ Annotation *Annotaions::getAnnotation(vtkActor *actor) {
 			return anno;
 		}
 	}
-	return 0;
+    return nullptr;
 }
 
 int Annotaions::getAnnotationIndex(Annotation * anno)
@@ -670,9 +700,9 @@ int Annotaions::getAnnotationIndex(Annotation * anno)
 	return -1;
 }
 
-Annotation *Annotaions::getAnnotation(int index) {
-	if (index < 0 || index > getSize() - 1) return nullptr;
-	return m_annotations[index];
+Annotation *Annotaions::getAnnotation(std::size_t index) {
+    if (index > getSize() - 1) return nullptr;
+    return m_annotations[static_cast<std::size_t>(index)];
 }
 
 void Annotaions::getAnnotations(
@@ -687,21 +717,22 @@ void Annotaions::getAnnotations(
 	}
 }
 
-void Annotaions::updateBalloonByIndex(int index)
+void Annotaions::updateBalloonByIndex(std::size_t index)
 {
-	if (index < 0 || index > getSize() - 1) return;
+    if (index > getSize() - 1) return;
 	if (!getAnnotation(index) || !getAnnotation(index)->getActor()) return;
 
 	if (m_balloonWidget)
 	{
 		m_balloonWidget->RemoveBalloon(getAnnotation(index)->getActor());
-		m_balloonWidget->AddBalloon(getAnnotation(index)->getActor(), getAnnotation(index)->getType().c_str(), NULL);
+        m_balloonWidget->AddBalloon(getAnnotation(index)->getActor(), getAnnotation(index)->getType().c_str(), nullptr);
 	}
 }
 
 void Annotaions::updateBalloonByAnno(Annotation * anno)
 {
 	if (!m_balloonWidget || !anno->getActor()) return;
-
-	updateBalloonByIndex(getAnnotationIndex(anno));
+    int annIndex = getAnnotationIndex(anno);
+    if (annIndex < 0) return;
+    updateBalloonByIndex(static_cast<std::size_t>(annIndex));
 }

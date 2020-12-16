@@ -28,7 +28,7 @@ BaseWidgetWindow::~BaseWidgetWindow()
 
 bool BaseWidgetWindow::setInput(const ccHObject * obj)
 {
-	return false;
+    return obj ? true : false;
 }
 
 ccHObject * BaseWidgetWindow::getOutput() const

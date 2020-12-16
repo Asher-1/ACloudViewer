@@ -41,18 +41,18 @@
 
 namespace pcl
 {
-  namespace visualization
-  {
-    // Standard VTK macro for *New ()
-    vtkStandardNewMacro (PCLImageCanvasSource2D)
-  }
+    namespace visualization
+    {
+        // Standard VTK macro for *New ()
+        vtkStandardNewMacro(PCLImageCanvasSource2D)
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////
-void 
-pcl::visualization::PCLImageCanvasSource2D::DrawImage (vtkImageData* image)
+void
+pcl::visualization::PCLImageCanvasSource2D::DrawImage(vtkImageData* image)
 {
-  this->ImageData->DeepCopy (image);
-  this->Modified ();
+    this->ImageData->DeepCopy(image);
+    this->Modified();
 }
 

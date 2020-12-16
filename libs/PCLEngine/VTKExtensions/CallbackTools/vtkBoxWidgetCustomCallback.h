@@ -1,14 +1,15 @@
 #ifndef vtkBoxWidgetCallback_H
 #define vtkBoxWidgetCallback_H
 
+#include "qPCL.h"
+
 #include <vtkCommand.h>
 #include <vtkSmartPointer.h>
 
 class vtkActor;
 class vtkObject;
 
-class vtkBoxWidgetCustomCallback : public vtkCommand
-{
+class QPCL_ENGINE_LIB_API vtkBoxWidgetCustomCallback : public vtkCommand {
 public:
     static vtkBoxWidgetCustomCallback *New();
     virtual void Execute( vtkObject *caller, unsigned long, void* );

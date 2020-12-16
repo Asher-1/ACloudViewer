@@ -43,7 +43,7 @@ ConvexConcaveHullReconstruction::ConvexConcaveHullReconstruction()
 										 tr("ConvexConcaveHull Reconstruction"),
 										 tr("ConvexConcaveHull Reconstruction from clouds"),
 										 ":/toolbar/PclAlgorithms/icons/convex_concave_hull.png"))
-	, m_dialog(0)
+	, m_dialog(nullptr)
 	, m_dimension(3)
 	, m_alpha(0.5)
 {
@@ -52,7 +52,7 @@ ConvexConcaveHullReconstruction::ConvexConcaveHullReconstruction()
 ConvexConcaveHullReconstruction::~ConvexConcaveHullReconstruction()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.CVLib.org                            -
+// -                        CVLib: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.CVLib.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -70,7 +70,7 @@ public:
 ///
 /// \param input The Input point cloud.
 /// \param search_param KDTree KNN search parameter.
-std::shared_ptr<Feature> ComputeFPFHFeature(
+std::shared_ptr<Feature> ECV_DB_LIB_API ComputeFPFHFeature(
         const ccPointCloud &input,
         const geometry::KDTreeSearchParam &search_param =
 		geometry::KDTreeSearchParamKNN());

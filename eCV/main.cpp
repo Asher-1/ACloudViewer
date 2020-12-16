@@ -20,7 +20,9 @@
 #include <ecvGlobalShiftManager.h>
 
 // QPCL_ENGINE_LIB
+#ifdef USE_PCL_BACKEND
 #include <VtkUtils/vtkWidgetsFactory.h>
+#endif
 
 // QT
 #include <QDir>
@@ -49,6 +51,10 @@
 #include <unistd.h>
 #endif
 
+//#if defined(_MSC_VER) && (_MSC_VER >= 1600)
+//#pragma execution_character_set("utf-8")
+//#endif
+
 void InitEnvironment()
 {
 	//store the log message until a valid logging instance is registered
@@ -57,10 +63,11 @@ void InitEnvironment()
 	//global structures initialization
 	FileIOFilter::InitInternalFilters(); //load all known I/O filters
 
-	DBLib::ecvWidgetsInterface::InitInternalInterfaces();
-	DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetFilterWidgetInterface());
-	DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSmallWidgetsInterface());
-	DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSurfaceWidgetsInterface());
+#ifdef USE_PCL_BACKEND
+    DBLib::ecvWidgetsInterface::InitInternalInterfaces();
+    DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetFilterWidgetInterface());
+    DBLib::ecvWidgetsInterface::Register(VtkWidgetsFactory::GetSmallWidgetsInterface());
+#endif
 
 	// force pre-computed normals array initialization
 	ccNormalVectors::GetUniqueInstance(); 
@@ -100,7 +107,21 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef Q_OS_MAC
-	bool commandLine = isatty(fileno(stdin));
+	// On macOS, when double-clicking the application, the Finder (sometimes!) adds a command-line parameter
+	// like "-psn_0_582385" which is a "process serial number".
+	// We need to recognize this and discount it when determining if we are running on the command line or not.
+
+	int numRealArgs = argc;
+
+	for (int i = 1; i < argc; ++i)
+	{
+		if (strncmp(argv[i], "-psn_", 5) == 0)
+		{
+			--numRealArgs;
+		}
+	}
+
+	bool commandLine = (numRealArgs > 1) && (argv[1][0] == '-');
 #else
 	bool commandLine = (argc > 1) && (argv[1][0] == '-');
 #endif
@@ -132,7 +153,8 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				QMessageBox::warning(0, QObject::tr("Translation"), QObject::tr("Failed to load language file '%1'").arg(langFilename));
+                QMessageBox::warning(nullptr, QObject::tr("Translation"),
+                                     QObject::tr("Failed to load language file '%1'").arg(langFilename));
 			}
 			commandLine = false;
 			lastArgumentIndex += 2;
@@ -145,12 +167,12 @@ int main(int argc, char *argv[])
 	//standard mode
 	if (!commandLine)
 	{
-		if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_2_1) == 0)
-		{
-			QMessageBox::critical(0, QObject::tr("Error"),
-				QObject::tr("This application needs OpenGL 2.1 at least to run!"));
-			return EXIT_FAILURE;
-		}
+        if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_2_1) == 0)
+        {
+            QMessageBox::critical(nullptr, QObject::tr("Error"),
+                QObject::tr("This application needs OpenGL 2.1 at least to run!"));
+            return EXIT_FAILURE;
+        }
 
 		//splash screen
 		QPixmap pixmap(QString::fromUtf8(Settings::APP_START_LOGO));
@@ -174,63 +196,62 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		//main window init.
-		MainWindow* mainWindow = MainWindow::TheInstance();
+        //main window init.
+        MainWindow* mainWindow = MainWindow::TheInstance();
+
 		if (!mainWindow)
 		{
-			QMessageBox::critical(0, QObject::tr("Error"),
+            QMessageBox::critical(nullptr, QObject::tr("Error"),
 				QObject::tr("Failed to initialize the main application window?!"));
 			return EXIT_FAILURE;
 		}
 
-		mainWindow->initPlugins();
+        mainWindow->initPlugins();
 
 		if (Settings::UI_WRAPPER) {
-			// use UIManager instead
-			QUIWidget::setCode();
-			qui = new QUIWidget();
-			//设置主窗体
-			mainWindow->setUiManager(qui);
-			qui->setMainWidget(mainWindow);
+            // use UIManager instead
+            QUIWidget::setCode();
+            qui = new QUIWidget();
+            // set main weindow
+            mainWindow->setUiManager(qui);
+            qui->setMainWidget(mainWindow);
 
-			qui->setTitle(Settings::APP_TITLE);
+            qui->setTitle(Settings::APP_TITLE);
 
-			//设置标题文本居中
-			qui->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            // set align center
+            qui->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
-			//设置窗体可拖动大小
-			qui->setSizeGripEnabled(true);
+            // set dragable
+            qui->setSizeGripEnabled(true);
 
-			//设置换肤下拉菜单可见
-			qui->setVisible(QUIWidget::Lab_Ico, true);
-			qui->setVisible(QUIWidget::BtnMenu, true);
+            // set icon visibility
+            qui->setVisible(QUIWidget::Lab_Ico, true);
+            qui->setVisible(QUIWidget::BtnMenu, true);
 
-			//persistent Theme settings
-			QString qssfile = ecvSettingManager::getValue(ecvPS::ThemeSettings(),
-				ecvPS::CurrentTheme(),
-				Settings::DEFAULT_STYLE).toString();
-			qui->setStyle(qssfile);
+            //persistent Theme settings
+            QString qssfile = ecvSettingManager::getValue(ecvPS::ThemeSettings(),
+                ecvPS::CurrentTheme(),
+                Settings::DEFAULT_STYLE).toString();
+            qui->setStyle(qssfile);
 
-			//设置左上角图标-图形字体
-			//qui.setIconMain(QChar(0xf099), 11);
+            //qui.setIconMain(QChar(0xf099), 11);
 
-			//设置左上角图标-图片文件
-			qui->setPixmap(QUIWidget::Lab_Ico, Settings::APP_LOGO);
-			qui->setWindowIcon(QIcon(Settings::APP_LOGO));
+            qui->setPixmap(QUIWidget::Lab_Ico, Settings::APP_LOGO);
+            qui->setWindowIcon(QIcon(Settings::APP_LOGO));
 
-			qui->createTrayMenu();
+            qui->createTrayMenu();
 
-			qui->show();
+            qui->show();
 		}
 		else {
 			// use default ui
-			mainWindow->setWindowIcon(QIcon(Settings::APP_LOGO));
-			mainWindow->setWindowTitle(Settings::APP_TITLE);
-			//persistent Theme settings
-			QString qssfile = ecvSettingManager::getValue(
-				ecvPS::ThemeSettings(), ecvPS::CurrentTheme(),
-				Settings::DEFAULT_STYLE).toString();
-			MainWindow::ChangeStyle(qssfile);
+            mainWindow->setWindowIcon(QIcon(Settings::APP_LOGO));
+            mainWindow->setWindowTitle(Settings::APP_TITLE);
+            //persistent Theme settings
+            QString qssfile = ecvSettingManager::getValue(
+                ecvPS::ThemeSettings(), ecvPS::CurrentTheme(),
+                Settings::DEFAULT_STYLE).toString();
+            MainWindow::ChangeStyle(qssfile);
 			mainWindow->show();
 		}
 
@@ -288,7 +309,7 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			mainWindow->addToDB(filenames);
+            mainWindow->addToDB(filenames);
 		}
 		else if (splash)
 		{
@@ -321,11 +342,13 @@ int main(int argc, char *argv[])
 		}
 		catch (const std::exception& e)
 		{
-			QMessageBox::warning(0, QObject::tr("ECV crashed!"), QObject::tr("Hum, it seems that ECV has crashed... Sorry about that :)\n") + e.what());
+            QMessageBox::warning(nullptr, QObject::tr("ECV crashed!"),
+                                 QObject::tr("Hum, it seems that ECV has crashed... Sorry about that :)\n") + e.what());
 		}
 		catch (...)
 		{
-			QMessageBox::warning(0, QObject::tr("ECV crashed!"), QObject::tr("Hum, it seems that ECV has crashed... Sorry about that :)"));
+            QMessageBox::warning(nullptr, QObject::tr("ECV crashed!"),
+                                 QObject::tr("Hum, it seems that ECV has crashed... Sorry about that :)"));
 		}
 
 		//release the plugins
@@ -342,8 +365,10 @@ int main(int argc, char *argv[])
 	// release main window
 	MainWindow::DestroyInstance();
 
-	// release widgets resource
+#ifdef USE_PCL_BACKEND
+    // release widgets resource
 	DBLib::ecvWidgetsInterface::UnregisterAll();
+#endif
 
 	// release io filters
 	FileIOFilter::UnregisterAll();

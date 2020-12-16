@@ -162,7 +162,10 @@ bool ccGriddedTools::DetectParameters(	const ccPointCloud* cloud,
 				parameters.deltaPhiRad = static_cast<PointCoordinateType>(angles[maxSpanIndex].first);
 				if (verbose)
 				{
-					CVLog::Print(QString("[Scan grid] Detected pitch step: %1 degrees (span [%2 - %3])").arg(parameters.deltaPhiRad * CV_RAD_TO_DEG).arg(parameters.minPhi * CV_RAD_TO_DEG).arg(parameters.maxPhi * CV_RAD_TO_DEG));
+                    CVLog::Print(QString("[Scan grid] Detected pitch step: %1 degrees (span [%2 - %3])")
+                                 .arg(CVLib::RadiansToDegrees(parameters.deltaPhiRad))
+                                 .arg(CVLib::RadiansToDegrees(parameters.minPhi))
+                                 .arg(CVLib::RadiansToDegrees(parameters.maxPhi)));
 				}
 			}
 			else
@@ -276,7 +279,10 @@ bool ccGriddedTools::DetectParameters(	const ccPointCloud* cloud,
 				parameters.deltaThetaRad = static_cast<PointCoordinateType>(angles[maxSpanIndex].first);
 				if (verbose)
 				{
-					CVLog::Print(QString("[Scan grid] Detected yaw step: %1 degrees (span [%2 - %3])").arg(parameters.deltaThetaRad * CV_RAD_TO_DEG).arg(parameters.minTheta * CV_RAD_TO_DEG).arg(parameters.maxTheta * CV_RAD_TO_DEG));
+                    CVLog::Print(QString("[Scan grid] Detected yaw step: %1 degrees (span [%2 - %3])")
+                                 .arg(CVLib::RadiansToDegrees(parameters.deltaThetaRad))
+                                 .arg(CVLib::RadiansToDegrees(parameters.minTheta))
+                                 .arg(CVLib::RadiansToDegrees(parameters.maxTheta)));
 				}
 			}
 			else

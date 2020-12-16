@@ -70,10 +70,6 @@ int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     auto pcd = cloudViewer::io::CreatePointCloudFromFile(argv[1]);
-	cloudViewer::io::WritePointCloud(
-		"G:/dataset/pointCloud/data/ownTrainedData/test/2_aa.bin", *pcd, false, true, true);
-	cloudViewer::visualization::DrawGeometries({ pcd });
-
     {
         utility::ScopeTimer timer("FPFH estimation with Radius 0.25");
         // for (int i = 0; i < 20; i++) {

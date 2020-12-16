@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define QPCL_VTK_EDITCAMERA_TOOL_HEADER
 
 #include "../qPCL.h"
-#include "ecvGenericCameraTool.h"
+#include <ecvGenericCameraTool.h>
 
 #include <QObject>
 

@@ -26,7 +26,7 @@
 class ProjectionFilterDlg : public QDialog, public Ui::ProjectionFilterDlg
 {
 public:
-	explicit ProjectionFilterDlg(QWidget* parent = 0);
+    explicit ProjectionFilterDlg(QWidget* parent = nullptr);
 
 };
 

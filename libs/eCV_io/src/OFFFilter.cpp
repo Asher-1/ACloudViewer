@@ -22,9 +22,10 @@
 
 // ECV_DB_LIB
 #include <ecvMesh.h>
-#include <ecvNormalVectors.h>
 #include <ecvOctree.h>
 #include <ecvPointCloud.h>
+#include <ecvNormalVectors.h>
+#include <ecvHObjectCaster.h>
 
 //System
 #include <string>

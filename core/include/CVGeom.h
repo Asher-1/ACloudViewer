@@ -24,11 +24,11 @@
 #include "CVTypes.h"
 
 #include <Eigen/Core>
-#ifdef USE_EIGEN
-#endif // USE_EIGEN
 
 //system
 #include <cmath>
+#include <limits>
+#include <algorithm>
 #include <vector>
 
 //! 4-Tuple structure (templated version)
@@ -45,6 +45,12 @@ public:
 		};
 		Type u[4];
 	};
+
+    inline std::size_t rows() const {return dimensions();}
+    inline std::size_t dimensions() const {return 4;}
+
+    inline Type* data() { return u; }
+    inline const Type* data() const { return u; }
 
 	//! Default constructor
 	/** Inits tuple to (0, 0, 0, 0).
@@ -107,6 +113,15 @@ public:
 	inline Tuple4Tpl operator * (Type s) const { return Tuple4Tpl(x*s, y*s, z*s, w*s); }
 	//! Division operator
 	inline Tuple4Tpl operator / (Type s) const { return Tuple4Tpl(x/s, y/s, z/s, w/s); }
+
+    //! Direct coordinate access
+    inline Type& operator [] (unsigned i) { return u[i]; }
+    //! Direct coordinate access (const)
+    inline const Type& operator [] (unsigned i) const { return u[i]; }
+    //! Direct coordinate access
+    inline Type& operator () (unsigned i) { return u[i]; }
+    //! Direct coordinate access (const)
+    inline const Type& operator () (unsigned i) const { return u[i]; }
 };
 
 //! 3-Tuple structure (templated version)
@@ -123,6 +138,12 @@ public:
 		};
 		Type u[3];
 	};
+
+    inline std::size_t rows() const {return dimensions();}
+    inline std::size_t dimensions() const {return 3;}
+
+    inline Type* data() { return u; }
+    inline const Type* data() const { return u; }
 
 	//! Default constructor
 	/** Inits tuple to (0, 0, 0).
@@ -442,6 +463,12 @@ public:
 		};
 		Type u[2];
 	};
+
+    inline std::size_t rows() const {return dimensions();}
+    inline std::size_t dimensions() const {return 2;}
+
+    inline Type* data() { return u; }
+    inline const Type* data() const { return u; }
 
 	//! Default constructor
 	/** Inits vector to (0,0).

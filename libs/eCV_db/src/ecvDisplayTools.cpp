@@ -24,8 +24,9 @@
 #include <CVTools.h>
 
 // LOCAL
-#include "ecvDisplayTools.h"
 #include "ecvBBox.h"
+#include "ecvRenderingTools.h"
+#include "ecvDisplayTools.h"
 #include "ecvSingleton.h"
 #include "ecvClipBox.h"
 #include "ecvPointCloud.h"
@@ -90,7 +91,7 @@ static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 //Unique GL window ID
 static int s_GlWindowNumber = 0;
 
-void ecvDisplayTools::Init(ecvDisplayTools* displayTools, QMainWindow* win)
+void ecvDisplayTools::Init(ecvDisplayTools* displayTools, QMainWindow* win, bool stereoMode)
 {
 	//should be called only once!
 	if (s_tools.instance)
@@ -107,7 +108,7 @@ void ecvDisplayTools::Init(ecvDisplayTools* displayTools, QMainWindow* win)
 
 	SetMainWindow(win);
 	// register current instance visualizer only once
-	s_tools.instance->registerVisualizer(win);
+    s_tools.instance->registerVisualizer(win, stereoMode);
 
 	s_tools.instance->m_uniqueID = ++s_GlWindowNumber; //GL window unique ID
 	s_tools.instance->m_lastMousePos = QPoint(-1, -1);
@@ -378,7 +379,8 @@ void ecvDisplayTools::onWheelEvent(float wheelDelta_deg)
 		{
 			//convert degrees in 'constant' walking speed in ... pixels ;)
 			const double& deg2PixConversion = GetDisplayParameters().zoomSpeed;
-			double delta = deg2PixConversion * static_cast<double>(wheelDelta_deg * m_viewportParams.pixelSize);
+			double delta = deg2PixConversion * 
+				static_cast<double>(wheelDelta_deg) * m_viewportParams.pixelSize;
 
 			//if we are (clearly) outisde of the displayed objects bounding-box
 			if (m_cameraToBBCenterDist > m_bbHalfDiag)
@@ -408,21 +410,19 @@ bool ecvDisplayTools::ProcessClickableItems(int x, int y)
 		return false;
 	}
 
-	//correction for HD screens
-	const int retinaScale = GetDevicePixelRatio();
-	x *= retinaScale;
-	y *= retinaScale;
+		// correction for HD screens
+    const int retinaScale = GetDevicePixelRatio();
+    x *= retinaScale;
+    y *= retinaScale;
 
-	ClickableItem::Role clickedItem = ClickableItem::NO_ROLE;
-	for (std::vector<ClickableItem>::const_iterator it = s_tools.instance->m_clickableItems.begin(); 
-		it != s_tools.instance->m_clickableItems.end(); ++it)
-	{
-		if (it->area.contains(x, y))
-		{
-			clickedItem = it->role;
-			break;
-		}
-	}
+    ClickableItem::Role clickedItem = ClickableItem::NO_ROLE;
+    for (std::vector<ClickableItem>::const_iterator it = s_tools.instance->m_clickableItems.begin();
+         it != s_tools.instance->m_clickableItems.end(); ++it) {
+        if (it->area.contains(x, y)) {
+            clickedItem = it->role;
+            break;
+        }
+    }
 
 	switch (clickedItem)
 	{
@@ -475,8 +475,7 @@ bool ecvDisplayTools::ProcessClickableItems(int x, int y)
 	{
 		if (s_tools.instance->m_win)
 		{
-			SetExclusiveFullScreenFlage(false);
-			//s_tools.instance->m_win->toggleExclusiveFullScreen(false);
+            emit s_tools.instance->exclusiveFullScreenToggled(false);
 		}
 		
 	}
@@ -1190,7 +1189,7 @@ void ecvDisplayTools::UpdateActiveItemsList(int x, int y, bool extendToSelectedL
 
 				for (auto & label : labels)
 				{
-					if (label->isA(CV_TYPES::LABEL_2D) && label->isVisible()) //Warning: cc2DViewportLabel is also a kind of 'CC_TYPES::LABEL_2D'!
+					if (label->isA(CV_TYPES::LABEL_2D) && label->isVisible()) //Warning: cc2DViewportLabel is also a kind of 'CV_TYPES::LABEL_2D'!
 					{
 						cc2DLabel* l = static_cast<cc2DLabel*>(label);
 						if (l != label && l->isSelected())
@@ -1439,11 +1438,11 @@ float ecvDisplayTools::ComputePerspectiveZoom()
 
 	//Camera center to pivot vector
 	double zoomEquivalentDist = (s_tools.instance->m_viewportParams.cameraCenter - s_tools.instance->m_viewportParams.pivotPoint).norm();
-	if (zoomEquivalentDist < ZERO_TOLERANCE)
+    if (CVLib::LessThanEpsilon( zoomEquivalentDist ))
 		return 1.0f;
 
 	float screenSize = std::min(s_tools.instance->m_glViewport.width(), s_tools.instance->m_glViewport.height()) * s_tools.instance->m_viewportParams.pixelSize; //see how pixelSize is computed!
-	return screenSize / static_cast<float>(zoomEquivalentDist * std::tan(currentFov_deg * CV_DEG_TO_RAD));
+    return screenSize / static_cast<float>(zoomEquivalentDist * std::tan(CVLib::DegreesToRadians(currentFov_deg)));
 }
 
 ccGLMatrixd & ecvDisplayTools::GetModelViewMatrix()
@@ -1720,16 +1719,22 @@ void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView)
 			//(i.e. we replace the zoom by setting the camera at the right distance from
 			//the pivot point)
 			double currentFov_deg = static_cast<double>(GetFov());
-			assert(currentFov_deg > ZERO_TOLERANCE);
-			double screenSize = std::min(s_tools.instance->m_glViewport.width(), s_tools.instance->m_glViewport.height()) * s_tools.instance->m_viewportParams.pixelSize; //see how pixelSize is computed!
+            assert(CVLib::GreaterThanEpsilon(currentFov_deg));
+            // see how pixelSize is computed!
+            double screenSize = std::min(s_tools.instance->m_glViewport.width(),
+					s_tools.instance->m_glViewport.height())
+                    * s_tools.instance->m_viewportParams.pixelSize;
 			if (screenSize > 0.0)
 			{
-				PC.z = screenSize / (s_tools.instance->m_viewportParams.zoom*std::tan(currentFov_deg*CV_DEG_TO_RAD));
+                PC.z = screenSize / (s_tools.instance->m_viewportParams.zoom * 
+					std::tan(CVLib::DegreesToRadians(currentFov_deg)));
 			}
 		}
 
 		//display message
-		DisplayNewMessage(objectCenteredView ? "Centered perspective ON" : "Viewer-based perspective ON",
+		DisplayNewMessage(objectCenteredView ? 
+			"Centered perspective ON" :
+			"Viewer-based perspective ON",
 			LOWER_LEFT_MESSAGE,
 			false,
 			2,
@@ -1737,7 +1742,8 @@ void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView)
 	}
 	else
 	{
-		s_tools.instance->m_viewportParams.objectCenteredView = true; //object-centered mode is forced for otho. view
+        // object-centered mode is forced for otho. view
+		s_tools.instance->m_viewportParams.objectCenteredView = true; 
 
 		if (perspectiveWasEnabled) //from perspective view to ortho. view
 		{
@@ -1825,7 +1831,7 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox, bool 
 	//we get the bounding-box diagonal length
 	double bbDiag = static_cast<double>(zoomedBox.getDiagNorm());
 
-	if (bbDiag < ZERO_TOLERANCE)
+    if (CVLib::LessThanEpsilon(bbDiag))
 	{
 		CVLog::Warning("[ecvDisplayTools] Entity/DB has a null bounding-box! Can't zoom in...");
 		return;
@@ -1880,8 +1886,7 @@ void ecvDisplayTools::GetVisibleObjectsBB(ccBBox& box)
 	}
 }
 
-ENTITY_TYPE ecvDisplayTools::ConVertToEntityType(const CV_CLASS_ENUM & type)
-{
+ENTITY_TYPE ecvDisplayTools::ConvertToEntityType(const CV_CLASS_ENUM& type) {
 	ENTITY_TYPE entityType = ENTITY_TYPE::ECV_NONE;
 	switch (type)
 	{
@@ -1909,6 +1914,7 @@ ENTITY_TYPE ecvDisplayTools::ConVertToEntityType(const CV_CLASS_ENUM & type)
 	case CV_TYPES::FACET:
 	case CV_TYPES::PRIMITIVE:
 	case CV_TYPES::MESH:
+    case CV_TYPES::SUB_MESH:
 	case CV_TYPES::SPHERE:
 	case CV_TYPES::CONE:
 	case CV_TYPES::PLANE:
@@ -2011,9 +2017,6 @@ CCVector3d ecvDisplayTools::GetCurrentViewDir()
 
 CCVector3d ecvDisplayTools::GetCurrentUpDir()
 {
-	//if (m_viewportParams.objectCenteredView)
-	//	return CCVector3d(0,1,0);
-
 	//otherwise up direction is the 2nd line of the current view matrix
 	const double* M = s_tools.instance->m_viewportParams.viewMat.data();
 	CCVector3d axis(M[1], M[5], M[9]);
@@ -2308,7 +2311,7 @@ bool ecvDisplayTools::RenderToFile(QString filename,
 	}
 	bool success = false;
 
-	SaveScreenshot(CVTools::fromQString(filename));
+	SaveScreenshot(CVTools::FromQString(filename));
 
 #if 0
 	QImage outputImage = renderToImage(zoomFactor, dontScaleFeatures, renderOverlayItems);
@@ -2361,15 +2364,13 @@ const ecvGui::ParamStruct& ecvDisplayTools::GetDisplayParameters()
 
 void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters & params)
 {
-	//get/compute the modelview matrix
+	// get/compute the modelview matrix
 	{
-		//params.modelViewMat = GetModelViewMatrix();
 		GetViewMatrix(params.modelViewMat.data());
 	}
 
-	//get/compute the projection matrix
+	// get/compute the projection matrix
 	{
-		//params.projectionMat = GetProjectionMatrix();
 		GetProjectionMatrix(params.projectionMat.data());
 	}
 
@@ -2386,10 +2387,6 @@ void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters & params)
 	params.viewport[2] = Width() * GetDevicePixelRatio();
 	params.viewport[3] = Height() * GetDevicePixelRatio();
 	SetGLViewport(QRect(0, 0, Width(), Height()));
-	//params.viewport[0] = s_tools.instance->m_glViewport.x();
-	//params.viewport[1] = s_tools.instance->m_glViewport.y();
-	//params.viewport[2] = s_tools.instance->m_glViewport.width();
-	//params.viewport[3] = s_tools.instance->m_glViewport.height();
 
 	params.perspective = s_tools.instance->m_viewportParams.perspectiveView;
 	params.pixelSize = s_tools.instance->m_viewportParams.pixelSize;
@@ -2418,10 +2415,6 @@ void ecvDisplayTools::UpdateDisplayParameters()
 	{
 		s_tools.instance->m_viewportParams.zoom = ComputePerspectiveZoom();
 	}
-	//else
-	//{
-	//	s_tools.instance->m_viewportParams.zoom = GetParallelScale();
-	//}
 
 	// set camera pos
 	double pos[3];
@@ -2561,8 +2554,6 @@ void ecvDisplayTools::UpdateZoom(float zoomFactor)
 	{
 		SetZoom(s_tools.instance->m_viewportParams.zoom*zoomFactor);
 	}
-
-	//SetZoom(GetParallelScale());
 }
 
 void ecvDisplayTools::SetPickingMode(PICKING_MODE mode/*=DEFAULT_PICKING*/)
@@ -2680,32 +2671,6 @@ void ecvDisplayTools::SetFocusToScreen()
 			GetCurrentScreen()->parentWidget()->setFocus();
 		}
 	}
-}
-
-void ecvDisplayTools::SimulateKeyBoardPress(Qt::Key key, int loopNum)
-{
-	int keyId = CVTools::TranslateKeyCode(key);
-	if (keyId == 0)
-	{
-		CVLog::Warning("[ecvDisplayTools::SimulateKeyBoardPress] invalid key!");
-		return;
-	}
-
-	SetFocusToScreen();
-
-#ifdef CV_WINDOWS
-	for (int i = 0; i < loopNum; ++i)
-	{
-		//QKeyEvent pressKeyEvent(QEvent::KeyPress, key, Qt::NoModifier);
-		//QCoreApplication::sendEvent(GetCurrentScreen(), &pressKeyEvent);
-
-		::keybd_event(keyId, 0, 0, 0);
-		Sleep(10);
-		::keybd_event(keyId, 0, KEYEVENTF_KEYUP, 0);
-	}
-#else
-	CVLog::Warning(QString("only windows support!"));
-#endif
 }
 
 void ecvDisplayTools::ToBeRefreshed()
@@ -2949,25 +2914,6 @@ void ecvDisplayTools::Draw3D(CC_DRAW_CONTEXT& CONTEXT)
 		}
 	}
 
-#if 0
-
-	//model and projection matrices
-	ccGLMatrixd modelViewMat, projectionMat;
-	{ // mono vision mode
-		modelViewMat = GetModelViewMatrix();
-		projectionMat = GetProjectionMatrix();
-	}
-
-	//setup the projection matrix
-	{
-		TransformCameraProjection(projectionMat);
-	}
-	//setup the default view matrix
-	{
-		TransformCameraView(modelViewMat);
-	}
-#endif
-
 	// we draw 3D entities
 	if (s_tools.instance->m_globalDBRoot)
 	{
@@ -3030,7 +2976,6 @@ void ecvDisplayTools::DrawBackground(CC_DRAW_CONTEXT& CONTEXT)
 		CONTEXT.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
 	}
 
-
 	//clear background
 	{
 		if (CONTEXT.clearDepthLayer)
@@ -3068,18 +3013,6 @@ void ecvDisplayTools::DrawBackground(CC_DRAW_CONTEXT& CONTEXT)
 		}
 	}
 
-	//draw 2D background primitives
-	//DGM: useless for now
-#if 0
-	if (false)
-	{
-		//we draw 2D entities
-		if (m_globalDBRoot)
-			m_globalDBRoot->draw(CONTEXT);
-		if (m_winDBRoot)
-			m_winDBRoot->draw(CONTEXT);
-	}
-#endif
 }
 
 void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT)
@@ -3100,6 +3033,8 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT)
 	if (s_tools.instance->m_winDBRoot)
 		s_tools.instance->m_winDBRoot->draw(CONTEXT);
 
+	//current displayed scalar field color ramp (if any)
+	ccRenderingTools::DrawColorRamp(CONTEXT);
 
 	s_tools.instance->m_clickableItems.clear();
 
@@ -3282,17 +3217,17 @@ void ecvDisplayTools::RenderText(
 	context.textParam.text = str;
 	context.textParam.display3D = false;
 	context.textParam.font = font;
-	QRect screen = QGuiApplication::primaryScreen()->geometry();
+	context.textParam.font.setPointSize(font.pointSize());
+	//QRect screen = QGuiApplication::primaryScreen()->geometry();
 
-	if (screen.width() <= 1920)
-	{
-		context.textParam.font.setPointSize(font.pointSize());
-	}
-	else // for high DPI
-	{
-		context.textParam.font.setPointSize(font.pointSize() * 3);
-	
-	}
+	//if (screen.width() > 1920 && GetDevicePixelRatio() == 1)
+	//{
+ //       context.textParam.font.setPointSize(font.pointSize() * 3);
+	//}
+	//else // for high DPI
+	//{
+ //       context.textParam.font.setPointSize(font.pointSize());
+	//}
 	context.textDefaultCol = color;
 	if (context.textParam.display3D)
 	{
@@ -3312,39 +3247,6 @@ void ecvDisplayTools::RenderText(
 		context.textParam.textPos.z = 0;
 	}
 	DisplayText(context);
-
-#if 0
-	//compute the text bounding rect
-	// This adjustment and the change to x & y are to work around a crash with Qt 5.9.
-	// At the time I (Andy) could not determine if it is a bug in CC or Qt.
-	//		https://bugreports.qt.io/browse/QTBUG-61863
-	//		https://github.com/CLOUDVIEWER /CLOUDVIEWER /issues/543
-	QRect rect = QFontMetrics(font).boundingRect(str).adjusted(-1, -2, 1, 2);
-
-	x -= 1;	// magic number!
-	y += 3;	// magic number!
-
-	//first we create a QImage from the text
-	QImage textImage(rect.width(), rect.height(), QImage::Format::Format_RGBA8888);
-	rect = textImage.rect();
-
-	textImage.fill(Qt::transparent);
-	{
-		QPainter painter(&textImage);
-
-		const ecvColor::Rgbaf  defaultColor = ecvColor::bright;
-		QColor color;
-		color.setRgbF(defaultColor.r, defaultColor.g, defaultColor.b, defaultColor.a);
-
-		painter.setPen(color);
-		painter.setFont(font);
-		painter.drawText(rect, Qt::AlignCenter, str);
-	}
-
-	//and then we convert this QImage to a texture!
-	{
-	}
-#endif
 }
 
 void ecvDisplayTools::RenderText(
@@ -3374,7 +3276,6 @@ void ecvDisplayTools::Display3DLabel(
 	const unsigned char* rgb/*=0*/, 
 	const QFont& font/*=QFont()*/)
 {
-	//glColor3ubv_safe<ccQOpenGLFunctions>(functions(), rgb ? rgb : getDisplayParameters().textDefaultCol.rgb);
 	ecvColor::Rgbub col(rgb ? rgb : GetDisplayParameters().textDefaultCol.rgb);
 	RenderText(pos3D.x, pos3D.y, pos3D.z, str, font, col);
 }
@@ -3396,19 +3297,14 @@ void ecvDisplayTools::DisplayText(QString text,
 
 	QFont realFont = (font ? *font : s_tools.instance->m_font);
 	QFont textFont = realFont;
-	QRect screen = QGuiApplication::primaryScreen()->geometry();
+	//QRect screen = QGuiApplication::primaryScreen()->geometry();
 
-	if (screen.width() > 1920) // for high DPI
-	{
-		textFont.setPointSize(textFont.pointSize() * 3);
-		int size = textFont.pointSize();
-		textFont.setPointSize(size - 9);
-	}
-	else
-	{
-		int size = textFont.pointSize();
-		textFont.setPointSize(size - 3);
-	}
+	//if (screen.width() > 1920 && GetDevicePixelRatio() == 1) // for high DPI
+	//{
+	//	textFont.setPointSize(textFont.pointSize() * 3);
+	//	int size = textFont.pointSize();
+	//	textFont.setPointSize(size - 9);
+	//}
 
 	QFontMetrics fm(textFont);
 	int margin = fm.height() / 4;
@@ -3456,7 +3352,9 @@ void ecvDisplayTools::DisplayText(QString text,
 			param.color.g = invertedCol[1];
 			param.color.b = invertedCol[2];
 			param.color.a = invertedCol[3];
-			param.rect = QRect(xB - margin, yB - margin, rect.width() + 2 * margin, rect.height() + 2 * margin);
+			param.rect = QRect(xB - margin, yB - margin, 
+				rect.width() + 2 * margin, 
+				static_cast<int>(rect.height() + 1.5 * margin));
 
 			DrawWidgets(param, true);
 		}
@@ -3511,9 +3409,6 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 	//"exit" icon
 	//static const QImage c_exitIcon = QImage(":/Resources/images/ecvExit.png").mirrored();
-
-	int halfW = s_tools.instance->m_glViewport.width() / 2;
-	int halfH = s_tools.instance->m_glViewport.height() / 2;
 	int fullW = s_tools.instance->m_glViewport.width();
 	int fullH = s_tools.instance->m_glViewport.height();
 
@@ -3552,8 +3447,6 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 		//"full-screen" icon
 		{
-			//DisplayTexture2DPosition(c_exitIcon, -halfW + xStart, halfH - (yStart + s_tools.instance->m_hotZone->iconSize), 
-			//	s_tools.instance->m_hotZone->iconSize, s_tools.instance->m_hotZone->iconSize);
 			int x0 = xStart;
 			int y0 = fullH - (yStart + iconSize);
 			WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, CLICKED_ITEMS);
@@ -3565,6 +3458,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 			texParam.color = ecvColor::bright;
 			texParam.text = "Exit";
 			texParam.rect = QRect(x0, fullH - (yStart + 3*iconSize/4), iconSize, iconSize);
+            texParam.fontSize = s_tools.instance->m_hotZone->font.pointSize();
 			DrawWidgets(texParam, false);
 			s_tools.instance->m_clickableItems.emplace_back(ClickableItem::LEAVE_FULLSCREEN_MODE, 
 				QRect(xStart, yStart, iconSize, iconSize));
@@ -3580,7 +3474,6 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 		int xStart = s_tools.instance->m_hotZone->topCorner.x();
 
 		//label
-		//glColor3ubv_safe<ccQOpenGLFunctions>(glFunc, m_hotZone->color);
 		RenderText(xStart, yStart + s_tools.instance->m_hotZone->yTextBottomLineShift, 
 			s_tools.instance->m_hotZone->bbv_label, s_tools.instance->m_hotZone->font);
 
@@ -3589,8 +3482,6 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 		//"exit" icon
 		{
-			//DisplayTexture2DPosition(c_exitIcon, -halfW + xStart, halfH - (yStart + s_tools.instance->m_hotZone->iconSize), 
-			//	s_tools.instance->m_hotZone->iconSize, s_tools.instance->m_hotZone->iconSize);
 			s_tools.instance->m_clickableItems.emplace_back(ClickableItem::LEAVE_BUBBLE_VIEW_MODE, 
 				QRect(xStart, yStart, s_tools.instance->m_hotZone->iconSize, s_tools.instance->m_hotZone->iconSize));
 			xStart += s_tools.instance->m_hotZone->iconSize;
@@ -3602,10 +3493,9 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 	if (s_tools.instance->m_clickableItemsVisible)
 	{
-		//static const QImage c_minusPix = QImage(":/Resources/images/ecvMinus.png").mirrored();
-		//static const QImage c_plusPix = QImage(":/Resources/images/ecvPlus.png").mirrored();
+        ecvColor::Rgb textColor = ecvColor::Rgb(s_tools.instance->m_hotZone->color);
 		WIDGETS_PARAMETER widgetParam(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, CLICKED_ITEMS);
-		widgetParam.color = ecvColor::FromRgba(ecvColor::ogreen);
+        widgetParam.color = ecvColor::FromRgba(ecvColor::ogreen);
 		WIDGETS_PARAMETER sepParam(WIDGETS_TYPE::WIDGET_POINTS_2D, CLICKED_ITEMS);
 		sepParam.color = widgetParam.color;
 		sepParam.color.a = 0.5f;
@@ -3616,16 +3506,13 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 			RenderText(xStart, yStart + s_tools.instance->m_hotZone->yTextBottomLineShift, 
 				s_tools.instance->m_hotZone->psi_label, s_tools.instance->m_hotZone->font, 
-				ecvColor::defaultLabelBkgColor, CLICKED_ITEMS);
+				textColor, CLICKED_ITEMS);
 
 			//icons
 			xStart += s_tools.instance->m_hotZone->psi_labelRect.width() + s_tools.instance->m_hotZone->margin;
-			xStart -= iconSize;
+            xStart -= iconSize;
 			//"minus" icon
 			{
-				//DisplayTexture2DPosition(c_minusPix, "ecvMinus", xStart, fullH - (yStart + s_tools.instance->m_hotZone->iconSize),
-				//	s_tools.instance->m_hotZone->iconSize, s_tools.instance->m_hotZone->iconSize);
-
 				int x0 = xStart;
 				int y0 = fullH - (yStart + iconSize/2);
 				widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
@@ -3647,9 +3534,6 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 			//"plus" icon
 			{
-				//DisplayTexture2DPosition(c_plusPix, "ecvPlus", xStart, fullH - (yStart + s_tools.instance->m_hotZone->iconSize), 
-				//	s_tools.instance->m_hotZone->iconSize, s_tools.instance->m_hotZone->iconSize);
-
 				int x0 = xStart;
 				int y0 = fullH - (yStart + iconSize / 2);
 				widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
@@ -3673,20 +3557,16 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 		{
 			int xStart = s_tools.instance->m_hotZone->topCorner.x();
 
-			//glColor3ubv_safe<ccQOpenGLFunctions>(glFunc, s_tools.instance->m_hotZone->color);
 			RenderText(xStart, yStart + s_tools.instance->m_hotZone->yTextBottomLineShift, 
 				s_tools.instance->m_hotZone->lsi_label, s_tools.instance->m_hotZone->font, 
-				ecvColor::defaultLabelBkgColor, CLICKED_ITEMS);
+				textColor, CLICKED_ITEMS);
 
 			//icons
 			xStart += s_tools.instance->m_hotZone->lsi_labelRect.width() + s_tools.instance->m_hotZone->margin;
-			xStart -= iconSize;
+            xStart -= iconSize;
 
 			//"minus" icon
 			{
-				//DisplayTexture2DPosition(c_minusPix, -halfW + xStart, halfH - (yStart + s_tools.instance->m_hotZone->iconSize),
-				//	s_tools.instance->m_hotZone->iconSize, s_tools.instance->m_hotZone->iconSize);
-
 				int x0 = xStart;
 				int y0 = fullH - (yStart + iconSize / 2);
 				widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
@@ -3699,7 +3579,6 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 			//separator
 			{
-
 				sepParam.radius = s_tools.instance->m_viewportParams.defaultLineWidth / 2;
 				int x0 = xStart + s_tools.instance->m_hotZone->margin /*s_tools.instance->m_hotZone->margin / 2*/;
 				int y0 = fullH - (yStart + iconSize / 2);
@@ -3710,9 +3589,6 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 
 			//"plus" icon
 			{
-				//DisplayTexture2DPosition(c_plusPix, -halfW + xStart, halfH - (yStart + s_tools.instance->m_hotZone->iconSize),
-				//	s_tools.instance->m_hotZone->iconSize, s_tools.instance->m_hotZone->iconSize);
-				
 				int x0 = xStart;
 				int y0 = fullH - (yStart + iconSize / 2);
 				widgetParam.rect = QRect(x0, y0, iconSize, iconSize / 4);
@@ -3732,7 +3608,6 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 			yStart += s_tools.instance->m_hotZone->margin;
 		}
 	}
-
 }
 
 void ecvDisplayTools::DrawScale(const ecvColor::Rgbub& color)
@@ -3823,11 +3698,11 @@ void ecvDisplayTools::ChangeEntityProperties(PROPERTY_PARAM & propertyParam, boo
 	{
 		if (propertyParam.entity->isKindOf(CV_TYPES::PRIMITIVE))
 		{
-			propertyParam.entityType = ConVertToEntityType(CV_TYPES::PRIMITIVE);
+            propertyParam.entityType = ConvertToEntityType(CV_TYPES::PRIMITIVE);
 		}
 		else
 		{
-			propertyParam.entityType = ConVertToEntityType(propertyParam.entity->getClassID());
+            propertyParam.entityType = ConvertToEntityType(propertyParam.entity->getClassID());
 		}
 
 		propertyParam.viewId = QString::number(propertyParam.entity->getUniqueID());
@@ -3854,12 +3729,12 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param, bool update/* 
 	case WIDGETS_TYPE::WIDGET_T2D:
 	{
 		QFont textFont = s_tools.instance->m_font;
-		QRect screen = QGuiApplication::primaryScreen()->geometry();
+		//QRect screen = QGuiApplication::primaryScreen()->geometry();
 
-		if (screen.width() > 1920) // for high DPI
-		{
-			textFont.setPointSize(textFont.pointSize() * 3);
-		}
+		//if (screen.width() > 1920 && GetDevicePixelRatio() == 1)  // for high DPI
+		//{
+		//	textFont.setPointSize(textFont.pointSize() * 3);
+		//}
 
 		const_cast<WIDGETS_PARAMETER*>(&param)->fontSize = textFont.pointSize();
 		
@@ -3867,10 +3742,11 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param, bool update/* 
 	}
 		break;
 	case WIDGETS_TYPE::WIDGET_IMAGE:
-	case WIDGETS_TYPE::WIDGET_CIRCLE_2D:
 	case WIDGETS_TYPE::WIDGET_LINE_2D:
-	case WIDGETS_TYPE::WIDGET_POLYLINE_2D:
+	case WIDGETS_TYPE::WIDGET_CIRCLE_2D:
 	case WIDGETS_TYPE::WIDGET_POINTS_2D:
+	case WIDGETS_TYPE::WIDGET_SCALAR_BAR:
+	case WIDGETS_TYPE::WIDGET_POLYLINE_2D:
 	case WIDGETS_TYPE::WIDGET_TRIANGLE_2D:
 	case WIDGETS_TYPE::WIDGET_RECTANGLE_2D:
 		s_tools.instance->drawWidgets(param);
@@ -3956,6 +3832,14 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	case WIDGETS_TYPE::WIDGET_CAPTION:
 	{
 		context.removeEntityType = ENTITY_TYPE::ECV_CAPTION;
+		context.defaultViewPort = param.viewPort;
+		context.removeViewID = param.viewID;
+		RemoveEntities(context);
+	}
+	break;
+	case WIDGETS_TYPE::WIDGET_SCALAR_BAR:
+	{
+		context.removeEntityType = ENTITY_TYPE::ECV_SCALAR_BAR;
 		context.defaultViewPort = param.viewPort;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -4092,50 +3976,11 @@ void ecvDisplayTools::DrawPivot()
 		sphere.setVisible(true);
 		sphere.setEnabled(true);
 		//force lighting for proper sphere display
-		/*glFunc->glPushAttrib(GL_LIGHTING_BIT);
-		glEnableSunLight();*/
 		CC_DRAW_CONTEXT CONTEXT;
 		GetContext(CONTEXT);
 		CONTEXT.drawingFlags = CC_DRAW_3D | CC_DRAW_FOREGROUND | CC_LIGHT_ENABLED;
 		sphere.draw(CONTEXT);
-		//glFunc->glPopAttrib(); //GL_LIGHTING_BIT
 	}
-
-	//draw 3 circles
-
-
-	//default transparency
-	const float c_alpha = 0.6f;
-
-	////pivot symbol: 3 circles
-
-	//glFunc->glColor4f(1.0f, 0.0f, 0.0f, c_alpha);
-	//glDrawUnitCircle(context(), 0);
-	//glFunc->glBegin(GL_LINES);
-	//glFunc->glVertex3f(-1.0f, 0.0f, 0.0f);
-	//glFunc->glVertex3f(1.0f, 0.0f, 0.0f);
-	//glFunc->glEnd();
-
-	//glFunc->glColor4f(0.0f, 1.0f, 0.0f, c_alpha);
-	//glDrawUnitCircle(context(), 1);
-	//glFunc->glBegin(GL_LINES);
-	//glFunc->glVertex3f(0.0f, -1.0f, 0.0f);
-	//glFunc->glVertex3f(0.0f, 1.0f, 0.0f);
-	//glFunc->glEnd();
-
-	//glFunc->glColor4f(0.0f, 0.7f, 1.0f, c_alpha);
-	//glDrawUnitCircle(context(), 2);
-	//glFunc->glBegin(GL_LINES);
-	//glFunc->glVertex3f(0.0f, 0.0f, -1.0f);
-	//glFunc->glVertex3f(0.0f, 0.0f, 1.0f);
-	//glFunc->glEnd();
-
-	//glFunc->glPopAttrib(); //GL_COLOR_BUFFER_BIT | GL_LINE_BIT
-
-	//glFunc->glEndList();
-
-	//constant scale
-	const double scale = symbolRadius * ComputeActualPixelSize();
 }
 
 void ecvDisplayTools::SetCurrentScreen(QWidget* widget) {

@@ -33,7 +33,7 @@ VtkPlotWidgetPrivate::~VtkPlotWidgetPrivate()
     VtkUtils::vtkSafeDelete(contextView);
 }
 
-VtkPlotWidget::VtkPlotWidget(QWidget* parent) : QVTKWidget(parent)
+VtkPlotWidget::VtkPlotWidget(QWidget* parent) : QVTKOpenGLNativeWidget(parent)
 {
     setWindowTitle(tr("ChartXY"));
     d_ptr = new VtkPlotWidgetPrivate;

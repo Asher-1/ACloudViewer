@@ -295,7 +295,7 @@ static ccPolyline* GetConeProfile(ccCone* cone)
 		CCVector3 Z(0, 0, 0);
 		Z.u[revolDim] = PC_ONE;
 		ccGLMatrix axisTrans = ccGLMatrix::FromToRotation(y, Z);
-		assert(((axisTrans * y) - Z).norm() < ZERO_TOLERANCE);
+        assert(CVLib::LessThanEpsilon(((axisTrans * y) - Z).norm()));
 		ccGLMatrix polyMat = coneTrans * axisTrans;
 		polyline->setGLTransformation(polyMat);
 	}
@@ -373,7 +373,7 @@ void qSRA::computeCloud2ProfileRadialDist() const
 		if (doComputeRadialDists(cloud, polyline))
 		{
 			//automatically ask the user if he wants to generate a 2D map
-			if (QMessageBox::question(	m_app ? m_app->getMainWindow() : 0,
+			if (QMessageBox::question(	m_app ? m_app->getMainWindow() : nullptr,
 										tr("Generate map"),
 										tr("Do you want to generate a 2D deviation map?"),
 										QMessageBox::Yes,
@@ -501,7 +501,7 @@ void qSRA::doProjectCloudDistsInGrid(ccPointCloud* cloud, ccPolyline* polyline) 
 			sf = cloud->getCurrentDisplayedScalarField();
 			if (sf)
 			{
-				if (QMessageBox::question(	m_app ? m_app->getMainWindow() : 0,
+				if (QMessageBox::question(	m_app ? m_app->getMainWindow() : nullptr,
 											tr("Distance field"),
 											tr("Cloud has no '%1' field. Do you want to use the active scalar field instead?").arg(RADIAL_DIST_SF_NAME),
 											QMessageBox::Yes,

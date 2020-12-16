@@ -52,7 +52,7 @@ public:
 	/**
 	\param mainWidget MainWindow widget (optional)
 	**/
-	static void Init(ecvDisplayTools* displayTools, QMainWindow* win);
+	static void Init(ecvDisplayTools* displayTools, QMainWindow* win, bool stereoMode = false);
 	static ecvDisplayTools* TheInstance();
 
 	static void ReleaseInstance();
@@ -93,11 +93,11 @@ public:
 		INTERACT_NONE = 0,
 
 		//camera interactions
-		INTERACT_ROTATE = 1,
-		INTERACT_PAN = 2,
-		INTERACT_CTRL_PAN = 4,
-		INTERACT_ZOOM_CAMERA = 8,
-		INTERACT_2D_ITEMS = 16, //labels, etc.
+		INTERACT_ROTATE          =  1,
+		INTERACT_PAN             =  2,
+		INTERACT_CTRL_PAN        =  4,
+		INTERACT_ZOOM_CAMERA     =  8,
+		INTERACT_2D_ITEMS        = 16, //labels, etc.
 		INTERACT_CLICKABLE_ITEMS = 32, //hot zone
 
 		//options / modifiers
@@ -109,6 +109,11 @@ public:
 		INTERACT_SIG_MOUSE_MOVED = 512,      //mouse moved (only if a button is clicked)
 		INTERACT_SIG_BUTTON_RELEASED = 1024, //mouse button released
 		INTERACT_SEND_ALL_SIGNALS = INTERACT_SIG_RB_CLICKED | INTERACT_SIG_LB_CLICKED | INTERACT_SIG_MOUSE_MOVED | INTERACT_SIG_BUTTON_RELEASED,
+
+		// default modes
+		MODE_PAN_ONLY = INTERACT_PAN | INTERACT_ZOOM_CAMERA | INTERACT_2D_ITEMS | INTERACT_CLICKABLE_ITEMS,
+		MODE_TRANSFORM_CAMERA = INTERACT_ROTATE | MODE_PAN_ONLY,
+		MODE_TRANSFORM_ENTITIES = INTERACT_ROTATE | INTERACT_PAN | INTERACT_ZOOM_CAMERA | INTERACT_TRANSFORM_ENTITIES | INTERACT_CLICKABLE_ITEMS,
 	};
 	Q_DECLARE_FLAGS(INTERACTION_FLAGS, INTERACTION_FLAG)
 
@@ -233,14 +238,18 @@ public:
 			, fs_label("fullscreen mode")
 			, psi_label("default point size")
 			, lsi_label("default line width")
-			, margin(10)
-			, iconSize(16)
+            , margin(10) // 16|10
+            , iconSize(12) // 16
 			, topCorner(0, 0)
 		{
 			//default color ("greenish")
-			color[0] = 133;
-			color[1] = 193;
-			color[2] = 39;
+			//color[0] = 133;
+			//color[1] = 193;
+			//color[2] = 39;
+
+			color[0] = ecvColor::defaultLabelBkgColor.r;
+            color[1] = ecvColor::defaultLabelBkgColor.g;
+            color[2] = ecvColor::defaultLabelBkgColor.b;
 
 			if (win)
 			{
@@ -289,7 +298,7 @@ public:
 			maxAreaCorner.setY(maxAreaCorner.y() + (iconSize + margin) * (rowCount - 1));
 
 			QRect areaRect(minAreaCorner - QPoint(margin, margin) / 2,
-				maxAreaCorner + QPoint(margin, margin) / 2);
+						   maxAreaCorner + QPoint(margin, margin) / 2);
 
 			return areaRect;
 		}
@@ -340,7 +349,6 @@ public:
 		const QFont& font = QFont());
 
 public: //! Draws the main 3D layer
-	static void SimulateKeyBoardPress(Qt::Key key, int loopNum = 1);
 	static void SetFocusToScreen();
 	static void ToBeRefreshed();
 	static void RefreshDisplay(bool only2D = false, bool forceRedraw = true);
@@ -355,9 +363,9 @@ public: //! Draws the main 3D layer
 	static void RemoveBB(CC_DRAW_CONTEXT context);
 	static void RemoveBB(const QString& viewId);
 	static void ChangeEntityProperties(PROPERTY_PARAM& propertyParam, bool autoUpdate = true);
-	inline virtual void changeEntityProperties(PROPERTY_PARAM& propertyParam) { /* do nothing */ };
+    inline virtual void changeEntityProperties(PROPERTY_PARAM& propertyParam) { /* do nothing */ }
 	static void DrawWidgets(const WIDGETS_PARAMETER& param, bool update = false);
-	inline virtual void drawWidgets(const WIDGETS_PARAMETER& param) { /* do nothing */ };
+    inline virtual void drawWidgets(const WIDGETS_PARAMETER& param) { /* do nothing */ }
 	static void RemoveWidgets(const WIDGETS_PARAMETER& param, bool update = false);
 
 	inline static void DrawCoordinates(double scale = 1.0,
@@ -439,12 +447,10 @@ public: // main interface
 	inline static void SetRemoveAllFlag(bool state) { TheInstance()->m_removeAllFlag = state; }
 
 	inline static void TransformCameraView(const ccGLMatrixd & viewMat) { TheInstance()->transformCameraView(viewMat); }
-	inline virtual void transformCameraView(const ccGLMatrixd & viewMat) { /* do nothing */ };
+    inline virtual void transformCameraView(const ccGLMatrixd & viewMat) { /* do nothing */ }
 	inline static void TransformCameraProjection(const ccGLMatrixd & projMat) { TheInstance()->transformCameraProjection(projMat); }
-	inline virtual void transformCameraProjection(const ccGLMatrixd & projMat) { /* do nothing */ };
+    inline virtual void transformCameraProjection(const ccGLMatrixd & projMat) { /* do nothing */ }
 
-	inline static void UpdateScreen() { GetCurrentScreen()->update(); };
-	inline static void Update() { UpdateCamera(); UpdateScreen(); };
 	static inline int GetDevicePixelRatio() { 
 		//return TheInstance()->getDevicePixelRatio(); 
 		return GetMainWindow()->devicePixelRatio();
@@ -466,21 +472,21 @@ public: // main interface
 	inline virtual void fullScreen(bool state) {/* do nothing */}
 
 	inline static void GetCameraPos(double *pos, int viewPort = 0) { TheInstance()->getCameraPos(pos, viewPort); }
-	inline virtual void getCameraPos(double *pos, int viewPort = 0) { /* do nothing */ };
+    inline virtual void getCameraPos(double *pos, int viewPort = 0) { /* do nothing */ }
 	inline static void GetCameraFocal(double *focal, int viewPort = 0) { TheInstance()->getCameraFocal(focal, viewPort); }
-	inline virtual void getCameraFocal(double *focal, int viewPort = 0) { /* do nothing */ };
+    inline virtual void getCameraFocal(double *focal, int viewPort = 0) { /* do nothing */ }
 	inline static void GetCameraUp(double *up, int viewPort = 0) { TheInstance()->getCameraUp(up, viewPort); }
 	virtual void getCameraUp(double *up, int viewPort = 0) { /* do nothing */ }
 
 	inline static void SetCameraPosition(const CCVector3d& pos, int viewPort = 0) { 
-		TheInstance()->setCameraPosition(pos, viewPort); };
-	inline virtual void setCameraPosition(const CCVector3d& pos, int viewPort = 0) { /* do nothing */ };
+        TheInstance()->setCameraPosition(pos, viewPort); }
+    inline virtual void setCameraPosition(const CCVector3d& pos, int viewPort = 0) { /* do nothing */ }
 	inline static void SetCameraPosition(const double *pos, const double *focal, const double *up, int viewPort = 0) { 
 		TheInstance()->setCameraPosition(pos, focal, up, viewPort); }
-	inline virtual void setCameraPosition(const double *pos, const double *focal, const double *up, int viewPort = 0) { /* do nothing */ };
+    inline virtual void setCameraPosition(const double *pos, const double *focal, const double *up, int viewPort = 0) { /* do nothing */ }
 	inline static void SetCameraPosition(const double *pos, const double *up, int viewPort = 0) { 
 		TheInstance()->setCameraPosition(pos, up, viewPort); }
-	inline virtual void setCameraPosition(const double *pos, const double *up, int viewPort = 0) { /* do nothing */ };
+    inline virtual void setCameraPosition(const double *pos, const double *up, int viewPort = 0) { /* do nothing */ }
 	inline static void SetCameraPosition(double pos_x, double pos_y, double pos_z,
 		double view_x, double view_y, double view_z, double up_x, double up_y, double up_z, int viewPort = 0) {
 		TheInstance()->setCameraPosition(pos_x, pos_y, pos_z,
@@ -669,12 +675,17 @@ public: // visualization matrix transformation
 	**/
 	static void ResizeGL(int w, int h);
 	static void UpdateScreenSize();
-	inline static void ResetCamera(const ccBBox * bbox)  { TheInstance()->resetCamera(bbox); }
+    inline static void Update() { GetCurrentScreen()->update(); UpdateCamera(); }
+    inline static void UpdateScreen() { GetCurrentScreen()->update(); UpdateScene(); }
+	inline static void ResetCamera(const ccBBox * bbox)  { TheInstance()->resetCamera(bbox);  UpdateScreen(); }
 	inline virtual void resetCamera(const ccBBox * bbox) { /* do nothing */ }
-	inline static void ResetCamera() { TheInstance()->resetCamera(); }
+	inline static void ResetCamera() { TheInstance()->resetCamera(); UpdateScreen(); }
 	inline virtual void resetCamera() { /* do nothing */ }
-	inline static void UpdateCamera() { TheInstance()->updateCamera(); }
+	inline static void UpdateCamera() { TheInstance()->updateCamera(); UpdateScreen(); }
 	inline virtual void updateCamera() { /* do nothing */ }
+
+	inline static void UpdateScene() { TheInstance()->updateScene(); }
+	inline virtual void updateScene() { /* do nothing */ }
 
 	inline static void SetAutoUpateCameraPos(bool state) { TheInstance()->setAutoUpateCameraPos(state); }
 	inline virtual void setAutoUpateCameraPos(bool state) { /* do nothing */ }
@@ -764,8 +775,8 @@ public: // visualization matrix transformation
 		QString id = "");
 
 	//! Toggles (exclusive) full-screen mode
-	inline static void ToggleExclusiveFullScreen(bool state) { TheInstance()->toggleExclusiveFullScreen(state); };
-	inline virtual void toggleExclusiveFullScreen(bool state) {/* in this do nothing */};
+    inline static void ToggleExclusiveFullScreen(bool state) { TheInstance()->toggleExclusiveFullScreen(state); }
+    inline virtual void toggleExclusiveFullScreen(bool state) {/* in this do nothing */}
 
 
 	//! Returns whether the window is in exclusive full screen mode or not
@@ -1022,7 +1033,7 @@ public: // visualization matrix transformation
 	//takes rendering zoom into account!
 	inline static QFont GetTextDisplayFont() { return TheInstance()->m_font; }
 
-	static ENTITY_TYPE ConVertToEntityType(const CV_CLASS_ENUM & type);
+	static ENTITY_TYPE ConvertToEntityType(const CV_CLASS_ENUM & type);
 
 	//! Default picking radius value
 	static const int DefaultPickRadius = 5;
@@ -1046,7 +1057,7 @@ public: // visualization matrix transformation
 protected:
 	ecvDisplayTools() = default;
 	//! register visualizer callback function
-	virtual void registerVisualizer(QMainWindow * win) = 0;
+	virtual void registerVisualizer(QMainWindow * win, bool stereoMode = false) = 0;
 
 	QWidget* m_currentScreen;
 	QWidget* m_mainScreen;

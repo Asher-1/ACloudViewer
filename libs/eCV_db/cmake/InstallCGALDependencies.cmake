@@ -4,10 +4,6 @@ if( WIN32 )
 	# must work with files.
 	# Use the variables set by the libraries themselves and call InstallFiles() on them.
 
-	if( CVCORELIB_USE_TBB )
-		InstallFiles( FILES ${TBB_LIBRARIES} )
-	endif()
-	
 	if( CVCORELIB_USE_CGAL )
 	
 		list(GET GMP_LIBRARIES 0 FIRST_GMP_LIB_FILE)

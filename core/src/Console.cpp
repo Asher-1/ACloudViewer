@@ -48,163 +48,176 @@
 
 namespace CVLib {
 
-	namespace utility {
-		Logger & Logger::i()
-		{
-			static Logger instance;
-			return instance;
-		}
+namespace utility {
 
-		void Logger::ChangeConsoleColor(TextColor text_color,
-			int highlight_text) const {
+Logger & Logger::i()
+{
+    static Logger instance;
+    return instance;
+}
+
+VerbosityContextManager::VerbosityContextManager(
+                VerbosityLevel level) : level_(level) {}
+
+void VerbosityContextManager::enter() {
+    level_backup_ = Logger::i().verbosity_level_;
+    Logger::i().verbosity_level_ = level_;
+}
+
+void VerbosityContextManager::exit() {
+    Logger::i().verbosity_level_ = level_backup_;
+}
+
+void Logger::ChangeConsoleColor(TextColor text_color,
+                                int highlight_text) const {
 #ifdef _WIN32
-			const WORD EMPHASIS_MASK[2] = { 0, FOREGROUND_INTENSITY };
-			const WORD COLOR_MASK[8] = {
-					0,
-					FOREGROUND_RED,
-					FOREGROUND_GREEN,
-					FOREGROUND_GREEN | FOREGROUND_RED,
-					FOREGROUND_BLUE,
-					FOREGROUND_RED | FOREGROUND_BLUE,
-					FOREGROUND_GREEN | FOREGROUND_BLUE,
-					FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED };
-			HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-			SetConsoleTextAttribute(
-				h, EMPHASIS_MASK[highlight_text] | COLOR_MASK[(int)text_color]);
+    const WORD EMPHASIS_MASK[2] = { 0, FOREGROUND_INTENSITY };
+    const WORD COLOR_MASK[8] = {
+            0,
+            FOREGROUND_RED,
+            FOREGROUND_GREEN,
+            FOREGROUND_GREEN | FOREGROUND_RED,
+            FOREGROUND_BLUE,
+            FOREGROUND_RED | FOREGROUND_BLUE,
+            FOREGROUND_GREEN | FOREGROUND_BLUE,
+            FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED };
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(
+        h, EMPHASIS_MASK[highlight_text] | COLOR_MASK[(int)text_color]);
 #else
-			printf("%c[%d;%dm", 0x1B, highlight_text, (int)text_color + 30);
+    printf("%c[%d;%dm", 0x1B, highlight_text, static_cast<int>(text_color) + 30);
 #endif
-		}
+}
 
-		void Logger::ResetConsoleColor() const {
+void Logger::ResetConsoleColor() const {
 #ifdef _WIN32
-			HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-			SetConsoleTextAttribute(
-				h, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(
+        h, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
 #else
-			printf("%c[0;m", 0x1B);
+    printf("%c[0;m", 0x1B);
 #endif
-		}
+}
 
-		std::string Logger::ColorString(const std::string &text,
-			TextColor text_color,
-			int highlight_text) const {
-			std::ostringstream msg;
+std::string Logger::ColorString(const std::string &text,
+    TextColor text_color,
+    int highlight_text) const {
+    std::ostringstream msg;
 #ifndef _WIN32
-			msg << fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
-				(int)text_color + 30);
+    msg << fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
+        static_cast<int>(text_color) + 30);
 #endif
-			msg << text;
+    msg << text;
 #ifndef _WIN32
-			msg << fmt::sprintf("%c[0;m", 0x1B);
+    msg << fmt::sprintf("%c[0;m", 0x1B);
 #endif
-			return msg.str();
-		}
+    return msg.str();
+}
 
-		std::string GetCurrentTimeStamp() {
-			std::time_t t = std::time(nullptr);
-			return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
-		}
+std::string GetCurrentTimeStamp() {
+    std::time_t t = std::time(nullptr);
+    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
+}
 
-		std::string GetProgramOptionAsString(
-			int argc,
-			char **argv,
-			const std::string &option,
-			const std::string &default_value /* = ""*/) {
-			char **itr = std::find(argv, argv + argc, option);
-			if (itr != argv + argc && ++itr != argv + argc) {
-				return std::string(*itr);
-			}
-			return default_value;
-		}
+std::string GetProgramOptionAsString(
+    int argc,
+    char **argv,
+    const std::string &option,
+    const std::string &default_value /* = ""*/) {
+    char **itr = std::find(argv, argv + argc, option);
+    if (itr != argv + argc && ++itr != argv + argc) {
+        return std::string(*itr);
+    }
+    return default_value;
+}
 
-		int GetProgramOptionAsInt(int argc,
-			char **argv,
-			const std::string &option,
-			const int default_value /* = 0*/) {
-			std::string str = GetProgramOptionAsString(argc, argv, option, "");
-			if (str.length() == 0) {
-				return default_value;
-			}
-			char *end;
-			errno = 0;
-			long l = std::strtol(str.c_str(), &end, 0);
-			if ((errno == ERANGE && l == LONG_MAX) || l > INT_MAX) {
-				return default_value;
-			}
-			else if ((errno == ERANGE && l == LONG_MIN) || l < INT_MIN) {
-				return default_value;
-			}
-			else if (*end != '\0') {
-				return default_value;
-			}
-			return (int)l;
-		}
+int GetProgramOptionAsInt(int argc,
+    char **argv,
+    const std::string &option,
+    const int default_value /* = 0*/) {
+    std::string str = GetProgramOptionAsString(argc, argv, option, "");
+    if (str.length() == 0) {
+        return default_value;
+    }
+    char *end;
+    errno = 0;
+    long l = std::strtol(str.c_str(), &end, 0);
+    if ((errno == ERANGE && l == LONG_MAX) || l > INT_MAX) {
+        return default_value;
+    }
+    else if ((errno == ERANGE && l == LONG_MIN) || l < INT_MIN) {
+        return default_value;
+    }
+    else if (*end != '\0') {
+        return default_value;
+    }
+    return static_cast<int>(l);
+}
 
-		double GetProgramOptionAsDouble(int argc,
-			char **argv,
-			const std::string &option,
-			const double default_value /* = 0.0*/) {
-			std::string str = GetProgramOptionAsString(argc, argv, option, "");
-			if (str.length() == 0) {
-				return default_value;
-			}
-			char *end;
-			errno = 0;
-			double l = std::strtod(str.c_str(), &end);
-			if (errno == ERANGE && (l == HUGE_VAL || l == -HUGE_VAL)) {
-				return default_value;
-			}
-			else if (*end != '\0') {
-				return default_value;
-			}
-			return l;
-		}
+double GetProgramOptionAsDouble(int argc,
+    char **argv,
+    const std::string &option,
+    const double default_value /* = 0.0*/) {
+    std::string str = GetProgramOptionAsString(argc, argv, option, "");
+    if (str.length() == 0) {
+        return default_value;
+    }
+    char *end;
+    errno = 0;
+    double l = std::strtod(str.c_str(), &end);
+    if (errno == ERANGE && (l == HUGE_VAL || l == -HUGE_VAL)) {
+        return default_value;
+    }
+    else if (*end != '\0') {
+        return default_value;
+    }
+    return l;
+}
 
-		Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
-			int argc,
-			char **argv,
-			const std::string &option,
-			const Eigen::VectorXd default_value /* =
-			Eigen::VectorXd::Zero()*/) {
-			std::string str = GetProgramOptionAsString(argc, argv, option, "");
-			if (str.length() == 0 || (!(str.front() == '(' && str.back() == ')') &&
-				!(str.front() == '[' && str.back() == ']') &&
-				!(str.front() == '<' && str.back() == '>'))) {
-				return default_value;
-			}
-			std::vector<std::string> tokens;
-			SplitString(tokens, str.substr(1, str.length() - 2), ",");
-			Eigen::VectorXd vec(tokens.size());
-			for (size_t i = 0; i < tokens.size(); i++) {
-				char *end;
-				errno = 0;
-				double l = std::strtod(tokens[i].c_str(), &end);
-				if (errno == ERANGE && (l == HUGE_VAL || l == -HUGE_VAL)) {
-					return default_value;
-				}
-				else if (*end != '\0') {
-					return default_value;
-				}
-				vec(i) = l;
-			}
-			return vec;
-		}
+Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
+    int argc,
+    char **argv,
+    const std::string &option,
+    const Eigen::VectorXd default_value /* =
+    Eigen::VectorXd::Zero()*/) {
+    std::string str = GetProgramOptionAsString(argc, argv, option, "");
+    if (str.length() == 0 || (!(str.front() == '(' && str.back() == ')') &&
+        !(str.front() == '[' && str.back() == ']') &&
+        !(str.front() == '<' && str.back() == '>'))) {
+        return default_value;
+    }
+    std::vector<std::string> tokens;
+    SplitString(tokens, str.substr(1, str.length() - 2), ",");
+    Eigen::VectorXd vec(tokens.size());
+    for (size_t i = 0; i < tokens.size(); i++) {
+        char *end;
+        errno = 0;
+        double l = std::strtod(tokens[i].c_str(), &end);
+        if (errno == ERANGE && (l == HUGE_VAL || l == -HUGE_VAL)) {
+            return default_value;
+        }
+        else if (*end != '\0') {
+            return default_value;
+        }
+        vec(i) = l;
+    }
+    return vec;
+}
 
-		bool ProgramOptionExists(int argc, char **argv, const std::string &option) {
-			return std::find(argv, argv + argc, option) != argv + argc;
-		}
+bool ProgramOptionExists(int argc, char **argv, const std::string &option) {
+    return std::find(argv, argv + argc, option) != argv + argc;
+}
 
-		bool ProgramOptionExistsAny(int argc,
-			char **argv,
-			const std::vector<std::string> &options) {
-			for (const auto &option : options) {
-				if (ProgramOptionExists(argc, argv, option)) {
-					return true;
-				}
-			}
-			return false;
-		}
+bool ProgramOptionExistsAny(int argc,
+    char **argv,
+    const std::vector<std::string> &options) {
+    for (const auto &option : options) {
+        if (ProgramOptionExists(argc, argv, option)) {
+            return true;
+        }
+    }
+    return false;
+}
 
-	}  // namespace utility
+}  // namespace utility
 }  // namespace cloudViewer

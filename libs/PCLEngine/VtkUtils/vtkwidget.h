@@ -4,13 +4,18 @@
 //#define vtkRenderingCore_AUTOINIT 3(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingOpenGL) // ogl2
 //#define vtkRenderingVolume_AUTOINIT 1(vtkRenderingVolumeOpenGL)
 
-#include <vtkAutoInit.h>
-#include <vtkAutoInit.h>
+//#include <vtkAutoInit.h>
+//#include <vtkAutoInit.h>
 
 //VTK_MODULE_INIT(vtkRenderingOpenGL) // ogl2
 //VTK_MODULE_INIT(vtkInteractionStyle)
 
-#include <QVTKWidget.h>
+//#include <vtkAutoInit.h>
+//VTK_MODULE_INIT(vtkRenderingFreeType)
+//VTK_MODULE_INIT(vtkRenderingOpenGL2);
+//VTK_MODULE_INIT(vtkInteractionStyle);
+
+#include <QVTKOpenGLNativeWidget.h>
 #include <vtkSmartPointer.h>
 
 #include "../qPCL.h"
@@ -23,7 +28,7 @@ namespace VtkUtils
 {
 
 class VtkWidgetPrivate;
-class QPCL_ENGINE_LIB_API VtkWidget : public QVTKWidget
+class VtkWidget : public QVTKOpenGLNativeWidget
 {
 	Q_OBJECT
 public:

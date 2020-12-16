@@ -69,7 +69,7 @@ ccPointCloud* vtk2ccConverter::getPointCloudFromPolyData(vtkPolyData* polydata, 
 	//create cloud
 	ccPointCloud* cloud = new ccPointCloud("vertices");
 
-	size_t pointCount = static_cast<size_t>(polydata->GetNumberOfPoints());
+    vtkIdType pointCount = polydata->GetNumberOfPoints();
 	if (!cloud->resize(static_cast<unsigned>(pointCount)))
 	{
 		if (!silent)
@@ -103,11 +103,11 @@ ccPointCloud* vtk2ccConverter::getPointCloudFromPolyData(vtkPolyData* polydata, 
 		return nullptr;
 	}
 	
-	for (size_t i = 0; i < pointCount; ++i)
+    for (vtkIdType i = 0; i < pointCount; ++i)
 	{
 		double coordinate[3];
 		polydata->GetPoint(i, coordinate);
-		cloud->setPoint(i, CCVector3::fromArray(coordinate));
+        cloud->setPoint(static_cast<std::size_t>(i), CCVector3::fromArray(coordinate));
 		if (normals)
 		{
 			float normal[3];
@@ -193,9 +193,9 @@ ccMesh* vtk2ccConverter::getMeshFromPolyData(vtkPolyData* polydata, bool silent)
 			break;
 		}
 
-		mesh->addTriangle(static_cast<int>(cell_points[0]), 
-						  static_cast<int>(cell_points[1]), 
-						  static_cast<int>(cell_points[2]));
+        mesh->addTriangle(static_cast<unsigned>(cell_points[0]),
+                          static_cast<unsigned>(cell_points[1]),
+                          static_cast<unsigned>(cell_points[2]));
 		++id_poly;
 	}
 
@@ -238,16 +238,16 @@ ccHObject::Container vtk2ccConverter::getMultiPolylinesFromPolyData(vtkPolyData*
 	// initialize output
 	ccHObject::Container container;
 
-	int iCells = polydata->GetNumberOfCells();
-	for (int i = 0; i < iCells; i++)
+    vtkIdType iCells = polydata->GetNumberOfCells();
+    for (vtkIdType i = 0; i < iCells; i++)
 	{
-		ccPointCloud* vertices = 0;
+        ccPointCloud* vertices = nullptr;
 		vtkCell* cell = polydata->GetCell(i);
 		vtkIdType ptsCount = cell->GetNumberOfPoints();
 		if (ptsCount > 1)
 		{
 			vertices = new ccPointCloud("vertices");
-			if (!vertices->reserve(ptsCount))
+            if (!vertices->reserve(static_cast<unsigned>(ptsCount)))
 			{
 				CVLog::Error("not enough memory to allocate vertices...");
 				return container;
@@ -264,7 +264,7 @@ ccHObject::Container vtk2ccConverter::getMultiPolylinesFromPolyData(vtkPolyData*
 		if (vertices && vertices->size() == 0)
 		{
 			delete vertices;
-			vertices = 0;
+            vertices = nullptr;
 		}
 
 		if (vertices)
@@ -328,7 +328,7 @@ ccPolyline* vtk2ccConverter::getPolylineFromCC(ccPointCloud* vertices)
 			return nullptr;
 		}
 
-		int verticesCount = polyVertices->size();
+        unsigned verticesCount = polyVertices->size();
 		if (curvePoly->reserve(verticesCount))
 		{
 			curvePoly->addPointIndex(0, verticesCount);
@@ -337,7 +337,7 @@ ccPolyline* vtk2ccConverter::getPolylineFromCC(ccPointCloud* vertices)
 			bool closed = false;
 			CCVector3 start = CCVector3::fromArray(polyVertices->getPoint(0)->u);
 			CCVector3 end = CCVector3::fromArray(polyVertices->getPoint(verticesCount - 1)->u);
-			if ((end - start).norm() < ZERO_TOLERANCE)
+            if (CVLib::LessThanEpsilon((end - start).norm()))
 			{
 				closed = true;
 			}

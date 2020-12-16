@@ -14,14 +14,14 @@ using pcl::visualization::PointCloudColorHandler;
 
 template <typename PointT>
 class PclPointCloudColorHandlerLUT : public PointCloudColorHandler<PointT> {
-
+    
 public:
     typedef pcl::PointCloud<PointT> PointCloud;
     typedef typename PointCloud::Ptr PointCloudPtr;
     typedef typename PointCloud::ConstPtr PointCloudConstPtr;
 
-    typedef boost::shared_ptr<PclPointCloudColorHandlerLUT<PointT> > Ptr;
-    typedef boost::shared_ptr<const PclPointCloudColorHandlerLUT<PointT> > ConstPtr;
+    typedef std::shared_ptr<PclPointCloudColorHandlerLUT<PointT> > Ptr;
+    typedef std::shared_ptr<const PclPointCloudColorHandlerLUT<PointT> > ConstPtr;
 
     /** \brief Constructor. */
     PclPointCloudColorHandlerLUT () :

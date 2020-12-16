@@ -44,8 +44,7 @@ protected:
 	virtual int checkParameters();
 	virtual QString getErrorMessage(int errorCode);
 
-	void CorrespondenceMatching::applyTransformation(
-		ccHObject* entity, const ccGLMatrixd& mat);
+    void applyTransformation(ccHObject* entity, const ccGLMatrixd& mat);
 
 	ccPointCloud* m_sceneCloud;
 	CorrespondenceMatchingDialog* m_dialog;

@@ -49,8 +49,7 @@ protected:
 	virtual int checkParameters();
 	virtual QString getErrorMessage(int errorCode);
 
-	void TemplateAlignment::applyTransformation(
-		ccHObject* entity, const ccGLMatrixd& mat);
+    void applyTransformation(ccHObject* entity, const ccGLMatrixd& mat);
 
 	ccPointCloud* m_targetCloud;
 	TemplateAlignmentDialog* m_dialog;

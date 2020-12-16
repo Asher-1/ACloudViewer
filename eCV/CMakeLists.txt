@@ -4,13 +4,10 @@ OPTION( UPDATE_TRANSLATION_FILES "Generate or update ts files" OFF )
 
 include( CMakePolicies NO_POLICY_SCOPE )
 
-if (CVCORELIB_USE_TBB)
-	include_directories( ${TBB_INCLUDE_DIRS})
-endif()
-
-if (USE_PCL_BACKEND) 
-	include_directories( ${PCL_INCLUDE_DIRS} )
-	include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
+if (MSVC)
+    if (CVCORELIB_USE_TBB)
+		include_directories( ${TBB_INCLUDE_DIRS})
+    endif()
 endif()
 
 if (BUILD_PYTHON_MODULE)
@@ -62,17 +59,28 @@ if( MSVC )
 			message("QMs: ${QMs}")
 		endforeach()
 	endif()
-	
+elseif( APPLE )
+        add_executable( ${PROJECT_NAME} MACOSX_BUNDLE ${header_list} ${source_list} ${generated_ui_list} ${generated_qrc_list} ${txt_list} )
 else()
 	add_executable( ${PROJECT_NAME} ${header_list} ${source_list} ${generated_ui_list} ${generated_qrc_list} ${rc_list} ${txt_list} )
 endif()
 
-add_custom_command(
-	TARGET ${PROJECT_NAME}
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/ErowCloudViewer.exe ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/ErowCloudViewer.exe
-	VERBATIM
-)
+if (WIN32)
+    add_custom_command(
+            TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/ErowCloudViewer.exe ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/ErowCloudViewer.exe
+            VERBATIM
+    )
+else()
+    add_custom_command(
+            TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/ErowCloudViewer ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/ErowCloudViewer
+            VERBATIM
+    )
+endif()
+
 
 DeployQt(
 	TARGET
@@ -95,29 +103,36 @@ if( CVCORELIB_USE_QT_CONCURRENT )
 	)
 endif()
 
+# contrib. libraries support
+if( APPLE )
+        target_link_contrib( ${PROJECT_NAME} ${EROWCLOUDVIEWER_MAC_FRAMEWORK_DIR} )
+elseif( UNIX )
+        target_link_contrib( ${PROJECT_NAME} lib/erowcloudviewer )
+else()
+        target_link_contrib( ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} )
+endif()
+
 if (USE_PCL_BACKEND)
-	link_directories( ${PCL_LIBRARY_DIRS} )
-	link_directories( ${VTK_LIBRARIES_DIRS} )
-	# PCL
-	target_link_libraries( ${PROJECT_NAME} ${PCL_LIBRARIES} )
-	# VTK
-	target_link_libraries( ${PROJECT_NAME} ${VTK_LIBRARIES} )
-	target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
-	# Add custom preprocessor definitions
-	target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD )
-	
-endif()	
+        if( CMAKE_VERSION VERSION_LESS 3.13 )
+                link_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR} )
+        else()
+                target_link_directories( ${PROJECT_NAME}
+                        PUBLIC ${QPCL_ENGINE_LIB_SOURCE_DIR}
+                )
+        endif()
+        include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
+        target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
+endif()
 
 if (BUILD_PYTHON_MODULE)
-	target_link_libraries( ${PROJECT_NAME} ${3RDPARTY_LIBRARIES} )
 	target_link_libraries( ${PROJECT_NAME} ECV_PYTHON_LIB )
 	# Add custom preprocessor definitions
-	target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_PYTHON_LIBRARY_BUILD )
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_PYTHON_MODULE )
 endif()	
 
 # Add custom preprocessor definitions
 if( WIN32 )
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS ECV_DB_LIBRARY_BUILD ECV_IO_LIBRARY_BUILD)
+	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS)
 	if (MSVC)
 		set_target_properties( ${PROJECT_NAME} PROPERTIES LINK_FLAGS " /MANIFEST:NO" )
 	endif()
@@ -152,7 +167,7 @@ if( WIN32 OR APPLE )
 	endforeach()
 else( UNIX )
 	foreach( filename ${auxFiles} )
-		install_ext( FILES ${filename} share/ErowCloudViewer "" )
+                install_ext( FILES ${filename} share/erowcloudviewer "" )
 	endforeach()
 endif()
 
@@ -172,8 +187,8 @@ if( APPLE )
 	)
 elseif( UNIX )
 	InstallPlugins(
-		DEST_PATH "${CMAKE_INSTALL_LIBDIR}/ErowCloudViewer/plugins"
-		SHADER_DEST_PATH share/ErowCloudViewer/shaders
+                DEST_PATH "${CMAKE_INSTALL_LIBDIR}/erowcloudviewer/plugins"
+                SHADER_DEST_PATH share/erowcloudviewer/shaders
 	)
 else()
 	InstallPlugins(

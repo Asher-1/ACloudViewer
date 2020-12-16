@@ -33,7 +33,7 @@ class ccHObject;
 class ccScalarField;
 
 //! Display parameters of a 3D entity
-struct ECV_DB_LIB_API glDrawParams
+struct glDrawParams
 {
 	//! Display scalar field (prioritary on colors)
 	bool showSF;
@@ -78,6 +78,7 @@ enum ENTITY_TYPE
 	ECV_2DLABLE,
 	ECV_2DLABLE_VIEWPORT,
 	ECV_CAPTION,
+	ECV_SCALAR_BAR,
 	ECV_TEXT3D,
 	ECV_TEXT2D,
 	ECV_IMAGE,
@@ -102,6 +103,7 @@ enum WIDGETS_TYPE
 	WIDGET_LINE_3D,
 	WIDGET_SPHERE,
 	WIDGET_CAPTION,
+	WIDGET_SCALAR_BAR,
 	WIDGET_T3D,
 	WIDGET_T2D,
 };
@@ -111,14 +113,14 @@ struct ECV_DB_LIB_API PROPERTY_PARAM
 	//! Display scalar field (prioritary on colors)
 	QString viewId;
 	int viewPort = 0;
-	ecvColor::Rgb color;
-	double opacity = 1.0;
 	PointCoordinateType lineWidth = 2;
 	unsigned char pointSize = 1;
+    ccHObject* entity;
+    ecvColor::Rgb color;
 
+    double opacity = 1.0;
 	PROPERTY_MODE property;
 	ENTITY_TYPE entityType;
-	ccHObject* entity;
 
 	PROPERTY_PARAM(ccHObject* obj, const ecvColor::Rgb& col)
 		: entity(obj)
@@ -170,11 +172,11 @@ struct ECV_DB_LIB_API PROPERTY_PARAM
 };
 
 struct ECV_DB_LIB_API LineWidget {
-	bool valid;
 	CCVector3 lineSt;
 	CCVector3 lineEd;
 	float lineWidth;
 	ecvColor::Rgb lineColor;
+    bool valid;
 	LineWidget(float width = 2.0f, const ecvColor::Rgb& color = ecvColor::red)
 		: lineWidth(width)
 		, lineColor(color)
@@ -194,68 +196,8 @@ struct ECV_DB_LIB_API LineWidget {
 	{}
 };
 
-struct ECV_DB_LIB_API WIDGETS_PARAMETER
-{
-public: 
-	/*for general*/
-	int viewPort = 0;
-	QString viewID;
-	WIDGETS_TYPE type;
-	ccHObject* entity;
-	ecvColor::Rgbaf color;
-
-	int fontSize = 10;
-
-	/*for image*/
-	QImage image;
-	double opacity = 1.0;
-
-	/*for text*/
-	QString text;
-
-	/*for rectangle*/
-	bool filled = true;
-	QRect rect;
-
-	/*for 2D line or triangle*/
-	QPoint p1;
-	QPoint p2;
-	QPoint p3;
-	QPoint p4 = QPoint(-1, -1);
-
-	/*for circle, sphere or mark point*/
-	float radius;
-	CCVector3 center;
-	CCVector2 pos;
-	bool handleEnabled = false;
-
-	/*for 3D line*/
-	LineWidget lineWidget;
-
-	//Default constructor
-	WIDGETS_PARAMETER(WIDGETS_TYPE t, QString id = "id", int port = 0)
-		: viewID(id)
-		, type(t)
-		, viewPort(port)
-	{}
-
-	WIDGETS_PARAMETER(ccHObject* obj, WIDGETS_TYPE t, QString id = "id", int port = 0)
-		: entity(obj)
-		, viewID(id)
-		, type(t)
-		, viewPort(port)
-	{
-	}
-
-	void setLineWidget(const LineWidget& line) 
-	{
-		lineWidget = line;
-	}
-};
-
 //! to be removed structure
-struct ECV_DB_LIB_API removeInfo
-{
+struct ECV_DB_LIB_API removeInfo {
 	//! Remove type
 	ENTITY_TYPE removeType;
 	//! Remove viewId
@@ -267,8 +209,7 @@ struct ECV_DB_LIB_API removeInfo
 	}
 };
 
-struct ECV_DB_LIB_API hideInfo
-{
+struct ECV_DB_LIB_API hideInfo {
 	//! Hide type
 	ENTITY_TYPE hideType;
 	//! Hide viewId
@@ -280,8 +221,7 @@ struct ECV_DB_LIB_API hideInfo
 	}
 };
 
-struct ECV_DB_LIB_API TransformInfo
-{
+struct ECV_DB_LIB_API TransformInfo {
 	struct RotateParam {
 		double angle;
 		CCVector3 rotAxis;
@@ -313,7 +253,7 @@ struct ECV_DB_LIB_API TransformInfo
 
 	void setRotMat(const ccGLMatrixd& rotate) { RotMatrixMode = true; isRotate = true; rotMat = rotate; }
 	void setRotMat(const ccGLMatrix& rotate) { RotMatrixMode = true; isRotate = true; rotMat = ccGLMatrixd(rotate.data()); }
-	void setRotation(double angle, double x, double y, double z) { setRotation(angle, CCVector3(x, y, z)); }	
+    void setRotation(double angle, double x, double y, double z) { setRotation(angle, CCVector3d(x, y, z)); }
 	void setRotation(double angle, const CCVector3& axis) {
 		isRotate = true; 
 		RotMatrixMode = false; 
@@ -332,8 +272,7 @@ struct ECV_DB_LIB_API TransformInfo
 	void setTranslationEnd(const CCVector3& trans) { isTranslate = true; transVecEnd = trans; }
 };
 
-struct ECV_DB_LIB_API ecvTextParam
-{
+struct ECV_DB_LIB_API ecvTextParam {
 	bool display3D = false;
 	double textScale = 1.0;
 	double opacity = 1.0;
@@ -374,7 +313,7 @@ enum CC_DRAWING_FLAGS
 #define MACRO_VirtualTransEnabled(context) (context.drawingFlags & CC_VIRTUAL_TRANS_ENABLED)
 
 //! Display context
-struct ECV_DB_LIB_API ccGLDrawContext
+struct ccGLDrawContext
 {
 	//! Drawing options (see below)
 	int drawingFlags;
@@ -436,16 +375,16 @@ struct ECV_DB_LIB_API ccGLDrawContext
 	//! Default label background color
 	ecvColor::Rgbub labelDefaultBkgCol;
 
-	ecvColor::Rgbub backgroundCol;
-	ecvColor::Rgbub backgroundCol2;
-	bool drawBackgroundGradient;
-
 	ecvColor::Rgbf viewDefaultBkgCol;
 
 	//! Default label marker color
 	ecvColor::Rgbub labelDefaultMarkerCol;
 	//! Default bounding-box color
 	ecvColor::Rgbub bbDefaultCol;
+
+    ecvColor::Rgbub backgroundCol;
+    ecvColor::Rgbub backgroundCol2;
+    bool drawBackgroundGradient;
 
 	//! Whether to decimate big clouds when updating the 3D view
 	bool decimateCloudOnMove;
@@ -489,8 +428,22 @@ struct ECV_DB_LIB_API ccGLDrawContext
 	//Default constructor
 	ccGLDrawContext()
 		: drawingFlags(0)
-		, visFiltering(false)
 		, forceRedraw(true)
+        , visFiltering(false)
+        , viewID("unnamed")
+        , defaultViewPort(0)
+        , normalDensity(100)
+        , normalScale(0.02f)
+        , opacity(1.0)
+        , visible(true)
+        , defaultLineWidth(2)
+        , currentLineWidth(defaultLineWidth)
+        , defaultPointSize(1)
+        , meshRenderingMode(MESH_RENDERING_MODE::ECV_SURFACE_MODE)
+        , removeViewID("unnamed")
+        , removeEntityType(ENTITY_TYPE::ECV_POINT_CLOUD)
+        , clearDepthLayer(true)
+        , clearColorLayer(true)
 		, glW(0)
 		, glH(0)
 		, devicePixelRatio(1.0f)
@@ -498,50 +451,99 @@ struct ECV_DB_LIB_API ccGLDrawContext
 		, defaultMat(new ccMaterial("default"))
 		, defaultMeshFrontDiff(ecvColor::defaultMeshFrontDiff)
 		, defaultMeshBackDiff(ecvColor::defaultMeshBackDiff)
-		, pointsDefaultCol(ecvColor::defaultColor)
-		, pointsCurrentCol(ecvColor::defaultColor)
-		, textDefaultCol(ecvColor::defaultColor)
-		, labelDefaultBkgCol(ecvColor::defaultLabelBkgColor)
-		, viewDefaultBkgCol(ecvColor::defaultViewBkgColor)
-		, labelDefaultMarkerCol(ecvColor::defaultLabelMarkerColor)
-		, backgroundCol(ecvColor::defaultBkgColor)
-		, backgroundCol2(ecvColor::defaultLabelBkgColor)
 		, defaultMeshColor(ecvColor::lightGrey)
-		, defaultPolylineColor(ecvColor::green)
-		, bbDefaultCol(ecvColor::yellow)
-		, decimateCloudOnMove(true)
-		, minLODPointCount(10000000)
-		, currentLODLevel(0)
-		, moreLODPointsAvailable(false)
-		, higherLODLevelsAvailable(false)
-		, decimateMeshOnMove(true)
-		, minLODTriangleCount(2500000)
-		, sfColorScaleToDisplay(nullptr)
-		, useVBOs(true)
-		, labelMarkerSize(5)
-		, labelMarkerTextShift_pix(5)
-		, dispNumberPrecision(6)
-		, labelOpacity(100)
-		, stereoPassIndex(0)
-		, drawRoundedPoints(false)
-		, defaultViewPort(0)
-		, defaultPointSize(1)
-		, opacity(1.0)
-		, defaultLineWidth(2)
-		, currentLineWidth(defaultLineWidth)
-		, visible(true)
-		, normalDensity(100)
-		, normalScale(0.02f)
-		, viewID("unnamed")
-		, removeViewID("unnamed")
-		, removeEntityType(ENTITY_TYPE::ECV_POINT_CLOUD)
-		, meshRenderingMode(MESH_RENDERING_MODE::ECV_SURFACE_MODE)
-		, clearDepthLayer(true)
-		, clearColorLayer(true)
+        , defaultPolylineColor(ecvColor::green)
+        , pointsDefaultCol(ecvColor::defaultColor)
+        , pointsCurrentCol(ecvColor::defaultColor)
+        , textDefaultCol(ecvColor::defaultColor)
+        , labelDefaultBkgCol(ecvColor::defaultLabelBkgColor)
+        , viewDefaultBkgCol(ecvColor::defaultViewBkgColor)
+        , labelDefaultMarkerCol(ecvColor::defaultLabelMarkerColor)
+        , bbDefaultCol(ecvColor::yellow)
+        , backgroundCol(ecvColor::defaultBkgColor)
+        , backgroundCol2(ecvColor::defaultLabelBkgColor)
 		, drawBackgroundGradient(true)
+        , decimateCloudOnMove(true)
+        , minLODPointCount(10000000)
+        , currentLODLevel(0)
+        , moreLODPointsAvailable(false)
+        , higherLODLevelsAvailable(false)
+        , decimateMeshOnMove(true)
+        , minLODTriangleCount(2500000)
+        , sfColorScaleToDisplay(nullptr)
+        , useVBOs(true)
+        , labelMarkerSize(5)
+        , labelMarkerTextShift_pix(5)
+        , dispNumberPrecision(6)
+        , labelOpacity(100)
+        , stereoPassIndex(0)
+        , drawRoundedPoints(false)
 	{}
 };
 
 using CC_DRAW_CONTEXT = ccGLDrawContext;
+
+struct ECV_DB_LIB_API WIDGETS_PARAMETER {
+public:
+	/*for general*/
+    ccHObject* entity;
+    WIDGETS_TYPE type;
+	QString viewID;
+    int viewPort = 0;
+	ecvColor::Rgbaf color;
+
+	CC_DRAW_CONTEXT context;
+
+	int fontSize = 10;
+
+	/*for image*/
+	QImage image;
+	double opacity = 1.0;
+
+	/*for text*/
+	QString text;
+
+	/*for rectangle*/
+	bool filled = true;
+	QRect rect;
+
+	/*for 2D line or triangle*/
+	QPoint p1;
+	QPoint p2;
+	QPoint p3;
+	QPoint p4 = QPoint(-1, -1);
+
+	/*for circle, sphere or mark point*/
+	float radius;
+	CCVector3 center;
+	CCVector2 pos;
+	bool handleEnabled = false;
+
+	/*for 3D line*/
+	LineWidget lineWidget;
+
+	//Default constructor
+	WIDGETS_PARAMETER(WIDGETS_TYPE t, QString id = "id", int port = 0)
+        : type(t)
+        , viewID(id)
+        , viewPort(port)
+	{
+		context.viewID = viewID;
+	}
+
+	WIDGETS_PARAMETER(ccHObject* obj, WIDGETS_TYPE t, QString id = "id", int port = 0)
+		: entity(obj)
+        , type(t)
+        , viewID(id)
+        , viewPort(port)
+	{
+		context.viewID = viewID;
+	}
+
+	void setLineWidget(const LineWidget& line)
+	{
+		lineWidget = line;
+	}
+};
 
 #endif // ECV_GL_DRAW_CONTEXT_HEADER

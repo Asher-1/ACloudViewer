@@ -44,7 +44,7 @@ RegionGrowingSegmentation::RegionGrowingSegmentation()
 										 tr("Region Growing Segmentation"),
 										 tr("Region Growing Segmentation from clouds"),
 										 ":/toolbar/PclAlgorithms/icons/Regiongrowing.png"))
-	, m_dialog(0)
+	, m_dialog(nullptr)
 	, m_basedRgb(false)
 	, m_k_search(50)
 	, m_min_cluster_size(50)
@@ -62,7 +62,7 @@ RegionGrowingSegmentation::RegionGrowingSegmentation()
 RegionGrowingSegmentation::~RegionGrowingSegmentation()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

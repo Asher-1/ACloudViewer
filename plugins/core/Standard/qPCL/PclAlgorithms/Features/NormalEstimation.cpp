@@ -39,9 +39,9 @@ NormalEstimation::NormalEstimation()
 										 tr("Estimate Normals and Curvature"),
 										 tr("Estimate Normals and Curvature for the selected entity"),
 										 ":/toolbar/PclAlgorithms/icons/normal_curvature.png"))
-	, m_dialog(0)
-	, m_radius(0)
+    , m_dialog(nullptr)
 	, m_knn_radius(10)
+    , m_radius(0)
 	, m_useKnn(false)
 	, m_overwrite_curvature(false)
 {
@@ -51,7 +51,7 @@ NormalEstimation::NormalEstimation()
 NormalEstimation::~NormalEstimation()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+    if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 

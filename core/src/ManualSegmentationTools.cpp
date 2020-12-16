@@ -20,7 +20,7 @@
 
 //local
 #include <GenericProgressCallback.h>
-#include <PointCloud.h>
+#include <CVPointCloud.h>
 #include <Polyline.h>
 #include <SimpleMesh.h>
 

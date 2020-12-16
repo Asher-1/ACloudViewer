@@ -112,8 +112,7 @@ protected:
 	**/
 	virtual bool buildUp() { return true; }
 
-	virtual void initialize(ecvGenericVisualizer3D* viewer = nullptr) {};
-	virtual void registerFilter() {};
+    virtual void initialize(ecvGenericVisualizer3D* viewer = nullptr) = 0;
 
 	bool m_showOutline = false;
 
