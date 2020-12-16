@@ -167,12 +167,12 @@ int main(int argc, char *argv[])
 	//standard mode
 	if (!commandLine)
 	{
-		if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_2_1) == 0)
-		{
+        if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_2_1) == 0)
+        {
             QMessageBox::critical(nullptr, QObject::tr("Error"),
-				QObject::tr("This application needs OpenGL 2.1 at least to run!"));
-			return EXIT_FAILURE;
-		}
+                QObject::tr("This application needs OpenGL 2.1 at least to run!"));
+            return EXIT_FAILURE;
+        }
 
 		//splash screen
 		QPixmap pixmap(QString::fromUtf8(Settings::APP_START_LOGO));
