@@ -6,7 +6,7 @@ find_package( Qt5
 
 get_target_property( qmake_location Qt5::qmake IMPORTED_LOCATION )
 get_filename_component( qt5_bin_dir ${qmake_location} DIRECTORY )
-
+	
 if ( APPLE )
 	find_program( mac_deploy_qt macdeployqt HINTS "${qt5_bin_dir}" )
 
@@ -25,7 +25,7 @@ function( DeployQt )
 	if ( NOT APPLE AND NOT WIN32 )
 		return()
 	endif()
-
+	
 	cmake_parse_arguments(
 			DEPLOY_QT
 			""

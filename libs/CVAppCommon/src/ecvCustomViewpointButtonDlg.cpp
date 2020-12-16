@@ -7,8 +7,9 @@
 
 // ECV_DB_TOOL
 #include <ecvDisplayTools.h>
+#include <ecvGenericCameraTool.h>
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 #include <../PCLEngine/Tools/EditCameraTool.h>
 #endif
 
@@ -329,9 +330,9 @@ void ecvCustomViewpointButtonDlg::importConfigurations()
 	QString filename;
 	filename = selectedFiles[0];
 
-	ecvDisplayTools::LoadCameraParameters(CVTools::fromQString(filename));
+	ecvDisplayTools::LoadCameraParameters(CVTools::FromQString(filename));
 
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	EditCameraTool::UpdateCameraInfo();
 #else
 	CVLog::Warning("[ecvCustomViewpointButtonDlg::importConfigurations] please use pcl as backend and then try again!");
@@ -371,7 +372,7 @@ void ecvCustomViewpointButtonDlg::exportConfigurations()
 	}
 
 	QString filename = selectedFilename;
-	ecvDisplayTools::SaveCameraParameters(CVTools::fromQString(filename));
+	ecvDisplayTools::SaveCameraParameters(CVTools::FromQString(filename));
 }
 
 //------------------------------------------------------------------------------
@@ -380,15 +381,17 @@ void ecvCustomViewpointButtonDlg::appendRow()
 	const int numRows = this->ui->rowCount();
 	assert(numRows < MAXIMUM_NUMBER_OF_ITEMS);
 	this->ui->setNumberOfRows(numRows + 1);
-#ifdef ECV_PCL_ENGINE_LIBRARY_BUILD
+#ifdef USE_PCL_BACKEND
 	EditCameraTool::UpdateCameraInfo();
 #else
 	CVLog::Warning("[ecvCustomViewpointButtonDlg::importConfigurations] please use pcl as backend and then try again!");
 #endif
 
 	// read configurations.
-	QString curCameraParam = ecvGenericCameraTool::CurrentCameraParam.toString().c_str();
-	this->Configurations.push_back(curCameraParam);
+    QString curCameraParam =
+            ecvGenericCameraTool::CurrentCameraParam.toString().c_str();
+    this->Configurations.push_back(curCameraParam);
+
 }
 
 //------------------------------------------------------------------------------

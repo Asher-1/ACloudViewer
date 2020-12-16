@@ -31,8 +31,8 @@
 #include <ecvHObject.h>
 
 // ECV_PYTHON_LIB
-#ifdef ECV_PYTHON_LIBRARY_BUILD
-#include <Recognition/PythonInterface.h>
+#ifdef USE_PYTHON_MODULE
+#include <recognition/PythonInterface.h>
 
 class ecvDeepSemanticSegmentationTool : public ccOverlayDialog, public Ui::DeepSemanticSegmentationDlg
 {

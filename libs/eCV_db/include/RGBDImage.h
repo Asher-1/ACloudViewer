@@ -43,7 +43,7 @@ typedef std::vector<std::shared_ptr<RGBDImage>> RGBDImagePyramid;
 ///
 /// viewed from the same view, of the same resolution.
 /// If you have other format, convert it first.
-class RGBDImage : public ccHObject {
+class ECV_DB_LIB_API RGBDImage : public ccHObject {
 public:
 	/// \brief Default Constructor.
 	RGBDImage(const char* name = "RGBD_Image") : ccHObject(name) {}

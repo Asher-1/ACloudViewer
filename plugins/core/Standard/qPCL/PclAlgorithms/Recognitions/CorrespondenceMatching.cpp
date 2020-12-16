@@ -64,7 +64,7 @@ CorrespondenceMatching::CorrespondenceMatching()
 CorrespondenceMatching::~CorrespondenceMatching()
 {
 	//we must delete parent-less dialogs ourselves!
-	if (m_dialog && m_dialog->parent() == 0)
+	if (m_dialog && m_dialog->parent() == nullptr)
 		delete m_dialog;
 }
 
@@ -278,7 +278,7 @@ int CorrespondenceMatching::compute()
 
 			std::vector<int> neigh_indices(1);
 			std::vector<float> neigh_sqr_dists(1);
-			if (!pcl_isfinite(sceneDescriptors->at(i).descriptor[0])) //skipping NaNs
+            if (!std::isfinite(sceneDescriptors->at(i).descriptor[0])) //skipping NaNs
 			{
 				continue;
 			}
@@ -402,25 +402,26 @@ int CorrespondenceMatching::compute()
 			/**
 			* Hypothesis Verification
 			*/
-			CVLog::Print(tr("--- Hypotheses Verification Start ---------"));
-			if (!PCLModules::GetHypothesesVerification<PointType, PointType>(
-				scene, registered_instances, hypotheses_mask, clusterReg, inlierThreshold,
-				occlusionThreshold, radiusClutter, regularizer, radiusNormals, detectClutter))
-			{
-				return -1;
-			}
-			for (int i = 0; i < hypotheses_mask.size(); i++)
-			{
-				if (hypotheses_mask[i])
-				{
-					CVLog::Print(tr("Model %1 Instances %2 is GOOD!").arg(j + 1).arg(i + 1));
-				}
-				else
-				{
-					CVLog::Print(tr("Model %1 Instances %2 is bad and will be discarded!").arg(j + 1).arg(i + 1));
-				}
-			}
-			CVLog::Print(tr("--- Hypotheses Verification End ---------"));
+            CVLog::Print(tr("--- Hypotheses bugs and do not support! ---------"));
+//			CVLog::Print(tr("--- Hypotheses Verification Start ---------"));
+//			if (!PCLModules::GetHypothesesVerification<PointType, PointType>(
+//				scene, registered_instances, hypotheses_mask, clusterReg, inlierThreshold,
+//				occlusionThreshold, radiusClutter, regularizer, radiusNormals, detectClutter))
+//			{
+//				return -1;
+//			}
+//			for (int i = 0; i < hypotheses_mask.size(); i++)
+//			{
+//				if (hypotheses_mask[i])
+//				{
+//					CVLog::Print(tr("Model %1 Instances %2 is GOOD!").arg(j + 1).arg(i + 1));
+//				}
+//				else
+//				{
+//					CVLog::Print(tr("Model %1 Instances %2 is bad and will be discarded!").arg(j + 1).arg(i + 1));
+//				}
+//			}
+//			CVLog::Print(tr("--- Hypotheses Verification End ---------"));
 		}
 		else
 		{

@@ -2,7 +2,6 @@
 #define ECV_WIDGETS_INTERFACE_H
 
 #include "eCV_db.h"
-#include <CVWidgetsInterface.h>
 
 // QT
 #include <QString>
@@ -43,11 +42,9 @@ namespace DBLib
 		VTK_CONTOUR_WIDGET,
 	};
 
-	class ECV_DB_LIB_API ecvWidgetsInterface : public CVLib::CVWidgetsInterface
+	class ECV_DB_LIB_API ecvWidgetsInterface
 	{
 	public:
-		virtual ~ecvWidgetsInterface() {}
-
 		//! Shared type
 		typedef QSharedPointer<ecvWidgetsInterface> Shared;
 

@@ -70,7 +70,7 @@ ccPolyline::ccPolyline(ccPointCloud& associatedCloud)
 		bool closed = false;
 		CCVector3 start = CCVector3::fromArray(getAssociatedCloud()->getPoint(0)->u);
 		CCVector3 end = CCVector3::fromArray(getAssociatedCloud()->getPoint(verticesCount - 1)->u);
-		if ((end - start).norm() < ZERO_TOLERANCE)
+        if (CVLib::LessThanEpsilon((end - start).norm()))
 		{
 			closed = true;
 		} else {
@@ -696,7 +696,7 @@ ccPointCloud* ccPolyline::samplePoints(	bool densityBased,
 			//specific case: last point
 			if (i + 1 == pointCount)
 			{
-				assert(relativePos < lAB * 1.01); //it should only be a rounding issue in the worst case
+				//assert(relativePos < lAB * 1.01); //it should only be a rounding issue in the worst case
 				relativePos = lAB;
 			}
 			else //skip this segment

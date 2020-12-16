@@ -40,6 +40,7 @@
 #include <ecvMaterialSet.h>
 #include <ecvPolyline.h>
 #include <ecvChunk.h>
+#include <ecvHObjectCaster.h>
 
 //System
 #include <cstring>

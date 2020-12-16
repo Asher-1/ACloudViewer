@@ -50,6 +50,8 @@ struct VerticesIndexes
 		, i2(0)
 		, i3(0)
 	{}
+
+	inline unsigned int getDimension() const { return 3; }
 };
 
 //! A generic mesh with index-based vertex access

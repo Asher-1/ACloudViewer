@@ -155,7 +155,7 @@ ccHObject * cvGenericFilter::getOutput()
 	}
 
 	vtkPolyData * polydata = vtkPolyData::SafeDownCast(vtkData);
-	if (NULL == polydata)
+    if (!polydata)
 	{
 		return nullptr;
 	}
@@ -182,12 +182,12 @@ void cvGenericFilter::getOutput(
 	std::vector<ccHObject*>& outputSlices,
 	std::vector<ccPolyline*>& outputContours)
 {
+    outputContours.clear();
 	ccHObject* slices = getOutput();
 	if (slices)
 	{
 		outputSlices.push_back(slices);
 	}
-
 }
 
 void cvGenericFilter::modelReady()
@@ -269,7 +269,6 @@ void cvGenericFilter::updateSize()
 			widget->topLevelWidget()->adjustSize();
 		}
 	}
-
 }
 
 void cvGenericFilter::UpdateScalarRange()
@@ -419,7 +418,7 @@ vtkSmartPointer<vtkDataArray> cvGenericFilter::getActorScalars(vtkSmartPointer<v
 
 int cvGenericFilter::getDefaultScalarInterpolationForDataSet(vtkDataSet * data)
 {
-	vtkPolyData* polyData = vtkPolyData::SafeDownCast(data); // Check that polyData != NULL in case of segfault
+    vtkPolyData* polyData = vtkPolyData::SafeDownCast(data); // Check that polyData != nullptr in case of segfault
 	return (polyData && polyData->GetNumberOfCells() != polyData->GetNumberOfVerts());
 }
 
@@ -502,10 +501,11 @@ void cvGenericFilter::createActorFromData(vtkDataObject* dataObj)
 	mapper->SetInputData(data);
 	mapper->Update();
 
-	VtkUtils::vtkInitOnce(m_modelActor);
+//	VtkUtils::vtkInitOnce(m_modelActor);
+    m_modelActor = vtkSmartPointer<vtkLODActor>::New();
 	m_modelActor->SetMapper(mapper);
 
-    m_modelActor->SetNumberOfCloudPoints(int(std::max<vtkIdType>(1, data->GetNumberOfPoints() / 10)));
+    static_cast<vtkSmartPointer<vtkLODActor>>(m_modelActor)->SetNumberOfCloudPoints(int(std::max<vtkIdType>(1, data->GetNumberOfPoints() / 10)));
 	m_modelActor->GetProperty()->SetInterpolationToFlat();
 
 	addActor(m_modelActor);

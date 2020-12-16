@@ -66,7 +66,7 @@ void CutWindow::setOrigin(double origin[3])
 
 void CutWindow::setRadius(double radius)
 {
-
+    m_radius = radius;
 }
 
 void CutWindow::setCutType(CutType type)

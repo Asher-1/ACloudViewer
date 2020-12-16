@@ -27,7 +27,6 @@
 #include "LineSet.h"
 #include "ecvBBox.h"
 #include "ecvOrientedBBox.h"
-#include "ecvTetraMesh.h"
 
 #include <numeric>
 

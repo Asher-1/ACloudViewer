@@ -43,6 +43,8 @@ Compilation
 
 Supported OS: Windows, Linux, and Mac OS X
 
+Refer to the [compiling-cloudviewer.md file](doc/compiling-cloudviewer.md) for up-to-date information.
+
 Refer to the [BUILD.md file](BUILD.md) for up-to-date information.
 
 Basically, you have to:

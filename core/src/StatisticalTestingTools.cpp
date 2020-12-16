@@ -19,6 +19,7 @@
 #include <StatisticalTestingTools.h>
 
 //local
+#include "CVMath.h"
 #include "Chi2Helper.h"
 #include <DgmOctreeReferenceCloud.h>
 #include <GenericProgressCallback.h>
@@ -125,7 +126,7 @@ double StatisticalTestingTools::computeAdaptativeChi2Dist(	const GenericDistribu
 	ScalarType dV = maxV - minV;
 	unsigned histoBefore = 0;
 	unsigned histoAfter = 0;
-	if (dV > ZERO_TOLERANCE)
+    if ( GreaterThanEpsilon( dV ) )
 	{
 		for (unsigned i = 0; i < n; ++i)
 		{

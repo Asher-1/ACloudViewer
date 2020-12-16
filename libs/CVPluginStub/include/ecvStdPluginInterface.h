@@ -33,7 +33,7 @@
 #define CC_PLUGIN_REFRESH_ENTITY_BROWSER        0x00000002
 #define CC_PLUGIN_EXPAND_DB_TREE                0x00000004
 
-//! Standard CV plugin interface
+//! Standard ECV plugin interface
 /** Version 1.5
 	The plugin is now responsible for its own actions (QAction ;)
 	and the associated ecvMainAppInterface member should give it
@@ -102,6 +102,6 @@ protected:
 
 Q_DECLARE_METATYPE(const ccStdPluginInterface *);
 
-Q_DECLARE_INTERFACE(ccStdPluginInterface, "edf.rd.CloudViewer.ccStdPluginInterface/1.4")
+Q_DECLARE_INTERFACE(ccStdPluginInterface, "edf.rd.cloudviewer.ccStdPluginInterface/1.5")
 
 #endif // ECV_STD_PLUGIN_INTERFACE_HEADER

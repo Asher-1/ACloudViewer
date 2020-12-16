@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include "eCV_io.h"
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -35,15 +37,15 @@ namespace io {
 
 /// Factory function to create a mesh from a file (TriangleMeshFactory.cpp)
 /// Return an empty mesh if fail to read the file.
-std::shared_ptr<ccMesh> CreateMeshFromFile(
-        const std::string &filename, bool print_progress = false);
+std::shared_ptr<ccMesh> ECV_IO_LIB_API CreateMeshFromFile(const std::string &filename,
+                                                          bool print_progress = false);
 
 /// The general entrance for reading a TriangleMesh from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
-bool ReadTriangleMesh(const std::string &filename,
-                      ccMesh &mesh,
-                      bool print_progress = false);
+bool ECV_IO_LIB_API ReadTriangleMesh(const std::string &filename,
+                                     ccMesh &mesh,
+                                     bool print_progress = false);
 
 /// The general entrance for writing a TriangleMesh to a file
 /// The function calls write functions based on the extension name of filename.
@@ -52,79 +54,79 @@ bool ReadTriangleMesh(const std::string &filename,
 /// At current only .obj format supports uv coordinates (triangle_uvs) and
 /// textures.
 /// \return return true if the write function is successful, false otherwise.
-bool WriteTriangleMesh(const std::string &filename,
-                       const ccMesh &mesh,
-                       bool write_ascii = false,
-                       bool compressed = false,
-                       bool write_vertex_normals = true,
-                       bool write_vertex_colors = true,
-                       bool write_triangle_uvs = true,
-                       bool print_progress = false);
+bool ECV_IO_LIB_API WriteTriangleMesh(const std::string &filename,
+                                      const ccMesh &mesh,
+                                      bool write_ascii = false,
+                                      bool compressed = false,
+                                      bool write_vertex_normals = true,
+                                      bool write_vertex_colors = true,
+                                      bool write_triangle_uvs = true,
+                                      bool print_progress = false);
 
-bool ReadTriangleMeshFromPLY(const std::string &filename,
-                             ccMesh &mesh,
-                             bool print_progress);
+bool ECV_IO_LIB_API ReadTriangleMeshFromPLY(const std::string &filename,
+                                            ccMesh &mesh,
+                                            bool print_progress);
 
-bool WriteTriangleMeshToPLY(const std::string &filename,
-                            const ccMesh &mesh,
-                            bool write_ascii,
-                            bool compressed,
-                            bool write_vertex_normals,
-                            bool write_vertex_colors,
-                            bool write_triangle_uvs,
-                            bool print_progress);
+bool ECV_IO_LIB_API WriteTriangleMeshToPLY(const std::string &filename,
+                                           const ccMesh &mesh,
+                                           bool write_ascii,
+                                           bool compressed,
+                                           bool write_vertex_normals,
+                                           bool write_vertex_colors,
+                                           bool write_triangle_uvs,
+                                           bool print_progress);
 
-bool ReadTriangleMeshFromSTL(const std::string &filename,
-                             ccMesh &mesh,
-                             bool print_progress);
+bool ECV_IO_LIB_API ReadTriangleMeshFromSTL(const std::string &filename,
+                                            ccMesh &mesh,
+                                            bool print_progress);
 
-bool WriteTriangleMeshToSTL(const std::string &filename,
-                            const ccMesh &mesh,
-                            bool write_ascii,
-                            bool compressed,
-                            bool write_vertex_normals,
-                            bool write_vertex_colors,
-                            bool write_triangle_uvs,
-                            bool print_progress);
+bool ECV_IO_LIB_API WriteTriangleMeshToSTL(const std::string &filename,
+                                           const ccMesh &mesh,
+                                           bool write_ascii,
+                                           bool compressed,
+                                           bool write_vertex_normals,
+                                           bool write_vertex_colors,
+                                           bool write_triangle_uvs,
+                                           bool print_progress);
 
-bool ReadTriangleMeshFromOBJ(const std::string &filename,
-                             ccMesh &mesh,
-                             bool print_progress);
+bool ECV_IO_LIB_API ReadTriangleMeshFromOBJ(const std::string &filename,
+                                            ccMesh &mesh,
+                                            bool print_progress);
 
-bool WriteTriangleMeshToOBJ(const std::string &filename,
-                            const ccMesh &mesh,
-                            bool write_ascii,
-                            bool compressed,
-                            bool write_vertex_normals,
-                            bool write_vertex_colors,
-                            bool write_triangle_uvs,
-                            bool print_progress);
+bool ECV_IO_LIB_API WriteTriangleMeshToOBJ(const std::string &filename,
+                                           const ccMesh &mesh,
+                                           bool write_ascii,
+                                           bool compressed,
+                                           bool write_vertex_normals,
+                                           bool write_vertex_colors,
+                                           bool write_triangle_uvs,
+                                           bool print_progress);
 
-bool ReadTriangleMeshFromOFF(const std::string &filename,
-                             ccMesh &mesh,
-                             bool print_progress);
+bool ECV_IO_LIB_API ReadTriangleMeshFromOFF(const std::string &filename,
+                                            ccMesh &mesh,
+                                            bool print_progress);
 
-bool WriteTriangleMeshToOFF(const std::string &filename,
-                            const ccMesh &mesh,
-                            bool write_ascii,
-                            bool compressed,
-                            bool write_vertex_normals,
-                            bool write_vertex_colors,
-                            bool write_triangle_uvs,
-                            bool print_progress);
+bool ECV_IO_LIB_API WriteTriangleMeshToOFF(const std::string &filename,
+                                           const ccMesh &mesh,
+                                           bool write_ascii,
+                                           bool compressed,
+                                           bool write_vertex_normals,
+                                           bool write_vertex_colors,
+                                           bool write_triangle_uvs,
+                                           bool print_progress);
 
-bool ReadTriangleMeshFromGLTF(const std::string &filename,
-                              ccMesh &mesh,
-                              bool print_progress);
+bool ECV_IO_LIB_API ReadTriangleMeshFromGLTF(const std::string &filename,
+                                             ccMesh &mesh,
+                                             bool print_progress);
 
-bool WriteTriangleMeshToGLTF(const std::string &filename,
-                             const ccMesh &mesh,
-                             bool write_ascii,
-                             bool compressed,
-                             bool write_vertex_normals,
-                             bool write_vertex_colors,
-                             bool write_triangle_uvs,
-                             bool print_progress);
+bool ECV_IO_LIB_API WriteTriangleMeshToGLTF(const std::string &filename,
+                                            const ccMesh &mesh,
+                                            bool write_ascii,
+                                            bool compressed,
+                                            bool write_vertex_normals,
+                                            bool write_vertex_colors,
+                                            bool write_triangle_uvs,
+                                            bool print_progress);
 
 /// Function to convert a polygon into a collection of
 /// triangles whose vertices are only those of the polygon.
@@ -133,8 +135,8 @@ bool WriteTriangleMeshToGLTF(const std::string &filename,
 /// The triangles are added to the mesh that is passed as reference. The mesh
 /// should contain all vertices prior to calling this function.
 /// \return return true if triangulation is successful, false otherwise.
-bool AddTrianglesByEarClipping(ccMesh &mesh,
-                               std::vector<unsigned int> &indices);
+bool ECV_IO_LIB_API AddTrianglesByEarClipping(ccMesh &mesh,
+                                              std::vector<unsigned int> &indices);
 
 }  // namespace io
 }  // namespace cloudViewer

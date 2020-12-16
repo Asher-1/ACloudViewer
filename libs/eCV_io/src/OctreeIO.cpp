@@ -25,12 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #include "OctreeIO.h"
-
-#include <unordered_map>
-
 #include "IJsonConvertibleIO.h"
+
 #include <Console.h>
 #include <FileSystem.h>
+
+#include <unordered_map>
 
 namespace cloudViewer {
 namespace io {

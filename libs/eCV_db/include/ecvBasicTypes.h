@@ -18,16 +18,12 @@
 #ifndef ECV_BASIC_TYPES_HEADER
 #define ECV_BASIC_TYPES_HEADER
 
-//local
-#include "ecvColorTypes.h"
-
-// CV_CORE_LIB
-#include <CVGeom.h>
-
+//CVCoreLib
+#include <CVTypes.h>
 
 //! Compressed normals type
 /** Should be set accordingly to ccNormalCompressor::QUANTIZE_LEVEL
 **/
-typedef unsigned CompressedNormType;
+using CompressedNormType = unsigned int;
 
 #endif // ECV_BASIC_TYPES_HEADER

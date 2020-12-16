@@ -38,7 +38,7 @@
 #include <ecvDisplayTools.h>
 
 //Local
-#include "mainwindow.h"
+#include "MainWindow.h"
 #include "ecvCommon.h"
 #include "ecvHistogramWindow.h"
 
@@ -54,19 +54,19 @@ const unsigned char DEFAULT_OCTREE_LEVEL = 7;
 ccComparisonDlg::ccComparisonDlg(	ccHObject* compEntity,
 									ccHObject* refEntity,
 									CC_COMPARISON_TYPE cpType,
-									QWidget* parent/*=0*/,
+                                    QWidget* parent/*=nullptr*/,
 									bool noDisplay/*=false*/)
 	: QDialog(parent, Qt::Tool)
 	, Ui::ComparisonDialog()
 	, m_compEnt(compEntity)
-	, m_compCloud(0)
-	, m_compOctree(0)
+    , m_compCloud(nullptr)
+    , m_compOctree(nullptr)
 	, m_compOctreeIsPartial(false)
 	, m_compSFVisibility(false)
 	, m_refEnt(refEntity)
-	, m_refCloud(0)
-	, m_refMesh(0)
-	, m_refOctree(0)
+    , m_refCloud(nullptr)
+    , m_refMesh(nullptr)
+    , m_refOctree(nullptr)
 	, m_refOctreeIsPartial(false)
 	, m_refVisibility(false)
 	, m_compType(cpType)

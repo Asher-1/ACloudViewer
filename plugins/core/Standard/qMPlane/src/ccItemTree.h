@@ -52,7 +52,7 @@ namespace CC_ITEM_TREE {
 	*
 	* @param[in] parent The parent object of the container.
 	* @param[in] containerName The name of the new container object.
-	* @param[in] app The ccMainAppInterface object.
+	* @param[in] app The ecvMainAppInterface object.
 	* @throws std::invalid_argument Exception is thrown if parent is nullptr
 	* @return ccHObject* Returns the newly created container if not existing, otherwise existing one.
 	*/

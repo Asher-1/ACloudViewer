@@ -154,7 +154,7 @@ protected:
 	PclUtils::PCLVis* m_viewer = nullptr;
 	vtkRenderWindowInteractor* m_interactor = nullptr;
 
-	vtkSmartPointer<vtkActor> m_modelActor;
+    vtkSmartPointer<vtkActor> m_modelActor;
 	vtkSmartPointer<vtkLODActor> m_filterActor;
 	vtkSmartPointer<vtkScalarBarActor> m_scalarBar;
 	vtkSmartPointer<vtkActor> m_outlineActor;

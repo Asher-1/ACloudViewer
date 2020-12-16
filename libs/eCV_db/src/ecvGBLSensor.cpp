@@ -266,30 +266,30 @@ ccGBLSensor::NormalGrid* ccGBLSensor::projectNormals(	CVLib::GenericCloud* cloud
 			CCVector3 U = *P - sensorPos.getTranslationAsVec3D();
 			PointCoordinateType distToSensor = U.norm();
 
-			if (distToSensor > ZERO_TOLERANCE)
+            if (CVLib::GreaterThanEpsilon( distToSensor ))
 			{
-				//normal component along sensor viewing dir.
-				S.z = -N.dot(U) / distToSensor;
+                PointCoordinateType squareS2D = (S.x*S.x + S.y*S.y);
+                if ( CVLib::GreaterThanEpsilon( squareS2D ) )
+                {
+                    //and point+normal
+                    CCVector3 P2 = *P + CCVector3(N);
+                    CCVector2 S2;
+                    PointCoordinateType depth2;
+                    projectPoint(P2, S2, depth2, m_activeIndex);
 
-				if (S.z > 1.0 - ZERO_TOLERANCE)
-				{
-					S.x = 0;
-					S.y = 0;
-				}
-				else
-				{
-					//and point+normal
-					CCVector3 P2 = *P + CCVector3(N);
-					CCVector2 S2;
-					PointCoordinateType depth2;
-					projectPoint(P2, S2, depth2, m_activeIndex);
+                    //normal component along sensor viewing dir.
+                    S.z = -N.dot(U) / distToSensor;
 
-					//deduce other normals components
-					assert(S.x != 0 || S.y != 0);
-					PointCoordinateType coef = sqrt((1 - S.z*S.z) / (S.x*S.x + S.y*S.y + ZERO_TOLERANCE));
-					S.x = coef * (S2.x - Q.x);
-					S.y = coef * (S2.y - Q.y);
-				}
+                    //deduce other normals components
+                    PointCoordinateType coef = sqrt((PC_ONE - S.z*S.z) / squareS2D);
+                    S.x = coef * (S2.x - Q.x);
+                    S.y = coef * (S2.y - Q.y);
+                }
+                else
+                {
+                    S.x = 0;
+                    S.y = 0;
+                }
 			}
 			else
 			{
@@ -297,7 +297,8 @@ ccGBLSensor::NormalGrid* ccGBLSensor::projectNormals(	CVLib::GenericCloud* cloud
 			}
 
 			//project in Z-buffer
-			unsigned x, y;
+            unsigned x = 0;
+            unsigned y = 0;
 			if (convertToDepthMapCoords(Q.x, Q.y, x, y))
 			{
 				//add the transformed normal
@@ -528,7 +529,7 @@ bool ccGBLSensor::computeAutoParameters(CVLib::GenericCloud* theCloud)
 			projectPoint(*P, Q, depth, m_activeIndex);
 
 			//yaw
-			int angleYaw = static_cast<int>(Q.x * CV_RAD_TO_DEG);
+            int angleYaw = static_cast<int>(CVLib::RadiansToDegrees(Q.x));
 			assert(angleYaw >= -180 && angleYaw <= 180);
 			if (angleYaw == 180) //360 degrees warp
 				angleYaw = -180;
@@ -546,7 +547,7 @@ bool ccGBLSensor::computeAutoParameters(CVLib::GenericCloud* theCloud)
 			}
 
 			//pitch
-			int anglePitch = static_cast<int>(Q.y * CV_RAD_TO_DEG);
+            int anglePitch = static_cast<int>(CVLib::RadiansToDegrees(Q.y));
 			assert(anglePitch >= -180 && anglePitch <= 180);
 			if (anglePitch == 180)
 				anglePitch = -180;

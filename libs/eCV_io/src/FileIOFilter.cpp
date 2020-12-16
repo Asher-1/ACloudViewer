@@ -23,7 +23,6 @@
 #include "AsciiFilter.h"
 #include "VTKFilter.h"
 #include "STLFilter.h"
-#include "LASFilter.h"
 #include "PTXFilter.h"
 //MESHES
 #include "ObjFilter.h"
@@ -172,9 +171,6 @@ void FileIOFilter::InitInternalFilters()
 	//from the most useful to the less one!
 	Register(Shared(new BinFilter()));
 	Register(Shared(new AsciiFilter()));
-#ifdef CV_LAS_SUPPORT
-	Register(Shared(new LASFilter()));
-#endif
 	Register(Shared(new PTXFilter()));
 	Register(Shared(new PlyFilter()));
 	Register(Shared(new ObjFilter()));

@@ -1,0 +1,57 @@
+.. _introduction:
+
+About This Project
+#######################
+
+CloudViewer is an open-source library that supports rapid development of software
+that deals with 3D data. The CloudViewer frontend exposes a set of carefully selected
+data structures and algorithms in both C++ and Python. The backend is highly
+optimized and is set up for parallelization. We welcome contributions from the
+open-source community.
+
+If you use CloudViewer in an academic project, please cite our paper:
+::
+
+    @article{Zhou2018,
+        author    = {Asher},
+        title     = {{CloudViewer}: {A} Modern Library for {3D} Data Processing},
+        journal   = {arXiv:?},
+        year      = {2020},
+    }
+
+Core features
+======================
+
+* 3D data structures
+* 3D data processing algorithms
+* Scene reconstruction
+* Surface alignment
+* 3D visualization
+* Physically based rendering (PBR)
+* 3D machine learning support with PyTorch and TensorFlow
+* GPU acceleration for core 3D operations
+* Available in C++ and Python
+
+Supported platforms
+======================
+
+The package has been tested on:
+
+* Ubuntu 18.04 and 20.04
+* Windows 10 64-bit
+* macOS High Sierra and above
+
+With Python versions:
+* 3.5
+* 3.6
+* 3.7
+* 3.8
+
+Resources
+======================
+
+* Website: `www.erow.cn <http://www.erow.cn>`_
+* Code: `www.erow.cn <http://www.erow.cn>`_
+* Document: `www.erow.cn/docs <http://www.erow.cn/docs>`_
+* License: `The MIT license <https://opensource.org/licenses/MIT>`_
+

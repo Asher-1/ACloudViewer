@@ -20,7 +20,7 @@
 #define CV_ORIENTED_BOUNDING_BOX_HEADER
 
 //Local
-#include "Eigen/core"
+#include "Eigen/Core"
 #include "CVGeom.h"
 
 namespace CVLib
@@ -64,6 +64,9 @@ namespace CVLib
 		/// Get the extent/length of the bounding box 
 		/// in x, y, and z dimension in its frame of reference.
 		inline const Eigen::Vector3d& getExtent() const { return extent_; }
+
+		//! Returns center
+		inline CCVector3 getCenter() const { return center_; }
 
 		/// Returns the half extent of the bounding box in its frame of reference.
 		Eigen::Vector3d getHalfExtent() const { return getExtent() * 0.5; }

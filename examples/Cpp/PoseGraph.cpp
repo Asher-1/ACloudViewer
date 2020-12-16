@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <pipelines/registration/PoseGraph.h>
+
 #include <cstdio>
 
 #include "CloudViewer.h"
-#include <Registration/GlobalOptimization.h>
-#include <Registration/PoseGraph.h>
+#include <pipelines/registration/GlobalOptimization.h>
 
 using namespace cloudViewer;
 
@@ -52,31 +53,31 @@ int main(int argc, char **argv) {
     }
 
     // test posegraph read and write
-    registration::PoseGraph pose_graph_test;
+    pipelines::registration::PoseGraph pose_graph_test;
     pose_graph_test.nodes_.push_back(
-            registration::PoseGraphNode(Eigen::Matrix4d::Random()));
+        pipelines::registration::PoseGraphNode(Eigen::Matrix4d::Random()));
     pose_graph_test.nodes_.push_back(
-            registration::PoseGraphNode(Eigen::Matrix4d::Random()));
+        pipelines::registration::PoseGraphNode(Eigen::Matrix4d::Random()));
     pose_graph_test.edges_.push_back(
-            registration::PoseGraphEdge(0, 1, Eigen::Matrix4d::Random(),
+        pipelines::registration::PoseGraphEdge(0, 1, Eigen::Matrix4d::Random(),
                                         Eigen::Matrix6d::Random(), false, 1.0));
     pose_graph_test.edges_.push_back(
-            registration::PoseGraphEdge(0, 2, Eigen::Matrix4d::Random(),
+        pipelines::registration::PoseGraphEdge(0, 2, Eigen::Matrix4d::Random(),
                                         Eigen::Matrix6d::Random(), true, 0.2));
 	io::WritePoseGraph("test_pose_graph.json", pose_graph_test);
-	registration::PoseGraph pose_graph;
+    pipelines::registration::PoseGraph pose_graph;
 	io::ReadPoseGraph("test_pose_graph.json", pose_graph);
 	io::WritePoseGraph("test_pose_graph_copy.json", pose_graph);
 
     // testing posegraph optimization
     auto pose_graph_input = io::CreatePoseGraphFromFile(argv[1]);
-    registration::GlobalOptimizationConvergenceCriteria criteria;
-    registration::GlobalOptimizationOption option;
-    registration::GlobalOptimizationLevenbergMarquardt optimization_method;
-    registration::GlobalOptimization(*pose_graph_input, optimization_method,
+    pipelines::registration::GlobalOptimizationConvergenceCriteria criteria;
+    pipelines::registration::GlobalOptimizationOption option;
+    pipelines::registration::GlobalOptimizationLevenbergMarquardt optimization_method;
+    pipelines::registration::GlobalOptimization(*pose_graph_input, optimization_method,
                                      criteria, option);
     auto pose_graph_input_prunned =
-            registration::CreatePoseGraphWithoutInvalidEdges(*pose_graph_input, option);
+        pipelines::registration::CreatePoseGraphWithoutInvalidEdges(*pose_graph_input, option);
     io::WritePoseGraph("pose_graph_optimized.json", *pose_graph_input_prunned);
 
     return 0;

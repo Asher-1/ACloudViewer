@@ -23,6 +23,7 @@
 #include <ecvPointCloud.h>
 #include <ecvMesh.h>
 #include <ecvProgressDialog.h>
+#include <ecvHObjectCaster.h>
 
 //Qt
 #include <QDateTime>

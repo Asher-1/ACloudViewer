@@ -429,28 +429,6 @@ public: //bounding-box
 
 public: //display
 
-	//! Returns whether a GL transformation is enabled or not
-	inline virtual bool isGLTransEnabled() const { return m_glTransEnabled; }
-
-	//! Enables/disables associated GL transformation
-	/** See ccDrawableObject::setGLTransformation.
-	**/
-	virtual void enableGLTransformation(bool state) { m_glTransEnabled = state;  };
-
-	//! Resets associated GL transformation
-	/** GL transformation is reset to identity.
-		Note: GL transformation is automatically disabled.
-		See ccDrawableObject::setGLTransformation.
-	**/
-	virtual void resetGLTransformation() { enableGLTransformation(false); m_glTrans.toIdentity(); }
-
-	//! Returns associated GL transformation
-	/** See ccDrawableObject::setGLTransformation.
-	**/
-	inline virtual const ccGLMatrix& getGLTransformation() const { return m_glTrans; }
-
-public: //display
-
 	//Inherited from ccDrawableObject
 	void draw(CC_DRAW_CONTEXT& context) override;
 

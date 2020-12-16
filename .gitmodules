@@ -1,9 +1,6 @@
 [submodule "3rdparty/pybind11"]
 	path = 3rdparty/pybind11
 	url = https://github.com/pybind/pybind11.git
-[submodule "3rdparty/Eigen"]
-	path = 3rdparty/Eigen
-	url = https://github.com/eigenteam/eigen-git-mirror.git
 [submodule "3rdparty/qhull"]
 	path = 3rdparty/qhull
 	url = https://github.com/qhull/qhull.git
@@ -32,3 +29,30 @@
 [submodule "3rdparty/PoissonRecon/PoissonRecon"]
 	path = 3rdparty/PoissonRecon/PoissonRecon
 	url = https://github.com/intel-isl/Open3D-PoissonRecon.git
+[submodule "3rdparty/parallelstl"]
+	path = 3rdparty/parallelstl
+	url = https://github.com/oneapi-src/oneDPL
+[submodule "3rdparty/cub"]
+	path = 3rdparty/cub
+	url = https://github.com/NVlabs/cub
+[submodule "3rdparty/cutlass"]
+	path = 3rdparty/cutlass
+	url = https://github.com/NVIDIA/cutlass
+[submodule "3rdparty/filament/filament"]
+	path = 3rdparty/filament/filament
+	url = https://github.com/google/filament.git
+[submodule "3rdparty/imgui"]
+	path = 3rdparty/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "3rdparty/benchmark"]
+	path = 3rdparty/benchmark
+	url = https://github.com/google/benchmark.git
+[submodule "3rdparty/nanoflann"]
+	path = 3rdparty/nanoflann
+	url = https://github.com/jlblancoc/nanoflann
+[submodule "3rdparty/Eigen"]
+	path = 3rdparty/Eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "plugins/core/IO/qE57IO/extern/libE57Format"]
+	path = plugins/core/IO/qE57IO/extern/libE57Format
+	url = https://github.com/asmaloney/libE57Format.git

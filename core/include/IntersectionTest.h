@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.CVLib.org                            -
+// -                        CVLib: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.CVLib.org
+// Copyright (c) 2019 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,12 +27,14 @@
 #ifndef CV_INTERSECTION_TEST_HEADER
 #define CV_INTERSECTION_TEST_HEADER
 
+#include "CVCoreLib.h"
+
 #include <Eigen/Dense>
 
 namespace CVLib {
 namespace utility {
 
-class IntersectionTest {
+class CV_CORE_LIB_API IntersectionTest {
 public:
     static bool AABBAABB(const Eigen::Vector3d& min0,
                          const Eigen::Vector3d& max0,

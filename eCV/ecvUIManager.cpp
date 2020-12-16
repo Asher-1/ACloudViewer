@@ -5,6 +5,7 @@
 #include "ecvPersistentSettings.h"
 #include "CommonSettings.h"
 #include "MainWindow.h"
+#include "db_tree/ecvDBRoot.h"
 
 int QUIWidget::deskWidth()
 {
@@ -40,8 +41,6 @@ void QUIWidget::newDir(const QString &dirName)
 {
 	QString strDir = dirName;
 
-	//如果路径中包含斜杠字符则说明是绝对路径
-	//linux系统路径字符带有 /  windows系统 路径字符带有 :/
 	if (!strDir.startsWith("/") && !strDir.contains(":/")) {
 		strDir = QString("%1/%2").arg(QUIWidget::appPath()).arg(strDir);
 	}
@@ -281,8 +280,8 @@ void QUIWidget::setSystemDateTime(const QString &year, const QString &month, con
 	p.close();
 #else
 	QString cmd = QString("date %1%2%3%4%5.%6").arg(month).arg(day).arg(hour).arg(min).arg(year).arg(sec);
-	system(cmd.toLatin1());
-	system("hwclock -w");
+    if(system(cmd.toLatin1()) > 0) {}
+    if(system("hwclock -w") > 0) {}
 #endif
 }
 

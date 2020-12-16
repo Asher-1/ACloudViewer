@@ -175,6 +175,8 @@ ccMesh& ccMesh::operator=(const ccMesh & mesh)
 
 	this->resize(0);
 
+	this->adjacency_list_ = mesh.adjacency_list_;
+
 	this->merge(&mesh, false);
 	return (*this);
 }
@@ -186,6 +188,8 @@ ccMesh& ccMesh::operator+=(const ccMesh & mesh)
 		CVLog::Error("Fusion failed! (not enough memory?)");
 	}
 
+	this->adjacency_list_ = mesh.adjacency_list_;
+
 	return (*this);
 }
 
@@ -193,7 +197,6 @@ ccMesh ccMesh::operator+(const ccMesh & mesh) const
 {
 	return (ccMesh(*this) += mesh);
 }
-
 
 void ccMesh::setAssociatedCloud(ccGenericPointCloud* cloud)
 {
@@ -1802,6 +1805,12 @@ void ccMesh::clear()
 	
 	resize(0);
 	clearTriNormals();
+
+	adjacency_list_.clear();
+	triangle_uvs_.clear();
+	materials_.clear();
+	triangle_material_ids_.clear();
+	textures_.clear();
 }
 
 unsigned ccMesh::size() const
@@ -1895,12 +1904,30 @@ void ccMesh::setVertice(size_t index, const Eigen::Vector3d& vertice)
 	ccHObjectCaster::ToPointCloud(getAssociatedCloud())->setEigenPoint(index, vertice);
 }
 
+void ccMesh::addVertice(const Eigen::Vector3d& vertice)
+{
+	if (!getAssociatedCloud())
+	{
+		return;
+	}
+	ccHObjectCaster::ToPointCloud(getAssociatedCloud())->addEigenPoint(vertice);
+}
+
 void ccMesh::setVertexNormal(size_t index, const Eigen::Vector3d& normal)
 {
 	if (m_associatedCloud)
 	{
 		ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
 		cloud->setPointNormal(index, normal);
+	}
+}
+
+void ccMesh::addVertexNormal(const Eigen::Vector3d& normal)
+{
+	if (m_associatedCloud)
+	{
+		ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(m_associatedCloud);
+		cloud->addEigenNorm(normal);
 	}
 }
 
@@ -1948,6 +1975,14 @@ void ccMesh::setVertexColor(size_t index, const Eigen::Vector3d& color)
 	if (m_associatedCloud)
 	{
 		ccHObjectCaster::ToPointCloud(m_associatedCloud)->setPointColor(index, color);
+	}
+}
+
+void ccMesh::addVertexColor(const Eigen::Vector3d& color)
+{
+	if (m_associatedCloud)
+	{
+		ccHObjectCaster::ToPointCloud(m_associatedCloud)->addEigenColor(color);
 	}
 }
 
@@ -2179,6 +2214,31 @@ bool ccMesh::reserve(size_t n)
 	return m_triVertIndexes->reserveSafe(n);
 }
 
+bool ccMesh::reserveAssociatedCloud(std::size_t n) {
+    if (!m_associatedCloud) {
+        CVLib::utility::LogWarning("Must call createInternalCloud first!");
+        return false;
+    }
+    ccPointCloud* baseVertices = ccHObjectCaster::ToPointCloud(m_associatedCloud);
+
+    if (!baseVertices->reserveThePointsTable(n)) {
+        CVLib::utility::LogError(
+                "[reserveThePointsTable] Not have enough memory! ");
+        return false;
+    }
+    if (!baseVertices->reserveTheNormsTable()) {
+        CVLib::utility::LogError(
+                "[reserveTheNormsTable] Not have enough memory! ");
+        return false;
+    }
+    if (!baseVertices->reserveTheRGBTable()) {
+        CVLib::utility::LogError(
+                "[reserveTheRGBTable] Not have enough memory! ");
+        return false;
+    }
+    return true;
+}
+
 bool ccMesh::resize(size_t n)
 {
 	m_bBox.setValidity(false);
@@ -2208,7 +2268,33 @@ bool ccMesh::resize(size_t n)
 	return m_triVertIndexes->resizeSafe(n);
 }
 
-inline void ccMesh::shrinkVertexToFit()
+bool ccMesh::resizeAssociatedCloud(std::size_t n) {
+    if (!m_associatedCloud) {
+        CVLib::utility::LogWarning("Must call createInternalCloud first!");
+        return false;
+    }
+    ccPointCloud* baseVertices =
+            ccHObjectCaster::ToPointCloud(m_associatedCloud);
+
+    if (!baseVertices->resize(n)) {
+        CVLib::utility::LogError(
+                "[resize] Not have enough memory! ");
+        return false;
+    }
+    if (!baseVertices->resizeTheNormsTable()) {
+        CVLib::utility::LogError(
+                "[resizeTheNormsTable] Not have enough memory! ");
+        return false;
+    }
+    if (!baseVertices->resizeTheRGBTable()) {
+        CVLib::utility::LogError(
+                "[resizeTheRGBTable] Not have enough memory! ");
+        return false;
+    }
+    return true;
+}
+
+void ccMesh::shrinkVertexToFit()
 {
 	if (m_associatedCloud)
 	{
@@ -2294,7 +2380,7 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context)
 
 	handleColorRamp(context);
 
-	if (ecvDisplayTools::GetMainWindow() == nullptr) return;
+	if (!ecvDisplayTools::GetMainWindow()) return;
 
 	//3D pass
 	if (MACRO_Draw3D(context))
@@ -2986,6 +3072,24 @@ bool ccMesh::getTriangleNormals(unsigned triangleIndex, double Na[3], double Nb[
 bool ccMesh::getTriangleNormals(unsigned triangleIndex, Eigen::Vector3d & Na, Eigen::Vector3d & Nb, Eigen::Vector3d & Nc) const
 {
 	return getTriangleNormals(triangleIndex, Na.data(), Nb.data(), Nc.data());
+}
+
+std::vector<Eigen::Vector3d> ccMesh::getTriangleNormals() const {
+    std::vector<Eigen::Vector3d> triangleNormals;
+    triangleNormals.reserve(this->size());
+    for (size_t i = 0; i < this->size(); i++) {
+        triangleNormals.emplace_back(getTriangleNorm(i));
+    }
+    return triangleNormals;
+}
+
+std::vector<CCVector3 *> ccMesh::getTriangleNormalsPtr() const
+{
+    std::vector<CCVector3 *> triNormals;
+    for (size_t i = 0; i < this->size(); i++) {
+        triNormals.push_back(&ccNormalVectors::GetUniqueInstance()->getNormal(m_triNormals->getValue(i)));
+    }
+    return triNormals;
 }
 
 Eigen::Vector3d ccMesh::getTriangleNorm(size_t index) const
@@ -3733,9 +3837,9 @@ bool ccMesh::getColorFromMaterial(unsigned triIndex, const CCVector3& P, ecvColo
 	CCVector3d w;
 	computeInterpolationWeights(triIndex, P, w);
 
-	if ((!T1 && w.u[0] > ZERO_TOLERANCE)
-		|| (!T2 && w.u[1] > ZERO_TOLERANCE)
-		|| (!T3 && w.u[2] > ZERO_TOLERANCE))
+    if ((   !T1 && w.u[0] > ZERO_TOLERANCE_D)
+        || (!T2 && w.u[1] > ZERO_TOLERANCE_D)
+        || (!T3 && w.u[2] > ZERO_TOLERANCE_D))
 	{
 		//assert(false);
 		if (interpolateColorIfNoTexture)
@@ -3808,7 +3912,7 @@ static qint64 GenerateKey(unsigned edgeIndex1, unsigned edgeIndex2)
 
 bool ccMesh::pushSubdivide(/*PointCoordinateType maxArea, */unsigned indexA, unsigned indexB, unsigned indexC)
 {
-	if (s_maxSubdivideArea/*maxArea*/ <= ZERO_TOLERANCE)
+    if (s_maxSubdivideArea/*maxArea*/ <= ZERO_TOLERANCE_F)
 	{
 		CVLog::Error("[ccMesh::pushSubdivide] Invalid input argument!");
 		return false;
@@ -3973,7 +4077,7 @@ bool ccMesh::pushSubdivide(/*PointCoordinateType maxArea, */unsigned indexA, uns
 
 ccMesh* ccMesh::subdivide(PointCoordinateType maxArea) const
 {
-	if (maxArea <= ZERO_TOLERANCE)
+    if (CVLib::LessThanEpsilon(maxArea))
 	{
 		CVLog::Error("[ccMesh::subdivide] Invalid input argument!");
 		return nullptr;

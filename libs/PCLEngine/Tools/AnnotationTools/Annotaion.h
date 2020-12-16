@@ -184,7 +184,7 @@ public:
 	 * @param type_
 	 * @return
 	 */
-	static int GetTypeIndex(std::string type_);
+    static std::size_t GetTypeIndex(std::string type_);
 
 	/**
 	 * @brief GetTypeByIndex  auto add to vector map if has not
@@ -221,7 +221,7 @@ public:
 	void add(Annotation* anno);
 	void remove(Annotation* anno);
 	void clear();
-	int getSize();
+    std::size_t getSize();
 
 	void updateLabels(Annotation* anno, bool resetFlag = false);
 
@@ -245,23 +245,23 @@ public:
 	 * @return
 	 */
 	Annotation* getAnnotation(vtkActor* actor);
-	Annotation *getAnnotation(int index);
+    Annotation *getAnnotation(std::size_t index);
 	void getAnnotations(
 		const std::string & type, 
 		std::vector<Annotation*>& annotations);
 	int getAnnotationIndex(Annotation * anno);
 	std::vector<Annotation *>& getAnnotations();
 
-	inline int getLabelByIndex(int index) 
+    inline int getLabelByIndex(std::size_t index)
 	{ 
-		if (index >= m_capacity || index < 0)
+        if (index >= m_capacity)
 		{
 			return -1;
 		}
 		return m_labeledCloudIndex[index];
 	}
 
-	void updateBalloonByIndex(int index);
+    void updateBalloonByIndex(std::size_t index);
 	void updateBalloonByAnno(Annotation * anno);
 
 protected:
