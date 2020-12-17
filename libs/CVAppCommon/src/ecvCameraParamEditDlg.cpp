@@ -292,10 +292,6 @@ bool ecvCameraParamEditDlg::linkWith(QWidget* win)
 		connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::perspectiveStateChanged, this, &ecvCameraParamEditDlg::updateViewMode);
 		connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::destroyed, this, &QWidget::hide);
 	}
-	else
-	{
-		hide();
-	}
 
 	return true;
 }

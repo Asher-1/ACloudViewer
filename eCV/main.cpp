@@ -8,6 +8,7 @@
 
 // CV_CORE_LIB
 #include <CVLog.h>
+#include <CVTools.h>
 
 // ECV_DB_LIB
 #include <ecvColorScalesManager.h>
@@ -175,7 +176,7 @@ int main(int argc, char *argv[])
         }
 
 		//splash screen
-		QPixmap pixmap(QString::fromUtf8(Settings::APP_START_LOGO));
+        QPixmap pixmap(QString::fromUtf8(CVTools::FromQString(Settings::APP_START_LOGO).c_str()));
 		splash.reset(new QSplashScreen(pixmap, Qt::WindowStaysOnTopHint));
 		splash->show();
 		QApplication::processEvents();
