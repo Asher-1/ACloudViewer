@@ -20,9 +20,9 @@ endif()
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 
 # ErowCloudViewer build options
-option(BUILD_SHARED_LIBS          "Build shared libraries"                   		    OFF)
+option(BUILD_SHARED_LIBS          "Build shared libraries"                   		OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"                          ON )
-option(BUILD_EXAMPLES             "Build CloudViewer example programs"        		    ON )
+option(BUILD_EXAMPLES             "Build CloudViewer example programs"        		ON )
 option(BUILD_UNIT_TESTS           "Build CloudViewer unit tests"                        OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"                          OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                             ON )
@@ -63,7 +63,7 @@ option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                       
 option(BUNDLE_CLOUDVIEWER_ML      "Includes the CloudViewer-ML repo in the wheel"       OFF)
 option(DEVELOPER_BUILD            "Add -dev+commit_hash to the project version number"  ON )
 # PCL ENGINE SUPPORT
-option(USE_PCL_BACKEND           "Check to use pcl library as backend" 			        ON )
+option(USE_PCL_BACKEND           "Check to use pcl library as backend" 			ON )
 
 option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON )
 
