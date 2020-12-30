@@ -33,7 +33,7 @@
 #include <ecvBBox.h>
 #include <ecvOrientedBBox.h>
 #include <ecvPointCloud.h>
-#include <PointCloudIO.h>
+#include "io/PointCloudIO.h"
 #include <ecvKDTreeFlann.h>
 
 namespace cloudViewer {

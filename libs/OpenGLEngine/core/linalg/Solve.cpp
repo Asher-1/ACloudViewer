@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -41,19 +41,19 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     // Check devices
     Device device = A.GetDevice();
     if (device != B.GetDevice()) {
-        utility::LogError("Tensor A device {} and Tensor B device {} mismatch",
+        CVLib::utility::LogError("Tensor A device {} and Tensor B device {} mismatch",
                           A.GetDevice().ToString(), B.GetDevice().ToString());
     }
 
     // Check dtypes
     Dtype dtype = A.GetDtype();
     if (dtype != B.GetDtype()) {
-        utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch",
+        CVLib::utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch",
                           A.GetDtype().ToString(), B.GetDtype().ToString());
     }
 
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-        utility::LogError(
+        CVLib::utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}",
                 dtype.ToString());
@@ -63,25 +63,25 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     SizeVector A_shape = A.GetShape();
     SizeVector B_shape = B.GetShape();
     if (A_shape.size() != 2) {
-        utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
+        CVLib::utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
     }
     if (A_shape[0] != A_shape[1]) {
-        utility::LogError("Tensor A must be square, but got {} x {}.",
+        CVLib::utility::LogError("Tensor A must be square, but got {} x {}.",
                           A_shape[0], A_shape[1]);
     }
     if (B_shape.size() != 1 && B_shape.size() != 2) {
-        utility::LogError(
+        CVLib::utility::LogError(
                 "Tensor B must be 1D (vector) or 2D (matrix), but got {}D",
                 B_shape.size());
     }
     if (B_shape[0] != A_shape[0]) {
-        utility::LogError("Tensor A and B's first dimension mismatch.");
+        CVLib::utility::LogError("Tensor A and B's first dimension mismatch.");
     }
 
     int64_t n = A_shape[0];
     int64_t k = B_shape.size() == 2 ? B_shape[1] : 1;
     if (n == 0 || k == 0) {
-        utility::LogError(
+        CVLib::utility::LogError(
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
@@ -99,7 +99,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
 
         SolveCUDA(A_data, B_data, ipiv_data, n, k, dtype, device);
 #else
-        utility::LogError("Unimplemented device.");
+        CVLib::utility::LogError("Unimplemented device.");
 #endif
     } else {
         Dtype ipiv_dtype;
@@ -108,7 +108,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
         } else if (sizeof(CLOUDVIEWER_CPU_LINALG_INT) == 8) {
             ipiv_dtype = Dtype::Int64;
         } else {
-            utility::LogError("Unsupported CLOUDVIEWER_CPU_LINALG_INT type.");
+            CVLib::utility::LogError("Unsupported CLOUDVIEWER_CPU_LINALG_INT type.");
         }
         Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
         void *ipiv_data = ipiv.GetDataPtr();

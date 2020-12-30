@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -37,7 +37,7 @@ namespace kernel {
 void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     // Check shape
     if (!shape_util::CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
-        utility::LogError("Shape {} can not be broadcasted to {}.",
+        CVLib::utility::LogError("Shape {} can not be broadcasted to {}.",
                           src.GetShape(), dst.GetShape());
     }
 
@@ -45,7 +45,7 @@ void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     Device src_device = src.GetDevice();
     Device dst_device = dst.GetDevice();
     if (src_device != dst_device) {
-        utility::LogError("Source device {} != destination device {}.",
+        CVLib::utility::LogError("Source device {} != destination device {}.",
                           src_device.ToString(), dst_device.ToString());
     }
 
@@ -55,17 +55,17 @@ void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
 #ifdef BUILD_CUDA_MODULE
         UnaryEWCUDA(src, dst, op_code);
 #else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+        CVLib::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        utility::LogError("UnaryEW Unimplemented device");
+        CVLib::utility::LogError("UnaryEW Unimplemented device");
     }
 }
 
 void Copy(const Tensor& src, Tensor& dst) {
     // Check shape
     if (!shape_util::CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
-        utility::LogError("Shape {} can not be broadcasted to {}.",
+        CVLib::utility::LogError("Shape {} can not be broadcasted to {}.",
                           src.GetShape(), dst.GetShape());
     }
 
@@ -76,7 +76,7 @@ void Copy(const Tensor& src, Tensor& dst) {
          src_device_type != Device::DeviceType::CUDA) ||
         (dst_device_type != Device::DeviceType::CPU &&
          dst_device_type != Device::DeviceType::CUDA)) {
-        utility::LogError("Copy: Unimplemented device");
+        CVLib::utility::LogError("Copy: Unimplemented device");
     }
     if (src_device_type == Device::DeviceType::CPU &&
         dst_device_type == Device::DeviceType::CPU) {
@@ -85,7 +85,7 @@ void Copy(const Tensor& src, Tensor& dst) {
 #ifdef BUILD_CUDA_MODULE
         CopyCUDA(src, dst);
 #else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+        CVLib::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     }
 }

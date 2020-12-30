@@ -53,6 +53,13 @@ public:
     /// \return Returns true if the construction success, otherwise false.
     virtual bool SetTensorData(const Tensor &dataset_points) = 0;
 
+    /// Set the data for the nearest neighbor search.
+    ///
+    /// \param dataset_points Dataset points for KDTree construction. Must be
+    /// 2D, with shape {n, d}.
+    /// \return Returns true if the construction success, otherwise false.
+    virtual bool SetTensorData(const Tensor &dataset_points, double radius) = 0;
+
     /// Perform K nearest neighbor search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}, same
@@ -114,6 +121,10 @@ public:
     /// Get dtype of the dataset points.
     /// \return dtype of dataset points.
     Dtype GetDtype() const;
+
+    /// Get device of the dataset points.
+    /// \return device of dataset points.
+    Device GetDevice() const;
 
 protected:
     Tensor dataset_points_;

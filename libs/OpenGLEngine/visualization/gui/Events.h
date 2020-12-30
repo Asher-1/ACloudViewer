@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -42,7 +42,7 @@ enum class MouseButton {
 };
 
 // The key modifiers are labeled by functionality; for instance,
-// Ctrl on Windows and Command on macOS have roughly the samee functionality.
+// Ctrl on Windows and Command on macOS have roughly the same functionality.
 enum class KeyModifier {
     NONE = 0,
     SHIFT = (1 << 0),

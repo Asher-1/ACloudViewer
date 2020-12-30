@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -37,7 +37,7 @@ void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     void* ptr;
     ptr = std::malloc(byte_size);
     if (byte_size != 0 && !ptr) {
-        utility::LogError("CPU malloc failed");
+        CVLib::utility::LogError("CPU malloc failed");
     }
     return ptr;
 }

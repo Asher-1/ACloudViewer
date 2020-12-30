@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <ecvMesh.h>
 #include "visualization/rendering/MaterialModifier.h"
 #include "visualization/rendering/RendererHandle.h"
 

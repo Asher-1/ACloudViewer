@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -27,12 +27,16 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "core/Tensor.h"
 #include "t/geometry/Geometry.h"
 
 namespace cloudViewer {
+namespace geometry {
+    class Image;
+}
 namespace t {
 namespace geometry {
 
@@ -127,6 +131,28 @@ public:
 
     /// Retuns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
+
+    /// Compute min 2D coordinates for the data (always {0, 0}).
+    core::Tensor GetMinBound() const {
+        return core::Tensor::Zeros({2}, core::Dtype::Int64);
+    }
+
+    /// Compute max 2D coordinates for the data ({rows, cols}).
+    core::Tensor GetMaxBound() const {
+        return core::Tensor(std::vector<int64_t>{GetRows(), GetCols()}, {2},
+                            core::Dtype::Int64);
+    }
+
+    /// Create from a legacy Open3D Image.
+    static Image FromLegacyImage(
+            const cloudViewer::geometry::Image &image_legacy,
+            const core::Device &Device = core::Device("CPU:0"));
+
+    /// Convert to legacy Image type.
+    cloudViewer::geometry::Image ToLegacyImage() const;
+
+    /// Text description
+    std::string ToString() const;
 
 protected:
     /// Internal data of the Image, represented as a 3D tensor of shape {rols,

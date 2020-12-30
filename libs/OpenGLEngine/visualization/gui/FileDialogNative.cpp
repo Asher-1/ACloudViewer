@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,12 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#if defined(__APPLE__)
+// Include FileDialog here to get value of GUI_USE_NATIVE_FILE_DIALOG
+#include "visualization/gui/FileDialog.h"
+
+#if defined(__APPLE__) && GUI_USE_NATIVE_FILE_DIALOG
 
 #include <string>
 #include <vector>
 
-#include "visualization/gui/FileDialog.h"
 #include "visualization/gui/Native.h"
 
 namespace cloudViewer {
@@ -83,4 +85,4 @@ void FileDialog::OnDone() {}
 }  // namespace visualization
 }  // namespace cloudViewer
 
-#endif  // __APPLE__
+#endif  // __APPLE__ && GUI_USE_NATIVE_FILE_DIALOG

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -32,8 +32,6 @@
 #include <ecvBBox.h>
 #include "visualization/rendering/Renderer.h"
 
-class ccHObject;
-
 namespace cloudViewer {
 
 namespace t {
@@ -59,7 +57,18 @@ public:
 
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);
-    void SetBackgroundColor(const Eigen::Vector4f& color);
+    void SetBackground(const Eigen::Vector4f& color,
+                       std::shared_ptr<geometry::Image> image = nullptr);
+
+    enum class LightingProfile {
+        HARD_SHADOWS,
+        DARK_SHADOWS,
+        MED_SHADOWS,
+        SOFT_SHADOWS,
+        NO_SHADOWS
+    };
+
+    void SetLighting(LightingProfile profile, const Eigen::Vector3f& sun_dir);
 
     /// Sets the maximum number of points before AddGeometry also adds a
     /// downsampled point cloud with number of points, used when rendering
@@ -72,7 +81,7 @@ public:
     void ClearGeometry();
     /// Adds a geometry with the specified name. Default visible is true.
     void AddGeometry(const std::string& name,
-                     std::shared_ptr<const ccHObject> geom,
+                     const ccHObject* geom,
                      const Material& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     // Note: we can't use shared_ptr here, as we might be given something

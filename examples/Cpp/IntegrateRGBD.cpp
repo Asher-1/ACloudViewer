@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     std::string dir_name =
             CVLib::utility::filesystem::GetFileParentDirectory(match_filename).c_str();
     FILE *file = CVLib::utility::filesystem::FOpen(match_filename, "r");
-    if (file == NULL) {
+    if (!file) {
         CVLib::utility::LogWarning("Unable to open file {}", match_filename);
         fclose(file);
         return 0;

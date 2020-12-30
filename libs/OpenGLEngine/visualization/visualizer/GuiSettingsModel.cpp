@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -81,7 +81,15 @@ private:
 
 }  // namespace
 
+// static member definition
+constexpr const char* GuiSettingsModel::DEFAULT_IBL;
+constexpr const char* GuiSettingsModel::CUSTOM_IBL;
+constexpr const char* GuiSettingsModel::DEFAULT_MATERIAL_NAME;
+constexpr const char* GuiSettingsModel::MATERIAL_FROM_FILE_NAME;
+constexpr const char* GuiSettingsModel::POINT_CLOUD_PROFILE_NAME;
+
 using namespace CVLib;
+
 const std::vector<GuiSettingsModel::LightingProfile>
         GuiSettingsModel::lighting_profiles_ = {
                 LightingProfileBuilder()
@@ -142,7 +150,7 @@ const std::vector<GuiSettingsModel::LightingProfile>
 
 const std::map<std::string, const GuiSettingsModel::LitMaterial>
         GuiSettingsModel::prefab_materials_ = {
-                {"Polished ceramic", {}},
+                {DEFAULT_MATERIAL_NAME, {}},
                 {"Metal (rougher)",
                  {{1.0f, 1.0f, 1.0f}, 1.0f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},
                 {"Metal (smoother)",

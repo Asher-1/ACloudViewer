@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -38,8 +38,8 @@
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 #include <ImageIO.h>
-#include <FileFormatIO.h>
-#include <TriangleMeshIO.h>
+#include "io/FileFormatIO.h"
+#include "io/TriangleMeshIO.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/Model.h"
 
@@ -137,9 +137,18 @@ void LoadTextures(const std::string& filename,
 }
 
 bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
-                                 ccMesh& mesh, bool print_progress) {
+                                 ccMesh& mesh,
+                                 bool enable_post_processing,
+                                 bool print_progress) {
     Assimp::Importer importer;
-    const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
+
+    unsigned int post_process_flags = 0;
+
+    if (enable_post_processing) {
+        post_process_flags = kPostProcessFlags;
+    }
+
+    const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;

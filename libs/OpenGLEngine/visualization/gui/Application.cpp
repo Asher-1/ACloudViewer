@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -42,6 +42,8 @@
 
 #include <Console.h>
 #include <FileSystem.h>
+#include <Image.h>
+
 #include "visualization/gui/Button.h"
 #include "visualization/gui/Events.h"
 #include "visualization/gui/Label.h"

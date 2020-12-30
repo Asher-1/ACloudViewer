@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -33,121 +33,188 @@
 #include "core/EigenConverter.h"
 #include "core/ShapeUtil.h"
 #include "core/Tensor.h"
-#include "core/TensorList.h"
+#include "core/hashmap/Hashmap.h"
+#include "core/kernel/Kernel.h"
+#include "core/linalg/Matmul.h"
+#include "t/geometry/TensorMap.h"
 
 namespace cloudViewer {
 namespace t {
 namespace geometry {
 
-PointCloud::PointCloud(core::Dtype dtype, const core::Device &device)
+PointCloud::PointCloud(const core::Device &device)
     : Geometry(Geometry::GeometryType::PointCloud, 3),
       device_(device),
-      point_attr_(TensorListMap("points")) {
-    SetPoints(core::TensorList({3}, dtype, device_));
-}
+      point_attr_(TensorMap("points")) {}
 
-PointCloud::PointCloud(const core::TensorList &points)
-    : PointCloud(points.GetDtype(), points.GetDevice()) {
-    points.AssertElementShape({3});
+PointCloud::PointCloud(const core::Tensor &points)
+    : PointCloud(points.GetDevice()) {
+    points.AssertShapeCompatible({CVLib::utility::nullopt, 3});
     SetPoints(points);
 }
 
-PointCloud::PointCloud(const std::unordered_map<std::string, core::TensorList>
-                               &map_keys_to_tensorlists)
-    : PointCloud(map_keys_to_tensorlists.at("points").GetDtype(),
-                 map_keys_to_tensorlists.at("points").GetDevice()) {
-    map_keys_to_tensorlists.at("points").AssertElementShape({3});
-    point_attr_.Assign(map_keys_to_tensorlists);
+PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
+                               &map_keys_to_tensors)
+    : PointCloud(map_keys_to_tensors.at("points").GetDevice()) {
+    if (map_keys_to_tensors.count("points") == 0) {
+        CVLib::utility::LogError("\"points\" attribute must be specified.");
+    }
+    map_keys_to_tensors.at("points").AssertShapeCompatible(
+            {CVLib::utility::nullopt, 3});
+    point_attr_ = TensorMap("points", map_keys_to_tensors.begin(),
+                            map_keys_to_tensors.end());
 }
 
-core::Tensor PointCloud::GetMinBound() const {
-    return GetPoints().AsTensor().Min({0});
+core::Tensor PointCloud::GetMinBound() const { return GetPoints().Min({0}); }
+
+core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
+
+core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
+
+PointCloud PointCloud::Copy(const core::Device device) const {
+    PointCloud pcd(device);
+    for (auto &value : point_attr_) {
+        pcd.SetPointAttr(value.first, value.second.Copy(device));
+    }
+    return pcd;
 }
 
-core::Tensor PointCloud::GetMaxBound() const {
-    return GetPoints().AsTensor().Max({0});
-}
-
-core::Tensor PointCloud::GetCenter() const {
-    return GetPoints().AsTensor().Mean({0});
-}
+PointCloud PointCloud::Copy() const { return Copy(GetDevice()); }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    utility::LogError("Unimplemented");
+    transformation.AssertShape({4, 4});
+    transformation.AssertDevice(device_);
+
+    core::Tensor R = transformation.Slice(0, 0, 3).Slice(1, 0, 3);
+    core::Tensor t = transformation.Slice(0, 0, 3).Slice(1, 3, 4);
+    // TODO: Make it more generalised [4x4][4xN] transformation.
+
+    // TODO: Consider adding a new op extending MatMul to support `AB + C`
+    // GEMM operation. Also, a parallel joint optimimsed kernel for
+    // independent MatMul operation with common matrix like AB and AC
+    // with fusion based cache optimisation.
+    core::Tensor &points = GetPoints();
+    points = (R.Matmul(points.T())).Add_(t).T();
+
+    if (HasPointNormals()) {
+        core::Tensor &normals = GetPointNormals();
+        normals = (R.Matmul(normals.T())).T();
+    }
     return *this;
 }
 
 PointCloud &PointCloud::Translate(const core::Tensor &translation,
                                   bool relative) {
     translation.AssertShape({3});
-    core::Tensor transform = translation.Copy();
+    translation.AssertDevice(device_);
+
+    core::Tensor transform = translation;
     if (!relative) {
         transform -= GetCenter();
     }
-    GetPoints().AsTensor() += transform;
+    GetPoints() += transform;
     return *this;
 }
 
 PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
     center.AssertShape({3});
-    core::Tensor points = GetPoints().AsTensor();
+    center.AssertDevice(device_);
+
+    core::Tensor points = GetPoints();
     points.Sub_(center).Mul_(scale).Add_(center);
     return *this;
 }
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
-    utility::LogError("Unimplemented");
+    R.AssertShape({3, 3});
+    R.AssertDevice(device_);
+    center.AssertShape({3});
+    center.AssertDevice(device_);
+
+    core::Tensor Rot = R;
+    core::Tensor &points = GetPoints();
+    points = ((Rot.Matmul((points.Sub_(center)).T())).T()).Add_(center);
+
+    if (HasPointNormals()) {
+        core::Tensor &normals = GetPointNormals();
+        normals = (Rot.Matmul(normals.T())).T();
+    }
     return *this;
 }
 
-geometry::PointCloud PointCloud::FromLegacyPointCloud(
+PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
+                                            const core::Tensor &intrinsics,
+                                            const core::Tensor &extrinsics,
+                                            double depth_scale,
+                                            double depth_max,
+                                            int stride) {
+    depth.AsTensor().AssertDtype(core::Dtype::UInt16);
+
+    core::Device device = depth.GetDevice();
+    std::unordered_map<std::string, core::Tensor> srcs = {
+            {"depth", depth.AsTensor()},
+            {"intrinsics", intrinsics.Copy(device)},
+            {"extrinsics", extrinsics.Copy(device)},
+            {"depth_scale",
+             core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
+                          {}, core::Dtype::Float32, device)},
+            {"depth_max",
+             core::Tensor(std::vector<float>{static_cast<float>(depth_max)}, {},
+                          core::Dtype::Float32, device)},
+            {"stride", core::Tensor(std::vector<int64_t>{stride}, {},
+                                    core::Dtype::Int64, device)}};
+    std::unordered_map<std::string, core::Tensor> dsts;
+
+    core::kernel::GeneralEW(srcs, dsts, core::kernel::GeneralEWOpCode::Unproject);
+    if (dsts.count("points") == 0) {
+        CVLib::utility::LogError(
+                "[PointCloud] unprojection launch failed, vertex map expected "
+                "to return.");
+    }
+    return PointCloud(dsts.at("points"));
+}
+
+PointCloud PointCloud::FromLegacyPointCloud(
         const ccPointCloud &pcd_legacy,
         core::Dtype dtype,
         const core::Device &device) {
-    geometry::PointCloud pcd(dtype, device);
+    geometry::PointCloud pcd(device);
     if (pcd_legacy.hasPoints()) {
-        pcd.SetPoints(core::eigen_converter::EigenVector3dVectorToTensorList(
+        pcd.SetPoints(core::eigen_converter::EigenVector3dVectorToTensor(
                 pcd_legacy.getEigenPoints(), dtype, device));
     } else {
-        utility::LogWarning(
-                "Creating from an empty legacy pointcloud, an empty pointcloud "
-                "with default dtype and device will be created.");
+        CVLib::utility::LogWarning("Creating from an empty legacy PointCloud.");
     }
     if (pcd_legacy.hasColors()) {
-        pcd.SetPointColors(
-                core::eigen_converter::EigenVector3dVectorToTensorList(
-                        pcd_legacy.getEigenColors(), dtype, device));
+        pcd.SetPointColors(core::eigen_converter::EigenVector3dVectorToTensor(
+                pcd_legacy.getEigenColors(), dtype, device));
     }
     if (pcd_legacy.hasNormals()) {
-        pcd.SetPointNormals(
-                core::eigen_converter::EigenVector3dVectorToTensorList(
-                        pcd_legacy.getEigenNormals(), dtype, device));
+        pcd.SetPointNormals(core::eigen_converter::EigenVector3dVectorToTensor(
+                pcd_legacy.getEigenNormals(), dtype, device));
     }
     return pcd;
 }
 
 ccPointCloud PointCloud::ToLegacyPointCloud() const {
-   ccPointCloud pcd_legacy;
+    ccPointCloud pcd_legacy;
     if (HasPoints()) {
-        const core::TensorList &points = GetPoints();
-        for (int64_t i = 0; i < points.GetSize(); i++) {
-            pcd_legacy.addEigenPoint(
-                    core::eigen_converter::TensorToEigenVector3d(points[i]));
-        }
+        pcd_legacy.addPoints(
+                    core::eigen_converter::TensorToEigenVector3dVector(GetPoints()));
     }
     if (HasPointColors()) {
-        const core::TensorList &colors = GetPointColors();
-        for (int64_t i = 0; i < colors.GetSize(); i++) {
-            pcd_legacy.addEigenColor(
-                    core::eigen_converter::TensorToEigenVector3d(colors[i]));
+        if (pcd_legacy.reserveTheRGBTable())
+        {
+            pcd_legacy.addEigenColors(
+                        core::eigen_converter::TensorToEigenVector3dVector(GetPointColors()));
         }
     }
     if (HasPointNormals()) {
-        const core::TensorList &normals = GetPointNormals();
-        for (int64_t i = 0; i < normals.GetSize(); i++) {
-            pcd_legacy.addEigenNorm(
-                    core::eigen_converter::TensorToEigenVector3d(normals[i]));
+        if (pcd_legacy.reserveTheNormsTable())
+        {
+            pcd_legacy.addEigenNorms(
+                        core::eigen_converter::TensorToEigenVector3dVector(GetPointNormals()));
         }
     }
     return pcd_legacy;

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -415,12 +415,13 @@ void Octree::ConvertFromPointCloud(const ccPointCloud& point_cloud,
     }
 
     // Insert points
+    const bool has_colors = point_cloud.hasColors();
     for (size_t idx = 0; idx < point_cloud.size(); idx++) {
+        const Eigen::Vector3d& color =
+                has_colors ? point_cloud.getEigenColor(idx) : Eigen::Vector3d::Zero();
         InsertPoint(point_cloud.getEigenPoint(idx),
                     geometry::OctreeColorLeafNode::GetInitFunction(),
-                    geometry::OctreeColorLeafNode::GetUpdateFunction(
-						ecvColor::Rgb::ToEigen(point_cloud.getPointColor(static_cast<unsigned int>(idx)))
-					));
+                    geometry::OctreeColorLeafNode::GetUpdateFunction(color));
     }
 }
 
