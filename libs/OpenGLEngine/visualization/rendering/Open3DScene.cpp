@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -31,6 +31,7 @@
 #include <LineSet.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+#include "visualization/gui/Application.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
@@ -116,7 +117,9 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
-    scene->SetBackgroundColor({1.0f, 1.0f, 1.0f, 1.0f});
+    scene->SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
+
+    SetLighting(LightingProfile::MED_SHADOWS, {0.577f, -0.577f, -0.577f});
 
     RecreateAxis(scene, bounds_, false);
 }
@@ -147,9 +150,60 @@ void Open3DScene::ShowAxes(bool enable) {
     scene->ShowGeometry(kAxisObjectName, enable);
 }
 
-void Open3DScene::SetBackgroundColor(const Eigen::Vector4f& color) {
+void Open3DScene::SetBackground(const Eigen::Vector4f& color,
+                                std::shared_ptr<geometry::Image> image /*=0*/) {
     auto scene = renderer_.GetScene(scene_);
-    scene->SetBackgroundColor(color);
+    scene->SetBackground(color, image);
+}
+
+void Open3DScene::SetLighting(LightingProfile profile,
+                              const Eigen::Vector3f& sun_dir) {
+    auto scene = renderer_.GetScene(scene_);
+
+    if (profile != LightingProfile::HARD_SHADOWS) {
+        if (scene->GetIndirectLight().empty()) {
+            auto path = gui::Application::GetInstance().GetResourcePath();
+            scene->SetIndirectLight(std::string(path) + "/default");
+        }
+    }
+
+    Eigen::Vector3f sun_color(1.0f, 1.0f, 1.0f);
+
+    // These intensities have been chosen so that a white object on a white
+    // background is clearly visible even when the highlight is next to the
+    // background. Increasing the intensities much more make the highlight's
+    // white too similar to the background's white.
+    switch (profile) {
+        case LightingProfile::HARD_SHADOWS:
+            scene->EnableIndirectLight(false);
+            scene->EnableSunLight(true);
+            scene->SetSunLight(sun_dir, sun_color, 100000);
+            break;
+        case LightingProfile::DARK_SHADOWS:
+            scene->EnableIndirectLight(true);
+            scene->EnableSunLight(true);
+            scene->SetIndirectLightIntensity(5000);
+            scene->SetSunLight(sun_dir, sun_color, 85000);
+            break;
+        default:
+        case LightingProfile::MED_SHADOWS:
+            scene->EnableIndirectLight(true);
+            scene->EnableSunLight(true);
+            scene->SetIndirectLightIntensity(7500);
+            scene->SetSunLight(sun_dir, sun_color, 70000);
+            break;
+        case LightingProfile::SOFT_SHADOWS:
+            scene->EnableIndirectLight(true);
+            scene->EnableSunLight(true);
+            scene->SetIndirectLightIntensity(15000);
+            scene->SetSunLight(sun_dir, sun_color, 35000);
+            break;
+        case LightingProfile::NO_SHADOWS:
+            scene->EnableIndirectLight(true);
+            scene->SetIndirectLightIntensity(20000);
+            scene->EnableSunLight(false);
+            break;
+    }
 }
 
 void Open3DScene::ClearGeometry() {
@@ -170,7 +224,7 @@ void Open3DScene::ClearGeometry() {
 
 void Open3DScene::AddGeometry(
         const std::string& name,
-        std::shared_ptr<const ccHObject> geom,
+        const ccHObject* geom,
         const Material& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;
@@ -196,7 +250,7 @@ void Open3DScene::AddGeometry(
         SetGeometryToLOD(info, lod_);
     }
 
-   axis_dirty_ = true;
+    axis_dirty_ = true;
 }
 
 void Open3DScene::AddGeometry(

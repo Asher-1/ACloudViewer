@@ -34,8 +34,6 @@
 namespace cloudViewer {
 namespace core {
 
-    using namespace CVLib;
-
 /// Device context specifying device type and device id.
 /// For CPU, there is only one device with id 0
 class Device {
@@ -82,7 +80,7 @@ public:
                 str += "CUDA";
                 break;
             default:
-                utility::LogError("Unsupported device type");
+                CVLib::utility::LogError("Unsupported device type");
         }
         str += ":" + std::to_string(device_id_);
         return str;
@@ -95,35 +93,35 @@ public:
 protected:
     void AssertCPUDeviceIDIsZero() {
         if (device_type_ == DeviceType::CPU && device_id_ != 0) {
-            utility::LogError("CPU has device_id {}, but it must be 0.",
+            CVLib::utility::LogError("CPU has device_id {}, but it must be 0.",
                               device_id_);
         }
     }
 
     static DeviceType StringToDeviceType(const std::string& type_colon_id) {
         std::vector<std::string> tokens;
-        utility::SplitString(tokens, type_colon_id, ":", true);
+        CVLib::utility::SplitString(tokens, type_colon_id, ":", true);
         if (tokens.size() == 2) {
-            std::string device_name_lower = utility::ToLower(tokens[0]);
+            std::string device_name_lower = CVLib::utility::ToLower(tokens[0]);
             if (device_name_lower == "cpu") {
                 return DeviceType::CPU;
             } else if (device_name_lower == "cuda") {
                 return DeviceType::CUDA;
             } else {
-                utility::LogError("Invalid device string {}.", type_colon_id);
+                CVLib::utility::LogError("Invalid device string {}.", type_colon_id);
             }
         } else {
-            utility::LogError("Invalid device string {}.", type_colon_id);
+            CVLib::utility::LogError("Invalid device string {}.", type_colon_id);
         }
     }
 
     static int StringToDeviceId(const std::string& type_colon_id) {
         std::vector<std::string> tokens;
-        utility::SplitString(tokens, type_colon_id, ":", true);
+        CVLib::utility::SplitString(tokens, type_colon_id, ":", true);
         if (tokens.size() == 2) {
             return std::stoi(tokens[1]);
         } else {
-            utility::LogError("Invalid device string {}.", type_colon_id);
+            CVLib::utility::LogError("Invalid device string {}.", type_colon_id);
         }
     }
 

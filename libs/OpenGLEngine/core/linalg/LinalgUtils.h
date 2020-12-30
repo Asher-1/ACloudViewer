@@ -38,39 +38,39 @@
 namespace cloudViewer {
 namespace core {
 
-#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)       \
-    [&] {                                                   \
-        if (DTYPE == cloudViewer::core::Dtype::Float32) {        \
-            using scalar_t = float;                         \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::Float64) { \
-            using scalar_t = double;                        \
-            return __VA_ARGS__();                           \
-        } else {                                            \
-            utility::LogError("Unsupported data type.");    \
-        }                                                   \
+#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)           \
+    [&] {                                                       \
+        if (DTYPE == cloudViewer::core::Dtype::Float32) {       \
+            using scalar_t = float;                             \
+            return __VA_ARGS__();                               \
+        } else if (DTYPE == cloudViewer::core::Dtype::Float64) {\
+            using scalar_t = double;                            \
+            return __VA_ARGS__();                               \
+        } else {                                                \
+            CVLib::utility::LogError("Unsupported data type.");        \
+        }                                                       \
     }()
 
 inline void CLOUDVIEWER_LAPACK_CHECK(CLOUDVIEWER_CPU_LINALG_INT info,
                                 const std::string& msg) {
     if (info < 0) {
-        utility::LogError("{}: {}-th parameter is invalid.", msg, -info);
+        CVLib::utility::LogError("{}: {}-th parameter is invalid.", msg, -info);
     } else if (info > 0) {
-        utility::LogError("{}: singular condition detected.", msg);
+        CVLib::utility::LogError("{}: singular condition detected.", msg);
     }
 }
 
 #ifdef BUILD_CUDA_MODULE
 inline void CLOUDVIEWER_CUBLAS_CHECK(cublasStatus_t status, const std::string& msg) {
     if (CUBLAS_STATUS_SUCCESS != status) {
-        utility::LogError("{}", msg);
+        CVLib::utility::LogError("{}", msg);
     }
 }
 
 inline void CLOUDVIEWER_CUSOLVER_CHECK(cusolverStatus_t status,
                                   const std::string& msg) {
     if (CUSOLVER_STATUS_SUCCESS != status) {
-        utility::LogError("{}", msg);
+        CVLib::utility::LogError("{}", msg);
     }
 }
 
@@ -82,11 +82,11 @@ inline void CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
     MemoryManager::MemcpyToHost(&hinfo, dinfo, device, sizeof(int));
     if (status != CUSOLVER_STATUS_SUCCESS || hinfo != 0) {
         if (hinfo < 0) {
-            utility::LogError("{}: {}-th parameter is invalid.", msg, -hinfo);
+            CVLib::utility::LogError("{}: {}-th parameter is invalid.", msg, -hinfo);
         } else if (hinfo > 0) {
-            utility::LogError("{}: singular condition detected.", msg);
+            CVLib::utility::LogError("{}: singular condition detected.", msg);
         } else {
-            utility::LogError("{}: status error code = {}.", msg, status);
+            CVLib::utility::LogError("{}: status error code = {}.", msg, status);
         }
     }
 }

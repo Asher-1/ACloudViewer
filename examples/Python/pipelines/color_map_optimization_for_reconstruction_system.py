@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# CloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Advanced/color_map_optimization_for_reconstruction_system.py
 

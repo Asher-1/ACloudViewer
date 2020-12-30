@@ -76,6 +76,7 @@ namespace io {
 
     bool ECV_IO_LIB_API AutoReadMesh(const std::string& filename,
 		ccMesh& mesh,
+        bool enable_post_processing = false,
 		bool print_progress = false);
 
     bool ECV_IO_LIB_API AutoWriteMesh(const std::string &filename,

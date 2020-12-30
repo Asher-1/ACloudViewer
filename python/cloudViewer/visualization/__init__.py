@@ -34,3 +34,6 @@ else:
     from cloudViewer.cpu.pybind.visualization import *
 
 from ._external_visualizer import *
+
+if "@BUILD_GUI@" == "ON":
+    from .draw import draw

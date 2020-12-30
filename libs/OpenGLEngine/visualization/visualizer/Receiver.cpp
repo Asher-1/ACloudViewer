@@ -28,13 +28,14 @@
 
 #include <zmq.hpp>
 
-#include "ecvPointCloud.h"
 #include "ecvMesh.h"
+#include "ecvPointCloud.h"
+#include "visualization/rendering/Material.h" // must include first
 #include "io/rpc/MessageUtils.h"
 #include "io/rpc/Messages.h"
+#include "visualization/gui/Window.h"
 #include "visualization/gui/Application.h"
-#include "visualization/rendering/Material.h"
-#include "visualization/visualizer/GuiVisualizer.h"
+
 
 using namespace cloudViewer::io::rpc;
 using namespace CVLib::utility;
@@ -335,9 +336,9 @@ void Receiver::SetGeometry(std::shared_ptr<ccHObject> geom,
                            const std::string& layer) {
     std::shared_ptr<rendering::Open3DScene> scene = scene_;
     gui::Application::GetInstance().PostToMainThread(
-            gui_visualizer_, [geom, path, time, layer, scene]() {
+            window_, [geom, path, time, layer, scene]() {
                 (void)time;  // unused at the moment
-                scene->AddGeometry(path, geom, rendering::Material());
+                scene->AddGeometry(path, geom.get(), rendering::Material());
             });
 }
 

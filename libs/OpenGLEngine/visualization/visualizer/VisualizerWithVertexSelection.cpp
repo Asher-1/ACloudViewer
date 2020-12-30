@@ -36,8 +36,8 @@
 #include <ecvPointCloud.h>
 #include <ecvHObjectCaster.h>
 #include <IJsonConvertibleIO.h>
-#include <PointCloudIO.h>
-#include <TriangleMeshIO.h>
+#include "io/PointCloudIO.h"
+#include "io/TriangleMeshIO.h"
 #include <FileSystem.h>
 #include "visualization/utility/GLHelper.h"
 #include "visualization/utility/PointCloudPicker.h"

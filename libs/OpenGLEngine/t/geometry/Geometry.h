@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <string>
 
 namespace cloudViewer {
 namespace t {
@@ -91,12 +93,16 @@ public:
     /// Returns whether the geometry is 2D or 3D.
     int Dimension() const { return dimension_; }
 
+    std::string GetName() const { return name_; }
+    void SetName(const std::string& name) { name_ = name; }
+
 private:
     /// Type of geometry from GeometryType.
     GeometryType geometry_type_ = GeometryType::Unspecified;
 
     /// Number of dimensions of the geometry.
     int dimension_;
+    std::string name_;
 };
 
 }  // namespace geometry

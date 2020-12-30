@@ -67,7 +67,7 @@ namespace io {
             {"mat", AutoReadEntity},
             {"obj", AutoReadEntity},
             {"ptx", AutoReadEntity},
-            {"pt",	AutoReadEntity},
+            {"pt",  AutoReadEntity},
             {"poly",AutoReadEntity},
             {"shp", AutoReadEntity},
             {"sbf", AutoReadEntity},
@@ -357,7 +357,10 @@ namespace io {
 
 	}
 
-	bool AutoReadMesh(const std::string& filename, ccMesh& mesh, bool print_progress)
+    bool AutoReadMesh(const std::string& filename,
+                      ccMesh& mesh,
+                      bool enable_post_processing /*= false*/,
+                      bool print_progress)
 	{
 		ReadPointCloudOption p;
 		p.print_progress = print_progress;

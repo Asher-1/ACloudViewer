@@ -14,8 +14,8 @@ class ExternalVisualizer:
 
             import cloudViewer as cv3d
             import numpy as np
-            ev = cv3d.visualizer.ExternalVisualizer()
-            pcd = cv3d.geometry.PointCloud(cv3d.utility.Vector3dVector(np.random.rand(100,3)))
+            ev = cv3d.visualization.ExternalVisualizer()
+            pcd = cv3d.geometry.ccPointCloud(cv3d.utility.Vector3dVector(np.random.rand(100,3)))
             ev.set(pcd)
 
     Args:
@@ -29,7 +29,7 @@ class ExternalVisualizer:
         self.timeout = timeout
 
     def set(self, obj=None, path='', time=0, layer='', connection=None):
-        """Send CloudViewer objects for visualization to the visualizer.
+        """Send Open3D objects for visualization to the visualizer.
 
         Example:
             To quickly send a single object just write::
@@ -64,7 +64,7 @@ class ExternalVisualizer:
         """
         if connection is None:
             connection = cv3d.io.rpc.Connection(address=self.address,
-                                               timeout=self.timeout)
+                                                timeout=self.timeout)
         result = []
         if isinstance(obj, (tuple, list)):
             # item can be just an object or a tuple with path, time, layer, e.g.,
@@ -79,26 +79,26 @@ class ExternalVisualizer:
                         result.append(self.set(*item, connection=connection))
                 else:
                     result.append(self.set(item, connection=connection))
-        elif isinstance(obj, cv3d.geometry.PointCloud):
+        elif isinstance(obj, cv3d.geometry.ccPointCloud):
             status = cv3d.io.rpc.set_point_cloud(obj,
-                                                path=path,
-                                                time=time,
-                                                layer=layer,
-                                                connection=connection)
+                                                 path=path,
+                                                 time=time,
+                                                 layer=layer,
+                                                 connection=connection)
             result.append(status)
-        elif isinstance(obj, cv3d.geometry.TriangleMesh):
+        elif isinstance(obj, cv3d.geometry.ccMesh):
             status = cv3d.io.rpc.set_triangle_mesh(obj,
-                                                  path=path,
-                                                  time=time,
-                                                  layer=layer,
-                                                  connection=connection)
+                                                   path=path,
+                                                   time=time,
+                                                   layer=layer,
+                                                   connection=connection)
             result.append(status)
         elif isinstance(obj, cv3d.camera.PinholeCameraParameters):
             status = cv3d.io.rpc.set_legacy_camera(obj,
-                                                  path=path,
-                                                  time=time,
-                                                  layer=layer,
-                                                  connection=connection)
+                                                   path=path,
+                                                   time=time,
+                                                   layer=layer,
+                                                   connection=connection)
             result.append(status)
         else:
             raise Exception("Unsupported object type '{}'".format(str(
@@ -109,22 +109,79 @@ class ExternalVisualizer:
     def set_time(self, time):
         """Sets the time in the external visualizer
 
+        Note that this function is a placeholder for future functionality and
+        not yet supported by the receiving visualizer.
+
         Args:
             time: The time value
         """
         connection = cv3d.io.rpc.Connection(address=self.address,
-                                           timeout=self.timeout)
+                                            timeout=self.timeout)
         return cv3d.io.rpc.set_time(time, connection)
 
     def set_active_camera(self, path):
-        """Sets the time in the external visualizer
+        """Sets the active camera in the external visualizer
+
+        Note that this function is a placeholder for future functionality and
+        not yet supported by the receiving visualizer.
 
         Args:
             path: A path describing a location in the scene tree.
         """
         connection = cv3d.io.rpc.Connection(address=self.address,
-                                           timeout=self.timeout)
+                                            timeout=self.timeout)
         return cv3d.io.rpc.set_active_camera(path, connection)
+
+    def draw(self, geometry=None, *args, **kwargs):
+        """This function has the same functionality as 'set'.
+
+        This function is compatible with the standalone 'draw' function and can
+        be used to redirect calls to the external visualizer. Note that only
+        the geometry argument is supported, all other arguments will be 
+        ignored.
+
+        Example:
+            Here we use draw with the default external visualizer::
+                import cloudViewer as cv3d
+
+                torus = cv3d.geometry.ccMesh.create_torus()
+                sphere = cv3d.geometry.ccMesh.create_sphere()
+
+                draw = cv3d.visualization.EV.draw
+                draw([ {'geometry': sphere, 'name': 'sphere'},
+                       {'geometry': torus, 'name': 'torus', 'time': 1} ])
+
+                # now use the standard draw function as comparison
+                draw = cv3d.visualization.draw
+                draw([ {'geometry': sphere, 'name': 'sphere'},
+                       {'geometry': torus, 'name': 'torus', 'time': 1} ])
+
+        Args:
+            geometry: The geometry to draw. This can be a geometry object, a
+            list of geometries. To pass additional information along with the
+            geometry we can use a dictionary. Supported keys for the dictionary
+            are 'geometry', 'name', and 'time'.
+        """
+        if args or kwargs:
+            import warnings
+            warnings.warn(
+                "ExternalVisualizer.draw() does only support the 'geometry' argument",
+                Warning)
+
+        def add(g):
+            if isinstance(g, dict):
+                obj = g['geometry']
+                path = g.get('name', '')
+                time = g.get('time', 0)
+                self.set(obj=obj, path=path, time=time)
+            else:
+                self.set(g)
+
+        if isinstance(geometry, (tuple, list)):
+            for g in geometry:
+                add(g)
+        elif geometry is not None:
+            add(geometry)
 
 
 # convenience default external visualizer

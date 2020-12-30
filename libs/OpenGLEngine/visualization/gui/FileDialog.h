@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -30,6 +30,8 @@
 
 #include "visualization/gui/Dialog.h"
 
+#define GUI_USE_NATIVE_FILE_DIALOG 1
+
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
@@ -43,7 +45,7 @@ public:
     enum class Mode { OPEN, SAVE };
 
     FileDialog(Mode type, const char *title, const Theme &theme);
-    virtual ~FileDialog();
+    virtual ~FileDialog() override;
 
     /// May either be a directory or a file. If path is a file, it will be
     /// selected if it exists. Defaults to current working directory if

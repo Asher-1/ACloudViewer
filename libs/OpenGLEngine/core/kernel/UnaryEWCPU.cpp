@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -136,7 +136,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
 
     auto assert_dtype_is_float = [](Dtype dtype) -> void {
         if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-            utility::LogError(
+            CVLib::utility::LogError(
                     "Only supports Float32 and Float64, but {} is used.",
                     dtype.ToString());
         }
@@ -155,7 +155,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 CPULauncher::LaunchUnaryEWKernel(
                         indexer, CPULogicalNotElementKernel<scalar_t, bool>);
             } else {
-                utility::LogError(
+                CVLib::utility::LogError(
                         "Boolean op's output type must be boolean or the "
                         "same type as the input.");
             }
@@ -193,7 +193,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                             indexer, CPUAbsElementKernel<scalar_t>);
                     break;
                 default:
-                    utility::LogError("Unimplemented op_code for UnaryEWCPU");
+                    CVLib::utility::LogError("Unimplemented op_code for UnaryEWCPU");
                     break;
             }
         });

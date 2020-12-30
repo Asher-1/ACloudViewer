@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,10 +34,10 @@ namespace core {
 /// Templated factory.
 template <typename Hash, typename KeyEq>
 std::shared_ptr<CPUHashmap<Hash, KeyEq>> CreateTemplateCPUHashmap(
-        size_t init_buckets,
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
+        int64_t init_buckets,
+        int64_t init_capacity,
+        int64_t dsize_key,
+        int64_t dsize_value,
         const Device& device) {
     return std::make_shared<CPUHashmap<Hash, KeyEq>>(
             init_buckets, init_capacity, dsize_key, dsize_value, device);

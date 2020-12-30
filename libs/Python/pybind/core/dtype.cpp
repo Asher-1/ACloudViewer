@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -36,7 +36,7 @@ namespace cloudViewer {
 namespace core {
 
 void pybind_core_dtype(py::module &m) {
-    py::enum_<Dtype::DtypeCode>(m, "DtypeCode", "CloudViewer data type codes.")
+    py::enum_<Dtype::DtypeCode>(m, "DtypeCode", "Open3D data type codes.")
             .value("Undefined", Dtype::DtypeCode::Undefined)
             .value("Bool", Dtype::DtypeCode::Bool)
             .value("Int", Dtype::DtypeCode::Int)
@@ -46,7 +46,8 @@ void pybind_core_dtype(py::module &m) {
             .export_values();
 
     py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype",
-                                                    "CloudViewer data types.");
+                                                    "Open3D data types.");
+    dtype.def(py::init<Dtype::DtypeCode, int64_t, const std::string &>());
     dtype.def_readonly_static("Undefined", &Dtype::Undefined);
     dtype.def_readonly_static("Float32", &Dtype::Float32);
     dtype.def_readonly_static("Float64", &Dtype::Float64);

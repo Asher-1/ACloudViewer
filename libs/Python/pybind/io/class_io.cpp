@@ -33,15 +33,16 @@
 #include <io/PoseGraphIO.h>
 #include <IJsonConvertibleIO.h>
 #include <FeatureIO.h>
-#include <FileFormatIO.h>
+#include "io/FileFormatIO.h"
 #include <ImageIO.h>
+#include "io/ModelIO.h"
 #include <AutoIO.h>
 #include <LineSetIO.h>
 #include <FeatureIO.h>
-#include <PointCloudIO.h>
-#include <TriangleMeshIO.h>
+#include "io/PointCloudIO.h"
+#include "io/TriangleMeshIO.h"
 #include <VoxelGridIO.h>
-
+#include "visualization/rendering/Model.h"
 #include "pybind/docstring.h"
 #include "pybind/io/io.h"
 
@@ -266,7 +267,22 @@ void pybind_class_io(py::module &m_io) {
 		"write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
 		"write_triangle_uvs"_a = true, "print_progress"_a = false);
 	docstring::FunctionDocInject(m_io, "write_triangle_mesh",
-		map_shared_argument_docstrings);
+                                 map_shared_argument_docstrings);
+
+    // cloudViewer::visualization::rendering::TriangleMeshModel (Model.h)
+    m_io.def(
+            "read_triangle_model",
+            [](const std::string &filename, bool print_progress) {
+                py::gil_scoped_release release;
+                visualization::rendering::TriangleMeshModel model;
+                ReadTriangleModel(filename, model, print_progress);
+                return model;
+            },
+            "Function to read visualization.rendering.TriangleMeshModel from "
+            "file",
+            "filename"_a, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "read_triangle_model",
+                                 map_shared_argument_docstrings);
 
 	// cloudViewer::geometry::VoxelGrid
 	m_io.def("read_voxel_grid",

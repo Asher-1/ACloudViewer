@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -63,11 +63,16 @@ class FilamentResourceManager {
 public:
     static const MaterialHandle kDefaultLit;
     static const MaterialHandle kDefaultLitWithTransparency;
+    static const MaterialHandle kDefaultLitSSR;
     static const MaterialHandle kDefaultUnlit;
+    static const MaterialHandle kDefaultUnlitWithTransparency;
     static const MaterialHandle kDefaultNormalShader;
     static const MaterialHandle kDefaultDepthShader;
     static const MaterialHandle kDefaultUnlitGradientShader;
     static const MaterialHandle kDefaultUnlitSolidColorShader;
+    static const MaterialHandle kDefaultUnlitBackgroundShader;
+    static const MaterialHandle kDefaultLineShader;
+    static const MaterialHandle kDefaultUnlitPolygonOffsetShader;
     static const MaterialInstanceHandle kDepthMaterial;
     static const MaterialInstanceHandle kNormalsMaterial;
     static const MaterialInstanceHandle kColorMapMaterial;
@@ -97,7 +102,7 @@ public:
     SkyboxHandle CreateColorSkybox(const Eigen::Vector3f& color);
     SkyboxHandle CreateSkybox(const ResourceLoadRequest& request);
 
-    // Since rendering uses not all CloudViewer geometry/filament features, we don't
+    // Since rendering uses not all Open3D geometry/filament features, we don't
     // know which arguments pass to CreateVB(...). Thus creation of VB is
     // managed by FilamentGeometryBuffersBuilder class
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertex_buffer);

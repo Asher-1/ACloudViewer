@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,19 +32,17 @@
 
 #include "core/hashmap/DeviceHashmap.h"
 
-#include <unordered_map>
-
-#include <Helper.h>
 #include <Console.h>
+#include <Helper.h>
 
 namespace cloudViewer {
 namespace core {
 
 std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
-        size_t init_buckets,
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
+        int64_t init_buckets,
+        int64_t init_capacity,
+        int64_t dsize_key,
+        int64_t dsize_value,
         const Device& device) {
     if (device.GetType() == Device::DeviceType::CPU) {
         return CreateDefaultCPUHashmap(init_buckets, init_capacity, dsize_key,
@@ -57,7 +55,7 @@ std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
     }
 #endif
     else {
-        utility::LogError("[CreateDefaultDeviceHashmap]: Unimplemented device");
+        CVLib::utility::LogError("[CreateDefaultDeviceHashmap]: Unimplemented device");
     }
 }
 
