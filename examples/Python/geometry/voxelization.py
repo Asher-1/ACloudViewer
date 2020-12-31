@@ -8,7 +8,7 @@
    },
    "outputs": [],
    "source": [
-    "import open3d as o3d\n",
+    "import cloudViewer as o3d\n",
     "import numpy as np\n",
     "import matplotlib.pyplot as plt\n",
     "import copy\n",

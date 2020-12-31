@@ -27,7 +27,7 @@
 #include <ecvHObject.h>
 #include <t/geometry/Geometry.h>
 #include <visualization/gui/Window.h>
-#include <visualization/rendering/Open3DScene.h>
+#include <visualization/rendering/CloudViewerScene.h>
 #include <visualization/visualizer/O3DVisualizer.h>
 #include <pybind/visualization/visualization.h>
 
@@ -256,7 +256,7 @@ void pybind_o3dvisualizer(py::module& m) {
                     &O3DVisualizer::SetLineWidth,
                     "Gets/sets width of lines (in units of pixels)")
             .def_property_readonly("scene", &O3DVisualizer::GetScene,
-                                   "Returns the rendering.Open3DScene object "
+                                   "Returns the rendering.CloudViewerScene object "
                                    "for low-level manipulation")
             .def_property(
                     "current_time",

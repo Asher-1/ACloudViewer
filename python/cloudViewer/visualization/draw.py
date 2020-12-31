@@ -4,7 +4,7 @@ from . import O3DVisualizer
 
 def draw(
         geometry=None,
-        title="Open3D",
+        title="CloudViewer",
         width=1024,
         height=768,
         background_color=(1.0, 1.0, 1.0, 1.0),

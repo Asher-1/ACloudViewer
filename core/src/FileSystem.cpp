@@ -99,8 +99,7 @@ std::string GetRegularizedDirectoryName(const std::string &directory) {
 
 std::string GetWorkingDirectory() {
     char buff[PATH_MAX + 1];
-    char* info = getcwd(buff, PATH_MAX + 1);
-    CVLib::utility::LogInfo(info);
+    getcwd(buff, PATH_MAX + 1);
     return std::string(buff);
 }
 

@@ -32,7 +32,7 @@ class SpheresApp:
         self.window = gui.Application.instance.create_window(
             "Add Spheres Example", 1024, 768)
         self.scene = gui.SceneWidget()
-        self.scene.scene = rendering.Open3DScene(self.window.renderer)
+        self.scene.scene = rendering.CloudViewerScene(self.window.renderer)
         self.scene.scene.set_background_color([1, 1, 1, 1])
         self.scene.scene.scene.set_directional_light(
             [-1, -1, -1],  # direction

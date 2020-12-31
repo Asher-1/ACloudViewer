@@ -46,7 +46,7 @@ class Geometry;
 namespace visualization {
 
 namespace rendering {
-class Open3DScene;
+class CloudViewerScene;
 }  // namespace rendering
 
 namespace visualizer {
@@ -165,7 +165,7 @@ public:
     void ExportCurrentImage(const std::string& path);
 
     UIState GetUIState() const;
-    rendering::Open3DScene* GetScene() const;
+    rendering::CloudViewerScene* GetScene() const;
 
     /// Starts the RPC interface. See io/rpc/ReceiverBase for the parameters.
     void StartRPCInterface(const std::string& address, int timeout);

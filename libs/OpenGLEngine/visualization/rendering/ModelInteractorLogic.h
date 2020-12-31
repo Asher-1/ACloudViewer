@@ -35,13 +35,13 @@ namespace cloudViewer {
 namespace visualization {
 namespace rendering {
 
-class Open3DScene;
+class CloudViewerScene;
 
 class ModelInteractorLogic : public RotationInteractorLogic {
     using Super = RotationInteractorLogic;
 
 public:
-    ModelInteractorLogic(Open3DScene* scene,
+    ModelInteractorLogic(CloudViewerScene* scene,
                          Camera* camera,
                          double min_far_plane);
     virtual ~ModelInteractorLogic();
@@ -61,7 +61,7 @@ public:
     void EndMouseDrag() override;
 
 private:
-    Open3DScene* scene_;
+    CloudViewerScene* scene_;
     bool is_axes_visible_;
 
     ccBBox bounds_at_mouse_down_;

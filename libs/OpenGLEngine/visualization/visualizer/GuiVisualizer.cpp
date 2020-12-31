@@ -56,7 +56,7 @@
 #include "visualization/rendering/Camera.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/Model.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/RenderToBuffer.h"
 #include "visualization/rendering/RendererHandle.h"
 #include "visualization/rendering/RendererStructs.h"
@@ -82,7 +82,7 @@ std::shared_ptr<gui::Dialog> CreateAboutDialog(gui::Window *window) {
             (std::string("Open3D ") + CLOUDVIEWER_VERSION).c_str());
     auto text = std::make_shared<gui::Label>(
             "The MIT License (MIT)\n"
-            "Copyright (c) 2018 - 2020 www.open3d.org\n\n"
+            "Copyright (c) 2018 - 2020 www.erow.cn\n\n"
 
             "Permission is hereby granted, free of charge, to any person "
             "obtaining "
@@ -241,9 +241,9 @@ std::shared_ptr<gui::Dialog> CreateContactDialog(gui::Window *window) {
             "Mailing list:\n"
             "Discord channel:");
     auto right_col = std::make_shared<gui::Label>(
-            "http://www.open3d.org\n"
+            "http://www.erow.cn\n"
             "http://github.org/intel-isl/Open3D\n"
-            "http://www.open3d.org/index.php/subscribe/\n"
+            "http://www.erow.cn/index.php/subscribe/\n"
             "https://discord.gg/D35BGvn");
     auto ok = std::make_shared<gui::Button>("OK");
     ok->SetOnClicked([window]() { window->CloseDialog(); });
@@ -623,7 +623,7 @@ void GuiVisualizer::Init() {
     // Create scene
     impl_->scene_wgt_ = std::make_shared<gui::SceneWidget>();
     impl_->scene_wgt_->SetScene(
-            std::make_shared<rendering::Open3DScene>(GetRenderer()));
+            std::make_shared<rendering::CloudViewerScene>(GetRenderer()));
     impl_->scene_wgt_->SetOnSunDirectionChanged(
             [this](const Eigen::Vector3f &new_dir) {
                 auto lighting = impl_->settings_.model_.GetLighting();  // copy

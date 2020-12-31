@@ -44,7 +44,7 @@ namespace rendering {
 class Camera;
 struct Material;
 class MatrixInteractorLogic;
-class Open3DScene;
+class CloudViewerScene;
 }  // namespace rendering
 
 namespace gui {
@@ -54,7 +54,7 @@ class SelectionIndexLookup;
 // This is an internal class used by SceneWidget
 class PickPointsInteractor : public SceneWidget::MouseInteractor {
 public:
-    PickPointsInteractor(rendering::Open3DScene* scene,
+    PickPointsInteractor(rendering::CloudViewerScene* scene,
                          rendering::Camera* camera);
     virtual ~PickPointsInteractor();
 
@@ -88,7 +88,7 @@ protected:
     rendering::Material MakeMaterial();
 
 private:
-    rendering::Open3DScene* scene_;
+    rendering::CloudViewerScene* scene_;
     rendering::Camera* camera_;
 
     std::function<void(
@@ -98,7 +98,7 @@ private:
             on_picked_;
     int point_size_ = 3;
     rendering::MatrixInteractorLogic matrix_logic_;
-    std::shared_ptr<rendering::Open3DScene> picking_scene_;
+    std::shared_ptr<rendering::CloudViewerScene> picking_scene_;
     std::vector<Eigen::Vector3d> points_;
     // This is a pointer rather than unique_ptr so that we don't have
     // to define this (internal) class in the header file.

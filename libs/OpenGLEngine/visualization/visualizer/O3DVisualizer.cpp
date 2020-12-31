@@ -59,7 +59,7 @@
 #include "visualization/gui/Theme.h"
 #include "visualization/gui/TreeView.h"
 #include "visualization/gui/VectorEdit.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/visualizer/GuiWidgets.h"
 #include "visualization/visualizer/O3DVisualizerSelections.h"
@@ -280,16 +280,16 @@ private:
 
 struct LightingProfile {
     std::string name;
-    Open3DScene::LightingProfile profile;
+    CloudViewerScene::LightingProfile profile;
 };
 
 static const char *kCustomName = "Custom";
 static const std::vector<LightingProfile> gLightingProfiles = {
-        {"Hard shadows", Open3DScene::LightingProfile::HARD_SHADOWS},
-        {"Dark shadows", Open3DScene::LightingProfile::DARK_SHADOWS},
-        {"Medium shadows", Open3DScene::LightingProfile::MED_SHADOWS},
-        {"Soft shadows", Open3DScene::LightingProfile::SOFT_SHADOWS},
-        {"No shadows", Open3DScene::LightingProfile::NO_SHADOWS}};
+        {"Hard shadows", CloudViewerScene::LightingProfile::HARD_SHADOWS},
+        {"Dark shadows", CloudViewerScene::LightingProfile::DARK_SHADOWS},
+        {"Medium shadows", CloudViewerScene::LightingProfile::MED_SHADOWS},
+        {"Soft shadows", CloudViewerScene::LightingProfile::SOFT_SHADOWS},
+        {"No shadows", CloudViewerScene::LightingProfile::NO_SHADOWS}};
 
 }  // namespace
 
@@ -380,7 +380,7 @@ struct O3DVisualizer::Impl {
         window_ = w;
         scene_ = new SceneWidget();
         selections_ = std::make_shared<O3DVisualizerSelections>(*scene_);
-        scene_->SetScene(std::make_shared<Open3DScene>(w->GetRenderer()));
+        scene_->SetScene(std::make_shared<CloudViewerScene>(w->GetRenderer()));
         scene_->EnableSceneCaching(true);  // smoother UI with large geometry
         scene_->SetOnPointsPicked(
                 [this](const std::map<
@@ -1121,9 +1121,9 @@ struct O3DVisualizer::Impl {
         auto scene = scene_->GetScene();
         scene->SetLighting(profile.profile, sun_dir);
         ui_state_.use_ibl =
-                (profile.profile != Open3DScene::LightingProfile::HARD_SHADOWS);
+                (profile.profile != CloudViewerScene::LightingProfile::HARD_SHADOWS);
         ui_state_.use_sun =
-                (profile.profile != Open3DScene::LightingProfile::NO_SHADOWS);
+                (profile.profile != CloudViewerScene::LightingProfile::NO_SHADOWS);
         ui_state_.ibl_intensity =
                 int(scene->GetScene()->GetIndirectLightIntensity());
         ui_state_.sun_intensity =
@@ -1673,7 +1673,7 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
 
 O3DVisualizer::~O3DVisualizer() {}
 
-Open3DScene *O3DVisualizer::GetScene() const {
+CloudViewerScene *O3DVisualizer::GetScene() const {
     return impl_->scene_->GetScene().get();
 }
 

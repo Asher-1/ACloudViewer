@@ -30,13 +30,15 @@
 
 #include <Image.h>
 #include <ecvMesh.h>
+#include <LineSet.h>
+#include <ecvOrientedBBox.h>
 #include <ecvPointCloud.h>
 #include "t/geometry/PointCloud.h"
 #include "t/geometry/TriangleMesh.h"
 #include <Console.h>
 #include "visualization/gui/Events.h"
 #include "visualization/rendering/Material.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
 
@@ -92,7 +94,7 @@ private:
         std::string name;
         size_t start_index;
 
-        Obj(const std::string &n, size_t start) : name(n), start_index(start){};
+        Obj(const std::string &n, size_t start) : name(n), start_index(start){}
     };
 
 public:
@@ -129,12 +131,12 @@ private:
 };
 
 // ----------------------------------------------------------------------------
-PickPointsInteractor::PickPointsInteractor(rendering::Open3DScene *scene,
+PickPointsInteractor::PickPointsInteractor(rendering::CloudViewerScene *scene,
                                            rendering::Camera *camera) {
     scene_ = scene;
     camera_ = camera;
     picking_scene_ =
-            std::make_shared<rendering::Open3DScene>(scene->GetRenderer());
+            std::make_shared<rendering::CloudViewerScene>(scene->GetRenderer());
 
     picking_scene_->SetDownsampleThreshold(SIZE_MAX);  // don't downsample!
     picking_scene_->SetBackground(kBackgroundColor);
@@ -173,11 +175,17 @@ void PickPointsInteractor::SetPickableGeometry(
         auto mesh = dynamic_cast<const ccMesh *>(pg.geometry);
         auto tmesh =
                 dynamic_cast<const t::geometry::TriangleMesh *>(pg.tgeometry);
+
+        auto lines = dynamic_cast<const cloudViewer::geometry::LineSet *>(pg.geometry);
+
+        auto abb = dynamic_cast<const ccBBox *>(pg.geometry);
+        auto obb = dynamic_cast<const ecvOrientedBBox *>(pg.geometry);
+
         if (cloud) {
-            const std::vector<Eigen::Vector3d>& temp = cloud->getEigenPoints();
+            const std::vector<Eigen::Vector3d> temp = cloud->getEigenPoints();
             points_.insert(points_.end(), temp.begin(), temp.end());
         } else if (mesh) {
-            const std::vector<Eigen::Vector3d>& temp = mesh->getEigenVertices();
+            const std::vector<Eigen::Vector3d> temp = mesh->getEigenVertices();
             points_.insert(points_.end(), temp.begin(), temp.end());
         } else if (tcloud || tmesh) {
             const auto &tpoints =
@@ -189,6 +197,14 @@ void PickPointsInteractor::SetPickableGeometry(
                 points_.emplace_back(double(pts[i]), double(pts[i + 1]),
                                      double(pts[i + 2]));
             }
+        } else if (lines) {
+            points_.insert(points_.end(), lines->points_.begin(), lines->points_.end());
+        } else if (abb) {
+            const std::vector<Eigen::Vector3d> temp = abb->getBoxPoints();
+            points_.insert(points_.end(), temp.begin(), temp.end());
+        } else if (obb) {
+            const std::vector<Eigen::Vector3d> temp = obb->getBoxPoints();
+            points_.insert(points_.end(), temp.begin(), temp.end());
         }
 
         if (mesh || tmesh) {
@@ -208,7 +224,7 @@ void PickPointsInteractor::SetPickableGeometry(
             } else {
                 utility::LogWarning(
                         "PickPointsInteractor::SetPickableGeometry(): "
-                        "Open3DScene cannot add a t::geometry::TriangleMesh, "
+                        "CloudViewerScene cannot add a t::geometry::TriangleMesh, "
                         "so points on the back side of the mesh '{}', will be "
                         "pickable",
                         pg.name);

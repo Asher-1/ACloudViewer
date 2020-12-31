@@ -52,7 +52,7 @@
 #include "visualization/gui/VectorEdit.h"
 #include "visualization/gui/Widget.h"
 #include "visualization/gui/Window.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/filament/FilamentEngine.h"
@@ -149,11 +149,11 @@ void install_cleanup_atexit() {
 void InitializeForPython(std::string resource_path /*= ""*/) {
     if (resource_path.empty()) {
         // We need to find the resources directory. Fortunately,
-        // Python knows where the module lives (open3d.__file__
+        // Python knows where the module lives (cloudViewer.__file__
         // is the path to
         // __init__.py), so we can use that to find the
         // resources included in the wheel.
-        py::object o3d = py::module::import("open3d");
+        py::object o3d = py::module::import("cloudViewer");
         auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
         auto module_path =
                 utility::filesystem::GetFileParentDirectory(o3d_init_path);
@@ -164,7 +164,7 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
 }
 
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height) {
+        rendering::CloudViewerScene *scene, int width, int height) {
     PythonUnlocker unlocker;
     return Application::GetInstance().RenderToImage(
             unlocker, scene->GetView(), scene->GetScene(), width, height);
@@ -295,13 +295,13 @@ void pybind_gui_classes(py::module &m) {
                     "or quit() has been called.")
             .def(
                     "render_to_image",
-                    [](Application &instance, rendering::Open3DScene *scene,
+                    [](Application &instance, rendering::CloudViewerScene *scene,
                        int width, int height) {
                         return RenderToImageWithoutWindow(scene, width, height);
                     },
                     "Renders a scene to an image and returns the image. If you "
                     "are rendering without a visible window you should use "
-                    "open3d.visualization.rendering.RenderToImage instead")
+                    "cloudViewer.visualization.rendering.RenderToImage instead")
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
@@ -490,7 +490,7 @@ void pybind_gui_classes(py::module &m) {
                  "r"_a, "g"_a, "b"_a, "a"_a = 1.0);
 
     // ---- Theme ----
-    // Note: no constructor because themes are created by Open3D
+    // Note: no constructor because themes are created by CloudViewer
     py::class_<Theme> theme(m, "Theme",
                             "Theme parameters such as colors used for drawing "
                             "widgets (read-only)");
@@ -640,7 +640,7 @@ void pybind_gui_classes(py::module &m) {
                             b->SetPaddingEm(em.cast<float>(), vert);
                         } catch (const py::cast_error &) {
                             py::print(
-                                    "open3d.visualization.gui.Button."
+                                    "cloudViewer.visualization.gui.Button."
                                     "horizontal_padding_em can only be "
                                     "assigned a numeric type");
                         }
@@ -654,7 +654,7 @@ void pybind_gui_classes(py::module &m) {
                             b->SetPaddingEm(horiz, em.cast<float>());
                         } catch (const py::cast_error &) {
                             py::print(
-                                    "open3d.visualization.gui.Button."
+                                    "cloudViewer.visualization.gui.Button."
                                     "vertical_padding_em can only be "
                                     "assigned a numeric type");
                         }
@@ -971,7 +971,7 @@ void pybind_gui_classes(py::module &m) {
               "property")
             .def_property(
                     "scene", &PySceneWidget::GetScene, &SceneWidget::SetScene,
-                    "The rendering.Open3DScene that the SceneWidget renders")
+                    "The rendering.CloudViewerScene that the SceneWidget renders")
             .def("enable_scene_caching", &PySceneWidget::EnableSceneCaching,
                  "Enable/Disable caching of scene content when the view or "
                  "model is not changing. Scene caching can help improve UI "

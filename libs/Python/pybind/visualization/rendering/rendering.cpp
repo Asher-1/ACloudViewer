@@ -29,7 +29,7 @@
 #include "visualization/rendering/Gradient.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/Model.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
@@ -61,7 +61,7 @@ public:
         renderer_ = new FilamentRenderer(EngineInstance::GetInstance(), width,
                                          height,
                                          EngineInstance::GetResourceManager());
-        scene_ = new Open3DScene(*renderer_);
+        scene_ = new CloudViewerScene(*renderer_);
     }
 
     ~PyOffscreenRenderer() {
@@ -69,7 +69,7 @@ public:
         delete renderer_;
     }
 
-    Open3DScene *GetScene() { return scene_; }
+    CloudViewerScene *GetScene() { return scene_; }
 
     std::shared_ptr<geometry::Image> RenderToImage() {
         return gui::RenderToImageWithoutWindow(scene_, width_, height_);
@@ -81,7 +81,7 @@ private:
     FilamentRenderer *renderer_;
     // The offscreen renderer owns the scene so that it can clean it up
     // in the right order (otherwise we will crash).
-    Open3DScene *scene_;
+    CloudViewerScene *scene_;
 };
 
 void pybind_rendering_classes(py::module &m) {
@@ -116,7 +116,7 @@ void pybind_rendering_classes(py::module &m) {
                  "headless to True")
             .def_property_readonly(
                     "scene", &PyOffscreenRenderer::GetScene,
-                    "Returns the Open3DScene for this renderer. This scene is "
+                    "Returns the CloudViewerScene for this renderer. This scene is "
                     "destroyed when the renderer is destroyed and should not "
                     "be accessed after that point.")
             .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
@@ -385,94 +385,94 @@ void pybind_rendering_classes(py::module &m) {
     scene.attr("UPDATE_COLORS_FLAG") = py::int_(Scene::kUpdateColorsFlag);
     scene.attr("UPDATE_UV0_FLAG") = py::int_(Scene::kUpdateUv0Flag);
 
-    // ---- Open3DScene ----
-    py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
-            m, "Open3DScene", "High-level scene for rending");
-    py::enum_<Open3DScene::LightingProfile> lighting(
+    // ---- CloudViewerScene ----
+    py::class_<CloudViewerScene, UnownedPointer<CloudViewerScene>> o3dscene(
+            m, "CloudViewerScene", "High-level scene for rending");
+    py::enum_<CloudViewerScene::LightingProfile> lighting(
             o3dscene, "LightingProfile", py::arithmetic(),
             "Enum for conveniently setting lighting");
-    lighting.value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
-            .value("DARK_SHADOWS", Open3DScene::LightingProfile::DARK_SHADOWS)
-            .value("MED_SHADOWS", Open3DScene::LightingProfile::MED_SHADOWS)
-            .value("SOFT_SHADOWS", Open3DScene::LightingProfile::SOFT_SHADOWS)
-            .value("NO_SHADOWS", Open3DScene::LightingProfile::NO_SHADOWS)
+    lighting.value("HARD_SHADOWS", CloudViewerScene::LightingProfile::HARD_SHADOWS)
+            .value("DARK_SHADOWS", CloudViewerScene::LightingProfile::DARK_SHADOWS)
+            .value("MED_SHADOWS", CloudViewerScene::LightingProfile::MED_SHADOWS)
+            .value("SOFT_SHADOWS", CloudViewerScene::LightingProfile::SOFT_SHADOWS)
+            .value("NO_SHADOWS", CloudViewerScene::LightingProfile::NO_SHADOWS)
             .export_values();
 
     o3dscene.def(py::init<Renderer &>())
-            .def("show_skybox", &Open3DScene::ShowSkybox,
+            .def("show_skybox", &CloudViewerScene::ShowSkybox,
                  "Toggles display of the skybox")
-            .def("show_axes", &Open3DScene::ShowAxes,
+            .def("show_axes", &CloudViewerScene::ShowAxes,
                  "Toggles display of xyz axes")
-            .def("set_lighting", &Open3DScene::SetLighting,
+            .def("set_lighting", &CloudViewerScene::SetLighting,
                  "Sets a simple lighting model. set_lighting(profile, "
                  "sun_dir). The default value is "
-                 "set_lighting(Open3DScene.LightingProfile.MED_SHADOWS, "
+                 "set_lighting(CloudViewerScene.LightingProfile.MED_SHADOWS, "
                  "(0.577, -0.577, -0.577))")
             .def(
                     "set_background_color",
-                    [](Open3DScene &scene, const Eigen::Vector4f &color) {
+                    [](CloudViewerScene &scene, const Eigen::Vector4f &color) {
                         utility::LogWarning(
-                                "visualization.rendering.Open3DScene.set_"
+                                "visualization.rendering.CloudViewerScene.set_"
                                 "background_color()\nhas been deprecated. "
                                 "Please use set_background() instead.");
                         scene.SetBackground(color, nullptr);
                     },
                     "This function has been deprecated. Please use "
                     "set_background() instead.")
-            .def("set_background", &Open3DScene::SetBackground, "color"_a,
+            .def("set_background", &CloudViewerScene::SetBackground, "color"_a,
                  "image"_a = nullptr,
                  "set_background([r, g, b, a], image=None). Sets the "
                  "background color and (optionally) image of the scene. ")
-            .def("clear_geometry", &Open3DScene::ClearGeometry)
+            .def("clear_geometry", &CloudViewerScene::ClearGeometry)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
                                    const ccHObject *,
                                    const Material &, bool>(
-                         &Open3DScene::AddGeometry),
+                         &CloudViewerScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
                                    const t::geometry::PointCloud *,
                                    const Material &, bool>(
-                         &Open3DScene::AddGeometry),
+                         &CloudViewerScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
-            .def("add_model", &Open3DScene::AddModel,
+            .def("add_model", &CloudViewerScene::AddModel,
                  "Adds TriangleMeshModel to the scene.")
-            .def("has_geometry", &Open3DScene::HasGeometry,
+            .def("has_geometry", &CloudViewerScene::HasGeometry,
                  "has_geometry(name): returns True if the geometry has been "
                  "added to the scene, False otherwise")
-            .def("remove_geometry", &Open3DScene::RemoveGeometry,
+            .def("remove_geometry", &CloudViewerScene::RemoveGeometry,
                  "Removes the geometry with the given name")
             .def("modify_geometry_material",
-                 &Open3DScene::ModifyGeometryMaterial,
+                 &CloudViewerScene::ModifyGeometryMaterial,
                  "modify_geometry_material(name, material). Modifies the "
                  "material of the specified geometry")
-            .def("show_geometry", &Open3DScene::ShowGeometry,
+            .def("show_geometry", &CloudViewerScene::ShowGeometry,
                  "Shows or hides the geometry with the given name")
-            .def("update_material", &Open3DScene::UpdateMaterial,
+            .def("update_material", &CloudViewerScene::UpdateMaterial,
                  "Applies the passed material to all the geometries")
             .def(
                     "set_view_size",
-                    [](Open3DScene *scene, int width, int height) {
+                    [](CloudViewerScene *scene, int width, int height) {
                         scene->GetView()->SetViewport(0, 0, width, height);
                     },
                     "Sets the view size. This should not be used except for "
                     "rendering to an image")
-            .def_property_readonly("scene", &Open3DScene::GetScene,
+            .def_property_readonly("scene", &CloudViewerScene::GetScene,
                                    "The low-level rendering scene object")
-            .def_property_readonly("camera", &Open3DScene::GetCamera,
+            .def_property_readonly("camera", &CloudViewerScene::GetCamera,
                                    "The camera object")
-            .def_property_readonly("bounding_box", &Open3DScene::GetBoundingBox,
+            .def_property_readonly("bounding_box", &CloudViewerScene::GetBoundingBox,
                                    "The bounding box of all the items in the "
                                    "scene, visible and invisible")
             .def_property_readonly(
-                    "get_view", &Open3DScene::GetView,
+                    "get_view", &CloudViewerScene::GetView,
                     "The low level view associated with the scene")
             .def_property("downsample_threshold",
-                          &Open3DScene::GetDownsampleThreshold,
-                          &Open3DScene::SetDownsampleThreshold,
+                          &CloudViewerScene::GetDownsampleThreshold,
+                          &CloudViewerScene::SetDownsampleThreshold,
                           "Minimum number of points before downsampled point "
                           "clouds are created and used when rendering speed "
                           "is important");

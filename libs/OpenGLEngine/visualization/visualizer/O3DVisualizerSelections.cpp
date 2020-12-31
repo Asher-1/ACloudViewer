@@ -33,7 +33,7 @@
 
 #include "visualization/gui/SceneWidget.h"
 #include "visualization/rendering/Material.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Scene.h"
 
 namespace cloudViewer {
@@ -147,6 +147,7 @@ void O3DVisualizerSelections::UpdateSelectionGeometry() {
 
     if (!points.empty()) {
         ccMesh spheres;
+        spheres.createInternalCloud();
         for (auto &p : points) {
             auto ps = ccMesh::CreateSphere(point_size_, 10);
             ps->translate(p);

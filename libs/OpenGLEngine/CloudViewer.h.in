@@ -123,7 +123,7 @@
 #include "visualization/gui/TreeView.h"
 #include "visualization/gui/Window.h"
 #include "visualization/rendering/Material.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/utility/Draw.h"
 #include "visualization/utility/DrawGeometry.h"
 #include "visualization/utility/SelectionPolygon.h"
