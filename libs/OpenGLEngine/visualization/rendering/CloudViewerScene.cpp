@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 
 #include <algorithm>
 
@@ -113,7 +113,7 @@ void RecreateAxis(Scene* scene,
 
 }  // namespace
 
-Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
+CloudViewerScene::CloudViewerScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
@@ -124,24 +124,24 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     RecreateAxis(scene, bounds_, false);
 }
 
-Open3DScene::~Open3DScene() {
+CloudViewerScene::~CloudViewerScene() {
     ClearGeometry();
     auto scene = renderer_.GetScene(scene_);
     scene->RemoveGeometry(kAxisObjectName);
     scene->RemoveView(view_);
 }
 
-View* Open3DScene::GetView() const {
+View* CloudViewerScene::GetView() const {
     auto scene = renderer_.GetScene(scene_);
     return scene->GetView(view_);
 }
 
-void Open3DScene::ShowSkybox(bool enable) {
+void CloudViewerScene::ShowSkybox(bool enable) {
     auto scene = renderer_.GetScene(scene_);
     scene->ShowSkybox(enable);
 }
 
-void Open3DScene::ShowAxes(bool enable) {
+void CloudViewerScene::ShowAxes(bool enable) {
     auto scene = renderer_.GetScene(scene_);
     if (enable && axis_dirty_) {
         RecreateAxis(scene, bounds_, false);
@@ -150,13 +150,13 @@ void Open3DScene::ShowAxes(bool enable) {
     scene->ShowGeometry(kAxisObjectName, enable);
 }
 
-void Open3DScene::SetBackground(const Eigen::Vector4f& color,
+void CloudViewerScene::SetBackground(const Eigen::Vector4f& color,
                                 std::shared_ptr<geometry::Image> image /*=0*/) {
     auto scene = renderer_.GetScene(scene_);
     scene->SetBackground(color, image);
 }
 
-void Open3DScene::SetLighting(LightingProfile profile,
+void CloudViewerScene::SetLighting(LightingProfile profile,
                               const Eigen::Vector3f& sun_dir) {
     auto scene = renderer_.GetScene(scene_);
 
@@ -206,7 +206,7 @@ void Open3DScene::SetLighting(LightingProfile profile,
     }
 }
 
-void Open3DScene::ClearGeometry() {
+void CloudViewerScene::ClearGeometry() {
     auto scene = renderer_.GetScene(scene_);
     for (auto& g : geometries_) {
         scene->RemoveGeometry(g.second.name);
@@ -222,7 +222,7 @@ void Open3DScene::ClearGeometry() {
     axis_dirty_ = true;
 }
 
-void Open3DScene::AddGeometry(
+void CloudViewerScene::AddGeometry(
         const std::string& name,
         const ccHObject* geom,
         const Material& mat,
@@ -253,7 +253,7 @@ void Open3DScene::AddGeometry(
     axis_dirty_ = true;
 }
 
-void Open3DScene::AddGeometry(
+void CloudViewerScene::AddGeometry(
         const std::string& name,
         const t::geometry::PointCloud* geom,
         const Material& mat,
@@ -294,12 +294,12 @@ void Open3DScene::AddGeometry(
     axis_dirty_ = true;
 }
 
-bool Open3DScene::HasGeometry(const std::string& name) const {
+bool CloudViewerScene::HasGeometry(const std::string& name) const {
     auto scene = renderer_.GetScene(scene_);
     return scene->HasGeometry(name);
 }
 
-void Open3DScene::RemoveGeometry(const std::string& name) {
+void CloudViewerScene::RemoveGeometry(const std::string& name) {
     auto scene = renderer_.GetScene(scene_);
     auto g = geometries_.find(name);
     if (g != geometries_.end()) {
@@ -314,7 +314,7 @@ void Open3DScene::RemoveGeometry(const std::string& name) {
     }
 }
 
-void Open3DScene::ModifyGeometryMaterial(const std::string& name,
+void CloudViewerScene::ModifyGeometryMaterial(const std::string& name,
                                          const Material& mat) {
     auto scene = renderer_.GetScene(scene_);
     scene->OverrideMaterial(name, mat);
@@ -327,7 +327,7 @@ void Open3DScene::ModifyGeometryMaterial(const std::string& name,
     }
 }
 
-void Open3DScene::ShowGeometry(const std::string& name, bool show) {
+void CloudViewerScene::ShowGeometry(const std::string& name, bool show) {
     auto it = geometries_.find(name);
     if (it != geometries_.end()) {
         it->second.visible = show;
@@ -344,7 +344,7 @@ void Open3DScene::ShowGeometry(const std::string& name, bool show) {
     }
 }
 
-void Open3DScene::AddModel(const std::string& name,
+void CloudViewerScene::AddModel(const std::string& name,
                            const TriangleMeshModel& model) {
     auto scene = renderer_.GetScene(scene_);
     if (scene->AddGeometry(name, model)) {
@@ -357,7 +357,7 @@ void Open3DScene::AddModel(const std::string& name,
     axis_dirty_ = true;
 }
 
-void Open3DScene::UpdateMaterial(const Material& mat) {
+void CloudViewerScene::UpdateMaterial(const Material& mat) {
     auto scene = renderer_.GetScene(scene_);
     for (auto& g : geometries_) {
         scene->OverrideMaterial(g.second.name, mat);
@@ -372,14 +372,14 @@ void Open3DScene::UpdateMaterial(const Material& mat) {
     }
 }
 
-void Open3DScene::UpdateModelMaterial(const std::string& name,
+void CloudViewerScene::UpdateModelMaterial(const std::string& name,
                                       const TriangleMeshModel& model) {
     auto scene = renderer_.GetScene(scene_);
     scene->RemoveGeometry(name);
     scene->AddGeometry(name, model);
 }
 
-std::vector<std::string> Open3DScene::GetGeometries() {
+std::vector<std::string> CloudViewerScene::GetGeometries() {
     std::vector<std::string> names;
     names.reserve(geometries_.size());
     for (auto& it : geometries_) {
@@ -388,7 +388,7 @@ std::vector<std::string> Open3DScene::GetGeometries() {
     return names;
 }
 
-void Open3DScene::SetLOD(LOD lod) {
+void CloudViewerScene::SetLOD(LOD lod) {
     if (lod != lod_) {
         lod_ = lod;
 
@@ -398,7 +398,7 @@ void Open3DScene::SetLOD(LOD lod) {
     }
 }
 
-void Open3DScene::SetGeometryToLOD(const GeometryData& data, LOD lod) {
+void CloudViewerScene::SetGeometryToLOD(const GeometryData& data, LOD lod) {
     auto scene = renderer_.GetScene(scene_);
     scene->ShowGeometry(data.name, false);
     if (!data.fast_name.empty()) {
@@ -427,17 +427,17 @@ void Open3DScene::SetGeometryToLOD(const GeometryData& data, LOD lod) {
     }
 }
 
-Open3DScene::LOD Open3DScene::GetLOD() const { return lod_; }
+CloudViewerScene::LOD CloudViewerScene::GetLOD() const { return lod_; }
 
-Scene* Open3DScene::GetScene() const { return renderer_.GetScene(scene_); }
+Scene* CloudViewerScene::GetScene() const { return renderer_.GetScene(scene_); }
 
-Camera* Open3DScene::GetCamera() const {
+Camera* CloudViewerScene::GetCamera() const {
     auto scene = renderer_.GetScene(scene_);
     auto view = scene->GetView(view_);
     return view->GetCamera();
 }
 
-Renderer& Open3DScene::GetRenderer() const { return renderer_; }
+Renderer& CloudViewerScene::GetRenderer() const { return renderer_; }
 
 }  // namespace rendering
 }  // namespace visualization

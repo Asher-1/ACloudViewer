@@ -45,7 +45,7 @@
 #include "visualization/rendering/IBLRotationInteractorLogic.h"
 #include "visualization/rendering/LightDirectionInteractorLogic.h"
 #include "visualization/rendering/ModelInteractorLogic.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
 
@@ -63,7 +63,7 @@ static const double DELAY_FOR_BEST_RENDERING_SECS = 0.2;  // seconds
 // ----------------------------------------------------------------------------
 class RotateSunInteractor : public SceneWidget::MouseInteractor {
 public:
-    RotateSunInteractor(rendering::Open3DScene* scene,
+    RotateSunInteractor(rendering::CloudViewerScene* scene,
                         rendering::Camera* camera)
         : light_dir_(std::make_unique<rendering::LightDirectionInteractorLogic>(
                   scene->GetScene(), camera)) {}
@@ -400,7 +400,7 @@ class RotateModelInteractor : public RotationInteractor {
     using Super = RotationInteractor;
 
 public:
-    explicit RotateModelInteractor(rendering::Open3DScene* scene,
+    explicit RotateModelInteractor(rendering::CloudViewerScene* scene,
                                    rendering::Camera* camera)
         : RotationInteractor(),
           rotation_(new rendering::ModelInteractorLogic(
@@ -457,7 +457,7 @@ class PickInteractor : public RotateCameraInteractor {
     using Super = RotateCameraInteractor;
 
 public:
-    PickInteractor(rendering::Open3DScene* scene, rendering::Camera* camera)
+    PickInteractor(rendering::CloudViewerScene* scene, rendering::Camera* camera)
         : Super(camera), pick_(new PickPointsInteractor(scene, camera)) {}
 
     void SetViewSize(const Size& size) {
@@ -499,7 +499,7 @@ private:
 // ----------------------------------------------------------------------------
 class Interactors {
 public:
-    Interactors(rendering::Open3DScene* scene, rendering::Camera* camera)
+    Interactors(rendering::CloudViewerScene* scene, rendering::Camera* camera)
         : rotate_(std::make_unique<RotateCameraInteractor>(camera)),
           fly_(std::make_unique<FlyInteractor>(camera)),
           sun_(std::make_unique<RotateSunInteractor>(scene, camera)),
@@ -645,7 +645,7 @@ private:
 
 // ----------------------------------------------------------------------------
 struct SceneWidget::Impl {
-    std::shared_ptr<rendering::Open3DScene> scene_;
+    std::shared_ptr<rendering::CloudViewerScene> scene_;
     ccBBox bounds_;
     std::shared_ptr<Interactors> controls_;
     std::function<void(const Eigen::Vector3f&)> on_light_dir_changed_;
@@ -745,7 +745,7 @@ void SceneWidget::SetOnPointsPicked(
     impl_->controls_->SetOnPointsPicked(on_picked);
 }
 
-void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {
+void SceneWidget::SetScene(std::shared_ptr<rendering::CloudViewerScene> scene) {
     impl_->scene_ = scene;
     if (impl_->scene_) {
         auto view = impl_->scene_->GetView();
@@ -754,7 +754,7 @@ void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {
     }
 }
 
-std::shared_ptr<rendering::Open3DScene> SceneWidget::GetScene() const {
+std::shared_ptr<rendering::CloudViewerScene> SceneWidget::GetScene() const {
     return impl_->scene_;
 }
 
@@ -827,7 +827,7 @@ void SceneWidget::SetRenderQuality(Quality quality) {
     if (currentQuality != quality) {
         impl_->current_render_quality_ = quality;
         if (quality == Quality::FAST) {
-            impl_->scene_->SetLOD(rendering::Open3DScene::LOD::FAST);
+            impl_->scene_->SetLOD(rendering::CloudViewerScene::LOD::FAST);
 #if NO_RENDER_TARGET
             if (impl_->scene_caching_enabled_ && !impl_->is_picking_) {
 #else
@@ -838,7 +838,7 @@ void SceneWidget::SetRenderQuality(Quality quality) {
                         impl_->scene_->GetViewId(), true);
             }
         } else {
-            impl_->scene_->SetLOD(rendering::Open3DScene::LOD::HIGH_DETAIL);
+            impl_->scene_->SetLOD(rendering::CloudViewerScene::LOD::HIGH_DETAIL);
 #if NO_RENDER_TARGET
             if (impl_->scene_caching_enabled_ && !impl_->is_picking_) {
 #else

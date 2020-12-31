@@ -203,7 +203,7 @@ class AppWindow:
 
         # 3D widget
         self._scene = gui.SceneWidget()
-        self._scene.scene = rendering.Open3DScene(w.renderer)
+        self._scene.scene = rendering.CloudViewerScene(w.renderer)
         self._scene.set_on_sun_direction_changed(self._on_sun_dir)
 
         # ---- Settings panel ----

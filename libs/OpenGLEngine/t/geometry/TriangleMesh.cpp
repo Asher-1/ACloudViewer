@@ -108,7 +108,7 @@ geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
 ccMesh TriangleMesh::ToLegacyTriangleMesh() const {
     ccMesh mesh_legacy;
     mesh_legacy.createInternalCloud();
-    if (mesh_legacy.reserveAssociatedCloud(1))
+    if (mesh_legacy.reserveAssociatedCloud(1, HasVertexColors(), HasVertexNormals()))
     {
         CVLib::utility::LogError("[TriangleMesh::ToLegacyTriangleMesh] not enough memory!");
     }

@@ -47,10 +47,10 @@ class Camera;
 struct Material;
 struct TriangleMeshModel;
 
-class Open3DScene {
+class CloudViewerScene {
 public:
-    Open3DScene(Renderer& renderer);
-    ~Open3DScene();
+    CloudViewerScene(Renderer& renderer);
+    ~CloudViewerScene();
 
     View* GetView() const;
     ViewHandle GetViewId() const { return view_; }

@@ -251,7 +251,7 @@ public:
 		\return true if the method succeeds, false otherwise
 	**/
     bool reserve(std::size_t n);
-    bool reserveAssociatedCloud(std::size_t n);
+    bool reserveAssociatedCloud(std::size_t n, bool init_color = false, bool init_normal = false);
 
 	//! Resizes the array of vertex indexes (3 per triangle)
 	/** If the new number of elements is smaller than the actual size,

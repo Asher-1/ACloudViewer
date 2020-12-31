@@ -36,7 +36,7 @@
 // but they won't because Python still has a shared_ptr, leading to a crash
 // when the variable goes of scope on the Python side.
 // The following would crash gui.Window's holder is std::shared_ptr:
-//   import open3d.visualization.gui as gui
+//   import cloudViewer.visualization.gui as gui
 //   def main():
 //       gui.Application.instance.initialize()
 //       w = gui.Application.instance.create_window("Crash", 640, 480)

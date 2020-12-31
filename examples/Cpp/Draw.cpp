@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@
 
 using namespace cloudViewer;
 
-const std::string TEST_DIR = "../../../examples/TestData";
+const std::string TEST_DIR = "/media/yons/data/develop/pcl_projects/ErowCloudViewer/ErowCloudViewerPython/TestData";
 
 double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
@@ -104,8 +104,8 @@ void Actions() {
     if (bunny->isEmpty()) {
         CVLib::utility::LogError(
                 "Please download the Standford Bunny dataset using:\n"
-                "   cd <open3d_dir>/examples/python\n"
-                "   python -c 'from open3d_tutorial import *; "
+                "   cd <cloudViewer_dir>/examples/python\n"
+                "   python -c 'from cloudViewer_tutorial import *; "
                 "get_bunny_mesh()'");
         return;
     }
@@ -141,7 +141,7 @@ void Actions() {
 
     visualization::Draw({visualization::DrawObject(SOURCE_NAME, cloud),
                          visualization::DrawObject(TRUTH_NAME, bunny, false)},
-                        "Open3D: Draw Example: Actions", 1024, 768,
+                        "CloudViewer: Draw Example: Actions", 1024, 768,
                         {{"Create Mesh", make_mesh},
                          {"Toggle truth/result", toggle_result}});
 }
@@ -269,7 +269,7 @@ void Selections() {
 
     visualization::Draw({visualization::DrawObject(source_name, source),
                          visualization::DrawObject(target_name, target)},
-                        "Open3D: Draw example: Selection", 1024, 768,
+                        "CloudViewer: Draw example: Selection", 1024, 768,
                         {{"ICP Registration (one set)", DoICPOneSet},
                          {"ICP Registration (two sets)", DoICPTwoSets}});
 }

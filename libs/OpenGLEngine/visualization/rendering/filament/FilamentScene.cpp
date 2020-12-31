@@ -1491,7 +1491,7 @@ void FilamentScene::SetBackground(
     if (!HasGeometry(kBackgroundName)) {
         ccMesh quad;
         quad.createInternalCloud();
-        quad.reserveAssociatedCloud(2);
+        quad.reserveAssociatedCloud(4);
         quad.reserve(2);
 
         // The coordinates are in raw GL coordinates, what Filament calls

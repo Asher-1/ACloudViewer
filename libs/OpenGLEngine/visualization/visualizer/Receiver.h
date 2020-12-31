@@ -28,7 +28,7 @@
 #pragma once
 
 #include "io/rpc/ReceiverBase.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 
 class ccHObject;
 namespace cloudViewer {
@@ -38,11 +38,11 @@ namespace gui {
 class Window;
 }
 
-/// Receiver implementation which interfaces with the Open3DScene and a Window.
+/// Receiver implementation which interfaces with the CloudViewerScene and a Window.
 class Receiver : public io::rpc::ReceiverBase {
 public:
     Receiver(gui::Window* window,
-             std::shared_ptr<rendering::Open3DScene> scene,
+             std::shared_ptr<rendering::CloudViewerScene> scene,
              const std::string& address,
              int timeout)
         : ReceiverBase(address, timeout), window_(window), scene_(scene) {}
@@ -59,7 +59,7 @@ private:
                      const std::string& layer);
 
     gui::Window* window_;
-    std::shared_ptr<rendering::Open3DScene> scene_;
+    std::shared_ptr<rendering::CloudViewerScene> scene_;
 };
 
 }  // namespace visualization

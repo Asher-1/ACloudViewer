@@ -34,7 +34,7 @@ namespace t {
 namespace geometry {
 
 void pybind_geometry_class(py::module& m) {
-    // open3d.t.geometry.Geometry
+    // cloudViewer.t.geometry.Geometry
     py::class_<Geometry, PyGeometry<Geometry>> geometry(
             m, "Geometry", "The base geometry class.");
 

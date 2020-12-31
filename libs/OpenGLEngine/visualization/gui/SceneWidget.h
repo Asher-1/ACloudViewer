@@ -47,7 +47,7 @@ namespace rendering {
 class Camera;
 class CameraManipulator;
 class MatrixInteractorLogic;
-class Open3DScene;
+class CloudViewerScene;
 class View;
 }  // namespace rendering
 }  // namespace visualization
@@ -103,8 +103,8 @@ public:
     /// Enables showing the skybox while in skybox ROTATE_IBL mode.
     void ShowSkybox(bool is_on);
 
-    void SetScene(std::shared_ptr<rendering::Open3DScene> scene);
-    std::shared_ptr<rendering::Open3DScene> GetScene() const;
+    void SetScene(std::shared_ptr<rendering::CloudViewerScene> scene);
+    std::shared_ptr<rendering::CloudViewerScene> GetScene() const;
 
     rendering::View* GetRenderView() const;  // is nullptr if no scene
 
