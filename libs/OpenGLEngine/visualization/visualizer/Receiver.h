@@ -28,24 +28,24 @@
 #pragma once
 
 #include "io/rpc/ReceiverBase.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 
 class ccHObject;
 namespace cloudViewer {
 namespace visualization {
 
-class GuiVisualizer;
+namespace gui {
+class Window;
+}
 
-/// Receiver implementation for the GuiVisualizer
+/// Receiver implementation which interfaces with the CloudViewerScene and a Window.
 class Receiver : public io::rpc::ReceiverBase {
 public:
-    Receiver(GuiVisualizer* gui_visualizer,
-             std::shared_ptr<rendering::Open3DScene> scene,
+    Receiver(gui::Window* window,
+             std::shared_ptr<rendering::CloudViewerScene> scene,
              const std::string& address,
              int timeout)
-        : ReceiverBase(address, timeout),
-          gui_visualizer_(gui_visualizer),
-          scene_(scene) {}
+        : ReceiverBase(address, timeout), window_(window), scene_(scene) {}
 
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const io::rpc::messages::Request& req,
@@ -58,8 +58,8 @@ private:
                      int time,
                      const std::string& layer);
 
-    GuiVisualizer* gui_visualizer_;
-    std::shared_ptr<rendering::Open3DScene> scene_;
+    gui::Window* window_;
+    std::shared_ptr<rendering::CloudViewerScene> scene_;
 };
 
 }  // namespace visualization

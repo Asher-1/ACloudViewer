@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -67,7 +67,7 @@ namespace cloudViewer {
 namespace visualization {
 namespace rendering {
 
-    using namespace CVLib;
+using namespace CVLib;
 
 namespace {
 template <class ResourceType>
@@ -242,7 +242,11 @@ const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLitWithTransparency =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultLitSSR =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlit =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitWithTransparency =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultNormalShader =
         MaterialHandle::Next();
@@ -251,6 +255,12 @@ const MaterialHandle FilamentResourceManager::kDefaultDepthShader =
 const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitSolidColorShader =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitBackgroundShader =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultLineShader =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlitPolygonOffsetShader =
         MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
@@ -273,6 +283,9 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultDepthShader,
         FilamentResourceManager::kDefaultUnlitGradientShader,
         FilamentResourceManager::kDefaultUnlitSolidColorShader,
+        FilamentResourceManager::kDefaultUnlitBackgroundShader,
+        FilamentResourceManager::kDefaultLineShader,
+        FilamentResourceManager::kDefaultUnlitPolygonOffsetShader,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
@@ -765,6 +778,30 @@ void FilamentResourceManager::LoadDefaults() {
     materials_[kDefaultLitWithTransparency] =
             BoxResource(lit_trans_mat, engine_);
 
+    const auto lit_ssr_path = resource_root + "/defaultLitSSR.filamat";
+    auto lit_ssr_mat = LoadMaterialFromFile(lit_ssr_path, engine_);
+    lit_ssr_mat->setDefaultParameter("baseColor",
+                                     filament::RgbaType::PREMULTIPLIED_sRGB,
+                                     default_color_alpha);
+    lit_ssr_mat->setDefaultParameter("baseRoughness", 0.7f);
+    lit_ssr_mat->setDefaultParameter("reflectance", 0.5f);
+    lit_ssr_mat->setDefaultParameter("baseMetallic", 0.f);
+    lit_ssr_mat->setDefaultParameter("clearCoat", 0.f);
+    lit_ssr_mat->setDefaultParameter("clearCoatRoughness", 0.f);
+    lit_ssr_mat->setDefaultParameter("anisotropy", 0.f);
+    lit_ssr_mat->setDefaultParameter("thickness", 0.5f);
+    lit_ssr_mat->setDefaultParameter("transmission", 1.f);
+    lit_ssr_mat->setDefaultParameter("absorption",
+                                     filament::math::float3(0.f, 0.f, 0.f));
+    lit_ssr_mat->setDefaultParameter("pointSize", 3.f);
+    lit_ssr_mat->setDefaultParameter("albedo", texture, default_sampler);
+    lit_ssr_mat->setDefaultParameter("ao_rough_metalMap", texture,
+                                     default_sampler);
+    lit_ssr_mat->setDefaultParameter("normalMap", normal_map, default_sampler);
+    lit_ssr_mat->setDefaultParameter("reflectanceMap", texture,
+                                     default_sampler);
+    materials_[kDefaultLitSSR] = BoxResource(lit_ssr_mat, engine_);
+
     const auto unlit_path = resource_root + "/defaultUnlit.filamat";
     auto unlit_mat = LoadMaterialFromFile(unlit_path, engine_);
     unlit_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
@@ -772,6 +809,16 @@ void FilamentResourceManager::LoadDefaults() {
     unlit_mat->setDefaultParameter("pointSize", 3.f);
     unlit_mat->setDefaultParameter("albedo", texture, default_sampler);
     materials_[kDefaultUnlit] = BoxResource(unlit_mat, engine_);
+
+    const auto unlit_trans_path =
+            resource_root + "/defaultUnlitTransparency.filamat";
+    auto unlit_trans_mat = LoadMaterialFromFile(unlit_trans_path, engine_);
+    unlit_trans_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                         default_color);
+    unlit_trans_mat->setDefaultParameter("pointSize", 3.f);
+    unlit_trans_mat->setDefaultParameter("albedo", texture, default_sampler);
+    materials_[kDefaultUnlitWithTransparency] =
+            BoxResource(unlit_trans_mat, engine_);
 
     const auto depth_path = resource_root + "/depth.filamat";
     auto depth_mat = LoadMaterialFromFile(depth_path, engine_);
@@ -818,6 +865,26 @@ void FilamentResourceManager::LoadDefaults() {
     solid_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                    {0.5f, 0.5f, 0.5f});
     materials_[kDefaultUnlitSolidColorShader] = BoxResource(solid_mat, engine_);
+
+    const auto bg_path = resource_root + "/unlitBackground.filamat";
+    auto bg_mat = LoadMaterialFromFile(bg_path, engine_);
+    bg_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                {1.0f, 1.0f, 1.0f});
+    bg_mat->setDefaultParameter("albedo", texture, default_sampler);
+    bg_mat->setDefaultParameter("aspectRatio", 0.0f);
+    materials_[kDefaultUnlitBackgroundShader] = BoxResource(bg_mat, engine_);
+
+    const auto line_path = resource_root + "/unlitLine.filamat";
+    auto line_mat = LoadMaterialFromFile(line_path, engine_);
+    line_mat->setDefaultParameter("baseColor", filament::RgbType::LINEAR,
+                                  {1.f, 1.f, 1.f});
+    line_mat->setDefaultParameter("lineWidth", 1.f);
+    materials_[kDefaultLineShader] = BoxResource(line_mat, engine_);
+
+    const auto poffset_path = resource_root + "/unlitPolygonOffset.filamat";
+    auto poffset_mat = LoadMaterialFromFile(poffset_path, engine_);
+    materials_[kDefaultUnlitPolygonOffsetShader] =
+            BoxResource(poffset_mat, engine_);
 }
 
 }  // namespace rendering

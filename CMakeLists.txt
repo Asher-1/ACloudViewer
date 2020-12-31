@@ -17,7 +17,7 @@ if ( ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
 	endif()
 endif()
 
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum OS X deployment version")
 
 # ErowCloudViewer build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   		OFF)
@@ -56,12 +56,13 @@ option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"        
 option(WITH_FAISS                 "Enable Faiss"                                        ON )
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera"            OFF)
+option(USE_SYSTEM_LIBREALSENSE    "Use system pre-installed librealsense"               OFF)
 option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"               OFF)
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                            OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                               OFF)
 option(BUNDLE_CLOUDVIEWER_ML      "Includes the CloudViewer-ML repo in the wheel"       OFF)
-option(DEVELOPER_BUILD            "Add -dev+commit_hash to the project version number"  ON )
+option(DEVELOPER_BUILD            "Add +commit_hash to the project version number"      ON )
 # PCL ENGINE SUPPORT
 option(USE_PCL_BACKEND           "Check to use pcl library as backend" 			ON )
 
@@ -122,10 +123,10 @@ if(POLICY CMP0091)
 endif()
 
 # Catch a few incompatible build options
-if((UNIX AND NOT APPLE) AND BUILD_LIBREALSENSE)
-    message(STATUS "Disabling RealSense since it is not fully supported on Linux.")
-    set(BUILD_LIBREALSENSE OFF)
-endif()
+#if((UNIX AND NOT APPLE) AND BUILD_LIBREALSENSE)
+#    message(STATUS "Disabling RealSense since it is not fully supported on Linux.")
+#    set(BUILD_LIBREALSENSE OFF)
+#endif()
 if (APPLE AND ENABLE_HEADLESS_RENDERING)
     message(STATUS "Headless rendering is not supported on Mac OS")
     set(ENABLE_HEADLESS_RENDERING OFF)
@@ -152,8 +153,8 @@ foreach(ver ${CLOUDVIEWER_VERSION_READ})
 endforeach()
 set(CLOUDVIEWER_VERSION_DEVHASH "")
 if(DEVELOPER_BUILD)
-    execute_process(COMMAND git log --pretty=format:%h -n 1
-        OUTPUT_VARIABLE GIT_REV ERROR_QUIET)
+    execute_process(COMMAND git -C "${CMAKE_SOURCE_DIR}" log --pretty=format:%h -n 1
+        OUTPUT_VARIABLE GIT_REV)
     if (GIT_REV)
         set(CLOUDVIEWER_VERSION_DEVHASH "+${GIT_REV}")
     endif()
@@ -683,9 +684,10 @@ message(STATUS "Enabled Features:")
 cloudviewer_aligned_print("OpenMP" "${WITH_OPENMP}")
 cloudviewer_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
 cloudviewer_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
-cloudviewer_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
+cloudviewer_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
 cloudviewer_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
 cloudviewer_aligned_print("Build GUI" "${BUILD_GUI}")
+cloudviewer_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
 if(WIN32)
     cloudviewer_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
 endif()

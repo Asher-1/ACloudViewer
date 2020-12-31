@@ -32,18 +32,34 @@
 #include <ecvPointCloud.h>
 
 #include <ImageIO.h>
-#include <PointCloudIO.h>
+#include "io/PointCloudIO.h"
 #include <IJsonConvertibleIO.h>
 
 #include "visualization/utility/GLHelper.h"
 #include "visualization/visualizer/ViewParameters.h"
 #include "visualization/visualizer/ViewTrajectory.h"
 
+#if defined(__APPLE__) && defined(BUILD_GUI)
+namespace bluegl {
+int bind();
+void unbind();
+}  // namespace bluegl
+#endif
+
 namespace cloudViewer {
 namespace visualization {
 using namespace CVLib;
 
 bool Visualizer::InitOpenGL() {
+#if defined(__APPLE__) && defined(BUILD_GUI)
+    // On macOS, the Open3D shared library redirects OpenGL calls to BlueGL's
+    // forwarding functions. bluegl::bind() needs to be called before calling
+    // any OpenGL functions, otherwise the function addresses will be invalid.
+    if (bluegl::bind()) {
+        utility::LogWarning("Visualizer::InitOpenGL: bluegl::bind() error.");
+    }
+#endif
+
     glewExperimental = true;
     if (glewInit() != GLEW_OK) {
         utility::LogWarning("Failed to initialize GLEW.");
@@ -204,7 +220,7 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
     for (int i = 0; i < screen_image.height_; i++) {
         memcpy(image_ptr->data_.data() + bytes_per_line * i,
                screen_image.data_.data() +
-                       bytes_per_line * (screen_image.height_ - i - 1),
+               bytes_per_line * (screen_image.height_ - i - 1),
                bytes_per_line);
     }
     return image_ptr;

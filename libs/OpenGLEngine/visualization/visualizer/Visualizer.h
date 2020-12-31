@@ -35,6 +35,7 @@
 #include <GL/glew.h> // Make sure glew.h is included before gl.h
 #include <GLFW/glfw3.h>
 
+#include <Eigen/Core>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -90,7 +91,7 @@ public:
     /// \param left Left margin of the window to the screen.
     /// \param top Top margin of the window to the screen.
     /// \param visible Whether the window is visible.
-    bool CreateVisualizerWindow(const std::string &window_name = "cloudViewer",
+    bool CreateVisualizerWindow(const std::string &window_name = "Open3D",
                                 const int width = 640,
                                 const int height = 480,
                                 const int left = 50,
@@ -144,7 +145,7 @@ public:
     /// notify the Visualizer that the geometry has been changed and the
     /// Visualizer should be updated accordingly.
     ///
-    /// \param geometry The Geometry object.
+    /// \param geometry_ptr The Geometry object.
     virtual bool AddGeometry(
             std::shared_ptr<const ccHObject> geometry_ptr,
             bool reset_bounding_box = true);
@@ -157,7 +158,7 @@ public:
     /// 3. This function returns FALSE if the geometry to be removed is not
     /// added by AddGeometry
     ///
-    /// \param geometry The Geometry object.
+    /// \param geometry_ptr The Geometry object.
     virtual bool RemoveGeometry(
             std::shared_ptr<const ccHObject> geometry_ptr,
             bool reset_bounding_box = true);
@@ -180,6 +181,11 @@ public:
     /// Function to inform render needed to be updated.
     virtual void UpdateRender();
 
+    /// Functions to change between fullscreen and windowed modes
+    virtual void SetFullScreen(bool fullscreen);
+    virtual void ToggleFullScreen();
+    virtual bool IsFullScreen();
+
     virtual void PrintVisualizerHelp();
     virtual void UpdateWindowTitle();
     virtual void BuildUtilities();
@@ -195,8 +201,8 @@ public:
             bool do_render = true);
     /// \brief Function to capture and save a screen image.
     ///
+    /// \param filename Path to file.
     /// \param do_render Set to `true` to do render.
-    /// \param depth_scale Scale depth value when capturing the depth image.
     void CaptureScreenImage(const std::string &filename = "",
                             bool do_render = true);
     /// Function to capture depth in a float buffer.
@@ -262,8 +268,10 @@ protected:
 
 protected:
     // window
-    GLFWwindow *window_ = NULL;
-    std::string window_name_ = "cloudViewer";
+    GLFWwindow *window_ = nullptr;
+    std::string window_name_ = "Open3D";
+    Eigen::Vector2i saved_window_size_ = Eigen::Vector2i::Zero();
+    Eigen::Vector2i saved_window_pos_ = Eigen::Vector2i::Zero();
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
     // Auxiliary internal backup of the callback function.
     // It copies animation_callback_func_ in each PollEvent() or WaitEvent()

@@ -42,7 +42,7 @@ void* CUDASimpleMemoryManager::Malloc(size_t byte_size, const Device& device) {
     if (device.GetType() == Device::DeviceType::CUDA) {
         CLOUDVIEWER_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
     } else {
-        utility::LogError(
+        CVLib::utility::LogError(
                 "CUDASimpleMemoryManager::Malloc: Unimplemented device.");
     }
     return ptr;
@@ -55,7 +55,7 @@ void CUDASimpleMemoryManager::Free(void* ptr, const Device& device) {
             CLOUDVIEWER_CUDA_CHECK(cudaFree(ptr));
         }
     } else {
-        utility::LogError(
+        CVLib::utility::LogError(
                 "CUDASimpleMemoryManager::Free: Unimplemented device.");
     }
 }
@@ -69,7 +69,7 @@ void CUDASimpleMemoryManager::Memcpy(void* dst_ptr,
         src_device.GetType() == Device::DeviceType::CPU) {
         CUDADeviceSwitcher switcher(dst_device);
         if (!IsCUDAPointer(dst_ptr)) {
-            utility::LogError("dst_ptr is not a CUDA pointer.");
+            CVLib::utility::LogError("dst_ptr is not a CUDA pointer.");
         }
         CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
                                      cudaMemcpyHostToDevice));
@@ -77,7 +77,7 @@ void CUDASimpleMemoryManager::Memcpy(void* dst_ptr,
                src_device.GetType() == Device::DeviceType::CUDA) {
         CUDADeviceSwitcher switcher(src_device);
         if (!IsCUDAPointer(src_ptr)) {
-            utility::LogError("src_ptr is not a CUDA pointer.");
+            CVLib::utility::LogError("src_ptr is not a CUDA pointer.");
         }
         CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
                                      cudaMemcpyDeviceToHost));
@@ -85,11 +85,11 @@ void CUDASimpleMemoryManager::Memcpy(void* dst_ptr,
                src_device.GetType() == Device::DeviceType::CUDA) {
         CUDADeviceSwitcher switcher(dst_device);
         if (!IsCUDAPointer(dst_ptr)) {
-            utility::LogError("dst_ptr is not a CUDA pointer.");
+            CVLib::utility::LogError("dst_ptr is not a CUDA pointer.");
         }
         switcher.SwitchTo(src_device);
         if (!IsCUDAPointer(src_ptr)) {
-            utility::LogError("src_ptr is not a CUDA pointer.");
+            CVLib::utility::LogError("src_ptr is not a CUDA pointer.");
         }
 
         if (dst_device == src_device) {
@@ -112,7 +112,7 @@ void CUDASimpleMemoryManager::Memcpy(void* dst_ptr,
             MemoryManager::Free(cpu_buf, Device("CPU:0"));
         }
     } else {
-        utility::LogError("Wrong cudaMemcpyKind.");
+        CVLib::utility::LogError("Wrong cudaMemcpyKind.");
     }
 }
 

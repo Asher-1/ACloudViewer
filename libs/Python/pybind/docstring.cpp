@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "pybind/docstring.h"
+
 #include <regex>
 #include <sstream>
 #include <string>
@@ -33,20 +35,20 @@
 
 #include <Helper.h>
 #include <Console.h>
-#include "pybind/docstring.h"
 
 namespace cloudViewer {
 namespace docstring {
 
 // ref: enum_base in pybind11.h
-	py::handle static_property =
-		py::handle((PyObject*)py::detail::get_internals().static_property_type);
+py::handle static_property =
+        py::handle((PyObject*)py::detail::get_internals().static_property_type);
 
 void ClassMethodDocInject(py::module& pybind_module,
                           const std::string& class_name,
                           const std::string& function_name,
                           const std::unordered_map<std::string, std::string>&
-                                  map_parameter_body_docs) {
+                                  map_parameter_body_docs,
+                          bool skip_init) {
     // Get function
     PyObject* module = pybind_module.ptr();
     PyObject* class_obj = PyObject_GetAttrString(module, class_name.c_str());
@@ -57,25 +59,18 @@ void ClassMethodDocInject(py::module& pybind_module,
     PyObject* class_method_obj =
             PyObject_GetAttrString(class_obj, function_name.c_str());
     if (class_method_obj == nullptr) {
-		CVLib::utility::LogWarning("{}::{} docstring failed to inject.", class_name,
+        CVLib::utility::LogWarning("{}::{} docstring failed to inject.", class_name,
                             function_name);
         return;
     }
 
     // Extract PyCFunctionObject
     PyCFunctionObject* f = nullptr;
-#ifdef PYTHON_2_FALLBACK
-    if (Py_TYPE(class_method_obj) == &PyMethod_Type) {
-        PyMethodObject* class_method = (PyMethodObject*)class_method_obj;
-        f = (PyCFunctionObject*)class_method->im_func;
-    }
-#else
     if (Py_TYPE(class_method_obj) == &PyInstanceMethod_Type) {
         PyInstanceMethodObject* class_method =
                 (PyInstanceMethodObject*)class_method_obj;
         f = (PyCFunctionObject*)class_method->func;
     }
-#endif
     if (Py_TYPE(class_method_obj) == &PyCFunction_Type) {
         // def_static in Pybind is PyCFunction_Type, no need to convert
         f = (PyCFunctionObject*)class_method_obj;
@@ -84,10 +79,19 @@ void ClassMethodDocInject(py::module& pybind_module,
         return;
     }
 
-    // TODO: parse __init__ separately, currently __init__ can be overloaded
-    // which might cause parsing error. So they are skipped.
     if (function_name == "__init__") {
-        return;
+        // TODO: parse __init__ separately, currently __init__ can be
+        // overloaded which might cause parsing error. So we only do
+        // namespace fix and skip the parsing.
+        //
+        // If we know for sure that "__init__" is not overloaded, the doc
+        // injection should still work. In this case, skip_init == false.
+        if (skip_init) {
+            std::string pybind_doc = f->m_ml->ml_doc;
+            pybind_doc = FunctionDoc::NamespaceFix(pybind_doc);
+            f->m_ml->ml_doc = strdup(pybind_doc.c_str());
+            return;
+        }
     }
 
     // Parse existing docstring to FunctionDoc
@@ -111,7 +115,7 @@ void FunctionDocInject(py::module& pybind_module,
     PyObject* module = pybind_module.ptr();
     PyObject* f_obj = PyObject_GetAttrString(module, function_name.c_str());
     if (f_obj == nullptr) {
-		CVLib::utility::LogWarning("{} docstring failed to inject.", function_name);
+        CVLib::utility::LogWarning("{} docstring failed to inject.", function_name);
         return;
     }
     if (Py_TYPE(f_obj) != &PyCFunction_Type) {
@@ -154,8 +158,9 @@ void FunctionDoc::ParseSummary() {
     size_t arrow_pos = pybind_doc_.rfind(" -> ");
     if (arrow_pos != std::string::npos) {
         size_t result_type_pos = arrow_pos + 4;
-        size_t summary_start_pos = result_type_pos +
-			CVLib::utility::WordLength(pybind_doc_, result_type_pos, "._:,[]() ,");
+        size_t summary_start_pos =
+                result_type_pos +
+                CVLib::utility::WordLength(pybind_doc_, result_type_pos, "._:,[]() ,");
         size_t summary_len = pybind_doc_.size() - summary_start_pos;
         if (summary_len > 0) {
             std::string summary =
@@ -181,8 +186,9 @@ void FunctionDoc::ParseReturn() {
     size_t arrow_pos = pybind_doc_.rfind(" -> ");
     if (arrow_pos != std::string::npos) {
         size_t result_type_pos = arrow_pos + 4;
-        std::string return_type = pybind_doc_.substr( result_type_pos,
-			CVLib::utility::WordLength(pybind_doc_, result_type_pos,
+        std::string return_type = pybind_doc_.substr(
+                result_type_pos,
+                CVLib::utility::WordLength(pybind_doc_, result_type_pos,
                                     "._:,[]() ,"));
         return_doc_.type_ = StringCleanAll(return_type);
     }
@@ -240,7 +246,8 @@ std::string FunctionDoc::ToGoogleDocString() const {
             }
             if (argument_doc.long_default_ != "") {
                 std::vector<std::string> lines;
-				CVLib::utility::SplitString(lines, argument_doc.long_default_, "\n", true);
+                CVLib::utility::SplitString(lines, argument_doc.long_default_, "\n",
+                                     true);
                 rc << " Default value:" << std::endl << std::endl;
                 bool prev_line_is_listing = false;
                 for (std::string& line : lines) {
@@ -276,7 +283,7 @@ std::string FunctionDoc::ToGoogleDocString() const {
 
 std::string FunctionDoc::NamespaceFix(const std::string& s) {
     std::string rc = std::regex_replace(s, std::regex("::"), ".");
-    rc = std::regex_replace(rc, std::regex("cloudViewer\\.cloudViewer\\."), "cloudViewer.");
+    rc = std::regex_replace(rc, std::regex("cloudViewer\\.pybind\\."), "cloudViewer.");
     return rc;
 }
 

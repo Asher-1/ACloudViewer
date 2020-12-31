@@ -29,7 +29,7 @@
 
 #include <Console.h>
 
-#include <PointCloudIO.h>
+#include "io/PointCloudIO.h"
 #include <ecvPointCloud.h>
 
 namespace cloudViewer {

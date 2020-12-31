@@ -28,6 +28,8 @@
 #include <ecvHObject.h>
 #include <ecvOrientedBBox.h>
 
+#include <sstream>
+
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
@@ -120,14 +122,14 @@ void pybind_boundingvolume(py::module &m) {
                 "direction",
                 "center"_a, "R"_a, "extent"_a, "name"_a = "ecvOrientedBBox")
         .def("__repr__", [](const ecvOrientedBBox &box) {
-			return std::string("ecvOrientedBBox with extent (") +
-				std::to_string(box.getExtent()(0)) + ", " +
-				std::to_string(box.getExtent()(1)) + ", " +
-				std::to_string(box.getExtent()(2)) + "), center (" +
-				std::to_string(box.getPosition()(0)) + ", " +
-				std::to_string(box.getPosition()(1)) + ", " +
-				std::to_string(box.getPosition()(2)) + ")";
-			})
+                 std::stringstream s;
+                 auto c = box.center_;
+                 auto e = box.extent_;
+                 s << "ecvOrientedBBox: center: (" << c.x() << ", "
+                   << c.y() << ", " << c.z() << "), extent: " << e.x()
+                   << ", " << e.y() << e.z() << ")";
+                 return s.str();
+             })
 		.def_static(
 			"create_from_points",
 			py::overload_cast<const std::vector<Eigen::Vector3d> &>(
@@ -250,18 +252,16 @@ void pybind_boundingvolume(py::module &m) {
 			"Create an ccBBox from min bounds and max "
 			"bounds in x, y and z",
 			"min_bound"_a, "max_bound"_a, "name"_a = "ccBBox")
-		.def("__repr__",
-			[](const ccBBox &box) {
-			CCVector3 extent = box.getDiagVec();
-			CCVector3 center = box.getCenter();
-			return std::string("ccBBox with dimensions (") +
-				std::to_string(extent.x) + ", " +
-				std::to_string(extent.y) + ", " +
-				std::to_string(extent.z) + "), center (" +
-				std::to_string(center.x) + ", " + 
-				std::to_string(center.y) + ", " + 
-				std::to_string(center.z) + ")";
-			})
+        .def("__repr__", [](const ccBBox &box) {
+                 std::stringstream s;
+                 auto mn = box.getMinBound();
+                 auto mx = box.getMaxBound();
+                 s << "AxisAlignedBoundingBox: min: (" << mn.x() << ", "
+                   << mn.y() << ", " << mn.z() << "), max: (" << mx.x()
+                   << ", " << mx.y() << ", " << mx.z() << ")";
+                 return s.str();
+             })
+        .def(py::self += py::self)
 		.def("get_box_points", &ccBBox::getBoxPoints,
 		"Returns the eight points that define the bounding box.")
 		.def("get_extent", &ccBBox::getExtent,

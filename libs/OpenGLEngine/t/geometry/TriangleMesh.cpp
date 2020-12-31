@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -39,22 +39,18 @@ namespace cloudViewer {
 namespace t {
 namespace geometry {
 
-TriangleMesh::TriangleMesh(core::Dtype vertex_dtype,
-                           core::Dtype triangle_dtype,
-                           const core::Device &device)
+TriangleMesh::TriangleMesh(const core::Device &device)
     : Geometry(Geometry::GeometryType::TriangleMesh, 3),
       device_(device),
-      vertex_attr_(TensorListMap("vertices")),
-      triangle_attr_(TensorListMap("triangles")) {
-    SetVertices(core::TensorList({3}, vertex_dtype, device_));
-    SetTriangles(core::TensorList({3}, triangle_dtype, device_));
+      vertex_attr_(TensorMap("vertices")),
+      triangle_attr_(TensorMap("triangles")) {
 }
 
-TriangleMesh::TriangleMesh(const core::TensorList &vertices,
-                           const core::TensorList &triangles)
-    : TriangleMesh(vertices.GetDtype(), triangles.GetDtype(), [&]() {
+TriangleMesh::TriangleMesh(const core::Tensor &vertices,
+                           const core::Tensor &triangles)
+    : TriangleMesh([&]() {
           if (vertices.GetDevice() != triangles.GetDevice()) {
-              utility::LogError(
+              CVLib::utility::LogError(
                       "vertices' device {} does not match triangles' device "
                       "{}.",
                       vertices.GetDevice().ToString(),
@@ -64,6 +60,81 @@ TriangleMesh::TriangleMesh(const core::TensorList &vertices,
       }()) {
     SetVertices(vertices);
     SetTriangles(triangles);
+}
+
+geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
+        const ccMesh &mesh_legacy,
+        core::Dtype float_dtype,
+        core::Dtype int_dtype,
+        const core::Device &device) {
+    if (float_dtype != core::Dtype::Float32 &&
+        float_dtype != core::Dtype::Float64) {
+        CVLib::utility::LogError("float_dtype must be Float32 or Float64, but got {}.",
+                          float_dtype.ToString());
+    }
+    if (int_dtype != core::Dtype::Int32 && int_dtype != core::Dtype::Int64) {
+        CVLib::utility::LogError("int_dtype must be Int32 or Int64, but got {}.",
+                          int_dtype.ToString());
+    }
+
+    TriangleMesh mesh(device);
+    if (mesh_legacy.hasVertices()) {
+        mesh.SetVertices(core::eigen_converter::EigenVector3dVectorToTensor(
+                mesh_legacy.getEigenVertices(), float_dtype, device));
+    } else {
+        CVLib::utility::LogWarning("Creating from empty legacy TriangleMesh.");
+    }
+    if (mesh_legacy.hasColors()) {
+        mesh.SetVertexColors(core::eigen_converter::EigenVector3dVectorToTensor(
+                mesh_legacy.getVertexColors(), float_dtype, device));
+    }
+    if (mesh_legacy.hasNormals()) {
+        mesh.SetVertexNormals(
+                core::eigen_converter::EigenVector3dVectorToTensor(
+                        mesh_legacy.getVertexNormals(), float_dtype, device));
+    }
+    if (mesh_legacy.hasTriangles()) {
+        mesh.SetTriangles(core::eigen_converter::EigenVector3iVectorToTensor(
+                mesh_legacy.getTriangles(), int_dtype, device));
+    }
+    if (mesh_legacy.hasTriNormals()) {
+        mesh.SetTriangleNormals(
+                core::eigen_converter::EigenVector3dVectorToTensor(
+                        mesh_legacy.getTriangleNorms(), float_dtype, device));
+    }
+    return mesh;
+}
+
+ccMesh TriangleMesh::ToLegacyTriangleMesh() const {
+    ccMesh mesh_legacy;
+    mesh_legacy.createInternalCloud();
+    if (mesh_legacy.reserveAssociatedCloud(1, HasVertexColors(), HasVertexNormals()))
+    {
+        CVLib::utility::LogError("[TriangleMesh::ToLegacyTriangleMesh] not enough memory!");
+    }
+
+    if (HasVertices()) {
+        mesh_legacy.addEigenVertices(
+                    core::eigen_converter::TensorToEigenVector3dVector(GetVertices()));
+    }
+    if (HasVertexColors()) {
+        mesh_legacy.addVertexColors(
+                    core::eigen_converter::TensorToEigenVector3dVector(GetVertexColors()));
+    }
+    if (HasVertexNormals()) {
+        mesh_legacy.addVertexNormals(
+                    core::eigen_converter::TensorToEigenVector3dVector(GetVertexNormals()));
+    }
+    if (HasTriangles()) {
+        mesh_legacy.addTriangles(
+                    core::eigen_converter::TensorToEigenVector3iVector(GetTriangles()));
+    }
+    if (HasTriangleNormals()) {
+        mesh_legacy.addTriangleNorms(
+                    core::eigen_converter::TensorToEigenVector3dVector(GetTriangleNormals()));
+    }
+
+    return mesh_legacy;
 }
 
 }  // namespace geometry

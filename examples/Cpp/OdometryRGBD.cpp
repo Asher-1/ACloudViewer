@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -34,7 +34,7 @@ void PrintHelp(char* argv[]) {
 
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    OdometryRGBD [color_source] [source_target] [color_target] [depth_target] [options]");
+    utility::LogInfo(">    OdometryRGBD [color_source] [depth_source] [color_target] [depth_target] [options]");
     utility::LogInfo("     Given RGBD image pair, estimate 6D odometry.");
     utility::LogInfo("     [options]");
     utility::LogInfo("     --camera_intrinsic [intrinsic_path]");

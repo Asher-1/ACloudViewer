@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -27,6 +27,7 @@
 #pragma once
 
 #include "core/kernel/BinaryEW.h"
+#include "core/kernel/GeneralEW.h"
 #include "core/kernel/IndexGetSet.h"
 #include "core/kernel/NonZero.h"
 #include "core/kernel/Reduction.h"

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -41,7 +41,7 @@ void Reduction(const Tensor& src,
     // all dimensions.
     if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
         if (keepdim) {
-            utility::LogError("Arg-reduction keepdim must be false");
+            CVLib::utility::LogError("Arg-reduction keepdim must be false");
         }
         if (dims.size() != 1) {
             std::vector<bool> seen_dims(src.NumDims(), false);
@@ -50,7 +50,7 @@ void Reduction(const Tensor& src,
             }
             if (!std::all_of(seen_dims.begin(), seen_dims.end(),
                              [](bool seen) { return seen; })) {
-                utility::LogError(
+                CVLib::utility::LogError(
                         "Arg-reduction can only have 1 or all reduction "
                         "dimensions. However, dims = {}.",
                         dims);
@@ -63,11 +63,11 @@ void Reduction(const Tensor& src,
     SizeVector non_keepdim_shape =
             shape_util::ReductionShape(src.GetShape(), dims, false);
     if (keepdim && keepdim_shape != dst.GetShape()) {
-        utility::LogError("Expected output shape {} but got {}.",
+        CVLib::utility::LogError("Expected output shape {} but got {}.",
                           keepdim_shape.ToString(), dst.GetShape().ToString());
     }
     if (!keepdim && non_keepdim_shape != dst.GetShape()) {
-        utility::LogError("Expected output shape {} but got {}.",
+        CVLib::utility::LogError("Expected output shape {} but got {}.",
                           keepdim_shape.ToString(), dst.GetShape().ToString());
     }
 
@@ -83,7 +83,7 @@ void Reduction(const Tensor& src,
     }
 
     if (src.GetDevice() != dst.GetDevice()) {
-        utility::LogError("Device mismatch {} != {}.",
+        CVLib::utility::LogError("Device mismatch {} != {}.",
                           src.GetDevice().ToString(),
                           dst.GetDevice().ToString());
     }
@@ -95,10 +95,10 @@ void Reduction(const Tensor& src,
 #ifdef BUILD_CUDA_MODULE
         ReductionCUDA(src, dst, dims, keepdim, op_code);
 #else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+        CVLib::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        utility::LogError("Unimplemented device.");
+        CVLib::utility::LogError("Unimplemented device.");
     }
 
     if (!keepdim) {

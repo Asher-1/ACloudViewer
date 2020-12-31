@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -74,7 +74,7 @@ std::shared_ptr<ccMesh> CreateArrow(const Eigen::Vector3d& dir,
     ccPointCloud* baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
     auto arrow = std::make_shared<ccMesh>(baseVertices);
-    if (!arrow->reserveAssociatedCloud(1)) {
+    if (!arrow->reserveAssociatedCloud(n_segs + 1, false, true)) {
         return nullptr;
     }
 
@@ -150,13 +150,13 @@ void LightDirectionInteractorLogic::Rotate(int dx, int dy) {
 }
 
 void LightDirectionInteractorLogic::StartMouseDrag() {
-    light_dir_at_mouse_down_ = scene_->GetDirectionalLightDirection();
+    light_dir_at_mouse_down_ = scene_->GetSunLightDirection();
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
 
     ClearUI();
 
-    Eigen::Vector3f dir = scene_->GetDirectionalLightDirection();
+    Eigen::Vector3f dir = scene_->GetSunLightDirection();
 
     double size = model_size_;
     if (size <= 0.001) {

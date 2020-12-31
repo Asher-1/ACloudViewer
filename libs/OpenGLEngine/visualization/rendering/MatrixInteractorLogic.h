@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -41,6 +41,8 @@ public:
     virtual ~MatrixInteractorLogic();
 
     void SetViewSize(int width, int height);
+    int GetViewWidth() const;
+    int GetViewHeight() const;
 
     const ccBBox& GetBoundingBox() const;
     virtual void SetBoundingBox(const ccBBox& bounds);

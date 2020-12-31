@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -37,7 +37,7 @@ namespace core {
 static void AssertIsResizable(const TensorList& tensorlist,
                               const std::string& func_name) {
     if (!tensorlist.IsResizable()) {
-        utility::LogError(
+        CVLib::utility::LogError(
                 "TensorList::{}: TensorList is not resizable. Typically this "
                 "tensorlist is created with shared memory from a Tensor.",
                 func_name);
@@ -47,7 +47,7 @@ static void AssertIsResizable(const TensorList& tensorlist,
 TensorList TensorList::FromTensor(const Tensor& tensor, bool inplace) {
     SizeVector shape = tensor.GetShape();
     if (shape.size() == 0) {
-        utility::LogError("Tensor should at least have one dimension.");
+        CVLib::utility::LogError("Tensor should at least have one dimension.");
     }
     SizeVector element_shape =
             SizeVector(std::next(shape.begin()), shape.end());
@@ -55,7 +55,7 @@ TensorList TensorList::FromTensor(const Tensor& tensor, bool inplace) {
 
     if (inplace) {
         if (!tensor.IsContiguous()) {
-            utility::LogError(
+            CVLib::utility::LogError(
                     "Tensor must be contiguous for inplace tensorlist "
                     "construction.");
         }
@@ -109,16 +109,16 @@ void TensorList::PushBack(const Tensor& tensor) {
     AssertIsResizable(*this, __FUNCTION__);
 
     if (element_shape_ != tensor.GetShape()) {
-        utility::LogError(
+        CVLib::utility::LogError(
                 "TensorList has element shape {}, but tensor has shape {}.",
                 element_shape_, tensor.GetShape());
     }
     if (GetDtype() != tensor.GetDtype()) {
-        utility::LogError("TensorList has dtype {}, but tensor has shape {}.",
+        CVLib::utility::LogError("TensorList has dtype {}, but tensor has shape {}.",
                           GetDtype().ToString(), tensor.GetDtype().ToString());
     }
     if (GetDevice() != tensor.GetDevice()) {
-        utility::LogError("TensorList has device {}, but tensor has shape {}.",
+        CVLib::utility::LogError("TensorList has device {}, but tensor has shape {}.",
                           GetDevice().ToString(),
                           tensor.GetDevice().ToString());
     }
@@ -131,15 +131,15 @@ void TensorList::Extend(const TensorList& other) {
 
     // Check consistency
     if (element_shape_ != other.GetElementShape()) {
-        utility::LogError("TensorList shapes {} and {} are inconsistent.",
+        CVLib::utility::LogError("TensorList shapes {} and {} are inconsistent.",
                           element_shape_, other.GetElementShape());
     }
     if (GetDevice() != other.GetDevice()) {
-        utility::LogError("TensorList device {} and {} are inconsistent.",
+        CVLib::utility::LogError("TensorList device {} and {} are inconsistent.",
                           GetDevice().ToString(), other.GetDevice().ToString());
     }
     if (GetDtype() != other.GetDtype()) {
-        utility::LogError("TensorList dtype {} and {} are inconsistent.",
+        CVLib::utility::LogError("TensorList dtype {} and {} are inconsistent.",
                           GetDtype().ToString(), other.GetDtype().ToString());
     }
 
@@ -190,12 +190,12 @@ void TensorList::ResizeWithExpand(int64_t new_size) {
 
 int64_t TensorList::ComputeReserveSize(int64_t n) {
     if (n < 0) {
-        utility::LogError("Negative tensorlist size {} is not supported.", n);
+        CVLib::utility::LogError("Negative tensorlist size {} is not supported.", n);
     }
 
     int64_t base = 1;
     if (n > (base << 61)) {
-        utility::LogError("Too large tensorlist size {} is not supported.", n);
+        CVLib::utility::LogError("Too large tensorlist size {} is not supported.", n);
     }
 
     for (int i = 63; i >= 0; --i) {

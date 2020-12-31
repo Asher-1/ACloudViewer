@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,6 @@
 #pragma once
 
 #include "core/hashmap/CUDA/HashmapCUDA.h"
-#include "core/hashmap/CUDA/HashmapCUDAImpl.cuh"
 
 namespace cloudViewer {
 namespace core {
@@ -49,10 +48,10 @@ namespace core {
 /// Templated factory.
 template <typename Hash, typename KeyEq>
 std::shared_ptr<CUDAHashmap<Hash, KeyEq>> CreateTemplateCUDAHashmap(
-        size_t init_buckets,
-        size_t init_capacity,
-        size_t dsize_key,
-        size_t dsize_value,
+        int64_t init_buckets,
+        int64_t init_capacity,
+        int64_t dsize_key,
+        int64_t dsize_value,
         const Device& device) {
     return std::make_shared<CUDAHashmap<Hash, KeyEq>>(
             init_buckets, init_capacity, dsize_key, dsize_value, device);
