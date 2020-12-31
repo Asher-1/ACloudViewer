@@ -15,7 +15,6 @@ set( ErowCloudViewerPlugins_SOURCE_DIR "${CMAKE_SOURCE_DIR}/plugins" )
 
 add_subdirectory( core )
 add_subdirectory( example )
-#add_subdirectory( 3rdParty )
 
 # Check for any private plugins and add them
 get_filename_component( PRIVATE_DIR private ABSOLUTE )

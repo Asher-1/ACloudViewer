@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "ml/Helper.h"
-#include "ml/impl/misc/Nms.h"
+#include "ml/contrib/Nms.h"
 #include "ml/tensorflow/misc/NmsOpKernel.h"
 
 using namespace nms_opkernel;
@@ -39,7 +39,7 @@ public:
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& boxes,
                 const tensorflow::Tensor& scores) {
-        std::vector<int64_t> keep_indices = cloudViewer::ml::impl::NmsCUDAKernel(
+        std::vector<int64_t> keep_indices = cloudViewer::ml::contrib::NmsCUDAKernel(
                 boxes.flat<float>().data(), scores.flat<float>().data(),
                 boxes.dim_size(0), this->nms_overlap_thresh);
 
@@ -53,9 +53,9 @@ public:
     }
 };
 
-#define REG_KB(type)                                                        \
-    REGISTER_KERNEL_BUILDER(                                                \
-            Name("CloudviewerNms").Device(DEVICE_GPU).TypeConstraint<type>("T"), \
+#define REG_KB(type)                                                            \
+    REGISTER_KERNEL_BUILDER(                                                    \
+            Name("CloudviewerNms").Device(DEVICE_GPU).TypeConstraint<type>("T"),\
             NmsOpKernelCUDA);
 REG_KB(float)
 #undef REG_KB

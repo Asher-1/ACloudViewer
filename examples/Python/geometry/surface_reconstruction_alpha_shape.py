@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# CloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit www.erow.cn for details
 
 # examples/Python/Advanced/surface_reconstruction_alpha_shape.py
 

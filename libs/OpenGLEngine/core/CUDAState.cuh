@@ -42,7 +42,6 @@
 
 namespace cloudViewer {
 namespace core {
-using namespace CVLib;
 /// \class CUDADeviceSwitcher
 ///
 /// Switch CUDA device id in the current scope. The device id will be resetted
@@ -138,12 +137,12 @@ public:
 
     bool IsP2PEnabled(int src_id, int tar_id) {
         if (src_id < 0 || src_id >= num_devices_) {
-            utility::LogError(
+            CVLib::utility::LogError(
                     "Device id {} is out of bound of total {} devices.", src_id,
                     num_devices_);
         }
         if (tar_id < 0 || tar_id >= num_devices_) {
-            utility::LogError(
+            CVLib::utility::LogError(
                     "Device id {} is out of bound of total {} devices.", tar_id,
                     num_devices_);
         }

@@ -2214,31 +2214,6 @@ bool ccMesh::reserve(size_t n)
 	return m_triVertIndexes->reserveSafe(n);
 }
 
-bool ccMesh::reserveAssociatedCloud(std::size_t n) {
-    if (!m_associatedCloud) {
-        CVLib::utility::LogWarning("Must call createInternalCloud first!");
-        return false;
-    }
-    ccPointCloud* baseVertices = ccHObjectCaster::ToPointCloud(m_associatedCloud);
-
-    if (!baseVertices->reserveThePointsTable(n)) {
-        CVLib::utility::LogError(
-                "[reserveThePointsTable] Not have enough memory! ");
-        return false;
-    }
-    if (!baseVertices->reserveTheNormsTable()) {
-        CVLib::utility::LogError(
-                "[reserveTheNormsTable] Not have enough memory! ");
-        return false;
-    }
-    if (!baseVertices->reserveTheRGBTable()) {
-        CVLib::utility::LogError(
-                "[reserveTheRGBTable] Not have enough memory! ");
-        return false;
-    }
-    return true;
-}
-
 bool ccMesh::resize(size_t n)
 {
 	m_bBox.setValidity(false);
@@ -2281,14 +2256,39 @@ bool ccMesh::resizeAssociatedCloud(std::size_t n) {
                 "[resize] Not have enough memory! ");
         return false;
     }
-    if (!baseVertices->resizeTheNormsTable()) {
+    if (baseVertices->hasNormals() && !baseVertices->resizeTheNormsTable()) {
         CVLib::utility::LogError(
                 "[resizeTheNormsTable] Not have enough memory! ");
         return false;
     }
-    if (!baseVertices->resizeTheRGBTable()) {
+    if (baseVertices->hasColors() && !baseVertices->resizeTheRGBTable()) {
         CVLib::utility::LogError(
                 "[resizeTheRGBTable] Not have enough memory! ");
+        return false;
+    }
+    return true;
+}
+
+bool ccMesh::reserveAssociatedCloud(std::size_t n, bool init_color, bool init_normal) {
+    if (!m_associatedCloud) {
+        CVLib::utility::LogWarning("Must call createInternalCloud first!");
+        return false;
+    }
+    ccPointCloud* baseVertices = ccHObjectCaster::ToPointCloud(m_associatedCloud);
+
+    if (!baseVertices->reserveThePointsTable(n)) {
+        CVLib::utility::LogError(
+                "[reserveThePointsTable] Not have enough memory! ");
+        return false;
+    }
+    if (init_normal && !baseVertices->reserveTheNormsTable()) {
+        CVLib::utility::LogError(
+                "[reserveTheNormsTable] Not have enough memory! ");
+        return false;
+    }
+    if (init_color && !baseVertices->reserveTheRGBTable()) {
+        CVLib::utility::LogError(
+                "[reserveTheRGBTable] Not have enough memory! ");
         return false;
     }
     return true;

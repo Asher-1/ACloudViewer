@@ -28,8 +28,8 @@
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
 
-#include <PointCloudIO.h>
-#include <TriangleMeshIO.h>
+#include "io/PointCloudIO.h"
+#include "io/TriangleMeshIO.h"
 #include <IJsonConvertibleIO.h>
 #include <Image.h>
 #include <ecvMesh.h>

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -28,14 +28,14 @@
 
 #include <Eigen/src/Core/Transpose.h>
 
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Scene.h"
 
 namespace cloudViewer {
 namespace visualization {
 namespace rendering {
 
-ModelInteractorLogic::ModelInteractorLogic(Open3DScene* scene,
+ModelInteractorLogic::ModelInteractorLogic(CloudViewerScene* scene,
                                            Camera* camera,
                                            double min_far_plane)
     : RotationInteractorLogic(camera, min_far_plane), scene_(scene) {}

@@ -30,7 +30,8 @@
 
 namespace cloudViewer {
 namespace visualization {
-	using namespace CVLib;
+
+using namespace CVLib;
 
 void Visualizer::WindowRefreshCallback(GLFWwindow *window) {
     if (is_redraw_required_) {
@@ -120,6 +121,15 @@ void Visualizer::KeyPressCallback(
     }
 
     switch (key) {
+        case GLFW_KEY_ENTER:
+            if (mods & GLFW_MOD_ALT) {
+                if (IsFullScreen()) {
+                    SetFullScreen(false);
+                } else {
+                    SetFullScreen(true);
+                };
+            }
+            break;
         case GLFW_KEY_LEFT_BRACKET:
             view_control_ptr_->ChangeFieldOfView(-1.0);
             utility::LogDebug("[Visualizer] Field of view set to {:.2f}.",

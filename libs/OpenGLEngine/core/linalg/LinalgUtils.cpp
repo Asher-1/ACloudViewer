@@ -38,12 +38,12 @@ std::shared_ptr<CuSolverContext> CuSolverContext::GetInstance() {
 
 CuSolverContext::CuSolverContext() {
     if (cusolverDnCreate(&handle_) != CUSOLVER_STATUS_SUCCESS) {
-        utility::LogError("Unable to create cuSolver handle");
+        CVLib::utility::LogError("Unable to create cuSolver handle");
     }
 }
 CuSolverContext::~CuSolverContext() {
     if (cusolverDnDestroy(handle_) != CUSOLVER_STATUS_SUCCESS) {
-        utility::LogError("Unable to destroy cuSolver handle");
+        CVLib::utility::LogError("Unable to destroy cuSolver handle");
     }
 }
 
@@ -58,7 +58,7 @@ std::shared_ptr<CuBLASContext> CuBLASContext::GetInstance() {
 
 CuBLASContext::CuBLASContext() {
     if (cublasCreate(&handle_) != CUBLAS_STATUS_SUCCESS) {
-        utility::LogError("Unable to create cublas handle");
+        CVLib::utility::LogError("Unable to create cublas handle");
     }
 }
 CuBLASContext::~CuBLASContext() { cublasDestroy(handle_); }

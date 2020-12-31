@@ -33,6 +33,12 @@
 namespace CVLib {
 namespace utility {
 
+std::string IJsonConvertible::ToString() const {
+    Json::Value val;
+    ConvertToJsonValue(val);
+    return val.toStyledString();
+}
+
 bool IJsonConvertible::EigenVector3dFromJsonArray(Eigen::Vector3d &vec,
                                                   const Json::Value &value) {
     if (value.size() != 3) {

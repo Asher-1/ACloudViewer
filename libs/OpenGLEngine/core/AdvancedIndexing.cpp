@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -129,7 +129,7 @@ Tensor AdvancedIndexPreprocessor::RestrideIndexTensor(
 void AdvancedIndexPreprocessor::RunPreprocess() {
     // Dimension check
     if (static_cast<int64_t>(index_tensors_.size()) > tensor_.NumDims()) {
-        utility::LogError(
+        CVLib::utility::LogError(
                 "Number of index_tensors {} exceeds tensor dimension "
                 "{}.",
                 index_tensors_.size(), tensor_.NumDims());
@@ -140,7 +140,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     // converting to int64_t tensors.
     for (const Tensor& index_tensor : index_tensors_) {
         if (index_tensor.GetDtype() != Dtype::Int64) {
-            utility::LogError(
+            CVLib::utility::LogError(
                     "Index tensor must have Int64 dtype, but {} was used.",
                     index_tensor.GetDtype().ToString());
         }
@@ -232,7 +232,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
                            [](int64_t val) { return val == 0; });
     };
     if (contains_zero(indexed_shape_) && !contains_zero(replacement_shape)) {
-        utility::LogError("Index is out of bounds for dimension with size 0");
+        CVLib::utility::LogError("Index is out of bounds for dimension with size 0");
     }
 
     // Restride tensor_ and index tensors_.

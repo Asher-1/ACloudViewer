@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -59,7 +59,7 @@ void IndexGet(const Tensor& src,
         IndexGetCUDA(src, dst, index_tensors, indexed_shape, indexed_strides);
 #endif
     } else {
-        utility::LogError("IndexGet: Unimplemented device");
+        CVLib::utility::LogError("IndexGet: Unimplemented device");
     }
 }
 
@@ -84,7 +84,7 @@ void IndexSet(const Tensor& src,
         IndexSetCUDA(src, dst, index_tensors, indexed_shape, indexed_strides);
 #endif
     } else {
-        utility::LogError("IndexSet: Unimplemented device");
+        CVLib::utility::LogError("IndexSet: Unimplemented device");
     }
 }
 

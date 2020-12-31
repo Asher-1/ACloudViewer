@@ -17,7 +17,7 @@
  */
 // CloudViewer alterations are:
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -195,7 +195,7 @@ ImguiFilamentBridge::ImguiFilamentBridge(
 
     auto native_view = impl_->view_->GetNativeView();
     native_view->setPostProcessingEnabled(false);
-    native_view->setShadowsEnabled(false);
+    native_view->setShadowingEnabled(false);
 
     EntityManager& em = utils::EntityManager::get();
     impl_->renderable_ = em.create();

@@ -35,16 +35,19 @@ class Image;
 
 namespace visualization {
 namespace rendering {
-class Open3DScene;
+class CloudViewerScene;
 }
 
 namespace gui {
 
 void InitializeForPython(std::string resource_path = "");
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height);
+        rendering::CloudViewerScene *scene, int width, int height);
 
 void pybind_gui(py::module &m);
+
+void pybind_gui_events(py::module &m);
+void pybind_gui_classes(py::module &m);
 
 }  // namespace gui
 }  // namespace visualization

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -42,6 +42,8 @@
 
 #include <Console.h>
 #include <FileSystem.h>
+#include <Image.h>
+
 #include "visualization/gui/Button.h"
 #include "visualization/gui/Events.h"
 #include "visualization/gui/Label.h"
@@ -550,10 +552,9 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
 
             impl_->is_running_ = false;
             impl_->CleanupAfterRunning();
-        } else {
-            // reset, otherwise we will be done next time, too.
-            impl_->should_quit_ = false;
         }
+        // reset, otherwise we will be done next time, too.
+        impl_->should_quit_ = false;
     }
 
     return (status == RunStatus::CONTINUE);

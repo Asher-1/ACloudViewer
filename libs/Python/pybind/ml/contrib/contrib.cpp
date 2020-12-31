@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,6 @@
 
 #include "pybind/ml/contrib/contrib.h"
 
-#include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/cloudViewer_pybind.h"
 #include "pybind/pybind_utils.h"
@@ -40,6 +39,7 @@ void pybind_contrib(py::module& m) {
 
     pybind_contrib_subsample(m_contrib);
     pybind_contrib_nns(m_contrib);
+    pybind_contrib_iou(m_contrib);
 }
 
 }  // namespace contrib

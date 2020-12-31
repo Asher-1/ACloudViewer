@@ -27,7 +27,7 @@
 #include <benchmark/benchmark.h>
 
 #include <ecvMesh.h>
-#include <TriangleMeshIO.h>
+#include "io/TriangleMeshIO.h"
 
 namespace cloudViewer {
 namespace benchmarks {

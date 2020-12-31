@@ -3,8 +3,10 @@ file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
 set(ALL_SOURCE_FILES
     PointCloud.cpp
     Image.cpp
-    TensorListMap.cpp
+    RGBDImage.cpp
+    TensorMap.cpp
     TriangleMesh.cpp
+    TSDFVoxelGrid.cpp
 )
 
 add_library(tgeometry OBJECT ${ALL_SOURCE_FILES} ${ALL_HEADER_FILES})

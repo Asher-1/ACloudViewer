@@ -27,10 +27,11 @@
 #pragma once
 
 #include "pybind/cloudViewer_pybind.h"
+#include "pybind11/functional.h"
 
 // We cannot give out a shared_ptr to objects like Window which reference
 // Filament objects, because we cannot guarantee that the Python script is
-// not holding on to a reference when we cleanup Filament. The CloudViewer library
+// not holding on to a reference when we cleanup Filament. The Open3D library
 // will clear its shared_ptrs expecting the dependent object(s) to clean up,
 // but they won't because Python still has a shared_ptr, leading to a crash
 // when the variable goes of scope on the Python side.
@@ -79,6 +80,8 @@ void pybind_renderoption_method(py::module &m);
 void pybind_viewcontrol_method(py::module &m);
 void pybind_visualizer_method(py::module &m);
 void pybind_visualization_utility_methods(py::module &m);
+
+void pybind_o3dvisualizer(py::module &m);
 
 }  // namespace visualization
 }  // namespace cloudViewer

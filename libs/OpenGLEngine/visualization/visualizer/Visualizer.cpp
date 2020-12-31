@@ -27,10 +27,14 @@
 #include "visualization/visualizer/Visualizer.h"
 
 #include <Console.h>
-#include <ecvBBox.h>
 #include <ecvMesh.h>
-#include <ecvHObject.h>
-#include <ecvOrientedBBox.h>
+
+#if defined(__APPLE__) && defined(BUILD_GUI)
+namespace bluegl {
+int bind();
+void unbind();
+}  // namespace bluegl
+#endif
 
 namespace cloudViewer {
 
@@ -74,6 +78,9 @@ Visualizer::Visualizer() {}
 
 Visualizer::~Visualizer() {
     glfwTerminate();  // to be safe
+#if defined(__APPLE__) && defined(BUILD_GUI)
+    bluegl::unbind();
+#endif
 }
 
 bool Visualizer::CreateVisualizerWindow(
@@ -406,7 +413,7 @@ bool Visualizer::RemoveGeometry(
         if (geometry_renderer_ptr->GetGeometry() == geometry_ptr)
             geometry_renderer_delete = geometry_renderer_ptr;
     }
-    if (geometry_renderer_delete == NULL) return false;
+    if (!geometry_renderer_delete) return false;
     geometry_renderer_ptrs_.erase(geometry_renderer_delete);
     geometry_ptrs_.erase(geometry_ptr);
     if (reset_bounding_box) {
@@ -445,6 +452,34 @@ bool Visualizer::UpdateGeometry(
 void Visualizer::UpdateRender() { is_redraw_required_ = true; }
 
 bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
+
+void Visualizer::SetFullScreen(bool fullscreen) {
+    if (!fullscreen) {
+        glfwSetWindowMonitor(window_, nullptr, saved_window_pos_(0),
+                             saved_window_pos_(1), saved_window_size_(0),
+                             saved_window_size_(1), GLFW_DONT_CARE);
+    } else {
+        glfwGetWindowSize(window_, &saved_window_size_(0),
+                          &saved_window_size_(1));
+        glfwGetWindowPos(window_, &saved_window_pos_(0), &saved_window_pos_(1));
+        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+        glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width, mode->height,
+                             mode->refreshRate);
+    }
+}
+
+void Visualizer::ToggleFullScreen() {
+    if (IsFullScreen()) {
+        SetFullScreen(false);
+    } else {
+        SetFullScreen(true);
+    }
+}
+
+bool Visualizer::IsFullScreen() {
+    return glfwGetWindowMonitor(window_) != nullptr;
+}
 
 void Visualizer::PrintVisualizerHelp() {
     // clang-format off

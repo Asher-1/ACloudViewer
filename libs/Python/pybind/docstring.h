@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "eCV_python.h"
+
 #include <string>
 #include <unordered_map>
 
@@ -85,6 +85,9 @@ public:
     /// Generate Google style python docstring
     std::string ToGoogleDocString() const;
 
+    /// Apply fixes to namespace, e.g. "::" to "." for python
+    static std::string NamespaceFix(const std::string& s);
+
 protected:
     /// Parse the function name from docstring
     void ParseFunctionName();
@@ -98,7 +101,6 @@ protected:
     /// Parse function return
     void ParseReturn();
 
-protected:
     /// Split docstring to argument tokens
     /// E.g. "cylinder_radius: float = 1.0", "cylinder_radius: float"
     static std::vector<std::string> GetArgumentTokens(
@@ -110,9 +112,6 @@ protected:
     /// Runs all string cleanup functions
     static std::string StringCleanAll(std::string& s,
                                       const std::string& white_space = " \t\n");
-
-    /// Apply fixes to namespace, e.g. "::" to "." for python
-    static std::string NamespaceFix(const std::string& s);
 
 public:
     std::string name_ = "";
@@ -141,7 +140,8 @@ void ClassMethodDocInject(
         const std::string& function_name,
         const std::unordered_map<std::string, std::string>&
                 map_parameter_body_docs =
-                        std::unordered_map<std::string, std::string>());
+                        std::unordered_map<std::string, std::string>(),
+        bool skip_init = true);
 
 extern py::handle static_property;
 

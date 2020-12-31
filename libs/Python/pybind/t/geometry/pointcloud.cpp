@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -42,23 +42,19 @@ void pybind_pointcloud(py::module& m) {
                        "A pointcloud contains a set of 3D points.");
 
     // Constructors.
-    pointcloud
-            .def(py::init<core::Dtype, const core::Device&>(), "dtype"_a,
-                 "device"_a)
-            .def(py::init<const core::TensorList&>(), "points"_a)
+    pointcloud.def(py::init<const core::Device&>(), "device"_a)
+            .def(py::init<const core::Tensor&>(), "points"_a)
             .def(py::init<const std::unordered_map<std::string,
-                                                   core::TensorList>&>(),
-                 "map_keys_to_tensorlists"_a);
+                                                   core::Tensor>&>(),
+                 "map_keys_to_tensors"_a);
 
     // Point's attributes: points, colors, normals, etc.
-    // def_property_readonly is sufficient, since the returned TensorListMap can
-    // be editable in Python. We don't want the TensorListMp to be replaced
-    // by another TensorListMap in Python.
+    // def_property_readonly is sufficient, since the returned TensorMap can
+    // be editable in Python. We don't want the TensorMap to be replaced
+    // by another TensorMap in Python.
     pointcloud.def_property_readonly(
             "point",
             py::overload_cast<>(&PointCloud::GetPointAttr, py::const_));
-    pointcloud.def("synchronized_push_back", &PointCloud::SynchronizedPushBack,
-                   "map_keys_to_tensors"_a);
 
     // Pointcloud specific functions.
     // TOOD: convert o3d.pybind.core.Tensor (C++ binded Python) to
@@ -78,12 +74,18 @@ void pybind_pointcloud(py::module& m) {
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
     pointcloud.def_static(
+            "create_from_depth_image", &PointCloud::CreateFromDepthImage,
+            "depth"_a, "intrinsics"_a,
+            "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
+                                               core::Device("CPU:0")),
+            "depth_scale"_a = 1000.0, "depth_max"_a = 3.0, "stride"_a = 1);
+    pointcloud.def_static(
             "from_legacy_pointcloud", &PointCloud::FromLegacyPointCloud,
             "pcd_legacy"_a, "dtype"_a = core::Dtype::Float32,
             "device"_a = core::Device("CPU:0"),
-            "Create a PointCloud from a legacy CloudViewer PointCloud.");
+            "Create a PointCloud from a legacy Open3D PointCloud.");
     pointcloud.def("to_legacy_pointcloud", &PointCloud::ToLegacyPointCloud,
-                   "Convert to a legacy CloudViewer PointCloud.");
+                   "Convert to a legacy Open3D PointCloud.");
 }
 
 }  // namespace geometry

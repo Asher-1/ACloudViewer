@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -49,22 +49,18 @@
 #include "core/CUDAUtils.h"
 #include "core/MemoryManager.h"
 #include "core/hashmap/CUDA/Macros.h"
-#include "core/hashmap/Traits.h"
 
 namespace cloudViewer {
 namespace core {
 
 /// Internal Hashtable Node: (31 units and 1 next ptr) representation.
 /// A slab is kWarpSize x kWarpSize bits, or kWarpSize 32-bit uints.
-///
-/// \member kv_pair_ptrs:
-/// Each element is an internal ptr to a kv pair managed by the
-/// InternalMemoryManager. Can be converted to a real ptr.
-/// \member next_slab_ptr:
-/// An internal ptr managed by InternalNodeManager.
 class Slab {
 public:
+    /// Each element is an internal ptr to a kv pair managed by the
+    /// InternalMemoryManager. Can be converted to a real ptr.
     addr_t kv_pair_ptrs[kWarpSize - 1];
+    /// An internal ptr managed by InternalNodeManager.
     addr_t next_slab_ptr;
 };
 

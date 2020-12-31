@@ -69,6 +69,7 @@ public:
            const Device& device = Device("CPU:0"))
         : Tensor(shape, dtype, device) {
         // Check number of elements
+
         if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
             CVLib::utility::LogError(
                     "Tensor initialization values' size {} does not match the "
@@ -237,7 +238,7 @@ public:
     /// t2 = t[0:4:2]
     /// ```
     ///
-    /// The equivalent CloudViewer C++ calls:
+    /// The equivalent Open3D C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, Dtype::Float32);
     /// Tensor t1 = t.GetItem(TensorIndex(2));
@@ -257,7 +258,7 @@ public:
     /// t1 = t[1, 0:4:2]
     /// ```
     ///
-    /// The equivalent CloudViewer C++ calls:
+    /// The equivalent Open3D C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, Dtype::Float32);
     /// Tensor t1 = t.GetItem({TensorIndex(2), TensorSlice(0, 4, 2)});
@@ -277,7 +278,7 @@ public:
     /// t[0:4:2] = np.empty((2, 5), dtype=np.float32)
     /// ```
     ///
-    /// The equivalent CloudViewer C++ calls:
+    /// The equivalent Open3D C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, Dtype::Float32);
     /// t.SetItem(TensorIndex(2), Tensor({5}, Dtype::Float32));
@@ -293,7 +294,7 @@ public:
     /// t[2, 0:4:2] = np.empty((2, 5), dtype=np.float32)
     /// ```
     ///
-    /// The equivalent CloudViewer C++ calls:
+    /// The equivalent Open3D C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, Dtype::Float32);
     /// t.SetItem({TensorIndex(2), TensorSlice(0, 4, 2)},
@@ -435,12 +436,18 @@ public:
     /// 0-D and 1-D Tensor remains the same.
     Tensor T() const;
 
+    /// \brief Expects input to be 3x3 Matrix.
+    /// \return returns the determinant of the matrix (double).
+    double Det() const;
+
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
     /// mush have empty shape ()
     template <typename T>
     T Item() const {
-        if (shape_.size() != 0) {
-            CVLib::utility::LogError("Item only works for scalar Tensor of shape ()");
+        if (shape_.NumElements() != 1) {
+            CVLib::utility::LogError(
+                    "Tensor::Item() only works for Tensor with exactly one "
+                    "element.");
         }
         AssertTemplateDtype<T>();
         T value;
@@ -820,6 +827,17 @@ public:
     /// tensor.
     Tensor NonZero() const;
 
+    /// Evaluate a single-element Tensor as a boolean value. This can be used to
+    /// implement Tensor.__bool__() in Python, e.g.
+    /// ```python
+    /// assert Tensor([True])         # Passes.
+    /// assert Tensor([123])          # Passes.
+    /// assert Tensor([False])        # AssertionError.
+    /// assert Tensor([0])            # AssertionError.
+    /// assert Tensor([True, False])  # ValueError: cannot be evaluated as bool.
+    /// ```
+    bool IsNonZero() const;
+
     /// Returns true if all elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
     /// the reduction is apply to all dimensions.
@@ -920,6 +938,10 @@ public:
     /// Note VT (V transpose) is returned instead of V.
     std::tuple<Tensor, Tensor, Tensor> SVD() const;
 
+    /// Returns the size of the first dimension. If NumDims() == 0, an exception
+    /// will be thrown.
+    inline int64_t GetLength() const { return GetShape().GetLength(); }
+
     inline SizeVector GetShape() const { return shape_; }
 
     inline const SizeVector& GetShapeRef() const { return shape_; }
@@ -989,6 +1011,15 @@ public:
     /// Assert that the Tensor has the specified shape.
     void AssertShape(const SizeVector& expected_shape) const;
 
+    /// Assert that Tensor's shape is compatible with a dynamic shape.
+    void AssertShapeCompatible(const DynamicSizeVector& expected_shape) const;
+
+    /// Assert that the Tensor has the specified device.
+    void AssertDevice(const Device& expected_device) const;
+
+    /// Assert that the Tensor has the specified dtype.
+    void AssertDtype(const Dtype& expected_dtype) const;
+
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
@@ -1046,7 +1077,7 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
     AssertTemplateDtype<bool>();
 
     // std::vector<bool> possibly implements 1-bit-sized boolean storage.
-    // CloudViewer uses 1-byte-sized boolean storage for easy indexing.
+    // Open3D uses 1-byte-sized boolean storage for easy indexing.
     std::vector<uint8_t> init_vals_uchar(init_vals.size());
     std::transform(init_vals.begin(), init_vals.end(), init_vals_uchar.begin(),
                    [](bool v) -> uint8_t { return static_cast<uint8_t>(v); });
@@ -1066,7 +1097,7 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
                                 GetDtype().ByteSize() * NumElements());
 
     // std::vector<bool> possibly implements 1-bit-sized boolean storage.
-    // CloudViewer uses 1-byte-sized boolean storage for easy indexing.
+    // Open3D uses 1-byte-sized boolean storage for easy indexing.
     std::transform(values_uchar.begin(), values_uchar.end(), values.begin(),
                    [](uint8_t v) -> bool { return static_cast<bool>(v); });
     return values;
@@ -1074,8 +1105,9 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
 
 template <>
 inline bool Tensor::Item() const {
-    if (shape_.size() != 0) {
-        CVLib::utility::LogError("Item only works for scalar Tensor of shape ()");
+    if (shape_.NumElements() != 1) {
+        CVLib::utility::LogError(
+                "Tensor::Item only works for Tensor with one element.");
     }
     AssertTemplateDtype<bool>();
     uint8_t value;
