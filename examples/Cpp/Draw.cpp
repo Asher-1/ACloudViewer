@@ -30,8 +30,6 @@
 
 using namespace cloudViewer;
 
-const std::string TEST_DIR = "/media/yons/data/develop/pcl_projects/ErowCloudViewer/ErowCloudViewerPython/TestData";
-
 double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
 std::shared_ptr<ccPointCloud> MakePointCloud(
@@ -93,14 +91,14 @@ void MultiObjects() {
                          big_bbox, sphere_bbox, lines, lines_colored});
 }
 
-void Actions() {
+void Actions(const std::string test_dir) {
     const char *SOURCE_NAME = "Source";
     const char *RESULT_NAME = "Result (Poisson reconstruction)";
     const char *TRUTH_NAME = "Ground truth";
 
     auto bunny = std::make_shared<ccMesh>();
     bunny->createInternalCloud();
-    io::ReadTriangleMesh(TEST_DIR + "/Bunny.ply", *bunny);
+    io::ReadTriangleMesh(test_dir + "/Bunny.ply", *bunny);
     if (bunny->isEmpty()) {
         CVLib::utility::LogError(
                 "Please download the Standford Bunny dataset using:\n"
@@ -170,7 +168,7 @@ Eigen::Matrix4d_u GetICPTransform(
     return result.transformation_;
 }
 
-void Selections() {
+void Selections(const std::string test_dir) {
     std::cout << "Selection example:" << std::endl;
     std::cout << "  One set:  pick three points from the source (yellow), "
               << std::endl;
@@ -183,8 +181,8 @@ void Selections() {
               << std::endl;
     std::cout << "            three points from the target." << std::endl;
 
-    const auto cloud0_path = TEST_DIR + "/ICP/cloud_bin_0.pcd";
-    const auto cloud1_path = TEST_DIR + "/ICP/cloud_bin_2.pcd";
+    const auto cloud0_path = test_dir + "/ICP/cloud_bin_0.pcd";
+    const auto cloud1_path = test_dir + "/ICP/cloud_bin_2.pcd";
     auto source = std::make_shared<ccPointCloud>();
     io::ReadPointCloud(cloud0_path, *source);
     if (source->isEmpty()) {
@@ -275,6 +273,11 @@ void Selections() {
 }
 
 int main(int argc, char **argv) {
+    if (argc <= 1) {
+        CVLib::utility::LogError("missing input directionary!");
+        return 0;
+    }
+    std::string TEST_DIR(argv[1]);
     if (!CVLib::utility::filesystem::DirectoryExists(TEST_DIR)) {
         CVLib::utility::LogError(
                 "This example needs to be run from the <build>/bin/examples "
@@ -283,6 +286,6 @@ int main(int argc, char **argv) {
 
     SingleObject();
     MultiObjects();
-    Actions();
-    Selections();
+    Actions(TEST_DIR);
+    Selections(TEST_DIR);
 }

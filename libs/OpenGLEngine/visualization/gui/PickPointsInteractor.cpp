@@ -28,6 +28,8 @@
 
 #include <unordered_map>
 
+#include <Console.h>
+
 #include <Image.h>
 #include <ecvMesh.h>
 #include <LineSet.h>
@@ -35,7 +37,6 @@
 #include <ecvPointCloud.h>
 #include "t/geometry/PointCloud.h"
 #include "t/geometry/TriangleMesh.h"
-#include <Console.h>
 #include "visualization/gui/Events.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/CloudViewerScene.h"
