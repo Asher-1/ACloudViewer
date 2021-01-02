@@ -1,6 +1,6 @@
 # CloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.erow.cn for details
+# See license file or visit www.open3d.org for details
 
 # examples/python/geometry/half_edge_mesh.py
 
