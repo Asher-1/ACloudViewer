@@ -27,7 +27,6 @@
 #pragma once
 
 #include "core/Tensor.h"
-#include <Console.h>
 
 namespace cloudViewer {
 namespace core {

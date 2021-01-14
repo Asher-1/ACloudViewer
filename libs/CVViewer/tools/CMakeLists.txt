@@ -20,7 +20,7 @@ macro(TOOL TOOL_NAME)
     target_link_libraries( ${TOOL_NAME} ECV_IO_LIB )
 	
     set_target_properties(${TOOL_NAME} PROPERTIES FOLDER "Tools")
-    ShowAndAbortOnWarning(${TOOL_NAME})
+    cloudViewer_show_and_abort_on_warning(${TOOL_NAME})
     cloudViewer_set_global_properties(${TOOL_NAME})
 endmacro(TOOL)
 

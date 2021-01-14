@@ -55,12 +55,12 @@ void pybind_tsdf_voxelgrid(py::module& m) {
 
     tsdf_voxelgrid.def("integrate",
                        py::overload_cast<const Image&, const core::Tensor&,
-                                         const core::Tensor&, double, double>(
+                                         const core::Tensor&, float, float>(
                                &TSDFVoxelGrid::Integrate));
     tsdf_voxelgrid.def(
             "integrate",
             py::overload_cast<const Image&, const Image&, const core::Tensor&,
-                              const core::Tensor&, double, double>(
+                              const core::Tensor&, float, float>(
                     &TSDFVoxelGrid::Integrate));
 
     tsdf_voxelgrid.def("extract_surface_points",
@@ -68,9 +68,10 @@ void pybind_tsdf_voxelgrid(py::module& m) {
     tsdf_voxelgrid.def("extract_surface_mesh",
                        &TSDFVoxelGrid::ExtractSurfaceMesh);
 
-    tsdf_voxelgrid.def("copy", &TSDFVoxelGrid::Copy);
+    tsdf_voxelgrid.def("to", &TSDFVoxelGrid::To, "device"_a, "copy"_a = false);
+    tsdf_voxelgrid.def("clone", &TSDFVoxelGrid::Clone);
     tsdf_voxelgrid.def("cpu", &TSDFVoxelGrid::CPU);
-    tsdf_voxelgrid.def("cuda", &TSDFVoxelGrid::CUDA);
+    tsdf_voxelgrid.def("cuda", &TSDFVoxelGrid::CUDA, "device_id"_a);
 
     tsdf_voxelgrid.def("get_device", &TSDFVoxelGrid::GetDevice);
 }

@@ -1469,10 +1469,9 @@ bool SimpleShaderForOctreeFace::PrepareBinding(
     auto f = [&points, &colors, &option, &global_color_map, &view](
                      const std::shared_ptr<geometry::OctreeNode> &node,
                      const std::shared_ptr<geometry::OctreeNodeInfo> &node_info)
-            -> void {
+            -> bool {
         if (auto leaf_node =
-                    std::dynamic_pointer_cast<geometry::OctreeColorLeafNode>(
-                            node)) {
+                    std::dynamic_pointer_cast<geometry::OctreeColorLeafNode>(node)) {
             // All vertex in the voxel share the same color
             Eigen::Vector3f base_vertex = node_info->origin_.cast<float>();
             std::vector<Eigen::Vector3f> vertices;
@@ -1520,6 +1519,7 @@ bool SimpleShaderForOctreeFace::PrepareBinding(
                 colors.push_back(voxel_color_f);
             }
         }
+        return false;
     };
 
     octree.Traverse(f);
@@ -1565,7 +1565,7 @@ bool SimpleShaderForOctreeLine::PrepareBinding(
     auto f = [&points, &colors](
                      const std::shared_ptr<geometry::OctreeNode> &node,
                      const std::shared_ptr<geometry::OctreeNodeInfo> &node_info)
-            -> void {
+            -> bool {
         Eigen::Vector3f base_vertex = node_info->origin_.cast<float>();
         std::vector<Eigen::Vector3f> vertices;
         for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
@@ -1586,6 +1586,7 @@ bool SimpleShaderForOctreeLine::PrepareBinding(
             colors.push_back(voxel_color);
             colors.push_back(voxel_color);
         }
+        return false;
     };
 
     octree.Traverse(f);

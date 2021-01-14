@@ -28,7 +28,7 @@ add_library(tio OBJECT
     ${REALSENSE_SRC}
     )
 target_compile_definitions(tio PRIVATE ${IO_DEFINITIONS})
-ShowAndAbortOnWarning(tio)
+cloudViewer_show_and_abort_on_warning(tio)
 cloudViewer_set_global_properties(tio)
 cloudViewer_set_cloudViewer_lib_properties(tio)
 cloudViewer_link_3rdparty_libraries(tio)

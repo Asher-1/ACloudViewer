@@ -66,7 +66,7 @@ source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
 
 add_dependencies(visualization ShaderFileTarget)
 
-ShowAndAbortOnWarning(visualization)
+cloudViewer_show_and_abort_on_warning(visualization)
 cloudViewer_set_global_properties(visualization)
 cloudViewer_set_cloudViewer_lib_properties(visualization)
 cloudViewer_link_3rdparty_libraries(visualization)

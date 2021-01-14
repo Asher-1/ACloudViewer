@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -49,7 +49,7 @@ void pybind_console(py::module &m) {
 		py::none(), py::none(), "");
 
 	m.def("set_verbosity_level", &CVLib::utility::SetVerbosityLevel,
-		"Set global verbosity level of cloudViewer", py::arg("verbosity_level"));
+        "Set global verbosity level of CloudViewer", py::arg("verbosity_level"));
 	docstring::FunctionDocInject(
 		m, "set_verbosity_level",
 		{ {"verbosity_level",
@@ -57,13 +57,13 @@ void pybind_console(py::module &m) {
 		  "will be printed."} });
 
 	m.def("get_verbosity_level", &CVLib::utility::GetVerbosityLevel,
-		"Get global verbosity level of cloudViewer");
+        "Get global verbosity level of CloudViewer");
 	docstring::FunctionDocInject(m, "get_verbosity_level");
 
 	py::class_<CVLib::utility::VerbosityContextManager>(m, "VerbosityContextManager",
 		"A context manager to "
 		"temporally change the "
-		"verbosity level of Open3D")
+        "verbosity level of CloudViewer")
 		.def(py::init<CVLib::utility::VerbosityLevel>(),
 			"Create a VerbosityContextManager with a given VerbosityLevel",
 			"level"_a)

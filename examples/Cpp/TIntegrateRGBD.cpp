@@ -103,14 +103,14 @@ int main(int argc, char** argv) {
     int block_count =
             CVLib::utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
 
-    double voxel_size = CVLib::utility::GetProgramOptionAsDouble(
-            argc, argv, "--voxel_size", 3.0 / 512);
-    double depth_scale = CVLib::utility::GetProgramOptionAsDouble(
-            argc, argv, "--depth_scale", 1000.0);
-    double max_depth =
-            CVLib::utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.0);
-    double sdf_trunc =
-            CVLib::utility::GetProgramOptionAsDouble(argc, argv, "--sdf_trunc", 0.04);
+    float voxel_size = static_cast<float>(CVLib::utility::GetProgramOptionAsDouble(
+            argc, argv, "--voxel_size", 3.f / 512.f));
+    float depth_scale = static_cast<float>(CVLib::utility::GetProgramOptionAsDouble(
+            argc, argv, "--depth_scale", 1000.f));
+    float max_depth = static_cast<float>(
+            CVLib::utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
+    float sdf_trunc = static_cast<float>(CVLib::utility::GetProgramOptionAsDouble(
+            argc, argv, "--sdf_trunc", 0.04f));
 
     // Device
     std::string device_code = "CPU:0";
@@ -123,9 +123,8 @@ int main(int argc, char** argv) {
     t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
                                            {"weight", core::Dtype::UInt16},
                                            {"color", core::Dtype::UInt16}},
-                                          static_cast<float>(voxel_size),
-                                          static_cast<float>(sdf_trunc), 16,
-                                          block_count, device);
+                                           voxel_size, sdf_trunc, 16,
+                                           block_count, device);
 
     for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
         // Load image

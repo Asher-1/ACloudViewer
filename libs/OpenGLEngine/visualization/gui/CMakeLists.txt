@@ -16,7 +16,7 @@ endif()
 
 # create object library
 add_library(GUI OBJECT ${GUI_HEADER_FILES} ${GUI_SOURCE_FILES})
-ShowAndAbortOnWarning(GUI)
+cloudViewer_show_and_abort_on_warning(GUI)
 cloudViewer_set_global_properties(GUI)
 cloudViewer_link_3rdparty_libraries(GUI)
 

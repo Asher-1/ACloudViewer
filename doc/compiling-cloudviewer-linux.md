@@ -12,7 +12,7 @@ Build from source in Ubuntu and macOS
 	
 	    # configure for vtk(8.2)
 	      cmake -DVTK_QT_VERSION:STRING=5 \
-		-DCMAKE_BUILD_TYPE=Release 
+		-DCMAKE_BUILD_TYPE=Release \
 	      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
 	      	-DVTK_Group_Qt:BOOL=ON \
 	      	-DCMAKE_PREFIX_PATH:PATH=/opt/5.14.2/5.14.2/gcc_64/lib/cmake  \

@@ -71,7 +71,7 @@ file(GLOB_RECURSE cloudViewer_torch_ops_HEADERS "*.h")
 add_library(cloudViewer_torch_ops SHARED ${cloudViewer_torch_ops_HEADERS} ${cloudViewer_torch_ops_SOURCES})
 
 cloudViewer_set_global_properties(cloudViewer_torch_ops)
-ShowAndAbortOnWarning(cloudViewer_torch_ops)
+cloudViewer_show_and_abort_on_warning(cloudViewer_torch_ops)
 
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TORCH_OPS_DIR cloudViewer_torch_ops LIBRARY_OUTPUT_DIRECTORY)

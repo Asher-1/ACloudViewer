@@ -34,9 +34,9 @@
 #include "core/ShapeUtil.h"
 #include "core/Tensor.h"
 #include "core/hashmap/Hashmap.h"
-#include "core/kernel/Kernel.h"
 #include "core/linalg/Matmul.h"
 #include "t/geometry/TensorMap.h"
+#include "t/geometry/kernel/PointCloud.h"
 
 namespace cloudViewer {
 namespace t {
@@ -71,15 +71,18 @@ core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
 
 core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
 
-PointCloud PointCloud::Copy(const core::Device device) const {
+PointCloud PointCloud::To(const core::Device &device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
     PointCloud pcd(device);
-    for (auto &value : point_attr_) {
-        pcd.SetPointAttr(value.first, value.second.Copy(device));
+    for (auto &kv : point_attr_) {
+        pcd.SetPointAttr(kv.first, kv.second.To(device, /*copy=*/true));
     }
     return pcd;
 }
 
-PointCloud PointCloud::Copy() const { return Copy(GetDevice()); }
+PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
     transformation.AssertShape({4, 4});
@@ -146,33 +149,15 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
 PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             const core::Tensor &intrinsics,
                                             const core::Tensor &extrinsics,
-                                            double depth_scale,
-                                            double depth_max,
+                                            float depth_scale,
+                                            float depth_max,
                                             int stride) {
     depth.AsTensor().AssertDtype(core::Dtype::UInt16);
 
-    core::Device device = depth.GetDevice();
-    std::unordered_map<std::string, core::Tensor> srcs = {
-            {"depth", depth.AsTensor()},
-            {"intrinsics", intrinsics.Copy(device)},
-            {"extrinsics", extrinsics.Copy(device)},
-            {"depth_scale",
-             core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
-                          {}, core::Dtype::Float32, device)},
-            {"depth_max",
-             core::Tensor(std::vector<float>{static_cast<float>(depth_max)}, {},
-                          core::Dtype::Float32, device)},
-            {"stride", core::Tensor(std::vector<int64_t>{stride}, {},
-                                    core::Dtype::Int64, device)}};
-    std::unordered_map<std::string, core::Tensor> dsts;
-
-    core::kernel::GeneralEW(srcs, dsts, core::kernel::GeneralEWOpCode::Unproject);
-    if (dsts.count("points") == 0) {
-        CVLib::utility::LogError(
-                "[PointCloud] unprojection launch failed, vertex map expected "
-                "to return.");
-    }
-    return PointCloud(dsts.at("points"));
+    core::Tensor points;
+    kernel::pointcloud::Unproject(depth.AsTensor(), points, intrinsics,
+                                  extrinsics, depth_scale, depth_max, stride);
+    return PointCloud(points);
 }
 
 PointCloud PointCloud::FromLegacyPointCloud(

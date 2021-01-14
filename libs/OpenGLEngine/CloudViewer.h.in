@@ -100,7 +100,7 @@
 #include "t/geometry/TensorMap.h"
 #include "t/geometry/TriangleMesh.h"
 #include "t/io/PointCloudIO.h"
-#include "t/pipelines/TransformationConverter.h"
+#include "t/pipelines/kernel/TransformationConverter.h"
 #include "t/pipelines/registration/Registration.h"
 #include "t/pipelines/registration/TransformationEstimation.h"
 #include "visualization/gui/Application.h"

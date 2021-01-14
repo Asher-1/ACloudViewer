@@ -1,6 +1,20 @@
 # Create object library
-file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
-set(ALL_SOURCE_FILES
+file(GLOB_RECURSE ALL_T_HEADER_FILES "*.h")
+
+# Create object library
+set(T_GEOMETRY_KERNEL_SRC
+    kernel/PointCloud.cpp
+    kernel/PointCloudCPU.cpp
+    kernel/TSDFVoxelGrid.cpp
+    kernel/TSDFVoxelGridCPU.cpp
+)
+
+set(T_GEOMETRY_KERNEL_CUDA_SRC
+    kernel/PointCloudCUDA.cu
+    kernel/TSDFVoxelGridCUDA.cu
+)
+
+set(T_GEOMETRY_SRC
     PointCloud.cpp
     Image.cpp
     RGBDImage.cpp
@@ -9,9 +23,25 @@ set(ALL_SOURCE_FILES
     TSDFVoxelGrid.cpp
 )
 
-add_library(tgeometry OBJECT ${ALL_SOURCE_FILES} ${ALL_HEADER_FILES})
-ShowAndAbortOnWarning(tgeometry)
+if (BUILD_CUDA_MODULE)
+    set(ALL_T_GEOMETRY_SRC
+      ${T_GEOMETRY_KERNEL_SRC}
+      ${T_GEOMETRY_KERNEL_CUDA_SRC}
+      ${T_GEOMETRY_SRC}
+    )
+else()
+    set(ALL_T_GEOMETRY_SRC
+      ${T_GEOMETRY_KERNEL_SRC}
+      ${T_GEOMETRY_SRC}
+    )
+endif()
+
+add_library(tgeometry OBJECT ${ALL_T_GEOMETRY_SRC} ${ALL_T_HEADER_FILES})
+cloudViewer_show_and_abort_on_warning(tgeometry)
 cloudViewer_set_global_properties(tgeometry)
 cloudViewer_set_cloudViewer_lib_properties(tgeometry)
 cloudViewer_link_3rdparty_libraries(tgeometry)
 
+if(BUILD_CUDA_MODULE)
+    target_include_directories(tgeometry SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+endif()

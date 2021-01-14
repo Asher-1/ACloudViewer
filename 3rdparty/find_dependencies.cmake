@@ -558,19 +558,10 @@ if (BUILD_LIBREALSENSE)
     set(LIBREALSENSE_TARGET "3rdparty_librealsense")
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
 
-    if (UNIX AND NOT APPLE)
-        # Ubuntu dependency: libusb-1.0.0-dev
-        find_library(LIBUSB_LIB usb-1.0)
-        find_path(LIBUSB_INC libusb.h HINTS PATH_SUFFIXES libusb-1.0)
-        if (NOT LIBUSB_LIB)
-            message(FATAL_ERROR "libusb-1.0 library not found, please install libusb-1.0.0-dev.")
-        endif()
-        if (NOT LIBUSB_INC)
-            message(FATAL_ERROR "libusb-1.0 header not found, please install libusb-1.0.0-dev.")
-        endif()
-        message(STATUS "LIBUSB_LIB: ${LIBUSB_LIB}")
-        message(STATUS "LIBUSB_INC: ${LIBUSB_INC}")
-        target_link_libraries(3rdparty_librealsense INTERFACE ${LIBUSB_LIB})
+    if (UNIX AND NOT APPLE)    # Ubuntu dependency: libudev-dev
+        find_library(UDEV_LIBRARY udev REQUIRED
+            DOC "Library provided by the deb package libudev-dev")
+        target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
     endif()
 endif()
 
@@ -589,31 +580,40 @@ if(USE_SYSTEM_PNG)
     endif()
 endif()
 if(NOT USE_SYSTEM_PNG)
-    # message(STATUS "Building third-party library zlib from source")
-    # add_subdirectory(${CloudViewer_3RDPARTY_DIR}/zlib)
-    # import_3rdparty_library(3rdparty_zlib INCLUDE_DIRS ${CloudViewer_3RDPARTY_DIR}/zlib LIBRARIES ${ZLIB_LIBRARY})
-    # add_dependencies(3rdparty_zlib ${ZLIB_LIBRARY})
-    # message(STATUS "Building third-party library libpng from source")
-    # add_subdirectory(${CloudViewer_3RDPARTY_DIR}/libpng)
-    # import_3rdparty_library(3rdparty_png INCLUDE_DIRS ${CloudViewer_3RDPARTY_DIR}/libpng/ LIBRARIES ${PNG_LIBRARIES})
-    # add_dependencies(3rdparty_png ${PNG_LIBRARIES})
-    # target_link_libraries(3rdparty_png INTERFACE 3rdparty_zlib)
-    # set(PNG_TARGET "3rdparty_png")
-    # set(ZLIB_TARGET "3rdparty_zlib")
-    add_subdirectory(${CloudViewer_3RDPARTY_DIR}/zlib)
-    add_subdirectory(${CloudViewer_3RDPARTY_DIR}/libpng)
-    list(APPEND PNG_LIBRARIES zlib)
-    set(ZLIB_LIBRARIES ${ZLIB_LIBRARY})
+    include(${CloudViewer_3RDPARTY_DIR}/zlib/zlib.cmake)
+    import_3rdparty_library(3rdparty_zlib
+        INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
+        LIB_DIR      ${ZLIB_LIB_DIR}
+        LIBRARIES    ${ZLIB_LIBRARIES}
+    )
+    set(ZLIB_TARGET "3rdparty_zlib")
+    add_dependencies(3rdparty_zlib ext_zlib)
+
+    include(${CloudViewer_3RDPARTY_DIR}/libpng/libpng.cmake)
+    import_3rdparty_library(3rdparty_libpng
+        INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
+        LIB_DIR      ${LIBPNG_LIB_DIR}
+        LIBRARIES    ${LIBPNG_LIBRARIES}
+    )
+    set(LIBPNG_TARGET "3rdparty_libpng")
+    add_dependencies(3rdparty_libpng ext_libpng)
+    add_dependencies(ext_libpng ext_zlib)
+
+    # Putting zlib after libpng somehow works for Ubuntu.
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
+
+#    add_subdirectory(${CloudViewer_3RDPARTY_DIR}/zlib)
+#    add_subdirectory(${CloudViewer_3RDPARTY_DIR}/libpng)
+#    list(APPEND PNG_LIBRARIES zlib)
+#    set(ZLIB_LIBRARIES ${ZLIB_LIBRARY})
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
 endif()
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
 
 # rply
 build_3rdparty_library(3rdparty_rply DIRECTORY rply SOURCES rply/rply.c INCLUDE_DIRS rply/)
 set(RPLY_TARGET "3rdparty_rply")
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${RPLY_TARGET}")
-
-# rply
-#Directories("${CloudViewer_3RDPARTY_DIR}/rply"   rply_INCLUDE_DIRS)
 
 # tinyfiledialogs
 build_3rdparty_library(3rdparty_tinyfiledialogs
@@ -1138,19 +1138,19 @@ add_subdirectory( "${RANSAC_LIB_DIR}" )
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${GLFW_INCLUDE_DIRS}
-     ${PNG_INCLUDE_DIRS}
+#     ${PNG_INCLUDE_DIRS}
 )
 
 # set 3RDPARTY_LIBRARY_DIRS
 list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${GLFW_LIBRARY_DIRS}
-    ${PNG_LIBRARY_DIRS}
+#    ${PNG_LIBRARY_DIRS}
 )
 
 # set 3RDPARTY_LIBRARIES
 list(APPEND 3RDPARTY_LIBRARIES
      ${GLFW_LIBRARIES}
-     ${PNG_LIBRARIES}
+#     ${PNG_LIBRARIES}
 )
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS})
