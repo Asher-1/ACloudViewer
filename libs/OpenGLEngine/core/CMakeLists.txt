@@ -1,4 +1,6 @@
 set(KERNEL_SRC
+    kernel/Arange.cpp
+    kernel/ArangeCPU.cpp
     kernel/IndexGetSet.cpp
     kernel/IndexGetSetCPU.cpp
     kernel/NonZero.cpp
@@ -7,20 +9,18 @@ set(KERNEL_SRC
     kernel/UnaryEWCPU.cpp
     kernel/BinaryEW.cpp
     kernel/BinaryEWCPU.cpp
-    kernel/GeneralEW.cpp
-    kernel/GeneralEWCPU.cpp
     kernel/Reduction.cpp
     kernel/ReductionCPU.cpp
     kernel/Kernel.cpp
 )
 
 set(KERNEL_CUDA_SRC
+    kernel/ArangeCUDA.cu
     kernel/IndexGetSetCUDA.cu
     kernel/NonZeroCUDA.cu
     kernel/UnaryEWCUDA.cu
     kernel/BinaryEWCUDA.cu
-    kernel/GeneralEWCUDA.cu
-    kernel/ReductionCUDA.cu    
+    kernel/ReductionCUDA.cu
 )
 
 set(LINALG_SRC
@@ -54,6 +54,7 @@ set(CORE_SRC
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
+    NumpyIO.cpp
     Tensor.cpp
     TensorKey.cpp
     TensorList.cpp
@@ -115,11 +116,13 @@ else()
     )
 endif()
 
+file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
+
 # Create object library
 add_library(core OBJECT ${ALL_CORE_SRC} ${ALL_HEADER_FILES})
 cloudViewer_set_global_properties(core)
 cloudViewer_set_cloudViewer_lib_properties(core)
-ShowAndAbortOnWarning(core)
+cloudViewer_show_and_abort_on_warning(core)
 
 target_link_libraries(core PRIVATE ${CloudViewer_3RDPARTY_PRIVATE_TARGETS} CVCoreLib)
 target_link_libraries(core PUBLIC ${CloudViewer_3RDPARTY_PUBLIC_TARGETS} CVCoreLib)

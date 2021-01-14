@@ -26,9 +26,11 @@
 
 #include "pybind/core/tensor_converter.h"
 
-#include <Console.h>
-
 #include "core/Tensor.h"
+#include <Console.h>
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
 #include "pybind/core/core.h"
 #include "pybind/cloudViewer_pybind.h"
 #include "pybind/pybind_utils.h"
@@ -36,15 +38,17 @@
 namespace cloudViewer {
 namespace core {
 
+using namespace CVLib;
+
 static Tensor CastOptionalDtypeDevice(const Tensor& t,
-                                      CVLib::utility::optional<Dtype> dtype,
-                                      CVLib::utility::optional<Device> device) {
+                                      utility::optional<Dtype> dtype,
+                                      utility::optional<Device> device) {
     Tensor t_cast = t;
-    if (dtype.has_value() && dtype.value() != t_cast.GetDtype()) {
-        t_cast = t_cast.To(dtype.value(), /*copy=*/false);
+    if (dtype.has_value()) {
+        t_cast = t_cast.To(dtype.value());
     }
-    if (device.has_value() && device.value() != t_cast.GetDevice()) {
-        t_cast = t_cast.Copy(device.value());
+    if (device.has_value()) {
+        t_cast = t_cast.To(device.value());
     }
     return t_cast;
 }
@@ -52,7 +56,7 @@ static Tensor CastOptionalDtypeDevice(const Tensor& t,
 /// Convert Tensor class to py::array (Numpy array).
 py::array TensorToPyArray(const Tensor& tensor) {
     if (tensor.GetDevice().GetType() != Device::DeviceType::CPU) {
-        CVLib::utility::LogError(
+        utility::LogError(
                 "Can only convert CPU Tensor to numpy. Copy Tensor to CPU "
                 "before converting to numpy.");
     }
@@ -98,7 +102,7 @@ py::array TensorToPyArray(const Tensor& tensor) {
     // See PyTorch's torch/csrc/Module.cpp
     auto capsule_destructor = [](PyObject* data) {
         Tensor* base_tensor = reinterpret_cast<Tensor*>(
-                PyCapsule_GetPointer(data, "cloudViewer::Tensor"));
+                PyCapsule_GetPointer(data, "open3d::Tensor"));
         if (base_tensor) {
             delete base_tensor;
         } else {
@@ -106,7 +110,7 @@ py::array TensorToPyArray(const Tensor& tensor) {
         }
     };
 
-    py::capsule base_tensor_capsule(base_tensor, "cloudViewer::Tensor",
+    py::capsule base_tensor_capsule(base_tensor, "open3d::Tensor",
                                     capsule_destructor);
     return py::array(py_dtype, py_shape, py_strides, tensor.GetDataPtr(),
                      base_tensor_capsule);
@@ -134,13 +138,13 @@ Tensor PyArrayToTensor(py::array array, bool inplace) {
     if (inplace) {
         return t_inplace;
     } else {
-        return t_inplace.Copy();
+        return t_inplace.Clone();
     }
 }
 
 Tensor PyListToTensor(const py::list& list,
-                      CVLib::utility::optional<Dtype> dtype,
-                      CVLib::utility::optional<Device> device) {
+                      utility::optional<Dtype> dtype,
+                      utility::optional<Device> device) {
     py::object numpy = py::module::import("numpy");
     py::array np_array = numpy.attr("array")(list);
     Tensor t = PyArrayToTensor(np_array, false);
@@ -148,8 +152,8 @@ Tensor PyListToTensor(const py::list& list,
 }
 
 Tensor PyTupleToTensor(const py::tuple& tuple,
-                       CVLib::utility::optional<Dtype> dtype,
-                       CVLib::utility::optional<Device> device) {
+                       utility::optional<Dtype> dtype,
+                       utility::optional<Device> device) {
     py::object numpy = py::module::import("numpy");
     py::array np_array = numpy.attr("array")(tuple);
     Tensor t = PyArrayToTensor(np_array, false);
@@ -157,8 +161,8 @@ Tensor PyTupleToTensor(const py::tuple& tuple,
 }
 
 Tensor DoubleToTensor(double scalar_value,
-                      CVLib::utility::optional<Dtype> dtype,
-                      CVLib::utility::optional<Device> device) {
+                      utility::optional<Dtype> dtype,
+                      utility::optional<Device> device) {
     Dtype dtype_value = Dtype::Float64;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
@@ -169,12 +173,12 @@ Tensor DoubleToTensor(double scalar_value,
     }
     return Tensor(std::vector<double>{scalar_value}, {}, Dtype::Float64,
                   device_value)
-            .To(dtype_value, /*copy=*/false);
+            .To(dtype_value);
 }
 
 Tensor IntToTensor(int64_t scalar_value,
-                   CVLib::utility::optional<Dtype> dtype,
-                   CVLib::utility::optional<Device> device) {
+                   utility::optional<Dtype> dtype,
+                   utility::optional<Device> device) {
     Dtype dtype_value = Dtype::Int64;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
@@ -185,12 +189,12 @@ Tensor IntToTensor(int64_t scalar_value,
     }
     return Tensor(std::vector<int64_t>{scalar_value}, {}, Dtype::Int64,
                   device_value)
-            .To(dtype_value, /*copy=*/false);
+            .To(dtype_value);
 }
 
 Tensor PyHandleToTensor(const py::handle& handle,
-                        CVLib::utility::optional<Dtype> dtype,
-                        CVLib::utility::optional<Device> device,
+                        utility::optional<Dtype> dtype,
+                        utility::optional<Device> device,
                         bool force_copy) {
     /// 1) int
     /// 2) float (double)
@@ -213,20 +217,20 @@ Tensor PyHandleToTensor(const py::handle& handle,
         return CastOptionalDtypeDevice(PyArrayToTensor(handle.cast<py::array>(),
                                                        /*inplace=*/!force_copy),
                                        dtype, device);
-    } else if (class_name.find("cloudViewer") != std::string::npos &&
+    } else if (class_name.find("open3d") != std::string::npos &&
                class_name.find("Tensor") != std::string::npos) {
         try {
             Tensor* tensor = handle.cast<Tensor*>();
             if (force_copy) {
-                return CastOptionalDtypeDevice(tensor->Copy(), dtype, device);
+                return CastOptionalDtypeDevice(tensor->Clone(), dtype, device);
             } else {
                 return CastOptionalDtypeDevice(*tensor, dtype, device);
             }
         } catch (...) {
-            CVLib::utility::LogError("Cannot cast index to Tensor.");
+            utility::LogError("Cannot cast index to Tensor.");
         }
     } else {
-        CVLib::utility::LogError("PyHandleToTensor has invlaid input type {}.",
+        utility::LogError("PyHandleToTensor has invlaid input type {}.",
                           class_name);
     }
 }
@@ -237,7 +241,7 @@ SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
         if (std::string(item.get_type().str()) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
-            CVLib::utility::LogError(
+            utility::LogError(
                     "The tuple must be a 1D tuple of integers, but got {}.",
                     item.attr("__str__")());
         }
@@ -251,7 +255,7 @@ SizeVector PyListToSizeVector(const py::list& list) {
         if (std::string(item.get_type().str()) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
-            CVLib::utility::LogError(
+            utility::LogError(
                     "The list must be a 1D list of integers, but got {}.",
                     item.attr("__str__")());
         }
@@ -272,11 +276,11 @@ SizeVector PyHandleToSizeVector(const py::handle& handle) {
             SizeVector* sv = handle.cast<SizeVector*>();
             return SizeVector(sv->begin(), sv->end());
         } catch (...) {
-            CVLib::utility::LogError(
+            utility::LogError(
                     "PyHandleToSizeVector: cannot cast to SizeVector.");
         }
     } else {
-        CVLib::utility::LogError(
+        utility::LogError(
                 "PyHandleToSizeVector has invlaid input type {}. Only int, "
                 "tuple and list are supported.",
                 class_name);

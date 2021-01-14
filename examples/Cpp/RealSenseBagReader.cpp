@@ -111,19 +111,16 @@ int main(int argc, char **argv) {
     } else {
         output_path = CVLib::utility::GetProgramOptionAsString(argc, argv, "--output");
         if (output_path.empty()) {
-            CVLib::utility::LogError("Output path {} is empty, only play bag.",
-                              output_path);
-            return 1;
+            CVLib::utility::LogWarning("Output path {} is empty, only play bag.",
+                                       output_path);
         }
         if (CVLib::utility::filesystem::DirectoryExists(output_path)) {
             CVLib::utility::LogWarning(
                     "Output path {} already existing, only play bag.",
                     output_path);
-            return 1;
         } else if (!CVLib::utility::filesystem::MakeDirectory(output_path)) {
             CVLib::utility::LogWarning("Unable to create path {}, only play bag.",
                                 output_path);
-            return 1;
         } else {
             CVLib::utility::LogInfo("Decompress images to {}", output_path);
             CVLib::utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
@@ -208,14 +205,11 @@ int main(int argc, char **argv) {
     }
     const auto frame_interval = sc::duration<double>(1. / bag_metadata.fps_);
 
-    auto last_frame_time = std::chrono::steady_clock::now() - frame_interval;
     using legacyRGBDImage = cloudViewer::geometry::RGBDImage;
-    legacyRGBDImage im_rgbd;
+    auto last_frame_time = std::chrono::steady_clock::now();
+    legacyRGBDImage im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
     while (!bag_reader.IsEOF() && !flag_exit) {
         if (flag_play) {
-            std::this_thread::sleep_until(last_frame_time + frame_interval);
-            last_frame_time = std::chrono::steady_clock::now();
-            im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
             // create shared_ptr with no-op deleter for stack RGBDImage
             auto ptr_im_rgbd = std::shared_ptr<legacyRGBDImage>(
                     &im_rgbd, [](legacyRGBDImage *) {});
@@ -249,6 +243,10 @@ int main(int argc, char **argv) {
             }
             vis.UpdateGeometry();
             vis.UpdateRender();
+
+            std::this_thread::sleep_until(last_frame_time + frame_interval);
+            last_frame_time = std::chrono::steady_clock::now();
+            im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
         }
         vis.PollEvents();
     }

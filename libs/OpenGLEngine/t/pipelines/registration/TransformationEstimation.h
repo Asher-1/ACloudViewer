@@ -34,7 +34,7 @@
 #include "core/Tensor.h"
 #include "pipelines/registration/RobustKernel.h"
 #include "t/geometry/PointCloud.h"
-#include "t/pipelines/TransformationConverter.h"
+#include "t/pipelines/kernel/TransformationConverter.h"
 
 namespace cloudViewer {
 

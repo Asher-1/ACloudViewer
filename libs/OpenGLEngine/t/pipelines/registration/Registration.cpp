@@ -56,12 +56,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
     transformation.AssertShape({4, 4});
     transformation.AssertDtype(dtype);
-    core::Tensor transformation_device;
-    if (transformation.GetDevice() == device) {
-        transformation_device = transformation;
-    } else {
-        transformation_device = transformation.Copy(device);
-    }
+    core::Tensor transformation_device = transformation.To(device);
 
     RegistrationResult result(transformation_device);
     if (max_correspondence_distance <= 0.0) {
@@ -122,16 +117,11 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
     }
     transformation.AssertShape({4, 4});
     transformation.AssertDtype(dtype);
-    core::Tensor transformation_device;
-    if (transformation.GetDevice() == device) {
-        transformation_device = transformation;
-    } else {
-        transformation_device = transformation.Copy(device);
-    }
+    core::Tensor transformation_device = transformation.To(device);
 
     cloudViewer::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
-    geometry::PointCloud source_transformed = source.Copy();
+    geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation_device);
     return GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,
@@ -155,15 +145,10 @@ RegistrationResult RegistrationICP(const geometry::PointCloud &source,
     }
     init.AssertShape({4, 4});
     init.AssertDtype(dtype);
-    core::Tensor transformation_device;
-    if (init.GetDevice() == device) {
-        transformation_device = init;
-    } else {
-        transformation_device = init.Copy(device);
-    }
+    core::Tensor transformation_device = init.To(device);
 
     cloudViewer::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
-    geometry::PointCloud source_transformed = source.Copy();
+    geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation_device);
 
     // TODO: Default constructor absent in RegistrationResult class.

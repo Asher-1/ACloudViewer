@@ -82,7 +82,7 @@ add_library(cloudViewer_tf_ops SHARED ${cloudViewer_tf_ops_HEADERS} ${cloudViewe
 
 # do not use cloudViewer_set_global_properties(cloudViewer_tf_ops) here because some
 # options are not compatible for tf op libraries
-ShowAndAbortOnWarning(cloudViewer_tf_ops)
+cloudViewer_show_and_abort_on_warning(cloudViewer_tf_ops)
 
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TF_OPS_DIR cloudViewer_tf_ops LIBRARY_OUTPUT_DIRECTORY)

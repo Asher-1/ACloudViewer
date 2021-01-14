@@ -26,13 +26,15 @@
 
 #include "t/geometry/TSDFVoxelGrid.h"
 
-#include "core/kernel/Kernel.h"
 #include "t/geometry/PointCloud.h"
+#include "t/geometry/kernel/TSDFVoxelGrid.h"
 #include <Console.h>
 
 namespace cloudViewer {
 namespace t {
 namespace geometry {
+
+using namespace CVLib;
 
 TSDFVoxelGrid::TSDFVoxelGrid(
         std::unordered_map<std::string, core::Dtype> attr_dtype_map,
@@ -49,7 +51,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
       attr_dtype_map_(attr_dtype_map) {
     if (attr_dtype_map_.count("tsdf") == 0 ||
         attr_dtype_map_.count("weight") == 0) {
-        CVLib::utility::LogError(
+        utility::LogError(
                 "[TSDFVoxelGrid] expected properties tsdf and weight are "
                 "missing.");
     }
@@ -58,7 +60,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
     if (attr_dtype_map_.count("tsdf") != 0) {
         core::Dtype dtype = attr_dtype_map_.at("tsdf");
         if (dtype != core::Dtype::Float32) {
-            CVLib::utility::LogWarning(
+            utility::LogWarning(
                     "[TSDFVoxelGrid] unexpected TSDF dtype, please "
                     "implement your own Voxel structure in "
                     "core/kernel/GeneralEWSharedImpl.h for dispatching.");
@@ -69,7 +71,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
     if (attr_dtype_map_.count("weight") != 0) {
         core::Dtype dtype = attr_dtype_map_.at("weight");
         if (dtype != core::Dtype::Float32 && dtype != core::Dtype::UInt16) {
-            CVLib::utility::LogWarning(
+            utility::LogWarning(
                     "[TSDFVoxelGrid] unexpected weight dtype, please "
                     "implement your own Voxel structure in "
                     "core/kernel/GeneralEWSharedImpl.h for "
@@ -81,25 +83,23 @@ TSDFVoxelGrid::TSDFVoxelGrid(
     if (attr_dtype_map_.count("color") != 0) {
         core::Dtype dtype = attr_dtype_map_.at("color");
         if (dtype != core::Dtype::Float32 && dtype != core::Dtype::UInt16) {
-            CVLib::utility::LogWarning(
+            utility::LogWarning(
                     "[TSDFVoxelGrid] unexpected color dtype, please "
                     "implement your own Voxel structure in "
                     "core/kernel/GeneralEWSharedImpl.h for dispatching.");
         }
         total_bytes += dtype.ByteSize() * 3;
     }
-
     // Users can add other key/dtype checkers here for potential extensions.
 
     // SDF trunc check, critical for TSDF touch operation that allocates TSDF
     // volumes.
     if (sdf_trunc > block_resolution_ * voxel_size_ * 0.499) {
-        CVLib::utility::LogError(
+        utility::LogError(
                 "SDF trunc is too large. Please make sure sdf trunc is smaller "
                 "than half block size (i.e., block_resolution * voxel_size * "
                 "0.5)");
     }
-
     block_hashmap_ = std::make_shared<core::Hashmap>(
             block_count_, core::Dtype::Int32, core::Dtype::UInt8,
             core::SizeVector{3},
@@ -108,24 +108,24 @@ TSDFVoxelGrid::TSDFVoxelGrid(
             device);
 }
 
-void TSDFVoxelGrid::Integrate(const t::geometry::Image &depth,
+void TSDFVoxelGrid::Integrate(const Image &depth,
                               const core::Tensor &intrinsics,
                               const core::Tensor &extrinsics,
-                              double depth_scale,
-                              double depth_max) {
-    t::geometry::Image empty_color;
+                              float depth_scale,
+                              float depth_max) {
+    Image empty_color;
     Integrate(depth, empty_color, intrinsics, extrinsics, depth_scale,
               depth_max);
 }
 
-void TSDFVoxelGrid::Integrate(const t::geometry::Image &depth,
-                              const t::geometry::Image &color,
+void TSDFVoxelGrid::Integrate(const Image &depth,
+                              const Image &color,
                               const core::Tensor &intrinsics,
                               const core::Tensor &extrinsics,
-                              double depth_scale,
-                              double depth_max) {
+                              float depth_scale,
+                              float depth_max) {
     if (depth.IsEmpty()) {
-        CVLib::utility::LogError(
+        utility::LogError(
                 "[TSDFVoxelGrid] input depth is empty for integration.");
     }
 
@@ -134,80 +134,61 @@ void TSDFVoxelGrid::Integrate(const t::geometry::Image &depth,
     PointCloud pcd = PointCloud::CreateFromDepthImage(
             depth, intrinsics, extrinsics, depth_scale, depth_max, 4);
 
-    // Determine voxel blocks to allocate.
-    std::unordered_map<std::string, core::Tensor> srcs = {
-            {"points", pcd.GetPoints().Contiguous()},
-            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
-                                        {}, core::Dtype::Int64, device_)},
-            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
-                                        core::Dtype::Float32, device_)},
-            {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
-                                       core::Dtype::Float32, device_)}};
-    std::unordered_map<std::string, core::Tensor> dsts;
-
-    core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::TSDFTouch);
-    if (dsts.count("block_coords") == 0) {
-        CVLib::utility::LogError(
-                "[TSDFVoxelGrid] touch launch failed, expected block_coords");
-    }
+    core::Tensor block_coords;
+    kernel::tsdf::Touch(pcd.GetPoints().Contiguous(), block_coords,
+                        block_resolution_, voxel_size_, sdf_trunc_);
 
     // Active voxel blocks in the block hashmap.
-    core::Tensor block_coords = dsts.at("block_coords");
     core::Tensor addrs, masks;
-    block_hashmap_->Activate(block_coords, addrs, masks);
+    int64_t n = block_hashmap_->Size();
+    try {
+        block_hashmap_->Activate(block_coords, addrs, masks);
+    } catch (const std::runtime_error &) {
+        utility::LogError(
+                "[TSDFIntegrate] Unable to allocate volume during rehashing. "
+                "Consider using a "
+                "larger block_count at initialization to avoid rehashing "
+                "(currently {}), or choosing a larger voxel_size "
+                "(currently {})",
+                n, voxel_size_);
+    }
 
     // Collect voxel blocks in the viewing frustum. Note we cannot directly
     // reuse addrs from Activate, since some blocks might have been activated in
     // previous launches and return false.
     block_hashmap_->Find(block_coords, addrs, masks);
 
-    // TSDF Integration.
-    srcs = {{"depth", depth.AsTensor().Contiguous()},
-            {"indices", addrs.To(core::Dtype::Int64).IndexGet({masks})},
-            {"block_keys", block_hashmap_->GetKeyTensor()},
-            {"intrinsics", intrinsics.Copy(device_)},
-            {"extrinsics", extrinsics.Copy(device_)},
-            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
-                                        {}, core::Dtype::Int64, device_)},
-            {"depth_scale",
-             core::Tensor(std::vector<float>{static_cast<float>(depth_scale)},
-                          {}, core::Dtype::Float32, device_)},
-            {"depth_max",
-             core::Tensor(std::vector<float>{static_cast<float>(depth_max)}, {},
-                          core::Dtype::Float32, device_)},
-            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
-                                        core::Dtype::Float32, device_)},
-            {"sdf_trunc", core::Tensor(std::vector<float>{sdf_trunc_}, {},
-                                       core::Dtype::Float32, device_)}};
-
+    core::Tensor depth_tensor = depth.AsTensor().Contiguous();
+    core::Tensor color_tensor;
     if (color.IsEmpty()) {
-        CVLib::utility::LogDebug(
+        utility::LogDebug(
                 "[TSDFIntegrate] color image is empty, perform depth "
                 "integration only.");
     } else if (color.GetRows() == depth.GetRows() &&
                color.GetCols() == depth.GetCols() && color.GetChannels() == 3) {
         if (attr_dtype_map_.count("color") != 0) {
-            srcs.emplace(
-                    "color",
-                    color.AsTensor().To(core::Dtype::Float32).Contiguous());
+            color_tensor =
+                    color.AsTensor().To(core::Dtype::Float32).Contiguous();
         } else {
-            CVLib::utility::LogWarning(
+            utility::LogWarning(
                     "[TSDFIntegrate] color image is ignored since voxels do "
                     "not contain colors.");
         }
     } else {
-        CVLib::utility::LogWarning(
+        utility::LogWarning(
                 "[TSDFIntegrate] color image is ignored for the incompatible "
                 "shape.");
     }
 
-    dsts = {{"block_values", block_hashmap_->GetValueTensor()}};
-    core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::TSDFIntegrate);
+    core::Tensor dst = block_hashmap_->GetValueTensor();
+    kernel::tsdf::Integrate(depth_tensor, color_tensor,
+                            addrs.To(core::Dtype::Int64).IndexGet({masks}),
+                            block_hashmap_->GetKeyTensor(), dst, intrinsics,
+                            extrinsics, block_resolution_, voxel_size_,
+                            sdf_trunc_, depth_scale, depth_max);
 }
 
-t::geometry::PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
+PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
     // Extract active voxel blocks from the hashmap.
     core::Tensor active_addrs;
     block_hashmap_->GetActiveIndices(active_addrs);
@@ -216,35 +197,22 @@ t::geometry::PointCloud TSDFVoxelGrid::ExtractSurfacePoints() {
             BufferRadiusNeighbors(active_addrs);
 
     // Extract points around zero-crossings.
-    std::unordered_map<std::string, core::Tensor> srcs = {
-            {"indices", active_addrs.To(core::Dtype::Int64)},
-            {"nb_indices", active_nb_addrs.To(core::Dtype::Int64)},
-            {"nb_masks", active_nb_masks},
-            {"block_keys", block_hashmap_->GetKeyTensor()},
-            {"block_values", block_hashmap_->GetValueTensor()},
-            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
-                                        {}, core::Dtype::Int64, device_)},
-            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
-                                        core::Dtype::Float32, device_)}};
-
-    std::unordered_map<std::string, core::Tensor> dsts;
-    core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::TSDFPointExtraction);
-    if (dsts.count("points") == 0) {
-        CVLib::utility::LogError(
-                "[TSDFVoxelGrid] extract surface launch failed, points "
-                "expected to return.");
-    }
-    auto pcd = PointCloud(dsts.at("points"));
-    pcd.SetPointNormals(dsts.at("normals"));
-    if (attr_dtype_map_.count("color") != 0) {
-        pcd.SetPointColors(dsts.at("colors"));
+    core::Tensor points, normals, colors;
+    kernel::tsdf::ExtractSurfacePoints(
+            active_addrs.To(core::Dtype::Int64),
+            active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
+            block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
+            points, normals, colors, block_resolution_, voxel_size_);
+    auto pcd = PointCloud(points);
+    pcd.SetPointNormals(normals);
+    if (colors.NumElements() != 0) {
+        pcd.SetPointColors(colors);
     }
 
     return pcd;
 }
 
-t::geometry::TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
+TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
     // Query active blocks and their nearest neighbors to handle boundary cases.
     core::Tensor active_addrs;
     block_hashmap_->GetActiveIndices(active_addrs);
@@ -262,54 +230,33 @@ t::geometry::TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh() {
             {active_addrs.To(core::Dtype::Int64)},
             core::Tensor(iota_map, {num_blocks}, core::Dtype::Int64, device_));
 
-    std::unordered_map<std::string, core::Tensor> srcs = {
-            {"indices", active_addrs.To(core::Dtype::Int64)},
-            {"inv_indices", inverse_index_map},
-            {"nb_indices", active_nb_addrs.To(core::Dtype::Int64)},
-            {"nb_masks", active_nb_masks},
-            {"block_keys", block_hashmap_->GetKeyTensor()},
-            {"block_values", block_hashmap_->GetValueTensor()},
-            {"resolution", core::Tensor(std::vector<int64_t>{block_resolution_},
-                                        {}, core::Dtype::Int64, device_)},
-            {"voxel_size", core::Tensor(std::vector<float>{voxel_size_}, {},
-                                        core::Dtype::Float32, device_)}};
+    core::Tensor vertices, triangles, vertex_normals, vertex_colors;
+    kernel::tsdf::ExtractSurfaceMesh(
+            active_addrs.To(core::Dtype::Int64), inverse_index_map,
+            active_nb_addrs.To(core::Dtype::Int64), active_nb_masks,
+            block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
+            vertices, triangles, vertex_normals, vertex_colors,
+            block_resolution_, voxel_size_);
 
-    std::unordered_map<std::string, core::Tensor> dsts;
-
-    core::kernel::GeneralEW(srcs, dsts,
-                            core::kernel::GeneralEWOpCode::TSDFMeshExtraction);
-
-    TriangleMesh mesh(dsts.at("vertices"), dsts.at("triangles"));
-    mesh.SetVertexNormals(dsts.at("normals"));
-    if (attr_dtype_map_.count("color") != 0) {
-        mesh.SetVertexColors(dsts.at("colors"));
+    TriangleMesh mesh(vertices, triangles);
+    mesh.SetVertexNormals(vertex_normals);
+    if (vertex_colors.NumElements() != 0) {
+        mesh.SetVertexColors(vertex_colors);
     }
     return mesh;
 }
 
-TSDFVoxelGrid TSDFVoxelGrid::Copy(const core::Device &device) {
+TSDFVoxelGrid TSDFVoxelGrid::To(const core::Device &device, bool copy) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+
     TSDFVoxelGrid device_tsdf_voxelgrid(attr_dtype_map_, voxel_size_,
                                         sdf_trunc_, block_resolution_,
                                         block_count_, device);
     auto device_tsdf_hashmap = device_tsdf_voxelgrid.block_hashmap_;
-    *device_tsdf_hashmap = block_hashmap_->Copy(device);
+    *device_tsdf_hashmap = block_hashmap_->To(device);
     return device_tsdf_voxelgrid;
-}
-
-TSDFVoxelGrid TSDFVoxelGrid::CPU() {
-    if (GetDevice().GetType() == core::Device::DeviceType::CPU) {
-        return *this;
-    }
-    return Copy(core::Device("CPU:0"));
-}
-
-TSDFVoxelGrid TSDFVoxelGrid::CUDA(int device_id) {
-    core::Device device =
-            core::Device(core::Device::DeviceType::CUDA, device_id);
-    if (GetDevice() == device) {
-        return *this;
-    }
-    return Copy(device);
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(

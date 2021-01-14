@@ -68,9 +68,8 @@ void pybind_core_tensorlist(py::module& m) {
                           "inplace"_a = false);
 
     // Copiers.
-    tensorlist.def("shallow_copy_from", &TensorList::ShallowCopyFrom);
     tensorlist.def("copy_from", &TensorList::CopyFrom);
-    tensorlist.def("copy", &TensorList::Copy);
+    tensorlist.def("clone", &TensorList::Clone);
 
     // Accessors.
     tensorlist.def("__getitem__",

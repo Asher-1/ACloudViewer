@@ -85,7 +85,7 @@
 #define BIND_REDUCTION_OP(py_name, cpp_name)                            \
     tensor.def(                                                         \
             #py_name,                                                   \
-            [](const Tensor& tensor, CVLib::utility::optional<py::handle> dim, \
+            [](const Tensor& tensor, utility::optional<py::handle> dim, \
                bool keepdim) {                                          \
                 SizeVector reduction_dims;                              \
                 if (dim.has_value()) {                                  \
@@ -102,7 +102,7 @@
 #define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)                   \
     tensor.def(                                                           \
             #py_name,                                                     \
-            [](const Tensor& tensor, CVLib::utility::optional<py::handle> dim) { \
+            [](const Tensor& tensor, utility::optional<py::handle> dim) { \
                 SizeVector reduction_dims;                                \
                 if (dim.has_value()) {                                    \
                     reduction_dims = PyHandleToSizeVector(dim.value());   \
@@ -118,6 +118,8 @@
 namespace cloudViewer {
 namespace core {
 
+using namespace CVLib;
+
 template <typename T>
 static std::vector<T> ToFlatVector(
         py::array_t<T, py::array::c_style | py::array::forcecast> np_array) {
@@ -132,8 +134,8 @@ static void BindTensorCreation(py::class_<Tensor>& tensor,
                                func_t cpp_func) {
     tensor.def_static(
             py_name.c_str(),
-            [cpp_func](const SizeVector& shape, CVLib::utility::optional<Dtype> dtype,
-                       CVLib::utility::optional<Device> device) {
+            [cpp_func](const SizeVector& shape, utility::optional<Dtype> dtype,
+                       utility::optional<Device> device) {
                 return cpp_func(
                         shape,
                         dtype.has_value() ? dtype.value() : Dtype::Float32,
@@ -142,8 +144,8 @@ static void BindTensorCreation(py::class_<Tensor>& tensor,
             "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static(
             py_name.c_str(),
-            [cpp_func](const py::tuple& shape, CVLib::utility::optional<Dtype> dtype,
-                       CVLib::utility::optional<Device> device) {
+            [cpp_func](const py::tuple& shape, utility::optional<Dtype> dtype,
+                       utility::optional<Device> device) {
                 return cpp_func(
                         PyTupleToSizeVector(shape),
                         dtype.has_value() ? dtype.value() : Dtype::Float32,
@@ -152,8 +154,8 @@ static void BindTensorCreation(py::class_<Tensor>& tensor,
             "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static(
             py_name.c_str(),
-            [cpp_func](const py::list& shape, CVLib::utility::optional<Dtype> dtype,
-                       CVLib::utility::optional<Device> device) {
+            [cpp_func](const py::list& shape, utility::optional<Dtype> dtype,
+                       utility::optional<Device> device) {
                 return cpp_func(
                         PyListToSizeVector(shape),
                         dtype.has_value() ? dtype.value() : Dtype::Float32,
@@ -167,8 +169,8 @@ static void BindTensorFullCreation(py::class_<Tensor>& tensor) {
     tensor.def_static(
             "full",
             [](const SizeVector& shape, T fill_value,
-               CVLib::utility::optional<Dtype> dtype,
-               CVLib::utility::optional<Device> device) {
+               utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
                 return Tensor::Full<T>(
                         shape, fill_value,
                         dtype.has_value() ? dtype.value() : Dtype::Float32,
@@ -179,8 +181,8 @@ static void BindTensorFullCreation(py::class_<Tensor>& tensor) {
     tensor.def_static(
             "full",
             [](const py::tuple& shape, T fill_value,
-               CVLib::utility::optional<Dtype> dtype,
-               CVLib::utility::optional<Device> device) {
+               utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
                 return Tensor::Full<T>(
                         PyTupleToSizeVector(shape), fill_value,
                         dtype.has_value() ? dtype.value() : Dtype::Float32,
@@ -191,8 +193,8 @@ static void BindTensorFullCreation(py::class_<Tensor>& tensor) {
     tensor.def_static(
             "full",
             [](const py::list& shape, T fill_value,
-               CVLib::utility::optional<Dtype> dtype,
-               CVLib::utility::optional<Device> device) {
+               utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
                 return Tensor::Full<T>(
                         PyListToSizeVector(shape), fill_value,
                         dtype.has_value() ? dtype.value() : Dtype::Float32,
@@ -209,15 +211,14 @@ void pybind_core_tensor(py::module& m) {
 
     // o3c.Tensor(np.array([[0, 1, 2], [3, 4, 5]]), dtype=None, device=None).
     tensor.def(py::init([](const py::array& np_array,
-                           CVLib::utility::optional<Dtype> dtype,
-                           CVLib::utility::optional<Device> device) {
+                           utility::optional<Dtype> dtype,
+                           utility::optional<Device> device) {
                    Tensor t = PyArrayToTensor(np_array, /*inplace=*/false);
                    if (dtype.has_value()) {
-                       t = t.To(dtype.value(), /*copy=*/false);
+                       t = t.To(dtype.value());
                    }
-                   if (device.has_value() &&
-                       device.value() != core::Device("CPU:0")) {
-                       t = t.Copy(device.value());
+                   if (device.has_value()) {
+                       t = t.To(device.value());
                    }
                    return t;
                }),
@@ -225,8 +226,8 @@ void pybind_core_tensor(py::module& m) {
 
     // o3c.Tensor(1, dtype=None, device=None).
     // Default to Int64, CPU:0.
-    tensor.def(py::init([](int64_t scalar_value, CVLib::utility::optional<Dtype> dtype,
-                           CVLib::utility::optional<Device> device) {
+    tensor.def(py::init([](int64_t scalar_value, utility::optional<Dtype> dtype,
+                           utility::optional<Device> device) {
                    return IntToTensor(scalar_value, dtype, device);
                }),
                "scalar_value"_a, "dtype"_a = py::none(),
@@ -234,8 +235,8 @@ void pybind_core_tensor(py::module& m) {
 
     // o3c.Tensor(3.14, dtype=None, device=None).
     // Default to Float64, CPU:0.
-    tensor.def(py::init([](double scalar_value, CVLib::utility::optional<Dtype> dtype,
-                           CVLib::utility::optional<Device> device) {
+    tensor.def(py::init([](double scalar_value, utility::optional<Dtype> dtype,
+                           utility::optional<Device> device) {
                    return DoubleToTensor(scalar_value, dtype, device);
                }),
                "scalar_value"_a, "dtype"_a = py::none(),
@@ -243,16 +244,16 @@ void pybind_core_tensor(py::module& m) {
 
     // o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype=None, device=None).
     tensor.def(
-            py::init([](const py::list& shape, CVLib::utility::optional<Dtype> dtype,
-                        CVLib::utility::optional<Device> device) {
+            py::init([](const py::list& shape, utility::optional<Dtype> dtype,
+                        utility::optional<Device> device) {
                 return PyListToTensor(shape, dtype, device);
             }),
             "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
 
     // o3c.Tensor(((0, 1, 2), (3, 4, 5)), dtype=None, device=None).
     tensor.def(
-            py::init([](const py::tuple& shape, CVLib::utility::optional<Dtype> dtype,
-                        CVLib::utility::optional<Device> device) {
+            py::init([](const py::tuple& shape, utility::optional<Dtype> dtype,
+                        utility::optional<Device> device) {
                 return PyTupleToTensor(shape, dtype, device);
             }),
             "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
@@ -271,8 +272,8 @@ void pybind_core_tensor(py::module& m) {
     BindTensorFullCreation<bool>(tensor);
     tensor.def_static(
             "eye",
-            [](int64_t n, CVLib::utility::optional<Dtype> dtype,
-               CVLib::utility::optional<Device> device) {
+            [](int64_t n, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
                 return Tensor::Eye(
                         n, dtype.has_value() ? dtype.value() : Dtype::Float32,
                         device.has_value() ? device.value() : Device("CPU:0"));
@@ -280,28 +281,75 @@ void pybind_core_tensor(py::module& m) {
             "n"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static("diag", &Tensor::Diag);
 
-    // Tensor copy.
-    tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
+    // Tensor creation from arange for int.
+    tensor.def_static(
+            "arange",
+            [](int64_t stop, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Arange(
+                        0, stop, 1,
+                        dtype.has_value() ? dtype.value() : Dtype::Int64,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
+    tensor.def_static(
+            "arange",
+            [](utility::optional<int64_t> start, int64_t stop,
+               utility::optional<int64_t> step, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Arange(
+                        start.has_value() ? start.value() : 0, stop,
+                        step.has_value() ? step.value() : 1,
+                        dtype.has_value() ? dtype.value() : Dtype::Int64,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
+            "dtype"_a = py::none(), "device"_a = py::none());
+
+    // Tensor creation from arange for float.
+    tensor.def_static(
+            "arange",
+            [](double stop, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Arange(
+                        0.0, stop, 1.0,
+                        dtype.has_value() ? dtype.value() : Dtype::Float64,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
+    tensor.def_static(
+            "arange",
+            [](utility::optional<double> start, double stop,
+               utility::optional<double> step, utility::optional<Dtype> dtype,
+               utility::optional<Device> device) {
+                return Tensor::Arange(
+                        start.has_value() ? start.value() : 0.0, stop,
+                        step.has_value() ? step.value() : 1.0,
+                        dtype.has_value() ? dtype.value() : Dtype::Float64,
+                        device.has_value() ? device.value() : Device("CPU:0"));
+            },
+            "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
+            "dtype"_a = py::none(), "device"_a = py::none());
 
     // Device transfer.
     tensor.def(
             "cuda",
             [](const Tensor& tensor, int device_id) {
                 if (!cuda::IsAvailable()) {
-                    CVLib::utility::LogError(
+                    utility::LogError(
                             "CUDA is not available, cannot copy Tensor.");
                 }
                 if (device_id < 0 || device_id >= cuda::DeviceCount()) {
-                    CVLib::utility::LogError(
+                    utility::LogError(
                             "Invalid device_id {}, must satisfy 0 <= "
                             "device_id < {}",
                             device_id, cuda::DeviceCount());
                 }
-                return tensor.Copy(Device(Device::DeviceType::CUDA, device_id));
+                return tensor.To(Device(Device::DeviceType::CUDA, device_id));
             },
             "device_id"_a = 0);
     tensor.def("cpu", [](const Tensor& tensor) {
-        return tensor.Copy(Device(Device::DeviceType::CPU, 0));
+        return tensor.To(Device(Device::DeviceType::CPU, 0));
     });
 
     // Buffer I/O for Numpy and DLPack(PyTorch).
@@ -335,7 +383,7 @@ void pybind_core_tensor(py::module& m) {
         DLManagedTensor* dl_managed_tensor =
                 static_cast<DLManagedTensor*>(data);
         if (!dl_managed_tensor) {
-            CVLib::utility::LogError(
+            utility::LogError(
                     "from_dlpack must receive "
                     "DLManagedTensor PyCapsule.");
         }
@@ -348,6 +396,10 @@ void pybind_core_tensor(py::module& m) {
         return t;
     });
 
+    // Numpy IO.
+    tensor.def("save", &Tensor::Save);
+    tensor.def_static("load", &Tensor::Load);
+
     /// Linalg operations.
     tensor.def("matmul", &Tensor::Matmul);
     tensor.def("__matmul__", &Tensor::Matmul);
@@ -356,15 +408,28 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("inv", &Tensor::Inverse);
     tensor.def("svd", &Tensor::SVD);
 
-    // Casting.
+    // Casting can copying.
     tensor.def(
             "to",
-            [](const Tensor& tensor, const Dtype& dtype, bool copy) {
+            [](const Tensor& tensor, Dtype dtype, bool copy) {
                 return tensor.To(dtype, copy);
             },
             "dtype"_a, "copy"_a = false);
+    tensor.def(
+            "to",
+            [](const Tensor& tensor, const Device& device, bool copy) {
+                return tensor.To(device, copy);
+            },
+            "device"_a, "copy"_a = false);
+    tensor.def(
+            "to",
+            [](const Tensor& tensor, const Device& device, Dtype dtype,
+               bool copy) { return tensor.To(device, dtype, copy); },
+            "device"_a, "dtype"_a, "copy"_a = false);
+    tensor.def("clone", &Tensor::Clone);
     tensor.def("T", &Tensor::T);
     tensor.def("contiguous", &Tensor::Contiguous);
+    tensor.def("is_contiguous", &Tensor::IsContiguous);
 
     // See "emulating numeric types" section for Python built-in numeric ops.
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
@@ -471,6 +536,10 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("exp_", &Tensor::Exp_);
     tensor.def("abs", &Tensor::Abs);
     tensor.def("abs_", &Tensor::Abs_);
+    tensor.def("floor", &Tensor::Floor);
+    tensor.def("ceil", &Tensor::Ceil);
+    tensor.def("round", &Tensor::Round);
+    tensor.def("trunc", &Tensor::Trunc);
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
 
@@ -528,7 +597,7 @@ void pybind_core_tensor(py::module& m) {
         } else if (dtype == Dtype::Bool) {
             return py::bool_(tensor.Item<bool>());
         } else {
-            CVLib::utility::LogError(
+            utility::LogError(
                     "Tensor.item(): unsupported dtype to convert to python.");
         }
     });
