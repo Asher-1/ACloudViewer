@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
         Eigen::Matrix4f extrinsic =
                 trajectory->parameters_[i].extrinsic_.cast<float>();
         Tensor extrinsic_t =
-                core::eigen_converter::EigenMatrixToTensor(extrinsic).Copy(
+                core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
                         device);
 
         CVLib::utility::Timer timer;

@@ -1096,7 +1096,7 @@ bool Tensor::Any() const {
 }
 
 DLManagedTensor* Tensor::ToDLPack() const {
-    return Open3DDLManagedTensor::Create(*this);
+    return CloudViewerDLManagedTensor::Create(*this);
 }
 
 Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
