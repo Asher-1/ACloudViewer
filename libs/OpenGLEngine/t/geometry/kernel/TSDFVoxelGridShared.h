@@ -36,20 +36,20 @@
 #include "t/geometry/kernel/TSDFVoxelGrid.h"
 #include <Console.h>
 
-#define DISPATCH_BYTESIZE_TO_VOXEL(BYTESIZE, ...)            \
-    [&] {                                                    \
-        if (BYTESIZE == sizeof(ColoredVoxel32f)) {           \
-            using voxel_t = ColoredVoxel32f;                 \
-            return __VA_ARGS__();                            \
-        } else if (BYTESIZE == sizeof(ColoredVoxel16i)) {    \
-            using voxel_t = ColoredVoxel16i;                 \
-            return __VA_ARGS__();                            \
-        } else if (BYTESIZE == sizeof(Voxel32f)) {           \
-            using voxel_t = Voxel32f;                        \
-            return __VA_ARGS__();                            \
-        } else {                                             \
-            utility::LogError("Unsupported voxel bytesize"); \
-        }                                                    \
+#define DISPATCH_BYTESIZE_TO_VOXEL(BYTESIZE, ...)                   \
+    [&] {                                                           \
+        if (BYTESIZE == sizeof(ColoredVoxel32f)) {                  \
+            using voxel_t = ColoredVoxel32f;                        \
+            return __VA_ARGS__();                                   \
+        } else if (BYTESIZE == sizeof(ColoredVoxel16i)) {           \
+            using voxel_t = ColoredVoxel16i;                        \
+            return __VA_ARGS__();                                   \
+        } else if (BYTESIZE == sizeof(Voxel32f)) {                  \
+            using voxel_t = Voxel32f;                               \
+            return __VA_ARGS__();                                   \
+        } else {                                                    \
+            CVLib::utility::LogError("Unsupported voxel bytesize"); \
+        }                                                           \
     }()
 
 namespace cloudViewer {
@@ -466,7 +466,7 @@ void ExtractSurfacePointsCPU
 #else
     int total_count = (*count_ptr).load();
 #endif
-    utility::LogInfo("Total point count = {}", total_count);
+    CVLib::utility::LogInfo("Total point count = {}", total_count);
 
     points = core::Tensor({total_count, 3}, core::Dtype::Float32,
                           block_values.GetDevice());
@@ -667,7 +667,7 @@ void ExtractSurfaceMeshCPU
                 {n_blocks, resolution, resolution, resolution, 4},
                 core::Dtype::Int32, block_keys.GetDevice());
     } catch (const std::runtime_error&) {
-        utility::LogError(
+        CVLib::utility::LogError(
                 "[MeshExtractionKernel] Unable to allocate assistance mesh "
                 "structure for Marching "
                 "Cubes with {} active voxel blocks. Please consider using a "
@@ -837,7 +837,7 @@ void ExtractSurfaceMeshCPU
     (*vtx_count_ptr) = 0;
 #endif
 
-    utility::LogInfo("Total vertex count = {}", total_vtx_count);
+    CVLib::utility::LogInfo("Total vertex count = {}", total_vtx_count);
     vertices = core::Tensor({total_vtx_count, 3}, core::Dtype::Float32,
                             block_values.GetDevice());
     normals = core::Tensor({total_vtx_count, 3}, core::Dtype::Float32,
@@ -1070,7 +1070,7 @@ void ExtractSurfaceMeshCPU
 #else
     int total_tri_count = (*tri_count_ptr).load();
 #endif
-    utility::LogInfo("Total triangle count = {}", total_tri_count);
+    CVLib::utility::LogInfo("Total triangle count = {}", total_tri_count);
     triangles = triangles.Slice(0, 0, total_tri_count);
 }
 

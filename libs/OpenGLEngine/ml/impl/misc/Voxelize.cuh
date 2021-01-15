@@ -285,7 +285,7 @@ __global__ void CopyPointIndicesKernel(
     }
     int64_t end_out = prefix_sum_out[linear_idx];
 
-    int64_t num_points = end_out - begin_out;
+    // int64_t num_points = end_out - begin_out;
 
     int64_t in_idx;
     if (0 == linear_idx) {

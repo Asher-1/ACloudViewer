@@ -36,7 +36,8 @@ ExternalProject_Get_Property(ext_librealsense INSTALL_DIR)
 set(LIBREALSENSE_INCLUDE_DIR "${INSTALL_DIR}/include/") # "/" is critical.
 set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/lib")
 
-set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file usb) # The order is critical.
+#set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file usb) # The order is critical.
+set(LIBREALSENSE_LIBRARIES realsense2 realsense-file usb) # The order is critical.
 if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is no-op
     ExternalProject_Add_Step(ext_librealsense rename_debug_libs
         COMMAND $<IF:$<CONFIG:Debug>,rename,rem> realsense2d.lib realsense2.lib
