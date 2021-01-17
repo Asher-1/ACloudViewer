@@ -18,6 +18,10 @@
 #ifndef ECV_PCLVIS_HEADER
 #define ECV_PCLVIS_HEADER
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 // LOCAL
 #include "qPCL.h"
 #include "PCLCloud.h"

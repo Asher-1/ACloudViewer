@@ -15,6 +15,10 @@
 //#                                                                        #
 //##########################################################################
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 //Local
 #include "ImageVis.h"
 #include "PCLConv.h"
