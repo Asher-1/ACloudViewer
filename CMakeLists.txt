@@ -250,7 +250,7 @@ set(CLOUDVIEWER_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${COLOUDVIEW
 make_directory(${CLOUDVIEWER_OUTPUT_DIRECTORY})
 
 # Global Security options (including 3rd party code)
-# -Wall -Wextra -Werror or /W4 /WX are enabled for Open3D code (not 3rd party)
+# -Wall -Wextra -Werror or /W4 /WX are enabled for ErowCloudViewer code (not 3rd party)
 if (MSVC)
     set(HARDENING_CFLAGS
         /sdl            # SDL Checks
@@ -585,9 +585,9 @@ function(cloudViewer_show_and_abort_on_warning trgt)
             )
 
     target_compile_options(${trgt} PRIVATE
-        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>>
+        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX- ${DISABLE_MSVC_WARNINGS}>>
         $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall>>
-        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>>
+        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX- ${DISABLE_MSVC_WARNINGS}>>
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall>>
         $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
     )

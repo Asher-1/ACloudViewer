@@ -16,6 +16,9 @@
 //##########################################################################
 
 #include "PclFiltersTool.h" 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
 
 //Local
 #include "PclUtils/cc2sm.h"

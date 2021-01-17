@@ -17,7 +17,7 @@
 #include "stdio.h"
 #endif // (CV_WINDOWS)
 
-QTime CVTools::s_time;
+QElapsedTimer CVTools::s_time;
 
 std::string CVTools::GetFileName(const std::string file_name)
 {

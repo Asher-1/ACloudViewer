@@ -99,7 +99,11 @@ std::string GetRegularizedDirectoryName(const std::string &directory) {
 
 std::string GetWorkingDirectory() {
     char buff[PATH_MAX + 1];
+#ifdef CV_WINDOWS
+    _getcwd(buff, PATH_MAX + 1);
+#else
     getcwd(buff, PATH_MAX + 1);
+#endif
     return std::string(buff);
 }
 
@@ -180,7 +184,12 @@ std::vector<std::string> GetPathComponents(const std::string& path) {
 }
 
 bool ChangeWorkingDirectory(const std::string &directory) {
+#ifdef CV_WINDOWS
+    return (_chdir(directory.c_str()) == 0);
+#else
     return (chdir(directory.c_str()) == 0);
+#endif
+    
 }
 
 bool DirectoryExists(const std::string &directory) {

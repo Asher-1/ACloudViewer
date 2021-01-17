@@ -36,6 +36,10 @@
  *
  */
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 // LOCAL
 #include "vtkCustomInteractorStyle.h"
 #include "vtkCameraManipulator.h"

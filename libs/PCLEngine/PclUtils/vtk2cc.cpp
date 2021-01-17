@@ -17,6 +17,10 @@
 //
 #include "vtk2cc.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 //Local
 #include "my_point_types.h"
 #include "PclUtils/cc2sm.h"
