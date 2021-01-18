@@ -16,6 +16,10 @@
 //#                                                                        #
 //##########################################################################
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 #include <Delaunay2dMesh.h>
 
 //local
@@ -25,6 +29,7 @@
 
 #if defined(USE_CGAL_LIB)
 //CGAL Lib
+#include <CGAL/version_macros.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
@@ -85,7 +90,7 @@ bool Delaunay2dMesh::buildMesh(	const std::vector<CCVector2>& points2D,
 	//We define a vertex_base with info. The "info" (std::size_t) allow us to keep track of the original point index.
 	typedef CGAL::Triangulation_vertex_base_with_info_2<std::size_t, K> Vb;
 	typedef CGAL::Constrained_triangulation_face_base_2<K> Fb;
-	typedef CGAL::No_constraint_intersection_requiring_constructions_tag  Itag; //This tag could ben changed if we decide to handle intersection
+    typedef CGAL::No_intersection_tag  Itag;
 	typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
 	typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds, Itag> CDT;
 	typedef CDT::Point cgalPoint;

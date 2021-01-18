@@ -23,11 +23,6 @@
 #include "sm2cc.h"
 #include "cc2sm.h"
 
-// PCL
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-
 // CV_CORE_LIB
 #include <CVGeom.h>
 #include <CVTools.h>
@@ -44,11 +39,19 @@
 #include <ecvScalarField.h>
 #include <ecvHObjectCaster.h>
 
+// LOCAL
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
 
-//system
-#include <assert.h>
+// PCL
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+
+// VTK
 #include <vtkGenericOpenGLRenderWindow.h>
+
+// SYSTEM
+#include <assert.h>
 
 void PCLDisplayTools::registerVisualizer(QMainWindow * win, bool stereoMode)
 {
