@@ -26,7 +26,8 @@
 #include "Tools/ecvTools.h"
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
 
-#include "CVMath.h"
+// CV_CORE_LIB
+#include <CVMath.h>
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
