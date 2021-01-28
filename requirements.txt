@@ -1,0 +1,13 @@
+# runtime
+torch==1.6.0
+torchvision==0.7.0
+tensorflow==2.3.1
+addict
+matplotlib
+numpy
+pandas
+plyfile
+pyyaml
+scikit-learn
+tqdm
+jupyter

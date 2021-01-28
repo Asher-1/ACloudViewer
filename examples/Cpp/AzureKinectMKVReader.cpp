@@ -29,14 +29,14 @@
 #include <fstream>
 #include <thread>
 
-#include "Open3D/Open3D.h"
+#include "CloudViewer.h"
 
-using namespace open3d;
+using namespace cloudViewer;
 
 void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
     std::ofstream out(filename);
     if (!out.is_open()) {
-        utility::LogError("Cannot write to {}", filename);
+        CVLib::utility::LogError("Cannot write to {}", filename);
     }
 
     Json::StreamWriterBuilder builder;
@@ -49,8 +49,8 @@ void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
 Json::Value GenerateDatasetConfig(const std::string &output_path) {
     Json::Value value;
 
-    utility::LogInfo("Writing to config.json");
-    utility::LogInfo(
+    CVLib::utility::LogInfo("Writing to config.json");
+    CVLib::utility::LogInfo(
             "Please change path_dataset and path_intrinsic when you move the "
             "dataset.");
 
@@ -58,7 +58,7 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
         value["path_dataset"] = output_path;
         value["path_intrinsic"] = output_path + "/intrinsic.json";
     } else {  // relative dir
-        auto pwd = utility::filesystem::GetWorkingDirectory();
+        auto pwd = CVLib::utility::filesystem::GetWorkingDirectory();
         value["path_dataset"] = pwd + "/" + output_path;
         value["path_intrinsic"] = pwd + "/" + output_path + "/intrinsic.json";
     }
@@ -78,46 +78,46 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
 }
 
 void PrintUsage() {
-    PrintOpen3DVersion();
+    PrintCloudViewerVersion();
     // clang-format off
-    utility::LogInfo("Usage:");
-    utility::LogInfo("AzureKinectMKVReader --input input.mkv [--output] [path]");
+    CVLib::utility::LogInfo("Usage:");
+    CVLib::utility::LogInfo("AzureKinectMKVReader --input input.mkv [--output] [path]");
     // clang-format on
 }
 
 int main(int argc, char **argv) {
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
 
-    if (!utility::ProgramOptionExists(argc, argv, "--input")) {
+    if (!CVLib::utility::ProgramOptionExists(argc, argv, "--input")) {
         PrintUsage();
         return 1;
     }
     std::string mkv_filename =
-            utility::GetProgramOptionAsString(argc, argv, "--input");
+            CVLib::utility::GetProgramOptionAsString(argc, argv, "--input");
 
     bool write_image = false;
     std::string output_path;
-    if (!utility::ProgramOptionExists(argc, argv, "--output")) {
-        utility::LogInfo("No output image path, only play mkv.");
+    if (!CVLib::utility::ProgramOptionExists(argc, argv, "--output")) {
+        CVLib::utility::LogInfo("No output image path, only play mkv.");
     } else {
-        output_path = utility::GetProgramOptionAsString(argc, argv, "--output");
+        output_path = CVLib::utility::GetProgramOptionAsString(argc, argv, "--output");
         if (output_path.empty()) {
-            utility::LogError("Output path {} is empty, only play mkv.",
+            CVLib::utility::LogError("Output path {} is empty, only play mkv.",
                               output_path);
             return 1;
         }
-        if (utility::filesystem::DirectoryExists(output_path)) {
-            utility::LogError("Output path {} already existing, only play mkv.",
+        if (CVLib::utility::filesystem::DirectoryExists(output_path)) {
+            CVLib::utility::LogError("Output path {} already existing, only play mkv.",
                               output_path);
             return 1;
-        } else if (!utility::filesystem::MakeDirectory(output_path)) {
-            utility::LogError("Unable to create path {}, only play mkv.",
+        } else if (!CVLib::utility::filesystem::MakeDirectory(output_path)) {
+            CVLib::utility::LogError("Unable to create path {}, only play mkv.",
                               output_path);
             return 1;
         } else {
-            utility::LogInfo("Decompress images to {}", output_path);
-            utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
-            utility::filesystem::MakeDirectoryHierarchy(output_path + "/depth");
+            CVLib::utility::LogInfo("Decompress images to {}", output_path);
+            CVLib::utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
+            CVLib::utility::filesystem::MakeDirectoryHierarchy(output_path + "/depth");
             write_image = true;
         }
     }
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
     io::MKVReader mkv_reader;
     mkv_reader.Open(mkv_filename);
     if (!mkv_reader.IsOpened()) {
-        utility::LogError("Unable to open {}", mkv_filename);
+        CVLib::utility::LogError("Unable to open {}", mkv_filename);
         return 1;
     }
 
@@ -140,10 +140,10 @@ int main(int argc, char **argv) {
     vis.RegisterKeyCallback(
             GLFW_KEY_SPACE, [&](visualization::Visualizer *vis) {
                 if (flag_play) {
-                    utility::LogInfo(
+                    CVLib::utility::LogInfo(
                             "Playback paused, press [SPACE] to continue");
                 } else {
-                    utility::LogInfo(
+                    CVLib::utility::LogInfo(
                             "Playback resumed, press [SPACE] to pause");
                 }
                 flag_play = !flag_play;
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
             });
 
     vis.CreateVisualizerWindow("Open3D Azure Kinect MKV player", 1920, 540);
-    utility::LogInfo(
+    CVLib::utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
             "exit.");
 
@@ -177,12 +177,12 @@ int main(int argc, char **argv) {
             if (write_image) {
                 auto color_file =
                         fmt::format("{0}/color/{1:05d}.jpg", output_path, idx);
-                utility::LogInfo("Writing to {}", color_file);
+                CVLib::utility::LogInfo("Writing to {}", color_file);
                 io::WriteImage(color_file, im_rgbd->color_);
 
                 auto depth_file =
                         fmt::format("{0}/depth/{1:05d}.png", output_path, idx);
-                utility::LogInfo("Writing to {}", depth_file);
+                CVLib::utility::LogInfo("Writing to {}", depth_file);
                 io::WriteImage(depth_file, im_rgbd->depth_);
 
                 ++idx;

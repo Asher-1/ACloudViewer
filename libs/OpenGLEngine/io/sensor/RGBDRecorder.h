@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "cloudViewer/geometry/RGBDImage.h"
-#include "cloudViewer/io/sensor/RGBDSensorConfig.h"
+#include <RGBDImage.h>
+#include "io/sensor/RGBDSensorConfig.h"
 
 namespace cloudViewer {
 namespace io {

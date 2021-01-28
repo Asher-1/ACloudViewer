@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/sensor/azure_kinect/MKVMetadata.h"
+#include "io/sensor/azure_kinect/MKVMetadata.h"
 
 #include <json/json.h>
 
 #include <unordered_map>
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
 
 bool MKVMetadata::ConvertToJsonValue(Json::Value &value) const {
@@ -60,4 +60,4 @@ bool MKVMetadata::ConvertFromJsonValue(const Json::Value &value) {
     return true;
 }
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

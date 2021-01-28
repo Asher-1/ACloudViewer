@@ -1,0 +1,70 @@
+ARG EROWCLOUDVIEWER_VERSION
+ARG VTK_VERSION
+ARG PCL_VERSION
+ARG CUDA_VERSION
+ARG UBUNTU_VERSION
+FROM erowcloudviewer-deps:${EROWCLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+LABEL maintainer="AliceVision Team ludahai19@163.com"
+
+# Execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
+# docker run -it --runtime nvidia -p 2222:22 --name erowcloudviewer -v</path/to/your/data>:/data erowcloudviewer:develop-ubuntu20.04-cuda10.2
+# ssh -p 2222 -X root@<docker host> /opt/ErowCloudViewer_bundle/ErowCloudViewer # Password is 'erowcloudviewer'
+
+ENV EROWCLOUDVIEWER_DEV=/opt/ErowCloudViewer \
+    EROWCLOUDVIEWER_BUILD=/tmp/ErowCloudViewer_build \
+    BUNDLE_CLOUDVIEWER_ML=/opt/ErowCloudViewer/CloudViewer-ML \
+    AV_INSTALL=/opt/AliceVision_install \
+    QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
+    PATH="${PATH}:${BUNDLE_CLOUDVIEWER_ML}" \
+    OPENIMAGEIO_LIBRARY=/opt/AliceVision_install/lib
+
+COPY . ${EROWCLOUDVIEWER_DEV}/ErowCloudViewer
+
+WORKDIR ${EROWCLOUDVIEWER_BUILD}
+
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
+RUN echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' | debconf-set-selections
+    echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' | debconf-set-selections
+RUN apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
+
+# Build ErowCloudViewer plugins
+RUN cmake "${EROWCLOUDVIEWER_DEV}/ErowCloudViewer" \
+                            -DCMAKE_BUILD_TYPE=Release \
+                            -DCMAKE_BUILD_TYPE=Release \
+                            -DBUILD_JUPYTER_EXTENSION=ON \
+                            -DBUILD_LIBREALSENSE=ON \
+                            -DBUILD_AZURE_KINECT=ON \
+                            -DBUILD_RPC_INTERFACE=ON \
+                            -DBUILD_BENCHMARKS=OFF \
+                            -DWITH_OPENMP=ON \
+                            -DBUILD_CUDA_MODULE=ON \
+                            -DBUILD_PYTORCH_OPS=ON \
+                            -DBUILD_TENSORFLOW_OPS=ON \
+                            -DPYTHON_EXECUTABLE=/usr/bin/python3.6 \
+                            -DPYTHON_IN_PATH=/usr/bin/python3.6 \
+                            -DPYTHON_LIBRARY=/usr/lib/python3 \
+                            #-DBUNDLE_CLOUDVIEWER_ML=ON \
+                            #-DCLOUDVIEWER_ML_ROOT="${BUNDLE_CLOUDVIEWER_ML}" \
+                            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
+                            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake \
+                            -DCMAKE_INSTALL_PREFIX="${EROWCLOUDVIEWER_DEV}/install"
+RUN make "-j$(nproc)"
+#RUN make "-j$(nproc)" pip-package
+#RUN make "-j$(nproc)" install-pip-package
+#RUN make "-j$(nproc)" conda-package
+
+# Enable SSH X11 forwarding, needed when the Docker image
+# is run on a remote machine
+RUN apt install ssh xauth && \
+	systemctl enable ssh && \
+	mkdir -p /run/sshd
+
+RUN sed -i "s/^.*X11Forwarding.*$/X11Forwarding yes/; s/^.*X11UseLocalhost.*$/X11UseLocalhost no/; s/^.*PermitRootLogin prohibit-password/PermitRootLogin yes/; s/^.*X11UseLocalhost.*/X11UseLocalhost no/;" /etc/ssh/sshd_config
+RUN echo "root:erowcloudviewer" | chpasswd
+
+WORKDIR /root
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
+

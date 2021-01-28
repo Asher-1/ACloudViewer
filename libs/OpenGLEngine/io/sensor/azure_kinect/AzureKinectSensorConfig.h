@@ -29,8 +29,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "cloudViewer/io/sensor/RGBDSensorConfig.h"
-#include "cloudViewer/utility/IJsonConvertible.h"
+#include "io/sensor/RGBDSensorConfig.h"
+#include <IJsonConvertible.h>
 
 struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 
