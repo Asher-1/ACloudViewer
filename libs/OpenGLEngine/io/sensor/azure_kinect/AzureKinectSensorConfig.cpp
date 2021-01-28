@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+#include "io/sensor/azure_kinect/AzureKinectSensorConfig.h"
 
 #include <json/json.h>
 #include <k4a/k4a.h>
@@ -34,11 +34,13 @@
 #include <string>
 #include <unordered_map>
 
-#include "open3d/io/sensor/azure_kinect/K4aPlugin.h"
-#include "open3d/utility/Console.h"
+#include "io/sensor/azure_kinect/K4aPlugin.h"
+#include <Console.h>
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
+
+using namespace CVLib;
 
 static std::map<k4a_image_format_t, std::string> k4a_image_format_t_to_string{
         {K4A_IMAGE_FORMAT_COLOR_MJPG, "K4A_IMAGE_FORMAT_COLOR_MJPG"},
@@ -316,4 +318,4 @@ k4a_device_configuration_t AzureKinectSensorConfig::ConvertToNativeConfig()
 }
 
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

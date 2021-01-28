@@ -28,8 +28,8 @@
 
 #include <memory>
 
-#include "cloudViewer/io/sensor/RGBDSensor.h"
-#include "cloudViewer/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+#include "io/sensor/RGBDSensor.h"
+#include "io/sensor/azure_kinect/AzureKinectSensorConfig.h"
 
 struct _k4a_capture_t;         // typedef _k4a_capture_t* k4a_capture_t;
 struct _k4a_device_t;          // typedef _k4a_device_t* k4a_device_t;

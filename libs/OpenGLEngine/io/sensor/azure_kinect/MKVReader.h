@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "cloudViewer/geometry/RGBDImage.h"
-#include "cloudViewer/io/sensor/azure_kinect/MKVMetadata.h"
-#include "cloudViewer/utility/IJsonConvertible.h"
+#include <RGBDImage.h>
+#include "io/sensor/azure_kinect/MKVMetadata.h"
+#include <IJsonConvertible.h>
 
 struct _k4a_playback_t;        // typedef _k4a_playback_t* k4a_playback_t;
 struct _k4a_capture_t;         // typedef _k4a_capture_t* k4a_capture_t;

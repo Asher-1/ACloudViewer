@@ -30,9 +30,9 @@
 #include <memory>
 #include <string>
 
-#include "cloudViewer/io/sensor/RGBDRecorder.h"
-#include "cloudViewer/io/sensor/azure_kinect/AzureKinectSensor.h"
-#include "cloudViewer/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+#include "io/sensor/RGBDRecorder.h"
+#include "io/sensor/azure_kinect/AzureKinectSensor.h"
+#include "io/sensor/azure_kinect/AzureKinectSensorConfig.h"
 
 struct _k4a_record_t;  // typedef _k4a_record_t* k4a_record_t;
 

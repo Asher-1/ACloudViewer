@@ -1,0 +1,199 @@
+ARG VTK_VERSION
+ARG PCL_VERSION
+ARG CUDA_VERSION
+ARG UBUNTU_VERSION
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn7-devel-ubuntu${UBUNTU_VERSION}
+LABEL maintainer="ErowCloudViewer Team ludahai19@163.com"
+
+# Execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
+# docker run -it --runtime=nvidia erowcloudviewer
+
+ENV EROWCLOUDVIEWER_DEV=/opt/ErowCloudViewer \
+    EROWCLOUDVIEWER_BUILD=/tmp/ErowCloudViewer_build \
+    QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
+    QT_ROOT=/opt/Qt5.14.2/ \
+    QT_CI_LOGIN=alicevisionjunk@gmail.com \
+    QT_CI_PASSWORD=azerty1.
+
+# update apt
+RUN apt-get update --fix-missing -y && \
+apt-get install apt-utils software-properties-common --fix-missing -y && \
+apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc && \
+apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main' && \
+apt-get update --fix-missing -y
+
+# Install libs needed by Qt
+RUN DEBIAN_FRONTEND=noninteractive apt-get install --fix-missing -yq \
+        build-essential \
+        vim \
+        git \
+        g++ \
+        ccache \
+        python3.6 \
+        python3-pip \
+        python3-setuptools \
+        python3-dev \
+        python3-numpy \
+        python3-opencv \
+        libtbb2 \
+        libgtk2.0-dev \
+        libavcodec-dev \
+        libavformat-dev \
+        libswscale-dev \
+        libjpeg-dev \
+        libpng-dev \
+        libtiff-dev \
+        libdc1394-22-dev \
+        unzip \
+        cmake \
+        wget \
+        libsdl2-dev \
+        xorg-dev \
+        libc++-7-dev \
+        libc++abi-7-dev \
+        ninja-build \
+        libxi-dev \
+        libxmu-dev \
+        libxi-dev \
+        libflann1.9 \
+        libflann-dev \
+		libosmesa6-dev \
+        libudev-dev \
+        autoconf \
+        libtool \
+        libtbb-dev \
+        mpi-default-dev \
+        openmpi-bin \
+        openmpi-common \
+        libeigen3-dev \
+        libboost-all-dev \
+        libglew-dev \
+        'libqhull*' \
+        libgtest-dev \
+        libusb-1.0-0-dev \
+        libusb-dev \
+        libudev-dev \
+        git-core \
+        freeglut3-dev \
+        pkg-config \
+        libpcap-dev \
+        clang-format \
+        libqhull-dev \
+        graphviz \
+        nasm \
+        mono-complete \
+        libopenni-dev \
+        libopenni2-dev \
+        libgl1-mesa-dev \
+        libglu1-mesa-dev \
+        libx11-dev \
+        libxext-dev \
+        libxtst-dev \
+        libxrender-dev \
+        libxmu-dev \
+        libxmuu-dev \
+        flex \
+        fontconfig \
+        libfreetype6 \
+        libglib2.0-0 \ 
+        libice6 \
+        libx11-6 \
+        libxcb1 \
+        libxext6 \
+        libxi6 \
+        libxrender1 \
+        libsm6 \
+        libxt-dev \
+        libglu-dev \
+        libosmesa-dev \
+        libgl-dev \
+        libglu-dev \
+	libqt5charts5-dev \
+        libxcb-keysyms1 \
+        libxcb-image0 \
+        libxkbcommon-x11-0 \
+	libz-dev \
+	systemd \
+	ssh
+
+RUN apt-get install -y --no-install-recommends \
+	software-properties-common
+
+# Install Python3
+RUN apt install python3-pip -y && pip3 install --upgrade pip
+
+# Install opencv
+WORKDIR /opt
+COPY dl/opencv.zip /opt
+COPY dl/opencv_contrib.zip /opt
+#RUN cd /opt && git clone https://github.com/Itseez/opencv.git && \
+RUN cd /opt && unzip opencv.zip && unzip opencv_contrib.zip && \
+        #cd opencv && git checkout 4.3.0 && \
+        #cd /opt && git clone https://github.com/Itseez/opencv_contrib.git && \
+        #cd opencv_contrib && git checkout 4.3.0 && \
+        cd opencv && mkdir -p build && cd build && \
+        cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+                -DCMAKE_INSTALL_PREFIX=/usr/local \
+                -DOPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
+                -DBUILD_EXAMPLES=OFF .. && \
+        make "-j$(nproc)" && \
+        make install "-j$(nproc)" && ldconfig && \
+        rm -rf ./* && rm -rf /opt/opencv.zip /opt/opencv_contrib.zip
+
+# Install Qt (to build plugins)
+WORKDIR /tmp/qt
+COPY dl/qt.run /tmp/qt
+COPY ./docker/qt-installer-noninteractive.qs ${EROWCLOUDVIEWER_DEV}/docker/
+RUN chmod +x qt.run && \
+    ./qt.run --verbose --platform minimal --script "${EROWCLOUDVIEWER_DEV}/docker/qt-installer-noninteractive.qs" && \
+    rm qt.run
+
+# Install vtk
+WORKDIR /opt
+COPY dl/VTK-8.2.0.zip /opt
+#RUN cd /opt && git clone https://github.com/Kitware/VTK.git --recursive && \
+RUN cd /opt && unzip VTK-8.2.0.zip && \
+        cd VTK && \
+        #git checkout "${VTK_VERSION}" && \
+        mkdir -p build && cd build && \
+        cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+		        -DVTK_QT_VERSION:STRING=5 \
+		        -DVTK_Group_Qt:BOOL=ON \
+		        -DBUILD_SHARED_LIBS:BOOL=ON \
+		        -DVTK_BUILD_QT_DESIGNER_PLUGIN:BOOL=ON \
+		        -DBUILD_surface_on_nurbs=ON \
+                -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
+                -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
+        make "-j$(nproc)" && \
+        make install "-j$(nproc)" && ldconfig && \
+        cp lib/libQVTKWidgetPlugin.so "${QT_DIR}"/plugins/designer && \
+        cp lib/libQVTKWidgetPlugin.so "${QT_ROOT}"/Tools/QtCreator/lib/Qt/plugins/designer && \
+        rm -rf ./* && rm -rf /opt/VTK-8.2.0.zip
+
+# Install pcl
+WORKDIR /opt
+COPY dl/pcl-1.11.1.zip /opt
+#RUN cd /opt && git clone https://github.com/PointCloudLibrary/pcl.git --recursive && \
+RUN cd /opt && unzip pcl-1.11.1.zip && \
+        cd pcl && \
+        #git checkout "${PCL_VERSION}" && \
+        mkdir -p build && cd build && \
+        cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+		        -DBUILD_GPU=ON \
+		        -DBUILD_apps=ON \
+		        -DBUILD_examples=ON \
+		        -DBUILD_surface_on_nurbs=ON \
+                -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
+                -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
+        make "-j$(nproc)" && \
+        make install "-j$(nproc)" && ldconfig && \
+        rm -rf ./* && rm -rf /opt/pcl-1.11.1.zip
+
+COPY ./*requirements.txt ${EROWCLOUDVIEWER_DEV}/
+
+# Install Meshroom requirements and freeze bundle
+WORKDIR "${EROWCLOUDVIEWER_DEV}"
+RUN DEBIAN_FRONTEND=noninteractive pip3 install --user  -U pip -i https://pypi.tuna.tsinghua.edu.cn/simple/  \
+                                && pip3 config set global.index-url https://mirrors.aliyun.com/pypi/simple/
+RUN pip3 install -r requirements.txt
+

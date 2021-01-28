@@ -28,7 +28,7 @@
 
 #include <memory>
 
-#include "cloudViewer/io/sensor/RGBDSensorConfig.h"
+#include "io/sensor/RGBDSensorConfig.h"
 
 namespace cloudViewer {
 
@@ -42,7 +42,7 @@ class RGBDSensor {
 public:
     RGBDSensor() {}
     virtual bool Connect(size_t sensor_index) = 0;
-    virtual ~RGBDSensor(){};
+    virtual ~RGBDSensor(){}
 
     /// Capture one frame, return an RGBDImage.
     /// If \param enable_align_depth_to_color is true, the depth image will be

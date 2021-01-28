@@ -11,61 +11,61 @@
 #include <ctime>
 #include <iostream>
 
-#include "Open3D/Open3D.h"
+#include "CloudViewer.h"
 
-using namespace open3d;
+using namespace cloudViewer;
 
 void PrintUsage() {
-    PrintOpen3DVersion();
+    PrintCloudViewerVersion();
     // clang-format off
-    utility::LogInfo("Options: ");
-    utility::LogInfo("--config  Config .json file (default: none)");
-    utility::LogInfo("--list    List the currently connected K4A devices");
-    utility::LogInfo("--device  Specify the device index to use (default: 0)");
-    utility::LogInfo("-a        Align depth with color image (default: disabled)");
-    utility::LogInfo("-h        Print this helper");
+    CVLib::utility::LogInfo("Options: ");
+    CVLib::utility::LogInfo("--config  Config .json file (default: none)");
+    CVLib::utility::LogInfo("--list    List the currently connected K4A devices");
+    CVLib::utility::LogInfo("--device  Specify the device index to use (default: 0)");
+    CVLib::utility::LogInfo("-a        Align depth with color image (default: disabled)");
+    CVLib::utility::LogInfo("-h        Print this helper");
     // clang-format on
 }
 
 int main(int argc, char **argv) {
     // Parse arguments
-    if (utility::ProgramOptionExists(argc, argv, "-h")) {
+    if (CVLib::utility::ProgramOptionExists(argc, argv, "-h")) {
         PrintUsage();
         return 0;
     }
 
-    if (utility::ProgramOptionExists(argc, argv, "--list")) {
+    if (CVLib::utility::ProgramOptionExists(argc, argv, "--list")) {
         io::AzureKinectSensor::ListDevices();
         return 0;
     }
 
     io::AzureKinectSensorConfig sensor_config;
-    if (utility::ProgramOptionExists(argc, argv, "--config")) {
+    if (CVLib::utility::ProgramOptionExists(argc, argv, "--config")) {
         auto config_filename =
-                utility::GetProgramOptionAsString(argc, argv, "--config", "");
+                CVLib::utility::GetProgramOptionAsString(argc, argv, "--config", "");
         if (!io::ReadIJsonConvertibleFromJSON(config_filename, sensor_config)) {
-            utility::LogInfo("Invalid sensor config");
+            CVLib::utility::LogInfo("Invalid sensor config");
             return 1;
         }
     } else {
-        utility::LogInfo("Use default sensor config");
+        CVLib::utility::LogInfo("Use default sensor config");
     }
 
     int sensor_index =
-            utility::GetProgramOptionAsInt(argc, argv, "--device", 0);
+            CVLib::utility::GetProgramOptionAsInt(argc, argv, "--device", 0);
     if (sensor_index < 0 || sensor_index > 255) {
-        utility::LogWarning("Sensor index must between [0, 255]: {}",
+        CVLib::utility::LogWarning("Sensor index must between [0, 255]: {}",
                             sensor_index);
         return 1;
     }
 
     bool enable_align_depth_to_color =
-            utility::ProgramOptionExists(argc, argv, "-a");
+            CVLib::utility::ProgramOptionExists(argc, argv, "-a");
 
     // Init sensor
     io::AzureKinectSensor sensor(sensor_config);
     if (!sensor.Connect(sensor_index)) {
-        utility::LogWarning("Failed to connect to sensor, abort.");
+        CVLib::utility::LogWarning("Failed to connect to sensor, abort.");
         return 1;
     }
 
@@ -79,11 +79,11 @@ int main(int argc, char **argv) {
                                 return false;
                             });
 
-    vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 540);
+    vis.CreateVisualizerWindow("cloudViewer Azure Kinect Recorder", 1920, 540);
     do {
         auto im_rgbd = sensor.CaptureFrame(enable_align_depth_to_color);
         if (im_rgbd == nullptr) {
-            utility::LogInfo("Invalid capture, skipping this frame");
+            CVLib::utility::LogInfo("Invalid capture, skipping this frame");
             continue;
         }
 

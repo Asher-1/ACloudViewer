@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "cloudViewer/camera/PinholeCameraIntrinsic.h"
-#include "cloudViewer/utility/IJsonConvertible.h"
+#include "camera/PinholeCameraIntrinsic.h"
+#include <IJsonConvertible.h>
 
 enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
 
@@ -42,7 +42,7 @@ namespace io {
 /// class MKVMetadata
 ///
 /// AzureKinect mkv metadata.
-class MKVMetadata : public utility::IJsonConvertible {
+class MKVMetadata : public CVLib::utility::IJsonConvertible {
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
