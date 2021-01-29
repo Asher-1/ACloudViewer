@@ -15,18 +15,25 @@ test -d docker || (
 
 test -d dl || \
 	mkdir dl
+
 test -f dl/qt.run || \
 	wget https://download.qt.io/archive/qt/5.14/5.14.2/qt-opensource-linux-x64-5.14.2.run -O "dl/qt.run"
 
+test -f dl/Miniconda3-latest-Linux-x86_64.sh || \
+	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O "dl/Miniconda3-latest-Linux-x86_64.sh"
+
+test -f dl/xerces-c-3.2.3.zip || \
+	wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "dl/xerces-c-3.2.3.zip"
+
 # DEPENDENCIES
-#docker build \
-#	--rm \
-#	--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
-#	--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
-#	--build-arg "VTK_VERSION=${VTK_VERSION}" \
-#	--build-arg "PCL_VERSION=${PCL_VERSION}" \
-#	--tag "erowcloudviewer-deps:${EROWCLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-#	-f docker/Dockerfile_ubuntu_deps .
+docker build \
+	--rm \
+	--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
+	--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
+	--build-arg "VTK_VERSION=${VTK_VERSION}" \
+	--build-arg "PCL_VERSION=${PCL_VERSION}" \
+	--tag "erowcloudviewer-deps:${EROWCLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
+	-f docker/Dockerfile_ubuntu_deps .
 
 # ErowCloudViewer
 docker build \
