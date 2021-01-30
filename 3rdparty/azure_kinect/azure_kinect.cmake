@@ -19,13 +19,28 @@ endif()
 # Conditionally include header files in CloudViewer.h, when azure kinect is enabled.
 set(BUILD_AZURE_KINECT_COMMENT "")
 
+# Setup download links
+if(WIN32)
+	set_local_or_remote_url(
+		DOWNLOAD_URL_PRIMARY
+		LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/microsoft.azure.kinect.sensor.1.4.1.tgz"
+		REMOTE_URLS "https://www.nuget.org/api/v2/package/Microsoft.Azure.Kinect.Sensor/1.4.1"
+	)
+else()
+	set_local_or_remote_url(
+		DOWNLOAD_URL_PRIMARY
+		LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/libk4a1.4-dev_1.4.1_amd64.deb"
+		REMOTE_URLS https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4-dev/libk4a1.4-dev_1.4.1_amd64.deb
+	)
+endif()
+
 # This works even when the user does not have k4a libraries installed
 # in `Program Files`. We only need the headers.
 if (WIN32)
     ExternalProject_Add(
         ext_k4a
         PREFIX k4a
-        URL https://www.nuget.org/api/v2/package/Microsoft.Azure.Kinect.Sensor/1.4.1
+        URL ${DOWNLOAD_URL_PRIMARY}
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
@@ -37,7 +52,7 @@ else()
     ExternalProject_Add(
         ext_k4a
         PREFIX k4a
-        URL https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4-dev/libk4a1.4-dev_1.4.1_amd64.deb
+        URL ${DOWNLOAD_URL_PRIMARY}
         UPDATE_COMMAND ${CMAKE_COMMAND} -E tar xvf data.tar.gz
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
