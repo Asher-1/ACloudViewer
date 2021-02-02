@@ -29,7 +29,7 @@ if(WIN32)
 else()
 	set_local_or_remote_url(
 		DOWNLOAD_URL_PRIMARY
-		LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/libk4a1.4-dev_1.4.1_amd64.deb"
+                LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/libk4a1.4-dev_1.4.1_amd64.tar.gz"
 		REMOTE_URLS https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4-dev/libk4a1.4-dev_1.4.1_amd64.deb
 	)
 endif()

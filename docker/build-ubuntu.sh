@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-#test -z "$EROWCLOUDVIEWER_VERSION" && EROWCLOUDVIEWER_VERSION="$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short HEAD)"
-test -z "$EROWCLOUDVIEWER_VERSION" && EROWCLOUDVIEWER_VERSION="develop"
+#test -z "$CLOUDVIEWER_VERSION" && CLOUDVIEWER_VERSION="$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short HEAD)"
+test -z "$CLOUDVIEWER_VERSION" && CLOUDVIEWER_VERSION="develop"
 test -z "$VTK_VERSION" && VTK_VERSION=8.2.0
 test -z "$PCL_VERSION" && PCL_VERSION=1.11.1
-test -z "$CUDA_VERSION" && CUDA_VERSION=10.2
+test -z "$CUDA_VERSION" && CUDA_VERSION=101
 test -z "$UBUNTU_VERSION" && UBUNTU_VERSION=18.04
 
 test -d docker || (
@@ -25,6 +25,18 @@ test -f dl/Miniconda3-latest-Linux-x86_64.sh || \
 test -f dl/xerces-c-3.2.3.zip || \
 	wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "dl/xerces-c-3.2.3.zip"
 
+test -f dl/VTK-8.2.0.zip || \
+	wget https://www.vtk.org/files/release/8.2/VTK-8.2.0.zip -O "dl/VTK-8.2.0.zip"
+
+test -f dl/pcl-1.11.1.zip || \
+	wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-1.11.1/source.zip -O "dl/pcl-1.11.1.zip"
+
+test -f dl/opencv.zip || \
+	wget https://github.com/opencv/opencv/archive/4.3.0.zip -O "dl/opencv.zip"
+
+test -f dl/opencv_contrib.zip || \
+	wget https://github.com/opencv/opencv_contrib/archive/4.3.0.zip -O "dl/opencv_contrib.zip"
+
 # DEPENDENCIES
 docker build \
 	--rm \
@@ -32,17 +44,17 @@ docker build \
 	--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
 	--build-arg "VTK_VERSION=${VTK_VERSION}" \
 	--build-arg "PCL_VERSION=${PCL_VERSION}" \
-	--tag "erowcloudviewer-deps:${EROWCLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
+	--tag "cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
 	-f docker/Dockerfile_ubuntu_deps .
 
 # ErowCloudViewer
-docker build \
-	--rm \
-	--build-arg "EROWCLOUDVIEWER_VERSION=${EROWCLOUDVIEWER_VERSION}" \
-	--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
-	--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
-  --build-arg "VTK_VERSION=${VTK_VERSION}" \
-	--build-arg "PCL_VERSION=${PCL_VERSION}" \
-	--tag "erowcloudviewer:${EROWCLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-	-f docker/Dockerfile_ubuntu .
+#docker build \
+#	--rm \
+#	--build-arg "CLOUDVIEWER_VERSION=${CLOUDVIEWER_VERSION}" \
+#	--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
+#	--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
+#  --build-arg "VTK_VERSION=${VTK_VERSION}" \
+#	--build-arg "PCL_VERSION=${PCL_VERSION}" \
+#	--tag "cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
+#	-f docker/Dockerfile_ubuntu .
 
