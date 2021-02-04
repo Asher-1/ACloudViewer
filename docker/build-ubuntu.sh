@@ -37,6 +37,12 @@ test -f dl/opencv.zip || \
 test -f dl/opencv_contrib.zip || \
 	wget https://github.com/opencv/opencv_contrib/archive/4.3.0.zip -O "dl/opencv_contrib.zip"
 
+test -f dl/google-chrome-stable_current_amd64.deb || \
+	wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O "dl/google-chrome-stable_current_amd64.deb"
+
+test -f dl/nomachine.deb || \
+	wget "https://www.nomachine.com/free/linux/64/deb" -O "dl/nomachine.deb"
+
 # DEPENDENCIES
 docker build \
 	--rm \

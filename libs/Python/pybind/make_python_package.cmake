@@ -90,7 +90,7 @@ if (BUILD_JUPYTER_EXTENSION)
         )
     else()
         execute_process(
-            COMMAND npm install
+            COMMAND npm install --unsafe-perm 
             RESULT_VARIABLE res_var
             WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/js
         )
