@@ -5,15 +5,12 @@ sudo apt-get install x11-xserver-utils && xhost +
 
 # create container instance
 docker run -dit --runtime=nvidia --name=cloudViewer \
+  --shm-size="1g" \
   --cap-add=SYS_PTRACE \
   --security-opt seccomp=unconfined --privileged \
-  --env HTTP_PROXY="http://127.0.0.1:1089" \
-  --env HTTPS_PROXY="http://127.0.0.1:1089" \
   -e DISPLAY=unix$DISPLAY \
-  --net=host \
   -e GDK_SCALE \
   -e GDK_DPI_SCALE \
-  -m 8G \
   -p 10022:22 \
   -p 14000:4000 \
   -v /etc/localtime:/etc/localtime:ro \
@@ -33,12 +30,12 @@ export QT_PLUGIN_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/plugins:$QT_PLUGIN_PATH"
 export QML2_IMPORT_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/qml:$QML2_IMPORT_PATH"
 
 # Build ErowCloudViewer
-export DISPLAY=:0  #DISPLAY must be consistent with host
+export DISPLAY=:0  # DISPLAY must be consistent with host
 cd /opt/ErowCloudViewer
 mkdir build
 cd build
 
-cmakWhlOptions=(-DDEVELOPER_BUILD=OFF
+cmakeWhlOptions=(-DDEVELOPER_BUILD=OFF
   -DCMAKE_BUILD_TYPE=Release
   -DBUILD_JUPYTER_EXTENSION=ON
   -DBUILD_LIBREALSENSE=ON
@@ -59,7 +56,7 @@ cmakWhlOptions=(-DDEVELOPER_BUILD=OFF
   -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake
 )
 cmake "/opt/ErowCloudViewer/ErowCloudViewer" \
-      "${cmakWhlOptions[@]}" \
+      "${cmakeWhlOptions[@]}" \
       -DCMAKE_INSTALL_PREFIX=/opt/ErowCloudViewer/install
 
 # compile ErowCloudViewer pip-package
@@ -67,7 +64,7 @@ make "-j$(nproc)" pip-package
 make "-j$(nproc)" conda-package
 make install "-j$(nproc)"
 
-cmakGuiOptions=(-DDEVELOPER_BUILD=OFF
+cmakeGuiOptions=(-DDEVELOPER_BUILD=OFF
                 -DCMAKE_BUILD_TYPE=Release
                 -DBUILD_JUPYTER_EXTENSION=ON
                 -DBUILD_LIBREALSENSE=ON
@@ -120,8 +117,63 @@ cmakGuiOptions=(-DDEVELOPER_BUILD=OFF
         )
 
 cmake "/opt/ErowCloudViewer/ErowCloudViewer" \
-      "${cmakGuiOptions[@]}" \
+      "${cmakeGuiOptions[@]}" \
       -DCMAKE_INSTALL_PREFIX=/opt/ErowCloudViewer/install
 
 make "-j$(nproc)"
 make install "-j$(nproc)"
+
+#COPY dl/libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb /opt
+#COPY dl/libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb /opt
+#RUN dpkg -i libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb \
+#    && dpkg -i libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb \
+#    && rm -rf *.deb
+
+RUN   apt-get install nodejs npm -y \
+      && npm install n -g \
+      && n latest
+
+ENV DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket \
+    USER=ubuntu \
+    PASSWD=ubuntu \
+    UID=1000 \
+    GID=1000 \
+    TZ=Asia/Shanghai \
+    LANG=zh_CN.UTF-8 \
+    LC_ALL=zh_CN.UTF-8 \
+    LANGUAGE=zh_CN.UTF-8 \
+    DEBIAN_FRONTEND=noninteractive
+
+RUN groupadd -f $USER \
+    && useradd --create-home --no-log-init -g $USER $USER \
+    && usermod -aG sudo $USER \
+    && echo "$USER:$PASSWD" | chpasswd \
+    && chsh -s /bin/bash $USER \
+    && usermod  --uid $UID $USER \
+    && groupmod --gid $GID $USER
+
+# Install some dependences and xfce4 desktop
+RUN apt-get update --fix-missing -y \
+    && apt install  --fix-missing -yq \
+    openssh-server \
+    bash-completion \
+    xfce4 \
+    xfce4-terminal \
+    xfce4-power-manager \
+    fonts-wqy-zenhei \
+    locales \
+    ssh xauth \
+	&& systemctl enable ssh \
+	&& mkdir -p /run/sshd \
+	&& locale-gen $LANG \
+	&& /bin/sh -c LANG=C xdg-user-dirs-update --force
+
+COPY dl/google-chrome-stable_current_amd64.deb /opt
+COPY dl/nomachine.deb /opt
+RUN apt-get install -yf ./google-chrome-stable_current_amd64.deb \
+    && rm ./google-chrome-stable_current_amd64.deb \
+    && apt-get install -y pulseaudio \
+    && mkdir -p /var/run/dbus \
+    && dpkg -i ./nomachine.deb \
+    && sed -i "s|#EnableClipboard both|EnableClipboard both |g" /usr/NX/etc/server.cfg \
+    && sed -i '/DefaultDesktopCommand/c\DefaultDesktopCommand "/usr/bin/startxfce4"' /usr/NX/etc/node.cfg

@@ -3,26 +3,29 @@ ARG PCL_VERSION
 ARG CUDA_VERSION
 ARG UBUNTU_VERSION
 #FROM nvidia/cuda:${CUDA_VERSION}-cudnn7-devel-ubuntu${UBUNTU_VERSION}
+#FROM nvidia/opengl:1.2-glvnd-devel-ubuntu${UBUNTU_VERSION}
 FROM gezp/ubuntu-nomachine:${UBUNTU_VERSION}-cu${CUDA_VERSION}
 LABEL maintainer="ErowCloudViewer Team ludahai19@163.com"
 
 # Execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
 # docker run -it --runtime=nvidia cloudviewer-deps
 
-ENV CLOUDVIEWER_DEV=/opt/ErowCloudViewer \
-    CLOUDVIEWER_BUILD=/tmp/ErowCloudViewer_build \
+ENV REFRESHED_AT=2021-02-03 \
+    CLOUDVIEWER_DEV=/opt/ErowCloudViewer \
     QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
     QT_ROOT=/opt/Qt5.14.2/ \
     QT_CI_LOGIN=alicevisionjunk@gmail.com \
-    QT_CI_PASSWORD=azerty1.
+    QT_CI_PASSWORD=azerty1. \
+    DEBIAN_FRONTEND=noninteractive
 
 # Update apt and install libs needed by Qt
-RUN DEBIAN_FRONTEND=noninteractive apt-get update --fix-missing -y \
-    && apt-get install apt-utils software-properties-common --fix-missing -y \
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
+    && apt-get clean && apt-get update --fix-missing -y \
+    && apt-get install apt-utils software-properties-common tzdata --fix-missing -y \
     && apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc \
     && apt-add-repository --yes "deb https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
     && apt-get update --fix-missing -y \
-    && apt-get install --fix-missing -yq \
+    && apt-get install --fix-missing -yq --no-install-recommends \
         build-essential \
         vim \
         git \
@@ -30,6 +33,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update --fix-missing -y \
         g++ \
         tree \
         apt-file \
+        net-tools \
+        mesa-utils \
         libtbb2 \
         libgtk2.0-dev \
         libavcodec-dev \
@@ -44,13 +49,12 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update --fix-missing -y \
         cmake \
         cmake-gui \
         gdb \
+        ccache \
         wget \
         libsdl2-dev \
         xorg-dev \
         libc++-7-dev \
         libc++abi-7-dev \
-        libxi-dev \
-        libxmu-dev \
         libxi-dev \
         libflann1.9 \
         libflann-dev \
@@ -92,7 +96,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update --fix-missing -y \
         flex \
         fontconfig \
         libfreetype6 \
-        libglib2.0-0 \ 
+        libglib2.0-0 \
         libice6 \
         libx11-6 \
         libxcb1 \
@@ -101,25 +105,26 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update --fix-missing -y \
         libxrender1 \
         libsm6 \
         libxt-dev \
-        libglu-dev \
         libosmesa-dev \
         libgl-dev \
         libglu-dev \
-	    libqt5charts5-dev \
         libxcb-keysyms1 \
         libxcb-image0 \
         libxkbcommon-x11-0 \
 	    libz-dev \
 	    systemd \
 	    libjsoncpp-dev \
-	    libcgal-dev \
-	    ssh
+	    libcgal-dev
+
+# Install kinetic
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod \
+    && echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' | debconf-set-selections \
+    && echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' | debconf-set-selections \
+    && apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
 
 # Install and update npm and nodejs
-RUN   apt-get install nodejs npm -y \
-      && npm install npm@latest -g \
-      && npm install n -g \
-      && n latest
+RUN apt-get install nodejs npm -y
 
 # Install xerces-c
 WORKDIR /opt
@@ -144,25 +149,25 @@ RUN sh -c '/bin/echo -e "\nyes\n\nyes" | sh Miniconda3-latest-Linux-x86_64.sh' \
     && /root/miniconda3/bin/pip install --upgrade pip \
     && rm Miniconda3-latest-Linux-x86_64.sh
 
-# fix Miniconda3 python object.h bugs with qt
-RUN sed -i "s/PyType_Slot \*slots/PyType_Slot \*_slots/g" /root/miniconda3/include/python3.6m/object.h
-
 # Install ErowCloudViewer requirements and freeze bundle
 COPY ./*requirements.txt ${CLOUDVIEWER_DEV}/
 WORKDIR "${CLOUDVIEWER_DEV}"
-RUN DEBIAN_FRONTEND=noninteractive /root/miniconda3/bin/pip install --user  -U pip -i https://pypi.tuna.tsinghua.edu.cn/simple/  \
+RUN /root/miniconda3/bin/pip install --user  -U pip -i https://pypi.tuna.tsinghua.edu.cn/simple/  \
                                 && /root/miniconda3/bin/pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
 RUN /root/miniconda3/bin/conda install -c conda-forge pdal python-pdal -y
-RUN DEBIAN_FRONTEND=noninteractive /root/miniconda3/bin/pip install -r requirements.txt \
+RUN /root/miniconda3/bin/pip install -r requirements.txt \
     && /root/miniconda3/bin/pip install torch==1.6.0+cu101 torchvision==0.7.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html \
     && /root/miniconda3/bin/pip install tensorflow==2.3.1
 
-# Install kinetic
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod \
-    && echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' | debconf-set-selections \
-    && echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' | debconf-set-selections \
-    && apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
+# fix liblitedb.so.2.1 complain libstdc++.so.6 GLIBCXX not found, libgdal.so complain undefined TIFF* and object.h bugs with qt bugs
+RUN cp /root/miniconda3/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/ \
+    && rm -rf /usr/lib/x86_64-linux-gnu/libtiff* \
+    && ln -s /root/miniconda3/lib/libtiff.so.5.6.0 /usr/lib/x86_64-linux-gnu/libtiff.so.5 \
+    && ln -s /root/miniconda3/lib/libtiffxx.so.5.6.0 /usr/lib/x86_64-linux-gnu/libtiffxx.so.5 \
+    && ln -s /root/miniconda3/lib/libwebp.so.7.1.1 /usr/lib/x86_64-linux-gnu/libwebp.so.7 \
+    && ln -s /root/miniconda3/lib/libjpeg.so.9.4.0 /usr/lib/x86_64-linux-gnu/libjpeg.so.9 \
+    && sed -i "s/PyType_Slot \*slots/PyType_Slot \*_slots/g" /root/miniconda3/include/python3.6m/object.h \
+    && ldconfig
 
 # Install Qt (to build plugins)
 WORKDIR /tmp/qt
@@ -234,24 +239,30 @@ RUN unzip pcl-1.11.1.zip && \
     rm -rf ./* && \
     rm -rf /opt/pcl-1.11.1.zip
 
+WORKDIR /opt
+COPY dl/libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb /opt
+COPY dl/libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb /opt
+RUN dpkg -i libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb \
+    && dpkg -i libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb \
+    && rm -rf *.deb \
+    && npm install n -g \
+    && n latest
+
 # Enable SSH X11 forwarding, needed when the Docker image
 # is run on a remote machine
-RUN apt install ssh xauth && \
-	systemctl enable ssh && \
-	mkdir -p /run/sshd
-
 RUN sed -i "s/^.*X11Forwarding.*$/X11Forwarding yes/; s/^.*X11UseLocalhost.*$/X11UseLocalhost no/; s/^.*PermitRootLogin prohibit-password/PermitRootLogin yes/; s/^.*X11UseLocalhost.*/X11UseLocalhost no/;" /etc/ssh/sshd_config
 RUN echo "root:toor" | chpasswd
 
 WORKDIR /
-RUN apt install ccache -y
-RUN /bin/sh -c LANG=C xdg-user-dirs-update --force \
-    && chmod +x /nxserver.sh \
-    && rm -rf /var/lib/apt/lists/* \
+COPY docker/nxserver.sh /
+RUN chmod +x /nxserver.sh \
     && ln -s /opt/Qt5.14.2/5.14.2/gcc_64/lib/libQt5X11Extras.so.5.14.2 /usr/lib/libQt5X11Extras.so.5 \
-    && ldconfig
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /root/miniconda3/pkgs/* \
+    && rm -rf /root/.cache/* \
+    && rm -rf /root/.ccache/*
+
+ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
 
 EXPOSE 22 4000
 ENTRYPOINT ["/nxserver.sh"]
-#CMD ["/usr/sbin/sshd", "-D"]
-
