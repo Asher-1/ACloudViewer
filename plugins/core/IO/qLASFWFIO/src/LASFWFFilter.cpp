@@ -447,7 +447,7 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 			progressDialog->show();
 			QCoreApplication::processEvents();
 		}
-		CVLib::NormalizedProgress nProgress(progressDialog.data(), cloud->size());
+		cloudViewer::NormalizedProgress nProgress(progressDialog.data(), cloud->size());
 
 		bool hasReturnNumberField = false;
 		bool hasPlainClassificationField = false;
@@ -718,7 +718,7 @@ CC_FILE_ERROR LASFWFFilter::loadFile(const QString& filename, ccHObject& contain
 			progressDialog->show();
 			QCoreApplication::processEvents();
 		}
-		CVLib::NormalizedProgress nProgress(progressDialog.data(), pointCount);
+		cloudViewer::NormalizedProgress nProgress(progressDialog.data(), pointCount);
 
 		//number of points read from the beginning of the current cloud part
 		unsigned pointsRead = 0;

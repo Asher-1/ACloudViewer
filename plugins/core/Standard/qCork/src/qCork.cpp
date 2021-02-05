@@ -117,7 +117,7 @@ bool ToCorkMesh(const ccMesh* in, CorkMesh& out, ecvMainAppInterface* app = 0)
 	{
 		for(unsigned i=0; i<triCount; i++)
 		{
-			const CVLib::VerticesIndexes* tsi = in->getTriangleVertIndexes(i);
+			const cloudViewer::VerticesIndexes* tsi = in->getTriangleVertIndexes(i);
 			CorkTriangle corkTri;
 			corkTri.a = tsi->i1;
 			corkTri.b = tsi->i2;

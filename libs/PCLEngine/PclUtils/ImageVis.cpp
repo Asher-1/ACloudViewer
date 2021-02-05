@@ -316,9 +316,9 @@ namespace PclUtils
 		unsigned x, unsigned y, unsigned width, unsigned height,
 		const std::string &layer_id, double opacity)
 	{
-		//if (unsigned(getSize()[0]) != width ||
-		//	unsigned(getSize()[1]) != height)
-		//	setSize(width, height);
+		if (unsigned(getSize()[0]) != width ||
+			unsigned(getSize()[1]) != height)
+			setSize(width, height);
 
 		// Check to see if this ID entry already exists (has it been already added to the visualizer?)
 		pcl::visualization::ImageViewer::LayerMap::iterator am_it = std::find_if(layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
@@ -360,7 +360,6 @@ namespace PclUtils
 		ren_->GetActiveCamera()->SetParallelScale(0.5 * win_->GetSize()[1]);
 #endif
 	}
-
 
 	bool ImageVis::addText(unsigned int x, unsigned int y,
 		const std::string& text_string,

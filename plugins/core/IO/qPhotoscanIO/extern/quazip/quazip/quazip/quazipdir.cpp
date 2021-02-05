@@ -27,6 +27,8 @@ see quazip/(un)zip.h files for details. Basically it's the zlib license.
 #include <QSet>
 #include <QSharedData>
 
+#pragma warning(disable : 4996)
+
 /// \cond internal
 class QuaZipDirPrivate: public QSharedData {
     friend class QuaZipDir;
