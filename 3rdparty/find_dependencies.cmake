@@ -588,6 +588,8 @@ if(NOT USE_SYSTEM_PNG)
     )
     set(ZLIB_TARGET "3rdparty_zlib")
     add_dependencies(3rdparty_zlib ext_zlib)
+	set(ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
+	set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS})
 
     include(${CloudViewer_3RDPARTY_DIR}/libpng/libpng.cmake)
     import_3rdparty_library(3rdparty_libpng
@@ -602,12 +604,6 @@ if(NOT USE_SYSTEM_PNG)
     # Putting zlib after libpng somehow works for Ubuntu.
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${LIBPNG_TARGET}")
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${ZLIB_TARGET}")
-
-#    add_subdirectory(${CloudViewer_3RDPARTY_DIR}/zlib)
-#    add_subdirectory(${CloudViewer_3RDPARTY_DIR}/libpng)
-#    list(APPEND PNG_LIBRARIES zlib)
-#    set(ZLIB_LIBRARIES ${ZLIB_LIBRARY})
-#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
 endif()
 
 # rply

@@ -140,7 +140,6 @@ void PCLDisplayTools::drawPointCloud(CC_DRAW_CONTEXT & CONTEXT, ccPointCloud * e
 				{
 					m_visualizer3D->updateNormals(CONTEXT, nullptr);
 				}
-
 			}
 		}
 	}
@@ -261,13 +260,18 @@ void PCLDisplayTools::drawImage(CC_DRAW_CONTEXT & CONTEXT, ccImage * image)
 
 	if (!m_visualizer2D) return;
 
-#if 0
+#if 1
 	std::string viewID = CVTools::FromQString(CONTEXT.viewID);
 	bool firstShow = !m_visualizer2D->contains(viewID);
 
 	if (image->isRedraw() || firstShow)
 	{
-		m_visualizer2D->showRGBImage(image->data().bits(), image->getW(), image->getH(), viewID, image->getOpacity());
+        m_visualizer2D->showRGBImage(image->data().bits(), image->getW(),
+                                        image->getH(), viewID,
+                                        image->getOpacity());
+        //m_visualizer2D->addRGBImage(image->data().bits(), 0, 0, image->getW(),
+        //                            image->getH(), viewID,
+        //                            image->getOpacity());
 	}
 	m_visualizer2D->changeOpacity(viewID, image->getOpacity());
 #else
