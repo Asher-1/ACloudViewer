@@ -43,18 +43,18 @@ namespace io {
 bool RealSenseSensor::ListDevices() {
     auto all_device_info = EnumerateDevices();
     if (all_device_info.empty()) {
-        CVLib::utility::LogWarning("No RealSense devices detected.");
+        cloudViewer::utility::LogWarning("No RealSense devices detected.");
         return false;
     } else {
         size_t sensor_index = 0;
         for (auto& dev_info : all_device_info) {
-            CVLib::utility::LogInfo("[{}] {}: {}", sensor_index++, dev_info.name,
+            cloudViewer::utility::LogInfo("[{}] {}: {}", sensor_index++, dev_info.name,
                              dev_info.serial);
             for (auto& config : dev_info.valid_configs)
-                CVLib::utility::LogInfo("\t{}: [{}]", config.first,
+                cloudViewer::utility::LogInfo("\t{}: [{}]", config.first,
                                  fmt::join(config.second, " | "));
         }
-        CVLib::utility::LogInfo(
+        cloudViewer::utility::LogInfo(
                 "cloudViewer only supports synchronized color and depth capture "
                 "(color_fps = depth_fps).");
         return true;
@@ -149,7 +149,7 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
         rs2::context ctx;
         auto device_list = ctx.query_devices();
         if (sensor_index >= device_list.size()) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "No device for sensor_index {}. Only {} devices detected.",
                     sensor_index, device_list.size());
         } else {
@@ -159,14 +159,14 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
         }
     }
     if (!filename.empty()) {
-        if (CVLib::utility::filesystem::FileExists(filename_)) {
+        if (cloudViewer::utility::filesystem::FileExists(filename_)) {
             enable_recording_ = false;
-            CVLib::utility::LogError("Will not overwrite existing file {}.", filename);
+            cloudViewer::utility::LogError("Will not overwrite existing file {}.", filename);
         }
         const std::string parent_dir =
-                CVLib::utility::filesystem::GetFileParentDirectory(filename_);
-        if (!CVLib::utility::filesystem::DirectoryExists(parent_dir)) {
-            CVLib::utility::filesystem::MakeDirectoryHierarchy(parent_dir);
+                cloudViewer::utility::filesystem::GetFileParentDirectory(filename_);
+        if (!cloudViewer::utility::filesystem::DirectoryExists(parent_dir)) {
+            cloudViewer::utility::filesystem::MakeDirectoryHierarchy(parent_dir);
         }
         filename_ = filename;
         enable_recording_ = true;
@@ -206,7 +206,7 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
     RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
     return true;
 } catch (const rs2::error& e) {
-    CVLib::utility::LogError(
+    cloudViewer::utility::LogError(
             "Invalid RealSense camera configuration, or camera not connected:"
             "\n{}: {}",
             rs2_exception_type_to_string(e.get_type()), e.what());
@@ -215,7 +215,7 @@ bool RealSenseSensor::InitSensor(const RealSenseSensorConfig& sensor_config,
 
 bool RealSenseSensor::StartCapture(bool start_record) {
     if (is_capturing_) {
-        CVLib::utility::LogWarning("Capture already in progress.");
+        cloudViewer::utility::LogWarning("Capture already in progress.");
         return true;
     }
     try {
@@ -228,16 +228,16 @@ bool RealSenseSensor::StartCapture(bool start_record) {
         RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
 
         is_capturing_ = true;
-        CVLib::utility::LogInfo(
+        cloudViewer::utility::LogInfo(
                 "Capture started with RealSense camera {}",
                 profile.get_device().get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
         if (enable_recording_) {
-            CVLib::utility::LogInfo("Recording {}to bag file {}",
+            cloudViewer::utility::LogInfo("Recording {}to bag file {}",
                              start_record ? "" : "[Paused] ", filename_);
         }
         return true;
     } catch (const rs2::error& e) {
-        CVLib::utility::LogError("StartCapture() failed: {}: {}",
+        cloudViewer::utility::LogError("StartCapture() failed: {}: {}",
                           rs2_exception_type_to_string(e.get_type()), e.what());
         return false;
     }
@@ -247,7 +247,7 @@ void RealSenseSensor::PauseRecord() {
     if (!enable_recording_ || !is_recording_) return;
     pipe_->get_active_profile().get_device().as<rs2::recorder>().pause();
     is_recording_ = false;
-    CVLib::utility::LogDebug("Recording paused.");
+    cloudViewer::utility::LogDebug("Recording paused.");
 }
 
 void RealSenseSensor::ResumeRecord() {
@@ -257,16 +257,16 @@ void RealSenseSensor::ResumeRecord() {
                                .get_device()
                                .as<rs2::recorder>()) {
             dev.resume();
-            CVLib::utility::LogDebug("Recording resumed.");
+            cloudViewer::utility::LogDebug("Recording resumed.");
         } else {
             rs_config_->enable_record_to_file(filename_);
             pipe_.reset(new rs2::pipeline);
             pipe_->start(*rs_config_);
-            CVLib::utility::LogDebug("Recording started.");
+            cloudViewer::utility::LogDebug("Recording started.");
         }
         is_recording_ = true;
     } catch (const rs2::error& e) {
-        CVLib::utility::LogError("ResumeRecord() failed: {}: {}",
+        cloudViewer::utility::LogError("ResumeRecord() failed: {}: {}",
                           rs2_exception_type_to_string(e.get_type()), e.what());
     }
 }
@@ -274,7 +274,7 @@ void RealSenseSensor::ResumeRecord() {
 geometry::RGBDImage RealSenseSensor::CaptureFrame(bool wait,
                                                   bool align_depth_to_color) {
     if (!is_capturing_) {
-        CVLib::utility::LogError("Please StartCapture() first.");
+        cloudViewer::utility::LogError("Please StartCapture() first.");
         return geometry::RGBDImage();
     }
     try {
@@ -298,7 +298,7 @@ geometry::RGBDImage RealSenseSensor::CaptureFrame(bool wait,
                 metadata_.depth_dt_);
         return current_frame_;
     } catch (const rs2::error& e) {
-        CVLib::utility::LogError("CaptureFrame() failed: {}: {}",
+        cloudViewer::utility::LogError("CaptureFrame() failed: {}: {}",
                           rs2_exception_type_to_string(e.get_type()), e.what());
         return geometry::RGBDImage();
     }
@@ -309,7 +309,7 @@ void RealSenseSensor::StopCapture() {
         pipe_->stop();
         is_recording_ = false;
         is_capturing_ = false;
-        CVLib::utility::LogInfo("Capture stopped.");
+        cloudViewer::utility::LogInfo("Capture stopped.");
     }
 }
 

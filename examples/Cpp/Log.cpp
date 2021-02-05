@@ -30,7 +30,7 @@
 #include "CloudViewer.h"
 
 int main(int argc, char **argv) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 

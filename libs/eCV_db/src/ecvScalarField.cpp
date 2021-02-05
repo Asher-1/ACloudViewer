@@ -20,13 +20,13 @@
 //Local
 #include "ecvColorScalesManager.h"
 
-//CVLib
+//cloudViewer
 #include <CVConst.h>
 
 //system
 #include <algorithm>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 //! Default number of classes for associated histogram
 const unsigned MAX_HISTOGRAM_SIZE = 512;

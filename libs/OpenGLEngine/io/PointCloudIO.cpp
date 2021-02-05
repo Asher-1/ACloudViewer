@@ -93,21 +93,21 @@ bool ReadPointCloud(const std::string &filename,
                     const ReadPointCloudOption& params) {
     std::string format = params.format;
     if (format == "auto") {
-        format = CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
+        format = cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(filename);
     }
 
-    CVLib::utility::LogDebug("Format {} File {}", params.format, filename);
+    cloudViewer::utility::LogDebug("Format {} File {}", params.format, filename);
 
     auto map_itr = file_extension_to_pointcloud_read_function.find(format);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
             "Read ccPointCloud failed: unknown file extension for "
             "{} (format: {}).",
             filename, params.format);
         return false;
     }
     bool success = map_itr->second(filename, pointcloud, params);
-    CVLib::utility::LogDebug("Read ccPointCloud: {:d} vertices.",
+    cloudViewer::utility::LogDebug("Read ccPointCloud: {:d} vertices.",
                              pointcloud.size());
     if (params.remove_nan_points || params.remove_infinite_points) {
         pointcloud.removeNonFinitePoints(params.remove_nan_points,
@@ -124,15 +124,15 @@ bool ReadPointCloud(const std::string& filename,
                     bool print_progress) {
     std::string format = file_format;
     if (format == "auto") {
-        format = CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
+        format = cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(filename);
     }
 
     ReadPointCloudOption p;
     p.format = format;
     p.remove_nan_points = remove_nan_points;
     p.remove_infinite_points = remove_infinite_points;
-    CVLib::utility::ConsoleProgressUpdater progress_updater(
-        std::string("Reading ") + CVLib::utility::ToUpper(format) +
+    cloudViewer::utility::ConsoleProgressUpdater progress_updater(
+        std::string("Reading ") + cloudViewer::utility::ToUpper(format) +
         " file: " + filename,
         print_progress);
     p.update_progress = progress_updater;
@@ -143,10 +143,10 @@ bool WritePointCloud(const std::string& filename,
     const ccPointCloud& pointcloud,
     const WritePointCloudOption& params) {
     std::string format =
-        CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
+        cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(filename);
     auto map_itr = file_extension_to_pointcloud_write_function.find(format);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
             "Write ccPointCloud failed: unknown file extension {} "
             "for file {}.",
             format, filename);
@@ -154,7 +154,7 @@ bool WritePointCloud(const std::string& filename,
     }
 
     bool success = map_itr->second(filename, pointcloud, params);
-    CVLib::utility::LogDebug("Write ccPointCloud: {:d} vertices.",
+    cloudViewer::utility::LogDebug("Write ccPointCloud: {:d} vertices.",
                              pointcloud.size());
     return success;
 }
@@ -168,9 +168,9 @@ bool WritePointCloud(const std::string& filename,
     p.write_ascii = WritePointCloudOption::IsAscii(write_ascii);
     p.compressed = WritePointCloudOption::Compressed(compressed);
     std::string format =
-        CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
-    CVLib::utility::ConsoleProgressUpdater progress_updater(
-        std::string("Writing ") + CVLib::utility::ToUpper(format) +
+        cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(filename);
+    cloudViewer::utility::ConsoleProgressUpdater progress_updater(
+        std::string("Writing ") + cloudViewer::utility::ToUpper(format) +
         " file: " + filename,
         print_progress);
     p.update_progress = progress_updater;

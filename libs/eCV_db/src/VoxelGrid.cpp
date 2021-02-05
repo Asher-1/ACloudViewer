@@ -41,7 +41,7 @@
 namespace cloudViewer {
 namespace geometry {
 
-	using namespace CVLib;
+	using namespace cloudViewer;
 
 VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid, const char* name/* = "VoxelGrid"*/)
     : ccHObject(name),

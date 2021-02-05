@@ -41,7 +41,7 @@ namespace sc = std::chrono;
 void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
     std::ofstream out(filename);
     if (!out.is_open()) {
-        CVLib::utility::LogError("Cannot write to {}", filename);
+        cloudViewer::utility::LogError("Cannot write to {}", filename);
     }
 
     Json::StreamWriterBuilder builder;
@@ -55,8 +55,8 @@ Json::Value GenerateDatasetConfig(const std::string &output_path,
                                   const std::string &bagfile) {
     Json::Value value;
 
-    CVLib::utility::LogInfo("Writing to config.json");
-    CVLib::utility::LogInfo(
+    cloudViewer::utility::LogInfo("Writing to config.json");
+    cloudViewer::utility::LogInfo(
             "Please change path_dataset and path_intrinsic when you move the "
             "dataset.");
 
@@ -64,7 +64,7 @@ Json::Value GenerateDatasetConfig(const std::string &output_path,
         value["path_dataset"] = output_path;
         value["path_intrinsic"] = output_path + "/intrinsic.json";
     } else {  // relative dir
-        auto pwd = CVLib::utility::filesystem::GetWorkingDirectory();
+        auto pwd = cloudViewer::utility::filesystem::GetWorkingDirectory();
         value["path_dataset"] = pwd + "/" + output_path;
         value["path_intrinsic"] = pwd + "/" + output_path + "/intrinsic.json";
     }
@@ -85,46 +85,46 @@ Json::Value GenerateDatasetConfig(const std::string &output_path,
 
 void PrintUsage() {
     PrintCloudViewerVersion();
-    CVLib::utility::LogInfo("Usage:");
+    cloudViewer::utility::LogInfo("Usage:");
     // clang-format off
-    CVLib::utility::LogInfo("RealSenseBagReader [-V] --input input.bag [--output path]");
+    cloudViewer::utility::LogInfo("RealSenseBagReader [-V] --input input.bag [--output path]");
     // clang-format on
 }
 
 int main(int argc, char **argv) {
-    if (!CVLib::utility::ProgramOptionExists(argc, argv, "--input")) {
+    if (!cloudViewer::utility::ProgramOptionExists(argc, argv, "--input")) {
         PrintUsage();
         return 1;
     }
-    if (CVLib::utility::ProgramOptionExists(argc, argv, "-V")) {
-        CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "-V")) {
+        cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
     } else {
-        CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Info);
+        cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Info);
     }
     std::string bag_filename =
-            CVLib::utility::GetProgramOptionAsString(argc, argv, "--input");
+            cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--input");
 
     bool write_image = false;
     std::string output_path;
-    if (!CVLib::utility::ProgramOptionExists(argc, argv, "--output")) {
-        CVLib::utility::LogInfo("No output image path, only play bag.");
+    if (!cloudViewer::utility::ProgramOptionExists(argc, argv, "--output")) {
+        cloudViewer::utility::LogInfo("No output image path, only play bag.");
     } else {
-        output_path = CVLib::utility::GetProgramOptionAsString(argc, argv, "--output");
+        output_path = cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--output");
         if (output_path.empty()) {
-            CVLib::utility::LogWarning("Output path {} is empty, only play bag.",
+            cloudViewer::utility::LogWarning("Output path {} is empty, only play bag.",
                                        output_path);
         }
-        if (CVLib::utility::filesystem::DirectoryExists(output_path)) {
-            CVLib::utility::LogWarning(
+        if (cloudViewer::utility::filesystem::DirectoryExists(output_path)) {
+            cloudViewer::utility::LogWarning(
                     "Output path {} already existing, only play bag.",
                     output_path);
-        } else if (!CVLib::utility::filesystem::MakeDirectory(output_path)) {
-            CVLib::utility::LogWarning("Unable to create path {}, only play bag.",
+        } else if (!cloudViewer::utility::filesystem::MakeDirectory(output_path)) {
+            cloudViewer::utility::LogWarning("Unable to create path {}, only play bag.",
                                 output_path);
         } else {
-            CVLib::utility::LogInfo("Decompress images to {}", output_path);
-            CVLib::utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
-            CVLib::utility::filesystem::MakeDirectoryHierarchy(output_path + "/depth");
+            cloudViewer::utility::LogInfo("Decompress images to {}", output_path);
+            cloudViewer::utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
+            cloudViewer::utility::filesystem::MakeDirectoryHierarchy(output_path + "/depth");
             write_image = true;
         }
     }
@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
     t::io::RSBagReader bag_reader;
     bag_reader.Open(bag_filename);
     if (!bag_reader.IsOpened()) {
-        CVLib::utility::LogError("Unable to open {}", bag_filename);
+        cloudViewer::utility::LogError("Unable to open {}", bag_filename);
         return 1;
     }
 
@@ -149,10 +149,10 @@ int main(int argc, char **argv) {
     vis.RegisterKeyCallback(
             GLFW_KEY_SPACE, [&](visualization::Visualizer *vis) {
                 if (flag_play) {
-                    CVLib::utility::LogInfo(
+                    cloudViewer::utility::LogInfo(
                             "Playback paused, press [SPACE] to continue");
                 } else {
-                    CVLib::utility::LogInfo(
+                    cloudViewer::utility::LogInfo(
                             "Playback resumed, press [SPACE] to pause");
                 }
                 flag_play = !flag_play;
@@ -161,40 +161,40 @@ int main(int argc, char **argv) {
     vis.RegisterKeyCallback(GLFW_KEY_LEFT, [&](visualization::Visualizer *vis) {
         uint64_t now = bag_reader.GetTimestamp();
         if (bag_reader.SeekTimestamp(now < 1'000'000 ? 0 : now - 1'000'000))
-            CVLib::utility::LogInfo("Seek back 1s");
+            cloudViewer::utility::LogInfo("Seek back 1s");
         else
-            CVLib::utility::LogWarning("Seek back 1s failed");
+            cloudViewer::utility::LogWarning("Seek back 1s failed");
         return true;
     });
     vis.RegisterKeyCallback(
             GLFW_KEY_RIGHT, [&](visualization::Visualizer *vis) {
                 uint64_t now = bag_reader.GetTimestamp();
                 if (bag_reader.SeekTimestamp(now + 1'000'000))
-                    CVLib::utility::LogInfo("Seek forward 1s");
+                    cloudViewer::utility::LogInfo("Seek forward 1s");
                 else
-                    CVLib::utility::LogWarning("Seek forward 1s failed");
+                    cloudViewer::utility::LogWarning("Seek forward 1s failed");
                 return true;
             });
 
     vis.CreateVisualizerWindow("CloudViewer Intel RealSense bag player", 1920, 540);
-    CVLib::utility::LogInfo(
+    cloudViewer::utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
             "exit.");
 
     bool is_geometry_added = false;
     int idx = 0;
     const auto bag_metadata = bag_reader.GetMetadata();
-    CVLib::utility::LogInfo("Recorded with device {}", bag_metadata.device_name_);
-    CVLib::utility::LogInfo("    Serial number: {}", bag_metadata.serial_number_);
-    CVLib::utility::LogInfo("Video resolution: {}x{}", bag_metadata.width_,
+    cloudViewer::utility::LogInfo("Recorded with device {}", bag_metadata.device_name_);
+    cloudViewer::utility::LogInfo("    Serial number: {}", bag_metadata.serial_number_);
+    cloudViewer::utility::LogInfo("Video resolution: {}x{}", bag_metadata.width_,
                      bag_metadata.height_);
-    CVLib::utility::LogInfo("      frame rate: {}", bag_metadata.fps_);
-    CVLib::utility::LogInfo(
+    cloudViewer::utility::LogInfo("      frame rate: {}", bag_metadata.fps_);
+    cloudViewer::utility::LogInfo(
             "      duration: {:.6f}s",
             static_cast<double>(bag_metadata.stream_length_usec_) * 1e-6);
-    CVLib::utility::LogInfo("      color pixel format: {}",
+    cloudViewer::utility::LogInfo("      color pixel format: {}",
                      bag_metadata.color_format_);
-    CVLib::utility::LogInfo("      depth pixel format: {}",
+    cloudViewer::utility::LogInfo("      depth pixel format: {}",
                      bag_metadata.depth_format_);
 
     if (write_image) {
@@ -230,14 +230,14 @@ int main(int argc, char **argv) {
                 {
                     auto color_file = fmt::format("{0}/color/{1:05d}.jpg",
                                                   output_path, idx);
-                    CVLib::utility::LogInfo("Writing to {}", color_file);
+                    cloudViewer::utility::LogInfo("Writing to {}", color_file);
                     cloudViewer::io::WriteImage(color_file, im_rgbd.color_);
                 }
 #pragma omp section
                 {
                     auto depth_file = fmt::format("{0}/depth/{1:05d}.png",
                                                   output_path, idx);
-                    CVLib::utility::LogInfo("Writing to {}", depth_file);
+                    cloudViewer::utility::LogInfo("Writing to {}", depth_file);
                     cloudViewer::io::WriteImage(depth_file, im_rgbd.depth_);
                 }
             }

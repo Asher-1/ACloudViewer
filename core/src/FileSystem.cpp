@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -47,7 +47,7 @@
 #include <unistd.h>
 #endif
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 namespace filesystem {
 
@@ -99,12 +99,17 @@ std::string GetRegularizedDirectoryName(const std::string &directory) {
 
 std::string GetWorkingDirectory() {
     char buff[PATH_MAX + 1];
+    char* flag = nullptr;
 #ifdef CV_WINDOWS
-    _getcwd(buff, PATH_MAX + 1);
+    flag = _getcwd(buff, PATH_MAX + 1);
 #else
-    getcwd(buff, PATH_MAX + 1);
+    flag = getcwd(buff, PATH_MAX + 1);
 #endif
-    return std::string(buff);
+    if (flag) {
+        return std::string(buff);
+    } else {
+        return std::string("");
+    }
 }
 
 std::vector<std::string> GetPathComponents(const std::string& path) {
@@ -588,4 +593,4 @@ size_t CFile::ReadData(void* data, size_t elem_size, size_t num_elems) {
 
 }  // namespace filesystem
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

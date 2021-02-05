@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -28,7 +28,7 @@
 //System
 #include <algorithm>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 int AutoSegmentationTools::labelConnectedComponents(GenericIndexedCloudPersist* theCloud,
 													unsigned char level,

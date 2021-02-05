@@ -103,7 +103,7 @@ void TouchCUDA(const core::Tensor& points,
 
     int total_block_count = count.Item<int>();
     if (total_block_count == 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[CUDATSDFTouchKernel] No block is touched in TSDF volume, "
                 "abort integration. Please check specified parameters, "
                 "especially depth_scale and voxel_size");

@@ -31,7 +31,7 @@
 namespace cloudViewer {
 namespace visualization {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 void Visualizer::WindowRefreshCallback(GLFWwindow *window) {
     if (is_redraw_required_) {

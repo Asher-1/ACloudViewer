@@ -17,7 +17,7 @@
 
 #include "ecvPointCloud.h"
 
-//CVLib
+//cloudViewer
 #include <Helper.h>
 #include <Console.h>
 #include <ReferenceCloud.h>
@@ -61,7 +61,7 @@
 static const char s_deviationSFName[] = "Deviation";
 
 ccPointCloud::ccPointCloud(QString name) throw()
-	: CVLib::PointCloudTpl<ccGenericPointCloud>()
+	: cloudViewer::PointCloudTpl<ccGenericPointCloud>()
 	, m_rgbColors(nullptr)
 	, m_normals(nullptr)
 	, m_sfColorScaleDisplayed(false)
@@ -93,7 +93,7 @@ ccPointCloud::ccPointCloud(
 }
 
 ccPointCloud* ccPointCloud::From(
-	CVLib::GenericCloud* cloud, 
+	cloudViewer::GenericCloud* cloud, 
 	const ccGenericPointCloud* sourceCloud/*=0*/)
 {
 	ccPointCloud* pc = new ccPointCloud("Cloud");
@@ -131,7 +131,7 @@ ccPointCloud* ccPointCloud::From(
 }
 
 ccPointCloud* ccPointCloud::From(
-	const CVLib::GenericIndexedCloud* cloud, 
+	const cloudViewer::GenericIndexedCloud* cloud, 
 	const ccGenericPointCloud* sourceCloud/*=0*/)
 {
 	ccPointCloud* pc = new ccPointCloud("Cloud");
@@ -325,7 +325,7 @@ void UpdateGridIndexes(
 }
 
 ccPointCloud* ccPointCloud::partialClone(
-	const CVLib::ReferenceCloud* selection, 
+	const cloudViewer::ReferenceCloud* selection, 
 	int* warnings/*=0*/) const
 {
 	if (warnings)
@@ -1012,7 +1012,7 @@ const ccPointCloud& ccPointCloud::append(ccPointCloud* addedCloud, unsigned poin
 		{
 			if (!sfUpdated[j])
 			{
-				CVLib::ScalarField* sf = getScalarField(j);
+				cloudViewer::ScalarField* sf = getScalarField(j);
 				assert(sf);
 
 				if (sf->currentSize() == pointCountBefore)
@@ -1853,7 +1853,7 @@ void ccPointCloud::addEigenColors(const std::vector<Eigen::Vector3d>& colors)
 		{
 			m_rgbColors->release();
 			m_rgbColors = nullptr;
-			CVLib::utility::LogWarning("[ccPointCloud::addEigenColors] Not enough memory!");
+			cloudViewer::utility::LogWarning("[ccPointCloud::addEigenColors] Not enough memory!");
 			return;
 		}
 
@@ -1901,7 +1901,7 @@ void ccPointCloud::addEigenNorms(const std::vector<Eigen::Vector3d>& normals)
 		{
 			m_normals->release();
 			m_normals = nullptr;
-			CVLib::utility::LogWarning("[ccPointCloud::addEigenNorms] Not enough memory!");
+			cloudViewer::utility::LogWarning("[ccPointCloud::addEigenNorms] Not enough memory!");
 			return;
 		}
 
@@ -2165,7 +2165,7 @@ bool ccPointCloud::setRGBColorByHeight(unsigned char heightDim, ccColorScale::Sh
 
 	double minHeight = getOwnBB().minCorner().u[heightDim];
 	double height = getOwnBB().getDiagVec().u[heightDim];
-    if (CVLib::LessThanEpsilon(fabs(height))) //flat cloud!
+    if (cloudViewer::LessThanEpsilon(fabs(height))) //flat cloud!
 	{
 		const ecvColor::Rgb& col = colorScale->getColorByIndex(0);
 		return setRGBColor(col);
@@ -2264,7 +2264,7 @@ bool ccPointCloud::setRGBColor(const ecvColor::Rgb& col)
 
 CCVector3 ccPointCloud::computeGravityCenter()
 {
-	return CVLib::GeometricalAnalysisTools::ComputeGravityCenter(this);
+	return cloudViewer::GeometricalAnalysisTools::ComputeGravityCenter(this);
 }
 
 void ccPointCloud::applyGLTransformation(const ccGLMatrix& trans)
@@ -2366,7 +2366,7 @@ ccPointCloud& ccPointCloud::transform(const Eigen::Matrix4d& trans)
 ccPointCloud& ccPointCloud::translate(const Eigen::Vector3d& translation, bool relative)
 {
 	CCVector3 T = translation;
-    if (CVLib::LessThanEpsilon(fabs(T.x) + fabs(T.y) + fabs(T.z)))
+    if (cloudViewer::LessThanEpsilon(fabs(T.x) + fabs(T.y) + fabs(T.z)))
 		return *this;
 
 	unsigned count = size();
@@ -2805,7 +2805,7 @@ ccPointCloud* ccPointCloud::filterPointsByScalarValue(ScalarType minVal, ScalarT
 		return nullptr;
 	}
 
-	QSharedPointer<CVLib::ReferenceCloud> c(CVLib::ManualSegmentationTools::segment(this, minVal, maxVal, outside));
+	QSharedPointer<cloudViewer::ReferenceCloud> c(cloudViewer::ManualSegmentationTools::segment(this, minVal, maxVal, outside));
 
 	return (c ? partialClone(c.data()) : nullptr);
 }
@@ -2817,7 +2817,7 @@ ccPointCloud * ccPointCloud::filterPointsByScalarValue(std::vector<ScalarType> v
 		return nullptr;
 	}
 
-	QSharedPointer<CVLib::ReferenceCloud> c(CVLib::ManualSegmentationTools::segment(this, values, outside));
+	QSharedPointer<cloudViewer::ReferenceCloud> c(cloudViewer::ManualSegmentationTools::segment(this, values, outside));
 
 	return (c ? partialClone(c.data()) : nullptr);
 }
@@ -2830,7 +2830,7 @@ void ccPointCloud::hidePointsByScalarValue(ScalarType minVal, ScalarType maxVal)
 		return;
 	}
 
-	CVLib::ScalarField* sf = getCurrentOutScalarField();
+	cloudViewer::ScalarField* sf = getCurrentOutScalarField();
 	if (!sf)
 	{
 		CVLog::Error(QString("[Cloud %1] Internal error: no activated output scalar field!").arg(getName()));
@@ -2857,7 +2857,7 @@ void ccPointCloud::hidePointsByScalarValue(std::vector<ScalarType> values)
 		return;
 	}
 
-	CVLib::ScalarField* sf = getCurrentOutScalarField();
+	cloudViewer::ScalarField* sf = getCurrentOutScalarField();
 	if (!sf)
 	{
 		CVLog::Error(QString("[Cloud %1] Internal error: no activated output scalar field!").arg(getName()));
@@ -2910,7 +2910,7 @@ ccGenericPointCloud* ccPointCloud::createNewCloudFromVisibilitySelection(bool re
 	ccPointCloud* result = nullptr;
 	{
 		//we create a temporary entity with the visible points only
-		CVLib::ReferenceCloud* rc = getTheVisiblePoints(visTable, silent);
+		cloudViewer::ReferenceCloud* rc = getTheVisiblePoints(visTable, silent);
 		if (!rc)
 		{
 			//a warning message has already been issued by getTheVisiblePoints!
@@ -3086,15 +3086,15 @@ bool ccPointCloud::setRGBColorWithCurrentScalarField(bool mixWithExistingColor/*
 	return true;
 }
 
-QSharedPointer<CVLib::ReferenceCloud> ccPointCloud::computeCPSet(	ccGenericPointCloud& otherCloud,
-																	CVLib::GenericProgressCallback* progressCb/*=nullptr*/,
+QSharedPointer<cloudViewer::ReferenceCloud> ccPointCloud::computeCPSet(	ccGenericPointCloud& otherCloud,
+																	cloudViewer::GenericProgressCallback* progressCb/*=nullptr*/,
 																	unsigned char octreeLevel/*=0*/)
 {
 	int result = 0;
-	QSharedPointer<CVLib::ReferenceCloud> CPSet;
-	CPSet.reset(new CVLib::ReferenceCloud(&otherCloud));
+	QSharedPointer<cloudViewer::ReferenceCloud> CPSet;
+	CPSet.reset(new cloudViewer::ReferenceCloud(&otherCloud));
 
-	CVLib::DistanceComputationTools::Cloud2CloudDistanceComputationParams params;
+	cloudViewer::DistanceComputationTools::Cloud2CloudDistanceComputationParams params;
 	{
 		params.CPSet = CPSet.data();
 		params.octreeLevel = octreeLevel;
@@ -3109,14 +3109,14 @@ QSharedPointer<CVLib::ReferenceCloud> ccPointCloud::computeCPSet(	ccGenericPoint
 	if (sfIdx < 0)
 	{
 		CVLog::Warning("[ccPointCloud::ComputeCPSet] Not enough memory!");
-		return QSharedPointer<CVLib::ReferenceCloud>(nullptr);
+		return QSharedPointer<cloudViewer::ReferenceCloud>(nullptr);
 	}
 
 	int currentInSFIndex = m_currentInScalarFieldIndex;
 	int currentOutSFIndex = m_currentOutScalarFieldIndex;
 	setCurrentScalarField(sfIdx);
 
-	result = CVLib::DistanceComputationTools::computeCloud2CloudDistance(this, &otherCloud, params, progressCb);
+	result = cloudViewer::DistanceComputationTools::computeCloud2CloudDistance(this, &otherCloud, params, progressCb);
 
 	//restore previous parameters
 	setCurrentInScalarField(currentInSFIndex);
@@ -3133,7 +3133,7 @@ QSharedPointer<CVLib::ReferenceCloud> ccPointCloud::computeCPSet(	ccGenericPoint
 }
 
 bool ccPointCloud::interpolateColorsFrom(	ccGenericPointCloud* otherCloud,
-											CVLib::GenericProgressCallback* progressCb/*=nullptr*/,
+											cloudViewer::GenericProgressCallback* progressCb/*=nullptr*/,
 											unsigned char octreeLevel/*=0*/)
 {
 if (!otherCloud || otherCloud->size() == 0)
@@ -3158,7 +3158,7 @@ if (fabs(dist.x) > dimSum.x / 2
 
 //compute the closest-point set of 'this cloud' relatively to 'input cloud'
 //(to get a mapping between the resulting vertices and the input points)
-QSharedPointer<CVLib::ReferenceCloud> CPSet = computeCPSet(*otherCloud, progressCb, octreeLevel);
+QSharedPointer<cloudViewer::ReferenceCloud> CPSet = computeCPSet(*otherCloud, progressCb, octreeLevel);
 if (!CPSet)
 {
 	return false;
@@ -3192,7 +3192,7 @@ ccPointCloud* ccPointCloud::unrollOnCylinder(PointCoordinateType radius,
 	bool exportDeviationSF/*=false*/,
 	double startAngle_deg/*=0.0*/,
 	double stopAngle_deg/*=360.0*/,
-	CVLib::GenericProgressCallback* progressCb/*=nullptr*/) const
+	cloudViewer::GenericProgressCallback* progressCb/*=nullptr*/) const
 {
 
 	if (startAngle_deg >= stopAngle_deg)
@@ -3213,7 +3213,7 @@ ccPointCloud* ccPointCloud::unrollOnCylinder(PointCoordinateType radius,
 
 	unsigned numberOfPoints = size();
 
-	CVLib::NormalizedProgress nprogress(progressCb, numberOfPoints);
+	cloudViewer::NormalizedProgress nprogress(progressCb, numberOfPoints);
 	if (progressCb)
 	{
 		if (progressCb->textCanBeEdited())
@@ -3230,7 +3230,7 @@ ccPointCloud* ccPointCloud::unrollOnCylinder(PointCoordinateType radius,
 	//{
 	//	return 0;
 	//}
-	CVLib::ReferenceCloud duplicatedPoints(const_cast<ccPointCloud*>(this));
+	cloudViewer::ReferenceCloud duplicatedPoints(const_cast<ccPointCloud*>(this));
 	std::vector<CCVector3> unrolledPoints;
 	{
 		//compute an estimate of the final point count
@@ -3379,7 +3379,7 @@ ccPointCloud* ccPointCloud::unrollOnCylinder(PointCoordinateType radius,
 	ccPointCloud* clone = partialClone(&duplicatedPoints);
 	if (clone)
 	{
-		CVLib::ScalarField* deviationSF = nullptr;
+		cloudViewer::ScalarField* deviationSF = nullptr;
 		if (exportDeviationSF)
 		{
 			int sfIdx = clone->getScalarFieldIndexByName(s_deviationSFName);
@@ -3476,7 +3476,7 @@ ccPointCloud* ccPointCloud::unroll(	UnrollMode mode,
 									bool exportDeviationSF/*=false*/,
 									double startAngle_deg/*=0.0*/,
 									double stopAngle_deg/*=360.0*/,
-									CVLib::GenericProgressCallback* progressCb/*=nullptr*/) const
+									cloudViewer::GenericProgressCallback* progressCb/*=nullptr*/) const
 {
 	if (!params
 		|| params->axisDim > 2
@@ -3517,7 +3517,7 @@ ccPointCloud* ccPointCloud::unroll(	UnrollMode mode,
 	dim.y = (dim.x < 2 ? dim.x + 1 : 0);
 
 	unsigned numberOfPoints = size();
-	CVLib::NormalizedProgress nprogress(progressCb, numberOfPoints);
+	cloudViewer::NormalizedProgress nprogress(progressCb, numberOfPoints);
 	if (progressCb)
 	{
 		if (progressCb->textCanBeEdited())
@@ -3529,7 +3529,7 @@ ccPointCloud* ccPointCloud::unroll(	UnrollMode mode,
 		progressCb->start();
 	}
 
-	CVLib::ReferenceCloud duplicatedPoints(const_cast<ccPointCloud*>(this));
+	cloudViewer::ReferenceCloud duplicatedPoints(const_cast<ccPointCloud*>(this));
 	std::vector<CCVector3> unrolledPoints;
 	{
 		//compute an estimate of the final point count
@@ -3811,7 +3811,7 @@ ccPointCloud* ccPointCloud::unroll(	UnrollMode mode,
 	ccPointCloud* clone = partialClone(&duplicatedPoints);
 	if (clone)
 	{
-		CVLib::ScalarField* deviationSF = nullptr;
+		cloudViewer::ScalarField* deviationSF = nullptr;
 		if (exportDeviationSF)
 		{
 			int sfIdx = clone->getScalarFieldIndexByName(s_deviationSFName);
@@ -3869,7 +3869,7 @@ ccPointCloud* ccPointCloud::unrollOnCone(	double coneAngle_deg,
 											bool developStraightenedCone,
 											PointCoordinateType baseRadius,
 											bool exportDeviationSF/*=false*/,
-											CVLib::GenericProgressCallback* progressCb/*=nullptr*/) const
+											cloudViewer::GenericProgressCallback* progressCb/*=nullptr*/) const
 {
 	if (coneAxisDim > 2)
 	{
@@ -3884,7 +3884,7 @@ ccPointCloud* ccPointCloud::unrollOnCone(	double coneAngle_deg,
 
 	unsigned numberOfPoints = size();
 
-	CVLib::NormalizedProgress nprogress(progressCb, numberOfPoints);
+	cloudViewer::NormalizedProgress nprogress(progressCb, numberOfPoints);
 	if (progressCb)
 	{
 		if (progressCb->textCanBeEdited())
@@ -3902,7 +3902,7 @@ ccPointCloud* ccPointCloud::unrollOnCone(	double coneAngle_deg,
 		return nullptr;
 	}
 
-	CVLib::ScalarField* deviationSF = nullptr;
+	cloudViewer::ScalarField* deviationSF = nullptr;
 	if (exportDeviationSF)
 	{
 		int sfIdx = clone->getScalarFieldIndexByName(s_deviationSFName);
@@ -4586,7 +4586,7 @@ unsigned ccPointCloud::getUniqueIDForDisplay() const
 		return getUniqueID();
 }
 
-CVLib::ReferenceCloud* ccPointCloud::crop(const ccBBox& box, bool inside/*=true*/)
+cloudViewer::ReferenceCloud* ccPointCloud::crop(const ccBBox& box, bool inside/*=true*/)
 {
 	if (!box.isValid())
 	{
@@ -4601,7 +4601,7 @@ CVLib::ReferenceCloud* ccPointCloud::crop(const ccBBox& box, bool inside/*=true*
 		return nullptr;
 	}
 
-	CVLib::ReferenceCloud* ref = new CVLib::ReferenceCloud(this);
+	cloudViewer::ReferenceCloud* ref = new cloudViewer::ReferenceCloud(this);
 	if (!ref->reserve(count))
 	{
 		CVLog::Warning("[ccPointCloud::crop] Not enough memory!");
@@ -4632,7 +4632,7 @@ CVLib::ReferenceCloud* ccPointCloud::crop(const ccBBox& box, bool inside/*=true*
 	return ref;
 }
 
-CVLib::ReferenceCloud * ccPointCloud::crop(const ecvOrientedBBox & bbox)
+cloudViewer::ReferenceCloud * ccPointCloud::crop(const ecvOrientedBBox & bbox)
 {
 	if (bbox.isEmpty())
 	{
@@ -4647,7 +4647,7 @@ CVLib::ReferenceCloud * ccPointCloud::crop(const ecvOrientedBBox & bbox)
 		return nullptr;
 	}
 
-	CVLib::ReferenceCloud* ref = new CVLib::ReferenceCloud(this);
+	cloudViewer::ReferenceCloud* ref = new cloudViewer::ReferenceCloud(this);
 	if (!ref->reserve(count))
 	{
 		CVLog::Warning("[ccPointCloud::crop] Not enough memory!");
@@ -4686,7 +4686,7 @@ ecvOrientedBBox ccPointCloud::getOrientedBoundingBox() const
 	return ecvOrientedBBox::CreateFromPoints(m_points);
 }
 
-CVLib::ReferenceCloud* ccPointCloud::crop2D(const ccPolyline* poly, unsigned char orthoDim, bool inside/*=true*/)
+cloudViewer::ReferenceCloud* ccPointCloud::crop2D(const ccPolyline* poly, unsigned char orthoDim, bool inside/*=true*/)
 {
 	if (!poly)
 	{
@@ -4706,7 +4706,7 @@ CVLib::ReferenceCloud* ccPointCloud::crop2D(const ccPolyline* poly, unsigned cha
 		return nullptr;
 	}
 
-	CVLib::ReferenceCloud* ref = new CVLib::ReferenceCloud(this);
+	cloudViewer::ReferenceCloud* ref = new cloudViewer::ReferenceCloud(this);
 	if (!ref->reserve(count))
 	{
 		CVLog::Warning("[ccPointCloud::crop] Not enough memory!");
@@ -4722,7 +4722,7 @@ CVLib::ReferenceCloud* ccPointCloud::crop2D(const ccPolyline* poly, unsigned cha
 		const CCVector3* P = point(i);
 
 		CCVector2 P2D( P->u[X], P->u[Y] );
-		bool pointIsInside = CVLib::ManualSegmentationTools::isPointInsidePoly(P2D, poly);
+		bool pointIsInside = cloudViewer::ManualSegmentationTools::isPointInsidePoly(P2D, poly);
 		if (inside == pointIsInside)
 		{
 			ref->addPointIndex(i);
@@ -5257,7 +5257,7 @@ bool ccPointCloud::computeNormalsWithOctree(CV_LOCAL_MODEL_TYPES model,
 												model,
 												defaultRadius,
 												preferredOrientation,
-												static_cast<CVLib::GenericProgressCallback*>(pDlg),
+												static_cast<cloudViewer::GenericProgressCallback*>(pDlg),
 												getOctree().data()))
 	{
 		CVLog::Warning(QString("[computeNormals] Failed to compute normals on cloud '%1'").arg(getName()));
@@ -5383,7 +5383,7 @@ bool ccPointCloud::computeFWFAmplitude(double& minVal, double& maxVal, ecvProgre
 	}
 
 	//progress dialog
-	CVLib::NormalizedProgress nProgress(pDlg, static_cast<unsigned>(m_fwfWaveforms.size()));
+	cloudViewer::NormalizedProgress nProgress(pDlg, static_cast<unsigned>(m_fwfWaveforms.size()));
 	if (pDlg)
 	{
 		pDlg->setWindowTitle(QObject::tr("FWF amplitude"));
@@ -5434,7 +5434,7 @@ bool ccPointCloud::computeFWFAmplitude(double& minVal, double& maxVal, ecvProgre
 
 bool ccPointCloud::enhanceRGBWithIntensitySF(int sfIdx, bool useCustomIntensityRange/*=false*/, double minI/*=0.0*/, double maxI/*=1.0*/)
 {
-	CVLib::ScalarField* sf = getScalarField(sfIdx);
+	cloudViewer::ScalarField* sf = getScalarField(sfIdx);
 	if (!sf || !hasColors())
 	{
 		//invalid input
@@ -5659,7 +5659,7 @@ bool ccPointCloud::exportCoordToSF(bool exportDims[3])
 			return false;
 		}
 
-		CVLib::ScalarField* sf = getScalarField(sfIndex);
+		cloudViewer::ScalarField* sf = getScalarField(sfIndex);
 		if (!sf)
 		{
 			assert(false);
@@ -5719,7 +5719,7 @@ bool ccPointCloud::exportNormalToSF(bool exportDims[3])
 			return false;
 		}
 
-		CVLib::ScalarField* sf = getScalarField(sfIndex);
+		cloudViewer::ScalarField* sf = getScalarField(sfIndex);
 		if (!sf)
 		{
 			assert(false);
@@ -5972,7 +5972,7 @@ ccPointCloud::selectByIndex(
 
 	}
 
-	CVLib::utility::LogDebug(
+	cloudViewer::utility::LogDebug(
 		"ccPointCloud down sampled from {:d} points to {:d} points.",
 		(int)size(), (int)output->size());
 

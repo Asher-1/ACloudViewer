@@ -50,7 +50,7 @@
 namespace cloudViewer {
 namespace visualization {
 namespace glsl {
-	using namespace CVLib;
+	using namespace cloudViewer;
 
 // Coordinates of 8 vertices in a cuboid (assume origin (0,0,0), size 1)
 const static std::vector<Eigen::Vector3i> cuboid_vertex_offsets{
@@ -540,7 +540,7 @@ public:
 			for (unsigned n = 0; n < triNum; ++n)
 			{
 				//current triangle vertices
-				const CVLib::VerticesIndexes& tsi = *mesh.getTriangleVertIndexes(n);
+				const cloudViewer::VerticesIndexes& tsi = *mesh.getTriangleVertIndexes(n);
 
 				if (glParams.showColors)
 				{
@@ -1155,7 +1155,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
         colors.resize(mesh.size() * 3);
 
         for (unsigned int i = 0; i < mesh.size(); i++) {
-            const CVLib::VerticesIndexes *triangle =
+            const cloudViewer::VerticesIndexes *triangle =
                     mesh.getTriangleVertIndexes(i);
             for (unsigned int j = 0; j < 3; j++) {
                 unsigned int idx = i * 3 + j;

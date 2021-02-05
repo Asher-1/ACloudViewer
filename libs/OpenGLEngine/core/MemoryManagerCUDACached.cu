@@ -118,7 +118,7 @@ public:
     ~CUDACacher() {
         if (!allocated_blocks_.empty()) {
             // Should never reach here
-            CVLib::utility::LogError("[CUDACacher] Memory leak in destructor.");
+            cloudViewer::utility::LogError("[CUDACacher] Memory leak in destructor.");
         }
         ReleaseCache();
     }
@@ -181,7 +181,7 @@ public:
             auto it = block_pool->find(block);
             if (it == block_pool->end()) {
                 // Should never reach here
-                CVLib::utility::LogError(
+                cloudViewer::utility::LogError(
                         "[CUDACacher] Linked list node {} not found in pool.",
                         fmt::ptr(block));
             }
@@ -193,7 +193,7 @@ public:
 
         if (it == allocated_blocks_.end()) {
             // Should never reach here
-            CVLib::utility::LogError("[CUDACacher] Block should have been recorded.");
+            cloudViewer::utility::LogError("[CUDACacher] Block should have been recorded.");
         } else {
             // Release memory and check if merge is required
             BlockPtr block = it->second;
@@ -205,7 +205,7 @@ public:
                 BlockPtr next_block = block_it->next_;
                 if (next_block->prev_ != block_it) {
                     // Should never reach here
-                    CVLib::utility::LogError(
+                    cloudViewer::utility::LogError(
                             "[CUDACacher] Linked list nodes mismatch in "
                             "forward-direction merge.");
                 }
@@ -231,7 +231,7 @@ public:
                 BlockPtr prev_block = block_it->prev_;
                 if (prev_block->next_ != block_it) {
                     // Should never reach here.
-                    CVLib::utility::LogError(
+                    cloudViewer::utility::LogError(
                             "[CUDACacher]: linked list nodes mismatch in "
                             "backward-direction merge.");
                 }
@@ -280,7 +280,7 @@ public:
         release_pool(*small_block_pool_);
         release_pool(*large_block_pool_);
 
-        CVLib::utility::LogInfo("[CUDACacher] {} bytes released.", total_bytes);
+        cloudViewer::utility::LogInfo("[CUDACacher] {} bytes released.", total_bytes);
     }
 
 private:
@@ -305,7 +305,7 @@ void* CUDACachedMemoryManager::Malloc(size_t byte_size, const Device& device) {
         std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
         return instance->Malloc(byte_size, device);
     } else {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[CUDACachedMemoryManager] Malloc: Unimplemented device.");
         return nullptr;
     }
@@ -323,11 +323,11 @@ void CUDACachedMemoryManager::Free(void* ptr, const Device& device) {
             std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
             instance->Free(ptr, device);
         } else {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "[CUDACachedMemoryManager] Free: Invalid pointer.");
         }
     } else {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[CUDACachedMemoryManager] Free: Unimplemented device.");
     }
 }
@@ -341,7 +341,7 @@ void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
         src_device.GetType() == Device::DeviceType::CPU) {
         CUDADeviceSwitcher switcher(dst_device);
         if (!IsCUDAPointer(dst_ptr)) {
-            CVLib::utility::LogError("dst_ptr is not a CUDA pointer.");
+            cloudViewer::utility::LogError("dst_ptr is not a CUDA pointer.");
         }
         CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
                                      cudaMemcpyHostToDevice));
@@ -349,7 +349,7 @@ void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
                src_device.GetType() == Device::DeviceType::CUDA) {
         CUDADeviceSwitcher switcher(src_device);
         if (!IsCUDAPointer(src_ptr)) {
-            CVLib::utility::LogError("src_ptr is not a CUDA pointer.");
+            cloudViewer::utility::LogError("src_ptr is not a CUDA pointer.");
         }
         CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
                                      cudaMemcpyDeviceToHost));
@@ -357,11 +357,11 @@ void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
                src_device.GetType() == Device::DeviceType::CUDA) {
         CUDADeviceSwitcher switcher(dst_device);
         if (!IsCUDAPointer(dst_ptr)) {
-            CVLib::utility::LogError("dst_ptr is not a CUDA pointer.");
+            cloudViewer::utility::LogError("dst_ptr is not a CUDA pointer.");
         }
         switcher.SwitchTo(src_device);
         if (!IsCUDAPointer(src_ptr)) {
-            CVLib::utility::LogError("src_ptr is not a CUDA pointer.");
+            cloudViewer::utility::LogError("src_ptr is not a CUDA pointer.");
         }
 
         if (dst_device == src_device) {
@@ -384,7 +384,7 @@ void CUDACachedMemoryManager::Memcpy(void* dst_ptr,
             MemoryManager::Free(cpu_buf, Device("CPU:0"));
         }
     } else {
-        CVLib::utility::LogError("Wrong cudaMemcpyKind.");
+        cloudViewer::utility::LogError("Wrong cudaMemcpyKind.");
     }
 }
 

@@ -141,7 +141,7 @@ public:
 
     NDArrayIndexer(const core::Tensor& ndarray, int64_t active_dims) {
         if (!ndarray.IsContiguous()) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "[NDArrayIndexer] Only support contiguous tensors for "
                     "general operations.");
         }
@@ -149,7 +149,7 @@ public:
         core::SizeVector shape = ndarray.GetShape();
         int64_t n = ndarray.NumDims();
         if (active_dims > MAX_RESOLUTION_DIMS || active_dims > n) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "[NDArrayIndexer] Tensor shape too large, only <= {} "
                     "is "
                     "supported, but received {}.",
@@ -173,7 +173,7 @@ public:
     NDArrayIndexer(const core::SizeVector& shape) {
         int64_t n = static_cast<int64_t>(shape.size());
         if (n > MAX_RESOLUTION_DIMS) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "[NDArrayIndexer] SizeVector too large, only <= {} is "
                     "supported, but received {}.",
                     MAX_RESOLUTION_DIMS, n);

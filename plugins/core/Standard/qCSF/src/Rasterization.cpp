@@ -42,28 +42,28 @@ double Rasterization::findHeightValByScanline(Particle *p, Cloth &cloth)
 {
 	int xpos = p->pos_x;
 	int ypos = p->pos_y;
-	//横向向右扫描
+	// Scan to the right
 	for (int i = xpos + 1; i < cloth.num_particles_width; i++)
 	{
 		double crresHeight = cloth.getParticle(i, ypos).nearestPointHeight;
 		if (crresHeight > MIN_INF)
 			return crresHeight;
 	}
-	//横向向左扫描
+	// Scan to the left
 	for (int i = xpos - 1; i >= 0; i--)
 	{
 		double crresHeight = cloth.getParticle(i, ypos).nearestPointHeight;
 		if (crresHeight > MIN_INF)
 			return crresHeight;
 	}
-	//纵向向上扫描
+	// Scan vertically upward
 	for (int j = ypos - 1; j >= 0; j--)
 	{
 		double crresHeight = cloth.getParticle(xpos, j).nearestPointHeight;
 		if (crresHeight > MIN_INF)
 			return crresHeight;
 	}
-	//纵向向下扫描
+	// Scan vertically down
 	for (int j = ypos + 1; j < cloth.num_particles_height; j++)
 	{
 		double crresHeight = cloth.getParticle(xpos, j).nearestPointHeight;
@@ -125,13 +125,12 @@ bool Rasterization::RasterTerrain(Cloth& cloth, const wl::PointCloud& pc, std::v
 {
 	try
 	{
-		//首先对每个lidar点找到在布料网格中对应的节点，并记录下来
 		//find the nearest cloth particle for each lidar point by Rounding operation
 		for (int i = 0; i < pc.size(); i++)
 		{
 			double pc_x = pc[i].x;
 			double pc_z = pc[i].z;
-			//将该坐标与布料的左上角坐标相减 minus the top-left corner of the cloth
+			// minus the top-left corner of the cloth
 			double deltaX = pc_x - cloth.origin_pos.x;
 			double deltaZ = pc_z - cloth.origin_pos.z;
 			int col = int(deltaX / cloth.step_x + 0.5);
@@ -203,7 +202,8 @@ bool Rasterization::RasterTerrain(Cloth& cloth, const wl::PointCloud& pc, std::v
 {
 	try
 	{
-		//首先建立映射xz->y 即通过xz的坐标能够找到y的坐标，因为所有点云不可能有xz重合的
+		// First establish the mapping xz->y, that is, the coordinates of y can be found through the coordinates of xz,
+		// because all point clouds cannot have xz coincident
 		std::map<std::string, double > mapstring;
 		std::list<Point_d> points_2d;
 
@@ -257,18 +257,18 @@ bool Rasterization::RasterTerrain(Cloth& cloth, const wl::PointCloud& pc, std::v
 #include <DistanceComputationTools.h>
 #include <QThread>
 
-static bool ComputeMaxNeighborAltitude(	const CVLib::DgmOctree::octreeCell& cell,
+static bool ComputeMaxNeighborAltitude(	const cloudViewer::DgmOctree::octreeCell& cell,
 										void** additionalParameters,
-										CVLib::NormalizedProgress* nProgress = 0)
+                                        cloudViewer::NormalizedProgress* nProgress = 0)
 {
 	//additional parameters
 	const wl::PointCloud& pc = *(const wl::PointCloud*)additionalParameters[0];
 	std::vector<double>& heightVal = *(std::vector<double>*)additionalParameters[1];
-	const CVLib::DgmOctree* cloudOctree = (CVLib::DgmOctree*)additionalParameters[2];
+    const cloudViewer::DgmOctree* cloudOctree = (cloudViewer::DgmOctree*)additionalParameters[2];
 	unsigned KNN = *(unsigned*)additionalParameters[3];
 
 	//structure for the nearest neighbor search
-	CVLib::DgmOctree::NearestNeighboursSearchStruct nNSS;
+    cloudViewer::DgmOctree::NearestNeighboursSearchStruct nNSS;
 	nNSS.level = cell.level;
 	nNSS.minNumberOfNeighbors = KNN;
 	cloudOctree->getCellPos(cell.truncatedCode, cell.level, nNSS.cellPos, true);
@@ -304,7 +304,7 @@ static bool ComputeMaxNeighborAltitude(	const CVLib::DgmOctree::octreeCell& cell
 
 bool Rasterization::RasterTerrain(Cloth& cloth, const wl::PointCloud& pc, std::vector<double>& heightVal, unsigned KNN)
 {
-	CVLib::SimpleCloud particlePoints;
+    cloudViewer::SimpleCloud particlePoints;
 	if (!particlePoints.reserve(static_cast<unsigned>(cloth.getSize())))
 	{
 		//not enough memory
@@ -328,7 +328,7 @@ bool Rasterization::RasterTerrain(Cloth& cloth, const wl::PointCloud& pc, std::v
 		fclose(fp);
 	}
 
-	CVLib::SimpleCloud pcPoints;
+    cloudViewer::SimpleCloud pcPoints;
 	if (!pcPoints.reserve(static_cast<unsigned>(pc.size())))
 	{
 		//not enough memory
@@ -357,9 +357,9 @@ bool Rasterization::RasterTerrain(Cloth& cloth, const wl::PointCloud& pc, std::v
 		heightVal.resize(cloth.getSize(), std::numeric_limits<double>::quiet_NaN());
 
 		//we spatially 'synchronize' the cloud and particles octrees
-		CVLib::DgmOctree *cloudOctree = 0, *particleOctree = 0;
-		CVLib::DistanceComputationTools::SOReturnCode soCode =
-			CVLib::DistanceComputationTools::synchronizeOctrees
+        cloudViewer::DgmOctree *cloudOctree = 0, *particleOctree = 0;
+        cloudViewer::DistanceComputationTools::SOReturnCode soCode =
+            cloudViewer::DistanceComputationTools::synchronizeOctrees
 			(
 				&particlePoints,
 				&pcPoints,
@@ -369,7 +369,7 @@ bool Rasterization::RasterTerrain(Cloth& cloth, const wl::PointCloud& pc, std::v
 				0
 			);
 
-		if (soCode != CVLib::DistanceComputationTools::SYNCHRONIZED && soCode != CVLib::DistanceComputationTools::DISJOINT)
+        if (soCode != cloudViewer::DistanceComputationTools::SYNCHRONIZED && soCode != cloudViewer::DistanceComputationTools::DISJOINT)
 		{
 			//not enough memory (or invalid input)
 			return false;

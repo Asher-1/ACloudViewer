@@ -37,7 +37,7 @@ namespace cloudViewer {
 namespace ml {
 namespace contrib {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 py::array IouBevCPU(py::array boxes_a, py::array boxes_b) {
     core::Tensor boxes_a_tensor =

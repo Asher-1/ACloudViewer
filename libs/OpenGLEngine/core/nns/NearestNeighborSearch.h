@@ -69,7 +69,7 @@ public:
     ///
     /// \param radius optional radius parameter. required for gpu fixed radius
     /// index. \return Returns true if building index success, otherwise false.
-    bool FixedRadiusIndex(CVLib::utility::optional<double> radius = {});
+    bool FixedRadiusIndex(cloudViewer::utility::optional<double> radius = {});
 
     /// Set index for hybrid search.
     ///

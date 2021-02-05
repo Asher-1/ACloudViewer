@@ -64,7 +64,7 @@ void pybind_core_nns(py::module &m) {
             "Set index for knn search.");
     nns.def(
             "fixed_radius_index",
-            [](NearestNeighborSearch &self, CVLib::utility::optional<double> radius) {
+            [](NearestNeighborSearch &self, cloudViewer::utility::optional<double> radius) {
                 if (!radius.has_value()) {
                     return self.FixedRadiusIndex();
                 } else {

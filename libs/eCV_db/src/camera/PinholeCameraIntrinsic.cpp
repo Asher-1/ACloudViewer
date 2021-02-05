@@ -33,7 +33,7 @@
 
 namespace cloudViewer {
 namespace camera {
-using namespace CVLib;
+using namespace cloudViewer;
 
 PinholeCameraIntrinsic::PinholeCameraIntrinsic()
     : width_(-1), height_(-1), intrinsic_matrix_(Eigen::Matrix3d::Zero()) {}

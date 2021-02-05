@@ -182,7 +182,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
         }
         points.resize(static_cast<std::size_t>(mesh.size()) * 3);
         for (unsigned int i = 0; i < mesh.size(); i++) {
-            const CVLib::VerticesIndexes *triangle =
+            const cloudViewer::VerticesIndexes *triangle =
                     mesh.getTriangleVertIndexes(i);
             for (unsigned int j = 0; j < 3; j++) {
                 unsigned int idx = i * 3 + j;

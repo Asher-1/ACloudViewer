@@ -246,7 +246,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
                 resource_mgr_.GetMaterialInstance(instance_id);
         materials_modifier_->Init(w_material_instance.lock(), instance_id);
     } else {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "Failed to create material instance for material handle {}.",
                 id);
     }
@@ -262,7 +262,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
     if (!w_material_instance.expired()) {
         materials_modifier_->Init(w_material_instance.lock(), id);
     } else {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "Failed to modify material instance: unknown instance handle "
                 "{}.",
                 id);
@@ -331,7 +331,7 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     // TODO: assert(found != scenes_.end())
     if (found != scenes_.end()) {
         if (gui_scene_ != nullptr) {
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
                     "FilamentRenderer::ConvertToGuiScene: guiScene_ is already "
                     "set");
         }

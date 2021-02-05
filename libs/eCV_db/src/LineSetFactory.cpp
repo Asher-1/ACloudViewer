@@ -70,7 +70,7 @@ LineSet::CreateFromTriangleMesh(const ccMesh &mesh)
     line_set->points_ = mesh.getEigenVertices();
 
     std::unordered_set<Eigen::Vector2i,
-                       CVLib::utility::hash_eigen::hash<Eigen::Vector2i>>
+                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector2i>>
             inserted_edges;
     auto InsertEdge = [&](int vidx0, int vidx1) {
         Eigen::Vector2i edge(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
@@ -82,7 +82,7 @@ LineSet::CreateFromTriangleMesh(const ccMesh &mesh)
 
 	for (unsigned int i = 0; i < mesh.size(); ++i)
 	{
-		const CVLib::VerticesIndexes* tri = mesh.getTriangleVertIndexes(i);
+		const cloudViewer::VerticesIndexes* tri = mesh.getTriangleVertIndexes(i);
 		InsertEdge(tri->i1, tri->i2);
 		InsertEdge(tri->i2, tri->i3);
 		InsertEdge(tri->i3, tri->i1);
@@ -139,7 +139,7 @@ LineSet::CreateFromTetraMesh(const TetraMesh &mesh) {
     line_set->points_ = mesh.vertices_;
 
     std::unordered_set<Eigen::Vector2i,
-                       CVLib::utility::hash_eigen::hash<Eigen::Vector2i>>
+                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector2i>>
             inserted_edges;
     auto InsertEdge = [&](int vidx0, int vidx1) {
         Eigen::Vector2i edge(std::min(vidx0, vidx1), std::max(vidx0, vidx1));

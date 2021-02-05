@@ -41,7 +41,7 @@ const double LAMBDA_HYBRID_DEPTH = 0.968;
 
 namespace pipelines {
 namespace odometry {
-using namespace CVLib;
+using namespace cloudViewer;
 
 void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
         int row,

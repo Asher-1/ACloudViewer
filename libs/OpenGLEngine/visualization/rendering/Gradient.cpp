@@ -65,7 +65,7 @@ void Gradient::SetPoints(const std::vector<Gradient::Point>& points) {
     points_ = points;
     for (size_t i = 0; i < points_.size(); ++i) {
         if (points_[i].value < 0.0f || points_[i].value > 1.0f) {
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
                     "Gradient point {} must be in range [0.0, 1.0], clamping",
                     points_[i].value);
             points_[i].value = std::max(0.0f, std::min(1.0f, points_[i].value));

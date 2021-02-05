@@ -73,8 +73,8 @@ Tensor PyArrayToTensor(py::array array, bool inplace);
 ///
 /// The dtype will be inferred from the value of the list.
 Tensor PyListToTensor(const py::list& list,
-                      CVLib::utility::optional<Dtype> dtype = CVLib::utility::nullopt,
-                      CVLib::utility::optional<Device> device = CVLib::utility::nullopt);
+                      cloudViewer::utility::optional<Dtype> dtype = cloudViewer::utility::nullopt,
+                      cloudViewer::utility::optional<Device> device = cloudViewer::utility::nullopt);
 
 /// Convert py::tuple to Tensor.
 ///
@@ -84,22 +84,22 @@ Tensor PyListToTensor(const py::list& list,
 ///
 /// The dtype will be inferred from the value of the tuple.
 Tensor PyTupleToTensor(const py::tuple& tuple,
-                       CVLib::utility::optional<Dtype> dtype = CVLib::utility::nullopt,
-                       CVLib::utility::optional<Device> device = CVLib::utility::nullopt);
+                       cloudViewer::utility::optional<Dtype> dtype = cloudViewer::utility::nullopt,
+                       cloudViewer::utility::optional<Device> device = cloudViewer::utility::nullopt);
 
 /// Convert scalar double value to Tensor.
 ///
 /// The default dtype is Float64, unless specified.
 Tensor DoubleToTensor(double scalar_value,
-                      CVLib::utility::optional<Dtype> dtype = CVLib::utility::nullopt,
-                      CVLib::utility::optional<Device> device = CVLib::utility::nullopt);
+                      cloudViewer::utility::optional<Dtype> dtype = cloudViewer::utility::nullopt,
+                      cloudViewer::utility::optional<Device> device = cloudViewer::utility::nullopt);
 
 /// Convert scalar int value to Tensor.
 ///
 /// The default dtype is Int64, unless specified.
 Tensor IntToTensor(int64_t scalar_value,
-                   CVLib::utility::optional<Dtype> dtype = CVLib::utility::nullopt,
-                   CVLib::utility::optional<Device> device = CVLib::utility::nullopt);
+                   cloudViewer::utility::optional<Dtype> dtype = cloudViewer::utility::nullopt,
+                   cloudViewer::utility::optional<Device> device = cloudViewer::utility::nullopt);
 
 /// Convert supported python types to Tensor.
 ///
@@ -113,8 +113,8 @@ Tensor IntToTensor(int64_t scalar_value,
 ///
 /// An exception will be thrown if the type is not supported.
 Tensor PyHandleToTensor(const py::handle& handle,
-                        CVLib::utility::optional<Dtype> dtype = CVLib::utility::nullopt,
-                        CVLib::utility::optional<Device> device = CVLib::utility::nullopt,
+                        cloudViewer::utility::optional<Dtype> dtype = cloudViewer::utility::nullopt,
+                        cloudViewer::utility::optional<Device> device = cloudViewer::utility::nullopt,
                         bool force_copy = false);
 
 /// Convert py::tuple to SizeVector.

@@ -85,7 +85,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
         double gamma_32 /* = 0.975 */,
         int min_neighbors /*= 5 */) {
     if (input.isEmpty()) {
-        CVLib::utility::LogWarning("[ComputeISSKeypoints] Input ccPointCloud is empty!");
+        cloudViewer::utility::LogWarning("[ComputeISSKeypoints] Input ccPointCloud is empty!");
         return std::make_shared<ccPointCloud>();
     }
     const auto& points = input.getEigenPoints();
@@ -95,7 +95,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
         const double resolution = ComputeModelResolution(points, kdtree);
         salient_radius = 6 * resolution;
         non_max_radius = 4 * resolution;
-        CVLib::utility::LogDebug(
+        cloudViewer::utility::LogDebug(
                 "[ComputeISSKeypoints] Computed salient_radius = {}, "
                 "non_max_radius = {} from input model",
                 salient_radius, non_max_radius);
@@ -112,7 +112,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
             continue;
         }
 
-        Eigen::Matrix3d cov = CVLib::utility::ComputeCovariance(points, indices);
+        Eigen::Matrix3d cov = cloudViewer::utility::ComputeCovariance(points, indices);
         if (cov.isZero()) {
             continue;
         }
@@ -144,7 +144,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
         }
     }
 
-    CVLib::utility::LogDebug("[ComputeISSKeypoints] Extracted {} keypoints", kp_indices.size());
+    cloudViewer::utility::LogDebug("[ComputeISSKeypoints] Extracted {} keypoints", kp_indices.size());
     return input.selectByIndex(kp_indices);
 }
 

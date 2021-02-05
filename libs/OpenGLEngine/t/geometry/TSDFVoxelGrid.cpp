@@ -34,7 +34,7 @@ namespace cloudViewer {
 namespace t {
 namespace geometry {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 TSDFVoxelGrid::TSDFVoxelGrid(
         std::unordered_map<std::string, core::Dtype> attr_dtype_map,

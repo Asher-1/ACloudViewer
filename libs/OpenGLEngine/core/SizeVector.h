@@ -42,10 +42,10 @@ namespace core {
 ///
 /// Example: create a shape of (None, 3)
 /// ```
-/// core::DynamicSizeVector shape{CVLib::utility::nullopt, 3};
+/// core::DynamicSizeVector shape{cloudViewer::utility::nullopt, 3};
 /// ```
-class DynamicSizeVector : public std::vector<CVLib::utility::optional<int64_t>> {
-    using optint64_t = CVLib::utility::optional<int64_t>;
+class DynamicSizeVector : public std::vector<cloudViewer::utility::optional<int64_t>> {
+    using optint64_t = cloudViewer::utility::optional<int64_t>;
 
 public:
     DynamicSizeVector(const std::initializer_list<optint64_t>& dim_sizes)
@@ -136,7 +136,7 @@ public:
                 this->begin(), this->end(), 1LL,
                 [this](const int64_t& lhs, const int64_t& rhs) -> int64_t {
                     if (lhs < 0 || rhs < 0) {
-                        CVLib::utility::LogError(
+                        cloudViewer::utility::LogError(
                                 "Shape {} cannot contain negative dimensions.",
                                 this->ToString());
                     }
@@ -146,7 +146,7 @@ public:
 
     int64_t GetLength() const {
         if (size() == 0) {
-            CVLib::utility::LogError("Cannot get length of a 0-dimensional shape.");
+            cloudViewer::utility::LogError("Cannot get length of a 0-dimensional shape.");
         } else {
             return operator[](0);
         }
@@ -158,10 +158,10 @@ public:
                           const std::string msg = "") const {
         if (!IsCompatible(dsv)) {
             if (msg.empty()) {
-                CVLib::utility::LogError("Shape {} is not compatible with {}.",
+                cloudViewer::utility::LogError("Shape {} is not compatible with {}.",
                                   ToString(), dsv.ToString());
             } else {
-                CVLib::utility::LogError("Shape {} is not compatible with {}: {}",
+                cloudViewer::utility::LogError("Shape {} is not compatible with {}: {}",
                                   ToString(), dsv.ToString(), msg);
             }
         }

@@ -36,7 +36,7 @@
 namespace cloudViewer {
 namespace core {
 namespace cuda {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
 int DeviceCount() {
 #ifdef BUILD_CUDA_MODULE

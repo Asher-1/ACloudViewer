@@ -59,7 +59,7 @@ void IndexGet(const Tensor& src,
         IndexGetCUDA(src, dst, index_tensors, indexed_shape, indexed_strides);
 #endif
     } else {
-        CVLib::utility::LogError("IndexGet: Unimplemented device");
+        cloudViewer::utility::LogError("IndexGet: Unimplemented device");
     }
 }
 
@@ -81,7 +81,7 @@ void IndexSet(const Tensor& src,
                      indexed_strides);
 #endif
     } else {
-        CVLib::utility::LogError("IndexSet: Unimplemented device");
+        cloudViewer::utility::LogError("IndexSet: Unimplemented device");
     }
 }
 

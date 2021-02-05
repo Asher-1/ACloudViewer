@@ -260,21 +260,21 @@ public:
     /// Set the value of the "vertices" attribute in vertex_attr_.
     /// Convenience function.
     void SetVertices(const core::Tensor &value) {
-        value.AssertShapeCompatible({CVLib::utility::nullopt, 3});
+        value.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
         SetVertexAttr("vertices", value);
     }
 
     /// Set the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
     void SetVertexColors(const core::Tensor &value) {
-        value.AssertShapeCompatible({CVLib::utility::nullopt, 3});
+        value.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
         SetVertexAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute in vertex_attr_.
     /// This is a convenience function.
     void SetVertexNormals(const core::Tensor &value) {
-        value.AssertShapeCompatible({CVLib::utility::nullopt, 3});
+        value.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
         SetVertexAttr("normals", value);
     }
 
@@ -290,21 +290,21 @@ public:
 
     /// Set the vlaue of the "triangles" attribute in triangle_attr_.
     void SetTriangles(const core::Tensor &value) {
-        value.AssertShapeCompatible({CVLib::utility::nullopt, 3});
+        value.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
         SetTriangleAttr("triangles", value);
     }
 
     /// Set the value of the "normals" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleNormals(const core::Tensor &value) {
-        value.AssertShapeCompatible({CVLib::utility::nullopt, 3});
+        value.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
         SetTriangleAttr("normals", value);
     }
 
     /// Set the value of the "colors" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleColors(const core::Tensor &value) {
-        value.AssertShapeCompatible({CVLib::utility::nullopt, 3});
+        value.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
         SetTriangleAttr("colors", value);
     }
 
@@ -376,27 +376,27 @@ public:
     /// Returns !HasVertices(), triangles are ignored.
     bool IsEmpty() const override { return !HasVertices(); }
 
-    core::Tensor GetMinBound() const { CVLib::utility::LogError("Unimplemented"); }
+    core::Tensor GetMinBound() const { cloudViewer::utility::LogError("Unimplemented"); }
 
-    core::Tensor GetMaxBound() const { CVLib::utility::LogError("Unimplemented"); }
+    core::Tensor GetMaxBound() const { cloudViewer::utility::LogError("Unimplemented"); }
 
-    core::Tensor GetCenter() const { CVLib::utility::LogError("Unimplemented"); }
+    core::Tensor GetCenter() const { cloudViewer::utility::LogError("Unimplemented"); }
 
     TriangleMesh &Transform(const core::Tensor &transformation) {
-        CVLib::utility::LogError("Unimplemented");
+        cloudViewer::utility::LogError("Unimplemented");
     }
 
     TriangleMesh &Translate(const core::Tensor &translation,
                             bool relative = true) {
-        CVLib::utility::LogError("Unimplemented");
+        cloudViewer::utility::LogError("Unimplemented");
     }
 
     TriangleMesh &Scale(double scale, const core::Tensor &center) {
-        CVLib::utility::LogError("Unimplemented");
+        cloudViewer::utility::LogError("Unimplemented");
     }
 
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center) {
-        CVLib::utility::LogError("Unimplemented");
+        cloudViewer::utility::LogError("Unimplemented");
     }
 
     core::Device GetDevice() const { return device_; }

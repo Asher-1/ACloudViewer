@@ -35,19 +35,19 @@ void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
     // Check devices
     Device device = A.GetDevice();
     if (device != B.GetDevice()) {
-        CVLib::utility::LogError("Tensor A device {} and Tensor B device {} mismatch.",
+        cloudViewer::utility::LogError("Tensor A device {} and Tensor B device {} mismatch.",
                           A.GetDevice().ToString(), B.GetDevice().ToString());
     }
 
     // Check dtypes
     Dtype dtype = A.GetDtype();
     if (dtype != B.GetDtype()) {
-        CVLib::utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch.",
+        cloudViewer::utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch.",
                           A.GetDtype().ToString(), B.GetDtype().ToString());
     }
 
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}.",
                 dtype.ToString());
@@ -57,27 +57,27 @@ void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
     SizeVector A_shape = A.GetShape();
     SizeVector B_shape = B.GetShape();
     if (A_shape.size() != 2) {
-        CVLib::utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
+        cloudViewer::utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
     }
     if (B_shape.size() != 1 && B_shape.size() != 2) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Tensor B must be 1D (vector) or 2D (matrix), but got {}D.",
                 B_shape.size());
     }
     if (B_shape[0] != A_shape[0]) {
-        CVLib::utility::LogError("Tensor A and B's first dimension mismatch.");
+        cloudViewer::utility::LogError("Tensor A and B's first dimension mismatch.");
     }
 
     int64_t m = A_shape[0];
     int64_t n = A_shape[1];
     int64_t k = B_shape.size() == 2 ? B_shape[1] : 1;
     if (m == 0 || n == 0 || k == 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
     if (m < n) {
-        CVLib::utility::LogError("Tensor A shape must satisfy rows({}) > cols({}).", m,
+        cloudViewer::utility::LogError("Tensor A shape must satisfy rows({}) > cols({}).", m,
                           n);
     }
 
@@ -92,7 +92,7 @@ void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
 #ifdef BUILD_CUDA_MODULE
         LeastSquaresCUDA(A_data, B_data, m, n, k, dtype, device);
 #else
-        CVLib::utility::LogError("Unimplemented device.");
+        cloudViewer::utility::LogError("Unimplemented device.");
 #endif
     } else {
         LeastSquaresCPU(A_data, B_data, m, n, k, dtype, device);

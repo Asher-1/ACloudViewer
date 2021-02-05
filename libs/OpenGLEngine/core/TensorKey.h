@@ -35,8 +35,8 @@ namespace core {
 // Avoids circular include.
 class Tensor;
 
-// Same as CVLib::utility::nullopt. Provides a similar Python slicing API.
-constexpr CVLib::utility::nullopt_t None{CVLib::utility::nullopt_t::init()};
+// Same as cloudViewer::utility::nullopt. Provides a similar Python slicing API.
+constexpr cloudViewer::utility::nullopt_t None{cloudViewer::utility::nullopt_t::init()};
 
 /// \brief TensorKey is used to represent single index, slice or advanced
 /// indexing on a Tensor.
@@ -62,9 +62,9 @@ public:
     /// \param start: Start index. None means starting from the 0-th element.
     /// \param stop: Stop index. None means stopping at the last element.
     /// \param step: Step size. None means step size 1.
-    static TensorKey Slice(CVLib::utility::optional<int64_t> start,
-                           CVLib::utility::optional<int64_t> stop,
-                           CVLib::utility::optional<int64_t> step);
+    static TensorKey Slice(cloudViewer::utility::optional<int64_t> start,
+                           cloudViewer::utility::optional<int64_t> stop,
+                           cloudViewer::utility::optional<int64_t> step);
 
     /// Instantiates a TensorKey with tensor-index (advanced indexing) mode.
     ///

@@ -60,7 +60,7 @@ using namespace io;
 namespace ply_trianglemesh_reader {
 
 	struct PLYReaderState {
-		CVLib::utility::ConsoleProgressBar *progress_bar;
+		cloudViewer::utility::ConsoleProgressBar *progress_bar;
 		ccMesh *mesh_ptr;
 		long vertex_index;
 		long vertex_num;
@@ -160,7 +160,7 @@ namespace ply_trianglemesh_reader {
 		}
 		if (long(state_ptr->face.size()) == length) {
 			if (!AddTrianglesByEarClipping(*state_ptr->mesh_ptr, state_ptr->face)) {
-				CVLib::utility::LogWarning(
+				cloudViewer::utility::LogWarning(
 					"Read PLY failed: A polygon in the mesh could not be "
 					"decomposed into triangles.");
 				return 0;
@@ -214,7 +214,7 @@ static const std::unordered_map<
 }  // unnamed namespace
 
 namespace io {
-using namespace CVLib;
+using namespace cloudViewer;
 std::shared_ptr<ccMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress) {
     auto mesh = std::make_shared<ccMesh>();
@@ -228,9 +228,9 @@ bool ReadTriangleMesh(const std::string &filename,
                       bool enable_post_processing /* = false */,
                       bool print_progress /* = false */) {
     std::string filename_ext =
-            CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
+            cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "Read ccMesh failed: unknown file "
                 "extension.");
         return false;
@@ -238,18 +238,18 @@ bool ReadTriangleMesh(const std::string &filename,
     auto map_itr =
             file_extension_to_trianglemesh_read_function.find(filename_ext);
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "Read ccMesh failed: unknown file "
                 "extension.");
         return false;
     }
     bool success = map_itr->second(filename, mesh, enable_post_processing,
                                    print_progress);
-    CVLib::utility::LogDebug(
+    cloudViewer::utility::LogDebug(
             "Read ccMesh: {:d} triangles and {:d} vertices.",
             mesh.size(), mesh.getVerticeSize());
     if (mesh.hasVertices() && !mesh.hasTriangles()) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "ccMesh appears to be a geometry::PointCloud "
                 "(only contains vertices, but no triangles).");
     }
@@ -265,9 +265,9 @@ bool WriteTriangleMesh(const std::string &filename,
                        bool write_triangle_uvs /* = true*/,
                        bool print_progress /* = false*/) {
     std::string filename_ext =
-            CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
+            cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "Write ccMesh failed: unknown file "
                 "extension.");
         return false;
@@ -275,7 +275,7 @@ bool WriteTriangleMesh(const std::string &filename,
     auto map_itr =
             file_extension_to_trianglemesh_write_function.find(filename_ext);
     if (map_itr == file_extension_to_trianglemesh_write_function.end()) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "Write ccMesh failed: unknown file "
                 "extension.");
         return false;
@@ -283,7 +283,7 @@ bool WriteTriangleMesh(const std::string &filename,
     bool success = map_itr->second(filename, mesh, write_ascii, compressed,
                                    write_vertex_normals, write_vertex_colors,
                                    write_triangle_uvs, print_progress);
-    CVLib::utility::LogDebug(
+    cloudViewer::utility::LogDebug(
             "Write ccMesh: {:d} triangles and {:d} vertices.",
             mesh.size(), mesh.getVerticeSize());
     return success;
@@ -581,10 +581,10 @@ FileGeometry ReadFileGeometryTypeSTL(const std::string& path) {
 
 bool ReadTriangleMeshFromSTL(const std::string &filename,
 	ccMesh &mesh, bool print_progress) {
-	FILE *myFile = CVLib::utility::filesystem::FOpen(filename.c_str(), "rb");
+	FILE *myFile = cloudViewer::utility::filesystem::FOpen(filename.c_str(), "rb");
 
 	if (!myFile) {
-		CVLib::utility::LogWarning("Read STL failed: unable to open file.");
+		cloudViewer::utility::LogWarning("Read STL failed: unable to open file.");
 		fclose(myFile);
 		return false;
 	}
@@ -594,21 +594,21 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 		char header[80] = "";
         if(fread(header, sizeof(char), 80, myFile) != 80)
         {
-            CVLib::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] header IO error!");
+            cloudViewer::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] header IO error!");
         }
         if(fread(&num_of_triangles, sizeof(unsigned int), 1, myFile) != 1)
         {
-            CVLib::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] triangles IO error!");
+            cloudViewer::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] triangles IO error!");
         }
 	}
 	else {
-		CVLib::utility::LogWarning("Read STL failed: unable to read header.");
+		cloudViewer::utility::LogWarning("Read STL failed: unable to read header.");
 		fclose(myFile);
 		return false;
 	}
 
 	if (num_of_triangles == 0) {
-		CVLib::utility::LogWarning("Read STL failed: empty file.");
+		cloudViewer::utility::LogWarning("Read STL failed: empty file.");
 		fclose(myFile);
 		return false;
 	}
@@ -619,7 +619,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 	ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
 	assert(cloud && cloud->reserveThePointsTable(num_of_triangles * 3));
 
-	CVLib::utility::ConsoleProgressBar progress_bar(num_of_triangles,
+	cloudViewer::utility::ConsoleProgressBar progress_bar(num_of_triangles,
 		"Reading STL: ", print_progress);
 	for (int i = 0; i < num_of_triangles; i++) {
 		char buffer[50];
@@ -627,7 +627,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 		if (myFile) {
             if(fread(buffer, sizeof(char), 50, myFile) != 50)
             {
-                CVLib::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] buffer IO error!");
+                cloudViewer::utility::LogWarning("[TriangleMeshIO::ReadTriangleMeshFromSTL] buffer IO error!");
             }
 			float_buffer = reinterpret_cast<float *>(buffer);
 			mesh.addTriangleNorm(Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>());
@@ -642,7 +642,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 
 		}
 		else {
-			CVLib::utility::LogWarning("Read STL failed: not enough triangles.");
+			cloudViewer::utility::LogWarning("Read STL failed: not enough triangles.");
 			fclose(myFile);
 			return false;
 		}
@@ -677,7 +677,7 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
 	bool write_triangle_uvs /* = true*/,
 	bool print_progress) {
 	if (write_triangle_uvs && mesh.hasTriangleUvs()) {
-		CVLib::utility::LogWarning(
+		cloudViewer::utility::LogWarning(
 			"This file format does not support writing textures and uv "
 			"coordinates. Consider using .obj");
 	}
@@ -689,25 +689,25 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
 	std::ofstream myFile(filename.c_str(), std::ios::out | std::ios::binary);
 
 	if (!myFile) {
-		CVLib::utility::LogWarning("Write STL failed: unable to open file.");
+		cloudViewer::utility::LogWarning("Write STL failed: unable to open file.");
 		return false;
 	}
 
 	if (!mesh.hasTriNormals()) {
-		CVLib::utility::LogWarning("Write STL failed: compute normals first.");
+		cloudViewer::utility::LogWarning("Write STL failed: compute normals first.");
 		return false;
 	}
 
 	size_t num_of_triangles = mesh.size();
 	if (num_of_triangles == 0) {
-		CVLib::utility::LogWarning("Write STL failed: empty file.");
+		cloudViewer::utility::LogWarning("Write STL failed: empty file.");
 		return false;
 	}
 	char header[80] = "Created by cloudViewer";
 	myFile.write(header, 80);
 	myFile.write((char *)(&num_of_triangles), 4);
 
-	CVLib::utility::ConsoleProgressBar progress_bar(num_of_triangles,
+	cloudViewer::utility::ConsoleProgressBar progress_bar(num_of_triangles,
 		"Writing STL: ", print_progress);
 	for (size_t i = 0; i < num_of_triangles; i++) {
 		Eigen::Vector3f float_vector3f =
@@ -741,14 +741,14 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
 	std::string err;
 
 	std::string mtl_base_path =
-		CVLib::utility::filesystem::GetFileParentDirectory(filename);
+		cloudViewer::utility::filesystem::GetFileParentDirectory(filename);
 	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
 		filename.c_str(), mtl_base_path.c_str());
 	if (!warn.empty()) {
-		CVLib::utility::LogWarning("Read OBJ failed: {}", warn);
+		cloudViewer::utility::LogWarning("Read OBJ failed: {}", warn);
 	}
 	if (!err.empty()) {
-		CVLib::utility::LogWarning("Read OBJ failed: {}", err);
+		cloudViewer::utility::LogWarning("Read OBJ failed: {}", err);
 	}
 
 	if (!ret) {
@@ -797,7 +797,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
 		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
 			int fv = shapes[s].mesh.num_face_vertices[f];
 			if (fv != 3) {
-				CVLib::utility::LogWarning(
+				cloudViewer::utility::LogWarning(
 					"Read OBJ failed: facet with number of vertices not "
 					"equal to 3");
 				return false;

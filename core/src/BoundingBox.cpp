@@ -27,7 +27,7 @@
 #include <algorithm>
 #include <cstdint>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 BoundingBox::BoundingBox()
 	: m_bbMin(0, 0, 0)

@@ -30,7 +30,7 @@
 namespace cloudViewer {
 
 namespace visualization {
-	using namespace CVLib;
+	using namespace cloudViewer;
 
 VisualizerWithKeyCallback::VisualizerWithKeyCallback() {}
 

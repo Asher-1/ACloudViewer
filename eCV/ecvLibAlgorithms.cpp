@@ -17,7 +17,7 @@
 
 #include "ecvLibAlgorithms.h"
 
-//CVLib
+//cloudViewer
 #include <ScalarFieldTools.h>
 
 //ECV_DB_LIB
@@ -45,20 +45,20 @@
 
 namespace ccLibAlgorithms
 {
-	static QString GetDensitySFName(CVLib::GeometricalAnalysisTools::Density densityType, bool approx, double densityKernelSize = 0.0)
+	static QString GetDensitySFName(cloudViewer::GeometricalAnalysisTools::Density densityType, bool approx, double densityKernelSize = 0.0)
 	{
 		QString sfName;
 		
 		//update the name with the density type
 		switch (densityType)
 		{
-			case CVLib::GeometricalAnalysisTools::DENSITY_KNN:
+			case cloudViewer::GeometricalAnalysisTools::DENSITY_KNN:
 				sfName = CC_LOCAL_KNN_DENSITY_FIELD_NAME;
 				break;
-			case CVLib::GeometricalAnalysisTools::DENSITY_2D:
+			case cloudViewer::GeometricalAnalysisTools::DENSITY_2D:
 				sfName = CC_LOCAL_SURF_DENSITY_FIELD_NAME;
 				break;
-			case CVLib::GeometricalAnalysisTools::DENSITY_3D:
+			case cloudViewer::GeometricalAnalysisTools::DENSITY_3D:
 				sfName = CC_LOCAL_VOL_DENSITY_FIELD_NAME;
 				break;
 			default:
@@ -164,7 +164,7 @@ namespace ccLibAlgorithms
 	}
 
 
-	bool ComputeGeomCharacteristic(	CVLib::GeometricalAnalysisTools::GeomCharacteristic c,
+	bool ComputeGeomCharacteristic(	cloudViewer::GeometricalAnalysisTools::GeomCharacteristic c,
 									int subOption,
 									PointCoordinateType radius,
 									ccHObject::Container& entities,
@@ -180,50 +180,50 @@ namespace ccLibAlgorithms
 
 		switch (c)
 		{
-		case CVLib::GeometricalAnalysisTools::Feature:
+		case cloudViewer::GeometricalAnalysisTools::Feature:
 		{
 			switch (subOption)
 			{
-			case CVLib::Neighbourhood::EigenValuesSum:
+			case cloudViewer::Neighbourhood::EigenValuesSum:
 				sfName = "Eigenvalues sum";
 				break;
-			case CVLib::Neighbourhood::Omnivariance:
+			case cloudViewer::Neighbourhood::Omnivariance:
 				sfName = "Omnivariance";
 				break;
-			case CVLib::Neighbourhood::EigenEntropy:
+			case cloudViewer::Neighbourhood::EigenEntropy:
 				sfName = "Eigenentropy";
 				break;
-			case CVLib::Neighbourhood::Anisotropy:
+			case cloudViewer::Neighbourhood::Anisotropy:
 				sfName = "Anisotropy";
 				break;
-			case CVLib::Neighbourhood::Planarity:
+			case cloudViewer::Neighbourhood::Planarity:
 				sfName = "Planarity";
 				break;
-			case CVLib::Neighbourhood::Linearity:
+			case cloudViewer::Neighbourhood::Linearity:
 				sfName = "Linearity";
 				break;
-			case CVLib::Neighbourhood::PCA1:
+			case cloudViewer::Neighbourhood::PCA1:
 				sfName = "PCA1";
 				break;
-			case CVLib::Neighbourhood::PCA2:
+			case cloudViewer::Neighbourhood::PCA2:
 				sfName = "PCA2";
 				break;
-			case CVLib::Neighbourhood::SurfaceVariation:
+			case cloudViewer::Neighbourhood::SurfaceVariation:
 				sfName = "Surface variation";
 				break;
-			case CVLib::Neighbourhood::Sphericity:
+			case cloudViewer::Neighbourhood::Sphericity:
 				sfName = "Sphericity";
 				break;
-			case CVLib::Neighbourhood::Verticality:
+			case cloudViewer::Neighbourhood::Verticality:
 				sfName = "Verticality";
 				break;
-			case CVLib::Neighbourhood::EigenValue1:
+			case cloudViewer::Neighbourhood::EigenValue1:
 				sfName = "1st eigenvalue";
 				break;
-			case CVLib::Neighbourhood::EigenValue2:
+			case cloudViewer::Neighbourhood::EigenValue2:
 				sfName = "2nd eigenvalue";
 				break;
-			case CVLib::Neighbourhood::EigenValue3:
+			case cloudViewer::Neighbourhood::EigenValue3:
 				sfName = "3rd eigenvalue";
 				break;
 			default:
@@ -236,17 +236,17 @@ namespace ccLibAlgorithms
 		}
 		break;
 
-		case CVLib::GeometricalAnalysisTools::Curvature:
+		case cloudViewer::GeometricalAnalysisTools::Curvature:
 		{
 			switch (subOption)
 			{
-			case CVLib::Neighbourhood::GAUSSIAN_CURV:
+			case cloudViewer::Neighbourhood::GAUSSIAN_CURV:
 				sfName = CC_CURVATURE_GAUSSIAN_FIELD_NAME;
 				break;
-			case CVLib::Neighbourhood::MEAN_CURV:
+			case cloudViewer::Neighbourhood::MEAN_CURV:
 				sfName = CC_CURVATURE_MEAN_FIELD_NAME;
 				break;
-			case CVLib::Neighbourhood::NORMAL_CHANGE_RATE:
+			case cloudViewer::Neighbourhood::NORMAL_CHANGE_RATE:
 				sfName = CC_CURVATURE_NORM_CHANGE_RATE_FIELD_NAME;
 				break;
 			default:
@@ -258,19 +258,19 @@ namespace ccLibAlgorithms
 		}
 		break;
 
-		case CVLib::GeometricalAnalysisTools::LocalDensity:
-			sfName = GetDensitySFName(static_cast<CVLib::GeometricalAnalysisTools::Density>(subOption), false, radius);
+		case cloudViewer::GeometricalAnalysisTools::LocalDensity:
+			sfName = GetDensitySFName(static_cast<cloudViewer::GeometricalAnalysisTools::Density>(subOption), false, radius);
 			break;
 
-		case CVLib::GeometricalAnalysisTools::ApproxLocalDensity:
-			sfName = GetDensitySFName(static_cast<CVLib::GeometricalAnalysisTools::Density>(subOption), true);
+		case cloudViewer::GeometricalAnalysisTools::ApproxLocalDensity:
+			sfName = GetDensitySFName(static_cast<cloudViewer::GeometricalAnalysisTools::Density>(subOption), true);
 			break;
 
-		case CVLib::GeometricalAnalysisTools::Roughness:
+		case cloudViewer::GeometricalAnalysisTools::Roughness:
 			sfName = CC_ROUGHNESS_FIELD_NAME + QString(" (%1)").arg(radius);
 			break;
 
-		case CVLib::GeometricalAnalysisTools::MomentOrder1:
+		case cloudViewer::GeometricalAnalysisTools::MomentOrder1:
 			sfName = CC_MOMENT_ORDER1_FIELD_NAME + QString(" (%1)").arg(radius);
 			break;
 
@@ -326,11 +326,11 @@ namespace ccLibAlgorithms
 					}
 				}
 
-				CVLib::GeometricalAnalysisTools::ErrorCode result = 
-					CVLib::GeometricalAnalysisTools::ComputeCharactersitic(
+				cloudViewer::GeometricalAnalysisTools::ErrorCode result = 
+					cloudViewer::GeometricalAnalysisTools::ComputeCharactersitic(
 						c, subOption, cloud, radius, pDlg, octree.data());
 
-				if (result == CVLib::GeometricalAnalysisTools::NoError)
+				if (result == cloudViewer::GeometricalAnalysisTools::NoError)
 				{
 					if (pc && sfIdx >= 0)
 					{
@@ -344,25 +344,25 @@ namespace ccLibAlgorithms
 					QString errorMessage;
 					switch (result)
 					{
-					case CVLib::GeometricalAnalysisTools::InvalidInput:
+					case cloudViewer::GeometricalAnalysisTools::InvalidInput:
 						errorMessage = "Internal error (invalid input)";
 						break;
-					case CVLib::GeometricalAnalysisTools::NotEnoughPoints:
+					case cloudViewer::GeometricalAnalysisTools::NotEnoughPoints:
 						errorMessage = "Not enough points";
 						break;
-					case CVLib::GeometricalAnalysisTools::OctreeComputationFailed:
+					case cloudViewer::GeometricalAnalysisTools::OctreeComputationFailed:
 						errorMessage = "Failed to compute octree (not enough memory?)";
 						break;
-					case CVLib::GeometricalAnalysisTools::ProcessFailed:
+					case cloudViewer::GeometricalAnalysisTools::ProcessFailed:
 						errorMessage = "Process failed";
 						break;
-					case CVLib::GeometricalAnalysisTools::UnhandledCharacteristic:
+					case cloudViewer::GeometricalAnalysisTools::UnhandledCharacteristic:
 						errorMessage = "Internal error (unhandled characteristic)";
 						break;
-					case CVLib::GeometricalAnalysisTools::NotEnoughMemory:
+					case cloudViewer::GeometricalAnalysisTools::NotEnoughMemory:
 						errorMessage = "Not enough memory";
 						break;
-					case CVLib::GeometricalAnalysisTools::ProcessCancelledByUser:
+					case cloudViewer::GeometricalAnalysisTools::ProcessCancelledByUser:
 						errorMessage = "Process cancelled by user";
 						break;
 					default:
@@ -533,7 +533,7 @@ namespace ccLibAlgorithms
 				switch(algo)
 				{
 				case CCLIB_ALGO_SF_GRADIENT:
-					result = CVLib::ScalarFieldTools::computeScalarFieldGradient(cloud,
+					result = cloudViewer::ScalarFieldTools::computeScalarFieldGradient(cloud,
 						0, //auto --> FIXME: should be properly set by the user!
 						euclidean,
 						false,
@@ -614,7 +614,7 @@ namespace ccLibAlgorithms
 		ecvProgressDialog pDlg(true,parent);
 		pDlg.setMethodTitle(QObject::tr("Computing entities scales"));
 		pDlg.setInfo(QObject::tr("Entities: %1").arg(count));
-		CVLib::NormalizedProgress nProgress(&pDlg, 2 * count - 1);
+		cloudViewer::NormalizedProgress nProgress(&pDlg, 2 * count - 1);
 		pDlg.start();
 		QApplication::processEvents();
 		
@@ -641,7 +641,7 @@ namespace ccLibAlgorithms
 						
 					case PCA_MAX_DIM:
 					{
-						CVLib::Neighbourhood Yk(cloud);
+						cloudViewer::Neighbourhood Yk(cloud);
 						if (!Yk.getLSPlane())
 						{
 							CVLog::Warning(QString("[Scale Matching] Failed to perform PCA on entity '%1'!").arg(ent->getName()));
@@ -677,7 +677,7 @@ namespace ccLibAlgorithms
 						double finalError = 0.0;
 						double finalScale = 1.0;
 						unsigned finalPointCount = 0;
-						int transformationFilters = 0; //CVLib::RegistrationTools::SKIP_ROTATION;
+						int transformationFilters = 0; //cloudViewer::RegistrationTools::SKIP_ROTATION;
 						
 						if (ccRegistrationTools::ICP(
 								 ent,
@@ -690,7 +690,7 @@ namespace ccLibAlgorithms
 								 0,
 								 50000,
 								 false,
-								 CVLib::ICPRegistrationTools::MAX_ERROR_CONVERGENCE,
+								 cloudViewer::ICPRegistrationTools::MAX_ERROR_CONVERGENCE,
 								 true,
 								 icpFinalOverlap / 100.0,
 								 false,

@@ -18,7 +18,7 @@
 #ifndef QFACET_FAST_MARCHING_FOR_FACET_EXTRACTION_HEADER
 #define QFACET_FAST_MARCHING_FOR_FACET_EXTRACTION_HEADER
 
-//CVLib
+//cloudViewer
 #include <FastMarching.h>
 #include <GenericProgressCallback.h>
 #include <DistanceComputationTools.h>
@@ -32,7 +32,7 @@ class ccPointCloud;
 //! Fast Marching algorithm for planar facets extraction (qFacets plugin)
 /** Extends the FastMarching class.
 **/
-class FastMarchingForFacetExtraction : public CVLib::FastMarching
+class FastMarchingForFacetExtraction : public cloudViewer::FastMarching
 {
 public:
 
@@ -40,10 +40,10 @@ public:
 	static int ExtractPlanarFacets(	ccPointCloud* theCloud,
 									unsigned char octreeLevel,
 									ScalarType maxError,
-									CVLib::DistanceComputationTools::ERROR_MEASURES errorMeasure,
+									cloudViewer::DistanceComputationTools::ERROR_MEASURES errorMeasure,
 									bool useRetroProjectionError = true,
-									CVLib::GenericProgressCallback* progressCb = 0,
-									CVLib::DgmOctree* _theOctree = 0);
+									cloudViewer::GenericProgressCallback* progressCb = 0,
+									cloudViewer::DgmOctree* _theOctree = 0);
 
 	//! Default constructor
 	FastMarchingForFacetExtraction();
@@ -65,12 +65,12 @@ public:
 		\return a negative value if something went wrong
 	**/
 	int init(	ccGenericPointCloud* cloud,
-				CVLib::DgmOctree* theOctree,
+				cloudViewer::DgmOctree* theOctree,
 				unsigned char gridLevel,
 				ScalarType maxError,
-				CVLib::DistanceComputationTools::ERROR_MEASURES errorMeasure,
+				cloudViewer::DistanceComputationTools::ERROR_MEASURES errorMeasure,
 				bool useRetroProjectionError,
-				CVLib::GenericProgressCallback* progressCb = 0);
+				cloudViewer::GenericProgressCallback* progressCb = 0);
 
 	//! Updates a list of point flags, indicating the points alreay processed
 	/** \return the number of newly flagged points
@@ -80,7 +80,7 @@ public:
 								unsigned facetIndex);
 
 	//! Sets the propagation progress callback
-	void setPropagateCallback(CVLib::GenericProgressCallback* propagateProgressCb) { m_propagateProgressCb = propagateProgressCb; m_propagateProgress = 0; }
+	void setPropagateCallback(cloudViewer::GenericProgressCallback* propagateProgressCb) { m_propagateProgressCb = propagateProgressCb; m_propagateProgress = 0; }
 
 	//inherited methods (see FastMarchingAlgorithm)
 	virtual int propagate() override;
@@ -89,7 +89,7 @@ public:
 protected:
 
 	//! A Fast Marching grid cell for planar facets extraction
-	class PlanarCell : public CVLib::FastMarching::Cell
+	class PlanarCell : public cloudViewer::FastMarching::Cell
 	{
 	public:
 		//! Default constructor
@@ -109,13 +109,13 @@ protected:
 		//! The local cell center
 		CCVector3 C;
 		//! the code of the equivalent cell in the octree
-		CVLib::DgmOctree::CellCode cellCode;
+		cloudViewer::DgmOctree::CellCode cellCode;
 		//! Cell planarity error
 		ScalarType planarError;
 	};
 
 	//inherited methods (see FastMarchingAlgorithm)
-	virtual float computeTCoefApprox(CVLib::FastMarching::Cell* currentCell, CVLib::FastMarching::Cell* neighbourCell) const override;
+	virtual float computeTCoefApprox(cloudViewer::FastMarching::Cell* currentCell, cloudViewer::FastMarching::Cell* neighbourCell) const override;
 	virtual int step() override;
 	virtual void initTrialCells() override;
 	virtual bool instantiateGrid(unsigned size) override { return instantiateGridTpl<PlanarCell*>(size); }
@@ -124,7 +124,7 @@ protected:
 	ScalarType addCellToCurrentFacet(unsigned index);
 
 	//! Current facet points
-	CVLib::ReferenceCloud* m_currentFacetPoints;
+	cloudViewer::ReferenceCloud* m_currentFacetPoints;
 
 	//! Current facet error
 	ScalarType m_currentFacetError;
@@ -133,13 +133,13 @@ protected:
 	ScalarType m_maxError;
 
 	//! Error measrue
-	CVLib::DistanceComputationTools::ERROR_MEASURES m_errorMeasure;
+	cloudViewer::DistanceComputationTools::ERROR_MEASURES m_errorMeasure;
 
 	//! Whether to use retro-projection error in propagation
 	bool m_useRetroProjectionError;
 
 	//! Propagation progress callback
-	CVLib::GenericProgressCallback* m_propagateProgressCb;
+	cloudViewer::GenericProgressCallback* m_propagateProgressCb;
 	//! Propagation progress
 	unsigned m_propagateProgress;
 };

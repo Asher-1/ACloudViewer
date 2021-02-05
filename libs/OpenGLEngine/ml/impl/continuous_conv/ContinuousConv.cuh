@@ -35,7 +35,7 @@
 #include "ml/impl/misc/MemoryAllocation.h"
 #include <Helper.h>
 
-using CVLib::utility::DivUp;
+using cloudViewer::utility::DivUp;
 
 namespace cloudViewer {
 namespace ml {

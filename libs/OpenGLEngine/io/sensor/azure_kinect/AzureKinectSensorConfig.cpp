@@ -40,7 +40,7 @@
 namespace cloudViewer {
 namespace io {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 static std::map<k4a_image_format_t, std::string> k4a_image_format_t_to_string{
         {K4A_IMAGE_FORMAT_COLOR_MJPG, "K4A_IMAGE_FORMAT_COLOR_MJPG"},

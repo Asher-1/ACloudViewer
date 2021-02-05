@@ -496,7 +496,7 @@ ccHObject* qRansacSD::executeRANSAC(ccPointCloud* ccPC, const RansacParams& para
 			bool saveNormals = true;
 			{
 #ifdef POINTSWITHINDEX
-				CVLib::ReferenceCloud refPcShape(ccPC);
+				cloudViewer::ReferenceCloud refPcShape(ccPC);
 				//we fill cloud with sub-part points
 				if (!refPcShape.reserve(static_cast<unsigned>(shapePointsCount)))
 				{

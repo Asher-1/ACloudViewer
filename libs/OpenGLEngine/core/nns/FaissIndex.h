@@ -64,7 +64,7 @@ public:
     bool SetTensorData(const Tensor &dataset_points) override;
 
     bool SetTensorData(const Tensor &dataset_points, double radius) override {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "FaissIndex::SetTensorData with radius not implemented.");
     }
 
@@ -74,12 +74,12 @@ public:
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor &query_points, const Tensor &radii) const override {
-        CVLib::utility::LogError("FaissIndex::SearchHybrid not implemented.");
+        cloudViewer::utility::LogError("FaissIndex::SearchHybrid not implemented.");
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor &query_points, double radius) const override {
-        CVLib::utility::LogError("FaissIndex::SearchHybrid not implemented.");
+        cloudViewer::utility::LogError("FaissIndex::SearchHybrid not implemented.");
     }
 
     // query_points must be float32.

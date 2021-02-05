@@ -23,7 +23,7 @@
 //local
 #include "eCV_io.h"
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 //Qt

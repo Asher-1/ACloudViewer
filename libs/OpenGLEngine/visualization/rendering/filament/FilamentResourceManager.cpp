@@ -67,7 +67,7 @@ namespace cloudViewer {
 namespace visualization {
 namespace rendering {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 namespace {
 template <class ResourceType>

@@ -25,7 +25,7 @@
 #include <QApplication>
 #include <QMessageBox>
 
-//CVLib
+//cloudViewer
 #include <CVConst.h>
 #include <CVLog.h>
 

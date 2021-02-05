@@ -28,7 +28,7 @@
 
 #include <Helper.h>
 
-using namespace CVLib::utility;
+using namespace cloudViewer::utility;
 
 namespace cloudViewer {
 namespace ml {

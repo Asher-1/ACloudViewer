@@ -65,7 +65,7 @@ CreateVertexAndImageVisibility(
 void SetProxyIntensityForVertex(
         const ccMesh& mesh,
         const std::vector<geometry::Image>& images_gray,
-        const CVLib::utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const cloudViewer::utility::optional<std::vector<ImageWarpingField>>& warping_fields,
         const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         std::vector<double>& proxy_intensity,
@@ -74,7 +74,7 @@ void SetProxyIntensityForVertex(
 void SetGeometryColorAverage(
         ccMesh& mesh,
         const std::vector<geometry::Image>& images_color,
-        const CVLib::utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const cloudViewer::utility::optional<std::vector<ImageWarpingField>>& warping_fields,
         const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         int image_boundary_margin = 10,

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -33,7 +33,7 @@
 #include <string>
 #include <vector>
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 namespace filesystem {
 
@@ -152,6 +152,6 @@ private:
 
 }  // namespace filesystem
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer
 
 #endif // CV_FILESYSTEM_HEADER

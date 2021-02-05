@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -25,7 +25,7 @@
 #include "SquareMatrix.h"
 
 
-namespace CVLib
+namespace cloudViewer
 {
 
 class GenericIndexedMesh;
@@ -281,7 +281,7 @@ class CV_CORE_LIB_API Neighbourhood
 		bool compute3DQuadric(double quadricEquation[10]);
 
 		//! Computes the covariance matrix
-		CVLib::SquareMatrixd computeCovarianceMatrix();
+		cloudViewer::SquareMatrixd computeCovarianceMatrix();
 
 		//! Returns the set 'radius' (i.e. the distance between the gravity center and the its farthest point)
 		PointCoordinateType computeLargestRadius();

@@ -41,7 +41,7 @@ using namespace io;
 namespace ply_lineset_reader {
 
 	struct PLYReaderState {
-		CVLib::utility::ConsoleProgressBar *progress_bar;
+		cloudViewer::utility::ConsoleProgressBar *progress_bar;
 		geometry::LineSet *lineset_ptr;
 		long vertex_index;
 		long vertex_num;
@@ -128,7 +128,7 @@ static const std::unordered_map<std::string,
 }  // unnamed namespace
 
 namespace io {
-using namespace CVLib;
+using namespace cloudViewer;
 std::shared_ptr<geometry::LineSet> CreateLineSetFromFile(
         const std::string &filename,
         const std::string &format,

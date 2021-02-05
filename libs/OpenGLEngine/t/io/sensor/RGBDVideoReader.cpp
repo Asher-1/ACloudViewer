@@ -52,12 +52,12 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
                                  uint64_t start_time,
                                  uint64_t end_time) {
     if (!IsOpened()) {
-        CVLib::utility::LogError("Null file handler. Please call Open().");
+        cloudViewer::utility::LogError("Null file handler. Please call Open().");
     }
-    bool success = CVLib::utility::filesystem::MakeDirectoryHierarchy(fmt::format("{}/color", frame_path));
-    success &= CVLib::utility::filesystem::MakeDirectoryHierarchy(fmt::format("{}/depth", frame_path));
+    bool success = cloudViewer::utility::filesystem::MakeDirectoryHierarchy(fmt::format("{}/color", frame_path));
+    success &= cloudViewer::utility::filesystem::MakeDirectoryHierarchy(fmt::format("{}/depth", frame_path));
     if (!success) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Could not create color or depth subfolder in {} or they "
                 "already exist.",
                 frame_path);
@@ -77,7 +77,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             auto color_file =
                     fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
             cloudViewer::io::WriteImage(color_file, im_color);
-            CVLib::utility::LogDebug("Written color image to {}", color_file);
+            cloudViewer::utility::LogDebug("Written color image to {}", color_file);
         }
 #pragma omp section
         {
@@ -85,24 +85,24 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
             auto depth_file =
                     fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
             cloudViewer::io::WriteImage(depth_file, im_depth);
-            CVLib::utility::LogDebug("Written depth image to {}", depth_file);
+            cloudViewer::utility::LogDebug("Written depth image to {}", depth_file);
         }
     }
-    CVLib::utility::LogInfo("Written {} depth and color images to {}/{{depth,color}}/",
+    cloudViewer::utility::LogInfo("Written {} depth and color images to {}/{{depth,color}}/",
                             idx, frame_path);
 }
 
 std::unique_ptr<RGBDVideoReader> RGBDVideoReader::Create(
         const std::string &filename) {
 #ifdef BUILD_LIBREALSENSE
-    if (CVLib::utility::ToLower(filename).compare(filename.length() - 4, 4, ".bag") ==
+    if (cloudViewer::utility::ToLower(filename).compare(filename.length() - 4, 4, ".bag") ==
         0) {
         auto reader = std::make_unique<RSBagReader>();
         reader->Open(filename);
         return reader;
     } else
 #endif
-        CVLib::utility::LogError("Unsupported file format for {}", filename);
+        cloudViewer::utility::LogError("Unsupported file format for {}", filename);
 }
 }  // namespace io
 }  // namespace t

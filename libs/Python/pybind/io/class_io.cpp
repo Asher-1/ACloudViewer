@@ -433,7 +433,7 @@ void pybind_class_io(py::module &m_io) {
 		bool success =
 			io::ReadIJsonConvertibleFromJSON(filename, config);
 		if (!success) {
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
 				"Invalid sensor config {}, using default instead",
 				filename);
 			return io::AzureKinectSensorConfig();
@@ -461,7 +461,7 @@ void pybind_class_io(py::module &m_io) {
 		bool success =
 			io::ReadIJsonConvertibleFromJSON(filename, metadata);
 		if (!success) {
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
 				"Invalid mkv metadata {}, using default instead",
 				filename);
 			return io::MKVMetadata();

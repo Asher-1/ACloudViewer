@@ -33,8 +33,8 @@
 using namespace cloudViewer;
 
 void PrintHelp() {
-    CVLib::utility::LogInfo("Usage :");
-    CVLib::utility::LogInfo("    > ecvHalfEdgeMesh <file>");
+    cloudViewer::utility::LogInfo("Usage :");
+    cloudViewer::utility::LogInfo("    > ecvHalfEdgeMesh <file>");
 }
 
 void ColorizeBoundaryVertices(geometry::ecvHalfEdgeMesh &halfMesh, const Eigen::Vector3d &color) {
@@ -55,7 +55,7 @@ void DrawGeometriesWithBackFace(const std::vector<std::shared_ptr<const ccHObjec
 
 int main(int argc, char *argv[]) {
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         PrintHelp();

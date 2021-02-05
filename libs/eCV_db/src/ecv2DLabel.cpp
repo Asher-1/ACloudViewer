@@ -166,7 +166,7 @@ static double GetAngle_deg(CCVector3 AB, CCVector3 AC)
 		dotprod = -1.0;
 	else if (dotprod > 1.0)
 		dotprod = 1.0;
-    return CVLib::RadiansToDegrees(acos(dotprod));
+    return cloudViewer::RadiansToDegrees(acos(dotprod));
 }
 
 cc2DLabel::cc2DLabel(QString name/*=QString()*/)
@@ -973,7 +973,7 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context)
 		{
 			if (!c_unitTriMarker)
 			{
-				CVLib::GenericIndexedCloudPersist* cloud = nullptr;
+				cloudViewer::GenericIndexedCloudPersist* cloud = nullptr;
 				{
 					ccPointCloud* m_polyVertices = new ccPointCloud("vertices");
 					m_polyVertices->resize(3);
@@ -988,7 +988,7 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context)
 					ccGenericPointCloud* gencloud = ccHObjectCaster::ToGenericPointCloud(m_polyVertices);
 					if (gencloud)
 					{
-						cloud = static_cast<CVLib::GenericIndexedCloudPersist*>(gencloud);
+						cloud = static_cast<cloudViewer::GenericIndexedCloudPersist*>(gencloud);
 					}
 				}
 

@@ -21,7 +21,7 @@
 //Local
 #include "ecvHObject.h"
 
-//CVLib
+//cloudViewer
 #include <DgmOctree.h>
 #include <ReferenceCloud.h>
 
@@ -33,9 +33,9 @@ class ccGenericPointCloud;
 class ccOctreeFrustumIntersector;
 
 //! Octree structure
-/** Extends the CVLib::DgmOctree class.
+/** Extends the cloudViewer::DgmOctree class.
 **/
-class ECV_DB_LIB_API ccOctree : public QObject, public CVLib::DgmOctree
+class ECV_DB_LIB_API ccOctree : public QObject, public cloudViewer::DgmOctree
 {
 	Q_OBJECT
 
@@ -114,12 +114,12 @@ public: //RENDERING
 public: //HELPERS
 	
 	//! Computes the average color of a set of points
-	static void ComputeAverageColor(CVLib::ReferenceCloud* subset,
+	static void ComputeAverageColor(cloudViewer::ReferenceCloud* subset,
 									ccGenericPointCloud* sourceCloud,
 									ColorCompType meanCol[]);
 
 	//! Computes the average normal of a set of points
-	static CCVector3 ComputeAverageNorm(CVLib::ReferenceCloud* subset,
+	static CCVector3 ComputeAverageNorm(cloudViewer::ReferenceCloud* subset,
 										ccGenericPointCloud* sourceCloud);
 
 signals:
@@ -129,17 +129,17 @@ signals:
 
 protected: ////RENDERING
 
-	static bool DrawCellAsABox(	const CVLib::DgmOctree::octreeCell& cell,
+	static bool DrawCellAsABox(	const cloudViewer::DgmOctree::octreeCell& cell,
 								void** additionalParameters,
-								CVLib::NormalizedProgress* nProgress = 0);
+								cloudViewer::NormalizedProgress* nProgress = 0);
 
-	static bool DrawCellAsAPoint(	const CVLib::DgmOctree::octreeCell& cell,
+	static bool DrawCellAsAPoint(	const cloudViewer::DgmOctree::octreeCell& cell,
 									void** additionalParameters,
-									CVLib::NormalizedProgress* nProgress = 0);
+									cloudViewer::NormalizedProgress* nProgress = 0);
 
-	static bool DrawCellAsAPrimitive(	const CVLib::DgmOctree::octreeCell& cell,
+	static bool DrawCellAsAPrimitive(	const cloudViewer::DgmOctree::octreeCell& cell,
 										void** additionalParameters,
-										CVLib::NormalizedProgress* nProgress = 0);
+										cloudViewer::NormalizedProgress* nProgress = 0);
 
 protected: //MEMBERS
 

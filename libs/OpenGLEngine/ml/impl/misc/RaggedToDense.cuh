@@ -114,7 +114,7 @@ void RaggedToDenseCUDA(const cudaStream_t& stream,
                        const T* const default_value,
                        const size_t default_value_size,
                        T* out_values) {
-    using namespace CVLib::utility;
+    using namespace cloudViewer::utility;
     const int BLOCKSIZE = 128;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(DivUp(row_splits_size - 1, block.x));

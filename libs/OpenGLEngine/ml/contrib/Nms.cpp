@@ -47,7 +47,7 @@ namespace cloudViewer {
 namespace ml {
 namespace contrib {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 template <typename T>
 static std::vector<int64_t> SortIndexes(const T *values,

@@ -56,10 +56,10 @@ static std::tuple<float, float, float> Project3DPointAndGetUVDepth(
 template <typename T>
 static std::tuple<bool, T> QueryImageIntensity(
         const geometry::Image& img,
-        const CVLib::utility::optional<ImageWarpingField>& optional_warping_field,
+        const cloudViewer::utility::optional<ImageWarpingField>& optional_warping_field,
         const Eigen::Vector3d& V,
         const camera::PinholeCameraParameters& camera_parameter,
-        CVLib::utility::optional<int> channel,
+        cloudViewer::utility::optional<int> channel,
         int image_boundary_margin) {
     float u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera_parameter);
@@ -123,7 +123,7 @@ std::vector<geometry::Image> CreateDepthBoundaryMasks(
     auto n_images = images_depth.size();
     std::vector<geometry::Image> masks;
     for (size_t i = 0; i < n_images; i++) {
-        CVLib::utility::LogDebug("[MakeDepthMasks] geometry::Image {:d}/{:d}", i,
+        cloudViewer::utility::LogDebug("[MakeDepthMasks] geometry::Image {:d}/{:d}", i,
                           n_images);
         masks.push_back(*images_depth[i].CreateDepthBoundaryMask(
                 depth_threshold_for_discontinuity_check,
@@ -187,7 +187,7 @@ CreateVertexAndImageVisibility(
 
     for (int camera_id = 0; camera_id < int(n_camera); camera_id++) {
         size_t n_visible_vertex = visibility_image_to_vertex[camera_id].size();
-        CVLib::utility::LogDebug(
+        cloudViewer::utility::LogDebug(
                 "[cam {:d}]: {:d}/{:d} ({:.5f}%) vertices are visible",
                 camera_id, n_visible_vertex, n_vertex,
                 double(n_visible_vertex) / n_vertex * 100);
@@ -200,7 +200,7 @@ CreateVertexAndImageVisibility(
 void SetProxyIntensityForVertex(
         const ccMesh& mesh,
         const std::vector<geometry::Image>& images_gray,
-        const CVLib::utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const cloudViewer::utility::optional<std::vector<ImageWarpingField>>& warping_fields,
         const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         std::vector<double>& proxy_intensity,
@@ -221,11 +221,11 @@ void SetProxyIntensityForVertex(
                 std::tie(valid, gray) = QueryImageIntensity<float>(
                         images_gray[j], warping_fields.value()[j],
                         mesh.getVertice(i), camera_trajectory.parameters_[j],
-                        CVLib::utility::nullopt, image_boundary_margin);
+                        cloudViewer::utility::nullopt, image_boundary_margin);
             } else {
                 std::tie(valid, gray) = QueryImageIntensity<float>(
-                        images_gray[j], CVLib::utility::nullopt, mesh.getVertice(i),
-                        camera_trajectory.parameters_[j], CVLib::utility::nullopt,
+                        images_gray[j], cloudViewer::utility::nullopt, mesh.getVertice(i),
+                        camera_trajectory.parameters_[j], cloudViewer::utility::nullopt,
                         image_boundary_margin);
             }
 
@@ -243,7 +243,7 @@ void SetProxyIntensityForVertex(
 void SetGeometryColorAverage(
         ccMesh& mesh,
         const std::vector<geometry::Image>& images_color,
-        const CVLib::utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const cloudViewer::utility::optional<std::vector<ImageWarpingField>>& warping_fields,
         const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         int image_boundary_margin,
@@ -253,7 +253,7 @@ void SetGeometryColorAverage(
     cloud->unallocateColors();
     if(!cloud->resizeTheRGBTable())
     {
-        CVLib::utility::LogError("[SetGeometryColorAverage] not enough memory!");
+        cloudViewer::utility::LogError("[SetGeometryColorAverage] not enough memory!");
     }
     std::vector<size_t> valid_vertices;
     std::vector<size_t> invalid_vertices;
@@ -266,11 +266,11 @@ void SetGeometryColorAverage(
             int j = visibility_vertex_to_image[i][iter];
             uint8_t r_temp, g_temp, b_temp;
             bool valid = false;
-            CVLib::utility::optional<ImageWarpingField> optional_warping_field;
+            cloudViewer::utility::optional<ImageWarpingField> optional_warping_field;
             if (warping_fields.has_value()) {
                 optional_warping_field = warping_fields.value()[j];
             } else {
-                optional_warping_field = CVLib::utility::nullopt;
+                optional_warping_field = cloudViewer::utility::nullopt;
             }
             std::tie(valid, r_temp) = QueryImageIntensity<uint8_t>(
                     images_color[j], optional_warping_field, mesh.getVertice(i),

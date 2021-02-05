@@ -33,7 +33,7 @@
 #include <Helper.h>
 #include "utility/MiniVec.h"
 
-using namespace CVLib::utility;
+using namespace cloudViewer::utility;
 using namespace cloudViewer::utility;
 
 namespace cloudViewer {

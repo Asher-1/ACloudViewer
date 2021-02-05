@@ -34,20 +34,20 @@
 using namespace cloudViewer;
 
 int main(int argc, char **argv) {
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     if (argc != 2) {
         // clang-format off
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("    > PoseGraph [posegraph_for_optimization].json");
-        CVLib::utility::LogInfo("    The program will :");
-        CVLib::utility::LogInfo("    1) Generate random PoseGraph");
-        CVLib::utility::LogInfo("    2) Save random PoseGraph as test_pose_graph.json");
-        CVLib::utility::LogInfo("    3) Reads PoseGraph from test_pose_graph.json");
-        CVLib::utility::LogInfo("    4) Save loaded PoseGraph as test_pose_graph_copy.json");
-        CVLib::utility::LogInfo("    5) Load PoseGraph from [posegraph_for_optimization].json");
-        CVLib::utility::LogInfo("    6) Optimize PoseGraph");
-        CVLib::utility::LogInfo("    7) Save PoseGraph to pose_graph_optimized.json");
+        cloudViewer::utility::LogInfo("Usage:");
+        cloudViewer::utility::LogInfo("    > PoseGraph [posegraph_for_optimization].json");
+        cloudViewer::utility::LogInfo("    The program will :");
+        cloudViewer::utility::LogInfo("    1) Generate random PoseGraph");
+        cloudViewer::utility::LogInfo("    2) Save random PoseGraph as test_pose_graph.json");
+        cloudViewer::utility::LogInfo("    3) Reads PoseGraph from test_pose_graph.json");
+        cloudViewer::utility::LogInfo("    4) Save loaded PoseGraph as test_pose_graph_copy.json");
+        cloudViewer::utility::LogInfo("    5) Load PoseGraph from [posegraph_for_optimization].json");
+        cloudViewer::utility::LogInfo("    6) Optimize PoseGraph");
+        cloudViewer::utility::LogInfo("    7) Save PoseGraph to pose_graph_optimized.json");
         // clang-format on
         return 1;
     }

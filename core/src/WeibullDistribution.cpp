@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLib                                    #
+//#                               cloudViewer                                    #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -29,7 +29,7 @@
 #include <ScalarField.h>
 #include <ScalarFieldTools.h>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 //GAMMA function
 static double Gamma_cc(double x)

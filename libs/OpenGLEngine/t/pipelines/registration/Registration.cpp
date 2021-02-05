@@ -37,7 +37,7 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 static RegistrationResult GetRegistrationResultAndCorrespondences(
         const geometry::PointCloud &source,

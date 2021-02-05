@@ -21,7 +21,7 @@
 
 #include "ecvGenericPointCloud.h"
 
-// CVLib
+// cloudViewer
 #include <DistanceComputationTools.h>
 #include <GenericProgressCallback.h>
 #include <Neighbourhood.h>
@@ -159,7 +159,7 @@ void ccGenericPointCloud::setOctree(ccOctree::Shared octree, bool autoAddChild/*
 	}
 }
 
-ccOctree::Shared ccGenericPointCloud::computeOctree(CVLib::GenericProgressCallback* progressCb, bool autoAddChild/*=true*/)
+ccOctree::Shared ccGenericPointCloud::computeOctree(cloudViewer::GenericProgressCallback* progressCb, bool autoAddChild/*=true*/)
 {
 	deleteOctree();
 	
@@ -311,7 +311,7 @@ bool ccGenericPointCloud::pointPicking(	const CCVector2d& clickPos,
 		{
 			//we can now use the octree to do faster point picking
 #ifdef QT_DEBUG
-			CVLib::ScalarField* sf = nullptr;
+			cloudViewer::ScalarField* sf = nullptr;
 			if (getClassID() == CV_TYPES::POINT_CLOUD)
 			{
 				ccPointCloud* pc = static_cast<ccPointCloud*>(this);
@@ -445,14 +445,14 @@ bool ccGenericPointCloud::pointPicking(	const CCVector2d& clickPos,
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 ccGenericPointCloud::computeMeanAndCovariance() const
 {
-	CCVector3 gc = CVLib::GeometricalAnalysisTools::ComputeGravityCenter(this);
-	CVLib::SquareMatrixd covaMatrix = CVLib::GeometricalAnalysisTools::ComputeCovarianceMatrix(this, gc.u);
+	CCVector3 gc = cloudViewer::GeometricalAnalysisTools::ComputeGravityCenter(this);
+	cloudViewer::SquareMatrixd covaMatrix = cloudViewer::GeometricalAnalysisTools::ComputeCovarianceMatrix(this, gc.u);
 	Eigen::Matrix3d cov;
 	covaMatrix.toArray(cov.data());
 	return std::make_tuple(CCVector3d::fromArray(gc), cov);
 }
 
-CVLib::ReferenceCloud* ccGenericPointCloud::getTheVisiblePoints(const VisibilityTableType* visTable/*=nullptr*/, bool silent/*=false*/) const
+cloudViewer::ReferenceCloud* ccGenericPointCloud::getTheVisiblePoints(const VisibilityTableType* visTable/*=nullptr*/, bool silent/*=false*/) const
 {
 	if (!visTable)
 	{
@@ -480,7 +480,7 @@ CVLib::ReferenceCloud* ccGenericPointCloud::getTheVisiblePoints(const Visibility
 	}
 
 	//we create an entity with the 'visible' vertices only
-	CVLib::ReferenceCloud* rc = new CVLib::ReferenceCloud(const_cast<ccGenericPointCloud*>(this));
+	cloudViewer::ReferenceCloud* rc = new cloudViewer::ReferenceCloud(const_cast<ccGenericPointCloud*>(this));
 
 	if (pointCount)
 	{

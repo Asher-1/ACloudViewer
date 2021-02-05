@@ -40,7 +40,7 @@ namespace cloudViewer {
 namespace t {
 namespace io {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 struct PLYReaderState {
     struct AttrState {

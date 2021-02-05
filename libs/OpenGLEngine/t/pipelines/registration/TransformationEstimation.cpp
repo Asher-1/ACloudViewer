@@ -31,7 +31,7 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,

@@ -68,7 +68,7 @@ static const std::unordered_map<
 }  // unnamed namespace
 
 namespace io {
-using namespace CVLib;
+using namespace cloudViewer;
 
 std::shared_ptr<pipelines::color_map::ImageWarpingField> CreateImageWarpingFieldFromFile(
         const std::string &filename) {

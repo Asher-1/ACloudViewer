@@ -23,7 +23,7 @@
 //common
 #include <ecvQtHelpers.h>
 
-//CVLib
+//cloudViewer
 #include <DgmOctree.h>
 #include <CloudSamplingTools.h>
 #include <GeometricalAnalysisTools.h>
@@ -190,9 +190,9 @@ double ccRegistrationDlg::getMinRMSDecrease() const
 ccRegistrationDlg::ConvergenceMethod ccRegistrationDlg::getConvergenceMethod() const
 {
 	if (errorCriterion->isChecked())
-		return CVLib::ICPRegistrationTools::MAX_ERROR_CONVERGENCE;
+		return cloudViewer::ICPRegistrationTools::MAX_ERROR_CONVERGENCE;
 	else
-		return CVLib::ICPRegistrationTools::MAX_ITER_CONVERGENCE;
+		return cloudViewer::ICPRegistrationTools::MAX_ITER_CONVERGENCE;
 }
 
 int ccRegistrationDlg::getTransformationFilters() const
@@ -201,13 +201,13 @@ int ccRegistrationDlg::getTransformationFilters() const
 	switch (rotComboBox->currentIndex())
 	{
 	case 1:
-		filters |= CVLib::RegistrationTools::SKIP_RYZ;
+		filters |= cloudViewer::RegistrationTools::SKIP_RYZ;
 		break;
 	case 2:
-		filters |= CVLib::RegistrationTools::SKIP_RXZ;
+		filters |= cloudViewer::RegistrationTools::SKIP_RXZ;
 		break;
 	case 3:
-		filters |= CVLib::RegistrationTools::SKIP_RXY;
+		filters |= cloudViewer::RegistrationTools::SKIP_RXY;
 		break;
 	default:
 		//nothing to do
@@ -215,11 +215,11 @@ int ccRegistrationDlg::getTransformationFilters() const
 	}
 
 	if (!TxCheckBox->isChecked())
-		filters |= CVLib::RegistrationTools::SKIP_TX;
+		filters |= cloudViewer::RegistrationTools::SKIP_TX;
 	if (!TyCheckBox->isChecked())
-		filters |= CVLib::RegistrationTools::SKIP_TY;
+		filters |= cloudViewer::RegistrationTools::SKIP_TY;
 	if (!TzCheckBox->isChecked())
-		filters |= CVLib::RegistrationTools::SKIP_TZ;
+		filters |= cloudViewer::RegistrationTools::SKIP_TZ;
 
 	return filters;
 }

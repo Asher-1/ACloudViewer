@@ -66,7 +66,7 @@ namespace {
 static std::string g_file_dialog_dir;
 }  // namespace
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 class DirEntry {
 public:

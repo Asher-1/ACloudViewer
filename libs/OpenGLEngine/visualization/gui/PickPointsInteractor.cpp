@@ -86,7 +86,7 @@ uint32_t GetIndexForColor(geometry::Image *image, int x, int y) {
 
 }  // namespace
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 // ----------------------------------------------------------------------------
 class SelectionIndexLookup {

@@ -83,7 +83,7 @@ std::string FindResourcePath(int argc, const char *argv[]) {
         // is absolute path, we're done
     } else {
         // relative path:  prepend working directory
-        auto cwd = CVLib::utility::filesystem::GetWorkingDirectory();
+        auto cwd = cloudViewer::utility::filesystem::GetWorkingDirectory();
 #ifdef __APPLE__
         // When running an app from the command line with the full relative
         // path (e.g. `bin/CloudViewer.app/Contents/MacOS/CloudViewer`), the working
@@ -103,14 +103,14 @@ std::string FindResourcePath(int argc, const char *argv[]) {
 #endif  // __APPLE__
 
     auto resource_path = path + "/resources";
-    if (!CVLib::utility::filesystem::DirectoryExists(resource_path)) {
+    if (!cloudViewer::utility::filesystem::DirectoryExists(resource_path)) {
         return path + "/../resources";  // building with Xcode
     }
     return resource_path;
 }
 
 std::string FindFontPath(const std::string &font) {
-    using namespace CVLib::utility::filesystem;
+    using namespace cloudViewer::utility::filesystem;
 
     if (FileExists(font)) {
         return font;
@@ -198,7 +198,7 @@ std::string FindFontPath(const std::string &font) {
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
 struct Application::Impl {
     bool is_initialized_ = false;
@@ -343,7 +343,7 @@ void Application::Initialize() {
     // We don't have a great way of getting the process name, so let's hope that
     // the current directory is where the resources are located. This is a
     // safe assumption when running on macOS and Windows normally.
-    auto path = CVLib::utility::filesystem::GetWorkingDirectory();
+    auto path = cloudViewer::utility::filesystem::GetWorkingDirectory();
     // Copy to C string, as some implementations of std::string::c_str()
     // return a very temporary pointer.
     char *argv = strdup(path.c_str());

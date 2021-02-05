@@ -38,7 +38,7 @@ namespace geometry {
 namespace kernel {
 namespace tsdf {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 void Touch(const core::Tensor& points,
            core::Tensor& voxel_block_coords,

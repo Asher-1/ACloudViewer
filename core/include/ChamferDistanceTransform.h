@@ -7,7 +7,7 @@
 #include "Grid3D.h"
 #include "MathTools.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 
 	class GenericProgressCallback;

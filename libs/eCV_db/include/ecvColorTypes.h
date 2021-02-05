@@ -117,7 +117,7 @@ namespace ecvColor
 			{
 				if (t(0) > 1 || t(1) > 1 || t(2) > 1)
 				{
-					CVLib::utility::LogWarning("[ecvColor] Find invalid color: ");
+					cloudViewer::utility::LogWarning("[ecvColor] Find invalid color: ");
 					std::cout << t << std::endl;
 				}
 				

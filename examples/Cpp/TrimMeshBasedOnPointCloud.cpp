@@ -29,7 +29,7 @@
 #include <ecvHObjectCaster.h>
 
 void PrintHelp() {
-    using namespace CVLib;
+    using namespace cloudViewer;
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > TrimMeshBasedOnPointCloud [options]");
@@ -46,7 +46,7 @@ void PrintHelp() {
 }
 
 int main(int argc, char *argv[]) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
     if (argc < 4 || utility::ProgramOptionExists(argc, argv, "--help") ||
         utility::ProgramOptionExists(argc, argv, "-h")) {

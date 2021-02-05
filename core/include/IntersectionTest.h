@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -31,7 +31,7 @@
 
 #include <Eigen/Dense>
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 class CV_CORE_LIB_API IntersectionTest {
@@ -83,6 +83,6 @@ public:
 };
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer
 
 #endif // CV_INTERSECTION_TEST_HEADER

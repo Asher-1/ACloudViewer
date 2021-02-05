@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -23,7 +23,7 @@
 #include "Neighbourhood.h"
 #include "ParallelSort.h"
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 TrueKdTree::TrueKdTree(GenericIndexedCloudPersist* cloud)
 	: m_root(nullptr)

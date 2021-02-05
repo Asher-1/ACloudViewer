@@ -49,7 +49,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-using namespace CVLib;
+using namespace cloudViewer;
 
 bool VisualizerWithEditing::AddGeometry(
         std::shared_ptr<const ccHObject> geometry_ptr,

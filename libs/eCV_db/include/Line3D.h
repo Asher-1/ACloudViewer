@@ -122,7 +122,7 @@ public:
     /// plane taking into account line semantics. Returns an empty result if
     /// there is no intersection. On a Line3D this returns the same result as
     /// .Line().intersectionParameter(plane)
-    virtual CVLib::utility::optional<double> IntersectionParameter(
+    virtual cloudViewer::utility::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const;
 
     /// \brief Calculates the parameter of a point projected onto the line
@@ -169,7 +169,7 @@ public:
     /// \warning A line that lies exactly in one of the AABB's planes within the
     /// double floating point precision will not intersect correctly by this
     /// method
-    virtual CVLib::utility::optional<double> SlabAABB(const ccBBox& box) const;
+    virtual cloudViewer::utility::optional<double> SlabAABB(const ccBBox& box) const;
 
     /// \brief Returns the lower intersection parameter for a line with an
     /// axis aligned bounding box or empty if no intersection. This method is
@@ -193,7 +193,7 @@ public:
     /// is important.  In such cases if performance is important, a simple
     /// custom implementation based on the problem directionality will likely
     /// outperform even the slab method.
-    virtual CVLib::utility::optional<double> ExactAABB(const ccBBox& box) const;
+    virtual cloudViewer::utility::optional<double> ExactAABB(const ccBBox& box) const;
 
     /// \brief Computes the two corresponding parameters of the closest distance
     /// between two Line3D objects, including derived types Ray3D and Segment3D,
@@ -276,7 +276,7 @@ public:
     /// there is no intersection. On a Ray3D this means that intersections
     /// behind the origin are invalid, so the return value will always be
     /// positive.
-    CVLib::utility::optional<double> IntersectionParameter(
+    cloudViewer::utility::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const override;
 
     /// \brief Returns the lower intersection parameter for a ray with an
@@ -299,7 +299,7 @@ public:
     /// \warning A ray that lies exactly in one of the AABB's planes within the
     /// double floating point precision will not intersect correctly by this
     /// method
-    CVLib::utility::optional<double> SlabAABB(const ccBBox& box) const override;
+    cloudViewer::utility::optional<double> SlabAABB(const ccBBox& box) const override;
 
     /// \brief Clamps/bounds a parameter value to the closest valid place where
     /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
@@ -374,7 +374,7 @@ public:
     /// plane taking into account segment semantics. Returns an empty result if
     /// there is no intersection. On a Segment3D this means that intersections
     /// behind the origin and beyond the endpoint are invalid.
-    CVLib::utility::optional<double> IntersectionParameter(
+    cloudViewer::utility::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const override;
 
     /// \brief Returns the lower intersection parameter for a segment with an
@@ -399,7 +399,7 @@ public:
     /// \warning A segment that lies exactly in one of the AABB's planes within
     /// the double floating point precision will not intersect correctly by this
     /// method
-    CVLib::utility::optional<double> SlabAABB(const ccBBox& box) const override;
+    cloudViewer::utility::optional<double> SlabAABB(const ccBBox& box) const override;
 
     /// \brief Returns the lower intersection parameter for a segment with an
     /// axis aligned bounding box or empty if no intersection. This method is
@@ -420,7 +420,7 @@ public:
     /// intersection is important.  In such cases if performance is important, a
     /// simple custom implementation based on the problem directionality will
     /// likely outperform even the slab method.
-    CVLib::utility::optional<double> ExactAABB(const ccBBox& box) const override;
+    cloudViewer::utility::optional<double> ExactAABB(const ccBBox& box) const override;
 
     /// \brief Clamps/bounds a parameter value to the closest valid place where
     /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D

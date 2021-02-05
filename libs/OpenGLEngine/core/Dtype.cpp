@@ -55,7 +55,7 @@ Dtype::Dtype(DtypeCode dtype_code, int64_t byte_size, const std::string &name)
     (void)dtype_code_;
     (void)byte_size_;
     if (name.size() > max_name_len_ - 1) {
-        CVLib::utility::LogError("Name {} must be shorter.", name);
+        cloudViewer::utility::LogError("Name {} must be shorter.", name);
     } else {
         std::strcpy(name_, name.c_str());
     }

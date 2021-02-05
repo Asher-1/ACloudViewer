@@ -53,13 +53,13 @@ void ClassMethodDocInject(py::module& pybind_module,
     PyObject* module = pybind_module.ptr();
     PyObject* class_obj = PyObject_GetAttrString(module, class_name.c_str());
     if (class_obj == nullptr) {
-        CVLib::utility::LogWarning("{} docstring failed to inject.", class_name);
+        cloudViewer::utility::LogWarning("{} docstring failed to inject.", class_name);
         return;
     }
     PyObject* class_method_obj =
             PyObject_GetAttrString(class_obj, function_name.c_str());
     if (class_method_obj == nullptr) {
-        CVLib::utility::LogWarning("{}::{} docstring failed to inject.", class_name,
+        cloudViewer::utility::LogWarning("{}::{} docstring failed to inject.", class_name,
                             function_name);
         return;
     }
@@ -115,7 +115,7 @@ void FunctionDocInject(py::module& pybind_module,
     PyObject* module = pybind_module.ptr();
     PyObject* f_obj = PyObject_GetAttrString(module, function_name.c_str());
     if (f_obj == nullptr) {
-        CVLib::utility::LogWarning("{} docstring failed to inject.", function_name);
+        cloudViewer::utility::LogWarning("{} docstring failed to inject.", function_name);
         return;
     }
     if (Py_TYPE(f_obj) != &PyCFunction_Type) {
@@ -160,7 +160,7 @@ void FunctionDoc::ParseSummary() {
         size_t result_type_pos = arrow_pos + 4;
         size_t summary_start_pos =
                 result_type_pos +
-                CVLib::utility::WordLength(pybind_doc_, result_type_pos, "._:,[]() ,");
+                cloudViewer::utility::WordLength(pybind_doc_, result_type_pos, "._:,[]() ,");
         size_t summary_len = pybind_doc_.size() - summary_start_pos;
         if (summary_len > 0) {
             std::string summary =
@@ -188,7 +188,7 @@ void FunctionDoc::ParseReturn() {
         size_t result_type_pos = arrow_pos + 4;
         std::string return_type = pybind_doc_.substr(
                 result_type_pos,
-                CVLib::utility::WordLength(pybind_doc_, result_type_pos,
+                cloudViewer::utility::WordLength(pybind_doc_, result_type_pos,
                                     "._:,[]() ,"));
         return_doc_.type_ = StringCleanAll(return_type);
     }
@@ -246,7 +246,7 @@ std::string FunctionDoc::ToGoogleDocString() const {
             }
             if (argument_doc.long_default_ != "") {
                 std::vector<std::string> lines;
-                CVLib::utility::SplitString(lines, argument_doc.long_default_, "\n",
+                cloudViewer::utility::SplitString(lines, argument_doc.long_default_, "\n",
                                      true);
                 rc << " Default value:" << std::endl << std::endl;
                 bool prev_line_is_listing = false;
@@ -289,7 +289,7 @@ std::string FunctionDoc::NamespaceFix(const std::string& s) {
 
 std::string FunctionDoc::StringCleanAll(std::string& s,
                                         const std::string& white_space) {
-    std::string rc = CVLib::utility::StripString(s, white_space);
+    std::string rc = cloudViewer::utility::StripString(s, white_space);
     rc = NamespaceFix(rc);
     return rc;
 }

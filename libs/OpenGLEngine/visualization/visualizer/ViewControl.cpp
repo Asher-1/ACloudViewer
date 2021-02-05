@@ -40,7 +40,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-using namespace CVLib;
+using namespace cloudViewer;
 
 const double ViewControl::FIELD_OF_VIEW_MAX = 90.0;
 const double ViewControl::FIELD_OF_VIEW_MIN = 5.0;

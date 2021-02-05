@@ -21,7 +21,7 @@
 //Local
 #include "eCV_db.h"
 
-//CVLib
+//cloudViewer
 #include <DgmOctree.h>
 
 //Qt
@@ -47,7 +47,7 @@ public:
 	//! Inits the dialog with an octree
 	/** Alternative to ccOctreeSpinBox::setCloud
 	**/
-	void setOctree(CVLib::DgmOctree* octree);
+	void setOctree(cloudViewer::DgmOctree* octree);
 
 protected slots:
 

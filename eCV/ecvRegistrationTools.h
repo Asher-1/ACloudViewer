@@ -18,7 +18,7 @@
 #ifndef ECV_REGISTRATION_TOOLS_HEADER
 #define ECV_REGISTRATION_TOOLS_HEADER
 
-//CVLib
+//cloudViewer
 #include <RegistrationTools.h>
 
 //ECV_DB_LIB
@@ -47,12 +47,12 @@ public:
 					unsigned maxIterationCount,
 					unsigned randomSamplingLimit,
 					bool removeFarthestPoints,
-					CVLib::ICPRegistrationTools::CONVERGENCE_TYPE method,
+					cloudViewer::ICPRegistrationTools::CONVERGENCE_TYPE method,
 					bool adjustScale,
 					double finalOverlapRatio = 1.0,
 					bool useDataSFAsWeights = false,
 					bool useModelSFAsWeights = false,
-					int transformationFilters = CVLib::ICPRegistrationTools::SKIP_NONE,
+					int transformationFilters = cloudViewer::ICPRegistrationTools::SKIP_NONE,
 					int maxThreadCount = 0,
 					QWidget* parent = nullptr);
 

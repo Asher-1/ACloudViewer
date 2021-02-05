@@ -132,18 +132,18 @@ bool CommandCrossSection::process(ccCommandLineInterface &cmd)
 	}
 
     //safety checks
-    if ( CVLib::LessThanEpsilon( boxThickness.x )
-         ||	CVLib::LessThanEpsilon( boxThickness.y )
-         ||	CVLib::LessThanEpsilon( boxThickness.z )
+    if ( cloudViewer::LessThanEpsilon( boxThickness.x )
+         ||	cloudViewer::LessThanEpsilon( boxThickness.y )
+         ||	cloudViewer::LessThanEpsilon( boxThickness.z )
          )
     {
         return cmd.error(QString("Invalid box thickness"));
     }
 
     CCVector3 repeatStep = boxThickness + CCVector3(repeatGap, repeatGap, repeatGap);
-    if ( (repeatDim[0] && CVLib::LessThanEpsilon( repeatStep.x ) )
-         ||	(repeatDim[1] && CVLib::LessThanEpsilon( repeatStep.y ) )
-         ||	(repeatDim[2] && CVLib::LessThanEpsilon( repeatStep.z ) )
+    if ( (repeatDim[0] && cloudViewer::LessThanEpsilon( repeatStep.x ) )
+         ||	(repeatDim[1] && cloudViewer::LessThanEpsilon( repeatStep.y ) )
+         ||	(repeatDim[2] && cloudViewer::LessThanEpsilon( repeatStep.z ) )
          )
     {
         return cmd.error(QString("Repeat gap can't be equal or smaller than 'minus' box width"));

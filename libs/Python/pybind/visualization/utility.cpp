@@ -118,12 +118,12 @@ void pybind_visualization_utility_methods(py::module &m) {
 			 int top, bool point_show_normal, bool mesh_show_wireframe,
 			 bool mesh_show_back_face, bool show_coordinate_frame) {
               std::string current_dir =
-                      CVLib::utility::filesystem::GetWorkingDirectory();
+                      cloudViewer::utility::filesystem::GetWorkingDirectory();
               visualization::DrawGeometries(
 				  geometry_list, window_name, width,
 				  height, left, top, point_show_normal, 
 				  mesh_show_wireframe, mesh_show_back_face, show_coordinate_frame);
-              CVLib::utility::filesystem::ChangeWorkingDirectory(current_dir);
+              cloudViewer::utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of ccHObject objects",
           "geometry_list"_a, "window_name"_a = "cloudViewer", "width"_a = 1920,
@@ -137,12 +137,12 @@ void pybind_visualization_utility_methods(py::module &m) {
 			bool mesh_show_back_face, bool show_coordinate_frame, Eigen::Vector3d lookat,
 			Eigen::Vector3d up, Eigen::Vector3d front, double zoom) {
 		std::string current_dir =
-			CVLib::utility::filesystem::GetWorkingDirectory();
+			cloudViewer::utility::filesystem::GetWorkingDirectory();
 		visualization::DrawGeometries(
 			geometry_list, window_name, width, height, left, top,
 			point_show_normal, mesh_show_wireframe,
 			mesh_show_back_face, show_coordinate_frame, &lookat, &up, &front, &zoom);
-		CVLib::utility::filesystem::ChangeWorkingDirectory(current_dir);
+		cloudViewer::utility::filesystem::ChangeWorkingDirectory(current_dir);
 		},
 		"Function to draw a list of ccHObject objects",
 		"geometry_list"_a, "window_name"_a = "cloudViewer", "width"_a = 1920,
@@ -159,11 +159,11 @@ void pybind_visualization_utility_methods(py::module &m) {
              const std::string &window_name, int width, int height, int left,
              int top, const std::string &json_filename) {
               std::string current_dir =
-                      CVLib::utility::filesystem::GetWorkingDirectory();
+                      cloudViewer::utility::filesystem::GetWorkingDirectory();
               visualization::DrawGeometriesWithCustomAnimation(
                       geometry_ptrs, window_name, width, height, left, top,
                       json_filename);
-              CVLib::utility::filesystem::ChangeWorkingDirectory(current_dir);
+              cloudViewer::utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of ccHObject objects with a GUI "
           "that "
@@ -181,11 +181,11 @@ void pybind_visualization_utility_methods(py::module &m) {
              const std::string &window_name, int width, int height, int left,
              int top) {
               std::string current_dir =
-                      CVLib::utility::filesystem::GetWorkingDirectory();
+                      cloudViewer::utility::filesystem::GetWorkingDirectory();
               visualization::DrawGeometriesWithAnimationCallback(
                       geometry_ptrs, callback_func, window_name, width, height,
                       left, top);
-              CVLib::utility::filesystem::ChangeWorkingDirectory(current_dir);
+              cloudViewer::utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of ccHObject objects with a "
           "customized "
@@ -205,11 +205,11 @@ void pybind_visualization_utility_methods(py::module &m) {
              const std::string &window_name, int width, int height, int left,
              int top) {
               std::string current_dir =
-                      CVLib::utility::filesystem::GetWorkingDirectory();
+                      cloudViewer::utility::filesystem::GetWorkingDirectory();
               visualization::DrawGeometriesWithKeyCallbacks(
                       geometry_ptrs, key_to_callback, window_name, width,
                       height, left, top);
-              CVLib::utility::filesystem::ChangeWorkingDirectory(current_dir);
+              cloudViewer::utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of ccHObject objects with a "
           "customized "

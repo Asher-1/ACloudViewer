@@ -42,7 +42,7 @@ bool f_traverse(const std::shared_ptr<geometry::OctreeNode>& node,
             for (const auto& c : internal_point_node->children_) {
                 if (c) num_children++;
             }
-            CVLib::utility::LogInfo(
+            cloudViewer::utility::LogInfo(
                     "Internal node at depth {} with origin {} has "
                     "{} children and {} points",
                     node_info->depth_, node_info->origin_, num_children,
@@ -50,14 +50,14 @@ bool f_traverse(const std::shared_ptr<geometry::OctreeNode>& node,
         }
     } else if (auto leaf_node = std::dynamic_pointer_cast<
                        geometry::OctreePointColorLeafNode>(node)) {
-        CVLib::utility::LogInfo(
+        cloudViewer::utility::LogInfo(
                 "Node at depth {} with origin {} has"
                 "color {} and {} points",
                 node_info->depth_, node_info->origin_, leaf_node->color_,
                 leaf_node->indices_.size());
-        // CVLib::utility::LogInfo("Indices: {}", leaf_node->indices_);
+        // cloudViewer::utility::LogInfo("Indices: {}", leaf_node->indices_);
     } else {
-        CVLib::utility::LogError("Unknown node type");
+        cloudViewer::utility::LogError("Unknown node type");
     }
 
     return false;
@@ -66,12 +66,12 @@ bool f_traverse(const std::shared_ptr<geometry::OctreeNode>& node,
 int main(int argc, char** args) {
     using namespace cloudViewer;
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
     if (argc < 2) {
         PrintCloudViewerVersion();
         // clang-format off
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("    > Octree [pointcloud_filename]");
+        cloudViewer::utility::LogInfo("Usage:");
+        cloudViewer::utility::LogInfo("    > Octree [pointcloud_filename]");
         // clang-format on
         return 1;
     }
@@ -87,14 +87,14 @@ int main(int argc, char** args) {
     auto start = std::chrono::steady_clock::now();
     auto result = octree->LocateLeafNode(Eigen::Vector3d::Zero());
     auto end = std::chrono::steady_clock::now();
-    CVLib::utility::LogInfo(
+    cloudViewer::utility::LogInfo(
             "Located in {} usec",
             std::chrono::duration_cast<std::chrono::microseconds>(end - start)
                     .count());
     if (auto point_node =
                 std::dynamic_pointer_cast<geometry::OctreePointColorLeafNode>(
                         result.first)) {
-        CVLib::utility::LogInfo(
+        cloudViewer::utility::LogInfo(
                 "Found leaf node at depth {} with origin {} and {} indices",
                 result.second->depth_, result.second->origin_,
                 point_node->indices_.size());

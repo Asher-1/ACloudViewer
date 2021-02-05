@@ -34,7 +34,7 @@
 namespace cloudViewer {
 namespace visualization {
 namespace rendering {
-    using namespace CVLib;
+    using namespace cloudViewer;
 static const ResourceLoadRequest::ErrorCallback kDefaultErrorHandler =
         [](const ResourceLoadRequest& request,
            const uint8_t code,

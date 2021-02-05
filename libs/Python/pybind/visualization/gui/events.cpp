@@ -34,7 +34,7 @@ namespace cloudViewer {
 namespace visualization {
 namespace gui {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 void pybind_gui_events(py::module& m) {
     py::enum_<MouseButton> buttons(m, "MouseButton", "Mouse button identifiers",

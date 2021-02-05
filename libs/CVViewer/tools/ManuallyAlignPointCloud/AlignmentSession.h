@@ -38,7 +38,7 @@
 
 namespace cloudViewer {
 
-class AlignmentSession : public CVLib::utility::IJsonConvertible {
+class AlignmentSession : public cloudViewer::utility::IJsonConvertible {
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;

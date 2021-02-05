@@ -140,7 +140,7 @@ public:
     bool SetTensorData(const Tensor &dataset_points) override;
 
     bool SetTensorData(const Tensor &dataset_points, double radius) override {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "NanoFlannIndex::SetTensorData with radius not implemented.");
     }
 

@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <cstdint>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 OrientedBoundingBox& OrientedBoundingBox::Clear() {
 	center_.setZero();

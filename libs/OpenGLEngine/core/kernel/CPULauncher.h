@@ -109,7 +109,7 @@ public:
                                              func_t element_kernel,
                                              scalar_t identity) {
         if (indexer.NumOutputElements() > 1) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "Internal error: two-pass reduction only works for "
                     "single-output reduction ops.");
         }
@@ -158,7 +158,7 @@ public:
             }
         }
         if (best_dim == -1) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "Internal error: all dims are reduction dims, use "
                     "LaunchReductionKernelTwoPass instead.");
         }

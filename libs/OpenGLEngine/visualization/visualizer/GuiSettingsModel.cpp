@@ -88,7 +88,7 @@ constexpr const char* GuiSettingsModel::DEFAULT_MATERIAL_NAME;
 constexpr const char* GuiSettingsModel::MATERIAL_FROM_FILE_NAME;
 constexpr const char* GuiSettingsModel::POINT_CLOUD_PROFILE_NAME;
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 const std::vector<GuiSettingsModel::LightingProfile>
         GuiSettingsModel::lighting_profiles_ = {

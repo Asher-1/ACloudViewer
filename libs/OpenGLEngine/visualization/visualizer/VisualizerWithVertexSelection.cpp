@@ -71,7 +71,7 @@ bool BindFramebuffer(int width, int height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     if (!GLEW_ARB_framebuffer_object) {
         // OpenGL 2.1 doesn't require this, 3.1+ does
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "[BindFramebuffwer] Your GPU does not provide framebuffer "
                 "objects. "
                 "Use a texture instead.");
@@ -88,7 +88,7 @@ bool BindFramebuffer(int width, int height) {
     GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, DrawBuffers);  // "1" is the size of DrawBuffers
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        CVLib::utility::LogWarning("[BindFramebuffer] Something is wrong with FBO.");
+        cloudViewer::utility::LogWarning("[BindFramebuffer] Something is wrong with FBO.");
         return false;
     }
     return true;
@@ -96,7 +96,7 @@ bool BindFramebuffer(int width, int height) {
 
 }  // namespace
 
-using namespace CVLib;
+using namespace cloudViewer;
 bool VisualizerWithVertexSelection::AddGeometry(
         std::shared_ptr<const ccHObject> geometry_in_ptr,
         bool reset_bounding_box) {

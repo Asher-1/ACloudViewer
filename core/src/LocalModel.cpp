@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLib                                    #
+//#                               cloudViewer                                    #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -25,7 +25,7 @@
 #include "GenericTriangle.h"
 
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 //! Least Squares Best Fitting Plane "local modelization"
 class LSLocalModel : public LocalModel

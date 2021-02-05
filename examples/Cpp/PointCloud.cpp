@@ -31,7 +31,7 @@
 #include "CloudViewer.h"
 
 void PrintPointCloud(const ccPointCloud &pointcloud) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
     bool pointcloud_has_normal = pointcloud.hasNormals();
     utility::LogInfo("Pointcloud has {:d} points.", (int)pointcloud.size());
@@ -60,7 +60,7 @@ void PrintPointCloud(const ccPointCloud &pointcloud) {
 }
 
 int main(int argc, char *argv[]) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
 	if (argc < 1)
 	{

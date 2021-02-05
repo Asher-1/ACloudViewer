@@ -67,7 +67,7 @@ namespace cloudViewer {
 namespace visualization {
 namespace gui {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 class PythonUnlocker : public Application::EnvUnlocker {
 public:

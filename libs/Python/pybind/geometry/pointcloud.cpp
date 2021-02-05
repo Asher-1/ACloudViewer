@@ -373,7 +373,7 @@ void pybind_pointcloud(py::module &m) {
 			if (cloud.getScalarField(static_cast<int>(index))) {
 				return std::ref(*cloud.getScalarField(static_cast<int>(index)));
 			} else {
-				CVLib::utility::LogWarning("[ccPointCloud] Do not have any scalar field!");
+				cloudViewer::utility::LogWarning("[ccPointCloud] Do not have any scalar field!");
 			}
 		}, "Returns a pointer to a specific scalar field.", "index"_a)
 		.def("get_sf_name", [](const ccPointCloud& cloud, std::size_t index) {
@@ -386,14 +386,14 @@ void pybind_pointcloud(py::module &m) {
 			if (cloud.getCurrentInScalarField()) {
 				return std::ref(*cloud.getCurrentInScalarField());
 			} else {
-				CVLib::utility::LogWarning("[ccPointCloud] cloud input does not have any scalar field!");
+				cloudViewer::utility::LogWarning("[ccPointCloud] cloud input does not have any scalar field!");
 			}
 		}, "Returns the scalar field currently associated to the cloud input.")
 		.def("get_current_output_sf", [](const ccPointCloud& cloud) {
 			if (cloud.getCurrentOutScalarField()) {
 				return std::ref(*cloud.getCurrentOutScalarField());
 			} else {
-				CVLib::utility::LogWarning("[ccPointCloud] cloud output does not have any scalar field!");
+				cloudViewer::utility::LogWarning("[ccPointCloud] cloud output does not have any scalar field!");
 			}
 		}, "Returns the scalar field currently associated to the cloud output.")
 		.def("rename_sf", [](ccPointCloud& cloud, std::size_t index, const std::string& name) {
@@ -403,7 +403,7 @@ void pybind_pointcloud(py::module &m) {
 				if (cloud.getCurrentDisplayedScalarField()) {
 					return std::ref(*cloud.getCurrentDisplayedScalarField());
 				} else {
-					CVLib::utility::LogWarning("[ccPointCloud] Do not have scalar fields!");
+					cloudViewer::utility::LogWarning("[ccPointCloud] Do not have scalar fields!");
 				}
 			}, "Returns the currently displayed scalar (or 0 if none).")
 		.def("set_current_displayed_sf", &ccPointCloud::setCurrentDisplayedScalarField,
@@ -429,7 +429,7 @@ void pybind_pointcloud(py::module &m) {
 			}, "Returns the cloud gravity center")
 		.def("crop_2d", [](ccPointCloud& cloud, const ccPolyline& polyline, 
 										unsigned char ortho_dim, bool inside) {
-				CVLib::ReferenceCloud* ref = cloud.crop2D(&polyline, ortho_dim, inside);
+				cloudViewer::ReferenceCloud* ref = cloud.crop2D(&polyline, ortho_dim, inside);
 				if (!ref || ref->size() == 0)
 				{
 					if (ref)
@@ -439,15 +439,15 @@ void pybind_pointcloud(py::module &m) {
 					ref = nullptr;
 					if (polyline.isEmpty())
 					{
-						CVLib::utility::LogWarning("[ccPointCloud::crop2D] Invalid input polyline");
+						cloudViewer::utility::LogWarning("[ccPointCloud::crop2D] Invalid input polyline");
 					}
 					if (ortho_dim > 2)
 					{
-						CVLib::utility::LogWarning("[ccPointCloud::crop2D] Invalid input ortho_dim");
+						cloudViewer::utility::LogWarning("[ccPointCloud::crop2D] Invalid input ortho_dim");
 					}
 					if (cloud.isEmpty())
 					{
-						CVLib::utility::LogWarning("[ccPointCloud::crop2D] Cloud is empty!");
+						cloudViewer::utility::LogWarning("[ccPointCloud::crop2D] Cloud is empty!");
 					}
 					
 					return std::ref(cloud);
@@ -460,7 +460,7 @@ void pybind_pointcloud(py::module &m) {
 				}
 				if (!croppedCloud)
 				{
-					CVLib::utility::LogWarning("[ccPointCloud::crop2D] Not enough memory!");
+					cloudViewer::utility::LogWarning("[ccPointCloud::crop2D] Not enough memory!");
 					return std::ref(cloud);
 				} 
 				
@@ -521,7 +521,7 @@ void pybind_pointcloud(py::module &m) {
 				auto dipDirSF = new ccScalarField("DipDir");
 				if (!cloud.convertNormalToDipDirSFs(dipSF, dipDirSF))
 				{
-					CVLib::utility::LogWarning("[ccPointCloud] Failed to convert normal to Dip and DipDir scalar fields!");
+					cloudViewer::utility::LogWarning("[ccPointCloud] Failed to convert normal to Dip and DipDir scalar fields!");
 				}
 				return std::make_tuple(std::unique_ptr<ccScalarField, py::nodelete>(dipSF),
 					std::unique_ptr<ccScalarField, py::nodelete>(dipDirSF));
@@ -530,7 +530,7 @@ void pybind_pointcloud(py::module &m) {
 				return std::shared_ptr<ccPointCloud>(cloud.cloneThis(nullptr, ignore_children));
 			}, "All the main features of the entity are cloned, except from the octree and"
 			" the points visibility information.", "ignore_children"_a = true)
-		.def("partial_clone", [](const ccPointCloud& cloud, std::shared_ptr<CVLib::ReferenceCloud> selection) {
+		.def("partial_clone", [](const ccPointCloud& cloud, std::shared_ptr<cloudViewer::ReferenceCloud> selection) {
 				return std::shared_ptr<ccPointCloud>(cloud.partialClone(selection.get(), nullptr));
 			}, "Creates a new point cloud object from a ReferenceCloud (selection).", 
 			"selection"_a)
@@ -559,14 +559,14 @@ void pybind_pointcloud(py::module &m) {
 			}, "Exports the specified normal dimension(s) to scalar field(s).", 
 			"export_x"_a = false, "export_y"_a = false, "export_z"_a = false)
 		.def_static("from",
-			[](const CVLib::GenericIndexedCloud& cloud, 
+			[](const cloudViewer::GenericIndexedCloud& cloud, 
 				std::shared_ptr<const ccGenericPointCloud> source_cloud) {
 				return std::shared_ptr<ccPointCloud>(ccPointCloud::From(&cloud, source_cloud.get()));
 			},
-			"'GenericCloud' is a very simple and light interface from CVLib. It is"
+			"'GenericCloud' is a very simple and light interface from cloudViewer. It is"
 			"meant to give access to points coordinates of any cloud(on the "
 			"condition it implements the GenericCloud interface of course). "
-			"See CVLib documentation for more information about GenericClouds."
+			"See cloudViewer documentation for more information about GenericClouds."
 			"As the GenericCloud interface is very simple, only points are imported."
 			"Note : throws an 'int' exception in case of error(see CTOR_ERRORS)"
 			"-param cloud a GenericCloud structure"

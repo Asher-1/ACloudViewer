@@ -50,7 +50,7 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertices,
                            const core::Tensor &triangles)
     : TriangleMesh([&]() {
           if (vertices.GetDevice() != triangles.GetDevice()) {
-              CVLib::utility::LogError(
+              cloudViewer::utility::LogError(
                       "vertices' device {} does not match triangles' device "
                       "{}.",
                       vertices.GetDevice().ToString(),
@@ -69,11 +69,11 @@ geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
         const core::Device &device) {
     if (float_dtype != core::Dtype::Float32 &&
         float_dtype != core::Dtype::Float64) {
-        CVLib::utility::LogError("float_dtype must be Float32 or Float64, but got {}.",
+        cloudViewer::utility::LogError("float_dtype must be Float32 or Float64, but got {}.",
                           float_dtype.ToString());
     }
     if (int_dtype != core::Dtype::Int32 && int_dtype != core::Dtype::Int64) {
-        CVLib::utility::LogError("int_dtype must be Int32 or Int64, but got {}.",
+        cloudViewer::utility::LogError("int_dtype must be Int32 or Int64, but got {}.",
                           int_dtype.ToString());
     }
 
@@ -82,7 +82,7 @@ geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
         mesh.SetVertices(core::eigen_converter::EigenVector3dVectorToTensor(
                 mesh_legacy.getEigenVertices(), float_dtype, device));
     } else {
-        CVLib::utility::LogWarning("Creating from empty legacy TriangleMesh.");
+        cloudViewer::utility::LogWarning("Creating from empty legacy TriangleMesh.");
     }
     if (mesh_legacy.hasColors()) {
         mesh.SetVertexColors(core::eigen_converter::EigenVector3dVectorToTensor(
@@ -110,7 +110,7 @@ ccMesh TriangleMesh::ToLegacyTriangleMesh() const {
     mesh_legacy.createInternalCloud();
     if (mesh_legacy.reserveAssociatedCloud(1, HasVertexColors(), HasVertexNormals()))
     {
-        CVLib::utility::LogError("[TriangleMesh::ToLegacyTriangleMesh] not enough memory!");
+        cloudViewer::utility::LogError("[TriangleMesh::ToLegacyTriangleMesh] not enough memory!");
     }
 
     if (HasVertices()) {

@@ -116,23 +116,23 @@ ccMesh RunRigidOptimizer(
                 option.debug_output_dir_ + "/rigid/opt_mesh",
                 option.debug_output_dir_ + "/rigid/opt_camera_trajectory"};
         for (const std::string& dir : dirs) {
-            if (CVLib::utility::filesystem::DirectoryExists(dir)) {
-                CVLib::utility::LogInfo("Directory exists: {}.", dir);
+            if (cloudViewer::utility::filesystem::DirectoryExists(dir)) {
+                cloudViewer::utility::LogInfo("Directory exists: {}.", dir);
             } else {
-                if (CVLib::utility::filesystem::MakeDirectoryHierarchy(dir)) {
-                    CVLib::utility::LogInfo("Directory created: {}.", dir);
+                if (cloudViewer::utility::filesystem::MakeDirectoryHierarchy(dir)) {
+                    cloudViewer::utility::LogInfo("Directory created: {}.", dir);
                 } else {
-                    CVLib::utility::LogError("Making directory failed: {}.", dir);
+                    cloudViewer::utility::LogError("Making directory failed: {}.", dir);
                 }
             }
         }
     }
 
-    CVLib::utility::LogDebug("[ColorMapOptimization] CreateUtilImagesFromRGBD");
+    cloudViewer::utility::LogDebug("[ColorMapOptimization] CreateUtilImagesFromRGBD");
     std::tie(images_gray, images_dx, images_dy, images_color, images_depth) =
             CreateUtilImagesFromRGBD(images_rgbd);
 
-    CVLib::utility::LogDebug("[ColorMapOptimization] CreateDepthBoundaryMasks");
+    cloudViewer::utility::LogDebug("[ColorMapOptimization] CreateDepthBoundaryMasks");
     images_mask = CreateDepthBoundaryMasks(
             images_depth, option.depth_threshold_for_discontinuity_check_,
             option.half_dilation_kernel_size_for_discontinuity_map_);
@@ -145,23 +145,23 @@ ccMesh RunRigidOptimizer(
         }
     }
 
-    CVLib::utility::LogDebug("[ColorMapOptimization] CreateVertexAndImageVisibility");
+    cloudViewer::utility::LogDebug("[ColorMapOptimization] CreateVertexAndImageVisibility");
     std::tie(visibility_vertex_to_image, visibility_image_to_vertex) =
             CreateVertexAndImageVisibility(
                     opt_mesh, images_depth, images_mask, opt_camera_trajectory,
                     option.maximum_allowable_depth_,
                     option.depth_threshold_for_visibility_check_);
 
-    CVLib::utility::LogDebug("[ColorMapOptimization] Rigid Optimization");
+    cloudViewer::utility::LogDebug("[ColorMapOptimization] Rigid Optimization");
     std::vector<double> proxy_intensity;
     int total_num_ = 0;
     int n_camera = int(opt_camera_trajectory.parameters_.size());
-    SetProxyIntensityForVertex(opt_mesh, images_gray, CVLib::utility::nullopt,
+    SetProxyIntensityForVertex(opt_mesh, images_gray, cloudViewer::utility::nullopt,
                                opt_camera_trajectory,
                                visibility_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
-        CVLib::utility::LogDebug("[Iteration {:04d}] ", itr + 1);
+        cloudViewer::utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         total_num_ = 0;
 #pragma omp parallel for schedule(static)
@@ -189,14 +189,14 @@ ccMesh RunRigidOptimizer(
             Eigen::Vector6d JTr;
             double r2;
             std::tie(JTJ, JTr, r2) =
-                    CVLib::utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+                    cloudViewer::utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
                             f_lambda, int(visibility_image_to_vertex[c].size()),
                             false);
 
             bool is_success;
             Eigen::Matrix4d delta;
             std::tie(is_success, delta) =
-                    CVLib::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ,
+                    cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ,
                                                                          JTr);
             pose = delta * pose;
             opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
@@ -206,16 +206,16 @@ ccMesh RunRigidOptimizer(
                 total_num_ += int(visibility_image_to_vertex[c].size());
             }
         }
-        CVLib::utility::LogDebug("Residual error : {:.6f} (avg : {:.6f})", residual,
+        cloudViewer::utility::LogDebug("Residual error : {:.6f} (avg : {:.6f})", residual,
                           residual / total_num_);
-        SetProxyIntensityForVertex(opt_mesh, images_gray, CVLib::utility::nullopt,
+        SetProxyIntensityForVertex(opt_mesh, images_gray, cloudViewer::utility::nullopt,
                                    opt_camera_trajectory,
                                    visibility_vertex_to_image, proxy_intensity,
                                    option.image_boundary_margin_);
 
         if (!option.debug_output_dir_.empty()) {
             // Save opt_mesh.
-            SetGeometryColorAverage(opt_mesh, images_color, CVLib::utility::nullopt,
+            SetGeometryColorAverage(opt_mesh, images_color, cloudViewer::utility::nullopt,
                                     opt_camera_trajectory,
                                     visibility_vertex_to_image,
                                     option.image_boundary_margin_,
@@ -234,8 +234,8 @@ ccMesh RunRigidOptimizer(
         }
     }
 
-    CVLib::utility::LogDebug("[ColorMapOptimization] Set Mesh Color");
-    SetGeometryColorAverage(opt_mesh, images_color, CVLib::utility::nullopt,
+    cloudViewer::utility::LogDebug("[ColorMapOptimization] Set Mesh Color");
+    SetGeometryColorAverage(opt_mesh, images_color, cloudViewer::utility::nullopt,
                             opt_camera_trajectory, visibility_vertex_to_image,
                             option.image_boundary_margin_,
                             option.invisible_vertex_color_knn_);

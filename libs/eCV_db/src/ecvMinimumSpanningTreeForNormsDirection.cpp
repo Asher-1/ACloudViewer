@@ -17,7 +17,7 @@
 
 #include "ecvMinimumSpanningTreeForNormsDirection.h"
 
-//CVLib
+//cloudViewer
 #include <ReferenceCloud.h>
 
 //local
@@ -192,7 +192,7 @@ static bool ResolveNormalsWithMST(	ccPointCloud* cloud,
 		visited.resize(vertexCount, false);
 
 		//progress notification
-		CVLib::NormalizedProgress nProgress(progressCb, vertexCount);
+		cloudViewer::NormalizedProgress nProgress(progressCb, vertexCount);
 		if (progressCb)
 		{
 			progressCb->update(0);
@@ -206,7 +206,7 @@ static bool ResolveNormalsWithMST(	ccPointCloud* cloud,
 		}
 
 #ifndef WITH_GRAPH
-		CVLib::DgmOctree::NearestNeighboursSearchStruct nNSS;
+		cloudViewer::DgmOctree::NearestNeighboursSearchStruct nNSS;
 		nNSS.level = level;
 		nNSS.minNumberOfNeighbors = kNN + 1; //+1 because we'll get the query point itself!
 #endif
@@ -404,9 +404,9 @@ static bool ResolveNormalsWithMST(	ccPointCloud* cloud,
 	return true;
 }
 
-static bool ComputeMSTGraphAtLevel(	const CVLib::DgmOctree::octreeCell& cell,
+static bool ComputeMSTGraphAtLevel(	const cloudViewer::DgmOctree::octreeCell& cell,
 									void** additionalParameters,
-									CVLib::NormalizedProgress* nProgress/*=0*/)
+									cloudViewer::NormalizedProgress* nProgress/*=0*/)
 {
 	//parameters
 	Graph* graph = static_cast<Graph*>(additionalParameters[0]);
@@ -415,7 +415,7 @@ static bool ComputeMSTGraphAtLevel(	const CVLib::DgmOctree::octreeCell& cell,
 	//structure for the nearest neighbor search
 	unsigned kNN = *static_cast<unsigned*>(additionalParameters[2]);
 
-	CVLib::DgmOctree::NearestNeighboursSearchStruct nNSS;
+	cloudViewer::DgmOctree::NearestNeighboursSearchStruct nNSS;
 	nNSS.level				  = cell.level;
 	nNSS.minNumberOfNeighbors = kNN + 1; //+1 because we'll get the query point itself!
 	cell.parentOctree->getCellPos(cell.truncatedCode, cell.level, nNSS.cellPos, true);
@@ -434,7 +434,7 @@ static bool ComputeMSTGraphAtLevel(	const CVLib::DgmOctree::octreeCell& cell,
 			return false;
 		}
 
-		CVLib::DgmOctree::NeighboursSet::iterator it = nNSS.pointsInNeighbourhood.begin();
+		cloudViewer::DgmOctree::NeighboursSet::iterator it = nNSS.pointsInNeighbourhood.begin();
 		for (unsigned i = 0; i < n; ++i, ++it)
 		{
 			it->point = cell.points->getPointPersistentPtr(i);

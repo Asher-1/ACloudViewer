@@ -44,7 +44,7 @@ namespace cloudViewer {
 namespace visualization {
 namespace rendering {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 class PyOffscreenRenderer {
 public:

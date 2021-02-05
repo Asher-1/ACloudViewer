@@ -40,7 +40,7 @@ namespace impl {
 
 namespace {
 
-using namespace CVLib::utility;
+using namespace cloudViewer::utility;
 using namespace cloudViewer::utility;
 
 template <class T, bool LARGE_ARRAY>

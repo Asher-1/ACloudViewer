@@ -34,7 +34,7 @@
 #include "ecvGenericPointCloud.h"
 #include "ecvColorScalesManager.h"
 
-// CVLib
+// cloudViewer
 #include <Console.h>
 #include <ManualSegmentationTools.h>
 #include <PointProjectionTools.h>
@@ -99,7 +99,7 @@ ccMesh::ccMesh(const std::vector<Eigen::Vector3d> &vertices,
 	this->setTriangles(triangles);
 }
 
-ccMesh::ccMesh(CVLib::GenericIndexedMesh* giMesh, 
+ccMesh::ccMesh(cloudViewer::GenericIndexedMesh* giMesh, 
 	ccGenericPointCloud* giVertices)
 	: ccGenericMesh("Mesh")
 	, m_associatedCloud(nullptr)
@@ -124,7 +124,7 @@ ccMesh::ccMesh(CVLib::GenericIndexedMesh* giMesh,
 	giMesh->placeIteratorAtBeginning();
 	for (unsigned i = 0; i < triNum; ++i)
 	{
-		const CVLib::VerticesIndexes* tsi = giMesh->getNextTriangleVertIndexes();
+		const cloudViewer::VerticesIndexes* tsi = giMesh->getNextTriangleVertIndexes();
 		addTriangle(tsi->i1, tsi->i2, tsi->i3);
 	}
 
@@ -216,14 +216,14 @@ bool ccMesh::createInternalCloud()
 		{
 			addChild(getAssociatedCloud());
 		}
-		CVLib::utility::LogWarning("Already has associated vertices cloud!");
+		cloudViewer::utility::LogWarning("Already has associated vertices cloud!");
 		return false;
 	}
 
 	ccPointCloud* cloud = new ccPointCloud("vertices");
 	if (!cloud)
 	{
-		CVLib::utility::LogWarning("Creating associated vertices cloud failed!");
+		cloudViewer::utility::LogWarning("Creating associated vertices cloud failed!");
 		return false;
 	}
 	cloud->setEnabled(false);
@@ -330,7 +330,7 @@ bool ccMesh::computePerVertexNormals()
 	{
 		for (unsigned i = 0; i < triCount; ++i)
 		{
-			CVLib::VerticesIndexes* tsi = getNextTriangleVertIndexes();
+			cloudViewer::VerticesIndexes* tsi = getNextTriangleVertIndexes();
 
 			assert(tsi->i1 < vertCount && tsi->i2 < vertCount && tsi->i3 < vertCount);
 			const CCVector3 *A = cloud->getPoint(tsi->i1);
@@ -394,7 +394,7 @@ bool ccMesh::computePerTriangleNormals()
 	{
 		for (unsigned i = 0; i < triCount; ++i)
 		{
-			const CVLib::VerticesIndexes& tri = m_triVertIndexes->getValue(i);
+			const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->getValue(i);
 			const CCVector3* A = m_associatedCloud->getPoint(tri.i1);
 			const CCVector3* B = m_associatedCloud->getPoint(tri.i2);
 			const CCVector3* C = m_associatedCloud->getPoint(tri.i3);
@@ -472,7 +472,7 @@ bool ccMesh::processScalarField(MESH_SCALAR_FIELD_PROCESS process)
 		placeIteratorAtBeginning();
 		for (unsigned i = 0; i < nTri; ++i)
 		{
-			const CVLib::VerticesIndexes* tsi = getNextTriangleVertIndexes(); //DGM: getNextTriangleVertIndexes is faster for mesh groups!
+			const cloudViewer::VerticesIndexes* tsi = getNextTriangleVertIndexes(); //DGM: getNextTriangleVertIndexes is faster for mesh groups!
 
 			//compute the sum of all connected vertices SF values
 			meanSF[tsi->i1] += m_associatedCloud->getPointScalarValue(tsi->i2);
@@ -741,7 +741,7 @@ std::shared_ptr<ccMesh>
 ccMesh::selectByIndex(const std::vector<size_t>& indices, bool cleanup) const
 {
 	if (hasTriangleUvs()) {
-		CVLib::utility::LogWarning(
+		cloudViewer::utility::LogWarning(
 			"[SelectByIndices] This mesh contains triangle uvs that are "
 			"not handled in this function");
 	}
@@ -758,7 +758,7 @@ ccMesh::selectByIndex(const std::vector<size_t>& indices, bool cleanup) const
 	std::vector<int> new_vert_ind(getVerticeSize(), -1);
 	for (const auto &sel_vidx : indices) {
 		if (sel_vidx < 0 || sel_vidx >= getVerticeSize()) {
-			CVLib::utility::LogWarning(
+			cloudViewer::utility::LogWarning(
 				"[SelectByIndex] indices contains index {} out of range. "
 				"It is ignored.",
 				sel_vidx);
@@ -829,7 +829,7 @@ ccMesh::selectByIndex(const std::vector<size_t>& indices, bool cleanup) const
 	baseVertices->setLocked(false);
 	output->addChild(baseVertices);
 
-	CVLib::utility::LogDebug(
+	cloudViewer::utility::LogDebug(
 		"Triangle mesh sampled from {:d} vertices and {:d} triangles to "
 		"{:d} vertices and {:d} triangles.",
 		(int)getVerticeSize(), (int)size(),
@@ -841,7 +841,7 @@ ccMesh::selectByIndex(const std::vector<size_t>& indices, bool cleanup) const
 std::shared_ptr<ccMesh> ccMesh::crop(const ccBBox& bbox) const
 {
 	if (!bbox.isValid()) {
-		CVLib::utility::LogError(
+		cloudViewer::utility::LogError(
 			"[ccMesh::crop] ccBBox either has zeros "
 			"size, or has wrong bounds.");
 		return std::make_shared<ccMesh>(nullptr);
@@ -852,7 +852,7 @@ std::shared_ptr<ccMesh> ccMesh::crop(const ccBBox& bbox) const
 std::shared_ptr<ccMesh> ccMesh::crop(const ecvOrientedBBox& bbox) const
 {
 	if (bbox.isEmpty()) {
-		CVLib::utility::LogError(
+		cloudViewer::utility::LogError(
 			"[ccMesh::crop] ecvOrientedBBox either has zeros "
 			"size, or has wrong bounds.");
 		return std::make_shared<ccMesh>(nullptr);
@@ -901,14 +901,14 @@ bool ccMesh::laplacianSmooth(unsigned nbIteration,
 	placeIteratorAtBeginning();
 	for(unsigned j=0; j<faceCount; j++)
 	{
-		const CVLib::VerticesIndexes* tri = getNextTriangleVertIndexes();
+		const cloudViewer::VerticesIndexes* tri = getNextTriangleVertIndexes();
 		edgesCount[tri->i1] += 2;
 		edgesCount[tri->i2] += 2;
 		edgesCount[tri->i3] += 2;
 	}
 
 	//progress dialog
-	CVLib::NormalizedProgress nProgress(progressCb, nbIteration);
+	cloudViewer::NormalizedProgress nProgress(progressCb, nbIteration);
 	if (progressCb)
 	{
 		progressCb->setMethodTitle(QObject::tr("Laplacian smooth"));
@@ -925,7 +925,7 @@ bool ccMesh::laplacianSmooth(unsigned nbIteration,
 		placeIteratorAtBeginning();
 		for (unsigned j = 0; j < faceCount; j++)
 		{
-			const CVLib::VerticesIndexes* tri = getNextTriangleVertIndexes();
+			const cloudViewer::VerticesIndexes* tri = getNextTriangleVertIndexes();
 
 			const CCVector3* A = m_associatedCloud->getPoint(tri->i1);
 			const CCVector3* B = m_associatedCloud->getPoint(tri->i2);
@@ -1002,7 +1002,7 @@ ccMesh* ccMesh::cloneMesh(	ccGenericPointCloud* vertices/*=0*/,
 			placeIteratorAtBeginning();
 			for (unsigned i = 0; i < triNum; ++i)
 			{
-				const CVLib::VerticesIndexes* tsi = getNextTriangleVertIndexes();
+				const cloudViewer::VerticesIndexes* tsi = getNextTriangleVertIndexes();
 				usedVerts[tsi->i1] = 1;
 				usedVerts[tsi->i2] = 1;
 				usedVerts[tsi->i3] = 1;
@@ -1024,7 +1024,7 @@ ccMesh* ccMesh::cloneMesh(	ccGenericPointCloud* vertices/*=0*/,
 		else
 		{
 			//we create a temporary entity with used vertices only
-			CVLib::ReferenceCloud rc(m_associatedCloud);
+			cloudViewer::ReferenceCloud rc(m_associatedCloud);
 			if (rc.reserve(realVertCount))
 			{
 				for (unsigned i=0; i<vertNum; ++i)
@@ -1070,7 +1070,7 @@ ccMesh* ccMesh::cloneMesh(	ccGenericPointCloud* vertices/*=0*/,
 		placeIteratorAtBeginning();
 		for (unsigned i = 0; i < triNum; ++i)
 		{
-			const CVLib::VerticesIndexes* tsi = getNextTriangleVertIndexes();
+			const cloudViewer::VerticesIndexes* tsi = getNextTriangleVertIndexes();
 			cloneMesh->addTriangle(usedVerts[tsi->i1], usedVerts[tsi->i2], usedVerts[tsi->i3]);
 		}
 		usedVerts.resize(0);
@@ -1080,7 +1080,7 @@ ccMesh* ccMesh::cloneMesh(	ccGenericPointCloud* vertices/*=0*/,
 		placeIteratorAtBeginning();
 		for (unsigned i = 0; i < triNum; ++i)
 		{
-			const CVLib::VerticesIndexes* tsi = getNextTriangleVertIndexes();
+			const cloudViewer::VerticesIndexes* tsi = getNextTriangleVertIndexes();
 			cloneMesh->addTriangle(tsi->i1, tsi->i2, tsi->i3);
 		}
 	}
@@ -1233,7 +1233,7 @@ ccMesh* ccMesh::TriangulateTwoPolylines(
 	}
 	assert(vertices->size() != 0);
 
-	CVLib::Neighbourhood N(vertices);
+	cloudViewer::Neighbourhood N(vertices);
 
 	//get plane coordinate system
 	CCVector3 O = *N.getGravityCenter();
@@ -1307,7 +1307,7 @@ ccMesh* ccMesh::TriangulateTwoPolylines(
 		assert(segments2D.size() == (p1->segmentCount() + p2->segmentCount()) * 2);
 	}
 
-	CVLib::Delaunay2dMesh* delaunayMesh = new CVLib::Delaunay2dMesh;
+	cloudViewer::Delaunay2dMesh* delaunayMesh = new cloudViewer::Delaunay2dMesh;
 	char errorStr[1024];
 	if (!delaunayMesh->buildMesh(points2D, segments2D, errorStr))
 	{
@@ -1322,7 +1322,7 @@ ccMesh* ccMesh::TriangulateTwoPolylines(
 	//remove the points oustide of the 'concave' hull
 	{
 		//first compute the Convex hull
-		std::vector<CVLib::PointProjectionTools::IndexedCCVector2> indexedPoints2D;
+		std::vector<cloudViewer::PointProjectionTools::IndexedCCVector2> indexedPoints2D;
 		try
 		{
 			indexedPoints2D.resize(points2D.size());
@@ -1332,14 +1332,14 @@ ccMesh* ccMesh::TriangulateTwoPolylines(
 				indexedPoints2D[i].index = static_cast<unsigned>(i);
 			}
 			
-			std::list<CVLib::PointProjectionTools::IndexedCCVector2*> hullPoints;
-			if (CVLib::PointProjectionTools::extractConvexHull2D(indexedPoints2D, hullPoints))
+			std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*> hullPoints;
+			if (cloudViewer::PointProjectionTools::extractConvexHull2D(indexedPoints2D, hullPoints))
 			{
-				std::list<CVLib::PointProjectionTools::IndexedCCVector2*>::iterator A = hullPoints.begin();
+				std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*>::iterator A = hullPoints.begin();
 				for (; A != hullPoints.end(); ++A)
 				{
 					//current hull segment
-					std::list<CVLib::PointProjectionTools::IndexedCCVector2*>::iterator B = A;
+					std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*>::iterator B = A;
 					++B;
 					if (B == hullPoints.end())
 					{
@@ -1435,7 +1435,7 @@ ccMesh* ccMesh::Triangulate(ccGenericPointCloud* cloud,
 	
 	//compute raw mesh
 	char errorStr[1024];
-	CVLib::GenericIndexedMesh* dummyMesh = CVLib::PointProjectionTools::computeTriangulation(	cloud,
+	cloudViewer::GenericIndexedMesh* dummyMesh = cloudViewer::PointProjectionTools::computeTriangulation(	cloud,
 																								type,
 																								maxEdgeLength,
 																								dim,
@@ -1554,7 +1554,7 @@ bool ccMesh::merge(const ccMesh* mesh, bool createSubMesh)
 
 			for (unsigned i = 0; i < triAdded; ++i)
 			{
-				const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(i);
+				const cloudViewer::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(i);
 				addTriangle(vertIndexShift + tsi->i1, vertIndexShift + tsi->i2, vertIndexShift + tsi->i3);
 			}
 		}
@@ -1830,7 +1830,7 @@ void ccMesh::forEach(genericTriangleAction action)
 
 	for (unsigned i = 0; i < m_triVertIndexes->size(); ++i)
 	{
-		const CVLib::VerticesIndexes& tri = m_triVertIndexes->at(i);
+		const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->at(i);
 		m_currentTriangle.A = m_associatedCloud->getPoint(tri.i1);
 		m_currentTriangle.B = m_associatedCloud->getPoint(tri.i2);
 		m_currentTriangle.C = m_associatedCloud->getPoint(tri.i3);
@@ -1843,7 +1843,7 @@ void ccMesh::placeIteratorAtBeginning()
 	m_globalIterator = 0;
 }
 
-CVLib::GenericTriangle* ccMesh::_getNextTriangle()
+cloudViewer::GenericTriangle* ccMesh::_getNextTriangle()
 {
 	if (m_globalIterator < m_triVertIndexes->size())
 	{
@@ -1853,11 +1853,11 @@ CVLib::GenericTriangle* ccMesh::_getNextTriangle()
 	return nullptr;
 }
 
-CVLib::GenericTriangle* ccMesh::_getTriangle(unsigned triangleIndex) //temporary
+cloudViewer::GenericTriangle* ccMesh::_getTriangle(unsigned triangleIndex) //temporary
 {
 	assert(triangleIndex < m_triVertIndexes->size());
 
-	const CVLib::VerticesIndexes& tri = m_triVertIndexes->getValue(triangleIndex);
+	const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->getValue(triangleIndex);
 	m_currentTriangle.A = m_associatedCloud->getPoint(tri.i1);
 	m_currentTriangle.B = m_associatedCloud->getPoint(tri.i2);
 	m_currentTriangle.C = m_associatedCloud->getPoint(tri.i3);
@@ -1869,7 +1869,7 @@ void ccMesh::getTriangleVertices(unsigned triangleIndex, CCVector3& A, CCVector3
 {
 	assert(triangleIndex < m_triVertIndexes->size());
 
-	const CVLib::VerticesIndexes& tri = m_triVertIndexes->getValue(triangleIndex);
+	const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->getValue(triangleIndex);
 	m_associatedCloud->getPoint(tri.i1, A);
 	m_associatedCloud->getPoint(tri.i2, B);
 	m_associatedCloud->getPoint(tri.i3, C);
@@ -1879,7 +1879,7 @@ void ccMesh::getTriangleVertices(unsigned triangleIndex, double A[3], double B[3
 {
 	assert(triangleIndex < m_triVertIndexes->size());
 
-	const CVLib::VerticesIndexes& tri = m_triVertIndexes->getValue(triangleIndex);
+	const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->getValue(triangleIndex);
 	m_associatedCloud->getPoint(tri.i1, A);
 	m_associatedCloud->getPoint(tri.i2, B);
 	m_associatedCloud->getPoint(tri.i3, C);
@@ -2051,7 +2051,7 @@ std::vector<CCVector3>& ccMesh::getVerticesPtr()
 {
 	if (!getAssociatedCloud())
 	{
-		CVLib::utility::LogError("[ccMesh] m_associatedCloud must be set before use!");
+		cloudViewer::utility::LogError("[ccMesh] m_associatedCloud must be set before use!");
 	}
 	return ccHObjectCaster::ToPointCloud(getAssociatedCloud())->getPoints();
 }
@@ -2060,7 +2060,7 @@ const std::vector<CCVector3>& ccMesh::getVertices() const
 {
 	if (!getAssociatedCloud())
 	{
-		CVLib::utility::LogError("[ccMesh] m_associatedCloud must be set before use!");
+		cloudViewer::utility::LogError("[ccMesh] m_associatedCloud must be set before use!");
 	}
 
 	return ccHObjectCaster::ToPointCloud(getAssociatedCloud())->getPoints();
@@ -2107,7 +2107,7 @@ void ccMesh::refreshBB()
 	size_t count = m_triVertIndexes->size();
 	for (size_t i = 0; i < count; ++i)
 	{
-		const CVLib::VerticesIndexes& tri = m_triVertIndexes->at(i);
+		const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->at(i);
 		assert(tri.i1 < m_associatedCloud->size() && tri.i2 < m_associatedCloud->size() && tri.i3 < m_associatedCloud->size());
 		m_bBox.add(*m_associatedCloud->getPoint(tri.i1));
 		m_bBox.add(*m_associatedCloud->getPoint(tri.i2));
@@ -2142,10 +2142,10 @@ const ccGLMatrix& ccMesh::getGLTransformationHistory() const
 //specific methods
 void ccMesh::addTriangle(unsigned i1, unsigned i2, unsigned i3)
 {
-	m_triVertIndexes->emplace_back(CVLib::VerticesIndexes(i1, i2, i3));
+	m_triVertIndexes->emplace_back(cloudViewer::VerticesIndexes(i1, i2, i3));
 }
 
-void ccMesh::addTriangle(const CVLib::VerticesIndexes & triangle)
+void ccMesh::addTriangle(const cloudViewer::VerticesIndexes & triangle)
 {
 	m_triVertIndexes->emplace_back(triangle);
 }
@@ -2154,11 +2154,11 @@ void ccMesh::setTriangle(size_t index, const Eigen::Vector3i& triangle)
 {
 	if (index >= m_triVertIndexes->size())
 	{
-		CVLib::utility::LogWarning("[ccMesh::setTriangle] index out of range!");
+		cloudViewer::utility::LogWarning("[ccMesh::setTriangle] index out of range!");
 		return;
 	}
 	m_triVertIndexes->at(index) = 
-		CVLib::VerticesIndexes(
+		cloudViewer::VerticesIndexes(
 		static_cast<unsigned>(triangle[0]), 
 		static_cast<unsigned>(triangle[1]),
 		static_cast<unsigned>(triangle[2]));
@@ -2166,7 +2166,7 @@ void ccMesh::setTriangle(size_t index, const Eigen::Vector3i& triangle)
 
 Eigen::Vector3i ccMesh::getTriangle(size_t index) const
 {
-	const CVLib::VerticesIndexes* tsi =
+	const cloudViewer::VerticesIndexes* tsi =
 		getTriangleVertIndexes(static_cast<unsigned int>(index));
 
 	return Eigen::Vector3i(tsi->i1, tsi->i2, tsi->i3);
@@ -2185,7 +2185,7 @@ std::vector<Eigen::Vector3i> ccMesh::getTriangles() const
 {
 	if (!hasTriangles())
 	{
-		CVLib::utility::LogWarning("[getTriangles] has no triangles!");
+		cloudViewer::utility::LogWarning("[getTriangles] has no triangles!");
 		return std::vector<Eigen::Vector3i>();
 	}
 
@@ -2245,24 +2245,24 @@ bool ccMesh::resize(size_t n)
 
 bool ccMesh::resizeAssociatedCloud(std::size_t n) {
     if (!m_associatedCloud) {
-        CVLib::utility::LogWarning("Must call createInternalCloud first!");
+        cloudViewer::utility::LogWarning("Must call createInternalCloud first!");
         return false;
     }
     ccPointCloud* baseVertices =
             ccHObjectCaster::ToPointCloud(m_associatedCloud);
 
     if (!baseVertices->resize(n)) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[resize] Not have enough memory! ");
         return false;
     }
     if (baseVertices->hasNormals() && !baseVertices->resizeTheNormsTable()) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[resizeTheNormsTable] Not have enough memory! ");
         return false;
     }
     if (baseVertices->hasColors() && !baseVertices->resizeTheRGBTable()) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[resizeTheRGBTable] Not have enough memory! ");
         return false;
     }
@@ -2271,23 +2271,23 @@ bool ccMesh::resizeAssociatedCloud(std::size_t n) {
 
 bool ccMesh::reserveAssociatedCloud(std::size_t n, bool init_color, bool init_normal) {
     if (!m_associatedCloud) {
-        CVLib::utility::LogWarning("Must call createInternalCloud first!");
+        cloudViewer::utility::LogWarning("Must call createInternalCloud first!");
         return false;
     }
     ccPointCloud* baseVertices = ccHObjectCaster::ToPointCloud(m_associatedCloud);
 
     if (!baseVertices->reserveThePointsTable(n)) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[reserveThePointsTable] Not have enough memory! ");
         return false;
     }
     if (init_normal && !baseVertices->reserveTheNormsTable()) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[reserveTheNormsTable] Not have enough memory! ");
         return false;
     }
     if (init_color && !baseVertices->reserveTheRGBTable()) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[reserveTheRGBTable] Not have enough memory! ");
         return false;
     }
@@ -2319,7 +2319,7 @@ void ccMesh::removeTriangles(size_t index)
 {
 	if (index >= size())
 	{
-		CVLib::utility::LogWarning("[ccMesh::removeTriangles] index out of range!");
+		cloudViewer::utility::LogWarning("[ccMesh::removeTriangles] index out of range!");
 		return;
 	}
 
@@ -2332,19 +2332,19 @@ void ccMesh::removeTriangles(size_t index)
 		m_triNormalIndexes->erase(m_triNormalIndexes->begin() + index);
 }
 
-CVLib::VerticesIndexes* ccMesh::getTriangleVertIndexes(unsigned triangleIndex)
+cloudViewer::VerticesIndexes* ccMesh::getTriangleVertIndexes(unsigned triangleIndex)
 {
 	return &m_triVertIndexes->at(triangleIndex);
 }
 
-const CVLib::VerticesIndexes* ccMesh::getTriangleVertIndexes(unsigned triangleIndex) const
+const cloudViewer::VerticesIndexes* ccMesh::getTriangleVertIndexes(unsigned triangleIndex) const
 {
 	return &m_triVertIndexes->at(triangleIndex);
 }
 
 void ccMesh::getTriangleVertIndexes(size_t triangleIndex, Eigen::Vector3i& vertIndx) const
 {
-	const CVLib::VerticesIndexes* tsi = 
+	const cloudViewer::VerticesIndexes* tsi = 
 		getTriangleVertIndexes(static_cast<unsigned int>(triangleIndex));
 	vertIndx(0) = tsi->i1;
 	vertIndx(1) = tsi->i2;
@@ -2352,7 +2352,7 @@ void ccMesh::getTriangleVertIndexes(size_t triangleIndex, Eigen::Vector3i& vertI
 }
 
 
-CVLib::VerticesIndexes* ccMesh::getNextTriangleVertIndexes()
+cloudViewer::VerticesIndexes* ccMesh::getNextTriangleVertIndexes()
 {
 	if (m_globalIterator < m_triVertIndexes->size())
 	{
@@ -2524,10 +2524,10 @@ ccMesh* ccMesh::createNewMeshFromSelection(bool removeSelectedFaces)
 	assert(newVertices);
 
 	//create a 'reference' cloud if none was provided
-	QSharedPointer<CVLib::ReferenceCloud> rc;
+	QSharedPointer<cloudViewer::ReferenceCloud> rc;
 	{
 		//we create a temporary entity with the visible vertices only
-		rc.reset(new CVLib::ReferenceCloud(m_associatedCloud));
+		rc.reset(new cloudViewer::ReferenceCloud(m_associatedCloud));
 
 		for (unsigned i = 0; i < m_associatedCloud->size(); ++i)
 			if (verticesVisibility[i] == POINT_VISIBLE)
@@ -2545,7 +2545,7 @@ ccMesh* ccMesh::createNewMeshFromSelection(bool removeSelectedFaces)
 	}
 
 	//we create a new mesh with the current selection
-	CVLib::GenericIndexedMesh* result = CVLib::ManualSegmentationTools::segmentMesh(this, rc.data(), true, nullptr, newVertices);
+	cloudViewer::GenericIndexedMesh* result = cloudViewer::ManualSegmentationTools::segmentMesh(this, rc.data(), true, nullptr, newVertices);
 
 	//don't use this anymore
 	rc.clear();
@@ -2651,7 +2651,7 @@ ccMesh* ccMesh::createNewMeshFromSelection(bool removeSelectedFaces)
 				size_t triNum = m_triVertIndexes->size();
 				for (size_t i = 0; i < triNum; ++i)
 				{
-					const CVLib::VerticesIndexes& tsi = m_triVertIndexes->at(i);
+					const cloudViewer::VerticesIndexes& tsi = m_triVertIndexes->at(i);
 
 					//all vertices must be visible
 					if (verticesVisibility[tsi.i1] == POINT_VISIBLE &&
@@ -2828,7 +2828,7 @@ ccMesh* ccMesh::createNewMeshFromSelection(bool removeSelectedFaces)
 
 				for (size_t i = 0; i < triNum; ++i)
 				{
-					const CVLib::VerticesIndexes& tsi = m_triVertIndexes->at(i);
+					const cloudViewer::VerticesIndexes& tsi = m_triVertIndexes->at(i);
 
 					//at least one hidden vertex --> we keep it
 					if (verticesVisibility[tsi.i1] != POINT_VISIBLE ||
@@ -2886,7 +2886,7 @@ ccMesh* ccMesh::createNewMeshFromSelection(bool removeSelectedFaces)
 		size_t lastTri = 0;
 		for (size_t i = 0; i < triNum; ++i)
 		{
-			const CVLib::VerticesIndexes& tsi = m_triVertIndexes->at(i);
+			const cloudViewer::VerticesIndexes& tsi = m_triVertIndexes->at(i);
 
 			//at least one hidden vertex --> we keep it
 			if (verticesVisibility[tsi.i1] != POINT_VISIBLE ||
@@ -2919,7 +2919,7 @@ void ccMesh::shiftTriangleIndexes(unsigned shift)
 {
 	for (size_t i = 0; i < m_triVertIndexes->size(); ++i)
 	{
-		CVLib::VerticesIndexes& ti = m_triVertIndexes->at(i);
+		cloudViewer::VerticesIndexes& ti = m_triVertIndexes->at(i);
 		ti.i1 += shift;
 		ti.i2 += shift;
 		ti.i3 += shift;
@@ -2928,7 +2928,7 @@ void ccMesh::shiftTriangleIndexes(unsigned shift)
 
 void ccMesh::flipTriangles()
 {
-	for (CVLib::VerticesIndexes& ti : *m_triVertIndexes)
+	for (cloudViewer::VerticesIndexes& ti : *m_triVertIndexes)
 	{
 		std::swap(ti.i2, ti.i3);
 	}
@@ -3165,7 +3165,7 @@ std::vector<Eigen::Vector3d> ccMesh::getTriangleNorms() const
 {
 	if (!hasTriNormals())
 	{
-		CVLib::utility::LogWarning("[getTriangleNorms] has no triangle normals!");
+		cloudViewer::utility::LogWarning("[getTriangleNorms] has no triangle normals!");
 		return std::vector<Eigen::Vector3d>();
 	}
 
@@ -3188,7 +3188,7 @@ bool ccMesh::setTriangleNorms(const std::vector<Eigen::Vector3d>& triangle_norma
 		{
 			if (!setTriangleNorm(i, triangle_normals[i]))
 			{
-				CVLib::utility::LogWarning("[ccMesh::addTriangleNorms] add triangle normals failed!");
+				cloudViewer::utility::LogWarning("[ccMesh::addTriangleNorms] add triangle normals failed!");
 				success = false;
 				break;
 			}
@@ -3212,7 +3212,7 @@ bool ccMesh::addTriangleNorms(const std::vector<Eigen::Vector3d>& triangle_norma
 		{
 			if (!addTriangleNorm(normal))
 			{
-				CVLib::utility::LogWarning("[ccMesh::addTriangleNorms] add triangle normals failed!");
+				cloudViewer::utility::LogWarning("[ccMesh::addTriangleNorms] add triangle normals failed!");
 				success = false;
 				break;
 			}
@@ -3444,7 +3444,7 @@ bool ccMesh::toFile_MeOnly(QFile& out) const
 	//triangles indexes (dataVersion>=20)
 	if (!m_triVertIndexes)
 		return CVLog::Error("Internal error: mesh has no triangles array! (not enough memory?)");
-	if (!ccSerializationHelper::GenericArrayToFile<CVLib::VerticesIndexes, 3, unsigned>(*m_triVertIndexes, out))
+	if (!ccSerializationHelper::GenericArrayToFile<cloudViewer::VerticesIndexes, 3, unsigned>(*m_triVertIndexes, out))
 		return false;
 
 	//per-triangle materials (dataVersion>=20))
@@ -3536,7 +3536,7 @@ bool ccMesh::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
 	//triangles indexes (dataVersion>=20)
 	if (!m_triVertIndexes)
 		return false;
-	if (!ccSerializationHelper::GenericArrayFromFile<CVLib::VerticesIndexes, 3, unsigned>(*m_triVertIndexes, in, dataVersion))
+	if (!ccSerializationHelper::GenericArrayFromFile<cloudViewer::VerticesIndexes, 3, unsigned>(*m_triVertIndexes, in, dataVersion))
 		return false;
 
 	//per-triangle materials (dataVersion>=20))
@@ -3629,11 +3629,11 @@ void ccMesh::computeInterpolationWeights(unsigned triIndex, const CCVector3& P, 
 {
 	assert(triIndex < m_triVertIndexes->size());
 
-	const CVLib::VerticesIndexes& tri = m_triVertIndexes->at(triIndex);
+	const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->at(triIndex);
 	return computeInterpolationWeights(tri, P, weights);
 }
 
-void ccMesh::computeInterpolationWeights(const CVLib::VerticesIndexes& vertIndexes, const CCVector3& P, CCVector3d& weights) const
+void ccMesh::computeInterpolationWeights(const cloudViewer::VerticesIndexes& vertIndexes, const CCVector3& P, CCVector3d& weights) const
 {
 	const CCVector3 *A = m_associatedCloud->getPoint(vertIndexes.i1);
 	const CCVector3 *B = m_associatedCloud->getPoint(vertIndexes.i2);
@@ -3656,12 +3656,12 @@ bool ccMesh::interpolateNormals(unsigned triIndex, const CCVector3& P, CCVector3
 	if (!hasNormals())
 		return false;
 
-	const CVLib::VerticesIndexes& tri = m_triVertIndexes->getValue(triIndex);
+	const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->getValue(triIndex);
 
 	return interpolateNormals(tri, P, N, hasTriNormals() ? &m_triNormalIndexes->at(triIndex) : nullptr);
 }
 
-bool ccMesh::interpolateNormals(const CVLib::VerticesIndexes& vertIndexes, const CCVector3& P, CCVector3& N, const Tuple3i* triNormIndexes/*=0*/)
+bool ccMesh::interpolateNormals(const cloudViewer::VerticesIndexes& vertIndexes, const CCVector3& P, CCVector3& N, const Tuple3i* triNormIndexes/*=0*/)
 {
 	//intepolation weights
 	CCVector3d w;
@@ -3701,12 +3701,12 @@ bool ccMesh::interpolateColors(unsigned triIndex, const CCVector3& P, ecvColor::
 	if (!hasColors())
 		return false;
 
-	const CVLib::VerticesIndexes& tri = m_triVertIndexes->getValue(triIndex);
+	const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->getValue(triIndex);
 
 	return interpolateColors(tri, P, C);
 }
 
-bool ccMesh::interpolateColors(const CVLib::VerticesIndexes& vertIndexes, const CCVector3& P, ecvColor::Rgb& rgb)
+bool ccMesh::interpolateColors(const cloudViewer::VerticesIndexes& vertIndexes, const CCVector3& P, ecvColor::Rgb& rgb)
 {
 	//intepolation weights
 	CCVector3d w;
@@ -3743,7 +3743,7 @@ bool ccMesh::getVertexColorFromMaterial(unsigned triIndex, unsigned char vertInd
 		assert(matIndex < static_cast<int>(m_materials->size()));
 	}
 
-	const CVLib::VerticesIndexes& tri = m_triVertIndexes->getValue(triIndex);
+	const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->getValue(triIndex);
 
 	//do we need to change material?
 	bool foundMaterial = false;
@@ -3970,7 +3970,7 @@ bool ccMesh::pushSubdivide(/*PointCoordinateType maxArea, */unsigned indexA, uns
 				if (vertices->hasColors())
 				{
 					ecvColor::Rgb C;
-					interpolateColors(CVLib::VerticesIndexes(indexA, indexB, indexC), G1, C);
+					interpolateColors(cloudViewer::VerticesIndexes(indexA, indexB, indexC), G1, C);
 					vertices->addRGBColor(C);
 				}
 				//and add it to the map
@@ -4002,7 +4002,7 @@ bool ccMesh::pushSubdivide(/*PointCoordinateType maxArea, */unsigned indexA, uns
 				if (vertices->hasColors())
 				{
 					ecvColor::Rgb C;
-					interpolateColors(CVLib::VerticesIndexes(indexA, indexB, indexC), G2, C);
+					interpolateColors(cloudViewer::VerticesIndexes(indexA, indexB, indexC), G2, C);
 					vertices->addRGBColor(C);
 				}
 				//and add it to the map
@@ -4034,7 +4034,7 @@ bool ccMesh::pushSubdivide(/*PointCoordinateType maxArea, */unsigned indexA, uns
 				if (vertices->hasColors())
 				{
 					ecvColor::Rgb C;
-					interpolateColors(CVLib::VerticesIndexes(indexA, indexB, indexC), G3, C);
+					interpolateColors(cloudViewer::VerticesIndexes(indexA, indexB, indexC), G3, C);
 					vertices->addRGBColor(C);
 				}
 				//and add it to the map
@@ -4077,7 +4077,7 @@ bool ccMesh::pushSubdivide(/*PointCoordinateType maxArea, */unsigned indexA, uns
 
 ccMesh* ccMesh::subdivide(PointCoordinateType maxArea) const
 {
-    if (CVLib::LessThanEpsilon(maxArea))
+    if (cloudViewer::LessThanEpsilon(maxArea))
 	{
 		CVLog::Error("[ccMesh::subdivide] Invalid input argument!");
 		return nullptr;
@@ -4116,7 +4116,7 @@ ccMesh* ccMesh::subdivide(PointCoordinateType maxArea) const
 	{
 		for (unsigned i = 0; i < triCount; ++i)
 		{
-			const CVLib::VerticesIndexes& tri = m_triVertIndexes->getValue(i);
+			const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->getValue(i);
 			if (!resultMesh->pushSubdivide(/*maxArea,*/tri.i1, tri.i2, tri.i3))
 			{
 				CVLog::Error("[ccMesh::subdivide] Not enough memory!");
@@ -4138,7 +4138,7 @@ ccMesh* ccMesh::subdivide(PointCoordinateType maxArea) const
 		unsigned newTriCount = resultMesh->size();
 		for (unsigned i = 0; i < newTriCount; ++i)
 		{
-			CVLib::VerticesIndexes& tri = resultMesh->m_triVertIndexes->getValue(i); //warning: array might change at each call to reallocate!
+			cloudViewer::VerticesIndexes& tri = resultMesh->m_triVertIndexes->getValue(i); //warning: array might change at each call to reallocate!
 			unsigned indexA = tri.i1;
 			unsigned indexB = tri.i2;
 			unsigned indexC = tri.i3;
@@ -4320,7 +4320,7 @@ bool ccMesh::convertMaterialsToVertexColors()
 	placeIteratorAtBeginning();
 	for (unsigned i = 0; i < faceCount; ++i)
 	{
-		const CVLib::VerticesIndexes* tsi = getNextTriangleVertIndexes();
+		const cloudViewer::VerticesIndexes* tsi = getNextTriangleVertIndexes();
 		for (unsigned char j = 0; j < 3; ++j)
 		{
 			ecvColor::Rgb C;

@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -23,7 +23,7 @@
 #include "CVGeom.h"
 #include "SquareMatrix.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 	//! Bounding box structure
 	class CV_CORE_LIB_API BoundingBox

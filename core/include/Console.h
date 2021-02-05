@@ -45,7 +45,7 @@
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 enum class CV_CORE_LIB_API VerbosityLevel {
@@ -324,4 +324,4 @@ bool CV_CORE_LIB_API ProgramOptionExistsAny(int argc,
 
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

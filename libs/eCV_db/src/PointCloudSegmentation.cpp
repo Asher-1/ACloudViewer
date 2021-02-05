@@ -185,12 +185,12 @@ ccPointCloud::segmentPlane(
 
 	// Return if ransac_n is less than the required plane model parameters.
 	if (ransac_n < 3) {
-		CVLib::utility::LogError(
+		cloudViewer::utility::LogError(
 			"ransac_n should be set to higher than or equal to 3.");
 		return std::make_tuple(best_plane_model, inliers);
 	}
 	if (num_points < size_t(ransac_n)) {
-		CVLib::utility::LogError("There must be at least 'ransac_n' points.");
+		cloudViewer::utility::LogError("There must be at least 'ransac_n' points.");
 		return std::make_tuple(best_plane_model, inliers);
 	}
 
@@ -238,7 +238,7 @@ ccPointCloud::segmentPlane(
 	// Improve best_plane_model using the final inliers.
 	best_plane_model = GetPlaneFromPoints(getPoints(), inliers);
 
-	CVLib::utility::LogDebug("RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}",
+	cloudViewer::utility::LogDebug("RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}",
 		inliers.size(), result.fitness_, result.inlier_rmse_);
 	return std::make_tuple(best_plane_model, inliers);
 }

@@ -17,7 +17,7 @@
 
 #include "ecvNormalCompressor.h"
 
-//CVLib
+//cloudViewer
 #include <CVConst.h>
 
 //System

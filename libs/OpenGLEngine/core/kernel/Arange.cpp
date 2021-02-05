@@ -31,7 +31,7 @@
 namespace cloudViewer {
 namespace core {
 namespace kernel {
-using namespace CVLib;
+using namespace cloudViewer;
 Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
     start.AssertShape({}, "Start tensor must have shape {}.");
     stop.AssertShape({}, "Stop tensor must have shape {}.");

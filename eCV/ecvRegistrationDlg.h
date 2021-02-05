@@ -20,7 +20,7 @@
 
 #include <QDialog>
 
-//CVLib
+//cloudViewer
 #include <RegistrationTools.h>
 
 #include <ui_registrationDlg.h>
@@ -42,7 +42,7 @@ public:
 	virtual ~ccRegistrationDlg();
 
 	//shortcuts
-	typedef CVLib::ICPRegistrationTools::CONVERGENCE_TYPE ConvergenceMethod;
+	typedef cloudViewer::ICPRegistrationTools::CONVERGENCE_TYPE ConvergenceMethod;
 
 	//! Returns convergence method
 	ConvergenceMethod getConvergenceMethod() const;
@@ -87,7 +87,7 @@ public:
 	bool adjustScale() const;
 
 	//! Returns active transformation filters
-	/** See CVLib::RegistrationTools::TRANSFORMATION_FILTERS.
+	/** See cloudViewer::RegistrationTools::TRANSFORMATION_FILTERS.
 	**/
 	int getTransformationFilters() const;
 

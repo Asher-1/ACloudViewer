@@ -31,7 +31,7 @@
 #include <ecvHObjectCaster.h>
 #include "ecvColorScalesManager.h"
 
-//CVLib
+//cloudViewer
 #include <CVPlatform.h>
 
 //Qt
@@ -307,7 +307,7 @@ CC_FILE_ERROR LASFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		pDlg->setInfo(QObject::tr("Points: %L1").arg(numberOfPoints));
 		pDlg->start();
 	}
-    CVLib::NormalizedProgress nProgress(pDlg.data(), numberOfPoints);
+    cloudViewer::NormalizedProgress nProgress(pDlg.data(), numberOfPoints);
 
 	CCVector3d bbMin, bbMax;
 	if (!theCloud->getGlobalBB(bbMin, bbMax))
@@ -1278,7 +1278,7 @@ CC_FILE_ERROR LASFilter::loadFile(const QString& filename, ccHObject& container,
 				pDlg->setInfo(QObject::tr("Points: %L1").arg(nbOfPoints));
 				pDlg->start();
 			}
-            CVLib::NormalizedProgress nProgress(pDlg.data(), nbOfPoints);
+            cloudViewer::NormalizedProgress nProgress(pDlg.data(), nbOfPoints);
 
 			for (PointId idx = 0; idx < pointView->size(); ++idx)
 			{
@@ -1309,7 +1309,7 @@ CC_FILE_ERROR LASFilter::loadFile(const QString& filename, ccHObject& container,
 			return CC_FERR_NO_ERROR;
 		}
 
-        CVLib::NormalizedProgress nProgress(pDlg.data(), nbOfPoints);
+        cloudViewer::NormalizedProgress nProgress(pDlg.data(), nbOfPoints);
 		ccPointCloud* loadedCloud = nullptr;
 		std::vector< LasField::Shared > fieldsToLoad;
 		CCVector3d Pshift(0, 0, 0);

@@ -341,7 +341,7 @@ ccPolyline* vtk2ccConverter::getPolylineFromCC(ccPointCloud* vertices)
 			bool closed = false;
 			CCVector3 start = CCVector3::fromArray(polyVertices->getPoint(0)->u);
 			CCVector3 end = CCVector3::fromArray(polyVertices->getPoint(verticesCount - 1)->u);
-            if (CVLib::LessThanEpsilon((end - start).norm()))
+            if (cloudViewer::LessThanEpsilon((end - start).norm()))
 			{
 				closed = true;
 			}

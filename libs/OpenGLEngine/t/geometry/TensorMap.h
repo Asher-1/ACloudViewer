@@ -57,7 +57,7 @@ public:
     /// delete in C++, but it is needed for pybind to bind as a generic python
     /// map interface.
     explicit TensorMap() : TensorMap("Undefined") {
-        CVLib::utility::LogError("Please construct TensorMap with a primary key.");
+        cloudViewer::utility::LogError("Please construct TensorMap with a primary key.");
     }
 
     template <class InputIt>

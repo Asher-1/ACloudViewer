@@ -19,7 +19,7 @@
 
 #include "ecvStdPluginInterface.h"
 
-//CVLib
+//cloudViewer
 #include <ReferenceCloud.h>
 
 //Qt
@@ -56,24 +56,24 @@ private:
 
 	void KmeansClustering();
 
-	bool addPoint(CVLib::ReferenceCloud& filteredCloud, unsigned int j);
+	bool addPoint(cloudViewer::ReferenceCloud& filteredCloud, unsigned int j);
 
 	template <typename T>
 	void createClouds(	T& dlg,
 						ccPointCloud* cloud,
-						const CVLib::ReferenceCloud& filteredCloudInside,
-						const CVLib::ReferenceCloud& filteredCloudOutside,
+						const cloudViewer::ReferenceCloud& filteredCloudInside,
+						const cloudViewer::ReferenceCloud& filteredCloudOutside,
 						QString name);
 
 	void createCloud(	ccPointCloud* cloud,
-						const CVLib::ReferenceCloud& referenceCloud,
+						const cloudViewer::ReferenceCloud& referenceCloud,
 						QString name);
 
 	//! Segment a cloud with RGB color
 	void filterRgbWithSegmentation();
 
 	//! Region (shared)
-	typedef QSharedPointer<CVLib::ReferenceCloud> Region;
+	typedef QSharedPointer<cloudViewer::ReferenceCloud> Region;
 	//! Region set
 	typedef std::vector<Region> RegionSet;
 

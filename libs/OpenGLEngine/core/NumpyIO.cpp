@@ -62,7 +62,7 @@
 
 namespace cloudViewer {
 namespace core {
-using namespace CVLib;
+using namespace cloudViewer;
 
 static char BigEndianChar() {
     int x = 1;

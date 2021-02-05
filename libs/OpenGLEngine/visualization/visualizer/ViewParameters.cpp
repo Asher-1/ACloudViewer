@@ -33,7 +33,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-using namespace CVLib;
+using namespace cloudViewer;
 
 ViewParameters::Vector17d ViewParameters::ConvertToVector17d() {
     ViewParameters::Vector17d v;

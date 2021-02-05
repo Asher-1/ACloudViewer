@@ -64,7 +64,7 @@ core::Dtype ArrayFormatToDtype(const std::string& format, size_t byte_size) {
                byte_size == 1) {
         return core::Dtype::Bool;
     } else {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "ArrayFormatToDtype: unsupported python array format {} with "
                 "byte_size {}.",
                 format, byte_size);
@@ -87,7 +87,7 @@ std::string DtypeToArrayFormat(const core::Dtype& dtype) {
     } else if (dtype == core::Dtype::Bool) {
         return py::format_descriptor<bool>::format();
     } else {
-        CVLib::utility::LogError("Unsupported data type.");
+        cloudViewer::utility::LogError("Unsupported data type.");
     }
 }
 

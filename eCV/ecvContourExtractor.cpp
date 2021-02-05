@@ -46,7 +46,7 @@ enum HullPointFlags {	POINT_NOT_USED	= 0,
 						POINT_FROZEN	= 3,
 };
 
-typedef CVLib::PointProjectionTools::IndexedCCVector2 Vertex2D;
+typedef cloudViewer::PointProjectionTools::IndexedCCVector2 Vertex2D;
 typedef std::list<Vertex2D*>::iterator VertexIterator;
 typedef std::list<Vertex2D*>::const_iterator ConstVertexIterator;
 
@@ -210,7 +210,7 @@ bool ccContourExtractor::ExtractConcaveHull2D(	std::vector<Vertex2D>& points,
 												double maxAngleDeg/*=0.0*/)
 {
 	//first compute the Convex hull
-	if (!CVLib::PointProjectionTools::extractConvexHull2D(points,hullPoints))
+	if (!cloudViewer::PointProjectionTools::extractConvexHull2D(points,hullPoints))
 		return false;
 
 	//do we really need to compute the concave hull?
@@ -524,8 +524,8 @@ bool ccContourExtractor::ExtractConcaveHull2D(	std::vector<Vertex2D>& points,
 								break;
 						}
 
-						if (	((*itI)->index != (*itA)->index && (*itJ)->index != (*itA)->index && CVLib::PointProjectionTools::segmentIntersect(**itI,**itJ,**itA,P))
-							||	((*itI)->index != (*itB)->index && (*itJ)->index != (*itB)->index && CVLib::PointProjectionTools::segmentIntersect(**itI,**itJ,P,**itB)) )
+						if (	((*itI)->index != (*itA)->index && (*itJ)->index != (*itA)->index && cloudViewer::PointProjectionTools::segmentIntersect(**itI,**itJ,**itA,P))
+							||	((*itI)->index != (*itB)->index && (*itJ)->index != (*itB)->index && cloudViewer::PointProjectionTools::segmentIntersect(**itI,**itJ,P,**itB)) )
 						{
 							intersect = true;
 							break;
@@ -696,7 +696,7 @@ bool ccContourExtractor::ExtractConcaveHull2D(	std::vector<Vertex2D>& points,
 
 typedef std::list<Vertex2D*> Hull2D;
 
-ccPolyline* ccContourExtractor::ExtractFlatContour(	CVLib::GenericIndexedCloudPersist* points,
+ccPolyline* ccContourExtractor::ExtractFlatContour(	cloudViewer::GenericIndexedCloudPersist* points,
 													bool allowMultiPass,
 													PointCoordinateType maxEdgeLength/*=0*/,
 													const PointCoordinateType* preferredNormDim/*=0*/,
@@ -715,13 +715,13 @@ ccPolyline* ccContourExtractor::ExtractFlatContour(	CVLib::GenericIndexedCloudPe
 	if (ptsCount < 3)
 		return nullptr;
 
-	CVLib::Neighbourhood Yk(points);
+	cloudViewer::Neighbourhood Yk(points);
 	//local base
 	CCVector3 O;
 	CCVector3 X;
 	CCVector3 Y;
 
-	CVLib::Neighbourhood::InputVectorsUsage vectorsUsage = CVLib::Neighbourhood::None;
+	cloudViewer::Neighbourhood::InputVectorsUsage vectorsUsage = cloudViewer::Neighbourhood::None;
 
 	//we project the input points on a plane
 	std::vector<Vertex2D> points2D;
@@ -730,7 +730,7 @@ ccPolyline* ccContourExtractor::ExtractFlatContour(	CVLib::GenericIndexedCloudPe
 	if (preferredUpDir != nullptr)
 	{
 		Y = CCVector3(preferredUpDir);
-		vectorsUsage = CVLib::Neighbourhood::UseYAsUpDir;
+		vectorsUsage = cloudViewer::Neighbourhood::UseYAsUpDir;
 	}
 
 	//if the user has specified a default direction, we'll use it as 'projecting plane'
@@ -751,7 +751,7 @@ ccPolyline* ccContourExtractor::ExtractFlatContour(	CVLib::GenericIndexedCloudPe
 			O = *G;
 			//Y = CCVector3(preferredUpDir); //already done above
 			X = Y.cross(CCVector3(preferredNormDim));
-			vectorsUsage = CVLib::Neighbourhood::UseOXYasBase;
+			vectorsUsage = cloudViewer::Neighbourhood::UseOXYasBase;
 		}
 	}
 
@@ -844,7 +844,7 @@ ccPolyline* ccContourExtractor::ExtractFlatContour(	CVLib::GenericIndexedCloudPe
 	return contourPolyline;
 }
 
-bool ccContourExtractor::ExtractFlatContour(CVLib::GenericIndexedCloudPersist* points,
+bool ccContourExtractor::ExtractFlatContour(cloudViewer::GenericIndexedCloudPersist* points,
 											bool allowMultiPass,
 											PointCoordinateType maxEdgeLength,
 											std::vector<ccPolyline*>& parts,

@@ -511,7 +511,7 @@ CC_FILE_ERROR RasterGridFilter::loadFile(const QString& filename, ccHObject& con
 					//shall we remove the points with invalid heights?
 					if (QMessageBox::question(0, "Remove NaN points?", "This raster has pixels with invalid heights. Shall we remove them?", QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes)
 					{
-						CVLib::ReferenceCloud validPoints(pc);
+						cloudViewer::ReferenceCloud validPoints(pc);
 						unsigned count = pc->size();
 						bool error = true;
 						if (validPoints.reserve(count-zInvalid))

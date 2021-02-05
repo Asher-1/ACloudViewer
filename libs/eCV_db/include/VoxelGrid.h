@@ -262,7 +262,7 @@ public:
     /// Voxels contained in voxel grid
     std::unordered_map<Eigen::Vector3i,
                        Voxel,
-                       CVLib::utility::hash_eigen::hash<Eigen::Vector3i>>
+                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector3i>>
             voxels_;
 };
 
@@ -277,7 +277,7 @@ public:
 public:
     void Add(const Eigen::Vector3i &voxel_index) {
         if (num_of_points_ > 0 && voxel_index != voxel_index_) {
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
                     "Tried to aggregate ColorVoxel with different "
                     "voxel_index");
         }

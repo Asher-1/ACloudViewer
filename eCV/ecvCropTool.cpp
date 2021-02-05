@@ -42,7 +42,7 @@ ccHObject* ccCropTool::Crop(ccHObject* entity, const ccBBox& box, bool inside/*=
 	{
 		ccPointCloud* cloud = static_cast<ccPointCloud*>(entity);
 
-		CVLib::ReferenceCloud* selection = cloud->crop(box, inside);
+		cloudViewer::ReferenceCloud* selection = cloud->crop(box, inside);
 		if (!selection)
 		{
 			//process failed!
@@ -68,7 +68,7 @@ ccHObject* ccCropTool::Crop(ccHObject* entity, const ccBBox& box, bool inside/*=
 	else if (entity->isKindOf(CV_TYPES::MESH))
 	{
 		ccGenericMesh* mesh = static_cast<ccGenericMesh*>(entity);
-		CVLib::ManualSegmentationTools::MeshCutterParams params;
+		cloudViewer::ManualSegmentationTools::MeshCutterParams params;
 		params.bbMin = CCVector3d::fromArray(box.minCorner().u);
 		params.bbMax = CCVector3d::fromArray(box.maxCorner().u);
 		params.generateOutsideMesh = !inside;
@@ -90,7 +90,7 @@ ccHObject* ccCropTool::Crop(ccHObject* entity, const ccBBox& box, bool inside/*=
 			cropVertices = rotatedVertices;
 		}
 
-		if (!CVLib::ManualSegmentationTools::segmentMeshWitAABox(mesh, cropVertices, params))
+		if (!cloudViewer::ManualSegmentationTools::segmentMeshWitAABox(mesh, cropVertices, params))
 		{
 			//process failed!
 			CVLog::Warning(QString("[Crop] Failed to crop mesh '%1'!").arg(mesh->getName()));
@@ -103,7 +103,7 @@ ccHObject* ccCropTool::Crop(ccHObject* entity, const ccBBox& box, bool inside/*=
 			cropVertices = origVertices;
 		}
 
-		CVLib::SimpleMesh* tempMesh = inside ? params.insideMesh : params.outsideMesh;
+		cloudViewer::SimpleMesh* tempMesh = inside ? params.insideMesh : params.outsideMesh;
 
 		//output
 		ccMesh* croppedMesh = 0;
@@ -224,10 +224,10 @@ ccHObject* ccCropTool::Crop(ccHObject* entity, const ccBBox& box, bool inside/*=
 									{
 										//get the origin triangle
 										unsigned origTriIndex = origTriIndexes[i];
-										const CVLib::VerticesIndexes* tsio = mesh->getTriangleVertIndexes(origTriIndex);
+										const cloudViewer::VerticesIndexes* tsio = mesh->getTriangleVertIndexes(origTriIndex);
 
 										//get the new triangle
-										const CVLib::VerticesIndexes* tsic = croppedMesh->getTriangleVertIndexes(i);
+										const cloudViewer::VerticesIndexes* tsic = croppedMesh->getTriangleVertIndexes(i);
 
 										//we now have to test the 3 vertices of the new triangle
 										for (unsigned j = 0; j < 3; ++j)
@@ -263,7 +263,7 @@ ccHObject* ccCropTool::Crop(ccHObject* entity, const ccBBox& box, bool inside/*=
 													CCVector3d scalarValues(0, 0, 0);
 													if (origVertices_pc)
 													{
-														const CVLib::ScalarField* sf = origVertices_pc->getScalarField(s);
+														const cloudViewer::ScalarField* sf = origVertices_pc->getScalarField(s);
 														scalarValues.x = sf->getValue(tsio->i1);
 														scalarValues.y = sf->getValue(tsio->i2);
 														scalarValues.z = sf->getValue(tsio->i3);
@@ -385,7 +385,7 @@ ccHObject* ccCropTool::Crop(ccHObject* entity, const ccBBox& box, bool inside/*=
                                             TexCoords2D* tx3 = nullptr;
 											mesh->getTriangleTexCoordinates(origTriIndex, tx1, tx2, tx3);
 											//get the new triangle
-											const CVLib::VerticesIndexes* tsic = croppedMesh->getTriangleVertIndexes(i);
+											const cloudViewer::VerticesIndexes* tsic = croppedMesh->getTriangleVertIndexes(i);
 											//for each vertex of the new triangle
 											int texIndexes[3] = { -1, -1, -1 };
 											for (unsigned j = 0; j < 3; ++j)
@@ -395,9 +395,9 @@ ccHObject* ccCropTool::Crop(ccHObject* entity, const ccBBox& box, bool inside/*=
 												//intepolation weights
 												CCVector3d w;
 												mesh->computeInterpolationWeights(origTriIndex, *Vcj, w);
-                                                if (	(tx1 || CVLib::LessThanEpsilon( w.u[0] ) )
-                                                    &&	(tx2 || CVLib::LessThanEpsilon( w.u[1] ) )
-                                                    &&	(tx3 || CVLib::LessThanEpsilon( w.u[2] ) ) )
+                                                if (	(tx1 || cloudViewer::LessThanEpsilon( w.u[0] ) )
+                                                    &&	(tx2 || cloudViewer::LessThanEpsilon( w.u[1] ) )
+                                                    &&	(tx3 || cloudViewer::LessThanEpsilon( w.u[2] ) ) )
 												{
 													TexCoords2D t(	static_cast<float>((tx1 ? tx1->tx*w.u[0] : 0.0) + (tx2 ? tx2->tx*w.u[1] : 0.0) + (tx3 ? tx3->tx*w.u[2] : 0.0)),
 																	static_cast<float>((tx1 ? tx1->ty*w.u[0] : 0.0) + (tx2 ? tx2->ty*w.u[1] : 0.0) + (tx3 ? tx3->ty*w.u[2] : 0.0)) );

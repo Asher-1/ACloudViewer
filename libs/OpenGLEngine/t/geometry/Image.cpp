@@ -36,7 +36,7 @@
 namespace cloudViewer {
 namespace t {
 namespace geometry {
-using namespace CVLib;
+using namespace cloudViewer;
 
 Image::Image(int64_t rows,
              int64_t cols,

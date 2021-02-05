@@ -35,7 +35,7 @@
 namespace cloudViewer {
 namespace visualization {
 namespace glsl {
-using namespace CVLib;
+using namespace cloudViewer;
 
 bool TextureSimpleShader::Compile() {
     if (CompileShaders(TextureSimpleVertexShader, NULL,
@@ -203,7 +203,7 @@ bool TextureSimpleShaderForTriangleMesh::PrepareBinding(
 
     // Bind vertices and uvs per material
     for (size_t i = 0; i < mesh.size(); i++) {
-        const CVLib::VerticesIndexes *triangle = 
+        const cloudViewer::VerticesIndexes *triangle = 
 			mesh.getTriangleVertIndexes(static_cast<unsigned int>(i));
         int mi = mesh.triangle_material_ids_[i];
 

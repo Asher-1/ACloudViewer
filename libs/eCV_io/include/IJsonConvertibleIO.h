@@ -43,25 +43,25 @@ namespace io {
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
 bool ECV_IO_LIB_API ReadIJsonConvertible(const std::string &filename,
-                          CVLib::utility::IJsonConvertible &object);
+                          cloudViewer::utility::IJsonConvertible &object);
 
 /// The general entrance for writing an IJsonConvertible to a file
 /// The function calls write functions based on the extension name of filename.
 /// \return return true if the write function is successful, false otherwise.
 bool ECV_IO_LIB_API WriteIJsonConvertible(const std::string &filename,
-                           const CVLib::utility::IJsonConvertible &object);
+                           const cloudViewer::utility::IJsonConvertible &object);
 
 bool ECV_IO_LIB_API ReadIJsonConvertibleFromJSON(const std::string &filename,
-                                  CVLib::utility::IJsonConvertible &object);
+                                  cloudViewer::utility::IJsonConvertible &object);
 
 bool ECV_IO_LIB_API WriteIJsonConvertibleToJSON(const std::string &filename,
-                                 const CVLib::utility::IJsonConvertible &object);
+                                 const cloudViewer::utility::IJsonConvertible &object);
 
 bool ECV_IO_LIB_API ReadIJsonConvertibleFromJSONString(const std::string &json_string,
-                                        CVLib::utility::IJsonConvertible &object);
+                                        cloudViewer::utility::IJsonConvertible &object);
 
 bool ECV_IO_LIB_API WriteIJsonConvertibleToJSONString(std::string &json_string,
-                                       const CVLib::utility::IJsonConvertible &object);
+                                       const cloudViewer::utility::IJsonConvertible &object);
 
 /// String to and from enum mapping, based on
 /// https://github.com/nlohmann/json/blob/master/include/nlohmann/detail/macro_scope.hpp
@@ -104,7 +104,7 @@ bool ECV_IO_LIB_API WriteIJsonConvertibleToJSONString(std::string &json_string,
                 [&str](const std::pair<ENUM_TYPE, std::string> &es_pair)  \
                         -> bool { return es_pair.second == str; });       \
         e = ((it != std::end(m)) ? it : std::begin(m))->first;            \
-        CVLib::utility::LogDebug("{} -> {}", str, e);                     \
+        cloudViewer::utility::LogDebug("{} -> {}", str, e);                     \
     }
 
 }  // namespace io

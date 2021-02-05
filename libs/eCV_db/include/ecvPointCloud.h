@@ -23,7 +23,7 @@
 #pragma warning( disable: 4250 )
 #endif
 
-//CVLib
+//cloudViewer
 #include <PointCloudTpl.h>
 
 //Local
@@ -139,11 +139,11 @@ const unsigned CC_MAX_NUMBER_OF_POINTS_PER_CLOUD = 2000000000; //we must keep it
 	- per-point visibility information (to hide/display subsets of points)
 	- other children objects (meshes, calibrated pictures, etc.)
 **/
-class ECV_DB_LIB_API ccPointCloud : public CVLib::PointCloudTpl<ccGenericPointCloud>
+class ECV_DB_LIB_API ccPointCloud : public cloudViewer::PointCloudTpl<ccGenericPointCloud>
 {
 public:
 	//! Base class (shortcut)
-	using BaseClass = CVLib::PointCloudTpl<ccGenericPointCloud>;
+	using BaseClass = cloudViewer::PointCloudTpl<ccGenericPointCloud>;
 
 	//! Default constructor
 	/** Creates an empty cloud without any feature. Each of them shoud be
@@ -166,27 +166,27 @@ public:
 public: //clone, copy, etc.
 
 	//! Creates a new point cloud object from a GenericIndexedCloud
-	/** "GenericIndexedCloud" is an extension of GenericCloud (from CVLib)
+	/** "GenericIndexedCloud" is an extension of GenericCloud (from cloudViewer)
 		which provides a const random accessor to points.
-		See CVLib documentation for more information about GenericIndexedCloud.
+		See cloudViewer documentation for more information about GenericIndexedCloud.
 		As the GenericIndexedCloud interface is very simple, only points are imported.
 		Note: throws an 'int' exception in case of error (see CTOR_ERRORS)
 		\param cloud a GenericIndexedCloud structure
 		\param sourceCloud cloud from which main parameters will be imported (optional)
 	**/
-	static ccPointCloud* From(const CVLib::GenericIndexedCloud* cloud, const ccGenericPointCloud* sourceCloud = nullptr);
+	static ccPointCloud* From(const cloudViewer::GenericIndexedCloud* cloud, const ccGenericPointCloud* sourceCloud = nullptr);
 
 	//! Creates a new point cloud object from a GenericCloud
-	/** "GenericCloud" is a very simple and light interface from CVLib. It is
+	/** "GenericCloud" is a very simple and light interface from cloudViewer. It is
 		meant to give access to points coordinates of any cloud (on the
 		condition it implements the GenericCloud interface of course).
-		See CVLib documentation for more information about GenericClouds.
+		See cloudViewer documentation for more information about GenericClouds.
 		As the GenericCloud interface is very simple, only points are imported.
 		Note: throws an 'int' exception in case of error (see CTOR_ERRORS)
 		\param cloud a GenericCloud structure
 		\param sourceCloud cloud from which main parameters will be imported (optional)
 	**/
-	static ccPointCloud* From(CVLib::GenericCloud* cloud, const ccGenericPointCloud* sourceCloud = nullptr);
+	static ccPointCloud* From(cloudViewer::GenericCloud* cloud, const ccGenericPointCloud* sourceCloud = nullptr);
 
 	/// \brief Function to select points from \p input ccPointCloud into
 	/// \p output ccPointCloud.
@@ -207,12 +207,12 @@ public: //clone, copy, etc.
 
 	//! Creates a new point cloud object from a ReferenceCloud (selection)
 	/** "Reference clouds" are a set of indexes referring to a real point cloud.
-		See CVLib documentation for more information about ReferenceClouds.
+		See cloudViewer documentation for more information about ReferenceClouds.
 		Warning: the ReferenceCloud structure must refer to this cloud.
 		\param selection a ReferenceCloud structure (pointing to source)
 		\param[out] warnings [optional] to determine if warnings (CTOR_ERRORS) occurred during the duplication process
 	**/
-	ccPointCloud* partialClone(const CVLib::ReferenceCloud* selection, int* warnings = nullptr) const;
+	ccPointCloud* partialClone(const cloudViewer::ReferenceCloud* selection, int* warnings = nullptr) const;
 
 	//! Clones this entity
 	/** All the main features of the entity are cloned, except from the octree and
@@ -544,7 +544,7 @@ public: //other methods
 	//void removeFromDisplay(const ccGenericGLDisplay* win) override; //for proper VBO release
 	//void setDisplay(ccGenericGLDisplay* win) override;
 
-	//inherited from CVLib::GenericCloud
+	//inherited from cloudViewer::GenericCloud
 	unsigned char testVisibility(const CCVector3& P) const override;
 
 	//inherited from ccGenericPointCloud
@@ -569,8 +569,8 @@ public: //other methods
 	std::vector<Eigen::Vector3d> getEigenNormals() const;
 	void setEigenNormals(const std::vector<Eigen::Vector3d>& normals);
 
-	CVLib::ReferenceCloud* crop(const ccBBox& box, bool inside = true) override;
-	CVLib::ReferenceCloud* crop(const ecvOrientedBBox& bbox) override;
+	cloudViewer::ReferenceCloud* crop(const ccBBox& box, bool inside = true) override;
+	cloudViewer::ReferenceCloud* crop(const ecvOrientedBBox& bbox) override;
 
 	virtual void applyRigidTransformation(const ccGLMatrix& trans) override;
 	virtual void scale(PointCoordinateType fx, PointCoordinateType fy, PointCoordinateType fz, CCVector3 center = CCVector3(0,0,0)) override;
@@ -590,13 +590,13 @@ public: //other methods
 	/** The output (reference) clouds will have as many points as this cloud
 		(with the indexes pointing on the closest point in the other cloud)
 	**/
-	QSharedPointer<CVLib::ReferenceCloud> computeCPSet(	ccGenericPointCloud& otherCloud,
-														CVLib::GenericProgressCallback* progressCb = nullptr,
+	QSharedPointer<cloudViewer::ReferenceCloud> computeCPSet(	ccGenericPointCloud& otherCloud,
+														cloudViewer::GenericProgressCallback* progressCb = nullptr,
 														unsigned char octreeLevel = 0);
 
 	//! Interpolate colors from another cloud (nearest neighbor only)
 	bool interpolateColorsFrom(	ccGenericPointCloud* cloud,
-								CVLib::GenericProgressCallback* progressCb = nullptr,
+								cloudViewer::GenericProgressCallback* progressCb = nullptr,
 								unsigned char octreeLevel = 0);
 
 	//! Sets a particular point color
@@ -806,7 +806,7 @@ public: //other methods
 		bool exportDeviationSF = false,
 		double startAngle_deg = 0.0,
 		double stopAngle_deg = 360.0,
-		CVLib::GenericProgressCallback* progressCb = nullptr) const;
+		cloudViewer::GenericProgressCallback* progressCb = nullptr) const;
 
 	//! Adds associated SF color ramp info to current GL context
 	void addColorRampInfo(CC_DRAW_CONTEXT& context);
@@ -831,7 +831,7 @@ public: //other methods
 		\param inside whether selected points are inside or outside the polyline
 		\return points falling inside (or outside) as a selection
 	**/
-	CVLib::ReferenceCloud* crop2D(const ccPolyline* poly, unsigned char orthoDim, bool inside = true);
+	cloudViewer::ReferenceCloud* crop2D(const ccPolyline* poly, unsigned char orthoDim, bool inside = true);
 
 	//! Appends a cloud to this one
 	/** Same as the += operator with pointCountBefore == size()

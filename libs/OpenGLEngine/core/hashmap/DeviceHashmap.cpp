@@ -55,7 +55,7 @@ std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
     }
 #endif
     else {
-        CVLib::utility::LogError("[CreateDefaultDeviceHashmap]: Unimplemented device");
+        cloudViewer::utility::LogError("[CreateDefaultDeviceHashmap]: Unimplemented device");
     }
 }
 

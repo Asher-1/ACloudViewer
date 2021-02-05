@@ -311,5 +311,5 @@ float ccThicknessTool::planeToPointDistance(ccPlane* plane, CCVector3 P)
 	pEq[3]= plane->getCenter().dot(plane->getNormal()); //a point on the plane dot the plane normal
 
 	//return distance
-	return CVLib::DistanceComputationTools::computePoint2PlaneDistance(&P, pEq);
+	return cloudViewer::DistanceComputationTools::computePoint2PlaneDistance(&P, pEq);
 }

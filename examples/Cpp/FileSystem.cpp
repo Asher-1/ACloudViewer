@@ -29,7 +29,7 @@
 #include "CloudViewer.h"
 
 void PrintHelp() {
-    using namespace CVLib;
+    using namespace cloudViewer;
     utility::LogInfo("Usage :");
     utility::LogInfo("    > FileSystem ls [dir]");
     utility::LogInfo("    > FileSystem mkdir [dir]");
@@ -39,7 +39,7 @@ void PrintHelp() {
 }
 
 int main(int argc, char **args) {
-    using namespace CVLib::utility::filesystem;
+    using namespace cloudViewer::utility::filesystem;
 
     std::string directory, function;
     if (argc <= 1) {

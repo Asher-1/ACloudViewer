@@ -39,7 +39,7 @@ void unbind();
 namespace cloudViewer {
 
 namespace {
-	using namespace CVLib;
+	using namespace cloudViewer;
 
 class GLFWEnvironmentSingleton {
 private:
