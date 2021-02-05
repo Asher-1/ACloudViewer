@@ -50,7 +50,7 @@
 
 namespace cloudViewer {
 namespace io {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
 const unsigned int kPostProcessFlags =
         aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices |

@@ -129,7 +129,7 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
     //test base view matrix
     for (unsigned i = 0; i < 12; ++i)
     {
-        if ( CVLib::GreaterThanEpsilon( fabs(params.viewMat.data()[i] - m_params.viewMat.data()[i]) ) )
+        if ( cloudViewer::GreaterThanEpsilon( fabs(params.viewMat.data()[i] - m_params.viewMat.data()[i]) ) )
         {
             return;
         }
@@ -142,8 +142,8 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
 			params.perspectiveAspectRatio != m_params.perspectiveAspectRatio)
 			return;
 
-        if (CVLib::GreaterThanEpsilon( (params.pivotPoint - m_params.pivotPoint).norm() )
-            || CVLib::GreaterThanEpsilon( (params.cameraCenter - m_params.cameraCenter).norm() ))
+        if (cloudViewer::GreaterThanEpsilon( (params.pivotPoint - m_params.pivotPoint).norm() )
+            || cloudViewer::GreaterThanEpsilon( (params.cameraCenter - m_params.cameraCenter).norm() ))
         {
             return;
         }

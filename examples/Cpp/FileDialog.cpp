@@ -29,8 +29,8 @@
 #include "CloudViewer.h"
 
 void PrintHelp() {
-	CVLib::utility::LogInfo("Usage :");
-	CVLib::utility::LogInfo("    > FileDialog [save|load]");
+	cloudViewer::utility::LogInfo("Usage :");
+	cloudViewer::utility::LogInfo("    > FileDialog [save|load]");
 }
 
 int main(int argc, char *argv[]) {
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
                                                 NULL, NULL, 1);
 		if (str)
 		{
-			CVLib::utility::LogInfo("{}", str);
+			cloudViewer::utility::LogInfo("{}", str);
 		}
         
     } else if (option == "save") {
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
                                                 &pattern, NULL);
 		if (str)
 		{
-			CVLib::utility::LogInfo("{}", str);
+			cloudViewer::utility::LogInfo("{}", str);
 		}
     }
     return 0;

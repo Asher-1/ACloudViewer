@@ -37,7 +37,7 @@
 namespace cloudViewer {
 namespace t {
 namespace geometry {
-using namespace CVLib;
+using namespace cloudViewer;
 
 bool TensorMap::IsSizeSynchronized() const {
     const int64_t primary_size = GetPrimarySize();

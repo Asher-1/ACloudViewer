@@ -49,7 +49,7 @@ namespace cloudViewer {
 namespace io {
 namespace k4a_plugin {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 #ifdef _WIN32
 

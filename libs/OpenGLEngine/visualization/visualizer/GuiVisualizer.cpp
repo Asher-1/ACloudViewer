@@ -314,7 +314,7 @@ private:
 
 }  // namespace
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 const std::string MODEL_NAME = "__model__";
 

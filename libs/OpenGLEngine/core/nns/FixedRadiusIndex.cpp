@@ -50,12 +50,12 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius) {
 #ifdef BUILD_CUDA_MODULE
     if (dataset_points.GetDevice().GetType() != Device::DeviceType::CUDA) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[FixedRadiusIndex::SetTensorData] dataset_points should be "
                 "GPU Tensor.");
     }
     if (radius <= 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[FixedRadiusIndex::SetTensorData] radius should be positive.");
     }
     dataset_points_ = dataset_points.Contiguous();
@@ -110,7 +110,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     });
     return true;
 #else
-    CVLib::utility::LogError(
+    cloudViewer::utility::LogError(
             "FixedRadiusIndex::SetTensorData BUILD_CUDA_MODULE is OFF. Please "
             "compile cloudViewer with BUILD_CUDA_MODULE=ON.");
 #endif
@@ -123,13 +123,13 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     query_points.AssertDtype(GetDtype());
 
     // Check shape.
-    query_points.AssertShapeCompatible({CVLib::utility::nullopt, GetDimension()});
+    query_points.AssertShapeCompatible({cloudViewer::utility::nullopt, GetDimension()});
 
     // Check device.
     query_points.AssertDevice(GetDevice());
 
     if (radius <= 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[FixedRadiusIndex::SearchRadius] radius should be positive.");
     }
     Tensor query_points_ = query_points.Contiguous();
@@ -195,7 +195,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                     .Sub(neighbors_row_splits.Slice(0, 0, num_query_points));
     return std::make_tuple(neighbors_index, neighbors_distance, num_neighbors);
 #else
-    CVLib::utility::LogError(
+    cloudViewer::utility::LogError(
                 "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. Please "
                 "compile cloudViewer with BUILD_CUDA_MODULE=ON.");
 #endif

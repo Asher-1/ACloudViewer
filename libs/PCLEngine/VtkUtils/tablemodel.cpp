@@ -80,7 +80,7 @@ void TableModel::updateData(const ccHObject * objContainer)
 			int triNum = static_cast<int>(mesh->size());
 			for (int i = 0; i < triNum; ++i)
 			{
-				const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(i);
+				const cloudViewer::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(i);
 				if (visFiltering)
 				{
 					//we skip the triangle if at least one vertex is hidden

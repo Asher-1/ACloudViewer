@@ -57,7 +57,7 @@
 #endif
 // clang-format on
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 namespace poisson {
 

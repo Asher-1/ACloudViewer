@@ -137,7 +137,7 @@ ccGenericPrimitive* ccQuadric::clone() const
 	return finishCloneJob(new ccQuadric(m_minCorner,m_maxCorner,m_eq,&m_dims,&m_transformation,getName(),m_drawPrecision));
 }
 
-ccQuadric* ccQuadric::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/*=0*/)
+ccQuadric* ccQuadric::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double* rms/*=0*/)
 {
 	//number of points
 	unsigned count = cloud->size();
@@ -152,7 +152,7 @@ ccQuadric* ccQuadric::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/
 	//project the points on a 2D plane
 	CCVector3 G, X, Y, N;
 	{
-		CVLib::Neighbourhood Yk(cloud);
+		cloudViewer::Neighbourhood Yk(cloud);
 		
 		//plane equation
 		const PointCoordinateType* theLSPlane = Yk.getLSPlane();
@@ -189,7 +189,7 @@ ccQuadric* ccQuadric::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/
 		tempCloud.addPoint(CCVector3(P.dot(X),P.dot(Y),P.dot(N)));
 	}
 
-	CVLib::Neighbourhood Zk(&tempCloud);
+	cloudViewer::Neighbourhood Zk(&tempCloud);
 	{
 		//set exact values for gravity center and plane equation
 		//(just to be sure and to avoid re-computing them)

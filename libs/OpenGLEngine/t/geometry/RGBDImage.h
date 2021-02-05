@@ -55,7 +55,7 @@ public:
         if (color.GetRows() != depth.GetRows() ||
             color.GetCols() != depth.GetCols()) {
             aligned_ = false;
-            CVLib::utility::LogWarning("Aligned image pair must have the same resolution.");
+            cloudViewer::utility::LogWarning("Aligned image pair must have the same resolution.");
         }
     }
 

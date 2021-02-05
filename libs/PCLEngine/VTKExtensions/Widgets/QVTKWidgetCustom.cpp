@@ -944,7 +944,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 
 				if (m_tools->m_rectPickingPoly)
 				{
-					CVLib::GenericIndexedCloudPersist* vertices = 
+					cloudViewer::GenericIndexedCloudPersist* vertices = 
 						m_tools->m_rectPickingPoly->getAssociatedCloud();
 					assert(vertices);
 					CCVector3* B = const_cast<CCVector3*>(vertices->getPointPersistentPtr(1));
@@ -1222,7 +1222,7 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent *event)
 			//if a rectangular picking area has been defined
 			if (m_tools->m_rectPickingPoly)
 			{
-				CVLib::GenericIndexedCloudPersist* vertices = m_tools->m_rectPickingPoly->getAssociatedCloud();
+				cloudViewer::GenericIndexedCloudPersist* vertices = m_tools->m_rectPickingPoly->getAssociatedCloud();
 				assert(vertices);
 				const CCVector3* A = vertices->getPointPersistentPtr(0);
 				const CCVector3* C = vertices->getPointPersistentPtr(2);

@@ -69,7 +69,7 @@ static const std::unordered_map<
                 {"txt", WritePinholeCameraTrajectoryToTUM},
         };
 
-using namespace CVLib;
+using namespace cloudViewer;
 std::shared_ptr<camera::PinholeCameraTrajectory>
 CreatePinholeCameraTrajectoryFromFile(const std::string &filename) {
     auto trajectory = std::make_shared<camera::PinholeCameraTrajectory>();

@@ -21,7 +21,7 @@
 #include <QHeaderView>
 #include <QMessageBox>
 
-//CVLib
+//cloudViewer
 #include <DistanceComputationTools.h>
 #include <MeshSamplingTools.h>
 #include <ScalarField.h>
@@ -84,7 +84,7 @@ ccComparisonDlg::ccComparisonDlg(	ccHObject* compEntity,
 	{
 		//octree level
 		octreeLevelComboBox->addItem("AUTO");
-		for (int i=1; i<=CVLib::DgmOctree::MAX_OCTREE_LEVEL; ++i)
+		for (int i=1; i<=cloudViewer::DgmOctree::MAX_OCTREE_LEVEL; ++i)
 			octreeLevelComboBox->addItem(QString::number(i));
 
 		//local model
@@ -331,7 +331,7 @@ bool ccComparisonDlg::computeApproxDistances()
 	}
 
 	m_compCloud->setCurrentScalarField(sfIdx);
-	CVLib::ScalarField* sf = m_compCloud->getCurrentInScalarField();
+	cloudViewer::ScalarField* sf = m_compCloud->getCurrentInScalarField();
 	assert(sf);
 
 	//prepare the octree structures
@@ -349,7 +349,7 @@ bool ccComparisonDlg::computeApproxDistances()
 	{
 	case CLOUDCLOUD_DIST: //cloud-cloud
 		{
-			approxResult = CVLib::DistanceComputationTools::computeApproxCloud2CloudDistance(	m_compCloud,
+			approxResult = cloudViewer::DistanceComputationTools::computeApproxCloud2CloudDistance(	m_compCloud,
 																								m_refCloud,
 																								DEFAULT_OCTREE_LEVEL,
 																								0,
@@ -361,7 +361,7 @@ bool ccComparisonDlg::computeApproxDistances()
 	
 	case CLOUDMESH_DIST: //cloud-mesh
 		{
-			CVLib::DistanceComputationTools::Cloud2MeshDistanceComputationParams c2mParams;
+			cloudViewer::DistanceComputationTools::Cloud2MeshDistanceComputationParams c2mParams;
 			{
 				c2mParams.octreeLevel = DEFAULT_OCTREE_LEVEL;
 				c2mParams.maxSearchDist = 0;
@@ -370,7 +370,7 @@ bool ccComparisonDlg::computeApproxDistances()
 				c2mParams.flipNormals = false;
 				c2mParams.multiThread = false;
 			}
-			approxResult = CVLib::DistanceComputationTools::computeCloud2MeshDistance(	m_compCloud,
+			approxResult = cloudViewer::DistanceComputationTools::computeCloud2MeshDistance(	m_compCloud,
 																						m_refMesh,
 																						c2mParams,
 																						progressDlg.data(),
@@ -482,7 +482,7 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist)
 		sfIdx = m_compCloud->getScalarFieldIndexByName(CC_TEMP_APPROX_DISTANCES_DEFAULT_SF_NAME);
 	}
 
-	const CVLib::ScalarField* approxDistances = m_compCloud->getScalarField(sfIdx);
+	const cloudViewer::ScalarField* approxDistances = m_compCloud->getScalarField(sfIdx);
 	if (!approxDistances)
 	{
 		assert(sfIdx >= 0);
@@ -490,7 +490,7 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist)
 	}
 
 	//evalutate the theoretical time for each octree level
-	const int MAX_OCTREE_LEVEL = m_refMesh ? 9 : CVLib::DgmOctree::MAX_OCTREE_LEVEL; //DGM: can't go higher than level 9 with a mesh as the grid is 'plain' and would take too much memory!
+	const int MAX_OCTREE_LEVEL = m_refMesh ? 9 : cloudViewer::DgmOctree::MAX_OCTREE_LEVEL; //DGM: can't go higher than level 9 with a mesh as the grid is 'plain' and would take too much memory!
 	std::vector<double> timings;
 	try
 	{
@@ -504,7 +504,7 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist)
 
 	//if the reference is a mesh
 	double meanTriangleSurface = 1.0;
-	CVLib::GenericIndexedMesh* mesh = 0;
+	cloudViewer::GenericIndexedMesh* mesh = 0;
 	if (!m_refOctree)
 	{
 		if (!m_refMesh)
@@ -512,14 +512,14 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist)
 			CVLog::Error("Internal error: reference entity should be a mesh!");
 			return -1;
 		}
-		mesh = static_cast<CVLib::GenericIndexedMesh*>(m_refMesh);
+		mesh = static_cast<cloudViewer::GenericIndexedMesh*>(m_refMesh);
 		if (!mesh || mesh->size() == 0)
 		{
 			CVLog::Warning("Can't determine best octree level: mesh is empty!");
 			return -1;
 		}
 		//total mesh surface
-		double meshSurface = CVLib::MeshSamplingTools::computeMeshArea(mesh);
+		double meshSurface = cloudViewer::MeshSamplingTools::computeMeshArea(mesh);
 		//average triangle surface
 		if (meshSurface > 0)
 		{
@@ -540,7 +540,7 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist)
 		progressDlg->setInfo(tr("Testing %1 levels...").arg(MAX_OCTREE_LEVEL)); //we lie here ;)
 		progressDlg->start();
 	}
-	CVLib::NormalizedProgress nProgress(progressDlg.data(), MAX_OCTREE_LEVEL - 2);
+	cloudViewer::NormalizedProgress nProgress(progressDlg.data(), MAX_OCTREE_LEVEL - 2);
 	QApplication::processEvents();
 
 	bool maxDistanceDefined = maxDistCheckBox->isChecked();
@@ -549,7 +549,7 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist)
 	//for each level
 	for (int level = s_minOctreeLevel; level < MAX_OCTREE_LEVEL; ++level)
 	{
-		const unsigned char bitDec = CVLib::DgmOctree::GET_BIT_SHIFT(level);
+		const unsigned char bitDec = cloudViewer::DgmOctree::GET_BIT_SHIFT(level);
 		unsigned numberOfPointsInCell = 0;
 		unsigned index = 0;
 		double cellDist = -1;
@@ -566,13 +566,13 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist)
 			refListDensity = m_refOctree->computeMeanOctreeDensity(static_cast<unsigned char>(level));
 		}
 
-		CVLib::DgmOctree::CellCode tempCode = 0xFFFFFFFF;
+		cloudViewer::DgmOctree::CellCode tempCode = 0xFFFFFFFF;
 
 		//scan the octree structure
-		const CVLib::DgmOctree::cellsContainer& compCodes = m_compOctree->pointsAndTheirCellCodes();
-		for (CVLib::DgmOctree::cellsContainer::const_iterator c=compCodes.begin(); c!=compCodes.end(); ++c)
+		const cloudViewer::DgmOctree::cellsContainer& compCodes = m_compOctree->pointsAndTheirCellCodes();
+		for (cloudViewer::DgmOctree::cellsContainer::const_iterator c=compCodes.begin(); c!=compCodes.end(); ++c)
 		{
-			CVLib::DgmOctree::CellCode truncatedCode = (c->theCode >> bitDec);
+			cloudViewer::DgmOctree::CellCode truncatedCode = (c->theCode >> bitDec);
 
 			//new cell?
 			if (truncatedCode != tempCode)
@@ -673,7 +673,7 @@ bool ccComparisonDlg::computeDistances()
 		return false;
 
 	int octreeLevel = octreeLevelComboBox->currentIndex();
-	assert(octreeLevel <= CVLib::DgmOctree::MAX_OCTREE_LEVEL);
+	assert(octreeLevel <= cloudViewer::DgmOctree::MAX_OCTREE_LEVEL);
 
 	if (octreeLevel == 0)
 	{
@@ -706,7 +706,7 @@ bool ccComparisonDlg::computeDistances()
 	}
 
 	m_compCloud->setCurrentScalarField(sfIdx);
-	CVLib::ScalarField* sf = m_compCloud->getCurrentInScalarField();
+	cloudViewer::ScalarField* sf = m_compCloud->getCurrentInScalarField();
 	assert(sf);
 
 	//max search distance
@@ -714,8 +714,8 @@ bool ccComparisonDlg::computeDistances()
 	//multi-thread
 	bool multiThread = multiThreadedCheckBox->isChecked();
 
-	CVLib::DistanceComputationTools::Cloud2CloudDistanceComputationParams c2cParams;
-	CVLib::DistanceComputationTools::Cloud2MeshDistanceComputationParams  c2mParams;
+	cloudViewer::DistanceComputationTools::Cloud2CloudDistanceComputationParams c2cParams;
+	cloudViewer::DistanceComputationTools::Cloud2MeshDistanceComputationParams  c2mParams;
 	c2cParams.maxThreadCount = c2mParams.maxThreadCount = maxThreadCountSpinBox->value();
 
 	int result = -1;
@@ -840,7 +840,7 @@ bool ccComparisonDlg::computeDistances()
 			c2cParams.CPSet = 0;
 		}
 		
-		result = CVLib::DistanceComputationTools::computeCloud2CloudDistance(	m_compCloud,
+		result = cloudViewer::DistanceComputationTools::computeCloud2CloudDistance(	m_compCloud,
 																				m_refCloud,
 																				c2cParams,
 																				progressDlg.data(),
@@ -865,7 +865,7 @@ bool ccComparisonDlg::computeDistances()
 			c2mParams.multiThread = multiThread;
 		}
 		
-		result = CVLib::DistanceComputationTools::computeCloud2MeshDistance(	m_compCloud,
+		result = cloudViewer::DistanceComputationTools::computeCloud2MeshDistance(	m_compCloud,
 																				m_refMesh,
 																				c2mParams,
 																				progressDlg.data(),
@@ -933,7 +933,7 @@ bool ccComparisonDlg::computeDistances()
 			static const QChar charDim[3] = { 'X', 'Y', 'Z' };
 			for (unsigned j = 0; j < 3; ++j)
 			{
-				CVLib::ScalarField* sf = c2cParams.splitDistances[j];
+				cloudViewer::ScalarField* sf = c2cParams.splitDistances[j];
 				if (sf)
 				{
 					sf->setName(qPrintable(m_sfName + QString(" (%1)").arg(charDim[j])));
@@ -960,7 +960,7 @@ bool ccComparisonDlg::computeDistances()
 
 	for (unsigned j = 0; j < 3; ++j)
 	{
-		CVLib::ScalarField* &sf = c2cParams.splitDistances[j];
+		cloudViewer::ScalarField* &sf = c2cParams.splitDistances[j];
 		if (sf)
 		{
 			sf->release();

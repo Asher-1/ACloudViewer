@@ -369,7 +369,7 @@ bool ccCameraSensor::applyViewport()
 	//aspect ratio
 	float ar = static_cast<float>(m_intrinsicParams.arrayWidth) / m_intrinsicParams.arrayHeight;
 	//fov
-    float fov_deg = CVLib::RadiansToDegrees(m_intrinsicParams.vFOV_rad);
+    float fov_deg = cloudViewer::RadiansToDegrees(m_intrinsicParams.vFOV_rad);
 	//camera position/orientation
 	ccGLMatrixd transd(trans.data());
 	ecvDisplayTools::SetupProjectiveViewport(transd, fov_deg, ar);
@@ -772,7 +772,7 @@ bool ccCameraSensor::fromImageCoordToGlobalCoord(const CCVector2& imageCoord, CC
 	trans.applyRotation(viewDir);
 	viewDir.normalize();
 
-    if ( CVLib::LessThanEpsilon( fabs(viewDir.z) ) )
+    if ( cloudViewer::LessThanEpsilon( fabs(viewDir.z) ) )
 	{
 		//viewing dir is parallel to the plane Z = Z0!
 		return false;
@@ -925,7 +925,7 @@ bool ccCameraSensor::computeUncertainty(const CCVector2& pixel, const float dept
 	return false;
 }
 
-bool ccCameraSensor::computeUncertainty(CVLib::ReferenceCloud* points, std::vector< Vector3Tpl<ScalarType> >& accuracy/*, bool lensCorrection*/)
+bool ccCameraSensor::computeUncertainty(cloudViewer::ReferenceCloud* points, std::vector< Vector3Tpl<ScalarType> >& accuracy/*, bool lensCorrection*/)
 {
 	if (!points || points->size() == 0)
 	{
@@ -1577,7 +1577,7 @@ float ccCameraSensor::ComputeFovRadFromFocalMm(float focal_mm, float ccdSize_mm)
 }
 
 bool ccCameraSensor::computeOrthoRectificationParams(const ccImage* image,
-	CVLib::GenericIndexedCloud* keypoints3D,
+	cloudViewer::GenericIndexedCloud* keypoints3D,
 	std::vector<KeyPoint>& keypointsImage,
 	double a_out[3],
 	double b_out[3],
@@ -1650,8 +1650,8 @@ bool ccCameraSensor::computeOrthoRectificationParams(const ccImage* image,
 
 	//conjugate gradient initialization
 	//we solve tA.A.X = tA.b
-	CVLib::ConjugateGradient<8, double> cg;
-	CVLib::SquareMatrixd& tAA = cg.A();
+	cloudViewer::ConjugateGradient<8, double> cg;
+	cloudViewer::SquareMatrixd& tAA = cg.A();
 	double* tAb = cg.b();
 
 	//compute tA.A and tA.b
@@ -1888,7 +1888,7 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(const ccImage* image,
 }
 
 ccImage* ccCameraSensor::orthoRectifyAsImage(const ccImage* image,
-	CVLib::GenericIndexedCloud* keypoints3D,
+	cloudViewer::GenericIndexedCloud* keypoints3D,
 	std::vector<KeyPoint>& keypointsImage,
 	double& pixelSize,
 	double* minCorner/*=0*/,
@@ -2294,7 +2294,7 @@ bool ccCameraSensor::OrthoRectifyAsImages(std::vector<ccImage*> images,
 
 ccPointCloud* ccCameraSensor::orthoRectifyAsCloud(
 	const ccImage* image,
-	CVLib::GenericIndexedCloud* keypoints3D,
+	cloudViewer::GenericIndexedCloud* keypoints3D,
 	std::vector<KeyPoint>& keypointsImage) const
 {
 	double a[3], b[3], c[3];
@@ -2382,25 +2382,25 @@ ccPointCloud* ccCameraSensor::orthoRectifyAsCloud(
 /*******************                              *******************/
 /********************************************************************/
 
-bool ccOctreeFrustumIntersector::build(CVLib::DgmOctree* octree)
+bool ccOctreeFrustumIntersector::build(cloudViewer::DgmOctree* octree)
 {
 	if (!octree)
 		return false;
 
-	for (int i = 0; i < CVLib::DgmOctree::MAX_OCTREE_LEVEL + 1; i++)
+	for (int i = 0; i < cloudViewer::DgmOctree::MAX_OCTREE_LEVEL + 1; i++)
 		m_cellsBuilt[i].clear();
 
-	const CVLib::DgmOctree::cellsContainer& thePointsAndTheirCellCodes = octree->pointsAndTheirCellCodes();
-	CVLib::DgmOctree::cellsContainer::const_iterator it = thePointsAndTheirCellCodes.begin();
+	const cloudViewer::DgmOctree::cellsContainer& thePointsAndTheirCellCodes = octree->pointsAndTheirCellCodes();
+	cloudViewer::DgmOctree::cellsContainer::const_iterator it = thePointsAndTheirCellCodes.begin();
 
 	try
 	{
 		for (it=thePointsAndTheirCellCodes.begin(); it!=thePointsAndTheirCellCodes.end(); ++it)
 		{
-			CVLib::DgmOctree::CellCode completeCode = it->theCode;
-			for (unsigned char level=1; level<=CVLib::DgmOctree::MAX_OCTREE_LEVEL; level++)
+			cloudViewer::DgmOctree::CellCode completeCode = it->theCode;
+			for (unsigned char level=1; level<=cloudViewer::DgmOctree::MAX_OCTREE_LEVEL; level++)
 			{
-				unsigned char bitDec = CVLib::DgmOctree::GET_BIT_SHIFT(level);
+				unsigned char bitDec = cloudViewer::DgmOctree::GET_BIT_SHIFT(level);
 				m_cellsBuilt[level].insert(completeCode >> bitDec);
 			}
 		}
@@ -2408,7 +2408,7 @@ bool ccOctreeFrustumIntersector::build(CVLib::DgmOctree* octree)
 	catch (const std::bad_alloc&)
 	{
 		CVLog::Warning("[ccCameraSensor::prepareOctree] Not enough memory!");
-		for (int i = 0; i <= CVLib::DgmOctree::MAX_OCTREE_LEVEL; i++)
+		for (int i = 0; i <= cloudViewer::DgmOctree::MAX_OCTREE_LEVEL; i++)
 		{
 			m_cellsBuilt[i].clear();
 		}
@@ -2594,7 +2594,7 @@ ccOctreeFrustumIntersector::separatingAxisTest(const CCVector3& bbMin,
 }
 
 void ccOctreeFrustumIntersector::computeFrustumIntersectionByLevel(unsigned char level,
-																	CVLib::DgmOctree::CellCode parentTruncatedCode,
+																	cloudViewer::DgmOctree::CellCode parentTruncatedCode,
 																	OctreeCellVisibility parentResult,
 																	const float planesCoefficients[6][4],
 																	const CCVector3 ptsFrustum[8],
@@ -2605,16 +2605,16 @@ void ccOctreeFrustumIntersector::computeFrustumIntersectionByLevel(unsigned char
 		return;
 
 	// move code to the left
-	CVLib::DgmOctree::CellCode baseTruncatedCode = (parentTruncatedCode << 3);
+	cloudViewer::DgmOctree::CellCode baseTruncatedCode = (parentTruncatedCode << 3);
 
 	// test to do on the 8 child cells
 	for (unsigned i=0; i<8; i++)
 	{
 		// set truncated code of the current cell
-		CVLib::DgmOctree::CellCode truncatedCode = baseTruncatedCode + i;
+		cloudViewer::DgmOctree::CellCode truncatedCode = baseTruncatedCode + i;
 
 		// if the current cell has not been built (contains no 3D points), we skip it
-		std::unordered_set<CVLib::DgmOctree::CellCode>::const_iterator got = m_cellsBuilt[level].find(truncatedCode);
+		std::unordered_set<cloudViewer::DgmOctree::CellCode>::const_iterator got = m_cellsBuilt[level].find(truncatedCode);
 		if (got != m_cellsBuilt[level].end())
 		{
 			// get extrema of the current cell
@@ -2633,7 +2633,7 @@ void ccOctreeFrustumIntersector::computeFrustumIntersectionByLevel(unsigned char
 					m_cellsIntersectFrustum[level].insert(truncatedCode);
 
 				// we do the same for the children (if we have not already reached the end of the tree)
-				if (level < CVLib::DgmOctree::MAX_OCTREE_LEVEL)
+				if (level < cloudViewer::DgmOctree::MAX_OCTREE_LEVEL)
 					computeFrustumIntersectionByLevel(level+1, truncatedCode, result, planesCoefficients, ptsFrustum, edges, center);
 			}
 		}
@@ -2649,7 +2649,7 @@ void ccOctreeFrustumIntersector::computeFrustumIntersectionWithOctree(	std::vect
 {
 	// clear old result
 	{
-		for (int i=0; i<=CVLib::DgmOctree::MAX_OCTREE_LEVEL; i++)
+		for (int i=0; i<=cloudViewer::DgmOctree::MAX_OCTREE_LEVEL; i++)
 		{
 			m_cellsInFrustum[i].clear();
 			m_cellsIntersectFrustum[i].clear();
@@ -2660,11 +2660,11 @@ void ccOctreeFrustumIntersector::computeFrustumIntersectionWithOctree(	std::vect
 	computeFrustumIntersectionByLevel(1, 0, CELL_INTERSECT_FRUSTUM, planesCoefficients, ptsFrustum, edges, center);
 
 	// get points
-	unsigned char level = static_cast<unsigned char>(CVLib::DgmOctree::MAX_OCTREE_LEVEL);
+	unsigned char level = static_cast<unsigned char>(cloudViewer::DgmOctree::MAX_OCTREE_LEVEL);
 
 	// dealing with cells completely inside the frustum
-	std::unordered_set<CVLib::DgmOctree::CellCode>::const_iterator it;
-	CVLib::ReferenceCloud pointsInCell(m_associatedOctree->associatedCloud());
+	std::unordered_set<cloudViewer::DgmOctree::CellCode>::const_iterator it;
+	cloudViewer::ReferenceCloud pointsInCell(m_associatedOctree->associatedCloud());
 	for (it = m_cellsInFrustum[level].begin(); it != m_cellsInFrustum[level].end(); ++it)
 	{
 		// get all points in cell

@@ -257,24 +257,24 @@ void qFacets::extractFacets(CellsFusionDlg::Algorithm algo)
 	s_maxEdgeLength = fusionDlg.maxEdgeLengthDoubleSpinBox->value();
 
 	//convert 'errorMeasureComboBox' index to enum
-	CVLib::DistanceComputationTools::ERROR_MEASURES errorMeasure =
-		CVLib::DistanceComputationTools::RMS;
+	cloudViewer::DistanceComputationTools::ERROR_MEASURES errorMeasure =
+		cloudViewer::DistanceComputationTools::RMS;
 	switch (s_errorMeasureType)
 	{
 	case 0:
-		errorMeasure = CVLib::DistanceComputationTools::RMS;
+		errorMeasure = cloudViewer::DistanceComputationTools::RMS;
 		break;
 	case 1:
-		errorMeasure = CVLib::DistanceComputationTools::MAX_DIST_68_PERCENT;
+		errorMeasure = cloudViewer::DistanceComputationTools::MAX_DIST_68_PERCENT;
 		break;
 	case 2:
-		errorMeasure = CVLib::DistanceComputationTools::MAX_DIST_95_PERCENT;
+		errorMeasure = cloudViewer::DistanceComputationTools::MAX_DIST_95_PERCENT;
 		break;
 	case 3:
-		errorMeasure = CVLib::DistanceComputationTools::MAX_DIST_99_PERCENT;
+		errorMeasure = cloudViewer::DistanceComputationTools::MAX_DIST_99_PERCENT;
 		break;
 	case 4:
-		errorMeasure = CVLib::DistanceComputationTools::MAX_DIST;
+		errorMeasure = cloudViewer::DistanceComputationTools::MAX_DIST;
 		break;
 	default:
 		assert(false);
@@ -348,8 +348,8 @@ void qFacets::extractFacets(CellsFusionDlg::Algorithm algo)
 	{
 		pc->setCurrentScalarField(sfIdx); //for AutoSegmentationTools::extractConnectedComponents
 
-		CVLib::ReferenceCloudContainer components;
-		if (!CVLib::AutoSegmentationTools::extractConnectedComponents(pc, components))
+		cloudViewer::ReferenceCloudContainer components;
+		if (!cloudViewer::AutoSegmentationTools::extractConnectedComponents(pc, components))
 		{
 			m_app->dispToConsole(
 				tr("Failed to extract fused components! (not enough memory?)"), 
@@ -434,7 +434,7 @@ void qFacets::extractFacets(CellsFusionDlg::Algorithm algo)
 }
 
 ccHObject* qFacets::createFacets(ccPointCloud* cloud,
-	CVLib::ReferenceCloudContainer& components,
+	cloudViewer::ReferenceCloudContainer& components,
 	unsigned minPointsPerComponent,
 	double maxEdgeLength,
 	bool randomColors,
@@ -467,7 +467,7 @@ ccHObject* qFacets::createFacets(ccPointCloud* cloud,
 	error = false;
 	while (!components.empty())
 	{
-		CVLib::ReferenceCloud* compIndexes = components.back();
+		cloudViewer::ReferenceCloud* compIndexes = components.back();
 		components.pop_back();
 
 		// if it has enough points
@@ -657,7 +657,7 @@ void ComputeFacetExtensions(CCVector3& N, ccPolyline* facetContour, double& hori
 	//horizontal and vertical extensions
 	horizExt = vertExt = 0;
 
-	CVLib::GenericIndexedCloudPersist* vertCloud = facetContour->getAssociatedCloud();
+	cloudViewer::GenericIndexedCloudPersist* vertCloud = facetContour->getAssociatedCloud();
 	if (vertCloud)
 	{
 		//oriRotMat.applyRotation(N); //DGM: oriRotMat is only for display!
@@ -665,14 +665,14 @@ void ComputeFacetExtensions(CCVector3& N, ccPolyline* facetContour, double& hori
 		CCVector3 Xf(1, 0, 0), Yf(0, 1, 0);
 		//we get the horizontal vector on the plane
 		CCVector3 D = CCVector3(0, 0, 1).cross(N);
-        if (CVLib::GreaterThanEpsilon(D.norm2())) //otherwise the facet is horizontal!
+        if (cloudViewer::GreaterThanEpsilon(D.norm2())) //otherwise the facet is horizontal!
 		{
 			Yf = D;
 			Yf.normalize();
 			Xf = N.cross(Yf);
 		}
 
-		const CCVector3* G = CVLib::Neighbourhood(vertCloud).getGravityCenter();
+		const CCVector3* G = cloudViewer::Neighbourhood(vertCloud).getGravityCenter();
 
 		ccBBox box;
 		for (unsigned i = 0; i < vertCloud->size(); ++i)
@@ -815,7 +815,7 @@ void qFacets::exportFacets()
 
 		//update X & Y
 		CCVector3 D = Z.cross(CCVector3(0, 0, 1));
-        if (CVLib::GreaterThanEpsilon(D.norm2())) //otherwise the vertical dir hasn't changed!
+        if (cloudViewer::GreaterThanEpsilon(D.norm2())) //otherwise the vertical dir hasn't changed!
 		{
 			X = -D;
 			X.normalize();
@@ -869,7 +869,7 @@ void qFacets::exportFacets()
 		//if necessary, we create a (temporary) new facet
 		if (!useNativeOrientation)
 		{
-			CVLib::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
+			cloudViewer::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
 			if (!vertices || vertices->size() < 3)
 				continue;
 

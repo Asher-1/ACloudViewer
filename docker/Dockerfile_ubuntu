@@ -110,8 +110,7 @@ RUN cmake "${EROWCLOUDVIEWER_DEV}/ErowCloudViewer" \
 
 RUN make "-j$(nproc)" \
     && make install "-j$(nproc)" \
-    && rm -rf ${EROWCLOUDVIEWER_BUILD} \
-    && mv /tmp/libQt5* /usr/lib/x86_64-linux-gnu/
+    && rm -rf ${EROWCLOUDVIEWER_BUILD}
 
 WORKDIR /
 

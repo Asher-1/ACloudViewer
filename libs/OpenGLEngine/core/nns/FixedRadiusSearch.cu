@@ -117,7 +117,7 @@ void CountHashTableEntries(const cudaStream_t& stream,
     const int BLOCKSIZE = 64;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
-    grid.x = CVLib::utility::DivUp(num_points, block.x);
+    grid.x = cloudViewer::utility::DivUp(num_points, block.x);
 
     if (grid.x)
         CountHashTableEntriesKernel<T><<<grid, block, 0, stream>>>(
@@ -187,7 +187,7 @@ void ComputePointIndexTable(
     const int BLOCKSIZE = 64;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
-    grid.x = CVLib::utility::DivUp(num_points, block.x);
+    grid.x = cloudViewer::utility::DivUp(num_points, block.x);
 
     if (grid.x)
         ComputePointIndexTableKernel<T><<<grid, block, 0, stream>>>(
@@ -316,7 +316,7 @@ void CountNeighbors(const cudaStream_t& stream,
     const int BLOCKSIZE = 64;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
-    grid.x = CVLib::utility::DivUp(num_queries, block.x);
+    grid.x = cloudViewer::utility::DivUp(num_queries, block.x);
 
     if (grid.x) {
 #define FN_PARAMETERS                                                   \
@@ -477,7 +477,7 @@ void WriteNeighborsIndicesAndDistances(
     const int BLOCKSIZE = 64;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
-    grid.x = CVLib::utility::DivUp(num_queries, block.x);
+    grid.x = cloudViewer::utility::DivUp(num_queries, block.x);
 
     if (grid.x) {
 #define FN_PARAMETERS                                                      \

@@ -238,9 +238,9 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
     std::string json_filename = filename;
     if (json_filename.empty()) {
         json_filename =
-                "ViewTrajectory_" + CVLib::utility::GetCurrentTimeStamp() + ".json";
+                "ViewTrajectory_" + cloudViewer::utility::GetCurrentTimeStamp() + ".json";
     }
-    CVLib::utility::LogDebug("[Visualizer] Trejactory capture to {}",
+    cloudViewer::utility::LogDebug("[Visualizer] Trejactory capture to {}",
                       json_filename.c_str());
     return io::WriteIJsonConvertible(json_filename, view_trajectory_);
 }

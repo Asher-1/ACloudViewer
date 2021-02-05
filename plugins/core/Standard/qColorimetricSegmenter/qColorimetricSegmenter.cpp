@@ -28,7 +28,7 @@
 #include <CVLog.h>
 #include <ecvPointCloud.h>
 
-//CVLib
+//cloudViewer
 #include <DistanceComputationTools.h>
 
 //System
@@ -282,8 +282,8 @@ void ColorimetricSegmenter::filterRgb()
 		if (cloud && cloud->hasColors())
 		{
 			// Use only references for speed reasons
-			CVLib::ReferenceCloud filteredCloudInside(cloud);
-			CVLib::ReferenceCloud filteredCloudOutside(cloud);
+			cloudViewer::ReferenceCloud filteredCloudInside(cloud);
+			cloudViewer::ReferenceCloud filteredCloudOutside(cloud);
 
 			for (unsigned j = 0; j < cloud->size(); ++j)
 			{
@@ -356,8 +356,8 @@ void ColorimetricSegmenter::filterScalar()
 	for (ccPointCloud* cloud : clouds)
 	{
 		// Use only references for speed reasons
-		CVLib::ReferenceCloud filteredCloudInside(cloud);
-		CVLib::ReferenceCloud filteredCloudOutside(cloud);
+		cloudViewer::ReferenceCloud filteredCloudInside(cloud);
+		cloudViewer::ReferenceCloud filteredCloudOutside(cloud);
 
 		for (unsigned j = 0; j < cloud->size(); ++j)
 		{
@@ -379,7 +379,7 @@ void ColorimetricSegmenter::filterScalar()
 	ShowDurationNow(startTime);
 }
 
-typedef QSharedPointer<CVLib::ReferenceCloud> _Region;
+typedef QSharedPointer<cloudViewer::ReferenceCloud> _Region;
 typedef std::vector<_Region> _RegionSet;
 typedef std::vector<_RegionSet> SetOfRegionSet;
 
@@ -407,7 +407,7 @@ static bool KNNRegions(	ccPointCloud* basePointCloud,
 	}
 
 	// compute distances
-	CVLib::DistanceComputationTools::Cloud2CloudDistanceComputationParams params = CVLib::DistanceComputationTools::Cloud2CloudDistanceComputationParams();
+	cloudViewer::DistanceComputationTools::Cloud2CloudDistanceComputationParams params = cloudViewer::DistanceComputationTools::Cloud2CloudDistanceComputationParams();
 	{
 		params.kNNForLocalModel = k;
 		params.maxSearchDist = thresholdDistance;
@@ -426,7 +426,7 @@ static bool KNNRegions(	ccPointCloud* basePointCloud,
 		}
 		//DGM: warning, the computeCloud2CloudDistance method doesn't return a distance value (but a status / error)
 		//distances are stored in the active scalar field (one per point!)
-		int result = CVLib::DistanceComputationTools::computeCloud2CloudDistance(neighbourCloud.data(), regionCloud.data(), params);
+		int result = cloudViewer::DistanceComputationTools::computeCloud2CloudDistance(neighbourCloud.data(), regionCloud.data(), params);
 		if (result >= 0)
 		{
             double meanDistance = 0.0;
@@ -489,7 +489,7 @@ Compute the average color (RGB)
 @param subset : subset of points
 Returns average color (RGB)
 */
-static ecvColor::Rgb ComputeAverageColor(const ccPointCloud& cloud, CVLib::ReferenceCloud* subset)
+static ecvColor::Rgb ComputeAverageColor(const ccPointCloud& cloud, cloudViewer::ReferenceCloud* subset)
 {
 	if (!subset || subset->size() == 0)
 	{
@@ -533,8 +533,8 @@ static ecvColor::Rgb ComputeAverageColor(const ccPointCloud& cloud, CVLib::Refer
  * @return Colorimetrical difference.
  */
 double ColorimetricalDifference(const ccPointCloud& basePointCloud,
-								CVLib::ReferenceCloud* c1,
-								CVLib::ReferenceCloud* c2)
+								cloudViewer::ReferenceCloud* c1,
+								cloudViewer::ReferenceCloud* c2)
 {
 	ecvColor::Rgb rgb1 = ComputeAverageColor(basePointCloud, c1);
 	ecvColor::Rgb rgb2 = ComputeAverageColor(basePointCloud, c2);
@@ -566,7 +566,7 @@ bool ColorimetricSegmenter::RegionGrowing(	RegionSet& regions,
 	
 		std::vector<unsigned> pointIndices;
 	
-		CVLib::DgmOctree* octree = new CVLib::DgmOctree(pointCloud); // used to search nearest neighbors
+		cloudViewer::DgmOctree* octree = new cloudViewer::DgmOctree(pointCloud); // used to search nearest neighbors
 		octree->build();
 	
 		// while there is points in {P} that haven’t been labeled
@@ -577,7 +577,7 @@ bool ColorimetricSegmenter::RegionGrowing(	RegionSet& regions,
 			unlabeledPoints.pop_back();
 		
 			// initialize a new region Rc and add current point to R
-			Region rc(new CVLib::ReferenceCloud(pointCloud));
+			Region rc(new cloudViewer::ReferenceCloud(pointCloud));
 			rc->addPointIndex(unlabeledPoints.back());
 		
 			// while stack Points is not empty
@@ -588,7 +588,7 @@ bool ColorimetricSegmenter::RegionGrowing(	RegionSet& regions,
 				pointIndices.pop_back();
 
 				// for each point p in {KNNTNN(Tpoint)}
-				CVLib::DgmOctree::NearestNeighboursSearchStruct nNSS = CVLib::DgmOctree::NearestNeighboursSearchStruct();
+				cloudViewer::DgmOctree::NearestNeighboursSearchStruct nNSS = cloudViewer::DgmOctree::NearestNeighboursSearchStruct();
 				{
 					nNSS.level = 1;
 					nNSS.queryPoint = *(pointCloud->getPoint(tPointIndex));
@@ -635,7 +635,7 @@ bool ColorimetricSegmenter::RegionGrowing(	RegionSet& regions,
  * @return The index of the region if found, -1 in the other case.
  */
 static int FindRegion(	const std::vector<_RegionSet>& container,
-						CVLib::ReferenceCloud* region )
+						cloudViewer::ReferenceCloud* region )
 {
 	for (size_t i = 0; i < container.size(); ++i)
 	{
@@ -703,7 +703,7 @@ bool ColorimetricSegmenter::RegionMergingAndRefinement(	RegionSet& mergedRegions
 	// merge all the regions in the same list in {H} and get {R’}
 	for (const _RegionSet& l : homogeneous)
 	{
-		Region merged(new CVLib::ReferenceCloud(l[0]->getAssociatedCloud()));
+		Region merged(new cloudViewer::ReferenceCloud(l[0]->getAssociatedCloud()));
 		for (const Region& li : l)
 		{
 			if (li && !merged->add(*li))
@@ -715,9 +715,9 @@ bool ColorimetricSegmenter::RegionMergingAndRefinement(	RegionSet& mergedRegions
 		mergedRegions.push_back(merged);
 	}
 	
-	//std::vector<CVLib::ReferenceCloud*>* knnResult;
+	//std::vector<cloudViewer::ReferenceCloud*>* knnResult;
 	// for each region Ri in {R’}
-	/*for (CVLib::ReferenceCloud* r : *mergedRegionsRef)
+	/*for (cloudViewer::ReferenceCloud* r : *mergedRegionsRef)
 	{
 		// if sizeof(Ri)<Min
 		if(r->size() < Min)
@@ -920,8 +920,8 @@ void ColorimetricSegmenter::filterHSV()
 		if (cloud->hasColors())
 		{
 			// Use only references for speed reasons
-			CVLib::ReferenceCloud filteredCloudInside(cloud);
-			CVLib::ReferenceCloud filteredCloudOutside(cloud);
+			cloudViewer::ReferenceCloud filteredCloudInside(cloud);
+			cloudViewer::ReferenceCloud filteredCloudOutside(cloud);
 
 			// We manually add color ranges with HSV values
 			for (unsigned j = 0; j < cloud->size(); ++j)
@@ -975,7 +975,7 @@ void ColorimetricSegmenter::filterHSV()
 }
 
 // Method to add point to a ReferenceCloud*
-bool ColorimetricSegmenter::addPoint(CVLib::ReferenceCloud& filteredCloud, unsigned int j)
+bool ColorimetricSegmenter::addPoint(cloudViewer::ReferenceCloud& filteredCloud, unsigned int j)
 {
 	m_addPointError = !filteredCloud.addPointIndex(j);
 	
@@ -992,8 +992,8 @@ bool ColorimetricSegmenter::addPoint(CVLib::ReferenceCloud& filteredCloud, unsig
 template <typename T>
 void ColorimetricSegmenter::createClouds(	T& dlg,
 											ccPointCloud* cloud,
-											const CVLib::ReferenceCloud& filteredCloudInside,
-											const CVLib::ReferenceCloud& filteredCloudOutside,
+											const cloudViewer::ReferenceCloud& filteredCloudInside,
+											const cloudViewer::ReferenceCloud& filteredCloudOutside,
 											QString name )
 {
 	if (dlg.retain->isChecked())
@@ -1014,7 +1014,7 @@ void ColorimetricSegmenter::createClouds(	T& dlg,
 
 // Method to create a new cloud
 void ColorimetricSegmenter::createCloud(ccPointCloud* cloud,
-										const CVLib::ReferenceCloud& referenceCloud,
+										const cloudViewer::ReferenceCloud& referenceCloud,
 										QString name)
 {
 	if (!cloud)

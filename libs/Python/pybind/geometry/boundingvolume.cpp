@@ -38,13 +38,13 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_boundingvolume(py::module &m) {
-	py::class_<CVLib::OrientedBoundingBox, 
-		PyOrientedBBoxBase<CVLib::OrientedBoundingBox>,
-		std::shared_ptr<CVLib::OrientedBoundingBox> >
+	py::class_<cloudViewer::OrientedBoundingBox, 
+		PyOrientedBBoxBase<cloudViewer::OrientedBoundingBox>,
+		std::shared_ptr<cloudViewer::OrientedBoundingBox> >
 		oriented_bounding_box_base(m, "OrientedBoundingBox", 
 			"The base OrientedBoundingBox class.");
-	py::detail::bind_default_constructor<CVLib::OrientedBoundingBox>(oriented_bounding_box_base);
-	py::detail::bind_copy_functions<CVLib::OrientedBoundingBox>(oriented_bounding_box_base);
+	py::detail::bind_default_constructor<cloudViewer::OrientedBoundingBox>(oriented_bounding_box_base);
+	py::detail::bind_copy_functions<cloudViewer::OrientedBoundingBox>(oriented_bounding_box_base);
 	oriented_bounding_box_base.def(
 		py::init<const Eigen::Vector3d &, const Eigen::Matrix3d &,
 			const Eigen::Vector3d &>(),
@@ -52,42 +52,42 @@ void pybind_boundingvolume(py::module &m) {
 			"in x, y and z direction",
 			"center"_a, "R"_a, "extent"_a)
 		.def("__repr__",
-			[](const CVLib::OrientedBoundingBox &box) {
+			[](const cloudViewer::OrientedBoundingBox &box) {
 			return std::string("OrientedBoundingBox"); })
-		.def("volume", &CVLib::OrientedBoundingBox::volume,
+		.def("volume", &cloudViewer::OrientedBoundingBox::volume,
 			"Returns the volume of the bounding box.")
-		.def("get_extent", &CVLib::OrientedBoundingBox::getExtent,
+		.def("get_extent", &cloudViewer::OrientedBoundingBox::getExtent,
 			"Get the extent/length of the bounding box in x, y, and z dimension "
 			"in its frame of reference")
-		.def("get_half_extent", &CVLib::OrientedBoundingBox::getHalfExtent,
+		.def("get_half_extent", &cloudViewer::OrientedBoundingBox::getHalfExtent,
 			"Returns the half extent of the bounding box in its frame of reference.")
-		.def("get_max_extent", &CVLib::OrientedBoundingBox::getMaxExtent,
+		.def("get_max_extent", &cloudViewer::OrientedBoundingBox::getMaxExtent,
 			"Returns the max extent of the bounding box in its frame of reference")
-		.def("set_color", &CVLib::OrientedBoundingBox::setColor,
+		.def("set_color", &cloudViewer::OrientedBoundingBox::setColor,
 			"``float64`` array of shape ``(3, )``",
 			"color"_a)
-		.def("get_color", &CVLib::OrientedBoundingBox::getColor,
+		.def("get_color", &cloudViewer::OrientedBoundingBox::getColor,
 			"``float64`` array of shape ``(3, )``")
-		.def("get_box_points", &CVLib::OrientedBoundingBox::getBoxPoints,
+		.def("get_box_points", &cloudViewer::OrientedBoundingBox::getBoxPoints,
 			"Returns the eight points that define the bounding box.")
-		.def("clear", &CVLib::OrientedBoundingBox::Clear,
+		.def("clear", &cloudViewer::OrientedBoundingBox::Clear,
 			"Clear all elements in the geometry..")
 		.def("get_point_indices_within_bounding_box",
 			py::overload_cast<const std::vector<Eigen::Vector3d> &>(
-				&CVLib::OrientedBoundingBox::getPointIndicesWithinBoundingBox, py::const_),
+				&cloudViewer::OrientedBoundingBox::getPointIndicesWithinBoundingBox, py::const_),
 			"Return indices to points that are within the bounding box.",
 			"points"_a)
 		.def_static("create_from_axis_aligned_bounding_box",
-			&CVLib::OrientedBoundingBox::CreateFromAxisAlignedBoundingBox,
+			&cloudViewer::OrientedBoundingBox::CreateFromAxisAlignedBoundingBox,
 			"Returns an oriented bounding box from the BoundingBox.",
 			"aabox"_a)
-		.def_readwrite("center", &CVLib::OrientedBoundingBox::center_,
+		.def_readwrite("center", &cloudViewer::OrientedBoundingBox::center_,
 		"``float64`` array of shape ``(3, )``")
-		.def_readwrite("R", &CVLib::OrientedBoundingBox::R_,
+		.def_readwrite("R", &cloudViewer::OrientedBoundingBox::R_,
 			"``float64`` array of shape ``(3,3 )``")
-		.def_readwrite("extent", &CVLib::OrientedBoundingBox::extent_,
+		.def_readwrite("extent", &cloudViewer::OrientedBoundingBox::extent_,
 			"``float64`` array of shape ``(3, )``")
-		.def_readwrite("color", &CVLib::OrientedBoundingBox::color_,
+		.def_readwrite("color", &cloudViewer::OrientedBoundingBox::color_,
 			"``float64`` array of shape ``(3, )``");
 
 	docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "clear");
@@ -108,7 +108,7 @@ void pybind_boundingvolume(py::module &m) {
 		  "created."} });
 
     py::class_<ecvOrientedBBox, PyGeometry<ecvOrientedBBox>,
-               std::shared_ptr<ecvOrientedBBox>, ccHObject, CVLib::OrientedBoundingBox>
+               std::shared_ptr<ecvOrientedBBox>, ccHObject, cloudViewer::OrientedBoundingBox>
             oriented_bounding_box(m, "ecvOrientedBBox",
                                   "Class that defines an oriented box that can "
                                   "be computed from 3D geometries.");
@@ -150,68 +150,68 @@ void pybind_boundingvolume(py::module &m) {
 		  "BoundingBox object from which OrientedBoundingBox is "
 		  "created."} });
 
-	py::class_<CVLib::BoundingBox, PyAxisBBoxBase<CVLib::BoundingBox>,
-		std::shared_ptr<CVLib::BoundingBox>>
+	py::class_<cloudViewer::BoundingBox, PyAxisBBoxBase<cloudViewer::BoundingBox>,
+		std::shared_ptr<cloudViewer::BoundingBox>>
 		axis_bounding_box_base(m, "BoundingBox",
 			"Class that defines an axis_aligned box "
 			"that can be computed from 3D "
 			"geometries, The axis aligned bounding "
 			"box uses the coordinate axes for "
 			"bounding box generation.");
-	py::detail::bind_default_constructor<CVLib::BoundingBox>(axis_bounding_box_base);
-	py::detail::bind_copy_functions<CVLib::BoundingBox>(axis_bounding_box_base);
+	py::detail::bind_default_constructor<cloudViewer::BoundingBox>(axis_bounding_box_base);
+	py::detail::bind_copy_functions<cloudViewer::BoundingBox>(axis_bounding_box_base);
 	axis_bounding_box_base
 		.def(py::init<const Eigen::Vector3d &, const Eigen::Vector3d &>(),
 			"Create an BoundingBox from min bounds and max "
 			"bounds in x, y and z",
 			"bbMinCorner"_a, "bbMaxCorner"_a)
 		.def("__repr__",
-			[](const CVLib::BoundingBox &box) {
+			[](const cloudViewer::BoundingBox &box) {
 			return std::string("BoundingBox"); })
 
-		.def("clear", &CVLib::BoundingBox::clear,
+		.def("clear", &cloudViewer::BoundingBox::clear,
 			"Resets the bounding box.")
-			.def("is_valid", &CVLib::BoundingBox::isValid,
+			.def("is_valid", &cloudViewer::BoundingBox::isValid,
 				"Returns whether bounding box is valid or not")
-			.def("set_validity", &CVLib::BoundingBox::setValidity,
+			.def("set_validity", &cloudViewer::BoundingBox::setValidity,
 				"Sets bonding box validity.",
 				"state"_a)
-			.def("volume", &CVLib::BoundingBox::volume,
+			.def("volume", &cloudViewer::BoundingBox::volume,
 				"Returns the bounding box volume.")
-			.def("add", &CVLib::BoundingBox::addEigen,
+			.def("add", &cloudViewer::BoundingBox::addEigen,
 				"'Enlarges' the bounding box with a point.",
 				"point"_a)
-			.def("get_x_percentage", &CVLib::BoundingBox::getXPercentage,
+			.def("get_x_percentage", &cloudViewer::BoundingBox::getXPercentage,
 				"Returns x Percentage.",
 				"x"_a)
-			.def("get_y_percentage", &CVLib::BoundingBox::getYPercentage,
+			.def("get_y_percentage", &cloudViewer::BoundingBox::getYPercentage,
 				"Returns y Percentage.",
 				"y"_a)
-			.def("get_z_percentage", &CVLib::BoundingBox::getZPercentage,
+			.def("get_z_percentage", &cloudViewer::BoundingBox::getZPercentage,
 				"Returns z Percentage.",
 				"z"_a)
-			.def("get_diag_norm", &CVLib::BoundingBox::getDiagNormd,
+			.def("get_diag_norm", &cloudViewer::BoundingBox::getDiagNormd,
 				"Returns diagonal length (double precision)")
-			.def("get_min_box_dim", &CVLib::BoundingBox::getMinBoxDim,
+			.def("get_min_box_dim", &cloudViewer::BoundingBox::getMinBoxDim,
 				"Returns minimal box dimension")
-			.def("get_max_box_dim", &CVLib::BoundingBox::getMaxBoxDim,
+			.def("get_max_box_dim", &cloudViewer::BoundingBox::getMaxBoxDim,
 				"Returns maximal box dimension")
-			.def("compute_volume", &CVLib::BoundingBox::computeVolume,
+			.def("compute_volume", &cloudViewer::BoundingBox::computeVolume,
 				"Returns the bounding-box volume")
-			.def("get_bounds", &CVLib::BoundingBox::getBounds,
+			.def("get_bounds", &cloudViewer::BoundingBox::getBounds,
 				"Returns the bounding-box bounds",
 				"bounds"_a)
-			.def("min_distance_to", &CVLib::BoundingBox::minDistTo,
+			.def("min_distance_to", &cloudViewer::BoundingBox::minDistTo,
 				"Computes min gap (absolute distance) between this "
 				"bounding-box and another one; return min gap (>=0) "
 				"or -1 if at least one of the box is not valid",
 				"box"_a)
-			.def("contains", &CVLib::BoundingBox::containsEigen,
+			.def("contains", &cloudViewer::BoundingBox::containsEigen,
 				"Returns whether a points is inside the box or not",
 				"point"_a)
 			.def("get_point_indices_within_boundingbox",
 				py::overload_cast<const std::vector<Eigen::Vector3d> &>(
-					&CVLib::BoundingBox::getPointIndicesWithinBoundingBox, py::const_),
+					&cloudViewer::BoundingBox::getPointIndicesWithinBoundingBox, py::const_),
 				"Returns point indices Within bounding box.",
 				"points"_a);
 
@@ -236,7 +236,7 @@ void pybind_boundingvolume(py::module &m) {
 			{ {"bounds", "the output bounds with six double values."} });
 
     py::class_<ccBBox, PyGeometry<ccBBox>,
-               std::shared_ptr<ccBBox>, ccHObject, CVLib::BoundingBox>
+               std::shared_ptr<ccBBox>, ccHObject, cloudViewer::BoundingBox>
             axis_aligned_bounding_box(m, "ccBBox",
                                       "Class that defines an axis_aligned box "
                                       "that can be computed from 3D "

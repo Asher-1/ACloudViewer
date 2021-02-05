@@ -229,7 +229,7 @@ void RealSenseSensorConfig::GetPixelDtypes(const rs2::pipeline_profile &profile,
             RealSenseSensorConfig::get_dtype_channels(
                     static_cast<int>(rs_color.format()));
     if (metadata.color_dt_ != core::Dtype::UInt8) {
-        CVLib::utility::LogError("Only 8 bit unsigned int color is supported!");
+        cloudViewer::utility::LogError("Only 8 bit unsigned int color is supported!");
     }
     const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH)
                                   .as<rs2::video_stream_profile>();
@@ -237,14 +237,14 @@ void RealSenseSensorConfig::GetPixelDtypes(const rs2::pipeline_profile &profile,
                                  static_cast<int>(rs_depth.format()))
                                  .first;
     if (metadata.depth_dt_ != core::Dtype::UInt16) {
-        CVLib::utility::LogError("Only 16 bit unsigned int depth is supported!");
+        cloudViewer::utility::LogError("Only 16 bit unsigned int depth is supported!");
     }
 }
 
 Json::Value RealSenseSensorConfig::GetMetadataJson(
         const rs2::pipeline_profile &profile) {
     if (!profile) {
-        CVLib::utility::LogError("Invalid RealSense pipeline profile.");
+        cloudViewer::utility::LogError("Invalid RealSense pipeline profile.");
     }
     Json::Value value;
 
@@ -272,7 +272,7 @@ Json::Value RealSenseSensorConfig::GetMetadataJson(
                                     .substr(11);  // remove RS2_FORMAT_ prefix
     value["fps"] = rs_color.fps();
     if (value["fps"] != rs_depth.fps()) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Different frame rates for color ({} fps) and depth ({} fps) "
                 "streams is not supported.",
                 value["fps"], rs_depth.fps());

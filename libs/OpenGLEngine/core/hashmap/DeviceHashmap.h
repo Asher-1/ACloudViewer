@@ -43,7 +43,7 @@ public:
     DefaultHash() {}
     DefaultHash(int64_t key_size) : key_size_in_int_(key_size / sizeof(int)) {
         if (key_size % 4 != 0 || key_size_in_int_ == 0) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "[DefaultHash] Only support keys whose byte size is "
                     "multiples of sizeof(int)");
         }
@@ -72,7 +72,7 @@ public:
     DefaultKeyEq() {}
     DefaultKeyEq(int64_t key_size) : key_size_in_int_(key_size / sizeof(int)) {
         if (key_size % 4 != 0 || key_size_in_int_ == 0) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "[DefaultKeyEq] Only support keys whose byte size is "
                     "multiples of sizeof(int)");
         }

@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -24,7 +24,7 @@
 #include "GenericIndexedCloudPersist.h"
 
 
-namespace CVLib
+namespace cloudViewer
 {
 
 //! A kind of ReferenceCloud based on the DgmOctree::NeighboursSet structure

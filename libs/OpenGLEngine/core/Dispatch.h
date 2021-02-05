@@ -67,7 +67,7 @@
             using scalar_t = uint16_t;                      \
             return __VA_ARGS__();                           \
         } else {                                            \
-            CVLib::utility::LogError("Unsupported data type.");    \
+            cloudViewer::utility::LogError("Unsupported data type.");    \
         }                                                   \
     }()
 

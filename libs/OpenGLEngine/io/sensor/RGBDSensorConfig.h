@@ -31,7 +31,7 @@
 namespace cloudViewer {
 namespace io {
 
-class RGBDSensorConfig : public CVLib::utility::IJsonConvertible {};
+class RGBDSensorConfig : public cloudViewer::utility::IJsonConvertible {};
 
 }  // namespace io
 }  // namespace cloudViewer

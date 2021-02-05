@@ -32,7 +32,7 @@ namespace cloudViewer {
 namespace pipelines {
 namespace color_map {
 
-class ImageWarpingField : public CVLib::utility::IJsonConvertible {
+class ImageWarpingField : public cloudViewer::utility::IJsonConvertible {
 public:
     ImageWarpingField();
     ImageWarpingField(int width, int height, int number_of_vertical_anchors);

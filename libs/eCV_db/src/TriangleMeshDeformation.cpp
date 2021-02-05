@@ -34,7 +34,7 @@
 
 #include <Console.h>
 
-using namespace CVLib;
+using namespace cloudViewer;
 ;
 
 std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(

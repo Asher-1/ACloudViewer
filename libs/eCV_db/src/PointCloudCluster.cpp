@@ -72,8 +72,8 @@ std::vector<int> ccPointCloud::clusterDBSCAN(double eps,
 	cloudViewer::geometry::KDTreeFlann kdtree(*this);
 
 	// precompute all neighbours
-	CVLib::utility::LogDebug("Precompute Neighbours");
-	CVLib::utility::ConsoleProgressBar progress_bar(
+	cloudViewer::utility::LogDebug("Precompute Neighbours");
+	cloudViewer::utility::ConsoleProgressBar progress_bar(
 		this->size(), "Precompute Neighbours", print_progress);
 	std::vector<std::vector<int>> nbs(this->size());
 #ifdef _OPENMP
@@ -92,10 +92,10 @@ std::vector<int> ccPointCloud::clusterDBSCAN(double eps,
 		}
 
 	}
-	CVLib::utility::LogDebug("Done Precompute Neighbours");
+	cloudViewer::utility::LogDebug("Done Precompute Neighbours");
 
 	// set all labels to undefined (-2)
-	CVLib::utility::LogDebug("Compute Clusters");
+	cloudViewer::utility::LogDebug("Compute Clusters");
 	progress_bar.reset(this->size(), "Clustering", print_progress);
 	std::vector<int> labels(this->size(), -2);
 	int cluster_label = 0;
@@ -143,7 +143,7 @@ std::vector<int> ccPointCloud::clusterDBSCAN(double eps,
 		cluster_label++;
 	}
 
-	CVLib::utility::LogDebug("Done Compute Clusters: {:d}", cluster_label);
+	cloudViewer::utility::LogDebug("Done Compute Clusters: {:d}", cluster_label);
 	return labels;
 }
 
@@ -213,7 +213,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 	{
 		if (params.primEnabled.size() == 0)
 		{
-			CVLib::utility::LogError("[ccPointCloud::executeRANSAC] No primitive type selected!");
+			cloudViewer::utility::LogError("[ccPointCloud::executeRANSAC] No primitive type selected!");
 			return group;
 		}
 	}
@@ -232,7 +232,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 		}
 		catch (...)
 		{
-			CVLib::utility::LogError("[ccPointCloud::executeRANSAC] Could not create temporary cloud, Not enough memory!");
+			cloudViewer::utility::LogError("[ccPointCloud::executeRANSAC] Could not create temporary cloud, Not enough memory!");
 			return group;
 		}
 
@@ -301,7 +301,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 		}
 		else
 		{
-			CVLib::utility::LogError("[ccPointCloud::executeRANSAC] Not enough memory to compute normals!");
+			cloudViewer::utility::LogError("[ccPointCloud::executeRANSAC] Not enough memory to compute normals!");
 			return group;
 		}
 	}
@@ -351,7 +351,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 			}
 			break;
 		default:
-			CVLib::utility::LogWarning("unsupported detector object!");
+			cloudViewer::utility::LogWarning("unsupported detector object!");
 			break;
 		}
 	}
@@ -403,7 +403,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 
 	if (remaining == count && shapes.size() == 0)
 	{
-		CVLib::utility::LogWarning("[ccPointCloud::executeRANSAC] Segmentation failed...");
+		cloudViewer::utility::LogWarning("[ccPointCloud::executeRANSAC] Segmentation failed...");
 		return group;
 	}
 
@@ -423,13 +423,13 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 			//too many points?!
 			if (shapePointsCount > count)
 			{
-				CVLib::utility::LogError("[ccPointCloud::executeRANSAC] Inconsistent result!");
+				cloudViewer::utility::LogError("[ccPointCloud::executeRANSAC] Inconsistent result!");
 				break;
 			}
 
 			if (shapePointsCount < params.supportPoints)
 			{
-				CVLib::utility::LogWarning("[ccPointCloud::executeRANSAC] Skipping shape, {:d} did not meet minimum point requirement", shapePointsCount);
+				cloudViewer::utility::LogWarning("[ccPointCloud::executeRANSAC] Skipping shape, {:d} did not meet minimum point requirement", shapePointsCount);
 				count -= shapePointsCount;
 				continue;
 			}
@@ -630,7 +630,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 				const TorusPrimitiveShape* torus = static_cast<const TorusPrimitiveShape*>(shape);
 				if (torus->Internal().IsAppleShaped())
 				{
-					CVLib::utility::LogWarning("[ccPointCloud::executeRANSAC] Apple-shaped torus are not handled by CloudViewer!");
+					cloudViewer::utility::LogWarning("[ccPointCloud::executeRANSAC] Apple-shaped torus are not handled by CloudViewer!");
 				}
 				else
 				{
@@ -697,17 +697,17 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 		
 		if (print_progress)
 		{
-			CVLib::utility::LogDebug("[ccPointCloud::executeRANSAC] Detect Plane Shape number: {:d}", planeCount-1);
-			CVLib::utility::LogDebug("[ccPointCloud::executeRANSAC] Detect Sphere Shape number: {:d}", sphereCount-1);
-			CVLib::utility::LogDebug("[ccPointCloud::executeRANSAC] Detect Cylinder Shape number: {:d}", cylinderCount-1);
-			CVLib::utility::LogDebug("[ccPointCloud::executeRANSAC] Detect Cone Shape number: {:d}", coneCount-1);
-			CVLib::utility::LogDebug("[ccPointCloud::executeRANSAC] Detect Torus Shape number: {:d}", torusCount-1);
+			cloudViewer::utility::LogDebug("[ccPointCloud::executeRANSAC] Detect Plane Shape number: {:d}", planeCount-1);
+			cloudViewer::utility::LogDebug("[ccPointCloud::executeRANSAC] Detect Sphere Shape number: {:d}", sphereCount-1);
+			cloudViewer::utility::LogDebug("[ccPointCloud::executeRANSAC] Detect Cylinder Shape number: {:d}", cylinderCount-1);
+			cloudViewer::utility::LogDebug("[ccPointCloud::executeRANSAC] Detect Cone Shape number: {:d}", coneCount-1);
+			cloudViewer::utility::LogDebug("[ccPointCloud::executeRANSAC] Detect Torus Shape number: {:d}", torusCount-1);
 		}
 	}
 
 	if (print_progress)
 	{
-		CVLib::utility::LogDebug("[ccPointCloud::executeRANSAC] Total Shape Detection Instances: {:d}", group.size());
+		cloudViewer::utility::LogDebug("[ccPointCloud::executeRANSAC] Total Shape Detection Instances: {:d}", group.size());
 	}
 
 	return group;

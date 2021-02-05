@@ -38,7 +38,7 @@
 namespace cloudViewer {
 namespace core {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 static Tensor CastOptionalDtypeDevice(const Tensor& t,
                                       utility::optional<Dtype> dtype,

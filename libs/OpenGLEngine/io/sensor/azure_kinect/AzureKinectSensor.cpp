@@ -38,7 +38,7 @@
 namespace cloudViewer {
 namespace io {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 AzureKinectSensor::AzureKinectSensor(
         const AzureKinectSensorConfig &sensor_config)

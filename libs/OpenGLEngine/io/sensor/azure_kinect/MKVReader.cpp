@@ -40,7 +40,7 @@
 namespace cloudViewer {
 namespace io {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 MKVReader::MKVReader() : handle_(nullptr), transformation_(nullptr) {}
 

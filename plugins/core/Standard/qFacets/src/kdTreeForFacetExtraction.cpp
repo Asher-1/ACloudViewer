@@ -49,7 +49,7 @@ struct Candidate
 	{
 		if (leaf && leaf->points)
 		{
-			CVLib::Neighbourhood N(leaf->points);
+			cloudViewer::Neighbourhood N(leaf->points);
 			centroid = *N.getGravityCenter();
 			radius = N.computeLargestRadius();
 		}
@@ -63,11 +63,11 @@ static bool CandidateDistAscendingComparison(const Candidate& a, const Candidate
 
 bool ccKdTreeForFacetExtraction::FuseCells(	ccKdTree* kdTree,
 											double maxError,
-											CVLib::DistanceComputationTools::ERROR_MEASURES errorMeasure,
+											cloudViewer::DistanceComputationTools::ERROR_MEASURES errorMeasure,
 											double maxAngle_deg,
 											PointCoordinateType overlapCoef/*=1*/,
 											bool closestFirst/*=true*/,
-											CVLib::GenericProgressCallback* progressCb/*=0*/)
+											cloudViewer::GenericProgressCallback* progressCb/*=0*/)
 {
 	if (!kdTree)
 		return false;
@@ -82,7 +82,7 @@ bool ccKdTreeForFacetExtraction::FuseCells(	ccKdTree* kdTree,
 		return false;
 
 	//progress notification
-	CVLib::NormalizedProgress nProgress(progressCb, static_cast<unsigned>(leaves.size()));
+	cloudViewer::NormalizedProgress nProgress(progressCb, static_cast<unsigned>(leaves.size()));
 	if (progressCb)
 	{
 		progressCb->update(0);
@@ -138,9 +138,9 @@ bool ccKdTreeForFacetExtraction::FuseCells(	ccKdTree* kdTree,
 			currentCell->userData = macroIndex++;
 
 			//we init the current set of 'fused' points with the cell's points
-			CVLib::ReferenceCloud* currentPointSet = currentCell->points;
+			cloudViewer::ReferenceCloud* currentPointSet = currentCell->points;
 			//get current fused set centroid and normal
-			CCVector3 currentCentroid = *CVLib::Neighbourhood(currentPointSet).getGravityCenter();
+			CCVector3 currentCentroid = *cloudViewer::Neighbourhood(currentPointSet).getGravityCenter();
 			CCVector3 currentNormal(currentCell->planeEq);
 
 			//visited neighbors
@@ -213,7 +213,7 @@ bool ccKdTreeForFacetExtraction::FuseCells(	ccKdTree* kdTree,
 					
 					//we will keep track of the best fused 'couple' at each pass
 					std::list<Candidate>::iterator bestIt = candidates.end();
-					CVLib::ReferenceCloud* bestFused = 0;
+					cloudViewer::ReferenceCloud* bestFused = 0;
 					CCVector3 bestNormal(0,0,0);
 					double bestError = -1.0;
 
@@ -254,7 +254,7 @@ bool ccKdTreeForFacetExtraction::FuseCells(	ccKdTree* kdTree,
 						}
 
 						//fuse the main set with the current candidate
-						CVLib::ReferenceCloud* fused = new CVLib::ReferenceCloud(*currentPointSet);
+						cloudViewer::ReferenceCloud* fused = new cloudViewer::ReferenceCloud(*currentPointSet);
 						if (!fused->add(*(it->leaf->points)))
 						{
 							//not enough memory!
@@ -267,9 +267,9 @@ bool ccKdTreeForFacetExtraction::FuseCells(	ccKdTree* kdTree,
 
 						//fit a plane and estimate the resulting error
 						double error = -1.0;
-						const PointCoordinateType* planeEquation = CVLib::Neighbourhood(fused).getLSPlane();
+						const PointCoordinateType* planeEquation = cloudViewer::Neighbourhood(fused).getLSPlane();
 						if (planeEquation)
-							error = CVLib::DistanceComputationTools::ComputeCloud2PlaneDistance(fused, planeEquation, errorMeasure);
+							error = cloudViewer::DistanceComputationTools::ComputeCloud2PlaneDistance(fused, planeEquation, errorMeasure);
 
 						if (error < 0.0 || error > maxError)
 						{
@@ -311,7 +311,7 @@ bool ccKdTreeForFacetExtraction::FuseCells(	ccKdTree* kdTree,
 						currentPointSet = bestFused;
 						{
 							//update infos
-							CVLib::Neighbourhood N(currentPointSet);
+							cloudViewer::Neighbourhood N(currentPointSet);
 							//currentCentroid = *N.getGravityCenter(); //if we update it, the search will naturally shift along one dimension!
 							//currentNormal = bestNormal; //same thing here for normals
 						}
@@ -363,7 +363,7 @@ bool ccKdTreeForFacetExtraction::FuseCells(	ccKdTree* kdTree,
 
 		for (size_t i=0; i<leaves.size(); ++i)
 		{
-			CVLib::ReferenceCloud* subset = leaves[i]->points;
+			cloudViewer::ReferenceCloud* subset = leaves[i]->points;
 			if (subset)
 			{
 				ScalarType scalar = (ScalarType)leaves[i]->userData;

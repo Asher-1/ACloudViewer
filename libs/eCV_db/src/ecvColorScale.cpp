@@ -20,7 +20,7 @@
 //Qt
 #include <QUuid>
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 //Local

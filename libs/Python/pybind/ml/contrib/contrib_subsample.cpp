@@ -34,7 +34,7 @@
 namespace cloudViewer {
 namespace ml {
 namespace contrib {
-    using namespace CVLib;
+    using namespace cloudViewer;
 const py::tuple SubsampleBatch(py::array points,
                                py::array batches,
                                utility::optional<py::array> features,

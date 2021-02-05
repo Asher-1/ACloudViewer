@@ -20,7 +20,7 @@
 
 #include "CVPluginAPI.h"
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 //Qt

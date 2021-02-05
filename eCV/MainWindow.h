@@ -252,7 +252,7 @@ private:
 	void doActionComputeMesh(CC_TRIANGULATION_TYPES type);
 	//! Creates point clouds from multiple 'components'
 	void createComponentsClouds(ccGenericPointCloud* cloud,
-		CVLib::ReferenceCloudContainer& components,
+		cloudViewer::ReferenceCloudContainer& components,
 		unsigned minPointPerComponent,
 		bool randomColors,
 		bool selectComponents,

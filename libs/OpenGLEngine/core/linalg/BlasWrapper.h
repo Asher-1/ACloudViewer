@@ -48,7 +48,7 @@ inline void gemm_cpu(CBLAS_LAYOUT layout,
                      scalar_t beta,
                      scalar_t *C_data,
                      CLOUDVIEWER_CPU_LINALG_INT ldc) {
-    CVLib::utility::LogError("Unsupported data type.");
+    cloudViewer::utility::LogError("Unsupported data type.");
 }
 
 template <>
@@ -105,7 +105,7 @@ inline cublasStatus_t gemm_cuda(cublasHandle_t handle,
                                 const scalar_t *beta,
                                 scalar_t *C_data,
                                 int ldc) {
-    CVLib::utility::LogError("Unsupported data type.");
+    cloudViewer::utility::LogError("Unsupported data type.");
     return CUBLAS_STATUS_NOT_SUPPORTED;
 }
 
@@ -122,7 +122,7 @@ inline cublasStatus_t trsm_cuda(cublasHandle_t handle,
                                 int lda,
                                 scalar_t *B,
                                 int ldb) {
-    CVLib::utility::LogError("Unsupported data type.");
+    cloudViewer::utility::LogError("Unsupported data type.");
     return CUBLAS_STATUS_NOT_SUPPORTED;
 }
 

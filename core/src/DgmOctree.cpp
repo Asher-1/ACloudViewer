@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLib                                    #
+//#                               cloudViewer                                    #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -46,7 +46,7 @@
 #endif
 #endif
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 /**********************************/
 /* PRE COMPUTED VALUES AND TABLES */
@@ -64,7 +64,7 @@ struct BitShiftValues
 		//we compute all possible values
 		for (unsigned char level = 0; level <= DgmOctree::MAX_OCTREE_LEVEL; ++level)
 		{
-			values[level] = (3 * (CVLib::DgmOctree::MAX_OCTREE_LEVEL - level));
+			values[level] = (3 * (cloudViewer::DgmOctree::MAX_OCTREE_LEVEL - level));
 		}
 	}
 
@@ -80,7 +80,7 @@ struct MonoDimensionalCellCodes
 	/** There are 1024 possible values at level 10, and 2M. at level 21.
 		\warning Never pass a 'constant initializer' by reference
 	**/
-	static const int VALUE_COUNT = CVLib::DgmOctree::MAX_OCTREE_LENGTH;
+	static const int VALUE_COUNT = cloudViewer::DgmOctree::MAX_OCTREE_LENGTH;
 
 	//! Default initialization
 	MonoDimensionalCellCodes()
@@ -90,8 +90,8 @@ struct MonoDimensionalCellCodes
 		for (int value = 0; value < VALUE_COUNT; ++value)
 		{
 			int mask = VALUE_COUNT;
-			CVLib::DgmOctree::CellCode code = 0;
-			for (unsigned char k = 0; k < CVLib::DgmOctree::MAX_OCTREE_LEVEL; k++)
+			cloudViewer::DgmOctree::CellCode code = 0;
+			for (unsigned char k = 0; k < cloudViewer::DgmOctree::MAX_OCTREE_LEVEL; k++)
 			{
 				mask >>= 1;
 				code <<= 3;
@@ -104,8 +104,8 @@ struct MonoDimensionalCellCodes
 		}
 
 		//we compute all possible masks as well! (all dimensions)
-		//CVLib::DgmOctree::CellCode baseMask = (1 << (3 * CVLib::DgmOctree::MAX_OCTREE_LEVEL));
-		//for (int level = CVLib::DgmOctree::MAX_OCTREE_LEVEL; level >= 0; --level)
+		//cloudViewer::DgmOctree::CellCode baseMask = (1 << (3 * cloudViewer::DgmOctree::MAX_OCTREE_LEVEL));
+		//for (int level = cloudViewer::DgmOctree::MAX_OCTREE_LEVEL; level >= 0; --level)
 		//{
 		//	masks[level] = baseMask - 1;
 		//	baseMask >>= 3;
@@ -113,10 +113,10 @@ struct MonoDimensionalCellCodes
 	}
 
 	//! Mono-dimensional cell codes
-	CVLib::DgmOctree::CellCode values[VALUE_COUNT];
+	cloudViewer::DgmOctree::CellCode values[VALUE_COUNT];
 
 	//! Mono-dimensional cell masks
-	//CVLib::DgmOctree::CellCode masks[CVLib::DgmOctree::MAX_OCTREE_LEVEL + 1];
+	//cloudViewer::DgmOctree::CellCode masks[cloudViewer::DgmOctree::MAX_OCTREE_LEVEL + 1];
 };
 static MonoDimensionalCellCodes PRE_COMPUTED_POS_CODES;
 
@@ -126,7 +126,7 @@ static MonoDimensionalCellCodes PRE_COMPUTED_POS_CODES;
 
 unsigned char DgmOctree::GET_BIT_SHIFT(unsigned char level)
 {
-	//return (3 * (CVLib::DgmOctree::MAX_OCTREE_LEVEL - level));
+	//return (3 * (cloudViewer::DgmOctree::MAX_OCTREE_LEVEL - level));
 	return PRE_COMPUTED_BIT_SHIFT_VALUES.values[level];
 }
 

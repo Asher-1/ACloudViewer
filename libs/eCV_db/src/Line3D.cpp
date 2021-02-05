@@ -5,7 +5,7 @@
 namespace cloudViewer {
 namespace geometry {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 // Line3D Implementations
 // ===========================================================================

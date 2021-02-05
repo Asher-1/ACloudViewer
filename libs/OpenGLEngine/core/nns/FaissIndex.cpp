@@ -63,13 +63,13 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
     dataset_points_.AssertDtype(Dtype::Float32);
 
     if (dataset_points.NumDims() != 2) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[FaissIndex::SetTensorData] dataset_points must be "
                 "2D matrix, with shape {n_dataset_points, d}.");
     }
 
     if (dimension == 0 || dataset_size == 0) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "[FaissIndex::SetTensorData] Failed due to no data.");
     }
 
@@ -81,7 +81,7 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
         index.reset(new faiss::gpu::GpuIndexFlat(
                 res.get(), dimension, faiss::MetricType::METRIC_L2, config));
 #else
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[FaissIndex::SetTensorData] GPU Tensor is not supported when "
                 "BUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
                 "BUILD_CUDA_MODULE=ON.");
@@ -100,10 +100,10 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
     query_points.AssertDtype(Dtype::Float32);
 
     // Check shape.
-    query_points.AssertShapeCompatible({CVLib::utility::nullopt, GetDimension()});
+    query_points.AssertShapeCompatible({cloudViewer::utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[FaissIndex::SearchKnn] knn should be larger than 0.");
     }
 
@@ -133,14 +133,14 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
     query_points.AssertDtype(Dtype::Float32);
 
     // Check shape.
-    query_points.AssertShapeCompatible({CVLib::utility::nullopt, GetDimension()});
+    query_points.AssertShapeCompatible({cloudViewer::utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[FaissIndex::SearchHybrid] max_knn should be larger than 0.");
     }
     if (radius <= 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[FaissIndex::SearchHybrid] radius should be larger than 0.");
     }
 

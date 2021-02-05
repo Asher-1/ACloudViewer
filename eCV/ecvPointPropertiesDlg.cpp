@@ -28,7 +28,7 @@
 #include <ecv2DLabel.h>
 #include <ecvDisplayTools.h>
 
-//CVLib
+//cloudViewer
 #include <ScalarField.h>
 
 //Qt

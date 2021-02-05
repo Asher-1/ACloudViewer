@@ -82,14 +82,14 @@ void testFromFile(const std::string& filename)
 
 int main(int argc, char **argv) {
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         // clang-format off
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("    > Polylines [filename]");
-        CVLib::utility::LogInfo("    The program will :");
-        CVLib::utility::LogInfo("    1. load the polyline in [filename].");
+        cloudViewer::utility::LogInfo("Usage:");
+        cloudViewer::utility::LogInfo("    > Polylines [filename]");
+        cloudViewer::utility::LogInfo("    The program will :");
+        cloudViewer::utility::LogInfo("    1. load the polyline in [filename].");
         // clang-format on
         return 1;
     }

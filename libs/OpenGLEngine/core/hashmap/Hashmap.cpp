@@ -40,7 +40,7 @@
 namespace cloudViewer {
 namespace core {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 Hashmap::Hashmap(int64_t init_capacity,
                  const Dtype& dtype_key,

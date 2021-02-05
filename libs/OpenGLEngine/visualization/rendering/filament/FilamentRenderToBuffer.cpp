@@ -60,7 +60,7 @@
 namespace cloudViewer {
 namespace visualization {
 namespace rendering {
-    using namespace CVLib;
+    using namespace cloudViewer;
 FilamentRenderToBuffer::FilamentRenderToBuffer(filament::Engine& engine)
     : engine_(engine) {
     renderer_ = engine_.createRenderer();

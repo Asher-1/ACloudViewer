@@ -21,7 +21,7 @@
 #include "ecvSingleton.h"
 #include "ecvNormalCompressor.h"
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 #include <DgmOctreeReferenceCloud.h>
 #include <GenericIndexedMesh.h>
@@ -160,7 +160,7 @@ bool ccNormalVectors::UpdateNormalOrientations(	ccGenericPointCloud* theCloud,
 	case PLUS_BARYCENTER:
 	case MINUS_BARYCENTER:
 		{
-			barycenter = CVLib::GeometricalAnalysisTools::ComputeGravityCenter(theCloud);
+			barycenter = cloudViewer::GeometricalAnalysisTools::ComputeGravityCenter(theCloud);
 			CVLog::Print(QString("[UpdateNormalOrientations] Barycenter: (%1,%2,%3)").arg(barycenter.x).arg(barycenter.y).arg(barycenter.z));
 			useBarycenter = true;
 			positiveSign = (preferredOrientation == 6);
@@ -239,8 +239,8 @@ PointCoordinateType ccNormalVectors::GuessNaiveRadius(ccGenericPointCloud* cloud
 }
 
 PointCoordinateType ccNormalVectors::GuessBestRadius(	ccGenericPointCloud* cloud,
-														CVLib::DgmOctree* inputOctree/*=0*/,
-														CVLib::GenericProgressCallback* progressCb/*=0*/)
+														cloudViewer::DgmOctree* inputOctree/*=0*/,
+														cloudViewer::GenericProgressCallback* progressCb/*=0*/)
 {
 	if (!cloud)
 	{
@@ -248,10 +248,10 @@ PointCoordinateType ccNormalVectors::GuessBestRadius(	ccGenericPointCloud* cloud
 		return 0;
 	}
 
-	CVLib::DgmOctree* octree = inputOctree;
+	cloudViewer::DgmOctree* octree = inputOctree;
 	if (!octree)
 	{
-		octree = new CVLib::DgmOctree(cloud);
+		octree = new cloudViewer::DgmOctree(cloud);
 		if (octree->build() <= 0)
 		{
 			delete octree;
@@ -308,7 +308,7 @@ PointCoordinateType ccNormalVectors::GuessBestRadius(	ccGenericPointCloud* cloud
 				assert(randomIndex < cloud->size());
 
 				const CCVector3* P = cloud->getPoint(randomIndex);
-				CVLib::DgmOctree::NeighboursSet Yk;
+				cloudViewer::DgmOctree::NeighboursSet Yk;
 				int n = octree->getPointsInSphericalNeighbourhood(*P, radius, Yk, octreeLevel);
 				assert(n >= 1);
 
@@ -415,8 +415,8 @@ bool ccNormalVectors::ComputeCloudNormals(	ccGenericPointCloud* theCloud,
 											CV_LOCAL_MODEL_TYPES localModel,
 											PointCoordinateType localRadius,
 											Orientation preferredOrientation/*=UNDEFINED*/,
-											CVLib::GenericProgressCallback* progressCb/*=0*/,
-											CVLib::DgmOctree* inputOctree/*=0*/)
+											cloudViewer::GenericProgressCallback* progressCb/*=0*/,
+											cloudViewer::DgmOctree* inputOctree/*=0*/)
 {
 	assert(theCloud);
 
@@ -426,10 +426,10 @@ bool ccNormalVectors::ComputeCloudNormals(	ccGenericPointCloud* theCloud,
 		return false;
 	}
 
-	CVLib::DgmOctree* theOctree = inputOctree;
+	cloudViewer::DgmOctree* theOctree = inputOctree;
 	if (!theOctree)
 	{
-		theOctree = new CVLib::DgmOctree(theCloud);
+		theOctree = new cloudViewer::DgmOctree(theCloud);
 		if (theOctree->build() <= 0)
 		{
 			delete theOctree;
@@ -539,9 +539,9 @@ bool ccNormalVectors::ComputeCloudNormals(	ccGenericPointCloud* theCloud,
 	return true;
 }
 
-bool ccNormalVectors::ComputeNormalWithQuadric(CVLib::GenericIndexedCloudPersist* points, const CCVector3& P, CCVector3& N)
+bool ccNormalVectors::ComputeNormalWithQuadric(cloudViewer::GenericIndexedCloudPersist* points, const CCVector3& P, CCVector3& N)
 {
-	CVLib::Neighbourhood Z(points);
+	cloudViewer::Neighbourhood Z(points);
 
 	Tuple3ub dims;
 	const PointCoordinateType* h = Z.getQuadric(&dims);
@@ -572,7 +572,7 @@ bool ccNormalVectors::ComputeNormalWithQuadric(CVLib::GenericIndexedCloudPersist
 	}
 }
 
-bool ccNormalVectors::ComputeNormalWithLS(CVLib::GenericIndexedCloudPersist* pointAndNeighbors, CCVector3& N)
+bool ccNormalVectors::ComputeNormalWithLS(cloudViewer::GenericIndexedCloudPersist* pointAndNeighbors, CCVector3& N)
 {
 	N = CCVector3(0, 0, 0);
 
@@ -587,7 +587,7 @@ bool ccNormalVectors::ComputeNormalWithLS(CVLib::GenericIndexedCloudPersist* poi
 		return false;
 	}
 
-	CVLib::Neighbourhood Z(pointAndNeighbors);
+	cloudViewer::Neighbourhood Z(pointAndNeighbors);
 	const CCVector3* _N = Z.getLSPlaneNormal();
 	if (_N)
 	{
@@ -601,7 +601,7 @@ bool ccNormalVectors::ComputeNormalWithLS(CVLib::GenericIndexedCloudPersist* poi
 }
 
 
-bool ccNormalVectors::ComputeNormalWithTri(CVLib::GenericIndexedCloudPersist* pointAndNeighbors, CCVector3& N)
+bool ccNormalVectors::ComputeNormalWithTri(cloudViewer::GenericIndexedCloudPersist* pointAndNeighbors, CCVector3& N)
 {
 	N = CCVector3(0, 0, 0);
 
@@ -616,10 +616,10 @@ bool ccNormalVectors::ComputeNormalWithTri(CVLib::GenericIndexedCloudPersist* po
 		return false;
 	}
 
-	CVLib::Neighbourhood Z(pointAndNeighbors);
+	cloudViewer::Neighbourhood Z(pointAndNeighbors);
 
 	//we mesh the neighbour points (2D1/2)
-	CVLib::GenericIndexedMesh* theMesh = Z.triangulateOnPlane();
+	cloudViewer::GenericIndexedMesh* theMesh = Z.triangulateOnPlane();
 	if (!theMesh)
 	{
 		return false;
@@ -632,7 +632,7 @@ bool ccNormalVectors::ComputeNormalWithTri(CVLib::GenericIndexedCloudPersist* po
 	for (unsigned j = 0; j < triCount; ++j)
 	{
 		//we can't use getNextTriangleVertIndexes (which is faster on mesh groups but not multi-thread compatible) but anyway we'll never get mesh groups here!
-		const CVLib::VerticesIndexes* tsi = theMesh->getTriangleVertIndexes(j);
+		const cloudViewer::VerticesIndexes* tsi = theMesh->getTriangleVertIndexes(j);
 
 		//we look if the central point is one of the triangle's vertices
 		if (tsi->i1 == 0 || tsi->i2 == 0 || tsi->i3 == 0)
@@ -656,15 +656,15 @@ bool ccNormalVectors::ComputeNormalWithTri(CVLib::GenericIndexedCloudPersist* po
 	return true;
 }
 
-bool ccNormalVectors::ComputeNormsAtLevelWithQuadric(	const CVLib::DgmOctree::octreeCell& cell,
+bool ccNormalVectors::ComputeNormsAtLevelWithQuadric(	const cloudViewer::DgmOctree::octreeCell& cell,
 														void** additionalParameters,
-														CVLib::NormalizedProgress* nProgress/*=0*/)
+														cloudViewer::NormalizedProgress* nProgress/*=0*/)
 {
 	//additional parameters
 	NormsTableType* theNorms = static_cast<NormsTableType*>(additionalParameters[0]);
 	PointCoordinateType radius = *static_cast<PointCoordinateType*>(additionalParameters[1]);
 
-	CVLib::DgmOctree::NearestNeighboursSphericalSearchStruct nNSS;
+	cloudViewer::DgmOctree::NearestNeighboursSphericalSearchStruct nNSS;
 	nNSS.level = cell.level;
 	nNSS.prepare(radius, cell.parentOctree->getCellSize(nNSS.level));
 	cell.parentOctree->getCellPos(cell.truncatedCode, cell.level, nNSS.cellPos, true);
@@ -673,7 +673,7 @@ bool ccNormalVectors::ComputeNormsAtLevelWithQuadric(	const CVLib::DgmOctree::oc
 	//we already know which points are lying in the current cell
 	unsigned pointCount = cell.points->size();
 	nNSS.pointsInNeighbourhood.resize(pointCount);
-	CVLib::DgmOctree::NeighboursSet::iterator it = nNSS.pointsInNeighbourhood.begin();
+	cloudViewer::DgmOctree::NeighboursSet::iterator it = nNSS.pointsInNeighbourhood.begin();
 	for (unsigned j = 0; j < pointCount; ++j, ++it)
 	{
 		it->point = cell.points->getPointPersistentPtr(j);
@@ -695,7 +695,7 @@ bool ccNormalVectors::ComputeNormsAtLevelWithQuadric(	const CVLib::DgmOctree::oc
 		}
 		if (k >= NUMBER_OF_POINTS_FOR_NORM_WITH_QUADRIC)
 		{
-			CVLib::DgmOctreeReferenceCloud neighbours(&nNSS.pointsInNeighbourhood, k);
+			cloudViewer::DgmOctreeReferenceCloud neighbours(&nNSS.pointsInNeighbourhood, k);
 
 			CCVector3 N;
 			if (ComputeNormalWithQuadric(&neighbours, nNSS.queryPoint, N))
@@ -711,15 +711,15 @@ bool ccNormalVectors::ComputeNormsAtLevelWithQuadric(	const CVLib::DgmOctree::oc
 	return true;
 }
 
-bool ccNormalVectors::ComputeNormsAtLevelWithLS(const CVLib::DgmOctree::octreeCell& cell,
+bool ccNormalVectors::ComputeNormsAtLevelWithLS(const cloudViewer::DgmOctree::octreeCell& cell,
 												void** additionalParameters,
-												CVLib::NormalizedProgress* nProgress/*=0*/)
+												cloudViewer::NormalizedProgress* nProgress/*=0*/)
 {
 	//additional parameters
 	NormsTableType* theNorms = static_cast<NormsTableType*>(additionalParameters[0]);
 	PointCoordinateType radius = *static_cast<PointCoordinateType*>(additionalParameters[1]);
 
-	CVLib::DgmOctree::NearestNeighboursSphericalSearchStruct nNSS;
+	cloudViewer::DgmOctree::NearestNeighboursSphericalSearchStruct nNSS;
 	nNSS.level = cell.level;
 	nNSS.prepare(radius, cell.parentOctree->getCellSize(nNSS.level));
 	cell.parentOctree->getCellPos(cell.truncatedCode, cell.level, nNSS.cellPos, true);
@@ -729,7 +729,7 @@ bool ccNormalVectors::ComputeNormsAtLevelWithLS(const CVLib::DgmOctree::octreeCe
 	unsigned pointCount = cell.points->size();
 	nNSS.pointsInNeighbourhood.resize(pointCount);
 	{
-		CVLib::DgmOctree::NeighboursSet::iterator it = nNSS.pointsInNeighbourhood.begin();
+		cloudViewer::DgmOctree::NeighboursSet::iterator it = nNSS.pointsInNeighbourhood.begin();
 		for (unsigned j = 0; j < pointCount; ++j, ++it)
 		{
 			it->point = cell.points->getPointPersistentPtr(j);
@@ -752,7 +752,7 @@ bool ccNormalVectors::ComputeNormsAtLevelWithLS(const CVLib::DgmOctree::octreeCe
 		}
 		if (k >= NUMBER_OF_POINTS_FOR_NORM_WITH_LS)
 		{
-			CVLib::DgmOctreeReferenceCloud neighbours(&nNSS.pointsInNeighbourhood, k);
+			cloudViewer::DgmOctreeReferenceCloud neighbours(&nNSS.pointsInNeighbourhood, k);
 
 			CCVector3 N;
 			if (ComputeNormalWithLS(&neighbours, N))
@@ -770,14 +770,14 @@ bool ccNormalVectors::ComputeNormsAtLevelWithLS(const CVLib::DgmOctree::octreeCe
 	return true;
 }
 
-bool ccNormalVectors::ComputeNormsAtLevelWithTri(	const CVLib::DgmOctree::octreeCell& cell,
+bool ccNormalVectors::ComputeNormsAtLevelWithTri(	const cloudViewer::DgmOctree::octreeCell& cell,
 													void** additionalParameters,
-													CVLib::NormalizedProgress* nProgress/*=0*/)
+													cloudViewer::NormalizedProgress* nProgress/*=0*/)
 {
 	//additional parameters
 	NormsTableType* theNorms = static_cast<NormsTableType*>(additionalParameters[0]);
 
-	CVLib::DgmOctree::NearestNeighboursSearchStruct nNSS;
+	cloudViewer::DgmOctree::NearestNeighboursSearchStruct nNSS;
 	nNSS.level = cell.level;
 	nNSS.minNumberOfNeighbors = NUMBER_OF_POINTS_FOR_NORM_WITH_TRI;
 	cell.parentOctree->getCellPos(cell.truncatedCode, cell.level, nNSS.cellPos, true);
@@ -786,7 +786,7 @@ bool ccNormalVectors::ComputeNormsAtLevelWithTri(	const CVLib::DgmOctree::octree
 	//we already know which points are lying in the current cell
 	unsigned pointCount = cell.points->size();
 	nNSS.pointsInNeighbourhood.resize(pointCount);
-	CVLib::DgmOctree::NeighboursSet::iterator it = nNSS.pointsInNeighbourhood.begin();
+	cloudViewer::DgmOctree::NeighboursSet::iterator it = nNSS.pointsInNeighbourhood.begin();
 	{
 		for (unsigned j = 0; j < pointCount; ++j, ++it)
 		{
@@ -805,7 +805,7 @@ bool ccNormalVectors::ComputeNormsAtLevelWithTri(	const CVLib::DgmOctree::octree
 		{
 			if (k > NUMBER_OF_POINTS_FOR_NORM_WITH_TRI * 3)
 				k = NUMBER_OF_POINTS_FOR_NORM_WITH_TRI * 3;
-			CVLib::DgmOctreeReferenceCloud neighbours(&nNSS.pointsInNeighbourhood, k);
+			cloudViewer::DgmOctreeReferenceCloud neighbours(&nNSS.pointsInNeighbourhood, k);
 
 			CCVector3 N;
 			if (ComputeNormalWithTri(&neighbours, N))
@@ -845,9 +845,9 @@ void ccNormalVectors::ConvertNormalToStrikeAndDip(const CCVector3& N, PointCoord
 	// uses a right hand rule for the dip of the plane
 	if (N.norm2() > std::numeric_limits<PointCoordinateType>::epsilon())
 	{
-        strike_deg = 180.0 - CVLib::RadiansToDegrees(atan2(N.y, N.x));		//atan2 output is between -180 and 180! So strike is always positive here
+        strike_deg = 180.0 - cloudViewer::RadiansToDegrees(atan2(N.y, N.x));		//atan2 output is between -180 and 180! So strike is always positive here
 		PointCoordinateType x = sqrt(N.x*N.x + N.y*N.y);		//x is the horizontal magnitude
-        dip_deg = CVLib::RadiansToDegrees(atan2(x, N.z));
+        dip_deg = cloudViewer::RadiansToDegrees(atan2(x, N.z));
 	}
 	else
 	{
@@ -885,8 +885,8 @@ void ccNormalVectors::ConvertNormalToDipAndDipDir(const CCVector3& N, PointCoord
 		// We skip the division by r because the normal is a unit vector.
 		double dip_rad = acos(fabs(N.z));
 
-        dipDir_deg = static_cast<PointCoordinateType>(CVLib::RadiansToDegrees(dipDir_rad));
-        dip_deg = static_cast<PointCoordinateType>(CVLib::RadiansToDegrees(dip_rad));
+        dipDir_deg = static_cast<PointCoordinateType>(cloudViewer::RadiansToDegrees(dipDir_rad));
+        dip_deg = static_cast<PointCoordinateType>(cloudViewer::RadiansToDegrees(dip_rad));
 	}
 	else
 	{

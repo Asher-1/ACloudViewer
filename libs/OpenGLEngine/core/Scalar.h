@@ -79,7 +79,7 @@ public:
     /// ScalarType::Double.
     double GetDouble() const {
         if (!IsDouble()) {
-            CVLib::utility::LogError("Scalar is not a ScalarType:Double type.");
+            cloudViewer::utility::LogError("Scalar is not a ScalarType:Double type.");
         }
         return value_.d;
     }
@@ -87,7 +87,7 @@ public:
     /// ScalarType::Int64.
     int64_t GetInt64() const {
         if (!IsInt64()) {
-            CVLib::utility::LogError("Scalar is not a ScalarType:Int64 type.");
+            cloudViewer::utility::LogError("Scalar is not a ScalarType:Int64 type.");
         }
         return value_.i;
     }
@@ -95,7 +95,7 @@ public:
     /// ScalarType::Bool.
     bool GetBool() const {
         if (!IsBool()) {
-            CVLib::utility::LogError("Scalar is not a ScalarType:Bool type.");
+            cloudViewer::utility::LogError("Scalar is not a ScalarType:Bool type.");
         }
         return value_.b;
     }
@@ -110,7 +110,7 @@ public:
         } else if (scalar_type_ == ScalarType::Bool) {
             return static_cast<T>(value_.b);
         } else {
-            CVLib::utility::LogError("To: ScalarType not supported.");
+            cloudViewer::utility::LogError("To: ScalarType not supported.");
         }
     }
 
@@ -118,10 +118,10 @@ public:
                               const std::string& error_msg) const {
         if (scalar_type_ != other.scalar_type_) {
             if (error_msg.empty()) {
-                CVLib::utility::LogError("Scalar mode {} are not the same as {}.",
+                cloudViewer::utility::LogError("Scalar mode {} are not the same as {}.",
                                   ToString(), other.ToString());
             } else {
-                CVLib::utility::LogError("Scalar mode {} are not the same as {}: {}",
+                cloudViewer::utility::LogError("Scalar mode {} are not the same as {}: {}",
                                   ToString(), other.ToString(), error_msg);
             }
         }
@@ -140,7 +140,7 @@ public:
             scalar_type_str = "Bool";
             value_str = value_.b ? "true" : "false";
         } else {
-            CVLib::utility::LogError("ScalarTypeToString: ScalarType not supported.");
+            cloudViewer::utility::LogError("ScalarTypeToString: ScalarType not supported.");
         }
         return scalar_type_str + ":" + value_str;
     }
@@ -154,7 +154,7 @@ public:
         } else if (scalar_type_ == ScalarType::Bool) {
             return false;  // Boolean does not equal to non-boolean values.
         } else {
-            CVLib::utility::LogError("Equals: ScalarType not supported.");
+            cloudViewer::utility::LogError("Equals: ScalarType not supported.");
         }
     }
 
@@ -171,7 +171,7 @@ public:
             return scalar_type_ == ScalarType::Bool &&
                    value_.b == other.value_.b;
         } else {
-            CVLib::utility::LogError("Equals: ScalarType not supported.");
+            cloudViewer::utility::LogError("Equals: ScalarType not supported.");
         }
     }
 

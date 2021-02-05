@@ -23,7 +23,7 @@
 #include "ecvCommon.h"
 #include "ecvPickingListener.h"
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 //system

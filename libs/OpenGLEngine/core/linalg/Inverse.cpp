@@ -40,7 +40,7 @@ void Inverse(const Tensor &A, Tensor &output) {
     // Check dtypes
     Dtype dtype = A.GetDtype();
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}.",
                 dtype.ToString());
@@ -49,16 +49,16 @@ void Inverse(const Tensor &A, Tensor &output) {
     // Check dimensions
     SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
-        CVLib::utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
+        cloudViewer::utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
     }
     if (A_shape[0] != A_shape[1]) {
-        CVLib::utility::LogError("Tensor A must be square, but got {} x {}.",
+        cloudViewer::utility::LogError("Tensor A must be square, but got {} x {}.",
                           A_shape[0], A_shape[1]);
     }
 
     int64_t n = A_shape[0];
     if (n == 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
@@ -78,7 +78,7 @@ void Inverse(const Tensor &A, Tensor &output) {
         InverseCUDA(A_data, ipiv_data, output_data, n, dtype, device);
         output = output.T();
 #else
-        CVLib::utility::LogError("Unimplemented device.");
+        cloudViewer::utility::LogError("Unimplemented device.");
 #endif
     } else {
         Dtype ipiv_dtype;
@@ -87,7 +87,7 @@ void Inverse(const Tensor &A, Tensor &output) {
         } else if (sizeof(CLOUDVIEWER_CPU_LINALG_INT) == 8) {
             ipiv_dtype = Dtype::Int64;
         } else {
-            CVLib::utility::LogError("Unsupported CLOUDVIEWER_CPU_LINALG_INT type.");
+            cloudViewer::utility::LogError("Unsupported CLOUDVIEWER_CPU_LINALG_INT type.");
         }
         Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
         void *ipiv_data = ipiv.GetDataPtr();

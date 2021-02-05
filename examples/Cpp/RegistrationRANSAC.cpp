@@ -57,10 +57,10 @@ void VisualizeRegistration(const ccPointCloud &source,
 int main(int argc, char *argv[]) {
     using namespace cloudViewer;
 
-	CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+	cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     if (argc < 3 || argc > 7) {
-        CVLib::utility::LogInfo(
+        cloudViewer::utility::LogInfo(
                 "Usage : RegistrationRANSAC path_to_first_point_cloud "
                 "path_to_second_point_cloud [--method=feature_matching] "
                 "[--mutual_filter] [--visualize]");
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     }
 
     bool visualize = false;
-    if (CVLib::utility::ProgramOptionExists(argc, argv, "--visualize")) {
+    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--visualize")) {
         visualize = true;
     }
 
@@ -97,19 +97,19 @@ int main(int argc, char *argv[]) {
     std::string method = "";
     const std::string kMethodFeature = "feature_matching";
     const std::string kMethodCorres = "correspondence";
-    if (CVLib::utility::ProgramOptionExists(argc, argv, "--method")) {
-        method = CVLib::utility::GetProgramOptionAsString(argc, argv, "--method");
+    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--method")) {
+        method = cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--method");
     } else {
         method = "feature_matching";
     }
     if (method != kMethodFeature && method != kMethodCorres) {
-        CVLib::utility::LogInfo(
+        cloudViewer::utility::LogInfo(
                 "--method must be \'feature_matching\' or \'correspondence\'");
         return 1;
     }
 
     bool mutual_filter = false;
-    if (CVLib::utility::ProgramOptionExists(argc, argv, "--mutual_filter")) {
+    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--mutual_filter")) {
         mutual_filter = true;
     }
 
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            CVLib::utility::LogDebug("{:d} points remain", mutual.size());
+            cloudViewer::utility::LogDebug("{:d} points remain", mutual.size());
             registration_result = pipelines::registration::
                     RegistrationRANSACBasedOnCorrespondence(
                             *source, *target, mutual, 0.075,
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
                             pipelines::registration::RANSACConvergenceCriteria(
                                     100000, 0.999));
         } else {
-            CVLib::utility::LogDebug("{:d} points remain", corres_ji.size());
+            cloudViewer::utility::LogDebug("{:d} points remain", corres_ji.size());
             registration_result = pipelines::registration::
                     RegistrationRANSACBasedOnCorrespondence(
                             *source, *target, corres_ji, 0.075,

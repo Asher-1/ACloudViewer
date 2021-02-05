@@ -442,7 +442,7 @@ bool cc2smReader::getvtkScalars(vtkSmartPointer<vtkDataArray> &scalars, bool sfC
 	{
 		int sfIdx = m_cc_cloud->getCurrentDisplayedScalarFieldIndex();
 		if (sfIdx < 0) return false;
-		CVLib::ScalarField* scalar_field = m_cc_cloud->getScalarField(sfIdx);
+		cloudViewer::ScalarField* scalar_field = m_cc_cloud->getScalarField(sfIdx);
 		if (!scalar_field) return false;
 		for (unsigned cp = 0; cp < nr_points; ++cp)
 		{
@@ -517,7 +517,7 @@ PCLCloud::Ptr cc2smReader::getFloatScalarField(const std::string& field_name) co
 	int sfIdx = m_cc_cloud->getScalarFieldIndexByName(field_name.c_str());
 	if (sfIdx < 0)
 		return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
-	CVLib::ScalarField* scalar_field = m_cc_cloud->getScalarField(sfIdx);
+	cloudViewer::ScalarField* scalar_field = m_cc_cloud->getScalarField(sfIdx);
 	assert(scalar_field);
 
 	PCLCloud::Ptr sm_cloud (new PCLCloud);
@@ -787,7 +787,7 @@ PCLMesh::Ptr cc2smReader::getPclMesh(ccGenericMesh* mesh) {
 
 	for (unsigned n = 0; n < triNum; ++n)
 	{
-		const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
+		const cloudViewer::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
 		if (visFiltering)
 		{
 			//we skip the triangle if at least one vertex is hidden
@@ -913,7 +913,7 @@ bool cc2smReader::getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const {
 
     // vertices visibility
     for (unsigned n = 0; n < triNum; ++n) {
-        const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
+        const cloudViewer::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
         if (visFiltering) {
             // we skip the triangle if at least one vertex is hidden
             if ((verticesVisibility[tsi->i1] != POINT_VISIBLE) ||
@@ -1067,7 +1067,7 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
 		//vertices visibility
         for (unsigned n = 0; n < triNum; ++n)
 		{
-			const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
+			const cloudViewer::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
 			if (visFiltering)
 			{
 				//we skip the triangle if at least one vertex is hidden

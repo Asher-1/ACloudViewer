@@ -31,7 +31,7 @@
 namespace cloudViewer {
 namespace ml {
 namespace contrib {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
 /// TOOD: This is a temporary wrapper for 3DML repository use. In the future,
 /// the native CloudViewer Python API should be improved and used.

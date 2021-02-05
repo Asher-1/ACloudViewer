@@ -81,7 +81,7 @@ bool CorrespondenceCheckerBasedOnNormal::Check(
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d &transformation) const {
     if (source.hasNormals() == false || target.hasNormals() == false) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "[CorrespondenceCheckerBasedOnNormal::Check] Pointcloud has no "
                 "normals.");
         return true;

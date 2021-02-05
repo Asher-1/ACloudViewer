@@ -37,7 +37,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-using namespace CVLib;
+using namespace cloudViewer;
 std::shared_ptr<ccMesh> ccMesh::subdivideMidpoint(
 	int number_of_iterations) const {
 	if (hasTriangleUvs()) {

@@ -48,7 +48,7 @@ void unbind();
 
 namespace cloudViewer {
 namespace visualization {
-using namespace CVLib;
+using namespace cloudViewer;
 
 bool Visualizer::InitOpenGL() {
 #if defined(__APPLE__) && defined(BUILD_GUI)

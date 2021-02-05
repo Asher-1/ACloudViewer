@@ -42,7 +42,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-    using namespace CVLib;
+    using namespace cloudViewer;
 static const char *CUSTOM_LIGHTING = "Custom";
 
 std::shared_ptr<gui::Slider> MakeSlider(const gui::Slider::Type type,

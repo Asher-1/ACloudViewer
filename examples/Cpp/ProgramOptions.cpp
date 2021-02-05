@@ -28,7 +28,7 @@
 
 
 void PrintHelp() {
-    using namespace CVLib;
+    using namespace cloudViewer;
     // clang-format off
     utility::LogInfo("Usage :");
     utility::LogInfo("    > ProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]");
@@ -36,7 +36,7 @@ void PrintHelp() {
 }
 
 int main(int argc, char *argv[]) {
-    using namespace CVLib;
+    using namespace cloudViewer;
     if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help")) {
         PrintHelp();
         return 1;

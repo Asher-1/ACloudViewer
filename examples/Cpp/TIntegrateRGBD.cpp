@@ -32,25 +32,25 @@ using namespace cloudViewer::core;
 void PrintHelp() {
     cloudViewer::PrintCloudViewerVersion();
     // clang-format off
-    CVLib::utility::LogInfo("Usage:");
-    CVLib::utility::LogInfo(">    TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
-    CVLib::utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud from color and depth images");
-    CVLib::utility::LogInfo("     [options]");
-    CVLib::utility::LogInfo("     --voxel_size [=0.0058 (m)]");
-    CVLib::utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
-    CVLib::utility::LogInfo("     --depth_scale [=1000.0]");
-    CVLib::utility::LogInfo("     --max_depth [=3.0]");
-    CVLib::utility::LogInfo("     --sdf_trunc [=0.04]");
-    CVLib::utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
-    CVLib::utility::LogInfo("     --device [CPU:0]");
-    CVLib::utility::LogInfo("     --mesh");
-    CVLib::utility::LogInfo("     --pointcloud");
+    cloudViewer::utility::LogInfo("Usage:");
+    cloudViewer::utility::LogInfo(">    TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
+    cloudViewer::utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud from color and depth images");
+    cloudViewer::utility::LogInfo("     [options]");
+    cloudViewer::utility::LogInfo("     --voxel_size [=0.0058 (m)]");
+    cloudViewer::utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
+    cloudViewer::utility::LogInfo("     --depth_scale [=1000.0]");
+    cloudViewer::utility::LogInfo("     --max_depth [=3.0]");
+    cloudViewer::utility::LogInfo("     --sdf_trunc [=0.04]");
+    cloudViewer::utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
+    cloudViewer::utility::LogInfo("     --device [CPU:0]");
+    cloudViewer::utility::LogInfo("     --mesh");
+    cloudViewer::utility::LogInfo("     --pointcloud");
     // clang-format on
-    CVLib::utility::LogInfo("");
+    cloudViewer::utility::LogInfo("");
 }
 
 int main(int argc, char** argv) {
-    if (argc == 1 || CVLib::utility::ProgramOptionExists(argc, argv, "--help") ||
+    if (argc == 1 || cloudViewer::utility::ProgramOptionExists(argc, argv, "--help") ||
         argc < 4) {
         PrintHelp();
         return 1;
@@ -61,15 +61,15 @@ int main(int argc, char** argv) {
     std::string depth_folder = std::string(argv[2]);
 
     std::vector<std::string> color_filenames;
-    CVLib::utility::filesystem::ListFilesInDirectory(color_folder, color_filenames);
+    cloudViewer::utility::filesystem::ListFilesInDirectory(color_folder, color_filenames);
     std::sort(color_filenames.begin(), color_filenames.end());
 
     std::vector<std::string> depth_filenames;
-    CVLib::utility::filesystem::ListFilesInDirectory(depth_folder, depth_filenames);
+    cloudViewer::utility::filesystem::ListFilesInDirectory(depth_folder, depth_filenames);
     std::sort(depth_filenames.begin(), depth_filenames.end());
 
     if (color_filenames.size() != depth_filenames.size()) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[TIntegrateRGBD] numbers of color and depth files mismatch. "
                 "Please provide folders with same number of images.");
     }
@@ -80,14 +80,14 @@ int main(int argc, char** argv) {
             io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
 
     // Intrinsics
-    std::string intrinsic_path = CVLib::utility::GetProgramOptionAsString(
+    std::string intrinsic_path = cloudViewer::utility::GetProgramOptionAsString(
             argc, argv, "--intrinsic_path", "");
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     if (intrinsic_path.empty()) {
-        CVLib::utility::LogWarning("Using default Primesense intrinsics");
+        cloudViewer::utility::LogWarning("Using default Primesense intrinsics");
     } else if (!io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
-        CVLib::utility::LogError("Unable to convert json to intrinsics.");
+        cloudViewer::utility::LogError("Unable to convert json to intrinsics.");
     }
 
     auto focal_length = intrinsic.GetFocalLength();
@@ -101,24 +101,24 @@ int main(int argc, char** argv) {
             {3, 3}, Dtype::Float32);
 
     int block_count =
-            CVLib::utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
+            cloudViewer::utility::GetProgramOptionAsInt(argc, argv, "--block_count", 1000);
 
-    float voxel_size = static_cast<float>(CVLib::utility::GetProgramOptionAsDouble(
+    float voxel_size = static_cast<float>(cloudViewer::utility::GetProgramOptionAsDouble(
             argc, argv, "--voxel_size", 3.f / 512.f));
-    float depth_scale = static_cast<float>(CVLib::utility::GetProgramOptionAsDouble(
+    float depth_scale = static_cast<float>(cloudViewer::utility::GetProgramOptionAsDouble(
             argc, argv, "--depth_scale", 1000.f));
     float max_depth = static_cast<float>(
-            CVLib::utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
-    float sdf_trunc = static_cast<float>(CVLib::utility::GetProgramOptionAsDouble(
+            cloudViewer::utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
+    float sdf_trunc = static_cast<float>(cloudViewer::utility::GetProgramOptionAsDouble(
             argc, argv, "--sdf_trunc", 0.04f));
 
     // Device
     std::string device_code = "CPU:0";
-    if (CVLib::utility::ProgramOptionExists(argc, argv, "--device")) {
-        device_code = CVLib::utility::GetProgramOptionAsString(argc, argv, "--device");
+    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--device")) {
+        device_code = cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--device");
     }
     core::Device device(device_code);
-    CVLib::utility::LogInfo("Using device: {}", device.ToString());
+    cloudViewer::utility::LogInfo("Using device: {}", device.ToString());
 
     t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
                                            {"weight", core::Dtype::UInt16},
@@ -144,21 +144,21 @@ int main(int argc, char** argv) {
                 core::eigen_converter::EigenMatrixToTensor(extrinsic).To(
                         device);
 
-        CVLib::utility::Timer timer;
+        cloudViewer::utility::Timer timer;
         timer.Start();
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
                              depth_scale, max_depth);
         timer.Stop();
-        CVLib::utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
+        cloudViewer::utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
     }
 
-    if (CVLib::utility::ProgramOptionExists(argc, argv, "--mesh")) {
+    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh = voxel_grid.ExtractSurfaceMesh();
         auto mesh_legacy = std::make_shared<ccMesh>(mesh.ToLegacyTriangleMesh());
         cloudViewer::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply", *mesh_legacy);
     }
 
-    if (CVLib::utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
+    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd = voxel_grid.ExtractSurfacePoints();
         auto pcd_legacy = std::make_shared<ccPointCloud>(pcd.ToLegacyPointCloud());
         cloudViewer::io::WritePointCloud("pcd_" + device.ToString() + ".ply", *pcd_legacy);

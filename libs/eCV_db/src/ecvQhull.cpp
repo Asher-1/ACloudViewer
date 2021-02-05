@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -124,7 +124,7 @@ Qhull::ComputeConvexHull(const std::vector<CCVector3>& points)
 	}
 
 	for (unsigned int i = 0; i < convex_hull->size(); ++i) {
-		CVLib::VerticesIndexes* tsi = convex_hull->getTriangleVertIndexes(i);
+		cloudViewer::VerticesIndexes* tsi = convex_hull->getTriangleVertIndexes(i);
 		tsi->i1 = vert_map[tsi->i1];
 		tsi->i2 = vert_map[tsi->i2];
 		tsi->i3 = vert_map[tsi->i3];

@@ -35,7 +35,7 @@
 namespace cloudViewer {
 namespace core {
 namespace kernel {
-    using namespace CVLib;
+    using namespace cloudViewer;
 void TestLinalgIntegration() {
     // Blas
     std::vector<double> A{1.0, 2.0, 1.0, -3.0, 4.0, -1.0};

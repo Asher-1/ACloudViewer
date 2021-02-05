@@ -58,10 +58,10 @@ void Unproject(const core::Tensor& depth,
         UnprojectCUDA(depth, points, intrinsics_d, extrinsics_d, depth_scale,
                       depth_max, stride);
 #else
-        CVLib::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+        cloudViewer::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        CVLib::utility::LogError("Unimplemented device");
+        cloudViewer::utility::LogError("Unimplemented device");
     }
 }
 }  // namespace pointcloud

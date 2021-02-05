@@ -40,7 +40,7 @@ namespace core {
             using scalar_t = double;                            \
             return __VA_ARGS__();                               \
         } else {                                                \
-            CVLib::utility::LogError("Unsupported data type."); \
+            cloudViewer::utility::LogError("Unsupported data type."); \
         }                                                       \
     }()
 

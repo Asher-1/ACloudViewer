@@ -38,11 +38,11 @@
 int main(int argc, char *argv[]) {
     using namespace cloudViewer;
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
     if (argc < 3) {
-        CVLib::utility::LogInfo("CloudViewer {}", CLOUDVIEWER_VERSION);
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("\t> {} [mesh|pointcloud] [filename] ...\n", argv[0]);
+        cloudViewer::utility::LogInfo("CloudViewer {}", CLOUDVIEWER_VERSION);
+        cloudViewer::utility::LogInfo("Usage:");
+        cloudViewer::utility::LogInfo("\t> {} [mesh|pointcloud] [filename] ...\n", argv[0]);
         return 1;
     }
 
@@ -52,25 +52,25 @@ int main(int argc, char *argv[]) {
     auto mesh = std::make_shared<ccMesh>();
     if (option == "mesh") {
         if (!io::ReadTriangleMesh(filename, *mesh)) {
-            CVLib::utility::LogWarning("Failed to read {}", filename);
+            cloudViewer::utility::LogWarning("Failed to read {}", filename);
             return 1;
         }
         cloud->setEigenPoints(mesh->getEigenVertices());
     } else if (option == "pointcloud") {
         if (!io::ReadPointCloud(filename, *cloud)) {
-            CVLib::utility::LogWarning("Failed to read {}\n\n", filename);
+            cloudViewer::utility::LogWarning("Failed to read {}\n\n", filename);
             return 1;
         }
     } else {
-        CVLib::utility::LogError("option {} not supported\n", option);
+        cloudViewer::utility::LogError("option {} not supported\n", option);
     }
 
     // Compute the ISS Keypoints
     auto iss_keypoints = std::make_shared<ccPointCloud>();
     {
-        CVLib::utility::ScopeTimer timer("ISS Keypoints estimation");
+        cloudViewer::utility::ScopeTimer timer("ISS Keypoints estimation");
         iss_keypoints = geometry::keypoint::ComputeISSKeypoints(*cloud);
-        CVLib::utility::LogInfo("Detected {} keypoints",
+        cloudViewer::utility::LogInfo("Detected {} keypoints",
                          iss_keypoints->size());
     }
 

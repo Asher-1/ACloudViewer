@@ -135,7 +135,7 @@ namespace io {
 			QString extension = QFileInfo(file).suffix();
 			if (extension.isEmpty())
 			{
-				CVLib::utility::LogWarning("[Load] Can't guess file format: no file extension");
+				cloudViewer::utility::LogWarning("[Load] Can't guess file format: no file extension");
 				result = CC_FERR_CONSOLE_ERROR;
 				break;
 			}
@@ -147,7 +147,7 @@ namespace io {
 				//unknown extension?
 				if (!filter)
 				{
-					CVLib::utility::LogWarning(
+					cloudViewer::utility::LogWarning(
 						"[Load] Can't guess file format: unhandled file extension '%s'",
 						extension.toStdString().c_str());
 					result = CC_FERR_CONSOLE_ERROR;
@@ -158,7 +158,7 @@ namespace io {
 				QFileInfo fi(file);
 				if (!fi.exists())
 				{
-					CVLib::utility::LogWarning(
+					cloudViewer::utility::LogWarning(
 						"[Load] File '%s' doesn't exist!", file.toStdString().c_str());
 					result = CC_FERR_CONSOLE_ERROR;
 					break;
@@ -179,10 +179,10 @@ namespace io {
 				}
 				catch (const std::exception& e)
 				{
-					CVLib::utility::LogWarning(
+					cloudViewer::utility::LogWarning(
 						"[I/O] CC has caught an exception while loading file '%s'!",
 						file.toStdString().c_str());
-					CVLib::utility::LogWarning("[I/O] Exception: %s", e.what());
+					cloudViewer::utility::LogWarning("[I/O] Exception: %s", e.what());
 					if (container)
 					{
 						container->removeAllChildren();
@@ -191,7 +191,7 @@ namespace io {
 				}
 				catch (...)
 				{
-					CVLib::utility::LogWarning(
+					cloudViewer::utility::LogWarning(
 						"[I/O] CC has caught an unhandled exception while loading file '%s'",
 						file.toStdString().c_str());
 					if (container)
@@ -259,7 +259,7 @@ namespace io {
 
 					if (!outMesh->merge(mesh, false))
 					{
-						CVLib::utility::LogWarning("[AutoReadEntity] merge mesh child failed!");
+						cloudViewer::utility::LogWarning("[AutoReadEntity] merge mesh child failed!");
 					}
 				}
 				successFlag = true;
@@ -324,7 +324,7 @@ namespace io {
 				//unknown extension?
 				if (!filter)
 				{
-					CVLib::utility::LogWarning(
+					cloudViewer::utility::LogWarning(
 						"[AutoWriteEntity] Can't guess file format: unhandled file extension '%s'",
 						CVTools::FromQString(extension).c_str());
 					result = CC_FERR_CONSOLE_ERROR;
@@ -337,7 +337,7 @@ namespace io {
 				}
 				catch (...)
 				{
-					CVLib::utility::LogWarning(
+					cloudViewer::utility::LogWarning(
 						"[AutoWriteEntity] CV has caught an unhandled exception while saving file '%s'",
 						CVTools::FromQString(completeFileName).c_str());
 					result = CC_FERR_CONSOLE_ERROR;
@@ -382,7 +382,7 @@ namespace io {
 		return AutoWriteEntity(filename, mesh, params);
 	}
 
-using namespace CVLib;
+using namespace cloudViewer;
 std::shared_ptr<ccHObject> CreateEntityFromFile(
         const std::string &filename,
         const std::string &format,

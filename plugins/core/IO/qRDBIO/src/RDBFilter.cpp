@@ -349,7 +349,7 @@ CC_FILE_ERROR RDBFilter::loadFile( const QString &filename, ccHObject &container
 
 		//progress dialog
         ecvProgressDialog pdlg(true, parameters.parentWidget);
-        CVLib::NormalizedProgress nprogress(&pdlg, root.pointCountTotal / BUFFER_SIZE);
+        cloudViewer::NormalizedProgress nprogress(&pdlg, root.pointCountTotal / BUFFER_SIZE);
 		{
 			std::stringstream ss;
 			ss << "Loading RDB file [" << filename.toStdString().c_str()<< "]";

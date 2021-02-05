@@ -70,10 +70,10 @@ bool RSBagReader::Open(const std::string &filename) {
                 RealSenseSensorConfig::GetMetadataJson(profile));
         RealSenseSensorConfig::GetPixelDtypes(profile, metadata_);
         if (seek_to_ == UINT64_MAX) {
-            CVLib::utility::LogInfo("File {} opened", filename);
+            cloudViewer::utility::LogInfo("File {} opened", filename);
         }
     } catch (const rs2::error &) {
-        CVLib::utility::LogWarning("Unable to open file {}", filename);
+        cloudViewer::utility::LogWarning("Unable to open file {}", filename);
         return false;
     }
     filename_ = filename;
@@ -107,13 +107,13 @@ void RSBagReader::fill_frame_buffer() try {
 
     while (is_opened_) {
         rs_device.resume();
-        CVLib::utility::LogDebug(
+        cloudViewer::utility::LogDebug(
                 "frame_reader_thread_ start reading tail_fid_={}, "
                 "head_fid_={}.",
                 tail_fid_, head_fid_);
         while (!is_eof_ && head_fid_ < tail_fid_ + frame_buffer_.size()) {
             if (seek_to_ < UINT64_MAX) {
-                CVLib::utility::LogDebug("frame_reader_thread_ seek to {}us",
+                cloudViewer::utility::LogDebug("frame_reader_thread_ seek to {}us",
                                   seek_to_);
                 rs_device.seek(std::chrono::microseconds(seek_to_));
                 tail_fid_.store(
@@ -151,14 +151,14 @@ void RSBagReader::fill_frame_buffer() try {
                         1000;  // Convert nanoseconds -> microseconds
                 ++head_fid_;   // atomic
             } else {
-                CVLib::utility::LogDebug("frame_reader_thread EOF. Join.");
+                cloudViewer::utility::LogDebug("frame_reader_thread EOF. Join.");
                 is_eof_ = true;
                 return;
             }
             if (!is_opened_) break;  // exit if Close()
         }
         rs_device.pause();  // Pause playback to prevent frame drops
-        CVLib::utility::LogDebug(
+        cloudViewer::utility::LogDebug(
                 "frame_reader_thread pause reading tail_fid_={}, head_fid_={}",
                 tail_fid_, head_fid_);
         need_frames_.wait(lock, [this] {
@@ -168,17 +168,17 @@ void RSBagReader::fill_frame_buffer() try {
         });
     }
 } catch (const rs2::error &e) {
-    CVLib::utility::LogError("Realsense error: {}: {}",
+    cloudViewer::utility::LogError("Realsense error: {}: {}",
                       rs2_exception_type_to_string(e.get_type()), e.what());
 } catch (const std::exception &e) {
-    CVLib::utility::LogError("Error in reading RealSense bag file: {}", e.what());
+    cloudViewer::utility::LogError("Error in reading RealSense bag file: {}", e.what());
 }
 
 bool RSBagReader::IsEOF() const { return is_eof_ && tail_fid_ == head_fid_; }
 
 t::geometry::RGBDImage RSBagReader::NextFrame() {
     if (!IsOpened()) {
-        CVLib::utility::LogError("Null file handler. Please call Open().");
+        cloudViewer::utility::LogError("Null file handler. Please call Open().");
     }
     if (!is_eof_ &&
         head_fid_ < tail_fid_ + frame_buffer_.size() / BUFFER_REFILL_FACTOR)
@@ -191,7 +191,7 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
                 std::chrono::duration<double>(1 / metadata_.fps_));
     }
     if (is_eof_ && tail_fid_ == head_fid_) {  // no more frames
-        CVLib::utility::LogInfo("EOF reached");
+        cloudViewer::utility::LogInfo("EOF reached");
         return t::geometry::RGBDImage();
     } else {
         return frame_buffer_[(tail_fid_++) %  // atomic
@@ -201,11 +201,11 @@ t::geometry::RGBDImage RSBagReader::NextFrame() {
 
 bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
     if (!IsOpened()) {
-        CVLib::utility::LogWarning("Null file handler. Please call Open().");
+        cloudViewer::utility::LogWarning("Null file handler. Please call Open().");
         return false;
     }
     if (timestamp >= metadata_.stream_length_usec_) {
-        CVLib::utility::LogWarning("Timestamp {} exceeds maximum {} (us).", timestamp,
+        cloudViewer::utility::LogWarning("Timestamp {} exceeds maximum {} (us).", timestamp,
                             metadata_.stream_length_usec_);
         return false;
     }
@@ -220,7 +220,7 @@ bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
 
 uint64_t RSBagReader::GetTimestamp() const {
     if (!IsOpened()) {
-        CVLib::utility::LogWarning("Null file handler. Please call Open().");
+        cloudViewer::utility::LogWarning("Null file handler. Please call Open().");
         return UINT64_MAX;
     }
     return tail_fid_ == 0

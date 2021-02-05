@@ -37,7 +37,7 @@
 //Qt
 #include <QFileInfo>
 
-//CVLib
+//cloudViewer
 #include <MeshSamplingTools.h>
 
 //System
@@ -252,7 +252,7 @@ static int32_t sizeofMultipatch(size_t numPoints, size_t numParts = 1)
 	return static_cast<int32_t>(recordSize / 2); // 16bit words
 }
 
-static bool areVerticesCounterClockwise(const CVLib::GenericIndexedCloudPersist *vertices,
+static bool areVerticesCounterClockwise(const cloudViewer::GenericIndexedCloudPersist *vertices,
 										int32_t numPoints,
 										unsigned char dim1,
 										unsigned char dim2)
@@ -274,7 +274,7 @@ static bool areVerticesCounterClockwise(const CVLib::GenericIndexedCloudPersist 
 	return sum < 0.0;
 }
 
-static CCVector2d minMaxOfEnabledScalarField(const CVLib::GenericIndexedCloudPersist *cloud)
+static CCVector2d minMaxOfEnabledScalarField(const cloudViewer::GenericIndexedCloudPersist *cloud)
 {
 	CCVector2d minMax(std::numeric_limits<double>::max(), std::numeric_limits<double>::min());
 	if (cloud->isScalarFieldEnabled())
@@ -334,7 +334,7 @@ CCVector2d mRangeOfContainer(ccHObject::Container &objects)
 {
 	CCVector2d range(std::numeric_limits<double>::max(), std::numeric_limits<double>::min());
 
-	auto updateRange = [&range](const CVLib::GenericIndexedCloudPersist *cloud)
+	auto updateRange = [&range](const cloudViewer::GenericIndexedCloudPersist *cloud)
 	{
 		if (!cloud->isScalarFieldEnabled())
 			return;
@@ -365,7 +365,7 @@ CCVector2d mRangeOfContainer(ccHObject::Container &objects)
 			case CV_TYPES::POLY_LINE:
 			{
 				const ccPolyline *poly = ccHObjectCaster::ToPolyline(obj);
-				const CVLib::GenericIndexedCloudPersist *vertices = poly->getAssociatedCloud();
+				const cloudViewer::GenericIndexedCloudPersist *vertices = poly->getAssociatedCloud();
 				updateRange(vertices);
 				break;
 			}
@@ -992,12 +992,12 @@ static void save3DCloud(QDataStream &stream, const ccGenericPointCloud *cloud, c
 	}
 }
 
-static inline bool isTriangleStrip(const CVLib::VerticesIndexes *idx)
+static inline bool isTriangleStrip(const cloudViewer::VerticesIndexes *idx)
 {
 	return (idx->i3 - 1) == idx->i2 && (idx->i3 - 2) == idx->i1;
 }
 
-static inline bool isTriangleFan(const CVLib::VerticesIndexes *idx)
+static inline bool isTriangleFan(const cloudViewer::VerticesIndexes *idx)
 {
 	return idx->i1 == 0 && idx->i2 == (idx->i3 - 1);
 }
@@ -1010,16 +1010,16 @@ static inline bool isTriangleFan(const CVLib::VerticesIndexes *idx)
  */
 CC_FILE_ERROR findTriangleOrganisation(ccMesh *mesh, ESRI_PART_TYPE &type)
 {
-	const CVLib::VerticesIndexes *firstVert = mesh->getNextTriangleVertIndexes();
+	const cloudViewer::VerticesIndexes *firstVert = mesh->getNextTriangleVertIndexes();
 	if (!isTriangleFan(firstVert) && !isTriangleStrip(firstVert))
 		return CC_FERR_BAD_ENTITY_TYPE;
 
-	const CVLib::VerticesIndexes *secondVert = mesh->getNextTriangleVertIndexes();
+	const cloudViewer::VerticesIndexes *secondVert = mesh->getNextTriangleVertIndexes();
 	if (isTriangleStrip(secondVert))
 	{
 		for (unsigned i = 2; i < mesh->size(); ++i)
 		{
-			CVLib::VerticesIndexes *idx = mesh->getNextTriangleVertIndexes();
+			cloudViewer::VerticesIndexes *idx = mesh->getNextTriangleVertIndexes();
 			if (!isTriangleStrip(idx))
 				return CC_FERR_BAD_ENTITY_TYPE;
 		}
@@ -1031,7 +1031,7 @@ CC_FILE_ERROR findTriangleOrganisation(ccMesh *mesh, ESRI_PART_TYPE &type)
 	{
 		for (unsigned i = 2; i < mesh->size(); ++i)
 		{
-			CVLib::VerticesIndexes *idx = mesh->getNextTriangleVertIndexes();
+			cloudViewer::VerticesIndexes *idx = mesh->getNextTriangleVertIndexes();
 			if (!isTriangleFan(idx))
 				return CC_FERR_BAD_ENTITY_TYPE;
 		}
@@ -1148,7 +1148,7 @@ static CC_FILE_ERROR LoadPolyline(QDataStream &shpStream,
 
 		//test if the polyline is closed
 		bool isClosed = false;
-        if (vertCount > 2 && CVLib::LessThanEpsilon((points[firstIndex] - points[lastIndex]).norm()))
+        if (vertCount > 2 && cloudViewer::LessThanEpsilon((points[firstIndex] - points[lastIndex]).norm()))
 		{
 			vertCount--;
 			isClosed = true;
@@ -1243,7 +1243,7 @@ static CC_FILE_ERROR SavePolyline(ccPolyline *poly,
 		return CC_FERR_BAD_ENTITY_TYPE;
 	}
 
-	CVLib::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
+	cloudViewer::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
 	if (!vertices)
 		return CC_FERR_BAD_ENTITY_TYPE;
 
@@ -2196,7 +2196,7 @@ CC_FILE_ERROR ShpFilter::loadFile(const QString &filename, ccHObject &container,
 		}
 		else
 		{
-			CVLib::ScalarField* sf = singlePoints->getScalarField(0);
+			cloudViewer::ScalarField* sf = singlePoints->getScalarField(0);
 			if (sf)
 			{
 				sf->computeMinAndMax();

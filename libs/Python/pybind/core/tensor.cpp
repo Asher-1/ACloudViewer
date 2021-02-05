@@ -118,7 +118,7 @@
 namespace cloudViewer {
 namespace core {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 template <typename T>
 static std::vector<T> ToFlatVector(

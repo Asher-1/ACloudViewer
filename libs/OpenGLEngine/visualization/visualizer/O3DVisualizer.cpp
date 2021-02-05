@@ -146,7 +146,7 @@ private:
     }
 };
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 class EmptyIfHiddenVert : public CollapsableVert {
     using Super = CollapsableVert;

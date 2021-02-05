@@ -29,7 +29,7 @@
 
 #include "Console.h"  //for ConsoleProgressBar
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 /// Progress reporting through update_progress(double percent) function.

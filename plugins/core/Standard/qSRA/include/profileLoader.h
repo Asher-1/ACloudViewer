@@ -24,7 +24,7 @@ class ecvMainAppInterface;
 //Qt
 #include <QString>
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 //! Loads a 2D profile form a custom (ASCII) file

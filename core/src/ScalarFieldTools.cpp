@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -26,7 +26,7 @@
 //system
 #include <cstdio>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 static const int AVERAGE_NUMBER_OF_POINTS_FOR_GRADIENT_COMPUTATION = 14;
 

@@ -122,7 +122,7 @@ FilamentMaterialModifier::FilamentMaterialModifier(
 
 void FilamentMaterialModifier::Reset() {
     if (material_instance_ != nullptr) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "Previous material instance modifications are not finished!");
     }
 
@@ -134,7 +134,7 @@ void FilamentMaterialModifier::Init(
         const std::shared_ptr<filament::MaterialInstance>& material_instance,
         const MaterialInstanceHandle& id) {
     if (material_instance_ != nullptr) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "Previous material instance modifications are not finished!");
     }
 
@@ -209,7 +209,7 @@ MaterialModifier& FilamentMaterialModifier::SetTexture(
                     parameter, texture_ptr.get(),
                     SamplerFromSamplerParameters(sampler_config));
         } else {
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
                     "Failed to set texture for material.\n\tMaterial handle: "
                     "{}\n\tTexture handle: {}\n\tParameter name: {}",
                     current_handle_, texture_handle, parameter);

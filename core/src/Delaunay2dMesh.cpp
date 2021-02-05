@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -37,7 +37,7 @@
 #endif
 
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 Delaunay2dMesh::Delaunay2dMesh()
 	: m_associatedCloud(nullptr)
@@ -251,7 +251,7 @@ bool Delaunay2dMesh::removeOuterTriangles(	const std::vector<CCVector2>& vertice
 			CCVector2 G = (A + B + C) / 3.0;
 
 			//if G is inside the 'polygon'
-			bool isInside = CVLib::ManualSegmentationTools::isPointInsidePoly(G, polygon2D);
+			bool isInside = cloudViewer::ManualSegmentationTools::isPointInsidePoly(G, polygon2D);
 			if ((removeOutside && isInside) || (!removeOutside && !isInside))
 			{
 				//we keep the corresponding triangle
@@ -333,7 +333,7 @@ void Delaunay2dMesh::forEach(genericTriangleAction action)
 	if (!m_associatedCloud)
 		return;
 
-	CVLib::SimpleTriangle tri;
+	cloudViewer::SimpleTriangle tri;
 
 	const int* _triIndexes = m_triIndexes;
 	for (unsigned i=0; i<m_numberOfTriangles; ++i, _triIndexes+=3)
@@ -510,6 +510,6 @@ Delaunay2dMesh* Delaunay2dMesh::TesselateContour(GenericIndexedCloudPersist* con
 		}
 	}
 
-	CVLib::Delaunay2dMesh* dMesh = CVLib::Delaunay2dMesh::TesselateContour(contourPoints2D);
+	cloudViewer::Delaunay2dMesh* dMesh = cloudViewer::Delaunay2dMesh::TesselateContour(contourPoints2D);
 	return dMesh;
 }

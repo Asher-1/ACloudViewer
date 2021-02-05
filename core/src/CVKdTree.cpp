@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -24,7 +24,7 @@
 //system
 #include <algorithm>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 KDTree::KDTree()
 	: m_root(nullptr)
@@ -115,7 +115,7 @@ void KDTree::deleteSubTree(KdCell *cell)
 }
 
 /*** Comparison functions used by the sort function (Strict ordering must be used) ***/
-static CVLib::GenericIndexedCloud* s_comparisonCloud = nullptr;
+static cloudViewer::GenericIndexedCloud* s_comparisonCloud = nullptr;
 
 //! Compares X coordinates of two points designated by their index
 static bool ComparisonX(const unsigned &a, const unsigned &b)

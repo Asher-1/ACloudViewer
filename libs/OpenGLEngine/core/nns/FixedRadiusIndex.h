@@ -55,7 +55,7 @@ public:
 
 public:
     bool SetTensorData(const Tensor& dataset_points) override {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "FixedRadiusIndex::SetTensorData witout radius not "
                 "implemented.");
     }
@@ -64,12 +64,12 @@ public:
 
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         int knn) const override {
-        CVLib::utility::LogError("FixedRadiusIndex::SearchKnn not implemented.");
+        cloudViewer::utility::LogError("FixedRadiusIndex::SearchKnn not implemented.");
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor& query_points, const Tensor& radii) const override {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "FixedRadiusIndex::SearchRadius with multi-radii not "
                 "implemented.");
     }
@@ -89,7 +89,7 @@ public:
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor& query_points,
                                            float radius,
                                            int max_knn) const override {
-        CVLib::utility::LogError("FixedRadiusIndex::SearchHybrid not implemented.");
+        cloudViewer::utility::LogError("FixedRadiusIndex::SearchHybrid not implemented.");
     }
 
     const double hash_table_size_factor = 1 / 32;

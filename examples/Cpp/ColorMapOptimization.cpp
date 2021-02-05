@@ -29,8 +29,8 @@
 #include "CloudViewer.h"
 
 int main(int argc, char *argv[]) {
-    using namespace CVLib;
-    using namespace CVLib::utility::filesystem;
+    using namespace cloudViewer;
+    using namespace cloudViewer::utility::filesystem;
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc != 2) {

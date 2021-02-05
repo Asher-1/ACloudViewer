@@ -43,7 +43,7 @@
 namespace cloudViewer {
 namespace core {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 static TensorKey ToTensorKey(int key) { return TensorKey::Index(key); }
 

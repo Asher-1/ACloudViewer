@@ -48,13 +48,13 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
                             geometry::PointCloud &pointcloud,
                             const cloudViewer::io::ReadPointCloudOption &params) {
     try {
-        CVLib::utility::filesystem::CFile file;
+        cloudViewer::utility::filesystem::CFile file;
         if (!file.Open(filename, "r")) {
-            CVLib::utility::LogWarning("Read XYZI failed: unable to open file: {}",
+            cloudViewer::utility::LogWarning("Read XYZI failed: unable to open file: {}",
                                 filename);
             return false;
         }
-        CVLib::utility::CountingProgressReporter reporter(params.update_progress);
+        cloudViewer::utility::CountingProgressReporter reporter(params.update_progress);
         reporter.SetTotal(file.GetFileSize());
         int64_t num_points = file.GetNumLines();
 
@@ -85,7 +85,7 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
 
         return true;
     } catch (const std::exception &e) {
-        CVLib::utility::LogWarning("Read XYZ failed with exception: {}", e.what());
+        cloudViewer::utility::LogWarning("Read XYZ failed with exception: {}", e.what());
         return false;
     }
 }
@@ -98,16 +98,16 @@ bool WritePointCloudToXYZI(const std::string &filename,
     }
 
     try {
-        CVLib::utility::filesystem::CFile file;
+        cloudViewer::utility::filesystem::CFile file;
         if (!file.Open(filename, "w")) {
-            CVLib::utility::LogWarning("Write XYZI failed: unable to open file: {}",
+            cloudViewer::utility::LogWarning("Write XYZI failed: unable to open file: {}",
                                 filename);
             return false;
         }
-        CVLib::utility::CountingProgressReporter reporter(params.update_progress);
+        cloudViewer::utility::CountingProgressReporter reporter(params.update_progress);
         const core::Tensor &points = pointcloud.GetPoints();
-        if (!points.GetShape().IsCompatible({CVLib::utility::nullopt, 3})) {
-            CVLib::utility::LogWarning(
+        if (!points.GetShape().IsCompatible({cloudViewer::utility::nullopt, 3})) {
+            cloudViewer::utility::LogWarning(
                     "Write XYZI failed: Shape of points is {}, but it should "
                     "be Nx3.",
                     points.GetShape());
@@ -116,7 +116,7 @@ bool WritePointCloudToXYZI(const std::string &filename,
         const core::Tensor &intensities =
                 pointcloud.GetPointAttr("intensities");
         if (points.GetShape(0) != intensities.GetShape(0)) {
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
                     "Write XYZI failed: Points ({}) and intensities ({}) have "
                     "different lengths.",
                     points.GetShape(0), intensities.GetShape(0));
@@ -130,7 +130,7 @@ bool WritePointCloudToXYZI(const std::string &filename,
                         points[i][1].Item<double>(),
                         points[i][2].Item<double>(),
                         intensities[i][0].Item<double>()) < 0) {
-                CVLib::utility::LogWarning(
+                cloudViewer::utility::LogWarning(
                         "Write XYZI failed: unable to write file: {}",
                         filename);
                 return false;  // error happened during writing.
@@ -142,7 +142,7 @@ bool WritePointCloudToXYZI(const std::string &filename,
         reporter.Finish();
         return true;
     } catch (const std::exception &e) {
-        CVLib::utility::LogWarning("Write XYZI failed with exception: {}", e.what());
+        cloudViewer::utility::LogWarning("Write XYZI failed with exception: {}", e.what());
         return false;
     }
 }

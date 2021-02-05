@@ -84,7 +84,7 @@ static const std::unordered_map<
 }  // unnamed namespace
 
 namespace io {
-	using namespace CVLib;
+	using namespace cloudViewer;
 std::shared_ptr<geometry::Image> CreateImageFromFile(
         const std::string &filename) {
     auto image = std::make_shared<geometry::Image>();

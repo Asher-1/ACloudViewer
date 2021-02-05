@@ -69,7 +69,7 @@ std::shared_ptr<DeviceHashmap<Hash, KeyEq>> CreateTemplateDeviceHashmap(
     }
 #endif
     else {
-        CVLib::utility::LogError("[CreateTemplateHashmap]: Unimplemented device");
+        cloudViewer::utility::LogError("[CreateTemplateHashmap]: Unimplemented device");
     }
 }
 }  // namespace core

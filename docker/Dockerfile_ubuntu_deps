@@ -124,7 +124,9 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
     && apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
 
 # Install and update npm and nodejs
-RUN apt-get install nodejs npm -y
+RUN apt-get install nodejs npm -y \
+    && npm install n -g \
+    && n latest
 
 # Install xerces-c
 WORKDIR /opt
@@ -244,9 +246,7 @@ COPY dl/libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb /opt
 COPY dl/libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb /opt
 RUN dpkg -i libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb \
     && dpkg -i libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb \
-    && rm -rf *.deb \
-    && npm install n -g \
-    && n latest
+    && rm -rf *.deb
 
 # Enable SSH X11 forwarding, needed when the Docker image
 # is run on a remote machine

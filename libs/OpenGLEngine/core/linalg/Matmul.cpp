@@ -35,19 +35,19 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     // Check devices
     Device device = A.GetDevice();
     if (device != B.GetDevice()) {
-        CVLib::utility::LogError("Tensor A device {} and Tensor B device {} mismatch.",
+        cloudViewer::utility::LogError("Tensor A device {} and Tensor B device {} mismatch.",
                           A.GetDevice().ToString(), B.GetDevice().ToString());
     }
 
     // Check dtypes
     Dtype dtype = A.GetDtype(), dtype_original = dtype;
     if (dtype != B.GetDtype()) {
-        CVLib::utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch.",
+        cloudViewer::utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch.",
                           A.GetDtype().ToString(), B.GetDtype().ToString());
     }
 
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-        CVLib::utility::LogDebug("Converting to Float32 dtype to from {}.",
+        cloudViewer::utility::LogDebug("Converting to Float32 dtype to from {}.",
                           dtype.ToString());
         dtype = Dtype::Float32;
     }
@@ -57,15 +57,15 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     SizeVector B_shape = B.GetShape();
 
     if (A_shape.size() != 2) {
-        CVLib::utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
+        cloudViewer::utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
     }
     if (B_shape.size() != 1 && B_shape.size() != 2) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Tensor B must be 1D (vector) or 2D (matrix), but got {}D.",
                 B_shape.size());
     }
     if (A_shape[1] != B_shape[0]) {
-        CVLib::utility::LogError("Tensor A columns {} mismatch with Tensor B rows {}.",
+        cloudViewer::utility::LogError("Tensor A columns {} mismatch with Tensor B rows {}.",
                           A_shape[1], B_shape[0]);
     }
 
@@ -75,7 +75,7 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     int64_t n = B_shape.size() == 2 ? B_shape[1] : 1;
 
     if (m == 0 || k == 0 || n == 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
@@ -91,7 +91,7 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
 #ifdef BUILD_CUDA_MODULE
         MatmulCUDA(A_data, B_data, C_data, m, k, n, dtype);
 #else
-        CVLib::utility::LogError("Unimplemented device.");
+        cloudViewer::utility::LogError("Unimplemented device.");
 #endif
     } else {
         MatmulCPU(A_data, B_data, C_data, m, k, n, dtype);

@@ -56,7 +56,7 @@ namespace cloudViewer {
 
 namespace {
 using namespace io;
-using namespace CVLib;
+using namespace cloudViewer;
 
 namespace ply_pointcloud_reader {
 

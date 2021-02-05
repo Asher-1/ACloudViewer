@@ -26,7 +26,7 @@
 
 #include "CloudViewer.h"
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 void PrintHelp() {
     utility::LogInfo("Usage :");

@@ -41,7 +41,7 @@
 namespace cloudViewer {
 namespace geometry {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 std::shared_ptr<OctreeNode> OctreeNode::ConstructFromJsonValue(
         const Json::Value& value) {

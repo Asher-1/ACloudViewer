@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -37,7 +37,7 @@ namespace Json {
 class Value;
 }  // namespace Json
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 /// Class IJsonConvertible defines the behavior of a class that can convert
@@ -85,6 +85,6 @@ public:
 };
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer
 
 #endif // CV_IJSONCONVERTIBLE_HEADER

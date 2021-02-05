@@ -2,9 +2,10 @@
 
 # install some dependence on host pc
 sudo apt-get install x11-xserver-utils && xhost +
+ssh -p 10022 -X root@192.168.1.218
 
 # create container instance
-docker run -dit --runtime=nvidia --name=cloudViewer \
+docker run -dit --runtime=nvidia --name=cloudviewer \
   --shm-size="1g" \
   --cap-add=SYS_PTRACE \
   --security-opt seccomp=unconfined --privileged \
@@ -21,7 +22,7 @@ docker run -dit --runtime=nvidia --name=cloudViewer \
   cloudviewer-deps:develop-ubuntu18.04-cuda101
 
 # attach into container instance
-docker exec -it cloudViewer /bin/bash
+docker exec -it cloudviewer /bin/bash
 
 ln -s /opt/Qt5.14.2/5.14.2/gcc_64/lib/libQt5X11Extras.so.5.14.2 /usr/lib/libQt5X11Extras.so.5
 export PATH="/opt/Qt5.14.2/5.14.2/gcc_64/bin:$PATH"
@@ -122,16 +123,6 @@ cmake "/opt/ErowCloudViewer/ErowCloudViewer" \
 
 make "-j$(nproc)"
 make install "-j$(nproc)"
-
-#COPY dl/libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb /opt
-#COPY dl/libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb /opt
-#RUN dpkg -i libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb \
-#    && dpkg -i libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb \
-#    && rm -rf *.deb
-
-RUN   apt-get install nodejs npm -y \
-      && npm install n -g \
-      && n latest
 
 ENV DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket \
     USER=ubuntu \

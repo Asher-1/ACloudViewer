@@ -41,7 +41,7 @@ namespace cloudViewer {
 namespace core {
 namespace kernel {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 template <typename src_t, typename dst_t>
 static void CPUCopyElementKernel(const void* src, void* dst) {

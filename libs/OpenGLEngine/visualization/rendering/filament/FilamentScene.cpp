@@ -157,7 +157,7 @@ namespace cloudViewer {
 namespace visualization {
 namespace rendering {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 FilamentScene::FilamentScene(filament::Engine& engine,
                              FilamentResourceManager& resource_mgr,

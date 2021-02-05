@@ -48,7 +48,7 @@ NanoFlannIndex::~NanoFlannIndex(){};
 bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
     SizeVector shape = dataset_points.GetShape();
     if (dataset_points.NumDims() != 2) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[NanoFlannIndex::SetTensorData] dataset_points must be "
                 "2D matrix, with shape {n_dataset_points, d}.");
     }
@@ -72,10 +72,10 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     query_points.AssertDtype(GetDtype());
 
     // Check shapes.
-    query_points.AssertShapeCompatible({CVLib::utility::nullopt, GetDimension()});
+    query_points.AssertShapeCompatible({cloudViewer::utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[NanoFlannIndex::SearchKnn] knn should be larger than 0.");
     }
 
@@ -116,7 +116,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                 batch_indices.Ge(0).To(Dtype::Int64).Sum({-1}, false);
         int64_t num_neighbors = check_valid[0].Item<int64_t>();
         if (check_valid.Ne(num_neighbors).Any()) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "[NanoFlannIndex::SearchKnn] The number of neighbors are "
                     "different. Something went wrong.");
         }
@@ -137,7 +137,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
     // Check shapes.
     int64_t num_query_points = query_points.GetShape()[0];
-    query_points.AssertShapeCompatible({CVLib::utility::nullopt, GetDimension()});
+    query_points.AssertShapeCompatible({cloudViewer::utility::nullopt, GetDimension()});
     radii.AssertShape({num_query_points});
 
     Dtype dtype = GetDtype();
@@ -158,7 +158,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         // Check if the raii has negative values.
         Tensor below_zero = radii.Le(0);
         if (below_zero.Any()) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "[NanoFlannIndex::SearchRadius] radius should be "
                     "larger than 0.");
         }
@@ -232,15 +232,15 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     query_points.AssertDtype(GetDtype());
 
     // Check shapes.
-    query_points.AssertShapeCompatible({CVLib::utility::nullopt, GetDimension()});
+    query_points.AssertShapeCompatible({cloudViewer::utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[NanoFlannIndex::SearchHybrid] max_knn should be larger than "
                 "0.");
     }
     if (radius <= 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[NanoFlannIndex::SearchHybrid] radius should be larger than "
                 "0.");
     }

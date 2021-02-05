@@ -45,10 +45,10 @@ static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
         dtype = core::Dtype::Int32;
     }
     if (dtype.ByteSize() * 3 != sizeof(Eigen::Matrix<T, 3, 1>)) {
-        CVLib::utility::LogError("Internal error: dtype size mismatch {} != {}.",
+        cloudViewer::utility::LogError("Internal error: dtype size mismatch {} != {}.",
                           dtype.ByteSize() * 3, sizeof(Eigen::Matrix<T, 3, 1>));
     }
-    tensor.AssertShapeCompatible({CVLib::utility::nullopt, 3});
+    tensor.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
 
     // Eigen::Vector3x is not a "fixed-size vectorizable Eigen type" thus it is
     // safe to write directly into std vector memory, see:

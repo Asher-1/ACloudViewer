@@ -27,7 +27,7 @@
 #include <ecvScalarField.h>
 #include <ecvProgressDialog.h>
 
-//CVLib
+//cloudViewer
 #include <Delaunay2dMesh.h>
 
 //Qt
@@ -251,7 +251,7 @@ bool DistanceMapGenerationTool::ComputeRadialDist(	ccPointCloud* cloud,
 	assert(cloud && profile);
 
 	//number of vertices for the profile
-	CVLib::GenericIndexedCloudPersist* vertices = profile->getAssociatedCloud();
+	cloudViewer::GenericIndexedCloudPersist* vertices = profile->getAssociatedCloud();
 	unsigned vertexCount = vertices->size();
 	if (vertexCount < 2)
 	{
@@ -317,7 +317,7 @@ bool DistanceMapGenerationTool::ComputeRadialDist(	ccPointCloud* cloud,
 		dlg.setMethodTitle(QObject::tr("Cloud to profile radial distance"));
 		dlg.setInfo(QObject::tr("Polyline: %1 vertices\nCloud: %2 points").arg(vertexCount).arg(pointCount));
 		dlg.start();
-		CVLib::NormalizedProgress nProgress(static_cast<CVLib::GenericProgressCallback*>(&dlg), pointCount);
+		cloudViewer::NormalizedProgress nProgress(static_cast<cloudViewer::GenericProgressCallback*>(&dlg), pointCount);
 
 		for (unsigned i = 0; i < pointCount; ++i)
 		{
@@ -352,7 +352,7 @@ bool DistanceMapGenerationTool::ComputeRadialDist(	ccPointCloud* cloud,
 					double dist = radius - radius_th;
 
 					//we look at the closest segment (if the polyline is concave!)
-					if (!CVLib::ScalarField::ValidValue(minDist) || dist*dist < minDist*minDist)
+					if (!cloudViewer::ScalarField::ValidValue(minDist) || dist*dist < minDist*minDist)
 					{
 						minDist = static_cast<ScalarType>(dist);
 					}
@@ -562,7 +562,7 @@ QSharedPointer<DistanceMapGenerationTool::Map> DistanceMapGenerationTool::Create
 	{
 		//we skip invalid values
 		const ScalarType& val = sf->getValue(n);
-		if (!CVLib::ScalarField::ValidValue(val))
+		if (!cloudViewer::ScalarField::ValidValue(val))
 			continue;
 
 		const CCVector3* P = cloud->getPoint(n);
@@ -697,7 +697,7 @@ QSharedPointer<DistanceMapGenerationTool::Map> DistanceMapGenerationTool::Create
 				}
 
 				//mesh the '2D' points
-				CVLib::Delaunay2dMesh* dm = new CVLib::Delaunay2dMesh();
+				cloudViewer::Delaunay2dMesh* dm = new cloudViewer::Delaunay2dMesh();
 				char errorStr[1024];
 				if (!dm->buildMesh(the2DPoints, 0, errorStr))
 				{
@@ -712,7 +712,7 @@ QSharedPointer<DistanceMapGenerationTool::Map> DistanceMapGenerationTool::Create
 					dm->placeIteratorAtBeginning();
 					for (unsigned k = 0; k < triNum; ++k)
 					{
-						const CVLib::VerticesIndexes* tsi = dm->getNextTriangleVertIndexes();
+						const cloudViewer::VerticesIndexes* tsi = dm->getNextTriangleVertIndexes();
 						//get the triangle bounding box (in grid coordinates)
 						int P[3][2];
 						int xMin = 0, yMin = 0, xMax = 0, yMax = 0;
@@ -973,7 +973,7 @@ bool DistanceMapGenerationTool::ComputeSurfacesAndVolumes(	const QSharedPointer<
 		//invalid input!
 		return false;
 
-	CVLib::GenericIndexedCloudPersist* vertices = profile->getAssociatedCloud();
+	cloudViewer::GenericIndexedCloudPersist* vertices = profile->getAssociatedCloud();
 	unsigned vertexCount = vertices ? vertices->size() : 0;
 	if (vertexCount < 2)
 	{
@@ -1318,7 +1318,7 @@ ccMesh* DistanceMapGenerationTool::ConvertProfileToMesh(ccPolyline* profile,
 	}
 
 	//profile vertices
-	CVLib::GenericIndexedCloudPersist* profileVertices = profile->getAssociatedCloud();
+	cloudViewer::GenericIndexedCloudPersist* profileVertices = profile->getAssociatedCloud();
 	unsigned profVertCount = profileVertices->size();
 	if (profVertCount < 2)
 	{
@@ -1524,7 +1524,7 @@ ccPointCloud* DistanceMapGenerationTool::ConvertMapToCloud(	const QSharedPointer
 	}
 
 	//number of vertices
-	CVLib::GenericIndexedCloudPersist* polyVertices = 
+	cloudViewer::GenericIndexedCloudPersist* polyVertices = 
 		profile->getAssociatedCloud();
 	unsigned polyVertCount = polyVertices->size();
 	if (polyVertCount < 2)

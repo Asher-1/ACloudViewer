@@ -42,10 +42,10 @@ Tensor NonZero(const Tensor& src) {
 #ifdef BUILD_CUDA_MODULE
         return NonZeroCUDA(src);
 #else
-        CVLib::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+        cloudViewer::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        CVLib::utility::LogError("NonZero: Unimplemented device");
+        cloudViewer::utility::LogError("NonZero: Unimplemented device");
     }
 }
 

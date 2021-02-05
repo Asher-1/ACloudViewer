@@ -39,7 +39,7 @@ namespace shape_util {
 /// E.g. ExpandFrontDims({2, 3}, 5) == {1, 1, 1, 2, 3}
 static SizeVector ExpandFrontDims(const SizeVector& shape, int64_t ndims) {
     if (ndims < static_cast<int64_t>(shape.size())) {
-        CVLib::utility::LogError("Cannot expand a shape with ndims {} to ndims {}.",
+        cloudViewer::utility::LogError("Cannot expand a shape with ndims {} to ndims {}.",
                           shape.size(), ndims);
     }
     SizeVector expanded_shape(ndims, 1);
@@ -75,7 +75,7 @@ bool IsCompatibleBroadcastShape(const SizeVector& l_shape,
 SizeVector BroadcastedShape(const SizeVector& l_shape,
                             const SizeVector& r_shape) {
     if (!IsCompatibleBroadcastShape(l_shape, r_shape)) {
-        CVLib::utility::LogError("Shape {} and {} are not broadcast-compatible",
+        cloudViewer::utility::LogError("Shape {} and {} are not broadcast-compatible",
                           l_shape, r_shape);
     }
 
@@ -96,7 +96,7 @@ SizeVector BroadcastedShape(const SizeVector& l_shape,
         } else if (l_shape_filled[i] == r_shape_filled[i]) {
             broadcasted_shape[i] = l_shape_filled[i];
         } else {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "Internal error: dimension size {} is not compatible with "
                     "{}, however, this error shall have been captured by "
                     "IsCompatibleBroadcastShape already.",
@@ -131,7 +131,7 @@ SizeVector ReductionShape(const SizeVector& src_shape,
         std::vector<bool> dims_mask(src_ndims, false);
         for (const int64_t& dim : dims) {
             if (dims_mask[WrapDim(dim, src_ndims)]) {
-                CVLib::utility::LogError("Repeated reduction dimension {}", dim);
+                cloudViewer::utility::LogError("Repeated reduction dimension {}", dim);
             }
             dims_mask[WrapDim(dim, src_ndims)] = true;
         }
@@ -149,13 +149,13 @@ SizeVector ReductionShape(const SizeVector& src_shape,
 
 int64_t WrapDim(int64_t dim, int64_t max_dim, bool inclusive) {
     if (max_dim <= 0) {
-        CVLib::utility::LogError("max_dim {} must be >= 0");
+        cloudViewer::utility::LogError("max_dim {} must be >= 0");
     }
     int64_t min = -max_dim;
     int64_t max = inclusive ? max_dim : max_dim - 1;
 
     if (dim < min || dim > max) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Index out-of-range: dim == {}, but it must satisfy {} <= dim "
                 "<= {}",
                 dim, min, max);
@@ -174,7 +174,7 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
     for (int64_t dim = 0, ndim = shape.size(); dim != ndim; dim++) {
         if (shape[dim] == -1) {
             if (has_inferred_dim) {
-                CVLib::utility::LogError(
+                cloudViewer::utility::LogError(
                         "Proposed shape {}, but at most one dimension can be "
                         "-1 (inferred).",
                         shape.ToString());
@@ -184,7 +184,7 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
         } else if (shape[dim] >= 0) {
             new_size *= shape[dim];
         } else {
-            CVLib::utility::LogError("Invalid shape dimension {}", shape[dim]);
+            cloudViewer::utility::LogError("Invalid shape dimension {}", shape[dim]);
         }
     }
 
@@ -200,7 +200,7 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
             //   empty_tensor.view(-1, 0)
             // doesn't.
             if (new_size == 0) {
-                CVLib::utility::LogError(
+                cloudViewer::utility::LogError(
                         "Cannot reshape tensor of 0 elements into shape {}, "
                         "because the unspecified dimension size -1 can be any "
                         "value and is ambiguous.",
@@ -211,7 +211,7 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
         return inferred_shape;
     }
 
-    CVLib::utility::LogError("Shape {} is invalid for {} number of elements.", shape,
+    cloudViewer::utility::LogError("Shape {} is invalid for {} number of elements.", shape,
                       num_elements);
 }
 
@@ -223,7 +223,7 @@ SizeVector Concat(const SizeVector& l_shape, const SizeVector& r_shape) {
 
 SizeVector Iota(int64_t n) {
     if (n < 0) {
-        CVLib::utility::LogError("Iota(n) requires n >= 0, but n == {}.", n);
+        cloudViewer::utility::LogError("Iota(n) requires n >= 0, but n == {}.", n);
     }
     SizeVector sv(n);
     std::iota(sv.begin(), sv.end(), 0);

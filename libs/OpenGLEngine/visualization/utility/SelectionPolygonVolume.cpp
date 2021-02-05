@@ -34,7 +34,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-using namespace CVLib;
+using namespace cloudViewer;
 
 bool SelectionPolygonVolume::ConvertToJsonValue(Json::Value &value) const {
     Json::Value polygon_array;

@@ -38,7 +38,7 @@
 
 
 using namespace cloudViewer::io::rpc;
-using namespace CVLib::utility;
+using namespace cloudViewer::utility;
 
 namespace cloudViewer {
 namespace visualization {

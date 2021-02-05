@@ -100,7 +100,7 @@ void Actions(const std::string test_dir) {
     bunny->createInternalCloud();
     io::ReadTriangleMesh(test_dir + "/Bunny.ply", *bunny);
     if (bunny->isEmpty()) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Please download the Standford Bunny dataset using:\n"
                 "   cd <cloudViewer_dir>/examples/python\n"
                 "   python -c 'from cloudViewer_tutorial import *; "
@@ -186,13 +186,13 @@ void Selections(const std::string test_dir) {
     auto source = std::make_shared<ccPointCloud>();
     io::ReadPointCloud(cloud0_path, *source);
     if (source->isEmpty()) {
-        CVLib::utility::LogError("Could not open {}", cloud0_path);
+        cloudViewer::utility::LogError("Could not open {}", cloud0_path);
         return;
     }
     auto target = std::make_shared<ccPointCloud>();
     io::ReadPointCloud(cloud1_path, *target);
     if (target->isEmpty()) {
-        CVLib::utility::LogError("Could not open {}", cloud1_path);
+        cloudViewer::utility::LogError("Could not open {}", cloud1_path);
         return;
     }
     source->paintUniformColor({1.000, 0.706, 0.000});
@@ -206,7 +206,7 @@ void Selections(const std::string test_dir) {
              target_name](visualization::visualizer::O3DVisualizer &o3dvis) {
                 auto sets = o3dvis.GetSelectionSets();
                 if (sets.empty()) {
-                     CVLib::utility::LogWarning(
+                     cloudViewer::utility::LogWarning(
                              "You must select points for correspondence before "
                              "running ICP!");
                      return;
@@ -238,7 +238,7 @@ void Selections(const std::string test_dir) {
              target_name](visualization::visualizer::O3DVisualizer &o3dvis) {
                 auto sets = o3dvis.GetSelectionSets();
                 if (sets.size() < 2) {
-                    CVLib::utility::LogWarning(
+                    cloudViewer::utility::LogWarning(
                             "You must have at least two sets of selected "
                             "points before running ICP!");
                     return;
@@ -274,12 +274,12 @@ void Selections(const std::string test_dir) {
 
 int main(int argc, char **argv) {
     if (argc <= 1) {
-        CVLib::utility::LogError("missing input directionary!");
+        cloudViewer::utility::LogError("missing input directionary!");
         return 0;
     }
     std::string TEST_DIR(argv[1]);
-    if (!CVLib::utility::filesystem::DirectoryExists(TEST_DIR)) {
-        CVLib::utility::LogError(
+    if (!cloudViewer::utility::filesystem::DirectoryExists(TEST_DIR)) {
+        cloudViewer::utility::LogError(
                 "This example needs to be run from the <build>/bin/examples "
                 "directory");
     }

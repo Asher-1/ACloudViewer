@@ -53,12 +53,12 @@ bool ccRegistrationTools::ICP(	ccHObject* data,
 								unsigned maxIterationCount,
 								unsigned randomSamplingLimit,
 								bool removeFarthestPoints,
-								CVLib::ICPRegistrationTools::CONVERGENCE_TYPE method,
+								cloudViewer::ICPRegistrationTools::CONVERGENCE_TYPE method,
 								bool adjustScale,
 								double finalOverlapRatio/*=1.0*/,
 								bool useDataSFAsWeights/*=false*/,
 								bool useModelSFAsWeights/*=false*/,
-								int filters/*=CVLib::ICPRegistrationTools::SKIP_NONE*/,
+								int filters/*=cloudViewer::ICPRegistrationTools::SKIP_NONE*/,
 								int maxThreadCount/*=0*/,
 								QWidget* parent/*=0*/)
 {
@@ -69,10 +69,10 @@ bool ccRegistrationTools::ICP(	ccHObject* data,
 		progressDlg.reset(new ecvProgressDialog(false, parent));
 	}
 
-	Garbage<CVLib::GenericIndexedCloudPersist> cloudGarbage;
+	Garbage<cloudViewer::GenericIndexedCloudPersist> cloudGarbage;
 
 	//if the 'model' entity is a mesh, we need to sample points on it
-	CVLib::GenericIndexedCloudPersist* modelCloud = nullptr;
+	cloudViewer::GenericIndexedCloudPersist* modelCloud = nullptr;
 	ccGenericMesh* modelMesh = nullptr;
 	if (model->isKindOf(CV_TYPES::MESH))
 	{
@@ -85,10 +85,10 @@ bool ccRegistrationTools::ICP(	ccHObject* data,
 	}
 
 	//if the 'data' entity is a mesh, we need to sample points on it
-	CVLib::GenericIndexedCloudPersist* dataCloud = nullptr;
+	cloudViewer::GenericIndexedCloudPersist* dataCloud = nullptr;
 	if (data->isKindOf(CV_TYPES::MESH))
 	{
-		dataCloud = CVLib::MeshSamplingTools::samplePointsOnMesh(ccHObjectCaster::ToGenericMesh(data), s_defaultSampledPointsOnDataMesh, progressDlg.data());
+		dataCloud = cloudViewer::MeshSamplingTools::samplePointsOnMesh(ccHObjectCaster::ToGenericMesh(data), s_defaultSampledPointsOnDataMesh, progressDlg.data());
 		if (!dataCloud)
 		{
 			CVLog::Error("[ICP] Failed to sample points on 'data' mesh!");
@@ -102,7 +102,7 @@ bool ccRegistrationTools::ICP(	ccHObject* data,
 	}
 
 	//we activate a temporary scalar field for registration distances computation
-	CVLib::ScalarField* dataDisplayedSF = nullptr;
+	cloudViewer::ScalarField* dataDisplayedSF = nullptr;
 	int oldDataSfIdx = -1, dataSfIdx = -1;
 
 	//if the 'data' entity is a real ccPointCloud, we can even create a proper temporary SF for registration distances
@@ -148,18 +148,18 @@ bool ccRegistrationTools::ICP(	ccHObject* data,
 		int result = -1;
 		if (modelMesh)
 		{
-			CVLib::DistanceComputationTools::Cloud2MeshDistanceComputationParams c2mParams;
+			cloudViewer::DistanceComputationTools::Cloud2MeshDistanceComputationParams c2mParams;
 			c2mParams.octreeLevel = gridLevel;
 			c2mParams.maxSearchDist = 0;
 			c2mParams.useDistanceMap = true;
 			c2mParams.signedDistances = false;
 			c2mParams.flipNormals = false;
 			c2mParams.multiThread = false;
-			result = CVLib::DistanceComputationTools::computeCloud2MeshDistance(dataCloud, modelMesh, c2mParams, progressDlg.data());
+			result = cloudViewer::DistanceComputationTools::computeCloud2MeshDistance(dataCloud, modelMesh, c2mParams, progressDlg.data());
 		}
 		else
 		{
-			result = CVLib::DistanceComputationTools::computeApproxCloud2CloudDistance(	dataCloud,
+			result = cloudViewer::DistanceComputationTools::computeApproxCloud2CloudDistance(	dataCloud,
 																						modelCloud,
 																						gridLevel,
 																						-1,
@@ -200,7 +200,7 @@ bool ccRegistrationTools::ICP(	ccHObject* data,
 		//evntually select the points with distance below 'maxSearchDist'
 		//(should roughly correspond to 'finalOverlapRatio + margin' percent)
 		{
-			CVLib::ReferenceCloud* refCloud = new CVLib::ReferenceCloud(dataCloud);
+			cloudViewer::ReferenceCloud* refCloud = new cloudViewer::ReferenceCloud(dataCloud);
 			cloudGarbage.add(refCloud);
 			unsigned countBefore = dataCloud->size();
 			unsigned baseIncrement = static_cast<unsigned>(std::max(100.0,countBefore*finalOverlapRatio*0.05));
@@ -230,12 +230,12 @@ bool ccRegistrationTools::ICP(	ccHObject* data,
 	}
 
 	//weights
-	CVLib::ScalarField* modelWeights = nullptr;
-	CVLib::ScalarField* dataWeights = nullptr;
+	cloudViewer::ScalarField* modelWeights = nullptr;
+	cloudViewer::ScalarField* dataWeights = nullptr;
 	{
 		if (!modelMesh && useModelSFAsWeights)
 		{
-			if (modelCloud == dynamic_cast<CVLib::GenericIndexedCloudPersist*>(model) && model->isA(CV_TYPES::POINT_CLOUD))
+			if (modelCloud == dynamic_cast<cloudViewer::GenericIndexedCloudPersist*>(model) && model->isA(CV_TYPES::POINT_CLOUD))
 			{
 				ccPointCloud* pc = static_cast<ccPointCloud*>(model);
 				modelWeights = pc->getCurrentDisplayedScalarField();
@@ -264,9 +264,9 @@ bool ccRegistrationTools::ICP(	ccHObject* data,
 		}
 	}
 
-	CVLib::ICPRegistrationTools::RESULT_TYPE result;
-	CVLib::PointProjectionTools::Transformation transform;
-	CVLib::ICPRegistrationTools::Parameters params;
+	cloudViewer::ICPRegistrationTools::RESULT_TYPE result;
+	cloudViewer::PointProjectionTools::Transformation transform;
+	cloudViewer::ICPRegistrationTools::Parameters params;
 	{
 		params.convType = method;
 		params.minRMSDecrease = minRMSDecrease;
@@ -281,20 +281,20 @@ bool ccRegistrationTools::ICP(	ccHObject* data,
 		params.maxThreadCount = maxThreadCount;
 	}
 
-	result = CVLib::ICPRegistrationTools::Register(	modelCloud,
+	result = cloudViewer::ICPRegistrationTools::Register(	modelCloud,
 													modelMesh,
 													dataCloud,
 													params,
 													transform,
 													finalRMS,
 													finalPointCount,
-													static_cast<CVLib::GenericProgressCallback*>(progressDlg.data()));
+													static_cast<cloudViewer::GenericProgressCallback*>(progressDlg.data()));
 
-	if (result >= CVLib::ICPRegistrationTools::ICP_ERROR)
+	if (result >= cloudViewer::ICPRegistrationTools::ICP_ERROR)
 	{
 		CVLog::Error("Registration failed: an error occurred (code %i)",result);
 	}
-	else if (result == CVLib::ICPRegistrationTools::ICP_APPLY_TRANSFO)
+	else if (result == cloudViewer::ICPRegistrationTools::ICP_APPLY_TRANSFO)
 	{
 		transMat = FromCCLibMatrix<PointCoordinateType, float>(transform.R, transform.T, transform.s);
 		finalScale = transform.s;
@@ -309,5 +309,5 @@ bool ccRegistrationTools::ICP(	ccHObject* data,
 		pc->deleteScalarField(dataSfIdx);
 	}
 
-	return (result < CVLib::ICPRegistrationTools::ICP_ERROR);
+	return (result < cloudViewer::ICPRegistrationTools::ICP_ERROR);
 }

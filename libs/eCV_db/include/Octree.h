@@ -91,7 +91,7 @@ public:
 /// Design decision: do not store origin and size of a node
 ///     - Good: better space efficiency.
 ///     - Bad: need to recompute origin and size when traversing.
-class ECV_DB_LIB_API OctreeNode : public CVLib::utility::IJsonConvertible {
+class ECV_DB_LIB_API OctreeNode : public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     ///
@@ -264,7 +264,7 @@ public:
 /// \class Octree
 ///
 /// \brief Octree datastructure.
-class ECV_DB_LIB_API Octree : public ccHObject, public CVLib::utility::IJsonConvertible {
+class ECV_DB_LIB_API Octree : public ccHObject, public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     Octree(const char* name = "Octree2")

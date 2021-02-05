@@ -40,7 +40,7 @@ namespace camera {
 ///
 /// Contains a list of PinholeCameraParameters, useful to storing trajectories.
 class ECV_DB_LIB_API PinholeCameraTrajectory :
-	public CVLib::utility::IJsonConvertible {
+	public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     PinholeCameraTrajectory();

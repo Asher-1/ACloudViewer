@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -26,7 +26,7 @@
 #include "SquareMatrix.h"
 #include "Polyline.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 
 class GenericTriangle;
@@ -387,7 +387,7 @@ public: //distance to simple entities (triangles, planes, etc.)
 		\param planeEquation plane equation: [a,b,c,d] as 'ax+by+cz=d'
 		\param measureType measure type
 	**/
-	static ScalarType ComputeCloud2PlaneDistance(	CVLib::GenericCloud* cloud,
+	static ScalarType ComputeCloud2PlaneDistance(	cloudViewer::GenericCloud* cloud,
 													const PointCoordinateType* planeEquation,
 													ERROR_MEASURES measureType);
 

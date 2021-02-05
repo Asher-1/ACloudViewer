@@ -54,14 +54,14 @@ void MemoryManager::Memcpy(void* dst_ptr,
     if (num_bytes == 0) {
         return;
     } else if (src_ptr == nullptr || dst_ptr == nullptr) {
-        CVLib::utility::LogError("src_ptr and dst_ptr cannot be nullptr.");
+        cloudViewer::utility::LogError("src_ptr and dst_ptr cannot be nullptr.");
     }
 
     if ((dst_device.GetType() != Device::DeviceType::CPU &&
          dst_device.GetType() != Device::DeviceType::CUDA) ||
         (src_device.GetType() != Device::DeviceType::CPU &&
          src_device.GetType() != Device::DeviceType::CUDA)) {
-        CVLib::utility::LogError("MemoryManager::Memcpy: Unimplemented device.");
+        cloudViewer::utility::LogError("MemoryManager::Memcpy: Unimplemented device.");
     }
 
     std::shared_ptr<DeviceMemoryManager> device_mm;
@@ -97,7 +97,7 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
         const Device& device) {
     static std::unordered_map<Device::DeviceType,
                               std::shared_ptr<DeviceMemoryManager>,
-                              CVLib::utility::hash_enum_class>
+                              cloudViewer::utility::hash_enum_class>
             map_device_type_to_memory_manager = {
                     {Device::DeviceType::CPU,
                      std::make_shared<CPUMemoryManager>()},
@@ -113,7 +113,7 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
             };
     if (map_device_type_to_memory_manager.find(device.GetType()) ==
         map_device_type_to_memory_manager.end()) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "MemoryManager::GetDeviceMemoryManager: Unimplemented device");
     }
     return map_device_type_to_memory_manager.at(device.GetType());

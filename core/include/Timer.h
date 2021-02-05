@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -33,7 +33,7 @@
 // SYSTEM
 #include <string>
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 class CV_CORE_LIB_API Timer {
@@ -86,6 +86,6 @@ private:
 };
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer
 
 #endif // CV_TIMER_HEADER

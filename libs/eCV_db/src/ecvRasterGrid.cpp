@@ -17,7 +17,7 @@
 
 #include "ecvRasterGrid.h"
 
-//CVLib
+//cloudViewer
 #include <Delaunay2dMesh.h>
 
 //ECV_DB_LIB
@@ -220,7 +220,7 @@ bool ccRasterGrid::fillWith(	ccGenericPointCloud* cloud,
 		progressDialog->show();
 		QCoreApplication::processEvents();
 	}
-	CVLib::NormalizedProgress nProgress(progressDialog, pointCount);
+	cloudViewer::NormalizedProgress nProgress(progressDialog, pointCount);
 
 	//vertical dimension
 	assert(Z <= 2);
@@ -344,7 +344,7 @@ bool ccRasterGrid::fillWith(	ccGenericPointCloud* cloud,
 			{
 				assert(!scalarFields[k].empty());
 
-				CVLib::ScalarField* sf = pc->getScalarField(static_cast<unsigned>(k));
+				cloudViewer::ScalarField* sf = pc->getScalarField(static_cast<unsigned>(k));
 				assert(sf && pos < scalarFields[k].size());
 
 				ScalarType sfValue = sf->getValue(n);
@@ -511,7 +511,7 @@ bool ccRasterGrid::fillWith(	ccGenericPointCloud* cloud,
 			assert(index == nonEmptyCellCount);
 
 			//mesh the '2D' points
-			CVLib::Delaunay2dMesh delaunayMesh;
+			cloudViewer::Delaunay2dMesh delaunayMesh;
 			char errorStr[1024];
 			if (delaunayMesh.buildMesh(the2DPoints, 0, errorStr))
 			{
@@ -520,7 +520,7 @@ bool ccRasterGrid::fillWith(	ccGenericPointCloud* cloud,
 				delaunayMesh.placeIteratorAtBeginning();
 				for (unsigned k = 0; k < triNum; ++k)
 				{
-					const CVLib::VerticesIndexes* tsi = delaunayMesh.getNextTriangleVertIndexes();
+					const cloudViewer::VerticesIndexes* tsi = delaunayMesh.getNextTriangleVertIndexes();
 					//get the triangle bounding box (in grid coordinates)
 					int P[3][2];
 					int xMin = 0, yMin = 0, xMax = 0, yMax = 0;
@@ -743,7 +743,7 @@ ccPointCloud* ccRasterGrid::convertToCloud(	const std::vector<ExportableFields>&
 			assert(false);
 			return nullptr;
 		}
-		CVLib::ReferenceCloud refCloud(inputCloud);
+		cloudViewer::ReferenceCloud refCloud(inputCloud);
 		if (!refCloud.reserve(nonEmptyCellCount))
 		{
 			CVLog::Warning("[Rasterize] Not enough memory!");
@@ -803,7 +803,7 @@ ccPointCloud* ccRasterGrid::convertToCloud(	const std::vector<ExportableFields>&
 	assert(cloudGrid);
 	
 	//shall we generate additional scalar fields?
-	std::vector<CVLib::ScalarField*> exportedSFs;
+	std::vector<cloudViewer::ScalarField*> exportedSFs;
 	if (!exportedFields.empty())
 	{
 		exportedSFs.resize(exportedFields.size(), nullptr);
@@ -930,7 +930,7 @@ ccPointCloud* ccRasterGrid::convertToCloud(	const std::vector<ExportableFields>&
 				assert(exportedSFs.size() == exportedFields.size());
 				for (size_t k = 0; k < exportedSFs.size(); ++k)
 				{
-					CVLib::ScalarField* sf = exportedSFs[k];
+					cloudViewer::ScalarField* sf = exportedSFs[k];
 					if (!sf)
 					{
 						continue;
@@ -1016,7 +1016,7 @@ ccPointCloud* ccRasterGrid::convertToCloud(	const std::vector<ExportableFields>&
 				assert(exportedSFs.size() == exportedFields.size());
 				for (size_t k = 0; k < exportedSFs.size(); ++k)
 				{
-					CVLib::ScalarField* sf = exportedSFs[k];
+					cloudViewer::ScalarField* sf = exportedSFs[k];
 					if (!sf)
 					{
 						continue;
@@ -1086,7 +1086,7 @@ ccPointCloud* ccRasterGrid::convertToCloud(	const std::vector<ExportableFields>&
 					assert(sf);
 					//set sf values
 					unsigned n = 0;
-					const ScalarType emptyCellSFValue = CVLib::ScalarField::NaN();
+					const ScalarType emptyCellSFValue = cloudViewer::ScalarField::NaN();
 					const double* _sfGrid = scalarFields[k].data();
 					for (unsigned j = 0; j < height; ++j)
 					{
@@ -1116,7 +1116,7 @@ ccPointCloud* ccRasterGrid::convertToCloud(	const std::vector<ExportableFields>&
 		//we simply add NAN values at the end of the SFs
 		for (int k = 0; k < static_cast<int>(cloudGrid->getNumberOfScalarFields()); ++k)
 		{
-			CVLib::ScalarField* sf = cloudGrid->getScalarField(k);
+			cloudViewer::ScalarField* sf = cloudGrid->getScalarField(k);
 			sf->resizeSafe(cloudGrid->size(), true, NAN_VALUE);
 		}
 	}

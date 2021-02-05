@@ -90,7 +90,7 @@ using namespace utils;
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
-    using namespace CVLib;
+    using namespace cloudViewer;
 static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
     std::vector<char> bytes;
     std::string error_str;

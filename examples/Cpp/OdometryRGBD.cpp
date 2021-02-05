@@ -30,7 +30,7 @@
 #include "CloudViewer.h"
 
 void PrintHelp(char* argv[]) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
     // clang-format off
     utility::LogInfo("Usage:");
@@ -48,38 +48,38 @@ void PrintHelp(char* argv[]) {
 int main(int argc, char* argv[]) {
     using namespace cloudViewer;
 
-    if (argc <= 4 || CVLib::utility::ProgramOptionExists(argc, argv, "--help") ||
-		CVLib::utility::ProgramOptionExists(argc, argv, "-h")) {
+    if (argc <= 4 || cloudViewer::utility::ProgramOptionExists(argc, argv, "--help") ||
+		cloudViewer::utility::ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp(argv);
         return 1;
     }
 
     std::string intrinsic_path;
-    if (CVLib::utility::ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
-        intrinsic_path = CVLib::utility::GetProgramOptionAsString(argc, argv,
+    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
+        intrinsic_path = cloudViewer::utility::GetProgramOptionAsString(argc, argv,
                                                            "--camera_intrinsic")
                                  .c_str();
-		CVLib::utility::LogInfo("Camera intrinsic path {}",
+		cloudViewer::utility::LogInfo("Camera intrinsic path {}",
                            intrinsic_path.c_str());
     } else {
-		CVLib::utility::LogWarning("Camera intrinsic path is not given");
+		cloudViewer::utility::LogWarning("Camera intrinsic path is not given");
         return 1;
     }
     camera::PinholeCameraIntrinsic intrinsic;
     if (intrinsic_path.empty() ||
         !io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
-		CVLib::utility::LogWarning(
+		cloudViewer::utility::LogWarning(
                 "Failed to read intrinsic parameters for depth image.");
-		CVLib::utility::LogWarning("Using default value for Primesense camera.");
+		cloudViewer::utility::LogWarning("Using default value for Primesense camera.");
         intrinsic = camera::PinholeCameraIntrinsic(
 			camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }
 
-    if (CVLib::utility::ProgramOptionExists(argc, argv, "--verbose"))
-		CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--verbose"))
+		cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     int rgbd_type =
-		CVLib::utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
+		cloudViewer::utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
     auto color_source = io::CreateImageFromFile(argv[1]);
     auto depth_source = io::CreateImageFromFile(argv[2]);
     auto color_target = io::CreateImageFromFile(argv[3]);
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     Eigen::Matrix4d trans_odo = Eigen::Matrix4d::Identity();
     Eigen::Matrix6d info_odo = Eigen::Matrix6d::Zero();
     bool is_success;
-    if (CVLib::utility::ProgramOptionExists(argc, argv, "--hybrid")) {
+    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--hybrid")) {
         pipelines::odometry::RGBDOdometryJacobianFromHybridTerm jacobian_method;
         std::tie(is_success, trans_odo, info_odo) =
             pipelines::odometry::ComputeRGBDOdometry(*source, *target, intrinsic,

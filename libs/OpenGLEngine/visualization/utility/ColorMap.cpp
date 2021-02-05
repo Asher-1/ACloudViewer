@@ -36,7 +36,7 @@ using namespace visualization;
 class GlobalColorMapSingleton {
 private:
     GlobalColorMapSingleton() : color_map_(new ColorMapJet) {
-        CVLib::utility::LogDebug("Global colormap init.");
+        cloudViewer::utility::LogDebug("Global colormap init.");
     }
     GlobalColorMapSingleton(const GlobalColorMapSingleton &) = delete;
     GlobalColorMapSingleton &operator=(const GlobalColorMapSingleton &) =
@@ -44,7 +44,7 @@ private:
 
 public:
     ~GlobalColorMapSingleton() {
-        CVLib::utility::LogDebug("Global colormap destruct.");
+        cloudViewer::utility::LogDebug("Global colormap destruct.");
     }
 
 public:

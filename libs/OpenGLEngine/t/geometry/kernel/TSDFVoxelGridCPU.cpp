@@ -107,7 +107,7 @@ void TouchCPU(const core::Tensor& points,
 
     int64_t block_count = set.size();
     if (block_count == 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "No block is touched in TSDF volume, abort integration. Please "
                 "check specified parameters, "
                 "especially depth_scale and voxel_size");

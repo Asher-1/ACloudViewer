@@ -38,7 +38,7 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
     // Check dtypes
     Dtype dtype = A.GetDtype();
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}",
                 dtype.ToString());
@@ -47,16 +47,16 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
     // Check dimensions
     SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
-        CVLib::utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
+        cloudViewer::utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
     }
 
     int64_t m = A_shape[0], n = A_shape[1];
     if (m == 0 || n == 0) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Tensor shapes should not contain dimensions with zero.");
     }
     if (m < n) {
-        CVLib::utility::LogError("Only support m >= n, but got {} and {} matrix", m,
+        cloudViewer::utility::LogError("Only support m >= n, but got {} and {} matrix", m,
                           n);
     }
 
@@ -77,7 +77,7 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
         SVDCUDA(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,
                 device);
 #else
-        CVLib::utility::LogError("Unimplemented device.");
+        cloudViewer::utility::LogError("Unimplemented device.");
 #endif
     } else {
         SVDCPU(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,

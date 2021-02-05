@@ -568,11 +568,11 @@ namespace {
 				QString weight;
 				QString trend;
 				QString plunge;
-				CVLib::ScalarField* wSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Weight"));
-				CVLib::ScalarField* trendSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Trend"));
-				CVLib::ScalarField* plungeSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Plunge"));
+				cloudViewer::ScalarField* wSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Weight"));
+				cloudViewer::ScalarField* trendSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Trend"));
+				cloudViewer::ScalarField* plungeSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Plunge"));
 	
-				CVLib::ScalarField* tSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Thickness"));
+				cloudViewer::ScalarField* tSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Thickness"));
 				for (unsigned p = 0; p < cloud->size(); p++)
 				{
 					x += QString::asprintf("%f,", cloud->getPoint(p)->x);

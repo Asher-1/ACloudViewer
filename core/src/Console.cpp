@@ -46,7 +46,7 @@
 
 #include "Helper.h"
 
-namespace CVLib {
+namespace cloudViewer {
 
 namespace utility {
 

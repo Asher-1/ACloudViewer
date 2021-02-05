@@ -387,7 +387,7 @@ Window::Window(const std::string& title,
         // not contain any of the code points?), which cause Filament to
         // panic. Handle this gracefully.
         if (textureW == 0 || textureH == 0) {
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
                     "Got zero-byte font texture; ignoring custom fonts");
             io.Fonts->Clear();
             impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
@@ -896,7 +896,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
         }
         if (win_idx >= win_names.size()) {
             win_idx = win_names.size() - 1;
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
                     "Using too many top-level child widgets; use a layout "
                     "instead.");
         }

@@ -42,7 +42,7 @@
 #include <limits>
 #include <Console.h>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 namespace cloudViewer {
 
@@ -246,7 +246,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::CreateFromDepthImage(
 				project_valid_depth_only);
 		}
 	}
-	CVLib::utility::LogError(
+	cloudViewer::utility::LogError(
 		"[CreatePointCloudFromDepthImage] Unsupported image format.");
 	return std::make_shared<ccPointCloud>();
 }
@@ -272,7 +272,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::CreateFromRGBDImage(
                     image, intrinsic, extrinsic, project_valid_depth_only);
         }
     }
-	CVLib::utility::LogError(
+	cloudViewer::utility::LogError(
 		"[CreatePointCloudFromRGBDImage] Unsupported image format.");
 	return std::make_shared<ccPointCloud>();
 }
@@ -569,7 +569,7 @@ ccPointCloud::voxelDownSample(double voxel_size)
 		utility::LogError("[ccPointCloud::voxelDownSample] voxel_size is too small.");
 	}
 	std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
-		CVLib::utility::hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
+		cloudViewer::utility::hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
 
 	Eigen::Vector3d ref_coord;
 	Eigen::Vector3i voxel_index;
@@ -677,7 +677,7 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
 	output->importParametersFrom(this);
 
 	std::unordered_map<Eigen::Vector3i, AccumulatedPointForTrace,
-		CVLib::utility::hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
+		cloudViewer::utility::hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
 
 	int cid_temp[3] = { 1, 2, 4 };
 	for (size_t i = 0; i < this->size(); i++) {
@@ -1178,7 +1178,7 @@ bool ccPointCloud::orientNormalsToAlignWithDirection(
 	const Eigen::Vector3d &orientation_reference
 /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/) {
     if (!hasNormals()) {
-		CVLib::utility::LogWarning(
+		cloudViewer::utility::LogWarning(
 			"[OrientNormalsToAlignWithDirection] No normals in the "
 			"ccPointCloud. Call EstimateNormals() first.");
 	}
@@ -1200,7 +1200,7 @@ bool ccPointCloud::orientNormalsToAlignWithDirection(
 bool ccPointCloud::orientNormalsTowardsCameraLocation(
 	const Eigen::Vector3d &camera_location /* = Eigen::Vector3d::Zero()*/) {
 	if (hasNormals() == false) {
-		CVLib::utility::LogWarning(
+		cloudViewer::utility::LogWarning(
 			"[OrientNormalsTowardsCameraLocation] No normals in the "
 			"ccPointCloud. Call EstimateNormals() first.");
 	}

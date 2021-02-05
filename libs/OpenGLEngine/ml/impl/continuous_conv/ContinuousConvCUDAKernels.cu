@@ -27,7 +27,7 @@
 #include "ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 #include <Helper.h>
 
-using CVLib::utility::DivUp;
+using cloudViewer::utility::DivUp;
 
 namespace cloudViewer {
 namespace ml {

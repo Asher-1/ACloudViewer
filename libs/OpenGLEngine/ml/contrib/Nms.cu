@@ -144,7 +144,7 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
     }
 
     // Cololum-wise number of blocks.
-    const int num_block_cols = CVLib::utility::DivUp(n, NMS_BLOCK_SIZE);
+    const int num_block_cols = cloudViewer::utility::DivUp(n, NMS_BLOCK_SIZE);
 
     // Compute sort indices.
     float *scores_copy = nullptr;
@@ -163,8 +163,8 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
                                     n * num_block_cols * sizeof(uint64_t)));
 
     // Launch kernel.
-    dim3 blocks(CVLib::utility::DivUp(n, NMS_BLOCK_SIZE),
-                CVLib::utility::DivUp(n, NMS_BLOCK_SIZE));
+    dim3 blocks(cloudViewer::utility::DivUp(n, NMS_BLOCK_SIZE),
+                cloudViewer::utility::DivUp(n, NMS_BLOCK_SIZE));
     dim3 threads(NMS_BLOCK_SIZE);
     NmsKernel<<<blocks, threads>>>(boxes, sort_indices, mask_ptr, n,
                                    nms_overlap_thresh, num_block_cols);

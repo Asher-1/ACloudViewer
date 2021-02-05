@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -27,7 +27,7 @@
 //STL
 #include <vector>
 
-namespace CVLib
+namespace cloudViewer
 {
 
 	//! A storage-efficient point cloud structure that can also handle an unlimited number of scalar fields

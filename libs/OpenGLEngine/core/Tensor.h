@@ -72,7 +72,7 @@ public:
         // Check number of elements
 
         if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "Tensor initialization values' size {} does not match the "
                     "shape {}",
                     init_vals.size(), shape_.NumElements());
@@ -81,7 +81,7 @@ public:
         // Check data types
         AssertTemplateDtype<T>();
         if (!std::is_pod<T>()) {
-            CVLib::utility::LogError("Object must be a POD.");
+            cloudViewer::utility::LogError("Object must be a POD.");
         }
 
         // Copy data to blob
@@ -152,7 +152,7 @@ public:
     template <typename T>
     Tensor& operator=(const T& v) && {
         if (shape_.size() != 0) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "Assignment with scalar only works for scalar Tensor of "
                     "shape ()");
         }
@@ -170,7 +170,7 @@ public:
     template <typename Object>
     Tensor& AssignObject(const Object& v) && {
         if (shape_.size() != 0) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "Assignment with scalar only works for scalar Tensor of "
                     "shape ()");
         }
@@ -261,7 +261,7 @@ public:
                 dim1_size = static_cast<int64_t>(ele0.size());
             } else {
                 if (static_cast<int64_t>(ele0.size()) != dim1_size) {
-                    CVLib::utility::LogError(
+                    cloudViewer::utility::LogError(
                             "Cannot create Tensor with ragged nested sequences "
                             "(nested lists with unequal sizes or shapes).");
                 }
@@ -292,7 +292,7 @@ public:
                 dim1_size = static_cast<int64_t>(ele1.size());
             } else {
                 if (static_cast<int64_t>(ele1.size()) != dim1_size) {
-                    CVLib::utility::LogError(
+                    cloudViewer::utility::LogError(
                             "Cannot create Tensor with ragged nested sequences "
                             "(nested lists with unequal sizes or shapes).");
                 }
@@ -303,7 +303,7 @@ public:
                     dim2_size = static_cast<int64_t>(ele0.size());
                 } else {
                     if (static_cast<int64_t>(ele0.size()) != dim2_size) {
-                        CVLib::utility::LogError(
+                        cloudViewer::utility::LogError(
                                 "Cannot create Tensor with ragged nested "
                                 "sequences (nested lists with unequal sizes or "
                                 "shapes).");
@@ -567,7 +567,7 @@ public:
     template <typename T>
     T Item() const {
         if (shape_.NumElements() != 1) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "Tensor::Item() only works for Tensor with exactly one "
                     "element.");
         }
@@ -1110,12 +1110,12 @@ public:
     template <typename T>
     void AssertTemplateDtype() const {
         if (!dtype_.IsObject() && Dtype::FromType<T>() != dtype_) {
-            CVLib::utility::LogError(
+            cloudViewer::utility::LogError(
                     "Requested values have type {} but Tensor has type {}",
                     Dtype::FromType<T>().ToString(), dtype_.ToString());
         }
         if (dtype_.ByteSize() != sizeof(T)) {
-            CVLib::utility::LogError("Internal error: element size mismatch {} != {}",
+            cloudViewer::utility::LogError("Internal error: element size mismatch {} != {}",
                               dtype_.ByteSize(), sizeof(T));
         }
     }
@@ -1195,7 +1195,7 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
     : Tensor(shape, dtype, device) {
     // Check number of elements
     if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Tensor initialization values' size {} does not match the "
                 "shape {}",
                 init_vals.size(), shape_.NumElements());
@@ -1234,7 +1234,7 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
 template <>
 inline bool Tensor::Item() const {
     if (shape_.NumElements() != 1) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "Tensor::Item only works for Tensor with one element.");
     }
     AssertTemplateDtype<bool>();

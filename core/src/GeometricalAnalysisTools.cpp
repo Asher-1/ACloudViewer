@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <random>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 //volume of a unit sphere
 static double s_UnitSphereVolume = 4.0 * M_PI / 3.0;
@@ -334,7 +334,7 @@ GeometricalAnalysisTools::ErrorCode GeometricalAnalysisTools::FlagDuplicatePoint
 
 	cloud->enableScalarField();
 	//set all flags to 0 by default
-	cloud->forEach(CVLib::ScalarFieldTools::SetScalarValueToZero);
+	cloud->forEach(cloudViewer::ScalarFieldTools::SetScalarValueToZero);
 
 	unsigned char level = theOctree->findBestLevelForAGivenNeighbourhoodSizeExtraction(static_cast<PointCoordinateType>(minDistanceBetweenPoints));
 
@@ -497,7 +497,7 @@ bool GeometricalAnalysisTools::ComputeApproxPointsDensityInACellAtLevel(const Dg
 			double R2 = nNSS.pointsInNeighbourhood[1].squareDistd;
 
 			ScalarType density = NAN_VALUE;
-            if (CVLib::GreaterThanEpsilon(R2))
+            if (cloudViewer::GreaterThanEpsilon(R2))
 			{
 				switch (densityType)
 				{
@@ -592,14 +592,14 @@ CCVector3 GeometricalAnalysisTools::ComputeWeightedGravityCenter(GenericCloud* c
 	return CCVector3::fromArray(sum.u);
 }
 
-CVLib::SquareMatrixd GeometricalAnalysisTools::ComputeCovarianceMatrix(const GenericCloud* cloud, const PointCoordinateType* _gravityCenter)
+cloudViewer::SquareMatrixd GeometricalAnalysisTools::ComputeCovarianceMatrix(const GenericCloud* cloud, const PointCoordinateType* _gravityCenter)
 {
 	assert(cloud);
 	unsigned n = (cloud ? cloud->size() : 0);
 	if (n==0)
-		return CVLib::SquareMatrixd();
+		return cloudViewer::SquareMatrixd();
 
-	CVLib::SquareMatrixd covMat(3);
+	cloudViewer::SquareMatrixd covMat(3);
 	covMat.clear();
 
 	//gravity center
@@ -638,7 +638,7 @@ CVLib::SquareMatrixd GeometricalAnalysisTools::ComputeCovarianceMatrix(const Gen
 	return covMat;
 }
 
-CVLib::SquareMatrixd GeometricalAnalysisTools::ComputeCrossCovarianceMatrix(GenericCloud* P,
+cloudViewer::SquareMatrixd GeometricalAnalysisTools::ComputeCrossCovarianceMatrix(GenericCloud* P,
 																			GenericCloud* Q,
 																			const CCVector3& Gp,
 																			const CCVector3& Gq)
@@ -647,7 +647,7 @@ CVLib::SquareMatrixd GeometricalAnalysisTools::ComputeCrossCovarianceMatrix(Gene
 	assert(Q->size() == P->size());
 
 	//shortcuts to output matrix lines
-	CVLib::SquareMatrixd covMat(3);
+	cloudViewer::SquareMatrixd covMat(3);
 	double* l1 = covMat.row(0);
 	double* l2 = covMat.row(1);
 	double* l3 = covMat.row(2);
@@ -678,7 +678,7 @@ CVLib::SquareMatrixd GeometricalAnalysisTools::ComputeCrossCovarianceMatrix(Gene
 	return covMat;
 }
 
-CVLib::SquareMatrixd GeometricalAnalysisTools::ComputeWeightedCrossCovarianceMatrix(GenericCloud* P, //data
+cloudViewer::SquareMatrixd GeometricalAnalysisTools::ComputeWeightedCrossCovarianceMatrix(GenericCloud* P, //data
 																					GenericCloud* Q, //model
 																					const CCVector3& Gp,
 																					const CCVector3& Gq,
@@ -690,7 +690,7 @@ CVLib::SquareMatrixd GeometricalAnalysisTools::ComputeWeightedCrossCovarianceMat
 	assert(coupleWeights->currentSize() == P->size());
 
 	//shortcuts to output matrix lines
-	CVLib::SquareMatrixd covMat(3);
+	cloudViewer::SquareMatrixd covMat(3);
 	double* r1 = covMat.row(0);
 	double* r2 = covMat.row(1);
 	double* r3 = covMat.row(2);

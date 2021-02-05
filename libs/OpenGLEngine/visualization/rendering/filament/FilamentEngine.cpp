@@ -61,8 +61,8 @@ void EngineInstance::EnableHeadless() { is_headless_ = true; }
 
 void EngineInstance::SetResourcePath(const std::string& resource_path) {
     resource_path_ = resource_path;
-    if (!CVLib::utility::filesystem::DirectoryExists(resource_path_)) {
-        CVLib::utility::LogError(
+    if (!cloudViewer::utility::filesystem::DirectoryExists(resource_path_)) {
+        cloudViewer::utility::LogError(
                 ("Can't find resource directory: " + resource_path_).c_str());
     }
 }
@@ -119,7 +119,7 @@ EngineInstance::EngineInstance() {
 #ifdef __linux__
         custom_platform = CreateEGLHeadlessPlatform();
 #else
-        CVLib::utility::LogError("EGL Headless is not supported on this platform");
+        cloudViewer::utility::LogError("EGL Headless is not supported on this platform");
 #endif
     }
 

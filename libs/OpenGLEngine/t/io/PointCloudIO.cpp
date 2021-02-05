@@ -39,7 +39,7 @@ namespace cloudViewer {
 namespace t {
 namespace io {
 
-    using namespace CVLib;
+    using namespace cloudViewer;
 
 static const std::unordered_map<
         std::string,

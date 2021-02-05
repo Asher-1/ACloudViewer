@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -35,7 +35,7 @@
 #include <tuple>
 #include <vector>
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 /// The namespace hash_tuple defines a general hash function for std::tuple
@@ -180,5 +180,5 @@ T UniformRandFloatBinaryFriendly(unsigned int power = 5) {
 }
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer
 

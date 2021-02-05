@@ -31,7 +31,7 @@
 #include "io/rpc/Messages.h"
 #include "io/rpc/ZMQContext.h"
 
-using namespace CVLib::utility;
+using namespace cloudViewer::utility;
 
 namespace {
 std::shared_ptr<zmq::message_t> CreateStatusMessage(

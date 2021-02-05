@@ -322,7 +322,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
         colors.resize(static_cast<std::size_t>(mesh.size()) * 3);
 
         for (unsigned int i = 0; i < mesh.size(); i++) {
-            const CVLib::VerticesIndexes *triangle =
+            const cloudViewer::VerticesIndexes *triangle =
                     mesh.getTriangleVertIndexes(i);
             std::vector<Eigen::Vector3d> vN(3);
             mesh.getTriangleNormals(i, vN[0], vN[1], vN[2]);

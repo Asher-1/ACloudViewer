@@ -47,7 +47,7 @@ namespace cloudViewer {
 
 		static const std::unordered_map<
 			std::string,
-			std::function<bool(const std::string &, CVLib::utility::IJsonConvertible &)>>
+			std::function<bool(const std::string &, cloudViewer::utility::IJsonConvertible &)>>
 			file_extension_to_ijsonconvertible_read_function{
 					{"json", ReadIJsonConvertibleFromJSON},
 		};
@@ -55,14 +55,14 @@ namespace cloudViewer {
 		static const std::unordered_map<
 			std::string,
 			std::function<bool(const std::string &,
-				const CVLib::utility::IJsonConvertible &)>>
+				const cloudViewer::utility::IJsonConvertible &)>>
 			file_extension_to_ijsonconvertible_write_function{
 					{"json", WriteIJsonConvertibleToJSON},
 		};
 
 
 		bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
-			CVLib::utility::IJsonConvertible &object) {
+			cloudViewer::utility::IJsonConvertible &object) {
 			Json::Value root_object;
 			Json::CharReaderBuilder builder;
 			builder["collectComments"] = false;
@@ -77,7 +77,7 @@ namespace cloudViewer {
 		}
 
 		bool WriteIJsonConvertibleToJSONStream(
-			std::ostream &json_stream, const CVLib::utility::IJsonConvertible &object) {
+			std::ostream &json_stream, const cloudViewer::utility::IJsonConvertible &object) {
 			Json::Value root_object;
 			if (object.ConvertToJsonValue(root_object) == false) {
 				return false;
@@ -96,7 +96,7 @@ namespace cloudViewer {
 	{
 
 		bool ReadIJsonConvertibleFromJSON(const std::string &filename,
-			CVLib::utility::IJsonConvertible &object) {
+			cloudViewer::utility::IJsonConvertible &object) {
 			std::ifstream file_in(filename);
 			if (file_in.is_open() == false) {
 				CVLog::Warning("Read JSON failed: unable to open file: {}",
@@ -109,7 +109,7 @@ namespace cloudViewer {
 		}
 
 		bool WriteIJsonConvertibleToJSON(const std::string &filename,
-			const CVLib::utility::IJsonConvertible &object) {
+			const cloudViewer::utility::IJsonConvertible &object) {
 			std::ofstream file_out(filename);
 			if (file_out.is_open() == false) {
 				CVLog::Warning("Write JSON failed: unable to open file: {}",
@@ -122,13 +122,13 @@ namespace cloudViewer {
 		}
 
 		bool ReadIJsonConvertibleFromJSONString(const std::string &json_string,
-			CVLib::utility::IJsonConvertible &object) {
+			cloudViewer::utility::IJsonConvertible &object) {
 			std::istringstream iss(json_string);
 			return ReadIJsonConvertibleFromJSONStream(iss, object);
 		}
 
 		bool WriteIJsonConvertibleToJSONString(
-			std::string &json_string, const CVLib::utility::IJsonConvertible &object) {
+			std::string &json_string, const cloudViewer::utility::IJsonConvertible &object) {
 			std::ostringstream oss;
 			bool success = WriteIJsonConvertibleToJSONStream(oss, object);
 			json_string = oss.str();
@@ -136,9 +136,9 @@ namespace cloudViewer {
 		}
 
 		bool ReadIJsonConvertible(const std::string &filename,
-			CVLib::utility::IJsonConvertible &object) {
+			cloudViewer::utility::IJsonConvertible &object) {
 			std::string filename_ext =
-				CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
+				cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(filename);
 			if (filename_ext.empty()) {
 				CVLog::Warning(
 					"Read utility::IJsonConvertible failed: unknown file "
@@ -157,9 +157,9 @@ namespace cloudViewer {
 		}
 
 		bool WriteIJsonConvertible(const std::string &filename,
-			const CVLib::utility::IJsonConvertible &object) {
+			const cloudViewer::utility::IJsonConvertible &object) {
 			std::string filename_ext =
-				CVLib::utility::filesystem::GetFileExtensionInLowerCase(filename);
+				cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(filename);
 			if (filename_ext.empty()) {
 				CVLog::Warning(
 					"Write utility::IJsonConvertible failed: unknown file "

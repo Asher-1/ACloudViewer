@@ -31,7 +31,7 @@
 
 namespace cloudViewer {
 namespace geometry {
-	using namespace CVLib;
+	using namespace cloudViewer;
 
 std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
     const camera::PinholeCameraIntrinsic& intrinsic) {

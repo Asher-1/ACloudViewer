@@ -49,7 +49,7 @@
 namespace cloudViewer {
 namespace core {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 /// CloudViewer DLPack Tensor manager.
 class CloudViewerDLManagedTensor {
@@ -68,7 +68,7 @@ private:
                 dl_device_type = DLDeviceType::kDLGPU;
                 break;
             default:
-                CVLib::utility::LogError("ToDLPack: unsupported device type {}",
+                cloudViewer::utility::LogError("ToDLPack: unsupported device type {}",
                                   device.ToString());
         }
 
@@ -94,7 +94,7 @@ private:
         } else if (dtype == Dtype::UInt16) {
             dl_data_type.code = DLDataTypeCode::kDLUInt;
         } else {
-            CVLib::utility::LogError("Unsupported data type");
+            cloudViewer::utility::LogError("Unsupported data type");
         }
 
         dl_data_type.bits = static_cast<uint8_t>(dtype.ByteSize() * 8);

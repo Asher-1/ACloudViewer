@@ -36,7 +36,7 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
     core::Dtype dtype = core::Dtype::Float32;

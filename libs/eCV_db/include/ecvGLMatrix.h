@@ -99,7 +99,7 @@ public:
 /*** Helpers ***/
 
 //! Constructor from a 3x3 rotation matrix R and a vector Tr
-template <typename Tin, typename Tout> ccGLMatrixTpl<Tout> FromCCLibMatrix(const CVLib::SquareMatrixTpl<Tin>& R, const Vector3Tpl<Tin>& Tr)
+template <typename Tin, typename Tout> ccGLMatrixTpl<Tout> FromCCLibMatrix(const cloudViewer::SquareMatrixTpl<Tin>& R, const Vector3Tpl<Tin>& Tr)
 {
 	ccGLMatrixTpl<Tout> outputMat;
 	//outputMat.toIdentity(); //already done in the constructor
@@ -125,7 +125,7 @@ template <typename Tin, typename Tout> ccGLMatrixTpl<Tout> FromCCLibMatrix(const
 }
 
 //! Constructor from a 3x3 rotation matrix R, a vector Tr, a scale S
-template <typename Tin, typename Tout> ccGLMatrixTpl<Tout> FromCCLibMatrix(const CVLib::SquareMatrixTpl<Tin>& R, const Vector3Tpl<Tin>& Tr, Tin S)
+template <typename Tin, typename Tout> ccGLMatrixTpl<Tout> FromCCLibMatrix(const cloudViewer::SquareMatrixTpl<Tin>& R, const Vector3Tpl<Tin>& Tr, Tin S)
 {
 	ccGLMatrixTpl<Tout> outputMat;
 	//outputMat.toIdentity(); //already done in the constructor
@@ -151,7 +151,7 @@ template <typename Tin, typename Tout> ccGLMatrixTpl<Tout> FromCCLibMatrix(const
 }
 
 //! Constructor from a rotation center G, a 3x3 rotation matrix R and a vector Tr
-template <typename Tin, typename Tout> ccGLMatrixTpl<Tout> FromCCLibMatrix(const CVLib::SquareMatrixTpl<Tin>& R, const Vector3Tpl<Tin>& Tr, const Vector3Tpl<Tin>& rotCenter)
+template <typename Tin, typename Tout> ccGLMatrixTpl<Tout> FromCCLibMatrix(const cloudViewer::SquareMatrixTpl<Tin>& R, const Vector3Tpl<Tin>& Tr, const Vector3Tpl<Tin>& rotCenter)
 {
 	ccGLMatrixTpl<Tout> outputMat = FromCCLibMatrix<Tin,Tout>(R,Tr);
 

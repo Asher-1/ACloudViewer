@@ -49,7 +49,7 @@ PointCloud::PointCloud(const core::Device &device)
 
 PointCloud::PointCloud(const core::Tensor &points)
     : PointCloud(points.GetDevice()) {
-    points.AssertShapeCompatible({CVLib::utility::nullopt, 3});
+    points.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
     SetPoints(points);
 }
 
@@ -57,10 +57,10 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
                                &map_keys_to_tensors)
     : PointCloud(map_keys_to_tensors.at("points").GetDevice()) {
     if (map_keys_to_tensors.count("points") == 0) {
-        CVLib::utility::LogError("\"points\" attribute must be specified.");
+        cloudViewer::utility::LogError("\"points\" attribute must be specified.");
     }
     map_keys_to_tensors.at("points").AssertShapeCompatible(
-            {CVLib::utility::nullopt, 3});
+            {cloudViewer::utility::nullopt, 3});
     point_attr_ = TensorMap("points", map_keys_to_tensors.begin(),
                             map_keys_to_tensors.end());
 }
@@ -169,7 +169,7 @@ PointCloud PointCloud::FromLegacyPointCloud(
         pcd.SetPoints(core::eigen_converter::EigenVector3dVectorToTensor(
                 pcd_legacy.getEigenPoints(), dtype, device));
     } else {
-        CVLib::utility::LogWarning("Creating from an empty legacy PointCloud.");
+        cloudViewer::utility::LogWarning("Creating from an empty legacy PointCloud.");
     }
     if (pcd_legacy.hasColors()) {
         pcd.SetPointColors(core::eigen_converter::EigenVector3dVectorToTensor(

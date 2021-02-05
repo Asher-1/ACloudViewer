@@ -35,7 +35,7 @@
 namespace cloudViewer {
 namespace io {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 MKVWriter::MKVWriter() : handle_(nullptr) {}
 

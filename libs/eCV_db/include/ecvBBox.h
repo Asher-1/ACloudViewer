@@ -32,13 +32,13 @@
 /** Supports several operators such as addition (to a matrix or a vector) and
 	multiplication (by a matrix or a scalar).
 **/
-class ECV_DB_LIB_API ccBBox : public ccHObject, public CVLib::BoundingBox
+class ECV_DB_LIB_API ccBBox : public ccHObject, public cloudViewer::BoundingBox
 {
 public:
 	//! Default constructor
 	ccBBox() 
 		: ccHObject("ccBBox")
-		, CVLib::BoundingBox()
+		, cloudViewer::BoundingBox()
 		, color_(0, 0, 0)
 	{}
 
@@ -47,7 +47,7 @@ public:
 		const CCVector3& bbMaxCorner, 
 		const std::string& name = "ccBBox")
 		: ccHObject(name.c_str())
-		, CVLib::BoundingBox(bbMinCorner, bbMaxCorner)
+		, cloudViewer::BoundingBox(bbMinCorner, bbMaxCorner)
 		, color_(0, 0, 0)
 	{}
 
@@ -59,15 +59,15 @@ public:
 		const Eigen::Vector3d& max_bound,
 		const std::string& name = "ccBBox")
 		: ccHObject(name.c_str())
-		, CVLib::BoundingBox(min_bound, max_bound)
+		, cloudViewer::BoundingBox(min_bound, max_bound)
 		, color_(0, 0, 0)
 	{}
 
 	//! Constructor from two vectors (lower min. and upper max. corners)
-	ccBBox(const CVLib::BoundingBox& bbox, 
+	ccBBox(const cloudViewer::BoundingBox& bbox, 
 		const std::string& name = "ccBBox")
 		: ccHObject(name.c_str())
-		, CVLib::BoundingBox(bbox)
+		, cloudViewer::BoundingBox(bbox)
 		, color_(0, 0, 0)
 	{}
 
