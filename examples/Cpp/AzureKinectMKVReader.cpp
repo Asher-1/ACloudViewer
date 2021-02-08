@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
                 return true;
             });
 
-    vis.CreateVisualizerWindow("Open3D Azure Kinect MKV player", 1920, 540);
+    vis.CreateVisualizerWindow("CloudViewer Azure Kinect MKV player", 1920, 540);
     cloudViewer::utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
             "exit.");

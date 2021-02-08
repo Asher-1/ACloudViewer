@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef CV_IJSONCONVERTIBLE_HEADER
-#define CV_IJSONCONVERTIBLE_HEADER
+#pragma once
 
 #include "CVCoreLib.h"
 
@@ -33,9 +32,11 @@
 #include "Eigen.h"
 #include <Eigen/Core>
 
+/// @cond
 namespace Json {
 class Value;
 }  // namespace Json
+/// @endcond
 
 namespace cloudViewer {
 namespace utility {
@@ -86,5 +87,3 @@ public:
 
 }  // namespace utility
 }  // namespace cloudViewer
-
-#endif // CV_IJSONCONVERTIBLE_HEADER
