@@ -28,24 +28,31 @@
 #pragma once
 
 #include "io/rpc/ReceiverBase.h"
-#include "visualization/rendering/CloudViewerScene.h"
 
 class ccHObject;
 namespace cloudViewer {
+
 namespace visualization {
 
 namespace gui {
 class Window;
-}
+}  // namespace gui
 
 /// Receiver implementation which interfaces with the CloudViewerScene and a Window.
 class Receiver : public io::rpc::ReceiverBase {
 public:
-    Receiver(gui::Window* window,
-             std::shared_ptr<rendering::CloudViewerScene> scene,
-             const std::string& address,
-             int timeout)
-        : ReceiverBase(address, timeout), window_(window), scene_(scene) {}
+    using OnGeometryFunc = std::function<void(
+            std::shared_ptr<ccHObject>,     // geometry
+            const std::string&,             // path
+            int,                            // time
+            const std::string&)>;           // layer
+    Receiver(const std::string& address,
+             int timeout,
+             gui::Window* window,
+             OnGeometryFunc on_geometry)
+        : ReceiverBase(address, timeout),
+          window_(window),
+          on_geometry_(on_geometry) {}
 
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const io::rpc::messages::Request& req,
@@ -53,13 +60,13 @@ public:
             const MsgpackObject& obj) override;
 
 private:
+    gui::Window* window_;
+    OnGeometryFunc on_geometry_;
+
     void SetGeometry(std::shared_ptr<ccHObject> geom,
                      const std::string& path,
                      int time,
                      const std::string& layer);
-
-    gui::Window* window_;
-    std::shared_ptr<rendering::CloudViewerScene> scene_;
 };
 
 }  // namespace visualization

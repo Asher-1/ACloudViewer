@@ -123,7 +123,7 @@ static TensorKey PyHandleToTensorKey(const py::handle& item) {
         return ToTensorKey(item.cast<py::tuple>());
     } else if (class_name == "<class 'numpy.ndarray'>") {
         return ToTensorKey(item.cast<py::array>());
-    } else if (class_name.find("open3d") != std::string::npos &&
+    } else if (class_name.find("cloudViewer") != std::string::npos &&
                class_name.find("Tensor") != std::string::npos) {
         try {
             Tensor* tensor = item.cast<Tensor*>();

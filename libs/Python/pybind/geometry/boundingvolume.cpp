@@ -127,7 +127,7 @@ void pybind_boundingvolume(py::module &m) {
                  auto e = box.extent_;
                  s << "ecvOrientedBBox: center: (" << c.x() << ", "
                    << c.y() << ", " << c.z() << "), extent: " << e.x()
-                   << ", " << e.y() << e.z() << ")";
+                   << ", " << e.y() << ", " << e.z() << ")";
                  return s.str();
              })
 		.def_static(

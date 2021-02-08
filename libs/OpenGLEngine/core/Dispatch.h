@@ -29,7 +29,7 @@
 #include "core/Dtype.h"
 #include <Console.h>
 
-/// Call a numerical templated funciton based on Dtype. Warp the function to
+/// Call a numerical templated function based on Dtype. Warp the function to
 /// a lambda function to use DISPATCH_DTYPE_TO_TEMPLATE.
 ///
 /// Before:

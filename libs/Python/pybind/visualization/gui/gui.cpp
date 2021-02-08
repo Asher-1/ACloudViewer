@@ -67,8 +67,6 @@ namespace cloudViewer {
 namespace visualization {
 namespace gui {
 
-using namespace cloudViewer;
-
 class PythonUnlocker : public Application::EnvUnlocker {
 public:
     PythonUnlocker() { unlocker_ = nullptr; }
@@ -153,10 +151,10 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
         // is the path to
         // __init__.py), so we can use that to find the
         // resources included in the wheel.
-        py::object o3d = py::module::import("cloudViewer");
-        auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
+        py::object cv3d = py::module::import("cloudViewer");
+        auto cv3d_init_path = cv3d.attr("__file__").cast<std::string>();
         auto module_path =
-                utility::filesystem::GetFileParentDirectory(o3d_init_path);
+                utility::filesystem::GetFileParentDirectory(cv3d_init_path);
         resource_path = module_path + "/resources";
     }
     Application::GetInstance().Initialize(resource_path.c_str());
@@ -382,7 +380,9 @@ void pybind_gui_classes(py::module &m) {
             .def_property_readonly("is_visible", &PyWindow::IsVisible,
                                    "True if window is visible (read-only)")
             .def("show", &PyWindow::Show, "Shows or hides the window")
-            .def("close", &PyWindow::Close, "Closes the window and destroys it")
+            .def("close", &PyWindow::Close,
+                 "Closes the window and destroys it, unless an on_close "
+                 "callback cancels the close.")
             .def("set_needs_layout", &PyWindow::SetNeedsLayout,
                  "Flags window to re-layout")
             .def("post_redraw", &PyWindow::PostRedraw,
@@ -401,6 +401,11 @@ void pybind_gui_classes(py::module &m) {
                  "and must return True if a redraw is needed (that is, if "
                  "any widget has changed in any fashion) or False if nothing "
                  "has changed")
+            .def("set_on_close", &PyWindow::SetOnClose,
+                 "Sets a callback that will be called when the window is "
+                 "closed. The callback is given no arguments and should return "
+                 "True to continue closing the window or False to cancel the "
+                 "close")
             .def(
                     "set_on_layout",
                     [](PyWindow *w, std::function<void(const Theme &)> f) {
@@ -490,7 +495,7 @@ void pybind_gui_classes(py::module &m) {
                  "r"_a, "g"_a, "b"_a, "a"_a = 1.0);
 
     // ---- Theme ----
-    // Note: no constructor because themes are created by CloudViewer
+    // Note: no constructor because themes are created by Open3D
     py::class_<Theme> theme(m, "Theme",
                             "Theme parameters such as colors used for drawing "
                             "widgets (read-only)");
@@ -959,6 +964,8 @@ void pybind_gui_classes(py::module &m) {
             }),
             py::none(), py::none(), "");
     scene_ctrl.value("ROTATE_CAMERA", SceneWidget::Controls::ROTATE_CAMERA)
+            .value("ROTATE_CAMERA_SPHERE",
+                   SceneWidget::Controls::ROTATE_CAMERA_SPHERE)
             .value("FLY", SceneWidget::Controls::FLY)
             .value("ROTATE_SUN", SceneWidget::Controls::ROTATE_SUN)
             .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)
@@ -984,6 +991,10 @@ void pybind_gui_classes(py::module &m) {
                  "Configure the camera: setup_camera(field_of_view, "
                  "model_bounds, "
                  "center_of_rotation)")
+            .def("look_at", &PySceneWidget::LookAt,
+                 "look_at(center, eye, up): sets the "
+                 "camera view so that the camera is located at 'eye', pointing "
+                 "towards 'center', and oriented so that the up vector is 'up'")
             .def("set_on_mouse", &PySceneWidget::SetOnMouse,
                  "Sets a callback for mouse events. This callback is passed "
                  "a MouseEvent object. The callback must return "

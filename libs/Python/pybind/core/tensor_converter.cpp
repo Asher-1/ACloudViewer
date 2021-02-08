@@ -102,7 +102,7 @@ py::array TensorToPyArray(const Tensor& tensor) {
     // See PyTorch's torch/csrc/Module.cpp
     auto capsule_destructor = [](PyObject* data) {
         Tensor* base_tensor = reinterpret_cast<Tensor*>(
-                PyCapsule_GetPointer(data, "open3d::Tensor"));
+                PyCapsule_GetPointer(data, "cloudViewer::Tensor"));
         if (base_tensor) {
             delete base_tensor;
         } else {
@@ -110,7 +110,7 @@ py::array TensorToPyArray(const Tensor& tensor) {
         }
     };
 
-    py::capsule base_tensor_capsule(base_tensor, "open3d::Tensor",
+    py::capsule base_tensor_capsule(base_tensor, "cloudViewer::Tensor",
                                     capsule_destructor);
     return py::array(py_dtype, py_shape, py_strides, tensor.GetDataPtr(),
                      base_tensor_capsule);
@@ -217,7 +217,7 @@ Tensor PyHandleToTensor(const py::handle& handle,
         return CastOptionalDtypeDevice(PyArrayToTensor(handle.cast<py::array>(),
                                                        /*inplace=*/!force_copy),
                                        dtype, device);
-    } else if (class_name.find("open3d") != std::string::npos &&
+    } else if (class_name.find("cloudViewer") != std::string::npos &&
                class_name.find("Tensor") != std::string::npos) {
         try {
             Tensor* tensor = handle.cast<Tensor*>();

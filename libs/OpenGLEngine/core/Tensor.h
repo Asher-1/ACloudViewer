@@ -48,7 +48,7 @@ namespace core {
 /// Tensor can also be used to perform numerical operations.
 class Tensor {
 public:
-    Tensor(){}
+    Tensor(){};
 
     /// Constructor for creating a contiguous Tensor
     Tensor(const SizeVector& shape,
@@ -72,7 +72,7 @@ public:
         // Check number of elements
 
         if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Tensor initialization values' size {} does not match the "
                     "shape {}",
                     init_vals.size(), shape_.NumElements());
@@ -81,7 +81,7 @@ public:
         // Check data types
         AssertTemplateDtype<T>();
         if (!std::is_pod<T>()) {
-            cloudViewer::utility::LogError("Object must be a POD.");
+            utility::LogError("Object must be a POD.");
         }
 
         // Copy data to blob
@@ -152,7 +152,7 @@ public:
     template <typename T>
     Tensor& operator=(const T& v) && {
         if (shape_.size() != 0) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Assignment with scalar only works for scalar Tensor of "
                     "shape ()");
         }
@@ -170,7 +170,7 @@ public:
     template <typename Object>
     Tensor& AssignObject(const Object& v) && {
         if (shape_.size() != 0) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Assignment with scalar only works for scalar Tensor of "
                     "shape ()");
         }
@@ -261,7 +261,7 @@ public:
                 dim1_size = static_cast<int64_t>(ele0.size());
             } else {
                 if (static_cast<int64_t>(ele0.size()) != dim1_size) {
-                    cloudViewer::utility::LogError(
+                    utility::LogError(
                             "Cannot create Tensor with ragged nested sequences "
                             "(nested lists with unequal sizes or shapes).");
                 }
@@ -292,7 +292,7 @@ public:
                 dim1_size = static_cast<int64_t>(ele1.size());
             } else {
                 if (static_cast<int64_t>(ele1.size()) != dim1_size) {
-                    cloudViewer::utility::LogError(
+                    utility::LogError(
                             "Cannot create Tensor with ragged nested sequences "
                             "(nested lists with unequal sizes or shapes).");
                 }
@@ -303,7 +303,7 @@ public:
                     dim2_size = static_cast<int64_t>(ele0.size());
                 } else {
                     if (static_cast<int64_t>(ele0.size()) != dim2_size) {
-                        cloudViewer::utility::LogError(
+                        utility::LogError(
                                 "Cannot create Tensor with ragged nested "
                                 "sequences (nested lists with unequal sizes or "
                                 "shapes).");
@@ -567,7 +567,7 @@ public:
     template <typename T>
     T Item() const {
         if (shape_.NumElements() != 1) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Tensor::Item() only works for Tensor with exactly one "
                     "element.");
         }
@@ -757,6 +757,18 @@ public:
 
     /// Element-wise absolute value of a tensor, in-place.
     Tensor Abs_();
+
+    /// Element-wise clipping of tensor values so that resulting values lie in
+    /// the range [\p min_val, \p max_val], returning a new tensor.
+    /// \param min_val Lower bound for output values.
+    /// \param max_val Upper bound for output values.
+    Tensor Clip(double min_val, double max_val) const;
+
+    /// Element-wise clipping of tensor values so that resulting values lie in
+    /// the range [\p min_val, \p max_val]. In-place version.
+    /// \param min_val Lower bound for output values.
+    /// \param max_val Upper bound for output values.
+    Tensor Clip_(double min_val, double max_val);
 
     /// Element-wise floor value of a tensor, returning a new tensor.
     Tensor Floor() const;
@@ -1057,7 +1069,7 @@ public:
     /// result.
     Tensor Matmul(const Tensor& rhs) const;
 
-    /// Solves the linear system AX = B with QR decomposition and returns X.
+    /// Solves the linear system AX = B with LU decomposition and returns X.
     /// A must be a square matrix.
     Tensor Solve(const Tensor& rhs) const;
 
@@ -1093,6 +1105,23 @@ public:
         return strides_[shape_util::WrapDim(dim, NumDims())];
     }
 
+    template <typename T>
+    inline T* GetDataPtr() {
+        return const_cast<T*>(const_cast<const Tensor*>(this)->GetDataPtr<T>());
+    }
+
+    template <typename T>
+    inline const T* GetDataPtr() const {
+        if (!dtype_.IsObject() && Dtype::FromType<T>() != dtype_) {
+            utility::LogError(
+                    "Requested values have type {} but Tensor has type {}. "
+                    "Please use non templated GetDataPtr() with manual "
+                    "casting.",
+                    Dtype::FromType<T>().ToString(), dtype_.ToString());
+        }
+        return static_cast<T*>(data_ptr_);
+    }
+
     inline void* GetDataPtr() { return data_ptr_; }
 
     inline const void* GetDataPtr() const { return data_ptr_; }
@@ -1110,12 +1139,12 @@ public:
     template <typename T>
     void AssertTemplateDtype() const {
         if (!dtype_.IsObject() && Dtype::FromType<T>() != dtype_) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Requested values have type {} but Tensor has type {}",
                     Dtype::FromType<T>().ToString(), dtype_.ToString());
         }
         if (dtype_.ByteSize() != sizeof(T)) {
-            cloudViewer::utility::LogError("Internal error: element size mismatch {} != {}",
+            utility::LogError("Internal error: element size mismatch {} != {}",
                               dtype_.ByteSize(), sizeof(T));
         }
     }
@@ -1195,7 +1224,7 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
     : Tensor(shape, dtype, device) {
     // Check number of elements
     if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "Tensor initialization values' size {} does not match the "
                 "shape {}",
                 init_vals.size(), shape_.NumElements());
@@ -1234,7 +1263,7 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
 template <>
 inline bool Tensor::Item() const {
     if (shape_.NumElements() != 1) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "Tensor::Item only works for Tensor with one element.");
     }
     AssertTemplateDtype<bool>();

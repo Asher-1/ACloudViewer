@@ -38,63 +38,61 @@ namespace sc = std::chrono;
 void PrintUsage() {
     PrintCloudViewerVersion();
     // clang-format off
-    cloudViewer::utility::LogInfo(
+    utility::LogInfo(
             "Open a RealSense camera and display live color and depth streams. You can set\n"
             "frame sizes and frame rates for each stream and the depth stream can be\n"
             "optionally aligned to the color stream. NOTE: An error of 'UNKNOWN: Couldn't\n"
             "resolve requests' implies  unsupported stream format settings.");
     // clang-format on
-    cloudViewer::utility::LogInfo("Usage:");
-    cloudViewer::utility::LogInfo(
+    utility::LogInfo("Usage:");
+    utility::LogInfo(
             "RealSenseRecorder [-h|--help] [-V] [-l|--list-devices] [--align]\n"
             "[--record rgbd_video_file.bag] [-c|--config rs-config.json]");
 }
 
 int main(int argc, char **argv) {
     // Parse command line arguments
-    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--help") ||
-        cloudViewer::utility::ProgramOptionExists(argc, argv, "-h")) {
+    if (utility::ProgramOptionExists(argc, argv, "--help") ||
+        utility::ProgramOptionExists(argc, argv, "-h")) {
         PrintUsage();
         return 0;
     }
-    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--list-devices") ||
-        cloudViewer::utility::ProgramOptionExists(argc, argv, "-l")) {
+    if (utility::ProgramOptionExists(argc, argv, "--list-devices") ||
+        utility::ProgramOptionExists(argc, argv, "-l")) {
         tio::RealSenseSensor::ListDevices();
         return 0;
     }
-    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "-V")) {
-        cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
+    if (utility::ProgramOptionExists(argc, argv, "-V")) {
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     } else {
-        cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Info);
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     }
     bool align_streams = false;
     std::string config_file, bag_file;
 
-    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "-c")) {
-        config_file = cloudViewer::utility::GetProgramOptionAsString(argc, argv, "-c");
-    } else if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--config")) {
-        config_file = cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--config");
-    } else {
-        cloudViewer::utility::LogError("config json file required.");
-        PrintUsage();
-        return 1;
+    if (utility::ProgramOptionExists(argc, argv, "-c")) {
+        config_file = utility::GetProgramOptionAsString(argc, argv, "-c");
+    } else if (utility::ProgramOptionExists(argc, argv, "--config")) {
+        config_file = utility::GetProgramOptionAsString(argc, argv, "--config");
     }
-    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--align")) {
+    if (utility::ProgramOptionExists(argc, argv, "--align")) {
         align_streams = true;
     }
-    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--record")) {
-        bag_file = cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--record");
+    if (utility::ProgramOptionExists(argc, argv, "--record")) {
+        bag_file = utility::GetProgramOptionAsString(argc, argv, "--record");
     }
 
     // Read in camera configuration.
     tio::RealSenseSensorConfig rs_cfg;
-    cloudViewer::io::ReadIJsonConvertible(config_file, rs_cfg);
+    if (!config_file.empty()) {
+        io::ReadIJsonConvertible(config_file, rs_cfg);
+    }
 
     // Initialize camera.
     tio::RealSenseSensor rs;
     rs.ListDevices();
     rs.InitSensor(rs_cfg, 0, bag_file);
-    cloudViewer::utility::LogInfo("{}", rs.GetMetadata().ToString());
+    utility::LogInfo("{}", rs.GetMetadata().ToString());
 
     // Create windows to show depth and color streams.
     bool flag_start = false, flag_record = flag_start, flag_exit = false;
@@ -102,9 +100,9 @@ int main(int argc, char **argv) {
     auto callback_exit = [&](visualization::Visualizer *vis) {
         flag_exit = true;
         if (flag_start) {
-            cloudViewer::utility::LogInfo("Recording finished.");
+            utility::LogInfo("Recording finished.");
         } else {
-            cloudViewer::utility::LogInfo("Nothing has been recorded.");
+            utility::LogInfo("Nothing has been recorded.");
         }
         return false;
     };
@@ -113,7 +111,7 @@ int main(int argc, char **argv) {
     auto callback_toggle_record = [&](visualization::Visualizer *vis) {
         if (flag_record) {
             rs.PauseRecord();
-            cloudViewer::utility::LogInfo(
+            utility::LogInfo(
                     "Recording paused. "
                     "Press [SPACE] to continue. "
                     "Press [ESC] to save and exit.");
@@ -122,13 +120,13 @@ int main(int argc, char **argv) {
             rs.ResumeRecord();
             flag_record = true;
             if (!flag_start) {
-                cloudViewer::utility::LogInfo(
+                utility::LogInfo(
                         "Recording started. "
                         "Press [SPACE] to pause. "
                         "Press [ESC] to save and exit.");
                 flag_start = true;
             } else {
-                cloudViewer::utility::LogInfo(
+                utility::LogInfo(
                         "Recording resumed, video may be discontinuous. "
                         "Press [SPACE] to pause. "
                         "Press [ESC] to save and exit.");
@@ -139,16 +137,16 @@ int main(int argc, char **argv) {
     if (!bag_file.empty()) {
         depth_vis.RegisterKeyCallback(GLFW_KEY_SPACE, callback_toggle_record);
         color_vis.RegisterKeyCallback(GLFW_KEY_SPACE, callback_toggle_record);
-        cloudViewer::utility::LogInfo(
+        utility::LogInfo(
                 "In the visulizer window, "
                 "press [SPACE] to start recording, "
                 "press [ESC] to exit.");
     } else {
-        cloudViewer::utility::LogInfo("In the visulizer window, press [ESC] to exit.");
+        utility::LogInfo("In the visulizer window, press [ESC] to exit.");
     }
 
-    using legacyRGBDImage = cloudViewer::geometry::RGBDImage;
-    using legacyImage = cloudViewer::geometry::Image;
+    using legacyRGBDImage = geometry::RGBDImage;
+    using legacyImage = geometry::Image;
     std::shared_ptr<legacyImage> depth_image_ptr, color_image_ptr;
 
     // Loop over frames from device
@@ -161,10 +159,10 @@ int main(int argc, char **argv) {
 
         // Improve depth visualization by scaling
         /* im_rgbd.depth_.LinearTransform(0.25); */
-        depth_image_ptr = std::shared_ptr<cloudViewer::geometry::Image>(
-                &im_rgbd.depth_, [](cloudViewer::geometry::Image *) {});
-        color_image_ptr = std::shared_ptr<cloudViewer::geometry::Image>(
-                &im_rgbd.color_, [](cloudViewer::geometry::Image *) {});
+        depth_image_ptr = std::shared_ptr<geometry::Image>(
+                &im_rgbd.depth_, [](geometry::Image *) {});
+        color_image_ptr = std::shared_ptr<geometry::Image>(
+                &im_rgbd.color_, [](geometry::Image *) {});
 
         if (!is_geometry_added) {
             if (!depth_vis.CreateVisualizerWindow(
@@ -175,7 +173,7 @@ int main(int argc, char **argv) {
                         "cloudViewer || RealSense || Color", color_image_ptr->width_,
                         color_image_ptr->height_, 675, 50) ||
                 !color_vis.AddGeometry(color_image_ptr)) {
-                cloudViewer::utility::LogError("Window creation failed!");
+                utility::LogError("Window creation failed!");
                 return 0;
             }
             is_geometry_added = true;
@@ -189,7 +187,7 @@ int main(int argc, char **argv) {
         color_vis.UpdateRender();
 
         if (frame_id++ % 30 == 0) {
-            cloudViewer::utility::LogInfo("Time: {}s, Frame {}",
+            utility::LogInfo("Time: {}s, Frame {}",
                              static_cast<double>(rs.GetTimestamp()) * 1e-6,
                              frame_id - 1);
         }

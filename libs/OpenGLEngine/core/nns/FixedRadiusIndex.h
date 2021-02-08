@@ -55,7 +55,7 @@ public:
 
 public:
     bool SetTensorData(const Tensor& dataset_points) override {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "FixedRadiusIndex::SetTensorData witout radius not "
                 "implemented.");
     }
@@ -64,12 +64,12 @@ public:
 
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         int knn) const override {
-        cloudViewer::utility::LogError("FixedRadiusIndex::SearchKnn not implemented.");
+        utility::LogError("FixedRadiusIndex::SearchKnn not implemented.");
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor& query_points, const Tensor& radii) const override {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "FixedRadiusIndex::SearchRadius with multi-radii not "
                 "implemented.");
     }
@@ -89,7 +89,7 @@ public:
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor& query_points,
                                            float radius,
                                            int max_knn) const override {
-        cloudViewer::utility::LogError("FixedRadiusIndex::SearchHybrid not implemented.");
+        utility::LogError("FixedRadiusIndex::SearchHybrid not implemented.");
     }
 
     const double hash_table_size_factor = 1 / 32;
@@ -110,22 +110,20 @@ public:
 
     void AllocIndices(int32_t** ptr, size_t num) {
         neighbors_index = Tensor::Empty({int64_t(num)}, Dtype::Int32, device_);
-        *ptr = static_cast<int32_t*>(neighbors_index.GetDataPtr());
+        *ptr = neighbors_index.GetDataPtr<int32_t>();
     }
 
     void AllocDistances(T** ptr, size_t num) {
         neighbors_distance =
                 Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
-        *ptr = static_cast<T*>(neighbors_distance.GetDataPtr());
+        *ptr = neighbors_distance.GetDataPtr<T>();
     }
 
     const int32_t* IndicesPtr() const {
-        return static_cast<const int32_t*>(neighbors_index.GetDataPtr());
+        return neighbors_index.GetDataPtr<int32_t>();
     }
 
-    const T* DistancesPtr() const {
-        return static_cast<T*>(neighbors_distance.GetDataPtr());
-    }
+    const T* DistancesPtr() const { return neighbors_distance.GetDataPtr<T>(); }
 
     const Tensor& NeighborsIndex() const { return neighbors_index; }
     const Tensor& NeighborsDistance() const { return neighbors_distance; }

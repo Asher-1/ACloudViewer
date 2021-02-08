@@ -28,9 +28,8 @@
 #include "IJsonConvertibleIO.h"
 
 // CV_CORE_LIB
-#include <CVLog.h>
+#include <Console.h>
 #include <FileSystem.h>
-
 
 // JSON_LIB
 #include <json/json.h>
@@ -66,11 +65,11 @@ namespace cloudViewer {
 			Json::Value root_object;
 			Json::CharReaderBuilder builder;
 			builder["collectComments"] = false;
-			JSONCPP_STRING errs;
+            Json::String errs;
 			bool is_parse_successful =
 				parseFromStream(builder, json_stream, &root_object, &errs);
 			if (!is_parse_successful) {
-				CVLog::Warning("Read JSON failed: {}.", errs);
+                utility::LogWarning("Read JSON failed: {}.", errs);
 				return false;
 			}
 			return object.ConvertFromJsonValue(root_object);
@@ -99,7 +98,7 @@ namespace cloudViewer {
 			cloudViewer::utility::IJsonConvertible &object) {
 			std::ifstream file_in(filename);
 			if (file_in.is_open() == false) {
-				CVLog::Warning("Read JSON failed: unable to open file: {}",
+                utility::LogWarning("Read JSON failed: unable to open file: {}",
 					filename);
 				return false;
 			}
@@ -112,7 +111,7 @@ namespace cloudViewer {
 			const cloudViewer::utility::IJsonConvertible &object) {
 			std::ofstream file_out(filename);
 			if (file_out.is_open() == false) {
-				CVLog::Warning("Write JSON failed: unable to open file: {}",
+                utility::LogWarning("Write JSON failed: unable to open file: {}",
 					filename);
 				return false;
 			}
@@ -140,7 +139,7 @@ namespace cloudViewer {
 			std::string filename_ext =
 				cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(filename);
 			if (filename_ext.empty()) {
-				CVLog::Warning(
+                utility::LogWarning(
 					"Read utility::IJsonConvertible failed: unknown file "
 					"extension.");
 				return false;
@@ -148,7 +147,7 @@ namespace cloudViewer {
 			auto map_itr =
 				file_extension_to_ijsonconvertible_read_function.find(filename_ext);
 			if (map_itr == file_extension_to_ijsonconvertible_read_function.end()) {
-				CVLog::Warning(
+                utility::LogWarning(
 					"Read utility::IJsonConvertible failed: unknown file "
 					"extension.");
 				return false;
@@ -161,7 +160,7 @@ namespace cloudViewer {
 			std::string filename_ext =
 				cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(filename);
 			if (filename_ext.empty()) {
-				CVLog::Warning(
+                utility::LogWarning(
 					"Write utility::IJsonConvertible failed: unknown file "
 					"extension.");
 				return false;
@@ -169,7 +168,7 @@ namespace cloudViewer {
 			auto map_itr = file_extension_to_ijsonconvertible_write_function.find(
 				filename_ext);
 			if (map_itr == file_extension_to_ijsonconvertible_write_function.end()) {
-				CVLog::Warning(
+                utility::LogWarning(
 					"Write utility::IJsonConvertible failed: unknown file "
 					"extension.");
 				return false;

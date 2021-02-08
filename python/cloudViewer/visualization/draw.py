@@ -7,13 +7,12 @@ def draw(
         title="CloudViewer",
         width=1024,
         height=768,
-        background_color=(1.0, 1.0, 1.0, 1.0),
         actions=None,
-        #lookat=None,
-        #eye=None,
-        #up=None,
-        #field_of_view=None,
-        bg_color=(1, 1, 1, 1),
+        lookat=None,
+        eye=None,
+        up=None,
+        field_of_view=60.0,
+        bg_color=(1.0, 1.0, 1.0, 1.0),
         bg_image=None,
         show_ui=None,
         point_size=None,
@@ -23,9 +22,10 @@ def draw(
         on_init=None,
         on_animation_frame=None,
         on_animation_tick=None):
+    
     gui.Application.instance.initialize()
     w = O3DVisualizer(title, width, height)
-    w.set_background(background_color, None)
+    w.set_background(bg_color, bg_image)
 
     if actions is not None:
         for a in actions:
@@ -48,8 +48,9 @@ def draw(
     elif geometry is not None:
         add(geometry, n)
 
-    w.reset_camera_to_default()
-    w.set_background(bg_color, bg_image)
+    w.reset_camera_to_default()  # make sure far/near get setup nicely
+    if lookat is not None and eye is not None and up is not None:
+        w.setup_camera(field_of_view, lookat, eye, up)
 
     w.animation_time_step = animation_time_step
     if animation_duration is not None:
@@ -61,6 +62,12 @@ def draw(
     if rpc_interface:
         w.start_rpc_interface(address="tcp://127.0.0.1:51454", timeout=10000)
 
+        def stop_rpc():
+            w.stop_rpc_interface()
+            return True
+
+        w.set_on_close(stop_rpc)
+
     if on_init is not None:
         on_init(w)
     if on_animation_frame is not None:
@@ -70,6 +77,3 @@ def draw(
 
     gui.Application.instance.add_window(w)
     gui.Application.instance.run()
-
-    if rpc_interface:
-        w.stop_rpc_interface()
