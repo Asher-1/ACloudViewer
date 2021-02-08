@@ -117,7 +117,9 @@ public:
 
     /// Must be called on the same thread that calls Run()
     void AddWindow(std::shared_ptr<Window> window);
-    /// Must be called on the same thread that calls Run()
+    /// Must be called on the same thread that calls Run(). This is normally
+    /// called from Window::Close() and should not need to be called in user
+    /// code.
     void RemoveWindow(Window *window);
 
     /// Creates a message box window the next time the event loop processes.
@@ -164,7 +166,7 @@ public:
     /// EnvUnlocker allows an external environment to provide
     /// a way to unlock the environment while we wait for the next event.
     /// This is useful to release the Python GIL, for example. Callers of
-    /// of CloudViewer's GUI from languages such as scripting languages which do
+    /// of Open3D's GUI from languages such as scripting languages which do
     /// not expect the author to need to clean up after themselves may want to
     /// write their own Run() function that calls RunOneTick() with
     /// cleanup_if_no_windows=false and schedule a call to OnTerminate() with

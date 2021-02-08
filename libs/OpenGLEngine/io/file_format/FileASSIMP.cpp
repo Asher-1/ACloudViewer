@@ -155,21 +155,23 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
     }
 
     mesh.clear();
-    if (!mesh.getAssociatedCloud())
-    {
-        if (scene->mNumMeshes > 0) {
-            const auto* assimp_mesh = scene->mMeshes[0];
+    if (scene->mNumMeshes > 0) {
+        const auto* assimp_mesh = scene->mMeshes[0];
+
+        if (!mesh.getAssociatedCloud())
+        {
             mesh.createInternalCloud();
-            if(!mesh.reserveAssociatedCloud(
-                        assimp_mesh->mNumVertices,
-                        assimp_mesh->HasVertexColors(0),
-                        assimp_mesh->HasNormals())) {
-                return false;
-            }
-        } else {
-            utility::LogWarning("Must call createInternalCloud first!");
+        }
+
+        if(!mesh.reserveAssociatedCloud(
+                    assimp_mesh->mNumVertices,
+                    assimp_mesh->HasVertexColors(0),
+                    assimp_mesh->HasNormals())) {
             return false;
         }
+    } else {
+        utility::LogWarning("Must call createInternalCloud first!");
+        return false;
     }
 
     size_t current_vidx = 0;
@@ -234,7 +236,6 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         current_vidx += assimp_mesh->mNumVertices;
     }
 
-    // Now load the materials
     // Now load the materials
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];

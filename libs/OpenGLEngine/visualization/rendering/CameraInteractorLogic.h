@@ -42,7 +42,7 @@ public:
 
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
-    void Dolly(int dy, DragType type) override;
+    void Dolly(float dy, DragType type) override;
     void Dolly(float z_dist, Camera::Transform matrix_in) override;
 
     void Pan(int dx, int dy) override;

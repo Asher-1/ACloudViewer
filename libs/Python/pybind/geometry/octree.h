@@ -55,7 +55,7 @@ public:
 };
 
 }  // namespace geometry
-}  // namespace open3d
+}  // namespace cloudViewer
 
 
 

@@ -21,6 +21,7 @@ endif()
 # ErowCloudViewer build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   		OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"                          ON )
+option(WITH_IPPICV                "Use Intel Performance Primitives"                    ON )
 option(BUILD_EXAMPLES             "Build CloudViewer example programs"        		ON )
 option(BUILD_UNIT_TESTS           "Build CloudViewer unit tests"                        OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"                          OFF)
@@ -72,8 +73,17 @@ option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll outpu
 # downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
 # are prepared manually by the user. This is only supported by limited 3rd party
 # libraries.
+
+set(THIRD_PARTY_FROM "cmake options")
+if(DEFINED ENV{THIRD_PARTY_DOWNLOAD_DIR} AND
+        IS_DIRECTORY "$ENV{THIRD_PARTY_DOWNLOAD_DIR}" AND
+        NOT THIRD_PARTY_DOWNLOAD_DIR)
+    set(THIRD_PARTY_DOWNLOAD_DIR "$ENV{THIRD_PARTY_DOWNLOAD_DIR}")
+    set(THIRD_PARTY_FROM "the environment")
+endif()
 if(THIRD_PARTY_DOWNLOAD_DIR)
-    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to ${THIRD_PARTY_DOWNLOAD_DIR}.")
+    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to "
+    "${THIRD_PARTY_DOWNLOAD_DIR} from ${THIRD_PARTY_FROM}.")
 else()
     message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
 endif()
@@ -822,6 +832,7 @@ set(deps
     GLFW
     GOOGLETEST
     IMGUI
+    IPPICV
     JPEG
     JSONCPP
     LIBLZF

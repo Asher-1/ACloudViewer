@@ -50,12 +50,12 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius) {
 #ifdef BUILD_CUDA_MODULE
     if (dataset_points.GetDevice().GetType() != Device::DeviceType::CUDA) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "[FixedRadiusIndex::SetTensorData] dataset_points should be "
                 "GPU Tensor.");
     }
     if (radius <= 0) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "[FixedRadiusIndex::SetTensorData] radius should be positive.");
     }
     dataset_points_ = dataset_points.Contiguous();
@@ -85,21 +85,19 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
         BuildSpatialHashTableCUDA(
                 temp_ptr, temp_size, dataset_points_.GetShape()[1],
-                static_cast<scalar_t *>(dataset_points_.GetDataPtr()),
+                dataset_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
-                (uint32_t *)static_cast<int32_t *>(
-                        hash_table_cell_splits_.GetDataPtr()),
-                (uint32_t *)static_cast<int32_t *>(
-                        hash_table_index_.GetDataPtr()));
+                (uint32_t *)hash_table_cell_splits_.GetDataPtr<int32_t>(),
+                (uint32_t *)hash_table_index_.GetDataPtr<int32_t>());
         Tensor temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8,
                                            dataset_points_.GetDevice());
         temp_ptr = temp_tensor.GetDataPtr();
 
         BuildSpatialHashTableCUDA(
                 temp_ptr, temp_size, dataset_points_.GetShape()[1],
-                static_cast<scalar_t *>(dataset_points_.GetDataPtr()),
+                dataset_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
@@ -110,9 +108,9 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     });
     return true;
 #else
-    cloudViewer::utility::LogError(
+    utility::LogError(
             "FixedRadiusIndex::SetTensorData BUILD_CUDA_MODULE is OFF. Please "
-            "compile cloudViewer with BUILD_CUDA_MODULE=ON.");
+            "compile Open3d with BUILD_CUDA_MODULE=ON.");
 #endif
 };
 
@@ -123,13 +121,13 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     query_points.AssertDtype(GetDtype());
 
     // Check shape.
-    query_points.AssertShapeCompatible({cloudViewer::utility::nullopt, GetDimension()});
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
 
     // Check device.
     query_points.AssertDevice(GetDevice());
 
     if (radius <= 0) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "[FixedRadiusIndex::SearchRadius] radius should be positive.");
     }
     Tensor query_points_ = query_points.Contiguous();
@@ -149,20 +147,15 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         NeighborSearchAllocator<scalar_t> output_allocator(
                 dataset_points_.GetDevice());
         FixedRadiusSearchCUDA(
-                temp_ptr, temp_size,
-                static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
-                GetDatasetSize(),
-                static_cast<const scalar_t *>(dataset_points_.GetDataPtr()),
-                num_query_points,
-                static_cast<scalar_t *>(query_points_.GetDataPtr()),
+                temp_ptr, temp_size, neighbors_row_splits.GetDataPtr<int64_t>(),
+                GetDatasetSize(), dataset_points_.GetDataPtr<scalar_t>(),
+                num_query_points, query_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), queries_row_splits.size(),
                 queries_row_splits.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
-                (uint32_t *)static_cast<const int32_t *>(
-                        hash_table_cell_splits_.GetDataPtr()),
-                (uint32_t *)static_cast<const int32_t *>(
-                        hash_table_index_.GetDataPtr()),
+                (uint32_t *)hash_table_cell_splits_.GetDataPtr<int32_t>(),
+                (uint32_t *)hash_table_index_.GetDataPtr<int32_t>(),
                 output_allocator);
 
         Tensor temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8,
@@ -170,20 +163,15 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         temp_ptr = temp_tensor.GetDataPtr();
 
         FixedRadiusSearchCUDA(
-                temp_ptr, temp_size,
-                static_cast<int64_t *>(neighbors_row_splits.GetDataPtr()),
-                GetDatasetSize(),
-                static_cast<const scalar_t *>(dataset_points_.GetDataPtr()),
-                num_query_points,
-                static_cast<scalar_t *>(query_points_.GetDataPtr()),
+                temp_ptr, temp_size, neighbors_row_splits.GetDataPtr<int64_t>(),
+                GetDatasetSize(), dataset_points_.GetDataPtr<scalar_t>(),
+                num_query_points, query_points_.GetDataPtr<scalar_t>(),
                 static_cast<scalar_t>(radius), points_row_splits_.size(),
                 points_row_splits_.data(), queries_row_splits.size(),
                 queries_row_splits.data(), hash_table_splits_.data(),
                 hash_table_cell_splits_.GetShape()[0],
-                (uint32_t *)static_cast<const int32_t *>(
-                        hash_table_cell_splits_.GetDataPtr()),
-                (uint32_t *)static_cast<const int32_t *>(
-                        hash_table_index_.GetDataPtr()),
+                (uint32_t *)hash_table_cell_splits_.GetDataPtr<int32_t>(),
+                (uint32_t *)hash_table_index_.GetDataPtr<int32_t>(),
                 output_allocator);
 
         neighbors_index = output_allocator.NeighborsIndex().To(Dtype::Int64);
@@ -195,9 +183,9 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                     .Sub(neighbors_row_splits.Slice(0, 0, num_query_points));
     return std::make_tuple(neighbors_index, neighbors_distance, num_neighbors);
 #else
-    cloudViewer::utility::LogError(
-                "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. Please "
-                "compile cloudViewer with BUILD_CUDA_MODULE=ON.");
+    utility::LogError(
+            "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. Please "
+            "compile Open3d with BUILD_CUDA_MODULE=ON.");
 #endif
 };
 

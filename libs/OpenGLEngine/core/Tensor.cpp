@@ -49,8 +49,6 @@
 namespace cloudViewer {
 namespace core {
 
-using namespace cloudViewer;
-
 /// CloudViewer DLPack Tensor manager.
 class CloudViewerDLManagedTensor {
 private:
@@ -901,6 +899,17 @@ Tensor Tensor::Abs() const {
 
 Tensor Tensor::Abs_() {
     kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Abs);
+    return *this;
+}
+
+Tensor Tensor::Clip(double min_val, double max_val) const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    utility::LogError("Not Implemented!");
+    return dst_tensor;
+}
+
+Tensor Tensor::Clip_(double min_val, double max_val) {
+    utility::LogError("Not Implemented!");
     return *this;
 }
 
