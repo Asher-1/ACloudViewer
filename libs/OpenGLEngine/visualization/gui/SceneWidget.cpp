@@ -709,9 +709,9 @@ struct SceneWidget::Impl {
         auto far3 =
                 camera->GetModelMatrix().translation().cast<double>().norm();
         auto model_size = 2.0 * bounds_.getExtent().norm();
-        auto far = std::max(MIN_FAR_PLANE,
+        auto far_ = std::max(MIN_FAR_PLANE,
                             std::max(std::max(far1, far2), far3) + model_size);
-        camera->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
+        camera->SetProjection(verticalFoV, aspect, NEAR_PLANE, far_,
                               rendering::Camera::FovType::Vertical);
     }
 };
