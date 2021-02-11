@@ -25,4 +25,4 @@
 // ----------------------------------------------------------------------------
 
 #include "core/kernel/CPULauncher.h"
-#include "t/geometry/kernel/PointCloudShared.h"
+#include "t/geometry/kernel/PointCloudImpl.h"

@@ -29,6 +29,7 @@
 #include <unordered_map>
 
 #include "core/Tensor.h"
+#include "core/hashmap/Hashmap.h"
 
 namespace cloudViewer {
 namespace t {
@@ -53,6 +54,20 @@ void Integrate(const core::Tensor& depth,
                float sdf_trunc,
                float depth_scale,
                float depth_max);
+
+void RayCast(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+             core::Tensor& block_values,
+             core::Tensor& vertex_map,
+             core::Tensor& color_map,
+             const core::Tensor& intrinsics,
+             const core::Tensor& pose,
+             int64_t block_resolution,
+             float voxel_size,
+             float sdf_trunc,
+             int max_steps,
+             float depth_min,
+             float depth_max,
+             float weight_threshold);
 
 void ExtractSurfacePoints(const core::Tensor& block_indices,
                           const core::Tensor& nb_block_indices,
@@ -99,6 +114,20 @@ void IntegrateCPU(const core::Tensor& depth,
                   float depth_scale,
                   float depth_max);
 
+void RayCastCPU(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+                core::Tensor& block_values,
+                core::Tensor& vertex_map,
+                core::Tensor& color_map,
+                const core::Tensor& intrinsics,
+                const core::Tensor& extrinsics,
+                int64_t block_resolution,
+                float voxel_size,
+                float sdf_trunc,
+                int max_steps,
+                float depth_min,
+                float depth_max,
+                float weight_threshold);
+
 void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
                              const core::Tensor& nb_block_indices,
                              const core::Tensor& nb_block_masks,
@@ -144,6 +173,20 @@ void IntegrateCUDA(const core::Tensor& depth,
                    float sdf_trunc,
                    float depth_scale,
                    float depth_max);
+
+void RayCastCUDA(std::shared_ptr<core::DefaultDeviceHashmap>& hashmap,
+                 core::Tensor& block_values,
+                 core::Tensor& vertex_map,
+                 core::Tensor& color_map,
+                 const core::Tensor& intrinsics,
+                 const core::Tensor& extrinsics,
+                 int64_t block_resolution,
+                 float voxel_size,
+                 float sdf_trunc,
+                 int max_steps,
+                 float depth_min,
+                 float depth_max,
+                 float weight_threshold);
 
 void ExtractSurfacePointsCUDA(const core::Tensor& block_indices,
                               const core::Tensor& nb_block_indices,

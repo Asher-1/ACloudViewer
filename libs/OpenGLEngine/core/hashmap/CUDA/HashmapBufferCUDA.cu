@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,5 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core/kernel/CUDALauncher.cuh"
-#include "t/geometry/kernel/PointCloudImpl.h"
+#include "core/hashmap/CUDA/HashmapBufferCUDA.h"
+
+namespace cloudViewer {
+namespace core {
+
+__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity) {
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < capacity) {
+        heap[i] = i;
+    }
+}
+
+}  // namespace core
+}  // namespace cloudViewer

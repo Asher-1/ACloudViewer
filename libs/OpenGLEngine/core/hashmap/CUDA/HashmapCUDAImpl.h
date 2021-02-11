@@ -23,8 +23,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+#pragma once
 
-#include "core/hashmap/CUDA/HashmapBufferCUDA.cuh"
+#include "core/hashmap/CUDA/HashmapBufferCUDA.h"
 #include "core/hashmap/CUDA/InternalNodeManager.h"
 #include "core/hashmap/CUDA/Macros.h"
 #include "core/hashmap/CUDA/Traits.h"
