@@ -30,23 +30,24 @@ using namespace cloudViewer;
 using namespace cloudViewer::core;
 
 void PrintHelp() {
-    cloudViewer::PrintCloudViewerVersion();
+    PrintCloudViewerVersion();
     // clang-format off
-    cloudViewer::utility::LogInfo("Usage:");
-    cloudViewer::utility::LogInfo(">    TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
-    cloudViewer::utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud from color and depth images");
-    cloudViewer::utility::LogInfo("     [options]");
-    cloudViewer::utility::LogInfo("     --voxel_size [=0.0058 (m)]");
-    cloudViewer::utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
-    cloudViewer::utility::LogInfo("     --depth_scale [=1000.0]");
-    cloudViewer::utility::LogInfo("     --max_depth [=3.0]");
-    cloudViewer::utility::LogInfo("     --sdf_trunc [=0.04]");
-    cloudViewer::utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
-    cloudViewer::utility::LogInfo("     --device [CPU:0]");
-    cloudViewer::utility::LogInfo("     --mesh");
-    cloudViewer::utility::LogInfo("     --pointcloud");
+    utility::LogInfo("Usage:");
+    utility::LogInfo(">    TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
+    utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud from color and depth images");
+    utility::LogInfo("     [options]");
+    utility::LogInfo("     --voxel_size [=0.0058 (m)]");
+    utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
+    utility::LogInfo("     --depth_scale [=1000.0]");
+    utility::LogInfo("     --max_depth [=3.0]");
+    utility::LogInfo("     --sdf_trunc [=0.04]");
+    utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
+    utility::LogInfo("     --device [CPU:0]");
+    utility::LogInfo("     --raycast");
+    utility::LogInfo("     --mesh");
+    utility::LogInfo("     --pointcloud");
     // clang-format on
-    cloudViewer::utility::LogInfo("");
+    utility::LogInfo("");
 }
 
 int main(int argc, char** argv) {
@@ -112,6 +113,8 @@ int main(int argc, char** argv) {
     float sdf_trunc = static_cast<float>(cloudViewer::utility::GetProgramOptionAsDouble(
             argc, argv, "--sdf_trunc", 0.04f));
 
+    bool enable_raycast = utility::ProgramOptionExists(argc, argv, "--raycast");
+
     // Device
     std::string device_code = "CPU:0";
     if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--device")) {
@@ -148,6 +151,17 @@ int main(int argc, char** argv) {
         timer.Start();
         voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
                              depth_scale, max_depth);
+        if (enable_raycast && i % 100 == 0) {
+        core::Tensor vertex_map, color_map;
+        std::tie(vertex_map, color_map) = voxel_grid.RayCast(
+                intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
+                50, 0.1, 3.0, std::min(i * 1.0f, 3.0f));
+
+        t::geometry::Image vertex_im(vertex_map);
+        visualization::DrawGeometries(
+                {std::make_shared<cloudViewer::geometry::Image>(
+                        vertex_im.ToLegacyImage())});
+        }
         timer.Stop();
         cloudViewer::utility::LogInfo("{}: Integration takes {}", i, timer.GetDuration());
     }

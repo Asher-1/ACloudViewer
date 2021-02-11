@@ -1,7 +1,10 @@
 set(FILE_IO_SRC
+    ImageIO.cpp
     PointCloudIO.cpp
     file_format/FileXYZI.cpp
     file_format/FilePLY.cpp
+    file_format/FileJPG.cpp
+    file_format/FilePNG.cpp
     )
 
 set(SENSOR_IO_SRC

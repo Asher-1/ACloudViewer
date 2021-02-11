@@ -31,6 +31,7 @@
 
 #include <ecvBBox.h>
 #include "visualization/rendering/Renderer.h"
+#include "visualization/rendering/Scene.h"
 
 namespace cloudViewer {
 
@@ -59,6 +60,8 @@ public:
     void ShowAxes(bool enable);
     void SetBackground(const Eigen::Vector4f& color,
                        std::shared_ptr<geometry::Image> image = nullptr);
+
+    void ShowGroundPlane(bool enable, Scene::GroundPlane plane);
 
     enum class LightingProfile {
         HARD_SHADOWS,

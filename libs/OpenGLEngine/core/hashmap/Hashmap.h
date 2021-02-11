@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
 #include "core/Dtype.h"
 #include "core/Tensor.h"
 #include "core/hashmap/HashmapBuffer.h"
@@ -139,6 +141,10 @@ public:
 
     /// Return size / bucket_count.
     float LoadFactor() const;
+
+    std::shared_ptr<DefaultDeviceHashmap> GetDeviceHashmap() const {
+        return device_hashmap_;
+    }
 
 protected:
     void AssertKeyDtype(const Dtype& dtype_key,
