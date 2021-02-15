@@ -40,7 +40,7 @@
 
 #pragma warning(disable:4715)
 
-using namespace CVLib;
+using namespace cloudViewer;
 namespace cloudViewer {
 namespace geometry {
 
@@ -118,7 +118,7 @@ void pybind_cloudbase(py::module &m) {
 	pyrefcloud.def(py::init([](std::shared_ptr<GenericIndexedCloudPersist> associated_cloud) {
 			return new ReferenceCloud(associated_cloud.get());
 		}), "ReferenceCloud constructor", "associated_cloud"_a)
-	.def("__repr__", [](const CVLib::Polyline &poly) {
+	.def("__repr__", [](const cloudViewer::Polyline &poly) {
 			return fmt::format("ReferenceCloud with {} points", poly.size());
 		})
 	.def("get_point_global_index", &ReferenceCloud::getPointGlobalIndex,
@@ -140,14 +140,14 @@ void pybind_cloudbase(py::module &m) {
 				return std::ref(*obj.getAssociatedCloud());
 			}
 			else {
-				CVLib::utility::LogWarning("[CVLib::ReferenceCloud] does not have associated cloud!");
+				cloudViewer::utility::LogWarning("[cloudViewer::ReferenceCloud] does not have associated cloud!");
 			}
 		}, "Returns the associated (source) cloud.")
 	.def("get_associated_cloud", [](const ReferenceCloud& obj) {
 			if (obj.getAssociatedCloud()) {
 				return std::ref(*obj.getAssociatedCloud());
 			} else {
-				CVLib::utility::LogWarning("[CVLib::ReferenceCloud] does not have associated cloud!");
+				cloudViewer::utility::LogWarning("[cloudViewer::ReferenceCloud] does not have associated cloud!");
 			}
 		}, "Returns the associated (source) cloud (const version).")
 	.def("set_associated_cloud", [](ReferenceCloud& obj, 
@@ -198,7 +198,7 @@ void pybind_cloudbase(py::module &m) {
 
 	// cloudViewer.geometry.ccGenericPointCloud functions
 	py::class_<ccGenericPointCloud, PyGeometry<ccGenericPointCloud>,
-		std::shared_ptr<ccGenericPointCloud>, CVLib::GenericIndexedCloudPersist, ccHObject>
+		std::shared_ptr<ccGenericPointCloud>, cloudViewer::GenericIndexedCloudPersist, ccHObject>
 		genericPointCloud(m, "ccGenericPointCloud", py::multiple_inheritance(),
 			"A 3D cloud interface with associated features (color, normals, octree, etc.).");
 	genericPointCloud.def("__repr__", [](const ccGenericPointCloud &cloud) {

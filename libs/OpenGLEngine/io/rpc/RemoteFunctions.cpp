@@ -39,7 +39,7 @@
 #include <ecvPointCloud.h>
 #include <ecvHObjectCaster.h>
 
-using namespace CVLib::utility;
+using namespace cloudViewer::utility;
 
 namespace cloudViewer {
 namespace io {
@@ -205,10 +205,7 @@ bool SetMeshData(const core::Tensor& vertices,
     }
 
     auto PrepareTensor = [](const core::Tensor& a) {
-        if (a.GetDevice().GetType() != core::Device::DeviceType::CPU) {
-            return a.Copy(core::Device("CPU:0"));
-        }
-        return a.Contiguous();
+        return a.To(core::Device("CPU:0")).Contiguous();
     };
 
     auto CreateArray = [](const core::Tensor& a) {

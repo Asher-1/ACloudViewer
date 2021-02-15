@@ -28,7 +28,7 @@
 
 #include "CloudViewer.h"
 
-using namespace CVLib;
+using namespace cloudViewer;
 void PrintHelp() {
     // clang-format off
     utility::LogInfo("Usage:");
@@ -68,7 +68,7 @@ void convert(int argc,
              char **argv,
              const std::string &file_in,
              const std::string &file_out) {
-    using namespace CVLib::utility::filesystem;
+    using namespace cloudViewer::utility::filesystem;
     auto pointcloud_ptr = cloudViewer::io::CreatePointCloudFromFile(file_in.c_str());
     size_t point_num_in = pointcloud_ptr->size();
     bool processed = false;
@@ -186,7 +186,7 @@ void convert(int argc,
 }
 
 int main(int argc, char **argv) {
-    using namespace CVLib::utility::filesystem;
+    using namespace cloudViewer::utility::filesystem;
 
     if (argc < 3 || utility::ProgramOptionExists(argc, argv, "--help") ||
         utility::ProgramOptionExists(argc, argv, "-h")) {

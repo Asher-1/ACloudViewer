@@ -3,7 +3,7 @@
 
 //##########################################################################
 //#                                                                        #
-//#                       CLOUDCOMPARE PLUGIN: qRDBIO                      #
+//#                     EROWCLOUDVIEWER PLUGIN: qRDBIO                     #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -18,7 +18,7 @@
 //#                                                                        #
 //##########################################################################
 
-#include <ccIOPluginInterface.h>
+#include <ecvIOPluginInterface.h>
 
 //! RDB file (3D cloud)
 class qRDBIO : public QObject, public ccIOPluginInterface
@@ -26,7 +26,7 @@ class qRDBIO : public QObject, public ccIOPluginInterface
 	Q_OBJECT
 	Q_INTERFACES( ccPluginInterface ccIOPluginInterface )
 
-	Q_PLUGIN_METADATA( IID "cccorp.cloudcompare.plugin.qRDBIO" FILE "../info.json" )
+    Q_PLUGIN_METADATA( IID "ecvcorp.cloudviewer.plugin.qRDBIO" FILE "../info.json" )
 
 public:
 	//! Default constructor
@@ -36,4 +36,4 @@ public:
 	FilterList getFilters() override;
 };
 
-#endif //Q_RDB_IO_PLUGIN_HEADER
+#endif // Q_RDB_IO_PLUGIN_HEADER

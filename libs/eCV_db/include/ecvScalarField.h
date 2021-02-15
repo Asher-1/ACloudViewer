@@ -18,16 +18,16 @@
 #ifndef ECV_DB_SCALAR_FIELD_HEADER
 #define ECV_DB_SCALAR_FIELD_HEADER
 
-//CVLib
+//cloudViewer
 #include <ScalarField.h>
 
 //ECV_DB_LIB
 #include "ecvColorScale.h"
 
 //! A scalar field associated to display-related parameters
-/** Extends the CVLib::ScalarField object.
+/** Extends the cloudViewer::ScalarField object.
 **/
-class ECV_DB_LIB_API ccScalarField : public CVLib::ScalarField,
+class ECV_DB_LIB_API ccScalarField : public cloudViewer::ScalarField,
                                      public ccSerializableObject {
 public:
 

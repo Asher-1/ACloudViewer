@@ -31,7 +31,7 @@
 #include "io/rpc/Messages.h"
 #include <Console.h>
 
-using namespace CVLib::utility;
+using namespace cloudViewer::utility;
 
 namespace cloudViewer {
 namespace io {

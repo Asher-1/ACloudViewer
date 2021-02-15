@@ -30,16 +30,18 @@
 #include "core/Tensor.h"
 #include "core/TensorList.h"
 #include "t/io/PointCloudIO.h"
-#include "t/geometry/TensorListMap.h"
+#include "t/geometry/TensorMap.h"
 #include <Console.h>
-#include <FileFormatIO.h>
+#include "io/FileFormatIO.h"
 #include <FileSystem.h>
 #include <ProgressReporters.h>
 
 namespace cloudViewer {
 namespace t {
 namespace io {
-    using namespace CVLib;
+
+using namespace cloudViewer;
+
 struct PLYReaderState {
     struct AttrState {
         std::string name_;
@@ -67,7 +69,7 @@ static int ReadAttributeCallback(p_ply_argument argument) {
         return 0;
     }
 
-    T *data_ptr = static_cast<T *>(attr_state->data_.GetDataPtr());
+    T *data_ptr = attr_state->data_.GetDataPtr<T>();
     data_ptr[attr_state->current_size_++] =
             static_cast<T>(ply_get_argument_value(argument));
 
@@ -77,15 +79,15 @@ static int ReadAttributeCallback(p_ply_argument argument) {
     return 1;
 }
 
-static core::TensorList ConcatColumns(const core::Tensor &a,
-                                      const core::Tensor &b,
-                                      const core::Tensor &c) {
+// TODO: ConcatColumns can be implemented in Tensor.cpp as a generic function.
+static core::Tensor ConcatColumns(const core::Tensor &a,
+                                  const core::Tensor &b,
+                                  const core::Tensor &c) {
     if (a.NumDims() != 1 || b.NumDims() != 1 || c.NumDims() != 1) {
         utility::LogError("Read PLY failed: only 1D attributes are supported.");
     }
 
-    if ((a.GetShape()[0] != b.GetShape()[0]) ||
-        (a.GetShape()[0] != c.GetShape()[0])) {
+    if ((a.GetLength() != b.GetLength()) || (a.GetLength() != c.GetLength())) {
         utility::LogError("Read PLY failed: size mismatch in base attributes.");
     }
     if ((a.GetDtype() != b.GetDtype()) || (a.GetDtype() != c.GetDtype())) {
@@ -93,16 +95,16 @@ static core::TensorList ConcatColumns(const core::Tensor &a,
                 "Read PLY failed: datatype mismatch in base attributes.");
     }
 
-    core::TensorList combined =
-            core::TensorList(a.GetShape()[0], {3}, a.GetDtype());
-    combined.AsTensor().IndexExtract(1, 0) = a;
-    combined.AsTensor().IndexExtract(1, 1) = b;
-    combined.AsTensor().IndexExtract(1, 2) = c;
+    core::Tensor combined =
+            core::Tensor::Empty({a.GetLength(), 3}, a.GetDtype());
+    combined.IndexExtract(1, 0) = a;
+    combined.IndexExtract(1, 1) = b;
+    combined.IndexExtract(1, 2) = c;
 
     return combined;
 }
 
-// Some of these datatypes are supported by TensorList but are added here just
+// Some of these datatypes are supported by Tensor but are added here just
 // for completeness.
 static std::string GetDtypeString(e_ply_type type) {
     if (type == PLY_INT8) {
@@ -190,7 +192,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     PLYReaderState state;
 
     const char *element_name;
-    long element_size;
+    long element_size = 0;
     // Loop through ply elements and find "vertex".
     p_ply_element element = ply_get_next_element(ply_file, nullptr);
     while (element) {
@@ -263,7 +265,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     if (state.name_to_attr_state_.count("x") != 0 &&
         state.name_to_attr_state_.count("y") != 0 &&
         state.name_to_attr_state_.count("z") != 0) {
-        core::TensorList points =
+        core::Tensor points =
                 ConcatColumns(state.name_to_attr_state_.at("x")->data_,
                               state.name_to_attr_state_.at("y")->data_,
                               state.name_to_attr_state_.at("z")->data_);
@@ -275,7 +277,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     if (state.name_to_attr_state_.count("nx") != 0 &&
         state.name_to_attr_state_.count("ny") != 0 &&
         state.name_to_attr_state_.count("nz") != 0) {
-        core::TensorList normals =
+        core::Tensor normals =
                 ConcatColumns(state.name_to_attr_state_.at("nx")->data_,
                               state.name_to_attr_state_.at("ny")->data_,
                               state.name_to_attr_state_.at("nz")->data_);
@@ -287,7 +289,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     if (state.name_to_attr_state_.count("red") != 0 &&
         state.name_to_attr_state_.count("green") != 0 &&
         state.name_to_attr_state_.count("blue") != 0) {
-        core::TensorList colors =
+        core::Tensor colors =
                 ConcatColumns(state.name_to_attr_state_.at("red")->data_,
                               state.name_to_attr_state_.at("green")->data_,
                               state.name_to_attr_state_.at("blue")->data_);
@@ -299,10 +301,8 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     // Add rest of the attributes.
     for (auto const &it : state.name_to_attr_state_) {
-        pointcloud.SetPointAttr(
-                it.second->name_,
-                core::TensorList::FromTensor(
-                        it.second->data_.Reshape({element_size, 1})));
+        pointcloud.SetPointAttr(it.second->name_,
+                                it.second->data_.Reshape({element_size, 1}));
     }
     ply_close(ply_file);
     reporter.Finish();
@@ -334,7 +334,7 @@ static e_ply_type GetPlyType(const core::Dtype &dtype) {
 
 template <typename T>
 static const T *GetValue(core::Tensor t_attr, int pos) {
-    return static_cast<const T *>(t_attr.GetDataPtr());
+    return t_attr.GetDataPtr<T>();
 }
 
 bool WritePointCloudToPLY(const std::string &filename,
@@ -345,17 +345,17 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    geometry::TensorListMap tl_map = pointcloud.GetPointAttr();
-    long num_points = static_cast<long>(pointcloud.GetPoints().GetSize());
+    geometry::TensorMap t_map = pointcloud.GetPointAttr();
+    long num_points = static_cast<long>(pointcloud.GetPoints().GetLength());
 
     // Make sure all the attributes have same size.
-    if (!tl_map.IsSizeSynchronized()) {
-        for (auto const &it : tl_map) {
-            if (it.second.GetSize() != num_points) {
+    if (!t_map.IsSizeSynchronized()) {
+        for (auto const &it : t_map) {
+            if (it.second.GetLength() != num_points) {
                 utility::LogWarning(
                         "Write PLY failed: Points ({}) and {} ({}) have "
                         "different lengths.",
-                        num_points, it.first, it.second.GetSize());
+                        num_points, it.first, it.second.GetLength());
                 return false;
             }
         }
@@ -364,14 +364,14 @@ bool WritePointCloudToPLY(const std::string &filename,
     p_ply ply_file =
             ply_create(filename.c_str(),
                        bool(params.write_ascii) ? PLY_ASCII : PLY_LITTLE_ENDIAN,
-                       NULL, 0, NULL);
+                       nullptr, 0, nullptr);
     if (!ply_file) {
         utility::LogWarning("Write PLY failed: unable to open file: {}.",
                             filename);
         return false;
     }
 
-    ply_add_comment(ply_file, "Created by CloudViewer");
+    ply_add_comment(ply_file, "Created by cloudViewer");
     ply_add_element(ply_file, "vertex", num_points);
 
     e_ply_type pointType = GetPlyType(pointcloud.GetPoints().GetDtype());
@@ -402,7 +402,7 @@ bool WritePointCloudToPLY(const std::string &filename,
     }
 
     e_ply_type attributeType;
-    for (auto const &it : tl_map) {
+    for (auto const &it : t_map) {
         if (it.first != "points" && it.first != "colors" &&
             it.first != "normals") {
             attributeType = GetPlyType(it.second.GetDtype());
@@ -449,7 +449,7 @@ bool WritePointCloudToPLY(const std::string &filename,
                     });
         }
 
-        for (auto const &it : tl_map) {
+        for (auto const &it : t_map) {
             if (it.first != "points" && it.first != "colors" &&
                 it.first != "normals") {
                 DISPATCH_DTYPE_TO_TEMPLATE(it.second.GetDtype(), [&]() {
@@ -469,7 +469,6 @@ bool WritePointCloudToPLY(const std::string &filename,
     ply_close(ply_file);
     return true;
 }
-
 
 }  // namespace io
 }  // namespace t

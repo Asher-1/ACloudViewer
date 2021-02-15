@@ -152,14 +152,14 @@ RegistrationResult RegistrationICP(
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
     if (max_correspondence_distance <= 0.0) {
-        CVLib::utility::LogError("Invalid max_correspondence_distance.");
+        cloudViewer::utility::LogError("Invalid max_correspondence_distance.");
     }
     if ((estimation.GetTransformationEstimationType() ==
                  TransformationEstimationType::PointToPlane ||
          estimation.GetTransformationEstimationType() ==
                  TransformationEstimationType::ColoredICP) &&
         (!source.hasNormals() || !target.hasNormals())) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "TransformationEstimationPointToPlane and "
                 "TransformationEstimationColoredICP "
                 "require pre-computed normal vectors.");
@@ -176,7 +176,7 @@ RegistrationResult RegistrationICP(
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, kdtree, max_correspondence_distance, transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        CVLib::utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
+        cloudViewer::utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
@@ -229,7 +229,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
             if (itr < exit_itr_local) {
                 for (int j = 0; j < ransac_n; j++) {
-                    ransac_corres[j] = corres[CVLib::utility::UniformRandInt(
+                    ransac_corres[j] = corres[cloudViewer::utility::UniformRandInt(
                             0, static_cast<int>(corres.size()) - 1)];
                 }
 
@@ -281,7 +281,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
             }
         }
     }
-    CVLib::utility::LogDebug(
+    cloudViewer::utility::LogDebug(
             "RANSAC exits at {:d}-th iteration: inlier ratio {:e}, "
             "RMSE {:e}",
             exit_itr, best_result.fitness_, best_result.inlier_rmse_);
@@ -353,13 +353,13 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 
         // Empirically mutual correspondence set should not be too small
         if (int(corres_mutual.size()) >= ransac_n * 3) {
-            CVLib::utility::LogDebug("{:d} correspondences remain after mutual filter",
+            cloudViewer::utility::LogDebug("{:d} correspondences remain after mutual filter",
                               corres_mutual.size());
             return RegistrationRANSACBasedOnCorrespondence(
                     source, target, corres_mutual, max_correspondence_distance,
                     estimation, ransac_n, checkers, criteria);
         }
-        CVLib::utility::LogDebug(
+        cloudViewer::utility::LogDebug(
                 "Too few correspondences after mutual filter, fall back to "
                 "original correspondences.");
     }

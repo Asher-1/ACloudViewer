@@ -81,13 +81,13 @@ public:
 	static bool SetQuadTexture(ccMesh* quadMesh, QImage image, QString imageFilename = QString());
 
 	//! Fits a plane primitive on a cloud
-	/** The cloud can be any CVLib::GenericIndexedCloudPersist-derived object,
+	/** The cloud can be any cloudViewer::GenericIndexedCloudPersist-derived object,
 		i.e. even a ccPolyline object for instance.
 		\param[in] cloud input cloud
 		\param[out] rms plane fitting rms (optional)
 		\return plane primitive (if successful)
 	**/
-	static ccPlane* Fit(CVLib::GenericIndexedCloudPersist * cloud, double* rms = 0);
+	static ccPlane* Fit(cloudViewer::GenericIndexedCloudPersist * cloud, double* rms = 0);
 
 	//! Returns the equation of the plane
 	/** Equation:

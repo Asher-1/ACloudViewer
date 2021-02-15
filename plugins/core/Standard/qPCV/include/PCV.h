@@ -18,7 +18,7 @@
 #ifndef MESH_ILLUMINATION_HEADER
 #define MESH_ILLUMINATION_HEADER
 
-//CVLib
+//cloudViewer
 #include <GenericCloud.h>
 #include <GenericMesh.h>
 #include <GenericIndexedMesh.h>
@@ -51,13 +51,13 @@ public:
 		\return number of 'light' directions actually used (or a value <0 if an error occurred)
 	**/
 	static int Launch(	unsigned numberOfRays,
-						CVLib::GenericCloud* vertices,
-						CVLib::GenericMesh* mesh = nullptr,
+						cloudViewer::GenericCloud* vertices,
+						cloudViewer::GenericMesh* mesh = nullptr,
 						bool meshIsClosed = false,
 						bool mode360 = true,
 						unsigned width = 1024,
 						unsigned height = 1024,
-						CVLib::GenericProgressCallback* progressCb = nullptr,
+						cloudViewer::GenericProgressCallback* progressCb = nullptr,
 						QString entityName = QString());
 
 	//! Simulates global illumination on a cloud (or a mesh) with OpenGL
@@ -73,12 +73,12 @@ public:
 		\return success
 	**/
 	static bool Launch(	std::vector<CCVector3>& rays,
-						CVLib::GenericCloud* vertices,
-						CVLib::GenericMesh* mesh = nullptr,
+						cloudViewer::GenericCloud* vertices,
+						cloudViewer::GenericMesh* mesh = nullptr,
 						bool meshIsClosed = false,
 						unsigned width = 1024,
 						unsigned height = 1024,
-						CVLib::GenericProgressCallback* progressCb = nullptr,
+						cloudViewer::GenericProgressCallback* progressCb = nullptr,
 						QString entityName = QString());
 
 	//! Generates a given number of rays

@@ -28,16 +28,17 @@
 
 #include <zmq.hpp>
 
-#include "ecvPointCloud.h"
 #include "ecvMesh.h"
+#include "ecvPointCloud.h"
+#include "visualization/rendering/Material.h" // must include first
 #include "io/rpc/MessageUtils.h"
 #include "io/rpc/Messages.h"
+#include "visualization/gui/Window.h"
 #include "visualization/gui/Application.h"
-#include "visualization/rendering/Material.h"
-#include "visualization/visualizer/GuiVisualizer.h"
+
 
 using namespace cloudViewer::io::rpc;
-using namespace CVLib::utility;
+using namespace cloudViewer::utility;
 
 namespace cloudViewer {
 namespace visualization {
@@ -46,9 +47,6 @@ std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
         const messages::Request& req,
         const messages::SetMeshData& msg,
         const MsgpackObject& obj) {
-    if (!scene_) {
-        LogError("scene is null");
-    }
 
     std::string errstr(":");
     if (!msg.data.CheckMessage(errstr)) {
@@ -333,11 +331,9 @@ void Receiver::SetGeometry(std::shared_ptr<ccHObject> geom,
                            const std::string& path,
                            int time,
                            const std::string& layer) {
-    std::shared_ptr<rendering::Open3DScene> scene = scene_;
     gui::Application::GetInstance().PostToMainThread(
-            gui_visualizer_, [geom, path, time, layer, scene]() {
-                (void)time;  // unused at the moment
-                scene->AddGeometry(path, geom, rendering::Material());
+            window_, [this, geom, path, time, layer]() {
+                on_geometry_(geom, path, time, layer);
             });
 }
 

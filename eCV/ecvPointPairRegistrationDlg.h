@@ -121,8 +121,8 @@ protected:
 	//! Enables (or not) buttons depending on the number of points in both lists
 	void onPointCountChanged();
 
-	//! Calls Horn registration (CVLib::HornRegistrationTools)
-	bool callHornRegistration(CVLib::PointProjectionTools::Transformation& trans, double& rms, bool autoUpdateTab);
+	//! Calls Horn registration (cloudViewer::HornRegistrationTools)
+	bool callHornRegistration(cloudViewer::PointProjectionTools::Transformation& trans, double& rms, bool autoUpdateTab);
 
 	//! Clears the RMS rows
 	void clearRMSColumns();

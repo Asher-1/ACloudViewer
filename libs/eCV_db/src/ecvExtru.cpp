@@ -21,7 +21,7 @@
 #include "ecvPointCloud.h"
 #include "ecvNormalVectors.h"
 
-//CVLib
+//cloudViewer
 #include <Delaunay2dMesh.h>
 
 //system
@@ -57,7 +57,7 @@ bool ccExtru::buildUp()
 	if (count < 3)
 		return false;
 
-	CVLib::Delaunay2dMesh mesh;
+	cloudViewer::Delaunay2dMesh mesh;
 
 	//DGM: we check that last vertex is different from the first one!
 	//(yes it happens ;)
@@ -67,7 +67,7 @@ bool ccExtru::buildUp()
 	char errorStr[1024];
 	if (!mesh.buildMesh(m_profile,count,errorStr))
 	{
-		CVLog::Warning(QString("[ccPlane::buildUp] Profile triangulation failed (CVLib said: '%1'").arg(errorStr));
+		CVLog::Warning(QString("[ccPlane::buildUp] Profile triangulation failed (cloudViewer said: '%1'").arg(errorStr));
 		return false;
 	}
 

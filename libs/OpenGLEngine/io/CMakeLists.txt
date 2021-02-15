@@ -24,7 +24,7 @@ add_library(io OBJECT
             ${IO_ALL_SOURCE_FILES}
             ${RPLY_SOURCE_FILES}
             ${LIBLZF_SOURCE_FILES})
-ShowAndAbortOnWarning(io)
+cloudViewer_show_and_abort_on_warning(io)
 cloudViewer_set_global_properties(io)
 cloudViewer_set_cloudViewer_lib_properties(io)
 cloudViewer_link_3rdparty_libraries(io)

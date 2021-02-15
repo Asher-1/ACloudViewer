@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -139,6 +139,11 @@ public:
 public:
     bool SetTensorData(const Tensor &dataset_points) override;
 
+    bool SetTensorData(const Tensor &dataset_points, double radius) override {
+        cloudViewer::utility::LogError(
+                "NanoFlannIndex::SetTensorData with radius not implemented.");
+    }
+
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                         int knn) const override;
 
@@ -150,9 +155,7 @@ public:
 
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
                                            float radius,
-                                           int max_knn) const override {
-        utility::LogError("NanoFlannIndex::SearchHybrid not implemented.");
-    }
+                                           int max_knn) const override;
 
 protected:
     // Tensor dataset_points_;

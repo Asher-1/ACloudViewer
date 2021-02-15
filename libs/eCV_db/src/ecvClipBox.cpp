@@ -51,7 +51,7 @@ void DrawUnitArrow(int ID, const CCVector3& start, const CCVector3& direction, P
 		if (ps > -1)
 		{
 			//we deduce angle from scalar prod
-            angle_deg = static_cast<PointCoordinateType>(CVLib::RadiansToDegrees( acos(ps) ));
+            angle_deg = static_cast<PointCoordinateType>(cloudViewer::RadiansToDegrees( acos(ps) ));
 
 			//we compute rotation axis with scalar prod
 			axis = Z.cross(direction);
@@ -63,7 +63,7 @@ void DrawUnitArrow(int ID, const CCVector3& start, const CCVector3& direction, P
 	else
 	{
 		//we deduce angle from scalar prod
-        angle_deg = static_cast<PointCoordinateType>(CVLib::RadiansToDegrees( acos(ps) ));
+        angle_deg = static_cast<PointCoordinateType>(cloudViewer::RadiansToDegrees( acos(ps) ));
 
 		//we compute rotation axis with scalar prod
 		axis = Z.cross(direction);
@@ -136,7 +136,7 @@ static void DrawUnitTorus(int ID, const CCVector3& center, const CCVector3& dire
 		if (ps > -1)
 		{
 			//we deduce angle from scalar prod
-            angle_deg = static_cast<PointCoordinateType>(CVLib::RadiansToDegrees( acos(ps) ));
+            angle_deg = static_cast<PointCoordinateType>(cloudViewer::RadiansToDegrees( acos(ps) ));
 
 			//we compute rotation axis with scalar prod
 			axis = Z.cross(direction);
@@ -148,7 +148,7 @@ static void DrawUnitTorus(int ID, const CCVector3& center, const CCVector3& dire
 	else
 	{
 		//we deduce angle from scalar prod
-        angle_deg = static_cast<PointCoordinateType>(CVLib::RadiansToDegrees( acos(ps) ));
+        angle_deg = static_cast<PointCoordinateType>(cloudViewer::RadiansToDegrees( acos(ps) ));
 
 		//we compute rotation axis with scalar prod
 		axis = Z.cross(direction);

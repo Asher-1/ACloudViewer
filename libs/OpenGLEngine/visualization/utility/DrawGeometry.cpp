@@ -43,7 +43,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-	using namespace CVLib;
+	using namespace cloudViewer;
 
 bool DrawGeometries(const std::vector<std::shared_ptr<const ccHObject>> &geometry_ptrs,
                     const std::string &window_name /* = "cloudViewer"*/,

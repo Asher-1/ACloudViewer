@@ -27,6 +27,8 @@ add_subdirectory(t/geometry)
 set_target_properties(tgeometry PROPERTIES FOLDER "Modules")
 add_subdirectory(t/io)
 set_target_properties(tio PROPERTIES FOLDER "Modules")
+add_subdirectory(t/pipelines)
+set_target_properties(tpipelines PROPERTIES FOLDER "Modules")
 add_subdirectory(io)
 set_target_properties(io PROPERTIES FOLDER "Modules")
 
@@ -60,7 +62,8 @@ ADD_SOURCE_GROUP(io)
 ADD_SOURCE_GROUP(tio)
 ADD_SOURCE_GROUP(ml)
 ADD_SOURCE_GROUP(pipelines)
-add_source_group(utility)
+ADD_SOURCE_GROUP(tpipelines)
+ADD_SOURCE_GROUP(utility)
 ADD_SOURCE_GROUP(visualization)
 
 # note: adding at least one real source file to any target that references
@@ -73,6 +76,7 @@ add_library(${PROJECT_NAME}
     $<TARGET_OBJECTS:tio>
     $<TARGET_OBJECTS:ml_contrib>
     $<TARGET_OBJECTS:pipelines>
+    $<TARGET_OBJECTS:tpipelines>
     $<TARGET_OBJECTS:utility>
     $<TARGET_OBJECTS:visualization>
     ${GUI_OBJECTS}
@@ -86,7 +90,7 @@ target_link_libraries(  ${PROJECT_NAME} PUBLIC
 # Qt
 #target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Core)
 
-ShowAndAbortOnWarning(${PROJECT_NAME})
+cloudViewer_show_and_abort_on_warning(${PROJECT_NAME})
 cloudViewer_set_global_properties(${PROJECT_NAME})
 cloudViewer_set_cloudViewer_lib_properties(${PROJECT_NAME})
 cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})

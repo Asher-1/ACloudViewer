@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -42,10 +42,10 @@ Tensor NonZero(const Tensor& src) {
 #ifdef BUILD_CUDA_MODULE
         return NonZeroCUDA(src);
 #else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+        cloudViewer::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        utility::LogError("NonZero: Unimplemented device");
+        cloudViewer::utility::LogError("NonZero: Unimplemented device");
     }
 }
 

@@ -73,7 +73,7 @@ struct OffsetCalculator {
                      const int64_t* const* strides)
         : dims_(dims) {
         if (dims_ > MAX_DIMS) {
-            utility::LogError("tensor has too many (>{}) dims_", MAX_DIMS);
+            cloudViewer::utility::LogError("tensor has too many (>{}) dims_", MAX_DIMS);
         }
 
         for (int i = 0; i < MAX_DIMS; ++i) {
@@ -132,7 +132,7 @@ struct TensorRef {
 
     TensorRef(const Tensor& t) {
         if (t.NumDims() > MAX_DIMS) {
-            utility::LogError("Tenor has too many dimensions {} > {}.",
+            cloudViewer::utility::LogError("Tenor has too many dimensions {} > {}.",
                               t.NumDims(), MAX_DIMS);
         }
         data_ptr_ = const_cast<void*>(t.GetDataPtr());
@@ -147,7 +147,7 @@ struct TensorRef {
     void Permute(const SizeVector& dims) {
         // Check dims are permuntation of [0, 1, 2, ..., n-1]
         if (static_cast<int64_t>(dims.size()) != ndims_) {
-            utility::LogError("Number of dimensions mismatch {} != {}.",
+            cloudViewer::utility::LogError("Number of dimensions mismatch {} != {}.",
                               dims.size(), ndims_);
         }
         std::vector<bool> seen_dims(ndims_, false);
@@ -156,7 +156,7 @@ struct TensorRef {
         }
         if (!std::all_of(seen_dims.begin(), seen_dims.end(),
                          [](bool seen) { return seen; })) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "Permute dims must be a permuntation from 0 to {}.",
                     dims.size() - 1);
         }
@@ -340,14 +340,14 @@ public:
     /// Returns input TensorRef.
     TensorRef& GetInput(int64_t i) {
         if (i >= num_inputs_ || i < 0) {
-            utility::LogError("0 <= i < {} required, however, i = {}.",
+            cloudViewer::utility::LogError("0 <= i < {} required, however, i = {}.",
                               num_inputs_, i);
         }
         return inputs_[i];
     }
     const TensorRef& GetInput(int64_t i) const {
         if (i >= num_inputs_ || i < 0) {
-            utility::LogError("0 <= i < {} required, however, i = {}.",
+            cloudViewer::utility::LogError("0 <= i < {} required, however, i = {}.",
                               num_inputs_, i);
         }
         return inputs_[i];
@@ -356,14 +356,14 @@ public:
     /// Returns output TensorRef.
     TensorRef& GetOutput(int64_t i) {
         if (i >= num_outputs_ || i < 0) {
-            utility::LogError("0 <= i < {} required, however, i = {}.",
+            cloudViewer::utility::LogError("0 <= i < {} required, however, i = {}.",
                               num_outputs_, i);
         }
         return outputs_[i];
     }
     const TensorRef& GetOutput(int64_t i) const {
         if (i >= num_outputs_ || i < 0) {
-            utility::LogError("0 <= i < {} required, however, i = {}.",
+            cloudViewer::utility::LogError("0 <= i < {} required, however, i = {}.",
                               num_outputs_, i);
         }
         return outputs_[i];
@@ -373,14 +373,14 @@ public:
     /// Equivalent to GetOutput(0).
     TensorRef& GetOutput() {
         if (num_outputs_ > 1) {
-            utility::LogError("num_outputs_ == {} > 0, use GetOutput(i)",
+            cloudViewer::utility::LogError("num_outputs_ == {} > 0, use GetOutput(i)",
                               num_outputs_);
         }
         return GetOutput(0);
     }
     const TensorRef& GetOutput() const {
         if (num_outputs_ > 1) {
-            utility::LogError("num_outputs_ == {} > 0, use GetOutput(i)",
+            cloudViewer::utility::LogError("num_outputs_ == {} > 0, use GetOutput(i)",
                               num_outputs_);
         }
         return GetOutput(0);

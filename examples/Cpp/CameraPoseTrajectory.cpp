@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -32,11 +32,11 @@
 
 int main(int argc, char *argv[]) {
     using namespace cloudViewer;
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     if (argc != 3) {
-        CVLib::utility::LogInfo("Usage :");
-        CVLib::utility::LogInfo(">    CameraPoseTrajectory trajectory_file pcds_dir");
+        cloudViewer::utility::LogInfo("Usage :");
+        cloudViewer::utility::LogInfo(">    CameraPoseTrajectory trajectory_file pcds_dir");
         return 1;
     }
     const int NUM_OF_COLOR_PALETTE = 5;
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {
         std::string buffer =
                 fmt::format("{}cloud_bin_{:d}.pcd", argv[2], (int)i);
-        if (CVLib::utility::filesystem::FileExists(buffer.c_str())) {
+        if (cloudViewer::utility::filesystem::FileExists(buffer.c_str())) {
             auto pcd = io::CreatePointCloudFromFile(buffer.c_str());
             pcd->transform(trajectory.parameters_[i].extrinsic_);
             if ((int)i < NUM_OF_COLOR_PALETTE) {

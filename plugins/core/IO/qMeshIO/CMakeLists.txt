@@ -46,5 +46,6 @@ if ( PLUGIN_IO_QMESH )
 		message( WARNING "The AMD64 option may cause link errors. If you run into link errors regarding 'inflate_fast', try turning this off." )
 	endif()
 
+	target_link_libraries( ${PROJECT_NAME} ${ZLIB_LIBRARIES} )
 	target_link_libraries( ${PROJECT_NAME} ${ASSIMP_LIBRARIES} )
 endif()

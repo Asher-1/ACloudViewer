@@ -17,7 +17,7 @@
  */
 // CloudViewer alterations are:
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -90,7 +90,7 @@ using namespace utils;
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
-    using namespace CVLib;
+    using namespace cloudViewer;
 static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
     std::vector<char> bytes;
     std::string error_str;
@@ -195,7 +195,7 @@ ImguiFilamentBridge::ImguiFilamentBridge(
 
     auto native_view = impl_->view_->GetNativeView();
     native_view->setPostProcessingEnabled(false);
-    native_view->setShadowsEnabled(false);
+    native_view->setShadowingEnabled(false);
 
     EntityManager& em = utils::EntityManager::get();
     impl_->renderable_ = em.create();

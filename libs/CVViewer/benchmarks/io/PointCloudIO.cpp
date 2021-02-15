@@ -29,7 +29,7 @@
 
 #include <Console.h>
 
-#include <PointCloudIO.h>
+#include "io/PointCloudIO.h"
 #include <ecvPointCloud.h>
 
 namespace cloudViewer {
@@ -43,7 +43,7 @@ namespace {
 template <class T>
 double AverageDistance(const std::vector<T> &a, const std::vector<T> &b) {
     if (a.size() != b.size()) {
-        CVLib::utility::LogError("vectors different size {} {}", a.size(), b.size());
+        cloudViewer::utility::LogError("vectors different size {} {}", a.size(), b.size());
     }
     if (a.size() == 0) {
         return 0.;
@@ -100,7 +100,7 @@ class TestPCGrid0 {
 public:
     void Setup(int size) {
         if (size_ == size) return;
-        CVLib::utility::LogInfo("setup PCGrid size={}", size);
+        cloudViewer::utility::LogInfo("setup PCGrid size={}", size);
         pc_.clear();
 
         size_ = size;
@@ -127,16 +127,16 @@ public:
         if (!WritePointCloud(args.filename, pc,
                              {bool(args.write_ascii), bool(args.compressed),
                               print_progress})) {
-            CVLib::utility::LogError("Failed to write to {}", args.filename);
+            cloudViewer::utility::LogError("Failed to write to {}", args.filename);
         }
         ccPointCloud pc2;
         if (!ReadPointCloud(args.filename, pc2,
                             {"auto", false, false, print_progress})) {
-            CVLib::utility::LogError("Failed to read from {}", args.filename);
+            cloudViewer::utility::LogError("Failed to read from {}", args.filename);
         }
         auto CheckLE = [](double a, double b) {
             if (a <= b) return;
-            CVLib::utility::LogError("Error too high: {} {}", a, b);
+            cloudViewer::utility::LogError("Error too high: {} {}", a, b);
         };
 
         const double pointsMaxError =

@@ -26,7 +26,8 @@
 #include "Tools/ecvTools.h"
 #include "VTKExtensions/Widgets/QVTKWidgetCustom.h"
 
-#include "CVMath.h"
+// CV_CORE_LIB
+#include <CVMath.h>
 
 // ECV_DB_LIB
 #include <ecvDisplayTools.h>
@@ -305,8 +306,8 @@ public:
 	}
 
 	// set and get view angle in y direction or zoom factor in perspective mode
-    inline virtual double getCameraFovy(int viewPort = 0) override { return CVLib::RadiansToDegrees(m_visualizer3D->getCamera(viewPort).fovy); }
-    inline virtual void setCameraFovy(double fovy, int viewport = 0) override { m_visualizer3D->setCameraFieldOfView(CVLib::RadiansToDegrees(fovy), viewport); }
+    inline virtual double getCameraFovy(int viewPort = 0) override { return cloudViewer::RadiansToDegrees(m_visualizer3D->getCamera(viewPort).fovy); }
+    inline virtual void setCameraFovy(double fovy, int viewport = 0) override { m_visualizer3D->setCameraFieldOfView(cloudViewer::RadiansToDegrees(fovy), viewport); }
 
 	// get zoom factor in parallel mode
 	virtual double getParallelScale(int viewPort = 0) override;

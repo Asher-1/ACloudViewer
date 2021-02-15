@@ -44,7 +44,7 @@ public:
     using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, CVLib::utility::Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             std::vector<double> &w,
             const geometry::RGBDImage &source,

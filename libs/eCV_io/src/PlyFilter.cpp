@@ -47,7 +47,7 @@
 #include <unistd.h>
 #endif
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 
 PlyFilter::PlyFilter()
@@ -435,7 +435,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity, QString filename, e_ply_s
 		mesh->placeIteratorAtBeginning();
 		for (unsigned i = 0; i < triNum; ++i)
 		{
-			const CVLib::VerticesIndexes* tsi = mesh->getNextTriangleVertIndexes(); //DGM: getNextTriangleVertIndexes is faster for mesh groups!
+			const cloudViewer::VerticesIndexes* tsi = mesh->getNextTriangleVertIndexes(); //DGM: getNextTriangleVertIndexes is faster for mesh groups!
 			ply_write(ply, double(3));
 			assert(tsi->i1 < vertCount);
 			assert(tsi->i2 < vertCount);
@@ -671,7 +671,7 @@ static int scalar_cb(p_ply_argument argument)
 		//skip the next pieces of data
 		return 1;
 	}
-	CVLib::ScalarField* sf = 0;
+	cloudViewer::ScalarField* sf = 0;
 	ply_get_argument_user_data(argument, (void**)(&sf), nullptr);
 
 	p_ply_element element;
@@ -1570,7 +1570,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename, const QString& inputT
 				int sfIdx = cloud->addScalarField(qPrintable(qPropName));
 				if (sfIdx >= 0)
 				{
-					CVLib::ScalarField* sf = cloud->getScalarField(sfIdx);
+					cloudViewer::ScalarField* sf = cloud->getScalarField(sfIdx);
 					assert(sf);
 					if (sf->resizeSafe(numberOfScalars))
 					{
@@ -1774,7 +1774,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename, const QString& inputT
 	{
 		for (unsigned i = 0; i < cloud->getNumberOfScalarFields(); ++i)
 		{
-			CVLib::ScalarField* sf = cloud->getScalarField(i);
+			cloudViewer::ScalarField* sf = cloud->getScalarField(i);
 			assert(sf);
 			sf->computeMinAndMax();
 			if (i == 0)
@@ -1800,7 +1800,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename, const QString& inputT
 		unsigned minVertIndex = numberOfPoints, maxVertIndex = 0;
 		for (unsigned i = 0; i < s_triCount; ++i)
 		{
-			const CVLib::VerticesIndexes* tri = mesh->getTriangleVertIndexes(i);
+			const cloudViewer::VerticesIndexes* tri = mesh->getTriangleVertIndexes(i);
 			if (tri->i1 < minVertIndex)
 				minVertIndex = tri->i1;
 			else if (tri->i1 > maxVertIndex)
@@ -1822,7 +1822,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename, const QString& inputT
 				CVLog::Warning("[PLY] Vertex indexes seem to be shifted (+1)! We will try to 'unshift' indices (otherwise file is corrupted...)");
 				for (unsigned i = 0; i < s_triCount; ++i)
 				{
-					CVLib::VerticesIndexes* tri = mesh->getTriangleVertIndexes(i);
+					cloudViewer::VerticesIndexes* tri = mesh->getTriangleVertIndexes(i);
 					--tri->i1;
 					--tri->i2;
 					--tri->i3;

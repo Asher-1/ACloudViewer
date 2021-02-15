@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -121,7 +121,7 @@ bool KDTreeFlann::SetGeometry(const ccHObject &geometry, bool use_eigen/* = true
     case CV_TYPES::IMAGE:
 	case CV_TYPES::HIERARCHY_OBJECT:
     default:
-        CVLib::utility::LogWarning("[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
+        cloudViewer::utility::LogWarning("[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
         return false;
     }
 }
@@ -178,7 +178,7 @@ int KDTreeFlann::Query(const std::vector<T> &queries,
 
 	if (flag < 0)
 	{
-		CVLib::utility::LogWarning("[KDTreeFlann::Query] some queries failed!");
+		cloudViewer::utility::LogWarning("[KDTreeFlann::Query] some queries failed!");
 	}
 
 	return flag;
@@ -341,7 +341,7 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
     dimension_ = data.rows();
     dataset_size_ = data.cols();
     if (dimension_ == 0 || dataset_size_ == 0) {
-		CVLib::utility::LogWarning("[KDTreeFlann::SetRawData] Failed due to no data.");
+		cloudViewer::utility::LogWarning("[KDTreeFlann::SetRawData] Failed due to no data.");
         return false;
     }
     data_.resize(dataset_size_ * dimension_);
@@ -369,7 +369,7 @@ bool KDTreeFlann::SetRawData(const std::vector<const CCVector3 *> &data)
     dimension_ = 3;
     dataset_size_ = data.size();
     if (dimension_ == 0 || dataset_size_ == 0) {
-        CVLib::utility::LogWarning("[KDTreeFlann::SetRawData] Failed due to no data.");
+        cloudViewer::utility::LogWarning("[KDTreeFlann::SetRawData] Failed due to no data.");
         return false;
     }
     dataf_.resize(dataset_size_ * dimension_);

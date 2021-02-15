@@ -1,5 +1,9 @@
 #include "cvGenericFilter.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 // LOCAL
 #include "PclUtils/vtk2cc.h"
 #include "PclUtils/PCLVis.h"

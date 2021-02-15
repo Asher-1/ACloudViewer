@@ -66,20 +66,22 @@ def main(config, keys):
     if len(color_files) != len(depth_files):
         raise ValueError(
             "The number of color images {} must equal to the number of depth images {}."
-            .format(len(color_files), len(depth_files)))
+                .format(len(color_files), len(depth_files)))
 
     camera = cv3d.io.read_pinhole_camera_trajectory(
         os.path.join(path, config["template_global_traj"]))
     if len(color_files) != len(camera.parameters):
         raise ValueError(
             "The number of color images {} must equal to the number of camera parameters {}."
-            .format(len(color_files), len(depth_files)))
+                .format(len(color_files), len(depth_files)))
 
-    color_files, depth_files = collect_keyframe_rgbd(color_files, depth_files, keys)
+    color_files, depth_files = collect_keyframe_rgbd(color_files, depth_files,
+                                                     keys)
 
     # Read camera poses
     if config["path_intrinsic"]:
-        intrinsic = cv3d.io.read_pinhole_camera_intrinsic(config["path_intrinsic"])
+        intrinsic = cv3d.io.read_pinhole_camera_intrinsic(
+            config["path_intrinsic"])
     else:
         intrinsic = cv3d.camera.PinholeCameraIntrinsic(
             cv3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
@@ -96,31 +98,36 @@ def main(config, keys):
         depth = cv3d.io.read_image(os.path.join(depth_files[i]))
         color = cv3d.io.read_image(os.path.join(color_files[i]))
         rgbd_image = cv3d.geometry.RGBDImage.create_from_color_and_depth(
-            color, depth, convert_rgb_to_intensity=False)
+            color,
+            depth,
+            depth_scale=config["depth_scale"],
+            depth_trunc=config["max_depth"],
+            convert_rgb_to_intensity=False)
         rgbd_images.append(rgbd_image)
 
     # Before full optimization, let's just visualize texture map
     # with given geometry, RGBD images, and camera poses.
-    option = cv3d.pipelines.color_map.ColorMapOptimizationOption()
-    option.maximum_iteration = 0
-    cv3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images, camera, option)
-    cv3d.visualization.draw_geometries([mesh])
+    mesh_optimized = cv3d.pipelines.color_map.run_rigid_optimizer(
+        mesh, rgbd_images, camera,
+        cv3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=0))
+    cv3d.visualization.draw_geometries([mesh_optimized])
     cv3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
-                     "color_map_before_optimization.ply"), mesh)
+                     "color_map_before_optimization.ply"), mesh_optimized)
 
     # Optimize texture and save the mesh as texture_mapped.ply
     # This is implementation of following paper
     # Q.-Y. Zhou and V. Koltun,
     # Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
     # SIGGRAPH 2014
-    option.maximum_iteration = 300
-    option.non_rigid_camera_coordinate = True
-    cv3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images, camera, option)
-    cv3d.visualization.draw_geometries([mesh])
+    mesh_optimized = cv3d.pipelines.color_map.run_non_rigid_optimizer(
+        mesh, rgbd_images, camera,
+        cv3d.pipelines.color_map.NonRigidOptimizerOption(
+            maximum_iteration=300, maximum_allowable_depth=config["max_depth"]))
+    cv3d.visualization.draw_geometries([mesh_optimized])
     cv3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
-                     "color_map_after_optimization.ply"), mesh)
+                     "color_map_after_optimization.ply"), mesh_optimized)
 
 
 if __name__ == "__main__":
@@ -130,15 +137,16 @@ if __name__ == "__main__":
                         type=str,
                         required=True,
                         help='path to the config for the dataset '
-                        'preprocessed by the Reconstruction System')
-    parser.add_argument('--keys',
-                        type=str,
-                        help='txt file that contains the indices of the keyframes')
+                             'preprocessed by the Reconstruction System')
+    parser.add_argument(
+        '--keys',
+        type=str,
+        help='txt file that contains the indices of the keyframes')
     parser.add_argument('--sample_rate',
                         type=int,
                         default=10,
                         help='sampling rate that evenly sample key frames '
-                        'if key.txt is not provided')
+                             'if key.txt is not provided')
     args = parser.parse_args()
 
     cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)

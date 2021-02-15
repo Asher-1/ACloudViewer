@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -52,8 +52,8 @@ protected:
                     camera.parameters_[0]);
             io::WriteIJsonConvertible("camera.json", camera);
         } else if (key == GLFW_KEY_L) {
-            if (CVLib::utility::filesystem::FileExists("depth.png") &&
-                CVLib::utility::filesystem::FileExists("camera.json")) {
+            if (cloudViewer::utility::filesystem::FileExists("depth.png") &&
+                cloudViewer::utility::filesystem::FileExists("camera.json")) {
                 camera::PinholeCameraTrajectory camera;
                 io::ReadIJsonConvertible("camera.json", camera);
                 auto image_ptr = io::CreateImageFromFile("depth.png");
@@ -64,13 +64,13 @@ protected:
                 AddGeometry(pointcloud_ptr);
             }
         } else if (key == GLFW_KEY_K) {
-            if (CVLib::utility::filesystem::FileExists("depth.ply")) {
+            if (cloudViewer::utility::filesystem::FileExists("depth.ply")) {
                 auto pointcloud_ptr = io::CreatePointCloudFromFile("depth.ply");
                 AddGeometry(pointcloud_ptr);
             }
         } else if (key == GLFW_KEY_P) {
-            if (CVLib::utility::filesystem::FileExists("depth.png") &&
-                CVLib::utility::filesystem::FileExists("camera.json")) {
+            if (cloudViewer::utility::filesystem::FileExists("depth.png") &&
+                cloudViewer::utility::filesystem::FileExists("camera.json")) {
                 camera::PinholeCameraTrajectory camera;
                 io::ReadIJsonConvertible("camera.json", camera);
                 view_control_ptr_->ConvertFromPinholeCameraParameters(
@@ -85,25 +85,25 @@ protected:
 };
 
 int main(int argc, char *argv[]) {
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
     if (argc < 2) {
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("    > DepthCapture  [filename]");
+        cloudViewer::utility::LogInfo("Usage:");
+        cloudViewer::utility::LogInfo("    > DepthCapture  [filename]");
         return 1;
     }
 
     auto mesh_ptr = io::CreateMeshFromFile(argv[1]);
     mesh_ptr->computeVertexNormals();
-    CVLib::utility::LogInfo("Press S to capture a depth image.");
+    cloudViewer::utility::LogInfo("Press S to capture a depth image.");
     VisualizerWithDepthCapture visualizer;
     visualizer.CreateVisualizerWindow("Depth Capture", 640, 480, 200, 200);
     visualizer.AddGeometry(mesh_ptr);
     visualizer.Run();
     visualizer.DestroyVisualizerWindow();
 
-    if (!CVLib::utility::filesystem::FileExists("depth.png") ||
-        !CVLib::utility::filesystem::FileExists("camera.json")) {
-        CVLib::utility::LogInfo("Depth has not been captured.");
+    if (!cloudViewer::utility::filesystem::FileExists("depth.png") ||
+        !cloudViewer::utility::filesystem::FileExists("camera.json")) {
+        cloudViewer::utility::LogInfo("Depth has not been captured.");
         return 1;
     }
 
@@ -121,15 +121,15 @@ int main(int argc, char *argv[]) {
     visualizer1.Run();
     visualizer1.DestroyVisualizerWindow();
 
-    CVLib::utility::LogInfo("Press L to validate the depth image.");
-    CVLib::utility::LogInfo("Press P to load the capturing camera pose.");
+    cloudViewer::utility::LogInfo("Press L to validate the depth image.");
+    cloudViewer::utility::LogInfo("Press P to load the capturing camera pose.");
     VisualizerWithDepthCapture visualizer2;
     visualizer2.CreateVisualizerWindow("Depth Validation", 640, 480, 200, 200);
     visualizer2.AddGeometry(mesh_ptr);
     visualizer2.Run();
     visualizer2.DestroyVisualizerWindow();
 
-    CVLib::utility::LogInfo("End of the test.");
+    cloudViewer::utility::LogInfo("End of the test.");
 
     return 0;
 }

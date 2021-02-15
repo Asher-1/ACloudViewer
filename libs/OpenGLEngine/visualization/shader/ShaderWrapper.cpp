@@ -33,7 +33,7 @@ namespace cloudViewer {
 namespace visualization {
 
 namespace glsl {
-using namespace CVLib;
+using namespace cloudViewer;
 
 bool ShaderWrapper::Render(const ccHObject &geometry,
                            const RenderOption &option,

@@ -145,7 +145,7 @@ int NurbsCurveFitting::compute()
 	PointCloudT::Ptr point_mean(new PointCloudT);
 	std::vector<double> x_mean, y_mean, z_mean;
 	double a, b, c;
-	// 0.5表示x方向的步长，-1(小于0就行)表示y方向不分段，如需分段，则设置相应步长
+	// 0.5 represent step length, -1
 	fit.grid_mean_xyz(0.5, -1, x_mean, y_mean, z_mean, point_mean);
 	fit.polynomial3D_fitting(x_mean, y_mean, z_mean, a, b, c);
 	fit.getPolynomial3D(outCurve, 0.01);
@@ -179,7 +179,7 @@ int NurbsCurveFitting::compute()
 		N = pPlane->getNormal();
 		delete pPlane;
 		pPlane = nullptr;
-		//C = *CVLib::Neighbourhood(cloud).getGravityCenter();
+		//C = *cloudViewer::Neighbourhood(cloud).getGravityCenter();
 		makeZPosMatrix = ccGLMatrix::FromToRotation(N, CCVector3(0, 0, PC_ONE));
 		//CCVector3 Gt = C;
 		//makeZPosMatrix.applyRotation(Gt);

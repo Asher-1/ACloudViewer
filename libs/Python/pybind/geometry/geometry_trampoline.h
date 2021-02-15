@@ -98,7 +98,7 @@ public:
 };
 
 // MESH
-template <class GenericMeshBase = CVLib::GenericMesh>
+template <class GenericMeshBase = cloudViewer::GenericMesh>
 class PyGenericMesh : public GenericMeshBase {
 public:
 	using GenericMeshBase::GenericMeshBase;
@@ -106,7 +106,7 @@ public:
 	unsigned size() const override {
 		PYBIND11_OVERLOAD_PURE(unsigned, GenericMeshBase, );
 	}
-	void forEach(std::function<void(CVLib::GenericTriangle &)> action) override {
+	void forEach(std::function<void(cloudViewer::GenericTriangle &)> action) override {
 		PYBIND11_OVERLOAD_PURE(void, GenericMeshBase, action);
 	}
 	void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) override {
@@ -115,21 +115,21 @@ public:
 	void placeIteratorAtBeginning() override {
 		PYBIND11_OVERLOAD_PURE(void, GenericMeshBase, );
 	}
-	CVLib::GenericTriangle* _getNextTriangle() override {
-		PYBIND11_OVERLOAD_PURE(CVLib::GenericTriangle*, GenericMeshBase, );
+	cloudViewer::GenericTriangle* _getNextTriangle() override {
+		PYBIND11_OVERLOAD_PURE(cloudViewer::GenericTriangle*, GenericMeshBase, );
 	}
 };
 
-template <class GenericIndexedMeshBase = CVLib::GenericIndexedMesh>
+template <class GenericIndexedMeshBase = cloudViewer::GenericIndexedMesh>
 class PyGenericIndexedMesh : public PyGenericMesh<GenericIndexedMeshBase> {
 public:
 	using PyGenericMesh<GenericIndexedMeshBase>::PyGenericMesh;
 
-	CVLib::GenericTriangle* _getTriangle(unsigned triangleIndex) override {
-		PYBIND11_OVERLOAD_PURE(CVLib::GenericTriangle*, GenericIndexedMeshBase, triangleIndex);
+	cloudViewer::GenericTriangle* _getTriangle(unsigned triangleIndex) override {
+		PYBIND11_OVERLOAD_PURE(cloudViewer::GenericTriangle*, GenericIndexedMeshBase, triangleIndex);
 	}
-	CVLib::VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) override {
-		PYBIND11_OVERLOAD_PURE(CVLib::VerticesIndexes*, GenericIndexedMeshBase, triangleIndex);
+	cloudViewer::VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) override {
+		PYBIND11_OVERLOAD_PURE(cloudViewer::VerticesIndexes*, GenericIndexedMeshBase, triangleIndex);
 	}
 	void getTriangleVertices(unsigned triangleIndex, CCVector3& A, CCVector3& B, CCVector3& C) const override {
 		PYBIND11_OVERLOAD_PURE(void, GenericIndexedMeshBase, triangleIndex, A, B, C);
@@ -137,8 +137,8 @@ public:
 	void getTriangleVertices(unsigned triangleIndex, double A[3], double B[3], double C[3]) const override {
 		PYBIND11_OVERLOAD_PURE(void, GenericIndexedMeshBase, triangleIndex, A, B, C);
 	}
-	CVLib::VerticesIndexes* getNextTriangleVertIndexes() override {
-		PYBIND11_OVERLOAD_PURE(CVLib::VerticesIndexes*, GenericIndexedMeshBase, );
+	cloudViewer::VerticesIndexes* getNextTriangleVertIndexes() override {
+		PYBIND11_OVERLOAD_PURE(cloudViewer::VerticesIndexes*, GenericIndexedMeshBase, );
 	}
 };
 
@@ -240,13 +240,13 @@ public:
 	}
 };
 
-template <class AxisBBoxBase = CVLib::BoundingBox>
+template <class AxisBBoxBase = cloudViewer::BoundingBox>
 class PyAxisBBoxBase : public AxisBBoxBase {
 public:
 	using AxisBBoxBase::AxisBBoxBase;
 };
 
-template <class OrientedBBoxBase = CVLib::OrientedBoundingBox>
+template <class OrientedBBoxBase = cloudViewer::OrientedBoundingBox>
 class PyOrientedBBoxBase : public OrientedBBoxBase {
 public:
 	using OrientedBBoxBase::OrientedBBoxBase;

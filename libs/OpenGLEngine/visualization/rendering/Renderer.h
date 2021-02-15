@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <ecvMesh.h>
 #include "visualization/rendering/MaterialModifier.h"
 #include "visualization/rendering/RendererHandle.h"
 
@@ -104,6 +103,12 @@ public:
     virtual std::shared_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
 
     void RenderToImage(
+            View* view,
+            Scene* scene,
+            std::function<void(std::shared_ptr<geometry::Image>)> cb);
+
+    // Returns a float image ranging from 0 (near plane) to 1 (far plane)
+    void RenderToDepthImage(
             View* view,
             Scene* scene,
             std::function<void(std::shared_ptr<geometry::Image>)> cb);

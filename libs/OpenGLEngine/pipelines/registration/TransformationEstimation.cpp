@@ -97,13 +97,13 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
     Eigen::Vector6d JTr;
     double r2;
     std::tie(JTJ, JTr, r2) =
-        CVLib::utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+        cloudViewer::utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
             compute_jacobian_and_residual, (int)corres.size());
 
     bool is_success;
     Eigen::Matrix4d extrinsic;
     std::tie(is_success, extrinsic) =
-        CVLib::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+        cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
 
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 };

@@ -65,7 +65,7 @@ static const std::unordered_map<
 }  // unnamed namespace
 
 namespace io {
-using namespace CVLib;
+using namespace cloudViewer;
 
 std::shared_ptr<pipelines::registration::PoseGraph> CreatePoseGraphFromFile(
         const std::string &filename) {

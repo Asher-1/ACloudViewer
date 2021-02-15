@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLib                                    #
+//#                               cloudViewer                                    #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -38,7 +38,7 @@
 
 #include <Jacobi.h>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 #ifdef USE_EIGEN
 Eigen::MatrixXd ToEigen(const SquareMatrixd& M)
@@ -170,12 +170,12 @@ void Neighbourhood::computeGravityCenter()
 		});
 }
 
-CVLib::SquareMatrixd Neighbourhood::computeCovarianceMatrix()
+cloudViewer::SquareMatrixd Neighbourhood::computeCovarianceMatrix()
 {
 	assert(m_associatedCloud);
 	unsigned count = (m_associatedCloud ? m_associatedCloud->size() : 0);
 	if (!count)
-		return CVLib::SquareMatrixd();
+		return cloudViewer::SquareMatrixd();
 
 	//we get centroid
 	const CCVector3* G = getGravityCenter();
@@ -202,7 +202,7 @@ CVLib::SquareMatrixd Neighbourhood::computeCovarianceMatrix()
 	}
 
 	//symmetry
-	CVLib::SquareMatrixd covMat(3);
+	cloudViewer::SquareMatrixd covMat(3);
 	covMat.m_values[0][0] = mXX / count;
 	covMat.m_values[1][1] = mYY / count;
 	covMat.m_values[2][2] = mZZ / count;
@@ -435,7 +435,7 @@ bool Neighbourhood::computeQuadric()
 	//conjugate gradient initialization
 	//we solve tA.A.X=tA.b
 	ConjugateGradient<6, double> cg;
-	const CVLib::SquareMatrixd& tAA = cg.A();
+	const cloudViewer::SquareMatrixd& tAA = cg.A();
 	double* tAb = cg.b();
 
 	//compute tA.A and tA.b
@@ -651,7 +651,7 @@ bool Neighbourhood::compute3DQuadric(double quadricEquation[10])
 		quadricEquation[i] = minEigenVec[i];
 	}
 #else
-	CVLib::SquareMatrixd eigVectors;
+	cloudViewer::SquareMatrixd eigVectors;
 	std::vector<double> eigValues;
 	if (!Jacobi<double>::ComputeEigenValuesAndVectors(D, eigVectors, eigValues, true))
 	{

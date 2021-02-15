@@ -111,16 +111,16 @@ unsigned ccAlignDlg::getMaxNumberOfCandidates()
 	return nbMaxCandidates->value();
 }
 
-CVLib::ReferenceCloud *ccAlignDlg::getSampledModel()
+cloudViewer::ReferenceCloud *ccAlignDlg::getSampledModel()
 {
-	CVLib::ReferenceCloud* sampledCloud = 0;
+	cloudViewer::ReferenceCloud* sampledCloud = 0;
 
 	switch (getSamplingMethod())
 	{
 	case SPACE:
 		{
-			CVLib::CloudSamplingTools::SFModulationParams modParams(false);
-			sampledCloud = CVLib::CloudSamplingTools::resampleCloudSpatially(	modelObject,
+			cloudViewer::CloudSamplingTools::SFModulationParams modParams(false);
+			sampledCloud = cloudViewer::CloudSamplingTools::resampleCloudSpatially(	modelObject,
 																				static_cast<PointCoordinateType>(modelSamplingRate->value()),
 																				modParams);
 		}
@@ -128,9 +128,9 @@ CVLib::ReferenceCloud *ccAlignDlg::getSampledModel()
 	case OCTREE:
 		if (modelObject->getOctree())
 		{
-			sampledCloud = CVLib::CloudSamplingTools::subsampleCloudWithOctreeAtLevel(	modelObject,
+			sampledCloud = cloudViewer::CloudSamplingTools::subsampleCloudWithOctreeAtLevel(	modelObject,
 																						static_cast<unsigned char>(modelSamplingRate->value()),
-																						CVLib::CloudSamplingTools::NEAREST_POINT_TO_CELL_CENTER,
+																						cloudViewer::CloudSamplingTools::NEAREST_POINT_TO_CELL_CENTER,
 																						nullptr,
 																						modelObject->getOctree().data());
 		}
@@ -141,13 +141,13 @@ CVLib::ReferenceCloud *ccAlignDlg::getSampledModel()
 		break;
 	case RANDOM:
 		{
-			sampledCloud = CVLib::CloudSamplingTools::subsampleCloudRandomly(	modelObject,
+			sampledCloud = cloudViewer::CloudSamplingTools::subsampleCloudRandomly(	modelObject,
 																				static_cast<unsigned>(modelSamplingRate->value()));
 		}
 		break;
 	default:
 		{
-			sampledCloud = new CVLib::ReferenceCloud(modelObject);
+			sampledCloud = new cloudViewer::ReferenceCloud(modelObject);
 			if (!sampledCloud->addPointIndex(0, modelObject->size()))
 			{
 				delete sampledCloud;
@@ -161,24 +161,24 @@ CVLib::ReferenceCloud *ccAlignDlg::getSampledModel()
 	return sampledCloud;
 }
 
-CVLib::ReferenceCloud *ccAlignDlg::getSampledData()
+cloudViewer::ReferenceCloud *ccAlignDlg::getSampledData()
 {
-	CVLib::ReferenceCloud* sampledCloud = 0;
+	cloudViewer::ReferenceCloud* sampledCloud = 0;
 
 	switch (getSamplingMethod())
 	{
 	case SPACE:
 		{
-			CVLib::CloudSamplingTools::SFModulationParams modParams(false);
-			sampledCloud = CVLib::CloudSamplingTools::resampleCloudSpatially(dataObject, static_cast<PointCoordinateType>(dataSamplingRate->value()),modParams);
+			cloudViewer::CloudSamplingTools::SFModulationParams modParams(false);
+			sampledCloud = cloudViewer::CloudSamplingTools::resampleCloudSpatially(dataObject, static_cast<PointCoordinateType>(dataSamplingRate->value()),modParams);
 		}
 		break;
 	case OCTREE:
 		if (dataObject->getOctree())
 		{
-			sampledCloud = CVLib::CloudSamplingTools::subsampleCloudWithOctreeAtLevel(	dataObject,
+			sampledCloud = cloudViewer::CloudSamplingTools::subsampleCloudWithOctreeAtLevel(	dataObject,
 																						static_cast<unsigned char>(dataSamplingRate->value()),
-																						CVLib::CloudSamplingTools::NEAREST_POINT_TO_CELL_CENTER,
+																						cloudViewer::CloudSamplingTools::NEAREST_POINT_TO_CELL_CENTER,
 																						nullptr,
 																						dataObject->getOctree().data());
 		}
@@ -189,12 +189,12 @@ CVLib::ReferenceCloud *ccAlignDlg::getSampledData()
 		break;
 	case RANDOM:
 		{
-			sampledCloud = CVLib::CloudSamplingTools::subsampleCloudRandomly(dataObject, (unsigned)(dataSamplingRate->value()));
+			sampledCloud = cloudViewer::CloudSamplingTools::subsampleCloudRandomly(dataObject, (unsigned)(dataSamplingRate->value()));
 		}
 		break;
 	default:
 		{
-			sampledCloud = new CVLib::ReferenceCloud(dataObject);
+			sampledCloud = new cloudViewer::ReferenceCloud(dataObject);
 			if (!sampledCloud->addPointIndex(0,dataObject->size()))
 			{
 				delete sampledCloud;
@@ -269,7 +269,7 @@ void ccAlignDlg::modelSamplingRateChanged(double value)
 	{
 	case SPACE:
 		{
-			CVLib::ReferenceCloud* tmpCloud = getSampledModel(); //DGM FIXME: wow! you generate a spatially sampled cloud just to display its size?!
+			cloudViewer::ReferenceCloud* tmpCloud = getSampledModel(); //DGM FIXME: wow! you generate a spatially sampled cloud just to display its size?!
 			if (tmpCloud)
 			{
 				message = QString("distance units (%1 remaining points)").arg(tmpCloud->size());
@@ -284,7 +284,7 @@ void ccAlignDlg::modelSamplingRateChanged(double value)
 		break;
 	case OCTREE:
 		{
-			CVLib::ReferenceCloud* tmpCloud = getSampledModel(); //DGM FIXME: wow! you generate a spatially sampled cloud just to display its size?!
+			cloudViewer::ReferenceCloud* tmpCloud = getSampledModel(); //DGM FIXME: wow! you generate a spatially sampled cloud just to display its size?!
 			if (tmpCloud)
 			{
 				message = QString("%1 remaining points").arg(tmpCloud->size());
@@ -316,7 +316,7 @@ void ccAlignDlg::dataSamplingRateChanged(double value)
 	{
 	case SPACE:
 		{
-			CVLib::ReferenceCloud* tmpCloud = getSampledData(); //DGM FIXME: wow! you generate a spatially sampled cloud just to display its size?!
+			cloudViewer::ReferenceCloud* tmpCloud = getSampledData(); //DGM FIXME: wow! you generate a spatially sampled cloud just to display its size?!
 			if (tmpCloud)
 			{
 				message = QString("distance units (%1 remaining points)").arg(tmpCloud->size());
@@ -331,7 +331,7 @@ void ccAlignDlg::dataSamplingRateChanged(double value)
 		break;
 	case OCTREE:
 		{
-			CVLib::ReferenceCloud* tmpCloud = getSampledData(); //DGM FIXME: wow! you generate a spatially sampled cloud just to display its size?!
+			cloudViewer::ReferenceCloud* tmpCloud = getSampledData(); //DGM FIXME: wow! you generate a spatially sampled cloud just to display its size?!
 			if (tmpCloud)
 			{
 				message = QString("%1 remaining points").arg(tmpCloud->size());
@@ -353,10 +353,10 @@ void ccAlignDlg::estimateDelta()
 {
 	ecvProgressDialog pDlg(false,this);
 
-	CVLib::ReferenceCloud *sampledData = getSampledData();
+	cloudViewer::ReferenceCloud *sampledData = getSampledData();
 
 	//we have to work on a copy of the cloud in order to prevent the algorithms from modifying the original cloud.
-	CVLib::PointCloud cloud;
+	cloudViewer::PointCloud cloud;
 	{
 		cloud.reserve(sampledData->size());
 		for (unsigned i = 0; i < sampledData->size(); i++)
@@ -364,7 +364,7 @@ void ccAlignDlg::estimateDelta()
 		cloud.enableScalarField();
 	}
 
-	if (CVLib::GeometricalAnalysisTools::ComputeLocalDensityApprox(&cloud, CVLib::GeometricalAnalysisTools::DENSITY_KNN, &pDlg) != CVLib::GeometricalAnalysisTools::NoError)
+	if (cloudViewer::GeometricalAnalysisTools::ComputeLocalDensityApprox(&cloud, cloudViewer::GeometricalAnalysisTools::DENSITY_KNN, &pDlg) != cloudViewer::GeometricalAnalysisTools::NoError)
 	{
 		CVLog::Error("Failed to compute approx. density");
 		return;
@@ -452,7 +452,7 @@ void ccAlignDlg::changeSamplingMethod(int index)
 				if (!modelObject->getOctree())
 					modelObject->computeOctree();
 				modelSamplingRate->setDecimals(0);
-				modelSamplingRate->setMaximum(static_cast<double>(CVLib::DgmOctree::MAX_OCTREE_LEVEL));
+				modelSamplingRate->setMaximum(static_cast<double>(cloudViewer::DgmOctree::MAX_OCTREE_LEVEL));
 				modelSamplingRate->setMinimum(1.);
 				modelSamplingRate->setSingleStep(1.);
 			}
@@ -461,7 +461,7 @@ void ccAlignDlg::changeSamplingMethod(int index)
 				if (!dataObject->getOctree())
 					dataObject->computeOctree();
 				dataSamplingRate->setDecimals(0);
-				dataSamplingRate->setMaximum(static_cast<double>(CVLib::DgmOctree::MAX_OCTREE_LEVEL));
+				dataSamplingRate->setMaximum(static_cast<double>(cloudViewer::DgmOctree::MAX_OCTREE_LEVEL));
 				dataSamplingRate->setMinimum(1.);
 				dataSamplingRate->setSingleStep(1.);
 			}

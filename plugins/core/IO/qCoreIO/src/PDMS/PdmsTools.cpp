@@ -1078,7 +1078,7 @@ bool GenericItem::setOrientation(const CCVector3 &x, const CCVector3 &y, const C
 
 bool GenericItem::isOrientationValid(unsigned i) const
 {
-    return CVLib::GreaterThanEpsilon( orientation[i].norm2() );
+    return cloudViewer::GreaterThanEpsilon( orientation[i].norm2() );
 }
 
 bool GenericItem::completeOrientation()
@@ -1485,16 +1485,16 @@ std::pair<int, int> SCylinder::write(std::ostream &output, int nbtabs) const
 	output << "HEIGHT " << height << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-    output << "XTSHEAR " << CVLib::RadiansToDegrees( xtshear ) << std::endl;
+    output << "XTSHEAR " << cloudViewer::RadiansToDegrees( xtshear ) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-    output << "XBSHEAR " << CVLib::RadiansToDegrees( xbshear ) << std::endl;
+    output << "XBSHEAR " << cloudViewer::RadiansToDegrees( xbshear ) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-    output << "YTSHEAR " << CVLib::RadiansToDegrees( ytshear ) << std::endl;
+    output << "YTSHEAR " << cloudViewer::RadiansToDegrees( ytshear ) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-    output << "YBSHEAR " << CVLib::RadiansToDegrees( ybshear ) << std::endl;
+    output << "YBSHEAR " << cloudViewer::RadiansToDegrees( ybshear ) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
 	output << "AT X " << position[0] << " Y " << position[1] << " Z " << position[2] << std::endl;
@@ -1550,7 +1550,7 @@ std::pair<int, int> CTorus::write(std::ostream &output, int nbtabs) const
 	output << "ROUTSIDE " << outside_radius << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-    output << "ANGLE " << CVLib::RadiansToDegrees(angle) << std::endl;
+    output << "ANGLE " << cloudViewer::RadiansToDegrees(angle) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
 	output << "AT X " << position[0] << " Y " << position[1] << " Z " << position[2] << std::endl;
@@ -1610,7 +1610,7 @@ std::pair<int, int> RTorus::write(std::ostream &output, int nbtabs) const
 	output << "HEIGHT " << height << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
-    output << "ANGLE " << CVLib::RadiansToDegrees(angle) << std::endl;
+    output << "ANGLE " << cloudViewer::RadiansToDegrees(angle) << std::endl;
 	for (i = 0; i <= nbtabs; i++)
 		output << "\t";
 	output << "AT X " << position[0] << " Y " << position[1] << " Z " << position[2] << std::endl;
@@ -1648,10 +1648,10 @@ bool Dish::setValue(Token t, PointCoordinateType value)
 
 PointCoordinateType Dish::surface() const
 {
-    if ( CVLib::GreaterThanEpsilon(radius) )
+    if ( cloudViewer::GreaterThanEpsilon(radius) )
 	{
 		PointCoordinateType r = static_cast<PointCoordinateType>(0.5f*diameter);
-        if ( CVLib::LessThanEpsilon( fabs(2 * height - diameter) ) )
+        if ( cloudViewer::LessThanEpsilon( fabs(2 * height - diameter) ) )
 			return static_cast<PointCoordinateType>(2.0*M_PI)*PDMS_SQR(r);
 		if (2 * height > diameter)
 		{

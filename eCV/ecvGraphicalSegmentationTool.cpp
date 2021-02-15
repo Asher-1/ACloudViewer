@@ -642,7 +642,7 @@ void ccGraphicalSegmentationTool::segment(bool keepPointsInside)
 				CCVector2 P2D(	static_cast<PointCoordinateType>(Q2D.x),
 								static_cast<PointCoordinateType>(Q2D.y) );
 				
-				bool pointInside = CVLib::ManualSegmentationTools::isPointInsidePoly(P2D, m_segmentationPoly);
+				bool pointInside = cloudViewer::ManualSegmentationTools::isPointInsidePoly(P2D, m_segmentationPoly);
 
 				visibilityArray[i] = (keepPointsInside != pointInside ? POINT_HIDDEN : POINT_VISIBLE);
 			}
@@ -793,7 +793,7 @@ void ccGraphicalSegmentationTool::doActionUseExistingPolyline()
 				}
 			}
 
-			CVLib::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
+			cloudViewer::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
 			bool mode3D = !poly->is2DMode();
 
 			//viewing parameters (for conversion from 3D to 2D)
@@ -901,7 +901,7 @@ void ccGraphicalSegmentationTool::doExportSegmentationPolyline()
 			const int height = camera.viewport[3];
 
 			//project the 2D polyline in 3D
-			CVLib::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
+			cloudViewer::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
 			ccPointCloud* verticesPC = dynamic_cast<ccPointCloud*>(vertices);
 			if (verticesPC)
 			{

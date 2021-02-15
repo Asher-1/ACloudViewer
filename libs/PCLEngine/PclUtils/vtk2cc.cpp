@@ -17,6 +17,10 @@
 //
 #include "vtk2cc.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 //Local
 #include "my_point_types.h"
 #include "PclUtils/cc2sm.h"
@@ -337,7 +341,7 @@ ccPolyline* vtk2ccConverter::getPolylineFromCC(ccPointCloud* vertices)
 			bool closed = false;
 			CCVector3 start = CCVector3::fromArray(polyVertices->getPoint(0)->u);
 			CCVector3 end = CCVector3::fromArray(polyVertices->getPoint(verticesCount - 1)->u);
-            if (CVLib::LessThanEpsilon((end - start).norm()))
+            if (cloudViewer::LessThanEpsilon((end - start).norm()))
 			{
 				closed = true;
 			}

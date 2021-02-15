@@ -33,7 +33,7 @@
 namespace cloudViewer {
 namespace pipelines {
 namespace color_map {
-using namespace CVLib;
+using namespace cloudViewer;
 
 ImageWarpingField::ImageWarpingField() { InitializeWarpingFields(0, 0, 0); }
 

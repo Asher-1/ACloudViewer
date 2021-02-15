@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -34,20 +34,20 @@ int main(int argc, char **argv) {
     using namespace cloudViewer;
     using namespace flann;
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         // clang-format off
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("    > LineSet [filename]");
-        CVLib::utility::LogInfo("    The program will :");
-        CVLib::utility::LogInfo("    1. load the pointcloud in [filename].");
-        CVLib::utility::LogInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.");
-        CVLib::utility::LogInfo("    3. convert the correspondences to LineSet and render it.");
-        CVLib::utility::LogInfo("    4. rotate the point cloud slightly to get another point cloud.");
-        CVLib::utility::LogInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.");
-        CVLib::utility::LogInfo("    6. convert to LineSet and render it.");
-        CVLib::utility::LogInfo("    7. distance below 0.05 are rendered as red, others as blue.");
+        cloudViewer::utility::LogInfo("Usage:");
+        cloudViewer::utility::LogInfo("    > LineSet [filename]");
+        cloudViewer::utility::LogInfo("    The program will :");
+        cloudViewer::utility::LogInfo("    1. load the pointcloud in [filename].");
+        cloudViewer::utility::LogInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.");
+        cloudViewer::utility::LogInfo("    3. convert the correspondences to LineSet and render it.");
+        cloudViewer::utility::LogInfo("    4. rotate the point cloud slightly to get another point cloud.");
+        cloudViewer::utility::LogInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.");
+        cloudViewer::utility::LogInfo("    6. convert to LineSet and render it.");
+        cloudViewer::utility::LogInfo("    7. distance below 0.05 are rendered as red, others as blue.");
         // clang-format on
         return 1;
     }

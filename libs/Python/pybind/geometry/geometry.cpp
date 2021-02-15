@@ -96,126 +96,126 @@ void pybind_geometry_classes(py::module &m) {
 		if (ccHObjectCaster::ToGenericPointCloud(&entity)) {
 			return std::ref(*ccHObjectCaster::ToGenericPointCloud(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccGenericPointCloud (if possible)", "entity"_a);
 	m.def("ToPointCloud", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToPointCloud(&entity)) {
 			return std::ref(*ccHObjectCaster::ToPointCloud(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to 'equivalent' ccPointCloud", "entity"_a);
 	m.def("ToShifted", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToShifted(&entity)) {
 			return std::ref(*ccHObjectCaster::ToShifted(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to 'equivalent' ccShiftedObject", "entity"_a);
 	m.def("ToPolyline", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToPolyline(&entity)) {
 			return std::ref(*ccHObjectCaster::ToPolyline(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccPolyline (if possible)", "entity"_a);
 	m.def("ToFacet", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToFacet(&entity)) {
 			return std::ref(*ccHObjectCaster::ToFacet(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccFacet (if possible)", "entity"_a);
 	m.def("ToGenericMesh", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToGenericMesh(&entity)) {
 			return std::ref(*ccHObjectCaster::ToGenericMesh(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccGenericMesh (if possible)", "entity"_a);
 	m.def("ToMesh", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToMesh(&entity)) {
 			return std::ref(*ccHObjectCaster::ToMesh(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccMesh (if possible)", "entity"_a);
 	m.def("ToSubMesh", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToSubMesh(&entity)) {
 			return std::ref(*ccHObjectCaster::ToSubMesh(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccSubMesh (if possible)", "entity"_a);
 	m.def("ToPlanarEntity", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToPlanarEntity(&entity)) {
 			return std::ref(*ccHObjectCaster::ToPlanarEntity(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccPlanarEntityInterface (if possible)", "entity"_a);
 	m.def("ToQuadric", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToQuadric(&entity)) {
 			return std::ref(*ccHObjectCaster::ToQuadric(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccQuadric (if possible)", "entity"_a);
 	m.def("ToBox", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToBox(&entity)) {
 			return std::ref(*ccHObjectCaster::ToBox(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccBox (if possible)", "entity"_a);
 	m.def("ToSphere", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToSphere(&entity)) {
 			return std::ref(*ccHObjectCaster::ToSphere(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccSphere (if possible)", "entity"_a);
 	m.def("ToCylinder", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToCylinder(&entity)) {
 			return std::ref(*ccHObjectCaster::ToCylinder(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccCylinder (if possible)", "entity"_a);
 	m.def("ToCone", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToCone(&entity)) {
 			return std::ref(*ccHObjectCaster::ToCone(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccCone (if possible)", "entity"_a);
 	m.def("ToPlane", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToPlane(&entity)) {
 			return std::ref(*ccHObjectCaster::ToPlane(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccPlane (if possible)", "entity"_a);
 	m.def("ToDish", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToDish(&entity)) {
 			return std::ref(*ccHObjectCaster::ToDish(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccDish (if possible)", "entity"_a);
 	m.def("ToExtru", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToExtru(&entity)) {
 			return std::ref(*ccHObjectCaster::ToExtru(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccExtru (if possible)", "entity"_a);
 	m.def("ToTorus", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToTorus(&entity)) {
 			return std::ref(*ccHObjectCaster::ToTorus(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccTorus (if possible)", "entity"_a);
 	
@@ -223,42 +223,42 @@ void pybind_geometry_classes(py::module &m) {
 		if (ccHObjectCaster::ToOctreeProxy(&entity)) {
 			return std::ref(*ccHObjectCaster::ToOctreeProxy(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccOctreeProxy (if possible)", "entity"_a);
 	m.def("ToKdTree", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToKdTree(&entity)) {
 			return std::ref(*ccHObjectCaster::ToKdTree(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccKdTree (if possible)", "entity"_a);
 	m.def("ToSensor", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToSensor(&entity)) {
 			return std::ref(*ccHObjectCaster::ToSensor(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccSensor (if possible)", "entity"_a);
 	m.def("ToGBLSensor", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToGBLSensor(&entity)) {
 			return std::ref(*ccHObjectCaster::ToGBLSensor(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccGBLSensor (if possible)", "entity"_a);
 	m.def("ToCameraSensor", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToCameraSensor(&entity)) {
 			return std::ref(*ccHObjectCaster::ToCameraSensor(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccCameraSensor (if possible)", "entity"_a);
 	m.def("ToImage", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToImage(&entity)) {
 			return std::ref(*ccHObjectCaster::ToImage(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccImage (if possible)", "entity"_a);
 	
@@ -266,77 +266,77 @@ void pybind_geometry_classes(py::module &m) {
 		if (ccHObjectCaster::To2DLabel(&entity)) {
 			return std::ref(*ccHObjectCaster::To2DLabel(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to cc2DLabel (if possible)", "entity"_a);
 	m.def("To2DViewportLabel", [](ccHObject& entity) {
 		if (ccHObjectCaster::To2DViewportLabel(&entity)) {
 			return std::ref(*ccHObjectCaster::To2DViewportLabel(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to cc2DViewportLabel (if possible)", "entity"_a);
 	m.def("To2DViewportObject", [](ccHObject& entity) {
 		if (ccHObjectCaster::To2DViewportObject(&entity)) {
 			return std::ref(*ccHObjectCaster::To2DViewportObject(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to cc2DViewportObject (if possible)", "entity"_a);
 	m.def("ToTransBuffer", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToTransBuffer(&entity)) {
 			return std::ref(*ccHObjectCaster::ToTransBuffer(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccIndexedTransformationBuffer (if possible)", "entity"_a);
 	m.def("ToImage2", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToImage2(&entity)) {
 			return std::ref(*ccHObjectCaster::ToImage2(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to Image (if possible)", "entity"_a);
 	m.def("ToRGBDImage", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToRGBDImage(&entity)) {
 			return std::ref(*ccHObjectCaster::ToRGBDImage(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to RGBDImage (if possible)", "entity"_a);
 	m.def("ToVoxelGrid", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToVoxelGrid(&entity)) {
 			return std::ref(*ccHObjectCaster::ToVoxelGrid(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to VoxelGrid (if possible)", "entity"_a);
 	m.def("ToLineSet", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToLineSet(&entity)) {
 			return std::ref(*ccHObjectCaster::ToLineSet(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to LineSet (if possible)", "entity"_a);
 	m.def("ToOctree2", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToOctree2(&entity)) {
 			return std::ref(*ccHObjectCaster::ToOctree2(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to Octree (if possible)", "entity"_a);
 	m.def("ToBBox", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToBBox(&entity)) {
 			return std::ref(*ccHObjectCaster::ToBBox(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccBBox (if possible)", "entity"_a);
 	m.def("ToOrientedBBox", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToOrientedBBox(&entity)) {
 			return std::ref(*ccHObjectCaster::ToOrientedBBox(&entity));
 		} else {
-			CVLib::utility::LogWarning("[ccHObjectCaster] converting failed!");
+			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ecvOrientedBBox (if possible)", "entity"_a);
 

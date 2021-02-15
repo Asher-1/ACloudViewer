@@ -27,7 +27,7 @@
 #include "CloudViewer.h"
 
 void PrintHelp() {
-    using namespace CVLib;
+    using namespace cloudViewer;
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > MergeMesh source_directory target_file [option]");
@@ -42,8 +42,8 @@ void PrintHelp() {
 }
 
 int main(int argc, char **argv) {
-    using namespace CVLib;
-    using namespace CVLib::utility::filesystem;
+    using namespace cloudViewer;
+    using namespace cloudViewer::utility::filesystem;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc <= 2 || utility::ProgramOptionExists(argc, argv, "--help")) {

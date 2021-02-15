@@ -34,7 +34,7 @@ void copyScalarFields(const ccPointCloud *inCloud, ccPointCloud *outCloud, pcl::
 	unsigned sfCount = inCloud->getNumberOfScalarFields();
     for (unsigned i = 0; i < sfCount; ++i)
 	{
-        const CVLib::ScalarField* field = inCloud->getScalarField(static_cast<int>(i));
+        const cloudViewer::ScalarField* field = inCloud->getScalarField(static_cast<int>(i));
 		const char* name = field->getName();
 
         ccScalarField* new_field = nullptr;

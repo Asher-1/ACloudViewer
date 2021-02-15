@@ -75,7 +75,7 @@ bool ecvFilterByLabelDlg::start()
 	}
 
 	labelGroupBox->setEnabled(true);
-	CVLib::ScalarField* sf = pc->getCurrentDisplayedScalarField();
+	cloudViewer::ScalarField* sf = pc->getCurrentDisplayedScalarField();
 	Q_ASSERT(sf->currentSize() == pc->size());
 
 	clear();

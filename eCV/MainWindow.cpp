@@ -3099,7 +3099,7 @@ void MainWindow::doActionMerge()
 		ccHObjectContext firstCloudContext;
 
 		//whether to generate the 'original cloud index' scalar field or not
-		CVLib::ScalarField* ocIndexSF = nullptr;
+		cloudViewer::ScalarField* ocIndexSF = nullptr;
 		size_t cloudIndex = 0;
 
 		for (size_t i = 0; i < clouds.size(); ++i)
@@ -3791,7 +3791,7 @@ void MainWindow::doActionComputeKdTree()
 	eTimer.start();
 	ccKdTree* kdtree = new ccKdTree(cloud);
 
-	if (kdtree->build(s_kdTreeMaxErrorPerCell, CVLib::DistanceComputationTools::MAX_DIST_95_PERCENT, 4, 1000, &pDlg))
+	if (kdtree->build(s_kdTreeMaxErrorPerCell, cloudViewer::DistanceComputationTools::MAX_DIST_95_PERCENT, 4, 1000, &pDlg))
 	{
 		qint64 elapsedTime_ms = eTimer.elapsed();
 
@@ -3873,11 +3873,11 @@ void MainWindow::doActionResampleWithOctree()
 			cloud->setEnabled(false);
 			QElapsedTimer eTimer;
 			eTimer.start();
-			CVLib::GenericIndexedCloud* result = CVLib::CloudSamplingTools::resampleCloudWithOctree
+			cloudViewer::GenericIndexedCloud* result = cloudViewer::CloudSamplingTools::resampleCloudWithOctree
 			(
 				cloud,
 				aimedPoints,
-				CVLib::CloudSamplingTools::CELL_GRAVITY_CENTER,
+				cloudViewer::CloudSamplingTools::CELL_GRAVITY_CENTER,
 				&pDlg,
 				octree.data()
 			);
@@ -4223,7 +4223,7 @@ void MainWindow::doActionComputeDistancesFromSensor()
 				return;
 			}
 		}
-		CVLib::ScalarField* distances = cloud->getScalarField(sfIdx);
+		cloudViewer::ScalarField* distances = cloud->getScalarField(sfIdx);
 
 		for (unsigned i = 0; i < cloud->size(); ++i)
 		{
@@ -4290,7 +4290,7 @@ void MainWindow::doActionComputeScatteringAngles()
 			return;
 		}
 	}
-	CVLib::ScalarField* angles = cloud->getScalarField(sfIdx);
+	cloudViewer::ScalarField* angles = cloud->getScalarField(sfIdx);
 
 	//perform computations
 	for (unsigned i = 0; i < cloud->size(); ++i)
@@ -4311,7 +4311,7 @@ void MainWindow::doActionComputeScatteringAngles()
 		ScalarType theta = std::acos(std::min(std::abs(cosTheta), 1.0f));
 
 		if (toDegreeFlag)
-            theta = CVLib::RadiansToDegrees(theta);
+            theta = cloudViewer::RadiansToDegrees(theta);
 
 		angles->setValue(i, theta);
 	}
@@ -4613,7 +4613,7 @@ void MainWindow::doActionProjectUncertainty()
 		return;
 	}
 
-	CVLib::ReferenceCloud points(pointCloud);
+	cloudViewer::ReferenceCloud points(pointCloud);
 	if (!points.reserve(pointCloud->size()))
 	{
 		ecvConsole::Error("Not enough memory!");
@@ -4647,7 +4647,7 @@ void MainWindow::doActionProjectUncertainty()
 		}
 
 		// fill scalar field
-		CVLib::ScalarField* sf = pointCloud->getScalarField(sfIdx);
+		cloudViewer::ScalarField* sf = pointCloud->getScalarField(sfIdx);
 		assert(sf);
 		if (sf)
 		{
@@ -4676,7 +4676,7 @@ void MainWindow::doActionProjectUncertainty()
 		}
 
 		// fill scalar field
-		CVLib::ScalarField* sf = pointCloud->getScalarField(sfIdx);
+		cloudViewer::ScalarField* sf = pointCloud->getScalarField(sfIdx);
 		assert(sf);
 		if (sf)
 		{
@@ -4757,7 +4757,7 @@ void MainWindow::doActionCheckPointsInsideFrustum()
 				return;
 			}
 
-			CVLib::ScalarField* sf = pointCloud->getScalarField(sfIdx);
+			cloudViewer::ScalarField* sf = pointCloud->getScalarField(sfIdx);
 			assert(sf);
 			if (sf)
 			{
@@ -4948,7 +4948,7 @@ void MainWindow::doActionComputePointsVisibility()
 		return;
 	}
 
-	CVLib::ScalarField* sf = pointCloud->getScalarField(sfIdx);
+	cloudViewer::ScalarField* sf = pointCloud->getScalarField(sfIdx);
 	assert(sf);
 	if (sf)
 	{
@@ -4956,7 +4956,7 @@ void MainWindow::doActionComputePointsVisibility()
 
 		//progress bar
 		ecvProgressDialog pdlg(true);
-		CVLib::NormalizedProgress nprogress(&pdlg, pointCloud->size());
+		cloudViewer::NormalizedProgress nprogress(&pdlg, pointCloud->size());
 		pdlg.setMethodTitle(tr("Compute visibility"));
 		pdlg.setInfo(tr("Points: %L1").arg(pointCloud->size()));
 		pdlg.start();
@@ -5285,7 +5285,7 @@ void MainWindow::doConvertPolylinesToMesh()
 		assert(segments2D.size() == segmentCount * 2);
 	}
 
-	CVLib::Delaunay2dMesh* delaunayMesh = new CVLib::Delaunay2dMesh;
+	cloudViewer::Delaunay2dMesh* delaunayMesh = new cloudViewer::Delaunay2dMesh;
 	char errorStr[1024];
 	if (!delaunayMesh->buildMesh(points2D, segments2D, errorStr))
 	{
@@ -5324,7 +5324,7 @@ void MainWindow::doConvertPolylinesToMesh()
 		unsigned vertCount = vertices->size();
 		for (unsigned i = 0; i < delaunayMesh->size(); ++i)
 		{
-			const CVLib::VerticesIndexes* tsi = delaunayMesh->getTriangleVertIndexes(i);
+			const cloudViewer::VerticesIndexes* tsi = delaunayMesh->getTriangleVertIndexes(i);
 			assert(tsi->i1 < vertCount && tsi->i2 < vertCount && tsi->i3 < vertCount);
 		}
 	}
@@ -5577,10 +5577,10 @@ void MainWindow::doActionFlagMeshVertices()
 						continue;
 					}
 				}
-				CVLib::ScalarField* flags = vertices->getScalarField(sfIdx);
+				cloudViewer::ScalarField* flags = vertices->getScalarField(sfIdx);
 
-				CVLib::MeshSamplingTools::EdgeConnectivityStats stats;
-				if (CVLib::MeshSamplingTools::flagMeshVerticesByType(mesh, flags, &stats))
+				cloudViewer::MeshSamplingTools::EdgeConnectivityStats stats;
+				if (cloudViewer::MeshSamplingTools::flagMeshVerticesByType(mesh, flags, &stats))
 				{
 					vertices->setCurrentDisplayedScalarField(sfIdx);
 					ccScalarField* sf = vertices->getCurrentDisplayedScalarField();
@@ -5619,7 +5619,7 @@ void MainWindow::doActionFlagMeshVertices()
 	{
 		//display reminder
 		forceConsoleDisplay();
-		ecvConsole::Print(tr("[Mesh Quality] SF flags: %1 (NORMAL) / %2 (BORDER) / (%3) NON-MANIFOLD").arg(CVLib::MeshSamplingTools::VERTEX_NORMAL).arg(CVLib::MeshSamplingTools::VERTEX_BORDER).arg(CVLib::MeshSamplingTools::VERTEX_NON_MANIFOLD));
+		ecvConsole::Print(tr("[Mesh Quality] SF flags: %1 (NORMAL) / %2 (BORDER) / (%3) NON-MANIFOLD").arg(cloudViewer::MeshSamplingTools::VERTEX_NORMAL).arg(cloudViewer::MeshSamplingTools::VERTEX_BORDER).arg(cloudViewer::MeshSamplingTools::VERTEX_NON_MANIFOLD));
 	}
 
 	if (errors)
@@ -5638,14 +5638,14 @@ void MainWindow::doActionMeasureMeshVolume()
 			if (mesh)
 			{
 				//we compute the mesh volume
-				double V = CVLib::MeshSamplingTools::computeMeshVolume(mesh);
+				double V = cloudViewer::MeshSamplingTools::computeMeshVolume(mesh);
 				//we force the console to display itself
 				forceConsoleDisplay();
 				ecvConsole::Print(tr("[Mesh Volume] Mesh '%1': V=%2 (cube units)").arg(entity->getName()).arg(V));
 
 				//check that the mesh is closed
-				CVLib::MeshSamplingTools::EdgeConnectivityStats stats;
-				if (CVLib::MeshSamplingTools::computeMeshEdgesConnectivity(mesh, stats))
+				cloudViewer::MeshSamplingTools::EdgeConnectivityStats stats;
+				if (cloudViewer::MeshSamplingTools::computeMeshEdgesConnectivity(mesh, stats))
 				{
 					if (stats.edgesNotShared != 0)
 					{
@@ -5678,7 +5678,7 @@ void MainWindow::doActionMeasureMeshSurface()
 			ccGenericMesh* mesh = ccHObjectCaster::ToGenericMesh(entity);
 			if (mesh)
 			{
-				double S = CVLib::MeshSamplingTools::computeMeshArea(mesh);
+				double S = cloudViewer::MeshSamplingTools::computeMeshArea(mesh);
 				//we force the console to display itself
 				forceConsoleDisplay();
 				ecvConsole::Print(tr("[Mesh Surface] Mesh '%1': S=%2 (square units)").arg(entity->getName()).arg(S));
@@ -5777,18 +5777,18 @@ void MainWindow::doActionComparePlanes()
 	p2->getEquation(N2, d2);
 
 	double angle_rad = N1.angle_rad(N2);
-    info << QString("Angle P1/P2: %1 deg.").arg(CVLib::RadiansToDegrees(angle_rad));
+    info << QString("Angle P1/P2: %1 deg.").arg(cloudViewer::RadiansToDegrees(angle_rad));
 	CVLog::Print(QString("[Compare] ") + info.last());
 
 	PointCoordinateType planeEq1[4] = { N1.x, N1.y, N1.z, d1 };
 	PointCoordinateType planeEq2[4] = { N2.x, N2.y, N2.z, d2 };
 	CCVector3 C1 = p1->getCenter();
-	ScalarType distCenter1ToPlane2 = CVLib::DistanceComputationTools::computePoint2PlaneDistance(&C1, planeEq2);
+	ScalarType distCenter1ToPlane2 = cloudViewer::DistanceComputationTools::computePoint2PlaneDistance(&C1, planeEq2);
 	info << QString("Distance Center(P1)/P2: %1").arg(distCenter1ToPlane2);
 	CVLog::Print(QString("[Compare] ") + info.last());
 
 	CCVector3 C2 = p2->getCenter();
-	ScalarType distCenter2ToPlane1 = CVLib::DistanceComputationTools::computePoint2PlaneDistance(&C2, planeEq1);
+	ScalarType distCenter2ToPlane1 = cloudViewer::DistanceComputationTools::computePoint2PlaneDistance(&C2, planeEq1);
 	info << QString("Distance Center(P2)/P1: %1").arg(distCenter2ToPlane1);
 	CVLog::Print(QString("[Compare] ") + info.last());
 
@@ -6089,7 +6089,7 @@ void MainWindow::doActionSORFilter()
 		}
 
 		//computation
-		CVLib::ReferenceCloud* selection = CVLib::CloudSamplingTools::sorFilter(cloud,
+		cloudViewer::ReferenceCloud* selection = cloudViewer::CloudSamplingTools::sorFilter(cloud,
 			s_sorFilterKnn,
 			s_sorFilterNSigma,
 			0,
@@ -6205,7 +6205,7 @@ void MainWindow::doActionFilterNoise()
 		}
 
 		//computation
-		CVLib::ReferenceCloud* selection = CVLib::CloudSamplingTools::noiseFilter(cloud,
+		cloudViewer::ReferenceCloud* selection = cloudViewer::CloudSamplingTools::noiseFilter(cloud,
 			kernelRadius,
 			s_noiseFilterNSigma,
 			s_noiseFilterRemoveIsolatedPoints,
@@ -6466,12 +6466,12 @@ void MainWindow::doComputeBestFitBB()
 
 		if (cloud && cloud->isA(CV_TYPES::POINT_CLOUD)) // TODO
 		{
-			CVLib::Neighbourhood Yk(cloud);
+			cloudViewer::Neighbourhood Yk(cloud);
 
-			CVLib::SquareMatrixd covMat = Yk.computeCovarianceMatrix();
+			cloudViewer::SquareMatrixd covMat = Yk.computeCovarianceMatrix();
 			if (covMat.isValid())
 			{
-				CVLib::SquareMatrixd eigVectors;
+				cloudViewer::SquareMatrixd eigVectors;
 				std::vector<double> eigValues;
 				if (Jacobi<double>::ComputeEigenValuesAndVectors(covMat, eigVectors, eigValues, true))
 				{
@@ -6558,8 +6558,8 @@ void MainWindow::doActionComputeDistanceMap()
 			continue;
 		}
 
-		//CVLib::ChamferDistanceTransform cdt;
-		CVLib::SaitoSquaredDistanceTransform cdt;
+		//cloudViewer::ChamferDistanceTransform cdt;
+		cloudViewer::SaitoSquaredDistanceTransform cdt;
 		if (!cdt.initGrid(Tuple3ui(steps, steps, steps)))
 		{
 			//not enough memory
@@ -6666,7 +6666,7 @@ void MainWindow::doActionComputeDistToBestFitQuadric3D()
 		if (entity->isKindOf(CV_TYPES::POINT_CLOUD))
 		{
 			ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(entity);
-			CVLib::Neighbourhood Yk(cloud);
+			cloudViewer::Neighbourhood Yk(cloud);
 
 			double Q[10];
 			if (Yk.compute3DQuadric(Q))
@@ -6793,15 +6793,15 @@ void MainWindow::doAction4pcsRegister()
 	data = aDlg.getDataObject();
 
 	//Take the correct number of points among the clouds
-	CVLib::ReferenceCloud *subModel = aDlg.getSampledModel();
-	CVLib::ReferenceCloud *subData = aDlg.getSampledData();
+	cloudViewer::ReferenceCloud *subModel = aDlg.getSampledModel();
+	cloudViewer::ReferenceCloud *subData = aDlg.getSampledData();
 
 	unsigned nbMaxCandidates = aDlg.isNumberOfCandidatesLimited() ? aDlg.getMaxNumberOfCandidates() : 0;
 
 	ecvProgressDialog pDlg(true, this);
 
-	CVLib::PointProjectionTools::Transformation transform;
-	if (CVLib::FPCSRegistrationTools::RegisterClouds(subModel,
+	cloudViewer::PointProjectionTools::Transformation transform;
+	if (cloudViewer::FPCSRegistrationTools::RegisterClouds(subModel,
 		subData,
 		transform,
 		static_cast<ScalarType>(aDlg.getDelta()),
@@ -6987,7 +6987,7 @@ void MainWindow::doActionRegister()
 	bool adjustScale = rDlg.adjustScale();
 	int transformationFilters = rDlg.getTransformationFilters();
 	unsigned finalOverlap = rDlg.getFinalOverlap();
-	CVLib::ICPRegistrationTools::CONVERGENCE_TYPE method = 
+	cloudViewer::ICPRegistrationTools::CONVERGENCE_TYPE method = 
 		rDlg.getConvergenceMethod();
 	int maxThreadCount = rDlg.getMaxThreadCount();
 
@@ -7346,7 +7346,7 @@ void MainWindow::doSphericalNeighbourhoodExtractionTest()
 			}
 		}
 
-		CVLib::ScalarField* sf = cloud->getScalarField(sfIdx);
+		cloudViewer::ScalarField* sf = cloud->getScalarField(sfIdx);
 		sf->fill(NAN_VALUE);
 		cloud->setCurrentScalarField(sfIdx);
 
@@ -7363,7 +7363,7 @@ void MainWindow::doSphericalNeighbourhoodExtractionTest()
 		for (unsigned j = 0; j < samples; ++j)
 		{
 			unsigned randIndex = dist(gen);
-			CVLib::DgmOctree::NeighboursSet neighbours;
+			cloudViewer::DgmOctree::NeighboursSet neighbours;
 			octree->getPointsInSphericalNeighbourhood(*cloud->getPoint(randIndex), sphereRadius, neighbours, level);
 			size_t neihgboursCount = neighbours.size();
 			extractedPoints += neihgboursCount;
@@ -7462,7 +7462,7 @@ void MainWindow::doCylindricalNeighbourhoodExtractionTest()
 			}
 			unsigned randIndex = distIndex(gen);
 
-			CVLib::DgmOctree::CylindricalNeighbourhood cn;
+			cloudViewer::DgmOctree::CylindricalNeighbourhood cn;
 			cn.center = *cloud->getPoint(randIndex);
 			cn.dir = dir;
 			cn.level = level;
@@ -7586,9 +7586,9 @@ void MainWindow::doActionComputeBestICPRmsMatrix()
 		//init all possible transformations
 		static const double angularStep_deg = 45.0;
 		unsigned phiSteps = static_cast<unsigned>(360.0 / angularStep_deg);
-        assert( CVLib::LessThanEpsilon( std::abs(360.0 - phiSteps * angularStep_deg) ) );
+        assert( cloudViewer::LessThanEpsilon( std::abs(360.0 - phiSteps * angularStep_deg) ) );
         unsigned thetaSteps = static_cast<unsigned>(180.0 / angularStep_deg);
-        assert( CVLib::LessThanEpsilon( std::abs(180.0 - thetaSteps * angularStep_deg) ) );
+        assert( cloudViewer::LessThanEpsilon( std::abs(180.0 - thetaSteps * angularStep_deg) ) );
 		unsigned rotCount = phiSteps * (thetaSteps - 1) + 2;
 		matrices.reserve(rotCount);
 		matrixAngles.reserve(rotCount);
@@ -7625,7 +7625,7 @@ void MainWindow::doActionComputeBestICPRmsMatrix()
 		ecvProgressDialog pDlg(true, this);
 		pDlg.setMethodTitle(tr("Testing all possible positions"));
 		pDlg.setInfo(tr("%1 clouds and %2 positions").arg(cloudCount).arg(matrices.size()));
-		CVLib::NormalizedProgress nProgress(&pDlg, static_cast<unsigned>(((cloudCount*(cloudCount - 1)) / 2)*matrices.size()));
+		cloudViewer::NormalizedProgress nProgress(&pDlg, static_cast<unsigned>(((cloudCount*(cloudCount - 1)) / 2)*matrices.size()));
 		pDlg.start();
 		QApplication::processEvents();
 
@@ -7670,17 +7670,17 @@ void MainWindow::doActionComputeBestICPRmsMatrix()
 #ifndef TEST_GENERATION
 					double finalRMS = 0.0;
 					unsigned finalPointCount = 0;
-					CVLib::ICPRegistrationTools::RESULT_TYPE result;
-					CVLib::ICPRegistrationTools::ScaledTransformation registerTrans;
-					CVLib::ICPRegistrationTools::Parameters params;
+					cloudViewer::ICPRegistrationTools::RESULT_TYPE result;
+					cloudViewer::ICPRegistrationTools::ScaledTransformation registerTrans;
+					cloudViewer::ICPRegistrationTools::Parameters params;
 					{
-						params.convType = CVLib::ICPRegistrationTools::MAX_ERROR_CONVERGENCE;
+						params.convType = cloudViewer::ICPRegistrationTools::MAX_ERROR_CONVERGENCE;
 						params.minRMSDecrease = 1.0e-6;
 					}
 
-					result = CVLib::ICPRegistrationTools::Register(A, 0, B, params, registerTrans, finalRMS, finalPointCount);
+					result = cloudViewer::ICPRegistrationTools::Register(A, 0, B, params, registerTrans, finalRMS, finalPointCount);
 
-					if (result >= CVLib::ICPRegistrationTools::ICP_ERROR)
+					if (result >= cloudViewer::ICPRegistrationTools::ICP_ERROR)
 					{
 						delete B;
 						if (bestB)
@@ -7994,7 +7994,7 @@ void MainWindow::doActionFilterByValue()
 		if (cloud && cloud->isA(CV_TYPES::POINT_CLOUD))
 		{
 			ccPointCloud* pc = static_cast<ccPointCloud*>(cloud);
-			CVLib::ScalarField* sf = pc->getCurrentDisplayedScalarField();
+			cloudViewer::ScalarField* sf = pc->getCurrentDisplayedScalarField();
 			if (sf)
 			{
 				toFilter.emplace_back(entity, pc);
@@ -8222,7 +8222,7 @@ void MainWindow::doActionAddConstantSF()
 		return;
 	}
 
-	CVLib::ScalarField* sf = cloud->getScalarField(sfIdx);
+	cloudViewer::ScalarField* sf = cloud->getScalarField(sfIdx);
 	assert(sf);
 	if (sf)
 	{
@@ -8403,15 +8403,15 @@ void MainWindow::doRemoveDuplicatePoints()
 
 			ccOctree::Shared octree = cloud->getOctree();
 
-			CVLib::GeometricalAnalysisTools::ErrorCode result = CVLib::GeometricalAnalysisTools::FlagDuplicatePoints(cloud,
+			cloudViewer::GeometricalAnalysisTools::ErrorCode result = cloudViewer::GeometricalAnalysisTools::FlagDuplicatePoints(cloud,
 				minDistanceBetweenPoints,
 				&pDlg,
 				octree.data());
 
-			if (result == CVLib::GeometricalAnalysisTools::NoError)
+			if (result == cloudViewer::GeometricalAnalysisTools::NoError)
 			{
 				//count the number of duplicate points!
-				CVLib::ScalarField* flagSF = cloud->getScalarField(sfIdx);
+				cloudViewer::ScalarField* flagSF = cloud->getScalarField(sfIdx);
 				unsigned duplicateCount = 0;
 				assert(flagSF);
 				if (flagSF)
@@ -8529,7 +8529,7 @@ void MainWindow::doActionSubsample()
 		for (size_t i = 0; i < clouds.size(); ++i)
 		{
 			ccPointCloud* cloud = clouds[i];
-			CVLib::ReferenceCloud *sampledCloud = sDlg.getSampledCloud(cloud, &pDlg);
+			cloudViewer::ReferenceCloud *sampledCloud = sDlg.getSampledCloud(cloud, &pDlg);
 			if (!sampledCloud)
 			{
 				ecvConsole::Warning(tr("[Subsampling] Failed to subsample cloud '%1'!").arg(cloud->getName()));
@@ -8651,11 +8651,11 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 
                 if (uniqueShift)
                 {
-                    uniqueShift = CVLib::LessThanEpsilon( (shifted->getGlobalShift() - shift).norm() );
+                    uniqueShift = cloudViewer::LessThanEpsilon( (shifted->getGlobalShift() - shift).norm() );
                 }
                 if (uniqueScale)
                 {
-                    uniqueScale = CVLib::LessThanEpsilon( std::abs(shifted->getGlobalScale() - scale) );
+                    uniqueScale = cloudViewer::LessThanEpsilon( std::abs(shifted->getGlobalScale() - scale) );
                 }
 			}
 
@@ -8723,7 +8723,7 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 				assert(shifted->getGlobalScale() > 0);
 				double scaleCoef = scale / shifted->getGlobalScale();
 
-                if (CVLib::GreaterThanEpsilon( T.norm() ) || CVLib::GreaterThanEpsilon( std::abs(scaleCoef - 1.0) ))
+                if (cloudViewer::GreaterThanEpsilon( T.norm() ) || cloudViewer::GreaterThanEpsilon( std::abs(scaleCoef - 1.0) ))
 				{
 					ccGLMatrix transMat;
 					transMat.toIdentity();
@@ -9503,7 +9503,7 @@ struct ComponentIndexAndSize
 };
 
 void MainWindow::createComponentsClouds(ccGenericPointCloud* cloud,
-	CVLib::ReferenceCloudContainer& components,
+	cloudViewer::ReferenceCloudContainer& components,
 	unsigned minPointsPerComponent,
 	bool randomColors,
 	bool selectComponents,
@@ -9550,7 +9550,7 @@ void MainWindow::createComponentsClouds(ccGenericPointCloud* cloud,
 		//for each component
 		for (size_t i = 0; i < components.size(); ++i)
 		{
-			CVLib::ReferenceCloud* compIndexes = _sortedIndexes ? components[_sortedIndexes->at(i).index] : components[i];
+			cloudViewer::ReferenceCloud* compIndexes = _sortedIndexes ? components[_sortedIndexes->at(i).index] : components[i];
 
 			//if it has enough points
 			if (compIndexes->size() >= minPointsPerComponent)
@@ -9684,8 +9684,8 @@ void MainWindow::doActionLabelConnectedComponents()
 			pc->setCurrentScalarField(sfIdx);
 
 			//we try to label all CCs
-			CVLib::ReferenceCloudContainer components;
-			int componentCount = CVLib::AutoSegmentationTools::labelConnectedComponents(cloud,
+			cloudViewer::ReferenceCloudContainer components;
+			int componentCount = cloudViewer::AutoSegmentationTools::labelConnectedComponents(cloud,
 				static_cast<unsigned char>(octreeLevel),
 				false,
 				&pDlg,
@@ -9729,7 +9729,7 @@ void MainWindow::doActionLabelConnectedComponents()
 				}
 
 				pc->getCurrentInScalarField()->computeMinAndMax();
-				if (!CVLib::AutoSegmentationTools::extractConnectedComponents(cloud, components))
+				if (!cloudViewer::AutoSegmentationTools::extractConnectedComponents(cloud, components))
 				{
 					ecvConsole::Warning(tr("[doActionLabelConnectedComponents] Something went wrong while extracting CCs from cloud %1...").arg(cloud->getName()));
 				}
@@ -9941,13 +9941,13 @@ void MainWindow::doActionCloudPrimitiveDist()
 			}
 			compEnt->setCurrentScalarField(sfIdx);
 			compEnt->enableScalarField();
-			compEnt->forEach(CVLib::ScalarFieldTools::SetScalarValueToNaN);
+			compEnt->forEach(cloudViewer::ScalarFieldTools::SetScalarValueToNaN);
 			int returnCode;
 			switch (entityType)
 			{
 			case CV_TYPES::SPHERE:
 			{
-				if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2SphereEquation(compEnt, refEntity->getOwnBB().getCenter(), static_cast<ccSphere*>(refEntity)->getRadius(), signedDist)))
+				if (!(returnCode = cloudViewer::DistanceComputationTools::computeCloud2SphereEquation(compEnt, refEntity->getOwnBB().getCenter(), static_cast<ccSphere*>(refEntity)->getRadius(), signedDist)))
 					ecvConsole::Error(errString, "Sphere", returnCode);
 				break;
 			}
@@ -9956,20 +9956,20 @@ void MainWindow::doActionCloudPrimitiveDist()
 				ccPlane* plane = static_cast<ccPlane*>(refEntity);
 				if (treatPlanesAsBounded)
 				{
-					CVLib::SquareMatrix rotationTransform(plane->getTransformation().data(), true);
-					if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2RectangleEquation(compEnt, plane->getXWidth(), plane->getYWidth(), rotationTransform, plane->getCenter(), signedDist)))
+					cloudViewer::SquareMatrix rotationTransform(plane->getTransformation().data(), true);
+					if (!(returnCode = cloudViewer::DistanceComputationTools::computeCloud2RectangleEquation(compEnt, plane->getXWidth(), plane->getYWidth(), rotationTransform, plane->getCenter(), signedDist)))
 						ecvConsole::Error(errString, "Bounded Plane", returnCode);
 				}
 				else
 				{
-					if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2PlaneEquation(compEnt, static_cast<ccPlane*>(refEntity)->getEquation(), signedDist)))
+					if (!(returnCode = cloudViewer::DistanceComputationTools::computeCloud2PlaneEquation(compEnt, static_cast<ccPlane*>(refEntity)->getEquation(), signedDist)))
 						ecvConsole::Error(errString, "Infinite Plane", returnCode);
 				}
 				break;
 			}
 			case CV_TYPES::CYLINDER:
 			{
-				if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2CylinderEquation(compEnt, 
+				if (!(returnCode = cloudViewer::DistanceComputationTools::computeCloud2CylinderEquation(compEnt, 
 					static_cast<ccCylinder*>(refEntity)->getBottomCenter(), 
 					static_cast<ccCylinder*>(refEntity)->getTopCenter(), 
 					static_cast<ccCylinder*>(refEntity)->getBottomRadius(), signedDist)))
@@ -9978,16 +9978,16 @@ void MainWindow::doActionCloudPrimitiveDist()
 			}
 			case CV_TYPES::CONE:
 			{
-				if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2ConeEquation(compEnt, static_cast<ccCone*>(refEntity)->getLargeCenter(), static_cast<ccCone*>(refEntity)->getSmallCenter(), static_cast<ccCone*>(refEntity)->getLargeRadius(), static_cast<ccCone*>(refEntity)->getSmallRadius(), signedDist)))
+				if (!(returnCode = cloudViewer::DistanceComputationTools::computeCloud2ConeEquation(compEnt, static_cast<ccCone*>(refEntity)->getLargeCenter(), static_cast<ccCone*>(refEntity)->getSmallCenter(), static_cast<ccCone*>(refEntity)->getLargeRadius(), static_cast<ccCone*>(refEntity)->getSmallRadius(), signedDist)))
 					ecvConsole::Error(errString, "Cone", returnCode);
 				break;
 			}
 			case CV_TYPES::BOX:
 			{
 				const ccGLMatrix& glTransform = refEntity->getGLTransformationHistory();
-				CVLib::SquareMatrix rotationTransform(glTransform.data(), true);
+				cloudViewer::SquareMatrix rotationTransform(glTransform.data(), true);
 				CCVector3 boxCenter = glTransform.getColumnAsVec3D(3);
-				if (!(returnCode = CVLib::DistanceComputationTools::computeCloud2BoxEquation(compEnt, static_cast<ccBox*>(refEntity)->getDimensions(), rotationTransform, boxCenter, signedDist)))
+				if (!(returnCode = cloudViewer::DistanceComputationTools::computeCloud2BoxEquation(compEnt, static_cast<ccBox*>(refEntity)->getDimensions(), rotationTransform, boxCenter, signedDist)))
 					ecvConsole::Error(errString, "Box", returnCode);
 				break;
 			}
@@ -9996,7 +9996,7 @@ void MainWindow::doActionCloudPrimitiveDist()
 				signedDist = false;
 				flippedNormals = false;
 				ccPolyline* line = static_cast<ccPolyline*>(refEntity);
-				returnCode = CVLib::DistanceComputationTools::computeCloud2PolylineEquation(compEnt, line);
+				returnCode = cloudViewer::DistanceComputationTools::computeCloud2PolylineEquation(compEnt, line);
 				if (!returnCode)
 				{
 					ecvConsole::Error(errString, "Polyline", returnCode);
@@ -10014,7 +10014,7 @@ void MainWindow::doActionCloudPrimitiveDist()
 			sfName = QString(signedDist ? CC_CLOUD2PRIMITIVE_SIGNED_DISTANCES_DEFAULT_SF_NAME : CC_CLOUD2PRIMITIVE_DISTANCES_DEFAULT_SF_NAME);
 			if (flippedNormals)
 			{
-				compEnt->forEach(CVLib::ScalarFieldTools::SetScalarValueInverted);
+				compEnt->forEach(cloudViewer::ScalarFieldTools::SetScalarValueInverted);
 				sfName += QString("[-]");
 			}
 
@@ -10261,7 +10261,7 @@ void MainWindow::doActionExportCloudInfo()
 		{
 			ccPointCloud* cloud = static_cast<ccPointCloud*>(entity);
 
-			CCVector3 G = *CVLib::Neighbourhood(cloud).getGravityCenter();
+			CCVector3 G = *cloudViewer::Neighbourhood(cloud).getGravityCenter();
 			csvStream << cloud->getName() << "," /*"Name;"*/;
 			csvStream << cloud->size() << "," /*"Points;"*/;
 			csvStream << G.x << "," /*"meanX;"*/;
@@ -10269,7 +10269,7 @@ void MainWindow::doActionExportCloudInfo()
 			csvStream << G.z << "," /*"meanZ;"*/;
 			for (unsigned j = 0; j < cloud->getNumberOfScalarFields(); ++j)
 			{
-				CVLib::ScalarField* sf = cloud->getScalarField(j);
+				cloudViewer::ScalarField* sf = cloud->getScalarField(j);
 				csvStream << sf->getName() << "," /*"SF name;"*/;
 
 				unsigned validCount = 0;
@@ -10278,7 +10278,7 @@ void MainWindow::doActionExportCloudInfo()
 				for (unsigned k = 0; k < sf->currentSize(); ++k)
 				{
 					const ScalarType& val = sf->getValue(k);
-					if (CVLib::ScalarField::ValidValue(val))
+					if (cloudViewer::ScalarField::ValidValue(val))
 					{
 						++validCount;
 						sfSum += val;
@@ -10341,13 +10341,13 @@ void MainWindow::doActionComputeCPS()
 	}
 	cmpPC->setCurrentScalarField(sfIdx);
 	cmpPC->enableScalarField();
-	//cmpPC->forEach(CVLib::ScalarFieldTools::SetScalarValueToNaN); //now done by default by computeCloud2CloudDistance
+	//cmpPC->forEach(cloudViewer::ScalarFieldTools::SetScalarValueToNaN); //now done by default by computeCloud2CloudDistance
 
-	CVLib::ReferenceCloud CPSet(srcCloud);
+	cloudViewer::ReferenceCloud CPSet(srcCloud);
 	ecvProgressDialog pDlg(true, this);
-	CVLib::DistanceComputationTools::Cloud2CloudDistanceComputationParams params;
+	cloudViewer::DistanceComputationTools::Cloud2CloudDistanceComputationParams params;
 	params.CPSet = &CPSet;
-	int result = CVLib::DistanceComputationTools::computeCloud2CloudDistance(compCloud, srcCloud, params, &pDlg);
+	int result = cloudViewer::DistanceComputationTools::computeCloud2CloudDistance(compCloud, srcCloud, params, &pDlg);
 	cmpPC->deleteScalarField(sfIdx);
 
 	if (result >= 0)
@@ -10425,13 +10425,13 @@ void MainWindow::doActionFitSphere()
 		CCVector3 center;
 		PointCoordinateType radius;
 		double rms;
-		if (CVLib::GeometricalAnalysisTools::DetectSphereRobust(cloud,
+		if (cloudViewer::GeometricalAnalysisTools::DetectSphereRobust(cloud,
 			outliersRatio,
 			center,
 			radius,
 			rms,
 			&pDlg,
-			confidence) != CVLib::GeometricalAnalysisTools::NoError)
+			confidence) != cloudViewer::GeometricalAnalysisTools::NoError)
 		{
 			CVLog::Warning(tr("[Fit sphere] Failed to fit a sphere on cloud '%1'").arg(cloud->getName()));
 			continue;
@@ -10481,12 +10481,12 @@ void MainWindow::doComputePlaneOrientation(bool fitFacet)
 	for (ccHObject *entity : selectedEntities)
 	{
 		ccShiftedObject* shifted = nullptr;
-		CVLib::GenericIndexedCloudPersist* cloud = nullptr;
+		cloudViewer::GenericIndexedCloudPersist* cloud = nullptr;
 
 		if (entity->isKindOf(CV_TYPES::POLY_LINE))
 		{
 			ccPolyline* poly = ccHObjectCaster::ToPolyline(entity);
-			cloud = static_cast<CVLib::GenericIndexedCloudPersist*>(poly);
+			cloud = static_cast<cloudViewer::GenericIndexedCloudPersist*>(poly);
 			shifted = poly;
 		}
 		else
@@ -10494,7 +10494,7 @@ void MainWindow::doComputePlaneOrientation(bool fitFacet)
 			ccGenericPointCloud* gencloud = ccHObjectCaster::ToGenericPointCloud(entity);
 			if (gencloud)
 			{
-				cloud = static_cast<CVLib::GenericIndexedCloudPersist*>(gencloud);
+				cloud = static_cast<cloudViewer::GenericIndexedCloudPersist*>(gencloud);
 				shifted = gencloud;
 			}
 		}
@@ -10539,7 +10539,7 @@ void MainWindow::doComputePlaneOrientation(bool fitFacet)
 				{
 					plane = static_cast<ccHObject*>(pPlane);
 					N = pPlane->getNormal();
-					C = *CVLib::Neighbourhood(cloud).getGravityCenter();
+					C = *cloudViewer::Neighbourhood(cloud).getGravityCenter();
 					pPlane->enableStippling(true);
 				}
 			}

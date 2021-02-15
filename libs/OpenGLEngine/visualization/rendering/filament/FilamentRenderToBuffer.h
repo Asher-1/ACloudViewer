@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -51,14 +51,17 @@ public:
     // FilamentRenderToBuffer, unless you are NOT using
     // CloudViewer::visualization::gui or another FilamentRenderer instance.
     explicit FilamentRenderToBuffer(filament::Engine& engine);
-    FilamentRenderToBuffer(filament::Engine& engine, FilamentRenderer& parent);
+
     ~FilamentRenderToBuffer() override;
 
     void Configure(const View* view,
                    Scene* scene,
                    int width,
                    int height,
+                   int n_channels,
+                   bool depth_image,
                    BufferReadyCallback cb) override;
+
     void SetDimensions(std::uint32_t width, std::uint32_t height) override;
     View& GetView() override;
 
@@ -71,7 +74,6 @@ public:
 private:
     friend class FilamentRenderer;
 
-    FilamentRenderer* parent_ = nullptr;
     filament::Engine& engine_;
     filament::Renderer* renderer_ = nullptr;
     filament::SwapChain* swapchain_ = nullptr;
@@ -79,8 +81,10 @@ private:
 
     std::size_t width_ = 0;
     std::size_t height_ = 0;
+    std::size_t n_channels_ = 0;
     std::uint8_t* buffer_ = nullptr;
     std::size_t buffer_size_ = 0;
+    bool depth_image_ = false;
 
     BufferReadyCallback callback_;
     bool frame_done_ = true;

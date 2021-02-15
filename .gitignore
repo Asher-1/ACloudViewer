@@ -8,7 +8,10 @@ CMakeLists.txt.user
 tmp/
 *.tmp
 *.bak
+dl/*
 *.swp
+*.run
+*.zip
 dist/
 .idea
 local.properties

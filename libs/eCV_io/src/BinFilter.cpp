@@ -267,7 +267,7 @@ CC_FILE_ERROR BinFilter::SaveFileV2(QFile& out, ccHObject* object)
 		}
 		else if (currentObject->isKindOf(CV_TYPES::POLY_LINE))
 		{
-			CVLib::GenericIndexedCloudPersist* cloud = static_cast<ccPolyline*>(currentObject)->getAssociatedCloud();
+			cloudViewer::GenericIndexedCloudPersist* cloud = static_cast<ccPolyline*>(currentObject)->getAssociatedCloud();
 			ccPointCloud* pc = dynamic_cast<ccPointCloud*>(cloud);
 			if (pc)
 				dependencies.insert(pc);
@@ -746,7 +746,7 @@ CC_FILE_ERROR BinFilter::LoadFileV2(QFile& in, ccHObject& container, int flags)
 						unsigned vertCount = pc->size();
 						for (unsigned i = 0; i < faceCount; ++i)
 						{
-							const CVLib::VerticesIndexes* tri = mesh->getTriangleVertIndexes(i);
+							const cloudViewer::VerticesIndexes* tri = mesh->getTriangleVertIndexes(i);
 							if (	tri->i1 >= vertCount
 								||	tri->i2 >= vertCount
 								||	tri->i3 >= vertCount )
@@ -1110,7 +1110,7 @@ CC_FILE_ERROR BinFilter::LoadFileV1(QFile& in, ccHObject& container, unsigned nb
 		}
 
 		//progress for this cloud
-		CVLib::NormalizedProgress nprogress(pDlg.data(), nbOfPoints);
+		cloudViewer::NormalizedProgress nprogress(pDlg.data(), nbOfPoints);
 		if (pDlg)
 		{
 			pDlg->reset();
@@ -1285,7 +1285,7 @@ CC_FILE_ERROR BinFilter::LoadFileV1(QFile& in, ccHObject& container, unsigned nb
 
 		if (header.scalarField)
 		{
-			CVLib::ScalarField* sf = loadedCloud->getCurrentInScalarField();
+			cloudViewer::ScalarField* sf = loadedCloud->getCurrentInScalarField();
 			assert(sf);
 			sf->setName(sfName);
 

@@ -1483,7 +1483,9 @@ void write_binary_item( FILE *fp , int file_type , int int_val , unsigned int ui
 	case PLY_FLOAT_64:
 		value = &double_val;
 		break;
-	default: ERROR_OUT( "Bad type: " , type );
+	default: 
+		value = nullptr;
+		ERROR_OUT( "Bad type: " , type );
 	}
 
 

@@ -199,7 +199,7 @@ std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
         const geometry::Image &depth, const Eigen::Matrix3d &intrinsic_matrix) {
     auto image_xyz = std::make_shared<geometry::Image>();
     if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[ConvertDepthImageToXYZImage] Unsupported image format.");
     }
     const double inv_fx = 1.0 / intrinsic_matrix(0, 0);
@@ -302,7 +302,7 @@ void NormalizeIntensity(geometry::Image &image_s,
                         CorrespondenceSetPixelWise &correspondence) {
     if (image_s.width_ != image_t.width_ ||
         image_s.height_ != image_t.height_) {
-        CVLib::utility::LogError(
+        cloudViewer::utility::LogError(
                 "[NormalizeIntensity] Size of two input images should be "
                 "same");
     }
@@ -443,27 +443,27 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 
     auto f_lambda =
             [&](int i,
-                std::vector<Eigen::Vector6d, CVLib::utility::Vector6d_allocator> &J_r,
+                std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
                 std::vector<double>& r, std::vector<double> &w) {
                 jacobian_method.ComputeJacobianAndResidual(
                         i, J_r, r, w, source, target, source_xyz, target_dx,
                         target_dy, intrinsic, extrinsic_initial,
                         *correspondence);
             };
-    CVLib::utility::LogDebug("Iter : {:d}, Level : {:d}, ", iter, level);
+    cloudViewer::utility::LogDebug("Iter : {:d}, Level : {:d}, ", iter, level);
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
     double r2;
     std::tie(JTJ, JTr, r2) =
-            CVLib::utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+            cloudViewer::utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
                     f_lambda, corresps_count);
 
     bool is_success;
     Eigen::Matrix4d extrinsic;
     std::tie(is_success, extrinsic) =
-            CVLib::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+            cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
     if (!is_success) {
-        CVLib::utility::LogWarning("[ComputeOdometry] no solution!");
+        cloudViewer::utility::LogWarning("[ComputeOdometry] no solution!");
         return std::make_tuple(false, Eigen::Matrix4d::Identity());
     } else {
         return std::make_tuple(true, extrinsic);
@@ -520,7 +520,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
             result_odo = curr_odo * result_odo;
 
             if (!is_success) {
-                CVLib::utility::LogWarning("[ComputeOdometry] no solution!");
+                cloudViewer::utility::LogWarning("[ComputeOdometry] no solution!");
                 return std::make_tuple(false, Eigen::Matrix4d::Identity());
             }
         }
@@ -538,7 +538,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         /*=RGBDOdometryJacobianFromHybridTerm*/,
         const OdometryOption &option /*= OdometryOption()*/) {
     if (!CheckRGBDImagePair(source, target)) {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "[RGBDOdometry] Two RGBD pairs should be same in size.");
         return std::make_tuple(false, Eigen::Matrix4d::Identity(),
                                Eigen::Matrix6d::Zero());

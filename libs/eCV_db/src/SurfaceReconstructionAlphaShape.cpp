@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -36,7 +36,7 @@
 #include <iostream>
 #include <list>
 
-using namespace CVLib;
+using namespace cloudViewer;
 std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
 	const ccPointCloud& pcd,
 	double alpha,

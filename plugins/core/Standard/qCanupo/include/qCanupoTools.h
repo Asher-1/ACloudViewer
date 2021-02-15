@@ -21,7 +21,7 @@
 //Local
 #include "classifier.h"
 
-//CVLib
+//cloudViewer
 #include <GenericIndexedCloud.h>
 #include <GenericProgressCallback.h>
 #include <DgmOctree.h>
@@ -80,7 +80,7 @@ public:
 	static size_t TestVectorsOverlap(const std::vector<float>& first, const std::vector<float>& second);
 
 	//! Computes the 'descriptors' for various scales on core points only
-	static bool ComputeCorePointsDescriptors(	CVLib::GenericIndexedCloud* corePoints,
+	static bool ComputeCorePointsDescriptors(	cloudViewer::GenericIndexedCloud* corePoints,
 												CorePointDescSet& corePointsDescriptors,
 												ccGenericPointCloud* sourceCloud,
 												const std::vector<float>& sortedScales,
@@ -88,8 +88,8 @@ public:
 												QString& error, //if any
 												unsigned descriptorID = DESC_DIMENSIONALITY,
 												int maxThreadCount = 0,
-												CVLib::GenericProgressCallback* progressCb = 0,
-												CVLib::DgmOctree* inputOctree = 0,
+												cloudViewer::GenericProgressCallback* progressCb = 0,
+												cloudViewer::DgmOctree* inputOctree = 0,
 												std::vector<ccScalarField*>* roughnessSFs = 0 /*for tests*/); 
 
 	//! Returns a long description of a given entity (name + [ID])

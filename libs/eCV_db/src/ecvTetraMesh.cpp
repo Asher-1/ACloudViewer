@@ -42,7 +42,7 @@
 
 #include <Console.h>
 
-using namespace CVLib;
+using namespace cloudViewer;
 namespace cloudViewer {
 namespace geometry {
 
@@ -75,7 +75,7 @@ TetraMesh &TetraMesh::removeDuplicatedVertices() {
     typedef decltype(tetras_)::value_type::Scalar Index;
     typedef std::tuple<double, double, double> Coordinate3;
     std::unordered_map<Coordinate3, size_t,
-                       CVLib::utility::hash_tuple::hash<Coordinate3>>
+                       cloudViewer::utility::hash_tuple::hash<Coordinate3>>
             point_to_old_index;
 	std::vector<Index> index_old_to_new(vertices_.size());
 	size_t old_vertex_num = vertices_.size();

@@ -33,7 +33,7 @@
 
 namespace cloudViewer {
 namespace camera {
-using namespace CVLib;
+using namespace cloudViewer;
 
 PinholeCameraTrajectory::PinholeCameraTrajectory() {}
 

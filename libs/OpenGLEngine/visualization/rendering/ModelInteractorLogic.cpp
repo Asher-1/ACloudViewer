@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -28,14 +28,14 @@
 
 #include <Eigen/src/Core/Transpose.h>
 
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Scene.h"
 
 namespace cloudViewer {
 namespace visualization {
 namespace rendering {
 
-ModelInteractorLogic::ModelInteractorLogic(Open3DScene* scene,
+ModelInteractorLogic::ModelInteractorLogic(CloudViewerScene* scene,
                                            Camera* camera,
                                            double min_far_plane)
     : RotationInteractorLogic(camera, min_far_plane), scene_(scene) {}
@@ -94,8 +94,8 @@ void ModelInteractorLogic::RotateZ(int dx, int dy) {
     UpdateBoundingBox(Camera::Transform(rot_matrix));
 }
 
-void ModelInteractorLogic::Dolly(int dy, DragType drag_type) {
-    float z_dist = CalcDollyDist(dy, drag_type);
+void ModelInteractorLogic::Dolly(float dy, DragType drag_type) {
+    float z_dist = CalcDollyDist(dy, drag_type, matrix_at_mouse_down_);
     Eigen::Vector3f world_move = -z_dist * camera_->GetForwardVector();
 
     for (auto o : transforms_at_mouse_down_) {

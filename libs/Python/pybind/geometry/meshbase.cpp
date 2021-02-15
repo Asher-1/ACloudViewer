@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -33,7 +33,7 @@
 
 #pragma warning(disable:4715)
 
-using namespace CVLib;
+using namespace cloudViewer;
 namespace cloudViewer {
 namespace geometry {
 
@@ -100,7 +100,7 @@ void pybind_meshbase(py::module &m) {
 				return std::ref(*mesh._getNextTriangle());
 			}
 			else {
-				CVLib::utility::LogWarning("[GenericMesh] does not have next triangle!");
+				cloudViewer::utility::LogWarning("[GenericMesh] does not have next triangle!");
 			}
 		}, "Returns the next triangle (relatively to the global iterator position).")
 	.def("place_iterator_at_beginning", &GenericMesh::placeIteratorAtBeginning,
@@ -128,51 +128,51 @@ void pybind_meshbase(py::module &m) {
 	docstring::ClassMethodDocInject(m, "GenericTriangle", "get_B");
 	docstring::ClassMethodDocInject(m, "GenericTriangle", "get_C");
 
-	py::class_<CVLib::VerticesIndexes, std::shared_ptr<CVLib::VerticesIndexes>>
+	py::class_<cloudViewer::VerticesIndexes, std::shared_ptr<cloudViewer::VerticesIndexes>>
 		verticesindexes(m, "VerticesIndexes",
 			"VerticesIndexes, Triangle described by the indexes of its 3 vertices.");
-		py::detail::bind_default_constructor<CVLib::VerticesIndexes>(verticesindexes);
-		py::detail::bind_copy_functions<CVLib::VerticesIndexes>(verticesindexes);
+		py::detail::bind_default_constructor<cloudViewer::VerticesIndexes>(verticesindexes);
+		py::detail::bind_copy_functions<cloudViewer::VerticesIndexes>(verticesindexes);
 		verticesindexes.def(py::init<>())
 		.def(py::init([](unsigned i1, unsigned i2, unsigned i3) {
-			return new CVLib::VerticesIndexes(i1, i2, i3);
+			return new cloudViewer::VerticesIndexes(i1, i2, i3);
 		}), "Constructor with specified indexes", "i1"_a, "i2"_a, "i3"_a);
 
-	py::class_<CVLib::GenericIndexedMesh, PyGenericIndexedMesh<CVLib::GenericIndexedMesh>,
-		std::shared_ptr<CVLib::GenericIndexedMesh>, CVLib::GenericMesh>
+	py::class_<cloudViewer::GenericIndexedMesh, PyGenericIndexedMesh<cloudViewer::GenericIndexedMesh>,
+		std::shared_ptr<cloudViewer::GenericIndexedMesh>, cloudViewer::GenericMesh>
 		genericIndexedMesh(m, "GenericIndexedMesh",
 			"GenericIndexedMesh with index-based vertex access.");
-	genericIndexedMesh.def("__repr__", [](const CVLib::GenericIndexedMesh &mesh) {
+	genericIndexedMesh.def("__repr__", [](const cloudViewer::GenericIndexedMesh &mesh) {
 		return std::string("GenericIndexedMesh with ") +
 			std::to_string(mesh.size()) + " triangles";
 	})
-	.def("get_triangle", [](CVLib::GenericIndexedMesh& mesh, size_t triangle_index) {
+	.def("get_triangle", [](cloudViewer::GenericIndexedMesh& mesh, size_t triangle_index) {
 			if (mesh._getTriangle(static_cast<unsigned>(triangle_index))) {
 				return std::ref(*mesh._getTriangle(static_cast<unsigned>(triangle_index)));
 			}
 			else {
-				CVLib::utility::LogWarning("[CVLib::GenericIndexedMesh] does not have triangle!");
+				cloudViewer::utility::LogWarning("[cloudViewer::GenericIndexedMesh] does not have triangle!");
 			}
 		}, "Returns the ith triangle.", "triangle_index"_a)
-	.def("get_vertice_indexes", [](CVLib::GenericIndexedMesh& mesh, size_t triangle_index) {
+	.def("get_vertice_indexes", [](cloudViewer::GenericIndexedMesh& mesh, size_t triangle_index) {
 			if (mesh.getTriangleVertIndexes(static_cast<unsigned>(triangle_index))) {
 				return std::ref(*mesh.getTriangleVertIndexes(static_cast<unsigned>(triangle_index)));
 			}
 			else {
-				CVLib::utility::LogWarning("[CVLib::GenericIndexedMesh] does not have vertice indexes!");
+				cloudViewer::utility::LogWarning("[cloudViewer::GenericIndexedMesh] does not have vertice indexes!");
 			}
 		}, "Returns the indexes of the vertices of a given triangle.", "triangle_index"_a)
-	.def("get_triangle_vertices", [](const CVLib::GenericIndexedMesh& mesh, size_t triangle_index) {
+	.def("get_triangle_vertices", [](const cloudViewer::GenericIndexedMesh& mesh, size_t triangle_index) {
 			CCVector3 A, B, C;
 			mesh.getTriangleVertices(static_cast<unsigned>(triangle_index), A, B, C);
 			return std::make_tuple(CCVector3d::fromArray(A), CCVector3d::fromArray(B), CCVector3d::fromArray(C));
 		}, "Returns the vertices of a given triangle.", "triangle_index"_a)
-	.def("get_next_vertice_indexes", [](CVLib::GenericIndexedMesh& mesh) {
+	.def("get_next_vertice_indexes", [](cloudViewer::GenericIndexedMesh& mesh) {
 			if (mesh.getNextTriangleVertIndexes()) {
 				return std::ref(*mesh.getNextTriangleVertIndexes());
 			}
 			else {
-				CVLib::utility::LogWarning("[CVLib::GenericIndexedMesh] does not have next vertice indexes!");
+				cloudViewer::utility::LogWarning("[cloudViewer::GenericIndexedMesh] does not have next vertice indexes!");
 			}
 		}, "Returns the indexes of the vertices of the next triangle (relatively to the global iterator position).");
 
@@ -182,7 +182,7 @@ void pybind_meshbase(py::module &m) {
 	docstring::ClassMethodDocInject(m, "GenericIndexedMesh", "get_next_vertice_indexes");
 
 	py::class_<ccGenericMesh, PyGeometry<ccGenericMesh>,
-		std::shared_ptr<ccGenericMesh>, CVLib::GenericIndexedMesh, ccHObject>
+		std::shared_ptr<ccGenericMesh>, cloudViewer::GenericIndexedMesh, ccHObject>
 	genericMesh(m, "ccGenericMesh", py::multiple_inheritance(),
 			"ccGenericMesh class. Generic mesh interface.");
 	genericMesh.def("__repr__",
@@ -195,7 +195,7 @@ void pybind_meshbase(py::module &m) {
 				return std::ref(*mesh.getAssociatedCloud());
 			}
 			else {
-				CVLib::utility::LogWarning("[ccGenericMesh] does not have associated cloud!");
+				cloudViewer::utility::LogWarning("[ccGenericMesh] does not have associated cloud!");
 			}
 		}, "Returns the associated cloud.")
 	.def("refresh_bbox", &ccGenericMesh::refreshBB, "Forces bounding-box update.")
@@ -325,7 +325,7 @@ void pybind_meshbase(py::module &m) {
 	docstring::ClassMethodDocInject(m, "ccGenericMesh", "import_parameters_from");
 
 	py::class_<ecvMeshBase, PyGeometry<ecvMeshBase>,
-                   std::shared_ptr<ecvMeshBase>, CVLib::GenericMesh, ccHObject>
+                   std::shared_ptr<ecvMeshBase>, cloudViewer::GenericMesh, ccHObject>
                 meshbase2(m, "ecvMeshBase",
                          "ecvMeshBase class. Triangle mesh contains vertices. "
                          "Optionally, the mesh "

@@ -35,7 +35,7 @@ public:
 	explicit ccMouseCircle(QWidget* owner, QString name = QString("MouseCircle"));
 
 	//deconstructor
-	~ccMouseCircle();
+    virtual ~ccMouseCircle() override;
 
 	//get the circle radius in px
 	int getRadiusPx();
@@ -44,11 +44,11 @@ public:
 	float getRadiusWorld();
 
 	//removes the link with the owner (no cleanup)
-	void ownerIsDead() { m_owner = 0; }
+    void ownerIsDead() { m_owner = nullptr; }
 
 protected:
 	//draws a circle of radius r around the mouse
-	void draw(CC_DRAW_CONTEXT& context);
+    void draw(CC_DRAW_CONTEXT& context) override;
 
 private:
 	// QWidget this overlay is attached to -> used to get mouse position & events
@@ -56,7 +56,7 @@ private:
 	float m_winTotalZoom;
 
 	//event to get mouse-move updates & trigger repaint
-	bool eventFilter(QObject* obj, QEvent* event);
+    bool eventFilter(QObject* obj, QEvent* event) override;
 
 public:
 	static const int RESOLUTION = 100;

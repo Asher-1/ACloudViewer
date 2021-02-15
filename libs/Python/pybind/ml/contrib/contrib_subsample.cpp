@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "ml/contrib/GridSubsampling.h"
-#include "pybind/core/core.h"
+#include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"
 #include "pybind/ml/contrib/contrib.h"
 #include "pybind/cloudViewer_pybind.h"
@@ -34,7 +34,7 @@
 namespace cloudViewer {
 namespace ml {
 namespace contrib {
-    using namespace CVLib;
+    using namespace cloudViewer;
 const py::tuple SubsampleBatch(py::array points,
                                py::array batches,
                                utility::optional<py::array> features,

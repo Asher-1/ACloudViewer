@@ -60,14 +60,14 @@ bool ccCone::buildUp()
 		return false;
 
     //invalid dimensions?
-    if ( CVLib::LessThanEpsilon( m_height ) || CVLib::LessThanEpsilon( m_bottomRadius + m_topRadius ) )
+    if ( cloudViewer::LessThanEpsilon( m_height ) || cloudViewer::LessThanEpsilon( m_bottomRadius + m_topRadius ) )
     {
         return false;
     }
 
 	//topology
-    bool singlePointBottom = CVLib::LessThanEpsilon( m_bottomRadius );
-    bool singlePointTop = CVLib::LessThanEpsilon( m_topRadius );
+    bool singlePointBottom = cloudViewer::LessThanEpsilon( m_bottomRadius );
+    bool singlePointTop = cloudViewer::LessThanEpsilon( m_topRadius );
 	assert(!singlePointBottom || !singlePointTop);
 
 	unsigned steps = m_drawPrecision;

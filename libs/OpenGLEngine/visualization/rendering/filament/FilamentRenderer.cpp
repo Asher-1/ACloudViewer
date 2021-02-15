@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -191,10 +191,20 @@ void FilamentRenderer::EnableCaching(bool enable) {
 
 void FilamentRenderer::BeginFrame() {
     // We will complete render to buffer requests first
-    for (auto& br : buffer_renderers_) {
-        if (br->pending_) {
-            br->Render();
+    if (!buffer_renderers_.empty()) {
+        for (auto& br : buffer_renderers_) {
+            if (br->pending_) {
+                br->Render();
+            }
         }
+
+        // Force the engine to render, otherwise it sometimes doesn't
+        // render for a while, especially on Linux. This means the read
+        // pixels callback does not get called until sometime later,
+        // possibly several draws later.
+        engine_.flushAndWait();
+
+        buffer_renderers_.clear();  // Cleanup
     }
 
     if (render_caching_enabled_) {
@@ -246,7 +256,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
                 resource_mgr_.GetMaterialInstance(instance_id);
         materials_modifier_->Init(w_material_instance.lock(), instance_id);
     } else {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "Failed to create material instance for material handle {}.",
                 id);
     }
@@ -262,7 +272,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
     if (!w_material_instance.expired()) {
         materials_modifier_->Init(w_material_instance.lock(), id);
     } else {
-        CVLib::utility::LogWarning(
+        cloudViewer::utility::LogWarning(
                 "Failed to modify material instance: unknown instance handle "
                 "{}.",
                 id);
@@ -321,8 +331,8 @@ void FilamentRenderer::RemoveSkybox(const SkyboxHandle& id) {
 }
 
 std::shared_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
-    auto renderer = std::make_shared<FilamentRenderToBuffer>(engine_, *this);
-    buffer_renderers_.insert(renderer.get());
+    auto renderer = std::make_shared<FilamentRenderToBuffer>(engine_);
+    buffer_renderers_.insert(renderer);
     return std::move(renderer);
 }
 
@@ -331,7 +341,7 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     // TODO: assert(found != scenes_.end())
     if (found != scenes_.end()) {
         if (gui_scene_ != nullptr) {
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
                     "FilamentRenderer::ConvertToGuiScene: guiScene_ is already "
                     "set");
         }
@@ -345,9 +355,9 @@ TextureHandle FilamentRenderer::AddTexture(
     return resource_mgr_.CreateTexture(image, srgb);
 }
 
-void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {
-    buffer_renderers_.erase(render);
-}
+//void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {
+//    buffer_renderers_.erase(render);
+//}
 
 }  // namespace rendering
 }  // namespace visualization

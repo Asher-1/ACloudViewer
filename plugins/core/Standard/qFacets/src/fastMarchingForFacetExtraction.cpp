@@ -54,11 +54,11 @@ const int c_3dNeighboursPosShift[] = {-1,-1,-1,
 									 1, 1, 1 };
 
 FastMarchingForFacetExtraction::FastMarchingForFacetExtraction()
-	: CVLib::FastMarching()
+	: cloudViewer::FastMarching()
 	, m_currentFacetPoints(nullptr)
 	, m_currentFacetError(0)
 	, m_maxError(0)
-	, m_errorMeasure(CVLib::DistanceComputationTools::RMS)
+	, m_errorMeasure(cloudViewer::DistanceComputationTools::RMS)
 	, m_useRetroProjectionError(false)
 	, m_propagateProgressCb(nullptr)
 	, m_propagateProgress(0)
@@ -73,11 +73,11 @@ FastMarchingForFacetExtraction::~FastMarchingForFacetExtraction()
 	}
 }
 
-static bool ComputeCellStats(	CVLib::ReferenceCloud* subset,
+static bool ComputeCellStats(	cloudViewer::ReferenceCloud* subset,
 								CCVector3& N,
 								CCVector3& C,
 								ScalarType& error,
-								CVLib::DistanceComputationTools::ERROR_MEASURES errorMeasure)
+								cloudViewer::DistanceComputationTools::ERROR_MEASURES errorMeasure)
 {
 	error = 0;
 
@@ -85,7 +85,7 @@ static bool ComputeCellStats(	CVLib::ReferenceCloud* subset,
 		return false;
 
 	//we compute the gravity center
-	CVLib::Neighbourhood Yk(subset);
+	cloudViewer::Neighbourhood Yk(subset);
 	C = *Yk.getGravityCenter();
 
 	//we compute the (least square) best fit plane
@@ -93,7 +93,7 @@ static bool ComputeCellStats(	CVLib::ReferenceCloud* subset,
 	if (planeEquation)
 	{
 		N = CCVector3(planeEquation); //normal = first 3 components
-		error = CVLib::DistanceComputationTools::ComputeCloud2PlaneDistance(subset, planeEquation, errorMeasure);
+		error = cloudViewer::DistanceComputationTools::ComputeCloud2PlaneDistance(subset, planeEquation, errorMeasure);
 	}
 	else
 	{
@@ -105,12 +105,12 @@ static bool ComputeCellStats(	CVLib::ReferenceCloud* subset,
 }
 
 int FastMarchingForFacetExtraction::init(	ccGenericPointCloud* cloud,
-											CVLib::DgmOctree* theOctree,
+											cloudViewer::DgmOctree* theOctree,
 											unsigned char level,
 											ScalarType maxError,
-											CVLib::DistanceComputationTools::ERROR_MEASURES errorMeasure,
+											cloudViewer::DistanceComputationTools::ERROR_MEASURES errorMeasure,
 											bool useRetroProjectionError,
-											CVLib::GenericProgressCallback* progressCb/*=0*/)
+											cloudViewer::GenericProgressCallback* progressCb/*=0*/)
 {
 	m_maxError = maxError;
 	m_errorMeasure = errorMeasure;
@@ -132,17 +132,17 @@ int FastMarchingForFacetExtraction::init(	ccGenericPointCloud* cloud,
 		return result;
 
 	//fill the grid with the octree
-	CVLib::DgmOctree::cellCodesContainer cellCodes;
+	cloudViewer::DgmOctree::cellCodesContainer cellCodes;
 	theOctree->getCellCodes(level, cellCodes, true);
 	size_t cellCount = cellCodes.size();
 
-	CVLib::NormalizedProgress nProgress(progressCb, static_cast<unsigned>(cellCount));
+	cloudViewer::NormalizedProgress nProgress(progressCb, static_cast<unsigned>(cellCount));
 	if (progressCb)
 	{
 		progressCb->setInfo(qPrintable(QString("Level: %1\nCells: %2").arg(level).arg(cellCount)));
 	}
 
-	CVLib::ReferenceCloud Yk(theOctree->associatedCloud());
+	cloudViewer::ReferenceCloud Yk(theOctree->associatedCloud());
 	while (!cellCodes.empty())
 	{
 		if (theOctree->getPointsInCell(cellCodes.back(), level, &Yk, true))
@@ -203,7 +203,7 @@ int FastMarchingForFacetExtraction::step()
 	if (minTCellIndex == 0)
 		return 0;
 
-	CVLib::FastMarching::Cell* minTCell =  m_theGrid[minTCellIndex];
+	cloudViewer::FastMarching::Cell* minTCell =  m_theGrid[minTCellIndex];
 	assert(minTCell && minTCell->state != PlanarCell::ACTIVE_CELL);
 
 	if (minTCell->T < Cell::T_INF())
@@ -236,7 +236,7 @@ int FastMarchingForFacetExtraction::step()
 				{
 					//get neighbor cell
 					unsigned nIndex = minTCellIndex + m_neighboursIndexShift[i];
-					CVLib::FastMarching::Cell* nCell = m_theGrid[nIndex];
+					cloudViewer::FastMarching::Cell* nCell = m_theGrid[nIndex];
 					if (nCell)
 					{
 						//if it' not yet a TRIAL cell
@@ -278,7 +278,7 @@ int FastMarchingForFacetExtraction::step()
 	return 1;
 }
 
-float FastMarchingForFacetExtraction::computeTCoefApprox(CVLib::FastMarching::Cell* originCell, CVLib::FastMarching::Cell* destCell) const
+float FastMarchingForFacetExtraction::computeTCoefApprox(cloudViewer::FastMarching::Cell* originCell, cloudViewer::FastMarching::Cell* destCell) const
 {
 	PlanarCell* oCell = static_cast<PlanarCell*>(originCell);
 	PlanarCell* dCell = static_cast<PlanarCell*>(destCell);
@@ -307,10 +307,10 @@ float FastMarchingForFacetExtraction::computeTCoefApprox(CVLib::FastMarching::Ce
 		theLSQPlaneEquation[2] = oCell->N.z;
 		theLSQPlaneEquation[3] = oCell->C.dot(oCell->N);
 
-		CVLib::ReferenceCloud Yk(m_octree->associatedCloud());
+		cloudViewer::ReferenceCloud Yk(m_octree->associatedCloud());
 		if (m_octree->getPointsInCell(oCell->cellCode, m_gridLevel, &Yk, true))
 		{
-			ScalarType reprojError = CVLib::DistanceComputationTools::ComputeCloud2PlaneDistance(&Yk, theLSQPlaneEquation, m_errorMeasure);
+			ScalarType reprojError = cloudViewer::DistanceComputationTools::ComputeCloud2PlaneDistance(&Yk, theLSQPlaneEquation, m_errorMeasure);
 			if (reprojError >= 0)
 				return (1.0f - orientationConfidence) * static_cast<float>(reprojError);
 		}
@@ -362,14 +362,14 @@ unsigned FastMarchingForFacetExtraction::updateFlagsTable(	ccGenericPointCloud* 
 	//for (size_t i = 0; i < m_activeCells.size(); ++i)
 	//{
 	//	//we remove the processed cell so as to be sure not to consider them again!
-	//	CVLib::FastMarching::Cell* cell = m_theGrid[m_activeCells[i]];
+	//	cloudViewer::FastMarching::Cell* cell = m_theGrid[m_activeCells[i]];
 	//	m_theGrid[m_activeCells[i]] = 0;
 	//	if (cell)
 	//		delete cell;
 	//}
 	
 	//unsigned pointCount = 0;
-	CVLib::ReferenceCloud Yk(m_octree->associatedCloud());
+	cloudViewer::ReferenceCloud Yk(m_octree->associatedCloud());
 	for (size_t i = 0; i < m_activeCells.size(); ++i)
 	{
 		PlanarCell* aCell = static_cast<PlanarCell*>(m_theGrid[m_activeCells[i]]);
@@ -393,7 +393,7 @@ unsigned FastMarchingForFacetExtraction::updateFlagsTable(	ccGenericPointCloud* 
 
 bool FastMarchingForFacetExtraction::setSeedCell(const Tuple3i& pos)
 {
-	if (!CVLib::FastMarching::setSeedCell(pos))
+	if (!cloudViewer::FastMarching::setSeedCell(pos))
 	{
 		return false;
 	}
@@ -402,7 +402,7 @@ bool FastMarchingForFacetExtraction::setSeedCell(const Tuple3i& pos)
 	{
 		if (!m_currentFacetPoints)
 		{
-			m_currentFacetPoints = new CVLib::ReferenceCloud(m_octree->associatedCloud());
+			m_currentFacetPoints = new cloudViewer::ReferenceCloud(m_octree->associatedCloud());
 		}
 		assert(m_currentFacetPoints->size() == 0);
 
@@ -419,14 +419,14 @@ bool FastMarchingForFacetExtraction::setSeedCell(const Tuple3i& pos)
 
 ScalarType FastMarchingForFacetExtraction::addCellToCurrentFacet(unsigned index)
 {
-	if (!m_currentFacetPoints || !m_initialized || !m_octree || m_gridLevel > CVLib::DgmOctree::MAX_OCTREE_LEVEL)
+	if (!m_currentFacetPoints || !m_initialized || !m_octree || m_gridLevel > cloudViewer::DgmOctree::MAX_OCTREE_LEVEL)
 		return -1;
 
 	PlanarCell* cell = static_cast<PlanarCell*>(m_theGrid[index]);
 	if (!cell)
 		return -1;
 
-	CVLib::ReferenceCloud Yk(m_octree->associatedCloud());
+	cloudViewer::ReferenceCloud Yk(m_octree->associatedCloud());
 	if (!m_octree->getPointsInCell(cell->cellCode, m_gridLevel, &Yk, true))
 		return -1;
 
@@ -479,10 +479,10 @@ void FastMarchingForFacetExtraction::initTrialCells()
 int FastMarchingForFacetExtraction::ExtractPlanarFacets(	ccPointCloud* theCloud,
 															unsigned char octreeLevel,
 															ScalarType maxError,
-															CVLib::DistanceComputationTools::ERROR_MEASURES errorMeasure,
+															cloudViewer::DistanceComputationTools::ERROR_MEASURES errorMeasure,
 															bool useRetroProjectionError/*=true*/,
-															CVLib::GenericProgressCallback* progressCb/*=0*/,
-															CVLib::DgmOctree* _theOctree/*=0*/)
+															cloudViewer::GenericProgressCallback* progressCb/*=0*/,
+															cloudViewer::DgmOctree* _theOctree/*=0*/)
 {
 	assert(theCloud);
 
@@ -503,11 +503,11 @@ int FastMarchingForFacetExtraction::ExtractPlanarFacets(	ccPointCloud* theCloud,
 	}
 
 	//we compute the octree if none is provided
-	CVLib::DgmOctree* theOctree = _theOctree;
-	QScopedPointer<CVLib::DgmOctree> tempOctree;
+	cloudViewer::DgmOctree* theOctree = _theOctree;
+	QScopedPointer<cloudViewer::DgmOctree> tempOctree;
 	if (!theOctree)
 	{
-		theOctree = new CVLib::DgmOctree(theCloud);
+		theOctree = new cloudViewer::DgmOctree(theCloud);
 		tempOctree.reset(theOctree);
 		if (theOctree->build(progressCb) < 1)
 		{

@@ -44,7 +44,7 @@ namespace
 		edge* nextEdge;
 	};
 
-	static void ReleaseEdgeList(edge**& theEdges, unsigned numberOfVertexes, CVLib::NormalizedProgress* nprogress = nullptr)
+	static void ReleaseEdgeList(edge**& theEdges, unsigned numberOfVertexes, cloudViewer::NormalizedProgress* nprogress = nullptr)
 	{
 		for (unsigned i = 0; i < numberOfVertexes; ++i)
 		{
@@ -153,7 +153,7 @@ CC_FILE_ERROR MAFilter::saveToFile(ccHObject* entity, const QString& filename, c
 		pDlg->setInfo(QObject::tr("Triangles = %1").arg(numberOfTriangles));
 		pDlg->start();
 	}
-	CVLib::NormalizedProgress nprogress(pDlg.data(), ((2 + coloursAdjustment) * numberOfTriangles + (3 + coloursAdjustment) * numberOfVertexes));
+	cloudViewer::NormalizedProgress nprogress(pDlg.data(), ((2 + coloursAdjustment) * numberOfTriangles + (3 + coloursAdjustment) * numberOfVertexes));
 
 	//we extract the (short) filename from the whole path
 	QString baseFilename = QFileInfo(filename).fileName();
@@ -337,7 +337,7 @@ CC_FILE_ERROR MAFilter::saveToFile(ccHObject* entity, const QString& filename, c
 		theMesh->placeIteratorAtBeginning();
 		for (unsigned i = 0; i < numberOfTriangles; ++i)
 		{
-			const CVLib::VerticesIndexes* tsi = theMesh->getNextTriangleVertIndexes(); //DGM: getNextTriangleVertIndexes is faster for mesh groups!
+			const cloudViewer::VerticesIndexes* tsi = theMesh->getNextTriangleVertIndexes(); //DGM: getNextTriangleVertIndexes is faster for mesh groups!
 
 			ind[0] = tsi->i1;
 			ind[1] = tsi->i2;
@@ -456,7 +456,7 @@ CC_FILE_ERROR MAFilter::saveToFile(ccHObject* entity, const QString& filename, c
 				return CC_FERR_WRITING;
 			}
 
-			CVLib::VerticesIndexes* tsi = theMesh->getNextTriangleVertIndexes(); //DGM: getNextTriangleVertIndexes is faster for mesh groups!
+			cloudViewer::VerticesIndexes* tsi = theMesh->getNextTriangleVertIndexes(); //DGM: getNextTriangleVertIndexes is faster for mesh groups!
 			ind[0] = tsi->i1;
 			ind[1] = tsi->i2;
 			ind[2] = tsi->i3;
@@ -535,7 +535,7 @@ CC_FILE_ERROR MAFilter::saveToFile(ccHObject* entity, const QString& filename, c
 		{
 			for (unsigned i = 0; i < numberOfTriangles; ++i)
 			{
-				CVLib::VerticesIndexes* tsi = theMesh->getNextTriangleVertIndexes(); //DGM: getNextTriangleVertIndexes is faster for mesh groups!
+				cloudViewer::VerticesIndexes* tsi = theMesh->getNextTriangleVertIndexes(); //DGM: getNextTriangleVertIndexes is faster for mesh groups!
 				ind[0] = tsi->i1;
 				ind[1] = tsi->i2;
 				ind[2] = tsi->i3;

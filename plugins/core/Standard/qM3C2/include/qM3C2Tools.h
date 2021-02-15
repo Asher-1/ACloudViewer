@@ -51,22 +51,22 @@ public:
 	/** See qCC's ccNormalVectors::ComputeCloudNormals.
 		\warning normals orientation is not resolved!
 	**/
-	static bool ComputeCorePointsNormals(	CVLib::GenericIndexedCloud* corePoints,
+	static bool ComputeCorePointsNormals(	cloudViewer::GenericIndexedCloud* corePoints,
 											NormsIndexesTableType* corePointsNormals,
 											ccGenericPointCloud* sourceCloud,
 											const std::vector<PointCoordinateType>& sortedRadii,
 											bool& invalidNormals,
 											int maxThreadCount = 0,
 											ccScalarField* normalScale = 0,
-											CVLib::GenericProgressCallback* progressCb = 0,
-											CVLib::DgmOctree* inputOctree = 0);
+											cloudViewer::GenericProgressCallback* progressCb = 0,
+											cloudViewer::DgmOctree* inputOctree = 0);
 	
 	//! Re-orients normal vectors so that they all 'look' towards the nearest point of another cloud
-	static bool UpdateNormalOrientationsWithCloud(	CVLib::GenericIndexedCloud* normCloud,
+	static bool UpdateNormalOrientationsWithCloud(	cloudViewer::GenericIndexedCloud* normCloud,
 													NormsIndexesTableType& normsCodes,
-													CVLib::GenericIndexedCloud* orientationCloud,
+													cloudViewer::GenericIndexedCloud* orientationCloud,
 													int maxThreadCount = 0,
-													CVLib::GenericProgressCallback* progressCb = 0);
+													cloudViewer::GenericProgressCallback* progressCb = 0);
 
 	//! Makes all normals horizontal
 	static void MakeNormalsHorizontal(NormsIndexesTableType& normsCodes);
@@ -82,7 +82,7 @@ public:
 		or the median and interquartile range (if useMedian is true).
 		See http://en.wikipedia.org/wiki/Interquartile_range
 	**/
-	static void ComputeStatistics(	CVLib::DgmOctree::NeighboursSet& set,
+	static void ComputeStatistics(	cloudViewer::DgmOctree::NeighboursSet& set,
 									bool useMedian,
 									double& meanOrMedian,
 									double& stdDevOrIQR);

@@ -67,7 +67,7 @@ void CountNeighborsCUDA(const cudaStream_t& stream,
                         size_t count_size,
                         const T* const __restrict__ indices,
                         size_t indices_size) {
-    using namespace CVLib::utility;
+    using namespace cloudViewer::utility;
 
     cudaMemsetAsync(count, 0, sizeof(uint32_t) * count_size, stream);
 
@@ -151,7 +151,7 @@ void FillNeighborsIndexAndAttributesCUDA(
         size_t inp_num_queries,
         const int64_t* const __restrict__ out_neighbors_row_splits,
         size_t out_num_queries) {
-    using namespace CVLib::utility;
+    using namespace cloudViewer::utility;
 
     cudaMemsetAsync(count, 0, sizeof(uint32_t) * count_size, stream);
 
@@ -263,7 +263,7 @@ void InvertNeighborsListCUDA(const cudaStream_t& stream,
                              const size_t index_size,
                              int64_t* out_neighbors_row_splits,
                              const size_t out_num_queries) {
-    using namespace CVLib::utility;
+    using namespace cloudViewer::utility;
 
     const bool get_temp_size = !temp;
 

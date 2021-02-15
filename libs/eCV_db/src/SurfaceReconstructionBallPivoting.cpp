@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -49,7 +49,7 @@ typedef BallPivotingVertex* BallPivotingVertexPtr;
 typedef std::shared_ptr<BallPivotingEdge> BallPivotingEdgePtr;
 typedef std::shared_ptr<BallPivotingTriangle> BallPivotingTrianglePtr;
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 class BallPivotingVertex {
 public:
@@ -415,12 +415,12 @@ public:
 			utility::LogDebug("[FindCandidateVertex] candidate={:d} => {}",
 				candidate->idx_, candidate->point_.transpose());
 
-			bool coplanar = CVLib::utility::IntersectionTest::PointsCoplanar(
+			bool coplanar = cloudViewer::utility::IntersectionTest::PointsCoplanar(
 				src->point_, tgt->point_, opp->point_, candidate->point_);
-			if (coplanar && (CVLib::utility::IntersectionTest::LineSegmentsMinimumDistance(
+			if (coplanar && (cloudViewer::utility::IntersectionTest::LineSegmentsMinimumDistance(
 				mp, candidate->point_, src->point_,
 				opp->point_) < 1e-12 ||
-				CVLib::utility::IntersectionTest::LineSegmentsMinimumDistance(
+				cloudViewer::utility::IntersectionTest::LineSegmentsMinimumDistance(
 					mp, candidate->point_, tgt->point_,
 					opp->point_) < 1e-12)) {
 				utility::LogDebug(

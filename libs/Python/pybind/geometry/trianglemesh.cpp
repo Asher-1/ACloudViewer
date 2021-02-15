@@ -73,9 +73,9 @@ void pybind_trianglemesh(py::module &m) {
 				}
 				
 			}), "Create a triangle mesh from vertices", "cloud"_a = nullptr)
-		.def(py::init([](std::shared_ptr<CVLib::GenericIndexedMesh> index_mesh,
+		.def(py::init([](std::shared_ptr<cloudViewer::GenericIndexedMesh> index_mesh,
 			std::shared_ptr<ccGenericPointCloud> cloud) {
-				CVLib::GenericIndexedMesh* indexMesh = nullptr;
+				cloudViewer::GenericIndexedMesh* indexMesh = nullptr;
 				if (index_mesh)
 				{
 					indexMesh = index_mesh.get();
@@ -562,7 +562,7 @@ void pybind_trianglemesh(py::module &m) {
             "'As-Rigid-As-Possible Surface Modeling', 2007",
             "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
             "max_iter"_a,
-            "energy"_a = CVLib::GenericMesh::DeformAsRigidAsPossibleEnergy::Spokes,
+            "energy"_a = cloudViewer::GenericMesh::DeformAsRigidAsPossibleEnergy::Spokes,
             "smoothed_alpha"_a = 0.01)
 		.def_static("compute_triangle_area", &ccMesh::ComputeTriangleArea,
 					"Function that computes the area of a mesh triangle.", "p0"_a, "p1"_a, "p2"_a)
@@ -581,7 +581,7 @@ void pybind_trianglemesh(py::module &m) {
 							ccMesh::Triangulate(&cloud, type, update_normals, max_edge_length, dim));
                     },
                     "Creates a Delaunay 2.5D mesh from a point cloud \n"
-					"See CVLib::PointProjectionTools::computeTriangulation.",
+					"See cloudViewer::PointProjectionTools::computeTriangulation.",
 					"cloud"_a, "type"_a, "update_normals"_a = false, 
 					"max_edge_length"_a = 0, "dim"_a = 2)
         .def_static("triangulate_two_polylines",

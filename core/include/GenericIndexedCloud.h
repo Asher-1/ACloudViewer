@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -22,7 +22,7 @@
 //Local
 #include "GenericCloud.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 
 //! A generic 3D point cloud with index-based point access

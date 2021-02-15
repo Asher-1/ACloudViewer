@@ -51,7 +51,7 @@ enum class ECV_DB_LIB_API PinholeCameraIntrinsicParameters {
 ///
 /// \brief Contains the pinhole camera intrinsic parameters.
 class ECV_DB_LIB_API PinholeCameraIntrinsic :
-	public CVLib::utility::IJsonConvertible {
+    public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     PinholeCameraIntrinsic();

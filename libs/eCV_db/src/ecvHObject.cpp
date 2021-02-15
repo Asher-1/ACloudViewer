@@ -260,7 +260,7 @@ void ccHObject::ResizeAndPaintUniformColor(
 	colors.resize(size);
 	Eigen::Vector3d clipped_color = color;
 	if (color.minCoeff() < 0 || color.maxCoeff() > 1) {
-		CVLib::utility::LogWarning(
+		cloudViewer::utility::LogWarning(
 			"[ccHObject::ResizeAndPaintUniformColor] invalid color in paintUniformColor, clipping to [0, 1]");
 		clipped_color = clipped_color.array()
 			.max(Eigen::Vector3d(0, 0, 0).array())
@@ -376,44 +376,44 @@ void ccHObject::RotateNormals(const Eigen::Matrix3d& R,
 
 Eigen::Matrix3d ccHObject::GetRotationMatrixFromXYZ(
 	const Eigen::Vector3d& rotation) {
-	return CVLib::utility::RotationMatrixX(rotation(0)) *
-		CVLib::utility::RotationMatrixY(rotation(1)) *
-		CVLib::utility::RotationMatrixZ(rotation(2));
+	return cloudViewer::utility::RotationMatrixX(rotation(0)) *
+		cloudViewer::utility::RotationMatrixY(rotation(1)) *
+		cloudViewer::utility::RotationMatrixZ(rotation(2));
 }
 
 Eigen::Matrix3d ccHObject::GetRotationMatrixFromYZX(
 	const Eigen::Vector3d& rotation) {
-	return CVLib::utility::RotationMatrixY(rotation(0)) *
-		CVLib::utility::RotationMatrixZ(rotation(1)) *
-		CVLib::utility::RotationMatrixX(rotation(2));
+	return cloudViewer::utility::RotationMatrixY(rotation(0)) *
+		cloudViewer::utility::RotationMatrixZ(rotation(1)) *
+		cloudViewer::utility::RotationMatrixX(rotation(2));
 }
 
 Eigen::Matrix3d ccHObject::GetRotationMatrixFromZXY(
 	const Eigen::Vector3d& rotation) {
-	return CVLib::utility::RotationMatrixZ(rotation(0)) *
-		CVLib::utility::RotationMatrixX(rotation(1)) *
-		CVLib::utility::RotationMatrixY(rotation(2));
+	return cloudViewer::utility::RotationMatrixZ(rotation(0)) *
+		cloudViewer::utility::RotationMatrixX(rotation(1)) *
+		cloudViewer::utility::RotationMatrixY(rotation(2));
 }
 
 Eigen::Matrix3d ccHObject::GetRotationMatrixFromXZY(
 	const Eigen::Vector3d& rotation) {
-	return CVLib::utility::RotationMatrixX(rotation(0)) *
-		CVLib::utility::RotationMatrixZ(rotation(1)) *
-		CVLib::utility::RotationMatrixY(rotation(2));
+	return cloudViewer::utility::RotationMatrixX(rotation(0)) *
+		cloudViewer::utility::RotationMatrixZ(rotation(1)) *
+		cloudViewer::utility::RotationMatrixY(rotation(2));
 }
 
 Eigen::Matrix3d ccHObject::GetRotationMatrixFromZYX(
 	const Eigen::Vector3d& rotation) {
-	return CVLib::utility::RotationMatrixZ(rotation(0)) *
-		CVLib::utility::RotationMatrixY(rotation(1)) *
-		CVLib::utility::RotationMatrixX(rotation(2));
+	return cloudViewer::utility::RotationMatrixZ(rotation(0)) *
+		cloudViewer::utility::RotationMatrixY(rotation(1)) *
+		cloudViewer::utility::RotationMatrixX(rotation(2));
 }
 
 Eigen::Matrix3d ccHObject::GetRotationMatrixFromYXZ(
 	const Eigen::Vector3d& rotation) {
-	return CVLib::utility::RotationMatrixY(rotation(0)) *
-		CVLib::utility::RotationMatrixX(rotation(1)) *
-		CVLib::utility::RotationMatrixZ(rotation(2));
+	return cloudViewer::utility::RotationMatrixY(rotation(0)) *
+		cloudViewer::utility::RotationMatrixX(rotation(1)) *
+		cloudViewer::utility::RotationMatrixZ(rotation(2));
 }
 
 Eigen::Matrix3d ccHObject::GetRotationMatrixFromAxisAngle(

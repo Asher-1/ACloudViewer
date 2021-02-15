@@ -64,7 +64,7 @@ target_link_libraries( benchmarks benchmark::benchmark benchmark::benchmark_main
 target_link_libraries( benchmarks ECV_DB_LIB )
 target_link_libraries( benchmarks ECV_IO_LIB )
 target_link_libraries( benchmarks OPENGL_ENGINE_LIB )
-ShowAndAbortOnWarning(benchmarks)
+cloudViewer_show_and_abort_on_warning(benchmarks)
 cloudViewer_set_global_properties(benchmarks)
 
 if (BUILD_CUDA_MODULE)

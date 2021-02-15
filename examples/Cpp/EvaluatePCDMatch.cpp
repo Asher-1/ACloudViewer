@@ -30,7 +30,7 @@
 #include "CloudViewer.h"
 
 void PrintHelp() {
-    using namespace CVLib;
+    using namespace cloudViewer;
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > EvaluatePCDMatch [options]");
@@ -50,7 +50,7 @@ void PrintHelp() {
 bool ReadLogFile(const std::string &filename,
                  std::vector<std::pair<int, int>> &pair_ids,
                  std::vector<Eigen::Matrix4d> &transformations) {
-    using namespace CVLib;
+    using namespace cloudViewer;
     pair_ids.clear();
     transformations.clear();
     FILE *f = utility::filesystem::FOpen(filename, "r");
@@ -104,7 +104,7 @@ bool ReadLogFile(const std::string &filename,
 }
 
 int main(int argc, char *argv[]) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
     if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
         utility::ProgramOptionExists(argc, argv, "-h")) {

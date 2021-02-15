@@ -25,7 +25,7 @@
 #include "ecvBBox.h"
 #include "ecvAdvancedTypes.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 	class GenericProgressCallback;
 	class ReferenceCloud;
@@ -36,7 +36,7 @@ class ccPointCloud;
 class ccMaterialSet;
 
 //! Generic mesh interface
-class ECV_DB_LIB_API ccGenericMesh : public CVLib::GenericIndexedMesh, public ccHObject
+class ECV_DB_LIB_API ccGenericMesh : public cloudViewer::GenericIndexedMesh, public ccHObject
 {
 
 public:
@@ -192,7 +192,7 @@ public:
 								bool withNormals,
 								bool withRGB,
 								bool withTexture,
-								CVLib::GenericProgressCallback* pDlg = nullptr);
+								cloudViewer::GenericProgressCallback* pDlg = nullptr);
 
 	//! Imports the parameters from another mesh
 	/** Only the specific parameters are imported.

@@ -20,6 +20,10 @@
 #ifndef ECV_COLOR_SCALE_EDITOR_WIDGET_HEADER
 #define ECV_COLOR_SCALE_EDITOR_WIDGET_HEADER
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 #include "CVPluginAPI.h"
 
 //Qt

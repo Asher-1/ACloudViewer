@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -33,7 +33,7 @@
 
 #include <functional>
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
     /// Function to solve Ax=b
@@ -387,4 +387,4 @@ namespace utility {
         const std::vector<int>& indices);
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

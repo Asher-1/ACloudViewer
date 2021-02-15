@@ -37,7 +37,7 @@ public:
 
 public:
     bool LoadFromFile(const std::string &filename) {
-        FILE *fid = CVLib::utility::filesystem::FOpen(filename, "rb");
+        FILE *fid = cloudViewer::utility::filesystem::FOpen(filename, "rb");
         fread(&dataset_size_, sizeof(int), 1, fid);
         fread(&dimension_, sizeof(int), 1, fid);
         data_.resize(dataset_size_ * dimension_);
@@ -81,7 +81,7 @@ public:
 };
 
 void PrintHelp() {
-    using namespace CVLib;
+    using namespace cloudViewer;
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > EvaluateFeatureMatch [options]");
@@ -99,7 +99,7 @@ void PrintHelp() {
 bool ReadLogFile(const std::string &filename,
                  std::vector<std::pair<int, int>> &pair_ids,
                  std::vector<Eigen::Matrix4d> &transformations) {
-    using namespace CVLib;
+    using namespace cloudViewer;
     pair_ids.clear();
     transformations.clear();
     FILE *f = utility::filesystem::FOpen(filename, "r");
@@ -153,13 +153,13 @@ bool ReadLogFile(const std::string &filename,
 }
 
 void WriteBinaryResult(const std::string &filename, std::vector<double> &data) {
-    FILE *f = CVLib::utility::filesystem::FOpen(filename, "wb");
+    FILE *f = cloudViewer::utility::filesystem::FOpen(filename, "wb");
     fwrite(data.data(), sizeof(double), data.size(), f);
     fclose(f);
 }
 
 int main(int argc, char *argv[]) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
     if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
         utility::ProgramOptionExists(argc, argv, "-h")) {

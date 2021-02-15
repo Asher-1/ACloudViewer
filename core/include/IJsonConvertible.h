@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef CV_IJSONCONVERTIBLE_HEADER
-#define CV_IJSONCONVERTIBLE_HEADER
+#pragma once
 
 #include "CVCoreLib.h"
 
@@ -33,11 +32,13 @@
 #include "Eigen.h"
 #include <Eigen/Core>
 
+/// @cond
 namespace Json {
 class Value;
 }  // namespace Json
+/// @endcond
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 /// Class IJsonConvertible defines the behavior of a class that can convert
@@ -49,6 +50,9 @@ public:
 public:
     virtual bool ConvertToJsonValue(Json::Value &value) const = 0;
     virtual bool ConvertFromJsonValue(const Json::Value &value) = 0;
+
+    /// Convert to a styled string representation of JSON data for display
+    virtual std::string ToString() const;
 
 public:
     static bool EigenVector3dFromJsonArray(Eigen::Vector3d &vec,
@@ -82,6 +86,4 @@ public:
 };
 
 }  // namespace utility
-}  // namespace CVLib
-
-#endif // CV_IJSONCONVERTIBLE_HEADER
+}  // namespace cloudViewer

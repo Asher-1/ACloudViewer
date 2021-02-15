@@ -101,7 +101,7 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 		double angle_rad;
 		CCVector3d axis, trans;
 		mat.getParameters(angle_rad, axis, trans);
-        double angle_deg = CVLib::RadiansToDegrees(angle_rad);
+        double angle_deg = cloudViewer::RadiansToDegrees(angle_rad);
 		normalContext.transformInfo.setRotation(angle_deg, axis);
 	}
 

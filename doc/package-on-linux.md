@@ -16,7 +16,7 @@
 
 3. Make translations
 
-		cp plugins lib/
+		cp -r plugins lib/
 		cd lib/
 		mkdir translations
 		cp TRANSLATIONS_DIR/ErowCloudViewer_zh.qm translations/
@@ -24,8 +24,9 @@
 4. Copy QT_DIR/gcc_64/plugins/* and go into platforms folder
 (Note: need copy libQOpenGL.so.5 to ErowCloudViewer directory)
 		
-		cp QT_DIR/gcc_64/plugins/* ./
+		cp -r QT_DIR/gcc_64/plugins/* ./
 		cd platforms
+		cp ../../copylib.sh ./
 		./copylib.sh libqxcb.so
 		mv lib/* ../ && rm -rf lib
 
@@ -33,6 +34,7 @@
 5. Find dependences for plugins(libQPDAL_IO_PLUGIN.so and libQMANUAL_SEG_PLUGIN.so)
  
 		cd ../plugins/
+		cp ../../copylib.sh ./
 		./copylib.sh libQPDAL_IO_PLUGIN.so
 		mv lib/* ../ && rm -rf lib
 		./copylib.sh libQMANUAL_SEG_PLUGIN.so
@@ -41,7 +43,7 @@
 6. Copy ErowCloudviewer.desktop, ErowCloudviewer.png, ErowCloudviewer.svg and ErowCloudViewer.sh from source code
 		
 		cd ..
-		cp SOURECE_CODE/ErowCloudviewer* ./
+		cp SOURECE_CODE/util/ErowCloudviewer* ./
 
 7. Run ErowCloudViewer.sh instead of ErowCloudViewer
 

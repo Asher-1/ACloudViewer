@@ -24,6 +24,8 @@ see quazip/(un)zip.h files for details. Basically it's the zlib license.
 
 #include "quaziodevice.h"
 
+ #pragma warning(disable : 4996)
+
 #define QUAZIO_INBUFSIZE 4096
 #define QUAZIO_OUTBUFSIZE 4096
 

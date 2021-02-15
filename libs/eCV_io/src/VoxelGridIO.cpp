@@ -41,7 +41,7 @@ using namespace io;
 namespace ply_voxelgrid_reader {
 
 	struct PLYReaderState {
-		CVLib::utility::ConsoleProgressBar *progress_bar;
+		cloudViewer::utility::ConsoleProgressBar *progress_bar;
 		std::vector<geometry::Voxel> *voxelgrid_ptr;
 		Eigen::Vector3d origin;
 		double voxel_size;
@@ -133,7 +133,7 @@ static const std::unordered_map<std::string,
 
 namespace io {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridFromFile(
         const std::string &filename,

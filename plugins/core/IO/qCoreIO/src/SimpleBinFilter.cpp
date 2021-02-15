@@ -209,7 +209,7 @@ CC_FILE_ERROR SimpleBinFilter::saveToFile(ccHObject* root, const QString& filena
 		pDlg->start();
 	}
 
-	CVLib::NormalizedProgress nProgress(pDlg.data(), pointCount);
+	cloudViewer::NormalizedProgress nProgress(pDlg.data(), pointCount);
 
 	//we can eventually save the data
 	dataStream.setFloatingPointPrecision(QDataStream::SinglePrecision); //we wave only 'float' values in the data
@@ -517,7 +517,7 @@ CC_FILE_ERROR SimpleBinFilter::loadFile(const QString& filename, ccHObject& cont
 		pDlg->setModal(true);
 		pDlg->start();
 	}
-	CVLib::NormalizedProgress nProgress(pDlg.data(), static_cast<unsigned>(descriptor.pointCount));
+	cloudViewer::NormalizedProgress nProgress(pDlg.data(), static_cast<unsigned>(descriptor.pointCount));
 
 	//reserve memory
 	for (size_t i = 0; i < descriptor.SFs.size(); ++i)

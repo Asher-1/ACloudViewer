@@ -42,7 +42,7 @@ const std::vector<double> Sobel32 = {1.0, 2.0, 1.0};
 
 namespace cloudViewer {
 namespace geometry {
-	using namespace CVLib;
+	using namespace cloudViewer;
 	void Image::onDeletionOf(const ccHObject * obj)
 	{
 		ccHObject::onDeletionOf(obj);

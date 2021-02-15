@@ -56,9 +56,9 @@
 namespace py = pybind11;
 using namespace py::literals;
 
-typedef std::vector<Eigen::Matrix4d, CVLib::utility::Matrix4d_allocator>
+typedef std::vector<Eigen::Matrix4d, cloudViewer::utility::Matrix4d_allocator>
         temp_eigen_matrix4d;
-typedef std::vector<Eigen::Vector4i, CVLib::utility::Vector4i_allocator>
+typedef std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator>
         temp_eigen_vector4i;
 
 PYBIND11_MAKE_OPAQUE(std::vector<int>);
@@ -166,12 +166,12 @@ struct cloudViewer_optional_caster {
 };
 
 template <typename T>
-struct type_caster<CVLib::utility::optional<T>>
-    : public cloudViewer_optional_caster<CVLib::utility::optional<T>> {};
+struct type_caster<cloudViewer::utility::optional<T>>
+    : public cloudViewer_optional_caster<cloudViewer::utility::optional<T>> {};
 
 template <>
-struct type_caster<CVLib::utility::nullopt_t>
-    : public void_caster<CVLib::utility::nullopt_t> {};
+struct type_caster<cloudViewer::utility::nullopt_t>
+    : public void_caster<cloudViewer::utility::nullopt_t> {};
 
 }  // namespace detail
 }  // namespace pybind11

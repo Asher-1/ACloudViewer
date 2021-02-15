@@ -56,7 +56,7 @@ namespace geometry {
 ///
 /// Triangle mesh contains vertices. Optionally, the mesh may also contain
 /// vertex normals and vertex colors.
-class ECV_DB_LIB_API ecvMeshBase : public CVLib::GenericMesh, public ccHObject {
+class ECV_DB_LIB_API ecvMeshBase : public cloudViewer::GenericMesh, public ccHObject {
 
 public:
     /// \brief Default Constructor.
@@ -75,7 +75,7 @@ public:
     // inherited methods (GenericIndexedMesh)
     virtual void placeIteratorAtBeginning() override {}
     virtual void forEach(genericTriangleAction action) override {}
-    virtual CVLib::GenericTriangle *_getNextTriangle() override {
+    virtual cloudViewer::GenericTriangle *_getNextTriangle() override {
         return nullptr;
     }
 

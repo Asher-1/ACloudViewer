@@ -24,7 +24,7 @@
 //Qt
 #include <QSettings>
 
-//CVLib
+//cloudViewer
 #include <MeshSamplingTools.h>
 
 //System
@@ -46,7 +46,7 @@ static const char c_csm_stepColor[]				= "color";
 static const char c_csm_customLabels[]			= "labels";
 static const char c_csm_customLabelValue[]		= "value";
 
-//matplotlib library colorscale created by Stéfan van der Walt and Nathaniel Smith
+//matplotlib library colorscale created by Stan van der Walt and Nathaniel Smith
 double s_viridis[] =
 {
 	0.26700401, 0.00487433, 0.32941519,
@@ -598,9 +598,9 @@ ccColorScale::Shared ccColorScalesManager::Create(DEFAULT_SCALES scaleType)
 		scale->insert(ccColorScaleElement(0.0, Qt::blue ), false);
 		scale->insert(ccColorScaleElement(0.5, Qt::green), false);
 		scale->insert(ccColorScaleElement(1.0, Qt::red  ), false);
-		assert(		CVLib::MeshSamplingTools::VERTEX_NORMAL < CVLib::MeshSamplingTools::VERTEX_BORDER
-				&&	CVLib::MeshSamplingTools::VERTEX_BORDER < CVLib::MeshSamplingTools::VERTEX_NON_MANIFOLD );
-		scale->setAbsolute(CVLib::MeshSamplingTools::VERTEX_NORMAL, CVLib::MeshSamplingTools::VERTEX_NON_MANIFOLD);
+        assert(		cloudViewer::MeshSamplingTools::VERTEX_NORMAL < cloudViewer::MeshSamplingTools::VERTEX_BORDER
+                &&	cloudViewer::MeshSamplingTools::VERTEX_BORDER < cloudViewer::MeshSamplingTools::VERTEX_NON_MANIFOLD );
+        scale->setAbsolute(cloudViewer::MeshSamplingTools::VERTEX_NORMAL, cloudViewer::MeshSamplingTools::VERTEX_NON_MANIFOLD);
 		scale->customLabels().insert(0);
 		scale->customLabels().insert(0.5);
 		scale->customLabels().insert(1.0);

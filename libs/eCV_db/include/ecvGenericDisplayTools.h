@@ -30,7 +30,7 @@
 #include <cmath>
 
 //! Generic display tools
-class ECV_DB_LIB_API ecvGenericDisplayTools : public CVLib::CVToolbox
+class ECV_DB_LIB_API ecvGenericDisplayTools : public cloudViewer::CVToolbox
 {
 
 public:

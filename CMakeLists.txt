@@ -1,12 +1,13 @@
-if (WIN32)
-    cmake_minimum_required(VERSION 3.18)
-else()
-    # If you're using Ubuntu 18.04, we suggest you install the latest
-    # CMake from the official repository https://apt.kitware.com/.
-    # CMake 3.17+ is required to allow linking with OBJECT libraries,
-    # to prevent erroneous -gencode option deduplication with CUDA,
-    # and to simplify generator expressions for selecting compile flags.
-    cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.18)
+# If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
+# official repository https://apt.kitware.com/.  CMake 3.18+ is required to
+# allow linking with OBJECT libraries, to prevent erroneous -gencode option
+# deduplication with CUDA, and to simplify generator expressions for selecting
+# compile flags and setting global hardened link flags.
+
+if (APPLE)
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+    "Minimum OS X deployment version" FORCE)
 endif()
 
 # One shouldn't generate the BUILD project directly in the SOURCES folder!
@@ -17,12 +18,11 @@ if ( ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
 	endif()
 endif()
 
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
-
 # ErowCloudViewer build options
-option(BUILD_SHARED_LIBS          "Build shared libraries"                   		    OFF)
+option(BUILD_SHARED_LIBS          "Build shared libraries"                   		OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"                          ON )
-option(BUILD_EXAMPLES             "Build CloudViewer example programs"        		    ON )
+option(WITH_IPPICV                "Use Intel Performance Primitives"                    ON )
+option(BUILD_EXAMPLES             "Build CloudViewer example programs"        		ON )
 option(BUILD_UNIT_TESTS           "Build CloudViewer unit tests"                        OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"                          OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                             ON )
@@ -56,14 +56,15 @@ option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"        
 option(WITH_FAISS                 "Enable Faiss"                                        ON )
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera"            OFF)
+option(USE_SYSTEM_LIBREALSENSE    "Use system pre-installed librealsense"               OFF)
 option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"               OFF)
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                            OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                               OFF)
 option(BUNDLE_CLOUDVIEWER_ML      "Includes the CloudViewer-ML repo in the wheel"       OFF)
-option(DEVELOPER_BUILD            "Add -dev+commit_hash to the project version number"  ON )
+option(DEVELOPER_BUILD            "Add +commit_hash to the project version number"      ON )
 # PCL ENGINE SUPPORT
-option(USE_PCL_BACKEND           "Check to use pcl library as backend" 			        ON )
+option(USE_PCL_BACKEND           "Check to use pcl library as backend" 			ON )
 
 option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON )
 
@@ -72,8 +73,17 @@ option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll outpu
 # downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
 # are prepared manually by the user. This is only supported by limited 3rd party
 # libraries.
+
+set(THIRD_PARTY_FROM "cmake options")
+if(DEFINED ENV{THIRD_PARTY_DOWNLOAD_DIR} AND
+        IS_DIRECTORY "$ENV{THIRD_PARTY_DOWNLOAD_DIR}" AND
+        NOT THIRD_PARTY_DOWNLOAD_DIR)
+    set(THIRD_PARTY_DOWNLOAD_DIR "$ENV{THIRD_PARTY_DOWNLOAD_DIR}")
+    set(THIRD_PARTY_FROM "the environment")
+endif()
 if(THIRD_PARTY_DOWNLOAD_DIR)
-    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to ${THIRD_PARTY_DOWNLOAD_DIR}.")
+    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to "
+    "${THIRD_PARTY_DOWNLOAD_DIR} from ${THIRD_PARTY_FROM}.")
 else()
     message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
 endif()
@@ -114,18 +124,11 @@ if(POLICY CMP0063)
 endif()
 
 # Set policy to enable MSVC_RUNTIME_LIBRARY property.
-# TODO: This requires CMake 3.15+ on Winndows. At this point, we're not updating
-# cmake_minimum_required to 3.15 since it may break existing systems. As Windows
-# users can typically download the latest CMake, the impact should be minimal.
 if(POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
 
 # Catch a few incompatible build options
-if((UNIX AND NOT APPLE) AND BUILD_LIBREALSENSE)
-    message(STATUS "Disabling RealSense since it is not fully supported on Linux.")
-    set(BUILD_LIBREALSENSE OFF)
-endif()
 if (APPLE AND ENABLE_HEADLESS_RENDERING)
     message(STATUS "Headless rendering is not supported on Mac OS")
     set(ENABLE_HEADLESS_RENDERING OFF)
@@ -152,8 +155,8 @@ foreach(ver ${CLOUDVIEWER_VERSION_READ})
 endforeach()
 set(CLOUDVIEWER_VERSION_DEVHASH "")
 if(DEVELOPER_BUILD)
-    execute_process(COMMAND git log --pretty=format:%h -n 1
-        OUTPUT_VARIABLE GIT_REV ERROR_QUIET)
+    execute_process(COMMAND git -C "${CMAKE_SOURCE_DIR}" log --pretty=format:%h -n 1
+        OUTPUT_VARIABLE GIT_REV)
     if (GIT_REV)
         set(CLOUDVIEWER_VERSION_DEVHASH "+${GIT_REV}")
     endif()
@@ -255,6 +258,101 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(COLOUDVIEWER_APP_DIR_NAME "CloudViewer")
 set(CLOUDVIEWER_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${COLOUDVIEWER_APP_DIR_NAME}")
 make_directory(${CLOUDVIEWER_OUTPUT_DIRECTORY})
+
+# Global Security options (including 3rd party code)
+# -Wall -Wextra -Werror or /W4 /WX are enabled for ErowCloudViewer code (not 3rd party)
+if (MSVC)
+    set(HARDENING_CFLAGS
+        /sdl            # SDL Checks
+        /GS             # Code Generation: Security Check
+        /guard:cf       # Code Generation: Control Flow Guard
+        CACHE STRING "Compiler flags for security hardening")
+    set(HARDENING_LDFLAGS
+        /INCREMENTAL:NO  # Disable incremental Linking
+        #/NXCOMPAT       # Data Execution Prevention: On by default in VS2019
+        /DYNAMICBASE     # Randomized Base Address
+        /HIGHENTROPYVA   #
+        #/INTEGRITYCHECK # Signed binary: Disabled
+        CACHE STRING "Linker flags for security hardening")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(HARDENING_CFLAGS
+        -fsanitize=safe-stack           # Stack execution protection
+        -fstack-protector               # Stack-based buffer overrun detection
+        -fpie -fPIC                     # Position independent execution
+        -D_FORTIFY_SOURCE=2
+        -Wformat -Wformat-security      # Format string vulnerability
+        -fsanitize=cfi                  # Control flow integrity
+        CACHE STRING "Compiler flags for security hardening")
+    set(HARDENING_LDFLAGS
+        -Wl,-z,relro,-z,now         # Data relocation protection
+        -pie                        # Position independent execution
+        CACHE STRING "Linker flags for security hardening")
+    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
+        list(APPEND HARDENING_CFLAGS -O2)
+        list(APPEND HARDENING_LDFLAGS -S)
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    set(HARDENING_CFLAGS
+        -fstack-protector               # Stack-based buffer overrun detection
+        -fpie -fPIC                     # Position independent execution
+        -D_FORTIFY_SOURCE=2
+        -Wformat -Wformat-security      # Format string vulnerability
+        CACHE STRING "Compiler flags for security hardening")
+    set(HARDENING_LDFLAGS  ""
+        # -pie Position independent execution is default on macOSX 10.6+
+        CACHE STRING "Linker flags for security hardening")
+    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
+        list(APPEND HARDENING_CFLAGS -O2)
+        list(APPEND HARDENING_LDFLAGS -S)
+    endif()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(HARDENING_CFLAGS
+        -fstack-protector-strong    # Stack-based buffer overrun detection
+        -fPIE -fPIC                 # Position independent
+        -D_FORTIFY_SOURCE=2
+        -Wformat -Wformat-security  # Format string vulnerability
+        CACHE STRING "Compiler flags for security hardening")
+    set(HARDENING_LDFLAGS
+        -Wl,-z,noexecstack   # Stack execution protection
+        -Wl,-z,relro,-z,now  # Data relocation protection
+        -pie                 # Position independent
+        CACHE STRING "Linker flags for security hardening")
+    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
+        list(APPEND HARDENING_CFLAGS -O2)
+        list(APPEND HARDENING_LDFLAGS -strip-debug)
+    endif()
+else()
+    message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}. No security "
+    "flags set")
+endif()
+include(CheckCXXCompilerFlag)
+foreach(FLAG ${HARDENING_CFLAGS})
+    check_cxx_compiler_flag(${FLAG} FLAG${FLAG})
+    if (NOT FLAG${FLAG})
+        list(REMOVE_ITEM HARDENING_CFLAGS ${FLAG})
+        message(WARNING "Compiler does not support security option ${FLAG}")
+    endif()
+endforeach()
+include(CheckLinkerFlag)
+foreach(FLAG ${HARDENING_LDFLAGS})
+    check_linker_flag(CXX ${FLAG} FLAG${FLAG})              # cmake 3.18+
+    if (NOT FLAG${FLAG})
+        list(REMOVE_ITEM HARDENING_LDFLAGS ${FLAG})
+        message(WARNING "Linker does not support security option ${FLAG}")
+    endif()
+endforeach()
+string(REPLACE ";" "," CUDA_HARDENING_CFLAGS "${HARDENING_CFLAGS}")
+string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")
+message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS} and
+linker flags: ${HARDENING_LDFLAGS}")
+add_compile_options(
+    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_CFLAGS}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>"
+    )
+add_link_options(
+    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_LDFLAGS}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>"
+    )
 
 # Build CUDA module by default if CUDA is available
 # Compatible with CMake 3.8+
@@ -471,7 +569,7 @@ function(Directories root output)
     set (${output} ${data} PARENT_SCOPE)
 endfunction()
 
-function(ShowAndAbortOnWarning trgt)
+function(cloudViewer_show_and_abort_on_warning trgt)
     if (BUILD_CUDA_MODULE)
         if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.2")
             set(CUDA_FLAGS "--compiler-options -Wall --Werror cross-execution-space-call,reorder,deprecated-declarations")
@@ -482,10 +580,24 @@ function(ShowAndAbortOnWarning trgt)
         set(CUDA_FLAGS "")
     endif()
 
+    set(DISABLE_MSVC_WARNINGS
+            /wd4201        # non-standard extention nameless struct (filament includes)
+            /wd4310        # cast truncates const value (filament)
+            /wd4505        # unreferenced local function has been removed (dirent)
+            /wd4127        # conditional expression is const (Eigen)
+            /wd4189        # local variable is initialized but not referenced (PoissonRecon)
+            /wd4324        # structure was padded due to alignment specifier (qhull)
+            /wd4706        # assignment within conditional expression (fileIO, ...)
+            /wd4100        # unreferenced parameter (many places in Open3D code)
+            /wd4702        # unreachable code (many places in Open3D code)
+            /wd4244        # implicit data type conversion (many places in Open3D code)
+            /wd4245        # signed/unsigned mismatch (visualization, PoissonRecon, ...)
+            )
+
     target_compile_options(${trgt} PRIVATE
-        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:MSVC>:/W3>>
+        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX- ${DISABLE_MSVC_WARNINGS}>>
         $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall>>
-        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W3>>
+        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX- ${DISABLE_MSVC_WARNINGS}>>
         $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall>>
         $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
     )
@@ -683,9 +795,10 @@ message(STATUS "Enabled Features:")
 cloudviewer_aligned_print("OpenMP" "${WITH_OPENMP}")
 cloudviewer_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
 cloudviewer_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
-cloudviewer_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
+cloudviewer_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
 cloudviewer_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
 cloudviewer_aligned_print("Build GUI" "${BUILD_GUI}")
+cloudviewer_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
 if(WIN32)
     cloudviewer_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
 endif()
@@ -719,6 +832,7 @@ set(deps
     GLFW
     GOOGLETEST
     IMGUI
+    IPPICV
     JPEG
     JSONCPP
     LIBLZF

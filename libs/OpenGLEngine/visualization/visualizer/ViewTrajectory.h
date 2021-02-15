@@ -36,7 +36,7 @@
 namespace cloudViewer {
 namespace visualization {
 
-class ViewTrajectory : public CVLib::utility::IJsonConvertible {
+class ViewTrajectory : public cloudViewer::utility::IJsonConvertible {
 public:
     static const int INTERVAL_MAX;
     static const int INTERVAL_MIN;

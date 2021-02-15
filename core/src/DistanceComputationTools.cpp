@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -46,7 +46,7 @@
 #endif
 #endif
 
-namespace CVLib
+namespace cloudViewer
 {
 
 	//! List of triangles (indexes)
@@ -121,9 +121,9 @@ namespace CVLib
 			}
 		}
 	};
-} //namespace CVLib
+} //namespace cloudViewer
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 bool DistanceComputationTools::MultiThreadSupport()
 {
@@ -977,12 +977,12 @@ int DistanceComputationTools::intersectMeshWithOctree(	OctreeAndMeshIntersection
 //! Method used by computeCloud2MeshDistanceWithOctree
 void ComparePointsAndTriangles(	ReferenceCloud& Yk,
 								unsigned& remainingPoints,
-								CVLib::GenericIndexedMesh* mesh,
+								cloudViewer::GenericIndexedMesh* mesh,
 								std::vector<unsigned>& trianglesToTest,
 								std::size_t& trianglesToTestCount,
 								std::vector<ScalarType>& minDists,
 								ScalarType maxRadius,
-								CVLib::DistanceComputationTools::Cloud2MeshDistanceComputationParams& params)
+								cloudViewer::DistanceComputationTools::Cloud2MeshDistanceComputationParams& params)
 {
 	assert(mesh);
 	assert(remainingPoints <= Yk.size());
@@ -997,7 +997,7 @@ void ComparePointsAndTriangles(	ReferenceCloud& Yk,
 	while (trianglesToTestCount != 0)
 	{
 		//we query the vertex coordinates
-		CVLib::SimpleTriangle tri;
+		cloudViewer::SimpleTriangle tri;
 		mesh->getTriangleVertices(trianglesToTest[--trianglesToTestCount], tri.A, tri.B, tri.C);
 
 		//for each point inside the current cell
@@ -1089,7 +1089,7 @@ static DgmOctree* s_octree_MT = nullptr;
 static NormalizedProgress* s_normProgressCb_MT = nullptr;
 static OctreeAndMeshIntersection* s_intersection_MT = nullptr;
 static bool s_cellFunc_MT_success = true;
-static CVLib::DistanceComputationTools::Cloud2MeshDistanceComputationParams s_params_MT;
+static cloudViewer::DistanceComputationTools::Cloud2MeshDistanceComputationParams s_params_MT;
 
 //'processTriangles' mechanism (based on bit mask)
 static std::vector<std::vector<bool>*> s_bitArrayPool_MT;
@@ -2960,24 +2960,24 @@ ScalarType DistanceComputationTools::ComputeCloud2PlaneMaxDistance(	GenericCloud
 	return static_cast<ScalarType>(maxDist);
 }
 
-ScalarType DistanceComputationTools::ComputeCloud2PlaneDistance(CVLib::GenericCloud* cloud,
+ScalarType DistanceComputationTools::ComputeCloud2PlaneDistance(cloudViewer::GenericCloud* cloud,
 																const PointCoordinateType* planeEquation,
 																ERROR_MEASURES measureType)
 {
 	switch (measureType)
 	{
 	case RMS:
-		return CVLib::DistanceComputationTools::computeCloud2PlaneDistanceRMS(cloud,planeEquation);
+		return cloudViewer::DistanceComputationTools::computeCloud2PlaneDistanceRMS(cloud,planeEquation);
 
 	case MAX_DIST_68_PERCENT:
-		return CVLib::DistanceComputationTools::ComputeCloud2PlaneRobustMax(cloud,planeEquation,0.32f);
+		return cloudViewer::DistanceComputationTools::ComputeCloud2PlaneRobustMax(cloud,planeEquation,0.32f);
 	case MAX_DIST_95_PERCENT:
-		return CVLib::DistanceComputationTools::ComputeCloud2PlaneRobustMax(cloud,planeEquation,0.05f);
+		return cloudViewer::DistanceComputationTools::ComputeCloud2PlaneRobustMax(cloud,planeEquation,0.05f);
 	case MAX_DIST_99_PERCENT:
-		return CVLib::DistanceComputationTools::ComputeCloud2PlaneRobustMax(cloud,planeEquation,0.01f);
+		return cloudViewer::DistanceComputationTools::ComputeCloud2PlaneRobustMax(cloud,planeEquation,0.01f);
 	
 	case MAX_DIST:
-		return CVLib::DistanceComputationTools::ComputeCloud2PlaneMaxDistance(cloud,planeEquation);
+		return cloudViewer::DistanceComputationTools::ComputeCloud2PlaneMaxDistance(cloud,planeEquation);
 
 	default:
 		assert(false);

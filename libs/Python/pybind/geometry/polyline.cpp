@@ -41,38 +41,38 @@
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
 
-using namespace CVLib;
+using namespace cloudViewer;
 namespace cloudViewer {
 namespace geometry {
 
 void pybind_polyline(py::module &m) {
-	py::class_<CVLib::Polyline, PyGenericReferenceCloud<CVLib::Polyline>,
-		std::shared_ptr<CVLib::Polyline>, ReferenceCloud>
+	py::class_<cloudViewer::Polyline, PyGenericReferenceCloud<cloudViewer::Polyline>,
+		std::shared_ptr<cloudViewer::Polyline>, ReferenceCloud>
 		polyline(m, "Polyline", "The polyline is considered as a cloud of points "
 			"(in a specific order) with a open  closed state information..");
 	polyline.def(py::init([](std::shared_ptr<GenericIndexedCloudPersist> associated_cloud) {
-		return new CVLib::Polyline(associated_cloud.get());
+		return new cloudViewer::Polyline(associated_cloud.get());
 	}), "Polyline constructor", "associated_cloud"_a)
-		.def("__repr__", [](const CVLib::Polyline &poly) {
+		.def("__repr__", [](const cloudViewer::Polyline &poly) {
 		std::string info = fmt::format(
-			"CVLib::Polyline with {} points and is closed {}",
+			"cloudViewer::Polyline with {} points and is closed {}",
 			poly.size(), poly.isClosed() ? "True" : "False");
 		return info;
 	})
-	.def("is_closed", &CVLib::Polyline::isClosed,
+	.def("is_closed", &cloudViewer::Polyline::isClosed,
 		"Returns whether the polyline is closed or not.")
-	.def("set_closed", &CVLib::Polyline::setClosed,
+	.def("set_closed", &cloudViewer::Polyline::setClosed,
 		"Sets whether the polyline is closed or not.", "state"_a);
 	docstring::ClassMethodDocInject(m, "Polyline", "is_closed");
 	docstring::ClassMethodDocInject(m, "Polyline", "set_closed");
 
 	// cloudViewer.geometry.ccPolyline
 	py::class_<ccPolyline, PyGeometry<ccPolyline>, 
-		std::shared_ptr<ccPolyline>, CVLib::Polyline, ccHObject>
+		std::shared_ptr<ccPolyline>, cloudViewer::Polyline, ccHObject>
 		pyply(m, "ccPolyline", py::multiple_inheritance(), 
-			"Colored polyline, Extends the CVLib::Polyline class.");
+			"Colored polyline, Extends the cloudViewer::Polyline class.");
 	py::detail::bind_copy_functions<ccPolyline>(pyply);
-	//pyply.def(py::init([](std::shared_ptr<CVLib::GenericIndexedCloudPersist> cloud) {
+	//pyply.def(py::init([](std::shared_ptr<cloudViewer::GenericIndexedCloudPersist> cloud) {
 	//	return new ccPolyline(cloud.get());
 	//}), "cloud -> the associated point cloud (i.e. the vertices)", "cloud"_a = nullptr)
 	pyply.def(py::init([](std::shared_ptr<ccPointCloud> cloud) {

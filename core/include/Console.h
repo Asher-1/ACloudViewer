@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -45,7 +45,7 @@
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 enum class CV_CORE_LIB_API VerbosityLevel {
@@ -87,42 +87,52 @@ public:
 
 	static Logger &i();
 
-    void VError[[noreturn]](const char *format, fmt::format_args args) const {
+    void VError [[noreturn]] (const char *fname,
+                              int linenum,
+                              const char *fn_name,
+                              const char *format,
+                              fmt::format_args args) const {
         std::string err_msg = fmt::vformat(format, args);
-        err_msg = fmt::format("[CloudViewer ERROR] {}", err_msg);
+        err_msg = fmt::format(
+                "In function {}:\n"
+                "{}:{} [CloudViewer Error] {}",
+                fn_name, fname, linenum, err_msg);
         err_msg = ColorString(err_msg, TextColor::Red, 1);
         throw std::runtime_error(err_msg);
     }
 
     void VWarning(const char *format, fmt::format_args args) const {
         if (verbosity_level_ >= VerbosityLevel::Warning) {
-            ChangeConsoleColor(TextColor::Yellow, 1);
-            fmt::print("[CloudViewer WARNING] ");
-            fmt::vprint(format, args);
-            fmt::print("\n");
-            ResetConsoleColor();
+            std::string err_msg = fmt::vformat(format, args);
+            err_msg = fmt::format("[CloudViewer WARNING] {}", err_msg);
+            err_msg = ColorString(err_msg, TextColor::Yellow, 1);
+            print_fcn_(err_msg);
         }
     }
 
     void VInfo(const char *format, fmt::format_args args) const {
         if (verbosity_level_ >= VerbosityLevel::Info) {
-            fmt::print("[CloudViewer INFO] ");
-            fmt::vprint(format, args);
-            fmt::print("\n");
+            std::string err_msg = fmt::vformat(format, args);
+            err_msg = fmt::format("[CloudViewer INFO] {}", err_msg);
+            print_fcn_(err_msg);
         }
     }
 
     void VDebug(const char *format, fmt::format_args args) const {
         if (verbosity_level_ >= VerbosityLevel::Debug) {
-            fmt::print("[CloudViewer DEBUG] ");
-            fmt::vprint(format, args);
-            fmt::print("\n");
+            std::string err_msg = fmt::vformat(format, args);
+            err_msg = fmt::format("[CloudViewer DEBUG] {}", err_msg);
+            print_fcn_(err_msg);
         }
     }
 
     template <typename... Args>
-    void Error[[noreturn]](const char *format, const Args &... args) const {
-        VError(format, fmt::make_format_args(args...));
+    void Error [[noreturn]] (const char *fname,
+                             int linenum,
+                             const char *fn_name,
+                             const char *format,
+                             const Args &... args) const {
+        VError(fname, linenum, fn_name, format, fmt::make_format_args(args...));
     }
 
     template <typename... Args>
@@ -138,43 +148,6 @@ public:
     template <typename... Args>
     void Debug(const char *format, const Args &... args) const {
         VDebug(format, fmt::make_format_args(args...));
-    }
-
-    template <typename... Args>
-    void Errorf[[noreturn]](const char *format, const Args &... args) const {
-        std::string err_msg = fmt::sprintf(format, args...);
-        err_msg = fmt::format("[CloudViewer Error] {}", err_msg);
-        err_msg = ColorString(err_msg, TextColor::Red, 1);
-        throw std::runtime_error(err_msg);
-    }
-
-    template <typename... Args>
-    void Warningf(const char *format, const Args &... args) const {
-        if (verbosity_level_ >= VerbosityLevel::Warning) {
-            ChangeConsoleColor(TextColor::Yellow, 1);
-            fmt::print("[CloudViewer WARNING] ");
-            fmt::printf(format, args...);
-            ResetConsoleColor();
-            fmt::print("\n");
-        }
-    }
-
-    template <typename... Args>
-    void Infof(const char *format, const Args &... args) const {
-        if (verbosity_level_ >= VerbosityLevel::Info) {
-            fmt::print("[CloudViewer INFO] ");
-            fmt::printf(format, args...);
-            fmt::print("\n");
-        }
-    }
-
-    template <typename... Args>
-    void Debugf(const char *format, const Args &... args) const {
-        if (verbosity_level_ >= VerbosityLevel::Debug) {
-            fmt::print("[CloudViewer DEBUG] ");
-            fmt::printf(format, args...);
-            fmt::print("\n");
-        }
     }
 
 protected:
@@ -209,9 +182,33 @@ inline VerbosityLevel CV_CORE_LIB_API GetVerbosityLevel() {
 }
 
 template <typename... Args>
-inline void LogError[[noreturn]](const char *format, const Args &... args) {
-    Logger::i().VError(format, fmt::make_format_args(args...));
+inline void _LogError [[noreturn]] (const char *fname,
+                                    int linenum,
+                                    const char *fn_name,
+                                    const char *format,
+                                    Args &&... args) {
+    Logger::i().VError(fname, linenum, fn_name, format,
+                       fmt::make_format_args(args...));
 }
+// Compiler-specific function macro.
+// Ref: https://stackoverflow.com/a/4384825
+#ifdef _WIN32
+#define __FN__ __FUNCSIG__
+#else
+#define __FN__ __PRETTY_FUNCTION__
+#endif
+
+// Mimic 'macro in namespace' by concatenating utility:: and _LogError.
+// Ref: https://stackoverflow.com/a/11791202
+// We avoid using (format, ...) since in this case __VA_ARGS__ can be
+// empty, and the behavior of pruning trailing comma with ##__VA_ARGS__ is not
+// officially standard.
+// Ref: https://stackoverflow.com/a/28074198
+// __PRETTY_FUNCTION__ has to be converted, otherwise a bug regarding [noreturn]
+// will be triggered.
+// Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
+#define LogError(...) \
+    _LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
 
 template <typename... Args>
 inline void LogWarning(const char *format, const Args &... args) {
@@ -228,33 +225,16 @@ inline void LogDebug(const char *format, const Args &... args) {
     Logger::i().VDebug(format, fmt::make_format_args(args...));
 }
 
-template <typename... Args>
-inline void LogErrorf[[noreturn]](const char *format, const Args &... args) {
-    Logger::i().Errorf(format, args...);
-}
-
-template <typename... Args>
-inline void LogWarningf(const char *format, const Args &... args) {
-    Logger::i().Warningf(format, args...);
-}
-
-template <typename... Args>
-inline void LogInfof(const char *format, const Args &... args) {
-    Logger::i().Infof(format, args...);
-}
-
-template <typename... Args>
-inline void LogDebugf(const char *format, const Args &... args) {
-    Logger::i().Debugf(format, args...);
-}
-
 class CV_CORE_LIB_API VerbosityContextManager {
 public:
-    VerbosityContextManager(VerbosityLevel level);
+    VerbosityContextManager(VerbosityLevel level) : level_(level) {}
 
-    void enter();
+    void enter() {
+        level_backup_ = Logger::i().verbosity_level_;
+        Logger::i().verbosity_level_ = level_;
+    }
 
-    void exit();
+    void exit() { Logger::i().verbosity_level_ = level_backup_; }
 
 private:
     VerbosityLevel level_;
@@ -290,7 +270,7 @@ public:
                        std::string(resolution_, '='));
         } else {
             size_t new_progress_pixel =
-                    static_cast<size_t>(current_count_ * resolution_ / expected_count_);
+                    int(current_count_ * resolution_ / expected_count_);
             if (new_progress_pixel > progress_pixel_) {
                 progress_pixel_ = new_progress_pixel;
                 int percent = int(current_count_ * 100 / expected_count_);
@@ -316,30 +296,32 @@ private:
 std::string CV_CORE_LIB_API GetCurrentTimeStamp();
 
 std::string CV_CORE_LIB_API GetProgramOptionAsString(int argc,
-                                     char **argv,
-                                     const std::string &option,
-                                     const std::string &default_value = "");
+                                                     char **argv,
+                                                     const std::string &option,
+                                                     const std::string &default_value = "");
 
 int CV_CORE_LIB_API GetProgramOptionAsInt(int argc,
-                          char **argv,
-                          const std::string &option,
-                          const int default_value = 0);
+                                          char **argv,
+                                          const std::string &option,
+                                          const int default_value = 0);
 
 double CV_CORE_LIB_API GetProgramOptionAsDouble(int argc,
-                                char **argv,
-                                const std::string &option,
-                                const double default_value = 0.0);
+                                                char **argv,
+                                                const std::string &option,
+                                                const double default_value = 0.0);
 
 Eigen::VectorXd CV_CORE_LIB_API GetProgramOptionAsEigenVectorXd(
-        int argc,
-        char **argv,
-        const std::string &option,
-        const Eigen::VectorXd default_value = Eigen::VectorXd::Zero(0));
+                                int argc,
+                                char **argv,
+                                const std::string &option,
+                                const Eigen::VectorXd default_value = Eigen::VectorXd::Zero(0));
 
 bool CV_CORE_LIB_API ProgramOptionExists(int argc, char **argv, const std::string &option);
 
-bool CV_CORE_LIB_API ProgramOptionExistsAny(int argc, char **argv,
-                            const std::vector<std::string> &options);
+bool CV_CORE_LIB_API ProgramOptionExistsAny(int argc,
+                                            char **argv,
+                                            const std::vector<std::string> &options);
+
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

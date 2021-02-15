@@ -89,12 +89,12 @@ public:
 	QString getEquationString() const;
 
 	//! Fits a quadric primitive on a cloud
-	/** The cloud can be any CVLib::GenericIndexedCloudPersist-derived object.
+	/** The cloud can be any cloudViewer::GenericIndexedCloudPersist-derived object.
 		\param[in] cloud input cloud
 		\param[out] rms quadric fitting rms (optional)
 		\return quadric primitive (if successful)
 	**/
-	static ccQuadric* Fit(CVLib::GenericIndexedCloudPersist * cloud, double* rms/*=0*/);
+	static ccQuadric* Fit(cloudViewer::GenericIndexedCloudPersist * cloud, double* rms/*=0*/);
 
 protected:
 

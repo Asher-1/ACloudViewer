@@ -175,7 +175,7 @@ public:
 		else
 		{
 			//create relative distance matrix
-			CVLib::SquareMatrixf distMat(static_cast<unsigned>(count));
+			cloudViewer::SquareMatrixf distMat(static_cast<unsigned>(count));
 			if (distMat.isValid())
 			{
 				for (unsigned it1 = 0; it1 + 1 != count; ++it1)

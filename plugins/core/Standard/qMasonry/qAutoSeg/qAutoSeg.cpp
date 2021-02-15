@@ -903,27 +903,27 @@ void cwt2d(double sca, cv::Mat image, cv::Mat &cwtcfs, cv::Mat &bincfs)
 
 ccPolyline* contourPoly(ccPointCloud* stone)
 {
-	std::vector<CVLib::PointProjectionTools::IndexedCCVector2> point;
-	std::list<CVLib::PointProjectionTools::IndexedCCVector2*> hullPoint2;
+	std::vector<cloudViewer::PointProjectionTools::IndexedCCVector2> point;
+	std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*> hullPoint2;
 
 	for (unsigned i = 0; i < stone->size();++i)
 	{
 		PointCoordinateType x = stone->getPoint(i)->x;
 		PointCoordinateType z = stone->getPoint(i)->z;
-		CVLib::PointProjectionTools::IndexedCCVector2 P(x, z, i);
+		cloudViewer::PointProjectionTools::IndexedCCVector2 P(x, z, i);
 
 		point.push_back(P);
 	}
 
-	CVLib::PointProjectionTools::extractConcaveHull2D(point, hullPoint2, 0.0001);
+	cloudViewer::PointProjectionTools::extractConcaveHull2D(point, hullPoint2, 0.0001);
 
 	vector<unsigned> Vec;
 	for (int i = 0; i < (hullPoint2.size());++i)
 	{
 
-		list<CVLib::PointProjectionTools::IndexedCCVector2*>::iterator it = hullPoint2.begin();
+		list<cloudViewer::PointProjectionTools::IndexedCCVector2*>::iterator it = hullPoint2.begin();
 		std::advance(it, i);
-		CVLib::PointProjectionTools::IndexedCCVector2* P2 = *it;
+		cloudViewer::PointProjectionTools::IndexedCCVector2* P2 = *it;
 		int k = P2->index;
 		Vec.push_back(k);
 	}
@@ -965,29 +965,29 @@ ccPolyline* contourPoly(ccPointCloud* stone)
 
 ccPolyline* contourPoly2(ccPointCloud* cloud0, vector<int> V, QString name )
 {
-	std::vector<CVLib::PointProjectionTools::IndexedCCVector2> point;
-	std::list<CVLib::PointProjectionTools::IndexedCCVector2*> hullPoint2;
+	std::vector<cloudViewer::PointProjectionTools::IndexedCCVector2> point;
+	std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*> hullPoint2;
 
 	for (unsigned i =0; i<V.size();++i)
 
 	{
 		PointCoordinateType x = cloud0->getPoint(V[i])->x;
 		PointCoordinateType z = cloud0->getPoint(V[i])->z;
-		CVLib::PointProjectionTools::IndexedCCVector2 P(x, z, i);
+		cloudViewer::PointProjectionTools::IndexedCCVector2 P(x, z, i);
 
 		point.push_back(P);
 	}
 
 
-	CVLib::PointProjectionTools::extractConcaveHull2D(point, hullPoint2, 0.0001);
+	cloudViewer::PointProjectionTools::extractConcaveHull2D(point, hullPoint2, 0.0001);
 
 	vector<unsigned> Vec;
 	for (int i = 0; i < (hullPoint2.size());++i)
 	{
 
-		list<CVLib::PointProjectionTools::IndexedCCVector2*>::iterator it = hullPoint2.begin();
+		list<cloudViewer::PointProjectionTools::IndexedCCVector2*>::iterator it = hullPoint2.begin();
 		std::advance(it, i);
-		CVLib::PointProjectionTools::IndexedCCVector2* P2 = *it;
+		cloudViewer::PointProjectionTools::IndexedCCVector2* P2 = *it;
 		int k = P2->index;
 		Vec.push_back(k);
 	}
@@ -1078,8 +1078,8 @@ ccPointCloud* getMortarMaps(ccPointCloud* f_cloudStones, ccPointCloud* f_cloudMo
 
 	}
 
-	CVLib::CloudSamplingTools::SFModulationParams modParams(false); 	//Subsample result
-	CVLib::ReferenceCloud* refCloud = CVLib::CloudSamplingTools::resampleCloudSpatially(skelM, 0.01, modParams, 0, 0); //1 point per cm^2
+	cloudViewer::CloudSamplingTools::SFModulationParams modParams(false); 	//Subsample result
+	cloudViewer::ReferenceCloud* refCloud = cloudViewer::CloudSamplingTools::resampleCloudSpatially(skelM, 0.01, modParams, 0, 0); //1 point per cm^2
 
 	ccPointCloud* f_skelMortar = skelM->partialClone(refCloud); 	//save output
 	delete refCloud;
@@ -1199,7 +1199,7 @@ ccPointCloud* getMortarMaps(ccPointCloud* f_cloudStones, ccPointCloud* f_cloudMo
 		}
 	}
 
-	CVLib::ScalarField* depthSF = nullptr; //Add depth as a scalarField to f_skelMortar
+	cloudViewer::ScalarField* depthSF = nullptr; //Add depth as a scalarField to f_skelMortar
 
 	int sfIdxD = f_skelMortar->getScalarFieldIndexByName("Mortar relative depth (mm)");
 	if (sfIdxD < 0)
@@ -1224,7 +1224,7 @@ ccPointCloud* getMortarMaps(ccPointCloud* f_cloudStones, ccPointCloud* f_cloudMo
 
 	depthSF->computeMinAndMax();
 
-	CVLib::ScalarField* widthSF = nullptr; //Add width as a scalarField to f_skelMortar
+	cloudViewer::ScalarField* widthSF = nullptr; //Add width as a scalarField to f_skelMortar
 
 	int sfIdxW = f_skelMortar->getScalarFieldIndexByName("Mortar relative width (mm)");
 	if (sfIdxW < 0)
@@ -2143,7 +2143,7 @@ void ccAutoSeg::doAction()
 
 	// adding scalar field of stoneId to stone point cloud
 
-	CVLib::ScalarField* stIdSF = nullptr;
+	cloudViewer::ScalarField* stIdSF = nullptr;
 
 
 	int sfIdx = f_cloudStones->getScalarFieldIndexByName("Stone Index");

@@ -134,7 +134,11 @@ void QuaZipNewInfo::setFileNTFSTimes(const QString &fileName)
     }
     setFileNTFSmTime(fi.lastModified());
     setFileNTFSaTime(fi.lastRead());
+#if QT_DEPRECATED_SINCE(5, 10)
+    setFileNTFScTime(fi.birthTime());
+#else
     setFileNTFScTime(fi.created());
+#endif
 }
 
 static void setNTFSTime(QByteArray &extra, const QDateTime &time, int position,
