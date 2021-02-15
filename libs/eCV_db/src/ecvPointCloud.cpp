@@ -4915,7 +4915,7 @@ bool ccPointCloud::computeNormalsWithGrids(	double minTriangleAngle_deg/*=1.0*/,
 	}
 
 	PointCoordinateType minAngleCos = static_cast<PointCoordinateType>(cos(minTriangleAngle_deg * CV_DEG_TO_RAD));
-	//double minTriangleAngle_rad = minTriangleAngle_deg * CV_DEG_TO_RAD;
+//    double minTriangleAngle_rad = cloudViewer::DegreesToRadians(minTriangleAngle_deg);
 
 	//for each grid cell
 	for (size_t gi = 0; gi < gridCount(); ++gi)
@@ -5496,7 +5496,7 @@ ccMesh* ccPointCloud::triangulateGrid(const Grid& grid, double minTriangleAngle_
 	}
 
 	PointCoordinateType minAngleCos = static_cast<PointCoordinateType>(cos(minTriangleAngle_deg * CV_DEG_TO_RAD));
-	//double minTriangleAngle_rad = minTriangleAngle_deg * CV_DEG_TO_RAD;
+//    double minTriangleAngle_rad = cloudViewer::DegreesToRadians(minTriangleAngle_deg);
 	
 	for (int j = 0; j < static_cast<int>(grid.h) - 1; ++j)
 	{

@@ -52,6 +52,7 @@
 #include "visualization/gui/Task.h"
 #include "visualization/gui/Theme.h"
 #include "visualization/gui/Window.h"
+#include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
 #include "visualization/rendering/filament/FilamentEngine.h"
@@ -634,7 +635,7 @@ const char *Application::GetResourcePath() const {
 const Theme &Application::GetTheme() const { return impl_->theme_; }
 
 std::shared_ptr<geometry::Image> Application::RenderToImage(
-        EnvUnlocker &unlocker,
+        rendering::Renderer &renderer,
         rendering::View *view,
         rendering::Scene *scene,
         int width,
@@ -644,29 +645,40 @@ std::shared_ptr<geometry::Image> Application::RenderToImage(
         img = _img;
     };
 
-    auto render = std::make_shared<rendering::FilamentRenderToBuffer>(
-            rendering::EngineInstance::GetInstance());
-    render->Configure(
-            view, scene, width, height,
-            // the shared_ptr (render) is const unless the lambda
-            // is made mutable
-            [render, callback](
-                    const rendering::RenderToBuffer::Buffer &buffer) mutable {
-                auto image = std::make_shared<geometry::Image>();
-                image->width_ = int(buffer.width);
-                image->height_ = int(buffer.height);
-                image->num_of_channels_ = 3;
-                image->bytes_per_channel_ = 1;
-                image->data_ = std::vector<uint8_t>(buffer.bytes,
-                                                    buffer.bytes + buffer.size);
-                callback(image);
-                render = nullptr;
-            });
-    render->Render();
+    // Despite the fact that Renderer is created with a width/height, it is
+    // the View's viewport that actually controls the size when rendering to
+    // an image. Set the viewport here, rather than in the pybinds so that
+    // C++ callers do not need to know do this themselves.
+    view->SetViewport(0, 0, static_cast<std::uint32_t>(width),
+                      static_cast<std::uint32_t>(height));
 
-    while (!img && RunOneTick(unlocker, false)) {
-        render->RenderTick();
-    }
+    renderer.RenderToImage(view, scene, callback);
+    renderer.BeginFrame();
+    renderer.EndFrame();
+
+    return img;
+}
+
+std::shared_ptr<geometry::Image> Application::RenderToDepthImage(
+        rendering::Renderer &renderer,
+        rendering::View *view,
+        rendering::Scene *scene,
+        int width,
+        int height) {
+    std::shared_ptr<geometry::Image> img;
+    auto callback = [&img](std::shared_ptr<geometry::Image> _img) {
+        img = _img;
+    };
+
+    // Despite the fact that Renderer is created with a width/height, it is
+    // the View's viewport that actually controls the size when rendering to
+    // an image. Set the viewport here, rather than in the pybinds so that
+    // C++ callers do not need to know do this themselves.
+    view->SetViewport(0, 0, width, height);
+
+    renderer.RenderToDepthImage(view, scene, callback);
+    renderer.BeginFrame();
+    renderer.EndFrame();
 
     return img;
 }

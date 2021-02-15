@@ -59,7 +59,7 @@
 
 /*** helpers ***/
 
-ccPointCloud* ccHObjectCaster::ToPointCloud(ccHObject* obj, bool* lockedVertices /*= 0*/)
+ccPointCloud* ccHObjectCaster::ToPointCloud(ccHObject* obj, bool* lockedVertices /*= nullptr*/)
 {
 	if (lockedVertices)
 	{
@@ -89,7 +89,7 @@ ccPointCloud* ccHObjectCaster::ToPointCloud(ccHObject* obj, bool* lockedVertices
 	return nullptr;
 }
 
-ccGenericPointCloud* ccHObjectCaster::ToGenericPointCloud(ccHObject* obj, bool* lockedVertices /*= 0*/)
+ccGenericPointCloud* ccHObjectCaster::ToGenericPointCloud(ccHObject* obj, bool* lockedVertices /*= nullptr*/)
 {
 	if (lockedVertices)
 	{
@@ -119,7 +119,7 @@ ccGenericPointCloud* ccHObjectCaster::ToGenericPointCloud(ccHObject* obj, bool* 
 	return nullptr;
 }
 
-ccShiftedObject* ccHObjectCaster::ToShifted(ccHObject* obj, bool* lockedVertices /*= 0*/)
+ccShiftedObject* ccHObjectCaster::ToShifted(ccHObject* obj, bool* lockedVertices /*= nullptr*/)
 {
 	ccGenericPointCloud* cloud = ToGenericPointCloud(obj, lockedVertices);
 	if (cloud)
@@ -139,27 +139,27 @@ ccShiftedObject* ccHObjectCaster::ToShifted(ccHObject* obj, bool* lockedVertices
 
 ccGenericMesh* ccHObjectCaster::ToGenericMesh(ccHObject* obj)
 {
-	return (obj && obj->isKindOf(CV_TYPES::MESH) ? static_cast<ccGenericMesh*>(obj) : 0);
+    return (obj && obj->isKindOf(CV_TYPES::MESH) ? static_cast<ccGenericMesh*>(obj) : nullptr);
 }
 
 ccMesh* ccHObjectCaster::ToMesh(ccHObject* obj)
 {
-	return (obj && (obj->isA(CV_TYPES::MESH) || obj->isKindOf(CV_TYPES::PRIMITIVE)) ? static_cast<ccMesh*>(obj) : 0);
+    return (obj && (obj->isA(CV_TYPES::MESH) || obj->isKindOf(CV_TYPES::PRIMITIVE)) ? static_cast<ccMesh*>(obj) : nullptr);
 }
 
 ccSubMesh* ccHObjectCaster::ToSubMesh(ccHObject* obj)
 {
-	return (obj && obj->isA(CV_TYPES::SUB_MESH) ? static_cast<ccSubMesh*>(obj) : 0);
+    return (obj && obj->isA(CV_TYPES::SUB_MESH) ? static_cast<ccSubMesh*>(obj) : nullptr);
 }
 
 ccPolyline* ccHObjectCaster::ToPolyline(ccHObject* obj)
 {
-	return (obj && obj->isA(CV_TYPES::POLY_LINE) ? static_cast<ccPolyline*>(obj) : 0);
+    return (obj && obj->isA(CV_TYPES::POLY_LINE) ? static_cast<ccPolyline*>(obj) : nullptr);
 }
 
 ccFacet* ccHObjectCaster::ToFacet(ccHObject* obj)
 {
-	return obj && obj->isA(CV_TYPES::FACET) ? static_cast<ccFacet*>(obj) : 0;
+    return obj && obj->isA(CV_TYPES::FACET) ? static_cast<ccFacet*>(obj) : nullptr;
 }
 
 ccPlanarEntityInterface* ccHObjectCaster::ToPlanarEntity(ccHObject* obj)

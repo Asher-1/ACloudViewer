@@ -37,19 +37,15 @@
 #include <QTranslator>
 
 // COMMON
-#include <CommonSettings.h>
+#include "CommonSettings.h"
+#include "ecvTranslationManager.h"
 
 // PLUGINS
 #include "ecvPluginInterface.h"
 #include "ecvPluginManager.h"
 
 #ifdef USE_VLD
-//VLD
 #include <vld.h>
-#endif
-
-#ifdef Q_OS_MAC
-#include <unistd.h>
 #endif
 
 //#if defined(_MSC_VER) && (_MSC_VER >= 1600)
@@ -127,7 +123,7 @@ int main(int argc, char *argv[])
 	bool commandLine = (argc > 1) && (argv[1][0] == '-');
 #endif
 
-	ecvApplication::init(commandLine);
+    ecvApplication::InitOpenGL();
 
 	ecvApplication app(argc, argv, commandLine);
 
@@ -142,24 +138,15 @@ int main(int argc, char *argv[])
 	QTranslator translator;
 	if (commandLine)
 	{
-		//translation file selection
-		if (QString(argv[lastArgumentIndex]).toUpper() == "-LANG")
-		{
-			QString langFilename = QString(argv[2]);
+        //translation file selection
+        if (QString(argv[lastArgumentIndex]).toUpper() == "-LANG")
+        {
+            QString langFilename = QString::fromLocal8Bit(argv[2]);
 
-			//Load translation file
-			if (translator.load(langFilename, QCoreApplication::applicationDirPath()))
-			{
-				qApp->installTranslator(&translator);
-			}
-			else
-			{
-                QMessageBox::warning(nullptr, QObject::tr("Translation"),
-                                     QObject::tr("Failed to load language file '%1'").arg(langFilename));
-			}
-			commandLine = false;
-			lastArgumentIndex += 2;
-		}
+            ccTranslationManager::get().loadTranslation(langFilename);
+            commandLine = false;
+            lastArgumentIndex += 2;
+        }
 	}
 
 	//splash screen

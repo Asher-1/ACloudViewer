@@ -1036,7 +1036,7 @@ bool ccRasterizeTool::ExportGeoTiff(QString outputFilename,
 {
 #ifdef CV_GDAL_SUPPORT
 
-	if (exportBands.visibleSF && visibleSfIndex <= 0)
+    if (exportBands.visibleSF && visibleSfIndex < 0)
 	{
 		assert(false);
 		return false;

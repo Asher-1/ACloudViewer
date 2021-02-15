@@ -349,25 +349,30 @@ CC_FILE_ERROR LASFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		}
 	}
 
-	//Set offset & scale, as points will be stored as boost::int32_t values (between -2147483648 and 2147483647)
-	//int_value = (double_value-offset)/scale
-    if (hasOffsetMetaData & ecvGlobalShiftManager::NeedShift(bbMax - lasOffset))
-	{
-		//the previous offset can't be used
-		hasOffsetMetaData = false;
-		lasOffset = CCVector3d(0, 0, 0);
-	}
-    if (!hasOffsetMetaData && ecvGlobalShiftManager::NeedShift(bbMax))
-	{
-		//we have no choice, we'll use the min bounding box
-		lasOffset = bbMin;
-	}
+    //Try to use the global shift if no LAS offset is defined
+    if (!hasOffsetMetaData && theCloud->isShifted())
+    {
+        lasOffset = -theCloud->getGlobalShift(); //'global shift' is the opposite of LAS offset ;)
+        hasOffsetMetaData = true;
+    }
 
-	//optimal scale (for accuracy) --> 1e-8 because the maximum integer is roughly +/-2e+9
-	CCVector3d diag = bbMax - lasOffset;
-    CCVector3d optimalScale(1.0e-9 * std::max<double>(diag.x, ZERO_TOLERANCE_D),
-                            1.0e-9 * std::max<double>(diag.y, ZERO_TOLERANCE_D),
-                            1.0e-9 * std::max<double>(diag.z, ZERO_TOLERANCE_D));
+    //If we don't have any offset, let's use the min bounding-box corner
+    if (!hasOffsetMetaData && ecvGlobalShiftManager::NeedShift(bbMax))
+    {
+        //we have no choice, we'll use the min bounding box
+        lasOffset = bbMin;
+    }
+
+    // maximum cloud 'extents' relatively to the 'offset' point
+    CCVector3d diagPos = bbMax - lasOffset;
+    CCVector3d diagNeg = lasOffset - bbMin;
+    CCVector3d diag(std::max(diagPos.x, diagNeg.x),
+                    std::max(diagPos.y, diagNeg.y),
+                    std::max(diagPos.z, diagNeg.z));
+    //optimal scale (for accuracy) --> 1e-9 because the maximum integer is roughly +/-2e+9
+    CCVector3d optimalScale(1.0e-9 * std::max<double>(diag.x, 1.0),
+                            1.0e-9 * std::max<double>(diag.y, 1.0),
+                            1.0e-9 * std::max<double>(diag.z, 1.0));
 
 	bool canUseOriginalScale = false;
 	if (hasScaleMetaData)
@@ -727,7 +732,7 @@ public:
 	    const QString &absoluteBaseFilename,
 	    const CCVector3d& bbMin,
 	    const CCVector3d& bbMax,
-	    const PointTableRef table,
+        PointTableRef table,
 	    const LasHeader& header)
 	{
 		//init tiling dimensions

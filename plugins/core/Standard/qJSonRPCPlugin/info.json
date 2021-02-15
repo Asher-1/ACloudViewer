@@ -1,0 +1,24 @@
+{
+	"type" : "Standard",
+	"name" : "Json RPC (Standard Plugin)",
+	"icon" : ":/CC/plugin/JsonRPCPlugin/images/icon.png",
+    "description": "This is a Json RPC interface for ErowCloudViewer.",
+	"authors" : [
+		{
+			"name" : "theAdib",
+			"email" : "theadib@gmail.com"
+		}
+	],
+	"maintainers" : [
+		{
+			"name" : "theAdib",
+			"email" : "theadib@gmail.com"
+		}
+	],
+	"references" : [
+		{
+			"text" : "Sword swallowing and its side effects",
+			"url" : "http://www.bmj.com/content/333/7582/1285"
+		}
+	]
+}
