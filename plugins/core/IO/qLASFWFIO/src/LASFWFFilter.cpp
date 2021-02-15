@@ -265,6 +265,18 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity, const QString& filenam
 				}
 			}
 
+			bool hasOffsetMetaData = false;
+			CCVector3d lasOffset(0, 0, 0);
+			lasOffset.x = cloud->getMetaData(LAS_OFFSET_X_META_DATA).toDouble(&hasOffsetMetaData);
+			if (hasOffsetMetaData)
+			{
+				lasOffset.y = cloud->getMetaData(LAS_OFFSET_Y_META_DATA).toDouble(&hasOffsetMetaData);
+				if (hasOffsetMetaData)
+				{
+					lasOffset.z = cloud->getMetaData(LAS_OFFSET_Z_META_DATA).toDouble(&hasOffsetMetaData);
+				}
+			}
+
 			//Try to use the global shift if no LAS offset is defined
 			if (!hasOffsetMetaData && isShifted)
 			{
