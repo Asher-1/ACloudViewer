@@ -86,7 +86,9 @@ public:
 	}
 };
 
-CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters)
+CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity,
+                                    const QString& filename,
+                                    const SaveParameters& parameters)
 {
 	if (!entity || filename.isEmpty())
 		return CC_FERR_BAD_ARGUMENT;
@@ -136,7 +138,7 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, 
 	if (saveOriginOrientation)
 	{
 		//search for a sensor as child (we take the first if there are several of them)
-		ccSensor* sensor(0);
+        ccSensor* sensor(nullptr);
 		{
 			for (unsigned i = 0; i < ccCloud->getChildrenNumber(); ++i)
 			{

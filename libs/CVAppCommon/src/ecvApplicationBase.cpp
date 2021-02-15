@@ -40,43 +40,27 @@
 #endif
 
 
-void ecvApplicationBase::init(bool noOpenGLSupport)
+void ecvApplicationBase::InitOpenGL()
 {
-	if (!noOpenGLSupport)
-	{
-		//See http://doc.qt.io/qt-5/qopenglwidget.html#opengl-function-calls-headers-and-qopenglfunctions
-		/** Calling QSurfaceFormat::setDefaultFormat() before constructing the QApplication instance is mandatory
-			on some platforms (for example, OS X) when an OpenGL core profile context is requested. This is to
-			ensure that resource sharing between contexts stays functional as all internal contexts are created
-			using the correct version and profile.
-		**/
-		{
-			QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+    //See http://doc.qt.io/qt-5/qopenglwidget.html#opengl-function-calls-headers-and-qopenglfunctions
+    /** Calling QSurfaceFormat::setDefaultFormat() before constructing the QApplication instance is mandatory
+        on some platforms (for example, OS X) when an OpenGL core profile context is requested. This is to
+        ensure that resource sharing between contexts stays functional as all internal contexts are created
+        using the correct version and profile.
+    **/
+    {
+        QSurfaceFormat format = QSurfaceFormat::defaultFormat();
 
-			format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-			format.setStencilBufferSize(0);
+        format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+        format.setStencilBufferSize(0);
 
 #ifdef CV_GL_WINDOW_USE_QWINDOW
-			format.setStereo(true);
+        format.setStereo(true);
 #endif
 
 #ifdef Q_OS_MAC
-			format.setVersion(2, 1);	// must be 2.1 - see ccGLWindow::functions()
-			format.setProfile(QSurfaceFormat::CoreProfile);
-#endif
-
-#ifdef QT_DEBUG
-			format.setOption(QSurfaceFormat::DebugContext, true);
-#endif
-			QSurfaceFormat::setDefaultFormat(format);
-		}
-
-#ifdef Q_OS_WIN
-		////enables automatic scaling based on the monitor's pixel density
-		//QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-        //qputenv("QT_ENABLE_HIGHDPI_SCALING", "2");
-        //QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
-        //        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+        format.setVersion(2, 1);	// must be 2.1 - see ccGLWindow::functions()
+        format.setProfile(QSurfaceFormat::CoreProfile);
 #endif
 
 #ifdef Q_OS_UNIX
@@ -84,11 +68,16 @@ void ecvApplicationBase::init(bool noOpenGLSupport)
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
-		// The 'AA_ShareOpenGLContexts' attribute must be defined BEFORE the creation of the Q(Gui)Application
-		// DGM: this is mandatory to enable exclusive full screen for ccGLWidget (at least on Windows)
-		QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+#ifdef QT_DEBUG
+        format.setOption(QSurfaceFormat::DebugContext, true);
+#endif
+        QSurfaceFormat::setDefaultFormat(format);
 
-	}
+    }
+
+    // The 'AA_ShareOpenGLContexts' attribute must be defined BEFORE the creation of the Q(Gui)Application
+    // DGM: this is mandatory to enable exclusive full screen for ccGLWidget (at least on Windows)
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 }
 
 ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, bool isCommandLine, const QString &version)

@@ -116,8 +116,8 @@ PointCloud* PointProjectionTools::developCloudOnCone(GenericCloud* cloud, unsign
 	unsigned char dim2 = (dim<2 ? dim+1 : 0);
 
 	float tan_alpha = tanf(alpha*static_cast<float>(CV_DEG_TO_RAD));
-	//float cos_alpha = cos(alpha*CV_DEG_TO_RAD);
-	//float sin_alpha = sin(alpha*CV_DEG_TO_RAD);
+//    float cos_alpha = cos(cloudViewer::DegreesToRadians(alpha));
+//    float sin_alpha = sin(cloudViewer::DegreesToRadians(alpha));
 	float q = 1.0f/(1.0f+tan_alpha*tan_alpha);
 
 	cloud->placeIteratorAtBeginning();
