@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -29,8 +29,8 @@
 #include "CloudViewer.h"
 
 int main(int argc, char *argv[]) {
-    using namespace CVLib;
-    using namespace CVLib::utility::filesystem;
+    using namespace cloudViewer;
+    using namespace cloudViewer::utility::filesystem;
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc != 2) {
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     ListFilesInDirectoryWithExtension(data_path + "/image/", "png",
                                       color_filenames);
     assert(depth_filenames.size() == color_filenames.size());
-    std::vector<std::shared_ptr<cloudViewer::geometry::RGBDImage>> rgbd_images;
+    std::vector<cloudViewer::geometry::RGBDImage> rgbd_images;
     for (size_t i = 0; i < depth_filenames.size(); i++) {
         utility::LogDebug("reading {}...", depth_filenames[i]);
         auto depth = cloudViewer::io::CreateImageFromFile(depth_filenames[i]);
@@ -54,23 +54,24 @@ int main(int argc, char *argv[]) {
         auto color = cloudViewer::io::CreateImageFromFile(color_filenames[i]);
         auto rgbd_image = cloudViewer::geometry::RGBDImage::CreateFromColorAndDepth(
                 *color, *depth, 1000.0, 3.0, false);
-        rgbd_images.push_back(rgbd_image);
+        rgbd_images.push_back(*rgbd_image);
     }
-    auto camera = cloudViewer::io::CreatePinholeCameraTrajectoryFromFile(data_path +
+    std::shared_ptr<cloudViewer::camera::PinholeCameraTrajectory> camera =
+            cloudViewer::io::CreatePinholeCameraTrajectoryFromFile(data_path +
                                                             "/scene/trajectory.log");
-    auto mesh = cloudViewer::io::CreateMeshFromFile(data_path + "/scene/integrated.ply");
+    std::shared_ptr<ccMesh> mesh =
+            cloudViewer::io::CreateMeshFromFile(data_path + "/scene/integrated.ply");
 
     // Optimize texture and save the mesh as texture_mapped.ply
     // This is implementation of following paper
     // Q.-Y. Zhou and V. Koltun,
     // Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
     // SIGGRAPH 2014
-    cloudViewer::pipelines::color_map::ColorMapOptimizationOption option;
-    //option.maximum_iteration_ = 0;
-    option.maximum_iteration_ = 300;
-    option.non_rigid_camera_coordinate_ = true;
-    cloudViewer::pipelines::color_map::ColorMapOptimization(*mesh, rgbd_images, *camera, option);
-    cloudViewer::io::WriteTriangleMesh("color_map_after_optimization.ply", *mesh);
+    cloudViewer::pipelines::color_map::NonRigidOptimizerOption non_rigid_option;  // Default
+    ccMesh optimized_mesh =
+            cloudViewer::pipelines::color_map::RunNonRigidOptimizer(
+                    *mesh, rgbd_images, *camera, non_rigid_option);
+    cloudViewer::io::WriteTriangleMesh("color_map_after_optimization.ply", optimized_mesh);
 
     return 0;
 }

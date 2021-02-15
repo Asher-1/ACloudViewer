@@ -70,7 +70,7 @@ ccPolyline::ccPolyline(ccPointCloud& associatedCloud)
 		bool closed = false;
 		CCVector3 start = CCVector3::fromArray(getAssociatedCloud()->getPoint(0)->u);
 		CCVector3 end = CCVector3::fromArray(getAssociatedCloud()->getPoint(verticesCount - 1)->u);
-        if (CVLib::LessThanEpsilon((end - start).norm()))
+        if (cloudViewer::LessThanEpsilon((end - start).norm()))
 		{
 			closed = true;
 		} else {
@@ -84,7 +84,7 @@ ccPolyline::ccPolyline(ccPointCloud& associatedCloud)
 	}
 	else
 	{
-		CVLib::utility::LogError("[ccPolyline] not enough memory!");
+		cloudViewer::utility::LogError("[ccPolyline] not enough memory!");
 	}
 }
 
@@ -511,7 +511,7 @@ bool ccPolyline::split(	PointCoordinateType maxEdgeLength,
 		if (partSize > 1) //otherwise we skip that point
 		{
 			//create the corresponding part
-			CVLib::ReferenceCloud ref(m_theAssociatedCloud);
+			cloudViewer::ReferenceCloud ref(m_theAssociatedCloud);
 			if (!ref.reserve(partSize))
 			{
 				CVLog::Error("[ccPolyline::split] Not enough memory!");
@@ -554,14 +554,14 @@ bool ccPolyline::add(const ccPointCloud& cloud)
 	ccPointCloud* oldCloud = static_cast<ccPointCloud*>(m_theAssociatedCloud);
 	if (!oldCloud)
 	{
-		CVLib::utility::LogWarning("[ccPolyline::add] invalid associated cloud!");
+		cloudViewer::utility::LogWarning("[ccPolyline::add] invalid associated cloud!");
 		return false;
 	}
 	unsigned int newCount = cloud.size();
 	unsigned int currentSize = oldCloud->size();
 	if (!oldCloud->reserve(currentSize + newCount))
 	{
-		CVLib::utility::LogWarning("[ccPolyline] Not enough memory!");
+		cloudViewer::utility::LogWarning("[ccPolyline] Not enough memory!");
 		return false;
 	}
 
@@ -838,15 +838,15 @@ ccPolyline &ccPolyline::operator+=(const ccPolyline &polyline) {
 	if (polyline.isEmpty()) return (*this);
 	if (!polyline.getAssociatedCloud())
 	{
-		CVLib::utility::LogError("[ccPolyline] Cannot find associated cloud in polyline!");
+		cloudViewer::utility::LogError("[ccPolyline] Cannot find associated cloud in polyline!");
 		return (*this);
 	}
 
 	if (m_theAssociatedCloud == polyline.getAssociatedCloud())
 	{
-		if (!CVLib::ReferenceCloud::add(polyline))
+		if (!cloudViewer::ReferenceCloud::add(polyline))
 		{
-			CVLib::utility::LogError("[ccPolyline] Not enough memory!");
+			cloudViewer::utility::LogError("[ccPolyline] Not enough memory!");
 			return (*this);
 		}
 	}
@@ -856,7 +856,7 @@ ccPolyline &ccPolyline::operator+=(const ccPolyline &polyline) {
 			polyline.getAssociatedCloud());
 		if (!cloud || !add(*cloud))
 		{
-			CVLib::utility::LogWarning("[ccPolyline] adding ccPolyline failed!");
+			cloudViewer::utility::LogWarning("[ccPolyline] adding ccPolyline failed!");
 		}
 	}
 

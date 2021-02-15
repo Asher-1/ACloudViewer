@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -126,7 +126,7 @@ private:
                                              func_t element_kernel,
                                              scalar_t identity) {
         if (indexer.NumOutputElements() > 1) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "Internal error: two-pass reduction only works for "
                     "single-output reduction ops.");
         }
@@ -177,7 +177,7 @@ private:
             }
         }
         if (best_dim == -1) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "Internal error: all dims are reduction dims, use "
                     "LaunchReductionKernelTwoPass instead.");
         }
@@ -255,7 +255,7 @@ void ReductionCPU(const Tensor& src,
                     break;
                 case ReductionOpCode::Min:
                     if (indexer.NumWorkloads() == 0) {
-                        utility::LogError(
+                        cloudViewer::utility::LogError(
                                 "Zero-size Tensor does not suport Min.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::max();
@@ -265,7 +265,7 @@ void ReductionCPU(const Tensor& src,
                     break;
                 case ReductionOpCode::Max:
                     if (indexer.NumWorkloads() == 0) {
-                        utility::LogError(
+                        cloudViewer::utility::LogError(
                                 "Zero-size Tensor does not suport Max.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::lowest();
@@ -274,13 +274,13 @@ void ReductionCPU(const Tensor& src,
                     }
                     break;
                 default:
-                    utility::LogError("Unsupported op code.");
+                    cloudViewer::utility::LogError("Unsupported op code.");
                     break;
             }
         });
     } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
         if (dst.GetDtype() != Dtype::Int64) {
-            utility::LogError("Arg-reduction must have int64 output dtype.");
+            cloudViewer::utility::LogError("Arg-reduction must have int64 output dtype.");
         }
         // Accumulation buffer to store temporary min/max values.
         Tensor dst_acc(dst.GetShape(), src.GetDtype(), src.GetDevice());
@@ -292,7 +292,7 @@ void ReductionCPU(const Tensor& src,
             switch (op_code) {
                 case ReductionOpCode::ArgMin:
                     if (indexer.NumWorkloads() == 0) {
-                        utility::LogError(
+                        cloudViewer::utility::LogError(
                                 "Zero-size Tensor does not suport ArgMin.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::max();
@@ -302,7 +302,7 @@ void ReductionCPU(const Tensor& src,
                     break;
                 case ReductionOpCode::ArgMax:
                     if (indexer.NumWorkloads() == 0) {
-                        utility::LogError(
+                        cloudViewer::utility::LogError(
                                 "Zero-size Tensor does not suport ArgMax.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::lowest();
@@ -311,18 +311,18 @@ void ReductionCPU(const Tensor& src,
                     }
                     break;
                 default:
-                    utility::LogError("Unsupported op code.");
+                    cloudViewer::utility::LogError("Unsupported op code.");
                     break;
             }
         });
     } else if (s_boolean_reduce_ops.find(op_code) !=
                s_boolean_reduce_ops.end()) {
         if (src.GetDtype() != Dtype::Bool) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "Boolean reduction only supports boolean input tensor.");
         }
         if (dst.GetDtype() != Dtype::Bool) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "Boolean reduction only supports boolean output tensor.");
         }
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
@@ -339,11 +339,11 @@ void ReductionCPU(const Tensor& src,
                 re.Run(CPUAnyReductionKernel, static_cast<uint8_t>(false));
                 break;
             default:
-                utility::LogError("Unsupported op code.");
+                cloudViewer::utility::LogError("Unsupported op code.");
                 break;
         }
     } else {
-        utility::LogError("Unsupported op code.");
+        cloudViewer::utility::LogError("Unsupported op code.");
     }
 }
 

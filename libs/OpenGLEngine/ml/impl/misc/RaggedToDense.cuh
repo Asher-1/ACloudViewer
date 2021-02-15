@@ -47,7 +47,7 @@ __global__ void RaggedToDenseCUDAKernel(
         const size_t default_value_size,
         T* __restrict__ out_values) {
     const int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i >= row_splits_size) return;
+    if (i + 1 >= row_splits_size) return;
 
     const int64_t start = row_splits[i];
     const int64_t end = min(int64_t(out_col_size) + start, row_splits[i + 1]);
@@ -114,7 +114,7 @@ void RaggedToDenseCUDA(const cudaStream_t& stream,
                        const T* const default_value,
                        const size_t default_value_size,
                        T* out_values) {
-    using namespace CVLib::utility;
+    using namespace cloudViewer::utility;
     const int BLOCKSIZE = 128;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(DivUp(row_splits_size - 1, block.x));

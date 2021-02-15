@@ -66,7 +66,7 @@ public:
     /// e.g. FromType<float>(). Unsupported type results in an exception.
     template <typename T>
     static inline const Dtype FromType() {
-        CVLib::utility::LogError("Unsupported data for Dtype::FromType.");
+        cloudViewer::utility::LogError("Unsupported data for Dtype::FromType.");
     }
 
     int64_t ByteSize() const { return byte_size_; }

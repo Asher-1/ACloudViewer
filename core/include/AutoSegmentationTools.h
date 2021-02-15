@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -25,7 +25,7 @@
 #include "CVToolbox.h"
 #include "CVTypes.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 
 class GenericIndexedCloudPersist;
@@ -68,8 +68,8 @@ public:
 	static int labelConnectedComponents(GenericIndexedCloudPersist* theCloud,
 										unsigned char level,
 										bool sixConnexity = false,
-										CVLib::GenericProgressCallback* progressCb = nullptr,
-										CVLib::DgmOctree* inputOctree = nullptr);
+										cloudViewer::GenericProgressCallback* progressCb = nullptr,
+										cloudViewer::DgmOctree* inputOctree = nullptr);
 
 	//! Extracts connected components from a point cloud
 	/** This method shloud only be called after the connected components have been
@@ -108,8 +108,8 @@ public:
 													PointCoordinateType radius,
 													unsigned char octreeLevel,
 													ReferenceCloudContainer& theSegmentedLists,
-													CVLib::GenericProgressCallback* progressCb = nullptr,
-													CVLib::DgmOctree* inputOctree = nullptr,
+													cloudViewer::GenericProgressCallback* progressCb = nullptr,
+													cloudViewer::DgmOctree* inputOctree = nullptr,
 													bool applyGaussianFilter = false,
 													float alpha = 2.0f);
 

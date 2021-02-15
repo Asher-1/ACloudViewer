@@ -22,7 +22,7 @@
 #include "ecvDisplayTools.h"
 #include <Console.h>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 ecvOrientedBBox ccBBox::getOrientedBoundingBox() const
 {

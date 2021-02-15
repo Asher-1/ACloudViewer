@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <random>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 GenericIndexedCloud* CloudSamplingTools::resampleCloudWithOctree(	GenericIndexedCloudPersist* inputCloud,
 																	int newNumberOfPoints,
@@ -840,7 +840,7 @@ bool CloudSamplingTools::applyNoiseFilterAtLevel(	const DgmOctree::octreeCell& c
 					for (unsigned j = 0; j < realNeighborCount; ++j)
 					{
 						const CCVector3* P = neighboursCloud.getPoint(j);
-						double d = CVLib::DistanceComputationTools::computePoint2PlaneDistance(P, lsPlane);
+						double d = cloudViewer::DistanceComputationTools::computePoint2PlaneDistance(P, lsPlane);
 						sum_d += d;
 						sum_d2 += d*d;
 					}
@@ -850,7 +850,7 @@ bool CloudSamplingTools::applyNoiseFilterAtLevel(	const DgmOctree::octreeCell& c
 				}
 
 				//distance from the query point to the plane
-				double d = std::abs(CVLib::DistanceComputationTools::computePoint2PlaneDistance(&nNSS.queryPoint, lsPlane));
+				double d = std::abs(cloudViewer::DistanceComputationTools::computePoint2PlaneDistance(&nNSS.queryPoint, lsPlane));
 
 				if (d <= maxD)
 				{

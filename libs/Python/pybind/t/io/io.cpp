@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -35,6 +35,7 @@ namespace io {
 void pybind_io(py::module& m) {
     py::module m_io = m.def_submodule("io");
     pybind_class_io(m_io);
+    pybind_sensor(m_io);
 }
 
 }  // namespace io

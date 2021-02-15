@@ -89,10 +89,10 @@ float ccMeasurementDevice::measurePointToPlaneDistance(const ccPlane * plane, co
 	PointCoordinateType equation[4] = { N.x, N.y, N.z, 0 };
 	plane->getEquation(N, equation[3]);
 	if (signedMeasurement) {
-		return CVLib::DistanceComputationTools::computePoint2PlaneDistance(&point, equation);
+		return cloudViewer::DistanceComputationTools::computePoint2PlaneDistance(&point, equation);
 	}
 	else {
-		return abs(CVLib::DistanceComputationTools::computePoint2PlaneDistance(&point, equation));
+		return abs(cloudViewer::DistanceComputationTools::computePoint2PlaneDistance(&point, equation));
 	}
 }
 
@@ -129,10 +129,10 @@ void ccMeasurementDevice::addPointDistancesToScalarfield(ccScalarField *scalarFi
 	for (unsigned int i = 0; i < cloud->size(); ++i) {
 		const CCVector3 *P = cloud->getPoint(i);
 		if (signedMeasurement) {
-			scalarField->addElement(CVLib::DistanceComputationTools::computePoint2PlaneDistance(P, equation));
+			scalarField->addElement(cloudViewer::DistanceComputationTools::computePoint2PlaneDistance(P, equation));
 		}
 		else {
-			scalarField->addElement(abs(CVLib::DistanceComputationTools::computePoint2PlaneDistance(P, equation)));
+			scalarField->addElement(abs(cloudViewer::DistanceComputationTools::computePoint2PlaneDistance(P, equation)));
 		}
 	}
 }

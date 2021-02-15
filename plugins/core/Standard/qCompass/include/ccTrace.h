@@ -270,8 +270,8 @@ private:
 	//random vars that we keep to optimise speed
 	int m_start_rgb[3];
 	int m_end_rgb[3]; //[r,g,b] values for start and end nodes
-	CVLib::DgmOctree::NeighboursSet m_neighbours;
-	CVLib::DgmOctree::PointDescriptor m_p;
+	cloudViewer::DgmOctree::NeighboursSet m_neighbours;
+	cloudViewer::DgmOctree::PointDescriptor m_p;
 	float m_search_r;
 	float m_maxIterations;
 

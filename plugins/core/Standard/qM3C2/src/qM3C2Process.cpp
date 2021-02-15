@@ -22,7 +22,7 @@
 #include "qM3C2Dialog.h"
 #include "qM3C2DisclaimerDialog.h"
 
-//CVLib
+//cloudViewer
 #include <CloudSamplingTools.h>
 
 // ECV_DB_LIB
@@ -73,12 +73,12 @@ struct PrecisionMaps
 {
 	PrecisionMaps() : sX(nullptr), sY(nullptr), sZ(nullptr), scale(1.0) {}
 	bool valid() const { return (sX != nullptr && sY != nullptr && sZ != nullptr); }
-	CVLib::ScalarField *sX, *sY, *sZ;
+	cloudViewer::ScalarField *sX, *sY, *sZ;
 	double scale;
 };
 
 // Computes the uncertainty based on 'precision maps' (as scattered scalar fields)
-static double ComputePMUncertainty(CVLib::DgmOctree::NeighboursSet& set, const CCVector3& N, const PrecisionMaps& PM)
+static double ComputePMUncertainty(cloudViewer::DgmOctree::NeighboursSet& set, const CCVector3& N, const PrecisionMaps& PM)
 {
 	size_t count = set.size();
 	if (count == 0)
@@ -181,7 +181,7 @@ struct M3C2Params
 	bool usePrecisionMaps = false;
 
 	//progress notification
-	CVLib::NormalizedProgress* nProgress = nullptr;
+	cloudViewer::NormalizedProgress* nProgress = nullptr;
 	bool processCanceled = false;
 };
 static M3C2Params s_M3C2Params;
@@ -213,7 +213,7 @@ void ComputeM3C2DistForPoint(unsigned index)
 		bool validStats1 = false;
 
 		//extract cloud #1's neighbourhood
-		CVLib::DgmOctree::ProgressiveCylindricalNeighbourhood cn1;
+		cloudViewer::DgmOctree::ProgressiveCylindricalNeighbourhood cn1;
 		cn1.center = P;
 		cn1.dir = N;
 		cn1.level = s_M3C2Params.level1;
@@ -295,7 +295,7 @@ void ComputeM3C2DistForPoint(unsigned index)
 			bool validStats2 = false;
 			
 			//extract cloud #2's neighbourhood
-			CVLib::DgmOctree::ProgressiveCylindricalNeighbourhood cn2;
+			cloudViewer::DgmOctree::ProgressiveCylindricalNeighbourhood cn2;
 			cn2.center = P;
 			cn2.dir = N;
 			cn2.level = s_M3C2Params.level2;
@@ -550,9 +550,9 @@ bool qM3C2Process::Compute(const qM3C2Dialog& dlg, QString& errorMessage, ccPoin
 	bool corePointsHaveBeenSubsampled = false;
 	if (!s_M3C2Params.corePoints && samplingDist > 0)
 	{
-		CVLib::CloudSamplingTools::SFModulationParams modParams(false);
-		CVLib::ReferenceCloud* subsampled = 
-			CVLib::CloudSamplingTools::resampleCloudSpatially(cloud1,
+		cloudViewer::CloudSamplingTools::SFModulationParams modParams(false);
+		cloudViewer::ReferenceCloud* subsampled = 
+			cloudViewer::CloudSamplingTools::resampleCloudSpatially(cloud1,
 			static_cast<PointCoordinateType>(samplingDist),
 			modParams,
 			s_M3C2Params.cloud1Octree.data(),
@@ -799,7 +799,7 @@ bool qM3C2Process::Compute(const qM3C2Dialog& dlg, QString& errorMessage, ccPoin
 		assert(normMode == qM3C2Normals::VERT_MODE || (s_M3C2Params.coreNormals && corePointCount == s_M3C2Params.coreNormals->currentSize()));
 
 		pDlg.reset();
-		CVLib::NormalizedProgress nProgress(&pDlg, corePointCount);
+		cloudViewer::NormalizedProgress nProgress(&pDlg, corePointCount);
 		pDlg.setMethodTitle(QObject::tr("M3C2 Distances Computation"));
 		pDlg.setInfo(QObject::tr("Core points: %1").arg(corePointCount));
 		pDlg.start();

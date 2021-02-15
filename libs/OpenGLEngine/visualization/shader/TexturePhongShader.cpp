@@ -37,7 +37,7 @@ namespace cloudViewer {
 namespace visualization {
 
 namespace glsl {
-using namespace CVLib;
+using namespace cloudViewer;
 
 bool TexturePhongShader::Compile() {
     if (!CompileShaders(TexturePhongVertexShader, NULL,
@@ -293,7 +293,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
     tmp_uvs.resize(num_materials_);
 
     for (unsigned int i = 0; i < mesh.size(); i++) {
-        const CVLib::VerticesIndexes* triangle = mesh.getTriangleVertIndexes(i);
+        const cloudViewer::VerticesIndexes* triangle = mesh.getTriangleVertIndexes(i);
         int mi = mesh.triangle_material_ids_[i];
 
 		std::vector<Eigen::Vector3d> vN(3);

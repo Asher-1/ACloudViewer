@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -37,7 +37,7 @@
 #include <unistd.h>
 #endif  // _WIN32
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 void SplitString(std::vector<std::string>& tokens,
@@ -120,4 +120,4 @@ int UniformRandInt(const int min, const int max) {
 }
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

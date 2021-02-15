@@ -63,7 +63,7 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
     endforeach()
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
-    ShowAndAbortOnWarning(${TARGET_NAME})
+    cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
 
     # Copy the resource files. This needs to be done as a post-build step

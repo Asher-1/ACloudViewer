@@ -34,31 +34,29 @@
 namespace cloudViewer {
 namespace core {
 
-    using namespace CVLib;
-
 /// Device context specifying device type and device id.
 /// For CPU, there is only one device with id 0
 class Device {
 public:
-    /// Type for device
+    /// Type for device.
     enum class DeviceType { CPU = 0, CUDA = 1 };
 
-    /// Defalut constructor
+    /// Default constructor.
     Device() : device_type_(DeviceType::CPU), device_id_(0) {
         AssertCPUDeviceIDIsZero();
     }
 
-    /// Constructor with device specified
+    /// Constructor with device specified.
     Device(DeviceType device_type, int device_id)
         : device_type_(device_type), device_id_(device_id) {
         AssertCPUDeviceIDIsZero();
     }
 
-    /// Constructor from device type string and device id
+    /// Constructor from device type string and device id.
     Device(const std::string& device_type, int device_id)
         : Device(device_type + ":" + std::to_string(device_id)) {}
 
-    /// Constructor from string, e.g. "CUDA:0"
+    /// Constructor from string, e.g. "CUDA:0".
     Device(const std::string& type_colon_id)
         : device_type_(StringToDeviceType(type_colon_id)),
           device_id_(StringToDeviceId(type_colon_id)) {
@@ -82,7 +80,7 @@ public:
                 str += "CUDA";
                 break;
             default:
-                utility::LogError("Unsupported device type");
+                cloudViewer::utility::LogError("Unsupported device type");
         }
         str += ":" + std::to_string(device_id_);
         return str;
@@ -95,35 +93,35 @@ public:
 protected:
     void AssertCPUDeviceIDIsZero() {
         if (device_type_ == DeviceType::CPU && device_id_ != 0) {
-            utility::LogError("CPU has device_id {}, but it must be 0.",
+            cloudViewer::utility::LogError("CPU has device_id {}, but it must be 0.",
                               device_id_);
         }
     }
 
     static DeviceType StringToDeviceType(const std::string& type_colon_id) {
         std::vector<std::string> tokens;
-        utility::SplitString(tokens, type_colon_id, ":", true);
+        cloudViewer::utility::SplitString(tokens, type_colon_id, ":", true);
         if (tokens.size() == 2) {
-            std::string device_name_lower = utility::ToLower(tokens[0]);
+            std::string device_name_lower = cloudViewer::utility::ToLower(tokens[0]);
             if (device_name_lower == "cpu") {
                 return DeviceType::CPU;
             } else if (device_name_lower == "cuda") {
                 return DeviceType::CUDA;
             } else {
-                utility::LogError("Invalid device string {}.", type_colon_id);
+                cloudViewer::utility::LogError("Invalid device string {}.", type_colon_id);
             }
         } else {
-            utility::LogError("Invalid device string {}.", type_colon_id);
+            cloudViewer::utility::LogError("Invalid device string {}.", type_colon_id);
         }
     }
 
     static int StringToDeviceId(const std::string& type_colon_id) {
         std::vector<std::string> tokens;
-        utility::SplitString(tokens, type_colon_id, ":", true);
+        cloudViewer::utility::SplitString(tokens, type_colon_id, ":", true);
         if (tokens.size() == 2) {
             return std::stoi(tokens[1]);
         } else {
-            utility::LogError("Invalid device string {}.", type_colon_id);
+            cloudViewer::utility::LogError("Invalid device string {}.", type_colon_id);
         }
     }
 

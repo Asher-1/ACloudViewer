@@ -72,10 +72,10 @@ public:
 	virtual unsigned size() const override { return 0; }
 	virtual void forEach(genericTriangleAction action) override {}
 	virtual void placeIteratorAtBeginning() override {}
-	virtual CVLib::GenericTriangle* _getNextTriangle() override { return 0; }
-	virtual CVLib::GenericTriangle* _getTriangle(unsigned index) override { return 0; }
-	virtual CVLib::VerticesIndexes* getNextTriangleVertIndexes() override { return 0; }
-	virtual CVLib::VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) override { return 0; }
+	virtual cloudViewer::GenericTriangle* _getNextTriangle() override { return 0; }
+	virtual cloudViewer::GenericTriangle* _getTriangle(unsigned index) override { return 0; }
+	virtual cloudViewer::VerticesIndexes* getNextTriangleVertIndexes() override { return 0; }
+	virtual cloudViewer::VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) override { return 0; }
 	virtual void getTriangleVertices(unsigned triangleIndex, CCVector3& A, CCVector3& B, CCVector3& C) const override {}
 	virtual void getTriangleVertices(unsigned triangleIndex, double A[3], double B[3], double C[3]) const override {}
 	virtual void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) override {}

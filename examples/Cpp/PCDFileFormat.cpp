@@ -30,16 +30,16 @@ int main(int argc, char **argv) {
     using namespace cloudViewer;
     using namespace flann;
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         // clang-format off
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]");
-        CVLib::utility::LogInfo("    The program will :");
-        CVLib::utility::LogInfo("    1. load the pointcloud in [filename].");
-		CVLib::utility::LogInfo("    2. visualize the point cloud.");
-        CVLib::utility::LogInfo("    3. if a save method is specified, write the point cloud into data.pcd.");
+        cloudViewer::utility::LogInfo("Usage:");
+        cloudViewer::utility::LogInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]");
+        cloudViewer::utility::LogInfo("    The program will :");
+        cloudViewer::utility::LogInfo("    1. load the pointcloud in [filename].");
+		cloudViewer::utility::LogInfo("    2. visualize the point cloud.");
+        cloudViewer::utility::LogInfo("    3. if a save method is specified, write the point cloud into data.pcd.");
         // clang-format on
         return 0;
     }

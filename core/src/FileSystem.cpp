@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -47,7 +47,7 @@
 #include <unistd.h>
 #endif
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 namespace filesystem {
 
@@ -99,9 +99,17 @@ std::string GetRegularizedDirectoryName(const std::string &directory) {
 
 std::string GetWorkingDirectory() {
     char buff[PATH_MAX + 1];
-    char* info = getcwd(buff, PATH_MAX + 1);
-    CVLib::utility::LogInfo(info);
-    return std::string(buff);
+    char* flag = nullptr;
+#ifdef CV_WINDOWS
+    flag = _getcwd(buff, PATH_MAX + 1);
+#else
+    flag = getcwd(buff, PATH_MAX + 1);
+#endif
+    if (flag) {
+        return std::string(buff);
+    } else {
+        return std::string("");
+    }
 }
 
 std::vector<std::string> GetPathComponents(const std::string& path) {
@@ -181,7 +189,12 @@ std::vector<std::string> GetPathComponents(const std::string& path) {
 }
 
 bool ChangeWorkingDirectory(const std::string &directory) {
+#ifdef CV_WINDOWS
+    return (_chdir(directory.c_str()) == 0);
+#else
     return (chdir(directory.c_str()) == 0);
+#endif
+    
 }
 
 bool DirectoryExists(const std::string &directory) {
@@ -506,6 +519,33 @@ int64_t CFile::GetFileSize() {
     return size;
 }
 
+int64_t CFile::GetNumLines() {
+    if (!file_) {
+        utility::LogError("CFile::GetNumLines() called on a closed file");
+    }
+    fpos_t prevpos;
+    if (fgetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fgetpos failed: {}", GetError());
+    }
+    if (fseek(file_, 0, SEEK_SET)) {
+        error_code_ = errno;
+        utility::LogError("fseek failed: {}", GetError());
+    }
+    int64_t num_lines = 0;
+    int c;
+    while (EOF != (c = getc(file_))) {
+        if (c == '\n') {
+            num_lines++;
+        }
+    }
+    if (fsetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fsetpos failed: {}", GetError());
+    }
+    return num_lines;
+}
+
 const char* CFile::ReadLine() {
     if (!file_) {
         utility::LogError("CFile::ReadLine() called on a closed file");
@@ -553,4 +593,4 @@ size_t CFile::ReadData(void* data, size_t elem_size, size_t num_elems) {
 
 }  // namespace filesystem
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

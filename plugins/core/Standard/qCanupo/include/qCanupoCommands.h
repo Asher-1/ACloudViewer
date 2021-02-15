@@ -94,7 +94,7 @@ struct CommandCanupoClassif : public ccCommandLineInterface::Command
 		{
 			CorePointDescSet corePointsDescriptors; //core point descriptors
 			ccPointCloud* realCorePoints = desc.pc;
-			CVLib::GenericIndexedCloudPersist* corePoints = realCorePoints;
+			cloudViewer::GenericIndexedCloudPersist* corePoints = realCorePoints;
 
 			//has the current cloud an active SF?
 			int currentSFIndex = desc.pc->getCurrentDisplayedScalarFieldIndex();

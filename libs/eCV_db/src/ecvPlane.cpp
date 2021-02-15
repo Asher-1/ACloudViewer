@@ -117,7 +117,7 @@ void ccPlane::flip()
 	updateRepresentation();
 }
 
-ccPlane* ccPlane::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/*=0*/)
+ccPlane* ccPlane::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double* rms/*=0*/)
 {
 	//number of points
 	unsigned count = cloud->size();
@@ -127,7 +127,7 @@ ccPlane* ccPlane::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/*=0*
 		return 0;
 	}
 
-	CVLib::Neighbourhood Yk(cloud);
+	cloudViewer::Neighbourhood Yk(cloud);
 
 	//plane equation
 	const PointCoordinateType* theLSPlane = Yk.getLSPlane();
@@ -185,7 +185,7 @@ ccPlane* ccPlane::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/*=0*
 	//compute least-square fitting RMS if requested
 	if (rms)
 	{
-		*rms = CVLib::DistanceComputationTools::computeCloud2PlaneDistanceRMS(cloud, theLSPlane);
+		*rms = cloudViewer::DistanceComputationTools::computeCloud2PlaneDistanceRMS(cloud, theLSPlane);
 		plane->setMetaData(QString("RMS"), QVariant(*rms));
 	}
 

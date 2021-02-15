@@ -49,6 +49,8 @@
 #define CLOUDVIEWER_GET_LAST_CUDA_ERROR(message) \
     __CLOUDVIEWER_GET_LAST_CUDA_ERROR(message, __FILE__, __LINE__)
 
+#define CUDA_CALL(cuda_function, ...) cuda_function(__VA_ARGS__);
+
 #else  // #ifdef BUILD_CUDA_MODULE
 
 #define CLOUDVIEWER_HOST_DEVICE
@@ -56,18 +58,19 @@
 #define CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(type)
 #define CLOUDVIEWER_CUDA_CHECK(err)
 #define CLOUDVIEWER_GET_LAST_CUDA_ERROR(message)
+#define CUDA_CALL(cuda_function, ...) \
+    utility::LogError("Not built with CUDA, cannot call " #cuda_function);
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 
 namespace cloudViewer {
 namespace core {
-using namespace CVLib;
 #ifdef BUILD_CUDA_MODULE
 inline void __CLOUDVIEWER_CUDA_CHECK(cudaError_t err,
                                 const char* file,
                                 const int line) {
     if (err != cudaSuccess) {
-        utility::LogError("{}:{} CUDA runtime error: {}", file, line,
+        cloudViewer::utility::LogError("{}:{} CUDA runtime error: {}", file, line,
                           cudaGetErrorString(err));
     }
 }
@@ -77,7 +80,7 @@ inline void __CLOUDVIEWER_GET_LAST_CUDA_ERROR(const char* message,
                                          const int line) {
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        utility::LogError("{}:{} {}: CLOUDVIEWER_GET_LAST_CUDA_ERROR(): {}", file,
+        cloudViewer::utility::LogError("{}:{} {}: CLOUDVIEWER_GET_LAST_CUDA_ERROR(): {}", file,
                           line, message, cudaGetErrorString(err));
     }
 }
@@ -87,7 +90,7 @@ inline int GetCUDACurrentDeviceTextureAlignment() {
     int device = 0;
     cudaError_t err = cudaGetDevice(&device);
     if (err != cudaSuccess) {
-        utility::LogError(
+        cloudViewer::utility::LogError(
                 "GetCUDACurrentDeviceTextureAlignment(): cudaGetDevice failed "
                 "with {}",
                 cudaGetErrorString(err));
@@ -96,7 +99,7 @@ inline int GetCUDACurrentDeviceTextureAlignment() {
     int value = 0;
     err = cudaDeviceGetAttribute(&value, cudaDevAttrTextureAlignment, device);
     if (err != cudaSuccess) {
-        utility::LogError(
+        cloudViewer::utility::LogError(
                 "GetCUDACurrentDeviceTextureAlignment(): "
                 "cudaDeviceGetAttribute failed with {}",
                 cudaGetErrorString(err));

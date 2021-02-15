@@ -29,10 +29,10 @@
 #include <vector>
 
 #include "core/Tensor.h"
-#ifdef WITH_FAISS
 #include "core/nns/FaissIndex.h"
-#endif
+#include "core/nns/FixedRadiusIndex.h"
 #include "core/nns/NanoFlannIndex.h"
+#include <Optional.h>
 
 namespace cloudViewer {
 namespace core {
@@ -67,8 +67,9 @@ public:
 
     /// Set index for fixed-radius search.
     ///
-    /// \return Returns true if building index success, otherwise false.
-    bool FixedRadiusIndex();
+    /// \param radius optional radius parameter. required for gpu fixed radius
+    /// index. \return Returns true if building index success, otherwise false.
+    bool FixedRadiusIndex(cloudViewer::utility::optional<double> radius = {});
 
     /// Set index for hybrid search.
     ///
@@ -134,9 +135,8 @@ private:
 
 protected:
     std::unique_ptr<NanoFlannIndex> nanoflann_index_;
-#ifdef WITH_FAISS
     std::unique_ptr<FaissIndex> faiss_index_;
-#endif
+    std::unique_ptr<nns::FixedRadiusIndex> fixed_radius_index_;
     const Tensor dataset_points_;
 };
 

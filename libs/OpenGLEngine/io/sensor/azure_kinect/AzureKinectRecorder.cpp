@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        cloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "open3d/io/sensor/azure_kinect/AzureKinectRecorder.h"
+#include "visualization/visualizer/VisualizerWithKeyCallback.h" // must put in first
+#include "io/sensor/azure_kinect/AzureKinectRecorder.h"
 
 #include <assert.h>
 #include <k4a/k4a.h>
@@ -39,14 +40,15 @@
 #include <ctime>
 #include <iostream>
 
-#include "open3d/geometry/RGBDImage.h"
-#include "open3d/io/sensor/azure_kinect/K4aPlugin.h"
-#include "open3d/io/sensor/azure_kinect/MKVReader.h"
-#include "open3d/visualization/utility/ColorMap.h"
-#include "open3d/visualization/visualizer/VisualizerWithKeyCallback.h"
+#include <RGBDImage.h>
+#include "io/sensor/azure_kinect/K4aPlugin.h"
+#include "io/sensor/azure_kinect/MKVReader.h"
+#include "visualization/utility/ColorMap.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace io {
+
+using namespace cloudViewer;
 
 AzureKinectRecorder::AzureKinectRecorder(
         const AzureKinectSensorConfig& sensor_config, size_t sensor_index)
@@ -118,4 +120,4 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
     return im_rgbd;
 }
 }  // namespace io
-}  // namespace open3d
+}  // namespace cloudViewer

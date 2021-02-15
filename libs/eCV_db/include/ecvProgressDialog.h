@@ -31,11 +31,11 @@
 
 //! Graphical progress indicator (thread-safe)
 /** Implements the GenericProgressCallback interface, in order
-	to be passed to the CVLib algorithms (check the
-	CVLib documentation for more information about the
+	to be passed to the cloudViewer algorithms (check the
+	cloudViewer documentation for more information about the
 	inherited methods).
 **/
-class ECV_DB_LIB_API ecvProgressDialog : public QProgressDialog, public CVLib::GenericProgressCallback
+class ECV_DB_LIB_API ecvProgressDialog : public QProgressDialog, public cloudViewer::GenericProgressCallback
 {
 
 	Q_OBJECT

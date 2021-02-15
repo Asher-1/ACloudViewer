@@ -40,7 +40,6 @@ namespace cloudViewer {
 namespace pipelines {
 namespace integration {
 
-using namespace CVLib;
 UniformTSDFVolume::UniformTSDFVolume(
         double length,
         int resolution,

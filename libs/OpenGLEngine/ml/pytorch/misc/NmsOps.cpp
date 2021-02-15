@@ -26,7 +26,7 @@
 
 #include <vector>
 
-#include "ml/impl/misc/Nms.h"
+#include "ml/contrib/Nms.h"
 #include "ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
@@ -39,7 +39,7 @@ torch::Tensor Nms(torch::Tensor boxes,
 
     if (boxes.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
-        std::vector<int64_t> keep_indices = cloudViewer::ml::impl::NmsCUDAKernel(
+        std::vector<int64_t> keep_indices = cloudViewer::ml::contrib::NmsCUDAKernel(
                 boxes.data_ptr<float>(), scores.data_ptr<float>(),
                 boxes.size(0), nms_overlap_thresh);
         return torch::from_blob(keep_indices.data(),
@@ -51,7 +51,7 @@ torch::Tensor Nms(torch::Tensor boxes,
 
 #endif
     } else {
-        std::vector<int64_t> keep_indices = cloudViewer::ml::impl::NmsCPUKernel(
+        std::vector<int64_t> keep_indices = cloudViewer::ml::contrib::NmsCPUKernel(
                 boxes.data_ptr<float>(), scores.data_ptr<float>(),
                 boxes.size(0), nms_overlap_thresh);
         return torch::from_blob(keep_indices.data(),

@@ -109,7 +109,7 @@ public:
                                              func_t element_kernel,
                                              scalar_t identity) {
         if (indexer.NumOutputElements() > 1) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "Internal error: two-pass reduction only works for "
                     "single-output reduction ops.");
         }
@@ -158,7 +158,7 @@ public:
             }
         }
         if (best_dim == -1) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "Internal error: all dims are reduction dims, use "
                     "LaunchReductionKernelTwoPass instead.");
         }
@@ -170,8 +170,17 @@ public:
             LaunchReductionKernelSerial<scalar_t>(sub_indexer, element_kernel);
         }
     }
-};
 
+    /// General kernels with non-conventional indexers
+    template <typename func_t>
+    static void LaunchGeneralKernel(int64_t n, func_t element_kernel) {
+#pragma omp parallel for schedule(static)
+        for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
+            element_kernel(workload_idx);
+        }
+    }
+
+};
 }  // namespace kernel
 }  // namespace core
 }  // namespace cloudViewer

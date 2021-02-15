@@ -1,6 +1,9 @@
 #ifndef QPCL_PointCloudColorHandlerLUT_H
 #define QPCL_PointCloudColorHandlerLUT_H
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
 
 #include "PclCloudLUT.h"
 #include <pcl/visualization/point_cloud_color_handlers.h>

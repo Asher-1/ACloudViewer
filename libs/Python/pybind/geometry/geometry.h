@@ -32,6 +32,7 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_geometry(py::module &m);
+
 void pybind_cloudbase(py::module &m);
 void pybind_pointcloud(py::module &m);
 void pybind_keypoint(py::module& m);

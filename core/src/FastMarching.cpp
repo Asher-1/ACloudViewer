@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -22,7 +22,7 @@
 #include "DgmOctree.h"
 
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 FastMarching::FastMarching()
 	: m_initialized(false)
@@ -242,13 +242,13 @@ unsigned FastMarching::getNearestTrialCell()
 	//we look for the "TRIAL" cell with the minimum time (T)
 	std::size_t minTCellIndexPos = 0;
 	unsigned minTCellIndex = m_trialCells[minTCellIndexPos];
-	CVLib::FastMarching::Cell* minTCell = m_theGrid[minTCellIndex];
+	cloudViewer::FastMarching::Cell* minTCell = m_theGrid[minTCellIndex];
 	assert(minTCell != nullptr);
 
 	for (std::size_t i=1; i<m_trialCells.size(); ++i)
 	{
 		unsigned cellIndex = m_trialCells[i];
-		CVLib::FastMarching::Cell* cell = m_theGrid[cellIndex];
+		cloudViewer::FastMarching::Cell* cell = m_theGrid[cellIndex];
 		assert(cell != nullptr);
 		
 		if (cell->T < minTCell->T)
@@ -300,7 +300,7 @@ float FastMarching::computeT(unsigned index)
 		//look for the minimum arrival time from +/-X
 		double Tmin = static_cast<double>(Cell::T_INF());
 		for (unsigned n = 0; n < m_numberOfNeighbours; ++n)
-			if (CVLib::c_FastMarchingNeighbourPosShift[n * 3] != 0)
+			if (cloudViewer::c_FastMarchingNeighbourPosShift[n * 3] != 0)
 				if (T[n] < Tmin)
 					Tmin = T[n];
 		if (Tij > Tmin)
@@ -316,7 +316,7 @@ float FastMarching::computeT(unsigned index)
 		//look for the minimum arrival time from +/-Y
 		double Tmin = static_cast<double>(Cell::T_INF());
 		for (unsigned n = 0; n < m_numberOfNeighbours; ++n)
-			if (CVLib::c_FastMarchingNeighbourPosShift[n * 3 + 1] != 0)
+			if (cloudViewer::c_FastMarchingNeighbourPosShift[n * 3 + 1] != 0)
 				if (T[n] < Tmin)
 					Tmin = T[n];
 		if (Tij > Tmin)
@@ -332,7 +332,7 @@ float FastMarching::computeT(unsigned index)
 		//look for the minimum arrival time from +/-Z
 		double Tmin = static_cast<double>(Cell::T_INF());
 		for (unsigned n = 0; n < m_numberOfNeighbours; ++n)
-			if (CVLib::c_FastMarchingNeighbourPosShift[n * 3 + 2] != 0)
+			if (cloudViewer::c_FastMarchingNeighbourPosShift[n * 3 + 2] != 0)
 				if (T[n] < Tmin)
 					Tmin = T[n];
 		if (Tij > Tmin)

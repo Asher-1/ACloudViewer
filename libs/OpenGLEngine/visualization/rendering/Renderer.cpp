@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -28,13 +28,15 @@
 
 #include <Image.h>
 #include <Console.h>
+#include "visualization/rendering/Material.h"
 #include "visualization/rendering/RenderToBuffer.h"
+#include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
 
 namespace cloudViewer {
 namespace visualization {
 namespace rendering {
-    using namespace CVLib;
+    using namespace cloudViewer;
 static const ResourceLoadRequest::ErrorCallback kDefaultErrorHandler =
         [](const ResourceLoadRequest& request,
            const uint8_t code,
@@ -88,7 +90,7 @@ void Renderer::RenderToImage(
     auto vp = view->GetViewport();
     auto render = CreateBufferRenderer();
     render->Configure(
-            view, scene, vp[2], vp[3],
+            view, scene, vp[2], vp[3], 3, false,
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
             [render, cb](const RenderToBuffer::Buffer& buffer) mutable {
@@ -99,6 +101,31 @@ void Renderer::RenderToImage(
                 image->bytes_per_channel_ = 1;
                 image->data_ = std::vector<uint8_t>(buffer.bytes,
                                                     buffer.bytes + buffer.size);
+                cb(image);
+                render = nullptr;
+            });
+}
+
+void Renderer::RenderToDepthImage(
+        View* view,
+        Scene* scene,
+        std::function<void(std::shared_ptr<geometry::Image>)> cb) {
+    auto vp = view->GetViewport();
+    auto render = CreateBufferRenderer();
+    render->Configure(
+            view, scene, vp[2], vp[3], 1, true,
+            // the shared_ptr (render) is const unless the lambda
+            // is made mutable
+            [render, cb](const RenderToBuffer::Buffer& buffer) mutable {
+                auto image = std::make_shared<geometry::Image>();
+                image->width_ = int(buffer.width);
+                image->height_ = int(buffer.height);
+                image->num_of_channels_ = 1;
+                image->bytes_per_channel_ = 4;
+                image->data_.resize(image->width_ * image->height_ *
+                                    image->num_of_channels_ *
+                                    image->bytes_per_channel_);
+                memcpy(image->data_.data(), buffer.bytes, buffer.size);
                 cb(image);
                 render = nullptr;
             });

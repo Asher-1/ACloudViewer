@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,7 @@
 
 #include "CloudViewer.h"
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 void PrintHelp() {
     utility::LogInfo("Usage :");

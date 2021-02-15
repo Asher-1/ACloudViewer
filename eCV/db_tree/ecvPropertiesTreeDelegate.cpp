@@ -545,7 +545,7 @@ void ccPropertiesTreeDelegate::fillSFWithPointCloud(ccGenericPointCloud* _obj)
 		appendRow(ITEM(tr("Active")), PERSISTENT_EDITOR(OBJECT_CURRENT_SCALAR_FIELD), true);
 
 		//no need to go any further if no SF is currently active
-		CVLib::ScalarField* sf = cloud->getCurrentDisplayedScalarField();
+		cloudViewer::ScalarField* sf = cloud->getCurrentDisplayedScalarField();
 		if (sf)
 		{
 			addSeparator(tr("Color Scale"));
@@ -741,19 +741,19 @@ void ccPropertiesTreeDelegate::fillWithPointKdTree(ccKdTree* _obj)
 		QString errorMeasure;
 		switch (_obj->getMaxErrorType())
 		{
-		case CVLib::DistanceComputationTools::RMS:
+		case cloudViewer::DistanceComputationTools::RMS:
 			errorMeasure = tr("RMS");
 			break;
-		case CVLib::DistanceComputationTools::MAX_DIST_68_PERCENT:
+		case cloudViewer::DistanceComputationTools::MAX_DIST_68_PERCENT:
 			errorMeasure = tr("Max dist @ 68%");
 			break;
-		case CVLib::DistanceComputationTools::MAX_DIST_95_PERCENT:
+		case cloudViewer::DistanceComputationTools::MAX_DIST_95_PERCENT:
 			errorMeasure = tr("Max dist @ 95%");
 			break;
-		case CVLib::DistanceComputationTools::MAX_DIST_99_PERCENT:
+		case cloudViewer::DistanceComputationTools::MAX_DIST_99_PERCENT:
 			errorMeasure = tr("Max dist @ 99%");
 			break;
-		case CVLib::DistanceComputationTools::MAX_DIST:
+		case cloudViewer::DistanceComputationTools::MAX_DIST:
 			errorMeasure = tr("Max distance");
 			break;
 		default:
@@ -889,20 +889,20 @@ void ccPropertiesTreeDelegate::fillWithGBLSensor(ccGBLSensor* _obj)
 		//Angular range (yaw)
 		PointCoordinateType yawMin = _obj->getMinYaw();
 		PointCoordinateType yawMax = _obj->getMaxYaw();
-        appendRow(ITEM("Yaw span"), ITEM(QString("[%1 ; %2]").arg(CVLib::RadiansToDegrees(yawMin), 0, 'f', 2).arg(CVLib::RadiansToDegrees(yawMax), 0, 'f', 2)));
+        appendRow(ITEM("Yaw span"), ITEM(QString("[%1 ; %2]").arg(cloudViewer::RadiansToDegrees(yawMin), 0, 'f', 2).arg(cloudViewer::RadiansToDegrees(yawMax), 0, 'f', 2)));
 
 		//Angular steps (yaw)
 		PointCoordinateType yawStep = _obj->getYawStep();
-        appendRow(ITEM("Yaw step"), ITEM(QString("%1").arg(CVLib::RadiansToDegrees(yawStep), 0, 'f', 4)));
+        appendRow(ITEM("Yaw step"), ITEM(QString("%1").arg(cloudViewer::RadiansToDegrees(yawStep), 0, 'f', 4)));
 
 		//Angular range (pitch)
 		PointCoordinateType pitchMin = _obj->getMinPitch();
 		PointCoordinateType pitchMax = _obj->getMaxPitch();
-        appendRow(ITEM("Pitch span"), ITEM(QString("[%1 ; %2]").arg(CVLib::RadiansToDegrees(pitchMin), 0, 'f', 2).arg(CVLib::RadiansToDegrees(pitchMax), 0, 'f', 2)));
+        appendRow(ITEM("Pitch span"), ITEM(QString("[%1 ; %2]").arg(cloudViewer::RadiansToDegrees(pitchMin), 0, 'f', 2).arg(cloudViewer::RadiansToDegrees(pitchMax), 0, 'f', 2)));
 
 		//Angular steps (pitch)
 		PointCoordinateType pitchStep = _obj->getPitchStep();
-        appendRow(ITEM("Pitch step"), ITEM(QString("%1").arg(CVLib::RadiansToDegrees(pitchStep), 0, 'f', 4)));
+        appendRow(ITEM("Pitch step"), ITEM(QString("%1").arg(cloudViewer::RadiansToDegrees(pitchStep), 0, 'f', 4)));
 	}
 
 	//Positions
@@ -933,7 +933,7 @@ void ccPropertiesTreeDelegate::fillWithCameraSensor(ccCameraSensor* _obj)
 	}
 
 	//Field of view
-    appendRow(ITEM("Field of view"), ITEM(QString::number(CVLib::RadiansToDegrees(params.vFOV_rad)) + " deg."));
+    appendRow(ITEM("Field of view"), ITEM(QString::number(cloudViewer::RadiansToDegrees(params.vFOV_rad)) + " deg."));
 
 	//Skewness
 	appendRow(ITEM("Skew"), ITEM(QString::number(params.skew)));
@@ -1148,7 +1148,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(QWidget *parent,
 	case OBJECT_OCTREE_LEVEL:
 	{
 		QSpinBox* spinBox = new QSpinBox(parent);
-		spinBox->setRange(1, CVLib::DgmOctree::MAX_OCTREE_LEVEL);
+		spinBox->setRange(1, cloudViewer::DgmOctree::MAX_OCTREE_LEVEL);
 
 		connect(spinBox, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
 				this, &ccPropertiesTreeDelegate::octreeDisplayedLevelChanged);

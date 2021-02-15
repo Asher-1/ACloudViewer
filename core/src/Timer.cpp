@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -29,7 +29,7 @@
 
 #include <chrono>
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 Timer::Timer()
@@ -105,4 +105,4 @@ void FPSTimer::Signal() {
 }
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

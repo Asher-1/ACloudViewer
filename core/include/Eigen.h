@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -51,7 +51,7 @@ namespace Eigen {
 
 }  // namespace Eigen
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
     using Matrix4d_allocator = Eigen::aligned_allocator<Eigen::Matrix4d>;
@@ -145,6 +145,6 @@ namespace utility {
         const std::vector<IdxType>& indices);
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer
 
 #endif  // CV_EIGEN_HEADER

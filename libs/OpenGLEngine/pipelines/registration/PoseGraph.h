@@ -40,7 +40,7 @@ namespace registration {
 /// \class PoseGraphNode
 ///
 /// \brief Node of PoseGraph.
-class /*OPENGL_ENGINE_LIB_API*/ PoseGraphNode : public CVLib::utility::IJsonConvertible {
+class /*OPENGL_ENGINE_LIB_API*/ PoseGraphNode : public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity())
@@ -58,7 +58,7 @@ public:
 /// \class PoseGraphEdge
 ///
 /// \brief Edge of PoseGraph.
-class /*OPENGL_ENGINE_LIB_API*/ PoseGraphEdge : public CVLib::utility::IJsonConvertible {
+class /*OPENGL_ENGINE_LIB_API*/ PoseGraphEdge : public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Parameterized Constructor.
     ///
@@ -113,7 +113,7 @@ public:
 /// \class PoseGraph
 ///
 /// \brief Data structure defining the pose graph.
-class /*OPENGL_ENGINE_LIB_API*/ PoseGraph : public CVLib::utility::IJsonConvertible {
+class /*OPENGL_ENGINE_LIB_API*/ PoseGraph : public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     PoseGraph();

@@ -38,7 +38,7 @@ set(TORCH_OPS_SOURCES
     "misc/VoxelizeOps.cpp"
     "misc/VoxelizeOpKernel.cpp"
     "misc/NmsOps.cpp"
-    "../impl/misc/Nms.cpp"
+    "../contrib/Nms.cpp"
 )
 
 set(TORCH_OPS_CUDA_SOURCES
@@ -53,7 +53,7 @@ set(TORCH_OPS_CUDA_SOURCES
     "misc/RaggedToDenseOpKernel.cu"
     "misc/VoxelizeOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
-    "../impl/misc/Nms.cu"
+    "../contrib/Nms.cu"
 )
 
 if(BUILD_CUDA_MODULE)
@@ -71,7 +71,7 @@ file(GLOB_RECURSE cloudViewer_torch_ops_HEADERS "*.h")
 add_library(cloudViewer_torch_ops SHARED ${cloudViewer_torch_ops_HEADERS} ${cloudViewer_torch_ops_SOURCES})
 
 cloudViewer_set_global_properties(cloudViewer_torch_ops)
-ShowAndAbortOnWarning(cloudViewer_torch_ops)
+cloudViewer_show_and_abort_on_warning(cloudViewer_torch_ops)
 
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TORCH_OPS_DIR cloudViewer_torch_ops LIBRARY_OUTPUT_DIRECTORY)

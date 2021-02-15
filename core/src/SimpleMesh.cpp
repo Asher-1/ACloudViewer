@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -24,7 +24,7 @@
 //System
 #include <cassert>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 SimpleMesh::SimpleMesh(GenericIndexedCloud* _theVertices, bool linkVerticesWithMesh)
 	: GenericIndexedMesh()
@@ -88,7 +88,7 @@ void SimpleMesh::getTriangleVertices(unsigned triangleIndex, CCVector3& A, CCVec
 	theVertices->getPoint(ti.i3, C);
 }
 
-void CVLib::SimpleMesh::getTriangleVertices(unsigned triangleIndex, double A[3], double B[3], double C[3]) const
+void cloudViewer::SimpleMesh::getTriangleVertices(unsigned triangleIndex, double A[3], double B[3], double C[3]) const
 {
 	assert(triangleIndex < m_triIndexes.size());
 

@@ -51,7 +51,7 @@ public:
 	//! Returns subsampled version of a cloud according to current parameters
 	/** Should be called only once the dialog has been validated.
 	**/
-	CVLib::ReferenceCloud* getSampledCloud(ccGenericPointCloud* cloud, CVLib::GenericProgressCallback* progressCb = 0);
+	cloudViewer::ReferenceCloud* getSampledCloud(ccGenericPointCloud* cloud, cloudViewer::GenericProgressCallback* progressCb = 0);
 
 	//! Enables the SF modulation option (SPATIAL method)
 	void enableSFModulation(ScalarType sfMin, ScalarType sfMax);

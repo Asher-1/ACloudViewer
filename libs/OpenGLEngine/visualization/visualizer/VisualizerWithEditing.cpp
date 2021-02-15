@@ -28,8 +28,8 @@
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
 
-#include <PointCloudIO.h>
-#include <TriangleMeshIO.h>
+#include "io/PointCloudIO.h"
+#include "io/TriangleMeshIO.h"
 #include <IJsonConvertibleIO.h>
 #include <Image.h>
 #include <ecvMesh.h>
@@ -49,7 +49,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-using namespace CVLib;
+using namespace cloudViewer;
 
 bool VisualizerWithEditing::AddGeometry(
         std::shared_ptr<const ccHObject> geometry_ptr,

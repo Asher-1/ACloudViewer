@@ -628,7 +628,7 @@ bool ccVolumeCalcTool::ComputeVolume(	ccRasterGrid& grid,
 			pDlg->show();
 			QCoreApplication::processEvents();
 		}
-		CVLib::NormalizedProgress nProgress(pDlg.data(), grid.width * grid.height);
+		cloudViewer::NormalizedProgress nProgress(pDlg.data(), grid.width * grid.height);
 		
 		size_t ceilNonMatchingCount = 0;
 		size_t groundNonMatchingCount = 0;

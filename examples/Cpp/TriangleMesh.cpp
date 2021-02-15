@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -31,7 +31,7 @@
 #include <ecvHObjectCaster.h>
 
 void PrintHelp() {
-    using namespace CVLib;
+    using namespace cloudViewer;
     utility::LogInfo("Usage :");
     utility::LogInfo("    > TriangleMesh sphere");
     utility::LogInfo("    > TriangleMesh merge <file1> <file2>");
@@ -55,8 +55,7 @@ void PaintMesh(ccMesh &mesh, const Eigen::Vector3d &color) {
 
 int main(int argc, char *argv[]) {
     using namespace cloudViewer;
-
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         PrintHelp();
@@ -99,14 +98,14 @@ int main(int argc, char *argv[]) {
     } else if (option == "arrow") {
         auto mesh = ccMesh::CreateArrow();
         mesh->computeVertexNormals();
-		CVLib::utility::LogInfo("Mesh has {:d} vertices, {:d} triangles.",
+        utility::LogInfo("Mesh has {:d} vertices, {:d} triangles.",
 			mesh->getVerticeSize(), mesh->size());
 		mesh->rotate(ccHObject::GetRotationMatrixFromXYZ(Eigen::Vector3d(0.3, 0.5, 0.1)),
 			mesh->getGeometryCenter());
 		ccBBox aabox = mesh->getAxisAlignedBoundingBox();
-		CVLib::utility::LogInfo("Mesh Axis Aligned bbox volume: {:f}.", aabox.volume());
+        utility::LogInfo("Mesh Axis Aligned bbox volume: {:f}.", aabox.volume());
 		ecvOrientedBBox obb = mesh->getOrientedBoundingBox();
-		CVLib::utility::LogInfo("Mesh Oriented bbox volume: {:f}.", obb.volume());
+        utility::LogInfo("Mesh Oriented bbox volume: {:f}.", obb.volume());
 
 		auto abbox_show = std::make_shared<ccBBox>(aabox);
 		auto obbox_show = std::make_shared<ecvOrientedBBox>(obb);
@@ -135,12 +134,12 @@ int main(int argc, char *argv[]) {
 		}
         auto mesh1 = io::CreateMeshFromFile(argv[2]);
         auto mesh2 = io::CreateMeshFromFile(argv[3]);
-        CVLib::utility::LogInfo("Mesh1 has {:d} vertices, {:d} triangles.",
+        utility::LogInfo("Mesh1 has {:d} vertices, {:d} triangles.",
                          mesh1->getVerticeSize(), mesh1->size());
-        CVLib::utility::LogInfo("Mesh2 has {:d} vertices, {:d} triangles.",
+        utility::LogInfo("Mesh2 has {:d} vertices, {:d} triangles.",
                          mesh2->getVerticeSize(), mesh2->size());
         *mesh1 += *mesh2;
-        CVLib::utility::LogInfo(
+        utility::LogInfo(
                 "After merge, Mesh1 has {:d} vertices, {:d} triangles.",
                 mesh1->getVerticeSize(), mesh1->size());
 		mesh1->shrinkToFit();
@@ -148,7 +147,7 @@ int main(int argc, char *argv[]) {
 		mesh1->removeDuplicatedTriangles();
 		mesh1->removeDegenerateTriangles();
 		mesh1->removeUnreferencedVertices();
-        CVLib::utility::LogInfo(
+        utility::LogInfo(
                 "After purge vertices, Mesh1 has {:d} vertices, {:d} "
                 "triangles.",
                 mesh1->getVerticeSize(), mesh1->size());
@@ -160,7 +159,7 @@ int main(int argc, char *argv[]) {
 			PrintHelp();
 			return 1;
 		}
-		auto mesh = cloudViewer::io::CreateMeshFromFile(argv[2]);
+        auto mesh = io::CreateMeshFromFile(argv[2]);
 		mesh->computeVertexNormals();
 		visualization::DrawGeometries({ mesh });
 		auto mesh_sub = mesh->subdivideMidpoint(2);
@@ -176,7 +175,7 @@ int main(int argc, char *argv[]) {
 			PrintHelp();
 			return 1;
 		}
-		auto mesh = cloudViewer::io::CreateMeshFromFile(argv[2]);
+        auto mesh = io::CreateMeshFromFile(argv[2]);
 		mesh->computeVertexNormals();
 		visualization::DrawGeometries({ mesh });
 		auto mesh_sub = mesh->subdivideLoop(3);
@@ -191,7 +190,7 @@ int main(int argc, char *argv[]) {
 			PrintHelp();
 			return 1;
 		}
-		auto mesh = cloudViewer::io::CreateMeshFromFile(argv[2]);
+        auto mesh = io::CreateMeshFromFile(argv[2]);
 		mesh->computeVertexNormals();
 		visualization::DrawGeometries({ mesh });
 		auto mesh_sub = mesh->subdivideMidpoint(2);
@@ -206,7 +205,7 @@ int main(int argc, char *argv[]) {
 			PrintHelp();
 			return 1;
 		}
-		auto mesh = cloudViewer::io::CreateMeshFromFile(argv[2]);
+        auto mesh = io::CreateMeshFromFile(argv[2]);
 		mesh->computeVertexNormals();
 		visualization::DrawGeometries({ mesh });
 		auto mesh_smooth_laplacian = mesh->filterSmoothLaplacian(100, 0.5);
@@ -221,7 +220,7 @@ int main(int argc, char *argv[]) {
 			PrintHelp();
 			return 1;
 		}
-		auto mesh = cloudViewer::io::CreateMeshFromFile(argv[2]);
+        auto mesh = io::CreateMeshFromFile(argv[2]);
 		mesh->computeVertexNormals();
 		visualization::DrawGeometries({ mesh });
 		auto mesh_sharpen = mesh->filterSharpen(1, 1);
@@ -236,7 +235,7 @@ int main(int argc, char *argv[]) {
 			PrintHelp();
 			return 1;
 		}
-		auto mesh = cloudViewer::io::CreateMeshFromFile(argv[2]);
+        auto mesh = io::CreateMeshFromFile(argv[2]);
 		mesh->computeVertexNormals();
 		visualization::DrawGeometries({ mesh });
 		auto pcd = mesh->samplePointsPoissonDisk(2000);
@@ -254,7 +253,7 @@ int main(int argc, char *argv[]) {
 			PrintHelp();
 			return 1;
 		}
-		auto mesh = cloudViewer::io::CreateMeshFromFile(argv[2]);
+        auto mesh = io::CreateMeshFromFile(argv[2]);
 		mesh->computeVertexNormals();
 		io::WriteTriangleMesh(argv[3], *mesh, true, true);
 
@@ -317,7 +316,7 @@ int main(int argc, char *argv[]) {
 				ecvColor::Rgb::FromEigen(Eigen::Vector3d(color, color, color)));
             r += sqrt(dists[0]);
         }
-        CVLib::utility::LogInfo("Average distance is {:.6f}.",
+        utility::LogInfo("Average distance is {:.6f}.",
                          r / (double)mesh1->getVerticeSize());
         if (argc > 5) {
             io::WriteTriangleMesh(argv[5], *mesh1);
@@ -347,8 +346,8 @@ int main(int argc, char *argv[]) {
         mesh->computeVertexNormals();
         camera::PinholeCameraTrajectory trajectory;
         io::ReadIJsonConvertible(argv[3], trajectory);
-        if (CVLib::utility::filesystem::DirectoryExists("image") == false) {
-            CVLib::utility::LogWarning("No image!");
+        if (utility::filesystem::DirectoryExists("image") == false) {
+            utility::LogWarning("No image!");
             return 0;
         }
         int idx = 3000;
@@ -383,7 +382,7 @@ int main(int argc, char *argv[]) {
             std::cout << pt_in_plane / pt_in_plane(2) << std::endl;
             auto result = fimage->FloatValueAt(uv(0), uv(1));
             if (result.first) {
-                CVLib::utility::LogInfo("{:.6f}", result.second);
+                utility::LogInfo("{:.6f}", result.second);
             }
             visualization::DrawGeometries({fimage}, "Test", 1920, 1080);
         }

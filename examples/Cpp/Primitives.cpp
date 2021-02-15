@@ -97,13 +97,13 @@ auto getUnions()
 
 int main(int argc, char **argv) {
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     if (argc < 1) {
         // clang-format off
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("    > Primitives sphere");
-		CVLib::utility::LogInfo("    > Primitives cone <file1>");
+        cloudViewer::utility::LogInfo("Usage:");
+        cloudViewer::utility::LogInfo("    > Primitives sphere");
+		cloudViewer::utility::LogInfo("    > Primitives cone <file1>");
         // clang-format on
         return 1;
     }

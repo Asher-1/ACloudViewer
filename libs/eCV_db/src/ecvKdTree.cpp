@@ -25,7 +25,7 @@
 #include "ecvDisplayTools.h"
 
 ccKdTree::ccKdTree(ccGenericPointCloud* aCloud)
-	: CVLib::TrueKdTree(aCloud)
+	: cloudViewer::TrueKdTree(aCloud)
 	, ccHObject("Kd-tree")
 	, m_associatedGenericCloud(aCloud)
 {
@@ -206,7 +206,7 @@ bool ccKdTree::convertCellIndexToSF()
 	//for each cell
 	for (size_t i=0; i<leaves.size(); ++i)
 	{
-		CVLib::ReferenceCloud* subset = leaves[i]->points;
+		cloudViewer::ReferenceCloud* subset = leaves[i]->points;
 		if (subset)
 		{
 			for (unsigned j=0; j<subset->size(); ++j)
@@ -239,7 +239,7 @@ bool ccKdTree::convertCellIndexToRandomColor()
 	for (size_t i = 0; i < leaves.size(); ++i)
 	{
 		ecvColor::Rgb col = ecvColor::Generator::Random();
-		CVLib::ReferenceCloud* subset = leaves[i]->points;
+		cloudViewer::ReferenceCloud* subset = leaves[i]->points;
 		if (subset)
 		{
 			for (unsigned j = 0; j < subset->size(); ++j)

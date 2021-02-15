@@ -34,7 +34,7 @@
 #include "pybind/geometry/geometry_trampoline.h"
 
 // PointCloud
-template <class GenericCloudBase = CVLib::GenericCloud>
+template <class GenericCloudBase = cloudViewer::GenericCloud>
 class PyGenericCloud : public GenericCloudBase {
 public:
 	using GenericCloudBase::GenericCloudBase;
@@ -42,8 +42,8 @@ public:
 	unsigned size() const override {
 		PYBIND11_OVERLOAD_PURE(unsigned, GenericCloudBase, );
 	}
-	void forEach(CVLib::GenericCloud::genericPointAction action) override {
-		PYBIND11_OVERLOAD_PURE(void, GenericCloudBase, CVLib::GenericCloud::genericPointAction);
+	void forEach(cloudViewer::GenericCloud::genericPointAction action) override {
+		PYBIND11_OVERLOAD_PURE(void, GenericCloudBase, cloudViewer::GenericCloud::genericPointAction);
 	}
 	void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) override {
 		PYBIND11_OVERLOAD_PURE(void, GenericCloudBase, bbMin, bbMax);
@@ -69,7 +69,7 @@ public:
 
 };
 
-template <class GenericIndexedCloudBase = CVLib::GenericIndexedCloud>
+template <class GenericIndexedCloudBase = cloudViewer::GenericIndexedCloud>
 class PyGenericIndexedCloud : public PyGenericCloud<GenericIndexedCloudBase> {
 public:
 	using PyGenericCloud<GenericIndexedCloudBase>::PyGenericCloud;
@@ -85,7 +85,7 @@ public:
 	}
 };
 
-template <class GenericIndexedCloudPersistBase = CVLib::GenericIndexedCloudPersist>
+template <class GenericIndexedCloudPersistBase = cloudViewer::GenericIndexedCloudPersist>
 class PyGenericIndexedCloudPersist : public PyGenericIndexedCloud<GenericIndexedCloudPersistBase>
 {
 public:
@@ -141,11 +141,11 @@ public:
 	void applyRigidTransformation(const ccGLMatrix& trans) override {
 		PYBIND11_OVERLOAD_PURE(void, GenericPointCloudBase, trans);
 	}
-	CVLib::ReferenceCloud* crop(const ccBBox& box, bool inside = true) override {
-		PYBIND11_OVERLOAD_PURE(CVLib::ReferenceCloud*, GenericPointCloudBase, box, inside);
+	cloudViewer::ReferenceCloud* crop(const ccBBox& box, bool inside = true) override {
+		PYBIND11_OVERLOAD_PURE(cloudViewer::ReferenceCloud*, GenericPointCloudBase, box, inside);
 	}
-	CVLib::ReferenceCloud* crop(const ecvOrientedBBox& box) override {
-		PYBIND11_OVERLOAD_PURE(CVLib::ReferenceCloud*, GenericPointCloudBase, box);
+	cloudViewer::ReferenceCloud* crop(const ecvOrientedBBox& box) override {
+		PYBIND11_OVERLOAD_PURE(cloudViewer::ReferenceCloud*, GenericPointCloudBase, box);
 	}
 	void removePoints(size_t index) override {
 		PYBIND11_OVERLOAD_PURE(void, GenericPointCloudBase, index);
@@ -156,7 +156,7 @@ public:
 	}
 };
 
-template <class GenericReferenceCloud = CVLib::ReferenceCloud>
+template <class GenericReferenceCloud = cloudViewer::ReferenceCloud>
 class PyGenericReferenceCloud : public PyGenericIndexedCloudPersist<GenericReferenceCloud>
 {
 public:

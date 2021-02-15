@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -25,7 +25,7 @@
 
 class AtomicCounter;
 
-namespace CVLib
+namespace cloudViewer
 {
 
 //! A generic progress indicator interface to notify algorithms progress to the client application

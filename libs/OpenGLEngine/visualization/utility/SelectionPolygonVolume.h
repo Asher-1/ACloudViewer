@@ -44,7 +44,7 @@ namespace visualization {
 /// \class SelectionPolygonVolume
 ///
 /// \brief Select a polygon volume for cropping.
-class SelectionPolygonVolume : public CVLib::utility::IJsonConvertible {
+class SelectionPolygonVolume : public cloudViewer::utility::IJsonConvertible {
 public:
     ~SelectionPolygonVolume() override {}
 

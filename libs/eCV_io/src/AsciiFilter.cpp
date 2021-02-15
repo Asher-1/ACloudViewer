@@ -17,7 +17,7 @@
 
 #include "AsciiFilter.h"
 
-//CVLib
+//cloudViewer
 #include <ScalarField.h>
 #include <Garbage.h>
 #include <CVLog.h>
@@ -210,7 +210,7 @@ CC_FILE_ERROR AsciiFilter::saveToFile(ccHObject* entity, const QString& filename
 		pDlg->setInfo(QObject::tr("Number of points: %1").arg(numberOfPoints));
 		pDlg->start();
 	}
-	CVLib::NormalizedProgress nprogress(pDlg.data(), numberOfPoints);
+	cloudViewer::NormalizedProgress nprogress(pDlg.data(), numberOfPoints);
 
 	//output precision
 	const int s_coordPrecision = saveDialog->coordsPrecision();
@@ -478,7 +478,7 @@ struct cloudAttributesDescriptor
 		int indexes[c_attribCount];
 	};
 	std::vector<int> scalarIndexes;
-	std::vector<CVLib::ScalarField*> scalarFields;
+	std::vector<cloudViewer::ScalarField*> scalarFields;
 	bool hasNorms;
 	bool hasRGBColors;
 	bool hasFloatRGBColors[3];
@@ -775,7 +775,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 		pDlg->setInfo(QObject::tr("Approximate number of points: %1").arg(approximateNumberOfLines));
 		pDlg->start();
 	}
-	CVLib::NormalizedProgress nprogress(pDlg.data(), approximateNumberOfLines);
+	cloudViewer::NormalizedProgress nprogress(pDlg.data(), approximateNumberOfLines);
 
 	//buffers
 	ScalarType D = 0;

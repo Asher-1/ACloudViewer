@@ -877,7 +877,7 @@ bool CommandSubsample::process(ccCommandLineInterface &cmd)
 			ccPointCloud* cloud = cmd.clouds()[i].pc;
 			cmd.print(QObject::tr("\tProcessing cloud #%1 (%2)").arg(i + 1).arg(!cloud->getName().isEmpty() ? cloud->getName() : "no name"));
 
-			CVLib::ReferenceCloud* refCloud = CVLib::CloudSamplingTools::subsampleCloudRandomly(cloud, count, cmd.progressDialog());
+			cloudViewer::ReferenceCloud* refCloud = cloudViewer::CloudSamplingTools::subsampleCloudRandomly(cloud, count, cmd.progressDialog());
 			if (!refCloud)
 			{
 				return cmd.error(QObject::tr("Subsampling process failed!"));
@@ -934,8 +934,8 @@ bool CommandSubsample::process(ccCommandLineInterface &cmd)
 			ccPointCloud* cloud = cmd.clouds()[i].pc;
 			cmd.print(QObject::tr("\tProcessing cloud #%1 (%2)").arg(i + 1).arg(!cloud->getName().isEmpty() ? cloud->getName() : "no name"));
 
-			CVLib::CloudSamplingTools::SFModulationParams modParams(false);
-			CVLib::ReferenceCloud* refCloud = CVLib::CloudSamplingTools::resampleCloudSpatially(cloud, static_cast<PointCoordinateType>(step), modParams, nullptr, cmd.progressDialog());
+			cloudViewer::CloudSamplingTools::SFModulationParams modParams(false);
+			cloudViewer::ReferenceCloud* refCloud = cloudViewer::CloudSamplingTools::resampleCloudSpatially(cloud, static_cast<PointCoordinateType>(step), modParams, nullptr, cmd.progressDialog());
 			if (!refCloud)
 			{
 				return cmd.error("Subsampling process failed!");
@@ -982,7 +982,7 @@ bool CommandSubsample::process(ccCommandLineInterface &cmd)
 
 		bool ok = false;
 		int octreeLevel = cmd.arguments().takeFirst().toInt(&ok);
-		if (!ok || octreeLevel < 1 || octreeLevel > CVLib::DgmOctree::MAX_OCTREE_LEVEL)
+		if (!ok || octreeLevel < 1 || octreeLevel > cloudViewer::DgmOctree::MAX_OCTREE_LEVEL)
 		{
 			return cmd.error(QObject::tr("Invalid octree level!"));
 		}
@@ -1000,9 +1000,9 @@ bool CommandSubsample::process(ccCommandLineInterface &cmd)
 			ccPointCloud* cloud = cmd.clouds()[i].pc;
 			cmd.print(QObject::tr("\tProcessing cloud #%1 (%2)").arg(i + 1).arg(!cloud->getName().isEmpty() ? cloud->getName() : "no name"));
 
-			CVLib::ReferenceCloud* refCloud = CVLib::CloudSamplingTools::subsampleCloudWithOctreeAtLevel(cloud,
+			cloudViewer::ReferenceCloud* refCloud = cloudViewer::CloudSamplingTools::subsampleCloudWithOctreeAtLevel(cloud,
 				static_cast<unsigned char>(octreeLevel),
-				CVLib::CloudSamplingTools::NEAREST_POINT_TO_CELL_CENTER,
+				cloudViewer::CloudSamplingTools::NEAREST_POINT_TO_CELL_CENTER,
 				progressDialog.data());
 			if (!refCloud)
 			{
@@ -1073,7 +1073,7 @@ bool CommandExtractCCs::process(ccCommandLineInterface &cmd)
 		return cmd.error(QObject::tr("Missing parameter: octree level after \"-%1\"").arg(COMMAND_EXTRACT_CC));
 	}
 	bool ok;
-	unsigned char octreeLevel = std::min<unsigned char>(cmd.arguments().takeFirst().toUShort(&ok), CVLib::DgmOctree::MAX_OCTREE_LEVEL);
+	unsigned char octreeLevel = std::min<unsigned char>(cmd.arguments().takeFirst().toUShort(&ok), cloudViewer::DgmOctree::MAX_OCTREE_LEVEL);
 	if (!ok)
 	{
 		return cmd.error(QObject::tr("Invalid octree level!"));
@@ -1122,7 +1122,7 @@ bool CommandExtractCCs::process(ccCommandLineInterface &cmd)
 			cloud->setCurrentScalarField(sfIdx);
 
 			//try to label all CCs
-			int componentCount = CVLib::AutoSegmentationTools::labelConnectedComponents(cloud,
+			int componentCount = cloudViewer::AutoSegmentationTools::labelConnectedComponents(cloud,
 				static_cast<unsigned char>(octreeLevel),
 				false,
 				progressDialog.data());
@@ -1134,8 +1134,8 @@ bool CommandExtractCCs::process(ccCommandLineInterface &cmd)
 			}
 
 			cloud->getCurrentInScalarField()->computeMinAndMax();
-			CVLib::ReferenceCloudContainer components;
-			bool success = CVLib::AutoSegmentationTools::extractConnectedComponents(cloud, components);
+			cloudViewer::ReferenceCloudContainer components;
+			bool success = cloudViewer::AutoSegmentationTools::extractConnectedComponents(cloud, components);
 			cloud->deleteScalarField(sfIdx);
 			sfIdx = -1;
 
@@ -1149,7 +1149,7 @@ bool CommandExtractCCs::process(ccCommandLineInterface &cmd)
 			int realIndex = 0;
 			for (size_t j = 0; j < components.size(); ++j)
 			{
-				CVLib::ReferenceCloud* compIndexes = components[j];
+				cloudViewer::ReferenceCloud* compIndexes = components[j];
 
 				//if it has enough points
 				if (compIndexes->size() >= minPointCount)
@@ -1226,18 +1226,18 @@ bool CommandCurvature::process(ccCommandLineInterface &cmd)
 	}
 
 	QString curvTypeStr = cmd.arguments().takeFirst().toUpper();
-	CVLib::Neighbourhood::CurvatureType curvType = CVLib::Neighbourhood::MEAN_CURV;
+	cloudViewer::Neighbourhood::CurvatureType curvType = cloudViewer::Neighbourhood::MEAN_CURV;
 	if (curvTypeStr == "MEAN")
 	{
-		//curvType = CVLib::Neighbourhood::MEAN_CURV;
+		//curvType = cloudViewer::Neighbourhood::MEAN_CURV;
 	}
 	else if (curvTypeStr == "GAUSS")
 	{
-		curvType = CVLib::Neighbourhood::GAUSSIAN_CURV;
+		curvType = cloudViewer::Neighbourhood::GAUSSIAN_CURV;
 	}
 	else if (curvTypeStr == "NORMAL_CHANGE")
 	{
-		curvType = CVLib::Neighbourhood::NORMAL_CHANGE_RATE;
+		curvType = cloudViewer::Neighbourhood::NORMAL_CHANGE_RATE;
 	}
 	else
 	{
@@ -1271,7 +1271,7 @@ bool CommandCurvature::process(ccCommandLineInterface &cmd)
 		entities[i] = cmd.clouds()[i].pc;
 	}
 
-	if (ccLibAlgorithms::ComputeGeomCharacteristic(CVLib::GeometricalAnalysisTools::Curvature, curvType, kernelSize, entities, cmd.widgetParent()))
+	if (ccLibAlgorithms::ComputeGeomCharacteristic(cloudViewer::GeometricalAnalysisTools::Curvature, curvType, kernelSize, entities, cmd.widgetParent()))
 	{
 		//save output
 		if (cmd.autoSaveMode() && !cmd.saveClouds(QObject::tr("%1_CURVATURE_KERNEL_%2").arg(curvTypeStr).arg(kernelSize)))
@@ -1282,7 +1282,7 @@ bool CommandCurvature::process(ccCommandLineInterface &cmd)
 	return true;
 }
 
-static bool ReadDensityType(ccCommandLineInterface& cmd, CVLib::GeometricalAnalysisTools::Density& density)
+static bool ReadDensityType(ccCommandLineInterface& cmd, cloudViewer::GeometricalAnalysisTools::Density& density)
 {
 	if (cmd.arguments().empty())
 	{
@@ -1293,15 +1293,15 @@ static bool ReadDensityType(ccCommandLineInterface& cmd, CVLib::GeometricalAnaly
 	QString typeArg = cmd.arguments().takeFirst().toUpper();
 	if (typeArg == "KNN")
 	{
-		density = CVLib::GeometricalAnalysisTools::DENSITY_KNN;
+		density = cloudViewer::GeometricalAnalysisTools::DENSITY_KNN;
 	}
 	else if (typeArg == "SURFACE")
 	{
-		density = CVLib::GeometricalAnalysisTools::DENSITY_2D;
+		density = cloudViewer::GeometricalAnalysisTools::DENSITY_2D;
 	}
 	else if (typeArg == "VOLUME")
 	{
-		density = CVLib::GeometricalAnalysisTools::DENSITY_3D;
+		density = cloudViewer::GeometricalAnalysisTools::DENSITY_3D;
 	}
 	else
 	{
@@ -1332,7 +1332,7 @@ bool CommandApproxDensity::process(ccCommandLineInterface &cmd)
 	}
 
 	//optional parameter: density type
-	CVLib::GeometricalAnalysisTools::Density densityType = CVLib::GeometricalAnalysisTools::DENSITY_3D;
+	cloudViewer::GeometricalAnalysisTools::Density densityType = cloudViewer::GeometricalAnalysisTools::DENSITY_3D;
 	if (!cmd.arguments().empty())
 	{
 		QString argument = cmd.arguments().front();
@@ -1352,7 +1352,7 @@ bool CommandApproxDensity::process(ccCommandLineInterface &cmd)
 		}
 	}
 
-	if (ccLibAlgorithms::ComputeGeomCharacteristic(CVLib::GeometricalAnalysisTools::ApproxLocalDensity, densityType, 0, entities, cmd.widgetParent()))
+	if (ccLibAlgorithms::ComputeGeomCharacteristic(cloudViewer::GeometricalAnalysisTools::ApproxLocalDensity, densityType, 0, entities, cmd.widgetParent()))
 	{
 		//save output
 		if (cmd.autoSaveMode() && !cmd.saveClouds("APPROX_DENSITY"))
@@ -1387,7 +1387,7 @@ bool CommandDensity::process(ccCommandLineInterface &cmd)
 	cmd.print(QObject::tr("\tSphere radius: %1").arg(kernelSize));
 
 	//optional parameter: density type
-	CVLib::GeometricalAnalysisTools::Density densityType = CVLib::GeometricalAnalysisTools::DENSITY_3D;
+	cloudViewer::GeometricalAnalysisTools::Density densityType = cloudViewer::GeometricalAnalysisTools::DENSITY_3D;
 	if (!cmd.arguments().empty())
 	{
 		QString argument = cmd.arguments().front();
@@ -1420,7 +1420,7 @@ bool CommandDensity::process(ccCommandLineInterface &cmd)
 		entities[i] = cmd.clouds()[i].pc;
 	}
 
-	if (ccLibAlgorithms::ComputeGeomCharacteristic(CVLib::GeometricalAnalysisTools::LocalDensity, densityType, kernelSize, entities, cmd.widgetParent()))
+	if (ccLibAlgorithms::ComputeGeomCharacteristic(cloudViewer::GeometricalAnalysisTools::LocalDensity, densityType, kernelSize, entities, cmd.widgetParent()))
 	{
 		//save output
 		if (cmd.autoSaveMode() && !cmd.saveClouds("DENSITY"))
@@ -1538,7 +1538,7 @@ bool CommandRoughness::process(ccCommandLineInterface &cmd)
 		entities[i] = cmd.clouds()[i].pc;
 	}
 
-	if (ccLibAlgorithms::ComputeGeomCharacteristic(CVLib::GeometricalAnalysisTools::Roughness, 0, kernelSize, entities, cmd.widgetParent()))
+	if (ccLibAlgorithms::ComputeGeomCharacteristic(cloudViewer::GeometricalAnalysisTools::Roughness, 0, kernelSize, entities, cmd.widgetParent()))
 	{
 		//save output
 		if (cmd.autoSaveMode() && !cmd.saveClouds(QObject::tr("ROUGHNESS_KERNEL_%2").arg(kernelSize)))
@@ -1849,7 +1849,7 @@ bool CommandFilterBySFValue::process(ccCommandLineInterface &cmd)
 
 	for (size_t i = 0; i < cmd.clouds().size(); ++i)
 	{
-		CVLib::ScalarField* sf = cmd.clouds()[i].pc->getCurrentOutScalarField();
+		cloudViewer::ScalarField* sf = cmd.clouds()[i].pc->getCurrentOutScalarField();
 		if (sf)
 		{
 			ScalarType thisMinVal = minVal;
@@ -1968,7 +1968,7 @@ bool CommandComputeMeshVolume::process(ccCommandLineInterface &cmd)
 	for (CLMeshDesc& meshDesc : cmd.meshes())
 	{
 		//we compute the mesh volume
-		double V = CVLib::MeshSamplingTools::computeMeshVolume(meshDesc.mesh);
+		double V = cloudViewer::MeshSamplingTools::computeMeshVolume(meshDesc.mesh);
 
 		QString titleStr = QObject::tr("Mesh '%1'").arg(meshDesc.basename);
 		if (meshDesc.indexInFile >= 0)
@@ -2398,7 +2398,7 @@ bool CommandMatchBestFitPlane::process(ccCommandLineInterface &cmd)
 			cmd.print(QObject::tr("Plane successfully fitted: rms = %1").arg(rms));
 
 			CCVector3 N = pPlane->getNormal();
-			CCVector3 C = *CVLib::Neighbourhood(pc).getGravityCenter();
+			CCVector3 C = *cloudViewer::Neighbourhood(pc).getGravityCenter();
 
 			CLMeshDesc planeDesc;
 			planeDesc.mesh = pPlane;
@@ -2608,7 +2608,7 @@ bool CommandSORFilter::process(ccCommandLineInterface &cmd)
 		assert(cloud);
 
 		//computation
-		CVLib::ReferenceCloud* selection = CVLib::CloudSamplingTools::sorFilter(cloud,
+		cloudViewer::ReferenceCloud* selection = cloudViewer::CloudSamplingTools::sorFilter(cloud,
 			knn,
 			nSigma,
 			nullptr,
@@ -3120,7 +3120,7 @@ bool CommandCrop2D::process(ccCommandLineInterface &cmd)
 	//now we can crop the loaded cloud(s)
 	for (size_t i = 0; i < cmd.clouds().size(); ++i)
 	{
-		CVLib::ReferenceCloud* ref = cmd.clouds()[i].pc->crop2D(&poly, orthoDim, inside);
+		cloudViewer::ReferenceCloud* ref = cmd.clouds()[i].pc->crop2D(&poly, orthoDim, inside);
 		if (ref)
 		{
 			if (ref->size() != 0)
@@ -3604,7 +3604,7 @@ bool CommandStatTest::process(ccCommandLineInterface &cmd)
 	cmd.print(QObject::tr("[STATISTICAL TEST]"));
 
 	//distribution
-	CVLib::GenericDistribution* distrib = nullptr;
+	cloudViewer::GenericDistribution* distrib = nullptr;
 	{
 		if (cmd.arguments().empty())
 		{
@@ -3637,9 +3637,9 @@ bool CommandStatTest::process(ccCommandLineInterface &cmd)
 				return cmd.error(QObject::tr("Invalid parameter: sigma value after \"GAUSS\" {mu}"));
 			}
 
-			CVLib::NormalDistribution* N = new CVLib::NormalDistribution();
+			cloudViewer::NormalDistribution* N = new cloudViewer::NormalDistribution();
 			N->setParameters(static_cast<ScalarType>(mu), static_cast<ScalarType>(sigma*sigma)); //warning: we input sigma2 here (not sigma)
-			distrib = static_cast<CVLib::GenericDistribution*>(N);
+			distrib = static_cast<cloudViewer::GenericDistribution*>(N);
 		}
 		else if (distribStr == "WEIBULL")
 		{
@@ -3677,9 +3677,9 @@ bool CommandStatTest::process(ccCommandLineInterface &cmd)
 				return cmd.error(QObject::tr("Invalid parameter: shift value after \"WEIBULL\" {a} {b}"));
 			}
 
-			CVLib::WeibullDistribution* N = new CVLib::WeibullDistribution();
+			cloudViewer::WeibullDistribution* N = new cloudViewer::WeibullDistribution();
 			N->setParameters(static_cast<ScalarType>(a), static_cast<ScalarType>(b), static_cast<ScalarType>(shift));
-			distrib = static_cast<CVLib::GenericDistribution*>(N);
+			distrib = static_cast<cloudViewer::GenericDistribution*>(N);
 		}
 		else
 		{
@@ -3734,7 +3734,7 @@ bool CommandStatTest::process(ccCommandLineInterface &cmd)
 		ccPointCloud* pc = cmd.clouds()[i].pc;
 
 		//we apply method on currently 'output' SF
-		CVLib::ScalarField* outSF = pc->getCurrentOutScalarField();
+		cloudViewer::ScalarField* outSF = pc->getCurrentOutScalarField();
 		if (outSF)
 		{
 			assert(outSF->capacity() != 0);
@@ -3765,7 +3765,7 @@ bool CommandStatTest::process(ccCommandLineInterface &cmd)
 				}
 			}
 
-			double chi2dist = CVLib::StatisticalTestingTools::testCloudWithStatisticalModel(distrib, pc, kNN, pValue, progressDialog.data(), theOctree.data());
+			double chi2dist = cloudViewer::StatisticalTestingTools::testCloudWithStatisticalModel(distrib, pc, kNN, pValue, progressDialog.data(), theOctree.data());
 
 			cmd.print(QObject::tr("[Chi2 Test] %1 test result = %2").arg(distrib->getName()).arg(chi2dist));
 
@@ -4409,7 +4409,7 @@ bool CommandICP::process(ccCommandLineInterface &cmd)
 		iterationCount,
 		randomSamplingLimit,
 		enableFarthestPointRemoval,
-		iterationCount != 0 ? CVLib::ICPRegistrationTools::MAX_ITER_CONVERGENCE : CVLib::ICPRegistrationTools::MAX_ERROR_CONVERGENCE,
+		iterationCount != 0 ? cloudViewer::ICPRegistrationTools::MAX_ITER_CONVERGENCE : cloudViewer::ICPRegistrationTools::MAX_ERROR_CONVERGENCE,
 		adjustScale,
 		overlap / 100.0,
 		dataSFAsWeights >= 0,
@@ -4840,7 +4840,7 @@ bool CommandMoment::process(ccCommandLineInterface &cmd)
 		entities[i] = cmd.clouds()[i].pc;
 	}
 
-	if (ccLibAlgorithms::ComputeGeomCharacteristic(CVLib::GeometricalAnalysisTools::MomentOrder1, 0, kernelSize, entities, cmd.widgetParent()))
+	if (ccLibAlgorithms::ComputeGeomCharacteristic(cloudViewer::GeometricalAnalysisTools::MomentOrder1, 0, kernelSize, entities, cmd.widgetParent()))
 	{
 		//save output
 		if (cmd.autoSaveMode() && !cmd.saveClouds(QObject::tr("MOMENT_KERNEL_%2").arg(kernelSize)))
@@ -4865,63 +4865,63 @@ bool CommandFeature::process(ccCommandLineInterface &cmd)
 	}
 
 	QString featureTypeStr = cmd.arguments().takeFirst().toUpper();
-	CVLib::Neighbourhood::GeomFeature featureType;
+	cloudViewer::Neighbourhood::GeomFeature featureType;
 
 	if (featureTypeStr == "SUM_OF_EIGENVALUES")
 	{
-		featureType = CVLib::Neighbourhood::EigenValuesSum;
+		featureType = cloudViewer::Neighbourhood::EigenValuesSum;
 	}
 	else if (featureTypeStr == "OMNIVARIANCE")
 	{
-		featureType = CVLib::Neighbourhood::Omnivariance;
+		featureType = cloudViewer::Neighbourhood::Omnivariance;
 	}
 	else if (featureTypeStr == "EIGENTROPY")
 	{
-		featureType = CVLib::Neighbourhood::EigenEntropy;
+		featureType = cloudViewer::Neighbourhood::EigenEntropy;
 	}
 	else if (featureTypeStr == "ANISOTROPY")
 	{
-		featureType = CVLib::Neighbourhood::Anisotropy;
+		featureType = cloudViewer::Neighbourhood::Anisotropy;
 	}
 	else if (featureTypeStr == "PLANARITY")
 	{
-		featureType = CVLib::Neighbourhood::Planarity;
+		featureType = cloudViewer::Neighbourhood::Planarity;
 	}
 	else if (featureTypeStr == "LINEARITY")
 	{
-		featureType = CVLib::Neighbourhood::Linearity;
+		featureType = cloudViewer::Neighbourhood::Linearity;
 	}
 	else if (featureTypeStr == "PCA1")
 	{
-		featureType = CVLib::Neighbourhood::PCA1;
+		featureType = cloudViewer::Neighbourhood::PCA1;
 	}
 	else if (featureTypeStr == "PCA2")
 	{
-		featureType = CVLib::Neighbourhood::PCA2;
+		featureType = cloudViewer::Neighbourhood::PCA2;
 	}
 	else if (featureTypeStr == "SURFACE_VARIATION")
 	{
-		featureType = CVLib::Neighbourhood::SurfaceVariation;
+		featureType = cloudViewer::Neighbourhood::SurfaceVariation;
 	}
 	else if (featureTypeStr == "SPHERICITY")
 	{
-		featureType = CVLib::Neighbourhood::Sphericity;
+		featureType = cloudViewer::Neighbourhood::Sphericity;
 	}
 	else if (featureTypeStr == "VERTICALITY")
 	{
-		featureType = CVLib::Neighbourhood::Verticality;
+		featureType = cloudViewer::Neighbourhood::Verticality;
 	}
 	else if (featureTypeStr == "EIGENVALUE1")
 	{
-		featureType = CVLib::Neighbourhood::EigenValue1;
+		featureType = cloudViewer::Neighbourhood::EigenValue1;
 	}
 	else if (featureTypeStr == "EIGENVALUE2")
 	{
-		featureType = CVLib::Neighbourhood::EigenValue2;
+		featureType = cloudViewer::Neighbourhood::EigenValue2;
 	}
 	else if (featureTypeStr == "EIGENVALUE3")
 	{
-		featureType = CVLib::Neighbourhood::EigenValue3;
+		featureType = cloudViewer::Neighbourhood::EigenValue3;
 	}
 	else
 	{
@@ -4969,7 +4969,7 @@ bool CommandFeature::process(ccCommandLineInterface &cmd)
 		entities[i] = cmd.clouds()[i].pc;
 	}
 
-	if (ccLibAlgorithms::ComputeGeomCharacteristic(CVLib::GeometricalAnalysisTools::Feature, featureType, kernelSize, entities, cmd.widgetParent()))
+	if (ccLibAlgorithms::ComputeGeomCharacteristic(cloudViewer::GeometricalAnalysisTools::Feature, featureType, kernelSize, entities, cmd.widgetParent()))
 	{
 		//save output
 		if (cmd.autoSaveMode() && !cmd.saveClouds(QObject::tr("%1_FEATURE_KERNEL_%2").arg(featureTypeStr).arg(kernelSize)))

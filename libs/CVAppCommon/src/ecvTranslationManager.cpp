@@ -43,25 +43,48 @@ void ccTranslationManager::registerTranslatorFile( const QString &prefix, const 
 
 void ccTranslationManager::loadTranslations()
 {
-	const QLocale	locale( languagePref() );
+    const QLocale locale(languagePref());
 	
-	const auto	&info = mTranslatorFileInfo;
+    const auto &info = mTranslatorFileInfo;
 	
-	for ( const auto &fileInfo : info )
+    for (const auto& fileInfo : info)
 	{
-		auto translator = new QTranslator( ecvApp );
+        auto translator = new QTranslator(ecvApp);
 	 
-		bool loaded = translator->load( locale, fileInfo.prefix, QStringLiteral( "_" ), fileInfo.path );
+        bool loaded = translator->load(locale, fileInfo.prefix, QStringLiteral( "_" ), fileInfo.path);
 	 
 		if ( loaded )
 		{ 
-		   ecvApp->installTranslator( translator );
+           ecvApp->installTranslator(translator);
 		}
 		else
 		{
 			delete translator;
 		}
 	}
+}
+
+void ccTranslationManager::loadTranslation(QString language)
+{
+    const QLocale locale(language);
+
+    const auto& info = mTranslatorFileInfo;
+
+    for (const auto& fileInfo : info)
+    {
+        auto translator = new QTranslator(ecvApp);
+
+        bool loaded = translator->load(locale, fileInfo.prefix, QStringLiteral("_"), fileInfo.path);
+
+        if (loaded)
+        {
+            ecvApp->installTranslator(translator);
+        }
+        else
+        {
+            delete translator;
+        }
+    }
 }
 
 void ccTranslationManager::populateMenu( QMenu *menu, const QString &pathToTranslationFiles )

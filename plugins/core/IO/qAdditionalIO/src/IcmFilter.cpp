@@ -215,7 +215,7 @@ int IcmFilter::LoadCalibratedImages(ccHObject* entities, const QString& path, co
 			float fov_rad = 0;
 			sscanf(line,"\t fieldOfView %f\n",&fov_rad);
 
-            float fov_deg = CVLib::RadiansToDegrees(fov_rad);
+            float fov_deg = cloudViewer::RadiansToDegrees(fov_rad);
             CVLog::Print("\t FOV=%f (degrees)", fov_deg);
 
 			//Position

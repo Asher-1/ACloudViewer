@@ -22,7 +22,7 @@
 #include "ecvHObject.h"
 #include "ecvPlanarEntityInterface.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 	class GenericIndexedCloudPersist;
 }
@@ -57,7 +57,7 @@ public:
 		\param planeEquation to input a custom plane equation
 		\return a facet (or 0 if an error occurred)
 	**/
-	static ccFacet* Create(	CVLib::GenericIndexedCloudPersist* cloud,
+	static ccFacet* Create(	cloudViewer::GenericIndexedCloudPersist* cloud,
 							PointCoordinateType maxEdgeLength = 0,
 							bool transferOwnership = false,
 							const PointCoordinateType* planeEquation = 0);
@@ -155,7 +155,7 @@ protected:
 	virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 
 	//! Creates internal representation (polygon, polyline, etc.)
-	bool createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* points,
+	bool createInternalRepresentation(	cloudViewer::GenericIndexedCloudPersist* points,
 										const PointCoordinateType* planeEquation = 0);
 
 	//! Facet

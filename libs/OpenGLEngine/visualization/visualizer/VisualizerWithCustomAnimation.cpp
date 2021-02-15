@@ -36,7 +36,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-using namespace CVLib;
+using namespace cloudViewer;
 VisualizerWithCustomAnimation::VisualizerWithCustomAnimation() {}
 
 VisualizerWithCustomAnimation::~VisualizerWithCustomAnimation() {}

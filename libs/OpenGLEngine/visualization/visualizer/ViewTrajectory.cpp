@@ -33,7 +33,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-using namespace CVLib;
+using namespace cloudViewer;
 
 const int ViewTrajectory::INTERVAL_MAX = 59;
 const int ViewTrajectory::INTERVAL_MIN = 0;

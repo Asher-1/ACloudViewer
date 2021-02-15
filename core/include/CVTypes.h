@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -93,7 +93,7 @@ enum CV_OBJECT_FLAG {	//CC_UNUSED			= 1, //DGM: not used anymore (former CC_FATH
 //! Type of object type flags (64 bits)
 using CV_CLASS_ENUM = int64_t;
 
-//! CVLib  object type flags
+//! cloudViewer  object type flags
 namespace CV_TYPES
 {
 	typedef enum : CV_CLASS_ENUM {

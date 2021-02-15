@@ -59,7 +59,7 @@ public:
     /// \param tetras List of tetras denoted by the index of points forming the
     /// tetra.
     TetraMesh(const std::vector<Eigen::Vector3d> &vertices,
-              const std::vector<Eigen::Vector4i, CVLib::utility::Vector4i_allocator> &tetras,
+              const std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator> &tetras,
               const char *name = "TetraMesh")
         : ecvMeshBase(name),
           tetras_(tetras) {}
@@ -122,7 +122,7 @@ public:
 
 public:
 	/// List of tetras denoted by the index of points forming the tetra.
-	std::vector<Eigen::Vector4i, CVLib::utility::Vector4i_allocator> tetras_;
+	std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator> tetras_;
 };
 
 }  // namespace geometry

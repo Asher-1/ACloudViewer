@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -39,7 +39,7 @@ namespace {
 enum class ThreadState { NOT_STARTED, RUNNING, FINISHED };
 }
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 struct Task::Impl {
     std::function<void()> func_;

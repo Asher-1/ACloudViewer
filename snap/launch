@@ -1,5 +1,0 @@
-#!/bin/bash
-
-export LD_LIBRARY_PATH=$SNAP/lib/erowcloudviewer:$LD_LIBRARY_PATH
-
-exec desktop-launch "$@"

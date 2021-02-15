@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -30,8 +30,14 @@
 // JSON_LIB
 #include <json/json.h>
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
+
+std::string IJsonConvertible::ToString() const {
+    Json::Value val;
+    ConvertToJsonValue(val);
+    return val.toStyledString();
+}
 
 bool IJsonConvertible::EigenVector3dFromJsonArray(Eigen::Vector3d &vec,
                                                   const Json::Value &value) {
@@ -183,4 +189,4 @@ bool IJsonConvertible::EigenMatrix6dToJsonArray(const Eigen::Matrix6d_u &mat,
 }
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

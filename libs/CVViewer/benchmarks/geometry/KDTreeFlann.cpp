@@ -47,7 +47,7 @@ class TestKDTreeLine0 {
 public:
     void setup(int size) {
         if (this->size_ == size) return;
-        CVLib::utility::LogInfo("setup KDTree size={:d}", size);
+        cloudViewer::utility::LogInfo("setup KDTree size={:d}", size);
         pc_.clear();
 
         this->size_ = size;
@@ -76,7 +76,7 @@ public:
         int result = kdtree_.SearchRadius<CCVector3>(query, radius,
                                                     indices, distance2);
         if (result != radiusInSteps * 2) {
-            CVLib::utility::LogError("error! size={:d} radiusInSteps={:d} pos={:d} num={:d}",
+            cloudViewer::utility::LogError("error! size={:d} radiusInSteps={:d} pos={:d} num={:d}",
                               size_, radiusInSteps, pos_, result);
         }
     }

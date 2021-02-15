@@ -18,7 +18,7 @@
 #ifndef ECV_MESH_HEADER
 #define ECV_MESH_HEADER
 
-//CVLib
+//cloudViewer
 #include <Helper.h>
 #include <Eigen/Core>
 #include <SimpleTriangle.h>
@@ -62,12 +62,12 @@ public:
 	explicit ccMesh(const std::vector<Eigen::Vector3d> &vertices,
 		const std::vector<Eigen::Vector3i> &triangles);
 
-	//! ccMesh constructor (from a CVLib::GenericIndexedMesh)
+	//! ccMesh constructor (from a cloudViewer::GenericIndexedMesh)
 	/** The GenericIndexedMesh should refer to a known ccGenericPointCloud.
 		\param giMesh the GenericIndexedMesh
 		\param giVertices giMesh vertices
 	**/
-	explicit ccMesh(CVLib::GenericIndexedMesh* giMesh, ccGenericPointCloud* giVertices);
+	explicit ccMesh(cloudViewer::GenericIndexedMesh* giMesh, ccGenericPointCloud* giVertices);
 
 	//! Default destructor
 	~ccMesh() override;
@@ -94,7 +94,7 @@ public:
 		NormsIndexesTableType* clonedNormsTable = nullptr,
 		TextureCoordsContainer* cloneTexCoords = nullptr);
 
-	static inline CVLib::VerticesIndexes GetOrderedTriangle(int vidx0, int vidx1, int vidx2) {
+	static inline cloudViewer::VerticesIndexes GetOrderedTriangle(int vidx0, int vidx1, int vidx2) {
 		if (vidx0 > vidx2) {
 			std::swap(vidx0, vidx2);
 		}
@@ -104,14 +104,14 @@ public:
 		if (vidx1 > vidx2) {
 			std::swap(vidx1, vidx2);
 		}
-		return CVLib::VerticesIndexes(
+		return cloudViewer::VerticesIndexes(
 			static_cast<unsigned int>(vidx0),
 			static_cast<unsigned int>(vidx1),
 			static_cast<unsigned int>(vidx2));
 	}
 
 	//! Creates a Delaunay 2.5D mesh from a point cloud
-	/** See CVLib::PointProjectionTools::computeTriangulation.
+	/** See cloudViewer::PointProjectionTools::computeTriangulation.
 	**/
 	static ccMesh* Triangulate(ccGenericPointCloud* cloud,
 		CC_TRIANGULATION_TYPES type,
@@ -154,10 +154,10 @@ public:
 	//inherited methods (GenericIndexedMesh)
 	void forEach(genericTriangleAction action) override;
 	void placeIteratorAtBeginning() override;
-	CVLib::GenericTriangle* _getNextTriangle() override; //temporary
-	CVLib::GenericTriangle* _getTriangle(unsigned triangleIndex) override; //temporary
-	CVLib::VerticesIndexes* getNextTriangleVertIndexes() override;
-	CVLib::VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) override;
+	cloudViewer::GenericTriangle* _getNextTriangle() override; //temporary
+	cloudViewer::GenericTriangle* _getTriangle(unsigned triangleIndex) override; //temporary
+	cloudViewer::VerticesIndexes* getNextTriangleVertIndexes() override;
+	cloudViewer::VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) override;
 	virtual void getTriangleVertices(unsigned triangleIndex, CCVector3& A, CCVector3& B, CCVector3& C) const override;
 	virtual void getTriangleVertices(unsigned triangleIndex, double A[3], double B[3], double C[3]) const override;
 	
@@ -195,7 +195,7 @@ public:
 
 	//const version of getTriangleVertIndexes
 	void getTriangleVertIndexes(size_t triangleIndex, Eigen::Vector3i& vertIndx) const;
-	const virtual CVLib::VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) const;
+	const virtual cloudViewer::VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) const;
 
 	//inherited methods (ccDrawableObject)
 	bool hasColors() const override;
@@ -224,7 +224,7 @@ public:
 		\param i3 third vertex index (relatively to the vertex cloud)
 	**/
 	void addTriangle(unsigned i1, unsigned i2, unsigned i3);
-	void addTriangle(const CVLib::VerticesIndexes& triangle);
+	void addTriangle(const cloudViewer::VerticesIndexes& triangle);
 	inline void addTriangle(const Eigen::Vector3i& index) {
 		addTriangle(static_cast<unsigned>(index[0]), 
 			static_cast<unsigned>(index[1]),
@@ -243,7 +243,7 @@ public:
 	std::vector<Eigen::Vector3i> getTriangles() const;
 	
     //! Container of per-triangle vertices indexes (3)
-    using triangleIndexesContainer = ccArray<CVLib::VerticesIndexes, 3, unsigned>;
+    using triangleIndexesContainer = ccArray<cloudViewer::VerticesIndexes, 3, unsigned>;
     inline triangleIndexesContainer* getTrianglesPtr() const { return m_triVertIndexes; }
 
 	//! Reserves the memory to store the vertex indexes (3 per triangle)
@@ -251,7 +251,7 @@ public:
 		\return true if the method succeeds, false otherwise
 	**/
     bool reserve(std::size_t n);
-    bool reserveAssociatedCloud(std::size_t n);
+    bool reserveAssociatedCloud(std::size_t n, bool init_color = false, bool init_normal = false);
 
 	//! Resizes the array of vertex indexes (3 per triangle)
 	/** If the new number of elements is smaller than the actual size,
@@ -649,11 +649,11 @@ public: // some cloudViewer interface
 	/// get clamped.
 	/// \return cot weight per edge.
 	std::unordered_map<Eigen::Vector2i,
-		double, CVLib::utility::hash_eigen::hash<Eigen::Vector2i>>
+		double, cloudViewer::utility::hash_eigen::hash<Eigen::Vector2i>>
 	computeEdgeWeightsCot(
 		const std::unordered_map<Eigen::Vector2i,
 		std::vector<int>,
-		CVLib::utility::hash_eigen::hash<Eigen::Vector2i>>
+		cloudViewer::utility::hash_eigen::hash<Eigen::Vector2i>>
 		&edges_to_vertices,
 		double min_weight = std::numeric_limits<double>::lowest()) const;
 
@@ -823,14 +823,14 @@ public: // some cloudViewer interface
    /// triangle indices the given edge belongs to.
 	std::unordered_map<Eigen::Vector2i,
 		std::vector<int>,
-		CVLib::utility::hash_eigen::hash<Eigen::Vector2i>>
+		cloudViewer::utility::hash_eigen::hash<Eigen::Vector2i>>
 		getEdgeToTrianglesMap() const;
 
 	/// Function that returns a map from edges (vertex0, vertex1) to the
 	/// vertex (vertex2) indices the given edge belongs to.
 	std::unordered_map<Eigen::Vector2i,
 		std::vector<int>,
-		CVLib::utility::hash_eigen::hash<Eigen::Vector2i>>
+		cloudViewer::utility::hash_eigen::hash<Eigen::Vector2i>>
 		getEdgeToVerticesMap() const;
 
 	/// Function that computes the area of a mesh triangle identified by the
@@ -1298,11 +1298,11 @@ protected:
 	void onDeletionOf(const ccHObject* obj) override;
 
 	//! Same as other 'computeInterpolationWeights' method with a set of 3 vertices indexes
-	void computeInterpolationWeights(const CVLib::VerticesIndexes& vertIndexes, const CCVector3& P, CCVector3d& weights) const;
+	void computeInterpolationWeights(const cloudViewer::VerticesIndexes& vertIndexes, const CCVector3& P, CCVector3d& weights) const;
 	//! Same as other 'interpolateNormals' method with a set of 3 vertices indexes
-	bool interpolateNormals(const CVLib::VerticesIndexes& vertIndexes, const CCVector3& P, CCVector3& N, const Tuple3i* triNormIndexes = nullptr);
+	bool interpolateNormals(const cloudViewer::VerticesIndexes& vertIndexes, const CCVector3& P, CCVector3& N, const Tuple3i* triNormIndexes = nullptr);
 	//! Same as other 'interpolateColors' method with a set of 3 vertices indexes
-	bool interpolateColors(const CVLib::VerticesIndexes& vertIndexes, const CCVector3& P, ecvColor::Rgb& C);
+	bool interpolateColors(const cloudViewer::VerticesIndexes& vertIndexes, const CCVector3& P, ecvColor::Rgb& C);
 
 	//! Used internally by 'subdivide'
 	bool pushSubdivide(/*PointCoordinateType maxArea, */unsigned indexA, unsigned indexB, unsigned indexC);
@@ -1350,7 +1350,7 @@ protected:
 	//! Iterator on the list of triangles
 	unsigned m_globalIterator;
 	//! Dump triangle structure to transmit temporary data
-	CVLib::SimpleRefTriangle m_currentTriangle;
+	cloudViewer::SimpleRefTriangle m_currentTriangle;
 
 	//! Bounding-box
 	ccBBox m_bBox;

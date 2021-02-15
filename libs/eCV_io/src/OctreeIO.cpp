@@ -34,7 +34,7 @@
 
 namespace cloudViewer {
 namespace io {
-using namespace CVLib;
+using namespace cloudViewer;
 static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &, geometry::Octree &)>>

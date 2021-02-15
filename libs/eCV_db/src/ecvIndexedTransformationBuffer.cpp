@@ -18,7 +18,7 @@
 #include "ecvIndexedTransformationBuffer.h"
 #include "ecvBBox.h"
 
-//CVLib
+//cloudViewer
 #include <ParallelSort.h>
 
 ccIndexedTransformationBuffer::ccIndexedTransformationBuffer(QString name)

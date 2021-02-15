@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "cloudViewer/camera/PinholeCameraIntrinsic.h"
-#include "cloudViewer/utility/IJsonConvertible.h"
+#include <IJsonConvertible.h>
+#include "camera/PinholeCameraIntrinsic.h"
 
 enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
 

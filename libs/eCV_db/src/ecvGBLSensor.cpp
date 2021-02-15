@@ -217,7 +217,7 @@ bool ccGBLSensor::convertToDepthMapCoords(PointCoordinateType yaw, PointCoordina
 	return true;
 }
 
-ccGBLSensor::NormalGrid* ccGBLSensor::projectNormals(	CVLib::GenericCloud* cloud,
+ccGBLSensor::NormalGrid* ccGBLSensor::projectNormals(	cloudViewer::GenericCloud* cloud,
 														const NormalGrid& theNorms,
 														double posIndex/*=0*/) const
 {
@@ -266,10 +266,10 @@ ccGBLSensor::NormalGrid* ccGBLSensor::projectNormals(	CVLib::GenericCloud* cloud
 			CCVector3 U = *P - sensorPos.getTranslationAsVec3D();
 			PointCoordinateType distToSensor = U.norm();
 
-            if (CVLib::GreaterThanEpsilon( distToSensor ))
+            if (cloudViewer::GreaterThanEpsilon( distToSensor ))
 			{
                 PointCoordinateType squareS2D = (S.x*S.x + S.y*S.y);
-                if ( CVLib::GreaterThanEpsilon( squareS2D ) )
+                if ( cloudViewer::GreaterThanEpsilon( squareS2D ) )
                 {
                     //and point+normal
                     CCVector3 P2 = *P + CCVector3(N);
@@ -324,7 +324,7 @@ ccGBLSensor::NormalGrid* ccGBLSensor::projectNormals(	CVLib::GenericCloud* cloud
 	return normalGrid;
 }
 
-ccGBLSensor::ColorGrid* ccGBLSensor::projectColors(	CVLib::GenericCloud* cloud,
+ccGBLSensor::ColorGrid* ccGBLSensor::projectColors(	cloudViewer::GenericCloud* cloud,
 													const ColorGrid& theColors) const
 {
 	if (!cloud || theColors.capacity() == 0)
@@ -489,7 +489,7 @@ struct Interval
 	}
 };
 
-bool ccGBLSensor::computeAutoParameters(CVLib::GenericCloud* theCloud)
+bool ccGBLSensor::computeAutoParameters(cloudViewer::GenericCloud* theCloud)
 {
 	assert(theCloud);
 	if (!theCloud)
@@ -529,7 +529,7 @@ bool ccGBLSensor::computeAutoParameters(CVLib::GenericCloud* theCloud)
 			projectPoint(*P, Q, depth, m_activeIndex);
 
 			//yaw
-            int angleYaw = static_cast<int>(CVLib::RadiansToDegrees(Q.x));
+            int angleYaw = static_cast<int>(cloudViewer::RadiansToDegrees(Q.x));
 			assert(angleYaw >= -180 && angleYaw <= 180);
 			if (angleYaw == 180) //360 degrees warp
 				angleYaw = -180;
@@ -547,7 +547,7 @@ bool ccGBLSensor::computeAutoParameters(CVLib::GenericCloud* theCloud)
 			}
 
 			//pitch
-            int anglePitch = static_cast<int>(CVLib::RadiansToDegrees(Q.y));
+            int anglePitch = static_cast<int>(cloudViewer::RadiansToDegrees(Q.y));
 			assert(anglePitch >= -180 && anglePitch <= 180);
 			if (anglePitch == 180)
 				anglePitch = -180;
@@ -613,7 +613,7 @@ bool ccGBLSensor::computeAutoParameters(CVLib::GenericCloud* theCloud)
 	return true;
 }
 
-bool ccGBLSensor::computeDepthBuffer(CVLib::GenericCloud* theCloud, int& errorCode, ccPointCloud* projectedCloud/*=0*/)
+bool ccGBLSensor::computeDepthBuffer(cloudViewer::GenericCloud* theCloud, int& errorCode, ccPointCloud* projectedCloud/*=0*/)
 {
 	assert(theCloud);
 	if (!theCloud)
@@ -692,7 +692,7 @@ bool ccGBLSensor::computeDepthBuffer(CVLib::GenericCloud* theCloud, int& errorCo
 		{
 			//progress bar
 			ecvProgressDialog pdlg(true);
-			CVLib::NormalizedProgress nprogress(&pdlg, pointCount);
+			cloudViewer::NormalizedProgress nprogress(&pdlg, pointCount);
 			pdlg.setMethodTitle(QObject::tr("Depth buffer"));
 			pdlg.setInfo(QObject::tr("Points: %L1").arg(pointCount));
 			pdlg.start();

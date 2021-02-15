@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -37,7 +37,7 @@
 //system
 #include <ctime>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 void RegistrationTools::FilterTransformation(	const ScaledTransformation& inTrans,
 												int filters,
@@ -59,7 +59,7 @@ void RegistrationTools::FilterTransformation(	const ScaledTransformation& inTran
 	//filter rotation
 	if (inTrans.R.isValid() && (filters & SKIP_ROTATION))
 	{
-		const CVLib::SquareMatrix R(inTrans.R); //copy it in case inTrans and outTrans are the same!
+		const cloudViewer::SquareMatrix R(inTrans.R); //copy it in case inTrans and outTrans are the same!
 		outTrans.R.toIdentity();
 		if (filters & SKIP_RYZ) //keep only the rotation component around X
 		{
@@ -704,7 +704,7 @@ ICPRegistrationTools::RESULT_TYPE ICPRegistrationTools::Register(	GenericIndexed
 		//single iteration of the registration procedure
 		currentTrans = ScaledTransformation();
 		if (!RegistrationTools::RegistrationProcedure(	data.cloud,
-														data.CPSetRef ? static_cast<CVLib::GenericCloud*>(data.CPSetRef) : static_cast<CVLib::GenericCloud*>(data.CPSetPlain),
+														data.CPSetRef ? static_cast<cloudViewer::GenericCloud*>(data.CPSetRef) : static_cast<cloudViewer::GenericCloud*>(data.CPSetPlain),
 														currentTrans,
 														params.adjustScale,
 														coupleWeights))

@@ -18,9 +18,9 @@ else()
         set_local_or_remote_url(
             DOWNLOAD_URL_PRIMARY
             LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/filament-v1.9.9-mac.tgz"
-            REMOTE_URLS "https://github.com/google/filament/releases/download/v1.9.9/filament-v1.9.9-mac.tgz"
+            REMOTE_URLS "https://github.com/google/filament/releases/download/v1.9.11/filament-v1.9.11-mac.tgz"
         )
-    else()      # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
+    else() # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
         execute_process(COMMAND ldd --version OUTPUT_VARIABLE ldd_version)
         string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
 

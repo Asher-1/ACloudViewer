@@ -47,7 +47,7 @@ class RGBDImage;
 namespace pipelines {
 namespace odometry {
 
-typedef std::vector<Eigen::Vector4i, CVLib::utility::Vector4i_allocator>
+typedef std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator>
         CorrespondenceSetPixelWise;
 
 /// \class RGBDOdometryJacobian
@@ -66,7 +66,7 @@ public:
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
     virtual void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, CVLib::utility::Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             std::vector<double>& w,
             const geometry::RGBDImage &source,
@@ -98,7 +98,7 @@ public:
     /// \brief Parameterized Constructor
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, CVLib::utility::Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             std::vector<double> &w,
             const geometry::RGBDImage &source,
@@ -129,7 +129,7 @@ public:
     /// \brief Parameterized Constructor.
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, CVLib::utility::Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             std::vector<double> &w,
             const geometry::RGBDImage &source,

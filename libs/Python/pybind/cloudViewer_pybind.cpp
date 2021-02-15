@@ -39,7 +39,7 @@
 namespace cloudViewer {
 
     PYBIND11_MODULE(pybind, m) {
-        CVLib::utility::Logger::i().print_fcn_ = [](const std::string& msg) {
+        cloudViewer::utility::Logger::i().print_fcn_ = [](const std::string& msg) {
             py::gil_scoped_acquire acquire;
             py::print(msg);
         };

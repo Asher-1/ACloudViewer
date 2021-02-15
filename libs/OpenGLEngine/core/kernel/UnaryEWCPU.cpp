@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -40,6 +40,8 @@
 namespace cloudViewer {
 namespace core {
 namespace kernel {
+
+using namespace cloudViewer;
 
 template <typename src_t, typename dst_t>
 static void CPUCopyElementKernel(const void* src, void* dst) {
@@ -89,6 +91,30 @@ template <typename scalar_t>
 static void CPUAbsElementKernel(const void* src, void* dst) {
     *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
             std::abs(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
+template <typename scalar_t>
+static void CPUFloorElementKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(std::floor(
+            static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
+template <typename scalar_t>
+static void CPUCeilElementKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            std::ceil(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
+template <typename scalar_t>
+static void CPURoundElementKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(std::round(
+            static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
+template <typename scalar_t>
+static void CPUTruncElementKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(std::trunc(
+            static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename src_t, typename dst_t>
@@ -191,6 +217,22 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 case UnaryEWOpCode::Abs:
                     CPULauncher::LaunchUnaryEWKernel(
                             indexer, CPUAbsElementKernel<scalar_t>);
+                    break;
+                case UnaryEWOpCode::Floor:
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUFloorElementKernel<scalar_t>);
+                    break;
+                case UnaryEWOpCode::Ceil:
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUCeilElementKernel<scalar_t>);
+                    break;
+                case UnaryEWOpCode::Round:
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPURoundElementKernel<scalar_t>);
+                    break;
+                case UnaryEWOpCode::Trunc:
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUTruncElementKernel<scalar_t>);
                     break;
                 default:
                     utility::LogError("Unimplemented op_code for UnaryEWCPU");

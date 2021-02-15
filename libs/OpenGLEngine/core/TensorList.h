@@ -119,7 +119,7 @@ public:
     TensorList(InputIterator begin, InputIterator end) {
         int64_t size = std::distance(begin, end);
         if (size == 0) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "Empty input tensors cannot initialize a tensorlist.");
         }
 
@@ -131,7 +131,7 @@ public:
         element_shape_ = begin->GetShape();
         std::for_each(begin, end, [&](const Tensor& tensor) -> void {
             if (tensor.GetShape() != element_shape_) {
-                utility::LogError(
+                cloudViewer::utility::LogError(
                         "Tensors must have the same shape {}, but got {}.",
                         element_shape_, tensor.GetShape());
             }
@@ -141,7 +141,7 @@ public:
         Dtype dtype = begin->GetDtype();
         std::for_each(begin, end, [&](const Tensor& tensor) -> void {
             if (tensor.GetDtype() != dtype) {
-                utility::LogError(
+                cloudViewer::utility::LogError(
                         "Tensors must have the same dtype {}, but got {}.",
                         dtype.ToString(), tensor.GetDtype().ToString());
             }
@@ -151,7 +151,7 @@ public:
         Device device = begin->GetDevice();
         std::for_each(begin, end, [&](const Tensor& tensor) -> void {
             if (tensor.GetDevice() != device) {
-                utility::LogError(
+                cloudViewer::utility::LogError(
                         "Tensors must have the same device {}, but got {}.",
                         device.ToString(), tensor.GetDevice().ToString());
             }
@@ -203,13 +203,9 @@ public:
     /// returned tensor will always be resizable.
     void CopyFrom(const TensorList& other);
 
-    /// Performs "shallow" copy from another tensorlist. The internal tensor
-    /// memory will be shared.
-    void ShallowCopyFrom(const TensorList& other);
-
     /// Duplicate the current tensorlist. Values will be copied. The returned
     /// tensor will always be resizable.
-    TensorList Copy() const;
+    TensorList Clone() const;
 
     /// Return the reference of the contained valid tensors with shared memory.
     Tensor AsTensor() const;
@@ -265,7 +261,7 @@ public:
 
     void AssertElementShape(const SizeVector& expected_element_shape) const {
         if (expected_element_shape != element_shape_) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "TensorList has element shape {}, but is expected to have "
                     "element shape {}.",
                     element_shape_, expected_element_shape);
@@ -274,7 +270,7 @@ public:
 
     void AssertDevice(const Device& expected_device) const {
         if (GetDevice() != expected_device) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "TensorList has device {}, but is expected to be {}.",
                     GetDevice().ToString(), expected_device.ToString());
         }

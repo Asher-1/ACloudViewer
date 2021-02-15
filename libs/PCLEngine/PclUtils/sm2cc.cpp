@@ -77,7 +77,7 @@ ccPointCloud* sm2ccConverter::getCloud(bool ignoreScalars/* = false*/, bool igno
 	if (!m_sm_cloud)
 	{
 		assert(false);
-		return 0;
+        return nullptr;
 	}
 	
 	//get the fields list
@@ -91,7 +91,7 @@ ccPointCloud* sm2ccConverter::getCloud(bool ignoreScalars/* = false*/, bool igno
 	//begin with checks and conversions
 	//be sure we have x, y, and z fields
 	if (!ExistField(m_sm_cloud,"x") || !ExistField(m_sm_cloud,"y") || !ExistField(m_sm_cloud,"z"))
-		return 0;
+        return nullptr;
 
 	//create cloud
 	ccPointCloud* cloud = new ccPointCloud();
@@ -100,7 +100,7 @@ ccPointCloud* sm2ccConverter::getCloud(bool ignoreScalars/* = false*/, bool igno
 	if (!addXYZ(cloud))
 	{
 		delete cloud;
-		return 0;
+        return nullptr;
 	}
 
 	//remove x,y,z fields from the vector of field names
@@ -164,7 +164,7 @@ ccMesh* sm2ccConverter::getMesh(const std::vector<pcl::Vertices>& polygons, bool
 	if (!mesh->reserve(triNum))
 	{
 		assert(false);
-		return 0;
+        return nullptr;
 	}
 	for (size_t i = 0; i < triNum; ++i)
 	{

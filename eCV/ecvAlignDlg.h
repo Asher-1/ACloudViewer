@@ -50,8 +50,8 @@ public:
 	CC_SAMPLING_METHOD getSamplingMethod();
 	bool isNumberOfCandidatesLimited();
 	unsigned getMaxNumberOfCandidates();
-	CVLib::ReferenceCloud *getSampledModel();
-	CVLib::ReferenceCloud *getSampledData();
+	cloudViewer::ReferenceCloud *getSampledModel();
+	cloudViewer::ReferenceCloud *getSampledData();
 
 
 protected slots:

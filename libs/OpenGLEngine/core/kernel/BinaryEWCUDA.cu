@@ -250,7 +250,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                 LaunchBoolBinaryEWCUDAKernel<scalar_t, bool>(lhs, rhs, dst,
                                                              op_code, indexer);
             } else {
-                utility::LogError(
+                cloudViewer::utility::LogError(
                         "Boolean op's output type must be boolean or the "
                         "same type as the input.");
             }

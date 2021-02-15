@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -44,7 +44,7 @@
 #include <omp.h>
 #endif
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 ccMesh &ccMesh::removeDuplicatedVertices() {
 	typedef std::tuple<double, double, double> Coordinate3;
@@ -1370,7 +1370,7 @@ void ccMesh::removeVerticesByMask(const std::vector<bool> &vertex_mask) {
 
 	std::vector<bool> triangle_mask(this->size());
 	for (unsigned tidx = 0; tidx < this->size(); ++tidx) {
-		CVLib::VerticesIndexes* tria = getTriangleVertIndexes(tidx);
+		cloudViewer::VerticesIndexes* tria = getTriangleVertIndexes(tidx);
 		triangle_mask[tidx] =	vertex_mask[tria->i[0]] || 
 								vertex_mask[tria->i[1]] ||
 								vertex_mask[tria->i[2]];
@@ -1815,7 +1815,7 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsUniformlyImpl(
 
 			assert(m_associatedCloud);
 			ccPointCloud* cloud = (ccPointCloud*)m_associatedCloud;
-			const CVLib::VerticesIndexes* tri = getTriangleVertIndexes(static_cast<unsigned int>(tidx));
+			const cloudViewer::VerticesIndexes* tri = getTriangleVertIndexes(static_cast<unsigned int>(tidx));
 			
 			if (has_vert_normal && !use_triangle_normal) {
 				Eigen::Vector3d N = a * cloud->getEigenNormal(tri->i1) +

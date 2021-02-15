@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -34,7 +34,7 @@
 
 #include <Console.h>
 
-using namespace CVLib;
+using namespace cloudViewer;
 ;
 
 std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(

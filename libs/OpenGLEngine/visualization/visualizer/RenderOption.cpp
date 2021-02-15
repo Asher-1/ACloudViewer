@@ -33,7 +33,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-using namespace CVLib;
+using namespace cloudViewer;
 
 bool RenderOption::ConvertToJsonValue(Json::Value &value) const {
     value["class_name"] = "RenderOption";

@@ -48,19 +48,19 @@ enum class ReductionOpCode {
     Any,
 };
 
-static const std::unordered_set<ReductionOpCode, utility::hash_enum_class>
+static const std::unordered_set<ReductionOpCode, cloudViewer::utility::hash_enum_class>
         s_regular_reduce_ops = {
                 ReductionOpCode::Sum,
                 ReductionOpCode::Prod,
                 ReductionOpCode::Min,
                 ReductionOpCode::Max,
 };
-static const std::unordered_set<ReductionOpCode, utility::hash_enum_class>
+static const std::unordered_set<ReductionOpCode, cloudViewer::utility::hash_enum_class>
         s_arg_reduce_ops = {
                 ReductionOpCode::ArgMin,
                 ReductionOpCode::ArgMax,
 };
-static const std::unordered_set<ReductionOpCode, utility::hash_enum_class>
+static const std::unordered_set<ReductionOpCode, cloudViewer::utility::hash_enum_class>
         s_boolean_reduce_ops = {
                 ReductionOpCode::All,
                 ReductionOpCode::Any,

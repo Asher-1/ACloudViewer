@@ -1,4 +1,6 @@
 set(KERNEL_SRC
+    kernel/Arange.cpp
+    kernel/ArangeCPU.cpp
     kernel/IndexGetSet.cpp
     kernel/IndexGetSetCPU.cpp
     kernel/NonZero.cpp
@@ -13,6 +15,7 @@ set(KERNEL_SRC
 )
 
 set(KERNEL_CUDA_SRC
+    kernel/ArangeCUDA.cu
     kernel/IndexGetSetCUDA.cu
     kernel/NonZeroCUDA.cu
     kernel/UnaryEWCUDA.cu
@@ -51,6 +54,7 @@ set(CORE_SRC
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
+    NumpyIO.cpp
     Tensor.cpp
     TensorKey.cpp
     TensorList.cpp
@@ -69,20 +73,28 @@ set(HASHMAP_SRC
 
 set(HASHMAP_CUDA_SRC
   hashmap/CUDA/DefaultHashmapCUDA.cu
+  hashmap/CUDA/HashmapBufferCUDA.cu
+  hashmap/CUDA/InternalNodeManager.cu
   )
 
 set(CORE_NNS_SRC
     nns/NNSIndex.cpp
     nns/NanoFlannIndex.cpp
     nns/NearestNeighborSearch.cpp
+    nns/FixedRadiusIndex.cpp
 )
 
-
 if (WITH_FAISS)
-    list(APPEND CORE_NNS_SRC nns/FaissIndex.cpp)
+    set(CORE_NNS_SRC ${CORE_NNS_SRC} nns/FaissIndex.cpp)
 endif()
 
-file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
+if (BUILD_CUDA_MODULE)
+    set(CORE_NNS_SRC ${CORE_NNS_SRC} nns/FixedRadiusSearch.cu)
+endif()
+
+if (BUILD_CUDA_MODULE)
+    list(APPEND CORE_NNS_SRC nns/FixedRadiusSearch.cu)
+endif()
 
 if(BUILD_CUDA_MODULE)
     set(ALL_CORE_SRC
@@ -106,11 +118,13 @@ else()
     )
 endif()
 
+file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
+
 # Create object library
 add_library(core OBJECT ${ALL_CORE_SRC} ${ALL_HEADER_FILES})
-ShowAndAbortOnWarning(core)
 cloudViewer_set_global_properties(core)
 cloudViewer_set_cloudViewer_lib_properties(core)
+cloudViewer_show_and_abort_on_warning(core)
 
 target_link_libraries(core PRIVATE ${CloudViewer_3RDPARTY_PRIVATE_TARGETS} CVCoreLib)
 target_link_libraries(core PUBLIC ${CloudViewer_3RDPARTY_PUBLIC_TARGETS} CVCoreLib)
@@ -134,4 +148,6 @@ endforeach()
 
 if(BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    find_package(CUB REQUIRED)
+    target_include_directories(core SYSTEM PRIVATE ${CUB_INCLUDE_DIR})
 endif()

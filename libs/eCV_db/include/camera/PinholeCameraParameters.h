@@ -40,7 +40,7 @@ namespace camera {
 ///
 /// \brief Contains both intrinsic and extrinsic pinhole camera parameters.
 class ECV_DB_LIB_API PinholeCameraParameters :
-	public CVLib::utility::IJsonConvertible {
+	public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     PinholeCameraParameters();

@@ -21,7 +21,7 @@
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
-// CVLib
+// cloudViewer
 #include <Neighbourhood.h>
 #include <Jacobi.h>
 
@@ -74,14 +74,14 @@ public:
 	}
 
 	//inherited from ScaleParamsComputer
-	virtual bool computeScaleParams(CVLib::ReferenceCloud& neighbors, double radius, float params[], bool& invalidScale)
+	virtual bool computeScaleParams(cloudViewer::ReferenceCloud& neighbors, double radius, float params[], bool& invalidScale)
 	{
 		//PCA analysis
 		if (neighbors.size() >= 3)
 		{
-			CVLib::Neighbourhood Z(&neighbors);
+			cloudViewer::Neighbourhood Z(&neighbors);
 
-			CVLib::SquareMatrixd eigVectors;
+			cloudViewer::SquareMatrixd eigVectors;
 			std::vector<double> eigValues;
 			if (Jacobi<double>::ComputeEigenValuesAndVectors(Z.computeCovarianceMatrix(), eigVectors, eigValues, true))
 			{
@@ -179,7 +179,7 @@ public:
 	}
 
 	//inherited from ScaleParamsComputer
-	virtual bool computeScaleParams(CVLib::ReferenceCloud& neighbors, double radius, float params[], bool& invalidScale)
+	virtual bool computeScaleParams(cloudViewer::ReferenceCloud& neighbors, double radius, float params[], bool& invalidScale)
 	{
 		//PCA analysis
 		if (neighbors.size() >= 3)
@@ -190,7 +190,7 @@ public:
 			for (unsigned i=0; i<neighbors.size(); ++i)
 			{
 				ScalarType val = neighbors.getPointScalarValue(i);
-				if (CVLib::ScalarField::ValidValue(val))
+				if (cloudViewer::ScalarField::ValidValue(val))
 				{
 					meanVal += val;
 					++validCount;
@@ -211,9 +211,9 @@ public:
 				return true;
 			}
 
-			CVLib::Neighbourhood Z(&neighbors);
+			cloudViewer::Neighbourhood Z(&neighbors);
 
-			CVLib::SquareMatrixd eigVectors;
+			cloudViewer::SquareMatrixd eigVectors;
 			std::vector<double> eigValues;
 			if (Jacobi<double>::ComputeEigenValuesAndVectors(Z.computeCovarianceMatrix(), eigVectors, eigValues, true))
 			{
@@ -300,13 +300,13 @@ public:
 	}
 
 	//inherited from ScaleParamsComputer
-	virtual bool computeScaleParams(CVLib::ReferenceCloud& neighbors, double radius, float params[], bool& invalidScale)
+	virtual bool computeScaleParams(cloudViewer::ReferenceCloud& neighbors, double radius, float params[], bool& invalidScale)
 	{
 		//Curvature
 		if (neighbors.size() >= 6)
 		{
-			CVLib::Neighbourhood Z(&neighbors);
-			params[0] = Z.computeCurvature(*neighbors.getPoint(0), CVLib::Neighbourhood::GAUSSIAN_CURV);
+			cloudViewer::Neighbourhood Z(&neighbors);
+			params[0] = Z.computeCurvature(*neighbors.getPoint(0), cloudViewer::Neighbourhood::GAUSSIAN_CURV);
 
 			//save parameters for next scale
 			m_defaultParams[0] = params[0];
@@ -355,7 +355,7 @@ public:
 	}
 
 	//inherited from ScaleParamsComputer
-	virtual bool computeScaleParams(CVLib::ReferenceCloud& neighbors, double radius, float params[], bool& invalidScale)
+	virtual bool computeScaleParams(cloudViewer::ReferenceCloud& neighbors, double radius, float params[], bool& invalidScale)
 	{
 		//Curvature
 		if (neighbors.size() >= ?)
@@ -698,7 +698,7 @@ bool CorePointDescSet::loadFromMSC(QString filename, QString& error, ccPointClou
 	int ptnparams;
 	mscfile.read((char*)&ptnparams, sizeof(int));
 
-	std::vector<CVLib::ScalarField*> paramsSf(3,0);
+	std::vector<cloudViewer::ScalarField*> paramsSf(3,0);
 	if (corePoints)
 	{
 		//above 3, ptnparams contains additional scalars

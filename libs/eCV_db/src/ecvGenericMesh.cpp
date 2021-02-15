@@ -28,7 +28,7 @@
 #include "ecvScalarField.h"
 #include "ecvDisplayTools.h"
 
-//CVLib
+//cloudViewer
 #include <GenericProgressCallback.h>
 #include <GenericTriangle.h>
 #include <MeshSamplingTools.h>
@@ -346,7 +346,7 @@ ccPointCloud* ccGenericMesh::samplePoints(	bool densityBased,
 											bool withNormals,
 											bool withRGB,
 											bool withTexture,
-											CVLib::GenericProgressCallback* pDlg/*=nullptr*/)
+											cloudViewer::GenericProgressCallback* pDlg/*=nullptr*/)
 {
 	if (samplingParameter <= 0)
 	{
@@ -362,14 +362,14 @@ ccPointCloud* ccGenericMesh::samplePoints(	bool densityBased,
 		triIndices.reset(new std::vector<unsigned>);
 	}
 
-	CVLib::PointCloud* sampledCloud = nullptr;
+	cloudViewer::PointCloud* sampledCloud = nullptr;
 	if (densityBased)
 	{
-		sampledCloud = CVLib::MeshSamplingTools::samplePointsOnMesh(this, samplingParameter, pDlg, triIndices.data());
+		sampledCloud = cloudViewer::MeshSamplingTools::samplePointsOnMesh(this, samplingParameter, pDlg, triIndices.data());
 	}
 	else
 	{
-		sampledCloud = CVLib::MeshSamplingTools::samplePointsOnMesh(this, static_cast<unsigned>(samplingParameter), pDlg, triIndices.data());
+		sampledCloud = cloudViewer::MeshSamplingTools::samplePointsOnMesh(this, static_cast<unsigned>(samplingParameter), pDlg, triIndices.data());
 	}
 
 	//convert to real point cloud
@@ -519,7 +519,7 @@ void ccGenericMesh::importParametersFrom(const ccGenericMesh* mesh)
 
 void ccGenericMesh::computeInterpolationWeights(unsigned triIndex, const CCVector3& P, CCVector3d& weights) const
 {
-	CVLib::GenericTriangle* tri = const_cast<ccGenericMesh*>(this)->_getTriangle(triIndex);
+	cloudViewer::GenericTriangle* tri = const_cast<ccGenericMesh*>(this)->_getTriangle(triIndex);
 	const CCVector3 *A = tri->_getA();
 	const CCVector3 *B = tri->_getB();
 	const CCVector3 *C = tri->_getC();
@@ -583,9 +583,13 @@ bool ccGenericMesh::trianglePicking(unsigned triIndex,
 	}
 
 	//barycentric coordinates
-	GLdouble detT = (B2D.y - C2D.y) *      (A2D.x - C2D.x) + (C2D.x - B2D.x) *      (A2D.y - C2D.y);
-	GLdouble l1 = ((B2D.y - C2D.y) * (clickPos.x - C2D.x) + (C2D.x - B2D.x) * (clickPos.y - C2D.y)) / detT;
-	GLdouble l2 = ((C2D.y - A2D.y) * (clickPos.x - C2D.x) + (A2D.x - C2D.x) * (clickPos.y - C2D.y)) / detT;
+    GLdouble detT = (B2D.y - C2D.y) * (A2D.x - C2D.x) + (C2D.x - B2D.x) * (A2D.y - C2D.y);
+    if (cloudViewer::LessThanEpsilon(std::abs(detT)))
+    {
+        return false;
+    }
+    GLdouble l1 = ((B2D.y - C2D.y) * (clickPos.x - C2D.x) + (C2D.x - B2D.x) * (clickPos.y - C2D.y)) / detT;
+    GLdouble l2 = ((C2D.y - A2D.y) * (clickPos.x - C2D.x) + (A2D.x - C2D.x) * (clickPos.y - C2D.y)) / detT;
 
 	//does the point falls inside the triangle?
 	if (l1 >= 0 && l1 <= 1.0 && l2 >= 0.0 && l2 <= 1.0)

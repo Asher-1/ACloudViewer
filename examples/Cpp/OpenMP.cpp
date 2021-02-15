@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -39,7 +39,7 @@
 #define NUM_START 1
 #define NUM_END 10
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 void simple_task() {
     int n_a_rows = 2000;
@@ -126,13 +126,13 @@ void TestMatrixMultiplication(int argc, char **argv) {
     if (argc > 1) {
         test_thread = std::stoi(argv[1]);
     }
-    CVLib::utility::LogInfo("Benchmark multithreading up to {:d} threads.",
+    cloudViewer::utility::LogInfo("Benchmark multithreading up to {:d} threads.",
                              test_thread);
 
     for (int i = 1; i <= test_thread; i *= 2) {
         std::string buff =
                 fmt::format("simple task, {:d} tasks, {:d} threads", i, i);
-        CVLib::utility::ScopeTimer t(buff.c_str());
+        cloudViewer::utility::ScopeTimer t(buff.c_str());
 #ifdef _OPENMP
         omp_set_num_threads(i);
 #endif
@@ -143,7 +143,7 @@ void TestMatrixMultiplication(int argc, char **argv) {
     for (int i = 1; i <= test_thread; i *= 2) {
         std::string buff =
                 fmt::format("simple task, {:d} tasks, {:d} threads", i, i);
-        CVLib::utility::ScopeTimer t(buff.c_str());
+        cloudViewer::utility::ScopeTimer t(buff.c_str());
         std::vector<std::thread> threads(i);
         for (int k = 0; k < i; k++) {
             threads[k] = std::thread(simple_task);
@@ -155,7 +155,7 @@ void TestMatrixMultiplication(int argc, char **argv) {
 
     for (int i = 1; i <= test_thread; i *= 2) {
         std::string buff = fmt::format("svd, {:d} tasks, {:d} threads", i, i);
-        CVLib::utility::ScopeTimer t(buff.c_str());
+        cloudViewer::utility::ScopeTimer t(buff.c_str());
 #ifdef _OPENMP
         omp_set_num_threads(i);
 #endif
@@ -166,7 +166,7 @@ void TestMatrixMultiplication(int argc, char **argv) {
     for (int i = 1; i <= test_thread; i *= 2) {
         std::string buff =
                 fmt::format("svd task, {:d} tasks, {:d} threads", i, i);
-        CVLib::utility::ScopeTimer t(buff.c_str());
+        cloudViewer::utility::ScopeTimer t(buff.c_str());
         std::vector<std::thread> threads(i);
         for (int k = 0; k < i; k++) {
             threads[k] = std::thread(svd_task);
@@ -197,7 +197,7 @@ void TestBindedFunction() {
     const int NCORR = 200000000;
     std::vector<Eigen::Vector3d> data;
     {
-        CVLib::utility::ScopeTimer timer1("Data generation");
+        cloudViewer::utility::ScopeTimer timer1("Data generation");
         data.resize(NCORR);
 #ifdef _OPENMP
 #pragma omp for nowait
@@ -223,7 +223,7 @@ void TestBindedFunction() {
     ATA.setZero();
     ATb.setZero();
     {
-        CVLib::utility::ScopeTimer timer("Calling binding function");
+        cloudViewer::utility::ScopeTimer timer("Calling binding function");
 #ifdef _OPENMP
 #pragma omp parallel
         {
@@ -259,7 +259,7 @@ void TestBindedFunction() {
     ATA.setZero();
     ATb.setZero();
     {
-        CVLib::utility::ScopeTimer timer("Calling lambda function");
+        cloudViewer::utility::ScopeTimer timer("Calling lambda function");
 #ifdef _OPENMP
 #pragma omp parallel
         {
@@ -295,7 +295,7 @@ void TestBindedFunction() {
     ATA.setZero();
     ATb.setZero();
     {
-        CVLib::utility::ScopeTimer timer("Calling function directly");
+        cloudViewer::utility::ScopeTimer timer("Calling function directly");
 #ifdef _OPENMP
 #pragma omp parallel
         {
@@ -331,7 +331,7 @@ void TestBindedFunction() {
     ATA.setZero();
     ATb.setZero();
     {
-        CVLib::utility::ScopeTimer timer("Direct optration");
+        cloudViewer::utility::ScopeTimer timer("Direct optration");
 #ifdef _OPENMP
 #pragma omp parallel
         {
@@ -370,7 +370,7 @@ void TestBindedFunction() {
 }
 
 int main(int argc, char **argv) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
     if (utility::ProgramOptionExists(argc, argv, "--test_bind")) {
         TestBindedFunction();

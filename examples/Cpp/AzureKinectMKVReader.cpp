@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 www.erow.cn
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,14 +29,14 @@
 #include <fstream>
 #include <thread>
 
-#include "Open3D/Open3D.h"
+#include "CloudViewer.h"
 
-using namespace open3d;
+using namespace cloudViewer;
 
 void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
     std::ofstream out(filename);
     if (!out.is_open()) {
-        utility::LogError("Cannot write to {}", filename);
+        cloudViewer::utility::LogError("Cannot write to {}", filename);
     }
 
     Json::StreamWriterBuilder builder;
@@ -49,8 +49,8 @@ void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
 Json::Value GenerateDatasetConfig(const std::string &output_path) {
     Json::Value value;
 
-    utility::LogInfo("Writing to config.json");
-    utility::LogInfo(
+    cloudViewer::utility::LogInfo("Writing to config.json");
+    cloudViewer::utility::LogInfo(
             "Please change path_dataset and path_intrinsic when you move the "
             "dataset.");
 
@@ -58,7 +58,7 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
         value["path_dataset"] = output_path;
         value["path_intrinsic"] = output_path + "/intrinsic.json";
     } else {  // relative dir
-        auto pwd = utility::filesystem::GetWorkingDirectory();
+        auto pwd = cloudViewer::utility::filesystem::GetWorkingDirectory();
         value["path_dataset"] = pwd + "/" + output_path;
         value["path_intrinsic"] = pwd + "/" + output_path + "/intrinsic.json";
     }
@@ -78,46 +78,46 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
 }
 
 void PrintUsage() {
-    PrintOpen3DVersion();
+    PrintCloudViewerVersion();
     // clang-format off
-    utility::LogInfo("Usage:");
-    utility::LogInfo("AzureKinectMKVReader --input input.mkv [--output] [path]");
+    cloudViewer::utility::LogInfo("Usage:");
+    cloudViewer::utility::LogInfo("AzureKinectMKVReader --input input.mkv [--output] [path]");
     // clang-format on
 }
 
 int main(int argc, char **argv) {
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
-    if (!utility::ProgramOptionExists(argc, argv, "--input")) {
+    if (!cloudViewer::utility::ProgramOptionExists(argc, argv, "--input")) {
         PrintUsage();
         return 1;
     }
     std::string mkv_filename =
-            utility::GetProgramOptionAsString(argc, argv, "--input");
+            cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--input");
 
     bool write_image = false;
     std::string output_path;
-    if (!utility::ProgramOptionExists(argc, argv, "--output")) {
-        utility::LogInfo("No output image path, only play mkv.");
+    if (!cloudViewer::utility::ProgramOptionExists(argc, argv, "--output")) {
+        cloudViewer::utility::LogInfo("No output image path, only play mkv.");
     } else {
-        output_path = utility::GetProgramOptionAsString(argc, argv, "--output");
+        output_path = cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--output");
         if (output_path.empty()) {
-            utility::LogError("Output path {} is empty, only play mkv.",
+            cloudViewer::utility::LogError("Output path {} is empty, only play mkv.",
                               output_path);
             return 1;
         }
-        if (utility::filesystem::DirectoryExists(output_path)) {
-            utility::LogError("Output path {} already existing, only play mkv.",
+        if (cloudViewer::utility::filesystem::DirectoryExists(output_path)) {
+            cloudViewer::utility::LogError("Output path {} already existing, only play mkv.",
                               output_path);
             return 1;
-        } else if (!utility::filesystem::MakeDirectory(output_path)) {
-            utility::LogError("Unable to create path {}, only play mkv.",
+        } else if (!cloudViewer::utility::filesystem::MakeDirectory(output_path)) {
+            cloudViewer::utility::LogError("Unable to create path {}, only play mkv.",
                               output_path);
             return 1;
         } else {
-            utility::LogInfo("Decompress images to {}", output_path);
-            utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
-            utility::filesystem::MakeDirectoryHierarchy(output_path + "/depth");
+            cloudViewer::utility::LogInfo("Decompress images to {}", output_path);
+            cloudViewer::utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
+            cloudViewer::utility::filesystem::MakeDirectoryHierarchy(output_path + "/depth");
             write_image = true;
         }
     }
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
     io::MKVReader mkv_reader;
     mkv_reader.Open(mkv_filename);
     if (!mkv_reader.IsOpened()) {
-        utility::LogError("Unable to open {}", mkv_filename);
+        cloudViewer::utility::LogError("Unable to open {}", mkv_filename);
         return 1;
     }
 
@@ -140,18 +140,18 @@ int main(int argc, char **argv) {
     vis.RegisterKeyCallback(
             GLFW_KEY_SPACE, [&](visualization::Visualizer *vis) {
                 if (flag_play) {
-                    utility::LogInfo(
+                    cloudViewer::utility::LogInfo(
                             "Playback paused, press [SPACE] to continue");
                 } else {
-                    utility::LogInfo(
+                    cloudViewer::utility::LogInfo(
                             "Playback resumed, press [SPACE] to pause");
                 }
                 flag_play = !flag_play;
                 return true;
             });
 
-    vis.CreateVisualizerWindow("Open3D Azure Kinect MKV player", 1920, 540);
-    utility::LogInfo(
+    vis.CreateVisualizerWindow("CloudViewer Azure Kinect MKV player", 1920, 540);
+    cloudViewer::utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
             "exit.");
 
@@ -177,12 +177,12 @@ int main(int argc, char **argv) {
             if (write_image) {
                 auto color_file =
                         fmt::format("{0}/color/{1:05d}.jpg", output_path, idx);
-                utility::LogInfo("Writing to {}", color_file);
+                cloudViewer::utility::LogInfo("Writing to {}", color_file);
                 io::WriteImage(color_file, im_rgbd->color_);
 
                 auto depth_file =
                         fmt::format("{0}/depth/{1:05d}.png", output_path, idx);
-                utility::LogInfo("Writing to {}", depth_file);
+                cloudViewer::utility::LogInfo("Writing to {}", depth_file);
                 io::WriteImage(depth_file, im_rgbd->depth_);
 
                 ++idx;

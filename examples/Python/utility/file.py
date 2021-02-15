@@ -5,9 +5,12 @@
 # examples/Python/Utility/file.py
 
 from os import listdir, makedirs
-from os.path import exists, isfile, join, splitext
+from os.path import exists, isfile, join, splitext, dirname, basename
 import shutil
 import re
+from warnings import warn
+import json
+import cloudViewer as cv3d
 
 
 def sorted_alphanum(file_list_ordered):
@@ -45,7 +48,7 @@ def get_rgbd_folders(path_dataset):
 def get_rgbd_file_lists(path_dataset):
     path_color, path_depth = get_rgbd_folders(path_dataset)
     color_files = get_file_list(path_color, ".jpg") + \
-            get_file_list(path_color, ".png")
+                  get_file_list(path_color, ".png")
     depth_files = get_file_list(path_depth, ".png")
     return color_files, depth_files
 
@@ -61,9 +64,9 @@ def make_clean_folder(path_folder):
 def check_folder_structure(path_dataset):
     path_color, path_depth = get_rgbd_folders(path_dataset)
     assert exists(path_depth), \
-            "Path %s is not exist!" % path_depth
+        "Path %s is not exist!" % path_depth
     assert exists(path_color), \
-            "Path %s is not exist!" % path_color
+        "Path %s is not exist!" % path_color
 
 
 def write_poses_to_log(filename, poses):
@@ -78,3 +81,50 @@ def write_poses_to_log(filename, poses):
                 pose[2, 0], pose[2, 1], pose[2, 2], pose[2, 3]))
             f.write('{0:.8f} {1:.8f} {2:.8f} {3:.8f}\n'.format(
                 pose[3, 0], pose[3, 1], pose[3, 2], pose[3, 3]))
+
+
+def read_poses_from_log(traj_log):
+    import numpy as np
+
+    trans_arr = []
+    with open(traj_log) as f:
+        content = f.readlines()
+
+        # Load .log file.
+        for i in range(0, len(content), 5):
+            # format %d (src) %d (tgt) %f (fitness)
+            data = list(map(float, content[i].strip().split(' ')))
+            ids = (int(data[0]), int(data[1]))
+            fitness = data[2]
+
+            # format %f x 16
+            T_gt = np.array(
+                list(map(float, (''.join(
+                    content[i + 1:i + 5])).strip().split()))).reshape((4, 4))
+
+            trans_arr.append(T_gt)
+
+    return trans_arr
+
+
+def extract_rgbd_frames(rgbd_video_file):
+    """
+    Extract color and aligned depth frames and intrinsic calibration from an
+    RGBD video file (currently only RealSense bag files supported). Folder
+    structure is:
+        <directory of rgbd_video_file/<rgbd_video_file name without extension>/
+            {depth/00000.jpg,color/00000.png,intrinsic.json}
+    """
+    frames_folder = join(dirname(rgbd_video_file),
+                         basename(splitext(rgbd_video_file)[0]))
+    path_intrinsic = join(frames_folder, "intrinsic.json")
+    if isfile(path_intrinsic):
+        warn(f"Skipping frame extraction for {rgbd_video_file} since files are"
+             " present.")
+    else:
+        rgbd_video = cv3d.t.io.RGBDVideoReader.create(rgbd_video_file)
+        rgbd_video.save_frames(frames_folder)
+    with open(path_intrinsic) as intr_file:
+        intr = json.load(intr_file)
+    depth_scale = intr["depth_scale"]
+    return frames_folder, path_intrinsic, depth_scale

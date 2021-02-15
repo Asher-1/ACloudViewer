@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include "cloudViewer/utility/IJsonConvertible.h"
+#include <IJsonConvertible.h>
 
 namespace cloudViewer {
 namespace io {
 
-class RGBDSensorConfig : public utility::IJsonConvertible {};
+class RGBDSensorConfig : public cloudViewer::utility::IJsonConvertible {};
 
 }  // namespace io
 }  // namespace cloudViewer

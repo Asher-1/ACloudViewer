@@ -27,7 +27,7 @@
 //qCC
 #include "ecvStdPluginInterface.h"
 
-//CVLib
+//cloudViewer
 #include <AutoSegmentationTools.h>
 #include <ReferenceCloud.h>
 
@@ -88,7 +88,7 @@ protected:
 
 	//! Creates facets from components
 	ccHObject* createFacets(ccPointCloud* cloud,
-							CVLib::ReferenceCloudContainer& components,
+							cloudViewer::ReferenceCloudContainer& components,
 							unsigned minPointsPerComponent,
 							double maxEdgeLength,
 							bool randomColors,

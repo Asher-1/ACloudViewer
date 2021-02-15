@@ -25,7 +25,7 @@
 class ccMesh;
 
 //! A sub-mesh
-/** Equivalent to a CVLib::ReferenceCloud for a mesh
+/** Equivalent to a cloudViewer::ReferenceCloud for a mesh
 **/
 class ECV_DB_LIB_API ccSubMesh : public ccGenericMesh
 {
@@ -76,10 +76,10 @@ public:
 	inline unsigned size() const override { return static_cast<unsigned>(m_triIndexes.size()); }
 	void forEach(genericTriangleAction action) override;
 	inline void placeIteratorAtBeginning() override { m_globalIterator = 0; }
-	CVLib::GenericTriangle* _getNextTriangle() override; //temporary object
-	CVLib::GenericTriangle* _getTriangle(unsigned index) override; //temporary object
-	CVLib::VerticesIndexes* getNextTriangleVertIndexes() override;
-	CVLib::VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) override;
+	cloudViewer::GenericTriangle* _getNextTriangle() override; //temporary object
+	cloudViewer::GenericTriangle* _getTriangle(unsigned index) override; //temporary object
+	cloudViewer::VerticesIndexes* getNextTriangleVertIndexes() override;
+	cloudViewer::VerticesIndexes* getTriangleVertIndexes(unsigned triangleIndex) override;
 	virtual void getTriangleVertices(unsigned triangleIndex, CCVector3& A, CCVector3& B, CCVector3& C) const override;
 	virtual void getTriangleVertices(unsigned triangleIndex, double A[3], double B[3], double C[3]) const override;
 

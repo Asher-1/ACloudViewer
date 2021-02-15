@@ -86,7 +86,7 @@ void MatrixDisplayDlg::fillDialogWith(const CCVector3d& axis, double angle_rad, 
 	//rotation axis
 	QString axisStr = QString("%0 ; %1 ; %2").arg(axis.x,0,'f',precision).arg(axis.y,0,'f',precision).arg(axis.z,0,'f',precision);
 	//rotation angle
-    QString angleStr = QString("%1 deg.").arg(CVLib::RadiansToDegrees(angle_rad), 0, 'f', precision);
+    QString angleStr = QString("%1 deg.").arg(cloudViewer::RadiansToDegrees(angle_rad), 0, 'f', precision);
 
 	axisLabel->setText(axisStr);
 	angleLabel->setText(angleStr);

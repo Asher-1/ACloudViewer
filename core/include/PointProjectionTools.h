@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -33,7 +33,7 @@ enum CC_TRIANGULATION_TYPES {	DELAUNAY_2D_AXIS_ALIGNED  = 1,		/**< Delaunay 2D t
 								DELAUNAY_2D_BEST_LS_PLANE = 2,		/**< Delaunay 2D with points projected on the best least square fitting plane **/
 };
 
-namespace CVLib
+namespace cloudViewer
 {
 
 class GenericIndexedMesh;
@@ -50,7 +50,7 @@ public:
 	struct Transformation
 	{
 		//! Rotation
-		CVLib::SquareMatrix R;
+		cloudViewer::SquareMatrix R;
 		//! Translation
 		CCVector3 T;
 		//! Scale

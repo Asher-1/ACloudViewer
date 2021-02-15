@@ -390,7 +390,7 @@ void QvtkTransformTool::getOutput(std::vector<ccHObject*>& out)
 		transformFilter->Update();
 		dataObject = transformFilter->GetOutput();
 
-		ccHObject* result;
+		ccHObject* result = nullptr;
 		ccHObject* baseEntity = getAssociatedEntity()->getChild(index);
 		assert(baseEntity);
 

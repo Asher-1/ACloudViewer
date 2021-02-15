@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -31,7 +31,7 @@
 //system
 #include <set>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 PointCloud* PointProjectionTools::developCloudOnCylinder(	GenericCloud* cloud,
 															PointCoordinateType radius,
@@ -116,8 +116,8 @@ PointCloud* PointProjectionTools::developCloudOnCone(GenericCloud* cloud, unsign
 	unsigned char dim2 = (dim<2 ? dim+1 : 0);
 
 	float tan_alpha = tanf(alpha*static_cast<float>(CV_DEG_TO_RAD));
-	//float cos_alpha = cos(alpha*CV_DEG_TO_RAD);
-	//float sin_alpha = sin(alpha*CV_DEG_TO_RAD);
+//    float cos_alpha = cos(cloudViewer::DegreesToRadians(alpha));
+//    float sin_alpha = sin(cloudViewer::DegreesToRadians(alpha));
 	float q = 1.0f/(1.0f+tan_alpha*tan_alpha);
 
 	cloud->placeIteratorAtBeginning();
@@ -491,7 +491,7 @@ enum HullPointFlags {	POINT_NOT_USED	= 0,
 						POINT_FROZEN	= 3,
 };
 
-using Vertex2D = CVLib::PointProjectionTools::IndexedCCVector2;
+using Vertex2D = cloudViewer::PointProjectionTools::IndexedCCVector2;
 using VertexIterator = std::list<Vertex2D *>::iterator;
 using ConstVertexIterator = std::list<Vertex2D *>::const_iterator;
 
@@ -734,8 +734,8 @@ bool PointProjectionTools::extractConcaveHull2D(std::vector<IndexedCCVector2>& p
 						if (itJ == hullPoints.end())
 							itJ = hullPoints.begin();
 
-						if (	((*itI)->index != (*itA)->index && (*itJ)->index != (*itA)->index && CVLib::PointProjectionTools::segmentIntersect(**itI,**itJ,**itA,P))
-							||	((*itI)->index != (*itB)->index && (*itJ)->index != (*itB)->index && CVLib::PointProjectionTools::segmentIntersect(**itI,**itJ,P,**itB)) )
+						if (	((*itI)->index != (*itA)->index && (*itJ)->index != (*itA)->index && cloudViewer::PointProjectionTools::segmentIntersect(**itI,**itJ,**itA,P))
+							||	((*itI)->index != (*itB)->index && (*itJ)->index != (*itB)->index && cloudViewer::PointProjectionTools::segmentIntersect(**itI,**itJ,P,**itB)) )
 						{
 							intersect = true;
 							break;

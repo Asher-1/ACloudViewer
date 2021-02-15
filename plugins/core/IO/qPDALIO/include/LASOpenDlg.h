@@ -28,7 +28,7 @@
 #include <string.h>
 #include <vector>
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 //! Dialog to choose the LAS fields to load

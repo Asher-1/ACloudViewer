@@ -7,7 +7,7 @@
 // system
 #include <string>
 #include <vector>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QString>
 #include <QTextCodec>
 
@@ -48,7 +48,7 @@ public:
 private:
 	CVTools() = delete;
 
-    static QTime s_time;
+    static QElapsedTimer s_time;
 
 };
 

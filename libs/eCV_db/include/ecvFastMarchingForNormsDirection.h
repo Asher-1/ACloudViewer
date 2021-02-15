@@ -18,7 +18,7 @@
 #ifndef ECV_FAST_MARCHING_DIRECTION_HEADER
 #define ECV_FAST_MARCHING_DIRECTION_HEADER
 
-//CVLib
+//cloudViewer
 #include <DgmOctree.h>
 #include <FastMarching.h>
 
@@ -36,7 +36,7 @@ class ecvProgressDialog;
 //! Fast Marching algorithm for normals direction resolution
 /** Extends the FastMarching class.
 **/
-class ccFastMarchingForNormsDirection : public CVLib::FastMarching
+class ccFastMarchingForNormsDirection : public cloudViewer::FastMarching
 {
 
 public:
@@ -76,7 +76,7 @@ public:
 protected:
 
 	//! A Fast Marching grid cell for normals direction resolution
-	class DirectionCell : public CVLib::FastMarching::Cell
+	class DirectionCell : public cloudViewer::FastMarching::Cell
 	{
 	public:
 		//! Default constructor
@@ -99,7 +99,7 @@ protected:
 		//! The local cell center
 		CCVector3 C;
 		//! the code of the equivalent cell in the octree
-		CVLib::DgmOctree::CellCode cellCode;
+		cloudViewer::DgmOctree::CellCode cellCode;
 		//! Confidence value
 		float signConfidence;
 #ifdef QT_DEBUG
@@ -109,7 +109,7 @@ protected:
 	};
 
 	//inherited methods (see FastMarchingAlgorithm)
-	float computeTCoefApprox(CVLib::FastMarching::Cell* currentCell, CVLib::FastMarching::Cell* neighbourCell) const override;
+	float computeTCoefApprox(cloudViewer::FastMarching::Cell* currentCell, cloudViewer::FastMarching::Cell* neighbourCell) const override;
 	int step() override;
 	void initTrialCells() override;
 	bool instantiateGrid(unsigned size) override { return instantiateGridTpl<DirectionCell*>(size); }

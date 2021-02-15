@@ -108,7 +108,7 @@ const ccGenericPrimitive& ccGenericPrimitive::operator += (const ccGenericPrimit
 		//copy faces
 		for (unsigned i = 0; i < prim.size(); ++i)
 		{
-			const CVLib::VerticesIndexes* tsi = prim.getTriangleVertIndexes(i);
+			const cloudViewer::VerticesIndexes* tsi = prim.getTriangleVertIndexes(i);
 			addTriangle(vertCount + tsi->i1, vertCount + tsi->i2, vertCount + tsi->i3);
 			if (primHasFaceNorms)
 			{

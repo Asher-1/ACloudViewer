@@ -26,11 +26,8 @@
 
 #include "visualization/shader/RGBDImageShader.h"
 
-//#include "CloudViewer.h"
-
 #include <algorithm>
 
-#include <Image.h>
 #include <RGBDImage.h>
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"

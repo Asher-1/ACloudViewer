@@ -6,7 +6,7 @@
 #include "ecvGLMatrix.h"
 #include "ecvSerializableObject.h"
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 //system

@@ -42,7 +42,7 @@
 #include <numeric>
 #include <tuple>
 
-using namespace CVLib;
+using namespace cloudViewer;
 namespace cloudViewer {
 namespace geometry {
 

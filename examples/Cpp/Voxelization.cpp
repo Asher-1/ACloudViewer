@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,7 @@
 
 #include "CloudViewer.h"
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 void PrintVoxelGridInformation(const cloudViewer::geometry::VoxelGrid& voxel_grid) {
     utility::LogInfo("geometry::VoxelGrid with {:d} voxels",
@@ -41,11 +41,11 @@ void PrintVoxelGridInformation(const cloudViewer::geometry::VoxelGrid& voxel_gri
 int main(int argc, char** args) {
     using namespace cloudViewer;
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
     if (argc < 3) {
         // clang-format off
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("    > Voxelization [pointcloud_filename] [voxel_filename_ply]");
+        cloudViewer::utility::LogInfo("Usage:");
+        cloudViewer::utility::LogInfo("    > Voxelization [pointcloud_filename] [voxel_filename_ply]");
         // clang-format on
         return 1;
     }

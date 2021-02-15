@@ -139,7 +139,7 @@ vector<int> ccManualSeg::pointIdx(ccPointCloud* cloud, ccPolyline* poly)
 
 	m_segmentationPoly->clear();
 	m_polyVertices->clear();
-	CVLib::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
+	cloudViewer::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
 	bool mode3D = !poly->is2DMode();
 
 	//duplicate polyline 'a minima' (only points and indexes + closed state)
@@ -184,7 +184,7 @@ vector<int> ccManualSeg::pointIdx(ccPointCloud* cloud, ccPolyline* poly)
 			CCVector2 P2D(static_cast<PointCoordinateType>(Q2D.x),
 						  static_cast<PointCoordinateType>(Q2D.y));
 
-			bool pointInside = CVLib::ManualSegmentationTools::isPointInsidePoly(P2D, m_segmentationPoly);
+			bool pointInside = cloudViewer::ManualSegmentationTools::isPointInsidePoly(P2D, m_segmentationPoly);
 			// visibility values of 1 are points inside (with false in this line)
 			visibilityArrayBase2[j] = (false != pointInside ? POINT_HIDDEN : POINT_VISIBLE);
 			cnt = cnt + visibilityArrayBase2[j];
@@ -202,8 +202,8 @@ vector<int> ccManualSeg::pointIdx(ccPointCloud* cloud, ccPolyline* poly)
 ccPolyline* contourPoly(ccPointCloud* stone)
 {
 
-	std::vector<CVLib::PointProjectionTools::IndexedCCVector2> point;
-	std::list<CVLib::PointProjectionTools::IndexedCCVector2*> hullPoint2;
+	std::vector<cloudViewer::PointProjectionTools::IndexedCCVector2> point;
+	std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*> hullPoint2;
 
 
 	for (unsigned i = 0; i < stone->size();++i)
@@ -211,21 +211,21 @@ ccPolyline* contourPoly(ccPointCloud* stone)
 	{
 		PointCoordinateType x = stone->getPoint(i)->x;
 		PointCoordinateType z = stone->getPoint(i)->z;
-		CVLib::PointProjectionTools::IndexedCCVector2 P(x, z, i);
+		cloudViewer::PointProjectionTools::IndexedCCVector2 P(x, z, i);
 
 		point.push_back(P);
 	}
 
 
-	CVLib::PointProjectionTools::extractConcaveHull2D(point, hullPoint2, 0.0001);
+	cloudViewer::PointProjectionTools::extractConcaveHull2D(point, hullPoint2, 0.0001);
 
 	vector<unsigned> Vec;
 	for (int i = 0; i < (hullPoint2.size());++i)
 	{
 
-		list<CVLib::PointProjectionTools::IndexedCCVector2*>::iterator it = hullPoint2.begin();
+		list<cloudViewer::PointProjectionTools::IndexedCCVector2*>::iterator it = hullPoint2.begin();
 		std::advance(it, i);
-		CVLib::PointProjectionTools::IndexedCCVector2* P2 = *it;
+		cloudViewer::PointProjectionTools::IndexedCCVector2* P2 = *it;
 		int k = P2->index;
 		Vec.push_back(k);
 	}
@@ -503,8 +503,8 @@ vector<int> setIntersectIdxPixs1D(vector<int> listNew, vector<int> listOld) {
 
 ccPolyline* contourPoly2(ccPointCloud* cloud0, vector<int> V, QString name)
 {
-	std::vector<CVLib::PointProjectionTools::IndexedCCVector2> point;
-	std::list<CVLib::PointProjectionTools::IndexedCCVector2*> hullPoint2;
+	std::vector<cloudViewer::PointProjectionTools::IndexedCCVector2> point;
+	std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*> hullPoint2;
 
 
 	for (unsigned i = 0; i < V.size();++i)
@@ -512,21 +512,21 @@ ccPolyline* contourPoly2(ccPointCloud* cloud0, vector<int> V, QString name)
 	{
 		PointCoordinateType x = cloud0->getPoint(V[i])->x;
 		PointCoordinateType z = cloud0->getPoint(V[i])->z;
-		CVLib::PointProjectionTools::IndexedCCVector2 P(x, z, i);
+		cloudViewer::PointProjectionTools::IndexedCCVector2 P(x, z, i);
 
 		point.push_back(P);
 	}
 
 
-	CVLib::PointProjectionTools::extractConcaveHull2D(point, hullPoint2, 0.0001);
+	cloudViewer::PointProjectionTools::extractConcaveHull2D(point, hullPoint2, 0.0001);
 
 	vector<unsigned> Vec;
 	for (int i = 0; i < (hullPoint2.size());++i)
 	{
 
-		list<CVLib::PointProjectionTools::IndexedCCVector2*>::iterator it = hullPoint2.begin();
+		list<cloudViewer::PointProjectionTools::IndexedCCVector2*>::iterator it = hullPoint2.begin();
 		std::advance(it, i);
-		CVLib::PointProjectionTools::IndexedCCVector2* P2 = *it;
+		cloudViewer::PointProjectionTools::IndexedCCVector2* P2 = *it;
 		int k = P2->index;
 		Vec.push_back(k);
 	}
@@ -648,8 +648,8 @@ ccPointCloud* getMortarMaps(ccPointCloud* f_cloudStones, ccPointCloud* f_cloudMo
 	}
 
 
-	CVLib::CloudSamplingTools::SFModulationParams modParams(false); 	//Subsample result
-	CVLib::ReferenceCloud* refCloud = CVLib::CloudSamplingTools::resampleCloudSpatially(skelM, 0.01, modParams, 0, 0); //1 point per cm^2
+	cloudViewer::CloudSamplingTools::SFModulationParams modParams(false); 	//Subsample result
+	cloudViewer::ReferenceCloud* refCloud = cloudViewer::CloudSamplingTools::resampleCloudSpatially(skelM, 0.01, modParams, 0, 0); //1 point per cm^2
 
 	ccPointCloud* f_skelMortar = skelM->partialClone(refCloud); 	//save output
 	delete refCloud;
@@ -774,7 +774,7 @@ ccPointCloud* getMortarMaps(ccPointCloud* f_cloudStones, ccPointCloud* f_cloudMo
 	}
 
 
-	CVLib::ScalarField* depthSF = nullptr; //Add depth as a scalarField to f_skelMortar
+	cloudViewer::ScalarField* depthSF = nullptr; //Add depth as a scalarField to f_skelMortar
 
 	int sfIdxD = f_skelMortar->getScalarFieldIndexByName("Mortar relative depth (mm)");
 	if (sfIdxD < 0)
@@ -801,7 +801,7 @@ ccPointCloud* getMortarMaps(ccPointCloud* f_cloudStones, ccPointCloud* f_cloudMo
 
 
 
-	CVLib::ScalarField* widthSF = nullptr; //Add width as a scalarField to f_skelMortar
+	cloudViewer::ScalarField* widthSF = nullptr; //Add width as a scalarField to f_skelMortar
 
 	int sfIdxW = f_skelMortar->getScalarFieldIndexByName("Mortar relative width (mm)");
 	if (sfIdxW < 0)
@@ -1132,7 +1132,7 @@ void ccManualSeg::doAction()
 
 
 		int sfindex = cloudStone->getScalarFieldIndexByName("Stone Index");
-		CVLib::ScalarField* stIdSF = cloudStone->getScalarField(sfindex);
+		cloudViewer::ScalarField* stIdSF = cloudStone->getScalarField(sfindex);
 
 		for (unsigned int i = 0; i < cloudMortar->size();i++)
 			mortarPoints[0].push_back(i);
@@ -1446,7 +1446,7 @@ void ccManualSeg::doAction()
 		}
 
 		//Adding scalrfield to the stone cloud
-		CVLib::ScalarField* new_stIdSF = nullptr;
+		cloudViewer::ScalarField* new_stIdSF = nullptr;
 
 		int nsfIdx = new_CloudStone->getScalarFieldIndexByName("Stone Index");
 		if (nsfIdx < 0)
@@ -1540,7 +1540,7 @@ void ccManualSeg::doAction()
 
 
 		int nsfindex = new_CloudStone->getScalarFieldIndexByName("Stone Index");
-		CVLib::ScalarField* nstIdSF = new_CloudStone->getScalarField(nsfindex);
+		cloudViewer::ScalarField* nstIdSF = new_CloudStone->getScalarField(nsfindex);
 
 		if (nbpts > 0)
 		{

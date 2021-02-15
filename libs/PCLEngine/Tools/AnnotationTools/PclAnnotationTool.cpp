@@ -17,6 +17,10 @@
 
 #include "PclAnnotationTool.h" 
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 //Local
 #include "PclUtils/cc2sm.h"
 #include "PclUtils/PCLVis.h"
@@ -585,7 +589,7 @@ void PclAnnotationTool::exportAnnotations()
 void PclAnnotationTool::createAnnotationFromSelectPoints(std::string type)
 {
 	if (m_last_selected_slice.size() > 3) {
-		Annotation* anno;
+		Annotation* anno = nullptr;
 		if (m_annotationMode == AnnotationMode::BOUNDINGBOX)
 		{
 			anno = new Annotation(m_baseCloud, m_last_selected_slice, type);

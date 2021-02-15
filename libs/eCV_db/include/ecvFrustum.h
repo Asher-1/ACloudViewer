@@ -18,7 +18,7 @@
 #ifndef ECV_FRUSTUM_HEADER
 #define ECV_FRUSTUM_HEADER
 
-//CVLib
+//cloudViewer
 #include <RayAndBox.h>
 
 //Local

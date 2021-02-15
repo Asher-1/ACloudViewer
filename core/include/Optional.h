@@ -25,7 +25,7 @@
 //
 //
 // CloudViewer
-// - Namespace change: CVLib::utility::optional
+// - Namespace change: cloudViewer::utility::optional
 
 #pragma once
 
@@ -42,7 +42,7 @@
 #define TR2_OPTIONAL_REQUIRES(...) \
     typename std::enable_if<__VA_ARGS__::value, bool>::type = false
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 struct in_place_t {
@@ -919,13 +919,13 @@ constexpr optional<X&> make_optional(std::reference_wrapper<X> v) {
 }
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer
 
 namespace std {
 template <typename T>
-struct hash<CVLib::utility::optional<T>> {
+struct hash<cloudViewer::utility::optional<T>> {
     typedef typename hash<T>::result_type result_type;
-    typedef CVLib::utility::optional<T> argument_type;
+    typedef cloudViewer::utility::optional<T> argument_type;
 
     constexpr result_type operator()(argument_type const& arg) const {
         return arg ? std::hash<T>{}(*arg) : result_type{};
@@ -933,9 +933,9 @@ struct hash<CVLib::utility::optional<T>> {
 };
 
 template <typename T>
-struct hash<CVLib::utility::optional<T&>> {
+struct hash<cloudViewer::utility::optional<T&>> {
     typedef typename hash<T>::result_type result_type;
-    typedef CVLib::utility::optional<T&> argument_type;
+    typedef cloudViewer::utility::optional<T&> argument_type;
 
     constexpr result_type operator()(argument_type const& arg) const {
         return arg ? std::hash<T>{}(*arg) : result_type{};

@@ -72,12 +72,11 @@ CC_FILE_ERROR RasterGridFilter::loadFile(const QString& filename, ccHObject& con
 			if( poDataset->GetProjectionRef() != nullptr )
 				CVLog::Print( "Projection is `%s'", poDataset->GetProjectionRef() );
 
-			double adfGeoTransform[6] = {	 0, //top left x
-											 1, //w-e pixel resolution (can be negative)
-											 0, //0
-											 0, //top left y
-											 0, //0
-											 1  //n-s pixel resolution (can be negative)
+            // See https://gdal.org/user/raster_data_model.html
+            // Xgeo = adfGeoTransform(0) + Xpixel * adfGeoTransform(1) + Yline * adfGeoTransform(2)
+            // Ygeo = adfGeoTransform(3) + Xpixel * adfGeoTransform(4) + Yline * adfGeoTransform(5)
+            double adfGeoTransform[6] = {	0.0, 1.0, 0.0,
+                                            0.0, 0.0, 1.0 };
 			};
 
 			if( poDataset->GetGeoTransform( adfGeoTransform ) == CE_None )
@@ -89,7 +88,7 @@ CC_FILE_ERROR RasterGridFilter::loadFile(const QString& filename, ccHObject& con
 			if (adfGeoTransform[1] == 0 || adfGeoTransform[5] == 0)
 			{
 				CVLog::Warning("Invalid pixel size! Forcing it to (1,1)");
-				adfGeoTransform[1] = adfGeoTransform[5] = 1;
+                adfGeoTransform[1] = adfGeoTransform[5] = 1.0;
 			}
 
 			//first check if the raster actually has 'color' bands
@@ -163,16 +162,9 @@ CC_FILE_ERROR RasterGridFilter::loadFile(const QString& filename, ccHObject& con
 				// B ------ C
 				// |        |
 				// A ------ D
-				CCVector3d B = origin + Pshift; //origin is 'top left'
-				CCVector3d C = B;
-				C.x += rasterX * adfGeoTransform[1];
-				C.y += rasterX * adfGeoTransform[4];
-				CCVector3d D = C;
-				D.x += rasterY * adfGeoTransform[2];
-				D.y += rasterY * adfGeoTransform[5];
-				CCVector3d A = B;
-				A.x += rasterY * adfGeoTransform[2];
-				A.y += rasterY * adfGeoTransform[5];
+                CCVector3d C = B + CCVector3d(rasterX * adfGeoTransform[1], rasterX * adfGeoTransform[4], 0);
+                CCVector3d A = B + CCVector3d(rasterY * adfGeoTransform[2], rasterY * adfGeoTransform[5], 0);
+                CCVector3d D = C + CCVector3d(rasterY * adfGeoTransform[2], rasterY * adfGeoTransform[5], 0);
 
 				pc->addPoint(CCVector3::fromArray(A.u));
 				pc->addPoint(CCVector3::fromArray(B.u));
@@ -190,17 +182,19 @@ CC_FILE_ERROR RasterGridFilter::loadFile(const QString& filename, ccHObject& con
 					return CC_FERR_NOT_ENOUGH_MEMORY;
 				}
 
-				double z = 0.0 /*+ Pshift.z*/;
-				for (int j = 0; j < rasterY; ++j)
-				{
-					for (int i = 0; i < rasterX; ++i)
-					{
-						double x = adfGeoTransform[0] + (static_cast<double>(i) + 0.5) * adfGeoTransform[1] + (static_cast<double>(j) + 0.5) * adfGeoTransform[2] + Pshift.x;
-						double y = adfGeoTransform[3] + (static_cast<double>(i) + 0.5) * adfGeoTransform[4] + (static_cast<double>(j) + 0.5) * adfGeoTransform[5] + Pshift.y;
-						CCVector3 P(static_cast<PointCoordinateType>(x), static_cast<PointCoordinateType>(y), static_cast<PointCoordinateType>(z));
-						pc->addPoint(P);
-					}
-				}
+                double z = 0.0 + Pshift.z;
+                for (int j = 0; j < rasterY; ++j)
+                {
+                    for (int i = 0; i < rasterX; ++i)
+                    {
+                        // Xgeo = adfGeoTransform(0) + Xpixel * adfGeoTransform(1) + Yline * adfGeoTransform(2)
+                        // Ygeo = adfGeoTransform(3) + Xpixel * adfGeoTransform(4) + Yline * adfGeoTransform(5)
+                        double x = adfGeoTransform[0] + (i + 0.5) * adfGeoTransform[1] + (j + 0.5) * adfGeoTransform[2] + Pshift.x;
+                        double y = adfGeoTransform[3] + (i + 0.5) * adfGeoTransform[4] + (j + 0.5) * adfGeoTransform[5] + Pshift.y;
+                        CCVector3 P(static_cast<PointCoordinateType>(x), static_cast<PointCoordinateType>(y), static_cast<PointCoordinateType>(z));
+                        pc->addPoint(P);
+                    }
+                }
 				QVariant xVar = QVariant::fromValue<int>(rasterX);
 				QVariant yVar = QVariant::fromValue<int>(rasterY);
 				pc->setMetaData("raster_width", xVar);
@@ -284,7 +278,7 @@ CC_FILE_ERROR RasterGridFilter::loadFile(const QString& filename, ccHObject& con
 
 						for (int k = 0; k < nXSize; ++k)
 						{
-							double z = static_cast<double>(scanline[k]) + Pshift[2];
+                            double z = static_cast<double>(scanline[k]) + Pshift.z;
 							unsigned pointIndex = static_cast<unsigned>(k + j * rasterX);
 							if (pointIndex <= pc->size())
 							{
@@ -511,7 +505,7 @@ CC_FILE_ERROR RasterGridFilter::loadFile(const QString& filename, ccHObject& con
 					//shall we remove the points with invalid heights?
 					if (QMessageBox::question(0, "Remove NaN points?", "This raster has pixels with invalid heights. Shall we remove them?", QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes)
 					{
-						CVLib::ReferenceCloud validPoints(pc);
+						cloudViewer::ReferenceCloud validPoints(pc);
 						unsigned count = pc->size();
 						bool error = true;
 						if (validPoints.reserve(count-zInvalid))

@@ -652,7 +652,7 @@ void ecvDisplayTools::ProcessPickingResult(const PickingParameters& params,
 				ccGenericMesh *mesh = ccHObjectCaster::ToGenericMesh(pickedEntity);
 				ccGenericPointCloud *cloud = mesh->getAssociatedCloud();
 				assert(cloud);
-				CVLib::VerticesIndexes *vertexIndexes = mesh->getTriangleVertIndexes(pickedItemIndex);
+				cloudViewer::VerticesIndexes *vertexIndexes = mesh->getTriangleVertIndexes(pickedItemIndex);
 				label->addPickedPoint(cloud, vertexIndexes->i1);
 				label->addPickedPoint(cloud, vertexIndexes->i2);
 				label->addPickedPoint(cloud, vertexIndexes->i3);
@@ -1438,11 +1438,11 @@ float ecvDisplayTools::ComputePerspectiveZoom()
 
 	//Camera center to pivot vector
 	double zoomEquivalentDist = (s_tools.instance->m_viewportParams.cameraCenter - s_tools.instance->m_viewportParams.pivotPoint).norm();
-    if (CVLib::LessThanEpsilon( zoomEquivalentDist ))
+    if (cloudViewer::LessThanEpsilon( zoomEquivalentDist ))
 		return 1.0f;
 
 	float screenSize = std::min(s_tools.instance->m_glViewport.width(), s_tools.instance->m_glViewport.height()) * s_tools.instance->m_viewportParams.pixelSize; //see how pixelSize is computed!
-    return screenSize / static_cast<float>(zoomEquivalentDist * std::tan(CVLib::DegreesToRadians(currentFov_deg)));
+    return screenSize / static_cast<float>(zoomEquivalentDist * std::tan(cloudViewer::DegreesToRadians(currentFov_deg)));
 }
 
 ccGLMatrixd & ecvDisplayTools::GetModelViewMatrix()
@@ -1719,7 +1719,7 @@ void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView)
 			//(i.e. we replace the zoom by setting the camera at the right distance from
 			//the pivot point)
 			double currentFov_deg = static_cast<double>(GetFov());
-            assert(CVLib::GreaterThanEpsilon(currentFov_deg));
+            assert(cloudViewer::GreaterThanEpsilon(currentFov_deg));
             // see how pixelSize is computed!
             double screenSize = std::min(s_tools.instance->m_glViewport.width(),
 					s_tools.instance->m_glViewport.height())
@@ -1727,7 +1727,7 @@ void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView)
 			if (screenSize > 0.0)
 			{
                 PC.z = screenSize / (s_tools.instance->m_viewportParams.zoom * 
-					std::tan(CVLib::DegreesToRadians(currentFov_deg)));
+					std::tan(cloudViewer::DegreesToRadians(currentFov_deg)));
 			}
 		}
 
@@ -1831,7 +1831,7 @@ void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox, bool 
 	//we get the bounding-box diagonal length
 	double bbDiag = static_cast<double>(zoomedBox.getDiagNorm());
 
-    if (CVLib::LessThanEpsilon(bbDiag))
+    if (cloudViewer::LessThanEpsilon(bbDiag))
 	{
 		CVLog::Warning("[ecvDisplayTools] Entity/DB has a null bounding-box! Can't zoom in...");
 		return;

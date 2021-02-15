@@ -546,7 +546,7 @@ ccPointCloud* ccRasterizeTool::convertGridToCloud(	const std::vector<ccRasterGri
 			int hillshadeSFIdx = m_rasterCloud->getScalarFieldIndexByName(HILLSHADE_FIELD_NAME);
 			if (hillshadeSFIdx >= 0)
 			{
-				CVLib::ScalarField* hillshadeField = m_rasterCloud->getScalarField(hillshadeSFIdx);
+				cloudViewer::ScalarField* hillshadeField = m_rasterCloud->getScalarField(hillshadeSFIdx);
 				if (hillshadeField->currentSize() == cloudGrid->size())
 				{
 					try
@@ -844,7 +844,7 @@ void ccRasterizeTool::generateMesh() const
 	if (rasterCloud)
 	{
 		char errorStr[1024];
-		CVLib::GenericIndexedMesh* baseMesh = CVLib::PointProjectionTools::computeTriangulation(rasterCloud,
+		cloudViewer::GenericIndexedMesh* baseMesh = cloudViewer::PointProjectionTools::computeTriangulation(rasterCloud,
 																								DELAUNAY_2D_AXIS_ALIGNED,
 																								0,
 																								getProjectionDimension(),
@@ -1036,7 +1036,7 @@ bool ccRasterizeTool::ExportGeoTiff(QString outputFilename,
 {
 #ifdef CV_GDAL_SUPPORT
 
-	if (exportBands.visibleSF && visibleSfIndex <= 0)
+    if (exportBands.visibleSF && visibleSfIndex < 0)
 	{
 		assert(false);
 		return false;
@@ -1913,7 +1913,7 @@ void ccRasterizeTool::generateContours()
 		pDlg.start();
 		pDlg.show();
 		QApplication::processEvents();
-		CVLib::NormalizedProgress nProgress(&pDlg, levelCount);
+		cloudViewer::NormalizedProgress nProgress(&pDlg, levelCount);
 
 		int lineWidth = contourWidthSpinBox->value();
 		bool colorize = colorizeContoursCheckBox->isChecked();
@@ -2226,7 +2226,7 @@ void ccRasterizeTool::generateImage() const
 		}
 
 		double range = maxHeight - minHeight;
-        if (CVLib::LessThanEpsilon(range))
+        if (cloudViewer::LessThanEpsilon(range))
 		{
 			range = 1.0;
 		}

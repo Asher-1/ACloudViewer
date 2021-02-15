@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -31,10 +31,10 @@
 namespace cloudViewer {
 namespace ml {
 namespace contrib {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
-/// TOOD: This is a temory wrapper for 3DML repositiory use. In the future, the
-/// native CloudViewer Python API should be improved and used.
+/// TOOD: This is a temporary wrapper for 3DML repository use. In the future,
+/// the native CloudViewer Python API should be improved and used.
 ///
 /// \param query_points Tensor of shape {n_query_points, d}, dtype Float32.
 /// \param dataset_points Tensor of shape {n_dataset_points, d}, dtype Float32.
@@ -73,8 +73,8 @@ const core::Tensor KnnSearch(const core::Tensor& query_points,
     return indices.To(core::Dtype::Int32);
 }
 
-/// TOOD: This is a temory wrapper for 3DML repositiory use. In the future, the
-/// native CloudViewer Python API should be improved and used.
+/// TOOD: This is a temporary wrapper for 3DML repository use. In the future,
+/// the native CloudViewer Python API should be improved and used.
 ///
 /// \param query_points Tensor of shape {n_query_points, d}, dtype Float32.
 /// \param dataset_points Tensor of shape {n_dataset_points, d}, dtype Float32.

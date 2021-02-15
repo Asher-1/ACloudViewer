@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -28,7 +28,7 @@
 #include <cstring>
 #include <vector>
 
-namespace CVLib
+namespace cloudViewer
 {
 	//! Square matrix
 	/** Row-major ordered matrix (i.e. elements are accessed with 'values[row][column]')
@@ -783,6 +783,6 @@ namespace CVLib
 	//! Double square matrix type
 	using SquareMatrixd = SquareMatrixTpl<double>;
 
-} //namespace CVLib
+} //namespace cloudViewer
 
 #endif //SQUARE_MATRIX_HEADER

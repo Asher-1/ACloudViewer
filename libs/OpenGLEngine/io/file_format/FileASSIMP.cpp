@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -38,8 +38,8 @@
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 #include <ImageIO.h>
-#include <FileFormatIO.h>
-#include <TriangleMeshIO.h>
+#include "io/FileFormatIO.h"
+#include "io/TriangleMeshIO.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/Model.h"
 
@@ -50,7 +50,7 @@
 
 namespace cloudViewer {
 namespace io {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
 const unsigned int kPostProcessFlags =
         aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices |
@@ -137,27 +137,41 @@ void LoadTextures(const std::string& filename,
 }
 
 bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
-                                 ccMesh& mesh, bool print_progress) {
+                                 ccMesh& mesh,
+                                 bool enable_post_processing,
+                                 bool print_progress) {
     Assimp::Importer importer;
-    const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
+
+    unsigned int post_process_flags = 0;
+
+    if (enable_post_processing) {
+        post_process_flags = kPostProcessFlags;
+    }
+
+    const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;
     }
 
     mesh.clear();
-    if (!mesh.getAssociatedCloud())
-    {
-        if (scene->mNumMeshes > 0) {
-            const auto* assimp_mesh = scene->mMeshes[0];
+    if (scene->mNumMeshes > 0) {
+        const auto* assimp_mesh = scene->mMeshes[0];
+
+        if (!mesh.getAssociatedCloud())
+        {
             mesh.createInternalCloud();
-            if(!mesh.reserveAssociatedCloud(assimp_mesh->mNumVertices)) {
-                return false;
-            }
-        } else {
-            utility::LogWarning("Must call createInternalCloud first!");
+        }
+
+        if(!mesh.reserveAssociatedCloud(
+                    assimp_mesh->mNumVertices,
+                    assimp_mesh->HasVertexColors(0),
+                    assimp_mesh->HasNormals())) {
             return false;
         }
+    } else {
+        utility::LogWarning("Must call createInternalCloud first!");
+        return false;
     }
 
     size_t current_vidx = 0;
@@ -190,7 +204,7 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
             mesh.triangle_material_ids_.push_back(assimp_mesh->mMaterialIndex);
         }
 
-        if (assimp_mesh->mNormals) {
+        if (assimp_mesh->HasNormals()) {
             for (size_t nidx = 0; nidx < assimp_mesh->mNumVertices; ++nidx) {
                 auto& normal = assimp_mesh->mNormals[nidx];
                 mesh.addVertexNormal({ normal.x, normal.y, normal.z });
@@ -222,7 +236,6 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         current_vidx += assimp_mesh->mNumVertices;
     }
 
-    // Now load the materials
     // Now load the materials
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];

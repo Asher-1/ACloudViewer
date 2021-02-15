@@ -37,7 +37,7 @@ namespace cloudViewer {
 namespace pipelines {
 namespace integration {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length,
 	double sdf_trunc,

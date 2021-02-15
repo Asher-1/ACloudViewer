@@ -35,6 +35,8 @@ namespace geometry {
 void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     ccPointCloud legacy_pcd;
     unsigned int num_points = 1000000;  // 1M
+    legacy_pcd.reserveThePointsTable(num_points);
+    legacy_pcd.reserveTheRGBTable();
     legacy_pcd.resize(num_points);
 
     // Warm up.
@@ -49,11 +51,33 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     }
 }
 
+void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
+    int64_t num_points = 1000000;  // 1M
+    PointCloud pcd(device);
+    pcd.SetPoints(core::Tensor({num_points, 3}, core::Dtype::Float32, device));
+    pcd.SetPointColors(
+            core::Tensor({num_points, 3}, core::Dtype::Float32, device));
+
+    // Warm up.
+    ccPointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+    (void)legacy_pcd;
+
+    for (auto _ : state) {
+        ccPointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+    }
+}
+
 BENCHMARK_CAPTURE(FromLegacyPointCloud, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(ToLegacyPointCloud, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(FromLegacyPointCloud, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(ToLegacyPointCloud, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -31,7 +31,7 @@
 #include "CloudViewer.h"
 
 void PrintUsage() {
-    using namespace CVLib;
+    using namespace cloudViewer;
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing|editmesh] [filename]");
@@ -45,10 +45,10 @@ ccPointCloud readPoints(const char* file)
 {
 	ccPointCloud cloud;
 	if (cloudViewer::io::ReadPointCloud(file, cloud)) {
-		CVLib::utility::LogInfo("Successfully read {}", file);
+		cloudViewer::utility::LogInfo("Successfully read {}", file);
 	}
 	else {
-		CVLib::utility::LogWarning("Failed to read {}", file);
+		cloudViewer::utility::LogWarning("Failed to read {}", file);
 		return ccPointCloud();
 	}
 	return cloud;
@@ -64,10 +64,10 @@ ccMesh readMeshes(const char* file)
 	ccMesh mesh(baseVertices);
 	mesh.addChild(baseVertices);
 	if (cloudViewer::io::ReadTriangleMesh(file, mesh)) {
-		CVLib::utility::LogInfo("Successfully read {}", file);
+		cloudViewer::utility::LogInfo("Successfully read {}", file);
 	}
 	else {
-		CVLib::utility::LogWarning("Failed to read {}", file);
+		cloudViewer::utility::LogWarning("Failed to read {}", file);
 		return ccMesh();
 	}
 	return mesh;
@@ -77,7 +77,7 @@ ccMesh readMeshes(const char* file)
 int main(int argc, char *argv[]) {
     using namespace cloudViewer;
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
     if (argc < 3) {
         PrintUsage();
         return 1;
@@ -93,10 +93,10 @@ int main(int argc, char *argv[]) {
 		auto mesh_ptr = std::make_shared<ccMesh>(baseVertices);
 		mesh_ptr->addChild(baseVertices);
 		if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-			CVLib::utility::LogInfo("Successfully read {}", argv[2]);
+			cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
 		}
 		else {
-			CVLib::utility::LogWarning("Failed to read {}", argv[2]);
+			cloudViewer::utility::LogWarning("Failed to read {}", argv[2]);
 			return 1;
 		}
 
@@ -122,9 +122,9 @@ int main(int argc, char *argv[]) {
 		auto mesh_ptr = std::make_shared<ccMesh>(baseVertices);
 		mesh_ptr->addChild(baseVertices);
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            CVLib::utility::LogInfo("Successfully read {}", argv[2]);
+            cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            CVLib::utility::LogWarning("Failed to read {}", argv[2]);
+            cloudViewer::utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->computeVertexNormals();
@@ -150,9 +150,9 @@ int main(int argc, char *argv[]) {
 		auto mesh_ptr = std::make_shared<ccMesh>(baseVertices);
 		mesh_ptr->addChild(baseVertices);
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            CVLib::utility::LogInfo("Successfully read {}", argv[2]);
+            cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            CVLib::utility::LogWarning("Failed to read {}", argv[2]);
+            cloudViewer::utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->computeVertexNormals();
@@ -185,9 +185,9 @@ int main(int argc, char *argv[]) {
 		mesh_ptr->addChild(baseVertices);
 
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            CVLib::utility::LogInfo("Successfully read {}", argv[2]);
+            cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            CVLib::utility::LogWarning("Failed to read {}", argv[2]);
+            cloudViewer::utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->computeVertexNormals();
@@ -216,10 +216,10 @@ int main(int argc, char *argv[]) {
 	else if (option == "pointcloud") {
         auto cloud_ptr = std::make_shared<ccPointCloud>();
 		if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
-			CVLib::utility::LogInfo("Successfully read {}", argv[2]);
+			cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
 		}
 		else {
-			CVLib::utility::LogWarning("Failed to read {}", argv[2]);
+			cloudViewer::utility::LogWarning("Failed to read {}", argv[2]);
 			return 1;
 		}
 
@@ -231,9 +231,9 @@ int main(int argc, char *argv[]) {
 	else if (option == "rainbow") {
         auto cloud_ptr = std::make_shared<ccPointCloud>();
         if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
-            CVLib::utility::LogInfo("Successfully read {}", argv[2]);
+            cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            CVLib::utility::LogWarning("Failed to read {}", argv[2]);
+            cloudViewer::utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
 
@@ -265,9 +265,9 @@ int main(int argc, char *argv[]) {
 	else if (option == "image") {
         auto image_ptr = std::make_shared<geometry::Image>();
         if (io::ReadImage(argv[2], *image_ptr)) {
-            CVLib::utility::LogInfo("Successfully read {}", argv[2]);
+            cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            CVLib::utility::LogWarning("Failed to read {}", argv[2]);
+            cloudViewer::utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         visualization::DrawGeometries({image_ptr}, "Image", image_ptr->width_,
@@ -280,21 +280,21 @@ int main(int argc, char *argv[]) {
         }
 
         int rgbd_type =
-                CVLib::utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
+                cloudViewer::utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
         auto color_ptr = std::make_shared<geometry::Image>();
         auto depth_ptr = std::make_shared<geometry::Image>();
 
         if (io::ReadImage(argv[2], *color_ptr)) {
-            CVLib::utility::LogInfo("Successfully read {}", argv[2]);
+            cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            CVLib::utility::LogWarning("Failed to read {}", argv[2]);
+            cloudViewer::utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
 
         if (io::ReadImage(argv[3], *depth_ptr)) {
-            CVLib::utility::LogInfo("Successfully read {}", argv[3]);
+            cloudViewer::utility::LogInfo("Successfully read {}", argv[3]);
         } else {
-            CVLib::utility::LogWarning("Failed to read {}", argv[3]);
+            cloudViewer::utility::LogWarning("Failed to read {}", argv[3]);
             return 1;
         }
 
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
         visualization::DrawGeometriesWithEditing({pcd}, "Editing", 1920, 1080);
     }
 	else if (option == "axisBBox") {
-		double extent = CVLib::utility::GetProgramOptionAsDouble(argc, argv, "--extent");
+		double extent = cloudViewer::utility::GetProgramOptionAsDouble(argc, argv, "--extent");
 		double minValue = -extent / 2.0;
 		double maxValue = extent / 2.0;
 
@@ -339,7 +339,7 @@ int main(int argc, char *argv[]) {
 		visualization::DrawGeometries({ abbox }, "Axis aligned bounding box", 1600, 900);
 	}
 	else if (option == "orientedBBox") {
-		double extent = CVLib::utility::GetProgramOptionAsDouble(argc, argv, "--extent");
+		double extent = cloudViewer::utility::GetProgramOptionAsDouble(argc, argv, "--extent");
 		double minValue = -extent / 2.0;
 		double maxValue = extent / 2.0;
 		auto abbox = std::make_shared<ccBBox>(
@@ -363,9 +363,9 @@ int main(int argc, char *argv[]) {
 		mesh_ptr->addChild(baseVertices);
 
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            CVLib::utility::LogInfo("Successfully read {}", argv[2]);
+            cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            CVLib::utility::LogWarning("Failed to read {}", argv[2]);
+            cloudViewer::utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
 
@@ -390,7 +390,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    CVLib::utility::LogInfo("End of the test.");
+    cloudViewer::utility::LogInfo("End of the test.");
 
     return 0;
 }
