@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.18)
+
 #
 # CloudViewer 3rd party library integration
 #
@@ -235,6 +237,57 @@ function(import_3rdparty_library name)
                 set(installed_library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_${name}${CMAKE_STATIC_LIBRARY_SUFFIX})
             else()
                 set(installed_library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_${name}_${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
+            endif()
+            target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
+            if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
+                install(FILES ${arg_LIB_DIR}/${library_filename}
+                    DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
+                    RENAME ${installed_library_filename}
+                )
+                target_link_libraries(${name} INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CloudViewer_INSTALL_LIB_DIR}/${installed_library_filename}>)
+            endif()
+        endforeach()
+    endif()
+    if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
+        install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
+    endif()
+    add_library(${PROJECT_NAME}::${name} ALIAS ${name})
+endfunction()
+
+function(import_shared_3rdparty_library name)
+    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    if(arg_UNPARSED_ARGUMENTS)
+        message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
+        message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
+    endif()
+    if(NOT arg_LIB_DIR)
+        set(arg_LIB_DIR "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
+    endif()
+    add_library(${name} INTERFACE)
+    if(arg_INCLUDE_DIRS)
+        foreach(incl IN LISTS arg_INCLUDE_DIRS)
+            if (incl MATCHES "(.*)/$")
+                set(incl_path ${CMAKE_MATCH_1})
+            else()
+                get_filename_component(incl_path "${incl}" DIRECTORY)
+            endif()
+            target_include_directories(${name} SYSTEM INTERFACE $<BUILD_INTERFACE:${incl_path}>)
+            if(arg_PUBLIC OR arg_HEADER)
+                install(DIRECTORY ${incl} DESTINATION ${CloudViewer_INSTALL_INCLUDE_DIR}/cloudViewer/3rdparty
+                    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+                )
+                target_include_directories(${name} INTERFACE $<INSTALL_INTERFACE:${CloudViewer_INSTALL_INCLUDE_DIR}/cloudViewer/3rdparty>)
+            endif()
+        endforeach()
+    endif()
+    if(arg_LIBRARIES)
+        list(LENGTH arg_LIBRARIES libcount)
+        foreach(arg_LIBRARY IN LISTS arg_LIBRARIES)
+            set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${arg_LIBRARY}${CMAKE_SHARED_LIBRARY_SUFFIX})
+            if(libcount EQUAL 1)
+                set(installed_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${PROJECT_NAME}_${name}${CMAKE_SHARED_LIBRARY_SUFFIX})
+            else()
+                set(installed_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${PROJECT_NAME}_${name}_${arg_LIBRARY}${CMAKE_SHARED_LIBRARY_SUFFIX})
             endif()
             target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
             if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
@@ -1165,6 +1218,32 @@ if (WITH_IPPICV)
     endif()
 endif ()
 
+# AliceVision
+#if(USE_SYSTEM_ALICEVISION)
+#    find_package(AliceVision CONFIG REQUIRED)
+#    if(AliceVision_FOUND)
+#        message(STATUS "Found AliceVision : ${AliceVision_FOUND}")
+#        message(STATUS "Found AliceVision version: ${AliceVision_VERSION}")
+#        if(NOT BUILD_SHARED_LIBS)
+#            list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES aliceVision_system aliceVision_sfmDataIO)
+#        endif()
+#        set(ALICEVISION_TARGET aliceVision_system aliceVision_sfmDataIO)
+#    else()
+#        message(STATUS "Unable to find installed third-party library AliceVision")
+#        set(USE_SYSTEM_ALICEVISION OFF)
+#    endif()
+#endif()
+#if(NOT USE_SYSTEM_ALICEVISION)
+#    include(${CloudViewer_3RDPARTY_DIR}/aliceVision/aliceVision_download.cmake)
+#    import_shared_3rdparty_library(3rdparty_alicevision
+#        INCLUDE_DIRS ${AliceVision_DIR}
+#        LIB_DIR ${AliceVision_ROOT}/lib
+#        LIBRARIES ${AliceVision_LIBRARIES}
+#    )
+#    set(ALICEVISION_TARGET "3rdparty_alicevision")
+#endif()
+#list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${ALICEVISION_TARGET}")
+
 # ransac_sd.
 #Causes the sub clouds to be generated as partial clones of original cloud
 add_definitions( -DPOINTSWITHINDEX )
@@ -1173,19 +1252,16 @@ add_subdirectory( "${RANSAC_LIB_DIR}" )
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${GLFW_INCLUDE_DIRS}
-#     ${PNG_INCLUDE_DIRS}
 )
 
 # set 3RDPARTY_LIBRARY_DIRS
 list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${GLFW_LIBRARY_DIRS}
-#    ${PNG_LIBRARY_DIRS}
 )
 
 # set 3RDPARTY_LIBRARIES
 list(APPEND 3RDPARTY_LIBRARIES
      ${GLFW_LIBRARIES}
-#     ${PNG_LIBRARIES}
 )
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS})

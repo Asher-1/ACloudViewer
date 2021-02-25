@@ -153,6 +153,6 @@ namespace cloudViewer
 		bool m_valid;
 	};
 
-} //namespace
+} // namespace cloudViewer
 
 #endif // CV_BOUNDING_BOX_HEADER
