@@ -27,7 +27,8 @@
 #include <algorithm>
 #include <cstdint>
 
-using namespace cloudViewer;
+namespace cloudViewer
+{
 
 BoundingBox::BoundingBox()
 	: m_bbMin(0, 0, 0)
@@ -239,3 +240,4 @@ const BoundingBox& BoundingBox::operator *= (const SquareMatrix& mat)
 	return *this;
 }
 
+} // namespace cloudViewer
