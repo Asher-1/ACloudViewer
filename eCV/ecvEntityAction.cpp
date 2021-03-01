@@ -1765,29 +1765,34 @@ namespace ccEntityAction
 		 
 	bool invertNormals(const ccHObject::Container &selectedEntities)
 	{
-		for (ccHObject* ent : selectedEntities)
-		{
-			bool lockedVertices;
-			ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(ent, &lockedVertices);
-			if (lockedVertices)
-			{
-				ecvUtils::DisplayLockedVerticesWarning(ent->getName(), selectedEntities.size() == 1);
-				continue;
-			}
-			
-			if (cloud && cloud->isA(CV_TYPES::POINT_CLOUD)) // TODO
-			{
-				ccPointCloud* ccCloud = static_cast<ccPointCloud*>(cloud);
-				if (ccCloud->hasNormals())
-				{
-					ccCloud->invertNormals();
-					ccCloud->showNormals(true);
-					//ccCloud->prepareDisplayForRefresh_recursive();
-				}
-			}
-		}
-		
-		return true;
+        for (ccHObject* ent : selectedEntities)
+        {
+            // is it a mesh?
+            ccMesh* mesh = ccHObjectCaster::ToMesh(ent);
+            if (mesh && mesh->hasNormals())
+            {
+                mesh->invertNormals();
+                mesh->showNormals(true);
+                continue;
+            }
+
+            // is it a cloud?
+            bool lockedVertices;
+            ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
+            if (cloud && cloud->hasNormals())
+            {
+                if (lockedVertices)
+                {
+                    ecvUtils::DisplayLockedVerticesWarning(ent->getName(), selectedEntities.size() == 1);
+                    continue;
+                }
+
+                cloud->invertNormals();
+                cloud->showNormals(true);
+            }
+        }
+
+        return true;
 	}
 		 
 	bool orientNormalsFM(const ccHObject::Container &selectedEntities, QWidget *parent)

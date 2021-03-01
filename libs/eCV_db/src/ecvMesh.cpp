@@ -430,7 +430,7 @@ bool ccMesh::computePerTriangleNormals()
 
 bool ccMesh::normalsShown() const
 {
-	return (ccHObject::normalsShown() || triNormsShown());
+    return (ccHObject::normalsShown() || triNormsShown());
 }
 
 bool ccMesh::processScalarField(MESH_SCALAR_FIELD_PROCESS process)
@@ -2926,6 +2926,33 @@ void ccMesh::shiftTriangleIndexes(unsigned shift)
 	}
 }
 
+void ccMesh::invertNormals()
+{
+    //per-triangle normals
+    if (m_triNormals)
+    {
+        invertPerTriangleNormals();
+    }
+
+    //per-vertex normals
+    ccPointCloud* pc = dynamic_cast<ccPointCloud*>(m_associatedCloud);
+    if (pc && pc->hasNormals())
+    {
+        pc->invertNormals();
+    }
+}
+
+void ccMesh::invertPerTriangleNormals()
+{
+    if (m_triNormals)
+    {
+        for (CompressedNormType& n : *m_triNormals)
+        {
+            ccNormalCompressor::InvertNormal(n);
+        }
+    }
+}
+
 void ccMesh::flipTriangles()
 {
 	for (cloudViewer::VerticesIndexes& ti : *m_triVertIndexes)
@@ -2947,7 +2974,7 @@ void ccMesh::removePerTriangleNormalIndexes()
 {
 	if (m_triNormalIndexes)
 		m_triNormalIndexes->release();
-	m_triNormalIndexes = nullptr;
+    m_triNormalIndexes = nullptr;
 }
 
 bool ccMesh::reservePerTriangleNormalIndexes()
