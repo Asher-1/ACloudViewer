@@ -55,6 +55,13 @@ struct CommandOctreeNormal : public ccCommandLineInterface::Command
 	bool process(ccCommandLineInterface& cmd) override;
 };
 
+struct CommandInvertNormal : public ccCommandLineInterface::Command
+{
+    CommandInvertNormal();
+
+    bool process(ccCommandLineInterface& cmd) override;
+};
+
 struct CommandConvertNormalsToDipAndDipDir : public ccCommandLineInterface::Command
 {
 	CommandConvertNormalsToDipAndDipDir();
@@ -324,6 +331,13 @@ struct CommandSFOperation : public ccCommandLineInterface::Command
 	CommandSFOperation();
 
 	bool process(ccCommandLineInterface& cmd) override;
+};
+
+struct CommandSFRename : public ccCommandLineInterface::Command
+{
+    CommandSFRename();
+
+    bool process(ccCommandLineInterface& cmd) override;
 };
 
 struct CommandICP : public ccCommandLineInterface::Command

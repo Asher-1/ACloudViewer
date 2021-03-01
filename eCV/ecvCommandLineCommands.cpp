@@ -43,104 +43,106 @@
 #include <QDateTime>
 
 //commands
-constexpr char COMMAND_CLOUD_EXPORT_FORMAT[] = "C_EXPORT_FMT";
-constexpr char COMMAND_EXPORT_EXTENSION[] = "EXT";
-constexpr char COMMAND_ASCII_EXPORT_PRECISION[] = "PREC";
-constexpr char COMMAND_ASCII_EXPORT_SEPARATOR[] = "SEP";
-constexpr char COMMAND_ASCII_EXPORT_ADD_COL_HEADER[] = "ADD_HEADER";
-constexpr char COMMAND_ASCII_EXPORT_ADD_PTS_COUNT[] = "ADD_PTS_COUNT";
-constexpr char COMMAND_MESH_EXPORT_FORMAT[] = "M_EXPORT_FMT";
-constexpr char COMMAND_HIERARCHY_EXPORT_FORMAT[] = "H_EXPORT_FMT";
-constexpr char COMMAND_OPEN[] = "O";				//+file name
-constexpr char COMMAND_OPEN_SKIP_LINES[] = "SKIP";			//+number of lines to skip
-constexpr char COMMAND_SUBSAMPLE[] = "SS";				//+ method (RANDOM/SPATIAL/OCTREE) + parameter (resp. point count / spatial step / octree level)
-constexpr char COMMAND_EXTRACT_CC[] = "EXTRACT_CC";
-constexpr char COMMAND_CURVATURE[] = "CURV";			//+ curvature type (MEAN/GAUSS)
-constexpr char COMMAND_DENSITY[] = "DENSITY";		//+ sphere radius
-constexpr char COMMAND_DENSITY_TYPE[] = "TYPE";			//+ density type
-constexpr char COMMAND_APPROX_DENSITY[] = "APPROX_DENSITY";
-constexpr char COMMAND_SF_GRADIENT[] = "SF_GRAD";
-constexpr char COMMAND_ROUGHNESS[] = "ROUGH";
-constexpr char COMMAND_APPLY_TRANSFORMATION[] = "APPLY_TRANS";
-constexpr char COMMAND_DROP_GLOBAL_SHIFT[] = "DROP_GLOBAL_SHIFT";
-constexpr char COMMAND_SF_COLOR_SCALE[] = "SF_COLOR_SCALE";
-constexpr char COMMAND_SF_CONVERT_TO_RGB[] = "SF_CONVERT_TO_RGB";
-constexpr char COMMAND_FILTER_SF_BY_VALUE[] = "FILTER_SF";
-constexpr char COMMAND_MERGE_CLOUDS[] = "MERGE_CLOUDS";
-constexpr char COMMAND_MERGE_MESHES[] = "MERGE_MESHES";
-constexpr char COMMAND_SET_ACTIVE_SF[] = "SET_ACTIVE_SF";
-constexpr char COMMAND_REMOVE_ALL_SFS[] = "REMOVE_ALL_SFS";
-constexpr char COMMAND_REMOVE_SCAN_GRIDS[] = "REMOVE_SCAN_GRIDS";
-constexpr char COMMAND_REMOVE_RGB[] = "REMOVE_RGB";
-constexpr char COMMAND_REMOVE_NORMALS[] = "REMOVE_NORMALS";
-constexpr char COMMAND_MATCH_BB_CENTERS[] = "MATCH_CENTERS";
-constexpr char COMMAND_BEST_FIT_PLANE[] = "BEST_FIT_PLANE";
-constexpr char COMMAND_BEST_FIT_PLANE_MAKE_HORIZ[] = "MAKE_HORIZ";
-constexpr char COMMAND_BEST_FIT_PLANE_KEEP_LOADED[] = "KEEP_LOADED";
-constexpr char COMMAND_ORIENT_NORMALS[] = "ORIENT_NORMS_MST";
-constexpr char COMMAND_SOR_FILTER[] = "SOR";
-constexpr char COMMAND_SAMPLE_MESH[] = "SAMPLE_MESH";
-constexpr char COMMAND_CROP[] = "CROP";
-constexpr char COMMAND_CROP_OUTSIDE[] = "OUTSIDE";
-constexpr char COMMAND_CROP_2D[] = "CROP2D";
-constexpr char COMMAND_COLOR_BANDING[] = "CBANDING";
-constexpr char COMMAND_C2M_DIST[] = "C2M_DIST";
-constexpr char COMMAND_C2M_DIST_FLIP_NORMALS[] = "FLIP_NORMS";
-constexpr char COMMAND_C2C_DIST[] = "C2C_DIST";
-constexpr char COMMAND_C2C_SPLIT_XYZ[] = "SPLIT_XYZ";
-constexpr char COMMAND_C2C_LOCAL_MODEL[] = "MODEL";
-constexpr char COMMAND_C2X_MAX_DISTANCE[] = "MAX_DIST";
-constexpr char COMMAND_C2X_OCTREE_LEVEL[] = "OCTREE_LEVEL";
-constexpr char COMMAND_STAT_TEST[] = "STAT_TEST";
-constexpr char COMMAND_DELAUNAY[] = "DELAUNAY";
-constexpr char COMMAND_DELAUNAY_AA[] = "AA";
-constexpr char COMMAND_DELAUNAY_BF[] = "BEST_FIT";
-constexpr char COMMAND_DELAUNAY_MAX_EDGE_LENGTH[] = "MAX_EDGE_LENGTH";
-constexpr char COMMAND_SF_ARITHMETIC[] = "SF_ARITHMETIC";
-constexpr char COMMAND_SF_OP[] = "SF_OP";
-constexpr char COMMAND_COORD_TO_SF[] = "COORD_TO_SF";
-constexpr char COMMAND_EXTRACT_VERTICES[] = "EXTRACT_VERTICES";
-constexpr char COMMAND_ICP[] = "ICP";
-constexpr char COMMAND_ICP_REFERENCE_IS_FIRST[] = "REFERENCE_IS_FIRST";
-constexpr char COMMAND_ICP_MIN_ERROR_DIIF[] = "MIN_ERROR_DIFF";
-constexpr char COMMAND_ICP_ITERATION_COUNT[] = "ITER";
-constexpr char COMMAND_ICP_OVERLAP[] = "OVERLAP";
-constexpr char COMMAND_ICP_ADJUST_SCALE[] = "ADJUST_SCALE";
-constexpr char COMMAND_ICP_RANDOM_SAMPLING_LIMIT[] = "RANDOM_SAMPLING_LIMIT";
-constexpr char COMMAND_ICP_ENABLE_FARTHEST_REMOVAL[] = "FARTHEST_REMOVAL";
-constexpr char COMMAND_ICP_USE_MODEL_SF_AS_WEIGHT[] = "MODEL_SF_AS_WEIGHTS";
-constexpr char COMMAND_ICP_USE_DATA_SF_AS_WEIGHT[] = "DATA_SF_AS_WEIGHTS";
-constexpr char COMMAND_ICP_ROT[] = "ROT";
-constexpr char COMMAND_PLY_EXPORT_FORMAT[] = "PLY_EXPORT_FMT";
-constexpr char COMMAND_COMPUTE_GRIDDED_NORMALS[] = "COMPUTE_NORMALS";
-constexpr char COMMAND_COMPUTE_OCTREE_NORMALS[] = "OCTREE_NORMALS";
-constexpr char COMMAND_CONVERT_NORMALS_TO_DIP[] = "NORMALS_TO_DIP";
-constexpr char COMMAND_CONVERT_NORMALS_TO_SFS[] = "NORMALS_TO_SFS";
-constexpr char COMMAND_CLEAR_NORMALS[] = "CLEAR_NORMALS";
-constexpr char COMMAND_MESH_VOLUME[] = "MESH_VOLUME";
-constexpr char COMMAND_VOLUME_TO_FILE[] = "TO_FILE";
-constexpr char COMMAND_SAVE_CLOUDS[] = "SAVE_CLOUDS";
-constexpr char COMMAND_SAVE_MESHES[] = "SAVE_MESHES";
-constexpr char COMMAND_AUTO_SAVE[] = "AUTO_SAVE";
-constexpr char COMMAND_LOG_FILE[] = "LOG_FILE";
-constexpr char COMMAND_CLEAR[] = "CLEAR";
-constexpr char COMMAND_CLEAR_CLOUDS[] = "CLEAR_CLOUDS";
-constexpr char COMMAND_POP_CLOUDS[] = "POP_CLOUDS";
-constexpr char COMMAND_CLEAR_MESHES[] = "CLEAR_MESHES";
-constexpr char COMMAND_POP_MESHES[] = "POP_MESHES";
-constexpr char COMMAND_NO_TIMESTAMP[] = "NO_TIMESTAMP";
-constexpr char COMMAND_MOMENT[] = "MOMENT";
-constexpr char COMMAND_FEATURE[] = "FEATURE";
+constexpr char COMMAND_CLOUD_EXPORT_FORMAT[]            = "C_EXPORT_FMT";
+constexpr char COMMAND_EXPORT_EXTENSION[]               = "EXT";
+constexpr char COMMAND_ASCII_EXPORT_PRECISION[]         = "PREC";
+constexpr char COMMAND_ASCII_EXPORT_SEPARATOR[]         = "SEP";
+constexpr char COMMAND_ASCII_EXPORT_ADD_COL_HEADER[]    = "ADD_HEADER";
+constexpr char COMMAND_ASCII_EXPORT_ADD_PTS_COUNT[]     = "ADD_PTS_COUNT";
+constexpr char COMMAND_MESH_EXPORT_FORMAT[]             = "M_EXPORT_FMT";
+constexpr char COMMAND_HIERARCHY_EXPORT_FORMAT[]        = "H_EXPORT_FMT";
+constexpr char COMMAND_OPEN[] = "O";                    //+file name
+constexpr char COMMAND_OPEN_SKIP_LINES[]                = "SKIP"; //+number of lines to skip
+constexpr char COMMAND_SUBSAMPLE[]                      = "SS";	//+ method (RANDOM/SPATIAL/OCTREE) + parameter (resp. point count / spatial step / octree level)
+constexpr char COMMAND_EXTRACT_CC[]                     = "EXTRACT_CC";
+constexpr char COMMAND_CURVATURE[]                      = "CURV"; //+ curvature type (MEAN/GAUSS)
+constexpr char COMMAND_DENSITY[]                        = "DENSITY"; //+ sphere radius
+constexpr char COMMAND_DENSITY_TYPE[]                   = "TYPE"; //+ density type
+constexpr char COMMAND_APPROX_DENSITY[]                 = "APPROX_DENSITY";
+constexpr char COMMAND_SF_GRADIENT[]                    = "SF_GRAD";
+constexpr char COMMAND_ROUGHNESS[]                      = "ROUGH";
+constexpr char COMMAND_APPLY_TRANSFORMATION[]           = "APPLY_TRANS";
+constexpr char COMMAND_DROP_GLOBAL_SHIFT[]              = "DROP_GLOBAL_SHIFT";
+constexpr char COMMAND_SF_COLOR_SCALE[]                 = "SF_COLOR_SCALE";
+constexpr char COMMAND_SF_CONVERT_TO_RGB[]              = "SF_CONVERT_TO_RGB";
+constexpr char COMMAND_FILTER_SF_BY_VALUE[]             = "FILTER_SF";
+constexpr char COMMAND_MERGE_CLOUDS[]                   = "MERGE_CLOUDS";
+constexpr char COMMAND_MERGE_MESHES[]                   = "MERGE_MESHES";
+constexpr char COMMAND_SET_ACTIVE_SF[]                  = "SET_ACTIVE_SF";
+constexpr char COMMAND_REMOVE_ALL_SFS[]                 = "REMOVE_ALL_SFS";
+constexpr char COMMAND_REMOVE_SCAN_GRIDS[]              = "REMOVE_SCAN_GRIDS";
+constexpr char COMMAND_REMOVE_RGB[]                     = "REMOVE_RGB";
+constexpr char COMMAND_REMOVE_NORMALS[]                 = "REMOVE_NORMALS";
+constexpr char COMMAND_MATCH_BB_CENTERS[]               = "MATCH_CENTERS";
+constexpr char COMMAND_BEST_FIT_PLANE[]                 = "BEST_FIT_PLANE";
+constexpr char COMMAND_BEST_FIT_PLANE_MAKE_HORIZ[]      = "MAKE_HORIZ";
+constexpr char COMMAND_BEST_FIT_PLANE_KEEP_LOADED[]     = "KEEP_LOADED";
+constexpr char COMMAND_ORIENT_NORMALS[]                 = "ORIENT_NORMS_MST";
+constexpr char COMMAND_SOR_FILTER[]                     = "SOR";
+constexpr char COMMAND_SAMPLE_MESH[]                    = "SAMPLE_MESH";
+constexpr char COMMAND_CROP[]                           = "CROP";
+constexpr char COMMAND_CROP_OUTSIDE[]                   = "OUTSIDE";
+constexpr char COMMAND_CROP_2D[]                        = "CROP2D";
+constexpr char COMMAND_COLOR_BANDING[]                  = "CBANDING";
+constexpr char COMMAND_C2M_DIST[]                       = "C2M_DIST";
+constexpr char COMMAND_C2M_DIST_FLIP_NORMALS[]          = "FLIP_NORMS";
+constexpr char COMMAND_C2C_DIST[]                       = "C2C_DIST";
+constexpr char COMMAND_C2C_SPLIT_XYZ[]                  = "SPLIT_XYZ";
+constexpr char COMMAND_C2C_LOCAL_MODEL[]                = "MODEL";
+constexpr char COMMAND_C2X_MAX_DISTANCE[]               = "MAX_DIST";
+constexpr char COMMAND_C2X_OCTREE_LEVEL[]               = "OCTREE_LEVEL";
+constexpr char COMMAND_STAT_TEST[]                      = "STAT_TEST";
+constexpr char COMMAND_DELAUNAY[]                       = "DELAUNAY";
+constexpr char COMMAND_DELAUNAY_AA[]                    = "AA";
+constexpr char COMMAND_DELAUNAY_BF[]                    = "BEST_FIT";
+constexpr char COMMAND_DELAUNAY_MAX_EDGE_LENGTH[]       = "MAX_EDGE_LENGTH";
+constexpr char COMMAND_SF_ARITHMETIC[]                  = "SF_ARITHMETIC";
+constexpr char COMMAND_SF_OP[]                          = "SF_OP";
+constexpr char COMMAND_RENAME_SF[]						= "RENAME_SF";
+constexpr char COMMAND_COORD_TO_SF[]                    = "COORD_TO_SF";
+constexpr char COMMAND_EXTRACT_VERTICES[]               = "EXTRACT_VERTICES";
+constexpr char COMMAND_ICP[]                            = "ICP";
+constexpr char COMMAND_ICP_REFERENCE_IS_FIRST[]         = "REFERENCE_IS_FIRST";
+constexpr char COMMAND_ICP_MIN_ERROR_DIIF[]             = "MIN_ERROR_DIFF";
+constexpr char COMMAND_ICP_ITERATION_COUNT[]            = "ITER";
+constexpr char COMMAND_ICP_OVERLAP[]                    = "OVERLAP";
+constexpr char COMMAND_ICP_ADJUST_SCALE[]               = "ADJUST_SCALE";
+constexpr char COMMAND_ICP_RANDOM_SAMPLING_LIMIT[]      = "RANDOM_SAMPLING_LIMIT";
+constexpr char COMMAND_ICP_ENABLE_FARTHEST_REMOVAL[]    = "FARTHEST_REMOVAL";
+constexpr char COMMAND_ICP_USE_MODEL_SF_AS_WEIGHT[]     = "MODEL_SF_AS_WEIGHTS";
+constexpr char COMMAND_ICP_USE_DATA_SF_AS_WEIGHT[]      = "DATA_SF_AS_WEIGHTS";
+constexpr char COMMAND_ICP_ROT[]                        = "ROT";
+constexpr char COMMAND_PLY_EXPORT_FORMAT[]              = "PLY_EXPORT_FMT";
+constexpr char COMMAND_COMPUTE_GRIDDED_NORMALS[]        = "COMPUTE_NORMALS";
+constexpr char COMMAND_INVERT_NORMALS[]					= "INVERT_NORMALS";
+constexpr char COMMAND_COMPUTE_OCTREE_NORMALS[]         = "OCTREE_NORMALS";
+constexpr char COMMAND_CONVERT_NORMALS_TO_DIP[]         = "NORMALS_TO_DIP";
+constexpr char COMMAND_CONVERT_NORMALS_TO_SFS[]         = "NORMALS_TO_SFS";
+constexpr char COMMAND_CLEAR_NORMALS[]                  = "CLEAR_NORMALS";
+constexpr char COMMAND_MESH_VOLUME[]                    = "MESH_VOLUME";
+constexpr char COMMAND_VOLUME_TO_FILE[]                 = "TO_FILE";
+constexpr char COMMAND_SAVE_CLOUDS[]                    = "SAVE_CLOUDS";
+constexpr char COMMAND_SAVE_MESHES[]                    = "SAVE_MESHES";
+constexpr char COMMAND_AUTO_SAVE[]                      = "AUTO_SAVE";
+constexpr char COMMAND_LOG_FILE[]                       = "LOG_FILE";
+constexpr char COMMAND_CLEAR[]                          = "CLEAR";
+constexpr char COMMAND_CLEAR_CLOUDS[]                   = "CLEAR_CLOUDS";
+constexpr char COMMAND_POP_CLOUDS[]                     = "POP_CLOUDS";
+constexpr char COMMAND_CLEAR_MESHES[]                   = "CLEAR_MESHES";
+constexpr char COMMAND_POP_MESHES[]                     = "POP_MESHES";
+constexpr char COMMAND_NO_TIMESTAMP[]                   = "NO_TIMESTAMP";
+constexpr char COMMAND_MOMENT[]                         = "MOMENT";
+constexpr char COMMAND_FEATURE[]                        = "FEATURE";
 
 //options / modifiers
-constexpr char COMMAND_MAX_THREAD_COUNT[] = "MAX_TCOUNT";
-constexpr char OPTION_ALL_AT_ONCE[] = "ALL_AT_ONCE";
-constexpr char OPTION_ON[] = "ON";
-constexpr char OPTION_OFF[] = "OFF";
-constexpr char OPTION_LAST[] = "LAST";
-constexpr char OPTION_FILE_NAMES[] = "FILE";
-constexpr char OPTION_ORIENT[] = "ORIENT";
-constexpr char OPTION_MODEL[] = "MODEL";
+constexpr char COMMAND_MAX_THREAD_COUNT[]               = "MAX_TCOUNT";
+constexpr char OPTION_ALL_AT_ONCE[]                     = "ALL_AT_ONCE";
+constexpr char OPTION_ON[]                              = "ON";
+constexpr char OPTION_OFF[]                             = "OFF";
+constexpr char OPTION_LAST[]                            = "LAST";
+constexpr char OPTION_FILE_NAMES[]                      = "FILE";
+constexpr char OPTION_ORIENT[]                          = "ORIENT";
+constexpr char OPTION_MODEL[]                           = "MODEL";
 
 CommandChangeOutputFormat::CommandChangeOutputFormat(const QString& name, const QString& keyword)
 	: ccCommandLineInterface::Command(name, keyword)
@@ -562,6 +564,71 @@ bool CommandClearNormals::process(ccCommandLineInterface &cmd)
 	}
 
 	return true;
+}
+
+CommandInvertNormal::CommandInvertNormal()
+    : ccCommandLineInterface::Command(QObject::tr("Invert normals"), COMMAND_INVERT_NORMALS)
+{}
+
+bool CommandInvertNormal::process(ccCommandLineInterface &cmd)
+{
+    cmd.print(QObject::tr("[INVERT NORMALS]"));
+
+    if (cmd.clouds().empty() && cmd.meshes().empty())
+    {
+        return cmd.error(QObject::tr("No input point cloud or mesh (be sure to open one with \"-%1 [cloud filename]\" before \"-%2\")").arg(COMMAND_OPEN, COMMAND_INVERT_NORMALS));
+    }
+
+    for (CLCloudDesc& thisCloudDesc : cmd.clouds())
+    {
+        ccPointCloud* cloud = thisCloudDesc.pc;
+
+        if (!cloud->hasNormals())
+        {
+            cmd.warning(QObject::tr("Cloud %1 has no normals").arg(cloud->getName()));
+            continue;
+        }
+
+        cloud->invertNormals();
+
+        if (cmd.autoSaveMode())
+        {
+            QString errorStr = cmd.exportEntity(thisCloudDesc, "_INVERTED_NORMALS");
+            if (!errorStr.isEmpty())
+            {
+                return cmd.error(errorStr);
+            }
+        }
+    }
+
+    for (CLMeshDesc& thisMeshDesc : cmd.meshes())
+    {
+        ccMesh* mesh = ccHObjectCaster::ToMesh(thisMeshDesc.mesh);
+        if (!mesh)
+        {
+            assert(false);
+            continue;
+        }
+
+        if (!mesh->hasNormals())
+        {
+            cmd.warning(QObject::tr("Mesh %1 has no normals").arg(mesh->getName()));
+            continue;
+        }
+
+        mesh->invertNormals();
+
+        if (cmd.autoSaveMode())
+        {
+            QString errorStr = cmd.exportEntity(thisMeshDesc, "_INVERTED_NORMALS");
+            if (!errorStr.isEmpty())
+            {
+                return cmd.error(errorStr);
+            }
+        }
+    }
+
+    return true;
 }
 
 CommandOctreeNormal::CommandOctreeNormal()
@@ -4105,6 +4172,107 @@ bool CommandSFOperation::process(ccCommandLineInterface &cmd)
 	}
 
 	return true;
+}
+
+CommandSFRename::CommandSFRename()
+    : ccCommandLineInterface::Command(QObject::tr("Rename SF"), COMMAND_RENAME_SF)
+{}
+
+bool CommandSFRename::process(ccCommandLineInterface &cmd)
+{
+    cmd.print(QObject::tr("[RENAME SF]"));
+
+    if (cmd.arguments().size() < 2)
+    {
+        return cmd.error(QObject::tr("Missing parameter(s): SF index and/or scalar field name after '%1' (2 values expected)").arg(COMMAND_RENAME_SF));
+    }
+
+    //read sf index
+    int sfIndex = -1;
+    bool ok = true;
+    QString sfIndexStr = cmd.arguments().takeFirst();
+    if (sfIndexStr.toUpper() == OPTION_LAST)
+    {
+        sfIndex = -2;
+    }
+    else
+    {
+        sfIndex = sfIndexStr.toInt(&ok);
+    }
+
+    if (!ok || sfIndex == -1)
+    {
+        return cmd.error(QObject::tr("Invalid SF index! (after %1)").arg(COMMAND_SF_OP));
+    }
+
+    //read the SF name
+    QString sfName = cmd.arguments().takeFirst();
+
+    //apply operation on clouds
+    for (CLCloudDesc& cloudDesc : cmd.clouds())
+    {
+        ccPointCloud* cloud = cloudDesc.pc;
+        if (cloud && cloud->getNumberOfScalarFields() != 0 && sfIndex < static_cast<int>(cloud->getNumberOfScalarFields()))
+        {
+            int thisSFIndex = (sfIndex < 0 ? static_cast<int>(cloud->getNumberOfScalarFields()) - 1 : sfIndex);
+            int indexOfSFWithSameName = cloud->getScalarFieldIndexByName(qPrintable(sfName));
+            if (indexOfSFWithSameName >= 0 && thisSFIndex != indexOfSFWithSameName)
+            {
+                return cmd.error("A SF with the same name is already defined on cloud " + cloud->getName());
+            }
+            cloudViewer::ScalarField* sf = cloud->getScalarField(thisSFIndex);
+            if (!sf)
+            {
+                assert(false);
+                return cmd.error("Internal error: invalid SF index");
+            }
+            sf->setName(qPrintable(sfName));
+
+            if (cmd.autoSaveMode())
+            {
+                QString errorStr = cmd.exportEntity(cloudDesc, "SF_RENAMED");
+                if (!errorStr.isEmpty())
+                {
+                    return cmd.error(errorStr);
+                }
+            }
+        }
+    }
+
+    //and meshes!
+    for (CLMeshDesc& meshDesc : cmd.meshes())
+    {
+        bool isLocked = false;
+        ccGenericMesh* mesh = meshDesc.mesh;
+        ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(mesh, &isLocked);
+        if (cloud && !isLocked && cloud->getNumberOfScalarFields() != 0 && sfIndex < static_cast<int>(cloud->getNumberOfScalarFields()))
+        {
+            int thisSFIndex = (sfIndex < 0 ? static_cast<int>(cloud->getNumberOfScalarFields()) - 1 : sfIndex);
+            int indexOfSFWithSameName = cloud->getScalarFieldIndexByName(qPrintable(sfName));
+            if (indexOfSFWithSameName >= 0 && thisSFIndex != indexOfSFWithSameName)
+            {
+                return cmd.error("A SF with the same name is already defined on cloud " + cloud->getName());
+            }
+            cloudViewer::ScalarField* sf = cloud->getScalarField(thisSFIndex);
+            if (!sf)
+            {
+                assert(false);
+                return cmd.error("Internal error: invalid SF index");
+            }
+            sf->setName(qPrintable(sfName));
+
+            if (cmd.autoSaveMode())
+            {
+                QString errorStr = cmd.exportEntity(meshDesc, "SF_RENAMED");
+                if (!errorStr.isEmpty())
+                {
+                    return cmd.error(errorStr);
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 CommandICP::CommandICP()
