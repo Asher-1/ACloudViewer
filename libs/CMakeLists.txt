@@ -39,6 +39,10 @@ add_subdirectory( OpenGLEngine )
 
 add_subdirectory( CVViewer )
 
+if(BUILD_RECONSTRUCTION)
+    add_subdirectory( Reconstruction )
+endif()
+
 # ECV PYTHON LIB
 if (BUILD_PYTHON_MODULE)
     add_subdirectory( Python )

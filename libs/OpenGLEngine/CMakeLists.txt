@@ -87,9 +87,6 @@ target_link_libraries(  ${PROJECT_NAME} PUBLIC
                                         ECV_DB_LIB
                                         ECV_IO_LIB)
 
-# Qt
-#target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Core)
-
 cloudViewer_show_and_abort_on_warning(${PROJECT_NAME})
 cloudViewer_set_global_properties(${PROJECT_NAME})
 cloudViewer_set_cloudViewer_lib_properties(${PROJECT_NAME})
