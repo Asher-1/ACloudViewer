@@ -238,6 +238,8 @@ function(import_3rdparty_library name)
             else()
                 set(installed_library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_${name}_${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
             endif()
+#            message("library_filename: " ${arg_LIB_DIR}/${library_filename})
+#            message("incl_path: " ${incl_path})
             target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
             if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
                 install(FILES ${arg_LIB_DIR}/${library_filename}
@@ -285,9 +287,9 @@ function(import_shared_3rdparty_library name)
         foreach(arg_LIBRARY IN LISTS arg_LIBRARIES)
             set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${arg_LIBRARY}${CMAKE_SHARED_LIBRARY_SUFFIX})
             if(libcount EQUAL 1)
-                set(installed_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${PROJECT_NAME}_${name}${CMAKE_SHARED_LIBRARY_SUFFIX})
+                set(installed_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}_${name}${CMAKE_SHARED_LIBRARY_SUFFIX})
             else()
-                set(installed_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${PROJECT_NAME}_${name}_${arg_LIBRARY}${CMAKE_SHARED_LIBRARY_SUFFIX})
+                set(installed_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}_${name}_${arg_LIBRARY}${CMAKE_SHARED_LIBRARY_SUFFIX})
             endif()
             target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
             if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
@@ -639,8 +641,8 @@ if(NOT USE_SYSTEM_PNG)
     )
     set(ZLIB_TARGET "3rdparty_zlib")
     add_dependencies(3rdparty_zlib ext_zlib)
-	set(ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
-	set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS})
+    set(ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
+    set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS})
 
     include(${CloudViewer_3RDPARTY_DIR}/libpng/libpng.cmake)
     import_3rdparty_library(3rdparty_libpng
@@ -1218,31 +1220,77 @@ if (WITH_IPPICV)
     endif()
 endif ()
 
-# AliceVision
-#if(USE_SYSTEM_ALICEVISION)
-#    find_package(AliceVision CONFIG REQUIRED)
-#    if(AliceVision_FOUND)
-#        message(STATUS "Found AliceVision : ${AliceVision_FOUND}")
-#        message(STATUS "Found AliceVision version: ${AliceVision_VERSION}")
-#        if(NOT BUILD_SHARED_LIBS)
-#            list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES aliceVision_system aliceVision_sfmDataIO)
-#        endif()
-#        set(ALICEVISION_TARGET aliceVision_system aliceVision_sfmDataIO)
-#    else()
-#        message(STATUS "Unable to find installed third-party library AliceVision")
-#        set(USE_SYSTEM_ALICEVISION OFF)
-#    endif()
-#endif()
-#if(NOT USE_SYSTEM_ALICEVISION)
-#    include(${CloudViewer_3RDPARTY_DIR}/aliceVision/aliceVision_download.cmake)
-#    import_shared_3rdparty_library(3rdparty_alicevision
-#        INCLUDE_DIRS ${AliceVision_DIR}
-#        LIB_DIR ${AliceVision_ROOT}/lib
-#        LIBRARIES ${AliceVision_LIBRARIES}
+if(BUILD_RECONSTRUCTION)
+
+    include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
+    import_3rdparty_library(3rdparty_freeimage
+        INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
+        LIB_DIR      ${FREEIMAGE_LIB_DIR}
+        LIBRARIES    ${FREEIMAGE_LIBRARIES}
+    )
+    set(FREEIMAGE_TARGET "3rdparty_freeimage")
+    add_dependencies(3rdparty_freeimage ext_freeimage)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
+
+#    include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
+#    import_3rdparty_library(3rdparty_gflags
+#        INCLUDE_DIRS ${GFLAGS_INCLUDE_DIRS}
+#        LIB_DIR      ${GFLAGS_LIB_DIR}
+#        LIBRARIES    ${GFLAGS_LIBRARIES}
 #    )
-#    set(ALICEVISION_TARGET "3rdparty_alicevision")
-#endif()
-#list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${ALICEVISION_TARGET}")
+#    set(GFLAGS_TARGET "3rdparty_gflags")
+#    add_dependencies(3rdparty_gflags ext_gflags)
+
+#    include(${CloudViewer_3RDPARTY_DIR}/glog/glog_build.cmake)
+#    import_3rdparty_library(3rdparty_glog
+#        INCLUDE_DIRS ${GLOG_INCLUDE_DIRS}
+#        LIB_DIR      ${GLOG_LIB_DIR}
+#        LIBRARIES    ${GLOG_LIBRARIES}
+#    )
+#    set(GLOG_TARGET "3rdparty_glog")
+#    add_dependencies(3rdparty_glog ext_glog)
+#    add_dependencies(ext_glog ext_gflags)
+
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
+
+#    include(${CloudViewer_3RDPARTY_DIR}/lapack/lapack_build.cmake)
+#    import_3rdparty_library(3rdparty_lapack
+#        INCLUDE_DIRS ${LAPACK_INCLUDE_DIRS}
+#        LIB_DIR      ${LAPACK_LIB_DIR}
+#        LIBRARIES    ${LAPACKBLAS_LIBRARIES}
+#    )
+#    set(LAPACK_TARGET "3rdparty_lapack")
+#    add_dependencies(3rdparty_lapack ext_lapack)
+
+#    include(${CloudViewer_3RDPARTY_DIR}/suitesparse/suitesparse_build.cmake)
+#    import_3rdparty_library(3rdparty_suitesparse
+#        INCLUDE_DIRS ${SUITESPARSE_INCLUDE_DIRS}
+#        LIB_DIR      ${SUITESPARSE_LIB_DIR}
+#        LIBRARIES    ${SUITESPARSE_LIBRARIES}
+#    )
+#    set(SUITESPARSE_TARGET "3rdparty_suitesparse")
+#    add_dependencies(3rdparty_suitesparse ext_suitesparse)
+#    add_dependencies(ext_suitesparse ext_lapack)
+
+#    include(${CloudViewer_3RDPARTY_DIR}/ceres-solver/ceres_build.cmake)
+#    import_3rdparty_library(3rdparty_ceres
+#        INCLUDE_DIRS ${CERES_INCLUDE_DIRS}
+#        LIB_DIR      ${CERES_LIB_DIR}
+#        LIBRARIES    ${CERES_LIBRARIES}
+#    )
+#    set(CERES_TARGET "3rdparty_ceres")
+#    add_dependencies(3rdparty_ceres ext_ceres)
+#    add_dependencies(ext_ceres ext_glog ${EIGEN3_TARGET})
+
+#    # Putting zlib after libpng somehow works for Ubuntu.
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${CERES_TARGET}")
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${LAPACK_TARGET}")
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${SUITESPARSE_TARGET}")
+#    include(${CloudViewer_3RDPARTY_DIR}/reconstruction/reconstruction_colmap.cmake)
+endif()
 
 # ransac_sd.
 #Causes the sub clouds to be generated as partial clones of original cloud
@@ -1263,7 +1311,6 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
 list(APPEND 3RDPARTY_LIBRARIES
      ${GLFW_LIBRARIES}
 )
-
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS})
 set(3RDPARTY_LIBRARY_DIRS ${3RDPARTY_LIBRARY_DIRS})
-set(3RDPARTY_LIBRARIES    ${3RDPARTY_LIBRARIES}   )
+set(3RDPARTY_LIBRARIES    ${3RDPARTY_LIBRARIES})
