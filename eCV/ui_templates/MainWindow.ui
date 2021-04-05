@@ -73,7 +73,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>22</height>
+     <height>28</height>
     </rect>
    </property>
    <property name="font">
@@ -183,6 +183,7 @@
     <addaction name="actionOrthogonalProjection"/>
     <addaction name="action3DView"/>
     <addaction name="menuAngle_view"/>
+    <addaction name="actionSaveViewportAsObject"/>
     <addaction name="actionConsole"/>
     <addaction name="actionZoomAndCenter"/>
     <addaction name="actionResetGUIElementsPos"/>
@@ -781,44 +782,6 @@ QTreeView::branch:open:has-children:has-siblings  {
     </layout>
    </widget>
   </widget>
-  <widget class="QToolBar" name="ViewToolBar">
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="windowTitle">
-    <string>Viewing tools</string>
-   </property>
-   <property name="toolTip">
-    <string>Viewing tools</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>LeftToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionDisplayOptions"/>
-   <addaction name="actionEditCamera"/>
-   <addaction name="actionScreenShot"/>
-   <addaction name="action3DView"/>
-   <addaction name="actionToggleOrientationMarker"/>
-   <addaction name="actionShowPivot"/>
-   <addaction name="actionResetPivot"/>
-   <addaction name="actionAutoPickPivot"/>
-   <addaction name="actionZoomAndCenter"/>
-   <addaction name="actionGlobalZoom"/>
-   <addaction name="actionSetViewTop"/>
-   <addaction name="actionSetViewFront"/>
-   <addaction name="actionSetViewLeft"/>
-   <addaction name="actionSetViewBack"/>
-   <addaction name="actionSetViewRight"/>
-   <addaction name="actionSetViewBottom"/>
-   <addaction name="actionSetViewIso1"/>
-   <addaction name="actionSetViewIso2"/>
-  </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="windowTitle">
     <string>Main tools</string>
@@ -917,6 +880,44 @@ QTreeView::branch:open:has-children:has-siblings  {
    </attribute>
    <addaction name="actionSemanticAnnotation"/>
    <addaction name="actionBoxAnnotation"/>
+  </widget>
+  <widget class="QToolBar" name="ViewToolBar">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="windowTitle">
+    <string>Viewing tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Viewing tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionDisplayOptions"/>
+   <addaction name="actionEditCamera"/>
+   <addaction name="actionScreenShot"/>
+   <addaction name="action3DView"/>
+   <addaction name="actionToggleOrientationMarker"/>
+   <addaction name="actionShowPivot"/>
+   <addaction name="actionResetPivot"/>
+   <addaction name="actionAutoPickPivot"/>
+   <addaction name="actionZoomAndCenter"/>
+   <addaction name="actionGlobalZoom"/>
+   <addaction name="actionSetViewTop"/>
+   <addaction name="actionSetViewFront"/>
+   <addaction name="actionSetViewLeft"/>
+   <addaction name="actionSetViewBack"/>
+   <addaction name="actionSetViewRight"/>
+   <addaction name="actionSetViewBottom"/>
+   <addaction name="actionSetViewIso1"/>
+   <addaction name="actionSetViewIso2"/>
   </widget>
   <action name="actionOpen">
    <property name="icon">
@@ -3416,6 +3417,24 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionColorFromScalarField">
    <property name="text">
     <string>From Scalar fields</string>
+   </property>
+  </action>
+  <action name="actionSaveViewportAsObject">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqEyeball.png</normaloff>:/Resources/images/svg/pqEyeball.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save viewport as object</string>
+   </property>
+   <property name="statusTip">
+    <string>Save viewport as object</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+V</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
    </property>
   </action>
  </widget>

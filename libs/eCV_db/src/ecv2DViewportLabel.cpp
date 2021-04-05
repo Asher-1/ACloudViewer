@@ -138,20 +138,15 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
 
 	if (m_params.perspectiveView)
 	{
-		if (params.fov != m_params.fov || 
-			params.perspectiveAspectRatio != m_params.perspectiveAspectRatio)
+		if (params.fov_deg != m_params.fov_deg || 
+			params.cameraAspectRatio != m_params.cameraAspectRatio)
 			return;
 
-        if (cloudViewer::GreaterThanEpsilon( (params.pivotPoint - m_params.pivotPoint).norm() )
-            || cloudViewer::GreaterThanEpsilon( (params.cameraCenter - m_params.cameraCenter).norm() ))
+        if (cloudViewer::GreaterThanEpsilon( (params.getPivotPoint() - m_params.getPivotPoint()).norm() )
+            || cloudViewer::GreaterThanEpsilon( (params.getCameraCenter() - m_params.getCameraCenter()).norm() ))
         {
             return;
         }
-	}
-	else
-	{
-		if (params.orthoAspectRatio != m_params.orthoAspectRatio)
-			return;
 	}
 
 	float relativeZoom = 1.0f;
@@ -163,9 +158,9 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
 		float winTotalZoom = params.zoom / params.pixelSize;
 		relativeZoom = winTotalZoom / totalZoom;
 
-		CCVector3d dC = m_params.cameraCenter - params.cameraCenter;
+        CCVector3d dC = m_params.getCameraCenter() - params.getCameraCenter();
 
-		CCVector3d P = m_params.pivotPoint - params.pivotPoint;
+        CCVector3d P = m_params.getPivotPoint() - params.getPivotPoint();
 		m_params.viewMat.apply(P);
 
 		dx = static_cast<float>(dC.x + P.x);

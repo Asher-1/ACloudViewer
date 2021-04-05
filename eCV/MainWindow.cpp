@@ -109,6 +109,7 @@
 //dialogs
 #include "ecvAlignDlg.h"
 #include "ecvAboutDialog.h"
+#include "ecvRenderToFileDlg.h"
 #include "ecvLabelingDlg.h"
 #include "ecvUnrollDlg.h"
 #include "ecvSORFilterDlg.h"
@@ -144,6 +145,11 @@
 // other
 #include "db_tree/ecvDBRoot.h"
 #include "pluginManager/ecvPluginUIManager.h"
+
+// Reconstruction
+#ifdef USE_COLMAP_MODULE
+#include "reconstruction/ReconstructionWidget.h"
+#endif
 
 // QPCL_ENGINE_LIB
 #ifdef USE_PCL_BACKEND
@@ -245,8 +251,11 @@ MainWindow::MainWindow()
     , m_mousePosLabel(nullptr)
 	, m_systemInfoLabel(nullptr)
 	, m_currentFullWidget(nullptr)
-	, m_exclusiveFullscreen(false)
+    , m_exclusiveFullscreen(false)
     , m_lastViewMode(VIEWMODE::ORTHOGONAL)
+#ifdef USE_COLMAP_MODULE
+    , m_rcw(nullptr)
+#endif
 {
     m_ui->setupUi(this);
 
@@ -269,6 +278,11 @@ MainWindow::MainWindow()
 
     // connect actions
     connectActions();
+
+    // Reconstruction
+#ifdef USE_COLMAP_MODULE
+    initReconstructions();
+#endif
 
     freezeUI(false);
 
@@ -360,6 +374,35 @@ MainWindow::MainWindow()
     ecvConsole::Print(tr("[ErowCloudViewer Software start], Welcome to use ErowCloudViewer"));
 }
 
+#ifdef USE_COLMAP_MODULE
+void MainWindow::initReconstructions()
+{
+    // init reconstructions
+    if (!m_rcw)
+    {
+        m_rcw = new cloudViewer::ReconstructionWidget(this);
+    }
+
+    // Set up dynamic tool bars
+    for (QToolBar *toolbar : m_rcw->getReconstructionToolbars())
+    {
+        addToolBar(Qt::TopToolBarArea, toolbar);
+    }
+
+    // Set up dynamic menus
+    QMenu* rc_menu = new QMenu(tr("Reconstruction"), this);
+    for (QMenu *menu : m_rcw->getReconstructionMenus())
+    {
+        rc_menu->addMenu(menu);
+    }
+    m_ui->menuBar->insertMenu(m_ui->menuDisplay->menuAction(), rc_menu);
+
+    // Set docker widget
+    this->addDockWidget(Qt::BottomDockWidgetArea, m_rcw->getLogWidget());
+
+}
+#endif
+
 MainWindow::~MainWindow() {
     cancelPreviousPickingOperation(false); //just in case
 
@@ -388,6 +431,11 @@ MainWindow::~MainWindow() {
     m_plpDlg = nullptr;
     m_pprDlg = nullptr;
     m_pfDlg = nullptr;
+
+    // Reconstruction
+#ifdef USE_COLMAP_MODULE
+    m_rcw = nullptr;
+#endif
 
     //release all 'overlay' dialogs
     while (!m_mdiDialogs.empty())
@@ -690,7 +738,8 @@ void MainWindow::connectActions()
 	connect(m_ui->actionResetGUIElementsPos, &QAction::triggered, this, &MainWindow::doActionResetGUIElementsPos);
 	connect(m_ui->actionGlobalZoom, &QAction::triggered, this, &MainWindow::setGlobalZoom);
 	connect(m_ui->actionZoomAndCenter, &QAction::triggered, this, &MainWindow::zoomOnSelectedEntities);
-	connect(m_ui->actionDisplayOptions, &QAction::triggered, this, &MainWindow::showDisplayOptions);
+    connect(m_ui->actionSaveViewportAsObject, &QAction::triggered, this, &MainWindow::doActionSaveViewportAsCamera);
+    connect(m_ui->actionDisplayOptions, &QAction::triggered, this, &MainWindow::showDisplayOptions);
 	connect(m_ui->actionSetViewTop, &QAction::triggered, this, [=]() { setView(CC_TOP_VIEW); });
 	connect(m_ui->actionSetViewBottom, &QAction::triggered, this, [=]() { setView(CC_BOTTOM_VIEW); });
 	connect(m_ui->actionSetViewFront, &QAction::triggered, this, [=]() { setView(CC_FRONT_VIEW); });
@@ -811,7 +860,6 @@ void MainWindow::initStatusBar()
         m_ui->statusBar->addPermanentWidget(m_systemInfoLabel);
     }
 
-    //QMainWindow::statusBar()->setStyleSheet(QString("QStatusBar::item{border: 0px}"));
     QMainWindow::statusBar()->showMessage(tr("Ready"));
 }
 
@@ -1015,7 +1063,6 @@ void MainWindow::updateViewModePopUpMenu()
 		m_viewModePopupButton->setEnabled(false);
 	}
 }
-
 
 void MainWindow::addWidgetToQMdiArea(QWidget* viewWidget)
 {
@@ -1491,33 +1538,33 @@ void MainWindow::doActionEditCamera()
 	updateOverlayDialogsPlacement();
 }
 
+static unsigned s_viewportIndex = 0;
+void MainWindow::doActionSaveViewportAsCamera()
+{
+    QWidget* win = getActiveWindow();
+    if (!win)
+        return;
+
+    cc2DViewportObject* viewportObject = new cc2DViewportObject(QString("Viewport #%1").arg(++s_viewportIndex));
+    viewportObject->setParameters(ecvDisplayTools::GetViewportParameters());
+
+    addToDB(viewportObject);
+}
+
 void MainWindow::doActionScreenShot()
 {
-	//default output path (+ filename)
-	QString currentPath = ecvSettingManager::getValue(ecvPS::SaveFile(), ecvPS::CurrentPath(), ecvFileUtils::defaultDocPath()).toString();
-	QString filters = "*.png";
-	QString selectedFilter = filters;
-	QString selectedFilename = QFileDialog::getSaveFileName(
-		this,
-		tr("export current screen to image"), 
-		currentPath, 
-		filters,
-		&selectedFilter,
-		ECVFileDialogOptions());
+    QWidget* win = getActiveWindow();
+    if (!win)
+        return;
 
-	if (selectedFilename.isEmpty())
-	{
-		//process cancelled by the user
-		return;
-	}
+    ccRenderToFileDlg rtfDlg(static_cast<unsigned>(win->width()),
+                             static_cast<unsigned>(win->height()), this);
 
-	ecvDisplayTools::SaveScreenshot(CVTools::FromQString(selectedFilename));
-
-	ecvConsole::Print(tr("Screen Shot has been saved in %1").arg(selectedFilename));
-
-	//we update current file path
-	currentPath = QFileInfo(selectedFilename).absolutePath();
-	ecvSettingManager::setValue(ecvPS::SaveFile(), ecvPS::CurrentPath(), currentPath);
+    if (rtfDlg.exec())
+    {
+        QApplication::processEvents();
+        ecvDisplayTools::RenderToFile(rtfDlg.getFilename(), rtfDlg.getZoom(), rtfDlg.dontScalePoints(), rtfDlg.renderOverlayItems());
+    }
 }
 
 void MainWindow::doActionToggleOrientationMarker(bool state)

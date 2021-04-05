@@ -49,13 +49,14 @@
 // VTK
 #include <vtkPointPicker.h>
 #include <vtkAreaPicker.h>
-#include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkTransform.h>
-#include <vtkRendererCollection.h>
 #include <vtkCamera.h>
 #include <vtkAxes.h>
 #include <vtkTubeFilter.h>
+#include <vtkRenderWindow.h>
+#include <vtkRendererCollection.h>
+#include <vtkWindowToImageFilter.h>
 #include <vtkQImageToImageSource.h>
 
 #include <vtkTextActor.h>
@@ -1956,8 +1957,13 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 	{
 		//removeOrientationMarkerWidgetAxes();
 		hideOrientationMarkerWidgetAxes();
-		CVLog::Print("Hide Orientation Marker Widget Axes!");
-	}
+        CVLog::Print("Hide Orientation Marker Widget Axes!");
+    }
+
+    bool PCLVis::pclMarkerAxesShown()
+    {
+        return m_axes_widget ? m_axes_widget->GetEnabled() : false;
+    }
 
 	void PCLVis::hideOrientationMarkerWidgetAxes()
 	{
@@ -2066,12 +2072,10 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 			if (m_axes_widget->GetEnabled())
 			{
 				m_axes_widget->SetEnabled(false);
-				CVLog::Print("Hide Orientation Marker Widget Axes!");
 			}
 			else
 			{
 				m_axes_widget->SetEnabled(true);
-				CVLog::Print("Show Orientation Marker Widget Axes!");
 			}
 		}
 		else
@@ -2440,8 +2444,92 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		else
 		{
 			return std::string("");
-		}
-	}
+        }
+    }
+
+    QImage PCLVis::renderToImage(int zoomFactor, bool renderOverlayItems, bool silent, int viewport)
+    {
+        bool coords_changed = false;
+        bool lengend_changed = false;
+        bool coords_shown = ecvDisplayTools::OrientationMarkerShown();
+        bool lengend_shown = ecvDisplayTools::OverlayEntitiesAreDisplayed();
+        if (lengend_shown) {
+            ecvDisplayTools::DisplayOverlayEntities(false);
+            lengend_changed = true;
+        }
+        if (renderOverlayItems) {
+            if (!coords_shown) {
+                ecvDisplayTools::ToggleOrientationMarker(true);
+                coords_changed = true;
+            }
+        } else {
+            if (coords_shown) {
+                ecvDisplayTools::ToggleOrientationMarker(false);
+                coords_changed = true;
+            }
+        }
+
+        vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
+                vtkSmartPointer<vtkWindowToImageFilter>::New();
+        windowToImageFilter->SetInput(getRenderWindow());
+        #if VTK_MAJOR_VERSION > 8 || VTK_MAJOR_VERSION == 8 && VTK_MINOR_VERSION >= 1
+            windowToImageFilter->SetScale(zoomFactor); //image quality
+        #else
+            windowToImageFilter->SetMagnification(zoomFactor); //image quality
+        #endif
+        windowToImageFilter->SetInputBufferTypeToRGBA(); //also record the alpha (transparency) channel
+        windowToImageFilter->ReadFrontBufferOff(); // read from the back buffer
+        windowToImageFilter->Update();
+
+        vtkImageData* imageData = windowToImageFilter->GetOutput();
+        if (!imageData)
+        {
+            if (!silent)
+                CVLog::Error("[PCLVis::renderToImage] invalid vtkImageData!");
+            return QImage();
+        }
+        int width = imageData->GetDimensions()[0];
+        int height = imageData->GetDimensions()[1];
+
+        QImage outputImage( width, height, QImage::Format_RGB32 );
+        QRgb *rgbPtr = reinterpret_cast<QRgb *>(outputImage.bits()) + width * (height - 1);
+        unsigned char *colorsPtr = reinterpret_cast<unsigned char *>(imageData->GetScalarPointer());
+        if (!colorsPtr)
+        {
+            if (!silent)
+                CVLog::Error("[PCLVis::renderToImage] invalid scalar pointer of vtkImageData!");
+            return QImage();
+        }
+
+        // Loop over the vtkImageData contents.
+        for ( int row = 0; row < height; row++ )
+        {
+          for ( int col = 0; col < width; col++ )
+          {
+            // Swap the vtkImageData RGB values with an equivalent QColor
+            *( rgbPtr++ ) = QColor( colorsPtr[0], colorsPtr[1], colorsPtr[2] ).rgb();
+            colorsPtr += imageData->GetNumberOfScalarComponents();
+          }
+
+          rgbPtr -= width * 2;
+        }
+
+        if (outputImage.isNull())
+        {
+            if (!silent)
+                CVLog::Error("[PCLVis::renderToImage] Direct screen capture failed! (not enough memory?)");
+        }
+
+        if (lengend_changed) {
+            ecvDisplayTools::DisplayOverlayEntities(lengend_shown);
+        }
+
+        if (coords_changed) {
+            ecvDisplayTools::ToggleOrientationMarker(coords_shown);
+        }
+
+        return outputImage;
+    }
 
 	/********************************Interactor Function*********************************/
 

@@ -38,6 +38,7 @@
 #include "exe/sfm.h"
 #include "exe/vocab_tree.h"
 #include "util/version.h"
+#include "pipelines/feature.hpp"
 
 namespace {
 

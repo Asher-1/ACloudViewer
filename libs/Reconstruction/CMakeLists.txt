@@ -128,6 +128,7 @@ if(CMAKE_BUILD_TYPE)
     message(STATUS "Build type specified as ${CMAKE_BUILD_TYPE}")
 else()
     message(STATUS "Build type not specified, using Release")
+    set(CMAKE_BUILD_TYPE Release)
     set(IS_DEBUG OFF)
 endif()
 
@@ -154,6 +155,10 @@ endif()
 if(IS_DEBUG)
     add_definitions("-DEIGEN_INITIALIZE_MATRICES_BY_NAN")
 endif()
+
+# fix eigen alignment bugs for colmap
+add_definitions(-DEIGEN_DONT_ALIGN)
+add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
 
 if(SIMD_ENABLED)
     message(STATUS "Enabling SIMD support")
@@ -261,7 +266,6 @@ include(GenerateVersionDefinitions)
 
 set(COLMAP_INCLUDE_DIRS
     ${BOOST_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIRS}
     ${GLOG_INCLUDE_DIRS}
     ${CERES_INCLUDE_DIRS}
     ${GLEW_INCLUDE_DIRS}
@@ -286,6 +290,11 @@ message("GLOG_INCLUDE_DIRS: " ${GLOG_INCLUDE_DIRS})
 
 if(OPENMP_FOUND)
     list(APPEND COLMAP_EXTERNAL_LIBRARIES ${OpenMP_libomp_LIBRARY})
+endif()
+
+if(Qt5_FOUND AND GUI_ENABLED)
+    list(APPEND COLMAP_INCLUDE_DIRS ${Qt5Core_INCLUDE_DIRS} ${Qt5OpenGL_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS})
+    list(APPEND COLMAP_EXTERNAL_LIBRARIES ${Qt5Core_LIBRARIES} ${Qt5OpenGL_LIBRARIES} ${Qt5Widgets_LIBRARIES})
 endif()
 
 if(CGAL_FOUND)
@@ -379,5 +388,49 @@ set_target_properties(
     EXCLUDE_FROM_ALL 1
     EXCLUDE_FROM_DEFAULT_BUILD 1)
 
-# install (shared) lib to specified destinations
-#InstallSharedLibrary( TARGET ${PROJECT_NAME} )
+################################################################################
+# Install and uninstall scripts
+################################################################################
+
+# Install header files.
+install(DIRECTORY src/
+        DESTINATION include/colmap
+        FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY lib/
+        DESTINATION include/colmap/lib
+        FILES_MATCHING REGEX ".*[.]h|.*[.]hpp|.*[.]inl")
+
+# Generate and install CMake configuration.
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeConfig.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfig.cmake" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfig.cmake"
+        DESTINATION "share/colmap")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeConfigVersion.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfigVersion.cmake" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfigVersion.cmake"
+        DESTINATION "share/colmap")
+
+# Install find_package scripts for dependencies.
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+        DESTINATION share/colmap
+        FILES_MATCHING PATTERN "Find*.cmake")
+
+# Install batch scripts under Windows.
+if(IS_MSVC)
+    install(FILES "scripts/shell/COLMAP.bat" "scripts/shell/RUN_TESTS.bat"
+            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                        GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+            DESTINATION "/")
+endif()
+
+# Install application meny entry under Linux/Unix.
+if(UNIX AND NOT APPLE)
+    install(FILES "doc/COLMAP.desktop" DESTINATION "share/applications")
+endif()
+
+# Configure the uninstallation script.
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeUninstall.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/CMakeUninstall.cmake"
+               IMMEDIATE @ONLY)
+add_custom_target(uninstall_colmap COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/CMakeUninstall.cmake)
+set_target_properties(uninstall_colmap PROPERTIES FOLDER ${CMAKE_TARGETS_ROOT_FOLDER})

@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                   CLOUDVIEWER  PLUGIN: qAnimation                      #
+//#                   CLOUDCOMPARE PLUGIN: qAnimation                      #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -24,21 +24,23 @@
 //Qt
 #include <QObject>
 
+class ccGLWindow;
+
 // Animation plugin
 class qAnimation : public QObject, public ccStdPluginInterface
 {
 	Q_OBJECT
-
 	Q_INTERFACES( ccPluginInterface ccStdPluginInterface )
-	Q_PLUGIN_METADATA(IID "ecvcorp.cloudviewer.plugin.qAnimation" FILE "../info.json")
+
+    Q_PLUGIN_METADATA( IID "ecvcorp.cloudviewer.plugin.qAnimation" FILE "../info.json" )
 
 public:
 
 	//! Default constructor
 	qAnimation(QObject* parent = nullptr);
-	
+
 	virtual ~qAnimation() = default;
-	
+
 	//inherited from ccStdPluginInterface
 	void onNewSelection(const ccHObject::Container& selectedEntities) override;
 	virtual QList<QAction *> getActions() override;
@@ -50,4 +52,4 @@ private:
 	QAction* m_action;
 };
 
-#endif // Q_ANIMATION_PLUGIN_HEADER
+#endif

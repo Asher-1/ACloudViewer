@@ -94,6 +94,12 @@ namespace Ui {
 	class MainViewerClass;
 }
 
+#ifdef USE_COLMAP_MODULE
+namespace cloudViewer {
+    class ReconstructionWidget;
+}
+#endif
+
 class MainWindow : public QMainWindow, public ecvMainAppInterface, public ccPickingListener
 {
 	Q_OBJECT
@@ -368,6 +374,7 @@ private slots:
 	void doActionPerspectiveProjection();
 	void doActionOrthogonalProjection();
 	void doActionEditCamera();
+    void doActionSaveViewportAsCamera();
 	void doActionScreenShot();
 	void doActionToggleOrientationMarker(bool state);
 
@@ -632,6 +639,13 @@ private:
 	/*** plugins ***/
 	//! Manages plugins - menus, toolbars, and the about dialog
 	ccPluginUIManager* m_pluginUIManager;
+
+private:
+
+#ifdef USE_COLMAP_MODULE
+    void initReconstructions();
+    cloudViewer::ReconstructionWidget* m_rcw;
+#endif
 
 signals:
 	//! Signal emitted when the exclusive full screen is toggled

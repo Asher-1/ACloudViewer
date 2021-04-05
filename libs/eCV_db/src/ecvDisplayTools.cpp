@@ -162,7 +162,7 @@ void ecvDisplayTools::Init(ecvDisplayTools* displayTools, QMainWindow* win, bool
 
 	//matrices
 	s_tools.instance->m_viewportParams.viewMat.toIdentity();
-	s_tools.instance->m_viewportParams.cameraCenter.z = -1.0; //don't position the camera on the pivot by default!
+    s_tools.instance->m_viewportParams.setCameraCenter(CCVector3d(0.0, 0.0, 1.0)); //don't position the camera on the pivot by default!
 	s_tools.instance->m_viewMatd.toIdentity();
 	s_tools.instance->m_projMatd.toIdentity();
 
@@ -1090,7 +1090,13 @@ CCVector3d ecvDisplayTools::ToVtkCoordinates(int x, int y, int z)
 void ecvDisplayTools::ToVtkCoordinates(CCVector3d & sP)
 {
 	sP.y = Height() - sP.y; // for vtk coordinates
-	sP *= GetDevicePixelRatio();
+    sP *= GetDevicePixelRatio();
+}
+
+void ecvDisplayTools::ToVtkCoordinates(CCVector2i &sP)
+{
+    sP.y = Height() - sP.y; // for vtk coordinates
+    sP *= GetDevicePixelRatio();
 }
 
 void ecvDisplayTools::SetPivotVisibility(PivotVisibility vis)
@@ -1155,7 +1161,7 @@ void ecvDisplayTools::MoveCamera(float dx, float dy, float dz)
 		s_tools.instance->m_viewportParams.viewMat.transposed().applyRotation(V);
 	}
 
-	SetCameraPos(s_tools.instance->m_viewportParams.cameraCenter + V);
+    SetCameraPos(s_tools.instance->m_viewportParams.getCameraCenter() + V);
 }
 
 void ecvDisplayTools::UpdateActiveItemsList(int x, int y, bool extendToSelectedLabels/*=false*/)
@@ -1244,7 +1250,7 @@ CCVector3d ecvDisplayTools::ConvertMousePositionToOrientation(int x, int y)
 		ccGLCameraParameters camera;
 		GetGLCameraParameters(camera);
 
-		if (!camera.project(s_tools.instance->m_viewportParams.pivotPoint, Q2D))
+        if (!camera.project(s_tools.instance->m_viewportParams.getPivotPoint(), Q2D))
 		{
 			//arbitrary direction
 			return CCVector3d(0, 0, 1);
@@ -1437,7 +1443,8 @@ float ecvDisplayTools::ComputePerspectiveZoom()
 		return 1.0f;
 
 	//Camera center to pivot vector
-	double zoomEquivalentDist = (s_tools.instance->m_viewportParams.cameraCenter - s_tools.instance->m_viewportParams.pivotPoint).norm();
+    double zoomEquivalentDist = (s_tools.instance->m_viewportParams.getCameraCenter() -
+                                 s_tools.instance->m_viewportParams.getPivotPoint()).norm();
     if (cloudViewer::LessThanEpsilon( zoomEquivalentDist ))
 		return 1.0f;
 
@@ -1489,7 +1496,8 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(const CCVector3d& cameraCen
 	}
 
 	//virtual pivot point (i.e. to handle viewer-based mode smoothly)
-	CCVector3d pivotPoint = (s_tools.instance->m_viewportParams.objectCenteredView ? s_tools.instance->m_viewportParams.pivotPoint : cameraCenter);
+    CCVector3d pivotPoint = (s_tools.instance->m_viewportParams.objectCenteredView ?
+                             s_tools.instance->m_viewportParams.getPivotPoint() : cameraCenter);
 
 	//distance between the camera center and the pivot point
 	//warning: in orthographic mode it's important to get the 'real' camera center
@@ -1505,7 +1513,8 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(const CCVector3d& cameraCen
 	double MP = (bbCenter - pivotPoint).norm() + bbHalfDiag;
 
 	//pivot symbol should always be visible in object-based mode (if enabled)
-	if (s_tools.instance->m_pivotSymbolShown && s_tools.instance->m_pivotVisibility != PIVOT_HIDE && 
+    if (s_tools.instance->m_pivotSymbolShown &&
+        s_tools.instance->m_pivotVisibility != PIVOT_HIDE &&
 		withGLfeatures && s_tools.instance->m_viewportParams.objectCenteredView)
 	{
 		double pivotActualRadius = CC_DISPLAYED_PIVOT_RADIUS_PERCENT * 
@@ -1543,7 +1552,8 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(const CCVector3d& cameraCen
 		}
 
 		//compute the aspect ratio
-		double ar = static_cast<double>(s_tools.instance->m_glViewport.width()) / s_tools.instance->m_glViewport.height();
+        double ar = static_cast<double>(s_tools.instance->m_glViewport.width()) /
+                s_tools.instance->m_glViewport.height();
 
 		double currentFov_deg = static_cast<double>(GetFov());
 
@@ -1561,11 +1571,13 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(const CCVector3d& cameraCen
 		//max distance (camera to 'farthest' point)
 		double maxDist = CP + MP;
 
-		double maxDist_pix = maxDist / s_tools.instance->m_viewportParams.pixelSize * s_tools.instance->m_viewportParams.zoom;
+        double maxDist_pix = maxDist / s_tools.instance->m_viewportParams.pixelSize *
+                                       s_tools.instance->m_viewportParams.zoom;
 		maxDist_pix = std::max(maxDist_pix, 1.0);
 
 		double halfW = s_tools.instance->m_glViewport.width() / 2.0;
-		double halfH = s_tools.instance->m_glViewport.height() / 2.0 * s_tools.instance->m_viewportParams.orthoAspectRatio;
+        double halfH = s_tools.instance->m_glViewport.height() / 2.0 *
+                s_tools.instance->m_viewportParams.cameraAspectRatio;
 
 		//save actual zNear and zFar parameters
 		double zNear = -maxDist_pix;
@@ -1606,7 +1618,7 @@ CCVector3d ecvDisplayTools::GetRealCameraCenter()
 	//the camera center is always defined in perspective mode
 	if (s_tools.instance->m_viewportParams.perspectiveView)
 	{
-		return s_tools.instance->m_viewportParams.cameraCenter;
+        return s_tools.instance->m_viewportParams.getCameraCenter();
 	}
 
 	//in orthographic mode, we put the camera at the center of the
@@ -1614,8 +1626,8 @@ CCVector3d ecvDisplayTools::GetRealCameraCenter()
 	ccBBox box;
 	GetVisibleObjectsBB(box);
 
-	return CCVector3d(s_tools.instance->m_viewportParams.cameraCenter.x,
-		s_tools.instance->m_viewportParams.cameraCenter.y,
+    return CCVector3d(s_tools.instance->m_viewportParams.getCameraCenter().x,
+        s_tools.instance->m_viewportParams.getCameraCenter().y,
 		box.isValid() ? box.getCenter().z : 0.0);
 }
 
@@ -1629,14 +1641,14 @@ ccGLMatrixd ecvDisplayTools::ComputeModelViewMatrix(const CCVector3d& cameraCent
 	{
 		//place origin on pivot point
 		viewMatd.setTranslation(/*viewMatd.getTranslationAsVec3D()*/ 
-			-s_tools.instance->m_viewportParams.pivotPoint);
+            -s_tools.instance->m_viewportParams.getPivotPoint());
 
 		//rotation (viewMat is simply a rotation matrix around the pivot here!)
 		viewMatd = s_tools.instance->m_viewportParams.viewMat * viewMatd;
 
 		//go back to initial origin
 		//then place origin on camera center
-		viewMatd.setTranslation(viewMatd.getTranslationAsVec3D() + s_tools.instance->m_viewportParams.pivotPoint - cameraCenter);
+        viewMatd.setTranslation(viewMatd.getTranslationAsVec3D() + s_tools.instance->m_viewportParams.getCameraCenter() - cameraCenter);
 	}
 	else
 	{
@@ -1655,7 +1667,7 @@ ccGLMatrixd ecvDisplayTools::ComputeModelViewMatrix(const CCVector3d& cameraCent
 		if (s_tools.instance->m_glViewport.height() != 0)
 		{
 			double ar = static_cast<double>(s_tools.instance->m_glViewport.width() /
-				(s_tools.instance->m_glViewport.height() * s_tools.instance->m_viewportParams.perspectiveAspectRatio));
+				(s_tools.instance->m_glViewport.height() * s_tools.instance->m_viewportParams.cameraAspectRatio));
 			if (ar < 1.0)
 			{
 				//glScalef(ar, ar, 1.0);
@@ -1668,7 +1680,7 @@ ccGLMatrixd ecvDisplayTools::ComputeModelViewMatrix(const CCVector3d& cameraCent
 	{
 		//apply zoom
 		double totalZoom = static_cast<double>(s_tools.instance->m_viewportParams.zoom / 
-			s_tools.instance->m_viewportParams.pixelSize);
+                                               s_tools.instance->m_viewportParams.pixelSize);
 		//glScalef(totalZoom,totalZoom,totalZoom);
 		scaleMatd.data()[0] = totalZoom;
 		scaleMatd.data()[5] = totalZoom;
@@ -1708,8 +1720,8 @@ void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView)
 	s_tools.instance->m_viewportParams.objectCenteredView = objectCenteredView;
 
 	//Camera center to pivot vector
-	CCVector3d PC = s_tools.instance->m_viewportParams.cameraCenter - 
-		s_tools.instance->m_viewportParams.pivotPoint;
+    CCVector3d PC = s_tools.instance->m_viewportParams.getCameraCenter() -
+        s_tools.instance->m_viewportParams.getPivotPoint();
 
 	if (s_tools.instance->m_viewportParams.perspectiveView)
 	{
@@ -1770,7 +1782,7 @@ void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView)
 		s_tools.instance->m_viewportParams.viewMat.apply(PC);
 	}
 
-	SetCameraPos(s_tools.instance->m_viewportParams.pivotPoint + PC);
+    SetCameraPos(s_tools.instance->m_viewportParams.getPivotPoint() + PC);
 
 	emit s_tools.instance->perspectiveStateChanged();
 	emit s_tools.instance->cameraParamChanged();
@@ -1937,7 +1949,20 @@ ENTITY_TYPE ecvDisplayTools::ConvertToEntityType(const CV_CLASS_ENUM& type) {
 	default:
 		break;
 	}
-	return entityType;
+    return entityType;
+}
+
+void ecvDisplayTools::DisplayOverlayEntities(bool state)
+{
+    s_tools.instance->m_displayOverlayEntities = state;
+    if (!state) {
+        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->bbv_label));
+        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->fs_label));
+        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->psi_label));
+        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->lsi_label));
+        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "Exit"));
+        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "clicked_items"));
+    }
 }
 
 void ecvDisplayTools::SetSceneDB(ccHObject * root)
@@ -2029,7 +2054,7 @@ float ecvDisplayTools::GetFov()
 {
 	return (s_tools.instance->m_bubbleViewModeEnabled ? 
 			s_tools.instance->m_bubbleViewFov_deg :
-			s_tools.instance->m_viewportParams.fov);
+			s_tools.instance->m_viewportParams.fov_deg);
 }
 
 void ecvDisplayTools::SetupProjectiveViewport(const ccGLMatrixd& cameraMatrix,
@@ -2078,10 +2103,10 @@ void ecvDisplayTools::SetAspectRatio(float ar)
 		return;
 	}
 
-	if (s_tools.instance->m_viewportParams.perspectiveAspectRatio != ar)
+	if (s_tools.instance->m_viewportParams.cameraAspectRatio != ar)
 	{
 		//update param
-		s_tools.instance->m_viewportParams.perspectiveAspectRatio = ar;
+		s_tools.instance->m_viewportParams.cameraAspectRatio = ar;
 
 		//and camera state (if perspective view is 'on')
 		if (s_tools.instance->m_viewportParams.perspectiveView)
@@ -2106,10 +2131,10 @@ void ecvDisplayTools::SetFov(float fov_deg)
 	{
 		SetBubbleViewFov(fov_deg);
 	}
-	else if (s_tools.instance->m_viewportParams.fov != fov_deg)
+	else if (s_tools.instance->m_viewportParams.fov_deg != fov_deg)
 	{
 		//update param
-		s_tools.instance->m_viewportParams.fov = fov_deg;
+		s_tools.instance->m_viewportParams.fov_deg = fov_deg;
 		//and camera state (if perspective view is 'on')
 		if (s_tools.instance->m_viewportParams.perspectiveView)
 		{
@@ -2127,7 +2152,7 @@ void ecvDisplayTools::SetFov(float fov_deg)
 				SCREEN_SIZE_MESSAGE);
 		}
 
-		emit s_tools.instance->fovChanged(s_tools.instance->m_viewportParams.fov);
+		emit s_tools.instance->fovChanged(s_tools.instance->m_viewportParams.fov_deg);
 		emit s_tools.instance->cameraParamChanged();
 	}
 }
@@ -2209,17 +2234,17 @@ void ecvDisplayTools::SetPivotPoint(const CCVector3d& P,
 			s_tools.instance->m_viewportParams.objectCenteredView))
 	{
 		//compute the equivalent camera center
-		CCVector3d dP = s_tools.instance->m_viewportParams.pivotPoint - P;
+        CCVector3d dP = s_tools.instance->m_viewportParams.getPivotPoint() - P;
 		CCVector3d MdP = dP; s_tools.instance->m_viewportParams.viewMat.applyRotation(MdP);
-		CCVector3d newCameraPos = s_tools.instance->m_viewportParams.cameraCenter + MdP - dP;
+        CCVector3d newCameraPos = s_tools.instance->m_viewportParams.getCameraCenter() + MdP - dP;
 		SetCameraPos(newCameraPos);
 	}
 
-	s_tools.instance->m_viewportParams.pivotPoint = P;
+    s_tools.instance->m_viewportParams.setPivotPoint(P, true);
 	SetAutoUpateCameraPos(autoUpdateCameraPos);
 	SetCenterOfRotation(P);
 
-	emit s_tools.instance->pivotPointChanged(s_tools.instance->m_viewportParams.pivotPoint);
+    emit s_tools.instance->pivotPointChanged(s_tools.instance->m_viewportParams.getPivotPoint());
 	emit s_tools.instance->cameraParamChanged();
 
 	if (verbose)
@@ -2309,12 +2334,9 @@ bool ecvDisplayTools::RenderToFile(QString filename,
 	{
 		return false;
 	}
-	bool success = false;
 
-	SaveScreenshot(CVTools::FromQString(filename));
-
-#if 0
-	QImage outputImage = renderToImage(zoomFactor, dontScaleFeatures, renderOverlayItems);
+    QImage outputImage = RenderToImage(static_cast<int>(zoomFactor),
+                                       renderOverlayItems, false, 0);
 
 	if (outputImage.isNull())
 	{
@@ -2325,7 +2347,7 @@ bool ecvDisplayTools::RenderToFile(QString filename,
 	if (GetDisplayParameters().drawRoundedPoints)
 	{
 		//convert the image to plain RGB to avoid issues with points transparency when saving to PNG
-		//outputImage = outputImage.convertToFormat(QImage::Format_RGB32);
+        outputImage = outputImage.convertToFormat(QImage::Format_RGB32);
 	}
 
 	bool success = outputImage.convertToFormat(QImage::Format_RGB32).save(filename);
@@ -2337,18 +2359,17 @@ bool ecvDisplayTools::RenderToFile(QString filename,
 	{
 		CVLog::Print(QString("[Snapshot] Failed to save file '%1'!").arg(filename));
 	}
-#endif
 
 	return success;
 }
 
 void ecvDisplayTools::SetCameraPos(const CCVector3d& P)
 {
-	if ((s_tools.instance->m_viewportParams.cameraCenter - P).norm2d() != 0.0)
+    if ((s_tools.instance->m_viewportParams.getCameraCenter() - P).norm2d() != 0.0)
 	{
-		s_tools.instance->m_viewportParams.cameraCenter = P;
+        s_tools.instance->m_viewportParams.setCameraCenter(P);
 		//SetCameraPosition(P);
-		emit s_tools.instance->cameraPosChanged(s_tools.instance->m_viewportParams.cameraCenter);
+        emit s_tools.instance->cameraPosChanged(s_tools.instance->m_viewportParams.getCameraCenter());
 		emit s_tools.instance->cameraParamChanged();
 		InvalidateViewport();
 		InvalidateVisualization();
@@ -2379,8 +2400,8 @@ void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters & params)
 	GetCameraClip(nearFar);
 	s_tools.instance->m_viewportParams.zNear = nearFar[0];
 	s_tools.instance->m_viewportParams.zFar = nearFar[1];
-	s_tools.instance->m_viewportParams.fov = GetCameraFovy();
-	params.fov_deg = s_tools.instance->m_viewportParams.fov;
+	s_tools.instance->m_viewportParams.fov_deg = GetCameraFovy();
+	params.fov_deg = s_tools.instance->m_viewportParams.fov_deg;
 
 	params.viewport[0] = 0;
 	params.viewport[1] = 0;
@@ -2408,8 +2429,7 @@ void ecvDisplayTools::UpdateDisplayParameters()
 	s_tools.instance->m_viewportParams.zFar = nearFar[1];
 
 	// set camera fov
-	double fov = GetCameraFovy();
-	s_tools.instance->m_viewportParams.fov = fov;
+    s_tools.instance->m_viewportParams.fov_deg = static_cast<float>(GetCameraFovy());
 
 	if (s_tools.instance->m_viewportParams.perspectiveView)
 	{
@@ -2419,7 +2439,7 @@ void ecvDisplayTools::UpdateDisplayParameters()
 	// set camera pos
 	double pos[3];
 	GetCameraPos(pos);
-	s_tools.instance->m_viewportParams.cameraCenter = CCVector3d::fromArray(pos);
+    s_tools.instance->m_viewportParams.setCameraCenter(CCVector3d::fromArray(pos), true);
 
 	// set camera focal
 	double focal[3];
@@ -2438,11 +2458,11 @@ void ecvDisplayTools::SetViewportParameters(const ecvViewportParameters& params)
 	s_tools.instance->m_viewportParams = params;
 	if (params.perspectiveView)
 	{
-		SetCameraFovy(params.fov);
+		SetCameraFovy(params.fov_deg);
 		SetCameraClip(params.zNear, params.zFar);
 	}
 
-	SetCameraPosition(params.cameraCenter.u, params.focal.u, params.up.u);
+    SetCameraPosition(params.getCameraCenter().u, params.focal.u, params.up.u);
 	//Update();
 
 	InvalidateViewport();
@@ -2450,9 +2470,9 @@ void ecvDisplayTools::SetViewportParameters(const ecvViewportParameters& params)
 	Deprecate3DLayer();
 
 	emit s_tools.instance->baseViewMatChanged(s_tools.instance->m_viewportParams.viewMat);
-	emit s_tools.instance->pivotPointChanged(s_tools.instance->m_viewportParams.pivotPoint);
-	emit s_tools.instance->cameraPosChanged(s_tools.instance->m_viewportParams.cameraCenter);
-	emit s_tools.instance->fovChanged(s_tools.instance->m_viewportParams.fov);
+    emit s_tools.instance->pivotPointChanged(s_tools.instance->m_viewportParams.getPivotPoint());
+    emit s_tools.instance->cameraPosChanged(s_tools.instance->m_viewportParams.getCameraCenter());
+	emit s_tools.instance->fovChanged(s_tools.instance->m_viewportParams.fov_deg);
 	emit s_tools.instance->cameraParamChanged();
 }
 
@@ -2600,7 +2620,8 @@ double ecvDisplayTools::ComputeActualPixelSize()
 		return 1.0;
 
 	//Camera center to pivot vector
-	double zoomEquivalentDist = (s_tools.instance->m_viewportParams.cameraCenter - s_tools.instance->m_viewportParams.pivotPoint).norm();
+    double zoomEquivalentDist = (s_tools.instance->m_viewportParams.getCameraCenter() -
+                                 s_tools.instance->m_viewportParams.getPivotPoint()).norm();
 
 	double currentFov_deg = static_cast<double>(GetFov());
 	return zoomEquivalentDist * std::tan(std::min(currentFov_deg, 75.0) * CV_DEG_TO_RAD) / minScreenDim; //tan(75) = 3.73 (then it quickly increases!)
@@ -3220,14 +3241,6 @@ void ecvDisplayTools::RenderText(
 	context.textParam.font.setPointSize(font.pointSize());
 	//QRect screen = QGuiApplication::primaryScreen()->geometry();
 
-	//if (screen.width() > 1920 && GetDevicePixelRatio() == 1)
-	//{
- //       context.textParam.font.setPointSize(font.pointSize() * 3);
-	//}
-	//else // for high DPI
-	//{
- //       context.textParam.font.setPointSize(font.pointSize());
-	//}
 	context.textDefaultCol = color;
 	if (context.textParam.display3D)
 	{
@@ -3297,15 +3310,6 @@ void ecvDisplayTools::DisplayText(QString text,
 
 	QFont realFont = (font ? *font : s_tools.instance->m_font);
 	QFont textFont = realFont;
-	//QRect screen = QGuiApplication::primaryScreen()->geometry();
-
-	//if (screen.width() > 1920 && GetDevicePixelRatio() == 1) // for high DPI
-	//{
-	//	textFont.setPointSize(textFont.pointSize() * 3);
-	//	int size = textFont.pointSize();
-	//	textFont.setPointSize(size - 9);
-	//}
-
 	QFontMetrics fm(textFont);
 	int margin = fm.height() / 4;
 
@@ -3410,7 +3414,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 	//"exit" icon
 	//static const QImage c_exitIcon = QImage(":/Resources/images/ecvExit.png").mirrored();
 	int fullW = s_tools.instance->m_glViewport.width();
-	int fullH = s_tools.instance->m_glViewport.height();
+    int fullH = s_tools.instance->m_glViewport.height();
 
 	// clear history
 	RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS));
@@ -3960,9 +3964,9 @@ void ecvDisplayTools::DrawPivot()
 	}
 
 	//place origin on pivot point
-	CCVector3d tranlateTartget = CCVector3d(s_tools.instance->m_viewportParams.pivotPoint.x, 
-											s_tools.instance->m_viewportParams.pivotPoint.y, 
-											s_tools.instance->m_viewportParams.pivotPoint.z);
+    CCVector3d tranlateTartget = CCVector3d(s_tools.instance->m_viewportParams.getPivotPoint().x,
+                                            s_tools.instance->m_viewportParams.getPivotPoint().y,
+                                            s_tools.instance->m_viewportParams.getPivotPoint().z);
 
 	//compute actual symbol radius
 	double symbolRadius = CC_DISPLAYED_PIVOT_RADIUS_PERCENT * std::min(s_tools.instance->m_glViewport.width(), 

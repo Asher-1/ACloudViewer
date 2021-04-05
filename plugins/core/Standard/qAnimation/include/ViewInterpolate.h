@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                   CLOUDVIEWER  PLUGIN: qAnimation                      #
+//#                   CLOUDCOMPARE PLUGIN: qAnimation                      #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -19,10 +19,11 @@
 #ifndef VIEWINTERPOLATE_H
 #define VIEWINTERPOLATE_H
 
-// ECV_DB_LIB
-#include <ecv2DViewportObject.h>
+// CV_DB_LIB
+#include <ecvViewportParameters.h>
 
 class ecvViewportParameters;
+class ccPolyline;
 
 //! The ViewInterpolate class
 /** This class takes pointers to two viewport objects, and returns intermediate viewports between over a set number of steps.
@@ -31,24 +32,26 @@ class ViewInterpolate
 {
 public:
 
-	//! Default constructor
-    ViewInterpolate( );
-
 	//! Constructor from two viewports and a number of steps
-    ViewInterpolate( cc2DViewportObject * view1,  cc2DViewportObject * view2, unsigned int stepCount = 0 );
+    ViewInterpolate( const ecvViewportParameters& view1,  const ecvViewportParameters& view2, unsigned int stepCount = 0 );
 
-    //! Sets the first viewport object
-	inline void setView1 ( cc2DViewportObject * view ) { m_view1 = view; }
+	//! Sets the smooth trajectory (optional)
+	void setSmoothTrajectory(	ccPolyline* smoothTrajectory,
+								ccPolyline* smoothTrajectoryReversed,
+								unsigned i1,
+								unsigned i2,
+								PointCoordinateType length);
+
     //! Returns the first viewport object
-	inline cc2DViewportObject * view1 () const { return m_view1; }
-
-    // Sets the second viewport object
-	inline void setView2 ( cc2DViewportObject * view ) {  m_view2 = view; }
+    inline const ecvViewportParameters& view1 () const { return m_view1; }
     // Returns the second viewport object
-	inline const cc2DViewportObject * view2 () const { return m_view2; }
+    inline const ecvViewportParameters& view2 () const { return m_view2; }
 
-    //! Returns the next viewport
-    bool nextView ( cc2DViewportObject& a_returned_viewport );
+	//! Interpolates the 2 viewports at a given (relative) position
+    bool interpolate(ecvViewportParameters& a_returned_viewport, double ratio ) const;
+	
+	//! Returns the next viewport
+    bool nextView (ecvViewportParameters& a_returned_viewport );
 
     //! Returns the current step
 	inline unsigned int currentStep () { return m_currentStep; }
@@ -65,13 +68,16 @@ public:
 
 private:
 
-    cc2DViewportObject* m_view1;
-
-    cc2DViewportObject* m_view2;
+    const ecvViewportParameters& m_view1;
+    const ecvViewportParameters& m_view2;
 
     unsigned int m_totalSteps;
-
     unsigned int m_currentStep;
+
+	ccPolyline *smoothTrajectory, *smoothTrajectoryReversed;
+	unsigned smoothTrajStartIndex, smoothTrajStopIndex, smoothTrajCurrentIndex;
+	PointCoordinateType smoothSegmentLength, smoothCurrentLength;
+
 };
 
 #endif // VIEWINTERPOLATE_H

@@ -496,7 +496,12 @@ void PCLDisplayTools::drawOrientedBBox(CC_DRAW_CONTEXT & context, const ecvOrien
 			m_visualizer3D->setLineWidth(context.defaultLineWidth, bboxID, viewPort);
 			m_visualizer3D->setLightMode(bboxID, viewPort);
 		}
-	}
+    }
+}
+
+bool PCLDisplayTools::orientationMarkerShown()
+{
+    return m_visualizer3D->pclMarkerAxesShown();
 }
 
 void PCLDisplayTools::toggleOrientationMarker(bool state)
@@ -976,7 +981,18 @@ QString PCLDisplayTools::pick3DItem(int x, int y)
 		return m_visualizer3D->pickItem(x, y).c_str();
 	}
 
-	return QString();
+    return QString();
+}
+
+QImage PCLDisplayTools::renderToImage(int zoomFactor, bool renderOverlayItems, bool silent, int viewport)
+{
+    if (m_visualizer3D) {
+        return m_visualizer3D->renderToImage(zoomFactor, renderOverlayItems, silent, viewport);
+    } else {
+        if (!silent)
+            CVLog::Error("[PCLDisplayTools::renderToImage] PCLVis Initialization failed! (not enough memory?)");
+        return QImage();
+    }
 }
 
 double PCLDisplayTools::getParallelScale(int viewPort)

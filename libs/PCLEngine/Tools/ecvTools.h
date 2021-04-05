@@ -67,7 +67,7 @@ namespace ecvTools
 			return ecvColor::Rgbf(col.r, col.g, col.b);
 		}
 		else {
-			return ecvColor::Rgbf(col.r / 255.0, col.g / 255.0, col.b / 255.0);
+            return ecvColor::Rgbf(col.r / 255.0f, col.g / 255.0f, col.b / 255.0f);
 		}
 	}
 
@@ -76,7 +76,7 @@ namespace ecvTools
 			return ecvColor::Rgbf(col.r, col.g, col.b);
 		}
 		else {
-			return ecvColor::Rgbf(col.r / 255.0, col.g / 255.0, col.b / 255.0);
+            return ecvColor::Rgbf(col.r / 255.0f, col.g / 255.0f, col.b / 255.0f);
 		}
 	}
 
@@ -150,12 +150,7 @@ namespace ecvTools
 			//shall we colorize it with a random color?
 			if (randomColors)
 			{
-				ecvColor::Rgb col, darkCol;
-				col = ecvColor::Generator::Random();
-				/*assert(c_darkColorRatio <= 1.0);
-				darkCol.r = static_cast<ColorCompType>(static_cast<double>(col.r) * c_darkColorRatio);
-				darkCol.g = static_cast<ColorCompType>(static_cast<double>(col.g) * c_darkColorRatio);
-				darkCol.b = static_cast<ColorCompType>(static_cast<double>(col.b) * c_darkColorRatio);*/
+                ecvColor::Rgb col = ecvColor::Generator::Random();
 				out_cloud_cc->setRGBColor(col);
 				out_cloud_cc->showColors(true);
 				out_cloud_cc->showSF(false); //just in case
@@ -187,7 +182,7 @@ namespace ecvTools
 	{
 		if (!xyzCloud)
 		{
-			return 0;
+            return nullptr;
 		}
 
 		//we create a new group to store all input CCs as 'clusters'
@@ -236,7 +231,7 @@ namespace ecvTools
 	{
 		if (!ccCloud)
 		{
-			return 0;
+            return nullptr;
 		}
 
 		//we create a new group to store all input CCs as 'clusters'
@@ -254,8 +249,7 @@ namespace ecvTools
 				//shall we colorize it with a random color?
 				if (randomColors)
 				{
-					ecvColor::Rgb col, darkCol;
-					col = ecvColor::Generator::Random();
+                    ecvColor::Rgb col = ecvColor::Generator::Random();
 					cloud->setRGBColor(col);
 					cloud->showColors(true);
 					cloud->showSF(false); //just in case

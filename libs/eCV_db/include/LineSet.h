@@ -97,7 +97,7 @@ public:
     bool hasLines() const { return hasPoints() && lines_.size() > 0; }
 
     /// Returns `true` if the objects lines contains colors.
-    bool hasColors() const {
+    bool hasColors() const override {
         return hasLines() && colors_.size() == lines_.size();
     }
 
@@ -139,14 +139,12 @@ public:
     /// ccBBox.
     ///
     /// \param box The input bounding box.
-    static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(
-            const ccBBox &box);
+    static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(const ccBBox &box);
 
     /// Factory function to create a LineSet from edges of a triangle mesh.
     ///
     /// \param mesh The input triangle mesh.
-    static std::shared_ptr<LineSet> CreateFromTriangleMesh(
-            const ccMesh &mesh);
+    static std::shared_ptr<LineSet> CreateFromTriangleMesh(const ccMesh &mesh);
 
     /// Factory function to create a LineSet from edges of a tetra mesh.
     ///

@@ -23,94 +23,145 @@
 #include "ecvGLMatrix.h"
 #include "ecvSerializableObject.h"
 
+class QRect;
+
 //! Standard parameters for GL displays/viewports
 class ECV_DB_LIB_API ecvViewportParameters : public ccSerializableObject
 {
-public:
-	//! Default constructor
-	ecvViewportParameters();
+public: //functions
 
-	//! Copy constructor
-	ecvViewportParameters(const ecvViewportParameters& params);
+    //! Default constructor
+    ecvViewportParameters();
 
-	//inherited from ccSerializableObject
-	bool isSerializable() const override { return true; }
-	bool toFile(QFile& out) const override;
-	bool fromFile(QFile& in, short dataVersion, int flags) override;
+    //! Copy constructor
+    ecvViewportParameters(const ecvViewportParameters& params);
 
-	//! Current pixel size (in 'current unit'/pixel)
-	/** This scale is valid eveywhere in ortho. mode
-		or at the focal distance in perspective mode.
-		Warning: doesn't take current zoom into account!
-	**/
-	float pixelSize;
+    //inherited from ccSerializableObject
+    bool isSerializable() const override { return true; }
+    bool toFile(QFile& out) const override;
+    bool fromFile(QFile& in, short dataVersion, int flags) override;
 
-	//! Current zoom
-	float zoom;
+    //! Sets the pivot point (for object-centered view mode)
+    void setPivotPoint(const CCVector3d& P, bool autoUpdateFocal = true);
 
-	//! Visualization matrix (rotation only)
-	ccGLMatrixd viewMat;
+    //! Returns the pivot point (for object-centered view mode)
+    const CCVector3d& getPivotPoint() const { return pivotPoint; }
 
-	//! Point size
-	float defaultPointSize;
-	//! Line width
-	float defaultLineWidth;
+    //! Sets the camera center
+    //* _
+    void setCameraCenter(const CCVector3d& C, bool autoUpdateFocal = true);
 
-	//! Perspective view state
-	bool perspectiveView;
-	//! Whether view is centered on displayed scene (true) or on the user eye (false)
-	/** Always true for ortho. mode.
-	**/
-	bool objectCenteredView;
+    //! Returns the camera center
+    const CCVector3d& getCameraCenter() const { return cameraCenter; }
 
-	//! Theoretical perspective 'zNear' relative position
-	double zNearCoef;
-	//! Actual perspective 'zNear' value
-	double zNear;
-	//! Actual perspective 'zFar' value
-	double zFar;
+    //! Sets the 'focal' distance
+    /** \warning changes the camera cener position in object-centered view mode
+    **/
+    void setFocalDistance(double distance);
 
-	//! Rotation pivot point (for object-centered view modes)
-	CCVector3d pivotPoint;
+    //! Computes the 'focal' distance
+    double getFocalDistance() const { return focalDistance; }
 
-	//! Camera center (for perspective mode)
-	CCVector3d cameraCenter;
+    //! Helper: converts an integer (increment) in [0 iMax] to a double (zNear) value in [0.001 1]
+    static double IncrementToZNearCoef(int i, int iMax);
 
-	CCVector3d focal;
+    //! Helper: converts a double (zNear) value in ]0 1] to integer increments in [0 iMax]
+    static int ZNearCoefToIncrement(double coef, int iMax);
 
-	CCVector3d up;
+    //! Computes the view matrix
+    ccGLMatrixd computeViewMatrix() const;
 
-	//! Camera F.O.V. (field of view - for perspective mode only)
-	float fov;
-	//! Camera aspect ratio (perspective mode only)
-	float perspectiveAspectRatio;
+    //! Computes the scale matrix
+    ccGLMatrixd computeScaleMatrix(const QRect& glViewport) const;
 
-	//! 3D view aspect ratio (ortho mode only)
-	/** AR = width / height
-	**/
-	float orthoAspectRatio;
+    //! Returns the viewing direction
+    /** This is the direction normal to the screen
+        (pointing 'forward') in the world coordinate system.
+    **/
+    CCVector3d getViewDir() const;
 
-	//! Helper: converts an integer (increment) in [0 iMax] to a double (zNear) value in [0.001 1]
-	static double IncrementToZNearCoef(int i, int iMax)
-	{
-		assert(i >= 0 && i <= iMax);
-		return pow(10, -static_cast<double>((iMax - i) * 3) / iMax); //between 10^-3 and 1
-	}
+    //! Returns the up direction
+    /** This is the vertical direction of the screen
+        (pointing 'upward') in the world coordinate system.
+    **/
+    CCVector3d getUpDir() const;
 
-	//! Helper: converts a double (zNear) value in [0 1] to integer increments in [0 iMax]
-	static int ZNearCoefToIncrement(double coef, int iMax)
-	{
-		assert(coef >= 0 && coef <= 1.0);
-		double id = -(iMax / 3.0) * log10(coef);
-		int i = static_cast<int>(id);
-		//cope with numerical inaccuracies
-		if (fabs(id - i) > fabs(id - (i + 1)))
-		{
-			++i;
-		}
-		assert(i >= 0 && i <= iMax);
-		return iMax - i;
-	}
+    //! Returns the view rotation 'center'
+    /** The rotation center is defined as:
+        - the pivot point in object-centered view mode
+        - the camera center in viewer-centered view mode
+    **/
+    const CCVector3d& getRotationCenter() const;
+
+    //! Computes the ratio 'distance to half width' (based on the current FOV)
+    /** Half width = ratio * distance = tan(fov / 2) * distance
+    **/
+    double computeDistanceToHalfWidthRatio() const;
+
+    //! Computes the ratio 'distance to width' (based on the current FOV)
+    /** Width = ratio * distance = (2 * tan(fov / 2)) * distance
+    **/
+    double computeDistanceToWidthRatio() const;
+
+    //! Computes the object 'width' at the 'focal' distance
+    double computeWidthAtFocalDist() const;
+
+    //! Computes the pixel size at the 'focal' distance
+    double computePixelSize(int glWidth) const;
+
+public: //variables
+
+    //! Visualization matrix (rotation only)
+    ccGLMatrixd viewMat;
+
+    //! Point size
+    float defaultPointSize;
+    //! Line width
+    float defaultLineWidth;
+
+    //! Current pixel size (in 'current unit'/pixel)
+    /** This scale is valid eveywhere in ortho. mode
+        or at the focal distance in perspective mode.
+        Warning: doesn't take current zoom into account!
+    **/
+    float pixelSize;
+
+    //! Current zoom
+    float zoom;
+
+    //! Perspective view state
+    bool perspectiveView;
+    //! Whether view is centered on displayed scene (true) or on the user eye (false)
+    /** Always true for ortho. mode.
+    **/
+    bool objectCenteredView;
+
+    //! Theoretical perspective 'zNear' relative position
+    double zNearCoef;
+    //! Actual perspective 'zNear' value
+    double zNear;
+    //! Actual perspective 'zFar' value
+    double zFar;
+
+    CCVector3d focal;
+
+    CCVector3d up;
+
+    //! Camera F.O.V. (field of view) in degrees
+    float fov_deg;
+    //! Camera aspect ratio
+    float cameraAspectRatio;
+
+protected:
+
+    //! Focal distance
+    double focalDistance;
+
+    //! Rotation pivot point (for object-centered view modes)
+    CCVector3d pivotPoint;
+
+    //! Camera center
+    CCVector3d cameraCenter;
 };
 
 #endif // ECV_VIEWPORT_PARAMETERS_HEADER

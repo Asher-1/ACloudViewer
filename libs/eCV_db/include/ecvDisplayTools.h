@@ -382,6 +382,11 @@ public: //! Draws the main 3D layer
 	}
 	inline virtual void toggleOrientationMarker(bool state = true) { /* do nothing */ }
 
+    inline static bool OrientationMarkerShown() {
+        return TheInstance()->orientationMarkerShown();
+    }
+    inline virtual bool orientationMarkerShown() { return false; /* do nothing */ }
+
 private:
 	static void Draw3D(CC_DRAW_CONTEXT& CONTEXT);
 
@@ -410,6 +415,7 @@ public: // main interface
 	static QPointF ToCenteredGLCoordinates(int x, int y);
 	static CCVector3d ToVtkCoordinates(int x, int y, int z = 0);
 	static void ToVtkCoordinates(CCVector3d & sP);
+    static void ToVtkCoordinates(CCVector2i & sP);
 
 	//! Returns window own DB
 	inline static ccHObject* GetOwnDB() { return TheInstance()->m_winDBRoot; }
@@ -513,7 +519,7 @@ public: // main interface
 	inline static double GetCameraFovy(int viewPort = 0) { return TheInstance()->getCameraFovy(viewPort); }
 	inline virtual double getCameraFovy(int viewPort = 0) { return 0; /* do nothing */ }
 	inline static void SetCameraFovy(double fovy, int viewport = 0) { 
-		TheInstance()->m_viewportParams.fov = fovy;
+		TheInstance()->m_viewportParams.fov_deg = fovy;
 		TheInstance()->setCameraFovy(fovy, viewport); 
 	}
 	inline virtual void setCameraFovy(double fovy, int viewport = 0) { /* do nothing */ }
@@ -756,6 +762,9 @@ public: // visualization matrix transformation
 		float zoomFactor = 1.0f,
 		bool dontScaleFeatures = false,
 		bool renderOverlayItems = false);
+
+    inline static QImage RenderToImage(int zoomFactor = 1, bool renderOverlayItems = false, bool silent = false, int viewport = 0) { return TheInstance()->renderToImage(zoomFactor, renderOverlayItems, silent, viewport); }
+    inline virtual QImage renderToImage(int zoomFactor = 1, bool renderOverlayItems = false, bool silent = false, int viewport = 0) { return QImage(); /* do nothing */ }
 
 	static void DrawScale(const ecvColor::Rgbub& color);
 
@@ -1028,6 +1037,9 @@ public: // visualization matrix transformation
 	//! Returns current font size for labels
 	static int GetLabelFontPointSize();
 
+    static void SetClickableItemsVisible(bool state) {TheInstance()->m_clickableItemsVisible = state; }
+    static bool GetClickableItemsVisible() { return TheInstance()->m_clickableItemsVisible; }
+
 	//takes rendering zoom into account!
 	static QFont GetLabelDisplayFont();
 	//takes rendering zoom into account!
@@ -1044,7 +1056,7 @@ public: // visualization matrix transformation
 	inline static int GetPickingRadius() { return TheInstance()->m_pickRadius; }
 
 	//! Sets whether overlay entities (scale, tetrahedron, etc.) should be displayed or not
-	inline static void DisplayOverlayEntities(bool state) { TheInstance()->m_displayOverlayEntities = state; }
+    static void DisplayOverlayEntities(bool state);
 
 	//! Returns whether overlay entities (scale, tetrahedron, etc.) are displayed or not
 	inline static bool OverlayEntitiesAreDisplayed() { return TheInstance()->m_displayOverlayEntities; }
