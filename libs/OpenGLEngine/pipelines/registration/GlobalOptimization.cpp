@@ -54,7 +54,7 @@ namespace registration {
 /// GlobalOptimization.h
 
 // clang-format off
-const std::vector<Eigen::Matrix4d, cloudViewer::utility::Matrix4d_allocator>
+const std::vector<Eigen::Matrix4d, utility::Matrix4d_allocator>
         jacobian_operator = {
                 // for alpha
                 (Eigen::Matrix4d() << 0, 0, 0, 0,

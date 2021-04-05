@@ -45,5 +45,4 @@ COLMAP_ADD_EXECUTABLE(colmap_exe
     mvs.cc
     sfm.cc
     vocab_tree.cc)
-
 set_target_properties(colmap_exe PROPERTIES OUTPUT_NAME colmap)

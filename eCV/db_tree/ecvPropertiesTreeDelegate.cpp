@@ -1048,7 +1048,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(QWidget *parent,
 		//	comboBox->addItem(glWindows[i]->windowTitle());
 		//}
 
-		connect(comboBox, static_cast<void (QComboBox::*)(const QString &)>(&QComboBox::currentIndexChanged),
+        connect(comboBox, static_cast<void (QComboBox::*)(const QString &)>(&QComboBox::currentTextChanged),
 				this, &ccPropertiesTreeDelegate::objectDisplayChanged);
 
 		outputWidget = comboBox;
@@ -1358,7 +1358,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(QWidget *parent,
 				comboBox->addItem(s_sfColor);
 				comboBox->setItemIcon(comboBox->count() - 1, QIcon(QString::fromUtf8(":/Resources/images/typeSF.png")));
 			}
-			connect(comboBox, static_cast<void (QComboBox::*)(const QString &)>(&QComboBox::currentIndexChanged),
+            connect(comboBox, static_cast<void (QComboBox::*)(const QString &)>(&QComboBox::currentTextChanged),
 					this, &ccPropertiesTreeDelegate::colorSourceChanged);
 		}
 
@@ -2287,9 +2287,7 @@ void ccPropertiesTreeDelegate::applyLabelViewport()
 	assert(viewport);
 
 	ecvDisplayTools::SetViewportParameters(viewport->getParameters());
-	ecvDisplayTools::SetRedrawRecursive(false);
-	m_currentObject->setRedrawFlagRecursive(true);
-	ecvDisplayTools::RedrawDisplay();
+    ecvDisplayTools::UpdateScreen();
 }
 
 void ccPropertiesTreeDelegate::updateLabelViewport()

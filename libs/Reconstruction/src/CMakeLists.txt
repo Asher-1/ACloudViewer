@@ -58,11 +58,16 @@ add_subdirectory(retrieval)
 add_subdirectory(sfm)
 add_subdirectory(tools)
 add_subdirectory(util)
+add_subdirectory(pipelines)
 if (GUI_ENABLED)
     add_subdirectory(ui)
 endif()
 
 COLMAP_ADD_STATIC_LIBRARY(colmap ${COLMAP_SOURCES})
+
+# fix eigen alignment bugs for colmap
+add_definitions(-DEIGEN_DONT_ALIGN)
+add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
 
 if(CUDA_ENABLED)
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --use_fast_math")

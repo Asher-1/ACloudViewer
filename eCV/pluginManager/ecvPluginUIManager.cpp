@@ -350,10 +350,6 @@ void ccPluginUIManager::setupMenus()
 {	
 	m_pluginMenu = new QMenu( tr( "Plugins" ), m_parentWidget );
 	m_pclAlgorithmMenu = new QMenu(tr("PCL ALgorithms"), m_parentWidget);
-
-	//m_pclAlgorithmMenu->addAction(m_actionRemovePCLAlgorithm);
-
-	//m_pclAlgorithmActions.setExclusive(true);
 }
 
 void ccPluginUIManager::addActionsToMenu( ccStdPluginInterface *stdPlugin, const QList<QAction *> &actions )

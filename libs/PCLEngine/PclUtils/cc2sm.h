@@ -92,9 +92,9 @@ protected:
 
 	//! Associated cloud
 	const ccPointCloud* m_cc_cloud;
+    bool m_showMode;
 	bool m_partialVisibility;
 	unsigned m_visibilityNum;
-	bool m_showMode;
 
 };
 

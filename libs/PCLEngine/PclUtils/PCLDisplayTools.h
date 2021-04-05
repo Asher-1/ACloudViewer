@@ -91,6 +91,7 @@ public: // inherit from ecvDisplayTools
 
 	virtual void drawOrientedBBox(CC_DRAW_CONTEXT& context, const ecvOrientedBBox * obb) override;
 
+    virtual bool orientationMarkerShown() override;
 	virtual void toggleOrientationMarker(bool state) override;
 
 	virtual void removeEntities(CC_DRAW_CONTEXT& CONTEXT) override;
@@ -347,6 +348,8 @@ public:
 	virtual QString pick2DLabel(int x, int y) override;
 
 	virtual QString pick3DItem(int x = -1, int y = -1) override;
+
+    virtual QImage renderToImage(int zoomFactor = 1, bool renderOverlayItems = false, bool silent = false, int viewport = 0) override;
 private:
 	void drawPointCloud(CC_DRAW_CONTEXT& CONTEXT, ccPointCloud * ecvCloud);
     void drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccGenericMesh* mesh);

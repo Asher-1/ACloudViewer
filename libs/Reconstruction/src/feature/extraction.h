@@ -91,6 +91,7 @@ class FeatureImporter : public Thread {
 namespace internal {
 
 struct ImageData {
+
   ImageReader::Status status = ImageReader::Status::FAILURE;
 
   Camera camera;

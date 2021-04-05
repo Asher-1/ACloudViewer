@@ -563,7 +563,7 @@ void DistanceMapGenerationDlg::updateZoom(ccBBox& box)
 			centerPos = (0.5f - mapStart) / mapPart;
 
 			//update pixel size accordingly
-			float screenHeight = ecvDisplayTools::GlHeight() * params.orthoAspectRatio;
+            float screenHeight = ecvDisplayTools::GlHeight() * params.cameraAspectRatio;
 			params.pixelSize = static_cast<float>(std::max(box.getDiagVec().x / mapWidth, box.getDiagVec().y / screenHeight));
 			ecvDisplayTools::SetViewportParameters(params);
 		}
@@ -1076,7 +1076,7 @@ void DistanceMapGenerationDlg::baseRadiusChanged(double)
 		return;
 
 	ecvViewportParameters params = ecvDisplayTools::GetViewportParameters();
-	params.orthoAspectRatio = static_cast<float>( getBaseRadius() );
+    params.cameraAspectRatio = static_cast<float>( getBaseRadius() );
 	ecvDisplayTools::SetViewportParameters(params);
 	ecvDisplayTools::RedrawDisplay();
 }

@@ -90,6 +90,7 @@ namespace PclUtils
 		/** \brief Marker Axes.
 		*/
 		void hidePclMarkerAxes();
+        bool pclMarkerAxesShown();
 		void showPclMarkerAxes(vtkRenderWindowInteractor* interactor = nullptr);
 		void hideOrientationMarkerWidgetAxes();
 		void showOrientationMarkerWidgetAxes(vtkRenderWindowInteractor* interactor);
@@ -332,6 +333,8 @@ namespace PclUtils
 		void exitCallbackProcess();
 		void setAreaPickingMode(bool state);
 		std::string pickItem(double x = -1, double y = -1);
+
+        QImage renderToImage(int zoomFactor = 1, bool renderOverlayItems = false, bool silent = false, int viewport = 0);
 
 	protected:
 		void pickActor(double x, double y);

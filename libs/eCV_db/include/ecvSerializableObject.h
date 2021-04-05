@@ -29,6 +29,7 @@
 
 //Qt
 #include <QDataStream>
+#include <QMultiMap>
 #include <QFile>
 
 //! Serializable object interface
@@ -56,13 +57,16 @@ public:
 		DF_SCALAR_VAL_32_BITS	= 2, /**< Scalar values are stored as 32 bits floats (otherwise 64 bits double) **/
 	};
 
+    //! Map of loaded uniqie IDs (old ID --> new ID)
+    typedef QMultiMap<unsigned, unsigned> LoadedIDMap;
+
 	//! Loads data from binary stream
 	/** \param in input file (already opened)
 		\param dataVersion file version
 		\param flags deserialization flags (see ccSerializableObject::DeserializationFlags)
 		\return success
 	**/
-	virtual bool fromFile(QFile& in, short dataVersion, int flags) { return false; }
+    virtual bool fromFile(QFile& in, short dataVersion, int flags) { return false; }
 
 	//! Sends a custom error message (write error) and returns 'false'
 	/** Shortcut for returning a standardized error message in the toFile method.
