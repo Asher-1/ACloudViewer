@@ -37,22 +37,17 @@
 #include <QtGui>
 #include <QtWidgets>
 
-#include "util/option_manager.h"
-
 namespace cloudViewer {
-
-using namespace colmap;
 
 template <class Elem = char, class Tr = std::char_traits<Elem>>
 class StandardOutputRedirector : public std::basic_streambuf<Elem, Tr> {
   typedef void (*cb_func_ptr)(const Elem*, std::streamsize count, void* data);
 
  public:
-  StandardOutputRedirector(std::ostream& stream, cb_func_ptr cb_func,
-                           void* data)
+  StandardOutputRedirector(std::ostream& stream, cb_func_ptr cb_func, void* data)
       : stream_(stream), cb_func_(cb_func), data_(data) {
-    buf_ = stream_.rdbuf(this);
-  };
+        buf_ = stream_.rdbuf(this);
+  }
 
   ~StandardOutputRedirector() { stream_.rdbuf(buf_); }
 

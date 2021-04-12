@@ -2738,8 +2738,6 @@ void ccPointCloud::drawMeOnly(CC_DRAW_CONTEXT& context)
 			}
 		}
 
-		//DisplayDesc toDisplay(0, size());
-
 		bool colorMaterialEnabled = false;
 
 		if (glParams.showColors && isColorOverriden())
@@ -2756,13 +2754,6 @@ void ccPointCloud::drawMeOnly(CC_DRAW_CONTEXT& context)
 		if (glParams.showSF || glParams.showColors)
 		{
 			colorMaterialEnabled = true;
-		}
-
-		if (glParams.showNorms && glParams.showSF)
-		{
-			//we must get rid of lights 'color' if a scalar field is displayed!
-			//glFunc->glPushAttrib(GL_LIGHTING_BIT);
-			//ccMaterial::MakeLightsNeutral(context.qGLContext);
 		}
 
 		// start draw point cloud

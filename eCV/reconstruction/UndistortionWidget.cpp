@@ -31,7 +31,13 @@
 
 #include "UndistortionWidget.h"
 
+#include "base/reconstruction.h"
+#include "util/misc.h"
+#include "OptionManager.h"
+
 namespace cloudViewer {
+
+using namespace colmap;
 
 UndistortionWidget::UndistortionWidget(QWidget* parent,
                                        const OptionManager* options)
@@ -87,14 +93,14 @@ void UndistortionWidget::Undistort() {
     if (output_format_->currentIndex() == 0) {
       undistorter =
           new COLMAPUndistorter(undistortion_options_, *reconstruction_,
-                                *options_->image_path, output_path_);
+                                        *options_->image_path, output_path_);
     } else if (output_format_->currentIndex() == 1) {
       undistorter = new PMVSUndistorter(undistortion_options_, *reconstruction_,
-                                        *options_->image_path, output_path_);
+                                                *options_->image_path, output_path_);
     } else if (output_format_->currentIndex() == 2) {
       undistorter =
           new CMPMVSUndistorter(undistortion_options_, *reconstruction_,
-                                *options_->image_path, output_path_);
+                                        *options_->image_path, output_path_);
     } else {
       QMessageBox::critical(this, "", tr("Invalid output format"));
       return;

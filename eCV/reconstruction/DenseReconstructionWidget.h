@@ -34,27 +34,29 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "mvs/fusion.h"
 #include "ImageViewerWidget.h"
 #include "OptionsWidget.h"
-#include "ThreadControlWidget.h"
-#include "util/option_manager.h"
+#include "util/ply.h"
+
+namespace colmap {
+    class Reconstruction;
+}
 
 namespace cloudViewer {
 
+class OptionManager;
 class ReconstructionWidget;
-
-using namespace colmap;
 class DenseReconstructionOptionsWidget : public QWidget {
  public:
   DenseReconstructionOptionsWidget(QWidget* parent, OptionManager* options);
 };
 
+class ThreadControlWidget;
 class DenseReconstructionWidget : public QWidget {
  public:
   DenseReconstructionWidget(ReconstructionWidget* main_window, OptionManager* options);
 
-  void Show(Reconstruction* reconstruction);
+  void Show(colmap::Reconstruction* reconstruction);
 
  private:
   void showEvent(QShowEvent* event);
@@ -77,7 +79,7 @@ class DenseReconstructionWidget : public QWidget {
 
   ReconstructionWidget* main_window_;
   OptionManager* options_;
-  Reconstruction* reconstruction_;
+  colmap::Reconstruction* reconstruction_;
   ThreadControlWidget* thread_control_widget_;
   DenseReconstructionOptionsWidget* options_widget_;
   ImageViewerWidget* image_viewer_widget_;
@@ -99,7 +101,7 @@ class DenseReconstructionWidget : public QWidget {
   std::string depth_maps_path_;
   std::string normal_maps_path_;
 
-  std::vector<PlyPoint> fused_points_;
+  std::vector<colmap::PlyPoint> fused_points_;
   std::vector<std::vector<int>> fused_points_visibility_;
 };
 

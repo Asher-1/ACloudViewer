@@ -52,7 +52,14 @@ class vtkRenderWindow;
 class vtkMatrix4x4;
 
 class ccBBox;
+class ccCameraSensor;
 class ecvPointpickingTools;
+
+namespace cloudViewer {
+namespace geometry {
+class LineSet;
+}
+}
 
 namespace VTKExtensions
 {
@@ -134,7 +141,7 @@ namespace PclUtils
 		/**
 		 * Resets the center of rotation to the focal point.
 		 */
-		void resetCenterOfRotation();
+        void resetCenterOfRotation(int viewport = 0);
 
         static void ExpandBounds(double bounds[6], vtkMatrix4x4 *matrix);
 
@@ -175,7 +182,7 @@ namespace PclUtils
 		 * Synchronizes bounds information on all nodes.
 		 * \note CallOnAllProcesses
 		 */
-		void synchronizeGeometryBounds();
+        void synchronizeGeometryBounds(int viewport = 0);
 
 		// Return a depth value for z-buffer
 		double getGLDepth(int x, int y);
@@ -193,25 +200,33 @@ namespace PclUtils
 		   * the view plane is parallel to the view up axis, the view up axis will
 		   * be reset to one of the three coordinate axes.
 		   */
-		void resetCameraClippingRange();
+        void resetCameraClippingRange(int viewport = 0);
+        void internalResetCameraClippingRange() { this->resetCameraClippingRange(0); }
 		void resetCamera(const ccBBox * bbox);
 		void resetCamera(double xMin, double xMax, double yMin, double yMax, double zMin, double zMax);
         inline void resetCamera() { pcl::visualization::PCLVisualizer::resetCamera(); }
 		inline void resetCamera(double bounds[6]) { resetCamera(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]); }
-		void getReasonableClippingRange(double range[2]);
+        void getReasonableClippingRange(double range[2], int viewport = 0);
 		void expandBounds(double bounds[6], vtkMatrix4x4* matrix);
+        void setCameraViewAngle(double viewAngle, int viewport = 0);
 
-		void draw(CC_DRAW_CONTEXT& CONTEXT, PCLCloud::Ptr smCloud);
-		void updateNormals(CC_DRAW_CONTEXT& CONTEXT, PCLCloud::Ptr smCloud);
-		void draw(CC_DRAW_CONTEXT& CONTEXT, PCLMesh::Ptr pclMesh);
-		void draw(CC_DRAW_CONTEXT& CONTEXT, PCLTextureMesh::Ptr textureMesh);
-		void draw(const CC_DRAW_CONTEXT& CONTEXT, PCLPolygon::Ptr pclPolygon, bool closed);
-		bool removeEntities(const CC_DRAW_CONTEXT& CONTEXT);
+        void draw(const CC_DRAW_CONTEXT& context, PCLCloud::Ptr smCloud);
+        void draw(const CC_DRAW_CONTEXT& context, PCLMesh::Ptr pclMesh);
+        void draw(const CC_DRAW_CONTEXT& context, PCLTextureMesh::Ptr textureMesh);
+        void draw(const CC_DRAW_CONTEXT& context, PCLPolygon::Ptr pclPolygon, bool closed);
+        void draw(const CC_DRAW_CONTEXT& context, const ccCameraSensor* camera);
+        void draw(const CC_DRAW_CONTEXT& context, const cloudViewer::geometry::LineSet* lineset);
+
+        void transformEntities(const CC_DRAW_CONTEXT& context);
+        vtkSmartPointer<vtkTransform> getTransformation(const CC_DRAW_CONTEXT& context,
+                                                        const CCVector3d& origin);
+        void updateNormals(const CC_DRAW_CONTEXT& context, PCLCloud::Ptr smCloud);
+        bool removeEntities(const CC_DRAW_CONTEXT& context);
 		void hideShowActors(bool visibility, const std::string & viewID, int viewport = 0);
 		void hideShowWidgets(bool visibility, const std::string & viewID, int viewport = 0);
 		
-		bool addScalarBar(const CC_DRAW_CONTEXT& CONTEXT);
-		bool updateScalarBar(const CC_DRAW_CONTEXT& CONTEXT);
+        bool addScalarBar(const CC_DRAW_CONTEXT& context);
+        bool updateScalarBar(const CC_DRAW_CONTEXT& context);
 		bool addCaption(const std::string& text,
 			const CCVector2& pos2D,
 			const CCVector3& anchorPos,
@@ -237,29 +252,30 @@ namespace PclUtils
 				double width, double height, double depth, double r = 1.0, double g = 1.0, double b = 1.0, 
 				const std::string &id = "cube", int viewport = 0);
 		int textureFromTexMaterial(const pcl::TexMaterial& tex_mat, vtkTexture* vtk_tex) const;
-		void displayText(const CC_DRAW_CONTEXT&  CONTEXT);
+        void displayText(const CC_DRAW_CONTEXT&  context);
 		
 		void setPointSize(const unsigned char pointSize, const std::string & viewID, int viewport = 0);
-		void setPointCloudUniqueColor(float r, float g, float b, const std::string &viewID, int viewPort = 0);
-		void resetScalarColor(const std::string &viewID, bool flag = true, int viewPort = 0);
-		void setShapeUniqueColor(float r, float g, float b, const std::string &viewID, int viewPort = 0);
+        void setPointCloudUniqueColor(double r, double g, double b, const std::string &viewID, int viewport = 0);
+        void resetScalarColor(const std::string &viewID, bool flag = true, int viewport = 0);
+        void setShapeUniqueColor(float r, float g, float b, const std::string &viewID, int viewport = 0);
 		void setLineWidth(const unsigned char lineWidth, const std::string & viewID, int viewport = 0);
 		void setMeshRenderingMode(MESH_RENDERING_MODE mode, const std::string & viewID, int viewport = 0);
 		void setLightMode(const std::string & viewID, int viewport = 0);
 		void setPointCloudOpacity(double opacity, const std::string & viewID, int viewport = 0);
 		void setShapeOpacity(double opacity, const std::string & viewID, int viewport = 0);
 
-		void transformEntities(CC_DRAW_CONTEXT & CONTEXT);
 		vtkSmartPointer<pcl::visualization::PCLVisualizerInteractorStyle> getPCLInteractorStyle();
-		vtkActor* getActorById(const std::string & viewId);
-		std::string getIdByActor(vtkActor* actor);
+        vtkActor* getActorById(const std::string & viewId);
+        vtkProp* getPropById(const std::string & viewId);
+        vtkSmartPointer<vtkPropCollection> getPropCollectionById(const std::string & viewId);
+        std::string getIdByActor(vtkProp* actor);
 		vtkAbstractWidget* getWidgetById(const std::string & viewId);
 
 		/**
 		  * Get the Current Renderer in the list.
 		  * Return NULL when at the end of the list.
 		  */
-		vtkRenderer *getCurrentRenderer();
+        vtkRenderer *getCurrentRenderer(int viewport = 0);
 
 	public:
 		/** \brief Check if the widgets or props with the given id was already added to this visualizer.

@@ -15,7 +15,7 @@
 //       its contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// this SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
@@ -24,21 +24,29 @@
 // SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 // INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// ARISING IN ANY WAY OUT OF THE USE OF this SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "ReconstructionWidget.h"
+
 #include "MainWindow.h"
 #include "util/version.h"
-#include "ReconstructionWidget.h"
+#include "RenderOptions.h"
+#include "ReconstructionOptionsWidget.h"
+
+#include <ecvDisplayTools.h>
 
 namespace cloudViewer {
 
+using namespace colmap;
+
 ReconstructionWidget::ReconstructionWidget(MainWindow* app)
-    : QWidget(app),
+    : QWidget(ecvDisplayTools::GetMainScreen()),
       app_(app),
-      thread_control_widget_(new ThreadControlWidget(app)) {
+      thread_control_widget_(new ThreadControlWidget(this)),
+      statusbar_timer_label_(nullptr) {
 
   CreateWidgets();
   CreateActions();
@@ -46,14 +54,10 @@ ReconstructionWidget::ReconstructionWidget(MainWindow* app)
   CreateToolbar();
   CreateStatusbar();
   CreateControllers();
-
-//  showLog();
-  hideLog();
-
   options_.AddAllOptions();
 
+  hideLog();
   iniEnvironment();
-
 }
 
 void ReconstructionWidget::iniEnvironment()
@@ -163,13 +167,13 @@ void ReconstructionWidget::CreateActions() {
 
   action_project_new_ =
       new QAction(QIcon(":/media/project-new.png"), tr("New project"), this);
-  action_project_new_->setShortcuts(QKeySequence::New);
+//  action_project_new_->setShortcuts(QKeySequence::New);
   connect(action_project_new_, &QAction::triggered, this,
           &ReconstructionWidget::ProjectNew);
 
   action_project_open_ =
       new QAction(QIcon(":/media/project-open.png"), tr("Open project"), this);
-  action_project_open_->setShortcuts(QKeySequence::Open);
+//  action_project_open_->setShortcuts(QKeySequence::Open);
   connect(action_project_open_, &QAction::triggered, this,
           &ReconstructionWidget::ProjectOpen);
 
@@ -180,13 +184,13 @@ void ReconstructionWidget::CreateActions() {
 
   action_project_save_ =
       new QAction(QIcon(":/media/project-save.png"), tr("Save project"), this);
-  action_project_save_->setShortcuts(QKeySequence::Save);
+//  action_project_save_->setShortcuts(QKeySequence::Save);
   connect(action_project_save_, &QAction::triggered, this,
           &ReconstructionWidget::ProjectSave);
 
   action_project_save_as_ = new QAction(QIcon(":/media/project-save-as.png"),
                                         tr("Save project as..."), this);
-  action_project_save_as_->setShortcuts(QKeySequence::SaveAs);
+//  action_project_save_as_->setShortcuts(QKeySequence::SaveAs);
   connect(action_project_save_as_, &QAction::triggered, this,
           &ReconstructionWidget::ProjectSaveAs);
 
@@ -394,7 +398,7 @@ void ReconstructionWidget::CreateActions() {
 }
 
 void ReconstructionWidget::CreateMenus() {
-  QMenu* file_menu = new QMenu(tr("File"), this);
+  QMenu* file_menu = new QMenu(tr("ProjectFile"), this);
   file_menu->addAction(action_project_new_);
   file_menu->addAction(action_project_open_);
   file_menu->addAction(action_project_edit_);
@@ -450,7 +454,7 @@ void ReconstructionWidget::CreateMenus() {
 }
 
 void ReconstructionWidget::CreateToolbar() {
-  file_toolbar_ = new QToolBar(tr("File"), this);
+  file_toolbar_ = new QToolBar(tr("ProjectFile"), this);
   file_toolbar_->addAction(action_project_new_);
   file_toolbar_->addAction(action_project_open_);
   file_toolbar_->addAction(action_project_edit_);
@@ -505,7 +509,6 @@ void ReconstructionWidget::CreateStatusbar() {
   statusbar_timer_label_ = new QLabel("Time 00:00:00:00", this);
   statusbar_timer_label_->setFont(font);
   statusbar_timer_label_->setAlignment(Qt::AlignCenter);
-  app_->statusBar()->addWidget(statusbar_timer_label_, 1);
   statusbar_timer_ = new QTimer(this);
   connect(statusbar_timer_, &QTimer::timeout, this, &ReconstructionWidget::UpdateTimer);
   statusbar_timer_->start(1000);
@@ -514,7 +517,6 @@ void ReconstructionWidget::CreateStatusbar() {
       new QLabel("0 Images - 0 Points", this);
   model_viewer_widget_->statusbar_status_label->setFont(font);
   model_viewer_widget_->statusbar_status_label->setAlignment(Qt::AlignCenter);
-  app_->statusBar()->addWidget(model_viewer_widget_->statusbar_status_label, 1);
 }
 
 void ReconstructionWidget::CreateControllers() {
@@ -1344,8 +1346,11 @@ void ReconstructionWidget::UpdateTimer() {
   const int minutes = (elapsed_time / 60) % 60;
   const int hours = (elapsed_time / 3600) % 24;
   const int days = elapsed_time / 86400;
-  statusbar_timer_label_->setText(QString().sprintf(
-      "Time %02d:%02d:%02d:%02d", days, hours, minutes, seconds));
+  if (statusbar_timer_label_)
+  {
+      statusbar_timer_label_->setText(QString().sprintf(
+          "Time %02d:%02d:%02d:%02d", days, hours, minutes, seconds));
+  }
 }
 
 void ReconstructionWidget::ShowInvalidProjectError() {

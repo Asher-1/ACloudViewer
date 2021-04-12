@@ -129,6 +129,13 @@ void MainWindow::CreateWidgets() {
   dock_log_widget_ = new QDockWidget("Log", this);
   dock_log_widget_->setWidget(log_widget_);
   addDockWidget(Qt::RightDockWidgetArea, dock_log_widget_);
+
+//  status_bar_ = new QStatusBar(this);
+//  status_bar_->setObjectName(QString::fromUtf8("CustomStatusBar"));
+//  QFont font;
+//  font.setPointSize(11);
+//  status_bar_->setFont(font);
+//  this->setStatusBar(status_bar_);
 }
 
 void MainWindow::CreateActions() {
@@ -522,7 +529,7 @@ void MainWindow::CreateStatusbar() {
       new QLabel("0 Images - 0 Points", this);
   model_viewer_widget_->statusbar_status_label->setFont(font);
   model_viewer_widget_->statusbar_status_label->setAlignment(Qt::AlignCenter);
-  statusBar()->addWidget(model_viewer_widget_->statusbar_status_label, 1);
+  this->statusBar()->addWidget(model_viewer_widget_->statusbar_status_label, 1);
 }
 
 void MainWindow::CreateControllers() {

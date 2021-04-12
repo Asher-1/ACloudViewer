@@ -805,6 +805,17 @@ bool ccDBRoot::setData(const QModelIndex &index, const QVariant &value, int role
 						label->updateLabel();
 					}
 				}
+                else if (item->isKindOf(CV_TYPES::SENSOR))
+                {
+                    ccSensor* sensor = ccHObjectCaster::ToSensor(item);
+                    if (sensor)
+                    {
+                        CC_DRAW_CONTEXT context;
+                        context.visible = sensor->isEnabled();
+                        sensor->hideShowDrawings(context);
+                        ecvDisplayTools::UpdateScreen();
+                    }
+                }
 				else
 				{
 					// considering this item object may has not been added to rendering window

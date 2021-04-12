@@ -105,19 +105,6 @@ ccIndexedTransformation& ccIndexedTransformation::operator *= (const ccGLMatrix&
 	return (*this);
 }
 
-//ccIndexedTransformation ccIndexedTransformation::operator * (const ccIndexedTransformation& trans) const
-//{
-//	return ccIndexedTransformation( static_cast<ccGLMatrix*>(this) * trans, m_index);
-//}
-//
-//ccIndexedTransformation& ccIndexedTransformation::operator *= (const ccIndexedTransformation& trans)
-//{
-//	ccGLMatrix temp = (*this) * M;
-//	(*this) = temp;
-//
-//	return (*this);
-//}
-
 ccIndexedTransformation& ccIndexedTransformation::operator += (const CCVector3& T)
 {
 	*static_cast<ccGLMatrix*>(this) += T;

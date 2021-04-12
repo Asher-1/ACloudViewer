@@ -37,15 +37,19 @@
 #include "ColorMaps.h"
 #include "base/database.h"
 #include "base/reconstruction.h"
-#include "util/option_manager.h"
+#include "OptionManager.h"
 #include "ImageViewerWidget.h"
 #include "MovieGrabberWidget.h"
 #include "PointViewerWidget.h"
-#include "ui/render_options.h"
+#include "RenderOptions.h"
+
+#include <LineSet.h>
+
+class ccPointCloud;
+class ccCameraSensor;
 
 namespace cloudViewer {
 
-using namespace colmap;
 class ModelViewerWidget : public QWidget {
  public:
   const float kInitNearPlane = 1.0f;
@@ -69,6 +73,7 @@ class ModelViewerWidget : public QWidget {
   const int kDoubleClickInterval = 250;
 
   ModelViewerWidget(QWidget* parent, OptionManager* options);
+  virtual ~ModelViewerWidget() override;
 
   void ReloadReconstruction();
   void ClearReconstruction();
@@ -95,32 +100,27 @@ class ModelViewerWidget : public QWidget {
   QImage GrabImage();
   void GrabMovie();
 
-  void ShowPointInfo(const point3D_t point3D_id);
-  void ShowImageInfo(const image_t image_id);
+  void ShowPointInfo(const colmap::point3D_t point3D_id);
+  void ShowImageInfo(const colmap::image_t image_id);
 
   float PointSize() const;
   float ImageSize() const;
   void SetPointSize(const float point_size);
   void SetImageSize(const float image_size);
 
-  void SetBackgroundColor(const float r, const float g, const float b);
-
   // Copy of current scene data that is displayed
-  Reconstruction* reconstruction = nullptr;
-  EIGEN_STL_UMAP(camera_t, Camera) cameras;
-  EIGEN_STL_UMAP(image_t, Image) images;
-  EIGEN_STL_UMAP(point3D_t, Point3D) points3D;
-  std::vector<image_t> reg_image_ids;
+  colmap::Reconstruction* reconstruction = nullptr;
+  EIGEN_STL_UMAP(colmap::camera_t, colmap::Camera) cameras;
+  EIGEN_STL_UMAP(colmap::image_t, colmap::Image) images;
+  EIGEN_STL_UMAP(colmap::point3D_t, colmap::Point3D) points3D;
+  std::vector<colmap::image_t> reg_image_ids;
 
   QLabel* statusbar_status_label;
 
  private:
   void mousePressEvent(QMouseEvent* event) override;
-  void mouseReleaseEvent(QMouseEvent* event) override;
-  void mouseMoveEvent(QMouseEvent* event) override;
   void wheelEvent(QWheelEvent* event) override;
 
-  void SetupPainters();
   void SetupView();
 
   void Upload();
@@ -129,6 +129,14 @@ class ModelViewerWidget : public QWidget {
   void UploadImageData(const bool selection_mode = false);
   void UploadImageConnectionData();
   void UploadMovieGrabberData();
+
+  void update();
+  void drawPointCloud(ccPointCloud* cloud);
+  void resetPointCloud(ccPointCloud* cloud);
+  void drawLines(geometry::LineSet& lineset);
+  void resetLines(geometry::LineSet& lineset);
+  void drawCameraSensors(std::vector<std::shared_ptr<ccCameraSensor>>& sensors);
+  void resetCameraSensors(std::vector<std::shared_ptr<ccCameraSensor>>& sensors);
 
   void ComposeProjectionMatrix();
 
@@ -156,10 +164,21 @@ class ModelViewerWidget : public QWidget {
 
   float focus_distance_;
 
-  std::vector<std::pair<size_t, char>> selection_buffer_;
-  image_t selected_image_id_;
-  point3D_t selected_point3D_id_;
-  size_t selected_movie_grabber_view_;
+  std::vector<std::pair<std::size_t, char>> selection_buffer_;
+  colmap::image_t selected_image_id_;
+  colmap::point3D_t selected_point3D_id_;
+  std::size_t selected_movie_grabber_view_;
+
+  // for visualization
+  ccPointCloud* cloud_sparse_;
+  ccPointCloud* cloud_dense_;
+
+  geometry::LineSet point_line_data_;
+  geometry::LineSet image_line_data_;
+  std::vector<std::shared_ptr<ccCameraSensor>> sensors_;
+
+  geometry::LineSet movie_grabber_path_;
+  std::vector<std::shared_ptr<ccCameraSensor>> movie_grabber_sensors_;
 
   bool coordinate_grid_enabled_;
 
@@ -170,7 +189,6 @@ class ModelViewerWidget : public QWidget {
   // Near clipping plane.
   float near_plane_;
 
-  float background_color_[3];
 };
 
 }  // namespace cloudViewer

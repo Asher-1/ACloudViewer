@@ -20,8 +20,6 @@ endif()
 
 # ErowCloudViewer build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   			OFF)
-option(WITH_OPENMP                "Use OpenMP multi-threading"                          	ON )
-option(WITH_IPPICV                "Use Intel Performance Primitives"                    	ON )
 option(BUILD_EXAMPLES             "Build CloudViewer example programs"        			ON )
 option(BUILD_UNIT_TESTS           "Build CloudViewer unit tests"                        	OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"                          	OFF)
@@ -31,11 +29,11 @@ option(BUILD_CUDA_MODULE          "Build the CUDA module"                       
 option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"                	ON )
 option(BUILD_GUI                  "Builds new GUI"                                      	ON )
 option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for CloudViewer"              	OFF)
-option(WITH_OPENMP                "Use OpenMP multi-threading"                          	ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"                   	OFF)
 option(STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"                 	OFF)
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"                      	OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                             	OFF)
+option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"                          	OFF)
 # 3rd-party build options
 option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"                      	OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"                     	OFF)
@@ -52,10 +50,10 @@ option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"           
 option(USE_SYSTEM_QHULL           "Use system pre-installed qhull"                      	OFF)
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"                   	OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"              	OFF)
-option(USE_SYSTEM_ALICEVISION     "Use 3D Reconstruction and Camera Tracking algorithms"       OFF)
-option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"                          	OFF)
+# PCL ENGINE SUPPORT
+option(USE_PCL_BACKEND           "Check to use pcl library as backend" 				ON )
+# Mac options
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"                	ON )
-option(WITH_FAISS                 "Enable Faiss"                                        	ON )
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera"            	OFF)
 option(USE_SYSTEM_LIBREALSENSE    "Use system pre-installed librealsense"               	OFF)
@@ -65,9 +63,12 @@ option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                    
 option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                               	OFF)
 option(BUNDLE_CLOUDVIEWER_ML      "Includes the CloudViewer-ML repo in the wheel"       	OFF)
 option(DEVELOPER_BUILD            "Add +commit_hash to the project version number"      	ON )
-# PCL ENGINE SUPPORT
-option(USE_PCL_BACKEND           "Check to use pcl library as backend" 				ON )
 
+# other options
+option(WITH_FAISS                 "Enable Faiss"                                        	ON )
+option(WITH_OPENMP                "Use OpenMP multi-threading"                          	ON )
+option(WITH_SIMD                  "Use Single Instruction Multiple Data speed optimization"     ON )
+option(WITH_IPPICV                "Use Intel Performance Primitives"                    	ON )
 option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON )
 
 # In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
@@ -695,6 +696,25 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
     endif()
 endif()
 
+if (BUILD_RECONSTRUCTION)
+    message(STATUS "Enabling Reconstruction support and automatically disable simd!")
+    set(WITH_SIMD OFF)
+endif()
+
+if (WITH_SIMD)
+    add_definitions(-DEIGEN_ALIGN)
+    add_definitions(-DEIGEN_ALIGN_STATICALLY)
+    add_definitions(-DENABLE_CPU_NEON)
+    add_definitions(-DENABLE_CPU_AVX)
+    add_definitions(-DENABLE_CPU_SSE)
+    add_definitions(-DENABLE_CPU_SSE2)
+    message(STATUS "Enabling SIMD support")
+else()
+    add_definitions(-DEIGEN_DONT_ALIGN)
+    add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
+    message(STATUS "Disabling SIMD support")
+endif()
+
 add_subdirectory( core )
 
 # Propagate the choice to use doubles for ScalarType
@@ -796,6 +816,7 @@ message(STATUS "CloudViewer ${PROJECT_VERSION} Configuration Summary")
 message(STATUS "========================================================================")
 message(STATUS "Enabled Features:")
 cloudviewer_aligned_print("OpenMP" "${WITH_OPENMP}")
+cloudviewer_aligned_print("SIMD" "${WITH_SIMD}")
 cloudviewer_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
 cloudviewer_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
 cloudviewer_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
@@ -830,7 +851,6 @@ set(deps
     EIGEN3
     FAISS
     FILAMENT
-    ALICEVISION
     FLANN
     FMT
     GLEW

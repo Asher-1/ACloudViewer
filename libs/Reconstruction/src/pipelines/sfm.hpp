@@ -95,8 +95,8 @@ int RunBundleAdjuster(const std::string& input_path,
 }
 
 int RunColorExtractor(const std::string& image_path,
-                      const std::string& input_path,
-                      const std::string& output_path) {
+                      const std::string& output_path,
+                      const std::string& input_path = "") {
 
   OptionsParser parser;
   parser.registerOption("image_path", &image_path);
@@ -110,8 +110,8 @@ int RunColorExtractor(const std::string& image_path,
 
 int RunMapper(const std::string& database_path,
               const std::string& image_path,
-              const std::string& input_path,
               const std::string& output_path,
+              const std::string& input_path = "",
               const std::string& image_list_path = "") {
 //  colmap::OptionManager options;
 //  options.AddMapperOptions();

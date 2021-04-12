@@ -52,7 +52,7 @@ int RunDelaunayMesher(const std::string& input_path,
 }
 
 int RunPatchMatchStereo(std::string workspace_path,
-                        std::string config_path,
+                        std::string config_path = "",
                         std::string workspace_format = "COLMAP",
                         std::string pmvs_option_name = "option-all") {
 //  colmap::OptionManager options;
@@ -84,8 +84,8 @@ int RunPoissonMesher(const std::string& input_path,
 }
 
 int RunStereoFuser(const std::string& workspace_path,
-                   const std::string& bbox_path,
                    const std::string& output_path,
+                   const std::string& bbox_path = "",
                    const std::string& input_type = "geometric",
                    const std::string& output_type = "PLY",
                    const std::string& workspace_format = "COLMAP",

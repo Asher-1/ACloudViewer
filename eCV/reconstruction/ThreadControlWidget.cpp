@@ -29,9 +29,13 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "ThreadControlWidget.h"
 #include "BundleAdjustmentWidget.h"
+#include "util/threading.h"
 
 namespace cloudViewer {
+
+using namespace colmap;
 
 ThreadControlWidget::ThreadControlWidget(QWidget* parent)
     : QWidget(parent),

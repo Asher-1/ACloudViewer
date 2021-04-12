@@ -182,7 +182,7 @@ bool PclAnnotationTool::getCurrentAnnotations(std::vector<int>& annos) const
 	return m_annoManager && m_annoManager->getAnnotations(annos);
 }
 
-bool PclAnnotationTool::setInputCloud(ccPointCloud* cloud, int viewPort)
+bool PclAnnotationTool::setInputCloud(ccPointCloud* cloud, int viewport)
 {
 	PCLCloud::Ptr smCloud = cc2smReader(cloud).getAsSM();
 	if (!smCloud)
@@ -686,10 +686,10 @@ void PclAnnotationTool::updateCloud()
 	}
 }
 
-void PclAnnotationTool::setPointSize(const std::string & viewID, int viewPort)
+void PclAnnotationTool::setPointSize(const std::string & viewID, int viewport)
 {
 	if (!m_viewer) return;
-	m_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viewID, viewPort);
+	m_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viewID, viewport);
 }
 
 void PclAnnotationTool::showAnnotation()

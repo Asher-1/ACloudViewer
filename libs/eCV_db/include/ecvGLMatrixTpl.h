@@ -25,6 +25,7 @@
 #include <CVConst.h>
 #include <CVMath.h>
 #include <CVGeom.h>
+#include <Eigen/Geometry>
 
 //Qt
 #include <QTextStream>
@@ -66,6 +67,15 @@ public:
 	{
 		return ccGLMatrixTpl<T>(mat.data());
 	}
+
+    static inline ccGLMatrixTpl<T>
+        FromEigenMatrix3(const Eigen::Matrix<T, 3, 3>& mat)
+    {
+        ccGLMatrixTpl<T> rotMat;
+        rotMat.clearTranslation();
+        rotMat.setRotation(mat.data());
+        return rotMat;
+    }
 
 	static inline Eigen::Matrix<T, 4, 4> 
 		ToEigenMatrix4(const ccGLMatrixTpl<float>& mat)
@@ -307,6 +317,89 @@ public:
 
 		return rotMat;
 	}
+
+    //! Converts a quaternion to a rotation matrix
+    /** \param q quaternion (4 values: w,x,y,z)
+        \return corresponding rotation matrix
+    **/
+    static Eigen::Matrix<T, 3, 1> QuaternionToRotationMatrix(const Eigen::Matrix<T, 4, 1>& qvec) {
+      const Eigen::Matrix<T, 4, 1> normalized_qvec = NormalizeQuaternion(qvec);
+      const Eigen::Quaternion<T> quat(normalized_qvec(0), normalized_qvec(1),
+                                      normalized_qvec(2), normalized_qvec(3));
+      return quat.toRotationMatrix();
+    }
+
+    //! Converts a quaternion to a rotation matrix
+    /** \param q quaternion (4 values: w,x,y,z)
+        \return corresponding rotation matrix
+    **/
+    static ccGLMatrixTpl<T> QuaternionToRotationMatrix(const Tuple4Tpl<T>& qvec) {
+      Eigen::Matrix<T, 4, 1> t_qvec;
+      t_qvec(0) = qvec.w;
+      t_qvec(1) = qvec.x;
+      t_qvec(2) = qvec.y;
+      t_qvec(3) = qvec.z;
+      const Eigen::Matrix<T, 4, 1> normalized_qvec = NormalizeQuaternion(t_qvec);
+      const Eigen::Quaternion<T> quat(normalized_qvec(0), normalized_qvec(1),
+                                      normalized_qvec(2), normalized_qvec(3));
+      return FromEigenMatrix3(quat.toRotationMatrix());
+    }
+
+    //! Converts a quaternion to a rotation matrix
+    /** \param q quaternion (4 values: w,x,y,z)
+        \return corresponding normalized quaternion
+    **/
+    static Eigen::Matrix<T, 4, 1> NormalizeQuaternion(const Eigen::Matrix<T, 4, 1>& qvec) {
+      const T norm = qvec.norm();
+      if (norm == 0) {
+        // We do not just use (1, 0, 0, 0) because that is a constant and when used
+        // for automatic differentiation that would lead to a zero derivative.
+        return Eigen::Matrix<T, 4, 1>(static_cast<T>(1.0), qvec(1), qvec(2), qvec(3));
+      } else {
+        return qvec / norm;
+      }
+    }
+
+    //! Converts to a quaternion from a rotation matrix
+    /** \param q quaternion (4 values: w,x,y,z)
+        \return corresponding quaternion
+    **/
+    void toQuaternion(T q[]) const
+    {
+        Eigen::Quaternion<T> t_q = Eigen::Quaternion<T>(ToEigenMatrix3(*this));
+//        t_q.normalize();
+        q[0] = t_q.w();
+        q[1] = t_q.x();
+        q[2] = t_q.y();
+        q[3] = t_q.z();
+    }
+
+    //! Returns equivalent parameters: a rotation axis and an angle
+    /** \param[out] alpha_rad rotation angle in radians (in [0;pi])
+        \param[out] axis3D unit rotation axis
+    **/
+    void toAngleAxis(T& alpha_rad, Vector3Tpl<T>& axis3D) const
+    {
+        Eigen::AngleAxis<T> v = Eigen::AngleAxis<T>(ToEigenMatrix3(*this));
+        alpha_rad = v.angle();
+        axis3D.x = v.axis().x();
+        axis3D.y = v.axis().y();
+        axis3D.z = v.axis().z();
+    }
+
+    //! Returns equivalent parameters: 3 rotation angles
+    /** yaw(rz) pitch(ry) roll(rx)
+        \param[out] rz angle (in radians)
+        \param[out] ry angle (in radians)
+        \param[out] rx angle (in radians)
+    **/
+    void toEulerAngle(T& rz, T& ry, T& rx) const
+    {
+        Eigen::Matrix<T, 3, 1> euler_angles = ToEigenMatrix3(*this).eulerAngles(2,1,0);
+        rz = euler_angles.z();
+        ry = euler_angles.y();
+        rx = euler_angles.x();
+    }
 
 	//! Generates a 'viewing' matrix from a looking vector and a 'up' direction
 	/** \warning No translation is applied (pure rotation matrix)

@@ -61,10 +61,10 @@ ccTracePolylineTool::SegmentGLParams::SegmentGLParams(int x , int y)
 ccTracePolylineTool::ccTracePolylineTool(ccPickingHub* pickingHub, QWidget* parent)
 	: ccOverlayDialog(parent)
 	, Ui::TracePolyLineDlg()
-	, m_polyTip(0)
-	, m_polyTipVertices(0)
-	, m_poly3D(0)
-	, m_poly3DVertices(0)
+    , m_polyTip(nullptr)
+    , m_polyTipVertices(nullptr)
+    , m_poly3D(nullptr)
+    , m_poly3DVertices(nullptr)
 	, m_done(false)
 	, m_pickingHub(pickingHub)
 {
@@ -141,13 +141,13 @@ ccPolyline* ccTracePolylineTool::polylineOverSampling(unsigned steps) const
 	if (!m_poly3D || !m_poly3DVertices || m_segmentParams.size() != m_poly3DVertices->size())
 	{
 		assert(false);
-		return 0;
+        return nullptr;
 	}
 
 	if (steps <= 1)
 	{
 		//nothing to do
-		return 0;
+        return nullptr;
 	}
 
 	ccHObject::Container clouds;
@@ -159,7 +159,7 @@ ccPolyline* ccTracePolylineTool::polylineOverSampling(unsigned steps) const
 	{
 		//no entity is currently displayed?!
 		assert(false);
-		return 0;
+        return nullptr;
 	}
 
 	unsigned n_verts = m_poly3DVertices->size();
@@ -175,7 +175,7 @@ ccPolyline* ccTracePolylineTool::polylineOverSampling(unsigned steps) const
 	{
 		CVLog::Warning("[ccTracePolylineTool::PolylineOverSampling] Not enough memory");
 		delete newPoly;
-		return 0;
+        return nullptr;
 	}
 	newVertices->importParametersFrom(m_poly3DVertices);
 	newVertices->setName(m_poly3DVertices->getName());
@@ -560,8 +560,8 @@ void ccTracePolylineTool::restart(bool reset)
 			delete m_poly3D;
 			m_segmentParams.resize(0);
 			//delete m_poly3DVertices;
-			m_poly3D = 0;
-			m_poly3DVertices = 0;
+            m_poly3D = nullptr;
+            m_poly3DVertices = nullptr;
 		}
 		else
 		{
@@ -609,7 +609,7 @@ void ccTracePolylineTool::exportLine()
 
 			delete m_poly3D;
 			m_segmentParams.resize(0);
-			m_poly3DVertices = 0;
+            m_poly3DVertices = nullptr;
 			m_poly3D = poly;
 		}
 	}
@@ -625,9 +625,9 @@ void ccTracePolylineTool::exportLine()
 		assert(false);
 	}
 
-	m_poly3D = 0;
+    m_poly3D = nullptr;
 	m_segmentParams.resize(0);
-	m_poly3DVertices = 0;
+    m_poly3DVertices = nullptr;
 
 	resetLine(); //to update the GUI
 }

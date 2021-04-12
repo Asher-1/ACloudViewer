@@ -34,11 +34,11 @@
 
 namespace cloudViewer {
 
-int RunModelAligner(const std::string& database_path,
-                    const std::string& input_path,
+int RunModelAligner(const std::string& input_path,
                     const std::string& output_path,
-                    const std::string& ref_images_path,
-                    const std::string& transform_path,
+                    const std::string& database_path = "",
+                    const std::string& ref_images_path = "",
+                    const std::string& transform_path = "",
                     const std::string& alignment_type = "plane",
                     double max_error = 0.0,
                     int min_common_images = 3,
@@ -74,7 +74,7 @@ int RunModelAnalyzer(const std::string& path) {
 
 int RunModelComparer(const std::string& input_path1,
                      const std::string& input_path2,
-                     const std::string& output_path,
+                     const std::string& output_path = "",
                      double min_inlier_observations = 0.3,
                      double max_reproj_error = 8.0) {
     OptionsParser parser;
@@ -103,6 +103,25 @@ int RunModelConverter(const std::string& input_path,
     return EXIT_FAILURE;
 
   return colmap::RunModelConverter(parser.getArgc(), parser.getArgv());
+}
+
+int RunModelCropper(const std::string& input_path,
+                    const std::string& output_path,
+                    const std::string& boundary,
+                    const std::string& gps_transform_path = "",
+                    bool is_gps = false) {
+
+  OptionsParser parser;
+  parser.registerOption("input_path", &input_path);
+  parser.registerOption("output_path", &output_path);
+  parser.registerOption("boundary", &boundary);
+  parser.registerOption("gps_transform_path", &gps_transform_path);
+  parser.registerOption("is_gps", &is_gps);
+  if (!parser.parseOptions())
+    return EXIT_FAILURE;
+
+  return colmap::RunModelCropper(parser.getArgc(), parser.getArgv());
+
 }
 
 int RunModelMerger(const std::string& input_path1,
@@ -137,6 +156,56 @@ int RunModelOrientationAligner(const std::string& image_path,
     return EXIT_FAILURE;
 
   return colmap::RunModelOrientationAligner(parser.getArgc(), parser.getArgv());
+}
+
+
+int RunModelSplitter(const std::string& input_path,
+                     const std::string& output_path,
+                     const std::string& split_type,
+                     const std::string& split_params,
+                     const std::string& gps_transform_path = "",
+                     std::size_t min_reg_images = 10,
+                     std::size_t min_num_points = 100,
+                     double overlap_ratio = 0.0,
+                     double min_area_ratio = 0.0,
+                     int num_threads = -1,
+                     bool is_gps = false) {
+
+  OptionsParser parser;
+  parser.registerOption("input_path", &input_path);
+  parser.registerOption("output_path", &output_path);
+  // supported {tiles, extent, parts}
+  parser.registerOption("split_type", &split_type);
+  parser.registerOption("split_params", &split_params);
+  parser.registerOption("gps_transform_path", &gps_transform_path);
+  parser.registerOption("min_reg_images", &min_reg_images);
+  parser.registerOption("min_num_points", &min_num_points);
+  parser.registerOption("overlap_ratio", &overlap_ratio);
+  parser.registerOption("min_area_ratio", &min_area_ratio);
+  parser.registerOption("num_threads", &num_threads);
+  parser.registerOption("is_gps", &is_gps);
+  if (!parser.parseOptions())
+    return EXIT_FAILURE;
+
+  return colmap::RunModelSplitter(parser.getArgc(), parser.getArgv());
+}
+
+int RunModelTransformer(const std::string& input_path,
+                        const std::string& output_path,
+                        const std::string& transform_path,
+                        bool is_inverse = false) {
+
+  OptionsParser parser;
+  parser.registerOption("input_path", &input_path);
+  parser.registerOption("output_path", &output_path);
+  parser.registerOption("split_type", &transform_path);
+  parser.registerOption("split_params", &is_inverse);
+
+  if (!parser.parseOptions())
+    return EXIT_FAILURE;
+
+  return colmap::RunModelTransformer(parser.getArgc(), parser.getArgv());
+
 }
 
 }  // namespace cloudViewer

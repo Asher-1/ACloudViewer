@@ -39,20 +39,19 @@
 
 namespace cloudViewer {
 
-using namespace colmap;
 // Base class for 3D point color mapping.
 class PointColormapBase {
  public:
   PointColormapBase();
   virtual ~PointColormapBase() = default;
 
-  virtual void Prepare(EIGEN_STL_UMAP(camera_t, Camera) & cameras,
-                       EIGEN_STL_UMAP(image_t, Image) & images,
-                       EIGEN_STL_UMAP(point3D_t, Point3D) & points3D,
-                       std::vector<image_t>& reg_image_ids) = 0;
+  virtual void Prepare(EIGEN_STL_UMAP(colmap::camera_t, colmap::Camera) & cameras,
+                       EIGEN_STL_UMAP(colmap::image_t, colmap::Image) & images,
+                       EIGEN_STL_UMAP(colmap::point3D_t, colmap::Point3D) & points3D,
+                       std::vector<colmap::image_t>& reg_image_ids) = 0;
 
-  virtual Eigen::Vector4f ComputeColor(const point3D_t point3D_id,
-                                       const Point3D& point3D) = 0;
+  virtual Eigen::Vector4f ComputeColor(const colmap::point3D_t point3D_id,
+                                       const colmap::Point3D& point3D) = 0;
 
   void UpdateScale(std::vector<float>* values);
   float AdjustScale(const float gray);
@@ -68,52 +67,52 @@ class PointColormapBase {
 // Map color according to RGB value from image.
 class PointColormapPhotometric : public PointColormapBase {
  public:
-  void Prepare(EIGEN_STL_UMAP(camera_t, Camera) & cameras,
-               EIGEN_STL_UMAP(image_t, Image) & images,
-               EIGEN_STL_UMAP(point3D_t, Point3D) & points3D,
-               std::vector<image_t>& reg_image_ids) override;
+  void Prepare(EIGEN_STL_UMAP(colmap::camera_t, colmap::Camera) & cameras,
+               EIGEN_STL_UMAP(colmap::image_t, colmap::Image) & images,
+               EIGEN_STL_UMAP(colmap::point3D_t, colmap::Point3D) & points3D,
+               std::vector<colmap::image_t>& reg_image_ids) override;
 
-  Eigen::Vector4f ComputeColor(const point3D_t point3D_id,
-                               const Point3D& point3D) override;
+  Eigen::Vector4f ComputeColor(const colmap::point3D_t point3D_id,
+                               const colmap::Point3D& point3D) override;
 };
 
 // Map color according to error.
 class PointColormapError : public PointColormapBase {
  public:
-  void Prepare(EIGEN_STL_UMAP(camera_t, Camera) & cameras,
-               EIGEN_STL_UMAP(image_t, Image) & images,
-               EIGEN_STL_UMAP(point3D_t, Point3D) & points3D,
-               std::vector<image_t>& reg_image_ids) override;
+  void Prepare(EIGEN_STL_UMAP(colmap::camera_t, colmap::Camera) & cameras,
+               EIGEN_STL_UMAP(colmap::image_t, colmap::Image) & images,
+               EIGEN_STL_UMAP(colmap::point3D_t, colmap::Point3D) & points3D,
+               std::vector<colmap::image_t>& reg_image_ids) override;
 
-  Eigen::Vector4f ComputeColor(const point3D_t point3D_id,
-                               const Point3D& point3D) override;
+  Eigen::Vector4f ComputeColor(const colmap::point3D_t point3D_id,
+                               const colmap::Point3D& point3D) override;
 };
 
 // Map color according to track length.
 class PointColormapTrackLen : public PointColormapBase {
  public:
-  void Prepare(EIGEN_STL_UMAP(camera_t, Camera) & cameras,
-               EIGEN_STL_UMAP(image_t, Image) & images,
-               EIGEN_STL_UMAP(point3D_t, Point3D) & points3D,
-               std::vector<image_t>& reg_image_ids) override;
+  void Prepare(EIGEN_STL_UMAP(colmap::camera_t, colmap::Camera) & cameras,
+               EIGEN_STL_UMAP(colmap::image_t, colmap::Image) & images,
+               EIGEN_STL_UMAP(colmap::point3D_t, colmap::Point3D) & points3D,
+               std::vector<colmap::image_t>& reg_image_ids) override;
 
-  Eigen::Vector4f ComputeColor(const point3D_t point3D_id,
-                               const Point3D& point3D) override;
+  Eigen::Vector4f ComputeColor(const colmap::point3D_t point3D_id,
+                               const colmap::Point3D& point3D) override;
 };
 
 // Map color according to ground-resolution.
 class PointColormapGroundResolution : public PointColormapBase {
  public:
-  void Prepare(EIGEN_STL_UMAP(camera_t, Camera) & cameras,
-               EIGEN_STL_UMAP(image_t, Image) & images,
-               EIGEN_STL_UMAP(point3D_t, Point3D) & points3D,
-               std::vector<image_t>& reg_image_ids) override;
+  void Prepare(EIGEN_STL_UMAP(colmap::camera_t, colmap::Camera) & cameras,
+               EIGEN_STL_UMAP(colmap::image_t, colmap::Image) & images,
+               EIGEN_STL_UMAP(colmap::point3D_t, colmap::Point3D) & points3D,
+               std::vector<colmap::image_t>& reg_image_ids) override;
 
-  Eigen::Vector4f ComputeColor(const point3D_t point3D_id,
-                               const Point3D& point3D) override;
+  Eigen::Vector4f ComputeColor(const colmap::point3D_t point3D_id,
+                               const colmap::Point3D& point3D) override;
 
  private:
-  std::unordered_map<point3D_t, float> resolutions_;
+  std::unordered_map<colmap::point3D_t, float> resolutions_;
 };
 
 // Base class for image color mapping.
@@ -122,12 +121,12 @@ class ImageColormapBase {
   ImageColormapBase();
   virtual ~ImageColormapBase() = default;
 
-  virtual void Prepare(EIGEN_STL_UMAP(camera_t, Camera) & cameras,
-                       EIGEN_STL_UMAP(image_t, Image) & images,
-                       EIGEN_STL_UMAP(point3D_t, Point3D) & points3D,
-                       std::vector<image_t>& reg_image_ids) = 0;
+  virtual void Prepare(EIGEN_STL_UMAP(colmap::camera_t, colmap::Camera) & cameras,
+                       EIGEN_STL_UMAP(colmap::image_t, colmap::Image) & images,
+                       EIGEN_STL_UMAP(colmap::point3D_t, colmap::Point3D) & points3D,
+                       std::vector<colmap::image_t>& reg_image_ids) = 0;
 
-  virtual void ComputeColor(const Image& image, Eigen::Vector4f* plane_color,
+  virtual void ComputeColor(const colmap::Image& image, Eigen::Vector4f* plane_color,
                             Eigen::Vector4f* frame_color) = 0;
 
   const static Eigen::Vector4f kDefaultPlaneColor;
@@ -137,12 +136,12 @@ class ImageColormapBase {
 // Use uniform color for all images.
 class ImageColormapUniform : public ImageColormapBase {
  public:
-  void Prepare(EIGEN_STL_UMAP(camera_t, Camera) & cameras,
-               EIGEN_STL_UMAP(image_t, Image) & images,
-               EIGEN_STL_UMAP(point3D_t, Point3D) & points3D,
-               std::vector<image_t>& reg_image_ids) override;
+  void Prepare(EIGEN_STL_UMAP(colmap::camera_t, colmap::Camera) & cameras,
+               EIGEN_STL_UMAP(colmap::image_t, colmap::Image) & images,
+               EIGEN_STL_UMAP(colmap::point3D_t, colmap::Point3D) & points3D,
+               std::vector<colmap::image_t>& reg_image_ids) override;
 
-  void ComputeColor(const Image& image, Eigen::Vector4f* plane_color,
+  void ComputeColor(const colmap::Image& image, Eigen::Vector4f* plane_color,
                     Eigen::Vector4f* frame_color) override;
 
   Eigen::Vector4f uniform_plane_color = kDefaultPlaneColor;
@@ -152,16 +151,16 @@ class ImageColormapUniform : public ImageColormapBase {
 // Use color for images with specific words in their name.
 class ImageColormapNameFilter : public ImageColormapBase {
  public:
-  void Prepare(EIGEN_STL_UMAP(camera_t, Camera) & cameras,
-               EIGEN_STL_UMAP(image_t, Image) & images,
-               EIGEN_STL_UMAP(point3D_t, Point3D) & points3D,
-               std::vector<image_t>& reg_image_ids) override;
+  void Prepare(EIGEN_STL_UMAP(colmap::camera_t, colmap::Camera) & cameras,
+               EIGEN_STL_UMAP(colmap::image_t, colmap::Image) & images,
+               EIGEN_STL_UMAP(colmap::point3D_t, colmap::Point3D) & points3D,
+               std::vector<colmap::image_t>& reg_image_ids) override;
 
   void AddColorForWord(const std::string& word,
                        const Eigen::Vector4f& plane_color,
                        const Eigen::Vector4f& frame_color);
 
-  void ComputeColor(const Image& image, Eigen::Vector4f* plane_color,
+  void ComputeColor(const colmap::Image& image, Eigen::Vector4f* plane_color,
                     Eigen::Vector4f* frame_color) override;
 
  private:

@@ -296,21 +296,12 @@ void ccPolyline::drawMeOnly(CC_DRAW_CONTEXT& context)
 				CC_DRAW_CONTEXT markerContext = context;
 				markerContext.drawingFlags &= (~CC_DRAW_ENTITY_NAMES); // we must remove the 'push name flag' so that the sphere doesn't push its own!
 
-				//glFunc->glMatrixMode(GL_MODELVIEW);
-				//glFunc->glPushMatrix();
-				//ccGL::Translate(glFunc, P1->x, P1->y, P1->z);
 				markerContext.transformInfo.setTranslationStart(CCVector3(P1->x, P1->y, P1->z));
-
 				ccGLMatrixd rotMat = ccGLMatrixd::FromToRotation(CCVector3d(u.x, u.y, u.z), CCVector3d(0, 0, PC_ONE));
-				//glFunc->glMultMatrixf(rotMat.inverse().data());
-				markerContext.transformInfo.setRotMat(rotMat.inverse());
-				//glFunc->glScalef(m_arrowLength, m_arrowLength, m_arrowLength);
+                markerContext.transformInfo.setTransformation(rotMat.inverse(), false);
 				markerContext.transformInfo.setScale(CCVector3(m_arrowLength, m_arrowLength, m_arrowLength));
-
-				//ccGL::Translate(glFunc, 0.0, 0.0, -0.5);
 				markerContext.transformInfo.setTranslationEnd(CCVector3(0.0, 0.0, -0.5));
 				c_unitArrow->draw(markerContext);
-				//glFunc->glPopMatrix();
 			}
 		}
 	}

@@ -65,13 +65,17 @@ public:
 	~LineSet() override {}
 
 
-	//inherited methods (ccHObject)
+    // inherited methods (ccHObject)
 	virtual bool isSerializable() const override { return true; }
 
 	//! Returns unique class ID
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::LINESET; }
 
 	virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
+
+protected:
+    //inherited methods (ccHObject)
+    virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 
 public:
     LineSet &clear();

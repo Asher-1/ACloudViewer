@@ -40,9 +40,17 @@ class vtkDataSet;
 class vtkActor;
 class vtkLODActor;
 class vtkPoints;
+class vtkPropAssembly;
 class vtkAbstractWidget;
 class vtkUnstructuredGrid;
 
+namespace cloudViewer {
+namespace geometry {
+    class LineSet;
+}
+}
+
+class ccCameraSensor;
 namespace PclTools
 {
 	// Helper function called by createActorFromVTKDataSet () methods.
@@ -80,9 +88,31 @@ namespace PclTools
 	  */
 	void AllocVtkUnstructuredGrid(vtkSmartPointer<vtkUnstructuredGrid> &polydata);
 
-	vtkSmartPointer<vtkDataSet> CreateLine(vtkSmartPointer<vtkPoints> points);
+    bool UpdateScalarBar(vtkAbstractWidget* widget, const CC_DRAW_CONTEXT& CONTEXT);
 
-	bool UpdateScalarBar(vtkAbstractWidget* widget, const CC_DRAW_CONTEXT& CONTEXT);
+    vtkSmartPointer<vtkPoints> GetVtkPointsFromLineSet(const cloudViewer::geometry::LineSet& lineset);
+    vtkSmartPointer<vtkPolyData> CreateCoordinateFromLineSet(const cloudViewer::geometry::LineSet& lineset);
+
+    void SetPolyDataColor(vtkSmartPointer<vtkPolyData> polyData,
+                          const ecvColor::Rgb& color, bool is_cell = false);
+    void AddPolyDataCell(vtkSmartPointer<vtkPolyData> polyData);
+    vtkSmartPointer<vtkPolyData> CreateLine(vtkSmartPointer<vtkPoints> points);
+    vtkSmartPointer<vtkPolyData> CreateCameras(const ccCameraSensor *cameraSensor,
+                                               const ecvColor::Rgb& lineColor,
+                                               const ecvColor::Rgb& planeColor);
+    vtkSmartPointer<vtkPolyData> CreatePlane(const pcl::ModelCoefficients &coefficients,
+                                             double x, double y, double z, double scale = 1);
+    vtkSmartPointer<vtkPolyData> CreatePlane(const pcl::ModelCoefficients &coefficients);
+    vtkSmartPointer<vtkPropAssembly> CreateCoordinate(double axesLength = 1.5,
+                                                      const std::string& xLabel = "x",
+                                                      const std::string& yLabel = "y",
+                                                      const std::string& zLabel = "z",
+                                                      const std::string& xPlus = "R",
+                                                      const std::string& xMinus = "L",
+                                                      const std::string& yPlus = "A",
+                                                      const std::string& yMinus = "P",
+                                                      const std::string& zPlus = "I",
+                                                      const std::string& zMinus = "S");
 };
 
 #endif // QPCL_PCLTOOLS_HEADER

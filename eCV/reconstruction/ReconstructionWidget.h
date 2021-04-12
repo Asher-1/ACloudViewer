@@ -37,7 +37,7 @@
 
 #include "util/bitmap.h"
 #include "base/reconstruction.h"
-#include "controllers/incremental_mapper.h"
+#include "controllers/IncrementalMapperController.h"
 #include "AutomaticReconstructionWidget.h"
 #include "BundleAdjustmentWidget.h"
 #include "DatabaseManagementWidget.h"
@@ -49,16 +49,18 @@
 #include "ProjectWidget.h"
 #include "LogWidget.h"
 #include "ReconstructionManagerWidget.h"
-#include "ui/reconstruction_options_widget.h"
 #include "ReconstructionStatsWidget.h"
 #include "UndistortionWidget.h"
+#include "OptionManager.h"
+#include "ReconstructionManager.h"
 
 class MainWindow;
 
 namespace cloudViewer {
 
-using namespace colmap;
+class ReconstructionOptionsWidget;
 class ReconstructionWidget : public QWidget {
+    Q_OBJECT
  public:
   explicit ReconstructionWidget(MainWindow* app);
 
@@ -74,6 +76,9 @@ class ReconstructionWidget : public QWidget {
   QDockWidget* getLogWidget() {return dock_log_widget_; }
   std::vector<QMenu*>& getReconstructionMenus() { return menus_list_; }
   std::vector<QToolBar*>& getReconstructionToolbars() { return toolbar_list_; }
+
+  QLabel* getTimerStatusBar() { return statusbar_timer_label_; }
+  QLabel* getImageStatusBar() { return model_viewer_widget_->statusbar_status_label; }
 
  private:
   friend class AutomaticReconstructionWidget;
@@ -123,8 +128,8 @@ class ReconstructionWidget : public QWidget {
   void RenderSelectedReconstruction();
   void RenderClear();
 
-  void SelectReconstructionIdx(const size_t);
-  size_t SelectedReconstructionIdx();
+  void SelectReconstructionIdx(const std::size_t);
+  std::size_t SelectedReconstructionIdx();
   bool HasSelectedReconstruction();
   bool IsSelectedReconstructionValid();
 
@@ -151,7 +156,7 @@ class ReconstructionWidget : public QWidget {
   ReconstructionManager reconstruction_manager_;
   std::unique_ptr<IncrementalMapperController> mapper_controller_;
 
-  Timer timer_;
+  colmap::Timer timer_;
 
   ModelViewerWidget* model_viewer_widget_;
   ProjectWidget* project_widget_;

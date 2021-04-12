@@ -65,10 +65,6 @@ endif()
 
 COLMAP_ADD_STATIC_LIBRARY(colmap ${COLMAP_SOURCES})
 
-# fix eigen alignment bugs for colmap
-add_definitions(-DEIGEN_DONT_ALIGN)
-add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
-
 if(CUDA_ENABLED)
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --use_fast_math")
 
@@ -87,9 +83,9 @@ if(CUDA_ENABLED)
     COLMAP_ADD_STATIC_CUDA_LIBRARY(colmap_cuda ${COLMAP_CUDA_SOURCES})
     target_link_libraries(colmap_cuda colmap)
 
-    target_link_libraries(colmap PRIVATE
+    target_link_libraries(colmap PUBLIC
         colmap_cuda ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
 else()
-    target_link_libraries(colmap PRIVATE
+    target_link_libraries(colmap PUBLIC
         ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
 endif()

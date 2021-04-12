@@ -54,15 +54,15 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeHelper.cmake NO_POLICY_SCOPE)
 ################################################################################
 
 set(GUI_ENABLED ${BUILD_GUI})
-set(SIMD_ENABLED ${WITH_SIMD})
 set(OPENMP_ENABLED ${WITH_OPENMP})
 set(CUDA_ENABLED ${BUILD_CUDA_MODULE})
 set(TESTS_ENABLED ${BUILD_UNIT_TESTS})
 set(CGAL_ENABLED ${CVCORELIB_USE_CGAL})
+set(SIMD_ENABLED ${WITH_SIMD})
 set(IPO_ENABLED ON)
 set(BOOST_STATIC ON)
 set(OPENGL_ENABLED ON)
-set(PROFILING_ENABLED OFF)
+set(PROFILING_ENABLED OFF) # Whether to enable google-perftools linker flags
 set(CUDA_ARCHS "Auto" CACHE STRING "List of CUDA architectures for which to \
 generate code, e.g., Auto, All, Maxwell, Pascal, ...")
 
@@ -156,14 +156,17 @@ if(IS_DEBUG)
     add_definitions("-DEIGEN_INITIALIZE_MATRICES_BY_NAN")
 endif()
 
-# fix eigen alignment bugs for colmap
-add_definitions(-DEIGEN_DONT_ALIGN)
-add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
-
 if(SIMD_ENABLED)
-    message(STATUS "Enabling SIMD support")
+    add_definitions(-DEIGEN_ALIGN)
+    add_definitions(-DEIGEN_ALIGN_STATICALLY)
+    add_definitions("-DENABLE_CPU_NEON")
+    add_definitions("-DENABLE_CPU_AVX")
+    add_definitions("-DENABLE_CPU_SSE")
+    add_definitions("-DENABLE_CPU_SSE2")
 else()
-    message(STATUS "Disabling SIMD support")
+    # fix eigen alignment bugs for colmap
+    add_definitions(-DEIGEN_DONT_ALIGN)
+    add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
 endif()
 
 if(OPENMP_ENABLED AND OPENMP_FOUND)

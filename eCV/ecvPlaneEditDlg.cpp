@@ -41,7 +41,7 @@ static CCVector3d s_center(0, 0, 0);
 ccPlaneEditDlg::ccPlaneEditDlg(ccPickingHub* pickingHub, QWidget* parent)
 	: QDialog(parent)
 	, Ui::PlaneEditDlg()
-	, m_associatedPlane(0)
+    , m_associatedPlane(nullptr)
 	, m_pickingHub(pickingHub)
 {
 	assert(pickingHub);

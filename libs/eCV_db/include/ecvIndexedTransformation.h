@@ -69,14 +69,6 @@ public:
 	**/
 	ccIndexedTransformation& operator *= (const ccGLMatrix& mat);
 
-	//! Multiplication operator
-	//ccIndexedTransformation operator * (const ccIndexedTransformation& mat) const;
-	
-	//! (in place) Multiplication operator
-	/** Warning: index is not modified by this operation.
-	**/
-	//ccIndexedTransformation& operator *= (const ccIndexedTransformation& trans)
-
 	//! (in place) Translation operator
 	/** Warning: index is not modified by this operation.
 	**/

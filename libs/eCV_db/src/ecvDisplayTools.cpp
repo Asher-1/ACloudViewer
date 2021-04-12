@@ -1909,6 +1909,7 @@ ENTITY_TYPE ecvDisplayTools::ConvertToEntityType(const CV_CLASS_ENUM& type) {
 		entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
 		break;
 	case CV_TYPES::POLY_LINE:
+    case CV_TYPES::LINESET:
 		entityType = ENTITY_TYPE::ECV_SHAPE;
 		break;		
 	case CV_TYPES::LABEL_2D:
@@ -2058,7 +2059,7 @@ float ecvDisplayTools::GetFov()
 }
 
 void ecvDisplayTools::SetupProjectiveViewport(const ccGLMatrixd& cameraMatrix,
-	float fov_deg/*=0.0f*/,
+    float fov_deg/*=0.0f*/,
 	float ar/*=1.0f*/,
 	bool viewerBasedPerspective/*=true*/,
 	bool bubbleViewMode/*=false*/)
@@ -2080,6 +2081,9 @@ void ecvDisplayTools::SetupProjectiveViewport(const ccGLMatrixd& cameraMatrix,
 
 	//set the camera matrix 'translation' as OpenGL camera center
 	CCVector3d T = cameraMatrix.getTranslationAsVec3D();
+    CCVector3d UP = cameraMatrix.getColumnAsVec3D(1);
+    cameraMatrix.applyRotation(UP.data());
+    SetCameraPosition(T.data(), UP.data());
 	SetCameraPos(T);
 	if (viewerBasedPerspective && s_tools.instance->m_autoPickPivotAtCenter)
 	{
@@ -2092,7 +2096,8 @@ void ecvDisplayTools::SetupProjectiveViewport(const ccGLMatrixd& cameraMatrix,
 	trans.invert();
 	SetBaseViewMat(trans);
 
-	RedrawDisplay();
+    ResetCameraClippingRange();
+    UpdateScreen();
 }
 
 void ecvDisplayTools::SetAspectRatio(float ar)
@@ -2108,19 +2113,16 @@ void ecvDisplayTools::SetAspectRatio(float ar)
 		//update param
 		s_tools.instance->m_viewportParams.cameraAspectRatio = ar;
 
-		//and camera state (if perspective view is 'on')
-		if (s_tools.instance->m_viewportParams.perspectiveView)
-		{
-			InvalidateViewport();
-			InvalidateVisualization();
-			Deprecate3DLayer();
-		}
+        //and camera state
+        InvalidateViewport();
+        InvalidateVisualization();
+        Deprecate3DLayer();
 	}
 }
 
 void ecvDisplayTools::SetFov(float fov_deg)
 {
-	if (fov_deg < FLT_EPSILON || fov_deg > 180.0f)
+    if (cloudViewer::LessThanEpsilon(fov_deg) || fov_deg > 180.0f)
 	{
 		CVLog::Warning("[ecvDisplayTools::setFov] Invalid FOV value!");
 		return;
@@ -2136,11 +2138,8 @@ void ecvDisplayTools::SetFov(float fov_deg)
 		//update param
 		s_tools.instance->m_viewportParams.fov_deg = fov_deg;
 		//and camera state (if perspective view is 'on')
-		if (s_tools.instance->m_viewportParams.perspectiveView)
 		{
-
 			SetCameraFovy(fov_deg);
-
 			InvalidateViewport();
 			InvalidateVisualization();
 			Deprecate3DLayer();
@@ -2368,7 +2367,7 @@ void ecvDisplayTools::SetCameraPos(const CCVector3d& P)
     if ((s_tools.instance->m_viewportParams.getCameraCenter() - P).norm2d() != 0.0)
 	{
         s_tools.instance->m_viewportParams.setCameraCenter(P);
-		//SetCameraPosition(P);
+        SetCameraPosition(P);
         emit s_tools.instance->cameraPosChanged(s_tools.instance->m_viewportParams.getCameraCenter());
 		emit s_tools.instance->cameraParamChanged();
 		InvalidateViewport();
@@ -3671,6 +3670,7 @@ void ecvDisplayTools::CheckIfRemove()
 			if (rmInfo.removeType == ENTITY_TYPE::ECV_OCTREE) continue;
 			if (rmInfo.removeType == ENTITY_TYPE::ECV_KDTREE) continue;
 			if (rmInfo.removeType == ENTITY_TYPE::ECV_2DLABLE) continue;
+            if (rmInfo.removeType == ENTITY_TYPE::ECV_SENSOR) continue;
 			
 			CC_DRAW_CONTEXT context;
 			context.removeEntityType = rmInfo.removeType;
@@ -3721,7 +3721,7 @@ void ecvDisplayTools::ChangeEntityProperties(PROPERTY_PARAM & propertyParam, boo
 void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param, bool update/* = false*/)
 {
 	ccHObject * entity = param.entity;
-	int viewPort = param.viewPort;
+    int viewport = param.viewport;
 	switch (param.type)
 	{
 	case WIDGETS_TYPE::WIDGET_COORDINATE:
@@ -3780,7 +3780,7 @@ void ecvDisplayTools::DrawWidgets(const WIDGETS_PARAMETER& param, bool update/* 
 		{
 			CONTEXT.drawingFlags |= CC_VIRTUAL_TRANS_ENABLED;
 		}
-		CONTEXT.defaultViewPort = viewPort;
+        CONTEXT.defaultViewPort = viewport;
 		poly->draw(CONTEXT);
 	}
 		break;
@@ -3818,7 +3818,7 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	break;
 	case WIDGETS_TYPE::WIDGET_POLYGONMESH:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_MESH;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -3827,7 +3827,7 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	case WIDGETS_TYPE::WIDGET_LINE_3D:
 	case WIDGETS_TYPE::WIDGET_POLYLINE:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_LINES_3D;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -3836,7 +3836,7 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	case WIDGETS_TYPE::WIDGET_CAPTION:
 	{
 		context.removeEntityType = ENTITY_TYPE::ECV_CAPTION;
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
 	}
@@ -3844,14 +3844,14 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	case WIDGETS_TYPE::WIDGET_SCALAR_BAR:
 	{
 		context.removeEntityType = ENTITY_TYPE::ECV_SCALAR_BAR;
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
 	}
 	break;
 	case WIDGETS_TYPE::WIDGET_SPHERE:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -3859,7 +3859,7 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	break;
 	case WIDGETS_TYPE::WIDGET_IMAGE:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_IMAGE;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -3867,7 +3867,7 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	break;
 	case WIDGETS_TYPE::WIDGET_POINTS_2D:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_MARK_POINT;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -3875,14 +3875,14 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	break;
 	case WIDGETS_TYPE::WIDGET_CIRCLE_2D:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_CIRCLE_2D;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
 	}
 	case WIDGETS_TYPE::WIDGET_TRIANGLE_2D:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_TRIANGLE_2D;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -3890,7 +3890,7 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	break;
 	case WIDGETS_TYPE::WIDGET_POLYLINE_2D:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_POLYLINE_2D;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -3898,7 +3898,7 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	break;
 	case WIDGETS_TYPE::WIDGET_LINE_2D:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_LINES_2D;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -3906,7 +3906,7 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	break;
 	case WIDGETS_TYPE::WIDGET_RECTANGLE_2D:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_RECTANGLE_2D;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -3914,7 +3914,7 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 	break;
 	case WIDGETS_TYPE::WIDGET_T2D:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_TEXT2D;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);
@@ -3922,7 +3922,7 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param, bool update/
 		break;
 	case WIDGETS_TYPE::WIDGET_T3D:
 	{
-		context.defaultViewPort = param.viewPort;
+        context.defaultViewPort = param.viewport;
 		context.removeEntityType = ENTITY_TYPE::ECV_TEXT3D;
 		context.removeViewID = param.viewID;
 		RemoveEntities(context);

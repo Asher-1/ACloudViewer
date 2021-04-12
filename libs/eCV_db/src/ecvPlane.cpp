@@ -124,7 +124,7 @@ ccPlane* ccPlane::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double* rm
 	if (count < 3)
 	{
 		CVLog::Warning("[ccPlane::Fit] Not enough points in input cloud to fit a plane!");
-		return 0;
+        return nullptr;
 	}
 
 	cloudViewer::Neighbourhood Yk(cloud);
@@ -134,7 +134,7 @@ ccPlane* ccPlane::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double* rm
 	if (!theLSPlane)
 	{
 		CVLog::Warning("[ccPlane::Fit] Not enough points to fit a plane!");
-		return 0;
+        return nullptr;
 	}
 
 	//get the centroid
@@ -188,7 +188,6 @@ ccPlane* ccPlane::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double* rm
 		*rms = cloudViewer::DistanceComputationTools::computeCloud2PlaneDistanceRMS(cloud, theLSPlane);
 		plane->setMetaData(QString("RMS"), QVariant(*rms));
 	}
-
 
 	return plane;
 }

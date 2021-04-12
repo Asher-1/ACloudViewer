@@ -33,11 +33,6 @@ add_subdirectory( db_tree )
 add_subdirectory( pluginManager )
 
 if (BUILD_RECONSTRUCTION)
-    include_directories(${COLMAP_SOURCE_DIR}/lib)
-    include_directories(${COLMAP_SOURCE_DIR}/src)
-    # fix eigen alignment bugs for colmap
-    add_definitions(-DEIGEN_DONT_ALIGN)
-    add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
     add_subdirectory(reconstruction)
 endif()
 
@@ -122,6 +117,20 @@ else()
     target_link_contrib( ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} )
 endif()
 
+if (USE_PCL_BACKEND)
+    target_link_directories( ${PROJECT_NAME}
+            PUBLIC ${QPCL_ENGINE_LIB_SOURCE_DIR}
+    )
+    include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
+    target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
+endif()
+
+if (BUILD_PYTHON_MODULE)
+    target_link_libraries( ${PROJECT_NAME} ECV_PYTHON_LIB )
+    # Add custom preprocessor definitions
+    target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_PYTHON_MODULE )
+endif()	
+
 if (BUILD_RECONSTRUCTION)
     if (${BUILD_GUI})
         target_compile_definitions( ${PROJECT_NAME} PRIVATE GUI_ENABLED)
@@ -143,24 +152,12 @@ if (BUILD_RECONSTRUCTION)
     endif()
     target_compile_definitions( ${PROJECT_NAME} PRIVATE OPENGL_ENABLED)
 
+    include_directories(${COLMAP_SOURCE_DIR}/lib)
+    include_directories(${COLMAP_SOURCE_DIR}/src)
     target_link_libraries( ${PROJECT_NAME} colmap)
     # Add custom preprocessor definitions
     target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_COLMAP_MODULE )
 endif()
-
-if (USE_PCL_BACKEND)
-    target_link_directories( ${PROJECT_NAME}
-            PUBLIC ${QPCL_ENGINE_LIB_SOURCE_DIR}
-    )
-    include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
-    target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
-endif()
-
-if (BUILD_PYTHON_MODULE)
-    target_link_libraries( ${PROJECT_NAME} ECV_PYTHON_LIB )
-    # Add custom preprocessor definitions
-    target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_PYTHON_MODULE )
-endif()	
 
 # Add custom preprocessor definitions
 if( WIN32 )

@@ -29,13 +29,15 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#include "controllers/bundle_adjustment.h"
-
+#include "controllers/BundleAdjustmentController.h"
+#include "ThreadControlWidget.h"
 #include "BundleAdjustmentWidget.h"
 #include "ReconstructionWidget.h"
+#include "OptionManager.h"
 
 namespace cloudViewer {
 
+using namespace colmap;
 BundleAdjustmentWidget::BundleAdjustmentWidget(ReconstructionWidget* main_window,
                                                OptionManager* options)
     : OptionsWidget(main_window),

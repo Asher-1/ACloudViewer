@@ -34,33 +34,35 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "base/reconstruction.h"
 #include "base/undistortion.h"
 #include "OptionsWidget.h"
 #include "ThreadControlWidget.h"
-#include "util/misc.h"
-#include "util/option_manager.h"
+
+namespace colmap {
+    class Reconstruction;
+}
 
 namespace cloudViewer {
 
-using namespace colmap;
+class OptionManager;
+
 class UndistortionWidget : public OptionsWidget {
  public:
   UndistortionWidget(QWidget* parent, const OptionManager* options);
 
-  void Show(const Reconstruction& reconstruction);
+  void Show(const colmap::Reconstruction& reconstruction);
   bool IsValid() const;
 
  private:
   void Undistort();
 
   const OptionManager* options_;
-  const Reconstruction* reconstruction_;
+  const colmap::Reconstruction* reconstruction_;
 
   ThreadControlWidget* thread_control_widget_;
 
   QComboBox* output_format_;
-  UndistortCameraOptions undistortion_options_;
+  colmap::UndistortCameraOptions undistortion_options_;
   std::string output_path_;
 };
 

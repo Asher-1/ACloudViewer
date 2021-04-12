@@ -55,7 +55,7 @@ public:
 	virtual void initAnnotationLabels(const std::vector<std::string>& labelList) {}
 
 	virtual void toggleInteractor() = 0;
-	virtual bool setInputCloud(ccPointCloud* pointCloud, int viewPort = 0) = 0;
+	virtual bool setInputCloud(ccPointCloud* pointCloud, int viewport = 0) = 0;
 	virtual void start() = 0;
 	virtual void stop() = 0;
 

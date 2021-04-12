@@ -31,14 +31,13 @@
 
 #pragma once
 
-#include "controllers/automatic_reconstruction.h"
+#include "controllers/AutomaticReconstructionController.h"
 #include "OptionsWidget.h"
-#include "ThreadControlWidget.h"
 
 namespace cloudViewer {
 class ReconstructionWidget;
+class ThreadControlWidget;
 
-using namespace cloudViewer;
 class AutomaticReconstructionWidget : public OptionsWidget {
  public:
   AutomaticReconstructionWidget(ReconstructionWidget* main_window);

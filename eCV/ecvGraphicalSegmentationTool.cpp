@@ -48,8 +48,8 @@ ccGraphicalSegmentationTool::ccGraphicalSegmentationTool(QWidget* parent)
 	, Ui::GraphicalSegmentationDlg()
 	, m_somethingHasChanged(false)
 	, m_state(0)
-	, m_segmentationPoly(0)
-	, m_polyVertices(0)
+    , m_segmentationPoly(nullptr)
+    , m_polyVertices(nullptr)
 	, m_rectangularSelection(false)
 	, m_deleteHiddenParts(false)
 {
@@ -121,11 +121,11 @@ ccGraphicalSegmentationTool::~ccGraphicalSegmentationTool()
 {
 	if (m_segmentationPoly)
 		delete m_segmentationPoly;
-	m_segmentationPoly = 0;
+    m_segmentationPoly = nullptr;
 
 	if (m_polyVertices)
 		delete m_polyVertices;
-	m_polyVertices = 0;
+    m_polyVertices = nullptr;
 }
 
 void ccGraphicalSegmentationTool::onShortcutTriggered(int key)

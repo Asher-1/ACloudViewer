@@ -175,6 +175,7 @@ class MainWindow : public QMainWindow {
   QToolBar* render_toolbar_;
   QToolBar* extras_toolbar_;
 
+//  QStatusBar* status_bar_;
   QDockWidget* dock_log_widget_;
 
   QTimer* statusbar_timer_;

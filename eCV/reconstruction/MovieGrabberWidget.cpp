@@ -36,9 +36,12 @@
 #include "base/pose.h"
 #include "base/projection.h"
 #include "ModelViewerWidget.h"
-#include "ui/render_options.h"
+#include "RenderOptions.h"
+#include "QtUtils.h"
 
 namespace cloudViewer {
+
+using namespace colmap;
 
 MovieGrabberWidget::MovieGrabberWidget(QWidget* parent,
                                        ModelViewerWidget* model_viewer_widget)
@@ -207,8 +210,7 @@ void MovieGrabberWidget::Assemble() {
 
   // Data of first view.
   const Eigen::Matrix4d prev_model_view_matrix =
-      QMatrixToEigen(view_data_[table_->item(0, 0)].model_view_matrix)
-          .cast<double>();
+      QMatrixToEigen(view_data_[table_->item(0, 0)].model_view_matrix).cast<double>();
   const Eigen::Matrix3x4d prev_view_model_matrix =
       InvertProjectionMatrix(prev_model_view_matrix.topLeftCorner<3, 4>());
   Eigen::Vector4d prev_qvec =

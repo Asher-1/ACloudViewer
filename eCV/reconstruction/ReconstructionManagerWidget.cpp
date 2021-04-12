@@ -30,8 +30,11 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #include "ReconstructionManagerWidget.h"
+#include "ReconstructionManager.h"
 
 namespace cloudViewer {
+
+using namespace colmap;
 
 const std::size_t ReconstructionManagerWidget::kNewestReconstructionIdx =
     std::numeric_limits<size_t>::max();

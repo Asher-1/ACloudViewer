@@ -34,21 +34,20 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "base/reconstruction.h"
 #include "OptionsWidget.h"
-#include "ThreadControlWidget.h"
-#include "util/option_manager.h"
+#include "base/reconstruction.h"
 
 namespace cloudViewer {
-using namespace cloudViewer;
 
+class OptionManager;
 class ReconstructionWidget;
+class ThreadControlWidget;
 
 class BundleAdjustmentWidget : public OptionsWidget {
  public:
   BundleAdjustmentWidget(ReconstructionWidget* main_window, OptionManager* options);
 
-  void Show(Reconstruction* reconstruction);
+  void Show(colmap::Reconstruction* reconstruction);
 
  private:
   void Run();
@@ -56,7 +55,7 @@ class BundleAdjustmentWidget : public OptionsWidget {
 
   ReconstructionWidget* main_window_;
   OptionManager* options_;
-  Reconstruction* reconstruction_;
+  colmap::Reconstruction* reconstruction_;
   ThreadControlWidget* thread_control_widget_;
   QAction* render_action_;
 };

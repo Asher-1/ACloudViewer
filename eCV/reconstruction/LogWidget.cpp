@@ -30,6 +30,7 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #include "LogWidget.h"
+#include "OptionManager.h"
 
 namespace cloudViewer {
 

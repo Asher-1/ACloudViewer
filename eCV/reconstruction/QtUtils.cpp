@@ -36,6 +36,7 @@
 
 namespace cloudViewer {
 
+using namespace colmap;
 Eigen::Matrix4f QMatrixToEigen(const QMatrix4x4& matrix) {
   Eigen::Matrix4f eigen;
   for (size_t r = 0; r < 4; ++r) {

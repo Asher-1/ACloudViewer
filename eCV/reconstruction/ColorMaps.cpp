@@ -35,6 +35,8 @@
 
 namespace cloudViewer {
 
+using namespace colmap;
+
 PointColormapBase::PointColormapBase()
     : scale(1.0f),
       min(0.0f),

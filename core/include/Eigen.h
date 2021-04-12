@@ -31,9 +31,12 @@
 
 // EIGEN
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <Eigen/StdVector>
 
 // SYSTEM
+#include <initializer_list>
+#include <memory>
 #include <tuple>
 #include <vector>
 

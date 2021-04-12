@@ -30,6 +30,7 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #include "ReconstructionStatsWidget.h"
+#include "base/reconstruction.h"
 
 namespace cloudViewer {
 
@@ -49,7 +50,7 @@ ReconstructionStatsWidget::ReconstructionStatsWidget(QWidget* parent)
   grid->addWidget(stats_table_);
 }
 
-void ReconstructionStatsWidget::Show(const Reconstruction& reconstruction) {
+void ReconstructionStatsWidget::Show(const colmap::Reconstruction& reconstruction) {
   QString stats;
 
   stats_table_->clearContents();

@@ -42,22 +42,21 @@
 
 namespace cloudViewer {
 
-using namespace colmap;
 Eigen::Matrix4f QMatrixToEigen(const QMatrix4x4& matrix);
 
 QMatrix4x4 EigenToQMatrix(const Eigen::Matrix4f& matrix);
 
-QImage BitmapToQImageRGB(const Bitmap& bitmap);
+QImage BitmapToQImageRGB(const colmap::Bitmap& bitmap);
 
-void DrawKeypoints(QPixmap* image, const FeatureKeypoints& points,
+void DrawKeypoints(QPixmap* image, const colmap::FeatureKeypoints& points,
                    const QColor& color = Qt::red);
 
 QPixmap ShowImagesSideBySide(const QPixmap& image1, const QPixmap& image2);
 
 QPixmap DrawMatches(const QPixmap& image1, const QPixmap& image2,
-                    const FeatureKeypoints& points1,
-                    const FeatureKeypoints& points2,
-                    const FeatureMatches& matches,
+                    const colmap::FeatureKeypoints& points1,
+                    const colmap::FeatureKeypoints& points2,
+                    const colmap::FeatureMatches& matches,
                     const QColor& keypoints_color = Qt::red);
 
 }  // namespace cloudViewer

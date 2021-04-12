@@ -31,11 +31,15 @@
 
 #include "FeatureMatchingWidget.h"
 
-#include "feature/matching.h"
+#include "OptionManager.h"
 #include "OptionsWidget.h"
 #include "ThreadControlWidget.h"
+#include "util/misc.h"
+#include "feature/matching.h"
 
 namespace cloudViewer {
+
+using namespace colmap;
 
 class FeatureMatchingTab : public QWidget {
  public:
@@ -158,8 +162,8 @@ void ExhaustiveMatchingTab::Run() {
   options_widget_->WriteOptions();
 
   Thread* matcher = new ExhaustiveFeatureMatcher(*options_->exhaustive_matching,
-                                                 *options_->sift_matching,
-                                                 *options_->database_path);
+                                                                 *options_->sift_matching,
+                                                                 *options_->database_path);
   thread_control_widget_->StartThread("Matching...", true, matcher);
 }
 
@@ -207,8 +211,8 @@ void SequentialMatchingTab::Run() {
   }
 
   Thread* matcher = new SequentialFeatureMatcher(*options_->sequential_matching,
-                                                 *options_->sift_matching,
-                                                 *options_->database_path);
+                                                                 *options_->sift_matching,
+                                                                 *options_->database_path);
   thread_control_widget_->StartThread("Matching...", true, matcher);
 }
 
@@ -242,8 +246,8 @@ void VocabTreeMatchingTab::Run() {
   }
 
   Thread* matcher = new VocabTreeFeatureMatcher(*options_->vocab_tree_matching,
-                                                *options_->sift_matching,
-                                                *options_->database_path);
+                                                                *options_->sift_matching,
+                                                                *options_->database_path);
   thread_control_widget_->StartThread("Matching...", true, matcher);
 }
 
@@ -264,8 +268,8 @@ void SpatialMatchingTab::Run() {
   options_widget_->WriteOptions();
 
   Thread* matcher = new SpatialFeatureMatcher(*options_->spatial_matching,
-                                              *options_->sift_matching,
-                                              *options_->database_path);
+                                                              *options_->sift_matching,
+                                                              *options_->database_path);
   thread_control_widget_->StartThread("Matching...", true, matcher);
 }
 
@@ -283,7 +287,8 @@ TransitiveMatchingTab::TransitiveMatchingTab(QWidget* parent,
 void TransitiveMatchingTab::Run() {
   options_widget_->WriteOptions();
 
-  Thread* matcher = new TransitiveFeatureMatcher(*options_->transitive_matching,
+  Thread* matcher = new TransitiveFeatureMatcher(
+                                                 *options_->transitive_matching,
                                                  *options_->sift_matching,
                                                  *options_->database_path);
   thread_control_widget_->StartThread("Matching...", true, matcher);

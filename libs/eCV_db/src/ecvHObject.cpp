@@ -930,6 +930,17 @@ void ccHObject::getTypeID_recursive(std::vector<removeInfo> & rmInfos, bool rela
 			labelViewPort->clear2Dviews();
 		}
 	}
+    else if (rminfo.removeType == ENTITY_TYPE::ECV_SENSOR)
+    {
+        ccHObject* obj = find(rminfo.removeId.toUInt());
+        ccSensor* sensor = ccHObjectCaster::ToSensor(obj);
+        if (sensor)
+        {
+            // clear
+            CC_DRAW_CONTEXT context;;
+            sensor->clearDrawings(context);
+        }
+    }
 
 	// need to remove 3D name if shown
 	if (nameShownIn3D())
@@ -1719,6 +1730,15 @@ void ccHObject::hideObject_recursive(bool recursive)
 			label2d->update2DLabelView(context, true);
 			continue;
 		}
+        else if (hdInfo.hideType == ENTITY_TYPE::ECV_SENSOR)
+        {
+            ccHObject* obj = find(hdInfo.hideId.toUInt());
+            assert(obj && obj->isA(CV_TYPES::CAMERA_SENSOR));
+            ccSensor* cameraSensor = ccHObjectCaster::ToSensor(obj);
+            cameraSensor->hideShowDrawings(context);
+            continue;
+        }
+
 		context.viewID = hdInfo.hideId;
 		// hide obj bbox
 		hideBB(context);
