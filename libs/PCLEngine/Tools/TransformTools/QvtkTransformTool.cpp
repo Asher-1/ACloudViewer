@@ -76,7 +76,7 @@ void QvtkTransformTool::setVisualizer(ecvGenericVisualizer3D* viewer)
 	}
 }
 
-bool QvtkTransformTool::setInputData(ccHObject * entity, int viewPort)
+bool QvtkTransformTool::setInputData(ccHObject * entity, int viewport)
 {
 	if (!m_viewer || !ecvGenericTransformTool::setInputData(entity))
 	{

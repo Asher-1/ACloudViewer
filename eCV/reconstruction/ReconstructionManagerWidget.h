@@ -33,11 +33,9 @@
 
 #include <QtWidgets>
 
-#include "base/reconstruction_manager.h"
-
 namespace cloudViewer {
 
-using namespace colmap;
+class ReconstructionManager;
 class ReconstructionManagerWidget : public QComboBox {
  public:
   const static size_t kNewestReconstructionIdx;

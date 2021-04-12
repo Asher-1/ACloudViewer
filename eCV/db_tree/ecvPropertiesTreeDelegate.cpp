@@ -1744,11 +1744,23 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem * item)
 			{
 				plane->showNormalVector(item->checkState() == Qt::Checked);
 				ecvDisplayTools::SetRedrawRecursive(false);
-				m_currentObject->setRedrawFlagRecursive(true);
+                m_currentObject->setRedrawFlagRecursive(true);
 				ecvDisplayTools::RedrawDisplay();
 				break;
 			}
 		}
+        else if (m_currentObject->isKindOf(CV_TYPES::SENSOR)) {
+            ccSensor* sensor = ccHObjectCaster::ToSensor(m_currentObject);
+            if (sensor)
+            {
+                sensor->setVisible(item->checkState() == Qt::Checked);
+                CC_DRAW_CONTEXT context;
+                context.visible = sensor->isVisible();
+                sensor->hideShowDrawings(context);
+                ecvDisplayTools::UpdateScreen();
+                break;
+            }
+        }
 		else
 		{
 			m_currentObject->setVisible(item->checkState() == Qt::Checked);
@@ -1876,7 +1888,6 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem * item)
 		assert(mesh);
 		mesh->enableStippling(item->checkState() == Qt::Checked);
 		ecvDisplayTools::SetRedrawRecursive(false);
-		//mesh->setRedrawFlagRecursive(true);
 	}
 	redraw = true;
 	break;
@@ -1929,15 +1940,21 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem * item)
 	{
 		ccCameraSensor* sensor = ccHObjectCaster::ToCameraSensor(m_currentObject);
 		sensor->drawFrustum(item->checkState() == Qt::Checked);
+        ecvDisplayTools::SetRedrawRecursive(false);
+        sensor->setRedrawFlagRecursive(true);
+        ecvDisplayTools::RedrawDisplay();
 	}
-	redraw = true;
+    redraw = false;
 	break;
 	case OBJECT_SENSOR_DRAW_FRUSTUM_PLANES:
 	{
 		ccCameraSensor* sensor = ccHObjectCaster::ToCameraSensor(m_currentObject);
 		sensor->drawFrustumPlanes(item->checkState() == Qt::Checked);
+        ecvDisplayTools::SetRedrawRecursive(false);
+        sensor->setRedrawFlagRecursive(true);
+        ecvDisplayTools::RedrawDisplay();
 	}
-	redraw = true;
+    redraw = false;
 	break;
 	}
 

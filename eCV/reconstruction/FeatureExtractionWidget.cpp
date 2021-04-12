@@ -31,13 +31,17 @@
 
 #include "FeatureExtractionWidget.h"
 
+#include "util/misc.h"
+#include "OptionManager.h"
 #include "base/camera_models.h"
 #include "feature/extraction.h"
-#include "OptionsWidget.h"
 #include "QtUtils.h"
+#include "OptionsWidget.h"
 #include "ThreadControlWidget.h"
 
 namespace cloudViewer {
+
+using namespace colmap;
 
 class ExtractionWidget : public OptionsWidget {
  public:
@@ -113,7 +117,8 @@ void SIFTExtractionWidget::Run() {
   reader_options.database_path = *options_->database_path;
   reader_options.image_path = *options_->image_path;
 
-  Thread* extractor = new SiftFeatureExtractor(reader_options, *options_->sift_extraction);
+  Thread* extractor = new SiftFeatureExtractor(reader_options,
+                                                               *options_->sift_extraction);
   thread_control_widget_->StartThread("Extracting...", true, extractor);
 }
 

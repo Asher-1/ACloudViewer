@@ -32,9 +32,16 @@
 #include "ImageViewerWidget.h"
 
 #include "ModelViewerWidget.h"
+#include "base/database.h"
+#include "base/projection.h"
+#include "base/reconstruction.h"
 #include "util/misc.h"
+#include "OptionManager.h"
+#include "QtUtils.h"
 
 namespace cloudViewer {
+
+using namespace colmap;
 
 const double ImageViewerWidget::kZoomFactor = 1.20;
 

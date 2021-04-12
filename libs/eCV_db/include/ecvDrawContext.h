@@ -77,7 +77,7 @@ enum ENTITY_TYPE
 	ECV_POLYGON,
 	ECV_2DLABLE,
 	ECV_2DLABLE_VIEWPORT,
-	ECV_CAPTION,
+    ECV_CAPTION,
 	ECV_SCALAR_BAR,
 	ECV_TEXT3D,
 	ECV_TEXT2D,
@@ -112,7 +112,7 @@ struct ECV_DB_LIB_API PROPERTY_PARAM
 {
 	//! Display scalar field (prioritary on colors)
 	QString viewId;
-	int viewPort = 0;
+    int viewport = 0;
 	PointCoordinateType lineWidth = 2;
 	unsigned char pointSize = 1;
     ccHObject* entity;
@@ -228,13 +228,16 @@ struct ECV_DB_LIB_API TransformInfo {
 	};
 
 	RotateParam rotateParam;
-	bool RotMatrixMode = false;
 	bool isRotate = false;
+    bool applyEuler = true;
 	bool isScale = false;
 	bool isTranslate = false;
 	bool isPositionChanged = false;
-	//! rotation matrix
-	ccGLMatrixd rotMat;
+
+    double quaternion[4];
+
+    CCVector3d eulerZYX;
+
 	//! the x y z scale
 	CCVector3 scaleXYZ;
 
@@ -249,20 +252,71 @@ struct ECV_DB_LIB_API TransformInfo {
 		isPositionChanged = true;
 	}
 
-	bool isApplyTransform() { return isRotate || isScale || isTranslate || isPositionChanged; } const
+    bool isApplyTransform() const { return isRotate || isScale || isTranslate || isPositionChanged; }
 
-	void setRotMat(const ccGLMatrixd& rotate) { RotMatrixMode = true; isRotate = true; rotMat = rotate; }
-	void setRotMat(const ccGLMatrix& rotate) { RotMatrixMode = true; isRotate = true; rotMat = ccGLMatrixd(rotate.data()); }
+    void setTransformation(const ccGLMatrixd& transform, bool updateTranslation = true, bool useEuler = true) {
+        if (useEuler) {
+//            double phi_rad, theta_rad, psi_rad;
+//            CCVector3d t3D;
+//            transform.getParameters(phi_rad, theta_rad, psi_rad, t3D);
+//            setRotation(cloudViewer::RadiansToDegrees(psi_rad),
+//                        cloudViewer::RadiansToDegrees(theta_rad),
+//                        cloudViewer::RadiansToDegrees(phi_rad));
+//            if (updateTranslation)
+//            {
+//                setTranslationStart(CCVector3::fromArray(transform.getTranslationAsVec3D().u));
+//            }
+
+            double rz, ry, rx;
+            transform.toEulerAngle(rz, ry, rx);
+            setRotation(cloudViewer::RadiansToDegrees(rz),
+                        cloudViewer::RadiansToDegrees(ry),
+                        cloudViewer::RadiansToDegrees(rx));
+            if (updateTranslation)
+            {
+                setTranslationStart(CCVector3::fromArray(transform.getTranslationAsVec3D().u));
+            }
+
+        } else {
+            double angle_rad;
+            CCVector3d axis, trans;
+            transform.getParameters(angle_rad, axis, trans);
+            double angle_deg = cloudViewer::RadiansToDegrees(angle_rad);
+            setRotation(angle_deg, axis);
+            if (updateTranslation)
+            {
+                setTranslationStart(CCVector3::fromArray(trans.u));
+            }
+        }
+    }
+    void setTransformation(const ccGLMatrix& transform,
+                           bool updateTranslation = true,
+                           bool useEuler = true) {
+        setTransformation(ccGLMatrixd(transform.data()),
+                          updateTranslation, useEuler);
+    }
+
+    void setRotation(double zAngle, double yAngle, double xAngle) {
+        isRotate = true;
+        applyEuler = true;
+        eulerZYX[0] = zAngle;
+        eulerZYX[1] = yAngle;
+        eulerZYX[2] = xAngle;
+    }
+    void setRotation(double zyxAngle[3]) {
+        setRotation(zyxAngle[0], zyxAngle[1], zyxAngle[2]);
+    }
+
     void setRotation(double angle, double x, double y, double z) { setRotation(angle, CCVector3d(x, y, z)); }
 	void setRotation(double angle, const CCVector3& axis) {
-		isRotate = true; 
-		RotMatrixMode = false; 
+        isRotate = true;
+        applyEuler = false;
 		rotateParam.angle = angle; 
 		rotateParam.rotAxis = axis; 
 	}
 	void setRotation(double angle, const CCVector3d& axis) {
 		isRotate = true; 
-		RotMatrixMode = false; 
+        applyEuler = false;
 		rotateParam.angle = angle;
 		rotateParam.rotAxis = CCVector3::fromArray(axis.u);
 	}
@@ -489,7 +543,7 @@ public:
     ccHObject* entity;
     WIDGETS_TYPE type;
 	QString viewID;
-    int viewPort = 0;
+    int viewport = 0;
 	ecvColor::Rgbaf color;
 
 	CC_DRAW_CONTEXT context;
@@ -526,7 +580,7 @@ public:
 	WIDGETS_PARAMETER(WIDGETS_TYPE t, QString id = "id", int port = 0)
         : type(t)
         , viewID(id)
-        , viewPort(port)
+        , viewport(port)
 	{
 		context.viewID = viewID;
 	}
@@ -535,7 +589,7 @@ public:
 		: entity(obj)
         , type(t)
         , viewID(id)
-        , viewPort(port)
+        , viewport(port)
 	{
 		context.viewID = viewID;
 	}

@@ -31,9 +31,11 @@
 
 #include "AutomaticReconstructionWidget.h"
 #include "ReconstructionWidget.h"
+#include "ThreadControlWidget.h"
 
 namespace cloudViewer {
 
+using namespace colmap;
 AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     ReconstructionWidget* main_window)
     : OptionsWidget(main_window),

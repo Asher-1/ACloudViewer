@@ -119,7 +119,7 @@ macro(COLMAP_ADD_LIBRARY TARGET_NAME)
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
     # INTERNAL LIB
-    target_link_libraries(  ${TARGET_NAME}  PRIVATE
+    target_link_libraries(  ${TARGET_NAME}  PUBLIC
                                             ECV_DB_LIB
                                             ECV_IO_LIB)
     # install
@@ -135,7 +135,7 @@ macro(COLMAP_ADD_STATIC_LIBRARY TARGET_NAME)
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
     # INTERNAL LIB
-    target_link_libraries(  ${TARGET_NAME}  PRIVATE
+    target_link_libraries(  ${TARGET_NAME}  PUBLIC
                                             ECV_DB_LIB
                                             ECV_IO_LIB)
     # install

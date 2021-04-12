@@ -36,6 +36,8 @@
 #include "mvs/meshing.h"
 #include "mvs/patch_match.h"
 #include "ReconstructionWidget.h"
+#include "RenderOptions.h"
+#include "OptionManager.h"
 
 namespace cloudViewer {
 namespace {
@@ -157,7 +159,7 @@ std::vector<std::pair<std::string, std::string>> ReadPatchMatchConfig(
   std::string ref_image_name;
   std::vector<std::pair<std::string, std::string>> images;
   while (std::getline(file, line)) {
-    StringTrim(&line);
+    colmap::StringTrim(&line);
 
     if (line.empty() || line[0] == '#') {
       continue;
@@ -176,6 +178,7 @@ std::vector<std::pair<std::string, std::string>> ReadPatchMatchConfig(
 
 }  // namespace
 
+using namespace colmap;
 DenseReconstructionOptionsWidget::DenseReconstructionOptionsWidget(
     QWidget* parent, OptionManager* options)
     : QWidget(parent) {

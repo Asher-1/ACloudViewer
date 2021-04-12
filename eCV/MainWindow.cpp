@@ -342,13 +342,7 @@ MainWindow::MainWindow()
 
     refreshAll();
 
-#ifdef QT_DEBUG
-    // efficiency for debug mode
-    m_ui->actionToggleOrientationMarker->toggle();
-    doActionToggleOrientationMarker(false);
-#else
     doActionToggleOrientationMarker(true);
-#endif // QT_DEBUG
 
 #ifdef USE_PYTHON_MODULE
     QString applicationPath = QCoreApplication::applicationDirPath();
@@ -373,35 +367,6 @@ MainWindow::MainWindow()
 	// print welcome message
     ecvConsole::Print(tr("[ErowCloudViewer Software start], Welcome to use ErowCloudViewer"));
 }
-
-#ifdef USE_COLMAP_MODULE
-void MainWindow::initReconstructions()
-{
-    // init reconstructions
-    if (!m_rcw)
-    {
-        m_rcw = new cloudViewer::ReconstructionWidget(this);
-    }
-
-    // Set up dynamic tool bars
-    for (QToolBar *toolbar : m_rcw->getReconstructionToolbars())
-    {
-        addToolBar(Qt::TopToolBarArea, toolbar);
-    }
-
-    // Set up dynamic menus
-    QMenu* rc_menu = new QMenu(tr("Reconstruction"), this);
-    for (QMenu *menu : m_rcw->getReconstructionMenus())
-    {
-        rc_menu->addMenu(menu);
-    }
-    m_ui->menuBar->insertMenu(m_ui->menuDisplay->menuAction(), rc_menu);
-
-    // Set docker widget
-    this->addDockWidget(Qt::BottomDockWidgetArea, m_rcw->getLogWidget());
-
-}
-#endif
 
 MainWindow::~MainWindow() {
     cancelPreviousPickingOperation(false); //just in case
@@ -844,7 +809,7 @@ void MainWindow::initStatusBar()
         m_mousePosLabel->setFont(ft);
         m_mousePosLabel->setMinimumSize(m_mousePosLabel->sizeHint());
         m_mousePosLabel->setAlignment(Qt::AlignHCenter);
-        m_ui->statusBar->insertWidget(0, m_mousePosLabel, 3);
+        m_ui->statusBar->insertWidget(0, m_mousePosLabel, 1);
         connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mousePosChanged, this, &MainWindow::onMousePosChanged);
     }
 
@@ -857,10 +822,10 @@ void MainWindow::initStatusBar()
             tr("<style> a{text-decoration: none} </style> <a href=\"http://www.erow.cn\">%1 | www.erow.cn</a>").arg(Settings::TITLE + " " + Settings::APP_VERSION));
         m_systemInfoLabel->setTextFormat(Qt::RichText);
         m_systemInfoLabel->setOpenExternalLinks(true);
-        m_ui->statusBar->addPermanentWidget(m_systemInfoLabel);
+        m_ui->statusBar->addPermanentWidget(m_systemInfoLabel, 0);
     }
 
-    QMainWindow::statusBar()->showMessage(tr("Ready"));
+    statusBar()->showMessage(tr("Ready"));
 }
 
 void MainWindow::initPlugins()
@@ -903,6 +868,38 @@ void MainWindow::initDBRoot()
         m_ccRoot->selectEntities(entities);
     });
 }
+
+#ifdef USE_COLMAP_MODULE
+void MainWindow::initReconstructions()
+{
+    // init reconstructions
+    if (!m_rcw)
+    {
+        m_rcw = new cloudViewer::ReconstructionWidget(this);
+    }
+
+    // Set up dynamic tool bars
+    for (QToolBar *toolbar : m_rcw->getReconstructionToolbars())
+    {
+        addToolBar(Qt::TopToolBarArea, toolbar);
+    }
+
+    // Set up dynamic menus
+    QMenu* rc_menu = new QMenu(tr("Reconstruction"), this);
+    for (QMenu *menu : m_rcw->getReconstructionMenus())
+    {
+        rc_menu->addMenu(menu);
+    }
+    m_ui->menuBar->insertMenu(m_ui->menuDisplay->menuAction(), rc_menu);
+
+    // Set docker widget
+    this->addDockWidget(Qt::RightDockWidgetArea, m_rcw->getLogWidget());
+
+    // Set reconstruction status bar
+    m_ui->statusBar->insertPermanentWidget(1, m_rcw->getImageStatusBar(), 0);
+    m_ui->statusBar->insertPermanentWidget(1, m_rcw->getTimerStatusBar(), 0);
+}
+#endif
 
 void MainWindow::toggleActiveWindowAutoPickRotCenter(bool state)
 {
@@ -1401,7 +1398,7 @@ void MainWindow::addToDB(const QStringList& filenames, QString fileFilter/*=QStr
 		}
 	}
 
-	QMainWindow::statusBar()->showMessage(tr("%1 file(s) loaded").arg(filenames.size()), 2000);
+    statusBar()->showMessage(tr("%1 file(s) loaded").arg(filenames.size()), 2000);
 }
 
 void MainWindow::addToDB(ccHObject* obj,

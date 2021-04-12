@@ -64,6 +64,9 @@ public:
 	ccBBox getOwnBB(bool withGLFeatures = false) override;
 	ccBBox getOwnFitBB(ccGLMatrix& trans) override;
 
+    virtual void clearDrawings(CC_DRAW_CONTEXT& context) override;
+    virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) override;
+
 	//inherited from ccSensor
 	bool applyViewport() override;
 

@@ -35,19 +35,18 @@
 #include <QtWidgets>
 
 #include "base/reconstruction.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 
 class ModelViewerWidget;
+class OptionManager;
 
-using namespace colmap;
 class PointViewerWidget : public QWidget {
  public:
   PointViewerWidget(QWidget* parent, ModelViewerWidget* model_viewer_widget,
                     OptionManager* option);
 
-  void Show(const point3D_t point3D_id);
+  void Show(const colmap::point3D_t point3D_id);
 
  private:
   void closeEvent(QCloseEvent* event);
@@ -65,7 +64,7 @@ class PointViewerWidget : public QWidget {
 
   QPushButton* delete_button_;
 
-  point3D_t point3D_id_;
+  colmap::point3D_t point3D_id_;
 
   QTableWidget* info_table_;
   QTableWidgetItem* xyz_item_;
@@ -75,7 +74,7 @@ class PointViewerWidget : public QWidget {
   QTableWidget* location_table_;
   std::vector<QPixmap> location_pixmaps_;
   std::vector<QLabel*> location_labels_;
-  std::vector<image_t> image_ids_;
+  std::vector<colmap::image_t> image_ids_;
   std::vector<double> reproj_errors_;
   std::vector<std::string> image_names_;
 

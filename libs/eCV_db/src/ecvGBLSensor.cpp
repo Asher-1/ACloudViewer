@@ -933,7 +933,17 @@ ccBBox ccGBLSensor::getOwnFitBB(ccGLMatrix& trans)
 	trans = sensorPos;
 
 	return ccBBox(	CCVector3(-m_scale,-m_scale,-m_scale),
-					CCVector3( m_scale, m_scale, m_scale) );
+                    CCVector3( m_scale, m_scale, m_scale) );
+}
+
+void ccGBLSensor::clearDrawings(CC_DRAW_CONTEXT &context)
+{
+
+}
+
+void ccGBLSensor::hideShowDrawings(CC_DRAW_CONTEXT &context)
+{
+
 }
 
 bool ccGBLSensor::applyViewport()

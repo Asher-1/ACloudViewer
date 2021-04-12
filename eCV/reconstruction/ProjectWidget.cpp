@@ -32,11 +32,14 @@
 #include "ProjectWidget.h"
 
 #include "base/database.h"
+#include "OptionManager.h"
 
 // CV_CORE_LIB
 #include <CVTools.h>
 
 namespace cloudViewer {
+
+using namespace colmap;
 
 ProjectWidget::ProjectWidget(QWidget* parent, OptionManager* options)
     : QWidget(parent), options_(options), prev_selected_(false) {

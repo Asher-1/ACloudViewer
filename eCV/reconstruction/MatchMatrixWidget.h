@@ -32,11 +32,11 @@
 #pragma once
 
 #include "ImageViewerWidget.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 
-using namespace colmap;
+class OptionManager;
+
 // Widget to visualize match matrix.
 class MatchMatrixWidget : public ImageViewerWidget {
  public:

@@ -32,9 +32,14 @@
 #include "PointViewerWidget.h"
 #include "ModelViewerWidget.h"
 #include "util/misc.h"
+#include "util/bitmap.h"
+#include "QtUtils.h"
+
+#include "OptionManager.h"
 
 namespace cloudViewer {
 
+using namespace colmap;
 PointViewerWidget::PointViewerWidget(QWidget* parent,
                                      ModelViewerWidget* model_viewer_widget,
                                      OptionManager* options)
@@ -182,7 +187,7 @@ void PointViewerWidget::Show(const point3D_t point3D_id) {
         ProjectPointToImage(point3D.XYZ(), image.ProjectionMatrix(), camera);
     const double reproj_error = (point2D.XY() - proj_point2D).norm();
 
-    Bitmap bitmap;
+    colmap::Bitmap bitmap;
     const std::string path = JoinPaths(*options_->image_path, image.Name());
     if (!bitmap.Read(path, true)) {
       std::cerr << "ERROR: Cannot read image at path " << path << std::endl;

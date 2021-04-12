@@ -33,16 +33,17 @@
 
 #include <QtWidgets>
 
-#include "base/reconstruction.h"
+namespace colmap {
+    class Reconstruction;
+}
 
 namespace cloudViewer {
 
-using namespace colmap;
 class ReconstructionStatsWidget : public QWidget {
  public:
   explicit ReconstructionStatsWidget(QWidget* parent);
 
-  void Show(const Reconstruction& reconstruction);
+  void Show(const colmap::Reconstruction& reconstruction);
 
  private:
   void AddStatistic(const QString& header, const QString& content);

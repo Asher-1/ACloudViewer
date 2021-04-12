@@ -354,12 +354,12 @@ public: //! Draws the main 3D layer
 	static void RefreshDisplay(bool only2D = false, bool forceRedraw = true);
 	static void RedrawDisplay(bool only2D = false, bool forceRedraw = true);
 	static void CheckIfRemove();
-	inline static void Draw(CC_DRAW_CONTEXT& context, const ccHObject * obj) { TheInstance()->draw(context, obj); }
-	inline virtual void draw(CC_DRAW_CONTEXT& context, const ccHObject * obj) { /* do nothing */ }
-	inline static void DrawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox) { TheInstance()->drawBBox(context, bbox); }
-	inline virtual void drawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox) { /* do nothing */ }
-	inline static void DrawOrientedBBox(CC_DRAW_CONTEXT& context, const ecvOrientedBBox * obb) { TheInstance()->drawOrientedBBox(context, obb); }
-	inline virtual void drawOrientedBBox(CC_DRAW_CONTEXT& context, const ecvOrientedBBox * obb) { /* do nothing */ }
+    inline static void Draw(const CC_DRAW_CONTEXT& context, const ccHObject * obj) { TheInstance()->draw(context, obj); }
+    inline virtual void draw(const CC_DRAW_CONTEXT& context, const ccHObject * obj) { /* do nothing */ }
+    inline static void DrawBBox(const CC_DRAW_CONTEXT& context, const ccBBox * bbox) { TheInstance()->drawBBox(context, bbox); }
+    inline virtual void drawBBox(const CC_DRAW_CONTEXT& context, const ccBBox * bbox) { /* do nothing */ }
+    inline static void DrawOrientedBBox(const CC_DRAW_CONTEXT& context, const ecvOrientedBBox * obb) { TheInstance()->drawOrientedBBox(context, obb); }
+    inline virtual void drawOrientedBBox(const CC_DRAW_CONTEXT& context, const ecvOrientedBBox * obb) { /* do nothing */ }
 	static void RemoveBB(CC_DRAW_CONTEXT context);
 	static void RemoveBB(const QString& viewId);
 	static void ChangeEntityProperties(PROPERTY_PARAM& propertyParam, bool autoUpdate = true);
@@ -477,34 +477,34 @@ public: // main interface
 	inline static void FullScreen(bool state) { TheInstance()->fullScreen(state); }
 	inline virtual void fullScreen(bool state) {/* do nothing */}
 
-	inline static void GetCameraPos(double *pos, int viewPort = 0) { TheInstance()->getCameraPos(pos, viewPort); }
-    inline virtual void getCameraPos(double *pos, int viewPort = 0) { /* do nothing */ }
-	inline static void GetCameraFocal(double *focal, int viewPort = 0) { TheInstance()->getCameraFocal(focal, viewPort); }
-    inline virtual void getCameraFocal(double *focal, int viewPort = 0) { /* do nothing */ }
-	inline static void GetCameraUp(double *up, int viewPort = 0) { TheInstance()->getCameraUp(up, viewPort); }
-	virtual void getCameraUp(double *up, int viewPort = 0) { /* do nothing */ }
+    inline static void GetCameraPos(double *pos, int viewport = 0) { TheInstance()->getCameraPos(pos, viewport); }
+    inline virtual void getCameraPos(double *pos, int viewport = 0) { /* do nothing */ }
+    inline static void GetCameraFocal(double *focal, int viewport = 0) { TheInstance()->getCameraFocal(focal, viewport); }
+    inline virtual void getCameraFocal(double *focal, int viewport = 0) { /* do nothing */ }
+    inline static void GetCameraUp(double *up, int viewport = 0) { TheInstance()->getCameraUp(up, viewport); }
+    virtual void getCameraUp(double *up, int viewport = 0) { /* do nothing */ }
 
-	inline static void SetCameraPosition(const CCVector3d& pos, int viewPort = 0) { 
-        TheInstance()->setCameraPosition(pos, viewPort); }
-    inline virtual void setCameraPosition(const CCVector3d& pos, int viewPort = 0) { /* do nothing */ }
-	inline static void SetCameraPosition(const double *pos, const double *focal, const double *up, int viewPort = 0) { 
-		TheInstance()->setCameraPosition(pos, focal, up, viewPort); }
-    inline virtual void setCameraPosition(const double *pos, const double *focal, const double *up, int viewPort = 0) { /* do nothing */ }
-	inline static void SetCameraPosition(const double *pos, const double *up, int viewPort = 0) { 
-		TheInstance()->setCameraPosition(pos, up, viewPort); }
-    inline virtual void setCameraPosition(const double *pos, const double *up, int viewPort = 0) { /* do nothing */ }
+    inline static void SetCameraPosition(const CCVector3d& pos, int viewport = 0) {
+        TheInstance()->setCameraPosition(pos, viewport); }
+    inline virtual void setCameraPosition(const CCVector3d& pos, int viewport = 0) { /* do nothing */ }
+    inline static void SetCameraPosition(const double *pos, const double *focal, const double *up, int viewport = 0) {
+        TheInstance()->setCameraPosition(pos, focal, up, viewport); }
+    inline virtual void setCameraPosition(const double *pos, const double *focal, const double *up, int viewport = 0) { /* do nothing */ }
+    inline static void SetCameraPosition(const double *pos, const double *up, int viewport = 0) {
+        TheInstance()->setCameraPosition(pos, up, viewport); }
+    inline virtual void setCameraPosition(const double *pos, const double *up, int viewport = 0) { /* do nothing */ }
 	inline static void SetCameraPosition(double pos_x, double pos_y, double pos_z,
-		double view_x, double view_y, double view_z, double up_x, double up_y, double up_z, int viewPort = 0) {
+        double view_x, double view_y, double view_z, double up_x, double up_y, double up_z, int viewport = 0) {
 		TheInstance()->setCameraPosition(pos_x, pos_y, pos_z,
-			view_x, view_y, view_z, up_x, up_y, up_z, viewPort);
+            view_x, view_y, view_z, up_x, up_y, up_z, viewport);
 	}
 	inline virtual void setCameraPosition(double pos_x, double pos_y, double pos_z,
 		double view_x, double view_y, double view_z,
-		double up_x, double up_y, double up_z, int viewPort = 0) { /* do nothing */ }
+        double up_x, double up_y, double up_z, int viewport = 0) { /* do nothing */ }
 
 	// set and get clip distances (near and far)
-	inline static void GetCameraClip(double *clipPlanes, int viewPort = 0) { TheInstance()->getCameraClip(clipPlanes, viewPort); }
-	virtual void getCameraClip(double *clipPlanes, int viewPort = 0) { /* do nothing */ }
+    inline static void GetCameraClip(double *clipPlanes, int viewport = 0) { TheInstance()->getCameraClip(clipPlanes, viewport); }
+    virtual void getCameraClip(double *clipPlanes, int viewport = 0) { /* do nothing */ }
 	inline static void SetCameraClip(double znear, double zfar, int viewport = 0) {
 		TheInstance()->m_viewportParams.zNear = znear;
 		TheInstance()->m_viewportParams.zFar = zfar;
@@ -512,19 +512,19 @@ public: // main interface
 	}
 	virtual void setCameraClip(double znear, double zfar, int viewport = 0) { /* do nothing */ }
 
-	inline static void ResetCameraClippingRange() { TheInstance()->resetCameraClippingRange(); }
-	inline virtual void resetCameraClippingRange() { /* do nothing */ }
+    inline static void ResetCameraClippingRange(int viewport = 0) { TheInstance()->resetCameraClippingRange(viewport); }
+    inline virtual void resetCameraClippingRange(int viewport = 0) { /* do nothing */ }
 
 	// set and get view angle in y direction
-	inline static double GetCameraFovy(int viewPort = 0) { return TheInstance()->getCameraFovy(viewPort); }
-	inline virtual double getCameraFovy(int viewPort = 0) { return 0; /* do nothing */ }
+    inline static double GetCameraFovy(int viewport = 0) { return TheInstance()->getCameraFovy(viewport); }
+    inline virtual double getCameraFovy(int viewport = 0) { return 0; /* do nothing */ }
 	inline static void SetCameraFovy(double fovy, int viewport = 0) { 
-		TheInstance()->m_viewportParams.fov_deg = fovy;
-		TheInstance()->setCameraFovy(fovy, viewport); 
+        TheInstance()->m_viewportParams.fov_deg = static_cast<float>(fovy);
+        TheInstance()->setCameraFovy(cloudViewer::DegreesToRadians(fovy), viewport);
 	}
 	inline virtual void setCameraFovy(double fovy, int viewport = 0) { /* do nothing */ }
 
-	inline static void GetViewerPos(int * viewPos, int viewPort = 0) {
+    inline static void GetViewerPos(int * viewPos, int viewport = 0) {
 		viewPos[0] = 0;
 		viewPos[1] = 0;
 		viewPos[2] = Width();
@@ -580,22 +580,22 @@ public: // main interface
 	inline static void SetLookUpTableID(const std::string & viewID) { TheInstance()->setLookUpTableID(viewID); }
 	inline virtual void setLookUpTableID(const std::string & viewID) { /* do nothing */ }
 
-	inline static void GetProjectionMatrix(double * projArray, int viewPort = 0) {
-		TheInstance()->getProjectionMatrix(projArray, viewPort);
+    inline static void GetProjectionMatrix(double * projArray, int viewport = 0) {
+        TheInstance()->getProjectionMatrix(projArray, viewport);
 	}
-	inline virtual void getProjectionMatrix(double * projArray, int viewPort = 0) { /* do nothing */ }
-	inline static void GetViewMatrix(double * viewArray, int viewPort = 0) { 
-		TheInstance()->getViewMatrix(viewArray, viewPort);
+    inline virtual void getProjectionMatrix(double * projArray, int viewport = 0) { /* do nothing */ }
+    inline static void GetViewMatrix(double * viewArray, int viewport = 0) {
+        TheInstance()->getViewMatrix(viewArray, viewport);
 	}
-	inline virtual void getViewMatrix(double * viewArray, int viewPort = 0) { /* do nothing */ }
+    inline virtual void getViewMatrix(double * viewArray, int viewport = 0) { /* do nothing */ }
 
-	inline static bool HideShowEntities(CC_DRAW_CONTEXT& CONTEXT) { return TheInstance()->hideShowEntities(CONTEXT); }
+    inline static bool HideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) { return TheInstance()->hideShowEntities(CONTEXT); }
+    inline virtual bool hideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) { return true; /* do nothing */ }
 	static void HideShowEntities(const QStringList & viewIDs, ENTITY_TYPE hideShowEntityType, bool visibility = false);
-	inline virtual bool hideShowEntities(CC_DRAW_CONTEXT& CONTEXT) { return true; /* do nothing */ }
 
-	inline static void RemoveEntities(CC_DRAW_CONTEXT& CONTEXT) { TheInstance()->removeEntities(CONTEXT); }
+    inline static void RemoveEntities(const CC_DRAW_CONTEXT& CONTEXT) { TheInstance()->removeEntities(CONTEXT); }
+    inline virtual void removeEntities(const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
 	static void RemoveEntities(const QStringList & viewIDs, ENTITY_TYPE removeEntityType);
-	inline virtual void removeEntities(CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
 
 	static void DrawBackground(CC_DRAW_CONTEXT& CONTEXT);
 	static void DrawForeground(CC_DRAW_CONTEXT& CONTEXT);
@@ -609,7 +609,7 @@ public: // main interface
 
 	static void FilterByEntityType(ccHObject::Container& labels, CV_CLASS_ENUM type);
 
-	inline virtual void setBackgroundColor(CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
+    inline virtual void setBackgroundColor(const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
 
 	/** \brief Create a new viewport from [xmin,ymin] -> [xmax,ymax].
 	  * \param[in] xmin the minimum X coordinate for the viewport (0.0 <= 1.0)
@@ -667,9 +667,11 @@ public: // visualization matrix transformation
 
 	static void UpdateDisplayParameters();
 
-	static void SetupProjectiveViewport(const ccGLMatrixd& cameraMatrix, float fov_deg = 0.0f,
-		float ar = 1.0f, bool viewerBasedPerspective = true,
-		bool bubbleViewMode = false);
+    static void SetupProjectiveViewport(const ccGLMatrixd& cameraMatrix,
+                                        float fov_deg = 0.0f,
+                                        float ar = 1.0f,
+                                        bool viewerBasedPerspective = true,
+                                        bool bubbleViewMode = false);
 
 	//! Sets current camera aspect ratio (width/height)
 	/** AR is only used in perspective mode.
@@ -706,11 +708,11 @@ public: // visualization matrix transformation
 	/**
 	 * Resets the center of rotation to the focal point.
 	 */
-	inline static void ResetCenterOfRotation() {
-		TheInstance()->resetCenterOfRotation(); 
+    inline static void ResetCenterOfRotation(int viewport = 0) {
+        TheInstance()->resetCenterOfRotation(viewport);
 		UpdateScreen();
 	}
-	inline virtual void resetCenterOfRotation() { /* do nothing */ }
+    inline virtual void resetCenterOfRotation(int viewport = 0) { /* do nothing */ }
 
 	/**
 	 * Set the center of rotation. For this to work,
@@ -907,8 +909,8 @@ public: // visualization matrix transformation
 	static void SetViewportParameters(const ecvViewportParameters& params);
 	static const ecvViewportParameters& GetViewportParameters();
 
-	inline static double GetParallelScale(int viewPort = 0) { return TheInstance()->getParallelScale(); }
-	inline virtual double getParallelScale(int viewPort = 0) { return -1.0; }
+    inline static double GetParallelScale(int viewport = 0) { return TheInstance()->getParallelScale(); }
+    inline virtual double getParallelScale(int viewport = 0) { return -1.0; }
 
 	static ccGLMatrixd& GetModelViewMatrix();
 	static ccGLMatrixd& GetProjectionMatrix();

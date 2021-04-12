@@ -161,7 +161,7 @@ bool ccIndexedTransformationBuffer::getInterpolatedTransformation(	double index,
 																	ccIndexedTransformation& trans,
 																	double maxIndexDistForInterpolation/*=DBL_MAX*/) const
 {
-	const ccIndexedTransformation *t1=0, *t2=0;
+    const ccIndexedTransformation *t1=nullptr, *t2=nullptr;
 
 	if (!findNearest(index, t1, t2))
 		return false;

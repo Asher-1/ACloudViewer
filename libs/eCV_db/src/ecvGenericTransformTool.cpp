@@ -23,7 +23,7 @@ ecvGenericTransformTool::ecvGenericTransformTool()
 {
 }
 
-bool ecvGenericTransformTool::setInputData(ccHObject * entity, int viewPort)
+bool ecvGenericTransformTool::setInputData(ccHObject * entity, int viewport)
 {
 	if (!entity)
 	{

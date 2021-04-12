@@ -97,13 +97,7 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 	ccGLMatrixd mat = ccGLMatrixd(
 		ccGLMatrix::FromToRotation(CCVector3(0, 0, PC_ONE), getNormal()).data());
 	mat.applyRotation(direction);
-	{
-		double angle_rad;
-		CCVector3d axis, trans;
-		mat.getParameters(angle_rad, axis, trans);
-        double angle_deg = cloudViewer::RadiansToDegrees(angle_rad);
-		normalContext.transformInfo.setRotation(angle_deg, axis);
-	}
+    normalContext.transformInfo.setTransformation(mat, false);
 
 	//ccGL::Scale(glFunc, scale, scale, scale);
 	normalContext.transformInfo.setScale(CCVector3(scale, scale, scale));

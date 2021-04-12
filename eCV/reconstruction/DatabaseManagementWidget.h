@@ -38,12 +38,14 @@
 
 #include "ImageViewerWidget.h"
 #include "base/database.h"
-#include "util/misc.h"
-#include "util/option_manager.h"
+
+namespace colmap {
+    class Reconstruction;
+}
 
 namespace cloudViewer {
 
-using namespace colmap;
+class OptionManager;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Matches
@@ -52,7 +54,8 @@ using namespace colmap;
 class TwoViewInfoTab : public QWidget {
  public:
   TwoViewInfoTab() {}
-  TwoViewInfoTab(QWidget* parent, OptionManager* options, Database* database);
+  TwoViewInfoTab(QWidget* parent, OptionManager* options,
+                 colmap::Database* database);
 
   void Clear();
 
@@ -62,10 +65,10 @@ class TwoViewInfoTab : public QWidget {
   void FillTable();
 
   OptionManager* options_;
-  Database* database_;
+  colmap::Database* database_;
 
-  const Image* image_;
-  std::vector<std::pair<const Image*, FeatureMatches>> matches_;
+  const colmap::Image* image_;
+  std::vector<std::pair<const colmap::Image*, colmap::FeatureMatches>> matches_;
   std::vector<int> configs_;
   std::vector<size_t> sorted_matches_idxs_;
 
@@ -76,25 +79,25 @@ class TwoViewInfoTab : public QWidget {
 
 class MatchesTab : public TwoViewInfoTab {
  public:
-  MatchesTab(QWidget* parent, OptionManager* options, Database* database);
+  MatchesTab(QWidget* parent, OptionManager* options, colmap::Database* database);
 
-  void Reload(const std::vector<Image>& images, const image_t image_id);
+  void Reload(const std::vector<colmap::Image>& images, const colmap::image_t image_id);
 };
 
 class TwoViewGeometriesTab : public TwoViewInfoTab {
  public:
   TwoViewGeometriesTab(QWidget* parent, OptionManager* options,
-                       Database* database);
+                       colmap::Database* database);
 
-  void Reload(const std::vector<Image>& images, const image_t image_id);
+  void Reload(const std::vector<colmap::Image>& images, const colmap::image_t image_id);
 };
 
 class OverlappingImagesWidget : public QWidget {
  public:
   OverlappingImagesWidget(QWidget* parent, OptionManager* options,
-                          Database* database);
+                          colmap::Database* database);
 
-  void ShowMatches(const std::vector<Image>& images, const image_t image_id);
+  void ShowMatches(const std::vector<colmap::Image>& images, const colmap::image_t image_id);
 
  private:
   void closeEvent(QCloseEvent* event);
@@ -114,7 +117,7 @@ class OverlappingImagesWidget : public QWidget {
 
 class CameraTab : public QWidget {
  public:
-  CameraTab(QWidget* parent, Database* database);
+  CameraTab(QWidget* parent, colmap::Database* database);
 
   void Reload();
   void Clear();
@@ -124,9 +127,9 @@ class CameraTab : public QWidget {
   void Add();
   void SetModel();
 
-  Database* database_;
+  colmap::Database* database_;
 
-  std::vector<Camera> cameras_;
+  std::vector<colmap::Camera> cameras_;
 
   QTableWidget* table_widget_;
   QLabel* info_label_;
@@ -134,8 +137,9 @@ class CameraTab : public QWidget {
 
 class ImageTab : public QWidget {
  public:
-  ImageTab(QWidget* parent, CameraTab* camera_tab, OptionManager* options,
-           Database* database);
+  ImageTab(QWidget* parent, CameraTab* camera_tab,
+           OptionManager* options,
+           colmap::Database* database);
 
   void Reload();
   void Clear();
@@ -151,9 +155,9 @@ class ImageTab : public QWidget {
   CameraTab* camera_tab_;
 
   OptionManager* options_;
-  Database* database_;
+  colmap::Database* database_;
 
-  std::vector<Image> images_;
+  std::vector<colmap::Image> images_;
 
   QTableWidget* table_widget_;
   QLabel* info_label_;
@@ -177,7 +181,7 @@ class DatabaseManagementWidget : public QWidget {
   QWidget* parent_;
 
   OptionManager* options_;
-  Database database_;
+  colmap::Database database_;
 
   QTabWidget* tab_widget_;
   ImageTab* image_tab_;

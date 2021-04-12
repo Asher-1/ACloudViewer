@@ -33,18 +33,17 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include "feature/types.h"
 
-#include "base/database.h"
-#include "base/projection.h"
-#include "base/reconstruction.h"
-#include "util/option_manager.h"
-#include "QtUtils.h"
+namespace colmap {
+    class Bitmap;
+}
 
 namespace cloudViewer {
 
+class OptionManager;
 class ModelViewerWidget;
 
-using namespace colmap;
 class ImageViewerGraphicsScene : public QGraphicsScene {
  public:
   ImageViewerGraphicsScene();
@@ -59,7 +58,7 @@ class ImageViewerWidget : public QWidget {
  public:
   explicit ImageViewerWidget(QWidget* parent);
 
-  void ShowBitmap(const Bitmap& bitmap);
+  void ShowBitmap(const colmap::Bitmap& bitmap);
   void ShowPixmap(const QPixmap& pixmap);
   void ReadAndShow(const std::string& path);
 
@@ -85,14 +84,14 @@ class FeatureImageViewerWidget : public ImageViewerWidget {
   FeatureImageViewerWidget(QWidget* parent, const std::string& switch_text);
 
   void ReadAndShowWithKeypoints(const std::string& path,
-                                const FeatureKeypoints& keypoints,
+                                const colmap::FeatureKeypoints& keypoints,
                                 const std::vector<char>& tri_mask);
 
   void ReadAndShowWithMatches(const std::string& path1,
                               const std::string& path2,
-                              const FeatureKeypoints& keypoints1,
-                              const FeatureKeypoints& keypoints2,
-                              const FeatureMatches& matches);
+                              const colmap::FeatureKeypoints& keypoints1,
+                              const colmap::FeatureKeypoints& keypoints2,
+                              const colmap::FeatureMatches& matches);
 
  protected:
   void ShowOrHide();
@@ -110,7 +109,7 @@ class DatabaseImageViewerWidget : public FeatureImageViewerWidget {
                             ModelViewerWidget* ModelViewerWidget,
                             OptionManager* options);
 
-  void ShowImageWithId(const image_t image_id);
+  void ShowImageWithId(const colmap::image_t image_id);
 
  private:
   void ResizeTable();
@@ -122,7 +121,7 @@ class DatabaseImageViewerWidget : public FeatureImageViewerWidget {
 
   QPushButton* delete_button_;
 
-  image_t image_id_;
+  colmap::image_t image_id_;
 
   QTableWidget* table_widget_;
   QTableWidgetItem* image_id_item_;

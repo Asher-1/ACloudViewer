@@ -38,7 +38,7 @@ public:
 	**/
 	ccPlane(PointCoordinateType xWidth,
 			PointCoordinateType yWidth,
-			const ccGLMatrix* transMat = 0,
+            const ccGLMatrix* transMat = nullptr,
 			QString name = QString("Plane"));
 
 	//! Simplified constructor
@@ -102,7 +102,7 @@ public:
 		planeEquation plane equation : [a, b, c, d] as 'ax+by+cz=d'
 		Same equation used in Neighbourhood and DistanceComputationTools
 	**/
-	const PointCoordinateType* getEquation();
+    const PointCoordinateType* getEquation();
 
 	//! Flips the plane
 	void flip();

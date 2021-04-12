@@ -30,8 +30,14 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #include "MatchMatrixWidget.h"
+#include "OptionManager.h"
+
+#include "util/bitmap.h"
+#include "base/database.h"
 
 namespace cloudViewer {
+
+using namespace colmap;
 
 MatchMatrixWidget::MatchMatrixWidget(QWidget* parent, OptionManager* options)
     : ImageViewerWidget(parent), options_(options) {

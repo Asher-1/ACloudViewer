@@ -43,13 +43,12 @@ namespace cloudViewer {
 
 class ModelViewerWidget;
 
-using namespace colmap;
 class MovieGrabberWidget : public QWidget {
  public:
   MovieGrabberWidget(QWidget* parent, ModelViewerWidget* model_viewer_widget);
 
   // List of views, used to visualize the movie grabber camera path.
-  std::vector<Image> views;
+  std::vector<colmap::Image> views;
 
   struct ViewData {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

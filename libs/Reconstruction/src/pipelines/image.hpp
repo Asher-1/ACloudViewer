@@ -36,8 +36,8 @@ namespace cloudViewer {
 
 int RunImageDeleter(const std::string& input_path,
                     const std::string& output_path,
-                    const std::string& image_ids_path,
-                    const std::string& image_names_path) {
+                    const std::string& image_ids_path = "",
+                    const std::string& image_names_path = "") {
     OptionsParser parser;
     parser.registerOption("input_path", &input_path);
     parser.registerOption("output_path", &output_path);

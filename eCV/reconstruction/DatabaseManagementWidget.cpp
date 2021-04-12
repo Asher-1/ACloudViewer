@@ -31,10 +31,15 @@
 
 #include "DatabaseManagementWidget.h"
 #include "base/camera_models.h"
+#include "util/misc.h"
+#include "OptionManager.h"
+
 
 namespace cloudViewer {
 
-TwoViewInfoTab::TwoViewInfoTab(QWidget* parent, OptionManager* options,
+using namespace colmap;
+
+TwoViewInfoTab::TwoViewInfoTab(QWidget* parent, OptionManager*options,
                                Database* database)
     : QWidget(parent),
       options_(options),
@@ -143,7 +148,7 @@ void TwoViewInfoTab::FillTable() {
   table_widget_->resizeColumnsToContents();
 }
 
-MatchesTab::MatchesTab(QWidget* parent, OptionManager* options,
+MatchesTab::MatchesTab(QWidget* parent, OptionManager*options,
                        Database* database)
     : TwoViewInfoTab(parent, options, database) {
   QStringList table_header;
@@ -177,7 +182,7 @@ void MatchesTab::Reload(const std::vector<Image>& images,
 }
 
 TwoViewGeometriesTab::TwoViewGeometriesTab(QWidget* parent,
-                                           OptionManager* options,
+                                           OptionManager*options,
                                            Database* database)
     : TwoViewInfoTab(parent, options, database) {
   QStringList table_header;
@@ -215,7 +220,7 @@ void TwoViewGeometriesTab::Reload(const std::vector<Image>& images,
 }
 
 OverlappingImagesWidget::OverlappingImagesWidget(QWidget* parent,
-                                                 OptionManager* options,
+                                                 OptionManager*options,
                                                  Database* database)
     : parent_(parent), options_(options) {
   // Do not change flag, to make sure feature database is not accessed from
@@ -453,7 +458,7 @@ void CameraTab::SetModel() {
 }
 
 ImageTab::ImageTab(QWidget* parent, CameraTab* camera_tab,
-                   OptionManager* options, Database* database)
+                   OptionManager*options, Database* database)
     : QWidget(parent),
       camera_tab_(camera_tab),
       options_(options),
@@ -734,7 +739,7 @@ void ImageTab::SplitCamera() {
 }
 
 DatabaseManagementWidget::DatabaseManagementWidget(QWidget* parent,
-                                                   OptionManager* options)
+                                                   OptionManager*options)
     : parent_(parent), options_(options) {
   setWindowFlags(Qt::Window);
   setWindowTitle("Database management");

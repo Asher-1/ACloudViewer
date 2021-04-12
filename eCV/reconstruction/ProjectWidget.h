@@ -35,11 +35,11 @@
 #include <QtWidgets>
 
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 
-using namespace colmap;
+class OptionManager;
+
 class ProjectWidget : public QWidget {
  public:
   ProjectWidget(QWidget* parent, OptionManager* options);
