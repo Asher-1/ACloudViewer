@@ -317,7 +317,7 @@ void ecvViewportParameters::setFocalDistance(double distance)
 
 double ecvViewportParameters::computeDistanceToHalfWidthRatio() const
 {
-    return std::tan(cloudViewer::DegreesToRadians(fov_deg / 2.0));
+    return std::tan(static_cast<double>(cloudViewer::DegreesToRadians(fov_deg / 2.0f)));
 }
 
 double ecvViewportParameters::computeDistanceToWidthRatio() const

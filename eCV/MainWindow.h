@@ -154,9 +154,11 @@ public:
 
 	void updateFullScreenMenu(bool state);
 
-	void addToDBAuto(const QStringList& filenames);
+    void addToDBAuto(const QStringList& filenames, bool displayDialog = true);
 
-	void addToDB(const QStringList& filenames, QString fileFilter = QString());
+    void addToDB(const QStringList& filenames,
+                 QString fileFilter = QString(),
+                 bool displayDialog = true);
 
 	//! Sets up the UI (menus and toolbars) based on loaded plugins
 	void initPlugins();
@@ -263,6 +265,10 @@ private:
 		bool randomColors,
 		bool selectComponents,
 		bool sortBysize = true);
+
+public slots:
+    void doActionPerspectiveProjection();
+    void doActionOrthogonalProjection();
 
 private slots:
 	// status slots
@@ -371,8 +377,6 @@ private slots:
 	void toggleRotationCenterVisibility(bool state);
 	void doActionResetRotCenter();
 
-	void doActionPerspectiveProjection();
-	void doActionOrthogonalProjection();
 	void doActionEditCamera();
     void doActionSaveViewportAsCamera();
 	void doActionScreenShot();

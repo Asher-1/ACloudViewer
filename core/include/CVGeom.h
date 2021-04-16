@@ -207,7 +207,7 @@ public:
 	//! Constructor from a triplet of coordinates
 	/** Inits vector to (x,y,z).
 	**/
-	inline Vector3Tpl(Type _x, Type _y, Type _z) : Tuple3Tpl<Type>(_x, _y, _z) {}
+    inline Vector3Tpl(Type _x, Type _y, Type _z) : Tuple3Tpl<Type>(_x, _y, _z) {}
 
 	//! Constructor from an array of 3 elements
 	inline explicit Vector3Tpl(const Type p[]) : Tuple3Tpl<Type>(p) {}

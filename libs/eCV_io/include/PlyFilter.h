@@ -19,7 +19,7 @@
 #define ECV_PLY_FILTER_HEADER
 
 #include "FileIOFilter.h"
-#include "rply.h"
+#include "FileRply.h"
 
 //! PLY format types
 static const char e_ply_type_names[][12]= {

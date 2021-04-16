@@ -34,6 +34,7 @@
 #include "MainWindow.h"
 #include "util/version.h"
 #include "RenderOptions.h"
+#include "RenderOptionsWidget.h"
 #include "ReconstructionOptionsWidget.h"
 
 #include <ecvDisplayTools.h>
@@ -67,10 +68,6 @@ void ReconstructionWidget::iniEnvironment()
 
     // import path
     std::string import_path = CVTools::FromQString(settings.value("import_path", "").toString());
-    if (!import_path.empty())
-    {
-        ImportReconstruction(import_path);
-    }
 
     // project path
     std::string project_path =
@@ -119,7 +116,7 @@ void ReconstructionWidget::close() {
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(
         this, "",
-        tr("You have not saved your project. Do you want to save it?"),
+        tr("You have not saved your reconstruction project. Do you want to save it?"),
         QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
       ProjectSave();
@@ -135,7 +132,7 @@ void ReconstructionWidget::close() {
 }
 
 void ReconstructionWidget::CreateWidgets() {
-  model_viewer_widget_ = new ModelViewerWidget(this, &options_);
+  model_viewer_widget_ = new ModelViewerWidget(this, &options_, app_);
 
   project_widget_ = new ProjectWidget(this, &options_);
   project_widget_->SetDatabasePath(*options_.database_path);
@@ -149,6 +146,8 @@ void ReconstructionWidget::CreateWidgets() {
       new ReconstructionOptionsWidget(this, &options_);
   bundle_adjustment_widget_ = new BundleAdjustmentWidget(this, &options_);
   dense_reconstruction_widget_ = new DenseReconstructionWidget(this, &options_);
+  render_options_widget_ =
+      new RenderOptionsWidget(this, &options_, model_viewer_widget_);
   log_widget_ = new LogWidget(this);
   undistortion_widget_ = new UndistortionWidget(this, &options_);
   reconstruction_manager_widget_ =
@@ -327,6 +326,16 @@ void ReconstructionWidget::CreateActions() {
   connect(action_render_toggle_, &QAction::triggered, this,
           &ReconstructionWidget::RenderToggle);
 
+  action_render_reset_view_ = new QAction(
+      QIcon(":/media/render-reset-view.png"), tr("Reset view"), this);
+  connect(action_render_reset_view_, &QAction::triggered, model_viewer_widget_,
+          &ModelViewerWidget::ResetView);
+
+  action_render_options_ = new QAction(QIcon(":/media/render-options.png"),
+                                       tr("Render options"), this);
+  connect(action_render_options_, &QAction::triggered, this,
+          &ReconstructionWidget::RenderOptions);
+
   connect(
       reconstruction_manager_widget_,
       static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
@@ -437,6 +446,12 @@ void ReconstructionWidget::CreateMenus() {
   reconstruction_menu->addAction(action_dense_reconstruction_);
   menus_list_.push_back(reconstruction_menu);
 
+  QMenu* render_menu = new QMenu(tr("Render"), this);
+  render_menu->addAction(action_render_toggle_);
+  render_menu->addAction(action_render_reset_view_);
+  render_menu->addAction(action_render_options_);
+  menus_list_.push_back(render_menu);
+
   QMenu* extras_menu = new QMenu(tr("Extras"), this);
   extras_menu->addAction(action_log_show_);
   extras_menu->addAction(action_match_matrix_);
@@ -476,6 +491,8 @@ void ReconstructionWidget::CreateToolbar() {
   reconstruction_toolbar_->addAction(action_reconstruction_start_);
   reconstruction_toolbar_->addAction(action_reconstruction_step_);
   reconstruction_toolbar_->addAction(action_reconstruction_pause_);
+  reconstruction_toolbar_->addAction(action_reconstruction_reset_);
+  reconstruction_toolbar_->addAction(action_reconstruction_normalize_);
   reconstruction_toolbar_->addAction(action_reconstruction_options_);
   reconstruction_toolbar_->addAction(action_bundle_adjustment_);
   reconstruction_toolbar_->addAction(action_dense_reconstruction_);
@@ -484,6 +501,8 @@ void ReconstructionWidget::CreateToolbar() {
 
   render_toolbar_ = new QToolBar(tr("Render"), this);
   render_toolbar_->addAction(action_render_toggle_);
+  render_toolbar_->addAction(action_render_reset_view_);
+  render_toolbar_->addAction(action_render_options_);
   render_toolbar_->addWidget(reconstruction_manager_widget_);
   render_toolbar_->setIconSize(QSize(16, 16));
   toolbar_list_.push_back(render_toolbar_);
@@ -499,10 +518,6 @@ void ReconstructionWidget::CreateToolbar() {
 }
 
 void ReconstructionWidget::CreateStatusbar() {
-
-  if (!app_)
-      return;
-
   QFont font;
   font.setPointSize(11);
 
@@ -1160,6 +1175,14 @@ void ReconstructionWidget::Render() {
     refresh_rate = options_.render->refresh_rate;
   }
 
+  if (!render_options_widget_->automatic_update ||
+      render_options_widget_->counter % refresh_rate != 0) {
+    render_options_widget_->counter += 1;
+    return;
+  }
+
+  render_options_widget_->counter += 1;
+
   RenderNow();
 }
 
@@ -1184,6 +1207,12 @@ void ReconstructionWidget::RenderClear() {
   reconstruction_manager_widget_->SelectReconstruction(
       ReconstructionManagerWidget::kNewestReconstructionIdx);
   model_viewer_widget_->ClearReconstruction();
+}
+
+void ReconstructionWidget::RenderOptions()
+{
+    render_options_widget_->show();
+    render_options_widget_->raise();
 }
 
 void ReconstructionWidget::SelectReconstructionIdx(const size_t) {
@@ -1335,9 +1364,18 @@ void ReconstructionWidget::ResetOptions() {
 }
 
 void ReconstructionWidget::RenderToggle() {
-    Render();
-    action_render_toggle_->setIcon(QIcon(":/media/render-disabled.png"));
-    action_render_toggle_->setText(tr("Enable rendering"));
+    if (render_options_widget_->automatic_update) {
+      render_options_widget_->automatic_update = false;
+      render_options_widget_->counter = 0;
+      action_render_toggle_->setIcon(QIcon(":/media/render-disabled.png"));
+      action_render_toggle_->setText(tr("Enable rendering"));
+    } else {
+      render_options_widget_->automatic_update = true;
+      render_options_widget_->counter = 0;
+      Render();
+      action_render_toggle_->setIcon(QIcon(":/media/render-enabled.png"));
+      action_render_toggle_->setText(tr("Disable rendering"));
+    }
 }
 
 void ReconstructionWidget::UpdateTimer() {

@@ -526,20 +526,27 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
     void PCLVis::resetCameraClippingRange(int viewport)
 	{
-        double nearFar[2];
-        this->getReasonableClippingRange(nearFar, viewport);
-        this->setCameraClipDistances(0, nearFar[1], viewport);
+        if (getVtkCamera()->GetParallelProjection())
+        {
+            double nearFar[2];
+            this->getReasonableClippingRange(nearFar, viewport);
+            this->setCameraClipDistances(0, nearFar[1] * 3, viewport);
+        }
+        else
+        {
+            this->synchronizeGeometryBounds(viewport);
+            if (this->GeometryBounds.IsValid())
+            {
+                double originBounds[6];
+                this->GeometryBounds.GetBounds(originBounds);
+                this->GeometryBounds.Scale(1.5, 1.5, 1.5);
+                double bounds[6];
+                this->GeometryBounds.GetBounds(bounds);
+                this->getCurrentRenderer()->ResetCameraClippingRange(bounds);
+                this->GeometryBounds.SetBounds(originBounds);
+            }
+        }
 
-		if (this->GeometryBounds.IsValid())
-		{
-//			double originBounds[6];
-//			this->GeometryBounds.GetBounds(originBounds);
-//          this->GeometryBounds.Scale(1.5, 1.5, 1.5);
-//			double bounds[6];
-//			this->GeometryBounds.GetBounds(bounds);
-//			this->getCurrentRenderer()->ResetCameraClippingRange(bounds);
-//			this->GeometryBounds.SetBounds(originBounds);
-		}
 	}
 
 	void PCLVis::resetCamera(double xMin, double xMax, double yMin, double yMax, double zMin, double zMax)
@@ -871,7 +878,6 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
         std::string viewID = CVTools::FromQString(context.viewID);
         int viewport = context.defaultViewPort;
         float lineWidth = static_cast<float>(context.currentLineWidth);
-//        double opacity = static_cast<double>(context.opacity);
         if (contains(viewID))
         {
             removeShapes(viewID, viewport);
@@ -885,7 +891,6 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
         PclTools::CreateActorFromVTKDataSet(linesData, linesActor);
         linesActor->GetProperty()->SetRepresentationToSurface();
         linesActor->GetProperty()->SetLineWidth(lineWidth);
-//        linesActor->GetProperty()->SetOpacity(opacity);
         addActorToRenderer(linesActor, viewport);
 
         // Save the pointer/ID pair to the global actor map
@@ -1961,8 +1966,14 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
 	vtkSmartPointer<vtkCamera> PCLVis::getVtkCamera(int viewport)
 	{
-		return getCurrentRenderer()->GetActiveCamera();
-	}
+        return getCurrentRenderer()->GetActiveCamera();
+    }
+
+    double PCLVis::setModelViewMatrix(const ccGLMatrixd &viewMat, int viewport/* = 0*/)
+    {
+
+        getVtkCamera(viewport)->SetModelTransformMatrix(viewMat.data());
+    }
 
 	double PCLVis::getParallelScale()
 	{
@@ -2498,7 +2509,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		// Because VTK/OpenGL stores data without NaN, we lose the 1-1 correspondence, so we must search for the real point
 		CCVector3 picked_pt;
 		event.getPoint(picked_pt.x, picked_pt.y, picked_pt.z);
-		std::string id = pickItem();
+        std::string id = pickItem(-1, -1, 3.0, 3.0);
 		emit interactorPointPickedEvent(picked_pt, idx, id);
 	}
 
@@ -2536,26 +2547,28 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		{
 			if (m_actorPickingEnabled)
 			{
-				pickActor(event.getX(), event.getY());
+                vtkActor* pickedActor = pickActor(event.getX(), event.getY());
+                if (pickedActor)
+                {
+                    emit interactorPickedEvent(pickedActor);
+                }
 			}
 		}
 	}
 
-	void PCLVis::pickActor(double x, double y) {
+    vtkActor*  PCLVis::pickActor(double x, double y) {
 		if (!m_propPicker)
 		{
 			m_propPicker = vtkSmartPointer<vtkPropPicker>::New();
 		}
 
-		m_propPicker->Pick(x, y, 0, getRendererCollection()->GetFirstRenderer());
-		vtkActor* pickedActor = m_propPicker->GetActor();
-		if (pickedActor)
-		{
-			emit interactorPickedEvent(pickedActor);
-		}
+        m_propPicker->Pick(x, y, 0, getRendererCollection()->GetFirstRenderer());
+        m_propPicker->GetActor();
+
 	}
 
-	std::string PCLVis::pickItem(double x, double y)
+    std::string PCLVis::pickItem(double x0/* = -1*/, double y0/* = -1*/,
+                                 double x1/*= 5.0*/, double y1/*= 5.0*/)
 	{
 		if (!m_area_picker)
 		{
@@ -2563,7 +2576,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		}
 		int * pos = getRenderWindowInteractor()->GetEventPosition();
 
-		m_area_picker->AreaPick(pos[0], pos[1], pos[0] + 5.0, pos[1] + 5.0, getRendererCollection()->GetFirstRenderer());
+        m_area_picker->AreaPick(pos[0], pos[1], pos[0] + x1, pos[1] + y1, getRendererCollection()->GetFirstRenderer());
 		vtkActor* pickedActor = m_area_picker->GetActor();
 		if (pickedActor)
 		{
@@ -2571,7 +2584,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		}
 		else
 		{
-			return std::string("");
+            return std::string("-1");
         }
     }
 

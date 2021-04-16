@@ -125,7 +125,8 @@ namespace PclUtils
 		pcl::visualization::Camera getCamera(int viewport = 0);
 		vtkSmartPointer<vtkCamera> getVtkCamera(int viewport = 0);
 
-		double getParallelScale();
+        double setModelViewMatrix(const ccGLMatrixd& viewMat, int viewport = 0);
+        double getParallelScale();
 
 		void setOrthoProjection(int viewport = 0);
 		void setPerspectiveProjection(int viewport = 0);
@@ -348,14 +349,13 @@ namespace PclUtils
         void toggleAreaPicking();
 		void exitCallbackProcess();
 		void setAreaPickingMode(bool state);
-		std::string pickItem(double x = -1, double y = -1);
+        vtkActor* pickActor(double x, double y);
+        std::string pickItem(double x0 = -1, double y0 = -1, double x1 = 5.0, double y1 = 5.0);
 
         QImage renderToImage(int zoomFactor = 1, bool renderOverlayItems = false, bool silent = false, int viewport = 0);
 
 	protected:
-		void pickActor(double x, double y);
-
-		// Util Variables
+        // Util Variables
 		int m_x_pressNum;
 		int m_currentMode;
 		bool m_pointPickingEnabled;
@@ -373,7 +373,7 @@ namespace PclUtils
 		vtkSmartPointer<vtkOrientationMarkerWidget> m_axes_widget;
 		vtkSmartPointer<vtkPointPicker> m_point_picker;
 		vtkSmartPointer<vtkAreaPicker> m_area_picker;
-		vtkSmartPointer<vtkPropPicker>  m_propPicker;
+        vtkSmartPointer<vtkPropPicker>  m_propPicker;
 
 		std::vector<int> m_selected_slice;
 	};

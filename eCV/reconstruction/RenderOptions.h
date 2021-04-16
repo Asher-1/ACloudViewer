@@ -58,7 +58,7 @@ struct RenderOptions {
   bool image_connections = false;
 
   // The projection type of the renderer.
-  int projection_type = ProjectionType::PERSPECTIVE;
+  int projection_type = ProjectionType::ORTHOGRAPHIC;
 
   bool Check() const;
 };

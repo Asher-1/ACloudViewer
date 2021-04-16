@@ -1,11 +1,6 @@
 project( ECV_DB_LIB )
 
-file(GLOB         RPLY_SOURCE_FILES "../../3rdparty/rply/rply/*.c")
-file(GLOB         LIBLZF_SOURCE_FILES "../../3rdparty/liblzf/liblzf/*.c")
-
-add_library(${PROJECT_NAME} SHARED 
-			${RPLY_SOURCE_FILES}
-			${LIBLZF_SOURCE_FILES})
+add_library(${PROJECT_NAME} SHARED )
 
 add_subdirectory( include )
 add_subdirectory( src )

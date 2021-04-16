@@ -352,11 +352,11 @@ void ccDBRoot::unloadAll()
 
 	while (m_treeRoot->getChildrenNumber() > 0)
 	{
-		int i = static_cast<int>(m_treeRoot->getChildrenNumber())-1;
-		ccHObject* object = m_treeRoot->getChild(i);
+        int i = static_cast<int>(m_treeRoot->getChildrenNumber())-1;
+        ccHObject* object = m_treeRoot->getChild(static_cast<unsigned int>(i));
 		assert(object);
 
-		beginRemoveRows(index(object).parent(),i,i);
+        beginRemoveRows(index(object).parent(), i, i);
 		m_treeRoot->removeChild(i);
 		endRemoveRows();
 	}
@@ -365,7 +365,6 @@ void ccDBRoot::unloadAll()
 
 	updatePropertiesView();
 
-	//MainWindow::RefreshAllGLWindow(false);
 	ecvDisplayTools::SetRemoveAllFlag(true);
 	MainWindow::TheInstance()->refreshAll();
 }
@@ -625,9 +624,12 @@ void ccDBRoot::deleteSelectedEntities()
 		emit dbIsEmpty();
 	}
 
-	ecvDisplayTools::SetRemoveViewIDs(toBeDeletedInfos);
-	ecvDisplayTools::SetRedrawRecursive(false);
-	MainWindow::TheInstance()->refreshAll(false);
+    if (!toBeDeletedInfos.empty())
+    {
+        ecvDisplayTools::SetRemoveViewIDs(toBeDeletedInfos);
+        ecvDisplayTools::SetRedrawRecursive(false);
+        MainWindow::TheInstance()->refreshAll(false);
+    }
 }
 
 QVariant ccDBRoot::data(const QModelIndex &index, int role) const

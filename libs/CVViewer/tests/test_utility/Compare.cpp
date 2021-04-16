@@ -26,7 +26,7 @@
 
 #include "tests/test_utility/Compare.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 std::string LineInfo(const char* file, int line) {
@@ -123,4 +123,4 @@ void ExpectEQInternal(const std::string& line_info,
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

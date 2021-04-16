@@ -615,6 +615,8 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent * event)
 	bool doRedraw = false;
 	Qt::KeyboardModifiers keyboardModifiers = QApplication::keyboardModifiers();
 
+    emit m_tools->mouseWheelChanged(event);
+
 	if (keyboardModifiers & Qt::AltModifier)
 	{
 		event->accept();
@@ -1293,7 +1295,7 @@ void QVTKWidgetCustom::dropEvent(QDropEvent * event)
 
 		if (!fileNames.empty())
 		{
-			emit m_tools->filesDropped(fileNames);
+            emit m_tools->filesDropped(fileNames, true);
 		}
 
 		event->acceptProposedAction();

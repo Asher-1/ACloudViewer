@@ -29,7 +29,7 @@
 //
 // Author: Asher (Dahai Lu)
 
-#include <CVLog.h>
+#include <Console.h>
 #include "util/misc.h"
 #include "util/option_manager.h"
 
@@ -70,12 +70,10 @@ public:
       } else if (std::is_same<T, std::string>::value) {
         if (!reinterpret_cast<const std::string*>(option)->empty())
         {
-            options_string_.emplace_back(name,
-                                         reinterpret_cast<const std::string*>(option));
+            options_string_.emplace_back(name, reinterpret_cast<const std::string*>(option));
         }
       } else {
-//        LOG(FATAL) << "Unsupported option type";
-       CVLog::Error("Unsupported option type");
+       utility::LogError("Unsupported option type");
       }
     }
 

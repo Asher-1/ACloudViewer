@@ -54,6 +54,9 @@ class AutomaticReconstructionWidget : public OptionsWidget {
   QComboBox* quality_cb_;
   QComboBox* mesher_cb_;
   QAction* render_result_;
+
+  std::vector<std::string> meshing_paths_;
+  std::vector<std::vector<colmap::PlyPoint>> fused_points_;
 };
 
 }  // namespace cloudViewer

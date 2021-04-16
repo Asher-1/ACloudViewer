@@ -1223,14 +1223,14 @@ endif ()
 if(BUILD_RECONSTRUCTION)
 
     include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
-    import_3rdparty_library(3rdparty_freeimage
-        INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
-        LIB_DIR      ${FREEIMAGE_LIB_DIR}
-        LIBRARIES    ${FREEIMAGE_LIBRARIES}
-    )
-    set(FREEIMAGE_TARGET "3rdparty_freeimage")
-    add_dependencies(3rdparty_freeimage ext_freeimage)
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
+#    import_3rdparty_library(3rdparty_freeimage
+#        INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
+#        LIB_DIR      ${FREEIMAGE_LIB_DIR}
+#        LIBRARIES    ${FREEIMAGE_LIBRARIES}
+#    )
+#    set(FREEIMAGE_TARGET "3rdparty_freeimage")
+#    add_dependencies(3rdparty_freeimage ext_freeimage)
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
 
 #    include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
 #    import_3rdparty_library(3rdparty_gflags

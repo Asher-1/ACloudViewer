@@ -81,11 +81,11 @@ if(CUDA_ENABLED)
     endif()
 
     COLMAP_ADD_STATIC_CUDA_LIBRARY(colmap_cuda ${COLMAP_CUDA_SOURCES})
-    target_link_libraries(colmap_cuda colmap)
+    target_link_libraries(colmap_cuda PRIVATE colmap)
 
-    target_link_libraries(colmap PUBLIC
+    target_link_libraries(colmap PRIVATE
         colmap_cuda ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
 else()
-    target_link_libraries(colmap PUBLIC
+    target_link_libraries(colmap PRIVATE
         ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
 endif()

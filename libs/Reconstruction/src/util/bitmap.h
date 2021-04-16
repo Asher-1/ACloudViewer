@@ -48,6 +48,7 @@
 
 #include "util/string.h"
 
+
 namespace colmap {
 
 // Templated bitmap color class.

@@ -44,9 +44,11 @@
 #include "RenderOptions.h"
 
 #include <LineSet.h>
+#include <ecvBBox.h>
 
 class ccPointCloud;
 class ccCameraSensor;
+class MainWindow;
 
 namespace cloudViewer {
 
@@ -65,14 +67,14 @@ class ModelViewerWidget : public QWidget {
   const float kInitPointSize = 1.0f;
   const float kMinPointSize = 0.5f;
   const float kMaxPointSize = 100.0f;
-  const float kPointScaleSpeed = 0.1f;
+  const float kPointScaleSpeed = 1.0f;
   const float kInitImageSize = 0.2f;
   const float kMinImageSize = 1e-6f;
   const float kMaxImageSize = 1e3f;
   const float kImageScaleSpeed = 0.1f;
   const int kDoubleClickInterval = 250;
 
-  ModelViewerWidget(QWidget* parent, OptionManager* options);
+  ModelViewerWidget(QWidget* parent, OptionManager* options, MainWindow* app);
   virtual ~ModelViewerWidget() override;
 
   void ReloadReconstruction();
@@ -86,27 +88,36 @@ class ModelViewerWidget : public QWidget {
 
   void UpdateMovieGrabber();
 
-  void ChangeFocusDistance(const float delta);
-  void ChangeNearPlane(const float delta);
   void ChangePointSize(const float delta);
   void ChangeCameraSize(const float delta);
 
-  QMatrix4x4 ModelViewMatrix() const;
-  void SetModelViewMatrix(const QMatrix4x4& matrix);
+  void ResetView();
 
-  void SelectObject(const int x, const int y);
+  ccGLMatrixd ModelViewMatrix() const;
+
+  void SelectObject(ccHObject* entity, unsigned subEntityID, int x, int y, const CCVector3& P);
+//  void SelectObject(const CCVector3& p, int index, const std::string& id);
   void SelectMoviewGrabberView(const size_t view_idx);
 
   QImage GrabImage();
   void GrabMovie();
 
+  void update();
+  void StartRender();
+  void EndRender(bool autoZoom = true);
+
   void ShowPointInfo(const colmap::point3D_t point3D_id);
   void ShowImageInfo(const colmap::image_t image_id);
 
+  void SetPerspectiveProjection();
+  void SetOrthogonalProjection();
+
   float PointSize() const;
   float ImageSize() const;
-  void SetPointSize(const float point_size);
-  void SetImageSize(const float image_size);
+  void SetPointSize(const float point_size, bool autoUpdate = true);
+  void SetImageSize(const float image_size, bool autoUpdate = true);
+
+  void SetBackgroundColor(const float r, const float g, const float b);
 
   // Copy of current scene data that is displayed
   colmap::Reconstruction* reconstruction = nullptr;
@@ -118,9 +129,6 @@ class ModelViewerWidget : public QWidget {
   QLabel* statusbar_status_label;
 
  private:
-  void mousePressEvent(QMouseEvent* event) override;
-  void wheelEvent(QWheelEvent* event) override;
-
   void SetupView();
 
   void Upload();
@@ -130,26 +138,15 @@ class ModelViewerWidget : public QWidget {
   void UploadImageConnectionData();
   void UploadMovieGrabberData();
 
-  void update();
   void drawPointCloud(ccPointCloud* cloud);
   void resetPointCloud(ccPointCloud* cloud);
   void drawLines(geometry::LineSet& lineset);
   void resetLines(geometry::LineSet& lineset);
-  void drawCameraSensors(std::vector<std::shared_ptr<ccCameraSensor>>& sensors);
-  void resetCameraSensors(std::vector<std::shared_ptr<ccCameraSensor>>& sensors);
-
-  void ComposeProjectionMatrix();
-
-  float ZoomScale() const;
-  float AspectRatio() const;
-  float OrthographicWindowExtent() const;
-
-  Eigen::Vector3f PositionToArcballVector(const float x, const float y) const;
+  void drawCameraSensors(std::vector<ccCameraSensor*>& sensors);
+  void resetCameraSensors(std::vector<ccCameraSensor*>& sensors);
+  void clearSensors(std::vector<ccCameraSensor*>& sensors);
 
   OptionManager* options_;
-
-  QMatrix4x4 model_view_matrix_;
-  QMatrix4x4 projection_matrix_;
 
   PointViewerWidget* point_viewer_widget_;
   DatabaseImageViewerWidget* image_viewer_widget_;
@@ -158,10 +155,6 @@ class ModelViewerWidget : public QWidget {
   std::unique_ptr<PointColormapBase> point_colormap_;
   std::unique_ptr<ImageColormapBase> image_colormap_;
 
-  bool mouse_is_pressed_;
-  QTimer mouse_press_timer_;
-  QPoint prev_mouse_pos_;
-
   float focus_distance_;
 
   std::vector<std::pair<std::size_t, char>> selection_buffer_;
@@ -169,25 +162,25 @@ class ModelViewerWidget : public QWidget {
   colmap::point3D_t selected_point3D_id_;
   std::size_t selected_movie_grabber_view_;
 
+  MainWindow* app_;
+
   // for visualization
   ccPointCloud* cloud_sparse_;
-  ccPointCloud* cloud_dense_;
+  ccBBox bbox_;
 
   geometry::LineSet point_line_data_;
   geometry::LineSet image_line_data_;
-  std::vector<std::shared_ptr<ccCameraSensor>> sensors_;
+  std::vector<ccCameraSensor*> sensors_;
+
+  ccHObject* main_sensors_;
 
   geometry::LineSet movie_grabber_path_;
-  std::vector<std::shared_ptr<ccCameraSensor>> movie_grabber_sensors_;
-
-  bool coordinate_grid_enabled_;
+  std::vector<ccCameraSensor*> movie_grabber_sensors_;
 
   // Size of points (dynamic): does not require re-uploading of points.
   float point_size_;
   // Size of image models (not dynamic): requires re-uploading of image models.
   float image_size_;
-  // Near clipping plane.
-  float near_plane_;
 
 };
 
