@@ -11,7 +11,7 @@
 //#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
 //#  GNU General Public License for more details.                          #
 //#                                                                        #
-//#                         COPYRIGHT: DAHAI LU                         #
+//#                         COPYRIGHT: DAHAI LU                            #
 //#                                                                        #
 //##########################################################################
 //
@@ -83,12 +83,6 @@ void PCLDisplayTools::registerVisualizer(QMainWindow * win, bool stereoMode)
 
 		m_visualizer2D->setRender(getQVtkWidget()->getVtkRender());
 		m_visualizer2D->setupInteractor(getQVtkWidget()->GetInteractor(), getQVtkWidget()->GetRenderWindow());
-		{
-			//// test
-			//QImage image("G:/develop/pcl_projects/cloud/obj/test/maps/test_albedo.jpg");
-			//m_visualizer2D->showRGBImage(image.bits(), image.width(), image.height(), "image", 1.0);
-			//m_visualizer2D->spin();
-		}
 	}
 	else
 	{
@@ -314,8 +308,6 @@ void PCLDisplayTools::drawCamera(const CC_DRAW_CONTEXT& context, ccCameraSensor 
 
     if (m_visualizer3D->contains(viewID))
     {
-//        ecvColor::Rgbf polygonColor = ecvTools::TransFormRGB(context.defaultPolylineColor);
-//        m_visualizer3D->setShapeUniqueColor(polygonColor.r, polygonColor.g, polygonColor.b, viewID, viewport);
         m_visualizer3D->setLineWidth(context.currentLineWidth, viewID, viewport);
     }
 }
@@ -1038,6 +1030,26 @@ QString PCLDisplayTools::pick3DItem(int x, int y)
     return QString();
 }
 
+QString PCLDisplayTools::pickObject(double x, double y)
+{
+    if (m_visualizer3D)
+    {
+        vtkActor* pickedActor = m_visualizer3D->pickActor(x, y);
+        if (pickedActor)
+        {
+            if (pickedActor)
+            {
+                return m_visualizer3D->getIdByActor(pickedActor).c_str();
+            }
+            else
+            {
+                return "-1";
+            }
+        }
+    }
+    return "-1";
+}
+
 QImage PCLDisplayTools::renderToImage(int zoomFactor, bool renderOverlayItems, bool silent, int viewport)
 {
     if (m_visualizer3D) {
@@ -1105,7 +1117,15 @@ void PCLDisplayTools::getViewMatrix(double * ViewArray, int viewport)
 	ViewArray[12] = tempArray[12];
 	ViewArray[13] = tempArray[13];
 	ViewArray[14] = tempArray[14];
-	ViewArray[15] = tempArray[15];
+    ViewArray[15] = tempArray[15];
+}
+
+void PCLDisplayTools::setViewMatrix(const ccGLMatrixd &viewMat, int viewport)
+{
+    if(m_visualizer3D)
+    {
+        m_visualizer3D->setModelViewMatrix(viewMat, viewport);
+    }
 }
 
 void PCLDisplayTools::changeEntityProperties(PROPERTY_PARAM & param)

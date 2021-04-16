@@ -35,6 +35,7 @@
 
 #include "../OptionManager.h"
 #include "util/threading.h"
+#include "util/ply.h"
 
 namespace cloudViewer {
 
@@ -89,6 +90,9 @@ class AutomaticReconstructionController : public colmap::Thread {
     // Whether to use the GPU in feature extraction and matching.
     bool use_gpu = true;
 
+    // Whether to add the reconstruction results to DBRoot.
+    bool autoVisualization = true;
+
     // Index of the GPU used for GPU stages. For multi-GPU computation,
     // you should separate multiple GPU indices by comma, e.g., "0,1,2,3".
     // By default, all GPUs will be used in all stages.
@@ -99,6 +103,9 @@ class AutomaticReconstructionController : public colmap::Thread {
       const Options& options, ReconstructionManager* reconstruction_manager);
 
   void Stop() override;
+
+  std::vector<std::vector<colmap::PlyPoint>> fused_points_;
+  std::vector<std::string> meshing_paths_;
 
  private:
   void Run() override;

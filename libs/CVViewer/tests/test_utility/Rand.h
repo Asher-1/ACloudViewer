@@ -29,7 +29,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "cloudViewer/utility/Eigen.h"
+#include "Eigen.h"
 
 namespace cloudViewer {
 namespace tests {

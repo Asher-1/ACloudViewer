@@ -692,7 +692,7 @@ PCLCloud::Ptr cc2smReader::getAsSM(bool ignoreScalars) const
 	if (!m_cc_cloud || m_cc_cloud->size() == 0)
 	{
 		assert(false);
-		return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
+        return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
 	}
 
 	//container
@@ -715,7 +715,7 @@ PCLCloud::Ptr cc2smReader::getAsSM(bool ignoreScalars) const
 	catch (const std::bad_alloc&)
 	{
 		//not enough memory
-		return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
+        return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
 	}
 
 	return getAsSM(fields);

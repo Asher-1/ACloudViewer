@@ -58,6 +58,7 @@ class MainWindow;
 
 namespace cloudViewer {
 
+class RenderOptionsWidget;
 class ReconstructionOptionsWidget;
 class ReconstructionWidget : public QWidget {
     Q_OBJECT
@@ -125,6 +126,7 @@ class ReconstructionWidget : public QWidget {
   void Render();
   void RenderNow();
   void RenderToggle();
+  void RenderOptions();
   void RenderSelectedReconstruction();
   void RenderClear();
 
@@ -167,6 +169,7 @@ class ReconstructionWidget : public QWidget {
   ReconstructionOptionsWidget* reconstruction_options_widget_;
   BundleAdjustmentWidget* bundle_adjustment_widget_;
   DenseReconstructionWidget* dense_reconstruction_widget_;
+  RenderOptionsWidget* render_options_widget_;
   LogWidget* log_widget_;
   UndistortionWidget* undistortion_widget_;
   ReconstructionManagerWidget* reconstruction_manager_widget_;
@@ -218,6 +221,8 @@ class ReconstructionWidget : public QWidget {
   QAction* action_render_;
   QAction* action_render_now_;
   QAction* action_render_toggle_;
+  QAction* action_render_reset_view_;
+  QAction* action_render_options_;
 
   QAction* action_reconstruction_stats_;
   QAction* action_match_matrix_;

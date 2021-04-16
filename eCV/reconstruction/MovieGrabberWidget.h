@@ -39,6 +39,9 @@
 
 #include "base/reconstruction.h"
 
+#include "ecvGLMatrix.h"
+#include <ecvViewportParameters.h>
+
 namespace cloudViewer {
 
 class ModelViewerWidget;
@@ -52,7 +55,8 @@ class MovieGrabberWidget : public QWidget {
 
   struct ViewData {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    QMatrix4x4 model_view_matrix;
+    ccGLMatrixd model_view_matrix;
+    ecvViewportParameters viewportParams;
     float point_size = -1.0f;
     float image_size = -1.0f;
   };

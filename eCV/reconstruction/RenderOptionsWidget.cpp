@@ -183,6 +183,7 @@ void RenderOptionsWidget::Apply() {
   ApplyProjection();
   ApplyPointColormap();
   ApplyImageColormap();
+  ApplyBackgroundColor();
 
   model_viewer_widget_->ReloadReconstruction();
 }
@@ -201,6 +202,14 @@ void RenderOptionsWidget::ApplyProjection() {
       options_->render->projection_type =
           RenderOptions::ProjectionType::PERSPECTIVE;
       break;
+  }
+  if (options_->render->projection_type == RenderOptions::ProjectionType::PERSPECTIVE)
+  {
+      model_viewer_widget_->SetPerspectiveProjection();
+  }
+  if (options_->render->projection_type == RenderOptions::ProjectionType::ORTHOGRAPHIC)
+  {
+      model_viewer_widget_->SetOrthogonalProjection();
   }
 }
 
@@ -253,6 +262,12 @@ void RenderOptionsWidget::ApplyImageColormap() {
   }
 
   model_viewer_widget_->SetImageColormap(image_color_map);
+}
+
+void RenderOptionsWidget::ApplyBackgroundColor()
+{
+    model_viewer_widget_->SetBackgroundColor(
+        background_color_(0), background_color_(1), background_color_(2));
 }
 
 void RenderOptionsWidget::SelectColor(const std::string& title,

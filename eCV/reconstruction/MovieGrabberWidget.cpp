@@ -38,6 +38,7 @@
 #include "ModelViewerWidget.h"
 #include "RenderOptions.h"
 #include "QtUtils.h"
+#include "controllers/ViewInterpolate.h"
 
 namespace cloudViewer {
 
@@ -112,7 +113,7 @@ MovieGrabberWidget::MovieGrabberWidget(QWidget* parent,
 }
 
 void MovieGrabberWidget::Add() {
-  const QMatrix4x4 matrix = model_viewer_widget_->ModelViewMatrix();
+  const ccGLMatrixd matrix = model_viewer_widget_->ModelViewMatrix();
 
   double time = 0;
   if (table_->rowCount() > 0) {
@@ -127,6 +128,7 @@ void MovieGrabberWidget::Add() {
 
   // Save size state of current viewpoint.
   MovieGrabberWidget::ViewData view_data;
+  view_data.viewportParams = ecvDisplayTools::GetViewportParameters();
   view_data.model_view_matrix = matrix;
   view_data.point_size = model_viewer_widget_->PointSize();
   view_data.image_size = model_viewer_widget_->ImageSize();
@@ -137,7 +139,7 @@ void MovieGrabberWidget::Add() {
   table_->selectRow(table_->rowCount() - 1);
 
   // Zoom out a little, so that we can see the newly added camera
-  model_viewer_widget_->ChangeFocusDistance(-5);
+//  model_viewer_widget_->ChangeFocusDistance(-5);
 }
 
 void MovieGrabberWidget::Delete() {
@@ -182,7 +184,7 @@ void MovieGrabberWidget::Assemble() {
 
   const QDir dir = QDir(path);
 
-  const QMatrix4x4 model_view_matrix_cached =
+  const ccGLMatrixd model_view_matrix_cached =
       model_viewer_widget_->ModelViewMatrix();
   const float point_size_cached = model_viewer_widget_->PointSize();
   const float image_size_cached = model_viewer_widget_->ImageSize();
@@ -209,14 +211,7 @@ void MovieGrabberWidget::Assemble() {
   size_t frame_number = 0;
 
   // Data of first view.
-  const Eigen::Matrix4d prev_model_view_matrix =
-      QMatrixToEigen(view_data_[table_->item(0, 0)].model_view_matrix).cast<double>();
-  const Eigen::Matrix3x4d prev_view_model_matrix =
-      InvertProjectionMatrix(prev_model_view_matrix.topLeftCorner<3, 4>());
-  Eigen::Vector4d prev_qvec =
-      RotationMatrixToQuaternion(prev_view_model_matrix.block<3, 3>(0, 0));
-  Eigen::Vector3d prev_tvec = prev_view_model_matrix.block<3, 1>(0, 3);
-
+  ecvViewportParameters firstViewport = view_data_[table_->item(0, 0)].viewportParams;
   for (int row = 1; row < table_->rowCount(); ++row) {
     const auto logical_idx = table_->verticalHeader()->logicalIndex(row);
     QTableWidgetItem* prev_table_item = table_->item(logical_idx - 1, 0);
@@ -224,15 +219,6 @@ void MovieGrabberWidget::Assemble() {
 
     const MovieGrabberWidget::ViewData& prev_view_data = view_data_.at(prev_table_item);
     const MovieGrabberWidget::ViewData& view_data = view_data_.at(table_item);
-
-    // Data of next view.
-    const Eigen::Matrix4d curr_model_view_matrix =
-        QMatrixToEigen(view_data.model_view_matrix).cast<double>();
-    const Eigen::Matrix3x4d curr_view_model_matrix =
-        InvertProjectionMatrix(curr_model_view_matrix.topLeftCorner<3, 4>());
-    const Eigen::Vector4d curr_qvec =
-        RotationMatrixToQuaternion(curr_view_model_matrix.block<3, 3>(0, 0));
-    const Eigen::Vector3d curr_tvec = curr_view_model_matrix.block<3, 1>(0, 3);
 
     // Time difference between previous and current view.
     const float dt = std::abs(table_item->text().toFloat() -
@@ -251,33 +237,25 @@ void MovieGrabberWidget::Assemble() {
         tt = ScaleSigmoid(tt, static_cast<float>(smoothness_sb_->value()));
       }
 
-      // Compute current model-view matrix.
-      Eigen::Vector4d interp_qvec;
-      Eigen::Vector3d interp_tvec;
-      InterpolatePose(prev_qvec, prev_tvec, curr_qvec, curr_tvec, tt,
-                      &interp_qvec, &interp_tvec);
-
-      Eigen::Matrix4d frame_model_view_matrix = Eigen::Matrix4d::Identity();
-      frame_model_view_matrix.topLeftCorner<3, 4>() = InvertProjectionMatrix(
-          ComposeProjectionMatrix(interp_qvec, interp_tvec));
-
-      model_viewer_widget_->SetModelViewMatrix(
-          EigenToQMatrix(frame_model_view_matrix.cast<float>()));
+      ViewInterpolate interpolator(prev_view_data.viewportParams, view_data.viewportParams);
+      ecvViewportParameters currentViewport;
+      interpolator.interpolate(currentViewport, static_cast<double>(tt));
 
       // Set point and image sizes.
+      model_viewer_widget_->StartRender();
       model_viewer_widget_->SetPointSize(prev_view_data.point_size +
-                                         dpoint_size * tt);
+                                         dpoint_size * tt, false);
       model_viewer_widget_->SetImageSize(prev_view_data.image_size +
-                                         dimage_size * tt);
+                                         dimage_size * tt, false);
+      ecvDisplayTools::SetViewportParameters(currentViewport);
+      model_viewer_widget_->EndRender();
+      model_viewer_widget_->update();
 
       QImage image = model_viewer_widget_->GrabImage();
       image.save(dir.filePath(
           "frame" + QString().sprintf("%06zu", frame_number) + ".png"));
       frame_number += 1;
     }
-
-    prev_qvec = curr_qvec;
-    prev_tvec = curr_tvec;
   }
 
   views = views_cached;
@@ -290,7 +268,9 @@ void MovieGrabberWidget::Assemble() {
   if (coords_changed) {
       ecvDisplayTools::ToggleOrientationMarker(coords_shown);
   }
-  model_viewer_widget_->SetModelViewMatrix(model_view_matrix_cached);
+  ecvDisplayTools::SetViewportParameters(firstViewport);
+  ecvDisplayTools::UpdateScreen();
+
 }
 
 void MovieGrabberWidget::TimeChanged(QTableWidgetItem* item) {
@@ -313,7 +293,11 @@ void MovieGrabberWidget::UpdateViews() {
     QTableWidgetItem* item = table_->item(logical_idx, 0);
 
     const Eigen::Matrix4d model_view_matrix =
-        QMatrixToEigen(view_data_.at(item).model_view_matrix).cast<double>();
+        ccGLMatrixd::ToEigenMatrix4(view_data_.at(item).model_view_matrix);
+
+//    const Eigen::Matrix4d model_view_matrix =
+//        ccGLMatrixd::ToEigenMatrix4(view_data_.at(item).viewportParams.computeViewMatrix());
+
     Image image;
     image.Qvec() =
         RotationMatrixToQuaternion(model_view_matrix.block<3, 3>(0, 0));

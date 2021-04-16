@@ -31,7 +31,7 @@
 #include <numeric>
 #include <vector>
 
-#include "cloudViewer/utility/Console.h"
+#include "Console.h"
 #include "tests/test_utility/Compare.h"
 
 namespace cloudViewer {

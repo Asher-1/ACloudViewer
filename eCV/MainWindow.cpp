@@ -738,7 +738,7 @@ void MainWindow::connectActions()
 	m_ui->consoleWidget->setProperty("contextMenuPolicy", Qt::CustomContextMenu);
 	connect(m_ui->consoleWidget, &ecvCustomQListWidget::customContextMenuRequested, this, &MainWindow::popMenuInConsole);
 	//DGM: we don't want to block the 'dropEvent' method of ccGLWindow instances!
-	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::filesDropped, this, &MainWindow::addToDBAuto, Qt::QueuedConnection);
+    connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::filesDropped, this, &MainWindow::addToDBAuto, Qt::QueuedConnection);
 
 	// hidden
 	connect(m_ui->actionEnableVisualDebugTraces, &QAction::triggered, this, &MainWindow::toggleVisualDebugTraces);
@@ -1339,12 +1339,15 @@ void MainWindow::doActionOpenFile() {
 	addToDB(selectedFiles, currentOpenDlgFilter);
 }
 
-void MainWindow::addToDBAuto(const QStringList & filenames)
+void MainWindow::addToDBAuto(const QStringList & filenames,
+                             bool displayDialog/* = true*/)
 {
-	addToDB(filenames, QString());
+    addToDB(filenames, QString(), displayDialog);
 }
 
-void MainWindow::addToDB(const QStringList& filenames, QString fileFilter/*=QString()*/)
+void MainWindow::addToDB(const QStringList& filenames,
+                         QString fileFilter/*=QString()*/,
+                         bool displayDialog/* = true*/)
 {
 	//to use the same 'global shift' for multiple files
 	CCVector3d loadCoordinatesShift(0, 0, 0);
@@ -1352,7 +1355,7 @@ void MainWindow::addToDB(const QStringList& filenames, QString fileFilter/*=QStr
 
 	FileIOFilter::LoadParameters parameters;
 	{
-		parameters.alwaysDisplayLoadDialog = true;
+        parameters.alwaysDisplayLoadDialog = displayDialog;
 		parameters.shiftHandlingMode = ecvGlobalShiftManager::DIALOG_IF_NECESSARY;
 		parameters.coordinatesShift = &loadCoordinatesShift;
 		parameters.coordinatesShiftEnabled = &loadCoordinatesTransEnabled;
@@ -2326,12 +2329,12 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	bool atLeastOneSensor = (selInfo.sensorCount > 0);
 	bool atLeastOneGBLSensor = (selInfo.gblSensorCount > 0);
 	bool atLeastOneCameraSensor = (selInfo.cameraSensorCount > 0);
-	bool atLeastOnePolyline = (selInfo.polylineCount > 0);
+    bool atLeastOnePolyline = (selInfo.polylineCount > 0);
 
-	//m_ui->menuEdit->setEnabled(atLeastOneEntity);
-	//m_ui->menuTools->setEnabled(atLeastOneEntity);
-	//m_ui->menuAlgorithm->setEnabled(atLeastOneEntity);
-	//m_ui->menuDisplay->setEnabled(atLeastOneEntity);
+    //m_ui->menuEdit->setEnabled(atLeastOneEntity);
+    //m_ui->menuTools->setEnabled(atLeastOneEntity);
+    //m_ui->menuAlgorithm->setEnabled(atLeastOneEntity);
+    //m_ui->menuDisplay->setEnabled(atLeastOneEntity);
 
 	m_ui->actionTracePolyline->setEnabled(!dbIsEmpty);
 	m_ui->actionZoomAndCenter->setEnabled(atLeastOneEntity);
@@ -2343,9 +2346,9 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionSegment->setEnabled(atLeastOneEntity);
 	m_ui->actionFilterSection->setEnabled(atLeastOneEntity);
 	m_ui->actionTranslateRotate->setEnabled(atLeastOneEntity);
-	//m_ui->actionShowDepthBuffer->setEnabled(atLeastOneGBLSensor);
-	//m_ui->actionExportDepthBuffer->setEnabled(atLeastOneGBLSensor);
-	//m_ui->actionComputePointsVisibility->setEnabled(atLeastOneGBLSensor);
+    m_ui->actionShowDepthBuffer->setEnabled(atLeastOneGBLSensor);
+    m_ui->actionExportDepthBuffer->setEnabled(atLeastOneGBLSensor);
+    m_ui->actionComputePointsVisibility->setEnabled(atLeastOneGBLSensor);
 	m_ui->actionResampleWithOctree->setEnabled(atLeastOneCloud);
 	m_ui->actionApplyScale->setEnabled(atLeastOneCloud || atLeastOneMesh || atLeastOnePolyline);
 	m_ui->actionApplyTransformation->setEnabled(atLeastOneEntity);
@@ -2370,7 +2373,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionFitPlane->setEnabled(atLeastOneEntity);
 	m_ui->actionFitPlaneProxy->setEnabled(atLeastOneEntity);
 	m_ui->actionFitSphere->setEnabled(atLeastOneCloud);
-	//m_ui->actionLevel->setEnabled(atLeastOneEntity);
+//    m_ui->actionLevel->setEnabled(atLeastOneEntity);
 	m_ui->actionFitFacet->setEnabled(atLeastOneEntity);
 	m_ui->actionFitQuadric->setEnabled(atLeastOneCloud);
 	m_ui->actionSubsample->setEnabled(atLeastOneCloud);
@@ -2407,7 +2410,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionDistanceToBestFitQuadric3D->setEnabled(atLeastOneCloud);
 	m_ui->actionDistanceMap->setEnabled(atLeastOneMesh || atLeastOneCloud);
 
-	//m_ui->menuMeshScalarField->setEnabled(atLeastOneSF && atLeastOneMesh);
+    m_ui->menuMeshScalarField->setEnabled(atLeastOneSF && atLeastOneMesh);
 	//actionSmoothMeshSF->setEnabled(atLeastOneSF && atLeastOneMesh);
 	//actionEnhanceMeshSF->setEnabled(atLeastOneSF && atLeastOneMesh);
 
@@ -2440,25 +2443,25 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionConvertPolylinesToMesh->setEnabled(atLeastOnePolyline || exactlyOneGroup);
 	m_ui->actionSamplePointsOnPolyline->setEnabled(atLeastOnePolyline);
 	m_ui->actionMeshTwoPolylines->setEnabled(selInfo.selCount == 2 && selInfo.polylineCount == 2);
-	//m_ui->actionModifySensor->setEnabled(exactlyOneSensor);
-	//m_ui->actionComputeDistancesFromSensor->setEnabled(atLeastOneCameraSensor || atLeastOneGBLSensor);
-	//m_ui->actionComputeScatteringAngles->setEnabled(exactlyOneSensor);
-	//m_ui->actionViewFromSensor->setEnabled(exactlyOneSensor);
-	//m_ui->actionCreateGBLSensor->setEnabled(atLeastOneCloud);
-	//m_ui->actionCreateCameraSensor->setEnabled(selInfo.selCount <= 1); //free now
-	//m_ui->actionProjectUncertainty->setEnabled(exactlyOneCameraSensor);
-	//m_ui->actionCheckPointsInsideFrustum->setEnabled(exactlyOneCameraSensor);
+    m_ui->actionModifySensor->setEnabled(exactlyOneSensor);
+    m_ui->actionComputeDistancesFromSensor->setEnabled(atLeastOneCameraSensor || atLeastOneGBLSensor);
+    m_ui->actionComputeScatteringAngles->setEnabled(exactlyOneSensor);
+    m_ui->actionViewFromSensor->setEnabled(exactlyOneSensor);
+    m_ui->actionCreateGBLSensor->setEnabled(atLeastOneCloud);
+    m_ui->actionCreateCameraSensor->setEnabled(selInfo.selCount <= 1); //free now
+    m_ui->actionProjectUncertainty->setEnabled(exactlyOneCameraSensor);
+    m_ui->actionCheckPointsInsideFrustum->setEnabled(exactlyOneCameraSensor);
 	m_ui->actionLabelConnectedComponents->setEnabled(atLeastOneCloud);
 	m_ui->actionSORFilter->setEnabled(atLeastOneCloud);
 	m_ui->actionNoiseFilter->setEnabled(atLeastOneCloud);
 	m_ui->actionVoxelSampling->setEnabled(atLeastOneCloud);
 	m_ui->actionUnroll->setEnabled(exactlyOneEntity);
-	//m_ui->actionStatisticalTest->setEnabled(exactlyOneEntity && exactlyOneSF);
+//    m_ui->actionStatisticalTest->setEnabled(exactlyOneEntity && exactlyOneSF);
 	m_ui->actionAddConstantSF->setEnabled(exactlyOneCloud || exactlyOneMesh);
-	//m_ui->actionEditGlobalScale->setEnabled(exactlyOneCloud || exactlyOneMesh);
+//    m_ui->actionEditGlobalScale->setEnabled(exactlyOneCloud || exactlyOneMesh);
 	m_ui->actionComputeKdTree->setEnabled(exactlyOneCloud || exactlyOneMesh);
-	//m_ui->actionShowWaveDialog->setEnabled(exactlyOneCloud);
-	//m_ui->actionCompressFWFData->setEnabled(atLeastOneCloud);
+    m_ui->actionShowWaveDialog->setEnabled(exactlyOneCloud);
+    m_ui->actionCompressFWFData->setEnabled(atLeastOneCloud);
 
 	m_ui->actionKMeans->setEnabled(/*TODO: exactlyOneEntity && exactlyOneSF*/false);
 	m_ui->actionFrontPropagation->setEnabled(/*TODO: exactlyOneEntity && exactlyOneSF*/false);
@@ -2470,7 +2473,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 
 	m_ui->actionFindBiggestInnerRectangle->setEnabled(exactlyOneCloud);
 
-	//m_ui->menuActiveScalarField->setEnabled((exactlyOneCloud || exactlyOneMesh) && selInfo.sfCount > 0);
+//	m_ui->menuActiveScalarField->setEnabled((exactlyOneCloud || exactlyOneMesh) && selInfo.sfCount > 0);
 	m_ui->actionClipFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
 	m_ui->actionProbeFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
 	m_ui->actionGlyphFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
@@ -2483,7 +2486,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 
 	m_ui->actionDBScanCluster->setEnabled(atLeastOneCloud);
 	m_ui->actionPlaneSegmentation->setEnabled(atLeastOneCloud);
-	//m_ui->actionExtractSections->setEnabled(atLeastOneCloud);
+//	m_ui->actionExtractSections->setEnabled(atLeastOneCloud);
 	//m_ui->actionRasterize->setEnabled(exactlyOneCloud);
 	m_ui->actionBoxAnnotation->setEnabled(exactlyOneCloud);
 	m_ui->actionSemanticAnnotation->setEnabled(exactlyOneCloud);
@@ -4381,17 +4384,6 @@ void MainWindow::doActionSetViewFromSensor()
 	ccSensor* sensor = ccHObjectCaster::ToSensor(m_selectedEntities[0]);
 	assert(sensor);
 
-	//try to find the associated window
-	//ccGenericGLDisplay* win = sensor->getDisplay();
-	//if (!win)
-	//{
-	//	//get associated cloud
-	//	ccPointCloud * cloud = ccHObjectCaster::ToPointCloud(sensor->getParent());
-	//	if (cloud)
-	//		win = cloud->getDisplay();
-	//}
-
-	//if (sensor->applyViewport(win))
 	if (sensor->applyViewport())
 	{
 		ecvConsole::Print("[doActionSetViewFromSensor] Viewport applied");

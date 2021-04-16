@@ -589,6 +589,11 @@ public: // main interface
 	}
     inline virtual void getViewMatrix(double * viewArray, int viewport = 0) { /* do nothing */ }
 
+    inline static void SetViewMatrix(const ccGLMatrixd& viewMat, int viewport = 0) {
+        TheInstance()->setViewMatrix(viewMat, viewport);
+    }
+    inline virtual void setViewMatrix(const ccGLMatrixd& viewMat, int viewport = 0) { /* do nothing */ }
+
     inline static bool HideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) { return TheInstance()->hideShowEntities(CONTEXT); }
     inline virtual bool hideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) { return true; /* do nothing */ }
 	static void HideShowEntities(const QStringList & viewIDs, ENTITY_TYPE hideShowEntityType, bool visibility = false);
@@ -606,6 +611,8 @@ public: // main interface
 
 	static QString Pick3DItem(int x = -1, int y = -1) { return TheInstance()->pick3DItem(x, y); }
 	virtual QString pick3DItem(int x = -1, int y = -1) { return QString(); /* do nothing */ }
+    static QString PickObject(double x = -1, double y = -1) { return TheInstance()->pickObject(x, y); }
+    virtual QString pickObject(double x = -1, double y = -1) { return QString(); /* do nothing */ }
 
 	static void FilterByEntityType(ccHObject::Container& labels, CV_CLASS_ENUM type);
 
@@ -917,9 +924,17 @@ public: // visualization matrix transformation
 
 	static void UpdateModelViewMatrix();
 	static void UpdateProjectionMatrix();
-	static ccGLMatrixd ComputeModelViewMatrix(const CCVector3d& cameraCenter);
-	static ccGLMatrixd ComputeProjectionMatrix(const CCVector3d& cameraCenter, bool withGLfeatures, 
-											   ProjectionMetrics* metrics/*=0*/, double* eyeOffset/*=0*/);
+
+    //! Computes the model view matrix
+    static ccGLMatrixd ComputeModelViewMatrix();
+    //! Computes the projection matrix
+    /** \param[in]  withGLfeatures whether to take additional elements (pivot symbol, custom light, etc.) into account or not
+        \param[out] metrics [optional] output other metrics (Znear and Zfar, etc.)
+        \param[out] eyeOffset [optional] eye offset (for stereo display)
+    **/
+    static ccGLMatrixd ComputeProjectionMatrix(bool withGLfeatures,
+                                               ProjectionMetrics* metrics = nullptr,
+                                               double* eyeOffset = nullptr);
 
 	inline static void Deprecate3DLayer() { TheInstance()->m_updateFBO = true; }
 	inline static void InvalidateViewport() { TheInstance()->m_validProjectionMatrix = false; }
@@ -1300,6 +1315,8 @@ public: // event representation
 	//! Returns the OpenGL context size
 	static QSize GlSize() { return TheInstance()->m_glViewport.size(); }
 
+    static void ClearBubbleView();
+
 public slots:
 
 	//! Reacts to the itemPickedFast signal
@@ -1351,6 +1368,7 @@ signals:
 	void cameraDisplaced(float ddx, float ddy);
 	//! Signal emitted when the mouse wheel is rotated
 	void mouseWheelRotated(float wheelDelta_deg);
+    void mouseWheelChanged(QWheelEvent* event);
 
 	//! Signal emitted when the perspective state changes (see setPerspectiveState)
 	void perspectiveStateChanged();
@@ -1421,7 +1439,7 @@ signals:
 	void drawing3D();
 
 	//! Signal emitted when files are dropped on the window
-	void filesDropped(const QStringList& filenames);
+    void filesDropped(const QStringList& filenames, bool displayDialog);
 
 	//! Signal emitted when a new label is created
 	void newLabel(ccHObject* obj);

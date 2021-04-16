@@ -57,6 +57,7 @@ class RenderOptionsWidget : public OptionsWidget {
   void ApplyProjection();
   void ApplyPointColormap();
   void ApplyImageColormap();
+  void ApplyBackgroundColor();
 
   void SelectColor(const std::string& title, Eigen::Vector4f* color);
   void SelectPointColormap(const int idx);

@@ -84,6 +84,7 @@ if(OPENMP_ENABLED)
     find_package(OpenMP QUIET)
 endif()
 
+#find_package(FreeImage REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(Glog REQUIRED)
 
@@ -156,17 +157,30 @@ if(IS_DEBUG)
     add_definitions("-DEIGEN_INITIALIZE_MATRICES_BY_NAN")
 endif()
 
-if(SIMD_ENABLED)
-    add_definitions(-DEIGEN_ALIGN)
-    add_definitions(-DEIGEN_ALIGN_STATICALLY)
-    add_definitions("-DENABLE_CPU_NEON")
-    add_definitions("-DENABLE_CPU_AVX")
-    add_definitions("-DENABLE_CPU_SSE")
-    add_definitions("-DENABLE_CPU_SSE2")
+if(${SIMD_ENABLED})
+    CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+    if (COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+    else()
+      CHECK_CXX_COMPILER_FLAG("/arch:AVX" COMPILER_OPT_ARCH_AVX_SUPPORTED)
+      if(COMPILER_OPT_ARCH_AVX_SUPPORTED)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
+      endif()
+      CHECK_CXX_COMPILER_FLAG("/arch:SSE" COMPILER_OPT_ARCH_SSE_SUPPORTED)
+      if(COMPILER_OPT_ARCH_SSE_SUPPORTED)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE")
+      endif()
+      CHECK_CXX_COMPILER_FLAG("/arch:SSE2" COMPILER_OPT_ARCH_SSE2_SUPPORTED)
+      if(COMPILER_OPT_ARCH_SSE2_SUPPORTED)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
+      endif()
+    endif()
+    message(STATUS "Enabling SIMD support in colmap")
 else()
     # fix eigen alignment bugs for colmap
     add_definitions(-DEIGEN_DONT_ALIGN)
     add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
+    message(STATUS "Disabling SIMD support in colmap")
 endif()
 
 if(OPENMP_ENABLED AND OPENMP_FOUND)
@@ -270,22 +284,24 @@ include(GenerateVersionDefinitions)
 set(COLMAP_INCLUDE_DIRS
     ${BOOST_INCLUDE_DIRS}
     ${GLOG_INCLUDE_DIRS}
+    ${FREEIMAGE_INCLUDE_DIRS}
     ${CERES_INCLUDE_DIRS}
-    ${GLEW_INCLUDE_DIRS}
 )
 
 set(COLMAP_LINK_DIRS
     ${Boost_LIBRARY_DIRS}
 )
 
+set(freeimage_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
+set(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIB_DIR}/${freeimage_library_filename})
 set(COLMAP_EXTERNAL_LIBRARIES
     ${CMAKE_DL_LIBS}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     ${GLOG_LIBRARIES}
+    ${FREEIMAGE_LIBRARIES}
     ${CERES_LIBRARIES}
-    ${OPENGL_LIBRARIES}
 )
 
 message("GLOG_LIBRARIES: " ${GLOG_LIBRARIES})

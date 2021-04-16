@@ -25,7 +25,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/PlyOpenDlg.cpp
 		${CMAKE_CURRENT_LIST_DIR}/PTXFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/RasterGridFilter.cpp
-		${CMAKE_CURRENT_LIST_DIR}/rply.c
+		${CMAKE_CURRENT_LIST_DIR}/FileRply.c
 		${CMAKE_CURRENT_LIST_DIR}/ShpDBFFields.cpp
 		${CMAKE_CURRENT_LIST_DIR}/ShpFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/STLFilter.cpp

@@ -35,9 +35,15 @@
 #include "QtUtils.h"
 
 // CV_DB_LIB
-#include <ecvCameraSensor.h>
 #include <ecvPointCloud.h>
+#include <ecvCameraSensor.h>
 #include <ecvDisplayTools.h>
+#include <ecvHObjectCaster.h>
+#include <ecvGenericVisualizer3D.h>
+
+// LOCAL
+#include "ecvDBRoot.h"
+#include "MainWindow.h"
 
 #define SELECTION_BUFFER_IMAGE_IDX 0
 #define SELECTION_BUFFER_POINT_IDX 1
@@ -74,13 +80,21 @@ inline Eigen::Vector4f IndexToRGB(const size_t index) {
   return color;
 }
 
-std::shared_ptr<ccCameraSensor> BuildImageModel( const colmap::Image& image, const colmap::Camera& camera,
-                                                 const float image_size, const Eigen::Vector4d& plane_color,
-                                                 const Eigen::Vector4d& frame_color) {
-  // Generate camera dimensions in OpenGL (world) coordinate space.
-
-  auto sensor = std::make_shared<ccCameraSensor>();
-  sensor->setGraphicScale(image_size);
+void BuildImageModel( ccCameraSensor* sensor,
+                      const colmap::Image& image, const colmap::Camera& camera,
+                      const float image_size, const Eigen::Vector4d& plane_color,
+                      const Eigen::Vector4d& frame_color) {
+  // temp information
+  const float kBaseCameraWidth = 1024.0f;
+  sensor->setGraphicScale(-2*PC_ONE);
+  const float image_width = image_size * camera.Width() / kBaseCameraWidth;
+  const float image_height = image_width * static_cast<float>(camera.Height()) /
+                             static_cast<float>(camera.Width());
+  const float image_extent = std::max(image_width, image_height);
+  const float camera_extent = std::max(camera.Width(), camera.Height());
+  const float camera_extent_world =
+      static_cast<float>(camera.ImageToWorldThreshold(camera_extent));
+  const float focal_length = 2.0f * image_extent / camera_extent_world;
 
   // set color
   ecvColor::Rgb planeColor = ecvColor::Rgb::FromEigen(
@@ -94,20 +108,13 @@ std::shared_ptr<ccCameraSensor> BuildImageModel( const colmap::Image& image, con
                                                           frame_color(2)));
   sensor->setFrameColor(frameColor);
 
-  // temp information
-  const float kBaseCameraWidth = 1024.0f;
-  const float image_width = image_size * camera.Width() / kBaseCameraWidth;
-  const float image_height = image_width * static_cast<float>(camera.Height()) /
-                             static_cast<float>(camera.Width());
-  const float image_extent = std::max(image_width, image_height);
-  const float camera_extent = std::max(camera.Width(), camera.Height());
-  const float camera_extent_world =
-      static_cast<float>(camera.ImageToWorldThreshold(camera_extent));
-  const float focal_length = 2.0f * image_extent / camera_extent_world;
-
   // init camera intrinsic parameters
   ccCameraSensor::IntrinsicParameters iParams;
-  iParams.vertFocal_pix = static_cast<float>(camera.MeanFocalLength());
+  float pixelSize_mm         = image_size; // pixel size (real distance in meter)
+  iParams.pixelSize_mm[0]    = pixelSize_mm;
+  iParams.pixelSize_mm[1]    = pixelSize_mm;
+  iParams.vertFocal_pix      = ccCameraSensor::ConvertFocalMMToPix(focal_length, pixelSize_mm);
+  iParams.vFOV_rad           = cloudViewer::DegreesToRadians(25.0f);
   iParams.arrayWidth = static_cast<int>(camera.Width());
   iParams.arrayHeight = static_cast<int>(camera.Height());
   iParams.principal_point[0] = static_cast<float>(camera.PrincipalPointX());
@@ -115,20 +122,18 @@ std::shared_ptr<ccCameraSensor> BuildImageModel( const colmap::Image& image, con
   sensor->setIntrinsicParameters(iParams);
 
   // init camera rigid transformation parameters
-  const Eigen::Matrix<float, 3, 4> proj_matrix = image.ProjectionMatrix().cast<float>();
+  const Eigen::Matrix<float, 3, 4> proj_matrix = image.InverseProjectionMatrix().cast<float>();
   Eigen::Matrix3f rotation = proj_matrix.leftCols<3>();
   Eigen::Vector3f translation = proj_matrix.rightCols<1>();
-  ccGLMatrix rot = ccGLMatrix::FromEigenMatrix(rotation);
+  ccGLMatrix rot = ccGLMatrix::FromEigenMatrix3(rotation);
   rot.setTranslation(translation.data());
   sensor->setRigidTransformation(rot);
-
-  return sensor;
 }
 
 }  // namespace
 
 using namespace colmap;
-ModelViewerWidget::ModelViewerWidget(QWidget* parent, OptionManager* options)
+ModelViewerWidget::ModelViewerWidget(QWidget* parent, OptionManager* options, MainWindow* app)
     : QWidget(parent),
       statusbar_status_label(nullptr),
       options_(options),
@@ -136,16 +141,20 @@ ModelViewerWidget::ModelViewerWidget(QWidget* parent, OptionManager* options)
       image_viewer_widget_(
           new DatabaseImageViewerWidget(parent, this, options)),
       movie_grabber_widget_(new MovieGrabberWidget(parent, this)),
-      mouse_is_pressed_(false),
       focus_distance_(kInitFocusDistance),
       selected_image_id_(kInvalidImageId),
       selected_point3D_id_(kInvalidPoint3DId),
-      coordinate_grid_enabled_(true),
-      near_plane_(kInitNearPlane) {
+      app_(app),
+      cloud_sparse_(nullptr),
+      main_sensors_(nullptr)
+{
 
   SetupView();
   SetPointColormap(new PointColormapPhotometric());
   SetImageColormap(new ImageColormapUniform());
+
+  connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::itemPicked,
+          this, &ModelViewerWidget::SelectObject);
 
   image_size_ = static_cast<float>(ecvDisplayTools::GetDevicePixelRatio() * image_size_);
   point_size_ = static_cast<float>(ecvDisplayTools::GetDevicePixelRatio() * point_size_);
@@ -153,39 +162,25 @@ ModelViewerWidget::ModelViewerWidget(QWidget* parent, OptionManager* options)
   point_line_data_.clear();
   image_line_data_.clear();
   sensors_.clear();
-
-  cloud_sparse_ = new ccPointCloud("sparseCloud");
-  if (cloud_dense_->reserveThePointsTable(1))
-  {
-      cloud_sparse_->reserveTheRGBTable();
-      cloud_sparse_->showColors(true);
-      cloud_sparse_->setPointSize(static_cast<unsigned>(point_size_));
-  }
-  else
-  {
-    CVLog::Warning("[ModelViewerWidget] Not enough memory!");
-  }
-
-  cloud_dense_ = new ccPointCloud("denseCloud");
-  if (cloud_dense_->reserveThePointsTable(1))
-  {
-      cloud_dense_->reserveTheRGBTable();
-      cloud_dense_->showColors(true);
-      cloud_dense_->setPointSize(static_cast<unsigned>(point_size_));
-  }
-  else
-  {
-    CVLog::Warning("[ModelViewerWidget] Not enough memory!");
-  }
-
+  movie_grabber_sensors_.clear();
 }
 
 ModelViewerWidget::~ModelViewerWidget()
 {
     if (cloud_sparse_)
+    {
         delete cloud_sparse_;
-    if (cloud_dense_)
-        delete cloud_dense_;
+        cloud_sparse_ = nullptr;
+    }
+
+    clearSensors(sensors_);
+    clearSensors(movie_grabber_sensors_);
+
+    if (main_sensors_)
+    {
+        delete main_sensors_;
+        main_sensors_ = nullptr;
+    }
 }
 
 void ModelViewerWidget::ReloadReconstruction() {
@@ -218,10 +213,20 @@ void ModelViewerWidget::ClearReconstruction() {
   points3D.clear();
   reg_image_ids.clear();
   reconstruction = nullptr;
+  selected_image_id_ = kInvalidImageId;
+  selected_point3D_id_ = kInvalidPoint3DId;
   Upload();
 }
 
 int ModelViewerWidget::GetProjectionType() const {
+  if (ecvDisplayTools::GetPerspectiveState())
+  {
+      options_->render->projection_type = RenderOptions::ProjectionType::PERSPECTIVE;
+  }
+  else
+  {
+      options_->render->projection_type = RenderOptions::ProjectionType::ORTHOGRAPHIC;
+  }
   return options_->render->projection_type;
 }
 
@@ -234,39 +239,9 @@ void ModelViewerWidget::SetImageColormap(ImageColormapBase* colormap) {
 }
 
 void ModelViewerWidget::UpdateMovieGrabber() {
+  StartRender();
   UploadMovieGrabberData();
-  update();
-}
-
-void ModelViewerWidget::ChangeFocusDistance(const float delta) {
-  if (delta == 0.0f) {
-    return;
-  }
-  const float prev_focus_distance = focus_distance_;
-  float diff = delta * ZoomScale() * kFocusSpeed;
-  focus_distance_ -= diff;
-  if (focus_distance_ < kMinFocusDistance) {
-    focus_distance_ = kMinFocusDistance;
-    diff = prev_focus_distance - focus_distance_;
-  } else if (focus_distance_ > kMaxFocusDistance) {
-    focus_distance_ = kMaxFocusDistance;
-    diff = prev_focus_distance - focus_distance_;
-  }
-  const Eigen::Matrix4f vm_mat = QMatrixToEigen(model_view_matrix_).inverse();
-  const Eigen::Vector3f tvec(0, 0, diff);
-  const Eigen::Vector3f tvec_rot = vm_mat.block<3, 3>(0, 0) * tvec;
-  model_view_matrix_.translate(tvec_rot(0), tvec_rot(1), tvec_rot(2));
-  ComposeProjectionMatrix();
-  update();
-}
-
-void ModelViewerWidget::ChangeNearPlane(const float delta) {
-  if (delta == 0.0f) {
-    return;
-  }
-  near_plane_ *= (1.0f + delta / 100.0f * kNearPlaneScaleSpeed);
-  near_plane_ = std::max(kMinNearPlane, std::min(kMaxNearPlane, near_plane_));
-  ComposeProjectionMatrix();
+  EndRender(false);
   update();
 }
 
@@ -276,6 +251,13 @@ void ModelViewerWidget::ChangePointSize(const float delta) {
   }
   point_size_ *= (1.0f + delta / 100.0f * kPointScaleSpeed);
   point_size_ = std::max(kMinPointSize, std::min(kMaxPointSize, point_size_));
+
+  StartRender();
+  if (cloud_sparse_)
+  {
+      cloud_sparse_->setPointSize(static_cast<unsigned>(point_size_));
+  }
+  EndRender(false);
   update();
 }
 
@@ -285,47 +267,98 @@ void ModelViewerWidget::ChangeCameraSize(const float delta) {
   }
   image_size_ *= (1.0f + delta / 100.0f * kImageScaleSpeed);
   image_size_ = std::max(kMinImageSize, std::min(kMaxImageSize, image_size_));
+  StartRender();
   UploadImageData();
   UploadMovieGrabberData();
+  EndRender(false);
   update();
 }
 
-QMatrix4x4 ModelViewerWidget::ModelViewMatrix() const {
-  return model_view_matrix_;
+void ModelViewerWidget::ResetView()
+{
+    SetupView();
+    Upload();
 }
 
-void ModelViewerWidget::SetModelViewMatrix(const QMatrix4x4& matrix) {
-  model_view_matrix_ = matrix;
-  update();
+ccGLMatrixd ModelViewerWidget::ModelViewMatrix() const {
+  ccGLMatrixd mat;
+  ecvDisplayTools::GetViewMatrix(mat.data());
+  return mat;
 }
 
-void ModelViewerWidget::SelectObject(const int x, const int y) {
+void ModelViewerWidget::SelectObject(ccHObject* entity, unsigned subEntityID, int x, int y, const CCVector3& P) {
+
+  if (reg_image_ids.empty() || points3D.empty() || !app_)
+  {
+      return;
+  }
+
+  ccHObject* obj = entity;
+  if (!main_sensors_ || !cloud_sparse_)
+  {
+      return;
+  } else {
+    if (obj->isKindOf(CV_TYPES::CAMERA_SENSOR))
+    {
+        if(!main_sensors_->find(subEntityID))
+        {
+            return;
+        }
+    } else if (obj->isKindOf(CV_TYPES::POINT_CLOUD)) {
+        if (cloud_sparse_->getUniqueID() != obj->getUniqueID())
+        {
+            return;
+        }
+    }
+  }
+
   // Upload data in selection mode (one color per object).
   UploadImageData(true);
   UploadPointData(true);
 
-  // Render in selection mode, with larger points to improve selection accuracy.
-  const QMatrix4x4 pmv_matrix = projection_matrix_ * model_view_matrix_;
-//  image_triangle_painter_.Render(pmv_matrix);
-//  point_painter_.Render(pmv_matrix, 2 * point_size_);
+  std::size_t selected_index = 0;
+  if (obj->isKindOf(CV_TYPES::CAMERA_SENSOR))
+  {
+    ccCameraSensor* camera = ccHObjectCaster::ToCameraSensor(obj);
+    camera->setSelected(true);
+    ecvColor::Rgb plane_color = camera->getPlaneColor();
+    selected_index = RGBToIndex(plane_color.r, plane_color.g, plane_color.b);
+  }
+  else if (obj->isKindOf(CV_TYPES::POINT_CLOUD) &&
+           obj->getUniqueID() == cloud_sparse_->getUniqueID())
+  {
+    selected_index = static_cast<std::size_t>(subEntityID);
+    if (selected_index >= cloud_sparse_->size())
+    {
+        CVLog::Warning("[ModelViewerWidget::SelectObject] Invalid picking point index!");
+        return;
+    }
 
-  CCVector2i scaled_coords(x, y);
-  ecvDisplayTools::ToVtkCoordinates(scaled_coords);
-  QString obj_id = ecvDisplayTools::Pick3DItem(scaled_coords.x, scaled_coords.y);
-  std::array<uint8_t, 3> color;
+    const CCVector3 *refP = cloud_sparse_->getPointPtr(selected_index);
+    if (GreaterThanEpsilon((P - *refP).norm()))
+    {
+       return;
+    }
 
-  const size_t index = RGBToIndex(color[0], color[1], color[2]);
+    ecvColor::Rgb& pointColor = cloud_sparse_->getPointColorPtr(selected_index);
+    selected_index = RGBToIndex(pointColor.r, pointColor.g, pointColor.b);
 
-  if (index < selection_buffer_.size()) {
-    const char buffer_type = selection_buffer_[index].second;
+  }
+  else
+  {
+      return;
+  }
+
+  if (selected_index < selection_buffer_.size()) {
+    const char buffer_type = selection_buffer_[selected_index].second;
     if (buffer_type == SELECTION_BUFFER_IMAGE_IDX) {
-      selected_image_id_ = static_cast<image_t>(selection_buffer_[index].first);
+      selected_image_id_ = static_cast<image_t>(selection_buffer_[selected_index].first);
       selected_point3D_id_ = kInvalidPoint3DId;
       ShowImageInfo(selected_image_id_);
     } else if (buffer_type == SELECTION_BUFFER_POINT_IDX) {
       selected_image_id_ = kInvalidImageId;
-      selected_point3D_id_ = selection_buffer_[index].first;
-      ShowPointInfo(selection_buffer_[index].first);
+      selected_point3D_id_ = selection_buffer_[selected_index].first;
+      ShowPointInfo(selection_buffer_[selected_index].first);
     } else {
       selected_image_id_ = kInvalidImageId;
       selected_point3D_id_ = kInvalidPoint3DId;
@@ -339,17 +372,21 @@ void ModelViewerWidget::SelectObject(const int x, const int y) {
 
   selection_buffer_.clear();
 
+  StartRender();
   UploadPointData();
   UploadImageData();
   UploadPointConnectionData();
   UploadImageConnectionData();
+  EndRender(false);
 
   update();
 }
 
 void ModelViewerWidget::SelectMoviewGrabberView(const size_t view_idx) {
   selected_movie_grabber_view_ = view_idx;
+  StartRender();
   UploadMovieGrabberData();
+  EndRender(false);
   update();
 }
 
@@ -358,87 +395,137 @@ QImage ModelViewerWidget::GrabImage() {
     return ecvDisplayTools::RenderToImage(1, false, true, 0);
 }
 
-void ModelViewerWidget::GrabMovie() { movie_grabber_widget_->show(); }
+void ModelViewerWidget::GrabMovie() {
+    if (GetProjectionType() != RenderOptions::ProjectionType::PERSPECTIVE) {
+      QMessageBox::critical(this, tr("Error"),
+                            tr("You must use perspective projection."));
+      return;
+    }
+    movie_grabber_widget_->show();
+}
 
 void ModelViewerWidget::ShowPointInfo(const point3D_t point3D_id) {
   point_viewer_widget_->Show(point3D_id);
 }
 
 void ModelViewerWidget::ShowImageInfo(const image_t image_id) {
-  image_viewer_widget_->ShowImageWithId(image_id);
+    image_viewer_widget_->ShowImageWithId(image_id);
+}
+
+void ModelViewerWidget::SetPerspectiveProjection()
+{
+    if (app_)
+    {
+         app_->doActionPerspectiveProjection();
+    }
+}
+
+void ModelViewerWidget::SetOrthogonalProjection()
+{
+    if (app_)
+    {
+        app_->doActionOrthogonalProjection();
+    }
 }
 
 float ModelViewerWidget::PointSize() const { return point_size_; }
 
 float ModelViewerWidget::ImageSize() const { return image_size_; }
 
-void ModelViewerWidget::SetPointSize(const float point_size) {
+void ModelViewerWidget::SetPointSize(const float point_size, bool autoUpdate/* = true*/) {
   point_size_ = point_size;
+
+  if (autoUpdate)
+  {
+      StartRender();
+  }
+
+  if (cloud_sparse_)
+  {
+      cloud_sparse_->setPointSize(static_cast<unsigned>(point_size_));
+  }
+
+  if (autoUpdate)
+  {
+      EndRender(false);
+      update();
+  }
 }
 
-void ModelViewerWidget::SetImageSize(const float image_size) {
+void ModelViewerWidget::SetImageSize(const float image_size, bool autoUpdate/* = true*/) {
   image_size_ = image_size;
+
+  if (autoUpdate)
+  {
+      StartRender();
+  }
+
   UploadImageData();
+
+  if (autoUpdate)
+  {
+      EndRender(false);
+      update();
+  }
 }
 
-void ModelViewerWidget::mousePressEvent(QMouseEvent* event) {
-  if (mouse_press_timer_.isActive()) {  // Select objects (2. click)
-    mouse_is_pressed_ = false;
-    mouse_press_timer_.stop();
-    selection_buffer_.clear();
-    SelectObject(event->pos().x(), event->pos().y());
-  } else {  // Set timer to remember 1. click
-    mouse_press_timer_.setSingleShot(true);
-    mouse_press_timer_.start(kDoubleClickInterval);
-    mouse_is_pressed_ = true;
-    prev_mouse_pos_ = event->pos();
-  }
-  event->accept();
-}
-
-void ModelViewerWidget::wheelEvent(QWheelEvent* event) {
-  if (event->modifiers() & Qt::ControlModifier) {
-    ChangePointSize(event->delta());
-  } else if (event->modifiers() & Qt::AltModifier) {
-    ChangeCameraSize(event->delta());
-  } else if (event->modifiers() & Qt::ShiftModifier) {
-    ChangeNearPlane(event->delta());
-  } else {
-    ChangeFocusDistance(event->delta());
-  }
-  event->accept();
+void ModelViewerWidget::SetBackgroundColor(const float r, const float g, const float b)
+{
+    ecvGui::ParamStruct params = ecvGui::Parameters();
+    params.backgroundCol = ecvColor::Rgb::FromEigen(Eigen::Vector3f(r, g, b).cast<double>());
+    ecvDisplayTools::SetDisplayParameters(params);
+    ecvDisplayTools::RedrawDisplay(true, false);
 }
 
 void ModelViewerWidget::SetupView() {
   point_size_ = kInitPointSize;
   image_size_ = kInitImageSize;
   focus_distance_ = kInitFocusDistance;
-  model_view_matrix_.setToIdentity();
-  model_view_matrix_.translate(0, 0, -focus_distance_);
-  model_view_matrix_.rotate(225, 1, 0, 0);
-  model_view_matrix_.rotate(-45, 0, 1, 0);
 }
 
 void ModelViewerWidget::Upload() {
   point_colormap_->Prepare(cameras, images, points3D, reg_image_ids);
   image_colormap_->Prepare(cameras, images, points3D, reg_image_ids);
 
-  ComposeProjectionMatrix();
-
+  StartRender();
   UploadPointData();
   UploadImageData();
   UploadMovieGrabberData();
   UploadPointConnectionData();
   UploadImageConnectionData();
+  EndRender();
 
   update();
+}
+
+void ModelViewerWidget::StartRender()
+{
+    // render before
+    ecvDisplayTools::SetRedrawRecursive(false);
+    bbox_.clear();
+}
+
+void ModelViewerWidget::EndRender(bool autoZoom/* = true*/)
+{
+    if (autoZoom && bbox_.isValid())
+    {
+        ecvDisplayTools::UpdateConstellationCenterAndZoom(&bbox_, true);
+    }
+    else
+    {
+        ecvDisplayTools::RedrawDisplay();
+    }
 }
 
 void ModelViewerWidget::UploadPointData(const bool selection_mode) {
   if (!cloud_sparse_)
   {
-      CVLog::Warning("[ModelViewerWidget::UploadPointData] Not enough memory!");
-      return;
+      cloud_sparse_ = new ccPointCloud("sparseCloud");
+      if (!cloud_sparse_)
+      {
+        CVLog::Warning("[ModelViewerWidget::UploadPointData] Not enough memory!");
+        return;
+      }
   }
 
   cloud_sparse_->clear();
@@ -449,13 +536,19 @@ void ModelViewerWidget::UploadPointData(const bool selection_mode) {
       return;
   }
 
+  MainWindow::ccHObjectContext objContext;
+  if (app_ && app_->db()->find(cloud_sparse_->getUniqueID()))
+  {
+      objContext = app_->removeObjectTemporarilyFromDBTree(cloud_sparse_);
+  }
+
   // Assume we want to display the majority of points
   if (!cloud_sparse_->reserve(static_cast<unsigned>(points3D.size())))
   {
-      cloud_sparse_->reserve(static_cast<unsigned>(points3D.size()));
       return;
   } else {
       cloud_sparse_->reserveTheRGBTable();
+      cloud_sparse_->showColors(true);
   }
 
   const size_t min_track_len =
@@ -520,18 +613,24 @@ void ModelViewerWidget::UploadPointData(const bool selection_mode) {
     }
   }
 
+  if (app_ && objContext.parent)
+  {
+      app_->putObjectBackIntoDBTree(cloud_sparse_, objContext);
+  }
+
   drawPointCloud(cloud_sparse_);
 }
 
 void ModelViewerWidget::UploadPointConnectionData() {
+  point_line_data_.clear();
   if (selected_point3D_id_ == kInvalidPoint3DId) {
     // No point selected, so upload empty data
-    return;
+      resetLines(point_line_data_);
+      return;
   }
 
-  point_line_data_.clear();
   const auto& point3D = points3D[selected_point3D_id_];
-  if (point3D.Track().Elements().size() == 0)
+  if (point3D.Track().Elements().empty())
   {
       resetLines(point_line_data_);
       return;
@@ -571,7 +670,7 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
       sensors_.reserve(curSensorNum);
   }
 
-  std::size_t index = 0;
+  std::size_t cameraIndex = 0;
   for (const image_t image_id : reg_image_ids) {
     const Image& image = images[image_id];
     const Camera& camera = cameras[image.CameraId()];
@@ -594,19 +693,27 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
 
     // Lines are not colored with the indexed color in selection mode, so do not
     // show them, so they do not block the selection process
-    auto sensor = BuildImageModel(image, camera, image_size_,
-                                  plane_color.cast<double>(),
-                                  frame_color.cast<double>());
-
-    if (index < lastSensorNum)
+    ccCameraSensor* sensor = nullptr;
+    if (cameraIndex < lastSensorNum)
     {
-        sensors_[index].reset(sensor.get());
+        sensor = sensors_[cameraIndex];
     }
     else
     {
+        sensor = new ccCameraSensor();
+        sensor->setName(sensor->getName() + "_" + QString::number(cameraIndex));
         sensors_.push_back(sensor);
     }
-    index++;
+
+    if (!sensor)
+    {
+        return;
+    }
+
+    BuildImageModel(sensor, image, camera, image_size_,
+                      plane_color.cast<double>(),
+                      frame_color.cast<double>());
+    cameraIndex++;
   }
 
   drawCameraSensors(sensors_);
@@ -615,6 +722,8 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
 void ModelViewerWidget::UploadImageConnectionData() {
   std::vector<image_t> image_ids;
 
+  image_line_data_.clear();
+
   if (selected_image_id_ != kInvalidImageId) {
     // Show connections to selected images
     image_ids.push_back(selected_image_id_);
@@ -622,16 +731,8 @@ void ModelViewerWidget::UploadImageConnectionData() {
     // Show all connections
     image_ids = reg_image_ids;
   } else {  // Disabled, so upload empty data
-//    image_connection_painter_.Upload(line_data);
+    resetLines(image_line_data_);
     return;
-  }
-
-  image_line_data_.clear();
-
-  if (image_ids.size() == 0)
-  {
-      resetLines(image_line_data_);
-      return;
   }
 
   for (const image_t image_id : image_ids) {
@@ -723,16 +824,25 @@ void ModelViewerWidget::UploadMovieGrabberData() {
         frame_color = kMovieGrabberImageFrameColor;
       }
 
-      auto sensor = BuildImageModel(image, camera, image_size_,
-                                    plane_color, frame_color);
+      ccCameraSensor* sensor = nullptr;
       if (index < lastSensorNum)
       {
-          movie_grabber_sensors_[index].reset(sensor.get());
+          sensor = movie_grabber_sensors_[index];
       }
       else
       {
+          sensor = new ccCameraSensor();
+          sensor->setName("Grab Sensor_" + QString::number(index));
           movie_grabber_sensors_.push_back(sensor);
       }
+
+      if (!sensor)
+      {
+        return;
+      }
+
+      BuildImageModel(sensor, image, camera, image_size_,
+                      plane_color, frame_color);
       index++;
     }
 
@@ -753,61 +863,68 @@ void ModelViewerWidget::update()
 
 void ModelViewerWidget::drawPointCloud(ccPointCloud *cloud)
 {
-    if (!cloud)
-    {
+    if (!cloud || cloud->isEmpty()) {
+        cloud->setVisible(false);
+        cloud->setEnabled(false);
+        cloud->setRedrawFlagRecursive(false);
         return;
+    } else {
+        if(app_ && !app_->db()->find(cloud->getUniqueID()))
+        {
+            app_->addToDB(cloud);
+            cloud->setLocked(true);
+        }
+
+        cloud->setPointSize(static_cast<unsigned>(point_size_));
+        cloud->setVisible(true);
+        cloud->setEnabled(true);
+        cloud->setRedrawFlagRecursive(true);
+        ccBBox box = cloud->getOwnBB();
+        if (box.isValid())
+        {
+            bbox_ += box;
+        }
     }
-
-    CC_DRAW_CONTEXT context;
-
-    //we get display parameters
-    glDrawParams glParams;
-    cloud->getDrawingParameters(glParams);
-
-    if (glParams.showColors && cloud->isColorOverriden())
-    {
-        //ccGL::Color3v(glFunc, m_tempColor.rgb);
-        context.pointsCurrentCol = cloud->getTempColor();
-        glParams.showColors = false;
-    }
-    else
-    {
-        context.pointsCurrentCol = context.pointsDefaultCol;
-    }
-
-    // start draw point cloud
-    context.drawParam = glParams;
-    //custom point size?
-    if (cloud->getPointSize() > 0 && cloud->getPointSize() <= MAX_POINT_SIZE_F)
-    {
-        context.defaultPointSize = cloud->getPointSize();
-    }
-
-    ecvDisplayTools::Draw(context, cloud);
 }
 
 void ModelViewerWidget::resetPointCloud(ccPointCloud *cloud)
 {
-    CC_DRAW_CONTEXT context;
-    context.removeViewID = QString::number(cloud->getUniqueID(), 10);
-    context.removeEntityType = cloud->getEntityType();
-    ecvDisplayTools::RemoveEntities(context);
+    if (cloud)
+    {
+        cloud->clear();
+        if (app_ && app_->db()->find(cloud->getUniqueID()))
+        {
+            cloud->setLocked(false);
+            app_->removeFromDB(cloud, false);
+        }
+    }
 }
 
 void ModelViewerWidget::drawLines(geometry::LineSet &lineset)
 {
-    CC_DRAW_CONTEXT context;
-    if (lineset.isColorOverriden())
+    if (!lineset.isEmpty())
     {
-        context.defaultPolylineColor = lineset.getTempColor();
-    }
-    else if (lineset.colorsShown() && lineset.hasColors())
-    {
-        context.defaultPolylineColor = ecvColor::Rgb::FromEigen(lineset.colors_[0]);
-    }
+        CC_DRAW_CONTEXT context;
+        if (lineset.isColorOverriden())
+        {
+            context.defaultPolylineColor = lineset.getTempColor();
+        }
+        else if (lineset.colorsShown() && lineset.hasColors())
+        {
+            context.defaultPolylineColor = ecvColor::Rgb::FromEigen(lineset.colors_[0]);
+        }
 
-    context.currentLineWidth = 1;
-    ecvDisplayTools::Draw(context, &lineset);
+        context.currentLineWidth = 1;
+        context.viewID = QString::number(lineset.getUniqueID(), 10);
+        lineset.setRedrawFlagRecursive(true);
+        ccBBox box = lineset.getOwnBB();
+        if (box.isValid())
+        {
+            bbox_ += box;
+        }
+
+        ecvDisplayTools::Draw(context, &lineset);
+    }
 }
 
 void ModelViewerWidget::resetLines(geometry::LineSet &lineset)
@@ -818,88 +935,80 @@ void ModelViewerWidget::resetLines(geometry::LineSet &lineset)
     ecvDisplayTools::RemoveEntities(context);
 }
 
-void ModelViewerWidget::drawCameraSensors(std::vector<std::shared_ptr<ccCameraSensor>>& sensors)
+void ModelViewerWidget::drawCameraSensors(std::vector<ccCameraSensor*>& sensors)
 {
-    CC_DRAW_CONTEXT context;
+    if (!main_sensors_)
+    {
+        main_sensors_ = new ccHObject("SensorsGroup");
+        main_sensors_->setLocked(true);
+    }
+
+    MainWindow::ccHObjectContext objContext;
+    if (main_sensors_ && app_ && app_->db()->find(main_sensors_->getUniqueID()))
+    {
+        objContext = app_->removeObjectTemporarilyFromDBTree(main_sensors_);
+    }
+
     for (std::size_t i = 0; i < sensors.size(); ++i) {
         if (!sensors[i])
             continue;
-
-        context.currentLineWidth = 1;
-        context.defaultPolylineColor = sensors[i]->getFrameColor();
-        context.defaultMeshColor = sensors[i]->getPlaneColor();
-        context.opacity = 0.2f;
+        if(main_sensors_ && !main_sensors_->find(sensors[i]->getUniqueID()))
         {
-            ccIndexedTransformation sensorPos;
-            if (!sensors[i]->getAbsoluteTransformation(sensorPos,
-                                                       sensors[i]->getActiveIndex()))
-            {
-                //no visible position for this index!
-                continue;
-            }
-            context.transformInfo.setTransformation(sensorPos, true, true);
+            sensors[i]->setLocked(true);
+            main_sensors_->addChild(sensors[i]);
         }
+        sensors[i]->setVisible(true);
+        sensors[i]->setEnabled(true);
+        sensors[i]->setRedrawFlagRecursive(true);
+        ccBBox box = sensors[i]->getOwnBB(true);
+        if (box.isValid())
+        {
+            bbox_ += box;
+        }
+    }
 
-        // update drawing data
-        sensors[i]->updateData();
+    if (main_sensors_ && app_ && objContext.parent)
+    {
+        app_->putObjectBackIntoDBTree(main_sensors_, objContext);
+    }
 
-        context.visible = context.visible;
-        context.viewID = context.viewID;
-        ecvDisplayTools::Draw(context, sensors[i].get());
+    if(app_ && !app_->db()->find(main_sensors_->getUniqueID()))
+    {
+        if (main_sensors_->getChildrenNumber() > 0)
+        {
+            app_->addToDB(main_sensors_);
+        }
     }
 }
 
-void ModelViewerWidget::resetCameraSensors(std::vector<std::shared_ptr<ccCameraSensor> > &sensors)
+void ModelViewerWidget::resetCameraSensors(std::vector<ccCameraSensor*> &sensors)
 {
-    CC_DRAW_CONTEXT context;
+    clearSensors(sensors);
+}
+
+void ModelViewerWidget::clearSensors(std::vector<ccCameraSensor *> &sensors)
+{
     for (std::size_t i = 0; i < sensors.size(); ++i) {
         if (!sensors[i])
             continue;
-        sensors[i]->clearDrawings(context);
+        if (app_ && app_->db()->find(sensors[i]->getUniqueID()))
+        {
+            sensors[i]->setLocked(false);
+            app_->removeFromDB(sensors[i], true);
+        }
+        sensors[i] = nullptr;
     }
-}
 
-void ModelViewerWidget::ComposeProjectionMatrix() {
-  projection_matrix_.setToIdentity();
-  if (options_->render->projection_type ==
-      RenderOptions::ProjectionType::PERSPECTIVE) {
-    projection_matrix_.perspective(kFieldOfView, AspectRatio(), near_plane_,
-                                   kFarPlane);
-  } else if (options_->render->projection_type ==
-             RenderOptions::ProjectionType::ORTHOGRAPHIC) {
-    const float extent = OrthographicWindowExtent();
-    projection_matrix_.ortho(-AspectRatio() * extent, AspectRatio() * extent,
-                             -extent, extent, near_plane_, kFarPlane);
-  }
-}
-
-float ModelViewerWidget::ZoomScale() const {
-  // "Constant" scale factor w.r.t. zoom-level.
-//  const ecvViewportParameters& viewParams = ecvDisplayTools::GetViewportParameters();
-  return 2.0f * std::tan(static_cast<float>(DegToRad(ecvDisplayTools::GetCameraFovy())) / 2.0f) *
-         std::abs(focus_distance_) / ecvDisplayTools::GlHeight();
-}
-
-float ModelViewerWidget::AspectRatio() const {
-  return static_cast<float>(ecvDisplayTools::GlWidth()) /
-          static_cast<float>(ecvDisplayTools::GlHeight());
-}
-
-float ModelViewerWidget::OrthographicWindowExtent() const {
-  return std::tan(DegToRad(ecvDisplayTools::GetCameraFovy()) / 2.0f) * focus_distance_;
-}
-
-Eigen::Vector3f ModelViewerWidget::PositionToArcballVector(
-    const float x, const float y) const {
-  Eigen::Vector3f vec(2.0f * x / ecvDisplayTools::GlWidth() - 1,
-                      1 - 2.0f * y / ecvDisplayTools::GlHeight(), 0.0f);
-  const float norm2 = vec.squaredNorm();
-  if (norm2 <= 1.0f) {
-    vec.z() = std::sqrt(1.0f - norm2);
-  } else {
-    vec = vec.normalized();
-  }
-  return vec;
+    if (main_sensors_ && main_sensors_->getChildrenNumber() == 0)
+    {
+        if (app_ && app_->db()->find(main_sensors_->getUniqueID()))
+        {
+            main_sensors_->setLocked(false);
+            app_->removeFromDB(main_sensors_, true);
+            main_sensors_ = nullptr;
+        }
+    }
+    sensors.clear();
 }
 
 }  // namespace cloudViewer

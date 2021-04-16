@@ -32,6 +32,7 @@
 #include "ecvPointCloud.h"
 #include "ecvSphere.h"
 #include "ecvSubMesh.h"
+#include "ecvCameraSensor.h"
 #include "ecvHObjectCaster.h"
 #include "ecvInteractor.h"
 #include "ecv2DLabel.h"
@@ -355,8 +356,12 @@ void ecvDisplayTools::doPicking()
 			//shift+Alt = point/triangle picking
 			if (pickingMode == ENTITY_PICKING && (QApplication::keyboardModifiers() & Qt::AltModifier))
 			{
-				pickingMode = LABEL_PICKING;
-			}
+                pickingMode = LABEL_PICKING;
+            }
+            else if(pickingMode == ENTITY_PICKING && (QApplication::keyboardModifiers() & Qt::ControlModifier))
+            {
+                pickingMode = POINT_OR_TRIANGLE_PICKING;
+            }
 
 			PickingParameters params(pickingMode, x, y, m_pickRadius, m_pickRadius);
 			StartPicking(params);
@@ -389,7 +394,7 @@ void ecvDisplayTools::onWheelEvent(float wheelDelta_deg)
 				delta *= 1.0 + std::log(m_cameraToBBCenterDist / m_bbHalfDiag);
 			}
 
-			MoveCamera(0.0f, 0.0f, static_cast<float>(-delta));
+//			MoveCamera(0.0f, 0.0f, static_cast<float>(-delta));
 		}
 	}
 	else //ortho. mode
@@ -873,7 +878,7 @@ void ecvDisplayTools::StartCPUBasedPointPicking(const PickingParameters& params)
 			}
 
 			nearestEntity = pickedEntity;
-}
+    }
 	}
 	else
 	{
@@ -897,9 +902,9 @@ void ecvDisplayTools::StartCPUBasedPointPicking(const PickingParameters& params)
 				bool ignoreSubmeshes = false;
 
 				//we look for point cloud displayed in this window
-				if (ent->isKindOf(CV_TYPES::POINT_CLOUD))
-				{
-					ccGenericPointCloud* cloud = static_cast<ccGenericPointCloud*>(ent);
+                if (ent->isKindOf(CV_TYPES::POINT_CLOUD))
+                {
+                    ccGenericPointCloud* cloud = static_cast<ccGenericPointCloud*>(ent);
 
 					if (firstCloudWithoutOctree && !cloud->getOctree() && cloud->size() > MIN_POINTS_FOR_OCTREE_COMPUTATION) //no need to use the octree for a few points!
 					{
@@ -1016,7 +1021,35 @@ void ecvDisplayTools::StartCPUBasedPointPicking(const PickingParameters& params)
 							nearestEntity = mesh;
 						}
 					}
-				}
+                } else if (ent->isKindOf(CV_TYPES::SENSOR)) {
+                    // only activated when ctrl and mouse pressed!
+                    if (params.mode != POINT_OR_TRIANGLE_PICKING)
+                    {
+                        continue;
+                    }
+
+                    if (ent->isA(CV_TYPES::CAMERA_SENSOR))
+                    {
+                        ignoreSubmeshes = true;
+
+                        ccCameraSensor* cameraSensor = static_cast<ccCameraSensor*>(ent);
+                        if (!cameraSensor && cameraSensor->getNearPlane().isEmpty())
+                        {
+                            //skip meshes that are displayed in wireframe mode
+                            continue;
+                        }
+
+                        QString id = ecvDisplayTools::PickObject(clickedPos.x, clickedPos.y);
+
+                        if (id.toInt() != -1 && static_cast<int>(cameraSensor->getUniqueID()) == id.toInt())
+                        {
+                            nearestElementIndex = id.toInt();
+                            nearestPoint = CCVector3();
+                            nearestEntity = cameraSensor;
+                            break;
+                        }
+                    }
+                }
 
 				//add children
 				for (unsigned i = 0; i < ent->getChildrenNumber(); ++i)
@@ -1207,8 +1240,6 @@ void ecvDisplayTools::UpdateActiveItemsList(int x, int y, bool extendToSelectedL
 			}
 		}
 	}
-
-	//Update2DLabel();
 }
 
 void ecvDisplayTools::onItemPickedFast(ccHObject* pickedEntity, int pickedItemIndex, int x, int y)
@@ -1468,8 +1499,9 @@ ccGLMatrixd & ecvDisplayTools::GetProjectionMatrix()
 	return s_tools.instance->m_projMatd;
 }
 
-ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(const CCVector3d& cameraCenter, bool withGLfeatures, 
-													 ProjectionMetrics* metrics/*=0*/, double* eyeOffset/*=0*/)
+ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(bool withGLfeatures,
+                                                     ProjectionMetrics* metrics/*=nullptr*/,
+                                                     double* eyeOffset/*=nullptr*/)
 {
 	double bbHalfDiag = 1.0;
 	CCVector3d bbCenter(0, 0, 0);
@@ -1489,107 +1521,112 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(const CCVector3d& cameraCen
 		}
 	}
 
+    CCVector3d cameraCenterToBBCenter = s_tools.instance->m_viewportParams.getCameraCenter() - bbCenter;
+    double cameraToBBCenterDist = cameraCenterToBBCenter.normd();
+
 	if (metrics)
 	{
 		metrics->bbHalfDiag = bbHalfDiag;
-		metrics->cameraToBBCenterDist = (cameraCenter - bbCenter).normd();
+        metrics->cameraToBBCenterDist = cameraToBBCenterDist;
 	}
 
-	//virtual pivot point (i.e. to handle viewer-based mode smoothly)
-    CCVector3d pivotPoint = (s_tools.instance->m_viewportParams.objectCenteredView ?
-                             s_tools.instance->m_viewportParams.getPivotPoint() : cameraCenter);
+    //virtual pivot point (i.e. to handle viewer-based mode smoothly)
+    CCVector3d rotationCenter = s_tools.instance->m_viewportParams.getRotationCenter();
 
-	//distance between the camera center and the pivot point
-	//warning: in orthographic mode it's important to get the 'real' camera center
-	//(i.e. with z == bbCenter(z) and not z == anything)
-	//otherwise we (sometimes largely) overestimate the distance between the camera center
-	//and the displayed objects if the camera has been shifted in the Z direction (e.g. after
-	//switching from perspective to ortho. view).
-	//While the user won't see the difference this has a great influence on GL filters
-	//(as normalized depth map values depend on it)
-	double CP = (cameraCenter - pivotPoint).norm();
+    //compute the maximum distance between the pivot point and the farthest displayed object
+    double rotationCenterToFarthestObjectDist = 0.0;
+    {
+        //maximum distance between the pivot point and the farthest corner of the displayed objects bounding-box
+        rotationCenterToFarthestObjectDist = (bbCenter - rotationCenter).norm() + bbHalfDiag;
 
-	//distance between the pivot point and DB farthest point
-	double MP = (bbCenter - pivotPoint).norm() + bbHalfDiag;
+        //(if enabled) the pivot symbol should always be visible in object-centere view mode
+        if (s_tools.instance->m_pivotSymbolShown &&
+            s_tools.instance->m_pivotVisibility != PIVOT_HIDE &&
+            withGLfeatures &&
+            s_tools.instance->m_viewportParams.objectCenteredView)
+        {
+            double pivotActualRadius = CC_DISPLAYED_PIVOT_RADIUS_PERCENT *
+                std::min(s_tools.instance->m_glViewport.width(),
+                s_tools.instance->m_glViewport.height()) / 2;
+            double pivotSymbolScale = pivotActualRadius * ComputeActualPixelSize();
+            rotationCenterToFarthestObjectDist = std::max(rotationCenterToFarthestObjectDist, pivotSymbolScale);
+        }
 
-	//pivot symbol should always be visible in object-based mode (if enabled)
-    if (s_tools.instance->m_pivotSymbolShown &&
-        s_tools.instance->m_pivotVisibility != PIVOT_HIDE &&
-		withGLfeatures && s_tools.instance->m_viewportParams.objectCenteredView)
-	{
-		double pivotActualRadius = CC_DISPLAYED_PIVOT_RADIUS_PERCENT * 
-			std::min(s_tools.instance->m_glViewport.width(), 
-			s_tools.instance->m_glViewport.height()) / 2;
-		double pivotSymbolScale = pivotActualRadius * ComputeActualPixelSize();
-		MP = std::max(MP, pivotSymbolScale);
-	}
-	MP *= 1.01; //for round-off issues
+        if (withGLfeatures && s_tools.instance->m_customLightEnabled)
+        {
+            //distance from custom light to pivot point
+            double distToCustomLight = (rotationCenter - CCVector3d::fromArray(s_tools.instance->m_customLightPos)).norm();
+            rotationCenterToFarthestObjectDist = std::max(rotationCenterToFarthestObjectDist, distToCustomLight);
+        }
 
-	if (withGLfeatures && s_tools.instance->m_customLightEnabled)
-	{
-		//distance from custom light to pivot point
-		double distToCustomLight = (pivotPoint - CCVector3d::fromArray(s_tools.instance->m_customLightPos)).norm();
-		MP = std::max(MP, distToCustomLight);
-	}
+        rotationCenterToFarthestObjectDist *= 1.01; //for round-off issues
+    }
 
-	if (GetPerspectiveState())
-	{
-		//we deduce zNear et zFar
-		//DGM: the 'zNearCoef' must not be too small, otherwise the loss in accuracy
-		//for the detph buffer is too high and the display is jeopardized, especially
-		//for entities with big coordinates)
-		//double zNear = MP * m_viewportParams.zNearCoef;
-		//DGM: what was the purpose of this?!
-		//if (m_viewportParams.objectCenteredView)
-		//	zNear = std::max<double>(CP-MP, zNear);
-		double zFar = std::max(CP + MP, 1.0);
-		double zNear = zFar * s_tools.instance->m_viewportParams.zNearCoef;
+    double cameraCenterToRotationCentertDist = 0;
+    if (s_tools.instance->m_viewportParams.objectCenteredView)
+    {
+        cameraCenterToRotationCentertDist = s_tools.instance->m_viewportParams.getFocalDistance();
+    }
 
-		if (metrics)
-		{
-			metrics->zNear = zNear;
-			metrics->zFar = zFar;
-		}
+    //we deduce zFar
+    double zNear = cameraCenterToRotationCentertDist - rotationCenterToFarthestObjectDist;
+    double zFar = cameraCenterToRotationCentertDist + rotationCenterToFarthestObjectDist;
 
-		//compute the aspect ratio
-        double ar = static_cast<double>(s_tools.instance->m_glViewport.width()) /
-                s_tools.instance->m_glViewport.height();
+    //compute the aspect ratio
+    double ar = static_cast<double>(s_tools.instance->m_glViewport.height()) /
+                                    s_tools.instance->m_glViewport.width();
 
-		double currentFov_deg = static_cast<double>(GetFov());
+    ccGLMatrixd projMatrix;
+    if (s_tools.instance->m_viewportParams.perspectiveView)
+    {
+            //DGM: the 'zNearCoef' must not be too small, otherwise the loss in accuracy
+            //for the detph buffer is too high and the display is jeopardized, especially
+            //for entities with large coordinates)
+            //zNear = zFar * m_viewportParams.zNearCoef;
+            zNear = bbHalfDiag * s_tools.instance->m_viewportParams.zNearCoef; //we want a stable value!
+            //zNear = std::max(bbHalfDiag * m_viewportParams.zNearCoef, zNear); //we want a stable value!
+            zFar = std::max(zNear + ZERO_TOLERANCE_D, zFar);
 
-		//DGM: take now 'frustumAsymmetry' into account (for stereo rendering)
-		//return ccGLUtils::Perspective(currentFov_deg,ar,zNear,zFar);
-		double yMax = zNear * std::tan(currentFov_deg / 2.0 * CV_DEG_TO_RAD);
-		double xMax = yMax * ar;
+            double xMax = zNear * s_tools.instance->m_viewportParams.computeDistanceToHalfWidthRatio();
+            double yMax = xMax * ar;
 
-		double frustumAsymmetry = 0.0;
+            //DGM: we now take 'frustumAsymmetry' into account (for stereo rendering)
+            double frustumAsymmetry = 0.0;
+//            if (eyeOffset)
+//            {
+//                //see 'NVIDIA 3D VISION PRO AND STEREOSCOPIC 3D' White paper (Oct 2010, p. 12)
+//                double convergence = std::abs(s_tools.instance->m_viewportParams.getFocalDistance());
 
-		return ecvGenericDisplayTools::Frustum(-xMax - frustumAsymmetry, xMax - frustumAsymmetry, -yMax, yMax, zNear, zFar);
-	}
+//                //we assume zNear = screen distance
+//                //double scale = zNear * m_stereoParams.stereoStrength / m_stereoParams.screenDistance_mm;	//DGM: we don't want to depend on the cloud size anymore
+//                                                                                                            //as it can produce very strange visual effects on very large clouds
+//                                                                                                            //we now keep something related to the focal distance (multiplied by
+//                                                                                                            //the 'zNearCoef' that can be tweaked by the user if necessary)
+//                double scale = convergence * s_tools.instance->m_viewportParams.zNearCoef *
+//                        s_tools.instance->m_stereoParams.stereoStrength /
+//                        s_tools.instance->m_stereoParams.screenDistance_mm;
+//                double eyeSeperation = s_tools.instance->m_stereoParams.eyeSeparation_mm * scale;
+
+//                //on input 'eyeOffset' should be -1 (left) or +1 (right)
+//                *eyeOffset *= eyeSeperation;
+
+//                frustumAsymmetry = (*eyeOffset) * zNear / convergence;
+
+//            }
+
+            projMatrix = ecvGenericDisplayTools::Frustum(-xMax - frustumAsymmetry, xMax - frustumAsymmetry, -yMax, yMax, zNear, zFar);
+    }
 	else
 	{
-		//max distance (camera to 'farthest' point)
-		double maxDist = CP + MP;
+        //zNear = std::max(zNear, 0.0);
+        zFar = std::max(zNear + ZERO_TOLERANCE_D, zFar);
 
-        double maxDist_pix = maxDist / s_tools.instance->m_viewportParams.pixelSize *
-                                       s_tools.instance->m_viewportParams.zoom;
-		maxDist_pix = std::max(maxDist_pix, 1.0);
+        //CVLog::Print(QString("cameraCenterToPivotDist = %0 / zNear = %1 / zFar = %2").arg(cameraCenterToPivotDist).arg(zNear).arg(zFar));
 
-		double halfW = s_tools.instance->m_glViewport.width() / 2.0;
-        double halfH = s_tools.instance->m_glViewport.height() / 2.0 *
-                s_tools.instance->m_viewportParams.cameraAspectRatio;
+        double xMax = std::abs(cameraCenterToRotationCentertDist) * s_tools.instance->m_viewportParams.computeDistanceToHalfWidthRatio();
+        double yMax = xMax * ar;
 
-		//save actual zNear and zFar parameters
-		double zNear = -maxDist_pix;
-		double zFar = maxDist_pix;
-
-		if (metrics)
-		{
-			metrics->zNear = zNear;
-			metrics->zFar = zFar;
-		}
-
-		return ecvGenericDisplayTools::Ortho(halfW, halfH, maxDist_pix);
+        projMatrix = ecvGenericDisplayTools::Ortho(-xMax, xMax, -yMax, yMax, zNear, zFar);
 	}
 }
 
@@ -1599,7 +1636,6 @@ void ecvDisplayTools::UpdateProjectionMatrix()
 
 	s_tools.instance->m_projMatd = ComputeProjectionMatrix
 	(
-		GetRealCameraCenter(),
 		true,
 		&metrics,
 		nullptr
@@ -1631,69 +1667,19 @@ CCVector3d ecvDisplayTools::GetRealCameraCenter()
 		box.isValid() ? box.getCenter().z : 0.0);
 }
 
-ccGLMatrixd ecvDisplayTools::ComputeModelViewMatrix(const CCVector3d& cameraCenter)
+ccGLMatrixd ecvDisplayTools::ComputeModelViewMatrix()
 {
-	ccGLMatrixd viewMatd;
-	viewMatd.toIdentity();
+    ccGLMatrixd viewMatd = s_tools.instance->m_viewportParams.computeViewMatrix();
 
-	//apply current camera parameters (see trunk/doc/rendering_pipeline.doc)
-	if (s_tools.instance->m_viewportParams.objectCenteredView)
-	{
-		//place origin on pivot point
-		viewMatd.setTranslation(/*viewMatd.getTranslationAsVec3D()*/ 
-            -s_tools.instance->m_viewportParams.getPivotPoint());
+    ccGLMatrixd scaleMatd = s_tools.instance->m_viewportParams.computeScaleMatrix(s_tools.instance->m_glViewport);
 
-		//rotation (viewMat is simply a rotation matrix around the pivot here!)
-		viewMatd = s_tools.instance->m_viewportParams.viewMat * viewMatd;
-
-		//go back to initial origin
-		//then place origin on camera center
-        viewMatd.setTranslation(viewMatd.getTranslationAsVec3D() + s_tools.instance->m_viewportParams.getCameraCenter() - cameraCenter);
-	}
-	else
-	{
-		//place origin on camera center
-		viewMatd.setTranslation(/*viewMatd.getTranslationAsVec3D()*/ -cameraCenter);
-
-		//rotation (viewMat is the rotation around the camera center here - no pivot)
-		viewMatd = s_tools.instance->m_viewportParams.viewMat * viewMatd;
-	}
-
-	ccGLMatrixd scaleMatd;
-	scaleMatd.toIdentity();
-	if (GetPerspectiveState()) //perspective mode
-	{
-		//for proper aspect ratio handling
-		if (s_tools.instance->m_glViewport.height() != 0)
-		{
-			double ar = static_cast<double>(s_tools.instance->m_glViewport.width() /
-				(s_tools.instance->m_glViewport.height() * s_tools.instance->m_viewportParams.cameraAspectRatio));
-			if (ar < 1.0)
-			{
-				//glScalef(ar, ar, 1.0);
-				scaleMatd.data()[0] = ar;
-				scaleMatd.data()[5] = ar;
-			}
-		}
-	}
-	else //ortho. mode
-	{
-		//apply zoom
-		double totalZoom = static_cast<double>(s_tools.instance->m_viewportParams.zoom / 
-                                               s_tools.instance->m_viewportParams.pixelSize);
-		//glScalef(totalZoom,totalZoom,totalZoom);
-		scaleMatd.data()[0] = totalZoom;
-		scaleMatd.data()[5] = totalZoom;
-		scaleMatd.data()[10] = totalZoom;
-	}
-
-	return scaleMatd * viewMatd;
+    return scaleMatd * viewMatd;
 }
 
 void ecvDisplayTools::UpdateModelViewMatrix()
 {
 	//we save visualization matrix
-	s_tools.instance->m_viewMatd = ComputeModelViewMatrix(GetRealCameraCenter());
+    s_tools.instance->m_viewMatd = ComputeModelViewMatrix();
 
 	s_tools.instance->m_validModelviewMatrix = true;
 }
@@ -1957,12 +1943,7 @@ void ecvDisplayTools::DisplayOverlayEntities(bool state)
 {
     s_tools.instance->m_displayOverlayEntities = state;
     if (!state) {
-        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->bbv_label));
-        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->fs_label));
-        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->psi_label));
-        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->lsi_label));
-        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "Exit"));
-        RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "clicked_items"));
+        ClearBubbleView();
     }
 }
 
@@ -2394,12 +2375,14 @@ void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters & params)
 		GetProjectionMatrix(params.projectionMat.data());
 	}
 
-	s_tools.instance->m_viewportParams.viewMat = ccGLMatrixd(params.projectionMat.data());
+    ccGLMatrixd rotationMat;
+    rotationMat.setRotation(ccGLMatrixd::ToEigenMatrix3(params.modelViewMat).data());
+    s_tools.instance->m_viewportParams.viewMat = rotationMat;
 	double nearFar[2];
 	GetCameraClip(nearFar);
 	s_tools.instance->m_viewportParams.zNear = nearFar[0];
 	s_tools.instance->m_viewportParams.zFar = nearFar[1];
-	s_tools.instance->m_viewportParams.fov_deg = GetCameraFovy();
+    s_tools.instance->m_viewportParams.fov_deg = static_cast<float>(GetCameraFovy());
 	params.fov_deg = s_tools.instance->m_viewportParams.fov_deg;
 
 	params.viewport[0] = 0;
@@ -2426,6 +2409,12 @@ void ecvDisplayTools::UpdateDisplayParameters()
 	GetCameraClip(nearFar);
 	s_tools.instance->m_viewportParams.zNear = nearFar[0];
 	s_tools.instance->m_viewportParams.zFar = nearFar[1];
+
+    ccGLMatrixd viewMat;
+    GetViewMatrix(viewMat.data());
+    ccGLMatrixd rotationMat;
+    rotationMat.setRotation(ccGLMatrixd::ToEigenMatrix3(viewMat).data());
+    s_tools.instance->m_viewportParams.viewMat = rotationMat;
 
 	// set camera fov
     s_tools.instance->m_viewportParams.fov_deg = static_cast<float>(GetCameraFovy());
@@ -3381,6 +3370,16 @@ void ecvDisplayTools::DisplayTexture2DPosition(QImage image, const QString& id, 
 	DrawWidgets(param, true);
 }
 
+void ecvDisplayTools::ClearBubbleView()
+{
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->bbv_label));
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->fs_label));
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->psi_label));
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->lsi_label));
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "Exit"));
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "clicked_items"));
+}
+
 void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 {
 	const static char* CLICKED_ITEMS = "clicked_items";
@@ -3399,13 +3398,7 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart)
 		&& !s_tools.instance->m_bubbleViewModeEnabled
 		&& !fullScreenEnabled)
 	{
-		RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->bbv_label));
-		RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->fs_label));
-		RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->psi_label));
-		RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, s_tools.instance->m_hotZone->lsi_label));
-		RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "Exit"));
-		
-		RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, CLICKED_ITEMS));
+        ClearBubbleView();
 		//nothing to do
 		return;
 	}

@@ -233,6 +233,8 @@ void AutomaticReconstructionController::RunSparseMapper() {
 void AutomaticReconstructionController::RunDenseMapper() {
   CreateDirIfNotExists(JoinPaths(options_.workspace_path, "dense"));
 
+  fused_points_.clear();
+  meshing_paths_.clear();
   for (size_t i = 0; i < reconstruction_manager_->Size(); ++i) {
     if (IsStopped()) {
       return;
@@ -313,6 +315,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
       active_thread_ = nullptr;
 
       std::cout << "Writing output: " << fused_path << std::endl;
+      fused_points_.push_back(fuser.GetFusedPoints());
       WriteBinaryPlyPoints(fused_path, fuser.GetFusedPoints());
       mvs::WritePointsVisibility(fused_path + ".vis",
                                  fuser.GetFusedPointsVisibility());
@@ -326,12 +329,14 @@ void AutomaticReconstructionController::RunDenseMapper() {
 
     if (!ExistsFile(meshing_path)) {
       if (options_.mesher == Mesher::POISSON) {
-        mvs::PoissonMeshing(*option_manager_.poisson_meshing, fused_path,
-                            meshing_path);
+        mvs::PoissonMeshing(*option_manager_.poisson_meshing,
+                            fused_path, meshing_path);
+        meshing_paths_.push_back(meshing_path);
       } else if (options_.mesher == Mesher::DELAUNAY) {
 #ifdef CGAL_ENABLED
-        mvs::DenseDelaunayMeshing(*option_manager_.delaunay_meshing, dense_path,
-                                  meshing_path);
+        mvs::DenseDelaunayMeshing(*option_manager_.delaunay_meshing,
+                                  dense_path, meshing_path);
+        meshing_paths_.push_back(meshing_path);
 #else  // CGAL_ENABLED
         std::cout << std::endl
                   << "WARNING: Skipping Delaunay meshing because CGAL is "

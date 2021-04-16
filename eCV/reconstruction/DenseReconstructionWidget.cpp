@@ -39,6 +39,10 @@
 #include "RenderOptions.h"
 #include "OptionManager.h"
 
+#include <ecvDisplayTools.h>
+#include <ecvPointCloud.h>
+#include "MainWindow.h"
+
 namespace cloudViewer {
 namespace {
 
@@ -390,6 +394,7 @@ void DenseReconstructionWidget::PoissonMeshing() {
               *options_->poisson_meshing,
               JoinPaths(workspace_path, kFusedFileName),
               JoinPaths(workspace_path, kPoissonMeshedFileName));
+          out_mesh_path_ = JoinPaths(workspace_path, kPoissonMeshedFileName);
           show_meshing_info_action_->trigger();
         });
   }
@@ -524,28 +529,34 @@ void DenseReconstructionWidget::RefreshWorkspace() {
 void DenseReconstructionWidget::WriteFusedPoints() {
   const int reply = QMessageBox::question(
       this, "",
-      tr("Do you want to visualize the point cloud? Otherwise, to visualize "
+      tr("Do you want to add the dense fused point cloud to DBRoot? Otherwise, to visualize "
          "the reconstructed dense point cloud later, navigate to the "
          "<i>dense</i> sub-folder in your workspace with <i>File > Import "
          "model from...</i>."),
       QMessageBox::Yes | QMessageBox::No);
   if (reply == QMessageBox::Yes) {
-    const size_t reconstruction_idx =
-        main_window_->reconstruction_manager_.Add();
-    auto& reconstruction =
-        main_window_->reconstruction_manager_.Get(reconstruction_idx);
-
-    for (const auto& point : fused_points_) {
-      const Eigen::Vector3d xyz(point.x, point.y, point.z);
-      reconstruction.AddPoint3D(xyz, Track(),
-                                Eigen::Vector3ub(point.r, point.g, point.b));
+    ccPointCloud* cloud = new ccPointCloud("denseCloud");
+    unsigned nPoints = static_cast<unsigned>(fused_points_.size());
+    if (nPoints > 0 && cloud->reserveThePointsTable(nPoints))
+    {
+        if (cloud->reserveTheRGBTable())
+        {
+            cloud->showColors(true);
+            for (const auto& point : fused_points_)
+            {
+                cloud->addPoint(CCVector3(point.x, point.y, point.z));
+                cloud->addRGBColor(ecvColor::Rgb(point.r, point.g, point.b));
+            }
+            if (main_window_->app_)
+            {
+                main_window_->app_->addToDB(cloud);
+            }
+        }
+        else
+        {
+            CVLog::Warning("[DenseReconstructionWidget::WriteFusedPoints] Not enough memory!");
+        }
     }
-
-    options_->render->min_track_len = 0;
-    main_window_->reconstruction_manager_widget_->Update();
-    main_window_->reconstruction_manager_widget_->SelectReconstruction(
-        reconstruction_idx);
-    main_window_->RenderNow();
   }
 
   const std::string workspace_path =
@@ -569,10 +580,18 @@ void DenseReconstructionWidget::WriteFusedPoints() {
 }
 
 void DenseReconstructionWidget::ShowMeshingInfo() {
-  QMessageBox::information(
+  const int reply = QMessageBox::question(
       this, "",
-      tr("To visualize the meshed model, you must use an external viewer such "
-         "as Meshlab. The model is located in the workspace folder."));
+      tr("Do you want to add the meshed model to DBRoot, Otherwise, to visualize "
+         "the reconstructed dense point cloud later, navigate to the File-->Open. "
+         "The model is located in the workspace folder."),
+      QMessageBox::Yes | QMessageBox::No);
+  if (reply == QMessageBox::Yes) {
+      if (main_window_->app_)
+      {
+          main_window_->app_->addToDBAuto(QStringList(out_mesh_path_.c_str()), false);
+      }
+  }
 }
 
 QWidget* DenseReconstructionWidget::GenerateTableButtonWidget(

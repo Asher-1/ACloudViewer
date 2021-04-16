@@ -32,6 +32,8 @@
 #include "AutomaticReconstructionWidget.h"
 #include "ReconstructionWidget.h"
 #include "ThreadControlWidget.h"
+#include <ecvPointCloud.h>
+#include "MainWindow.h"
 
 namespace cloudViewer {
 
@@ -82,6 +84,7 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
   AddOptionBool(&options_.single_camera, "Shared intrinsics");
   AddOptionBool(&options_.sparse, "Sparse model");
   AddOptionBool(&options_.dense, "Dense model");
+  AddOptionBool(&options_.autoVisualization, "Auto visualization");
 
   QLabel* mesher_label = new QLabel(tr("Mesher"), this);
   mesher_label->setFont(font());
@@ -182,8 +185,13 @@ void AutomaticReconstructionWidget::Run() {
       new AutomaticReconstructionController(
           options_, &main_window_->reconstruction_manager_);
 
-  controller->AddCallback(Thread::FINISHED_CALLBACK,
-                          [this]() { render_result_->trigger(); });
+  controller->AddCallback(Thread::FINISHED_CALLBACK, [this, controller]() {
+      fused_points_ = controller->fused_points_;
+      meshing_paths_ = controller->meshing_paths_;
+      controller->fused_points_.clear();
+      controller->meshing_paths_.clear();
+      render_result_->trigger();
+  });
 
   thread_control_widget_->StartThread("Reconstructing...", true, controller);
 }
@@ -196,21 +204,79 @@ void AutomaticReconstructionWidget::RenderResult() {
   }
 
   if (options_.sparse) {
-    QMessageBox::information(
-        this, "",
-        tr("Imported the reconstructed sparse models for visualization. The "
-           "models were also exported to the <i>sparse</i> sub-folder in the "
-           "workspace."));
+      QMessageBox::information(
+          this, "",
+          tr("Imported the reconstructed sparse models for visualization. The "
+             "models were also exported to the <i>sparse</i> sub-folder in the "
+             "workspace."));
   }
 
   if (options_.dense) {
-    QMessageBox::information(
-        this, "",
-        tr("To visualize the reconstructed dense point cloud, navigate to the "
-           "<i>dense</i> sub-folder in your workspace with <i>File > Import "
-           "model from...</i>. To visualize the meshed model, you must use an "
-           "external viewer such as Meshlab."));
-  }
+      if (options_.autoVisualization) {
+          // add dense point cloud
+          if (!fused_points_.empty()) {
+              //we create a new group to store all fused dense point cloud
+              ccHObject* fusedCloudGroup = new ccHObject("fusedCloudGroup");
+              fusedCloudGroup->setVisible(true);
+
+              //for each cluster
+              for (std::size_t i = 0; i < fused_points_.size(); ++i) {
+                  ccPointCloud* cloud = new ccPointCloud(QString("%1-denseCloud").arg(i));
+                  if (cloud) {
+                      unsigned nPoints = static_cast<unsigned>(fused_points_.size());
+                      if (nPoints > 0 && cloud->reserveThePointsTable(nPoints)) {
+                          if (cloud->reserveTheRGBTable()) {
+                              for (const auto& point : fused_points_[i]) {
+                                  cloud->addPoint(CCVector3(point.x, point.y, point.z));
+                                  cloud->addRGBColor(ecvColor::Rgb(point.r, point.g, point.b));
+                              }
+                              fusedCloudGroup->addChild(cloud);
+                          } else {
+                              CVLog::Error("[AutomaticReconstructionWidget::RenderResult] Not enough memory!");
+                          }
+                      } else {
+                        CVLog::Warning("[RenderResult] Ignore empty fused points for index %i!", i);
+                      }
+                  } else {
+                    CVLog::Error("[AutomaticReconstructionWidget::RenderResult] Not enough memory!");
+                  }
+              }
+
+              if (fusedCloudGroup->getChildrenNumber() == 0) {
+                  delete fusedCloudGroup;
+                  fusedCloudGroup = nullptr;
+                  CVLog::Warning("[AutomaticReconstructionWidget::RenderResult] some unknown error!");
+              } else {
+                  if (main_window_->app_)
+                  {
+                      main_window_->app_->addToDB(fusedCloudGroup);
+                  }
+              }
+          }
+
+          // add meshed model
+          if (!meshing_paths_.empty()) {
+              if (main_window_->app_) {
+                  QStringList filenames;
+                  for (const std::string& path : meshing_paths_) {
+                      if(!ExistsFile(path)) {
+                          CVLog::Warning("[RenderResult] Ignore invalid meshed model for file [%s]", path.c_str());
+                          continue;
+                      }
+                      filenames.push_back(path.c_str());
+                  }
+                  main_window_->app_->addToDBAuto(filenames, false);
+              }
+          }
+       } else {
+          QMessageBox::information(
+              this, "",
+              tr("To visualize the reconstructed dense point cloud, navigate to the "
+                 "<i>dense</i> sub-folder in your workspace with <i>File > Import "
+                 "model from...</i>. To visualize the meshed model, "
+                 "you can only drop meshed file into the main window."));
+       }
+   }
 }
 
 }  // namespace cloudViewer

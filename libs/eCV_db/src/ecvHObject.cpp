@@ -735,6 +735,13 @@ void ccHObject::removeFromRenderScreen(bool recursive)
         plane->clearNormalVector(context);
 	}
 
+    if (this->isKindOf(CV_TYPES::SENSOR))
+    {
+        ccSensor* sensor = ccHObjectCaster::ToSensor(this);
+        CC_DRAW_CONTEXT tempContext;
+        sensor->clearDrawings(tempContext);
+    }
+
 	if (recursive)
 	{
 		for (auto child : m_children)

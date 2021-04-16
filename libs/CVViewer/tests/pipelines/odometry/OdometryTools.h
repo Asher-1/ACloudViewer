@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "cloudViewer/geometry/Image.h"
+#include "Image.h"
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

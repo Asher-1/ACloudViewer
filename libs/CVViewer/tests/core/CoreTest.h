@@ -28,12 +28,12 @@
 
 #include <vector>
 
-#include "cloudViewer/core/Device.h"
-#include "cloudViewer/core/SizeVector.h"
+#include "core/Device.h"
+#include "core/SizeVector.h"
 #include "tests/UnitTest.h"
 
 #ifdef BUILD_CUDA_MODULE
-#include "cloudViewer/core/CUDAState.cuh"
+#include "core/CUDAState.cuh"
 #endif
 
 namespace cloudViewer {

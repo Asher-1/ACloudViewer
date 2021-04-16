@@ -11,7 +11,7 @@
 //#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
 //#  GNU General Public License for more details.                          #
 //#                                                                        #
-//#                         COPYRIGHT: DAHAI LU                         #
+//#                         COPYRIGHT: DAHAI LU                            #
 //#                                                                        #
 //##########################################################################
 //
@@ -345,6 +345,7 @@ public:
 
     inline virtual void getProjectionMatrix(double * projArray, int viewport = 0) override;
     inline virtual void getViewMatrix(double * ViewArray, int viewport = 0) override;
+    inline virtual void setViewMatrix(const ccGLMatrixd& viewMat, int viewport = 0) override;
 
 public:
 	inline PclUtils::PCLVis* get3DViewer() { return m_visualizer3D.get(); }
@@ -353,6 +354,7 @@ public:
 	virtual QString pick2DLabel(int x, int y) override;
 
 	virtual QString pick3DItem(int x = -1, int y = -1) override;
+    virtual QString pickObject(double x = -1, double y = -1) override;
 
     virtual QImage renderToImage(int zoomFactor = 1, bool renderOverlayItems = false, bool silent = false, int viewport = 0) override;
 private:
