@@ -563,9 +563,9 @@ bool ccFacet::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccFacet::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccFacet::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	if (dataVersion < 32)

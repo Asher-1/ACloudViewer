@@ -313,7 +313,7 @@ PCLCloud::Ptr cc2smReader::getXYZ() const
 PCLCloud::Ptr cc2smReader::getNormals() const
 {
 	if (!m_cc_cloud || !m_cc_cloud->hasNormals())
-		return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
+        return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
 
 	PCLCloud::Ptr sm_cloud (new PCLCloud);
 	try
@@ -516,7 +516,9 @@ PCLCloud::Ptr cc2smReader::getFloatScalarField(const std::string& field_name) co
 
 	int sfIdx = m_cc_cloud->getScalarFieldIndexByName(field_name.c_str());
 	if (sfIdx < 0)
-		return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
+    {
+        return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
+    }
 	cloudViewer::ScalarField* scalar_field = m_cc_cloud->getScalarField(sfIdx);
 	assert(scalar_field);
 
@@ -636,7 +638,7 @@ PCLCloud::Ptr cc2smReader::getAsSM(std::list<std::string>& requested_fields) con
 		{
 			bool exists = checkIfFieldExists(*it);
 			if (!exists) //all check results must be true
-				return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
+                return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
 		}
 	}
 

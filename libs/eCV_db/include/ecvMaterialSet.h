@@ -74,7 +74,7 @@ protected:
 
 	//inherited from ccHObject
 	ECV_DB_LIB_API virtual bool toFile_MeOnly(QFile& out) const override;
-	ECV_DB_LIB_API virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    ECV_DB_LIB_API virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 
 	//! Default destructor (protected: use 'release' instead)
 	ECV_DB_LIB_API virtual ~ccMaterialSet();

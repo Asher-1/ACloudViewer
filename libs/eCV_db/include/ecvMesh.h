@@ -1300,7 +1300,7 @@ protected:
 	//inherited from ccHObject
 	void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 	bool toFile_MeOnly(QFile& out) const override;
-	bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 	void applyGLTransformation(const ccGLMatrix& trans) override;
 	void onUpdateOf(ccHObject* obj) override;
 	void onDeletionOf(const ccHObject* obj) override;

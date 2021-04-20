@@ -29,128 +29,382 @@
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
-//PCL V1.6 or older
-#ifdef PCL_VER_1_6_OR_OLDER
-
-#include <sensor_msgs/PointField.h>
-typedef sensor_msgs::PointField PCLScalarField;
-
-#else //Version 1.7 or newer
+//system
+#include <list>
+#include <assert.h>
 
 #include <pcl/PCLPointField.h>
 typedef pcl::PCLPointField PCLScalarField;
 
-#endif
-
-//system
-#include <assert.h>
-
-size_t GetNumberOfPoints(PCLCloud::Ptr sm_cloud)
+// Custom PCL point types
+template<typename T> struct PointXYZTpl
 {
-	return static_cast<size_t>(sm_cloud ? sm_cloud->width * sm_cloud->height : 0);
+  union EIGEN_ALIGN16
+  {
+    T data[3];
+    struct
+    {
+      T x;
+      T y;
+      T z;
+    };
+  };
+};
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZTpl<std::int32_t>,
+                                    (std::int32_t, x, x)
+                                    (std::int32_t, y, y)
+                                    (std::int32_t, z, z) )
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZTpl<std::int16_t>,
+                                    (std::int16_t, x, x)
+                                    (std::int16_t, y, y)
+                                    (std::int16_t, z, z) )
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZTpl<double>,
+                                    (double, x, x)
+                                    (double, y, y)
+                                    (double, z, z) )
+
+size_t GetNumberOfPoints(const PCLCloud& pclCloud)
+{
+    return static_cast<size_t>(pclCloud.width) * pclCloud.height;
 }
 
-bool ExistField(PCLCloud::Ptr sm_cloud, std::string name)
+bool ExistField(const PCLCloud& pclCloud, std::string name)
 {
-	if (sm_cloud)
-		for (std::vector< PCLScalarField >::const_iterator it = sm_cloud->fields.begin(); it != sm_cloud->fields.end(); ++it)
-			if (it->name == name)
-				return true;
+    for (const auto& field : pclCloud.fields)
+        if (field.name == name)
+            return true;
 
-	return false;
+    return false;
 }
 
-sm2ccConverter::sm2ccConverter(PCLCloud::Ptr sm_cloud)
-	: m_sm_cloud(sm_cloud)
+template<class T> void PCLCloudToCCCloud(const PCLCloud& pclCloud, ccPointCloud& ccCloud)
 {
-	assert(sm_cloud);
+    size_t pointCount = GetNumberOfPoints(pclCloud);
+
+    pcl::PointCloud<T> pcl_cloud;
+    FROM_PCL_CLOUD(pclCloud, pcl_cloud);
+    for (size_t i = 0; i < pointCount; ++i)
+    {
+        CCVector3 P(pcl_cloud.at(i).x,
+                    pcl_cloud.at(i).y,
+                    pcl_cloud.at(i).z);
+
+        ccCloud.addPoint(P);
+    }
 }
 
-sm2ccConverter::sm2ccConverter(PCLCloud& sm_cloud)
-	: m_sm_cloud(new PCLCloud(sm_cloud))
+bool pcl2cc::CopyXYZ(const PCLCloud& pclCloud, ccPointCloud& ccCloud, uint8_t coordinateType)
 {
-	assert(m_sm_cloud);
+    size_t pointCount = GetNumberOfPoints(pclCloud);
+    if (pointCount == 0)
+    {
+        assert(false);
+        return false;
+    }
+
+    if (!ccCloud.reserve(static_cast<unsigned>(pointCount)))
+    {
+        return false;
+    }
+
+    //add xyz to the input cloud taking xyz infos from the sm cloud
+    switch (coordinateType)
+    {
+        case pcl::PCLPointField::INT16:
+            PCLCloudToCCCloud<PointXYZTpl<std::int16_t>>(pclCloud, ccCloud);
+            break;
+        case pcl::PCLPointField::INT32:
+            PCLCloudToCCCloud<PointXYZTpl<std::int32_t>>(pclCloud, ccCloud);
+            break;
+        case pcl::PCLPointField::FLOAT32:
+            PCLCloudToCCCloud<pcl::PointXYZ>(pclCloud, ccCloud);
+            break;
+        case pcl::PCLPointField::FLOAT64:
+            PCLCloudToCCCloud<PointXYZTpl<double>>(pclCloud, ccCloud);
+            break;
+        default:
+            CVLog::Warning("[PCL] Unsupported coordinate type " + QString::number(coordinateType));
+            return false;
+    };
+
+    return true;
 }
 
-ccPointCloud* sm2ccConverter::getCloud(bool ignoreScalars/* = false*/, bool ignoreRgb/* = false*/)
+bool pcl2cc::CopyNormals(const PCLCloud& pclCloud, ccPointCloud& ccCloud)
 {
-	if (!m_sm_cloud)
-	{
-		assert(false);
+    pcl::PointCloud<OnlyNormals>::Ptr pcl_cloud_normals (new pcl::PointCloud<OnlyNormals>);
+    FROM_PCL_CLOUD(pclCloud, *pcl_cloud_normals);
+
+    if (!ccCloud.reserveTheNormsTable())
+        return false;
+
+    size_t pointCount = GetNumberOfPoints(pclCloud);
+
+    //loop
+    for (size_t i = 0; i < pointCount; ++i)
+    {
+        CCVector3 N(	static_cast<PointCoordinateType>(pcl_cloud_normals->at(i).normal_x),
+                        static_cast<PointCoordinateType>(pcl_cloud_normals->at(i).normal_y),
+                        static_cast<PointCoordinateType>(pcl_cloud_normals->at(i).normal_z) );
+
+        ccCloud.addNorm(N);
+    }
+
+    ccCloud.showNormals(true);
+
+    return true;
+}
+
+bool pcl2cc::CopyRGB(const PCLCloud& pclCloud, ccPointCloud& ccCloud)
+{
+    pcl::PointCloud<OnlyRGB>::Ptr pcl_cloud_rgb (new pcl::PointCloud<OnlyRGB>);
+    FROM_PCL_CLOUD(pclCloud, *pcl_cloud_rgb);
+    size_t pointCount = GetNumberOfPoints(pclCloud);
+    if (pointCount == 0)
+        return true;
+    if (!ccCloud.reserveTheRGBTable())
+        return false;
+
+
+    //loop
+    for (size_t i = 0; i < pointCount; ++i)
+    {
+        ecvColor::Rgb C(static_cast<ColorCompType>(pcl_cloud_rgb->points[i].r),
+                        static_cast<ColorCompType>(pcl_cloud_rgb->points[i].g),
+                        static_cast<ColorCompType>(pcl_cloud_rgb->points[i].b) );
+        ccCloud.addRGBColor(C);
+    }
+
+    ccCloud.showColors(true);
+
+    return true;
+}
+
+bool pcl2cc::CopyScalarField(	const PCLCloud& pclCloud,
+                                const std::string& sfName,
+                                ccPointCloud& ccCloud,
+                                bool overwriteIfExist/*=true*/)
+{
+    //if the input field already exists...
+    int id = ccCloud.getScalarFieldIndexByName(sfName.c_str());
+    if (id >= 0)
+    {
+        if (overwriteIfExist)
+            //we simply delete it
+            ccCloud.deleteScalarField(id);
+        else
+            //we keep it as is
+            return false;
+    }
+
+    size_t pointCount = GetNumberOfPoints(pclCloud);
+
+    //create new scalar field
+    ccScalarField* cc_scalar_field = new ccScalarField(sfName.c_str());
+    if (!cc_scalar_field->reserveSafe(static_cast<unsigned>(pointCount)))
+    {
+        cc_scalar_field->release();
+        return false;
+    }
+
+    //get PCL field
+    int field_index = pcl::getFieldIndex(pclCloud, sfName);
+    const PCLScalarField& pclField = pclCloud.fields[field_index];
+    //temporary change the name of the given field to something else -> S5c4laR should be a pretty uncommon name,
+    const_cast<PCLScalarField&>(pclField).name = "S5c4laR";
+
+    switch (pclField.datatype)
+    {
+    case PCLScalarField::FLOAT32:
+    {
+        pcl::PointCloud<FloatScalar>::Ptr pcl_scalar(new pcl::PointCloud<FloatScalar>);
+        FROM_PCL_CLOUD(pclCloud, *pcl_scalar);
+
+        for (size_t i = 0; i < pointCount; ++i)
+        {
+            ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
+            cc_scalar_field->addElement(scalar);
+        }
+    }
+    break;
+
+    case PCLScalarField::FLOAT64:
+    {
+        pcl::PointCloud<DoubleScalar>::Ptr pcl_scalar(new pcl::PointCloud<DoubleScalar>);
+        FROM_PCL_CLOUD(pclCloud, *pcl_scalar);
+
+        for (size_t i = 0; i < pointCount; ++i)
+        {
+            ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
+            cc_scalar_field->addElement(scalar);
+        }
+    }
+    break;
+
+    case PCLScalarField::INT16:
+    {
+        pcl::PointCloud<ShortScalar>::Ptr pcl_scalar(new pcl::PointCloud<ShortScalar>);
+        FROM_PCL_CLOUD(pclCloud, *pcl_scalar);
+
+        for (size_t i = 0; i < pointCount; ++i)
+        {
+            ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
+            cc_scalar_field->addElement(scalar);
+        }
+    }
+    break;
+
+    case PCLScalarField::UINT16:
+    {
+        pcl::PointCloud<UShortScalar>::Ptr pcl_scalar(new pcl::PointCloud<UShortScalar>);
+        FROM_PCL_CLOUD(pclCloud, *pcl_scalar);
+
+        for (size_t i = 0; i < pointCount; ++i)
+        {
+            ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
+            cc_scalar_field->addElement(scalar);
+        }
+    }
+    break;
+
+    case PCLScalarField::UINT32:
+    {
+        pcl::PointCloud<UIntScalar>::Ptr pcl_scalar(new pcl::PointCloud<UIntScalar>);
+        FROM_PCL_CLOUD(pclCloud, *pcl_scalar);
+
+        for (size_t i = 0; i < pointCount; ++i)
+        {
+            ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
+            cc_scalar_field->addElement(scalar);
+        }
+    }
+    break;
+
+    case PCLScalarField::INT32:
+    {
+        pcl::PointCloud<IntScalar>::Ptr pcl_scalar(new pcl::PointCloud<IntScalar>);
+        FROM_PCL_CLOUD(pclCloud, *pcl_scalar);
+
+        for (size_t i = 0; i < pointCount; ++i)
+        {
+            ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
+            cc_scalar_field->addElement(scalar);
+        }
+    }
+    break;
+
+    default:
+        CVLog::Warning(QString("[PCL] Field with an unmanaged type (= %1)").arg(pclField.datatype));
+        cc_scalar_field->release();
+        return false;
+    }
+
+    cc_scalar_field->computeMinAndMax();
+    ccCloud.addScalarField(cc_scalar_field);
+    ccCloud.setCurrentDisplayedScalarField(0);
+    ccCloud.showSF(true);
+
+    //restore old name for the scalar field
+    const_cast<PCLScalarField&>(pclField).name = sfName;
+
+    return true;
+}
+
+ccPointCloud* pcl2cc::Convert(const PCLCloud& pclCloud, bool ignoreScalars/* = false*/, bool ignoreRgb/* = false*/)
+{
+    //retrieve the valid fields
+    std::list<std::string> fields;
+    uint8_t coordinateType = 0;
+    for (const auto& field : pclCloud.fields)
+    {
+        if (field.name != "_") //PCL padding fields
+        {
+            fields.push_back(field.name);
+        }
+
+        if (coordinateType == 0
+            &&	(field.name == "x" || field.name == "y" || field.name == "z"))
+        {
+            coordinateType = field.datatype;
+        }
+    }
+
+    //begin with checks and conversions
+    //be sure we have x, y, and z fields
+    if (!ExistField(pclCloud, "x") || !ExistField(pclCloud, "y") || !ExistField(pclCloud, "z"))
+    {
         return nullptr;
-	}
-	
-	//get the fields list
-	std::list<std::string> fields;
-	for (std::vector< PCLScalarField >::const_iterator it = m_sm_cloud->fields.begin(); it != m_sm_cloud->fields.end(); ++it)
-	{
-		if (it->name != "_") //PCL padding fields
-			fields.push_back(it->name);
-	}
+    }
 
-	//begin with checks and conversions
-	//be sure we have x, y, and z fields
-	if (!ExistField(m_sm_cloud,"x") || !ExistField(m_sm_cloud,"y") || !ExistField(m_sm_cloud,"z"))
-        return nullptr;
+    //create cloud
+    ccPointCloud* ccCloud = new ccPointCloud();
+    size_t expectedPointCount = GetNumberOfPoints(pclCloud);
+    if (expectedPointCount != 0)
+    {
+        //push points inside
+        if (!CopyXYZ(pclCloud, *ccCloud, coordinateType))
+        {
+            delete ccCloud;
+            return nullptr;
+        }
+    }
 
-	//create cloud
-	ccPointCloud* cloud = new ccPointCloud();
+    //remove x,y,z fields from the vector of field names
+    fields.remove("x");
+    fields.remove("y");
+    fields.remove("z");
 
-	//push points inside
-	if (!addXYZ(cloud))
-	{
-		delete cloud;
-        return nullptr;
-	}
+    //do we have normals?
+    if (ExistField(pclCloud, "normal_x") || ExistField(pclCloud, "normal_y") || ExistField(pclCloud, "normal_z"))
+    {
+        CopyNormals(pclCloud, *ccCloud);
 
-	//remove x,y,z fields from the vector of field names
-	fields.remove("x");
-	fields.remove("y");
-	fields.remove("z");
+        //remove the corresponding fields
+        fields.remove("normal_x");
+        fields.remove("normal_y");
+        fields.remove("normal_z");
+    }
 
-	//do we have normals?
-	if (ExistField(m_sm_cloud,"normal_x") || ExistField(m_sm_cloud,"normal_y") || ExistField(m_sm_cloud,"normal_z"))
-	{
-		addNormals(cloud);
-		
-		//remove the corresponding fields
-		fields.remove("normal_x");
-		fields.remove("normal_y");
-		fields.remove("normal_z");
-	}
+    //do we have colors?
+    if (!ignoreRgb)
+    {
+        //The same for colors
+        if (ExistField(pclCloud, "rgb"))
+        {
+            CopyRGB(pclCloud, *ccCloud);
 
-	//The same for colors
-	if (ExistField(m_sm_cloud, "rgb") && !ignoreRgb)
-	{
-		addRGB(cloud);
+            //remove the corresponding field
+            fields.remove("rgb");
+        }
+        //The same for colors
+        else if (ExistField(pclCloud, "rgba"))
+        {
+            CopyRGB(pclCloud, *ccCloud);
 
-		//remove the corresponding field
-		fields.remove("rgb");
-	}
-	//The same for colors
-	else if (ExistField(m_sm_cloud, "rgba") && !ignoreRgb)
-	{
-		addRGB(cloud);
+            //remove the corresponding field
+            fields.remove("rgba");
+        }
+    }
 
-		//remove the corresponding field
-		fields.remove("rgba");
-	}
+    //All the remaining fields will be stored as scalar fields
+    if (!ignoreScalars)
+    {
+        for (const std::string& name : fields)
+        {
+            CopyScalarField(pclCloud, name, *ccCloud);
+        }
+    }
 
-	//All the remaining fields will be stored as scalar fields
-	if (!ignoreScalars)
-	{
-		for (std::list<std::string>::const_iterator name = fields.begin(); name != fields.end(); ++name)
-		{
-			addScalarField(cloud, *name);
-		}
-	}
-
-	return cloud;
+    return ccCloud;
 }
 
-ccMesh* sm2ccConverter::getMesh(const std::vector<pcl::Vertices>& polygons, bool ignoreScalars/* = false*/, bool ignoreRgb/* = false*/)
+ccMesh* pcl2cc::Convert(const PCLCloud& pclCloud, const std::vector<pcl::Vertices>& polygons,
+                        bool ignoreScalars/* = false*/, bool ignoreRgb/* = false*/)
 {
-	ccPointCloud* vertices = getCloud(ignoreScalars, ignoreRgb);
+    ccPointCloud* vertices = Convert(pclCloud, ignoreScalars, ignoreRgb);
 	if (!vertices) return nullptr;
 	vertices->setName("vertices");
 	//vertices->showNormals(false);
@@ -189,220 +443,4 @@ ccMesh* sm2ccConverter::getMesh(const std::vector<pcl::Vertices>& polygons, bool
 	mesh->addChild(vertices);
 
 	return mesh;
-}
-
-bool sm2ccConverter::addXYZ(ccPointCloud *cloud)
-{
-	assert(m_sm_cloud && cloud);
-	if (!m_sm_cloud || !cloud)
-		return false;
-
-	size_t pointCount = GetNumberOfPoints(m_sm_cloud);
-
-	if (!cloud->reserve(static_cast<unsigned>(pointCount)))
-		return false;
-
-	//add xyz to the given cloud taking xyz infos from the sm cloud
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-	FROM_PCL_CLOUD(*m_sm_cloud, *pcl_cloud);
-
-	//loop
-	for (size_t i = 0; i < pointCount; ++i)
-	{
-		CCVector3 P(pcl_cloud->at(i).x,
-					pcl_cloud->at(i).y,
-					pcl_cloud->at(i).z);
-
-		cloud->addPoint(P);
-	}
-
-	return true;
-}
-
-bool sm2ccConverter::addNormals(ccPointCloud *cloud)
-{
-	assert(m_sm_cloud && cloud);
-	if (!m_sm_cloud || !cloud)
-		return false;
-
-	pcl::PointCloud<OnlyNormals>::Ptr pcl_cloud_normals (new pcl::PointCloud<OnlyNormals>);
-	FROM_PCL_CLOUD(*m_sm_cloud, *pcl_cloud_normals);
-
-	if (!cloud->reserveTheNormsTable())
-		return false;
-
-	size_t pointCount = GetNumberOfPoints(m_sm_cloud);
-
-	//loop
-	for (size_t i = 0; i < pointCount; ++i)
-	{
-		CCVector3 N(static_cast<PointCoordinateType>(pcl_cloud_normals->at(i).normal_x),
-					static_cast<PointCoordinateType>(pcl_cloud_normals->at(i).normal_y),
-					static_cast<PointCoordinateType>(pcl_cloud_normals->at(i).normal_z));
-
-		cloud->addNorm(N);
-	}
-
-	cloud->showNormals(true);
-	
-	return true;
-}
-
-bool sm2ccConverter::addRGB(ccPointCloud * cloud)
-{
-	assert(m_sm_cloud && cloud);
-	if (!m_sm_cloud || !cloud)
-		return false;
-
-	pcl::PointCloud<OnlyRGB>::Ptr pcl_cloud_rgb (new pcl::PointCloud<OnlyRGB>);
-	FROM_PCL_CLOUD(*m_sm_cloud, *pcl_cloud_rgb);
-
-	if (!cloud->reserveTheRGBTable())
-		return false;
-
-	size_t pointCount = GetNumberOfPoints(m_sm_cloud);
-
-	//loop
-	for (size_t i = 0; i < pointCount; ++i)
-	{
-		ecvColor::Rgb C(static_cast<ColorCompType>(pcl_cloud_rgb->points[i].r),
-						static_cast<ColorCompType>(pcl_cloud_rgb->points[i].g),
-						static_cast<ColorCompType>(pcl_cloud_rgb->points[i].b) );
-		cloud->addRGBColor(C);
-	}
-
-	cloud->showColors(true);
-
-	return true;
-}
-
-bool sm2ccConverter::addScalarField(ccPointCloud * cloud, const std::string& name, bool overwrite_if_exist/*=true*/)
-{
-	assert(m_sm_cloud && cloud);
-	if (!m_sm_cloud || !cloud)
-		return false;
-
-	//if this field already exist, simply delete it
-	int id = cloud->getScalarFieldIndexByName(name.c_str());
-	if (id >= 0)
-	{
-		if (overwrite_if_exist)
-			// we simply delete it
-			cloud->deleteScalarField(id);
-		else
-			// we keep it as is
-			return false;
-	}
-
-	size_t pointCount = GetNumberOfPoints(m_sm_cloud);
-
-	//create new scalar field
-	ccScalarField* cc_scalar_field = new ccScalarField(name.c_str());
-	if (!cc_scalar_field->reserveSafe(static_cast<unsigned>(pointCount)))
-	{
-		cc_scalar_field->release();
-		return false;
-	}
-
-	//get PCL field
-	int field_index = pcl::getFieldIndex(*m_sm_cloud, name);
-	PCLScalarField pclField = m_sm_cloud->fields[field_index];
-	//temporary change the name of the given field to something else -> S5c4laR should be a pretty uncommon name,
-	pclField.name = std::string("S5c4laR");
-
-	switch (pclField.datatype)
-	{
-	case PCLScalarField::FLOAT32:
-	{
-		pcl::PointCloud<FloatScalar>::Ptr pcl_scalar(new pcl::PointCloud<FloatScalar>);
-		FROM_PCL_CLOUD(*m_sm_cloud, *pcl_scalar);
-
-		for (size_t i = 0; i < pointCount; ++i)
-		{
-			ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
-			cc_scalar_field->addElement(scalar);
-		}
-	}
-	break;
-
-	case PCLScalarField::FLOAT64:
-	{
-		pcl::PointCloud<DoubleScalar>::Ptr pcl_scalar(new pcl::PointCloud<DoubleScalar>);
-		FROM_PCL_CLOUD(*m_sm_cloud, *pcl_scalar);
-
-		for (size_t i = 0; i < pointCount; ++i)
-		{
-			ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
-			cc_scalar_field->addElement(scalar);
-		}
-	}
-	break;
-
-	case PCLScalarField::INT16:
-	{
-		pcl::PointCloud<ShortScalar>::Ptr pcl_scalar(new pcl::PointCloud<ShortScalar>);
-		FROM_PCL_CLOUD(*m_sm_cloud, *pcl_scalar);
-
-		for (size_t i = 0; i < pointCount; ++i)
-		{
-			ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
-			cc_scalar_field->addElement(scalar);
-		}
-	}
-	break;
-
-	case PCLScalarField::UINT16:
-	{
-		pcl::PointCloud<UShortScalar>::Ptr pcl_scalar(new pcl::PointCloud<UShortScalar>);
-		FROM_PCL_CLOUD(*m_sm_cloud, *pcl_scalar);
-
-		for (size_t i = 0; i < pointCount; ++i)
-		{
-			ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
-			cc_scalar_field->addElement(scalar);
-		}
-	}
-	break;
-
-	case PCLScalarField::UINT32:
-	{
-		pcl::PointCloud<UIntScalar>::Ptr pcl_scalar(new pcl::PointCloud<UIntScalar>);
-		FROM_PCL_CLOUD(*m_sm_cloud, *pcl_scalar);
-
-		for (size_t i = 0; i < pointCount; ++i)
-		{
-			ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
-			cc_scalar_field->addElement(scalar);
-		}
-	}
-	break;
-
-	case PCLScalarField::INT32:
-	{
-		pcl::PointCloud<IntScalar>::Ptr pcl_scalar(new pcl::PointCloud<IntScalar>);
-		FROM_PCL_CLOUD(*m_sm_cloud, *pcl_scalar);
-
-		for (size_t i = 0; i < pointCount; ++i)
-		{
-			ScalarType scalar = static_cast<ScalarType>(pcl_scalar->points[i].S5c4laR);
-			cc_scalar_field->addElement(scalar);
-		}
-	}
-	break;
-
-	default:
-		CVLog::Warning(QString("[PCL] Field with an unmanaged type (= %1)").arg(pclField.datatype));
-		cc_scalar_field->release();
-		return false;
-	}
-
-	cc_scalar_field->computeMinAndMax();
-	cloud->addScalarField(cc_scalar_field);
-	cloud->setCurrentDisplayedScalarField(0);
-	cloud->showSF(true);
-
-	//restore old name for the scalar field
-	m_sm_cloud->fields[field_index].name = name;
-
-	return true;
 }

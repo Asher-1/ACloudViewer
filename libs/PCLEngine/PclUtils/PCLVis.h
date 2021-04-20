@@ -52,7 +52,8 @@ class vtkRenderWindow;
 class vtkMatrix4x4;
 
 class ccBBox;
-class ccCameraSensor;
+class ecvOrientedBBox;
+class ccSensor;
 class ecvPointpickingTools;
 
 namespace cloudViewer {
@@ -215,7 +216,7 @@ namespace PclUtils
         void draw(const CC_DRAW_CONTEXT& context, PCLMesh::Ptr pclMesh);
         void draw(const CC_DRAW_CONTEXT& context, PCLTextureMesh::Ptr textureMesh);
         void draw(const CC_DRAW_CONTEXT& context, PCLPolygon::Ptr pclPolygon, bool closed);
-        void draw(const CC_DRAW_CONTEXT& context, const ccCameraSensor* camera);
+        void draw(const CC_DRAW_CONTEXT& context, const ccSensor* sensor);
         void draw(const CC_DRAW_CONTEXT& context, const cloudViewer::geometry::LineSet* lineset);
 
         void transformEntities(const CC_DRAW_CONTEXT& context);
@@ -248,10 +249,12 @@ namespace PclUtils
 			double r, double g, double b, float width = 1.0f,
 			const std::string &id = "multiline", int viewport = 0);
 		bool addTextureMesh(const PCLTextureMesh &mesh, const std::string &id, int viewport);
-		bool addOrientedCube(
-				const Eigen::Vector3f &translation, const Eigen::Quaternionf &rotation,
-				double width, double height, double depth, double r = 1.0, double g = 1.0, double b = 1.0, 
-				const std::string &id = "cube", int viewport = 0);
+        bool addOrientedCube(const ccGLMatrixd &trans, double width, double height, double depth, double r = 1.0, double g = 1.0, double b = 1.0,
+                             const std::string &id = "cube", int viewport = 0);
+        bool addOrientedCube(const Eigen::Vector3f &translation, const Eigen::Quaternionf &rotation,
+                             double width, double height, double depth, double r = 1.0, double g = 1.0, double b = 1.0,
+                             const std::string &id = "cube", int viewport = 0);
+        bool addOrientedCube(const ecvOrientedBBox& obb, const std::string &id = "cube", int viewport = 0);
 		int textureFromTexMaterial(const pcl::TexMaterial& tex_mat, vtkTexture* vtk_tex) const;
         void displayText(const CC_DRAW_CONTEXT&  context);
 		
@@ -378,7 +381,7 @@ namespace PclUtils
 		std::vector<int> m_selected_slice;
 	};
 
-	typedef boost::shared_ptr<PCLVis> PCLVisPtr;
+    typedef std::shared_ptr<PCLVis> PCLVisPtr;
 }
 
 

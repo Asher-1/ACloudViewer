@@ -29,6 +29,10 @@
 
 // ECV_DB_LIB
 #include <ecvBBox.h>
+#include <LineSet.h>
+#include <ecvCameraSensor.h>
+#include <ecvGBLSensor.h>
+#include <ecvOrientedBBox.h>
 #include <ecvColorScale.h>
 #include <ecvScalarField.h>
 #include <ecvDisplayTools.h>
@@ -530,7 +534,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
         {
             double nearFar[2];
             this->getReasonableClippingRange(nearFar, viewport);
-            this->setCameraClipDistances(0, nearFar[1] * 3, viewport);
+            this->setCameraClipDistances(nearFar[0] / 3, nearFar[1] * 3, viewport);
         }
         else
         {
@@ -871,9 +875,10 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
         }
     }
 
-    void PCLVis::draw(const CC_DRAW_CONTEXT &context, const ccCameraSensor* camera)
+    void PCLVis::draw(const CC_DRAW_CONTEXT &context, const ccSensor* sensor)
     {
-        if (!camera) return;
+
+        if (!sensor) return;
 
         std::string viewID = CVTools::FromQString(context.viewID);
         int viewport = context.defaultViewPort;
@@ -883,9 +888,40 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
             removeShapes(viewID, viewport);
         }
 
-        vtkSmartPointer<vtkPolyData> linesData =
-                PclTools::CreateCameras(camera, context.defaultPolylineColor,
-                                        context.defaultMeshColor);
+        vtkSmartPointer<vtkPolyData> linesData = nullptr;
+        if (sensor->isA(CV_TYPES::CAMERA_SENSOR))
+        {
+            // the sensor to draw
+            const ccCameraSensor* camera = reinterpret_cast<const ccCameraSensor *>(sensor);
+            if (!camera) return;
+            linesData = PclTools::CreateCameraSensor(camera, context.defaultPolylineColor,
+                                                     context.defaultMeshColor);
+        }
+        else if (sensor->isA(CV_TYPES::GBL_SENSOR))
+        {
+            // the sensor to draw
+            const ccGBLSensor* camera = reinterpret_cast<const ccGBLSensor *>(sensor);;
+            if (!camera) return;
+            linesData = PclTools::CreateGBLSensor(camera);
+        }
+        else
+        {
+            CVLog::Error("[PCLVis::draw] unsupported sensor type!");
+        }
+
+        if (!linesData)
+        {
+            if (sensor->isA(CV_TYPES::CAMERA_SENSOR))
+            {
+                CVLog::Error("[PCLVis::draw] CreateCameraSensor failed!");
+            }
+            else if (sensor->isA(CV_TYPES::GBL_SENSOR))
+            {
+                CVLog::Error("[PCLVis::draw] CreateCameraSensor failed!");
+            }
+            return;
+        }
+
         // Create lines Actor
         vtkSmartPointer<vtkLODActor> linesActor;
         PclTools::CreateActorFromVTKDataSet(linesData, linesActor);
@@ -911,8 +947,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
             removeShapes(viewID, viewport);
         }
 
-        vtkSmartPointer<vtkPoints> linePoints = PclTools::GetVtkPointsFromLineSet(*lineset);
-        vtkSmartPointer<vtkPolyData> linesData = PclTools::CreateLine(linePoints);
+        vtkSmartPointer<vtkPolyData> linesData = PclTools::CreatePolyDataFromLineSet(*lineset, false);
 
         // Create lines Actor
         vtkSmartPointer<vtkLODActor> linesActor;
@@ -958,11 +993,13 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
         vtkSmartPointer<vtkTransform> trans = vtkSmartPointer<vtkTransform>::New();
         trans->Identity ();
-        trans->PostMultiply();
+//        trans->PostMultiply();
         trans->Translate(-origin[0], -origin[1], -origin[2]);
-
-        if (transInfo.isScale)
-            trans->Scale(transInfo.scaleXYZ.u);
+        if (transInfo.isTranslate)
+        {
+            trans->Translate(transInfo.transVecStart.u);
+            trans->Translate(transInfo.transVecEnd.u);
+        }
 
         if (transInfo.isRotate)
         {
@@ -980,13 +1017,13 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
             }
         }
 
+        if (transInfo.isScale)
+        {
+            trans->Scale(transInfo.scaleXYZ.u);
+        }
+
         trans->Translate(origin.data());
 
-        if (transInfo.isTranslate)
-        {
-            trans->Translate(transInfo.transVecStart.u);
-            trans->Translate(transInfo.transVecEnd.u);
-        }
         return trans;
     }
 
@@ -1644,12 +1681,48 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		// Save the viewpoint transformation matrix to the global actor map
 		(*getCloudActorMap())[id].viewpoint_transformation_ = transformation;
 
-		return (true);
-	}
+        return (true);
+    }
+
+    bool PCLVis::addOrientedCube(const ccGLMatrixd &trans,
+                                 double width, double height, double depth,
+                                 double r, double g, double b,
+                                 const std::string &id, int viewport)
+    {
+        // Check to see if this ID entry already exists (has it been already added to the visualizer?)
+        pcl::visualization::ShapeActorMap::iterator am_it = getShapeActorMap()->find(id);
+        if (am_it != getShapeActorMap()->end())
+        {
+            CVLog::Error("[PCLVis::addCube] A shape with id <%s> already exists!"
+                " Please choose a different id and retry.",
+                id.c_str());
+            return (false);
+        }
+
+        vtkSmartPointer<vtkDataSet> data = PclTools::CreateCube(width, height, depth, trans);
+        if (!data)
+        {
+            return (false);
+        }
+
+        // Create an Actor
+        vtkSmartPointer<vtkLODActor> actor;
+        PclTools::CreateActorFromVTKDataSet(data, actor);
+        actor->GetProperty()->SetRepresentationToSurface();
+        actor->GetProperty()->SetColor(r, g, b);
+        addActorToRenderer(actor, viewport);
+
+        // Save the pointer/ID pair to the global actor map
+        (*getShapeActorMap())[id] = actor;
+
+        return (true);
+    }
 
 	bool PCLVis::addOrientedCube(
-			const Eigen::Vector3f &translation, const Eigen::Quaternionf &rotation,
-			double width, double height, double depth, double r, double g, double b,
+            const Eigen::Vector3f &translation,
+            const Eigen::Quaternionf &rotation,
+            double width, double height, double depth,
+            double r, double g, double b,
 			const std::string &id, int viewport)
 	{
 		// Check to see if this ID entry already exists (has it been already added to the visualizer?)
@@ -1660,9 +1733,13 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 				" Please choose a different id and retry.",
 				id.c_str());
 			return (false);
-		}
-		
-		vtkSmartPointer<vtkDataSet> data = pcl::visualization::createCube(translation, rotation, width, height, depth);
+        }
+
+        vtkSmartPointer<vtkDataSet> data = pcl::visualization::createCube(translation, rotation, width, height, depth);
+        if (!data)
+        {
+            return (false);
+        }
 
 		// Create an Actor
 		vtkSmartPointer<vtkLODActor> actor;
@@ -1674,8 +1751,42 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		// Save the pointer/ID pair to the global actor map
 		(*getShapeActorMap())[id] = actor;
 
-		return (true);
-	}
+        return (true);
+    }
+
+    bool PCLVis::addOrientedCube(const ecvOrientedBBox &obb, const std::string &id, int viewport)
+    {
+        // Check to see if this ID entry already exists (has it been already added to the visualizer?)
+        pcl::visualization::ShapeActorMap::iterator am_it = getShapeActorMap()->find(id);
+        if (am_it != getShapeActorMap()->end())
+        {
+            CVLog::Error("[PCLVis::addCube] A shape with id <%s> already exists!"
+                " Please choose a different id and retry.",
+                id.c_str());
+            return (false);
+        }
+
+        std::shared_ptr<cloudViewer::geometry::LineSet> linePoints =
+                cloudViewer::geometry::LineSet::CreateFromOrientedBoundingBox(obb);
+        vtkSmartPointer<vtkPolyData> data = PclTools::CreatePolyDataFromLineSet(*linePoints, false);
+        if (!data)
+        {
+            return (false);
+        }
+
+        // Create an Actor
+        vtkSmartPointer<vtkLODActor> actor;
+        PclTools::CreateActorFromVTKDataSet(data, actor);
+        actor->GetProperty()->SetRepresentationToSurface();
+        Eigen::Vector3d color = obb.getColor();
+        actor->GetProperty()->SetColor(color(0), color(1), color(2));
+        addActorToRenderer(actor, viewport);
+
+        // Save the pointer/ID pair to the global actor map
+        (*getShapeActorMap())[id] = actor;
+
+        return (true);
+    }
 	/********************************Draw Entities*********************************/
 
 	/******************************** Entities Removement *********************************/
@@ -1727,6 +1838,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		case ENTITY_TYPE::ECV_LINES_3D:
 		case ENTITY_TYPE::ECV_POLYLINE_2D:
 		case ENTITY_TYPE::ECV_SHAPE:
+        case ENTITY_TYPE::ECV_SENSOR:
 		{
             removeShapes(removeViewID, viewport);
             removePointClouds(removeViewID, viewport);

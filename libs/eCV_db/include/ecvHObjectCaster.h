@@ -54,6 +54,7 @@ class ccQuadric;
 class ccBox;
 class ccBBox;
 class ecvOrientedBBox;
+class ccCoordinateSystem;
 
 namespace cloudViewer
 {
@@ -182,6 +183,9 @@ public:
 
 	////! Converts current object to ecvOrientedBBox (if possible)
 	static ecvOrientedBBox* ToOrientedBBox(ccHObject* obj);
+
+    //! Converts current object to ccCoordinateSystem (if possible)
+    static ccCoordinateSystem* ToCoordinateSystem(ccHObject* obj);
 
 };
 

@@ -371,6 +371,15 @@ MainWindow::MainWindow()
 MainWindow::~MainWindow() {
     cancelPreviousPickingOperation(false); //just in case
 
+    // Reconstruction must before m_ccRoot
+#ifdef USE_COLMAP_MODULE
+    if (m_rcw)
+    {
+        m_rcw->release();
+    }
+    m_rcw = nullptr;
+#endif
+
     assert(m_ccRoot && m_mdiArea);
     m_ccRoot->unloadAll();
     m_ccRoot->disconnect();
@@ -396,11 +405,6 @@ MainWindow::~MainWindow() {
     m_plpDlg = nullptr;
     m_pprDlg = nullptr;
     m_pfDlg = nullptr;
-
-    // Reconstruction
-#ifdef USE_COLMAP_MODULE
-    m_rcw = nullptr;
-#endif
 
     //release all 'overlay' dialogs
     while (!m_mdiDialogs.empty())

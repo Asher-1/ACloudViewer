@@ -24,6 +24,7 @@
 #include "ecvBox.h"
 #include "ecvCustomObject.h"
 #include "ecvCylinder.h"
+#include "ecvCoordinateSystem.h"
 #include "ecvPolyline.h"
 #include "ecvFacet.h"
 #include "ecvImage.h"
@@ -209,6 +210,8 @@ ccHObject* ccHObject::New(CV_CLASS_ENUM objectType, const char* name/*=0*/)
 		return new ccCustomHObject(name);
 	case CV_TYPES::CUSTOM_LEAF_OBJECT:
 		return new ccCustomLeafObject(name);
+    case CV_TYPES::COORDINATESYSTEM:
+        return new ccCoordinateSystem(name);
 	case CV_TYPES::POINT_OCTREE:
 	case CV_TYPES::POINT_KDTREE:
 		//construction this way is not supported (yet)
@@ -738,8 +741,16 @@ void ccHObject::removeFromRenderScreen(bool recursive)
     if (this->isKindOf(CV_TYPES::SENSOR))
     {
         ccSensor* sensor = ccHObjectCaster::ToSensor(this);
-        CC_DRAW_CONTEXT tempContext;
-        sensor->clearDrawings(tempContext);
+        sensor->clearDrawings();
+    }
+
+    if (this->isKindOf(CV_TYPES::PRIMITIVE))
+    {
+        ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(this);
+        if (prim)
+        {
+            prim->clearDrawings();
+        }
     }
 
 	if (recursive)
@@ -908,6 +919,8 @@ void ccHObject::getTypeID_recursive(std::vector<removeInfo> & rmInfos, bool rela
 	else if (rminfo.removeType == ENTITY_TYPE::ECV_MESH)
 	{
 		ccHObject* obj = find(rminfo.removeId.toUInt());
+
+        // try clear plane
 		ccPlanarEntityInterface* plane = ccHObjectCaster::ToPlanarEntity(obj);
 		if (plane)
 		{
@@ -916,6 +929,13 @@ void ccHObject::getTypeID_recursive(std::vector<removeInfo> & rmInfos, bool rela
             CC_DRAW_CONTEXT context;
             plane->glDrawNormal(context, CCVector3(), 1.0);
 		}
+
+        // try clear primitives
+        ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(obj);
+        if (prim)
+        {
+            prim->clearDrawings();
+        }
 	}
 	else if (rminfo.removeType == ENTITY_TYPE::ECV_2DLABLE)
 	{
@@ -936,7 +956,7 @@ void ccHObject::getTypeID_recursive(std::vector<removeInfo> & rmInfos, bool rela
 			// clear
 			labelViewPort->clear2Dviews();
 		}
-	}
+    }
     else if (rminfo.removeType == ENTITY_TYPE::ECV_SENSOR)
     {
         ccHObject* obj = find(rminfo.removeId.toUInt());
@@ -944,8 +964,7 @@ void ccHObject::getTypeID_recursive(std::vector<removeInfo> & rmInfos, bool rela
         if (sensor)
         {
             // clear
-            CC_DRAW_CONTEXT context;;
-            sensor->clearDrawings(context);
+            sensor->clearDrawings();
         }
     }
 
@@ -1110,10 +1129,9 @@ void ccHObject::drawBB(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col)
 		ccGLMatrix trans;
 		ccBBox box = getOwnFitBB(trans);
 		if (box.isValid())
-		{
-			box += trans.getTranslationAsVec3D();
-			ecvOrientedBBox obb = ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(box);
-			obb.setRotation(ccGLMatrixd::ToEigenMatrix3(trans));
+        {
+            ecvOrientedBBox obb = ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(box);
+            obb.transform(ccGLMatrixd::ToEigenMatrix4(trans));
 			obb.draw(context, col);
 		}
 	}
@@ -1257,9 +1275,9 @@ bool ccHObject::toFile(QFile& out) const
 	return true;
 }
 
-bool ccHObject::fromFile(QFile& in, short dataVersion, int flags)
+bool ccHObject::fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!fromFileNoChildren(in, dataVersion, flags))
+    if (!fromFileNoChildren(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//(serializable) child count (dataVersion>=20)
@@ -1296,7 +1314,7 @@ bool ccHObject::fromFile(QFile& in, short dataVersion, int flags)
 			//store current position
 			size_t originalFilePos = in.pos();
 			//we need to load the custom object as plain ccCustomHobject
-			child->fromFileNoChildren(in, dataVersion, flags);
+            child->fromFileNoChildren(in, dataVersion, flags, oldToNewIDMap);
 			//go back to original position
 			in.seek(originalFilePos);
 			//get custom object name and plugin name
@@ -1323,7 +1341,7 @@ bool ccHObject::fromFile(QFile& in, short dataVersion, int flags)
 		assert(child && child->isSerializable());
 		if (child)
 		{
-			if (child->fromFile(in, dataVersion, flags))
+            if (child->fromFile(in, dataVersion, flags, oldToNewIDMap))
 			{
 				//FIXME
 				//addChild(child,child->getFlagState(CC_FATHER_DEPENDENT));
@@ -1357,7 +1375,7 @@ bool ccHObject::fromFile(QFile& in, short dataVersion, int flags)
 	//read transformation history (dataVersion >= 45)
 	if (dataVersion >= 45)
 	{
-		if (!m_glTransHistory.fromFile(in, dataVersion, flags))
+        if (!m_glTransHistory.fromFile(in, dataVersion, flags, oldToNewIDMap))
 		{
 			return false;
 		}
@@ -1366,16 +1384,16 @@ bool ccHObject::fromFile(QFile& in, short dataVersion, int flags)
 	return true;
 }
 
-bool ccHObject::fromFileNoChildren(QFile& in, short dataVersion, int flags)
+bool ccHObject::fromFileNoChildren(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
 	assert(in.isOpen() && (in.openMode() & QIODevice::ReadOnly));
 
 	//read 'ccObject' header
-	if (!ccObject::fromFile(in, dataVersion, flags))
+    if (!ccObject::fromFile(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//read own data
-	return fromFile_MeOnly(in, dataVersion, flags);
+    return fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap);
 }
 
 bool ccHObject::toFile_MeOnly(QFile& out) const
@@ -1428,7 +1446,7 @@ bool ccHObject::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccHObject::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccHObject::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
 	assert(in.isOpen() && (in.openMode() & QIODevice::ReadOnly));
 
@@ -1463,7 +1481,7 @@ bool ccHObject::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
 		return ReadError();
 	if (m_glTransEnabled)
 	{
-		if (!m_glTrans.fromFile(in, dataVersion, flags))
+        if (!m_glTrans.fromFile(in, dataVersion, flags, oldToNewIDMap))
 		{
 			return false;
 		}
@@ -1680,7 +1698,7 @@ void ccHObject::setHideShowType(CC_DRAW_CONTEXT & context)
 	context.hideShowEntityType = ecvDisplayTools::ConvertToEntityType(getClassID());
 }
 
-ENTITY_TYPE ccHObject::getEntityType()
+ENTITY_TYPE ccHObject::getEntityType() const
 {
 	return ecvDisplayTools::ConvertToEntityType(getClassID());
 }
@@ -1740,10 +1758,20 @@ void ccHObject::hideObject_recursive(bool recursive)
         else if (hdInfo.hideType == ENTITY_TYPE::ECV_SENSOR)
         {
             ccHObject* obj = find(hdInfo.hideId.toUInt());
-            assert(obj && obj->isA(CV_TYPES::CAMERA_SENSOR));
-            ccSensor* cameraSensor = ccHObjectCaster::ToSensor(obj);
-            cameraSensor->hideShowDrawings(context);
+            ccSensor* sensor = ccHObjectCaster::ToSensor(obj);
+            sensor->hideShowDrawings(context);
             continue;
+        }
+        else if (hdInfo.hideType == ENTITY_TYPE::ECV_MESH)
+        {
+            ccHObject* obj = find(hdInfo.hideId.toUInt());
+            // try hide primitives
+            ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(obj);
+            if (prim)
+            {
+                prim->hideShowDrawings(context);
+                continue;
+            }
         }
 
 		context.viewID = hdInfo.hideId;

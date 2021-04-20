@@ -219,7 +219,7 @@ bool ccObject::hasMetaData(QString key) const
 	return m_metaData.contains(key);
 }
 
-bool ccObject::fromFile(QFile& in, short dataVersion, int flags)
+bool ccObject::fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
 	assert(in.isOpen() && (in.openMode() & QIODevice::ReadOnly));
 

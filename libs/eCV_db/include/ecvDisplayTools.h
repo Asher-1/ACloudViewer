@@ -546,7 +546,7 @@ public: // main interface
 	inline static void LoadCameraParameters(const std::string &file) { TheInstance()->loadCameraParameters(file); }
 	inline virtual void loadCameraParameters(const std::string &file) { /* do nothing */ }
 
-	inline static void ShowOrientationMarker() 
+    inline static void ShowOrientationMarker()
 	{ 
 		TheInstance()->showOrientationMarker();
 		UpdateScreen();
@@ -594,13 +594,15 @@ public: // main interface
     }
     inline virtual void setViewMatrix(const ccGLMatrixd& viewMat, int viewport = 0) { /* do nothing */ }
 
+    static bool HideShowEntities(const ccHObject* obj, bool visible);
     inline static bool HideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) { return TheInstance()->hideShowEntities(CONTEXT); }
     inline virtual bool hideShowEntities(const CC_DRAW_CONTEXT& CONTEXT) { return true; /* do nothing */ }
 	static void HideShowEntities(const QStringList & viewIDs, ENTITY_TYPE hideShowEntityType, bool visibility = false);
 
+    static void RemoveEntities(const ccHObject* obj);
+    static void RemoveEntities(const QStringList & viewIDs, ENTITY_TYPE removeEntityType);
     inline static void RemoveEntities(const CC_DRAW_CONTEXT& CONTEXT) { TheInstance()->removeEntities(CONTEXT); }
     inline virtual void removeEntities(const CC_DRAW_CONTEXT& CONTEXT) { /* do nothing */ }
-	static void RemoveEntities(const QStringList & viewIDs, ENTITY_TYPE removeEntityType);
 
 	static void DrawBackground(CC_DRAW_CONTEXT& CONTEXT);
 	static void DrawForeground(CC_DRAW_CONTEXT& CONTEXT);

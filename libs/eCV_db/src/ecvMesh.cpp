@@ -2445,8 +2445,6 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context)
 			showTextures = false;
 		}
 
-		//in the case we need to display scalar field colors
-		ccScalarField* currentDisplayedScalarField = nullptr;
 		bool greyForNanScalarValues = true;
 		//unsigned colorRampSteps = 0;
 		ccColorScale::Shared colorScale(nullptr);
@@ -3510,9 +3508,9 @@ bool ccMesh::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccMesh::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccMesh::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccGenericMesh::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccGenericMesh::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//as the associated cloud (=vertices) can't be saved directly (as it may be shared by multiple meshes)
@@ -3807,7 +3805,7 @@ bool ccMesh::getVertexColorFromMaterial(unsigned triIndex, unsigned char vertInd
 		else
 		{
 			const ecvColor::Rgbaf& diffuse = material->getDiffuseFront();
-			rgb = ecvColor::FromRgbf(diffuse);
+            rgb = ecvColor::FromRgbafToRgb(diffuse);
 
 			foundMaterial = true;
 		}

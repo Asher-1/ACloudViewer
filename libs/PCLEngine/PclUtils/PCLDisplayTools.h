@@ -38,7 +38,7 @@
 
 class ccHObject;
 class ImageVis;
-class ccCameraSensor;
+class ccSensor;
 class ccGenericMesh;
 class ccImage;
 class ecvOrientedBBox;
@@ -363,7 +363,7 @@ private:
     void drawPolygon(const CC_DRAW_CONTEXT& context, ccPolyline* polyline);
     void drawLines(const CC_DRAW_CONTEXT& context, cloudViewer::geometry::LineSet* lineset);
     void drawImage(const CC_DRAW_CONTEXT& context, ccImage* image);
-    void drawCamera(const CC_DRAW_CONTEXT& context, ccCameraSensor * camera);
+    void drawSensor(const CC_DRAW_CONTEXT& context, ccSensor* sensor);
 
     bool updateEntityColor(const CC_DRAW_CONTEXT& context, ccHObject* ent);
 

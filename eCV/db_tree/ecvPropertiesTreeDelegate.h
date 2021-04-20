@@ -43,6 +43,7 @@ class ccShiftedObject;
 class CCShareable;
 class ccPlanarEntityInterface;
 class ccSensor;
+class ccCoordinateSystem;
 
 class QStandardItemModel;
 class QStandardItem;
@@ -102,6 +103,10 @@ public:
 							OBJECT_TRANS_BUFFER_TRIHDERONS_SCALE	,
 							OBJECT_HISTORY_MATRIX_EDITOR			,
 							OBJECT_GLTRANS_MATRIX_EDITOR			,
+                            OBJECT_COORDINATE_SYSTEM_DISP_PLANES	,
+                            OBJECT_COORDINATE_SYSTEM_DISP_AXES		,
+                            OBJECT_COORDINATE_SYSTEM_AXES_WIDTH		,
+                            OBJECT_COORDINATE_SYSTEM_DISP_SCALE		,
 							TREE_VIEW_HEADER						,
 	};
 
@@ -130,7 +135,13 @@ signals:
 	void ccObjectAppearanceChanged(ccHObject* hObject, bool forceRedraw = true) const;
 	void ccObjectAndChildrenAppearanceChanged(ccHObject* hObject, bool forceRedraw = true) const;
 
-protected slots:
+private:
+    static const char* s_noneString;
+    static const char* s_rgbColor;
+    static const char* s_sfColor;
+    static const char* s_defaultPointSizeString;
+    static const char* s_defaultPolyWidthSizeString;
+
 	void updateItem(QStandardItem*);
 	void scalarFieldChanged(int);
 	void colorScaleChanged(int);
@@ -152,11 +163,13 @@ protected slots:
 	void objectDisplayChanged(const QString &);
 	void colorSourceChanged(const QString &);
 	void sensorScaleChanged(double);
+    void coordinateSystemDisplayScaleChanged(double);
 	void sensorUncertaintyChanged();
 	void sensorIndexChanged(double);
 	void updateCurrentEntity(bool redraw = true);
 	void cloudPointSizeChanged(int);
 	void polyineWidthChanged(int);
+    void coordinateSystemAxisWidthChanged(int);
 	void trihedronsScaleChanged(double);
 
 protected:
@@ -186,6 +199,7 @@ protected:
 	void fillWithShareable(CCShareable*);
 	void fillWithMetaData(ccObject*);
 	void fillWithShifted(ccShiftedObject*);
+    void fillWithCoordinateSystem(const ccCoordinateSystem*);
 	template<class Type, int N, class ComponentType> void fillWithCCArray(ccArray<Type, N, ComponentType>*);
 
 	//! Returns whether the editor is wide (i.e. spans on two columns) or not

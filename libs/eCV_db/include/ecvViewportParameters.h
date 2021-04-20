@@ -39,7 +39,7 @@ public: //functions
     //inherited from ccSerializableObject
     bool isSerializable() const override { return true; }
     bool toFile(QFile& out) const override;
-    bool fromFile(QFile& in, short dataVersion, int flags) override;
+    bool fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 
     //! Sets the pivot point (for object-centered view mode)
     void setPivotPoint(const CCVector3d& P, bool autoUpdateFocal = true);

@@ -144,9 +144,25 @@ void MovieGrabberWidget::Add() {
 
 void MovieGrabberWidget::Delete() {
   QModelIndexList selection = table_->selectionModel()->selectedIndexes();
+  std::vector<colmap::image_t> toBeDeleted;
   for (const auto& index : selection) {
     table_->removeRow(index.row());
+    Image& image = views[static_cast<std::size_t>(index.row())];
+    toBeDeleted.push_back(image.ImageId());
   }
+
+  std::vector<colmap::image_t>::iterator it;
+  for (it=image_ids_.begin(); it!=image_ids_.end(); ) {
+      if (std::find(toBeDeleted.begin(), toBeDeleted.end(), *it) != toBeDeleted.end())
+      {
+          it = image_ids_.erase(it);
+      }
+      else
+      {
+          ++it;
+      }
+  }
+
   UpdateViews();
   model_viewer_widget_->UpdateMovieGrabber();
 }
@@ -157,6 +173,7 @@ void MovieGrabberWidget::Clear() {
     table_->removeRow(0);
   }
   views.clear();
+  image_ids_.clear();
   model_viewer_widget_->UpdateMovieGrabber();
 }
 
@@ -288,6 +305,8 @@ void MovieGrabberWidget::SelectionChanged(const QItemSelection& selected,
 
 void MovieGrabberWidget::UpdateViews() {
   views.clear();
+  colmap::image_t base_id = 1000;
+  std::size_t lastNum = image_ids_.size();
   for (int row = 0; row < table_->rowCount(); ++row) {
     const auto logical_idx = table_->verticalHeader()->logicalIndex(row);
     QTableWidgetItem* item = table_->item(logical_idx, 0);
@@ -299,6 +318,28 @@ void MovieGrabberWidget::UpdateViews() {
 //        ccGLMatrixd::ToEigenMatrix4(view_data_.at(item).viewportParams.computeViewMatrix());
 
     Image image;
+    colmap::image_t image_id;
+    std::size_t curIndex = static_cast<std::size_t>(row);
+    if (curIndex < lastNum)
+    {
+        image_id = image_ids_[curIndex];
+    }
+    else
+    {
+        if (image_ids_.empty())
+        {
+           image_id = base_id + static_cast<colmap::image_t>(row);
+        }
+        else
+        {
+            image_id = image_ids_[image_ids_.size() - 1] + 1;
+        }
+
+        image_ids_.push_back(image_id);
+    }
+
+    image.SetImageId(image_id);
+
     image.Qvec() =
         RotationMatrixToQuaternion(model_view_matrix.block<3, 3>(0, 0));
     image.Tvec() = model_view_matrix.block<3, 1>(0, 3);

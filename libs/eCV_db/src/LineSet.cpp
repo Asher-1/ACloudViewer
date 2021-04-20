@@ -58,11 +58,11 @@ void LineSet::drawMeOnly(CC_DRAW_CONTEXT &context)
         if (isColorOverriden())
         {
             context.defaultPolylineColor = getTempColor();
-        }
+        }/*
         else if (colorsShown() && hasColors())
         {
             context.defaultPolylineColor = ecvColor::Rgb::FromEigen(colors_[0]);
-        }
+        }*/
         context.currentLineWidth = 1;
         ecvDisplayTools::Draw(context, this);
     }

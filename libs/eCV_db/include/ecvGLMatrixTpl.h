@@ -988,6 +988,27 @@ public:
 		return m_mat[(col << 2) + row];
 	}
 
+    //! Applies transformation to a 3D vector (in place) - float version
+    /** Input array is directly modified after calling this method
+    **/
+    inline void apply(float vec[3]) const	{
+        CCVector3 internal_vec(vec[0], vec[1], vec[2]);
+        apply(internal_vec);
+        vec[0] = internal_vec[0];
+        vec[1] = internal_vec[1];
+        vec[2] = internal_vec[2];
+    }
+    //! Applies transformation to a 3D vector (in place) - double version
+    /** Input array is directly modified after calling this method
+    **/
+    inline void apply(double vec[3]) const	{
+        CCVector3d internal_vec(vec[0], vec[1], vec[2]);
+        apply(internal_vec);
+        vec[0] = internal_vec[0];
+        vec[1] = internal_vec[1];
+        vec[2] = internal_vec[2];
+    }
+
 	//! Applies transformation to a 3D vector (in place) - float version
 	/** Input vector is directly modified after calling this method
 	**/
@@ -1325,7 +1346,7 @@ public:
 		return true;
 	}
 
-	bool fromFile(QFile& in, short dataVersion, int flags) override
+    bool fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override
 	{
 		assert(in.isOpen() && (in.openMode() & QIODevice::ReadOnly));
 

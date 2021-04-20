@@ -1922,6 +1922,7 @@ ENTITY_TYPE ecvDisplayTools::ConvertToEntityType(const CV_CLASS_ENUM& type) {
 	case CV_TYPES::EXTRU:
 	case CV_TYPES::DISH:
 	case CV_TYPES::BOX:
+    case CV_TYPES::COORDINATESYSTEM:
 	case CV_TYPES::QUADRIC:
 		entityType = ENTITY_TYPE::ECV_MESH;
 		break;
@@ -1988,7 +1989,7 @@ void ecvDisplayTools::SetRemoveViewIDs(std::vector<removeInfo> & removeinfos)
 	else 
 	{
 		s_tools.instance->m_removeFlag = false;
-	}
+    }
 }
 
 void ecvDisplayTools::SetInteractionMode(INTERACTION_FLAGS flags)
@@ -2962,7 +2963,33 @@ void ecvDisplayTools::HideShowEntities(const QStringList & viewIDs, ENTITY_TYPE 
 	{
 		context.viewID = removeViewId;
 		HideShowEntities(context);
-	}
+    }
+}
+
+bool ecvDisplayTools::HideShowEntities(const ccHObject *obj, bool visible)
+{
+    if (!obj || !ecvDisplayTools::GetCurrentScreen())
+    {
+       return false;
+    }
+    CC_DRAW_CONTEXT context;
+    context.viewID = QString::number(obj->getUniqueID(), 10);
+    context.visible = visible;
+    ecvDisplayTools::HideShowEntities(context);
+    return true;
+}
+
+void ecvDisplayTools::RemoveEntities(const ccHObject* obj)
+{
+    if (!obj || !ecvDisplayTools::GetCurrentScreen())
+    {
+       return;
+    }
+
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = QString::number(obj->getUniqueID(), 10);
+    context.removeEntityType = obj->getEntityType();
+    ecvDisplayTools::RemoveEntities(context);
 }
 
 void ecvDisplayTools::RemoveEntities(const QStringList & viewIDs, ENTITY_TYPE removeEntityType)

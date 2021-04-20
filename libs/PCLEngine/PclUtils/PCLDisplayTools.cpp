@@ -248,7 +248,8 @@ void PCLDisplayTools::drawPolygon(const CC_DRAW_CONTEXT& context, ccPolyline* po
     }
 }
 
-void PCLDisplayTools::drawLines(const CC_DRAW_CONTEXT &context, cloudViewer::geometry::LineSet *lineset)
+void PCLDisplayTools::drawLines(const CC_DRAW_CONTEXT &context,
+                                cloudViewer::geometry::LineSet *lineset)
 {
     std::string viewID = CVTools::FromQString(context.viewID);
     bool firstShow = !m_visualizer3D->contains(viewID);
@@ -257,12 +258,17 @@ void PCLDisplayTools::drawLines(const CC_DRAW_CONTEXT &context, cloudViewer::geo
     if (lineset->isRedraw() || firstShow)
     {
         m_visualizer3D->draw(context, lineset);
+        m_visualizer3D->transformEntities(context);
     }
 
     if (m_visualizer3D->contains(viewID))
     {
-        ecvColor::Rgbf polygonColor = ecvTools::TransFormRGB(context.defaultPolylineColor);
-        m_visualizer3D->setShapeUniqueColor(polygonColor.r, polygonColor.g, polygonColor.b, viewID, viewport);
+        if (lineset->isColorOverriden() || !lineset->hasColors())
+        {
+            ecvColor::Rgbf polygonColor = ecvTools::TransFormRGB(context.defaultPolylineColor);
+            m_visualizer3D->setShapeUniqueColor(polygonColor.r, polygonColor.g, polygonColor.b, viewID, viewport);
+        }
+
         m_visualizer3D->setLineWidth(context.currentLineWidth, viewID, viewport);
         m_visualizer3D->setLightMode(viewID, viewport);
     }
@@ -294,15 +300,20 @@ void PCLDisplayTools::drawImage(const CC_DRAW_CONTEXT& context, ccImage * image)
 #endif
 }
 
-void PCLDisplayTools::drawCamera(const CC_DRAW_CONTEXT& context, ccCameraSensor *camera)
+void PCLDisplayTools::drawSensor(const CC_DRAW_CONTEXT& context, ccSensor *sensor)
 {
+    if (!sensor)
+    {
+        return;
+    }
+
     std::string viewID = CVTools::FromQString(context.viewID);
     bool firstShow = !m_visualizer3D->contains(viewID);
     int viewport = context.defaultViewPort;
 
-    if (camera->isRedraw() || firstShow)
+    if (sensor->isRedraw() || firstShow)
     {
-        m_visualizer3D->draw(context, camera);
+        m_visualizer3D->draw(context, sensor);
         m_visualizer3D->transformEntities(context);
     }
 
@@ -420,12 +431,12 @@ void PCLDisplayTools::draw(const CC_DRAW_CONTEXT& context, const ccHObject* obj)
 		if (!image) return;
         drawImage(context, image);
     }
-    else if (obj->isA(CV_TYPES::CAMERA_SENSOR))
+    else if (obj->isKindOf(CV_TYPES::SENSOR)) //  must use isKindOf here
     {
-        // the image to draw
-        ccCameraSensor* camera = ccHObjectCaster::ToCameraSensor(const_cast<ccHObject *>(obj));
-        if (!camera) return;
-        drawCamera(context, camera);
+        // the sensor to draw
+        ccSensor* sensor = ccHObjectCaster::ToSensor(const_cast<ccHObject *>(obj));
+        if (!sensor) return;
+        drawSensor(context, sensor);
     }
 	else
 	{
@@ -523,25 +534,14 @@ void PCLDisplayTools::drawOrientedBBox(const CC_DRAW_CONTEXT& context, const ecv
 	if (m_visualizer3D)
 	{
 		std::string bboxID = CVTools::FromQString(context.viewID);
-		if (!m_visualizer3D->contains(bboxID))
+        if (m_visualizer3D->contains(bboxID))
 		{
-			const Eigen::Matrix3d& rotation_OBB = obb->getRotation();
-			Eigen::Matrix3f rotation = rotation_OBB.cast<float>();
-			Eigen::Quaternionf quat(rotation);
-			const Eigen::Vector3d& position_OBB = obb->getPosition();
-			Eigen::Vector3f position(position_OBB(0), position_OBB(1), position_OBB(2));
-			const Eigen::Vector3d& extent = obb->getExtent();
-			const Eigen::Vector3d& color = obb->getColor();
-
-			m_visualizer3D->addOrientedCube(
-				position, quat, extent(0), extent(1), extent(2),
-                color(0), color(1), color(2), bboxID, viewport);
-
-			m_visualizer3D->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
-                pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, bboxID, viewport);
-            m_visualizer3D->setLineWidth(context.defaultLineWidth, bboxID, viewport);
-            m_visualizer3D->setLightMode(bboxID, viewport);
+            m_visualizer3D->removeShape(bboxID);
 		}
+
+        m_visualizer3D->addOrientedCube(*obb, bboxID, viewport);
+        m_visualizer3D->setLineWidth(context.defaultLineWidth, bboxID, viewport);
+        m_visualizer3D->setLightMode(bboxID, viewport);
     }
 }
 
@@ -684,7 +684,7 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER & param)
 			tParam.opacity = param.color.a;
 			tParam.text = param.text;
 			tParam.textPos = CCVector3d(param.rect.x(), param.rect.y(), 0.0);
-			context.textDefaultCol = ecvColor::FromRgbf(param.color);
+            context.textDefaultCol = ecvColor::FromRgbafToRgb(param.color);
 			context.textParam = tParam;
 			context.viewID = tParam.text;
 			m_visualizer3D->displayText(context);
@@ -1141,7 +1141,7 @@ void PCLDisplayTools::changeEntityProperties(PROPERTY_PARAM & param)
 	break;
 	case PROPERTY_MODE::ECV_LINEWITH_PROPERTY:
 	{
-        m_visualizer3D->setLineWidth(param.lineWidth, viewId, viewport);
+        m_visualizer3D->setLineWidth(static_cast<unsigned char>(param.lineWidth), viewId, viewport);
 	}
 	break;
 	case PROPERTY_MODE::ECV_COLOR_PROPERTY:

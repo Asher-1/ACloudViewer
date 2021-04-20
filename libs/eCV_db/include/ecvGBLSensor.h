@@ -19,10 +19,12 @@
 #define ECV_GROUND_LIDAR_SENSOR_HEADER
 
 //Local
+#include "LineSet.h"
 #include "ecvSensor.h"
+#include "ecvOrientedBBox.h"
 #include "ecvDepthBuffer.h"
 
-//cloudViewer
+// CV_CORE_LIB
 #include <GenericCloud.h>
 
 class ccPointCloud;
@@ -64,7 +66,7 @@ public:
 	ccBBox getOwnBB(bool withGLFeatures = false) override;
 	ccBBox getOwnFitBB(ccGLMatrix& trans) override;
 
-    virtual void clearDrawings(CC_DRAW_CONTEXT& context) override;
+    virtual void clearDrawings() override;
     virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) override;
 
 	//inherited from ccSensor
@@ -223,11 +225,15 @@ public: //depth buffer management
 	//! Removes the associated depth buffer
 	void clearDepthBuffer();
 
+    const cloudViewer::geometry::LineSet& getSensorLegLines() const {return m_leg; }
+    const cloudViewer::geometry::LineSet& getSensorAxis() const {return m_axis; }
+    const ecvOrientedBBox& getSensorHead() const {return m_obbHead; }
+
 protected:
 
 	//Inherited from ccHObject
 	bool toFile_MeOnly(QFile& out) const override;
-	bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 	void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 
 	//! Converts 2D angular coordinates (yaw,pitch) in integer depth buffer coordinates
@@ -265,6 +271,10 @@ protected:
 
 	//! Associated Z-buffer
 	ccDepthBuffer m_depthBuffer;
+
+    ecvOrientedBBox m_obbHead;
+    cloudViewer::geometry::LineSet m_leg;
+    cloudViewer::geometry::LineSet m_axis;
 };
 
 #endif // ECV_GROUND_LIDAR_SENSOR_HEADER

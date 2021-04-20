@@ -30,11 +30,13 @@
 #include <ecvBBox.h>
 #include <ecvPlane.h>
 #include <LineSet.h>
+#include <ecvGBLSensor.h>
 #include <ecvCameraSensor.h>
 #include <ecvColorScale.h>
 #include <ecvScalarField.h>
 #include <ecvDisplayTools.h>
 
+#include <vtkLine.h>
 #include <vtkCellData.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkAppendPolyData.h>
@@ -263,6 +265,49 @@ vtkSmartPointer<vtkPoints> PclTools::GetVtkPointsFromLineSet(
     return linePoints;
 }
 
+bool PclTools::GetVtkPointsAndLinesFromLineSet(const cloudViewer::geometry::LineSet &lineset,
+                                               vtkSmartPointer<vtkPoints> points,
+                                               vtkSmartPointer<vtkCellArray> lines,
+                                               vtkSmartPointer<vtkUnsignedCharArray> colors)
+{
+    if (!points || !lines)
+    {
+        return false;
+    }
+
+    bool has_color = false;
+    if (lineset.hasColors())
+    {
+      has_color = true;
+      colors->SetNumberOfComponents (3);
+      colors->SetName ("Colors");
+      colors->SetNumberOfTuples(static_cast<vtkIdType>(lineset.points_.size()));
+    }
+
+    points->SetNumberOfPoints(static_cast<vtkIdType>(lineset.points_.size()));
+    for (std::size_t i = 0; i < lineset.points_.size(); ++i)
+    {
+        Eigen::Vector3d p = lineset.points_[i];
+        points->SetPoint(static_cast<vtkIdType>(i), p.data());
+    }
+
+    for (std::size_t i = 0; i < lineset.lines_.size(); ++i)
+    {
+        vtkSmartPointer<vtkLine> segment = vtkSmartPointer<vtkLine>::New();
+        Eigen::Vector2i segIndex = lineset.lines_[i];
+        segment->GetPointIds()->SetId(0, segIndex(0));
+        segment->GetPointIds()->SetId(1, segIndex(1));
+        lines->InsertNextCell(segment);
+        if (has_color)
+        {
+            ecvColor::Rgb color = ecvColor::Rgb::FromEigen(lineset.colors_[i]);
+            colors->InsertTuple3(static_cast<vtkIdType>(i), color.r, color.g, color.b);
+        }
+    }
+
+    return true;
+}
+
 vtkSmartPointer<vtkPolyData>
 PclTools::CreateLine(vtkSmartPointer<vtkPoints> points)
 {
@@ -272,6 +317,32 @@ PclTools::CreateLine(vtkSmartPointer<vtkPoints> points)
     return lineSource->GetOutput();
 }
 
+vtkSmartPointer<vtkPolyData> PclTools::CreateLine(vtkSmartPointer<vtkPoints> points,
+                                                  vtkSmartPointer<vtkCellArray> lines,
+                                                  vtkSmartPointer<vtkUnsignedCharArray> colors)
+{
+    if (points->GetNumberOfPoints() == 0 &&
+        lines->GetNumberOfCells() == 0 &&
+        colors->GetNumberOfTuples() == 0)
+    {
+        return nullptr;
+    }
+
+    vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+    if (points->GetNumberOfPoints() > 0)
+    {
+        polyData->SetPoints(points);
+    }
+    if (lines->GetNumberOfCells() > 0)
+    {
+        polyData->SetLines(lines);
+    }
+    if (colors->GetNumberOfTuples() > 0)
+    {
+        polyData->GetCellData()->SetScalars(colors);
+    }
+    return polyData;
+}
 
 void PclTools::SetPolyDataColor(vtkSmartPointer<vtkPolyData> polyData,
                                 const ecvColor::Rgb& color, bool is_cell)
@@ -357,24 +428,46 @@ vtkSmartPointer<vtkPolyData> PclTools::CreateCoordinateFromLineSet(const cloudVi
     return appendFilter->GetOutput();
 }
 
-vtkSmartPointer<vtkPolyData> PclTools::CreateCameras(const ccCameraSensor *cameraSensor,
-                                                     const ecvColor::Rgb& lineColor,
-                                                     const ecvColor::Rgb& planeColor)
+vtkSmartPointer<vtkPolyData> PclTools::CreateGBLSensor(const ccGBLSensor *gBLSensor)
 {
+    assert(gBLSensor);
+    auto linePoints = cloudViewer::geometry::LineSet::CreateFromOrientedBoundingBox(gBLSensor->getSensorHead());
+
+    // sensor head lines
+    vtkSmartPointer<vtkPolyData> headLinesData = CreatePolyDataFromLineSet(*linePoints, false);
+
+    // sensor leg lines
+    vtkSmartPointer<vtkPolyData> legLinesData = CreatePolyDataFromLineSet(gBLSensor->getSensorLegLines(), false);
+
+    // sensor axis lines
+    vtkSmartPointer<vtkPolyData> axisLinesData = CreatePolyDataFromLineSet(gBLSensor->getSensorAxis(), false);
+
+    vtkSmartPointer<vtkAppendPolyData> appendFilter =
+            vtkSmartPointer<vtkAppendPolyData>::New();
+    appendFilter->AddInputData(headLinesData);
+    appendFilter->AddInputData(legLinesData);
+    appendFilter->AddInputData(axisLinesData);
+    appendFilter->Update();
+    return appendFilter->GetOutput();
+}
+
+vtkSmartPointer<vtkPolyData> PclTools::CreateCameraSensor(const ccCameraSensor *cameraSensor,
+                                                          const ecvColor::Rgb& lineColor,
+                                                          const ecvColor::Rgb& planeColor)
+{
+    assert(cameraSensor);
+
     // near plane
-    vtkSmartPointer<vtkPoints> nearPlaneLinePoints = GetVtkPointsFromLineSet(cameraSensor->getNearPlane());
-    vtkSmartPointer<vtkPolyData> nearPlaneLinesData = CreateLine(nearPlaneLinePoints);
+    vtkSmartPointer<vtkPolyData> nearPlaneLinesData = CreatePolyDataFromLineSet(cameraSensor->getNearPlane());
     AddPolyDataCell(nearPlaneLinesData);
     SetPolyDataColor(nearPlaneLinesData, planeColor, false);
 
     // side lines
-    vtkSmartPointer<vtkPoints> sideLinePoints = GetVtkPointsFromLineSet(cameraSensor->getSideLines());
-    vtkSmartPointer<vtkPolyData> sideLinesData = CreateLine(sideLinePoints);
+    vtkSmartPointer<vtkPolyData> sideLinesData = CreatePolyDataFromLineSet(cameraSensor->getSideLines());
     SetPolyDataColor(sideLinesData, lineColor, false);
 
     // arrow lines
-    vtkSmartPointer<vtkPoints> arrowLinePoints = GetVtkPointsFromLineSet(cameraSensor->getArrow());
-    vtkSmartPointer<vtkPolyData> arrowLinesData = CreateLine(arrowLinePoints);
+    vtkSmartPointer<vtkPolyData> arrowLinesData = CreatePolyDataFromLineSet(cameraSensor->getArrow());
     AddPolyDataCell(arrowLinesData);
     SetPolyDataColor(arrowLinesData, lineColor, false);
 
@@ -942,4 +1035,72 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget, const CC_DRAW_CONTEXT 
     scalarBarWidget->On();
     scalarBarWidget->Modified();
     return true;
+}
+
+bool PclTools::TransformPolyData(vtkSmartPointer<vtkPolyData> polyData, const ccGLMatrixd &trans)
+{
+    if (!polyData)
+    {
+        return false;
+    }
+    vtkSmartPointer<vtkPoints> points = polyData->GetPoints();
+    if(!points || points->GetNumberOfPoints() == 0)
+    {
+        return false;
+    }
+
+    return TransformVtkPoints(points, trans);
+
+}
+
+bool PclTools::TransformVtkPoints(vtkSmartPointer<vtkPoints> points, const ccGLMatrixd &trans)
+{
+    if(!points || points->GetNumberOfPoints() == 0)
+    {
+        return false;
+    }
+
+    for (vtkIdType i = 0; i < points->GetNumberOfPoints(); ++i) {
+        double * P = points->GetPoint(i);
+        trans.apply(P);
+    }
+
+    return true;
+}
+
+vtkSmartPointer<vtkPolyData> PclTools::CreateCube(double width, double height, double depth, const ccGLMatrixd &trans)
+{
+    vtkSmartPointer<vtkPolyData> data = CreateCube(width, height, depth);
+    if (!TransformPolyData(data, trans))
+    {
+        CVLog::Error("[PclTools::CreateCube] Creating cube failed!");
+        return nullptr;
+    }
+    return data;
+}
+
+vtkSmartPointer<vtkPolyData> PclTools::CreateCube(double width, double height, double depth)
+{
+    vtkSmartPointer<vtkCubeSource> cube = vtkSmartPointer<vtkCubeSource>::New ();
+    cube->SetXLength (width);
+    cube->SetYLength (height);
+    cube->SetZLength (depth);
+    cube->Update();
+    return cube->GetOutput();
+}
+
+vtkSmartPointer<vtkPolyData> PclTools::CreatePolyDataFromLineSet(const cloudViewer::geometry::LineSet &lineset, bool useLineSource/* = true*/)
+{
+    if (useLineSource) {
+        return CreateLine(GetVtkPointsFromLineSet(lineset));
+    } else {
+        vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+        vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
+        vtkSmartPointer<vtkUnsignedCharArray> colors = vtkSmartPointer<vtkUnsignedCharArray>::New ();
+        if (GetVtkPointsAndLinesFromLineSet(lineset, points, lines, colors)) {
+            return CreateLine(points, lines, colors);
+        } else {
+            return nullptr;
+        }
+    }
 }

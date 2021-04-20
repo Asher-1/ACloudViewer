@@ -102,7 +102,7 @@ protected:
 
 	//inherited from ccHObject
 	virtual bool toFile_MeOnly(QFile& out) const override;
-	virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 
 	//! Bounding box
 	ccBBox m_bBox;

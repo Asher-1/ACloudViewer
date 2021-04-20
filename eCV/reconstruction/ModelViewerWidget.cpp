@@ -56,11 +56,6 @@ const Eigen::Vector4d kSelectedImageFrameColor(0.8, 0.0, 0.8, 1.0);
 const Eigen::Vector4d kMovieGrabberImagePlaneColor(0.0, 1.0, 1.0, 0.6);
 const Eigen::Vector4d kMovieGrabberImageFrameColor(0.0, 0.8, 0.8, 1.0);
 
-const Eigen::Vector4f kGridColor(0.2f, 0.2f, 0.2f, 0.6f);
-const Eigen::Vector4f kXAxisColor(0.9f, 0.0f, 0.0f, 0.5f);
-const Eigen::Vector4f kYAxisColor(0.0f, 0.9f, 0.0f, 0.5f);
-const Eigen::Vector4f kZAxisColor(0.0f, 0.0f, 0.9f, 0.5f);
-
 namespace cloudViewer {
 namespace {
 
@@ -86,7 +81,6 @@ void BuildImageModel( ccCameraSensor* sensor,
                       const Eigen::Vector4d& frame_color) {
   // temp information
   const float kBaseCameraWidth = 1024.0f;
-  sensor->setGraphicScale(-2*PC_ONE);
   const float image_width = image_size * camera.Width() / kBaseCameraWidth;
   const float image_height = image_width * static_cast<float>(camera.Height()) /
                              static_cast<float>(camera.Width());
@@ -107,6 +101,7 @@ void BuildImageModel( ccCameraSensor* sensor,
                                                           frame_color(1),
                                                           frame_color(2)));
   sensor->setFrameColor(frameColor);
+  sensor->setGraphicScale(-2*PC_ONE);
 
   // init camera intrinsic parameters
   ccCameraSensor::IntrinsicParameters iParams;
@@ -114,7 +109,7 @@ void BuildImageModel( ccCameraSensor* sensor,
   iParams.pixelSize_mm[0]    = pixelSize_mm;
   iParams.pixelSize_mm[1]    = pixelSize_mm;
   iParams.vertFocal_pix      = ccCameraSensor::ConvertFocalMMToPix(focal_length, pixelSize_mm);
-  iParams.vFOV_rad           = cloudViewer::DegreesToRadians(25.0f);
+  iParams.vFOV_rad           = cloudViewer::DegreesToRadians(45.0f);
   iParams.arrayWidth = static_cast<int>(camera.Width());
   iParams.arrayHeight = static_cast<int>(camera.Height());
   iParams.principal_point[0] = static_cast<float>(camera.PrincipalPointX());
@@ -165,16 +160,20 @@ ModelViewerWidget::ModelViewerWidget(QWidget* parent, OptionManager* options, Ma
   movie_grabber_sensors_.clear();
 }
 
-ModelViewerWidget::~ModelViewerWidget()
+void ModelViewerWidget::Release()
 {
+    if (movie_grabber_widget_)
+    {
+        movie_grabber_widget_->views.clear();
+    }
+
+    ClearReconstruction();
+
     if (cloud_sparse_)
     {
         delete cloud_sparse_;
         cloud_sparse_ = nullptr;
     }
-
-    clearSensors(sensors_);
-    clearSensors(movie_grabber_sensors_);
 
     if (main_sensors_)
     {
@@ -320,7 +319,6 @@ void ModelViewerWidget::SelectObject(ccHObject* entity, unsigned subEntityID, in
   if (obj->isKindOf(CV_TYPES::CAMERA_SENSOR))
   {
     ccCameraSensor* camera = ccHObjectCaster::ToCameraSensor(obj);
-    camera->setSelected(true);
     ecvColor::Rgb plane_color = camera->getPlaneColor();
     selected_index = RGBToIndex(plane_color.r, plane_color.g, plane_color.b);
   }
@@ -668,6 +666,9 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
   if (lastSensorNum < curSensorNum)
   {
       sensors_.reserve(curSensorNum);
+  } else if (lastSensorNum > curSensorNum) {
+      updateSensors(sensors_, reg_image_ids);
+      lastSensorNum = sensors_.size();
   }
 
   std::size_t cameraIndex = 0;
@@ -701,7 +702,6 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
     else
     {
         sensor = new ccCameraSensor();
-        sensor->setName(sensor->getName() + "_" + QString::number(cameraIndex));
         sensors_.push_back(sensor);
     }
 
@@ -710,6 +710,7 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
         return;
     }
 
+    sensor->setName(QString::number(image_id));
     BuildImageModel(sensor, image, camera, image_size_,
                       plane_color.cast<double>(),
                       frame_color.cast<double>());
@@ -779,11 +780,18 @@ void ModelViewerWidget::UploadMovieGrabberData() {
   if (lastSensorNum < curSensorNum)
   {
       movie_grabber_sensors_.reserve(curSensorNum);
+  } else if (lastSensorNum > curSensorNum) {
+      std::vector<colmap::image_t> image_ids;
+      for (const Image& image : movie_grabber_widget_->views) {
+          image_ids.push_back(image.ImageId());
+      }
+      updateSensors(movie_grabber_sensors_, image_ids);
+      lastSensorNum = movie_grabber_sensors_.size();
   }
 
   movie_grabber_path_.clear();
 
-  if (movie_grabber_widget_->views.size() > 0) {
+  if (curSensorNum > 0) {
     const Image& image0 = movie_grabber_widget_->views[0];
     Eigen::Vector3d prev_proj_center = image0.ProjectionCenter();
 
@@ -812,7 +820,7 @@ void ModelViewerWidget::UploadMovieGrabberData() {
 
     // Build all camera models
     std::size_t index = 0;
-    for (size_t i = 0; i < movie_grabber_widget_->views.size(); ++i) {
+    for (size_t i = 0; i < curSensorNum; ++i) {
       const Image& image = movie_grabber_widget_->views[i];
       Eigen::Vector4d plane_color;
       Eigen::Vector4d frame_color;
@@ -832,7 +840,6 @@ void ModelViewerWidget::UploadMovieGrabberData() {
       else
       {
           sensor = new ccCameraSensor();
-          sensor->setName("Grab Sensor_" + QString::number(index));
           movie_grabber_sensors_.push_back(sensor);
       }
 
@@ -841,6 +848,7 @@ void ModelViewerWidget::UploadMovieGrabberData() {
         return;
       }
 
+      sensor->setName(QString::number(image.ImageId()));
       BuildImageModel(sensor, image, camera, image_size_,
                       plane_color, frame_color);
       index++;
@@ -929,10 +937,7 @@ void ModelViewerWidget::drawLines(geometry::LineSet &lineset)
 
 void ModelViewerWidget::resetLines(geometry::LineSet &lineset)
 {
-    CC_DRAW_CONTEXT context;
-    context.removeViewID = QString::number(lineset.getUniqueID(), 10);
-    context.removeEntityType = lineset.getEntityType();
-    ecvDisplayTools::RemoveEntities(context);
+    ecvDisplayTools::RemoveEntities(&lineset);
 }
 
 void ModelViewerWidget::drawCameraSensors(std::vector<ccCameraSensor*>& sensors)
@@ -1008,7 +1013,41 @@ void ModelViewerWidget::clearSensors(std::vector<ccCameraSensor *> &sensors)
             main_sensors_ = nullptr;
         }
     }
+
     sensors.clear();
+}
+
+void ModelViewerWidget::updateSensors(std::vector<ccCameraSensor *> &sensors,
+                                      const std::vector<colmap::image_t>& image_ids)
+{
+    if (sensors.size() > image_ids.size()) {
+
+        std::vector<ccCameraSensor *> toBeDeleted;
+        std::vector<ccCameraSensor *> preserved;
+        for (ccCameraSensor* sensor : sensors) {
+            if (!sensor)
+            {
+                continue;
+            }
+            colmap::image_t sensorId = sensor->getName().toUInt();
+            if (std::find(image_ids.begin(), image_ids.end(), sensorId) == image_ids.end())
+            {
+                toBeDeleted.push_back(sensor);
+            } else {
+                preserved.push_back(sensor);
+            }
+        }
+
+        if (!toBeDeleted.empty())
+        {
+            sensors.clear();
+            for (ccCameraSensor* sensor : preserved) {
+                sensors.push_back(sensor);
+            }
+
+            clearSensors(toBeDeleted);
+        }
+    }
 }
 
 }  // namespace cloudViewer

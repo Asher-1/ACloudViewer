@@ -183,7 +183,7 @@ public: //general
 	ccCameraSensor(const IntrinsicParameters& iParams);
 
 	//! Destructor
-	virtual ~ccCameraSensor();
+    virtual ~ccCameraSensor() override;
 
 	//inherited from ccHObject
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::CAMERA_SENSOR; }
@@ -479,7 +479,7 @@ public: //misc
 
     double getFocalLength() const { return m_focalLength; }
 
-    virtual void clearDrawings(CC_DRAW_CONTEXT& context) override;
+    virtual void clearDrawings() override;
     virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) override;
 
 public: //helpers
@@ -513,7 +513,7 @@ protected:
 
 	//Inherited from ccHObject
 	virtual bool toFile_MeOnly(QFile& out) const override;
-	virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 	virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 
     ecvColor::Rgb m_plane_color;

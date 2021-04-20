@@ -68,6 +68,7 @@ class ReconstructionWidget : public QWidget {
   void ImportReconstruction(const std::string& path);
 
   void close();
+  void release();
 
   void iniEnvironment();
 
