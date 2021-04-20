@@ -33,6 +33,7 @@
 #include <ecvPointCloud.h>
 #include <ecvMesh.h>
 #include <ecvPlane.h>
+#include <ecvCoordinateSystem.h>
 #include <ecvPolyline.h>
 #include <ecvSubMesh.h>
 #include <ecvOctree.h>
@@ -74,18 +75,18 @@
 #include <assert.h>
 
 // Default 'None' string
-static const QString c_noneString = QObject::tr("None");
+const char* ccPropertiesTreeDelegate::s_noneString = QT_TR_NOOP( "None" );
 
 // Default color sources string
-static const QString s_rgbColor(QObject::tr("RGB"));
-static const QString s_sfColor(QObject::tr("Scalar field"));
+const char* ccPropertiesTreeDelegate::s_rgbColor = "RGB";
+const char* ccPropertiesTreeDelegate::s_sfColor = QT_TR_NOOP( "Scalar field" );
 
 // Other strings
-static const QString c_defaultPointSizeString = QObject::tr("Default");
-static const QString c_defaultPolyWidthSizeString = QObject::tr("Default Width");
+const char* ccPropertiesTreeDelegate::s_defaultPointSizeString = QT_TR_NOOP( "Default" );
+const char* ccPropertiesTreeDelegate::s_defaultPolyWidthSizeString = QT_TR_NOOP( "Default Width" );
 
 // Default separator colors
-static QString SEPARATOR_STYLESHEET("QLabel { background-color : darkGray; color : white; }");
+constexpr const char* SEPARATOR_STYLESHEET("QLabel { background-color : darkGray; color : white; }");
 
 //Shortcut to create a delegate item
 QStandardItem* ITEM(QString name,
@@ -201,7 +202,11 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject)
 		if (!m_currentObject->isA(CV_TYPES::VIEWPORT_2D_LABEL)) //don't need to display this kind of info for viewport labels!
 			fillWithHObject(m_currentObject);
 
-	if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD))
+    if (m_currentObject->isA(CV_TYPES::COORDINATESYSTEM))
+    {
+        fillWithCoordinateSystem(ccHObjectCaster::ToCoordinateSystem(m_currentObject));
+    }
+    else if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD))
 	{
 		fillWithPointCloud(ccHObjectCaster::ToGenericPointCloud(m_currentObject));
 	}
@@ -467,7 +472,27 @@ void ccPropertiesTreeDelegate::fillWithShifted(ccShiftedObject* _obj)
 	appendRow(ITEM(tr("Global shift")), ITEM(QString("(%1;%2;%3)").arg(shift.x, 0, 'f', 2).arg(shift.y, 0, 'f', 2).arg(shift.z, 0, 'f', 2)));
 
 	double scale = _obj->getGlobalScale();
-	appendRow(ITEM(tr("Global scale")), ITEM(QString("%1").arg(scale, 0, 'f', 6)));
+    appendRow(ITEM(tr("Global scale")), ITEM(QString("%1").arg(scale, 0, 'f', 6)));
+}
+
+void ccPropertiesTreeDelegate::fillWithCoordinateSystem(const ccCoordinateSystem * _obj)
+{
+    assert(_obj && m_model);
+    if (!_obj || !m_model)
+    {
+        return;
+    }
+
+    CCVector3 origin = _obj->getOrigin();
+    addSeparator(tr("Coordinate System"));
+    appendRow(ITEM(tr("Origin")),
+        ITEM(QStringLiteral("X: %0\nY: %1\nZ: %2").arg(origin.x).arg(origin.y).arg(origin.z)));
+    appendRow(ITEM(tr("Planes Visible")), CHECKABLE_ITEM(_obj->axisPlanesAreShown(), OBJECT_COORDINATE_SYSTEM_DISP_PLANES));
+    appendRow(ITEM(tr("Planes Stippled")), CHECKABLE_ITEM(static_cast<const ccMesh*>(_obj)->stipplingEnabled(), OBJECT_MESH_STIPPLING));
+    appendRow(ITEM(tr("Axis Lines Visible")), CHECKABLE_ITEM(_obj->axisLinesAreShown(), OBJECT_COORDINATE_SYSTEM_DISP_AXES));
+    appendRow(ITEM(tr("Axis width")), PERSISTENT_EDITOR(OBJECT_COORDINATE_SYSTEM_AXES_WIDTH), true);
+    appendRow(ITEM(tr("Display scale")), PERSISTENT_EDITOR(OBJECT_COORDINATE_SYSTEM_DISP_SCALE), true);
+
 }
 
 void ccPropertiesTreeDelegate::fillWithPointCloud(ccGenericPointCloud* _obj)
@@ -1041,7 +1066,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(QWidget *parent,
 		//std::vector<ccGLWindow*> glWindows;
 		//MainWindow::GetGLWindows(glWindows);
 
-		comboBox->addItem(c_noneString);
+        comboBox->addItem(s_noneString);
 
 		//for (unsigned i = 0; i < glWindows.size(); ++i)
 		//{
@@ -1317,7 +1342,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(QWidget *parent,
 	{
 		QComboBox *comboBox = new QComboBox(parent);
 
-		comboBox->addItem(c_defaultPointSizeString); //size = 0
+        comboBox->addItem(s_defaultPointSizeString); //size = 0
 		for (int i = static_cast<int>(MIN_POINT_SIZE_F); i <= static_cast<int>(MAX_POINT_SIZE_F); ++i)
 			comboBox->addItem(QString::number(i));
 
@@ -1331,7 +1356,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(QWidget *parent,
 	{
 		QComboBox *comboBox = new QComboBox(parent);
 
-		comboBox->addItem(c_defaultPolyWidthSizeString); //size = 0
+        comboBox->addItem(s_defaultPolyWidthSizeString); //size = 0
 		for (int i = static_cast<int>(MIN_LINE_WIDTH_F); i <= static_cast<int>(MAX_LINE_WIDTH_F); ++i)
 			comboBox->addItem(QString::number(i));
 
@@ -1345,7 +1370,7 @@ QWidget* ccPropertiesTreeDelegate::createEditor(QWidget *parent,
 	{
 		QComboBox *comboBox = new QComboBox(parent);
 
-		comboBox->addItem(c_noneString);
+        comboBox->addItem(s_noneString);
 		if (m_currentObject)
 		{
 			if (m_currentObject->hasColors())
@@ -1365,6 +1390,45 @@ QWidget* ccPropertiesTreeDelegate::createEditor(QWidget *parent,
 		outputWidget = comboBox;
 	}
 	break;
+    case OBJECT_COORDINATE_SYSTEM_AXES_WIDTH:
+    {
+        QComboBox* comboBox = new QComboBox(parent);
+
+        comboBox->addItem(tr(s_defaultPolyWidthSizeString)); //size = 0
+
+        for (int i = static_cast<int>(ccCoordinateSystem::MIN_AXIS_WIDTH_F); i <= static_cast<int>(ccCoordinateSystem::MAX_AXIS_WIDTH_F); ++i)
+        {
+            comboBox->addItem(QString::number(i));
+        }
+        ccCoordinateSystem* cs = ccHObjectCaster::ToCoordinateSystem(m_currentObject);
+        if (cs)
+        {
+            comboBox->setCurrentIndex(static_cast<int>(cs->getAxisWidth()));
+        }
+        connect(comboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &ccPropertiesTreeDelegate::coordinateSystemAxisWidthChanged);
+
+        outputWidget = comboBox;
+    }
+    break;
+    case OBJECT_COORDINATE_SYSTEM_DISP_SCALE:
+    {
+        QDoubleSpinBox* spinBox = new QDoubleSpinBox(parent);
+        spinBox->setRange(1.0e-3, 1.0e6);
+        spinBox->setDecimals(3);
+        spinBox->setSingleStep(1.0e-1);
+        ccCoordinateSystem* cs = ccHObjectCaster::ToCoordinateSystem(m_currentObject);
+        if (cs)
+        {
+            spinBox->setValue(cs->getDisplayScale());
+        }
+
+        connect(spinBox, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+            this, &ccPropertiesTreeDelegate::coordinateSystemDisplayScaleChanged);
+
+        outputWidget = spinBox;
+    }
+    break;
 	default:
 		return QStyledItemDelegate::createEditor(parent, option, index);
 	}
@@ -1749,7 +1813,8 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem * item)
 				break;
 			}
 		}
-        else if (m_currentObject->isKindOf(CV_TYPES::SENSOR)) {
+        else if (m_currentObject->isKindOf(CV_TYPES::SENSOR))
+        {
             ccSensor* sensor = ccHObjectCaster::ToSensor(m_currentObject);
             if (sensor)
             {
@@ -1757,6 +1822,19 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem * item)
                 CC_DRAW_CONTEXT context;
                 context.visible = sensor->isVisible();
                 sensor->hideShowDrawings(context);
+                ecvDisplayTools::UpdateScreen();
+                break;
+            }
+        }
+        else if (m_currentObject->isKindOf(CV_TYPES::PRIMITIVE))
+        {
+            ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(m_currentObject);
+            if (prim)
+            {
+                prim->setVisible(item->checkState() == Qt::Checked);
+                CC_DRAW_CONTEXT context;
+                context.visible = prim->isVisible();
+                prim->hideShowDrawings(context);
                 ecvDisplayTools::UpdateScreen();
                 break;
             }
@@ -1810,6 +1888,32 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem * item)
 	}
 	redraw = false;
 	break;
+    case OBJECT_COORDINATE_SYSTEM_DISP_AXES:
+    {
+        ccCoordinateSystem* cs = ccHObjectCaster::ToCoordinateSystem(m_currentObject);
+        if (cs)
+        {
+            cs->ShowAxisLines(item->checkState() == Qt::Checked);
+            CC_DRAW_CONTEXT context;
+            context.visible = cs->isVisible();
+            cs->hideShowDrawings(context);
+            ecvDisplayTools::UpdateScreen();
+        }
+    }
+    redraw = false;
+    break;
+    case OBJECT_COORDINATE_SYSTEM_DISP_PLANES:
+    {
+        ccCoordinateSystem* cs = ccHObjectCaster::ToCoordinateSystem(m_currentObject);
+        if (cs)
+        {
+            cs->ShowAxisPlanes(item->checkState() == Qt::Checked);
+            ecvDisplayTools::SetRedrawRecursive(false);
+            cs->setRedrawFlagRecursive(true);
+        }
+    }
+    redraw = true;
+    break;
 	case OBJECT_FACET_CONTOUR:
 	{
 		ccFacet* facet = ccHObjectCaster::ToFacet(m_currentObject);
@@ -2334,6 +2438,23 @@ void ccPropertiesTreeDelegate::sensorScaleChanged(double val)
 	}
 }
 
+void ccPropertiesTreeDelegate::coordinateSystemDisplayScaleChanged(double val)
+{
+    if (!m_currentObject)
+    {
+        return;
+    }
+
+    ccCoordinateSystem* cs = ccHObjectCaster::ToCoordinateSystem(m_currentObject);
+    assert(cs);
+
+    if (cs && cs->getDisplayScale() != static_cast<PointCoordinateType>(val))
+    {
+        cs->setDisplayScale(static_cast<PointCoordinateType>(val));
+        updateDisplay();
+    }
+}
+
 void ccPropertiesTreeDelegate::sensorUncertaintyChanged()
 {
 	if (!m_currentObject)
@@ -2420,6 +2541,23 @@ void ccPropertiesTreeDelegate::polyineWidthChanged(int size)
 	}
 }
 
+void ccPropertiesTreeDelegate::coordinateSystemAxisWidthChanged(int size)
+{
+    if (!m_currentObject)
+    {
+        return;
+    }
+
+    ccCoordinateSystem* cs = ccHObjectCaster::ToCoordinateSystem(m_currentObject);
+    assert(cs);
+
+    if (cs && cs->getAxisWidth() != static_cast<PointCoordinateType>(size))
+    {
+        cs->setAxisWidth(static_cast<PointCoordinateType>(size));
+        updateDisplay();
+    }
+}
+
 void ccPropertiesTreeDelegate::objectDisplayChanged(const QString& newDisplayTitle)
 {
 	if (!m_currentObject)
@@ -2454,7 +2592,7 @@ void ccPropertiesTreeDelegate::colorSourceChanged(const QString & source)
 
 	ecvDisplayTools::SetRedrawRecursive(false);
 
-	if (source == c_noneString)
+    if (source == s_noneString)
 	{
 		appearanceChanged = m_currentObject->colorsShown() || m_currentObject->sfShown();
 		m_currentObject->showColors(false);

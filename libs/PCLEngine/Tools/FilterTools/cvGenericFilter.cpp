@@ -167,16 +167,16 @@ ccHObject * cvGenericFilter::getOutput()
 	ccHObject* result;
 	if (m_meshMode)
 	{
-		result = vtk2ccConverter().getMeshFromPolyData(polydata);
+        result = vtk2cc::ConvertToMesh(polydata);
 		if (!result)
 		{
 			CVLog::Warning(QString("try to save in cloud format"));
-			result = vtk2ccConverter().getPointCloudFromPolyData(polydata);
+            result = vtk2cc::ConvertToPointCloud(polydata);
 		}
 	}
 	else
 	{
-		result = vtk2ccConverter().getPointCloudFromPolyData(polydata);
+        result = vtk2cc::ConvertToPointCloud(polydata);
 	}
 
 	return result;

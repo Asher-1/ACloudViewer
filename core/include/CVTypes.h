@@ -70,6 +70,7 @@ enum CV_OBJECT_FLAG {	//CC_UNUSED			= 1, //DGM: not used anymore (former CC_FATH
 #define CC_GROUND_BASED_BIT				0x00000008000000	//For Ground Based Lidar Sensors
 #define CC_RGB_COLOR_BIT				0x00000010000000	//Color (R,G,B)
 #define CC_RGBA_COLOR_BIT				0x00004000000000    //Color (R,G,B,A)
+#define CC_COORDINATESYSTEM_BIT			0x00200000000000	//CoordinateSystem (primitive)
 #define CC_NORMAL_BIT					0x00000020000000	//Normal (Nx,Ny,Nz)
 #define CC_COMPRESSED_NORMAL_BIT		0x00000040000000	//Compressed normal (index)
 #define CC_TEX_COORDS_BIT				0x00000080000000	//Texture coordinates (u,v)
@@ -146,6 +147,7 @@ namespace CV_TYPES
 		VIEWPORT_2D_LABEL	=	VIEWPORT_2D_OBJECT	| CC_LABEL_BIT,
 		CLIPPING_BOX		=	CC_CLIP_BOX_BIT		| CC_LEAF_BIT,
 		TRANS_BUFFER		=	HIERARCHY_OBJECT	| CC_TRANS_BUFFER_BIT		| CC_LEAF_BIT,
+        COORDINATESYSTEM	=	PRIMITIVE			| CC_COORDINATESYSTEM_BIT,
 		
 		//  Custom types
 		/** Custom objects are typically defined by plugins. They can be inserted in an object

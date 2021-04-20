@@ -75,7 +75,8 @@ class ModelViewerWidget : public QWidget {
   const int kDoubleClickInterval = 250;
 
   ModelViewerWidget(QWidget* parent, OptionManager* options, MainWindow* app);
-  virtual ~ModelViewerWidget() override;
+
+  void Release();
 
   void ReloadReconstruction();
   void ClearReconstruction();
@@ -145,6 +146,8 @@ class ModelViewerWidget : public QWidget {
   void drawCameraSensors(std::vector<ccCameraSensor*>& sensors);
   void resetCameraSensors(std::vector<ccCameraSensor*>& sensors);
   void clearSensors(std::vector<ccCameraSensor*>& sensors);
+  void updateSensors(std::vector<ccCameraSensor*>& sensors,
+                     const std::vector<colmap::image_t>& image_ids);
 
   OptionManager* options_;
 

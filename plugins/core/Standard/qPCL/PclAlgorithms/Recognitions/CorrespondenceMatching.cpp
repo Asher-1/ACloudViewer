@@ -445,20 +445,21 @@ int CorrespondenceMatching::compute()
 			// Save the aligned model for visualization
 			if (hypothesesMaskVec[j][i])
 			{
-				PCLCloud::Ptr out_cloud_sm(new PCLCloud);
-				TO_PCL_CLOUD(*instancesVec[j][i], *out_cloud_sm);
-				ccPointCloud* out_cloud_cc = sm2ccConverter(out_cloud_sm).getCloud();
+                PCLCloud out_cloud_sm;
+                TO_PCL_CLOUD(*instancesVec[j][i], out_cloud_sm);
+                if (out_cloud_sm.height * out_cloud_sm.width == 0)
+                {
+                    //cloud is empty
+                    return -53;
+                }
+
+                ccPointCloud* out_cloud_cc = pcl2cc::Convert(out_cloud_sm);
 				if (!out_cloud_cc)
 				{
 					//conversion failed (not enough memory?)
 					return -1;
 				}
 
-				if (out_cloud_sm->height * out_cloud_sm->width == 0)
-				{
-					//cloud is empty
-					return -53;
-				}
 				// copy global shift & scale and set name
 				ccPointCloud* cloud = m_dialog->getModelCloudByIndex(j + 1);
 				ecvColor::Rgb col = ecvColor::Generator::Random();

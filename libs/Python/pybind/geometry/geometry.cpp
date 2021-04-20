@@ -183,6 +183,13 @@ void pybind_geometry_classes(py::module &m) {
 			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccCylinder (if possible)", "entity"_a);
+//    m.def("ToCoordinateSystem", [](ccHObject& entity) {
+//        if (ccHObjectCaster::ToCoordinateSystem(&entity)) {
+//            return std::ref(*ccHObjectCaster::ToCoordinateSystem(&entity));
+//        } else {
+//            cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
+//        }
+//    }, "Converts current object to ccCoordinateSystem (if possible)", "entity"_a);
 	m.def("ToCone", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToCone(&entity)) {
 			return std::ref(*ccHObjectCaster::ToCone(&entity));
@@ -582,10 +589,24 @@ void pybind_geometry_classes(py::module &m) {
 						const Eigen::Vector3d &>(&ccHObject::rotate),
 			"Apply rotation to the geometry coordinates and normals.",
 			"R"_a, "center"_a)
-		.def("to_file", &ccHObject::toFile,
-			"Saves data to binary stream.", "out"_a)
-		.def("from_file", &ccHObject::fromFile,
-			"Loads data from binary stream.", "in"_a, "dataVersion"_a, "flags"_a)
+        .def("to_file", [](const ccHObject& entity, const std::string& filename) {
+                QFile out(filename.c_str());
+                if (!out.open(QIODevice::WriteOnly))
+                {
+                    return false;
+                }
+                return entity.toFile(out);
+            }, "Saves data to binary stream.", "filename"_a)
+        .def("from_file", [](ccHObject& entity, const std::string& filename, short dataVersion, int flags) {
+                QFile in(filename.c_str());
+                if (!in.open(QIODevice::ReadOnly))
+                {
+                    return false;
+                }
+                ccSerializableObject::LoadedIDMap oldToNewIDMap;
+                return entity.fromFile(in, dataVersion, flags, oldToNewIDMap);
+            }, "Loads data from binary stream.",
+             "filename"_a, "dataVersion"_a, "flags"_a)
 		.def("get_glTransformation_history", &ccHObject::getGLTransformationHistory,
 			"Returns the transformation 'history' matrix.")
 		.def("set_glTransformation_history", &ccHObject::setGLTransformationHistory,

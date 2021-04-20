@@ -90,7 +90,7 @@ QList<QAction *> qRansacSD::getActions()
 		m_action->setToolTip(getDescription());
 		m_action->setIcon(getIcon());
 		//connect signal
-		connect(m_action, SIGNAL(triggered()), this, SLOT(doAction()));
+        connect(m_action, &QAction::triggered, this, &qRansacSD::doAction);
 	}
 
 	return QList<QAction *>{ m_action };
@@ -108,8 +108,8 @@ void qRansacSD::registerCommands(ccCommandLineInterface* cmd)
 
 static MiscLib::Vector< std::pair< MiscLib::RefCountPtr< PrimitiveShape >, size_t > >* s_shapes; // stores the detected shapes
 static size_t s_remainingPoints = 0;
-static RansacShapeDetector* s_detector = 0;
-static PointCloud* s_cloud = 0;
+static RansacShapeDetector* s_detector = nullptr;
+static PointCloud* s_cloud = nullptr;
 void doDetection()
 {
 	if (!s_detector || !s_cloud || !s_shapes)

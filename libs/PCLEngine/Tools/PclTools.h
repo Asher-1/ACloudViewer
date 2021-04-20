@@ -50,6 +50,7 @@ namespace geometry {
 }
 }
 
+class ccGBLSensor;
 class ccCameraSensor;
 namespace PclTools
 {
@@ -90,14 +91,30 @@ namespace PclTools
 
     bool UpdateScalarBar(vtkAbstractWidget* widget, const CC_DRAW_CONTEXT& CONTEXT);
 
+    bool TransformPolyData(vtkSmartPointer<vtkPolyData> polyData, const ccGLMatrixd& trans);
+    bool TransformVtkPoints(vtkSmartPointer<vtkPoints> points, const ccGLMatrixd& trans);
+
+
     vtkSmartPointer<vtkPoints> GetVtkPointsFromLineSet(const cloudViewer::geometry::LineSet& lineset);
+    bool GetVtkPointsAndLinesFromLineSet(const cloudViewer::geometry::LineSet &lineset,
+                                         vtkSmartPointer<vtkPoints> points,
+                                         vtkSmartPointer<vtkCellArray> lines,
+                                         vtkSmartPointer<vtkUnsignedCharArray> colors);
+
     vtkSmartPointer<vtkPolyData> CreateCoordinateFromLineSet(const cloudViewer::geometry::LineSet& lineset);
+    vtkSmartPointer<vtkPolyData> CreatePolyDataFromLineSet(const cloudViewer::geometry::LineSet& lineset, bool useLineSource = true);
 
     void SetPolyDataColor(vtkSmartPointer<vtkPolyData> polyData,
                           const ecvColor::Rgb& color, bool is_cell = false);
     void AddPolyDataCell(vtkSmartPointer<vtkPolyData> polyData);
     vtkSmartPointer<vtkPolyData> CreateLine(vtkSmartPointer<vtkPoints> points);
-    vtkSmartPointer<vtkPolyData> CreateCameras(const ccCameraSensor *cameraSensor,
+    vtkSmartPointer<vtkPolyData> CreateLine(vtkSmartPointer<vtkPoints> points,
+                                            vtkSmartPointer<vtkCellArray> lines,
+                                            vtkSmartPointer<vtkUnsignedCharArray> colors);
+    vtkSmartPointer<vtkPolyData> CreateCube(double width, double height, double depth, const ccGLMatrixd &trans);
+    vtkSmartPointer<vtkPolyData> CreateCube(double width, double height, double depth);
+    vtkSmartPointer<vtkPolyData> CreateGBLSensor(const ccGBLSensor *gBLSensor);
+    vtkSmartPointer<vtkPolyData> CreateCameraSensor(const ccCameraSensor *cameraSensor,
                                                const ecvColor::Rgb& lineColor,
                                                const ecvColor::Rgb& planeColor);
     vtkSmartPointer<vtkPolyData> CreatePlane(const pcl::ModelCoefficients &coefficients,

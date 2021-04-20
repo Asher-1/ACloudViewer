@@ -65,6 +65,7 @@ class MovieGrabberWidget : public QWidget {
   // Add, delete, clear viewpoints.
   void Add();
   void Delete();
+
   void Clear();
 
   // Assemble movie from current viewpoints.
@@ -91,6 +92,8 @@ class MovieGrabberWidget : public QWidget {
   QSpinBox* frame_rate_sb_;
   QCheckBox* smooth_cb_;
   QDoubleSpinBox* smoothness_sb_;
+
+  std::vector<colmap::image_t> image_ids_;
 
   EIGEN_STL_UMAP(const QTableWidgetItem*, ViewData) view_data_;
 };

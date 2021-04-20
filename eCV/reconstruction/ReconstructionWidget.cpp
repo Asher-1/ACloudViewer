@@ -131,6 +131,15 @@ void ReconstructionWidget::close() {
   log_widget_->close();
 }
 
+void ReconstructionWidget::release()
+{
+    if (model_viewer_widget_)
+    {
+        model_viewer_widget_->Release();
+    }
+    this->close();
+}
+
 void ReconstructionWidget::CreateWidgets() {
   model_viewer_widget_ = new ModelViewerWidget(this, &options_, app_);
 

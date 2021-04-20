@@ -150,7 +150,7 @@ public:
 	/** \warning Doesn't save the texture image!
 	**/
 	virtual bool toFile(QFile& out) const;
-	virtual bool fromFile(QFile& in, short dataVersion, int flags);
+    virtual bool fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap);
 
 	//! Returns unique identifier (UUID)
 	inline QString getUniqueIdentifier() const { return m_uniqueID; }

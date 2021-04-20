@@ -320,7 +320,12 @@ ccBBox ccCameraSensor::getOwnFitBB(ccGLMatrix& trans)
 	trans = sensorPos;
 
 	CCVector3 upperLeftPoint = computeUpperLeftPoint();
-	return ccBBox(-upperLeftPoint, CCVector3(upperLeftPoint.x, upperLeftPoint.x, 0));
+    if (upperLeftPoint.z > 0) {
+        return ccBBox(-upperLeftPoint, CCVector3(upperLeftPoint.x, upperLeftPoint.y, 0));
+    }
+    else {
+        return ccBBox(CCVector3(upperLeftPoint.x, upperLeftPoint.y, 0), -upperLeftPoint);
+    }
 }
 
 void ccCameraSensor::setVertFocal_pix(float vertFocal_pix)
@@ -493,9 +498,9 @@ bool ccCameraSensor::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccCameraSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccCameraSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccSensor::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccSensor::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//serialization wasn't possible before v3.5!
@@ -507,7 +512,7 @@ bool ccCameraSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
 	{
 		//we don't need to save/load this matrix as it is dynamically computed!
 		ccGLMatrix dummyMatrix;
-		if (!dummyMatrix.fromFile(in, dataVersion, flags))
+        if (!dummyMatrix.fromFile(in, dataVersion, flags, oldToNewIDMap))
 			return ReadError();
 	}
 	m_projectionMatrixIsValid = false;
@@ -862,12 +867,6 @@ bool ccCameraSensor::fromRealImCoordToIdealImCoord(const CCVector2& real, CCVect
 	return false;
 }
 
-//TODO
-//bool ccCameraSensor::fromIdealImCoordToRealImCoord(const CCVector2& ideal, CCVector2& real) const
-//{
-//	return true;
-//}
-
 bool ccCameraSensor::computeUncertainty(const CCVector2& pixel, const float depth, Vector3Tpl<ScalarType>& sigma) const
 {
 	//no distortion parameters?
@@ -1179,15 +1178,17 @@ bool ccCameraSensor::computeFrustumCorners()
 		return false;
 	}
 
+    PointCoordinateType orientation = -PC_ONE * m_scale / std::abs(m_scale);
+
 	// DO NOT MODIFY THE ORDER OF THE CORNERS!! A LOT OF CODE DEPENDS OF THIS ORDER!!
-	m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn, yIn, -PC_ONE) * zNear);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn, yIn, -PC_ONE) * zFar);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn,-yIn, -PC_ONE) * zNear);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn,-yIn, -PC_ONE) * zFar);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn,-yIn, -PC_ONE) * zNear);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn,-yIn, -PC_ONE) * zFar);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn, yIn, -PC_ONE) * zNear);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn, yIn, -PC_ONE) * zFar);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn, yIn, orientation) * zNear);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn, yIn, orientation) * zFar);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn,-yIn, orientation) * zNear);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn,-yIn, orientation) * zFar);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn,-yIn, orientation) * zNear);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn,-yIn, orientation) * zFar);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn, yIn, orientation) * zNear);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn, yIn, orientation) * zFar);
 
 	// compute center of the circumscribed sphere
 	const CCVector3* P0 = m_frustumInfos.frustumCorners->getPoint(0);
@@ -1388,12 +1389,15 @@ void ccCameraSensor::updateData()
 
         // right vector
         m_axis.lines_.push_back(Eigen::Vector2i(0, 1));
+        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::red));
 
         // up vector
         m_axis.lines_.push_back(Eigen::Vector2i(0, 2));
+        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::yellow));
 
         // view vector
         m_axis.lines_.push_back(Eigen::Vector2i(0, 3));
+        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::green));
     }
 }
 
@@ -1416,15 +1420,12 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
     cameraContext.defaultPolylineColor = getFrameColor();
     cameraContext.defaultMeshColor = getPlaneColor();
     cameraContext.opacity = 0.2f;
-	{
-        ccIndexedTransformation sensorPos;
-        if (!getAbsoluteTransformation(sensorPos, getActiveIndex()))
-        {
-            //no visible position for this index!
-            return;
-        }
-        cameraContext.transformInfo.setTransformation(sensorPos, true, true);
-	}
+    ccIndexedTransformation sensorPos;
+    if (!getAbsoluteTransformation(sensorPos, getActiveIndex()))
+    {
+        //no visible position for this index!
+        return;
+    }
 
     // update drawing data
     updateData();
@@ -1432,8 +1433,8 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
     //frustum
     if (m_frustumInfos.drawFrustum || m_frustumInfos.drawSidePlanes)
     {
-        if (!m_frustumInfos.isComputed)
-            computeFrustumCorners();
+        // always compute corners
+        computeFrustumCorners();
 
         if (m_frustumInfos.frustumCorners && m_frustumInfos.frustumCorners->size() >= 8)
         {
@@ -1496,6 +1497,11 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
             {
                 if (!m_frustumInfos.frustumHull && m_frustumInfos.initFrustumHull())
                 {
+                    if (m_frustumInfos.isComputed)
+                    {
+                        m_frustumInfos.frustumCorners->applyRigidTransformation(sensorPos);
+                    }
+
                     //set the rigth display (just to be sure)
                     m_frustumInfos.frustumHull->setTempColor(m_color);
                     m_frustumInfos.frustumHull->showWired(false);
@@ -1518,24 +1524,34 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
         ecvDisplayTools::HideShowEntities(cameraContext);
     }
 
+    // tranformation
+    {
+        Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
+        m_nearPlane.transform(transformation);
+        m_nearPlane.setTempColor(getPlaneColor());
+        m_sideLines.transform(transformation);
+        m_sideLines.setTempColor(getFrameColor());
+        m_arrow.transform(transformation);
+        m_arrow.setTempColor(getFrameColor());
+        m_axis.transform(transformation);
+    }
+
     cameraContext.visible = context.visible;
     cameraContext.viewID = context.viewID;
     cameraContext.defaultMeshColor = getPlaneColor();
     ecvDisplayTools::Draw(cameraContext, this);
 }
 
-void ccCameraSensor::clearDrawings(CC_DRAW_CONTEXT& context)
+void ccCameraSensor::clearDrawings()
 {
     if (m_frustumInfos.frustumHull)
     {
+        CC_DRAW_CONTEXT context;
         context.removeEntityType = ENTITY_TYPE::ECV_MESH;
         context.removeViewID = QString::number(m_frustumInfos.frustumHull->getUniqueID(), 10);
         ecvDisplayTools::RemoveEntities(context);
     }
-
-    context.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
-    context.removeViewID = QString::number(this->getUniqueID(), 10);
-    ecvDisplayTools::RemoveEntities(context);
+    ecvDisplayTools::RemoveEntities(this);
 }
 
 void ccCameraSensor::hideShowDrawings(CC_DRAW_CONTEXT& context)
@@ -1545,10 +1561,8 @@ void ccCameraSensor::hideShowDrawings(CC_DRAW_CONTEXT& context)
 
     if (m_frustumInfos.frustumHull)
     {
-        CC_DRAW_CONTEXT tempContext = context;
-        tempContext.viewID = QString::number(m_frustumInfos.frustumHull->getUniqueID(), 10);
-        tempContext.visible = context.visible && m_frustumInfos.drawSidePlanes;
-        ecvDisplayTools::HideShowEntities(tempContext);
+        ecvDisplayTools::HideShowEntities(m_frustumInfos.frustumHull,
+                                          context.visible && m_frustumInfos.drawSidePlanes);
     }
 }
 
@@ -2439,50 +2453,6 @@ bool ccOctreeFrustumIntersector::build(cloudViewer::DgmOctree* octree)
 
 	return true;
 }
-
-//// an other method to compute frustum cell intersection (not used)
-//
-//unsigned char boxIntersectPlane(const CCVector3& minCorner, const CCVector3& maxCorner, const float planeCoefficient[4])
-//{
-//	CCVector3 n(planeCoefficient[0], planeCoefficient[1], planeCoefficient[2]);
-//	float d = planeCoefficient[3];
-//
-//	CCVector3 c = (maxCorner + minCorner) / 2.0;
-//	CCVector3 h = (maxCorner - minCorner) / 2.0;
-//
-//	float e = h[0]*abs(n[0]) + h[1]*abs(n[1]) + h[2]*abs(n[2]);
-//	float s = c.dot(n) + d;
-//
-//	if ((s-e) > 0.0)
-//		return CELL_OUTSIDE_FRUSTUM;
-//	if ((s+e) < 0.0)
-//		return CELL_INSIDE_FRUSTUM;
-//	return CELL_INTERSECT_FRUSTUM;
-//}
-//
-//unsigned char boxIntersectFrustum(const CCVector3& minCorner, const CCVector3& maxCorner, const float planesCoefficients[6][4])
-//{
-//	bool intersecting = false;
-//
-//	for (int i=0 ; i<6 ; i++)
-//	{
-//		float onePlaneCoefficients[4];
-//		for (int j=0 ; j<4 ; j++)
-//			onePlaneCoefficients[j] = planesCoefficients[i][j];
-//
-//		int result = boxIntersectPlane(minCorner, maxCorner, onePlaneCoefficients);
-//
-//		//pay attention to the signification of OUTSIDE and INSIDE there : INSIDE means that the box is in the positive half space delimited by the plane, OUTSIDE means that the box is in the negative half space !!
-//		if (result == CELL_OUTSIDE_FRUSTUM)
-//			return CELL_OUTSIDE_FRUSTUM;
-//		if (result == CELL_INTERSECT_FRUSTUM)
-//			intersecting = true;
-//	}
-//
-//	if (intersecting == true)
-//		return CELL_INTERSECT_FRUSTUM;
-//	return CELL_INSIDE_FRUSTUM;
-//}
 
 ccOctreeFrustumIntersector::OctreeCellVisibility
 ccOctreeFrustumIntersector::separatingAxisTest(const CCVector3& bbMin,

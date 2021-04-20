@@ -210,7 +210,8 @@ void pybind_scalarfield(py::module &m) {
 		{
 			return false;
 		}
-		return sf.fromFile(in, data_version, flags);
+        ccSerializableObject::LoadedIDMap oldToNewIDMap;
+        return sf.fromFile(in, data_version, flags, oldToNewIDMap);
 	}, "Loads data from binary stream", "filename"_a, "data_version"_a, "flags"_a)
 	.def("import_parameters_from", [](ccScalarField& sf, const ccScalarField& source) {
 		sf.importParametersFrom(&source);

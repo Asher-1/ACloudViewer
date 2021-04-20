@@ -31,17 +31,16 @@ class ccPolyline;
 class vtkPolyData;
 
 //! CC to PCL cloud converter
-class QPCL_ENGINE_LIB_API vtk2ccConverter
+class QPCL_ENGINE_LIB_API vtk2cc
 {
 public:
-	explicit vtk2ccConverter();
 
-	ccPointCloud* getPointCloudFromPolyData(vtkPolyData* polydata, bool silent = false);
-	ccMesh* getMeshFromPolyData(vtkPolyData* polydata, bool silent = false);
-	ccPolyline* getPolylineFromPolyData(vtkPolyData* polydata, bool silent = false);
+    static ccPointCloud* ConvertToPointCloud(vtkPolyData* polydata, bool silent = false);
+    static ccMesh* ConvertToMesh(vtkPolyData* polydata, bool silent = false);
+    static ccPolyline* ConvertToPolyline(vtkPolyData* polydata, bool silent = false);
 
-	ccPolyline* getPolylineFromCC(ccPointCloud* vertices);
-	std::vector<ccHObject*> getMultiPolylinesFromPolyData(vtkPolyData* polydata, QString baseName = "Slice", const ecvColor::Rgb &color = ecvColor::green);
+    static ccPolyline* ConvertToPolyline(ccPointCloud* vertices);
+    static std::vector<ccHObject*> ConvertToMultiPolylines(vtkPolyData* polydata, QString baseName = "Slice", const ecvColor::Rgb &color = ecvColor::green);
 };
 
 #endif // Q_PCL_VTK2CC_H

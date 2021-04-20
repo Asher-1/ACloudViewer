@@ -91,7 +91,7 @@ namespace ecvTools
 			return nullptr;
 		}
 
-		ccPointCloud* polyVertices = sm2ccConverter(curve_sm).getCloud(true, true);
+        ccPointCloud* polyVertices = pcl2cc::Convert(*curve_sm, true, true);
 		{
 			if (!polyVertices)
 			{
@@ -138,7 +138,7 @@ namespace ecvTools
 		const ccPointCloud * ccCloud = nullptr,
 		bool randomColors = true)
 	{
-		ccPointCloud* out_cloud_cc = sm2ccConverter(sm_cloud).getCloud();
+        ccPointCloud* out_cloud_cc = pcl2cc::Convert(*sm_cloud);
 
 		if (!out_cloud_cc)
 		{

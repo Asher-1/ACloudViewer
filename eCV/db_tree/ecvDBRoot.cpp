@@ -220,6 +220,7 @@ private:
 			{ CV_TYPES::LABEL_2D, labelIndex },
 			{ CV_TYPES::VIEWPORT_2D_OBJECT, viewportObjIndex },
 			{ CV_TYPES::VIEWPORT_2D_LABEL, viewportLabelIndex },
+            { CV_TYPES::COORDINATESYSTEM, geomIndex }
 		};
 	}
 	
@@ -815,6 +816,17 @@ bool ccDBRoot::setData(const QModelIndex &index, const QVariant &value, int role
                         CC_DRAW_CONTEXT context;
                         context.visible = sensor->isEnabled();
                         sensor->hideShowDrawings(context);
+                        ecvDisplayTools::UpdateScreen();
+                    }
+                }
+                else if (item->isKindOf(CV_TYPES::PRIMITIVE))
+                {
+                    ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(item);
+                    if (prim)
+                    {
+                        CC_DRAW_CONTEXT context;
+                        context.visible = prim->isEnabled();
+                        prim->hideShowDrawings(context);
                         ecvDisplayTools::UpdateScreen();
                     }
                 }

@@ -436,7 +436,7 @@ public: //display
 
 	void setHideShowType(CC_DRAW_CONTEXT & context);
 	void setRemoveType(CC_DRAW_CONTEXT & context);
-	ENTITY_TYPE getEntityType();
+    ENTITY_TYPE getEntityType() const;
 
 	//! Redraws associated display
 	virtual void redrawDisplay(bool forceRedraw = true, bool only2D = false);
@@ -500,7 +500,7 @@ public: //display
 	//inherited from ccSerializableObject
 	bool isSerializable() const override;
 	bool toFile(QFile& out) const override;
-	bool fromFile(QFile& in, short dataVersion, int flags) override;
+    bool fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 
 	//! Custom version of ccSerializableObject::fromFile
 	/** This is used to load only the object's part of a stream (and not its children)
@@ -509,7 +509,7 @@ public: //display
 		\param flags deserialization flags (see ccSerializableObject::DeserializationFlags)
 		\return success
 	**/
-	bool fromFileNoChildren(QFile& in, short dataVersion, int flags);
+    bool fromFileNoChildren(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap);
 
 	//! Returns whether object is shareable or not
 	/** If object is father dependent and 'shared', it won't
@@ -568,7 +568,7 @@ protected:
 		\param dataVersion file version
 		\param flags deserialization flags (see ccSerializableObject::DeserializationFlags)
 	**/
-	virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags);
+    virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap);
 	
 	//! Draws the entity name in 3D
 	/** Names is displayed at the center of the bounding box by default.

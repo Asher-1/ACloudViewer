@@ -66,7 +66,7 @@ public:
 		\param flags deserialization flags (see ccSerializableObject::DeserializationFlags)
 		\return success
 	**/
-    virtual bool fromFile(QFile& in, short dataVersion, int flags) { return false; }
+    virtual bool fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) { return false; }
 
 	//! Sends a custom error message (write error) and returns 'false'
 	/** Shortcut for returning a standardized error message in the toFile method.

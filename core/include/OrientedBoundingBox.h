@@ -80,7 +80,6 @@ namespace cloudViewer
 		inline const Eigen::Vector3d& getColor() const { return color_; }
 
 		inline const Eigen::Matrix3d& getRotation() const { return R_; }
-		inline void setRotation(const Eigen::Matrix3d& rotation) { R_ = rotation; }
 
 		inline const Eigen::Vector3d& getPosition() const { return center_; }
 

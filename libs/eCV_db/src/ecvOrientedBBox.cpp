@@ -69,12 +69,12 @@ ecvOrientedBBox ecvOrientedBBox::getOrientedBoundingBox() const {
 	return *this;
 }
 
-ecvOrientedBBox& ecvOrientedBBox::transform(
-	const Eigen::Matrix4d& transformation) {
-	CVLog::Error(
-		"A general transform of an ecvOrientedBBox is not implemented. "
-		"Call Translate, Scale, and Rotate.");
-	return *this;
+ecvOrientedBBox& ecvOrientedBBox::transform(const Eigen::Matrix4d& transformation) {
+    const Eigen::Matrix3d rotation = transformation.block<3,3>(0,0);
+    const Eigen::Vector3d translation = transformation.block<3, 1>(0, 3);
+    this->rotate(rotation, Eigen::Vector3d(0.0, 0.0, 0.0));
+    this->translate(translation, true);
+    return *this;
 }
 
 ecvOrientedBBox& ecvOrientedBBox::translate(
@@ -104,32 +104,18 @@ ecvOrientedBBox& ecvOrientedBBox::rotate(const Eigen::Matrix3d& R,
 
 const ecvOrientedBBox ecvOrientedBBox::operator * (const ccGLMatrix& mat)
 {
-	CCVector3 t3D;
-	float phi_rad, theta_rad, psi_rad;
-	mat.getParameters(phi_rad, theta_rad, psi_rad, t3D);
-
 	ecvOrientedBBox rotatedBox(*this);
-	rotatedBox.translate(CCVector3d::fromArray(t3D), true);
-	Eigen::Matrix3d matrix = ccHObject::GetRotationMatrixFromEulerAngle(
-							 Eigen::Vector3d(phi_rad, theta_rad, psi_rad));
-
-	rotatedBox.setRotation(matrix);
+    rotatedBox.rotate(ccGLMatrixd::ToEigenMatrix3(mat), Eigen::Vector3d(0.0, 0.0, 0.0));
+    rotatedBox.translate(CCVector3d::fromArray(mat.getTranslationAsVec3D()), true);
 	return rotatedBox;
 }
 
 const ecvOrientedBBox ecvOrientedBBox::operator * (const ccGLMatrixd& mat)
 {
-	CCVector3d t3D;
-	double phi_rad, theta_rad, psi_rad;
-	mat.getParameters(phi_rad, theta_rad, psi_rad, t3D);
-
-	ecvOrientedBBox rotatedBox(*this);
-	rotatedBox.translate(CCVector3d::fromArray(t3D), true);
-	Eigen::Matrix3d matrix = ccHObject::GetRotationMatrixFromEulerAngle(
-		Eigen::Vector3d(phi_rad, theta_rad, psi_rad));
-
-	rotatedBox.setRotation(matrix);
-	return rotatedBox;
+    ecvOrientedBBox rotatedBox(*this);
+    rotatedBox.rotate(ccGLMatrixd::ToEigenMatrix3(mat), Eigen::Vector3d(0.0, 0.0, 0.0));
+    rotatedBox.translate(CCVector3d::fromArray(mat.getTranslationAsVec3D()), true);
+    return rotatedBox;
 }
 
 ecvOrientedBBox ecvOrientedBBox::CreateFromPoints(
@@ -193,7 +179,8 @@ ecvOrientedBBox ecvOrientedBBox::CreateFromPoints(const std::vector<CCVector3>& 
 }
 
 ecvOrientedBBox ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(
-	const ccBBox& aabox) {
+    const ccBBox& aabox) {
+
 	ecvOrientedBBox obox;
 	obox.center_ = aabox.getGeometryCenter();
 	obox.extent_ = aabox.getExtent();

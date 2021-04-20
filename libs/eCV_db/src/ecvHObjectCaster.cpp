@@ -24,6 +24,7 @@
 #include "ecvCameraSensor.h"
 #include "ecvCone.h"
 #include "ecvCylinder.h"
+#include "ecvCoordinateSystem.h"
 #include "ecvDish.h"
 #include "ecvExtru.h"
 #include "ecvFacet.h"
@@ -318,5 +319,10 @@ ccBBox * ccHObjectCaster::ToBBox(ccHObject * obj)
 
 ecvOrientedBBox * ccHObjectCaster::ToOrientedBBox(ccHObject * obj)
 {
-	return obj && obj->isKindOf(CV_TYPES::ORIENTED_BBOX) ? static_cast<ecvOrientedBBox*>(obj) : nullptr;
+    return obj && obj->isKindOf(CV_TYPES::ORIENTED_BBOX) ? static_cast<ecvOrientedBBox*>(obj) : nullptr;
+}
+
+ccCoordinateSystem *ccHObjectCaster::ToCoordinateSystem(ccHObject *obj)
+{
+    return (obj && obj->isKindOf(CV_TYPES::COORDINATESYSTEM) ? static_cast<ccCoordinateSystem*>(obj) : nullptr);
 }

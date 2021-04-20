@@ -98,19 +98,19 @@ bool ecvViewportParameters::toFile(QFile& out) const
     return true;
 }
 
-bool ecvViewportParameters::fromFile(QFile& in, short dataVersion, int flags)
+bool ecvViewportParameters::fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
     //base modelview matrix (dataVersion>=20)
     if (dataVersion >= 36) //we now save the camera matrix in double precision
     {
-        if (!viewMat.fromFile(in, dataVersion, flags))
+        if (!viewMat.fromFile(in, dataVersion, flags, oldToNewIDMap))
             return false;
     }
     else
     {
         //camera matrix was saved in standard (float) precision
         ccGLMatrix _viewMat;
-        if (!_viewMat.fromFile(in, dataVersion, flags))
+        if (!_viewMat.fromFile(in, dataVersion, flags, oldToNewIDMap))
             return false;
         viewMat = ccGLMatrixd(_viewMat.data());
     }

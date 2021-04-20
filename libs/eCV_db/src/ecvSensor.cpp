@@ -164,9 +164,9 @@ bool ccSensor::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//serialization wasn't possible before v3.4!
@@ -174,7 +174,7 @@ bool ccSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
 		return false;
 
 	//rigid transformation (dataVersion>=34)
-	if (!m_rigidTransformation.fromFile(in,dataVersion,flags))
+    if (!m_rigidTransformation.fromFile(in,dataVersion,flags, oldToNewIDMap))
 		return ReadError();
 
 	//various parameters (dataVersion>=35)

@@ -351,14 +351,28 @@ namespace ecvColor
 	}
 
 	//! Conversion from Rgbf
-	inline Rgb FromRgbf(const Rgbf& color) { return Rgb(static_cast<ColorCompType>(color.r * MAX),
-														static_cast<ColorCompType>(color.g * MAX),
-														static_cast<ColorCompType>(color.b * MAX)); }
+    inline Rgb FromRgbfToRgb(const Rgbf& color) { return Rgb(static_cast<ColorCompType>(color.r * MAX),
+                                                             static_cast<ColorCompType>(color.g * MAX),
+                                                             static_cast<ColorCompType>(color.b * MAX)); }
 
 	//! Conversion from Rgbaf
-	inline Rgb FromRgbf(const Rgbaf& color) { return Rgb(static_cast<ColorCompType>(color.r * MAX),
-														 static_cast<ColorCompType>(color.g * MAX),
-														 static_cast<ColorCompType>(color.b * MAX)); }
+    inline Rgb FromRgbafToRgb(const Rgbaf& color) { return Rgb(static_cast<ColorCompType>(color.r * MAX),
+                                                               static_cast<ColorCompType>(color.g * MAX),
+                                                               static_cast<ColorCompType>(color.b * MAX)); }
+    //! Conversion from Rgb to Rgba
+    inline Rgba FromRgbToRgba(const Rgb& color)
+    {
+        return Rgba(color, MAX);
+    }
+
+    //! Conversion from Rgbaf to Rgba
+    inline Rgba FromRgbafToRgba(const Rgbaf& color)
+    {
+        return Rgba( static_cast<ColorCompType>(color.r * MAX),
+                     static_cast<ColorCompType>(color.g * MAX),
+                     static_cast<ColorCompType>(color.b * MAX),
+                     static_cast<ColorCompType>(color.a * MAX));
+    }
 
 	inline Rgbf FromRgb(const Rgb& color) { return Rgbf(static_cast<float>(1.0 * color.r / MAX),
 														static_cast<float>(1.0 * color.g / MAX),

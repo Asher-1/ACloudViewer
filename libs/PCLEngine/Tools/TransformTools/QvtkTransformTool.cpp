@@ -396,15 +396,15 @@ void QvtkTransformTool::getOutput(std::vector<ccHObject*>& out)
 
 		if (baseEntity->isKindOf(CV_TYPES::POINT_CLOUD))
 		{
-			result = vtk2ccConverter().getPointCloudFromPolyData(dataObject);
+            result = vtk2cc::ConvertToPointCloud(dataObject);
 		}
 		else if (baseEntity->isKindOf(CV_TYPES::MESH))
 		{
-			result = vtk2ccConverter().getMeshFromPolyData(dataObject);
+            result = vtk2cc::ConvertToMesh(dataObject);
 		}
 		else if (baseEntity->isKindOf(CV_TYPES::POLY_LINE))
 		{
-			result = vtk2ccConverter().getPolylineFromPolyData(dataObject);
+            result = vtk2cc::ConvertToPolyline(dataObject);
 		}
 		else
 		{
