@@ -1992,6 +1992,16 @@ void ecvDisplayTools::SetRemoveViewIDs(std::vector<removeInfo> & removeinfos)
     }
 }
 
+void ecvDisplayTools::ZoomCamera(double zoomFactor, int viewport)
+{
+    TheInstance()->zoomCamera(zoomFactor, viewport);
+    if (!TheInstance()->m_viewportParams.perspectiveView)
+    {
+        TheInstance()->UpdateZoom(static_cast<float>(zoomFactor));
+    }
+    UpdateDisplayParameters();
+}
+
 void ecvDisplayTools::SetInteractionMode(INTERACTION_FLAGS flags)
 {
 	s_tools.instance->m_interactionFlags = flags;

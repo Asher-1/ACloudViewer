@@ -35,6 +35,8 @@
 class ECV_DB_LIB_API ccBBox : public ccHObject, public cloudViewer::BoundingBox
 {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
 	//! Default constructor
 	ccBBox() 
 		: ccHObject("ccBBox")
@@ -128,7 +130,7 @@ public:
 	/// Sets the bounding box color.
 	inline void setColor(const Eigen::Vector3d& color) { color_ = color; }
 	/// Gets the bounding box color.
-	inline const Eigen::Vector3d& getColor() const { return color_; }
+    inline const Eigen::Vector3d& getColor() const { return color_; }
 
 	/// Creates the bounding box that encloses the set of points.
 	///
@@ -153,7 +155,7 @@ public:
 
 protected:
 	/// The color of the bounding box in RGB.
-	Eigen::Vector3d color_;
+    Eigen::Vector3d color_;
 
 };
 

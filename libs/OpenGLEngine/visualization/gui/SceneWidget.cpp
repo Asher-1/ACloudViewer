@@ -844,7 +844,7 @@ void SceneWidget::SetScene(std::shared_ptr<rendering::CloudViewerScene> scene) {
     impl_->scene_ = scene;
     if (impl_->scene_) {
         auto view = impl_->scene_->GetView();
-        impl_->controls_ = std::make_shared<Interactors>(impl_->scene_.get(),
+        impl_->controls_ = cloudViewer::make_shared<Interactors>(impl_->scene_.get(),
                                                          view->GetCamera());
     }
 }
@@ -989,7 +989,7 @@ rendering::Camera* SceneWidget::GetCamera() const {
 
 std::shared_ptr<Label3D> SceneWidget::AddLabel(const Eigen::Vector3f& pos,
                                                const char* text) {
-    auto l = std::make_shared<Label3D>(pos, text);
+    auto l = cloudViewer::make_shared<Label3D>(pos, text);
     impl_->labels_3d_.insert(l);
     return l;
 }

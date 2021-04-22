@@ -66,7 +66,7 @@ std::shared_ptr<ccPointCloud> CreatePointCloudFromFloatDepthImage(
 	const Eigen::Matrix4d& extrinsic,
 	int stride,
 	bool project_valid_depth_only) {
-	auto pointcloud = std::make_shared<ccPointCloud>();
+	auto pointcloud = cloudViewer::make_shared<ccPointCloud>();
 	Eigen::Matrix4d camera_pose = extrinsic.inverse();
 	auto focal_length = intrinsic.GetFocalLength();
 	auto principal_point = intrinsic.GetPrincipalPoint();
@@ -108,7 +108,7 @@ std::shared_ptr<ccPointCloud> CreatePointCloudFromRGBDImageT(
 	const camera::PinholeCameraIntrinsic& intrinsic,
 	const Eigen::Matrix4d& extrinsic,
 	bool project_valid_depth_only) {
-	auto pointcloud = std::make_shared<ccPointCloud>();
+	auto pointcloud = cloudViewer::make_shared<ccPointCloud>();
 	Eigen::Matrix4d camera_pose = extrinsic.inverse();
 	auto focal_length = intrinsic.GetFocalLength();
 	auto principal_point = intrinsic.GetPrincipalPoint();
@@ -248,7 +248,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::CreateFromDepthImage(
 	}
 	cloudViewer::utility::LogError(
 		"[CreatePointCloudFromDepthImage] Unsupported image format.");
-	return std::make_shared<ccPointCloud>();
+	return cloudViewer::make_shared<ccPointCloud>();
 }
 
 std::shared_ptr<ccPointCloud> ccPointCloud::CreateFromRGBDImage(
@@ -274,12 +274,12 @@ std::shared_ptr<ccPointCloud> ccPointCloud::CreateFromRGBDImage(
     }
 	cloudViewer::utility::LogError(
 		"[CreatePointCloudFromRGBDImage] Unsupported image format.");
-	return std::make_shared<ccPointCloud>();
+	return cloudViewer::make_shared<ccPointCloud>();
 }
 
 std::shared_ptr<ccPointCloud> ccPointCloud::createFromVoxelGrid(
 	const cloudViewer::geometry::VoxelGrid &voxel_grid) {
-	auto output = std::make_shared<ccPointCloud>();
+	auto output = cloudViewer::make_shared<ccPointCloud>();
 	output->resize(static_cast<unsigned int>(voxel_grid.voxels_.size()));
 	bool has_colors = voxel_grid.HasColors();
 	if (has_colors) {
@@ -547,7 +547,7 @@ namespace {
 std::shared_ptr<ccPointCloud>
 ccPointCloud::voxelDownSample(double voxel_size)
 {
-	auto output = std::make_shared<ccPointCloud>("pointCloud");
+	auto output = cloudViewer::make_shared<ccPointCloud>("pointCloud");
 	//visibility
 	output->setVisible(isVisible());
 	output->setEnabled(isEnabled());
@@ -668,7 +668,7 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
 	}
 
 	Eigen::MatrixXi cubic_id;
-	auto output = std::make_shared<ccPointCloud>("pointCloud");
+	auto output = cloudViewer::make_shared<ccPointCloud>("pointCloud");
 	//visibility
 	output->setVisible(isVisible());
 	output->setEnabled(isEnabled());
@@ -798,7 +798,7 @@ ccPointCloud::removeRadiusOutliers(size_t nb_points, double search_radius) const
 		utility::LogWarning(
 			"[RemoveRadiusOutliers] Illegal input parameters,"
 			"number of points and radius must be positive");
-		return std::make_tuple(std::make_shared<ccPointCloud>("pointCloud"),
+		return std::make_tuple(cloudViewer::make_shared<ccPointCloud>("pointCloud"),
 			std::vector<size_t>());
 	}
 	cloudViewer::geometry::KDTreeFlann kdtree;
@@ -832,12 +832,12 @@ ccPointCloud::removeStatisticalOutliers(size_t nb_neighbors,
 		utility::LogWarning(
 			"[RemoveStatisticalOutliers] Illegal input parameters, number "
 			"of neighbors and standard deviation ratio must be positive");
-		return std::make_tuple(std::make_shared<ccPointCloud>("pointCloud"),
+		return std::make_tuple(cloudViewer::make_shared<ccPointCloud>("pointCloud"),
 			std::vector<size_t>());
 	}
 
 	if (size() == 0) {
-		return std::make_tuple(std::make_shared<ccPointCloud>("pointCloud"),
+		return std::make_tuple(cloudViewer::make_shared<ccPointCloud>("pointCloud"),
 			std::vector<size_t>());
 	}
 
@@ -865,7 +865,7 @@ ccPointCloud::removeStatisticalOutliers(size_t nb_neighbors,
 		avg_distances[i] = mean;
 	}
 	if (valid_distances == 0) {
-		return std::make_tuple(std::make_shared<ccPointCloud>("pointCloud"),
+		return std::make_tuple(cloudViewer::make_shared<ccPointCloud>("pointCloud"),
 			std::vector<size_t>());
 	}
 	double cloud_mean = std::accumulate(
@@ -1401,7 +1401,7 @@ ccPointCloud::hiddenPointRemoval(const Eigen::Vector3d &camera_location, const d
 	if (radius <= 0) {
 		utility::LogError(
 			"[ccPointCloud::hiddenPointRemoval] radius must be larger than zero.");
-		return std::make_tuple(std::make_shared<ccMesh>(nullptr),
+		return std::make_tuple(cloudViewer::make_shared<ccMesh>(nullptr),
 			std::vector<size_t>());
 	}
 

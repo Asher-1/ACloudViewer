@@ -107,8 +107,8 @@ CreateUtilImagesFromRGBD(const std::vector<geometry::RGBDImage>& images_rgbd) {
                 geometry::Image::FilterType::Sobel3Dx));
         images_dy.push_back(*gray_image_filtered->Filter(
                 geometry::Image::FilterType::Sobel3Dy));
-        auto color = std::make_shared<geometry::Image>(images_rgbd[i].color_);
-        auto depth = std::make_shared<geometry::Image>(images_rgbd[i].depth_);
+        auto color = cloudViewer::make_shared<geometry::Image>(images_rgbd[i].color_);
+        auto depth = cloudViewer::make_shared<geometry::Image>(images_rgbd[i].depth_);
         images_color.push_back(*color);
         images_depth.push_back(*depth);
     }

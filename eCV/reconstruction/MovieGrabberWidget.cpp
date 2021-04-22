@@ -139,23 +139,23 @@ void MovieGrabberWidget::Add() {
   table_->selectRow(table_->rowCount() - 1);
 
   // Zoom out a little, so that we can see the newly added camera
-//  model_viewer_widget_->ChangeFocusDistance(-5);
+//  model_viewer_widget_->ChangeFocusDistance(-50.0f);
 }
 
 void MovieGrabberWidget::Delete() {
   QModelIndexList selection = table_->selectionModel()->selectedIndexes();
-  std::vector<colmap::image_t> toBeDeleted;
+  std::vector<colmap::camera_t> toBeDeleted;
   for (const auto& index : selection) {
     table_->removeRow(index.row());
     Image& image = views[static_cast<std::size_t>(index.row())];
-    toBeDeleted.push_back(image.ImageId());
+    toBeDeleted.push_back(image.CameraId());
   }
 
-  std::vector<colmap::image_t>::iterator it;
-  for (it=image_ids_.begin(); it!=image_ids_.end(); ) {
+  std::vector<colmap::camera_t>::iterator it;
+  for (it=camera_ids_.begin(); it!=camera_ids_.end(); ) {
       if (std::find(toBeDeleted.begin(), toBeDeleted.end(), *it) != toBeDeleted.end())
       {
-          it = image_ids_.erase(it);
+          it = camera_ids_.erase(it);
       }
       else
       {
@@ -173,7 +173,7 @@ void MovieGrabberWidget::Clear() {
     table_->removeRow(0);
   }
   views.clear();
-  image_ids_.clear();
+  camera_ids_.clear();
   model_viewer_widget_->UpdateMovieGrabber();
 }
 
@@ -305,8 +305,8 @@ void MovieGrabberWidget::SelectionChanged(const QItemSelection& selected,
 
 void MovieGrabberWidget::UpdateViews() {
   views.clear();
-  colmap::image_t base_id = 1000;
-  std::size_t lastNum = image_ids_.size();
+  colmap::camera_t base_id = 1000;
+  std::size_t lastNum = camera_ids_.size();
   for (int row = 0; row < table_->rowCount(); ++row) {
     const auto logical_idx = table_->verticalHeader()->logicalIndex(row);
     QTableWidgetItem* item = table_->item(logical_idx, 0);
@@ -314,31 +314,29 @@ void MovieGrabberWidget::UpdateViews() {
     const Eigen::Matrix4d model_view_matrix =
         ccGLMatrixd::ToEigenMatrix4(view_data_.at(item).model_view_matrix);
 
-//    const Eigen::Matrix4d model_view_matrix =
-//        ccGLMatrixd::ToEigenMatrix4(view_data_.at(item).viewportParams.computeViewMatrix());
-
     Image image;
-    colmap::image_t image_id;
+    colmap::camera_t camera_id;
     std::size_t curIndex = static_cast<std::size_t>(row);
     if (curIndex < lastNum)
     {
-        image_id = image_ids_[curIndex];
+        camera_id = camera_ids_[curIndex];
     }
     else
     {
-        if (image_ids_.empty())
+        if (camera_ids_.empty())
         {
-           image_id = base_id + static_cast<colmap::image_t>(row);
+           camera_id = base_id + static_cast<colmap::camera_t>(row);
         }
         else
         {
-            image_id = image_ids_[image_ids_.size() - 1] + 1;
+            camera_id = camera_ids_[camera_ids_.size() - 1] + 1;
         }
 
-        image_ids_.push_back(image_id);
+        camera_ids_.push_back(camera_id);
     }
 
-    image.SetImageId(image_id);
+    image.SetImageId(camera_id);
+    image.SetCameraId(camera_id);
 
     image.Qvec() =
         RotationMatrixToQuaternion(model_view_matrix.block<3, 3>(0, 0));

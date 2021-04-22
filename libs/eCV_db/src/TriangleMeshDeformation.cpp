@@ -49,7 +49,7 @@ std::shared_ptr<ccMesh> ccMesh::deformAsRigidAsPossible(
 	baseVertices->setEnabled(false);
 	// DGM: no need to lock it as it is only used by one mesh!
 	baseVertices->setLocked(false);
-	auto prime = std::make_shared<ccMesh>(baseVertices);
+	auto prime = cloudViewer::make_shared<ccMesh>(baseVertices);
 	prime->addChild(baseVertices);
 	baseVertices->addPoints(this->getVertices());
 	prime->addTriangles(this->getTriangles());

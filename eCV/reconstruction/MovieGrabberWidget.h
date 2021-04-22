@@ -93,7 +93,7 @@ class MovieGrabberWidget : public QWidget {
   QCheckBox* smooth_cb_;
   QDoubleSpinBox* smoothness_sb_;
 
-  std::vector<colmap::image_t> image_ids_;
+  std::vector<colmap::image_t> camera_ids_;
 
   EIGEN_STL_UMAP(const QTableWidgetItem*, ViewData) view_data_;
 };

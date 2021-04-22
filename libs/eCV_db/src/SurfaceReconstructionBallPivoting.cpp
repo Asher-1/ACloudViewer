@@ -177,7 +177,7 @@ public:
 		baseVertices->setEnabled(false);
 		// DGM: no need to lock it as it is only used by one mesh!
 		baseVertices->setLocked(false);
-		mesh_ = std::make_shared<ccMesh>(baseVertices);
+		mesh_ = cloudViewer::make_shared<ccMesh>(baseVertices);
 		mesh_->addChild(baseVertices);
 		if (!baseVertices->reserveThePointsTable(pcd.size()))
 		{
@@ -288,11 +288,11 @@ public:
 			"[CreateTriangle] with v0.idx={}, v1.idx={}, v2.idx={}",
 			v0->idx_, v1->idx_, v2->idx_);
 		BallPivotingTrianglePtr triangle =
-			std::make_shared<BallPivotingTriangle>(v0, v1, v2, center);
+			cloudViewer::make_shared<BallPivotingTriangle>(v0, v1, v2, center);
 
 		BallPivotingEdgePtr e0 = GetLinkingEdge(v0, v1);
 		if (e0 == nullptr) {
-			e0 = std::make_shared<BallPivotingEdge>(v0, v1);
+			e0 = cloudViewer::make_shared<BallPivotingEdge>(v0, v1);
 		}
 		e0->AddAdjacentTriangle(triangle);
 		v0->edges_.insert(e0);
@@ -300,7 +300,7 @@ public:
 
 		BallPivotingEdgePtr e1 = GetLinkingEdge(v1, v2);
 		if (e1 == nullptr) {
-			e1 = std::make_shared<BallPivotingEdge>(v1, v2);
+			e1 = cloudViewer::make_shared<BallPivotingEdge>(v1, v2);
 		}
 		e1->AddAdjacentTriangle(triangle);
 		v1->edges_.insert(e1);
@@ -308,7 +308,7 @@ public:
 
 		BallPivotingEdgePtr e2 = GetLinkingEdge(v2, v0);
 		if (e2 == nullptr) {
-			e2 = std::make_shared<BallPivotingEdge>(v2, v0);
+			e2 = cloudViewer::make_shared<BallPivotingEdge>(v2, v0);
 		}
 		e2->AddAdjacentTriangle(triangle);
 		v2->edges_.insert(e2);

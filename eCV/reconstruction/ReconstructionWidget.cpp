@@ -479,6 +479,7 @@ void ReconstructionWidget::CreateMenus() {
 
 void ReconstructionWidget::CreateToolbar() {
   file_toolbar_ = new QToolBar(tr("ProjectFile"), this);
+  file_toolbar_->setObjectName(QString::fromUtf8("ProjectFile"));
   file_toolbar_->addAction(action_project_new_);
   file_toolbar_->addAction(action_project_open_);
   file_toolbar_->addAction(action_project_edit_);
@@ -489,6 +490,7 @@ void ReconstructionWidget::CreateToolbar() {
   toolbar_list_.push_back(file_toolbar_);
 
   preprocessing_toolbar_ = new QToolBar(tr("Processing"), this);
+  preprocessing_toolbar_->setObjectName(QString::fromUtf8("Processing"));
   preprocessing_toolbar_->addAction(action_feature_extraction_);
   preprocessing_toolbar_->addAction(action_feature_matching_);
   preprocessing_toolbar_->addAction(action_database_management_);
@@ -496,6 +498,7 @@ void ReconstructionWidget::CreateToolbar() {
   toolbar_list_.push_back(preprocessing_toolbar_);
 
   reconstruction_toolbar_ = new QToolBar(tr("Reconstruction"), this);
+  reconstruction_toolbar_->setObjectName(QString::fromUtf8("Reconstruction"));
   reconstruction_toolbar_->addAction(action_automatic_reconstruction_);
   reconstruction_toolbar_->addAction(action_reconstruction_start_);
   reconstruction_toolbar_->addAction(action_reconstruction_step_);
@@ -509,6 +512,7 @@ void ReconstructionWidget::CreateToolbar() {
   toolbar_list_.push_back(reconstruction_toolbar_);
 
   render_toolbar_ = new QToolBar(tr("Render"), this);
+  render_toolbar_->setObjectName(QString::fromUtf8("Render"));
   render_toolbar_->addAction(action_render_toggle_);
   render_toolbar_->addAction(action_render_reset_view_);
   render_toolbar_->addAction(action_render_options_);
@@ -517,6 +521,7 @@ void ReconstructionWidget::CreateToolbar() {
   toolbar_list_.push_back(render_toolbar_);
 
   extras_toolbar_ = new QToolBar(tr("Extras"), this);
+  extras_toolbar_->setObjectName(QString::fromUtf8("Extras"));
   extras_toolbar_->addAction(action_log_show_);
   extras_toolbar_->addAction(action_match_matrix_);
   extras_toolbar_->addAction(action_reconstruction_stats_);

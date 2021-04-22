@@ -55,10 +55,10 @@ CheckableTextTreeCell::CheckableTextTreeCell(
     // We don't want any text in the checkbox, but passing "" seems to make it
     // not toggle, so we need to pass in something. This way it will just be
     // extra spacing.
-    impl_->checkbox_ = std::make_shared<Checkbox>(" ");
+    impl_->checkbox_ = cloudViewer::make_shared<Checkbox>(" ");
     impl_->checkbox_->SetChecked(is_checked);
     impl_->checkbox_->SetOnChecked(on_toggled);
-    impl_->label_ = std::make_shared<Label>(text);
+    impl_->label_ = cloudViewer::make_shared<Label>(text);
     AddChild(impl_->checkbox_);
     AddChild(impl_->label_);
 }
@@ -107,11 +107,11 @@ LUTTreeCell::LUTTreeCell(const char *text,
     // We don't want any text in the checkbox, but passing "" seems to make it
     // not toggle, so we need to pass in something. This way it will just be
     // extra spacing.
-    impl_->checkbox_ = std::make_shared<Checkbox>(" ");
+    impl_->checkbox_ = cloudViewer::make_shared<Checkbox>(" ");
     impl_->checkbox_->SetChecked(is_checked);
     impl_->checkbox_->SetOnChecked(on_enabled);
-    impl_->label_ = std::make_shared<Label>(text);
-    impl_->color_ = std::make_shared<ColorEdit>();
+    impl_->label_ = cloudViewer::make_shared<Label>(text);
+    impl_->color_ = cloudViewer::make_shared<ColorEdit>();
     impl_->color_->SetValue(color);
     impl_->color_->SetOnValueChanged(on_color_changed);
     AddChild(impl_->checkbox_);
@@ -170,12 +170,12 @@ ColormapTreeCell::ColormapTreeCell(
         std::function<void(double)> on_value_changed,
         std::function<void(const Color &)> on_color_changed)
     : impl_(new ColormapTreeCell::Impl()) {
-    impl_->value_ = std::make_shared<NumberEdit>(NumberEdit::DOUBLE);
+    impl_->value_ = cloudViewer::make_shared<NumberEdit>(NumberEdit::DOUBLE);
     impl_->value_->SetDecimalPrecision(3);
     impl_->value_->SetLimits(0.0, 1.0);
     impl_->value_->SetValue(value);
     impl_->value_->SetOnValueChanged(on_value_changed);
-    impl_->color_ = std::make_shared<ColorEdit>();
+    impl_->color_ = cloudViewer::make_shared<ColorEdit>();
     impl_->color_->SetValue(color);
     impl_->color_->SetOnValueChanged(on_color_changed);
     AddChild(impl_->value_);
@@ -270,7 +270,7 @@ TreeView::ItemId TreeView::AddItem(ItemId parent_id,
 }
 
 TreeView::ItemId TreeView::AddTextItem(ItemId parent_id, const char *text) {
-    std::shared_ptr<Widget> w = std::make_shared<Label>(text);
+    std::shared_ptr<Widget> w = cloudViewer::make_shared<Label>(text);
     return AddItem(parent_id, w);
 }
 

@@ -107,8 +107,8 @@ int main(int argc, char *argv[]) {
 		ecvOrientedBBox obb = mesh->getOrientedBoundingBox();
         utility::LogInfo("Mesh Oriented bbox volume: {:f}.", obb.volume());
 
-		auto abbox_show = std::make_shared<ccBBox>(aabox);
-		auto obbox_show = std::make_shared<ecvOrientedBBox>(obb);
+		auto abbox_show = cloudViewer::make_shared<ccBBox>(aabox);
+		auto obbox_show = cloudViewer::make_shared<ecvOrientedBBox>(obb);
 		visualization::DrawGeometries({ mesh, abbox_show, obbox_show });
 		aabox.scale(0.5, aabox.getGeometryCenter());
 		visualization::DrawGeometries({ mesh->crop(aabox), abbox_show, obbox_show });

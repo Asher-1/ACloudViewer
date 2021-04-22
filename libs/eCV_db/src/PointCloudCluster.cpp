@@ -489,7 +489,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 					CCVector3::fromArray(G.getValue()));
 
 				//plane primitive
-				prim = std::make_shared<ccPlane>(std::abs(dX), std::abs(dY), &glMat);
+				prim = cloudViewer::make_shared<ccPlane>(std::abs(dX), std::abs(dY), &glMat);
 				prim->setSelectionBehavior(ccHObject::SELECTION_FIT_BBOX);
 				prim->enableStippling(true);
 				PointCoordinateType dip = 0.0f;
@@ -517,7 +517,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 				ccGLMatrix glMat;
 				glMat.setTranslation(CC.getValue());
 				//sphere primitive
-				prim = std::make_shared<ccSphere>(radius, &glMat);
+				prim = cloudViewer::make_shared<ccSphere>(radius, &glMat);
 				prim->setEnabled(true);
 				prim->setName(QString("Sphere (r=%1)").arg(radius, 0, 'f'));
 				sphereCount++;
@@ -551,7 +551,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 					CCVector3::fromArray(G.getValue()));
 
 				//cylinder primitive
-				prim = std::make_shared<ccCylinder>(radius, h, &glMat);
+				prim = cloudViewer::make_shared<ccCylinder>(radius, h, &glMat);
 				prim->setEnabled(true);
 				prim->setName(QString("Cylinder (r=%1/h=%2)").arg(radius, 0, 'f').arg(h, 0, 'f'));
 				cylinderCount++;
@@ -616,7 +616,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 					ccGLMatrix glMat(X, Y, Z, C);
 
 					//eventually create the cone primitive
-					prim = std::make_shared<ccCone>(maxRadius, minRadius, maxHeight - minHeight, 0, 0, &glMat);
+					prim = cloudViewer::make_shared<ccCone>(maxRadius, minRadius, maxHeight - minHeight, 0, 0, &glMat);
 					prim->setEnabled(true);
 					prim->setName(QString("Cone (alpha=%1/h=%2)").arg(alpha, 0, 'f').arg(maxHeight - minHeight, 0, 'f'));
 					coneCount++;
@@ -655,7 +655,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
 					ccGLMatrix glMat(X, Y, Z, C);
 
 					//torus primitive
-					prim = std::make_shared<ccTorus>(maxRadius - minRadius, maxRadius + minRadius, M_PI * 2.0, false, 0, &glMat);
+					prim = cloudViewer::make_shared<ccTorus>(maxRadius - minRadius, maxRadius + minRadius, M_PI * 2.0, false, 0, &glMat);
 					prim->setEnabled(true);
 					prim->setName(QString("Torus (r=%1/R=%2)").arg(minRadius, 0, 'f').arg(maxRadius, 0, 'f'));
 					torusCount++;

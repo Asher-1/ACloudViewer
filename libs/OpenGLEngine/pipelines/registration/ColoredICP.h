@@ -55,7 +55,7 @@ public:
     };
     explicit TransformationEstimationForColoredICP(
         double lambda_geometric = 0.968,
-        std::shared_ptr<RobustKernel> kernel = std::make_shared<L2Loss>())
+        std::shared_ptr<RobustKernel> kernel = cloudViewer::make_shared<L2Loss>())
         : lambda_geometric_(lambda_geometric), kernel_(std::move(kernel)) {
         if (lambda_geometric_ < 0 || lambda_geometric_ > 1.0) {
             lambda_geometric_ = 0.968;
@@ -74,7 +74,7 @@ public:
 public:
     double lambda_geometric_ = 0.968;
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
-    std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
+    std::shared_ptr<RobustKernel> kernel_ = cloudViewer::make_shared<L2Loss>();
 
 private:
     const TransformationEstimationType type_ =

@@ -39,7 +39,6 @@
 #include <ecvCameraSensor.h>
 #include <ecvDisplayTools.h>
 #include <ecvHObjectCaster.h>
-#include <ecvGenericVisualizer3D.h>
 
 // LOCAL
 #include "ecvDBRoot.h"
@@ -244,6 +243,40 @@ void ModelViewerWidget::UpdateMovieGrabber() {
   update();
 }
 
+float ModelViewerWidget::ZoomScale()
+{
+    focus_distance_ = static_cast<float>(ecvDisplayTools::GetCameraFocalDistance());
+    // "Constant" scale factor w.r.t. zoom-level.
+    return 2.0f * std::tan(static_cast<float>(DegToRad(ecvDisplayTools::GetFov())) / 2.0f) *
+            std::abs(focus_distance_) / ecvDisplayTools::GlHeight();
+}
+
+float ModelViewerWidget::AspectRatio() const
+{
+    return static_cast<float>(ecvDisplayTools::GlWidth()) / static_cast<float>(ecvDisplayTools::GlHeight());
+}
+
+void ModelViewerWidget::ChangeFocusDistance(const float delta)
+{
+    if (delta == 0.0f) {
+      return;
+    }
+
+    focus_distance_ = static_cast<float>(ecvDisplayTools::GetCameraFocalDistance());
+    const float prev_focus_distance = focus_distance_;
+    float diff = delta * ZoomScale() * kFocusSpeed;
+    focus_distance_ -= diff;
+    if (focus_distance_ < kMinFocusDistance) {
+      focus_distance_ = kMinFocusDistance;
+      diff = prev_focus_distance - focus_distance_;
+    } else if (focus_distance_ > kMaxFocusDistance) {
+      focus_distance_ = kMaxFocusDistance;
+      diff = prev_focus_distance - focus_distance_;
+    }
+    ecvDisplayTools::SetCameraFocalDistance(static_cast<double>(focus_distance_));
+    ecvDisplayTools::Update();
+}
+
 void ModelViewerWidget::ChangePointSize(const float delta) {
   if (delta == 0.0f) {
     return;
@@ -395,10 +428,19 @@ QImage ModelViewerWidget::GrabImage() {
 
 void ModelViewerWidget::GrabMovie() {
     if (GetProjectionType() != RenderOptions::ProjectionType::PERSPECTIVE) {
-      QMessageBox::critical(this, tr("Error"),
-                            tr("You must use perspective projection."));
-      return;
+        const int reply = QMessageBox::question(this, tr("Warning"),
+            tr("You must use perspective projection, "
+               "do you want to switch to perspective mode now?"),
+            QMessageBox::Yes | QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            if (app_) {
+                app_->doActionPerspectiveProjection();
+            }
+        } else {
+            return;
+        }
     }
+
     movie_grabber_widget_->show();
 }
 
@@ -667,7 +709,11 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
   {
       sensors_.reserve(curSensorNum);
   } else if (lastSensorNum > curSensorNum) {
-      updateSensors(sensors_, reg_image_ids);
+      std::vector<colmap::camera_t> camera_ids;
+      for (const image_t image_id : reg_image_ids) {
+          camera_ids.push_back(images[image_id].CameraId());
+      }
+      updateSensors(sensors_, camera_ids);
       lastSensorNum = sensors_.size();
   }
 
@@ -710,7 +756,7 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
         return;
     }
 
-    sensor->setName(QString::number(image_id));
+    sensor->setName(QString::number(image.CameraId()));
     BuildImageModel(sensor, image, camera, image_size_,
                       plane_color.cast<double>(),
                       frame_color.cast<double>());
@@ -781,11 +827,11 @@ void ModelViewerWidget::UploadMovieGrabberData() {
   {
       movie_grabber_sensors_.reserve(curSensorNum);
   } else if (lastSensorNum > curSensorNum) {
-      std::vector<colmap::image_t> image_ids;
+      std::vector<colmap::camera_t> camera_ids;
       for (const Image& image : movie_grabber_widget_->views) {
-          image_ids.push_back(image.ImageId());
+          camera_ids.push_back(image.CameraId());
       }
-      updateSensors(movie_grabber_sensors_, image_ids);
+      updateSensors(movie_grabber_sensors_, camera_ids);
       lastSensorNum = movie_grabber_sensors_.size();
   }
 
@@ -848,7 +894,7 @@ void ModelViewerWidget::UploadMovieGrabberData() {
         return;
       }
 
-      sensor->setName(QString::number(image.ImageId()));
+      sensor->setName(QString::number(image.CameraId()));
       BuildImageModel(sensor, image, camera, image_size_,
                       plane_color, frame_color);
       index++;
@@ -1018,9 +1064,9 @@ void ModelViewerWidget::clearSensors(std::vector<ccCameraSensor *> &sensors)
 }
 
 void ModelViewerWidget::updateSensors(std::vector<ccCameraSensor *> &sensors,
-                                      const std::vector<colmap::image_t>& image_ids)
+                                      const std::vector<colmap::camera_t>& camera_ids)
 {
-    if (sensors.size() > image_ids.size()) {
+    if (sensors.size() > camera_ids.size()) {
 
         std::vector<ccCameraSensor *> toBeDeleted;
         std::vector<ccCameraSensor *> preserved;
@@ -1029,8 +1075,8 @@ void ModelViewerWidget::updateSensors(std::vector<ccCameraSensor *> &sensors,
             {
                 continue;
             }
-            colmap::image_t sensorId = sensor->getName().toUInt();
-            if (std::find(image_ids.begin(), image_ids.end(), sensorId) == image_ids.end())
+            colmap::camera_t sensorId = sensor->getName().toUInt();
+            if (std::find(camera_ids.begin(), camera_ids.end(), sensorId) == camera_ids.end())
             {
                 toBeDeleted.push_back(sensor);
             } else {

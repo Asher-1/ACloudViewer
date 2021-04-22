@@ -3460,8 +3460,7 @@ bool ccMesh::toFile_MeOnly(QFile& out) const
 		//we can't save the material set here (as it may be shared by multiple meshes)
 		//so instead we save it's unique ID (dataVersion>=20)
 		//WARNING: the material set must be saved in the same BIN file! (responsibility of the caller)
-		//uint32_t matSetID = (m_materials ? static_cast<uint32_t>(m_materials->getUniqueID()) : 0);
-		uint32_t matSetID = 0;
+        uint32_t matSetID = (m_materials ? static_cast<uint32_t>(m_materials->getUniqueID()) : 0);
 		if (out.write((const char*)&matSetID, 4) < 0)
 			return WriteError();
 	}
@@ -3555,7 +3554,7 @@ bool ccMesh::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMa
 		if (in.read((char*)&matSetID, 4) < 0)
 			return ReadError();
 		//[DIRTY] WARNING: temporarily, we set the array unique ID in the 'm_materials' pointer!!!
-		//*(uint32_t*)(&m_materials) = matSetID;
+        *(uint32_t*)(&m_materials) = matSetID;
 	}
 
 	//triangles indexes (dataVersion>=20)
@@ -3597,7 +3596,7 @@ bool ccMesh::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMa
 		if (!ccSerializationHelper::GenericArrayFromFile<Tuple3i, 3, int>(*m_texCoordIndexes, in, dataVersion))
 		{
 			m_texCoordIndexes->release();
-			m_texCoordIndexes = 0;
+            m_texCoordIndexes = nullptr;
 			return false;
 		}
 	}

@@ -61,6 +61,8 @@ namespace visualization {
 /// \brief The main Visualizer class.
 class Visualizer {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     struct MouseControl {
     public:
         bool is_mouse_left_button_down = false;

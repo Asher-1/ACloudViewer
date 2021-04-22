@@ -503,8 +503,35 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
         double* displayCoord = getCurrentRenderer()->GetDisplayPoint();
         double z_buffer = displayCoord[2];
 		
-		return z_buffer;
-	}
+        return z_buffer;
+    }
+
+    double PCLVis::getCameraFocalDistance(int viewport)
+    {
+        return getVtkCamera(viewport)->GetDistance();
+    }
+
+    void PCLVis::setCameraFocalDistance(double focal_distance, int viewport)
+    {
+        assert(focal_distance >= 0);
+        vtkSmartPointer<vtkCamera> cam = getVtkCamera(viewport);
+        if (cam)
+        {
+            cam->SetDistance(focal_distance);
+            cam->Modified();
+        }
+    }
+
+    void PCLVis::zoomCamera(double zoomFactor, int viewport)
+    {
+        assert(zoomFactor >= 0);
+        vtkSmartPointer<vtkCamera> cam = getVtkCamera(viewport);
+        if (cam)
+        {
+            cam->Zoom(zoomFactor);
+            cam->Modified();
+        }
+    }
 
 	void PCLVis::getProjectionTransformMatrix(Eigen::Matrix4d& proj)
 	{
@@ -2094,7 +2121,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
 	void PCLVis::setOrthoProjection(int viewport)
 	{
-		vtkSmartPointer<vtkCamera> cam = getVtkCamera();
+        vtkSmartPointer<vtkCamera> cam = getVtkCamera(viewport);
 		int flag = cam->GetParallelProjection();
 		if (!flag)
 		{
@@ -2106,7 +2133,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
 	void PCLVis::setPerspectiveProjection(int viewport)
 	{
-		vtkSmartPointer<vtkCamera> cam = getVtkCamera();
+        vtkSmartPointer<vtkCamera> cam = getVtkCamera(viewport);
 		int flag = cam->GetParallelProjection();
 		if (flag)
 		{

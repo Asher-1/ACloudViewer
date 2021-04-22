@@ -29,6 +29,8 @@
 
 #include <imgui.h>
 
+#include <Eigen.h>
+
 #include <string>
 #include <vector>
 

@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    auto cloud_ptr = std::make_shared<ccPointCloud>();
+    auto cloud_ptr = cloudViewer::make_shared<ccPointCloud>();
     if (cloudViewer::io::ReadPointCloud(argv[1], *cloud_ptr)) {
         utility::LogInfo("Successfully read {}", argv[1]);
     } else {
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 
     cloudViewer::visualization::DrawGeometries({cloud_ptr}, "Flann", 1600, 900);
 
-    auto new_cloud_ptr = std::make_shared<ccPointCloud>();
+    auto new_cloud_ptr = cloudViewer::make_shared<ccPointCloud>();
     if (cloudViewer::io::ReadPointCloud(argv[1], *new_cloud_ptr)) {
         utility::LogInfo("Successfully read {}", argv[1]);
     } else {

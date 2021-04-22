@@ -277,12 +277,12 @@ Application &Application::GetInstance() {
 void Application::ShowMessageBox(const char *title, const char *message) {
     utility::LogInfo("{}", message);
 
-    auto alert = std::make_shared<Window>((title ? title : "Alert"),
+    auto alert = cloudViewer::make_shared<Window>((title ? title : "Alert"),
                                           Window::FLAG_TOPMOST);
     auto em = alert->GetTheme().font_size;
-    auto layout = std::make_shared<Vert>(em, Margins(em));
-    auto msg = std::make_shared<Label>(message);
-    auto ok = std::make_shared<Button>("Ok");
+    auto layout = cloudViewer::make_shared<Vert>(em, Margins(em));
+    auto msg = cloudViewer::make_shared<Label>(message);
+    auto ok = cloudViewer::make_shared<Button>("Ok");
     ok->SetOnClicked([alert = alert.get() /*avoid shared_ptr cycle*/]() {
         Application::GetInstance().RemoveWindow(alert);
     });

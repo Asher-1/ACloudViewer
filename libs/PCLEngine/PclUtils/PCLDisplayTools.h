@@ -225,6 +225,17 @@ public:
 		}
 	}
 
+    inline virtual void zoomCamera(double zoomFactor, int viewport = 0) override {
+        m_visualizer3D->zoomCamera(zoomFactor, viewport);
+    }
+
+    inline virtual double getCameraFocalDistance(int viewport = 0) override {
+        return m_visualizer3D->getCameraFocalDistance(viewport);
+    }
+    inline virtual void setCameraFocalDistance(double focal_distance, int viewport = 0) override {
+        m_visualizer3D->setCameraFocalDistance(focal_distance, viewport);
+    }
+
     inline virtual void getCameraPos(double *pos, int viewport = 0) override {
         const pcl::visualization::Camera& cam = m_visualizer3D->getCamera(viewport);
 		pos[0] = cam.pos[0];

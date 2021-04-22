@@ -35,6 +35,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <Eigen.h>
 #include <Console.h>
 #include <FileSystem.h>
 #include <Helper.h>
@@ -232,15 +233,15 @@ struct FileDialog::Impl {
 FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
     : Dialog("File"), impl_(new FileDialog::Impl()) {
     auto em = theme.font_size;
-    auto layout = std::make_shared<Vert>(int(std::ceil(0.5 * em)), Margins(em));
+    auto layout = cloudViewer::make_shared<Vert>(int(std::ceil(0.5 * em)), Margins(em));
     impl_->mode_ = mode;
 
     // 'filename' needs to always exist, as we use it to store the name of
     // the picked file, however, it is only displayed for SAVE.
-    impl_->filename_ = std::make_shared<TextEdit>();
+    impl_->filename_ = cloudViewer::make_shared<TextEdit>();
     if (mode == Mode::SAVE) {
-        auto filenameLabel = std::make_shared<Label>("Save as:");
-        auto horiz = std::make_shared<Horiz>();
+        auto filenameLabel = cloudViewer::make_shared<Label>("Save as:");
+        auto horiz = cloudViewer::make_shared<Horiz>();
         horiz->AddStretch();
         horiz->AddChild(filenameLabel);
         horiz->AddChild(impl_->filename_);
@@ -248,22 +249,22 @@ FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
         layout->AddChild(horiz);
     }
 
-    impl_->dirtree_ = std::make_shared<Combobox>();
+    impl_->dirtree_ = cloudViewer::make_shared<Combobox>();
     layout->AddChild(Horiz::MakeCentered(impl_->dirtree_));
 
-    impl_->filelist_ = std::make_shared<ListView>();
+    impl_->filelist_ = cloudViewer::make_shared<ListView>();
     layout->AddChild(impl_->filelist_);
 
-    impl_->cancel_ = std::make_shared<Button>("Cancel");
+    impl_->cancel_ = cloudViewer::make_shared<Button>("Cancel");
     if (mode == Mode::OPEN) {
-        impl_->ok_ = std::make_shared<Button>("Open");
+        impl_->ok_ = cloudViewer::make_shared<Button>("Open");
     } else if (mode == Mode::SAVE) {
-        impl_->ok_ = std::make_shared<Button>("Save");
+        impl_->ok_ = cloudViewer::make_shared<Button>("Save");
     }
 
-    impl_->filter_ = std::make_shared<Combobox>();
-    auto filter_label = std::make_shared<Label>("File type:");
-    impl_->filter_row_ = std::make_shared<Horiz>();
+    impl_->filter_ = cloudViewer::make_shared<Combobox>();
+    auto filter_label = cloudViewer::make_shared<Label>("File type:");
+    impl_->filter_row_ = cloudViewer::make_shared<Horiz>();
     impl_->filter_row_->AddStretch();
     impl_->filter_row_->AddChild(filter_label);
     impl_->filter_row_->AddChild(impl_->filter_);
@@ -271,7 +272,7 @@ FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
     impl_->filter_row_->SetVisible(false);
     layout->AddChild(impl_->filter_row_);
 
-    auto horiz = std::make_shared<Horiz>(em);
+    auto horiz = cloudViewer::make_shared<Horiz>(em);
     horiz->AddStretch();
     horiz->AddChild(impl_->cancel_);
     horiz->AddChild(impl_->ok_);

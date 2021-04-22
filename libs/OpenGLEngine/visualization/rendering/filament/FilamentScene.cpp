@@ -976,7 +976,7 @@ std::shared_ptr<geometry::Image> CombineTextures(
         return {};
     }
 
-    auto image = std::make_shared<geometry::Image>();
+    auto image = cloudViewer::make_shared<geometry::Image>();
     image->Prepare(width, height, 3, 1);
     auto data = reinterpret_cast<uint8_t*>(image->data_.data());
 

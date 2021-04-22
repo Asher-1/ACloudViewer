@@ -51,6 +51,7 @@ class VoxelGrid;
 /// OctreeNodeInfo is computed on the fly, not stored with the Node.
 class ECV_DB_LIB_API OctreeNodeInfo {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
     /// \brief Default Constructor.
     ///
     /// Initializes all values as 0.
@@ -200,6 +201,7 @@ public:
 /// \brief OctreeColorLeafNode class is an OctreeLeafNode containing color.
 class ECV_DB_LIB_API OctreeColorLeafNode : public OctreeLeafNode {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
     bool operator==(const OctreeLeafNode& other) const override;
 
     /// Clone this OctreeLeafNode.
@@ -266,6 +268,8 @@ public:
 /// \brief Octree datastructure.
 class ECV_DB_LIB_API Octree : public ccHObject, public cloudViewer::utility::IJsonConvertible {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// \brief Default Constructor.
     Octree(const char* name = "Octree2")
         : ccHObject(name),

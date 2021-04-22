@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
 
         t::geometry::Image vertex_im(vertex_map);
         visualization::DrawGeometries(
-                {std::make_shared<cloudViewer::geometry::Image>(
+                {cloudViewer::make_shared<cloudViewer::geometry::Image>(
                         vertex_im.ToLegacyImage())});
         }
         timer.Stop();
@@ -168,13 +168,13 @@ int main(int argc, char** argv) {
 
     if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh = voxel_grid.ExtractSurfaceMesh();
-        auto mesh_legacy = std::make_shared<ccMesh>(mesh.ToLegacyTriangleMesh());
+        auto mesh_legacy = cloudViewer::make_shared<ccMesh>(mesh.ToLegacyTriangleMesh());
         cloudViewer::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply", *mesh_legacy);
     }
 
     if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd = voxel_grid.ExtractSurfacePoints();
-        auto pcd_legacy = std::make_shared<ccPointCloud>(pcd.ToLegacyPointCloud());
+        auto pcd_legacy = cloudViewer::make_shared<ccPointCloud>(pcd.ToLegacyPointCloud());
         cloudViewer::io::WritePointCloud("pcd_" + device.ToString() + ".ply", *pcd_legacy);
     }
 }

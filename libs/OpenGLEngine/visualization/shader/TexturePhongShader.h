@@ -39,6 +39,9 @@ namespace glsl {
 
 class TexturePhongShader : public ShaderWrapper {
 public:
+
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     ~TexturePhongShader() override { Release(); }
 
 protected:

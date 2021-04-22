@@ -40,6 +40,94 @@
 #include <tuple>
 #include <vector>
 
+/**
+ * \brief Macro to signal a class requires a custom allocator
+ *
+ *  It's an implementation detail to have pcl::has_custom_allocator work, a
+ *  thin wrapper over Eigen's own macro
+ *
+ * \see pcl::has_custom_allocator, pcl::make_shared
+ * \ingroup common
+ */
+#define CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW \
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW \
+    using _custom_allocator_type_trait = void;
+
+#ifndef EIGEN_ALIGNED_ALLOCATOR
+#define EIGEN_ALIGNED_ALLOCATOR Eigen::aligned_allocator
+#endif
+
+template <typename ...> using void_t = void; // part of std in c++17
+template <typename, typename = void_t<>> struct has_custom_allocator : std::false_type {};
+template <typename T> struct has_custom_allocator<T, void_t<typename T::_custom_allocator_type_trait>> : std::true_type {};
+
+
+namespace Eigen
+{
+template <typename X, typename... Args>
+inline std::shared_ptr<X> make_shared (Args&&... args) {
+    return std::shared_ptr<X> (new X (std::forward<Args> (args)...));
+}
+
+template <typename X, typename... Args>
+inline std::unique_ptr<X> make_unique (Args&&... args) {
+    return std::unique_ptr<X> (new X (std::forward<Args> (args)...));
+}
+}
+
+// Equivalent to EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION but with support for
+// initializer lists, which is a C++11 feature and not supported by the Eigen.
+// The initializer list extension is inspired by Theia and StackOverflow code.
+#define EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(...)                 \
+  namespace std {                                                          \
+  template <>                                                              \
+  class vector<__VA_ARGS__, std::allocator<__VA_ARGS__>>                   \
+      : public vector<__VA_ARGS__, EIGEN_ALIGNED_ALLOCATOR<__VA_ARGS__>> { \
+    typedef vector<__VA_ARGS__, EIGEN_ALIGNED_ALLOCATOR<__VA_ARGS__>>      \
+        vector_base;                                                       \
+                                                                           \
+   public:                                                                 \
+    typedef __VA_ARGS__ value_type;                                        \
+    typedef vector_base::allocator_type allocator_type;                    \
+    typedef vector_base::size_type size_type;                              \
+    typedef vector_base::iterator iterator;                                \
+    explicit vector(const allocator_type& a = allocator_type())            \
+        : vector_base(a) {}                                                \
+    template <typename InputIterator>                                      \
+    vector(InputIterator first, InputIterator last,                        \
+           const allocator_type& a = allocator_type())                     \
+        : vector_base(first, last, a) {}                                   \
+    vector(const vector& c) : vector_base(c) {}                            \
+    explicit vector(size_type num, const value_type& val = value_type())   \
+        : vector_base(num, val) {}                                         \
+    vector(iterator start, iterator end) : vector_base(start, end) {}      \
+    vector& operator=(const vector& x) {                                   \
+      vector_base::operator=(x);                                           \
+      return *this;                                                        \
+    }                                                                      \
+    vector(initializer_list<__VA_ARGS__> list)                             \
+        : vector_base(list.begin(), list.end()) {}                         \
+  };                                                                       \
+  }  // namespace std
+
+//EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector2d)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector4d)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector4f)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix2d)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix2f)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix4d)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix4f)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Affine3d)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Affine3f)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Quaterniond)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Quaternionf)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix<float, 3, 4>)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix<double, 3, 4>)
+
+#define EIGEN_STL_UMAP(KEY, VALUE)                                   \
+  std::unordered_map<KEY, VALUE, std::hash<KEY>, std::equal_to<KEY>, \
+                     Eigen::aligned_allocator<std::pair<KEY const, VALUE>>>
+
 namespace Eigen {
 
     /// Extending Eigen namespace by adding frequently used matrix type
@@ -55,6 +143,18 @@ namespace Eigen {
 }  // namespace Eigen
 
 namespace cloudViewer {
+template<typename T, typename ... Args>
+std::enable_if_t<has_custom_allocator<T>::value, std::shared_ptr<T>> make_shared(Args&&... args)
+{
+  return std::allocate_shared<T>(Eigen::aligned_allocator<T>(), std::forward<Args> (args)...);
+}
+
+template<typename T, typename ... Args>
+std::enable_if_t<!has_custom_allocator<T>::value, std::shared_ptr<T>> make_shared(Args&&... args)
+{
+  return std::make_shared<T>(std::forward<Args> (args)...);
+}
+
 namespace utility {
 
     using Matrix4d_allocator = Eigen::aligned_allocator<Eigen::Matrix4d>;

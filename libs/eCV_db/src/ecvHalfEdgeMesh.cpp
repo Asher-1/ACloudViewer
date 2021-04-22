@@ -167,8 +167,8 @@ std::shared_ptr<ecvHalfEdgeMesh>
 ecvHalfEdgeMesh::CreateFromTriangleMesh(const ccMesh &mesh) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh_cpy = std::make_shared<ccMesh>(baseVertices);
-    auto het_mesh = std::make_shared<ecvHalfEdgeMesh>();
+    auto mesh_cpy = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto het_mesh = cloudViewer::make_shared<ecvHalfEdgeMesh>();
 
     // Copy
     *mesh_cpy = mesh;

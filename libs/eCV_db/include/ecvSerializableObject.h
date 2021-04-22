@@ -153,10 +153,11 @@ public:
 	{
 		assert(out.isOpen() && (out.openMode() & QIODevice::WriteOnly));
 
-		if (data.empty())
-		{
-			return ccSerializableObject::MemoryError();
-		}
+        //removed to allow saving empty clouds
+        //if (data.empty())
+        //{
+        //	return ccSerializableObject::MemoryError();
+        //}
 
 		//component count (dataVersion>=20)
 		::uint8_t componentCount = static_cast<::uint8_t>(N);

@@ -477,6 +477,14 @@ public: // main interface
 	inline static void FullScreen(bool state) { TheInstance()->fullScreen(state); }
 	inline virtual void fullScreen(bool state) {/* do nothing */}
 
+    static void ZoomCamera(double zoomFactor, int viewport = 0);
+    inline virtual void zoomCamera(double zoomFactor, int viewport = 0) {}
+    inline static double GetCameraFocalDistance(int viewport = 0) { TheInstance()->getCameraFocalDistance(viewport); }
+    inline virtual double getCameraFocalDistance(int viewport = 0) { return 100.0; /* do nothing */ }
+
+    inline static void SetCameraFocalDistance(double focal_distance, int viewport = 0) { TheInstance()->setCameraFocalDistance(focal_distance, viewport); }
+    inline virtual void setCameraFocalDistance(double focal_distance, int viewport = 0) { /* do nothing */ }
+
     inline static void GetCameraPos(double *pos, int viewport = 0) { TheInstance()->getCameraPos(pos, viewport); }
     inline virtual void getCameraPos(double *pos, int viewport = 0) { /* do nothing */ }
     inline static void GetCameraFocal(double *focal, int viewport = 0) { TheInstance()->getCameraFocal(focal, viewport); }

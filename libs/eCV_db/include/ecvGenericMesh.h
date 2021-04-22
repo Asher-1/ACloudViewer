@@ -24,6 +24,7 @@
 // LOCAL
 #include "ecvBBox.h"
 #include "ecvAdvancedTypes.h"
+#include "ecvShiftedObject.h"
 
 namespace cloudViewer
 {
@@ -36,7 +37,7 @@ class ccPointCloud;
 class ccMaterialSet;
 
 //! Generic mesh interface
-class ECV_DB_LIB_API ccGenericMesh : public cloudViewer::GenericIndexedMesh, public ccHObject
+class ECV_DB_LIB_API ccGenericMesh : public cloudViewer::GenericIndexedMesh, public ccShiftedObject
 {
 
 public:
@@ -44,7 +45,7 @@ public:
 	//! Default constructor
 	/** \param name object name
 	**/
-	ccGenericMesh(QString name = QString());
+    ccGenericMesh(QString name = QString());
 
 	//! Destructor
 	~ccGenericMesh() override = default;
@@ -216,6 +217,13 @@ public:
 
 	//! Computes the point that corresponds to the given uv (barycentric) coordinates
 	bool computePointPosition(unsigned triIndex, const CCVector2d& uv, CCVector3& P, bool warningIfOutside = true) const;
+
+
+    //inherited methods (ccShiftedObject)
+    void setGlobalShift(const CCVector3d& shift) override;
+    void setGlobalScale(double scale) override;
+    const CCVector3d& getGlobalShift() const override;
+    double getGlobalScale() const override;
 
 protected:
 
