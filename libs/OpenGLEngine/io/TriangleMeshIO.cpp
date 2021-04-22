@@ -217,7 +217,7 @@ namespace io {
 using namespace cloudViewer;
 std::shared_ptr<ccMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress) {
-    auto mesh = std::make_shared<ccMesh>();
+    auto mesh = cloudViewer::make_shared<ccMesh>();
 	mesh->createInternalCloud();
     ReadTriangleMesh(filename, *mesh, print_progress);
     return mesh;

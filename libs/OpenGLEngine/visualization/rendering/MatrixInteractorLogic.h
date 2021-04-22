@@ -38,6 +38,8 @@ namespace rendering {
 /// direction of a directional light.
 class MatrixInteractorLogic {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     virtual ~MatrixInteractorLogic();
 
     void SetViewSize(int width, int height);

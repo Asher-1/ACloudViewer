@@ -31,6 +31,8 @@
 #include "visualization/gui/Theme.h"
 #include "visualization/gui/Util.h"
 
+#include <Eigen.h>
+
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
@@ -40,7 +42,7 @@ struct ImageLabel::Impl {
 };
 
 ImageLabel::ImageLabel(const char* image_path) : impl_(new ImageLabel::Impl()) {
-    impl_->image_ = std::make_shared<UIImage>(image_path);
+    impl_->image_ = cloudViewer::make_shared<UIImage>(image_path);
 }
 
 ImageLabel::ImageLabel(visualization::rendering::TextureHandle texture_id,
@@ -49,7 +51,7 @@ ImageLabel::ImageLabel(visualization::rendering::TextureHandle texture_id,
                        float u1 /*= 1.0f*/,
                        float v1 /*= 1.0f*/)
     : impl_(new ImageLabel::Impl()) {
-    impl_->image_ = std::make_shared<UIImage>(texture_id, u0, v0, u1, v1);
+    impl_->image_ = cloudViewer::make_shared<UIImage>(texture_id, u0, v0, u1, v1);
 }
 
 ImageLabel::ImageLabel(std::shared_ptr<UIImage> image)

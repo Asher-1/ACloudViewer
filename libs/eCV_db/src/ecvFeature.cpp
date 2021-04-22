@@ -77,7 +77,7 @@ std::shared_ptr<Feature> ComputeSPFHFeature(
 	const ccPointCloud &input,
 	const geometry::KDTreeFlann &kdtree,
 	const geometry::KDTreeSearchParam &search_param) {
-    auto feature = std::make_shared<Feature>();
+    auto feature = cloudViewer::make_shared<Feature>();
     feature->Resize(33, (int)input.size());
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -122,7 +122,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
         const ccPointCloud &input,
         const geometry::KDTreeSearchParam
         &search_param /* = geometry::KDTreeSearchParamKNN()*/) {
-    auto feature = std::make_shared<Feature>();
+    auto feature = cloudViewer::make_shared<Feature>();
     feature->Resize(33, (int)input.size());
     if (!input.hasNormals()) {
         CVLog::Error(

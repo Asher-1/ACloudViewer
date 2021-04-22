@@ -52,7 +52,7 @@ int Run(int argc, const char *argv[]) {
     auto &app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
 
-    auto vis = std::make_shared<GuiVisualizer>("CloudViewer", WIDTH, HEIGHT);
+    auto vis = cloudViewer::make_shared<GuiVisualizer>("CloudViewer", WIDTH, HEIGHT);
     bool is_path_valid = (path && path[0] != '\0');
     if (is_path_valid) {
         vis->LoadGeometry(path);

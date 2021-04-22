@@ -4309,13 +4309,38 @@ bool ccPointCloud::fromFile_MeOnly(QFile& in, short dataVersion, int flags, Load
 				m_rgbColors->link();
 			}
 			CV_CLASS_ENUM classID = ReadClassIDFromFile(in, dataVersion);
-			if (classID != CV_TYPES::RGB_COLOR_ARRAY)
-				return CorruptError();
-            if (!m_rgbColors->fromFile(in, dataVersion, flags, oldToNewIDMap))
-			{
-				unallocateColors();
-				return false;
-			}
+            if (classID == CV_TYPES::RGB_COLOR_ARRAY)
+            {
+                if (!m_rgbColors->fromFile(in, dataVersion, flags, oldToNewIDMap))
+                {
+                    unallocateColors();
+                    return false;
+                }
+            }
+            else if (classID == CV_TYPES::RGBA_COLOR_ARRAY)
+            {
+                QSharedPointer<RGBAColorsTableType> oldRGBAColors(new RGBAColorsTableType);
+                if (!oldRGBAColors->fromFile(in, dataVersion, flags, oldToNewIDMap))
+                {
+                    return false;
+                }
+
+                size_t count = oldRGBAColors->size();
+                if (!m_rgbColors->reserveSafe(count))
+                {
+                    unallocateColors();
+                    return MemoryError();
+                }
+
+                for (size_t i = 0; i < count; ++i)
+                {
+                    m_rgbColors->addElement(ecvColor::FromRgbaToRgba(oldRGBAColors->getValue(i)));
+                }
+            }
+            else
+            {
+                return CorruptError();
+            }
 		}
 	}
 

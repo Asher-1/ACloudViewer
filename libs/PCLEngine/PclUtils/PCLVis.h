@@ -189,6 +189,18 @@ namespace PclUtils
 		// Return a depth value for z-buffer
 		double getGLDepth(int x, int y);
 
+        double getCameraFocalDistance(int viewport = 0);
+        void setCameraFocalDistance(double focal_distance, int viewport = 0);
+
+        /**
+         * In perspective mode, decrease the view angle by the specified factor.
+         * In parallel mode, decrease the parallel scale by the specified factor.
+         * A value greater than 1 is a zoom-in, a value less than 1 is a zoom-out.
+         * @note This setting is ignored when UseExplicitProjectionTransformMatrix
+         * is true.
+         */
+        void zoomCamera(double zoomFactor, int viewport = 0);
+
 		void getProjectionTransformMatrix(Eigen::Matrix4d& proj);
 
 		void getModelViewTransformMatrix(Eigen::Matrix4d& view);

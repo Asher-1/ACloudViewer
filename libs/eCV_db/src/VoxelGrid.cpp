@@ -271,7 +271,7 @@ void VoxelGrid::CreateFromOctree(const Octree &octree) {
 
 std::shared_ptr<geometry::Octree> VoxelGrid::ToOctree(
         const size_t &max_depth) const {
-    auto octree = std::make_shared<geometry::Octree>(max_depth);
+    auto octree = cloudViewer::make_shared<geometry::Octree>(max_depth);
     octree->CreateFromVoxelGrid(*this);
     return octree;
 }

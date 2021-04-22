@@ -48,8 +48,8 @@ int main(int argc, char *argv[]) {
 
     const std::string option(argv[1]);
     const std::string filename(argv[2]);
-    auto cloud = std::make_shared<ccPointCloud>();
-    auto mesh = std::make_shared<ccMesh>();
+    auto cloud = cloudViewer::make_shared<ccPointCloud>();
+    auto mesh = cloudViewer::make_shared<ccMesh>();
     if (option == "mesh") {
         if (!io::ReadTriangleMesh(filename, *mesh)) {
             cloudViewer::utility::LogWarning("Failed to read {}", filename);
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Compute the ISS Keypoints
-    auto iss_keypoints = std::make_shared<ccPointCloud>();
+    auto iss_keypoints = cloudViewer::make_shared<ccPointCloud>();
     {
         cloudViewer::utility::ScopeTimer timer("ISS Keypoints estimation");
         iss_keypoints = geometry::keypoint::ComputeISSKeypoints(*cloud);

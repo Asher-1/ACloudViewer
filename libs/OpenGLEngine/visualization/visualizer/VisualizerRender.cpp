@@ -213,7 +213,7 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
 
     // glReadPixels get the screen in a vertically flipped manner
     // Thus we should flip it back.
-    auto image_ptr = std::make_shared<geometry::Image>();
+    auto image_ptr = cloudViewer::make_shared<geometry::Image>();
     image_ptr->Prepare(view_control_ptr_->GetWindowWidth(),
                        view_control_ptr_->GetWindowHeight(), 3, 4);
     int bytes_per_line = screen_image.BytesPerLine();
@@ -310,7 +310,7 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureDepthFloatBuffer(
 
     // glReadPixels get the screen in a vertically flipped manner
     // We should flip it back, and convert it to the correct depth value
-    auto image_ptr = std::make_shared<geometry::Image>();
+    auto image_ptr = cloudViewer::make_shared<geometry::Image>();
     double z_near = view_control_ptr_->GetZNear();
     double z_far = view_control_ptr_->GetZFar();
 

@@ -106,7 +106,7 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromVoxelGrid(
         const geometry::VoxelGrid& voxel_grid) {
     ccPointCloud* baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh = std::make_shared<ccMesh>(baseVertices);
+    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
     auto num_voxels = voxel_grid.voxels_.size();
     if (!baseVertices->reserve(static_cast<unsigned>(36 * num_voxels)))
     {
@@ -163,7 +163,7 @@ static std::shared_ptr<ccMesh> CreateTriangleMeshFromVoxelGrid(
 
 static std::shared_ptr<ccMesh> CreateTriangleMeshFromOctree(
         const geometry::Octree& octree) {
-    auto mesh = std::make_shared<ccMesh>();
+    auto mesh = cloudViewer::make_shared<ccMesh>();
 
     // We cannot have a real line with a width in pixels, we can only fake a
     // line as rectangles. This value works nicely on the assumption that the

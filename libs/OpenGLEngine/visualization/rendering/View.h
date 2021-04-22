@@ -28,6 +28,8 @@
 
 #include <Eigen/Geometry>
 
+#include <Eigen.h>
+
 namespace cloudViewer {
 namespace visualization {
 namespace rendering {

@@ -137,7 +137,7 @@ PickPointsInteractor::PickPointsInteractor(rendering::CloudViewerScene *scene,
     scene_ = scene;
     camera_ = camera;
     picking_scene_ =
-            std::make_shared<rendering::CloudViewerScene>(scene->GetRenderer());
+            cloudViewer::make_shared<rendering::CloudViewerScene>(scene->GetRenderer());
 
     picking_scene_->SetDownsampleThreshold(SIZE_MAX);  // don't downsample!
     picking_scene_->SetBackground(kBackgroundColor);
@@ -241,7 +241,7 @@ void PickPointsInteractor::SetPickableGeometry(
     }
 
     if (!points_.empty()) {  // Filament panics if an object has zero vertices
-        auto cloud = std::make_shared<ccPointCloud>(points_);
+        auto cloud = cloudViewer::make_shared<ccPointCloud>(points_);
         cloud->reserveTheRGBTable();
         for (size_t i = 0; i < cloud->size(); ++i) {
             cloud->addEigenColor(SetColorForIndex(uint32_t(i)));

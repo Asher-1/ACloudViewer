@@ -44,6 +44,8 @@ namespace cloudViewer {
 
 class VisualizerForAlignment : public visualization::Visualizer {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     VisualizerForAlignment(visualization::VisualizerWithEditing &source,
                            visualization::VisualizerWithEditing &target,
                            double voxel_size = -1.0,

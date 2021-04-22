@@ -186,6 +186,8 @@ protected:
 
 class TriangleMeshRenderer : public GeometryRenderer {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     ~TriangleMeshRenderer() override {}
 
 public:

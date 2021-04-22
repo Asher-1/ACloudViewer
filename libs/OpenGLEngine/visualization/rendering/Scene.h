@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <Eigen.h>
 #include <Eigen/Geometry>
 #include <memory>
 #include <vector>

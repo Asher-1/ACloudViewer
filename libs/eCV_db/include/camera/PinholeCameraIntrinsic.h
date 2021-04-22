@@ -53,6 +53,8 @@ enum class ECV_DB_LIB_API PinholeCameraIntrinsicParameters {
 class ECV_DB_LIB_API PinholeCameraIntrinsic :
     public cloudViewer::utility::IJsonConvertible {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// \brief Default Constructor.
     PinholeCameraIntrinsic();
     /// \brief Parameterized Constructor.

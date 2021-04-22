@@ -89,6 +89,9 @@ class ModelViewerWidget : public QWidget {
 
   void UpdateMovieGrabber();
 
+  float ZoomScale();
+  float AspectRatio() const;
+  void ChangeFocusDistance(const float delta);
   void ChangePointSize(const float delta);
   void ChangeCameraSize(const float delta);
 
@@ -147,7 +150,7 @@ class ModelViewerWidget : public QWidget {
   void resetCameraSensors(std::vector<ccCameraSensor*>& sensors);
   void clearSensors(std::vector<ccCameraSensor*>& sensors);
   void updateSensors(std::vector<ccCameraSensor*>& sensors,
-                     const std::vector<colmap::image_t>& image_ids);
+                     const std::vector<colmap::camera_t>& camera_ids);
 
   OptionManager* options_;
 

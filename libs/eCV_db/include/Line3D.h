@@ -335,6 +335,9 @@ public:
 /// the api surface for client code.
 class Segment3D : public Line3D {
 public:
+
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// \brief Creates a Segment3D through two points.  The origin will take the
     /// value of p0, and the endpoint be p1. The direction will be a normalized
     /// vector from p0 to p1.

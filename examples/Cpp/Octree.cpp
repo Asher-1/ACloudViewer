@@ -78,7 +78,7 @@ int main(int argc, char** args) {
 
     auto pcd = io::CreatePointCloudFromFile(args[1]);
     constexpr int max_depth = 3;
-    auto octree = std::make_shared<geometry::Octree>(max_depth);
+    auto octree = cloudViewer::make_shared<geometry::Octree>(max_depth);
     octree->ConvertFromPointCloud(*pcd);
 
     octree->Traverse(f_traverse);

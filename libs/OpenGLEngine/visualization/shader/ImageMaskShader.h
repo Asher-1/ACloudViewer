@@ -42,6 +42,8 @@ namespace glsl {
 
 class ImageMaskShader : public ShaderWrapper {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     ~ImageMaskShader() override { Release(); }
 
 protected:

@@ -48,6 +48,8 @@ namespace geometry {
 /// indices to the vertices.
 class ECV_DB_LIB_API TetraMesh : public ecvMeshBase {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
 	//! Default ccMesh constructor
 	/** \param vertices the vertices cloud
 	**/

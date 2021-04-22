@@ -59,6 +59,8 @@ namespace geometry {
 class ECV_DB_LIB_API ecvMeshBase : public cloudViewer::GenericMesh, public ccHObject {
 
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// \brief Default Constructor.
     ecvMeshBase(const char *name = "ecvMeshBase") : ccHObject(name) {}
     ~ecvMeshBase() override {}

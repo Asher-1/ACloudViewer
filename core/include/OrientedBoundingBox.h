@@ -20,7 +20,7 @@
 #define CV_ORIENTED_BOUNDING_BOX_HEADER
 
 //Local
-#include "Eigen/Core"
+#include "Eigen.h"
 #include "CVGeom.h"
 
 namespace cloudViewer
@@ -36,6 +36,8 @@ namespace cloudViewer
 	class CV_CORE_LIB_API OrientedBoundingBox
 	{
 	public:
+        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
 		/// \brief Default constructor.
 		///
 		/// Creates an empty Oriented Bounding Box.

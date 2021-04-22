@@ -40,7 +40,7 @@
 
 ccGenericMesh::ccGenericMesh(QString name/*=QString()*/)
 	: GenericIndexedMesh()
-	, ccHObject(name)
+    , ccShiftedObject(name)
 	, m_triNormsShown(false)
 	, m_materialsShown(false)
 	, m_showWired(false)
@@ -291,9 +291,9 @@ bool ccGenericMesh::toFile_MeOnly(QFile& out) const
 	if (out.write(reinterpret_cast<const char*>(&m_showWired), sizeof(bool)) < 0)
 		return WriteError();
 
-	//'show points' state (dataVersion>=20)
-	if (out.write(reinterpret_cast<const char*>(&m_showPoints), sizeof(bool)) < 0)
-		return WriteError();
+//	//'show points' state (dataVersion>=20)
+//	if (out.write(reinterpret_cast<const char*>(&m_showPoints), sizeof(bool)) < 0)
+//		return WriteError();
 
 	//'per-triangle normals shown' state (dataVersion>=29))
 	if (out.write(reinterpret_cast<const char*>(&m_triNormsShown), sizeof(bool)) < 0)
@@ -319,9 +319,9 @@ bool ccGenericMesh::fromFile_MeOnly(QFile& in, short dataVersion, int flags, Loa
 	if (in.read(reinterpret_cast<char*>(&m_showWired), sizeof(bool)) < 0)
 		return ReadError();
 	
-	//'show points' state (dataVersion>=20)
-	if (in.read(reinterpret_cast<char*>(&m_showPoints), sizeof(bool)) < 0)
-		return ReadError();
+//	//'show points' state (dataVersion>=20)
+//	if (in.read(reinterpret_cast<char*>(&m_showPoints), sizeof(bool)) < 0)
+//		return ReadError();
 
 	//'per-triangle normals shown' state (dataVersion>=29))
 	if (dataVersion >= 29)
@@ -438,9 +438,9 @@ ccPointCloud* ccGenericMesh::samplePoints(	bool densityBased,
 					unsigned triIndex = triIndices->at(i);
 					const CCVector3* P = cloud->getPoint(i);
 
-					//ecvColor::Rgb C;
-					//getColorFromMaterial(triIndex, *P, C, withRGB);
-					//cloud->addRGBColor(C);
+                    ecvColor::Rgb C;
+                    getColorFromMaterial(triIndex, *P, C, withRGB);
+                    cloud->addRGBColor(C);
 				}
 
 				cloud->showColors(true);
@@ -475,16 +475,9 @@ ccPointCloud* ccGenericMesh::samplePoints(	bool densityBased,
 
 	//we rename the resulting cloud
 	cloud->setName(getName() + QString(".sampled"));
-	//cloud->setDisplay(getDisplay());
-	//cloud->prepareDisplayForRefresh();
 
 	//import parameters from both the source vertices and the source mesh
-	ccGenericPointCloud* vertices = getAssociatedCloud();
-	if (vertices)
-	{
-		cloud->setGlobalShift(vertices->getGlobalShift());
-		cloud->setGlobalScale(vertices->getGlobalScale());
-	}
+    cloud->copyGlobalShiftAndScale(*this);
 	cloud->setGLTransformationHistory(getGLTransformationHistory());
 
 	return cloud;
@@ -498,9 +491,8 @@ void ccGenericMesh::importParametersFrom(const ccGenericMesh* mesh)
 		return;
 	}
 
-	//original shift & scale
-	//setGlobalShift(mesh->getGlobalShift());
-	//setGlobalScale(mesh->getGlobalScale());
+    //original shift & scale
+    copyGlobalShiftAndScale(*mesh);
 
 	//stippling
 	enableStippling(mesh->stipplingEnabled());
@@ -723,9 +715,52 @@ bool ccGenericMesh::computePointPosition(unsigned triIndex, const CCVector2d& uv
 		CVLog::Warning("Point falls outside of the triangle");
 	}
 
-	P = CCVector3(static_cast<PointCoordinateType>(uv.x * A.x + uv.y * B.x + z * C.x),
-		static_cast<PointCoordinateType>(uv.x * A.y + uv.y * B.y + z * C.y),
-		static_cast<PointCoordinateType>(uv.x * A.z + uv.y * B.z + z * C.z));
+    P = CCVector3(  static_cast<PointCoordinateType>(uv.x * A.x + uv.y * B.x + z * C.x),
+                    static_cast<PointCoordinateType>(uv.x * A.y + uv.y * B.y + z * C.y),
+                    static_cast<PointCoordinateType>(uv.x * A.z + uv.y * B.z + z * C.z));
 
-	return true;
+    return true;
 }
+
+void ccGenericMesh::setGlobalShift(const CCVector3d &shift)
+{
+    if (getAssociatedCloud())
+    {
+        //auto transfer the global shift info to the vertices
+        getAssociatedCloud()->setGlobalShift(shift);
+    }
+    else
+    {
+        //we normally don't want to store this information at
+        //the mesh level as it won't be saved.
+        assert(false);
+        ccShiftedObject::setGlobalShift(shift);
+    }
+}
+
+void ccGenericMesh::setGlobalScale(double scale)
+{
+    if (getAssociatedCloud())
+    {
+        //auto transfer the global scale info to the vertices
+        getAssociatedCloud()->setGlobalScale(scale);
+    }
+    else
+    {
+        //we normally don't want to store this information at
+        //the mesh level as it won't be saved.
+        assert(false);
+        ccShiftedObject::setGlobalScale(scale);
+    }
+}
+
+const CCVector3d& ccGenericMesh::getGlobalShift() const
+{
+    return (getAssociatedCloud() ? getAssociatedCloud()->getGlobalShift() : ccShiftedObject::getGlobalShift());
+}
+
+double ccGenericMesh::getGlobalScale() const
+{
+    return (getAssociatedCloud() ? getAssociatedCloud()->getGlobalScale() : ccShiftedObject::getGlobalScale());
+}
+

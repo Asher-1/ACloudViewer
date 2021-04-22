@@ -34,7 +34,7 @@ double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
 std::shared_ptr<ccPointCloud> MakePointCloud(
         int npts, const Eigen::Vector3d center, double radius, bool colorize) {
-    auto cloud = std::make_shared<ccPointCloud>();
+    auto cloud = cloudViewer::make_shared<ccPointCloud>();
     cloud->reserveThePointsTable(static_cast<unsigned>(npts));
     for (int i = 0; i < npts; ++i) {
         cloud->addEigenPoint({radius * GetRandom() + center.x(),
@@ -73,11 +73,11 @@ void MultiObjects() {
     sphere_colored_lit->computeVertexNormals();
     sphere_colored_lit->paintUniformColor({0.0, 1.0, 0.0});
     sphere_colored_lit->translate({6, 1, 0});
-    auto big_bbox = std::make_shared<ccBBox>(
+    auto big_bbox = cloudViewer::make_shared<ccBBox>(
             Eigen::Vector3d{-pc_rad, -3, -pc_rad},
             Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
     auto bbox = sphere_unlit->getAxisAlignedBoundingBox();
-    auto sphere_bbox = std::make_shared<ccBBox>(
+    auto sphere_bbox = cloudViewer::make_shared<ccBBox>(
             bbox.getMinBound(), bbox.getMaxBound());
     sphere_bbox->setColor({1.0, 0.5, 0.0});
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
@@ -96,7 +96,7 @@ void Actions(const std::string test_dir) {
     const char *RESULT_NAME = "Result (Poisson reconstruction)";
     const char *TRUTH_NAME = "Ground truth";
 
-    auto bunny = std::make_shared<ccMesh>();
+    auto bunny = cloudViewer::make_shared<ccMesh>();
     bunny->createInternalCloud();
     io::ReadTriangleMesh(test_dir + "/Bunny.ply", *bunny);
     if (bunny->isEmpty()) {
@@ -110,7 +110,7 @@ void Actions(const std::string test_dir) {
 
     bunny->paintUniformColor({1, 0.75, 0});
     bunny->computeVertexNormals();
-    auto cloud = std::make_shared<ccPointCloud>();
+    auto cloud = cloudViewer::make_shared<ccPointCloud>();
 
     cloud->addPoints(bunny->getVerticesPtr());
     cloud->addEigenNorms(bunny->getVertexNormals());
@@ -183,13 +183,13 @@ void Selections(const std::string test_dir) {
 
     const auto cloud0_path = test_dir + "/ICP/cloud_bin_0.pcd";
     const auto cloud1_path = test_dir + "/ICP/cloud_bin_2.pcd";
-    auto source = std::make_shared<ccPointCloud>();
+    auto source = cloudViewer::make_shared<ccPointCloud>();
     io::ReadPointCloud(cloud0_path, *source);
     if (source->isEmpty()) {
         cloudViewer::utility::LogError("Could not open {}", cloud0_path);
         return;
     }
-    auto target = std::make_shared<ccPointCloud>();
+    auto target = cloudViewer::make_shared<ccPointCloud>();
     io::ReadPointCloud(cloud1_path, *target);
     if (target->isEmpty()) {
         cloudViewer::utility::LogError("Could not open {}", cloud1_path);

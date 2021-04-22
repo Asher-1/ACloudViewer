@@ -42,6 +42,8 @@ namespace visualization {
 /// \brief View controller for visualizer.
 class ViewControl {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     static const double FIELD_OF_VIEW_MAX;
     static const double FIELD_OF_VIEW_MIN;
     static const double FIELD_OF_VIEW_DEFAULT;

@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
             *cloud_ptr, *cloud_ptr, correspondences);
     visualization::DrawGeometries({cloud_ptr, lineset_ptr});
 
-    auto new_cloud_ptr = std::make_shared<ccPointCloud>();
+    auto new_cloud_ptr = cloudViewer::make_shared<ccPointCloud>();
     *new_cloud_ptr = *cloud_ptr;
     auto bounding_box = new_cloud_ptr->getAxisAlignedBoundingBox();
     Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();

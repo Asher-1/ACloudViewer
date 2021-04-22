@@ -648,6 +648,15 @@ if (WITH_OPENMP)
      message(STATUS "Enabling Reconstruction support and automatically disable simd!")
      set(WITH_SIMD ON)
  endif()
+
+ # check for SSE flags
+ include( CMakeFindSSE )
+ if(WITH_SIMD AND "${CMAKE_CXX_FLAGS}" STREQUAL "${CMAKE_CXX_FLAGS_DEFAULT}")
+   CLOUDVIEWER_CHECK_FOR_SSE()
+ endif()
+
+ set(CVCONFIG_SSE_DEFINITIONS "${SSE_DEFINITIONS}")
+ set(CVCONFIG_SSE_COMPILE_OPTIONS ${SSE_FLAGS})
  
  if (WITH_SIMD)
      CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_OPT_ARCH_NATIVE_SUPPORTED)

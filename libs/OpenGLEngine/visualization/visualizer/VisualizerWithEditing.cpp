@@ -62,51 +62,51 @@ bool VisualizerWithEditing::AddGeometry(
     if (geometry_ptr->isKindOf(CV_TYPES::CUSTOM_H_OBJECT)) {
         return false;
     } else if (geometry_ptr->isKindOf(CV_TYPES::POINT_CLOUD)) {
-        auto ptr = std::make_shared<ccPointCloud>();
+        auto ptr = cloudViewer::make_shared<ccPointCloud>();
         *ptr = (const ccPointCloud &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
-                std::make_shared<glsl::PointCloudRenderer>();
+                cloudViewer::make_shared<glsl::PointCloudRenderer>();
         if (editing_geometry_renderer_ptr_->AddGeometry(
                     editing_geometry_ptr_) == false) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::LINESET)) {
-        auto ptr = std::make_shared<geometry::LineSet>();
+        auto ptr = cloudViewer::make_shared<geometry::LineSet>();
         *ptr = (const geometry::LineSet &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
-                std::make_shared<glsl::LineSetRenderer>();
+                cloudViewer::make_shared<glsl::LineSetRenderer>();
         if (editing_geometry_renderer_ptr_->AddGeometry(
                     editing_geometry_ptr_) == false) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::MESH)) {
-        auto ptr = std::make_shared<ccMesh>(nullptr);
+        auto ptr = cloudViewer::make_shared<ccMesh>(nullptr);
         *ptr = (const ccMesh &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
-                std::make_shared<glsl::TriangleMeshRenderer>();
+                cloudViewer::make_shared<glsl::TriangleMeshRenderer>();
         if (editing_geometry_renderer_ptr_->AddGeometry(
                     editing_geometry_ptr_) == false) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
-        auto ptr = std::make_shared<geometry::ecvHalfEdgeMesh>();
+        auto ptr = cloudViewer::make_shared<geometry::ecvHalfEdgeMesh>();
         *ptr = (const geometry::ecvHalfEdgeMesh &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
-                std::make_shared<glsl::HalfEdgeMeshRenderer>();
+                cloudViewer::make_shared<glsl::HalfEdgeMeshRenderer>();
         if (editing_geometry_renderer_ptr_->AddGeometry(
                     editing_geometry_ptr_) == false) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::IMAGE2)) {
-        auto ptr = std::make_shared<geometry::Image>();
+        auto ptr = cloudViewer::make_shared<geometry::Image>();
         *ptr = (const geometry::Image &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
-                std::make_shared<glsl::ImageRenderer>();
+                cloudViewer::make_shared<glsl::ImageRenderer>();
         if (editing_geometry_renderer_ptr_->AddGeometry(
                     editing_geometry_ptr_) == false) {
             return false;
@@ -166,9 +166,9 @@ void VisualizerWithEditing::BuildUtilities() {
 
     // 1. Build selection polygon
     success = true;
-    selection_polygon_ptr_ = std::make_shared<SelectionPolygon>();
+    selection_polygon_ptr_ = cloudViewer::make_shared<SelectionPolygon>();
     selection_polygon_renderer_ptr_ =
-            std::make_shared<glsl::SelectionPolygonRenderer>();
+            cloudViewer::make_shared<glsl::SelectionPolygonRenderer>();
     if (selection_polygon_renderer_ptr_->AddGeometry(selection_polygon_ptr_) ==
         false) {
         success = false;
@@ -180,13 +180,13 @@ void VisualizerWithEditing::BuildUtilities() {
 
     // 2. Build pointcloud picker
     success = true;
-    pointcloud_picker_ptr_ = std::make_shared<PointCloudPicker>();
+    pointcloud_picker_ptr_ = cloudViewer::make_shared<PointCloudPicker>();
     if (geometry_ptrs_.empty() ||
         pointcloud_picker_ptr_->SetPointCloud(editing_geometry_ptr_) == false) {
         success = false;
     }
     pointcloud_picker_renderer_ptr_ =
-            std::make_shared<glsl::PointCloudPickerRenderer>();
+            cloudViewer::make_shared<glsl::PointCloudPickerRenderer>();
     if (pointcloud_picker_renderer_ptr_->AddGeometry(pointcloud_picker_ptr_) ==
         false) {
         success = false;
@@ -198,7 +198,7 @@ void VisualizerWithEditing::BuildUtilities() {
 }
 
 int VisualizerWithEditing::PickPoint(double x, double y) {
-    auto renderer_ptr = std::make_shared<glsl::PointCloudPickingRenderer>();
+    auto renderer_ptr = cloudViewer::make_shared<glsl::PointCloudPickingRenderer>();
     if (renderer_ptr->AddGeometry(editing_geometry_ptr_) == false) {
         return -1;
     }

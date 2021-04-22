@@ -23,6 +23,7 @@
 #include "ecvGLMatrixTpl.h"
 
 // CV_CORE_LIB
+#include <Eigen.h>
 #include <SquareMatrix.h>
 
 //! Float version of ccGLMatrixTpl

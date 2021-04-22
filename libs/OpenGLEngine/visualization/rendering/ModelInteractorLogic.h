@@ -41,6 +41,8 @@ class ModelInteractorLogic : public RotationInteractorLogic {
     using Super = RotationInteractorLogic;
 
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     ModelInteractorLogic(CloudViewerScene* scene,
                          Camera* camera,
                          double min_far_plane);

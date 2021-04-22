@@ -519,8 +519,8 @@ CC_FILE_ERROR BinFilter::LoadFileV2(QFile& in, ccHObject& container, int flags)
 
     if (!root->fromFile(in, static_cast<short>(binVersion), flags, oldToNewIDMap))
 	{
-		//DGM: can't delete it, too dangerous (bad pointers ;)
-		//delete root;
+        //delete root; DGM: can't delete it, too dangerous (bad pointers ;)
+       CVLog::Error(QString("Failed to read file (file position: %1 / %2").arg(in.pos()).arg(in.size()));
 		return CC_FERR_CONSOLE_ERROR;
 	}
 

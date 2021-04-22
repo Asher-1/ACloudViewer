@@ -72,7 +72,7 @@ static const std::unordered_map<
 using namespace cloudViewer;
 std::shared_ptr<camera::PinholeCameraTrajectory>
 CreatePinholeCameraTrajectoryFromFile(const std::string &filename) {
-    auto trajectory = std::make_shared<camera::PinholeCameraTrajectory>();
+    auto trajectory = cloudViewer::make_shared<camera::PinholeCameraTrajectory>();
     ReadPinholeCameraTrajectory(filename, *trajectory);
     return trajectory;
 }

@@ -390,7 +390,7 @@ TextureHandle FilamentResourceManager::CreateTexture(
         const geometry::Image& image, bool srgb) {
     TextureHandle handle;
     if (image.HasData()) {
-        auto copy = std::make_shared<geometry::Image>(image);
+        auto copy = cloudViewer::make_shared<geometry::Image>(image);
 
         auto texture = LoadTextureFromImage(copy, srgb);
 
@@ -686,7 +686,7 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
 
 filament::Texture* FilamentResourceManager::LoadFilledTexture(
         const Eigen::Vector3f& color, size_t dimension) {
-    auto image = std::make_shared<geometry::Image>();
+    auto image = cloudViewer::make_shared<geometry::Image>();
     image->Prepare(int(dimension), int(dimension), 3, 1);
 
     struct RGB {

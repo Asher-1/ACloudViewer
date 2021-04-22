@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 		baseVertices->setEnabled(false);
 		// DGM: no need to lock it as it is only used by one mesh!
 		baseVertices->setLocked(false);
-		auto mesh_ptr = std::make_shared<ccMesh>(baseVertices);
+		auto mesh_ptr = cloudViewer::make_shared<ccMesh>(baseVertices);
 		mesh_ptr->addChild(baseVertices);
 		if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
 			cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 		baseVertices->setEnabled(false);
 		// DGM: no need to lock it as it is only used by one mesh!
 		baseVertices->setLocked(false);
-		auto mesh_ptr = std::make_shared<ccMesh>(baseVertices);
+		auto mesh_ptr = cloudViewer::make_shared<ccMesh>(baseVertices);
 		mesh_ptr->addChild(baseVertices);
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
 		baseVertices->setEnabled(false);
 		// DGM: no need to lock it as it is only used by one mesh!
 		baseVertices->setLocked(false);
-		auto mesh_ptr = std::make_shared<ccMesh>(baseVertices);
+		auto mesh_ptr = cloudViewer::make_shared<ccMesh>(baseVertices);
 		mesh_ptr->addChild(baseVertices);
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
 		baseVertices->setEnabled(false);
 		// DGM: no need to lock it as it is only used by one mesh!
 		baseVertices->setLocked(false);
-		auto mesh_ptr = std::make_shared<ccMesh>(baseVertices);
+		auto mesh_ptr = cloudViewer::make_shared<ccMesh>(baseVertices);
 		mesh_ptr->addChild(baseVertices);
 
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
                 "Press Space key to spin", 1600, 900);
     } 
 	else if (option == "pointcloud") {
-        auto cloud_ptr = std::make_shared<ccPointCloud>();
+        auto cloud_ptr = cloudViewer::make_shared<ccPointCloud>();
 		if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
 			cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
 		}
@@ -224,12 +224,12 @@ int main(int argc, char *argv[]) {
 		}
 
         cloud_ptr->normalizeNormals();
-		auto obbox = std::make_shared<ecvOrientedBBox>(cloud_ptr->getOrientedBoundingBox());
+		auto obbox = cloudViewer::make_shared<ecvOrientedBBox>(cloud_ptr->getOrientedBoundingBox());
         visualization::DrawGeometries({ cloud_ptr, obbox }, "PointCloud", 1600, 900);
 
     } 
 	else if (option == "rainbow") {
-        auto cloud_ptr = std::make_shared<ccPointCloud>();
+        auto cloud_ptr = cloudViewer::make_shared<ccPointCloud>();
         if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
             cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
         } else {
@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
                 "Rainbow", 1600, 900);
     } 
 	else if (option == "image") {
-        auto image_ptr = std::make_shared<geometry::Image>();
+        auto image_ptr = cloudViewer::make_shared<geometry::Image>();
         if (io::ReadImage(argv[2], *image_ptr)) {
             cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
         } else {
@@ -281,8 +281,8 @@ int main(int argc, char *argv[]) {
 
         int rgbd_type =
                 cloudViewer::utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
-        auto color_ptr = std::make_shared<geometry::Image>();
-        auto depth_ptr = std::make_shared<geometry::Image>();
+        auto color_ptr = cloudViewer::make_shared<geometry::Image>();
+        auto depth_ptr = cloudViewer::make_shared<geometry::Image>();
 
         if (io::ReadImage(argv[2], *color_ptr)) {
             cloudViewer::utility::LogInfo("Successfully read {}", argv[2]);
@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
 		double minValue = -extent / 2.0;
 		double maxValue = extent / 2.0;
 
-		auto abbox = std::make_shared<ccBBox>(
+		auto abbox = cloudViewer::make_shared<ccBBox>(
 			Eigen::Vector3d(minValue, minValue, minValue), 
 			Eigen::Vector3d(maxValue, maxValue, maxValue));
 		visualization::DrawGeometries({ abbox }, "Axis aligned bounding box", 1600, 900);
@@ -342,11 +342,11 @@ int main(int argc, char *argv[]) {
 		double extent = cloudViewer::utility::GetProgramOptionAsDouble(argc, argv, "--extent");
 		double minValue = -extent / 2.0;
 		double maxValue = extent / 2.0;
-		auto abbox = std::make_shared<ccBBox>(
+		auto abbox = cloudViewer::make_shared<ccBBox>(
 			Eigen::Vector3d(minValue, minValue, minValue),
 			Eigen::Vector3d(maxValue, maxValue, maxValue));
 
-		auto obbox = std::make_shared<ecvOrientedBBox>(
+		auto obbox = cloudViewer::make_shared<ecvOrientedBBox>(
 			Eigen::Vector3d(-10, 10, 0),
 			abbox->GetRotationMatrixFromXYZ(Eigen::Vector3d(2, 1, 0)),
 			Eigen::Vector3d(40, 20, 20));
@@ -356,7 +356,7 @@ int main(int argc, char *argv[]) {
 	else if (option == "animation") {
 		ccPointCloud* baseVertices = new ccPointCloud("vertices");
 		assert(baseVertices);
-		auto mesh_ptr = std::make_shared<ccMesh>(baseVertices);
+		auto mesh_ptr = cloudViewer::make_shared<ccMesh>(baseVertices);
 		baseVertices->setEnabled(false);
 		// DGM: no need to lock it as it is only used by one mesh!
 		baseVertices->setLocked(false);

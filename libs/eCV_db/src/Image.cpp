@@ -157,7 +157,7 @@ Image &Image::LinearTransform(double scale, double offset /* = 0.0*/) {
 }
 
 std::shared_ptr<Image> Image::Downsample() const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Downsample] Unsupported image format.");
     }
@@ -187,7 +187,7 @@ std::shared_ptr<Image> Image::Downsample() const {
 
 std::shared_ptr<Image> Image::FilterHorizontal(
         const std::vector<double> &kernel) const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4 ||
         kernel.size() % 2 != 1) {
         utility::LogError(
@@ -223,7 +223,7 @@ std::shared_ptr<Image> Image::FilterHorizontal(
 }
 
 std::shared_ptr<Image> Image::Filter(Image::FilterType type) const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Filter] Unsupported image format.");
     }
@@ -263,7 +263,7 @@ ImagePyramid Image::FilterPyramid(const ImagePyramid &input,
 
 std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
                                      const std::vector<double> &dy) const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Filter] Unsupported image format.");
     }
@@ -276,7 +276,7 @@ std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
 }
 
 std::shared_ptr<Image> Image::Transpose() const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     output->Prepare(height_, width_, num_of_channels_, bytes_per_channel_);
 
     int out_bytes_per_line = output->BytesPerLine();
@@ -305,7 +305,7 @@ std::shared_ptr<Image> Image::Transpose() const {
 }
 
 std::shared_ptr<Image> Image::FlipVertical() const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
 
     int bytes_per_line = BytesPerLine();
@@ -321,7 +321,7 @@ std::shared_ptr<Image> Image::FlipVertical() const {
 }
 
 std::shared_ptr<Image> Image::FlipHorizontal() const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
 
     int bytes_per_line = BytesPerLine();
@@ -347,7 +347,7 @@ std::shared_ptr<Image> Image::FlipHorizontal() const {
 }
 
 std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 1) {
         utility::LogError("[Dilate] Unsupported image format.");
     }
@@ -390,7 +390,7 @@ std::shared_ptr<Image> Image::CreateDepthBoundaryMask(
             depth_image->Filter(Image::FilterType::Sobel3Dx);
     auto depth_image_gradient_dy =
             depth_image->Filter(Image::FilterType::Sobel3Dy);
-    auto mask = std::make_shared<Image>();
+    auto mask = cloudViewer::make_shared<Image>();
     mask->Prepare(width, height, 1, 1);
 
 #ifdef _OPENMP

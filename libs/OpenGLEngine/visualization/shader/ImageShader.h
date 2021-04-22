@@ -40,6 +40,8 @@ namespace glsl {
 
 class ImageShader : public ShaderWrapper {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     ~ImageShader() override { Release(); }
 
 protected:

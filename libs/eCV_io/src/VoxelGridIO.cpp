@@ -139,7 +139,7 @@ std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridFromFile(
         const std::string &filename,
         const std::string &format,
         bool print_progress) {
-    auto voxelgrid = std::make_shared<geometry::VoxelGrid>();
+    auto voxelgrid = cloudViewer::make_shared<geometry::VoxelGrid>();
     ReadVoxelGrid(filename, *voxelgrid, format, print_progress);
     return voxelgrid;
 }

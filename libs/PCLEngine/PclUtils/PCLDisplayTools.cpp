@@ -651,7 +651,7 @@ bool PCLDisplayTools::hideShowEntities(const CC_DRAW_CONTEXT& context)
         m_visualizer3D->resetCameraClippingRange(context.defaultViewPort);
 	}
 	
-	return true;
+    return true;
 }
 
 void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER & param)

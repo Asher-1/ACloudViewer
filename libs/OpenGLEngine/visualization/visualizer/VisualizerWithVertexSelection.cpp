@@ -112,25 +112,25 @@ bool VisualizerWithVertexSelection::AddGeometry(
     switch (geometry_ptr_->getClassID()) {
 		case CV_TYPES::POINT_CLOUD:
             geometry_renderer_ptr_ =
-                    std::make_shared<glsl::PointCloudRenderer>();
+                    cloudViewer::make_shared<glsl::PointCloudRenderer>();
             break;
         case CV_TYPES::LINESET:
-            geometry_renderer_ptr_ = std::make_shared<glsl::LineSetRenderer>();
+            geometry_renderer_ptr_ = cloudViewer::make_shared<glsl::LineSetRenderer>();
             break;
         case CV_TYPES::MESH:  // fall-through
             geometry_renderer_ptr_ =
-                    std::make_shared<glsl::TriangleMeshRenderer>();
+                    cloudViewer::make_shared<glsl::TriangleMeshRenderer>();
             break;
         case CV_TYPES::HALF_EDGE_MESH:
             geometry_renderer_ptr_ =
-                    std::make_shared<glsl::HalfEdgeMeshRenderer>();
+                    cloudViewer::make_shared<glsl::HalfEdgeMeshRenderer>();
             break;
         case CV_TYPES::TETRA_MESH:
             geometry_renderer_ptr_ =
-                    std::make_shared<glsl::TetraMeshRenderer>();
+                    cloudViewer::make_shared<glsl::TetraMeshRenderer>();
             break;
         case CV_TYPES::IMAGE2:
-            geometry_renderer_ptr_ = std::make_shared<glsl::ImageRenderer>();
+            geometry_renderer_ptr_ = cloudViewer::make_shared<glsl::ImageRenderer>();
             break;
         case CV_TYPES::HIERARCHY_OBJECT:
             // MeshBase is too general, can't render. Fall-through.
@@ -152,12 +152,12 @@ bool VisualizerWithVertexSelection::AddGeometry(
     geometry_renderer_ptrs_.insert(geometry_renderer_ptr_);
 
     // Add the point selection renderers
-    ui_points_geometry_ptr_ = std::make_shared<ccPointCloud>();
-    ui_points_renderer_ptr_ = std::make_shared<glsl::PointCloudRenderer>();
+    ui_points_geometry_ptr_ = cloudViewer::make_shared<ccPointCloud>();
+    ui_points_renderer_ptr_ = cloudViewer::make_shared<glsl::PointCloudRenderer>();
     ui_points_renderer_ptr_->AddGeometry(ui_points_geometry_ptr_);
-    ui_selected_points_geometry_ptr_ = std::make_shared<ccPointCloud>();
+    ui_selected_points_geometry_ptr_ = cloudViewer::make_shared<ccPointCloud>();
     ui_selected_points_renderer_ptr_ =
-            std::make_shared<glsl::PointCloudRenderer>();
+            cloudViewer::make_shared<glsl::PointCloudRenderer>();
     ui_selected_points_renderer_ptr_->AddGeometry(
             ui_selected_points_geometry_ptr_);
     utility_renderer_ptrs_.push_back(ui_selected_points_renderer_ptr_);
@@ -302,9 +302,9 @@ void VisualizerWithVertexSelection::BuildUtilities() {
 
     // 1. Build selection polygon
     success = true;
-    selection_polygon_ptr_ = std::make_shared<SelectionPolygon>();
+    selection_polygon_ptr_ = cloudViewer::make_shared<SelectionPolygon>();
     selection_polygon_renderer_ptr_ =
-            std::make_shared<glsl::SelectionPolygonRenderer>();
+            cloudViewer::make_shared<glsl::SelectionPolygonRenderer>();
     if (selection_polygon_renderer_ptr_->AddGeometry(selection_polygon_ptr_) ==
         false) {
         success = false;
@@ -316,13 +316,13 @@ void VisualizerWithVertexSelection::BuildUtilities() {
 
     // 2. Build pointcloud picker
     success = true;
-    pointcloud_picker_ptr_ = std::make_shared<PointCloudPicker>();
+    pointcloud_picker_ptr_ = cloudViewer::make_shared<PointCloudPicker>();
     if (geometry_ptrs_.empty() ||
         pointcloud_picker_ptr_->SetPointCloud(geometry_ptr_) == false) {
         success = false;
     }
     pointcloud_picker_renderer_ptr_ =
-            std::make_shared<glsl::PointCloudPickerRenderer>();
+            cloudViewer::make_shared<glsl::PointCloudPickerRenderer>();
     if (pointcloud_picker_renderer_ptr_->AddGeometry(pointcloud_picker_ptr_) ==
         false) {
         success = false;
@@ -379,7 +379,7 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
                                                            double h) {
     points_in_rect_.clear();
 
-    auto renderer_ptr = std::make_shared<glsl::PointCloudPickingRenderer>();
+    auto renderer_ptr = cloudViewer::make_shared<glsl::PointCloudPickingRenderer>();
     if (renderer_ptr->AddGeometry(ui_points_geometry_ptr_) == false) {
         return {};
     }

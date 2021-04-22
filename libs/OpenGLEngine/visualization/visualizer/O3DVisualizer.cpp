@@ -214,12 +214,12 @@ public:
         // We don't want any text in the checkbox, but passing "" seems to make
         // it not toggle, so we need to pass in something. This way it will
         // just be extra spacing.
-        checkbox_ = std::make_shared<Checkbox>(" ");
+        checkbox_ = cloudViewer::make_shared<Checkbox>(" ");
         checkbox_->SetChecked(is_checked);
         checkbox_->SetOnChecked(on_toggled);
-        name_ = std::make_shared<Label>(name);
-        group_ = std::make_shared<Label>((flags & FLAG_GROUP) ? group : "");
-        time_ = std::make_shared<Label>(time_str.c_str());
+        name_ = cloudViewer::make_shared<Label>(name);
+        group_ = cloudViewer::make_shared<Label>((flags & FLAG_GROUP) ? group : "");
+        time_ = cloudViewer::make_shared<Label>(time_str.c_str());
         AddChild(checkbox_);
         AddChild(name_);
         AddChild(group_);
@@ -381,8 +381,8 @@ struct O3DVisualizer::Impl {
 
         window_ = w;
         scene_ = new SceneWidget();
-        selections_ = std::make_shared<O3DVisualizerSelections>(*scene_);
-        scene_->SetScene(std::make_shared<CloudViewerScene>(w->GetRenderer()));
+        selections_ = cloudViewer::make_shared<O3DVisualizerSelections>(*scene_);
+        scene_->SetScene(cloudViewer::make_shared<CloudViewerScene>(w->GetRenderer()));
         scene_->EnableSceneCaching(true);  // smoother UI with large geometry
         scene_->SetOnPointsPicked(
                 [this](const std::map<
@@ -497,11 +497,11 @@ struct O3DVisualizer::Impl {
 #endif  // __APPLE__
         h = new Horiz();
         h->AddStretch();
-        h->AddChild(std::make_shared<Label>(selection_help));
+        h->AddChild(cloudViewer::make_shared<Label>(selection_help));
         h->AddStretch();
         settings.pick_panel->AddChild(GiveOwnership(h));
         h = new Horiz(v_spacing);
-        h->AddChild(std::make_shared<Label>("Selection Sets"));
+        h->AddChild(cloudViewer::make_shared<Label>("Selection Sets"));
         h->AddStretch();
         h->AddChild(GiveOwnership(settings.new_selection_set));
         h->AddChild(GiveOwnership(settings.delete_selection_set));
@@ -594,13 +594,13 @@ struct O3DVisualizer::Impl {
         auto *grid = new VGrid(2, v_spacing);
         settings.scene_panel->AddChild(GiveOwnership(grid));
 
-        grid->AddChild(std::make_shared<Label>("BG Color"));
+        grid->AddChild(cloudViewer::make_shared<Label>("BG Color"));
         grid->AddChild(GiveOwnership(settings.bg_color));
-        grid->AddChild(std::make_shared<Label>("PointSize"));
+        grid->AddChild(cloudViewer::make_shared<Label>("PointSize"));
         grid->AddChild(GiveOwnership(settings.point_size));
-        grid->AddChild(std::make_shared<Label>("Shader"));
+        grid->AddChild(cloudViewer::make_shared<Label>("Shader"));
         grid->AddChild(GiveOwnership(settings.shader));
-        grid->AddChild(std::make_shared<Label>("Lighting"));
+        grid->AddChild(cloudViewer::make_shared<Label>("Lighting"));
         grid->AddChild(GiveOwnership(settings.lighting));
 
         // Light list
@@ -631,7 +631,7 @@ struct O3DVisualizer::Impl {
         h->AddChild(GiveOwnership(settings.use_sun));
 
         settings.light_panel->AddChild(
-                std::make_shared<Label>("Light sources"));
+                cloudViewer::make_shared<Label>("Light sources"));
         settings.light_panel->AddChild(GiveOwnership(h));
         settings.light_panel->AddFixed(half_em);
 
@@ -648,7 +648,7 @@ struct O3DVisualizer::Impl {
             this->SetIBL(resource_path + std::string("/") + std::string(val));
             this->settings.lighting->SetSelectedValue(kCustomName);
         });
-        grid->AddChild(std::make_shared<Label>("HDR map"));
+        grid->AddChild(cloudViewer::make_shared<Label>("HDR map"));
         grid->AddChild(GiveOwnership(settings.ibl_names));
 
         settings.ibl_intensity = new Slider(Slider::INT);
@@ -659,10 +659,10 @@ struct O3DVisualizer::Impl {
             this->SetUIState(ui_state_);
             this->settings.lighting->SetSelectedValue(kCustomName);
         });
-        grid->AddChild(std::make_shared<Label>("Intensity"));
+        grid->AddChild(cloudViewer::make_shared<Label>("Intensity"));
         grid->AddChild(GiveOwnership(settings.ibl_intensity));
 
-        settings.light_panel->AddChild(std::make_shared<Label>("Environment"));
+        settings.light_panel->AddChild(cloudViewer::make_shared<Label>("Environment"));
         settings.light_panel->AddChild(GiveOwnership(grid));
         settings.light_panel->AddFixed(half_em);
 
@@ -676,7 +676,7 @@ struct O3DVisualizer::Impl {
             this->SetUIState(ui_state_);
             this->settings.lighting->SetSelectedValue(kCustomName);
         });
-        grid->AddChild(std::make_shared<Label>("Intensity"));
+        grid->AddChild(cloudViewer::make_shared<Label>("Intensity"));
         grid->AddChild(GiveOwnership(settings.sun_intensity));
 
         settings.sun_dir = new VectorEdit();
@@ -694,7 +694,7 @@ struct O3DVisualizer::Impl {
                     // modified the scene.
                     this->settings.lighting->SetSelectedValue(kCustomName);
                 });
-        grid->AddChild(std::make_shared<Label>("Direction"));
+        grid->AddChild(cloudViewer::make_shared<Label>("Direction"));
         grid->AddChild(GiveOwnership(settings.sun_dir));
 
         settings.sun_color = new ColorEdit();
@@ -706,11 +706,11 @@ struct O3DVisualizer::Impl {
             this->SetUIState(ui_state_);
             this->settings.lighting->SetSelectedValue(kCustomName);
         });
-        grid->AddChild(std::make_shared<Label>("Color"));
+        grid->AddChild(cloudViewer::make_shared<Label>("Color"));
         grid->AddChild(GiveOwnership(settings.sun_color));
 
         settings.light_panel->AddChild(
-                std::make_shared<Label>("Sun (Directional light)"));
+                cloudViewer::make_shared<Label>("Sun (Directional light)"));
         settings.light_panel->AddChild(GiveOwnership(grid));
 
         // Geometry list
@@ -1367,7 +1367,7 @@ struct O3DVisualizer::Impl {
             added_groups_.insert(group);
             ui_state_.enabled_groups.insert(group);
 
-            auto cell = std::make_shared<CheckableTextTreeCell>(
+            auto cell = cloudViewer::make_shared<CheckableTextTreeCell>(
                     group.c_str(), true, [this, group](bool is_on) {
                         this->EnableGroup(group, is_on);
                     });
@@ -1410,7 +1410,7 @@ struct O3DVisualizer::Impl {
             if (it != settings.group2itemid.end()) {
                 parent = it->second;
             } else {
-                auto cell = std::make_shared<CheckableTextTreeCell>(
+                auto cell = cloudViewer::make_shared<CheckableTextTreeCell>(
                         o.group.c_str(), true,
                         [this, group = o.group](bool is_on) {
                             this->EnableGroup(group, is_on);
@@ -1427,7 +1427,7 @@ struct O3DVisualizer::Impl {
                                            : 0);
 #endif  // !GROUPS_USE_TREE
         flag |= (min_time_ != max_time_ ? DrawObjectTreeCell::FLAG_TIME : 0);
-        auto cell = std::make_shared<DrawObjectTreeCell>(
+        auto cell = cloudViewer::make_shared<DrawObjectTreeCell>(
                 o.name.c_str(), o.group.c_str(), o.time, o.is_visible, flag,
                 [this, name = o.name](bool is_on) {
                     ShowGeometry(name, is_on);
@@ -1564,11 +1564,11 @@ struct O3DVisualizer::Impl {
 
     void OnAbout() {
         auto &theme = window_->GetTheme();
-        auto dlg = std::make_shared<gui::Dialog>("About");
+        auto dlg = cloudViewer::make_shared<gui::Dialog>("About");
 
-        auto title = std::make_shared<gui::Label>(
+        auto title = cloudViewer::make_shared<gui::Label>(
                 (std::string("CloudViewer ") + CLOUDVIEWER_VERSION).c_str());
-        auto text = std::make_shared<gui::Label>(
+        auto text = cloudViewer::make_shared<gui::Label>(
                 "The MIT License (MIT)\n"
                 "Copyright (c) 2018 - 2020 www.erow.cn\n\n"
 
@@ -1597,11 +1597,11 @@ struct O3DVisualizer::Impl {
                 "WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING "
                 "FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR "
                 "OTHER DEALINGS IN THE SOFTWARE.");
-        auto ok = std::make_shared<gui::Button>("OK");
+        auto ok = cloudViewer::make_shared<gui::Button>("OK");
         ok->SetOnClicked([this]() { this->window_->CloseDialog(); });
 
         gui::Margins margins(theme.font_size);
-        auto layout = std::make_shared<gui::Vert>(0, margins);
+        auto layout = cloudViewer::make_shared<gui::Vert>(0, margins);
         layout->AddChild(gui::Horiz::MakeCentered(title));
         layout->AddFixed(theme.font_size);
         layout->AddChild(text);
@@ -1613,7 +1613,7 @@ struct O3DVisualizer::Impl {
     }
 
     void OnExportRGB() {
-        auto dlg = std::make_shared<gui::FileDialog>(
+        auto dlg = cloudViewer::make_shared<gui::FileDialog>(
                 gui::FileDialog::Mode::SAVE, "Save File", window_->GetTheme());
         dlg->AddFilter(".png", "PNG images (.png)");
         dlg->AddFilter("", "All files");
@@ -1685,28 +1685,28 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     // since a) we need to cache a pointer, and b) we should be the only
     // window, since the whole point of this class is to have an easy way to
     // visualize something with a blocking call to draw().
-    auto menu = std::make_shared<Menu>();
+    auto menu = cloudViewer::make_shared<Menu>();
 #if defined(__APPLE__)
     // The first menu item to be added on macOS becomes the application
     // menu (no matter its name)
-    auto app_menu = std::make_shared<Menu>();
+    auto app_menu = cloudViewer::make_shared<Menu>();
     app_menu->AddItem("About", MENU_ABOUT);
     menu->AddMenu("Open3D", app_menu);
 #endif  // __APPLE__
-    auto file_menu = std::make_shared<Menu>();
+    auto file_menu = cloudViewer::make_shared<Menu>();
     file_menu->AddItem("Export Current Image...", MENU_EXPORT_RGB);
     file_menu->AddSeparator();
     file_menu->AddItem("Close Window", MENU_CLOSE, KeyName::KEY_W);
     menu->AddMenu("File", file_menu);
 
-    auto actions_menu = std::make_shared<Menu>();
+    auto actions_menu = cloudViewer::make_shared<Menu>();
     actions_menu->AddItem("Show Settings", MENU_SETTINGS);
     actions_menu->SetChecked(MENU_SETTINGS, false);
     menu->AddMenu("Actions", actions_menu);
     impl_->settings.actions_menu = actions_menu.get();
 
 #if !defined(__APPLE__)
-    auto help_menu = std::make_shared<Menu>();
+    auto help_menu = cloudViewer::make_shared<Menu>();
     help_menu->AddItem("About", MENU_ABOUT);
     menu->AddMenu("Help", help_menu);
 #endif  // !__APPLE__
@@ -1741,7 +1741,7 @@ void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
     };
 
     impl_->receiver_ =
-            std::make_shared<Receiver>(address, timeout, this, on_geometry);
+            cloudViewer::make_shared<Receiver>(address, timeout, this, on_geometry);
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();

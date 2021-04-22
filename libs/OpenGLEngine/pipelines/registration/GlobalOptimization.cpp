@@ -259,7 +259,7 @@ Eigen::VectorXd UpdatePoseVector(const PoseGraph &pose_graph) {
 std::shared_ptr<PoseGraph> UpdatePoseGraph(const PoseGraph &pose_graph,
                                            const Eigen::VectorXd delta) {
     std::shared_ptr<PoseGraph> pose_graph_updated =
-            std::make_shared<PoseGraph>();
+            cloudViewer::make_shared<PoseGraph>();
     *pose_graph_updated = pose_graph;
     int n_nodes = (int)pose_graph.nodes_.size();
     for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
@@ -462,7 +462,7 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph) {
 std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
         const PoseGraph &pose_graph, const GlobalOptimizationOption &option) {
     std::shared_ptr<PoseGraph> pose_graph_pruned =
-            std::make_shared<PoseGraph>();
+            cloudViewer::make_shared<PoseGraph>();
 
     int n_nodes = (int)pose_graph.nodes_.size();
     for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
@@ -700,7 +700,7 @@ void GlobalOptimization(PoseGraph &pose_graph,
                         const GlobalOptimizationOption &option
                         /* = GlobalOptimizationOption() */) {
     if (!ValidatePoseGraph(pose_graph)) return;
-    std::shared_ptr<PoseGraph> pose_graph_pre = std::make_shared<PoseGraph>();
+    std::shared_ptr<PoseGraph> pose_graph_pre = cloudViewer::make_shared<PoseGraph>();
     *pose_graph_pre = pose_graph;
     method.OptimizePoseGraph(*pose_graph_pre, criteria, option);
     auto pose_graph_pre_pruned =

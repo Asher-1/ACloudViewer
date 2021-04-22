@@ -365,6 +365,12 @@ namespace ecvColor
         return Rgba(color, MAX);
     }
 
+    //! Conversion from Rgb to Rgba
+    inline Rgb FromRgbaToRgba(const Rgba& color)
+    {
+        return Rgb(color.r, color.g, color.b);
+    }
+
     //! Conversion from Rgbaf to Rgba
     inline Rgba FromRgbafToRgba(const Rgbaf& color)
     {

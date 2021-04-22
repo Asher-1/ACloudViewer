@@ -45,7 +45,7 @@ LineSet::CreateFromPointCloudCorrespondences(
         const ccPointCloud &cloud0,
         const ccPointCloud &cloud1,
         const std::vector<std::pair<int, int>> &correspondences) {
-    auto lineset_ptr = std::make_shared<LineSet>();
+    auto lineset_ptr = cloudViewer::make_shared<LineSet>();
     unsigned int point0_size = cloud0.size();
     unsigned int point1_size = cloud1.size();
     lineset_ptr->points_.resize(point0_size + point1_size);
@@ -66,7 +66,7 @@ LineSet::CreateFromPointCloudCorrespondences(
 std::shared_ptr<LineSet> 
 LineSet::CreateFromTriangleMesh(const ccMesh &mesh)
 {
-    auto line_set = std::make_shared<LineSet>();
+    auto line_set = cloudViewer::make_shared<LineSet>();
     line_set->points_ = mesh.getEigenVertices();
 
     std::unordered_set<Eigen::Vector2i,
@@ -94,7 +94,7 @@ LineSet::CreateFromTriangleMesh(const ccMesh &mesh)
 std::shared_ptr<LineSet> 
 LineSet::CreateFromOrientedBoundingBox(const ecvOrientedBBox &box) 
 {
-    auto line_set = std::make_shared<LineSet>();
+    auto line_set = cloudViewer::make_shared<LineSet>();
     line_set->points_ = box.getBoxPoints();
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
     line_set->lines_.push_back(Eigen::Vector2i(1, 7));
@@ -115,7 +115,7 @@ LineSet::CreateFromOrientedBoundingBox(const ecvOrientedBBox &box)
 std::shared_ptr<LineSet>
 LineSet::CreateFromAxisAlignedBoundingBox(const ccBBox &box) 
 {
-    auto line_set = std::make_shared<LineSet>();
+    auto line_set = cloudViewer::make_shared<LineSet>();
     line_set->points_ = box.getBoxPoints();
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
     line_set->lines_.push_back(Eigen::Vector2i(1, 7));
@@ -135,7 +135,7 @@ LineSet::CreateFromAxisAlignedBoundingBox(const ccBBox &box)
 
 std::shared_ptr<LineSet> 
 LineSet::CreateFromTetraMesh(const TetraMesh &mesh) {
-    auto line_set = std::make_shared<LineSet>();
+    auto line_set = cloudViewer::make_shared<LineSet>();
     line_set->points_ = mesh.vertices_;
 
     std::unordered_set<Eigen::Vector2i,

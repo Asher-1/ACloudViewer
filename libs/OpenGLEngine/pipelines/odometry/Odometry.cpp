@@ -40,8 +40,8 @@ namespace odometry {
 std::tuple<std::shared_ptr<geometry::Image>, std::shared_ptr<geometry::Image>>
 InitializeCorrespondenceMap(int width, int height) {
     // initialization: filling with any (u,v) to (-1,-1)
-    auto correspondence_map = std::make_shared<geometry::Image>();
-    auto depth_buffer = std::make_shared<geometry::Image>();
+    auto correspondence_map = cloudViewer::make_shared<geometry::Image>();
+    auto depth_buffer = cloudViewer::make_shared<geometry::Image>();
     correspondence_map->Prepare(width, height, 2, 4);
     depth_buffer->Prepare(width, height, 1, 4);
     for (int v = 0; v < correspondence_map->height_; v++) {
@@ -177,7 +177,7 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
     }      //    omp parallel
 #endif
 
-    auto correspondence = std::make_shared<CorrespondenceSetPixelWise>();
+    auto correspondence = cloudViewer::make_shared<CorrespondenceSetPixelWise>();
     int correspondence_count = CountCorrespondence(*correspondence_map);
     correspondence->resize(correspondence_count);
     int cnt = 0;
@@ -197,7 +197,7 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 
 std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
         const geometry::Image &depth, const Eigen::Matrix3d &intrinsic_matrix) {
-    auto image_xyz = std::make_shared<geometry::Image>();
+    auto image_xyz = cloudViewer::make_shared<geometry::Image>();
     if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
         cloudViewer::utility::LogError(
                 "[ConvertDepthImageToXYZImage] Unsupported image format.");
@@ -323,14 +323,14 @@ void NormalizeIntensity(geometry::Image &image_s,
 
 inline std::shared_ptr<geometry::RGBDImage> PackRGBDImage(
         const geometry::Image &color, const geometry::Image &depth) {
-    return std::make_shared<geometry::RGBDImage>(
+    return cloudViewer::make_shared<geometry::RGBDImage>(
             geometry::RGBDImage(color, depth));
 }
 
 std::shared_ptr<geometry::Image> PreprocessDepth(
         const geometry::Image &depth_orig, const OdometryOption &option) {
     std::shared_ptr<geometry::Image> depth_processed =
-            std::make_shared<geometry::Image>();
+            cloudViewer::make_shared<geometry::Image>();
     *depth_processed = depth_orig;
     for (int y = 0; y < depth_processed->height_; y++) {
         for (int x = 0; x < depth_processed->width_; x++) {
@@ -400,8 +400,8 @@ InitializeRGBDOdometry(
         source_color = source.color_.CreateFloatImage();
         target_color = target.color_.CreateFloatImage();
     } else {
-        source_color = std::make_shared<geometry::Image>(source.color_);
-        target_color = std::make_shared<geometry::Image>(target.color_);
+        source_color = cloudViewer::make_shared<geometry::Image>(source.color_);
+        target_color = cloudViewer::make_shared<geometry::Image>(target.color_);
     }
 
     auto source_gray =

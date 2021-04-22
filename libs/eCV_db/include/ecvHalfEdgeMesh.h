@@ -42,12 +42,16 @@ namespace geometry {
 /// functions.
 class ECV_DB_LIB_API ecvHalfEdgeMesh : public ecvMeshBase {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// \class HalfEdge
     ///
     /// \brief HalfEdge class contains vertex, triangle info about a half edge,
     /// as well as relations of next and twin half edge.
     class HalfEdge {
     public:
+        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
         /// \brief Default Constructor.
         ///
         /// Initializes all members of the instance with invalid values.
