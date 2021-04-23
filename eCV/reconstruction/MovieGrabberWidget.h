@@ -54,7 +54,7 @@ class MovieGrabberWidget : public QWidget {
   std::vector<colmap::Image> views;
 
   struct ViewData {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
     ccGLMatrixd model_view_matrix;
     ecvViewportParameters viewportParams;
     float point_size = -1.0f;

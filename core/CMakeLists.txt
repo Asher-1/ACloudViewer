@@ -101,6 +101,12 @@ else()
 	)
 endif()
 
+if (${WITH_SIMD})
+    target_compile_definitions( ${PROJECT_NAME} PUBLIC SIMD_ENABLED)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
+    target_compile_options(${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS}>")
+endif()
+
 # Windows-specific flags
 if ( WIN32 )
 	# Disable SECURE_SCL
@@ -228,10 +234,9 @@ endif()
 #		cmake/${PROJECT_NAME}
 #)
 
-
 # Enforce 3rd party dependencies
-cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 target_compile_definitions( ${PROJECT_NAME} PUBLIC USE_EIGEN )
+cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 
 CopyDLLToDirectory(${PROJECT_NAME})
 

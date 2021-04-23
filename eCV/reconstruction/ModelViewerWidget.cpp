@@ -319,45 +319,51 @@ ccGLMatrixd ModelViewerWidget::ModelViewMatrix() const {
 }
 
 void ModelViewerWidget::SelectObject(ccHObject* entity, unsigned subEntityID, int x, int y, const CCVector3& P) {
+    Q_UNUSED(x);
+    Q_UNUSED(y);
 
-  if (reg_image_ids.empty() || points3D.empty() || !app_)
-  {
+    if (!entity || reg_image_ids.empty() || points3D.empty())
+    {
       return;
-  }
+    }
 
-  ccHObject* obj = entity;
-  if (!main_sensors_ || !cloud_sparse_)
-  {
+    ccHObject* obj = entity;
+    if (!main_sensors_ || !cloud_sparse_)
+    {
       return;
-  } else {
+    }
+    else
+    {
     if (obj->isKindOf(CV_TYPES::CAMERA_SENSOR))
     {
         if(!main_sensors_->find(subEntityID))
         {
             return;
         }
-    } else if (obj->isKindOf(CV_TYPES::POINT_CLOUD)) {
+    }
+    else if (obj->isKindOf(CV_TYPES::POINT_CLOUD))
+    {
         if (cloud_sparse_->getUniqueID() != obj->getUniqueID())
         {
             return;
         }
     }
-  }
+    }
 
-  // Upload data in selection mode (one color per object).
-  UploadImageData(true);
-  UploadPointData(true);
+    // Upload data in selection mode (one color per object).
+    UploadImageData(true);
+    UploadPointData(true);
 
-  std::size_t selected_index = 0;
-  if (obj->isKindOf(CV_TYPES::CAMERA_SENSOR))
-  {
+    std::size_t selected_index = 0;
+    if (obj->isKindOf(CV_TYPES::CAMERA_SENSOR))
+    {
     ccCameraSensor* camera = ccHObjectCaster::ToCameraSensor(obj);
     ecvColor::Rgb plane_color = camera->getPlaneColor();
     selected_index = RGBToIndex(plane_color.r, plane_color.g, plane_color.b);
-  }
-  else if (obj->isKindOf(CV_TYPES::POINT_CLOUD) &&
+    }
+    else if (obj->isKindOf(CV_TYPES::POINT_CLOUD) &&
            obj->getUniqueID() == cloud_sparse_->getUniqueID())
-  {
+    {
     selected_index = static_cast<std::size_t>(subEntityID);
     if (selected_index >= cloud_sparse_->size())
     {
@@ -374,13 +380,15 @@ void ModelViewerWidget::SelectObject(ccHObject* entity, unsigned subEntityID, in
     ecvColor::Rgb& pointColor = cloud_sparse_->getPointColorPtr(selected_index);
     selected_index = RGBToIndex(pointColor.r, pointColor.g, pointColor.b);
 
-  }
-  else
-  {
+    }
+    else
+    {
       return;
-  }
+    }
 
-  if (selected_index < selection_buffer_.size()) {
+    colmap::image_t last_selected_image_id = selected_image_id_;
+
+    if (selected_index < selection_buffer_.size()) {
     const char buffer_type = selection_buffer_[selected_index].second;
     if (buffer_type == SELECTION_BUFFER_IMAGE_IDX) {
       selected_image_id_ = static_cast<image_t>(selection_buffer_[selected_index].first);
@@ -395,22 +403,44 @@ void ModelViewerWidget::SelectObject(ccHObject* entity, unsigned subEntityID, in
       selected_point3D_id_ = kInvalidPoint3DId;
       image_viewer_widget_->hide();
     }
-  } else {
+    } else {
     selected_image_id_ = kInvalidImageId;
     selected_point3D_id_ = kInvalidPoint3DId;
     image_viewer_widget_->hide();
-  }
+    }
 
-  selection_buffer_.clear();
+    selection_buffer_.clear();
 
-  StartRender();
-  UploadPointData();
-  UploadImageData();
-  UploadPointConnectionData();
-  UploadImageConnectionData();
-  EndRender(false);
+    StartRender();
+    UploadPointData();
+    UploadImageData();
+    UploadPointConnectionData();
+    UploadImageConnectionData();
+    EndRender(false);
 
-  update();
+    if (app_)
+    {
+      if (selected_image_id_ == kInvalidImageId)
+      {
+          app_->db()->expandElement(main_sensors_, false);
+          ccHObject* obj = getSelectedCamera(last_selected_image_id);
+          if (obj)
+          {
+              app_->db()->unselectEntity(obj);
+          }
+      }
+      else
+      {
+          app_->db()->expandElement(main_sensors_, true);
+          ccHObject* obj = getSelectedCamera(selected_image_id_);
+          if (obj)
+          {
+              app_->db()->selectEntity(obj);
+          }
+      }
+    }
+
+    update();
 }
 
 void ModelViewerWidget::SelectMoviewGrabberView(const size_t view_idx) {
@@ -577,7 +607,7 @@ void ModelViewerWidget::UploadPointData(const bool selection_mode) {
   }
 
   MainWindow::ccHObjectContext objContext;
-  if (app_ && app_->db()->find(cloud_sparse_->getUniqueID()))
+  if (app_ && app_->db()->find(static_cast<int>(cloud_sparse_->getUniqueID())))
   {
       objContext = app_->removeObjectTemporarilyFromDBTree(cloud_sparse_);
   }
@@ -709,11 +739,7 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
   {
       sensors_.reserve(curSensorNum);
   } else if (lastSensorNum > curSensorNum) {
-      std::vector<colmap::camera_t> camera_ids;
-      for (const image_t image_id : reg_image_ids) {
-          camera_ids.push_back(images[image_id].CameraId());
-      }
-      updateSensors(sensors_, camera_ids);
+      updateSensors(sensors_, reg_image_ids);
       lastSensorNum = sensors_.size();
   }
 
@@ -756,7 +782,7 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
         return;
     }
 
-    sensor->setName(QString::number(image.CameraId()));
+    sensor->setName(QString::number(image_id));
     BuildImageModel(sensor, image, camera, image_size_,
                       plane_color.cast<double>(),
                       frame_color.cast<double>());
@@ -827,11 +853,11 @@ void ModelViewerWidget::UploadMovieGrabberData() {
   {
       movie_grabber_sensors_.reserve(curSensorNum);
   } else if (lastSensorNum > curSensorNum) {
-      std::vector<colmap::camera_t> camera_ids;
+      std::vector<colmap::image_t> image_ids;
       for (const Image& image : movie_grabber_widget_->views) {
-          camera_ids.push_back(image.CameraId());
+          image_ids.push_back(image.ImageId());
       }
-      updateSensors(movie_grabber_sensors_, camera_ids);
+      updateSensors(movie_grabber_sensors_, image_ids);
       lastSensorNum = movie_grabber_sensors_.size();
   }
 
@@ -894,7 +920,7 @@ void ModelViewerWidget::UploadMovieGrabberData() {
         return;
       }
 
-      sensor->setName(QString::number(image.CameraId()));
+      sensor->setName(QString::number(image.ImageId()));
       BuildImageModel(sensor, image, camera, image_size_,
                       plane_color, frame_color);
       index++;
@@ -923,7 +949,7 @@ void ModelViewerWidget::drawPointCloud(ccPointCloud *cloud)
         cloud->setRedrawFlagRecursive(false);
         return;
     } else {
-        if(app_ && !app_->db()->find(cloud->getUniqueID()))
+        if(app_ && !app_->db()->find(static_cast<int>(cloud->getUniqueID())))
         {
             app_->addToDB(cloud);
             cloud->setLocked(true);
@@ -995,7 +1021,7 @@ void ModelViewerWidget::drawCameraSensors(std::vector<ccCameraSensor*>& sensors)
     }
 
     MainWindow::ccHObjectContext objContext;
-    if (main_sensors_ && app_ && app_->db()->find(main_sensors_->getUniqueID()))
+    if (main_sensors_ && app_ && app_->db()->find(static_cast<int>(main_sensors_->getUniqueID())))
     {
         objContext = app_->removeObjectTemporarilyFromDBTree(main_sensors_);
     }
@@ -1023,11 +1049,13 @@ void ModelViewerWidget::drawCameraSensors(std::vector<ccCameraSensor*>& sensors)
         app_->putObjectBackIntoDBTree(main_sensors_, objContext);
     }
 
-    if(app_ && !app_->db()->find(main_sensors_->getUniqueID()))
+    if(app_ && !app_->db()->find(static_cast<int>(main_sensors_->getUniqueID())))
     {
         if (main_sensors_->getChildrenNumber() > 0)
         {
             app_->addToDB(main_sensors_);
+            // just avoid duplicated rendering
+            main_sensors_->setRedrawFlagRecursive(false);
         }
     }
 }
@@ -1042,9 +1070,15 @@ void ModelViewerWidget::clearSensors(std::vector<ccCameraSensor *> &sensors)
     for (std::size_t i = 0; i < sensors.size(); ++i) {
         if (!sensors[i])
             continue;
-        if (app_ && app_->db()->find(sensors[i]->getUniqueID()))
+        if (app_ && app_->db()->find(static_cast<int>(sensors[i]->getUniqueID())))
         {
             sensors[i]->setLocked(false);
+            if (sensors[i]->isSelected())
+            {
+                // must unselect this sensor to be deleted,
+                // otherwise will remain in rendering screen?
+                app_->db()->unselectEntity(sensors[i]);
+            }
             app_->removeFromDB(sensors[i], true);
         }
         sensors[i] = nullptr;
@@ -1052,7 +1086,7 @@ void ModelViewerWidget::clearSensors(std::vector<ccCameraSensor *> &sensors)
 
     if (main_sensors_ && main_sensors_->getChildrenNumber() == 0)
     {
-        if (app_ && app_->db()->find(main_sensors_->getUniqueID()))
+        if (app_ && app_->db()->find(static_cast<int>(main_sensors_->getUniqueID())))
         {
             main_sensors_->setLocked(false);
             app_->removeFromDB(main_sensors_, true);
@@ -1064,9 +1098,9 @@ void ModelViewerWidget::clearSensors(std::vector<ccCameraSensor *> &sensors)
 }
 
 void ModelViewerWidget::updateSensors(std::vector<ccCameraSensor *> &sensors,
-                                      const std::vector<colmap::camera_t>& camera_ids)
+                                      const std::vector<colmap::image_t>& image_ids)
 {
-    if (sensors.size() > camera_ids.size()) {
+    if (sensors.size() > image_ids.size()) {
 
         std::vector<ccCameraSensor *> toBeDeleted;
         std::vector<ccCameraSensor *> preserved;
@@ -1075,8 +1109,8 @@ void ModelViewerWidget::updateSensors(std::vector<ccCameraSensor *> &sensors,
             {
                 continue;
             }
-            colmap::camera_t sensorId = sensor->getName().toUInt();
-            if (std::find(camera_ids.begin(), camera_ids.end(), sensorId) == camera_ids.end())
+            colmap::image_t sensorId = sensor->getName().toUInt();
+            if (std::find(image_ids.begin(), image_ids.end(), sensorId) == image_ids.end())
             {
                 toBeDeleted.push_back(sensor);
             } else {
@@ -1094,6 +1128,23 @@ void ModelViewerWidget::updateSensors(std::vector<ccCameraSensor *> &sensors,
             clearSensors(toBeDeleted);
         }
     }
+}
+
+ccHObject* ModelViewerWidget::getSelectedCamera(colmap::image_t selected_id)
+{
+    if (main_sensors_ && main_sensors_->getChildrenNumber() > 0)
+    {
+        for (unsigned ci = 0; ci != main_sensors_->getChildrenNumber(); ++ci)
+        {
+            ccHObject* obj = main_sensors_->getChild(ci);
+            if (obj->getName().toUInt() == selected_id)
+            {
+                return obj;
+            }
+        }
+    }
+
+    return nullptr;
 }
 
 }  // namespace cloudViewer

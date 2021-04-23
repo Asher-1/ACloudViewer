@@ -40,8 +40,8 @@ public:
 								double defaultVal2,
 								double defaultVal3,
 								int precision = 6,
-								const char* windowTitle = 0,
-								QWidget* parent = 0);
+                                const QString windowTitle = QString(),
+                                QWidget* parent = nullptr);
 
 	//! Enable the checkbox (bottom-left)
 	void showCheckbox(const QString& label, bool state, QString tooltip = QString());

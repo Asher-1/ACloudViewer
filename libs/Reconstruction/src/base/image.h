@@ -52,7 +52,7 @@ namespace colmap {
 // share a camera with multiple other images, if its intrinsics are the same.
 class Image {
  public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
   Image();
 

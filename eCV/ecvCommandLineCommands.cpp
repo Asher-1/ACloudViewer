@@ -205,14 +205,12 @@ bool CommandChangeCloudOutputFormat::process(ccCommandLineInterface &cmd)
 	//default options for ASCII output
 	if (fileFilter == AsciiFilter::GetFileFilter())
 	{
-		AsciiSaveDlg* saveDialog = AsciiFilter::GetSaveDialog();
-		assert(saveDialog);
-		saveDialog->setCoordsPrecision(cmd.numericalPrecision());
-		saveDialog->setSfPrecision(cmd.numericalPrecision());
-		saveDialog->setSeparatorIndex(0); //space
-		saveDialog->enableSwapColorAndSF(false); //default order: point, color, SF, normal
-		saveDialog->enableSaveColumnsNamesHeader(false);
-		saveDialog->enableSavePointCountHeader(false);
+        AsciiFilter::SetOutputCoordsPrecision(cmd.numericalPrecision());
+        AsciiFilter::SetOutputSFPrecision(cmd.numericalPrecision());
+        AsciiFilter::SetOutputSeparatorIndex(0); //space
+        AsciiFilter::SaveSFBeforeColor(false); //default order: point, color, SF, normal
+        AsciiFilter::SaveColumnsNamesHeader(false);
+        AsciiFilter::SavePointCountHeader(false);
 	}
 
 	//look for additional parameters
@@ -253,13 +251,8 @@ bool CommandChangeCloudOutputFormat::process(ccCommandLineInterface &cmd)
 				cmd.warning(QObject::tr("Argument '%1' is only applicable to ASCII format!").arg(argument));
 			}
 
-			AsciiSaveDlg* saveDialog = AsciiFilter::GetSaveDialog();
-			assert(saveDialog);
-			if (saveDialog)
-			{
-				saveDialog->setCoordsPrecision(precision);
-				saveDialog->setSfPrecision(precision);
-			}
+            AsciiFilter::SetOutputCoordsPrecision(precision);
+            AsciiFilter::SetOutputSFPrecision(precision);
 		}
 		else if (ccCommandLineInterface::IsCommand(argument, COMMAND_ASCII_EXPORT_SEPARATOR))
 		{
@@ -300,12 +293,7 @@ bool CommandChangeCloudOutputFormat::process(ccCommandLineInterface &cmd)
 				return cmd.error(QObject::tr("Invalid separator! ('%1')").arg(separatorStr));
 			}
 
-			AsciiSaveDlg* saveDialog = AsciiFilter::GetSaveDialog();
-			assert(saveDialog);
-			if (saveDialog)
-			{
-				saveDialog->setSeparatorIndex(index);
-			}
+            AsciiFilter::SetOutputSeparatorIndex(index);
 		}
 		else if (ccCommandLineInterface::IsCommand(argument, COMMAND_ASCII_EXPORT_ADD_COL_HEADER))
 		{
@@ -317,12 +305,7 @@ bool CommandChangeCloudOutputFormat::process(ccCommandLineInterface &cmd)
 				cmd.warning(QObject::tr("Argument '%1' is only applicable to ASCII format!").arg(argument));
 			}
 
-			AsciiSaveDlg* saveDialog = AsciiFilter::GetSaveDialog();
-			assert(saveDialog);
-			if (saveDialog)
-			{
-				saveDialog->enableSaveColumnsNamesHeader(true);
-			}
+            AsciiFilter::SaveColumnsNamesHeader(true);
 		}
 		else if (ccCommandLineInterface::IsCommand(argument, COMMAND_ASCII_EXPORT_ADD_PTS_COUNT))
 		{
@@ -334,12 +317,7 @@ bool CommandChangeCloudOutputFormat::process(ccCommandLineInterface &cmd)
 				cmd.warning(QObject::tr("Argument '%1' is only applicable to ASCII format!").arg(argument));
 			}
 
-			AsciiSaveDlg* saveDialog = AsciiFilter::GetSaveDialog();
-			assert(saveDialog);
-			if (saveDialog)
-			{
-				saveDialog->enableSavePointCountHeader(true);
-			}
+            AsciiFilter::SavePointCountHeader(true);
 		}
 		else
 		{
@@ -494,9 +472,7 @@ bool CommandLoad::process(ccCommandLineInterface &cmd)
 
 	if (skipLines > 0)
 	{
-		AsciiOpenDlg* openDialog = AsciiFilter::GetOpenDialog();
-		assert(openDialog);
-		openDialog->setSkippedLines(skipLines);
+        AsciiFilter::SetDefaultSkippedLineCount(skipLines);
 	}
 
 	//open specified file

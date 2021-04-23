@@ -93,6 +93,7 @@ protected slots:
 	void closeRectangle();
 	void updatePolyLine(int x, int y, Qt::MouseButtons buttons);
 	void pauseSegmentationMode(bool state, bool only2D = true);
+    inline void pauseSegmentation(bool state) { pauseSegmentationMode(state); }
 	void resetSegmentation();
 	void doSetPolylineSelection();
 	void doSetRectangularSelection();

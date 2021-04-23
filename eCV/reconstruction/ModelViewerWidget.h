@@ -150,7 +150,8 @@ class ModelViewerWidget : public QWidget {
   void resetCameraSensors(std::vector<ccCameraSensor*>& sensors);
   void clearSensors(std::vector<ccCameraSensor*>& sensors);
   void updateSensors(std::vector<ccCameraSensor*>& sensors,
-                     const std::vector<colmap::camera_t>& camera_ids);
+                     const std::vector<colmap::image_t>& image_ids);
+  ccHObject* getSelectedCamera(colmap::image_t selected_id);
 
   OptionManager* options_;
 

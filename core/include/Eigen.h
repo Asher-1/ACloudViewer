@@ -30,15 +30,17 @@
 #include "CVCoreLib.h"
 
 // EIGEN
-#include <Eigen/Core>
+#include <Eigen/Core>           // for EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 
 // SYSTEM
 #include <initializer_list>
-#include <memory>
+#include <type_traits>          // for std::enable_if_t, std::false_type, std::true_type
+#include <memory>               // for std::allocate_shared, std::dynamic_pointer_cast, std::make_shared, std::shared_ptr, std::static_pointer_cast, std::weak_ptr
 #include <tuple>
 #include <vector>
+#include <utility>              // for std::forward
 
 /**
  * \brief Macro to signal a class requires a custom allocator
@@ -49,66 +51,72 @@
  * \see pcl::has_custom_allocator, pcl::make_shared
  * \ingroup common
  */
-#define CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW \
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW \
-    using _custom_allocator_type_trait = void;
 
-#ifndef EIGEN_ALIGNED_ALLOCATOR
-#define EIGEN_ALIGNED_ALLOCATOR Eigen::aligned_allocator
+#ifdef SIMD_ENABLED
+    #define CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW \
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW \
+        using _custom_allocator_type_trait = void;
+#else
+    #define CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW \
+            using _custom_allocator_type_trait = void;
 #endif
 
-template <typename ...> using void_t = void; // part of std in c++17
-template <typename, typename = void_t<>> struct has_custom_allocator : std::false_type {};
-template <typename T> struct has_custom_allocator<T, void_t<typename T::_custom_allocator_type_trait>> : std::true_type {};
+#ifdef SIMD_ENABLED
+    #ifndef EIGEN_ALIGNED_ALLOCATOR
+        #define EIGEN_ALIGNED_ALLOCATOR Eigen::aligned_allocator
+    #endif
 
+    // Equivalent to EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION but with support for
+    // initializer lists, which is a C++11 feature and not supported by the Eigen.
+    // The initializer list extension is inspired by Theia and StackOverflow code.
+    #define EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(...)                 \
+      namespace std {                                                          \
+      template <>                                                              \
+      class vector<__VA_ARGS__, std::allocator<__VA_ARGS__>>                   \
+          : public vector<__VA_ARGS__, EIGEN_ALIGNED_ALLOCATOR<__VA_ARGS__>> { \
+        typedef vector<__VA_ARGS__, EIGEN_ALIGNED_ALLOCATOR<__VA_ARGS__>>      \
+            vector_base;                                                       \
+                                                                               \
+       public:                                                                 \
+        typedef __VA_ARGS__ value_type;                                        \
+        typedef vector_base::allocator_type allocator_type;                    \
+        typedef vector_base::size_type size_type;                              \
+        typedef vector_base::iterator iterator;                                \
+        explicit vector(const allocator_type& a = allocator_type())            \
+            : vector_base(a) {}                                                \
+        template <typename InputIterator>                                      \
+        vector(InputIterator first, InputIterator last,                        \
+               const allocator_type& a = allocator_type())                     \
+            : vector_base(first, last, a) {}                                   \
+        vector(const vector& c) : vector_base(c) {}                            \
+        explicit vector(size_type num, const value_type& val = value_type())   \
+            : vector_base(num, val) {}                                         \
+        vector(iterator start, iterator end) : vector_base(start, end) {}      \
+        vector& operator=(const vector& x) {                                   \
+          vector_base::operator=(x);                                           \
+          return *this;                                                        \
+        }                                                                      \
+        vector(initializer_list<__VA_ARGS__> list)                             \
+            : vector_base(list.begin(), list.end()) {}                         \
+      };                                                                       \
+      }  // namespace std
 
-namespace Eigen
-{
-template <typename X, typename... Args>
-inline std::shared_ptr<X> make_shared (Args&&... args) {
-    return std::shared_ptr<X> (new X (std::forward<Args> (args)...));
-}
+    #define EIGEN_STL_UMAP(KEY, VALUE)                                   \
+      std::unordered_map<KEY, VALUE, std::hash<KEY>, std::equal_to<KEY>, \
+                         Eigen::aligned_allocator<std::pair<KEY const, VALUE>>>
+#else
+    // Equivalent to EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION but with support for
+    // initializer lists, which is a C++11 feature and not supported by the Eigen.
+    // The initializer list extension is inspired by Theia and StackOverflow code.
+    #define EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(...)                  \
+        namespace std {                                                         \
+                                                                                \
+        }  // namespace std
 
-template <typename X, typename... Args>
-inline std::unique_ptr<X> make_unique (Args&&... args) {
-    return std::unique_ptr<X> (new X (std::forward<Args> (args)...));
-}
-}
-
-// Equivalent to EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION but with support for
-// initializer lists, which is a C++11 feature and not supported by the Eigen.
-// The initializer list extension is inspired by Theia and StackOverflow code.
-#define EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(...)                 \
-  namespace std {                                                          \
-  template <>                                                              \
-  class vector<__VA_ARGS__, std::allocator<__VA_ARGS__>>                   \
-      : public vector<__VA_ARGS__, EIGEN_ALIGNED_ALLOCATOR<__VA_ARGS__>> { \
-    typedef vector<__VA_ARGS__, EIGEN_ALIGNED_ALLOCATOR<__VA_ARGS__>>      \
-        vector_base;                                                       \
-                                                                           \
-   public:                                                                 \
-    typedef __VA_ARGS__ value_type;                                        \
-    typedef vector_base::allocator_type allocator_type;                    \
-    typedef vector_base::size_type size_type;                              \
-    typedef vector_base::iterator iterator;                                \
-    explicit vector(const allocator_type& a = allocator_type())            \
-        : vector_base(a) {}                                                \
-    template <typename InputIterator>                                      \
-    vector(InputIterator first, InputIterator last,                        \
-           const allocator_type& a = allocator_type())                     \
-        : vector_base(first, last, a) {}                                   \
-    vector(const vector& c) : vector_base(c) {}                            \
-    explicit vector(size_type num, const value_type& val = value_type())   \
-        : vector_base(num, val) {}                                         \
-    vector(iterator start, iterator end) : vector_base(start, end) {}      \
-    vector& operator=(const vector& x) {                                   \
-      vector_base::operator=(x);                                           \
-      return *this;                                                        \
-    }                                                                      \
-    vector(initializer_list<__VA_ARGS__> list)                             \
-        : vector_base(list.begin(), list.end()) {}                         \
-  };                                                                       \
-  }  // namespace std
+    #define EIGEN_STL_UMAP(KEY, VALUE)                                   \
+      std::unordered_map<KEY, VALUE, std::hash<KEY>, std::equal_to<KEY>, \
+                         std::allocator<std::pair<KEY const, VALUE>>>
+#endif
 
 //EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector2d)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector4d)
@@ -124,11 +132,17 @@ EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Quaternionf)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix<float, 3, 4>)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix<double, 3, 4>)
 
-#define EIGEN_STL_UMAP(KEY, VALUE)                                   \
-  std::unordered_map<KEY, VALUE, std::hash<KEY>, std::equal_to<KEY>, \
-                     Eigen::aligned_allocator<std::pair<KEY const, VALUE>>>
-
 namespace Eigen {
+
+    template <typename X, typename... Args>
+    inline std::shared_ptr<X> make_shared (Args&&... args) {
+        return std::shared_ptr<X> (new X (std::forward<Args> (args)...));
+    }
+
+    template <typename X, typename... Args>
+    inline std::unique_ptr<X> make_unique (Args&&... args) {
+        return std::unique_ptr<X> (new X (std::forward<Args> (args)...));
+    }
 
     /// Extending Eigen namespace by adding frequently used matrix type
     typedef Eigen::Matrix<double, 6, 6> Matrix6d;
@@ -141,6 +155,10 @@ namespace Eigen {
     typedef Eigen::Matrix<double, 4, 4, Eigen::DontAlign> Matrix4d_u;
 
 }  // namespace Eigen
+
+template <typename ...> using void_t = void; // part of std in c++17
+template <typename, typename = void_t<>> struct has_custom_allocator : std::false_type {};
+template <typename T> struct has_custom_allocator<T, void_t<typename T::_custom_allocator_type_trait>> : std::true_type {};
 
 namespace cloudViewer {
 template<typename T, typename ... Args>
