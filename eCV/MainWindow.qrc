@@ -264,6 +264,20 @@
         <file>Resources/images/icon/erow_256.ico</file>
         <file>Resources/images/icon/erow_256.png</file>
         <file>Resources/images/icon/erow_1024.png</file>
+        <file>Resources/images/others/pqAxes.png</file>
+        <file>Resources/images/pcl/show_axes.png</file>
+        <file>Resources/images/pcl/rgb_depth.png</file>
+        <file>Resources/images/pcl/normal_estimation.png</file>
+        <file>Resources/images/pcl/new_cloud_from_selection.png</file>
+        <file>Resources/images/pcl/insert_from_OpenNi.png</file>
+        <file>Resources/images/pcl/insert_from_file.png</file>
+        <file>Resources/images/pcl/frustum_selection.png</file>
+        <file>Resources/images/pcl/3dtree.png</file>
+        <file>Resources/images/svg/pqPointData.png</file>
+        <file>Resources/images/svg/pqPaste.png</file>
+        <file>Resources/images/svg/pqNodeMapData.png</file>
+        <file>Resources/images/svg/pqInvert.png</file>
+        <file>Resources/images/svg/pqSolidColor.png</file>
     </qresource>
     <qresource prefix="/qt">
         <file>etc/qt.conf</file>
