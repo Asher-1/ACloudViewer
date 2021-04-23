@@ -4334,7 +4334,7 @@ bool ccPointCloud::fromFile_MeOnly(QFile& in, short dataVersion, int flags, Load
 
                 for (size_t i = 0; i < count; ++i)
                 {
-                    m_rgbColors->addElement(ecvColor::FromRgbaToRgba(oldRGBAColors->getValue(i)));
+                    m_rgbColors->addElement(ecvColor::FromRgbaToRgb(oldRGBAColors->getValue(i)));
                 }
             }
             else

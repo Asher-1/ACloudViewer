@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-//#include "qGL.h"
 
 #include <memory>
 #include <vector>
@@ -40,7 +39,7 @@ namespace registration {
 /// \class PoseGraphNode
 ///
 /// \brief Node of PoseGraph.
-class /*OPENGL_ENGINE_LIB_API*/ PoseGraphNode : public cloudViewer::utility::IJsonConvertible {
+class PoseGraphNode : public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity())
@@ -58,7 +57,7 @@ public:
 /// \class PoseGraphEdge
 ///
 /// \brief Edge of PoseGraph.
-class /*OPENGL_ENGINE_LIB_API*/ PoseGraphEdge : public cloudViewer::utility::IJsonConvertible {
+class PoseGraphEdge : public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Parameterized Constructor.
     ///
@@ -113,7 +112,7 @@ public:
 /// \class PoseGraph
 ///
 /// \brief Data structure defining the pose graph.
-class /*OPENGL_ENGINE_LIB_API*/ PoseGraph : public cloudViewer::utility::IJsonConvertible {
+class PoseGraph : public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     PoseGraph();

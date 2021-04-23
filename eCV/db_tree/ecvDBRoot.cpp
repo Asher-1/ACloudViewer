@@ -247,13 +247,6 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget, QTreeView* propertiesTreeWid
 	m_dbTreeWidget->setAcceptDrops(true);
 	m_dbTreeWidget->setDropIndicatorShown(true);
 
-	//already done in ui file!
-	//m_dbTreeWidget->setDragDropMode(QAbstractItemView::InternalMove);
-	//m_dbTreeWidget->setEditTriggers(QAbstractItemView::EditKeyPressed);
-	//m_dbTreeWidget->setDragDropMode(QAbstractItemView::InternalMove);
-	//m_dbTreeWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
-	//m_dbTreeWidget->setUniformRowHeights(true);
-
 	//context menu on DB tree elements
 	m_dbTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 	m_expandBranch = new QAction(tr("Expand branch"), this);
@@ -279,50 +272,46 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget, QTreeView* propertiesTreeWid
 
 	m_contextMenuPos = QPoint(-1,-1);
 
-	//connect custom context menu actions
-	connect(m_dbTreeWidget,						SIGNAL(customContextMenuRequested(const QPoint&)),	this, SLOT(showContextMenu(const QPoint&)));
-	connect(m_expandBranch,						SIGNAL(triggered()),								this, SLOT(expandBranch()));
-	connect(m_collapseBranch,					SIGNAL(triggered()),								this, SLOT(collapseBranch()));
-	connect(m_gatherInformation,				SIGNAL(triggered()),								this, SLOT(gatherRecursiveInformation()));
-	connect(m_sortChildrenAZ,					SIGNAL(triggered()),								this, SLOT(sortChildrenAZ()));
-	connect(m_sortChildrenZA,					SIGNAL(triggered()),								this, SLOT(sortChildrenZA()));
-	connect(m_sortChildrenType,					SIGNAL(triggered()),								this, SLOT(sortChildrenType()));
-	connect(m_selectByTypeAndName,              SIGNAL(triggered()),								this, SLOT(selectByTypeAndName()));
-	connect(m_deleteSelectedEntities,			SIGNAL(triggered()),								this, SLOT(deleteSelectedEntities()));
-	connect(m_toggleSelectedEntities,			SIGNAL(triggered()),								this, SLOT(toggleSelectedEntities()));
-	connect(m_toggleSelectedEntitiesVisibility,	SIGNAL(triggered()),								this, SLOT(toggleSelectedEntitiesVisibility()));
-	connect(m_toggleSelectedEntitiesColor,		SIGNAL(triggered()),								this, SLOT(toggleSelectedEntitiesColor()));
-	connect(m_toggleSelectedEntitiesNormals,	SIGNAL(triggered()),								this, SLOT(toggleSelectedEntitiesNormals()));
-	connect(m_toggleSelectedEntitiesMat,		SIGNAL(triggered()),								this, SLOT(toggleSelectedEntitiesMat()));
-	connect(m_toggleSelectedEntitiesSF,			SIGNAL(triggered()),								this, SLOT(toggleSelectedEntitiesSF()));
-	connect(m_toggleSelectedEntities3DName,		SIGNAL(triggered()),								this, SLOT(toggleSelectedEntities3DName()));
-	connect(m_addEmptyGroup,					SIGNAL(triggered()),								this, SLOT(addEmptyGroup()));
-	connect(m_alignCameraWithEntity,			SIGNAL(triggered()),								this, SLOT(alignCameraWithEntityDirect()));
-	connect(m_alignCameraWithEntityReverse,		SIGNAL(triggered()),								this, SLOT(alignCameraWithEntityIndirect()));
-	connect(m_enableBubbleViewMode,				SIGNAL(triggered()),								this, SLOT(enableBubbleViewMode()));
-	connect(m_editLabelScalarValue,				SIGNAL(triggered()),								this, SLOT(editLabelScalarValue()));
+    //connect custom context menu actions
+    connect(m_dbTreeWidget,						&QWidget::customContextMenuRequested,	this, &ccDBRoot::showContextMenu);
+    connect(m_expandBranch,						&QAction::triggered,					this, &ccDBRoot::expandBranch);
+    connect(m_collapseBranch,					&QAction::triggered,					this, &ccDBRoot::collapseBranch);
+    connect(m_gatherInformation,				&QAction::triggered,					this, &ccDBRoot::gatherRecursiveInformation);
+    connect(m_sortChildrenAZ,					&QAction::triggered,					this, &ccDBRoot::sortChildrenAZ);
+    connect(m_sortChildrenZA,					&QAction::triggered,					this, &ccDBRoot::sortChildrenZA);
+    connect(m_sortChildrenType,					&QAction::triggered,					this, &ccDBRoot::sortChildrenType);
+    connect(m_selectByTypeAndName,              &QAction::triggered,					this, &ccDBRoot::selectByTypeAndName);
+    connect(m_deleteSelectedEntities,			&QAction::triggered,					this, &ccDBRoot::deleteSelectedEntities);
+    connect(m_toggleSelectedEntities,			&QAction::triggered,					this, &ccDBRoot::toggleSelectedEntities);
+    connect(m_toggleSelectedEntitiesVisibility,	&QAction::triggered,					this, &ccDBRoot::toggleSelectedEntitiesVisibility);
+    connect(m_toggleSelectedEntitiesColor,		&QAction::triggered,					this, &ccDBRoot::toggleSelectedEntitiesColor);
+    connect(m_toggleSelectedEntitiesNormals,	&QAction::triggered,					this, &ccDBRoot::toggleSelectedEntitiesNormals);
+    connect(m_toggleSelectedEntitiesMat,		&QAction::triggered,					this, &ccDBRoot::toggleSelectedEntitiesMat);
+    connect(m_toggleSelectedEntitiesSF,			&QAction::triggered,					this, &ccDBRoot::toggleSelectedEntitiesSF);
+    connect(m_toggleSelectedEntities3DName,		&QAction::triggered,					this, &ccDBRoot::toggleSelectedEntities3DName);
+    connect(m_addEmptyGroup,					&QAction::triggered,					this, &ccDBRoot::addEmptyGroup);
+    connect(m_alignCameraWithEntity,			&QAction::triggered,					this, &ccDBRoot::alignCameraWithEntityDirect);
+    connect(m_alignCameraWithEntityReverse,		&QAction::triggered,					this, &ccDBRoot::alignCameraWithEntityIndirect);
+    connect(m_enableBubbleViewMode,				&QAction::triggered,					this, &ccDBRoot::enableBubbleViewMode);
+    connect(m_editLabelScalarValue,				&QAction::triggered,					this, &ccDBRoot::editLabelScalarValue);
 
-	//other DB tree signals/slots connection
-	connect(m_dbTreeWidget->selectionModel(), SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)), this, SLOT(changeSelection(const QItemSelection&, const QItemSelection&)));
+    //other DB tree signals/slots connection
+    connect(m_dbTreeWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, &ccDBRoot::changeSelection);
 
-	//Properties Tree
-	assert(propertiesTreeWidget);
-	m_propertiesTreeWidget = propertiesTreeWidget;
-	m_propertiesModel = new QStandardItemModel(0, 2, parent);
-	m_ccPropDelegate = new ccPropertiesTreeDelegate(m_propertiesModel, m_propertiesTreeWidget);
-	m_propertiesTreeWidget->setItemDelegate(m_ccPropDelegate);
-	m_propertiesTreeWidget->setModel(m_propertiesModel);
-	//already done in ui file!
-	//m_propertiesTreeWidget->setSelectionMode(QAbstractItemView::NoSelection);
-	//m_propertiesTreeWidget->setAllColumnsShowFocus(true);
-	//m_propertiesTreeWidget->header()->setStretchLastSection(true);
-	m_propertiesTreeWidget->header()->setSectionResizeMode(QHeaderView::Interactive);
-	m_propertiesTreeWidget->setEnabled(false);
+    //Properties Tree
+    assert(propertiesTreeWidget);
+    m_propertiesTreeWidget = propertiesTreeWidget;
+    m_propertiesModel = new QStandardItemModel(0, 2, parent);
+    m_ccPropDelegate = new ccPropertiesTreeDelegate(m_propertiesModel, m_propertiesTreeWidget);
+    m_propertiesTreeWidget->setItemDelegate(m_ccPropDelegate);
+    m_propertiesTreeWidget->setModel(m_propertiesModel);
+    m_propertiesTreeWidget->header()->setSectionResizeMode(QHeaderView::Interactive);
+    m_propertiesTreeWidget->setEnabled(false);
 
-	//Properties tree signals/slots connection
-	connect(m_ccPropDelegate, SIGNAL(ccObjectPropertiesChanged(ccHObject*)), this, SLOT(updateCCObject(ccHObject*)));
-	connect(m_ccPropDelegate, SIGNAL(ccObjectAppearanceChanged(ccHObject*, bool)), this, SLOT(redrawCCObject(ccHObject*, bool)));
-	connect(m_ccPropDelegate, SIGNAL(ccObjectAndChildrenAppearanceChanged(ccHObject*, bool)), this, SLOT(redrawCCObjectAndChildren(ccHObject*, bool)));
+    //Properties tree signals/slots connection
+    connect(m_ccPropDelegate, &ccPropertiesTreeDelegate::ccObjectPropertiesChanged, this, &ccDBRoot::updateCCObject);
+    connect(m_ccPropDelegate, &ccPropertiesTreeDelegate::ccObjectAppearanceChanged, this, &ccDBRoot::redrawCCObject);
+    connect(m_ccPropDelegate, &ccPropertiesTreeDelegate::ccObjectAndChildrenAppearanceChanged, this, &ccDBRoot::redrawCCObjectAndChildren);
 }
 
 ccDBRoot::~ccDBRoot()
@@ -440,12 +429,46 @@ void ccDBRoot::addElement(ccHObject* object, bool autoExpand/*=true*/)
 
 void ccDBRoot::expandElement(ccHObject* object, bool state)
 {
-	if (!object || !m_dbTreeWidget)
+    if (!object || object->getChildrenNumber() == 0 || !m_dbTreeWidget)
 	{
 		return;
 	}
 
-	m_dbTreeWidget->setExpanded(index(object), state);
+    ccHObject* item = object;
+
+    //we recursively expand sub-branches
+    ccHObject::Container toExpand;
+    try
+    {
+        toExpand.push_back(item);
+        while (!toExpand.empty())
+        {
+            item = toExpand.back();
+            toExpand.pop_back();
+
+            QModelIndex itemIndex = index(item);
+            if (itemIndex.isValid())
+            {
+                if (state)
+                    m_dbTreeWidget->expand(itemIndex);
+                else
+                    m_dbTreeWidget->collapse(itemIndex);
+            }
+
+            assert(item->getChildrenNumber() != 0);
+            for (unsigned i=0; i<item->getChildrenNumber(); ++i)
+            {
+                if (item->getChild(i)->getChildrenNumber() != 0)
+                    toExpand.push_back(item->getChild(i));
+            }
+        }
+    }
+    catch (const std::bad_alloc&)
+    {
+        //not enough memory!
+    }
+
+    m_dbTreeWidget->setExpanded(index(object), state);
 }
 
 void ccDBRoot::removeElements(ccHObject::Container& objects)
@@ -925,6 +948,7 @@ int ccDBRoot::rowCount(const QModelIndex &parent) const
 
 int ccDBRoot::columnCount(const QModelIndex &parent) const
 {
+    Q_UNUSED(parent);
 	return 1;
 }
 
@@ -1356,6 +1380,7 @@ QMap<int,QVariant> ccDBRoot::itemData(const QModelIndex& index) const
 
 bool ccDBRoot::dropMimeData(const QMimeData* data, Qt::DropAction action, int destRow, int destColumn, const QModelIndex& destParent)
 {
+    Q_UNUSED(destColumn);
 	if (action != Qt::MoveAction)
 	{
 		return false;

@@ -89,10 +89,10 @@ public:
 		\param propertiesTreeWidget widget for selected entity's properties tree display
 		\param parent widget QObject parent
 	**/
-	ccDBRoot(ccCustomQTreeView* dbTreeWidget, QTreeView* propertiesTreeWidget, QObject* parent = 0);
+    ccDBRoot(ccCustomQTreeView* dbTreeWidget, QTreeView* propertiesTreeWidget, QObject* parent = nullptr);
 
 	//! Destructor
-	virtual ~ccDBRoot();
+    virtual ~ccDBRoot() override;
 
 	void hide();
 	void show();

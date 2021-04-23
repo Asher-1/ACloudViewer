@@ -18,6 +18,9 @@
 #ifndef Q_PCL_PLUGIN_MY_POINT_TYPES_H
 #define Q_PCL_PLUGIN_MY_POINT_TYPES_H
 
+// CV_CORE_LIB
+#include <Eigen.h>
+
 //PCL
 #include <pcl/register_point_struct.h>
 #include <pcl/point_types.h>
@@ -42,7 +45,7 @@ struct OnlyRGB
         };
         boost::uint32_t rgba;
     };
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 
@@ -50,49 +53,49 @@ struct OnlyRGB
 struct PointI
 {
     float intensity;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 
 struct FloatScalar
 {
     float S5c4laR;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 
 struct DoubleScalar
 {
     double S5c4laR;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 
 struct IntScalar
 {
     int S5c4laR;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 
 struct UIntScalar
 {
     unsigned S5c4laR;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 
 struct ShortScalar
 {
     short S5c4laR;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 
 struct UShortScalar
 {
     unsigned short S5c4laR;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 
@@ -102,7 +105,7 @@ struct OnlyNormals
     float normal_x;
     float normal_y;
     float normal_z;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 
@@ -124,7 +127,7 @@ struct PointXYZScalar
 {
     PCL_ADD_POINT4D;
     float scalar;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW		// make sure our new allocators are aligned
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW		// make sure our new allocators are aligned
 
 } EIGEN_ALIGN16;						// enforce SSE padding for correct memory alignment
 
@@ -147,7 +150,7 @@ struct PointXYZScalarRGB
         };
         boost::uint32_t rgba;
     };
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 
@@ -173,7 +176,7 @@ struct PointXYZScalarRGBNormals
     PCL_ADD_POINT4D;
     float curvature;
     float scalar;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 } EIGEN_ALIGN16;
 

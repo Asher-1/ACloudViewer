@@ -23,6 +23,10 @@ if( ${OPTION_USE_SHAPE_LIB} )
 endif()
 
 # Enforce 3rd party dependencies
+if(WITH_SIMD)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
+    target_compile_options(${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS}>")
+endif()
 cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 
 # INTERNAL LIB

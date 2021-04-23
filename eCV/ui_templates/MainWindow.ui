@@ -558,10 +558,18 @@
      <addaction name="actionShowWaveDialog"/>
      <addaction name="actionCompressFWFData"/>
     </widget>
+    <widget class="QMenu" name="menuCloud_2">
+     <property name="title">
+      <string>Cloud</string>
+     </property>
+     <addaction name="actionCreateSinglePointCloud"/>
+     <addaction name="actionPasteCloudFromClipboard"/>
+    </widget>
     <addaction name="menuClean"/>
     <addaction name="menuColor"/>
     <addaction name="menuNormals"/>
     <addaction name="menuOctree"/>
+    <addaction name="menuCloud_2"/>
     <addaction name="menuMesh"/>
     <addaction name="menuPolyline"/>
     <addaction name="menuPlane"/>
@@ -3435,6 +3443,31 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="shortcutVisibleInContextMenu">
     <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionCreateSinglePointCloud">
+   <property name="text">
+    <string>Create single point cloud</string>
+   </property>
+   <property name="toolTip">
+    <string>Create a cloud with a single point</string>
+   </property>
+   <property name="statusTip">
+    <string>Create a cloud with a single point</string>
+   </property>
+  </action>
+  <action name="actionPasteCloudFromClipboard">
+   <property name="text">
+    <string>Paste from clipboard</string>
+   </property>
+   <property name="toolTip">
+    <string>Paste from ASCII/text data stored in the clipboard</string>
+   </property>
+   <property name="statusTip">
+    <string>Paste from ASCII/text data stored in the clipboard</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>

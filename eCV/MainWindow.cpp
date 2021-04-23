@@ -116,6 +116,7 @@
 #include "ecvNoiseFilterDlg.h"
 #include "ecvPoissonReconDlg.h"
 #include "ecvColorFromScalarDlg.h"
+#include "ecvAskThreeDoubleValuesDlg.h"
 #include "ecvApplyTransformationDlg.h"
 #include "ecvGBLSensorProjectionDlg.h"
 #include "ecvCamSensorProjectionDlg.h"
@@ -540,6 +541,17 @@ void MainWindow::connectActions()
 	connect(m_ui->actionComputeOctree, &QAction::triggered, this, &MainWindow::doActionComputeOctree);
 	connect(m_ui->actionResampleWithOctree, &QAction::triggered, this, &MainWindow::doActionResampleWithOctree);
 
+    //"Edit > Cloud" menu
+    connect(m_ui->actionCreateSinglePointCloud,		&QAction::triggered, this, &MainWindow::createSinglePointCloud);
+    connect(m_ui->actionPasteCloudFromClipboard,	&QAction::triggered, this, &MainWindow::createPointCloudFromClipboard);
+    //the 'Paste from clipboard' tool depends on the clipboard state
+    {
+        const QClipboard* clipboard = QApplication::clipboard();
+        assert(clipboard);
+        m_ui->actionPasteCloudFromClipboard->setEnabled(clipboard->mimeData()->hasText());
+        connect(clipboard, &QClipboard::dataChanged, [&]() { m_ui->actionPasteCloudFromClipboard->setEnabled(clipboard->mimeData()->hasText()); });
+    }
+
 	// "Edit > Normals" menu
 	connect(m_ui->actionComputeNormals, &QAction::triggered, this, &MainWindow::doActionComputeNormals);
 	connect(m_ui->actionInvertNormals, &QAction::triggered, this, &MainWindow::doActionInvertNormals);
@@ -776,31 +788,31 @@ void MainWindow::initThemes()
     m_ui->TestThemeAction->setData(QVariant(Themes::THEME_TEST));
     m_ui->ParaviewThemeAction->setData(QVariant(Themes::THEME_PARAVIEW));
 
-    connect(m_ui->DfaultThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->BlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->LightBlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->DarkBlueThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->BlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->LightBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->FlatBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->DarkBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->GrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->LightGrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->DarkGrayThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->FlatWhiteThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->PsBlackThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->SilverThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->BFThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->TestThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
-    connect(m_ui->ParaviewThemeAction, SIGNAL(triggered()), this, SLOT(changeTheme()));
+    connect(m_ui->DfaultThemeAction,    &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->BlueThemeAction,      &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->LightBlueThemeAction, &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->DarkBlueThemeAction,  &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->BlackThemeAction,     &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->LightBlackThemeAction,&QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->FlatBlackThemeAction, &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->DarkBlackThemeAction, &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->GrayThemeAction,      &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->LightGrayThemeAction, &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->DarkGrayThemeAction,  &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->FlatWhiteThemeAction, &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->PsBlackThemeAction,   &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->SilverThemeAction,    &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->BFThemeAction,        &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->TestThemeAction,      &QAction::triggered, this, &MainWindow::changeTheme);
+    connect(m_ui->ParaviewThemeAction,  &QAction::triggered, this, &MainWindow::changeTheme);
 }
 
 void MainWindow::initLanguages()
 {
     m_ui->englishAction->setData(QVariant(CLOUDVIEWER_LANG_ENGLISH));
     m_ui->chineseAction->setData(QVariant(CLOUDVIEWER_LANG_CHINESE));
-    connect(m_ui->englishAction, SIGNAL(triggered()), this, SLOT(changeLanguage()));
-    connect(m_ui->chineseAction, SIGNAL(triggered()), this, SLOT(changeLanguage()));
+    connect(m_ui->englishAction, &QAction::triggered, this, &MainWindow::changeLanguage);
+    connect(m_ui->chineseAction, &QAction::triggered, this, &MainWindow::changeLanguage);
 }
 
 void MainWindow::initStatusBar()
@@ -3312,6 +3324,148 @@ void MainWindow::resetSelectedBBox()
 		}
 	}
 }
+
+void MainWindow::createSinglePointCloud()
+{
+    // ask the user to input the point coordinates
+    static CCVector3d s_lastPoint(0, 0, 0);
+    static size_t s_lastPointIndex = 0;
+    ccAskThreeDoubleValuesDlg axisDlg("x", "y", "z", -1.0e12, 1.0e12, s_lastPoint.x, s_lastPoint.y, s_lastPoint.z, 4, tr("Point coordinates"), this);
+    if (axisDlg.buttonBox->button(QDialogButtonBox::Ok))
+        axisDlg.buttonBox->button(QDialogButtonBox::Ok)->setFocus();
+    if (!axisDlg.exec())
+        return;
+    s_lastPoint.x = axisDlg.doubleSpinBox1->value();
+    s_lastPoint.y = axisDlg.doubleSpinBox2->value();
+    s_lastPoint.z = axisDlg.doubleSpinBox3->value();
+
+    // create the cloud
+    ccPointCloud* cloud = new ccPointCloud();
+    if (!cloud->reserve(1))
+    {
+        delete cloud;
+        CVLog::Error(tr("Not enough memory!"));
+        return;
+    }
+    cloud->setName(tr("Point #%1").arg(++s_lastPointIndex));
+    cloud->addPoint(CCVector3::fromArray(s_lastPoint.u));
+    cloud->setPointSize(5);
+
+    // add it to the DB tree
+    addToDB(cloud, true, true, true, true);
+
+    // select it
+    m_ccRoot->unselectAllEntities();
+    setSelectedInDB(cloud, true);
+}
+
+void MainWindow::createPointCloudFromClipboard()
+{
+    const QClipboard* clipboard = QApplication::clipboard();
+    assert(clipboard);
+    const QMimeData* mimeData = clipboard->mimeData();
+    if (!mimeData)
+    {
+        CVLog::Warning(tr("Clipboard is empty"));
+        return;
+    }
+
+    if (!mimeData->hasText())
+    {
+        CVLog::Error("ASCII/text data expected");
+        return;
+    }
+
+    // try to convert the data to a point cloud
+    FileIOFilter::LoadParameters parameters;
+    {
+        parameters.alwaysDisplayLoadDialog = true;
+        parameters.shiftHandlingMode = ecvGlobalShiftManager::DIALOG_IF_NECESSARY;
+        parameters.parentWidget = this;
+    }
+
+    ccHObject container;
+    QByteArray data = mimeData->data("text/plain");
+    CC_FILE_ERROR result = AsciiFilter().loadAsciiData(data, tr("Clipboard"), container, parameters);
+    if (result != CC_FERR_NO_ERROR)
+    {
+        FileIOFilter::DisplayErrorMessage(result, tr("loading"), tr("from the clipboard"));
+        return;
+    }
+
+    // we only expect clouds
+    ccHObject::Container clouds;
+    if (container.filterChildren(clouds, true, CV_TYPES::POINT_CLOUD) == 0)
+    {
+        assert(false);
+        CVLog::Error(tr("No cloud loaded"));
+        return;
+    }
+
+    // detach the clouds from the loading container
+    for (ccHObject* cloud : clouds)
+    {
+        if (cloud)
+        {
+            container.removeDependencyWith(cloud);
+        }
+    }
+    container.removeAllChildren();
+
+    // retrieve or create the group to store the 'clipboard' clouds
+    ccHObject* clipboardGroup = nullptr;
+    {
+        static unsigned s_clipboardGroupID = 0;
+
+        if (s_clipboardGroupID != 0)
+        {
+            clipboardGroup = dbRootObject()->find(s_clipboardGroupID);
+            if (nullptr == clipboardGroup)
+            {
+                // can't find the previous group
+                s_clipboardGroupID = 0;
+            }
+        }
+
+        if (s_clipboardGroupID == 0)
+        {
+            clipboardGroup = new ccHObject(tr("Clipboard"));
+            s_clipboardGroupID = clipboardGroup->getUniqueID();
+            addToDB(clipboardGroup, false, false, false, false);
+        }
+    }
+    assert(clipboardGroup);
+
+    bool normalsDisplayedByDefault = ecvOptions::Instance().normalsDisplayedByDefault;
+    for (ccHObject* cloud : clouds)
+    {
+        if (cloud)
+        {
+            clipboardGroup->addChild(cloud);
+            cloud->setName(tr("Cloud #%1").arg(clipboardGroup->getChildrenNumber()));
+
+            if (!normalsDisplayedByDefault)
+            {
+                // disable the normals on all loaded clouds!
+                static_cast<ccGenericPointCloud*>(cloud)->showNormals(false);
+            }
+        }
+    }
+
+    // eventually, we can add the clouds to the DB tree
+    for (size_t i = 0; i < clouds.size(); ++i)
+    {
+        ccHObject* cloud = clouds[i];
+        if (cloud)
+        {
+            bool lastCloud = (i + 1 == clouds.size());
+            addToDB(cloud, lastCloud, lastCloud, true, lastCloud);
+        }
+    }
+
+    QMainWindow::statusBar()->showMessage(tr("%1 cloud(s) loaded from the clipboard").arg(clouds.size()), 2000);
+}
+
 
 void MainWindow::removeFromDB(ccHObject * obj, bool autoDelete)
 {

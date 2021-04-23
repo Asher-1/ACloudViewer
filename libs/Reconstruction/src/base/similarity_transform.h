@@ -49,7 +49,7 @@ class Reconstruction;
 // 3D similarity transformation with 7 degrees of freedom.
 class SimilarityTransform3 {
  public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
   SimilarityTransform3();
 

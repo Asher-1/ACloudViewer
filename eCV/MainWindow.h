@@ -297,6 +297,11 @@ private slots:
 	void doSemanticAnnotation();
 	void doAnnotations(int mode);
 
+    //! Creates a cloud with a single point
+    void createSinglePointCloud();
+    //! Creates a cloud from the clipboard (ASCII) data
+    void createPointCloudFromClipboard();
+
 	// sand box research
 	void doActionComputeKdTree();
 	void doComputeBestFitBB();

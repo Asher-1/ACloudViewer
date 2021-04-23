@@ -30,6 +30,7 @@
 #include "PCLCloud.h"
 
 // CV_CORE_LIB
+#include <Eigen.h>
 #include <CVLog.h>
 #include <CVConst.h>
 
@@ -1611,7 +1612,7 @@ namespace PCLModules
 		{
 			float fitness_score;
 			Eigen::Matrix4f final_transformation;
-			EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+            CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 		};
 
 		TemplateMatching();
