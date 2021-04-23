@@ -39,6 +39,8 @@ class PointCloudPicker;
 /// \brief Visualizer with editing capabilities.
 class VisualizerWithEditing : public Visualizer {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     enum class SelectionMode {
         None = 0,
         Rectangle = 1,

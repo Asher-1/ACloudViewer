@@ -40,6 +40,7 @@ class ccGLMatrixd;
 class ECV_DB_LIB_API ecvOrientedBBox : public cloudViewer::OrientedBoundingBox, public ccHObject
 {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 	//! Default constructor
     ecvOrientedBBox()

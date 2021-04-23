@@ -33,6 +33,9 @@ namespace visualization {
 
 class ViewControlWithEditing : public ViewControl {
 public:
+
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     enum EditingMode {
         FreeMode = 0,
         OrthoPositiveX = 1,
@@ -55,7 +58,7 @@ public:
     void SetEditingMode(EditingMode mode);
     std::string GetStatusString() const;
 
-    EditingMode GetEditingMode() const { return editing_mode_; };
+    EditingMode GetEditingMode() const { return editing_mode_; }
     void ToggleEditingX() {
         if (editing_mode_ == EditingMode::OrthoPositiveX) {
             SetEditingMode(EditingMode::OrthoNegativeX);

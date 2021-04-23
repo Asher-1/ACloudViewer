@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-//#include "qGL.h"
 
 #include <string>
+#include <vector>
 
 namespace cloudViewer {
 namespace pipelines {

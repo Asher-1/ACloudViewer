@@ -40,6 +40,7 @@ class PointCloudPicker;
 
 class VisualizerWithVertexSelection : public Visualizer {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
     enum class SelectionMode { None = 0, Point = 1, Rectangle = 2, Moving = 3 };
 
 public:

@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-//#include "qGL.h"
 
 namespace cloudViewer {
 namespace pipelines {
@@ -126,7 +125,7 @@ public:
                 lower_scale_factor < 0.0 || lower_scale_factor > 1.0
                         ? 1. / 3.
                         : lower_scale_factor;
-    };
+    }
     ~GlobalOptimizationConvergenceCriteria() {}
 
 public:

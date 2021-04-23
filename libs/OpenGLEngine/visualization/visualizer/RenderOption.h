@@ -38,6 +38,9 @@ namespace visualization {
 /// \brief Defines rendering options for visualizer.
 class RenderOption : public cloudViewer::utility::IJsonConvertible {
 public:
+
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     // Global options
     enum class TextureInterpolationOption {
         Nearest = 0,

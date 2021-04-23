@@ -35,6 +35,9 @@ namespace visualization {
 
 class ViewControlWithCustomAnimation : public ViewControl {
 public:
+
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     enum AnimationMode {
         FreeMode = 0,
         PreviewMode = 1,

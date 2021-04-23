@@ -33,6 +33,9 @@ namespace visualization {
 
 class VisualizerWithCustomAnimation : public Visualizer {
 public:
+
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     VisualizerWithCustomAnimation();
     ~VisualizerWithCustomAnimation() override;
     VisualizerWithCustomAnimation(const VisualizerWithCustomAnimation &) =

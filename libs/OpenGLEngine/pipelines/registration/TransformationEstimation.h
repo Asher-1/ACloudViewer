@@ -96,10 +96,7 @@ public:
     ~TransformationEstimationPointToPoint() override {}
 
 public:
-    TransformationEstimationType GetTransformationEstimationType()
-            const override {
-        return type_;
-    };
+    TransformationEstimationType GetTransformationEstimationType() const override { return type_; }
     double ComputeRMSE(const ccPointCloud &source,
                        const ccPointCloud &target,
                        const CorrespondenceSet &corres) const override;

@@ -90,6 +90,9 @@ protected:
 
 class RGBDImageShaderForImage : public RGBDImageShader {
 public:
+
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     RGBDImageShaderForImage() : RGBDImageShader("RGBDImageShaderForImage") {}
 
 protected:
