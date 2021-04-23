@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "qGL.h"
 #include <memory>
 
 namespace cloudViewer {

@@ -58,9 +58,12 @@ class UniformTSDFVolume;
 /// structure edges.
 class ScalableTSDFVolume : public TSDFVolume {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     struct VolumeUnit {
     public:
-        VolumeUnit() : volume_(NULL) {}
+        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+        VolumeUnit() : volume_(nullptr) {}
 
     public:
         std::shared_ptr<UniformTSDFVolume> volume_;
@@ -93,10 +96,12 @@ public:
     /// Assume the index of the volume unit is (x, y, z), then the unit spans
     /// from (x, y, z) * volume_unit_length_
     /// to (x + 1, y + 1, z + 1) * volume_unit_length_
-    std::unordered_map<Eigen::Vector3i,
-                       VolumeUnit,
-                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector3i>>
-            volume_units_;
+    EIGEN_STL_UMAP_HASH(Eigen::Vector3i, VolumeUnit,
+                        utility::hash_eigen::hash<Eigen::Vector3i>) volume_units_;
+//    std::unordered_map<Eigen::Vector3i,
+//                       VolumeUnit,
+//                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector3i>>
+//            volume_units_;
 
 private:
     Eigen::Vector3i LocateVolumeUnit(const Eigen::Vector3d &point) {
@@ -105,8 +110,7 @@ private:
                                (int)std::floor(point(2) / volume_unit_length_));
     }
 
-    std::shared_ptr<UniformTSDFVolume> OpenVolumeUnit(
-            const Eigen::Vector3i &index);
+    std::shared_ptr<UniformTSDFVolume> OpenVolumeUnit(const Eigen::Vector3i &index);
 
     Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
 

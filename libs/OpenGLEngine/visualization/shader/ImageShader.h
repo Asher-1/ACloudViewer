@@ -81,6 +81,9 @@ protected:
 
 class ImageShaderForImage : public ImageShader {
 public:
+
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     ImageShaderForImage() : ImageShader("ImageShaderForImage") {}
 
 protected:

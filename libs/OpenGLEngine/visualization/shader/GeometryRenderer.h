@@ -46,6 +46,9 @@ namespace glsl {
 
 class GeometryRenderer {
 public:
+    // fix for inheritants alignment!
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     virtual ~GeometryRenderer() {}
 
 public:
@@ -186,8 +189,6 @@ protected:
 
 class TriangleMeshRenderer : public GeometryRenderer {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
-
     ~TriangleMeshRenderer() override {}
 
 public:

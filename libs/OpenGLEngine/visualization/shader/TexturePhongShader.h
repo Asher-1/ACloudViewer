@@ -110,6 +110,9 @@ protected:
 
 class TexturePhongShaderForTriangleMesh : public TexturePhongShader {
 public:
+
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     TexturePhongShaderForTriangleMesh()
         : TexturePhongShader("TexturePhongShaderForTriangleMesh") {}
 

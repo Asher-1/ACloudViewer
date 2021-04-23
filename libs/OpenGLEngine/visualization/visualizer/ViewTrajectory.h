@@ -38,6 +38,8 @@ namespace visualization {
 
 class ViewTrajectory : public cloudViewer::utility::IJsonConvertible {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     static const int INTERVAL_MAX;
     static const int INTERVAL_MIN;
     static const int INTERVAL_STEP;

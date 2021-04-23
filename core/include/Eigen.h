@@ -58,7 +58,7 @@
         using _custom_allocator_type_trait = void;
 #else
     #define CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW \
-            using _custom_allocator_type_trait = void;
+            using _custom_allocator_type_trait = int;
 #endif
 
 #ifdef SIMD_ENABLED
@@ -104,6 +104,9 @@
     #define EIGEN_STL_UMAP(KEY, VALUE)                                   \
       std::unordered_map<KEY, VALUE, std::hash<KEY>, std::equal_to<KEY>, \
                          Eigen::aligned_allocator<std::pair<KEY const, VALUE>>>
+    #define EIGEN_STL_UMAP_HASH(KEY, VALUE, HASH)                        \
+      std::unordered_map<KEY, VALUE, HASH, std::equal_to<KEY>,           \
+                         Eigen::aligned_allocator<std::pair<KEY const, VALUE>>>
 #else
     // Equivalent to EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION but with support for
     // initializer lists, which is a C++11 feature and not supported by the Eigen.
@@ -115,6 +118,9 @@
 
     #define EIGEN_STL_UMAP(KEY, VALUE)                                   \
       std::unordered_map<KEY, VALUE, std::hash<KEY>, std::equal_to<KEY>, \
+                         std::allocator<std::pair<KEY const, VALUE>>>
+    #define EIGEN_STL_UMAP_HASH(KEY, VALUE, HASH)                        \
+      std::unordered_map<KEY, VALUE, HASH, std::equal_to<KEY>,           \
                          std::allocator<std::pair<KEY const, VALUE>>>
 #endif
 
@@ -153,14 +159,18 @@ namespace Eigen {
     /// CloudViewer headers https://github.com/intel-isl/CloudViewer/issues/653
     typedef Eigen::Matrix<double, 6, 6, Eigen::DontAlign> Matrix6d_u;
     typedef Eigen::Matrix<double, 4, 4, Eigen::DontAlign> Matrix4d_u;
+    typedef Eigen::Matrix<double, 3, 1, Eigen::DontAlign> Vector3d_u;
+    typedef Eigen::Matrix<float, 3, 1, Eigen::DontAlign> Vector3f_u;
+    typedef Eigen::Matrix<double, 4, 1, Eigen::DontAlign> Vector4d_u;
+    typedef Eigen::Matrix<float, 4, 1, Eigen::DontAlign> Vector4f_u;
 
 }  // namespace Eigen
 
+namespace cloudViewer {
 template <typename ...> using void_t = void; // part of std in c++17
 template <typename, typename = void_t<>> struct has_custom_allocator : std::false_type {};
 template <typename T> struct has_custom_allocator<T, void_t<typename T::_custom_allocator_type_trait>> : std::true_type {};
 
-namespace cloudViewer {
 template<typename T, typename ... Args>
 std::enable_if_t<has_custom_allocator<T>::value, std::shared_ptr<T>> make_shared(Args&&... args)
 {

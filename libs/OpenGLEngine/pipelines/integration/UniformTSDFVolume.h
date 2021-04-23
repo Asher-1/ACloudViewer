@@ -57,6 +57,8 @@ namespace integration {
 /// voxel grid (Curless and Levoy 1996).
 class UniformTSDFVolume : public TSDFVolume {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     UniformTSDFVolume(double length,
                       int resolution,
                       double sdf_trunc,

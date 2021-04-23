@@ -100,6 +100,8 @@ protected:
 
 class PhongShaderForPointCloud : public PhongShader {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     PhongShaderForPointCloud() : PhongShader("PhongShaderForPointCloud") {}
 
 protected:
