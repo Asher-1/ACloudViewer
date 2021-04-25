@@ -479,7 +479,7 @@ public: // main interface
 
     static void ZoomCamera(double zoomFactor, int viewport = 0);
     inline virtual void zoomCamera(double zoomFactor, int viewport = 0) {}
-    inline static double GetCameraFocalDistance(int viewport = 0) { TheInstance()->getCameraFocalDistance(viewport); }
+    inline static double GetCameraFocalDistance(int viewport = 0) { return TheInstance()->getCameraFocalDistance(viewport); }
     inline virtual double getCameraFocalDistance(int viewport = 0) { return 100.0; /* do nothing */ }
 
     inline static void SetCameraFocalDistance(double focal_distance, int viewport = 0) { TheInstance()->setCameraFocalDistance(focal_distance, viewport); }

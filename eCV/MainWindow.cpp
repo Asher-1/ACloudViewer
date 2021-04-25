@@ -342,8 +342,18 @@ MainWindow::MainWindow()
     }
 
     refreshAll();
-
-    doActionToggleOrientationMarker(true);
+	
+#ifdef CV_WINDOWS
+	#ifdef QT_DEBUG
+		// speed up debugging on windows
+		doActionToggleOrientationMarker(false);
+	#else
+		doActionToggleOrientationMarker(true);
+	#endif
+#else
+	doActionToggleOrientationMarker(true);
+#endif
+	
 
 #ifdef USE_PYTHON_MODULE
     QString applicationPath = QCoreApplication::applicationDirPath();

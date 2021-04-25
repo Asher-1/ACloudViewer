@@ -322,7 +322,7 @@ public:
     /** \param q quaternion (4 values: w,x,y,z)
         \return corresponding rotation matrix
     **/
-    static Eigen::Matrix<T, 3, 1> QuaternionToRotationMatrix(const Eigen::Matrix<T, 4, 1>& qvec) {
+    static Eigen::Matrix<T, 3, 3> QuaternionToRotationMatrix(const Eigen::Matrix<T, 4, 1>& qvec) {
       const Eigen::Matrix<T, 4, 1> normalized_qvec = NormalizeQuaternion(qvec);
       const Eigen::Quaternion<T> quat(normalized_qvec(0), normalized_qvec(1),
                                       normalized_qvec(2), normalized_qvec(3));

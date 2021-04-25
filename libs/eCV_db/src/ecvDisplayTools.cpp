@@ -1628,6 +1628,7 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(bool withGLfeatures,
 
         projMatrix = ecvGenericDisplayTools::Ortho(-xMax, xMax, -yMax, yMax, zNear, zFar);
 	}
+    return projMatrix;
 }
 
 void ecvDisplayTools::UpdateProjectionMatrix()

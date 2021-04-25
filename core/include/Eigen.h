@@ -58,7 +58,7 @@
         using _custom_allocator_type_trait = void;
 #else
     #define CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW \
-            using _custom_allocator_type_trait = int;
+            using _custom_type_trait = void;
 #endif
 
 #ifdef SIMD_ENABLED

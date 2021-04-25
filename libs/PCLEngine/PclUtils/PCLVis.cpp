@@ -2108,7 +2108,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
         return getCurrentRenderer()->GetActiveCamera();
     }
 
-    double PCLVis::setModelViewMatrix(const ccGLMatrixd &viewMat, int viewport/* = 0*/)
+    void PCLVis::setModelViewMatrix(const ccGLMatrixd &viewMat, int viewport/* = 0*/)
     {
 
         getVtkCamera(viewport)->SetModelTransformMatrix(viewMat.data());
@@ -2702,8 +2702,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		}
 
         m_propPicker->Pick(x, y, 0, getRendererCollection()->GetFirstRenderer());
-        m_propPicker->GetActor();
-
+        return m_propPicker->GetActor();
 	}
 
     std::string PCLVis::pickItem(double x0/* = -1*/, double y0/* = -1*/,
