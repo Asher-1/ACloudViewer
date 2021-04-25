@@ -1,5 +1,15 @@
 include(ExternalProject)
-set(EIGEN_CMAKE_FLAGS ${EIGEN_DISABLE_ALIGN_FLAGS} -DEigen3_DIR:PATH=${EIGEN_ROOT_DIR}/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${EIGEN_INCLUDE_DIR} -DEIGEN_INCLUDE_DIR=${EIGEN_INCLUDE_DIR} -DEigen_INCLUDE_DIR=${EIGEN_INCLUDE_DIR})
+if (WIN32)
+    set( EIGEN_ROOT "" CACHE PATH "Eigen library root directory" )
+	if ( NOT EIGEN_ROOT )
+		message( SEND_ERROR "No Eigen library root specified (EIGEN_ROOT)" )
+	else()
+		include_directories( ${EIGEN_ROOT} )
+	endif()
+    set(EIGEN_CMAKE_FLAGS -DEigen3_DIR:PATH=${EIGEN_ROOT})
+else()
+    set(EIGEN_CMAKE_FLAGS -DEigen3_DIR:PATH=${EIGEN_ROOT_DIR}/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${EIGEN_INCLUDE_DIR} -DEIGEN3_INCLUDE_DIRS=${EIGEN_INCLUDE_DIR} -DEIGEN_INCLUDE_DIR=${EIGEN_INCLUDE_DIR} -DEigen_INCLUDE_DIR=${EIGEN_INCLUDE_DIR})
+endif()
 
 set_local_or_remote_url(
     DOWNLOAD_URL_PRIMARY
@@ -7,21 +17,8 @@ set_local_or_remote_url(
     REMOTE_URLS "https://github.com/ceres-solver/ceres-solver/archive/1.14.0.zip"
 )
 
-find_package(BLAS)
-find_package(LAPACK)
-find_package(SuiteSparse)
-
-if (BLAS_FOUND)
-    message("-- Found BLAS library: ${BLAS_LIBRARIES}")
-endif()
-if (LAPACK_FOUND)
-    message("-- Found LAPACK library: ${LAPACK_LIBRARIES}")
-endif()
-if (SUITESPARSE_FOUND)
-    message("-- Found SuiteSparse ${SUITESPARSE_VERSION}, building with SuiteSparse.")
-endif()
-
-ExternalProject_Add(
+if (WIN32)
+    ExternalProject_Add(
        ext_ceres
        PREFIX ceres-solver
        URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
@@ -31,22 +28,27 @@ ExternalProject_Add(
        UPDATE_COMMAND ""
        CMAKE_ARGS
               ${EIGEN_CMAKE_FLAGS}
-#              ${SUITESPARSE_CMAKE_FLAGS}
+              ${SUITESPARSE_CMAKE_FLAGS}
+              -DSUITESPARSE_INCLUDE_DIRS=${SUITESPARSE_INCLUDE_DIRS}
               -DBUILD_SHARED_LIBS=OFF
               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
               -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
               -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-              -DLAPACK_LIBRARIES={LAPACK_LIBRARIES}
-              -DBLAS_LIBRARIES={BLAS_LIBRARIES}
-              -DSUITESPARSE_INCLUDE_DIRS={SUITESPARSE_INCLUDE_DIRS}
-              -DSUITESPARSE:BOOL={SUITESPARSE_FOUND}
+              -DGFLAGS=ON
+              -Dgflags_DIR=${GFLAGS_LIB_DIR}/cmake/gflags
+              -Dglog_DIR=${GLOG_LIB_DIR}/cmake/glog
+              -DCMAKE_CXX_FLAGS=/DGOOGLE_GLOG_DLL_DECL=
+              -DLAPACK=ON
+              -DSUITESPARSE=ON
               -DOPENMP=ON
-              -DLAPACK:BOOL={LAPACK_FOUND}
-              -DBUILD_TESTING:BOOL=OFF
-              -DBUILD_EXAMPLES:BOOL=OFF
+              -DBUILD_TESTING=OFF
+              -DBUILD_EXAMPLES=OFF
               -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
-       DEPENDS ${EIGEN3_TARGET} ${SUITESPARSE_TARGET}
+       DEPENDS ${EIGEN3_TARGET} ${GLOG_TARGET} ${GFLAGS_TARGET} ${SUITESPARSE_TARGET}
        )
+else()
+
+endif()
 
 ExternalProject_Get_Property(ext_ceres INSTALL_DIR)
 set(CERES_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.

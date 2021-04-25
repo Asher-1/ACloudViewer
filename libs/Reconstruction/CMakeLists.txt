@@ -85,16 +85,23 @@ if(OPENMP_ENABLED)
 endif()
 
 #find_package(FreeImage REQUIRED)
-find_package(Ceres REQUIRED)
-find_package(Glog REQUIRED)
-
+#find_package(Ceres REQUIRED)
+#find_package(Glog REQUIRED)
+if (WIN32)
+	set( BOOST_ROOT "" CACHE PATH "Boost library root directory" )
+	if ( NOT BOOST_ROOT )
+		message( SEND_ERROR "No Boost library root specified (BOOST_ROOT)" )
+	else()
+		include_directories( ${BOOST_ROOT} )
+	endif()
+endif()
+#set(Boost_NO_BOOST_CMAKE ON)
 find_package(Boost REQUIRED COMPONENTS
              program_options
              filesystem
              graph
              system
              unit_test_framework)
-
 
 set(OpenGL_GL_PREFERENCE GLVND)
 
@@ -283,29 +290,26 @@ include(GenerateVersionDefinitions)
 
 set(COLMAP_INCLUDE_DIRS
     ${BOOST_INCLUDE_DIRS}
-    ${GLOG_INCLUDE_DIRS}
-    ${FREEIMAGE_INCLUDE_DIRS}
-    ${CERES_INCLUDE_DIRS}
+    #${GLOG_INCLUDE_DIRS}
+    #${FREEIMAGE_INCLUDE_DIRS}
+    #${CERES_INCLUDE_DIRS}
 )
 
 set(COLMAP_LINK_DIRS
     ${Boost_LIBRARY_DIRS}
 )
 
-set(freeimage_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
-set(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIB_DIR}/${freeimage_library_filename})
+#set(freeimage_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
+#set(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIB_DIR}/${freeimage_library_filename})
 set(COLMAP_EXTERNAL_LIBRARIES
     ${CMAKE_DL_LIBS}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
-    ${GLOG_LIBRARIES}
-    ${FREEIMAGE_LIBRARIES}
-    ${CERES_LIBRARIES}
+    #${GLOG_LIBRARIES}
+    #${FREEIMAGE_LIBRARIES}
+    #${CERES_LIBRARIES}
 )
-
-message("GLOG_LIBRARIES: " ${GLOG_LIBRARIES})
-message("GLOG_INCLUDE_DIRS: " ${GLOG_INCLUDE_DIRS})
 
 if(OPENMP_FOUND)
     list(APPEND COLMAP_EXTERNAL_LIBRARIES ${OpenMP_libomp_LIBRARY})

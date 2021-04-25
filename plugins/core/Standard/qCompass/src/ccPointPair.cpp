@@ -190,11 +190,11 @@ bool ccPointPair::isPointPair(ccHObject* object)
 {
 	if (object->hasMetaData("ccCompassType"))
 	{
-		return object->getMetaData("ccCompassType").toString().contains("PointPair") |
-			object->getMetaData("ccCompassType").toString().contains("Lineation") |
-			object->getMetaData("ccCompassType").toString().contains("Thickness") |
-			object->getMetaData("ccCompassType").toString().contains("PinchNode") |
-			object->getMetaData("ccCompassType").toString().contains("Relationship");
+		return  object->getMetaData("ccCompassType").toString().contains("PointPair") |
+				object->getMetaData("ccCompassType").toString().contains("Lineation") |
+				object->getMetaData("ccCompassType").toString().contains("Thickness") |
+				object->getMetaData("ccCompassType").toString().contains("PinchNode") |
+				object->getMetaData("ccCompassType").toString().contains("Relationship");
 	}
 	return false;
 }
