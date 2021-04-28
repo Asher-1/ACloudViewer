@@ -6,6 +6,11 @@ set_local_or_remote_url(
     REMOTE_URLS "https://github.com/gflags/gflags/archive/v2.2.2.zip"
 )
 
+set(BUILD_SHARED_LIBS_FLAG OFF)
+if (WIN32)
+	set(BUILD_SHARED_LIBS_FLAG OFF)
+endif()
+
 # Add gflags
 ExternalProject_Add(
     ext_gflags
@@ -14,7 +19,7 @@ ExternalProject_Add(
     URL_HASH MD5=ff856ff64757f1381f7da260f79ba79b
     UPDATE_COMMAND ""
     CMAKE_ARGS
-        -DBUILD_SHARED_LIBS=ON
+        -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS_FLAG}
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}

@@ -6,6 +6,11 @@ set_local_or_remote_url(
     REMOTE_URLS "https://github.com/google/glog/archive/v0.3.5.zip"
 )
 
+set(BUILD_SHARED_LIBS_FLAG OFF)
+if (WIN32)
+	set(BUILD_SHARED_LIBS_FLAG OFF)
+endif()
+
 ExternalProject_Add(
     ext_glog
     PREFIX glog
@@ -14,7 +19,7 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     CMAKE_ARGS
         ${GFLAGS_CMAKE_FLAGS}
-        -DBUILD_SHARED_LIBS=ON
+        -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS_FLAG}
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
