@@ -1784,7 +1784,8 @@ void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView)
 		settings.endGroup();
 	}
 
-	s_tools.instance->m_bubbleViewModeEnabled = false;
+    s_tools.instance->m_bubbleViewModeEnabled = false;
+
 	InvalidateViewport();
 	InvalidateVisualization();
 	Deprecate3DLayer();
@@ -2059,25 +2060,36 @@ void ecvDisplayTools::SetupProjectiveViewport(const ccGLMatrixd& cameraMatrix,
 {
 	//perspective (viewer-based by default)
 	if (bubbleViewMode)
-		SetBubbleViewMode(true);
+    {
+        SetBubbleViewMode(true);
+    }
 	else
-		SetPerspectiveState(true, !viewerBasedPerspective);
+    {
+        SetPerspectiveState(true, !viewerBasedPerspective);
+    }
 
 	//field of view (= OpenGL 'fovy' but in degrees)
 	if (fov_deg > 0.0f)
 	{
-		SetFov(fov_deg);
+        if (s_tools.instance->m_viewportParams.perspectiveView)
+        {
+            SetFov(fov_deg);
+        }
+        else
+        {
+            SetParallelScale(static_cast<double>(cloudViewer::DegreesToRadians(fov_deg)), 0);
+        }
 	}
 
 	//aspect ratio
 	SetAspectRatio(ar);
 
 	//set the camera matrix 'translation' as OpenGL camera center
-	CCVector3d T = cameraMatrix.getTranslationAsVec3D();
+    CCVector3d T = cameraMatrix.getTranslationAsVec3D();
     CCVector3d UP = cameraMatrix.getColumnAsVec3D(1);
     cameraMatrix.applyRotation(UP.data());
+    SetCameraPos(T);
     SetCameraPosition(T.data(), UP.data());
-	SetCameraPos(T);
 	if (viewerBasedPerspective && s_tools.instance->m_autoPickPivotAtCenter)
 	{
 		SetPivotPoint(T);
@@ -2087,7 +2099,7 @@ void ecvDisplayTools::SetupProjectiveViewport(const ccGLMatrixd& cameraMatrix,
 	ccGLMatrixd trans = cameraMatrix;
 	trans.clearTranslation();
 	trans.invert();
-	SetBaseViewMat(trans);
+    SetBaseViewMat(trans);
 
     ResetCameraClippingRange();
     UpdateScreen();
@@ -2359,7 +2371,7 @@ void ecvDisplayTools::SetCameraPos(const CCVector3d& P)
 {
     if ((s_tools.instance->m_viewportParams.getCameraCenter() - P).norm2d() != 0.0)
 	{
-        s_tools.instance->m_viewportParams.setCameraCenter(P);
+        s_tools.instance->m_viewportParams.setCameraCenter(P, true);
         SetCameraPosition(P);
         emit s_tools.instance->cameraPosChanged(s_tools.instance->m_viewportParams.getCameraCenter());
 		emit s_tools.instance->cameraParamChanged();
@@ -2392,6 +2404,11 @@ void ecvDisplayTools::GetGLCameraParameters(ccGLCameraParameters & params)
     s_tools.instance->m_viewportParams.viewMat = rotationMat;
 	double nearFar[2];
 	GetCameraClip(nearFar);
+
+    CCVector3d pivot;
+    GetCenterOfRotation(pivot);
+    s_tools.instance->m_viewportParams.setPivotPoint(pivot);
+
 	s_tools.instance->m_viewportParams.zNear = nearFar[0];
 	s_tools.instance->m_viewportParams.zFar = nearFar[1];
     s_tools.instance->m_viewportParams.fov_deg = static_cast<float>(GetCameraFovy());
@@ -2428,6 +2445,10 @@ void ecvDisplayTools::UpdateDisplayParameters()
     rotationMat.setRotation(ccGLMatrixd::ToEigenMatrix3(viewMat).data());
     s_tools.instance->m_viewportParams.viewMat = rotationMat;
 
+    CCVector3d pivot;
+    GetCenterOfRotation(pivot);
+    s_tools.instance->m_viewportParams.setPivotPoint(pivot);
+
 	// set camera fov
     s_tools.instance->m_viewportParams.fov_deg = static_cast<float>(GetCameraFovy());
 
@@ -2456,14 +2477,18 @@ void ecvDisplayTools::SetViewportParameters(const ecvViewportParameters& params)
 {
 	ecvViewportParameters oldParams = s_tools.instance->m_viewportParams;
 	s_tools.instance->m_viewportParams = params;
-	if (params.perspectiveView)
-	{
-		SetCameraFovy(params.fov_deg);
-		SetCameraClip(params.zNear, params.zFar);
-	}
+    SetCameraClip(params.zNear, params.zFar);
+    if (params.perspectiveView)
+    {
+        SetFov(params.fov_deg);
+    }
+    else
+    {
+        SetParallelScale(static_cast<double>(cloudViewer::DegreesToRadians(params.fov_deg)), 0);
+    }
 
+    SetPivotPoint(params.getPivotPoint(), false, false);
     SetCameraPosition(params.getCameraCenter().u, params.focal.u, params.up.u);
-	//Update();
 
 	InvalidateViewport();
 	InvalidateVisualization();

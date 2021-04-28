@@ -98,6 +98,7 @@
     <addaction name="helpAction"/>
     <addaction name="actionAbout"/>
     <addaction name="actionAboutPlugins"/>
+    <addaction name="actionCheckForUpdates"/>
     <addaction name="actionEnableQtWarnings"/>
    </widget>
    <widget class="QMenu" name="menuOption">
@@ -3486,6 +3487,15 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Ctrl+P</string>
    </property>
   </action>
+  <action name="actionCheckForUpdates">
+   <property name="icon">
+    <iconset resource="../QSimpleUpdater/etc/resources/qsimpleupdater.qrc">
+     <normaloff>:/icons/update.png</normaloff>:/icons/update.png</iconset>
+   </property>
+   <property name="text">
+    <string>Check for Updates</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -3501,6 +3511,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   </customwidget>
  </customwidgets>
  <resources>
+  <include location="../QSimpleUpdater/etc/resources/qsimpleupdater.qrc"/>
   <include location="../MainWindow.qrc"/>
  </resources>
  <connections>

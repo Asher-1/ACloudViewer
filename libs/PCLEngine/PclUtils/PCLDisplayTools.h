@@ -330,6 +330,7 @@ public:
 
 	// get zoom factor in parallel mode
     virtual double getParallelScale(int viewport = 0) override;
+    virtual void setParallelScale(double scale, int viewport = 0) override;
 
 	/** \brief Save the current rendered image to disk, as a PNG screen shot.
 	   * \param[in] file the name of the PNG file

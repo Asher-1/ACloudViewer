@@ -32,6 +32,9 @@ file( GLOB txt_list TODO.txt ${ErowCloudViewerProjects_SOURCE_DIR}/CHANGELOG.md 
 add_subdirectory( db_tree )
 add_subdirectory( pluginManager )
 
+# for
+add_subdirectory( QSimpleUpdater )
+
 if (BUILD_RECONSTRUCTION)
     add_subdirectory(reconstruction)
 endif()
@@ -97,6 +100,7 @@ DeployQt(
 target_link_libraries( ${PROJECT_NAME}
     CVAppCommon
     QCustomPlot
+    Qt5::Network
     Qt5::PrintSupport
 )
 

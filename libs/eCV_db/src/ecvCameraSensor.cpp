@@ -374,15 +374,47 @@ bool ccCameraSensor::applyViewport()
 		return false;
 	}
 
-	//aspect ratio
-	float ar = static_cast<float>(m_intrinsicParams.arrayWidth) / m_intrinsicParams.arrayHeight;
-    float h_fov_rad = 2 * atanf(tanf(m_intrinsicParams.vFOV_rad / 2) / ar);
-    //fov
-    float fov_deg = cloudViewer::RadiansToDegrees(h_fov_rad);
+    float fov_deg = cloudViewer::RadiansToDegrees( m_intrinsicParams.vFOV_rad );
 
-	//camera position/orientation
-	ccGLMatrixd transd(trans.data());
-	ecvDisplayTools::SetupProjectiveViewport(transd, fov_deg, ar);
+    ecvViewportParameters viewParams = ecvDisplayTools::GetViewportParameters();
+    viewParams.fov_deg = fov_deg;
+    viewParams.zFar = static_cast<double>(m_intrinsicParams.zFar_mm);
+    viewParams.zNear = static_cast<double>(m_intrinsicParams.zNear_mm);
+
+    CCVector3 upperLeftPointd = computeUpperLeftPoint();
+
+    // pos
+    CCVector3 camC = trans.getTranslationAsVec3D();
+    viewParams.setCameraCenter(CCVector3d::fromArray(camC));
+
+    int flag = 1;
+    if (upperLeftPointd.z > 0)
+    {
+        flag = 1;
+    }
+    else
+    {
+        flag = -1;
+    }
+
+    // up
+    CCVector3 upDir = flag * trans.getColumnAsVec3D(1);
+    upDir.normalize();
+    if ( cloudViewer::LessThanEpsilon( std::fabs(upDir.norm()) ) )
+    {
+        CVLog::Warning("[ccCameraSensor::applyViewport] Viewing dir is parallel to the plane Y!");
+        return false;
+    }
+    viewParams.up = CCVector3d::fromArray(upDir);
+
+    // focal
+    CCVector3 viewDir = flag * trans.getColumnAsVec3D(2);
+    CCVector3 focal3D = camC - viewDir;
+    viewParams.focal = CCVector3d::fromArray(focal3D);
+    viewParams.setPivotPoint(viewParams.focal, true);
+
+    ecvDisplayTools::SetViewportParameters(viewParams);
+    ecvDisplayTools::UpdateScreen();
 
 	return true;
 }
@@ -1826,7 +1858,7 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(const ccImage* image,
 		CCVector2 xBottomLeft(0, static_cast<PointCoordinateType>(height));
 		CCVector3 P3D;
 		if (!fromImageCoordToGlobalCoord(xBottomLeft, P3D, Z0))
-			return 0;
+            return  nullptr;
 #ifdef QT_DEBUG
 		//internal check
 		CCVector2 check(0, 0);

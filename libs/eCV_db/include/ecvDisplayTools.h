@@ -926,8 +926,13 @@ public: // visualization matrix transformation
 	static void SetViewportParameters(const ecvViewportParameters& params);
 	static const ecvViewportParameters& GetViewportParameters();
 
-    inline static double GetParallelScale(int viewport = 0) { return TheInstance()->getParallelScale(); }
+    // return value (in rad)
+    inline static double GetParallelScale(int viewport = 0) { return TheInstance()->getParallelScale(viewport); }
     inline virtual double getParallelScale(int viewport = 0) { return -1.0; }
+
+    // scale (in rad)
+    inline static void SetParallelScale(double scale, int viewport = 0) { TheInstance()->setParallelScale(scale, viewport); }
+    inline virtual void setParallelScale(double scale, int viewport = 0) { /*do nothing here*/  }
 
 	static ccGLMatrixd& GetModelViewMatrix();
 	static ccGLMatrixd& GetProjectionMatrix();

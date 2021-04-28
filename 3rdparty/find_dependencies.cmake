@@ -256,11 +256,11 @@ function(import_3rdparty_library name)
     add_library(${PROJECT_NAME}::${name} ALIAS ${name})
 endfunction()
 
-function(import_shared_3rdparty_library name)
+function(import_shared_3rdparty_library name ext_target)
     cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
-        message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
+        message(FATAL_ERROR "Invalid syntax: import_shared_3rdparty_library(${name} ${ARGN})")
     endif()
     if(NOT arg_LIB_DIR)
         set(arg_LIB_DIR "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
@@ -291,6 +291,13 @@ function(import_shared_3rdparty_library name)
             else()
                 set(installed_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}_${name}_${arg_LIBRARY}${CMAKE_SHARED_LIBRARY_SUFFIX})
             endif()
+
+            add_custom_command(TARGET ${ext_target}
+               POST_BUILD
+               COMMAND ${CMAKE_COMMAND} -E
+                   copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+            )
+
             target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
             if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
                 install(FILES ${arg_LIB_DIR}/${library_filename}
@@ -1221,73 +1228,88 @@ if (WITH_IPPICV)
 endif ()
 
 if(BUILD_RECONSTRUCTION)
-
+    # freeimage
     include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
-    import_3rdparty_library(3rdparty_freeimage
+    import_shared_3rdparty_library(3rdparty_freeimage ext_freeimage
         INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
         LIB_DIR      ${FREEIMAGE_LIB_DIR}
-        LIBRARIES    ${FREEIMAGE_LIBRARIES}
+        LIBRARIES    ${EXT_FREEIMAGE_LIBRARIES}
     )
     set(FREEIMAGE_TARGET "3rdparty_freeimage")
     add_dependencies(3rdparty_freeimage ext_freeimage)
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
 
+    # gflags
     include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
-    import_3rdparty_library(3rdparty_gflags
+    import_shared_3rdparty_library(3rdparty_gflags ext_gflags
         INCLUDE_DIRS ${GFLAGS_INCLUDE_DIRS}
         LIB_DIR      ${GFLAGS_LIB_DIR}
-        LIBRARIES    ${GFLAGS_LIBRARIES}
+        LIBRARIES    ${EXT_GFLAGS_LIBRARIES}
     )
     set(GFLAGS_TARGET "3rdparty_gflags")
     add_dependencies(3rdparty_gflags ext_gflags)
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
 
+    # glog
     include(${CloudViewer_3RDPARTY_DIR}/glog/glog_build.cmake)
-    import_3rdparty_library(3rdparty_glog
+    import_shared_3rdparty_library(3rdparty_glog ext_glog
         INCLUDE_DIRS ${GLOG_INCLUDE_DIRS}
         LIB_DIR      ${GLOG_LIB_DIR}
-        LIBRARIES    ${GLOG_LIBRARIES}
+        LIBRARIES    ${EXT_GLOG_LIBRARIES}
     )
     set(GLOG_TARGET "3rdparty_glog")
-    add_dependencies(ext_glog ext_gflags)
     add_dependencies(3rdparty_glog ext_glog)
+    add_dependencies(ext_glog ext_gflags)
+#    target_link_libraries(3rdparty_glog INTERFACE ${GFLAGS_TARGET})
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
 
-#    include(${CloudViewer_3RDPARTY_DIR}/lapack/lapack_build.cmake)
-#    import_3rdparty_library(3rdparty_lapack
-#        INCLUDE_DIRS ${LAPACK_INCLUDE_DIRS}
-#        LIB_DIR      ${LAPACK_LIB_DIR}
-#        LIBRARIES    ${LAPACKBLAS_LIBRARIES}
-#    )
-#    set(LAPACK_TARGET "3rdparty_lapack")
-#    add_dependencies(3rdparty_lapack ext_lapack)
+    # lapack and blas
+    if (NOT WIN32)
+        include(${CloudViewer_3RDPARTY_DIR}/lapack/lapack_build.cmake)
+        import_shared_3rdparty_library(3rdparty_lapack ext_lapack
+            INCLUDE_DIRS ${LAPACK_INCLUDE_DIRS}
+            LIB_DIR      ${LAPACK_LIB_DIR}
+            LIBRARIES    ${LAPACKBLAS_LIBRARIES}
+        )
+        set(LAPACK_TARGET "3rdparty_lapack")
+        add_dependencies(3rdparty_lapack ext_lapack)
+#        target_link_libraries(3rdparty_lapack INTERFACE Threads::Threads gfortran ${CMAKE_DL_LIBS})
+#        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${LAPACK_TARGET}")
+    endif()
 
+    # suitesparse
     include(${CloudViewer_3RDPARTY_DIR}/suitesparse/suitesparse_build.cmake)
     import_3rdparty_library(3rdparty_suitesparse
         INCLUDE_DIRS ${SUITESPARSE_INCLUDE_DIRS}
         LIB_DIR      ${SUITESPARSE_LIB_DIR}
-        LIBRARIES    ${SUITESPARSE_LIBRARIES}
+        LIBRARIES    ${EXT_SUITESPARSE_LIBRARIES}
     )
     set(SUITESPARSE_TARGET "3rdparty_suitesparse")
     add_dependencies(3rdparty_suitesparse ext_suitesparse)
+    add_dependencies(ext_suitesparse ext_lapack)
+#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${SUITESPARSE_TARGET}")
 
+    # custom eigen
+    include(${CloudViewer_3RDPARTY_DIR}/Eigen3/eigen3_build.cmake)
+    import_3rdparty_library(internal_3rdparty_eigen3
+        INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS}
+    )
+    set(INTERNAL_EIGEN3_TARGET "internal_3rdparty_eigen3")
+    add_dependencies(internal_3rdparty_eigen3 ext_eigen3)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${INTERNAL_EIGEN3_TARGET}")
+
+    # ceres
     include(${CloudViewer_3RDPARTY_DIR}/ceres-solver/ceres_build.cmake)
-    import_3rdparty_library(3rdparty_ceres
+    import_shared_3rdparty_library(3rdparty_ceres ext_ceres
         INCLUDE_DIRS ${CERES_INCLUDE_DIRS}
         LIB_DIR      ${CERES_LIB_DIR}
-        LIBRARIES    ${CERES_LIBRARIES}
+        LIBRARIES    ${EXT_CERES_LIBRARIES}
     )
     set(CERES_TARGET "3rdparty_ceres")
-    add_dependencies(ext_ceres ext_glog)
     add_dependencies(3rdparty_ceres ext_ceres)
+    add_dependencies(ext_ceres ext_suitesparse)
+#    target_link_libraries(3rdparty_ceres INTERFACE ${SUITESPARSE_TARGET} ${LAPACK_TARGET} ${GLOG_TARGET} ${CMAKE_DL_LIBS})
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${CERES_TARGET}")
-
-#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${CERES_TARGET}")
-#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
-#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
-#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${LAPACK_TARGET}")
-#    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${SUITESPARSE_TARGET}")
-#    include(${CloudViewer_3RDPARTY_DIR}/reconstruction/reconstruction_colmap.cmake)
 endif()
 
 # ransac_sd.

@@ -207,11 +207,11 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		registerPointPicking();
 		registerAreaPicking();
 
-        vtkMemberFunctionCommand<PCLVis>* observer =
-            vtkMemberFunctionCommand<PCLVis>::New();
-        observer->SetCallback(*this, &PCLVis::internalResetCameraClippingRange);
-        this->getCurrentRenderer()->AddObserver(vtkCommand::ResetCameraClippingRangeEvent, observer);
-        observer->FastDelete();
+//        vtkMemberFunctionCommand<PCLVis>* observer =
+//            vtkMemberFunctionCommand<PCLVis>::New();
+//        observer->SetCallback(*this, &PCLVis::internalResetCameraClippingRange);
+//        this->getCurrentRenderer()->AddObserver(vtkCommand::ResetCameraClippingRangeEvent, observer);
+//        observer->FastDelete();
     }
 
 	void PCLVis::getCenterOfRotation(double center[3])
@@ -557,26 +557,31 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
     void PCLVis::resetCameraClippingRange(int viewport)
 	{
-        if (getVtkCamera()->GetParallelProjection())
+        // set all renderer to this viewpoint
+        this->synchronizeGeometryBounds(viewport);
+        getRendererCollection()->InitTraversal ();
+        vtkRenderer* renderer = nullptr;
+        while ((renderer = getRendererCollection()->GetNextItem ()))
         {
-            double nearFar[2];
-            this->getReasonableClippingRange(nearFar, viewport);
-            this->setCameraClipDistances(nearFar[0] / 3, nearFar[1] * 3, viewport);
+          if (this->GeometryBounds.IsValid())
+          {
+              double originBounds[6];
+              this->GeometryBounds.GetBounds(originBounds);
+              this->GeometryBounds.Scale(2, 2, 2);
+              double bounds[6];
+              this->GeometryBounds.GetBounds(bounds);
+              this->GeometryBounds.SetBounds(originBounds);
+              renderer->ResetCameraClippingRange(bounds);
+          }
         }
-        else
-        {
-            this->synchronizeGeometryBounds(viewport);
-            if (this->GeometryBounds.IsValid())
-            {
-                double originBounds[6];
-                this->GeometryBounds.GetBounds(originBounds);
-                this->GeometryBounds.Scale(1.5, 1.5, 1.5);
-                double bounds[6];
-                this->GeometryBounds.GetBounds(bounds);
-                this->getCurrentRenderer()->ResetCameraClippingRange(bounds);
-                this->GeometryBounds.SetBounds(originBounds);
-            }
-        }
+        getRenderWindow()->Render ();
+
+//        if (getVtkCamera()->GetParallelProjection())
+//        {
+//            double nearFar[2];
+//            this->getReasonableClippingRange(nearFar, viewport);
+//            this->setCameraClipDistances(nearFar[0] / 3, nearFar[1] * 3, viewport);
+//        }
 
 	}
 
@@ -2114,9 +2119,20 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
         getVtkCamera(viewport)->SetModelTransformMatrix(viewMat.data());
     }
 
-	double PCLVis::getParallelScale()
+    void PCLVis::setParallelScale(double scale, int viewport)
+    {
+        vtkSmartPointer<vtkCamera> cam = getVtkCamera(viewport);
+        int flag = cam->GetParallelProjection();
+        if (flag)
+        {
+            cam->SetParallelScale(scale);
+            cam->Modified();
+        }
+    }
+
+    double PCLVis::getParallelScale(int viewport)
 	{
-        return this->getVtkCamera()->GetParallelScale();
+        return this->getVtkCamera(viewport)->GetParallelScale();
 	}
 
 	void PCLVis::setOrthoProjection(int viewport)

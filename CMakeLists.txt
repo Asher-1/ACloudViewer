@@ -236,6 +236,9 @@ set(PROJECT_ISSUES  "https://github.com/Asher-1/ErowCloudViewer/issues")
 include( CMakePolicies )
 include( CMakeSetCompilerOptions )
 include( DeployQt )
+# Load advanced scripts
+include( CMakeInclude )
+include( Install )
 
 # Set installation paths
 if(UNIX OR CYGWIN)
@@ -258,6 +261,7 @@ endif()
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/$<CONFIG>)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/$<CONFIG>)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+set(COLOUDVIEWER_PROJECT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set(COLOUDVIEWER_APP_DIR_NAME "CloudViewer")
 set(CLOUDVIEWER_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${COLOUDVIEWER_APP_DIR_NAME}")
 make_directory(${CLOUDVIEWER_OUTPUT_DIRECTORY})
@@ -723,10 +727,6 @@ endif()
 #     add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
 #     message(STATUS "Disabling SIMD support")
 # endif()
-
-# Load advanced scripts
-include( CMakeInclude )
-include( Install )
 
 # Add external libraries
 include( CMakeExternalLibs )

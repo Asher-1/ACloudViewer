@@ -104,6 +104,8 @@ void BuildImageModel( ccCameraSensor* sensor,
 
   // init camera intrinsic parameters
   ccCameraSensor::IntrinsicParameters iParams;
+  iParams.zFar_mm = 1e5f;
+  iParams.zNear_mm = 1e-3f;
   float pixelSize_mm         = image_size; // pixel size (real distance in meter)
   iParams.pixelSize_mm[0]    = pixelSize_mm;
   iParams.pixelSize_mm[1]    = pixelSize_mm;
