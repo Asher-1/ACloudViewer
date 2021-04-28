@@ -575,11 +575,11 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
         {
             double originBounds[6];
             this->GeometryBounds.GetBounds(originBounds);
-            this->GeometryBounds.Scale(2, 2, 2);
+            this->GeometryBounds.ScaleAboutCenter(2, 2, 2);
             double bounds[6];
             this->GeometryBounds.GetBounds(bounds);
-            this->GeometryBounds.SetBounds(originBounds);
             getCurrentRenderer(viewport)->ResetCameraClippingRange(bounds);
+            this->GeometryBounds.SetBounds(originBounds);
         }
         getRenderWindow()->Render ();
 
