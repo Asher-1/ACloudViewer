@@ -1063,13 +1063,21 @@ QImage PCLDisplayTools::renderToImage(int zoomFactor, bool renderOverlayItems, b
 
 double PCLDisplayTools::getParallelScale(int viewport)
 {
-    Q_UNUSED(viewport);
 	if (m_visualizer3D)
 	{
-		return m_visualizer3D->getParallelScale() * CV_DEG_TO_RAD;
+        return m_visualizer3D->getParallelScale(viewport);
 	}
 	
-	return -1;
+    return -1;
+}
+
+void PCLDisplayTools::setParallelScale(double scale, int viewport)
+{
+    if (m_visualizer3D)
+    {
+        m_visualizer3D->setParallelScale(scale, viewport);
+    }
+
 }
 
 void PCLDisplayTools::getProjectionMatrix(double * projArray, int viewport)

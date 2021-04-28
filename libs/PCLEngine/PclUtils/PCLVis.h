@@ -127,7 +127,8 @@ namespace PclUtils
 		vtkSmartPointer<vtkCamera> getVtkCamera(int viewport = 0);
 
         void setModelViewMatrix(const ccGLMatrixd& viewMat, int viewport = 0);
-        double getParallelScale();
+        double getParallelScale(int viewport = 0);
+        void setParallelScale(double scale, int viewport = 0);
 
 		void setOrthoProjection(int viewport = 0);
 		void setPerspectiveProjection(int viewport = 0);

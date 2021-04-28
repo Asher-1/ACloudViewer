@@ -35,7 +35,10 @@ namespace Settings {
 	static QString CONFIG_PATH			= "configuration.ini";
 	static QString LOGFILE				= "log.log";
 
-	// logos
+    // Define the URL of the Update Definitions file
+    static const QString UPDATE_RUL           = "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/updates.json";
+
+    // logos
     static const QString APP_LOGO		= ":/Resources/images/icon/erow_256.png";
     static const QString APP_START_LOGO	= ":/Resources/images/corp_black.png";
 	static const QString CLOUDFILE_LOGO = ":/Resources/images/dbCloudSymbol.png";

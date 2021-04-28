@@ -107,6 +107,7 @@
 #include "ui_globalShiftSettingsDlg.h"
 
 //dialogs
+#include "ecvUpdateDlg.h"
 #include "ecvAlignDlg.h"
 #include "ecvAboutDialog.h"
 #include "ecvRenderToFileDlg.h"
@@ -233,6 +234,7 @@ MainWindow::MainWindow()
     , m_recentFiles(new ecvRecentFiles(this))
     , m_viewModePopupButton(nullptr)
     , m_pickingHub(nullptr)
+    , m_updateDlg(nullptr)
     , m_cpeDlg(nullptr)
     , m_gsTool(nullptr)
     , m_tplTool(nullptr)
@@ -400,6 +402,7 @@ MainWindow::~MainWindow() {
     ccDBRoot* ccRoot = m_ccRoot;
     m_ccRoot = nullptr;
 
+    m_updateDlg = nullptr;
     m_cpeDlg = nullptr;
     m_mousePosLabel = nullptr;
     m_systemInfoLabel = nullptr;
@@ -752,9 +755,9 @@ void MainWindow::connectActions()
 	connect(m_ui->actionGlobalShiftSettings, &QAction::triggered, this, &MainWindow::doActionGlobalShiftSeetings);
 
 	// About (connect)
-	QObject::connect(m_ui->helpAction, &QAction::triggered, this, &MainWindow::help);
+    connect(m_ui->helpAction, &QAction::triggered, this, &MainWindow::help);
 	connect(m_ui->actionAboutPlugins, &QAction::triggered, m_pluginUIManager, &ccPluginUIManager::showAboutDialog);
-	QObject::connect(m_ui->actionEnableQtWarnings, &QAction::toggled, this, &MainWindow::doEnableQtWarnings);
+    connect(m_ui->actionEnableQtWarnings, &QAction::toggled, this, &MainWindow::doEnableQtWarnings);
     connect(m_ui->actionAbout, &QAction::triggered, this, [this]() {
 		ecvAboutDialog* aboutDialog = new ecvAboutDialog(this);
 		aboutDialog->exec();
@@ -773,8 +776,21 @@ void MainWindow::connectActions()
 	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::autoPickPivot, this, &MainWindow::setAutoPickPivot);
 	connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::exclusiveFullScreenToggled, this, &MainWindow::toggleExclusiveFullScreen);
 
+    // update
+    initApplicationUpdate();
+
 	// Set up dynamic menus
 	m_ui->menuFile->insertMenu(m_ui->actionSave, m_recentFiles->menu());
+}
+
+void MainWindow::initApplicationUpdate()
+{
+    // TODO: check update when application start!
+    if (!m_updateDlg)
+    {
+        m_updateDlg = new ecvUpdateDlg(this);
+        connect(m_ui->actionCheckForUpdates, &QAction::triggered, this, &MainWindow::doCheckForUpdate);
+    }
 }
 
 void MainWindow::initThemes()
@@ -3897,7 +3913,17 @@ void MainWindow::doShowPrimitiveFactory()
 
 	m_pfDlg->setModal(false);
 	m_pfDlg->setWindowModality(Qt::NonModal);
-	m_pfDlg->show();
+    m_pfDlg->show();
+}
+
+void MainWindow::doCheckForUpdate()
+{
+    if (m_updateDlg)
+    {
+        m_updateDlg->setModal(false);
+        m_updateDlg->setWindowModality(Qt::NonModal);
+        m_updateDlg->show();
+    }
 }
 
 void MainWindow::doActionComputeNormals()

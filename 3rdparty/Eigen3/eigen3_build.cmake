@@ -1,0 +1,27 @@
+include(ExternalProject)
+
+set_local_or_remote_url(
+    DOWNLOAD_URL_PRIMARY
+    LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/eigen-3.3.7.zip"
+    REMOTE_URLS "http://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.zip"
+)
+
+ExternalProject_Add(
+ext_eigen3
+PREFIX eigen3
+URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
+URL_HASH MD5=888aab45512cc0c734b3e8f60280daba
+UPDATE_COMMAND ""
+CMAKE_ARGS
+      #-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+      DEPENDS ${EIGEN3_TARGET} ${SUITESPARSE_TARGET}
+)
+
+ExternalProject_Get_Property(ext_eigen3 INSTALL_DIR)
+set(EIGEN_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
+set(EIGEN_CMAKE_FLAGS -DEigen3_DIR:PATH=${INSTALL_DIR}/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS} -DEIGEN_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS})
+
+

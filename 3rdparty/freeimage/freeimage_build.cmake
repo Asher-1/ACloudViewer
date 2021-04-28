@@ -16,9 +16,9 @@ else() # Linux or Mac
 endif()
 
 if(WIN32)
-set(FREEIMAGE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/freeimage_install)
-set(STATIC_FREEIMAGE_INCLUDE_DIR "${FREEIMAGE_INSTALL_PREFIX}/include/")
-set(STATIC_FREEIMAGE_LIB_DIR "${FREEIMAGE_INSTALL_PREFIX}/lib")
+    set(FREEIMAGE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/freeimage_install)
+    set(STATIC_FREEIMAGE_INCLUDE_DIR "${FREEIMAGE_INSTALL_PREFIX}/include/")
+    set(STATIC_FREEIMAGE_LIB_DIR "${FREEIMAGE_INSTALL_PREFIX}/lib")
     ExternalProject_Add(
         ext_freeimage
         PREFIX freeimage
@@ -34,7 +34,7 @@ set(STATIC_FREEIMAGE_LIB_DIR "${FREEIMAGE_INSTALL_PREFIX}/lib")
 
     set(FREEIMAGE_INCLUDE_DIRS ${STATIC_FREEIMAGE_INCLUDE_DIR}) # "/" is critical.
     set(FREEIMAGE_LIB_DIR ${STATIC_FREEIMAGE_LIB_DIR})
-    set(FREEIMAGE_LIBRARIES FreeImage)
+    set(EXT_FREEIMAGE_LIBRARIES FreeImage)
 else()
     ExternalProject_Add(
         ext_freeimage
@@ -51,5 +51,5 @@ else()
     ExternalProject_Get_Property(ext_freeimage INSTALL_DIR)
     set(FREEIMAGE_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
     set(FREEIMAGE_LIB_DIR ${INSTALL_DIR}/lib)
-    set(FREEIMAGE_LIBRARIES freeimage)
+    set(EXT_FREEIMAGE_LIBRARIES freeimage)
 endif()

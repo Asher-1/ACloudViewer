@@ -63,25 +63,26 @@ using std::map;
 
 class ccHObject;
 class ccPickingHub;
-class ccOverlayDialog;
 class ccPluginUIManager;
 class ccDBRoot;
 class ecvFilterTool;
 class ecvRecentFiles;
 class ecvAnnotationsTool;
 class ecvFilterWindowTool;
-class ecvFilterByLabelDlg;
-class ecvCameraParamEditDlg;
-class ecvPrimitiveFactoryDlg;
-class ecvDeepSemanticSegmentationTool;
-
-class ccComparisonDlg;
 class ccTracePolylineTool;
-class ccPointPropertiesDlg;
-class ccPointListPickingDlg;
-class ccPointPairRegistrationDlg;
 class ccGraphicalSegmentationTool;
 class ccGraphicalTransformationTool;
+class ecvDeepSemanticSegmentationTool;
+
+class ecvUpdateDlg;
+class ccOverlayDialog;
+class ccComparisonDlg;
+class ecvFilterByLabelDlg;
+class ccPointPropertiesDlg;
+class ecvCameraParamEditDlg;
+class ccPointListPickingDlg;
+class ecvPrimitiveFactoryDlg;
+class ccPointPairRegistrationDlg;
 
 class QMdiArea;
 class QMdiSubWindow;
@@ -99,6 +100,8 @@ namespace cloudViewer {
     class ReconstructionWidget;
 }
 #endif
+
+class QSimpleUpdater;
 
 class MainWindow : public QMainWindow, public ecvMainAppInterface, public ccPickingListener
 {
@@ -237,8 +240,9 @@ public:  // inherited from ecvMainAppInterface
 private:
 	/***** Utils Methods ***/
 	void connectActions();
+    void initThemes();
 	void initLanguages();
-	void initThemes();
+    void initApplicationUpdate();
 	void initial();
 	void initStatusBar();
 	void initDBRoot();
@@ -281,6 +285,8 @@ private slots:
 	void doActionGlobalShiftSeetings();
 	void doActionResetGUIElementsPos();
 	void doShowPrimitiveFactory();
+
+    void doCheckForUpdate();
 
 	void doActionComputeNormals();
 	void doActionInvertNormals();
@@ -596,6 +602,8 @@ private:
 	std::vector<ccMDIDialogs> m_mdiDialogs;
 
 	/*** dialogs ***/
+    //! Application update dialog
+    ecvUpdateDlg* m_updateDlg;
 	//! Camera params dialog
 	ecvCameraParamEditDlg* m_cpeDlg;
     //! Graphical segmentation dialog

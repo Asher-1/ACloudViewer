@@ -306,6 +306,12 @@ set(COLMAP_EXTERNAL_LIBRARIES
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
+    ${EIGEN3_TARGET}
+    ${FREEIMAGE_TARGET}
+#    ${GLOG_TARGET}
+#    ${CERES_TARGET}
+#    ${LAPACK_TARGET}
+#    ${SUITESPARSE_TARGET}
     #${GLOG_LIBRARIES}
     #${FREEIMAGE_LIBRARIES}
     #${CERES_LIBRARIES}
@@ -440,7 +446,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
 
 # Install batch scripts under Windows.
 if(IS_MSVC)
-    install(FILES "scripts/shell/COLMAP.bat" "scripts/shell/RUN_TESTS.bat"
+    install(FILES "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/COLMAP.bat" "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/RUN_TESTS.bat"
             PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                         GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
             DESTINATION "/")

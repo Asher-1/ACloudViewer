@@ -116,6 +116,12 @@ macro(COLMAP_ADD_LIBRARY TARGET_NAME)
     add_library(${TARGET_NAME} ${ARGN})
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
         ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
+
+    if (MSVC)
+        # fix compiling error on windows platform
+        target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+    endif()
+
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
@@ -138,6 +144,12 @@ macro(COLMAP_ADD_STATIC_LIBRARY TARGET_NAME)
     add_library(${TARGET_NAME} STATIC ${ARGN})
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
         ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
+
+    if (MSVC)
+        # fix compiling error on windows platform
+        target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+    endif()
+
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
@@ -165,6 +177,11 @@ macro(COLMAP_ADD_CUDA_LIBRARY TARGET_NAME)
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
         ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
 
+    if (MSVC)
+        # fix compiling error on windows platform
+        target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+    endif()
+
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
@@ -181,6 +198,11 @@ macro(COLMAP_ADD_STATIC_CUDA_LIBRARY TARGET_NAME)
     cuda_add_library(${TARGET_NAME} STATIC ${ARGN})
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
         ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
+
+    if (MSVC)
+        # fix compiling error on windows platform
+        target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+    endif()
 
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -204,6 +226,12 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
         ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
     target_link_libraries(${TARGET_NAME} PRIVATE colmap)
+
+    if (MSVC)
+        # fix compiling error on windows platform
+        target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+    endif()
+
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
@@ -226,6 +254,12 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
             ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
         target_link_libraries(${TARGET_NAME} PRIVATE colmap
                               ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+
+        if (MSVC)
+            # fix compiling error on windows platform
+            target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+        endif()
+
         add_test("${FOLDER_NAME}/${TARGET_NAME}" ${TARGET_NAME})
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -251,6 +285,12 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
             ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
         target_link_libraries(${TARGET_NAME} PRIVATE colmap
                               ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+
+        if (MSVC)
+            # fix compiling error on windows platform
+            target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+        endif()
+
         add_test("${FOLDER_NAME}/${TARGET_NAME}" ${TARGET_NAME})
 
         # Enforce 3rd party dependencies

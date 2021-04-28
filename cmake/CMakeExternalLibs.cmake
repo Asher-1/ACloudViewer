@@ -16,7 +16,7 @@ if ( QT5_ROOT_PATH )
 endif()
 
 # find qt5 components
-# find_package(Qt5 COMPONENTS OpenGL Widgets Core Gui PrintSupport Concurrent REQUIRED)
+# find_package(Qt5 COMPONENTS OpenGL Widgets Core Svg Gui PrintSupport Concurrent REQUIRED)
 find_package( Qt5
     COMPONENTS
         Concurrent
@@ -27,6 +27,7 @@ find_package( Qt5
         PrintSupport
         Svg
         Widgets
+        Network
     REQUIRED
 )
 
