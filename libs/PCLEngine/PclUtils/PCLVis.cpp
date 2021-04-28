@@ -457,21 +457,33 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		// local process, all vtkWidgetRepresentations return wacky Z bounds which
 		// screws up the renderer and we don't see any images. Hence we skip this on
 		// non-rendering nodes.
-		this->m_centerAxes->SetUseBounds(0);
-
-		double prop_bounds[6];
-        if (!this->getCurrentRenderer())
+        if (!this->getCurrentRenderer(viewport))
         {
             return;
         }
 
-		this->getCurrentRenderer()->ComputeVisiblePropBounds(prop_bounds);
-		this->m_centerAxes->SetUseBounds(1);
+        this->m_centerAxes->SetUseBounds(0);
+        this->GeometryBounds.Reset();
+
+        getRendererCollection()->InitTraversal();
+        vtkRenderer* renderer = nullptr;
+        int i = 0;
+        while ((renderer = getRendererCollection()->GetNextItem ()))
+        {
+            // Modify all renderer's cameras
+            if (viewport == 0 || viewport == i)
+            {
+                double prop_bounds[6];
+                this->getCurrentRenderer(viewport)->ComputeVisiblePropBounds(prop_bounds);
+                this->GeometryBounds.AddBounds(prop_bounds);
+            }
+            ++i;
+        }
+
+        this->m_centerAxes->SetUseBounds(1);
 
 		// sync up bounds across all processes when doing distributed rendering.
-		this->GeometryBounds.Reset();
-		this->GeometryBounds.AddBounds(prop_bounds);
-		if (!this->GeometryBounds.IsValid())
+        if (!this->GeometryBounds.IsValid())
 		{
 			this->GeometryBounds.SetBounds(-1, 1, -1, 1, -1, 1);
 		}
@@ -559,20 +571,15 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 	{
         // set all renderer to this viewpoint
         this->synchronizeGeometryBounds(viewport);
-        getRendererCollection()->InitTraversal ();
-        vtkRenderer* renderer = nullptr;
-        while ((renderer = getRendererCollection()->GetNextItem ()))
+        if (this->GeometryBounds.IsValid())
         {
-          if (this->GeometryBounds.IsValid())
-          {
-              double originBounds[6];
-              this->GeometryBounds.GetBounds(originBounds);
-              this->GeometryBounds.Scale(2, 2, 2);
-              double bounds[6];
-              this->GeometryBounds.GetBounds(bounds);
-              this->GeometryBounds.SetBounds(originBounds);
-              renderer->ResetCameraClippingRange(bounds);
-          }
+            double originBounds[6];
+            this->GeometryBounds.GetBounds(originBounds);
+            this->GeometryBounds.Scale(2, 2, 2);
+            double bounds[6];
+            this->GeometryBounds.GetBounds(bounds);
+            this->GeometryBounds.SetBounds(originBounds);
+            getCurrentRenderer(viewport)->ResetCameraClippingRange(bounds);
         }
         getRenderWindow()->Render ();
 
