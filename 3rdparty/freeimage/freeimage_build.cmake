@@ -16,9 +16,8 @@ else() # Linux or Mac
 endif()
 
 if(WIN32)
-    set(FREEIMAGE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/freeimage_install")
-    set(STATIC_FREEIMAGE_INCLUDE_DIR "${FREEIMAGE_INSTALL_PREFIX}/include/")
-    set(STATIC_FREEIMAGE_LIB_DIR "${FREEIMAGE_INSTALL_PREFIX}/lib")
+    set(STATIC_FREEIMAGE_INCLUDE_DIR "${CUSTOM_INSTALL_DIR}/include/")
+    set(STATIC_FREEIMAGE_LIB_DIR "${CUSTOM_INSTALL_DIR}/lib")
     ExternalProject_Add(
         ext_freeimage
         PREFIX freeimage
@@ -29,8 +28,8 @@ if(WIN32)
         BUILD_IN_SOURCE ON
         PATCH_COMMAND ""
         BUILD_COMMAND  ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Dist/x64 ${FREEIMAGE_INSTALL_PREFIX}/include
-        && ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Dist/x64 ${FREEIMAGE_INSTALL_PREFIX}/lib
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Dist/x64 ${STATIC_FREEIMAGE_INCLUDE_DIR}
+        && ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Dist/x64 ${STATIC_FREEIMAGE_LIB_DIR}
     )
 
     set(FREEIMAGE_INCLUDE_DIRS ${STATIC_FREEIMAGE_INCLUDE_DIR}) # "/" is critical.

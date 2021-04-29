@@ -156,9 +156,22 @@ if (BUILD_RECONSTRUCTION)
     endif()
     target_compile_definitions( ${PROJECT_NAME} PRIVATE OPENGL_ENABLED)
 
+    include_directories(${CUSTOM_INSTALL_DIR}/include)
     include_directories(${COLMAP_SOURCE_DIR}/lib)
     include_directories(${COLMAP_SOURCE_DIR}/src)
+    
     target_link_libraries( ${PROJECT_NAME} colmap)
+    # Disable BOOST autolink
+    add_definitions(-DBOOST_ALL_NO_LIB)
+    set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_STATIC ON)
+    set(Boost_USE_MULTITHREAD )
+
+    if(MSVC)
+        # Some fixes for the Glog library.
+        add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
+    endif()
+
     # Add custom preprocessor definitions
     target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_COLMAP_MODULE )
 endif()

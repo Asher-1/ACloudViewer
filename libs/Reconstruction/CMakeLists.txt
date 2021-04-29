@@ -66,14 +66,14 @@ set(PROFILING_ENABLED OFF) # Whether to enable google-perftools linker flags
 set(CUDA_ARCHS "Auto" CACHE STRING "List of CUDA architectures for which to \
 generate code, e.g., Auto, All, Maxwell, Pascal, ...")
 
-option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-
 if(TESTS_ENABLED)
     enable_testing()
 endif()
 
 if(BOOST_STATIC)
     set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_STATIC ON)
+    set(Boost_USE_MULTITHREAD )
 else()
     # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
     # https://lists.boost.org/boost-users/2009/11/54015.php
@@ -108,6 +108,8 @@ if(BOOST_NO_CXX11)
   # Avoid link errors on boost filesystem copy_file function
   # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
   add_definitions("-DBOOST_NO_CXX11_SCOPED_ENUMS")
+  add_definitions("-DBOOST_NO_CXX11_OVERRIDE")
+  message("disable boost cxx11 on colmap!")
 endif()
 
 find_package(Boost REQUIRED COMPONENTS
@@ -304,6 +306,7 @@ include(GenerateVersionDefinitions)
 
 set(COLMAP_INCLUDE_DIRS
     ${BOOST_INCLUDE_DIRS}
+    ${CUSTOM_INSTALL_DIR}/include
     #${GLOG_INCLUDE_DIRS}
     #${FREEIMAGE_INCLUDE_DIRS}
     #${CERES_INCLUDE_DIRS}
