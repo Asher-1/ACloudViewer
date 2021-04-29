@@ -66,6 +66,8 @@ set(PROFILING_ENABLED OFF) # Whether to enable google-perftools linker flags
 set(CUDA_ARCHS "Auto" CACHE STRING "List of CUDA architectures for which to \
 generate code, e.g., Auto, All, Maxwell, Pascal, ...")
 
+option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
+
 if(TESTS_ENABLED)
     enable_testing()
 endif()
@@ -73,6 +75,9 @@ endif()
 if(BOOST_STATIC)
     set(Boost_USE_STATIC_LIBS ON)
 else()
+    # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
+    # https://lists.boost.org/boost-users/2009/11/54015.php
+    add_definitions("-DBOOST_ALL_DYN_LINK")
     add_definitions("-DBOOST_TEST_DYN_LINK")
 endif()
 
@@ -88,14 +93,23 @@ endif()
 #find_package(Ceres REQUIRED)
 #find_package(Glog REQUIRED)
 if (WIN32)
-	set( BOOST_ROOT "" CACHE PATH "Boost library root directory" )
-	if ( NOT BOOST_ROOT )
-		message( SEND_ERROR "No Boost library root specified (BOOST_ROOT)" )
-	else()
-		include_directories( ${BOOST_ROOT} )
-	endif()
+    set( BOOST_ROOT "" CACHE PATH "Boost library root directory" )
+    if ( NOT BOOST_ROOT )
+        message( SEND_ERROR "No Boost library root specified (BOOST_ROOT)" )
+    else()
+        include_directories( ${BOOST_ROOT} )
+    endif()
 endif()
-#set(Boost_NO_BOOST_CMAKE ON)
+
+# Disable BOOST autolink
+add_definitions(-DBOOST_ALL_NO_LIB)
+
+if(BOOST_NO_CXX11)
+  # Avoid link errors on boost filesystem copy_file function
+  # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
+  add_definitions("-DBOOST_NO_CXX11_SCOPED_ENUMS")
+endif()
+
 find_package(Boost REQUIRED COMPONENTS
              program_options
              filesystem
@@ -299,18 +313,11 @@ set(COLMAP_LINK_DIRS
     ${Boost_LIBRARY_DIRS}
 )
 
-#set(freeimage_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
-#set(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIB_DIR}/${freeimage_library_filename})
 set(COLMAP_EXTERNAL_LIBRARIES
     ${CMAKE_DL_LIBS}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
-    ${FREEIMAGE_TARGET}
-#    ${GLOG_TARGET}
-#    ${CERES_TARGET}
-#    ${LAPACK_TARGET}
-#    ${SUITESPARSE_TARGET}
     #${GLOG_LIBRARIES}
     #${FREEIMAGE_LIBRARIES}
     #${CERES_LIBRARIES}
