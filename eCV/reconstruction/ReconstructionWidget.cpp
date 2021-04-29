@@ -1400,7 +1400,7 @@ void ReconstructionWidget::UpdateTimer() {
   const int days = elapsed_time / 86400;
   if (statusbar_timer_label_)
   {
-      statusbar_timer_label_->setText(QString().sprintf(
+      statusbar_timer_label_->setText(QString().asprintf(
           "Time %02d:%02d:%02d:%02d", days, hours, minutes, seconds));
   }
 }

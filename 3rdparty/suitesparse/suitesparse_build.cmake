@@ -21,6 +21,7 @@ ExternalProject_Add(
        CMAKE_ARGS
            -DOPENMP=ON
            -DBUILD_SHARED_LIBS=OFF
+           -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
            -DCUDA_INCLUDE_DIRS=${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
@@ -31,19 +32,7 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_suitesparse INSTALL_DIR)
 set(SUITESPARSE_INCLUDE_DIRS ${INSTALL_DIR}/include/suitesparse/)
 set(SUITESPARSE_LIB_DIR ${INSTALL_DIR}/lib)
-set(EXT_SUITESPARSE_LIBRARIES   suitesparseconfig
-                                amd
-                                btf
-                                camd
-                                ccolamd
-                                colamd
-                                cholmod
-                                cxsparse
-                                klu
-                                ldl
-                                umfpack
-                                spqr
-                                metis)
+
 if (BUILD_CUDA_MODULE)
     if(NOT WIN32)
         set(SUITESPARSE_LIBRARIES ${SUITESPARSE_LIBRARIES} SuiteSparse_GPURuntime GPUQREngine)
@@ -51,6 +40,19 @@ if (BUILD_CUDA_MODULE)
 endif()
 
 if(WIN32)
+    set(EXT_SUITESPARSE_LIBRARIES   suitesparseconfig
+                                    libamd
+                                    libbtf
+                                    libcamd
+                                    libccolamd
+                                    libcolamd
+                                    libcholmod
+                                    libcxsparse
+                                    libklu
+                                    libldl
+                                    libumfpack
+                                    libspqr
+                                    metis)
     # for compiling ceres-solver
     set(LAPACK_LIBRARIES ${INSTALL_DIR}/lib64/lapack_blas_windows/liblapack.lib)
     set(BLAS_LIBRARIES ${INSTALL_DIR}/lib64/lapack_blas_windows/libblas.lib)
@@ -69,22 +71,35 @@ if(WIN32)
     # fix postfix "d" on MSVC
     if(MSVC) # Rename debug libs to ${EXT_SUITESPARSE_LIBRARIES}. rem (comment) is no-op
         ExternalProject_Add_Step(ext_suitesparse rename_debug_libs
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y suitesparseconfigd.lib suitesparseconfig.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y amdd.lib amd.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y btfd.lib btf.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y camdd.lib camd.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y ccolamdd.lib ccolamd.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y cholmodd.lib cholmod.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y cxsparsed.lib cxsparse.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y klud.lib klu.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y ldld.lib ldl.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y umfpackd.lib umfpack.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y spqrd.lib spqr.lib
+            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libamdd.lib libamd.lib
+            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libbtfd.lib libbtf.lib
+            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libcamdd.lib libcamd.lib
+            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libccolamdd.lib libccolamd.lib
+            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libcholmodd.lib libcholmod.lib
+            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libcxsparsed.lib libcxsparse.lib
+            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libklud.lib libklu.lib
+            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libldld.lib libldl.lib
+            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libumfpackd.lib libumfpack.lib
+            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libspqrd.lib libspqr.lib
             COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y metisd.lib metis.lib
-            WORKING_DIRECTORY "${SUITESPARSE_LIB_DIR}"
+            WORKING_DIRECTORY ${SUITESPARSE_LIB_DIR}
             DEPENDEES install
         )
     endif()
+else()
+set(EXT_SUITESPARSE_LIBRARIES   suitesparseconfig
+                                amd
+                                btf
+                                camd
+                                ccolamd
+                                colamd
+                                cholmod
+                                cxsparse
+                                klu
+                                ldl
+                                umfpack
+                                spqr
+                                metis)
 endif()
 
 # fix cxsparse issue for ceres-solver!

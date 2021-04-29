@@ -32,14 +32,6 @@
 #ifndef COLMAP_SRC_UTIL_ALIGNMENT_H_
 #define COLMAP_SRC_UTIL_ALIGNMENT_H_
 
-#include <initializer_list>
-#include <memory>
-#include <vector>
-
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-#include <Eigen/StdVector>
-
 // CV_CORE_LIB
 #include <Eigen.h>
 

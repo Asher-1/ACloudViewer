@@ -9,7 +9,6 @@ set_local_or_remote_url(
 message("GLOG_CMAKE_FLAGS: " ${GLOG_CMAKE_FLAGS})
 message("EIGEN_CMAKE_FLAGS: " ${EIGEN_CMAKE_FLAGS})
 message("SUITESPARSE_CMAKE_FLAGS: " ${SUITESPARSE_CMAKE_FLAGS})
-message("INTERNAL_CMAKE_FLAGS: " ${INTERNAL_CMAKE_FLAGS})
 
 ExternalProject_Add(
    ext_ceres

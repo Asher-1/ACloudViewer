@@ -199,7 +199,7 @@ void ModelViewerWidget::ReloadReconstruction() {
 
   if (statusbar_status_label)
   {
-      statusbar_status_label->setText(QString().sprintf(
+      statusbar_status_label->setText(QString().asprintf(
           "%d Images - %d Points", static_cast<int>(reg_image_ids.size()),
           static_cast<int>(points3D.size())));
   }

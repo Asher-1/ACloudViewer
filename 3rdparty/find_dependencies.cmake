@@ -331,7 +331,7 @@ function(copy_shared_library ext_target)
             add_custom_command(TARGET ${ext_target}
                POST_BUILD
                COMMAND ${CMAKE_COMMAND} -E
-                   copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+                   copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
             )
         endforeach()
     endif()

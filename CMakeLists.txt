@@ -70,7 +70,7 @@ option(WITH_OPENMP                "Use OpenMP multi-threading"                  
 option(WITH_SIMD                  "Use Single Instruction Multiple Data speed optimization"     OFF)
 option(WITH_IPPICV                "Use Intel Performance Primitives"                    	ON )
 option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON )
-
+option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
 # In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
 # first try to look for the required files in THIRD_PARTY_DOWNLOAD_DIR, before
 # downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
@@ -441,7 +441,6 @@ endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-
 # Convenience function to link against all third-party libraries
 # We need this because we create a lot of object libraries to assemble
 # the main ErowCloudViewer library
@@ -678,12 +677,20 @@ if( WIN32 )
 	# (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
 	set( INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER} )
 elseif( UNIX AND NOT APPLE )
-        set( INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX} )
+    set( INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX} )
 endif()
 
 if (BUILD_RECONSTRUCTION)
     message(STATUS "Enabling Reconstruction support and automatically enable SIMD!")
     set(WITH_SIMD ON)
+    if (MSVC )
+      # Avoid link errors on boost filesystem copy_file function
+      # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
+      add_definitions("-DBOOST_NO_CXX11_SCOPED_ENUMS")
+      add_definitions("-DBOOST_NO_CXX11_OVERRIDE")
+      message("disable boost cxx11 globally!")
+      set(BOOST_NO_CXX11 ON)
+    endif()
 endif()
 
 # check for SSE flags
