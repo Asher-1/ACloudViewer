@@ -191,7 +191,7 @@ ccFacet* ccFacet::Create(	cloudViewer::GenericIndexedCloudPersist* cloud,
 	if (!cloud || cloud->size() < 3)
 	{
 		CVLog::Error("[ccFacet::Create] Need at least 3 points to create a valid facet!");
-		return 0;
+        return nullptr;
 	}
 
 	//create facet structure
@@ -199,7 +199,7 @@ ccFacet* ccFacet::Create(	cloudViewer::GenericIndexedCloudPersist* cloud,
 	if (!facet->createInternalRepresentation(cloud, planeEquation))
 	{
 		delete facet;
-		return 0;
+        return nullptr;
 	}
 
 	ccPointCloud* pc = dynamic_cast<ccPointCloud*>(cloud);

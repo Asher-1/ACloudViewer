@@ -581,8 +581,6 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
             getCurrentRenderer(viewport)->ResetCameraClippingRange(bounds);
             this->GeometryBounds.SetBounds(originBounds);
         }
-        getRenderWindow()->Render ();
-
 //        if (getVtkCamera()->GetParallelProjection())
 //        {
 //            double nearFar[2];

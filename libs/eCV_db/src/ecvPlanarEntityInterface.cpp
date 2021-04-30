@@ -97,7 +97,7 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 	ccGLMatrixd mat = ccGLMatrixd(
 		ccGLMatrix::FromToRotation(CCVector3(0, 0, PC_ONE), getNormal()).data());
     mat.applyRotation(direction);
-    normalContext.transformInfo.setTransformation(mat, false);
+    normalContext.transformInfo.setTransformation(mat, false, false);
 
 	//ccGL::Scale(glFunc, scale, scale, scale);
 	normalContext.transformInfo.setScale(CCVector3(scale, scale, scale));

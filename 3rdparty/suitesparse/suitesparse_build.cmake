@@ -9,15 +9,16 @@ set_local_or_remote_url(
 
 ExternalProject_Add(
        ext_suitesparse
-       PREFIX ${CUSTOM_BUILD_DIR}
+       PREFIX ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}
        URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
        URL_HASH MD5=e7c27075e8e0afc9d2cf188630090946
+       DOWNLOAD_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/download/suitesparse
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
        UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/suitesparse
-       BINARY_DIR ${CUSTOM_BUILD_DIR}/suitesparse_build
-       INSTALL_DIR ${CUSTOM_INSTALL_DIR}
+       BINARY_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/suitesparse_build
+       INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
        CMAKE_ARGS
            -DOPENMP=ON
            -DBUILD_SHARED_LIBS=OFF

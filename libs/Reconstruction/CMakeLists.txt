@@ -306,7 +306,7 @@ include(GenerateVersionDefinitions)
 
 set(COLMAP_INCLUDE_DIRS
     ${BOOST_INCLUDE_DIRS}
-    ${CUSTOM_INSTALL_DIR}/include
+    ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include
     #${GLOG_INCLUDE_DIRS}
     #${FREEIMAGE_INCLUDE_DIRS}
     #${CERES_INCLUDE_DIRS}

@@ -29,6 +29,18 @@ set(CloudViewer_3RDPARTY_HEADER_TARGETS)
 # will probably include HEADER_TARGETS, but also anything else we use internally.
 set(CloudViewer_3RDPARTY_PRIVATE_TARGETS)
 
+if (WIN32)
+    # EXTERNAL INSTALL DIR
+    set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/external/$<CONFIG>)
+    # EXTERNAL BUILD DIR
+    set(CLOUDVIEWER_EXTERNAL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/external_build/$<CONFIG>)
+else()
+    # EXTERNAL INSTALL DIR
+    set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/external)
+    # EXTERNAL BUILD DIR
+    set(CLOUDVIEWER_EXTERNAL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/external_build)
+endif()
+
 find_package(PkgConfig QUIET)
 
 #
@@ -1251,8 +1263,6 @@ if (WITH_IPPICV)
 endif ()
 
 if(BUILD_RECONSTRUCTION)
-    set(CUSTOM_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/external)
-    set(CUSTOM_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/external_build)
     if (WIN32)
         # freeimage
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
@@ -1321,7 +1331,7 @@ if(BUILD_RECONSTRUCTION)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
         #list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
-    else()
+    else() # must build shared library to avoid compiling error!
         # freeimage
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
         import_shared_3rdparty_library(3rdparty_freeimage ext_freeimage
@@ -1406,7 +1416,6 @@ endif()
 
 # ransac_sd.
 #Causes the sub clouds to be generated as partial clones of original cloud
-add_definitions( -DPOINTSWITHINDEX )
 set( RANSAC_LIB_DIR "${CloudViewer_3RDPARTY_DIR}/RANSAC_SD_orig" CACHE PATH "RANSAC lib path" )
 add_subdirectory( "${RANSAC_LIB_DIR}" )
 

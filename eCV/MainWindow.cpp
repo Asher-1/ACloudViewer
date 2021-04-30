@@ -2246,7 +2246,10 @@ void MainWindow::activateTranslateRotateMode()
 		new QvtkTransformTool(ecvDisplayTools::GetVisualizer3D());
 	if (!m_transTool)
 		m_transTool = new ccGraphicalTransformationTool(this);
-	assert(m_transTool->getNumberOfValidEntities() == 0);
+    if(m_transTool->getNumberOfValidEntities() != 0)
+    {
+        m_transTool->clear();
+    }
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
 	return;

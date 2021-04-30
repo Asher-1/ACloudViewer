@@ -65,6 +65,9 @@ public:
 
 	void exportNewEntities();
 
+    //! Clear all variables and 'unlink' dialog
+    void clear();
+
 protected slots:
 
 	//! Applies transformation to selected entities
@@ -88,9 +91,6 @@ protected slots:
 	void onTranlationModeChanged(bool dummy);
 
 protected:
-
-	//! Clear all variables and 'unlink' dialog
-	void clear();
 
 	//! List of entities to be transformed
 	ccHObject m_toTransform;

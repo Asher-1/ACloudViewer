@@ -282,18 +282,13 @@ void ecvConsole::refresh()
 					if (m_parentWindow)
 						m_parentWindow->forceConsoleDisplay();
 				}
-				//Standard
-				else
-				{
 #ifdef QT_DEBUG
-					if (debugMessage)
-						item->setForeground(Qt::blue);
-					else
+                else if (debugMessage) {
+                    item->setForeground(Qt::blue);
+                }
 #endif
-						item->setForeground(Qt::black);
-				}
 
-				m_textDisplay->addItem(item);
+                m_textDisplay->addItem(item);
 			}
 		}
 

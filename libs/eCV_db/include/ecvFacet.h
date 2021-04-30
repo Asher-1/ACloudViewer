@@ -46,7 +46,7 @@ public:
 			QString name = QString("Facet"));
 
 	//! Destructor
-	virtual ~ccFacet();
+    virtual ~ccFacet() override;
 
 	//! Creates a facet from a set of points
 	/** The facet boundary can either be the convex hull (maxEdgeLength = 0)
@@ -60,7 +60,7 @@ public:
 	static ccFacet* Create(	cloudViewer::GenericIndexedCloudPersist* cloud,
 							PointCoordinateType maxEdgeLength = 0,
 							bool transferOwnership = false,
-							const PointCoordinateType* planeEquation = 0);
+                            const PointCoordinateType* planeEquation = nullptr);
 
 	//! Returns class ID
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::FACET; }
@@ -156,7 +156,10 @@ protected:
 
 	//! Creates internal representation (polygon, polyline, etc.)
 	bool createInternalRepresentation(	cloudViewer::GenericIndexedCloudPersist* points,
-										const PointCoordinateType* planeEquation = 0);
+                                        const PointCoordinateType* planeEquation = nullptr);
+
+    //! for python interface use
+    std::shared_ptr<ccMesh> m_arrow;
 
 	//! Facet
 	ccMesh* m_polygonMesh;
@@ -181,8 +184,6 @@ protected:
 
 	//! Max length
 	PointCoordinateType m_maxEdgeLength;
-
-	std::shared_ptr<ccMesh> m_arrow;
 
 	//inherited from ccHObject
 	virtual bool toFile_MeOnly(QFile& out) const override;
