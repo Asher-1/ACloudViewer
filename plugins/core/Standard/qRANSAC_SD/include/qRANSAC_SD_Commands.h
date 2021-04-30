@@ -42,6 +42,7 @@ constexpr char OUT_CLOUD_DIR[] = "OUT_CLOUD_DIR";
 constexpr char OUT_MESH_DIR[] = "OUT_MESH_DIR";
 constexpr char OUT_PAIR_DIR[] = "OUT_PAIR_DIR";
 constexpr char OUT_GROUP_DIR[] = "OUT_GROUP_DIR";
+constexpr char OUT_RANDOM_COLOR[] = "OUT_RANDOM_COLOR";
 constexpr char OUTPUT_INDIVIDUAL_PRIMITIVES[] = "OUTPUT_INDIVIDUAL_PRIMITIVES";
 constexpr char OUTPUT_INDIVIDUAL_SUBCLOUDS[] = "OUTPUT_INDIVIDUAL_SUBCLOUDS";
 constexpr char OUTPUT_INDIVIDUAL_PAIRED_CLOUD_PRIMITIVE[] = "OUTPUT_INDIVIDUAL_PAIRED_CLOUD_PRIMITIVE";
@@ -86,6 +87,7 @@ struct CommandRANSAC : public ccCommandLineInterface::Command
 		float bitmapEpsilonPercentage = -1.0f;
 		params.epsilon = -1.0f;
 		params.bitmapEpsilon = -1.0f;
+        params.randomColor = false;
 
 		for (unsigned char k = 0; k < 5; ++k)
 		{
@@ -204,6 +206,10 @@ struct CommandRANSAC : public ccCommandLineInterface::Command
 					cmd.print(QObject::tr("\tProbability : %1").arg(val));
 					params.probability = val;
 				}
+                else if (param == OUT_RANDOM_COLOR)
+                {
+                    params.randomColor = true;
+                }
 				else if (param == OUT_CLOUD_DIR)
 				{
 					if (!makePathIfPossible(cmd, param, &outputCloudsDir, &outputIndividualClouds))

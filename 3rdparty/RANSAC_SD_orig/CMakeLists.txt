@@ -1,52 +1,104 @@
-cmake_minimum_required(VERSION 3.10)
-
-#Anytime we use COMPILE_DEFINITIONS_XXX we must define this policy!
-#(and setting it outside of this file doesn't seem to work...)
-#cmake_policy(SET CMP0043 OLD)
-
-add_subdirectory( MiscLib )
-
-set(QRANSAC_SD_MISC_LIB_LIBRARIES "QRANSAC_SD_MISC_LIB")
-set(QRANSAC_SD_MISC_LIB_LIBRARIES ${QRANSAC_SD_MISC_LIB_LIBRARIES} PARENT_SCOPE)
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/GfxTL )
-include_directories( ${QRANSAC_SD_MISC_LIB_SOURCE_DIR} )
-
 project( QRANSAC_SD_PRIM_SHAPES_LIB VERSION 1.1 )
 
-file( GLOB header_list *.h GfxTL/*.h )
-file( GLOB source_list *.cpp GfxTL/*.cpp )
+add_library( ${PROJECT_NAME} STATIC )
 
-add_library( ${PROJECT_NAME} STATIC ${header_list} ${source_list} )
-set_target_properties(${PROJECT_NAME} PROPERTIES
-        OUTPUT_NAME ${PROJECT_NAME}
-        FOLDER "3rdparty"
-    )
+add_subdirectory( GfxTL )
+add_subdirectory( MiscLib )
 
-# Add preprocessor definitions
-set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS _CRT_SECURE_NO_DEPRECATE _CRT_SECURE_NO_WARNINGS _SCL_SECURE_NO_WARNINGS TIMINGLEVEL0 _LIB )
-set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS_RELEASE TIMINGLEVEL1)
-
-if (OPENMP_FOUND AND NOT WIN32) #DGM: OpenMP doesn't work with Visual at least (the process loops infinitely)
-	set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS DOPARALLEL )
-endif()
-
-set(QRANSAC_SD_PRIM_SHAPES_LIB_LIBRARIES ${PROJECT_NAME})
-set(QRANSAC_SD_PRIM_SHAPES_LIB_LIBRARIES ${QRANSAC_SD_PRIM_SHAPES_LIB_LIBRARIES} PARENT_SCOPE)
-
-	 
-set (QRANSAC_INCLUDE_DIRS 
-		${QRANSAC_SD_MISC_LIB_SOURCE_DIR}
-		${QRANSAC_SD_PRIM_SHAPES_LIB_SOURCE_DIR}
-		${QRANSAC_SD_PRIM_SHAPES_LIB_SOURCE_DIR}/GfxTL
-	 PARENT_SCOPE
+target_compile_definitions( ${PROJECT_NAME}
+        PUBLIC
+                # Causes sub-clouds to be generated as partial clones of original cloud
+                POINTSWITHINDEX
+        PRIVATE
+                PRECISIONLEVMAR
+                _CRT_SECURE_NO_DEPRECATE
+                _CRT_SECURE_NO_WARNINGS
+                _SCL_SECURE_NO_WARNINGS
+                _LIB
+                $<$<CONFIG:Debug>:TIMINGLEVEL0>
+                $<$<CONFIG:Release>:TIMINGLEVEL1>
 )
-set (QRANSAC_LIBRARIES ${QRANSAC_SD_MISC_LIB_LIBRARIES} ${QRANSAC_SD_PRIM_SHAPES_LIB_LIBRARIES} PARENT_SCOPE)
 
-if (NOT BUILD_SHARED_LIBS)
-  install(TARGETS ${PROJECT_NAME}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-endif()
+# Apparently building with OpenMP is broken on Ubuntu
+# DGM: OpenMP doesn't work with MSVC (the process loops infinitely)
+#if( NOT WIN32 )
+#	find_package( OpenMP )
+
+#	if( OpenMP_CXX_FOUND )
+#		target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX )
+#		target_compile_definitions( ${PROJECT_NAME} PRIVATE DOPARALLEL )
+#	endif()
+#endif()
+
+target_sources( ${PROJECT_NAME}
+        PUBLIC
+                ${CMAKE_CURRENT_LIST_DIR}/BasePrimitiveShape.h
+                ${CMAKE_CURRENT_LIST_DIR}/basic.h
+                ${CMAKE_CURRENT_LIST_DIR}/Bitmap.h
+                ${CMAKE_CURRENT_LIST_DIR}/BitmapPrimitiveShape.h
+                ${CMAKE_CURRENT_LIST_DIR}/Candidate.h
+                ${CMAKE_CURRENT_LIST_DIR}/Cone.h
+                ${CMAKE_CURRENT_LIST_DIR}/ConePrimitiveShape.h
+                ${CMAKE_CURRENT_LIST_DIR}/ConePrimitiveShapeConstructor.h
+                ${CMAKE_CURRENT_LIST_DIR}/Cylinder.h
+                ${CMAKE_CURRENT_LIST_DIR}/CylinderPrimitiveShape.h
+                ${CMAKE_CURRENT_LIST_DIR}/CylinderPrimitiveShapeConstructor.h
+                ${CMAKE_CURRENT_LIST_DIR}/FlatNormalThreshPointCompatibilityFunc.h
+                ${CMAKE_CURRENT_LIST_DIR}/Grid.h
+                ${CMAKE_CURRENT_LIST_DIR}/IndexIterator.h
+                ${CMAKE_CURRENT_LIST_DIR}/LevMarFitting.h
+                ${CMAKE_CURRENT_LIST_DIR}/LevMarFunc.h
+                ${CMAKE_CURRENT_LIST_DIR}/LevMarLSWeight.h
+                ${CMAKE_CURRENT_LIST_DIR}/LowStretchSphereParametrization.h
+                ${CMAKE_CURRENT_LIST_DIR}/LowStretchTorusParametrization.h
+                ${CMAKE_CURRENT_LIST_DIR}/Octree.h
+                ${CMAKE_CURRENT_LIST_DIR}/Plane.h
+                ${CMAKE_CURRENT_LIST_DIR}/PlanePrimitiveShape.h
+                ${CMAKE_CURRENT_LIST_DIR}/PlanePrimitiveShapeConstructor.h
+                ${CMAKE_CURRENT_LIST_DIR}/PointCloud.h
+                ${CMAKE_CURRENT_LIST_DIR}/PrimitiveShape.h
+                ${CMAKE_CURRENT_LIST_DIR}/PrimitiveShapeConstructor.h
+                ${CMAKE_CURRENT_LIST_DIR}/PrimitiveShapeVisitor.h
+                ${CMAKE_CURRENT_LIST_DIR}/RansacShapeDetector.h
+                ${CMAKE_CURRENT_LIST_DIR}/RebuildAACubeTreeStrategy.h
+                ${CMAKE_CURRENT_LIST_DIR}/ScoreAACubeTreeStrategy.h
+                ${CMAKE_CURRENT_LIST_DIR}/ScoreComputer.h
+                ${CMAKE_CURRENT_LIST_DIR}/ScorePrimitiveShapeVisitor.h
+                ${CMAKE_CURRENT_LIST_DIR}/SimpleTorusParametrization.h
+                ${CMAKE_CURRENT_LIST_DIR}/Sphere.h
+                ${CMAKE_CURRENT_LIST_DIR}/SpherePrimitiveShape.h
+                ${CMAKE_CURRENT_LIST_DIR}/SpherePrimitiveShapeConstructor.h
+                ${CMAKE_CURRENT_LIST_DIR}/Torus.h
+                ${CMAKE_CURRENT_LIST_DIR}/TorusPrimitiveShape.h
+                ${CMAKE_CURRENT_LIST_DIR}/TorusPrimitiveShapeConstructor.h
+        PRIVATE
+                ${CMAKE_CURRENT_LIST_DIR}/Bitmap.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/BitmapPrimitiveShape.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/Candidate.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/Cone.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/ConePrimitiveShape.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/ConePrimitiveShapeConstructor.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/Cylinder.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/CylinderPrimitiveShape.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/CylinderPrimitiveShapeConstructor.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/LowStretchSphereParametrization.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/LowStretchTorusParametrization.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/Plane.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/PlanePrimitiveShape.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/PlanePrimitiveShapeConstructor.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/PointCloud.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/RansacShapeDetector.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/SimpleTorusParametrization.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/solve.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/Sphere.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/SpherePrimitiveShape.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/SpherePrimitiveShapeConstructor.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/Torus.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/TorusPrimitiveShape.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/TorusPrimitiveShapeConstructor.cpp
+)
+
+target_include_directories( ${PROJECT_NAME}
+        PUBLIC
+                ${CMAKE_CURRENT_SOURCE_DIR}
+)

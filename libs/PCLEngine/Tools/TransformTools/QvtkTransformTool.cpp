@@ -49,8 +49,8 @@ using namespace PclUtils;
 
 QvtkTransformTool::QvtkTransformTool(ecvGenericVisualizer3D* viewer)
 	: ecvGenericTransformTool()
-	, m_viewer(nullptr)
 	, m_boxWidgetTransformer(nullptr)
+    , m_viewer(nullptr)
 {
 	setVisualizer(viewer);
 	m_modelActors.clear();
@@ -402,10 +402,10 @@ void QvtkTransformTool::getOutput(std::vector<ccHObject*>& out)
 		{
             result = vtk2cc::ConvertToMesh(dataObject);
 		}
-		else if (baseEntity->isKindOf(CV_TYPES::POLY_LINE))
-		{
+        else if (baseEntity->isKindOf(CV_TYPES::POLY_LINE))
+        {
             result = vtk2cc::ConvertToPolyline(dataObject);
-		}
+        }
 		else
 		{
 			CVLog::Warning(QString("only cloud, mesh and polyline are supported now!"));

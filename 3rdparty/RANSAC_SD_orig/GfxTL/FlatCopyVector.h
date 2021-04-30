@@ -20,7 +20,7 @@
 #endif // !_mm_malloc
 #ifdef _mm_free
 #ifndef a_free
-#define a_free(ptr)  _mm_free((ptr))
+#define a_free(ptr) _mm_free((ptr))
 #endif // !a_free
 #endif // !_mm_free
 

@@ -254,7 +254,7 @@ struct ECV_DB_LIB_API TransformInfo {
 
     bool isApplyTransform() const { return isRotate || isScale || isTranslate || isPositionChanged; }
 
-    void setTransformation(const ccGLMatrixd& transform, bool updateTranslation = true, bool useEuler = true) {
+    void setTransformation(const ccGLMatrixd& transform, bool updateTranslation = true, bool useEuler = false) {
         if (useEuler) {
 //            double phi_rad, theta_rad, psi_rad;
 //            CCVector3d t3D;
