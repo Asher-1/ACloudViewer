@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.18)
+
 if(POLICY CMP0043)
     cmake_policy(SET CMP0043 NEW)
 endif()
@@ -48,6 +50,18 @@ set(COLMAP_TARGETS_ROOT_FOLDER "colmap_targets")
 set(COLMAP_SRC_ROOT_FOLDER "colmap_sources")
 
 set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
+
+# Macro to remove conflict include items
+macro(REMOVE_CONFLICTS_DIRECTORIES TARGET_NAME)
+	get_property(include_list TARGET ${TARGET_NAME} PROPERTY INCLUDE_DIRECTORIES)
+	#message("include_list : " ${include_list})
+	if (NOT ${BOOST_INCLUDE_DIRS} STREQUAL "")
+		list(REMOVE_ITEM include_list ${BOOST_INCLUDE_DIRS} )
+		list(REMOVE_ITEM include_list ${CMAKE_BINARY_DIR}/boost/src/ext_boost )
+		set_property(TARGET ${TARGET_NAME} PROPERTY INCLUDE_DIRECTORIES ${include_list})
+	endif()
+	#message("after include_list : " ${include_list})
+endmacro(COLMAP_ADD_CUDA_SOURCES)
 
 # This macro will search for source files in a given directory, will add them
 # to a source group (folder within a project), and will then return paths to
@@ -126,11 +140,8 @@ macro(COLMAP_ADD_LIBRARY TARGET_NAME)
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
-
-    # INTERNAL LIB
-    target_link_libraries( ${TARGET_NAME}  PUBLIC
-                                   ECV_DB_LIB
-                                   ECV_IO_LIB)
+								   
+	REMOVE_CONFLICTS_DIRECTORIES(${TARGET_NAME})
 
     set_target_properties( ${TARGET_NAME} PROPERTIES
             CXX_VISIBILITY_PRESET hidden
@@ -154,11 +165,8 @@ macro(COLMAP_ADD_STATIC_LIBRARY TARGET_NAME)
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
-
-    # INTERNAL LIB
-    target_link_libraries( ${TARGET_NAME}  PUBLIC
-                                   ECV_DB_LIB
-                                   ECV_IO_LIB)
+								   
+	REMOVE_CONFLICTS_DIRECTORIES(${TARGET_NAME})
 
     set_target_properties( ${TARGET_NAME} PROPERTIES
             CXX_VISIBILITY_PRESET hidden
@@ -186,6 +194,8 @@ macro(COLMAP_ADD_CUDA_LIBRARY TARGET_NAME)
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+	
+	REMOVE_CONFLICTS_DIRECTORIES(${TARGET_NAME})
 
     set_target_properties( ${TARGET_NAME} PROPERTIES
             CXX_VISIBILITY_PRESET hidden
@@ -209,6 +219,8 @@ macro(COLMAP_ADD_STATIC_CUDA_LIBRARY TARGET_NAME)
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
+	REMOVE_CONFLICTS_DIRECTORIES(${TARGET_NAME})
+
     set_target_properties( ${TARGET_NAME} PROPERTIES
             CXX_VISIBILITY_PRESET hidden
     )
@@ -226,22 +238,26 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
         ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
     target_link_libraries(${TARGET_NAME} PRIVATE colmap)
-
-    if (MSVC)
-        # fix compiling error on windows platform
-        target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
-    endif()
-
-    # Enforce 3rd party dependencies
+	
+	# Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+	
+    if (MSVC)
+        # fix compiling error on windows platform
+        target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+		# fix gflags library bugs on windows
+		target_link_libraries(${TARGET_NAME} PRIVATE shlwapi.lib)
+    endif()
+	
+	REMOVE_CONFLICTS_DIRECTORIES(${TARGET_NAME})
 
     # install
     if(VCPKG_BUILD)
         install(TARGETS ${TARGET_NAME} DESTINATION tools/)
     else()
-        install(TARGETS ${TARGET_NAME} DESTINATION bin/)
+        install(TARGETS ${TARGET_NAME} DESTINATION ${INSTALL_DESTINATIONS})
     endif()
 endmacro(COLMAP_ADD_EXECUTABLE)
 
@@ -265,6 +281,9 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
         cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+		
+		REMOVE_CONFLICTS_DIRECTORIES(${TARGET_NAME})
+		
         set_target_properties( ${TARGET_NAME} PROPERTIES
                 CXX_VISIBILITY_PRESET hidden
         )
@@ -297,6 +316,8 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
         cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+		
+		REMOVE_CONFLICTS_DIRECTORIES(${TARGET_NAME})
 
         set_target_properties( ${TARGET_NAME} PROPERTIES
                 CXX_VISIBILITY_PRESET hidden

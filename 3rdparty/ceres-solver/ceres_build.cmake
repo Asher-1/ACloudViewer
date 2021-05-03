@@ -6,10 +6,6 @@ set_local_or_remote_url(
     REMOTE_URLS "https://github.com/ceres-solver/ceres-solver/archive/1.14.0.zip"
 )
 
-message("GLOG_CMAKE_FLAGS: " ${GLOG_CMAKE_FLAGS})
-message("EIGEN_CMAKE_FLAGS: " ${EIGEN_CMAKE_FLAGS})
-message("SUITESPARSE_CMAKE_FLAGS: " ${SUITESPARSE_CMAKE_FLAGS})
-
 ExternalProject_Add(
    ext_ceres
    PREFIX ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}
@@ -37,7 +33,6 @@ ExternalProject_Add(
           -DBUILD_TESTING=OFF
           -DBUILD_EXAMPLES=OFF
           -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-          $<$<PLATFORM_ID:Windows>:-DCMAKE_CXX_FLAGS=/DGOOGLE_GLOG_DLL_DECL=>
           DEPENDS ${INTERNAL_EIGEN3_TARGET} ${SUITESPARSE_TARGET} ${GLOG_TARGET}
 )
 
@@ -48,5 +43,8 @@ if (WIN32)
     set(EXT_CERES_LIBRARIES ceres$<$<CONFIG:Debug>:-debug>)
 else()
     set(EXT_CERES_LIBRARIES ceres)
+	set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_CERES_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
+	install_ext( FILES ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${library_filename} ${INSTALL_DESTINATIONS} "")
 endif()
+
 set(CERES_CMAKE_FLAGS ${SUITESPARSE_CMAKE_FLAGS} ${EIGEN_CMAKE_FLAGS} ${GLOG_CMAKE_FLAGS} -DCeres_DIR=${CERES_LIB_DIR}/cmake/Ceres)

@@ -139,7 +139,7 @@ if (BUILD_RECONSTRUCTION)
     if (${BUILD_GUI})
         target_compile_definitions( ${PROJECT_NAME} PRIVATE GUI_ENABLED)
     endif()
-    if (${WITH_SIMD})
+    if (${USE_SIMD})
         target_compile_definitions( ${PROJECT_NAME} PRIVATE SIMD_ENABLED)
     endif()
     if (${WITH_OPENMP})
@@ -156,21 +156,20 @@ if (BUILD_RECONSTRUCTION)
     endif()
     target_compile_definitions( ${PROJECT_NAME} PRIVATE OPENGL_ENABLED)
 
-    # Disable BOOST autolink
-    add_definitions(-DBOOST_ALL_NO_LIB)
-    set(Boost_USE_STATIC_LIBS ON)
-    set(Boost_USE_STATIC ON)
+	if(MSVC)
+        # Some fixes for the Glog library.
+        add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
+        add_definitions("-DGOOGLE_GLOG_DLL_DECL=")
+		# fix gflags library bugs on windows
+		add_definitions(-DGFLAGS_DLL_DECLARE_FLAG= -DGFLAGS_DLL_DEFINE_FLAG= -DGFLAGS_IS_A_DLL=0)
+		target_link_libraries(${PROJECT_NAME} shlwapi.lib)
+    endif()
 
     include_directories(${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
     include_directories(${COLMAP_SOURCE_DIR}/lib)
     include_directories(${COLMAP_SOURCE_DIR}/src)
     
-    target_link_libraries( ${PROJECT_NAME} colmap)
-
-    if(MSVC)
-        # Some fixes for the Glog library.
-        add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
-    endif()
+    target_link_libraries(${PROJECT_NAME} colmap)
 
     # Add custom preprocessor definitions
     target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_COLMAP_MODULE )
