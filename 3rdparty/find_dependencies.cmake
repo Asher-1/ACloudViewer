@@ -31,14 +31,26 @@ set(CloudViewer_3RDPARTY_PRIVATE_TARGETS)
 
 if (WIN32)
     # EXTERNAL INSTALL DIR
-    set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/external/$<CONFIG>)
+    set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
+	if (NOT EXISTS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
+		file(MAKE_DIRECTORY ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
+	endif()
+	if (NOT EXISTS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
+		file(MAKE_DIRECTORY ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
+	endif()
+	if (NOT EXISTS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib)
+		file(MAKE_DIRECTORY ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib)
+	endif()
     # EXTERNAL BUILD DIR
-    set(CLOUDVIEWER_EXTERNAL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/external_build/$<CONFIG>)
+    set(CLOUDVIEWER_EXTERNAL_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/external_build")
+	if (NOT EXISTS ${CLOUDVIEWER_EXTERNAL_BUILD_DIR})
+		file(MAKE_DIRECTORY ${CLOUDVIEWER_EXTERNAL_BUILD_DIR})
+	endif()
 else()
     # EXTERNAL INSTALL DIR
-    set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/external)
+    set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
     # EXTERNAL BUILD DIR
-    set(CLOUDVIEWER_EXTERNAL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/external_build)
+    set(CLOUDVIEWER_EXTERNAL_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/external_build")
 endif()
 
 find_package(PkgConfig QUIET)
@@ -450,6 +462,12 @@ if(USE_SYSTEM_EIGEN3)
     endif()
 endif()
 if(NOT USE_SYSTEM_EIGEN3)
+	if(USE_SIMD)
+		# fix eigen alignment
+		set(EIGEN_TEST_SSE2 ON)
+	else()
+		set(EIGEN_TEST_SSE2 OFF)
+	endif()
     build_3rdparty_library(3rdparty_eigen3 PUBLIC DIRECTORY Eigen INCLUDE_DIRS Eigen INCLUDE_ALL)
     set(EIGEN3_TARGET "3rdparty_eigen3")
 endif()
@@ -462,6 +480,7 @@ endif()
 if(NOT USE_SYSTEM_FLANN OR NOT 3rdparty_flann_FOUND)
     build_3rdparty_library(3rdparty_flann DIRECTORY flann)
 endif()
+message(STATUS "INTERNAL_FLANN_DIR: " ${CloudViewer_3RDPARTY_DIR}/flann)
 set(FLANN_TARGET "3rdparty_flann")
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FLANN_TARGET}")
 
@@ -1078,14 +1097,17 @@ endif()
 # - zeromq
 # - msgpack
 if(BUILD_RPC_INTERFACE)
-    # boost: predef
-    include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
-    import_3rdparty_library(3rdparty_boost
-        INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
-    )
-    set(BOOST_TARGET "3rdparty_boost")
-    add_dependencies(3rdparty_boost ext_boost)
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
+	if (NOT WIN32) # fix compiling conflicts on windows
+	    # boost: predef
+		include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
+		import_3rdparty_library(3rdparty_boost
+			INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
+		)
+		message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
+		set(BOOST_TARGET "3rdparty_boost")
+		add_dependencies(3rdparty_boost ext_boost)
+		list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
+	endif()
 
     # zeromq
     include(${CloudViewer_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
@@ -1273,6 +1295,7 @@ if(BUILD_RECONSTRUCTION)
         )
         set(FREEIMAGE_TARGET "3rdparty_freeimage")
         add_dependencies(3rdparty_freeimage ext_freeimage)
+		list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
 
         # gflags
         include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
@@ -1304,6 +1327,13 @@ if(BUILD_RECONSTRUCTION)
         )
         set(SUITESPARSE_TARGET "3rdparty_suitesparse")
         add_dependencies(3rdparty_suitesparse ext_suitesparse)
+		
+        import_3rdparty_library(3rdparty_lapack
+                LIB_DIR      ${LAPACK_LIB_DIR}
+                LIBRARIES    ${LAPACKBLAS_LIBRARIES}
+        )
+        set(LAPACK_TARGET "3rdparty_lapack")
+        add_dependencies(3rdparty_lapack ext_suitesparse)
 
         # custom eigen
         include(${CloudViewer_3RDPARTY_DIR}/Eigen3/eigen3_build.cmake)
@@ -1325,12 +1355,13 @@ if(BUILD_RECONSTRUCTION)
         add_dependencies(ext_ceres ext_suitesparse)
         add_dependencies(ext_ceres ext_eigen3)
 
+		list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
+		list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
+		list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${INTERNAL_EIGEN3_TARGET}")
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${SUITESPARSE_TARGET}")
+		list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${LAPACK_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${CERES_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${INTERNAL_EIGEN3_TARGET}")
-        #list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${SUITESPARSE_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
-        #list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
+        
     else() # must build shared library to avoid compiling error!
         # freeimage
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
@@ -1341,6 +1372,7 @@ if(BUILD_RECONSTRUCTION)
         )
         set(FREEIMAGE_TARGET "3rdparty_freeimage")
         add_dependencies(3rdparty_freeimage ext_freeimage)
+		list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
 
         # gflags
         include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
@@ -1410,7 +1442,6 @@ if(BUILD_RECONSTRUCTION)
 #        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${LAPACK_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
 #        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
     endif()
 endif()
 

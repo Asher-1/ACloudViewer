@@ -35,7 +35,7 @@ elseif(IS_GNU OR IS_CLANG)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
 endif()
 
-add_subdirectory(FLANN)
+#add_subdirectory(FLANN)
 add_subdirectory(Graclus)
 add_subdirectory(LSD)
 add_subdirectory(PBA)

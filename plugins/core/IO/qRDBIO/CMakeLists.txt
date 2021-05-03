@@ -80,12 +80,11 @@ if( PLUGIN_IO_QRDB )
 
 	target_link_libraries( ${PROJECT_NAME} rdbcpp )
 
-
 	option( PLUGIN_IO_QRDB_INSTALL_DEPENDENCY "Install RDB shared library to library folder" OFF)
 	if( PLUGIN_IO_QRDB_INSTALL_DEPENDENCY )
 		if(MSVC)
 			# on Windows put the dll to the binaries for them to find them
-                        set(_rdb_libdir "${EROWCLOUDVIEWER_DEST_FOLDER}")
+			set(_rdb_libdir "${EROWCLOUDVIEWER_DEST_FOLDER}")
 		else()
 			# some distros prefer "lib" others like more specific folders like "lib64" (handled by GNUInstallDirs)
 			if( CMAKE_INSTALL_LIBDIR STREQUAL "" )
@@ -102,7 +101,25 @@ if( PLUGIN_IO_QRDB )
 		get_target_property(RDB_LIBRARY_FILE rdbc IMPORTED_LOCATION)
 		# resolve possible symlink and install the real library
 		get_filename_component(lib_REAL ${RDB_LIBRARY_FILE} REALPATH)
+		
+		# for debugging
+		if(WIN32)
+			add_custom_command(TARGET ${PROJECT_NAME}
+			   POST_BUILD
+			   COMMAND ${CMAKE_COMMAND} -E
+				   copy_if_different ${lib_REAL} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
+			)
+		else()
+			add_custom_command(TARGET ${PROJECT_NAME}
+			   POST_BUILD
+			   COMMAND ${CMAKE_COMMAND} -E
+				   copy_if_different ${lib_REAL} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+			)
+		endif()
+		
+		# install on windows
 		_InstallFiles(FILES ${lib_REAL} DEST_PATH ${_rdb_libdir})
+		
 		if( NOT WIN32 )
 			# find all the symlinks linking to lib_REAL
 			string(REGEX MATCH "\\.so" is_shared_lib_linux "${RDB_LIBRARY_FILE}")

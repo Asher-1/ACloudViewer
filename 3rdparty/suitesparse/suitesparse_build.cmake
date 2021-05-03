@@ -19,6 +19,8 @@ ExternalProject_Add(
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/suitesparse
        BINARY_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/suitesparse_build
        INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
+	   # fix compiling bugs on windows
+	   PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${CloudViewer_3RDPARTY_DIR}/suitesparse/CMakeLists.txt <SOURCE_DIR>
        CMAKE_ARGS
            -DOPENMP=ON
            -DBUILD_SHARED_LIBS=OFF
@@ -33,6 +35,19 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_suitesparse INSTALL_DIR)
 set(SUITESPARSE_INCLUDE_DIRS ${INSTALL_DIR}/include/suitesparse/)
 set(SUITESPARSE_LIB_DIR ${INSTALL_DIR}/lib)
+set(EXT_SUITESPARSE_LIBRARIES   suitesparseconfig
+								amd
+								btf
+								camd
+								ccolamd
+								colamd
+								cholmod
+								cxsparse
+								klu
+								ldl
+								umfpack
+								spqr
+								metis)
 
 if (BUILD_CUDA_MODULE)
     if(NOT WIN32)
@@ -40,20 +55,7 @@ if (BUILD_CUDA_MODULE)
     endif()
 endif()
 
-if(WIN32)
-    set(EXT_SUITESPARSE_LIBRARIES   suitesparseconfig
-                                    libamd
-                                    libbtf
-                                    libcamd
-                                    libccolamd
-                                    libcolamd
-                                    libcholmod
-                                    libcxsparse
-                                    libklu
-                                    libldl
-                                    libumfpack
-                                    libspqr
-                                    metis)
+if(WIN32)				
     # for compiling ceres-solver
     set(LAPACK_LIBRARIES ${INSTALL_DIR}/lib64/lapack_blas_windows/liblapack.lib)
     set(BLAS_LIBRARIES ${INSTALL_DIR}/lib64/lapack_blas_windows/libblas.lib)
@@ -62,45 +64,20 @@ if(WIN32)
     # just for deploy dll on windows
     set(LAPACK_INCLUDE_DIRS ${INSTALL_DIR}/include/)
     set(LAPACK_LIB_DIR ${INSTALL_DIR}/lib64/lapack_blas_windows)
-    set(LAPACKBLAS_LIBRARIES liblapack libblas libgcc_s_sjlj-1 libgfortran-3 libquadmath-0)
-
-    copy_shared_library(ext_suitesparse
+    set(LAPACKBLAS_LIBRARIES liblapack libblas)
+	set(LAPACKBLAS_DLL ${LAPACKBLAS_LIBRARIES} libgcc_s_sjlj-1 libgfortran-3 libquadmath-0)
+	
+	# for debugging
+	copy_shared_library(ext_suitesparse
             LIB_DIR      ${LAPACK_LIB_DIR}
-            LIBRARIES    ${LAPACKBLAS_LIBRARIES}
+            LIBRARIES    ${LAPACKBLAS_DLL}
     )
-
-    # fix postfix "d" on MSVC
-    if(MSVC) # Rename debug libs to ${EXT_SUITESPARSE_LIBRARIES}. rem (comment) is no-op
-        ExternalProject_Add_Step(ext_suitesparse rename_debug_libs
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libamdd.lib libamd.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libbtfd.lib libbtf.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libcamdd.lib libcamd.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libccolamdd.lib libccolamd.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libcholmodd.lib libcholmod.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libcxsparsed.lib libcxsparse.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libklud.lib libklu.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libldld.lib libldl.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libumfpackd.lib libumfpack.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y libspqrd.lib libspqr.lib
-            COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y metisd.lib metis.lib
-            WORKING_DIRECTORY ${SUITESPARSE_LIB_DIR}
-            DEPENDEES install
-        )
-    endif()
-else()
-set(EXT_SUITESPARSE_LIBRARIES   suitesparseconfig
-                                amd
-                                btf
-                                camd
-                                ccolamd
-                                colamd
-                                cholmod
-                                cxsparse
-                                klu
-                                ldl
-                                umfpack
-                                spqr
-                                metis)
+	
+	foreach( filename ${LAPACKBLAS_DLL} )
+		set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${filename}${CMAKE_SHARED_LIBRARY_SUFFIX})
+		install_ext( FILES ${LAPACK_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
+    endforeach()
+	
 endif()
 
 # fix cxsparse issue for ceres-solver!

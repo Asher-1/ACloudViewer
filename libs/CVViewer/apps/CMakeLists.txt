@@ -105,7 +105,6 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
             )
         endif()
 
-
         if (UNIX)
             install(DIRECTORY   "${APP_DIR}"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
@@ -137,6 +136,19 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
             install(FILES   "${APP_DIR}/${TARGET_NAME}.exe"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     RENAME "${APP_NAME}.exe")
+			
+			# deploy on windows
+			add_custom_command(TARGET ${TARGET_NAME}
+				POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/${APP_NAME}/${TARGET_NAME}.exe ${CMAKE_BINARY_DIR}/libs/CVViewer/apps/$<CONFIG>/${TARGET_NAME}.exe
+				VERBATIM
+			)
+			DeployQt(
+				TARGET
+					${TARGET_NAME}
+				DEPLOY_PATH
+					${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}
+			)
         else()
             install(DIRECTORY   "${APP_DIR}"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"

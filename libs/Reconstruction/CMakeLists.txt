@@ -58,7 +58,7 @@ set(OPENMP_ENABLED ${WITH_OPENMP})
 set(CUDA_ENABLED ${BUILD_CUDA_MODULE})
 set(TESTS_ENABLED ${BUILD_UNIT_TESTS})
 set(CGAL_ENABLED ${CVCORELIB_USE_CGAL})
-set(SIMD_ENABLED ${WITH_SIMD})
+set(SIMD_ENABLED ${USE_SIMD})
 set(IPO_ENABLED ON)
 set(BOOST_STATIC ON)
 set(OPENGL_ENABLED ON)
@@ -96,8 +96,9 @@ if (WIN32)
     set( BOOST_ROOT "" CACHE PATH "Boost library root directory" )
     if ( NOT BOOST_ROOT )
         message( SEND_ERROR "No Boost library root specified (BOOST_ROOT)" )
-    else()
-        include_directories( ${BOOST_ROOT} )
+	else()
+		add_definitions("-DBOOST_ROOT=${BOOST_ROOT}")
+		add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
     endif()
 endif()
 
@@ -159,11 +160,16 @@ endif()
 if(IS_MSVC)
     # Some fixes for the Glog library.
     add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
+	add_definitions("-DGOOGLE_GLOG_DLL_DECL=")
+	# fix gflags library bugs
+	add_definitions(-DGFLAGS_DLL_DECLARE_FLAG= -DGFLAGS_DLL_DEFINE_FLAG= -DGFLAGS_IS_A_DLL=0)
+	# opengl
     add_definitions("-DGL_GLEXT_PROTOTYPES")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
     # Enable object level parallel builds in Visual Studio.
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+	
 endif()
 
 if(IS_GNU)
@@ -179,32 +185,6 @@ endif()
 if(IS_DEBUG)
     add_definitions("-DEIGEN_INITIALIZE_MATRICES_BY_NAN")
 endif()
-
-#if(${SIMD_ENABLED})
-#    CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-#    if (COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-#      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-#    else()
-#      CHECK_CXX_COMPILER_FLAG("/arch:AVX" COMPILER_OPT_ARCH_AVX_SUPPORTED)
-#      if(COMPILER_OPT_ARCH_AVX_SUPPORTED)
-#        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
-#      endif()
-#      CHECK_CXX_COMPILER_FLAG("/arch:SSE" COMPILER_OPT_ARCH_SSE_SUPPORTED)
-#      if(COMPILER_OPT_ARCH_SSE_SUPPORTED)
-#        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE")
-#      endif()
-#      CHECK_CXX_COMPILER_FLAG("/arch:SSE2" COMPILER_OPT_ARCH_SSE2_SUPPORTED)
-#      if(COMPILER_OPT_ARCH_SSE2_SUPPORTED)
-#        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
-#      endif()
-#    endif()
-#    message(STATUS "Enabling SIMD support in colmap")
-#else()
-#    # fix eigen alignment bugs for colmap
-#    add_definitions(-DEIGEN_DONT_ALIGN)
-#    add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
-#    message(STATUS "Disabling SIMD support in colmap")
-#endif()
 
 if(OPENMP_ENABLED AND OPENMP_FOUND)
     message(STATUS "Enabling OpenMP support")
@@ -255,7 +235,6 @@ endif()
 
 if(GUI_ENABLED AND Qt5_FOUND)
     add_definitions("-DGUI_ENABLED")
-
     message(STATUS "Enabling GUI support")
 else()
     message(STATUS "Disabling GUI support")
@@ -346,7 +325,7 @@ if(UNIX)
 endif()
 
 set(COLMAP_INTERNAL_LIBRARIES
-    flann
+    #flann
     graclus
     lsd
     pba
@@ -372,7 +351,7 @@ add_subdirectory(src)
 # Generate source groups for Visual Studio, XCode, etc.
 ################################################################################
 
-COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
+#COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/Graclus LIB_GRACLUS_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/LSD LIB_LSD_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
@@ -398,7 +377,7 @@ COLMAP_ADD_SOURCE_DIR(src/util UTIL_SRCS *.h *.cc)
 # target does not allow us to set its C++ include directories (and thus
 # intellisense can't find any of the included files).
 add_library( ${COLMAP_SRC_ROOT_FOLDER}
-    ${LIB_FLANN_SRCS}
+    #${LIB_FLANN_SRCS}
     ${LIB_GRACLUS_SRCS}
     ${LIB_LSD_SRCS}
     ${LIB_PBA_SRCS}

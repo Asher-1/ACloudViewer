@@ -181,9 +181,10 @@ void Downloader::finished()
  */
 void Downloader::openDownload()
 {
-   if (!m_fileName.isEmpty())
+   if (!m_fileName.isEmpty()) 
+   {
       QDesktopServices::openUrl(QUrl::fromLocalFile(m_downloadDir.filePath(m_fileName)));
-
+   }
    else
    {
       QMessageBox::critical(this, tr("Error"), tr("Cannot find downloaded update!"), QMessageBox::Close);
@@ -233,8 +234,12 @@ void Downloader::installUpdate()
    /* Wait */
    else
    {
-      if (m_mandatoryUpdate)
-         QApplication::quit();
+       if (m_mandatoryUpdate) 
+       {
+          QString installerFile = m_downloadDir.filePath(m_fileName);
+          QMessageBox::information(this, "", tr("Please install from <i>%1</i> mannually!").arg(installerFile));
+          QApplication::quit();
+       }
 
       m_ui->openButton->setEnabled(true);
       m_ui->openButton->setVisible(true);

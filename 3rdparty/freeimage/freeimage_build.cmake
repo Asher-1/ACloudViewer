@@ -18,6 +18,7 @@ endif()
 if(WIN32)
     set(STATIC_FREEIMAGE_INCLUDE_DIR "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include/")
     set(STATIC_FREEIMAGE_LIB_DIR "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib")
+	set(EXT_FREEIMAGE_LIBRARIES FreeImage)
     ExternalProject_Add(
         ext_freeimage
         PREFIX ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}
@@ -33,16 +34,17 @@ if(WIN32)
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         PATCH_COMMAND ""
         BUILD_COMMAND  ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Dist/x64 ${STATIC_FREEIMAGE_INCLUDE_DIR}
-        && ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Dist/x64 ${STATIC_FREEIMAGE_LIB_DIR}
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_if_different <SOURCE_DIR>/Dist/x64/${EXT_FREEIMAGE_LIBRARIES}.h ${STATIC_FREEIMAGE_INCLUDE_DIR}
+        && ${CMAKE_COMMAND} -E copy_if_different <SOURCE_DIR>/Dist/x64/${EXT_FREEIMAGE_LIBRARIES}.lib ${STATIC_FREEIMAGE_LIB_DIR}
     )
 
+	ExternalProject_Get_Property(ext_freeimage SOURCE_DIR)
     set(FREEIMAGE_INCLUDE_DIRS ${STATIC_FREEIMAGE_INCLUDE_DIR}) # "/" is critical.
     set(FREEIMAGE_LIB_DIR ${STATIC_FREEIMAGE_LIB_DIR})
-    set(EXT_FREEIMAGE_LIBRARIES FreeImage)
 
+	# for debugging
     copy_shared_library(ext_freeimage
-            LIB_DIR      ${FREEIMAGE_LIB_DIR}
+            LIB_DIR      ${SOURCE_DIR}/Dist/x64
             LIBRARIES    ${EXT_FREEIMAGE_LIBRARIES}
     )
 else()
@@ -69,3 +71,12 @@ else()
     set(FREEIMAGE_LIB_DIR ${INSTALL_DIR}/lib)
     set(EXT_FREEIMAGE_LIBRARIES freeimage)
 endif()
+
+if(WIN32)
+	set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
+	install_ext( FILES ${SOURCE_DIR}/Dist/x64/${library_filename} ${INSTALL_DESTINATIONS} "")
+else()
+	set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
+	install_ext( FILES ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${library_filename} ${INSTALL_DESTINATIONS} "")
+endif()
+

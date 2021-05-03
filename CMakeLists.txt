@@ -19,12 +19,12 @@ if ( ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
 endif()
 
 # ErowCloudViewer build options
-option(BUILD_SHARED_LIBS          "Build shared libraries"                   			OFF)
-option(BUILD_EXAMPLES             "Build CloudViewer example programs"        			ON )
+option(BUILD_SHARED_LIBS          "Build shared libraries"                   			    OFF)
+option(BUILD_EXAMPLES             "Build CloudViewer example programs"        			    ON )
 option(BUILD_UNIT_TESTS           "Build CloudViewer unit tests"                        	OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"                          	OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                             	ON )
-option(BUILD_RECONSTRUCTION       "Build the 3D Reconstruction"                               	OFF)
+option(BUILD_RECONSTRUCTION       "Build the 3D Reconstruction"                             OFF)
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                               	OFF)
 option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"                	ON )
 option(BUILD_GUI                  "Builds new GUI"                                      	ON )
@@ -35,6 +35,7 @@ option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"              
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                             	OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"                          	OFF)
 # 3rd-party build options
+option(USE_SIMD                   "Use Single Instruction Multiple Data speed optimization" OFF)
 option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"                      	OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"                     	OFF)
 option(USE_SYSTEM_FLANN           "Use system pre-installed flann"                      	OFF)
@@ -51,7 +52,7 @@ option(USE_SYSTEM_QHULL           "Use system pre-installed qhull"              
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"                   	OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"              	OFF)
 # PCL ENGINE SUPPORT
-option(USE_PCL_BACKEND           "Check to use pcl library as backend" 				ON )
+option(USE_PCL_BACKEND           "Check to use pcl library as backend" 				        ON )
 # Mac options
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"                	ON )
 # Sensor options
@@ -67,7 +68,6 @@ option(DEVELOPER_BUILD            "Add +commit_hash to the project version numbe
 # other options
 option(WITH_FAISS                 "Enable Faiss"                                        	ON )
 option(WITH_OPENMP                "Use OpenMP multi-threading"                          	ON )
-option(WITH_SIMD                  "Use Single Instruction Multiple Data speed optimization"     OFF)
 option(WITH_IPPICV                "Use Intel Performance Primitives"                    	ON )
 option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON )
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
@@ -648,11 +648,30 @@ if (WITH_OPENMP)
         message(STATUS "OpenMP NOT found")
     endif ()
  endif ()
+ 
+ if (BUILD_RECONSTRUCTION)
+    message(STATUS "Enabling Reconstruction support and automatically enable SIMD!")
+    set(USE_SIMD ON)
+endif()
 
-# Enumerate all third-party libraries which we need later
-# This creates the necessary targets and sets the
-# CloudViewer_3RDPARTY_*_TARGETS variables we use in cloudViewer_link_3rdparty_libraries
-include(3rdparty/find_dependencies.cmake)
+# check for SSE flags
+include( CMakeFindSSE )
+if(USE_SIMD)
+   CLOUDVIEWER_CHECK_FOR_SSE()
+   set(CLOUDVIEWERCONFIG_SSE_DEFINITIONS "${SSE_DEFINITIONS}")
+   set(CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS ${SSE_FLAGS})
+   if (MSVC)
+       add_definitions(${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
+       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
+   else()
+       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
+   endif()
+
+   message(STATUS "Enabling SIMD support")
+   message(STATUS "Using CPU native flags for SSE optimization: ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS}")
+else()
+   message(STATUS "Disabling SIMD support")
+endif()
 
 # RPATH Linux/Unix: (dynamic) libs are put in a subdir of prefix/lib,
 # since they are only used by qCC/ccViewer
@@ -680,60 +699,10 @@ elseif( UNIX AND NOT APPLE )
     set( INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX} )
 endif()
 
-if (BUILD_RECONSTRUCTION)
-    message(STATUS "Enabling Reconstruction support and automatically enable SIMD!")
-    set(WITH_SIMD ON)
-    if (MSVC )
-      # Avoid link errors on boost filesystem copy_file function
-      # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
-      add_definitions("-DBOOST_NO_CXX11_SCOPED_ENUMS")
-      add_definitions("-DBOOST_NO_CXX11_OVERRIDE")
-      message("disable boost cxx11 globally!")
-      set(BOOST_NO_CXX11 ON)
-    endif()
-endif()
-
-# check for SSE flags
-include( CMakeFindSSE )
-if(WITH_SIMD)
-   CLOUDVIEWER_CHECK_FOR_SSE()
-   set(CLOUDVIEWERCONFIG_SSE_DEFINITIONS "${SSE_DEFINITIONS}")
-   set(CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS ${SSE_FLAGS})
-   if (MSVC)
-       add_definitions(${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
-       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
-   else()
-       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
-   endif()
-
-   message(STATUS "Enabling SIMD support")
-else()
-   message(STATUS "Disabling SIMD support")
-endif()
-# if (WITH_SIMD)
-#     CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-#     if (COMPILER_OPT_ARCH_NATIVE_SUPPORTED)
-#       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-#     else()
-#       CHECK_CXX_COMPILER_FLAG("/arch:AVX" COMPILER_OPT_ARCH_AVX_SUPPORTED)
-#       if(COMPILER_OPT_ARCH_AVX_SUPPORTED)
-#         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
-#       endif()
-#       CHECK_CXX_COMPILER_FLAG("/arch:SSE" COMPILER_OPT_ARCH_SSE_SUPPORTED)
-#       if(COMPILER_OPT_ARCH_SSE_SUPPORTED)
-#         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE")
-#       endif()
-#       CHECK_CXX_COMPILER_FLAG("/arch:SSE2" COMPILER_OPT_ARCH_SSE2_SUPPORTED)
-#       if(COMPILER_OPT_ARCH_SSE2_SUPPORTED)
-#         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
-#       endif()
-#     endif()
-#     message(STATUS "Enabling SIMD support")
-# else()
-#     add_definitions(-DEIGEN_DONT_ALIGN)
-#     add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY)
-#     message(STATUS "Disabling SIMD support")
-# endif()
+# Enumerate all third-party libraries which we need later
+# This creates the necessary targets and sets the
+# CloudViewer_3RDPARTY_*_TARGETS variables we use in cloudViewer_link_3rdparty_libraries
+include(3rdparty/find_dependencies.cmake)
 
 # Add external libraries
 include( CMakeExternalLibs )
@@ -853,7 +822,7 @@ message(STATUS "CloudViewer ${PROJECT_VERSION} Configuration Summary")
 message(STATUS "========================================================================")
 message(STATUS "Enabled Features:")
 cloudviewer_aligned_print("OpenMP" "${WITH_OPENMP}")
-cloudviewer_aligned_print("SIMD" "${WITH_SIMD}")
+cloudviewer_aligned_print("SIMD" "${USE_SIMD}")
 cloudviewer_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
 cloudviewer_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
 cloudviewer_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
