@@ -2162,6 +2162,10 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 			getCurrentRenderer()->SetActiveCamera(cam);
 			getRenderWindow()->Render();
 		}
+        }
+
+    bool PCLVis::getPerspectiveState(int viewport) { 
+        return !getVtkCamera(viewport)->GetParallelProjection();
 	}
 
 	/******************************** Camera Tools *********************************/

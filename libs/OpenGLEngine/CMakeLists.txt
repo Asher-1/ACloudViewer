@@ -114,7 +114,7 @@ write_basic_package_version_file("${PROJECT_BINARY_DIR}/CloudViewerConfigVersion
                                  COMPATIBILITY ExactVersion)
 
 # Installation
-install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Targets
+install(TARGETS ${PROJECT_NAME} EXPORT CloudViewerTargets
         RUNTIME DESTINATION ${CloudViewer_INSTALL_BIN_DIR}
         LIBRARY DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
         ARCHIVE DESTINATION ${CloudViewer_INSTALL_LIB_DIR}

@@ -2450,12 +2450,15 @@ void ecvDisplayTools::UpdateDisplayParameters()
     s_tools.instance->m_viewportParams.setPivotPoint(pivot);
 
 	// set camera fov
-    s_tools.instance->m_viewportParams.fov_deg = static_cast<float>(GetCameraFovy());
-
 	if (s_tools.instance->m_viewportParams.perspectiveView)
 	{
 		s_tools.instance->m_viewportParams.zoom = ComputePerspectiveZoom();
-	}
+        s_tools.instance->m_viewportParams.fov_deg = static_cast<float>(GetCameraFovy());
+	} 
+	else 
+	{
+        s_tools.instance->m_viewportParams.fov_deg = static_cast<float>(cloudViewer::RadiansToDegrees(GetParallelScale(0)));
+    }
 
 	// set camera pos
 	double pos[3];
@@ -2477,16 +2480,19 @@ void ecvDisplayTools::SetViewportParameters(const ecvViewportParameters& params)
 {
 	ecvViewportParameters oldParams = s_tools.instance->m_viewportParams;
 	s_tools.instance->m_viewportParams = params;
-    SetCameraClip(params.zNear, params.zFar);
-    if (params.perspectiveView)
-    {
-        SetFov(params.fov_deg);
-    }
-    else
-    {
-        SetParallelScale(static_cast<double>(cloudViewer::DegreesToRadians(params.fov_deg)), 0);
+
+	if (oldParams.perspectiveView == params.perspectiveView) {
+        if (oldParams.perspectiveView) {
+            SetFov(params.fov_deg);
+        } else {
+            SetParallelScale(static_cast<double>(cloudViewer::DegreesToRadians(params.fov_deg)), 0);
+        }
+    } else { // ignore fov_deg in different show mode
+        // keep old show mode
+        s_tools.instance->m_viewportParams.perspectiveView = oldParams.perspectiveView;
     }
 
+	SetCameraClip(params.zNear, params.zFar);
     SetPivotPoint(params.getPivotPoint(), false, false);
     SetCameraPosition(params.getCameraCenter().u, params.focal.u, params.up.u);
 

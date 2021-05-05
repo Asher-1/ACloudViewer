@@ -251,7 +251,30 @@ else()
     set(CloudViewer_INSTALL_INCLUDE_DIR include)
     set(CloudViewer_INSTALL_BIN_DIR bin)
     set(CloudViewer_INSTALL_LIB_DIR lib)
-    set(CloudViewer_INSTALL_CMAKE_DIR CMake)
+    set(CloudViewer_INSTALL_CMAKE_DIR "share/CloudViewer")
+endif()
+
+# RPATH Linux/Unix: (dynamic) libs are put in a subdir of prefix/lib,
+# since they are only used by qCC/ccViewer
+if( UNIX AND NOT APPLE )
+	include( GNUInstallDirs )
+        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}/erowcloudviewer")
+endif()
+
+# Define target folders
+# (now that ccViewer can have its own plugins, ErowCloudViewer and CloudViewer must fall in separate folders!
+if(WIN32 OR APPLE)
+	set( EROWCLOUDVIEWER_DEST_FOLDER "bin/ErowCloudViewer" )
+else()
+	set( EROWCLOUDVIEWER_DEST_FOLDER bin )
+endif()
+
+# set default install folders
+if( WIN32 )
+	# (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
+	set( INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER} )
+elseif( UNIX AND NOT APPLE )
+    set( INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX} )
 endif()
 
 # Put build results in some predictable places
@@ -671,32 +694,6 @@ if(USE_SIMD)
    message(STATUS "Using CPU native flags for SSE optimization: ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS}")
 else()
    message(STATUS "Disabling SIMD support")
-endif()
-
-# RPATH Linux/Unix: (dynamic) libs are put in a subdir of prefix/lib,
-# since they are only used by qCC/ccViewer
-if( UNIX AND NOT APPLE )
-	include( GNUInstallDirs )
-        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}/erowcloudviewer")
-endif()
-
-# Define target folders
-# (now that ccViewer can have its own plugins, ErowCloudViewer and CloudViewer must fall in separate folders!
-if(WIN32 OR APPLE)
-	set( EROWCLOUDVIEWER_DEST_FOLDER ErowCloudViewer )
-	if (OPTION_GL_QUAD_BUFFER_SUPPORT)
-		set ( EROWCLOUDVIEWER_DEST_FOLDER ${EROWCLOUDVIEWER_DEST_FOLDER}Stereo )
-	endif()
-else()
-	set( EROWCLOUDVIEWER_DEST_FOLDER bin )
-endif()
-
-# set default install folders
-if( WIN32 )
-	# (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
-	set( INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER} )
-elseif( UNIX AND NOT APPLE )
-    set( INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX} )
 endif()
 
 # Enumerate all third-party libraries which we need later

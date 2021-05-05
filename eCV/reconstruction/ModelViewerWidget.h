@@ -78,6 +78,8 @@ class ModelViewerWidget : public QWidget {
 
   void Release();
 
+  QWidget* getMainWindow();
+
   void ReloadReconstruction();
   void ClearReconstruction();
 

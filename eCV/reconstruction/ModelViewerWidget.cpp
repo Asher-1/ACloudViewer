@@ -183,6 +183,8 @@ void ModelViewerWidget::Release()
     }
 }
 
+QWidget* ModelViewerWidget::getMainWindow() { return app_; }
+
 void ModelViewerWidget::ReloadReconstruction() {
   if (reconstruction == nullptr) {
     return;
