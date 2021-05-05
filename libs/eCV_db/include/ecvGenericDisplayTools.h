@@ -55,7 +55,7 @@ public:
 		assert(GetInstance());
 		return GetInstance()->getPerspectiveState();
 	}
-	inline virtual bool getPerspectiveState() const { return false; }
+    inline virtual bool getPerspectiveState(int viewport = 0) const { return false; }
 
 	template <typename iType, typename oType>
 	static void ToWorldPoint(const Vector3Tpl<iType>& input2D, Vector3Tpl<oType>& output3D)

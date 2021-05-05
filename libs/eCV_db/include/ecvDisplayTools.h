@@ -850,8 +850,12 @@ public: // visualization matrix transformation
 	**/
 	static void SetPerspectiveState(bool state, bool objectCenteredView);
 
-	inline static bool GetPerspectiveState() { return TheInstance()->getPerspectiveState(); }
-	inline virtual bool getPerspectiveState() const override { return TheInstance()->m_viewportParams.perspectiveView; }
+	inline static bool GetPerspectiveState(int viewport = 0) {
+        return TheInstance()->getPerspectiveState(viewport);
+    }
+    inline virtual bool getPerspectiveState(int viewport = 0) const override {
+        return TheInstance()->m_viewportParams.perspectiveView;
+    }
 
 	//! Returns the zoom value equivalent to the current camera position (perspective only)
 	static float ComputePerspectiveZoom();

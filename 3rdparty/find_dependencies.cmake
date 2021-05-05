@@ -29,6 +29,8 @@ set(CloudViewer_3RDPARTY_HEADER_TARGETS)
 # will probably include HEADER_TARGETS, but also anything else we use internally.
 set(CloudViewer_3RDPARTY_PRIVATE_TARGETS)
 
+set(CUSTOM_TARGET_PREFIX "CloudViewer")
+
 if (WIN32)
     # EXTERNAL INSTALL DIR
     set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")

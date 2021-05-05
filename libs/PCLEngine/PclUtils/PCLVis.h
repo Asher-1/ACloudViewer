@@ -132,6 +132,7 @@ namespace PclUtils
 
 		void setOrthoProjection(int viewport = 0);
 		void setPerspectiveProjection(int viewport = 0);
+        bool getPerspectiveState(int viewport = 0);
 
 		inline bool getAutoUpateCameraPos() { return m_autoUpdateCameraPos; }
 		inline void setAutoUpateCameraPos(bool state) { m_autoUpdateCameraPos = state; }

@@ -227,6 +227,29 @@ void MovieGrabberWidget::Assemble() {
   const float frame_time = 1.0f / frame_rate;
   size_t frame_number = 0;
 
+  // precompute frame count
+  float totalTime = 0;
+  for (int row = 1; row < table_->rowCount(); ++row) {
+      const auto logical_idx = table_->verticalHeader()->logicalIndex(row);
+      QTableWidgetItem* prev_table_item = table_->item(logical_idx - 1, 0);
+      QTableWidgetItem* table_item = table_->item(logical_idx, 0);
+      // Time difference between previous and current view.
+      const float dt = std::abs(table_item->text().toFloat() -
+                                prev_table_item->text().toFloat());
+      totalTime += dt;
+  }
+  
+  int frameCount = static_cast<int>(frame_rate * totalTime);
+
+  // show progress dialog
+  QProgressDialog progressDialog(QString("Frames: %1").arg(frameCount),
+                                 "Cancel", 0, frameCount, this);
+  progressDialog.setWindowTitle("Generate movie frames");
+  progressDialog.setModal(true);
+  //progressDialog.setAutoClose(false);
+  progressDialog.show();
+  QApplication::processEvents();
+
   // Data of first view.
   ecvViewportParameters firstViewport = view_data_[table_->item(0, 0)].viewportParams;
   for (int row = 1; row < table_->rowCount(); ++row) {
@@ -246,6 +269,7 @@ void MovieGrabberWidget::Assemble() {
     const float dimage_size = view_data.image_size - prev_view_data.image_size;
 
     const auto num_frames = dt * frame_rate;
+
     for (size_t i = 0; i < num_frames; ++i) {
       const float t = i * frame_time;
       float tt = t / dt;
@@ -272,6 +296,12 @@ void MovieGrabberWidget::Assemble() {
       image.save(dir.filePath(
               "frame" + QString().asprintf("%06zu", frame_number) + ".png"));
       frame_number += 1;
+      progressDialog.setValue(frame_number);
+      QApplication::processEvents();
+      if (progressDialog.wasCanceled()) {
+          firstViewport = currentViewport;
+          break;
+      }
     }
   }
 

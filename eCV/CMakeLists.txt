@@ -27,7 +27,7 @@ file( GLOB ui_list ui_templates/*.ui )
 
 file( GLOB qrc_list *.qrc Resources/themes/*.qrc)
 
-file( GLOB txt_list TODO.txt ${ErowCloudViewerProjects_SOURCE_DIR}/CHANGELOG.md )
+file( GLOB txt_list TODO.txt ${ErowCloudViewerProjects_SOURCE_DIR}/CHANGELOG.txt)
 
 add_subdirectory( db_tree )
 add_subdirectory( pluginManager )
@@ -92,9 +92,9 @@ endif()
 
 DeployQt(
     TARGET
-            ${PROJECT_NAME}
+		${PROJECT_NAME}
     DEPLOY_PATH
-            ${PROJECT_NAME}
+		${EROWCLOUDVIEWER_DEST_FOLDER}
 )
 
 target_link_libraries( ${PROJECT_NAME}
@@ -197,7 +197,7 @@ endif()
 install_ext( TARGETS ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
 
 # Auxiliary files
-set( auxFiles  ${ErowCloudViewerProjects_SOURCE_DIR}/CHANGELOG.md bin_other/license.txt bin_other/global_shift_list_template.txt )
+set( auxFiles  ${ErowCloudViewerProjects_SOURCE_DIR}/CHANGELOG.txt bin_other/license.txt bin_other/global_shift_list_template.txt )
 
 if( WIN32 )
     # Additional auxiliary file(s)
