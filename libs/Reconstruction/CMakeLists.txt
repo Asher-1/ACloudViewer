@@ -96,9 +96,9 @@ if (WIN32)
     set( BOOST_ROOT "" CACHE PATH "Boost library root directory" )
     if ( NOT BOOST_ROOT )
         message( SEND_ERROR "No Boost library root specified (BOOST_ROOT)" )
-	else()
-		add_definitions("-DBOOST_ROOT=${BOOST_ROOT}")
-		add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
+    else()
+        add_definitions("-DBOOST_ROOT=${BOOST_ROOT}")
+        add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
     endif()
 endif()
 
@@ -297,9 +297,9 @@ set(COLMAP_LINK_DIRS
 
 set(COLMAP_EXTERNAL_LIBRARIES
     ${CMAKE_DL_LIBS}
+    ${Boost_SYSTEM_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
     #${GLOG_LIBRARIES}
     #${FREEIMAGE_LIBRARIES}
     #${CERES_LIBRARIES}

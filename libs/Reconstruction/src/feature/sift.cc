@@ -35,7 +35,7 @@
 #include <fstream>
 #include <memory>
 
-#include "FLANN/flann.hpp"
+#include "flann/flann.hpp"
 #include "GL/glew.h"
 #include "SiftGPU/SiftGPU.h"
 #include "VLFeat/covdet.h"

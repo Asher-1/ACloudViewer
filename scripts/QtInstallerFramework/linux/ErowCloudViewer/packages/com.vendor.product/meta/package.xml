@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>ErowCloudViewer</DisplayName>
+    <Description>3D PointCloud processing platform.</Description>
+    <Version>3.7.1</Version>
+    <ReleaseDate>2021-05-03</ReleaseDate>
+    <Licenses>
+        <License name="Beer Public License Agreement" file="license.txt" />
+    </Licenses>
+    <Default>script</Default>
+    <Script>installscript.qs</Script>
+    <UserInterfaces>
+		<UserInterface>targetwidget.ui</UserInterface>
+		<UserInterface>readmecheckboxform.ui</UserInterface>
+	</UserInterfaces>
+	<Translations>
+        <Translation>ErowCloudViewer_zh.qm</Translation>
+        <Translation>qt_en.qm</Translation>
+    </Translations>
+</Package>
