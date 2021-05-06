@@ -36,18 +36,18 @@ ExternalProject_Get_Property(ext_suitesparse INSTALL_DIR)
 set(SUITESPARSE_INCLUDE_DIRS ${INSTALL_DIR}/include/suitesparse/)
 set(SUITESPARSE_LIB_DIR ${INSTALL_DIR}/lib)
 set(EXT_SUITESPARSE_LIBRARIES   suitesparseconfig
-								amd
-								btf
-								camd
-								ccolamd
-								colamd
-								cholmod
-								cxsparse
-								klu
-								ldl
-								umfpack
-								spqr
-								metis)
+                                amd
+                                btf
+                                camd
+                                ccolamd
+                                colamd
+                                cholmod
+                                cxsparse
+                                klu
+                                ldl
+                                umfpack
+                                spqr
+                                metis)
 
 if (BUILD_CUDA_MODULE)
     if(NOT WIN32)
@@ -65,17 +65,16 @@ if(WIN32)
     set(LAPACK_INCLUDE_DIRS ${INSTALL_DIR}/include/)
     set(LAPACK_LIB_DIR ${INSTALL_DIR}/lib64/lapack_blas_windows)
     set(LAPACKBLAS_LIBRARIES liblapack libblas)
-	set(LAPACKBLAS_DLL ${LAPACKBLAS_LIBRARIES} libgcc_s_sjlj-1 libgfortran-3 libquadmath-0)
+    set(LAPACKBLAS_DLL ${LAPACKBLAS_LIBRARIES} libgcc_s_sjlj-1 libgfortran-3 libquadmath-0)
+
+    # for debugging
+    copy_shared_library(ext_suitesparse
+        LIB_DIR      ${LAPACK_LIB_DIR}
+        LIBRARIES    ${LAPACKBLAS_DLL})
 	
-	# for debugging
-	copy_shared_library(ext_suitesparse
-            LIB_DIR      ${LAPACK_LIB_DIR}
-            LIBRARIES    ${LAPACKBLAS_DLL}
-    )
-	
-	foreach( filename ${LAPACKBLAS_DLL} )
-		set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${filename}${CMAKE_SHARED_LIBRARY_SUFFIX})
-		install_ext( FILES ${LAPACK_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
+    foreach( filename ${LAPACKBLAS_DLL} )
+        set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${filename}${CMAKE_SHARED_LIBRARY_SUFFIX})
+        install_ext( FILES ${LAPACK_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
     endforeach()
 	
 endif()
