@@ -809,40 +809,40 @@ PCLMesh::Ptr cc2smReader::getPclMesh(ccGenericMesh* mesh) {
 	return pclMesh;
 }
 
-void getMaterial(ccMaterial::CShared inMaterial, PCLMaterial& outMaterial)
+void cc2pclMaterial(ccMaterial::CShared inMaterial, PCLMaterial& outMaterial)
 {
-	assert(inMaterial);
+    assert(inMaterial);
     inMaterial->getTexture();
-	std::string texFile = CVTools::FromQString(inMaterial->getTextureFilename());
-	std::string texName = CVTools::FromQString(inMaterial->getName());
-	// FIX special symbols bugs in vtk rendering system!
+    std::string texFile = CVTools::FromQString(inMaterial->getTextureFilename());
+    std::string texName = CVTools::FromQString(inMaterial->getName());
+    // FIX special symbols bugs in vtk rendering system!
     texName = CVTools::ExtractDigitAlpha(texName);
-	const ecvColor::Rgbaf& ambientColor = inMaterial->getAmbient();
-	const ecvColor::Rgbaf& diffuseColor = inMaterial->getDiffuseFront();
-	const ecvColor::Rgbaf& specularColor = inMaterial->getSpecular();
-	float shininess = inMaterial->getShininessFront();
+    const ecvColor::Rgbaf& ambientColor = inMaterial->getAmbient();
+    const ecvColor::Rgbaf& diffuseColor = inMaterial->getDiffuseFront();
+    const ecvColor::Rgbaf& specularColor = inMaterial->getSpecular();
+    float shininess = inMaterial->getShininessFront();
 
-	outMaterial.tex_name = texName;
-	outMaterial.tex_file = texFile;
-	outMaterial.tex_Ka.r = ambientColor.r;
-	outMaterial.tex_Ka.g = ambientColor.g;
-	outMaterial.tex_Ka.b = ambientColor.b;
-	outMaterial.tex_Kd.r = diffuseColor.r;
-	outMaterial.tex_Kd.g = diffuseColor.g;
-	outMaterial.tex_Kd.b = diffuseColor.b;
-	outMaterial.tex_Ks.r = specularColor.r;
-	outMaterial.tex_Ks.g = specularColor.g;
-	outMaterial.tex_Ks.b = specularColor.b;
-	outMaterial.tex_d = ambientColor.a;
-	outMaterial.tex_Ns = shininess;
-	if (outMaterial.tex_Ks.r == 0 && outMaterial.tex_Ks.g == 0 && outMaterial.tex_Ks.b == 0)
-	{
-		outMaterial.tex_illum = 1;
-	}
-	else
-	{
-		outMaterial.tex_illum = 2;
-	}
+    outMaterial.tex_name = texName;
+    outMaterial.tex_file = texFile;
+    outMaterial.tex_Ka.r = ambientColor.r;
+    outMaterial.tex_Ka.g = ambientColor.g;
+    outMaterial.tex_Ka.b = ambientColor.b;
+    outMaterial.tex_Kd.r = diffuseColor.r;
+    outMaterial.tex_Kd.g = diffuseColor.g;
+    outMaterial.tex_Kd.b = diffuseColor.b;
+    outMaterial.tex_Ks.r = specularColor.r;
+    outMaterial.tex_Ks.g = specularColor.g;
+    outMaterial.tex_Ks.b = specularColor.b;
+    outMaterial.tex_d = ambientColor.a;
+    outMaterial.tex_Ns = shininess;
+    if (outMaterial.tex_Ks.r == 0 && outMaterial.tex_Ks.g == 0 && outMaterial.tex_Ks.b == 0)
+    {
+        outMaterial.tex_illum = 1;
+    }
+    else
+    {
+        outMaterial.tex_illum = 2;
+    }
 }
 
 bool cc2smReader::getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const {
@@ -1090,13 +1090,13 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
 					textureMesh->tex_polygons.push_back(std::vector<pcl::Vertices>());
 					textureMesh->tex_materials.push_back(PCLMaterial());
 					textureMesh->tex_coordinates.push_back(std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> >());
-					getMaterial((*materials)[newMatlIndex], textureMesh->tex_materials.back());
+                    cc2pclMaterial((*materials)[newMatlIndex], textureMesh->tex_materials.back());
 				} else { // if we don't have any current material, we apply default one
 					textureMesh->tex_polygons.push_back(std::vector<pcl::Vertices>());
 					textureMesh->tex_materials.push_back(PCLMaterial());
 					textureMesh->tex_coordinates.push_back(std::vector< Eigen::Vector2f, Eigen::aligned_allocator< Eigen::Vector2f>>());
 					ccMaterial::Shared defaultMaterial(new ccMaterial("default"));
-					getMaterial(defaultMaterial, textureMesh->tex_materials.back());
+                    cc2pclMaterial(defaultMaterial, textureMesh->tex_materials.back());
 				}
 
 				lasMtlIndex = newMatlIndex;

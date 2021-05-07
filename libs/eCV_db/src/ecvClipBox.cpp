@@ -763,12 +763,12 @@ void ccClipBox::drawMeOnly(CC_DRAW_CONTEXT& context)
 	if (m_showBox)
 	{
 		//m_box.draw(m_selected ? context.bbDefaultCol : ecvColor::magenta);
-		context.viewID = QString::number(getUniqueID(), 10);
+        context.viewID = this->getViewId();
 		context.meshRenderingMode = MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
 		m_box.draw(context, ecvColor::yellow);
 	} 
 	else{
-		context.viewID = QString::number(getUniqueID(), 10);
+        context.viewID = this->getViewId();
 		context.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
 		context.removeViewID = QString("BBox-") + context.viewID;
 		ecvDisplayTools::RemoveEntities(context);

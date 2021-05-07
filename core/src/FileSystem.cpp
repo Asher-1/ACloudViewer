@@ -80,6 +80,11 @@ std::string GetFileNameWithoutDirectory(const std::string &filename) {
     }
 }
 
+std::string GetFileBaseName(const std::string &filename)
+{
+    return GetFileNameWithoutExtension(GetFileNameWithoutDirectory(filename));
+}
+
 std::string GetFileParentDirectory(const std::string &filename) {
     size_t slash_pos = filename.find_last_of("/\\");
     if (slash_pos == std::string::npos) {

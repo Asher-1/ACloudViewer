@@ -54,6 +54,10 @@ class ccGBLSensor;
 class ccCameraSensor;
 namespace PclTools
 {
+
+    PCLTextureMesh::Ptr CreateTexturingMesh(const std::string& filePath, bool save = false);
+    PCLTextureMesh::Ptr CreateTexturingMesh(const PCLMesh::ConstPtr triangles, const std::string& filePath, bool save = false);
+
 	// Helper function called by createActorFromVTKDataSet () methods.
 	// This function determines the default setting of vtkMapper::InterpolateScalarsBeforeMapping.
 	// Return 0, interpolation off, if data is a vtkPolyData that contains only vertices.

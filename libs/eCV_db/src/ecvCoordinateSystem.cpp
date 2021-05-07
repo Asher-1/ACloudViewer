@@ -114,7 +114,7 @@ ccPlane ccCoordinateSystem::getZXplane() const
 
 void ccCoordinateSystem::clearDrawings()
 {
-    ecvDisplayTools::RemoveEntities(this);
+    ccGenericPrimitive::clearDrawings();
     ecvDisplayTools::RemoveEntities(&m_axis);
 }
 
@@ -236,11 +236,12 @@ void ccCoordinateSystem::drawMeOnly(CC_DRAW_CONTEXT& context)
 	if (m_showAxisPlanes)
 	{
 		//call parent method to draw the Planes
+        context.viewID = this->getViewId();
 		ccGenericPrimitive::drawMeOnly(context);
 	}
     else
     {
-        ecvDisplayTools::RemoveEntities(this);
+        ccGenericPrimitive::clearDrawings();
     }
 
 	//show axis
@@ -284,7 +285,7 @@ void ccCoordinateSystem::drawMeOnly(CC_DRAW_CONTEXT& context)
                 m_axis.transform(transformation);
             }
 
-            tempContext.viewID = QString::number(m_axis.getUniqueID(), 10);
+            tempContext.viewID = m_axis.getViewId();
             ecvDisplayTools::Draw(tempContext, &m_axis);
         }
         else

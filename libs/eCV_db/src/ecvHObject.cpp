@@ -121,7 +121,7 @@ void ccHObject::notifyGeometryUpdate()
 	{
 		ecvDisplayTools::InvalidateViewport();
 		ecvDisplayTools::Deprecate3DLayer();
-		ecvDisplayTools::RemoveBB(QString::number(getUniqueID()));
+        ecvDisplayTools::RemoveBB(getViewId());
 	}
 
 	//process dependencies
@@ -727,8 +727,8 @@ bool ccHObject::isAncestorOf(const ccHObject *anObject) const
 void ccHObject::removeFromRenderScreen(bool recursive)
 {
 	CC_DRAW_CONTEXT context;
-	context.removeViewID = QString::number(getUniqueID(), 10);
-	context.removeEntityType = getEntityType();
+    context.removeViewID = getViewId();
+    context.removeEntityType = getEntityType();
 	ecvDisplayTools::RemoveEntities(context);
 
 	if (this->isKindOf(CV_TYPES::FACET) || this->isKindOf(CV_TYPES::PLANE))
@@ -892,7 +892,7 @@ ccBBox ccHObject::getDisplayBB_recursive(bool relative)
 void ccHObject::getTypeID_recursive(std::vector<removeInfo> & rmInfos, bool relative)
 {
 	removeInfo rminfo;
-	rminfo.removeId = QString::number(getUniqueID(), 10);
+    rminfo.removeId = getViewId();
 	rminfo.removeType = getEntityType();
 	if (rminfo.removeType == ENTITY_TYPE::ECV_OCTREE)
 	{
@@ -988,7 +988,7 @@ void ccHObject::getTypeID_recursive(std::vector<removeInfo> & rmInfos, bool rela
 void ccHObject::getTypeID_recursive(std::vector<hideInfo> & hdInfos, bool relative)
 {
 	hideInfo hdinfo;
-	hdinfo.hideId = QString::number(getUniqueID(), 10);
+    hdinfo.hideId = getViewId();
 	hdinfo.hideType = getEntityType();
 	hdInfos.push_back(hdinfo);
 
@@ -1521,7 +1521,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context)
 	if (getRemoveFlag())
 	{
 		setRemoveType(context);
-		context.removeViewID = QString::number(getUniqueID(), 10);
+        context.removeViewID = getViewId();
 		ecvDisplayTools::RemoveEntities(context);
 		return;
 	}
@@ -1545,7 +1545,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context)
 
 	if (!isFixedId())
 	{
-		context.viewID = QString::number(getUniqueID(), 10);
+        context.viewID = getViewId();
 	}
 
 	if (draw3D)
@@ -1648,16 +1648,16 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context)
 	{
 		CC_DRAW_CONTEXT tempContext = context;
 		tempContext.meshRenderingMode = MESH_RENDERING_MODE::ECV_WIREFRAME_MODE;
-		tempContext.viewID = QString::number(getUniqueID(), 10);
+        tempContext.viewID = getViewId();
 		drawBB(tempContext, tempContext.bbDefaultCol);
-		tempContext.viewID = QString::number(getUniqueID(), 10);
+        tempContext.viewID = getViewId();
 		showBB(tempContext);
 	} 
 	
 	if (!m_selected && draw3D)
 	{
 		CC_DRAW_CONTEXT context;
-		context.viewID = QString::number(getUniqueID(), 10);
+        context.viewID = getViewId();
 		hideBB(context);
 	}
 
@@ -1736,10 +1736,15 @@ void ccHObject::hideObject_recursive(bool recursive)
 		if (hdInfo.hideType == ENTITY_TYPE::ECV_NONE) continue;
 
 		context.hideShowEntityType = hdInfo.hideType;
+        context.viewID = hdInfo.hideId;
+        // hide obj bbox
+        hideBB(context);
+        context.viewID = hdInfo.hideId;
+
+        ccHObject* obj = find(hdInfo.hideId.toUInt());
 
 		if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE)
 		{
-			ccHObject* obj = find(hdInfo.hideId.toUInt());
 			assert(obj && obj->isA(CV_TYPES::LABEL_2D));
 			cc2DLabel* label2d = ccHObjectCaster::To2DLabel(obj);
 			label2d->setEnabled(false);
@@ -1748,7 +1753,6 @@ void ccHObject::hideObject_recursive(bool recursive)
 		}
 		else if (hdInfo.hideType == ENTITY_TYPE::ECV_2DLABLE_VIEWPORT)
 		{
-			ccHObject* obj = find(hdInfo.hideId.toUInt());
 			assert(obj && obj->isA(CV_TYPES::VIEWPORT_2D_LABEL));
 			cc2DViewportLabel* label2d = ccHObjectCaster::To2DViewportLabel(obj);
 			label2d->setEnabled(false);
@@ -1757,14 +1761,15 @@ void ccHObject::hideObject_recursive(bool recursive)
 		}
         else if (hdInfo.hideType == ENTITY_TYPE::ECV_SENSOR)
         {
-            ccHObject* obj = find(hdInfo.hideId.toUInt());
             ccSensor* sensor = ccHObjectCaster::ToSensor(obj);
-            sensor->hideShowDrawings(context);
-            continue;
+            if (sensor)
+            {
+                sensor->hideShowDrawings(context);
+                continue;
+            }
         }
         else if (hdInfo.hideType == ENTITY_TYPE::ECV_MESH)
         {
-            ccHObject* obj = find(hdInfo.hideId.toUInt());
             // try hide primitives
             ccGenericPrimitive* prim = ccHObjectCaster::ToPrimitive(obj);
             if (prim)
@@ -1775,8 +1780,6 @@ void ccHObject::hideObject_recursive(bool recursive)
         }
 
 		context.viewID = hdInfo.hideId;
-		// hide obj bbox
-		hideBB(context);
 		ecvDisplayTools::HideShowEntities(context);
 	}
 }

@@ -581,7 +581,7 @@ void ccGraphicalSegmentationTool::resetSegmentation()
 	{
 		ecvDisplayTools::RemoveWidgets(
 			WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POLYLINE_2D,
-			QString::number(m_segmentationPoly->getUniqueID())));
+            m_segmentationPoly->getViewId()));
 	}
 }
 

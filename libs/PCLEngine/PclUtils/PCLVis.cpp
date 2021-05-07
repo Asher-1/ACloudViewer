@@ -57,6 +57,7 @@
 #include <vtkTransform.h>
 #include <vtkCamera.h>
 #include <vtkAxes.h>
+#include <vtkPolyDataNormals.h>
 #include <vtkTubeFilter.h>
 #include <vtkRenderWindow.h>
 #include <vtkRendererCollection.h>
@@ -801,12 +802,17 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 	/********************************Draw Entities*********************************/
     void PCLVis::draw(const CC_DRAW_CONTEXT& context, PCLCloud::Ptr smCloud)
 	{
+        if (!smCloud || smCloud->fields.empty())
+        {
+            return;
+        }
+
         const std::string viewID = CVTools::FromQString(context.viewID);
         int viewport = context.defaultViewPort;
 
         if (context.drawParam.showColors || context.drawParam.showSF)
 		{
-			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_rgb(new pcl::PointCloud<pcl::PointXYZRGB>);
+            PointCloudRGB::Ptr cloud_rgb(new PointCloudRGB);
 			FROM_PCL_CLOUD(*smCloud, *cloud_rgb);
 
 			if (cloud_rgb)
@@ -819,15 +825,15 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		}
 		else
 		{
-			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+            PointCloudT::Ptr cloud_xyz(new PointCloudT);
 			FROM_PCL_CLOUD(*smCloud, *cloud_xyz);
 			if (cloud_xyz)
 			{
                 ecvColor::Rgbub col = context.pointsDefaultCol;
-				pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud_xyz, col.r, col.g, col.b);
-				if (!updatePointCloud<pcl::PointXYZ>(cloud_xyz, single_color, viewID))
+                pcl::visualization::PointCloudColorHandlerCustom<PointT> single_color(cloud_xyz, col.r, col.g, col.b);
+                if (!updatePointCloud<PointT>(cloud_xyz, single_color, viewID))
 				{
-                    addPointCloud<pcl::PointXYZ>(cloud_xyz, single_color, viewID, viewport);
+                    addPointCloud<PointT>(cloud_xyz, single_color, viewID, viewport);
 				}
 			}
 		}
@@ -835,6 +841,11 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
     void PCLVis::draw(const CC_DRAW_CONTEXT& context, PCLMesh::Ptr pclMesh)
 	{
+        if(!pclMesh)
+        {
+            return;
+        }
+
         std::string viewID = CVTools::FromQString(context.viewID);
         int viewport = context.defaultViewPort;
         if (context.visFiltering)
@@ -853,33 +864,8 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 			}
 		}
 
-		bool has_normal =	(pcl::getFieldIndex(pclMesh->cloud, "normal_x") != -1) &&
-							(pcl::getFieldIndex(pclMesh->cloud, "normal_y") != -1) &&
-							(pcl::getFieldIndex(pclMesh->cloud, "normal_z") != -1);
-		if (has_normal && contains(viewID))
-		{
-			vtkSmartPointer<vtkFloatArray> normals = vtkSmartPointer<vtkFloatArray>::New();
-			CloudNormal cloud;
-            FROM_PCL_CLOUD(pclMesh->cloud, cloud);
-            if (cloud.points.empty()) {
-                CVLog::Error("[PCLVis::addTextureMesh] Cloud is empty!");
-                return;
-            }
-            normals->SetNumberOfComponents(3);
-            for (std::size_t i = 0; i < cloud.points.size(); ++i) {
-                const NormalT& N = cloud.points[i];
-                const float normal[3] = {N.normal_x, N.normal_y, N.normal_z};
-                normals->InsertNextTupleValue(normal);
-            }
-            auto actor = getActorById(viewID);
-            if (!actor) return;
-            auto polydata = vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
-            if (polydata) {
-                polydata->GetPointData()->SetNormals(normals);
-                actor->GetMapper()->Update();
-                actor->Modified();
-            }
-		}
+        // normal shading
+        updateShadingMode(context, pclMesh->cloud);
 	}
 
     void PCLVis::draw(const CC_DRAW_CONTEXT& context, PCLTextureMesh::Ptr textureMesh)
@@ -1091,6 +1077,61 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
                 removePointClouds(normalID, viewport);
             }
         }
+
+        // normal shading
+        if (!smCloud || smCloud->fields.empty())
+        {
+            PCLCloud cloud;
+            updateShadingMode(context, cloud);
+        }
+        else
+        {
+            updateShadingMode(context, *smCloud);
+        }
+    }
+
+    void PCLVis::updateShadingMode(const CC_DRAW_CONTEXT &context, PCLCloud& smCloud)
+    {
+        // normal shading
+        const std::string viewID = CVTools::FromQString(context.viewID);
+        int viewport = context.defaultViewPort;
+        auto actor = getActorById(viewID);
+        if (!actor) return;
+        auto polydata = vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
+        if (!polydata) return;
+
+        if (context.drawParam.showNorms && !smCloud.fields.empty())
+        {
+            bool has_normal =	(pcl::getFieldIndex(smCloud, "normal_x") != -1) &&
+                                (pcl::getFieldIndex(smCloud, "normal_y") != -1) &&
+                                (pcl::getFieldIndex(smCloud, "normal_z") != -1);
+            if (has_normal)
+            {
+                vtkSmartPointer<vtkFloatArray> normals = vtkSmartPointer<vtkFloatArray>::New();
+                CloudNormal cloud;
+                FROM_PCL_CLOUD(smCloud, cloud);
+                if (cloud.points.empty()) {
+                    CVLog::Error("[PCLVis::addTextureMesh] Cloud is empty!");
+                    return;
+                }
+                normals->SetNumberOfComponents(3);
+                for (std::size_t i = 0; i < cloud.points.size(); ++i) {
+                    const NormalT& N = cloud.points[i];
+                    const float normal[3] = {N.normal_x, N.normal_y, N.normal_z};
+                    normals->InsertNextTupleValue(normal);
+                }
+
+                polydata->GetPointData()->SetNormals(normals);
+                setMeshShadingMode(SHADING_MODE::ECV_SHADING_PHONG, viewID, viewport);
+            }
+        }
+        else
+        {
+            polydata->GetPointData()->SetNormals(nullptr);
+            setMeshShadingMode(SHADING_MODE::ECV_SHADING_FLAT, viewID, viewport);
+        }
+        actor->GetMapper()->Update();
+        actor->Modified();
     }
 
     bool PCLVis::updateScalarBar(const CC_DRAW_CONTEXT& context)
@@ -1621,22 +1662,23 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
                     mesh.tex_materials[tex_id].tex_Kd;
             const PCLMaterial::RGB& specularColor =
                     mesh.tex_materials[tex_id].tex_Ks;
-            actor->GetProperty()->SetAmbientColor(
-                    ambientColor.r, ambientColor.g, ambientColor.b);
             actor->GetProperty()->SetDiffuseColor(
                     diffuseColor.r, diffuseColor.g, diffuseColor.b);
             actor->GetProperty()->SetSpecularColor(
                     specularColor.r, specularColor.g, specularColor.b);
+            actor->GetProperty()->SetAmbientColor(
+                    ambientColor.r, ambientColor.g, ambientColor.b);
             actor->GetProperty()->SetMaterialName(
                     mesh.tex_materials[tex_id].tex_name.c_str());
+            actor->GetProperty()->SetOpacity(mesh.tex_materials[tex_id].tex_d);
+            actor->GetProperty()->SetInterpolationToPhong();
             switch (mesh.tex_materials[tex_id].tex_illum) {
                 case 0:
                     actor->GetProperty()->SetLighting(false);
                     actor->GetProperty()->SetDiffuse(0);
                     actor->GetProperty()->SetSpecular(0);
                     actor->GetProperty()->SetAmbient(1.0);
-                    actor->GetProperty()->SetColor(
-                            actor->GetProperty()->GetDiffuseColor());
+                    actor->GetProperty()->SetColor(actor->GetProperty()->GetDiffuseColor());
                     break;
                 case 1:
                     actor->GetProperty()->SetDiffuse(1.0);
@@ -1648,9 +1690,8 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
                     actor->GetProperty()->SetDiffuse(1.0);
                     actor->GetProperty()->SetSpecular(1.0);
                     actor->GetProperty()->SetAmbient(1.0);
-                    //// blinn to phong ~= 4.0
-                    // actor->GetProperty()->SetSpecularPower(
-                    //        mesh.tex_materials[tex_id]. / 4.0);
+                    // blinn to phong ~= 4.0
+                    actor->GetProperty()->SetSpecularPower(mesh.tex_materials[tex_id].tex_Ns / 4.0);
                     break;
             }
             
@@ -1682,16 +1723,13 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
                 vtkSmartPointer<vtkFloatArray> coordinates =
                         vtkSmartPointer<vtkFloatArray>::New();
                 coordinates->SetNumberOfComponents(2);
-                std::stringstream ss;
-                ss << "TCoords" << tex_id;
+                std::stringstream ss; ss << "TCoords" << tex_id;
                 std::string this_coordinates_name = ss.str();
                 coordinates->SetName(this_coordinates_name.c_str());
                 for (std::size_t t = 0; t < mesh.tex_coordinates.size(); ++t) {
                     if (t == tex_id) {
-                        for (std::size_t tc = 0; tc < mesh.tex_coordinates[t].size(); ++tc)
-                            coordinates->InsertNextTuple2(
-                                    mesh.tex_coordinates[t][tc][0],
-                                    mesh.tex_coordinates[t][tc][1]);
+                        for (const auto &tc : mesh.tex_coordinates[t])
+                          coordinates->InsertNextTuple2 (tc[0], tc[1]);
                     } else {
                         for (std::size_t tc = 0; tc < mesh.tex_coordinates[t].size(); ++tc)
                             coordinates->InsertNextTuple2(-1.0, -1.0);
@@ -2052,8 +2090,61 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		{
 			setShapeRenderingProperties(
 				pcl::visualization::RenderingProperties::PCL_VISUALIZER_OPACITY, opacity, viewID, viewport);
-		}
-	}
+        }
+    }
+
+    void PCLVis::setShapeShadingMode(SHADING_MODE mode, const std::string &viewID, int viewport)
+    {
+        if (contains(viewID))
+        {
+            setShapeRenderingProperties(
+                pcl::visualization::RenderingProperties::PCL_VISUALIZER_SHADING, mode, viewID, viewport);
+        }
+    }
+
+    void PCLVis::setMeshShadingMode(SHADING_MODE mode, const std::string &viewID, int viewport)
+    {
+        vtkActor* actor = getActorById(viewID);
+        if (!actor)
+        {
+            CVLog::Warning("[PCLVis::SetMeshRenderingMode] Requested viewID not found, please check again...");
+            return;
+        }
+
+        switch (mode)
+        {
+            case SHADING_MODE::ECV_SHADING_FLAT:
+            {
+                actor->GetProperty()->SetInterpolationToFlat();
+                break;
+            }
+            case SHADING_MODE::ECV_SHADING_GOURAUD:
+            {
+                if (!actor->GetMapper ()->GetInput ()->GetPointData ()->GetNormals ())
+                {
+                  CVLog::Warning("[PCLVis::setMeshShadingMode] Normals do not exist in the dataset, but Gouraud shading was requested. Estimating normals...\n");
+                  vtkSmartPointer<vtkPolyDataNormals> normals = vtkSmartPointer<vtkPolyDataNormals>::New ();
+                  normals->SetInputConnection (actor->GetMapper ()->GetInputAlgorithm ()->GetOutputPort ());
+                  vtkDataSetMapper::SafeDownCast (actor->GetMapper ())->SetInputConnection (normals->GetOutputPort ());
+                }
+                actor->GetProperty ()->SetInterpolationToGouraud ();
+                break;
+            }
+            case SHADING_MODE::ECV_SHADING_PHONG:
+            {
+                if (!actor->GetMapper ()->GetInput ()->GetPointData ()->GetNormals ())
+                {
+                  PCL_INFO ("[pcl::visualization::PCLVisualizer::setShapeRenderingProperties] Normals do not exist in the dataset, but Phong shading was requested. Estimating normals...\n");
+                  vtkSmartPointer<vtkPolyDataNormals> normals = vtkSmartPointer<vtkPolyDataNormals>::New ();
+                  normals->SetInputConnection (actor->GetMapper ()->GetInputAlgorithm ()->GetOutputPort ());
+                  vtkDataSetMapper::SafeDownCast (actor->GetMapper ())->SetInputConnection (normals->GetOutputPort ());
+                }
+                actor->GetProperty ()->SetInterpolationToPhong ();
+                break;
+            }
+        }
+        actor->Modified ();
+    }
 
 	void PCLVis::setMeshRenderingMode(MESH_RENDERING_MODE mode, const std::string & viewID, int viewport)
 	{
@@ -2065,21 +2156,23 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		}
 		switch (mode)
 		{
-		case MESH_RENDERING_MODE::ECV_POINTS_MODE:
-			actor->GetProperty()->SetRepresentationToPoints();
-			actor->Modified();
-			break;
-		case MESH_RENDERING_MODE::ECV_WIREFRAME_MODE:
-			actor->GetProperty()->SetRepresentationToWireframe();
-			actor->Modified();
-			break;
-		case MESH_RENDERING_MODE::ECV_SURFACE_MODE:
-			actor->GetProperty()->SetRepresentationToSurface();
-			actor->Modified();
-			break;
-		default:
-			break;
+            case MESH_RENDERING_MODE::ECV_POINTS_MODE:
+            {
+                actor->GetProperty()->SetRepresentationToPoints();
+                break;
+            }
+            case MESH_RENDERING_MODE::ECV_WIREFRAME_MODE:
+            {
+                actor->GetProperty()->SetRepresentationToWireframe();
+                break;
+            }
+            case MESH_RENDERING_MODE::ECV_SURFACE_MODE:
+            {
+                actor->GetProperty()->SetRepresentationToSurface();
+                break;
+            }
 		}
+        actor->Modified();
 	}
 
 	void PCLVis::setLightMode(const std::string & viewID, int viewport)

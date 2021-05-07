@@ -85,8 +85,8 @@ public:
 	//! inherited methods (ccHObject)
 	const ccGLMatrix& getGLTransformationHistory() const override;
 
-    virtual void clearDrawings() {}
-    virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) { Q_UNUSED(context); }
+    virtual void clearDrawings();
+    virtual void hideShowDrawings(CC_DRAW_CONTEXT& context);
 
 protected:
 

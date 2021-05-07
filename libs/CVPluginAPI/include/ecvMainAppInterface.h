@@ -35,7 +35,7 @@ class ccPickingHub;
 class ecvMainAppInterface
 {
 public:
-	~ecvMainAppInterface() = default;
+    virtual ~ecvMainAppInterface() = default;
 
 	//! Returns main window
 	virtual QMainWindow* getMainWindow() = 0;
@@ -105,7 +105,7 @@ public:
 	/** \param obj entity
 		\param selected whether entity should be selected or not
 	**/
-	virtual void setSelectedInDB(ccHObject* obj, bool selected) = 0;
+    virtual void setSelectedInDB(ccHObject* obj, bool selected) = 0;
 
 	//! Returns currently selected entities ("read only")
 	virtual const ccHObject::Container& getSelectedEntities() const = 0;
@@ -147,6 +147,8 @@ public:
 	**/
 	virtual void refreshAll(bool only2D = false, bool forceRedraw = true) = 0;
 	virtual void refreshSelected(bool only2D = false, bool forceRedraw = true) = 0;
+    virtual void refreshObject(ccHObject* obj, bool only2D = false, bool forceRedraw = true) = 0;
+    virtual void refreshObjects(ccHObject::Container objs, bool only2D = false, bool forceRedraw = true) = 0;
 	virtual void resetSelectedBBox() = 0;
 	////! Enables all GL windows
 	//virtual void enableAll() = 0;

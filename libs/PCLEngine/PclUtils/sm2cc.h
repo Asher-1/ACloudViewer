@@ -34,6 +34,7 @@ class QPCL_ENGINE_LIB_API pcl2cc
 public:
 
     //! Converts a PCL point cloud to a ccPointCloud
+    static ccMesh* Convert(PCLTextureMesh::ConstPtr textureMesh);
     static ccPointCloud* Convert(const PCLCloud& pclCloud, bool ignoreScalars = false, bool ignoreRgb = false);
     static ccMesh* Convert(const PCLCloud& pclCloud, const std::vector<pcl::Vertices>& polygons,
                            bool ignoreScalars = false, bool ignoreRgb = false);

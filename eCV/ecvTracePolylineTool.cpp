@@ -675,7 +675,7 @@ void ccTracePolylineTool::resetPoly3D()
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
 		ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-			WIDGETS_TYPE::WIDGET_POLYLINE, QString::number(m_poly3D->getUniqueID())), true);
+            WIDGETS_TYPE::WIDGET_POLYLINE, m_poly3D->getViewId()), true);
 	}
 }
 
@@ -692,7 +692,7 @@ void ccTracePolylineTool::resetTip()
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
 		ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-			WIDGETS_TYPE::WIDGET_POLYLINE, QString::number(m_polyTip->getUniqueID())), true);
+            WIDGETS_TYPE::WIDGET_POLYLINE, m_polyTip->getViewId()), true);
 	}
 }
 

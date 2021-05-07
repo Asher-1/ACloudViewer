@@ -76,7 +76,8 @@ void cc2DViewportLabel::clear2Dviews()
 {
 	if (!ecvDisplayTools::GetCurrentScreen()) return;
 
-	ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_TRIANGLE_2D, QString::number(getUniqueID())));
+    ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_TRIANGLE_2D,
+                                                     this->getViewId()));
 }
 
 void cc2DViewportLabel::updateLabel()
@@ -172,7 +173,7 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
 
 	const ecvColor::Rgb* defaultColor = m_selected ? &ecvColor::red : &context.textDefaultCol;
 	
-	WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_TRIANGLE_2D, QString::number(getUniqueID()));
+    WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_TRIANGLE_2D, this->getViewId());
 	const ecvColor::Rgbf& tempColor = ecvColor::FromRgb(*defaultColor);
 	param.color.r = tempColor.r;
 	param.color.g = tempColor.g;
@@ -198,6 +199,6 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
 		int yStart = static_cast<int>(dy + std::min<float>(m_roi[1], m_roi[3]) * relativeZoom);
 
 		ecvDisplayTools::DisplayText(title, xStart, yStart - 5 - titleHeight,
-			ecvDisplayTools::ALIGN_DEFAULT, 0, defaultColor->rgb, &titleFont, QString::number(getUniqueID()));
+            ecvDisplayTools::ALIGN_DEFAULT, 0, defaultColor->rgb, &titleFont, this->getViewId());
 	}
 }

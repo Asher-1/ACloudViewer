@@ -47,6 +47,8 @@ std::string CV_CORE_LIB_API GetFileParentDirectory(const std::string &filename);
 
 std::string CV_CORE_LIB_API GetRegularizedDirectoryName(const std::string &directory);
 
+std::string CV_CORE_LIB_API GetFileBaseName(const std::string &filename);
+
 std::string CV_CORE_LIB_API GetWorkingDirectory();
 
 std::vector<std::string> CV_CORE_LIB_API GetPathComponents(const std::string& path);

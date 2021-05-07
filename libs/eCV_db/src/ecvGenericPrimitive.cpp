@@ -17,6 +17,7 @@
 
 #include "ecvGenericPrimitive.h"
 #include "ecvPointCloud.h"
+#include "ecvDisplayTools.h"
 
 ccGenericPrimitive::ccGenericPrimitive(QString name/*=QString()*/, 
 									   const ccGLMatrix* transMat/*=0*/)
@@ -225,7 +226,17 @@ void ccGenericPrimitive::applyGLTransformation(const ccGLMatrix& trans)
 
 const ccGLMatrix& ccGenericPrimitive::getGLTransformationHistory() const
 {
-	return m_transformation;
+    return m_transformation;
+}
+
+void ccGenericPrimitive::clearDrawings()
+{
+    ecvDisplayTools::RemoveEntities(this);
+}
+
+void ccGenericPrimitive::hideShowDrawings(CC_DRAW_CONTEXT &context)
+{
+    ecvDisplayTools::HideShowEntities(this, context.visible);
 }
 
 void ccGenericPrimitive::applyTransformationToVertices()

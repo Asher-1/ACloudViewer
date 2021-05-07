@@ -839,6 +839,13 @@ bool ccDBRoot::setData(const QModelIndex &index, const QVariant &value, int role
                         CC_DRAW_CONTEXT context;
                         context.visible = sensor->isEnabled();
                         sensor->hideShowDrawings(context);
+                        // for bbox
+                        context.viewID = sensor->getViewId();
+                        if (sensor->isSelected() && context.visible) {
+                            sensor->showBB(context);
+                        } else {
+                            sensor->hideBB(context);
+                        }
                         ecvDisplayTools::UpdateScreen();
                     }
                 }
@@ -850,6 +857,13 @@ bool ccDBRoot::setData(const QModelIndex &index, const QVariant &value, int role
                         CC_DRAW_CONTEXT context;
                         context.visible = prim->isEnabled();
                         prim->hideShowDrawings(context);
+                        // for bbox
+                        context.viewID = prim->getViewId();
+                        if (prim->isSelected() && context.visible) {
+                            prim->showBB(context);
+                        } else {
+                            prim->hideBB(context);
+                        }
                         ecvDisplayTools::UpdateScreen();
                     }
                 }

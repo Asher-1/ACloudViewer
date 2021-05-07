@@ -1820,8 +1820,15 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem * item)
             {
                 sensor->setVisible(item->checkState() == Qt::Checked);
                 CC_DRAW_CONTEXT context;
-                context.visible = sensor->isVisible();
+                context.visible = sensor->isVisible() && sensor->isEnabled();
                 sensor->hideShowDrawings(context);
+                // for bbox
+                context.viewID = sensor->getViewId();
+                if (sensor->isSelected() && sensor->isEnabled()) {
+                    sensor->showBB(context);
+                } else {
+                    sensor->hideBB(context);
+                }
                 ecvDisplayTools::UpdateScreen();
                 break;
             }
@@ -1833,8 +1840,15 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem * item)
             {
                 prim->setVisible(item->checkState() == Qt::Checked);
                 CC_DRAW_CONTEXT context;
-                context.visible = prim->isVisible();
+                context.visible = prim->isVisible() && prim->isEnabled();
                 prim->hideShowDrawings(context);
+                // for bbox
+                context.viewID = prim->getViewId();
+                if (prim->isSelected() && prim->isEnabled()) {
+                    prim->showBB(context);
+                } else {
+                    prim->hideBB(context);
+                }
                 ecvDisplayTools::UpdateScreen();
                 break;
             }

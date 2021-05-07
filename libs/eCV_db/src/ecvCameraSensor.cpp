@@ -1541,7 +1541,7 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
                     m_frustumInfos.frustumHull->setOpacity(cameraContext.opacity);
                     cameraContext.defaultMeshColor = m_color;
                     cameraContext.meshRenderingMode = MESH_RENDERING_MODE::ECV_SURFACE_MODE;
-                    cameraContext.viewID = QString::number(m_frustumInfos.frustumHull->getUniqueID(), 10);
+                    cameraContext.viewID = m_frustumInfos.frustumHull->getViewId();
                     ecvDisplayTools::Draw(cameraContext, m_frustumInfos.frustumHull);
                 }
             }
@@ -1552,7 +1552,7 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
     if (m_frustumInfos.frustumHull)
     {
         cameraContext.visible = context.visible && m_frustumInfos.drawSidePlanes;
-        cameraContext.viewID = QString::number(m_frustumInfos.frustumHull->getUniqueID(), 10);
+        cameraContext.viewID = m_frustumInfos.frustumHull->getViewId();
         ecvDisplayTools::HideShowEntities(cameraContext);
     }
 
@@ -1580,7 +1580,7 @@ void ccCameraSensor::clearDrawings()
     {
         CC_DRAW_CONTEXT context;
         context.removeEntityType = ENTITY_TYPE::ECV_MESH;
-        context.removeViewID = QString::number(m_frustumInfos.frustumHull->getUniqueID(), 10);
+        context.removeViewID = m_frustumInfos.frustumHull->getViewId();
         ecvDisplayTools::RemoveEntities(context);
     }
     ecvDisplayTools::RemoveEntities(this);
@@ -1588,7 +1588,7 @@ void ccCameraSensor::clearDrawings()
 
 void ccCameraSensor::hideShowDrawings(CC_DRAW_CONTEXT& context)
 {
-    context.viewID = QString::number(this->getUniqueID(), 10);
+    context.viewID = this->getViewId();
     ecvDisplayTools::HideShowEntities(context);
 
     if (m_frustumInfos.frustumHull)

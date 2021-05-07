@@ -198,7 +198,7 @@ bool PclAnnotationTool::setInputCloud(ccPointCloud* cloud, int viewport)
 
 	// hide origin cloud
 	{
-		m_baseCloudId = QString::number(cloud->getUniqueID()).toStdString();
+        m_baseCloudId = cloud->getViewId().toStdString();
 		vtkActor* modelActor = m_viewer->getActorById(m_baseCloudId);
 		if (modelActor)
 		{

@@ -376,6 +376,8 @@ public: //bounding-box
 	void hideBB(CC_DRAW_CONTEXT context);
 	void showBB(CC_DRAW_CONTEXT context);
 
+    inline QString getViewId() const { return QString::number(this->getUniqueID(), 10); }
+
 	//! Returns the entity's own bounding-box
 	/** Children bboxes are ignored.
 		\param withGLFeatures whether to take into account display-only elements (if any)

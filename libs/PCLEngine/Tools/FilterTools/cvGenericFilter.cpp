@@ -82,7 +82,7 @@ void cvGenericFilter::start()
 bool cvGenericFilter::setInput(ccHObject * obj)
 {
 	m_entity = obj;
-	m_id = QString::number(m_entity->getUniqueID()).toStdString();
+    m_id = m_entity->getViewId().toStdString();
 
 	if (m_entity->isKindOf(CV_TYPES::POINT_CLOUD))
 	{

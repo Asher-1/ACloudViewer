@@ -237,6 +237,7 @@ namespace PclUtils
         vtkSmartPointer<vtkTransform> getTransformation(const CC_DRAW_CONTEXT& context,
                                                         const CCVector3d& origin);
         void updateNormals(const CC_DRAW_CONTEXT& context, PCLCloud::Ptr smCloud);
+        void updateShadingMode(const CC_DRAW_CONTEXT& context, PCLCloud& smCloud);
         bool removeEntities(const CC_DRAW_CONTEXT& context);
 		void hideShowActors(bool visibility, const std::string & viewID, int viewport = 0);
 		void hideShowWidgets(bool visibility, const std::string & viewID, int viewport = 0);
@@ -281,6 +282,13 @@ namespace PclUtils
 		void setLightMode(const std::string & viewID, int viewport = 0);
 		void setPointCloudOpacity(double opacity, const std::string & viewID, int viewport = 0);
 		void setShapeOpacity(double opacity, const std::string & viewID, int viewport = 0);
+        /*
+         * value = 0, PCL_VISUALIZER_SHADING_FLAT
+         * value = 1, PCL_VISUALIZER_SHADING_GOURAUD
+         * value = 2, PCL_VISUALIZER_SHADING_PHONG
+        */
+        void setShapeShadingMode(SHADING_MODE mode, const std::string & viewID, int viewport = 0);
+        void setMeshShadingMode(SHADING_MODE mode, const std::string & viewID, int viewport = 0);
 
 		vtkSmartPointer<pcl::visualization::PCLVisualizerInteractorStyle> getPCLInteractorStyle();
         vtkActor* getActorById(const std::string & viewId);

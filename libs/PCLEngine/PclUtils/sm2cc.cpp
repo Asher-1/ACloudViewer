@@ -24,14 +24,22 @@
 //PCL
 #include <pcl/common/io.h>
 
+// CV_CORE_LIB
+#include <CVTools.h>
+#include <FileSystem.h>
+
 //ECV_DB_LIB
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+#include <ecvMaterialSet.h>
 #include <ecvScalarField.h>
 
 //system
 #include <list>
 #include <assert.h>
+
+// Qt
+#include <QImageReader>
 
 #include <pcl/PCLPointField.h>
 typedef pcl::PCLPointField PCLScalarField;
@@ -311,6 +319,161 @@ bool pcl2cc::CopyScalarField(	const PCLCloud& pclCloud,
     const_cast<PCLScalarField&>(pclField).name = sfName;
 
     return true;
+}
+
+void pcl2ccMaterial(const PCLMaterial& inMaterial, ccMaterial::Shared& outMaterial)
+{
+    QString cPath = CVTools::ToQString(inMaterial.tex_file);
+    QString parentPath = CVTools::ToQString(cloudViewer::utility::filesystem::GetFileParentDirectory(inMaterial.tex_file));
+    outMaterial->setName(inMaterial.tex_name.c_str());
+
+    cPath = CVTools::ToNativeSeparators(cPath);
+
+    if ( QFile::exists( cPath ) )
+    {
+        QImageReader reader( cPath );
+
+        QImage image = reader.read();
+        if (image.isNull())
+        {
+            CVLog::Warning(QString("[pcl2ccMaterial] failed to read image %1, %2")
+                           .arg(cPath).arg(reader.errorString()));
+        }
+
+        if ( !image.isNull() )
+        {
+           outMaterial->setTexture( image, parentPath, false );
+        }
+    }
+
+    std::string texName = inMaterial.tex_name;
+    // FIX special symbols bugs in vtk rendering system!
+    texName = CVTools::ExtractDigitAlpha(texName);
+    const ecvColor::Rgbaf ambientColor(inMaterial.tex_Ka.r, inMaterial.tex_Ka.g, inMaterial.tex_Ka.b, inMaterial.tex_d);
+    const ecvColor::Rgbaf diffuseColor(inMaterial.tex_Kd.r, inMaterial.tex_Kd.g, inMaterial.tex_Kd.b, inMaterial.tex_d);
+    const ecvColor::Rgbaf specularColor(inMaterial.tex_Ks.r, inMaterial.tex_Ks.g, inMaterial.tex_Ks.b, inMaterial.tex_d);
+    float shininess = inMaterial.tex_Ns;
+
+    outMaterial->setDiffuse(diffuseColor);
+    outMaterial->setAmbient(ambientColor);
+    outMaterial->setSpecular(specularColor);
+    //outMaterial->setEmission(ecvColor::Rgbaf());
+    outMaterial->setShininess(shininess);
+    outMaterial->setTransparency( inMaterial.tex_d );
+}
+
+ccMesh *pcl2cc::Convert(pcl::TextureMesh::ConstPtr textureMesh)
+{
+    if (!textureMesh || textureMesh->tex_polygons.empty())
+    {
+        return nullptr;
+    }
+
+    // mesh size
+    std::size_t nr_meshes = textureMesh->tex_polygons.size ();
+    // number of faces for header
+    std::size_t nr_faces = 0;
+    for (std::size_t m = 0; m < nr_meshes; ++m)
+    {
+        nr_faces += textureMesh->tex_polygons[m].size ();
+    }
+
+    // create mesh from PCLMaterial
+    std::vector<pcl::Vertices>  faces;
+    for (std::size_t i = 0; i < textureMesh->tex_polygons.size(); ++i) {
+        faces.insert(faces.end(), textureMesh->tex_polygons[i].begin(), textureMesh->tex_polygons[i].end());
+    }
+    ccMesh* newMesh = Convert(textureMesh->cloud, faces);
+    if (!newMesh)
+    {
+        return nullptr;
+    }
+    QString name ("texture-mesh");
+    newMesh->setName(name);
+
+    // create texture coordinates
+    TextureCoordsContainer *texCoords = new TextureCoordsContainer();
+    if ( texCoords )
+    {
+        texCoords->reserve( nr_faces );
+
+        bool allocated = texCoords->isAllocated();
+
+        allocated &= newMesh->reservePerTriangleTexCoordIndexes();
+        allocated &= newMesh->reservePerTriangleMtlIndexes();
+
+        if ( !allocated )
+        {
+           delete texCoords;
+           CVLog::Warning( QStringLiteral( "[pcl2cc::Convert] Cannot allocate texture coordinates for mesh '%1'" ).arg( name ) );
+        }
+        else
+        {
+           newMesh->setTexCoordinatesTable( texCoords );
+        }
+
+        for (std::size_t m = 0; m < nr_meshes; ++m)
+        {
+            if(textureMesh->tex_coordinates.empty ())
+                continue;
+            for (const auto &coordinate : textureMesh->tex_coordinates[m])
+            {
+                const TexCoords2D coord{ coordinate[0], coordinate[1] };
+                texCoords->addElement( coord );
+            }
+        }
+    }
+
+    // materials and texture file
+    ccMaterialSet *materialSet = new ccMaterialSet( "Materials" );
+    if(!textureMesh->tex_materials.empty ())
+    {
+        for (std::size_t m = 0; m < nr_meshes; ++m)
+        {
+            auto newMaterial = ccMaterial::Shared( new ccMaterial() );
+            pcl2ccMaterial(textureMesh->tex_materials[m], newMaterial);
+            materialSet->addMaterial( newMaterial );
+
+            for (std::size_t i = 0; i < textureMesh->tex_polygons[m].size(); ++i)
+            {
+
+               CCVector3i texCoordIndexes;
+               for (std::size_t j = 0; j < textureMesh->tex_polygons[m][i].vertices.size (); ++j)
+               {
+                  texCoordIndexes.u[j] = static_cast<int>(textureMesh->tex_polygons[m][i].vertices[j]);
+               }
+
+               // texture coordinates
+               newMesh->addTriangleMtlIndex( 0 );
+               newMesh->addTriangleTexCoordIndexes(texCoordIndexes.x,
+                                                   texCoordIndexes.y,
+                                                   texCoordIndexes.z);
+           }
+        }
+    }
+
+    if ( materialSet != nullptr )
+    {
+       newMesh->setMaterialSet( materialSet );
+       newMesh->showMaterials( true );
+    }
+
+    if ( newMesh->size() == 0 )
+    {
+       CVLog::Warning( QStringLiteral( "[pcl2cc::Convert] Mesh '%1' does not have any faces" ).arg( name ) );
+       delete newMesh;
+       return nullptr;
+    }
+
+    if ( !newMesh->getAssociatedCloud()->hasNormals() )
+    {
+       CVLog::Warning( QStringLiteral( "[pcl2cc::Convert] Mesh '%1' does not have normals - will compute them per vertex" ).arg( name ) );
+       newMesh->computeNormals( true );
+    }
+
+    newMesh->showNormals( true );
+    newMesh->showColors(newMesh->hasColors());
+    return newMesh;
 }
 
 ccPointCloud* pcl2cc::Convert(const PCLCloud& pclCloud, bool ignoreScalars/* = false*/, bool ignoreRgb/* = false*/)

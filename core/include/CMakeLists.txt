@@ -76,6 +76,10 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/Optional.h
 		${CMAKE_CURRENT_LIST_DIR}/ProgressReporters.h
 		${CMAKE_CURRENT_LIST_DIR}/WeibullDistribution.h
+		${CMAKE_CURRENT_LIST_DIR}/Cpu.h
+		${CMAKE_CURRENT_LIST_DIR}/MemoryInfo.h
+		${CMAKE_CURRENT_LIST_DIR}/Universe.h
+		${CMAKE_CURRENT_LIST_DIR}/StaticVector.h
 )
 
 install(
