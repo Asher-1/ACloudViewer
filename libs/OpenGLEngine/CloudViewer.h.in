@@ -37,6 +37,10 @@
 #include "Timer.h"
 #include "CVGeom.h"
 #include "CVLog.h"
+#include "Cpu.h"
+#include "Universe.h"
+#include "MemoryInfo.h"
+#include "StaticVector.h"
 
 #include "ecvMesh.h"
 #include "ecvHalfEdgeMesh.h"
@@ -74,6 +78,7 @@
 #include "core/DLPack.h"
 #include "core/Device.h"
 #include "core/Dtype.h"
+#include "core/Gpu.h"
 #include "core/EigenConverter.h"
 #include "core/FuncionTraits.h"
 #include "core/MemoryManager.h"

@@ -1082,7 +1082,7 @@ void ecvDisplayTools::StartCPUBasedPointPicking(const PickingParameters& params)
 		s_tools.instance->m_last_picked_point = nearestPoint;
 		if (nearestEntity)
 		{
-			s_tools.instance->m_last_picked_id = QString::number(nearestEntity->getUniqueID());
+            s_tools.instance->m_last_picked_id = nearestEntity->getViewId();
 		}
 	}
 
@@ -3015,8 +3015,9 @@ bool ecvDisplayTools::HideShowEntities(const ccHObject *obj, bool visible)
        return false;
     }
     CC_DRAW_CONTEXT context;
-    context.viewID = QString::number(obj->getUniqueID(), 10);
     context.visible = visible;
+    context.viewID = obj->getViewId();
+    context.hideShowEntityType = obj->getEntityType();
     ecvDisplayTools::HideShowEntities(context);
     return true;
 }
@@ -3029,7 +3030,7 @@ void ecvDisplayTools::RemoveEntities(const ccHObject* obj)
     }
 
     CC_DRAW_CONTEXT context;
-    context.removeViewID = QString::number(obj->getUniqueID(), 10);
+    context.removeViewID = obj->getViewId();
     context.removeEntityType = obj->getEntityType();
     ecvDisplayTools::RemoveEntities(context);
 }
@@ -3258,7 +3259,7 @@ void ecvDisplayTools::Pick2DLabel(int x, int y)
 			if (label->isA(CV_TYPES::LABEL_2D) && label->isVisible())
 			{
 				cc2DLabel* l = ccHObjectCaster::To2DLabel(label);
-				if (QString::number(l->getUniqueID()).compare(id) == 0)
+                if (l->getViewId().compare(id) == 0)
 				{
 					s_tools.instance->m_activeItems.push_back(l);
 				}
@@ -3771,7 +3772,7 @@ void ecvDisplayTools::ChangeEntityProperties(PROPERTY_PARAM & propertyParam, boo
             propertyParam.entityType = ConvertToEntityType(propertyParam.entity->getClassID());
 		}
 
-		propertyParam.viewId = QString::number(propertyParam.entity->getUniqueID());
+        propertyParam.viewId = propertyParam.entity->getViewId();
 		s_tools.instance->changeEntityProperties(propertyParam);
 		if (autoUpdate)
 		{

@@ -58,6 +58,6 @@ if (USE_PCL_BACKEND)
 	add_subdirectory( PCLEngine ) # must always be included after eCV_db and eCV_io (dependency)
 endif()
 
-add_subdirectory( CVAppCommon)
+add_subdirectory( CVAppCommon )
 add_subdirectory( CVPluginStub )    # Must come before CCPluginAPI
 add_subdirectory( CVPluginAPI )

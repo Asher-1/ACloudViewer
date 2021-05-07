@@ -921,7 +921,7 @@ void ccGBLSensor::clearDrawings()
 
 void ccGBLSensor::hideShowDrawings(CC_DRAW_CONTEXT &context)
 {
-    context.viewID = QString::number(this->getUniqueID(), 10);
+    context.viewID = this->getViewId();
     ecvDisplayTools::HideShowEntities(context);
 }
 

@@ -1546,7 +1546,7 @@ void MainWindow::addToDB(ccHObject* obj,
 	}
 	else if (autoRedraw)
 	{
-		obj->redrawDisplay();
+        refreshObject(obj);
 	}
 }
 
@@ -2193,7 +2193,6 @@ void MainWindow::doActionApplyScale()
 				C);
 
 			putObjectBackIntoDBTree(cloud, objContext);
-			//cloud->prepareDisplayForRefresh_recursive();
 
 			//don't forget the 'global shift'!
 			//DGM: but not the global scale!
@@ -3340,7 +3339,29 @@ void MainWindow::refreshSelected(bool only2D/* = false*/, bool forceRedraw/* = t
 			entity->setRedrawFlagRecursive(true);
 		}
 	}
-	ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
+    ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
+}
+
+void MainWindow::refreshObject(ccHObject *obj, bool only2D, bool forceRedraw)
+{
+    if (!obj) { return; }
+
+    ecvDisplayTools::SetRedrawRecursive(false);
+    obj->setRedrawFlagRecursive(true);
+    ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
+}
+
+void MainWindow::refreshObjects(ccHObject::Container objs, bool only2D, bool forceRedraw)
+{
+    ecvDisplayTools::SetRedrawRecursive(false);
+    for (ccHObject *entity : objs)
+    {
+        if (entity)
+        {
+            entity->setRedrawFlagRecursive(true);
+        }
+    }
+    ecvDisplayTools::RedrawDisplay(only2D, forceRedraw);
 }
 
 void MainWindow::resetSelectedBBox()
@@ -3349,7 +3370,7 @@ void MainWindow::resetSelectedBBox()
 	{
 		if (entity)
 		{
-			ecvDisplayTools::RemoveBB(QString::number(entity->getUniqueID()));
+            ecvDisplayTools::RemoveBB(entity->getViewId());
 		}
 	}
 }
@@ -3586,13 +3607,13 @@ void MainWindow::setGlobalZoom()
 void MainWindow::increasePointSize()
 {
 	ecvDisplayTools::SetPointSize(ecvDisplayTools::GetViewportParameters().defaultPointSize + 1);
-	ecvDisplayTools::RedrawDisplay();
+    refreshAll();
 }
 
 void MainWindow::decreasePointSize()
 {
 	ecvDisplayTools::SetPointSize(ecvDisplayTools::GetViewportParameters().defaultPointSize - 1);
-	ecvDisplayTools::RedrawDisplay();
+    refreshAll();
 }
 
 void MainWindow::showDisplayOptions()
@@ -3745,10 +3766,9 @@ void MainWindow::onItemPicked(const PickedItem & pi)
 		label->addPickedPoint(s_levelMarkersCloud, markerCount - 1);
 		label->setName(tr("P#%1").arg(markerCount));
 		label->setDisplayedIn2D(false);
-		//label->setDisplay(s_pickingWindow);
 		label->setVisible(true);
 		s_levelMarkersCloud->addChild(label);
-		refreshAll();
+        refreshSelected(s_levelMarkersCloud);
 
 		if (markerCount == 3)
 		{
@@ -3934,7 +3954,7 @@ void MainWindow::doActionComputeNormals()
 	if (!ccEntityAction::computeNormals(m_selectedEntities, this))
 		return;
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
@@ -3943,7 +3963,7 @@ void MainWindow::doActionInvertNormals()
 	if (!ccEntityAction::invertNormals(m_selectedEntities))
 		return;
 
-	refreshAll();
+    refreshSelected();
 }
 
 void MainWindow::doActionConvertNormalsToDipDir()
@@ -3954,7 +3974,7 @@ void MainWindow::doActionConvertNormalsToDipDir()
 		return;
 	}
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
@@ -3966,7 +3986,7 @@ void MainWindow::doActionExportNormalToSF()
 		return;
 	}
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
@@ -3978,8 +3998,8 @@ void MainWindow::doActionConvertNormalsToHSV()
 		return;
 	}
 
-	refreshAll();
-	updateUI();
+    refreshSelected();
+    updateUI();
 }
 
 void MainWindow::doActionOrientNormalsMST()
@@ -3987,7 +4007,7 @@ void MainWindow::doActionOrientNormalsMST()
 	if (!ccEntityAction::orientNormalsMST(m_selectedEntities, this))
 		return;
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
@@ -3996,7 +4016,7 @@ void MainWindow::doActionOrientNormalsFM()
 	if (!ccEntityAction::orientNormalsFM(m_selectedEntities, this))
 		return;
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
@@ -4052,9 +4072,7 @@ void MainWindow::doActionComputeKdTree()
 
 		addToDB(kdtree);
 		// update added point cloud
-		ecvDisplayTools::SetRedrawRecursive(false);
-		cloud->setRedrawFlagRecursive(true);
-		refreshAll();
+        refreshObject(cloud);
 		updateUI();
 	}
 	else
@@ -4070,7 +4088,7 @@ void MainWindow::doActionComputeOctree()
 	if (!ccEntityAction::computeOctree(m_selectedEntities, this))
 		return;
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
@@ -4147,10 +4165,9 @@ void MainWindow::doActionResampleWithOctree()
 	}
 
 	if (errors)
-		CVLog::Error(
-			tr("[ResampleWithOctree] Errors occurred during the process! Result may be incomplete!"));
-
-	
+    {
+        CVLog::Error(tr("[ResampleWithOctree] Errors occurred during the process! Result may be incomplete!"));
+    }
 }
 
 
@@ -4408,12 +4425,10 @@ void MainWindow::doActionMeshScanGrids()
 				cloud->addChild(gridMesh);
 				cloud->setVisible(false); //hide the cloud
 				addToDB(gridMesh, false, true, false, false);
-				//gridMesh->prepareDisplayForRefresh();
 			}
 		}
 	}
 
-	refreshAll();
 	updateUI();
 }
 
@@ -4479,10 +4494,9 @@ void MainWindow::doActionComputeDistancesFromSensor()
 		distances->computeMinAndMax();
 		cloud->setCurrentDisplayedScalarField(sfIdx);
 		cloud->showSF(true);
-		//cloud->prepareDisplayForRefresh_recursive();
 	}
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
@@ -4504,7 +4518,7 @@ void MainWindow::doActionComputeScatteringAngles()
 		return;
 
 	//get associated cloud
-	ccHObject* defaultCloud = sensor->getParent() && sensor->getParent()->isA(CV_TYPES::POINT_CLOUD) ? sensor->getParent() : 0;
+    ccHObject* defaultCloud = sensor->getParent() && sensor->getParent()->isA(CV_TYPES::POINT_CLOUD) ? sensor->getParent() : nullptr;
 	ccPointCloud* cloud = askUserToSelectACloud(defaultCloud, "Select a cloud on which to project the uncertainty:");
 	if (!cloud)
 	{
@@ -4563,9 +4577,8 @@ void MainWindow::doActionComputeScatteringAngles()
 	angles->computeMinAndMax();
 	cloud->setCurrentDisplayedScalarField(sfIdx);
 	cloud->showSF(true);
-	//cloud->prepareDisplayForRefresh_recursive();
 
-	refreshAll();
+    refreshObject(cloud);
 	updateUI();
 }
 
@@ -4808,8 +4821,7 @@ void MainWindow::doActionModifySensor()
 
 	if (sensor->isVisible() && sensor->isEnabled())
 	{
-		//sensor->prepareDisplayForRefresh();
-		refreshAll();
+        refreshObject(sensor);
 	}
 
 	updateUI();
@@ -4839,7 +4851,7 @@ void MainWindow::doActionProjectUncertainty()
 	}
 
 	//we need a cloud to project the uncertainty on!
-	ccHObject* defaultCloud = sensor->getParent() && sensor->getParent()->isA(CV_TYPES::POINT_CLOUD) ? sensor->getParent() : 0;
+    ccHObject* defaultCloud = sensor->getParent() && sensor->getParent()->isA(CV_TYPES::POINT_CLOUD) ? sensor->getParent() : nullptr;
 	ccPointCloud* pointCloud = askUserToSelectACloud(defaultCloud, "Select a cloud on which to project the uncertainty:");
 	if (!pointCloud)
 	{
@@ -4922,10 +4934,9 @@ void MainWindow::doActionProjectUncertainty()
 
 		pointCloud->showSF(true);
 		pointCloud->setCurrentDisplayedScalarField(sfIdx);
-		//pointCloud->prepareDisplayForRefresh();
 	}
 
-	refreshAll();
+    refreshObject(pointCloud);
 }
 
 void MainWindow::doActionCheckPointsInsideFrustum()
@@ -5006,8 +5017,7 @@ void MainWindow::doActionCheckPointsInsideFrustum()
 				sf->computeMinAndMax();
 				pointCloud->setCurrentDisplayedScalarField(sfIdx);
 				pointCloud->showSF(true);
-
-				pointCloud->redrawDisplay();
+                refreshObject(pointCloud);
 			}
 		}
 	}
@@ -5224,7 +5234,7 @@ void MainWindow::doActionComputePointsVisibility()
 			ecvConsole::Print(QString("\tOut of range = %1").arg(POINT_OUT_OF_RANGE));
 			ecvConsole::Print(QString("\tOut of fov = %1").arg(POINT_OUT_OF_FOV));
 		}
-		pointCloud->redrawDisplay();
+        refreshObject(pointCloud);
 	}
 
 	updateUI();
@@ -5274,7 +5284,7 @@ void MainWindow::doActionConvertTextureToColor()
 	if (!ccEntityAction::convertTextureToColor(m_selectedEntities, this))
 		return;
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
@@ -5651,7 +5661,7 @@ void MainWindow::doActionSmoothMeshSF()
 	if (!ccEntityAction::processMeshSF(m_selectedEntities, ccMesh::SMOOTH_MESH_SF, this))
 		return;
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
@@ -5660,7 +5670,7 @@ void MainWindow::doActionEnhanceMeshSF()
 	if (!ccEntityAction::processMeshSF(m_selectedEntities, ccMesh::ENHANCE_MESH_SF, this))
 		return;
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
@@ -5696,7 +5706,7 @@ void MainWindow::doActionSubdivideMesh()
 				if (subdividedMesh)
 				{
 					subdividedMesh->setName(tr("%1.subdivided(S<%2)").arg(mesh->getName()).arg(s_subdivideMaxArea));
-					mesh->redrawDisplay(true, true);
+                    refreshObject(mesh, true, true);
 					// avoid rendering this object this time
 					mesh->setEnabled(false);
 					addToDB(subdividedMesh);
@@ -5719,6 +5729,7 @@ void MainWindow::doActionSubdivideMesh()
 void MainWindow::doActionFlipMeshTriangles()
 {
 	bool warningIssued = false;
+    ecvDisplayTools::SetRedrawRecursive(false);
 	for (ccHObject *entity : getSelectedEntities())
 	{
 		if (entity->isKindOf(CV_TYPES::MESH))
@@ -5963,6 +5974,7 @@ void MainWindow::doActionFlipPlane()
 		return;
 	}
 
+    ecvDisplayTools::SetRedrawRecursive(false);
 	for (ccHObject* entity : m_selectedEntities)
 	{
 		ccPlane* plane = ccHObjectCaster::ToPlane(entity);
@@ -6232,45 +6244,42 @@ void MainWindow::doActionSetColor(bool colorize)
 
 void MainWindow::doActionRGBToGreyScale()
 {
-	ecvDisplayTools::SetRedrawRecursive(false);
 	if (!ccEntityAction::rgbToGreyScale(m_selectedEntities))
 		return;
 
-	refreshAll();
+    refreshSelected();
 }
 
 void MainWindow::doActionSetColorGradient()
 {
-	ecvDisplayTools::SetRedrawRecursive(false);
 	if (!ccEntityAction::setColorGradient(m_selectedEntities, this))
 		return;
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
 void MainWindow::doActionChangeColorLevels()
 {
 	ccEntityAction::changeColorLevels(m_selectedEntities, this);
+    refreshSelected();
 }
 
 void MainWindow::doActionInterpolateColors()
 {
-	ecvDisplayTools::SetRedrawRecursive(false);
 	if (!ccEntityAction::interpolateColors(m_selectedEntities, this))
 		return;
 
-	refreshAll();
+    refreshSelected();
 	updateUI();
 }
 
 void MainWindow::doActionEnhanceRGBWithIntensities()
 {
-	ecvDisplayTools::SetRedrawRecursive(false);
 	if (!ccEntityAction::enhanceRGBWithIntensities(m_selectedEntities, this))
 		return;
 
-	refreshAll();
+    refreshSelected();
 }
 
 void MainWindow::doActionColorFromScalars() {
@@ -9712,7 +9721,7 @@ void MainWindow::deactivateSegmentationMode(bool state)
 		m_gsTool->removeAllEntities(!deleteHiddenParts);
 		if (ecvDisplayTools::GetCurrentScreen())
 		{
-			ecvDisplayTools::RedrawDisplay();
+            refreshAll();
 		}
         ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_CAMERA());
 	}

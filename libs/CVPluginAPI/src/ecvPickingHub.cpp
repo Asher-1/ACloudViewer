@@ -50,7 +50,7 @@ void ccPickingHub::onActiveWindowChanged(QMdiSubWindow* mdiSubWindow)
 {
 	QWidget* window = (mdiSubWindow ? mdiSubWindow->widget() : nullptr);
 	//if (glWindow)
-	//	CVLog::Warning("New active GL window: " + QString::number(glWindow->getUniqueID()));
+    //	CVLog::Warning("New active GL window: " + glWindow->getViewId());
 	//else
 	//	CVLog::Warning("No more active GL window");
 

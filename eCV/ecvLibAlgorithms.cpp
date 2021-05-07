@@ -808,7 +808,7 @@ namespace ccLibAlgorithms
 				ccHObject* obj = toBeRescaleEntities[i];
 				if (obj)
 				{
-					ecvDisplayTools::RemoveBB(QString::number(obj->getUniqueID()));
+                    ecvDisplayTools::RemoveBB(obj->getViewId());
 					obj->setRedraw(true);
 				}
 			}

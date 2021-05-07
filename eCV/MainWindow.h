@@ -201,6 +201,8 @@ public:  // inherited from ecvMainAppInterface
 	//virtual void updateScreen() override;
 	virtual void refreshAll(bool only2D = false, bool forceRedraw = true) override;
 	virtual void refreshSelected(bool only2D = false, bool forceRedraw = true) override;
+    virtual void refreshObject(ccHObject* obj, bool only2D = false, bool forceRedraw = true) override;
+    virtual void refreshObjects(ccHObject::Container objs, bool only2D = false, bool forceRedraw = true) override;
 	virtual void resetSelectedBBox() override;
 	virtual void removeFromDB(ccHObject* obj, bool autoDelete = true) override;
 	virtual void setSelectedInDB(ccHObject* obj, bool selected) override;

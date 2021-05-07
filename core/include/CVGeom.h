@@ -530,6 +530,9 @@ using CCVector3f = Vector3Tpl<float>;
 //! Double 3D Vector
 using CCVector3d = Vector3Tpl<double>;
 
+//! Int 3D Vector
+using CCVector3i = Vector3Tpl<int>;
+
 //! Default 2D Vector
 using CCVector2 = Vector2Tpl<PointCoordinateType>;
 

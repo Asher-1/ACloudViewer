@@ -772,7 +772,7 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER & param)
 					return;
 				}
 
-				viewID = CVTools::FromQString(QString::number(poly->getUniqueID()));
+                viewID = CVTools::FromQString(poly->getViewId());
 
 				ecvColor::Rgbf color =  ecvColor::FromRgb(ecvColor::green);
 				if (poly->isColorOverriden())
@@ -1196,6 +1196,27 @@ void PCLDisplayTools::changeEntityProperties(PROPERTY_PARAM & param)
 		}
 	}
 	break;
+    case PROPERTY_MODE::ECV_SHADING_PROPERTY:
+    {
+        switch (param.entityType)
+        {
+        case ENTITY_TYPE::ECV_POINT_CLOUD:
+        case ENTITY_TYPE::ECV_MESH:
+        {
+            m_visualizer3D->setMeshShadingMode(param.shadingMode, viewId, viewport);
+        }
+        case ENTITY_TYPE::ECV_SHAPE:
+        case ENTITY_TYPE::ECV_LINES_3D:
+        {
+            m_visualizer3D->setShapeShadingMode(param.shadingMode, viewId, viewport);
+        }
+        break;
+        default:
+            break;
+
+        }
+    }
+    break;
 
 	default:
 		break;

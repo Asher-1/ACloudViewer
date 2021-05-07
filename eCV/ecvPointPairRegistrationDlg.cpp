@@ -1128,7 +1128,7 @@ void ccPointPairRegistrationDlg::updateSphereMarks(ccHObject* obj, bool remove)
 		if (remove)
 		{
 			context.removeEntityType = ENTITY_TYPE::ECV_MESH;
-			context.removeViewID = QString::number(obj->getUniqueID());
+            context.removeViewID = obj->getViewId();
 			ecvDisplayTools::RemoveEntities(context);
 			obj->showNameIn3D(false);
 		}
@@ -1535,7 +1535,7 @@ void ccPointPairRegistrationDlg::transformAlignedEntity(const ccGLMatrix &transM
 
 		if (!apply)
 		{
-			ecvDisplayTools::RemoveBB(QString::number(it.key()->getUniqueID()));
+            ecvDisplayTools::RemoveBB(it.key()->getViewId());
 		}
 	}
 	m_alignedPoints.applyGLTransformation_recursive(apply ? &transMat : nullptr);

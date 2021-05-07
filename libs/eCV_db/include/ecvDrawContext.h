@@ -49,6 +49,14 @@ enum PROPERTY_MODE
 	ECV_LINEWITH_PROPERTY,
 	ECV_COLOR_PROPERTY,
 	ECV_OPACITY_PROPERTY,
+    ECV_SHADING_PROPERTY,
+};
+
+enum SHADING_MODE
+{
+  ECV_SHADING_FLAT,
+  ECV_SHADING_GOURAUD,
+  ECV_SHADING_PHONG
 };
 
 enum MESH_RENDERING_MODE
@@ -120,6 +128,7 @@ struct ECV_DB_LIB_API PROPERTY_PARAM
 
     double opacity = 1.0;
 	PROPERTY_MODE property;
+    SHADING_MODE shadingMode;
 	ENTITY_TYPE entityType;
 
 	PROPERTY_PARAM(ccHObject* obj, const ecvColor::Rgb& col)
@@ -144,10 +153,22 @@ struct ECV_DB_LIB_API PROPERTY_PARAM
 		}
 	}
 
+    PROPERTY_PARAM(ccHObject* obj, SHADING_MODE shadingMode)
+        : entity(obj)
+        , property(PROPERTY_MODE::ECV_SHADING_PROPERTY)
+    {
+        this->shadingMode = shadingMode;
+    }
+
 	inline void setProperty(PROPERTY_MODE mode)
 	{
 		property = mode;
 	}
+
+    inline void setShadingMode(SHADING_MODE shadingMode)
+    {
+        this->shadingMode = shadingMode;
+    }
 
 	inline void setColor(const ecvColor::Rgb& col)
 	{

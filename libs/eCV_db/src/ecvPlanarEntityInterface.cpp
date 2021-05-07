@@ -62,13 +62,13 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 	if (c_unitNormalHeadSymbol)
 	{
 		m_headId = QString::number(m_uniqueId) + SEPARATOR +
-			QString::number(c_unitNormalHeadSymbol->getUniqueID());
+            c_unitNormalHeadSymbol->getViewId();
 	}
 
 	if (c_unitNormalSymbol)
 	{
 		m_bodyId = QString::number(m_uniqueId) + SEPARATOR +
-			QString::number(c_unitNormalSymbol->getUniqueID());
+            c_unitNormalSymbol->getViewId();
 	}
 
 	// build-up the normal representation own 'context'

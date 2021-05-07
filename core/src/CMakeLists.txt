@@ -45,6 +45,10 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/StatisticalTestingTools.cpp
 		${CMAKE_CURRENT_LIST_DIR}/Timer.cpp
 		${CMAKE_CURRENT_LIST_DIR}/WeibullDistribution.cpp
+		${CMAKE_CURRENT_LIST_DIR}/Cpu.cpp
+		${CMAKE_CURRENT_LIST_DIR}/MemoryInfo.cpp
+		${CMAKE_CURRENT_LIST_DIR}/Universe.cpp
+		${CMAKE_CURRENT_LIST_DIR}/StaticVector.cpp
 )
 
 target_include_directories( ${PROJECT_NAME}

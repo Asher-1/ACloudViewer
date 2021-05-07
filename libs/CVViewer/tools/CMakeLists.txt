@@ -30,3 +30,4 @@ TOOL(GLInfo                     OPENGL_ENGINE_LIB ${GLFW_TARGET} ${OPENGL_TARGET
 TOOL(ManuallyCropGeometry       OPENGL_ENGINE_LIB )
 TOOL(MergeMesh                  OPENGL_ENGINE_LIB )
 TOOL(ViewGeometry           	OPENGL_ENGINE_LIB )
+TOOL(HardwareResources          OPENGL_ENGINE_LIB )
