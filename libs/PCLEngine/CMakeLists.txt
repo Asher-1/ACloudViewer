@@ -111,6 +111,11 @@ if (USE_PCL_BACKEND)
                 ${PclUtils_list}
                 ${Widget_list})
 
+    if (MSVC)
+        # fix compiling error on windows platform for deprecated flag in pcl
+        target_compile_options(${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+    endif()
+
     target_include_directories( ${PROJECT_NAME} PUBLIC
                                 ${PCL_INCLUDE_DIRS} )
 

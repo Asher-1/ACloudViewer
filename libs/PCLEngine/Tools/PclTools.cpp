@@ -1326,7 +1326,6 @@ saveOBJFile (const std::string &file_name,
 /** \brief Display a 3D representation showing the a cloud and a list of camera with their 6DOf poses */
 void showCameras (pcl::texture_mapping::CameraVector cams, pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud)
 {
-
   // visualization object
   pcl::visualization::PCLVisualizer visu ("cameras");
 
