@@ -663,6 +663,7 @@ private:
 
 #ifdef USE_COLMAP_MODULE
     void initReconstructions();
+    void autoShowReconstructionToolBar(bool state);
     cloudViewer::ReconstructionWidget* m_rcw;
 #endif
 

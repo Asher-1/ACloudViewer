@@ -128,6 +128,7 @@ void ReconstructionWidget::close() {
     mapper_controller_->Wait();
   }
 
+  log_widget_->hide();
   log_widget_->close();
 }
 

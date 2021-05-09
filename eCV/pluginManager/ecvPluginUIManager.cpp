@@ -462,7 +462,6 @@ void ccPluginUIManager::setupToolbars()
 	m_pclAlgorithmsToolbar = new QToolBar(tr("PCL ALgorithms"), m_parentWidget);
 
 	m_pclAlgorithmsToolbar->setObjectName(QStringLiteral("PCL Plugin Toolbar"));
-	//m_pclAlgorithmsToolbar->addAction(m_actionRemovePCLAlgorithm);
 
 	connect(m_showPCLAlgorithmToolbar, &QAction::toggled, m_pclAlgorithmsToolbar, &QToolBar::setVisible);
 }
