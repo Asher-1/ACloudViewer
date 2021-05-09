@@ -882,9 +882,10 @@ void MainWindow::initPlugins()
     {
         addToolBar(Qt::TopToolBarArea, toolbar);
     }
+
     // Set up dynamic menus
-    m_ui->menuBar->insertMenu(m_ui->menuOption->menuAction(), m_pluginUIManager->pluginMenu());
-    m_ui->menuBar->insertMenu(m_ui->menuOption->menuAction(), m_pluginUIManager->pclAlgorithmMenu());
+    m_ui->menuBar->insertMenu(m_ui->menuDisplay->menuAction(), m_pluginUIManager->pclAlgorithmMenu());
+    m_ui->menuBar->insertMenu(m_ui->menuDisplay->menuAction(), m_pluginUIManager->pluginMenu());
 
     m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowMainPluginToolbar());
     m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowPCLAlgorithmToolbar());
@@ -921,10 +922,19 @@ void MainWindow::initReconstructions()
     }
 
     // Set up dynamic tool bars
+    QSettings settings;
+    bool autoShowFlag = settings.value(ecvPS::AutoShowReconstructionToolBar(), true).toBool();
+    QAction* showToolbarAction = new QAction( tr("Reconstruction"), this );
+    connect(showToolbarAction, &QAction::toggled, this, &MainWindow::autoShowReconstructionToolBar);
+    showToolbarAction->setCheckable( true );
+    showToolbarAction->setEnabled( true );
     for (QToolBar *toolbar : m_rcw->getReconstructionToolbars())
     {
         addToolBar(Qt::TopToolBarArea, toolbar);
+        connect(showToolbarAction, &QAction::toggled, toolbar, &QToolBar::setVisible);
     }
+    m_ui->menuToolbars->addAction(showToolbarAction);
+    showToolbarAction->setChecked( autoShowFlag );
 
     // Set up dynamic menus
     QMenu* rc_menu = new QMenu(tr("Reconstruction"), this);
@@ -940,6 +950,12 @@ void MainWindow::initReconstructions()
     // Set reconstruction status bar
     m_ui->statusBar->insertPermanentWidget(1, m_rcw->getImageStatusBar(), 0);
     m_ui->statusBar->insertPermanentWidget(1, m_rcw->getTimerStatusBar(), 0);
+}
+
+void MainWindow::autoShowReconstructionToolBar(bool state)
+{
+    QSettings settings;
+    settings.setValue(ecvPS::AutoShowReconstructionToolBar(), state);
 }
 #endif
 

@@ -19,15 +19,14 @@ endif()
 # find_package(Qt5 COMPONENTS OpenGL Widgets Core Svg Gui PrintSupport Concurrent REQUIRED)
 find_package( Qt5
     COMPONENTS
-        Concurrent
         Core
         Gui
-        OpenGL
-        OpenGLExtensions
-        PrintSupport
         Svg
+        OpenGL
         Widgets
         Network
+        Concurrent
+        PrintSupport
     REQUIRED
 )
 
