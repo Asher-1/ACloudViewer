@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -33,6 +33,7 @@
 
 #if defined(CV_WINDOWS)
 #include <windows.h>
+#include <sstream>
 #elif defined(CV_LINUX)
 #include <sys/sysinfo.h>
 #include <fstream>
