@@ -78,10 +78,10 @@ void PclAnnotationTool::initialize(ecvGenericVisualizer3D* viewer)
 	resetMode();
 
 	//init annotation manager
-	m_annoManager.reset(new Annotaions(
-		m_annotationMode == AnnotationMode::BOUNDINGBOX ?
-		m_viewer->getRenderWindowInteractor() : nullptr));
-	
+    m_annoManager.reset(new Annotaions(
+        m_annotationMode == AnnotationMode::BOUNDINGBOX ?
+        m_viewer->getRenderWindowInteractor() : nullptr));
+
 	m_currPickedAnnotation = nullptr;
 
 	// init m_baseCloud
@@ -277,7 +277,7 @@ void PclAnnotationTool::start()
 
 		if (m_annotationMode == AnnotationMode::BOUNDINGBOX)
 		{
-			m_viewer->setActorPickingEnabled(true);
+            m_viewer->setActorPickingEnabled(true);
 		}
 
 		connect(m_viewer, &PCLVis::interactorPickedEvent, this, &PclAnnotationTool::pickedEventProcess);
@@ -295,7 +295,7 @@ void PclAnnotationTool::stop()
 
 		if (m_annotationMode == AnnotationMode::BOUNDINGBOX)
 		{
-			m_viewer->setActorPickingEnabled(false);
+            m_viewer->setActorPickingEnabled(false);
 		}
 
 		disconnect(m_viewer, &PCLVis::interactorPickedEvent, this, &PclAnnotationTool::pickedEventProcess);

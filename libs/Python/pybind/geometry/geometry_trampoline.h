@@ -240,12 +240,6 @@ public:
 	}
 };
 
-template <class AxisBBoxBase = cloudViewer::BoundingBox>
-class PyAxisBBoxBase : public AxisBBoxBase {
-public:
-	using AxisBBoxBase::AxisBBoxBase;
-};
-
 template <class OrientedBBoxBase = cloudViewer::OrientedBoundingBox>
 class PyOrientedBBoxBase : public OrientedBBoxBase {
 public:
