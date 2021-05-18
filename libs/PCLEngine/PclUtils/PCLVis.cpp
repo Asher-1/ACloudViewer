@@ -109,8 +109,8 @@ namespace PclUtils
 PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interactor_style,
                const std::string& viewerName/* = ""*/,
                bool initIterator/* = false*/,
-               int argc/* = 0*/,				// unused
-               char** argv/* = nullptr*/ )		// unused
+               int argc/* = 0*/,
+               char** argv/* = nullptr*/ )
 		: pcl::visualization::PCLVisualizer(argc, argv, viewerName, interactor_style, initIterator)
 		, m_widget_map(new WidgetActorMap)
 		, m_prop_map(new PropActorMap)
@@ -2799,10 +2799,12 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
 	void PCLVis::mouseEventProcess(const pcl::visualization::MouseEvent& event, void * args)
 	{
-		if (event.getButton() == pcl::visualization::MouseEvent::LeftButton
+        // fix some unknown black screen issues when using LeftButton
+        // using RightButton instead of LeftButton to solve it
+        if (event.getButton() == pcl::visualization::MouseEvent::RightButton
 			&& event.getType() == pcl::visualization::MouseEvent::MouseButtonPress) 
 		{
-			if (m_actorPickingEnabled)
+            if (m_actorPickingEnabled)
 			{
                 vtkActor* pickedActor = pickActor(event.getX(), event.getY());
                 if (pickedActor)

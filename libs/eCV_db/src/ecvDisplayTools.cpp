@@ -1328,12 +1328,12 @@ CCVector3d ecvDisplayTools::ConvertMousePositionToOrientation(int x, int y)
 
 void ecvDisplayTools::RotateBaseViewMat(const ccGLMatrixd& rotMat)
 {
-	s_tools.instance->m_viewportParams.viewMat = rotMat * s_tools.instance->m_viewportParams.viewMat;
+//	s_tools.instance->m_viewportParams.viewMat = rotMat * s_tools.instance->m_viewportParams.viewMat;
 
-	//we emit the 'baseViewMatChanged' signal
-	emit s_tools.instance->baseViewMatChanged(s_tools.instance->m_viewportParams.viewMat);
-	emit s_tools.instance->cameraParamChanged();
-	InvalidateVisualization();
+//	//we emit the 'baseViewMatChanged' signal
+//	emit s_tools.instance->baseViewMatChanged(s_tools.instance->m_viewportParams.viewMat);
+//	emit s_tools.instance->cameraParamChanged();
+//	InvalidateVisualization();
 	//Deprecate3DLayer();
 }
 

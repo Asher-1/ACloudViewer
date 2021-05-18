@@ -87,7 +87,7 @@ protected:
 	**/
 	virtual bool buildUp() { return true; }
 
-	virtual void initialize(ecvGenericVisualizer3D* viewer) {};
+    virtual void initialize(ecvGenericVisualizer3D* viewer) = 0;
 
 	//! Returns vertices
 	ccPointCloud* vertices();

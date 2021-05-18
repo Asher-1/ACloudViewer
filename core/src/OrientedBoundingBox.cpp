@@ -17,7 +17,6 @@
 
 // LOCAL
 #include "CVLog.h"
-#include "BoundingBox.h"
 #include "OrientedBoundingBox.h"
 
 // EIGEN

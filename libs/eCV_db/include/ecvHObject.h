@@ -18,6 +18,9 @@
 #ifndef ECV_HIERARCHY_OBJECT_HEADER
 #define ECV_HIERARCHY_OBJECT_HEADER
 
+// CV_CORE_LIB
+#include "BoundingBox.h"
+
 //Local
 #include "ecvObject.h"
 
@@ -213,6 +216,8 @@ public: //construction
 
 public: //base members access
 
+    inline QString getViewId() const { return QString::number(this->getUniqueID(), 10); }
+
 	//! Returns class ID
 	/** \return class unique ID
 	**/
@@ -376,7 +381,33 @@ public: //bounding-box
 	void hideBB(CC_DRAW_CONTEXT context);
 	void showBB(CC_DRAW_CONTEXT context);
 
-    inline QString getViewId() const { return QString::number(this->getUniqueID(), 10); }
+    //! Global (non-shifted) bounding-box
+    using GlobalBoundingBox = cloudViewer::BoundingBoxTpl<double>;
+
+    //! Returns the entity's own global bounding-box (with global/non-shifted coordinates - if relevant)
+    /** Children bounding-boxes are ignored.
+        May differ from the (local) bounding-box if the entity is shifted
+        \param withGLFeatures whether to take into account display-only elements (if any)
+        \return global bounding-box
+    **/
+    virtual GlobalBoundingBox getOwnGlobalBB(bool withGLFeatures = false);
+
+    //! Returns the entity's own global bounding-box (with global/non-shifted coordinates - if relevant)
+    /** Children bounding-boxes are ignored.
+        By default this method returns the local bounding-box!
+        But it may differ from the (local) bounding-box if the entity is shifted.
+        \param[out] minCorner min global bounding-box corner
+        \param[out] maxCorner max global bounding-box corner
+        \return whether the bounding box is valid or not
+    **/
+    virtual bool getOwnGlobalBB(CCVector3d& minCorner, CCVector3d& maxCorner);
+
+    //! Returns the global bounding-box of this entity and it's children
+    /** \param withGLFeatures whether to take into account display-only elements (if any)
+        \param onlyEnabledChildren only consider the 'enabled' children
+        \return bounding-box
+    **/
+    virtual GlobalBoundingBox getGlobalBB_recursive(bool withGLFeatures = false, bool onlyEnabledChildren = true);
 
 	//! Returns the entity's own bounding-box
 	/** Children bboxes are ignored.

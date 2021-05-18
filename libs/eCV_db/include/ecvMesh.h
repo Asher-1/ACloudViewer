@@ -514,6 +514,13 @@ public:
 	//! Transforms the mesh per-triangle normals
 	void transformTriNormals(const ccGLMatrix& trans);
 
+    //! Default octree level for the 'mergeDuplicatedVertices' algorithm
+    static const unsigned char DefaultMergeDulicateVerticesLevel = 10;
+
+    //! Merges duplicated vertices
+    bool mergeDuplicatedVertices(unsigned char octreeLevel = DefaultMergeDulicateVerticesLevel, QWidget* parentWidget = nullptr);
+
+
 public: // some cloudViewer interface
 
 	/// The set adjacency_list[i] contains the indices of adjacent vertices of
