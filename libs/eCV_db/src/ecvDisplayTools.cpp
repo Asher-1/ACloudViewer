@@ -2315,6 +2315,15 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT)
 	//label opacity
 	CONTEXT.labelOpacity = guiParams.labelOpacity;
 
+    //default materials
+    CONTEXT.defaultMat->setDiffuseFront(guiParams.meshFrontDiff);
+    CONTEXT.defaultMat->setDiffuseBack(guiParams.meshBackDiff);
+    CONTEXT.defaultMat->setAmbient(ecvColor::bright);
+    CONTEXT.defaultMat->setSpecular(guiParams.meshSpecular);
+    CONTEXT.defaultMat->setEmission(ecvColor::night);
+    CONTEXT.defaultMat->setShininessFront(30);
+    CONTEXT.defaultMat->setShininessBack(50);
+
 	//default colors
 	CONTEXT.pointsDefaultCol = guiParams.pointsDefaultCol;
 	CONTEXT.textDefaultCol = guiParams.textDefaultCol;

@@ -32,7 +32,7 @@
 #include "OptionManager.h"
 #include "RenderOptions.h"
 #include "controllers/IncrementalMapperController.h"
-
+#include "controllers/TexturingController.h"
 #include <boost/filesystem/operations.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
@@ -68,6 +68,7 @@ OptionManager::OptionManager(bool add_project_options) {
   spatial_matching.reset(new SpatialMatchingOptions());
   transitive_matching.reset(new TransitiveMatchingOptions());
   image_pairs_matching.reset(new ImagePairsMatchingOptions());
+  texturing.reset(new TexturingOptions());
   bundle_adjustment.reset(new BundleAdjustmentOptions());
   mapper.reset(new IncrementalMapperOptions());
   patch_match_stereo.reset(new mvs::PatchMatchOptions());
@@ -188,6 +189,7 @@ void OptionManager::AddAllOptions() {
   AddStereoFusionOptions();
   AddPoissonMeshingOptions();
   AddDelaunayMeshingOptions();
+  AddTexturingOptions();
   AddRenderOptions();
 }
 
@@ -721,6 +723,25 @@ void OptionManager::AddDelaunayMeshingOptions() {
                               &delaunay_meshing->num_threads);
 }
 
+void OptionManager::AddTexturingOptions()
+{
+    if (added_texturing_options_) {
+      return;
+    }
+    added_texturing_options_ = true;
+
+    AddAndRegisterDefaultOption("Texturing.verbose",
+                                &texturing->verbose);
+    AddAndRegisterDefaultOption("Texturing.show_cameras",
+                                &texturing->show_cameras);
+    AddAndRegisterDefaultOption("Texturing.save_precision",
+                                &texturing->save_precision);
+    AddAndRegisterDefaultOption("Texturing.meshed_file_path",
+                                &texturing->meshed_file_path);
+    AddAndRegisterDefaultOption("Texturing.textured_file_path",
+                                &texturing->textured_file_path);
+}
+
 void OptionManager::AddRenderOptions() {
   if (added_render_options_) {
     return;
@@ -770,6 +791,7 @@ void OptionManager::Reset() {
   added_stereo_fusion_options_ = false;
   added_poisson_meshing_options_ = false;
   added_delaunay_meshing_options_ = false;
+  added_texturing_options_ = false;
   added_render_options_ = false;
 }
 
@@ -788,6 +810,7 @@ void OptionManager::ResetOptions(const bool reset_paths) {
   *spatial_matching = SpatialMatchingOptions();
   *transitive_matching = TransitiveMatchingOptions();
   *image_pairs_matching = ImagePairsMatchingOptions();
+  *texturing = TexturingOptions();
   *bundle_adjustment = BundleAdjustmentOptions();
   *mapper = IncrementalMapperOptions();
   *patch_match_stereo = mvs::PatchMatchOptions();
@@ -820,6 +843,7 @@ bool OptionManager::Check() {
   if (spatial_matching) success = success && spatial_matching->Check();
   if (transitive_matching) success = success && transitive_matching->Check();
   if (image_pairs_matching) success = success && image_pairs_matching->Check();
+  if (texturing) success = success && texturing->Check();
 
   if (bundle_adjustment) success = success && bundle_adjustment->Check();
   if (mapper) success = success && mapper->Check();
