@@ -18,6 +18,7 @@
 //Local
 #include "PCLVis.h"
 #include "PCLConv.h"
+#include "cc2sm.h"
 #include "Tools/ecvTools.h"
 #include "Tools/PclTools.h"
 
@@ -114,7 +115,6 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		: pcl::visualization::PCLVisualizer(argc, argv, viewerName, interactor_style, initIterator)
 		, m_widget_map(new WidgetActorMap)
 		, m_prop_map(new PropActorMap)
-		, m_x_pressNum(0)
 		, m_currentMode(ORIENT_MODE)
 		, m_pointPickingEnabled(true)
 		, m_areaPickingEnabled(false)
@@ -141,7 +141,6 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
         : pcl::visualization::PCLVisualizer(argc, argv, ren, wind, viewerName, interactor_style, initIterator)
 		, m_widget_map(new WidgetActorMap)
 		, m_prop_map(new PropActorMap)
-		, m_x_pressNum(0)
 		, m_currentMode(ORIENT_MODE)
         , m_pointPickingEnabled(true)
         , m_areaPickingEnabled(false)
@@ -877,7 +876,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
             removeMesh(viewID, viewport);
 		}
         addTextureMesh(*textureMesh, viewID, viewport);
-	}
+    }
 
     void PCLVis::draw(const CC_DRAW_CONTEXT& context, PCLPolygon::Ptr pclPolygon, bool closed)
 	{
@@ -1631,82 +1630,46 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		if (has_normal) 
 			polydata->GetPointData()->SetNormals(normals);
 
-		vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-		mapper->SetInputData(polydata);
+        vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+        mapper->SetInputData(polydata);
 
 		vtkSmartPointer<vtkLODActor> actor = vtkSmartPointer<vtkLODActor>::New();
-		vtkTextureUnitManager* tex_manager = 
-			vtkOpenGLRenderWindow::SafeDownCast(getRenderWindow())->GetTextureUnitManager();
-        if (!tex_manager) return (false);
-        // hardware always supports multitexturing of some degree
-        int texture_units = tex_manager->GetNumberOfTextureUnits();
-        if ((size_t)texture_units < mesh.tex_materials.size())
-            CVLog::Warning("[PCLVis::addTextureMesh] GPU texture units %d < mesh "
-                    "textures %d!", texture_units, mesh.tex_materials.size());
 
 		// total number of coordinates
         std::size_t nb_coordinates = 0;
         for (const auto& tex_coordinate : mesh.tex_coordinates)
             nb_coordinates += tex_coordinate.size();
-
-        // Load textures
-        std::size_t last_tex_id = std::min(
-                static_cast<int>(mesh.tex_materials.size()), texture_units);
-        std::size_t tex_id = 0;
-        while (tex_id < last_tex_id) 
-		{
-            // for materials
-            const PCLMaterial::RGB& ambientColor =
-                    mesh.tex_materials[tex_id].tex_Ka;
-            const PCLMaterial::RGB& diffuseColor =
-                    mesh.tex_materials[tex_id].tex_Kd;
-            const PCLMaterial::RGB& specularColor =
-                    mesh.tex_materials[tex_id].tex_Ks;
-            actor->GetProperty()->SetDiffuseColor(
-                    diffuseColor.r, diffuseColor.g, diffuseColor.b);
-            actor->GetProperty()->SetSpecularColor(
-                    specularColor.r, specularColor.g, specularColor.b);
-            actor->GetProperty()->SetAmbientColor(
-                    ambientColor.r, ambientColor.g, ambientColor.b);
-            actor->GetProperty()->SetMaterialName(
-                    mesh.tex_materials[tex_id].tex_name.c_str());
-            actor->GetProperty()->SetOpacity(mesh.tex_materials[tex_id].tex_d);
-            actor->GetProperty()->SetInterpolationToPhong();
-            switch (mesh.tex_materials[tex_id].tex_illum) {
-                case 0:
-                    actor->GetProperty()->SetLighting(false);
-                    actor->GetProperty()->SetDiffuse(0);
-                    actor->GetProperty()->SetSpecular(0);
-                    actor->GetProperty()->SetAmbient(1.0);
-                    actor->GetProperty()->SetColor(actor->GetProperty()->GetDiffuseColor());
-                    break;
-                case 1:
-                    actor->GetProperty()->SetDiffuse(1.0);
-                    actor->GetProperty()->SetSpecular(0);
-                    actor->GetProperty()->SetAmbient(1.0);
-                    break;
-                default:
-                case 2:
-                    actor->GetProperty()->SetDiffuse(1.0);
-                    actor->GetProperty()->SetSpecular(1.0);
-                    actor->GetProperty()->SetAmbient(1.0);
-                    // blinn to phong ~= 4.0
-                    actor->GetProperty()->SetSpecularPower(mesh.tex_materials[tex_id].tex_Ns / 4.0);
-                    break;
+        // no texture coordinates --> exit
+        if (nb_coordinates == 0)
+        {
+            CVLog::Warning("[PCLVisualizer::addTextureMesh] No textures coordinates found!");
+        } else {
+            vtkTextureUnitManager* tex_manager =
+                vtkOpenGLRenderWindow::SafeDownCast(getRenderWindow())->GetTextureUnitManager();
+            if (!tex_manager) return (false);
+            // hardware always supports multitexturing of some degree
+            int texture_units = tex_manager->GetNumberOfTextureUnits();
+            if (static_cast<std::size_t>(texture_units) < mesh.tex_materials.size())
+            {
+                CVLog::Warning("[PCLVis::addTextureMesh] GPU texture units %d < mesh "
+                        "textures %d!", texture_units, mesh.tex_materials.size());
             }
-            
-			// for textures
-            if (nb_coordinates != 0) 
-			{
-#if (VTK_MAJOR_VERSION == 8 && VTK_MINOR_VERSION >= 2) || VTK_MAJOR_VERSION > 8
+
+            std::size_t last_tex_id = std::min(mesh.tex_materials.size(),
+                                               static_cast<std::size_t>(texture_units));
+            std::size_t tex_id = 0;
+            // Load textures and texture coordinates
+            while (tex_id < last_tex_id)
+            {
+    #if (VTK_MAJOR_VERSION == 8 && VTK_MINOR_VERSION >= 2) || VTK_MAJOR_VERSION > 8
                 const char* tu = mesh.tex_materials[tex_id].tex_name.c_str();
-#else
+    #else
                 int tu = vtkProperty::VTK_TEXTURE_UNIT_0 + tex_id;
-#endif
+    #endif
                 vtkSmartPointer<vtkTexture> texture = vtkSmartPointer<vtkTexture>::New();
                 if (textureFromTexMaterial(mesh.tex_materials[tex_id], texture) <= 0) {
                     CVLog::Warning("[PCLVisualizer::addTextureMesh] Failed to load "
-                            "texture %s located in %s, skipping!\n",
+                            "texture %s located in %s, skipping!",
                             mesh.tex_materials[tex_id].tex_name.c_str(),
                             mesh.tex_materials[tex_id].tex_file.c_str());
                     ++tex_id;
@@ -1734,16 +1697,18 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
                         for (std::size_t tc = 0; tc < mesh.tex_coordinates[t].size(); ++tc)
                             coordinates->InsertNextTuple2(-1.0, -1.0);
                     }
-				}
+                }
 
                 mapper->MapDataArrayToMultiTextureAttribute(
-						tu, this_coordinates_name.c_str(),
+                        tu, this_coordinates_name.c_str(),
                         vtkDataObject::FIELD_ASSOCIATION_POINTS);
                 polydata->GetPointData()->AddArray(coordinates);
                 actor->GetProperty()->SetTexture(tu, texture);
-            }
 
-			++tex_id;
+                applyMaterial(mesh.tex_materials[tex_id], actor);
+
+                ++tex_id;
+            }
         }
 
 		// set mapper
@@ -1757,6 +1722,46 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		(*getCloudActorMap())[id].viewpoint_transformation_ = transformation;
 
         return (true);
+    }
+
+    bool PCLVis::applyMaterial(const pcl::TexMaterial &material, vtkActor *actor)
+    {
+        if (!actor)
+            return false;
+
+        const PCLMaterial::RGB& ambientColor = material.tex_Ka;
+        const PCLMaterial::RGB& diffuseColor = material.tex_Kd;
+        const PCLMaterial::RGB& specularColor = material.tex_Ks;
+        actor->GetProperty()->SetDiffuseColor(diffuseColor.r, diffuseColor.g, diffuseColor.b);
+        actor->GetProperty()->SetSpecularColor(specularColor.r, specularColor.g, specularColor.b);
+        actor->GetProperty()->SetAmbientColor(ambientColor.r, ambientColor.g, ambientColor.b);
+        actor->GetProperty()->SetOpacity(material.tex_d);
+        actor->GetProperty()->SetInterpolationToPhong();
+        switch (material.tex_illum) {
+            case 0:
+                actor->GetProperty()->SetLighting(false);
+                actor->GetProperty()->SetDiffuse(0);
+                actor->GetProperty()->SetSpecular(0);
+                actor->GetProperty()->SetAmbient(1.0);
+                actor->GetProperty()->SetColor(actor->GetProperty()->GetDiffuseColor());
+                break;
+            case 1:
+                actor->GetProperty()->SetDiffuse(1.0);
+                actor->GetProperty()->SetSpecular(0);
+                actor->GetProperty()->SetAmbient(1.0);
+                break;
+            default:
+            case 2:
+                actor->GetProperty()->SetDiffuse(1.0);
+                actor->GetProperty()->SetSpecular(1.0);
+                actor->GetProperty()->SetAmbient(1.0);
+                // blinn to phong ~= 4.0
+                double shiness = std::max(0.0, std::min(static_cast<double>(material.tex_Ns) / 4.0, 128.0));
+                actor->GetProperty()->SetSpecularPower(shiness);
+                break;
+        }
+
+        return true;
     }
 
     bool PCLVis::addOrientedCube(const ccGLMatrixd &trans,
@@ -2122,7 +2127,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
             {
                 if (!actor->GetMapper ()->GetInput ()->GetPointData ()->GetNormals ())
                 {
-                  CVLog::Warning("[PCLVis::setMeshShadingMode] Normals do not exist in the dataset, but Gouraud shading was requested. Estimating normals...\n");
+                  CVLog::Warning("[PCLVis::setMeshShadingMode] Normals do not exist in the dataset, but Gouraud shading was requested. Estimating normals...");
                   vtkSmartPointer<vtkPolyDataNormals> normals = vtkSmartPointer<vtkPolyDataNormals>::New ();
                   normals->SetInputConnection (actor->GetMapper ()->GetInputAlgorithm ()->GetOutputPort ());
                   vtkDataSetMapper::SafeDownCast (actor->GetMapper ())->SetInputConnection (normals->GetOutputPort ());
@@ -2134,7 +2139,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
             {
                 if (!actor->GetMapper ()->GetInput ()->GetPointData ()->GetNormals ())
                 {
-                  PCL_INFO ("[pcl::visualization::PCLVisualizer::setShapeRenderingProperties] Normals do not exist in the dataset, but Phong shading was requested. Estimating normals...\n");
+                  PCL_INFO ("[pcl::visualization::PCLVisualizer::setShapeRenderingProperties] Normals do not exist in the dataset, but Phong shading was requested. Estimating normals...");
                   vtkSmartPointer<vtkPolyDataNormals> normals = vtkSmartPointer<vtkPolyDataNormals>::New ();
                   normals->SetInputConnection (actor->GetMapper ()->GetInputAlgorithm ()->GetOutputPort ());
                   vtkDataSetMapper::SafeDownCast (actor->GetMapper ())->SetInputConnection (normals->GetOutputPort ());
@@ -2668,7 +2673,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 	{
 		m_cloud_mutex.lock();    // for not overwriting the point m_baseCloud 
 		registerPointPickingCallback(&PCLVis::pointPickingProcess, *this);
-		CVLog::Print("[pointPicking] Shift+click on three floor points!");
+        CVLog::Print("[pointPicking] SHIFT + left click to select a point!");
 		m_cloud_mutex.unlock();
 	}
 
@@ -2785,11 +2790,6 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 
 	void PCLVis::keyboardEventProcess(const pcl::visualization::KeyboardEvent& event, void * args)
 	{
-		if (event.getKeySym() == "x" || event.getKeySym() == "X")
-		{
-			m_x_pressNum++;
-		}
-
 		// delete annotation
 		if (event.keyDown()) // avoid double emitting
 		{

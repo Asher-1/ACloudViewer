@@ -29,6 +29,9 @@
 // ECV_DB_LIB
 #include <ecvDrawContext.h>
 
+// PCL_SURFACING
+#include <pcl/surface/texture_mapping.h>
+
 // PCL COMMON
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_cloud.h>
@@ -48,15 +51,27 @@ namespace cloudViewer {
 namespace geometry {
     class LineSet;
 }
+namespace camera {
+    class PinholeCameraTrajectory;
+}
 }
 
+class ccMesh;
 class ccGBLSensor;
 class ccCameraSensor;
 namespace PclTools
 {
 
-    PCLTextureMesh::Ptr CreateTexturingMesh(const std::string& filePath, bool save = false);
-    PCLTextureMesh::Ptr CreateTexturingMesh(const PCLMesh::ConstPtr triangles, const std::string& filePath, bool save = false);
+    QPCL_ENGINE_LIB_API bool SaveOBJFile(const std::string &file_name,
+                                         const PCLTextureMesh &tex_mesh, unsigned precision);
+    QPCL_ENGINE_LIB_API PCLTextureMesh::Ptr CreateTexturingMesh(const std::string& filePath,
+                                                                bool show_cameras = false, bool verbose = false);
+    QPCL_ENGINE_LIB_API  PCLTextureMesh::Ptr CreateTexturingMesh(const std::string& filePath,
+                                                                 const cloudViewer::camera::PinholeCameraTrajectory& cameraTrajectory,
+                                                                 bool show_cameras = false, bool verbose = false);
+    PCLTextureMesh::Ptr CreateTexturingMesh(const PCLMesh::ConstPtr triangles,
+                                            const pcl::texture_mapping::CameraVector& cameras,
+                                            bool show_cameras = false, bool verbose = false);
 
 	// Helper function called by createActorFromVTKDataSet () methods.
 	// This function determines the default setting of vtkMapper::InterpolateScalarsBeforeMapping.

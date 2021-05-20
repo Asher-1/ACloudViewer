@@ -49,7 +49,6 @@ struct SpatialMatchingOptions;
 struct TransitiveMatchingOptions;
 struct ImagePairsMatchingOptions;
 struct BundleAdjustmentOptions;
-struct IncrementalMapperOptions;
 
 namespace mvs {
 struct PatchMatchOptions;
@@ -62,8 +61,9 @@ struct DelaunayMeshingOptions;
 
 namespace cloudViewer {
 
-struct IncrementalMapperOptions;
 struct RenderOptions;
+struct TexturingOptions;
+struct IncrementalMapperOptions;
 
 class OptionManager {
  public:
@@ -103,6 +103,7 @@ class OptionManager {
   void AddStereoFusionOptions();
   void AddPoissonMeshingOptions();
   void AddDelaunayMeshingOptions();
+  void AddTexturingOptions();
   void AddRenderOptions();
 
   template <typename T>
@@ -136,6 +137,7 @@ class OptionManager {
   std::shared_ptr<colmap::SpatialMatchingOptions> spatial_matching;
   std::shared_ptr<colmap::TransitiveMatchingOptions> transitive_matching;
   std::shared_ptr<colmap::ImagePairsMatchingOptions> image_pairs_matching;
+  std::shared_ptr<TexturingOptions> texturing;
 
   std::shared_ptr<colmap::BundleAdjustmentOptions> bundle_adjustment;
   std::shared_ptr<IncrementalMapperOptions> mapper;
@@ -183,6 +185,7 @@ class OptionManager {
   bool added_stereo_fusion_options_;
   bool added_poisson_meshing_options_;
   bool added_delaunay_meshing_options_;
+  bool added_texturing_options_;
   bool added_render_options_;
 };
 
