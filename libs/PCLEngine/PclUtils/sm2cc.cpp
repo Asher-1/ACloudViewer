@@ -321,7 +321,7 @@ bool pcl2cc::CopyScalarField(	const PCLCloud& pclCloud,
     return true;
 }
 
-void pcl2ccMaterial(const PCLMaterial& inMaterial, ccMaterial::Shared& outMaterial)
+void pcl2cc::FromPCLMaterial(const PCLMaterial& inMaterial, ccMaterial::Shared& outMaterial)
 {
     QString cPath = CVTools::ToQString(inMaterial.tex_file);
     QString parentPath = CVTools::ToQString(cloudViewer::utility::filesystem::GetFileParentDirectory(inMaterial.tex_file));
@@ -357,9 +357,10 @@ void pcl2ccMaterial(const PCLMaterial& inMaterial, ccMaterial::Shared& outMateri
     outMaterial->setDiffuse(diffuseColor);
     outMaterial->setAmbient(ambientColor);
     outMaterial->setSpecular(specularColor);
-    //outMaterial->setEmission(ecvColor::Rgbaf());
+    outMaterial->setEmission(ecvColor::night);
     outMaterial->setShininess(shininess);
     outMaterial->setTransparency( inMaterial.tex_d );
+    outMaterial->setIllum(inMaterial.tex_illum);
 }
 
 ccMesh *pcl2cc::Convert(pcl::TextureMesh::ConstPtr textureMesh)
@@ -431,7 +432,7 @@ ccMesh *pcl2cc::Convert(pcl::TextureMesh::ConstPtr textureMesh)
         for (std::size_t m = 0; m < nr_meshes; ++m)
         {
             auto newMaterial = ccMaterial::Shared( new ccMaterial() );
-            pcl2ccMaterial(textureMesh->tex_materials[m], newMaterial);
+            FromPCLMaterial(textureMesh->tex_materials[m], newMaterial);
             materialSet->addMaterial( newMaterial );
 
             for (std::size_t i = 0; i < textureMesh->tex_polygons[m].size(); ++i)

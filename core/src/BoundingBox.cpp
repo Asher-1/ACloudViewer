@@ -26,7 +26,7 @@
 #include <numeric>
 #include <algorithm>
 #include <cstdint>
-
+/*
 namespace cloudViewer
 {
 
@@ -241,3 +241,4 @@ const BoundingBox& BoundingBox::operator *= (const SquareMatrix& mat)
 }
 
 } // namespace cloudViewer
+*/

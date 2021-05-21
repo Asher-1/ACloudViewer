@@ -264,6 +264,7 @@ namespace PclUtils
 			double r, double g, double b, float width = 1.0f,
 			const std::string &id = "multiline", int viewport = 0);
 		bool addTextureMesh(const PCLTextureMesh &mesh, const std::string &id, int viewport);
+        bool applyMaterial(const pcl::TexMaterial& material, vtkActor* actor);
         bool addOrientedCube(const ccGLMatrixd &trans, double width, double height, double depth, double r = 1.0, double g = 1.0, double b = 1.0,
                              const std::string &id = "cube", int viewport = 0);
         bool addOrientedCube(const Eigen::Vector3f &translation, const Eigen::Quaternionf &rotation,
@@ -363,7 +364,6 @@ namespace PclUtils
 		inline void setPointPickingEnabled(bool state) { m_pointPickingEnabled = state; }
 		inline void togglePointPicking() { setPointPickingEnabled(!isPointPickingEnabled()); }
 		
-		inline bool isAreaPickingMode() { return m_x_pressNum % 2 != 0; }
 		inline bool isAreaPickingEnabled() { return m_areaPickingEnabled; }
 		inline void setAreaPickingEnabled(bool state) { m_areaPickingEnabled = state; }
 
@@ -381,7 +381,6 @@ namespace PclUtils
 
 	protected:
         // Util Variables
-		int m_x_pressNum;
 		int m_currentMode;
 		bool m_pointPickingEnabled;
 		bool m_areaPickingEnabled;

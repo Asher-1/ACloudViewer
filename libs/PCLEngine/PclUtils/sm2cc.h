@@ -22,6 +22,9 @@
 #include "../qPCL.h"
 #include "PCLCloud.h"
 
+// ECV_DB_LIB
+#include <ecvMaterial.h>
+
 //system
 #include <list>
 
@@ -46,6 +49,8 @@ public: // other related utility functions
     static bool CopyRGB(const PCLCloud& pclCloud, ccPointCloud& ccCloud);
     static bool CopyScalarField(const PCLCloud& pclCloud, const std::string& sfName,
                                 ccPointCloud& ccCloud, bool overwriteIfExist = true);
+
+    static void FromPCLMaterial(const PCLMaterial& inMaterial, ccMaterial::Shared& outMaterial);
 
 };
 

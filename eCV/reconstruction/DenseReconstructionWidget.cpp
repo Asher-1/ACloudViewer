@@ -31,6 +31,8 @@
 
 #include "DenseReconstructionWidget.h"
 
+#include "controllers/TexturingController.h"
+
 #include "base/undistortion.h"
 #include "mvs/fusion.h"
 #include "mvs/meshing.h"
@@ -39,8 +41,14 @@
 #include "RenderOptions.h"
 #include "OptionManager.h"
 
+// CV_CORE_LIB
+#include <FileSystem.h>
+
+// ECV_DB_LIB
 #include <ecvDisplayTools.h>
 #include <ecvPointCloud.h>
+
+// LOCAL
 #include "MainWindow.h"
 
 namespace cloudViewer {
@@ -49,6 +57,7 @@ namespace {
 const static std::string kFusedFileName = "fused.ply";
 const static std::string kPoissonMeshedFileName = "meshed-poisson.ply";
 const static std::string kDelaunayMeshedFileName = "meshed-delaunay.ply";
+const static std::string kTexturedMeshFileName = "textured-mesh.obj";
 
 class StereoOptionsTab : public OptionsWidget {
  public:
@@ -153,6 +162,18 @@ class MeshingOptionsTab : public OptionsWidget {
   }
 };
 
+class TexturingOptionsTab : public OptionsWidget {
+ public:
+  TexturingOptionsTab(QWidget* parent, OptionManager* options)
+      : OptionsWidget(parent) {
+    AddOptionBool(&options->texturing->verbose, "verbose");
+    AddOptionBool(&options->texturing->show_cameras, "show_cameras");
+    AddOptionInt(&options->texturing->save_precision, "save_precision", 0);
+    AddOptionFilePath(&options->texturing->meshed_file_path, "meshed_file_path");
+    AddOptionDirPath(&options->texturing->textured_file_path, "textured_file_path");
+  }
+};
+
 // Read the specified reference image names from a patch match configuration.
 std::vector<std::pair<std::string, std::string>> ReadPatchMatchConfig(
     const std::string& config_path) {
@@ -197,6 +218,7 @@ DenseReconstructionOptionsWidget::DenseReconstructionOptionsWidget(
   tab_widget->addTab(new StereoOptionsTab(this, options), "Stereo");
   tab_widget->addTab(new FusionOptionsTab(this, options), "Fusion");
   tab_widget->addTab(new MeshingOptionsTab(this, options), "Meshing");
+  tab_widget->addTab(new TexturingOptionsTab(this, options), "Texturing");
 
   grid->addWidget(tab_widget, 0, 0);
 }
@@ -243,29 +265,34 @@ DenseReconstructionWidget::DenseReconstructionWidget(ReconstructionWidget* main_
           &DenseReconstructionWidget::DelaunayMeshing);
   grid->addWidget(delaunay_meshing_button_, 0, 4, Qt::AlignLeft);
 
+  texturing_button_ = new QPushButton(tr("Texturing"), this);
+  connect(texturing_button_, &QPushButton::released, this,
+          &DenseReconstructionWidget::Texturing);
+  grid->addWidget(texturing_button_, 0, 5, Qt::AlignLeft);
+
   QPushButton* options_button = new QPushButton(tr("Options"), this);
   connect(options_button, &QPushButton::released, options_widget_,
           &OptionsWidget::show);
-  grid->addWidget(options_button, 0, 5, Qt::AlignLeft);
+  grid->addWidget(options_button, 0, 6, Qt::AlignLeft);
 
   QLabel* workspace_path_label = new QLabel("Workspace", this);
-  grid->addWidget(workspace_path_label, 0, 6, Qt::AlignRight);
+  grid->addWidget(workspace_path_label, 0, 7, Qt::AlignRight);
 
   workspace_path_text_ = new QLineEdit(this);
-  grid->addWidget(workspace_path_text_, 0, 7, Qt::AlignRight);
+  grid->addWidget(workspace_path_text_, 0, 8, Qt::AlignRight);
   connect(workspace_path_text_, &QLineEdit::textChanged, this,
           &DenseReconstructionWidget::RefreshWorkspace, Qt::QueuedConnection);
 
   QPushButton* refresh_path_button = new QPushButton(tr("Refresh"), this);
   connect(refresh_path_button, &QPushButton::released, this,
           &DenseReconstructionWidget::RefreshWorkspace, Qt::QueuedConnection);
-  grid->addWidget(refresh_path_button, 0, 8, Qt::AlignRight);
+  grid->addWidget(refresh_path_button, 0, 9, Qt::AlignRight);
 
   QPushButton* workspace_path_button = new QPushButton(tr("Select"), this);
   connect(workspace_path_button, &QPushButton::released, this,
           &DenseReconstructionWidget::SelectWorkspacePath,
           Qt::QueuedConnection);
-  grid->addWidget(workspace_path_button, 0, 9, Qt::AlignRight);
+  grid->addWidget(workspace_path_button, 0, 10, Qt::AlignRight);
 
   QStringList table_header;
   table_header << "image_name"
@@ -284,7 +311,7 @@ DenseReconstructionWidget::DenseReconstructionWidget(ReconstructionWidget* main_
   table_widget_->setEditTriggers(QAbstractItemView::NoEditTriggers);
   table_widget_->verticalHeader()->setDefaultSectionSize(25);
 
-  grid->addWidget(table_widget_, 1, 0, 1, 10);
+  grid->addWidget(table_widget_, 1, 0, 1, 11);
 
   grid->setColumnStretch(4, 1);
 
@@ -307,13 +334,14 @@ DenseReconstructionWidget::DenseReconstructionWidget(ReconstructionWidget* main_
 }
 
 void DenseReconstructionWidget::showEvent(QShowEvent* event) {
-  RefreshWorkspace();
+    Q_UNUSED(event);
+    RefreshWorkspace();
 }
 
 void DenseReconstructionWidget::Show(Reconstruction* reconstruction) {
-  reconstruction_ = reconstruction;
-  show();
-  raise();
+    reconstruction_ = reconstruction;
+    show();
+    raise();
 }
 
 void DenseReconstructionWidget::Undistort() {
@@ -423,6 +451,68 @@ void DenseReconstructionWidget::DelaunayMeshing() {
 #endif
 }
 
+void DenseReconstructionWidget::Texturing()
+{
+    const std::string workspace_path = GetWorkspacePath();
+    if (workspace_path.empty()) {
+      return;
+    }
+
+    if (reconstruction_ == nullptr || reconstruction_->NumRegImages() < 2) {
+      QMessageBox::critical(this, "", tr("No reconstruction selected in main window"));
+      return;
+    }
+
+#ifdef USE_PCL_BACKEND
+    if (!ExistsFile(options_->texturing->meshed_file_path))
+    {
+        if (ExistsFile(JoinPaths(workspace_path, kPoissonMeshedFileName)))
+        {
+            options_->texturing->meshed_file_path =
+                    JoinPaths(workspace_path, kPoissonMeshedFileName);
+        }
+        else
+        {
+            options_->texturing->meshed_file_path =
+                    JoinPaths(workspace_path, kDelaunayMeshedFileName);
+        }
+    }
+
+    // use default textured file path in local worksapce path
+    if (options_->texturing->textured_file_path.empty())
+    {
+        options_->texturing->textured_file_path =
+                JoinPaths(workspace_path, kTexturedMeshFileName);
+    }
+    else
+    {
+        std::string parent_path = utility::filesystem::GetFileParentDirectory(
+                    options_->texturing->textured_file_path);
+        CreateDirIfNotExists(parent_path);
+        std::string name, ext;
+        SplitFileExtension(options_->texturing->textured_file_path, &name, &ext);
+        // only support obj textured mesh file extention
+        if (ext != ".obj" && ext != ".OBJ")
+        {
+            options_->texturing->textured_file_path =
+                    JoinPaths(parent_path, kTexturedMeshFileName);
+        }
+    }
+
+    TexturingReconstruction* texturingTool =
+        new TexturingReconstruction(*options_->texturing, *reconstruction_,
+                              *options_->image_path, workspace_path);
+    texturingTool->AddCallback(Thread::FINISHED_CALLBACK, [this]() {
+                              out_mesh_path_ = options_->texturing->textured_file_path;
+                              show_meshing_info_action_->trigger();} );
+    thread_control_widget_->StartThread("Texturing...", true, texturingTool);
+#else
+  QMessageBox::critical(this, "",
+                        tr("Dense texturing reconstruction requires pcl, which "
+                           "is not available on your system."));
+#endif
+}
+
 void DenseReconstructionWidget::SelectWorkspacePath() {
   std::string workspace_path;
   if (workspace_path_text_->text().isEmpty()) {
@@ -463,6 +553,7 @@ void DenseReconstructionWidget::RefreshWorkspace() {
     fusion_button_->setEnabled(false);
     poisson_meshing_button_->setEnabled(false);
     delaunay_meshing_button_->setEnabled(false);
+    texturing_button_->setEnabled(false);
     return;
   }
 
@@ -483,6 +574,7 @@ void DenseReconstructionWidget::RefreshWorkspace() {
     fusion_button_->setEnabled(false);
     poisson_meshing_button_->setEnabled(false);
     delaunay_meshing_button_->setEnabled(false);
+    texturing_button_->setEnabled(false);
     return;
   }
 
@@ -524,6 +616,9 @@ void DenseReconstructionWidget::RefreshWorkspace() {
       ExistsFile(JoinPaths(workspace_path, kFusedFileName)));
   delaunay_meshing_button_->setEnabled(
       ExistsFile(JoinPaths(workspace_path, kFusedFileName)));
+
+  texturing_button_->setEnabled(ExistsFile(JoinPaths(workspace_path, kPoissonMeshedFileName)) ||
+                                ExistsFile(JoinPaths(workspace_path, kDelaunayMeshedFileName)));
 }
 
 void DenseReconstructionWidget::WriteFusedPoints() {
@@ -580,6 +675,7 @@ void DenseReconstructionWidget::WriteFusedPoints() {
 }
 
 void DenseReconstructionWidget::ShowMeshingInfo() {
+  texturing_button_->setEnabled(true);
   const int reply = QMessageBox::question(
       this, "",
       tr("Do you want to add the meshed model to DBRoot, Otherwise, to visualize "

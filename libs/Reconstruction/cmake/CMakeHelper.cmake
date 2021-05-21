@@ -234,7 +234,13 @@ endmacro(COLMAP_ADD_STATIC_CUDA_LIBRARY)
 # arguments are the source files to use when building the target.
 macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     # ${ARGN} will store the list of source files passed to this function.
-    add_executable(${TARGET_NAME} ${ARGN})
+    if (MSVC)
+        set( rc_list ${PROJECT_SOURCE_DIR}/eCV/reconstruction/media/reconstruction_icon.rc )
+        add_executable(${TARGET_NAME} ${ARGN} ${rc_list})
+    else()
+        add_executable(${TARGET_NAME} ${ARGN})
+    endif()
+
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
         ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
     target_link_libraries(${TARGET_NAME} PRIVATE colmap)

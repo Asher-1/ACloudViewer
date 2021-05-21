@@ -22,11 +22,10 @@
 //Local
 #include "Eigen.h"
 #include "CVGeom.h"
+#include "BoundingBox.h"
 
 namespace cloudViewer
 {
-	class BoundingBox;
-
 	/// \class OrientedBoundingBox
 	///
 	/// \brief A bounding box oriented along an arbitrary frame of reference.

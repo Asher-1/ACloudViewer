@@ -150,68 +150,67 @@ void pybind_boundingvolume(py::module &m) {
 		  "BoundingBox object from which OrientedBoundingBox is "
 		  "created."} });
 
-	py::class_<cloudViewer::BoundingBox, PyAxisBBoxBase<cloudViewer::BoundingBox>,
-		std::shared_ptr<cloudViewer::BoundingBox>>
+    py::class_<cloudViewer::BoundingBox, std::shared_ptr<cloudViewer::BoundingBox>>
 		axis_bounding_box_base(m, "BoundingBox",
 			"Class that defines an axis_aligned box "
 			"that can be computed from 3D "
-			"geometries, The axis aligned bounding "
+            "geometries, The axis aligned bounding "
 			"box uses the coordinate axes for "
 			"bounding box generation.");
-	py::detail::bind_default_constructor<cloudViewer::BoundingBox>(axis_bounding_box_base);
-	py::detail::bind_copy_functions<cloudViewer::BoundingBox>(axis_bounding_box_base);
-	axis_bounding_box_base
+    py::detail::bind_default_constructor<cloudViewer::BoundingBox>(axis_bounding_box_base);
+    py::detail::bind_copy_functions<cloudViewer::BoundingBox>(axis_bounding_box_base);
+    axis_bounding_box_base
 		.def(py::init<const Eigen::Vector3d &, const Eigen::Vector3d &>(),
 			"Create an BoundingBox from min bounds and max "
 			"bounds in x, y and z",
 			"bbMinCorner"_a, "bbMaxCorner"_a)
 		.def("__repr__",
-			[](const cloudViewer::BoundingBox &box) {
+            [](const cloudViewer::BoundingBox &box) {
 			return std::string("BoundingBox"); })
 
-		.def("clear", &cloudViewer::BoundingBox::clear,
+        .def("clear", &cloudViewer::BoundingBox::clear,
 			"Resets the bounding box.")
-			.def("is_valid", &cloudViewer::BoundingBox::isValid,
+            .def("is_valid", &cloudViewer::BoundingBox::isValid,
 				"Returns whether bounding box is valid or not")
-			.def("set_validity", &cloudViewer::BoundingBox::setValidity,
+            .def("set_validity", &cloudViewer::BoundingBox::setValidity,
 				"Sets bonding box validity.",
 				"state"_a)
-			.def("volume", &cloudViewer::BoundingBox::volume,
+            .def("volume", &cloudViewer::BoundingBox::volume,
 				"Returns the bounding box volume.")
-			.def("add", &cloudViewer::BoundingBox::addEigen,
+            .def("add", &cloudViewer::BoundingBox::addEigen,
 				"'Enlarges' the bounding box with a point.",
 				"point"_a)
-			.def("get_x_percentage", &cloudViewer::BoundingBox::getXPercentage,
+            .def("get_x_percentage", &cloudViewer::BoundingBox::getXPercentage,
 				"Returns x Percentage.",
 				"x"_a)
-			.def("get_y_percentage", &cloudViewer::BoundingBox::getYPercentage,
+            .def("get_y_percentage", &cloudViewer::BoundingBox::getYPercentage,
 				"Returns y Percentage.",
 				"y"_a)
-			.def("get_z_percentage", &cloudViewer::BoundingBox::getZPercentage,
+            .def("get_z_percentage", &cloudViewer::BoundingBox::getZPercentage,
 				"Returns z Percentage.",
 				"z"_a)
-			.def("get_diag_norm", &cloudViewer::BoundingBox::getDiagNormd,
+            .def("get_diag_norm", &cloudViewer::BoundingBox::getDiagNormd,
 				"Returns diagonal length (double precision)")
-			.def("get_min_box_dim", &cloudViewer::BoundingBox::getMinBoxDim,
+            .def("get_min_box_dim", &cloudViewer::BoundingBox::getMinBoxDim,
 				"Returns minimal box dimension")
-			.def("get_max_box_dim", &cloudViewer::BoundingBox::getMaxBoxDim,
+            .def("get_max_box_dim", &cloudViewer::BoundingBox::getMaxBoxDim,
 				"Returns maximal box dimension")
-			.def("compute_volume", &cloudViewer::BoundingBox::computeVolume,
+            .def("compute_volume", &cloudViewer::BoundingBox::computeVolume,
 				"Returns the bounding-box volume")
-			.def("get_bounds", &cloudViewer::BoundingBox::getBounds,
+            .def("get_bounds", &cloudViewer::BoundingBox::getBounds,
 				"Returns the bounding-box bounds",
 				"bounds"_a)
-			.def("min_distance_to", &cloudViewer::BoundingBox::minDistTo,
+            .def("min_distance_to", &cloudViewer::BoundingBox::minDistTo,
 				"Computes min gap (absolute distance) between this "
 				"bounding-box and another one; return min gap (>=0) "
 				"or -1 if at least one of the box is not valid",
 				"box"_a)
-			.def("contains", &cloudViewer::BoundingBox::containsEigen,
+            .def("contains", &cloudViewer::BoundingBox::containsEigen,
 				"Returns whether a points is inside the box or not",
 				"point"_a)
 			.def("get_point_indices_within_boundingbox",
 				py::overload_cast<const std::vector<Eigen::Vector3d> &>(
-					&cloudViewer::BoundingBox::getPointIndicesWithinBoundingBox, py::const_),
+                    &cloudViewer::BoundingBox::getPointIndicesWithinBoundingBox, py::const_),
 				"Returns point indices Within bounding box.",
 				"points"_a);
 

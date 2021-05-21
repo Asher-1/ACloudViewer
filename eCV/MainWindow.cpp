@@ -9282,9 +9282,6 @@ void MainWindow::doAnnotations(int mode)
 			&ccOverlayDialog::processFinished,
 			this, [=]() {
 			ecvDisplayTools::UpdateScreen();
-			//ecvDisplayTools::SetRedrawRecursive(false);
-			//ent->setRedraw(true);
-			//ecvDisplayTools::RedrawDisplay();
 			freezeUI(false);
 			updateUI();
 		});
@@ -9304,9 +9301,6 @@ void MainWindow::doAnnotations(int mode)
 	{
 		//automatically deselect the entity (to avoid seeing its bounding box ;)
 		m_ccRoot->unselectEntity(ent);
-		// automatically remove current selected entity from screen for saving memory
-		//WIDGETS_PARAMETER param = WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_POINTS, QString::number(ent->getUniqueID()));
-		//ecvDisplayTools::RemoveWidgets(param);
 	}
 
 	if (m_annoTool->getNumberOfAssociatedEntity() == 0)
