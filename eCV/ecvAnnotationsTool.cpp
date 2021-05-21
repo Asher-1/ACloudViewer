@@ -194,6 +194,7 @@ void ecvAnnotationsTool::onLabelSelected()
 
 void ecvAnnotationsTool::onLabelChanged(int index)
 {
+    Q_UNUSED(index);
 	int curIndex = labelsComboBox->currentIndex();
 	if (curIndex < 0 || m_disabledCombEvent)
 	{
@@ -234,10 +235,12 @@ void ecvAnnotationsTool::onLabelChanged(int index)
 
 void ecvAnnotationsTool::onItemPicked(bool isPicked)
 {
+    Q_UNUSED(isPicked);
 }
 
 void ecvAnnotationsTool::toggleInteractors(bool state)
 {
+    Q_UNUSED(state);
 	if (m_annotationTool)
 	{
 		m_annotationTool->toggleInteractor();
@@ -475,6 +478,8 @@ void ecvAnnotationsTool::updateLabelsCombox(const std::vector<std::string>& labe
 
 void ecvAnnotationsTool::shiftBox(unsigned char dim, bool minus)
 {
+    Q_UNUSED(dim);
+    Q_UNUSED(minus);
 }
 
 void ecvAnnotationsTool::reset()

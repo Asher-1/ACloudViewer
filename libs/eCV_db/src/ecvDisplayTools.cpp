@@ -1328,12 +1328,12 @@ CCVector3d ecvDisplayTools::ConvertMousePositionToOrientation(int x, int y)
 
 void ecvDisplayTools::RotateBaseViewMat(const ccGLMatrixd& rotMat)
 {
-	s_tools.instance->m_viewportParams.viewMat = rotMat * s_tools.instance->m_viewportParams.viewMat;
+//	s_tools.instance->m_viewportParams.viewMat = rotMat * s_tools.instance->m_viewportParams.viewMat;
 
-	//we emit the 'baseViewMatChanged' signal
-	emit s_tools.instance->baseViewMatChanged(s_tools.instance->m_viewportParams.viewMat);
-	emit s_tools.instance->cameraParamChanged();
-	InvalidateVisualization();
+//	//we emit the 'baseViewMatChanged' signal
+//	emit s_tools.instance->baseViewMatChanged(s_tools.instance->m_viewportParams.viewMat);
+//	emit s_tools.instance->cameraParamChanged();
+//	InvalidateVisualization();
 	//Deprecate3DLayer();
 }
 
@@ -2314,6 +2314,15 @@ void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT)
 	CONTEXT.dispNumberPrecision = guiParams.displayedNumPrecision;
 	//label opacity
 	CONTEXT.labelOpacity = guiParams.labelOpacity;
+
+    //default materials
+    CONTEXT.defaultMat->setDiffuseFront(guiParams.meshFrontDiff);
+    CONTEXT.defaultMat->setDiffuseBack(guiParams.meshBackDiff);
+    CONTEXT.defaultMat->setAmbient(ecvColor::bright);
+    CONTEXT.defaultMat->setSpecular(guiParams.meshSpecular);
+    CONTEXT.defaultMat->setEmission(ecvColor::night);
+    CONTEXT.defaultMat->setShininessFront(30);
+    CONTEXT.defaultMat->setShininessBack(50);
 
 	//default colors
 	CONTEXT.pointsDefaultCol = guiParams.pointsDefaultCol;

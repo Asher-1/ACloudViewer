@@ -1721,8 +1721,40 @@ void ccHObject::showBB(CC_DRAW_CONTEXT context)
 	context.hideShowEntityType = ENTITY_TYPE::ECV_SHAPE;
 	context.viewID = QString("BBox-") + context.viewID;
 	context.visible = true;
-	ecvDisplayTools::HideShowEntities(context);
+    ecvDisplayTools::HideShowEntities(context);
 }
+
+ccHObject::GlobalBoundingBox ccHObject::getOwnGlobalBB(bool withGLFeatures/*=false*/)
+{
+    //by default this method returns the local bounding-box!
+    ccBBox box = getOwnBB(false);
+    return GlobalBoundingBox(CCVector3d::fromArray(box.minCorner().u), CCVector3d::fromArray(box.maxCorner().u));
+}
+
+bool ccHObject::getOwnGlobalBB(CCVector3d& minCorner, CCVector3d& maxCorner)
+{
+    //by default this method returns the local bounding-box!
+    ccBBox box = getOwnBB(false);
+    minCorner = CCVector3d::fromArray(box.minCorner().u);
+    maxCorner = CCVector3d::fromArray(box.maxCorner().u);
+    return box.isValid();
+}
+
+ccHObject::GlobalBoundingBox ccHObject::getGlobalBB_recursive(bool withGLFeatures/*=false*/, bool onlyEnabledChildren/*=true*/)
+{
+    GlobalBoundingBox box = getOwnGlobalBB(withGLFeatures);
+
+    for (auto child : m_children)
+    {
+        if (!onlyEnabledChildren || child->isEnabled())
+        {
+            box += child->getGlobalBB_recursive(withGLFeatures, onlyEnabledChildren);
+        }
+    }
+
+    return box;
+}
+
 
 void ccHObject::hideObject_recursive(bool recursive)
 {

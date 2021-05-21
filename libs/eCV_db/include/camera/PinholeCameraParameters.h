@@ -57,6 +57,8 @@ public:
     PinholeCameraIntrinsic intrinsic_;
     /// Camera extrinsic parameters.
     Eigen::Matrix4d_u extrinsic_;
+
+    std::string texture_file_;
 };
 }  // namespace camera
 }  // namespace cloudViewer

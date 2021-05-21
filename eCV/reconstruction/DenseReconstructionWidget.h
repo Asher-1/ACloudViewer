@@ -66,6 +66,7 @@ class DenseReconstructionWidget : public QWidget {
   void Fusion();
   void PoissonMeshing();
   void DelaunayMeshing();
+  void Texturing();
 
   void SelectWorkspacePath();
   std::string GetWorkspacePath();
@@ -90,6 +91,7 @@ class DenseReconstructionWidget : public QWidget {
   QPushButton* fusion_button_;
   QPushButton* poisson_meshing_button_;
   QPushButton* delaunay_meshing_button_;
+  QPushButton* texturing_button_;
   QAction* refresh_workspace_action_;
   QAction* write_fused_points_action_;
   QAction* show_meshing_info_action_;

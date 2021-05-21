@@ -45,12 +45,12 @@ public:
 	//! Default constructor
 	explicit ecvAnnotationsTool(QWidget* parent);
 	//! Default destructor
-	virtual ~ecvAnnotationsTool();
+    virtual ~ecvAnnotationsTool() override;
 
 	//inherited from ccOverlayDialog
-	virtual bool linkWith(QWidget* win) override;
 	virtual bool start() override;
 	virtual void stop(bool state) override;
+    virtual bool linkWith(QWidget* win) override;
 
 	bool setAnnotationsTool(ecvGenericAnnotationTool* annotationTool);
 
@@ -112,7 +112,7 @@ protected:
 	//! Sets predefined view
 	void setView(CC_VIEW_ORIENTATION orientation);
 
-	//! Clipping box
+    //! Annotation tool
 	ecvGenericAnnotationTool* m_annotationTool;
 
 	ccBBox getSelectedEntityBbox();

@@ -1806,159 +1806,201 @@ CommandFilterBySFValue::CommandFilterBySFValue()
 //special SF values that can be used instead of explicit ones
 enum USE_SPECIAL_SF_VALUE
 {
-	USE_NONE,
-	USE_MIN,
-	USE_DISP_MIN,
-	USE_SAT_MIN,
-	USE_MAX,
-	USE_DISP_MAX,
-	USE_SAT_MAX
+    USE_NONE,
+    USE_MIN,
+    USE_DISP_MIN,
+    USE_SAT_MIN,
+    USE_N_SIGMA_MIN,
+    USE_MAX,
+    USE_DISP_MAX,
+    USE_SAT_MAX,
+    USE_N_SIGMA_MAX
 };
 
 bool CommandFilterBySFValue::process(ccCommandLineInterface &cmd)
 {
-	cmd.print(QObject::tr("[FILTER BY VALUE]"));
+    cmd.print(QObject::tr("[FILTER BY VALUE]"));
 
-	USE_SPECIAL_SF_VALUE useValForMin = USE_NONE;
-	ScalarType minVal = 0;
-	QString minValStr;
-	{
-		if (cmd.arguments().empty())
-		{
-			return cmd.error(QObject::tr("Missing parameter: min value after \"-%1\"").arg(COMMAND_FILTER_SF_BY_VALUE));
-		}
+    USE_SPECIAL_SF_VALUE useValForMin = USE_NONE;
+    ScalarType minVal = 0;
+    QString minValStr;
+    {
+        if (cmd.arguments().empty())
+        {
+            return cmd.error(QObject::tr("Missing parameter: min value after \"-%1\"").arg(COMMAND_FILTER_SF_BY_VALUE));
+        }
 
-		bool paramOk = false;
-		minValStr = cmd.arguments().takeFirst();
-		if (minValStr.toUpper() == "MIN")
-		{
-			useValForMin = USE_MIN;
-		}
-		else if (minValStr.toUpper() == "DISP_MIN")
-		{
-			useValForMin = USE_DISP_MIN;
-		}
-		else if (minValStr.toUpper() == "SAT_MIN")
-		{
-			useValForMin = USE_SAT_MIN;
-		}
-		else
-		{
-			minVal = static_cast<ScalarType>(minValStr.toDouble(&paramOk));
-			if (!paramOk)
-			{
-				return cmd.error(QObject::tr("Failed to read a numerical parameter: min value (after \"-%1\"). Got '%2' instead.").arg(COMMAND_FILTER_SF_BY_VALUE, minValStr));
-			}
-		}
-	}
+        bool paramOk = false;
+        minValStr = cmd.arguments().takeFirst();
+        if (minValStr.toUpper() == "MIN")
+        {
+            useValForMin = USE_MIN;
+        }
+        else if (minValStr.toUpper() == "DISP_MIN")
+        {
+            useValForMin = USE_DISP_MIN;
+        }
+        else if (minValStr.toUpper() == "SAT_MIN")
+        {
+            useValForMin = USE_SAT_MIN;
+        }
+        else if (minValStr.toUpper() == "N_SIGMA_MIN")
+        {
+            useValForMin = USE_N_SIGMA_MIN;
+            if (cmd.arguments().empty())
+            {
+                return cmd.error(QObject::tr("Missing parameter: N value (after \"-%1 N_SIGMA_MIN\").").arg(COMMAND_FILTER_SF_BY_VALUE));
+            }
+            minValStr = cmd.arguments().takeFirst();
+            minVal = static_cast<ScalarType>(minValStr.toDouble(&paramOk));
+            if (!paramOk)
+            {
+                return cmd.error(QObject::tr("Failed to read a numerical parameter: N value (after \"N_SIGMA_MIN\"). Got '%2' instead.").arg(minValStr));
+            }
+        }
+        else
+        {
+            minVal = static_cast<ScalarType>(minValStr.toDouble(&paramOk));
+            if (!paramOk)
+            {
+                return cmd.error(QObject::tr("Failed to read a numerical parameter: min value (after \"-%1\"). Got '%2' instead.").arg(COMMAND_FILTER_SF_BY_VALUE, minValStr));
+            }
+        }
+    }
 
-	USE_SPECIAL_SF_VALUE useValForMax = USE_NONE;
-	ScalarType maxVal = 0;
-	QString maxValStr;
-	{
-		if (cmd.arguments().empty())
-		{
-			return cmd.error(QObject::tr("Missing parameter: max value after \"-%1\" {min}").arg(COMMAND_FILTER_SF_BY_VALUE));
-		}
+    USE_SPECIAL_SF_VALUE useValForMax = USE_NONE;
+    ScalarType maxVal = 0;
+    QString maxValStr;
+    {
+        if (cmd.arguments().empty())
+        {
+            return cmd.error(QObject::tr("Missing parameter: max value after \"-%1\" {min}").arg(COMMAND_FILTER_SF_BY_VALUE));
+        }
 
-		bool paramOk = false;
-		maxValStr = cmd.arguments().takeFirst();
-		if (maxValStr.toUpper() == "MAX")
-		{
-			useValForMax = USE_MAX;
-		}
-		else if (maxValStr.toUpper() == "DISP_MAX")
-		{
-			useValForMax = USE_DISP_MAX;
-		}
-		else if (maxValStr.toUpper() == "SAT_MAX")
-		{
-			useValForMax = USE_SAT_MAX;
-		}
-		else
-		{
-			maxVal = static_cast<ScalarType>(maxValStr.toDouble(&paramOk));
-			if (!paramOk)
-			{
-				return cmd.error(QObject::tr("Failed to read a numerical parameter: max value (after min value). Got '%1' instead.").arg(COMMAND_FILTER_SF_BY_VALUE, maxValStr));
-			}
-		}
-	}
+        bool paramOk = false;
+        maxValStr = cmd.arguments().takeFirst();
+        if (maxValStr.toUpper() == "MAX")
+        {
+            useValForMax = USE_MAX;
+        }
+        else if (maxValStr.toUpper() == "DISP_MAX")
+        {
+            useValForMax = USE_DISP_MAX;
+        }
+        else if (maxValStr.toUpper() == "SAT_MAX")
+        {
+            useValForMax = USE_SAT_MAX;
+        }
+        else if (maxValStr.toUpper() == "N_SIGMA_MAX")
+        {
+            useValForMax = USE_N_SIGMA_MAX;
+            if (cmd.arguments().empty())
+            {
+                return cmd.error(QObject::tr("Missing parameter: N value (after \"-%1 N_SIGMA_MAX\").").arg(COMMAND_FILTER_SF_BY_VALUE));
+            }
+            maxValStr = cmd.arguments().takeFirst();
+            maxVal = static_cast<ScalarType>(maxValStr.toDouble(&paramOk));
+            if (!paramOk)
+            {
+                return cmd.error(QObject::tr("Failed to read a numerical parameter: N value (after \"N_SIGMA_MAX\"). Got '%2' instead.").arg(maxValStr));
+            }
+        }
+        else
+        {
+            maxVal = static_cast<ScalarType>(maxValStr.toDouble(&paramOk));
+            if (!paramOk)
+            {
+                return cmd.error(QObject::tr("Failed to read a numerical parameter: max value (after min value). Got '%1' instead.").arg(COMMAND_FILTER_SF_BY_VALUE, maxValStr));
+            }
+        }
+    }
 
-	cmd.print(QObject::tr("\tInterval: [%1 - %2]").arg(minValStr, maxValStr));
+    cmd.print(QObject::tr("\tInterval: [%1 - %2]").arg(minValStr, maxValStr));
 
-	if (cmd.clouds().empty())
-	{
-		return cmd.error(QObject::tr("No point cloud on which to filter SF! (be sure to open one or generate one with \"-%1 [cloud filename]\" before \"-%2\")").arg(COMMAND_OPEN, COMMAND_FILTER_SF_BY_VALUE));
-	}
+    if (cmd.clouds().empty())
+    {
+        return cmd.error(QObject::tr("No point cloud on which to filter SF! (be sure to open one or generate one with \"-%1 [cloud filename]\" before \"-%2\")").arg(COMMAND_OPEN, COMMAND_FILTER_SF_BY_VALUE));
+    }
 
-	for (size_t i = 0; i < cmd.clouds().size(); ++i)
-	{
-		cloudViewer::ScalarField* sf = cmd.clouds()[i].pc->getCurrentOutScalarField();
-		if (sf)
-		{
-			ScalarType thisMinVal = minVal;
-			{
-				switch (useValForMin)
-				{
-				case USE_MIN:
-					thisMinVal = sf->getMin();
-					break;
-				case USE_DISP_MIN:
-					thisMinVal = static_cast<ccScalarField*>(sf)->displayRange().start();
-					break;
-				case USE_SAT_MIN:
-					thisMinVal = static_cast<ccScalarField*>(sf)->saturationRange().start();
-					break;
-				default:
-					//nothing to do
-					break;
-				}
-			}
+    for (size_t i = 0; i < cmd.clouds().size(); ++i)
+    {
+        cloudViewer::ScalarField* sf = cmd.clouds()[i].pc->getCurrentOutScalarField();
+        if (sf)
+        {
+            ScalarType thisMinVal = minVal;
+            {
+                switch (useValForMin)
+                {
+                    case USE_MIN:
+                        thisMinVal = sf->getMin();
+                        break;
+                    case USE_DISP_MIN:
+                        thisMinVal = static_cast<ccScalarField*>(sf)->displayRange().start();
+                        break;
+                    case USE_SAT_MIN:
+                        thisMinVal = static_cast<ccScalarField*>(sf)->saturationRange().start();
+                        break;
+                    case USE_N_SIGMA_MIN:
+                        ScalarType mean;
+                        ScalarType variance;
+                        sf->computeMeanAndVariance(mean, &variance);
+                        thisMinVal = mean - (sqrt(variance) * minVal);
+                        break;
+                    default:
+                        //nothing to do
+                        break;
+                }
+            }
 
-			ScalarType thisMaxVal = maxVal;
-			{
-				switch (useValForMax)
-				{
-				case USE_MAX:
-					thisMaxVal = sf->getMax();
-					break;
-				case USE_DISP_MAX:
-					thisMaxVal = static_cast<ccScalarField*>(sf)->displayRange().stop();
-					break;
-				case USE_SAT_MAX:
-					thisMaxVal = static_cast<ccScalarField*>(sf)->saturationRange().stop();
-					break;
-				default:
-					//nothing to do
-					break;
-				}
-			}
+            ScalarType thisMaxVal = maxVal;
+            {
+                switch (useValForMax)
+                {
+                    case USE_MAX:
+                        thisMaxVal = sf->getMax();
+                        break;
+                    case USE_DISP_MAX:
+                        thisMaxVal = static_cast<ccScalarField*>(sf)->displayRange().stop();
+                        break;
+                    case USE_SAT_MAX:
+                        thisMaxVal = static_cast<ccScalarField*>(sf)->saturationRange().stop();
+                        break;
+                    case USE_N_SIGMA_MAX:
+                        ScalarType mean;
+                        ScalarType variance;
+                        sf->computeMeanAndVariance(mean, &variance);
+                        thisMaxVal = mean + (sqrt(variance) * maxVal);
+                        break;
+                    default:
+                        //nothing to do
+                        break;
+                }
+            }
 
-			ccPointCloud* fitleredCloud = cmd.clouds()[i].pc->filterPointsByScalarValue(thisMinVal, thisMaxVal);
-			if (fitleredCloud)
-			{
-				cmd.print(QObject::tr("\t\tCloud '%1' --> %2/%3 points remaining").arg(cmd.clouds()[i].pc->getName()).arg(fitleredCloud->size()).arg(cmd.clouds()[i].pc->size()));
+            ccPointCloud* fitleredCloud = cmd.clouds()[i].pc->filterPointsByScalarValue(thisMinVal, thisMaxVal);
+            if (fitleredCloud)
+            {
+                cmd.print(QObject::tr("\t\tCloud '%1' --> %2/%3 points remaining").arg(cmd.clouds()[i].pc->getName()).arg(fitleredCloud->size()).arg(cmd.clouds()[i].pc->size()));
 
-				CLCloudDesc resultDesc(fitleredCloud, cmd.clouds()[i].basename, cmd.clouds()[i].path, cmd.clouds()[i].indexInFile);
-				//replace current cloud by this one
-				delete cmd.clouds()[i].pc;
-				cmd.clouds()[i].pc = fitleredCloud;
-				cmd.clouds()[i].basename += QObject::tr("_FILTERED_[%1_%2]").arg(thisMinVal).arg(thisMaxVal);
-				if (cmd.autoSaveMode())
-				{
-					QString errorStr = cmd.exportEntity(resultDesc);
-					if (!errorStr.isEmpty())
-					{
-						delete fitleredCloud;
-						return cmd.error(errorStr);
-					}
-				}
-			}
-		}
-	}
+                CLCloudDesc resultDesc(fitleredCloud, cmd.clouds()[i].basename, cmd.clouds()[i].path, cmd.clouds()[i].indexInFile);
+                //replace current cloud by this one
+                delete cmd.clouds()[i].pc;
+                cmd.clouds()[i].pc = fitleredCloud;
+                cmd.clouds()[i].basename += QObject::tr("_FILTERED_[%1_%2]").arg(thisMinVal).arg(thisMaxVal);
+                if (cmd.autoSaveMode())
+                {
+                    QString errorStr = cmd.exportEntity(resultDesc);
+                    if (!errorStr.isEmpty())
+                    {
+                        delete fitleredCloud;
+                        return cmd.error(errorStr);
+                    }
+                }
+            }
+        }
+    }
 
-	return true;
+    return true;
 }
 
 CommandComputeMeshVolume::CommandComputeMeshVolume()

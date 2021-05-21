@@ -22,6 +22,9 @@
 #include "../qPCL.h"
 #include "PCLCloud.h"
 
+// ECV_DB_LIB
+#include <ecvMaterial.h>
+
 //PCL
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -85,6 +88,8 @@ public:
 	bool getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const;
 
 	static std::string GetSimplifiedSFName(const std::string& ccSfName);
+
+    static void ConVertToPCLMaterial(ccMaterial::CShared inMaterial, PCLMaterial& outMaterial);
 
 protected:
 	

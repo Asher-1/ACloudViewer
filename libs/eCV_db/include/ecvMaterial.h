@@ -70,7 +70,7 @@ public:
 	//! Sets illum mode
     inline void setIllum(int illum) { m_illum = illum; }
     //! Returns illum mode
-    inline const int getIllum() const { return m_illum; }
+    inline int getIllum() const { return m_illum; }
 
 	//! Sets specular color
 	inline void setSpecular(const ecvColor::Rgbaf& color) { m_specular = color; }
