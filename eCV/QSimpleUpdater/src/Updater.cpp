@@ -457,7 +457,8 @@ void Updater::setUpdateAvailable(const bool available)
          else if (downloaderEnabled())
          {
             m_downloader->setUrlId(url());
-            m_downloader->setFileName(downloadUrl().split("/").last());
+            QString fileName = downloadUrl().split("/").last();
+            m_downloader->setFileName(fileName.split("?").first());
             m_downloader->setMandatoryUpdate(m_mandatoryUpdate);
             m_downloader->startDownload(QUrl(downloadUrl()));
          }
