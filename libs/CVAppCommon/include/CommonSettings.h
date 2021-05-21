@@ -37,6 +37,7 @@ namespace Settings {
 
     // Define the URL of the Update Definitions file
     static const QString UPDATE_RUL           = "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/updates.json";
+//    static const QString UPDATE_RUL     = "https://github.com/Asher-1/Asher-1.github.io/blob/main/files/ErowCloudViewer/updates.json?raw=true";
 
     // logos
     static const QString APP_LOGO		= ":/Resources/images/icon/erow_256.png";
