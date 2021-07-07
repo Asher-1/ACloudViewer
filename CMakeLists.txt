@@ -271,8 +271,8 @@ endif()
 
 # set default install folders
 if( WIN32 )
-	# (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
-	set( INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER} )
+    # (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
+    set( INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER} )
 elseif( UNIX AND NOT APPLE )
     set( INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX} )
 endif()

@@ -32,7 +32,6 @@
 #include <ecvGLMatrix.h>
 
 // ECV_DB_LIB
-#include <ecvSingleton.h>
 #include <ecvBBox.h>
 
 // VTK

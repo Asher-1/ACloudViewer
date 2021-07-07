@@ -10,51 +10,51 @@ if ( PLUGIN_STANDARD_MASONRY_QMANUAL_SEG )
     AddPlugin( NAME ${PROJECT_NAME} )
 
 
-	target_sources( ${PROJECT_NAME}
-		PRIVATE
-			${CMAKE_CURRENT_LIST_DIR}/qManualSeg.h
-			${CMAKE_CURRENT_LIST_DIR}/qManualSeg.cpp
-			${CMAKE_CURRENT_LIST_DIR}/profileImportDlg.h
-			${CMAKE_CURRENT_LIST_DIR}/profileImportDlg.cpp
-			${CMAKE_CURRENT_LIST_DIR}/profileImportDlg.ui
-	)
+    target_sources( ${PROJECT_NAME}
+            PRIVATE
+                    ${CMAKE_CURRENT_LIST_DIR}/qManualSeg.h
+                    ${CMAKE_CURRENT_LIST_DIR}/qManualSeg.cpp
+                    ${CMAKE_CURRENT_LIST_DIR}/profileImportDlg.h
+                    ${CMAKE_CURRENT_LIST_DIR}/profileImportDlg.cpp
+                    ${CMAKE_CURRENT_LIST_DIR}/profileImportDlg.ui
+    )
 
-	target_include_directories( ${PROJECT_NAME}
-		PRIVATE
-			${CMAKE_CURRENT_SOURCE_DIR}
-	)
- 
-	# Find Packages
-	# Find PCL
-	#set( PCL_DIR "C:/Program Files/PCL 1.9.1") #DGM: can't do that as it will obviously conflict with most of the users settings ;)
-	find_package( PCL 1.9.1 REQUIRED )
+    target_include_directories( ${PROJECT_NAME}
+            PRIVATE
+                    ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 
-	# Find OpenCV
-	#set( OpenCV_DIR "C:/opencv/build" ) #DGM: can't do that as it will obviously conflict with most of the users settings ;)
-	find_package( OpenCV REQUIRED )
+    # Find Packages
+    # Find PCL
+    #set( PCL_DIR "C:/Program Files/PCL 1.9.1") #DGM: can't do that as it will obviously conflict with most of the users settings ;)
+    find_package( PCL 1.9.1 REQUIRED )
 
-	if( PCL_FOUND AND OpenCV_FOUND )
-	  # [C/C++]>[General]>[Additional Include Directories]
-	  include_directories( ${PCL_INCLUDE_DIRS} )
-	  include_directories( ${OpenCV_INCLUDE_DIRS} )
+    # Find OpenCV
+    #set( OpenCV_DIR "C:/opencv/build" ) #DGM: can't do that as it will obviously conflict with most of the users settings ;)
+    find_package( OpenCV REQUIRED )
 
-	  # [C/C++]>[Preprocessor]>[Preprocessor Definitions]
-	  add_definitions( ${PCL_DEFINITIONS} )
+    if( PCL_FOUND AND OpenCV_FOUND )
+      # [C/C++]>[General]>[Additional Include Directories]
+      include_directories( ${PCL_INCLUDE_DIRS} )
+      include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-	  # For Use Not PreCompiled Features 
-	  #add_definitions( -DPCL_NO_PRECOMPILE )
+      # [C/C++]>[Preprocessor]>[Preprocessor Definitions]
+      add_definitions( ${PCL_DEFINITIONS} )
 
-	  # [Linker]>[General]>[Additional Library Directories]
-	  link_directories( ${PCL_LIBRARY_DIRS} )
-	  link_directories( ${OpenCV_LIB_DIR} )
+      # For Use Not PreCompiled Features
+      #add_definitions( -DPCL_NO_PRECOMPILE )
 
-	  # [Linker]>[Input]>[Additional Dependencies]
-	  target_link_libraries( QMANUAL_SEG_PLUGIN ${PCL_LIBRARIES} )
-	  target_link_libraries( QMANUAL_SEG_PLUGIN ${OpenCV_LIBS} )
-	  
-	  #import OpenCV dlls (if any, WIN32 only)
-	  include( ../cmake/ExportOpenCVDlls.cmake )
-	  export_OpenCV_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
-	endif()
+      # [Linker]>[General]>[Additional Library Directories]
+      link_directories( ${PCL_LIBRARY_DIRS} )
+      link_directories( ${OpenCV_LIB_DIR} )
+
+      # [Linker]>[Input]>[Additional Dependencies]
+      target_link_libraries( QMANUAL_SEG_PLUGIN ${PCL_LIBRARIES} )
+      target_link_libraries( QMANUAL_SEG_PLUGIN ${OpenCV_LIBS} )
+
+      #import OpenCV dlls (if any, WIN32 only)
+      include( ../cmake/ExportOpenCVDlls.cmake )
+      export_OpenCV_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
+    endif()
 
 endif()

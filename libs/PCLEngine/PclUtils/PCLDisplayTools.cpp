@@ -35,7 +35,6 @@
 #include <ecvGenericMesh.h>
 #include <ecvPolyline.h>
 #include <ecvSensor.h>
-#include <ecvSingleton.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 #include <ecvHObjectCaster.h>

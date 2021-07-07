@@ -118,7 +118,7 @@ void SIFTExtractionWidget::Run() {
   reader_options.image_path = *options_->image_path;
 
   Thread* extractor = new SiftFeatureExtractor(reader_options,
-                                                               *options_->sift_extraction);
+                                               *options_->sift_extraction);
   thread_control_widget_->StartThread("Extracting...", true, extractor);
 }
 
