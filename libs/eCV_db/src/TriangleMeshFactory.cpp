@@ -1752,7 +1752,7 @@ Eigen::Vector4d ccMesh::ComputeTrianglePlane(const Eigen::Vector3d &p0,
 	if (norm == 0) {
 		return Eigen::Vector4d(0, 0, 0, 0);
 	}
-	abc /= abc.norm();
+    abc /= norm;
 	double d = -abc.dot(p0);
 	return Eigen::Vector4d(abc(0), abc(1), abc(2), d);
 }

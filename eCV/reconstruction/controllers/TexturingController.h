@@ -63,7 +63,7 @@ struct TexturingOptions {
 };
 
 // Undistort images and export undistorted cameras, as required by the
-// mvs::PatchMatchController class.
+// cloudViewer::DenseReconstructionWidget::Texturing class.
 class TexturingReconstruction : public colmap::Thread {
  public:
   TexturingReconstruction(
