@@ -26,7 +26,7 @@
 
 #include "FeatureIO.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 namespace cloudViewer {

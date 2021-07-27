@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,44 +33,44 @@
 #include "core/MemoryManager.h"
 #include "core/linalg/LinalgHeadersCPU.h"
 #include "core/linalg/LinalgHeadersCUDA.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
 
-#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)           \
-    [&] {                                                       \
-        if (DTYPE == cloudViewer::core::Dtype::Float32) {       \
-            using scalar_t = float;                             \
-            return __VA_ARGS__();                               \
-        } else if (DTYPE == cloudViewer::core::Dtype::Float64) {\
-            using scalar_t = double;                            \
-            return __VA_ARGS__();                               \
-        } else {                                                \
-            cloudViewer::utility::LogError("Unsupported data type.");        \
-        }                                                       \
+#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)       \
+    [&] {                                                   \
+        if (DTYPE == cloudViewer:core::Dtype::Float32) {        \
+            using scalar_t = float;                         \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == cloudViewer:core::Dtype::Float64) { \
+            using scalar_t = double;                        \
+            return __VA_ARGS__();                           \
+        } else {                                            \
+            utility::LogError("Unsupported data type.");    \
+        }                                                   \
     }()
 
 inline void CLOUDVIEWER_LAPACK_CHECK(CLOUDVIEWER_CPU_LINALG_INT info,
                                 const std::string& msg) {
     if (info < 0) {
-        cloudViewer::utility::LogError("{}: {}-th parameter is invalid.", msg, -info);
+        utility::LogError("{}: {}-th parameter is invalid.", msg, -info);
     } else if (info > 0) {
-        cloudViewer::utility::LogError("{}: singular condition detected.", msg);
+        utility::LogError("{}: singular condition detected.", msg);
     }
 }
 
 #ifdef BUILD_CUDA_MODULE
-inline void CLOUDVIEWER_CUBLAS_CHECK(cublasStatus_t status, const std::string& msg) {
+inline void OPEN3D_CUBLAS_CHECK(cublasStatus_t status, const std::string& msg) {
     if (CUBLAS_STATUS_SUCCESS != status) {
-        cloudViewer::utility::LogError("{}", msg);
+        utility::LogError("{}", msg);
     }
 }
 
 inline void CLOUDVIEWER_CUSOLVER_CHECK(cusolverStatus_t status,
                                   const std::string& msg) {
     if (CUSOLVER_STATUS_SUCCESS != status) {
-        cloudViewer::utility::LogError("{}", msg);
+        utility::LogError("{}", msg);
     }
 }
 
@@ -82,11 +82,11 @@ inline void CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
     MemoryManager::MemcpyToHost(&hinfo, dinfo, device, sizeof(int));
     if (status != CUSOLVER_STATUS_SUCCESS || hinfo != 0) {
         if (hinfo < 0) {
-            cloudViewer::utility::LogError("{}: {}-th parameter is invalid.", msg, -hinfo);
+            utility::LogError("{}: {}-th parameter is invalid.", msg, -hinfo);
         } else if (hinfo > 0) {
-            cloudViewer::utility::LogError("{}: singular condition detected.", msg);
+            utility::LogError("{}: singular condition detected.", msg);
         } else {
-            cloudViewer::utility::LogError("{}: status error code = {}.", msg, status);
+            utility::LogError("{}: status error code = {}.", msg, status);
         }
     }
 }

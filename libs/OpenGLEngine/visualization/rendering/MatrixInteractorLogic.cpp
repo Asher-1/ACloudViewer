@@ -41,15 +41,17 @@ int MatrixInteractorLogic::GetViewWidth() const { return view_width_; }
 
 int MatrixInteractorLogic::GetViewHeight() const { return view_height_; }
 
-const ccBBox& MatrixInteractorLogic::GetBoundingBox()
-        const {
+const ccBBox& MatrixInteractorLogic::GetBoundingBox() const {
     return model_bounds_;
 }
 
-void MatrixInteractorLogic::SetBoundingBox(
-        const ccBBox& bounds) {
+void MatrixInteractorLogic::SetBoundingBox(const ccBBox& bounds) {
     model_size_ = (bounds.getMaxBound() - bounds.getMinBound()).norm();
     model_bounds_ = bounds;
+}
+
+Eigen::Vector3f MatrixInteractorLogic::GetCenterOfRotation() const {
+    return center_of_rotation_;
 }
 
 void MatrixInteractorLogic::SetMouseDownInfo(
@@ -204,8 +206,8 @@ void MatrixInteractorLogic::Dolly(float z_dist, Camera::Transform matrix) {
 }
 
 float MatrixInteractorLogic::CalcDollyDist(float dy,
-                                       DragType drag_type,
-                                       const Camera::Transform& matrix) {
+                                           DragType drag_type,
+                                           const Camera::Transform& matrix) {
     float length =
             (center_of_rotation_ - matrix * Eigen::Vector3f(0.0f, 0.0f, 0.0f))
                     .norm();

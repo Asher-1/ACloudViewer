@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,11 +26,11 @@
 
 #ifdef BUILD_CUDA_MODULE
 
-#include "open3d/core/CUDAState.cuh"
+#include "core/CUDAState.cuh"
 
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(CUDAState, InitState) {
@@ -46,6 +46,6 @@ TEST(CUDAState, InitState) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer
 
 #endif

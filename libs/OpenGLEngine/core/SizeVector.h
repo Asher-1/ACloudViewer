@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,11 +28,12 @@
 
 #include <cstddef>
 #include <numeric>
+#include <sstream>
 #include <string>
 #include <vector>
 
-#include <Console.h>
-#include <Optional.h>
+#include <Logging.h>
+#include "utility/Optional.h"
 
 namespace cloudViewer {
 namespace core {
@@ -42,10 +43,10 @@ namespace core {
 ///
 /// Example: create a shape of (None, 3)
 /// ```
-/// core::DynamicSizeVector shape{cloudViewer::utility::nullopt, 3};
+/// core::DynamicSizeVector shape{utility::nullopt, 3};
 /// ```
-class DynamicSizeVector : public std::vector<cloudViewer::utility::optional<int64_t>> {
-    using optint64_t = cloudViewer::utility::optional<int64_t>;
+class DynamicSizeVector : public std::vector<utility::optional<int64_t>> {
+    using optint64_t = utility::optional<int64_t>;
 
 public:
     DynamicSizeVector(const std::initializer_list<optint64_t>& dim_sizes)
@@ -136,7 +137,7 @@ public:
                 this->begin(), this->end(), 1LL,
                 [this](const int64_t& lhs, const int64_t& rhs) -> int64_t {
                     if (lhs < 0 || rhs < 0) {
-                        cloudViewer::utility::LogError(
+                        utility::LogError(
                                 "Shape {} cannot contain negative dimensions.",
                                 this->ToString());
                     }
@@ -146,7 +147,7 @@ public:
 
     int64_t GetLength() const {
         if (size() == 0) {
-            cloudViewer::utility::LogError("Cannot get length of a 0-dimensional shape.");
+            utility::LogError("Cannot get length of a 0-dimensional shape.");
         } else {
             return operator[](0);
         }
@@ -158,10 +159,10 @@ public:
                           const std::string msg = "") const {
         if (!IsCompatible(dsv)) {
             if (msg.empty()) {
-                cloudViewer::utility::LogError("Shape {} is not compatible with {}.",
+                utility::LogError("Shape {} is not compatible with {}.",
                                   ToString(), dsv.ToString());
             } else {
-                cloudViewer::utility::LogError("Shape {} is not compatible with {}: {}",
+                utility::LogError("Shape {} is not compatible with {}: {}",
                                   ToString(), dsv.ToString(), msg);
             }
         }

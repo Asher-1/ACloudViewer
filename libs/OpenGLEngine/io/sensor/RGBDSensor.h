@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,12 +42,12 @@ class RGBDSensor {
 public:
     RGBDSensor() {}
     virtual bool Connect(size_t sensor_index) = 0;
-    virtual ~RGBDSensor(){}
+    virtual ~RGBDSensor(){};
 
     /// Capture one frame, return an RGBDImage.
-    /// If \param enable_align_depth_to_color is true, the depth image will be
+    /// If \p enable_align_depth_to_color is true, the depth image will be
     /// warped to align with the color image; otherwise the raw depth image
-    /// output will be saved. Setting \param enable_align_depth_to_color to
+    /// output will be saved. Setting \p enable_align_depth_to_color to
     /// false is useful when capturing at high resolution with high frame rates.
     virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame(
             bool enable_align_depth_to_color) const = 0;

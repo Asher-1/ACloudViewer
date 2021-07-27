@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/HalfEdgeTriangleMesh.h"
+#include "geometry/HalfEdgeTriangleMesh.h"
 
 #include <iostream>
 #include <string>
 
-#include "open3d/io/TriangleMeshIO.h"
-#include "open3d/utility/Helper.h"
+#include "io/TriangleMeshIO.h"
+#include <Helper.h>
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 // [0: (-1, 2)]__________[1: (1, 2)]
@@ -505,4 +505,4 @@ TEST(HalfEdgeTriangleMesh, GetBoundaries_FourTrianglesDisconnect) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

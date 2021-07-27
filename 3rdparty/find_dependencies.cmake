@@ -2,6 +2,7 @@
 # CloudViewer 3rd party library integration
 #
 set(CloudViewer_3RDPARTY_DIR "${CMAKE_CURRENT_LIST_DIR}")
+message(STATUS "CloudViewer_3RDPARTY_DIR :"  ${CloudViewer_3RDPARTY_DIR})
 
 # EXTERNAL_MODULES
 # CMake modules we depend on in our public interface. These are modules we
@@ -578,7 +579,7 @@ import_3rdparty_library(3rdparty_assimp
         LIBRARIES ${ASSIMP_LIBRARIES}
         DEPENDS      ext_assimp
         )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_assimp)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_assimp)
 
 # OpenMP
 if(WITH_OPENMP)
@@ -588,7 +589,7 @@ if(WITH_OPENMP)
     )
     if(3rdparty_openmp_FOUND)
         message(STATUS "Building with OpenMP")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_openmp)
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_openmp)
         if(NOT BUILD_SHARED_LIBS)
             list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES "OpenMP")
         endif()
@@ -616,7 +617,7 @@ if(BUILD_CUDA_MODULE AND CUDAToolkit_VERSION VERSION_LESS "11.0")
         INCLUDE_DIRS ${CUB_INCLUDE_DIRS}
         DEPENDS      ext_cub
     )
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_cub)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_cub)
 endif()
 
 # cutlass
@@ -626,13 +627,13 @@ if(BUILD_CUDA_MODULE)
         INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
         DEPENDS      ext_cutlass
     )
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_cutlass)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_cutlass)
 endif()
 
 # Dirent
 if(WIN32)
     build_3rdparty_library(3rdparty_dirent DIRECTORY dirent)
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_dirent)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_dirent)
 endif()
 
 # Eigen3
@@ -658,18 +659,18 @@ if(NOT USE_SYSTEM_EIGEN3)
         DEPENDS      ext_eigen
     )
 endif()
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_eigen3)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_eigen3)
 
 # Flann
-if (USE_SYSTEM_FLANN)
-    pkg_config_3rdparty_library(3rdparty_flann flann)
-endif ()
-if (NOT USE_SYSTEM_FLANN OR NOT 3rdparty_flann_FOUND)
-    build_3rdparty_library(3rdparty_flann DIRECTORY flann)
-endif ()
-message(STATUS "INTERNAL_FLANN_DIR: " ${CloudViewer_3RDPARTY_DIR}/flann)
-set(FLANN_TARGET "3rdparty_flann")
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FLANN_TARGET}")
+#if (USE_SYSTEM_FLANN)
+#    pkg_config_3rdparty_library(3rdparty_flann flann)
+#endif ()
+#if (NOT USE_SYSTEM_FLANN OR NOT 3rdparty_flann_FOUND)
+#    build_3rdparty_library(3rdparty_flann DIRECTORY flann)
+#endif ()
+#message(STATUS "INTERNAL_FLANN_DIR: " ${CloudViewer_3RDPARTY_DIR}/flann)
+#set(FLANN_TARGET "3rdparty_flann")
+#list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FLANN_TARGET}")
 
 # Nanoflann
 include(${CloudViewer_3RDPARTY_DIR}/nanoflann/nanoflann.cmake)
@@ -677,7 +678,7 @@ import_3rdparty_library(3rdparty_nanoflann
     INCLUDE_DIRS ${NANOFLANN_INCLUDE_DIRS}
     DEPENDS      ext_nanoflann
 )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_nanoflann)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_nanoflann)
 
 # GLEW
 if(USE_SYSTEM_GLEW)
@@ -709,8 +710,8 @@ if(NOT USE_SYSTEM_GLEW)
         target_compile_definitions(3rdparty_glew PUBLIC GLEW_STATIC)
     endif()
 endif()
-list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS CloudViewer::3rdparty_glew)
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_glew)
+list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS 3rdparty_glew)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_glew)
 
 # GLFW
 if(USE_SYSTEM_GLFW)
@@ -736,10 +737,10 @@ if(NOT USE_SYSTEM_GLFW)
         LIBRARIES    glfw3
         DEPENDS      glfw
     )
-    target_link_libraries(3rdparty_glfw3 INTERFACE CloudViewer::3rdparty_threads)
+    target_link_libraries(3rdparty_glfw3 INTERFACE 3rdparty_threads)
     if(UNIX AND NOT APPLE)
-        if(TARGET CloudViewer::3rdparty_x11)
-            target_link_libraries(3rdparty_glfw3 INTERFACE CloudViewer::3rdparty_x11)
+        if(TARGET 3rdparty_x11)
+            target_link_libraries(3rdparty_glfw3 INTERFACE 3rdparty_x11)
         endif()
         find_library(RT_LIBRARY rt)
         if(RT_LIBRARY)
@@ -764,8 +765,8 @@ if(NOT USE_SYSTEM_GLFW)
         target_link_libraries(3rdparty_glfw3 INTERFACE gdi32)
     endif()
 endif()
-list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS CloudViewer::3rdparty_glfw3)
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_glfw3)
+list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS 3rdparty_glfw3)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_glfw3)
 
 # TurboJPEG
 if(USE_SYSTEM_JPEG AND BUILD_AZURE_KINECT)
@@ -789,8 +790,8 @@ if(USE_SYSTEM_JPEG)
         if(NOT BUILD_SHARED_LIBS)
             list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES "JPEG")
         endif()
-        if(TARGET CloudViewer::3rdparty_turbojpeg)
-            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_turbojpeg)
+        if(TARGET 3rdparty_turbojpeg)
+            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_turbojpeg)
         endif()
     else()
         set(USE_SYSTEM_JPEG OFF)
@@ -806,7 +807,7 @@ if(NOT USE_SYSTEM_JPEG)
         DEPENDS      ext_turbojpeg
     )
 endif()
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_jpeg)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_jpeg)
 
 # jsoncpp: always compile from source to avoid ABI issues.
 include(${CloudViewer_3RDPARTY_DIR}/jsoncpp/jsoncpp.cmake)
@@ -816,7 +817,7 @@ import_3rdparty_library(3rdparty_jsoncpp
     LIBRARIES    ${JSONCPP_LIBRARIES}
     DEPENDS      ext_jsoncpp
 )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_jsoncpp)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_jsoncpp)
 
 # liblzf
 if(USE_SYSTEM_LIBLZF)
@@ -839,13 +840,13 @@ if(NOT USE_SYSTEM_LIBLZF)
             liblzf/lzf_d.c
     )
 endif()
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_lzf)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_lzf)
 
 # tritriintersect
 build_3rdparty_library(3rdparty_tritriintersect DIRECTORY tomasakeninemoeller
     INCLUDE_DIRS include/
 )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_tritriintersect)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_tritriintersect)
 
 # librealsense SDK
 if (BUILD_LIBREALSENSE)
@@ -883,7 +884,7 @@ if (BUILD_LIBREALSENSE)
             target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
         endif()
     endif()
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_librealsense)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_librealsense)
 endif()
 
 # PNG
@@ -919,9 +920,9 @@ if(NOT USE_SYSTEM_PNG)
         DEPENDS      ext_libpng
     )
     add_dependencies(ext_libpng ext_zlib)
-    target_link_libraries(3rdparty_libpng INTERFACE CloudViewer::3rdparty_zlib)
+    target_link_libraries(3rdparty_libpng INTERFACE 3rdparty_zlib)
 
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_libpng)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_libpng)
 endif()
 
 # rply
@@ -931,7 +932,7 @@ build_3rdparty_library(3rdparty_rply DIRECTORY rply
     INCLUDE_DIRS
         rply/
 )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_rply)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_rply)
 
 # tinyfiledialogs
 build_3rdparty_library(3rdparty_tinyfiledialogs DIRECTORY tinyfiledialogs
@@ -940,7 +941,7 @@ build_3rdparty_library(3rdparty_tinyfiledialogs DIRECTORY tinyfiledialogs
     INCLUDE_DIRS
         include/
 )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_tinyfiledialogs)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_tinyfiledialogs)
 
 # tinygltf
 if(USE_SYSTEM_TINYGLTF)
@@ -964,7 +965,7 @@ if(NOT USE_SYSTEM_TINYGLTF)
     )
     target_compile_definitions(3rdparty_tinygltf INTERFACE TINYGLTF_IMPLEMENTATION STB_IMAGE_IMPLEMENTATION STB_IMAGE_WRITE_IMPLEMENTATION)
 endif()
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_tinygltf)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_tinygltf)
 
 # tinyobjloader
 if(USE_SYSTEM_TINYOBJLOADER)
@@ -988,7 +989,7 @@ if(NOT USE_SYSTEM_TINYOBJLOADER)
     )
     target_compile_definitions(3rdparty_tinyobjloader INTERFACE TINYOBJLOADER_IMPLEMENTATION)
 endif()
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_tinyobjloader)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_tinyobjloader)
 
 # Qhull
 if(USE_SYSTEM_QHULL)
@@ -1058,7 +1059,7 @@ if(NOT USE_SYSTEM_QHULL)
     )
     target_link_libraries(3rdparty_qhullcpp PRIVATE 3rdparty_qhull_r)
 endif()
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_qhullcpp)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_qhullcpp)
 
 
 # fmt
@@ -1085,7 +1086,7 @@ if(NOT USE_SYSTEM_FMT)
     )
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=1)
 endif()
-list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS CloudViewer::3rdparty_fmt)
+list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS 3rdparty_fmt)
 
 # Pybind11
 if (BUILD_PYTHON_MODULE)
@@ -1107,7 +1108,7 @@ if (BUILD_AZURE_KINECT)
         INCLUDE_DIRS ${K4A_INCLUDE_DIR}
         DEPENDS      ext_k4a
     )
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_k4a)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_k4a)
 endif()
 
 # PoissonRecon
@@ -1116,7 +1117,7 @@ import_3rdparty_library(3rdparty_poisson
     INCLUDE_DIRS ${POISSON_INCLUDE_DIRS}
     DEPENDS      ext_poisson
 )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_poisson)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_poisson)
 
 # Googletest
 if (BUILD_UNIT_TESTS)
@@ -1130,7 +1131,7 @@ if (BUILD_UNIT_TESTS)
             add_library(3rdparty_googletest INTERFACE)
             target_include_directories(3rdparty_googletest INTERFACE ${gtest_INCLUDE_DIRS} ${gmock_INCLUDE_DIRS})
             target_link_libraries(3rdparty_googletest INTERFACE ${gtest_LIBRARY} ${gmock_LIBRARY})
-            add_library(CloudViewer::3rdparty_googletest ALIAS 3rdparty_googletest)
+            add_library(3rdparty_googletest ALIAS 3rdparty_googletest)
         else()
             message(STATUS "Unable to find installed googletest")
             set(USE_SYSTEM_GOOGLETEST OFF)
@@ -1178,7 +1179,7 @@ else()
         endif()
     endif()
 endif()
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_opengl)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_opengl)
 
 # imgui
 if(BUILD_GUI)
@@ -1207,7 +1208,7 @@ if(BUILD_GUI)
                 ext_imgui
         )
     endif()
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_imgui)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_imgui)
 endif()
 
 # Filament
@@ -1286,7 +1287,7 @@ if(BUILD_GUI)
         DEPENDS ext_filament
     )
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
-    target_link_libraries(3rdparty_filament INTERFACE CloudViewer::3rdparty_threads ${CMAKE_DL_LIBS})
+    target_link_libraries(3rdparty_filament INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
     if(UNIX AND NOT APPLE)
         # Find CLANG_LIBDIR if it is not defined. Mutiple paths will be searched.
         if (NOT CLANG_LIBDIR)
@@ -1314,7 +1315,7 @@ if(BUILD_GUI)
         target_link_libraries(3rdparty_filament INTERFACE ${CORE_VIDEO} ${QUARTZ_CORE} ${OPENGL_LIBRARY} ${METAL_LIBRARY} ${APPKIT_LIBRARY})
         target_link_options(3rdparty_filament INTERFACE "-fobjc-link-runtime")
     endif()
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_filament)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_filament)
 endif()
 
 # RPC interface
@@ -1330,7 +1331,7 @@ if(BUILD_RPC_INTERFACE)
         LIBRARIES    ${ZEROMQ_LIBRARIES}
         DEPENDS      ext_zeromq ext_cppzmq
     )
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_zeromq)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_zeromq)
     if(DEFINED ZEROMQ_ADDITIONAL_LIBS)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS ${ZEROMQ_ADDITIONAL_LIBS})
     endif()
@@ -1341,7 +1342,7 @@ if(BUILD_RPC_INTERFACE)
         INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
         DEPENDS      ext_msgpack-c
     )
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_msgpack)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_msgpack)
 endif()
 
 # TBB
@@ -1352,7 +1353,7 @@ import_3rdparty_library(3rdparty_tbb
     LIBRARIES    ${STATIC_TBB_LIBRARIES}
     DEPENDS      ext_tbb
 )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_tbb)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_tbb)
 
 # parallelstl
 include(${CloudViewer_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
@@ -1362,7 +1363,7 @@ import_3rdparty_library(3rdparty_parallelstl
     INCLUDE_ALL
     DEPENDS      ext_parallelstl
 )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_parallelstl)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_parallelstl)
 
 if(USE_BLAS)
     # Try to locate system BLAS/LAPACK
@@ -1395,7 +1396,7 @@ if(USE_BLAS)
         if(BUILD_CUDA_MODULE)
             target_link_libraries(3rdparty_openblas INTERFACE CUDA::cusolver CUDA::cublas)
         endif()
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_openblas)
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_openblas)
     endif()
 else()
     include(${CloudViewer_3RDPARTY_DIR}/mkl/mkl.cmake)
@@ -1412,14 +1413,14 @@ else()
     )
     if(UNIX)
         target_compile_options(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
-        target_link_libraries(3rdparty_mkl INTERFACE CloudViewer::3rdparty_threads ${CMAKE_DL_LIBS})
+        target_link_libraries(3rdparty_mkl INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
     endif()
     target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
     # cuSOLVER and cuBLAS
     if(BUILD_CUDA_MODULE)
         target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver CUDA::cublas)
     endif()
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_mkl)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_mkl)
 endif()
 
 # Faiss
@@ -1446,7 +1447,7 @@ if (WITH_FAISS)
         DEPENDS      ext_faiss ${FAISS_EXTRA_DEPENDENCIES}
     )
     target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_faiss)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_faiss)
 endif()
 
 # NPP
@@ -1457,7 +1458,7 @@ if (BUILD_CUDA_MODULE)
         PACKAGE CUDAToolkit
         TARGETS CUDA::nppc CUDA::nppicc CUDA::nppif CUDA::nppig CUDA::nppim CUDA::nppial
     )
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_cuda_npp)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_cuda_npp)
 endif ()
 
 # IPP
@@ -1480,7 +1481,7 @@ if (WITH_IPPICV)
                 DEPENDS      ext_ippicv
             )
             target_compile_definitions(3rdparty_ippicv INTERFACE ${IPPICV_DEFINITIONS})
-            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_ippicv)
+            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_ippicv)
         endif()
     endif()
 endif ()
@@ -1494,7 +1495,7 @@ if (BUILD_CUDA_MODULE)
         LIBRARIES    ${STDGPU_LIBRARIES}
         DEPENDS      ext_stdgpu
     )
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_stdgpu)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_stdgpu)
 endif ()
 
 # WebRTC
@@ -1519,11 +1520,11 @@ if(BUILD_WEBRTC)
         LIBRARIES    ${WEBRTC_LIBRARIES}
         DEPENDS      ext_webrtc_all
     )
-    target_link_libraries(3rdparty_webrtc INTERFACE CloudViewer::3rdparty_threads ${CMAKE_DL_LIBS})
+    target_link_libraries(3rdparty_webrtc INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
     if (MSVC) # https://github.com/iimachines/webrtc-build/issues/2#issuecomment-503535704
         target_link_libraries(3rdparty_webrtc INTERFACE secur32 winmm dmoguids wmcodecdspuuid msdmo strmiids)
     endif()
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_webrtc)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_webrtc)
 
     # CivetWeb server
     include(${CloudViewer_3RDPARTY_DIR}/civetweb/civetweb.cmake)
@@ -1533,7 +1534,7 @@ if(BUILD_WEBRTC)
         LIBRARIES    ${CIVETWEB_LIBRARIES}
         DEPENDS      ext_civetweb
     )
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_civetweb)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_civetweb)
 else()
     # Don't incude WebRTC headers in CloudViewer.h.
     set(BUILD_WEBRTC_COMMENT "//")
@@ -1548,7 +1549,7 @@ import_3rdparty_library(3rdparty_embree
     LIBRARIES    ${EMBREE_LIBRARIES}
     DEPENDS      ext_embree
 )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS CloudViewer::3rdparty_embree)
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_embree)
 
 
 if (BUILD_RECONSTRUCTION)

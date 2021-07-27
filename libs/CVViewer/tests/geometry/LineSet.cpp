@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/LineSet.h"
+#include "geometry/LineSet.h"
 
-#include "open3d/geometry/PointCloud.h"
+#include "geometry/PointCloud.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(LineSet, Constructor) {
@@ -479,4 +479,4 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

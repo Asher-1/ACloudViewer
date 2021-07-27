@@ -21,7 +21,7 @@
 #include "ecvPointCloud.h"
 
 // CORE_DB_LIB
-#include <Console.h>
+#include <Logging.h>
 #include <PointProjectionTools.h>
 #include <Delaunay2dMesh.h>
 #include <DistanceComputationTools.h>

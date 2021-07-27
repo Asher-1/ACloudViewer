@@ -33,7 +33,7 @@
 #include "core/Atomic.h"
 #include "ml/impl/misc/NeighborSearchCommon.h"
 #include <Eigen.h>
-#include <Console.h>
+#include <Logging.h>
 #include "utility/ParallelScan.h"
 
 namespace cloudViewer {

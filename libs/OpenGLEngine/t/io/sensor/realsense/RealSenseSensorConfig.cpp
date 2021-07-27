@@ -38,7 +38,7 @@
 #include "camera/PinholeCameraIntrinsic.h"
 #include "t/io/sensor/RGBDVideoMetadata.h"
 #include "t/io/sensor/realsense/RealSensePrivate.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

@@ -26,7 +26,7 @@
 
 #include "visualization/utility/PointCloudPicker.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include <ecvBBox.h>
 #include <ecvPointCloud.h>
 #include <ecvOrientedBBox.h>

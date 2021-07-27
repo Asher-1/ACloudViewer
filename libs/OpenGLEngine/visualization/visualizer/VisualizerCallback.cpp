@@ -26,7 +26,7 @@
 
 #include "Visualizer.h"
 
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {
@@ -150,7 +150,7 @@ void Visualizer::KeyPressCallback(
             break;
         case GLFW_KEY_R:
             ResetViewPoint();
-            utility::LogDebug("[Visualizer] Reset view point.");
+            utility::LogDebug("[Visualizer] reset view point.");
             break;
         case GLFW_KEY_C:
             if (mods & GLFW_MOD_CONTROL || mods & GLFW_MOD_SUPER) {

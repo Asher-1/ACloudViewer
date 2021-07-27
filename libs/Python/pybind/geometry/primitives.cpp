@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 // CV_CORE_LIB
-#include <Console.h>
+#include <Logging.h>
 
 // ECV_DB_LIB
 #include <ecvPointCloud.h>
@@ -427,7 +427,7 @@ void pybind_primitives(py::module &m) {
 		{
 			cloudViewer::utility::LogWarning(
 				"[ccQuadric::Fit] Illegal input parameters, only support point cloud!");
-			return std::make_tuple(std::make_shared<ccQuadric>("Quadric"), 0.0);
+			return std::make_tuple(cloudViewer::make_shared<ccQuadric>("Quadric"), 0.0);
 		}
 		double rms = 0.0;
 		ccQuadric* quadric = ccQuadric::Fit(persistCloud, &rms);

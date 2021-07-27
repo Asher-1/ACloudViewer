@@ -32,12 +32,11 @@
 #include <string>
 #include <unordered_map>
 
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
 namespace geometry {
-using namespace cloudViewer;
 
 bool TensorMap::IsSizeSynchronized() const {
     const int64_t primary_size = GetPrimarySize();

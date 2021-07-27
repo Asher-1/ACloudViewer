@@ -7,13 +7,10 @@
 CMakeLists.txt.user
 tmp/
 *.tmp
-*.bak
 dl/*
 *.swp
 *.run
 *.zip
-dist/
-.idea
 local.properties
 .classpath
 .settings/
@@ -33,7 +30,6 @@ local.properties
 *.suo
 *.user
 *.sln.docstates
-docs/_out/
 *_i.c
 *_p.c
 *.ilk
@@ -98,16 +94,7 @@ Thumbs.db
 Desktop.ini
 #############
 ## Python
-**/package-lock.json
-*.pyc
-__pycache__
-._*
 # Packages
-*.egg
-*.egg-info/
-*.ipynb_checkpoints/
-*.py[cod]
-*.bak
 dist
 build
 eggs
@@ -120,14 +107,12 @@ develop-eggs
 pip-log.txt
 # Unit test / coverage reports
 .coverage
-.idea
 .tox
 #Translations
 *.mo
 #Mr Developer
 .mr.developer.cfg
 # Mac crap
-.DS_Store
 /build_64bits_msvc10/
 private_plugins
 CCCoreLibExport.h
@@ -135,8 +120,6 @@ CCCoreLibExport.h
 /.vs/ProjectSettings.json
 /.vs/slnx.sqlite
 /.vs
-.vscode
-/CMakeSettings.json
 #VS2019 default cmake build & install paths
 /out/
 
@@ -153,10 +136,8 @@ libs/OpenGLEngine/CloudViewerConfig.h
 libs/OpenGLEngine/visualization/shader/Shader.h
 util/pip_package/setup.py
 
-# CMake temp file from Visual Studio
-CMakeSettings.json
-
 # Temp directories
+3rdparty_downloads
 build*/
 cmake-build-debug/
 cmake-build-release/
@@ -183,14 +164,17 @@ __pycache__
 .DS_Store
 .vscode
 .idea
+*.egg
 *.egg-info/
 *.ipynb_checkpoints/
 *.py[cod]
 *.bak
-node_modules/
 static/
 *.old*
+dist/
 compile_commands.json
+
+
 
 # Example resources
 examples/python/reconstruction_system/dataset/

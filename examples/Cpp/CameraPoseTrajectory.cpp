@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,13 +30,25 @@
 
 #include "CloudViewer.h"
 
+void PrintHelp() {
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo(">    CameraPoseTrajectory [trajectory_file] [pcds_dir]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     using namespace cloudViewer;
-    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc != 3) {
-        cloudViewer::utility::LogInfo("Usage :");
-        cloudViewer::utility::LogInfo(">    CameraPoseTrajectory trajectory_file pcds_dir");
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
+        argc != 3) {
+        PrintHelp();
         return 1;
     }
     const int NUM_OF_COLOR_PALETTE = 5;
@@ -54,15 +66,16 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {
         std::string buffer =
                 fmt::format("{}cloud_bin_{:d}.pcd", argv[2], (int)i);
-        if (cloudViewer::utility::filesystem::FileExists(buffer.c_str())) {
+        if (utility::filesystem::FileExists(buffer.c_str())) {
             auto pcd = io::CreatePointCloudFromFile(buffer.c_str());
             pcd->transform(trajectory.parameters_[i].extrinsic_);
             if ((int)i < NUM_OF_COLOR_PALETTE) {
-				pcd->setRGBColor(ecvColor::Rgb::FromEigen(color_palette[i]));
+                pcd->setRGBColor(ecvColor::Rgb::FromEigen(color_palette[i]));
             } else {
-				Eigen::Vector3d col = (Eigen::Vector3d::Random() +
-					Eigen::Vector3d::Constant(1.0)) * 0.5;
-				pcd->setRGBColor(ecvColor::Rgb::FromEigen(col));
+                Eigen::Vector3d col = (Eigen::Vector3d::Random() +
+                                       Eigen::Vector3d::Constant(1.0)) *
+                                      0.5;
+                pcd->setRGBColor(ecvColor::Rgb::FromEigen(col));
             }
             pcds.push_back(pcd);
         }

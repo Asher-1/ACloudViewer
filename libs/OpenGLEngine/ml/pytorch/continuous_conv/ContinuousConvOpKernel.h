@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include "ml/impl/continuous_conv/ContinuousConvTypes.h"
 #include "torch/script.h"
 
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void ContinuousConvCPU(
         const torch::Tensor& filters,
         const torch::Tensor& out_positions,
@@ -44,14 +44,14 @@ void ContinuousConvCPU(
         const torch::Tensor& neighbors_importance,
         const torch::Tensor& neighbors_row_splits,
         const bool align_corners,
-        const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping,
+        const open3d::ml::impl::CoordinateMapping coordinate_mapping,
         const bool normalize,
-        const cloudViewer::ml::impl::InterpolationMode interpolation,
+        const open3d::ml::impl::InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
         torch::Tensor& out_features);
 
 #ifdef BUILD_CUDA_MODULE
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void ContinuousConvCUDA(
         const torch::Tensor& filters,
         const torch::Tensor& out_positions,
@@ -64,9 +64,9 @@ void ContinuousConvCUDA(
         const torch::Tensor& neighbors_importance,
         const torch::Tensor& neighbors_row_splits,
         const bool align_corners,
-        const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping,
+        const open3d::ml::impl::CoordinateMapping coordinate_mapping,
         const bool normalize,
-        const cloudViewer::ml::impl::InterpolationMode interpolation,
+        const open3d::ml::impl::InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
         torch::Tensor& out_features);
 #endif

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 namespace cloudViewer {
 namespace core {
 namespace kernel {
-using namespace cloudViewer;
+
 Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
     start.AssertShape({}, "Start tensor must have shape {}.");
     stop.AssertShape({}, "Stop tensor must have shape {}.");

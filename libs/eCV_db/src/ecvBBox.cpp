@@ -20,7 +20,7 @@
 // LOCAL
 #include "ecvOrientedBBox.h"
 #include "ecvDisplayTools.h"
-#include <Console.h>
+#include <Logging.h>
 
 using namespace cloudViewer;
 

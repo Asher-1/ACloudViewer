@@ -45,7 +45,7 @@ int Run(int argc, const char *argv[]) {
     if (argc > 1) {
         path = argv[1];
         if (argc > 2) {
-            cloudViewer::utility::LogWarning(gUsage.c_str());
+            utility::LogWarning(gUsage.c_str());
         }
     }
 

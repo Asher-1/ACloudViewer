@@ -28,7 +28,7 @@
 #include "IJsonConvertibleIO.h"
 
 // CV_CORE_LIB
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 // JSON_LIB

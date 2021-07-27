@@ -24,45 +24,26 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+# Main library, including compiled binaries
+graft cloudViewer
+graft js
+prune **/node_modules
+graft test
+
 # Misc
 include README.rst
 include LICENSE.txt
 include requirements.txt
+include cloudViewer.json
+include setup.cfg
+include setup.py
+include pyproject.toml
+include install.json
 
-# Compiled module
-include cloudViewer/cpu/*.pyd
-include cloudViewer/cuda/*.pyd
-include cloudViewer/cpu/*.so
-include cloudViewer/cuda/*.so
-include cloudViewer/cpu/*.dylib
-include cloudViewer/cuda/*.dylib
-include cloudViewer/cloudViewer*.so
-include cloudViewer/cloudViewer*.dylib
-include cloudViewer/*depthengine*
-include cloudViewer/*k4a*
-include cloudViewer/*libstdc*
-
-# Extra shared libraries
-include cloudViewer/*.so*
-
-# JS
-recursive-include cloudViewer/static *.*
-
-# Exclude
-global-exclude *.py[co]
-
-# ml module
-recursive-include cloudViewer/ml *.py
-recursive-include cloudViewer/_ml3d *.py
-recursive-include cloudViewer/_ml3d *.so
-recursive-include cloudViewer/_ml3d *.dylib
-recursive-include cloudViewer/_ml3d *.yml
-recursive-include cloudViewer/_ml3d *.yaml
-recursive-include cloudViewer/_ml3d/datasets *.txt
-
-# visualizer module
-recursive-include cloudViewer/visualization *.py
-
-# gui
-include cloudViewer/resources/*
-
+# Patterns to exclude from any directory
+global-exclude *~
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .git
+global-exclude .ipynb_checkpoints
+global-exclude *.map

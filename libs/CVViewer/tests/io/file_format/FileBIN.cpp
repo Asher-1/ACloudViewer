@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,7 @@
 
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(FileBIN, DISABLED_ReadMatrixXdFromBINFile) { NotImplemented(); }
@@ -38,4 +38,4 @@ TEST(FileBIN, DISABLED_ReadFeatureFromBIN) { NotImplemented(); }
 TEST(FileBIN, DISABLED_WriteFeatureToBIN) { NotImplemented(); }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -26,7 +26,6 @@
 
 #include <cstdio>
 
-
 #include "CloudViewer.h"
 
 int main(int argc, char **argv) {

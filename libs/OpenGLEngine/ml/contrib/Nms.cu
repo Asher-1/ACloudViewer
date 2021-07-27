@@ -38,10 +38,10 @@
 #include <thrust/sequence.h>
 #include <thrust/sort.h>
 
+#include <Helper.h>
 #include "ml/Helper.h"
 #include "ml/contrib/IoUImpl.h"
 #include "ml/contrib/Nms.h"
-#include <Helper.h>
 
 namespace cloudViewer {
 namespace ml {
@@ -148,18 +148,17 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
 
     // Compute sort indices.
     float *scores_copy = nullptr;
-    CLOUDVIEWER_ML_CUDA_CHECK(cudaMalloc((void **)&scores_copy, n * sizeof(float)));
-    CLOUDVIEWER_ML_CUDA_CHECK(cudaMemcpy(scores_copy, scores, n * sizeof(float),
+    CLOUDVIEWER_CUDA_CHECK(cudaMalloc((void **)&scores_copy, n * sizeof(float)));
+    CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(scores_copy, scores, n * sizeof(float),
                                     cudaMemcpyDeviceToDevice));
     int64_t *sort_indices = nullptr;
-    CLOUDVIEWER_ML_CUDA_CHECK(
-            cudaMalloc((void **)&sort_indices, n * sizeof(int64_t)));
+    CLOUDVIEWER_CUDA_CHECK(cudaMalloc((void **)&sort_indices, n * sizeof(int64_t)));
     SortIndices(scores_copy, sort_indices, n, true);
-    CLOUDVIEWER_ML_CUDA_CHECK(cudaFree(scores_copy));
+    CLOUDVIEWER_CUDA_CHECK(cudaFree(scores_copy));
 
     // Allocate masks on device.
     uint64_t *mask_ptr = nullptr;
-    CLOUDVIEWER_ML_CUDA_CHECK(cudaMalloc((void **)&mask_ptr,
+    CLOUDVIEWER_CUDA_CHECK(cudaMalloc((void **)&mask_ptr,
                                     n * num_block_cols * sizeof(uint64_t)));
 
     // Launch kernel.
@@ -172,16 +171,15 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
     // Copy cuda masks to cpu.
     std::vector<uint64_t> mask_vec(n * num_block_cols);
     uint64_t *mask = mask_vec.data();
-    CLOUDVIEWER_ML_CUDA_CHECK(cudaMemcpy(mask_vec.data(), mask_ptr,
+    CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(mask_vec.data(), mask_ptr,
                                     n * num_block_cols * sizeof(uint64_t),
                                     cudaMemcpyDeviceToHost));
-    CLOUDVIEWER_ML_CUDA_CHECK(cudaFree(mask_ptr));
+    CLOUDVIEWER_CUDA_CHECK(cudaFree(mask_ptr));
 
     // Copy sort_indices to cpu.
     std::vector<int64_t> sort_indices_cpu(n);
-    CLOUDVIEWER_ML_CUDA_CHECK(cudaMemcpy(sort_indices_cpu.data(), sort_indices,
-                                    n * sizeof(int64_t),
-                                    cudaMemcpyDeviceToHost));
+    CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(sort_indices_cpu.data(), sort_indices,
+                                    n * sizeof(int64_t), cudaMemcpyDeviceToHost));
 
     // Write to keep_indices in CPU.
     // remv_cpu has n bits in total. If the bit is 1, the corresponding
@@ -208,7 +206,7 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
             }
         }
     }
-    CLOUDVIEWER_ML_CUDA_CHECK(cudaFree(sort_indices));
+    CLOUDVIEWER_CUDA_CHECK(cudaFree(sort_indices));
     return keep_indices;
 }
 

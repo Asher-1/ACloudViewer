@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/TriangleMesh.h"
-#include "open3d/io/TriangleMeshIO.h"
+#include "geometry/TriangleMesh.h"
+#include "io/TriangleMeshIO.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(FileGLTF, WriteReadTriangleMeshFromGLTF) {
@@ -66,4 +66,4 @@ TEST(FileGLTF, WriteReadTriangleMeshFromGLTF) {
 // }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

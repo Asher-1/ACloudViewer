@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,29 +34,33 @@ using namespace cloudViewer;
 namespace tio = cloudViewer::t::io;
 namespace sc = std::chrono;
 
+void PrintHelp() {
+    using namespace cloudViewer;
 
-void PrintUsage() {
     PrintCloudViewerVersion();
     // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > RealSenseRecorder [-V] [-l|--list-devices] [--align] [--record rgbd_video_file.bag] [-c|--config rs-config.json]");
     utility::LogInfo(
             "Open a RealSense camera and display live color and depth streams. You can set\n"
             "frame sizes and frame rates for each stream and the depth stream can be\n"
             "optionally aligned to the color stream. NOTE: An error of 'UNKNOWN: Couldn't\n"
             "resolve requests' implies  unsupported stream format settings.");
     // clang-format on
-    utility::LogInfo("Usage:");
-    utility::LogInfo(
-            "RealSenseRecorder [-h|--help] [-V] [-l|--list-devices] [--align]\n"
-            "[--record rgbd_video_file.bag] [-c|--config rs-config.json]");
+    utility::LogInfo("");
 }
 
-int main(int argc, char **argv) {
-    // Parse command line arguments
-    if (utility::ProgramOptionExists(argc, argv, "--help") ||
-        utility::ProgramOptionExists(argc, argv, "-h")) {
-        PrintUsage();
-        return 0;
+int main(int argc, char *argv[]) {
+    using namespace cloudViewer;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
     }
+
     if (utility::ProgramOptionExists(argc, argv, "--list-devices") ||
         utility::ProgramOptionExists(argc, argv, "-l")) {
         tio::RealSenseSensor::ListDevices();
@@ -85,7 +89,7 @@ int main(int argc, char **argv) {
     // Read in camera configuration.
     tio::RealSenseSensorConfig rs_cfg;
     if (!config_file.empty()) {
-        io::ReadIJsonConvertible(config_file, rs_cfg);
+        cloudViewer::io::ReadIJsonConvertible(config_file, rs_cfg);
     }
 
     // Initialize camera.
@@ -145,8 +149,8 @@ int main(int argc, char **argv) {
         utility::LogInfo("In the visulizer window, press [ESC] to exit.");
     }
 
-    using legacyRGBDImage = geometry::RGBDImage;
-    using legacyImage = geometry::Image;
+    using legacyRGBDImage = cloudViewer::geometry::RGBDImage;
+    using legacyImage = cloudViewer::geometry::Image;
     std::shared_ptr<legacyImage> depth_image_ptr, color_image_ptr;
 
     // Loop over frames from device
@@ -159,18 +163,18 @@ int main(int argc, char **argv) {
 
         // Improve depth visualization by scaling
         /* im_rgbd.depth_.LinearTransform(0.25); */
-        depth_image_ptr = std::shared_ptr<geometry::Image>(
-                &im_rgbd.depth_, [](geometry::Image *) {});
-        color_image_ptr = std::shared_ptr<geometry::Image>(
-                &im_rgbd.color_, [](geometry::Image *) {});
+        depth_image_ptr = std::shared_ptr<cloudViewer::geometry::Image>(
+                &im_rgbd.depth_, [](cloudViewer::geometry::Image *) {});
+        color_image_ptr = std::shared_ptr<cloudViewer::geometry::Image>(
+                &im_rgbd.color_, [](cloudViewer::geometry::Image *) {});
 
         if (!is_geometry_added) {
             if (!depth_vis.CreateVisualizerWindow(
-                        "cloudViewer || RealSense || Depth", depth_image_ptr->width_,
+                        "Open3D || RealSense || Depth", depth_image_ptr->width_,
                         depth_image_ptr->height_, 15, 50) ||
                 !depth_vis.AddGeometry(depth_image_ptr) ||
                 !color_vis.CreateVisualizerWindow(
-                        "cloudViewer || RealSense || Color", color_image_ptr->width_,
+                        "Open3D || RealSense || Color", color_image_ptr->width_,
                         color_image_ptr->height_, 675, 50) ||
                 !color_vis.AddGeometry(color_image_ptr)) {
                 utility::LogError("Window creation failed!");

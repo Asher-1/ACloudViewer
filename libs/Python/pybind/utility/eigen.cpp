@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -27,21 +27,21 @@
 #include "pybind/docstring.h"
 #include "pybind/cloudViewer_pybind.h"
 
-
 namespace pybind11 {
 
 template <typename Vector,
           typename holder_type = std::unique_ptr<Vector>,
           typename... Args>
 py::class_<Vector, holder_type> bind_vector_without_repr(
-        py::module &m, std::string const &name, Args &&... args) {
+        py::module &m, std::string const &name, Args &&...args) {
     // hack function to disable __repr__ for the convenient function
     // bind_vector()
     using Class_ = py::class_<Vector, holder_type>;
     Class_ cl(m, name.c_str(), std::forward<Args>(args)...);
     cl.def(py::init<>());
-    cl.def("__bool__", [](const Vector &v) -> bool { return !v.empty(); },
-           "Check whether the list is nonempty");
+    cl.def(
+            "__bool__", [](const Vector &v) -> bool { return !v.empty(); },
+            "Check whether the list is nonempty");
     cl.def("__len__", &Vector::size);
     return cl;
 }
@@ -321,7 +321,6 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_matrix(
 }
 
 }  // unnamed namespace
-
 
 namespace cloudViewer {
 namespace utility {

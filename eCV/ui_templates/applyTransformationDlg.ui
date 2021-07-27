@@ -534,7 +534,7 @@ Let P be a 3D point, the transformed point P' will be such that: P' = R.P + T.</
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::Reset</set>
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::reset</set>
      </property>
     </widget>
    </item>

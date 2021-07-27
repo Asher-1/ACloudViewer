@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 
 #include "core/Device.h"
 #include "core/Tensor.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
@@ -42,10 +42,10 @@ Tensor NonZero(const Tensor& src) {
 #ifdef BUILD_CUDA_MODULE
         return NonZeroCUDA(src);
 #else
-        cloudViewer::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        cloudViewer::utility::LogError("NonZero: Unimplemented device");
+        utility::LogError("NonZero: Unimplemented device");
     }
 }
 

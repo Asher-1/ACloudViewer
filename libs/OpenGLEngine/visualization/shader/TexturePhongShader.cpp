@@ -26,7 +26,7 @@
 
 #include "visualization/shader/TexturePhongShader.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include <Image.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>

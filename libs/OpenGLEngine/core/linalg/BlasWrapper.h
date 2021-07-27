@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 
 #include "core/linalg/LinalgHeadersCPU.h"
 #include "core/linalg/LinalgHeadersCUDA.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
@@ -48,7 +48,7 @@ inline void gemm_cpu(CBLAS_LAYOUT layout,
                      scalar_t beta,
                      scalar_t *C_data,
                      CLOUDVIEWER_CPU_LINALG_INT ldc) {
-    cloudViewer::utility::LogError("Unsupported data type.");
+    utility::LogError("Unsupported data type.");
 }
 
 template <>
@@ -105,7 +105,7 @@ inline cublasStatus_t gemm_cuda(cublasHandle_t handle,
                                 const scalar_t *beta,
                                 scalar_t *C_data,
                                 int ldc) {
-    cloudViewer::utility::LogError("Unsupported data type.");
+    utility::LogError("Unsupported data type.");
     return CUBLAS_STATUS_NOT_SUPPORTED;
 }
 
@@ -122,7 +122,7 @@ inline cublasStatus_t trsm_cuda(cublasHandle_t handle,
                                 int lda,
                                 scalar_t *B,
                                 int ldb) {
-    cloudViewer::utility::LogError("Unsupported data type.");
+    utility::LogError("Unsupported data type.");
     return CUBLAS_STATUS_NOT_SUPPORTED;
 }
 
@@ -208,5 +208,6 @@ inline cublasStatus_t trsm_cuda<double>(cublasHandle_t handle,
                        ldb);
 }
 #endif
+
 }  // namespace core
 }  // namespace cloudViewer

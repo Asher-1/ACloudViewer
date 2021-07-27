@@ -27,7 +27,7 @@
 #include "visualization/shader/ShaderWrapper.h"
 
 #include <ecvHObject.h>
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {
@@ -68,30 +68,30 @@ bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
         return true;
     }
 
-    if (vertex_shader_code != NULL) {
+    if (vertex_shader_code != nullptr) {
         vertex_shader_ = glCreateShader(GL_VERTEX_SHADER);
         const GLchar *vertex_shader_code_buffer = vertex_shader_code;
-        glShaderSource(vertex_shader_, 1, &vertex_shader_code_buffer, NULL);
+        glShaderSource(vertex_shader_, 1, &vertex_shader_code_buffer, nullptr);
         glCompileShader(vertex_shader_);
         if (!ValidateShader(vertex_shader_)) {
             return false;
         }
     }
 
-    if (geometry_shader_code != NULL) {
+    if (geometry_shader_code != nullptr) {
         geometry_shader_ = glCreateShader(GL_GEOMETRY_SHADER);
         const GLchar *geometry_shader_code_buffer = geometry_shader_code;
-        glShaderSource(geometry_shader_, 1, &geometry_shader_code_buffer, NULL);
+        glShaderSource(geometry_shader_, 1, &geometry_shader_code_buffer, nullptr);
         glCompileShader(geometry_shader_);
         if (!ValidateShader(geometry_shader_)) {
             return false;
         }
     }
 
-    if (fragment_shader_code != NULL) {
+    if (fragment_shader_code != nullptr) {
         fragment_shader_ = glCreateShader(GL_FRAGMENT_SHADER);
         const GLchar *fragment_shader_code_buffer = fragment_shader_code;
-        glShaderSource(fragment_shader_, 1, &fragment_shader_code_buffer, NULL);
+        glShaderSource(fragment_shader_, 1, &fragment_shader_code_buffer, nullptr);
         glCompileShader(fragment_shader_);
         if (!ValidateShader(fragment_shader_)) {
             return false;
@@ -99,13 +99,13 @@ bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
     }
 
     program_ = glCreateProgram();
-    if (vertex_shader_code != NULL) {
+    if (vertex_shader_code != nullptr) {
         glAttachShader(program_, vertex_shader_);
     }
-    if (geometry_shader_code != NULL) {
+    if (geometry_shader_code != nullptr) {
         glAttachShader(program_, geometry_shader_);
     }
-    if (fragment_shader_code != NULL) {
+    if (fragment_shader_code != nullptr) {
         glAttachShader(program_, fragment_shader_);
     }
     glLinkProgram(program_);
@@ -115,13 +115,13 @@ bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
 
     // Mark shader objects as deletable.
     // They will be released as soon as program is deleted.
-    if (vertex_shader_code != NULL) {
+    if (vertex_shader_code != nullptr) {
         glDeleteShader(vertex_shader_);
     }
-    if (geometry_shader_code != NULL) {
+    if (geometry_shader_code != nullptr) {
         glDeleteShader(geometry_shader_);
     }
-    if (fragment_shader_code != NULL) {
+    if (fragment_shader_code != nullptr) {
         glDeleteShader(fragment_shader_);
     }
 
@@ -144,7 +144,7 @@ bool ShaderWrapper::ValidateShader(unsigned int shader_index) {
         glGetShaderiv(shader_index, GL_INFO_LOG_LENGTH, &info_log_length);
         if (info_log_length > 0) {
             std::vector<char> error_message(info_log_length + 1);
-            glGetShaderInfoLog(shader_index, info_log_length, NULL,
+            glGetShaderInfoLog(shader_index, info_log_length, nullptr,
                                &error_message[0]);
             utility::LogWarning("Shader error: {}", &error_message[0]);
         }
@@ -161,7 +161,7 @@ bool ShaderWrapper::ValidateProgram(unsigned int program_index) {
         glGetProgramiv(program_index, GL_INFO_LOG_LENGTH, &info_log_length);
         if (info_log_length > 0) {
             std::vector<char> error_message(info_log_length + 1);
-            glGetShaderInfoLog(program_index, info_log_length, NULL,
+            glGetShaderInfoLog(program_index, info_log_length, nullptr,
                                &error_message[0]);
             utility::LogWarning("Shader error: {}", &error_message[0]);
         }

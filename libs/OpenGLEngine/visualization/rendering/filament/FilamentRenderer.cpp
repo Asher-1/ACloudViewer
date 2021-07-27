@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,7 @@
 #pragma warning(disable : 4068 4146 4293 4305)
 #endif  // _MSC_VER
 
+#include <backend/PixelBufferDescriptor.h>
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
@@ -52,7 +53,8 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
-#include <Console.h>
+#include "core/Tensor.h"
+#include "utility/Logging.h"
 #include "visualization/rendering/filament/FilamentCamera.h"
 #include "visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "visualization/rendering/filament/FilamentRenderToBuffer.h"
@@ -122,26 +124,12 @@ void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
     co.clearColor.b = color.z();
     co.clearColor.a = color.w();
     co.clear = false;
-    co.discard = !preserve_buffer_;
+    co.discard = true;
     renderer_->setClearOptions(co);
-
-    // remember clear color
-    clear_color_[0] = color.x();
-    clear_color_[1] = color.y();
-    clear_color_[2] = color.z();
-    clear_color_[3] = color.w();
 }
 
-void FilamentRenderer::SetPreserveBuffer(bool preserve) {
-    filament::Renderer::ClearOptions co;
-    co.clearColor.r = clear_color_[0];
-    co.clearColor.g = clear_color_[1];
-    co.clearColor.b = clear_color_[2];
-    co.clearColor.a = clear_color_[3];
-    preserve_buffer_ = preserve;
-    co.clear = false;
-    co.discard = !preserve;
-    renderer_->setClearOptions(co);
+void FilamentRenderer::SetOnAfterDraw(std::function<void()> callback) {
+    on_after_draw_ = callback;
 }
 
 void FilamentRenderer::UpdateSwapChain() {
@@ -176,17 +164,10 @@ void FilamentRenderer::UpdateSwapChain() {
     swap_chain_ = engine_.createSwapChain(native_win);
 }
 
-void FilamentRenderer::EnableCaching(bool enable) {
-    render_caching_enabled_ = enable;
-    if (enable) {
-        // NOTE: Render two frames before switching swap chain to preserve
-        // contents. This ensures that the desired content is fully rendered
-        // into buffer. Ideally only a single frame is necessary but when
-        // render_count_ is 1 artifacts occasionally occur.
-        render_count_ = 2;
-    }
-
-    SetPreserveBuffer(false);
+void FilamentRenderer::UpdateBitmapSwapChain(int width, int height) {
+    engine_.destroy(swap_chain_);
+    swap_chain_ = engine_.createSwapChain(width, height,
+                                          filament::SwapChain::CONFIG_READABLE);
 }
 
 void FilamentRenderer::BeginFrame() {
@@ -207,25 +188,25 @@ void FilamentRenderer::BeginFrame() {
         buffer_renderers_.clear();  // Cleanup
     }
 
-    if (render_caching_enabled_) {
-        if (render_count_-- > 0) {
-            SetPreserveBuffer(false);
-        } else {
-            SetPreserveBuffer(true);
-        }
-    }
-
     frame_started_ = renderer_->beginFrame(swap_chain_);
 }
 
 void FilamentRenderer::Draw() {
     if (frame_started_) {
+        // Draw 3D scenes into textures
         for (const auto& pair : scenes_) {
             pair.second->Draw(*renderer_);
         }
 
+        // Draw the UI. This should come after the 3D scene(s), as SceneWidget
+        // will draw the textures as an image, and this way we will have the
+        // current frame's content from above.
         if (gui_scene_) {
             gui_scene_->Draw(*renderer_);
+        }
+
+        if (on_after_draw_) {
+            on_after_draw_();
         }
     }
 }
@@ -233,7 +214,51 @@ void FilamentRenderer::Draw() {
 void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
+        if (needs_wait_after_draw_) {
+            engine_.flushAndWait();
+            needs_wait_after_draw_ = false;
+        }
     }
+}
+
+namespace {
+
+struct UserData {
+    std::function<void(std::shared_ptr<core::Tensor>)> callback;
+    std::shared_ptr<core::Tensor> image;
+
+    UserData(std::function<void(std::shared_ptr<core::Tensor>)> cb,
+             std::shared_ptr<core::Tensor> img)
+        : callback(cb), image(img) {}
+};
+
+void ReadPixelsCallback(void*, size_t, void* user) {
+    auto* user_data = static_cast<UserData*>(user);
+    user_data->callback(user_data->image);
+    delete user_data;
+}
+
+}  // namespace
+
+void FilamentRenderer::RequestReadPixels(
+        int width,
+        int height,
+        std::function<void(std::shared_ptr<core::Tensor>)> callback) {
+    core::SizeVector shape{height, width, 3};
+    core::Dtype dtype = core::Dtype::UInt8;
+    int64_t nbytes = shape.NumElements() * dtype.ByteSize();
+
+    auto image = cloudViewer::make_shared<core::Tensor>(shape, dtype);
+    auto* user_data = new UserData(callback, image);
+
+    using namespace filament;
+    using namespace backend;
+
+    PixelBufferDescriptor pd(image->GetDataPtr(), nbytes, PixelDataFormat::RGB,
+                             PixelDataType::UBYTE, ReadPixelsCallback,
+                             user_data);
+    renderer_->readPixels(0, 0, width, height, std::move(pd));
+    needs_wait_after_draw_ = true;
 }
 
 MaterialHandle FilamentRenderer::AddMaterial(
@@ -256,7 +281,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
                 resource_mgr_.GetMaterialInstance(instance_id);
         materials_modifier_->Init(w_material_instance.lock(), instance_id);
     } else {
-        cloudViewer::utility::LogWarning(
+        utility::LogWarning(
                 "Failed to create material instance for material handle {}.",
                 id);
     }
@@ -272,7 +297,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
     if (!w_material_instance.expired()) {
         materials_modifier_->Init(w_material_instance.lock(), id);
     } else {
-        cloudViewer::utility::LogWarning(
+        utility::LogWarning(
                 "Failed to modify material instance: unknown instance handle "
                 "{}.",
                 id);
@@ -295,6 +320,19 @@ TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request,
     }
 
     return resource_mgr_.CreateTexture(request.path_.data(), srgb);
+}
+
+bool FilamentRenderer::UpdateTexture(
+        TextureHandle texture,
+        const std::shared_ptr<geometry::Image> image,
+        bool srgb) {
+    return resource_mgr_.UpdateTexture(texture, image, srgb);
+}
+
+bool FilamentRenderer::UpdateTexture(TextureHandle texture,
+                                     const t::geometry::Image& image,
+                                     bool srgb) {
+    return resource_mgr_.UpdateTexture(texture, image, srgb);
 }
 
 void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
@@ -333,7 +371,7 @@ void FilamentRenderer::RemoveSkybox(const SkyboxHandle& id) {
 std::shared_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
     auto renderer = cloudViewer::make_shared<FilamentRenderToBuffer>(engine_);
     buffer_renderers_.insert(renderer);
-    return std::move(renderer);
+    return renderer;
 }
 
 void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
@@ -341,7 +379,7 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     // TODO: assert(found != scenes_.end())
     if (found != scenes_.end()) {
         if (gui_scene_ != nullptr) {
-            cloudViewer::utility::LogWarning(
+            utility::LogWarning(
                     "FilamentRenderer::ConvertToGuiScene: guiScene_ is already "
                     "set");
         }
@@ -351,11 +389,17 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
 }
 
 TextureHandle FilamentRenderer::AddTexture(
-        const std::shared_ptr<geometry::Image>& image, bool srgb) {
+        const std::shared_ptr<geometry::Image> image, bool srgb) {
     return resource_mgr_.CreateTexture(image, srgb);
 }
 
-//void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {
+TextureHandle FilamentRenderer::AddTexture(const t::geometry::Image& image,
+                                           bool srgb) {
+    return resource_mgr_.CreateTexture(image, srgb);
+}
+
+// void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer*
+// render) {
 //    buffer_renderers_.erase(render);
 //}
 

@@ -27,7 +27,7 @@
 
 #include <benchmark/benchmark.h>
 
-#include <Console.h>
+#include <Logging.h>
 
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>

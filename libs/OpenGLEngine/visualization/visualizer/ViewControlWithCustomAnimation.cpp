@@ -25,7 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/ViewControlWithCustomAnimation.h"
-#include <Console.h>
+#include <Helper.h>
+#include <Logging.h>
 
 #include <IJsonConvertibleIO.h>
 
@@ -238,9 +239,9 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
     std::string json_filename = filename;
     if (json_filename.empty()) {
         json_filename =
-                "ViewTrajectory_" + cloudViewer::utility::GetCurrentTimeStamp() + ".json";
+                "ViewTrajectory_" + utility::GetCurrentTimeStamp() + ".json";
     }
-    cloudViewer::utility::LogDebug("[Visualizer] Trejactory capture to {}",
+    utility::LogDebug("[Visualizer] Trejactory capture to {}",
                       json_filename.c_str());
     return io::WriteIJsonConvertible(json_filename, view_trajectory_);
 }
@@ -248,7 +249,7 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
         const std::string &filename) {
     bool success = io::ReadIJsonConvertible(filename, view_trajectory_);
-    if (success == false) {
+    if (!success) {
         view_trajectory_.Reset();
     }
     current_keyframe_ = 0.0;
@@ -270,13 +271,13 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
     view_trajectory_.view_status_.resize(camera_trajectory.parameters_.size());
     for (size_t i = 0; i < camera_trajectory.parameters_.size(); i++) {
         ViewControlWithCustomAnimation view_control = *this;
-        if (view_control.ConvertFromPinholeCameraParameters(
-                    camera_trajectory.parameters_[i]) == false) {
+        if (!view_control.ConvertFromPinholeCameraParameters(
+                    camera_trajectory.parameters_[i])) {
             view_trajectory_.Reset();
             return false;
         }
-        if (view_control.ConvertToViewParameters(
-                    view_trajectory_.view_status_[i]) == false) {
+        if (!view_control.ConvertToViewParameters(
+                    view_trajectory_.view_status_[i])) {
             view_trajectory_.Reset();
             return false;
         }

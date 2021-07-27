@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/Image.h"
+#include "t/geometry/Image.h"
 
 #include "core/CoreTest.h"
-#include "open3d/core/TensorList.h"
+#include "core/TensorList.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 class ImagePermuteDevices : public PermuteDevices {};
@@ -121,4 +121,4 @@ TEST_P(ImagePermuteDevices, ConstructorFromTensor) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

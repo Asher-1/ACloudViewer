@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,21 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Tensor.h"
+#include "core/Tensor.h"
 
 #include <cmath>
 #include <limits>
 
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/kernel/Kernel.h"
-#include "open3d/utility/Helper.h"
+#include "core/AdvancedIndexing.h"
+#include "core/Dtype.h"
+#include "core/MemoryManager.h"
+#include "core/SizeVector.h"
+#include "core/kernel/Kernel.h"
+#include <Helper.h>
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 class TensorPermuteDevices : public PermuteDevices {};
@@ -2539,4 +2539,4 @@ TEST_P(TensorPermuteDevices, IsSame) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

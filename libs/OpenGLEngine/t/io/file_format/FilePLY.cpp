@@ -31,7 +31,7 @@
 #include "core/TensorList.h"
 #include "t/io/PointCloudIO.h"
 #include "t/geometry/TensorMap.h"
-#include <Console.h>
+#include <Logging.h>
 #include "io/FileFormatIO.h"
 #include <FileSystem.h>
 #include <ProgressReporters.h>
@@ -237,7 +237,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
                         name, size, element_name, element_size);
             }
 
-            auto attr_state = std::make_shared<PLYReaderState::AttrState>();
+            auto attr_state = cloudViewer::make_shared<PLYReaderState::AttrState>();
             attr_state->name_ = name;
             attr_state->data_ = core::Tensor({size}, GetDtype(type));
             attr_state->size_ = size;

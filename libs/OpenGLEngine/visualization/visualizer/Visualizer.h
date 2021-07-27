@@ -93,7 +93,7 @@ public:
     /// \param left Left margin of the window to the screen.
     /// \param top Top margin of the window to the screen.
     /// \param visible Whether the window is visible.
-    bool CreateVisualizerWindow(const std::string &window_name = "Open3D",
+    bool CreateVisualizerWindow(const std::string &window_name = "CloudViewer",
                                 const int width = 640,
                                 const int height = 480,
                                 const int left = 50,
@@ -271,7 +271,7 @@ protected:
 protected:
     // window
     GLFWwindow *window_ = nullptr;
-    std::string window_name_ = "Open3D";
+    std::string window_name_ = "CloudViewer";
     Eigen::Vector2i saved_window_size_ = Eigen::Vector2i::Zero();
     Eigen::Vector2i saved_window_pos_ = Eigen::Vector2i::Zero();
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
@@ -286,13 +286,13 @@ protected:
     MouseControl mouse_control_;
     bool is_redraw_required_ = true;
     bool is_initialized_ = false;
-    GLuint vao_id_;
+    GLuint vao_id_ = 0;
 
     // render targets for "capture_screen_float_buffer" and
     // "capture_screen_image" in offscreen render mode
-    unsigned int render_fbo_;
-    unsigned int render_rgb_tex_;
-    unsigned int render_depth_stencil_rbo_;
+    GLuint render_fbo_ = 0;
+    GLuint render_rgb_tex_ = 0;
+    GLuint render_depth_stencil_rbo_ = 0;
 
     // view control
     std::unique_ptr<ViewControl> view_control_ptr_;

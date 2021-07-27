@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 #include <atomic>
 #include <thread>
 
-#include <Console.h>
+#include "utility/Logging.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -38,8 +38,6 @@ namespace gui {
 namespace {
 enum class ThreadState { NOT_STARTED, RUNNING, FINISHED };
 }
-
-using namespace cloudViewer;
 
 struct Task::Impl {
     std::function<void()> func_;
@@ -54,7 +52,7 @@ Task::Task(std::function<void()> f) : impl_(new Task::Impl) {
     impl_->is_finished_running_ = false;
 }
 
-Task::~Task() { 
+Task::~Task() {
     // TODO: if able to cancel, do so here
     WaitToFinish();
 }

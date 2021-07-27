@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,11 +58,10 @@
 #include <vector>
 
 #include "core/Dispatch.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
-using namespace cloudViewer;
 
 static char BigEndianChar() {
     int x = 1;
@@ -81,12 +80,17 @@ static char DtypeToChar(const Dtype& dtype) {
     // '?': object
     if (dtype == Dtype::Float32) return 'f';
     if (dtype == Dtype::Float64) return 'f';
+    if (dtype == Dtype::Int8) return 'i';
+    if (dtype == Dtype::Int16) return 'i';
     if (dtype == Dtype::Int32) return 'i';
     if (dtype == Dtype::Int64) return 'i';
     if (dtype == Dtype::UInt8) return 'u';
     if (dtype == Dtype::UInt16) return 'u';
+    if (dtype == Dtype::UInt32) return 'u';
+    if (dtype == Dtype::UInt64) return 'u';
     if (dtype == Dtype::Bool) return 'b';
     utility::LogError("Unsupported dtype: {}", dtype.ToString());
+    return '\0';
 }
 
 template <typename T>
@@ -160,11 +164,18 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     char buffer[256];
     size_t res = fread(buffer, sizeof(char), 11, fp);
     if (res != 11) {
-        utility::LogError("ParseNumpyHeader: failed fread");
+        utility::LogError("Failed fread.");
     }
-    std::string header = fgets(buffer, 256, fp);
+    std::string header;
+    if (const char* header_chars = fgets(buffer, 256, fp)) {
+        header = std::string(header_chars);
+    } else {
+        utility::LogError(
+                "Numpy file header could not be read. "
+                "Possibly the file is corrupted.");
+    }
     if (header[header.size() - 1] != '\n') {
-        utility::LogError("ParseNumpyHeader: the last char must be '\n'");
+        utility::LogError("The last char must be '\n'.");
     }
 
     size_t loc1, loc2;
@@ -172,9 +183,7 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     // Fortran order.
     loc1 = header.find("fortran_order");
     if (loc1 == std::string::npos) {
-        utility::LogError(
-                "ParseNumpyHeader: failed to find header keyword: "
-                "'fortran_order'");
+        utility::LogError("Failed to find header keyword: 'fortran_order'");
     }
 
     loc1 += 16;
@@ -184,9 +193,7 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     loc1 = header.find("(");
     loc2 = header.find(")");
     if (loc1 == std::string::npos || loc2 == std::string::npos) {
-        utility::LogError(
-                "ParseNumpyHeader: failed to find header keyword: '(' or "
-                "')'");
+        utility::LogError("Failed to find header keyword: '(' or ')'");
     }
 
     std::regex num_regex("[0-9][0-9]*");
@@ -204,8 +211,7 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     // not sure when this applies except for byte array.
     loc1 = header.find("descr");
     if (loc1 == std::string::npos) {
-        utility::LogError(
-                "ParseNumpyHeader: failed to find header keyword: 'descr'");
+        utility::LogError("Failed to find header keyword: 'descr'");
     }
 
     loc1 += 9;
@@ -236,7 +242,7 @@ NumpyArray::NumpyArray(const SizeVector& shape,
     for (size_t i = 0; i < shape_.size(); i++) {
         num_elements_ *= shape_[i];
     }
-    blob_ = std::make_shared<Blob>(num_elements_ * word_size_, Device("CPU:0"));
+    blob_ = cloudViewer::make_shared<Blob>(num_elements_ * word_size_, Device("CPU:0"));
 }
 
 NumpyArray::NumpyArray(const Tensor& t)
@@ -249,23 +255,19 @@ NumpyArray::NumpyArray(const Tensor& t)
 }
 
 Dtype NumpyArray::GetDtype() const {
-    Dtype dtype(Dtype::DtypeCode::Undefined, 1, "undefined");
-    if (type_ == 'f' && word_size_ == 4) {
-        dtype = Dtype::Float32;
-    } else if (type_ == 'f' && word_size_ == 8) {
-        dtype = Dtype::Float64;
-    } else if (type_ == 'i' && word_size_ == 4) {
-        dtype = Dtype::Int32;
-    } else if (type_ == 'i' && word_size_ == 8) {
-        dtype = Dtype::Int64;
-    } else if (type_ == 'u' && word_size_ == 1) {
-        dtype = Dtype::UInt8;
-    } else if (type_ == 'u' && word_size_ == 2) {
-        dtype = Dtype::UInt16;
-    } else if (type_ == 'b') {
-        dtype = Dtype::Bool;
-    }
-    return dtype;
+    if (type_ == 'f' && word_size_ == 4) return Dtype::Float32;
+    if (type_ == 'f' && word_size_ == 8) return Dtype::Float64;
+    if (type_ == 'i' && word_size_ == 1) return Dtype::Int8;
+    if (type_ == 'i' && word_size_ == 2) return Dtype::Int16;
+    if (type_ == 'i' && word_size_ == 4) return Dtype::Int32;
+    if (type_ == 'i' && word_size_ == 8) return Dtype::Int64;
+    if (type_ == 'u' && word_size_ == 1) return Dtype::UInt8;
+    if (type_ == 'u' && word_size_ == 2) return Dtype::UInt16;
+    if (type_ == 'u' && word_size_ == 4) return Dtype::UInt32;
+    if (type_ == 'u' && word_size_ == 8) return Dtype::UInt64;
+    if (type_ == 'b') return Dtype::Bool;
+
+    return Dtype::Undefined;
 }
 
 Tensor NumpyArray::ToTensor() const {
@@ -287,7 +289,8 @@ Tensor NumpyArray::ToTensor() const {
 NumpyArray NumpyArray::Load(const std::string& file_name) {
     FILE* fp = fopen(file_name.c_str(), "rb");
     if (!fp) {
-        utility::LogError("NumpyLoad: Unable to open file {}.", file_name);
+        utility::LogError("Load: Unable to open file {}.", file_name);
+        assert(fp);
     }
     SizeVector shape;
     int64_t word_size;
@@ -298,7 +301,7 @@ NumpyArray NumpyArray::Load(const std::string& file_name) {
     size_t nread = fread(arr.GetDataPtr<char>(), 1,
                          static_cast<size_t>(arr.NumBytes()), fp);
     if (nread != static_cast<size_t>(arr.NumBytes())) {
-        utility::LogError("LoadTheNumpyFile: failed fread");
+        utility::LogError("Load: failed fread");
     }
     fclose(fp);
     return arr;
@@ -306,6 +309,10 @@ NumpyArray NumpyArray::Load(const std::string& file_name) {
 
 void NumpyArray::Save(std::string file_name) const {
     FILE* fp = fopen(file_name.c_str(), "wb");
+    if (!fp) {
+        utility::LogError("Save: Unable to open file {}.", file_name);
+        return;
+    }
     std::vector<char> header = CreateNumpyHeader(shape_, GetDtype());
     fseek(fp, 0, SEEK_SET);
     fwrite(&header[0], sizeof(char), header.size(), fp);

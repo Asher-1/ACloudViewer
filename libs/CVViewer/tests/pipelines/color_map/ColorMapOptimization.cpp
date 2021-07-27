@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/camera/PinholeCameraTrajectory.h"
-#include "open3d/geometry/Image.h"
-#include "open3d/geometry/RGBDImage.h"
-#include "open3d/geometry/TriangleMesh.h"
+#include "camera/PinholeCameraTrajectory.h"
+#include "geometry/Image.h"
+#include "geometry/RGBDImage.h"
+#include "geometry/TriangleMesh.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 /* TODO
@@ -74,7 +74,7 @@ std::vector<std::shared_ptr<geometry::Image>> GenerateSharedImages(
 
     std::vector<std::shared_ptr<geometry::Image>> output;
     for (size_t i = 0; i < size; i++)
-        output.push_back(std::make_shared<geometry::Image>(images[i]));
+        output.push_back(cloudViewer::make_shared<geometry::Image>(images[i]));
 
     return output;
 }
@@ -394,7 +394,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
     // TODO: change the initialization in such a way that the field has an
     // effect on the outcome of QueryImageIntensity.
     // int nr_anchors = 16;
-    // open3d::ImageWarpingField field(width, height, nr_anchors);
+    // cloudViewer::ImageWarpingField field(width, height, nr_anchors);
 
     Eigen::Vector3d pose(62.5, 37.5, 1.85);
     camera::PinholeCameraTrajectory camera =
@@ -1132,4 +1132,4 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -31,7 +31,7 @@
 
 #include "core/MemoryManager.h"
 #include "core/Tensor.h"
-#include <Console.h>
+#include <Logging.h>
 #include "pybind/core/core.h"
 #include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"

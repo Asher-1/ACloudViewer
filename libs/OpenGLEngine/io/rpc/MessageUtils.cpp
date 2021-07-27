@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 #include <zmq.hpp>
 
 #include "io/rpc/Messages.h"
-#include <Console.h>
+#include "utility/Logging.h"
 
 using namespace cloudViewer::utility;
 
@@ -63,7 +63,7 @@ std::shared_ptr<messages::Status> UnpackStatusFromReply(
         LogDebug("Failed to parse message: {}", e.what());
         offset = msg.size();
     }
-    return std::make_shared<messages::Status>(status);
+    return cloudViewer::make_shared<messages::Status>(status);
 }
 
 bool ReplyIsOKStatus(const zmq::message_t& msg) {

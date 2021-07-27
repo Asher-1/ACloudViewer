@@ -64,14 +64,14 @@ Eigen::Vector3f RotationInteractorLogic::CalcPanVectorWorld(int dx, int dy) {
     // the depth of the center of rotation.
     auto pos = camera_->GetPosition();
     auto forward = camera_->GetForwardVector();
-    float near_v = float(camera_->GetNear());
+    float near = float(camera_->GetNear());
     float dist = forward.dot(center_of_rotation_at_mouse_down_ - pos);
-    dist = std::max(near_v, dist);
+    dist = std::max(near, dist);
 
     // How far is one pixel?
     float half_fov = float(camera_->GetFieldOfView() / 2.0);
     float hal_fov_radians = half_fov * float(M_PI / 180.0);
-    float units_at_dist = 2.0f * std::tan(hal_fov_radians) * (near_v + dist);
+    float units_at_dist = 2.0f * std::tan(hal_fov_radians) * (near + dist);
     float units_per_px = units_at_dist / float(view_height_);
 
     // Move camera and center of rotation. Adjust values from the
@@ -98,21 +98,27 @@ void RotationInteractorLogic::UpdateCameraFarPlane() {
     // interactor's matrix.
     // Also, the far plane needs to be able to show the
     // axis if it is visible, so we need the far plane to include
-    // the origin. (See also SceneWidget::SetupCamera())
-    auto pos = camera_->GetModelMatrix().translation().cast<double>();
-    auto far1 = model_bounds_.getMinBound().norm();
-    auto far2 = model_bounds_.getMaxBound().norm();
-    auto far3 = pos.norm();
-    auto model_size = 2.0 * model_bounds_.getExtent().norm();
-    auto far_v = std::max(min_far_plane_,
-                        std::max(std::max(far1, far2), far3) + model_size);
-    float aspect = 1.0f;
-    if (view_height_ > 0) {
-        aspect = float(view_width_) / float(view_height_);
+    // the origin.
+    auto far = Camera::CalcFarPlane(*camera_, model_bounds_);
+    auto proj = camera_->GetProjection();
+    if (proj.is_intrinsic) {
+        Eigen::Matrix3d intrinsic;
+        intrinsic << proj.proj.intrinsics.fx, 0.0, proj.proj.intrinsics.cx, 0.0,
+                proj.proj.intrinsics.fy, proj.proj.intrinsics.cy, 0.0, 0.0, 1.0;
+        camera_->SetProjection(intrinsic, proj.proj.intrinsics.near_plane, far,
+                               proj.proj.intrinsics.width,
+                               proj.proj.intrinsics.height);
+    } else if (proj.is_ortho) {
+        camera_->SetProjection(proj.proj.ortho.projection, proj.proj.ortho.left,
+                               proj.proj.ortho.right, proj.proj.ortho.bottom,
+                               proj.proj.ortho.top, proj.proj.ortho.near_plane,
+                               far);
+    } else {
+        camera_->SetProjection(proj.proj.perspective.fov,
+                               proj.proj.perspective.aspect,
+                               proj.proj.perspective.near_plane, far,
+                               proj.proj.perspective.fov_type);
     }
-    camera_->SetProjection(camera_->GetFieldOfView(), aspect,
-                           camera_->GetNear(), far_v,
-                           camera_->GetFieldOfViewType());
 }
 
 }  // namespace rendering

@@ -56,10 +56,14 @@ REGISTER_OP("CloudviewerNms")
             return Status::OK();
         })
         .Doc(R"doc(
-Performs non-maximum suppression of bounding boxes and returns the selected box
-indices.
+Performs non-maximum suppression of bounding boxes.
 
-  # TensorFlow example.
+This function performs non-maximum suppression for the input bounding boxes
+considering the the per-box score and overlaps. It returns the indices of the
+selected boxes.
+
+Minimal example::
+
   import cloudViewer.ml.tf as ml3d
   import numpy as np
 

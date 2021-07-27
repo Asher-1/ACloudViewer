@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Timer.h"
-#include "Console.h"
+#include "Logging.h"
 
 #include <chrono>
 

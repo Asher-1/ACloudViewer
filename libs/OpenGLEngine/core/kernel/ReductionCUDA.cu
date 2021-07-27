@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,23 +30,25 @@
 #include <thrust/tuple.h>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <sstream>
 #include <tuple>
 #include <type_traits>
 
+#include "core/Blob.h"
 #include "core/CUDAState.cuh"
 #include "core/CUDAUtils.h"
 #include "core/Device.h"
 #include "core/Dispatch.h"
-#include "core/FuncionTraits.h"
+#include "core/FunctionTraits.h"
 #include "core/Indexer.h"
 #include "core/MemoryManager.h"
 #include "core/SizeVector.h"
 #include "core/Tensor.h"
 #include "core/kernel/CUDALauncher.cuh"
 #include "core/kernel/Reduction.h"
-#include <Console.h>
+#include <Logging.h>
 
 // CUDA reduction is based on PyTorch's CUDA reduction implementation.
 // See: aten/src/ATen/native/cuda/Reduce.cuh
@@ -60,18 +62,18 @@ constexpr uint32_t CUDA_MAX_THREADS_PER_SM = 2048;
 constexpr uint32_t CUDA_MAX_THREADS_PER_BLOCK = 1024;
 constexpr uint32_t CUDA_THREADS_PER_BLOCK_FALLBACK = 256;
 
-#define CLOUDVIEWER_MAX_THREADS_PER_BLOCK(val)          \
+#define OPEN3D_MAX_THREADS_PER_BLOCK(val)          \
     (((val) <= CUDA_MAX_THREADS_PER_BLOCK) ? (val) \
                                            : CUDA_THREADS_PER_BLOCK_FALLBACK)
-#define CLOUDVIEWER_MIN_BLOCKS_PER_SM(threads_per_block, blocks_per_sm)       \
+#define OPEN3D_MIN_BLOCKS_PER_SM(threads_per_block, blocks_per_sm)       \
     ((((threads_per_block) * (blocks_per_sm) <= CUDA_MAX_THREADS_PER_SM) \
               ? (blocks_per_sm)                                          \
               : ((CUDA_MAX_THREADS_PER_SM + (threads_per_block)-1) /     \
                  (threads_per_block))))
 
-#define CLOUDVIEWER_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm)       \
-    __launch_bounds__((CLOUDVIEWER_MAX_THREADS_PER_BLOCK((max_threads_per_block))), \
-                      (CLOUDVIEWER_MIN_BLOCKS_PER_SM((max_threads_per_block),       \
+#define OPEN3D_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm)       \
+    __launch_bounds__((OPEN3D_MAX_THREADS_PER_BLOCK((max_threads_per_block))), \
+                      (OPEN3D_MIN_BLOCKS_PER_SM((max_threads_per_block),       \
                                                 (min_blocks_per_sm))))
 
 template <typename T>
@@ -357,7 +359,7 @@ public:
 };
 
 template <int nt, typename R>
-CLOUDVIEWER_LAUNCH_BOUNDS_2(nt, 4)
+OPEN3D_LAUNCH_BOUNDS_2(nt, 4)
 __global__ void ReduceKernel(R reduction) {
     reduction.Run();
 }
@@ -698,7 +700,7 @@ public:
             out_scalar_t*,
             arg_t,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
-        assert(false);  // can't use AT_ASSERT in Cuda.
+        OPEN3D_ASSERT(false);
         return arg_t{};
     }
 
@@ -707,7 +709,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<can_acc>::type* = nullptr) const {
-        assert(!final_output_);
+        OPEN3D_ASSERT(!final_output_);
         return (out_scalar_t)value;
     }
 
@@ -719,7 +721,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
-        assert(false);
+        OPEN3D_ASSERT(false);
         return *out;
     }
 
@@ -731,7 +733,7 @@ public:
 
     CLOUDVIEWER_DEVICE void SetResultsToOutput(arg_t value,
                                           index_t base_offset) const {
-        assert(final_output_);
+        OPEN3D_ASSERT(final_output_);
         SetResults(ops_.Project(value), base_offset);
     }
 
@@ -845,10 +847,10 @@ public:
             numerator_ = 1;
             denominator_ = 1;
         } else {
-            int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
+            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
-            buffer_ = (char*)MemoryManager::Malloc(size, device);
-            acc_ptr_ = (char*)buffer_;
+            buffer_ = std::make_unique<Blob>(size, device);
+            acc_ptr_ = (char*)buffer_->GetDataPtr();
             numerator_ = acc_t_size;
             denominator_ = out_t_size;
             ReduceFraction(numerator_, denominator_);
@@ -863,12 +865,12 @@ public:
     }
 
 private:
+    std::unique_ptr<Blob> buffer_;
     char* acc_ptr_ = nullptr;
     char* out_ptr_ = nullptr;
     float size_factor_ = -1;
     int64_t numerator_ = -1;
     int64_t denominator_ = -1;
-    char* buffer_ = nullptr;
 };
 
 class CUDAReductionEngine {
@@ -880,12 +882,12 @@ public:
     template <typename func_t, typename scalar_t>
     void Run(const func_t& reduce_func, scalar_t identity) {
         if (indexer_.NumWorkloads() == 0) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "0-sized input should be handled outside of the reudction "
                     "engine.");
         }
         if (indexer_.NumInputs() != 1) {
-            cloudViewer::utility::LogError("Reduction op must have exactly one input.");
+            utility::LogError("Reduction op must have exactly one input.");
         }
 
         CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(func_t);
@@ -893,7 +895,7 @@ public:
         using arg1_t = typename BinaryFunctionTraits<func_t>::arg1_t;
         if (!std::is_same<scalar_t, arg0_t>::value ||
             !std::is_same<scalar_t, arg1_t>::value) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Function input type must match with the identity's type.");
         }
 
@@ -966,19 +968,25 @@ private:
 
         ReduceConfig config(sizeof(arg_t), indexer);
 
+        std::unique_ptr<Blob> buffer_blob;
+        std::unique_ptr<Blob> semaphores_blob;
         void* buffer = nullptr;
         void* semaphores = nullptr;
         if (config.ShouldGlobalReduce()) {
-            int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
+            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
 
-            buffer = MemoryManager::Malloc(config.GlobalMemorySize(), device);
-            semaphores = MemoryManager::Malloc(config.SemaphoreSize(), device);
+            buffer_blob =
+                    std::make_unique<Blob>(config.GlobalMemorySize(), device);
+            semaphores_blob =
+                    std::make_unique<Blob>(config.SemaphoreSize(), device);
+            buffer = buffer_blob->GetDataPtr();
+            semaphores = semaphores_blob->GetDataPtr();
             CLOUDVIEWER_CUDA_CHECK(
                     cudaMemset(semaphores, 0, config.SemaphoreSize()));
         }
 
-        assert(can_use_32bit_indexing);
+        OPEN3D_ASSERT(can_use_32bit_indexing);
         const char* in_data = (char*)indexer.GetInput(0).data_ptr_;
         char* out_data = (char*)indexer.GetOutput().data_ptr_;
         char* acc_data = acc_buf_ptr->GetAccSlice(out_data);
@@ -993,8 +1001,8 @@ private:
         // Launch reduce kernel
         int shared_memory = config.SharedMemorySize();
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
-                <<<config.GridDim(), config.BlockDim(), shared_memory>>>(
-                        reduce_op);
+                <<<config.GridDim(), config.BlockDim(), shared_memory,
+                   core::cuda::GetStream()>>>(reduce_op);
         CLOUDVIEWER_CUDA_CHECK(cudaDeviceSynchronize());
         CLOUDVIEWER_CUDA_CHECK(cudaGetLastError());
     }
@@ -1012,7 +1020,8 @@ void ReductionCUDA(const Tensor& src,
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         CUDAReductionEngine re(indexer);
         Dtype dtype = src.GetDtype();
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             switch (op_code) {
                 case ReductionOpCode::Sum:
@@ -1038,7 +1047,7 @@ void ReductionCUDA(const Tensor& src,
                     break;
                 case ReductionOpCode::Min:
                     if (indexer.NumWorkloads() == 0) {
-                        cloudViewer::utility::LogError(
+                        utility::LogError(
                                 "Zero-size Tensor does not suport Min.");
                     } else {
                         re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
@@ -1049,7 +1058,7 @@ void ReductionCUDA(const Tensor& src,
                     break;
                 case ReductionOpCode::Max:
                     if (indexer.NumWorkloads() == 0) {
-                        cloudViewer::utility::LogError(
+                        utility::LogError(
                                 "Zero-size Tensor does not suport Max.");
                     } else {
                         re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
@@ -1059,23 +1068,24 @@ void ReductionCUDA(const Tensor& src,
                     }
                     break;
                 default:
-                    cloudViewer::utility::LogError("Unsupported op code.");
+                    utility::LogError("Unsupported op code.");
                     break;
             }
         });
     } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
         if (dst.GetDtype() != Dtype::Int64) {
-            cloudViewer::utility::LogError("Arg-reduction must have int64 output dtype.");
+            utility::LogError("Arg-reduction must have int64 output dtype.");
         }
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME, dims);
         CUDAReductionEngine re(indexer);
         Dtype dtype = src.GetDtype();
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             switch (op_code) {
                 case ReductionOpCode::ArgMin:
                     if (indexer.NumWorkloads() == 0) {
-                        cloudViewer::utility::LogError(
+                        utility::LogError(
                                 "Zero-size Tensor does not suport ArgMin.");
                     } else {
                         re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
@@ -1086,7 +1096,7 @@ void ReductionCUDA(const Tensor& src,
                     break;
                 case ReductionOpCode::ArgMax:
                     if (indexer.NumWorkloads() == 0) {
-                        cloudViewer::utility::LogError(
+                        utility::LogError(
                                 "Zero-size Tensor does not suport ArgMax.");
                     } else {
                         re.Run([] CLOUDVIEWER_HOST_DEVICE(scalar_t a, scalar_t b)
@@ -1096,23 +1106,24 @@ void ReductionCUDA(const Tensor& src,
                     }
                     break;
                 default:
-                    cloudViewer::utility::LogError("Unsupported op code.");
+                    utility::LogError("Unsupported op code.");
                     break;
             }
         });
     } else if (s_boolean_reduce_ops.find(op_code) !=
                s_boolean_reduce_ops.end()) {
         if (src.GetDtype() != Dtype::Bool) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Boolean reduction only supports boolean input tensor.");
         }
         if (dst.GetDtype() != Dtype::Bool) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Boolean reduction only supports boolean output tensor.");
         }
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         CUDAReductionEngine re(indexer);
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         switch (op_code) {
             case ReductionOpCode::All:
                 if (indexer.NumWorkloads() == 0) {
@@ -1133,11 +1144,11 @@ void ReductionCUDA(const Tensor& src,
                 }
                 break;
             default:
-                cloudViewer::utility::LogError("Unsupported op code.");
+                utility::LogError("Unsupported op code.");
                 break;
         }
     } else {
-        cloudViewer::utility::LogError("Unsupported op code.");
+        utility::LogError("Unsupported op code.");
     }
 }
 

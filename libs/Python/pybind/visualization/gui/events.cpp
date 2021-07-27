@@ -26,15 +26,13 @@
 
 #include "visualization/gui/Events.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include "pybind/visualization/gui/gui.h"
 #include "pybind11/functional.h"
 
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
-
-using namespace cloudViewer;
 
 void pybind_gui_events(py::module& m) {
     py::enum_<MouseButton> buttons(m, "MouseButton", "Mouse button identifiers",

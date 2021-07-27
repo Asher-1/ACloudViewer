@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,13 +30,13 @@
 
 #include "core/ShapeUtil.h"
 #include "core/Tensor.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
 namespace kernel {
 
-const std::unordered_set<BinaryEWOpCode, cloudViewer::utility::hash_enum_class>
+const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class>
         s_boolean_binary_ew_op_codes{
                 BinaryEWOpCode::LogicalAnd, BinaryEWOpCode::LogicalOr,
                 BinaryEWOpCode::LogicalXor, BinaryEWOpCode::Gt,
@@ -53,7 +53,7 @@ void BinaryEW(const Tensor& lhs,
     for (auto device :
          std::vector<Device>({rhs.GetDevice(), dst.GetDevice()})) {
         if (lhs.GetDevice() != device) {
-            cloudViewer::utility::LogError("Device mismatch {} != {}.",
+            utility::LogError("Device mismatch {} != {}.",
                               lhs.GetDevice().ToString(), device.ToString());
         }
     }
@@ -62,7 +62,7 @@ void BinaryEW(const Tensor& lhs,
     const SizeVector broadcasted_input_shape =
             shape_util::BroadcastedShape(lhs.GetShape(), rhs.GetShape());
     if (broadcasted_input_shape != dst.GetShape()) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "The broadcasted input shape {} does not match the output "
                 "shape {}.",
                 broadcasted_input_shape, dst.GetShape());
@@ -75,10 +75,10 @@ void BinaryEW(const Tensor& lhs,
 #ifdef BUILD_CUDA_MODULE
         BinaryEWCUDA(lhs, rhs, dst, op_code);
 #else
-        cloudViewer::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        cloudViewer::utility::LogError("BinaryEW: Unimplemented device");
+        utility::LogError("BinaryEW: Unimplemented device");
     }
 }
 

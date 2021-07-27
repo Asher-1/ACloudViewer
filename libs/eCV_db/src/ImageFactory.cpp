@@ -26,7 +26,7 @@
 
 #include "Image.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include "camera/PinholeCameraIntrinsic.h"
 
 namespace cloudViewer {

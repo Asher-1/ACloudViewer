@@ -29,7 +29,7 @@
 //
 // Author: Asher (Dahai Lu)
 
-#include <Console.h>
+#include <Logging.h>
 #include "util/misc.h"
 #include "util/option_manager.h"
 

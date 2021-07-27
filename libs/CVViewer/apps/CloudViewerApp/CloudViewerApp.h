@@ -27,7 +27,6 @@
 #include <memory>
 
 namespace cloudViewer {
-
 namespace visualizer {
 class GuiVisualizer;
 }

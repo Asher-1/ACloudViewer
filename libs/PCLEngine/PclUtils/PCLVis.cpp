@@ -601,7 +601,7 @@ PCLVis::PCLVis(vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle> interact
 		}
 	}
 
-	// Reset the camera clipping range to include this entire bounding box
+	// reset the camera clipping range to include this entire bounding box
     void PCLVis::getReasonableClippingRange(double range[2], int viewport)
 	{
 		double vn[3], position[3], a, b, c, d;

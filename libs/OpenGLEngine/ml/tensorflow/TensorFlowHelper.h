@@ -25,11 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "ml/ShapeChecking.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/lib/core/errors.h"
+
+#include "ml/ShapeChecking.h"
 
 inline std::vector<cloudViewer::ml::op_util::DimValue> GetShapeVector(
         ::tensorflow::shape_inference::InferenceContext* c,

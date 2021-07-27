@@ -28,6 +28,7 @@
 
 #include <math.h>
 
+#include "Macro.h"
 #include "core/CUDAUtils.h"
 
 namespace cloudViewer {
@@ -50,7 +51,8 @@ struct Point {
     CLOUDVIEWER_HOST_DEVICE Point operator-(const Point &b) const {
         return Point(x_ - b.x_, y_ - b.y_);
     }
-    float x_, y_;
+    float x_ = 0.0f;
+    float y_ = 0.0f;
 };
 
 CLOUDVIEWER_HOST_DEVICE inline float Cross(const Point &a, const Point &b) {
@@ -214,6 +216,8 @@ CLOUDVIEWER_HOST_DEVICE inline float BoxOverlap(const float *box_a,
             cnt++;
         }
     }
+
+    CLOUDVIEWER_ASSERT(cnt != 0 && "Invalid value: cnt==0.");
 
     poly_center.x_ /= cnt;
     poly_center.y_ /= cnt;

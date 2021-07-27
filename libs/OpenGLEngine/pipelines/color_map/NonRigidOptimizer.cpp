@@ -29,13 +29,15 @@
 #include <memory>
 #include <vector>
 
+#include <FileSystem.h>
+#include <Parallel.h>
+
 #include <ImageIO.h>
 #include <PinholeCameraTrajectoryIO.h>
 #include "io/TriangleMeshIO.h"
 #include "io/ImageWarpingFieldIO.h"
 #include "pipelines/color_map/ColorMapUtils.h"
 #include "pipelines/color_map/ImageWarpingField.h"
-#include <FileSystem.h>
 
 namespace Eigen {
 
@@ -104,7 +106,7 @@ static std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
             }
             r2_sum_private += r * r;
         }
-#pragma omp critical
+#pragma omp critical(ComputeJTJandJTrNonRigid)
         {
             JTJ += JTJ_private;
             JTr += JTr_private;
@@ -112,7 +114,7 @@ static std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
         }
     }
     if (verbose) {
-        cloudViewer::utility::LogDebug("Residual : {:.2e} (# of elements : {:d})",
+        utility::LogDebug("Residual : {:.2e} (# of elements : {:d})",
                           r2_sum / (double)iteration_num, iteration_num);
     }
     return std::make_tuple(std::move(JTJ), std::move(JTr), r2_sum);
@@ -250,23 +252,23 @@ ccMesh RunNonRigidOptimizer(
                 option.debug_output_dir_ + "/non_rigid/opt_camera_trajectory",
                 option.debug_output_dir_ + "/non_rigid/warping_fields"};
         for (const std::string& dir : dirs) {
-            if (cloudViewer::utility::filesystem::DirectoryExists(dir)) {
-                cloudViewer::utility::LogInfo("Directory exists: {}.", dir);
+            if (utility::filesystem::DirectoryExists(dir)) {
+                utility::LogInfo("Directory exists: {}.", dir);
             } else {
-                if (cloudViewer::utility::filesystem::MakeDirectoryHierarchy(dir)) {
-                    cloudViewer::utility::LogInfo("Directory created: {}.", dir);
+                if (utility::filesystem::MakeDirectoryHierarchy(dir)) {
+                    utility::LogInfo("Directory created: {}.", dir);
                 } else {
-                    cloudViewer::utility::LogError("Making directory failed: {}.", dir);
+                    utility::LogError("Making directory failed: {}.", dir);
                 }
             }
         }
     }
 
-    cloudViewer::utility::LogDebug("[ColorMapOptimization] CreateUtilImagesFromRGBD");
+    utility::LogDebug("[ColorMapOptimization] CreateUtilImagesFromRGBD");
     std::tie(images_gray, images_dx, images_dy, images_color, images_depth) =
             CreateUtilImagesFromRGBD(images_rgbd);
 
-    cloudViewer::utility::LogDebug("[ColorMapOptimization] CreateDepthBoundaryMasks");
+    utility::LogDebug("[ColorMapOptimization] CreateDepthBoundaryMasks");
     images_mask = CreateDepthBoundaryMasks(
             images_depth, option.depth_threshold_for_discontinuity_check_,
             option.half_dilation_kernel_size_for_discontinuity_map_);
@@ -279,14 +281,14 @@ ccMesh RunNonRigidOptimizer(
         }
     }
 
-    cloudViewer::utility::LogDebug("[ColorMapOptimization] CreateVertexAndImageVisibility");
+    utility::LogDebug("[ColorMapOptimization] CreateVertexAndImageVisibility");
     std::tie(visibility_vertex_to_image, visibility_image_to_vertex) =
             CreateVertexAndImageVisibility(
                     opt_mesh, images_depth, images_mask, opt_camera_trajectory,
                     option.maximum_allowable_depth_,
                     option.depth_threshold_for_visibility_check_);
 
-    cloudViewer::utility::LogDebug("[ColorMapOptimization] Non-Rigid Optimization");
+    utility::LogDebug("[ColorMapOptimization] Non-Rigid Optimization");
     warping_fields = CreateWarpingFields(images_gray,
                                          option.number_of_vertical_anchors_);
     warping_fields_init = CreateWarpingFields(
@@ -299,10 +301,11 @@ ccMesh RunNonRigidOptimizer(
                                visibility_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
-        cloudViewer::utility::LogDebug("[Iteration {:04d}] ", itr + 1);
+        utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         double residual_reg = 0.0;
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int c = 0; c < n_camera; c++) {
             int nonrigidval = warping_fields[c].anchor_w_ *
                               warping_fields[c].anchor_h_ * 2;
@@ -348,13 +351,13 @@ ccMesh RunNonRigidOptimizer(
 
             bool success;
             Eigen::VectorXd result;
-            std::tie(success, result) = cloudViewer::utility::SolveLinearSystemPSD(
+            std::tie(success, result) = utility::SolveLinearSystemPSD(
                     JTJ, -JTr, /*prefer_sparse=*/false,
                     /*check_symmetric=*/false,
                     /*check_det=*/false, /*check_psd=*/false);
             Eigen::Vector6d result_pose;
             result_pose << result.block(0, 0, 6, 1);
-            auto delta = cloudViewer::utility::TransformVector6dToMatrix4d(result_pose);
+            auto delta = utility::TransformVector6dToMatrix4d(result_pose);
             pose = delta * pose;
 
             for (int j = 0; j < nonrigidval; j++) {
@@ -362,13 +365,13 @@ ccMesh RunNonRigidOptimizer(
             }
             opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
 
-#pragma omp critical
+#pragma omp critical(RunNonRigidOptimizer)
             {
                 residual += r2;
                 residual_reg += rr_reg;
             }
         }
-        cloudViewer::utility::LogDebug("Residual error : {:.6f}, reg : {:.6f}", residual,
+        utility::LogDebug("Residual error : {:.6f}, reg : {:.6f}", residual,
                           residual_reg);
         SetProxyIntensityForVertex(opt_mesh, images_gray, warping_fields,
                                    opt_camera_trajectory,
@@ -405,7 +408,7 @@ ccMesh RunNonRigidOptimizer(
         }
     }
 
-    cloudViewer::utility::LogDebug("[ColorMapOptimization] Set Mesh Color");
+    utility::LogDebug("[ColorMapOptimization] Set Mesh Color");
     SetGeometryColorAverage(opt_mesh, images_color, warping_fields,
                             opt_camera_trajectory, visibility_vertex_to_image,
                             option.image_boundary_margin_,

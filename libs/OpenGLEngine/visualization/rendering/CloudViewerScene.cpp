@@ -26,11 +26,12 @@
 
 #include "visualization/rendering/CloudViewerScene.h"
 
-#include <algorithm>
-
 #include <LineSet.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
+#include <algorithm>
+
 #include "visualization/gui/Application.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/Scene.h"
@@ -59,24 +60,24 @@ std::shared_ptr<ccMesh> CreateAxisGeometry(double axis_length) {
     std::shared_ptr<ccMesh> mesh_arrow;
     Eigen::Matrix4d transformation;
 
-    mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius,
-                                     cyl_height, cone_height);
+    mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius, cyl_height,
+                                     cone_height);
     mesh_arrow->computeVertexNormals();
     mesh_arrow->paintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
     transformation << 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1;
     mesh_arrow->transform(transformation);
     *mesh_frame += *mesh_arrow;
 
-    mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius,
-                                     cyl_height, cone_height);
+    mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius, cyl_height,
+                                     cone_height);
     mesh_arrow->computeVertexNormals();
     mesh_arrow->paintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
     transformation << 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1;
     mesh_arrow->transform(transformation);
     *mesh_frame += *mesh_arrow;
 
-    mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius,
-                                     cyl_height, cone_height);
+    mesh_arrow = ccMesh::CreateArrow(cyl_radius, cone_radius, cyl_height,
+                                     cone_height);
     mesh_arrow->computeVertexNormals();
     mesh_arrow->paintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));
     transformation << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
@@ -89,9 +90,7 @@ std::shared_ptr<ccMesh> CreateAxisGeometry(double axis_length) {
     return mesh_frame;
 }
 
-void RecreateAxis(Scene* scene,
-                  const ccBBox& bounds,
-                  bool enabled) {
+void RecreateAxis(Scene* scene, const ccBBox& bounds, bool enabled) {
     scene->RemoveGeometry(kAxisObjectName);
 
     // Axes length should be the longer of the bounds extent or 25% of the
@@ -104,7 +103,9 @@ void RecreateAxis(Scene* scene,
     }
     axis_length = std::max(axis_length, 0.25f * bounds.getCenter().norm());
     auto mesh = CreateAxisGeometry(axis_length);
-    scene->AddGeometry(kAxisObjectName, *mesh, Material());
+    Material mat;
+    mat.shader = "defaultUnlit";
+    scene->AddGeometry(kAxisObjectName, *mesh, mat);
     // It looks awkward to have the axis cast a a shadow, and even stranger
     // to receive a shadow.
     scene->GeometryShadows(kAxisObjectName, false, false);
@@ -117,7 +118,7 @@ CloudViewerScene::CloudViewerScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
-    scene->SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
+    SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
 
     SetLighting(LightingProfile::MED_SHADOWS, {0.577f, -0.577f, -0.577f});
 
@@ -136,6 +137,21 @@ View* CloudViewerScene::GetView() const {
     return scene->GetView(view_);
 }
 
+void CloudViewerScene::SetViewport(std::int32_t x,
+                                   std::int32_t y,
+                                   std::uint32_t width,
+                                   std::uint32_t height) {
+    // Setup the view in which we render to a texture. Since this is just a
+    // texture, we want our viewport to be the entire texture.
+    auto view = GetView();
+    // Since we are rendering into a texture (EnableViewCaching(true) below),
+    // we need to use the entire texture; the viewport passed in is the viewport
+    // with respect to the window, and we are setting the viewport with respect
+    // to the render target here.
+    view->SetViewport(0, 0, width, height);
+    view->EnableViewCaching(true);
+}
+
 void CloudViewerScene::ShowSkybox(bool enable) {
     auto scene = renderer_.GetScene(scene_);
     scene->ShowSkybox(enable);
@@ -150,10 +166,16 @@ void CloudViewerScene::ShowAxes(bool enable) {
     scene->ShowGeometry(kAxisObjectName, enable);
 }
 
-void CloudViewerScene::SetBackground(const Eigen::Vector4f& color,
-                                std::shared_ptr<geometry::Image> image /*=0*/) {
+void CloudViewerScene::SetBackground(
+        const Eigen::Vector4f& color,
+        std::shared_ptr<geometry::Image> image /*=0*/) {
     auto scene = renderer_.GetScene(scene_);
     scene->SetBackground(color, image);
+    background_color = color;
+}
+
+const Eigen::Vector4f CloudViewerScene::GetBackgroundColor() const {
+    return background_color;
 }
 
 void CloudViewerScene::ShowGroundPlane(bool enable, Scene::GroundPlane plane) {
@@ -162,7 +184,7 @@ void CloudViewerScene::ShowGroundPlane(bool enable, Scene::GroundPlane plane) {
 }
 
 void CloudViewerScene::SetLighting(LightingProfile profile,
-                              const Eigen::Vector3f& sun_dir) {
+                                   const Eigen::Vector3f& sun_dir) {
     auto scene = renderer_.GetScene(scene_);
 
     if (profile != LightingProfile::HARD_SHADOWS) {
@@ -320,7 +342,7 @@ void CloudViewerScene::RemoveGeometry(const std::string& name) {
 }
 
 void CloudViewerScene::ModifyGeometryMaterial(const std::string& name,
-                                         const Material& mat) {
+                                              const Material& mat) {
     auto scene = renderer_.GetScene(scene_);
     scene->OverrideMaterial(name, mat);
     auto it = geometries_.find(name);
@@ -350,7 +372,7 @@ void CloudViewerScene::ShowGeometry(const std::string& name, bool show) {
 }
 
 void CloudViewerScene::AddModel(const std::string& name,
-                           const TriangleMeshModel& model) {
+                                const TriangleMeshModel& model) {
     auto scene = renderer_.GetScene(scene_);
     if (scene->AddGeometry(name, model)) {
         GeometryData info(name, "");
@@ -378,7 +400,7 @@ void CloudViewerScene::UpdateMaterial(const Material& mat) {
 }
 
 void CloudViewerScene::UpdateModelMaterial(const std::string& name,
-                                      const TriangleMeshModel& model) {
+                                           const TriangleMeshModel& model) {
     auto scene = renderer_.GetScene(scene_);
     scene->RemoveGeometry(name);
     scene->AddGeometry(name, model);

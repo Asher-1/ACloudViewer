@@ -32,7 +32,7 @@
 #include <vector>
 
 #include <Helper.h>
-#include <Console.h>
+#include <Logging.h>
 
 #include "ecvHObject.h"
 

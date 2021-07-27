@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@ public:
 
     /// \brief Parameterized Constructor.
     ///
-    /// \param tensor Provides a set of data points as Tensor for KDTree
+    /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     FixedRadiusIndex(const Tensor& dataset_points, double radius);
     ~FixedRadiusIndex();
@@ -68,37 +68,29 @@ public:
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor& query_points, const Tensor& radii) const override {
+            const Tensor& query_points,
+            const Tensor& radii,
+            bool sort = true) const override {
         utility::LogError(
                 "FixedRadiusIndex::SearchRadius with multi-radii not "
                 "implemented.");
     }
-    /// Perform radius search.
-    ///
-    /// \param query_points Query points. Must be 2D, with shape {n, d}, same
-    /// dtype with dataset_points.
-    /// \param radius Radius.
-    /// \return Tuple of Tensors, (indices, distances, num_neighbors):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
-    /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
-    /// dataset_points.
-    /// - num_neighbors: Tensor of shape {n}, dtype Int64.
+
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor& query_points, double radius) const override;
+            const Tensor& query_points,
+            double radius,
+            bool sort = true) const override;
 
-    std::pair<Tensor, Tensor> SearchHybrid(const Tensor& query_points,
-                                           float radius,
-                                           int max_knn) const override {
-        utility::LogError("FixedRadiusIndex::SearchHybrid not implemented.");
-    }
+    std::tuple<Tensor, Tensor, Tensor> SearchHybrid(const Tensor& query_points,
+                                                    double radius,
+                                                    int max_knn) const override;
 
-    const double hash_table_size_factor = 1 / 32;
-    const int64_t max_hash_tabls_size = 10000;
+    const double hash_table_size_factor = 1.0 / 32;
+    const int64_t max_hash_tabls_size = 33554432;
 
 protected:
     std::vector<int64_t> points_row_splits_;
-    std::vector<uint32_t> hash_table_splits_;
-    std::vector<uint32_t> out_hash_table_splits_;
+    std::vector<int64_t> hash_table_splits_;
     Tensor hash_table_cell_splits_;
     Tensor hash_table_index_;
 };
@@ -108,29 +100,52 @@ class NeighborSearchAllocator {
 public:
     NeighborSearchAllocator(Device device) : device_(device) {}
 
-    void AllocIndices(int32_t** ptr, size_t num) {
-        neighbors_index = Tensor::Empty({int64_t(num)}, Dtype::Int32, device_);
-        *ptr = neighbors_index.GetDataPtr<int32_t>();
+    void AllocIndices(int64_t** ptr, size_t num) {
+        indices_ = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
+        *ptr = indices_.GetDataPtr<int64_t>();
+    }
+
+    void AllocIndices(int64_t** ptr, size_t num, int64_t value) {
+        indices_ = Tensor::Full({int64_t(num)}, value, Dtype::Int64, device_);
+        *ptr = indices_.GetDataPtr<int64_t>();
     }
 
     void AllocDistances(T** ptr, size_t num) {
-        neighbors_distance =
+        distances_ =
                 Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
-        *ptr = neighbors_distance.GetDataPtr<T>();
+        *ptr = distances_.GetDataPtr<T>();
     }
 
-    const int32_t* IndicesPtr() const {
-        return neighbors_index.GetDataPtr<int32_t>();
+    void AllocDistances(T** ptr, size_t num, T value) {
+        distances_ = Tensor::Full({int64_t(num)}, value, Dtype::FromType<T>(),
+                                  device_);
+        *ptr = distances_.GetDataPtr<T>();
     }
 
-    const T* DistancesPtr() const { return neighbors_distance.GetDataPtr<T>(); }
+    void AllocCounts(int64_t** ptr, size_t num) {
+        counts_ = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
+        *ptr = counts_.GetDataPtr<int64_t>();
+    }
 
-    const Tensor& NeighborsIndex() const { return neighbors_index; }
-    const Tensor& NeighborsDistance() const { return neighbors_distance; }
+    void AllocCounts(int64_t** ptr, size_t num, int64_t value) {
+        counts_ = Tensor::Full({int64_t(num)}, value, Dtype::Int64, device_);
+        *ptr = counts_.GetDataPtr<int64_t>();
+    }
+
+    const int64_t* IndicesPtr() const { return indices_.GetDataPtr<int64_t>(); }
+
+    const T* DistancesPtr() const { return distances_.GetDataPtr<T>(); }
+
+    const int64_t* CountsPtr() const { return counts_.GetDataPtr<int64_t>(); }
+
+    const Tensor& NeighborsIndex() const { return indices_; }
+    const Tensor& NeighborsDistance() const { return distances_; }
+    const Tensor& NeighborCounts() const { return counts_; }
 
 private:
-    Tensor neighbors_index;
-    Tensor neighbors_distance;
+    Tensor indices_;
+    Tensor distances_;
+    Tensor counts_;
     Device device_;
 };
 }  // namespace nns

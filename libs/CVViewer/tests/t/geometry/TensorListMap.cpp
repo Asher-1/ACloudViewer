@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/TensorListMap.h"
+#include "t/geometry/TensorListMap.h"
 
 #include <vector>
 
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(TensorListMap, Constructor_GetPrimaryKey) {
@@ -158,4 +158,4 @@ TEST(TensorListMap, Contains) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

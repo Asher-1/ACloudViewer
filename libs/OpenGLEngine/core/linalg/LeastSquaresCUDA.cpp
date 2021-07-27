@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "core/Blob.h"
 #include "core/CUDAUtils.h"
 #include "core/linalg/BlasWrapper.h"
 #include "core/linalg/LapackWrapper.h"
@@ -52,8 +53,7 @@ void LeastSquaresCUDA(void* A_data,
 
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len_geqrf, len_ormqr, len;
-        int* dinfo =
-                static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
+        Blob dinfo(sizeof(int), device);
 
         CLOUDVIEWER_CUSOLVER_CHECK(geqrf_cuda_buffersize<scalar_t>(
                                       cusolver_handle, m, n, m, &len_geqrf),
@@ -64,40 +64,40 @@ void LeastSquaresCUDA(void* A_data,
                               "ormqr_buffersize failed in LeastSquaresCUDA");
         len = std::max(len_geqrf, len_ormqr);
 
-        void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
-        void* tau = MemoryManager::Malloc(n * sizeof(scalar_t), device);
+        Blob workspace(len * sizeof(scalar_t), device);
+        Blob tau(n * sizeof(scalar_t), device);
 
         // Step 1: A = QR
         CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(
                 geqrf_cuda<scalar_t>(
                         cusolver_handle, m, n, static_cast<scalar_t*>(A_data),
-                        m, static_cast<scalar_t*>(tau),
-                        static_cast<scalar_t*>(workspace), len, dinfo),
-                "geqrf failed in LeastSquaresCUDA", dinfo, device);
+                        m, static_cast<scalar_t*>(tau.GetDataPtr()),
+                        static_cast<scalar_t*>(workspace.GetDataPtr()), len,
+                        static_cast<int*>(dinfo.GetDataPtr())),
+                "geqrf failed in LeastSquaresCUDA",
+                static_cast<int*>(dinfo.GetDataPtr()), device);
 
         // Step 2: B' = Q^T*B
         CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(
                 ormqr_cuda<scalar_t>(
                         cusolver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, m, k, n,
                         static_cast<scalar_t*>(A_data), m,
-                        static_cast<scalar_t*>(tau),
+                        static_cast<scalar_t*>(tau.GetDataPtr()),
                         static_cast<scalar_t*>(B_data), m,
-                        static_cast<scalar_t*>(workspace), len, dinfo),
-                "ormqr failed in LeastSquaresCUDA", dinfo, device);
+                        static_cast<scalar_t*>(workspace.GetDataPtr()), len,
+                        static_cast<int*>(dinfo.GetDataPtr())),
+                "ormqr failed in LeastSquaresCUDA",
+                static_cast<int*>(dinfo.GetDataPtr()), device);
 
         // Step 3: Solve Rx = B'
         scalar_t alpha = 1.0f;
-        CLOUDVIEWER_CUBLAS_CHECK(
+        OPEN3D_CUBLAS_CHECK(
                 trsm_cuda<scalar_t>(cublas_handle, CUBLAS_SIDE_LEFT,
                                     CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N,
                                     CUBLAS_DIAG_NON_UNIT, n, k, &alpha,
                                     static_cast<scalar_t*>(A_data), m,
                                     static_cast<scalar_t*>(B_data), m),
                 "trsm failed in LeastSquaresCUDA");
-
-        MemoryManager::Free(workspace, device);
-        MemoryManager::Free(tau, device);
-        MemoryManager::Free(dinfo, device);
     });
 }
 

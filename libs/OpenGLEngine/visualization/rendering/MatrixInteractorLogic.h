@@ -49,8 +49,11 @@ public:
     const ccBBox& GetBoundingBox() const;
     virtual void SetBoundingBox(const ccBBox& bounds);
 
+    Eigen::Vector3f GetCenterOfRotation() const;
+
     void SetMouseDownInfo(const Camera::Transform& matrix,
                           const Eigen::Vector3f& center_of_rotation);
+
 
     const Camera::Transform& GetMatrix() const;
 

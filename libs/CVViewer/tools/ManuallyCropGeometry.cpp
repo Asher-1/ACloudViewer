@@ -28,6 +28,8 @@
 
 void PrintHelp() {
     using namespace cloudViewer;
+    PrintCloudViewerVersion();
+
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]");
@@ -64,8 +66,8 @@ int main(int argc, char **argv) {
             utility::filesystem::GetFileParentDirectory(argv[1]));
     vis.CreateVisualizerWindow("Crop Point Cloud", 1920, 1080, 100, 100);
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
-        auto pcd_ptr = cloudViewer::io::CreatePointCloudFromFile(argv[2]);
-        if (!pcd_ptr->hasPoints()) {
+        auto pcd_ptr = io::CreatePointCloudFromFile(argv[2]);
+        if (pcd_ptr == nullptr || !pcd_ptr->isEmpty()) {
             utility::LogWarning("Failed to read the point cloud.");
             return 1;
         }
@@ -74,8 +76,8 @@ int main(int argc, char **argv) {
             vis.GetRenderOption().point_size_ = 1.0;
         }
     } else if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
-        auto mesh_ptr = cloudViewer::io::CreateMeshFromFile(argv[2]);
-        if (mesh_ptr->size() == 0) {
+        auto mesh_ptr = io::CreateMeshFromFile(argv[2]);
+        if (mesh_ptr == nullptr || mesh_ptr->isEmpty()) {
             utility::LogWarning("Failed to read the mesh.");
             return 1;
         }

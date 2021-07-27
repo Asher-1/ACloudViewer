@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -27,11 +27,11 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <memory>
 
 #include "pipelines/registration/Registration.h"
 #include "pipelines/registration/RobustKernel.h"
 #include "pipelines/registration/TransformationEstimation.h"
-
 
 class ccPointCloud;
 namespace cloudViewer {
@@ -42,20 +42,21 @@ class PointCloud;
 
 namespace pipelines {
 namespace registration {
-class RegistrationResult;
 
+class RegistrationResult;
 
 class TransformationEstimationForColoredICP : public TransformationEstimation {
 public:
-    ~TransformationEstimationForColoredICP() override {};
+    ~TransformationEstimationForColoredICP() override{};
 
     TransformationEstimationType GetTransformationEstimationType()
-        const override {
+            const override {
         return type_;
     };
     explicit TransformationEstimationForColoredICP(
-        double lambda_geometric = 0.968,
-        std::shared_ptr<RobustKernel> kernel = cloudViewer::make_shared<L2Loss>())
+            double lambda_geometric = 0.968,
+            std::shared_ptr<RobustKernel> kernel =
+                    cloudViewer::make_shared<L2Loss>())
         : lambda_geometric_(lambda_geometric), kernel_(std::move(kernel)) {
         if (lambda_geometric_ < 0 || lambda_geometric_ > 1.0) {
             lambda_geometric_ = 0.968;
@@ -64,12 +65,12 @@ public:
 
 public:
     double ComputeRMSE(const ccPointCloud& source,
-        const ccPointCloud& target,
-        const CorrespondenceSet& corres) const override;
+                       const ccPointCloud& target,
+                       const CorrespondenceSet& corres) const override;
     Eigen::Matrix4d ComputeTransformation(
-        const ccPointCloud& source,
-        const ccPointCloud& target,
-        const CorrespondenceSet& corres) const override;
+            const ccPointCloud& source,
+            const ccPointCloud& target,
+            const CorrespondenceSet& corres) const override;
 
 public:
     double lambda_geometric_ = 0.968;
@@ -78,7 +79,7 @@ public:
 
 private:
     const TransformationEstimationType type_ =
-        TransformationEstimationType::ColoredICP;
+            TransformationEstimationType::ColoredICP;
 };
 
 /// \brief Function for Colored ICP registration.
@@ -92,16 +93,17 @@ private:
 /// \param max_distance Maximum correspondence points-pair distance.
 /// \param init Initial transformation estimation.
 /// Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
-/// [0., 0., 0., 1.]]). \param criteria  Convergence criteria. \param
+/// [0., 0., 0., 1.]]).
 /// \param estimation TransformationEstimationForColoredICP method. Can only
 /// change the lambda_geometric value and the robust kernel used in the
 /// optimization
+/// \param criteria  Convergence criteria.
 RegistrationResult RegistrationColoredICP(
-        const ccPointCloud &source,
-        const ccPointCloud &target,
+        const ccPointCloud& source,
+        const ccPointCloud& target,
         double max_distance,
-        const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
-        const TransformationEstimationForColoredICP &estimation =
+        const Eigen::Matrix4d& init = Eigen::Matrix4d::Identity(),
+        const TransformationEstimationForColoredICP& estimation =
                 TransformationEstimationForColoredICP(),
         const ICPConvergenceCriteria& criteria = ICPConvergenceCriteria());
 

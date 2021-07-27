@@ -34,7 +34,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include <Console.h>
+#include <Logging.h>
 #include <Eigen/Dense>
 #include <cmath>  // jspark
 

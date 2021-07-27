@@ -47,7 +47,7 @@ class RGBDImage;
 namespace pipelines {
 namespace odometry {
 
-typedef std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator>
+typedef std::vector<Eigen::Vector4i, utility::Vector4i_allocator>
         CorrespondenceSetPixelWise;
 
 /// \class RGBDOdometryJacobian
@@ -66,7 +66,7 @@ public:
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
     virtual void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             std::vector<double>& w,
             const geometry::RGBDImage &source,
@@ -98,7 +98,7 @@ public:
     /// \brief Parameterized Constructor
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             std::vector<double> &w,
             const geometry::RGBDImage &source,
@@ -115,10 +115,15 @@ public:
 ///
 /// \brief Class to compute Jacobian using hybrid term.
 ///
-/// Energy: (I_p-I_q)^2 + lambda(D_p-(D_q)')^2
-/// reference:
-/// J. Park, Q.-Y. Zhou, and V. Koltun
-/// anonymous submission.
+/// Energy: \f$(I_p - I_q)^2 + \lambda(D_p - (D_q)')^2\f$, where
+/// \f$ I_p \f$ denotes the intensity at pixel p in the source,
+/// \f$ I_q \f$ denotes the intensity at pixel q in the target.
+/// \f$ D_p \f$ denotes the depth pixel p in the source,
+/// \f$ D_q \f$ denotes the depth pixel q in the target.
+/// q is obtained by transforming p with extrinsic then
+/// projecting with intrinsics.
+/// Reference: J. Park, Q.Y. Zhou, and V. Koltun,
+/// Colored Point Cloud Registration Revisited, ICCV, 2017.s
 class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
 public:
     /// \brief Default Constructor.
@@ -129,7 +134,7 @@ public:
     /// \brief Parameterized Constructor.
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             std::vector<double> &w,
             const geometry::RGBDImage &source,

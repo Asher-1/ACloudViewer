@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/VoxelGridIO.h"
+#include "io/VoxelGridIO.h"
 
-#include "open3d/geometry/VoxelGrid.h"
-#include "open3d/visualization/utility/DrawGeometry.h"
+#include "geometry/VoxelGrid.h"
+#include "visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(VoxelGridIO, PLYWriteRead) {
     // Create voxel_grid (two voxels)
-    auto src_voxel_grid = std::make_shared<geometry::VoxelGrid>();
+    auto src_voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
     src_voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
     src_voxel_grid->voxel_size_ = 5;
     src_voxel_grid->AddVoxel(geometry::Voxel(Eigen::Vector3i(1, 2, 3),
@@ -48,7 +48,7 @@ TEST(VoxelGridIO, PLYWriteRead) {
     EXPECT_TRUE(io::WriteVoxelGrid(file_name, *src_voxel_grid));
 
     // Read from file
-    auto dst_voxel_grid = std::make_shared<geometry::VoxelGrid>();
+    auto dst_voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
     EXPECT_TRUE(io::ReadVoxelGrid(file_name, *dst_voxel_grid));
     EXPECT_EQ(std::remove(file_name.c_str()), 0);
 
@@ -72,4 +72,4 @@ TEST(VoxelGridIO, PLYWriteRead) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

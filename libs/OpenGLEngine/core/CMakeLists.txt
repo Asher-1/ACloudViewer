@@ -1,154 +1,124 @@
-set(KERNEL_SRC
-    kernel/Arange.cpp
-    kernel/ArangeCPU.cpp
-    kernel/IndexGetSet.cpp
-    kernel/IndexGetSetCPU.cpp
-    kernel/NonZero.cpp
-    kernel/NonZeroCPU.cpp
-    kernel/UnaryEW.cpp
-    kernel/UnaryEWCPU.cpp
-    kernel/BinaryEW.cpp
-    kernel/BinaryEWCPU.cpp
-    kernel/Reduction.cpp
-    kernel/ReductionCPU.cpp
-    kernel/Kernel.cpp
-)
+add_library(core OBJECT)
 
-set(KERNEL_CUDA_SRC
-    kernel/ArangeCUDA.cu
-    kernel/IndexGetSetCUDA.cu
-    kernel/NonZeroCUDA.cu
-    kernel/UnaryEWCUDA.cu
-    kernel/BinaryEWCUDA.cu
-    kernel/ReductionCUDA.cu
-)
-
-set(LINALG_SRC
-    linalg/Matmul.cpp
-    linalg/MatmulCPU.cpp
-    linalg/LeastSquares.cpp
-    linalg/LeastSquaresCPU.cpp
-    linalg/Solve.cpp
-    linalg/SolveCPU.cpp
-    linalg/Inverse.cpp
-    linalg/InverseCPU.cpp
-    linalg/SVD.cpp
-    linalg/SVDCPU.cpp
-)
-
-set(LINALG_CUDA_SRC
-    linalg/LinalgUtils.cpp
-    linalg/MatmulCUDA.cpp
-    linalg/LeastSquaresCUDA.cpp
-    linalg/SolveCUDA.cpp
-    linalg/InverseCUDA.cpp
-    linalg/SVDCUDA.cpp
-)
-
-set(CORE_SRC
+target_sources(core PRIVATE
     AdvancedIndexing.cpp
-    ShapeUtil.cpp
     CUDAUtils.cpp
     Dtype.cpp
+    Gpu.cpp
     EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
+    MemoryManagerCached.cpp
     MemoryManagerCPU.cpp
+    MemoryManagerStatistic.cpp
     NumpyIO.cpp
+    ShapeUtil.cpp
     Tensor.cpp
     TensorKey.cpp
     TensorList.cpp
-    Gpu.cpp
 )
 
-set(CORE_CUDA_SRC
-    MemoryManagerCUDACached.cu
-    MemoryManagerCUDASimple.cu
+target_sources(core PRIVATE
+    hashmap/DeviceHashmap.cpp
+    hashmap/Hashmap.cpp
 )
 
-set(HASHMAP_SRC
-  hashmap/Hashmap.cpp
-  hashmap/DeviceHashmap.cpp
-  hashmap/CPU/DefaultHashmapCPU.cpp
+target_sources(core PRIVATE
+    hashmap/CPU/CreateCPUHashmap.cpp
 )
 
-set(HASHMAP_CUDA_SRC
-  hashmap/CUDA/DefaultHashmapCUDA.cu
-  hashmap/CUDA/HashmapBufferCUDA.cu
-  hashmap/CUDA/InternalNodeManager.cu
-  )
+target_sources(core PRIVATE
+    kernel/Arange.cpp
+    kernel/ArangeCPU.cpp
+    kernel/BinaryEW.cpp
+    kernel/BinaryEWCPU.cpp
+    kernel/IndexGetSet.cpp
+    kernel/IndexGetSetCPU.cpp
+    kernel/Kernel.cpp
+    kernel/NonZero.cpp
+    kernel/NonZeroCPU.cpp
+    kernel/Reduction.cpp
+    kernel/ReductionCPU.cpp
+    kernel/UnaryEW.cpp
+    kernel/UnaryEWCPU.cpp
+)
 
-set(CORE_NNS_SRC
-    nns/NNSIndex.cpp
+target_sources(core PRIVATE
+    linalg/Det.cpp
+    linalg/Inverse.cpp
+    linalg/InverseCPU.cpp
+    linalg/LeastSquares.cpp
+    linalg/LeastSquaresCPU.cpp
+    linalg/LU.cpp
+    linalg/LUCPU.cpp
+    linalg/Matmul.cpp
+    linalg/MatmulCPU.cpp
+    linalg/Solve.cpp
+    linalg/SolveCPU.cpp
+    linalg/SVD.cpp
+    linalg/SVDCPU.cpp
+    linalg/Tri.cpp
+    linalg/TriCPU.cpp
+)
+
+target_sources(core PRIVATE
+    nns/FixedRadiusIndex.cpp
     nns/NanoFlannIndex.cpp
     nns/NearestNeighborSearch.cpp
-    nns/FixedRadiusIndex.cpp
+    nns/NNSIndex.cpp
 )
 
-if (WITH_FAISS)
-    set(CORE_NNS_SRC ${CORE_NNS_SRC} nns/FaissIndex.cpp)
-endif()
-
 if (BUILD_CUDA_MODULE)
-    set(CORE_NNS_SRC ${CORE_NNS_SRC} nns/FixedRadiusSearch.cu)
-endif()
-
-if (BUILD_CUDA_MODULE)
-    list(APPEND CORE_NNS_SRC nns/FixedRadiusSearch.cu)
-endif()
-
-if(BUILD_CUDA_MODULE)
-    set(ALL_CORE_SRC
-        ${CORE_SRC}
-        ${CORE_CUDA_SRC}
-        ${LINALG_SRC}
-        ${LINALG_CUDA_SRC}
-        ${KERNEL_SRC}
-        ${KERNEL_CUDA_SRC}
-        ${HASHMAP_SRC}
-        ${HASHMAP_CUDA_SRC}
-        ${CORE_NNS_SRC}
+    target_sources(core PRIVATE
+        CUDAState.cu
+        MemoryManagerCUDA.cu
     )
-else()
-  set(ALL_CORE_SRC
-        ${CORE_SRC}
-        ${LINALG_SRC}
-        ${KERNEL_SRC}
-        ${HASHMAP_SRC}
-        ${CORE_NNS_SRC}
+
+    target_sources(core PRIVATE
+        hashmap/CUDA/CreateCUDAHashmap.cu
+        hashmap/CUDA/CUDAHashmapBufferAccessor.cu
+        hashmap/CUDA/SlabNodeManager.cu
+    )
+
+    target_sources(core PRIVATE
+        kernel/ArangeCUDA.cu
+        kernel/BinaryEWCUDA.cu
+        kernel/IndexGetSetCUDA.cu
+        kernel/NonZeroCUDA.cu
+        kernel/ReductionCUDA.cu
+        kernel/UnaryEWCUDA.cu
+    )
+
+    target_sources(core PRIVATE
+        linalg/InverseCUDA.cpp
+        linalg/LeastSquaresCUDA.cpp
+        linalg/LinalgUtils.cpp
+        linalg/LUCUDA.cpp
+        linalg/MatmulCUDA.cpp
+        linalg/SolveCUDA.cpp
+        linalg/SVDCUDA.cpp
+        linalg/TriCUDA.cu
+    )
+
+    target_sources(core PRIVATE
+        nns/FixedRadiusSearch.cu
+    )
+endif()
+
+if (WITH_FAISS)
+    target_sources(core PRIVATE
+        nns/FaissIndex.cpp
     )
 endif()
 
 file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
+target_sources(core PRIVATE ${ALL_HEADER_FILES})
 
-# Create object library
-add_library(core OBJECT ${ALL_CORE_SRC} ${ALL_HEADER_FILES})
+cloudViewer_show_and_abort_on_warning(core)
 cloudViewer_set_global_properties(core)
 cloudViewer_set_cloudViewer_lib_properties(core)
-cloudViewer_show_and_abort_on_warning(core)
-
-target_link_libraries(core PRIVATE ${CloudViewer_3RDPARTY_PRIVATE_TARGETS} CVCoreLib)
-target_link_libraries(core PUBLIC ${CloudViewer_3RDPARTY_PUBLIC_TARGETS} CVCoreLib)
-foreach(dep IN LISTS CloudViewer_3RDPARTY_HEADER_TARGETS)
-    if(TARGET ${dep})
-        get_property(inc TARGET ${dep} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-        if(inc)
-            set_property(TARGET core APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${inc})
-        endif()
-        get_property(inc TARGET core PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
-        if(inc)
-            set_property(TARGET core APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${inc})
-        endif()
-        get_property(def TARGET core PROPERTY INTERFACE_COMPILE_DEFINITIONS)
-        if(def)
-            set_property(TARGET core APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS ${def})
-        endif()
-    endif()
-endforeach()
-#cloudViewer_link_3rdparty_libraries(core)
+cloudViewer_link_3rdparty_libraries(core)
 
 if(BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-    find_package(CUB REQUIRED)
-    target_include_directories(core SYSTEM PRIVATE ${CUB_INCLUDE_DIR})
 endif()

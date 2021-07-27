@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,7 @@
 
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(FilePLY, DISABLED_ReadVertexCallback) { NotImplemented(); }
@@ -50,4 +50,4 @@ TEST(FilePLY, DISABLED_WriteTriangleMeshToPLY) { NotImplemented(); }
 TEST(FilePLY, DISABLED_ResetConsoleProgress) { NotImplemented(); }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

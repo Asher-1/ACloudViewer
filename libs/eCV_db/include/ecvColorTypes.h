@@ -32,7 +32,7 @@
 #include <algorithm>
 #include <type_traits>
 
-#include <Console.h>
+#include <Logging.h>
 #include <iostream>
 
 //! Default color components type (R,G and B)

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ void Inverse(const Tensor &A, Tensor &output) {
     // Check dtypes
     Dtype dtype = A.GetDtype();
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}.",
                 dtype.ToString());
@@ -49,16 +49,16 @@ void Inverse(const Tensor &A, Tensor &output) {
     // Check dimensions
     SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
-        cloudViewer::utility::LogError("Tensor A must be 2D, but got {}D.", A_shape.size());
+        utility::LogError("Tensor must be 2D, but got {}D.", A_shape.size());
     }
     if (A_shape[0] != A_shape[1]) {
-        cloudViewer::utility::LogError("Tensor A must be square, but got {} x {}.",
-                          A_shape[0], A_shape[1]);
+        utility::LogError("Tensor must be square, but got {} x {}.", A_shape[0],
+                          A_shape[1]);
     }
 
     int64_t n = A_shape[0];
     if (n == 0) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
@@ -78,7 +78,7 @@ void Inverse(const Tensor &A, Tensor &output) {
         InverseCUDA(A_data, ipiv_data, output_data, n, dtype, device);
         output = output.T();
 #else
-        cloudViewer::utility::LogError("Unimplemented device.");
+        utility::LogError("Unimplemented device.");
 #endif
     } else {
         Dtype ipiv_dtype;
@@ -87,7 +87,7 @@ void Inverse(const Tensor &A, Tensor &output) {
         } else if (sizeof(CLOUDVIEWER_CPU_LINALG_INT) == 8) {
             ipiv_dtype = Dtype::Int64;
         } else {
-            cloudViewer::utility::LogError("Unsupported CLOUDVIEWER_CPU_LINALG_INT type.");
+            utility::LogError("Unsupported CLOUDVIEWER_CPU_LINALG_INT type.");
         }
         Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
         void *ipiv_data = ipiv.GetDataPtr();

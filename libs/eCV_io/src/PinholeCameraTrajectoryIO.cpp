@@ -30,7 +30,7 @@
 #include <Eigen/Geometry>
 #include <unordered_map>
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include <IJsonConvertibleIO.h>
 

@@ -1,9 +1,9 @@
 file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
 set (SRC
-    Cloud.cpp
-    GridSubsampling.cpp
-    contrib_nns.cpp
     IoU.cpp
+    Cloud.cpp
+    contrib_nns.cpp
+    GridSubsampling.cpp
 )
 
 if(BUILD_CUDA_MODULE)

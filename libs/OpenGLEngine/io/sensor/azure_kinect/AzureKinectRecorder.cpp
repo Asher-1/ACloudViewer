@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.cloudViewer.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "visualization/visualizer/VisualizerWithKeyCallback.h" // must put in first
 #include "io/sensor/azure_kinect/AzureKinectRecorder.h"
 
 #include <assert.h>
@@ -40,15 +39,14 @@
 #include <ctime>
 #include <iostream>
 
-#include <RGBDImage.h>
+#include "geometry/RGBDImage.h"
 #include "io/sensor/azure_kinect/K4aPlugin.h"
 #include "io/sensor/azure_kinect/MKVReader.h"
 #include "visualization/utility/ColorMap.h"
+#include "visualization/visualizer/VisualizerWithKeyCallback.h"
 
 namespace cloudViewer {
 namespace io {
-
-using namespace cloudViewer;
 
 AzureKinectRecorder::AzureKinectRecorder(
         const AzureKinectSensorConfig& sensor_config, size_t sensor_index)

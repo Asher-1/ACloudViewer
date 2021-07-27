@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/Image.h"
+#include "geometry/Image.h"
 
-#include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "camera/PinholeCameraIntrinsic.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 using ConversionType = geometry::Image::ColorToIntensityConversionType;
@@ -1173,4 +1173,4 @@ TEST(Image, CreatePyramid) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

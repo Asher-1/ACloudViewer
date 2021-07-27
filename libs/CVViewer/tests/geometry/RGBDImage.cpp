@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/RGBDImage.h"
+#include "geometry/RGBDImage.h"
 
 #include <vector>
 
-#include "open3d/geometry/Image.h"
-#include "open3d/io/ImageIO.h"
+#include "geometry/Image.h"
+#include "io/ImageIO.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(RGBDImage, Constructor) {
@@ -329,4 +329,4 @@ TEST(RGBDImage, CreatePyramid) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

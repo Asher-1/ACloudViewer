@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include "core/linalg/BlasWrapper.h"
 #include "core/linalg/LinalgUtils.h"
 #include "core/linalg/Matmul.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
@@ -42,7 +42,7 @@ void MatmulCUDA(void* A_data,
     cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t alpha = 1, beta = 0;
-        CLOUDVIEWER_CUBLAS_CHECK(
+        OPEN3D_CUBLAS_CHECK(
                 gemm_cuda<scalar_t>(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k,
                                     &alpha,
                                     static_cast<const scalar_t*>(A_data), m,

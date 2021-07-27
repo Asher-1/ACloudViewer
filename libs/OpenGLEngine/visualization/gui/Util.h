@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,10 +29,10 @@
 
 #include <imgui.h>
 
-#include <Eigen.h>
-
 #include <string>
 #include <vector>
+
+#include "visualization/gui/Gui.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -46,6 +46,8 @@ class Color;
 // in Color or it would pull in imgui.h pretty much everywhere that gui is used.
 ImVec4 colorToImgui(const Color& color);
 uint32_t colorToImguiRGBA(const Color& color);
+
+std::string FindFontPath(std::string font, FontStyle style);
 
 }  // namespace gui
 }  // namespace visualization

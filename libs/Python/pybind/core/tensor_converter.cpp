@@ -27,7 +27,7 @@
 #include "pybind/core/tensor_converter.h"
 
 #include "core/Tensor.h"
-#include <Console.h>
+#include <Logging.h>
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif
@@ -37,8 +37,6 @@
 
 namespace cloudViewer {
 namespace core {
-
-using namespace cloudViewer;
 
 static Tensor CastOptionalDtypeDevice(const Tensor& t,
                                       utility::optional<Dtype> dtype,
@@ -102,7 +100,7 @@ py::array TensorToPyArray(const Tensor& tensor) {
     // See PyTorch's torch/csrc/Module.cpp
     auto capsule_destructor = [](PyObject* data) {
         Tensor* base_tensor = reinterpret_cast<Tensor*>(
-                PyCapsule_GetPointer(data, "cloudViewer::Tensor"));
+                PyCapsule_GetPointer(data, "open3d::Tensor"));
         if (base_tensor) {
             delete base_tensor;
         } else {
@@ -110,7 +108,7 @@ py::array TensorToPyArray(const Tensor& tensor) {
         }
     };
 
-    py::capsule base_tensor_capsule(base_tensor, "cloudViewer::Tensor",
+    py::capsule base_tensor_capsule(base_tensor, "open3d::Tensor",
                                     capsule_destructor);
     return py::array(py_dtype, py_shape, py_strides, tensor.GetDataPtr(),
                      base_tensor_capsule);
@@ -192,18 +190,38 @@ Tensor IntToTensor(int64_t scalar_value,
             .To(dtype_value);
 }
 
+Tensor BoolToTensor(bool scalar_value,
+                    utility::optional<Dtype> dtype,
+                    utility::optional<Device> device) {
+    Dtype dtype_value = Dtype::Bool;
+    if (dtype.has_value()) {
+        dtype_value = dtype.value();
+    }
+    Device device_value("CPU:0");
+    if (device.has_value()) {
+        device_value = device.value();
+    }
+    return Tensor(std::vector<bool>{scalar_value}, {}, Dtype::Bool,
+                  device_value)
+            .To(dtype_value);
+}
+
 Tensor PyHandleToTensor(const py::handle& handle,
                         utility::optional<Dtype> dtype,
                         utility::optional<Device> device,
                         bool force_copy) {
-    /// 1) int
-    /// 2) float (double)
-    /// 3) list
-    /// 4) tuple
-    /// 5) numpy.ndarray (value will be copied)
-    /// 6) Tensor (value will be copied)
-    std::string class_name(handle.get_type().str());
-    if (class_name == "<class 'int'>") {
+    // 1) bool
+    // 2) int
+    // 3) float (double)
+    // 4) list
+    // 5) tuple
+    // 6) numpy.ndarray (value will be copied)
+    // 7) Tensor (value will be copied)
+    std::string class_name(py::str(handle.get_type()));
+    if (class_name == "<class 'bool'>") {
+        return BoolToTensor(static_cast<bool>(handle.cast<py::bool_>()), dtype,
+                            device);
+    } else if (class_name == "<class 'int'>") {
         return IntToTensor(static_cast<int64_t>(handle.cast<py::int_>()), dtype,
                            device);
     } else if (class_name == "<class 'float'>") {
@@ -217,7 +235,7 @@ Tensor PyHandleToTensor(const py::handle& handle,
         return CastOptionalDtypeDevice(PyArrayToTensor(handle.cast<py::array>(),
                                                        /*inplace=*/!force_copy),
                                        dtype, device);
-    } else if (class_name.find("cloudViewer") != std::string::npos &&
+    } else if (class_name.find("open3d") != std::string::npos &&
                class_name.find("Tensor") != std::string::npos) {
         try {
             Tensor* tensor = handle.cast<Tensor*>();
@@ -230,15 +248,15 @@ Tensor PyHandleToTensor(const py::handle& handle,
             utility::LogError("Cannot cast index to Tensor.");
         }
     } else {
-        utility::LogError("PyHandleToTensor has invlaid input type {}.",
+        utility::LogError("PyHandleToTensor has invalid input type {}.",
                           class_name);
     }
 }
 
 SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
     SizeVector shape;
-    for (const py::handle& item : tuple) {
-        if (std::string(item.get_type().str()) == "<class 'int'>") {
+    for (const py::handle item : tuple) {
+        if (std::string(py::str(item.get_type())) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
             utility::LogError(
@@ -251,8 +269,8 @@ SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
 
 SizeVector PyListToSizeVector(const py::list& list) {
     SizeVector shape;
-    for (const py::handle& item : list) {
-        if (std::string(item.get_type().str()) == "<class 'int'>") {
+    for (const py::handle item : list) {
+        if (std::string(py::str(item.get_type())) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
             utility::LogError(
@@ -264,7 +282,7 @@ SizeVector PyListToSizeVector(const py::list& list) {
 }
 
 SizeVector PyHandleToSizeVector(const py::handle& handle) {
-    std::string class_name(handle.get_type().str());
+    std::string class_name(py::str(handle.get_type()));
     if (class_name == "<class 'int'>") {
         return SizeVector{static_cast<int64_t>(handle.cast<py::int_>())};
     } else if (class_name == "<class 'list'>") {
@@ -281,7 +299,7 @@ SizeVector PyHandleToSizeVector(const py::handle& handle) {
         }
     } else {
         utility::LogError(
-                "PyHandleToSizeVector has invlaid input type {}. Only int, "
+                "PyHandleToSizeVector has invalid input type {}. Only int, "
                 "tuple and list are supported.",
                 class_name);
     }

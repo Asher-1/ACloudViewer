@@ -34,7 +34,7 @@
 #include <png.h>
 #include <jpeglib.h>  // Include after cstddef to define size_t
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 namespace cloudViewer {
@@ -87,7 +87,7 @@ namespace io {
 	using namespace cloudViewer;
 std::shared_ptr<geometry::Image> CreateImageFromFile(
         const std::string &filename) {
-    auto image = std::make_shared<geometry::Image>();
+    auto image = cloudViewer::make_shared<geometry::Image>();
     ReadImage(filename, *image);
     return image;
 }
@@ -111,7 +111,7 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
 
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,
-                int quality /* = kOpen3DImageIODefaultQuality*/) {
+                int quality /* = kCloudViewerImageIODefaultQuality*/) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -159,7 +159,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
 
 bool WriteImageToPNG(const std::string &filename,
 					 const geometry::Image &image,
-                     int quality /* = kOpen3DImageIODefaultQuality*/) {
+                     int quality /* = kCloudViewerImageIODefaultQuality*/) {
 	if (!image.HasData()) {
 		utility::LogWarning("Write PNG failed: image has no data.");
 		return false;
@@ -246,7 +246,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
 
 bool WriteImageToJPG(const std::string &filename,
 					 const geometry::Image &image,
-                     int quality /* = kOpen3DImageIODefaultQuality*/) {
+                     int quality /* = kCloudViewerImageIODefaultQuality*/) {
 	if (!image.HasData()) {
 		utility::LogWarning("Write JPG failed: image has no data.");
 		return false;

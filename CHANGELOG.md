@@ -902,7 +902,7 @@ v1.0.0 (Asher) - 10/22/2019
 		- color scales are now listed in alphabetical order
 		- polylines exported from the 'Interactive Segmentation' tool will now use the same Global Shift as the segmented entity(ies)
 		- when changing the dip and dip direction of plane parallel with XY, the resulting plane shouldn't rotate in an arbitrary way anymore
-		- the filter and single-button plugin toolbars are now on the right side of the window by default (to reset to the default layouts, use "Reset all GUI element positions" at the bottom of the Display menu)
+		- the filter and single-button plugin toolbars are now on the right side of the window by default (to reset to the default layouts, use "reset all GUI element positions" at the bottom of the Display menu)
 		- the Plane edition dialog now lest the user specify the normal plane in addition to its dip and dip direction
 		- new 'Clone' icon with a colored background so as to more clearly spot when the icon is enabled (Nyan sheep!)
 		- now using PoissonRecon 9.011

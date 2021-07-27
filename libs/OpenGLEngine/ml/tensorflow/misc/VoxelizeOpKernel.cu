@@ -26,7 +26,7 @@
 
 #define EIGEN_USE_GPU
 #include "VoxelizeOpKernel.h"
-#include "ml/Helper.h"
+#include "core/CUDAUtils.h"
 #include "ml/impl/misc/Voxelize.cuh"
 
 using namespace cloudViewer::ml;
@@ -39,7 +39,8 @@ class VoxelizeOpKernelCUDA : public VoxelizeOpKernel {
 public:
     explicit VoxelizeOpKernelCUDA(OpKernelConstruction* construction)
         : VoxelizeOpKernel(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                cloudViewer::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

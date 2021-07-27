@@ -26,7 +26,7 @@
 
 #include "Gpu.h"
 
-#include <Console.h>
+#include <Logging.h>
 
 #include <sstream>
 #include <memory.h>

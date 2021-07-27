@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include "core/SizeVector.h"
 #include "core/Tensor.h"
 #include "core/kernel/UnaryEW.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
@@ -59,7 +59,7 @@ void IndexGet(const Tensor& src,
         IndexGetCUDA(src, dst, index_tensors, indexed_shape, indexed_strides);
 #endif
     } else {
-        cloudViewer::utility::LogError("IndexGet: Unimplemented device");
+        utility::LogError("IndexGet: Unimplemented device");
     }
 }
 
@@ -81,7 +81,7 @@ void IndexSet(const Tensor& src,
                      indexed_strides);
 #endif
     } else {
-        cloudViewer::utility::LogError("IndexSet: Unimplemented device");
+        utility::LogError("IndexSet: Unimplemented device");
     }
 }
 

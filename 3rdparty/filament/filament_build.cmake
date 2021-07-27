@@ -44,7 +44,7 @@ ExternalProject_Add(
     PREFIX filament
     URL https://github.com/intel-isl/filament/archive/d1d873d27f43ba0cee1674a555cc0f18daac3008.tar.gz
     URL_HASH SHA256=00c3f41af0fcfb2df904e1f77934f2678d943ddac5eb889788a5e22590e497bd
-    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
+    DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=${FILAMENT_BUILD_TYPE}

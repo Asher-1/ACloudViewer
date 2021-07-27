@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,7 @@
 
 #include "visualization/utility/ColorMap.h"
 
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 
@@ -36,7 +36,7 @@ using namespace visualization;
 class GlobalColorMapSingleton {
 private:
     GlobalColorMapSingleton() : color_map_(new ColorMapJet) {
-        cloudViewer::utility::LogDebug("Global colormap init.");
+        utility::LogDebug("Global colormap init.");
     }
     GlobalColorMapSingleton(const GlobalColorMapSingleton &) = delete;
     GlobalColorMapSingleton &operator=(const GlobalColorMapSingleton &) =
@@ -44,7 +44,7 @@ private:
 
 public:
     ~GlobalColorMapSingleton() {
-        cloudViewer::utility::LogDebug("Global colormap destruct.");
+        utility::LogDebug("Global colormap destruct.");
     }
 
 public:

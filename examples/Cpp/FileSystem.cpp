@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,28 +30,34 @@
 
 void PrintHelp() {
     using namespace cloudViewer;
-    utility::LogInfo("Usage :");
+
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
     utility::LogInfo("    > FileSystem ls [dir]");
     utility::LogInfo("    > FileSystem mkdir [dir]");
     utility::LogInfo("    > FileSystem rmdir [dir]");
     utility::LogInfo("    > FileSystem rmfile [file]");
     utility::LogInfo("    > FileSystem fileexists [file]");
+    // clang-format on
+    utility::LogInfo("");
 }
 
-int main(int argc, char **args) {
+int main(int argc, char *argv[]) {
+    using namespace cloudViewer;
     using namespace cloudViewer::utility::filesystem;
+    if (!(argc == 2 || argc == 3) ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
+    }
 
     std::string directory, function;
-    if (argc <= 1) {
-        PrintHelp();
-        return 0;
+    function = std::string(argv[1]);
+    if (argc == 2) {
+        directory = ".";
     } else {
-        function = std::string(args[1]);
-        if (argc <= 2) {
-            directory = ".";
-        } else {
-            directory = std::string(args[2]);
-        }
+        directory = std::string(argv[2]);
     }
 
     if (function == "ls") {

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -28,10 +28,10 @@
 
 #include <algorithm>
 
-#include "open3d/utility/Console.h"
+#include "utility/Console.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(Sort, Sort) {
@@ -108,4 +108,4 @@ TEST(Sort, GetIndicesAToBClose) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

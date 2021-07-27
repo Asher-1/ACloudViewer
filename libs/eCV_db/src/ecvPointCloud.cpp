@@ -19,7 +19,7 @@
 
 //cloudViewer
 #include <Helper.h>
-#include <Console.h>
+#include <Logging.h>
 #include <ReferenceCloud.h>
 #include <GeometricalAnalysisTools.h>
 #include <ManualSegmentationTools.h>
@@ -5760,7 +5760,7 @@ std::shared_ptr<ccPointCloud>
 ccPointCloud::selectByIndex(
 	const std::vector<size_t>& indices, bool invert/* = false */) const
 {
-	auto output = std::make_shared<ccPointCloud>("pointCloud");
+	auto output = cloudViewer::make_shared<ccPointCloud>("pointCloud");
 	bool has_normals = hasNormals();
 	bool has_colors = hasColors();
 	bool has_fwf = hasFWF();

@@ -27,14 +27,13 @@
 #include "OctreeIO.h"
 #include "IJsonConvertibleIO.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 #include <unordered_map>
 
 namespace cloudViewer {
 namespace io {
-using namespace cloudViewer;
 static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &, geometry::Octree &)>>

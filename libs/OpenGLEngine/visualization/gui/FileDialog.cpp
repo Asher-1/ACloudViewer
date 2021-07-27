@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,10 +35,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <Eigen.h>
-#include <Console.h>
-#include <FileSystem.h>
-#include <Helper.h>
+#include "utility/FileSystem.h"
+#include "utility/Helper.h"
+#include "utility/Logging.h"
 #include "visualization/gui/Button.h"
 #include "visualization/gui/Combobox.h"
 #include "visualization/gui/Label.h"
@@ -66,8 +65,6 @@ namespace {
 // need to be exporting internal details of the class.
 static std::string g_file_dialog_dir;
 }  // namespace
-
-using namespace cloudViewer;
 
 class DirEntry {
 public:
@@ -358,8 +355,7 @@ void FileDialog::SetPath(const char *path) {
 }
 
 void FileDialog::AddFilter(const char *filter, const char *description) {
-    std::vector<std::string> exts;
-    utility::SplitString(exts, filter, ", ");
+    std::vector<std::string> exts = utility::SplitString(filter, ", ");
 
     std::unordered_set<std::string> ext_filter;
     for (auto &ext : exts) {
@@ -409,16 +405,18 @@ void FileDialog::OnDone() {
                 }
             }
         }
-        std::cout << "[o3d] name: '" << name << "'" << std::endl;
+        utility::LogInfo("[o3d] name: {}.", name);
         this->impl_->on_done_((dir + "/" + name).c_str());
     } else {
         utility::LogError("FileDialog: need to call SetOnDone()");
     }
 }
 
-Size FileDialog::CalcPreferredSize(const Theme &theme) const {
-    auto em = theme.font_size;
-    auto width = std::max(25 * em, Super::CalcPreferredSize(theme).width);
+Size FileDialog::CalcPreferredSize(const LayoutContext &context,
+                                   const Constraints &constraints) const {
+    auto em = context.theme.font_size;
+    auto width = std::max(25 * em,
+                          Super::CalcPreferredSize(context, constraints).width);
     return Size(width, 30 * em);
 }
 

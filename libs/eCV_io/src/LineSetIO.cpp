@@ -30,7 +30,7 @@
 
 #include <unordered_map>
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 namespace cloudViewer {

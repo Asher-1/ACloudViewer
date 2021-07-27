@@ -49,7 +49,7 @@
 // CV_CORE_LIB
 #include <Eigen.h>
 #include <CVTools.h>
-#include <Console.h>
+#include <Logging.h>
 
 #include <Eigen/Dense>
 #include <numeric>

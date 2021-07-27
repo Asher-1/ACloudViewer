@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,8 @@
 
 #include "core/SizeVector.h"
 #include "core/Tensor.h"
-#include <Console.h>
 #include <Helper.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
@@ -48,19 +48,19 @@ enum class ReductionOpCode {
     Any,
 };
 
-static const std::unordered_set<ReductionOpCode, cloudViewer::utility::hash_enum_class>
+static const std::unordered_set<ReductionOpCode, utility::hash_enum_class>
         s_regular_reduce_ops = {
                 ReductionOpCode::Sum,
                 ReductionOpCode::Prod,
                 ReductionOpCode::Min,
                 ReductionOpCode::Max,
 };
-static const std::unordered_set<ReductionOpCode, cloudViewer::utility::hash_enum_class>
+static const std::unordered_set<ReductionOpCode, utility::hash_enum_class>
         s_arg_reduce_ops = {
                 ReductionOpCode::ArgMin,
                 ReductionOpCode::ArgMax,
 };
-static const std::unordered_set<ReductionOpCode, cloudViewer::utility::hash_enum_class>
+static const std::unordered_set<ReductionOpCode, utility::hash_enum_class>
         s_boolean_reduce_ops = {
                 ReductionOpCode::All,
                 ReductionOpCode::Any,

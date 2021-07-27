@@ -28,7 +28,7 @@
 
 #include <json/json.h>
 
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {

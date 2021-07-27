@@ -40,7 +40,7 @@
 #include "ecvPointCloud.h"
 #include "ecvHObjectCaster.h"
 
-#include <Console.h>
+#include <Logging.h>
 
 using namespace cloudViewer;
 namespace cloudViewer {

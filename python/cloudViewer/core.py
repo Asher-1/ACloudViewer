@@ -28,15 +28,17 @@ import cloudViewer as cv3d
 import numpy as np
 
 if cv3d.__DEVICE_API__ == 'cuda':
-    from cloudViewer.cuda.pybind.core import (Tensor, Hashmap, Dtype, DtypeCode,
-                                              Device, cuda, nns, SizeVector,
-                                              DynamicSizeVector, matmul,
-                                              lstsq, solve, inv, svd, TensorList)
+    from cloudViewer.cuda.pybind.core import (Tensor, Scalar, Hashmap, Dtype,
+                                              DtypeCode, Device, cuda, nns,
+                                              SizeVector, DynamicSizeVector, matmul,
+                                              lstsq, solve, det, lu, lu_ipiv, inv,
+                                              svd, triu, tril, triul, TensorList)
 else:
-    from cloudViewer.cpu.pybind.core import (Tensor, Hashmap, Dtype, DtypeCode,
-                                             Device, cuda, nns, SizeVector,
-                                             DynamicSizeVector, matmul,
-                                             lstsq, solve, inv, svd, TensorList)
+    from cloudViewer.cpu.pybind.core import (Tensor, Scalar, Hashmap, Dtype,
+                                             DtypeCode, Device, cuda, nns,
+                                             SizeVector, DynamicSizeVector, matmul,
+                                             lstsq, solve, det, lu, lu_ipiv, inv,
+                                             svd, triu, tril, triul, TensorList)
 
 
 def _numpy_dtype_to_dtype(numpy_dtype):

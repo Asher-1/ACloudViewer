@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Logging.h>
+
 #include <limits>
 
+#include <Parallel.h>
 #include "core/Dispatch.h"
 #include "core/Indexer.h"
 #include "core/Tensor.h"
-#include "core/kernel/ParallelUtil.h"
 #include "core/kernel/Reduction.h"
-#include <Console.h>
 
 namespace cloudViewer {
 namespace core {
@@ -95,7 +96,7 @@ public:
     void Run(const func_t& reduce_func, scalar_t identity) {
         // See: PyTorch's TensorIterator::parallel_reduce for the reference
         // design of reduction strategy.
-        if (GetMaxThreads() == 1 || InParallel()) {
+        if (utility::EstimateMaxThreads() == 1 || utility::InParallel()) {
             LaunchReductionKernelSerial<scalar_t>(indexer_, reduce_func);
         } else if (indexer_.NumOutputElements() <= 1) {
             LaunchReductionKernelTwoPass<scalar_t>(indexer_, reduce_func,
@@ -126,17 +127,18 @@ private:
                                              func_t element_kernel,
                                              scalar_t identity) {
         if (indexer.NumOutputElements() > 1) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Internal error: two-pass reduction only works for "
                     "single-output reduction ops.");
         }
         int64_t num_workloads = indexer.NumWorkloads();
-        int64_t num_threads = GetMaxThreads();
+        int64_t num_threads = utility::EstimateMaxThreads();
         int64_t workload_per_thread =
                 (num_workloads + num_threads - 1) / num_threads;
         std::vector<scalar_t> thread_results(num_threads, identity);
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
             int64_t start = thread_idx * workload_per_thread;
             int64_t end = std::min(start + workload_per_thread, num_workloads);
@@ -160,7 +162,7 @@ private:
         // Prefers outer dimension >= num_threads.
         const int64_t* indexer_shape = indexer.GetMasterShape();
         const int64_t num_dims = indexer.NumDims();
-        int64_t num_threads = GetMaxThreads();
+        int64_t num_threads = utility::EstimateMaxThreads();
 
         // Init best_dim as the outer-most non-reduction dim.
         int64_t best_dim = num_dims - 1;
@@ -177,12 +179,13 @@ private:
             }
         }
         if (best_dim == -1) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Internal error: all dims are reduction dims, use "
                     "LaunchReductionKernelTwoPass instead.");
         }
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int64_t i = 0; i < indexer_shape[best_dim]; ++i) {
             Indexer sub_indexer(indexer);
             sub_indexer.ShrinkDim(best_dim, i, 1);
@@ -202,13 +205,14 @@ public:
 
     template <typename func_t, typename scalar_t>
     void Run(const func_t& reduce_func, scalar_t identity) {
-        // Arg-reduction needs to iterate each output element separatly in
+        // Arg-reduction needs to iterate each output element separately in
         // sub-iterations. Each output elemnent corresponds to multiple input
         // elements. We need to keep track of the indices within each
         // sub-iteration.
         int64_t num_output_elements = indexer_.NumOutputElements();
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int64_t output_idx = 0; output_idx < num_output_elements;
              output_idx++) {
             // sub_indexer.NumWorkloads() == ipo.
@@ -255,7 +259,7 @@ void ReductionCPU(const Tensor& src,
                     break;
                 case ReductionOpCode::Min:
                     if (indexer.NumWorkloads() == 0) {
-                        cloudViewer::utility::LogError(
+                        utility::LogError(
                                 "Zero-size Tensor does not suport Min.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::max();
@@ -265,7 +269,7 @@ void ReductionCPU(const Tensor& src,
                     break;
                 case ReductionOpCode::Max:
                     if (indexer.NumWorkloads() == 0) {
-                        cloudViewer::utility::LogError(
+                        utility::LogError(
                                 "Zero-size Tensor does not suport Max.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::lowest();
@@ -274,13 +278,13 @@ void ReductionCPU(const Tensor& src,
                     }
                     break;
                 default:
-                    cloudViewer::utility::LogError("Unsupported op code.");
+                    utility::LogError("Unsupported op code.");
                     break;
             }
         });
     } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
         if (dst.GetDtype() != Dtype::Int64) {
-            cloudViewer::utility::LogError("Arg-reduction must have int64 output dtype.");
+            utility::LogError("Arg-reduction must have int64 output dtype.");
         }
         // Accumulation buffer to store temporary min/max values.
         Tensor dst_acc(dst.GetShape(), src.GetDtype(), src.GetDevice());
@@ -292,7 +296,7 @@ void ReductionCPU(const Tensor& src,
             switch (op_code) {
                 case ReductionOpCode::ArgMin:
                     if (indexer.NumWorkloads() == 0) {
-                        cloudViewer::utility::LogError(
+                        utility::LogError(
                                 "Zero-size Tensor does not suport ArgMin.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::max();
@@ -302,7 +306,7 @@ void ReductionCPU(const Tensor& src,
                     break;
                 case ReductionOpCode::ArgMax:
                     if (indexer.NumWorkloads() == 0) {
-                        cloudViewer::utility::LogError(
+                        utility::LogError(
                                 "Zero-size Tensor does not suport ArgMax.");
                     } else {
                         identity = std::numeric_limits<scalar_t>::lowest();
@@ -311,18 +315,18 @@ void ReductionCPU(const Tensor& src,
                     }
                     break;
                 default:
-                    cloudViewer::utility::LogError("Unsupported op code.");
+                    utility::LogError("Unsupported op code.");
                     break;
             }
         });
     } else if (s_boolean_reduce_ops.find(op_code) !=
                s_boolean_reduce_ops.end()) {
         if (src.GetDtype() != Dtype::Bool) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Boolean reduction only supports boolean input tensor.");
         }
         if (dst.GetDtype() != Dtype::Bool) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Boolean reduction only supports boolean output tensor.");
         }
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
@@ -339,11 +343,11 @@ void ReductionCPU(const Tensor& src,
                 re.Run(CPUAnyReductionKernel, static_cast<uint8_t>(false));
                 break;
             default:
-                cloudViewer::utility::LogError("Unsupported op code.");
+                utility::LogError("Unsupported op code.");
                 break;
         }
     } else {
-        cloudViewer::utility::LogError("Unsupported op code.");
+        utility::LogError("Unsupported op code.");
     }
 }
 

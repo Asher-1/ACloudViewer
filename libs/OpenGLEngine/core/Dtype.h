@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,10 +29,9 @@
 #include <cstring>
 #include <string>
 
-#include <Console.h>
-
 #include "Macro.h"
 #include "core/Dispatch.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
@@ -42,10 +41,14 @@ public:
     static const Dtype Undefined;
     static const Dtype Float32;
     static const Dtype Float64;
+    static const Dtype Int8;
+    static const Dtype Int16;
     static const Dtype Int32;
     static const Dtype Int64;
     static const Dtype UInt8;
     static const Dtype UInt16;
+    static const Dtype UInt32;
+    static const Dtype UInt64;
     static const Dtype Bool;
 
 public:
@@ -66,7 +69,7 @@ public:
     /// e.g. FromType<float>(). Unsupported type results in an exception.
     template <typename T>
     static inline const Dtype FromType() {
-        cloudViewer::utility::LogError("Unsupported data for Dtype::FromType.");
+        utility::LogError("Unsupported data for Dtype::FromType.");
     }
 
     int64_t ByteSize() const { return byte_size_; }
@@ -99,6 +102,16 @@ inline const Dtype Dtype::FromType<double>() {
 }
 
 template <>
+inline const Dtype Dtype::FromType<int8_t>() {
+    return Dtype::Int8;
+}
+
+template <>
+inline const Dtype Dtype::FromType<int16_t>() {
+    return Dtype::Int16;
+}
+
+template <>
 inline const Dtype Dtype::FromType<int32_t>() {
     return Dtype::Int32;
 }
@@ -116,6 +129,16 @@ inline const Dtype Dtype::FromType<uint8_t>() {
 template <>
 inline const Dtype Dtype::FromType<uint16_t>() {
     return Dtype::UInt16;
+}
+
+template <>
+inline const Dtype Dtype::FromType<uint32_t>() {
+    return Dtype::UInt32;
+}
+
+template <>
+inline const Dtype Dtype::FromType<uint64_t>() {
+    return Dtype::UInt64;
 }
 
 template <>

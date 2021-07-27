@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include <Console.h>
+#include <Logging.h>
 
 #include "VoxelGrid.h"
 #include "ecvBBox.h"

@@ -27,7 +27,7 @@
 
 #define EIGEN_USE_GPU
 #include "BuildSpatialHashTableOpKernel.h"
-#include "ml/Helper.h"
+#include "core/CUDAUtils.h"
 #include "ml/impl/misc/FixedRadiusSearch.cuh"
 
 using namespace cloudViewer;
@@ -41,7 +41,8 @@ public:
     explicit BuildSpatialHashTableOpKernelCUDA(
             OpKernelConstruction* construction)
         : BuildSpatialHashTableOpKernel(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                cloudViewer::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

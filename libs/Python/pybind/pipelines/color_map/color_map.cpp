@@ -26,14 +26,12 @@
 
 #include "pybind/pipelines/color_map/color_map.h"
 
+#include <Logging.h>
+#include <ecvMesh.h>
+#include <RGBDImage.h>
 #include "camera/PinholeCameraTrajectory.h"
 #include "pipelines/color_map/NonRigidOptimizer.h"
 #include "pipelines/color_map/RigidOptimizer.h"
-
-#include <Console.h>
-#include <ecvMesh.h>
-#include <RGBDImage.h>
-
 #include "pybind/docstring.h"
 
 namespace cloudViewer {
@@ -142,8 +140,7 @@ void pybind_color_map_options(py::module &m) {
             "debug_output_dir"_a = "");
 
     docstring::ClassMethodDocInject(m, "RigidOptimizerOption", "__init__",
-                                    colormap_docstrings,
-                                    /*skip_init=*/false);
+                                    colormap_docstrings);
 
     py::class_<pipelines::color_map::NonRigidOptimizerOption>
             non_rigid_optimizer_option(m, "NonRigidOptimizerOption",
@@ -187,8 +184,7 @@ void pybind_color_map_options(py::module &m) {
             "debug_output_dir"_a = "");
 
     docstring::ClassMethodDocInject(m, "NonRigidOptimizerOption", "__init__",
-                                    colormap_docstrings,
-                                    /*skip_init=*/false);
+                                    colormap_docstrings);
 }
 
 void pybind_color_map_classes(py::module &m) {

@@ -34,7 +34,7 @@
 #include <random>
 #include <unordered_set>
 
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace geometry {

@@ -27,7 +27,7 @@
 #include "visualization/visualizer/Visualizer.h" // must include first
 #include "camera/PinholeCameraTrajectory.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 

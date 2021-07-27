@@ -43,7 +43,7 @@ public:
 	//! Returns	the kernel radius (for 'precise' mode only)
 	double getRadius() const;
 
-	//! Reset the whole dialog
+	//! reset the whole dialog
 	void reset();
 
 protected:
