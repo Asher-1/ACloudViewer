@@ -31,7 +31,7 @@
 #include "ecvPointCloud.h"
 #include "ecvHObjectCaster.h"
 
-#include <Console.h>
+#include <Logging.h>
 
 // EIGEN
 #include <Eigen/Dense>

@@ -24,6 +24,8 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+"""Dataloader for TensorFlow."""
+
 import os as _os
 from cloudViewer import _build_config
 

@@ -27,7 +27,7 @@
 #include <numeric>
 #include <unordered_map>
 
-#include <Console.h>
+#include <Logging.h>
 #include <Helper.h>
 #include <IntersectionTest.h>
 

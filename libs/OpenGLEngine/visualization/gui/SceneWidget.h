@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,16 @@
 #include "visualization/rendering/RendererHandle.h"
 #include "visualization/rendering/View.h"
 
-class ccBBox;
-class ccHObject;
 namespace cloudViewer {
+
+namespace camera {
+class PinholeCameraIntrinsic;
+}  // namespace camera
+
+namespace geometry {
+class AxisAlignedBoundingBox;
+class Geometry3D;
+}  // namespace geometry
 
 namespace t {
 namespace geometry {
@@ -90,22 +97,32 @@ public:
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,
-                     const ccBBox& geometry_bounds,
+                     const ccBBox& scene_bounds,
                      const Eigen::Vector3f& center_of_rotation);
+    void SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     const ccBBox& scene_bounds);
+    void SetupCamera(const Eigen::Matrix3d& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px,
+                     const ccBBox& scene_bounds);
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,
                 const Eigen::Vector3f& up);
+
     void SetOnCameraChanged(
             std::function<void(visualization::rendering::Camera*)>
                     on_cam_changed);
+
+    Eigen::Vector3f GetCenterOfRotation() const;
+    void SetCenterOfRotation(const Eigen::Vector3f& center);
 
     /// Enables changing the directional light with the mouse.
     /// SceneWidget will update the light's direction, so onDirChanged is
     /// only needed if other things need to be updated (like a UI).
     void SetOnSunDirectionChanged(
             std::function<void(const Eigen::Vector3f&)> on_dir_changed);
-    /// Enables showing the skybox while in skybox ROTATE_IBL mode.
-    void ShowSkybox(bool is_on);
 
     void SetScene(std::shared_ptr<rendering::CloudViewerScene> scene);
     std::shared_ptr<rendering::CloudViewerScene> GetScene() const;
@@ -132,10 +149,10 @@ public:
 
     struct PickableGeometry {
         std::string name;
-        const ccHObject* geometry = nullptr;
+        const geometry::Geometry3D* geometry = nullptr;
         const t::geometry::Geometry* tgeometry = nullptr;
 
-        PickableGeometry(const std::string& n, const ccHObject* g)
+        PickableGeometry(const std::string& n, const geometry::Geometry3D* g)
             : name(n), geometry(g) {}
 
         PickableGeometry(const std::string& n, const t::geometry::Geometry* t)
@@ -145,7 +162,7 @@ public:
         /// have a geometry or a t::geometry; exactly one of g and t should be
         /// non-null; the other should be nullptr.
         PickableGeometry(const std::string& n,
-                         const ccHObject* g,
+                         const geometry::Geometry3D* g,
                          const t::geometry::Geometry* t)
             : name(n), geometry(g), tgeometry(t) {}
     };
@@ -160,13 +177,16 @@ public:
                             std::string,
                             std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
                     int)> on_picked);
+    void SetOnStartedPolygonPicking(std::function<void()> on_poly_pick);
+    enum class PolygonPickAction { CANCEL = 0, SELECT };
+    void DoPolygonPick(PolygonPickAction action);
 
     // 3D Labels
     std::shared_ptr<Label3D> AddLabel(const Eigen::Vector3f& pos,
                                       const char* text);
     void RemoveLabel(std::shared_ptr<Label3D> label);
+    void ClearLabels();
 
-    void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;

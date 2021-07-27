@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,9 +26,9 @@
 
 #include "tests/UnitTest.h"
 
-// #include "open3d/pipelines/color_map/ColorMapOptimizationOption.h"
+// #include "pipelines/color_map/ColorMapOptimizationOption.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 /* TODO
@@ -39,7 +39,7 @@ make these subcomponents visible to UnitTest.
 */
 
 TEST(ColorMapOptimizationOption, DISABLED_Constructor) {
-    // open3d::ColorMapOptimizationOption option;
+    // cloudViewer::ColorMapOptimizationOption option;
 
     // EXPECT_FALSE(option.non_rigid_camera_coordinate_);
 
@@ -57,4 +57,4 @@ TEST(ColorMapOptimizationOption, DISABLED_Constructor) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,19 +28,14 @@
 
 using namespace cloudViewer;
 
-void PrintHelp() {
-    utility::LogInfo("Usage :");
-    utility::LogInfo("    > RGBDOdometry [color1] [depth1] [color2] [depth2]");
-}
-
-std::shared_ptr<cloudViewer::geometry::RGBDImage> ReadRGBDImage(
+std::shared_ptr<geometry::RGBDImage> ReadRGBDImage(
         const char* color_filename,
         const char* depth_filename,
-        const cloudViewer::camera::PinholeCameraIntrinsic& intrinsic,
+        const camera::PinholeCameraIntrinsic& intrinsic,
         bool visualize) {
-	cloudViewer::geometry::Image color, depth;
-	cloudViewer::io::ReadImage(color_filename, color);
-	cloudViewer::io::ReadImage(depth_filename, depth);
+    geometry::Image color, depth;
+    io::ReadImage(color_filename, color);
+    io::ReadImage(depth_filename, depth);
     utility::LogInfo("Reading RGBD image : ");
     utility::LogInfo("     Color : {:d} x {:d} x {:d} ({:d} bits per channel)",
                      color.width_, color.height_, color.num_of_channels_,
@@ -50,37 +45,52 @@ std::shared_ptr<cloudViewer::geometry::RGBDImage> ReadRGBDImage(
                      depth.bytes_per_channel_ * 8);
     double depth_scale = 1000.0, depth_trunc = 3.0;
     bool convert_rgb_to_intensity = true;
-    std::shared_ptr<cloudViewer::geometry::RGBDImage> rgbd_image =
-		cloudViewer::geometry::RGBDImage::CreateFromColorAndDepth(
+    std::shared_ptr<geometry::RGBDImage> rgbd_image =
+            geometry::RGBDImage::CreateFromColorAndDepth(
                     color, depth, depth_scale, depth_trunc,
                     convert_rgb_to_intensity);
     if (visualize) {
-        auto pcd = ccPointCloud::CreateFromRGBDImage(*rgbd_image, intrinsic);
-		cloudViewer::visualization::DrawGeometries({pcd});
+        auto pcd = geometry::PointCloud::CreateFromRGBDImage(*rgbd_image,
+                                                             intrinsic);
+        visualization::DrawGeometries({pcd});
     }
     return rgbd_image;
 }
 
+void PrintHelp() {
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > RGBDOdometry [color1] [depth1] [color2] [depth2]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char* argv[]) {
-    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc != 5) {
+    using namespace cloudViewer;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc != 5 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-	cloudViewer::camera::PinholeCameraIntrinsic intrinsic = 
-		cloudViewer::camera::PinholeCameraIntrinsic(
-			cloudViewer::camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     bool visualize = true;
     auto source = ReadRGBDImage(argv[1], argv[2], intrinsic, visualize);
     auto target = ReadRGBDImage(argv[3], argv[4], intrinsic, visualize);
 
     Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
     std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> rgbd_odo =
-		cloudViewer::pipelines::odometry::ComputeRGBDOdometry(
+            pipelines::odometry::ComputeRGBDOdometry(
                     *source, *target, intrinsic, odo_init,
-			cloudViewer::pipelines::odometry::RGBDOdometryJacobianFromHybridTerm(),
-			cloudViewer::pipelines::odometry::OdometryOption());
+                    pipelines::odometry::RGBDOdometryJacobianFromHybridTerm(),
+                    pipelines::odometry::OdometryOption());
     std::cout << "RGBD Odometry" << std::endl;
     std::cout << std::get<1>(rgbd_odo) << std::endl;
     return 0;

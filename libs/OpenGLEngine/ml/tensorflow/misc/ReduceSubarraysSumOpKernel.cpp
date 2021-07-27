@@ -49,10 +49,10 @@ public:
     }
 };
 
-#define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("CloudviewerReduceSubarraysSum")    \
-                                    .Device(DEVICE_CPU)         \
-                                    .TypeConstraint<type>("T"), \
+#define REG_KB(type)                                                \
+    REGISTER_KERNEL_BUILDER(Name("CloudviewerReduceSubarraysSum")   \
+                                    .Device(DEVICE_CPU)             \
+                                    .TypeConstraint<type>("T"),     \
                             ReduceSubarraysSumOpKernelCPU<type>);
 REG_KB(int32_t)
 REG_KB(int64)

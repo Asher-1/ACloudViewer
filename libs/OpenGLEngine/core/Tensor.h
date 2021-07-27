@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <cassert>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -39,6 +38,7 @@
 #include "core/Scalar.h"
 #include "core/ShapeUtil.h"
 #include "core/SizeVector.h"
+#include "core/TensorInit.h"
 #include "core/TensorKey.h"
 
 namespace cloudViewer {
@@ -48,7 +48,7 @@ namespace core {
 /// Tensor can also be used to perform numerical operations.
 class Tensor {
 public:
-    Tensor(){};
+    Tensor() {}
 
     /// Constructor for creating a contiguous Tensor
     Tensor(const SizeVector& shape,
@@ -57,7 +57,7 @@ public:
         : shape_(shape),
           strides_(shape_util::DefaultStrides(shape)),
           dtype_(dtype),
-          blob_(std::make_shared<Blob>(shape.NumElements() * dtype.ByteSize(),
+          blob_(cloudViewer::make_shared<Blob>(shape.NumElements() * dtype.ByteSize(),
                                        device)) {
         data_ptr_ = blob_->GetDataPtr();
     }
@@ -144,28 +144,19 @@ public:
     /// An actual copy of the data will be performed.
     Tensor& operator=(Tensor&& other) &&;
 
-    /// Tensor assignment rvalue = rvalue_scalar, e.g. `tensor_a[0] = 100`
+    /// Tensor assignment rvalue = scalar, e.g. `tensor_a[0] = 100`
     /// Implicit casting is performed to the underlying dtype.
     ///
-    /// Note that we don't have lvalue = rvalue_scalar, e.g. we don't support
+    /// Note that we don't have lvalue = scalar, e.g. we don't support
     /// Tensor a_slice = tensor_a[0]; a_slice = 100;
     template <typename T>
-    Tensor& operator=(const T& v) && {
-        if (shape_.size() != 0) {
-            utility::LogError(
-                    "Assignment with scalar only works for scalar Tensor of "
-                    "shape ()");
-        }
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
-            scalar_t casted_v = static_cast<scalar_t>(v);
-            MemoryManager::MemcpyFromHost(GetDataPtr(), GetDevice(), &casted_v,
-                                          sizeof(scalar_t));
-        });
+    Tensor& operator=(const T v) && {
+        this->Fill(v);
         return *this;
     }
 
     /// Assign an object to a tensor. The tensor being assigned to must be a
-    /// scalr tensor of shape {}. The element byte size of the tensor must be
+    /// scalar tensor of shape {}. The element byte size of the tensor must be
     /// the same as the size of the object. The object must be a POD.
     template <typename Object>
     Tensor& AssignObject(const Object& v) && {
@@ -181,7 +172,7 @@ public:
     }
 
     /// \brief Fill the whole Tensor with a scalar value, the scalar will be
-    /// casted to the Tensor's dtype.
+    /// casted to the Tensor's Dtype.
     template <typename S>
     void Fill(S v);
 
@@ -193,7 +184,7 @@ public:
                         Dtype dtype,
                         const Device& device = Device("CPU:0"));
 
-    /// Create a tensor with uninitialized values with the same dtype and device
+    /// Create a tensor with uninitialized values with the same Dtype and Device
     /// as the other tensor.
     static Tensor EmptyLike(const Tensor& other) {
         return Tensor::Empty(other.shape_, other.dtype_, other.GetDevice());
@@ -220,114 +211,44 @@ public:
                        Dtype dtype,
                        const Device& device = Device("CPU:0"));
 
-    /// Create a 0-D tensor (scalar) with given value.
-    /// For example,
-    /// core::Tensor::Init<float>(1);
+    /// Create a 0-D tensor (scalar) with given value,
+    /// e.g., core::Tensor::Init<float>(0);
     template <typename T>
     static Tensor Init(const T val, const Device& device = Device("CPU:0")) {
         Dtype type = Dtype::FromType<T>();
         std::vector<T> ele_list{val};
         SizeVector shape;
         return Tensor(ele_list, shape, type, device);
-    };
+    }
 
-    /// Create a 1-D tensor with initializer list.
-    /// For example,
-    /// core::Tensor::Init<float>({1,2,3});
+    /// Create a 1-D tensor with initializer list,
+    /// e.g., core::Tensor::Init<float>({0, 1, 2});
     template <typename T>
-    static Tensor Init(const std::initializer_list<T> in_list,
+    static Tensor Init(const std::initializer_list<T>& in_list,
                        const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
-        ele_list.insert(ele_list.end(), in_list.begin(), in_list.end());
+        return InitWithInitializerList<T, 1>(in_list, device);
+    }
 
-        SizeVector shape{static_cast<int64_t>(in_list.size())};
-        return Tensor(ele_list, shape, type, device);
-    };
-
-    /// Create a 2-D tensor with nested initializer list.
-    /// For example,
-    /// core::Tensor::Init<float>({{1,2,3},{4,5,6}});
+    /// Create a 2-D tensor with nested initializer list,
+    /// e.g., core::Tensor::Init<float>({{0, 1, 2}, {3, 4, 5}});
     template <typename T>
     static Tensor Init(
-            const std::initializer_list<std::initializer_list<T>> in_list,
+            const std::initializer_list<std::initializer_list<T>>& in_list,
             const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
-        int64_t dim0_size = static_cast<int64_t>(in_list.size());
-        int64_t dim1_size = -1;
-        for (const auto& ele0 : in_list) {
-            if (dim1_size == -1) {
-                dim1_size = static_cast<int64_t>(ele0.size());
-            } else {
-                if (static_cast<int64_t>(ele0.size()) != dim1_size) {
-                    utility::LogError(
-                            "Cannot create Tensor with ragged nested sequences "
-                            "(nested lists with unequal sizes or shapes).");
-                }
-            }
-            ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
-        }
+        return InitWithInitializerList<T, 2>(in_list, device);
+    }
 
-        SizeVector shape{dim0_size, dim1_size};
-        return Tensor(ele_list, shape, type, device);
-    };
-
-    /// Create a 3-D tensor with nested initializer list.
-    /// For example,
-    /// core::Tensor::Init<float>({{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}});
+    /// Create a 3-D tensor with nested initializer list,
+    /// e.g., core::Tensor::Init<float>({{{0, 1}, {2, 3}}, {{4, 5}, {6, 7}}});
     template <typename T>
     static Tensor Init(
             const std::initializer_list<
-                    std::initializer_list<std::initializer_list<T>>> in_list,
+                    std::initializer_list<std::initializer_list<T>>>& in_list,
             const Device& device = Device("CPU:0")) {
-        Dtype type = Dtype::FromType<T>();
-        std::vector<T> ele_list;
-        int64_t dim0_size = static_cast<int64_t>(in_list.size());
-        int64_t dim1_size = -1;
-        int64_t dim2_size = -1;
+        return InitWithInitializerList<T, 3>(in_list, device);
+    }
 
-        for (const auto& ele1 : in_list) {
-            if (dim1_size == -1) {
-                dim1_size = static_cast<int64_t>(ele1.size());
-            } else {
-                if (static_cast<int64_t>(ele1.size()) != dim1_size) {
-                    utility::LogError(
-                            "Cannot create Tensor with ragged nested sequences "
-                            "(nested lists with unequal sizes or shapes).");
-                }
-            }
-
-            for (const auto& ele0 : ele1) {
-                if (dim2_size == -1) {
-                    dim2_size = static_cast<int64_t>(ele0.size());
-                } else {
-                    if (static_cast<int64_t>(ele0.size()) != dim2_size) {
-                        utility::LogError(
-                                "Cannot create Tensor with ragged nested "
-                                "sequences (nested lists with unequal sizes or "
-                                "shapes).");
-                    }
-                }
-
-                ele_list.insert(ele_list.end(), ele0.begin(), ele0.end());
-            }
-        }
-
-        // Handles 0-sized input lists.
-        SizeVector shape;
-        if (dim1_size == -1) {
-            shape = {dim0_size};
-        } else if (dim2_size == -1) {
-            shape = {dim0_size, dim1_size};
-        } else {
-            shape = {dim0_size, dim1_size, dim2_size};
-        }
-
-        return Tensor(ele_list, shape, type, device);
-    };
-
-    /// Create a identity matrix of size n x n.
+    /// Create an identity matrix of size n x n.
     static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
 
     /// Create a square matrix with specified diagonal elements in input.
@@ -339,6 +260,9 @@ public:
                          Scalar step = 1,
                          Dtype dtype = Dtype::Int64,
                          const Device& device = core::Device("CPU:0"));
+
+    /// Reverse a Tensor's elements by viewing the tensor as a 1D array.
+    Tensor Reverse() const;
 
     /// Pythonic __getitem__ for tensor.
     ///
@@ -439,9 +363,10 @@ public:
     /// without copying, but you should not depend on the copying vs. viewing
     /// behavior.
     ///
-    /// Ref: https://pytorch.org/docs/stable/tensors.html
-    ///      aten/src/ATen/native/TensorShape.cpp
-    ///      aten/src/ATen/TensorUtils.cpp
+    /// Ref:
+    /// - https://pytorch.org/docs/stable/tensors.html
+    /// - aten/src/ATen/native/TensorShape.cpp
+    /// - aten/src/ATen/TensorUtils.cpp
     Tensor Reshape(const SizeVector& dst_shape) const;
 
     /// Returns a new tensor view with the same data but of a different shape.
@@ -454,13 +379,14 @@ public:
     /// d+kd,d+1, ..., d+k that satisfy the following contiguity-like condition
     /// that for all i = 0, ..., k-1, strides[i] = stride[i + 1] * shape[i + 1].
     ///
-    /// Otherwise, contiguous() needs to be called before the tensor can be
-    /// viewed. See also: reshape(), which returns a view if the shapes are
-    /// compatible, and copies (equivalent to calling contiguous()) otherwise.
+    /// Otherwise, Contiguous() needs to be called before the tensor can be
+    /// viewed. See also: Reshape(), which returns a view if the shapes are
+    /// compatible, and copies (equivalent to calling Contiguous()) otherwise.
     ///
-    /// Ref: https://pytorch.org/docs/stable/tensors.html
-    ///      aten/src/ATen/native/TensorShape.cpp
-    ///      aten/src/ATen/TensorUtils.cpp
+    /// Ref:
+    /// - https://pytorch.org/docs/stable/tensors.html
+    /// - aten/src/ATen/native/TensorShape.cpp
+    /// - aten/src/ATen/TensorUtils.cpp
     Tensor View(const SizeVector& dst_shape) const;
 
     /// Copy Tensor to the same device.
@@ -472,7 +398,7 @@ public:
     /// Returns a tensor with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
     /// \param copy If true, a new tensor is always created; if false, the copy
-    /// is avoided when the original tensor already have the targeted dtype.
+    /// is avoided when the original tensor already has the targeted dtype.
     Tensor To(Dtype dtype, bool copy = false) const;
 
     /// Returns a tensor with the specified \p device.
@@ -558,12 +484,12 @@ public:
     /// 0-D and 1-D Tensor remains the same.
     Tensor T() const;
 
-    /// \brief Expects input to be 3x3 Matrix.
+    /// \brief Compute the determinant of a 2D square tensor.
     /// \return returns the determinant of the matrix (double).
     double Det() const;
 
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
-    /// mush have empty shape ()
+    /// must have empty shape.
     template <typename T>
     T Item() const {
         if (shape_.NumElements() != 1) {
@@ -579,103 +505,55 @@ public:
 
     /// Adds a tensor and returns the resulting tensor.
     Tensor Add(const Tensor& value) const;
-    template <typename T>
-    Tensor Add(T scalar_value) const {
-        return Add(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Add(Scalar value) const;
     Tensor operator+(const Tensor& value) const { return Add(value); }
-    template <typename T>
-    Tensor operator+(T scalar_value) const {
-        return Add(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor operator+(Scalar value) const { return Add(value); }
 
     /// Inplace version of Tensor::Add. Adds a tensor to the current tensor and
     /// returns the current tensor.
     Tensor Add_(const Tensor& value);
-    template <typename T>
-    Tensor Add_(T scalar_value) {
-        return Add_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Add_(Scalar value);
     Tensor operator+=(const Tensor& value) { return Add_(value); }
-    template <typename T>
-    Tensor operator+=(T scalar_value) {
-        return Add_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor operator+=(Scalar value) { return Add_(value); }
 
     /// Substracts a tensor and returns the resulting tensor.
     Tensor Sub(const Tensor& value) const;
-    template <typename T>
-    Tensor Sub(T scalar_value) const {
-        return Sub(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Sub(Scalar value) const;
     Tensor operator-(const Tensor& value) const { return Sub(value); }
-    template <typename T>
-    Tensor operator-(T scalar_value) const {
-        return Sub(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor operator-(Scalar value) const { return Sub(value); }
 
     /// Inplace version of Tensor::Sub. Substracts a tensor to the current
     /// tensor and returns the current tensor.
     Tensor Sub_(const Tensor& value);
-    template <typename T>
-    Tensor Sub_(T scalar_value) {
-        return Sub_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Sub_(Scalar value);
     Tensor operator-=(const Tensor& value) { return Sub_(value); }
-    template <typename T>
-    Tensor operator-=(T scalar_value) {
-        return Sub_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor operator-=(Scalar value) { return Sub_(value); }
 
     /// Multiplies a tensor and returns the resulting tensor.
     Tensor Mul(const Tensor& value) const;
-    template <typename T>
-    Tensor Mul(T scalar_value) const {
-        return Mul(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Mul(Scalar value) const;
     Tensor operator*(const Tensor& value) const { return Mul(value); }
-    template <typename T>
-    Tensor operator*(T scalar_value) const {
-        return Mul(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor operator*(Scalar value) const { return Mul(value); }
 
     /// Inplace version of Tensor::Mul. Multiplies a tensor to the current
     /// tensor and returns the current tensor.
     Tensor Mul_(const Tensor& value);
-    template <typename T>
-    Tensor Mul_(T scalar_value) {
-        return Mul_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Mul_(Scalar value);
     Tensor operator*=(const Tensor& value) { return Mul_(value); }
-    template <typename T>
-    Tensor operator*=(T scalar_value) {
-        return Mul_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor operator*=(Scalar value) { return Mul_(value); }
 
     /// Divides a tensor and returns the resulting tensor.
     Tensor Div(const Tensor& value) const;
-    template <typename T>
-    Tensor Div(T scalar_value) const {
-        return Div(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Div(Scalar value) const;
     Tensor operator/(const Tensor& value) const { return Div(value); }
-    template <typename T>
-    Tensor operator/(T scalar_value) const {
-        return Div(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor operator/(Scalar value) const { return Div(value); }
 
     /// Inplace version of Tensor::Div. Divides a tensor to the current
     /// tensor and returns the current tensor.
     Tensor Div_(const Tensor& value);
-    template <typename T>
-    Tensor Div_(T scalar_value) {
-        return Div_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Div_(Scalar value);
     Tensor operator/=(const Tensor& value) { return Div_(value); }
-    template <typename T>
-    Tensor operator/=(T scalar_value) {
-        return Div_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor operator/=(Scalar value) { return Div_(value); }
 
     /// Returns the sum of the tensor along the given \p dims.
     /// \param dims A list of dimensions to be reduced.
@@ -758,17 +636,30 @@ public:
     /// Element-wise absolute value of a tensor, in-place.
     Tensor Abs_();
 
+    /// Element-wise check for NaN values in a tensor, returning a new
+    /// Boolean tensor. Non-floating point tensors return all False values.
+    Tensor IsNan() const;
+
+    /// Element-wise check for Infinity values in a tensor, returning a new
+    /// Boolean tensor. Non-floating point tensors return all False values.
+    Tensor IsInf() const;
+
+    /// Element-wise check for finite values (not Inf or NaN) in a tensor,
+    /// returning a new Boolean tensor. Non-floating point tensors return all
+    /// True values.
+    Tensor IsFinite() const;
+
     /// Element-wise clipping of tensor values so that resulting values lie in
     /// the range [\p min_val, \p max_val], returning a new tensor.
     /// \param min_val Lower bound for output values.
     /// \param max_val Upper bound for output values.
-    Tensor Clip(double min_val, double max_val) const;
+    Tensor Clip(Scalar min_val, Scalar max_val) const;
 
     /// Element-wise clipping of tensor values so that resulting values lie in
     /// the range [\p min_val, \p max_val]. In-place version.
     /// \param min_val Lower bound for output values.
     /// \param max_val Upper bound for output values.
-    Tensor Clip_(double min_val, double max_val);
+    Tensor Clip_(Scalar min_val, Scalar max_val);
 
     /// Element-wise floor value of a tensor, returning a new tensor.
     Tensor Floor() const;
@@ -802,10 +693,7 @@ public:
     /// non-zero values will be treated as True.
     Tensor LogicalAnd(const Tensor& value) const;
     Tensor operator&&(const Tensor& value) const { return LogicalAnd(value); }
-    template <typename T>
-    Tensor LogicalAnd(T scalar_value) const {
-        return LogicalAnd(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalAnd(Scalar value) const;
 
     /// Element-wise logical and of tensors, in-place. This operation won't
     /// change the tensor's dtype.
@@ -814,10 +702,7 @@ public:
     /// will be treated as True. The tensor will be filled with 0 or 1 casted to
     /// the tensor's dtype.
     Tensor LogicalAnd_(const Tensor& value);
-    template <typename T>
-    Tensor LogicalAnd_(T scalar_value) {
-        return LogicalAnd_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalAnd_(Scalar value);
 
     /// Element-wise logical or of tensors, returning a new boolean tensor.
     ///
@@ -825,10 +710,7 @@ public:
     /// non-zero values will be treated as True.
     Tensor LogicalOr(const Tensor& value) const;
     Tensor operator||(const Tensor& value) const { return LogicalOr(value); }
-    template <typename T>
-    Tensor LogicalOr(T scalar_value) const {
-        return LogicalOr(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalOr(Scalar value) const;
 
     /// Element-wise logical or of tensors, in-place. This operation won't
     /// change the tensor's dtype.
@@ -837,10 +719,7 @@ public:
     /// will be treated as True. The tensor will be filled with 0 or 1 casted to
     /// the tensor's dtype.
     Tensor LogicalOr_(const Tensor& value);
-    template <typename T>
-    Tensor LogicalOr_(T scalar_value) {
-        return LogicalOr_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalOr_(Scalar value);
 
     /// Element-wise logical exclusive-or of tensors, returning a new boolean
     /// tensor.
@@ -848,10 +727,7 @@ public:
     /// If the tensor is not boolean, zero will be treated as False, while
     /// non-zero values will be treated as True.
     Tensor LogicalXor(const Tensor& value) const;
-    template <typename T>
-    Tensor LogicalXor(T scalar_value) const {
-        return LogicalXor(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalXor(Scalar value) const;
 
     /// Element-wise logical exclusive-or of tensors, in-place. This operation
     /// won't change the tensor's dtype.
@@ -860,108 +736,69 @@ public:
     /// non-zero values will be treated as True. The tensor will be filled with
     /// 0 or 1 casted to the tensor's dtype.
     Tensor LogicalXor_(const Tensor& value);
-    template <typename T>
-    Tensor LogicalXor_(T scalar_value) {
-        return LogicalXor_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor LogicalXor_(Scalar value);
 
     /// Element-wise greater-than of tensors, returning a new boolean tensor.
     Tensor Gt(const Tensor& value) const;
     Tensor operator>(const Tensor& value) const { return Gt(value); }
-    template <typename T>
-    Tensor Gt(T scalar_value) const {
-        return Gt(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Gt(Scalar value) const;
 
     /// Element-wise greater-than of tensors, in-place. This operation
     /// won't change the tensor's dtype.
     Tensor Gt_(const Tensor& value);
-    template <typename T>
-    Tensor Gt_(T scalar_value) {
-        return Gt_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Gt_(Scalar value);
 
     /// Element-wise less-than of tensors, returning a new boolean tensor.
     Tensor Lt(const Tensor& value) const;
     Tensor operator<(const Tensor& value) const { return Lt(value); }
-    template <typename T>
-    Tensor Lt(T scalar_value) const {
-        return Lt(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Lt(Scalar value) const;
 
     /// Element-wise less-than of tensors, in-place. This operation won't change
     /// the tensor's dtype.
     Tensor Lt_(const Tensor& value);
-    template <typename T>
-    Tensor Lt_(T scalar_value) {
-        return Lt_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Lt_(Scalar value);
 
     /// Element-wise greater-than-or-equals-to of tensors, returning a new
     /// boolean tensor.
     Tensor Ge(const Tensor& value) const;
     Tensor operator>=(const Tensor& value) const { return Ge(value); }
-    template <typename T>
-    Tensor Ge(T scalar_value) const {
-        return Ge(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Ge(Scalar value) const;
 
     /// Element-wise greater-than-or-equals-to of tensors, in-place. This
     /// operation won't change the tensor's dtype.
     Tensor Ge_(const Tensor& value);
-    template <typename T>
-    Tensor Ge_(T scalar_value) {
-        return Ge_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Ge_(Scalar value);
 
     /// Element-wise less-than-or-equals-to of tensors, returning a new boolean
     /// tensor.
     Tensor Le(const Tensor& value) const;
     Tensor operator<=(const Tensor& value) const { return Le(value); }
-    template <typename T>
-    Tensor Le(T scalar_value) const {
-        return Le(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Le(Scalar value) const;
 
     /// Element-wise less-than-or-equals-to of tensors, in-place. This operation
     /// won't change the tensor's dtype.
     Tensor Le_(const Tensor& value);
-    template <typename T>
-    Tensor Le_(T scalar_value) {
-        return Le_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Le_(Scalar value);
 
     /// Element-wise equals-to of tensors, returning a new boolean tensor.
     Tensor Eq(const Tensor& value) const;
     Tensor operator==(const Tensor& value) const { return Eq(value); }
-    template <typename T>
-    Tensor Eq(T scalar_value) const {
-        return Eq(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Eq(Scalar value) const;
 
     /// Element-wise equals-to of tensors, in-place. This
     /// operation won't change the tensor's dtype.
     Tensor Eq_(const Tensor& value);
-    template <typename T>
-    Tensor Eq_(T scalar_value) {
-        return Eq_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Eq_(Scalar value);
 
     /// Element-wise not-equals-to of tensors, returning a new boolean tensor.
     Tensor Ne(const Tensor& value) const;
     Tensor operator!=(const Tensor& value) const { return Ne(value); }
-    template <typename T>
-    Tensor Ne(T scalar_value) const {
-        return Ne(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Ne(Scalar value) const;
 
     /// Element-wise equals-to of tensors, in-place. This
     /// operation won't change the tensor's dtype.
     Tensor Ne_(const Tensor& value);
-    template <typename T>
-    Tensor Ne_(T scalar_value) {
-        return Ne_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
-    }
+    Tensor Ne_(Scalar value);
 
     /// Find the indices of the elements that are non-zero. Returns a vector of
     /// int64 Tensors, each containing the indices of the non-zero elements in
@@ -987,12 +824,12 @@ public:
 
     /// Returns true if all elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is apply to all dimensions.
+    /// the reduction is applied to all dimensions.
     bool All() const;
 
     /// Returns true if any elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is apply to all dimensions.
+    /// the reduction is applied to all dimensions.
     bool Any() const;
 
     /// Returns true if the two tensors are element-wise equal within a
@@ -1003,8 +840,8 @@ public:
     /// - If the shape is not the same: returns false.
     /// - Returns true if: abs(self - other) <= (atol + rtol * abs(other)).
     ///
-    /// The equation is not symmetrial, i.e. a.AllClose(b) might not be the same
-    /// as b.AllClose(a). Also see Numpy's documentation:
+    /// The equation is not symmetrical, i.e. a.AllClose(b) might not be the
+    /// same as b.AllClose(a). Also see Numpy's documentation:
     /// https://numpy.org/doc/stable/reference/generated/numpy.allclose.html.
     ///
     /// TODO: support nan
@@ -1016,7 +853,7 @@ public:
                   double rtol = 1e-5,
                   double atol = 1e-8) const;
 
-    /// Element-wise version of Tensor::AllClose.
+    /// Element-wise version of Tensor::AllClose().
     ///
     /// - If the device is not the same: throws exception.
     /// - If the dtype is not the same: throws exception.
@@ -1033,7 +870,7 @@ public:
     /// \param other The other tensor to compare with.
     /// \param rtol Relative tolerance.
     /// \param atol Absolute tolerance.
-    /// \return A boolean tensor indicating whether the tensor is close.
+    /// \return A boolean tensor indicating where the tensor is close.
     Tensor IsClose(const Tensor& other,
                    double rtol = 1e-5,
                    double atol = 1e-8) const;
@@ -1058,7 +895,7 @@ public:
     /// Tensor's data_ptr_ does not need to point to the beginning of blob_.
     inline bool IsContiguous() const {
         return shape_util::DefaultStrides(shape_) == strides_;
-    };
+    }
 
     /// Returns a contiguous Tensor containing the same data in the same device.
     /// If self tensor is already contiguous, the same underlying memory will be
@@ -1076,6 +913,64 @@ public:
     /// Solves the linear system AX = B with QR decomposition and returns X.
     /// A is a (m, n) matrix with m >= n.
     Tensor LeastSquares(const Tensor& rhs) const;
+
+    /// \brief Computes LU factorisation of the 2D square tensor,
+    /// using A = P * L * U; where P is the permutation matrix, L is the
+    /// lower-triangular matrix with diagonal elements as 1.0 and U is the
+    /// upper-triangular matrix, and returns tuple (P, L, U).
+    ///
+    /// \param permute_l [optional input] If true: returns L as P * L.
+    /// \return Tuple (P, L, U).
+    std::tuple<Tensor, Tensor, Tensor> LU(const bool permute_l = false) const;
+
+    /// \brief Computes LU factorisation of the 2D square tensor,
+    /// using A = P * L * U; where P is the permutation matrix, L is the
+    /// lower-triangular matrix with diagonal elements as 1.0 and U is the
+    /// upper-triangular matrix, and returns tuple `output` tensor of shape
+    /// {n,n} and `ipiv` tensor of shape {n}, where {n,n} is the shape of input
+    /// tensor. [ipiv, output = open3d.core.lu_ipiv(a)].
+    ///
+    /// \return Tuple {ipiv, output}. Where ipiv is a 1D integer pivort indices
+    /// tensor. It contains the pivot indices, indicating row i of the matrix
+    /// was interchanged with row ipiv(i)); and output it has L as
+    /// lower triangular values and U as upper triangle values including the
+    /// main diagonal (diagonal elements of L to be taken as unity).
+    std::tuple<Tensor, Tensor> LUIpiv() const;
+
+    /// \brief Returns the upper triangular matrix of the 2D tensor,
+    /// above the given diagonal index. [The value of diagonal = col - row,
+    /// therefore 0 is the main diagonal (row = col), and it shifts towards
+    /// right for positive values (for diagonal = 1, col - row = 1), and towards
+    /// left for negative values. The value of the diagonal parameter must be
+    /// between [-m, n] for a {m,n} shaped tensor.
+    ///
+    /// \param diagonal value of [col - row], above which the elements are to be
+    /// taken for upper triangular matrix.
+    Tensor Triu(const int diagonal = 0) const;
+
+    /// \brief Returns the lower triangular matrix of the 2D tensor,
+    /// above the given diagonal index. [The value of diagonal = col - row,
+    /// therefore 0 is the main diagonal (row = col), and it shifts towards
+    /// right for positive values (for diagonal = 1, col - row = 1), and towards
+    /// left for negative values. The value of the diagonal parameter must be
+    /// between [-m, n] where {m, n} is the shape of input tensor.
+    ///
+    /// \param diagonal value of [col - row], below which the elements are to be
+    /// taken for lower triangular matrix.
+    Tensor Tril(const int diagonal = 0) const;
+
+    /// \brief Returns the tuple of upper and lower triangular matrix
+    /// of the 2D tensor, above and below the given diagonal index.
+    /// The diagonal elements of lower triangular matrix are taken to be unity.
+    /// [The value of diagonal = col - row, therefore 0 is the main diagonal
+    /// (row = col), and it shifts towards right for positive values
+    /// (for diagonal = 1, col - row = 1), and towards left for negative values.
+    /// The value of the diagonal parameter must be between [-m, n] where {m, n}
+    /// is the shape of input tensor.
+    ///
+    /// \param diagonal value of [col - row], above and below which the elements
+    /// are to be taken for upper (diag. included) and lower triangular matrix.
+    std::tuple<Tensor, Tensor> Triul(const int diagonal = 0) const;
 
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.
@@ -1179,6 +1074,18 @@ public:
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
+
+private:
+    /// Create a n-D tensor with initializer list.
+    template <typename T, size_t D>
+    static Tensor InitWithInitializerList(
+            const tensor_init::NestedInitializerList<T, D>& nested_list,
+            const Device& device = Device("CPU:0")) {
+        SizeVector shape = tensor_init::InferShape(nested_list);
+        std::vector<T> values =
+                tensor_init::ToFlatVector<T, D>(shape, nested_list);
+        return Tensor(values, shape, Dtype::FromType<T>(), device);
+    }
 
 protected:
     /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension

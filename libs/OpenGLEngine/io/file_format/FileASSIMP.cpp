@@ -24,21 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <FileSystem.h>
+#include <ImageIO.h>
+#include <Logging.h>
+#include <ProgressReporters.h>
+#include <ecvPointCloud.h>
+
 #include <fstream>
 #include <numeric>
 #include <vector>
 
-#include <Console.h>
-#include <FileSystem.h>
-
-#include <ecvPointCloud.h>
-
 #include "assimp/Importer.hpp"
+#include "assimp/ProgressHandler.hpp"
 #include "assimp/pbrmaterial.h"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
-#include <ImageIO.h>
 #include "io/FileFormatIO.h"
+#include "io/ModelIO.h"
 #include "io/TriangleMeshIO.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/Model.h"
@@ -50,14 +52,11 @@
 
 namespace cloudViewer {
 namespace io {
-    using namespace cloudViewer;
 
 const unsigned int kPostProcessFlags =
-        aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices |
-        aiProcess_ImproveCacheLocality | aiProcess_RemoveRedundantMaterials |
+        aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials |
         aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_SortByPType |
-        aiProcess_FindDegenerates | aiProcess_OptimizeMeshes |
-        aiProcess_PreTransformVertices;
+        aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices;
 
 struct TextureImages {
     std::shared_ptr<geometry::Image> albedo;
@@ -136,15 +135,15 @@ void LoadTextures(const std::string& filename,
     // anisotropy
 }
 
-bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
-                                 ccMesh& mesh,
-                                 bool enable_post_processing,
-                                 bool print_progress) {
+bool ReadTriangleMeshUsingASSIMP(
+        const std::string& filename,
+        ccMesh& mesh,
+        const ReadTriangleMeshOptions& params /*={}*/) {
     Assimp::Importer importer;
 
     unsigned int post_process_flags = 0;
 
-    if (enable_post_processing) {
+    if (params.enable_post_processing) {
         post_process_flags = kPostProcessFlags;
     }
 
@@ -158,15 +157,13 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
     if (scene->mNumMeshes > 0) {
         const auto* assimp_mesh = scene->mMeshes[0];
 
-        if (!mesh.getAssociatedCloud())
-        {
+        if (!mesh.getAssociatedCloud()) {
             mesh.createInternalCloud();
         }
 
-        if(!mesh.reserveAssociatedCloud(
-                    assimp_mesh->mNumVertices,
-                    assimp_mesh->HasVertexColors(0),
-                    assimp_mesh->HasNormals())) {
+        if (!mesh.reserveAssociatedCloud(assimp_mesh->mNumVertices,
+                                         assimp_mesh->HasVertexColors(0),
+                                         assimp_mesh->HasNormals())) {
             return false;
         }
     } else {
@@ -190,7 +187,7 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         // copy vertex data
         for (size_t vidx = 0; vidx < assimp_mesh->mNumVertices; ++vidx) {
             auto& vertex = assimp_mesh->mVertices[vidx];
-            mesh.addVertice({ vertex.x, vertex.y, vertex.z });
+            mesh.addVertice({vertex.x, vertex.y, vertex.z});
         }
 
         // copy face indices data
@@ -207,7 +204,7 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         if (assimp_mesh->HasNormals()) {
             for (size_t nidx = 0; nidx < assimp_mesh->mNumVertices; ++nidx) {
                 auto& normal = assimp_mesh->mNormals[nidx];
-                mesh.addVertexNormal({ normal.x, normal.y, normal.z });
+                mesh.addVertexNormal({normal.x, normal.y, normal.z});
             }
         }
 
@@ -289,13 +286,45 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
 
 bool ReadModelUsingAssimp(const std::string& filename,
                           visualization::rendering::TriangleMeshModel& model,
-                          bool print_progress) {
+                          const ReadTriangleModelOptions& params /*={}*/) {
+    int64_t progress_total = 100;  // 70: ReadFile(), 10: mesh, 20: textures
+    float readfile_total = 70.0f;
+    float mesh_total = 10.0f;
+    float textures_total = 20.0f;
+    int64_t progress = 0;
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(progress_total);
+    class AssimpProgress : public Assimp::ProgressHandler {
+    public:
+        AssimpProgress(const ReadTriangleModelOptions& params, float scaling)
+            : params_(params), scaling_(scaling) {}
+
+        bool Update(float percentage = -1.0f) override {
+            if (params_.update_progress) {
+                params_.update_progress(
+                        std::max(0.0f, 100.0f * scaling_ * percentage));
+            }
+            return true;
+        }
+
+    private:
+        const ReadTriangleModelOptions& params_;
+        float scaling_;
+    };
+
     Assimp::Importer importer;
+    // The importer takes ownership of the pointer (the documentation
+    // is silent on this salient point).
+    importer.SetProgressHandler(
+            new AssimpProgress(params, readfile_total / progress_total));
     const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;
     }
+
+    progress = int64_t(readfile_total);
+    reporter.Update(progress);
 
     // Process each Assimp mesh into a ccMesh
     for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
@@ -313,13 +342,15 @@ bool ReadModelUsingAssimp(const std::string& filename,
         assert(baseVertices);
         auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
 
-        if(!baseVertices->reserveThePointsTable(assimp_mesh->mNumVertices)) {
-            utility::LogError("[reserveThePointsTable] Not have enough memory! ");
+        if (!baseVertices->reserveThePointsTable(assimp_mesh->mNumVertices)) {
+            utility::LogError(
+                    "[reserveThePointsTable] Not have enough memory! ");
             return false;
         }
         if (assimp_mesh->mNormals) {
             if (!baseVertices->reserveTheNormsTable()) {
-                utility::LogError("[reserveTheNormsTable] Not have enough memory! ");
+                utility::LogError(
+                        "[reserveTheNormsTable] Not have enough memory! ");
                 return false;
             }
         }
@@ -334,7 +365,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
         // copy vertex data
         for (size_t vidx = 0; vidx < assimp_mesh->mNumVertices; ++vidx) {
             auto& vertex = assimp_mesh->mVertices[vidx];
-            baseVertices->addEigenPoint( { vertex.x, vertex.y, vertex.z } );
+            baseVertices->addEigenPoint({vertex.x, vertex.y, vertex.z});
         }
 
         // copy face indices data
@@ -373,13 +404,12 @@ bool ReadModelUsingAssimp(const std::string& filename,
             }
         }
 
-        //do some cleaning
+        // do some cleaning
         {
             baseVertices->shrinkToFit();
             mesh->shrinkToFit();
             NormsIndexesTableType* normals = mesh->getTriNormsTable();
-            if (normals)
-            {
+            if (normals) {
                 normals->shrink_to_fit();
             }
         }
@@ -393,6 +423,9 @@ bool ReadModelUsingAssimp(const std::string& filename,
         model.meshes_.push_back({mesh, std::string(assimp_mesh->mName.C_Str()),
                                  assimp_mesh->mMaterialIndex});
     }
+
+    progress = int64_t(readfile_total + mesh_total);
+    reporter.Update(progress);
 
     // Load materials
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
@@ -443,7 +476,14 @@ bool ReadModelUsingAssimp(const std::string& filename,
         }
 
         model.materials_.push_back(cv3d_mat);
+
+        progress = int64_t(readfile_total + mesh_total +
+                           textures_total * float(i + 1) /
+                                   float(scene->mNumMaterials));
+        reporter.Update(progress);
     }
+
+    reporter.Update(progress_total);
 
     return true;
 }

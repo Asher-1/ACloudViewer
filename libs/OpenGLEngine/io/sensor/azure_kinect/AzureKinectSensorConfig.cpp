@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,12 +35,10 @@
 #include <unordered_map>
 
 #include "io/sensor/azure_kinect/K4aPlugin.h"
-#include <Console.h>
+#include "utility/Logging.h"
 
 namespace cloudViewer {
 namespace io {
-
-using namespace cloudViewer;
 
 static std::map<k4a_image_format_t, std::string> k4a_image_format_t_to_string{
         {K4A_IMAGE_FORMAT_COLOR_MJPG, "K4A_IMAGE_FORMAT_COLOR_MJPG"},

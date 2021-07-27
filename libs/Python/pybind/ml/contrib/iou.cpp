@@ -26,7 +26,7 @@
 
 #include "ml/contrib/IoU.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"
 #include "pybind/ml/contrib/contrib.h"
@@ -36,8 +36,6 @@
 namespace cloudViewer {
 namespace ml {
 namespace contrib {
-
-using namespace cloudViewer;
 
 py::array IouBevCPU(py::array boxes_a, py::array boxes_b) {
     core::Tensor boxes_a_tensor =

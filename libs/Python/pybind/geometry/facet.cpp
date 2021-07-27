@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 // CV_CORE_LIB
-#include <Console.h>
+#include <Logging.h>
 
 // ECV_DB_LIB
 #include <ecvMesh.h>
@@ -153,7 +153,7 @@ void pybind_facet(py::module &m) {
 			{
 				cloudViewer::utility::LogWarning(
 					"[ccFacet::Create] Illegal input parameters, only support point cloud!");
-				return std::make_shared<ccFacet>();
+				return cloudViewer::make_shared<ccFacet>();
 			}
 			
 			PointCoordinateType eq[4];

@@ -36,7 +36,7 @@
 #include <vector>
 
 #include <Eigen.h>
-#include <Console.h>
+#include <Logging.h>
 
 #include "ecvPointCloud.h"
 #include "ecvKDTreeFlann.h"
@@ -86,7 +86,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
         int min_neighbors /*= 5 */) {
     if (input.isEmpty()) {
         cloudViewer::utility::LogWarning("[ComputeISSKeypoints] Input ccPointCloud is empty!");
-        return std::make_shared<ccPointCloud>();
+        return cloudViewer::make_shared<ccPointCloud>();
     }
     const auto& points = input.getEigenPoints();
     KDTreeFlann kdtree(input);

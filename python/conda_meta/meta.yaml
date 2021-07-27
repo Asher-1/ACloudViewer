@@ -15,14 +15,14 @@ requirements:
     build:
         - python {{ python }}
         - setuptools
+        - ipywidgets
+        - jupyter-packaging
+        - jupyterlab
     run:
         - python
-        - ipywidgets
-        - widgetsnbextension
-        - notebook
-        - numpy
+        - jupyterlab
+        - jupyter
         - addict # CloudViewer-ML deps starts here (https://github.com/intel-isl/Open3D-ML/blob/master/requirements.txt)
-        - matplotlib
         - pandas
         - plyfile
         - pyyaml
@@ -33,6 +33,6 @@ about:
     home: @PROJECT_HOME@
     license: MIT
     license_file: LICENSE.txt
-    summary: cloudViewer is an open-source library that supports rapid development of software that deals with 3D data.
+    summary: CloudViewer is an open-source library that supports rapid development of software that deals with 3D data.
     doc_url: @PROJECT_DOCS@
     dev_url: @PROJECT_CODE@

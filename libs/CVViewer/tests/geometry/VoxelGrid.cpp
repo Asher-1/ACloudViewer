@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/VoxelGrid.h"
+#include "geometry/VoxelGrid.h"
 
-#include "open3d/geometry/LineSet.h"
-#include "open3d/geometry/TriangleMesh.h"
-#include "open3d/visualization/utility/DrawGeometry.h"
+#include "geometry/LineSet.h"
+#include "geometry/TriangleMesh.h"
+#include "visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(VoxelGrid, Bounds) {
-    auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
+    auto voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
     voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
     voxel_grid->voxel_size_ = 5;
     voxel_grid->AddVoxel(geometry::Voxel(Eigen::Vector3i(1, 0, 0)));
@@ -46,7 +46,7 @@ TEST(VoxelGrid, Bounds) {
 }
 
 TEST(VoxelGrid, GetVoxel) {
-    auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
+    auto voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
     voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
     voxel_grid->voxel_size_ = 5;
     ExpectEQ(voxel_grid->GetVoxel(Eigen::Vector3d(0, 0, 0)),
@@ -63,7 +63,7 @@ TEST(VoxelGrid, GetVoxel) {
 }
 
 TEST(VoxelGrid, Visualization) {
-    auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
+    auto voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
     voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
     voxel_grid->voxel_size_ = 5;
     voxel_grid->AddVoxel(geometry::Voxel(Eigen::Vector3i(0, 0, 0),
@@ -76,4 +76,4 @@ TEST(VoxelGrid, Visualization) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

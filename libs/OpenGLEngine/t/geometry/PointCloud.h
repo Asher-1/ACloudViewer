@@ -26,17 +26,19 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include <Image.h>
+#include <Logging.h>
+#include <ecvPointCloud.h>
+
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
-#include <Image.h>
-#include <ecvPointCloud.h>
-
 #include "core/Tensor.h"
+#include "core/hashmap/Hashmap.h"
 #include "t/geometry/Geometry.h"
 #include "t/geometry/Image.h"
+#include "t/geometry/RGBDImage.h"
 #include "t/geometry/TensorMap.h"
 
 namespace cloudViewer {
@@ -118,6 +120,9 @@ public:
 
     virtual ~PointCloud() override {}
 
+    /// \brief Text description.
+    std::string ToString() const;
+
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
 
@@ -164,7 +169,7 @@ public:
     /// \param value A tensor.
     void SetPointAttr(const std::string &key, const core::Tensor &value) {
         if (value.GetDevice() != device_) {
-            cloudViewer::utility::LogError("Attribute device {} != Pointcloud's device {}.",
+            utility::LogError("Attribute device {} != Pointcloud's device {}.",
                               value.GetDevice().ToString(), device_.ToString());
         }
         point_attr_[key] = value;
@@ -172,19 +177,19 @@ public:
 
     /// Set the value of the "points" attribute. Convenience function.
     void SetPoints(const core::Tensor &value) {
-        value.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetPointAttr("points", value);
     }
 
     /// Set the value of the "colors" attribute. Convenience function.
     void SetPointColors(const core::Tensor &value) {
-        value.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetPointAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute. Convenience function.
     void SetPointNormals(const core::Tensor &value) {
-        value.AssertShapeCompatible({cloudViewer::utility::nullopt, 3});
+        value.AssertShapeCompatible({utility::nullopt, 3});
         SetPointAttr("normals", value);
     }
 
@@ -196,6 +201,12 @@ public:
         return point_attr_.Contains(key) && GetPointAttr(key).GetLength() > 0 &&
                GetPointAttr(key).GetLength() == GetPoints().GetLength();
     }
+
+    /// Removes point attribute by key value. Primary attribute "points" cannot
+    /// be removed. Throws warning if attribute key does not exists.
+    ///
+    /// \param key Attribute name.
+    void RemovePointAttr(const std::string &key) { point_attr_.Erase(key); }
 
     /// Check if the "points" attribute's value has length > 0.
     /// This is a convenience function.
@@ -257,6 +268,19 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
+    /// Append a pointcloud and returns the resulting pointcloud.
+    ///
+    /// The pointcloud being appended, must have all the attributes
+    /// present in the pointcloud it is being appended to, with same
+    /// dtype, device and same shape other than the first dimension / length.
+    PointCloud Append(const PointCloud &other) const;
+
+    /// operator+ for t::PointCloud appends the compatible attributes to the
+    /// pointcloud.
+    PointCloud operator+(const PointCloud &other) const {
+        return Append(other);
+    }
+
     /// \brief Transforms the points and normals (if exist)
     /// of the PointCloud.
     /// Extracts R, t from Transformation
@@ -293,28 +317,39 @@ public:
     /// \return Rotated pointcloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// \brief Downsamples a point cloud with a specified voxel size.
+    /// \param voxel_size Voxel size. A positive number.
+    PointCloud VoxelDownSample(double voxel_size,
+                               const core::HashmapBackend &backend =
+                                       core::HashmapBackend::Default) const;
+
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
 
-    /// \brief Factory function to create a pointcloud from a depth image and a
+/// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.
     ///
     /// Given depth value d at (u, v) image coordinate, the corresponding 3d
-    /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
-    /// / fy\n
+    /// point is:
+    /// - z = d / depth_scale
+    /// - x = (u - cx) * z / fx
+    /// - y = (v - cy) * z / fy
     ///
-    /// \param depth The input depth image should be a uint16_t image.
-    /// \param intrinsic Intrinsic parameters of the camera.
-    /// \param extrinsic Extrinsic parameters of the camera.
+    /// \param depth The input depth image should be a uint16_t or float image.
+    /// \param intrinsics Intrinsic parameters of the camera.
+    /// \param extrinsics Extrinsic parameters of the camera.
     /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
-    /// \param depth_trunc Truncated at \p depth_trunc distance.
+    /// \param depth_max Truncated at \p depth_max distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
+    /// Unless \p with_normals=true, there is no low pass filtering, so aliasing
+    /// is possible for \p stride>1.
+    /// \param with_normals Also compute normals for the point cloud. If
+    /// True, the point cloud will only contain points with valid normals. If
+    /// normals are requested, the depth map is first filtered to ensure smooth
+    /// normals.
     ///
-    /// \return An empty pointcloud if the conversion fails.
-    /// If \param project_valid_depth_only is true, return point cloud, which
-    /// doesn't
-    /// have nan point. If the value is false, return point cloud, which has
-    /// a point for each pixel, whereas invalid depth results in NaN points.
+    /// \return Created pointcloud with the 'points' property set. Thus is empty
+    /// if the conversion fails.
     static PointCloud CreateFromDepthImage(
             const Image &depth,
             const core::Tensor &intrinsics,
@@ -322,7 +357,43 @@ public:
                     4, core::Dtype::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
-            int stride = 1);
+            int stride = 1,
+            bool with_normals = false);
+
+    /// \brief Factory function to create a pointcloud from an RGB-D image and a
+    /// camera model.
+    ///
+    /// Given depth value d at (u, v) image coordinate, the corresponding 3d
+    /// point is:
+    /// - z = d / depth_scale
+    /// - x = (u - cx) * z / fx
+    /// - y = (v - cy) * z / fy
+    ///
+    /// \param rgbd_image The input RGBD image should have a uint16_t or float
+    /// depth image and RGB image with any DType and the same size.
+    /// \param intrinsics Intrinsic parameters of the camera.
+    /// \param extrinsics Extrinsic parameters of the camera.
+    /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
+    /// \param depth_max Truncated at \p depth_max distance.
+    /// \param stride Sampling factor to support coarse point cloud extraction.
+    /// Unless \p with_normals=true, there is no low pass filtering, so aliasing
+    /// is possible for \p stride>1.
+    /// \param with_normals Also compute normals for the point cloud. If True,
+    /// the point cloud will only contain points with valid normals. If
+    /// normals are requested, the depth map is first filtered to ensure smooth
+    /// normals.
+    ///
+    /// \return Created pointcloud with the 'points' and 'colors' properties
+    /// set. This is empty if the conversion fails.
+    static PointCloud CreateFromRGBDImage(
+            const RGBDImage &rgbd_image,
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics = core::Tensor::Eye(
+                    4, core::Dtype::Float32, core::Device("CPU:0")),
+            float depth_scale = 1000.0f,
+            float depth_max = 3.0f,
+            int stride = 1,
+            bool with_normals = false);
 
     /// Create a PointCloud from a legacy cloudViewer PointCloud.
     static PointCloud FromLegacyPointCloud(
@@ -332,6 +403,26 @@ public:
 
     /// Convert to a legacy cloudViewer PointCloud.
     ccPointCloud ToLegacyPointCloud() const;
+
+     /// Project a point cloud to a depth image.
+    geometry::Image ProjectToDepthImage(
+            int width,
+            int height,
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics = core::Tensor::Eye(
+                    4, core::Dtype::Float32, core::Device("CPU:0")),
+            float depth_scale = 1000.0f,
+            float depth_max = 3.0f);
+
+    /// Project a point cloud to an RGBD image.
+    geometry::RGBDImage ProjectToRGBDImage(
+            int width,
+            int height,
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics = core::Tensor::Eye(
+                    4, core::Dtype::Float32, core::Device("CPU:0")),
+            float depth_scale = 1000.0f,
+            float depth_max = 3.0f);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

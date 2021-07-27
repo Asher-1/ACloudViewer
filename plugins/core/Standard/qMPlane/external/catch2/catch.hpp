@@ -5860,7 +5860,7 @@ namespace Catch {
             std::shared_ptr<SectionNode> node;
             if( m_sectionStack.empty() ) {
                 if( !m_rootSection )
-                    m_rootSection = std::make_shared<SectionNode>( incompleteStats );
+                    m_rootSection = cloudViewer::make_shared<SectionNode>( incompleteStats );
                 node = m_rootSection;
             }
             else {
@@ -5870,7 +5870,7 @@ namespace Catch {
                                     parentNode.childSections.end(),
                                     BySectionInfo( sectionInfo ) );
                 if( it == parentNode.childSections.end() ) {
-                    node = std::make_shared<SectionNode>( incompleteStats );
+                    node = cloudViewer::make_shared<SectionNode>( incompleteStats );
                     parentNode.childSections.push_back( node );
                 }
                 else
@@ -5901,7 +5901,7 @@ namespace Catch {
             m_sectionStack.pop_back();
         }
         void testCaseEnded(TestCaseStats const& testCaseStats) override {
-            auto node = std::make_shared<TestCaseNode>(testCaseStats);
+            auto node = cloudViewer::make_shared<TestCaseNode>(testCaseStats);
             assert(m_sectionStack.size() == 0);
             node->children.push_back(m_rootSection);
             m_testCases.push_back(node);
@@ -5912,12 +5912,12 @@ namespace Catch {
             m_deepestSection->stdErr = testCaseStats.stdErr;
         }
         void testGroupEnded(TestGroupStats const& testGroupStats) override {
-            auto node = std::make_shared<TestGroupNode>(testGroupStats);
+            auto node = cloudViewer::make_shared<TestGroupNode>(testGroupStats);
             node->children.swap(m_testCases);
             m_testGroups.push_back(node);
         }
         void testRunEnded(TestRunStats const& testRunStats) override {
-            auto node = std::make_shared<TestRunNode>(testRunStats);
+            auto node = cloudViewer::make_shared<TestRunNode>(testRunStats);
             node->children.swap(m_testGroups);
             m_testRuns.push_back(node);
             testRunEndedCumulative();
@@ -6044,7 +6044,7 @@ namespace Catch {
     public:
 
         explicit ReporterRegistrar( std::string const& name ) {
-            getMutableRegistryHub().registerReporter( name, std::make_shared<ReporterFactory>() );
+            getMutableRegistryHub().registerReporter( name, cloudViewer::make_shared<ReporterFactory>() );
         }
     };
 
@@ -6064,7 +6064,7 @@ namespace Catch {
     public:
 
         ListenerRegistrar() {
-            getMutableRegistryHub().registerListener( std::make_shared<ListenerFactory>() );
+            getMutableRegistryHub().registerListener( cloudViewer::make_shared<ListenerFactory>() );
         }
     };
 }
@@ -9242,13 +9242,13 @@ namespace detail {
     public:
         template<typename T>
         ParserRefImpl( T &ref, std::string const &hint )
-        :   m_ref( std::make_shared<BoundValueRef<T>>( ref ) ),
+        :   m_ref( cloudViewer::make_shared<BoundValueRef<T>>( ref ) ),
             m_hint( hint )
         {}
 
         template<typename LambdaT>
         ParserRefImpl( LambdaT const &ref, std::string const &hint )
-        :   m_ref( std::make_shared<BoundLambda<LambdaT>>( ref ) ),
+        :   m_ref( cloudViewer::make_shared<BoundLambda<LambdaT>>( ref ) ),
             m_hint(hint)
         {}
 
@@ -9287,19 +9287,19 @@ namespace detail {
 
         template<typename LambdaT>
         static auto makeRef(LambdaT const &lambda) -> std::shared_ptr<BoundValueRefBase> {
-            return std::make_shared<BoundLambda<LambdaT>>( lambda) ;
+            return cloudViewer::make_shared<BoundLambda<LambdaT>>( lambda) ;
         }
 
     public:
-        ExeName() : m_name( std::make_shared<std::string>( "<executable>" ) ) {}
+        ExeName() : m_name( cloudViewer::make_shared<std::string>( "<executable>" ) ) {}
 
         explicit ExeName( std::string &ref ) : ExeName() {
-            m_ref = std::make_shared<BoundValueRef<std::string>>( ref );
+            m_ref = cloudViewer::make_shared<BoundValueRef<std::string>>( ref );
         }
 
         template<typename LambdaT>
         explicit ExeName( LambdaT const& lambda ) : ExeName() {
-            m_ref = std::make_shared<BoundLambda<LambdaT>>( lambda );
+            m_ref = cloudViewer::make_shared<BoundLambda<LambdaT>>( lambda );
         }
 
         // The exe name is not parsed out of the normal tokens, but is handled specially
@@ -9363,9 +9363,9 @@ namespace detail {
 
     public:
         template<typename LambdaT>
-        explicit Opt( LambdaT const &ref ) : ParserRefImpl( std::make_shared<BoundFlagLambda<LambdaT>>( ref ) ) {}
+        explicit Opt( LambdaT const &ref ) : ParserRefImpl( cloudViewer::make_shared<BoundFlagLambda<LambdaT>>( ref ) ) {}
 
-        explicit Opt( bool &ref ) : ParserRefImpl( std::make_shared<BoundFlagRef>( ref ) ) {}
+        explicit Opt( bool &ref ) : ParserRefImpl( cloudViewer::make_shared<BoundFlagRef>( ref ) ) {}
 
         template<typename LambdaT>
         Opt( LambdaT const &ref, std::string const &hint ) : ParserRefImpl( ref, hint ) {}
@@ -12498,7 +12498,7 @@ namespace Catch {
                     tracker = std::static_pointer_cast<GeneratorTracker>( childTracker );
                 }
                 else {
-                    tracker = std::make_shared<GeneratorTracker>( nameAndLocation, ctx, &currentTracker );
+                    tracker = cloudViewer::make_shared<GeneratorTracker>( nameAndLocation, ctx, &currentTracker );
                     currentTracker.addChild( tracker );
                 }
 
@@ -13353,7 +13353,7 @@ namespace Catch {
     }
     Config& Session::config() {
         if( !m_config )
-            m_config = std::make_shared<Config>( m_configData );
+            m_config = cloudViewer::make_shared<Config>( m_configData );
         return *m_config;
     }
 
@@ -14182,7 +14182,7 @@ namespace TestCaseTracking {
     ITracker::~ITracker() = default;
 
     ITracker& TrackerContext::startRun() {
-        m_rootTracker = std::make_shared<SectionTracker>( NameAndLocation( "{root}", CATCH_INTERNAL_LINEINFO ), *this, nullptr );
+        m_rootTracker = cloudViewer::make_shared<SectionTracker>( NameAndLocation( "{root}", CATCH_INTERNAL_LINEINFO ), *this, nullptr );
         m_currentTracker = nullptr;
         m_runState = Executing;
         return *m_rootTracker;
@@ -14355,7 +14355,7 @@ namespace TestCaseTracking {
             section = std::static_pointer_cast<SectionTracker>( childTracker );
         }
         else {
-            section = std::make_shared<SectionTracker>( nameAndLocation, ctx, &currentTracker );
+            section = cloudViewer::make_shared<SectionTracker>( nameAndLocation, ctx, &currentTracker );
             currentTracker.addChild( section );
         }
         if( !ctx.completedCycle() )
@@ -14697,9 +14697,9 @@ namespace Catch {
         auto token = preprocessPattern();
 
         if (!token.empty()) {
-            TestSpec::PatternPtr pattern = std::make_shared<TestSpec::NamePattern>(token, m_substring);
+            TestSpec::PatternPtr pattern = cloudViewer::make_shared<TestSpec::NamePattern>(token, m_substring);
             if (m_exclusion)
-                pattern = std::make_shared<TestSpec::ExcludedPattern>(pattern);
+                pattern = cloudViewer::make_shared<TestSpec::ExcludedPattern>(pattern);
             m_currentFilter.m_patterns.push_back(pattern);
         }
         m_substring.clear();
@@ -14715,17 +14715,17 @@ namespace Catch {
             // we have to create a separate hide tag and shorten the real one
             if (token.size() > 1 && token[0] == '.') {
                 token.erase(token.begin());
-                TestSpec::PatternPtr pattern = std::make_shared<TestSpec::TagPattern>(".", m_substring);
+                TestSpec::PatternPtr pattern = cloudViewer::make_shared<TestSpec::TagPattern>(".", m_substring);
                 if (m_exclusion) {
-                    pattern = std::make_shared<TestSpec::ExcludedPattern>(pattern);
+                    pattern = cloudViewer::make_shared<TestSpec::ExcludedPattern>(pattern);
                 }
                 m_currentFilter.m_patterns.push_back(pattern);
             }
 
-            TestSpec::PatternPtr pattern = std::make_shared<TestSpec::TagPattern>(token, m_substring);
+            TestSpec::PatternPtr pattern = cloudViewer::make_shared<TestSpec::TagPattern>(token, m_substring);
 
             if (m_exclusion) {
-                pattern = std::make_shared<TestSpec::ExcludedPattern>(pattern);
+                pattern = cloudViewer::make_shared<TestSpec::ExcludedPattern>(pattern);
             }
             m_currentFilter.m_patterns.push_back(pattern);
         }

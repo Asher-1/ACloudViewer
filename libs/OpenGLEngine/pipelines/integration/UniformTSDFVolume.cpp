@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,15 +26,16 @@
 
 #include "pipelines/integration/UniformTSDFVolume.h"
 
+#include <Helper.h>
+#include <Parallel.h>
+#include <VoxelGrid.h>
+#include <ecvHObjectCaster.h>
+
 #include <iostream>
 #include <thread>
 #include <unordered_map>
 
-#include <Helper.h>
-#include <ecvHObjectCaster.h>
-
 #include "pipelines/integration/MarchingCubesConst.h"
-
 
 namespace cloudViewer {
 namespace pipelines {
@@ -67,8 +68,6 @@ void UniformTSDFVolume::Integrate(
     // The following implementation is a highly optimized version.
     if ((image.depth_.num_of_channels_ != 1) ||
         (image.depth_.bytes_per_channel_ != 4) ||
-        (image.depth_.width_ != intrinsic.width_) ||
-        (image.depth_.height_ != intrinsic.height_) ||
         (color_type_ == TSDFVolumeColorType::RGB8 &&
          image.color_.num_of_channels_ != 3) ||
         (color_type_ == TSDFVolumeColorType::RGB8 &&
@@ -76,100 +75,111 @@ void UniformTSDFVolume::Integrate(
         (color_type_ == TSDFVolumeColorType::Gray32 &&
          image.color_.num_of_channels_ != 1) ||
         (color_type_ == TSDFVolumeColorType::Gray32 &&
-         image.color_.bytes_per_channel_ != 4) ||
-        (color_type_ != TSDFVolumeColorType::NoColor &&
-         image.color_.width_ != intrinsic.width_) ||
-        (color_type_ != TSDFVolumeColorType::NoColor &&
-         image.color_.height_ != intrinsic.height_)) {
+         image.color_.bytes_per_channel_ != 4)) {
         utility::LogError(
                 "[UniformTSDFVolume::Integrate] Unsupported image format.");
     }
+    if ((image.depth_.width_ != intrinsic.width_) ||
+        (image.depth_.height_ != intrinsic.height_)) {
+        utility::LogError(
+                "[UniformTSDFVolume::Integrate] depth image size is ({} x {}), "
+                "but got ({} x {}) from intrinsic.",
+                image.depth_.width_, image.depth_.height_, intrinsic.width_,
+                intrinsic.height_);
+    }
+    if (color_type_ != TSDFVolumeColorType::NoColor &&
+        (image.color_.width_ != intrinsic.width_ ||
+         image.color_.height_ != intrinsic.height_)) {
+        utility::LogError(
+                "[UniformTSDFVolume::Integrate] color image size is ({} x {}), "
+                "but got ({} x {}) from intrinsic.",
+                image.color_.width_, image.color_.height_, intrinsic.width_,
+                intrinsic.height_);
+    }
+
     auto depth2cameradistance =
-            geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
+            geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(
+                    intrinsic);
     IntegrateWithDepthToCameraDistanceMultiplier(image, intrinsic, extrinsic,
                                                  *depth2cameradistance);
 }
 
-std::shared_ptr<ccPointCloud>
-UniformTSDFVolume::ExtractPointCloud() {
-	auto pointcloud = cloudViewer::make_shared<ccPointCloud>();
-	double half_voxel_length = voxel_length_ * 0.5;
-	for (int x = 1; x < resolution_ - 1; x++) {
-		for (int y = 1; y < resolution_ - 1; y++) {
-			for (int z = 1; z < resolution_ - 1; z++) {
-				Eigen::Vector3i idx0(x, y, z);
-				float w0 = voxels_[IndexOf(idx0)].weight_;
-				float f0 = voxels_[IndexOf(idx0)].tsdf_;
-				const Eigen::Vector3d &c0 = voxels_[IndexOf(idx0)].color_;
+std::shared_ptr<ccPointCloud> UniformTSDFVolume::ExtractPointCloud() {
+    auto pointcloud = cloudViewer::make_shared<ccPointCloud>();
+    double half_voxel_length = voxel_length_ * 0.5;
+    for (int x = 1; x < resolution_ - 1; x++) {
+        for (int y = 1; y < resolution_ - 1; y++) {
+            for (int z = 1; z < resolution_ - 1; z++) {
+                Eigen::Vector3i idx0(x, y, z);
+                float w0 = voxels_[IndexOf(idx0)].weight_;
+                float f0 = voxels_[IndexOf(idx0)].tsdf_;
+                const Eigen::Vector3d &c0 = voxels_[IndexOf(idx0)].color_;
 
-				if (!(w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f)) {
-					continue;
-				}
-				Eigen::Vector3d p0(half_voxel_length + voxel_length_ * x,
-					half_voxel_length + voxel_length_ * y,
-					half_voxel_length + voxel_length_ * z);
-				for (int i = 0; i < 3; i++) {
-					Eigen::Vector3d p1 = p0;
-					p1(i) += voxel_length_;
-					Eigen::Vector3i idx1 = idx0;
-					idx1(i) += 1;
-					if (idx1(i) < resolution_ - 1) {
-						float w1 = voxels_[IndexOf(idx1)].weight_;
-						float f1 = voxels_[IndexOf(idx1)].tsdf_;
-						const Eigen::Vector3d &c1 =
-							voxels_[IndexOf(idx1)].color_;
-						if (w1 != 0.0f && f1 < 0.98f && f1 >= -0.98f &&
-							f0 * f1 < 0) {
-							float r0 = std::fabs(f0);
-							float r1 = std::fabs(f1);
-							Eigen::Vector3d p = p0;
-							p(i) = (p0(i) * r1 + p1(i) * r0) / (r0 + r1);
-							pointcloud->addEigenPoint(p + origin_);
-							if (!pointcloud->hasColors())
-							{
-								if (!pointcloud->reserveTheRGBTable())
-								{
-									assert(false);
-								}
-							}
-							if (color_type_ == TSDFVolumeColorType::RGB8) {
-								pointcloud->addEigenColor(((c0 * r1 + c1 * r0) /
-									(r0 + r1) / 255.0f).cast<double>());
-							}
-							else if (color_type_ == TSDFVolumeColorType::Gray32) {
-								pointcloud->addEigenColor(((c0 * r1 + c1 * r0) /
-									(r0 + r1)).cast<double>());
-							}
-							// has_normal
-							if (!pointcloud->hasNormals())
-							{
-								if (!pointcloud->reserveTheNormsTable())
-								{
-									assert(false);
-								}
-							}
-							pointcloud->addEigenNorm(GetNormalAt(p));
-						}
-					}
-				}
-			}
-		}
-	}
+                if (!(w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f)) {
+                    continue;
+                }
+                Eigen::Vector3d p0(half_voxel_length + voxel_length_ * x,
+                                   half_voxel_length + voxel_length_ * y,
+                                   half_voxel_length + voxel_length_ * z);
+                for (int i = 0; i < 3; i++) {
+                    Eigen::Vector3d p1 = p0;
+                    p1(i) += voxel_length_;
+                    Eigen::Vector3i idx1 = idx0;
+                    idx1(i) += 1;
+                    if (idx1(i) < resolution_ - 1) {
+                        float w1 = voxels_[IndexOf(idx1)].weight_;
+                        float f1 = voxels_[IndexOf(idx1)].tsdf_;
+                        const Eigen::Vector3d &c1 =
+                                voxels_[IndexOf(idx1)].color_;
+                        if (w1 != 0.0f && f1 < 0.98f && f1 >= -0.98f &&
+                            f0 * f1 < 0) {
+                            float r0 = std::fabs(f0);
+                            float r1 = std::fabs(f1);
+                            Eigen::Vector3d p = p0;
+                            p(i) = (p0(i) * r1 + p1(i) * r0) / (r0 + r1);
+                            pointcloud->addEigenPoint(p + origin_);
+                            if (!pointcloud->hasColors()) {
+                                if (!pointcloud->reserveTheRGBTable()) {
+                                    assert(false);
+                                }
+                            }
+                            if (color_type_ == TSDFVolumeColorType::RGB8) {
+                                pointcloud->addEigenColor(
+                                        ((c0 * r1 + c1 * r0) / (r0 + r1) /
+                                         255.0f)
+                                                .cast<double>());
+                            } else if (color_type_ ==
+                                       TSDFVolumeColorType::Gray32) {
+                                pointcloud->addEigenColor(
+                                        ((c0 * r1 + c1 * r0) / (r0 + r1))
+                                                .cast<double>());
+                            }
+                            // has_normal
+                            if (!pointcloud->hasNormals() &&
+                                !pointcloud->reserveTheNormsTable()) {
+                                assert(false);
+                            }
+                            pointcloud->addEigenNorm(GetNormalAt(p));
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-	return pointcloud;
+    return pointcloud;
 }
 
-std::shared_ptr<ccMesh>
-UniformTSDFVolume::ExtractTriangleMesh() {
+std::shared_ptr<ccMesh> UniformTSDFVolume::ExtractTriangleMesh() {
     // implementation of marching cubes, based on
     // http://paulbourke.net/geometry/polygonise/
-	ccPointCloud* baseVertices = new ccPointCloud("vertices");
-	assert(baseVertices);
-	baseVertices->setEnabled(false);
-	// DGM: no need to lock it as it is only used by one mesh!
-	baseVertices->setLocked(false);
-	auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
-	mesh->addChild(baseVertices);
+    ccPointCloud *baseVertices = new ccPointCloud("vertices");
+    assert(baseVertices);
+    baseVertices->setEnabled(false);
+    // DGM: no need to lock it as it is only used by one mesh!
+    baseVertices->setLocked(false);
+    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    mesh->addChild(baseVertices);
 
     double half_voxel_length = voxel_length_ * 0.5;
     // Map of "edge_index = (x, y, z, 0) + edge_shift" to "global vertex index"
@@ -180,8 +190,9 @@ UniformTSDFVolume::ExtractTriangleMesh() {
             edgeindex_to_vertexindex;
     int edge_to_index[12];
 
-	ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud());
-	assert(cloud);
+    ccPointCloud *cloud =
+            ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud());
+    assert(cloud);
 
     for (int x = 0; x < resolution_ - 1; x++) {
         for (int y = 0; y < resolution_ - 1; y++) {
@@ -218,7 +229,8 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                         if (edgeindex_to_vertexindex.find(edge_index) ==
                             edgeindex_to_vertexindex.end()) {
                             edge_to_index[i] = (int)cloud->size();
-                            edgeindex_to_vertexindex[edge_index] = (int)cloud->size();
+                            edgeindex_to_vertexindex[edge_index] =
+                                    (int)cloud->size();
                             Eigen::Vector3d pt(
                                     half_voxel_length +
                                             voxel_length_ * edge_index(0),
@@ -233,18 +245,18 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                             if (color_type_ != TSDFVolumeColorType::NoColor) {
                                 const auto &c0 = c[edge_to_vert[i][0]];
                                 const auto &c1 = c[edge_to_vert[i][1]];
-								if (!cloud->hasColors())
-								{
-									if (!cloud->reserveTheRGBTable())
-									{
-										assert(false);
-									}
-								}
-                                cloud->addEigenColor((f1 * c0 + f0 * c1) / (f0 + f1));
+                                if (!cloud->hasColors()) {
+                                    if (!cloud->reserveTheRGBTable()) {
+                                        assert(false);
+                                    }
+                                }
+                                cloud->addEigenColor((f1 * c0 + f0 * c1) /
+                                                     (f0 + f1));
                             }
                         } else {
                             edge_to_index[i] =
-                                    edgeindex_to_vertexindex.find(edge_index)->second;
+                                    edgeindex_to_vertexindex.find(edge_index)
+                                            ->second;
                         }
                     }
                 }
@@ -257,22 +269,21 @@ UniformTSDFVolume::ExtractTriangleMesh() {
             }
         }
     }
-    
-	//do some cleaning
-	{
-		baseVertices->shrinkToFit();
-		mesh->shrinkToFit();
-		NormsIndexesTableType* normals = mesh->getTriNormsTable();
-		if (normals)
-		{
-			normals->shrink_to_fit();
-		}
-	}
-	return mesh;
+
+    // do some cleaning
+    {
+        baseVertices->shrinkToFit();
+        mesh->shrinkToFit();
+        NormsIndexesTableType *normals = mesh->getTriNormsTable();
+        if (normals) {
+            normals->shrink_to_fit();
+        }
+    }
+    return mesh;
 }
 
-std::shared_ptr<ccPointCloud>
-UniformTSDFVolume::ExtractVoxelPointCloud() const {
+std::shared_ptr<ccPointCloud> UniformTSDFVolume::ExtractVoxelPointCloud()
+        const {
     auto voxel = cloudViewer::make_shared<ccPointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
     // const float *p_tsdf = (const float *)tsdf_.data();
@@ -290,14 +301,10 @@ UniformTSDFVolume::ExtractVoxelPointCloud() const {
                     voxels_[ind].tsdf_ >= -0.98f) {
                     voxel->addEigenPoint(pt + origin_);
                     double c = (voxels_[ind].tsdf_ + 1.0) * 0.5;
-					if (!voxel->hasColors())
-					{
-						if (!voxel->reserveTheRGBTable())
-						{
-							assert(false);
-						}
-					}
-					voxel->addEigenColor(Eigen::Vector3d(c, c, c));
+                    if (!voxel->hasColors() && !voxel->reserveTheRGBTable()) {
+                        assert(false);
+                    }
+                    voxel->addEigenColor(Eigen::Vector3d(c, c, c));
                 }
             }
         }
@@ -311,6 +318,13 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     voxel_grid->voxel_size_ = voxel_length_;
     voxel_grid->origin_ = origin_;
 
+#ifdef _WIN32
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#else
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {
@@ -327,6 +341,98 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
         }
     }
     return voxel_grid;
+}
+
+std::vector<Eigen::Vector2d> UniformTSDFVolume::ExtractVolumeTSDF() const {
+    std::vector<Eigen::Vector2d> sharedvoxels_;
+    sharedvoxels_.resize(voxel_num_);
+
+#ifdef _OPENMP
+#ifdef _WIN32
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#else
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#endif
+#endif
+    for (int x = 0; x < resolution_; x++) {
+        for (int y = 0; y < resolution_; y++) {
+            for (int z = 0; z < resolution_; z++) {
+                const int ind = IndexOf(x, y, z);
+                const float f = voxels_[ind].tsdf_;
+                const float w = voxels_[ind].weight_;
+                sharedvoxels_[ind] = Eigen::Vector2d(f, w);
+            }
+        }
+    }
+    return sharedvoxels_;
+}
+
+std::vector<Eigen::Vector3d> UniformTSDFVolume::ExtractVolumeColor() const {
+    std::vector<Eigen::Vector3d> sharedcolors_;
+    sharedcolors_.resize(voxel_num_);
+#ifdef _OPENMP
+#ifdef _WIN32
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#else
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#endif
+#endif
+    for (int x = 0; x < resolution_; x++) {
+        for (int y = 0; y < resolution_; y++) {
+            for (int z = 0; z < resolution_; z++) {
+                const int ind = IndexOf(x, y, z);
+                sharedcolors_[ind] = voxels_[ind].color_;
+            }
+        }
+    }
+    return sharedcolors_;
+}
+
+void UniformTSDFVolume::InjectVolumeTSDF(
+        const std::vector<Eigen::Vector2d> &sharedvoxels) {
+#ifdef _OPENMP
+#ifdef _WIN32
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#else
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#endif
+#endif
+    for (int x = 0; x < resolution_; x++) {
+        for (int y = 0; y < resolution_; y++) {
+            for (int z = 0; z < resolution_; z++) {
+                const int ind = IndexOf(x, y, z);
+                voxels_[ind].tsdf_ = sharedvoxels[ind](0);
+                voxels_[ind].weight_ = sharedvoxels[ind](1);
+            }
+        }
+    }
+}
+
+void UniformTSDFVolume::InjectVolumeColor(
+        const std::vector<Eigen::Vector3d> &sharedcolors) {
+#ifdef _OPENMP
+#ifdef _WIN32
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#else
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#endif
+#endif
+    for (int x = 0; x < resolution_; x++) {
+        for (int y = 0; y < resolution_; y++) {
+            for (int z = 0; z < resolution_; z++) {
+                const int ind = IndexOf(x, y, z);
+                voxels_[ind].color_ = sharedcolors[ind];
+            }
+        }
+    }
 }
 
 void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
@@ -349,9 +455,11 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int x = 0; x < resolution_; x++) {

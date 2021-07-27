@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/IJsonConvertible.h"
+#include "utility/IJsonConvertible.h"
 
 #include <json/json.h>
 
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 // ----------------------------------------------------------------------------
@@ -211,4 +211,4 @@ TEST(IJsonConvertible, EigenMatrix6d_uToFromJsonArray) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

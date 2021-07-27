@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,6 @@
 #pragma warning(push)
 #pragma warning(disable : 4267)
 #endif
-
 #include "core/nns/FaissIndex.h"
 
 #include <faiss/IndexFlat.h>
@@ -40,7 +39,7 @@
 
 #include "core/Device.h"
 #include "core/SizeVector.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
@@ -63,13 +62,13 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
     dataset_points_.AssertDtype(Dtype::Float32);
 
     if (dataset_points.NumDims() != 2) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "[FaissIndex::SetTensorData] dataset_points must be "
                 "2D matrix, with shape {n_dataset_points, d}.");
     }
 
     if (dimension == 0 || dataset_size == 0) {
-        cloudViewer::utility::LogWarning(
+        utility::LogWarning(
                 "[FaissIndex::SetTensorData] Failed due to no data.");
     }
 
@@ -78,12 +77,14 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
         res.reset(new faiss::gpu::StandardGpuResources());
         faiss::gpu::GpuIndexFlatConfig config;
         config.device = dataset_points_.GetDevice().GetID();
+
+        CachedMemoryManager::ReleaseCache(dataset_points_.GetDevice());
         index.reset(new faiss::gpu::GpuIndexFlat(
                 res.get(), dimension, faiss::MetricType::METRIC_L2, config));
 #else
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "[FaissIndex::SetTensorData] GPU Tensor is not supported when "
-                "BUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
+                "BUILD_CUDA_MODULE=OFF. Please recompile CloudViewer with "
                 "BUILD_CUDA_MODULE=ON.");
 #endif
     } else {
@@ -100,10 +101,10 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
     query_points.AssertDtype(Dtype::Float32);
 
     // Check shape.
-    query_points.AssertShapeCompatible({cloudViewer::utility::nullopt, GetDimension()});
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "[FaissIndex::SearchKnn] knn should be larger than 0.");
     }
 
@@ -125,21 +126,20 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
     return std::make_pair(indices, distances);
 }
 
-std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
-                                                   float radius,
-                                                   int max_knn) const {
+std::tuple<Tensor, Tensor, Tensor> FaissIndex::SearchHybrid(
+        const Tensor &query_points, double radius, int max_knn) const {
     // Check dtype.
     query_points.AssertDtype(Dtype::Float32);
 
     // Check shape.
-    query_points.AssertShapeCompatible({cloudViewer::utility::nullopt, GetDimension()});
+    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "[FaissIndex::SearchHybrid] max_knn should be larger than 0.");
     }
     if (radius <= 0) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "[FaissIndex::SearchHybrid] radius should be larger than 0.");
     }
 
@@ -149,6 +149,9 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
     std::tie(indices, distances) = SearchKnn(query_points, max_knn);
 
     Tensor invalid = distances.Gt(radius);
+
+    Tensor counts = max_knn - invalid.To(core::Dtype::Int64).Sum({0});
+
     Tensor invalid_indices = Tensor(std::vector<int64_t>({-1}), {1},
                                     Dtype::Int64, indices.GetDevice());
     Tensor invalid_distances = Tensor(std::vector<float>({-1}), {1},
@@ -157,9 +160,13 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
     indices.SetItem(TensorKey::IndexTensor(invalid), invalid_indices);
     distances.SetItem(TensorKey::IndexTensor(invalid), invalid_distances);
 
-    return std::make_pair(indices, distances);
+    return std::make_tuple(indices, distances, counts);
 }
 
 }  // namespace nns
 }  // namespace core
 }  // namespace cloudViewer
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

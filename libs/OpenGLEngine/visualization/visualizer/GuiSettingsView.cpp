@@ -28,7 +28,7 @@
 
 #include <cmath>
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include "visualization/gui/Checkbox.h"
 #include "visualization/gui/ColorEdit.h"
@@ -42,7 +42,7 @@
 
 namespace cloudViewer {
 namespace visualization {
-    using namespace cloudViewer;
+
 static const char *CUSTOM_LIGHTING = "Custom";
 
 std::shared_ptr<gui::Slider> MakeSlider(const gui::Slider::Type type,
@@ -293,7 +293,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         model_.SetCurrentMaterialColor(
                 {color.GetRed(), color.GetGreen(), color.GetBlue()});
     });
-    reset_material_color_ = cloudViewer::make_shared<SmallButton>("Reset");
+    reset_material_color_ = cloudViewer::make_shared<SmallButton>("reset");
     reset_material_color_->SetOnClicked([this]() { model_.ResetColors(); });
 
     mat_grid->AddChild(cloudViewer::make_shared<gui::Label>("Color"));

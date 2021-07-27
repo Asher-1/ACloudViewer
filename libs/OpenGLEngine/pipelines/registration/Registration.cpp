@@ -31,8 +31,9 @@
 #include <ecvFeature.h>
 
 // CV_CORE_LIB
-#include <Console.h>
 #include <Helper.h>
+#include <Logging.h>
+#include <Parallel.h>
 
 namespace cloudViewer {
 namespace pipelines {
@@ -72,7 +73,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
             }
         }
 #ifdef _OPENMP
-#pragma omp critical
+#pragma omp critical(GetRegistrationResultAndCorrespondences)
 #endif
         {
             for (int i = 0; i < (int)correspondence_set_private.size(); i++) {
@@ -134,7 +135,7 @@ RegistrationResult EvaluateRegistration(
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
     ccPointCloud pcd = source;
-    if (transformation.isIdentity() == false) {
+    if (!transformation.isIdentity()) {
         pcd.transform(transformation);
     }
 
@@ -152,14 +153,14 @@ RegistrationResult RegistrationICP(
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
     if (max_correspondence_distance <= 0.0) {
-        cloudViewer::utility::LogError("Invalid max_correspondence_distance.");
+        utility::LogError("Invalid max_correspondence_distance.");
     }
     if ((estimation.GetTransformationEstimationType() ==
                  TransformationEstimationType::PointToPlane ||
          estimation.GetTransformationEstimationType() ==
                  TransformationEstimationType::ColoredICP) &&
         (!source.hasNormals() || !target.hasNormals())) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "TransformationEstimationPointToPlane and "
                 "TransformationEstimationColoredICP "
                 "require pre-computed normal vectors.");
@@ -169,14 +170,14 @@ RegistrationResult RegistrationICP(
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
     ccPointCloud pcd = source;
-    if (init.isIdentity() == false) {
+    if (!init.isIdentity()) {
         pcd.transform(init);
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, kdtree, max_correspondence_distance, transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        cloudViewer::utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
+        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
@@ -229,7 +230,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
             if (itr < exit_itr_local) {
                 for (int j = 0; j < ransac_n; j++) {
-                    ransac_corres[j] = corres[cloudViewer::utility::UniformRandInt(
+                    ransac_corres[j] = corres[utility::UniformRandInt(
                             0, static_cast<int>(corres.size()) - 1)];
                 }
 
@@ -270,7 +271,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         }      // for loop
 
 #ifdef _OPENMP
-#pragma omp critical
+#pragma omp critical(RegistrationRANSACBasedOnCorrespondence)
 #endif
         {
             if (best_result_local.IsBetterRANSACThan(best_result)) {
@@ -281,7 +282,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
             }
         }
     }
-    cloudViewer::utility::LogDebug(
+    utility::LogDebug(
             "RANSAC exits at {:d}-th iteration: inlier ratio {:e}, "
             "RMSE {:e}",
             exit_itr, best_result.fitness_, best_result.inlier_rmse_);
@@ -313,7 +314,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     pipelines::registration::CorrespondenceSet corres_ij(num_src_pts);
 
 #ifdef _OPENMP
-#pragma omp parallel for
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
 #endif
     for (int i = 0; i < num_src_pts; i++) {
         std::vector<int> corres_tmp(1);
@@ -331,7 +332,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         pipelines::registration::CorrespondenceSet corres_ji(num_tgt_pts);
 
 #ifdef _OPENMP
-#pragma omp parallel for
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
 #endif
         for (int j = 0; j < num_tgt_pts; ++j) {
             std::vector<int> corres_tmp(1);
@@ -353,13 +354,13 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 
         // Empirically mutual correspondence set should not be too small
         if (int(corres_mutual.size()) >= ransac_n * 3) {
-            cloudViewer::utility::LogDebug("{:d} correspondences remain after mutual filter",
+            utility::LogDebug("{:d} correspondences remain after mutual filter",
                               corres_mutual.size());
             return RegistrationRANSACBasedOnCorrespondence(
                     source, target, corres_mutual, max_correspondence_distance,
                     estimation, ransac_n, checkers, criteria);
         }
-        cloudViewer::utility::LogDebug(
+        utility::LogDebug(
                 "Too few correspondences after mutual filter, fall back to "
                 "original correspondences.");
     }
@@ -420,7 +421,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
 #ifdef _OPENMP
-#pragma omp critical
+#pragma omp critical(GetInformationMatrixFromPointClouds)
 #endif
         { GTG += GTG_private; }
 #ifdef _OPENMP

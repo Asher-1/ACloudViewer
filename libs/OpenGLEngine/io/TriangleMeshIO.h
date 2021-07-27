@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -30,6 +30,8 @@
 #include <string>
 #include <vector>
 
+#include <AutoIO.h>
+
 class ccMesh;
 namespace cloudViewer {
 namespace io {
@@ -44,8 +46,7 @@ std::shared_ptr<ccMesh> CreateMeshFromFile(const std::string &filename,
 /// \return return true if the read function is successful, false otherwise.
 bool ReadTriangleMesh(const std::string &filename,
                       ccMesh &mesh,
-                      bool enable_post_processing = false,
-                      bool print_progress = false);
+                      ReadTriangleMeshOptions params = {});
 
 /// The general entrance for writing a TriangleMesh to a file
 /// The function calls write functions based on the extension name of filename.
@@ -66,8 +67,7 @@ bool WriteTriangleMesh(const std::string &filename,
 // Currently enable_post_processing not used in ReadTriangleMeshFromPLY.
 bool ReadTriangleMeshFromPLY(const std::string &filename,
                              ccMesh &mesh,
-                             bool enable_post_processing,
-                             bool print_progress);
+                             const ReadTriangleMeshOptions &params);
 
 bool WriteTriangleMeshToPLY(const std::string &filename,
                             const ccMesh &mesh,
@@ -93,7 +93,7 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
 
 bool ReadTriangleMeshFromOBJ(const std::string &filename,
                              ccMesh &mesh,
-                             bool print_progress);
+                             const ReadTriangleMeshOptions &params);
 
 bool WriteTriangleMeshToOBJ(const std::string &filename,
                             const ccMesh &mesh,
@@ -106,13 +106,12 @@ bool WriteTriangleMeshToOBJ(const std::string &filename,
 
 bool ReadTriangleMeshUsingASSIMP(const std::string &filename,
                                  ccMesh &mesh,
-                                 bool enable_post_processing,
-                                 bool print_progress);
+                                 const ReadTriangleMeshOptions &params);
 
+// Currently enable_post_processing not used in ReadTriangleMeshFromOFF.
 bool ReadTriangleMeshFromOFF(const std::string &filename,
                              ccMesh &mesh,
-                             bool enable_post_processing,
-                             bool print_progress);
+                             const ReadTriangleMeshOptions &params);
 
 bool WriteTriangleMeshToOFF(const std::string &filename,
                             const ccMesh &mesh,
@@ -123,9 +122,10 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
                             bool write_triangle_uvs,
                             bool print_progress);
 
+// Currently enable_post_processing not used in ReadTriangleMeshFromGLTF.
 bool ReadTriangleMeshFromGLTF(const std::string &filename,
                               ccMesh &mesh,
-                              bool print_progress);
+                              const ReadTriangleMeshOptions &params);
 
 bool WriteTriangleMeshToGLTF(const std::string &filename,
                              const ccMesh &mesh,
@@ -143,7 +143,8 @@ bool WriteTriangleMeshToGLTF(const std::string &filename,
 /// The triangles are added to the mesh that is passed as reference. The mesh
 /// should contain all vertices prior to calling this function.
 /// \return return true if triangulation is successful, false otherwise.
-bool AddTrianglesByEarClipping(ccMesh &mesh, std::vector<unsigned int> &indices);
+bool AddTrianglesByEarClipping(ccMesh &mesh,
+                               std::vector<unsigned int> &indices);
 
 }  // namespace io
 }  // namespace cloudViewer

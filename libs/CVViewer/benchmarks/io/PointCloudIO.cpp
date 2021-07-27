@@ -24,12 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-
-#include <benchmark/benchmark.h>
-
-#include <Console.h>
-
 #include "io/PointCloudIO.h"
+
+#include <Logging.h>
+#include <benchmark/benchmark.h>
 #include <ecvPointCloud.h>
 
 namespace cloudViewer {
@@ -43,7 +41,7 @@ namespace {
 template <class T>
 double AverageDistance(const std::vector<T> &a, const std::vector<T> &b) {
     if (a.size() != b.size()) {
-        cloudViewer::utility::LogError("vectors different size {} {}", a.size(), b.size());
+        utility::LogError("vectors different size {} {}", a.size(), b.size());
     }
     if (a.size() == 0) {
         return 0.;
@@ -127,16 +125,16 @@ public:
         if (!WritePointCloud(args.filename, pc,
                              {bool(args.write_ascii), bool(args.compressed),
                               print_progress})) {
-            cloudViewer::utility::LogError("Failed to write to {}", args.filename);
+            utility::LogError("Failed to write to {}", args.filename);
         }
         ccPointCloud pc2;
         if (!ReadPointCloud(args.filename, pc2,
                             {"auto", false, false, print_progress})) {
-            cloudViewer::utility::LogError("Failed to read from {}", args.filename);
+            utility::LogError("Failed to read from {}", args.filename);
         }
         auto CheckLE = [](double a, double b) {
             if (a <= b) return;
-            cloudViewer::utility::LogError("Error too high: {} {}", a, b);
+            utility::LogError("Error too high: {} {}", a, b);
         };
 
         const double pointsMaxError =

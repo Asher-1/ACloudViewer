@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,14 +30,16 @@
 
 #include "CloudViewer.h"
 
+using namespace cloudViewer;
+
 std::tuple<std::shared_ptr<ccPointCloud>,
-           std::shared_ptr<cloudViewer::utility::Feature>>
+           std::shared_ptr<utility::Feature>>
 PreprocessPointCloud(const char *file_name) {
     auto pcd = cloudViewer::io::CreatePointCloudFromFile(file_name);
     auto pcd_down = pcd->voxelDownSample(0.05);
     pcd_down->estimateNormals(
             cloudViewer::geometry::KDTreeSearchParamHybrid(0.1, 30));
-    auto pcd_fpfh = cloudViewer::utility::ComputeFPFHFeature(
+    auto pcd_fpfh = utility::ComputeFPFHFeature(
             *pcd_down, cloudViewer::geometry::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
@@ -45,71 +47,60 @@ PreprocessPointCloud(const char *file_name) {
 void VisualizeRegistration(const ccPointCloud &source,
                            const ccPointCloud &target,
                            const Eigen::Matrix4d &Transformation) {
-    std::shared_ptr<ccPointCloud> source_transformed_ptr(new ccPointCloud);
+    std::shared_ptr<ccPointCloud> source_transformed_ptr(
+            new ccPointCloud);
     std::shared_ptr<ccPointCloud> target_ptr(new ccPointCloud);
     *source_transformed_ptr = source;
     *target_ptr = target;
     source_transformed_ptr->transform(Transformation);
-    cloudViewer::visualization::DrawGeometries({source_transformed_ptr, target_ptr},
+    visualization::DrawGeometries({source_transformed_ptr, target_ptr},
                                   "Registration result");
+}
+
+void PrintHelp() {
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > RegistrationRANSAC source_pcd target_pcd [--method=feature_matching] [--mutual_filter] [--visualize]");
+    // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char *argv[]) {
     using namespace cloudViewer;
 
-	cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc < 3 || argc > 7) {
-        cloudViewer::utility::LogInfo(
-                "Usage : RegistrationRANSAC path_to_first_point_cloud "
-                "path_to_second_point_cloud [--method=feature_matching] "
-                "[--mutual_filter] [--visualize]");
+    if (argc < 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 
     bool visualize = false;
-    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--visualize")) {
+    if (utility::ProgramOptionExists(argc, argv, "--visualize")) {
         visualize = true;
     }
-
-	{ // ICP registration
-		auto source_pcd = cloudViewer::io::CreatePointCloudFromFile(argv[1]);
-		auto target_pcd = cloudViewer::io::CreatePointCloudFromFile(argv[2]);
-		double threshold = 0.02;
-		Eigen::Matrix4d transInit;
-		transInit << 0.862, 0.011, -0.507, 0.5, -0.139, 0.967, -0.215, 0.7,
-			0.487, 0.255, 0.835, -1.4, 0.0, 0.0, 0.0, 1.0;
-		VisualizeRegistration(*source_pcd, *target_pcd, transInit);
-
-		pipelines::registration::RegistrationResult regP2P = 
-            pipelines::registration::RegistrationICP(*source_pcd, *target_pcd, threshold, transInit,
-                pipelines::registration::TransformationEstimationPointToPoint());
-		std::cout << regP2P.transformation_ << std::endl;
-		VisualizeRegistration(*source_pcd, *target_pcd, regP2P.transformation_);
-
-        pipelines::registration::RegistrationResult regP2L =
-            pipelines::registration::RegistrationICP(*source_pcd, *target_pcd, threshold, transInit,
-                pipelines::registration::TransformationEstimationPointToPlane());
-		std::cout << regP2L.transformation_ << std::endl;
-		VisualizeRegistration(*source_pcd, *target_pcd, regP2L.transformation_);
-	}
 
     std::string method = "";
     const std::string kMethodFeature = "feature_matching";
     const std::string kMethodCorres = "correspondence";
-    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--method")) {
-        method = cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--method");
+    if (utility::ProgramOptionExists(argc, argv, "--method")) {
+        method = utility::GetProgramOptionAsString(argc, argv, "--method");
     } else {
         method = "feature_matching";
     }
     if (method != kMethodFeature && method != kMethodCorres) {
-        cloudViewer::utility::LogInfo(
-                "--method must be \'feature_matching\' or \'correspondence\'");
+        utility::LogInfo(
+                "--method must be \'feature_matching\' or "
+                "\'correspondence\'");
         return 1;
     }
 
     bool mutual_filter = false;
-    if (cloudViewer::utility::ProgramOptionExists(argc, argv, "--mutual_filter")) {
+    if (utility::ProgramOptionExists(argc, argv, "--mutual_filter")) {
         mutual_filter = true;
     }
 
@@ -187,7 +178,7 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            cloudViewer::utility::LogDebug("{:d} points remain", mutual.size());
+            utility::LogDebug("{:d} points remain", mutual.size());
             registration_result = pipelines::registration::
                     RegistrationRANSACBasedOnCorrespondence(
                             *source, *target, mutual, 0.075,
@@ -197,7 +188,7 @@ int main(int argc, char *argv[]) {
                             pipelines::registration::RANSACConvergenceCriteria(
                                     100000, 0.999));
         } else {
-            cloudViewer::utility::LogDebug("{:d} points remain", corres_ji.size());
+            utility::LogDebug("{:d} points remain", corres_ji.size());
             registration_result = pipelines::registration::
                     RegistrationRANSACBasedOnCorrespondence(
                             *source, *target, corres_ji, 0.075,
@@ -213,5 +204,6 @@ int main(int argc, char *argv[]) {
         VisualizeRegistration(*source, *target,
                               registration_result.transformation_);
     }
+
     return 0;
 }

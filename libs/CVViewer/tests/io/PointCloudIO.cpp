@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/PointCloudIO.h"
+#include "io/PointCloudIO.h"
 
-#include "open3d/geometry/PointCloud.h"
+#include "geometry/PointCloud.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
-using open3d::io::ReadPointCloud;
-using open3d::io::ReadPointCloudOption;
-using open3d::io::WritePointCloud;
-using open3d::io::WritePointCloudOption;
+using cloudViewer::io::ReadPointCloud;
+using cloudViewer::io::ReadPointCloudOption;
+using cloudViewer::io::WritePointCloud;
+using cloudViewer::io::WritePointCloudOption;
 
 namespace {
 
@@ -448,4 +448,4 @@ TEST_P(ReadWritePC, UpdateProgressCallback) {
 TEST(PointCloudIO, DISABLED_CreatePointCloudFromFile) { NotImplemented(); }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -417,7 +417,7 @@ inline size_t LshTable<unsigned char>::getKey(const unsigned char* feature) cons
             size_t lowest_bit = mask_block & (-(ptrdiff_t)mask_block);
             // Add it to the current subsignature if necessary
             subsignature += (feature_block & lowest_bit) ? bit_index : 0;
-            // Reset the bit in the mask block
+            // reset the bit in the mask block
             mask_block ^= lowest_bit;
             // increment the bit index for the subsignature
             bit_index <<= 1;

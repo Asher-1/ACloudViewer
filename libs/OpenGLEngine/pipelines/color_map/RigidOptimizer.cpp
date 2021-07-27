@@ -29,13 +29,15 @@
 #include <memory>
 #include <vector>
 
+#include <FileSystem.h>
+#include <Optional.h>
+#include <Parallel.h>
+
 #include <ImageIO.h>
 #include <PinholeCameraTrajectoryIO.h>
 #include "io/TriangleMeshIO.h"
 #include "pipelines/color_map/ColorMapUtils.h"
 #include "pipelines/color_map/ImageWarpingField.h"
-#include <FileSystem.h>
-#include <Optional.h>
 
 namespace cloudViewer {
 namespace pipelines {
@@ -164,7 +166,8 @@ ccMesh RunRigidOptimizer(
         cloudViewer::utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         total_num_ = 0;
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int c = 0; c < n_camera; c++) {
             Eigen::Matrix4d pose;
             pose = opt_camera_trajectory.parameters_[c].extrinsic_;
@@ -200,7 +203,7 @@ ccMesh RunRigidOptimizer(
                                                                          JTr);
             pose = delta * pose;
             opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
-#pragma omp critical
+#pragma omp critical(RunRigidOptimizer)
             {
                 residual += r2;
                 total_num_ += int(visibility_image_to_vertex[c].size());

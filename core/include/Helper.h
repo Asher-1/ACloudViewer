@@ -26,14 +26,14 @@
 
 #pragma once
 
-#include "CVCoreLib.h"
-
 #include <cmath>
 #include <cstdlib>
 #include <functional>
 #include <string>
 #include <tuple>
 #include <vector>
+
+#include "CVCoreLib.h"
 
 namespace cloudViewer {
 namespace utility {
@@ -117,27 +117,34 @@ struct CV_CORE_LIB_API hash_enum_class {
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c
 void CV_CORE_LIB_API SplitString(std::vector<std::string>& tokens,
-                 const std::string& str,
-                 const std::string& delimiters = " ",
-                 bool trim_empty_str = true);
+                                 const std::string& str,
+                                 const std::string& delimiters = " ",
+                                 bool trim_empty_str = true);
+
+/// Function to split a string, mimics boost::split
+/// http://stackoverflow.com/questions/236129/split-a-string-in-c
+std::vector<std::string> CV_CORE_LIB_API
+SplitString(const std::string& str,
+            const std::string& delimiters = " ",
+            bool trim_empty_str = true);
 
 /// String util: find length of current word staring from a position
 /// By default, alpha numeric chars and chars in valid_chars are considered
 /// as valid charactors in a word
 size_t CV_CORE_LIB_API WordLength(const std::string& doc,
-                  size_t start_pos,
-                  const std::string& valid_chars = "_");
+                                  size_t start_pos,
+                                  const std::string& valid_chars = "_");
 
-CV_CORE_LIB_API std::string& LeftStripString(std::string& str,
-                             const std::string& chars = "\t\n\v\f\r ");
+CV_CORE_LIB_API std::string& LeftStripString(
+        std::string& str, const std::string& chars = "\t\n\v\f\r ");
 
-CV_CORE_LIB_API std::string& RightStripString(std::string& str,
-                              const std::string& chars = "\t\n\v\f\r ");
+CV_CORE_LIB_API std::string& RightStripString(
+        std::string& str, const std::string& chars = "\t\n\v\f\r ");
 
 /// Strip empty charactors in front and after string. Similar to Python's
 /// str.strip()
-CV_CORE_LIB_API std::string& StripString(std::string& str,
-                         const std::string& chars = "\t\n\v\f\r ");
+CV_CORE_LIB_API std::string& StripString(
+        std::string& str, const std::string& chars = "\t\n\v\f\r ");
 
 /// Convert string to the lower case
 std::string CV_CORE_LIB_API ToLower(const std::string& s);
@@ -157,7 +164,6 @@ inline int CV_CORE_LIB_API DivUp(int x, int y) {
 /// The integer is drawn from a uniform distribution bounded by min and max
 /// (inclusive)
 int CV_CORE_LIB_API UniformRandInt(const int min, const int max);
-
 
 /// Uniformly distributed binary-friendly floating point number in [0, 1).
 ///
@@ -179,6 +185,8 @@ T UniformRandFloatBinaryFriendly(unsigned int power = 5) {
     return static_cast<T>(1. / p * n);
 }
 
+/// Returns current time stamp.
+std::string GetCurrentTimeStamp();
+
 }  // namespace utility
 }  // namespace cloudViewer
-

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -59,17 +59,17 @@ struct Voxel32f {
     float weight;
 
     static bool HasColor() { return false; }
-    CLOUDVIEWER_HOST_DEVICE float GetTSDF() { return tsdf; }
-    CLOUDVIEWER_HOST_DEVICE float GetWeight() { return static_cast<float>(weight); }
-    CLOUDVIEWER_HOST_DEVICE float GetR() { return 1.0; }
-    CLOUDVIEWER_HOST_DEVICE float GetG() { return 1.0; }
-    CLOUDVIEWER_HOST_DEVICE float GetB() { return 1.0; }
+    OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
+    OPEN3D_HOST_DEVICE float GetWeight() { return static_cast<float>(weight); }
+    OPEN3D_HOST_DEVICE float GetR() { return 1.0; }
+    OPEN3D_HOST_DEVICE float GetG() { return 1.0; }
+    OPEN3D_HOST_DEVICE float GetB() { return 1.0; }
 
-    CLOUDVIEWER_HOST_DEVICE void Integrate(float dsdf) {
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
         tsdf = (weight * tsdf + dsdf) / (weight + 1);
         weight += 1;
     }
-    CLOUDVIEWER_HOST_DEVICE void Integrate(float dsdf,
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf,
                                       float dr,
                                       float dg,
                                       float db) {
@@ -94,18 +94,18 @@ struct ColoredVoxel16i {
     uint16_t b;
 
     static bool HasColor() { return true; }
-    CLOUDVIEWER_HOST_DEVICE float GetTSDF() { return tsdf; }
-    CLOUDVIEWER_HOST_DEVICE float GetWeight() { return static_cast<float>(weight); }
-    CLOUDVIEWER_HOST_DEVICE float GetR() {
+    OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
+    OPEN3D_HOST_DEVICE float GetWeight() { return static_cast<float>(weight); }
+    OPEN3D_HOST_DEVICE float GetR() {
         return static_cast<float>(r / kColorFactor);
     }
-    CLOUDVIEWER_HOST_DEVICE float GetG() {
+    OPEN3D_HOST_DEVICE float GetG() {
         return static_cast<float>(g / kColorFactor);
     }
-    CLOUDVIEWER_HOST_DEVICE float GetB() {
+    OPEN3D_HOST_DEVICE float GetB() {
         return static_cast<float>(b / kColorFactor);
     }
-    CLOUDVIEWER_HOST_DEVICE void Integrate(float dsdf) {
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
         float inc_wsum = static_cast<float>(weight) + 1;
         float inv_wsum = 1.0f / inc_wsum;
         tsdf = (static_cast<float>(weight) * tsdf + dsdf) * inv_wsum;
@@ -113,7 +113,7 @@ struct ColoredVoxel16i {
                                                ? weight + 1
                                                : kMaxUint16);
     }
-    CLOUDVIEWER_HOST_DEVICE void Integrate(float dsdf,
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf,
                                       float dr,
                                       float dg,
                                       float db) {
@@ -121,11 +121,11 @@ struct ColoredVoxel16i {
         float inv_wsum = 1.0f / inc_wsum;
         tsdf = (weight * tsdf + dsdf) * inv_wsum;
         r = static_cast<uint16_t>(
-                round((weight * r + dr * kColorFactor) * inv_wsum));
+                roundf((weight * r + dr * kColorFactor) * inv_wsum));
         g = static_cast<uint16_t>(
-                round((weight * g + dg * kColorFactor) * inv_wsum));
+                roundf((weight * g + dg * kColorFactor) * inv_wsum));
         b = static_cast<uint16_t>(
-                round((weight * b + db * kColorFactor) * inv_wsum));
+                roundf((weight * b + db * kColorFactor) * inv_wsum));
         weight = static_cast<uint16_t>(inc_wsum < static_cast<float>(kMaxUint16)
                                                ? weight + 1
                                                : kMaxUint16);
@@ -143,17 +143,17 @@ struct ColoredVoxel32f {
     float b;
 
     static bool HasColor() { return true; }
-    CLOUDVIEWER_HOST_DEVICE float GetTSDF() { return tsdf; }
-    CLOUDVIEWER_HOST_DEVICE float GetWeight() { return weight; }
-    CLOUDVIEWER_HOST_DEVICE float GetR() { return r; }
-    CLOUDVIEWER_HOST_DEVICE float GetG() { return g; }
-    CLOUDVIEWER_HOST_DEVICE float GetB() { return b; }
-    CLOUDVIEWER_HOST_DEVICE void Integrate(float dsdf) {
+    OPEN3D_HOST_DEVICE float GetTSDF() { return tsdf; }
+    OPEN3D_HOST_DEVICE float GetWeight() { return weight; }
+    OPEN3D_HOST_DEVICE float GetR() { return r; }
+    OPEN3D_HOST_DEVICE float GetG() { return g; }
+    OPEN3D_HOST_DEVICE float GetB() { return b; }
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf) {
         float inv_wsum = 1.0f / (weight + 1);
         tsdf = (weight * tsdf + dsdf) * inv_wsum;
         weight += 1;
     }
-    CLOUDVIEWER_HOST_DEVICE void Integrate(float dsdf,
+    OPEN3D_HOST_DEVICE void Integrate(float dsdf,
                                       float dr,
                                       float dg,
                                       float db) {
@@ -169,7 +169,7 @@ struct ColoredVoxel32f {
 
 // Get a voxel in a certain voxel block given the block id with its neighbors.
 template <typename voxel_t>
-inline CLOUDVIEWER_DEVICE voxel_t* DeviceGetVoxelAt(
+inline OPEN3D_DEVICE voxel_t* DeviceGetVoxelAt(
         int xo,
         int yo,
         int zo,
@@ -182,27 +182,26 @@ inline CLOUDVIEWER_DEVICE voxel_t* DeviceGetVoxelAt(
     int yn = (yo + resolution) % resolution;
     int zn = (zo + resolution) % resolution;
 
-    int64_t dxb = sign(xo - xn);
-    int64_t dyb = sign(yo - yn);
-    int64_t dzb = sign(zo - zn);
+    int64_t dxb = Sign(xo - xn);
+    int64_t dyb = Sign(yo - yn);
+    int64_t dzb = Sign(zo - zn);
 
     int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-    bool block_mask_i = *nb_block_masks_indexer.GetDataPtrFromCoord<bool>(
-            curr_block_idx, nb_idx);
+    bool block_mask_i =
+            *nb_block_masks_indexer.GetDataPtr<bool>(curr_block_idx, nb_idx);
     if (!block_mask_i) return nullptr;
 
-    int64_t block_idx_i =
-            *nb_block_indices_indexer.GetDataPtrFromCoord<int64_t>(
-                    curr_block_idx, nb_idx);
+    int64_t block_idx_i = *nb_block_indices_indexer.GetDataPtr<int64_t>(
+            curr_block_idx, nb_idx);
 
-    return blocks_indexer.GetDataPtrFromCoord<voxel_t>(xn, yn, zn, block_idx_i);
+    return blocks_indexer.GetDataPtr<voxel_t>(xn, yn, zn, block_idx_i);
 }
 
 // Get TSDF gradient as normal in a certain voxel block given the block id with
 // its neighbors.
 template <typename voxel_t>
-inline CLOUDVIEWER_DEVICE void DeviceGetNormalAt(
+inline OPEN3D_DEVICE void DeviceGetNormalAt(
         int xo,
         int yo,
         int zo,
@@ -213,7 +212,7 @@ inline CLOUDVIEWER_DEVICE void DeviceGetNormalAt(
         const NDArrayIndexer& nb_block_masks_indexer,
         const NDArrayIndexer& nb_block_indices_indexer,
         const NDArrayIndexer& blocks_indexer) {
-    auto GetVoxelAt = [&] CLOUDVIEWER_DEVICE(int xo, int yo, int zo) {
+    auto GetVoxelAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo) {
         return DeviceGetVoxelAt<voxel_t>(
                 xo, yo, zo, curr_block_idx, resolution, nb_block_masks_indexer,
                 nb_block_indices_indexer, blocks_indexer);

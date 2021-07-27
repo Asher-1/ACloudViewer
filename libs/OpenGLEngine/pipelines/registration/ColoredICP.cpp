@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,14 +26,14 @@
 
 #include "pipelines/registration/ColoredICP.h"
 
-#include <Eigen/Dense>
-#include <iostream>
-#include <Console.h>
 #include <Eigen.h>
-
+#include <Logging.h>
 #include <ecvKDTreeFlann.h>
 #include <ecvKDTreeSearchParam.h>
 #include <ecvPointCloud.h>
+
+#include <Eigen/Dense>
+#include <iostream>
 
 namespace cloudViewer {
 namespace pipelines {
@@ -47,8 +47,8 @@ public:
 };
 
 std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
-    const ccPointCloud& target,
-    const geometry::KDTreeSearchParamHybrid& search_param) {
+        const ccPointCloud &target,
+        const geometry::KDTreeSearchParamHybrid &search_param) {
     cloudViewer::utility::LogDebug("InitializePointCloudForColoredICP");
 
     geometry::KDTreeFlann tree;
@@ -57,26 +57,21 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
     auto output = cloudViewer::make_shared<PointCloudForColoredICP>();
 
     output->reserveThePointsTable(target.size());
-    if (target.hasColors())
-    {
+    if (target.hasColors()) {
         output->reserveTheRGBTable();
     }
-    if (target.hasNormals())
-    {
+    if (target.hasNormals()) {
         output->reserveTheNormsTable();
     }
 
-    for (unsigned int i = 0; i < target.size(); ++i)
-    {
+    for (unsigned int i = 0; i < target.size(); ++i) {
         output->addPoint(*target.getPoint(i));
 
-        if (target.hasColors())
-        {
+        if (target.hasColors()) {
             output->addRGBColor(target.getPointColor(i));
         }
 
-        if (target.hasNormals())
-        {
+        if (target.hasNormals()) {
             output->addNorm(target.getPointNormal(i));
         }
     }
@@ -86,11 +81,11 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
 
     Eigen::Vector3d colors;
     for (size_t k = 0; k < n_points; k++) {
-        const Eigen::Vector3d& vt = output->getEigenPoint(k);
-        const Eigen::Vector3d& nt = output->getEigenNormal(k);
+        const Eigen::Vector3d &vt = output->getEigenPoint(k);
+        const Eigen::Vector3d &nt = output->getEigenNormal(k);
 
-        const ecvColor::Rgb& col =
-            output->getPointColor(static_cast<unsigned int>(k));
+        const ecvColor::Rgb &col =
+                output->getPointColor(static_cast<unsigned int>(k));
         colors = ecvColor::Rgb::ToEigen(col);
         double it = (colors(0) + colors(1) + colors(2)) / 3.0;
 
@@ -98,7 +93,7 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
         std::vector<double> point_squared_distance;
 
         if (tree.SearchHybrid(vt, search_param.radius_, search_param.max_nn_,
-            point_idx, point_squared_distance) >= 4) {
+                              point_idx, point_squared_distance) >= 4) {
             // approximate image gradient of vt's tangential plane
             size_t nn = point_idx.size();
             Eigen::MatrixXd A(nn, 3);
@@ -110,8 +105,8 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
                 Eigen::Vector3d vt_adj = output->getEigenPoint(P_adj_idx);
                 Eigen::Vector3d vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
 
-                const ecvColor::Rgb& col =
-                    output->getPointColor(static_cast<unsigned int>(P_adj_idx));
+                const ecvColor::Rgb &col = output->getPointColor(
+                        static_cast<unsigned int>(P_adj_idx));
                 colors = ecvColor::Rgb::ToEigen(col);
                 double it_adj = (colors(0) + colors(1) + colors(2)) / 3.0;
                 A(i - 1, 0) = (vt_proj(0) - vt(0));
@@ -125,10 +120,10 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
             A(nn - 1, 2) = (nn - 1) * nt(2);
             b(nn - 1, 0) = 0;
             // solving linear equation
-            bool is_success;
+            bool is_success = false;
             Eigen::MatrixXd x;
-            std::tie(is_success, x) = cloudViewer::utility::SolveLinearSystemPSD(
-                A.transpose() * A, A.transpose() * b);
+            std::tie(is_success, x) = utility::SolveLinearSystemPSD(
+                    A.transpose() * A, A.transpose() * b);
             if (is_success) {
                 output->color_gradient_[k] = x;
             }
@@ -137,16 +132,29 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
     return output;
 }
 
-
 }  // namespace
 
 Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
         const ccPointCloud &source,
         const ccPointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || target.hasNormals() == false ||
-        target.hasColors() == false || source.hasColors() == false)
-        return Eigen::Matrix4d::Identity();
+    if (corres.empty()) {
+        utility::LogError(
+                "No correspondences found between source and target "
+                "pointcloud.");
+    }
+    if (!target.hasNormals()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have normals.");
+    }
+    if (!target.hasColors()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have colors.");
+    }
+    if (!source.hasColors()) {
+        utility::LogError(
+                "ColoredICP requires source pointcloud to have colors.");
+    }
 
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);
     double lambda_photometric = 1.0 - lambda_geometric_;
@@ -156,13 +164,13 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 
     auto compute_jacobian_and_residual =
             [&](int i,
-                std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
-                std::vector<double> &r, std::vector<double>& w) {
+                std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
+                std::vector<double> &r, std::vector<double> &w) {
                 size_t cs = corres[i][0];
                 size_t ct = corres[i][1];
-				const Eigen::Vector3d &vs = source.getEigenPoint(cs);
-				const Eigen::Vector3d &vt = target.getEigenPoint(ct);
-				const Eigen::Vector3d &nt = target.getEigenNormal(ct);
+                const Eigen::Vector3d &vs = source.getEigenPoint(cs);
+                const Eigen::Vector3d &vt = target.getEigenPoint(ct);
+                const Eigen::Vector3d &nt = target.getEigenNormal(ct);
 
                 J_r.resize(2);
                 r.resize(2);
@@ -175,14 +183,14 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 
                 // project vs into vt's tangential plane
                 Eigen::Vector3d vs_proj = vs - (vs - vt).dot(nt) * nt;
-				const ecvColor::Rgb& col_source =
-					source.getPointColor(static_cast<unsigned int>(cs));
-				Eigen::Vector3d colors = ecvColor::Rgb::ToEigen(col_source);
+                const ecvColor::Rgb &col_source =
+                        source.getPointColor(static_cast<unsigned int>(cs));
+                Eigen::Vector3d colors = ecvColor::Rgb::ToEigen(col_source);
                 double is = (colors(0) + colors(1) + colors(2)) / 3.0;
 
-				const ecvColor::Rgb& col_target = 
-					target.getPointColor(static_cast<unsigned int>(ct));
-				colors = ecvColor::Rgb::ToEigen(col_target);
+                const ecvColor::Rgb &col_target =
+                        target.getPointColor(static_cast<unsigned int>(ct));
+                colors = ecvColor::Rgb::ToEigen(col_target);
                 double it = (colors(0) + colors(1) + colors(2)) / 3.0;
 
                 const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
@@ -207,13 +215,13 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
     Eigen::Vector6d JTr;
     double r2;
     std::tie(JTJ, JTr, r2) =
-            cloudViewer::utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+            utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
                     compute_jacobian_and_residual, (int)corres.size());
 
     bool is_success;
     Eigen::Matrix4d extrinsic;
     std::tie(is_success, extrinsic) =
-            cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
 
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 }
@@ -231,19 +239,19 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
     for (size_t i = 0; i < corres.size(); i++) {
         size_t cs = corres[i][0];
         size_t ct = corres[i][1];
-		const Eigen::Vector3d &vs = source.getEigenPoint(cs);
-		const Eigen::Vector3d &vt = target.getEigenPoint(ct);
-		const Eigen::Vector3d &nt = target.getEigenNormal(ct);
+        const Eigen::Vector3d &vs = source.getEigenPoint(cs);
+        const Eigen::Vector3d &vt = target.getEigenPoint(ct);
+        const Eigen::Vector3d &nt = target.getEigenNormal(ct);
         Eigen::Vector3d vs_proj = vs - (vs - vt).dot(nt) * nt;
-		const ecvColor::Rgb& col_source =
-			source.getPointColor(static_cast<unsigned int>(cs));
-		Eigen::Vector3d colors = ecvColor::Rgb::ToEigen(col_source);
-		double is = (colors(0) + colors(1) + colors(2)) / 3.0;
+        const ecvColor::Rgb &col_source =
+                source.getPointColor(static_cast<unsigned int>(cs));
+        Eigen::Vector3d colors = ecvColor::Rgb::ToEigen(col_source);
+        double is = (colors(0) + colors(1) + colors(2)) / 3.0;
 
-		const ecvColor::Rgb& col_target =
-			target.getPointColor(static_cast<unsigned int>(ct));
-		colors = ecvColor::Rgb::ToEigen(col_target);
-		double it = (colors(0) + colors(1) + colors(2)) / 3.0;
+        const ecvColor::Rgb &col_target =
+                target.getPointColor(static_cast<unsigned int>(ct));
+        colors = ecvColor::Rgb::ToEigen(col_target);
+        double it = (colors(0) + colors(1) + colors(2)) / 3.0;
 
         const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
         double is0_proj = (dit.dot(vs_proj - vt)) + it;
@@ -260,15 +268,33 @@ RegistrationResult RegistrationColoredICP(
         const ccPointCloud &target,
         double max_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
-        const TransformationEstimationForColoredICP& estimation
+        const TransformationEstimationForColoredICP &estimation
         /*TransformationEstimationForColoredICP()*/,
         const ICPConvergenceCriteria
-        & criteria /* = ICPConvergenceCriteria()*/) {
-    auto target_c = InitializePointCloudForColoredICP(
-            target, geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30));
-    return RegistrationICP(
-            source, *target_c, max_distance, init, estimation, criteria);
-}
+                &criteria /* = ICPConvergenceCriteria()*/) {
+    if (!target.hasNormals()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have normals.");
+    }
+    if (!target.hasColors()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have colors.");
+    }
+    if (!source.hasColors()) {
+        utility::LogError(
+                "ColoredICP requires source pointcloud to have colors.");
+    }
+
+    if (auto target_c = InitializePointCloudForColoredICP(
+                target,
+                geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30))) {
+        return RegistrationICP(source, *target_c, max_distance, init,
+                               estimation, criteria);
+    } else {
+        utility::LogError(
+                "Internal error: InitializePointCloudForColoredICP returns "
+                "nullptr.");
+    };
 
 }  // namespace registration
 }  // namespace pipelines

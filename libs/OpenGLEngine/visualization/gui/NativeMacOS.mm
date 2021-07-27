@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@
 #define GLFW_EXPOSE_NATIVE_COCOA 1
 #include <GLFW/glfw3native.h>
 
-#include <Helper.h>
+#include "utility/Helper.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -156,8 +156,7 @@ void ShowNativeFileDialog(FileDialog::Mode type,
             if (f.first.empty() || f.first == "*.*") {
                 continue;
             }
-            std::vector<std::string> exts;
-            utility::SplitString(exts, f.first, ", ");
+            std::vector<std::string> exts = utility::SplitString(f.first, ", ");
             for (std::string ext : exts) {  // ext is a copy; might modify it
                 if (ext[0] == '.') {  // macOS assumes the dot in the extension
                     ext = ext.substr(1);

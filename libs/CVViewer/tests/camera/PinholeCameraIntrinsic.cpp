@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "camera/PinholeCameraIntrinsic.h"
 
 #include <json/json.h>
 
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(PinholeCameraIntrinsic, Constructor_Default) {
@@ -255,4 +255,4 @@ TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

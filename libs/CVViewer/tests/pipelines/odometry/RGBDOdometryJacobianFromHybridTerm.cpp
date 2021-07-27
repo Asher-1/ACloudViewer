@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/RGBDImage.h"
-#include "open3d/pipelines/odometry/RGBDOdometryJacobian.h"
+#include "geometry/RGBDImage.h"
+#include "pipelines/odometry/RGBDOdometryJacobian.h"
 #include "tests/UnitTest.h"
 #include "tests/pipelines/odometry/OdometryTools.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 using namespace odometry_tools;
@@ -130,4 +130,4 @@ TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

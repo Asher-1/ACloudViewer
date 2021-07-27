@@ -61,7 +61,7 @@ if( PLUGIN_IO_QRDB )
 
         FetchContent_Declare(rdb_sdk
                              URL "${DOWNLOAD_RDB_URL}"
-                             DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/download/rdbsdk)
+                             DOWNLOAD_DIR ${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/rdbsdk)
         FetchContent_GetProperties(rdb_sdk)
         if (NOT rdb_sdk_POPULATED)
             FetchContent_Populate(rdb_sdk)

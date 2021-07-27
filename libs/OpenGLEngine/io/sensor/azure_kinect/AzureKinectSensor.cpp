@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,22 +32,18 @@
 
 #include <memory>
 
-#include <RGBDImage.h>
+#include "geometry/RGBDImage.h"
 #include "io/sensor/azure_kinect/K4aPlugin.h"
+#include "utility/Parallel.h"
 
 namespace cloudViewer {
 namespace io {
-
-using namespace cloudViewer;
 
 AzureKinectSensor::AzureKinectSensor(
         const AzureKinectSensorConfig &sensor_config)
     : RGBDSensor(), sensor_config_(sensor_config) {}
 
-AzureKinectSensor::~AzureKinectSensor() {
-    k4a_plugin::k4a_device_stop_cameras(device_);
-    k4a_plugin::k4a_device_close(device_);
-}
+AzureKinectSensor::~AzureKinectSensor() { Disconnect(); }
 
 bool AzureKinectSensor::Connect(size_t sensor_index) {
     utility::LogInfo("AzureKinectSensor::Connect");
@@ -102,7 +98,7 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
     if (K4A_FAILED(k4a_plugin::k4a_device_start_cameras(device_,
                                                         &device_config))) {
         utility::LogWarning(
-                "Runtime error: k4a_plugin::k4a_device_set_color_control() "
+                "Runtime error: k4a_plugin::k4a_device_start_cameras() "
                 "failed");
         k4a_plugin::k4a_device_close(device_);
         return false;
@@ -128,6 +124,11 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
             k4a_plugin::k4a_transformation_create(&calibration);
 
     return true;
+}
+
+void AzureKinectSensor::Disconnect() {
+    k4a_plugin::k4a_device_stop_cameras(device_);
+    k4a_plugin::k4a_device_close(device_);
 }
 
 k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
@@ -177,7 +178,8 @@ void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
     }
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
 #pragma omp parallel for collapse(3) schedule(static)
 #endif

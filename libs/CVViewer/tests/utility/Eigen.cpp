@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Eigen.h"
+#include "utility/Eigen.h"
 
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(Eigen, TransformVector6dToMatrix4d) {
@@ -292,4 +292,4 @@ TEST(Eigen, ColorToUint8ToDouble) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

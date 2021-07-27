@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Blob.h"
+#include "core/Blob.h"
 
-#include "open3d/core/Device.h"
-#include "open3d/core/MemoryManager.h"
+#include "core/Device.h"
+#include "core/MemoryManager.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 class BlobPermuteDevices : public PermuteDevices {};
@@ -65,4 +65,4 @@ TEST_P(BlobPermuteDevices, BlobConstructorWithExternalMemory) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

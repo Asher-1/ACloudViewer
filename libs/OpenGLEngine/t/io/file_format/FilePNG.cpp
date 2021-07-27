@@ -27,7 +27,7 @@
 #include <png.h>
 
 #include "t/io/ImageIO.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

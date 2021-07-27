@@ -36,7 +36,7 @@
 
 #include <Eigen.h>
 #include <Helper.h>
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include <ProgressReporters.h>
 

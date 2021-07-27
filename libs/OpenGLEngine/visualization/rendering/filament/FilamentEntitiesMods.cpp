@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
-#include <Console.h>
+#include <Logging.h>
 #include "visualization/rendering/filament/FilamentEngine.h"
 #include "visualization/rendering/filament/FilamentResourceManager.h"
 
@@ -122,7 +122,7 @@ FilamentMaterialModifier::FilamentMaterialModifier(
 
 void FilamentMaterialModifier::Reset() {
     if (material_instance_ != nullptr) {
-        cloudViewer::utility::LogWarning(
+        utility::LogWarning(
                 "Previous material instance modifications are not finished!");
     }
 
@@ -134,7 +134,7 @@ void FilamentMaterialModifier::Init(
         const std::shared_ptr<filament::MaterialInstance>& material_instance,
         const MaterialInstanceHandle& id) {
     if (material_instance_ != nullptr) {
-        cloudViewer::utility::LogWarning(
+        utility::LogWarning(
                 "Previous material instance modifications are not finished!");
     }
 
@@ -209,7 +209,7 @@ MaterialModifier& FilamentMaterialModifier::SetTexture(
                     parameter, texture_ptr.get(),
                     SamplerFromSamplerParameters(sampler_config));
         } else {
-            cloudViewer::utility::LogWarning(
+            utility::LogWarning(
                     "Failed to set texture for material.\n\tMaterial handle: "
                     "{}\n\tTexture handle: {}\n\tParameter name: {}",
                     current_handle_, texture_handle, parameter);

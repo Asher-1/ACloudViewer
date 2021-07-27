@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,7 @@
 
 #include "visualization/visualizer/Visualizer.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include <ecvMesh.h>
 
 #if defined(__APPLE__) && defined(BUILD_GUI)
@@ -39,7 +39,6 @@ void unbind();
 namespace cloudViewer {
 
 namespace {
-	using namespace cloudViewer;
 
 class GLFWEnvironmentSingleton {
 private:
@@ -62,6 +61,12 @@ public:
 
     static int InitGLFW() {
         GLFWEnvironmentSingleton::GetInstance();
+#if defined(__APPLE__)
+        // On macOS, GLFW changes the directory to the resource directory,
+        // which will cause an unexpected change of directory if using a
+        // framework build version of Python.
+        glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
+#endif
         return glfwInit();
     }
 
@@ -84,7 +89,7 @@ Visualizer::~Visualizer() {
 }
 
 bool Visualizer::CreateVisualizerWindow(
-        const std::string &window_name /* = "cloudViewer"*/,
+        const std::string &window_name /* = "CloudViewer"*/,
         const int width /* = 640*/,
         const int height /* = 480*/,
         const int left /* = 50*/,
@@ -121,7 +126,8 @@ bool Visualizer::CreateVisualizerWindow(
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, visible ? 1 : 0);
 
-    window_ = glfwCreateWindow(width, height, window_name_.c_str(), nullptr, nullptr);
+    window_ = glfwCreateWindow(width, height, window_name_.c_str(), nullptr,
+                               nullptr);
     if (!window_) {
         utility::LogWarning("Failed to create window");
         return false;
@@ -248,13 +254,13 @@ void Visualizer::BuildUtilities() {
 
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
-	double extent = std::max(0.01, boundingbox.getMaxExtent() * 0.2);
-    coordinate_frame_mesh_ptr_ = ccMesh::CreateCoordinateFrame(
-            extent, boundingbox.getMinBound());
+    double extent = std::max(0.01, boundingbox.getMaxExtent() * 0.2);
+    coordinate_frame_mesh_ptr_ =
+            ccMesh::CreateCoordinateFrame(extent, boundingbox.getMinBound());
     coordinate_frame_mesh_renderer_ptr_ =
             cloudViewer::make_shared<glsl::CoordinateFrameRenderer>();
     if (!coordinate_frame_mesh_renderer_ptr_->AddGeometry(
-		coordinate_frame_mesh_ptr_)) {
+                coordinate_frame_mesh_ptr_)) {
         return;
     }
     utility_ptrs_.push_back(coordinate_frame_mesh_ptr_);
@@ -308,9 +314,8 @@ bool Visualizer::PollEvents() {
     return !glfwWindowShouldClose(window_);
 }
 
-bool Visualizer::AddGeometry(
-        std::shared_ptr<const ccHObject> geometry_ptr,
-        bool reset_bounding_box) {
+bool Visualizer::AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
+                             bool reset_bounding_box) {
     if (!is_initialized_) {
         return false;
     }
@@ -340,15 +345,15 @@ bool Visualizer::AddGeometry(
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::POLY_LINE)) {
         renderer_ptr = cloudViewer::make_shared<glsl::PolylineRenderer>();
-		if (!renderer_ptr->AddGeometry(geometry_ptr)) {
-			return false;
-		}
-	} else if (geometry_ptr->isKindOf(CV_TYPES::FACET)) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+            return false;
+        }
+    } else if (geometry_ptr->isKindOf(CV_TYPES::FACET)) {
         renderer_ptr = cloudViewer::make_shared<glsl::FacetRenderer>();
-		if (!renderer_ptr->AddGeometry(geometry_ptr)) {
-			return false;
-		}
-	} else if (geometry_ptr->isKindOf(CV_TYPES::MESH)) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+            return false;
+        }
+    } else if (geometry_ptr->isKindOf(CV_TYPES::MESH)) {
         renderer_ptr = cloudViewer::make_shared<glsl::TriangleMeshRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
@@ -373,20 +378,19 @@ bool Visualizer::AddGeometry(
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
-	}
-	else if (geometry_ptr->isKindOf(CV_TYPES::ORIENTED_BBOX)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::OrientedBoundingBoxRenderer>();
-		if (!renderer_ptr->AddGeometry(geometry_ptr)) {
-			return false;
-		}
-	}
-	else if (geometry_ptr->isKindOf(CV_TYPES::BBOX)) {
-        renderer_ptr = cloudViewer::make_shared<glsl::AxisAlignedBoundingBoxRenderer>();
-		if (!renderer_ptr->AddGeometry(geometry_ptr)) {
-			return false;
-		}
-	}
-	else {
+    } else if (geometry_ptr->isKindOf(CV_TYPES::ORIENTED_BBOX)) {
+        renderer_ptr =
+                cloudViewer::make_shared<glsl::OrientedBoundingBoxRenderer>();
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+            return false;
+        }
+    } else if (geometry_ptr->isKindOf(CV_TYPES::BBOX)) {
+        renderer_ptr = cloudViewer::make_shared<
+                glsl::AxisAlignedBoundingBoxRenderer>();
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+            return false;
+        }
+    } else {
         return false;
     }
     geometry_renderer_ptrs_.insert(renderer_ptr);
@@ -398,12 +402,11 @@ bool Visualizer::AddGeometry(
     utility::LogDebug(
             "Add geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().getPrintInfo().c_str());
-    return UpdateGeometry();
+    return UpdateGeometry(geometry_ptr);
 }
 
-bool Visualizer::RemoveGeometry(
-        std::shared_ptr<const ccHObject> geometry_ptr,
-        bool reset_bounding_box) {
+bool Visualizer::RemoveGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
+                                bool reset_bounding_box) {
     if (!is_initialized_) {
         return false;
     }
@@ -422,7 +425,7 @@ bool Visualizer::RemoveGeometry(
     utility::LogDebug(
             "Remove geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().getPrintInfo().c_str());
-    return UpdateGeometry();
+    return UpdateGeometry(geometry_ptr);
 }
 
 bool Visualizer::ClearGeometries() {
@@ -435,8 +438,7 @@ bool Visualizer::ClearGeometries() {
     return UpdateGeometry();
 }
 
-bool Visualizer::UpdateGeometry(
-        std::shared_ptr<const ccHObject> geometry_ptr) {
+bool Visualizer::UpdateGeometry(std::shared_ptr<const ccHObject> geometry_ptr) {
     glfwMakeContextCurrent(window_);
     bool success = true;
     for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
@@ -455,7 +457,7 @@ bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
 
 void Visualizer::SetFullScreen(bool fullscreen) {
     if (!fullscreen) {
-        glfwSetWindowMonitor(window_, nullptr, saved_window_pos_(0),
+        glfwSetWindowMonitor(window_, NULL, saved_window_pos_(0),
                              saved_window_pos_(1), saved_window_size_(0),
                              saved_window_size_(1), GLFW_DONT_CARE);
     } else {
@@ -463,9 +465,13 @@ void Visualizer::SetFullScreen(bool fullscreen) {
                           &saved_window_size_(1));
         glfwGetWindowPos(window_, &saved_window_pos_(0), &saved_window_pos_(1));
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-        glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width, mode->height,
-                             mode->refreshRate);
+        if (const GLFWvidmode *mode = glfwGetVideoMode(monitor)) {
+            glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width,
+                                 mode->height, mode->refreshRate);
+        } else {
+            utility::LogError(
+                    "Internal error: glfwGetVideoMode returns nullptr.");
+        }
     }
 }
 
@@ -502,6 +508,7 @@ void Visualizer::PrintVisualizerHelp() {
     utility::LogInfo("    P, PrtScn    : Take a screen capture.");
     utility::LogInfo("    D            : Take a depth capture.");
     utility::LogInfo("    O            : Take a capture of current rendering settings.");
+    utility::LogInfo("    Alt + Enter  : Toggle between full screen and windowed mode.");
     utility::LogInfo("");
     utility::LogInfo("  -- Render mode control --");
     utility::LogInfo("    L            : Turn on/off lighting.");

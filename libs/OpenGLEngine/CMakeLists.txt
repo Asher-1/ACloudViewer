@@ -4,7 +4,20 @@
 # In comparison, cloudViewer_set_global_properties() sets properties for the CloudViewer
 # lib, and targets that links to the CloudViewer lib, e.g pybind, unit tests, etc.
 function(cloudViewer_set_cloudViewer_lib_properties target)
-    target_compile_definitions(${target} PRIVATE CLOUDVIEWER_ENABLE_DLL_EXPORTS)
+    #target_compile_definitions(${target} PRIVATE CLOUDVIEWER_ENABLE_DLL_EXPORTS)
+    #target_compile_definitions(${target} PUBLIC ECV_OPENGL_ENGINE_LIBRARY_BUILD)
+    cmake_parse_arguments(arg "HIDDEN" "" "" ${ARGN})
+    if(NOT BUILD_SHARED_LIBS)
+        target_compile_definitions(${target} PUBLIC CLOUDVIEWER_STATIC)
+    endif()
+    if (arg_HIDDEN)
+        set_target_properties(${target} PROPERTIES
+                        CXX_VISIBILITY_PRESET hidden
+                        VISIBILITY_INLINES_HIDDEN ON
+                        )
+    else ()
+        target_compile_definitions(${target} PRIVATE CLOUDVIEWER_ENABLE_DLL_EXPORTS)
+    endif()
     target_compile_definitions(${target} PUBLIC ECV_OPENGL_ENGINE_LIBRARY_BUILD)
 endfunction()
 
@@ -52,8 +65,31 @@ if (BUILD_GUI)
     add_subdirectory(visualization/gui)
     set(GUI_OBJECTS "$<TARGET_OBJECTS:GUI>")
     set_target_properties(GUI PROPERTIES FOLDER "Modules")
-    set_target_properties(GuiResources PROPERTIES FOLDER "Modules")
 endif()
+
+if (BUILD_WEBRTC)
+    add_subdirectory(visualization/webrtc_server)
+    set(WEBRTC_OBJECTS "$<TARGET_OBJECTS:webrtc_server>")
+    set_target_properties(webrtc_server PROPERTIES FOLDER "Modules")
+endif()
+
+# note: adding at least one real source file to any target that references
+# reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
+add_library(${PROJECT_NAME}
+    CloudViewerConfig.cpp
+    $<TARGET_OBJECTS:core>
+    $<TARGET_OBJECTS:tgeometry>
+    $<TARGET_OBJECTS:tgeometry_kernel>
+    $<TARGET_OBJECTS:io>
+    $<TARGET_OBJECTS:tio>
+    $<TARGET_OBJECTS:ml_contrib>
+    $<TARGET_OBJECTS:pipelines>
+    $<TARGET_OBJECTS:tpipelines>
+    $<TARGET_OBJECTS:utility>
+    $<TARGET_OBJECTS:visualization>
+    ${GUI_OBJECTS}
+    ${WEBRTC_OBJECTS}
+)
 
 # Source group for Visual Studio
 ADD_SOURCE_GROUP(core)
@@ -65,22 +101,6 @@ ADD_SOURCE_GROUP(pipelines)
 ADD_SOURCE_GROUP(tpipelines)
 ADD_SOURCE_GROUP(utility)
 ADD_SOURCE_GROUP(visualization)
-
-# note: adding at least one real source file to any target that references
-# reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
-add_library(${PROJECT_NAME}
-    CloudViewerConfig.cpp
-    $<TARGET_OBJECTS:core>
-    $<TARGET_OBJECTS:tgeometry>
-    $<TARGET_OBJECTS:io>
-    $<TARGET_OBJECTS:tio>
-    $<TARGET_OBJECTS:ml_contrib>
-    $<TARGET_OBJECTS:pipelines>
-    $<TARGET_OBJECTS:tpipelines>
-    $<TARGET_OBJECTS:utility>
-    $<TARGET_OBJECTS:visualization>
-    ${GUI_OBJECTS}
-)
 
 # INTERNAL LIB
 target_link_libraries(  ${PROJECT_NAME} PUBLIC
@@ -95,6 +115,12 @@ cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 if(X11_TARGET)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${X11_TARGET})
 endif()
+
+# If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
+# libraries that are not hidden during compilation. Don't propagate beyond
+# direct consumers of libOpen3D.a
+target_link_options(${PROJECT_NAME} INTERFACE
+    $<$<STREQUAL:$<TARGET_PROPERTY:${PROJECT_NAME},TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
 
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 

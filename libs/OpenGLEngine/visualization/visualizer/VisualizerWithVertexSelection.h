@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -54,8 +54,8 @@ public:
 public:
     bool AddGeometry(std::shared_ptr<const ccHObject> geometry_ptr,
                      bool reset_bounding_box = true) override;
-    bool UpdateGeometry(std::shared_ptr<const ccHObject> geometry_ptr =
-                                nullptr) override;
+    bool UpdateGeometry(
+            std::shared_ptr<const ccHObject> geometry_ptr = nullptr) override;
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void BuildUtilities() override;
@@ -102,8 +102,8 @@ protected:
     const std::vector<CCVector3> *GetGeometryPoints(
             std::shared_ptr<const ccHObject> geometry);
 
-	const std::vector<Eigen::Vector3d> *GetGeometryEigenPoints(
-		std::shared_ptr<const ccHObject> geometry);
+    const std::vector<Eigen::Vector3d> *GetGeometryEigenPoints(
+            std::shared_ptr<const ccHObject> geometry);
 
 protected:
     std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
@@ -112,7 +112,7 @@ protected:
     SelectionMode selection_mode_ = SelectionMode::None;
     Eigen::Vector2d mouse_down_pos_;
     std::vector<int> points_in_rect_;
-    float drag_depth_;
+    float drag_depth_ = 0.0f;
 
     std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
     std::shared_ptr<glsl::PointCloudPickerRenderer>

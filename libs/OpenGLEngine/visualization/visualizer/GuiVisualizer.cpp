@@ -26,18 +26,21 @@
 
 #include "visualization/visualizer/GuiVisualizer.h"
 
-#include "CloudViewerConfig.h"
-#include <ecvBBox.h>
-#include <Image.h>
-#include <ecvMesh.h>
-#include <ImageIO.h>
-#include <ecvPointCloud.h>
-#include "io/PointCloudIO.h"
-#include "io/FileFormatIO.h"
-#include "io/TriangleMeshIO.h"
-#include "io/ModelIO.h"
-#include <Console.h>
 #include <FileSystem.h>
+#include <Image.h>
+#include <ImageIO.h>
+#include <Logging.h>
+#include <ecvBBox.h>
+#include <ecvMesh.h>
+#include <ecvPointCloud.h>
+
+#include <random>
+
+#include "CloudViewerConfig.h"
+#include "io/FileFormatIO.h"
+#include "io/ModelIO.h"
+#include "io/PointCloudIO.h"
+#include "io/TriangleMeshIO.h"
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Button.h"
 #include "visualization/gui/Checkbox.h"
@@ -54,9 +57,9 @@
 #include "visualization/gui/Theme.h"
 #include "visualization/gui/VectorEdit.h"
 #include "visualization/rendering/Camera.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/Model.h"
-#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/RenderToBuffer.h"
 #include "visualization/rendering/RendererHandle.h"
 #include "visualization/rendering/RendererStructs.h"
@@ -79,7 +82,7 @@ std::shared_ptr<gui::Dialog> CreateAboutDialog(gui::Window *window) {
     auto dlg = cloudViewer::make_shared<gui::Dialog>("About");
 
     auto title = cloudViewer::make_shared<gui::Label>(
-            (std::string("Open3D ") + CLOUDVIEWER_VERSION).c_str());
+            (std::string("CloudViewer ") + CLOUDVIEWER_VERSION).c_str());
     auto text = cloudViewer::make_shared<gui::Label>(
             "The MIT License (MIT)\n"
             "Copyright (c) 2018 - 2020 www.erow.cn\n\n"
@@ -119,7 +122,9 @@ std::shared_ptr<gui::Dialog> CreateAboutDialog(gui::Window *window) {
     auto layout = cloudViewer::make_shared<gui::Vert>(0, margins);
     layout->AddChild(gui::Horiz::MakeCentered(title));
     layout->AddFixed(theme.font_size);
-    layout->AddChild(text);
+    auto v = cloudViewer::make_shared<gui::ScrollableVert>(0);
+    v->AddChild(text);
+    layout->AddChild(v);
     layout->AddFixed(theme.font_size);
     layout->AddChild(gui::Horiz::MakeCentered(ok));
     dlg->AddChild(layout);
@@ -293,9 +298,10 @@ class DrawTimeLabel : public gui::Label {
 public:
     DrawTimeLabel(gui::Window *w) : Label("0.0 ms") { window_ = w; }
 
-    gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
-        auto h = Super::CalcPreferredSize(theme).height;
-        return gui::Size(theme.font_size * 5, h);
+    gui::Size CalcPreferredSize(const gui::LayoutContext &context,
+                                const Constraints &constraints) const override {
+        auto h = Super::CalcPreferredSize(context, constraints).height;
+        return gui::Size(context.theme.font_size * 5, h);
     }
 
     DrawResult Draw(const gui::DrawContext &context) override {
@@ -422,10 +428,8 @@ struct GuiVisualizer::Impl {
         } else {
             scene_wgt_->GetScene()->ShowSkybox(false);
         }
-        scene_wgt_->ShowSkybox(settings_.model_.GetShowSkybox());
 
         scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
-
         scene_wgt_->GetScene()->ShowGroundPlane(
                 settings_.model_.GetShowGround(),
                 rendering::Scene::GroundPlane::XZ);
@@ -587,8 +591,7 @@ GuiVisualizer::GuiVisualizer(const std::string &title, int width, int height)
 }
 
 GuiVisualizer::GuiVisualizer(
-        const std::vector<std::shared_ptr<const ccHObject>>
-                &geometries,
+        const std::vector<std::shared_ptr<const ccHObject>> &geometries,
         const std::string &title,
         int width,
         int height,
@@ -615,7 +618,7 @@ void GuiVisualizer::Init() {
         app_menu->AddSeparator();
         impl_->app_menu_custom_items_index_ = app_menu->GetNumberOfItems();
         app_menu->AddItem("Quit", FILE_QUIT, gui::KEY_Q);
-        menu->AddMenu("Open3D", app_menu);
+        menu->AddMenu("CloudViewer", app_menu);
         impl_->app_menu_ = app_menu;
 #endif  // __APPLE__
         auto file_menu = cloudViewer::make_shared<gui::Menu>();
@@ -641,7 +644,7 @@ void GuiVisualizer::Init() {
         help_menu->AddSeparator();
         help_menu->AddItem("About", HELP_ABOUT);
         help_menu->AddItem("Contact", HELP_CONTACT);
-#if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
+#if defined(__APPLE__)
         // macOS adds a special search item to menus named "Help",
         // so add a space to avoid that.
         menu->AddMenu("Help ", help_menu);
@@ -655,7 +658,8 @@ void GuiVisualizer::Init() {
     // Create scene
     impl_->scene_wgt_ = cloudViewer::make_shared<gui::SceneWidget>();
     impl_->scene_wgt_->SetScene(
-            cloudViewer::make_shared<rendering::CloudViewerScene>(GetRenderer()));
+            cloudViewer::make_shared<rendering::CloudViewerScene>(
+                    GetRenderer()));
     impl_->scene_wgt_->SetOnSunDirectionChanged(
             [this](const Eigen::Vector3f &new_dir) {
                 auto lighting = impl_->settings_.model_.GetLighting();  // copy
@@ -670,7 +674,6 @@ void GuiVisualizer::Init() {
     auto ibl_path = resource_path + "/default";
     auto *render_scene = impl_->scene_wgt_->GetScene()->GetScene();
     render_scene->SetIndirectLight(ibl_path);
-    impl_->scene_wgt_->ShowSkybox(settings.model_.GetShowSkybox());
 
     // Create materials
     impl_->InitializeMaterials(GetRenderer(), resource_path);
@@ -693,11 +696,12 @@ void GuiVisualizer::Init() {
     settings.wgt_base = cloudViewer::make_shared<gui::Vert>(0, base_margins);
 
     gui::Margins indent(em, 0, 0, 0);
-    auto view_ctrls =
-            cloudViewer::make_shared<gui::CollapsableVert>("Mouse controls", 0, indent);
+    auto view_ctrls = cloudViewer::make_shared<gui::CollapsableVert>(
+            "Mouse controls", 0, indent);
 
     // ... view manipulator buttons
-    settings.wgt_mouse_arcball = cloudViewer::make_shared<SmallToggleButton>("Arcball");
+    settings.wgt_mouse_arcball =
+            cloudViewer::make_shared<SmallToggleButton>("Arcball");
     impl_->settings_.wgt_mouse_arcball->SetOn(true);
     settings.wgt_mouse_arcball->SetOnClicked([this]() {
         impl_->SetMouseControls(*this,
@@ -707,7 +711,8 @@ void GuiVisualizer::Init() {
     settings.wgt_mouse_fly->SetOnClicked([this]() {
         impl_->SetMouseControls(*this, gui::SceneWidget::Controls::FLY);
     });
-    settings.wgt_mouse_model = cloudViewer::make_shared<SmallToggleButton>("Model");
+    settings.wgt_mouse_model =
+            cloudViewer::make_shared<SmallToggleButton>("Model");
     settings.wgt_mouse_model->SetOnClicked([this]() {
         impl_->SetMouseControls(*this,
                                 gui::SceneWidget::Controls::ROTATE_MODEL);
@@ -716,12 +721,13 @@ void GuiVisualizer::Init() {
     settings.wgt_mouse_sun->SetOnClicked([this]() {
         impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_SUN);
     });
-    settings.wgt_mouse_ibl = cloudViewer::make_shared<SmallToggleButton>("Environment");
+    settings.wgt_mouse_ibl =
+            cloudViewer::make_shared<SmallToggleButton>("Environment");
     settings.wgt_mouse_ibl->SetOnClicked([this]() {
         impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_IBL);
     });
 
-    auto reset_camera = cloudViewer::make_shared<SmallButton>("Reset camera");
+    auto reset_camera = cloudViewer::make_shared<SmallButton>("reset camera");
     reset_camera->SetOnClicked([this]() {
         impl_->scene_wgt_->GoToCameraPreset(
                 gui::SceneWidget::CameraPreset::PLUS_Z);
@@ -792,8 +798,8 @@ void GuiVisualizer::AddItemsToAppMenu(
     }
 }
 
-void GuiVisualizer::SetGeometry(
-        std::shared_ptr<const ccHObject> geometry, bool loaded_model) {
+void GuiVisualizer::SetGeometry(std::shared_ptr<const ccHObject> geometry,
+                                bool loaded_model) {
     auto scene3d = impl_->scene_wgt_->GetScene();
     scene3d->ClearGeometry();
 
@@ -803,6 +809,7 @@ void GuiVisualizer::SetGeometry(
     if (loaded_model) {
         scene3d->AddModel(MODEL_NAME, impl_->loaded_model_);
         impl_->settings_.model_.SetDisplayingPointClouds(false);
+        loaded_material.shader = "defaultLit";
     } else {
         // NOTE: If a model was NOT loaded then these must be point clouds
         std::shared_ptr<const ccHObject> g = geometry;
@@ -847,47 +854,50 @@ void GuiVisualizer::SetGeometry(
     // Setup UI for loaded model/point cloud
     impl_->settings_.model_.UnsetCustomDefaultColor();
     if (loaded_model) {
+        impl_->settings_.view_->ShowFileMaterialEntry(true);
         impl_->settings_.model_.SetCurrentMaterials(
                 GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
-        impl_->settings_.view_->ShowFileMaterialEntry(true);
     } else {
         impl_->settings_.view_->ShowFileMaterialEntry(false);
     }
     impl_->settings_.view_->Update();  // make sure prefab material is correct
 
     auto &bounds = scene3d->GetBoundingBox();
-    impl_->scene_wgt_->SetupCamera(60.0, bounds, bounds.getGeometryCenter().cast<float>());
+    impl_->scene_wgt_->SetupCamera(60.0, bounds,
+                                   bounds.getGeometryCenter().cast<float>());
 
     // Make sure scene is redrawn
     impl_->scene_wgt_->ForceRedraw();
 }
 
-void GuiVisualizer::Layout(const gui::Theme &theme) {
+void GuiVisualizer::Layout(const gui::LayoutContext &context) {
     auto r = GetContentRect();
-    const auto em = theme.font_size;
+    const auto em = context.theme.font_size;
     impl_->scene_wgt_->SetFrame(r);
 
     // Draw help keys HUD in upper left
-    const auto pref = impl_->help_keys_->CalcPreferredSize(theme);
+    const auto pref = impl_->help_keys_->CalcPreferredSize(
+            context, gui::Widget::Constraints());
     impl_->help_keys_->SetFrame(gui::Rect(0, r.y, pref.width, pref.height));
-    impl_->help_keys_->Layout(theme);
+    impl_->help_keys_->Layout(context);
 
     // Draw camera HUD in lower left
-    const auto prefcam = impl_->help_camera_->CalcPreferredSize(theme);
+    const auto prefcam = impl_->help_camera_->CalcPreferredSize(
+            context, gui::Widget::Constraints());
     impl_->help_camera_->SetFrame(gui::Rect(0, r.height + r.y - prefcam.height,
                                             prefcam.width, prefcam.height));
-    impl_->help_camera_->Layout(theme);
+    impl_->help_camera_->Layout(context);
 
     // Settings in upper right
     const auto LIGHT_SETTINGS_WIDTH = 18 * em;
-    auto light_settings_size =
-            impl_->settings_.wgt_base->CalcPreferredSize(theme);
+    auto light_settings_size = impl_->settings_.wgt_base->CalcPreferredSize(
+            context, gui::Widget::Constraints());
     gui::Rect lightSettingsRect(r.width - LIGHT_SETTINGS_WIDTH, r.y,
                                 LIGHT_SETTINGS_WIDTH,
                                 std::min(r.height, light_settings_size.height));
     impl_->settings_.wgt_base->SetFrame(lightSettingsRect);
 
-    Super::Layout(theme);
+    Super::Layout(context);
 }
 
 void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
@@ -902,8 +912,8 @@ void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
                                                    rendering::Material());
         impl_->UpdateFromModel(GetRenderer(), true);
     };
-    impl_->receiver_ =
-            cloudViewer::make_shared<Receiver>(address, timeout, this, on_geometry);
+    impl_->receiver_ = cloudViewer::make_shared<Receiver>(address, timeout,
+                                                          this, on_geometry);
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();
@@ -937,10 +947,11 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                                                             progressbar]() {
         auto &theme = GetTheme();
         auto loading_dlg = cloudViewer::make_shared<gui::Dialog>("Loading");
-        auto vert =
-                cloudViewer::make_shared<gui::Vert>(0, gui::Margins(theme.font_size));
+        auto vert = cloudViewer::make_shared<gui::Vert>(
+                0, gui::Margins(theme.font_size));
         auto loading_text = std::string("Loading ") + path;
-        vert->AddChild(cloudViewer::make_shared<gui::Label>(loading_text.c_str()));
+        vert->AddChild(
+                cloudViewer::make_shared<gui::Label>(loading_text.c_str()));
         vert->AddFixed(theme.font_size);
         vert->AddChild(progressbar);
         loading_dlg->AddChild(vert);
@@ -962,9 +973,16 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
 
         bool model_success = false;
         if (geometry_type & io::CONTAINS_TRIANGLES) {
+            const float ioProgressAmount = 1.0f;
             try {
-                model_success = io::ReadTriangleModel(
-                        path, impl_->loaded_model_, false);
+                io::ReadTriangleModelOptions opt;
+                opt.update_progress = [ioProgressAmount,
+                                       UpdateProgress](double percent) -> bool {
+                    UpdateProgress(ioProgressAmount * float(percent / 100.0));
+                    return true;
+                };
+                model_success =
+                        io::ReadTriangleModel(path, impl_->loaded_model_, opt);
             } catch (...) {
                 model_success = false;
             }
@@ -1151,13 +1169,13 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
 }
 
 void GuiVisualizer::OnDragDropped(const char *path) {
-    auto title = std::string("Open3D - ") + path;
+    auto title = std::string("CloudViewer - ") + path;
 #if LOAD_IN_NEW_WINDOW
     auto frame = this->GetFrame();
     std::vector<std::shared_ptr<const ccHObject>> nothing;
-    auto vis = cloudViewer::make_shared<GuiVisualizer>(nothing, title.c_str(),
-                                               frame.width, frame.height,
-                                               frame.x + 20, frame.y + 20);
+    auto vis = cloudViewer::make_shared<GuiVisualizer>(
+            nothing, title.c_str(), frame.width, frame.height, frame.x + 20,
+            frame.y + 20);
     gui::Application::GetInstance().AddWindow(vis);
 #else
     this->SetTitle(title);
@@ -1167,4 +1185,4 @@ void GuiVisualizer::OnDragDropped(const char *path) {
 }
 
 }  // namespace visualization
-}  // namespace CloudViewer
+}  // namespace cloudViewer

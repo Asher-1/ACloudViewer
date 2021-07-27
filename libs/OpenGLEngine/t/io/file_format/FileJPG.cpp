@@ -31,7 +31,7 @@
 // clang-format on
 
 #include "t/io/ImageIO.h"
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 namespace cloudViewer {

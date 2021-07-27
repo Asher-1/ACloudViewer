@@ -27,7 +27,7 @@
 #pragma once
 #include "CVCoreLib.h"
 
-#include "Console.h"  //for ConsoleProgressBar
+#include "Logging.h"  //for ConsoleProgressBar
 
 namespace cloudViewer {
 namespace utility {

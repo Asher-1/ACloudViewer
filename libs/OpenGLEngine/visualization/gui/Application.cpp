@@ -31,32 +31,35 @@
 #include <windows.h>  // so APIENTRY gets defined and GLFW doesn't define it
 #endif                // _MSC_VER
 
+#include <FileSystem.h>
 #include <GLFW/glfw3.h>
+#include <Image.h>
+#include <Logging.h>
 
 #include <algorithm>
 #include <chrono>
+#include <iostream>
 #include <list>
 #include <mutex>
 #include <thread>
 #include <unordered_set>
 
-#include <Console.h>
-#include <FileSystem.h>
-#include <Image.h>
-
 #include "visualization/gui/Button.h"
 #include "visualization/gui/Events.h"
+#include "visualization/gui/GLFWWindowSystem.h"
 #include "visualization/gui/Label.h"
 #include "visualization/gui/Layout.h"
 #include "visualization/gui/Native.h"
 #include "visualization/gui/Task.h"
 #include "visualization/gui/Theme.h"
+#include "visualization/gui/Util.h"
 #include "visualization/gui/Window.h"
 #include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
 #include "visualization/rendering/filament/FilamentEngine.h"
 #include "visualization/rendering/filament/FilamentRenderToBuffer.h"
+
 
 namespace {
 
@@ -84,10 +87,10 @@ std::string FindResourcePath(int argc, const char *argv[]) {
         // is absolute path, we're done
     } else {
         // relative path:  prepend working directory
-        auto cwd = cloudViewer::utility::filesystem::GetWorkingDirectory();
+        auto cwd = open3d::utility::filesystem::GetWorkingDirectory();
 #ifdef __APPLE__
         // When running an app from the command line with the full relative
-        // path (e.g. `bin/CloudViewer.app/Contents/MacOS/CloudViewer`), the working
+        // path (e.g. `bin/Open3D.app/Contents/MacOS/Open3D`), the working
         // directory can be set to the resources directory, in which case
         // a) we are done, and b) cwd + / + argv0 is wrong.
         if (cwd.rfind("/Contents/Resources") == cwd.size() - 19) {
@@ -104,94 +107,10 @@ std::string FindResourcePath(int argc, const char *argv[]) {
 #endif  // __APPLE__
 
     auto resource_path = path + "/resources";
-    if (!cloudViewer::utility::filesystem::DirectoryExists(resource_path)) {
+    if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
         return path + "/../resources";  // building with Xcode
     }
     return resource_path;
-}
-
-std::string FindFontPath(const std::string &font) {
-    using namespace cloudViewer::utility::filesystem;
-
-    if (FileExists(font)) {
-        return font;
-    }
-
-    std::string home;
-    char *raw_home = getenv("HOME");
-    if (raw_home) {  // std::string(nullptr) is undefined
-        home = raw_home;
-    }
-    std::vector<std::string> system_font_paths = {
-#ifdef __APPLE__
-            "/System/Library/Fonts", "/Library/Fonts", home + "/Library/Fonts"
-#elif _WIN32
-            "c:/Windows/Fonts"
-#else
-            "/usr/share/fonts",
-            home + "/.fonts",
-#endif  // __APPLE__
-    };
-
-#ifdef __APPLE__
-    std::vector<std::string> font_ext = {".ttf", ".ttc", ".otf"};
-    for (auto &font_path : system_font_paths) {
-        for (auto &ext : font_ext) {
-            std::string candidate = font_path + "/" + font + ext;
-            if (FileExists(candidate)) {
-                return candidate;
-            }
-        }
-    }
-    return "";
-#else
-    std::string font_ttf = font + ".ttf";
-    std::string font_ttc = font + ".ttc";
-    std::string font_otf = font + ".otf";
-    auto is_match = [font, &font_ttf, &font_ttc,
-                     &font_otf](const std::string &path) {
-        auto filename = GetFileNameWithoutDirectory(path);
-        auto ext = GetFileExtensionInLowerCase(filename);
-        if (ext != "ttf" && ext != "ttc" && ext != "otf") {
-            return false;
-        }
-        if (filename == font_ttf || filename == font_ttc ||
-            filename == font_otf) {
-            return true;
-        }
-        if (filename.find(font) == 0) {
-            return true;
-        }
-        return false;
-    };
-
-    for (auto &font_dir : system_font_paths) {
-        auto matches = FindFilesRecursively(font_dir, is_match);
-        for (auto &m : matches) {
-            if (GetFileNameWithoutExtension(GetFileNameWithoutDirectory(m)) ==
-                font) {
-                return m;
-            }
-        }
-        std::vector<std::string> suffixes = {
-                "-Regular.ttf", "-Regular.ttc", "-Regular.otf", "-Normal.ttf",
-                "-Normal.ttc",  "-Normal.otf",  "-Medium.ttf",  "-Medium.ttc",
-                "-Medium.otf",  "-Narrow.ttf",  "-Narrow.ttc",  "-Narrow.otf",
-                "Regular.ttf",  "-Regular.ttc", "-Regular.otf", "Normal.ttf",
-                "Normal.ttc",   "Normal.otf",   "Medium.ttf",   "Medium.ttc",
-                "Medium.otf",   "Narrow.ttf",   "Narrow.ttc",   "Narrow.otf"};
-        for (auto &m : matches) {
-            auto dir = GetFileParentDirectory(m);  // has trailing slash
-            for (auto &suf : suffixes) {
-                std::string candidate = dir + font + suf;
-                if (m == candidate) {
-                    return candidate;
-                }
-            }
-        }
-    }
-    return "";
-#endif  // __APPLE__
 }
 
 }  // namespace
@@ -199,14 +118,14 @@ std::string FindFontPath(const std::string &font) {
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
-    using namespace cloudViewer;
 
 struct Application::Impl {
     bool is_initialized_ = false;
-    std::vector<Application::UserFontInfo> fonts_;
+    std::shared_ptr<WindowSystem> window_system_;
+    std::vector<FontDescription> fonts_;
     Theme theme_;
     double last_time_ = 0.0;
-    bool is_GLFW_initialized_ = false;
+    bool is_ws_initialized_ = false;
     bool is_running_ = false;
     bool should_quit_ = false;
 
@@ -226,26 +145,21 @@ struct Application::Impl {
     std::vector<Posted> posted_;
     // ----
 
-    void InitGLFW() {
-        if (is_GLFW_initialized_) {
-            return;
+    void InitWindowSystem() {
+        if (!window_system_) {
+            window_system_ = cloudViewer::make_shared<GLFWWindowSystem>();
         }
 
-#if __APPLE__
-        // If we are running from Python we might not be running from a bundle
-        // and would therefore not be a Proper app yet.
-        MacTransformIntoApp();
-
-        glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
-#endif
-        glfwInit();
-        is_GLFW_initialized_ = true;
+        if (!is_ws_initialized_) {
+            window_system_->Initialize();
+            is_ws_initialized_ = true;
+        }
     }
 
     void PrepareForRunning() {
         // We already called this in the constructor, but it is possible
-        // (but unlikely) that the run loop finished and is starting again.
-        InitGLFW();
+        // that the run loop finished and is starting again.
+        InitWindowSystem();
 
         // Initialize rendering
         visualization::rendering::EngineInstance::SelectBackend(
@@ -264,10 +178,14 @@ struct Application::Impl {
         // script finishes.
         visualization::rendering::EngineInstance::DestroyInstance();
 
-        glfwTerminate();
-        is_GLFW_initialized_ = false;
+        if (window_system_) {
+            window_system_->Uninitialize();
+        }
+        is_ws_initialized_ = false;
     }
 };
+
+constexpr FontId Application::DEFAULT_FONT_ID;  // already assigned in header
 
 Application &Application::GetInstance() {
     static Application g_app;
@@ -297,9 +215,13 @@ Application::Application() : impl_(new Application::Impl()) {
 
     // Note that any values here need to be scaled by the scale factor in Window
     impl_->theme_.font_path =
-            "Roboto-Medium.ttf";   // full path will be added in Initialize()
-    impl_->theme_.font_size = 16;  // 1 em (font size is em in digital type)
-    impl_->theme_.default_margin = 8;          // 0.5 * em
+            "Roboto-Medium.ttf";  // full path will be added in Initialize()
+    impl_->theme_.font_bold_path = "Roboto-Bold.ttf";
+    impl_->theme_.font_italic_path = "Roboto-MediumItalic.ttf";
+    impl_->theme_.font_bold_italic_path = "Roboto-BoldItalic.ttf";
+    impl_->theme_.font_mono_path = "RobotoMono-Medium.ttf";
+    impl_->theme_.font_size = 16;      // 1 em (font size is em in digital type)
+    impl_->theme_.default_margin = 8;  // 0.5 * em
     impl_->theme_.default_layout_spacing = 6;  // 0.333 * em
 
     impl_->theme_.background_color = Color(0.175f, 0.175f, 0.175f);
@@ -320,7 +242,15 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.checkbox_background_hover_off_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.checkbox_background_hover_on_color =
             highlight_color.Lightened(0.15f);
-    impl_->theme_.checkbox_check_color = Color(1, 1, 1);
+    impl_->theme_.checkbox_check_color = Color(0.9f, 0.9f, 0.9f);
+    impl_->theme_.toggle_background_off_color =
+            impl_->theme_.checkbox_background_off_color;
+    impl_->theme_.toggle_background_on_color = Color(0.666f, 0.666f, 0.666f);
+    impl_->theme_.toggle_background_hover_off_color =
+            impl_->theme_.checkbox_background_hover_off_color;
+    impl_->theme_.toggle_background_hover_on_color =
+            impl_->theme_.toggle_background_on_color.Lightened(0.15f);
+    impl_->theme_.toggle_thumb_color = Color(1, 1, 1);
     impl_->theme_.combobox_background_color = Color(0.4f, 0.4f, 0.4f);
     impl_->theme_.combobox_hover_color = Color(0.5f, 0.5f, 0.5f);
     impl_->theme_.combobox_arrow_background_color = highlight_color;
@@ -344,7 +274,7 @@ void Application::Initialize() {
     // We don't have a great way of getting the process name, so let's hope that
     // the current directory is where the resources are located. This is a
     // safe assumption when running on macOS and Windows normally.
-    auto path = cloudViewer::utility::filesystem::GetWorkingDirectory();
+    auto path = open3d::utility::filesystem::GetWorkingDirectory();
     // Copy to C string, as some implementations of std::string::c_str()
     // return a very temporary pointer.
     char *argv = strdup(path.c_str());
@@ -370,40 +300,142 @@ void Application::Initialize(const char *resource_path) {
     std::string uiblit_path = std::string(resource_path) + "/ui_blit.filamat";
     if (!utility::filesystem::FileExists(uiblit_path)) {
         utility::LogError(
-                "Resource directory does not have CloudViewer resources: {}",
+                "Resource directory does not have Open3D resources: {}",
                 resource_path);
     }
 
     impl_->theme_.font_path = std::string(resource_path) + std::string("/") +
                               impl_->theme_.font_path;
+    impl_->theme_.font_bold_path = std::string(resource_path) +
+                                   std::string("/") +
+                                   impl_->theme_.font_bold_path;
+    impl_->theme_.font_italic_path = std::string(resource_path) +
+                                     std::string("/") +
+                                     impl_->theme_.font_italic_path;
+    impl_->theme_.font_bold_italic_path = std::string(resource_path) +
+                                          std::string("/") +
+                                          impl_->theme_.font_bold_italic_path;
+    impl_->theme_.font_mono_path = std::string(resource_path) +
+                                   std::string("/") +
+                                   impl_->theme_.font_mono_path;
+    if (impl_->fonts_.empty()) {
+        AddFont(FontDescription(FontDescription::SANS_SERIF,
+                                FontStyle::NORMAL));
+    }
     impl_->is_initialized_ = true;
 }
 
-void Application::SetFontForLanguage(const char *font, const char *lang_code) {
-    auto font_path = FindFontPath(font);
-    if (font_path.empty()) {
-        utility::LogWarning("Could not find font '{}'", font);
+void Application::VerifyIsInitialized() {
+    if (impl_->is_initialized_) {
         return;
     }
-    impl_->fonts_.push_back({font_path, lang_code, {}});
+
+    // Call LogWarning() first because it is easier to visually parse than the
+    // error message.
+    utility::LogWarning("gui::Initialize() was not called");
+
+    // It would be nice to make this LogWarning() and then call Initialize(),
+    // but Python scripts requires a different heuristic for finding the
+    // resource path than C++.
+    utility::LogError(
+            "gui::Initialize() must be called before creating a window or UI "
+            "element.");
 }
 
-void Application::SetFontForCodePoints(
-        const char *font, const std::vector<uint32_t> &code_points) {
-    auto font_path = FindFontPath(font);
-    if (font_path.empty()) {
-        utility::LogWarning("Could not find font '{}'", font);
-        return;
+bool Application::UsingNativeWindows() const {
+    auto os_ws =
+            std::dynamic_pointer_cast<GLFWWindowSystem>(impl_->window_system_);
+    return (os_ws != nullptr);
+}
+
+WindowSystem &Application::GetWindowSystem() const {
+    return *impl_->window_system_;
+}
+
+void Application::SetWindowSystem(std::shared_ptr<WindowSystem> ws) {
+    if (impl_->window_system_ != nullptr) {
+        utility::LogError("Cannot set WindowSystem. It is already set.");
     }
-    impl_->fonts_.push_back({font_path, "", code_points});
+    impl_->window_system_ = ws;
+    impl_->is_ws_initialized_ = false;
 }
 
-const std::vector<Application::UserFontInfo> &Application::GetUserFontInfo()
-        const {
+FontId Application::AddFont(const FontDescription &fd) {
+    FontId id = impl_->fonts_.size();
+    impl_->fonts_.push_back(fd);
+    SetFont(id, fd);  // make sure paths get update properly
+    return id;
+}
+
+void Application::SetFont(FontId id, const FontDescription &fd) {
+    auto GetSansSerifPath = [this](FontStyle style) {
+        switch (style) {
+            case FontStyle::BOLD:
+                return impl_->theme_.font_bold_path;
+            case FontStyle::ITALIC:
+                return impl_->theme_.font_italic_path;
+            case FontStyle::BOLD_ITALIC:
+                return impl_->theme_.font_bold_italic_path;
+            default:
+                return impl_->theme_.font_path;
+        }
+    };
+
+    auto GetStyleName = [](FontStyle style) {
+        switch (style) {
+            case FontStyle::BOLD:
+                return "BOLD";
+            case FontStyle::ITALIC:
+                return "ITALIC";
+            case FontStyle::BOLD_ITALIC:
+                return "BOLD_ITALIC";
+            default:
+                return "NORMAL";
+        }
+    };
+
+    impl_->fonts_[id] = fd;
+    auto style = impl_->fonts_[id].style_;
+    for (auto &range : impl_->fonts_[id].ranges_) {
+        // Substitute proper paths for default CSS-style virtual fonts
+        if (range.path == FontDescription::SANS_SERIF) {
+            range.path = GetSansSerifPath(style);
+        } else if (range.path == FontDescription::MONOSPACE) {
+            range.path = impl_->theme_.font_mono_path;
+        }
+        // Get the actual path
+        auto path = FindFontPath(range.path, style);
+        if (!path.empty()) {
+            range.path = path;
+        } else {
+            // If we can't find the requested style, try to at least find the
+            // typeface.
+            auto fallback = FindFontPath(range.path, FontStyle::NORMAL);
+            if (fallback.empty()) {
+                // But if that doesn't work, fall back to styled sans-serif.
+                fallback = GetSansSerifPath(style);
+            }
+            utility::LogWarning("Could not find font '{}' with style {}",
+                                range.path, GetStyleName(style));
+            range.path = fallback;
+        }
+    }
+
+    if (id == DEFAULT_FONT_ID && fd.point_size_ > 0) {
+        impl_->theme_.font_size = fd.point_size_;
+    }
+}
+
+const std::vector<FontDescription> &Application::GetFontDescriptions() const {
     return impl_->fonts_;
 }
 
-double Application::Now() const { return glfwGetTime(); }
+double Application::Now() const {
+    static auto g_tzero = std::chrono::steady_clock::now();
+    std::chrono::duration<double> t =
+            std::chrono::steady_clock::now() - g_tzero;
+    return t.count();
+}
 
 std::shared_ptr<Menu> Application::GetMenubar() const {
     return impl_->menubar_;
@@ -492,7 +524,7 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
             // If we post two expose events they get coalesced, but
             // setting needsLayout forces two (for the reason given above).
             w->SetNeedsLayout();
-            Window::UpdateAfterEvent(w.get());
+            w->PostRedraw();
             return;
         }
     }
@@ -563,7 +595,7 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
 
 Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
     unlocker.unlock();  // don't want to be locked while we wait
-    glfwWaitEventsTimeout(RUNLOOP_DELAY_SEC);
+    impl_->window_system_->WaitEventsTimeout(RUNLOOP_DELAY_SEC);
     unlocker.relock();  // need to relock in case we call any callbacks to
                         // functions in the containing (e.g. Python) environment
 
@@ -571,9 +603,7 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
     double now = Now();
     if (now - impl_->last_time_ >= 0.95 * RUNLOOP_DELAY_SEC) {
         for (auto w : impl_->windows_) {
-            if (w->OnTickEvent(TickEvent())) {
-                w->PostRedraw();
-            }
+            w->OnTickEvent(TickEvent());
         }
         impl_->last_time_ = now;
     }
@@ -589,6 +619,21 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
         unlocker.relock();
 
         for (auto &p : impl_->posted_) {
+            // Make sure this window still exists. Unfortunately, p.window
+            // is a pointer but impl_->windows_ is a shared_ptr, so we can't
+            // use find.
+            if (p.window) {
+                bool found = false;
+                for (auto w : impl_->windows_) {
+                    if (w.get() == p.window) {
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    continue;
+                }
+            }
+
             void *old = nullptr;
             if (p.window) {
                 old = p.window->MakeDrawContextCurrent();
@@ -649,8 +694,7 @@ std::shared_ptr<geometry::Image> Application::RenderToImage(
     // the View's viewport that actually controls the size when rendering to
     // an image. Set the viewport here, rather than in the pybinds so that
     // C++ callers do not need to know do this themselves.
-    view->SetViewport(0, 0, static_cast<std::uint32_t>(width),
-                      static_cast<std::uint32_t>(height));
+    view->SetViewport(0, 0, width, height);
 
     renderer.RenderToImage(view, scene, callback);
     renderer.BeginFrame();

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,11 @@
 
 #include "core/TensorKey.h"
 
-#include "core/Tensor.h"
+#include <memory>
+#include <sstream>
 
+#include "core/Tensor.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
@@ -60,15 +63,15 @@ private:
 
 class TensorKey::SliceImpl : public TensorKey::Impl {
 public:
-    SliceImpl(cloudViewer::utility::optional<int64_t> start,
-              cloudViewer::utility::optional<int64_t> stop,
-              cloudViewer::utility::optional<int64_t> step)
+    SliceImpl(utility::optional<int64_t> start,
+              utility::optional<int64_t> stop,
+              utility::optional<int64_t> step)
         : TensorKey::Impl(TensorKeyMode::Slice),
           start_(start),
           stop_(stop),
           step_(step) {}
     std::shared_ptr<SliceImpl> InstantiateDimSize(int64_t dim_size) const {
-        return std::make_shared<SliceImpl>(
+        return cloudViewer::make_shared<SliceImpl>(
                 start_.has_value() ? start_.value() : 0,
                 stop_.has_value() ? stop_.value() : dim_size,
                 step_.has_value() ? step_.value() : 1);
@@ -77,21 +80,21 @@ public:
         if (start_.has_value()) {
             return start_.value();
         } else {
-            cloudViewer::utility::LogError("TensorKeyMode::Slice: start is None.");
+            utility::LogError("TensorKeyMode::Slice: start is None.");
         }
     }
     int64_t GetStop() const {
         if (stop_.has_value()) {
             return stop_.value();
         } else {
-            cloudViewer::utility::LogError("TensorKeyMode::Slice: stop is None.");
+            utility::LogError("TensorKeyMode::Slice: stop is None.");
         }
     }
     int64_t GetStep() const {
         if (step_.has_value()) {
             return step_.value();
         } else {
-            cloudViewer::utility::LogError("TensorKeyMode::Slice: step is None.");
+            utility::LogError("TensorKeyMode::Slice: step is None.");
         }
     }
     std::string ToString() const override {
@@ -119,9 +122,9 @@ public:
     }
 
 private:
-    cloudViewer::utility::optional<int64_t> start_ = cloudViewer::utility::nullopt;
-    cloudViewer::utility::optional<int64_t> stop_ = cloudViewer::utility::nullopt;
-    cloudViewer::utility::optional<int64_t> step_ = cloudViewer::utility::nullopt;
+    utility::optional<int64_t> start_ = utility::nullopt;
+    utility::optional<int64_t> stop_ = utility::nullopt;
+    utility::optional<int64_t> step_ = utility::nullopt;
 };
 
 class TensorKey::IndexTensorImpl : public TensorKey::Impl {
@@ -147,24 +150,24 @@ TensorKey::TensorKeyMode TensorKey::GetMode() const { return impl_->GetMode(); }
 std::string TensorKey::ToString() const { return impl_->ToString(); }
 
 TensorKey TensorKey::Index(int64_t index) {
-    return TensorKey(std::make_shared<IndexImpl>(index));
+    return TensorKey(cloudViewer::make_shared<IndexImpl>(index));
 }
 
-TensorKey TensorKey::Slice(cloudViewer::utility::optional<int64_t> start,
-                           cloudViewer::utility::optional<int64_t> stop,
-                           cloudViewer::utility::optional<int64_t> step) {
-    return TensorKey(std::make_shared<SliceImpl>(start, stop, step));
+TensorKey TensorKey::Slice(utility::optional<int64_t> start,
+                           utility::optional<int64_t> stop,
+                           utility::optional<int64_t> step) {
+    return TensorKey(cloudViewer::make_shared<SliceImpl>(start, stop, step));
 }
 
 TensorKey TensorKey::IndexTensor(const Tensor& index_tensor) {
-    return TensorKey(std::make_shared<IndexTensorImpl>(index_tensor));
+    return TensorKey(cloudViewer::make_shared<IndexTensorImpl>(index_tensor));
 }
 
 int64_t TensorKey::GetIndex() const {
     if (auto index_impl = std::dynamic_pointer_cast<IndexImpl>(impl_)) {
         return index_impl->GetIndex();
     } else {
-        cloudViewer::utility::LogError("GetIndex() failed: the impl is not IndexImpl.");
+        utility::LogError("GetIndex() failed: the impl is not IndexImpl.");
     }
 }
 
@@ -172,28 +175,28 @@ int64_t TensorKey::GetStart() const {
     if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
         return slice_impl->GetStart();
     } else {
-        cloudViewer::utility::LogError("GetStart() failed: the impl is not SliceImpl.");
+        utility::LogError("GetStart() failed: the impl is not SliceImpl.");
     }
 }
 int64_t TensorKey::GetStop() const {
     if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
         return slice_impl->GetStop();
     } else {
-        cloudViewer::utility::LogError("GetStop() failed: the impl is not SliceImpl.");
+        utility::LogError("GetStop() failed: the impl is not SliceImpl.");
     }
 }
 int64_t TensorKey::GetStep() const {
     if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
         return slice_impl->GetStep();
     } else {
-        cloudViewer::utility::LogError("GetStep() failed: the impl is not SliceImpl.");
+        utility::LogError("GetStep() failed: the impl is not SliceImpl.");
     }
 }
 TensorKey TensorKey::InstantiateDimSize(int64_t dim_size) const {
     if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
         return TensorKey(slice_impl->InstantiateDimSize(dim_size));
     } else {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "InstantiateDimSize() failed: the impl is not SliceImpl.");
     }
 }
@@ -203,7 +206,7 @@ Tensor TensorKey::GetIndexTensor() const {
                 std::dynamic_pointer_cast<IndexTensorImpl>(impl_)) {
         return index_tensor_impl->GetIndexTensor();
     } else {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "GetIndexTensor() failed: the impl is not IndexTensorImpl.");
     }
 }

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,7 @@
 
 #include "tests/pipelines/odometry/OdometryTools.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 std::shared_ptr<geometry::Image> odometry_tools::GenerateImage(
@@ -38,7 +38,7 @@ std::shared_ptr<geometry::Image> odometry_tools::GenerateImage(
         const float& vmax,
         const int& seed) {
     std::shared_ptr<geometry::Image> image =
-            std::make_shared<geometry::Image>();
+            cloudViewer::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -95,7 +95,7 @@ std::shared_ptr<geometry::Image> odometry_tools::CorrespondenceMap(
     int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::Image> image =
-            std::make_shared<geometry::Image>();
+            cloudViewer::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -118,7 +118,7 @@ std::shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
     int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::Image> image =
-            std::make_shared<geometry::Image>();
+            cloudViewer::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -130,4 +130,4 @@ std::shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

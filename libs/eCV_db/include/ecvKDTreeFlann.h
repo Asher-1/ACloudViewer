@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -31,18 +31,17 @@
 #include <memory>
 #include <vector>
 
-#include "ecvHObject.h"
 #include "ecvFeature.h"
+#include "ecvHObject.h"
 #include "ecvKDTreeSearchParam.h"
 
-namespace flann {
-template <typename T>
-class Matrix;
-template <typename T>
-struct L2;
-template <typename T>
-class Index;
-}  // namespace flann
+/// @cond
+namespace nanoflann {
+struct metric_L2;
+template <class MatrixType, int DIM, class Distance, bool row_major>
+struct KDTreeEigenMatrixAdaptor;
+}  // namespace nanoflann
+/// @endcond
 
 namespace cloudViewer {
 namespace geometry {
@@ -53,42 +52,20 @@ namespace geometry {
 class ECV_DB_LIB_API KDTreeFlann {
 public:
     /// \brief Default Constructor.
-	/// \param leaf_size positive integer (default = 15), Number of points at which to switch to brute-force. Changing
-	/// leaf_size will not affect the results of a query, but can
-	///	significantly impact the speed of a query and the memory required
-	///	to store the constructed tree.
-	/// \param reorder
-	KDTreeFlann(size_t leaf_size = 15, bool reorder = true);
+    KDTreeFlann();
     /// \brief Parameterized Constructor.
     ///
     /// \param data Provides set of data points for KDTree construction.
-	/// \param leaf_size positive integer (default = 15), Number of points at which to switch to brute-force. Changing
-	/// leaf_size will not affect the results of a query, but can
-	///	significantly impact the speed of a query and the memory required
-	///	to store the constructed tree.
-	/// \param reorder
-    KDTreeFlann(const Eigen::MatrixXd &data,
-		size_t leaf_size = 15, bool reorder = true);
+    KDTreeFlann(const Eigen::MatrixXd &data);
     /// \brief Parameterized Constructor.
     ///
     /// \param geometry Provides geometry from which KDTree is constructed.
-	/// \param leaf_size positive integer (default = 15), Number of points at which to switch to brute-force. Changing
-	/// leaf_size will not affect the results of a query, but can
-	///	significantly impact the speed of a query and the memory required
-	///	to store the constructed tree.
-	/// \param reorder
-    KDTreeFlann(const ccHObject &geometry, 
-		size_t leaf_size = 15, bool reorder = true);
+    KDTreeFlann(const ccHObject &geometry);
     /// \brief Parameterized Constructor.
     ///
-    /// \param feature Provides a set of features from which the KDTree is constructed.
-	/// \param leaf_size positive integer (default = 15), Number of points at which to switch to brute-force. Changing
-	/// leaf_size will not affect the results of a query, but can
-	///	significantly impact the speed of a query and the memory required
-	///	to store the constructed tree.
-	/// \param reorder
-    KDTreeFlann(const utility::Feature &feature, 
-		size_t leaf_size = 15, bool reorder = true);
+    /// \param feature Provides a set of features from which the KDTree is
+    /// constructed.
+    KDTreeFlann(const utility::Feature &feature);
     ~KDTreeFlann();
     KDTreeFlann(const KDTreeFlann &) = delete;
     KDTreeFlann &operator=(const KDTreeFlann &) = delete;
@@ -113,11 +90,11 @@ public:
                std::vector<int> &indices,
                std::vector<double> &distance2) const;
 
-	template <typename T>
-	int Query(const std::vector<T> &queries,
-		const KDTreeSearchParam &param,
-		std::vector<std::vector<int>> &indices,
-		std::vector<std::vector<double>> &distance2) const;
+    template <typename T>
+    int Query(const std::vector<T> &queries,
+              const KDTreeSearchParam &param,
+              std::vector<std::vector<int>> &indices,
+              std::vector<std::vector<double>> &distance2) const;
 
     template <typename T>
     int SearchKNN(const T &query,
@@ -145,25 +122,25 @@ private:
     /// features, geometry, etc.
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
     bool SetRawData(const std::vector<CCVector3> &data);
-    bool SetRawData(const std::vector<const CCVector3*> &data);
-
-public:
-	std::vector<double> data_;
-    std::vector<PointCoordinateType> dataf_;
-	size_t dimension_ = 0;
-	size_t dataset_size_ = 0;
-	size_t leaf_size_ = 15;
-	bool reorder_ = true;
-    bool use_eigen_ = true;
+    bool SetRawData(const std::vector<const CCVector3 *> &data);
 
 protected:
-    std::unique_ptr<flann::Matrix<double>> flann_dataset_;
-    std::unique_ptr<flann::Index<flann::L2<double>>> flann_index_;
-    std::unique_ptr<flann::Matrix<PointCoordinateType>> flann_datasetf_;
-    std::unique_ptr<flann::Index<flann::L2<PointCoordinateType>>> flann_indexf_;
+    using KDTree_t = nanoflann::KDTreeEigenMatrixAdaptor<
+            Eigen::Map<const Eigen::MatrixXd>,
+            -1,
+            nanoflann::metric_L2,
+            false>;
+
+    std::vector<double> data_;
+    std::vector<PointCoordinateType> dataf_;
+    std::unique_ptr<Eigen::Map<const Eigen::MatrixXd>> data_interface_;
+    std::unique_ptr<KDTree_t> nanoflann_index_;
+    size_t dimension_ = 0;
+    size_t dataset_size_ = 0;
+    bool use_eigen_ = true;
 };
 
 }  // namespace geometry
 }  // namespace cloudViewer
 
-#endif // CV_KDTREE_FLANN_HEADER
+#endif  // CV_KDTREE_FLANN_HEADER

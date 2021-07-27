@@ -29,7 +29,7 @@
 #include <thread>
 
 #include "camera/PinholeCameraTrajectory.h"
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include <IJsonConvertibleIO.h>
 #include "visualization/visualizer/ViewControlWithCustomAnimation.h"

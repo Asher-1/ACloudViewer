@@ -113,7 +113,7 @@ public:
 
     // Scene geometry
     bool AddGeometry(const std::string& object_name,
-                     const ccHObject& geometry,
+                     const geometry::Geometry3D& geometry,
                      const Material& material,
                      const std::string& downsampled_name = "",
                      size_t downsample_threshold = SIZE_MAX) override;
@@ -146,6 +146,7 @@ public:
     void OverrideMaterial(const std::string& object_name,
                           const Material& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
+
     void OverrideMaterialAll(const Material& material,
                              bool shader_only = true) override;
 
@@ -213,16 +214,22 @@ public:
     void SetIndirectLightRotation(const Transform& rotation) override;
     Transform GetIndirectLightRotation() override;
     void ShowSkybox(bool show) override;
+    bool GetSkyboxVisible() const override;
     void SetBackground(
             const Eigen::Vector4f& color,
             const std::shared_ptr<geometry::Image> image = nullptr) override;
+    void SetBackground(TextureHandle image) override;
     void EnableGroundPlane(bool enable, GroundPlane plane) override;
-       void SetGroundPlaneColor(const Eigen::Vector4f& color) override;
+    void SetGroundPlaneColor(const Eigen::Vector4f& color) override;
 
     void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
+    void RenderToDepthImage(
+            std::function<void(std::shared_ptr<geometry::Image>)> callback)
+            override;
 
     void Draw(filament::Renderer& renderer);
+
     // NOTE: Can GetNativeScene be removed?
     filament::Scene* GetNativeScene() const { return scene_; }
 
@@ -325,6 +332,7 @@ private:
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
+    void CreateBackgroundGeometry();
     void CreateGroundPlaneGeometry();
 
     std::unordered_map<std::string, RenderableGeometry> geometries_;

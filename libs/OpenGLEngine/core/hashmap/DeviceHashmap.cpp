@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,38 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// High level non-templated hashmap interface for basic usages.
-//
-// If BUILD_CUDA_MODULE, link DefaultHashmap.cu that contains everything, and
-// disable code inside DefaultHashmap.cpp
-// Else, link DefaultHashmap.cpp and disregard DefaultHashmap.cu
-
 #include "core/hashmap/DeviceHashmap.h"
 
-#include <Console.h>
+#include "core/hashmap/Hashmap.h"
 #include <Helper.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
 
-std::shared_ptr<DefaultDeviceHashmap> CreateDefaultDeviceHashmap(
-        int64_t init_buckets,
+std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
         int64_t init_capacity,
-        int64_t dsize_key,
-        int64_t dsize_value,
-        const Device& device) {
+        const Dtype& dtype_key,
+        const Dtype& dtype_value,
+        const SizeVector& element_shape_key,
+        const SizeVector& element_shape_value,
+        const Device& device,
+        const HashmapBackend& backend) {
     if (device.GetType() == Device::DeviceType::CPU) {
-        return CreateDefaultCPUHashmap(init_buckets, init_capacity, dsize_key,
-                                       dsize_value, device);
+        return CreateCPUHashmap(init_capacity, dtype_key, dtype_value,
+                                element_shape_key, element_shape_value, device,
+                                backend);
     }
 #if defined(BUILD_CUDA_MODULE)
     else if (device.GetType() == Device::DeviceType::CUDA) {
-        return CreateDefaultCUDAHashmap(init_buckets, init_capacity, dsize_key,
-                                        dsize_value, device);
+        return CreateCUDAHashmap(init_capacity, dtype_key, dtype_value,
+                                 element_shape_key, element_shape_value, device,
+                                 backend);
     }
 #endif
     else {
-        cloudViewer::utility::LogError("[CreateDefaultDeviceHashmap]: Unimplemented device");
+        utility::LogError("[CreateDeviceHashmap]: Unimplemented device");
     }
 }
 

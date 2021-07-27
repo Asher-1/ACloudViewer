@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,17 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "FastGlobalRegistration.h"
+#include "pipelines/registration/FastGlobalRegistration.h"
 
-#include <Console.h>
 #include <Helper.h>
-
+#include <Logging.h>
 #include <ecvFeature.h>
 #include <ecvKDTreeFlann.h>
 #include <ecvPointCloud.h>
 
-#include "Registration.h"
-
+#include "pipelines/registration/Registration.h"
 
 namespace cloudViewer {
 namespace pipelines {
@@ -46,10 +44,9 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         const FastGlobalRegistrationOption& option) {
     // STEP 0) Swap source and target if necessary
     int fi = 0, fj = 1;
-    cloudViewer::utility::LogDebug("Advanced matching : [{:d} - {:d}]", fi, fj);
+    utility::LogDebug("Advanced matching : [{:d} - {:d}]", fi, fj);
     bool swapped = false;
-	if (point_cloud_vec[fj].size() >
-		point_cloud_vec[fi].size()) {
+    if (point_cloud_vec[fj].size() > point_cloud_vec[fi].size()) {
         int temp = fi;
         fi = fj;
         fj = temp;
@@ -92,10 +89,10 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     for (int j = 0; j < ncorres_ji; ++j)
         corres.push_back(
                 std::pair<int, int>(corres_ji[j].first, corres_ji[j].second));
-    cloudViewer::utility::LogDebug("points are remained : {:d}", (int)corres.size());
+    utility::LogDebug("points are remained : {:d}", (int)corres.size());
 
     // STEP 2) CROSS CHECK
-    cloudViewer::utility::LogDebug("\t[cross check] ");
+    utility::LogDebug("\t[cross check] ");
     std::vector<std::pair<int, int>> corres_cross;
     std::vector<std::vector<int>> Mi(nPti), Mj(nPtj);
     int ci, cj;
@@ -118,10 +115,10 @@ std::vector<std::pair<int, int>> AdvancedMatching(
             }
         }
     }
-    cloudViewer::utility::LogDebug("points are remained : %d", (int)corres_cross.size());
+    utility::LogDebug("points are remained : %d", (int)corres_cross.size());
 
     // STEP 3) TUPLE CONSTRAINT
-    cloudViewer::utility::LogDebug("\t[tuple constraint] ");
+    utility::LogDebug("\t[tuple constraint] ");
     int rand0, rand1, rand2, i, cnt = 0;
     int idi0, idi1, idi2, idj0, idj1, idj2;
     double scale = option.tuple_scale_;
@@ -130,9 +127,9 @@ std::vector<std::pair<int, int>> AdvancedMatching(
 
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
-        rand0 = cloudViewer::utility::UniformRandInt(0, ncorr - 1);
-        rand1 = cloudViewer::utility::UniformRandInt(0, ncorr - 1);
-        rand2 = cloudViewer::utility::UniformRandInt(0, ncorr - 1);
+        rand0 = utility::UniformRandInt(0, ncorr - 1);
+        rand1 = utility::UniformRandInt(0, ncorr - 1);
+        rand2 = utility::UniformRandInt(0, ncorr - 1);
         idi0 = corres_cross[rand0].first;
         idj0 = corres_cross[rand0].second;
         idi1 = corres_cross[rand1].first;
@@ -149,9 +146,9 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         double li2 = (pti2 - pti0).norm();
 
         // collect 3 points from j-th fragment
-		Eigen::Vector3d ptj0 = point_cloud_vec[fj].getEigenPoint(idj0);
-		Eigen::Vector3d ptj1 = point_cloud_vec[fj].getEigenPoint(idj1);
-		Eigen::Vector3d ptj2 = point_cloud_vec[fj].getEigenPoint(idj2);
+        Eigen::Vector3d ptj0 = point_cloud_vec[fj].getEigenPoint(idj0);
+        Eigen::Vector3d ptj1 = point_cloud_vec[fj].getEigenPoint(idj1);
+        Eigen::Vector3d ptj2 = point_cloud_vec[fj].getEigenPoint(idj2);
         double lj0 = (ptj0 - ptj1).norm();
         double lj1 = (ptj1 - ptj2).norm();
         double lj2 = (ptj2 - ptj0).norm();
@@ -166,7 +163,7 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         }
         if (cnt >= option.maximum_tuple_count_) break;
     }
-    cloudViewer::utility::LogDebug("{:d} tuples ({:d} trial, {:d} actual).", cnt,
+    utility::LogDebug("{:d} tuples ({:d} trial, {:d} actual).", cnt,
                       number_of_trial, i);
 
     if (swapped) {
@@ -177,7 +174,7 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         corres_tuple.clear();
         corres_tuple = temp;
     }
-    cloudViewer::utility::LogDebug("\t[final] matches {:d}.", (int)corres_tuple.size());
+    utility::LogDebug("\t[final] matches {:d}.", (int)corres_tuple.size());
     return corres_tuple;
 }
 
@@ -197,17 +194,19 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
 
         int npti = static_cast<int>(point_cloud_vec[i].size());
         for (int ii = 0; ii < npti; ++ii)
-            mean = mean + point_cloud_vec[i].getEigenPoint(static_cast<size_t>(ii));
+            mean = mean +
+                   point_cloud_vec[i].getEigenPoint(static_cast<size_t>(ii));
         mean = mean / npti;
         pcd_mean_vec.push_back(mean);
 
-        cloudViewer::utility::LogDebug("normalize points :: mean = [{:f} {:f} {:f}]",
+        utility::LogDebug("normalize points :: mean = [{:f} {:f} {:f}]",
                           mean(0), mean(1), mean(2));
         for (int ii = 0; ii < npti; ++ii)
             *point_cloud_vec[i].getPointPtr(static_cast<size_t>(ii)) -= mean;
 
         for (int ii = 0; ii < npti; ++ii) {
-            Eigen::Vector3d p(point_cloud_vec[i].getEigenPoint(static_cast<size_t>(ii)));
+            Eigen::Vector3d p(
+                    point_cloud_vec[i].getEigenPoint(static_cast<size_t>(ii)));
             double temp = p.norm();
             if (temp > max_scale) max_scale = temp;
         }
@@ -221,12 +220,17 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
         scale_global = scale;
         scale_start = 1.0;
     }
-    cloudViewer::utility::LogDebug("normalize points :: global scale : {:f}", scale_global);
+    utility::LogDebug("normalize points :: global scale : {:f}", scale_global);
+    if (scale_global <= 0) {
+        utility::LogError("Invalid scale_global: {}, it must be > 0.",
+                          scale_global);
+    }
 
     for (int i = 0; i < num; ++i) {
         int npti = static_cast<int>(point_cloud_vec[i].size());
         for (int ii = 0; ii < npti; ++ii) {
-            *point_cloud_vec[i].getPointPtr(static_cast<size_t>(ii)) /= scale_global;
+            *point_cloud_vec[i].getPointPtr(static_cast<size_t>(ii)) /=
+                    static_cast<float>(scale_global);
         }
     }
     return std::make_tuple(pcd_mean_vec, scale_global, scale_start);
@@ -237,7 +241,7 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
         const std::vector<std::pair<int, int>>& corres,
         double scale_start,
         const FastGlobalRegistrationOption& option) {
-    cloudViewer::utility::LogDebug("Pairwise rigid pose optimization");
+    utility::LogDebug("Pairwise rigid pose optimization");
     double par = scale_start;
     int numIter = option.iteration_number_;
 
@@ -301,8 +305,8 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
         }
         bool success;
         Eigen::VectorXd result;
-        std::tie(success, result) = cloudViewer::utility::SolveLinearSystemPSD(-JTJ, JTr);
-        Eigen::Matrix4d delta = cloudViewer::utility::TransformVector6dToMatrix4d(result);
+        std::tie(success, result) = utility::SolveLinearSystemPSD(-JTJ, JTr);
+        Eigen::Matrix4d delta = utility::TransformVector6dToMatrix4d(result);
         trans = delta * trans;
         point_cloud_copy_j.transform(delta);
 

@@ -28,8 +28,8 @@
 #include "visualization/utility/GLHelper.h"  // must include first!
 #include "visualization/utility/SelectionPolygon.h"
 
+#include <Logging.h>
 #include <ecvMesh.h>
-#include <Console.h>
 #include <ecvPointCloud.h>
 #include "visualization/utility/SelectionPolygonVolume.h"
 #include "visualization/visualizer/ViewControl.h"
@@ -37,8 +37,6 @@
 
 namespace cloudViewer {
 namespace visualization {
-
-using namespace cloudViewer;
 
 SelectionPolygon &SelectionPolygon::Clear() {
     polygon_.clear();

@@ -772,7 +772,7 @@ public:
 				QString filename = absoluteBaseFilename + QString("_%1_%2.%3").arg(QString::number(i), QString::number(j), ext);
 
 				fileNames[ii] = filename;
-				tilePointViews[ii] = std::make_shared<PointView>(table);
+				tilePointViews[ii] = cloudViewer::make_shared<PointView>(table);
 			}
 		}
 

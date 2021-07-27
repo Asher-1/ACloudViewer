@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <ecvMesh.h>
+#include "geometry/TriangleMesh.h"
 #include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/RendererHandle.h"
 
@@ -43,11 +43,18 @@ class Material;
 class MaterialInstance;
 class Skybox;
 class Texture;
+class RenderTarget;
 class VertexBuffer;
 }  // namespace filament
 /// @endcond
 
 namespace cloudViewer {
+
+namespace t {
+namespace geometry {
+class Image;
+}
+}  // namespace t
 
 namespace geometry {
 class Image;
@@ -96,9 +103,26 @@ public:
                                 bool srgb);
     // Slow, will make copy of image data and free it after.
     TextureHandle CreateTexture(const geometry::Image& image, bool srgb);
+    TextureHandle CreateTexture(const t::geometry::Image& image, bool srgb);
     // Creates texture of size 'dimension' filled with color 'color'
     TextureHandle CreateTextureFilled(const Eigen::Vector3f& color,
                                       size_t dimension);
+    // Creates a texture for use as a color attachment to a RenderTarget
+    TextureHandle CreateColorAttachmentTexture(int width, int height);
+    // Creates a texture for use as a depth attachment to a RenderTarget
+    TextureHandle CreateDepthAttachmentTexture(int width, int height);
+
+    RenderTargetHandle CreateRenderTarget(TextureHandle color,
+                                          TextureHandle depth);
+
+    // Replaces the contents of the texture with the image. Returns false if
+    // the image is not the same size of the texture.
+    bool UpdateTexture(TextureHandle texture,
+                       const std::shared_ptr<geometry::Image> image,
+                       bool srgb);
+    bool UpdateTexture(TextureHandle texture,
+                       const t::geometry::Image& image,
+                       bool srgb);
 
     IndirectLightHandle CreateIndirectLight(const ResourceLoadRequest& request);
     SkyboxHandle CreateColorSkybox(const Eigen::Vector3f& color);
@@ -116,6 +140,8 @@ public:
     std::weak_ptr<filament::MaterialInstance> GetMaterialInstance(
             const MaterialInstanceHandle& id);
     std::weak_ptr<filament::Texture> GetTexture(const TextureHandle& id);
+    std::weak_ptr<filament::RenderTarget> GetRenderTarget(
+            const RenderTargetHandle& id);
     std::weak_ptr<filament::IndirectLight> GetIndirectLight(
             const IndirectLightHandle& id);
     std::weak_ptr<filament::Skybox> GetSkybox(const SkyboxHandle& id);
@@ -150,6 +176,7 @@ private:
     ResourcesContainer<filament::MaterialInstance> material_instances_;
     ResourcesContainer<filament::Material> materials_;
     ResourcesContainer<filament::Texture> textures_;
+    ResourcesContainer<filament::RenderTarget> render_targets_;
     ResourcesContainer<filament::IndirectLight> ibls_;
     ResourcesContainer<filament::Skybox> skyboxes_;
     ResourcesContainer<filament::VertexBuffer> vertex_buffers_;
@@ -164,6 +191,8 @@ private:
 
     filament::Texture* LoadTextureFromImage(
             const std::shared_ptr<geometry::Image>& image, bool srgb);
+    filament::Texture* LoadTextureFromImage(const t::geometry::Image& image,
+                                            bool srgb);
     filament::Texture* LoadFilledTexture(const Eigen::Vector3f& color,
                                          size_t dimension);
 

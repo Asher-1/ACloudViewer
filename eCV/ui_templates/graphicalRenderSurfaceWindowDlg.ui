@@ -90,10 +90,10 @@
       </sizepolicy>
      </property>
      <property name="toolTip">
-      <string>Reset</string>
+      <string>reset</string>
      </property>
      <property name="statusTip">
-      <string>Reset</string>
+      <string>reset</string>
      </property>
      <property name="text">
       <string>raz</string>

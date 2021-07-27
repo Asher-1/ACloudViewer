@@ -15,7 +15,7 @@ ExternalProject_Add(
         PREFIX assimp
         URL https://github.com/assimp/assimp/archive/refs/tags/v5.0.1.tar.gz # Jan 2020
         URL_HASH SHA256=11310ec1f2ad2cd46b95ba88faca8f7aaa1efe9aa12605c55e3de2b977b3dbfc
-        DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
+        DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
         UPDATE_COMMAND ""
         PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${ASSIMP_PATCH_FILES} <SOURCE_DIR>/code/Obj
         CMAKE_ARGS

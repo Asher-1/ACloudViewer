@@ -29,7 +29,7 @@
 #include <unordered_map>
 
 #include <ImageIO.h>
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 namespace cloudViewer {
@@ -56,7 +56,7 @@ static const std::unordered_map<
 
 std::shared_ptr<geometry::Image> CreateImageFromFile(
         const std::string &filename) {
-    auto image = std::make_shared<geometry::Image>();
+    auto image = cloudViewer::make_shared<geometry::Image>();
     ReadImage(filename, *image);
     return image;
 }
@@ -93,10 +93,6 @@ bool WriteImage(const std::string &filename,
     if (map_itr == file_extension_to_image_write_function.end()) {
         utility::LogWarning(
                 "Write geometry::Image failed: unknown file extension.");
-        return false;
-    }
-    if (image.GetDevice() != core::Device("CPU:0")) {
-        utility::LogWarning("Write geometry::Image failed, data not on CPU.");
         return false;
     }
     return map_itr->second(filename, image, quality);

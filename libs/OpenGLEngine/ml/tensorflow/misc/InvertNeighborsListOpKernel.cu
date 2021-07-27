@@ -26,7 +26,7 @@
 
 #define EIGEN_USE_GPU
 #include "InvertNeighborsListOpKernel.h"
-#include "ml/Helper.h"
+#include "core/CUDAUtils.h"
 #include "ml/impl/misc/InvertNeighborsList.cuh"
 
 using namespace cloudViewer;
@@ -40,7 +40,8 @@ class InvertNeighborsListOpKernelCUDA : public InvertNeighborsListOpKernel {
 public:
     explicit InvertNeighborsListOpKernelCUDA(OpKernelConstruction* construction)
         : InvertNeighborsListOpKernel(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                cloudViewer::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

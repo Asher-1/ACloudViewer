@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/pipelines/integration/UniformTSDFVolume.h"
+#include "pipelines/integration/UniformTSDFVolume.h"
 
 #include <sstream>
 
-#include "open3d/camera/PinholeCameraIntrinsic.h"
-#include "open3d/geometry/RGBDImage.h"
-#include "open3d/io/ImageIO.h"
-#include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/utility/DrawGeometry.h"
+#include "camera/PinholeCameraIntrinsic.h"
+#include "geometry/RGBDImage.h"
+#include "io/ImageIO.h"
+#include <FileSystem.h>
+#include "visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 bool ReadPoses(const std::string& trajectory_path,
@@ -220,4 +220,4 @@ TEST(UniformTSDFVolume, DISABLED_GetNormalAt) {}
 TEST(UniformTSDFVolume, DISABLED_GetTSDFAt) {}
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

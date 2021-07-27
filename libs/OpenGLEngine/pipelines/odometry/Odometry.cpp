@@ -28,6 +28,7 @@
 #include "pipelines/odometry/RGBDOdometryJacobian.h"
 
 #include <Eigen/Dense>
+#include <memory>
 #include <Timer.h>
 
 #include <Image.h>
@@ -37,30 +38,31 @@ namespace cloudViewer {
 namespace pipelines {
 namespace odometry {
 
-std::tuple<std::shared_ptr<geometry::Image>, std::shared_ptr<geometry::Image>>
-InitializeCorrespondenceMap(int width, int height) {
+static std::tuple<geometry::Image, geometry::Image> InitializeCorrespondenceMap(
+        int width, int height) {
     // initialization: filling with any (u,v) to (-1,-1)
-    auto correspondence_map = cloudViewer::make_shared<geometry::Image>();
-    auto depth_buffer = cloudViewer::make_shared<geometry::Image>();
-    correspondence_map->Prepare(width, height, 2, 4);
-    depth_buffer->Prepare(width, height, 1, 4);
-    for (int v = 0; v < correspondence_map->height_; v++) {
-        for (int u = 0; u < correspondence_map->width_; u++) {
-            *correspondence_map->PointerAt<int>(u, v, 0) = -1;
-            *correspondence_map->PointerAt<int>(u, v, 1) = -1;
-            *depth_buffer->PointerAt<float>(u, v, 0) = -1.0f;
+    geometry::Image correspondence_map;
+    geometry::Image depth_buffer;
+    correspondence_map.Prepare(width, height, 2, 4);
+    depth_buffer.Prepare(width, height, 1, 4);
+    for (int v = 0; v < correspondence_map.height_; v++) {
+        for (int u = 0; u < correspondence_map.width_; u++) {
+            *correspondence_map.PointerAt<int>(u, v, 0) = -1;
+            *correspondence_map.PointerAt<int>(u, v, 1) = -1;
+            *depth_buffer.PointerAt<float>(u, v, 0) = -1.0f;
         }
     }
     return std::make_tuple(correspondence_map, depth_buffer);
 }
 
-inline void AddElementToCorrespondenceMap(geometry::Image &correspondence_map,
-                                          geometry::Image &depth_buffer,
-                                          int u_s,
-                                          int v_s,
-                                          int u_t,
-                                          int v_t,
-                                          float transformed_d_t) {
+static inline void AddElementToCorrespondenceMap(
+        geometry::Image &correspondence_map,
+        geometry::Image &depth_buffer,
+        int u_s,
+        int v_s,
+        int u_t,
+        int v_t,
+        float transformed_d_t) {
     int exist_u_t, exist_v_t;
     double exist_d_t;
     exist_u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
@@ -80,10 +82,10 @@ inline void AddElementToCorrespondenceMap(geometry::Image &correspondence_map,
     }
 }
 
-void MergeCorrespondenceMaps(geometry::Image &correspondence_map,
-                             geometry::Image &depth_buffer,
-                             geometry::Image &correspondence_map_part,
-                             geometry::Image &depth_buffer_part) {
+static void MergeCorrespondenceMaps(geometry::Image &correspondence_map,
+                                    geometry::Image &depth_buffer,
+                                    geometry::Image &correspondence_map_part,
+                                    geometry::Image &depth_buffer_part) {
     for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
         for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
             int u_t = *correspondence_map_part.PointerAt<int>(u_s, v_s, 0);
@@ -99,7 +101,7 @@ void MergeCorrespondenceMaps(geometry::Image &correspondence_map,
     }
 }
 
-int CountCorrespondence(const geometry::Image &correspondence_map) {
+static int CountCorrespondence(const geometry::Image &correspondence_map) {
     int correspondence_count = 0;
     for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
         for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
@@ -113,7 +115,7 @@ int CountCorrespondence(const geometry::Image &correspondence_map) {
     return correspondence_count;
 }
 
-std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
+static CorrespondenceSetPixelWise ComputeCorrespondence(
         const Eigen::Matrix3d intrinsic_matrix,
         const Eigen::Matrix4d &extrinsic,
         const geometry::Image &depth_s,
@@ -125,22 +127,18 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
     const Eigen::Matrix3d KRK_inv = K * R * K_inv;
     Eigen::Vector3d Kt = K * extrinsic.block<3, 1>(0, 3);
 
-    std::shared_ptr<geometry::Image> correspondence_map;
-    std::shared_ptr<geometry::Image> depth_buffer;
+    geometry::Image correspondence_map;
+    geometry::Image depth_buffer;
     std::tie(correspondence_map, depth_buffer) =
             InitializeCorrespondenceMap(depth_t.width_, depth_t.height_);
 
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
-        std::shared_ptr<geometry::Image> correspondence_map_private;
-        std::shared_ptr<geometry::Image> depth_buffer_private;
+        geometry::Image correspondence_map_private;
+        geometry::Image depth_buffer_private;
         std::tie(correspondence_map_private, depth_buffer_private) =
                 InitializeCorrespondenceMap(depth_t.width_, depth_t.height_);
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
         for (int v_s = 0; v_s < depth_s.height_; v_s++) {
             for (int u_s = 0; u_s < depth_s.width_; u_s++) {
                 double d_s = *depth_s.PointerAt<float>(u_s, v_s);
@@ -157,37 +155,34 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
                             std::abs(transformed_d_s - d_t) <=
                                     option.max_depth_diff_) {
                             AddElementToCorrespondenceMap(
-                                    *correspondence_map_private,
-                                    *depth_buffer_private, u_s, v_s, u_t, v_t,
+                                    correspondence_map_private,
+                                    depth_buffer_private, u_s, v_s, u_t, v_t,
                                     (float)d_s);
                         }
                     }
                 }
             }
         }
-#ifdef _OPENMP
-#pragma omp critical
+#pragma omp critical(ComputeCorrespondence)
         {
-#endif
-            MergeCorrespondenceMaps(*correspondence_map, *depth_buffer,
-                                    *correspondence_map_private,
-                                    *depth_buffer_private);
-#ifdef _OPENMP
+            MergeCorrespondenceMaps(correspondence_map, depth_buffer,
+                                    correspondence_map_private,
+                                    depth_buffer_private);
+
         }  //    omp critical
     }      //    omp parallel
-#endif
 
-    auto correspondence = cloudViewer::make_shared<CorrespondenceSetPixelWise>();
-    int correspondence_count = CountCorrespondence(*correspondence_map);
-    correspondence->resize(correspondence_count);
+    CorrespondenceSetPixelWise correspondence;
+    int correspondence_count = CountCorrespondence(correspondence_map);
+    correspondence.resize(correspondence_count);
     int cnt = 0;
-    for (int v_s = 0; v_s < correspondence_map->height_; v_s++) {
-        for (int u_s = 0; u_s < correspondence_map->width_; u_s++) {
-            int u_t = *correspondence_map->PointerAt<int>(u_s, v_s, 0);
-            int v_t = *correspondence_map->PointerAt<int>(u_s, v_s, 1);
+    for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
+        for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
+            int u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
+            int v_t = *correspondence_map.PointerAt<int>(u_s, v_s, 1);
             if (u_t != -1 && v_t != -1) {
                 Eigen::Vector4i pixel_correspondence(u_s, v_s, u_t, v_t);
-                (*correspondence)[cnt] = pixel_correspondence;
+                correspondence[cnt] = pixel_correspondence;
                 cnt++;
             }
         }
@@ -195,11 +190,11 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
     return correspondence;
 }
 
-std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
+static std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
         const geometry::Image &depth, const Eigen::Matrix3d &intrinsic_matrix) {
     auto image_xyz = cloudViewer::make_shared<geometry::Image>();
     if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "[ConvertDepthImageToXYZImage] Unsupported image format.");
     }
     const double inv_fx = 1.0 / intrinsic_matrix(0, 0);
@@ -222,7 +217,7 @@ std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
     return image_xyz;
 }
 
-std::vector<Eigen::Matrix3d> CreateCameraMatrixPyramid(
+static std::vector<Eigen::Matrix3d> CreateCameraMatrixPyramid(
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         int levels) {
     std::vector<Eigen::Matrix3d> pyramid_camera_matrix;
@@ -239,13 +234,13 @@ std::vector<Eigen::Matrix3d> CreateCameraMatrixPyramid(
     return pyramid_camera_matrix;
 }
 
-Eigen::Matrix6d CreateInformationMatrix(
+static Eigen::Matrix6d CreateInformationMatrix(
         const Eigen::Matrix4d &extrinsic,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const geometry::Image &depth_s,
         const geometry::Image &depth_t,
         const OdometryOption &option) {
-    auto correspondence =
+    CorrespondenceSetPixelWise correspondence =
             ComputeCorrespondence(pinhole_camera_intrinsic.intrinsic_matrix_,
                                   extrinsic, depth_s, depth_t, option);
 
@@ -256,18 +251,14 @@ Eigen::Matrix6d CreateInformationMatrix(
     // see http://redwood-data.org/indoor/registration.html
     // note: I comes first and q_skew is scaled by factor 2.
     Eigen::Matrix6d GTG = Eigen::Matrix6d::Identity();
-#ifdef _OPENMP
 #pragma omp parallel
     {
-#endif
         Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
         Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
-#ifdef _OPENMP
 #pragma omp for nowait
-#endif
-        for (int row = 0; row < int(correspondence->size()); row++) {
-            int u_t = (*correspondence)[row](2);
-            int v_t = (*correspondence)[row](3);
+        for (int row = 0; row < int(correspondence.size()); row++) {
+            int u_t = correspondence[row](2);
+            int v_t = correspondence[row](3);
             double x = *xyz_t->PointerAt<float>(u_t, v_t, 0);
             double y = *xyz_t->PointerAt<float>(u_t, v_t, 1);
             double z = *xyz_t->PointerAt<float>(u_t, v_t, 2);
@@ -287,22 +278,19 @@ Eigen::Matrix6d CreateInformationMatrix(
             G_r_private(5) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
-#ifdef _OPENMP
-#pragma omp critical
-#endif
+#pragma omp critical(CreateInformationMatrix)
         { GTG += GTG_private; }
-#ifdef _OPENMP
     }
-#endif
     return GTG;
 }
 
-void NormalizeIntensity(geometry::Image &image_s,
-                        geometry::Image &image_t,
-                        CorrespondenceSetPixelWise &correspondence) {
+static void NormalizeIntensity(
+        geometry::Image &image_s,
+        geometry::Image &image_t,
+        const CorrespondenceSetPixelWise &correspondence) {
     if (image_s.width_ != image_t.width_ ||
         image_s.height_ != image_t.height_) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "[NormalizeIntensity] Size of two input images should be "
                 "same");
     }
@@ -321,13 +309,13 @@ void NormalizeIntensity(geometry::Image &image_s,
     image_t.LinearTransform(0.5 / mean_t, 0.0);
 }
 
-inline std::shared_ptr<geometry::RGBDImage> PackRGBDImage(
+static inline std::shared_ptr<geometry::RGBDImage> PackRGBDImage(
         const geometry::Image &color, const geometry::Image &depth) {
     return cloudViewer::make_shared<geometry::RGBDImage>(
             geometry::RGBDImage(color, depth));
 }
 
-std::shared_ptr<geometry::Image> PreprocessDepth(
+static std::shared_ptr<geometry::Image> PreprocessDepth(
         const geometry::Image &depth_orig, const OdometryOption &option) {
     std::shared_ptr<geometry::Image> depth_processed =
             cloudViewer::make_shared<geometry::Image>();
@@ -342,8 +330,8 @@ std::shared_ptr<geometry::Image> PreprocessDepth(
     return depth_processed;
 }
 
-inline bool CheckImagePair(const geometry::Image &image_s,
-                           const geometry::Image &image_t) {
+static inline bool CheckImagePair(const geometry::Image &image_s,
+                                  const geometry::Image &image_t) {
     return (image_s.width_ == image_t.width_ &&
             image_s.height_ == image_t.height_);
 }
@@ -352,8 +340,8 @@ static inline bool IsColorImageRGB(const geometry::Image &image) {
     return (image.num_of_channels_ == 3);
 }
 
-inline bool CheckRGBDImagePair(const geometry::RGBDImage &source,
-                               const geometry::RGBDImage &target) {
+static inline bool CheckRGBDImagePair(const geometry::RGBDImage &source,
+                                      const geometry::RGBDImage &target) {
     if (IsColorImageRGB(source.color_) && IsColorImageRGB(target.color_)) {
         return (CheckImagePair(source.color_, target.color_) &&
                 CheckImagePair(source.depth_, target.depth_) &&
@@ -387,8 +375,8 @@ inline bool CheckRGBDImagePair(const geometry::RGBDImage &source,
     return false;
 }
 
-std::tuple<std::shared_ptr<geometry::RGBDImage>,
-           std::shared_ptr<geometry::RGBDImage>>
+static std::tuple<std::shared_ptr<geometry::RGBDImage>,
+                  std::shared_ptr<geometry::RGBDImage>>
 InitializeRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
@@ -415,17 +403,17 @@ InitializeRGBDOdometry(
     auto target_depth = target_depth_preprocessed->Filter(
             geometry::Image::FilterType::Gaussian3);
 
-    auto correspondence = ComputeCorrespondence(
+    CorrespondenceSetPixelWise correspondence = ComputeCorrespondence(
             pinhole_camera_intrinsic.intrinsic_matrix_, odo_init, *source_depth,
             *target_depth, option);
-    NormalizeIntensity(*source_gray, *target_gray, *correspondence);
+    NormalizeIntensity(*source_gray, *target_gray, correspondence);
 
     auto source_out = PackRGBDImage(*source_gray, *source_depth);
     auto target_out = PackRGBDImage(*target_gray, *target_depth);
     return std::make_tuple(source_out, target_out);
 }
 
-std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
+static std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
         int iter,
         int level,
         const geometry::RGBDImage &source,
@@ -437,40 +425,40 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
         const Eigen::Matrix4d &extrinsic_initial,
         const RGBDOdometryJacobian &jacobian_method,
         const OdometryOption &option) {
-    auto correspondence = ComputeCorrespondence(
+    CorrespondenceSetPixelWise correspondence = ComputeCorrespondence(
             intrinsic, extrinsic_initial, source.depth_, target.depth_, option);
-    int corresps_count = (int)correspondence->size();
+    int corresps_count = (int)correspondence.size();
 
     auto f_lambda =
             [&](int i,
-                std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
-                std::vector<double>& r, std::vector<double> &w) {
+                std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
+                std::vector<double> &r, std::vector<double> &w) {
                 jacobian_method.ComputeJacobianAndResidual(
                         i, J_r, r, w, source, target, source_xyz, target_dx,
                         target_dy, intrinsic, extrinsic_initial,
-                        *correspondence);
+                        correspondence);
             };
-    cloudViewer::utility::LogDebug("Iter : {:d}, Level : {:d}, ", iter, level);
+    utility::LogDebug("Iter : {:d}, Level : {:d}, ", iter, level);
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
     double r2;
     std::tie(JTJ, JTr, r2) =
-            cloudViewer::utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+            utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
                     f_lambda, corresps_count);
 
     bool is_success;
     Eigen::Matrix4d extrinsic;
     std::tie(is_success, extrinsic) =
-            cloudViewer::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
     if (!is_success) {
-        cloudViewer::utility::LogWarning("[ComputeOdometry] no solution!");
+        utility::LogWarning("[ComputeOdometry] no solution!");
         return std::make_tuple(false, Eigen::Matrix4d::Identity());
     } else {
         return std::make_tuple(true, extrinsic);
     }
 }
 
-std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
+static std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
@@ -520,7 +508,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
             result_odo = curr_odo * result_odo;
 
             if (!is_success) {
-                cloudViewer::utility::LogWarning("[ComputeOdometry] no solution!");
+                utility::LogWarning("[ComputeOdometry] no solution!");
                 return std::make_tuple(false, Eigen::Matrix4d::Identity());
             }
         }
@@ -538,7 +526,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         /*=RGBDOdometryJacobianFromHybridTerm*/,
         const OdometryOption &option /*= OdometryOption()*/) {
     if (!CheckRGBDImagePair(source, target)) {
-        cloudViewer::utility::LogWarning(
+        utility::LogWarning(
                 "[RGBDOdometry] Two RGBD pairs should be same in size.");
         return std::make_tuple(false, Eigen::Matrix4d::Identity(),
                                Eigen::Matrix6d::Zero());

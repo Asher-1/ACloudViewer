@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        cloudViewer: www.cloudViewer.org -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -23,7 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-
 
 #include <RGBDImage.h>
 #include "io/sensor/azure_kinect/AzureKinectRecorder.h"
@@ -84,6 +83,8 @@ void pybind_sensor(py::module &m) {
     azure_kinect_sensor
             .def("connect", &AzureKinectSensor::Connect, "sensor_index"_a,
                  "Connect to specified device.")
+            .def("disconnect", &AzureKinectSensor::Disconnect,
+                 "Disconnect from the connected device.")
             .def("capture_frame", &AzureKinectSensor::CaptureFrame,
                  "enable_align_depth_to_color"_a, "Capture an RGBD frame.")
             .def_static("list_devices", &AzureKinectSensor::ListDevices,

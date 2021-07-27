@@ -27,7 +27,7 @@
 #include "visualization/shader/TextureSimpleShader.h"
 
 #include <ecvMesh.h>
-#include <Console.h>
+#include <Logging.h>
 
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"

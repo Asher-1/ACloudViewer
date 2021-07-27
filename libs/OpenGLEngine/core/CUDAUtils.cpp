@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,8 @@
 
 #include "core/CUDAUtils.h"
 
-#include <Console.h>
+#include "Macro.h"
+#include <Logging.h>
 
 #ifdef BUILD_CUDA_MODULE
 #include "core/CUDAState.cuh"
@@ -35,15 +36,30 @@
 
 namespace cloudViewer {
 namespace core {
+
+#ifdef BUILD_CUDA_MODULE
+int GetCUDACurrentDeviceTextureAlignment() {
+    int value = 0;
+    cudaError_t err = cudaDeviceGetAttribute(
+            &value, cudaDevAttrTextureAlignment, cuda::GetDevice());
+    if (err != cudaSuccess) {
+        utility::LogError(
+                "GetCUDACurrentDeviceTextureAlignment(): "
+                "cudaDeviceGetAttribute failed with {}",
+                cudaGetErrorString(err));
+    }
+    return value;
+}
+#endif
+
 namespace cuda {
-    using namespace cloudViewer;
 
 int DeviceCount() {
 #ifdef BUILD_CUDA_MODULE
     try {
         std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
         return cuda_state->GetNumDevices();
-    } catch (const std::runtime_error& e) {  // GetInstance can throw
+    } catch (const std::runtime_error&) {  // GetInstance can throw
         return 0;
     }
 #else
@@ -56,7 +72,10 @@ bool IsAvailable() { return cuda::DeviceCount() > 0; }
 void ReleaseCache() {
 #ifdef BUILD_CUDA_MODULE
 #ifdef BUILD_CACHED_CUDA_MANAGER
-    CUDACachedMemoryManager::ReleaseCache();
+    // Release cache from all devices. Since only memory from CUDAMemoryManager
+    // is cached at the moment, this works as expected. In the future, the logic
+    // could become more fine-grained.
+    CachedMemoryManager::ReleaseCache();
 #else
     utility::LogWarning(
             "Built without cached CUDA memory manager, cuda::ReleaseCache() "
@@ -68,11 +87,49 @@ void ReleaseCache() {
 #endif
 }
 
+#ifdef BUILD_CUDA_MODULE
+
+int GetDevice() {
+    int device;
+    CLOUDVIEWER_CUDA_CHECK(cudaGetDevice(&device));
+    return device;
+}
+
+void SetDevice(int device_id) { CLOUDVIEWER_CUDA_CHECK(cudaSetDevice(device_id)); }
+
+class CUDAStream {
+public:
+    static CUDAStream& GetInstance() {
+        // The global stream state is given per thread like CUDA's internal
+        // device state.
+        static thread_local CUDAStream instance;
+        return instance;
+    }
+
+    cudaStream_t Get() { return stream_; }
+    void Set(cudaStream_t stream) { stream_ = stream; }
+
+    static cudaStream_t Default() { return static_cast<cudaStream_t>(0); }
+
+private:
+    CUDAStream() = default;
+
+    cudaStream_t stream_ = Default();
+};
+
+cudaStream_t GetStream() { return CUDAStream::GetInstance().Get(); }
+
+void SetStream(cudaStream_t stream) { CUDAStream::GetInstance().Set(stream); }
+
+cudaStream_t GetDefaultStream() { return CUDAStream::Default(); }
+
+#endif
+
 }  // namespace cuda
 }  // namespace core
-}  // namespace CloudViewer
+}  // namespace cloudViewer
 
 // C interface to provide un-mangled function to Python ctypes
-extern "C" int cloudViewer_core_cuda_device_count() {
+extern "C" CLOUDVIEWER_DLL_EXPORT int cloudviewer_core_cuda_device_count() {
     return cloudViewer::core::cuda::DeviceCount();
 }

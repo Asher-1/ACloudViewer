@@ -32,7 +32,7 @@
 #include <pybind11/attr.h>
 #include <pybind11/pybind11.h>
 
-#include <Console.h>
+#include <Logging.h>
 #include <memory>
 
 #include "pipelines/registration/RobustKernel.h"
@@ -210,7 +210,7 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
 )");
     py::detail::bind_copy_functions<HuberLoss>(h_loss);
     h_loss.def(py::init(
-                       [](double k) { return std::make_shared<HuberLoss>(k); }),
+                       [](double k) { return cloudViewer::make_shared<HuberLoss>(k); }),
                "k"_a)
             .def("__repr__",
                  [](const HuberLoss &rk) {
@@ -242,7 +242,7 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
 )");
     py::detail::bind_copy_functions<CauchyLoss>(c_loss);
     c_loss.def(py::init([](double k) {
-                   return std::make_shared<CauchyLoss>(k);
+                   return cloudViewer::make_shared<CauchyLoss>(k);
                }),
                "k"_a)
             .def("__repr__",
@@ -273,7 +273,7 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
   \end{equation}
 )");
     py::detail::bind_copy_functions<GMLoss>(gm_loss);
-    gm_loss.def(py::init([](double k) { return std::make_shared<GMLoss>(k); }),
+    gm_loss.def(py::init([](double k) { return cloudViewer::make_shared<GMLoss>(k); }),
                 "k"_a)
             .def("__repr__",
                  [](const GMLoss &rk) {
@@ -310,7 +310,7 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
 )");
     py::detail::bind_copy_functions<TukeyLoss>(t_loss);
     t_loss.def(py::init(
-                       [](double k) { return std::make_shared<TukeyLoss>(k); }),
+                       [](double k) { return cloudViewer::make_shared<TukeyLoss>(k); }),
                "k"_a)
             .def("__repr__",
                  [](const TukeyLoss &tk) {

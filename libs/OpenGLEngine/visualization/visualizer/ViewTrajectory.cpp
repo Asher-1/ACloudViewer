@@ -29,7 +29,7 @@
 #include <json/json.h>
 #include <Eigen/Dense>
 
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {
@@ -149,7 +149,7 @@ bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const {
     Json::Value trajectory_array;
     for (const auto &status : view_status_) {
         Json::Value status_object;
-        if (status.ConvertToJsonValue(status_object) == false) {
+        if (!status.ConvertToJsonValue(status_object)) {
             return false;
         }
         trajectory_array.append(status_object);
@@ -164,7 +164,7 @@ bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "ViewTrajectory read JSON failed: unsupported json format.");
         return false;
@@ -179,7 +179,7 @@ bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     is_loop_ = value.get("is_loop", false).asBool();
     interval_ = value.get("interval", 29).asInt();
     const Json::Value &trajectory_array = value["trajectory"];
-    if (trajectory_array.size() == 0) {
+    if (trajectory_array.empty()) {
         utility::LogWarning(
                 "ViewTrajectory read JSON failed: empty trajectory.");
         return false;
@@ -188,7 +188,7 @@ bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     for (int i = 0; i < (int)trajectory_array.size(); i++) {
         const Json::Value &status_object = trajectory_array[i];
         ViewParameters status;
-        if (status.ConvertFromJsonValue(status_object) == false) {
+        if (!status.ConvertFromJsonValue(status_object)) {
             return false;
         }
         view_status_[i] = status;

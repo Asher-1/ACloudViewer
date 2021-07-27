@@ -47,7 +47,7 @@ public:
         int64_t* ret_keep_indices = nullptr;
         output_allocator.AllocKeepIndices(&ret_keep_indices,
                                           keep_indices.size());
-        CLOUDVIEWER_ML_CUDA_CHECK(cudaMemcpy(ret_keep_indices, keep_indices.data(),
+        CLOUDVIEWER_CUDA_CHECK(cudaMemcpy(ret_keep_indices, keep_indices.data(),
                                         boxes.dim_size(0) * sizeof(int64_t),
                                         cudaMemcpyHostToDevice));
     }

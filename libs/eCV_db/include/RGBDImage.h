@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "ecvHObject.h"
 #include "Image.h"
+#include "ecvHObject.h"
 
 namespace cloudViewer {
 namespace geometry {
@@ -45,37 +45,37 @@ typedef std::vector<std::shared_ptr<RGBDImage>> RGBDImagePyramid;
 /// If you have other format, convert it first.
 class ECV_DB_LIB_API RGBDImage : public ccHObject {
 public:
-	/// \brief Default Constructor.
-	RGBDImage(const char* name = "RGBD_Image") : ccHObject(name) {}
-
+    /// \brief Default Constructor.
+    RGBDImage(const char *name = "RGBD_Image") : ccHObject(name) {}
+    /// \brief Parameterized Constructor.
+    ///
     /// \param color The color image.
     /// \param depth The depth image.
-    RGBDImage(const Image &color, 
-		const Image &depth,
-		const char* name = "RGBD_Image")
-        : ccHObject(name),
-          color_(color),
-          depth_(depth) {}
+    RGBDImage(const Image &color,
+              const Image &depth,
+              const char *name = "RGBD_Image")
+        : ccHObject(name), color_(color), depth_(depth) {}
 
     ~RGBDImage() override {
         color_.Clear();
         depth_.Clear();
     };
 
+    // inherited methods (ccHObject)
+    virtual bool isSerializable() const override { return true; }
 
-	//inherited methods (ccHObject)
-	virtual bool isSerializable() const override { return true; }
+    //! Returns unique class ID
+    virtual CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::RGBD_IMAGE;
+    }
 
-	//! Returns unique class ID
-	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::RGBD_IMAGE; }
-
-	virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
+    virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
 
 public:
-
     RGBDImage &Clear();
-	inline virtual bool isEmpty() const override 
-	{ return !color_.HasData() || !depth_.HasData(); }
+    inline virtual bool isEmpty() const override {
+        return !color_.HasData() || !depth_.HasData();
+    }
 
     virtual Eigen::Vector2d getMin2DBound() const override;
     virtual Eigen::Vector2d getMax2DBound() const override;

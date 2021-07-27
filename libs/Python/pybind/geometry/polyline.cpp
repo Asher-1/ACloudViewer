@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 // CV_CORE_LIB
-#include <Console.h>
+#include <Logging.h>
 #include <ReferenceCloud.h>
 
 // ECV_DB_LIB

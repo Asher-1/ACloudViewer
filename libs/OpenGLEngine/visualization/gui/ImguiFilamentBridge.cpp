@@ -15,13 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// CloudViewer alterations are:
+// Open3D alterations are:
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -70,7 +70,7 @@
 #include <map>
 #include <vector>
 
-#include <FileSystem.h>
+#include "utility/FileSystem.h"
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Color.h"
 #include "visualization/gui/Gui.h"
@@ -90,7 +90,7 @@ using namespace utils;
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
-    using namespace cloudViewer;
+
 static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
     std::vector<char> bytes;
     std::string error_str;
@@ -364,15 +364,19 @@ void ImguiFilamentBridge::Update(ImDrawData* imgui_data) {
                 auto skey =
                         ScissorRectKey(fbheight, pcmd.ClipRect, pcmd.TextureId);
                 auto miter = scissor_rects.find(skey);
-                assert(miter != scissor_rects.end());
-                rbuilder.geometry(prim_index,
-                                  RenderableManager::PrimitiveType::TRIANGLES,
-                                  impl_->vertex_buffers_[buffer_index],
-                                  impl_->index_buffers_[buffer_index],
-                                  indexOffset, pcmd.ElemCount)
-                        .blendOrder(prim_index, prim_index)
-                        .material(prim_index, miter->second);
-                prim_index++;
+                if (miter != scissor_rects.end()) {
+                    rbuilder.geometry(
+                                    prim_index,
+                                    RenderableManager::PrimitiveType::TRIANGLES,
+                                    impl_->vertex_buffers_[buffer_index],
+                                    impl_->index_buffers_[buffer_index],
+                                    indexOffset, pcmd.ElemCount)
+                            .blendOrder(prim_index, prim_index)
+                            .material(prim_index, miter->second);
+                    prim_index++;
+                } else {
+                    utility::LogError("Internal error: material not found.");
+                }
             }
             indexOffset += pcmd.ElemCount;
         }

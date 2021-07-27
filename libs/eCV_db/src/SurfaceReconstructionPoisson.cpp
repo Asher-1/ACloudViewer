@@ -24,11 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ecvMesh.h"
-#include "ecvPointCloud.h"
-#include "ecvHObjectCaster.h"
+#include <Logging.h>
 
-#include <Console.h>
 #include <Eigen/Dense>
 #include <cfloat>
 #include <cmath>
@@ -36,6 +33,10 @@
 #include <cstdlib>
 #include <iostream>
 #include <list>
+
+#include "ecvHObjectCaster.h"
+#include "ecvMesh.h"
+#include "ecvPointCloud.h"
 
 // clang-format off
 #ifdef _MSC_VER
@@ -347,7 +348,8 @@ void ExtractMesh(
     typedef UIntPack<FEMSigs...> Sigs;
     static const unsigned int DataSig =
             FEMDegreeAndBType<DATA_DEGREE, BOUNDARY_FREE>::Signature;
-    typedef typename FEMTree<Dim, Real>::template DensityEstimator<WEIGHT_DEGREE>
+    typedef typename FEMTree<Dim,
+                             Real>::template DensityEstimator<WEIGHT_DEGREE>
             DensityEstimator;
 
     FEMTreeProfiler<Dim, Real> profiler(tree);
@@ -362,8 +364,8 @@ void ExtractMesh(
     typename IsoSurfaceExtractor<Dim, Real, Vertex>::IsoStats isoStats;
     if (sampleData) {
         SparseNodeData<ProjectiveData<CloudViewerData, Real>,
-			IsotropicUIntPack<Dim, DataSig>>
-			_sampleData =
+                       IsotropicUIntPack<Dim, DataSig>>
+                _sampleData =
                         tree.template setMultiDepthDataField<DataSig, false>(
                                 *samples, *sampleData, (DensityEstimator*)NULL);
         for (const RegularTreeNode<Dim, FEMTreeNodeData, depth_and_offset_type>*
@@ -373,62 +375,68 @@ void ExtractMesh(
             if (clr) (*clr) *= (Real)pow(datax, tree.depth(n));
         }
         isoStats = IsoSurfaceExtractor<Dim, Real, Vertex>::template Extract<
-                CloudViewerData>(Sigs(), UIntPack<WEIGHT_DEGREE>(),
-                            UIntPack<DataSig>(), tree, density, &_sampleData,
-                            solution, isoValue, *mesh, SetVertex, !linear_fit,
-                            !non_manifold, polygon_mesh, false);
+                CloudViewerData>(
+                Sigs(), UIntPack<WEIGHT_DEGREE>(), UIntPack<DataSig>(), tree,
+                density, &_sampleData, solution, isoValue, *mesh, SetVertex,
+                !linear_fit, !non_manifold, polygon_mesh, false);
     } else {
         isoStats = IsoSurfaceExtractor<Dim, Real, Vertex>::template Extract<
-                CloudViewerData>(Sigs(), UIntPack<WEIGHT_DEGREE>(),
-                            UIntPack<DataSig>(), tree, density, NULL, solution,
-                            isoValue, *mesh, SetVertex, !linear_fit,
-                            !non_manifold, polygon_mesh, false);
+                CloudViewerData>(
+                Sigs(), UIntPack<WEIGHT_DEGREE>(), UIntPack<DataSig>(), tree,
+                density, NULL, solution, isoValue, *mesh, SetVertex,
+                !linear_fit, !non_manifold, polygon_mesh, false);
     }
 
     mesh->resetIterator();
     out_densities.clear();
-	ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(out_mesh->getAssociatedCloud());
-	if (!cloud)
-	{
-		utility::LogError("[poisson::ExtractMesh] ccMesh should set associated cloud before using!");
-	}
+    ccPointCloud* cloud =
+            ccHObjectCaster::ToPointCloud(out_mesh->getAssociatedCloud());
+    if (!cloud) {
+        utility::LogError(
+                "[poisson::ExtractMesh] ccMesh should set associated cloud "
+                "before using!");
+    }
 
-	if (!cloud->reserveThePointsTable(
-				static_cast<unsigned>(mesh->outOfCorePointCount())))
-	{
-		utility::LogError("[poisson::ExtractMesh] reserve points failed, not enough memory!");
-		return;
-	}
+    if (!cloud->reserveThePointsTable(
+                static_cast<unsigned>(mesh->outOfCorePointCount()))) {
+        utility::LogError(
+                "[poisson::ExtractMesh] reserve points failed, not enough "
+                "memory!");
+        return;
+    }
 
-	if (!cloud->reserveTheNormsTable())
-	{
-		utility::LogError("[poisson::ExtractMesh] reserve normals failed, not enough memory!");
-		return;
-	}
-	
-	if (!cloud->reserveTheRGBTable())
-	{
-		utility::LogError("[poisson::ExtractMesh] reserve rgbs failed, not enough memory!");
-		return;
-	}
+    if (!cloud->reserveTheNormsTable()) {
+        utility::LogError(
+                "[poisson::ExtractMesh] reserve normals failed, not enough "
+                "memory!");
+        return;
+    }
+
+    if (!cloud->reserveTheRGBTable()) {
+        utility::LogError(
+                "[poisson::ExtractMesh] reserve rgbs failed, not enough "
+                "memory!");
+        return;
+    }
 
     for (size_t vidx = 0; vidx < mesh->outOfCorePointCount(); ++vidx) {
         Vertex v;
         mesh->nextOutOfCorePoint(v);
         v.point = iXForm * v.point;
-		cloud->addEigenPoint(
+        cloud->addEigenPoint(
                 Eigen::Vector3d(v.point[0], v.point[1], v.point[2]));
 
-		cloud->addEigenNorm(v.normal_);
-		cloud->addEigenColor(v.color_);
+        cloud->addEigenNorm(v.normal_);
+        cloud->addEigenColor(v.color_);
         out_densities.push_back(v.w_);
     }
 
-	if (!out_mesh->reserve(mesh->polygonCount()))
-	{
-		utility::LogError("[poisson::ExtractMesh] reserve triangles failed, not enough memory!");
-		return;
-	}
+    if (!out_mesh->reserve(mesh->polygonCount())) {
+        utility::LogError(
+                "[poisson::ExtractMesh] reserve triangles failed, not enough "
+                "memory!");
+        return;
+    }
 
     for (size_t tidx = 0; tidx < mesh->polygonCount(); ++tidx) {
         std::vector<CoredVertexIndex<node_index_type>> triangle;
@@ -452,8 +460,8 @@ void Execute(const ccPointCloud& pcd,
              size_t width,
              float scale,
              bool linear_fit,
-			 float point_weight,
-			 float samples_per_node,
+             float point_weight,
+             float samples_per_node,
              UIntPack<FEMSigs...>) {
     static const int Dim = sizeof...(FEMSigs);
     typedef UIntPack<FEMSigs...> Sigs;
@@ -475,8 +483,8 @@ void Execute(const ccPointCloud& pcd,
     int base_depth = 0;
     int base_v_cycles = 1;
     float confidence = 0.f;
-    //float point_weight = 2.f * DEFAULT_FEM_DEGREE;
-    //float samples_per_node = 1.5f;
+    // float point_weight = 2.f * DEFAULT_FEM_DEGREE;
+    // float samples_per_node = 1.5f;
     float confidence_bias = 0.f;
     float cg_solver_accuracy = 1e-3f;
     int full_depth = 5;
@@ -505,10 +513,13 @@ void Execute(const ccPointCloud& pcd,
         if (width > 0) {
             xForm = GetPointXForm<Real, Dim>(pointStream, (Real)width,
                                              (Real)(scale > 0 ? scale : 1.),
-                                             depth) * xForm;
+                                             depth) *
+                    xForm;
         } else {
-            xForm = scale > 0 ? GetPointXForm<Real, Dim>(pointStream, 
-								(Real)scale) * xForm : xForm;
+            xForm = scale > 0 ? GetPointXForm<Real, Dim>(pointStream,
+                                                         (Real)scale) *
+                                        xForm
+                              : xForm;
         }
 
         pointStream.xform_ = &xForm;
@@ -520,7 +531,8 @@ void Execute(const ccPointCloud& pcd,
                 if (!l || l != l) return (Real)-1.;
                 return (Real)pow(l, confidence);
             };
-            auto ProcessData = [](const Point<Real, Dim>& p, CloudViewerData& d) {
+            auto ProcessData = [](const Point<Real, Dim>& p,
+                                  CloudViewerData& d) {
                 Real l = (Real)d.normal_.norm();
                 if (!l || l != l) return (Real)-1.;
                 d.normal_ /= l;
@@ -528,16 +540,16 @@ void Execute(const ccPointCloud& pcd,
             };
             if (confidence > 0) {
                 pointCount = FEMTreeInitializer<Dim, Real>::template Initialize<
-                        CloudViewerData>(tree.spaceRoot(), pointStream, depth,
-                                    samples, sampleData, true,
-                                    tree.nodeAllocators[0], tree.initializer(),
-                                    ProcessDataWithConfidence);
+                        CloudViewerData>(
+                        tree.spaceRoot(), pointStream, depth, samples,
+                        sampleData, true, tree.nodeAllocators[0],
+                        tree.initializer(), ProcessDataWithConfidence);
             } else {
                 pointCount = FEMTreeInitializer<Dim, Real>::template Initialize<
                         CloudViewerData>(tree.spaceRoot(), pointStream, depth,
-                                    samples, sampleData, true,
-                                    tree.nodeAllocators[0], tree.initializer(),
-                                    ProcessData);
+                                         samples, sampleData, true,
+                                         tree.nodeAllocators[0],
+                                         tree.initializer(), ProcessData);
             }
         }
         iXForm = xForm.inverse();
@@ -774,9 +786,9 @@ ccMesh::CreateFromPointCloudPoisson(const ccPointCloud& pcd,
                                     size_t width,
                                     float scale,
                                     bool linear_fit,
-									float point_weight,
-									float samples_per_node,
-									int boundary_type,
+                                    float point_weight,
+                                    float samples_per_node,
+                                    int boundary_type,
                                     int n_threads) {
     if (!pcd.hasNormals()) {
         utility::LogError("[CreateFromPointCloudPoisson] pcd has no normals");
@@ -787,53 +799,71 @@ ccMesh::CreateFromPointCloudPoisson(const ccPointCloud& pcd,
     }
 
 #ifdef _OPENMP
-    ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::OPEN_MP, n_threads);
+    ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::OPEN_MP,
+                     n_threads);
 #else
-    ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::THREAD_POOL, n_threads);
+    ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::THREAD_POOL,
+                     n_threads);
 #endif
 
-	auto mesh = cloudViewer::make_shared<ccMesh>();
-	if (!mesh->createInternalCloud())
-	{
-		utility::LogError("[CreateFromPointCloudPoisson] creating internal cloud failed!");
-	}
+    auto mesh = cloudViewer::make_shared<ccMesh>();
+    if (!mesh->createInternalCloud()) {
+        utility::LogError(
+                "[CreateFromPointCloudPoisson] creating internal cloud "
+                "failed!");
+    }
 
     std::vector<double> densities;
-	const BoundaryType BType = (BoundaryType)boundary_type;
-	switch (BType)
-	{
-	case BoundaryType::BOUNDARY_FREE:
-		typedef IsotropicUIntPack<poisson::DIMENSION, 
-			FEMDegreeAndBType<poisson::DEFAULT_FEM_DEGREE, 
-			BoundaryType::BOUNDARY_FREE>::Signature> FEMSigsFree;
-		poisson::Execute<float>(pcd, mesh, densities, static_cast<int>(depth), width, scale, 
-			linear_fit, point_weight, samples_per_node, FEMSigsFree());
-		break;
-	case BoundaryType::BOUNDARY_DIRICHLET:
-		typedef IsotropicUIntPack<poisson::DIMENSION, 
-			FEMDegreeAndBType<poisson::DEFAULT_FEM_DEGREE, 
-			BoundaryType::BOUNDARY_DIRICHLET>::Signature> FEMSigsDirichlet;
-		poisson::Execute<float>(pcd, mesh, densities, static_cast<int>(depth), width, scale, 
-			linear_fit, point_weight, samples_per_node, FEMSigsDirichlet());
-		break;
-	case BoundaryType::BOUNDARY_NEUMANN:
-		typedef IsotropicUIntPack<poisson::DIMENSION,
-			FEMDegreeAndBType<poisson::DEFAULT_FEM_DEGREE, 
-			BoundaryType::BOUNDARY_NEUMANN>::Signature> FEMSigsNeumann;
-		poisson::Execute<float>(pcd, mesh, densities, static_cast<int>(depth), width, scale, 
-			linear_fit, point_weight, samples_per_node, FEMSigsNeumann());
-		break;
-	case BoundaryType::BOUNDARY_COUNT:
-		typedef IsotropicUIntPack<poisson::DIMENSION,
-			FEMDegreeAndBType<poisson::DEFAULT_FEM_DEGREE,
-			BoundaryType::BOUNDARY_COUNT>::Signature> FEMSigsCount;
-		poisson::Execute<float>(pcd, mesh, densities, static_cast<int>(depth), width, scale, 
-			linear_fit, point_weight, samples_per_node, FEMSigsCount());
-		break;
-	default:
-		assert(false);
-		break;
-	}
+    const BoundaryType BType = (BoundaryType)boundary_type;
+    switch (BType) {
+        case BoundaryType::BOUNDARY_FREE:
+            typedef IsotropicUIntPack<
+                    poisson::DIMENSION,
+                    FEMDegreeAndBType<poisson::DEFAULT_FEM_DEGREE,
+                                      BoundaryType::BOUNDARY_FREE>::Signature>
+                    FEMSigsFree;
+            poisson::Execute<float>(
+                    pcd, mesh, densities, static_cast<int>(depth), width, scale,
+                    linear_fit, point_weight, samples_per_node, FEMSigsFree());
+            break;
+        case BoundaryType::BOUNDARY_DIRICHLET:
+            typedef IsotropicUIntPack<
+                    poisson::DIMENSION,
+                    FEMDegreeAndBType<
+                            poisson::DEFAULT_FEM_DEGREE,
+                            BoundaryType::BOUNDARY_DIRICHLET>::Signature>
+                    FEMSigsDirichlet;
+            poisson::Execute<float>(pcd, mesh, densities,
+                                    static_cast<int>(depth), width, scale,
+                                    linear_fit, point_weight, samples_per_node,
+                                    FEMSigsDirichlet());
+            break;
+        case BoundaryType::BOUNDARY_NEUMANN:
+            typedef IsotropicUIntPack<
+                    poisson::DIMENSION,
+                    FEMDegreeAndBType<
+                            poisson::DEFAULT_FEM_DEGREE,
+                            BoundaryType::BOUNDARY_NEUMANN>::Signature>
+                    FEMSigsNeumann;
+            poisson::Execute<float>(pcd, mesh, densities,
+                                    static_cast<int>(depth), width, scale,
+                                    linear_fit, point_weight, samples_per_node,
+                                    FEMSigsNeumann());
+            break;
+        case BoundaryType::BOUNDARY_COUNT:
+            typedef IsotropicUIntPack<
+                    poisson::DIMENSION,
+                    FEMDegreeAndBType<poisson::DEFAULT_FEM_DEGREE,
+                                      BoundaryType::BOUNDARY_COUNT>::Signature>
+                    FEMSigsCount;
+            poisson::Execute<float>(
+                    pcd, mesh, densities, static_cast<int>(depth), width, scale,
+                    linear_fit, point_weight, samples_per_node, FEMSigsCount());
+            break;
+        default:
+            assert(false);
+            break;
+    }
 
     ThreadPool::Terminate();
 

@@ -26,19 +26,19 @@
 
 #include <thread>
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include <IJsonConvertible.h>
 
 #include <ecvBBox.h>
-#include <ecvOrientedBBox.h>
 #include <ecvPointCloud.h>
-#include "io/PointCloudIO.h"
 #include <ecvKDTreeFlann.h>
+#include <ecvOrientedBBox.h>
+#include "io/PointCloudIO.h"
 
 namespace cloudViewer {
 
-class AlignmentSession : public cloudViewer::utility::IJsonConvertible {
+class AlignmentSession : public utility::IJsonConvertible {
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/TetraMesh.h"
+#include "geometry/TetraMesh.h"
 
 #include <Eigen/Geometry>
 
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/TriangleMesh.h"
+#include "geometry/PointCloud.h"
+#include "geometry/TriangleMesh.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(TetraMesh, Constructor) {
@@ -487,4 +487,4 @@ TEST(TetraMesh, ExtractTriangleMesh) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

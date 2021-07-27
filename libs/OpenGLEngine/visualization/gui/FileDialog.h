@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,7 @@ public:
     enum class Mode { OPEN, SAVE };
 
     FileDialog(Mode type, const char *title, const Theme &theme);
-    virtual ~FileDialog() override;
+    virtual ~FileDialog();
 
     /// May either be a directory or a file. If path is a file, it will be
     /// selected if it exists. Defaults to current working directory if
@@ -64,7 +64,8 @@ public:
     /// The OnCancel and OnDone callbacks *must* be specified.
     void SetOnDone(std::function<void(const char *)> on_done);
 
-    Size CalcPreferredSize(const Theme &theme) const override;
+    Size CalcPreferredSize(const LayoutContext &context,
+                           const Constraints &constraints) const override;
 
     void OnWillShow() override;
 

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,58 +34,82 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+// TODO: Disable fmt() macro defined in fmt<7.0.0.
+// TODO: Remove this line once Open3D upgrades its fmt dependency.
+#define FMT_STRING_ALIAS 0
+
+#include "core/CUDAState.cuh"
+#include "core/CUDAUtils.h"
+#include <Logging.h>
+
 #endif  // #ifdef BUILD_CUDA_MODULE
-
-#include <stdio.h>
-
-#include <stdexcept>
-#include <string>
-
-#ifdef BUILD_CUDA_MODULE
-/// TODO: Link CloudViewer and use CLOUDVIEWER_CUDA_CHECK instead.
-#define CLOUDVIEWER_ML_CUDA_CHECK(err) \
-    { cloudViewer::ml::__CLOUDVIEWER_ML_CUDA_CHECK((err), __FILE__, __LINE__); }
-#endif
 
 namespace cloudViewer {
 namespace ml {
 
 #ifdef BUILD_CUDA_MODULE
-/// Returns the texture alignment in bytes for the current device.
-inline int GetCUDACurrentDeviceTextureAlignment() {
-    int device = 0;
-    cudaError_t err = cudaGetDevice(&device);
-    if (err != cudaSuccess) {
-        throw std::runtime_error(
-                "GetCUDACurrentDeviceTextureAlignment(): cudaGetDevice failed "
-                "with {}" +
-                std::string(cudaGetErrorString(err)));
-    }
 
-    int value = 0;
-    err = cudaDeviceGetAttribute(&value, cudaDevAttrTextureAlignment, device);
-    if (err != cudaSuccess) {
-        throw std::runtime_error(
-                "GetCUDACurrentDeviceTextureAlignment(): cudaGetDevice failed "
-                "with {}" +
-                std::string(cudaGetErrorString(err)));
-    }
-    return value;
-}
+#define CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(err) \
+    __CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(err, __FILE__, __LINE__)
 
-/// TODO: Link CloudViewer and use CLOUDVIEWER_CUDA_CHECK instead.
-inline void __CLOUDVIEWER_ML_CUDA_CHECK(cudaError_t err,
-                                   	const char *file,
-                                   	int line,
-                                   	bool abort = true) {
-    if (err != cudaSuccess) {
-        fprintf(stderr, "%s:%d CUDA runtime error: %s\n", file, line,
-                cudaGetErrorString(err));
-        if (abort) {
-            exit(err);
+inline void __CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(CUresult err,
+                                          const char *file,
+                                          const int line,
+                                          bool abort = true) {
+    if (err != CUDA_SUCCESS) {
+        const char *error_string;
+        CUresult err_get_string = cuGetErrorString(err, &error_string);
+
+        if (err_get_string == CUDA_SUCCESS) {
+            utility::LogError("{}:{} CUDA driver error: {}", file, line,
+                              error_string);
+        } else {
+            utility::LogError("{}:{} CUDA driver error: UNKNOWN", file, line);
         }
     }
 }
+
+inline cudaStream_t GetDefaultStream() { (cudaStream_t)0; }
+
+inline int GetDevice(cudaStream_t stream) {
+    if (stream == GetDefaultStream()) {
+        // Default device.
+        return 0;
+    }
+
+    // Remember current context.
+    CUcontext current_context;
+    CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(cuCtxGetCurrent(&current_context));
+
+    // Switch to context of provided stream.
+    CUcontext context;
+    CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(cuStreamGetCtx(stream, &context));
+    CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(cuCtxSetCurrent(context));
+
+    // Query device of current context.
+    // This is the device of the provided stream.
+    CUdevice device;
+    CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(cuCtxGetDevice(&device));
+
+    // Restore previous context.
+    CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(cuCtxSetCurrent(current_context));
+
+    // CUdevice is a typedef to int.
+    return device;
+}
+
+class CUDAScopedDeviceStream {
+public:
+    explicit CUDAScopedDeviceStream(cudaStream_t stream)
+        : scoped_device_(GetDevice(stream)), scoped_stream_(stream) {}
+
+    CUDAScopedDeviceStream(CUDAScopedDeviceStream const &) = delete;
+    void operator=(CUDAScopedDeviceStream const &) = delete;
+
+private:
+    core::CUDAScopedDevice scoped_device_;
+    core::CUDAScopedStream scoped_stream_;
+};
 #endif
 
 }  // namespace ml

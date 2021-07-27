@@ -28,7 +28,7 @@
 
 #include <json/json.h>
 
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace pipelines {
@@ -94,7 +94,7 @@ bool ImageWarpingField::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
+    if (!value.isObject()) {
         utility::LogWarning(
                 "ImageWarpingField read JSON failed: unsupported json "
                 "format.");
@@ -112,7 +112,7 @@ bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value) {
     anchor_h_ = value.get("anchor_h", 1).asInt();
 
     const Json::Value flow_array = value["flow"];
-    if (flow_array.size() == 0 ||
+    if (flow_array.empty() ||
         int(flow_array.size()) != (anchor_w_ * anchor_h_ * 2)) {
         utility::LogWarning(
                 "ImageWarpingField read JSON failed: invalid flow.");

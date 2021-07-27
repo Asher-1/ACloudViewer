@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/TensorList.h"
+#include "core/TensorList.h"
 
 #include <vector>
 
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 class TensorListPermuteDevices : public PermuteDevices {};
@@ -467,4 +467,4 @@ TEST_P(TensorListPermuteDevices, Clear) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

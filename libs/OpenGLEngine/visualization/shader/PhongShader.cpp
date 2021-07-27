@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -25,9 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "visualization/shader/PhongShader.h"
+
+#include <ecvHalfEdgeMesh.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-#include <ecvHalfEdgeMesh.h>
+
 #include "visualization/shader/Shader.h"
 #include "visualization/utility/ColorMap.h"
 
@@ -80,8 +82,7 @@ bool PhongShader::BindGeometry(const ccHObject &geometry,
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3f> normals;
     std::vector<Eigen::Vector3f> colors;
-    if (PrepareBinding(geometry, option, view, points, normals, colors) ==
-        false) {
+    if (!PrepareBinding(geometry, option, view, points, normals, colors)) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -184,10 +185,9 @@ void PhongShader::SetLighting(const ViewControl &view,
     }
 }
 
-bool PhongShaderForPointCloud::PrepareRendering(
-        const ccHObject &geometry,
-        const RenderOption &option,
-        const ViewControl &view) {
+bool PhongShaderForPointCloud::PrepareRendering(const ccHObject &geometry,
+                                                const RenderOption &option,
+                                                const ViewControl &view) {
     if (!geometry.isKindOf(CV_TYPES::POINT_CLOUD)) {
         PrintShaderWarning("Rendering type is not ccPointCloud.");
         return false;
@@ -210,8 +210,7 @@ bool PhongShaderForPointCloud::PrepareBinding(
         PrintShaderWarning("Rendering type is not ccPointCloud.");
         return false;
     }
-    const ccPointCloud &pointcloud =
-            (const ccPointCloud &)geometry;
+    const ccPointCloud &pointcloud = (const ccPointCloud &)geometry;
     if (!pointcloud.hasPoints()) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
@@ -246,16 +245,14 @@ bool PhongShaderForPointCloud::PrepareBinding(
             case RenderOption::PointColorOption::Color:
             case RenderOption::PointColorOption::Default:
             default:
-				if (pointcloud.isColorOverriden()) {
-					color = ecvColor::Rgb::ToEigen(pointcloud.getTempColor());
-				}
-				else if (pointcloud.hasColors()) {
-					color = pointcloud.getEigenColor(i);
-				}
-				else {
-					color = global_color_map.GetColor(
-						view.GetBoundingBox().getZPercentage(point(2)));
-				}
+                if (pointcloud.isColorOverriden()) {
+                    color = ecvColor::Rgb::ToEigen(pointcloud.getTempColor());
+                } else if (pointcloud.hasColors()) {
+                    color = pointcloud.getEigenColor(i);
+                } else {
+                    color = global_color_map.GetColor(
+                            view.GetBoundingBox().getZPercentage(point(2)));
+                }
                 break;
         }
         colors[i] = color.cast<float>();
@@ -265,10 +262,9 @@ bool PhongShaderForPointCloud::PrepareBinding(
     return true;
 }
 
-bool PhongShaderForTriangleMesh::PrepareRendering(
-        const ccHObject &geometry,
-        const RenderOption &option,
-        const ViewControl &view) {
+bool PhongShaderForTriangleMesh::PrepareRendering(const ccHObject &geometry,
+                                                  const RenderOption &option,
+                                                  const ViewControl &view) {
     if (!geometry.isKindOf(CV_TYPES::MESH) &&
         !geometry.isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
         PrintShaderWarning("Rendering type is not ccMesh.");
@@ -439,7 +435,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
         draw_arrays_mode_ = GL_TRIANGLES;
         draw_arrays_size_ = GLsizei(points.size());
     }
-    
+
     return true;
 }
 

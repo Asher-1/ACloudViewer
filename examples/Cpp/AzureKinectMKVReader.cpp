@@ -36,7 +36,7 @@ using namespace cloudViewer;
 void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
     std::ofstream out(filename);
     if (!out.is_open()) {
-        cloudViewer::utility::LogError("Cannot write to {}", filename);
+        utility::LogError("Cannot write to {}", filename);
     }
 
     Json::StreamWriterBuilder builder;
@@ -49,8 +49,8 @@ void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
 Json::Value GenerateDatasetConfig(const std::string &output_path) {
     Json::Value value;
 
-    cloudViewer::utility::LogInfo("Writing to config.json");
-    cloudViewer::utility::LogInfo(
+    utility::LogInfo("Writing to config.json");
+    utility::LogInfo(
             "Please change path_dataset and path_intrinsic when you move the "
             "dataset.");
 
@@ -58,7 +58,7 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
         value["path_dataset"] = output_path;
         value["path_intrinsic"] = output_path + "/intrinsic.json";
     } else {  // relative dir
-        auto pwd = cloudViewer::utility::filesystem::GetWorkingDirectory();
+        auto pwd = utility::filesystem::GetWorkingDirectory();
         value["path_dataset"] = pwd + "/" + output_path;
         value["path_intrinsic"] = pwd + "/" + output_path + "/intrinsic.json";
     }
@@ -77,47 +77,53 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
     return value;
 }
 
-void PrintUsage() {
+void PrintHelp() {
+    using namespace cloudViewer;
+
     PrintCloudViewerVersion();
     // clang-format off
-    cloudViewer::utility::LogInfo("Usage:");
-    cloudViewer::utility::LogInfo("AzureKinectMKVReader --input input.mkv [--output] [path]");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > AzureKinectMKVReader --input input.mkv [--output] [path]");
     // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char **argv) {
-    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (!cloudViewer::utility::ProgramOptionExists(argc, argv, "--input")) {
-        PrintUsage();
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
+        !utility::ProgramOptionExists(argc, argv, "--input")) {
+        PrintHelp();
         return 1;
     }
+
     std::string mkv_filename =
-            cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--input");
+            utility::GetProgramOptionAsString(argc, argv, "--input");
 
     bool write_image = false;
     std::string output_path;
-    if (!cloudViewer::utility::ProgramOptionExists(argc, argv, "--output")) {
-        cloudViewer::utility::LogInfo("No output image path, only play mkv.");
+    if (!utility::ProgramOptionExists(argc, argv, "--output")) {
+        utility::LogInfo("No output image path, only play mkv.");
     } else {
-        output_path = cloudViewer::utility::GetProgramOptionAsString(argc, argv, "--output");
+        output_path = utility::GetProgramOptionAsString(argc, argv, "--output");
         if (output_path.empty()) {
-            cloudViewer::utility::LogError("Output path {} is empty, only play mkv.",
+            utility::LogError("Output path {} is empty, only play mkv.",
                               output_path);
             return 1;
         }
-        if (cloudViewer::utility::filesystem::DirectoryExists(output_path)) {
-            cloudViewer::utility::LogError("Output path {} already existing, only play mkv.",
+        if (utility::filesystem::DirectoryExists(output_path)) {
+            utility::LogError("Output path {} already existing, only play mkv.",
                               output_path);
             return 1;
-        } else if (!cloudViewer::utility::filesystem::MakeDirectory(output_path)) {
-            cloudViewer::utility::LogError("Unable to create path {}, only play mkv.",
+        } else if (!utility::filesystem::MakeDirectory(output_path)) {
+            utility::LogError("Unable to create path {}, only play mkv.",
                               output_path);
             return 1;
         } else {
-            cloudViewer::utility::LogInfo("Decompress images to {}", output_path);
-            cloudViewer::utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
-            cloudViewer::utility::filesystem::MakeDirectoryHierarchy(output_path + "/depth");
+            utility::LogInfo("Decompress images to {}", output_path);
+            utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
+            utility::filesystem::MakeDirectoryHierarchy(output_path + "/depth");
             write_image = true;
         }
     }
@@ -125,7 +131,7 @@ int main(int argc, char **argv) {
     io::MKVReader mkv_reader;
     mkv_reader.Open(mkv_filename);
     if (!mkv_reader.IsOpened()) {
-        cloudViewer::utility::LogError("Unable to open {}", mkv_filename);
+        utility::LogError("Unable to open {}", mkv_filename);
         return 1;
     }
 
@@ -140,18 +146,18 @@ int main(int argc, char **argv) {
     vis.RegisterKeyCallback(
             GLFW_KEY_SPACE, [&](visualization::Visualizer *vis) {
                 if (flag_play) {
-                    cloudViewer::utility::LogInfo(
+                    utility::LogInfo(
                             "Playback paused, press [SPACE] to continue");
                 } else {
-                    cloudViewer::utility::LogInfo(
+                    utility::LogInfo(
                             "Playback resumed, press [SPACE] to pause");
                 }
                 flag_play = !flag_play;
                 return true;
             });
 
-    vis.CreateVisualizerWindow("CloudViewer Azure Kinect MKV player", 1920, 540);
-    cloudViewer::utility::LogInfo(
+    vis.CreateVisualizerWindow("Open3D Azure Kinect MKV player", 1920, 540);
+    utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
             "exit.");
 
@@ -177,12 +183,12 @@ int main(int argc, char **argv) {
             if (write_image) {
                 auto color_file =
                         fmt::format("{0}/color/{1:05d}.jpg", output_path, idx);
-                cloudViewer::utility::LogInfo("Writing to {}", color_file);
+                utility::LogInfo("Writing to {}", color_file);
                 io::WriteImage(color_file, im_rgbd->color_);
 
                 auto depth_file =
                         fmt::format("{0}/depth/{1:05d}.png", output_path, idx);
-                cloudViewer::utility::LogInfo("Writing to {}", depth_file);
+                utility::LogInfo("Writing to {}", depth_file);
                 io::WriteImage(depth_file, im_rgbd->depth_);
 
                 ++idx;

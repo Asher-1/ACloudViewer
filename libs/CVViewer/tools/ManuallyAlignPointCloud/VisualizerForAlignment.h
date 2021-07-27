@@ -28,7 +28,7 @@
 #include <visualization/visualizer/Visualizer.h> // must include first
 #include <visualization/visualizer/VisualizerWithEditing.h>
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include <IJsonConvertible.h>
 

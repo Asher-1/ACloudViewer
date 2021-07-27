@@ -27,8 +27,9 @@
 #pragma once
 
 #include <Eigen/Geometry>
-
 #include <Eigen.h>
+
+#include "visualization/rendering/RendererHandle.h"
 
 namespace cloudViewer {
 namespace visualization {
@@ -91,6 +92,10 @@ public:
     virtual void SetColorGrading(const ColorGradingParams& color_grading) = 0;
 
     virtual void ConfigureForColorPicking() = 0;
+
+    virtual void EnableViewCaching(bool enable) = 0;
+    virtual bool IsCached() const = 0;
+    virtual TextureHandle GetColorBuffer() = 0;
 
     virtual Camera* GetCamera() const = 0;
 };

@@ -34,7 +34,7 @@
 namespace cloudViewer {
 namespace ml {
 namespace contrib {
-    using namespace cloudViewer;
+
 const py::tuple SubsampleBatch(py::array points,
                                py::array batches,
                                utility::optional<py::array> features,
@@ -140,7 +140,6 @@ const py::tuple SubsampleBatch(py::array points,
             original_batches, subsampled_batches, sampleDl, max_p);
 
     // Wrap result subsampled_points. Data will be copied.
-    assert(std::is_pod<PointXYZ>());
     int64_t num_subsampled_points =
             static_cast<int64_t>(subsampled_points.size());
     core::Tensor subsampled_points_t(
@@ -191,7 +190,8 @@ const py::tuple SubsampleBatch(py::array points,
     // Wrap result subsampled_classes. Data will be copied.
     core::Tensor subsampled_classes_t;
     if (classes.has_value()) {
-        if (subsampled_classes.size() != num_subsampled_points) {
+        if (static_cast<int64_t>(subsampled_classes.size()) !=
+            num_subsampled_points) {
             utility::LogError(
                     "Error: subsampled_classes.size() {} != "
                     "num_subsampled_points {}.",
@@ -302,7 +302,6 @@ const py::object Subsample(py::array points,
                      sampleDl, verbose);
 
     // Wrap result subsampled_points. Data will be copied.
-    assert(std::is_pod<PointXYZ>());
     int64_t num_subsampled_points =
             static_cast<int64_t>(subsampled_points.size());
     core::Tensor subsampled_points_t(
@@ -338,7 +337,8 @@ const py::object Subsample(py::array points,
     // Wrap result subsampled_classes. Data will be copied.
     core::Tensor subsampled_classes_t;
     if (classes.has_value()) {
-        if (subsampled_classes.size() != num_subsampled_points) {
+        if (static_cast<int64_t>(subsampled_classes.size()) !=
+            num_subsampled_points) {
             utility::LogError(
                     "Error: subsampled_classes.size() {} != "
                     "num_subsampled_points {}.",

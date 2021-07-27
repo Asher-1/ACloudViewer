@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,8 +34,8 @@ namespace visualization {
 namespace gui {
 
 // Label3D is a helper class for labels (like UI Labels) at 3D points as opposed
-// to screen points. It is NOT a UI widget but is instead used via cloudViewerScene
-// class. See cloudViewerScene::AddLabel/RemoveLabel.
+// to screen points. It is NOT a UI widget but is instead used via CloudViewerScene
+// class. See CloudViewerScene::AddLabel/RemoveLabel.
 class Label3D {
 public:
     /// Copies text

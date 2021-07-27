@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,19 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/OctreeIO.h"
+#include "io/OctreeIO.h"
 
 #include <json/json.h>
 
 #include <cstdio>
 
-#include "open3d/geometry/Octree.h"
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/io/PointCloudIO.h"
-#include "open3d/utility/IJsonConvertible.h"
+#include "geometry/Octree.h"
+#include "geometry/PointCloud.h"
+#include "io/PointCloudIO.h"
+#include "utility/IJsonConvertible.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
@@ -106,4 +106,4 @@ TEST(OctreeIO, JsonFileIOSevenCubes) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -26,7 +26,7 @@
 
 #include <cstdio>
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include <ProgressReporters.h>
 #include "io/FileFormatIO.h"

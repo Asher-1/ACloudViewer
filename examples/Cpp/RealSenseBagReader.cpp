@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -83,19 +83,29 @@ Json::Value GenerateDatasetConfig(const std::string &output_path,
     return value;
 }
 
-void PrintUsage() {
+void PrintHelp() {
+    using namespace cloudViewer;
+
     PrintCloudViewerVersion();
-    utility::LogInfo("Usage:");
     // clang-format off
-    utility::LogInfo("RealSenseBagReader [-V] --input input.bag [--output path]");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > RealSenseBagReader [-V] --input input.bag [--output path]");
     // clang-format on
+    utility::LogInfo("");
 }
 
-int main(int argc, char **argv) {
-    if (!utility::ProgramOptionExists(argc, argv, "--input")) {
-        PrintUsage();
+int main(int argc, char *argv[]) {
+    using namespace cloudViewer;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
+        !utility::ProgramOptionExists(argc, argv, "--input")) {
+        PrintHelp();
         return 1;
     }
+
     if (utility::ProgramOptionExists(argc, argv, "-V")) {
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     } else {
@@ -112,7 +122,7 @@ int main(int argc, char **argv) {
         output_path = utility::GetProgramOptionAsString(argc, argv, "--output");
         if (output_path.empty()) {
             utility::LogWarning("Output path {} is empty, only play bag.",
-                                       output_path);
+                                output_path);
         }
         if (utility::filesystem::DirectoryExists(output_path)) {
             utility::LogWarning(
@@ -176,7 +186,7 @@ int main(int argc, char **argv) {
                 return true;
             });
 
-    vis.CreateVisualizerWindow("CloudViewer Intel RealSense bag player", 1920, 540);
+    vis.CreateVisualizerWindow("Open3D Intel RealSense bag player", 1920, 540);
     utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
             "exit.");
@@ -205,7 +215,7 @@ int main(int argc, char **argv) {
     }
     const auto frame_interval = sc::duration<double>(1. / bag_metadata.fps_);
 
-    using legacyRGBDImage = geometry::RGBDImage;
+    using legacyRGBDImage = cloudViewer::geometry::RGBDImage;
     auto last_frame_time = std::chrono::steady_clock::now();
     legacyRGBDImage im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
     while (!bag_reader.IsEOF() && !flag_exit) {

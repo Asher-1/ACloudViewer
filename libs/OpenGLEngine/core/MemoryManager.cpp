@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,18 +31,24 @@
 
 #include "core/Blob.h"
 #include "core/Device.h"
+#include "core/MemoryManagerStatistic.h"
 #include <Helper.h>
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace core {
 
 void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
-    return GetDeviceMemoryManager(device)->Malloc(byte_size, device);
+    void* ptr = GetDeviceMemoryManager(device)->Malloc(byte_size, device);
+    MemoryManagerStatistic::GetInstance().CountMalloc(ptr, byte_size, device);
+    return ptr;
 }
 
 void MemoryManager::Free(void* ptr, const Device& device) {
-    return GetDeviceMemoryManager(device)->Free(ptr, device);
+    // Update statistics before freeing the memory. This ensures a consistent
+    // order in case a subsequent Malloc requires the currently freed memory.
+    MemoryManagerStatistic::GetInstance().CountFree(ptr, device);
+    GetDeviceMemoryManager(device)->Free(ptr, device);
 }
 
 void MemoryManager::Memcpy(void* dst_ptr,
@@ -54,14 +60,14 @@ void MemoryManager::Memcpy(void* dst_ptr,
     if (num_bytes == 0) {
         return;
     } else if (src_ptr == nullptr || dst_ptr == nullptr) {
-        cloudViewer::utility::LogError("src_ptr and dst_ptr cannot be nullptr.");
+        utility::LogError("src_ptr and dst_ptr cannot be nullptr.");
     }
 
     if ((dst_device.GetType() != Device::DeviceType::CPU &&
          dst_device.GetType() != Device::DeviceType::CUDA) ||
         (src_device.GetType() != Device::DeviceType::CPU &&
          src_device.GetType() != Device::DeviceType::CUDA)) {
-        cloudViewer::utility::LogError("MemoryManager::Memcpy: Unimplemented device.");
+        utility::LogError("MemoryManager::Memcpy: Unimplemented device.");
     }
 
     std::shared_ptr<DeviceMemoryManager> device_mm;
@@ -81,7 +87,7 @@ void MemoryManager::MemcpyFromHost(void* dst_ptr,
                                    const Device& dst_device,
                                    const void* host_ptr,
                                    size_t num_bytes) {
-    // Currenlty default host is CPU:0
+    // Currently default host is CPU:0
     Memcpy(dst_ptr, dst_device, host_ptr, Device("CPU:0"), num_bytes);
 }
 
@@ -89,7 +95,7 @@ void MemoryManager::MemcpyToHost(void* host_ptr,
                                  const void* src_ptr,
                                  const Device& src_device,
                                  size_t num_bytes) {
-    // Currenlty default host is CPU:0
+    // Currently default host is CPU:0
     Memcpy(host_ptr, Device("CPU:0"), src_ptr, src_device, num_bytes);
 }
 
@@ -97,24 +103,24 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
         const Device& device) {
     static std::unordered_map<Device::DeviceType,
                               std::shared_ptr<DeviceMemoryManager>,
-                              cloudViewer::utility::hash_enum_class>
+                              utility::hash_enum_class>
             map_device_type_to_memory_manager = {
                     {Device::DeviceType::CPU,
-                     std::make_shared<CPUMemoryManager>()},
+                     cloudViewer::make_shared<CPUMemoryManager>()},
 #ifdef BUILD_CUDA_MODULE
 #ifdef BUILD_CACHED_CUDA_MANAGER
                     {Device::DeviceType::CUDA,
-                     std::make_shared<CUDACachedMemoryManager>()},
+                     cloudViewer::make_shared<CachedMemoryManager>(
+                             cloudViewer::make_shared<CUDAMemoryManager>())},
 #else
                     {Device::DeviceType::CUDA,
-                     std::make_shared<CUDASimpleMemoryManager>()},
+                     cloudViewer::make_shared<CUDAMemoryManager>()},
 #endif  // BUILD_CACHED_CUDA_MANAGER
 #endif  // BUILD_CUDA_MODULE
             };
     if (map_device_type_to_memory_manager.find(device.GetType()) ==
         map_device_type_to_memory_manager.end()) {
-        cloudViewer::utility::LogError(
-                "MemoryManager::GetDeviceMemoryManager: Unimplemented device");
+        utility::LogError("Unimplemented device '{}'.", device.ToString());
     }
     return map_device_type_to_memory_manager.at(device.GetType());
 }

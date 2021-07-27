@@ -26,17 +26,17 @@
 
 #pragma once
 
-#include "camera/PinholeCameraIntrinsic.h"
-#include "pipelines/odometry/OdometryOption.h"
-#include "pipelines/odometry/RGBDOdometryJacobian.h"
-
 #include <Eigen/Core>
 #include <iostream>
 #include <tuple>
 #include <vector>
 
-#include <Console.h>
+#include "camera/PinholeCameraIntrinsic.h"
+#include "pipelines/odometry/OdometryOption.h"
+#include "pipelines/odometry/RGBDOdometryJacobian.h"
+
 #include <Eigen.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 

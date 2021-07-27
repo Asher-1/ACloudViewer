@@ -26,7 +26,7 @@
 
 #include "camera/PinholeCameraParameters.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include <json/json.h>
 
 

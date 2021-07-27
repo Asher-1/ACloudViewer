@@ -66,7 +66,9 @@
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
 
-#pragma warning(disable:4715)
+#ifdef _MSC_VER
+  #pragma warning(disable: 4715)
+#endif
 
 namespace cloudViewer {
 namespace geometry {
@@ -183,13 +185,13 @@ void pybind_geometry_classes(py::module &m) {
 			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccCylinder (if possible)", "entity"_a);
-//    m.def("ToCoordinateSystem", [](ccHObject& entity) {
-//        if (ccHObjectCaster::ToCoordinateSystem(&entity)) {
-//            return std::ref(*ccHObjectCaster::ToCoordinateSystem(&entity));
-//        } else {
-//            cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
-//        }
-//    }, "Converts current object to ccCoordinateSystem (if possible)", "entity"_a);
+        m.def("ToCoordinateSystem", [](ccHObject& entity) {
+            if (ccHObjectCaster::ToCoordinateSystem(&entity)) {
+                return std::ref(*ccHObjectCaster::ToCoordinateSystem(&entity));
+            } else {
+                cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
+            }
+        }, "Converts current object to ccCoordinateSystem (if possible)", "entity"_a);
 	m.def("ToCone", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToCone(&entity)) {
 			return std::ref(*ccHObjectCaster::ToCone(&entity));
@@ -225,7 +227,7 @@ void pybind_geometry_classes(py::module &m) {
 			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccTorus (if possible)", "entity"_a);
-	
+
 	m.def("ToOctreeProxy", [](ccHObject& entity) {
 		if (ccHObjectCaster::ToOctreeProxy(&entity)) {
 			return std::ref(*ccHObjectCaster::ToOctreeProxy(&entity));
@@ -268,7 +270,7 @@ void pybind_geometry_classes(py::module &m) {
 			cloudViewer::utility::LogWarning("[ccHObjectCaster] converting failed!");
 		}
 	}, "Converts current object to ccImage (if possible)", "entity"_a);
-	
+
 	m.def("To2DLabel", [](ccHObject& entity) {
 		if (ccHObjectCaster::To2DLabel(&entity)) {
 			return std::ref(*ccHObjectCaster::To2DLabel(&entity));
@@ -384,8 +386,8 @@ void pybind_geometry_classes(py::module &m) {
 	// Trick to write docs without listing the members in the enum class again.
 	geometry_type.attr("__doc__") = docstring::static_property(
 		py::cpp_function([](py::handle arg) -> std::string {
-		return "Enum class for Geometry types.";
-	}),
+		    return "Enum class for Geometry types.";
+	        }),
 		py::none(), py::none(), "");
 
 	geometry_type
@@ -433,32 +435,32 @@ void pybind_geometry_classes(py::module &m) {
 	drawableObject.def("__repr__", [](const ccDrawableObject &painter) {
 		return std::string("Generic interface for (3D) drawable entities");
 	})
-	.def("is_visible",			&ccDrawableObject::isVisible, "Returns whether entity is visible or not.")
-	.def("set_visible",			&ccDrawableObject::setVisible, "Sets entity visibility.", "state"_a)
+	.def("is_visible",		&ccDrawableObject::isVisible, "Returns whether entity is visible or not.")
+	.def("set_visible",		&ccDrawableObject::setVisible, "Sets entity visibility.", "state"_a)
 	.def("toggle_visibility",	&ccDrawableObject::toggleVisibility, "Toggles visibility.")
-	.def("is_visiblity_locked", &ccDrawableObject::isVisiblityLocked, "Returns whether visibility is locked or not.")
+	.def("is_visiblity_locked",     &ccDrawableObject::isVisiblityLocked, "Returns whether visibility is locked or not.")
 	.def("lock_visibility",		&ccDrawableObject::lockVisibility, "Locks/unlocks visibility.", "state"_a)
-	.def("is_selected",			&ccDrawableObject::isSelected, "Returns whether entity is selected or not.")
+	.def("is_selected",		&ccDrawableObject::isSelected, "Returns whether entity is selected or not.")
 	.def("set_selected",		&ccDrawableObject::setSelected, "Selects/Unselects entity.", "state"_a)
-	.def("has_colors",			&ccDrawableObject::hasColors, "Returns whether colors are enabled or not.")
+	.def("has_colors",		&ccDrawableObject::hasColors, "Returns whether colors are enabled or not.")
 	.def("colors_shown",		&ccDrawableObject::colorsShown, "Returns whether colors are shown or not.")
-	.def("show_colors",			&ccDrawableObject::showColors, "Sets colors visibility.", "state"_a)
+	.def("show_colors",		&ccDrawableObject::showColors, "Sets colors visibility.", "state"_a)
 	.def("toggle_colors",		&ccDrawableObject::toggleColors, "Toggles colors display state.")
-	.def("has_normals",			&ccDrawableObject::hasNormals, "Returns whether normals are enabled or not.")
+        .def("has_normals",		&ccDrawableObject::hasNormals, "Returns whether normals are enabled or not.")
 	.def("normals_shown",		&ccDrawableObject::normalsShown, "Returns whether normals are shown or not.")
 	.def("show_normals",		&ccDrawableObject::showNormals, "Sets normals visibility.", "state"_a)
 	.def("toggle_normals",		&ccDrawableObject::toggleNormals, "Toggles normals display state.")
 	.def("has_displayed_scalar_field", &ccDrawableObject::hasDisplayedScalarField, "Returns whether an active scalar field is available or not.")
 	.def("has_scalar_fields",	&ccDrawableObject::hasScalarFields, "Returns whether one or more scalar fields are instantiated.")
-	.def("show_sf",				&ccDrawableObject::showSF, "Sets active scalar field visibility.", "state"_a)
-	.def("toggle_sf",			&ccDrawableObject::toggleSF, "Toggles SF display state.")
-	.def("sf_shown",			&ccDrawableObject::sfShown, "Returns whether active scalar field is visible.")
+	.def("show_sf",			&ccDrawableObject::showSF, "Sets active scalar field visibility.", "state"_a)
+	.def("toggle_sf",		&ccDrawableObject::toggleSF, "Toggles SF display state.")
+	.def("sf_shown",		&ccDrawableObject::sfShown, "Returns whether active scalar field is visible.")
 	.def("toggle_materials",	&ccDrawableObject::toggleMaterials, "Toggles material display state.")
 	.def("show_3d_name",		&ccDrawableObject::showNameIn3D, "Sets whether name should be displayed in 3D.", "state"_a)
 	.def("name_3d_shown",		&ccDrawableObject::nameShownIn3D, "Returns whether name is displayed in 3D or not.")
 	.def("toggle_show_name",	&ccDrawableObject::toggleShowName, "Toggles name in 3D display state.")
-	.def("get_opacity",			&ccDrawableObject::getOpacity, "Get opacity.")
-	.def("set_opacity",			&ccDrawableObject::setOpacity, "Set opacity activation state.", "opacity"_a)
+	.def("get_opacity",		&ccDrawableObject::getOpacity, "Get opacity.")
+	.def("set_opacity",		&ccDrawableObject::setOpacity, "Set opacity activation state.", "opacity"_a)
 	.def("is_color_overriden",	&ccDrawableObject::isColorOverriden, "Returns whether colors are currently overridden by a temporary (unique) color.")
 	.def("get_temp_color", [](ccDrawableObject& painter) {
 			return ecvColor::Rgb::ToEigen(painter.getTempColor());
@@ -471,9 +473,9 @@ void pybind_geometry_classes(py::module &m) {
 	.def("set_gl_transformation", [](ccDrawableObject& painter, const Eigen::Matrix4d& transformation) {
 			painter.setGLTransformation(ccGLMatrix::FromEigenMatrix(transformation));
 		}, "Associates entity with a GL transformation (rotation + translation).", "transformation"_a)
-	.def("enable_gl_transformation", &ccDrawableObject::enableGLTransformation, 
+	.def("enable_gl_transformation", &ccDrawableObject::enableGLTransformation,
 		"Enables/disables associated GL transformation.", "state"_a)
-	.def("is_gl_trans_enabled", &ccDrawableObject::isGLTransEnabled, 
+	.def("is_gl_trans_enabled", &ccDrawableObject::isGLTransEnabled,
 		"Returns whether a GL transformation is enabled or not.")
 	.def("get_gl_transformation", [](const ccDrawableObject& painter) {
 			return ccGLMatrix::ToEigenMatrix4(painter.getGLTransformation());
@@ -525,7 +527,7 @@ void pybind_geometry_classes(py::module &m) {
 	docstring::ClassMethodDocInject(m, "ccDrawableObject", "translate_gl");
 
 	// cloudViewer.geometry
-	py::class_<ccHObject, PyGeometry<ccHObject>, 
+	py::class_<ccHObject, PyGeometry<ccHObject>,
 		std::shared_ptr<ccHObject>, ccObject, ccDrawableObject>
 		geometry3d(m, "ccHObject", py::multiple_inheritance(), "The geometry 3D class.");
 		geometry3d.def("__repr__", [](const ccHObject &geometry) {
@@ -622,16 +624,14 @@ void pybind_geometry_classes(py::module &m) {
 				ccHObject::Container filteredChildren;
 				entity.filterChildren(filteredChildren, recursive, filter, strict);
 				std::vector<std::shared_ptr<ccHObject>> container;
-				for (auto child : filteredChildren)
-				{
-					const_cast<ccHObject&>(entity).detachChild(child);
-					container.push_back(std::shared_ptr<ccHObject>(child));
+				for (auto child : filteredChildren) {
+                                    const_cast<ccHObject&>(entity).detachChild(child);
+                                    container.push_back(std::shared_ptr<ccHObject>(child));
 				}
-				
 				return container;
 			},
-			"Collects the children corresponding to a certain pattern.", 
-			"recursive"_a = false, 
+			"Collects the children corresponding to a certain pattern.",
+			"recursive"_a = false,
 			"filter"_a = CV_TYPES::OBJECT,
 			"strict"_a = false)
 		.def_static("New",
@@ -737,7 +737,7 @@ void pybind_geometry_classes(py::module &m) {
 		"(i.e 'isA') or not (i.e. 'isKindOf')"} });
 
 	// cloudViewer.geometry.ccPlanarEntityInterface
-	py::class_<ccPlanarEntityInterface, 
+	py::class_<ccPlanarEntityInterface,
 		PyPlanarEntityInterface<ccPlanarEntityInterface>,
 		std::shared_ptr<ccPlanarEntityInterface>>
 		planarEntityInterface(m, "ccPlanarEntityInterface", "The Interface for a planar entity.");
@@ -772,12 +772,12 @@ void pybind_geometry(py::module &m) {
 	pybind_lineset(m_submodule);
 	pybind_meshbase(m_submodule);
 	pybind_trianglemesh(m_submodule);
+        pybind_halfedgetrianglemesh(m_submodule);
+	pybind_tetramesh(m_submodule);
+	pybind_image(m_submodule);
 	pybind_primitives(m_submodule);
 	pybind_facet(m_submodule);
 	pybind_polyline(m_submodule);
-    pybind_halfedgetrianglemesh(m_submodule);
-	pybind_image(m_submodule);
-	pybind_tetramesh(m_submodule);
 	pybind_cloudbase_methods(m_submodule);
 	pybind_pointcloud_methods(m_submodule);
 	pybind_voxelgrid_methods(m_submodule);

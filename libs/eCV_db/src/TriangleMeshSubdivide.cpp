@@ -32,7 +32,7 @@
 #include <queue>
 #include <tuple>
 
-#include <Console.h>
+#include <Logging.h>
 
 #include <unordered_map>
 #include <unordered_set>

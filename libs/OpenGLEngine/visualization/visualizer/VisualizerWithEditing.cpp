@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,20 +26,18 @@
 
 #include "visualization/visualizer/VisualizerWithEditing.h"
 
+#include <FileSystem.h>
+#include <IJsonConvertibleIO.h>
+#include <Image.h>
+#include <LineSet.h>
+#include <Logging.h>
+#include <ecvHalfEdgeMesh.h>
+#include <ecvMesh.h>
+#include <ecvPointCloud.h>
 #include <tinyfiledialogs/tinyfiledialogs.h>
 
 #include "io/PointCloudIO.h"
 #include "io/TriangleMeshIO.h"
-#include <IJsonConvertibleIO.h>
-#include <Image.h>
-#include <ecvMesh.h>
-#include <ecvHalfEdgeMesh.h>
-#include <LineSet.h>
-#include <ecvPointCloud.h>
-
-#include <Console.h>
-#include <FileSystem.h>
-
 #include "visualization/utility/GLHelper.h"
 #include "visualization/utility/PointCloudPicker.h"
 #include "visualization/utility/SelectionPolygon.h"
@@ -49,14 +47,14 @@
 
 namespace cloudViewer {
 namespace visualization {
-using namespace cloudViewer;
 
 bool VisualizerWithEditing::AddGeometry(
         std::shared_ptr<const ccHObject> geometry_ptr,
         bool reset_bounding_box) {
-    if (is_initialized_ == false || geometry_ptrs_.empty() == false) {
+    if (!is_initialized_ || !geometry_ptrs_.empty()) {
         return false;
     }
+
     glfwMakeContextCurrent(window_);
     original_geometry_ptr_ = geometry_ptr;
     if (geometry_ptr->isKindOf(CV_TYPES::CUSTOM_H_OBJECT)) {
@@ -67,8 +65,8 @@ bool VisualizerWithEditing::AddGeometry(
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 cloudViewer::make_shared<glsl::PointCloudRenderer>();
-        if (editing_geometry_renderer_ptr_->AddGeometry(
-                    editing_geometry_ptr_) == false) {
+        if (!editing_geometry_renderer_ptr_->AddGeometry(
+                    editing_geometry_ptr_)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::LINESET)) {
@@ -77,8 +75,8 @@ bool VisualizerWithEditing::AddGeometry(
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 cloudViewer::make_shared<glsl::LineSetRenderer>();
-        if (editing_geometry_renderer_ptr_->AddGeometry(
-                    editing_geometry_ptr_) == false) {
+        if (!editing_geometry_renderer_ptr_->AddGeometry(
+                    editing_geometry_ptr_)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::MESH)) {
@@ -87,8 +85,8 @@ bool VisualizerWithEditing::AddGeometry(
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 cloudViewer::make_shared<glsl::TriangleMeshRenderer>();
-        if (editing_geometry_renderer_ptr_->AddGeometry(
-                    editing_geometry_ptr_) == false) {
+        if (!editing_geometry_renderer_ptr_->AddGeometry(
+                    editing_geometry_ptr_)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::HALF_EDGE_MESH)) {
@@ -97,8 +95,8 @@ bool VisualizerWithEditing::AddGeometry(
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 cloudViewer::make_shared<glsl::HalfEdgeMeshRenderer>();
-        if (editing_geometry_renderer_ptr_->AddGeometry(
-                    editing_geometry_ptr_) == false) {
+        if (!editing_geometry_renderer_ptr_->AddGeometry(
+                    editing_geometry_ptr_)) {
             return false;
         }
     } else if (geometry_ptr->isKindOf(CV_TYPES::IMAGE2)) {
@@ -107,8 +105,8 @@ bool VisualizerWithEditing::AddGeometry(
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 cloudViewer::make_shared<glsl::ImageRenderer>();
-        if (editing_geometry_renderer_ptr_->AddGeometry(
-                    editing_geometry_ptr_) == false) {
+        if (!editing_geometry_renderer_ptr_->AddGeometry(
+                    editing_geometry_ptr_)) {
             return false;
         }
     } else {
@@ -135,7 +133,7 @@ void VisualizerWithEditing::PrintVisualizerHelp() {
     utility::LogInfo("    Z            : Enter orthogonal view along Z axis, press again to flip.");
     utility::LogInfo("    K            : Lock / unlock camera.");
     utility::LogInfo("    Ctrl + D     : Downsample point cloud with a voxel grid.");
-    utility::LogInfo("    Ctrl + R     : Reset geometry to its initial state.");
+    utility::LogInfo("    Ctrl + R     : reset geometry to its initial state.");
     utility::LogInfo("    Shift + +/-  : Increase/decrease picked point size..");
     utility::LogInfo("    Shift + mouse left button   : Pick a point and add in queue.");
     utility::LogInfo("    Shift + mouse right button  : Remove last picked point from queue.");
@@ -152,7 +150,7 @@ void VisualizerWithEditing::PrintVisualizerHelp() {
 }
 
 void VisualizerWithEditing::UpdateWindowTitle() {
-    if (window_ != NULL) {
+    if (window_) {
         auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
         std::string new_window_title =
                 window_name_ + " - " + view_control.GetStatusString();
@@ -169,8 +167,7 @@ void VisualizerWithEditing::BuildUtilities() {
     selection_polygon_ptr_ = cloudViewer::make_shared<SelectionPolygon>();
     selection_polygon_renderer_ptr_ =
             cloudViewer::make_shared<glsl::SelectionPolygonRenderer>();
-    if (selection_polygon_renderer_ptr_->AddGeometry(selection_polygon_ptr_) ==
-        false) {
+    if (!selection_polygon_renderer_ptr_->AddGeometry(selection_polygon_ptr_)) {
         success = false;
     }
     if (success) {
@@ -182,13 +179,12 @@ void VisualizerWithEditing::BuildUtilities() {
     success = true;
     pointcloud_picker_ptr_ = cloudViewer::make_shared<PointCloudPicker>();
     if (geometry_ptrs_.empty() ||
-        pointcloud_picker_ptr_->SetPointCloud(editing_geometry_ptr_) == false) {
+        !pointcloud_picker_ptr_->SetPointCloud(editing_geometry_ptr_)) {
         success = false;
     }
     pointcloud_picker_renderer_ptr_ =
             cloudViewer::make_shared<glsl::PointCloudPickerRenderer>();
-    if (pointcloud_picker_renderer_ptr_->AddGeometry(pointcloud_picker_ptr_) ==
-        false) {
+    if (!pointcloud_picker_renderer_ptr_->AddGeometry(pointcloud_picker_ptr_)) {
         success = false;
     }
     if (success) {
@@ -198,8 +194,9 @@ void VisualizerWithEditing::BuildUtilities() {
 }
 
 int VisualizerWithEditing::PickPoint(double x, double y) {
-    auto renderer_ptr = cloudViewer::make_shared<glsl::PointCloudPickingRenderer>();
-    if (renderer_ptr->AddGeometry(editing_geometry_ptr_) == false) {
+    auto renderer_ptr =
+            cloudViewer::make_shared<glsl::PointCloudPickingRenderer>();
+    if (!renderer_ptr->AddGeometry(editing_geometry_ptr_)) {
         return -1;
     }
     const auto &view = GetViewControl();
@@ -389,7 +386,15 @@ void VisualizerWithEditing::KeyPressCallback(
                     editing_geometry_ptr_->isKindOf(CV_TYPES::POINT_CLOUD)) {
                     glfwMakeContextCurrent(window_);
                     ccPointCloud &pcd = (ccPointCloud &)*editing_geometry_ptr_;
-                    pcd = *selection_polygon_ptr_->CropPointCloud(pcd, view_control);
+                    if (std::shared_ptr<ccPointCloud> pcd_ptr =
+                                selection_polygon_ptr_->CropPointCloud(
+                                        pcd, view_control)) {
+                        pcd = *pcd_ptr;
+                    } else {
+                        utility::LogError(
+                                "Internal error: CropPointCloud returned "
+                                "nullptr.");
+                    }
                     editing_geometry_renderer_ptr_->UpdateGeometry();
                     const char *filename;
                     const char *pattern[1] = {"*.ply"};
@@ -398,13 +403,12 @@ void VisualizerWithEditing::KeyPressCallback(
                             std::to_string(crop_action_count_ + 1) + ".ply";
                     if (use_dialog_) {
                         filename = tinyfd_saveFileDialog(
-                                "ccPointCloud file",
-                                default_filename.c_str(), 1, pattern,
-                                "Polygon File Format (*.ply)");
+                                "ccPointCloud file", default_filename.c_str(),
+                                1, pattern, "Polygon File Format (*.ply)");
                     } else {
                         filename = default_filename.c_str();
                     }
-                    if (filename == NULL) {
+                    if (!filename) {
                         utility::LogWarning(
                                 "No filename is given. Abort saving.");
                     } else {
@@ -418,8 +422,15 @@ void VisualizerWithEditing::KeyPressCallback(
                            editing_geometry_ptr_->isKindOf(CV_TYPES::MESH)) {
                     glfwMakeContextCurrent(window_);
                     ccMesh &mesh = (ccMesh &)*editing_geometry_ptr_;
-                    mesh = *selection_polygon_ptr_->CropTriangleMesh(
-                            mesh, view_control);
+                    if (std::shared_ptr<ccMesh> mesh_ptr =
+                                selection_polygon_ptr_->CropTriangleMesh(
+                                        mesh, view_control)) {
+                        mesh = *mesh_ptr;
+                    } else {
+                        utility::LogError(
+                                "Internal error: CropTriangleMesh returned "
+                                "nullptr.");
+                    }
                     editing_geometry_renderer_ptr_->UpdateGeometry();
                     const char *filename;
                     const char *pattern[1] = {"*.ply"};
@@ -433,7 +444,7 @@ void VisualizerWithEditing::KeyPressCallback(
                     } else {
                         filename = default_filename.c_str();
                     }
-                    if (filename == NULL) {
+                    if (!filename) {
                         utility::LogWarning(
                                 "No filename is given. Abort saving.");
                     } else {
@@ -445,21 +456,24 @@ void VisualizerWithEditing::KeyPressCallback(
                     InvalidatePicking();
                 }
             } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+                Visualizer::KeyPressCallback(window, key, scancode, action,
+                                             mods);
             }
             break;
         case GLFW_KEY_MINUS:
             if (mods & GLFW_MOD_SHIFT) {
                 option.DecreaseSphereSize();
             } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+                Visualizer::KeyPressCallback(window, key, scancode, action,
+                                             mods);
             }
             break;
         case GLFW_KEY_EQUAL:
             if (mods & GLFW_MOD_SHIFT) {
                 option.IncreaseSphereSize();
             } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+                Visualizer::KeyPressCallback(window, key, scancode, action,
+                                             mods);
             }
             break;
         default:
@@ -608,7 +622,8 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window,
             } else {
                 const auto &point =
                         ((const ccPointCloud &)(*editing_geometry_ptr_))
-                                .getEigenPoint(static_cast<unsigned int>(index));
+                                .getEigenPoint(
+                                        static_cast<unsigned int>(index));
                 utility::LogInfo(
                         "Picked point #{:d} ({:.2}, {:.2}, {:.2}) to add in "
                         "queue.",
@@ -619,7 +634,7 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window,
             }
         } else if (button == GLFW_MOUSE_BUTTON_RIGHT &&
                    action == GLFW_RELEASE && (mods & GLFW_MOD_SHIFT)) {
-            if (pointcloud_picker_ptr_->picked_indices_.empty() == false) {
+            if (!pointcloud_picker_ptr_->picked_indices_.empty()) {
                 utility::LogInfo(
                         "Remove picked point #{} from pick queue.",
                         pointcloud_picker_ptr_->picked_indices_.back());
@@ -657,11 +672,12 @@ void VisualizerWithEditing::SaveCroppingResult(
             ".json";
     if (editing_geometry_ptr_->isKindOf(CV_TYPES::POINT_CLOUD))
         io::WritePointCloud(ply_filename,
-            (const ccPointCloud&)(*editing_geometry_ptr_), {});
+                            (const ccPointCloud &)(*editing_geometry_ptr_), {});
     else if (editing_geometry_ptr_->isKindOf(CV_TYPES::MESH))
-		io::WriteTriangleMesh(ply_filename,
-			(const ccMesh &)(*editing_geometry_ptr_));
-    io::WriteIJsonConvertible(volume_filename,
+        io::WriteTriangleMesh(ply_filename,
+                              (const ccMesh &)(*editing_geometry_ptr_));
+    io::WriteIJsonConvertible(
+            volume_filename,
             *selection_polygon_ptr_->CreateSelectionPolygonVolume(
                     GetViewControl()));
 }

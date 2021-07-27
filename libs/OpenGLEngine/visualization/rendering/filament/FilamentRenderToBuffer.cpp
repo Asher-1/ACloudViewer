@@ -51,7 +51,7 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
-#include <Console.h>
+#include <Logging.h>
 #include "visualization/rendering/filament/FilamentEngine.h"
 #include "visualization/rendering/filament/FilamentRenderer.h"
 #include "visualization/rendering/filament/FilamentScene.h"
@@ -160,7 +160,7 @@ void FilamentRenderToBuffer::CopySettings(const View* view) {
     if (depth_image_) {
         // Disable post-processing when rendering to depth image. It's uncessary
         // overhead and the depth buffer is discarded when post-processing is
-        // enabled so  and the returned image is all 0s.
+        // enabled so the returned image is all 0s.
         view_->ConfigureForColorPicking();
     }
 }
@@ -178,6 +178,10 @@ void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
 
     callback({self->width_, self->height_, self->n_channels_, self->buffer_,
               self->buffer_size_});
+
+    // Unassign the callback, in case it captured ourself. Then we would never
+    // get freed.
+    self->callback_ = nullptr;
 
     self->frame_done_ = true;
     delete params;

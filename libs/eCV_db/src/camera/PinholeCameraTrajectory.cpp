@@ -27,7 +27,7 @@
 #include "camera/PinholeCameraTrajectory.h"
 #include "camera/PinholeCameraIntrinsic.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include <json/json.h>
 
 

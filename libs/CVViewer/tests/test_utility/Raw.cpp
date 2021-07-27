@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -30,7 +30,7 @@
 #include <iostream>
 #include <sstream>
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 // ----------------------------------------------------------------------------
 // Raw data with SIZE = 1021 elements.
@@ -171,4 +171,4 @@ double Raw::Next() {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

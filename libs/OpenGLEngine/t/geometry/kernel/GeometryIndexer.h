@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,9 +28,11 @@
 
 #include <unordered_map>
 
+#include "core/CUDAUtils.h"
 #include "core/Tensor.h"
-#include <Console.h>
-#include <Helper.h>
+#include "utility/Helper.h"
+#include "utility/Logging.h"
+#include "utility/Timer.h"
 
 namespace cloudViewer {
 namespace t {
@@ -42,31 +44,40 @@ class TransformIndexer {
 public:
     /// intrinsic: simple pinhole camera matrix, stored in fx, fy, cx, cy
     /// extrinsic: world to camera transform, stored in a 3x4 matrix
-    TransformIndexer(const core::Tensor& intrinsic,
-                     const core::Tensor& extrinsic = core::Tensor::Eye(
-                             4, core::Dtype::Float32, core::Device("CPU:0")),
+    TransformIndexer(const core::Tensor& intrinsics,
+                     const core::Tensor& extrinsics,
                      float scale = 1.0f) {
-        intrinsic.AssertShape({3, 3});
-        extrinsic.AssertShape({4, 4});
-        intrinsic.AssertDtype(core::Dtype::Float32);
-        extrinsic.AssertDtype(core::Dtype::Float32);
+        intrinsics.AssertShape({3, 3});
+        intrinsics.AssertDtype(core::Dtype::Float64);
+        intrinsics.AssertDevice(core::Device("CPU:0"));
+        if (!intrinsics.IsContiguous()) {
+            utility::LogError("Intrinsics is not contiguous");
+        }
 
+        extrinsics.AssertShape({4, 4});
+        extrinsics.AssertDtype(core::Dtype::Float64);
+        extrinsics.AssertDevice(core::Device("CPU:0"));
+        if (!extrinsics.IsContiguous()) {
+            utility::LogError("Extrinsics is not contiguous");
+        }
+
+        const double* intrinsic_ptr = intrinsics.GetDataPtr<double>();
+        const double* extrinsic_ptr = extrinsics.GetDataPtr<double>();
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 4; ++j) {
-                extrinsic_[i][j] = extrinsic[i][j].Item<float>();
+                extrinsic_[i][j] = extrinsic_ptr[i * 4 + j];
             }
         }
 
-        fx_ = intrinsic[0][0].Item<float>();
-        fy_ = intrinsic[1][1].Item<float>();
-        cx_ = intrinsic[0][2].Item<float>();
-        cy_ = intrinsic[1][2].Item<float>();
-
+        fx_ = intrinsic_ptr[0 * 3 + 0];
+        fy_ = intrinsic_ptr[1 * 3 + 1];
+        cx_ = intrinsic_ptr[0 * 3 + 2];
+        cy_ = intrinsic_ptr[1 * 3 + 2];
         scale_ = scale;
     }
 
     /// Transform a 3D coordinate in camera coordinate to world coordinate
-    CLOUDVIEWER_HOST_DEVICE void RigidTransform(float x_in,
+    OPEN3D_HOST_DEVICE void RigidTransform(float x_in,
                                            float y_in,
                                            float z_in,
                                            float* x_out,
@@ -84,8 +95,27 @@ public:
                  z_in * extrinsic_[2][2] + extrinsic_[2][3];
     }
 
+    /// Transform a 3D coordinate in camera coordinate to world coordinate
+    OPEN3D_HOST_DEVICE void Rotate(float x_in,
+                                   float y_in,
+                                   float z_in,
+                                   float* x_out,
+                                   float* y_out,
+                                   float* z_out) const {
+        x_in *= scale_;
+        y_in *= scale_;
+        z_in *= scale_;
+
+        *x_out = x_in * extrinsic_[0][0] + y_in * extrinsic_[0][1] +
+                 z_in * extrinsic_[0][2];
+        *y_out = x_in * extrinsic_[1][0] + y_in * extrinsic_[1][1] +
+                 z_in * extrinsic_[1][2];
+        *z_out = x_in * extrinsic_[2][0] + y_in * extrinsic_[2][1] +
+                 z_in * extrinsic_[2][2];
+    }
+
     /// Project a 3D coordinate in camera coordinate to a 2D uv coordinate
-    CLOUDVIEWER_HOST_DEVICE void Project(float x_in,
+    OPEN3D_HOST_DEVICE void Project(float x_in,
                                     float y_in,
                                     float z_in,
                                     float* u_out,
@@ -96,7 +126,7 @@ public:
     }
 
     /// Unproject a 2D uv coordinate with depth to 3D in camera coordinate
-    CLOUDVIEWER_HOST_DEVICE void Unproject(float u_in,
+    OPEN3D_HOST_DEVICE void Unproject(float u_in,
                                       float v_in,
                                       float d_in,
                                       float* x_out,
@@ -105,6 +135,11 @@ public:
         *x_out = (u_in - cx_) * d_in / fx_;
         *y_out = (v_in - cy_) * d_in / fy_;
         *z_out = d_in;
+    }
+
+    OPEN3D_HOST_DEVICE void GetFocalLength(float* fx, float* fy) const {
+        *fx = fx_;
+        *fy = fy_;
     }
 
 private:
@@ -141,7 +176,7 @@ public:
 
     NDArrayIndexer(const core::Tensor& ndarray, int64_t active_dims) {
         if (!ndarray.IsContiguous()) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "[NDArrayIndexer] Only support contiguous tensors for "
                     "general operations.");
         }
@@ -149,11 +184,10 @@ public:
         core::SizeVector shape = ndarray.GetShape();
         int64_t n = ndarray.NumDims();
         if (active_dims > MAX_RESOLUTION_DIMS || active_dims > n) {
-            cloudViewer::utility::LogError(
-                    "[NDArrayIndexer] Tensor shape too large, only <= {} "
-                    "is "
-                    "supported, but received {}.",
-                    MAX_RESOLUTION_DIMS, active_dims);
+            utility::LogError(
+                    "[NDArrayIndexer] Tensor shape too large, only <= {} and "
+                    "<= {} array dim is supported, but received {}.",
+                    MAX_RESOLUTION_DIMS, n, active_dims);
         }
 
         // Leading dimensions are coordinates
@@ -166,6 +200,11 @@ public:
         for (int64_t i = active_dims_; i < n; ++i) {
             element_byte_size_ *= shape[i];
         }
+
+        // Fill-in rest to make compiler happy, not actually used.
+        for (int64_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
+            shape_[i] = 0;
+        }
         ptr_ = const_cast<void*>(ndarray.GetDataPtr());
     }
 
@@ -173,7 +212,7 @@ public:
     NDArrayIndexer(const core::SizeVector& shape) {
         int64_t n = static_cast<int64_t>(shape.size());
         if (n > MAX_RESOLUTION_DIMS) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "[NDArrayIndexer] SizeVector too large, only <= {} is "
                     "supported, but received {}.",
                     MAX_RESOLUTION_DIMS, n);
@@ -183,14 +222,19 @@ public:
             shape_[i] = shape[i];
         }
 
+        // Fill-in rest to make compiler happy, not actually used.
+        for (int64_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
+            shape_[i] = 0;
+        }
+
         // Reserved
         element_byte_size_ = 0;
         ptr_ = nullptr;
     }
 
-    CLOUDVIEWER_HOST_DEVICE int64_t ElementByteSize() { return element_byte_size_; }
+    OPEN3D_HOST_DEVICE int64_t ElementByteSize() { return element_byte_size_; }
 
-    CLOUDVIEWER_HOST_DEVICE int64_t NumElements() {
+    OPEN3D_HOST_DEVICE int64_t NumElements() {
         int64_t num_elems = 1;
         for (int64_t i = 0; i < active_dims_; ++i) {
             num_elems *= shape_[i];
@@ -199,14 +243,14 @@ public:
     }
 
     /// 2D coordinate => workload
-    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(int64_t x_in,
+    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
                                                    int64_t y_in,
                                                    int64_t* workload) const {
         *workload = y_in * shape_[1] + x_in;
     }
 
     /// 3D coordinate => workload
-    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(int64_t x_in,
+    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
                                                    int64_t y_in,
                                                    int64_t z_in,
                                                    int64_t* workload) const {
@@ -214,7 +258,7 @@ public:
     }
 
     /// 4D coordinate => workload
-    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(int64_t x_in,
+    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
                                                    int64_t y_in,
                                                    int64_t z_in,
                                                    int64_t t_in,
@@ -224,7 +268,7 @@ public:
     }
 
     /// Workload => 2D coordinate
-    inline CLOUDVIEWER_HOST_DEVICE void WorkloadToCoord(int64_t workload,
+    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
                                                    int64_t* x_out,
                                                    int64_t* y_out) const {
         *x_out = workload % shape_[1];
@@ -232,7 +276,7 @@ public:
     }
 
     /// Workload => 3D coordinate
-    inline CLOUDVIEWER_HOST_DEVICE void WorkloadToCoord(int64_t workload,
+    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
                                                    int64_t* x_out,
                                                    int64_t* y_out,
                                                    int64_t* z_out) const {
@@ -243,7 +287,7 @@ public:
     }
 
     /// Workload => 4D coordinate
-    inline CLOUDVIEWER_HOST_DEVICE void WorkloadToCoord(int64_t workload,
+    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
                                                    int64_t* x_out,
                                                    int64_t* y_out,
                                                    int64_t* z_out,
@@ -256,15 +300,15 @@ public:
         *t_out = workload / shape_[1];
     }
 
-    inline CLOUDVIEWER_HOST_DEVICE bool InBoundary(float x, float y) const {
+    inline OPEN3D_HOST_DEVICE bool InBoundary(float x, float y) const {
         return y >= 0 && x >= 0 && y <= shape_[0] - 1.0f &&
                x <= shape_[1] - 1.0f;
     }
-    inline CLOUDVIEWER_HOST_DEVICE bool InBoundary(float x, float y, float z) const {
+    inline OPEN3D_HOST_DEVICE bool InBoundary(float x, float y, float z) const {
         return z >= 0 && y >= 0 && x >= 0 && z <= shape_[0] - 1.0f &&
                y <= shape_[1] - 1.0f && x <= shape_[2] - 1.0f;
     }
-    inline CLOUDVIEWER_HOST_DEVICE bool InBoundary(float x,
+    inline OPEN3D_HOST_DEVICE bool InBoundary(float x,
                                               float y,
                                               float z,
                                               float t) const {
@@ -273,19 +317,18 @@ public:
                x <= shape_[3] - 1.0f;
     }
 
-    inline CLOUDVIEWER_HOST_DEVICE int64_t GetShape(int i) const {
+    inline OPEN3D_HOST_DEVICE int64_t GetShape(int i) const {
         return shape_[i];
     }
 
     template <typename T>
-    inline CLOUDVIEWER_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x) const {
         return static_cast<T*>(static_cast<void*>(static_cast<uint8_t*>(ptr_) +
                                                   x * element_byte_size_));
     }
 
     template <typename T>
-    inline CLOUDVIEWER_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
-                                                     int64_t y) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x, int64_t y) const {
         int64_t workload;
         CoordToWorkload(x, y, &workload);
         return static_cast<T*>(static_cast<void*>(
@@ -293,9 +336,9 @@ public:
     }
 
     template <typename T>
-    inline CLOUDVIEWER_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
-                                                     int64_t y,
-                                                     int64_t z) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x,
+                                            int64_t y,
+                                            int64_t z) const {
         int64_t workload;
         CoordToWorkload(x, y, z, &workload);
         return static_cast<T*>(static_cast<void*>(
@@ -303,10 +346,10 @@ public:
     }
 
     template <typename T>
-    inline CLOUDVIEWER_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
-                                                     int64_t y,
-                                                     int64_t z,
-                                                     int64_t t) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x,
+                                            int64_t y,
+                                            int64_t z,
+                                            int64_t t) const {
         int64_t workload;
         CoordToWorkload(x, y, z, t, &workload);
         return static_cast<T*>(static_cast<void*>(

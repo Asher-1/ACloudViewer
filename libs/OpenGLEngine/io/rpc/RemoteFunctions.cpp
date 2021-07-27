@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,11 +33,7 @@
 #include "io/rpc/Connection.h"
 #include "io/rpc/MessageUtils.h"
 #include "io/rpc/Messages.h"
-
-#include <Console.h>
-
-#include <ecvPointCloud.h>
-#include <ecvHObjectCaster.h>
+#include "utility/Logging.h"
 
 using namespace cloudViewer::utility;
 
@@ -45,13 +41,13 @@ namespace cloudViewer {
 namespace io {
 namespace rpc {
 
-bool SetPointCloud(const ccPointCloud& pcd,
+bool SetPointCloud(const geometry::PointCloud& pcd,
                    const std::string& path,
                    int time,
                    const std::string& layer,
                    std::shared_ptr<ConnectionBase> connection) {
     // TODO use SetMeshData here after switching to the new PointCloud class.
-    if (!pcd.hasPoints()) {
+    if (!pcd.HasPoints()) {
         LogInfo("SetMeshData: point cloud is empty");
         return false;
     }
@@ -62,16 +58,15 @@ bool SetPointCloud(const ccPointCloud& pcd,
     msg.layer = layer;
 
     msg.data.vertices = messages::Array::FromPtr(
-            (PointCoordinateType*)pcd.getPoints().data(), {int64_t(pcd.size()), 3});
-    if (pcd.hasNormals()) {
-        std::vector<CCVector3 *> normals = pcd.getPointNormalsPtr();
+            (double*)pcd.points_.data(), {int64_t(pcd.points_.size()), 3});
+    if (pcd.HasNormals()) {
         msg.data.vertex_attributes["normals"] =
-                messages::Array::FromPtr((PointCoordinateType*)(*normals.data()),
-                                         {int64_t(normals.size()), 3});
+                messages::Array::FromPtr((double*)pcd.normals_.data(),
+                                         {int64_t(pcd.normals_.size()), 3});
     }
-    if (pcd.hasColors()) {
+    if (pcd.HasColors()) {
         msg.data.vertex_attributes["colors"] = messages::Array::FromPtr(
-                (ColorCompType*)pcd.getPointColors().data(), {int64_t(pcd.getPointColors().size()), 3});
+                (double*)pcd.colors_.data(), {int64_t(pcd.colors_.size()), 3});
     }
 
     msgpack::sbuffer sbuf;
@@ -87,13 +82,13 @@ bool SetPointCloud(const ccPointCloud& pcd,
     return ReplyIsOKStatus(*reply);
 }
 
-bool SetTriangleMesh(const ccMesh& mesh,
+bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
                      const std::string& path,
                      int time,
                      const std::string& layer,
                      std::shared_ptr<ConnectionBase> connection) {
     // TODO use SetMeshData here after switching to the new TriangleMesh class.
-    if (!mesh.hasTriangles()) {
+    if (!mesh.HasTriangles()) {
         LogInfo("SetMeshData: triangle mesh is empty");
         return false;
     }
@@ -103,46 +98,35 @@ bool SetTriangleMesh(const ccMesh& mesh,
     msg.time = time;
     msg.layer = layer;
 
-    if (!mesh.getAssociatedCloud())
-    {
-        LogInfo("SetMeshData: triangle vertices is empty");
-        return false;
-    }
-
-    ccPointCloud& associatedCloud = *ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
-
     msg.data.vertices =
-            messages::Array::FromPtr((PointCoordinateType*)associatedCloud.getPoints().data(),
-                                     {int64_t(associatedCloud.size()), 3});
-
+            messages::Array::FromPtr((double*)mesh.vertices_.data(),
+                                     {int64_t(mesh.vertices_.size()), 3});
     msg.data.faces = messages::Array::FromPtr(
-            (unsigned*)(*mesh.getTrianglesPtr()).data(), {int64_t((*mesh.getTrianglesPtr()).size()), 3});
-    if (mesh.hasNormals()) {
-        std::vector<CCVector3 *> normals = associatedCloud.getPointNormalsPtr();
+            (int*)mesh.triangles_.data(), {int64_t(mesh.triangles_.size()), 3});
+    if (mesh.HasVertexNormals()) {
         msg.data.vertex_attributes["normals"] = messages::Array::FromPtr(
-                (PointCoordinateType*)(*normals.data()),
-                {int64_t(normals.size()), 3});
+                (double*)mesh.vertex_normals_.data(),
+                {int64_t(mesh.vertex_normals_.size()), 3});
     }
-    if (mesh.hasColors()) {
+    if (mesh.HasVertexColors()) {
         msg.data.vertex_attributes["colors"] = messages::Array::FromPtr(
-                (ColorCompType*)associatedCloud.getPointColors().data(),
-                {int64_t(associatedCloud.getPointColors().size()), 3});
+                (double*)mesh.vertex_colors_.data(),
+                {int64_t(mesh.vertex_colors_.size()), 3});
     }
-    if (mesh.hasTriNormals()) {
-        std::vector<CCVector3 *> triNormals = mesh.getTriangleNormalsPtr();
+    if (mesh.HasTriangleNormals()) {
         msg.data.face_attributes["normals"] = messages::Array::FromPtr(
-                (PointCoordinateType*)(*triNormals.data()),
-                {int64_t(triNormals.size()), 3});
+                (double*)mesh.triangle_normals_.data(),
+                {int64_t(mesh.triangle_normals_.size()), 3});
     }
-    if (mesh.hasTriangleUvs()) {
+    if (mesh.HasTriangleUvs()) {
         msg.data.face_attributes["uvs"] = messages::Array::FromPtr(
                 (double*)mesh.triangle_uvs_.data(),
                 {int64_t(mesh.triangle_uvs_.size()), 2});
     }
-    if (mesh.hasTextures()) {
+    if (mesh.HasTextures()) {
         int tex_id = 0;
         for (const auto& image : mesh.textures_) {
-            if (!image.isEmpty()) {
+            if (!image.IsEmpty()) {
                 std::vector<int64_t> shape(
                         {image.height_, image.width_, image.num_of_channels_});
                 if (image.bytes_per_channel_ == sizeof(uint8_t)) {
@@ -250,7 +234,7 @@ bool SetMeshData(const core::Tensor& vertices,
             LogError("SetMeshData: faces must have rank 2 but is {}",
                      faces.NumDims());
         } else if (faces.GetShape()[1] < 3) {
-            LogError("SetMeshData: last dim of faces must be >= 3 but is {}",
+            LogError("SetMeshData: last dim of faces must be >=3 but is {}",
                      faces.GetShape()[1]);
         } else {
             tensor_cache.push_back(PrepareTensor(faces));
@@ -284,7 +268,7 @@ bool SetMeshData(const core::Tensor& vertices,
             LogError("SetMeshData: lines must have rank 2 but is {}",
                      lines.NumDims());
         } else if (lines.GetShape()[1] < 2) {
-            LogError("SetMeshData: last dim of lines must be >= 2 but is {}",
+            LogError("SetMeshData: last dim of lines must be >=2 but is {}",
                      lines.GetShape()[1]);
         } else {
             tensor_cache.push_back(PrepareTensor(lines));

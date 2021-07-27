@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,7 +26,7 @@
 
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(FileXYZRGB, DISABLED_ReadPointCloudFromXYZRGB) { NotImplemented(); }
@@ -34,4 +34,4 @@ TEST(FileXYZRGB, DISABLED_ReadPointCloudFromXYZRGB) { NotImplemented(); }
 TEST(FileXYZRGB, DISABLED_WritePointCloudToXYZRGB) { NotImplemented(); }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

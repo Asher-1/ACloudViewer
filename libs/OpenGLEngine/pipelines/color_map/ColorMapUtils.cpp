@@ -26,6 +26,8 @@
 
 #include "pipelines/color_map/ColorMapUtils.h"
 
+#include <Parallel.h>
+
 #include <camera/PinholeCameraTrajectory.h>
 #include <Image.h>
 #include <ecvKDTreeFlann.h>
@@ -56,10 +58,10 @@ static std::tuple<float, float, float> Project3DPointAndGetUVDepth(
 template <typename T>
 static std::tuple<bool, T> QueryImageIntensity(
         const geometry::Image& img,
-        const cloudViewer::utility::optional<ImageWarpingField>& optional_warping_field,
+        const utility::optional<ImageWarpingField>& optional_warping_field,
         const Eigen::Vector3d& V,
         const camera::PinholeCameraParameters& camera_parameter,
-        cloudViewer::utility::optional<int> channel,
+        utility::optional<int> channel,
         int image_boundary_margin) {
     float u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera_parameter);
@@ -107,8 +109,8 @@ CreateUtilImagesFromRGBD(const std::vector<geometry::RGBDImage>& images_rgbd) {
                 geometry::Image::FilterType::Sobel3Dx));
         images_dy.push_back(*gray_image_filtered->Filter(
                 geometry::Image::FilterType::Sobel3Dy));
-        auto color = cloudViewer::make_shared<geometry::Image>(images_rgbd[i].color_);
-        auto depth = cloudViewer::make_shared<geometry::Image>(images_rgbd[i].depth_);
+        auto color = make_shared<geometry::Image>(images_rgbd[i].color_);
+        auto depth = make_shared<geometry::Image>(images_rgbd[i].depth_);
         images_color.push_back(*color);
         images_depth.push_back(*depth);
     }
@@ -123,7 +125,7 @@ std::vector<geometry::Image> CreateDepthBoundaryMasks(
     auto n_images = images_depth.size();
     std::vector<geometry::Image> masks;
     for (size_t i = 0; i < n_images; i++) {
-        cloudViewer::utility::LogDebug("[MakeDepthMasks] geometry::Image {:d}/{:d}", i,
+        utility::LogDebug("[MakeDepthMasks] geometry::Image {:d}/{:d}", i,
                           n_images);
         masks.push_back(*images_depth[i].CreateDepthBoundaryMask(
                 depth_threshold_for_discontinuity_check,
@@ -149,7 +151,8 @@ CreateVertexAndImageVisibility(
     std::vector<std::vector<int>> visibility_vertex_to_image;
     visibility_vertex_to_image.resize(n_vertex);
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int camera_id = 0; camera_id < int(n_camera); camera_id++) {
         for (int vertex_id = 0; vertex_id < int(n_vertex); vertex_id++) {
             Eigen::Vector3d X = mesh.getVertice(vertex_id);
@@ -180,14 +183,14 @@ CreateVertexAndImageVisibility(
                 continue;
             }
             visibility_image_to_vertex[camera_id].push_back(vertex_id);
-#pragma omp critical
+#pragma omp critical(CreateVertexAndImageVisibility)
             { visibility_vertex_to_image[vertex_id].push_back(camera_id); }
         }
     }
 
     for (int camera_id = 0; camera_id < int(n_camera); camera_id++) {
         size_t n_visible_vertex = visibility_image_to_vertex[camera_id].size();
-        cloudViewer::utility::LogDebug(
+        utility::LogDebug(
                 "[cam {:d}]: {:d}/{:d} ({:.5f}%) vertices are visible",
                 camera_id, n_visible_vertex, n_vertex,
                 double(n_visible_vertex) / n_vertex * 100);
@@ -200,7 +203,7 @@ CreateVertexAndImageVisibility(
 void SetProxyIntensityForVertex(
         const ccMesh& mesh,
         const std::vector<geometry::Image>& images_gray,
-        const cloudViewer::utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const utility::optional<std::vector<ImageWarpingField>>& warping_fields,
         const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         std::vector<double>& proxy_intensity,
@@ -208,7 +211,8 @@ void SetProxyIntensityForVertex(
     auto n_vertex = mesh.getVerticeSize();
     proxy_intensity.resize(n_vertex);
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(n_vertex); i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
@@ -221,11 +225,11 @@ void SetProxyIntensityForVertex(
                 std::tie(valid, gray) = QueryImageIntensity<float>(
                         images_gray[j], warping_fields.value()[j],
                         mesh.getVertice(i), camera_trajectory.parameters_[j],
-                        cloudViewer::utility::nullopt, image_boundary_margin);
+                        utility::nullopt, image_boundary_margin);
             } else {
                 std::tie(valid, gray) = QueryImageIntensity<float>(
-                        images_gray[j], cloudViewer::utility::nullopt, mesh.getVertice(i),
-                        camera_trajectory.parameters_[j], cloudViewer::utility::nullopt,
+                        images_gray[j], utility::nullopt, mesh.getVertice(i),
+                        camera_trajectory.parameters_[j], utility::nullopt,
                         image_boundary_margin);
             }
 
@@ -243,7 +247,7 @@ void SetProxyIntensityForVertex(
 void SetGeometryColorAverage(
         ccMesh& mesh,
         const std::vector<geometry::Image>& images_color,
-        const cloudViewer::utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const utility::optional<std::vector<ImageWarpingField>>& warping_fields,
         const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         int image_boundary_margin,
@@ -251,13 +255,13 @@ void SetGeometryColorAverage(
     size_t n_vertex = mesh.getVerticeSize();
     ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(mesh.getAssociatedCloud());
     cloud->unallocateColors();
-    if(!cloud->resizeTheRGBTable())
-    {
-        cloudViewer::utility::LogError("[SetGeometryColorAverage] not enough memory!");
+    if(!cloud->resizeTheRGBTable()) {
+        utility::LogError("[SetGeometryColorAverage] not enough memory!");
     }
     std::vector<size_t> valid_vertices;
     std::vector<size_t> invalid_vertices;
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)n_vertex; i++) {
         cloud->setPointColor(i, Eigen::Vector3d::Zero());
         double sum = 0.0;
@@ -266,11 +270,11 @@ void SetGeometryColorAverage(
             int j = visibility_vertex_to_image[i][iter];
             uint8_t r_temp, g_temp, b_temp;
             bool valid = false;
-            cloudViewer::utility::optional<ImageWarpingField> optional_warping_field;
+            utility::optional<ImageWarpingField> optional_warping_field;
             if (warping_fields.has_value()) {
                 optional_warping_field = warping_fields.value()[j];
             } else {
-                optional_warping_field = cloudViewer::utility::nullopt;
+                optional_warping_field = utility::nullopt;
             }
             std::tie(valid, r_temp) = QueryImageIntensity<uint8_t>(
                     images_color[j], optional_warping_field, mesh.getVertice(i),
@@ -289,7 +293,7 @@ void SetGeometryColorAverage(
                 sum += 1.0;
             }
         }
-#pragma omp critical
+#pragma omp critical(SetGeometryColorAverage)
         {
             if (sum > 0.0) {
                 cloud->setEigenColor(i, cloud->getEigenColor(i) / sum);
@@ -303,7 +307,8 @@ void SetGeometryColorAverage(
         std::shared_ptr<ccMesh> valid_mesh =
                 mesh.selectByIndex(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int i = 0; i < (int)invalid_vertices.size(); ++i) {
             size_t invalid_vertex = invalid_vertices[i];
             std::vector<int> indices;  // indices to valid_mesh

@@ -27,9 +27,9 @@
 #include "pipelines/registration/CorrespondenceChecker.h"
 
 #include <Eigen/Dense>
+#include <Logging.h>
 
 #include <ecvPointCloud.h>
-#include <Console.h>
 
 namespace cloudViewer {
 namespace pipelines {
@@ -80,8 +80,8 @@ bool CorrespondenceCheckerBasedOnNormal::Check(
         const ccPointCloud &target,
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d &transformation) const {
-    if (source.hasNormals() == false || target.hasNormals() == false) {
-        cloudViewer::utility::LogWarning(
+    if (!source.hasNormals() || !target.hasNormals()) {
+        utility::LogWarning(
                 "[CorrespondenceCheckerBasedOnNormal::Check] Pointcloud has no "
                 "normals.");
         return true;

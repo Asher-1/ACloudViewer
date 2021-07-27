@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/FileSystem.h"
+#include <FileSystem.h>
 
 #include <fcntl.h>
 #include <sys/stat.h>
 
 #include <algorithm>
 
-#include "open3d/utility/Console.h"
+#include "utility/Console.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 // ----------------------------------------------------------------------------
@@ -548,4 +548,4 @@ TEST(FileSystem, GetPathComponents) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

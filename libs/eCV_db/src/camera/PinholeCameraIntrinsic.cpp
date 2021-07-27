@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "camera/PinholeCameraIntrinsic.h"
-#include <Console.h>
+#include <Logging.h>
 
 #include <json/json.h>
 #include <Eigen/Dense>

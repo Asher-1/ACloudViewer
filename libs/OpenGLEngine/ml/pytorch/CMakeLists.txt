@@ -1,77 +1,117 @@
-message(STATUS "Building Pytorch ops")
-
 if(BUILD_CUDA_MODULE)
-    message(STATUS "Building Pytorch ops with CUDA")
+    message(STATUS "Building PyTorch ops with CUDA")
+else()
+    message(STATUS "Building PyTorch ops")
 endif()
 
 find_package(Pytorch REQUIRED)
-find_package(nanoflann REQUIRED)
-find_package(parallelstl REQUIRED)
-if(BUILD_CUDA_MODULE)
-    find_package(CUB REQUIRED)
-    find_package(CUTLASS REQUIRED)
-endif()
 
-set(TORCH_OPS_SOURCES
-    "continuous_conv/ContinuousConvBackpropFilterOpKernel.cpp"
-    "continuous_conv/ContinuousConvOpKernel.cpp"
-    "continuous_conv/ContinuousConvOps.cpp"
-    "continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.cpp"
-    "continuous_conv/ContinuousConvTransposeOpKernel.cpp"
-    "continuous_conv/ContinuousConvTransposeOps.cpp"
-    "misc/BuildSpatialHashTableOpKernel.cpp"
-    "misc/InvertNeighborsListOps.cpp"
-    "misc/RadiusSearchOpKernel.cpp"
-    "misc/ReduceSubarraysSumOps.cpp"
-    "misc/FixedRadiusSearchOps.cpp"
-    "misc/KnnSearchOpKernel.cpp"
-    "misc/RadiusSearchOps.cpp"
-    "misc/VoxelPoolingOpKernel.cpp"
-    "misc/BuildSpatialHashTableOps.cpp"
-    "misc/InvertNeighborsListOpKernel.cpp"
-    "misc/KnnSearchOps.cpp"
-    "misc/ReduceSubarraysSumOpKernel.cpp"
-    "misc/VoxelPoolingOps.cpp"
-    "misc/FixedRadiusSearchOpKernel.cpp"
-    "misc/RaggedToDenseOps.cpp"
-    "misc/RaggedToDenseOpKernel.cpp"
-    "misc/VoxelizeOps.cpp"
-    "misc/VoxelizeOpKernel.cpp"
-    "misc/NmsOps.cpp"
-    "../contrib/Nms.cpp"
-)
-
-set(TORCH_OPS_CUDA_SOURCES
-    "continuous_conv/ContinuousConvBackpropFilterOpKernel.cu"
-    "continuous_conv/ContinuousConvOpKernel.cu"
-    "continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.cu"
-    "continuous_conv/ContinuousConvTransposeOpKernel.cu"
-    "misc/FixedRadiusSearchOpKernel.cu"
-    "misc/BuildSpatialHashTableOpKernel.cu"
-    "misc/InvertNeighborsListOpKernel.cu"
-    "misc/ReduceSubarraysSumOpKernel.cu"
-    "misc/RaggedToDenseOpKernel.cu"
-    "misc/VoxelizeOpKernel.cu"
-    "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
-    "../contrib/Nms.cu"
-)
-
-if(BUILD_CUDA_MODULE)
-    set(cloudViewer_torch_ops_SOURCES
-        ${TORCH_OPS_SOURCES}
-        ${TORCH_OPS_CUDA_SOURCES}
-    )
-else()
-    set(cloudViewer_torch_ops_SOURCES
-        ${TORCH_OPS_SOURCES}
-    )
+if (Python3_VERSION VERSION_GREATER_EQUAL 3.9 AND Pytorch_VERSION VERSION_LESS 1.8.0)
+    message(FATAL_ERROR "Please update to PyTorch 1.8.0+ to build PyTorch Ops "
+    "with Python 3.9 to prevent a segmentation fault. See "
+    "https://github.com/pytorch/pytorch/issues/50014 for details")
 endif()
 
 file(GLOB_RECURSE cloudViewer_torch_ops_HEADERS "*.h")
-add_library(cloudViewer_torch_ops SHARED ${cloudViewer_torch_ops_HEADERS} ${cloudViewer_torch_ops_SOURCES})
 
-cloudViewer_set_global_properties(cloudViewer_torch_ops)
+add_library(cloudViewer_torch_ops SHARED ${cloudViewer_torch_ops_HEADERS})
+
+target_sources(cloudViewer_torch_ops PRIVATE
+    continuous_conv/ContinuousConvBackpropFilterOpKernel.cpp
+    continuous_conv/ContinuousConvOpKernel.cpp
+    continuous_conv/ContinuousConvOps.cpp
+    continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.cpp
+    continuous_conv/ContinuousConvTransposeOpKernel.cpp
+    continuous_conv/ContinuousConvTransposeOps.cpp
+)
+
+target_sources(cloudViewer_torch_ops PRIVATE
+    sparse_conv/SparseConvBackpropFilterOpKernel.cpp
+    sparse_conv/SparseConvOpKernel.cpp
+    sparse_conv/SparseConvOps.cpp
+    sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cpp
+    sparse_conv/SparseConvTransposeOpKernel.cpp
+    sparse_conv/SparseConvTransposeOps.cpp
+)
+
+target_sources(cloudViewer_torch_ops PRIVATE
+    misc/BuildSpatialHashTableOpKernel.cpp
+    misc/BuildSpatialHashTableOps.cpp
+    misc/FixedRadiusSearchOpKernel.cpp
+    misc/FixedRadiusSearchOps.cpp
+    misc/InvertNeighborsListOpKernel.cpp
+    misc/InvertNeighborsListOps.cpp
+    misc/KnnSearchOpKernel.cpp
+    misc/KnnSearchOps.cpp
+    misc/NmsOps.cpp
+    misc/RadiusSearchOpKernel.cpp
+    misc/RadiusSearchOps.cpp
+    misc/RaggedToDenseOpKernel.cpp
+    misc/RaggedToDenseOps.cpp
+    misc/ReduceSubarraysSumOpKernel.cpp
+    misc/ReduceSubarraysSumOps.cpp
+    misc/RoiPoolOps.cpp
+    misc/VoxelizeOpKernel.cpp
+    misc/VoxelizeOps.cpp
+    misc/VoxelPoolingOpKernel.cpp
+    misc/VoxelPoolingOps.cpp
+)
+
+target_sources(cloudViewer_torch_ops PRIVATE
+    pointnet/BallQueryOps.cpp
+    pointnet/InterpolateOps.cpp
+    pointnet/SamplingOps.cpp
+)
+
+target_sources(cloudViewer_torch_ops PRIVATE
+    ../contrib/Nms.cpp
+)
+
+if (BUILD_CUDA_MODULE)
+    target_sources(cloudViewer_torch_ops PRIVATE
+        continuous_conv/ContinuousConvBackpropFilterOpKernel.cu
+        continuous_conv/ContinuousConvOpKernel.cu
+        continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.cu
+        continuous_conv/ContinuousConvTransposeOpKernel.cu
+    )
+
+    target_sources(cloudViewer_torch_ops PRIVATE
+        sparse_conv/SparseConvBackpropFilterOpKernel.cu
+        sparse_conv/SparseConvOpKernel.cu
+        sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cu
+        sparse_conv/SparseConvTransposeOpKernel.cu
+    )
+
+    target_sources(cloudViewer_torch_ops PRIVATE
+        misc/BuildSpatialHashTableOpKernel.cu
+        misc/FixedRadiusSearchOpKernel.cu
+        misc/InvertNeighborsListOpKernel.cu
+        misc/RaggedToDenseOpKernel.cu
+        misc/ReduceSubarraysSumOpKernel.cu
+        misc/VoxelizeOpKernel.cu
+    )
+
+    target_sources(cloudViewer_torch_ops PRIVATE
+        pointnet/BallQueryKernel.cu
+        pointnet/InterpolateKernel.cu
+        pointnet/SamplingKernel.cu
+    )
+
+    target_sources(cloudViewer_torch_ops PRIVATE
+        ../impl/continuous_conv/ContinuousConvCUDAKernels.cu
+        ../impl/sparse_conv/SparseConvCUDAKernels.cu
+    )
+
+    target_sources(cloudViewer_torch_ops PRIVATE
+        ../contrib/BallQuery.cu
+        ../contrib/InterpolatePoints.cu
+        ../contrib/Nms.cu
+        ../contrib/RoiPoolKernel.cu
+    )
+endif()
+
 cloudViewer_show_and_abort_on_warning(cloudViewer_torch_ops)
+cloudViewer_set_global_properties(cloudViewer_torch_ops)
 
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TORCH_OPS_DIR cloudViewer_torch_ops LIBRARY_OUTPUT_DIRECTORY)
@@ -85,34 +125,34 @@ set_target_properties(cloudViewer_torch_ops PROPERTIES
 set_target_properties(cloudViewer_torch_ops PROPERTIES PREFIX "")
 set_target_properties(cloudViewer_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
-set( cloudViewer_torch_ops_DEFINITIONS )
-if(BUILD_CUDA_MODULE)
-    target_include_directories(cloudViewer_torch_ops SYSTEM PRIVATE
-        ${CUB_INCLUDE_DIR}
-        ${CUTLASS_INCLUDE_DIR}
-    )
-    list(APPEND cloudViewer_torch_ops_DEFINITIONS "BUILD_CUDA_MODULE")
-endif()
-target_compile_definitions(cloudViewer_torch_ops PRIVATE "${cloudViewer_torch_ops_DEFINITIONS}")
-
 target_include_directories(cloudViewer_torch_ops SYSTEM PRIVATE
-    ${PROJECT_SOURCE_DIR}/cpp
-    ${nanoflann_INCLUDE_DIR}
-    ${parallelstl_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/libs/OpenGLEngine
     ${TORCH_INCLUDE_DIRS}
 )
 
 target_link_libraries(cloudViewer_torch_ops PRIVATE
-    3rdparty_tbb
     torch_cpu
-    ${EIGEN3_TARGET}
-    ${FMT_TARGET}
+    3rdparty_eigen3
+    3rdparty_fmt
+    3rdparty_nanoflann
+    3rdparty_parallelstl
+    3rdparty_tbb
 )
-target_link_libraries(cloudViewer_torch_ops PRIVATE
-    CVCoreLib
-)
-if( BUILD_CUDA_MODULE )
+
+#target_link_libraries(cloudViewer_torch_ops PRIVATE
+#    CVCoreLib
+#)
+
+if (BUILD_CUDA_MODULE)
     target_link_libraries(cloudViewer_torch_ops PRIVATE
+        3rdparty_cutlass
         ${TORCH_LIBRARIES}
+        CUDA::cuda_driver
     )
+
+    if (TARGET 3rdparty_cub)
+        target_link_libraries(cloudViewer_torch_ops PRIVATE
+            3rdparty_cub
+        )
+    endif()
 endif()

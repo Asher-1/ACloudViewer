@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,12 +26,11 @@
 
 #include "pybind/pipelines/odometry/odometry.h"
 
+#include <Image.h>
+#include <RGBDImage.h>
 #include "pipelines/odometry/Odometry.h"
 #include "pipelines/odometry/OdometryOption.h"
 #include "pipelines/odometry/RGBDOdometryJacobian.h"
-
-#include <Image.h>
-#include <RGBDImage.h>
 #include "pybind/docstring.h"
 
 namespace cloudViewer {
@@ -44,7 +43,8 @@ public:
     using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, cloudViewer::utility::Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d,
+                        cloudViewer::utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             std::vector<double> &w,
             const geometry::RGBDImage &source,
@@ -79,14 +79,12 @@ void pybind_odometry_classes(py::module &m) {
                  "max_depth_diff"_a = 0.03, "min_depth"_a = 0.0,
                  "max_depth"_a = 4.0)
             .def_readwrite("iteration_number_per_pyramid_level",
-                           &OdometryOption::
-                                   iteration_number_per_pyramid_level_,
+                           &OdometryOption::iteration_number_per_pyramid_level_,
                            "List(int): Iteration number per image pyramid "
                            "level, typically larger image in the pyramid have "
                            "lower interation number to reduce computation "
                            "time.")
-            .def_readwrite("max_depth_diff",
-                           &OdometryOption::max_depth_diff_,
+            .def_readwrite("max_depth_diff", &OdometryOption::max_depth_diff_,
                            "Maximum depth difference to be considered as "
                            "correspondence. In depth image domain, if two "
                            "aligned pixels have a depth difference less than "
@@ -130,11 +128,11 @@ void pybind_odometry_classes(py::module &m) {
                     m, "RGBDOdometryJacobian",
                     "Base class that computes Jacobian from two RGB-D images.");
 
-    // cloudViewer.odometry.RGBDOdometryJacobianFromColorTerm: RGBDOdometryJacobian
-    py::class_<
-            RGBDOdometryJacobianFromColorTerm,
-            PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
-            RGBDOdometryJacobian>
+    // cloudViewer.odometry.RGBDOdometryJacobianFromColorTerm:
+    // RGBDOdometryJacobian
+    py::class_<RGBDOdometryJacobianFromColorTerm,
+               PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
+               RGBDOdometryJacobian>
             jacobian_color(m, "RGBDOdometryJacobianFromColorTerm",
                            R"(Class to Compute Jacobian using color term.
 
@@ -147,20 +145,19 @@ F. Steinbrucker, J. Sturm, and D. Cremers.
 Real-time visual odometry from dense RGB-D images.
 
 In ICCV Workshops, 2011.)");
-    py::detail::bind_default_constructor<
-            RGBDOdometryJacobianFromColorTerm>(jacobian_color);
-    py::detail::bind_copy_functions<
-            RGBDOdometryJacobianFromColorTerm>(jacobian_color);
+    py::detail::bind_default_constructor<RGBDOdometryJacobianFromColorTerm>(
+            jacobian_color);
+    py::detail::bind_copy_functions<RGBDOdometryJacobianFromColorTerm>(
+            jacobian_color);
     jacobian_color.def(
-            "__repr__",
-            [](const RGBDOdometryJacobianFromColorTerm &te) {
+            "__repr__", [](const RGBDOdometryJacobianFromColorTerm &te) {
                 return std::string("RGBDOdometryJacobianFromColorTerm");
             });
 
-    // cloudViewer.odometry.RGBDOdometryJacobianFromHybridTerm: RGBDOdometryJacobian
+    // cloudViewer.odometry.RGBDOdometryJacobianFromHybridTerm:
+    // RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobianFromHybridTerm,
-               PyRGBDOdometryJacobian<
-                       RGBDOdometryJacobianFromHybridTerm>,
+               PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
                RGBDOdometryJacobian>
             jacobian_hybrid(m, "RGBDOdometryJacobianFromHybridTerm",
                             R"(Class to compute Jacobian using hybrid term
@@ -172,13 +169,12 @@ Reference:
 J. Park, Q.-Y. Zhou, and V. Koltun
 
 Anonymous submission.)");
-    py::detail::bind_default_constructor<
-            RGBDOdometryJacobianFromHybridTerm>(jacobian_hybrid);
-    py::detail::bind_copy_functions<
-            RGBDOdometryJacobianFromHybridTerm>(jacobian_hybrid);
+    py::detail::bind_default_constructor<RGBDOdometryJacobianFromHybridTerm>(
+            jacobian_hybrid);
+    py::detail::bind_copy_functions<RGBDOdometryJacobianFromHybridTerm>(
+            jacobian_hybrid);
     jacobian_hybrid.def(
-            "__repr__",
-            [](const RGBDOdometryJacobianFromHybridTerm &te) {
+            "__repr__", [](const RGBDOdometryJacobianFromHybridTerm &te) {
                 return std::string("RGBDOdometryJacobianFromHybridTerm");
             });
 }

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/nns/NanoFlannIndex.h"
+#include "core/nns/NanoFlannIndex.h"
 
 #include <cmath>
 #include <limits>
 
-#include "open3d/core/Dtype.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/utility/Helper.h"
+#include "core/Dtype.h"
+#include "core/SizeVector.h"
+#include "geometry/PointCloud.h"
+#include <Helper.h>
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(NanoFlannIndex, SearchKnn) {
@@ -109,4 +109,4 @@ TEST(NanoFlannIndex, SearchRadius) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -591,7 +591,7 @@ namespace dlib
 #ifdef DLIB_USE_CUDA
             if (!inst.cudnn_descriptor)
             {
-                inst.cudnn_descriptor = std::make_shared<cuda::tensor_descriptor>();
+                inst.cudnn_descriptor = cloudViewer::make_shared<cuda::tensor_descriptor>();
                 inst.cudnn_descriptor->set_size(inst.m_n, inst.m_k, inst.m_nr, inst.m_nc);
             }
 #endif

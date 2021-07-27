@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "visualization/visualizer/VisualizerWithKeyCallback.h"
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 

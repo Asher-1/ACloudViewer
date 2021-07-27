@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Device.h"
+#include "core/Device.h"
 
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(Device, DefaultConstructor) {
@@ -62,4 +62,4 @@ TEST(Device, StringConstructorLower) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/ShapeChecking.h"
+#include "ml/ShapeChecking.h"
 
 #include "tests/UnitTest.h"
 
-using namespace open3d::ml::op_util;
+using namespace cloudViewer::ml::op_util;
 
 TEST(ShapeChecking, CheckShapeReturnValues) {
     auto status_ok = CheckShape({10, 20}, 10, 20);

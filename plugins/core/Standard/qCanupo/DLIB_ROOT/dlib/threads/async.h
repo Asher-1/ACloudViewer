@@ -58,10 +58,10 @@ namespace dlib
         Args&&... args 
     )
     {
-        auto prom = std::make_shared<std::promise<typename std::result_of<Function(Args...)>::type>>();
+        auto prom = cloudViewer::make_shared<std::promise<typename std::result_of<Function(Args...)>::type>>();
         std::future<typename std::result_of<Function(Args...)>::type> ret = prom->get_future();
         using bind_t = decltype(std::bind(std::forward<Function>(f), std::forward<Args>(args)...));
-        auto fun = std::make_shared<bind_t>(std::bind(std::forward<Function>(f), std::forward<Args>(args)...));
+        auto fun = cloudViewer::make_shared<bind_t>(std::bind(std::forward<Function>(f), std::forward<Args>(args)...));
         tp.add_task_by_value([fun, prom]()
         { 
             try

@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "Widget.h"
-#include "UIImage.h"
+#include "visualization/gui/Widget.h"
+#include "visualization/gui/UIImage.h"
 
 #include <functional>
 
@@ -64,7 +64,8 @@ public:
     bool GetIsOn() const;
     void SetOn(bool is_on);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const LayoutContext& context,
+                           const Constraints& constraints) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,19 +26,20 @@
 
 #include "visualization/visualizer/VisualizerWithVertexSelection.h"
 
-#include <tinyfiledialogs/tinyfiledialogs.h>
-#include <Console.h>
+#include <FileSystem.h>
+#include <IJsonConvertibleIO.h>
 #include <Image.h>
 #include <LineSet.h>
-#include <ecvMesh.h>
-#include <ecvTetraMesh.h>
-#include <ecvHalfEdgeMesh.h>
-#include <ecvPointCloud.h>
+#include <Logging.h>
 #include <ecvHObjectCaster.h>
-#include <IJsonConvertibleIO.h>
+#include <ecvHalfEdgeMesh.h>
+#include <ecvMesh.h>
+#include <ecvPointCloud.h>
+#include <ecvTetraMesh.h>
+#include <tinyfiledialogs/tinyfiledialogs.h>
+
 #include "io/PointCloudIO.h"
 #include "io/TriangleMeshIO.h"
-#include <FileSystem.h>
 #include "visualization/utility/GLHelper.h"
 #include "visualization/utility/PointCloudPicker.h"
 #include "visualization/utility/SelectionPolygon.h"
@@ -71,7 +72,7 @@ bool BindFramebuffer(int width, int height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     if (!GLEW_ARB_framebuffer_object) {
         // OpenGL 2.1 doesn't require this, 3.1+ does
-        cloudViewer::utility::LogWarning(
+        utility::LogWarning(
                 "[BindFramebuffwer] Your GPU does not provide framebuffer "
                 "objects. "
                 "Use a texture instead.");
@@ -88,7 +89,7 @@ bool BindFramebuffer(int width, int height) {
     GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, DrawBuffers);  // "1" is the size of DrawBuffers
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        cloudViewer::utility::LogWarning("[BindFramebuffer] Something is wrong with FBO.");
+        utility::LogWarning("[BindFramebuffer] Something is wrong with FBO.");
         return false;
     }
     return true;
@@ -100,7 +101,7 @@ using namespace cloudViewer;
 bool VisualizerWithVertexSelection::AddGeometry(
         std::shared_ptr<const ccHObject> geometry_in_ptr,
         bool reset_bounding_box) {
-    if (is_initialized_ == false || geometry_ptrs_.empty() == false) {
+    if (!is_initialized_ || !geometry_ptrs_.empty()) {
         utility::LogInfo(
                 "VisualizerWithVertexSelection only supports one geometry");
         return false;
@@ -110,12 +111,13 @@ bool VisualizerWithVertexSelection::AddGeometry(
     // Add the geometry/renderer
     geometry_ptr_ = geometry_in_ptr;
     switch (geometry_ptr_->getClassID()) {
-		case CV_TYPES::POINT_CLOUD:
+        case CV_TYPES::POINT_CLOUD:
             geometry_renderer_ptr_ =
                     cloudViewer::make_shared<glsl::PointCloudRenderer>();
             break;
         case CV_TYPES::LINESET:
-            geometry_renderer_ptr_ = cloudViewer::make_shared<glsl::LineSetRenderer>();
+            geometry_renderer_ptr_ =
+                    cloudViewer::make_shared<glsl::LineSetRenderer>();
             break;
         case CV_TYPES::MESH:  // fall-through
             geometry_renderer_ptr_ =
@@ -130,22 +132,23 @@ bool VisualizerWithVertexSelection::AddGeometry(
                     cloudViewer::make_shared<glsl::TetraMeshRenderer>();
             break;
         case CV_TYPES::IMAGE2:
-            geometry_renderer_ptr_ = cloudViewer::make_shared<glsl::ImageRenderer>();
+            geometry_renderer_ptr_ =
+                    cloudViewer::make_shared<glsl::ImageRenderer>();
             break;
         case CV_TYPES::HIERARCHY_OBJECT:
             // MeshBase is too general, can't render. Fall-through.
-		case CV_TYPES::RGBD_IMAGE:
+        case CV_TYPES::RGBD_IMAGE:
         case CV_TYPES::VOXEL_GRID:
-		case CV_TYPES::POINT_OCTREE2:
+        case CV_TYPES::POINT_OCTREE2:
         case CV_TYPES::ORIENTED_BBOX:
         case CV_TYPES::BBOX:
         case CV_TYPES::MESH_BASE:
             // MeshBase is too general, can't render. Fall-through.
-		case CV_TYPES::CUSTOM_H_OBJECT:
+        case CV_TYPES::CUSTOM_H_OBJECT:
             return false;
     }
 
-    if (geometry_renderer_ptr_->AddGeometry(geometry_ptr_) == false) {
+    if (!geometry_renderer_ptr_->AddGeometry(geometry_ptr_)) {
         return false;
     }
     geometry_ptrs_.insert(geometry_ptr_);
@@ -153,7 +156,8 @@ bool VisualizerWithVertexSelection::AddGeometry(
 
     // Add the point selection renderers
     ui_points_geometry_ptr_ = cloudViewer::make_shared<ccPointCloud>();
-    ui_points_renderer_ptr_ = cloudViewer::make_shared<glsl::PointCloudRenderer>();
+    ui_points_renderer_ptr_ =
+            cloudViewer::make_shared<glsl::PointCloudRenderer>();
     ui_points_renderer_ptr_->AddGeometry(ui_points_geometry_ptr_);
     ui_selected_points_geometry_ptr_ = cloudViewer::make_shared<ccPointCloud>();
     ui_selected_points_renderer_ptr_ =
@@ -193,23 +197,21 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
     bool result = Visualizer::UpdateGeometry(geometry_ptr);
 
     switch (geometry_ptr_->getClassID()) {
-		case CV_TYPES::POINT_CLOUD: {
-            auto cloud = std::static_pointer_cast<const ccPointCloud>(
-                    geometry_ptr_);
+        case CV_TYPES::POINT_CLOUD: {
+            auto cloud =
+                    std::static_pointer_cast<const ccPointCloud>(geometry_ptr_);
             if (cloud->size() !=
-				GetGeometryPoints(ui_points_geometry_ptr_)->size()) {
+                GetGeometryPoints(ui_points_geometry_ptr_)->size()) {
                 ClearPickedPoints();
             }
-			ui_points_geometry_ptr_->reserveThePointsTable(cloud->size());
-			ui_points_geometry_ptr_->addPoints(cloud->getPoints());
-			if (cloud->hasNormals())
-			{
-				if (!ui_points_geometry_ptr_->hasNormals())
-				{
-					ui_points_geometry_ptr_->reserveTheNormsTable();
-				}
-				ui_points_geometry_ptr_->addNorms(cloud->getPointNormals());
-			}
+            ui_points_geometry_ptr_->reserveThePointsTable(cloud->size());
+            ui_points_geometry_ptr_->addPoints(cloud->getPoints());
+            if (cloud->hasNormals()) {
+                if (!ui_points_geometry_ptr_->hasNormals()) {
+                    ui_points_geometry_ptr_->reserveTheNormsTable();
+                }
+                ui_points_geometry_ptr_->addNorms(cloud->getPointNormals());
+            }
 
             break;
         }
@@ -223,31 +225,30 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
             ui_points_geometry_ptr_->addPoints(lines->points_);
             break;
         }
-        case CV_TYPES::MESH:
-		{
-			auto mesh = std::static_pointer_cast<const ccMesh>(
-				geometry_ptr_);
-			ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud());
-			assert(cloud);
-			if (cloud->size() !=
-				GetGeometryPoints(ui_points_geometry_ptr_)->size()) {
-				ClearPickedPoints();
-			}
-			ui_points_geometry_ptr_->clear();
-			ui_points_geometry_ptr_->append(cloud, 0);
-			break;
-		}
+        case CV_TYPES::MESH: {
+            auto mesh = std::static_pointer_cast<const ccMesh>(geometry_ptr_);
+            ccPointCloud *cloud =
+                    ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud());
+            assert(cloud);
+            if (cloud->size() !=
+                GetGeometryPoints(ui_points_geometry_ptr_)->size()) {
+                ClearPickedPoints();
+            }
+            ui_points_geometry_ptr_->clear();
+            ui_points_geometry_ptr_->append(cloud, 0);
+            break;
+        }
         case CV_TYPES::TETRA_MESH:
         case CV_TYPES::HALF_EDGE_MESH: {
             auto mesh = std::static_pointer_cast<const geometry::ecvMeshBase>(
                     geometry_ptr_);
-			if (mesh->vertices_.size() !=
+            if (mesh->vertices_.size() !=
                 GetGeometryEigenPoints(ui_points_geometry_ptr_)->size()) {
                 ClearPickedPoints();
             }
-			ui_points_geometry_ptr_->clear();
-			ui_points_geometry_ptr_->addPoints(mesh->vertices_);
-			ui_points_geometry_ptr_->addEigenNorms(mesh->vertex_normals_);
+            ui_points_geometry_ptr_->clear();
+            ui_points_geometry_ptr_->addPoints(mesh->vertices_);
+            ui_points_geometry_ptr_->addEigenNorms(mesh->vertex_normals_);
             break;
         }
         case CV_TYPES::IMAGE2:
@@ -289,7 +290,7 @@ void VisualizerWithVertexSelection::PrintVisualizerHelp() {
 }
 
 void VisualizerWithVertexSelection::UpdateWindowTitle() {
-    if (window_ != NULL) {
+    if (window_) {
         auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
         auto title = window_name_ + " - " + view_control.GetStatusString();
         glfwSetWindowTitle(window_, title.c_str());
@@ -305,8 +306,7 @@ void VisualizerWithVertexSelection::BuildUtilities() {
     selection_polygon_ptr_ = cloudViewer::make_shared<SelectionPolygon>();
     selection_polygon_renderer_ptr_ =
             cloudViewer::make_shared<glsl::SelectionPolygonRenderer>();
-    if (selection_polygon_renderer_ptr_->AddGeometry(selection_polygon_ptr_) ==
-        false) {
+    if (!selection_polygon_renderer_ptr_->AddGeometry(selection_polygon_ptr_)) {
         success = false;
     }
     if (success) {
@@ -318,13 +318,12 @@ void VisualizerWithVertexSelection::BuildUtilities() {
     success = true;
     pointcloud_picker_ptr_ = cloudViewer::make_shared<PointCloudPicker>();
     if (geometry_ptrs_.empty() ||
-        pointcloud_picker_ptr_->SetPointCloud(geometry_ptr_) == false) {
+        !pointcloud_picker_ptr_->SetPointCloud(geometry_ptr_)) {
         success = false;
     }
     pointcloud_picker_renderer_ptr_ =
             cloudViewer::make_shared<glsl::PointCloudPickerRenderer>();
-    if (pointcloud_picker_renderer_ptr_->AddGeometry(pointcloud_picker_ptr_) ==
-        false) {
+    if (!pointcloud_picker_renderer_ptr_->AddGeometry(pointcloud_picker_ptr_)) {
         success = false;
     }
     if (success) {
@@ -348,7 +347,7 @@ float VisualizerWithVertexSelection::GetDepth(int winX, int winY) {
     glDisable(GL_BLEND);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-    glClearDepth(GLclampd(1.0f));
+    glClearDepth(1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     for (auto &renderer : geometry_renderer_ptrs_) {
@@ -379,8 +378,9 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
                                                            double h) {
     points_in_rect_.clear();
 
-    auto renderer_ptr = cloudViewer::make_shared<glsl::PointCloudPickingRenderer>();
-    if (renderer_ptr->AddGeometry(ui_points_geometry_ptr_) == false) {
+    auto renderer_ptr =
+            cloudViewer::make_shared<glsl::PointCloudPickingRenderer>();
+    if (!renderer_ptr->AddGeometry(ui_points_geometry_ptr_)) {
         return {};
     }
     const auto &view = GetViewControl();
@@ -395,7 +395,7 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
     glDisable(GL_BLEND);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-    glClearDepth(GLclampd(1.0f));
+    glClearDepth(1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Render any triangle meshes to the depth buffer only (so that z-buffer
@@ -539,7 +539,8 @@ void VisualizerWithVertexSelection::KeyPressCallback(
                 ui_selected_points_renderer_ptr_->UpdateGeometry();
                 is_redraw_required_ = true;
             } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+                Visualizer::KeyPressCallback(window, key, scancode, action,
+                                             mods);
             }
             break;
         case GLFW_KEY_MINUS: {
@@ -548,7 +549,8 @@ void VisualizerWithVertexSelection::KeyPressCallback(
                 is_redraw_required_ = true;
                 break;
             } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+                Visualizer::KeyPressCallback(window, key, scancode, action,
+                                             mods);
             }
         }
         case GLFW_KEY_EQUAL: {
@@ -557,7 +559,8 @@ void VisualizerWithVertexSelection::KeyPressCallback(
                 is_redraw_required_ = true;
                 break;
             } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+                Visualizer::KeyPressCallback(window, key, scancode, action,
+                                             mods);
             }
         }
         default:
@@ -727,45 +730,38 @@ void VisualizerWithVertexSelection::ClearPickedPoints() {
 }
 
 void VisualizerWithVertexSelection::AddPickedPoints(
-	const std::vector<int> indices) {
-
-	const std::vector<Eigen::Vector3d> * eigenPoints = nullptr;
-	const std::vector<CCVector3> * points = nullptr;
+        const std::vector<int> indices) {
+    const std::vector<Eigen::Vector3d> *eigenPoints = nullptr;
+    const std::vector<CCVector3> *points = nullptr;
     if (geometry_ptr_->isKindOf(CV_TYPES::POINT_CLOUD) ||
-        geometry_ptr_->isKindOf(CV_TYPES::MESH))
-	{
-		points = GetGeometryPoints(geometry_ptr_);
-		if (!points) {
-			return;  // can't get points info, so can't add them
-		}
-	}
-	else
-	{
-		eigenPoints = GetGeometryEigenPoints(geometry_ptr_);
-		if (!eigenPoints) {
-			return;  // can't get points info, so can't add them
-		}
-	}
+        geometry_ptr_->isKindOf(CV_TYPES::MESH)) {
+        points = GetGeometryPoints(geometry_ptr_);
+        if (!points) {
+            return;  // can't get points info, so can't add them
+        }
+    } else {
+        eigenPoints = GetGeometryEigenPoints(geometry_ptr_);
+        if (!eigenPoints) {
+            return;  // can't get points info, so can't add them
+        }
+    }
 
     for (auto &index : indices) {
-		if (eigenPoints)
-		{
-			const auto &point = (*eigenPoints)[index];
-			utility::LogInfo(
-				"Adding point #{:d} ({:.2f}, {:.2f}, {:.2f}) to selection.",
-				index, point(0), point(1), point(2));
-			selected_points_[index] = point;
-			ui_selected_points_geometry_ptr_->addEigenPoint(point);
-		}
-		else if (points)
-		{
-			const auto &point = (*points)[index];
-			utility::LogInfo(
-				"Adding point #{:d} ({:.2f}, {:.2f}, {:.2f}) to selection.",
-				index, point(0), point(1), point(2));
-			selected_points_[index] = CCVector3d::fromArray(point);
-			ui_selected_points_geometry_ptr_->addPoint(point);
-		}
+        if (eigenPoints) {
+            const auto &point = (*eigenPoints)[index];
+            utility::LogInfo(
+                    "Adding point #{:d} ({:.2f}, {:.2f}, {:.2f}) to selection.",
+                    index, point(0), point(1), point(2));
+            selected_points_[index] = point;
+            ui_selected_points_geometry_ptr_->addEigenPoint(point);
+        } else if (points) {
+            const auto &point = (*points)[index];
+            utility::LogInfo(
+                    "Adding point #{:d} ({:.2f}, {:.2f}, {:.2f}) to selection.",
+                    index, point(0), point(1), point(2));
+            selected_points_[index] = CCVector3d::fromArray(point);
+            ui_selected_points_geometry_ptr_->addPoint(point);
+        }
     }
 
     ui_selected_points_geometry_ptr_->paintUniformColor(SELECTED_POINTS_COLOR);
@@ -825,9 +821,9 @@ const std::vector<Eigen::Vector3d>
             break;
         }
         case CV_TYPES::HALF_EDGE_MESH:
-        case CV_TYPES::TETRA_MESH:
-		{
-            auto mesh = std::static_pointer_cast<const geometry::ecvMeshBase>(geometry);
+        case CV_TYPES::TETRA_MESH: {
+            auto mesh = std::static_pointer_cast<const geometry::ecvMeshBase>(
+                    geometry);
             points = &mesh->vertices_;
             break;
         }
@@ -844,36 +840,32 @@ const std::vector<Eigen::Vector3d>
     return points;
 }
 
-const std::vector<CCVector3>* 
-VisualizerWithVertexSelection::GetGeometryPoints(
-	std::shared_ptr<const ccHObject> geometry)
-{
-	const std::vector<CCVector3> *points = nullptr;
-	switch (geometry->getClassID()) {
-	case CV_TYPES::POINT_CLOUD: {
-		auto cloud = std::static_pointer_cast<const ccPointCloud>(
-			geometry);
-		points = &cloud->getPoints();
-		break;
-	}
-	case CV_TYPES::MESH:
-	case CV_TYPES::PRIMITIVE:
-	{
-		auto mesh = std::static_pointer_cast<const ccMesh>(geometry);
-		points = &mesh->getVertices();
-		break;
-	}
-	case CV_TYPES::IMAGE2:
-	case CV_TYPES::RGBD_IMAGE:
-	case CV_TYPES::VOXEL_GRID:
-	case CV_TYPES::POINT_OCTREE2:
-	case CV_TYPES::ORIENTED_BBOX:
-	case CV_TYPES::BBOX:
-	case CV_TYPES::CUSTOM_H_OBJECT:
-		points = nullptr;
-		break;
-	}
-	return points;
+const std::vector<CCVector3> *VisualizerWithVertexSelection::GetGeometryPoints(
+        std::shared_ptr<const ccHObject> geometry) {
+    const std::vector<CCVector3> *points = nullptr;
+    switch (geometry->getClassID()) {
+        case CV_TYPES::POINT_CLOUD: {
+            auto cloud = std::static_pointer_cast<const ccPointCloud>(geometry);
+            points = &cloud->getPoints();
+            break;
+        }
+        case CV_TYPES::MESH:
+        case CV_TYPES::PRIMITIVE: {
+            auto mesh = std::static_pointer_cast<const ccMesh>(geometry);
+            points = &mesh->getVertices();
+            break;
+        }
+        case CV_TYPES::IMAGE2:
+        case CV_TYPES::RGBD_IMAGE:
+        case CV_TYPES::VOXEL_GRID:
+        case CV_TYPES::POINT_OCTREE2:
+        case CV_TYPES::ORIENTED_BBOX:
+        case CV_TYPES::BBOX:
+        case CV_TYPES::CUSTOM_H_OBJECT:
+            points = nullptr;
+            break;
+    }
+    return points;
 }
 
 Eigen::Vector3d VisualizerWithVertexSelection::CalcDragDelta(double winX,

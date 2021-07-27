@@ -33,7 +33,7 @@
 #include <vector>
 
 #include "t/io/sensor/realsense/RealSensePrivate.h"
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 namespace cloudViewer {

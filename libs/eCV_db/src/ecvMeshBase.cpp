@@ -27,7 +27,7 @@
 #include "ecvMeshBase.h"
 
 // LOCAL
-#include <Console.h>
+#include <Logging.h>
 
 #include "ecvBBox.h"
 #include "ecvMesh.h"

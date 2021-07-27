@@ -26,10 +26,10 @@
 
 #include "CloudViewerConfig.h"
 
-#include "Console.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 
-void PrintCloudViewerVersion() { cloudViewer::utility::LogInfo("CloudViewer {}", CLOUDVIEWER_VERSION); }
+void PrintCloudViewerVersion() { utility::LogInfo("CloudViewer {}", CLOUDVIEWER_VERSION); }
 
 }  // namespace cloudViewer

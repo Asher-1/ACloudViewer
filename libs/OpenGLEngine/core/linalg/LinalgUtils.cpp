@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                       -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,19 +31,19 @@ namespace core {
 
 std::shared_ptr<CuSolverContext> CuSolverContext::GetInstance() {
     if (instance_ == nullptr) {
-        instance_ = std::make_shared<CuSolverContext>();
+        instance_ = cloudViewer::make_shared<CuSolverContext>();
     }
     return instance_;
 };
 
 CuSolverContext::CuSolverContext() {
     if (cusolverDnCreate(&handle_) != CUSOLVER_STATUS_SUCCESS) {
-        cloudViewer::utility::LogError("Unable to create cuSolver handle");
+        utility::LogError("Unable to create cuSolver handle");
     }
 }
 CuSolverContext::~CuSolverContext() {
     if (cusolverDnDestroy(handle_) != CUSOLVER_STATUS_SUCCESS) {
-        cloudViewer::utility::LogError("Unable to destroy cuSolver handle");
+        utility::LogError("Unable to destroy cuSolver handle");
     }
 }
 
@@ -51,14 +51,14 @@ std::shared_ptr<CuSolverContext> CuSolverContext::instance_ = nullptr;
 
 std::shared_ptr<CuBLASContext> CuBLASContext::GetInstance() {
     if (instance_ == nullptr) {
-        instance_ = std::make_shared<CuBLASContext>();
+        instance_ = cloudViewer::make_shared<CuBLASContext>();
     }
     return instance_;
 };
 
 CuBLASContext::CuBLASContext() {
     if (cublasCreate(&handle_) != CUBLAS_STATUS_SUCCESS) {
-        cloudViewer::utility::LogError("Unable to create cublas handle");
+        utility::LogError("Unable to create cublas handle");
     }
 }
 CuBLASContext::~CuBLASContext() { cublasDestroy(handle_); }

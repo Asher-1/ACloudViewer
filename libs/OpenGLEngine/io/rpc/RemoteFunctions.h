@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,11 +28,10 @@
 
 #include <map>
 
-#include <ecvMesh.h>
-#include <ecvPointCloud.h>
-
 #include "camera/PinholeCameraParameters.h"
 #include "core/Tensor.h"
+#include "geometry/PointCloud.h"
+#include "geometry/TriangleMesh.h"
 #include "io/rpc/ConnectionBase.h"
 
 namespace zmq {
@@ -60,7 +59,7 @@ struct Status;
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetPointCloud(const ccPointCloud& pcd,
+bool SetPointCloud(const geometry::PointCloud& pcd,
                    const std::string& path = "",
                    int time = 0,
                    const std::string& layer = "",
@@ -68,7 +67,7 @@ bool SetPointCloud(const ccPointCloud& pcd,
                            std::shared_ptr<ConnectionBase>());
 
 /// Function for sending a TriangleMesh.
-/// \param pcd         The TriangleMesh object.
+/// \param mesh         The TriangleMesh object.
 ///
 /// \param path        Path descriptor defining a location in the scene tree.
 /// E.g., 'mygroup/mypoints'.
@@ -80,7 +79,7 @@ bool SetPointCloud(const ccPointCloud& pcd,
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetTriangleMesh(const ccMesh& mesh,
+bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
                      const std::string& path = "",
                      int time = 0,
                      const std::string& layer = "",

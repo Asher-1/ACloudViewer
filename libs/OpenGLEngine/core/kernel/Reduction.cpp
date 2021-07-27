@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ void Reduction(const Tensor& src,
     // all dimensions.
     if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
         if (keepdim) {
-            cloudViewer::utility::LogError("Arg-reduction keepdim must be false");
+            utility::LogError("Arg-reduction keepdim must be false");
         }
         if (dims.size() != 1) {
             std::vector<bool> seen_dims(src.NumDims(), false);
@@ -50,7 +50,7 @@ void Reduction(const Tensor& src,
             }
             if (!std::all_of(seen_dims.begin(), seen_dims.end(),
                              [](bool seen) { return seen; })) {
-                cloudViewer::utility::LogError(
+                utility::LogError(
                         "Arg-reduction can only have 1 or all reduction "
                         "dimensions. However, dims = {}.",
                         dims);
@@ -63,11 +63,11 @@ void Reduction(const Tensor& src,
     SizeVector non_keepdim_shape =
             shape_util::ReductionShape(src.GetShape(), dims, false);
     if (keepdim && keepdim_shape != dst.GetShape()) {
-        cloudViewer::utility::LogError("Expected output shape {} but got {}.",
+        utility::LogError("Expected output shape {} but got {}.",
                           keepdim_shape.ToString(), dst.GetShape().ToString());
     }
     if (!keepdim && non_keepdim_shape != dst.GetShape()) {
-        cloudViewer::utility::LogError("Expected output shape {} but got {}.",
+        utility::LogError("Expected output shape {} but got {}.",
                           keepdim_shape.ToString(), dst.GetShape().ToString());
     }
 
@@ -83,7 +83,7 @@ void Reduction(const Tensor& src,
     }
 
     if (src.GetDevice() != dst.GetDevice()) {
-        cloudViewer::utility::LogError("Device mismatch {} != {}.",
+        utility::LogError("Device mismatch {} != {}.",
                           src.GetDevice().ToString(),
                           dst.GetDevice().ToString());
     }
@@ -95,10 +95,10 @@ void Reduction(const Tensor& src,
 #ifdef BUILD_CUDA_MODULE
         ReductionCUDA(src, dst, dims, keepdim, op_code);
 #else
-        cloudViewer::utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        cloudViewer::utility::LogError("Unimplemented device.");
+        utility::LogError("Unimplemented device.");
     }
 
     if (!keepdim) {
@@ -108,4 +108,4 @@ void Reduction(const Tensor& src,
 
 }  // namespace kernel
 }  // namespace core
-}  // namespace CloudViewer
+}  // namespace cloudViewer

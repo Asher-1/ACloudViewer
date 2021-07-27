@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,9 +35,9 @@
 // helper functions for parsing arguments
 //
 
-inline cloudViewer::ml::impl::CoordinateMapping ParseCoordinateMappingStr(
+inline open3d::ml::impl::CoordinateMapping ParseCoordinateMappingStr(
         const std::string& str) {
-    using cloudViewer::ml::impl::CoordinateMapping;
+    using open3d::ml::impl::CoordinateMapping;
     CoordinateMapping coordinate_mapping =
             CoordinateMapping::BALL_TO_CUBE_RADIAL;
     if (str == "ball_to_cube_radial") {
@@ -55,9 +55,9 @@ inline cloudViewer::ml::impl::CoordinateMapping ParseCoordinateMappingStr(
     return coordinate_mapping;
 }
 
-inline cloudViewer::ml::impl::InterpolationMode ParseInterpolationStr(
+inline open3d::ml::impl::InterpolationMode ParseInterpolationStr(
         const std::string& str) {
-    using cloudViewer::ml::impl::InterpolationMode;
+    using open3d::ml::impl::InterpolationMode;
     InterpolationMode interpolation = InterpolationMode::LINEAR;
     if (str == "linear") {
         interpolation = InterpolationMode::LINEAR;

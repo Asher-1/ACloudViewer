@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,18 +46,18 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
     num_inputs_ = static_cast<int64_t>(input_tensors.size());
     num_outputs_ = static_cast<int64_t>(output_tensors.size());
     if (num_inputs_ < 1) {
-        cloudViewer::utility::LogError("Indexer must have at least one input.");
+        utility::LogError("Indexer must have at least one input.");
     }
     if (num_inputs_ > MAX_INPUTS) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "Indexer cannot have more than {} inputs, but got {}.",
                 MAX_INPUTS, num_inputs_);
     }
     if (num_outputs_ < 1) {
-        cloudViewer::utility::LogError("Indexer must have at least one input.");
+        utility::LogError("Indexer must have at least one input.");
     }
     if (num_outputs_ > MAX_OUTPUTS) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "Indexer cannot have more than {} outputs, but got {}.",
                 MAX_OUTPUTS, num_outputs_);
     }
@@ -67,14 +67,14 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
         const Dtype ref_dtype = input_tensors[0].GetDtype();
         for (const auto& input_tensor : input_tensors) {
             if (input_tensor.GetDtype() != ref_dtype) {
-                cloudViewer::utility::LogError("Dype mismatch {} != {}.",
+                utility::LogError("Dype mismatch {} != {}.",
                                   input_tensor.GetDtype().ToString(),
                                   ref_dtype.ToString());
             }
         }
         for (const auto& output_tensor : output_tensors) {
             if (output_tensor.GetDtype() != ref_dtype) {
-                cloudViewer::utility::LogError("Dype mismatch {} != {}.",
+                utility::LogError("Dype mismatch {} != {}.",
                                   output_tensor.GetDtype().ToString(),
                                   ref_dtype.ToString());
             }
@@ -83,7 +83,7 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
         const Dtype ref_dtype = input_tensors[0].GetDtype();
         for (const auto& input_tensor : input_tensors) {
             if (input_tensor.GetDtype() != ref_dtype) {
-                cloudViewer::utility::LogError("Dype mismatch {} != {}.",
+                utility::LogError("Dype mismatch {} != {}.",
                                   input_tensor.GetDtype().ToString(),
                                   ref_dtype.ToString());
             }
@@ -92,14 +92,14 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
         const Dtype ref_dtype = input_tensors[0].GetDtype();
         for (const auto& input_tensor : input_tensors) {
             if (input_tensor.GetDtype() != ref_dtype) {
-                cloudViewer::utility::LogError("Dype mismatch {} != {}.",
+                utility::LogError("Dype mismatch {} != {}.",
                                   input_tensor.GetDtype().ToString(),
                                   ref_dtype.ToString());
             }
         }
         for (const auto& output_tensor : output_tensors) {
             if (output_tensor.GetDtype() != Dtype::Bool) {
-                cloudViewer::utility::LogError("Dype mismatch {} != {}.",
+                utility::LogError("Dype mismatch {} != {}.",
                                   output_tensor.GetDtype().ToString(),
                                   Dtype::Bool.ToString());
             }
@@ -107,7 +107,7 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
     } else if (dtype_policy == DtypePolicy::NONE) {
         // Do nothing.
     } else {
-        cloudViewer::utility::LogError("Unimplemented dtype policy");
+        utility::LogError("Unimplemented dtype policy");
     }
 
     // Convert to TensorRef.
@@ -122,7 +122,7 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
     SizeVector ref_output_shape = output_tensors[0].GetShape();
     for (const auto& output_tensor : output_tensors) {
         if (output_tensor.GetShape() != ref_output_shape) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "For broadcast, all output shapes must be the same, "
                     "but {} != {}",
                     output_tensor.GetShape(), ref_output_shape);
@@ -133,7 +133,7 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
     // simplicity, we require explicit broadcasting after reduction.
     if (reduction_dims.size() > 0) {
         if (num_inputs_ != 1) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Internal error: reduction op can only have 1 inputs.");
         }
 
@@ -143,7 +143,7 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
             if (shape_util::ReductionShape(input_tensors[0].GetShape(),
                                            reduction_dims, true) !=
                 output_tensors[i].GetShape()) {
-                cloudViewer::utility::LogError(
+                utility::LogError(
                         "Reduction dimensions mismatch, input's shape {}, "
                         "reduction dims {}, output's shape {}.",
                         input_tensors[0].GetShape(), reduction_dims,
@@ -232,11 +232,13 @@ IndexerIterator Indexer::SplitTo32BitIndexing() const {
 std::unique_ptr<Indexer> Indexer::SplitLargestDim() {
     // Get the dimension to split.
     if (ndims_ == 0) {
-        cloudViewer::utility::LogError("Cannot split when ndims_ == 0");
+        utility::LogError("Cannot split when ndims_ == 0");
+        return nullptr;
     }
     if (master_shape_[ndims_ - 1] < 2) {
-        cloudViewer::utility::LogError("master_shape_[ndims_ - 1] = {} < 2, cannot split.",
+        utility::LogError("master_shape_[ndims_ - 1] = {} < 2, cannot split.",
                           master_shape_[ndims_ - 1]);
+        return nullptr;
     }
     int64_t max_extent = -1;
     int64_t dim_to_split = -1;
@@ -261,9 +263,24 @@ std::unique_ptr<Indexer> Indexer::SplitLargestDim() {
             }
         }
     }
-    assert(max_extent >= 0);
-    assert(dim_to_split >= 0 && dim_to_split < ndims_ &&
-           master_shape_[dim_to_split] >= 2);
+    if (max_extent < 0) {
+        utility::LogError(
+                "Internal error: max_extent must be >= 0, but got {}.",
+                max_extent);
+        return nullptr;
+    }
+    if (!(dim_to_split >= 0 && dim_to_split < ndims_)) {
+        utility::LogError(
+                "Internal error: 0 <= dim_to_split < {} required, but got {}.",
+                ndims_, dim_to_split);
+        return nullptr;
+    }
+    if (master_shape_[dim_to_split] < 2) {
+        utility::LogError(
+                "Internal error: cannot split dimension size {}, must be >= 2.",
+                master_shape_[dim_to_split]);
+        return nullptr;
+    }
 
     std::unique_ptr<Indexer> copy(new Indexer(*this));
     bool overlaps = IsReductionDim(dim_to_split);
@@ -337,7 +354,14 @@ Indexer Indexer::GetPerOutputIndexer(int64_t output_idx) const {
 
 void Indexer::ShrinkDim(int64_t dim, int64_t start, int64_t size) {
     // inputs_ and output_'s shapes are not important.
-    assert(dim >= 0 && dim < ndims_ && size > 0);
+    if (!(dim >= 0 && dim < ndims_)) {
+        utility::LogError("0 <= dim < {} required, but got {}.", ndims_, dim);
+        return;
+    }
+    if (size <= 0) {
+        utility::LogError("Invalid size {}, must be > 0.", size);
+        return;
+    }
     // Inputs
     for (int64_t i = 0; i < num_inputs_; ++i) {
         inputs_[i].data_ptr_ = static_cast<char*>(inputs_[i].data_ptr_) +
@@ -557,7 +581,7 @@ void Indexer::ReductionRestride(TensorRef& dst,
                                 const int64_t* src_shape,
                                 const SizeVector& reduction_dims) {
     if (dst.ndims_ != src_ndims) {
-        cloudViewer::utility::LogError("Internal error, src ndims {} != dst ndims {}",
+        utility::LogError("Internal error, src ndims {} != dst ndims {}",
                           src_ndims, dst.ndims_);
     }
     for (int64_t i = 0; i < dst.ndims_; ++i) {

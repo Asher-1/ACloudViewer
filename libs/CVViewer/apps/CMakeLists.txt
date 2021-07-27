@@ -1,4 +1,4 @@
-macro(APP SRC_DIR APP_NAME TARGET_NAME)
+macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
     set(APPS_DIR "${PROJECT_SOURCE_DIR}/libs/CVViewer/apps")
     set(SOURCE_DIR "${APPS_DIR}/${SRC_DIR}")
 
@@ -44,8 +44,7 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
                               OUTPUT_NAME ${APP_NAME}
                              )
     endif()
-    add_dependencies(${TARGET_NAME} GuiResources)
-	
+
     include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
     if( MSVC )
        include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc )
@@ -56,11 +55,8 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
         AUTORCC OFF
         AUTOUIC OFF
     )
-	
-    set(DEPENDENCIES "${ARGN}")
-    foreach(DEPENDENCY IN LISTS DEPENDENCIES)
-        target_link_libraries(${TARGET_NAME} PRIVATE ${DEPENDENCY})
-    endforeach()
+
+    target_link_libraries(${TARGET_NAME} PRIVATE ${ARGN})
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -136,11 +132,12 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
             install(FILES   "${APP_DIR}/${TARGET_NAME}.exe"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     RENAME "${APP_NAME}.exe")
-			
+
 			# deploy on windows
 			add_custom_command(TARGET ${TARGET_NAME}
 				POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/${APP_NAME}/${TARGET_NAME}.exe ${CMAKE_BINARY_DIR}/libs/CVViewer/apps/$<CONFIG>/${TARGET_NAME}.exe
+				COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/${APP_NAME}/${TARGET_NAME}.exe
+                        ${CMAKE_BINARY_DIR}/libs/CVViewer/apps/$<CONFIG>/${TARGET_NAME}.exe
 				VERBATIM
 			)
 			DeployQt(
@@ -179,6 +176,6 @@ endmacro(APP)
 
 if (BUILD_GUI)
     set(TEMP_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-    APP(CloudViewerApp CloudViewer CloudViewerApp OPENGL_ENGINE_LIB)
+    cloudViewer_add_app(CloudViewerApp CloudViewer CloudViewerApp OPENGL_ENGINE_LIB)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEMP_RUNTIME_OUTPUT_DIRECTORY})
 endif()

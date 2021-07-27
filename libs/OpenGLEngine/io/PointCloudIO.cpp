@@ -28,7 +28,7 @@
 
 // CV_CORE_LIB
 #include <Helper.h>
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include <ProgressReporters.h>
 

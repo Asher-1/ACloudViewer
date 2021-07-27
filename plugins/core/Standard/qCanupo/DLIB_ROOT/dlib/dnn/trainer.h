@@ -78,7 +78,7 @@ namespace dlib
         explicit dnn_trainer(net_type& net_) : job_pipe(0), net(net_)
         {
             solver_type default_solver;
-            devices.push_back(std::make_shared<device_data>(dlib::cuda::get_device(), net, default_solver));
+            devices.push_back(cloudViewer::make_shared<device_data>(dlib::cuda::get_device(), net, default_solver));
 
             init();
         }
@@ -88,7 +88,7 @@ namespace dlib
             const solver_type& solver_
         ) : job_pipe(0), net(net_) 
         {
-            devices.push_back(std::make_shared<device_data>(dlib::cuda::get_device(), net, solver_));
+            devices.push_back(cloudViewer::make_shared<device_data>(dlib::cuda::get_device(), net, solver_));
 
             init();
         }
@@ -99,7 +99,7 @@ namespace dlib
             const std::vector<int>& cuda_extra_devices
         ) : job_pipe(0), net(net_) 
         {
-            devices.push_back(std::make_shared<device_data>(dlib::cuda::get_device(), net, solver_));
+            devices.push_back(cloudViewer::make_shared<device_data>(dlib::cuda::get_device(), net, solver_));
 
             const int total_devices = dlib::cuda::get_num_devices();
 
@@ -113,7 +113,7 @@ namespace dlib
                 // Switch to this device so that any tensor objects that get allocated when
                 // we create the device context happen on this device.
                 dlib::cuda::set_device(id);
-                devices.push_back(std::make_shared<device_data>(id, net, solver_, clone_net()));
+                devices.push_back(cloudViewer::make_shared<device_data>(id, net, solver_, clone_net()));
             }
             // Set the current device back to what it was before this constructor was
             // called.
@@ -582,7 +582,7 @@ namespace dlib
             // that.
             std::vector<std::shared_ptr<thread_pool>> tp;
             for (size_t i = 0; i < devices.size(); ++i)
-                tp.push_back(std::make_shared<thread_pool>(1));
+                tp.push_back(cloudViewer::make_shared<thread_pool>(1));
 
 
             main_iteration_counter = 0;
@@ -920,7 +920,7 @@ namespace dlib
                 net_type& net_,
                 const solver_type& solver_,
                 clone_net
-            ) : device_id(device_id_), net_copy(std::make_shared<net_type>(net_)), net(*net_copy), solvers(num_computational_layers, solver_) {}
+            ) : device_id(device_id_), net_copy(cloudViewer::make_shared<net_type>(net_)), net(*net_copy), solvers(num_computational_layers, solver_) {}
 
             int device_id;
             std::shared_ptr<net_type> net_copy;

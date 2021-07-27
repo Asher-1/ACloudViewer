@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Indexer.h"
+#include "core/Indexer.h"
 
 #include <unordered_map>
 
-#include "open3d/core/Device.h"
-#include "open3d/core/SizeVector.h"
+#include "core/Device.h"
+#include "core/SizeVector.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 class IndexerPermuteDevices : public PermuteDevices {};
@@ -190,4 +190,4 @@ TEST_P(IndexerPermuteDevices, GetPointers) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

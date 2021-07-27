@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -24,10 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <CVLog.h>
-
-// LOCAL
 #include "ecvFeature.h"
+
+#include <Logging.h>
+#include <Parallel.h>
+
 #include "ecvKDTreeFlann.h"
 #include "ecvPointCloud.h"
 
@@ -74,29 +75,32 @@ Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
 }
 
 std::shared_ptr<Feature> ComputeSPFHFeature(
-	const ccPointCloud &input,
-	const geometry::KDTreeFlann &kdtree,
-	const geometry::KDTreeSearchParam &search_param) {
+        const ccPointCloud &input,
+        const geometry::KDTreeFlann &kdtree,
+        const geometry::KDTreeSearchParam &search_param) {
     auto feature = cloudViewer::make_shared<Feature>();
     feature->Resize(33, (int)input.size());
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int i = 0; i < (int)input.size(); i++) {
-        const auto point = input.getPoint(static_cast<unsigned int>(i));
+        const auto &point = *input.getPoint(static_cast<unsigned int>(i));
         const auto &normal = input.getPointNormal(i);
         std::vector<int> indices;
         std::vector<double> distance2;
-        if (kdtree.Search(CCVector3d::fromArray(*point), search_param, indices, distance2) > 1) {
+        if (kdtree.Search(CCVector3d::fromArray(point), search_param, indices,
+                          distance2) > 1) {
             // only compute SPFH feature when a point has neighbors
             double hist_incr = 100.0 / (double)(indices.size() - 1);
             for (size_t k = 1; k < indices.size(); k++) {
                 // skip the point itself, compute histogram
                 auto pf = ComputePairFeatures(
-					CCVector3d::fromArray(*point),
-					CCVector3d::fromArray(normal),
-					CCVector3d::fromArray(*input.getPoint(indices[k])),
-					CCVector3d::fromArray(input.getPointNormal(indices[k])));
+                        CCVector3d::fromArray(point),
+                        CCVector3d::fromArray(normal),
+                        CCVector3d::fromArray(*input.getPoint(indices[k])),
+                        CCVector3d::fromArray(
+                                input.getPointNormal(indices[k])));
                 int h_index = (int)(floor(11 * (pf(0) + M_PI) / (2.0 * M_PI)));
                 if (h_index < 0) h_index = 0;
                 if (h_index >= 11) h_index = 10;
@@ -121,24 +125,28 @@ namespace utility {
 std::shared_ptr<Feature> ComputeFPFHFeature(
         const ccPointCloud &input,
         const geometry::KDTreeSearchParam
-        &search_param /* = geometry::KDTreeSearchParamKNN()*/) {
+                &search_param /* = geometry::KDTreeSearchParamKNN()*/) {
     auto feature = cloudViewer::make_shared<Feature>();
     feature->Resize(33, (int)input.size());
     if (!input.hasNormals()) {
-        CVLog::Error(
+        utility::LogError(
                 "[ComputeFPFHFeature] Failed because input point cloud has no "
                 "normal.");
     }
     geometry::KDTreeFlann kdtree(input);
     auto spfh = ComputeSPFHFeature(input, kdtree, search_param);
+    if (spfh == nullptr) {
+        utility::LogError("Internal error: SPFH feature is nullptr.");
+    }
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int i = 0; i < (int)input.size(); i++) {
         std::vector<int> indices;
         std::vector<double> distance2;
-        if (kdtree.Search(input.getEigenPoint(static_cast<size_t>(i)), 
-			search_param, indices, distance2) > 1) {
+        if (kdtree.Search(input.getEigenPoint(static_cast<size_t>(i)),
+                          search_param, indices, distance2) > 1) {
             double sum[3] = {0.0, 0.0, 0.0};
             for (size_t k = 1; k < indices.size(); k++) {
                 // skip the point itself

@@ -16,7 +16,7 @@
 //##########################################################################
 
 // LOCAL
-#include "Console.h"
+#include "Logging.h"
 #include "BoundingBox.h"
 
 // EIGEN

@@ -26,23 +26,31 @@
 
 #include "io/ModelIO.h"
 
-#include <unordered_map>
-
-#include <Console.h>
 #include <FileSystem.h>
+#include <Logging.h>
+
+#include <unordered_map>
 
 namespace cloudViewer {
 namespace io {
 
 bool ReadModelUsingAssimp(const std::string& filename,
                           visualization::rendering::TriangleMeshModel& model,
-                          bool print_progress);
+                          const ReadTriangleModelOptions& params /*={}*/);
 
 bool ReadTriangleModel(const std::string& filename,
                        visualization::rendering::TriangleMeshModel& model,
-                       bool print_progress) {
-    return ReadModelUsingAssimp(filename, model, print_progress);
+                       ReadTriangleModelOptions params /*={}*/) {
+    if (params.print_progress) {
+        auto progress_text = std::string("Reading model file") + filename;
+        auto pbar = utility::ConsoleProgressBar(100, progress_text, true);
+        params.update_progress = [pbar](double percent) mutable -> bool {
+            pbar.setCurrentCount(size_t(percent));
+            return true;
+        };
+    }
+    return ReadModelUsingAssimp(filename, model, params);
 }
 
 }  // namespace io
-}  // namespace CloudViewer
+}  // namespace cloudViewer

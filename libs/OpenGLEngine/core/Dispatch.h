@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: www.erow.cn                        -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #pragma once
 
 #include "core/Dtype.h"
-#include <Console.h>
+#include <Logging.h>
 
 /// Call a numerical templated function based on Dtype. Warp the function to
 /// a lambda function to use DISPATCH_DTYPE_TO_TEMPLATE.
@@ -54,6 +54,12 @@
         } else if (DTYPE == cloudViewer::core::Dtype::Float64) { \
             using scalar_t = double;                        \
             return __VA_ARGS__();                           \
+        } else if (DTYPE == cloudViewer::core::Dtype::Int8) {    \
+            using scalar_t = int8_t;                        \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == cloudViewer::core::Dtype::Int16) {   \
+            using scalar_t = int16_t;                       \
+            return __VA_ARGS__();                           \
         } else if (DTYPE == cloudViewer::core::Dtype::Int32) {   \
             using scalar_t = int32_t;                       \
             return __VA_ARGS__();                           \
@@ -66,8 +72,14 @@
         } else if (DTYPE == cloudViewer::core::Dtype::UInt16) {  \
             using scalar_t = uint16_t;                      \
             return __VA_ARGS__();                           \
+        } else if (DTYPE == cloudViewer::core::Dtype::UInt32) {  \
+            using scalar_t = uint32_t;                      \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == cloudViewer::core::Dtype::UInt64) {  \
+            using scalar_t = uint64_t;                      \
+            return __VA_ARGS__();                           \
         } else {                                            \
-            cloudViewer::utility::LogError("Unsupported data type.");    \
+            utility::LogError("Unsupported data type.");    \
         }                                                   \
     }()
 
@@ -78,5 +90,18 @@
             return __VA_ARGS__();                           \
         } else {                                            \
             DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, __VA_ARGS__); \
+        }                                                   \
+    }()
+
+#define DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(DTYPE, ...)        \
+    [&] {                                                   \
+        if (DTYPE == cloudViewer::core::Dtype::Float32) {        \
+            using scalar_t = float;                         \
+            return __VA_ARGS__();                           \
+        } else if (DTYPE == cloudViewer::core::Dtype::Float64) { \
+            using scalar_t = double;                        \
+            return __VA_ARGS__();                           \
+        } else {                                            \
+            utility::LogError("Unsupported data type.");    \
         }                                                   \
     }()
