@@ -28,7 +28,7 @@
 
 #include <cmath>
 
-#include "utility/FileSystem.h"
+#include <FileSystem.h>
 #include "visualization/gui/Color.h"
 
 namespace cloudViewer {

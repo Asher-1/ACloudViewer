@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "visualization/visualizer/Visualizer.h"
+#include "visualization/visualizer/ViewControlWithCustomAnimation.h"
 #include "visualization/utility/DrawGeometry.h"
 
 #include <Logging.h>
@@ -34,9 +36,7 @@
 
 #include "visualization/gui/Application.h"
 #include "visualization/visualizer/GuiVisualizer.h"
-#include "visualization/visualizer/ViewControlWithCustomAnimation.h"
 #include "visualization/visualizer/ViewControlWithEditing.h"
-#include "visualization/visualizer/Visualizer.h"
 #include "visualization/visualizer/VisualizerWithCustomAnimation.h"
 #include "visualization/visualizer/VisualizerWithEditing.h"
 #include "visualization/visualizer/VisualizerWithKeyCallback.h"

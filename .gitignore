@@ -177,6 +177,7 @@ compile_commands.json
 
 
 # Example resources
+examples/test_data/cloudViewer_downloads
 examples/python/reconstruction_system/dataset/
 examples/test_data/fountain_small
 examples/test_data/Armadillo.ply

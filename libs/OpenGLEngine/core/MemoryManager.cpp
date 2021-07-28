@@ -106,15 +106,15 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
                               utility::hash_enum_class>
             map_device_type_to_memory_manager = {
                     {Device::DeviceType::CPU,
-                     cloudViewer::make_shared<CPUMemoryManager>()},
+                     std::make_shared<CPUMemoryManager>()},
 #ifdef BUILD_CUDA_MODULE
 #ifdef BUILD_CACHED_CUDA_MANAGER
                     {Device::DeviceType::CUDA,
-                     cloudViewer::make_shared<CachedMemoryManager>(
-                             cloudViewer::make_shared<CUDAMemoryManager>())},
+                     std::make_shared<CachedMemoryManager>(
+                             std::make_shared<CUDAMemoryManager>())},
 #else
                     {Device::DeviceType::CUDA,
-                     cloudViewer::make_shared<CUDAMemoryManager>()},
+                     std::make_shared<CUDAMemoryManager>()},
 #endif  // BUILD_CACHED_CUDA_MANAGER
 #endif  // BUILD_CUDA_MODULE
             };

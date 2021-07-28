@@ -240,8 +240,6 @@ set(CLOUDVIEWER_VERSION_FULL "${CLOUDVIEWER_VERSION}${CLOUDVIEWER_VERSION_DEVHAS
 
 project(ErowCloudViewerProjects VERSION ${CLOUDVIEWER_VERSION} LANGUAGES C CXX)
 message(STATUS "ErowCloudViewerProjects ${CLOUDVIEWER_VERSION_FULL}")
-# Default debug suffix for libraries.
-set(CMAKE_DEBUG_POSTFIX "d")
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
@@ -541,6 +539,15 @@ if (WIN32)
     endif ()
 endif ()
 
+# Downloads files from https://github.com/Asher-1/cloudViewer_downloads to
+# Open3D/examples/test_data/cloudViewer_downloads.
+#add_custom_target(cloudViewer_downloads
+#        COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/cloudViewer_downloads.cmake
+#        COMMENT ""
+#        )
+
+include(${PROJECT_SOURCE_DIR}/examples/test_data/cloudViewer_downloads.cmake)
+
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -677,6 +684,9 @@ function(cloudViewer_set_global_properties target)
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
+
+    # Download test data files from cloudViewer_downloads repo.
+    add_dependencies(${target} ext_cloudViewer_downloads)
 
     # Strip unnecessary sections of the binary on Linux/macOS for Release builds
     # (from pybind11)
@@ -842,6 +852,10 @@ endif ()
 # This creates the necessary targets and sets the
 # CloudViewer_3RDPARTY_*_TARGETS variables we use in cloudViewer_link_3rdparty_libraries
 include(3rdparty/find_dependencies.cmake)
+
+# Default debug suffix for libraries.
+# Note: must put after include(3rdparty/find_dependencies.cmake)
+set(CMAKE_DEBUG_POSTFIX "d")
 
 # Add external libraries
 include(CMakeExternalLibs)
@@ -1012,29 +1026,29 @@ cloudviewer_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
 message(STATUS "========================================================================")
 message(STATUS "Third-Party Dependencies:")
 set(deps
-    EIGEN3
-    FAISS
-    FILAMENT
-    FLANN
-    FMT
-    GLEW
-    GLFW
-    GOOGLETEST
-    IMGUI
-    IPPICV
-    JPEG
-    JSONCPP
-    LIBLZF
-    OPENGL
-    PNG
-    PYBIND11
-    QHULL
-    LIBREALSENSE
-    TINYFILEDIALOGS
-    TINYGLTF
-    TINYOBJLOADER
-    WEBRTC
-    )
+        EIGEN3
+        FAISS
+        FILAMENT
+        FLANN
+        FMT
+        GLEW
+        GLFW
+        GOOGLETEST
+        IMGUI
+        IPPICV
+        JPEG
+        JSONCPP
+        LIBLZF
+        OPENGL
+        PNG
+        PYBIND11
+        QHULL
+        LIBREALSENSE
+        TINYFILEDIALOGS
+        TINYGLTF
+        TINYOBJLOADER
+        WEBRTC
+        )
 
 foreach (dep IN ITEMS ${deps})
     if (${dep}_TARGET)

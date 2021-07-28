@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "geometry/TriangleMesh.h"
+#include <ecvMesh.h>
 
 #include "geometry/BoundingVolume.h"
-#include "geometry/PointCloud.h"
+#include <ecvPointCloud.h>
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

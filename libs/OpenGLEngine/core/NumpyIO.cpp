@@ -242,7 +242,7 @@ NumpyArray::NumpyArray(const SizeVector& shape,
     for (size_t i = 0; i < shape_.size(); i++) {
         num_elements_ *= shape_[i];
     }
-    blob_ = cloudViewer::make_shared<Blob>(num_elements_ * word_size_, Device("CPU:0"));
+    blob_ = std::make_shared<Blob>(num_elements_ * word_size_, Device("CPU:0"));
 }
 
 NumpyArray::NumpyArray(const Tensor& t)

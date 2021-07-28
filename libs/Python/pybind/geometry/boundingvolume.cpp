@@ -255,7 +255,7 @@ void pybind_boundingvolume(py::module &m) {
                  std::stringstream s;
                  auto mn = box.getMinBound();
                  auto mx = box.getMaxBound();
-                 s << "AxisAlignedBoundingBox: min: (" << mn.x() << ", "
+                 s << "ccBBox: min: (" << mn.x() << ", "
                    << mn.y() << ", " << mn.z() << "), max: (" << mx.x()
                    << ", " << mx.y() << ", " << mx.z() << ")";
                  return s.str();

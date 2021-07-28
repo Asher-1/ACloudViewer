@@ -69,32 +69,32 @@ void To(const core::Tensor &src_im,
 
 void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im);
 
-void Dilate(const open3d::core::Tensor &srcim,
-            open3d::core::Tensor &dstim,
+void Dilate(const cloudViewer::core::Tensor &srcim,
+            cloudViewer::core::Tensor &dstim,
             int kernel_size);
 
-void Resize(const open3d::core::Tensor &srcim,
-            open3d::core::Tensor &dstim,
+void Resize(const cloudViewer::core::Tensor &srcim,
+            cloudViewer::core::Tensor &dstim,
             t::geometry::Image::InterpType interp_type);
 
-void Filter(const open3d::core::Tensor &srcim,
-            open3d::core::Tensor &dstim,
-            const open3d::core::Tensor &kernel);
+void Filter(const cloudViewer::core::Tensor &srcim,
+            cloudViewer::core::Tensor &dstim,
+            const cloudViewer::core::Tensor &kernel);
 
-void FilterBilateral(const open3d::core::Tensor &srcim,
-                     open3d::core::Tensor &dstim,
+void FilterBilateral(const cloudViewer::core::Tensor &srcim,
+                     cloudViewer::core::Tensor &dstim,
                      int kernel_size,
                      float value_sigma,
                      float distance_sigma);
 
-void FilterGaussian(const open3d::core::Tensor &srcim,
-                    open3d::core::Tensor &dstim,
+void FilterGaussian(const cloudViewer::core::Tensor &srcim,
+                    cloudViewer::core::Tensor &dstim,
                     int kernel_size,
                     float sigma);
 
-void FilterSobel(const open3d::core::Tensor &srcim,
-                 open3d::core::Tensor &dstim_dx,
-                 open3d::core::Tensor &dstim_dy,
+void FilterSobel(const cloudViewer::core::Tensor &srcim,
+                 cloudViewer::core::Tensor &dstim_dx,
+                 cloudViewer::core::Tensor &dstim_dy,
                  int kernel_size);
 }  // namespace ipp
 }  // namespace geometry

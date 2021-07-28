@@ -30,9 +30,9 @@
 
 #include "core/CUDAUtils.h"
 #include "core/Tensor.h"
-#include "utility/Helper.h"
-#include "utility/Logging.h"
-#include "utility/Timer.h"
+#include <Helper.h>
+#include <Logging.h>
+#include <Timer.h>
 
 namespace cloudViewer {
 namespace t {
@@ -77,7 +77,7 @@ public:
     }
 
     /// Transform a 3D coordinate in camera coordinate to world coordinate
-    OPEN3D_HOST_DEVICE void RigidTransform(float x_in,
+    CLOUDVIEWER_HOST_DEVICE void RigidTransform(float x_in,
                                            float y_in,
                                            float z_in,
                                            float* x_out,
@@ -96,7 +96,7 @@ public:
     }
 
     /// Transform a 3D coordinate in camera coordinate to world coordinate
-    OPEN3D_HOST_DEVICE void Rotate(float x_in,
+    CLOUDVIEWER_HOST_DEVICE void Rotate(float x_in,
                                    float y_in,
                                    float z_in,
                                    float* x_out,
@@ -115,7 +115,7 @@ public:
     }
 
     /// Project a 3D coordinate in camera coordinate to a 2D uv coordinate
-    OPEN3D_HOST_DEVICE void Project(float x_in,
+    CLOUDVIEWER_HOST_DEVICE void Project(float x_in,
                                     float y_in,
                                     float z_in,
                                     float* u_out,
@@ -126,7 +126,7 @@ public:
     }
 
     /// Unproject a 2D uv coordinate with depth to 3D in camera coordinate
-    OPEN3D_HOST_DEVICE void Unproject(float u_in,
+    CLOUDVIEWER_HOST_DEVICE void Unproject(float u_in,
                                       float v_in,
                                       float d_in,
                                       float* x_out,
@@ -137,7 +137,7 @@ public:
         *z_out = d_in;
     }
 
-    OPEN3D_HOST_DEVICE void GetFocalLength(float* fx, float* fy) const {
+    CLOUDVIEWER_HOST_DEVICE void GetFocalLength(float* fx, float* fy) const {
         *fx = fx_;
         *fy = fy_;
     }
@@ -232,9 +232,9 @@ public:
         ptr_ = nullptr;
     }
 
-    OPEN3D_HOST_DEVICE int64_t ElementByteSize() { return element_byte_size_; }
+    CLOUDVIEWER_HOST_DEVICE int64_t ElementByteSize() { return element_byte_size_; }
 
-    OPEN3D_HOST_DEVICE int64_t NumElements() {
+    CLOUDVIEWER_HOST_DEVICE int64_t NumElements() {
         int64_t num_elems = 1;
         for (int64_t i = 0; i < active_dims_; ++i) {
             num_elems *= shape_[i];
@@ -243,14 +243,14 @@ public:
     }
 
     /// 2D coordinate => workload
-    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
+    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(int64_t x_in,
                                                    int64_t y_in,
                                                    int64_t* workload) const {
         *workload = y_in * shape_[1] + x_in;
     }
 
     /// 3D coordinate => workload
-    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
+    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(int64_t x_in,
                                                    int64_t y_in,
                                                    int64_t z_in,
                                                    int64_t* workload) const {
@@ -258,7 +258,7 @@ public:
     }
 
     /// 4D coordinate => workload
-    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
+    inline CLOUDVIEWER_HOST_DEVICE void CoordToWorkload(int64_t x_in,
                                                    int64_t y_in,
                                                    int64_t z_in,
                                                    int64_t t_in,
@@ -268,7 +268,7 @@ public:
     }
 
     /// Workload => 2D coordinate
-    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
+    inline CLOUDVIEWER_HOST_DEVICE void WorkloadToCoord(int64_t workload,
                                                    int64_t* x_out,
                                                    int64_t* y_out) const {
         *x_out = workload % shape_[1];
@@ -276,7 +276,7 @@ public:
     }
 
     /// Workload => 3D coordinate
-    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
+    inline CLOUDVIEWER_HOST_DEVICE void WorkloadToCoord(int64_t workload,
                                                    int64_t* x_out,
                                                    int64_t* y_out,
                                                    int64_t* z_out) const {
@@ -287,7 +287,7 @@ public:
     }
 
     /// Workload => 4D coordinate
-    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
+    inline CLOUDVIEWER_HOST_DEVICE void WorkloadToCoord(int64_t workload,
                                                    int64_t* x_out,
                                                    int64_t* y_out,
                                                    int64_t* z_out,
@@ -300,15 +300,15 @@ public:
         *t_out = workload / shape_[1];
     }
 
-    inline OPEN3D_HOST_DEVICE bool InBoundary(float x, float y) const {
+    inline CLOUDVIEWER_HOST_DEVICE bool InBoundary(float x, float y) const {
         return y >= 0 && x >= 0 && y <= shape_[0] - 1.0f &&
                x <= shape_[1] - 1.0f;
     }
-    inline OPEN3D_HOST_DEVICE bool InBoundary(float x, float y, float z) const {
+    inline CLOUDVIEWER_HOST_DEVICE bool InBoundary(float x, float y, float z) const {
         return z >= 0 && y >= 0 && x >= 0 && z <= shape_[0] - 1.0f &&
                y <= shape_[1] - 1.0f && x <= shape_[2] - 1.0f;
     }
-    inline OPEN3D_HOST_DEVICE bool InBoundary(float x,
+    inline CLOUDVIEWER_HOST_DEVICE bool InBoundary(float x,
                                               float y,
                                               float z,
                                               float t) const {
@@ -317,18 +317,18 @@ public:
                x <= shape_[3] - 1.0f;
     }
 
-    inline OPEN3D_HOST_DEVICE int64_t GetShape(int i) const {
+    inline CLOUDVIEWER_HOST_DEVICE int64_t GetShape(int i) const {
         return shape_[i];
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x) const {
+    inline CLOUDVIEWER_HOST_DEVICE T* GetDataPtr(int64_t x) const {
         return static_cast<T*>(static_cast<void*>(static_cast<uint8_t*>(ptr_) +
                                                   x * element_byte_size_));
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x, int64_t y) const {
+    inline CLOUDVIEWER_HOST_DEVICE T* GetDataPtr(int64_t x, int64_t y) const {
         int64_t workload;
         CoordToWorkload(x, y, &workload);
         return static_cast<T*>(static_cast<void*>(
@@ -336,7 +336,7 @@ public:
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x,
+    inline CLOUDVIEWER_HOST_DEVICE T* GetDataPtr(int64_t x,
                                             int64_t y,
                                             int64_t z) const {
         int64_t workload;
@@ -346,7 +346,7 @@ public:
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x,
+    inline CLOUDVIEWER_HOST_DEVICE T* GetDataPtr(int64_t x,
                                             int64_t y,
                                             int64_t z,
                                             int64_t t) const {

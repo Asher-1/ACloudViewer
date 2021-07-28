@@ -1012,7 +1012,7 @@ public:  // for python interface
     /// All points with coordinates outside the bounding box \p bbox are
     /// clipped.
     ///
-    /// \param bbox AxisAlignedBoundingBox to crop points.
+    /// \param bbox ccBBox to crop points.
     std::shared_ptr<ccPointCloud> Crop(const ccBBox& bbox) const;
 
     /// \brief Function to crop ccPointCloud into output ccPointCloud

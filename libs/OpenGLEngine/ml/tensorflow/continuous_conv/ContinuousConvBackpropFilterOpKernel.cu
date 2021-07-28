@@ -42,7 +42,7 @@ public:
             OpKernelConstruction* construction)
         : ContinuousConvBackpropFilterOpKernel<TIndex>(construction) {
         texture_alignment =
-                open3d::core::GetCUDACurrentDeviceTextureAlignment();
+                cloudViewer::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

@@ -30,7 +30,7 @@
 #include <sstream>
 #include <string>
 
-#include "utility/IJsonConvertible.h"
+#include <IJsonConvertible.h>
 
 /// @cond
 namespace Json {

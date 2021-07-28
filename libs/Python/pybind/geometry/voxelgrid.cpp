@@ -71,13 +71,13 @@ void pybind_voxelgrid(py::module &m) {
                     "color", &Voxel::color_,
                     "Float64 numpy array of shape (3,): Color of the voxel.");
 
-    py::class_<VoxelGrid, PyGeometry3D<VoxelGrid>, std::shared_ptr<VoxelGrid>,
-               Geometry3D>
+ py::class_<geometry::VoxelGrid, PyGeometry<geometry::VoxelGrid>,
+               std::shared_ptr<geometry::VoxelGrid>, ccHObject>
             voxelgrid(m, "VoxelGrid",
                       "VoxelGrid is a collection of voxels which are aligned "
                       "in grid.");
-    py::detail::bind_default_constructor<VoxelGrid>(voxelgrid);
-    py::detail::bind_copy_functions<VoxelGrid>(voxelgrid);
+    py::detail::bind_default_constructor<geometry::VoxelGrid>(voxelgrid);
+    py::detail::bind_copy_functions<geometry::VoxelGrid>(voxelgrid);
     voxelgrid
             .def("__repr__",
                  [](const VoxelGrid &voxelgrid) {

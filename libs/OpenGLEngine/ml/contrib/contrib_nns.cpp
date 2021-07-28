@@ -27,7 +27,7 @@
 #include <numeric>
 
 #include "core/nns/NearestNeighborSearch.h"
-#include "utility/Parallel.h"
+#include <Parallel.h>
 
 namespace cloudViewer {
 namespace ml {

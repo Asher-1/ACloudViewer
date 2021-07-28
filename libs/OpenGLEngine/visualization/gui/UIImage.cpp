@@ -45,8 +45,8 @@
 
 #include <string>
 
-#include "geometry/Image.h"
-#include "io/ImageIO.h"
+#include <Image.h>
+#include <ImageIO.h>
 #include "t/geometry/Image.h"
 #include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/filament/FilamentEngine.h"

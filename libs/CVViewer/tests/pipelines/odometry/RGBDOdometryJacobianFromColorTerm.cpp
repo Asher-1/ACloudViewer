@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "geometry/RGBDImage.h"
+#include <RGBDImage.h>
 #include "pipelines/odometry/RGBDOdometryJacobian.h"
 #include "tests/UnitTest.h"
 #include "tests/pipelines/odometry/OdometryTools.h"

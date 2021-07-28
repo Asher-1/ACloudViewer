@@ -31,7 +31,7 @@
 #include "core/Dispatch.h"
 #include "core/Tensor.h"
 #include "t/pipelines/kernel/TransformationConverterImpl.h"
-#include "utility/Logging.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

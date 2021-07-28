@@ -87,7 +87,7 @@ std::string FindResourcePath(int argc, const char *argv[]) {
         // is absolute path, we're done
     } else {
         // relative path:  prepend working directory
-        auto cwd = open3d::utility::filesystem::GetWorkingDirectory();
+        auto cwd = cloudViewer::utility::filesystem::GetWorkingDirectory();
 #ifdef __APPLE__
         // When running an app from the command line with the full relative
         // path (e.g. `bin/Open3D.app/Contents/MacOS/Open3D`), the working
@@ -107,7 +107,7 @@ std::string FindResourcePath(int argc, const char *argv[]) {
 #endif  // __APPLE__
 
     auto resource_path = path + "/resources";
-    if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
+    if (!cloudViewer::utility::filesystem::DirectoryExists(resource_path)) {
         return path + "/../resources";  // building with Xcode
     }
     return resource_path;
@@ -274,7 +274,7 @@ void Application::Initialize() {
     // We don't have a great way of getting the process name, so let's hope that
     // the current directory is where the resources are located. This is a
     // safe assumption when running on macOS and Windows normally.
-    auto path = open3d::utility::filesystem::GetWorkingDirectory();
+    auto path = cloudViewer::utility::filesystem::GetWorkingDirectory();
     // Copy to C string, as some implementations of std::string::c_str()
     // return a very temporary pointer.
     char *argv = strdup(path.c_str());

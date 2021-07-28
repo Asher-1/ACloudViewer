@@ -455,7 +455,7 @@ void Tensor::Assign(const Tensor& other) {
     shape_ = other.shape_;
     strides_ = shape_util::DefaultStrides(shape_);
     dtype_ = other.dtype_;
-    blob_ = cloudViewer::make_shared<Blob>(shape_.NumElements() * dtype_.ByteSize(),
+    blob_ = std::make_shared<Blob>(shape_.NumElements() * dtype_.ByteSize(),
                                    other.GetDevice());
     data_ptr_ = blob_->GetDataPtr();
     kernel::Copy(other, *this);
@@ -1523,7 +1523,7 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
                              src->dl_tensor.strides + src->dl_tensor.ndim);
     }
 
-    auto blob = cloudViewer::make_shared<Blob>(device, src->dl_tensor.data, deleter);
+    auto blob = std::make_shared<Blob>(device, src->dl_tensor.data, deleter);
 
     // src->dl_tensor.byte_offset is ignored in PyTorch and MXNet, but
     // according to dlpack.h, we added the offset here.

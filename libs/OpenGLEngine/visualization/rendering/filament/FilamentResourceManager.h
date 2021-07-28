@@ -30,7 +30,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "geometry/TriangleMesh.h"
+#include <ecvMesh.h>
 #include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/RendererHandle.h"
 

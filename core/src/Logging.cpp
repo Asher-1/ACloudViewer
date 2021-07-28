@@ -173,7 +173,7 @@ VerbosityLevel Logger::GetVerbosityLevel() const {
 ConsoleProgressBar::ConsoleProgressBar(size_t expected_count,
                                        const std::string &progress_info,
                                        bool active) {
-    Reset(expected_count, progress_info, active);
+    reset(expected_count, progress_info, active);
 }
 
 void ConsoleProgressBar::reset(size_t expected_count,

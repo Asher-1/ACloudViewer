@@ -32,9 +32,9 @@
 
 #include <memory>
 
-#include "geometry/RGBDImage.h"
+#include <RGBDImage.h>
 #include "io/sensor/azure_kinect/K4aPlugin.h"
-#include "utility/Parallel.h"
+#include <Parallel.h>
 
 namespace cloudViewer {
 namespace io {

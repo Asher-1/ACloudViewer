@@ -33,9 +33,9 @@
 namespace pybind11 {
 namespace detail {
 template <>
-struct type_caster<open3d::core::Tensor>
-    : public type_caster_base<open3d::core::Tensor> {
-    using base = type_caster_base<open3d::core::Tensor>;
+struct type_caster<cloudViewer::core::Tensor>
+    : public type_caster_base<cloudViewer::core::Tensor> {
+    using base = type_caster_base<cloudViewer::core::Tensor>;
 
 public:
     bool load(py::handle src, bool convert) {
@@ -51,8 +51,8 @@ public:
                 class_name == "<class 'list'>" ||
                 class_name == "<class 'tuple'>" ||
                 class_name == "<class 'numpy.ndarray'>") {
-                auto tmp = open3d::core::PyHandleToTensor(src);
-                value = new open3d::core::Tensor(tmp);
+                auto tmp = cloudViewer::core::PyHandleToTensor(src);
+                value = new cloudViewer::core::Tensor(tmp);
                 return true;
             }
         }

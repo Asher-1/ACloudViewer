@@ -27,7 +27,7 @@
 #pragma once
 
 #include "core/EigenConverter.h"
-#include "geometry/LineSet.h"
+#include <LineSet.h>
 #include "io/PointCloudIO.h"
 #include "pipelines/registration/PoseGraph.h"
 #include "t/pipelines/registration/Registration.h"

@@ -70,7 +70,7 @@
 #include <map>
 #include <vector>
 
-#include "utility/FileSystem.h"
+#include <FileSystem.h>
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Color.h"
 #include "visualization/gui/Gui.h"

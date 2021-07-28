@@ -75,8 +75,8 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
     // Eliminates the case of impractical values (including negative).
     if (voxel_downsample_factor > 0.001) {
         // TODO: Use geometry::PointCloud::VoxelDownSample.
-        cloudViewer::geometry::PointCloud legacy_s = source.ToLegacyPointCloud();
-        cloudViewer::geometry::PointCloud legacy_t = target.ToLegacyPointCloud();
+        ccPointCloud legacy_s = source.ToLegacyPointCloud();
+        ccPointCloud legacy_t = target.ToLegacyPointCloud();
 
         legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
         legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);

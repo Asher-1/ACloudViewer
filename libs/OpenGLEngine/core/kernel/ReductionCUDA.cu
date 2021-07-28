@@ -700,7 +700,7 @@ public:
             out_scalar_t*,
             arg_t,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
-        OPEN3D_ASSERT(false);
+        CLOUDVIEWER_ASSERT(false);
         return arg_t{};
     }
 
@@ -709,7 +709,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<can_acc>::type* = nullptr) const {
-        OPEN3D_ASSERT(!final_output_);
+        CLOUDVIEWER_ASSERT(!final_output_);
         return (out_scalar_t)value;
     }
 
@@ -721,7 +721,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
-        OPEN3D_ASSERT(false);
+        CLOUDVIEWER_ASSERT(false);
         return *out;
     }
 
@@ -733,7 +733,7 @@ public:
 
     CLOUDVIEWER_DEVICE void SetResultsToOutput(arg_t value,
                                           index_t base_offset) const {
-        OPEN3D_ASSERT(final_output_);
+        CLOUDVIEWER_ASSERT(final_output_);
         SetResults(ops_.Project(value), base_offset);
     }
 
@@ -986,7 +986,7 @@ private:
                     cudaMemset(semaphores, 0, config.SemaphoreSize()));
         }
 
-        OPEN3D_ASSERT(can_use_32bit_indexing);
+        CLOUDVIEWER_ASSERT(can_use_32bit_indexing);
         const char* in_data = (char*)indexer.GetInput(0).data_ptr_;
         char* out_data = (char*)indexer.GetOutput().data_ptr_;
         char* acc_data = acc_buf_ptr->GetAccSlice(out_data);

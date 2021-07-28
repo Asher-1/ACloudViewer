@@ -54,7 +54,7 @@
 #endif  // _MSC_VER
 
 #include "core/Tensor.h"
-#include "utility/Logging.h"
+#include <Logging.h>
 #include "visualization/rendering/filament/FilamentCamera.h"
 #include "visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "visualization/rendering/filament/FilamentRenderToBuffer.h"

@@ -28,13 +28,13 @@
 
 #include <unordered_map>
 #include <unordered_set>
-
-#include "geometry/Image.h"
-#include "geometry/PointCloud.h"
-#include "geometry/TriangleMesh.h"
+#include <Eigen.h>
+#include <Image.h>
+#include <ecvPointCloud.h>
+#include <ecvMesh.h>
 #include "t/geometry/PointCloud.h"
 #include "t/geometry/TriangleMesh.h"
-#include "utility/Logging.h"
+#include <Logging.h>
 #include "visualization/gui/Events.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/CloudViewerScene.h"
@@ -44,7 +44,7 @@
 #define WANT_DEBUG_IMAGE 0
 
 #if WANT_DEBUG_IMAGE
-#include "io/ImageIO.h"
+#include <ImageIO.h>
 #endif  // WANT_DEBUG_IMAGE
 
 namespace cloudViewer {
@@ -177,18 +177,21 @@ void PickPointsInteractor::SetPickableGeometry(
     for (auto &pg : geometry) {
         lookup_->Add(pg.name, points_.size());
 
-        auto cloud = dynamic_cast<const geometry::PointCloud *>(pg.geometry);
+        auto cloud = dynamic_cast<const ccPointCloud *>(pg.geometry);
         auto tcloud =
                 dynamic_cast<const t::geometry::PointCloud *>(pg.tgeometry);
-        auto mesh = dynamic_cast<const geometry::TriangleMesh *>(pg.geometry);
+        auto mesh = dynamic_cast<const ccMesh *>(pg.geometry);
         auto tmesh =
                 dynamic_cast<const t::geometry::TriangleMesh *>(pg.tgeometry);
+
         if (cloud) {
-            points_.insert(points_.end(), cloud->points_.begin(),
-                           cloud->points_.end());
+            std::vector<Eigen::Vector3d> temp_points = cloud->getEigenPoints();
+            points_.insert(points_.end(), temp_points.begin(),
+                           temp_points.end());
         } else if (mesh) {
-            points_.insert(points_.end(), mesh->vertices_.begin(),
-                           mesh->vertices_.end());
+            std::vector<Eigen::Vector3d> temp_points = mesh->getEigenVertices();
+            points_.insert(points_.end(), temp_points.begin(),
+                           temp_points.end());
         } else if (tcloud || tmesh) {
             const auto &tpoints =
                     (tcloud ? tcloud->GetPoints() : tmesh->GetVertices());
@@ -234,10 +237,10 @@ void PickPointsInteractor::SetPickableGeometry(
     }
 
     if (!points_.empty()) {  // Filament panics if an object has zero vertices
-        auto cloud = cloudViewer::make_shared<geometry::PointCloud>(points_);
-        cloud->colors_.reserve(points_.size());
-        for (size_t i = 0; i < cloud->points_.size(); ++i) {
-            cloud->colors_.emplace_back(SetColorForIndex(uint32_t(i)));
+        auto cloud = cloudViewer::make_shared<ccPointCloud>(points_);
+        cloud->reserveTheRGBTable();
+        for (size_t i = 0; i < cloud->size(); ++i) {
+            cloud->addEigenColor(SetColorForIndex(uint32_t(i)));
         }
 
         auto mat = MakeMaterial();

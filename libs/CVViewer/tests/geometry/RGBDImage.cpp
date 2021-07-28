@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "geometry/RGBDImage.h"
+#include <RGBDImage.h>
 
 #include <vector>
 
-#include "geometry/Image.h"
-#include "io/ImageIO.h"
+#include <Image.h>
+#include <ImageIO.h>
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

@@ -59,10 +59,10 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
-#include "io/ImageIO.h"
+#include <ImageIO.h>
 #include "t/geometry/Image.h"
-#include "utility/FileSystem.h"
-#include "utility/Logging.h"
+#include <FileSystem.h>
+#include <Logging.h>
 #include "visualization/gui/Application.h"
 #include "visualization/rendering/filament/FilamentEngine.h"
 #include "visualization/rendering/filament/FilamentEntitiesMods.h"

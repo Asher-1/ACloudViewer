@@ -50,7 +50,6 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
-#include "geometry/BoundingVolume.h"
 #include "visualization/rendering/ColorGrading.h"
 #include "visualization/rendering/filament/FilamentCamera.h"
 #include "visualization/rendering/filament/FilamentEntitiesMods.h"

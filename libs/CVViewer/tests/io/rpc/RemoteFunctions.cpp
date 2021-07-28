@@ -28,8 +28,8 @@
 
 #include <random>
 
-#include "geometry/PointCloud.h"
-#include "geometry/TriangleMesh.h"
+#include <ecvPointCloud.h>
+#include <ecvMesh.h>
 #include "io/rpc/BufferConnection.h"
 #include "io/rpc/Connection.h"
 #include "io/rpc/DummyReceiver.h"

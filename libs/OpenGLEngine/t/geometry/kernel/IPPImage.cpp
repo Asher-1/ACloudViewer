@@ -36,7 +36,7 @@
 #include "core/Tensor.h"
 #include "core/kernel/CPULauncher.h"
 #include "t/geometry/Image.h"
-#include "utility/Logging.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -95,8 +95,8 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
     }
 }
 
-void Resize(const open3d::core::Tensor &src_im,
-            open3d::core::Tensor &dst_im,
+void Resize(const cloudViewer::core::Tensor &src_im,
+            cloudViewer::core::Tensor &dst_im,
             t::geometry::Image::InterpType interp_type) {
     auto dtype = src_im.GetDtype();
     // Create IPP wrappers for all Open3D tensors
@@ -171,9 +171,9 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     }
 }
 
-void Filter(const open3d::core::Tensor &src_im,
-            open3d::core::Tensor &dst_im,
-            const open3d::core::Tensor &kernel) {
+void Filter(const cloudViewer::core::Tensor &src_im,
+            cloudViewer::core::Tensor &dst_im,
+            const cloudViewer::core::Tensor &kernel) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();

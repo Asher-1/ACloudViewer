@@ -31,7 +31,7 @@
 
 #include "core/Dtype.h"
 #include "core/SizeVector.h"
-#include "geometry/PointCloud.h"
+#include <ecvPointCloud.h>
 #include <Helper.h>
 #include "tests/UnitTest.h"
 

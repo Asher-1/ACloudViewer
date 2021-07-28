@@ -26,8 +26,8 @@
 
 #include "geometry/VoxelGrid.h"
 
-#include "geometry/LineSet.h"
-#include "geometry/TriangleMesh.h"
+#include <LineSet.h>
+#include <ecvMesh.h>
 #include "visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
