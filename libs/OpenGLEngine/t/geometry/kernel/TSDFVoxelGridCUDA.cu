@@ -38,7 +38,7 @@
 #include "t/geometry/kernel/GeometryMacros.h"
 #include "t/geometry/kernel/TSDFVoxelGrid.h"
 #include "t/geometry/kernel/TSDFVoxelGridImpl.h"
-#include "utility/Logging.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -46,8 +46,8 @@ namespace geometry {
 namespace kernel {
 namespace tsdf {
 struct Coord3i {
-    OPEN3D_HOST_DEVICE Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
-    OPEN3D_HOST_DEVICE bool operator==(const Coord3i& other) const {
+    CLOUDVIEWER_HOST_DEVICE Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
+    CLOUDVIEWER_HOST_DEVICE bool operator==(const Coord3i& other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
 
@@ -74,7 +74,7 @@ void TouchCUDA(std::shared_ptr<core::Hashmap>& hashmap,
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32, device);
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
 
-    core::kernel::cuda_launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
+    core::kernel::cuda_launcher::ParallelFor(n, [=] CLOUDVIEWER_DEVICE(
                                                         int64_t workload_idx) {
         float x = pcd_ptr[3 * workload_idx + 0];
         float y = pcd_ptr[3 * workload_idx + 1];

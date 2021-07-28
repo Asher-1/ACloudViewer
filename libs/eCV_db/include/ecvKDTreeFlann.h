@@ -78,7 +78,7 @@ public:
     /// Sets the data for the KDTree from geometry.
     ///
     /// \param geometry Geometry for KDTree Construction.
-    bool SetGeometry(const ccHObject &geometry, bool use_eigen = true);
+    bool SetGeometry(const ccHObject &geometry);
     /// Sets the data for the KDTree from the feature data.
     ///
     /// \param feature Set of features for KDTree construction.
@@ -121,8 +121,6 @@ private:
     /// Internal method that sets all the members of KDTree by data provided by
     /// features, geometry, etc.
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
-    bool SetRawData(const std::vector<CCVector3> &data);
-    bool SetRawData(const std::vector<const CCVector3 *> &data);
 
 protected:
     using KDTree_t = nanoflann::KDTreeEigenMatrixAdaptor<
@@ -132,12 +130,10 @@ protected:
             false>;
 
     std::vector<double> data_;
-    std::vector<PointCoordinateType> dataf_;
-    std::unique_ptr<Eigen::Map<const Eigen::MatrixXd>> data_interface_;
     std::unique_ptr<KDTree_t> nanoflann_index_;
+    std::unique_ptr<Eigen::Map<const Eigen::MatrixXd>> data_interface_;
     size_t dimension_ = 0;
     size_t dataset_size_ = 0;
-    bool use_eigen_ = true;
 };
 
 }  // namespace geometry

@@ -27,6 +27,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#include "visualization/visualizer/VisualizerWithKeyCallback.h"
 #include "io/sensor/azure_kinect/AzureKinectRecorder.h"
 
 #include <assert.h>
@@ -39,11 +40,10 @@
 #include <ctime>
 #include <iostream>
 
-#include "geometry/RGBDImage.h"
+#include <RGBDImage.h>
 #include "io/sensor/azure_kinect/K4aPlugin.h"
 #include "io/sensor/azure_kinect/MKVReader.h"
 #include "visualization/utility/ColorMap.h"
-#include "visualization/visualizer/VisualizerWithKeyCallback.h"
 
 namespace cloudViewer {
 namespace io {

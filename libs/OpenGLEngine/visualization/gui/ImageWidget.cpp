@@ -28,7 +28,7 @@
 
 #include <imgui.h>
 
-#include "geometry/Image.h"
+#include <Image.h>
 #include "visualization/gui/Theme.h"
 #include "visualization/gui/Util.h"
 

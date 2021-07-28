@@ -29,8 +29,8 @@
 #include <sstream>
 
 #include "camera/PinholeCameraIntrinsic.h"
-#include "geometry/RGBDImage.h"
-#include "io/ImageIO.h"
+#include <RGBDImage.h>
+#include <ImageIO.h>
 #include <FileSystem.h>
 #include "visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"

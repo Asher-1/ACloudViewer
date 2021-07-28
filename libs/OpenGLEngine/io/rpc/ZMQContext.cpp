@@ -41,7 +41,7 @@ namespace rpc {
 std::shared_ptr<zmq::context_t> GetZMQContext() {
     std::lock_guard<std::mutex> lock(context_ptr_mutex);
     if (!context_ptr) {
-        context_ptr = cloudViewer::make_shared<zmq::context_t>();
+        context_ptr = std::make_shared<zmq::context_t>();
     }
     return context_ptr;
 }

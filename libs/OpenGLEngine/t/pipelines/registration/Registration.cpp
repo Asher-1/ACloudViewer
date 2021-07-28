@@ -29,8 +29,8 @@
 #include "core/Tensor.h"
 #include "core/nns/NearestNeighborSearch.h"
 #include "t/geometry/PointCloud.h"
-#include "utility/Helper.h"
-#include "utility/Logging.h"
+#include <Helper.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {
@@ -40,7 +40,7 @@ namespace registration {
 static RegistrationResult GetRegistrationResultAndCorrespondences(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        open3d::core::nns::NearestNeighborSearch &target_nns,
+        cloudViewer::core::nns::NearestNeighborSearch &target_nns,
         double max_correspondence_distance,
         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
@@ -119,7 +119,7 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
     geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation.To(device, dtype));
 
-    open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
+    cloudViewer::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
 
     return GetRegistrationResultAndCorrespondences(
             source_transformed, target, target_nns, max_correspondence_distance,

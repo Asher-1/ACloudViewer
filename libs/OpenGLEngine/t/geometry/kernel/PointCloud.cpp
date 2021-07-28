@@ -31,7 +31,7 @@
 #include "core/CUDAUtils.h"
 #include "core/ShapeUtil.h"
 #include "core/Tensor.h"
-#include "utility/Logging.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

@@ -32,7 +32,7 @@
 #include <sstream>
 #include <string>
 
-#include "utility/Logging.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {

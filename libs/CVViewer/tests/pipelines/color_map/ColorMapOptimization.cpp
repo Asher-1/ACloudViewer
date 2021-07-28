@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "camera/PinholeCameraTrajectory.h"
-#include "geometry/Image.h"
-#include "geometry/RGBDImage.h"
-#include "geometry/TriangleMesh.h"
+#include <Image.h>
+#include <RGBDImage.h>
+#include <ecvMesh.h>
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

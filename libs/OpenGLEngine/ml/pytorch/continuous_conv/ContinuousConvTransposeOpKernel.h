@@ -47,9 +47,9 @@ void ContinuousConvTransposeCPU(
         const torch::Tensor& neighbors_importance,
         const torch::Tensor& neighbors_row_splits,
         const bool align_corners,
-        const open3d::ml::impl::CoordinateMapping coordinate_mapping,
+        const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping,
         const bool normalize,
-        const open3d::ml::impl::InterpolationMode interpolation,
+        const cloudViewer::ml::impl::InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
         torch::Tensor& out_features);
 
@@ -70,9 +70,9 @@ void ContinuousConvTransposeCUDA(
         const torch::Tensor& neighbors_importance,
         const torch::Tensor& neighbors_row_splits,
         const bool align_corners,
-        const open3d::ml::impl::CoordinateMapping coordinate_mapping,
+        const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping,
         const bool normalize,
-        const open3d::ml::impl::InterpolationMode interpolation,
+        const cloudViewer::ml::impl::InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
         torch::Tensor& out_features);
 #endif

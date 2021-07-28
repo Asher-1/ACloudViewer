@@ -62,36 +62,22 @@ bool KDTreeFlann::SetMatrixData(const Eigen::MatrixXd &data) {
             data.data(), data.rows(), data.cols()));
 }
 
-bool KDTreeFlann::SetGeometry(const ccHObject &geometry,
-                              bool use_eigen /* = true*/) {
-    use_eigen_ = use_eigen;
-
+bool KDTreeFlann::SetGeometry(const ccHObject &geometry) {
     switch (geometry.getClassID()) {
         case CV_TYPES::POINT_CLOUD: {
-            const ccPointCloud &cloud =
-                    static_cast<const ccPointCloud &>(geometry);
-            if (use_eigen) {
-                std::vector<Eigen::Vector3d> points = cloud.getEigenPoints();
-                return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
-                        (const double *)points.data(), 3, points.size()));
-            } else {
-                return SetRawData(cloud.getPoints());
-            }
+            const auto &cloud = dynamic_cast<const ccPointCloud &>(geometry);
+            std::vector<Eigen::Vector3d> points = cloud.getEigenPoints();
+            return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
+                    (const double *)points.data(), 3, points.size()));
         }
         case CV_TYPES::MESH: {
-            const ccMesh &mesh = static_cast<const ccMesh &>(geometry);
-            if (use_eigen) {
-                std::vector<Eigen::Vector3d> points = mesh.getEigenVertices();
-                return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
-                        (const double *)points.data(), 3, points.size()));
-            } else {
-                return SetRawData(mesh.getVertices());
-            }
+            const auto &mesh = dynamic_cast<const ccMesh &>(geometry);
+            std::vector<Eigen::Vector3d> points = mesh.getEigenVertices();
+            return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
+                    (const double *)points.data(), 3, points.size()));
         }
         case CV_TYPES::HALF_EDGE_MESH: {
-            use_eigen_ = true;  // only support eigen
-            const ecvHalfEdgeMesh &mesh =
-                    static_cast<const ecvHalfEdgeMesh &>(geometry);
+            const auto &mesh = dynamic_cast<const ecvHalfEdgeMesh &>(geometry);
             return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
                     (const double *)mesh.vertices_.data(), 3,
                     mesh.vertices_.size()));
@@ -99,7 +85,7 @@ bool KDTreeFlann::SetGeometry(const ccHObject &geometry,
         case CV_TYPES::IMAGE:
         case CV_TYPES::HIERARCHY_OBJECT:
         default:
-            cloudViewer::utility::LogWarning(
+            utility::LogWarning(
                     "[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
             return false;
     }
@@ -154,8 +140,7 @@ int KDTreeFlann::Query(const std::vector<T> &queries,
     }
 
     if (flag < 0) {
-        cloudViewer::utility::LogWarning(
-                "[KDTreeFlann::Query] some queries failed!");
+        utility::LogWarning("[KDTreeFlann::Query] some queries failed!");
     }
 
     return flag;
@@ -169,51 +154,19 @@ int KDTreeFlann::SearchKNN(const T &query,
     // This is optimized code for heavily repeated search.
     // Other flann::Index::knnSearch() implementations lose performance due to
     // memory allocation/deallocation.
-
-    std::size_t KNN = static_cast<std::size_t>(knn);
-
-    if (!dataf_.empty())  // fast-float
-    {
-        if (dataset_size_ <= 0 || knn < 0) {
-            return -1;
-        }
-        int k = -1;
-
-        //        flann::Matrix<PointCoordinateType> query_flann(
-        //                (PointCoordinateType *)query.data(), 1, dimension_);
-        //        indices.resize(KNN);
-        //        flann::Matrix<int> indices_flann(indices.data(),
-        //        query_flann.rows, KNN); std::vector<PointCoordinateType>
-        //        tempDis(KNN); flann::Matrix<PointCoordinateType>
-        //        dists_flann(tempDis.data(),
-        //                                                       query_flann.rows,
-        //                                                       KNN);
-        //        int k = flann_indexf_->knnSearch(query_flann, indices_flann,
-        //                                         dists_flann, KNN,
-        //                                         flann::SearchParams(-1,
-        //                                         0.0));
-        //        indices.resize(k);
-        //        tempDis.resize(k);
-        //        distance2 = std::vector<double>(tempDis.begin(),
-        //        tempDis.end());
-        return k;
-
-    } else  // Eigen(double)
-    {
-        if (data_.empty() || dataset_size_ <= 0 ||
-            size_t(query.rows()) != dimension_ || knn < 0) {
-            return -1;
-        }
-        indices.resize(knn);
-        distance2.resize(knn);
-        std::vector<Eigen::Index> indices_eigen(knn);
-        int k = nanoflann_index_->index->knnSearch(
-                query.data(), knn, indices_eigen.data(), distance2.data());
-        indices.resize(k);
-        distance2.resize(k);
-        std::copy_n(indices_eigen.begin(), k, indices.begin());
-        return k;
+    if (data_.empty() || dataset_size_ <= 0 ||
+        size_t(query.rows()) != dimension_ || knn < 0) {
+        return -1;
     }
+    indices.resize(knn);
+    distance2.resize(knn);
+    std::vector<Eigen::Index> indices_eigen(knn);
+    int k = nanoflann_index_->index->knnSearch(
+            query.data(), knn, indices_eigen.data(), distance2.data());
+    indices.resize(k);
+    distance2.resize(k);
+    std::copy_n(indices_eigen.begin(), k, indices.begin());
+    return k;
 }
 
 template <typename T>
@@ -225,47 +178,21 @@ int KDTreeFlann::SearchRadius(const T &query,
     // Since max_nn is not given, we let flann to do its own memory management.
     // Other flann::Index::radiusSearch() implementations lose performance due
     // to memory management and CPU caching.
-
-    if (!dataf_.empty())  // fast-float
-    {
-        if (dataset_size_ <= 0) {
-            return -1;
-        }
-        int k = -1;
-
-        //        flann::Matrix<PointCoordinateType> query_flann(
-        //                (PointCoordinateType *)query.data(), 1, dimension_);
-        //        flann::SearchParams param(-1, 0.0);
-        //        param.max_neighbors = -1;
-        //        std::vector<std::vector<int>> indices_vec(1);
-        //        std::vector<std::vector<PointCoordinateType>> dists_vec(1);
-        //        int k = flann_indexf_->radiusSearch(query_flann, indices_vec,
-        //        dists_vec,
-        //                                            float(radius * radius),
-        //                                            param);
-        //        indices = indices_vec[0];
-        //        distance2 =
-        //                std::vector<double>(dists_vec[0].begin(),
-        //                dists_vec[0].end());
-        return k;
-    } else  // Eigen(double)
-    {
-        if (data_.empty() || dataset_size_ <= 0 ||
-            size_t(query.rows()) != dimension_) {
-            return -1;
-        }
-        std::vector<std::pair<Eigen::Index, double>> indices_dists;
-        int k = nanoflann_index_->index->radiusSearch(
-                query.data(), radius * radius, indices_dists,
-                nanoflann::SearchParams(-1, 0.0));
-        indices.resize(k);
-        distance2.resize(k);
-        for (int i = 0; i < k; ++i) {
-            indices[i] = indices_dists[i].first;
-            distance2[i] = indices_dists[i].second;
-        }
-        return k;
+    if (data_.empty() || dataset_size_ <= 0 ||
+        size_t(query.rows()) != dimension_) {
+        return -1;
     }
+    std::vector<std::pair<Eigen::Index, double>> indices_dists;
+    int k = nanoflann_index_->index->radiusSearch(
+            query.data(), radius * radius, indices_dists,
+            nanoflann::SearchParams(-1, 0.0));
+    indices.resize(k);
+    distance2.resize(k);
+    for (int i = 0; i < k; ++i) {
+        indices[i] = indices_dists[i].first;
+        distance2[i] = indices_dists[i].second;
+    }
+    return k;
 }
 
 template <typename T>
@@ -278,54 +205,21 @@ int KDTreeFlann::SearchHybrid(const T &query,
     // It is also the recommended setting for search.
     // Other flann::Index::radiusSearch() implementations lose performance due
     // to memory allocation/deallocation.
-
-    std::size_t KNN = static_cast<std::size_t>(max_nn);
-
-    if (!dataf_.empty())  // fast-float
-    {
-        if (dataset_size_ <= 0 || dataset_size_ <= 0 || max_nn < 0) {
-            return -1;
-        }
-        int k = -1;
-        //        flann::Matrix<PointCoordinateType> query_flann(
-        //                (PointCoordinateType *)query.data(), 1, dimension_);
-        //        flann::SearchParams param(-1, 0.0);
-        //        param.max_neighbors = max_nn;
-        //        indices.resize(KNN);
-        //        flann::Matrix<int> indices_flann(indices.data(),
-        //        query_flann.rows, KNN); std::vector<PointCoordinateType>
-        //        tempDis(KNN); flann::Matrix<PointCoordinateType>
-        //        dists_flann(tempDis.data(),
-        //                                                       query_flann.rows,
-        //                                                       KNN);
-        //        int k = flann_indexf_->radiusSearch(query_flann,
-        //        indices_flann,
-        //                                            dists_flann, float(radius
-        //                                            * radius), param);
-        //        indices.resize(k);
-        //        tempDis.resize(k);
-        //        distance2 = std::vector<double>(tempDis.begin(),
-        //        tempDis.end());
-        return k;
-    } else  // Eigen(double)
-    {
-        if (data_.empty() || dataset_size_ <= 0 ||
-            size_t(query.rows()) != dimension_ || max_nn < 0) {
-            return -1;
-        }
-        distance2.resize(max_nn);
-        std::vector<Eigen::Index> indices_eigen(max_nn);
-        int k = nanoflann_index_->index->knnSearch(
-                query.data(), max_nn, indices_eigen.data(), distance2.data());
-        k = std::distance(
-                distance2.begin(),
-                std::lower_bound(distance2.begin(), distance2.begin() + k,
-                                 radius * radius));
-        indices.resize(k);
-        distance2.resize(k);
-        std::copy_n(indices_eigen.begin(), k, indices.begin());
-        return k;
+    if (data_.empty() || dataset_size_ <= 0 ||
+        size_t(query.rows()) != dimension_ || max_nn < 0) {
+        return -1;
     }
+    distance2.resize(max_nn);
+    std::vector<Eigen::Index> indices_eigen(max_nn);
+    int k = nanoflann_index_->index->knnSearch(
+            query.data(), max_nn, indices_eigen.data(), distance2.data());
+    k = std::distance(distance2.begin(),
+                      std::lower_bound(distance2.begin(), distance2.begin() + k,
+                                       radius * radius));
+    indices.resize(k);
+    distance2.resize(k);
+    std::copy_n(indices_eigen.begin(), k, indices.begin());
+    return k;
 }
 
 bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
@@ -344,61 +238,6 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
     nanoflann_index_->index->buildIndex();
     return true;
 }
-
-bool KDTreeFlann::SetRawData(const std::vector<CCVector3> &data) {
-    std::vector<const CCVector3 *> temp;
-    for (std::size_t i = 0; i < data.size(); ++i) {
-        temp.push_back(&(data.at(i)));
-    }
-    return SetRawData(temp);
-}
-
-bool KDTreeFlann::SetRawData(const std::vector<const CCVector3 *> &data) {
-    dimension_ = 3;
-    dataset_size_ = data.size();
-    if (dimension_ == 0 || dataset_size_ == 0) {
-        cloudViewer::utility::LogWarning(
-                "[KDTreeFlann::SetRawData] Failed due to no data.");
-        return false;
-    }
-    dataf_.resize(dataset_size_ * dimension_);
-    memcpy(dataf_.data(), *data.data(),
-           dataset_size_ * dimension_ * sizeof(PointCoordinateType));
-//    flann_datasetf_.reset(new flann::Matrix<PointCoordinateType>(
-//            (PointCoordinateType *)dataf_.data(), dataset_size_, dimension_));
-//    flann_indexf_.reset(new flann::Index<flann::L2<PointCoordinateType>>(
-//            *flann_datasetf_,
-//            flann::KDTreeSingleIndexParams(leaf_size_, reorder_)));
-//    flann_indexf_->buildIndex();
-    return true;
-}
-
-template int KDTreeFlann::Search<CCVector3>(
-        const CCVector3 &query,
-        const KDTreeSearchParam &param,
-        std::vector<int> &indices,
-        std::vector<double> &distance2) const;
-template int KDTreeFlann::Query<CCVector3>(
-        const std::vector<CCVector3> &queries,
-        const KDTreeSearchParam &param,
-        std::vector<std::vector<int>> &indices,
-        std::vector<std::vector<double>> &distance2) const;
-template int KDTreeFlann::SearchKNN<CCVector3>(
-        const CCVector3 &query,
-        int knn,
-        std::vector<int> &indices,
-        std::vector<double> &distance2) const;
-template int KDTreeFlann::SearchRadius<CCVector3>(
-        const CCVector3 &query,
-        double radius,
-        std::vector<int> &indices,
-        std::vector<double> &distance2) const;
-template int KDTreeFlann::SearchHybrid<CCVector3>(
-        const CCVector3 &query,
-        double radius,
-        int max_nn,
-        std::vector<int> &indices,
-        std::vector<double> &distance2) const;
 
 template int KDTreeFlann::Search<Eigen::Vector3d>(
         const Eigen::Vector3d &query,

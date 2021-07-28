@@ -34,7 +34,7 @@
 
 #include "camera/PinholeCameraIntrinsic.h"
 #include "geometry/BoundingVolume.h"
-#include "geometry/Image.h"
+#include <Image.h>
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Color.h"
 #include "visualization/gui/Events.h"

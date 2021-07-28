@@ -42,8 +42,8 @@
 
 #include "io/sensor/azure_kinect/K4aPlugin.h"
 #include "io/sensor/azure_kinect/PluginMacros.h"
-#include "utility/Helper.h"
-#include "utility/Logging.h"
+#include <Helper.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace io {

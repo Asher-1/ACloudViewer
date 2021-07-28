@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "geometry/PointCloud.h"
+#include <ecvPointCloud.h>
 
 #include <algorithm>
 
 #include "camera/PinholeCameraIntrinsic.h"
 #include "geometry/BoundingVolume.h"
-#include "geometry/Image.h"
-#include "geometry/RGBDImage.h"
-#include "geometry/TriangleMesh.h"
-#include "io/ImageIO.h"
+#include <Image.h>
+#include <RGBDImage.h>
+#include <ecvMesh.h>
+#include <ImageIO.h>
 #include "io/PinholeCameraTrajectoryIO.h"
 #include "io/PointCloudIO.h"
 #include "visualization/utility/DrawGeometry.h"

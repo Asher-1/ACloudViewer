@@ -31,7 +31,7 @@
 #include <Eigen/Eigen>
 
 #include "geometry/KDTreeFlann.h"
-#include "geometry/PointCloud.h"
+#include <ecvPointCloud.h>
 #include "io/PointCloudIO.h"
 #include "pipelines/registration/TransformationEstimation.h"
 #include <Logging.h>

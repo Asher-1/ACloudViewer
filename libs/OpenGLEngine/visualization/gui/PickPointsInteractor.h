@@ -34,7 +34,6 @@
 namespace cloudViewer {
 
 namespace geometry {
-class Geometry3D;
 class Image;
 }  // namespace geometry
 

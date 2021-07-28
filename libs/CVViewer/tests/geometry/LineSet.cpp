@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "geometry/LineSet.h"
+#include <LineSet.h>
 
-#include "geometry/PointCloud.h"
+#include <ecvPointCloud.h>
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

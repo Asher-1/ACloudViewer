@@ -934,7 +934,7 @@ void pybind_trianglemesh(py::module& m) {
               "unreferenced vertices and degenerate triangles"}});
     docstring::ClassMethodDocInject(
             m, "ccMesh", "crop",
-            {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
+            {{"bounding_box", "ccBBox to crop points"}});
     docstring::ClassMethodDocInject(m, "ccMesh", "get_volume");
     docstring::ClassMethodDocInject(
             m, "ccMesh", "sample_points_uniformly",

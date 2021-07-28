@@ -57,7 +57,7 @@ public:
         : shape_(shape),
           strides_(shape_util::DefaultStrides(shape)),
           dtype_(dtype),
-          blob_(cloudViewer::make_shared<Blob>(shape.NumElements() * dtype.ByteSize(),
+          blob_(std::make_shared<Blob>(shape.NumElements() * dtype.ByteSize(),
                                        device)) {
         data_ptr_ = blob_->GetDataPtr();
     }

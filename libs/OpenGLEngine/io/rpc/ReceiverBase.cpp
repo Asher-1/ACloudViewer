@@ -41,7 +41,7 @@ std::shared_ptr<zmq::message_t> CreateStatusMessage(
     msgpack::pack(sbuf, reply);
     msgpack::pack(sbuf, status);
     std::shared_ptr<zmq::message_t> msg =
-            cloudViewer::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+            std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
 
     return msg;
 }

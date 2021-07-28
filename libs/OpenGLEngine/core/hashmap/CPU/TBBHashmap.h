@@ -303,16 +303,16 @@ void TBBHashmap<Key, Hash>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     this->buffer_ =
-            cloudViewer::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
+            std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_value_, this->device_);
 
-    buffer_ctx_ = cloudViewer::make_shared<CPUHashmapBufferAccessor>(
+    buffer_ctx_ = std::make_shared<CPUHashmapBufferAccessor>(
             this->capacity_, this->dsize_key_, this->dsize_value_,
             this->buffer_->GetKeyBuffer(), this->buffer_->GetValueBuffer(),
             this->buffer_->GetHeap());
     buffer_ctx_->Reset();
 
-    impl_ = cloudViewer::make_shared<tbb::concurrent_unordered_map<Key, addr_t, Hash>>(
+    impl_ = std::make_shared<tbb::concurrent_unordered_map<Key, addr_t, Hash>>(
             capacity, Hash());
 }
 

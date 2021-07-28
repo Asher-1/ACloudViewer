@@ -96,13 +96,13 @@ union un {
 };
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void svd3x3(const scalar_t *A_3x3,
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3(const scalar_t *A_3x3,
                                               scalar_t *U_3x3,
                                               scalar_t *S_3x1,
                                               scalar_t *V_3x3);
 
 template <>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
                                                       double *U_3x3,
                                                       double *S_3x1,
                                                       double *V_3x3) {
@@ -1139,7 +1139,7 @@ CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
 }
 
 template <>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
                                                      float *U_3x3,
                                                      float *S_3x1,
                                                      float *V_3x3) {
@@ -2176,7 +2176,7 @@ CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void solve_svd3x3(
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void solve_svd3x3(
         const scalar_t *A_3x3,  // input A {3,3}
         const scalar_t *B_3x1,  // input b {3,1}
         scalar_t *X_3x1)        // output x {3,1}

@@ -39,7 +39,7 @@ namespace kernel {
 
 /// Shared implementation for PoseToTransformation function.
 template <typename scalar_t>
-OPEN3D_HOST_DEVICE inline void PoseToTransformationImpl(
+CLOUDVIEWER_HOST_DEVICE inline void PoseToTransformationImpl(
         scalar_t *transformation_ptr, const scalar_t *pose_ptr) {
     transformation_ptr[0] = cos(pose_ptr[2]) * cos(pose_ptr[1]);
     transformation_ptr[1] =

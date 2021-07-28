@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "geometry/Image.h"
+#include <Image.h>
 
 #include "camera/PinholeCameraIntrinsic.h"
 #include "tests/UnitTest.h"

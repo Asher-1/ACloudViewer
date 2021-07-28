@@ -132,7 +132,7 @@ void pybind_kdtreeflann(py::module &m) {
             .def(py::init<const ccHObject&, size_t, bool>(),
 				"geometry"_a, "leaf_size"_a = 15, "reorder"_a = true)
             .def("set_geometry", &geometry::KDTreeFlann::SetGeometry,
-                 "Sets the data for the KDTree from geometry.", "geometry"_a, "use_eigen"_a = true)
+                 "Sets the data for the KDTree from geometry.", "geometry"_a)
             .def(py::init<const utility::Feature&, size_t, bool>(),
 				"feature"_a, "leaf_size"_a = 15, "reorder"_a = true)
             .def("set_feature", &geometry::KDTreeFlann::SetFeature,

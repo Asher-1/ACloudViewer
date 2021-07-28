@@ -470,7 +470,7 @@ void pybind_rendering_classes(py::module &m) {
                  "the scene")
             .def("add_geometry",
                  (bool (Scene::*)(
-                         const std::string &, const geometry::Geometry3D &,
+                         const std::string &, const ccHObject &,
                          const Material &, const std::string &, size_t)) &
                          Scene::AddGeometry,
                  "name"_a, "geometry"_a, "material"_a,
@@ -589,7 +589,7 @@ void pybind_rendering_classes(py::module &m) {
             .def("clear_geometry", &CloudViewerScene::ClearGeometry)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
-                                   const geometry::Geometry3D *,
+                                   const ccHObject *,
                                    const Material &, bool>(
                          &CloudViewerScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,

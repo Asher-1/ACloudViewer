@@ -38,11 +38,6 @@ namespace camera {
 class PinholeCameraIntrinsic;
 }  // namespace camera
 
-namespace geometry {
-class AxisAlignedBoundingBox;
-class Geometry3D;
-}  // namespace geometry
-
 namespace t {
 namespace geometry {
 class Geometry;
@@ -149,10 +144,10 @@ public:
 
     struct PickableGeometry {
         std::string name;
-        const geometry::Geometry3D* geometry = nullptr;
+        const ccHObject* geometry = nullptr;
         const t::geometry::Geometry* tgeometry = nullptr;
 
-        PickableGeometry(const std::string& n, const geometry::Geometry3D* g)
+        PickableGeometry(const std::string& n, const ccHObject* g)
             : name(n), geometry(g) {}
 
         PickableGeometry(const std::string& n, const t::geometry::Geometry* t)
@@ -162,7 +157,7 @@ public:
         /// have a geometry or a t::geometry; exactly one of g and t should be
         /// non-null; the other should be nullptr.
         PickableGeometry(const std::string& n,
-                         const geometry::Geometry3D* g,
+                         const ccHObject* g,
                          const t::geometry::Geometry* t)
             : name(n), geometry(g), tgeometry(t) {}
     };

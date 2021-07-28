@@ -1058,7 +1058,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
     auto menu_id = MenuId(item_id);
     switch (menu_id) {
         case FILE_OPEN: {
-            auto dlg = cloudViewer::make_shared<gui::FileDialog>(
+            auto dlg = std::make_shared<gui::FileDialog>(
                     gui::FileDialog::Mode::OPEN, "Open Geometry", GetTheme());
             dlg->AddFilter(".ply .stl .fbx .obj .off .gltf .glb",
                            "Triangle mesh files (.ply, .stl, .fbx, .obj, .off, "
@@ -1089,7 +1089,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
             break;
         }
         case FILE_EXPORT_RGB: {
-            auto dlg = cloudViewer::make_shared<gui::FileDialog>(
+            auto dlg = std::make_shared<gui::FileDialog>(
                     gui::FileDialog::Mode::SAVE, "Save File", GetTheme());
             dlg->AddFilter(".png", "PNG images (.png)");
             dlg->AddFilter("", "All files");
@@ -1112,7 +1112,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
 
             // We need relayout because materials settings pos depends on light
             // settings visibility
-            Layout(GetTheme());
+            this->SetNeedsLayout();
 
             break;
         }

@@ -31,7 +31,7 @@
 #include <iostream>
 #include <memory>
 
-#include "geometry/PointCloud.h"
+#include <ecvPointCloud.h>
 #include "geometry/VoxelGrid.h"
 #include "io/PointCloudIO.h"
 #include "visualization/utility/DrawGeometry.h"

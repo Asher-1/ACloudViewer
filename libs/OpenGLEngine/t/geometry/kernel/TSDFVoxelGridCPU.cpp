@@ -38,7 +38,7 @@
 #include "t/geometry/kernel/GeometryMacros.h"
 #include "t/geometry/kernel/TSDFVoxelGrid.h"
 #include "t/geometry/kernel/TSDFVoxelGridImpl.h"
-#include "utility/Logging.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace t {

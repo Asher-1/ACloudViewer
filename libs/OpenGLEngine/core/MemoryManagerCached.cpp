@@ -122,9 +122,9 @@ public:
                 return free_block->ptr_;
             } else {
                 // Split virtual block.
-                auto new_block = cloudViewer::make_shared<VirtualBlock>(
+                auto new_block = std::make_shared<VirtualBlock>(
                         free_block->ptr_, byte_size, free_block->r_block_);
-                auto remaining_block = cloudViewer::make_shared<VirtualBlock>(
+                auto remaining_block = std::make_shared<VirtualBlock>(
                         static_cast<char*>(free_block->ptr_) + byte_size,
                         remaining_size, free_block->r_block_);
 
@@ -186,7 +186,7 @@ public:
             if (free_virtual_blocks_.find(v_block_prev) !=
                 free_virtual_blocks_.end()) {
                 // Update merged block.
-                merged_v_block = cloudViewer::make_shared<VirtualBlock>(
+                merged_v_block = std::make_shared<VirtualBlock>(
                         v_block_prev->ptr_,
                         v_block_prev->byte_size_ + merged_v_block->byte_size_,
                         r_block);
@@ -209,7 +209,7 @@ public:
             if (free_virtual_blocks_.find(v_block_next) !=
                 free_virtual_blocks_.end()) {
                 // Update merged block.
-                merged_v_block = cloudViewer::make_shared<VirtualBlock>(
+                merged_v_block = std::make_shared<VirtualBlock>(
                         merged_v_block->ptr_,
                         merged_v_block->byte_size_ + v_block_next->byte_size_,
                         r_block);
@@ -231,8 +231,8 @@ public:
                  const std::shared_ptr<DeviceMemoryManager>& device_mm) {
         std::lock_guard<std::recursive_mutex> lock(mutex_);
 
-        auto r_block = cloudViewer::make_shared<RealBlock>(ptr, byte_size);
-        auto v_block = cloudViewer::make_shared<VirtualBlock>(ptr, byte_size, r_block);
+        auto r_block = std::make_shared<RealBlock>(ptr, byte_size);
+        auto v_block = std::make_shared<VirtualBlock>(ptr, byte_size, r_block);
         r_block->device_mm_ = device_mm;
         r_block->v_blocks_.insert(v_block);
 
@@ -265,7 +265,7 @@ public:
         while (!releasable_real_blocks.empty() && released_size < byte_size) {
             size_t remaining_size = byte_size - released_size;
             auto query_size =
-                    cloudViewer::make_shared<RealBlock>(nullptr, remaining_size);
+                    std::make_shared<RealBlock>(nullptr, remaining_size);
             auto it = releasable_real_blocks.lower_bound(query_size);
             if (it == releasable_real_blocks.end()) {
                 --it;
@@ -310,7 +310,7 @@ private:
 
         // Consider blocks with size in range
         // [byte_size, max_byte_size].
-        auto query_size = cloudViewer::make_shared<VirtualBlock>(
+        auto query_size = std::make_shared<VirtualBlock>(
                 nullptr, byte_size, std::weak_ptr<RealBlock>());
         auto it = free_virtual_blocks_.lower_bound(query_size);
         while (it != free_virtual_blocks_.end() &&

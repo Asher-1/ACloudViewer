@@ -34,7 +34,7 @@ namespace kernel {
 
 // ---- Matmul ----
 template <typename scalar_t>
-static CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x1(const scalar_t& m00,
+static CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void matmul3x3_3x1(const scalar_t& m00,
                                                             const scalar_t& m01,
                                                             const scalar_t& m02,
                                                             const scalar_t& m10,
@@ -55,7 +55,7 @@ static CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x1(const scalar_t&
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x1(const scalar_t* A_3x3,
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void matmul3x3_3x1(const scalar_t* A_3x3,
                                                      const scalar_t* B_3x1,
                                                      scalar_t* C_3x1) {
     C_3x1[0] = A_3x3[0] * B_3x1[0] + A_3x3[1] * B_3x1[1] + A_3x3[2] * B_3x1[2];
@@ -64,7 +64,7 @@ CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x1(const scalar_t* A_3x3,
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x3(const scalar_t* A_3x3,
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void matmul3x3_3x3(const scalar_t* A_3x3,
                                                      const scalar_t* B_3x3,
                                                      scalar_t* C_3x3) {
     matmul3x3_3x1(A_3x3[0], A_3x3[1], A_3x3[2], A_3x3[3], A_3x3[4], A_3x3[5],
@@ -79,7 +79,7 @@ CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x3(const scalar_t* A_3x3,
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_HOST_DEVICE OPEN3D_FORCE_INLINE void cross_3x1(
+CLOUDVIEWER_HOST_DEVICE CLOUDVIEWER_FORCE_INLINE void cross_3x1(
         const scalar_t* A_3x1_input,
         const scalar_t* B_3x1_input,
         scalar_t* C_3x1_output) {
@@ -92,7 +92,7 @@ CLOUDVIEWER_HOST_DEVICE OPEN3D_FORCE_INLINE void cross_3x1(
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_HOST_DEVICE OPEN3D_FORCE_INLINE scalar_t
+CLOUDVIEWER_HOST_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t
 dot_3x1(const scalar_t* A_3x1_input, const scalar_t* B_3x1_input) {
     return A_3x1_input[0] * B_3x1_input[0] + A_3x1_input[1] * B_3x1_input[1] +
            A_3x1_input[2] * B_3x1_input[2];
@@ -100,19 +100,19 @@ dot_3x1(const scalar_t* A_3x1_input, const scalar_t* B_3x1_input) {
 
 // ---- Determinant ----
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE scalar_t det2x2(const scalar_t* A_2x2) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t det2x2(const scalar_t* A_2x2) {
     return A_2x2[0] * A_2x2[3] - A_2x2[1] * A_2x2[2];
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE scalar_t det3x3(const scalar_t* A_3x3) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE scalar_t det3x3(const scalar_t* A_3x3) {
     return A_3x3[0] * (A_3x3[4] * A_3x3[8] - A_3x3[5] * A_3x3[7]) -
            A_3x3[3] * (A_3x3[1] * A_3x3[8] - A_3x3[2] * A_3x3[7]) +
            A_3x3[6] * (A_3x3[1] * A_3x3[5] - A_3x3[2] * A_3x3[4]);
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE bool inverse2x2(const scalar_t* A_2x2,
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE bool inverse2x2(const scalar_t* A_2x2,
                                                   scalar_t* output_2x2) {
     scalar_t det = det3x3(A_2x2);
     if (det < 1e-12) {
@@ -129,7 +129,7 @@ CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE bool inverse2x2(const scalar_t* A_2x2,
 
 // ---- Matrix Inverse ----
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE bool inverse3x3(const scalar_t* A_3x3,
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE bool inverse3x3(const scalar_t* A_3x3,
                                                   scalar_t* output_3x3) {
     scalar_t det = det3x3(A_3x3);
     if (det < 1e-12) {
@@ -151,14 +151,14 @@ CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE bool inverse3x3(const scalar_t* A_3x3,
 
 // ---- Matrix Transpose ----
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void transpose2x2_(scalar_t* A_2x2) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose2x2_(scalar_t* A_2x2) {
     scalar_t temp_01 = A_2x2[1];
     A_2x2[1] = A_2x2[2];
     A_2x2[2] = temp_01;
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void transpose2x2(const scalar_t* A_2x2,
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose2x2(const scalar_t* A_2x2,
                                                     scalar_t* output_2x2) {
     output_2x2[0] = A_2x2[0];
     output_2x2[1] = A_2x2[2];
@@ -167,7 +167,7 @@ CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void transpose2x2(const scalar_t* A_2x2,
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void transpose3x3_(scalar_t* A_3x3) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose3x3_(scalar_t* A_3x3) {
     scalar_t temp_01 = A_3x3[1];
     scalar_t temp_02 = A_3x3[2];
     scalar_t temp_12 = A_3x3[5];
@@ -180,7 +180,7 @@ CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void transpose3x3_(scalar_t* A_3x3) {
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void transpose3x3(const scalar_t* A_3x3,
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose3x3(const scalar_t* A_3x3,
                                                     scalar_t* output_3x3) {
     output_3x3[0] = A_3x3[0];
     output_3x3[1] = A_3x3[3];
@@ -196,7 +196,7 @@ CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void transpose3x3(const scalar_t* A_3x3,
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void transpose4x4_(scalar_t* A_4x4) {
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose4x4_(scalar_t* A_4x4) {
     scalar_t temp_01 = A_4x4[1];
     scalar_t temp_02 = A_4x4[2];
     scalar_t temp_03 = A_4x4[3];
@@ -218,7 +218,7 @@ CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void transpose4x4_(scalar_t* A_4x4) {
 }
 
 template <typename scalar_t>
-CLOUDVIEWER_DEVICE OPEN3D_FORCE_INLINE void transpose4x4(const scalar_t* A_4x4,
+CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void transpose4x4(const scalar_t* A_4x4,
                                                     scalar_t* output_4x4) {
     output_4x4[0] = A_4x4[0];
     output_4x4[1] = A_4x4[4];

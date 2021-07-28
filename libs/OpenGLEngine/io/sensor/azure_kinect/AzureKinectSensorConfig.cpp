@@ -35,7 +35,7 @@
 #include <unordered_map>
 
 #include "io/sensor/azure_kinect/K4aPlugin.h"
-#include "utility/Logging.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace io {

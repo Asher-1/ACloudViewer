@@ -26,8 +26,8 @@
 
 #include "geometry/KDTreeFlann.h"
 
-#include "geometry/PointCloud.h"
-#include "geometry/TriangleMesh.h"
+#include <ecvPointCloud.h>
+#include <ecvMesh.h>
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

@@ -47,7 +47,7 @@ using t::geometry::PointCloud;
 static PointCloud CreateTPCDFromFile(
         const std::string& fname,
         const core::Device& device = core::Device("CPU:0")) {
-    std::shared_ptr<cloudViewer::geometry::PointCloud> pcd =
+    std::shared_ptr<ccPointCloud> pcd =
             cloudViewer::io::CreatePointCloudFromFile(fname);
     return PointCloud::FromLegacyPointCloud(*pcd, core::Dtype::Float32, device);
 }

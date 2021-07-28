@@ -55,7 +55,6 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
     tree.SetGeometry(target);
 
     auto output = cloudViewer::make_shared<PointCloudForColoredICP>();
-
     output->reserveThePointsTable(target.size());
     if (target.hasColors()) {
         output->reserveTheRGBTable();
@@ -295,7 +294,7 @@ RegistrationResult RegistrationColoredICP(
                 "Internal error: InitializePointCloudForColoredICP returns "
                 "nullptr.");
     };
-
+}
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace cloudViewer

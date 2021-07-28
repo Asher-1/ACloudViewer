@@ -85,12 +85,12 @@ __device__ inline float atomicMaxf(float *addr, float value) {
 }
 #endif
 
-OPEN3D_HOST_DEVICE inline int Sign(int x) {
+CLOUDVIEWER_HOST_DEVICE inline int Sign(int x) {
     return (x > 0) ? 1 : ((x < 0) ? -1 : 0);
 }
 
 namespace {
-OPEN3D_DEVICE
+CLOUDVIEWER_DEVICE
 const int edge_table[256] = {
         0x0,   0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905,
         0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00, 0x190, 0x99,  0x393, 0x29a,
@@ -119,7 +119,7 @@ const int edge_table[256] = {
         0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c, 0x70c, 0x605,
         0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0};
 
-OPEN3D_DEVICE
+CLOUDVIEWER_DEVICE
 const int tri_table[256][16] = {
         {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
         {0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -378,7 +378,7 @@ const int tri_table[256][16] = {
         {0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
         {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
 
-OPEN3D_DEVICE const int tri_count[256] = {
+CLOUDVIEWER_DEVICE const int tri_count[256] = {
         0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 2, 1, 2, 2, 3, 2, 3, 3, 4,
         2, 3, 3, 4, 3, 4, 4, 3, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 3,
         2, 3, 3, 2, 3, 4, 4, 3, 3, 4, 4, 3, 4, 5, 5, 2, 1, 2, 2, 3, 2, 3, 3, 4,
@@ -392,14 +392,14 @@ OPEN3D_DEVICE const int tri_count[256] = {
         2, 3, 3, 2, 3, 4, 2, 1, 3, 2, 4, 1, 2, 1, 1, 0,
 };
 
-OPEN3D_DEVICE const int vtx_shifts[8][3] = {
+CLOUDVIEWER_DEVICE const int vtx_shifts[8][3] = {
         {0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
         {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1},
 };
 
 // First 3 elements: edge start vertex coordinate (assume origin at (0, 0, 0))
 // The last element: edge direction {0: x, 1: y, 2: z}
-OPEN3D_DEVICE const int edge_shifts[12][4] = {
+CLOUDVIEWER_DEVICE const int edge_shifts[12][4] = {
         {0, 0, 0, 0},  // Edge  0: {0, 1}
         {1, 0, 0, 1},  // Edge  1: {1, 2}
         {0, 1, 0, 0},  // Edge  2: {3, 2}
@@ -414,14 +414,14 @@ OPEN3D_DEVICE const int edge_shifts[12][4] = {
         {0, 1, 0, 2},  // Edge 11: {3, 7}
 };
 
-OPEN3D_DEVICE const int edge_to_vert[12][2] = {
+CLOUDVIEWER_DEVICE const int edge_to_vert[12][2] = {
         {0, 1}, {1, 2}, {3, 2}, {0, 3}, {4, 5}, {5, 6},
         {7, 6}, {4, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7},
 };
 
 // Turbo colormap
 // https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
-OPEN3D_DEVICE const unsigned char turbo_srgb_bytes[256][3] = {
+CLOUDVIEWER_DEVICE const unsigned char turbo_srgb_bytes[256][3] = {
         {48, 18, 59},   {50, 21, 67},   {51, 24, 74},    {52, 27, 81},
         {53, 30, 88},   {54, 33, 95},   {55, 36, 102},   {56, 39, 109},
         {57, 42, 115},  {58, 45, 121},  {59, 47, 128},   {60, 50, 134},

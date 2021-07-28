@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "utility/IJsonConvertible.h"
+#include <IJsonConvertible.h>
 
 #include <json/json.h>
 

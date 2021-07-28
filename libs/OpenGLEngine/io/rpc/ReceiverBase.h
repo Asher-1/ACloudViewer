@@ -30,7 +30,7 @@
 #include <mutex>
 #include <thread>
 
-#include "utility/Logging.h"
+#include <Logging.h>
 
 namespace zmq {
 class message_t;

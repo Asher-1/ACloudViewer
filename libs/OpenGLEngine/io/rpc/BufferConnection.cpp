@@ -29,7 +29,7 @@
 #include <zmq.hpp>
 
 #include "io/rpc/Messages.h"
-#include "utility/Logging.h"
+#include <Logging.h>
 
 using namespace cloudViewer::utility;
 

@@ -36,7 +36,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "utility/Logging.h"
+#include <Logging.h>
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Button.h"
 #include "visualization/gui/Dialog.h"

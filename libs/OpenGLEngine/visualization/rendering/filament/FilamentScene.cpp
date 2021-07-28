@@ -47,6 +47,7 @@
 #include <filament/Scene.h>
 #include <filament/Skybox.h>
 #include <filament/SwapChain.h>
+#include <filament/Texture.h>
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
@@ -1668,17 +1669,21 @@ bool FilamentScene::GetSkyboxVisible() const {
 
 void FilamentScene::CreateBackgroundGeometry() {
     if (!HasGeometry(kBackgroundName)) {
-        geometry::TriangleMesh quad;
+        ccMesh quad;
+        quad.createInternalCloud();
         // The coordinates are in raw GL coordinates, what Filament calls
         // "device coordinates". Since we want to draw on the entire screen,
         // and GL's native coordinates range from (-1, 1) to (1, 1), that's
         // what we use. The z value does not matter, as we are writing directly
         // to GL coordinates and we won't be writing depth values.
-        quad.vertices_ = {{-1.0, -1.0, 0.0},
+
+        quad.reserve(2);
+        quad.addEigenVertices({{-1.0, -1.0, 0.0},
                           {1.0, -1.0, 0.0},
                           {1.0, 1.0, 0.0},
-                          {-1.0, 1.0, 0.0}};
-        quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
+                          {-1.0, 1.0, 0.0}});
+        quad.addTriangles({{0, 1, 2}, {0, 2, 3}});
+
         Material m;
         m.shader = "unlitBackground";
         m.base_color = {1.f, 1.f, 1.f, 1.f};

@@ -37,8 +37,8 @@
 #include "t/geometry/kernel/GeometryMacros.h"
 #include "t/geometry/kernel/TSDFVoxel.h"
 #include "t/geometry/kernel/TSDFVoxelGrid.h"
-#include "utility/Logging.h"
-#include "utility/Timer.h"
+#include <Logging.h>
+#include <Timer.h>
 
 namespace cloudViewer {
 namespace t {
@@ -98,7 +98,7 @@ void IntegrateCPU
 
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
+                launcher::ParallelFor(n, [=] CLOUDVIEWER_DEVICE(
                                                  int64_t workload_idx) {
                     // Natural index (0, N) -> (block_idx, voxel_idx)
                     int block_idx = indices_ptr[workload_idx / resolution3];
@@ -165,7 +165,7 @@ void IntegrateCPU
                 });
             });
 #if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    CLOUDVIEWER_CUDA_CHECK(cudaDeviceSynchronize());
 #endif
 }
 
@@ -227,10 +227,10 @@ void ExtractSurfacePointsCPU
         // This pass determines valid number of points.
         DISPATCH_BYTESIZE_TO_VOXEL(
                 voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
+                    launcher::ParallelFor(n, [=] CLOUDVIEWER_DEVICE(
                                                      int64_t workload_idx) {
                         auto GetVoxelAt =
-                                [&] OPEN3D_DEVICE(
+                                [&] CLOUDVIEWER_DEVICE(
                                         int xo, int yo, int zo,
                                         int curr_block_idx) -> voxel_t* {
                             return DeviceGetVoxelAt<voxel_t>(
@@ -323,9 +323,9 @@ void ExtractSurfacePointsCPU
                     color_indexer = NDArrayIndexer(colors.value().get(), 1);
                 }
 
-                launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
+                launcher::ParallelFor(n, [=] CLOUDVIEWER_DEVICE(
                                                  int64_t workload_idx) {
-                    auto GetVoxelAt = [&] OPEN3D_DEVICE(
+                    auto GetVoxelAt = [&] CLOUDVIEWER_DEVICE(
                                               int xo, int yo, int zo,
                                               int curr_block_idx) -> voxel_t* {
                         return DeviceGetVoxelAt<voxel_t>(
@@ -335,7 +335,7 @@ void ExtractSurfacePointsCPU
                                 nb_block_indices_indexer,
                                 voxel_block_buffer_indexer);
                     };
-                    auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                    auto GetNormalAt = [&] CLOUDVIEWER_DEVICE(int xo, int yo, int zo,
                                                          int curr_block_idx,
                                                          float* n) {
                         return DeviceGetNormalAt<voxel_t>(
@@ -472,7 +472,7 @@ void ExtractSurfacePointsCPU
     valid_size = total_count;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    CLOUDVIEWER_CUDA_CHECK(cudaDeviceSynchronize());
 #endif
 }
 
@@ -541,8 +541,8 @@ void ExtractSurfaceMeshCPU
     // Pass 0: analyze mesh structure, set up one-on-one correspondences
     // from edges to vertices.
     DISPATCH_BYTESIZE_TO_VOXEL(voxel_bytesize, [&]() {
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
-            auto GetVoxelAt = [&] OPEN3D_DEVICE(
+        launcher::ParallelFor(n, [=] CLOUDVIEWER_DEVICE(int64_t widx) {
+            auto GetVoxelAt = [&] CLOUDVIEWER_DEVICE(
                                       int xo, int yo, int zo,
                                       int curr_block_idx) -> voxel_t* {
                 return DeviceGetVoxelAt<voxel_t>(
@@ -625,7 +625,7 @@ void ExtractSurfaceMeshCPU
 #endif
 
     if (vertex_count < 0) {
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
+        launcher::ParallelFor(n, [=] CLOUDVIEWER_DEVICE(int64_t widx) {
             // Natural index (0, N) -> (block_idx, voxel_idx)
             int64_t workload_block_idx = widx / resolution3;
             int64_t voxel_idx = widx % resolution3;
@@ -697,8 +697,8 @@ void ExtractSurfaceMeshCPU
             color_indexer = NDArrayIndexer(colors.value().get(), 1);
         }
 
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
-            auto GetVoxelAt = [&] OPEN3D_DEVICE(
+        launcher::ParallelFor(n, [=] CLOUDVIEWER_DEVICE(int64_t widx) {
+            auto GetVoxelAt = [&] CLOUDVIEWER_DEVICE(
                                       int xo, int yo, int zo,
                                       int curr_block_idx) -> voxel_t* {
                 return DeviceGetVoxelAt<voxel_t>(
@@ -707,7 +707,7 @@ void ExtractSurfaceMeshCPU
                         nb_block_indices_indexer, voxel_block_buffer_indexer);
             };
 
-            auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+            auto GetNormalAt = [&] CLOUDVIEWER_DEVICE(int xo, int yo, int zo,
                                                  int curr_block_idx, float* n) {
                 return DeviceGetNormalAt<voxel_t>(
                         xo, yo, zo, curr_block_idx, n,
@@ -768,7 +768,7 @@ void ExtractSurfaceMeshCPU
                                    static_cast<int>(yv) + (e == 1),
                                    static_cast<int>(zv) + (e == 2),
                                    static_cast<int>(workload_block_idx));
-                OPEN3D_ASSERT(voxel_ptr_e != nullptr &&
+                CLOUDVIEWER_ASSERT(voxel_ptr_e != nullptr &&
                               "Internal error: GetVoxelAt returns nullptr.");
                 float tsdf_e = voxel_ptr_e->GetTSDF();
                 float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
@@ -831,7 +831,7 @@ void ExtractSurfaceMeshCPU
 #else
     (*count_ptr) = 0;
 #endif
-    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
+    launcher::ParallelFor(n, [=] CLOUDVIEWER_DEVICE(int64_t widx) {
         // Natural index (0, N) -> (block_idx, voxel_idx)
         int64_t workload_block_idx = widx / resolution3;
         int64_t voxel_idx = widx % resolution3;
@@ -946,7 +946,7 @@ void EstimateRangeCPU
 
     // Pass 0: iterate over blocks, fill-in an rendering fragment array
     launcher::ParallelFor(
-            block_keys.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
+            block_keys.GetLength(), [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                 int* key = block_keys_indexer.GetDataPtr<int>(workload_idx);
 
                 int u_min = w_down - 1, v_min = h_down - 1, u_max = 0,
@@ -1034,7 +1034,7 @@ void EstimateRangeCPU
 
     // Pass 0.5: Fill in range map to prepare for atomic min/max
     launcher::ParallelFor(
-            h_down * w_down, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+            h_down * w_down, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                 int v = workload_idx / w_down;
                 int u = workload_idx % w_down;
                 float* range_ptr = range_map_indexer.GetDataPtr<float>(u, v);
@@ -1045,7 +1045,7 @@ void EstimateRangeCPU
     // Pass 1: iterate over rendering fragment array, fill-in range
     launcher::ParallelFor(
             frag_count * fragment_size * fragment_size,
-            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+            [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
                 int frag_idx = workload_idx / (fragment_size * fragment_size);
                 int local_idx = workload_idx % (fragment_size * fragment_size);
                 int dv = local_idx / fragment_size;
@@ -1077,7 +1077,7 @@ void EstimateRangeCPU
 #endif
             });
 #if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    CLOUDVIEWER_CUDA_CHECK(cudaDeviceSynchronize());
 #endif
 }
 
@@ -1087,11 +1087,11 @@ struct BlockCache {
     int z;
     int block_idx;
 
-    inline int OPEN3D_DEVICE Check(int xin, int yin, int zin) {
+    inline int CLOUDVIEWER_DEVICE Check(int xin, int yin, int zin) {
         return (xin == x && yin == y && zin == z) ? block_idx : -1;
     }
 
-    inline void OPEN3D_DEVICE Update(int xin,
+    inline void CLOUDVIEWER_DEVICE Update(int xin,
                                      int yin,
                                      int zin,
                                      int block_idx_in) {
@@ -1190,9 +1190,9 @@ void RayCastCPU
 
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                launcher::ParallelFor(rows * cols, [=] OPEN3D_DEVICE(
+                launcher::ParallelFor(rows * cols, [=] CLOUDVIEWER_DEVICE(
                                                            int64_t workload_idx) {
-                    auto GetVoxelAtP = [&] OPEN3D_DEVICE(
+                    auto GetVoxelAtP = [&] CLOUDVIEWER_DEVICE(
                                                int x_b, int y_b, int z_b,
                                                int x_v, int y_v, int z_v,
                                                core::addr_t block_addr,
@@ -1231,7 +1231,7 @@ void RayCastCPU
                         }
                     };
 
-                    auto GetVoxelAtT = [&] OPEN3D_DEVICE(
+                    auto GetVoxelAtT = [&] CLOUDVIEWER_DEVICE(
                                                float x_o, float y_o, float z_o,
                                                float x_d, float y_d, float z_d,
                                                float t,
@@ -1501,7 +1501,7 @@ void RayCastCPU
             });
 
 #if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    CLOUDVIEWER_CUDA_CHECK(cudaDeviceSynchronize());
 #endif
 }
 

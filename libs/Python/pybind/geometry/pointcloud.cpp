@@ -832,7 +832,7 @@ void pybind_pointcloud(py::module& m) {
               "number of points[0-1]"}});
     docstring::ClassMethodDocInject(
             m, "ccPointCloud", "crop",
-            {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
+            {{"bounding_box", "ccBBox to crop points"}});
     docstring::ClassMethodDocInject(
             m, "ccPointCloud", "remove_non_finite_points",
             {{"remove_nan", "Remove NaN values from the PointCloud"},

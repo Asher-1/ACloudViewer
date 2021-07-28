@@ -39,7 +39,7 @@
 
 #include "core/Tensor.h"
 #include <Helper.h>
-#include "utility/IJsonConvertible.h"
+#include <IJsonConvertible.h>
 #include <Logging.h>
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Events.h"

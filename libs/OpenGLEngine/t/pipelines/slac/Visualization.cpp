@@ -72,15 +72,15 @@ void VisualizePointCloudCorrespondences(const t::geometry::PointCloud& tpcd_i,
     core::Tensor correspondences_host =
             correspondences.To(core::Device("CPU:0"));
 
-    auto pcd_i_corres = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd_i_corres = cloudViewer::make_shared<ccPointCloud>(
             tpcd_i.Clone().Transform(T_ij).ToLegacyPointCloud());
-    pcd_i_corres->PaintUniformColor(kSourceColor);
-    pcd_i_corres->Transform(flip);
+    pcd_i_corres->paintUniformColor(kSourceColor);
+    pcd_i_corres->transform(flip);
 
-    auto pcd_j_corres = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd_j_corres = cloudViewer::make_shared<ccPointCloud>(
             tpcd_j.ToLegacyPointCloud());
-    pcd_j_corres->PaintUniformColor(kTargetColor);
-    pcd_j_corres->Transform(flip);
+    pcd_j_corres->paintUniformColor(kTargetColor);
+    pcd_j_corres->transform(flip);
 
     std::vector<std::pair<int, int>> corres_lines;
     for (int i = 0; i < correspondences_host.GetLength(); ++i) {
@@ -91,7 +91,7 @@ void VisualizePointCloudCorrespondences(const t::geometry::PointCloud& tpcd_i,
     auto lineset =
             cloudViewer::geometry::LineSet::CreateFromPointCloudCorrespondences(
                     *pcd_i_corres, *pcd_j_corres, corres_lines);
-    lineset->PaintUniformColor(kCorresColor);
+    lineset->paintUniformColor(kCorresColor);
 
     visualization::DrawGeometries({pcd_i_corres, pcd_j_corres, lineset});
 }
@@ -103,15 +103,15 @@ void VisualizePointCloudEmbedding(t::geometry::PointCloud& tpcd_param,
     flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
 
     // Prepare all ctr grid point cloud for lineset
-    auto pcd = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd = cloudViewer::make_shared<ccPointCloud>(
             tpcd_param.ToLegacyPointCloud());
-    pcd->Transform(flip);
+    pcd->transform(flip);
 
     t::geometry::PointCloud tpcd_grid(
             ctr_grid.GetCurrPositions().Slice(0, 0, ctr_grid.Size()));
-    auto pcd_grid = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd_grid = cloudViewer::make_shared<ccPointCloud>(
             tpcd_grid.ToLegacyPointCloud());
-    pcd_grid->Transform(flip);
+    pcd_grid->transform(flip);
 
     // Prepare nb point cloud for visualization
     core::Tensor corres =
@@ -120,10 +120,10 @@ void VisualizePointCloudEmbedding(t::geometry::PointCloud& tpcd_param,
     t::geometry::PointCloud tpcd_grid_nb(
             tpcd_grid.GetPoints().IndexGet({corres.View({-1})}));
 
-    auto pcd_grid_nb = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd_grid_nb = cloudViewer::make_shared<ccPointCloud>(
             tpcd_grid_nb.ToLegacyPointCloud());
-    pcd_grid_nb->PaintUniformColor(kSourceColor);
-    pcd_grid_nb->Transform(flip);
+    pcd_grid_nb->paintUniformColor(kSourceColor);
+    pcd_grid_nb->transform(flip);
 
     visualization::DrawGeometries({pcd, pcd_grid_nb}, "Point cloud embedding");
 
@@ -151,7 +151,7 @@ void VisualizePointCloudEmbedding(t::geometry::PointCloud& tpcd_param,
     }
 
     // Ensure raw pcd is visible
-    pcd->PaintUniformColor({0, 0, 0});
+    pcd->paintUniformColor({0, 0, 0});
     visualization::DrawGeometries({lineset, pcd, pcd_grid_nb},
                                   "Point cloud embedding");
 }
@@ -169,30 +169,30 @@ void VisualizePointCloudDeformation(const geometry::PointCloud& tpcd_param,
     core::Tensor curr = ctr_grid.GetCurrPositions().IndexGet({corres});
 
     t::geometry::PointCloud tpcd_init_grid(prev);
-    auto pcd_init_grid = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd_init_grid = cloudViewer::make_shared<ccPointCloud>(
             tpcd_init_grid.ToLegacyPointCloud());
-    pcd_init_grid->PaintUniformColor({0, 1, 0});
-    pcd_init_grid->Transform(flip);
+    pcd_init_grid->paintUniformColor({0, 1, 0});
+    pcd_init_grid->transform(flip);
 
-    auto pcd = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd = cloudViewer::make_shared<ccPointCloud>(
             tpcd_param.ToLegacyPointCloud());
-    pcd->PaintUniformColor({0, 1, 0});
-    pcd->Transform(flip);
+    pcd->paintUniformColor({0, 1, 0});
+    pcd->transform(flip);
 
     t::geometry::PointCloud tpcd_curr_grid(curr);
-    auto pcd_curr_grid = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd_curr_grid = cloudViewer::make_shared<ccPointCloud>(
             tpcd_curr_grid.ToLegacyPointCloud());
-    pcd_curr_grid->PaintUniformColor({1, 0, 0});
-    pcd_curr_grid->Transform(flip);
+    pcd_curr_grid->paintUniformColor({1, 0, 0});
+    pcd_curr_grid->transform(flip);
 
     auto tpcd_warped = ctr_grid.Deform(tpcd_param);
-    auto pcd_warped = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd_warped = cloudViewer::make_shared<ccPointCloud>(
             tpcd_warped.ToLegacyPointCloud());
-    pcd_warped->PaintUniformColor({1, 0, 0});
-    pcd_warped->Transform(flip);
+    pcd_warped->paintUniformColor({1, 0, 0});
+    pcd_warped->transform(flip);
 
     std::vector<std::pair<int, int>> deform_lines;
-    for (size_t i = 0; i < pcd_init_grid->points_.size(); ++i) {
+    for (size_t i = 0; i < pcd_init_grid->size(); ++i) {
         deform_lines.push_back(std::make_pair(i, i));
     }
     auto lineset =
@@ -218,14 +218,14 @@ void VisualizeGridDeformation(ControlGrid& cgrid) {
     core::Tensor curr = cgrid.GetCurrPositions().Slice(0, 0, n);
 
     t::geometry::PointCloud tpcd_init_grid(prev);
-    auto pcd_init_grid = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd_init_grid = cloudViewer::make_shared<ccPointCloud>(
             tpcd_init_grid.ToLegacyPointCloud());
-    pcd_init_grid->PaintUniformColor({0, 1, 0});
+    pcd_init_grid->paintUniformColor({0, 1, 0});
 
     t::geometry::PointCloud tpcd_curr_grid(curr);
-    auto pcd_curr_grid = cloudViewer::make_shared<cloudViewer::geometry::PointCloud>(
+    auto pcd_curr_grid = cloudViewer::make_shared<ccPointCloud>(
             tpcd_curr_grid.ToLegacyPointCloud());
-    pcd_curr_grid->PaintUniformColor({1, 0, 0});
+    pcd_curr_grid->paintUniformColor({1, 0, 0});
 
     std::vector<std::pair<int, int>> nb_lines;
     for (int64_t i = 0; i < indices.GetLength(); ++i) {

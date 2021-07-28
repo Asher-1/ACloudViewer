@@ -32,9 +32,9 @@
 
 #include "ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 #include "ml/impl/misc/MemoryAllocation.h"
-#include "utility/Helper.h"
+#include <Helper.h>
 
-using open3d::utility::DivUp;
+using cloudViewer::utility::DivUp;
 
 namespace cloudViewer {
 namespace ml {

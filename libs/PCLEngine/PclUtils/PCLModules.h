@@ -33,6 +33,7 @@
 #include <Eigen.h>
 #include <CVLog.h>
 #include <CVConst.h>
+#include <Parallel.h>
 
 // PCL COMMON
 #include <pcl/Vertices.h>
@@ -1134,7 +1135,7 @@ namespace PCLModules
 
         //create the smoothing object
         pcl::MovingLeastSquares< PointInT, PointOutT > smoother;
-        int n_threads = omp_get_max_threads();
+        int n_threads = cloudViewer::utility::EstimateMaxThreads();
         smoother.setNumberOfThreads(n_threads);
 
 		smoother.setInputCloud(inCloud);

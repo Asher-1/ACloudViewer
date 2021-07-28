@@ -48,7 +48,7 @@
 #include <functional>
 #include <utility>
 
-#include "utility/IJsonConvertible.h"
+#include <IJsonConvertible.h>
 #include "visualization/webrtc_server/BitmapTrackSource.h"
 #include "visualization/webrtc_server/ImageCapturer.h"
 #include "visualization/webrtc_server/VideoFilter.h"

@@ -47,9 +47,9 @@ void ContinuousConvTransposeBackpropFilterCPU(
         const torch::Tensor& neighbors_row_splits,
         const torch::Tensor& out_features_gradient,
         const bool align_corners,
-        const open3d::ml::impl::CoordinateMapping coordinate_mapping,
+        const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping,
         const bool normalize,
-        const open3d::ml::impl::InterpolationMode interpolation,
+        const cloudViewer::ml::impl::InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
         torch::Tensor& filter_backprop);
 
@@ -70,9 +70,9 @@ void ContinuousConvTransposeBackpropFilterCUDA(
         const torch::Tensor& neighbors_row_splits,
         const torch::Tensor& out_features_gradient,
         const bool align_corners,
-        const open3d::ml::impl::CoordinateMapping coordinate_mapping,
+        const cloudViewer::ml::impl::CoordinateMapping coordinate_mapping,
         const bool normalize,
-        const open3d::ml::impl::InterpolationMode interpolation,
+        const cloudViewer::ml::impl::InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
         torch::Tensor& filter_backprop);
 #endif

@@ -31,9 +31,9 @@
 #include <cstdio>
 
 #include "geometry/Octree.h"
-#include "geometry/PointCloud.h"
+#include <ecvPointCloud.h>
 #include "io/PointCloudIO.h"
-#include "utility/IJsonConvertible.h"
+#include <IJsonConvertible.h>
 #include "tests/UnitTest.h"
 
 namespace cloudViewer {

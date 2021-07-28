@@ -113,7 +113,7 @@ public:
 
     // Scene geometry
     bool AddGeometry(const std::string& object_name,
-                     const geometry::Geometry3D& geometry,
+                     const ccHObject& geometry,
                      const Material& material,
                      const std::string& downsampled_name = "",
                      size_t downsample_threshold = SIZE_MAX) override;

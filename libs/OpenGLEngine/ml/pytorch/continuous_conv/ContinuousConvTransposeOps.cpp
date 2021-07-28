@@ -337,7 +337,7 @@ torch::Tensor ContinuousConvTranspose(
 }
 
 static auto registry = torch::RegisterOperators(
-        "open3d::continuous_conv_transpose(Tensor filters, Tensor "
+        "cloudViewer::continuous_conv_transpose(Tensor filters, Tensor "
         "out_positions, Tensor out_importance, Tensor extents, Tensor offset, "
         "Tensor inp_positions, Tensor inp_features, Tensor "
         "inp_neighbors_index, Tensor inp_neighbors_importance_sum, Tensor "

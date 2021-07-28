@@ -71,7 +71,7 @@ public:
           stop_(stop),
           step_(step) {}
     std::shared_ptr<SliceImpl> InstantiateDimSize(int64_t dim_size) const {
-        return cloudViewer::make_shared<SliceImpl>(
+        return std::make_shared<SliceImpl>(
                 start_.has_value() ? start_.value() : 0,
                 stop_.has_value() ? stop_.value() : dim_size,
                 step_.has_value() ? step_.value() : 1);
@@ -150,17 +150,17 @@ TensorKey::TensorKeyMode TensorKey::GetMode() const { return impl_->GetMode(); }
 std::string TensorKey::ToString() const { return impl_->ToString(); }
 
 TensorKey TensorKey::Index(int64_t index) {
-    return TensorKey(cloudViewer::make_shared<IndexImpl>(index));
+    return TensorKey(std::make_shared<IndexImpl>(index));
 }
 
 TensorKey TensorKey::Slice(utility::optional<int64_t> start,
                            utility::optional<int64_t> stop,
                            utility::optional<int64_t> step) {
-    return TensorKey(cloudViewer::make_shared<SliceImpl>(start, stop, step));
+    return TensorKey(std::make_shared<SliceImpl>(start, stop, step));
 }
 
 TensorKey TensorKey::IndexTensor(const Tensor& index_tensor) {
-    return TensorKey(cloudViewer::make_shared<IndexTensorImpl>(index_tensor));
+    return TensorKey(std::make_shared<IndexTensorImpl>(index_tensor));
 }
 
 int64_t TensorKey::GetIndex() const {

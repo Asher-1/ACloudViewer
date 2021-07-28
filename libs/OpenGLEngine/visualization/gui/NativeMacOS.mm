@@ -34,7 +34,7 @@
 #define GLFW_EXPOSE_NATIVE_COCOA 1
 #include <GLFW/glfw3native.h>
 
-#include "utility/Helper.h"
+#include <Helper.h>
 
 namespace cloudViewer {
 namespace visualization {

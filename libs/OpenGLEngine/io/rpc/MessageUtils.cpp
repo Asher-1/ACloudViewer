@@ -29,7 +29,7 @@
 #include <zmq.hpp>
 
 #include "io/rpc/Messages.h"
-#include "utility/Logging.h"
+#include <Logging.h>
 
 using namespace cloudViewer::utility;
 
@@ -63,7 +63,7 @@ std::shared_ptr<messages::Status> UnpackStatusFromReply(
         LogDebug("Failed to parse message: {}", e.what());
         offset = msg.size();
     }
-    return cloudViewer::make_shared<messages::Status>(status);
+    return std::make_shared<messages::Status>(status);
 }
 
 bool ReplyIsOKStatus(const zmq::message_t& msg) {

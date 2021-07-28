@@ -36,8 +36,8 @@
 #include "t/geometry/kernel/GeometryIndexer.h"
 #include "t/geometry/kernel/GeometryMacros.h"
 #include "t/geometry/kernel/PointCloud.h"
-#include "utility/Logging.h"
-#include "utility/Timer.h"
+#include <Logging.h>
+#include <Timer.h>
 
 namespace cloudViewer {
 namespace t {
@@ -104,7 +104,7 @@ void UnprojectCPU
 #endif
 
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+        launcher::ParallelFor(n, [=] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
             int64_t y = (workload_idx / cols_strided) * stride;
             int64_t x = (workload_idx % cols_strided) * stride;
 
@@ -137,7 +137,7 @@ void UnprojectCPU
 #endif
 
 #ifdef __CUDACC__
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    CLOUDVIEWER_CUDA_CHECK(cudaDeviceSynchronize());
 #endif
     points = points.Slice(0, 0, total_pts_count);
     if (have_colors) {

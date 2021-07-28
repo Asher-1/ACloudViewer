@@ -30,8 +30,8 @@
 
 #include "camera/PinholeCameraParameters.h"
 #include "core/Tensor.h"
-#include "geometry/PointCloud.h"
-#include "geometry/TriangleMesh.h"
+#include <ecvPointCloud.h>
+#include <ecvMesh.h>
 #include "io/rpc/ConnectionBase.h"
 
 namespace zmq {
@@ -59,7 +59,7 @@ struct Status;
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetPointCloud(const geometry::PointCloud& pcd,
+bool SetPointCloud(const ccPointCloud& pcd,
                    const std::string& path = "",
                    int time = 0,
                    const std::string& layer = "",
@@ -79,7 +79,7 @@ bool SetPointCloud(const geometry::PointCloud& pcd,
 /// \param connection  The connection object used for sending the data.
 ///                    If nullptr a default connection object will be used.
 ///
-bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
+bool SetTriangleMesh(const ccMesh& mesh,
                      const std::string& path = "",
                      int time = 0,
                      const std::string& layer = "",

@@ -29,7 +29,7 @@
 #include <atomic>
 #include <thread>
 
-#include "utility/Logging.h"
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace visualization {
