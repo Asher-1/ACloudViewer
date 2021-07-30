@@ -31,6 +31,7 @@
 #include "recognition/DeepSemanticSegmentation.h"
 
 // pybind11
+#undef slots
 #include <pybind11/embed.h>
 
 // CV_CORE_LIB
