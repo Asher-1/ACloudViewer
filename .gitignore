@@ -179,6 +179,7 @@ compile_commands.json
 
 
 # Example resources
+examples/test_data
 examples/test_data/cloudViewer_downloads
 examples/python/reconstruction_system/dataset/
 examples/test_data/fountain_small
