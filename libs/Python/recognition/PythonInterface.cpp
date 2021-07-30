@@ -31,6 +31,7 @@
 #include <CVTools.h>
 
 // PYTHON
+#undef slots
 #include <pybind11/embed.h>
 
 // SYSTEM

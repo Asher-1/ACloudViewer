@@ -6,7 +6,7 @@ ExternalProject_Add(
     ext_dlib
     PREFIX dlib
     URL https://github.com/davisking/dlib/archive/refs/tags/v19.22.tar.gz
-    URL_HASH SHA256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    URL_HASH SHA256=5f44b67f762691b92f3e41dcf9c95dd0f4525b59cacb478094e511fdacb5c096
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/dlib"
     UPDATE_COMMAND ""
     CMAKE_ARGS
