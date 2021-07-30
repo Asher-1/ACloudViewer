@@ -140,7 +140,9 @@ util/pip_package/setup.py
 3rdparty_downloads
 build*/
 cmake-build-debug/
+cmake-build-debug2/
 cmake-build-release/
+cmake-build-release2/
 util/pip_package/dist/
 util/conda_package/dist/
 doxygen/

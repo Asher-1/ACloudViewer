@@ -29,7 +29,7 @@
 #include <algorithm>
 
 #include "camera/PinholeCameraIntrinsic.h"
-#include "geometry/BoundingVolume.h"
+#include <ecvBBox.h>
 #include <Image.h>
 #include <RGBDImage.h>
 #include <ecvMesh.h>

@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "pybind/open3d_pybind.h"
+#include "pybind/cloudViewer_pybind.h"
 
 namespace cloudViewer {
 namespace t {

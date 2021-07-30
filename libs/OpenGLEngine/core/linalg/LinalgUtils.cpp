@@ -31,7 +31,7 @@ namespace core {
 
 std::shared_ptr<CuSolverContext> CuSolverContext::GetInstance() {
     if (instance_ == nullptr) {
-        instance_ = cloudViewer::make_shared<CuSolverContext>();
+        instance_ = std::make_shared<CuSolverContext>();
     }
     return instance_;
 };
@@ -51,7 +51,7 @@ std::shared_ptr<CuSolverContext> CuSolverContext::instance_ = nullptr;
 
 std::shared_ptr<CuBLASContext> CuBLASContext::GetInstance() {
     if (instance_ == nullptr) {
-        instance_ = cloudViewer::make_shared<CuBLASContext>();
+        instance_ = std::make_shared<CuBLASContext>();
     }
     return instance_;
 };

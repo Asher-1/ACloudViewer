@@ -47,12 +47,12 @@ public:
         PYBIND11_OVERLOAD_PURE(void, TSDFVolumeBase, image, intrinsic,
                                extrinsic);
     }
-    std::shared_ptr<geometry::PointCloud> ExtractPointCloud() override {
-        PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::PointCloud>,
+    std::shared_ptr<ccPointCloud> ExtractPointCloud() override {
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<ccPointCloud>,
                                TSDFVolumeBase, );
     }
-    std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() override {
-        PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::TriangleMesh>,
+    std::shared_ptr<ccMesh> ExtractTriangleMesh() override {
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<ccMesh>,
                                TSDFVolumeBase, );
     }
 };

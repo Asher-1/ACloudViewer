@@ -26,6 +26,7 @@
 #include "ecvHObject.h"
 
 // CV_CORE_LIB
+#include <SquareMatrix.h>
 #include <BoundingBox.h>
 
 //! Bounding box structure
@@ -36,16 +37,14 @@ class ECV_DB_LIB_API ccBBox : public ccHObject,
                               public cloudViewer::BoundingBox {
 public:
     //! Default constructor
-    ccBBox()
-        : ccHObject("ccBBox"), cloudViewer::BoundingBox(), color_(0, 0, 0) {}
+    ccBBox() : ccHObject("ccBBox"), cloudViewer::BoundingBox() {}
 
     //! Constructor from two vectors (lower min. and upper max. corners)
     ccBBox(const CCVector3& bbMinCorner,
            const CCVector3& bbMaxCorner,
            const std::string& name = "ccBBox")
         : ccHObject(name.c_str()),
-          cloudViewer::BoundingBox(bbMinCorner, bbMaxCorner),
-          color_(0, 0, 0) {}
+          cloudViewer::BoundingBox(bbMinCorner, bbMaxCorner) {}
 
     /// \brief Parameterized constructor.
     ///
@@ -55,27 +54,24 @@ public:
            const Eigen::Vector3d& max_bound,
            const std::string& name = "ccBBox")
         : ccHObject(name.c_str()),
-          cloudViewer::BoundingBox(min_bound, max_bound),
-          color_(0, 0, 0) {}
+          cloudViewer::BoundingBox(min_bound, max_bound) {}
 
     //! Constructor from two vectors (lower min. and upper max. corners)
-    ccBBox(const cloudViewer::BoundingBox& bbox,
-           const std::string& name = "ccBBox")
-        : ccHObject(name.c_str()),
-          cloudViewer::BoundingBox(bbox),
-          color_(0, 0, 0) {}
+    explicit ccBBox(const cloudViewer::BoundingBox& bbox,
+                    const std::string& name = "ccBBox")
+        : ccHObject(name.c_str()), cloudViewer::BoundingBox(bbox) {}
 
     //! Applies transformation to the bounding box
     const ccBBox operator*(const ccGLMatrix& mat);
     //! Applies transformation to the bounding box
     const ccBBox operator*(const ccGLMatrixd& mat);
 
-    virtual ~ccBBox() override = default;
+    ~ccBBox() override = default;
 
     // inherited methods (ccHObject)
-    virtual bool isSerializable() const override { return true; }
+    bool isSerializable() const override { return true; }
     //! Returns unique class ID
-    virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::BBOX; }
+    CV_CLASS_ENUM getClassID() const override { return CV_TYPES::BBOX; }
     // Returns the entity's own bounding-box
     virtual inline ccBBox getOwnBB(bool withGLFeatures = false) override {
         return *this;
@@ -109,8 +105,18 @@ public:  // inherited methods (ccHObject)
 
     const ccBBox& operator+=(const ccBBox& other);
 
-    //! Shifts the bounding box with a vector
-    const ccBBox& operator+=(const CCVector3& aVector);
+    // CCVector3: must override to fix candidate template ignored:
+    // could not match 'QStringBuilder' against 'Vector3Tpl
+    const ccBBox& operator+=(const CCVector3 & V) override;
+    const ccBBox& operator-=(const CCVector3& V) override;
+    const ccBBox& operator*=(float scaleFactor) override;
+    const ccBBox& operator*=(const cloudViewer::SquareMatrix& mat) override;
+
+    // Eigen::Vector3d
+    const ccBBox& operator+=(const Eigen::Vector3d& V);
+    const ccBBox& operator-=(const Eigen::Vector3d& V);
+    const ccBBox& operator*=(double scaleFactor);
+    const ccBBox& operator*=(const Eigen::Matrix3d& mat);
 
 public:
     //! Draws bounding box (OpenGL)
@@ -127,13 +133,6 @@ public:
     }
     inline void setMaxBounds(const Eigen::Vector3d& maxBound) {
         m_bbMax = maxBound;
-    }
-
-    /// Sets the bounding box color.
-    inline void setColor(const Eigen::Vector3d& color) { color_ = color; }
-    /// Gets the bounding box color.
-    inline Eigen::Vector3d getColor() const {
-        return CCVector3d::fromArray(color_);
     }
 
     /// Creates the bounding box that encloses the set of points.
@@ -159,10 +158,6 @@ public:
 
     /// Returns the eight points that define the bounding box.
     std::vector<Eigen::Vector3d> getBoxPoints() const;
-
-protected:
-    /// The color of the bounding box in RGB.
-    CCVector3d color_;
 };
 
 #endif  // ECV_BBOX_HEADER

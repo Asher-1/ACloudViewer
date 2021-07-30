@@ -74,6 +74,7 @@ option(USE_SYSTEM_PYBIND11 "Use system pre-installed pybind11" OFF)
 option(USE_SYSTEM_QHULL "Use system pre-installed qhull" OFF)
 option(USE_SYSTEM_TINYGLTF "Use system pre-installed tinygltf" OFF)
 option(USE_SYSTEM_TINYOBJLOADER "Use system pre-installed tinyobjloader" OFF)
+option(USE_SYSTEM_FFMPEG "Use system pre-installed ffmpeg" OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source" OFF)
 option(PREFER_OSX_HOMEBREW "Prefer Homebrew libs over frameworks" ON)
 option(WITH_FAISS "Enable Faiss" ON)
@@ -546,7 +547,7 @@ endif ()
 #        COMMENT ""
 #        )
 
-include(${PROJECT_SOURCE_DIR}/examples/test_data/cloudViewer_downloads.cmake)
+include(${PROJECT_SOURCE_DIR}/examples/cloudViewer_downloads.cmake)
 
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

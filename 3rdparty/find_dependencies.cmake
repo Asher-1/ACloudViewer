@@ -42,16 +42,9 @@ if (WIN32)
     if (NOT EXISTS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib)
         file(MAKE_DIRECTORY ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib)
     endif ()
-    # EXTERNAL BUILD DIR
-    set(CLOUDVIEWER_EXTERNAL_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/external_build")
-    if (NOT EXISTS ${CLOUDVIEWER_EXTERNAL_BUILD_DIR})
-        file(MAKE_DIRECTORY ${CLOUDVIEWER_EXTERNAL_BUILD_DIR})
-    endif ()
 else ()
     # EXTERNAL INSTALL DIR
     set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
-    # EXTERNAL BUILD DIR
-    set(CLOUDVIEWER_EXTERNAL_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/external_build")
 endif ()
 
 find_package(PkgConfig QUIET)
@@ -412,6 +405,7 @@ function(import_3rdparty_library name)
                 set(installed_library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_${name}_${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
             endif ()
 
+            message("thirdparty lib: ${arg_LIB_DIR}/${library_filename}")
             # Apple compiler ld
             target_link_libraries(${name} INTERFACE
                     "$<BUILD_INTERFACE:$<$<AND:${HIDDEN},${FLAG_load_hidden}>:-load_hidden >${arg_LIB_DIR}/${library_filename}>")
@@ -659,6 +653,7 @@ if (NOT USE_SYSTEM_EIGEN3)
             DEPENDS ext_eigen
             )
 endif ()
+set(INTERNAL_EIGEN3_TARGET "3rdparty_eigen3")
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_eigen3)
 
 # Flann
@@ -1604,12 +1599,12 @@ if (BUILD_RECONSTRUCTION)
         add_dependencies(3rdparty_lapack ext_suitesparse)
 
         # custom eigen
-        include(${CloudViewer_3RDPARTY_DIR}/Eigen3/eigen3_build.cmake)
-        import_3rdparty_library(internal_3rdparty_eigen3
-                INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS}
-                )
-        set(INTERNAL_EIGEN3_TARGET "internal_3rdparty_eigen3")
-        add_dependencies(internal_3rdparty_eigen3 ext_eigen3)
+#        include(${CloudViewer_3RDPARTY_DIR}/Eigen3/eigen3_build.cmake)
+#        import_3rdparty_library(internal_3rdparty_eigen3
+#                INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS}
+#                )
+#        set(INTERNAL_EIGEN3_TARGET "internal_3rdparty_eigen3")
+#        add_dependencies(internal_3rdparty_eigen3 ext_eigen3)
 
         # ceres
         include(${CloudViewer_3RDPARTY_DIR}/ceres-solver/ceres_build.cmake)
@@ -1625,7 +1620,7 @@ if (BUILD_RECONSTRUCTION)
 
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${INTERNAL_EIGEN3_TARGET}")
+#        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${INTERNAL_EIGEN3_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${SUITESPARSE_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${LAPACK_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${CERES_TARGET}")
@@ -1695,12 +1690,12 @@ if (BUILD_RECONSTRUCTION)
         add_dependencies(ext_suitesparse ${LAPACK_TARGET})
 
         # custom eigen
-        include(${CloudViewer_3RDPARTY_DIR}/Eigen3/eigen3_build.cmake)
-        import_3rdparty_library(internal_3rdparty_eigen3
-                INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS}
-                )
-        set(INTERNAL_EIGEN3_TARGET "internal_3rdparty_eigen3")
-        add_dependencies(internal_3rdparty_eigen3 ext_eigen3)
+#        include(${CloudViewer_3RDPARTY_DIR}/Eigen3/eigen3_build.cmake)
+#        import_3rdparty_library(internal_3rdparty_eigen3
+#                INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS}
+#                )
+#        set(INTERNAL_EIGEN3_TARGET "internal_3rdparty_eigen3")
+#        add_dependencies(internal_3rdparty_eigen3 ext_eigen3)
 
         # ceres
         include(${CloudViewer_3RDPARTY_DIR}/ceres-solver/ceres_build.cmake)
@@ -1712,10 +1707,10 @@ if (BUILD_RECONSTRUCTION)
         set(CERES_TARGET "3rdparty_ceres")
         add_dependencies(3rdparty_ceres ext_ceres)
         add_dependencies(ext_ceres ext_suitesparse)
-        add_dependencies(ext_ceres ext_eigen3)
+        add_dependencies(ext_ceres ext_eigen)
 
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${CERES_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${INTERNAL_EIGEN3_TARGET}")
+#        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${INTERNAL_EIGEN3_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
     endif ()
 endif ()

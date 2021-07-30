@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -121,21 +121,19 @@ void pybind_kdtreeflann(py::module &m) {
                     {"knn", "``knn`` neighbors will be searched."},
                     {"feature", "Feature data."},
                     {"data", "Matrix data."}};
-    py::class_<geometry::KDTreeFlann, std::shared_ptr<geometry::KDTreeFlann>>
+    py::class_<KDTreeFlann, std::shared_ptr<KDTreeFlann>>
             kdtreeflann(m, "KDTreeFlann",
                         "KDTree with FLANN for nearest neighbor search.");
-    kdtreeflann.def(py::init<size_t, bool>(), "leaf_size"_a = 15, "reorder"_a = true)
-            .def(py::init<const Eigen::MatrixXd&, size_t, bool>(),
-				"data"_a, "leaf_size"_a = 15, "reorder"_a = true)
-            .def("set_matrix_data", &geometry::KDTreeFlann::SetMatrixData,
+    kdtreeflann.def(py::init<>())
+            .def(py::init<const Eigen::MatrixXd &>(), "data"_a)
+            .def("set_matrix_data", &KDTreeFlann::SetMatrixData,
                  "Sets the data for the KDTree from a matrix.", "data"_a)
-            .def(py::init<const ccHObject&, size_t, bool>(),
-				"geometry"_a, "leaf_size"_a = 15, "reorder"_a = true)
-            .def("set_geometry", &geometry::KDTreeFlann::SetGeometry,
+            .def(py::init<const ccHObject &>(), "geometry"_a)
+            .def("set_geometry", &KDTreeFlann::SetGeometry,
                  "Sets the data for the KDTree from geometry.", "geometry"_a)
-            .def(py::init<const utility::Feature&, size_t, bool>(),
-				"feature"_a, "leaf_size"_a = 15, "reorder"_a = true)
-            .def("set_feature", &geometry::KDTreeFlann::SetFeature,
+            .def(py::init<const utility::Feature &>(),
+                 "feature"_a)
+            .def("set_feature", &KDTreeFlann::SetFeature,
                  "Sets the data for the KDTree from the feature data.",
                  "feature"_a)
             // Although these C++ style functions are fast by orders of
@@ -155,141 +153,147 @@ void pybind_kdtreeflann(py::module &m) {
             //.def("search_hybrid_vector_3d_in_place",
             //        &KDTreeFlann::SearchHybrid<Eigen::Vector3d>, "query"_a,
             //        "radius"_a, "max_nn"_a, "indices"_a, "distance2"_a)
-            .def("search_vector_3d",
-                 [](const geometry::KDTreeFlann &tree,
-                    const Eigen::Vector3d &query,
-                    const geometry::KDTreeSearchParam &param) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.Search(query, param, indices, distance2);
-                     if (k < 0)
-                         throw std::runtime_error("search_vector_3d() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "search_param"_a)
-			.def("query_vector_3d",
-				 [](const geometry::KDTreeFlann &tree,
-					const std::vector<Eigen::Vector3d> &queries,
-					const geometry::KDTreeSearchParam &param) {
-					 std::vector < std::vector<int> > indices;
-					 std::vector < std::vector<double> > distance2;
-					 int k = tree.Query(queries, param, indices, distance2);
-					 if (k < 0)
-						 throw std::runtime_error("search_vector_3d() error!");
-					 return std::make_tuple(k, indices, distance2);
-				},
-				"queries"_a, "search_param"_a)
-            .def("search_knn_vector_3d",
-                 [](const geometry::KDTreeFlann &tree,
-                    const Eigen::Vector3d &query, int knn) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.SearchKNN(query, knn, indices, distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_knn_vector_3d() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "knn"_a)
-            .def("search_radius_vector_3d",
-                 [](const geometry::KDTreeFlann &tree,
-                    const Eigen::Vector3d &query, double radius) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.SearchRadius(query, radius, indices,
-                                               distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_radius_vector_3d() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "radius"_a)
-            .def("search_hybrid_vector_3d",
-                 [](const geometry::KDTreeFlann &tree,
-                    const Eigen::Vector3d &query, double radius, int max_nn) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.SearchHybrid(query, radius, max_nn, indices,
-                                               distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_hybrid_vector_3d() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "radius"_a, "max_nn"_a)
-            .def("search_vector_xd",
-                 [](const geometry::KDTreeFlann &tree,
-                    const Eigen::VectorXd &query,
-                    const geometry::KDTreeSearchParam &param) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.Search(query, param, indices, distance2);
-                     if (k < 0)
-                         throw std::runtime_error("search_vector_xd() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "search_param"_a)
+            .def(
+                    "search_vector_3d",
+                    [](const geometry::KDTreeFlann &tree,
+                       const Eigen::Vector3d &query,
+                       const geometry::KDTreeSearchParam &param) {
+                        std::vector<int> indices;
+                        std::vector<double> distance2;
+                        int k = tree.Search(query, param, indices, distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_vector_3d() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "search_param"_a)
+            .def(
+                    "query_vector_3d",
+                    [](const geometry::KDTreeFlann &tree,
+                       const std::vector<Eigen::Vector3d> &queries,
+                       const geometry::KDTreeSearchParam &param) {
+                        std::vector<std::vector<int>> indices;
+                        std::vector<std::vector<double>> distance2;
+                        int k = tree.Query(queries, param, indices, distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_vector_3d() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "queries"_a, "search_param"_a)
+            .def(
+                    "search_knn_vector_3d",
+                    [](const geometry::KDTreeFlann &tree,
+                       const Eigen::Vector3d &query, int knn) {
+                        std::vector<int> indices;
+                        std::vector<double> distance2;
+                        int k = tree.SearchKNN(query, knn, indices, distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_knn_vector_3d() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "knn"_a)
+            .def(
+                    "search_radius_vector_3d",
+                    [](const geometry::KDTreeFlann &tree,
+                       const Eigen::Vector3d &query, double radius) {
+                        std::vector<int> indices;
+                        std::vector<double> distance2;
+                        int k = tree.SearchRadius(query, radius, indices,
+                                                  distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_radius_vector_3d() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "radius"_a)
+            .def(
+                    "search_hybrid_vector_3d",
+                    [](const geometry::KDTreeFlann &tree,
+                       const Eigen::Vector3d &query, double radius,
+                       int max_nn) {
+                        std::vector<int> indices;
+                        std::vector<double> distance2;
+                        int k = tree.SearchHybrid(query, radius, max_nn,
+                                                  indices, distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_hybrid_vector_3d() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "radius"_a, "max_nn"_a)
+            .def(
+                    "search_vector_xd",
+                    [](const geometry::KDTreeFlann &tree,
+                       const Eigen::VectorXd &query,
+                       const geometry::KDTreeSearchParam &param) {
+                        std::vector<int> indices;
+                        std::vector<double> distance2;
+                        int k = tree.Search(query, param, indices, distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_vector_xd() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "search_param"_a)
 
-			.def("query_vector_xd",
-				 [](const geometry::KDTreeFlann &tree,
-					const std::vector<Eigen::VectorXd> &queries,
-					const geometry::KDTreeSearchParam &param) {
-					 std::vector < std::vector<int> > indices;
-					 std::vector < std::vector<double> > distance2;
-					 int k = tree.Query(queries, param, indices, distance2);
-					 if (k < 0)
-						 throw std::runtime_error("query_vector_xd() error!");
-					 return std::make_tuple(k, indices, distance2);
-				 },
-				 "queries"_a, "search_param"_a)
-            .def("search_knn_vector_xd",
-                 [](const geometry::KDTreeFlann &tree,
-                    const Eigen::VectorXd &query, int knn) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.SearchKNN(query, knn, indices, distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_knn_vector_xd() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "knn"_a)
-            .def("search_radius_vector_xd",
-                 [](const geometry::KDTreeFlann &tree,
-                    const Eigen::VectorXd &query, double radius) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.SearchRadius(query, radius, indices,
-                                               distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_radius_vector_xd() error!");
-                     return std::make_tuple(k, indices, distance2);
-                 },
-                 "query"_a, "radius"_a)
-            .def("search_hybrid_vector_xd",
-                 [](const geometry::KDTreeFlann &tree,
-                    const Eigen::VectorXd &query, double radius, int max_nn) {
-                     std::vector<int> indices;
-                     std::vector<double> distance2;
-                     int k = tree.SearchHybrid(query, radius, max_nn, indices,
-                                               distance2);
-                     if (k < 0)
-                         throw std::runtime_error(
-                                 "search_hybrid_vector_xd() error!");
-                     return std::make_tuple(k, indices, distance2);
-				 },
-				"query"_a, "radius"_a, "max_nn"_a)
-			.def_readonly("data",
-				&geometry::KDTreeFlann::data_,
-				"``float64`` array of shape ``(dataset_size_*dimension_, 1)``, "
-				"use ``numpy.asarray()`` to access data.")
-			.def_readonly("data_cols",
-				&geometry::KDTreeFlann::dimension_,
-				"internal data cols")
-			.def_readonly("data_rows",
-				&geometry::KDTreeFlann::dataset_size_,
-				"internal data rows");
+            .def(
+                    "query_vector_xd",
+                    [](const geometry::KDTreeFlann &tree,
+                       const std::vector<Eigen::VectorXd> &queries,
+                       const geometry::KDTreeSearchParam &param) {
+                        std::vector<std::vector<int>> indices;
+                        std::vector<std::vector<double>> distance2;
+                        int k = tree.Query(queries, param, indices, distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "query_vector_xd() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "queries"_a, "search_param"_a)
+            .def(
+                    "search_knn_vector_xd",
+                    [](const geometry::KDTreeFlann &tree,
+                       const Eigen::VectorXd &query, int knn) {
+                        std::vector<int> indices;
+                        std::vector<double> distance2;
+                        int k = tree.SearchKNN(query, knn, indices, distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_knn_vector_xd() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "knn"_a)
+            .def(
+                    "search_radius_vector_xd",
+                    [](const geometry::KDTreeFlann &tree,
+                       const Eigen::VectorXd &query, double radius) {
+                        std::vector<int> indices;
+                        std::vector<double> distance2;
+                        int k = tree.SearchRadius(query, radius, indices,
+                                                  distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_radius_vector_xd() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "radius"_a)
+            .def(
+                    "search_hybrid_vector_xd",
+                    [](const geometry::KDTreeFlann &tree,
+                       const Eigen::VectorXd &query, double radius,
+                       int max_nn) {
+                        std::vector<int> indices;
+                        std::vector<double> distance2;
+                        int k = tree.SearchHybrid(query, radius, max_nn,
+                                                  indices, distance2);
+                        if (k < 0)
+                            throw std::runtime_error(
+                                    "search_hybrid_vector_xd() error!");
+                        return std::make_tuple(k, indices, distance2);
+                    },
+                    "query"_a, "radius"_a, "max_nn"_a);
     docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_hybrid_vector_3d",
                                     map_kd_tree_flann_method_docs);
     docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_hybrid_vector_xd",

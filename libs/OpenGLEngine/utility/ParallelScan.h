@@ -27,31 +27,10 @@
 #pragma once
 
 #include <tbb/parallel_for.h>
+#include <tbb/parallel_scan.h>
 
-#include "tbb/parallel_scan.h"
-
-#ifdef CV_WINDOWS
-#if TBB_INTERFACE_VERSION >= 20000
-// Check if the C++ standard library implements parallel algorithms
-// and use this over parallelstl to avoid conflicts.
-// Clang does not implement it so far, so checking for C++17 is not sufficient.
-#ifdef __cpp_lib_parallel_algorithm
-#include <execution>
-#include <numeric>
-#else
-#include "pstl/execution"
-#include "pstl/numeric"
-
-// parallelstl incorrectly assumes MSVC to unconditionally implement
-// parallel algorithms even if __cpp_lib_parallel_algorithm is not defined.
-// So manually include the header which pulls all "pstl::execution" definitions
-// into the "std" namespace.
-#if __PSTL_CPP17_EXECUTION_POLICIES_PRESENT
-#include <pstl/internal/glue_execution_defs.h>
-#endif
-#endif
-#else
 #if TBB_INTERFACE_VERSION >= 10000
+
 // Check if the C++ standard library implements parallel algorithms
 // and use this over parallelstl to avoid conflicts.
 // Clang does not implement it so far, so checking for C++17 is not sufficient.
@@ -59,8 +38,8 @@
 #include <execution>
 #include <numeric>
 #else
-#include "pstl/execution"
-#include "pstl/numeric"
+#include <pstl/execution>
+#include <pstl/numeric>
 
 // parallelstl incorrectly assumes MSVC to unconditionally implement
 // parallel algorithms even if __cpp_lib_parallel_algorithm is not defined.
@@ -69,6 +48,7 @@
 #if __PSTL_CPP17_EXECUTION_POLICIES_PRESENT
 #include <pstl/internal/glue_execution_defs.h>
 #endif
+
 #endif
 #endif
 

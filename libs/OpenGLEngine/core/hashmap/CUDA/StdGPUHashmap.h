@@ -366,7 +366,7 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
 
     // Allocate buffer for key values.
     this->buffer_ =
-            cloudViewer::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
+            std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_value_, this->device_);
 
     buffer_accessor_.HostAllocate(this->device_);

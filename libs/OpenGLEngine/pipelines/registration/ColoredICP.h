@@ -36,10 +36,6 @@
 class ccPointCloud;
 namespace cloudViewer {
 
-namespace geometry {
-class PointCloud;
-}
-
 namespace pipelines {
 namespace registration {
 

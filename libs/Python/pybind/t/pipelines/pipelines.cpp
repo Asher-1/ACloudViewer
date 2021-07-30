@@ -26,7 +26,7 @@
 
 #include "pybind/t/pipelines/pipelines.h"
 
-#include "pybind/open3d_pybind.h"
+#include "pybind/cloudViewer_pybind.h"
 #include "pybind/t/pipelines/odometry/odometry.h"
 #include "pybind/t/pipelines/registration/registration.h"
 #include "pybind/t/pipelines/slac/slac.h"

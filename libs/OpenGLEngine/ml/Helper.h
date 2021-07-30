@@ -69,7 +69,7 @@ inline void __CLOUDVIEWER_ML_CUDA_DRIVER_CHECK(CUresult err,
     }
 }
 
-inline cudaStream_t GetDefaultStream() { (cudaStream_t)0; }
+inline cudaStream_t GetDefaultStream() { return (cudaStream_t)0; }
 
 inline int GetDevice(cudaStream_t stream) {
     if (stream == GetDefaultStream()) {

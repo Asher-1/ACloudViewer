@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,12 +26,12 @@
 
 #pragma once
 
+#include <Helper.h>
 #include <thrust/sequence.h>
 
 #include <cub/cub.cuh>
 
 #include "ml/impl/misc/MemoryAllocation.h"
-#include <Helper.h>
 #include "utility/MiniVec.h"
 
 namespace cloudViewer {
@@ -395,9 +395,9 @@ void CopyPointIndices(const cudaStream_t& stream,
 template <class T, int NDIM, class OUTPUT_ALLOCATOR>
 void VoxelizeCUDA(const cudaStream_t& stream,
                   void* temp,
-                  size_t& temp_size,
+                  std::size_t& temp_size,
                   int texture_alignment,
-                  size_t num_points,
+                  std::size_t num_points,
                   const T* const points,
                   const T* const voxel_size,
                   const T* const points_range_min,
@@ -548,7 +548,7 @@ void VoxelizeCUDA(const cudaStream_t& stream,
         cudaMemsetAsync(out_voxel_row_splits, 0, sizeof(int64_t), stream);
     }
 
-    if (max_points_per_voxel < num_points) {
+    if (static_cast<std::size_t>(max_points_per_voxel) < num_points) {
         // Limit the number of output points to max_points_per_voxel by
         // limiting the unique_hashes_count.
         if (!get_temp_size) {

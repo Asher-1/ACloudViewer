@@ -26,14 +26,16 @@
 
 #pragma once
 
+#include "CVCoreLib.h"
+
 namespace cloudViewer {
 namespace utility {
 
 /// Estimate the maximum number of threads to be used in a parallel region.
-int EstimateMaxThreads();
+int CV_CORE_LIB_API EstimateMaxThreads();
 
 /// Returns true if in an parallel section.
-bool InParallel();
+bool CV_CORE_LIB_API InParallel();
 
 }  // namespace utility
 }  // namespace cloudViewer

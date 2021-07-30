@@ -128,7 +128,7 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
     const int out_channels = filter_dims[filter_dims.size() - 1];
 
     int num_kernel_elements = 1;
-    for (int i = 0; i < filter_dims.size() - 2; ++i)
+    for (std::size_t i = 0; i < filter_dims.size() - 2; ++i)
         num_kernel_elements *= filter_dims[i];
 
     // this defines how much temporary storage we need at least

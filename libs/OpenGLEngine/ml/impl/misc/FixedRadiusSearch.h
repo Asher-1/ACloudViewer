@@ -27,14 +27,15 @@
 #pragma once
 
 #include <tbb/parallel_for.h>
-
 #include <set>
 
-#include "core/Atomic.h"
-#include "ml/impl/misc/NeighborSearchCommon.h"
+#include <Eigen/Core>
 #include <Eigen.h>
 #include <Logging.h>
+
+#include "core/Atomic.h"
 #include "utility/ParallelScan.h"
+#include "ml/impl/misc/NeighborSearchCommon.h"
 
 namespace cloudViewer {
 namespace ml {

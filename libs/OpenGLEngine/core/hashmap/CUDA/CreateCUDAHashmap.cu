@@ -56,12 +56,12 @@ std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
     if (backend == HashmapBackend::Default ||
         backend == HashmapBackend::StdGPU) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
-            device_hashmap_ptr = cloudViewer::make_shared<StdGPUHashmap<key_t, hash_t>>(
+            device_hashmap_ptr = std::make_shared<StdGPUHashmap<key_t, hash_t>>(
                     init_capacity, dsize_key, dsize_value, device);
         });
     } else {  // if (backend == HashmapBackend::Slab) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
-            device_hashmap_ptr = cloudViewer::make_shared<SlabHashmap<key_t, hash_t>>(
+            device_hashmap_ptr = std::make_shared<SlabHashmap<key_t, hash_t>>(
                     init_capacity, dsize_key, dsize_value, device);
         });
     }

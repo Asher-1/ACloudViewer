@@ -179,14 +179,14 @@ int CV_CORE_LIB_API UniformRandInt(const int min, const int max);
 /// \param power The possible random numbers are: n * 1 / (2 ^ power),
 ///              where n = 0, 1, 2, ..., (2 ^ power - 1).
 template <typename T>
-T UniformRandFloatBinaryFriendly(unsigned int power = 5) {
+T CV_CORE_LIB_API UniformRandFloatBinaryFriendly(unsigned int power = 5) {
     double p = std::pow(2, power);
     int n = UniformRandInt(0, p - 1);
     return static_cast<T>(1. / p * n);
 }
 
 /// Returns current time stamp.
-std::string GetCurrentTimeStamp();
+std::string CV_CORE_LIB_API GetCurrentTimeStamp();
 
 }  // namespace utility
 }  // namespace cloudViewer
