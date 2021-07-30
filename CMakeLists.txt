@@ -1026,46 +1026,43 @@ endif ()
 cloudviewer_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
 message(STATUS "========================================================================")
 message(STATUS "Third-Party Dependencies:")
-set(deps
-        EIGEN3
-        FAISS
-        FILAMENT
-        FLANN
-        FMT
-        GLEW
-        GLFW
-        GOOGLETEST
-        IMGUI
-        IPPICV
-        JPEG
-        JSONCPP
-        LIBLZF
-        OPENGL
-        PNG
-        PYBIND11
-        QHULL
-        LIBREALSENSE
-        TINYFILEDIALOGS
-        TINYGLTF
-        TINYOBJLOADER
-        WEBRTC
+set(3RDPARTY_DEPENDENCIES
+    Eigen3
+    faiss
+    filament
+    fmt
+    GLEW
+    GLFW
+    imgui
+    ippicv
+    JPEG
+    jsoncpp
+    liblzf
+    OpenGL
+    PNG
+    qhullcpp
+    librealsense
+    tinyfiledialogs
+    TinyGLTF
+    tinyobjloader
+    WebRTC
         )
 
-foreach (dep IN ITEMS ${deps})
-    if (${dep}_TARGET)
-        if (NOT USE_SYSTEM_${dep})
-            set(usage "yes (build from source)")
-        else ()
-            set(usage "yes")
-            if (${dep}_VERSION_STRING)
-                set(usage "${usage} (v${${dep}_VERSION_STRING})")
-            elseif (${dep}_VERSION)
-                set(usage "${usage} (v${${dep}_VERSION})")
-            endif ()
-        endif ()
-    else ()
-        set(usage "no")
-    endif ()
-    cloudviewer_aligned_print("${dep}" "${usage}")
-endforeach ()
+foreach(dep IN LISTS 3RDPARTY_DEPENDENCIES)
+    string(TOLOWER "${dep}" dep_lower)
+    string(TOUPPER "${dep}" dep_upper)
+    if(TARGET 3rdparty_${dep_lower})
+        if(NOT USE_SYSTEM_${dep_upper})
+            cloudviewer_aligned_print("${dep}" "yes (build from source)")
+        else()
+            if(3rdparty_${dep_lower}_VERSION)
+                cloudviewer_aligned_print("${dep}" "yes (v${3rdparty_${dep_lower}_VERSION})")
+            else()
+                cloudviewer_aligned_print("${dep}" "yes")
+            endif()
+        endif()
+    else()
+        cloudviewer_aligned_print("${dep}" "no")
+    endif()
+endforeach()
 message(STATUS "========================================================================")
