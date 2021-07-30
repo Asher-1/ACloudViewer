@@ -252,7 +252,7 @@ private:
                 fmt::format_args args) const;
 
 private:
-    struct Impl;
+    struct CV_CORE_LIB_API Impl;
     std::unique_ptr<Impl> impl_;
 };
 
