@@ -33,9 +33,4 @@ if (PLUGIN_STANDARD_QCANUPO)
     add_subdirectory(ui)
 
     target_link_libraries(${PROJECT_NAME} 3rdparty_dlib)
-    # Don't forget the DLIB 'source.cpp' file
-    target_sources(${PROJECT_NAME}
-            PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/contrib/all/source.cpp
-            )
 endif ()

@@ -1,6 +1,6 @@
 include(ExternalProject)
 
-set(lib_name xerces)
+set(lib_name xerces-c)
 
 ExternalProject_Add(
     ext_xerces
@@ -18,6 +18,14 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_xerces INSTALL_DIR)
-set(XERCES_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
+set(XERCES_INCLUDE_DIRS ${INSTALL_DIR}/include/xercesc/) # "/" is critical.
 set(XERCES_LIB_DIR ${INSTALL_DIR}/lib)
 set(XERCES_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
+
+if (WIN32)
+    set(XERCES_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:D>)
+else()
+    set(XERCES_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
+    set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_CERES_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
+    install_ext( FILES ${XERCES_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
+endif()
