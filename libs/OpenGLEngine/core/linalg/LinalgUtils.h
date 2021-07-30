@@ -40,10 +40,10 @@ namespace core {
 
 #define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)       \
     [&] {                                                   \
-        if (DTYPE == cloudViewer:core::Dtype::Float32) {        \
+        if (DTYPE == cloudViewer::core::Dtype::Float32) {        \
             using scalar_t = float;                         \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer:core::Dtype::Float64) { \
+        } else if (DTYPE == cloudViewer::core::Dtype::Float64) { \
             using scalar_t = double;                        \
             return __VA_ARGS__();                           \
         } else {                                            \

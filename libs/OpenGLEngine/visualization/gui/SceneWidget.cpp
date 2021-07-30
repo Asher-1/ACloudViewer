@@ -33,7 +33,7 @@
 #include <unordered_set>
 
 #include "camera/PinholeCameraIntrinsic.h"
-#include "geometry/BoundingVolume.h"
+#include <ecvBBox.h>
 #include <Image.h>
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Color.h"
@@ -228,7 +228,7 @@ public:
         bool redraw = false;
         if (!keys_down_.empty()) {
             auto& bounds = camera_controls_->GetBoundingBox();
-            const float dist = float(0.0025 * bounds.GetExtent().norm());
+            const float dist = float(0.0025 * bounds.getExtent().norm());
             const float angle_rad = 0.0075f;
 
             auto HasKey = [this](uint32_t key) -> bool {
@@ -883,7 +883,7 @@ void SceneWidget::SetupCamera(
     // and the center of rotation needs to be visually consistent.
     Eigen::Vector3f forward = camera->GetForwardVector();
     Eigen::Vector3f pos = camera->GetPosition();
-    Eigen::Vector3f toCenter = scene_bounds.GetCenter().cast<float>() - pos;
+    Eigen::Vector3f toCenter = scene_bounds.getGeometryCenter().cast<float>() - pos;
     float dist = toCenter.dot(forward);
     Eigen::Vector3f cor = pos + dist * forward;
     impl_->controls_->SetCenterOfRotation(cor);
@@ -996,7 +996,7 @@ void SceneWidget::SetViewControls(Controls mode) {
         // position as the user moves the mouse. Use the distance to the
         // center of the model, which should be reasonable.
         auto camera = GetCamera();
-        Eigen::Vector3f to_center = impl_->bounds_.GetCenter().cast<float>() -
+        Eigen::Vector3f to_center = impl_->bounds_.getGeometryCenter().cast<float>() -
                                     camera->GetPosition();
         Eigen::Vector3f forward = camera->GetForwardVector();
         Eigen::Vector3f center =
@@ -1054,8 +1054,8 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     // (0, 0, 0), and this will result in the far plane being not being
     // far enough and clipping the model. To test, use
     // https://docs.google.com/uc?export=download&id=0B-ePgl6HF260ODdvT09Xc1JxOFE
-    float max_dim = float(1.25 * impl_->bounds_.GetMaxExtent());
-    Eigen::Vector3f center = impl_->bounds_.GetCenter().cast<float>();
+    float max_dim = float(1.25 * impl_->bounds_.getMaxExtent());
+    Eigen::Vector3f center = impl_->bounds_.getGeometryCenter().cast<float>();
     Eigen::Vector3f eye, up;
     switch (preset) {
         case CameraPreset::PLUS_X: {

@@ -1,23 +1,14 @@
 include(ExternalProject)
 
-set_local_or_remote_url(
-    DOWNLOAD_URL_PRIMARY
-    LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/suitesparse-metis-1.5.0.tar"
-    REMOTE_URLS "https://codeload.github.com/jlblancoc/suitesparse-metis-for-windows/zip/7bc503bfa2c4f1be9176147d36daf9e18340780a"
-#    REMOTE_URLS "https://github.com/jlblancoc/suitesparse-metis-for-windows/archive/refs/tags/v1.5.0.zip"
-)
-
 ExternalProject_Add(
        ext_suitesparse
-       PREFIX ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}
-       URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
+       PREFIX suitesparse
+       URL https://codeload.github.com/jlblancoc/suitesparse-metis-for-windows/zip/7bc503bfa2c4f1be9176147d36daf9e18340780a
        URL_HASH MD5=e7c27075e8e0afc9d2cf188630090946
-       DOWNLOAD_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/download/suitesparse
+       DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/suitesparse"
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
        UPDATE_COMMAND ""
-       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/suitesparse
-       BINARY_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/suitesparse_build
        INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
 	   # fix compiling bugs on windows
 	   PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${CloudViewer_3RDPARTY_DIR}/suitesparse/CMakeLists.txt <SOURCE_DIR>

@@ -42,15 +42,15 @@
 namespace cloudViewer {
 
 PYBIND11_MODULE(pybind, m) {
-    cloudViewer::utility::Logger::i().print_fcn_ = [](const std::string& msg) {
+    utility::Logger::GetInstance().SetPrintFunction([](const std::string& msg) {
         py::gil_scoped_acquire acquire;
         py::print(msg);
-    };
+    });
 
     m.doc() = "Python binding of CloudViewer";
 
-    // Check Open3D CXX11_ABI with
-    // import open3d as o3d; print(o3d.open3d_pybind._GLIBCXX_USE_CXX11_ABI)
+    // Check CloudViewer CXX11_ABI with
+    // import cloudViewer as cv3d; print(cv3d.cloudViewer_pybind._GLIBCXX_USE_CXX11_ABI)
     m.add_object("_GLIBCXX_USE_CXX11_ABI",
                  _GLIBCXX_USE_CXX11_ABI ? Py_True : Py_False);
 

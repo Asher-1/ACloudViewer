@@ -8,23 +8,20 @@
 
 include(ExternalProject)
 
-
 ExternalProject_Add(
-    ext_boost
-    PREFIX boost
-    GIT_REPOSITORY https://github.com/boostorg/boost.git
-    GIT_TAG boost-1.73.0
-    GIT_SUBMODULES tools/boostdep libs/predef # Only need a subset of boost
-    GIT_SHALLOW ON                            # git clone --depth 1
-    GIT_SUBMODULES_RECURSE OFF
-    BUILD_IN_SOURCE ON
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND echo "Running Boost build..."
-    COMMAND python tools/boostdep/depinst/depinst.py predef
-    COMMAND $<IF:$<PLATFORM_ID:Windows>,bootstrap.bat,./bootstrap.sh>
-    COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> headers
-    UPDATE_COMMAND ""
-    INSTALL_COMMAND ""
+        ext_boost
+        PREFIX boost
+        URL https://github.com/boostorg/boost/archive/refs/tags/boost-1.73.0.tar.gz
+        URL_HASH SHA256=2f5f2b789edb00260aa71f03189da5f21cf4b5617c4fbba709e9fbcfc76a2f1e
+        DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/boost"
+        BUILD_IN_SOURCE ON
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND echo "Running Boost build..."
+        COMMAND python tools/boostdep/depinst/depinst.py predef
+        COMMAND $<IF:$<PLATFORM_ID:Windows>,bootstrap.bat,./bootstrap.sh>
+        COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> headers
+        UPDATE_COMMAND ""
+        INSTALL_COMMAND ""
 )
 
 ExternalProject_Get_Property(ext_boost SOURCE_DIR)

@@ -26,7 +26,7 @@
 
 #include <ecvMesh.h>
 
-#include "geometry/BoundingVolume.h"
+#include <ecvBBox.h>
 #include <ecvPointCloud.h>
 #include "tests/UnitTest.h"
 

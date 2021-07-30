@@ -27,11 +27,13 @@
 
 #include <memory>
 
+#include "CVCoreLib.h"
+
 namespace cloudViewer {
 namespace utility {
 
 /// \brief CPU information.
-class CPUInfo {
+class CV_CORE_LIB_API CPUInfo {
 public:
     static CPUInfo& GetInstance();
 

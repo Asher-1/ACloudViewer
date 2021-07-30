@@ -27,6 +27,7 @@
 #include "io/rpc/RemoteFunctions.h"
 
 #include <Logging.h>
+#include <ecvHObjectCaster.h>
 
 #include <Eigen/Geometry>
 #include <zmq.hpp>

@@ -139,9 +139,9 @@ target_link_libraries(cloudViewer_torch_ops PRIVATE
     3rdparty_tbb
 )
 
-#target_link_libraries(cloudViewer_torch_ops PRIVATE
-#    CVCoreLib
-#)
+target_link_libraries(cloudViewer_torch_ops PRIVATE
+    CVCoreLib
+)
 
 if (BUILD_CUDA_MODULE)
     target_link_libraries(cloudViewer_torch_ops PRIVATE

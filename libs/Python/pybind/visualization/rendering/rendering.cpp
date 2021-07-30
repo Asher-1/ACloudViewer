@@ -387,7 +387,7 @@ void pybind_rendering_classes(py::module &m) {
     py::class_<TriangleMeshModel::MeshInfo> tri_model_info(tri_model,
                                                            "MeshInfo", "");
     tri_model_info
-            .def(py::init([](std::shared_ptr<geometry::TriangleMesh> mesh,
+            .def(py::init([](std::shared_ptr<ccMesh> mesh,
                              const std::string &name,
                              unsigned int material_idx) {
                 return TriangleMeshModel::MeshInfo{mesh, name, material_idx};

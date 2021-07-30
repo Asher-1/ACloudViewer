@@ -32,6 +32,8 @@
 #include "visualization/rendering/RendererHandle.h"
 #include "visualization/rendering/View.h"
 
+class ccBBox;
+class ccHObject;
 namespace cloudViewer {
 
 namespace camera {

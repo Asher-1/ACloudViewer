@@ -332,7 +332,7 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
 
     // Allocate buffer for key values.
     this->buffer_ =
-            cloudViewer::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
+            std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_value_, this->device_);
     buffer_accessor_.HostAllocate(this->device_);
     buffer_accessor_.Setup(this->capacity_, this->dsize_key_,
@@ -342,7 +342,7 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
     buffer_accessor_.Reset(this->device_);
 
     // Allocate buffer for linked list nodes.
-    node_mgr_ = cloudViewer::make_shared<SlabNodeManager>(this->device_);
+    node_mgr_ = std::make_shared<SlabNodeManager>(this->device_);
 
     // Allocate linked list heads.
     impl_.bucket_list_head_ = static_cast<Slab*>(MemoryManager::Malloc(
