@@ -217,8 +217,10 @@ const ccBBox& ccBBox::operator*=(const cloudViewer::SquareMatrix& mat) {
 
         for (int i = 0; i < 8; ++i) {
             add(mat * boxCorners[i]);
-        }
+        }   
     }
+
+    return *this;
 }
 
 const ccBBox& ccBBox::operator+=(const Eigen::Vector3d& V) {
@@ -268,4 +270,6 @@ const ccBBox& ccBBox::operator*=(const Eigen::Matrix3d& mat) {
             add(tempMat * boxCorners[i]);
         }
     }
+
+    return *this;
 }

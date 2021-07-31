@@ -656,17 +656,6 @@ endif ()
 set(INTERNAL_EIGEN3_TARGET "3rdparty_eigen3")
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_eigen3)
 
-# Flann
-#if (USE_SYSTEM_FLANN)
-#    pkg_config_3rdparty_library(3rdparty_flann flann)
-#endif ()
-#if (NOT USE_SYSTEM_FLANN OR NOT 3rdparty_flann_FOUND)
-#    build_3rdparty_library(3rdparty_flann DIRECTORY flann)
-#endif ()
-#message(STATUS "INTERNAL_FLANN_DIR: " ${CloudViewer_3RDPARTY_DIR}/flann)
-#set(FLANN_TARGET "3rdparty_flann")
-#list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FLANN_TARGET}")
-
 # Nanoflann
 include(${CloudViewer_3RDPARTY_DIR}/nanoflann/nanoflann.cmake)
 import_3rdparty_library(3rdparty_nanoflann
@@ -1715,10 +1704,15 @@ if (BUILD_RECONSTRUCTION)
     endif ()
 endif ()
 
-# ransac_sd.
-#Causes the sub clouds to be generated as partial clones of original cloud
-set(RANSAC_LIB_DIR "${CloudViewer_3RDPARTY_DIR}/RANSAC_SD_orig" CACHE PATH "RANSAC lib path")
-add_subdirectory("${RANSAC_LIB_DIR}")
+# ransacSD
+include(${CloudViewer_3RDPARTY_DIR}/RANSAC_SD/RANSAC_SD.cmake)
+import_3rdparty_library(3rdparty_ransacSD
+        INCLUDE_DIRS ${RANSACSD_INCLUDE_DIRS}
+		LIB_DIR ${RANSACSD_LIB_DIR}
+		LIBRARIES ${RANSACSD_LIBRARIES}
+        DEPENDS ext_ransacSD
+        )
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_ransacSD)
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS "")
 

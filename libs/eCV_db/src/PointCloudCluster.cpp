@@ -214,7 +214,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
     this->getBoundingBox(bbMin, bbMax);
     const CCVector3d& globalShift = this->getGlobalShift();
     double globalScale = this->getGlobalScale();
-    ::PointCloud cloud;
+    ransac::RansacPointCloud cloud;
     {
         try {
             cloud.reserve(count);
@@ -226,7 +226,7 @@ geometry::RansacResults ccPointCloud::executeRANSAC(
         }
 
         // default point & normal
-        ::Point Pt;
+        ransac::RansacPoint Pt;
         Pt.normal[0] = 0.0;
         Pt.normal[1] = 0.0;
         Pt.normal[2] = 0.0;

@@ -5,16 +5,7 @@ if (PLUGIN_STANDARD_QCANUPO)
 
     AddPlugin(NAME ${PROJECT_NAME})
 
-    #    include_directories( DLIB_ROOT )
-
-    # set( DLIB_ROOT "DLIB_ROOT" CACHE PATH "DLib library root directory" )
-    # if ( NOT DLIB_ROOT )
-    # message( SEND_ERROR "No DLib library root specified (DLIB_ROOT)" )
-    # else()
-    # include_directories( ${DLIB_ROOT} )
-    # endif()
-
-    include(contrib/dlib_build.cmake)
+    include(cmake/dlib_build.cmake)
     import_3rdparty_library(3rdparty_dlib
             INCLUDE_DIRS ${DLIB_INCLUDE_DIRS}
             LIB_DIR ${DLIB_LIB_DIR}
