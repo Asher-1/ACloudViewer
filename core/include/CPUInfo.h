@@ -35,6 +35,12 @@ namespace utility {
 /// \brief CPU information.
 class CV_CORE_LIB_API CPUInfo {
 public:
+    struct CV_CORE_LIB_API Impl {
+        int num_cores_;
+        int num_threads_;
+    };
+
+public:
     static CPUInfo& GetInstance();
 
     ~CPUInfo() = default;
@@ -55,7 +61,6 @@ public:
 
 private:
     CPUInfo();
-    struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 

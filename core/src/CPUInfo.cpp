@@ -48,11 +48,6 @@
 namespace cloudViewer {
 namespace utility {
 
-struct CPUInfo::Impl {
-    int num_cores_;
-    int num_threads_;
-};
-
 /// Returns the number of physical CPU cores.
 static int PhysicalConcurrency() {
     try {
