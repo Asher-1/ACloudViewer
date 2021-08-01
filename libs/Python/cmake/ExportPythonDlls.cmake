@@ -5,7 +5,10 @@ function(export_python_dlls) # 1 argument: ARGV0 = destination directory
 
         # trim PYTHON_EXECUTABLE path if needed
         get_filename_component(ECV_PYTHON_DIR ${PYTHON_EXECUTABLE} PATH)
-        set(PYTHON_DLL "${ECV_PYTHON_DIR}/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.dll")
+        set(PYTHON_DLL "${ECV_PYTHON_DIR}/python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}.dll")
+		copy_shared_library(${PROJECT_NAME}
+			LIB_DIR      ${ECV_PYTHON_DIR}
+			LIBRARIES    "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
         copy_files("${PYTHON_DLL}" "${ARGV0}")
         unset(PYTHON_DLL)
 

@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "CloudViewer.h"
+
 #include <ecvHObjectCaster.h>
 
 #include <iostream>
-
-#include "CloudViewer.h"
 
 using namespace cloudViewer;
 

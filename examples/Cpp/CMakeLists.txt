@@ -13,6 +13,10 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
     foreach (DEPENDENCY IN LISTS DEPENDENCIES)
         target_link_libraries(${EXAMPLE_CPP_NAME} ${DEPENDENCY})
     endforeach ()
+	
+	target_link_libraries(${EXAMPLE_CPP_NAME}
+			${INTERNAL_EIGEN3_TARGET}
+			)
 
     target_link_libraries(${EXAMPLE_CPP_NAME}
             ECV_DB_LIB

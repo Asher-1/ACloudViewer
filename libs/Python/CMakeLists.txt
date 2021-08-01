@@ -80,6 +80,10 @@ if (BUILD_PYTHON_MODULE)
 
     endif ()
 
+	target_link_libraries(${PROJECT_NAME}
+			${INTERNAL_EIGEN3_TARGET}
+			)
+			
     # Add custom preprocessor definitions
     if (WIN32)
         # Do not treat includes from IMPORTED target as SYSTEM (Python headers in pybind11::embed).
