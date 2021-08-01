@@ -405,7 +405,7 @@ function(import_3rdparty_library name)
                 set(installed_library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_${name}_${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
             endif ()
 
-            message("thirdparty lib: ${arg_LIB_DIR}/${library_filename}")
+            #message("thirdparty lib: ${arg_LIB_DIR}/${library_filename}")
             # Apple compiler ld
             target_link_libraries(${name} INTERFACE
                     "$<BUILD_INTERFACE:$<$<AND:${HIDDEN},${FLAG_load_hidden}>:-load_hidden >${arg_LIB_DIR}/${library_filename}>")
@@ -1588,7 +1588,7 @@ if (BUILD_RECONSTRUCTION)
         add_dependencies(3rdparty_lapack ext_suitesparse)
 
         # custom eigen
-#        include(${CloudViewer_3RDPARTY_DIR}/Eigen3/eigen3_build.cmake)
+#        include(${CloudViewer_3RDPARTY_DIR}/eigen/eigen3_build.cmake)
 #        import_3rdparty_library(internal_3rdparty_eigen3
 #                INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS}
 #                )

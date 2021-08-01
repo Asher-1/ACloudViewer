@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <ecvHObjectCaster.h>
-
 #include "CloudViewer.h"
+
+#include <ecvHObjectCaster.h>
 
 void PrintHelp() {
     using namespace cloudViewer;

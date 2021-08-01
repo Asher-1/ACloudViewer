@@ -6,9 +6,6 @@ endif ()
 set(PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 
 include_directories(${OPENGL_ENGINE_LIB_SOURCE_DIR})
-if (MSVC)
-    include_directories(${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc)
-endif ()
 
 set(PACKAGE_NAME pybind)
 
@@ -32,8 +29,6 @@ target_sources(pybind PRIVATE
         cloudViewer_pybind.cpp
         pybind_utils.cpp
         )
-
-set_target_properties(pybind PROPERTIES DEBUG_POSTFIX "")
 
 # Include with `#include "pybind/geometry/xxx.h`
 target_include_directories(pybind PRIVATE
@@ -146,11 +141,11 @@ if (BUNDLE_CLOUDVIEWER_ML)
 endif ()
 
 configure_file("_build_config.py.in"
-        "${CMAKE_BINARY_DIR}/lib/_build_config.py.in")
+        "${CMAKE_BINARY_DIR}/lib/_build_config.py")
 
 file(GENERATE
         OUTPUT "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
-        INPUT "${CMAKE_BINARY_DIR}/lib/_build_config.py.in"
+        INPUT "${CMAKE_BINARY_DIR}/lib/_build_config.py"
         )
 
 add_custom_target(python-package

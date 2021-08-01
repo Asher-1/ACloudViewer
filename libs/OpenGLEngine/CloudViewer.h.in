@@ -27,6 +27,7 @@
 #pragma once
 
 // Note: do not modify CloudViewer.h, modify CloudViewer.h.in instead
+#include "visualization/visualizer/ViewControl.h"  // must include first
 #include "CloudViewerConfig.h"
 #include "AutoIO.h"
 #include "CVGeom.h"
@@ -34,6 +35,7 @@
 #include "CVTools.h"
 #include "Console.h"
 #include "Logging.h"
+#include "Parallel.h"
 #include "Cpu.h"
 #include "CPUInfo.h"
 #include "Eigen.h"
@@ -141,7 +143,6 @@
 #include "visualization/utility/SelectionPolygon.h"
 #include "visualization/utility/SelectionPolygonVolume.h"
 #include "visualization/visualizer/O3DVisualizer.h"
-#include "visualization/visualizer/ViewControl.h"  // must include first
 #include "visualization/visualizer/ViewControlWithCustomAnimation.h"
 #include "visualization/visualizer/ViewControlWithEditing.h"
 #include "visualization/visualizer/Visualizer.h"

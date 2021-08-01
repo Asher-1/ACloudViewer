@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -31,7 +31,7 @@
 #include "recognition/DeepSemanticSegmentation.h"
 
 // pybind11
-#undef slots
+//#undef slots
 #include <pybind11/embed.h>
 
 // CV_CORE_LIB

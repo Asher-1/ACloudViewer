@@ -6,18 +6,11 @@ if( PLUGIN_STANDARD_QHOUGH_NORMALS )
 
 	AddPlugin( NAME ${PROJECT_NAME} )
 	
-	# set( EIGEN_ROOT_DIR "" CACHE PATH "Eigen root (contains the Eigen directory)" )
-	# if ( NOT EIGEN_ROOT_DIR )
-		# message( SEND_ERROR "No Eigen root directory specified (EIGEN_ROOT_DIR)" )
-	# endif()
-
-	# target_include_directories( ${PROJECT_NAME} PRIVATE ${EIGEN_ROOT_DIR} )
-	
 	# add_subdirectory( extern/nanoflann )
 	add_subdirectory( extern/normals_Hough )
 	add_subdirectory( include )
 	add_subdirectory( src )
 	add_subdirectory( ui )
 	
-	target_link_libraries( ${PROJECT_NAME} ${EIGEN3_TARGET} ${NANOFLANN_TARGET})
+	target_link_libraries( ${PROJECT_NAME} 3rdparty_eigen3 3rdparty_nanoflann)
 endif()
