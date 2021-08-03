@@ -42,7 +42,7 @@ std::shared_ptr<DeviceMemoryManager> MakeMemoryManager(
     std::shared_ptr<DeviceMemoryManager> device_mm;
     switch (device.GetType()) {
         case Device::DeviceType::CPU:
-            device_mm = cloudViewer::make_shared<CPUMemoryManager>();
+            device_mm = std::make_shared<CPUMemoryManager>();
             break;
 
 #ifdef BUILD_CUDA_MODULE
@@ -61,7 +61,7 @@ std::shared_ptr<DeviceMemoryManager> MakeMemoryManager(
             return device_mm;
 
         case MemoryManagerBackend::Cached:
-            return cloudViewer::make_shared<CachedMemoryManager>(device_mm);
+            return std::make_shared<CachedMemoryManager>(device_mm);
 
         default:
             utility::LogError("Unimplemented backend");

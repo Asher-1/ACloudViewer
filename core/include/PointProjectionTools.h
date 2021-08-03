@@ -50,18 +50,23 @@ public:
      **/
     struct Transformation {
         //! Rotation
-        cloudViewer::SquareMatrix R;
+        SquareMatrixd R;
         //! Translation
-        CCVector3 T;
+        CCVector3d T;
         //! Scale
-        PointCoordinateType s;
+        double s;
 
         //! Default constructor
-        Transformation() : s(PC_ONE) {}
+        Transformation() : s(1.0) {}
+
+        //! Applies the transformation to a point
+        inline CCVector3d apply(const CCVector3d& P) const {
+            return s * (R * P) + T;
+        }
 
         //! Applies the transformation to a point
         inline CCVector3 apply(const CCVector3& P) const {
-            return s * (R * P) + T;
+            return (s * (R * P) + T).toPC();
         }
 
         //! Applies the transformation to a cloud
@@ -112,8 +117,8 @@ public:
 
     //! Applys a geometrical transformation to a point cloud
     /** \param cloud the point cloud to be "transformed"
-            \param trans the geometrical transformation
-            \param progressCb the client application can get some notification
+        \param trans the geometrical transformation
+        \param progressCb the client application can get some notification
     of the process progress through this callback mechanism (see
     GenericProgressCallback) \return the "transformed" cloud
     **/
@@ -122,10 +127,20 @@ public:
             Transformation& trans,
             GenericProgressCallback* progressCb = nullptr);
 
+    //! Applies a geometrical transformation to an indexed point cloud
+    /** \param cloud the point cloud to be "transformed"
+        \param trans the geometrical transformation
+        \param progressCb the client application can get some notification of the process progress through this callback mechanism (see GenericProgressCallback)
+        \return the "transformed" cloud
+    **/
+    static PointCloud* applyTransformation(	GenericIndexedCloud* cloud,
+                                                Transformation& trans,
+                                                GenericProgressCallback* progressCb = nullptr);
+
     //! Applys a geometrical transformation to a single point
     /** \param P the point
-            \param trans the geometrical transformation
-            \return the "transformed" point
+        \param trans the geometrical transformation
+        \return the "transformed" point
     **/
     // static CCVector3 applyTransformation(const CCVector3& P, Transformation&
     // trans);

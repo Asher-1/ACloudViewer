@@ -46,7 +46,7 @@ public:
 	//inherited methods (ccGenericMesh)
 	ccGenericPointCloud* getAssociatedCloud() const override;
 	void refreshBB() override;
-	bool interpolateNormals(unsigned triIndex, const CCVector3& P, CCVector3& N) override;
+        bool interpolateNormalsBC(unsigned triIndex, const CCVector3d& w, CCVector3& N) override;
 	bool interpolateColors(unsigned triIndex, const CCVector3& P, ecvColor::Rgb& rgb) override;
 	bool getColorFromMaterial(unsigned triIndex, const CCVector3& P, ecvColor::Rgb& rgb, bool interpolateColorIfNoTexture) override;
 	bool getVertexColorFromMaterial(unsigned triIndex, unsigned char vertIndex, ecvColor::Rgb& rgb, bool returnColorIfNoTexture) override;
@@ -55,7 +55,7 @@ public:
 	int getTriangleMtlIndex(unsigned triangleIndex) const override;
 	bool hasTextures() const override;
 	TextureCoordsContainer* getTexCoordinatesTable() const override;
-    void getTexCoordinates(unsigned index, TexCoords2D*& tx) const override;
+        void getTexCoordinates(unsigned index, TexCoords2D*& tx) const override;
 	void getTriangleTexCoordinates(unsigned triIndex, TexCoords2D* &tx1, TexCoords2D* &tx2, TexCoords2D* &tx3) const override;
 	bool hasPerTriangleTexCoordIndexes() const override;
 	void getTriangleTexCoordinatesIndexes(unsigned triangleIndex, int& i1, int& i2, int& i3) const override;
@@ -84,6 +84,7 @@ public:
 	virtual void getTriangleVertices(unsigned triangleIndex, double A[3], double B[3], double C[3]) const override;
 
 	void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) override;
+        bool interpolateNormals(unsigned triIndex, const CCVector3& P, CCVector3& N) override;
 
 	//! Returns global index (i.e. relative to the associated mesh) of a given element
 	/** \param localIndex local index (i.e. relative to the internal index container)

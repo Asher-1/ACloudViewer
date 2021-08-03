@@ -30,7 +30,7 @@
 
 #include <Eigen/Eigen>
 
-#include "geometry/KDTreeFlann.h"
+#include <ecvKDTreeFlann.h>
 #include <ecvPointCloud.h>
 #include "io/PointCloudIO.h"
 #include "pipelines/registration/TransformationEstimation.h"
@@ -57,23 +57,23 @@ namespace cloudViewer {
 namespace pipelines {
 namespace registration {
 
-static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
+static std::tuple<ccPointCloud, ccPointCloud> LoadPointCloud(
         const std::string& source_filename,
         const std::string& target_filename,
         const double voxel_downsample_factor) {
-    geometry::PointCloud source;
-    geometry::PointCloud target;
+    ccPointCloud source;
+    ccPointCloud target;
 
     io::ReadPointCloud(source_filename, source, {"auto", false, false, true});
     io::ReadPointCloud(target_filename, target, {"auto", false, false, true});
 
     // Eliminates the case of impractical values (including negative).
     if (voxel_downsample_factor > 0.001) {
-        source = *source.VoxelDownSample(voxel_downsample_factor);
-        target = *target.VoxelDownSample(voxel_downsample_factor);
+        source = *source.voxelDownSample(voxel_downsample_factor);
+        target = *target.voxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                " voxelDownSample: Impractical voxel size [< 0.001], skiping "
                 "downsampling.");
     }
 
@@ -82,8 +82,8 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
 
 static void BenchmarkRegistrationICPLegacy(
         benchmark::State& state, const TransformationEstimationType& type) {
-    geometry::PointCloud source;
-    geometry::PointCloud target;
+    ccPointCloud source;
+    ccPointCloud target;
 
     std::tie(source, target) = LoadPointCloud(source_pointcloud_filename,
                                               target_pointcloud_filename,

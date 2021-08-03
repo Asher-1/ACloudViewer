@@ -1102,15 +1102,6 @@ ccBBox ccHObject::getOwnFitBB(ccGLMatrix & trans)
 	return getOwnBB();
 }
 
-bool ccHObject::getGlobalBB(CCVector3d & minCorner, CCVector3d & maxCorner)
-{
-	//by default this method returns the local bounding-box!
-	ccBBox box = getOwnBB(false);
-	minCorner = CCVector3d::fromArray(box.minCorner().u);
-	maxCorner = CCVector3d::fromArray(box.maxCorner().u);
-	return box.isValid();
-}
-
 void ccHObject::drawBB(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col)
 {
 	if (!ecvDisplayTools::GetMainWindow())

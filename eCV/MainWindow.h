@@ -92,7 +92,7 @@ class QUIWidget;
 struct dbTreeSelectionInfo;
 
 namespace Ui {
-	class MainViewerClass;
+    class MainViewerClass;
 }
 
 #ifdef USE_COLMAP_MODULE
@@ -173,14 +173,14 @@ public:
 	void onItemPicked(const PickedItem& pi) override;
 
 	//! Returns real 'dbRoot' object
-	inline virtual ccDBRoot* db() { return m_ccRoot; }
+	inline ccDBRoot* db() { return m_ccRoot; }
 
 	//! Returns the number of 3D views
 	int getRenderWindowCount() const;
 
 	//! Returns MDI area subwindow corresponding to a given 3D view
 	QMdiSubWindow* getMDISubWindow(QWidget* win);
-	virtual QWidget* getActiveWindow() override;
+	QWidget* getActiveWindow() override;
 	QWidget* getWindow(int index) const;
 	void update3DViewsMenu();
 public:
@@ -194,50 +194,52 @@ public:  // inherited from ecvMainAppInterface
 		QString title, QString xAxisLabel) override;
 	ccPickingHub* pickingHub() override { return m_pickingHub; }
 
-	virtual void toggleExclusiveFullScreen(bool state) override;
-	virtual void toggle3DView(bool state) override;
-	virtual void forceConsoleDisplay() override;
-	virtual ccHObject* dbRootObject() override;
-	//virtual void updateScreen() override;
-	virtual void refreshAll(bool only2D = false, bool forceRedraw = true) override;
-	virtual void refreshSelected(bool only2D = false, bool forceRedraw = true) override;
-    virtual void refreshObject(ccHObject* obj, bool only2D = false, bool forceRedraw = true) override;
-    virtual void refreshObjects(ccHObject::Container objs, bool only2D = false, bool forceRedraw = true) override;
-	virtual void resetSelectedBBox() override;
-	virtual void removeFromDB(ccHObject* obj, bool autoDelete = true) override;
-	virtual void setSelectedInDB(ccHObject* obj, bool selected) override;
-    virtual void putObjectBackIntoDBTree(ccHObject* obj, const ccHObjectContext& context) override;
-	virtual inline QMainWindow* getMainWindow() override { return this; }
-	virtual inline const ccHObject::Container& getSelectedEntities() const override { return m_selectedEntities; }
-	virtual ccHObjectContext removeObjectTemporarilyFromDBTree(ccHObject* obj) override;
+	void toggleExclusiveFullScreen(bool state) override;
+	void toggle3DView(bool state) override;
+	void forceConsoleDisplay() override;
+	ccHObject* dbRootObject() override;
+	//void updateScreen() override;
+	void refreshAll(bool only2D = false, bool forceRedraw = true) override;
+	void refreshSelected(bool only2D = false, bool forceRedraw = true) override;
+    void refreshObject(ccHObject* obj, bool only2D = false, bool forceRedraw = true) override;
+    void refreshObjects(ccHObject::Container objs, bool only2D = false, bool forceRedraw = true) override;
+	void resetSelectedBBox() override;
+	void removeFromDB(ccHObject* obj, bool autoDelete = true) override;
+	void setSelectedInDB(ccHObject* obj, bool selected) override;
+    void putObjectBackIntoDBTree(ccHObject* obj, const ccHObjectContext& context) override;
+	inline QMainWindow* getMainWindow() override { return this; }
+	inline const ccHObject::Container& getSelectedEntities() const override { return m_selectedEntities; }
+	ccHObjectContext removeObjectTemporarilyFromDBTree(ccHObject* obj) override;
 
-	virtual ccColorScalesManager* getColorScalesManager() override;
+	ccColorScalesManager* getColorScalesManager() override;
 
-	virtual void addToDB(ccHObject* obj,
+	void addToDB(ccHObject* obj,
 		bool updateZoom = false,
 		bool autoExpandDBTree = true,
 		bool checkDimensions = false,
 		bool autoRedraw = true) override;
 
-	virtual void registerOverlayDialog(ccOverlayDialog* dlg, Qt::Corner pos) override;
-	virtual void unregisterOverlayDialog(ccOverlayDialog* dlg) override;
-	virtual void updateOverlayDialogsPlacement() override;
+	void registerOverlayDialog(ccOverlayDialog* dlg, Qt::Corner pos) override;
+	void unregisterOverlayDialog(ccOverlayDialog* dlg) override;
+	void updateOverlayDialogsPlacement() override;
+        ccHObject* loadFile(QString filename, bool silent) override;
 
-	//virtual int getDevicePixelRatio() const override;
-	virtual void setView( CC_VIEW_ORIENTATION view ) override;
 
-	virtual void dispToConsole(QString message, ConsoleMessageLevel level = STD_CONSOLE_MESSAGE) override;
+	//int getDevicePixelRatio() const override;
+	void setView( CC_VIEW_ORIENTATION view ) override;
+
+	void dispToConsole(QString message, ConsoleMessageLevel level = STD_CONSOLE_MESSAGE) override;
 	ccUniqueIDGenerator::Shared getUniqueIDGenerator() override;
 
-	virtual void addWidgetToQMdiArea(QWidget* widget) override;
+	void addWidgetToQMdiArea(QWidget* widget) override;
 
-	virtual void increasePointSize() override;
-	virtual void decreasePointSize() override;
-	virtual void updateUI() override;
-	virtual void freezeUI(bool state) override;
-	virtual void zoomOnSelectedEntities() override;
-	virtual void zoomOnEntities(ccHObject* obj) override;
-	virtual void setGlobalZoom() override;
+	void increasePointSize() override;
+	void decreasePointSize() override;
+	void updateUI() override;
+	void freezeUI(bool state) override;
+	void zoomOnSelectedEntities() override;
+	void zoomOnEntities(ccHObject* obj) override;
+	void setGlobalZoom() override;
 
 private:
 	/***** Utils Methods ***/

@@ -7,6 +7,8 @@ add_subdirectory(pipelines)
 add_subdirectory(t/geometry)
 add_subdirectory(t/pipelines)
 
+include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
+
 target_compile_definitions(benchmarks PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
 target_compile_definitions(benchmarks PRIVATE BENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
 

@@ -77,7 +77,7 @@ static const std::string path = std::string(TEST_DATA_DIR) + "/fragment.ply";
 void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
     auto pcd = cloudViewer::io::CreatePointCloudFromFile(path);
     for (auto _ : state) {
-        pcd->VoxelDownSample(voxel_size);
+        pcd->voxelDownSample(voxel_size);
     }
 }
 

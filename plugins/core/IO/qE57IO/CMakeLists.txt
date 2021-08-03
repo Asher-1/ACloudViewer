@@ -18,7 +18,7 @@ if (PLUGIN_IO_QE57)
 			LIBRARIES    xerces-c_3_2$<$<CONFIG:Debug>:D>)
 		target_link_LIBE57FORMAT( ${PROJECT_NAME} )
 	else ()
-		include( cmake/libE57Format.cmake )
+		include( cmake/E57Format_build.cmake )
 		import_3rdparty_library(3rdparty_libE57Format
 				INCLUDE_DIRS ${E57Format_INCLUDE_DIRS}
 				LIB_DIR ${E57Format_LIB_DIR}

@@ -499,19 +499,21 @@ std::shared_ptr<ccMesh> ccMesh::filterSharpen(int number_of_iterations,
 
             size_t nb_size = mesh->adjacency_list_[vidx].size();
             if (filter_vertex) {
-                baseVertices->setPoint(
-                        vidx,
-                        prev_vertices[vidx] +
-                                strength * (prev_vertices[vidx] * nb_size -
-                                            vertex_sum));
+                CCVector3 p = prev_vertices[vidx] +
+                              static_cast<float>(strength) *
+                                      (prev_vertices[vidx] *
+                                               static_cast<float>(nb_size) -
+                                       vertex_sum);
+                baseVertices->setPoint(vidx, p);
             }
 
             if (filter_normal) {
-                baseVertices->setPointNormal(
-                        vidx, prev_vertex_normals[vidx] +
-                                      strength * (prev_vertex_normals[vidx] *
-                                                          nb_size -
-                                                  normal_sum));
+                CCVector3 p = prev_vertex_normals[vidx] +
+                              static_cast<float>(strength) *
+                                      (prev_vertex_normals[vidx] *
+                                               static_cast<float>(nb_size) -
+                                       normal_sum);
+                baseVertices->setPointNormal(vidx, p);
             }
             if (filter_color) {
                 baseVertices->setPointColor(
@@ -687,10 +689,11 @@ void ccMesh::filterSmoothLaplacianHelper(
             total_weight += weight;
 
             if (filter_vertex) {
-                vertex_sum += weight * prev_vertices[nbidx];
+                vertex_sum += static_cast<float>(weight) * prev_vertices[nbidx];
             }
             if (filter_normal) {
-                normal_sum += weight * prev_vertex_normals[nbidx];
+                normal_sum +=
+                        static_cast<float>(weight) * prev_vertex_normals[nbidx];
             }
             if (filter_color) {
                 color_sum += weight *
@@ -700,14 +703,16 @@ void ccMesh::filterSmoothLaplacianHelper(
 
         if (filter_vertex) {
             cloud->setPoint(vidx, prev_vertices[vidx] +
-                                          lambda * (vertex_sum / total_weight -
-                                                    prev_vertices[vidx]));
+                                          static_cast<float>(lambda) *
+                                                  (vertex_sum / total_weight -
+                                                   prev_vertices[vidx]));
         }
         if (filter_normal) {
             cloud->setPointNormal(vidx,
                                   prev_vertex_normals[vidx] +
-                                          lambda * (normal_sum / total_weight -
-                                                    prev_vertex_normals[vidx]));
+                                          static_cast<float>(lambda) *
+                                                  (normal_sum / total_weight -
+                                                   prev_vertex_normals[vidx]));
         }
         if (filter_color) {
             Eigen::Vector3d C =

@@ -52,7 +52,7 @@ constexpr char COMMAND_ASCII_EXPORT_ADD_COL_HEADER[]    = "ADD_HEADER";
 constexpr char COMMAND_ASCII_EXPORT_ADD_PTS_COUNT[]     = "ADD_PTS_COUNT";
 constexpr char COMMAND_MESH_EXPORT_FORMAT[]             = "M_EXPORT_FMT";
 constexpr char COMMAND_HIERARCHY_EXPORT_FORMAT[]        = "H_EXPORT_FMT";
-constexpr char COMMAND_OPEN[] = "O";                    //+file name
+constexpr char COMMAND_OPEN[]                           = "O";                    //+file name
 constexpr char COMMAND_OPEN_SKIP_LINES[]                = "SKIP"; //+number of lines to skip
 constexpr char COMMAND_SUBSAMPLE[]                      = "SS";	//+ method (RANDOM/SPATIAL/OCTREE) + parameter (resp. point count / spatial step / octree level)
 constexpr char COMMAND_EXTRACT_CC[]                     = "EXTRACT_CC";
@@ -71,6 +71,7 @@ constexpr char COMMAND_MERGE_CLOUDS[]                   = "MERGE_CLOUDS";
 constexpr char COMMAND_MERGE_MESHES[]                   = "MERGE_MESHES";
 constexpr char COMMAND_SET_ACTIVE_SF[]                  = "SET_ACTIVE_SF";
 constexpr char COMMAND_REMOVE_ALL_SFS[]                 = "REMOVE_ALL_SFS";
+constexpr char COMMAND_REMOVE_SF[]			= "REMOVE_SF";
 constexpr char COMMAND_REMOVE_SCAN_GRIDS[]              = "REMOVE_SCAN_GRIDS";
 constexpr char COMMAND_REMOVE_RGB[]                     = "REMOVE_RGB";
 constexpr char COMMAND_REMOVE_NORMALS[]                 = "REMOVE_NORMALS";
@@ -100,7 +101,7 @@ constexpr char COMMAND_DELAUNAY_BF[]                    = "BEST_FIT";
 constexpr char COMMAND_DELAUNAY_MAX_EDGE_LENGTH[]       = "MAX_EDGE_LENGTH";
 constexpr char COMMAND_SF_ARITHMETIC[]                  = "SF_ARITHMETIC";
 constexpr char COMMAND_SF_OP[]                          = "SF_OP";
-constexpr char COMMAND_RENAME_SF[]						= "RENAME_SF";
+constexpr char COMMAND_RENAME_SF[]			= "RENAME_SF";
 constexpr char COMMAND_COORD_TO_SF[]                    = "COORD_TO_SF";
 constexpr char COMMAND_EXTRACT_VERTICES[]               = "EXTRACT_VERTICES";
 constexpr char COMMAND_ICP[]                            = "ICP";
@@ -116,7 +117,7 @@ constexpr char COMMAND_ICP_USE_DATA_SF_AS_WEIGHT[]      = "DATA_SF_AS_WEIGHTS";
 constexpr char COMMAND_ICP_ROT[]                        = "ROT";
 constexpr char COMMAND_PLY_EXPORT_FORMAT[]              = "PLY_EXPORT_FMT";
 constexpr char COMMAND_COMPUTE_GRIDDED_NORMALS[]        = "COMPUTE_NORMALS";
-constexpr char COMMAND_INVERT_NORMALS[]					= "INVERT_NORMALS";
+constexpr char COMMAND_INVERT_NORMALS[]			= "INVERT_NORMALS";
 constexpr char COMMAND_COMPUTE_OCTREE_NORMALS[]         = "OCTREE_NORMALS";
 constexpr char COMMAND_CONVERT_NORMALS_TO_DIP[]         = "NORMALS_TO_DIP";
 constexpr char COMMAND_CONVERT_NORMALS_TO_SFS[]         = "NORMALS_TO_SFS";
@@ -430,8 +431,7 @@ bool CommandLoad::process(ccCommandLineInterface &cmd)
 
 	//optional parameters
 	int skipLines = 0;
-
-	bool coordinatesShiftWasEnabled = cmd.coordinatesShiftWasEnabled();
+	ccCommandLineInterface::GlobalShiftOptions globalShiftOptions;
 
 	while (!cmd.arguments().empty())
 	{
@@ -460,7 +460,7 @@ bool CommandLoad::process(ccCommandLineInterface &cmd)
 			//local option confirmed, we can move on
 			cmd.arguments().pop_front();
 
-			if (!cmd.processGlobalShiftCommand())
+			if (!cmd.processGlobalShiftCommand(globalShiftOptions))
 			{
 				//error message already issued
 				return false;
@@ -472,26 +472,21 @@ bool CommandLoad::process(ccCommandLineInterface &cmd)
 		}
 	}
 
-	if (skipLines > 0)
+	if (skipLines >= 0)
 	{
-        AsciiFilter::SetDefaultSkippedLineCount(skipLines);
+		AsciiFilter::SetDefaultSkippedLineCount(skipLines);
 	}
 
 	//open specified file
 	QString filename(cmd.arguments().takeFirst());
-	if (!cmd.importFile(filename))
+	if (!cmd.importFile(filename, globalShiftOptions))
 	{
 		return false;
 	}
 
-	if (!coordinatesShiftWasEnabled)
-	{
-		//store persistent parameters
-		cmd.storeCoordinatesShiftParams();
-	}
-
 	return true;
 }
+
 
 CommandClearNormals::CommandClearNormals()
 	: ccCommandLineInterface::Command(QObject::tr("Clears normals"), COMMAND_CLEAR_NORMALS)
@@ -651,13 +646,13 @@ bool CommandOctreeNormal::process(ccCommandLineInterface &cmd)
 			if (!cmd.arguments().isEmpty())
 			{
 				QString orient_argument = cmd.arguments().takeFirst().toUpper();
-				if (orient_argument == "PLUS_ZERO")
+				if (orient_argument == "PLUS_ZERO" || orient_argument == "PLUS_ORIGIN")
 				{
-					orientation = ccNormalVectors::Orientation::PLUS_ZERO;
+					orientation = ccNormalVectors::Orientation::PLUS_ORIGIN;
 				}
-				else if (orient_argument == "MINUS_ZERO")
+				else if (orient_argument == "MINUS_ZERO" || orient_argument == "MINUS_ORIGIN")
 				{
-					orientation = ccNormalVectors::Orientation::MINUS_ZERO;
+					orientation = ccNormalVectors::Orientation::MINUS_ORIGIN;
 				}
 				else if (orient_argument == "PLUS_BARYCENTER")
 				{
@@ -694,6 +689,10 @@ bool CommandOctreeNormal::process(ccCommandLineInterface &cmd)
 				else if (orient_argument == "PREVIOUS")
 				{
 					orientation = ccNormalVectors::Orientation::PREVIOUS;
+				}
+                                else if (orient_argument == "SENSOR_ORIGIN")
+				{
+					orientation = ccNormalVectors::Orientation::SENSOR_ORIGIN;
 				}
 				else
 				{
@@ -2246,11 +2245,11 @@ bool CommandSetActiveSF::process(ccCommandLineInterface &cmd)
 	return true;
 }
 
-CommandRemoveAllSF::CommandRemoveAllSF()
+CommandRemoveAllSFs::CommandRemoveAllSFs()
 	: ccCommandLineInterface::Command(QObject::tr("Remove all SF"), COMMAND_REMOVE_ALL_SFS)
 {}
 
-bool CommandRemoveAllSF::process(ccCommandLineInterface &cmd)
+bool CommandRemoveAllSFs::process(ccCommandLineInterface &cmd)
 {
 	//no argument required
 	for (auto &cloudDesc : cmd.clouds())
@@ -2271,6 +2270,83 @@ bool CommandRemoveAllSF::process(ccCommandLineInterface &cmd)
 			{
 				static_cast<ccPointCloud*>(cloud)->deleteAllScalarFields();
 				cloud->showSF(false);
+			}
+		}
+	}
+
+	return true;
+}
+
+CommandRemoveSF::CommandRemoveSF()
+	: ccCommandLineInterface::Command(QObject::tr("Remove a specific SF"), COMMAND_REMOVE_SF)
+{}
+
+bool CommandRemoveSF::removeSF(int sfIndex, ccPointCloud& pc)
+{
+	if (pc.getNumberOfScalarFields() > static_cast<unsigned>(sfIndex))
+	{
+		pc.deleteScalarField(sfIndex);
+		if (pc.getNumberOfScalarFields() == 0)
+		{
+			pc.showSF(false);
+		}
+		else if (pc.getCurrentDisplayedScalarFieldIndex() < 0)
+		{
+			pc.setCurrentDisplayedScalarField(static_cast<int>(pc.getNumberOfScalarFields()) - 1);
+		}
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool CommandRemoveSF::process(ccCommandLineInterface &cmd)
+{
+	if (cmd.arguments().empty())
+	{
+		return cmd.error(QObject::tr("Missing parameter: SF index after %1").arg(COMMAND_REMOVE_SF));
+	}
+
+	bool paramOk = false;
+	QString sfIndexStr = cmd.arguments().takeFirst();
+	int sfIndex = sfIndexStr.toInt(&paramOk);
+	if (!paramOk)
+	{
+		return cmd.error(QObject::tr("Failed to read a numerical parameter: SF index. Got '%1' instead.").arg(sfIndexStr));
+	}
+	cmd.print(QObject::tr("\tSF index: %1").arg(sfIndex));
+
+	if (sfIndex < 0)
+	{
+		return cmd.error(QObject::tr("Invalid SF index (positive value expected)"));
+	}
+
+	for (auto &cloudDesc : cmd.clouds())
+	{
+		if (cloudDesc.pc)
+		{
+			if (!removeSF(sfIndex, *cloudDesc.pc))
+			{
+				cmd.warning(QObject::tr("Cloud '%1' has not enough SFs").arg(cloudDesc.pc->getName()));
+			}
+		}
+	}
+
+	for (auto &meshDesc : cmd.meshes())
+	{
+		if (meshDesc.mesh)
+		{
+			ccGenericPointCloud* cloud = meshDesc.mesh->getAssociatedCloud();
+			if (cloud->isA(CV_TYPES::POINT_CLOUD))
+			{
+				ccPointCloud* pc = static_cast<ccPointCloud*>(cloud);
+				if (!removeSF(sfIndex, *pc))
+				{
+					cmd.warning(QObject::tr("Mesh '%1' vertices have not enough SFs").arg(meshDesc.mesh->getName()));
+				}
 			}
 		}
 	}
@@ -3708,12 +3784,15 @@ bool CommandCPS::process(ccCommandLineInterface &cmd)
     assert(compPointCloud && refPointCloud);
 
     ecvProgressDialog pDlg(true, nullptr);
-    cloudViewer::DistanceComputationTools::Cloud2CloudDistanceComputationParams params;
+    cloudViewer::DistanceComputationTools::Cloud2CloudDistancesComputationParams
+            params;
     cloudViewer::ReferenceCloud closestPointSet(refPointCloud);
     params.CPSet = &closestPointSet;
 
     // COMPUTE CLOUD 2 CLOUD DISTANCE, THIS INCLUDES THE CLOSEST POINT SET GENERATION
-    int result = cloudViewer::DistanceComputationTools::computeCloud2CloudDistance(compPointCloud, refPointCloud, params, &pDlg);
+    int result =
+            cloudViewer::DistanceComputationTools::computeCloud2CloudDistances(
+                    compPointCloud, refPointCloud, params, &pDlg);
 
     if (result >= 0)
     {
@@ -4641,57 +4720,65 @@ bool CommandICP::process(ccCommandLineInterface &cmd)
 	double finalError = 0.0;
 	double finalScale = 1.0;
 	unsigned finalPointCount = 0;
-	if (ccRegistrationTools::ICP(dataAndModel[0]->getEntity(),
-		dataAndModel[1]->getEntity(),
-		transMat,
-		finalScale,
-		finalError,
-		finalPointCount,
-		minErrorDiff,
-		iterationCount,
-		randomSamplingLimit,
-		enableFarthestPointRemoval,
-		iterationCount != 0 ? cloudViewer::ICPRegistrationTools::MAX_ITER_CONVERGENCE : cloudViewer::ICPRegistrationTools::MAX_ERROR_CONVERGENCE,
-		adjustScale,
-		overlap / 100.0,
-		dataSFAsWeights >= 0,
-		modelSFAsWeights >= 0,
-		transformationFilters,
-		maxThreadCount,
-		cmd.widgetParent()))
+
+	cloudViewer::ICPRegistrationTools::Parameters parameters;
 	{
-		ccHObject* data = dataAndModel[0]->getEntity();
-		data->applyGLTransformation_recursive(&transMat);
-		cmd.print(QObject::tr("Entity '%1' has been registered").arg(data->getName()));
-		cmd.print(QObject::tr("RMS: %1").arg(finalError));
-		cmd.print(QObject::tr("Number of points used for final step: %1").arg(finalPointCount));
+		parameters.convType			= (iterationCount != 0 ? cloudViewer::ICPRegistrationTools::MAX_ITER_CONVERGENCE : cloudViewer::ICPRegistrationTools::MAX_ERROR_CONVERGENCE);
+		parameters.minRMSDecrease		= minErrorDiff;
+		parameters.nbMaxIterations		= iterationCount;
+		parameters.adjustScale			= adjustScale;
+		parameters.filterOutFarthestPoints	= enableFarthestPointRemoval;
+		parameters.samplingLimit		= randomSamplingLimit;
+		parameters.finalOverlapRatio		= overlap / 100.0;
+		parameters.transformationFilters	= transformationFilters;
+		parameters.maxThreadCount		= maxThreadCount;
+		parameters.useC2MSignedDistances	= false; //TODO
+		parameters.normalsMatching		= cloudViewer::ICPRegistrationTools::NO_NORMAL; //TODO
+	}
 
-		//save matrix in a separate text file
-		{
-			QString txtFilename = QObject::tr("%1/%2_REGISTRATION_MATRIX").arg(dataAndModel[0]->path, dataAndModel[0]->basename);
-			if (cmd.addTimestamp())
-				txtFilename += QObject::tr("_%1").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh'h'mm"));
-			txtFilename += QObject::tr(".txt");
-			QFile txtFile(txtFilename);
-			txtFile.open(QIODevice::WriteOnly | QIODevice::Text);
-			QTextStream txtStream(&txtFile);
-			txtStream << transMat.toString(cmd.numericalPrecision(), ' ') << endl;
-			txtFile.close();
-		}
+	if (ccRegistrationTools::ICP(	dataAndModel[0]->getEntity(),
+                                        dataAndModel[1]->getEntity(),
+                                        transMat,
+                                        finalScale,
+                                        finalError,
+                                        finalPointCount,
+                                        parameters,
+                                        dataSFAsWeights >= 0,
+                                        modelSFAsWeights >= 0,
+                                        cmd.widgetParent()))
+	{
+            ccHObject* data = dataAndModel[0]->getEntity();
+            data->applyGLTransformation_recursive(&transMat);
+            cmd.print(QObject::tr("Entity '%1' has been registered").arg(data->getName()));
+            cmd.print(QObject::tr("RMS: %1").arg(finalError));
+            cmd.print(QObject::tr("Number of points used for final step: %1").arg(finalPointCount));
 
-		dataAndModel[0]->basename += QObject::tr("_REGISTERED");
-		if (cmd.autoSaveMode())
-		{
-			QString errorStr = cmd.exportEntity(*dataAndModel[0]);
-			if (!errorStr.isEmpty())
-			{
-				return cmd.error(errorStr);
-			}
-		}
+            //save matrix in a separate text file
+            {
+                QString txtFilename = QObject::tr("%1/%2_REGISTRATION_MATRIX").arg(dataAndModel[0]->path, dataAndModel[0]->basename);
+                if (cmd.addTimestamp())
+                    txtFilename += QObject::tr("_%1").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh'h'mm"));
+                txtFilename += QObject::tr(".txt");
+                QFile txtFile(txtFilename);
+                txtFile.open(QIODevice::WriteOnly | QIODevice::Text);
+                QTextStream txtStream(&txtFile);
+                txtStream << transMat.toString(cmd.numericalPrecision(), ' ') << endl;
+                txtFile.close();
+            }
+
+            dataAndModel[0]->basename += QObject::tr("_REGISTERED");
+            if (cmd.autoSaveMode())
+            {
+                QString errorStr = cmd.exportEntity(*dataAndModel[0]);
+                if (!errorStr.isEmpty())
+                {
+                    return cmd.error(errorStr);
+                }
+            }
 	}
 	else
 	{
-		return false;
+            return false;
 	}
 
 	return true;
@@ -5057,7 +5144,7 @@ bool CommandMoment::process(ccCommandLineInterface &cmd)
 {
 	if (cmd.arguments().empty())
 	{
-		return cmd.error(QObject::tr("Missing parameter: kernel size"));
+            return cmd.error(QObject::tr("Missing parameter: kernel size after %1").arg(COMMAND_MOMENT));
 	}
 
 	bool paramOk = false;

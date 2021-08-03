@@ -3799,47 +3799,45 @@ bool ccMesh::interpolateNormals(unsigned triIndex,
 }
 
 bool ccMesh::interpolateNormals(const cloudViewer::VerticesIndexes& vertIndexes,
-                                const CCVector3& P,
-                                CCVector3& N,
-                                const Tuple3i* triNormIndexes /*=0*/) {
-    // intepolation weights
-    CCVector3d w;
-    computeInterpolationWeights(vertIndexes, P, w);
-
+                                const CCVector3d& w, CCVector3& N, const Tuple3i* triNormIndexes/*=0*/)
+{
     CCVector3d Nd(0, 0, 0);
     {
-        if (!triNormIndexes || triNormIndexes->u[0] >= 0) {
-            const CCVector3& N1 =
-                    triNormIndexes
-                            ? ccNormalVectors::GetNormal(m_triNormals->getValue(
-                                      triNormIndexes->u[0]))
-                            : m_associatedCloud->getPointNormal(vertIndexes.i1);
-            Nd += CCVector3d(N1.x, N1.y, N1.z) * w.u[0];
-        }
+            if (!triNormIndexes || triNormIndexes->u[0] >= 0)
+            {
+                    const CCVector3& N1 = triNormIndexes ? ccNormalVectors::GetNormal(m_triNormals->getValue(triNormIndexes->u[0])) : m_associatedCloud->getPointNormal(vertIndexes.i1);
+                    Nd += N1.toDouble() * w.u[0];
+            }
 
-        if (!triNormIndexes || triNormIndexes->u[1] >= 0) {
-            const CCVector3& N2 =
-                    triNormIndexes
-                            ? ccNormalVectors::GetNormal(m_triNormals->getValue(
-                                      triNormIndexes->u[1]))
-                            : m_associatedCloud->getPointNormal(vertIndexes.i2);
-            Nd += CCVector3d(N2.x, N2.y, N2.z) * w.u[1];
-        }
+            if (!triNormIndexes || triNormIndexes->u[1] >= 0)
+            {
+                    const CCVector3& N2 = triNormIndexes ? ccNormalVectors::GetNormal(m_triNormals->getValue(triNormIndexes->u[1])) : m_associatedCloud->getPointNormal(vertIndexes.i2);
+                    Nd += N2.toDouble() * w.u[1];
+            }
 
-        if (!triNormIndexes || triNormIndexes->u[2] >= 0) {
-            const CCVector3& N3 =
-                    triNormIndexes
-                            ? ccNormalVectors::GetNormal(m_triNormals->getValue(
-                                      triNormIndexes->u[2]))
-                            : m_associatedCloud->getPointNormal(vertIndexes.i3);
-            Nd += CCVector3d(N3.x, N3.y, N3.z) * w.u[2];
-        }
-        Nd.normalize();
+            if (!triNormIndexes || triNormIndexes->u[2] >= 0)
+            {
+                    const CCVector3& N3 = triNormIndexes ? ccNormalVectors::GetNormal(m_triNormals->getValue(triNormIndexes->u[2])) : m_associatedCloud->getPointNormal(vertIndexes.i3);
+                    Nd += N3.toDouble() * w.u[2];
+            }
+            Nd.normalize();
     }
 
-    N = CCVector3::fromArray(Nd.u);
+    N = Nd.toPC();
 
     return true;
+}
+
+bool ccMesh::interpolateNormalsBC(unsigned triIndex, const CCVector3d& w, CCVector3& N)
+{
+    assert(triIndex < size());
+
+    if (!hasNormals())
+            return false;
+
+    const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->getValue(triIndex);
+
+    return interpolateNormals(tri, w, N, hasTriNormals() ? &m_triNormalIndexes->at(triIndex) : nullptr);
 }
 
 bool ccMesh::interpolateColors(unsigned triIndex,

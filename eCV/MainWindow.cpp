@@ -265,7 +265,7 @@ MainWindow::MainWindow()
     setWindowTitle(QStringLiteral("ErowCloudViewer v") + ecvApp->versionLongStr(false));
 
     m_pluginUIManager = new ccPluginUIManager( this, this );
-	
+
     ccTranslationManager::get().populateMenu( m_ui->langAction, ecvApp->translationPath() );
 
 #ifdef Q_OS_MAC
@@ -344,7 +344,7 @@ MainWindow::MainWindow()
     }
 
     refreshAll();
-	
+
 #ifdef CV_WINDOWS
 	#ifdef QT_DEBUG
 		// speed up debugging on windows
@@ -355,7 +355,7 @@ MainWindow::MainWindow()
 #else
 	doActionToggleOrientationMarker(true);
 #endif
-	
+
 
 #ifdef USE_PYTHON_MODULE
     QString applicationPath = QCoreApplication::applicationDirPath();
@@ -670,7 +670,7 @@ void MainWindow::connectActions()
 	connect(m_ui->actionFilterSection,			&QAction::triggered, this, &MainWindow::activateFilterWindowMode);
 	connect(m_ui->actionKMeans,					&QAction::triggered, this, &MainWindow::doActionKMeans);
 	connect(m_ui->actionFrontPropagation,		&QAction::triggered, this, &MainWindow::doActionFrontPropagation);
-	
+
 	// "Tools > Distances" menu
 	connect(m_ui->actionCloudCloudDist,			&QAction::triggered, this, &MainWindow::doActionCloudCloudDist);
 	connect(m_ui->actionCloudMeshDist,			&QAction::triggered, this, &MainWindow::doActionCloudMeshDist);
@@ -683,11 +683,11 @@ void MainWindow::connectActions()
 
 	//"Tools > Recognition" menu
 	connect(m_ui->actionSemanticSegmentation, &QAction::triggered, this, &MainWindow::doSemanticSegmentation);
-	
+
 	//"Tools > Segmentation" menu
 	connect(m_ui->actionDBScanCluster, &QAction::triggered, this, &MainWindow::doActionDBScanCluster);
 	connect(m_ui->actionPlaneSegmentation, &QAction::triggered, this, &MainWindow::doActionPlaneSegmentation);
-	
+
 	//"Tools > Registration" menu
 	connect(m_ui->actionMatchBBCenters, &QAction::triggered, this, &MainWindow::doActionMatchBBCenters);
 	connect(m_ui->actionMatchScales, &QAction::triggered, this, &MainWindow::doActionMatchScales);
@@ -702,7 +702,7 @@ void MainWindow::connectActions()
 	connect(m_ui->actionFitSphere, &QAction::triggered, this, &MainWindow::doActionFitSphere);
 	connect(m_ui->actionFitFacet, &QAction::triggered, this, &MainWindow::doActionFitFacet);
 	connect(m_ui->actionFitQuadric, &QAction::triggered, this, &MainWindow::doActionFitQuadric);
-	
+
 	// "Tools > Batch export" menu
 	connect(m_ui->actionExportCloudInfo, &QAction::triggered, this, &MainWindow::doActionExportCloudInfo);
 	connect(m_ui->actionExportPlaneInfo, &QAction::triggered, this, &MainWindow::doActionExportPlaneInfo);
@@ -1025,7 +1025,7 @@ void MainWindow::setOrthoView()
 {
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
-		
+
 		ecvDisplayTools::SetPerspectiveState(false, true);
 
 		//update pop-up menu 'top' icon
@@ -1326,7 +1326,7 @@ ccUniqueIDGenerator::Shared MainWindow::getUniqueIDGenerator()
 // Open point cloud
 void MainWindow::getFileFilltersAndHistory(QStringList &fileFilters, QString &currentOpenDlgFilter)
 {
-	currentOpenDlgFilter = 
+	currentOpenDlgFilter =
 		ecvSettingManager::getValue(ecvPS::LoadFile(),
 		ecvPS::SelectedInputFilter(),
 		AsciiFilter::GetFileFilter()).toString();
@@ -1362,7 +1362,7 @@ void MainWindow::getFileFilltersAndHistory(QStringList &fileFilters, QString &cu
 void MainWindow::doActionOpenFile() {
 
 	//persistent settings
-	QString currentPath = 
+	QString currentPath =
 		ecvSettingManager::getValue(ecvPS::LoadFile(),
 		ecvPS::CurrentPath(),
 		ecvFileUtils::defaultDocPath()).toString();
@@ -1372,7 +1372,7 @@ void MainWindow::doActionOpenFile() {
 	getFileFilltersAndHistory(fileFilters, currentOpenDlgFilter);
 
 	//file choosing dialog
-	QStringList selectedFiles = 
+	QStringList selectedFiles =
 		QFileDialog::getOpenFileNames(
 		this,
 		tr("Open file(s)"),
@@ -1386,7 +1386,7 @@ void MainWindow::doActionOpenFile() {
 
 	// persistent save last loading parameters
 	currentPath = QFileInfo(selectedFiles[0]).absolutePath();
-	ecvSettingManager::setValue(ecvPS::LoadFile(), ecvPS::CurrentPath(), currentPath);	
+	ecvSettingManager::setValue(ecvPS::LoadFile(), ecvPS::CurrentPath(), currentPath);
 	ecvSettingManager::setValue(ecvPS::LoadFile(), ecvPS::SelectedInputFilter(), currentOpenDlgFilter);
 
 	// this way FileIOFilter will try to guess the file type automatically!
@@ -2303,7 +2303,7 @@ void MainWindow::activateTranslateRotateMode()
 	//try to activate "moving mode" in current GL window
 	if (m_transTool->start())
 	{
-		connect(m_transTool, &ccOverlayDialog::processFinished, 
+		connect(m_transTool, &ccOverlayDialog::processFinished,
 			this, &MainWindow::deactivateTranslateRotateMode);
 		registerOverlayDialog(m_transTool, Qt::TopRightCorner);
 		freezeUI(true);
@@ -2499,7 +2499,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionDecimateFilter->setEnabled(exactlyOneMesh);
 	m_ui->actionIsoSurfaceFilter->setEnabled(exactlyOneMesh);
 	m_ui->actionSmoothFilter->setEnabled(exactlyOneMesh);
-	
+
 	m_ui->actionConvertPolylinesToMesh->setEnabled(atLeastOnePolyline || exactlyOneGroup);
 	m_ui->actionSamplePointsOnPolyline->setEnabled(atLeastOnePolyline);
 	m_ui->actionMeshTwoPolylines->setEnabled(selInfo.selCount == 2 && selInfo.polylineCount == 2);
@@ -2539,7 +2539,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo)
 	m_ui->actionGlyphFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
 	m_ui->actionStreamlineFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
 	m_ui->actionThresholdFilter->setEnabled(atLeastOneCloud || atLeastOneMesh || (selInfo.groupCount != 0));
-	
+
 #ifdef USE_PYTHON_MODULE
 	m_ui->actionSemanticSegmentation->setEnabled(atLeastOneCloud);
 #endif // USE_PYTHON_MODULE
@@ -2743,7 +2743,7 @@ MainWindow::ccHObjectContext MainWindow::removeObjectTemporarilyFromDBTree(ccHOb
 
 	//mandatory (to call putObjectBackIntoDBTree)
 	context.parent = obj->getParent();
-	
+
 	//remove the object's dependency to its father (in case it undergoes "severe" modifications)
 	if (context.parent)
 	{
@@ -2834,7 +2834,7 @@ void MainWindow::toggleExclusiveFullScreen(bool state)
 			m_exclusiveFullscreen = false;
 			onExclusiveFullScreenToggled(state);
 			ecvDisplayTools::DisplayNewMessage(QString(), ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 0, ecvDisplayTools::FULL_SCREEN_MESSAGE); //remove any message
-			
+
 			if (m_currentFullWidget)
 			{
 				m_currentFullWidget->showNormal();
@@ -3068,6 +3068,21 @@ void MainWindow::updateOverlayDialogsPlacement()
 	{
 		repositionOverlayDialog(mdiDlg);
 	}
+}
+
+ccHObject* MainWindow::loadFile(QString filename, bool silent)
+{
+	FileIOFilter::LoadParameters parameters;
+	{
+		parameters.alwaysDisplayLoadDialog = silent ? false : true;
+		parameters.shiftHandlingMode = ecvGlobalShiftManager::NO_DIALOG_AUTO_SHIFT;
+		parameters.parentWidget = silent ? nullptr : this;
+	}
+
+	CC_FILE_ERROR result = CC_FERR_NO_ERROR;
+	ccHObject* newGroup = FileIOFilter::LoadFromFile(filename, parameters, result);
+
+	return newGroup;
 }
 
 void MainWindow::repositionOverlayDialog(ccMDIDialogs& mdiDlg)
@@ -3648,7 +3663,7 @@ void MainWindow::doActionPerspectiveProjection()
 	{
 		ecvDisplayTools::SetPerspectiveProjection();
 	}
-	
+
 	setPerspectiveView();
 
 	updateViewModePopUpMenu();
@@ -3660,7 +3675,7 @@ void MainWindow::doActionOrthogonalProjection()
 	{
 		ecvDisplayTools::SetOrthoProjection();
 	}
-	
+
 	setOrthoView();
 
 	updateViewModePopUpMenu();
@@ -4272,7 +4287,7 @@ void MainWindow::doActionComputeMesh(CC_TRIANGULATION_TYPES type)
 	static double s_meshMaxEdgeLength = 0.0;
 	{
 		bool ok = true;
-		double maxEdgeLength = QInputDialog::getDouble(this, 
+		double maxEdgeLength = QInputDialog::getDouble(this,
 			tr("Triangulate"), tr("Max edge length (0 = no limit)"),
 			s_meshMaxEdgeLength, 0, 1.0e9, 8, &ok);
 		if (!ok)
@@ -4351,7 +4366,7 @@ void MainWindow::doActionComputeMesh(CC_TRIANGULATION_TYPES type)
 		ecvConsole::Error(tr("Error(s) occurred! See the Console messages"));
 	}
 
-	
+
 	updateUI();
 }
 
@@ -4373,8 +4388,8 @@ void MainWindow::doMeshTwoPolylines()
 	CCVector3 viewingDir(0, 0, 0);
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
-		useViewingDir = (QMessageBox::question(this, 
-			tr("Projection method"), 
+		useViewingDir = (QMessageBox::question(this,
+			tr("Projection method"),
 			tr("Use best fit plane (yes) or the current viewing direction (no)"),
 			QMessageBox::Yes, QMessageBox::No) == QMessageBox::No);
 		if (useViewingDir)
@@ -5362,7 +5377,7 @@ void MainWindow::doActionSamplePointsOnMesh()
 
 	if (errors)
 		CVLog::Error(tr("[doActionSamplePointsOnMesh] Errors occurred during the process! Result may be incomplete!"));
-	
+
 }
 
 void MainWindow::doActionSamplePointsOnPolyline()
@@ -5606,7 +5621,7 @@ void MainWindow::doConvertPolylinesToMesh()
 		mesh->addChild(vertices);
 		mesh->setVisible(true);
 		vertices->setEnabled(false);
-		
+
 		if (mesh->computePerVertexNormals())
 		{
 			mesh->showNormals(true);
@@ -5669,7 +5684,7 @@ void MainWindow::doBSplineFittingFromCloud()
 	CVLog::Warning("[doBSplineFittingFromCloud] please use pcl as backend and then try again!");
 	return;
 #endif
-	
+
 }
 
 void MainWindow::doActionSmoothMeshSF()
@@ -6909,7 +6924,7 @@ void MainWindow::doActionComputeDistanceMap()
 		}
 	}
 
-	
+
 }
 
 void MainWindow::doActionComputeDistToBestFitQuadric3D()
@@ -7018,94 +7033,90 @@ void MainWindow::doActionComputeDistToBestFitQuadric3D()
 
 }
 
-// Aurelien BEY le 13/11/2008 
+// Aurelien BEY le 13/11/2008
 void MainWindow::doAction4pcsRegister()
 {
-	if (QMessageBox::warning(this,
-		tr("Work in progress"),
-		tr("This method is still under development: are you sure you want to use it? (a crash may likely happen)"),
-		QMessageBox::Yes, QMessageBox::No) == QMessageBox::No)
-		return;
+    if (QMessageBox::warning(this,
+            tr("Work in progress"),
+            tr("This method is still under development: are you sure you want to use it? (a crash may likely happen)"),
+            QMessageBox::Yes, QMessageBox::No) == QMessageBox::No)
+            return;
 
-	if (m_selectedEntities.size() != 2)
-	{
-		ecvConsole::Error(tr("Select 2 point clouds!"));
-		return;
-	}
+    if (m_selectedEntities.size() != 2)
+    {
+            ecvConsole::Error(tr("Select 2 point clouds!"));
+            return;
+    }
 
-	if (!m_selectedEntities[0]->isKindOf(CV_TYPES::POINT_CLOUD) ||
-		!m_selectedEntities[1]->isKindOf(CV_TYPES::POINT_CLOUD))
-	{
-		ecvConsole::Error(tr("Select 2 point clouds!"));
-		return;
-	}
+    if (!m_selectedEntities[0]->isKindOf(CV_TYPES::POINT_CLOUD) ||
+            !m_selectedEntities[1]->isKindOf(CV_TYPES::POINT_CLOUD))
+    {
+            ecvConsole::Error(tr("Select 2 point clouds!"));
+            return;
+    }
 
-	ccGenericPointCloud *model = ccHObjectCaster::ToGenericPointCloud(m_selectedEntities[0]);
-	ccGenericPointCloud *data = ccHObjectCaster::ToGenericPointCloud(m_selectedEntities[1]);
+    ccGenericPointCloud *model = ccHObjectCaster::ToGenericPointCloud(m_selectedEntities[0]);
+    ccGenericPointCloud *data = ccHObjectCaster::ToGenericPointCloud(m_selectedEntities[1]);
 
-	ccAlignDlg aDlg(model, data);
-	if (!aDlg.exec())
-		return;
+    ccAlignDlg aDlg(model, data);
+    if (!aDlg.exec())
+            return;
 
-	// model = aDlg.getModelObject();
-	data = aDlg.getDataObject();
+    // model = aDlg.getModelObject();
+    data = aDlg.getDataObject();
 
-	//Take the correct number of points among the clouds
-	cloudViewer::ReferenceCloud *subModel = aDlg.getSampledModel();
-	cloudViewer::ReferenceCloud *subData = aDlg.getSampledData();
+    //Take the correct number of points among the clouds
+    cloudViewer::ReferenceCloud *subModel = aDlg.getSampledModel();
+    cloudViewer::ReferenceCloud *subData = aDlg.getSampledData();
 
-	unsigned nbMaxCandidates = aDlg.isNumberOfCandidatesLimited() ? aDlg.getMaxNumberOfCandidates() : 0;
+    unsigned nbMaxCandidates = aDlg.isNumberOfCandidatesLimited() ? aDlg.getMaxNumberOfCandidates() : 0;
 
-	ecvProgressDialog pDlg(true, this);
+    ecvProgressDialog pDlg(true, this);
 
-	cloudViewer::PointProjectionTools::Transformation transform;
-	if (cloudViewer::FPCSRegistrationTools::RegisterClouds(subModel,
-		subData,
-		transform,
-		static_cast<ScalarType>(aDlg.getDelta()),
-		static_cast<ScalarType>(aDlg.getDelta() / 2),
-		static_cast<PointCoordinateType>(aDlg.getOverlap()),
-		aDlg.getNbTries(),
-		5000,
-		&pDlg,
-		nbMaxCandidates))
-	{
-		//output resulting transformation matrix
-		{
-			ccGLMatrix transMat = FromCCLibMatrix<PointCoordinateType, float>(transform.R, transform.T);
-			forceConsoleDisplay();
-			ecvConsole::Print(tr("[Align] Resulting matrix:"));
-			ecvConsole::Print(transMat.toString(12, ' ')); //full precision
-			ecvConsole::Print(tr("Hint: copy it (CTRL+C) and apply it - or its inverse - on any entity with the 'Edit > Apply transformation' tool"));
-		}
+    cloudViewer::PointProjectionTools::Transformation transform;
+    if (cloudViewer::FPCSRegistrationTools::RegisterClouds(subModel,
+            subData,
+            transform,
+            static_cast<ScalarType>(aDlg.getDelta()),
+            static_cast<ScalarType>(aDlg.getDelta() / 2),
+            static_cast<PointCoordinateType>(aDlg.getOverlap()),
+            aDlg.getNbTries(),
+            5000,
+            &pDlg,
+            nbMaxCandidates))
+    {
+        //output resulting transformation matrix
+        {
+                ccGLMatrix transMat = FromCCLibMatrix<double, float>(transform.R, transform.T);
+                forceConsoleDisplay();
+                ecvConsole::Print(tr("[Align] Resulting matrix:"));
+                ecvConsole::Print(transMat.toString(12, ' ')); //full precision
+                ecvConsole::Print(tr("Hint: copy it (CTRL+C) and apply it - or its inverse - on any entity with the 'Edit > Apply transformation' tool"));
+        }
 
-		ccPointCloud *newDataCloud = data->isA(CV_TYPES::POINT_CLOUD) ? static_cast<ccPointCloud*>(data)->cloneThis() : ccPointCloud::From(data, data);
+        ccPointCloud *newDataCloud = data->isA(CV_TYPES::POINT_CLOUD) ? static_cast<ccPointCloud*>(data)->cloneThis() : ccPointCloud::From(data, data);
 
-		if (data->getParent())
-			data->getParent()->addChild(newDataCloud);
-		newDataCloud->setName(data->getName() + tr(".registered"));
-		transform.apply(*newDataCloud);
-		newDataCloud->invalidateBoundingBox(); //invalidate bb
-		//newDataCloud->setDisplay(data->getDisplay());
-		//newDataCloud->prepareDisplayForRefresh();
-		addToDB(newDataCloud);
-		zoomOn(newDataCloud);
+        if (data->getParent())
+                data->getParent()->addChild(newDataCloud);
+        newDataCloud->setName(data->getName() + tr(".registered"));
+        transform.apply(*newDataCloud);
+        newDataCloud->invalidateBoundingBox(); //invalidate bb
+        addToDB(newDataCloud);
+        zoomOn(newDataCloud);
 
-		data->setEnabled(false);
-		//data->prepareDisplayForRefresh_recursive();
-	}
-	else
-	{
-		ecvConsole::Warning(tr("[Align] Registration failed!"));
-	}
+        data->setEnabled(false);
+    }
+    else
+    {
+        ecvConsole::Warning(tr("[Align] Registration failed!"));
+    }
 
-	if (subModel)
-		delete subModel;
-	if (subData)
-		delete subData;
+    if (subModel)
+        delete subModel;
+    if (subData)
+        delete subData;
 
-	
-	updateUI();
+    updateUI();
 }
 
 //semi-persistent parameters
@@ -7218,36 +7229,58 @@ void MainWindow::doActionRegister()
 	if (m_selectedEntities.size() != 2
 		|| (!m_selectedEntities[0]->isKindOf(CV_TYPES::POINT_CLOUD) &&
 			!m_selectedEntities[0]->isKindOf(CV_TYPES::MESH))
-		|| (!m_selectedEntities[1]->isKindOf(CV_TYPES::POINT_CLOUD) && 
+		|| (!m_selectedEntities[1]->isKindOf(CV_TYPES::POINT_CLOUD) &&
 			!m_selectedEntities[1]->isKindOf(CV_TYPES::MESH)))
 	{
 		ecvConsole::Error(tr("Select 2 point clouds or meshes!"));
 		return;
 	}
 
-	ccHObject *data = static_cast<ccHObject*>(m_selectedEntities[1]);
-	ccHObject *model = static_cast<ccHObject*>(m_selectedEntities[0]);
+	ccHObject* data = static_cast<ccHObject*>(m_selectedEntities[0]);
+	ccHObject* model = static_cast<ccHObject*>(m_selectedEntities[1]);
+	if (data->isKindOf(CV_TYPES::MESH) && model->isKindOf(CV_TYPES::POINT_CLOUD))
+	{
+		//by default, prefer the mesh as the reference
+		std::swap(data, model);
+	}
 
 	ccRegistrationDlg rDlg(data, model, this);
 	if (!rDlg.exec())
 		return;
 
-	//DGM (23/01/09): model and data order may have changed!
+	//model and data order may have changed!
 	model = rDlg.getModelEntity();
 	data = rDlg.getDataEntity();
 
 	double minRMSDecrease = rDlg.getMinRMSDecrease();
-	unsigned maxIterationCount = rDlg.getMaxIterationCount();
-	unsigned randomSamplingLimit = rDlg.randomSamplingLimit();
-	bool removeFarthestPoints = rDlg.removeFarthestPoints();
-	bool useDataSFAsWeights = rDlg.useDataSFAsWeights();
-	bool useModelSFAsWeights = rDlg.useModelSFAsWeights();
-	bool adjustScale = rDlg.adjustScale();
-	int transformationFilters = rDlg.getTransformationFilters();
-	unsigned finalOverlap = rDlg.getFinalOverlap();
-	cloudViewer::ICPRegistrationTools::CONVERGENCE_TYPE method = 
-		rDlg.getConvergenceMethod();
-	int maxThreadCount = rDlg.getMaxThreadCount();
+	if (std::isnan(minRMSDecrease))
+	{
+		CVLog::Error(tr("Invalid minimum RMS decrease value"));
+		return;
+	}
+	if (minRMSDecrease < ccRegistrationDlg::GetAbsoluteMinRMSDecrease())
+	{
+		minRMSDecrease = ccRegistrationDlg::GetAbsoluteMinRMSDecrease();
+		CVLog::Error(tr("Minimum RMS decrease value is too small.\n%1 will be used instead (numerical accuracy limit).").arg(minRMSDecrease, 0, 'E', 1));
+		rDlg.setMinRMSDecrease(minRMSDecrease);
+	}
+
+	cloudViewer::ICPRegistrationTools::Parameters parameters;
+	{
+                parameters.convType		        = rDlg.getConvergenceMethod();
+		parameters.minRMSDecrease	        = minRMSDecrease;
+		parameters.nbMaxIterations	        = rDlg.getMaxIterationCount();
+		parameters.adjustScale		        = rDlg.adjustScale();
+		parameters.filterOutFarthestPoints	= rDlg.removeFarthestPoints();
+		parameters.samplingLimit		= rDlg.randomSamplingLimit();
+		parameters.finalOverlapRatio		= rDlg.getFinalOverlap() / 100.0;
+		parameters.transformationFilters	= rDlg.getTransformationFilters();
+		parameters.maxThreadCount		= rDlg.getMaxThreadCount();
+		parameters.useC2MSignedDistances	= rDlg.useC2MSignedDistances();
+		parameters.normalsMatching		= rDlg.normalsMatchingOption();
+	}
+	bool useDataSFAsWeights		= rDlg.useDataSFAsWeights();
+	bool useModelSFAsWeights	= rDlg.useModelSFAsWeights();
 
 	//semi-persistent storage (for next call)
 	rDlg.saveParameters();
@@ -7257,35 +7290,30 @@ void MainWindow::doActionRegister()
 	double finalScale = 1.0;
 	unsigned finalPointCount = 0;
 
-	if (ccRegistrationTools::ICP(data,
-		model,
-		transMat,
-		finalScale,
-		finalError,
-		finalPointCount,
-		minRMSDecrease,
-		maxIterationCount,
-		randomSamplingLimit,
-		removeFarthestPoints,
-		method,
-		adjustScale,
-		finalOverlap / 100.0,
-		useDataSFAsWeights,
-		useModelSFAsWeights,
-		transformationFilters,
-		maxThreadCount,
-		this))
+	if (ccRegistrationTools::ICP(	data,
+                                        model,
+                                        transMat,
+                                        finalScale,
+                                        finalError,
+                                        finalPointCount,
+                                        parameters,
+                                        useDataSFAsWeights,
+                                        useModelSFAsWeights,
+                                        this))
 	{
-		QString rmsString = tr("Final RMS: %1 (computed on %2 points)").arg(finalError).arg(finalPointCount);
-		CVLog::Print(tr("[Register] ") + rmsString);
+		QString rmsString = tr("Final RMS*: %1 (computed on %2 points)").arg(finalError).arg(finalPointCount);
+		QString rmsDisclaimerString = tr("(* RMS is potentially weighted, depending on the selected options)");
+		CVLog::Print(QString("[Register] ") + rmsString);
+		CVLog::Print(QString("[Register] ") + rmsDisclaimerString);
 
 		QStringList summary;
 		summary << rmsString;
+		summary << rmsDisclaimerString;
 		summary << "----------------";
 
 		//transformation matrix
 		{
-			summary << tr("Transformation matrix");
+			summary << "Transformation matrix";
 			summary << transMat.toString(3, '\t'); //low precision, just for display
 			summary << "----------------";
 
@@ -7294,7 +7322,7 @@ void MainWindow::doActionRegister()
 			CVLog::Print(tr("Hint: copy it (CTRL+C) and apply it - or its inverse - on any entity with the 'Edit > Apply transformation' tool"));
 		}
 
-		if (adjustScale)
+		if (parameters.adjustScale)
 		{
 			QString scaleString = tr("Scale: %1 (already integrated in above matrix!)").arg(finalScale);
 			CVLog::Warning(tr("[Register] ") + scaleString);
@@ -7308,7 +7336,7 @@ void MainWindow::doActionRegister()
 
 		//overlap
 		summary << "----------------";
-		QString overlapString = tr("Theoretical overlap: %1%").arg(finalOverlap);
+		QString overlapString = tr("Theoretical overlap: %1%").arg(static_cast<int>(parameters.finalOverlapRatio * 100));
 		CVLog::Print(tr("[Register] %1").arg(overlapString));
 		summary << overlapString;
 
@@ -7498,7 +7526,7 @@ void MainWindow::activateRegisterPointPairTool()
 	if (!m_pprDlg)
 	{
 		m_pprDlg = new ccPointPairRegistrationDlg(m_pickingHub, this, this);
-		connect(m_pprDlg, &ccOverlayDialog::processFinished, this, 
+		connect(m_pprDlg, &ccOverlayDialog::processFinished, this,
 			&MainWindow::deactivateRegisterPointPairTool);
 		registerOverlayDialog(m_pprDlg, Qt::TopRightCorner);
 	}
@@ -7752,7 +7780,7 @@ void MainWindow::doCylindricalNeighbourhoodExtractionTest()
 
 	addToDB(cloud);
 
-	
+
 	updateUI();
 }
 
@@ -8007,7 +8035,7 @@ void MainWindow::doActionComputeBestICPRmsMatrix()
 #endif
 	{
 		//persistent settings
-		QString currentPath = ecvSettingManager::getValue(ecvPS::SaveFile(), 
+		QString currentPath = ecvSettingManager::getValue(ecvPS::SaveFile(),
 			ecvPS::CurrentPath(), ecvFileUtils::defaultDocPath()).toString();
 
 		QString outputFilename = QFileDialog::getSaveFileName(this,
@@ -8542,7 +8570,7 @@ void MainWindow::doActionImportSFFromFile()
 	{
 		return;
 	}
-	
+
 	if (scalars.size() != cloud->size())
 	{
 		CVLog::Warning("scalar files are probably corrupted and drop it!");
@@ -8622,7 +8650,7 @@ void MainWindow::doRemoveDuplicatePoints()
 	bool first = true;
 
 	//persistent setting(s)
-	double minDistanceBetweenPoints = 
+	double minDistanceBetweenPoints =
 		ecvSettingManager::getValue(ecvPS::DuplicatePointsGroup(),
 		ecvPS::DuplicatePointsMinDist(), 1.0e-12).toDouble();
 
@@ -8837,7 +8865,7 @@ void MainWindow::doActionSubsample()
 	if (m_ccRoot)
 		m_ccRoot->selectEntities(resultingClouds);
 
-	
+
 	updateUI();
 }
 
@@ -9164,7 +9192,7 @@ void MainWindow::doActionFilterMode(int mode)
 
 #ifdef USE_PCL_BACKEND
 	ecvGenericFiltersTool* filter = new PclFiltersTool(
-		ecvDisplayTools::GetVisualizer3D(), 
+		ecvDisplayTools::GetVisualizer3D(),
 		ecvGenericFiltersTool::FilterType(mode));
 #else
 	CVLog::Warning("[MainWindow] please use pcl as backend and then try again!");
@@ -9172,7 +9200,7 @@ void MainWindow::doActionFilterMode(int mode)
 #endif // USE_PCL_BACKEND
 
 	// we have to use a local copy: 'unselectEntity' will change the set of currently selected entities!
-	ccHObject::Container selectedEntities = getSelectedEntities(); 
+	ccHObject::Container selectedEntities = getSelectedEntities();
 	if (!m_filterTool)
 	{
 		m_filterTool = new ecvFilterTool(this);
@@ -9196,7 +9224,7 @@ void MainWindow::doActionFilterMode(int mode)
 				m_ccRoot->selectEntities(outs);
 				refreshSelected();
 			}
-			
+
 			freezeUI(false);
 			updateUI();
 		});
@@ -9273,7 +9301,7 @@ void MainWindow::doAnnotations(int mode)
 
 #ifdef USE_PCL_BACKEND
 	PclAnnotationTool* annoTools =
-		new PclAnnotationTool(ecvDisplayTools::GetVisualizer3D(), 
+		new PclAnnotationTool(ecvDisplayTools::GetVisualizer3D(),
 			ecvGenericAnnotationTool::AnnotationMode(mode));
 	if (!m_annoTool)
 	{
@@ -9333,7 +9361,7 @@ void MainWindow::doSemanticSegmentation()
 	if (!m_dssTool)
 	{
 		m_dssTool = new ecvDeepSemanticSegmentationTool(this);
-		connect(m_dssTool, &ccOverlayDialog::processFinished, 
+		connect(m_dssTool, &ccOverlayDialog::processFinished,
 			this, &MainWindow::deactivateSemanticSegmentation);
 		registerOverlayDialog(m_dssTool, Qt::TopRightCorner);
 	}
@@ -9962,7 +9990,7 @@ void MainWindow::doActionLabelConnectedComponents()
 				if (realComponentCount > 500)
 				{
 					//too many components
-					if (QMessageBox::warning(this, tr("Many components"), 
+					if (QMessageBox::warning(this, tr("Many components"),
 						tr("Do you really expect up to %1 components?\n(this may take a lot of time to process and display)").
 						arg(realComponentCount), QMessageBox::Yes, QMessageBox::No) == QMessageBox::No)
 					{
@@ -10002,7 +10030,7 @@ void MainWindow::doActionLabelConnectedComponents()
 			}
 		}
 	}
-	
+
 	updateUI();
 }
 
@@ -10221,9 +10249,9 @@ void MainWindow::doActionCloudPrimitiveDist()
 			}
 			case CV_TYPES::CYLINDER:
 			{
-				if (!(returnCode = cloudViewer::DistanceComputationTools::computeCloud2CylinderEquation(compEnt, 
-					static_cast<ccCylinder*>(refEntity)->getBottomCenter(), 
-					static_cast<ccCylinder*>(refEntity)->getTopCenter(), 
+				if (!(returnCode = cloudViewer::DistanceComputationTools::computeCloud2CylinderEquation(compEnt,
+					static_cast<ccCylinder*>(refEntity)->getBottomCenter(),
+					static_cast<ccCylinder*>(refEntity)->getTopCenter(),
 					static_cast<ccCylinder*>(refEntity)->getBottomRadius(), signedDist)))
 					ecvConsole::Error(errString, "Cylinder", returnCode);
 				break;
@@ -10592,14 +10620,20 @@ void MainWindow::doActionComputeCPS()
 		return;
 	}
 	cmpPC->setCurrentScalarField(sfIdx);
-	cmpPC->enableScalarField();
-	//cmpPC->forEach(cloudViewer::ScalarFieldTools::SetScalarValueToNaN); //now done by default by computeCloud2CloudDistance
+	if (!cmpPC->enableScalarField())
+	{
+		ecvConsole::Error(tr("Not enough memory!"));
+		return;
+	}
+	//cmpPC->forEach(cloudViewer::ScalarFieldTools::SetScalarValueToNaN); //now done by default by computeCloud2CloudDistances
 
 	cloudViewer::ReferenceCloud CPSet(srcCloud);
 	ecvProgressDialog pDlg(true, this);
-	cloudViewer::DistanceComputationTools::Cloud2CloudDistanceComputationParams params;
+	cloudViewer::DistanceComputationTools::
+                Cloud2CloudDistancesComputationParams params;
 	params.CPSet = &CPSet;
-	int result = cloudViewer::DistanceComputationTools::computeCloud2CloudDistance(compCloud, srcCloud, params, &pDlg);
+	int result = cloudViewer::DistanceComputationTools::
+                computeCloud2CloudDistances(compCloud, srcCloud, params, &pDlg);
 	cmpPC->deleteScalarField(sfIdx);
 
 	if (result >= 0)
@@ -10616,7 +10650,7 @@ void MainWindow::doActionComputeCPS()
 		srcCloud->setEnabled(false);
 	}
 
-	
+
 }
 
 //void MainWindow::doCompute2HalfDimVolume()
@@ -10847,7 +10881,7 @@ void MainWindow::doComputePlaneOrientation(bool fitFacet)
 			}
 		}
 	}
-	
+
 	updateUI();
 }
 
@@ -10937,7 +10971,7 @@ void MainWindow::doActionUnroll()
 
 	//if selected entity is a mesh, the method will be applied to its vertices
 	bool lockedVertices;
-	ccGenericPointCloud* cloud = 
+	ccGenericPointCloud* cloud =
 		ccHObjectCaster::ToGenericPointCloud(m_selectedEntities[0], &lockedVertices);
 	if (lockedVertices)
 	{

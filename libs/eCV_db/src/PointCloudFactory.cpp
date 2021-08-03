@@ -1377,7 +1377,7 @@ ccPointCloud::hiddenPointRemoval(const Eigen::Vector3d &camera_location,
         CCVector3 projected_point = *getPoint(pidx) - camera_location;
         double norm = projected_point.norm();
         spherical_projection.push_back(
-                projected_point + 2 * (radius - norm) * projected_point / norm);
+                projected_point + 2 * static_cast<PointCoordinateType>(radius - norm) * projected_point / norm);
     }
 
     // add origin

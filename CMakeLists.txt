@@ -810,7 +810,7 @@ function(CopyDLLToDirectory trgt)
         # Install dependence lib files
         if (WIN32)
             foreach (filename "$<TARGET_FILE:${trgt}>")
-                install_ext(FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin/${COLOUDVIEWER_APP_DIR_NAME}" "")
+                cloudViewer_install_ext(FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin/${COLOUDVIEWER_APP_DIR_NAME}" "")
             endforeach ()
         endif ()
     endif ()

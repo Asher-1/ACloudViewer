@@ -62,9 +62,9 @@ endif()
 
 if(WIN32)
     set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
-    install_ext( FILES ${SOURCE_DIR}/Dist/x64/${library_filename} ${INSTALL_DESTINATIONS} "")
+    cloudViewer_install_ext( FILES ${SOURCE_DIR}/Dist/x64/${library_filename} ${INSTALL_DESTINATIONS} "")
 else()
     set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
-    install_ext( FILES ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${library_filename} ${INSTALL_DESTINATIONS} "")
+    cloudViewer_install_ext( FILES ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${library_filename} ${INSTALL_DESTINATIONS} "")
 endif()
 

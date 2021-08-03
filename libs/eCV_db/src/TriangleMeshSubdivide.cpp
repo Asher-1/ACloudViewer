@@ -214,7 +214,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
 			*oldVertice->getPoint(static_cast<unsigned>(vidx))* alpha);
 		if (has_vert_normal) {
 			newVertice->setPointNormal(static_cast<unsigned>(vidx),
-				alpha * oldVertice->getPointNormal(static_cast<unsigned>(vidx)));
+				static_cast<PointCoordinateType>(alpha) * oldVertice->getPointNormal(static_cast<unsigned>(vidx)));
 		}
 		if (has_vert_color) {
 			newVertice->setEigenColor(static_cast<unsigned>(vidx),
@@ -227,7 +227,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
 			if (has_vert_normal) {
 				newVertice->setPointNormal(static_cast<unsigned>(vidx),
 					newVertice->getPointNormal(static_cast<unsigned>(vidx)) +
-					beta * oldVertice->getPointNormal(static_cast<unsigned>(nb)));
+					static_cast<PointCoordinateType>(beta) * oldVertice->getPointNormal(static_cast<unsigned>(nb)));
 			}
 			if (has_vert_color) {
 				newVertice->setEigenColor(static_cast<unsigned>(vidx),

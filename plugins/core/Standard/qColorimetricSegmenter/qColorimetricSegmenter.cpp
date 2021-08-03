@@ -407,7 +407,9 @@ static bool KNNRegions(	ccPointCloud* basePointCloud,
 	}
 
 	// compute distances
-	cloudViewer::DistanceComputationTools::Cloud2CloudDistanceComputationParams params = cloudViewer::DistanceComputationTools::Cloud2CloudDistanceComputationParams();
+	cloudViewer::DistanceComputationTools::
+                Cloud2CloudDistancesComputationParams params = cloudViewer::DistanceComputationTools::
+                                Cloud2CloudDistancesComputationParams();
 	{
 		params.kNNForLocalModel = k;
 		params.maxSearchDist = thresholdDistance;
@@ -424,9 +426,11 @@ static bool KNNRegions(	ccPointCloud* basePointCloud,
 			//not enough memory
 			return false;
 		}
-		//DGM: warning, the computeCloud2CloudDistance method doesn't return a distance value (but a status / error)
+		//DGM: warning, the computeCloud2CloudDistances method doesn't return a distance value (but a status / error)
 		//distances are stored in the active scalar field (one per point!)
-		int result = cloudViewer::DistanceComputationTools::computeCloud2CloudDistance(neighbourCloud.data(), regionCloud.data(), params);
+		int result = cloudViewer::DistanceComputationTools::
+                        computeCloud2CloudDistances(neighbourCloud.data(),
+                                                    regionCloud.data(), params);
 		if (result >= 0)
 		{
             double meanDistance = 0.0;

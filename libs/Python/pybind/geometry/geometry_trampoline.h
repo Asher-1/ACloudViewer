@@ -140,6 +140,14 @@ public:
 	cloudViewer::VerticesIndexes* getNextTriangleVertIndexes() override {
 		PYBIND11_OVERLOAD_PURE(cloudViewer::VerticesIndexes*, GenericIndexedMeshBase, );
 	}
+
+        bool interpolateNormals(unsigned triIndex, const CCVector3& P, CCVector3& N) override {
+		PYBIND11_OVERLOAD_PURE(bool, GenericIndexedMeshBase, triIndex, P, N);
+	}
+
+        bool normalsAvailable() const override {
+		PYBIND11_OVERLOAD_PURE(bool, GenericIndexedMeshBase, );
+	}
 };
 
 template <class GenericTriangleMesh = ccGenericMesh>
@@ -196,9 +204,6 @@ public:
 	NormsIndexesTableType* getTriNormsTable() const override {
 		PYBIND11_OVERLOAD_PURE(NormsIndexesTableType*, GenericTriangleMesh, );
 	}
-	bool interpolateNormals(unsigned triIndex, const CCVector3& P, CCVector3& N) override {
-		PYBIND11_OVERLOAD_PURE(bool, GenericTriangleMesh, triIndex, P, N);
-	}
 	bool interpolateColors(unsigned triIndex, const CCVector3& P, ecvColor::Rgb& C) override {
 		PYBIND11_OVERLOAD_PURE(bool, GenericTriangleMesh, triIndex, P, C);
 	}
@@ -208,6 +213,10 @@ public:
 	bool getVertexColorFromMaterial(unsigned triIndex, unsigned char vertIndex, ecvColor::Rgb& C, bool returnColorIfNoTexture) override {
 		PYBIND11_OVERLOAD_PURE(bool, GenericTriangleMesh, triIndex, vertIndex, C, returnColorIfNoTexture);
 	}
+
+        bool interpolateNormalsBC(unsigned triIndex, const CCVector3d& w, CCVector3& N) override {
+            PYBIND11_OVERLOAD_PURE(bool, GenericTriangleMesh, triIndex, w, N);
+        }
 
 };
 
