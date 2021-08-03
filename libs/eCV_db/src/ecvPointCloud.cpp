@@ -1648,6 +1648,13 @@ const CCVector3& ccPointCloud::getPointNormal(unsigned pointIndex) const
 	return ccNormalVectors::GetNormal(m_normals->getValue(pointIndex));
 }
 
+const CCVector3* ccPointCloud::getNormal(unsigned pointIndex) const
+{
+	assert(m_normals && pointIndex < m_normals->currentSize());
+
+	return &ccNormalVectors::GetNormal(m_normals->getValue(pointIndex));
+}
+
 CCVector3& ccPointCloud::getPointNormalPtr(size_t pointIndex) const
 {
 	assert(m_normals && pointIndex < m_normals->currentSize());
@@ -3085,13 +3092,14 @@ QSharedPointer<cloudViewer::ReferenceCloud> ccPointCloud::computeCPSet(	ccGeneri
 	QSharedPointer<cloudViewer::ReferenceCloud> CPSet;
 	CPSet.reset(new cloudViewer::ReferenceCloud(&otherCloud));
 
-	cloudViewer::DistanceComputationTools::Cloud2CloudDistanceComputationParams params;
+	cloudViewer::DistanceComputationTools::
+                Cloud2CloudDistancesComputationParams params;
 	{
 		params.CPSet = CPSet.data();
 		params.octreeLevel = octreeLevel;
 	}
 
-	//create temporary SF for the nearest neighors determination (computeCloud2CloudDistance)
+	//create temporary SF for the nearest neighors determination (computeCloud2CloudDistances)
 	//so that we can properly remove it afterwards!
 	static const char s_defaultTempSFName[] = "CPSetComputationTempSF";
 	int sfIdx = getScalarFieldIndexByName(s_defaultTempSFName);
@@ -3107,7 +3115,9 @@ QSharedPointer<cloudViewer::ReferenceCloud> ccPointCloud::computeCPSet(	ccGeneri
 	int currentOutSFIndex = m_currentOutScalarFieldIndex;
 	setCurrentScalarField(sfIdx);
 
-	result = cloudViewer::DistanceComputationTools::computeCloud2CloudDistance(this, &otherCloud, params, progressCb);
+	result = cloudViewer::DistanceComputationTools::
+                computeCloud2CloudDistances(this, &otherCloud, params,
+                                            progressCb);
 
 	//restore previous parameters
 	setCurrentInScalarField(currentInSFIndex);
@@ -5250,31 +5260,28 @@ bool ccPointCloud::orientNormalsTowardViewPoint( CCVector3 & VP, ecvProgressDial
 }
 
 bool ccPointCloud::computeNormalsWithOctree(CV_LOCAL_MODEL_TYPES model,
-											ccNormalVectors::Orientation preferredOrientation,
-											PointCoordinateType defaultRadius,
-											ecvProgressDialog* pDlg/*=0*/)
+                                            ccNormalVectors::Orientation preferredOrientation,
+                                            PointCoordinateType defaultRadius,
+                                            ecvProgressDialog* pDlg/*=nullptr*/)
 {
 	//compute the normals the 'old' way ;)
-	if (!getOctree())
+	if (!getOctree() && !computeOctree(pDlg))
 	{
-		if (!computeOctree(pDlg))
-		{
-			CVLog::Warning(QString("[computeNormals] Could not compute octree on cloud '%1'").arg(getName()));
-			return false;
-		}
+		CVLog::Warning(QString("[computeNormals] Could not compute octree for cloud '%1'").arg(getName()));
+		return false;
 	}
 
 	//computes cloud normals
 	QElapsedTimer eTimer;
 	eTimer.start();
 	NormsIndexesTableType* normsIndexes = new NormsIndexesTableType;
-	if (!ccNormalVectors::ComputeCloudNormals(	this,
-												*normsIndexes,
-												model,
-												defaultRadius,
-												preferredOrientation,
-												static_cast<cloudViewer::GenericProgressCallback*>(pDlg),
-												getOctree().data()))
+	if (!ccNormalVectors::ComputeCloudNormals(this,
+                                                    *normsIndexes,
+                                                    model,
+                                                    defaultRadius,
+                                                    preferredOrientation,
+                                                    static_cast<cloudViewer::GenericProgressCallback*>(pDlg),
+                                                    getOctree().data()))
 	{
 		CVLog::Warning(QString("[computeNormals] Failed to compute normals on cloud '%1'").arg(getName()));
 		return false;

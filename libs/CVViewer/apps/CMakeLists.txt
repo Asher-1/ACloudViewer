@@ -46,9 +46,6 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
     endif()
 
     include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
-    if( MSVC )
-       include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc )
-    endif()
 
     set_target_properties( ${TARGET_NAME} PROPERTIES
         AUTOMOC OFF
@@ -164,11 +161,11 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
     # Install auxiliary files
     if(APPLE OR UNIX) # For Linux it's already installed in by qCC
 	    foreach( filename ${auxFiles} )
-		    install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin" "" )
+		    cloudViewer_install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin" "" )
 	    endforeach()
     else ()
     	foreach( filename ${auxFiles} )
-		    install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}" "" )
+		    cloudViewer_install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}" "" )
 	    endforeach()
     endif()
 

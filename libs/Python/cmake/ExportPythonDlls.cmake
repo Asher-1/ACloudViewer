@@ -9,7 +9,7 @@ function(export_python_dlls) # 1 argument: ARGV0 = destination directory
 		copy_shared_library(${PROJECT_NAME}
 			LIB_DIR      ${ECV_PYTHON_DIR}
 			LIBRARIES    "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
-        copy_files("${PYTHON_DLL}" "${ARGV0}")
+        cloudViewer_install_files("${PYTHON_DLL}" "${ARGV0}")
         unset(PYTHON_DLL)
 
     endif ()

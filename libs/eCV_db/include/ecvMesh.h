@@ -146,9 +146,7 @@ public:
         return m_associatedCloud;
     }
     void refreshBB() override;
-    bool interpolateNormals(unsigned triIndex,
-                            const CCVector3& P,
-                            CCVector3& N) override;
+    bool interpolateNormalsBC(unsigned triIndex, const CCVector3d& w, CCVector3& N) override;
     bool interpolateColors(unsigned triIndex,
                            const CCVector3& P,
                            ecvColor::Rgb& C) override;
@@ -214,6 +212,8 @@ public:
 
     virtual unsigned size() const override;
     void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) override;
+    bool normalsAvailable() const override  { return hasNormals(); }
+    bool interpolateNormals(unsigned triIndex, const CCVector3& P, CCVector3& N) override;
 
     // const version of getTriangleVertIndexes
     void getTriangleVertIndexes(size_t triangleIndex,
@@ -1426,11 +1426,9 @@ protected:
             const cloudViewer::VerticesIndexes& vertIndexes,
             const CCVector3& P,
             CCVector3d& weights) const;
-    //! Same as other 'interpolateNormals' method with a set of 3 vertices
-    //! indexes
+    //! Same as other 'interpolateNormals' method with a set of 3 vertices indexes
     bool interpolateNormals(const cloudViewer::VerticesIndexes& vertIndexes,
-                            const CCVector3& P,
-                            CCVector3& N,
+                            const CCVector3d& w, CCVector3& N,
                             const Tuple3i* triNormIndexes = nullptr);
     //! Same as other 'interpolateColors' method with a set of 3 vertices
     //! indexes

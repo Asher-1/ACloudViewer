@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "geometry/KDTreeFlann.h"
+#include <ecvKDTreeFlann.h>
 
 #include <ecvPointCloud.h>
 #include <ecvMesh.h>

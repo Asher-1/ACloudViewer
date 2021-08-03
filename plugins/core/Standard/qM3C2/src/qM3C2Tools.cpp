@@ -372,10 +372,10 @@ static void OrientPointNormalWithCloud(unsigned index)
 }
 
 bool qM3C2Normals::UpdateNormalOrientationsWithCloud(	cloudViewer::GenericIndexedCloud* normCloud,
-														NormsIndexesTableType& normsCodes,
-														cloudViewer::GenericIndexedCloud* orientationCloud,
-														int maxThreadCount/*=0*/,
-														cloudViewer::GenericProgressCallback* progressCb/*=0*/)
+                                                        NormsIndexesTableType& normsCodes,
+                                                        cloudViewer::GenericIndexedCloud* orientationCloud,
+                                                        int maxThreadCount/*=0*/,
+                                                        cloudViewer::GenericProgressCallback* progressCb/*=nullptr*/)
 {
 	//input normals
 	unsigned count = normsCodes.currentSize();
@@ -526,7 +526,8 @@ double Interquartile(const cloudViewer::DgmOctree::NeighboursSet& set)
 	return q3 - q1;
 }
 
-void qM3C2Tools::ComputeStatistics(cloudViewer::DgmOctree::NeighboursSet& set, bool useMedian, double& meanOrMedian, double& stdDevOrIQR)
+void qM3C2Tools::ComputeStatistics(cloudViewer::DgmOctree::NeighboursSet& set,
+                                   bool useMedian, double& meanOrMedian, double& stdDevOrIQR)
 {
 	size_t count = set.size();
 	if (count == 0)
@@ -572,12 +573,12 @@ void qM3C2Tools::ComputeStatistics(cloudViewer::DgmOctree::NeighboursSet& set, b
 }
 
 bool qM3C2Tools::GuessBestParams(	ccPointCloud* cloud1,
-									ccPointCloud* cloud2,
-									unsigned minPoints4Stats,
-									qM3C2Tools::GuessedParams& params,
-									bool fastMode,
-									ecvMainAppInterface* app/*=0*/,
-									unsigned probingCount/*=1000*/)
+                                        ccPointCloud* cloud2,
+                                        unsigned minPoints4Stats,
+                                        qM3C2Tools::GuessedParams& params,
+                                        bool fastMode,
+                                        ecvMainAppInterface* app/*=nullptr*/,
+                                        unsigned probingCount/*=1000*/)
 {
 	//invalid parameters?
 	if (!cloud1 || !cloud2 || minPoints4Stats == 0)
@@ -649,8 +650,9 @@ bool qM3C2Tools::GuessBestParams(	ccPointCloud* cloud1,
 		while (!hasBestNormLevel || !hasBestProjLevel)
 		{
 			unsigned char level = octree1->findBestLevelForAGivenNeighbourhoodSizeExtraction(scale);
-			if (app)
-				app->dispToConsole(QString("[M3C2::auto] Test scale: %1 (level %2, %3 samples)").arg(scale).arg(level).arg(probingCount));
+			if (app) {
+                            app->dispToConsole(QString("[M3C2::auto] Test scale: %1 (level %2, %3 samples)").arg(scale).arg(level).arg(probingCount));
+                        }
 
 			double sumPopulation = 0;
 			double sumPopulation2 = 0;
@@ -767,7 +769,7 @@ bool qM3C2Tools::GuessBestParams(	ccPointCloud* cloud1,
 						if (fabs(meanNormal.u[maxDim]) < fabs(meanNormal.z))
 							maxDim = 2;
 
-						params.preferredDimension = 2 * maxDim;
+						params.preferredDimension = maxDim;
 					}
 					else
 					{

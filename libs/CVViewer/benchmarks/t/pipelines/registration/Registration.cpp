@@ -78,8 +78,8 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
         ccPointCloud legacy_s = source.ToLegacyPointCloud();
         ccPointCloud legacy_t = target.ToLegacyPointCloud();
 
-        legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
-        legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
+        legacy_s = *legacy_s.voxelDownSample(voxel_downsample_factor);
+        legacy_t = *legacy_t.voxelDownSample(voxel_downsample_factor);
 
         source = geometry::PointCloud::FromLegacyPointCloud(legacy_s);
         target = geometry::PointCloud::FromLegacyPointCloud(legacy_t);

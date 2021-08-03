@@ -27,6 +27,7 @@
 #pragma once
 
 // PYBIND_11
+#undef slots
 #include <pybind11/detail/internals.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>

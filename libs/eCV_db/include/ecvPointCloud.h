@@ -568,6 +568,10 @@ public:  // other methods
     // inherited from cloudViewer::GenericCloud
     unsigned char testVisibility(const CCVector3& P) const override;
 
+    //inherited from cloudViewer::GenericIndexedCloud
+    bool normalsAvailable() const override { return hasNormals(); }
+    const CCVector3* getNormal(unsigned pointIndex) const override; //equivalent to getPointNormal, but for CCCoreLib
+
     // inherited from ccGenericPointCloud
     const ecvColor::Rgb* getScalarValueColor(ScalarType d) const override;
     const ecvColor::Rgb* getPointScalarValueColor(

@@ -65,7 +65,7 @@ if(WIN32)
 	
     foreach( filename ${LAPACKBLAS_DLL} )
         set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${filename}${CMAKE_SHARED_LIBRARY_SUFFIX})
-        install_ext( FILES ${LAPACK_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
+        cloudViewer_install_ext( FILES ${LAPACK_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
     endforeach()
 	
 endif()

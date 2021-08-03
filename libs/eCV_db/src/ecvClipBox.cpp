@@ -87,7 +87,7 @@ void DrawUnitArrow(int ID,
 
     CCVector3 dir = direction;
     if (ID >= ccClipBox::CROSS * 10) {
-        context.transformInfo.setTranslationEnd(0.3f * 0.5 * dir);
+        context.transformInfo.setTranslationEnd(0.3f * 0.5f * dir);
     } else {
         context.transformInfo.setTranslationEnd(0.3f * dir);
     }
@@ -99,7 +99,7 @@ void DrawUnitArrow(int ID,
     // context.transformInfo.setTranslationEnd(CCVector3(0, 0, 0.3f+0.2f));
 
     if (ID >= ccClipBox::CROSS * 10) {
-        context.transformInfo.setTranslationEnd((0.3f + 0.2f) * 0.5 * dir);
+        context.transformInfo.setTranslationEnd((0.3f + 0.2f) * 0.5f * dir);
     } else {
         context.transformInfo.setTranslationEnd((0.3f + 0.2f) * dir);
     }

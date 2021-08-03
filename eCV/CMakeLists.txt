@@ -194,7 +194,7 @@ if( WIN32 )
 endif()
 
 # install program
-install_ext( TARGETS ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
+cloudViewer_install_ext( TARGETS ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
 
 # Auxiliary files
 set( auxFiles  ${ErowCloudViewerProjects_SOURCE_DIR}/CHANGELOG.txt bin_other/license.txt bin_other/global_shift_list_template.txt )
@@ -208,11 +208,11 @@ endif()
 # Install auxiliary files
 if( WIN32 OR APPLE )
     foreach( filename ${auxFiles} )
-        install_ext( FILES ${filename} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
+        cloudViewer_install_ext( FILES ${filename} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
     endforeach()
 else( UNIX )
     foreach( filename ${auxFiles} )
-        install_ext( FILES ${filename} share/erowcloudviewer "" )
+        cloudViewer_install_ext( FILES ${filename} share/erowcloudviewer "" )
     endforeach()
 endif()
 

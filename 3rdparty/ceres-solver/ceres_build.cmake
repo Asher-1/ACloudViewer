@@ -36,7 +36,7 @@ if (WIN32)
 else()
     set(EXT_CERES_LIBRARIES ceres)
     set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_CERES_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
-    install_ext( FILES ${CERES_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
+    cloudViewer_install_ext( FILES ${CERES_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
 endif()
 
 set(CERES_CMAKE_FLAGS ${SUITESPARSE_CMAKE_FLAGS} ${EIGEN_CMAKE_FLAGS} ${GLOG_CMAKE_FLAGS} -DCeres_DIR=${CERES_LIB_DIR}/cmake/Ceres)

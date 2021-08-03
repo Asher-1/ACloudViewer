@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------
 
 # Copy files to the specified directory and for the active configurations
-function( copy_files )	# 2 (or 3) arguments:
+function( cloudViewer_install_files )	# 2 (or 3) arguments:
 						# ARGV0 = files (if it's a list you have to provide the list alias quoted!)
 						# ARGV1 = target (directory)
                         # ARGV2 = 1 for debug install (if available)
@@ -35,7 +35,7 @@ endfunction()
 #   - ARGV1 = target (warning: one project or one file at a time)
 #   - ARGV2 = base install destination (_debug or _withDebInfo will be automatically appended if multi-conf is supported)
 #   - ARGV3 = install destination suffix (optional)
-function( install_ext )
+function( cloudViewer_install_ext )
 	if( APPLE )
 		install( ${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3} )
 		return()

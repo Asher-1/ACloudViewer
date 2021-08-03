@@ -49,8 +49,8 @@ ccBBox& ccBBox::translate(const Eigen::Vector3d& translation, bool relative) {
 }
 
 ccBBox& ccBBox::scale(const double s, const Eigen::Vector3d& center) {
-    m_bbMin = s * (m_bbMin - center) + center;
-    m_bbMax = s * (m_bbMax - center) + center;
+    m_bbMin = static_cast<PointCoordinateType>(s) * (m_bbMin - center) + center;
+    m_bbMax = static_cast<PointCoordinateType>(s) * (m_bbMax - center) + center;
     return *this;
 }
 
