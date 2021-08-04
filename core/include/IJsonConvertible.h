@@ -46,13 +46,13 @@ namespace utility {
 ///
 /// \param json_str String containing json value.
 /// \return A Json object.
-Json::Value StringToJson(const std::string &json_str);
+Json::Value CV_CORE_LIB_API StringToJson(const std::string &json_str);
 
 /// \brief Serialize a Json::Value to a string.
 ///
 /// \param json The Json::Value object to be converted.
 /// \return A string containing the json value.
-std::string JsonToString(const Json::Value json);
+std::string CV_CORE_LIB_API JsonToString(const Json::Value json);
 
 /// Class IJsonConvertible defines the behavior of a class that can convert
 /// itself to/from a json::Value.

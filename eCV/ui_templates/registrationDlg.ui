@@ -261,57 +261,52 @@
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string>Normals</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QComboBox" name="normalsComboBox">
-            <property name="toolTip">
-             <string>options to take normals into account, to improve the registration result</string>
-            </property>
+           <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
-             <property name="text">
-              <string>Ignored</string>
-             </property>
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>Normals</string>
+              </property>
+             </widget>
             </item>
             <item>
-             <property name="text">
-              <string>Opposite side</string>
-             </property>
+             <widget class="QComboBox" name="normalsComboBox">
+              <property name="toolTip">
+               <string>options to take normals into account, to improve the registration result</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Ignored</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Opposite side</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Same side</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Double-sided</string>
+               </property>
+              </item>
+             </widget>
             </item>
-            <item>
-             <property name="text">
-              <string>Same side</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Double-sided</string>
-             </property>
-            </item>
-           </widget>
+           </layout>
           </item>
           <item>
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Maximum</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -326,19 +321,7 @@
        </item>
        <item>
         <widget class="QFrame" name="threadingFrame">
-         <layout class="QHBoxLayout" name="horizontalLayout_7">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="QFrame" name="threadCountFrame">
             <property name="frameShape">
@@ -385,6 +368,9 @@
            <spacer name="horizontalSpacer_2">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Maximum</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
