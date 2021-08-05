@@ -1,9 +1,6 @@
 import cloudViewer as cv3d
 
-if cv3d._build_config['BUILD_RPC_INTERFACE']:
-    __all__ = ['ExternalVisualizer', 'EV']
-else:
-    __all__ = []
+__all__ = ['ExternalVisualizer', 'EV']
 
 
 class ExternalVisualizer:

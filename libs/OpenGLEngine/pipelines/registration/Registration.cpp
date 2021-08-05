@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,9 +26,9 @@
 
 #include "pipelines/registration/Registration.h"
 
+#include <ecvFeature.h>
 #include <ecvKDTreeFlann.h>
 #include <ecvPointCloud.h>
-#include <ecvFeature.h>
 
 // CV_CORE_LIB
 #include <Helper.h>
@@ -108,8 +108,8 @@ static RegistrationResult EvaluateRANSACBasedOnCorrespondence(
     int good = 0;
     double max_dis2 = max_correspondence_distance * max_correspondence_distance;
     for (const auto &c : corres) {
-        double dis2 = (source.getEigenPoint(c[0]) - 
-					target.getEigenPoint(c[1])).squaredNorm();
+        double dis2 = (source.getEigenPoint(c[0]) - target.getEigenPoint(c[1]))
+                              .squaredNorm();
         if (dis2 < max_dis2) {
             good++;
             error2 += dis2;
@@ -126,12 +126,11 @@ static RegistrationResult EvaluateRANSACBasedOnCorrespondence(
     return result;
 }
 
-RegistrationResult EvaluateRegistration(
-        const ccPointCloud &source,
-        const ccPointCloud &target,
-        double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation
-		/* = Eigen::Matrix4d::Identity()*/) {
+RegistrationResult EvaluateRegistration(const ccPointCloud &source,
+                                        const ccPointCloud &target,
+                                        double max_correspondence_distance,
+                                        const Eigen::Matrix4d &transformation
+                                        /* = Eigen::Matrix4d::Identity()*/) {
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
     ccPointCloud pcd = source;
@@ -208,7 +207,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers /* = {}*/,
         const RANSACConvergenceCriteria &criteria
-        /* = RANSACConvergenceCriteria()*/) {
+        /* = RANSACConvergenceCriteria()*/,
+        utility::optional<unsigned int> seed /* = utility::nullopt*/) {
     if (ransac_n < 3 || (int)corres.size() < ransac_n ||
         max_correspondence_distance <= 0.0) {
         return RegistrationResult();
@@ -223,6 +223,10 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         CorrespondenceSet ransac_corres(ransac_n);
         RegistrationResult best_result_local;
         int exit_itr_local = criteria.max_iteration_;
+        unsigned int seed_val =
+                seed.has_value() ? seed.value() : std::random_device{}();
+        utility::UniformRandIntGenerator rand_generator(
+                0, static_cast<int>(corres.size()) - 1, seed_val);
 
 #ifdef _OPENMP
 #pragma omp for nowait
@@ -230,8 +234,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
             if (itr < exit_itr_local) {
                 for (int j = 0; j < ransac_n; j++) {
-                    ransac_corres[j] = corres[utility::UniformRandInt(
-                            0, static_cast<int>(corres.size()) - 1)];
+                    ransac_corres[j] = corres[rand_generator()];
                 }
 
                 Eigen::Matrix4d transformation =
@@ -302,7 +305,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers /* = {}*/,
         const RANSACConvergenceCriteria &criteria
-        /* = RANSACConvergenceCriteria()*/) {
+        /* = RANSACConvergenceCriteria()*/,
+        utility::optional<unsigned int> seed /* = utility::nullopt*/) {
     if (ransac_n < 3 || max_correspondence_distance <= 0.0) {
         return RegistrationResult();
     }
@@ -358,7 +362,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                               corres_mutual.size());
             return RegistrationRANSACBasedOnCorrespondence(
                     source, target, corres_mutual, max_correspondence_distance,
-                    estimation, ransac_n, checkers, criteria);
+                    estimation, ransac_n, checkers, criteria, seed);
         }
         utility::LogDebug(
                 "Too few correspondences after mutual filter, fall back to "
@@ -367,8 +371,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 
     return RegistrationRANSACBasedOnCorrespondence(
             source, target, corres_ij, max_correspondence_distance, estimation,
-            ransac_n, checkers, criteria);
-
+            ransac_n, checkers, criteria, seed);
 }
 
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(

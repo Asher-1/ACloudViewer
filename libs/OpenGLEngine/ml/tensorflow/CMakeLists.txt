@@ -123,7 +123,7 @@ if (BUILD_CUDA_MODULE)
 endif()
 
 cloudViewer_show_and_abort_on_warning(cloudViewer_tf_ops)
-# do not use open3d_set_global_properties(cloudViewer_tf_ops) here because some
+# do not use cloudViewer_set_global_properties(cloudViewer_tf_ops) here because some
 # options are not compatible for tf op libraries
 
 # Set output directory according to architecture (cpu/cuda)

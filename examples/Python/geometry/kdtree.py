@@ -10,7 +10,7 @@ import cloudViewer as cv3d
 if __name__ == "__main__":
     print("Testing kdtree in cloudViewer ...")
     print("Load a point cloud and paint it gray.")
-    pcd = cv3d.io.read_point_cloud("../../TestData/Feature/cloud_bin_0.pcd")
+    pcd = cv3d.io.read_point_cloud("../../test_data/Feature/cloud_bin_0.pcd")
     pcd.paint_uniform_color([0.5, 0.5, 0.5])
     pcd_tree = cv3d.geometry.KDTreeFlann(pcd)
 

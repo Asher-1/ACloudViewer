@@ -568,9 +568,10 @@ public:  // other methods
     // inherited from cloudViewer::GenericCloud
     unsigned char testVisibility(const CCVector3& P) const override;
 
-    //inherited from cloudViewer::GenericIndexedCloud
+    // inherited from cloudViewer::GenericIndexedCloud
     bool normalsAvailable() const override { return hasNormals(); }
-    const CCVector3* getNormal(unsigned pointIndex) const override; //equivalent to getPointNormal, but for CCCoreLib
+    const CCVector3* getNormal(unsigned pointIndex)
+            const override;  // equivalent to getPointNormal, but for CCCoreLib
 
     // inherited from ccGenericPointCloud
     const ecvColor::Rgb* getScalarValueColor(ScalarType d) const override;
@@ -940,6 +941,11 @@ public:  // for python interface
     virtual ccPointCloud& rotate(const Eigen::Matrix3d& R,
                                  const Eigen::Vector3d& center) override;
 
+    /// Returns 'true' if the point cloud contains per-point covariance matrix.
+    bool hasCovariances() const {
+        return !m_points.empty() && covariances_.size() == m_points.size();
+    }
+
     /// Normalize point normals to length 1.`
     ccPointCloud& normalizeNormals();
 
@@ -1089,6 +1095,28 @@ public:  // for python interface
     /// \param target The target point cloud.
     std::vector<double> computePointCloudDistance(const ccPointCloud& target);
 
+    /// \brief Static function to compute the covariance matrix for each point
+    /// of a point cloud. Doesn't change the input PointCloud, just outputs the
+    /// covariance matrices.
+    ///
+    ///
+    /// \param input PointCloud to use for covariance computation \param
+    /// search_param The KDTree search parameters for neighborhood search.
+    static std::vector<Eigen::Matrix3d> EstimatePerPointCovariances(
+            const ccPointCloud& input,
+            const cloudViewer::geometry::KDTreeSearchParam& search_param =
+                    cloudViewer::geometry::KDTreeSearchParamKNN());
+
+    /// \brief Function to compute the covariance matrix for each point of a
+    /// point cloud.
+    ///
+    ///
+    /// \param search_param The KDTree search parameters for neighborhood
+    /// search.
+    void estimateCovariances(
+            const cloudViewer::geometry::KDTreeSearchParam& search_param =
+                    cloudViewer::geometry::KDTreeSearchParamKNN());
+
     /// \brief Function to compute the Mahalanobis distance for points
     /// in an input point cloud.
     ///
@@ -1228,6 +1256,10 @@ public:  // for python interface
     ///
     /// \param color RGB colors of vertices.
     ccPointCloud& paintUniformColor(const Eigen::Vector3d& color);
+
+public:
+    /// Covariance Matrix for each point
+    std::vector<Eigen::Matrix3d> covariances_;
 
 protected:
     // inherited from ccHObject

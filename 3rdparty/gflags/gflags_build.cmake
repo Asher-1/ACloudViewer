@@ -1,11 +1,5 @@
 include(ExternalProject)
 
-set_local_or_remote_url(
-    DOWNLOAD_URL_PRIMARY
-    LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/gflags-2.2.2.zip"
-    REMOTE_URLS ""
-)
-
 # Add gflags
 ExternalProject_Add(
     ext_gflags

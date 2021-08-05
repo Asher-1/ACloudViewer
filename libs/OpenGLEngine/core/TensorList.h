@@ -58,13 +58,13 @@ namespace core {
 class TensorList {
 public:
     /// Useful to support operator[] in a map.
-    TensorList() : TensorList(SizeVector({}), Dtype::Float32) {}
+    TensorList() : TensorList(SizeVector({}), core::Float32) {}
 
     /// Constructs an empty tensorlist.
     ///
     /// \param element_shape Shape of the contained tensors, e.g. {3,}. 0-sized
     /// and scalar element_shape are allowed.
-    /// \param dtype Data type of the contained tensors. e.g. Dtype::Float32.
+    /// \param dtype Data type of the contained tensors. e.g. core::Float32.
     /// \param device Device of the contained tensors. e.g. Device("CPU:0").
     TensorList(const SizeVector& element_shape,
                Dtype dtype,
@@ -89,18 +89,18 @@ public:
     /// \param size Size of the tensorlist.
     /// \param element_shape Shape of the contained tensors, e.g. {3,}. 0-sized
     /// and scalar element_shape are allowed.
-    /// \param dtype Data type of the contained tensors. e.g. Dtype::Float32.
+    /// \param dtype Data type of the contained tensors. e.g. core::Float32.
     /// \param device Device of the contained tensors. e.g. Device("CPU:0").
     TensorList(int64_t size,
-        const SizeVector& element_shape,
-        Dtype dtype,
-        const Device& device = Device("CPU:0"))
+               const SizeVector& element_shape,
+               Dtype dtype,
+               const Device& device = Device("CPU:0"))
         : element_shape_(element_shape),
-        size_(size),
-        reserved_size_(ComputeReserveSize(size)),
-        internal_tensor_(shape_util::Concat({ reserved_size_ }, element_shape_),
-            dtype,
-            device) {}
+          size_(size),
+          reserved_size_(ComputeReserveSize(size)),
+          internal_tensor_(shape_util::Concat({reserved_size_}, element_shape_),
+                           dtype,
+                           device) {}
 
     /// Constructs a tensorlist from a list of Tensors. The tensors must have
     /// the same shape, dtype and device. Values will be copied.
@@ -119,7 +119,7 @@ public:
     TensorList(InputIterator begin, InputIterator end) {
         int64_t size = std::distance(begin, end);
         if (size == 0) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "Empty input tensors cannot initialize a tensorlist.");
         }
 
@@ -131,7 +131,7 @@ public:
         element_shape_ = begin->GetShape();
         std::for_each(begin, end, [&](const Tensor& tensor) -> void {
             if (tensor.GetShape() != element_shape_) {
-                cloudViewer::utility::LogError(
+                utility::LogError(
                         "Tensors must have the same shape {}, but got {}.",
                         element_shape_, tensor.GetShape());
             }
@@ -141,7 +141,7 @@ public:
         Dtype dtype = begin->GetDtype();
         std::for_each(begin, end, [&](const Tensor& tensor) -> void {
             if (tensor.GetDtype() != dtype) {
-                cloudViewer::utility::LogError(
+                utility::LogError(
                         "Tensors must have the same dtype {}, but got {}.",
                         dtype.ToString(), tensor.GetDtype().ToString());
             }
@@ -151,7 +151,7 @@ public:
         Device device = begin->GetDevice();
         std::for_each(begin, end, [&](const Tensor& tensor) -> void {
             if (tensor.GetDevice() != device) {
-                cloudViewer::utility::LogError(
+                utility::LogError(
                         "Tensors must have the same device {}, but got {}.",
                         device.ToString(), tensor.GetDevice().ToString());
             }
@@ -261,7 +261,7 @@ public:
 
     void AssertElementShape(const SizeVector& expected_element_shape) const {
         if (expected_element_shape != element_shape_) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "TensorList has element shape {}, but is expected to have "
                     "element shape {}.",
                     element_shape_, expected_element_shape);
@@ -270,7 +270,7 @@ public:
 
     void AssertDevice(const Device& expected_device) const {
         if (GetDevice() != expected_device) {
-            cloudViewer::utility::LogError(
+            utility::LogError(
                     "TensorList has device {}, but is expected to be {}.",
                     GetDevice().ToString(), expected_device.ToString());
         }

@@ -18,7 +18,7 @@ from trajectory_io import read_trajectory
 
 
 def run_benchmark():
-    dataset_path = os.path.join(pwd, "..", "..", "TestData", "RGBD")
+    dataset_path = os.path.join(pwd, "..", "..", "test_data", "RGBD")
     camera_poses = read_trajectory(os.path.join(dataset_path, "odometry.log"))
     camera_intrinsics = cv3d.camera.PinholeCameraIntrinsic(
         cv3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)

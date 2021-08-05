@@ -271,6 +271,7 @@ public:
 						bool autoComputeOctree = false);
 
 	std::tuple<Eigen::Vector3d, Eigen::Matrix3d> computeMeanAndCovariance() const;
+	cloudViewer::SquareMatrixd computeCovariance() const;
 
 protected:
 	//inherited from ccHObject

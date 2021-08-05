@@ -1,6 +1,6 @@
 # CloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+# See license file or visit www.cloudViewer.org for details
 
 # examples/python/geometry/half_edge_mesh.py
 
@@ -21,7 +21,7 @@ def draw_geometries_with_back_face(geometries):
 
 if __name__ == "__main__":
     # Initialize a HalfEdgeTriangleMesh from TriangleMesh
-    mesh = cv3d.io.read_triangle_mesh("../../TestData/sphere.ply")
+    mesh = cv3d.io.read_triangle_mesh("../../test_data/sphere.ply")
     bbox = cv3d.geometry.ccBBox()
     bbox.set_min_bound([-1, -1, -1])
     bbox.set_max_bound([1, 0.6, 1])

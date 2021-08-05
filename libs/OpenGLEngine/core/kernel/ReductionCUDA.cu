@@ -37,16 +37,15 @@
 #include <type_traits>
 
 #include "core/Blob.h"
-#include "core/CUDAState.cuh"
 #include "core/CUDAUtils.h"
 #include "core/Device.h"
 #include "core/Dispatch.h"
 #include "core/FunctionTraits.h"
 #include "core/Indexer.h"
 #include "core/MemoryManager.h"
+#include "core/ParallelFor.h"
 #include "core/SizeVector.h"
 #include "core/Tensor.h"
-#include "core/kernel/CUDALauncher.cuh"
 #include "core/kernel/Reduction.h"
 #include <Logging.h>
 
@@ -1003,7 +1002,7 @@ private:
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
                 <<<config.GridDim(), config.BlockDim(), shared_memory,
                    core::cuda::GetStream()>>>(reduce_op);
-        CLOUDVIEWER_CUDA_CHECK(cudaDeviceSynchronize());
+        cuda::Synchronize();
         CLOUDVIEWER_CUDA_CHECK(cudaGetLastError());
     }
 
@@ -1073,7 +1072,7 @@ void ReductionCUDA(const Tensor& src,
             }
         });
     } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
-        if (dst.GetDtype() != Dtype::Int64) {
+        if (dst.GetDtype() != core::Int64) {
             utility::LogError("Arg-reduction must have int64 output dtype.");
         }
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME, dims);
@@ -1112,11 +1111,11 @@ void ReductionCUDA(const Tensor& src,
         });
     } else if (s_boolean_reduce_ops.find(op_code) !=
                s_boolean_reduce_ops.end()) {
-        if (src.GetDtype() != Dtype::Bool) {
+        if (src.GetDtype() != core::Bool) {
             utility::LogError(
                     "Boolean reduction only supports boolean input tensor.");
         }
-        if (dst.GetDtype() != Dtype::Bool) {
+        if (dst.GetDtype() != core::Bool) {
             utility::LogError(
                     "Boolean reduction only supports boolean output tensor.");
         }

@@ -159,8 +159,8 @@ def voxel_carving(mesh,
 if __name__ == '__main__':
     mesh = meshes.armadillo()
 
-    output_filename = os.path.abspath("../../TestData/voxelized.ply")
-    camera_path = os.path.abspath("../../TestData/sphere.ply")
+    output_filename = os.path.abspath("../../test_data/voxelized.ply")
+    camera_path = os.path.abspath("../../test_data/sphere.ply")
 
     visualization = True
     cubic_size = 2.0

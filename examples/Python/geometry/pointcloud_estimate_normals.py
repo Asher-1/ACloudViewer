@@ -33,7 +33,7 @@ def pointcloud_generator():
 
     yield 'bunny', meshes.bunny().scale(10).sample_points_uniformly(int(1e5))
 
-    yield 'fragment', cv3d.io.read_point_cloud('../../TestData/fragment.ply')
+    yield 'fragment', cv3d.io.read_point_cloud('../../test_data/fragment.ply')
 
 
 if __name__ == "__main__":

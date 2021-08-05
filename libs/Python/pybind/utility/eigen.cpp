@@ -33,7 +33,7 @@ template <typename Vector,
           typename holder_type = std::unique_ptr<Vector>,
           typename... Args>
 py::class_<Vector, holder_type> bind_vector_without_repr(
-        py::module &m, std::string const &name, Args &&...args) {
+        py::module &m, std::string const &name, Args &&... args) {
     // hack function to disable __repr__ for the convenient function
     // bind_vector()
     using Class_ = py::class_<Vector, holder_type>;
@@ -56,7 +56,7 @@ py::class_<Vector, holder_type> bind_vector_without_repr(
 template <typename EigenVector>
 std::vector<EigenVector> py_array_to_vectors_double(
         py::array_t<double, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -74,7 +74,7 @@ std::vector<EigenVector> py_array_to_vectors_double(
 template <typename EigenVector>
 std::vector<EigenVector> py_array_to_vectors_int(
         py::array_t<int, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -91,7 +91,7 @@ template <typename EigenVector,
 std::vector<EigenVector, EigenAllocator>
 py_array_to_vectors_int_eigen_allocator(
         py::array_t<int, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -108,7 +108,7 @@ template <typename EigenVector,
 std::vector<EigenVector, EigenAllocator>
 py_array_to_vectors_int64_eigen_allocator(
         py::array_t<int64_t, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -329,7 +329,7 @@ void pybind_eigen(py::module &m) {
     auto intvector = pybind_eigen_vector_of_scalar<int>(m, "IntVector");
     intvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert int32 numpy array of shape ``(n,)`` to cloudViewer format.)";
+                return R"(Convert int32 numpy array of shape ``(n,)`` to Open3D format.)";
             }),
             py::none(), py::none(), "");
 
@@ -337,7 +337,7 @@ void pybind_eigen(py::module &m) {
             pybind_eigen_vector_of_scalar<double>(m, "DoubleVector");
     doublevector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert float64 numpy array of shape ``(n,)`` to cloudViewer format.)";
+                return R"(Convert float64 numpy array of shape ``(n,)`` to Open3D format.)";
             }),
             py::none(), py::none(), "");
 
@@ -346,22 +346,22 @@ void pybind_eigen(py::module &m) {
             py::py_array_to_vectors_double<Eigen::Vector3d>);
     vector3dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert float64 numpy array of shape ``(n, 3)`` to cloudViewer format.
+                return R"(Convert float64 numpy array of shape ``(n, 3)`` to Open3D format.
 
 Example usage
 
 .. code-block:: python
 
-    import cloudViewer
+    import open3d
     import numpy as np
 
-    pcd = cloudViewer.geometry.PointCloud()
+    pcd = open3d.geometry.PointCloud()
     np_points = np.random.rand(100, 3)
 
-    # From numpy to cloudViewer
-    pcd.points = cloudViewer.utility.Vector3dVector(np_points)
+    # From numpy to Open3D
+    pcd.points = open3d.utility.Vector3dVector(np_points)
 
-    # From cloudViewer to numpy
+    # From Open3D to numpy
     np_points = np.asarray(pcd.points)
 )";
             }),
@@ -372,13 +372,13 @@ Example usage
             py::py_array_to_vectors_int<Eigen::Vector3i>);
     vector3ivector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert int32 numpy array of shape ``(n, 3)`` to cloudViewer format..
+                return R"(Convert int32 numpy array of shape ``(n, 3)`` to Open3D format..
 
 Example usage
 
 .. code-block:: python
 
-    import cloudViewer
+    import open3d
     import numpy as np
 
     # Example mesh
@@ -392,19 +392,19 @@ Example usage
     #
     # z coordinate: 0
 
-    mesh = cloudViewer.geometry.TriangleMesh()
+    mesh = open3d.geometry.TriangleMesh()
     np_vertices = np.array([[-1, 2, 0],
                             [1, 2, 0],
                             [0, 0, 0],
                             [2, 0, 0]])
     np_triangles = np.array([[0, 2, 1],
                              [1, 2, 3]]).astype(np.int32)
-    mesh.vertices = cloudViewer.Vector3dVector(np_vertices)
+    mesh.vertices = open3d.Vector3dVector(np_vertices)
 
-    # From numpy to cloudViewer
-    mesh.triangles = cloudViewer.Vector3iVector(np_triangles)
+    # From numpy to Open3D
+    mesh.triangles = open3d.Vector3iVector(np_triangles)
 
-    # From cloudViewer to numpy
+    # From Open3D to numpy
     np_triangles = np.asarray(mesh.triangles)
 )";
             }),
@@ -416,7 +416,7 @@ Example usage
     vector2ivector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert int32 numpy array of shape ``(n, 2)`` to "
-                       "cloudViewer format.";
+                       "Open3D format.";
             }),
             py::none(), py::none(), "");
 
@@ -426,7 +426,18 @@ Example usage
     vector2dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert float64 numpy array of shape ``(n, 2)`` to "
-                       "cloudViewer format.";
+                       "Open3D format.";
+            }),
+            py::none(), py::none(), "");
+
+    auto matrix3dvector =
+            pybind_eigen_vector_of_matrix<Eigen::Matrix3d,
+                                          std::allocator<Eigen::Matrix3d>>(
+                    m, "Matrix3dVector", "std::vector<Eigen::Matrix3d>");
+    matrix3dvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert float64 numpy array of shape ``(n, 3, 3)`` to "
+                       "Open3D format.";
             }),
             py::none(), py::none(), "");
 
@@ -435,7 +446,7 @@ Example usage
     matrix4dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert float64 numpy array of shape ``(n, 4, 4)`` to "
-                       "cloudViewer format.";
+                       "Open3D format.";
             }),
             py::none(), py::none(), "");
 
@@ -446,7 +457,7 @@ Example usage
     vector4ivector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert int numpy array of shape ``(n, 4)`` to "
-                       "cloudViewer format.";
+                       "Open3D format.";
             }),
             py::none(), py::none(), "");
 }

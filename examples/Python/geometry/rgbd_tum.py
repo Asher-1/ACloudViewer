@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     print("Read TUM dataset")
     color_raw = cv3d.io.read_image(
-        "../../TestData/RGBD/other_formats/TUM_color.png")
+        "../../test_data/RGBD/other_formats/TUM_color.png")
     depth_raw = cv3d.io.read_image(
-        "../../TestData/RGBD/other_formats/TUM_depth.png")
+        "../../test_data/RGBD/other_formats/TUM_depth.png")
     rgbd_image = cv3d.geometry.RGBDImage.create_from_tum_format(color_raw, depth_raw)
     print(rgbd_image)
     plt.subplot(1, 2, 1)

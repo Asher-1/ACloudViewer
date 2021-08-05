@@ -24,13 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core/CUDAState.cuh"
 #include "core/CUDAUtils.h"
 #include "core/Dispatch.h"
 #include "core/Indexer.h"
+#include "core/ParallelFor.h"
 #include "core/Tensor.h"
 #include "core/kernel/BinaryEW.h"
-#include "core/kernel/CUDALauncher.cuh"
 
 namespace cloudViewer {
 namespace core {
@@ -39,14 +38,15 @@ namespace kernel {
 // Cannot be a static function since on Windows a function enclosing
 // __host__ __device__ lambda function must have external linkage.
 template <typename func_t>
-void LaunchBinaryEWKernel(const Indexer& indexer,
+void LaunchBinaryEWKernel(const Device& device,
+                          const Indexer& indexer,
                           const func_t& element_kernel) {
     CLOUDVIEWER_ASSERT_HOST_DEVICE_LAMBDA(func_t);
     auto element_func = [=] CLOUDVIEWER_HOST_DEVICE(int64_t i) {
         element_kernel(indexer.GetInputPtr(0, i), indexer.GetInputPtr(1, i),
                        indexer.GetOutputPtr(i));
     };
-    cuda_launcher::ParallelFor(indexer.NumWorkloads(), element_func);
+    ParallelFor(device, indexer.NumWorkloads(), element_func);
     CLOUDVIEWER_GET_LAST_CUDA_ERROR("LaunchBinaryEWKernel failed.");
 }
 
@@ -163,69 +163,79 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
                                   Tensor& dst,
                                   BinaryEWOpCode op_code,
                                   const Indexer& indexer) {
+    Device device = lhs.GetDevice();
     switch (op_code) {
         case BinaryEWOpCode::LogicalAnd:
-            LaunchBinaryEWKernel(indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
-                                                                void* rhs,
-                                                                void* dst) {
-                CUDALogicalAndElementKernel<src_t, dst_t>(lhs, rhs, dst);
-            });
+            LaunchBinaryEWKernel(device, indexer,
+                                 [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
+                                     CUDALogicalAndElementKernel<src_t, dst_t>(
+                                             lhs, rhs, dst);
+                                 });
             break;
         case BinaryEWOpCode::LogicalOr:
-            LaunchBinaryEWKernel(
-                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                   void* dst) {
-                        CUDALogicalOrElementKernel<src_t, dst_t>(lhs, rhs, dst);
-                    });
+            LaunchBinaryEWKernel(device, indexer,
+                                 [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
+                                     CUDALogicalOrElementKernel<src_t, dst_t>(
+                                             lhs, rhs, dst);
+                                 });
             break;
         case BinaryEWOpCode::LogicalXor:
-            LaunchBinaryEWKernel(indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
-                                                                void* rhs,
-                                                                void* dst) {
-                CUDALogicalXorElementKernel<src_t, dst_t>(lhs, rhs, dst);
-            });
+            LaunchBinaryEWKernel(device, indexer,
+                                 [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
+                                     CUDALogicalXorElementKernel<src_t, dst_t>(
+                                             lhs, rhs, dst);
+                                 });
             break;
         case BinaryEWOpCode::Gt:
-            LaunchBinaryEWKernel(
-                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                   void* dst) {
-                        CUDAGtElementKernel<src_t, dst_t>(lhs, rhs, dst);
-                    });
+            LaunchBinaryEWKernel(device, indexer,
+                                 [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
+                                     CUDAGtElementKernel<src_t, dst_t>(lhs, rhs,
+                                                                       dst);
+                                 });
             break;
         case BinaryEWOpCode::Lt:
-            LaunchBinaryEWKernel(
-                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                   void* dst) {
-                        CUDALtElementKernel<src_t, dst_t>(lhs, rhs, dst);
-                    });
+            LaunchBinaryEWKernel(device, indexer,
+                                 [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
+                                     CUDALtElementKernel<src_t, dst_t>(lhs, rhs,
+                                                                       dst);
+                                 });
             break;
         case BinaryEWOpCode::Ge:
-            LaunchBinaryEWKernel(
-                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                   void* dst) {
-                        CUDAGeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
-                    });
+            LaunchBinaryEWKernel(device, indexer,
+                                 [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
+                                     CUDAGeqElementKernel<src_t, dst_t>(
+                                             lhs, rhs, dst);
+                                 });
             break;
         case BinaryEWOpCode::Le:
-            LaunchBinaryEWKernel(
-                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                   void* dst) {
-                        CUDALeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
-                    });
+            LaunchBinaryEWKernel(device, indexer,
+                                 [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
+                                     CUDALeqElementKernel<src_t, dst_t>(
+                                             lhs, rhs, dst);
+                                 });
             break;
         case BinaryEWOpCode::Eq:
-            LaunchBinaryEWKernel(
-                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                   void* dst) {
-                        CUDAEqElementKernel<src_t, dst_t>(lhs, rhs, dst);
-                    });
+            LaunchBinaryEWKernel(device, indexer,
+                                 [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
+                                     CUDAEqElementKernel<src_t, dst_t>(lhs, rhs,
+                                                                       dst);
+                                 });
             break;
         case BinaryEWOpCode::Ne:
-            LaunchBinaryEWKernel(
-                    indexer, [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
-                                                   void* dst) {
-                        CUDANeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
-                    });
+            LaunchBinaryEWKernel(device, indexer,
+                                 [] CLOUDVIEWER_HOST_DEVICE(const void* lhs,
+                                                       void* rhs, void* dst) {
+                                     CUDANeqElementKernel<src_t, dst_t>(
+                                             lhs, rhs, dst);
+                                 });
             break;
         default:
             break;
@@ -255,7 +265,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                 Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
                 LaunchBoolBinaryEWCUDAKernel<scalar_t, scalar_t>(
                         lhs, rhs, dst, op_code, indexer);
-            } else if (dst_dtype == Dtype::Bool) {
+            } else if (dst_dtype == core::Bool) {
                 // By default, output is boolean type.
                 Indexer indexer({lhs, rhs}, dst,
                                 DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
@@ -274,7 +284,7 @@ void BinaryEWCUDA(const Tensor& lhs,
             switch (op_code) {
                 case BinaryEWOpCode::Add:
                     LaunchBinaryEWKernel(
-                            indexer,
+                            src_device, indexer,
                             [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
                                 CUDAAddElementKernel<scalar_t>(lhs, rhs, dst);
@@ -282,7 +292,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                     break;
                 case BinaryEWOpCode::Sub:
                     LaunchBinaryEWKernel(
-                            indexer,
+                            src_device, indexer,
                             [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
                                 CUDASubElementKernel<scalar_t>(lhs, rhs, dst);
@@ -290,7 +300,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                     break;
                 case BinaryEWOpCode::Mul:
                     LaunchBinaryEWKernel(
-                            indexer,
+                            src_device, indexer,
                             [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
                                 CUDAMulElementKernel<scalar_t>(lhs, rhs, dst);
@@ -298,7 +308,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                     break;
                 case BinaryEWOpCode::Div:
                     LaunchBinaryEWKernel(
-                            indexer,
+                            src_device, indexer,
                             [] CLOUDVIEWER_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
                                 CUDADivElementKernel<scalar_t>(lhs, rhs, dst);

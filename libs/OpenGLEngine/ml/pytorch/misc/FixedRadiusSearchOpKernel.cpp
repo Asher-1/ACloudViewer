@@ -25,12 +25,13 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "ml/impl/misc/FixedRadiusSearch.h"
+#include "core/nns/FixedRadiusSearchImpl.h"
+#include "core/nns/NeighborSearchCommon.h"
 #include "ml/pytorch/TorchHelper.h"
 #include "ml/pytorch/misc/NeighborSearchAllocator.h"
 #include "torch/script.h"
 
-using namespace cloudViewer::ml::impl;
+using namespace cloudViewer::core::nns;
 
 template <class T>
 void FixedRadiusSearchCPU(const torch::Tensor& points,
@@ -50,7 +51,7 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
     NeighborSearchAllocator<T> output_allocator(points.device().type(),
                                                 points.device().index());
 
-    FixedRadiusSearchCPU(
+    cloudViewer::core::nns::impl::FixedRadiusSearchCPU(
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),
             T(radius), points_row_splits.size(0),

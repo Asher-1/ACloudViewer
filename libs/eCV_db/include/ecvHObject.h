@@ -97,6 +97,15 @@ public:  // construction
     /// \param normals A list of normals to be transformed.
     static void TransformNormals(const Eigen::Matrix4d& transformation,
                                  std::vector<Eigen::Vector3d>& normals);
+
+
+    /// \brief Transforms all covariance matrices with the transformation.
+    ///
+    /// \param transformation 4x4 matrix for transformation.
+    /// \param covariances A list of covariance matrices to be transformed.
+    static void TransformCovariances(const Eigen::Matrix4d& transformation,
+                                     std::vector<Eigen::Matrix3d>& covariances);
+
     /// \brief Apply translation to the geometry coordinates.
     ///
     /// \param translation A 3D vector to transform the geometry.
@@ -133,6 +142,13 @@ public:  // construction
     /// \param normals A list of normals to be transformed.
     static void RotateNormals(const Eigen::Matrix3d& R,
                               std::vector<Eigen::Vector3d>& normals);
+
+    /// \brief Rotate all covariance matrices with the rotation matrix \p R.
+    ///
+    /// \param R A 3x3 rotation matrix
+    /// \param covariances A list of covariance matrices to be transformed.
+    static void RotateCovariances(const Eigen::Matrix3d& R,
+                                  std::vector<Eigen::Matrix3d>& covariances);
 
     virtual bool isEmpty() const { return true; }
     /// Returns min bounds for geometry coordinates.

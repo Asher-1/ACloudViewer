@@ -10,7 +10,7 @@ import cloudViewer as cv3d
 
 def generate_from_point_cloud():
     print("Load a ply point cloud, print it, and render it")
-    pc = cv3d.io.read_point_cloud("../../TestData/fragment.ply")
+    pc = cv3d.io.read_point_cloud("../../test_data/fragment.ply")
     facet = cv3d.geometry.ccFacet.Create(cloud=pc, max_edge_length=0)
     facet.get_polygon().set_temp_color([0, 0, 0.5])
     facet.get_polygon().set_opacity(0.5)
@@ -24,7 +24,7 @@ def generate_from_point_cloud():
 
 def generate_from_file():
     print("Load a ply point cloud, print it, and render it")
-    entity = cv3d.io.read_entity("../../TestData/facets/facets.bin")
+    entity = cv3d.io.read_entity("../../test_data/facets/facets.bin")
     facets = entity.filter_children(recursive=False, filter=cv3d.geometry.ccHObject.FACET)
     print(facets)
     for facet in facets:

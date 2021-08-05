@@ -13,7 +13,7 @@ from trajectory_io import read_trajectory
 import numpy as np
 
 if __name__ == "__main__":
-    camera_poses = read_trajectory("../../TestData/RGBD/odometry.log")
+    camera_poses = read_trajectory("../../test_data/RGBD/odometry.log")
     camera_intrinsics = cv3d.camera.PinholeCameraIntrinsic(
         cv3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     volume = cv3d.pipelines.integration.UniformTSDFVolume(
@@ -26,9 +26,9 @@ if __name__ == "__main__":
     for i in range(len(camera_poses)):
         print("Integrate {:d}-th image into the volume.".format(i))
         color = cv3d.io.read_image(
-            "../../TestData/RGBD/color/{:05d}.jpg".format(i))
+            "../../test_data/RGBD/color/{:05d}.jpg".format(i))
         depth = cv3d.io.read_image(
-            "../../TestData/RGBD/depth/{:05d}.png".format(i))
+            "../../test_data/RGBD/depth/{:05d}.png".format(i))
         rgbd = cv3d.geometry.RGBDImage.create_from_color_and_depth(
             color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False)
         volume.integrate(

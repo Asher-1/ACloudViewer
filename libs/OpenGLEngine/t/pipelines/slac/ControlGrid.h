@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                        -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018-2021 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -121,8 +121,7 @@ public:
 
     /// Get control grid original positions directly from tensor keys.
     core::Tensor GetInitPositions() {
-        return ctr_hashmap_->GetKeyTensor().To(core::Dtype::Float32) *
-               grid_size_;
+        return ctr_hashmap_->GetKeyTensor().To(core::Float32) * grid_size_;
     }
 
     /// Get control grid shifted positions from tensor values (optimized

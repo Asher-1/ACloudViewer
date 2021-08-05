@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "core/CUDAUtils.h"
 #include "core/nns/NearestNeighborSearch.h"
 #include "t/io/PointCloudIO.h"
 #include "t/pipelines/registration/TransformationEstimation.h"
@@ -39,15 +40,15 @@ static const std::string source_pointcloud_filename =
 static const std::string target_pointcloud_filename =
         std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
 
-static const double voxel_downsampling_factor = 0.05;
+static const double voxel_downsampling_factor = 0.02;
 
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
-static const int max_iterations = 1;
+static const int max_iterations = 30;
 
 // NNS parameter.
-static const double max_correspondence_distance = 0.15;
+static const double max_correspondence_distance = 0.05;
 
 // Initial transformation guess for registation.
 static const std::vector<float> initial_transform_flat{
@@ -75,14 +76,14 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
     // Eliminates the case of impractical values (including negative).
     if (voxel_downsample_factor > 0.001) {
         // TODO: Use geometry::PointCloud::VoxelDownSample.
-        ccPointCloud legacy_s = source.ToLegacyPointCloud();
-        ccPointCloud legacy_t = target.ToLegacyPointCloud();
+        ccPointCloud legacy_s = source.ToLegacy();
+        ccPointCloud legacy_t = target.ToLegacy();
 
         legacy_s = *legacy_s.voxelDownSample(voxel_downsample_factor);
         legacy_t = *legacy_t.voxelDownSample(voxel_downsample_factor);
 
-        source = geometry::PointCloud::FromLegacyPointCloud(legacy_s);
-        target = geometry::PointCloud::FromLegacyPointCloud(legacy_t);
+        source = geometry::PointCloud::FromLegacy(legacy_s);
+        target = geometry::PointCloud::FromLegacy(legacy_t);
     } else {
         utility::LogWarning(
                 " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
@@ -104,9 +105,8 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
 
 static void BenchmarkRegistrationICP(benchmark::State& state,
                                      const core::Device& device,
+                                     const core::Dtype& dtype,
                                      const TransformationEstimationType& type) {
-    core::Dtype dtype = core::Dtype::Float32;
-
     geometry::PointCloud source(device), target(device);
 
     std::tie(source, target) = LoadTensorPointCloudFromFile(
@@ -115,15 +115,17 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {
-        estimation = cloudViewer::make_shared<TransformationEstimationPointToPlane>();
+        estimation = std::make_shared<TransformationEstimationPointToPlane>();
     } else if (type == TransformationEstimationType::PointToPoint) {
-        estimation = cloudViewer::make_shared<TransformationEstimationPointToPoint>();
+        estimation = std::make_shared<TransformationEstimationPointToPoint>();
     }
 
     core::Tensor init_trans =
-            core::Tensor(initial_transform_flat, {4, 4}, dtype, device);
+            core::Tensor(initial_transform_flat, {4, 4}, core::Float32, device)
+                    .To(dtype);
 
     RegistrationResult reg_result(init_trans);
+
     // Warm up.
     reg_result = RegistrationICP(
             source, target, max_correspondence_distance, init_trans,
@@ -136,6 +138,7 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
                 *estimation,
                 ICPConvergenceCriteria(relative_fitness, relative_rmse,
                                        max_iterations));
+        core::cuda::Synchronize(device);
     }
 
     utility::LogDebug(" PointCloud Size: Source: {}  Target: {}",
@@ -143,35 +146,68 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
                       target.GetPoints().GetShape().ToString());
     utility::LogDebug(" Max iterations: {}, Max_correspondence_distance : {}",
                       max_iterations, max_correspondence_distance);
-    utility::LogDebug(" Correspondences: {}, Fitness: {}, Inlier RMSE: {}",
-                      reg_result.correspondence_set_.first.GetLength(),
-                      reg_result.fitness_, reg_result.inlier_rmse_);
 }
 
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPlane / CPU,
+                  PointToPlane / CPU32,
                   core::Device("CPU:0"),
+                  core::Float32,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPlane / CUDA,
+                  PointToPlane / CUDA32,
                   core::Device("CUDA:0"),
+                  core::Float32,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 #endif
 
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPoint / CPU,
+                  PointToPoint / CPU32,
                   core::Device("CPU:0"),
+                  core::Float32,
                   TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPoint / CUDA,
+                  PointToPoint / CUDA32,
                   core::Device("CUDA:0"),
+                  core::Float32,
+                  TransformationEstimationType::PointToPoint)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  PointToPlane / CPU64,
+                  core::Device("CPU:0"),
+                  core::Float64,
+                  TransformationEstimationType::PointToPlane)
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  PointToPlane / CUDA64,
+                  core::Device("CUDA:0"),
+                  core::Float64,
+                  TransformationEstimationType::PointToPlane)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  PointToPoint / CPU64,
+                  core::Device("CPU:0"),
+                  core::Float64,
+                  TransformationEstimationType::PointToPoint)
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  PointToPoint / CUDA64,
+                  core::Device("CUDA:0"),
+                  core::Float64,
                   TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 #endif

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Eigen.h>
+
 #include <string>
 #include <utility>
 
@@ -45,6 +46,7 @@ enum class TransformationEstimationType {
     PointToPoint = 1,
     PointToPlane = 2,
     ColoredICP = 3,
+    GeneralizedICP = 4,
 };
 
 /// \class TransformationEstimation
@@ -96,7 +98,10 @@ public:
     ~TransformationEstimationPointToPoint() override {}
 
 public:
-    TransformationEstimationType GetTransformationEstimationType() const override { return type_; }
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return type_;
+    }
     double ComputeRMSE(const ccPointCloud &source,
                        const ccPointCloud &target,
                        const CorrespondenceSet &corres) const override;
@@ -131,7 +136,7 @@ public:
     /// \brief Constructor that takes as input a RobustKernel \param kernel Any
     /// of the implemented statistical robust kernel for outlier rejection.
     explicit TransformationEstimationPointToPlane(
-        std::shared_ptr<RobustKernel> kernel)
+            std::shared_ptr<RobustKernel> kernel)
         : kernel_(std::move(kernel)) {}
 
 public:
@@ -146,6 +151,7 @@ public:
             const ccPointCloud &source,
             const ccPointCloud &target,
             const CorrespondenceSet &corres) const override;
+
 public:
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
     std::shared_ptr<RobustKernel> kernel_ = cloudViewer::make_shared<L2Loss>();

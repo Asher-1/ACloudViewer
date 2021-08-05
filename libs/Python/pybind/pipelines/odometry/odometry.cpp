@@ -43,8 +43,7 @@ public:
     using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d,
-                        cloudViewer::utility::Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             std::vector<double> &w,
             const geometry::RGBDImage &source,
@@ -62,7 +61,7 @@ public:
 };
 
 void pybind_odometry_classes(py::module &m) {
-    // cloudViewer.odometry.OdometryOption
+    // open3d.odometry.OdometryOption
     py::class_<OdometryOption> odometry_option(
             m, "OdometryOption", "Class that defines Odometry options.");
     odometry_option
@@ -121,15 +120,14 @@ void pybind_odometry_classes(py::module &m) {
                        std::to_string(c.max_depth_);
             });
 
-    // cloudViewer.odometry.RGBDOdometryJacobian
+    // open3d.odometry.RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobian,
                PyRGBDOdometryJacobian<RGBDOdometryJacobian>>
             jacobian(
                     m, "RGBDOdometryJacobian",
                     "Base class that computes Jacobian from two RGB-D images.");
 
-    // cloudViewer.odometry.RGBDOdometryJacobianFromColorTerm:
-    // RGBDOdometryJacobian
+    // open3d.odometry.RGBDOdometryJacobianFromColorTerm: RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobianFromColorTerm,
                PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
                RGBDOdometryJacobian>
@@ -154,8 +152,7 @@ In ICCV Workshops, 2011.)");
                 return std::string("RGBDOdometryJacobianFromColorTerm");
             });
 
-    // cloudViewer.odometry.RGBDOdometryJacobianFromHybridTerm:
-    // RGBDOdometryJacobian
+    // open3d.odometry.RGBDOdometryJacobianFromHybridTerm: RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobianFromHybridTerm,
                PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
                RGBDOdometryJacobian>
@@ -181,6 +178,7 @@ Anonymous submission.)");
 
 void pybind_odometry_methods(py::module &m) {
     m.def("compute_rgbd_odometry", &ComputeRGBDOdometry,
+          py::call_guard<py::gil_scoped_release>(),
           "Function to estimate 6D rigid motion from two RGBD image pairs. "
           "Output: (is_success, 4x4 motion matrix, 6x6 information matrix).",
           "rgbd_source"_a, "rgbd_target"_a,
@@ -197,8 +195,10 @@ void pybind_odometry_methods(py::module &m) {
                     {"odo_init", "Initial 4x4 motion matrix estimation."},
                     {"jacobian",
                      "The odometry Jacobian method to use. Can be "
-                     "``RGBDOdometryJacobianFromHybridTerm()`` or "
-                     "``RGBDOdometryJacobianFromColorTerm().``"},
+                     "``"
+                     "RGBDOdometryJacobianFromHybridTerm()`` or "
+                     "``RGBDOdometryJacobianFromColorTerm("
+                     ").``"},
                     {"option", "Odometry hyper parameteres."},
             });
 }

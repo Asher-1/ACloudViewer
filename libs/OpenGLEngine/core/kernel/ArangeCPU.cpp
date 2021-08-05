@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "core/Dispatch.h"
+#include "core/ParallelFor.h"
 #include "core/Tensor.h"
 #include "core/kernel/Arange.h"
-#include "core/kernel/CPULauncher.h"
 
 namespace cloudViewer {
 namespace core {
@@ -43,13 +43,10 @@ void ArangeCPU(const Tensor& start,
         scalar_t sstep = step.Item<scalar_t>();
         scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
         int64_t n = dst.GetLength();
-        cpu_launcher::ParallelFor(
-                n, cpu_launcher::SMALL_OP_GRAIN_SIZE,
-                [&](int64_t workload_idx) {
-                    dst_ptr[workload_idx] =
-                            sstart +
-                            static_cast<scalar_t>(sstep * workload_idx);
-                });
+        ParallelFor(start.GetDevice(), n, [&](int64_t workload_idx) {
+            dst_ptr[workload_idx] =
+                    sstart + static_cast<scalar_t>(sstep * workload_idx);
+        });
     });
 }
 

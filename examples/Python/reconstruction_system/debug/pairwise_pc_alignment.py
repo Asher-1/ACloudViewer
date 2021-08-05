@@ -1,6 +1,6 @@
 # CloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+# See license file or visit www.cloudViewer.org for details
 
 # examples/Python/ReconstructionSystem/debug/pairwise_pc_alignment.py
 

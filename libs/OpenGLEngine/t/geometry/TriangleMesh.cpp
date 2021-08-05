@@ -33,7 +33,8 @@
 #include "core/EigenConverter.h"
 #include "core/ShapeUtil.h"
 #include "core/Tensor.h"
-#include "core/TensorList.h"
+#include "t/geometry/kernel/PointCloud.h"
+#include "t/geometry/kernel/Transform.h"
 
 namespace cloudViewer {
 namespace t {
@@ -62,17 +63,65 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertices,
     SetTriangles(triangles);
 }
 
-geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
+TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
+    kernel::transform::TransformPoints(transformation, GetVertices());
+    if (HasVertexNormals()) {
+        kernel::transform::TransformNormals(transformation, GetVertexNormals());
+    }
+    if (HasTriangleNormals()) {
+        kernel::transform::TransformNormals(transformation,
+                                            GetTriangleNormals());
+    }
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Translate(const core::Tensor &translation,
+                                      bool relative) {
+    translation.AssertShape({3});
+    translation.AssertDevice(device_);
+
+    core::Tensor transform = translation;
+    if (!relative) {
+        transform -= GetCenter();
+    }
+    GetVertices() += transform;
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
+    center.AssertShape({3});
+    center.AssertDevice(device_);
+
+    core::Tensor points = GetVertices();
+    points.Sub_(center).Mul_(scale).Add_(center);
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
+                                   const core::Tensor &center) {
+    kernel::transform::RotatePoints(R, GetVertices(), center);
+    if (HasVertexNormals()) {
+        kernel::transform::RotateNormals(R, GetVertexNormals());
+    }
+    if (HasTriangleNormals()) {
+        kernel::transform::RotateNormals(R, GetTriangleNormals());
+    }
+    return *this;
+}
+
+
+geometry::TriangleMesh TriangleMesh::FromLegacy(
         const ccMesh &mesh_legacy,
         core::Dtype float_dtype,
         core::Dtype int_dtype,
         const core::Device &device) {
-    if (float_dtype != core::Dtype::Float32 &&
-        float_dtype != core::Dtype::Float64) {
+    if (float_dtype != core::Float32 &&
+        float_dtype != core::Float64) {
         cloudViewer::utility::LogError("float_dtype must be Float32 or Float64, but got {}.",
                           float_dtype.ToString());
     }
-    if (int_dtype != core::Dtype::Int32 && int_dtype != core::Dtype::Int64) {
+    if (int_dtype != core::Int32 && int_dtype != core::Int64) {
         cloudViewer::utility::LogError("int_dtype must be Int32 or Int64, but got {}.",
                           int_dtype.ToString());
     }
@@ -105,12 +154,12 @@ geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
     return mesh;
 }
 
-ccMesh TriangleMesh::ToLegacyTriangleMesh() const {
+ccMesh TriangleMesh::ToLegacy() const {
     ccMesh mesh_legacy;
     mesh_legacy.createInternalCloud();
     if (mesh_legacy.reserveAssociatedCloud(1, HasVertexColors(), HasVertexNormals()))
     {
-        cloudViewer::utility::LogError("[TriangleMesh::ToLegacyTriangleMesh] not enough memory!");
+        cloudViewer::utility::LogError("[TriangleMesh::ToLegacy] not enough memory!");
     }
 
     if (HasVertices()) {

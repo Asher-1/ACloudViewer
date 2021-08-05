@@ -129,7 +129,7 @@ Tensor AdvancedIndexPreprocessor::RestrideIndexTensor(
 void AdvancedIndexPreprocessor::RunPreprocess() {
     // Dimension check
     if (static_cast<int64_t>(index_tensors_.size()) > tensor_.NumDims()) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "Number of index_tensors {} exceeds tensor dimension "
                 "{}.",
                 index_tensors_.size(), tensor_.NumDims());
@@ -139,8 +139,8 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     // Boolean indexing tensors will be supported in the future by
     // converting to int64_t tensors.
     for (const Tensor& index_tensor : index_tensors_) {
-        if (index_tensor.GetDtype() != Dtype::Int64) {
-            cloudViewer::utility::LogError(
+        if (index_tensor.GetDtype() != core::Int64) {
+            utility::LogError(
                     "Index tensor must have Int64 dtype, but {} was used.",
                     index_tensor.GetDtype().ToString());
         }
@@ -154,7 +154,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     //      A[[1, 2], [3, 4]] is converted to
     //      A[[1, 2], [3, 4], :, :].
     Tensor empty_index_tensor =
-            Tensor(SizeVector(), Dtype::Int64, tensor_.GetDevice());
+            Tensor(SizeVector(), core::Int64, tensor_.GetDevice());
     int64_t num_omitted_dims = tensor_.NumDims() - index_tensors_.size();
     for (int64_t i = 0; i < num_omitted_dims; ++i) {
         index_tensors_.push_back(empty_index_tensor);
@@ -232,7 +232,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
                            [](int64_t val) { return val == 0; });
     };
     if (contains_zero(indexed_shape_) && !contains_zero(replacement_shape)) {
-        cloudViewer::utility::LogError("Index is out of bounds for dimension with size 0");
+        utility::LogError("Index is out of bounds for dimension with size 0");
     }
 
     // Restride tensor_ and index tensors_.
@@ -250,7 +250,7 @@ std::vector<Tensor> AdvancedIndexPreprocessor::ExpandBoolTensors(
         const std::vector<Tensor>& index_tensors) {
     std::vector<Tensor> res_index_tensors;
     for (const Tensor& index_tensor : index_tensors) {
-        if (index_tensor.GetDtype() == Dtype::Bool) {
+        if (index_tensor.GetDtype() == core::Bool) {
             std::vector<Tensor> non_zero_indices = index_tensor.NonZeroNumpy();
             res_index_tensors.insert(res_index_tensors.end(),
                                      non_zero_indices.begin(),

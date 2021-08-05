@@ -24,5 +24,5 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core/kernel/CPULauncher.h"
+#include "core/ParallelFor.h"
 #include "t/pipelines/kernel/FillInLinearSystemImpl.h"

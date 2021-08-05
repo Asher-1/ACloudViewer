@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import cloudViewer as cv3d
 import cloudViewer.visualization.gui as gui
 import cloudViewer.visualization.rendering as rendering

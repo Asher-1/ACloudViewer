@@ -33,7 +33,7 @@ run_cpp_unit_tests
 # Run on GPU only. CPU versions run on Github already
 if nvidia-smi >/dev/null 2>&1; then
     echo "Try importing CloudViewer Python package"
-    test_wheel lib/python_package/pip_package/open3d*.whl
+    test_wheel lib/python_package/pip_package/CloudViewer*.whl
     df -h
     echo "Running CloudViewer Python tests..."
     run_python_tests

@@ -38,7 +38,7 @@
 
 namespace cloudViewer {
 namespace geometry {
-    class Image;
+class Image;
 }
 
 namespace t {
@@ -69,7 +69,7 @@ public:
     Image(int64_t rows = 0,
           int64_t cols = 0,
           int64_t channels = 1,
-          core::Dtype dtype = core::Dtype::Float32,
+          core::Dtype dtype = core::Float32,
           const core::Device &device = core::Device("CPU:0"));
 
     /// \brief Construct from a tensor. The tensor won't be copied and memory
@@ -98,7 +98,7 @@ public:
     Image &Reset(int64_t rows = 0,
                  int64_t cols = 0,
                  int64_t channels = 1,
-                 core::Dtype dtype = core::Dtype::Float32,
+                 core::Dtype dtype = core::Float32,
                  const core::Device &device = core::Device("CPU:0"));
 
 public:
@@ -340,22 +340,22 @@ public:
 
     /// \brief Compute min 2D coordinates for the data (always {0, 0}).
     core::Tensor GetMinBound() const {
-        return core::Tensor::Zeros({2}, core::Dtype::Int64);
+        return core::Tensor::Zeros({2}, core::Int64);
     }
 
     /// \brief Compute max 2D coordinates for the data ({rows, cols}).
     core::Tensor GetMaxBound() const {
         return core::Tensor(std::vector<int64_t>{GetRows(), GetCols()}, {2},
-                            core::Dtype::Int64);
+                            core::Int64);
     }
 
     /// \brief Create from a legacy Open3D Image.
-    static Image FromLegacyImage(
+    static Image FromLegacy(
             const cloudViewer::geometry::Image &image_legacy,
             const core::Device &Device = core::Device("CPU:0"));
 
     /// \brief Convert to legacy Image type.
-    cloudViewer::geometry::Image ToLegacyImage() const;
+    cloudViewer::geometry::Image ToLegacy() const;
 
     /// \brief Text description.
     std::string ToString() const;

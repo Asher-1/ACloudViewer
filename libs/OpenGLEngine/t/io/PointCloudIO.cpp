@@ -26,13 +26,13 @@
 
 #include "t/io/PointCloudIO.h"
 
+#include <iostream>
+#include <unordered_map>
+
 #include <FileSystem.h>
 #include <Helper.h>
 #include <Logging.h>
 #include <ProgressReporters.h>
-
-#include <iostream>
-#include <unordered_map>
 
 #include "io/PointCloudIO.h"
 
@@ -62,11 +62,11 @@ static const std::unordered_map<
                 {"pts", WritePointCloudToPTS},
         };
 
-std::shared_ptr<geometry::PointCloud> CreatetPointCloudFromFile(
+std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &filename,
         const std::string &format,
         bool print_progress) {
-    auto pointcloud = cloudViewer::make_shared<geometry::PointCloud>();
+    auto pointcloud = std::make_shared<geometry::PointCloud>();
     ReadPointCloud(filename, *pointcloud, {format, true, true, print_progress});
     return pointcloud;
 }
@@ -85,11 +85,11 @@ bool ReadPointCloud(const std::string &filename,
     auto map_itr = file_extension_to_pointcloud_read_function.find(format);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
         ccPointCloud legacy_pointcloud;
-        success = cloudViewer::io::ReadPointCloud(filename, legacy_pointcloud,
-                                                  params);
+        success =
+                cloudViewer::io::ReadPointCloud(filename, legacy_pointcloud, params);
         if (!success) return false;
-        pointcloud = geometry::PointCloud::FromLegacyPointCloud(
-                legacy_pointcloud, core::Dtype::Float64);
+        pointcloud = geometry::PointCloud::FromLegacy(legacy_pointcloud,
+                                                      core::Float64);
     } else {
         success = map_itr->second(filename, pointcloud, params);
         utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
@@ -135,10 +135,10 @@ bool WritePointCloud(const std::string &filename,
     auto map_itr = file_extension_to_pointcloud_write_function.find(format);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
         return cloudViewer::io::WritePointCloud(
-                filename, pointcloud.ToLegacyPointCloud(), params);
+                filename, pointcloud.ToLegacy(), params);
     }
 
-    bool success = map_itr->second(filename, pointcloud, params);
+    bool success = map_itr->second(filename, pointcloud.CPU(), params);
     if (!pointcloud.IsEmpty()) {
         utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
                           (int)pointcloud.GetPoints().GetLength());
@@ -154,10 +154,8 @@ bool WritePointCloud(const std::string &filename,
                      bool compressed /* = false*/,
                      bool print_progress) {
     cloudViewer::io::WritePointCloudOption p;
-    p.write_ascii =
-            cloudViewer::io::WritePointCloudOption::IsAscii(write_ascii);
-    p.compressed =
-            cloudViewer::io::WritePointCloudOption::Compressed(compressed);
+    p.write_ascii = cloudViewer::io::WritePointCloudOption::IsAscii(write_ascii);
+    p.compressed = cloudViewer::io::WritePointCloudOption::Compressed(compressed);
     std::string format =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     utility::ConsoleProgressUpdater progress_updater(

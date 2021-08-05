@@ -31,9 +31,9 @@
 #include "core/Dtype.h"
 #include "core/Indexer.h"
 #include "core/MemoryManager.h"
+#include "core/ParallelFor.h"
 #include "core/SizeVector.h"
 #include "core/Tensor.h"
-#include "core/kernel/CPULauncher.h"
 #include "core/kernel/UnaryEW.h"
 #include <Logging.h>
 
@@ -43,11 +43,10 @@ namespace kernel {
 
 template <typename func_t>
 static void LaunchUnaryEWKernel(const Indexer& indexer, const func_t& func) {
-    cpu_launcher::ParallelFor(
-            indexer.NumWorkloads(), cpu_launcher::SMALL_OP_GRAIN_SIZE,
-            [&indexer, &func](int64_t i) {
-                func(indexer.GetInputPtr(0, i), indexer.GetOutputPtr(i));
-            });
+    ParallelFor(Device("CPU:0"), indexer.NumWorkloads(),
+                [&indexer, &func](int64_t i) {
+                    func(indexer.GetInputPtr(0, i), indexer.GetOutputPtr(i));
+                });
 }
 
 template <typename src_t, typename dst_t>
@@ -165,11 +164,10 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
             scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
             scalar_t* dst_ptr = static_cast<scalar_t*>(dst.GetDataPtr());
-            cpu_launcher::ParallelFor(
-                    num_elements, cpu_launcher::SMALL_OP_GRAIN_SIZE,
-                    [&](int64_t workload_idx) {
-                        dst_ptr[workload_idx] = scalar_element;
-                    });
+            ParallelFor(Device("CPU:0"), num_elements,
+                        [&](int64_t workload_idx) {
+                            dst_ptr[workload_idx] = scalar_element;
+                        });
         });
     } else {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
@@ -198,7 +196,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     Dtype dst_dtype = dst.GetDtype();
 
     auto assert_dtype_is_float = [](Dtype dtype) -> void {
-        if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
+        if (dtype != core::Float32 && dtype != core::Float64) {
             utility::LogError(
                     "Only supports Float32 and Float64, but {} is used.",
                     dtype.ToString());
@@ -212,7 +210,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 LaunchUnaryEWKernel(
                         indexer,
                         CPULogicalNotElementKernel<scalar_t, scalar_t>);
-            } else if (dst_dtype == Dtype::Bool) {
+            } else if (dst_dtype == core::Bool) {
                 Indexer indexer({src}, dst,
                                 DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
                 LaunchUnaryEWKernel(indexer,

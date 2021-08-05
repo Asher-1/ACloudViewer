@@ -26,12 +26,13 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "ml/impl/misc/FixedRadiusSearch.cuh"
+#include "core/nns/FixedRadiusSearchImpl.cuh"
+#include "core/nns/NeighborSearchCommon.h"
 #include "ml/pytorch/TorchHelper.h"
 #include "ml/pytorch/misc/NeighborSearchAllocator.h"
 #include "torch/script.h"
 
-using namespace cloudViewer::ml::impl;
+using namespace cloudViewer::core::nns;
 
 template <class T>
 void FixedRadiusSearchCUDA(const torch::Tensor& points,
@@ -60,7 +61,7 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     size_t temp_size = 0;
 
     // determine temp_size
-    FixedRadiusSearchCUDA(
+    cloudViewer::core::nns::impl::FixedRadiusSearchCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),
@@ -76,7 +77,7 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     auto temp_tensor = CreateTempTensor(temp_size, points.device(), &temp_ptr);
 
     // actually run the search
-    FixedRadiusSearchCUDA(
+    cloudViewer::core::nns::impl::FixedRadiusSearchCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),

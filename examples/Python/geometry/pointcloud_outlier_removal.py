@@ -20,7 +20,7 @@ def display_inlier_outlier(cloud, ind):
 if __name__ == "__main__":
 
     print("Load a ply point cloud, print it, and render it")
-    pcd = cv3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_2.pcd")
+    pcd = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_2.pcd")
     cv3d.visualization.draw_geometries([pcd])
 
     print("Downsample the point cloud with a voxel of 0.02")

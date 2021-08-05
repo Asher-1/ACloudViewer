@@ -191,16 +191,14 @@ int main(int argc, char* argv[]) {
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh = voxel_grid.ExtractSurfaceMesh();
-        auto mesh_legacy = cloudViewer::make_shared<ccMesh>(
-                mesh.ToLegacyTriangleMesh());
+        auto mesh_legacy = cloudViewer::make_shared<ccMesh>(mesh.ToLegacy());
         cloudViewer::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
                                       *mesh_legacy);
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd = voxel_grid.ExtractSurfacePoints();
-        auto pcd_legacy = cloudViewer::make_shared<ccPointCloud>(
-                pcd.ToLegacyPointCloud());
+        auto pcd_legacy = cloudViewer::make_shared<ccPointCloud>(pcd.ToLegacy());
         cloudViewer::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
                                     *pcd_legacy);
     }

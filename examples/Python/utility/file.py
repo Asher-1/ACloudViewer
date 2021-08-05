@@ -1,6 +1,6 @@
 # CloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+# See license file or visit www.cloudViewer.org for details
 
 # examples/Python/Utility/file.py
 
@@ -36,7 +36,9 @@ def add_if_exists(path_dataset, folder_names):
     for folder_name in folder_names:
         if exists(join(path_dataset, folder_name)):
             path = join(path_dataset, folder_name)
-    return path
+            return path
+    raise FileNotFoundError(
+        f"None of the folders {folder_names} found in {path_dataset}")
 
 
 def get_rgbd_folders(path_dataset):
@@ -62,11 +64,13 @@ def make_clean_folder(path_folder):
 
 
 def check_folder_structure(path_dataset):
+    if isfile(path_dataset) and path_dataset.endswith(".bag"):
+        return
     path_color, path_depth = get_rgbd_folders(path_dataset)
     assert exists(path_depth), \
-        "Path %s is not exist!" % path_depth
+            "Path %s is not exist!" % path_depth
     assert exists(path_color), \
-        "Path %s is not exist!" % path_color
+            "Path %s is not exist!" % path_color
 
 
 def write_poses_to_log(filename, poses):

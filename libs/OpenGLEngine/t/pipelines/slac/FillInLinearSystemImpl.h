@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                        -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018-2021 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +27,13 @@
 #pragma once
 
 #include <fstream>
+#include <FileSystem.h>
+
+#include <ecvPointCloud.h>
 
 #include "core/EigenConverter.h"
 #include "t/pipelines/kernel/FillInLinearSystem.h"
 #include "t/pipelines/slac/SLACOptimizer.h"
-#include <FileSystem.h>
 
 namespace cloudViewer {
 namespace t {
@@ -49,7 +51,7 @@ static PointCloud CreateTPCDFromFile(
         const core::Device& device = core::Device("CPU:0")) {
     std::shared_ptr<ccPointCloud> pcd =
             cloudViewer::io::CreatePointCloudFromFile(fname);
-    return PointCloud::FromLegacyPointCloud(*pcd, core::Dtype::Float32, device);
+    return PointCloud::FromLegacy(*pcd, core::Float32, device);
 }
 
 static void FillInRigidAlignmentTerm(Tensor& AtA,
@@ -102,9 +104,9 @@ void FillInRigidAlignmentTerm(Tensor& AtA,
                 tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}));
 
         Tensor Ti = EigenMatrixToTensor(pose_graph.nodes_[i].pose_)
-                            .To(device, core::Dtype::Float32);
+                            .To(device, core::Float32);
         Tensor Tj = EigenMatrixToTensor(pose_graph.nodes_[j].pose_)
-                            .To(device, core::Dtype::Float32);
+                            .To(device, core::Float32);
 
         FillInRigidAlignmentTerm(AtA, Atb, residual, tpcd_i_indexed,
                                  tpcd_j_indexed, Ti, Tj, i, j,
@@ -210,11 +212,11 @@ void FillInSLACAlignmentTerm(Tensor& AtA,
 
         // Load poses.
         auto Ti = EigenMatrixToTensor(pose_graph.nodes_[i].pose_)
-                          .To(device, core::Dtype::Float32);
+                          .To(device, core::Float32);
         auto Tj = EigenMatrixToTensor(pose_graph.nodes_[j].pose_)
-                          .To(device, core::Dtype::Float32);
+                          .To(device, core::Float32);
         auto Tij = EigenMatrixToTensor(edge.transformation_)
-                           .To(device, core::Dtype::Float32);
+                           .To(device, core::Float32);
 
         // Fill In.
         FillInSLACAlignmentTerm(AtA, Atb, residual, ctr_grid, tpcd_param_i,

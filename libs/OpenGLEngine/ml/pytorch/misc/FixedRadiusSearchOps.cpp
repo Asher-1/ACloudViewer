@@ -27,11 +27,11 @@
 
 #include <vector>
 
-#include "ml/impl/misc/NeighborSearchCommon.h"
+#include "core/nns/NeighborSearchCommon.h"
 #include "ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
-using namespace cloudViewer::ml::impl;
+using namespace cloudViewer::core::nns;
 
 template <class T>
 void FixedRadiusSearchCPU(const torch::Tensor& points,

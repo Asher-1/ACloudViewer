@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                        -
+// -                        Open3D: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018-2021 www.cloudViewer.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "t/pipelines/slac/Visualization.h"
-
 #include "visualization/utility/DrawGeometry.h"
+#include <Eigen.h>
 
 namespace cloudViewer {
 namespace t {
@@ -73,12 +73,12 @@ void VisualizePointCloudCorrespondences(const t::geometry::PointCloud& tpcd_i,
             correspondences.To(core::Device("CPU:0"));
 
     auto pcd_i_corres = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_i.Clone().Transform(T_ij).ToLegacyPointCloud());
+            tpcd_i.Clone().Transform(T_ij).ToLegacy());
     pcd_i_corres->paintUniformColor(kSourceColor);
     pcd_i_corres->transform(flip);
 
     auto pcd_j_corres = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_j.ToLegacyPointCloud());
+            tpcd_j.ToLegacy());
     pcd_j_corres->paintUniformColor(kTargetColor);
     pcd_j_corres->transform(flip);
 
@@ -104,24 +104,23 @@ void VisualizePointCloudEmbedding(t::geometry::PointCloud& tpcd_param,
 
     // Prepare all ctr grid point cloud for lineset
     auto pcd = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_param.ToLegacyPointCloud());
-    pcd->transform(flip);
+            tpcd_param.ToLegacy());
+    pcd->Transform(flip);
 
     t::geometry::PointCloud tpcd_grid(
             ctr_grid.GetCurrPositions().Slice(0, 0, ctr_grid.Size()));
     auto pcd_grid = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_grid.ToLegacyPointCloud());
+            tpcd_grid.ToLegacy());
     pcd_grid->transform(flip);
 
     // Prepare nb point cloud for visualization
-    core::Tensor corres =
-            tpcd_param.GetPointAttr(ControlGrid::kGrid8NbIndices)
-                    .To(core::Device("CPU:0"), core::Dtype::Int64);
+    core::Tensor corres = tpcd_param.GetPointAttr(ControlGrid::kGrid8NbIndices)
+                                  .To(core::Device("CPU:0"), core::Int64);
     t::geometry::PointCloud tpcd_grid_nb(
             tpcd_grid.GetPoints().IndexGet({corres.View({-1})}));
 
     auto pcd_grid_nb = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_grid_nb.ToLegacyPointCloud());
+            tpcd_grid_nb.ToLegacy());
     pcd_grid_nb->paintUniformColor(kSourceColor);
     pcd_grid_nb->transform(flip);
 
@@ -162,7 +161,7 @@ void VisualizePointCloudDeformation(const geometry::PointCloud& tpcd_param,
     flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
 
     core::Tensor corres = tpcd_param.GetPointAttr(ControlGrid::kGrid8NbIndices)
-                                  .To(core::Device("CPU:0"), core::Dtype::Int64)
+                                  .To(core::Device("CPU:0"), core::Int64)
                                   .View({-1});
 
     core::Tensor prev = ctr_grid.GetInitPositions().IndexGet({corres});
@@ -170,24 +169,24 @@ void VisualizePointCloudDeformation(const geometry::PointCloud& tpcd_param,
 
     t::geometry::PointCloud tpcd_init_grid(prev);
     auto pcd_init_grid = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_init_grid.ToLegacyPointCloud());
+            tpcd_init_grid.ToLegacy());
     pcd_init_grid->paintUniformColor({0, 1, 0});
     pcd_init_grid->transform(flip);
 
     auto pcd = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_param.ToLegacyPointCloud());
+            tpcd_param.ToLegacy());
     pcd->paintUniformColor({0, 1, 0});
     pcd->transform(flip);
 
     t::geometry::PointCloud tpcd_curr_grid(curr);
     auto pcd_curr_grid = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_curr_grid.ToLegacyPointCloud());
+            tpcd_curr_grid.ToLegacy());
     pcd_curr_grid->paintUniformColor({1, 0, 0});
     pcd_curr_grid->transform(flip);
 
     auto tpcd_warped = ctr_grid.Deform(tpcd_param);
     auto pcd_warped = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_warped.ToLegacyPointCloud());
+            tpcd_warped.ToLegacy());
     pcd_warped->paintUniformColor({1, 0, 0});
     pcd_warped->transform(flip);
 
@@ -219,12 +218,12 @@ void VisualizeGridDeformation(ControlGrid& cgrid) {
 
     t::geometry::PointCloud tpcd_init_grid(prev);
     auto pcd_init_grid = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_init_grid.ToLegacyPointCloud());
+            tpcd_init_grid.ToLegacy());
     pcd_init_grid->paintUniformColor({0, 1, 0});
 
     t::geometry::PointCloud tpcd_curr_grid(curr);
     auto pcd_curr_grid = cloudViewer::make_shared<ccPointCloud>(
-            tpcd_curr_grid.ToLegacyPointCloud());
+            tpcd_curr_grid.ToLegacy());
     pcd_curr_grid->paintUniformColor({1, 0, 0});
 
     std::vector<std::pair<int, int>> nb_lines;

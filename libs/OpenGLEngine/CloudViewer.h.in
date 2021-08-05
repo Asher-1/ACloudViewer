@@ -96,6 +96,7 @@
 #include "pipelines/integration/UniformTSDFVolume.h"
 #include "pipelines/odometry/Odometry.h"
 #include "pipelines/registration/ColoredICP.h"
+#include "pipelines/registration/GeneralizedICP.h"
 #include "pipelines/registration/Registration.h"
 #include "pipelines/registration/TransformationEstimation.h"
 #include "t/geometry/Geometry.h"

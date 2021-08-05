@@ -23,7 +23,7 @@ if __name__ == "__main__":
     print("")
 
     print("Optimizing Fragment cv3d.registration.PoseGraph using cloudViewer ...")
-    data_path = "../../TestData/GraphOptimization/"
+    data_path = "../../test_data/GraphOptimization/"
     pose_graph_fragment = cv3d.io.read_pose_graph(data_path + "pose_graph_example_fragment.json")
     print(pose_graph_fragment)
     cv3d.registration.global_optimization(pose_graph_fragment, method, criteria, option)

@@ -8,7 +8,7 @@ import cloudViewer as cv3d
 
 
 def example_import_function():
-    pcd = cv3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
+    pcd = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_0.pcd")
     print(pcd)
 
 

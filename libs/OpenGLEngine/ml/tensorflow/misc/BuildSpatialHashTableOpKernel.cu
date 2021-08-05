@@ -28,11 +28,9 @@
 #define EIGEN_USE_GPU
 #include "BuildSpatialHashTableOpKernel.h"
 #include "core/CUDAUtils.h"
-#include "ml/impl/misc/FixedRadiusSearch.cuh"
+#include "core/nns/FixedRadiusSearchImpl.cuh"
 
 using namespace cloudViewer;
-using namespace cloudViewer::ml;
-using namespace cloudViewer::ml::impl;
 using namespace tensorflow;
 
 template <class T>
@@ -58,7 +56,7 @@ public:
         size_t temp_size = 0;
 
         // determine temp_size
-        BuildSpatialHashTableCUDA(
+        cloudViewer::core::nns::impl::BuildSpatialHashTableCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 points.shape().dim_size(0), points.flat<T>().data(),
                 radius.scalar<T>()(), points_row_splits.shape().dim_size(0),
@@ -76,7 +74,7 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually build the table
-        BuildSpatialHashTableCUDA(
+        cloudViewer::core::nns::impl::BuildSpatialHashTableCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 points.shape().dim_size(0), points.flat<T>().data(),
                 radius.scalar<T>()(), points_row_splits.shape().dim_size(0),

@@ -10,7 +10,7 @@ import cloudViewer as cv3d
 if __name__ == "__main__":
 
     print("Load a ply point cloud, print it, and render it")
-    pcd = cv3d.io.read_point_cloud("../../TestData/fragment.ply")
+    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.ply")
     cv3d.visualization.draw_geometries([pcd])
 
     print("Let's draw some primitives")
@@ -71,6 +71,6 @@ if __name__ == "__main__":
     cv3d.visualization.draw_geometries([line_set])
 
     print("Let's draw a textured triangle mesh from obj file.")
-    textured_mesh = cv3d.io.read_triangle_mesh("../../TestData/crate/crate.obj")
+    textured_mesh = cv3d.io.read_triangle_mesh("../../test_data/crate/crate.obj")
     textured_mesh.compute_vertex_normals()
     cv3d.visualization.draw_geometries([textured_mesh])

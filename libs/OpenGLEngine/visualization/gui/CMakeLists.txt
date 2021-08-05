@@ -72,9 +72,9 @@ file(COPY ${GUI_RESOURCE_SOURCE_FILES}
         DESTINATION ${GUI_RESOURCE_DIR})
 
 
-include(add_compiled_materials)
+include(CloudViewerAddCompiledMaterials)
 
-open3d_add_compiled_materials(materials
+cloudViewer_add_compiled_materials(materials
         OUTPUT_DIRECTORY
         ${GUI_RESOURCE_DIR}
         SOURCES

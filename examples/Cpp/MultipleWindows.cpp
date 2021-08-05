@@ -51,7 +51,7 @@ public:
 
     void Run() {
         main_vis_ = cloudViewer::make_shared<visualizer::O3DVisualizer>(
-                "Open3D - Multi-Window Demo", WIDTH, HEIGHT);
+                "CloudViewer - Multi-Window Demo", WIDTH, HEIGHT);
         main_vis_->AddAction(
                 "Take snapshot in new window",
                 [this](visualizer::O3DVisualizer &) { this->OnSnapshot(); });
@@ -70,7 +70,7 @@ private:
     void OnSnapshot() {
         n_snapshots_ += 1;
         snapshot_pos_ = gui::Point(snapshot_pos_.x + 50, snapshot_pos_.y + 50);
-        auto title = std::string("Open3D - Multi-Window Demo (Snapshot #") +
+        auto title = std::string("CloudViewer - Multi-Window Demo (Snapshot #") +
                      std::to_string(n_snapshots_) + ")";
         auto new_vis = cloudViewer::make_shared<visualizer::O3DVisualizer>(
                 title, WIDTH, HEIGHT);

@@ -45,10 +45,10 @@ endif()
 
 if ( BUILD_CUDA_MODULE )
     #Warning: convert the fpic option in Qt5::Core over to INTERFACE_POSITION_INDEPENDENT_CODE
-#    get_property(core_options TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS)
-#    string(REPLACE "-fPIC" "" new_core_options ${core_options})
-#    set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS ${new_core_options})
-#    set_property(TARGET Qt5::Core PROPERTY INTERFACE_POSITION_INDEPENDENT_CODE "ON")
+    get_property(core_options TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS)
+    string(REPLACE "-fPIC" "" new_core_options ${core_options})
+    set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS ${new_core_options})
+    set_property(TARGET Qt5::Core PROPERTY INTERFACE_POSITION_INDEPENDENT_CODE "ON")
 endif()
 
 # turn on QStringBuilder for more efficient string construction

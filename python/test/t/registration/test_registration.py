@@ -95,8 +95,8 @@ def test_evaluate_registration(device):
     target_t.point["points"] = target_points
     target_t.point["normals"] = target_normals
 
-    source_legacy = source_t.to_legacy_pointcloud()
-    target_legacy = target_t.to_legacy_pointcloud()
+    source_legacy = source_t.to_legacy()
+    target_legacy = target_t.to_legacy()
 
     max_correspondence_distance = 1.25
     init_trans_legacy = np.eye(4)
@@ -142,8 +142,8 @@ def test_registration_icp_point_to_point(device):
     source_t.point["points"] = source_points
     target_t.point["points"] = target_points
 
-    source_legacy = source_t.to_legacy_pointcloud()
-    target_legacy = target_t.to_legacy_pointcloud()
+    source_legacy = source_t.to_legacy()
+    target_legacy = target_t.to_legacy()
 
     max_correspondence_distance = 1.25
 
@@ -204,8 +204,8 @@ def test_test_registration_icp_point_to_plane(device):
     target_t.point["points"] = target_points
     target_t.point["normals"] = target_normals
 
-    source_legacy = source_t.to_legacy_pointcloud()
-    target_legacy = target_t.to_legacy_pointcloud()
+    source_legacy = source_t.to_legacy()
+    target_legacy = target_t.to_legacy()
 
     max_correspondence_distance = 1.25
     init_trans_legacy = np.eye(4)
