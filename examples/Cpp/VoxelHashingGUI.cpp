@@ -324,8 +324,7 @@ public:
                 auto pcd = model_->ExtractPointCloud(
                         prop_values_.pointcloud_size, 3.0);
                 auto pcd_legacy =
-                        cloudViewer::make_shared<ccPointCloud>(
-                                pcd.ToLegacyPointCloud());
+                        cloudViewer::make_shared<ccPointCloud>(pcd.ToLegacy());
                 io::WritePointCloud("scene.ply", *pcd_legacy);
 
                 utility::LogInfo("Writing trajectory to trajectory.log...");
@@ -536,24 +535,24 @@ protected:
         is_scene_updated_ = false;
 
         color = cloudViewer::make_shared<cloudViewer::geometry::Image>(
-                ref_color.ToLegacyImage());
+                ref_color.ToLegacy());
         depth_colored = cloudViewer::make_shared<cloudViewer::geometry::Image>(
                 ref_depth
                         .ColorizeDepth(depth_scale, 0.3, prop_values_.depth_max)
-                        .ToLegacyImage());
+                        .ToLegacy());
 
         raycast_color = cloudViewer::make_shared<geometry::Image>(
                 t::geometry::Image(
                         core::Tensor::Zeros(
                                 {ref_depth.GetRows(), ref_depth.GetCols(), 3},
                                 core::Dtype::UInt8, core::Device("CPU:0")))
-                        .ToLegacyImage());
+                        .ToLegacy());
         raycast_depth_colored = cloudViewer::make_shared<geometry::Image>(
                 t::geometry::Image(
                         core::Tensor::Zeros(
                                 {ref_depth.GetRows(), ref_depth.GetCols(), 3},
                                 core::Dtype::UInt8, core::Device("CPU:0")))
-                        .ToLegacyImage());
+                        .ToLegacy());
 
         // Add placeholder in case color raycast is disabled in the beginning.
         raycast_frame.SetData(
@@ -695,25 +694,25 @@ protected:
 
             // TODO: update support for timages-image conversion
             color = cloudViewer::make_shared<cloudViewer::geometry::Image>(
-                    input_frame.GetDataAsImage("color").ToLegacyImage());
+                    input_frame.GetDataAsImage("color").ToLegacy());
             depth_colored = cloudViewer::make_shared<cloudViewer::geometry::Image>(
-                    input_frame.GetDataAsImage("depth")
-                            .ColorizeDepth(depth_scale, 0.3,
-                                           prop_values_.depth_max)
-                            .ToLegacyImage());
+                            input_frame.GetDataAsImage("depth")
+                                    .ColorizeDepth(depth_scale, 0.3,
+                                                   prop_values_.depth_max)
+                                    .ToLegacy());
 
             if (prop_values_.raycast_color) {
                 raycast_color = cloudViewer::make_shared<cloudViewer::geometry::Image>(
-                        raycast_frame.GetDataAsImage("color")
-                                .To(core::Dtype::UInt8, false, 255.0f)
-                                .ToLegacyImage());
+                                raycast_frame.GetDataAsImage("color")
+                                        .To(core::Dtype::UInt8, false, 255.0f)
+                                        .ToLegacy());
             }
 
             raycast_depth_colored = cloudViewer::make_shared<cloudViewer::geometry::Image>(
-                    raycast_frame.GetDataAsImage("depth")
-                            .ColorizeDepth(depth_scale, 0.3,
-                                           prop_values_.depth_max)
-                            .ToLegacyImage());
+                            raycast_frame.GetDataAsImage("depth")
+                                    .ColorizeDepth(depth_scale, 0.3,
+                                                   prop_values_.depth_max)
+                                    .ToLegacy());
 
             // Extract surface on demand (do before we increment idx, so that
             // we see something immediately, on interation 0)

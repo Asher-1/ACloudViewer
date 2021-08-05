@@ -26,6 +26,7 @@ target_sources(visualization PRIVATE
 )
 
 target_sources(visualization PRIVATE
+    visualizer/Receiver.cpp
     visualizer/RenderOption.cpp
     visualizer/RenderOptionWithEditing.cpp
     visualizer/ViewControl.cpp
@@ -89,16 +90,9 @@ if (BUILD_GUI)
     )
 endif()
 
-if (BUILD_RPC_INTERFACE)
-    target_sources(visualization PRIVATE
-        visualizer/Receiver.cpp
-    )
-endif()
+include(CloudViewerAddEncodedShader)
 
-
-include(add_encoded_shader)
-
-open3d_add_encoded_shader(shader
+cloudViewer_add_encoded_shader(shader
     OUTPUT_HEADER
     shader/Shader.h
     SOURCES

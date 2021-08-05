@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: www.erow.cn -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <Optional.h>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <tuple>
@@ -34,14 +36,12 @@
 class ccPointCloud;
 namespace cloudViewer {
 
-namespace utility
-{
-	class Feature;
+namespace utility {
+class Feature;
 }
 
 namespace pipelines {
 namespace registration {
-
 
 class RegistrationResult;
 
@@ -63,20 +63,24 @@ public:
     /// \param iteration_number Maximum number of iterations.
     /// \param tuple_scale Similarity measure used for tuples of feature points.
     /// \param maximum_tuple_count Maximum numer of tuples.
-    FastGlobalRegistrationOption(double division_factor = 1.4,
-                                 bool use_absolute_scale = false,
-                                 bool decrease_mu = true,
-                                 double maximum_correspondence_distance = 0.025,
-                                 int iteration_number = 64,
-                                 double tuple_scale = 0.95,
-                                 int maximum_tuple_count = 1000)
+    /// \param seed Random seed.
+    FastGlobalRegistrationOption(
+            double division_factor = 1.4,
+            bool use_absolute_scale = false,
+            bool decrease_mu = true,
+            double maximum_correspondence_distance = 0.025,
+            int iteration_number = 64,
+            double tuple_scale = 0.95,
+            int maximum_tuple_count = 1000,
+            utility::optional<unsigned int> seed = utility::nullopt)
         : division_factor_(division_factor),
           use_absolute_scale_(use_absolute_scale),
           decrease_mu_(decrease_mu),
           maximum_correspondence_distance_(maximum_correspondence_distance),
           iteration_number_(iteration_number),
           tuple_scale_(tuple_scale),
-          maximum_tuple_count_(maximum_tuple_count) {}
+          maximum_tuple_count_(maximum_tuple_count),
+          seed_(seed) {}
     ~FastGlobalRegistrationOption() {}
 
 public:
@@ -97,6 +101,8 @@ public:
     double tuple_scale_;
     /// Maximum number of tuples..
     int maximum_tuple_count_;
+    /// Random seed
+    utility::optional<unsigned int> seed_;
 };
 
 RegistrationResult FastGlobalRegistration(

@@ -38,7 +38,6 @@
 // TODO: Remove this line once Open3D upgrades its fmt dependency.
 #define FMT_STRING_ALIAS 0
 
-#include "core/CUDAState.cuh"
 #include "core/CUDAUtils.h"
 #include <Logging.h>
 

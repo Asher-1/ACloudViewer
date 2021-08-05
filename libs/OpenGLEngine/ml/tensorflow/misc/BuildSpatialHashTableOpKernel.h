@@ -23,7 +23,7 @@
 #pragma once
 
 #include "../TensorFlowHelper.h"
-#include "ml/impl/misc/FixedRadiusSearch.h"
+#include "core/nns/FixedRadiusSearchImpl.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -34,7 +34,6 @@ public:
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
         using namespace tensorflow;
-        using namespace cloudViewer::ml::impl;
 
         OP_REQUIRES_OK(construction,
                        construction->GetAttr("max_hash_table_size",

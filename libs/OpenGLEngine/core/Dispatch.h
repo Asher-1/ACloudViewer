@@ -33,9 +33,9 @@
 /// a lambda function to use DISPATCH_DTYPE_TO_TEMPLATE.
 ///
 /// Before:
-///     if (dtype == Dtype::Float32) {
+///     if (dtype == core::Float32) {
 ///         func<float>(args);
-///     } else if (dtype == Dtype::Float64) {
+///     } else if (dtype == core::Float64) {
 ///         func<double>(args);
 ///     } else ...
 ///
@@ -48,57 +48,55 @@
 ///     https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/Dispatch.h
 #define DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, ...)              \
     [&] {                                                   \
-        if (DTYPE == cloudViewer::core::Dtype::Float32) {        \
+        if (DTYPE == cloudViewer::core::Float32) {          \
             using scalar_t = float;                         \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::Float64) { \
+        } else if (DTYPE == cloudViewer::core::Float64) {   \
             using scalar_t = double;                        \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::Int8) {    \
+        } else if (DTYPE == cloudViewer::core::Int8) {      \
             using scalar_t = int8_t;                        \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::Int16) {   \
+        } else if (DTYPE == cloudViewer::core::Int16) {     \
             using scalar_t = int16_t;                       \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::Int32) {   \
+        } else if (DTYPE == cloudViewer::core::Int32) {     \
             using scalar_t = int32_t;                       \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::Int64) {   \
+        } else if (DTYPE == cloudViewer::core::Int64) {     \
             using scalar_t = int64_t;                       \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::UInt8) {   \
+        } else if (DTYPE == cloudViewer::core::UInt8) {     \
             using scalar_t = uint8_t;                       \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::UInt16) {  \
+        } else if (DTYPE == cloudViewer::core::UInt16) {    \
             using scalar_t = uint16_t;                      \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::UInt32) {  \
+        } else if (DTYPE == cloudViewer::core::UInt32) {    \
             using scalar_t = uint32_t;                      \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::UInt64) {  \
+        } else if (DTYPE == cloudViewer::core::UInt64) {    \
             using scalar_t = uint64_t;                      \
             return __VA_ARGS__();                           \
         } else {                                            \
             utility::LogError("Unsupported data type.");    \
         }                                                   \
-    }()
 
 #define DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(DTYPE, ...)    \
     [&] {                                                   \
-        if (DTYPE == cloudViewer::core::Dtype::Bool) {           \
+        if (DTYPE == cloudViewer::core::Bool) {             \
             using scalar_t = bool;                          \
             return __VA_ARGS__();                           \
         } else {                                            \
             DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, __VA_ARGS__); \
         }                                                   \
-    }()
 
 #define DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(DTYPE, ...)        \
     [&] {                                                   \
-        if (DTYPE == cloudViewer::core::Dtype::Float32) {        \
+        if (DTYPE == cloudViewer::core::Float32) {          \
             using scalar_t = float;                         \
             return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Dtype::Float64) { \
+        } else if (DTYPE == cloudViewer::core::Float64) {   \
             using scalar_t = double;                        \
             return __VA_ARGS__();                           \
         } else {                                            \

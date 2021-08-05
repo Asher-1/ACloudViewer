@@ -26,7 +26,7 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "ml/impl/misc/FixedRadiusSearch.cuh"
+#include "core/nns/FixedRadiusSearchImpl.cuh"
 #include "ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
@@ -45,7 +45,7 @@ void BuildSpatialHashTableCUDA(const torch::Tensor& points,
     size_t temp_size = 0;
 
     // determine temp_size
-    cloudViewer::ml::impl::BuildSpatialHashTableCUDA(
+    cloudViewer::core::nns::impl::BuildSpatialHashTableCUDA(
             stream, temp_ptr, temp_size, texture_alignment, points.size(0),
             points.data_ptr<T>(), T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), hash_table_splits.data(),
@@ -57,7 +57,7 @@ void BuildSpatialHashTableCUDA(const torch::Tensor& points,
     auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
 
     // actually build the table
-    cloudViewer::ml::impl::BuildSpatialHashTableCUDA(
+    cloudViewer::core::nns::impl::BuildSpatialHashTableCUDA(
             stream, temp_ptr, temp_size, texture_alignment, points.size(0),
             points.data_ptr<T>(), T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), hash_table_splits.data(),

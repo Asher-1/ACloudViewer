@@ -8,7 +8,7 @@ import numpy as np
 import cloudViewer as cv3d
 
 if __name__ == "__main__":
-    pcd = cv3d.io.read_point_cloud("../../TestData/fragment.pcd")
+    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.pcd")
 
     print(
         "Find the plane model and the inliers of the largest planar segment in the point cloud."

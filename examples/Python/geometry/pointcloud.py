@@ -10,7 +10,7 @@ import cloudViewer as cv3d
 if __name__ == "__main__":
     cv3d.utility.set_verbosity_level(cv3d.utility.Debug)
     print("Load a ply point cloud, print it, and render it")
-    pcd = cv3d.io.read_point_cloud("../../TestData/fragment.ply")
+    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.ply")
     print(pcd)
     print(pcd.size())
     print(pcd.has_points())
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     print("Load a polygon volume and use it to crop the original point cloud")
     vol = cv3d.visualization.read_selection_polygon_volume(
-        "../../TestData/Crop/cropped.json")
+        "../../test_data/Crop/cropped.json")
     chair = vol.crop_point_cloud(pcd)
     cv3d.visualization.draw_geometries([chair])
     print("")

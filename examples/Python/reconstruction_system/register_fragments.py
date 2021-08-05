@@ -22,10 +22,10 @@ def preprocess_point_cloud(pcd, config):
     pcd_down = pcd.voxel_down_sample(voxel_size)
     pcd_down.estimate_normals(
         cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0, max_nn=30))
-    pcd_fpfh = cv3d.pipelines.registration.compute_fpfh_feature(pcd_down,
-                                                                cv3d.geometry.KDTreeSearchParamHybrid(
-                                                                    radius=voxel_size * 5.0,
-                                                                    max_nn=100))
+    pcd_fpfh = cv3d.pipelines.registration.compute_fpfh_feature(
+        pcd_down,
+        cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 5.0,
+                                              max_nn=100))
     return (pcd_down, pcd_fpfh)
 
 
@@ -165,9 +165,9 @@ def make_posegraph_for_scene(ply_file_names, config):
     else:
         for r in matching_results:
             (matching_results[r].success, matching_results[r].transformation,
-             matching_results[r].information) = \
-                register_point_cloud_pair(ply_file_names,
-                                          matching_results[r].s, matching_results[r].t, config)
+                    matching_results[r].information) = \
+                    register_point_cloud_pair(ply_file_names,
+                    matching_results[r].s, matching_results[r].t, config)
 
     for r in matching_results:
         if matching_results[r].success:

@@ -28,6 +28,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "core/CUDAUtils.h"
 #include "ml/contrib/RoiPoolKernel.h"
 
 namespace cloudViewer {
@@ -319,7 +320,7 @@ void roipool3dLauncher(int batch_size,
     cudaFree(pts_idx);
 
 #ifdef DEBUG
-    cudaDeviceSynchronize();  // for using printf in kernel function
+    core::cuda::Synchronize();  // for using printf in kernel function
 #endif
 }
 

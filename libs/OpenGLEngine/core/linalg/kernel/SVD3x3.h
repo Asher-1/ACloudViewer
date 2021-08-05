@@ -84,6 +84,7 @@
 #define __rsqrt_rn(x) (1.0 / sqrt(x))
 #endif
 
+
 namespace cloudViewer {
 namespace core {
 namespace linalg {
@@ -804,8 +805,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
 
     Stmp5.f = 0.f;
     Sch.f = __dsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa11.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -909,8 +910,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
 
     Stmp5.f = 0.f;
     Sch.f = __dsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa11.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -1014,8 +1015,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<double>(const double *A_
 
     Stmp5.f = 0.f;
     Sch.f = __dsub_rn(Stmp5.f, Sa22.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa22.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa22.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa22.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -1841,8 +1842,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa11.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -1946,8 +1947,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa11.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -2051,8 +2052,8 @@ CLOUDVIEWER_DEVICE CLOUDVIEWER_FORCE_INLINE void svd3x3<float>(const float *A_3x
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa22.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa22.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa22.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa22.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;

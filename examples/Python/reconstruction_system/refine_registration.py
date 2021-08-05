@@ -9,15 +9,14 @@ import cloudViewer as cv3d
 import sys
 
 sys.path.append("../Utility")
-from file import join, get_file_list
+from file import join, get_file_list, write_poses_to_log
 from visualization import draw_registration_result_original_color
 
 sys.path.append(".")
 from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 
-def update_posegrph_for_scene(s, t, transformation, information, odometry,
-                              pose_graph):
+def update_posegrph_for_scene(s, t, transformation, information, odometry, pose_graph):
     if t == s + 1:  # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
@@ -53,23 +52,43 @@ def multiscale_icp(source,
             result_icp = cv3d.pipelines.registration.registration_icp(
                 source_down, target_down, distance_threshold,
                 current_transformation,
-                cv3d.pipelines.registration.TransformationEstimationPointToPoint(),
-                cv3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=iter))
+                cv3d.pipelines.registration.TransformationEstimationPointToPoint(
+                ),
+                cv3d.pipelines.registration.ICPConvergenceCriteria(
+                    max_iteration=iter))
         else:
             source_down.estimate_normals(
-                cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] * 2.0, max_nn=30))
+                cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
+                                                             2.0,
+                                                      max_nn=30))
             target_down.estimate_normals(
-                cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] * 2.0, max_nn=30))
+                cv3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
+                                                             2.0,
+                                                      max_nn=30))
             if config["icp_method"] == "point_to_plane":
                 result_icp = cv3d.pipelines.registration.registration_icp(
                     source_down, target_down, distance_threshold,
                     current_transformation,
-                    cv3d.pipelines.registration.TransformationEstimationPointToPlane(),
-                    cv3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=iter))
+                    cv3d.pipelines.registration.
+                        TransformationEstimationPointToPlane(),
+                    cv3d.pipelines.registration.ICPConvergenceCriteria(
+                        max_iteration=iter))
             if config["icp_method"] == "color":
                 result_icp = cv3d.pipelines.registration.registration_colored_icp(
-                    source_down, target_down, voxel_size[scale],
+                    source_down, target_down, distance_threshold,
                     current_transformation,
+                    cv3d.pipelines.registration.
+                        TransformationEstimationForColoredICP(),
+                    cv3d.pipelines.registration.ICPConvergenceCriteria(
+                        relative_fitness=1e-6,
+                        relative_rmse=1e-6,
+                        max_iteration=iter))
+            if config["icp_method"] == "generalized":
+                result_icp = cv3d.pipelines.registration.registration_generalized_icp(
+                    source_down, target_down, distance_threshold,
+                    current_transformation,
+                    cv3d.pipelines.registration.
+                        TransformationEstimationForGeneralizedICP(),
                     cv3d.pipelines.registration.ICPConvergenceCriteria(
                         relative_fitness=1e-6,
                         relative_rmse=1e-6,
@@ -80,8 +99,6 @@ def multiscale_icp(source,
                 source_down, target_down, voxel_size[scale] * 1.4,
                 result_icp.transformation)
 
-    if config["debug_mode"]:
-        draw_registration_result_original_color(source, target, result_icp.transformation)
     return (result_icp.transformation, information_matrix)
 
 
@@ -103,9 +120,16 @@ def register_point_cloud_pair(ply_file_names, s, t, transformation_init,
     source = cv3d.io.read_point_cloud(ply_file_names[s])
     print("reading %s ..." % ply_file_names[t])
     target = cv3d.io.read_point_cloud(ply_file_names[t])
+
+    if config["debug_mode"]:
+        draw_registration_result_original_color(source, target,
+                                                transformation_init)
+
     (transformation, information) = \
         local_refinement(source, target, transformation_init, config)
+
     if config["debug_mode"]:
+        draw_registration_result_original_color(source, target, transformation)
         print(transformation)
         print(information)
     return (transformation, information)
@@ -132,8 +156,10 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
     for edge in pose_graph.edges:
         s = edge.source_node_id
         t = edge.target_node_id
+
+        transformation_init = edge.transformation
         matching_results[s * n_files + t] = \
-            matching_result(s, t, edge.transformation)
+            matching_result(s, t, transformation_init)
 
     if config["python_multi_threading"]:
         from joblib import Parallel, delayed
@@ -172,9 +198,30 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
 
 
 def run(config):
-    print("refine rough pipelines.registration of fragments.")
+    print("refine rough registration of fragments.")
     cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
     ply_file_names = get_file_list(
         join(config["path_dataset"], config["folder_fragment"]), ".ply")
     make_posegraph_for_refined_scene(ply_file_names, config)
     optimize_posegraph_for_refined_scene(config["path_dataset"], config)
+
+    path_dataset = config['path_dataset']
+    n_fragments = len(ply_file_names)
+
+    # Save to trajectory
+    poses = []
+    pose_graph_fragment = cv3d.io.read_pose_graph(
+        join(path_dataset, config["template_refined_posegraph_optimized"]))
+    for fragment_id in range(len(pose_graph_fragment.nodes)):
+        pose_graph_rgbd = cv3d.io.read_pose_graph(
+            join(path_dataset,
+                 config["template_fragment_posegraph_optimized"] % fragment_id))
+        for frame_id in range(len(pose_graph_rgbd.nodes)):
+            frame_id_abs = fragment_id * \
+                           config['n_frames_per_fragment'] + frame_id
+            pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose,
+                          pose_graph_rgbd.nodes[frame_id].pose)
+            poses.append(pose)
+
+    traj_name = join(path_dataset, config["template_global_traj"])
+    write_poses_to_log(traj_name, poses)

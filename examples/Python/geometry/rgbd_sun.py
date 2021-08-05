@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     print("Read SUN dataset")
     color_raw = cv3d.io.read_image(
-        "../../TestData/RGBD/other_formats/SUN_color.jpg")
+        "../../test_data/RGBD/other_formats/SUN_color.jpg")
     depth_raw = cv3d.io.read_image(
-        "../../TestData/RGBD/other_formats/SUN_depth.png")
+        "../../test_data/RGBD/other_formats/SUN_depth.png")
     rgbd_image = cv3d.geometry.RGBDImage.create_from_sun_format(
         color_raw, depth_raw)
     print(rgbd_image)

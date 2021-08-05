@@ -47,7 +47,7 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 	CXX_VISIBILITY_PRESET hidden
 )
 
-CopyDLLToDirectory(${PROJECT_NAME})
+cloudViewer_install_targets(${PROJECT_NAME})
 
 if ( BUILD_TESTING )
 	add_subdirectory( test ) 

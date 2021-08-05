@@ -37,7 +37,7 @@
 #include <Logging.h>
 
 #ifdef BUILD_CUDA_MODULE
-#include "core/CUDAState.cuh"
+#include "core/CUDAUtils.h"
 #endif
 
 namespace cloudViewer {

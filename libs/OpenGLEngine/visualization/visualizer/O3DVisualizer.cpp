@@ -873,18 +873,16 @@ struct O3DVisualizer::Impl {
                 has_colors = !lines->colors_.empty();
                 no_shadows = true;
             } else if (obb) {
-                has_colors =
-                        (obb->getColor() != Eigen::Vector3d{0.0, 0.0, 0.0});
+                has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
                 no_shadows = true;
             } else if (aabb) {
-                has_colors =
-                        (aabb->getColor() != Eigen::Vector3d{0.0, 0.0, 0.0});
+                has_colors = (aabb->getColor() != Eigen::Vector3d{0.0, 0.0, 0.0});
                 no_shadows = true;
             } else if (mesh) {
-                has_normals = mesh->hasNormals();
+                has_normals = !mesh->hasNormals();
                 has_colors = true;  // always want base_color as white
             } else if (t_mesh) {
-                has_normals = t_mesh->HasVertexNormals();
+                has_normals = !t_mesh->HasVertexNormals();
                 has_colors = true;  // always want base_color as white
             } else if (voxel_grid) {
                 has_normals = false;
@@ -913,8 +911,9 @@ struct O3DVisualizer::Impl {
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
 
             // Finally assign material properties if geometry is a triangle mesh
-            auto tmesh = std::dynamic_pointer_cast<ccMesh>(geom);
-            if (tmesh && !tmesh->materials_.empty()) {
+            auto tmesh =
+                    std::dynamic_pointer_cast<ccMesh>(geom);
+            if (tmesh && tmesh->materials_.size() > 0) {
                 // Only a single material is supported for TriangleMesh so we
                 // just grab the first one we find. Users should be using
                 // TriangleMeshModel if they have a model with multiple
@@ -983,7 +982,7 @@ struct O3DVisualizer::Impl {
             utility::LogWarning(
                     "No valid geometry specified to O3DVisualizer. Only "
                     "supported "
-                    "geometries are ccHObject and TGeometry PointClouds.");
+                    "geometries are Geometry3D and TGeometry PointClouds.");
         }
 
         if (no_shadows) {
@@ -1296,10 +1295,10 @@ struct O3DVisualizer::Impl {
         Eigen::Vector3f sun_dir = {0.577f, -0.577f, -0.577f};
         auto scene = scene_->GetScene();
         scene->SetLighting(profile.profile, sun_dir);
-        ui_state_.use_ibl = (profile.profile !=
-                             CloudViewerScene::LightingProfile::HARD_SHADOWS);
-        ui_state_.use_sun = (profile.profile !=
-                             CloudViewerScene::LightingProfile::NO_SHADOWS);
+        ui_state_.use_ibl =
+                (profile.profile != CloudViewerScene::LightingProfile::HARD_SHADOWS);
+        ui_state_.use_sun =
+                (profile.profile != CloudViewerScene::LightingProfile::NO_SHADOWS);
         ui_state_.ibl_intensity =
                 int(scene->GetScene()->GetIndirectLightIntensity());
         ui_state_.sun_intensity =
@@ -1699,7 +1698,7 @@ struct O3DVisualizer::Impl {
                 (std::string("CloudViewer ") + CLOUDVIEWER_VERSION).c_str());
         auto text = std::make_shared<gui::Label>(
                 "The MIT License (MIT)\n"
-                "Copyright (c) 2018-2021 www.erow.cn\n\n"
+                "Copyright (c) 2018-2021 www.open3d.org\n\n"
 
                 "Permission is hereby granted, free of charge, to any person "
                 "obtaining a copy of this software and associated "
@@ -1820,6 +1819,7 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     app_menu->AddItem("About", MENU_ABOUT);
     menu->AddMenu("CloudViewer", app_menu);
 #endif  // __APPLE__
+
     if (Application::GetInstance().UsingNativeWindows()) {
         auto file_menu = std::make_shared<Menu>();
         file_menu->AddItem("Export Current Image...", MENU_EXPORT_RGB);
@@ -1859,7 +1859,6 @@ CloudViewerScene *O3DVisualizer::GetScene() const {
 }
 
 void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
-#ifdef BUILD_RPC_INTERFACE
     auto on_geometry = [this](std::shared_ptr<ccHObject> geom,
                               const std::string &path, int time,
                               const std::string &layer) {
@@ -1878,22 +1877,13 @@ void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
     } catch (std::exception &e) {
         utility::LogWarning("Failed to start RPC interface: {}", e.what());
     }
-#else
-    utility::LogWarning(
-            "O3DVisualizer::StartRPCInterface: RPC interface not built");
-#endif
 }
 
 void O3DVisualizer::StopRPCInterface() {
-#ifdef BUILD_RPC_INTERFACE
     if (impl_->receiver_) {
         utility::LogInfo("Stopping RPC interface");
     }
     impl_->receiver_.reset();
-#else
-    utility::LogWarning(
-            "O3DVisualizer::StopRPCInterface: RPC interface not built");
-#endif
 }
 
 void O3DVisualizer::AddAction(const std::string &name,
@@ -1933,7 +1923,7 @@ void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<ccHObject> geom,
-        const rendering::Material *material /*= nullptr*/,
+        const rendering::Material *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
@@ -1944,7 +1934,7 @@ void O3DVisualizer::AddGeometry(
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<t::geometry::Geometry> tgeom,
-        const rendering::Material *material /*= nullptr*/,
+        const rendering::Material *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {

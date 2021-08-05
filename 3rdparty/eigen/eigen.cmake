@@ -18,7 +18,6 @@ ExternalProject_Add(
     URL https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2
     URL_HASH SHA256=92641cb17a92bcf311c7fc095a555ca0e32990503573dda80eb1764dc37dcac9
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/eigen"
-    INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""

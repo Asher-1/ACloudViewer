@@ -40,7 +40,7 @@ static void SetPNGImageFromImage(const geometry::Image &image,
     pngimage.height = image.GetRows();
     pngimage.format = pngimage.flags = 0;
 
-    if (image.GetDtype() == core::Dtype::UInt16) {
+    if (image.GetDtype() == core::UInt16) {
         pngimage.format |= PNG_FORMAT_FLAG_LINEAR;
     }
     if (image.GetChannels() >= 3) {
@@ -71,11 +71,11 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     if (pngimage.format & PNG_FORMAT_FLAG_LINEAR) {
         image.Reset(pngimage.height, pngimage.width,
                     PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
-                    core::Dtype::UInt16, image.GetDevice());
+                    core::UInt16, image.GetDevice());
     } else {
         image.Reset(pngimage.height, pngimage.width,
                     PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
-                    core::Dtype::UInt8, image.GetDevice());
+                    core::UInt8, image.GetDevice());
     }
 
     if (png_image_finish_read(&pngimage, NULL, image.GetDataPtr(), 0, NULL) ==
@@ -95,8 +95,8 @@ bool WriteImageToPNG(const std::string &filename,
         utility::LogWarning("Write PNG failed: image has no data.");
         return false;
     }
-    if (image.GetDtype() != core::Dtype::UInt8 &&
-        image.GetDtype() != core::Dtype::UInt16) {
+    if (image.GetDtype() != core::UInt8 &&
+        image.GetDtype() != core::UInt16) {
         utility::LogWarning("Write PNG failed: unsupported image data.");
         return false;
     }

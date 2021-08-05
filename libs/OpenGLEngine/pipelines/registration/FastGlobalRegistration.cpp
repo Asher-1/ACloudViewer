@@ -115,7 +115,7 @@ std::vector<std::pair<int, int>> AdvancedMatching(
             }
         }
     }
-    utility::LogDebug("points are remained : %d", (int)corres_cross.size());
+    utility::LogDebug("points are remained : {:d}", (int)corres_cross.size());
 
     // STEP 3) TUPLE CONSTRAINT
     utility::LogDebug("\t[tuple constraint] ");
@@ -125,11 +125,15 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
 
+    unsigned int seed_val = option.seed_.has_value() ? option.seed_.value()
+                                                     : std::random_device{}();
+    utility::UniformRandIntGenerator rand_generator(0, ncorr - 1, seed_val);
+
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
-        rand0 = utility::UniformRandInt(0, ncorr - 1);
-        rand1 = utility::UniformRandInt(0, ncorr - 1);
-        rand2 = utility::UniformRandInt(0, ncorr - 1);
+        rand0 = rand_generator();
+        rand1 = rand_generator();
+        rand2 = rand_generator();
         idi0 = corres_cross[rand0].first;
         idj0 = corres_cross[rand0].second;
         idi1 = corres_cross[rand1].first;
@@ -368,7 +372,8 @@ RegistrationResult FastGlobalRegistration(
     return EvaluateRegistration(
             source_orig, target_orig, option.maximum_correspondence_distance_,
             GetTransformationOriginalScale(transformation, pcd_mean_vec,
-                                           scale_global).inverse());
+                                           scale_global)
+                    .inverse());
 }
 
 }  // namespace registration

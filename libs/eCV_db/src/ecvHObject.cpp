@@ -252,7 +252,7 @@ ccHObject* ccHObject::New(const QString& pluginId, const QString& classId, const
 
 QIcon ccHObject::getIcon() const
 {
-	return QIcon();
+    return QIcon();
 }
 
 /////////////////////// for python interface /////////////////////////////////
@@ -260,81 +260,87 @@ void ccHObject::ResizeAndPaintUniformColor(
 	std::vector<Eigen::Vector3d>& colors,
 	const size_t size,
 	const Eigen::Vector3d& color) {
-	colors.resize(size);
-	Eigen::Vector3d clipped_color = color;
-	if (color.minCoeff() < 0 || color.maxCoeff() > 1) {
-		cloudViewer::utility::LogWarning(
-			"[ccHObject::ResizeAndPaintUniformColor] invalid color in paintUniformColor, clipping to [0, 1]");
-		clipped_color = clipped_color.array()
-			.max(Eigen::Vector3d(0, 0, 0).array())
-			.matrix();
-		clipped_color = clipped_color.array()
-			.min(Eigen::Vector3d(1, 1, 1).array())
-			.matrix();
-	}
-	for (size_t i = 0; i < size; i++) {
-		colors[i] = clipped_color;
-	}
+    colors.resize(size);
+    Eigen::Vector3d clipped_color = color;
+    if (color.minCoeff() < 0 || color.maxCoeff() > 1) {
+        cloudViewer::utility::LogWarning(
+                "[ccHObject::ResizeAndPaintUniformColor] invalid color in paintUniformColor, clipping to [0, 1]");
+        clipped_color = clipped_color.array()
+                .max(Eigen::Vector3d(0, 0, 0).array())
+                .matrix();
+        clipped_color = clipped_color.array()
+                .min(Eigen::Vector3d(1, 1, 1).array())
+                .matrix();
+    }
+    for (size_t i = 0; i < size; i++) {
+        colors[i] = clipped_color;
+    }
 }
 
 Eigen::Vector3d ccHObject::ComputeMinBound(
 	const std::vector<Eigen::Vector3d>& points)
 {
-	if (points.empty()) {
-		return Eigen::Vector3d(0.0, 0.0, 0.0);
-	}
-	return std::accumulate(
-		points.begin(), points.end(), points[0],
-		[](const Eigen::Vector3d& a, const Eigen::Vector3d& b) {
-		return a.array().min(b.array()).matrix();
-	});
+    if (points.empty()) {
+        return Eigen::Vector3d(0.0, 0.0, 0.0);
+    }
+    return std::accumulate(
+            points.begin(), points.end(), points[0],
+            [](const Eigen::Vector3d& a, const Eigen::Vector3d& b) {
+        return a.array().min(b.array()).matrix();
+    });
 }
 
 Eigen::Vector3d ccHObject::ComputeMaxBound(
 	const std::vector<Eigen::Vector3d>& points)
 {
-	if (points.empty()) {
-		return Eigen::Vector3d(0.0, 0.0, 0.0);
-	}
-	return std::accumulate(
-		points.begin(), points.end(), points[0],
-		[](const Eigen::Vector3d& a, const Eigen::Vector3d& b) {
-		return a.array().max(b.array()).matrix();
-	});
+    if (points.empty()) {
+        return Eigen::Vector3d(0.0, 0.0, 0.0);
+    }
+    return std::accumulate(
+            points.begin(), points.end(), points[0],
+            [](const Eigen::Vector3d& a, const Eigen::Vector3d& b) {
+        return a.array().max(b.array()).matrix();
+    });
 }
 
 Eigen::Vector3d ccHObject::ComputeCenter(
 	const std::vector<Eigen::Vector3d>& points) {
-	Eigen::Vector3d center(0, 0, 0);
-	if (points.empty()) {
-		return center;
-	}
-	center = std::accumulate(points.begin(), points.end(), center);
-	center /= double(points.size());
-	return center;
+    Eigen::Vector3d center(0, 0, 0);
+    if (points.empty()) {
+        return center;
+    }
+    center = std::accumulate(points.begin(), points.end(), center);
+    center /= double(points.size());
+    return center;
 }
 
 void ccHObject::TransformPoints(
 	const Eigen::Matrix4d& transformation,
 	std::vector<Eigen::Vector3d>& points) {
-	for (auto& point : points) {
-		Eigen::Vector4d new_point =
-			transformation *
-			Eigen::Vector4d(point(0), point(1), point(2), 1.0);
-		point = new_point.head<3>() / new_point(3);
-	}
+    for (auto& point : points) {
+        Eigen::Vector4d new_point =
+                transformation *
+                Eigen::Vector4d(point(0), point(1), point(2), 1.0);
+        point = new_point.head<3>() / new_point(3);
+    }
 }
 
 void ccHObject::TransformNormals(
 	const Eigen::Matrix4d& transformation,
 	std::vector<Eigen::Vector3d>& normals)
 {
-	for (auto& normal : normals) {
-		Eigen::Vector4d new_normal =
-			transformation *
-			Eigen::Vector4d(normal(0), normal(1), normal(2), 0.0);
-		normal = new_normal.head<3>();
-	}
+    for (auto& normal : normals) {
+        Eigen::Vector4d new_normal =
+                transformation *
+                Eigen::Vector4d(normal(0), normal(1), normal(2), 0.0);
+        normal = new_normal.head<3>();
+    }
+}
+
+void ccHObject::TransformCovariances(
+        const Eigen::Matrix4d& transformation,
+        std::vector<Eigen::Matrix3d>& covariances) {
+    RotateCovariances(transformation.block<3, 3>(0, 0), covariances);
 }
 
 void ccHObject::TranslatePoints(
@@ -342,39 +348,50 @@ void ccHObject::TranslatePoints(
 	std::vector<Eigen::Vector3d>& points,
 	bool relative)
 {
-	Eigen::Vector3d transform = translation;
-	if (!relative) {
-		transform -= ComputeCenter(points);
-	}
-	for (auto& point : points) {
-		point += transform;
-	}
+    Eigen::Vector3d transform = translation;
+    if (!relative) {
+        transform -= ComputeCenter(points);
+    }
+    for (auto& point : points) {
+        point += transform;
+    }
 }
 
 void ccHObject::ScalePoints(const double scale,
 	std::vector<Eigen::Vector3d>& points,
 	const Eigen::Vector3d& center)
 {
-	for (auto& point : points) {
-		point = (point - center) * scale + center;
-	}
+    for (auto& point : points) {
+        point = (point - center) * scale + center;
+    }
 }
 
 void ccHObject::RotatePoints(const Eigen::Matrix3d& R,
 	std::vector<Eigen::Vector3d>& points,
 	const Eigen::Vector3d& center)
 {
-	for (auto& point : points) {
-		point = R * (point - center) + center;
-	}
+    for (auto& point : points) {
+        point = R * (point - center) + center;
+    }
 }
 
 void ccHObject::RotateNormals(const Eigen::Matrix3d& R,
 	std::vector<Eigen::Vector3d>& normals)
 {
-	for (auto& normal : normals) {
-		normal = R * normal;
-	}
+    for (auto& normal : normals) {
+        normal = R * normal;
+    }
+}
+
+/// The only part that affects the covariance is the rotation part. For more
+/// information on variance propagation please visit:
+/// https://en.wikipedia.org/wiki/Propagation_of_uncertainty
+void ccHObject::RotateCovariances(
+        const Eigen::Matrix3d& R,
+        std::vector<Eigen::Matrix3d>& covariances) {
+    for (auto& covariance : covariances) {
+        covariance = R * covariance * R.transpose();
+    }
 }
 
 Eigen::Matrix3d ccHObject::GetRotationMatrixFromXYZ(

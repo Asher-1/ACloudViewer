@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <Logging.h>
+#include <Parallel.h>
 
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
@@ -344,6 +345,7 @@ ccPointCloud &ccPointCloud::removeNonFinitePoints(bool remove_nan,
                                                   bool remove_infinite) {
     bool has_normal = hasNormals();
     bool has_color = hasColors();
+    bool has_covariance = hasCovariances();
     bool has_fwf = hasFWF();
     // scalar fields
     unsigned sfCount = getNumberOfScalarFields();
@@ -364,6 +366,7 @@ ccPointCloud &ccPointCloud::removeNonFinitePoints(bool remove_nan,
             m_points[k] = m_points[i];
             if (has_normal) m_points[k] = m_points[i];
             if (has_color) m_points[k] = m_points[i];
+            if (has_covariance) covariances_[k] = covariances_[i];
             if (has_fwf) {
                 if (fwfDescriptors().contains(
                             m_fwfWaveforms[k].descriptorID())) {
@@ -437,13 +440,6 @@ ccPointCloud &ccPointCloud::removeNonFinitePoints(bool remove_nan,
 namespace {
 class AccumulatedPoint {
 public:
-    AccumulatedPoint()
-        : num_of_points_(0),
-          point_(0.0, 0.0, 0.0),
-          normal_(0.0, 0.0, 0.0),
-          color_(0.0, 0.0, 0.0) {}
-
-public:
     void AddPoint(const ccPointCloud &cloud, unsigned int index) {
         point_ += cloud.getEigenPoint(index);
         if (cloud.hasNormals()) {
@@ -455,6 +451,9 @@ public:
         }
         if (cloud.hasColors()) {
             color_ += cloud.getEigenColor(index);
+        }
+        if (cloud.hasCovariances()) {
+            covariance_ += cloud.covariances_[index];
         }
         num_of_points_++;
     }
@@ -469,11 +468,16 @@ public:
         return color_ / double(num_of_points_);
     }
 
+    Eigen::Matrix3d GetAverageCovariance() const {
+        return covariance_ / double(num_of_points_);
+    }
+
 public:
-    int num_of_points_;
-    Eigen::Vector3d point_;
-    Eigen::Vector3d normal_;
-    Eigen::Vector3d color_;
+    int num_of_points_ = 0;
+    Eigen::Vector3d point_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d normal_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d color_ = Eigen::Vector3d::Zero();
+    Eigen::Matrix3d covariance_ = Eigen::Matrix3d::Zero();
 };
 
 class point_cubic_id {
@@ -508,6 +512,10 @@ public:
             } else {
                 color_ += fcolor;
             }
+        }
+
+        if (cloud.hasCovariances()) {
+            covariance_ += cloud.covariances_[index];
         }
 
         point_cubic_id new_id;
@@ -577,6 +585,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::voxelDownSample(double voxel_size) {
 
     bool has_normals = hasNormals();
     bool has_colors = hasColors();
+    bool has_covariances = hasCovariances();
 
     if (!output->reserveThePointsTable(
                 static_cast<unsigned int>(voxelindex_to_accpoint.size()))) {
@@ -623,6 +632,12 @@ std::shared_ptr<ccPointCloud> ccPointCloud::voxelDownSample(double voxel_size) {
         // import normals
         if (has_normals) {
             output->addEigenNorm(accpoint.second.GetAverageNormal());
+        }
+
+        // import covariance
+        if (has_covariances) {
+            output->covariances_.emplace_back(
+                    accpoint.second.GetAverageCovariance());
         }
     }
 
@@ -684,6 +699,7 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
 
     bool has_normals = hasNormals();
     bool has_colors = hasColors();
+    bool has_covariances = hasCovariances();
     int cnt = 0;
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
     cubic_id.setConstant(-1);
@@ -737,6 +753,12 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
         // import normals
         if (has_normals) {
             output->addEigenNorm(accpoint.second.GetAverageNormal());
+        }
+
+        // import covariance
+        if (has_covariances) {
+            output->covariances_.emplace_back(
+                    accpoint.second.GetAverageCovariance());
         }
 
         auto original_id = accpoint.second.GetOriginalID();
@@ -990,13 +1012,14 @@ Eigen::Vector3d ComputeEigenvector1(const Eigen::Matrix3d &A,
     }
 }
 
-Eigen::Vector3d FastEigen3x3(Eigen::Matrix3d &A) {
+Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &covariance) {
     // Previous version based on:
     // https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
     // Current version based on
     // https://www.geometrictools.com/Documentation/RobustEigenSymmetric3x3.pdf
     // which handles edge cases like points on a plane
 
+    Eigen::Matrix3d A = covariance;
     double max_coeff = A.maxCoeff();
     if (max_coeff == 0) {
         return Eigen::Vector3d::Zero();
@@ -1076,29 +1099,56 @@ Eigen::Vector3d FastEigen3x3(Eigen::Matrix3d &A) {
     }
 }
 
-Eigen::Vector3d ComputeNormal(const ccPointCloud &cloud,
-                              const std::vector<int> &indices,
+Eigen::Vector3d ComputeNormal(const Eigen::Matrix3d &covariance,
                               bool fast_normal_computation) {
-    if (indices.size() == 0) {
-        return Eigen::Vector3d::Zero();
-    }
-    Eigen::Matrix3d covariance =
-            utility::ComputeCovariance(cloud.getEigenPoints(), indices);
-
     if (fast_normal_computation) {
         return FastEigen3x3(covariance);
-    } else {
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
-        solver.compute(covariance, Eigen::ComputeEigenvectors);
-        return solver.eigenvectors().col(0);
     }
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
+    solver.compute(covariance, Eigen::ComputeEigenvectors);
+    return solver.eigenvectors().col(0);
 }
 
 }  // unnamed namespace
 }  // namespace cloudViewer
 
+std::vector<Eigen::Matrix3d> ccPointCloud::EstimatePerPointCovariances(
+        const ccPointCloud &input,
+        const geometry::KDTreeSearchParam
+                &search_param /* = KDTreeSearchParamKNN()*/) {
+    const auto points = input.getEigenPoints();
+    std::vector<Eigen::Matrix3d> covariances;
+    covariances.resize(points.size());
+
+    KDTreeFlann kdtree;
+    kdtree.SetGeometry(input);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+#endif
+    for (int i = 0; i < (int)points.size(); i++) {
+        std::vector<int> indices;
+        std::vector<double> distance2;
+        if (kdtree.Search(points[i], search_param, indices, distance2) >= 3) {
+            auto covariance = utility::ComputeCovariance(points, indices);
+            if (input.hasCovariances() && covariance.isIdentity(1e-4)) {
+                covariances[i] = input.covariances_[i];
+            } else {
+                covariances[i] = covariance;
+            }
+        } else {
+            covariances[i] = Eigen::Matrix3d::Identity();
+        }
+    }
+    return covariances;
+}
+void ccPointCloud::estimateCovariances(
+        const geometry::KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
+    this->covariances_ = EstimatePerPointCovariances(*this, search_param);
+}
+
 bool ccPointCloud::estimateNormals(
-        const cloudViewer::geometry::KDTreeSearchParam
+        const geometry::KDTreeSearchParam
                 &search_param /* = KDTreeSearchParamKNN()*/,
         bool fast_normal_computation /* = true */) {
     bool has_normal = hasNormals();
@@ -1106,36 +1156,32 @@ bool ccPointCloud::estimateNormals(
         resizeTheNormsTable();
     }
 
-    cloudViewer::geometry::KDTreeFlann kdtree;
-    kdtree.SetGeometry(*this);
+    std::vector<Eigen::Matrix3d> covariances;
+    if (!hasCovariances()) {
+        covariances = EstimatePerPointCovariances(*this, search_param);
+    } else {
+        covariances = covariances_;
+    }
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
-    for (int i = 0; i < (int)size(); i++) {
-        std::vector<int> indices;
-        std::vector<double> distance2;
-        Eigen::Vector3d normal;
-        if (kdtree.Search(getEigenPoint(static_cast<size_t>(i)), search_param,
-                          indices, distance2) >= 3) {
-            normal = cloudViewer::ComputeNormal(*this, indices,
-                                                fast_normal_computation);
-            if (normal.norm() == 0.0) {
-                if (has_normal) {
-                    normal = CCVector3d::fromArray(
-                            getPointNormal(static_cast<unsigned int>(i)));
-                } else {
-                    normal = Eigen::Vector3d(0.0, 0.0, 1.0);
-                }
+    for (int i = 0; i < (int)covariances.size(); i++) {
+        auto normal = ComputeNormal(covariances[i], fast_normal_computation);
+        if (normal.norm() == 0.0) {
+            if (has_normal) {
+                normal = CCVector3d::fromArray(
+                        getPointNormal(static_cast<unsigned int>(i)));
+            } else {
+                normal = Eigen::Vector3d(0.0, 0.0, 1.0);
             }
-            if (has_normal && normal.dot(CCVector3d::fromArray(getPointNormal(
-                                      static_cast<unsigned int>(i)))) < 0.0) {
-                normal *= -1.0;
-            }
-            setPointNormal(static_cast<unsigned int>(i), normal);
-        } else {
-            setPointNormal(static_cast<unsigned int>(i),
-                           CCVector3(0.0f, 0.0f, 1.0f));
         }
+        if (has_normal && normal.dot(CCVector3d::fromArray(getPointNormal(
+                                  static_cast<unsigned int>(i)))) < 0.0) {
+            normal *= -1.0;
+        }
+        setPointNormal(static_cast<unsigned int>(i), normal);
     }
 
     return true;
@@ -1150,7 +1196,8 @@ bool ccPointCloud::orientNormalsToAlignWithDirection(
                 "ccPointCloud. Call EstimateNormals() first.");
     }
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int i = 0; i < (int)this->size(); i++) {
         auto &normal = getPointNormalPtr(static_cast<size_t>(i));
@@ -1172,7 +1219,8 @@ bool ccPointCloud::orientNormalsTowardsCameraLocation(
                 "ccPointCloud. Call EstimateNormals() first.");
     }
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int i = 0; i < (int)this->size(); i++) {
         Eigen::Vector3d orientation_reference =
@@ -1315,7 +1363,8 @@ std::vector<double> ccPointCloud::computeMahalanobisDistance() const {
 
     Eigen::Matrix3d cov_inv = covariance.inverse();
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int i = 0; i < (int)size(); i++) {
         Eigen::Vector3d p =
@@ -1330,7 +1379,8 @@ std::vector<double> ccPointCloud::computeNearestNeighborDistance() const {
     std::vector<double> nn_dis(size());
     cloudViewer::geometry::KDTreeFlann kdtree(*this);
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int i = 0; i < (int)size(); i++) {
         std::vector<int> indices(2);
@@ -1377,7 +1427,9 @@ ccPointCloud::hiddenPointRemoval(const Eigen::Vector3d &camera_location,
         CCVector3 projected_point = *getPoint(pidx) - camera_location;
         double norm = projected_point.norm();
         spherical_projection.push_back(
-                projected_point + 2 * static_cast<PointCoordinateType>(radius - norm) * projected_point / norm);
+                projected_point +
+                2 * static_cast<PointCoordinateType>(radius - norm) *
+                        projected_point / norm);
     }
 
     // add origin

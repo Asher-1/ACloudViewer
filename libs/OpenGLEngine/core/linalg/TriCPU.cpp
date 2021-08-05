@@ -26,8 +26,8 @@
 
 #include "core/Dispatch.h"
 #include "core/Indexer.h"
+#include "core/ParallelFor.h"
 #include "core/Tensor.h"
-#include "core/kernel/CPULauncher.h"
 #include "core/linalg/TriImpl.h"
 
 namespace cloudViewer {
@@ -42,15 +42,13 @@ void TriuCPU(const Tensor &A, Tensor &output, const int diagonal) {
         int cols = A.GetShape()[1];
         int n = A.GetShape()[0] * cols;
 
-        kernel::cpu_launcher::ParallelFor(
-                n, kernel::cpu_launcher::SMALL_OP_GRAIN_SIZE,
-                [&] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
-                    const int64_t idx = workload_idx / cols;
-                    const int64_t idy = workload_idx % cols;
-                    if (idy - idx >= diagonal) {
-                        output_ptr[workload_idx] = A_ptr[idx * cols + idy];
-                    }
-                });
+        ParallelFor(A.GetDevice(), n, [&] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+            const int64_t idx = workload_idx / cols;
+            const int64_t idy = workload_idx % cols;
+            if (idy - idx >= diagonal) {
+                output_ptr[workload_idx] = A_ptr[idx * cols + idy];
+            }
+        });
     });
 }
 
@@ -63,15 +61,13 @@ void TrilCPU(const Tensor &A, Tensor &output, const int diagonal) {
         int cols = A.GetShape()[1];
         int n = A.GetShape()[0] * cols;
 
-        kernel::cpu_launcher::ParallelFor(
-                n, kernel::cpu_launcher::SMALL_OP_GRAIN_SIZE,
-                [&] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
-                    const int64_t idx = workload_idx / cols;
-                    const int64_t idy = workload_idx % cols;
-                    if (idy - idx <= diagonal) {
-                        output_ptr[workload_idx] = A_ptr[idx * cols + idy];
-                    }
-                });
+        ParallelFor(A.GetDevice(), n, [&] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+            const int64_t idx = workload_idx / cols;
+            const int64_t idy = workload_idx % cols;
+            if (idy - idx <= diagonal) {
+                output_ptr[workload_idx] = A_ptr[idx * cols + idy];
+            }
+        });
     });
 }
 
@@ -88,20 +84,18 @@ void TriulCPU(const Tensor &A,
         int cols = A.GetShape()[1];
         int n = A.GetShape()[0] * cols;
 
-        kernel::cpu_launcher::ParallelFor(
-                n, kernel::cpu_launcher::SMALL_OP_GRAIN_SIZE,
-                [&] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
-                    const int64_t idx = workload_idx / cols;
-                    const int64_t idy = workload_idx % cols;
-                    if (idy - idx < diagonal) {
-                        lower_ptr[workload_idx] = A_ptr[idx * cols + idy];
-                    } else if (idy - idx > diagonal) {
-                        upper_ptr[workload_idx] = A_ptr[idx * cols + idy];
-                    } else {
-                        lower_ptr[workload_idx] = 1;
-                        upper_ptr[workload_idx] = A_ptr[idx * cols + idy];
-                    }
-                });
+        ParallelFor(A.GetDevice(), n, [&] CLOUDVIEWER_DEVICE(int64_t workload_idx) {
+            const int64_t idx = workload_idx / cols;
+            const int64_t idy = workload_idx % cols;
+            if (idy - idx < diagonal) {
+                lower_ptr[workload_idx] = A_ptr[idx * cols + idy];
+            } else if (idy - idx > diagonal) {
+                upper_ptr[workload_idx] = A_ptr[idx * cols + idy];
+            } else {
+                lower_ptr[workload_idx] = 1;
+                upper_ptr[workload_idx] = A_ptr[idx * cols + idy];
+            }
+        });
     });
 }
 

@@ -141,7 +141,7 @@ public:
     /// Transfer the triangle mesh to CPU.
     ///
     /// If the triangle mesh is already on CPU, no copy will be performed.
-    TriangleMesh CPU() const { return To(core::Device("CPU:0")); }
+    TriangleMesh CPU() const { return To(core::Device("CPU:0")); };
 
     /// Transfer the triangle mesh to a CUDA device.
     ///
@@ -149,7 +149,7 @@ public:
     /// will be performed.
     TriangleMesh CUDA(int device_id = 0) const {
         return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    }
+    };
 
     /// Getter for vertex_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetVertexAttr() const { return vertex_attr_; }
@@ -391,28 +391,20 @@ public:
     /// Returns !HasVertices(), triangles are ignored.
     bool IsEmpty() const override { return !HasVertices(); }
 
-    core::Tensor GetMinBound() const { utility::LogError("Unimplemented"); }
+    core::Tensor GetMinBound() const { return GetVertices().Min({0}); }
 
-    core::Tensor GetMaxBound() const { utility::LogError("Unimplemented"); }
+    core::Tensor GetMaxBound() const { return GetVertices().Max({0}); }
 
-    core::Tensor GetCenter() const { utility::LogError("Unimplemented"); }
+    core::Tensor GetCenter() const { return GetVertices().Mean({0}); }
 
-    TriangleMesh &Transform(const core::Tensor &transformation) {
-        utility::LogError("Unimplemented");
-    }
+    TriangleMesh &Transform(const core::Tensor &transformation);
 
     TriangleMesh &Translate(const core::Tensor &translation,
-                            bool relative = true) {
-        utility::LogError("Unimplemented");
-    }
+                            bool relative = true);
 
-    TriangleMesh &Scale(double scale, const core::Tensor &center) {
-        utility::LogError("Unimplemented");
-    }
+    TriangleMesh &Scale(double scale, const core::Tensor &center);
 
-    TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center) {
-        utility::LogError("Unimplemented");
-    }
+    TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     core::Device GetDevice() const { return device_; }
 
@@ -423,14 +415,14 @@ public:
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
     /// triangles.
     /// \param device The device where the resulting TriangleMesh resides in.
-    static geometry::TriangleMesh FromLegacyTriangleMesh(
+    static geometry::TriangleMesh FromLegacy(
             const ccMesh &mesh_legacy,
-            core::Dtype float_dtype = core::Dtype::Float32,
-            core::Dtype int_dtype = core::Dtype::Int64,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D TriangleMesh.
-    ccMesh ToLegacyTriangleMesh() const;
+    ccMesh ToLegacy() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

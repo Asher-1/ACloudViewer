@@ -188,8 +188,7 @@ int main(int argc, char* argv[]) {
                 argc, argv, "--pointcloud",
                 "pcd_" + device.ToString() + ".ply");
         auto pcd = model.ExtractPointCloud(-1);
-        auto pcd_legacy = cloudViewer::make_shared<ccPointCloud>(
-                pcd.ToLegacyPointCloud());
+        auto pcd_legacy = cloudViewer::make_shared<ccPointCloud>(pcd.ToLegacy());
         cloudViewer::io::WritePointCloud(filename, *pcd_legacy);
     }
 
@@ -197,8 +196,7 @@ int main(int argc, char* argv[]) {
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--mesh", "mesh_" + device.ToString() + ".ply");
         auto mesh = model.ExtractTriangleMesh(-1);
-        auto mesh_legacy = cloudViewer::make_shared<ccMesh>(
-                mesh.ToLegacyTriangleMesh());
+        auto mesh_legacy = cloudViewer::make_shared<ccMesh>(mesh.ToLegacy());
         cloudViewer::io::WriteTriangleMesh(filename, *mesh_legacy);
     }
 }

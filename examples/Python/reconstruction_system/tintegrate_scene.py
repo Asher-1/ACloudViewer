@@ -22,8 +22,8 @@ if __name__ == '__main__':
         'dataset_path',
         type=str,
         help='path to the dataset.'
-             'It should contain 16bit depth images in a folder named depth/'
-             'and rgb images in a folder named color/ or rgb/')
+        'It should contain 16bit depth images in a folder named depth/'
+        'and rgb images in a folder named color/ or rgb/')
     parser.add_argument('trajectory_path',
                         type=str,
                         help='path to the trajectory in open3d\'s .log format')
@@ -34,25 +34,25 @@ if __name__ == '__main__':
     parser.add_argument('--intrinsic_path',
                         type=str,
                         help='path to the intrinsic.json config file.'
-                             'By default PrimeSense intrinsics is used.')
+                        'By default PrimeSense intrinsics is used.')
     parser.add_argument(
         '--block_count',
         type=int,
         default=100,
         help='estimated number of 16x16x16 voxel blocks to represent a scene.'
-             'Typically with a 6mm resolution,'
-             'a lounge scene requires around 30K blocks,'
-             'while a large apartment requires 80K blocks.'
-             'Open3D will dynamically increase the block count on demand,'
-             'but a rough upper bound will be useful especially when memory is limited.'
+        'Typically with a 6mm resolution,'
+        'a lounge scene requires around 30K blocks,'
+        'while a large apartment requires 80K blocks.'
+        'CloudViewer will dynamically increase the block count on demand,'
+        'but a rough upper bound will be useful especially when memory is limited.'
     )
     parser.add_argument(
         '--voxel_size',
         type=float,
         default=3.0 / 512,
         help='voxel resolution.'
-             'For small scenes, 6mm preserves fine details.'
-             'For large indoor scenes, 1cm or larger will be reasonable for limited memory.'
+        'For small scenes, 6mm preserves fine details.'
+        'For large indoor scenes, 1cm or larger will be reasonable for limited memory.'
     )
     parser.add_argument(
         '--depth_scale',
@@ -68,6 +68,9 @@ if __name__ == '__main__':
                         default=0.04,
                         help='SDF truncation threshold.')
     parser.add_argument('--device', type=str, default='cuda:0')
+    parser.add_argument('--raycast',
+                        action='store_true',
+                        help='visualize ray casting every 100 frames')
     args = parser.parse_args()
     print(args)
 
@@ -84,7 +87,7 @@ if __name__ == '__main__':
         intrinsic = cv3d.io.read_pinhole_camera_intrinsic(args.intrinsic_path)
 
     intrinsic = cv3d.core.Tensor(intrinsic.intrinsic_matrix,
-                                 cv3d.core.Dtype.Float32, device)
+                                cv3d.core.Dtype.Float32, device)
 
     # Load extrinsics
     trajectory = read_poses_from_log(args.trajectory_path)
@@ -111,20 +114,37 @@ if __name__ == '__main__':
 
     for i in range(n_files):
         rgb = cv3d.io.read_image(color_files[i])
-        rgb = cv3d.t.geometry.Image.from_legacy_image(rgb, device=device)
+        rgb = cv3d.t.geometry.Image.from_legacy(rgb, device=device)
 
         depth = cv3d.io.read_image(depth_files[i])
-        depth = cv3d.t.geometry.Image.from_legacy_image(depth, device=device)
+        depth = cv3d.t.geometry.Image.from_legacy(depth, device=device)
 
         extrinsic = cv3d.core.Tensor(extrinsics[i], cv3d.core.Dtype.Float32,
-                                     device)
+                                    device)
 
         start = time.time()
         volume.integrate(depth, rgb, intrinsic, extrinsic, args.depth_scale,
                          args.max_depth)
+        if args.raycast and i % 100 == 0:
+            colormap_code = int(cv3d.t.geometry.SurfaceMaskCode.ColorMap)
+            vertexmap_code = int(cv3d.t.geometry.SurfaceMaskCode.VertexMap)
+
+            result = volume.raycast(intrinsic, extrinsic, depth.columns,
+                                    depth.rows,
+                                    args.depth_scale, 0.1, args.max_depth,
+                                    min(i * 1.0,
+                                        3.0), colormap_code | vertexmap_code)
+            vertexmap = result[cv3d.t.geometry.SurfaceMaskCode.VertexMap]
+            colormap = result[cv3d.t.geometry.SurfaceMaskCode.ColorMap]
+
+            cv3d.visualization.draw_geometries(
+                [cv3d.t.geometry.Image(vertexmap).to_legacy_image()])
+            cv3d.visualization.draw_geometries(
+                [cv3d.t.geometry.Image(colormap).to_legacy_image()])
+
         end = time.time()
         print('Integration {:04d}/{:04d} takes {:.3f} ms'.format(
             i, n_files, (end - start) * 1000.0))
 
-    mesh = volume.extract_surface_mesh().to_legacy_triangle_mesh()
+    mesh = volume.cpu().extract_surface_mesh().to_legacy()
     cv3d.io.write_triangle_mesh(args.mesh_name, mesh, False, True)

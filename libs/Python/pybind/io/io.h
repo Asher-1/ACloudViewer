@@ -35,12 +35,10 @@ void pybind_io(py::module& m);
 
 void pybind_class_io(py::module& m);
 
+void pybind_rpc(py::module& m);
+
 #ifdef BUILD_AZURE_KINECT
 void pybind_sensor(py::module& m);
-#endif
-
-#ifdef BUILD_RPC_INTERFACE
-void pybind_rpc(py::module& m);
 #endif
 
 }  // namespace io

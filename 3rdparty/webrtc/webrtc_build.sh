@@ -106,15 +106,15 @@ download_webrtc_sources() {
 
 build_webrtc() {
     # PWD=Open3D
-    OPEN3D_DIR="$PWD"
+    CLOUDVIEWER_DIR="$PWD"
     echo Apply patches
     cp 3rdparty/webrtc/{CMakeLists.txt,webrtc_common.cmake} ../webrtc
     git -C ../webrtc/src apply \
-        "$OPEN3D_DIR"/3rdparty/webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch
+        "CLOUDVIEWER_DIR"/3rdparty/webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch
     git -C ../webrtc/src/build apply \
-        "$OPEN3D_DIR"/3rdparty/webrtc/0001-build-enable-rtc_use_cxx11_abi-option.patch
+        "CLOUDVIEWER_DIR"/3rdparty/webrtc/0001-build-enable-rtc_use_cxx11_abi-option.patch
     git -C ../webrtc/src/third_party apply \
-        "$OPEN3D_DIR"/3rdparty/webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch
+        "CLOUDVIEWER_DIR"/3rdparty/webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch
     WEBRTC_COMMIT_SHORT=$(git -C ../webrtc/src rev-parse --short=7 HEAD)
 
     echo Build WebRTC
@@ -132,11 +132,11 @@ build_webrtc() {
     echo Package WebRTC
     if [[ $(uname -s) == 'Linux' ]]; then
         tar -czf \
-            "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz" \
+            "CLOUDVIEWER_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz" \
             webrtc_release
     elif [[ $(uname -s) == 'Darwin' ]]; then
         tar -czf \
-            "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz" \
+            "CLOUDVIEWER_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz" \
             webrtc_release
     fi
     popd # PWD=Open3D

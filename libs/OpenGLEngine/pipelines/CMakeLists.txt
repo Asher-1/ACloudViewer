@@ -21,6 +21,7 @@ target_sources(pipelines PRIVATE
     registration/ColoredICP.cpp
     registration/CorrespondenceChecker.cpp
     registration/FastGlobalRegistration.cpp
+    registration/GeneralizedICP.cpp
     registration/GlobalOptimization.cpp
     registration/PoseGraph.cpp
     registration/Registration.cpp

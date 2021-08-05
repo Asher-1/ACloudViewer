@@ -1,6 +1,6 @@
 # CloudViewer: www.erow.cn
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+# See license file or visit www.cloudViewer.org for details
 
 # examples/Python/Utility/downloader.py
 
@@ -25,7 +25,7 @@ def get_redwood_dataset():
         # download and unzip dataset
         for name in dataset_names:
             print("==================================")
-            file_downloader("http://redwood-data.org/indoor/data/%s-fragments-ply.zip" % \
+            file_downloader("https://github.com/isl-org/open3d_downloads/releases/download/redwood/%s-fragments-ply.zip" % \
                     name)
             unzip_data("%s-fragments-ply.zip" % name,
                        "%s/%s" % (dataset_path, name))

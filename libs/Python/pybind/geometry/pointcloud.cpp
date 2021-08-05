@@ -26,9 +26,9 @@
 
 #include <Image.h>
 #include <RGBDImage.h>
-#include <camera/PinholeCameraIntrinsic.h>
-#include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <ecvPointCloud.h>
+#include <camera/PinholeCameraIntrinsic.h>
 
 #include <vector>
 
@@ -178,6 +178,8 @@ void pybind_pointcloud(py::module& m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
+            .def("has_covariances", &ccPointCloud::hasCovariances,
+                 "Returns ``True`` if the point cloud contains covariances.")
             .def("normalize_normals", &ccPointCloud::normalizeNormals,
                  "Normalize point normals to length 1.")
             .def("paint_uniform_color", &ccPointCloud::paintUniformColor,
@@ -730,6 +732,21 @@ void pybind_pointcloud(py::module& m) {
                     "field(s).",
                     "export_x"_a = false, "export_y"_a = false,
                     "export_z"_a = false)
+            .def("estimate_covariances", &ccPointCloud::estimateCovariances,
+                 "Function to compute the covariance matrix for each point "
+                 "in the point cloud",
+                 "search_param"_a = KDTreeSearchParamKNN())
+            .def_readwrite("covariances", &ccPointCloud::covariances_,
+                   "``float64`` array of shape ``(num_points, 3, 3)``, "
+                   "use ``numpy.asarray()`` to access data: Points "
+                   "covariances.")
+            .def_static(
+                    "estimate_point_covariances",
+                    &ccPointCloud::EstimatePerPointCovariances,
+                    "Static function to compute the covariance matrix for "
+                    "each "
+                    "point in the given point cloud, doesn't change the input",
+                    "input"_a, "search_param"_a = KDTreeSearchParamKNN())
             .def_static(
                     "from",
                     [](const cloudViewer::GenericIndexedCloud& cloud,
@@ -804,6 +821,15 @@ void pybind_pointcloud(py::module& m) {
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_normal");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "get_normals");
     docstring::ClassMethodDocInject(m, "ccPointCloud", "normalize_normals");
+    docstring::ClassMethodDocInject(
+            m, "ccPointCloud", "estimate_point_covariances",
+            {{"input", "The input point cloud."},
+             {"search_param",
+              "The KDTree search parameters for neighborhood search."}});
+    docstring::ClassMethodDocInject(
+            m, "ccPointCloud", "estimate_covariances",
+            {{"search_param",
+              "The KDTree search parameters for neighborhood search."}});
     docstring::ClassMethodDocInject(
             m, "ccPointCloud", "paint_uniform_color",
             {{"color", "RGB color for the PointCloud."}});

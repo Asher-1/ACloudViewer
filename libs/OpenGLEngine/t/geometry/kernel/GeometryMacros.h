@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                        -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -54,15 +54,23 @@ __device__ double atomicAdd(double *address, double val) {
 #endif
 
 #define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
-
-#define ISNAN(X) isnan(X)
 #else
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
-#define ISNAN(X) std::isnan(X)
 #endif
 
-#define OPEN3D_MIN(a, b) a < b ? a : b
-#define OPEN3D_MAX(a, b) a > b ? a : b
+namespace cloudViewer {
+template <typename scalar_t, typename T>
+CLOUDVIEWER_HOST_DEVICE bool IsClose(const scalar_t &x,
+                                const T &y,
+                                const double rtol = 1e-4) {
+    return ((x > (1.0 - rtol) * y) && (x < (1.0 + rtol) * y));
+}
+
+template <typename scalar_t>
+CLOUDVIEWER_HOST_DEVICE scalar_t Square(const scalar_t &x) {
+    return x * x;
+}
+}  // namespace cloudViewer
 
 // https://stackoverflow.com/a/51549250
 #ifdef __CUDACC__

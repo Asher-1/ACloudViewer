@@ -68,31 +68,31 @@ static TensorKey ToTensorKey(const py::slice& key) {
 
 static TensorKey ToTensorKey(const py::list& key) {
     Tensor key_tensor = PyTupleToTensor(key);
-    if (key_tensor.GetDtype() != Dtype::Bool) {
-        key_tensor = key_tensor.To(Dtype::Int64);
+    if (key_tensor.GetDtype() != core::Bool) {
+        key_tensor = key_tensor.To(core::Int64);
     }
     return TensorKey::IndexTensor(key_tensor);
 }
 
 static TensorKey ToTensorKey(const py::tuple& key) {
     Tensor key_tensor = PyTupleToTensor(key);
-    if (key_tensor.GetDtype() != Dtype::Bool) {
-        key_tensor = key_tensor.To(Dtype::Int64);
+    if (key_tensor.GetDtype() != core::Bool) {
+        key_tensor = key_tensor.To(core::Int64);
     }
     return TensorKey::IndexTensor(key_tensor);
 }
 
 static TensorKey ToTensorKey(const py::array& key) {
     Tensor key_tensor = PyArrayToTensor(key, /*inplace=*/false);
-    if (key_tensor.GetDtype() != Dtype::Bool) {
-        key_tensor = key_tensor.To(Dtype::Int64);
+    if (key_tensor.GetDtype() != core::Bool) {
+        key_tensor = key_tensor.To(core::Int64);
     }
     return TensorKey::IndexTensor(key_tensor);
 }
 
 static TensorKey ToTensorKey(const Tensor& key_tensor) {
-    if (key_tensor.GetDtype() != Dtype::Bool) {
-        return TensorKey::IndexTensor(key_tensor.To(Dtype::Int64));
+    if (key_tensor.GetDtype() != core::Bool) {
+        return TensorKey::IndexTensor(key_tensor.To(core::Int64));
     } else {
         return TensorKey::IndexTensor(key_tensor);
     }
@@ -120,7 +120,7 @@ static TensorKey PyHandleToTensorKey(const py::handle& item) {
         return ToTensorKey(item.cast<py::tuple>());
     } else if (class_name == "<class 'numpy.ndarray'>") {
         return ToTensorKey(item.cast<py::array>());
-    } else if (class_name.find("open3d") != std::string::npos &&
+    } else if (class_name.find("cloudViewer") != std::string::npos &&
                class_name.find("Tensor") != std::string::npos) {
         try {
             Tensor* tensor = item.cast<Tensor*>();

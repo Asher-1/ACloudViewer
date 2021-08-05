@@ -32,7 +32,7 @@ endif()
 # Add custom preprocessor definitions
 target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_DB_LIBRARY_BUILD )
 
-CopyDLLToDirectory(${PROJECT_NAME})
+cloudViewer_install_targets(${PROJECT_NAME})
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
 	CXX_VISIBILITY_PRESET hidden

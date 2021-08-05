@@ -9,13 +9,13 @@ import numpy as np
 
 if __name__ == "__main__":
     pinhole_camera_intrinsic = cv3d.io.read_pinhole_camera_intrinsic(
-        "../../TestData/camera_primesense.json")
+        "../../test_data/camera_primesense.json")
     print(pinhole_camera_intrinsic.intrinsic_matrix)
 
-    source_color = cv3d.io.read_image("../../TestData/RGBD/color/00000.jpg")
-    source_depth = cv3d.io.read_image("../../TestData/RGBD/depth/00000.png")
-    target_color = cv3d.io.read_image("../../TestData/RGBD/color/00001.jpg")
-    target_depth = cv3d.io.read_image("../../TestData/RGBD/depth/00001.png")
+    source_color = cv3d.io.read_image("../../test_data/RGBD/color/00000.jpg")
+    source_depth = cv3d.io.read_image("../../test_data/RGBD/depth/00000.png")
+    target_color = cv3d.io.read_image("../../test_data/RGBD/color/00001.jpg")
+    target_depth = cv3d.io.read_image("../../test_data/RGBD/depth/00001.png")
     source_rgbd_image = cv3d.geometry.RGBDImage.create_from_color_and_depth(
         source_color, source_depth)
     source_pcd = cv3d.geometry.ccPointCloud.create_from_rgbd_image(

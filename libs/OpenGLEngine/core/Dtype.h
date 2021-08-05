@@ -91,6 +91,19 @@ private:
     char name_[max_name_len_];  // MSVC warns if std::string is exported to DLL.
 };
 
+CLOUDVIEWER_API extern const Dtype Undefined;
+CLOUDVIEWER_API extern const Dtype Float32;
+CLOUDVIEWER_API extern const Dtype Float64;
+CLOUDVIEWER_API extern const Dtype Int8;
+CLOUDVIEWER_API extern const Dtype Int16;
+CLOUDVIEWER_API extern const Dtype Int32;
+CLOUDVIEWER_API extern const Dtype Int64;
+CLOUDVIEWER_API extern const Dtype UInt8;
+CLOUDVIEWER_API extern const Dtype UInt16;
+CLOUDVIEWER_API extern const Dtype UInt32;
+CLOUDVIEWER_API extern const Dtype UInt64;
+CLOUDVIEWER_API extern const Dtype Bool;
+
 template <>
 inline const Dtype Dtype::FromType<float>() {
     return Dtype::Float32;

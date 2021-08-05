@@ -115,7 +115,7 @@ def test_to_legacy_pointcloud(device):
             [9, 10, 11],
         ], dtype, device))
 
-    legacy_pcd = pcd.to_legacy_pointcloud()
+    legacy_pcd = pcd.to_legacy()
     np.testing.assert_allclose(np.asarray(legacy_pcd.points),
                                np.array([
                                    [0, 1, 2],

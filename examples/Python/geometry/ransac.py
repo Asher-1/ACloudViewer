@@ -31,7 +31,7 @@ def pointcloud_generator():
     unit_points = mesh.sample_points_uniformly(int(1e5))
     yield "shapes", unit_points, 0.001, 8.0
 
-    yield "fragment", cv3d.io.read_point_cloud("../../TestData/fragment.ply"), 0.01, 6.0
+    yield "fragment", cv3d.io.read_point_cloud("../../test_data/fragment.ply"), 0.01, 6.0
 
 
 if __name__ == "__main__":

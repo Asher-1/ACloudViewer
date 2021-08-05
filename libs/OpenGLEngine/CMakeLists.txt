@@ -4,8 +4,6 @@
 # In comparison, cloudViewer_set_global_properties() sets properties for the CloudViewer
 # lib, and targets that links to the CloudViewer lib, e.g pybind, unit tests, etc.
 function(cloudViewer_set_cloudViewer_lib_properties target)
-    #target_compile_definitions(${target} PRIVATE CLOUDVIEWER_ENABLE_DLL_EXPORTS)
-    #target_compile_definitions(${target} PUBLIC ECV_OPENGL_ENGINE_LIBRARY_BUILD)
     cmake_parse_arguments(arg "HIDDEN" "" "" ${ARGN})
     if(NOT BUILD_SHARED_LIBS)
         target_compile_definitions(${target} PUBLIC CLOUDVIEWER_STATIC)
@@ -24,7 +22,6 @@ endfunction()
 project( OPENGL_ENGINE_LIB )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-
 file( GLOB basic_list ${CMAKE_CURRENT_SOURCE_DIR}/*.h )
 
 # Configure a header file to pass the version settings to the source code
@@ -92,15 +89,15 @@ add_library(${PROJECT_NAME}
 )
 
 # Source group for Visual Studio
-ADD_SOURCE_GROUP(core)
-ADD_SOURCE_GROUP(tgeometry)
-ADD_SOURCE_GROUP(io)
-ADD_SOURCE_GROUP(tio)
-ADD_SOURCE_GROUP(ml)
-ADD_SOURCE_GROUP(pipelines)
-ADD_SOURCE_GROUP(tpipelines)
-ADD_SOURCE_GROUP(utility)
-ADD_SOURCE_GROUP(visualization)
+add_source_group(core)
+add_source_group(tgeometry)
+add_source_group(io)
+add_source_group(tio)
+add_source_group(ml)
+add_source_group(pipelines)
+add_source_group(tpipelines)
+add_source_group(utility)
+add_source_group(visualization)
 
 # INTERNAL LIB
 target_link_libraries(  ${PROJECT_NAME} PUBLIC

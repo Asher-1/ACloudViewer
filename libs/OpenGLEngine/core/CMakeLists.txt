@@ -1,124 +1,121 @@
-add_library(core OBJECT)
+file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
+add_library(core OBJECT ${ALL_HEADER_FILES})
 
 target_sources(core PRIVATE
-    AdvancedIndexing.cpp
-    CUDAUtils.cpp
-    Dtype.cpp
-    Gpu.cpp
-    EigenConverter.cpp
-    Indexer.cpp
-    MemoryManager.cpp
-    MemoryManagerCached.cpp
-    MemoryManagerCPU.cpp
-    MemoryManagerStatistic.cpp
-    NumpyIO.cpp
-    ShapeUtil.cpp
-    Tensor.cpp
-    TensorKey.cpp
-    TensorList.cpp
-)
+        AdvancedIndexing.cpp
+        CUDAUtils.cpp
+        Dtype.cpp
+        Gpu.cpp
+        EigenConverter.cpp
+        Indexer.cpp
+        MemoryManager.cpp
+        MemoryManagerCached.cpp
+        MemoryManagerCPU.cpp
+        MemoryManagerStatistic.cpp
+        ShapeUtil.cpp
+        Tensor.cpp
+        TensorKey.cpp
+        TensorList.cpp
+        )
 
 target_sources(core PRIVATE
-    hashmap/DeviceHashmap.cpp
-    hashmap/Hashmap.cpp
-)
+        hashmap/DeviceHashmap.cpp
+        hashmap/Hashmap.cpp
+        )
 
 target_sources(core PRIVATE
-    hashmap/CPU/CreateCPUHashmap.cpp
-)
+        hashmap/CPU/CreateCPUHashmap.cpp
+        )
 
 target_sources(core PRIVATE
-    kernel/Arange.cpp
-    kernel/ArangeCPU.cpp
-    kernel/BinaryEW.cpp
-    kernel/BinaryEWCPU.cpp
-    kernel/IndexGetSet.cpp
-    kernel/IndexGetSetCPU.cpp
-    kernel/Kernel.cpp
-    kernel/NonZero.cpp
-    kernel/NonZeroCPU.cpp
-    kernel/Reduction.cpp
-    kernel/ReductionCPU.cpp
-    kernel/UnaryEW.cpp
-    kernel/UnaryEWCPU.cpp
-)
+        kernel/Arange.cpp
+        kernel/ArangeCPU.cpp
+        kernel/BinaryEW.cpp
+        kernel/BinaryEWCPU.cpp
+        kernel/IndexGetSet.cpp
+        kernel/IndexGetSetCPU.cpp
+        kernel/Kernel.cpp
+        kernel/NonZero.cpp
+        kernel/NonZeroCPU.cpp
+        kernel/Reduction.cpp
+        kernel/ReductionCPU.cpp
+        kernel/UnaryEW.cpp
+        kernel/UnaryEWCPU.cpp
+        )
 
 target_sources(core PRIVATE
-    linalg/Det.cpp
-    linalg/Inverse.cpp
-    linalg/InverseCPU.cpp
-    linalg/LeastSquares.cpp
-    linalg/LeastSquaresCPU.cpp
-    linalg/LU.cpp
-    linalg/LUCPU.cpp
-    linalg/Matmul.cpp
-    linalg/MatmulCPU.cpp
-    linalg/Solve.cpp
-    linalg/SolveCPU.cpp
-    linalg/SVD.cpp
-    linalg/SVDCPU.cpp
-    linalg/Tri.cpp
-    linalg/TriCPU.cpp
-)
+        linalg/Det.cpp
+        linalg/Inverse.cpp
+        linalg/InverseCPU.cpp
+        linalg/LeastSquares.cpp
+        linalg/LeastSquaresCPU.cpp
+        linalg/LU.cpp
+        linalg/LUCPU.cpp
+        linalg/Matmul.cpp
+        linalg/MatmulCPU.cpp
+        linalg/Solve.cpp
+        linalg/SolveCPU.cpp
+        linalg/SVD.cpp
+        linalg/SVDCPU.cpp
+        linalg/Tri.cpp
+        linalg/TriCPU.cpp
+        )
 
 target_sources(core PRIVATE
-    nns/FixedRadiusIndex.cpp
-    nns/NanoFlannIndex.cpp
-    nns/NearestNeighborSearch.cpp
-    nns/NNSIndex.cpp
-)
+        nns/FixedRadiusSearchOps.cpp
+        nns/FixedRadiusIndex.cpp
+        nns/NanoFlannIndex.cpp
+        nns/NearestNeighborSearch.cpp
+        nns/NNSIndex.cpp
+        )
 
 if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
-        CUDAState.cu
-        MemoryManagerCUDA.cu
-    )
+            MemoryManagerCUDA.cpp
+            )
 
     target_sources(core PRIVATE
-        hashmap/CUDA/CreateCUDAHashmap.cu
-        hashmap/CUDA/CUDAHashmapBufferAccessor.cu
-        hashmap/CUDA/SlabNodeManager.cu
-    )
+            hashmap/CUDA/CreateCUDAHashmap.cu
+            hashmap/CUDA/CUDAHashmapBufferAccessor.cu
+            hashmap/CUDA/SlabNodeManager.cu
+            )
 
     target_sources(core PRIVATE
-        kernel/ArangeCUDA.cu
-        kernel/BinaryEWCUDA.cu
-        kernel/IndexGetSetCUDA.cu
-        kernel/NonZeroCUDA.cu
-        kernel/ReductionCUDA.cu
-        kernel/UnaryEWCUDA.cu
-    )
+            kernel/ArangeCUDA.cu
+            kernel/BinaryEWCUDA.cu
+            kernel/IndexGetSetCUDA.cu
+            kernel/NonZeroCUDA.cu
+            kernel/ReductionCUDA.cu
+            kernel/UnaryEWCUDA.cu
+            )
 
     target_sources(core PRIVATE
-        linalg/InverseCUDA.cpp
-        linalg/LeastSquaresCUDA.cpp
-        linalg/LinalgUtils.cpp
-        linalg/LUCUDA.cpp
-        linalg/MatmulCUDA.cpp
-        linalg/SolveCUDA.cpp
-        linalg/SVDCUDA.cpp
-        linalg/TriCUDA.cu
-    )
+            linalg/InverseCUDA.cpp
+            linalg/LeastSquaresCUDA.cpp
+            linalg/LinalgUtils.cpp
+            linalg/LUCUDA.cpp
+            linalg/MatmulCUDA.cpp
+            linalg/SolveCUDA.cpp
+            linalg/SVDCUDA.cpp
+            linalg/TriCUDA.cu
+            )
 
     target_sources(core PRIVATE
-        nns/FixedRadiusSearch.cu
-    )
-endif()
+            nns/FixedRadiusSearchOps.cu
+            )
+endif ()
 
 if (WITH_FAISS)
     target_sources(core PRIVATE
-        nns/FaissIndex.cpp
-    )
-endif()
-
-file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
-target_sources(core PRIVATE ${ALL_HEADER_FILES})
+            nns/FaissIndex.cpp
+            )
+endif ()
 
 cloudViewer_show_and_abort_on_warning(core)
 cloudViewer_set_global_properties(core)
 cloudViewer_set_cloudViewer_lib_properties(core)
 cloudViewer_link_3rdparty_libraries(core)
 
-if(BUILD_CUDA_MODULE)
+if (BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-endif()
+endif ()

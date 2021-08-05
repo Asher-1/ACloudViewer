@@ -33,7 +33,7 @@ if (BUILD_PYTHON_MODULE)
     # UTILS PYBIND MODULE
     file(GLOB_RECURSE utility_pybind_list ${CMAKE_CURRENT_SOURCE_DIR}/utility/*)
     source_group("utility" FILES ${utility_pybind_list})
-    # ADD_SOURCE_GROUP(utility)
+    # add_source_group(utility)
     file(GLOB recognition_pybind_list
             ${CMAKE_CURRENT_SOURCE_DIR}/recognition/*.h
             ${CMAKE_CURRENT_SOURCE_DIR}/recognition/*.cpp

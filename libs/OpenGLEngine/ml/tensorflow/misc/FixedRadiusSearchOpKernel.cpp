@@ -27,9 +27,8 @@
 
 #include "FixedRadiusSearchOpKernel.h"
 
-#include "ml/impl/misc/FixedRadiusSearch.h"
+#include "core/nns/FixedRadiusSearchImpl.h"
 
-using namespace cloudViewer::ml::impl;
 using namespace fixed_radius_search_opkernel;
 using namespace tensorflow;
 
@@ -51,7 +50,7 @@ public:
                 tensorflow::Tensor& query_neighbors_row_splits) {
         OutputAllocator<T> output_allocator(context);
 
-        FixedRadiusSearchCPU(
+        cloudViewer::core::nns::impl::FixedRadiusSearchCPU(
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
@@ -67,10 +66,10 @@ public:
     }
 };
 
-#define REG_KB(type)                                            \
+#define REG_KB(type)                                                 \
     REGISTER_KERNEL_BUILDER(Name("CloudviewerFixedRadiusSearch")     \
-                                    .Device(DEVICE_CPU)         \
-                                    .TypeConstraint<type>("T"), \
+                                    .Device(DEVICE_CPU)              \
+                                    .TypeConstraint<type>("T"),      \
                             FixedRadiusSearchOpKernelCPU<type>);
 REG_KB(float)
 REG_KB(double)

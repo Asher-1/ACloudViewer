@@ -74,7 +74,7 @@ def wrap_polyline(points, color):
 
 
 def generate_from_file():
-    entity = cv3d.io.read_entity("../../TestData/polylines/polylines.bin")
+    entity = cv3d.io.read_entity("../../test_data/polylines/polylines.bin")
     polylines = entity.filter_children(recursive=False, filter=cv3d.geometry.ccHObject.POLY_LINE)
     print(polylines)
     for poly in polylines:

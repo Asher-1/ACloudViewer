@@ -30,7 +30,7 @@ def pointcloud_generator():
     mesh += cv3d.geometry.ccMesh.create_moebius(twists=2).translate((d, -d, 0))
     yield "shapes", mesh.sample_points_uniformly(int(1e5)), 0.5
 
-    yield "fragment", cv3d.io.read_point_cloud("../../TestData/fragment.ply"), 0.02
+    yield "fragment", cv3d.io.read_point_cloud("../../test_data/fragment.ply"), 0.02
 
 
 if __name__ == "__main__":
