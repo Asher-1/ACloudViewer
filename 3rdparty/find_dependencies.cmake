@@ -1635,9 +1635,9 @@ if (BUILD_RECONSTRUCTION)
                 INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
                 LIB_DIR ${FREEIMAGE_LIB_DIR}
                 LIBRARIES ${EXT_FREEIMAGE_LIBRARIES}
+                DEPENDS ext_freeimage
                 )
         set(FREEIMAGE_TARGET "3rdparty_freeimage")
-        add_dependencies(3rdparty_freeimage ext_freeimage)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${FREEIMAGE_TARGET}")
 
         # gflags
@@ -1646,9 +1646,9 @@ if (BUILD_RECONSTRUCTION)
                 INCLUDE_DIRS ${GFLAGS_INCLUDE_DIRS}
                 LIB_DIR ${GFLAGS_LIB_DIR}
                 LIBRARIES ${EXT_GFLAGS_LIBRARIES}
+                DEPENDS ext_gflags
                 )
         set(GFLAGS_TARGET "3rdparty_gflags")
-        add_dependencies(3rdparty_gflags ext_gflags)
 
         # glog
         include(${CloudViewer_3RDPARTY_DIR}/glog/glog_build.cmake)
@@ -1656,9 +1656,9 @@ if (BUILD_RECONSTRUCTION)
                 INCLUDE_DIRS ${GLOG_INCLUDE_DIRS}
                 LIB_DIR ${GLOG_LIB_DIR}
                 LIBRARIES ${EXT_GLOG_LIBRARIES}
+                DEPENDS ext_glog
                 )
         set(GLOG_TARGET "3rdparty_glog")
-        add_dependencies(3rdparty_glog ext_glog)
         add_dependencies(ext_glog ext_gflags)
 
         # suitesparse
@@ -1667,9 +1667,9 @@ if (BUILD_RECONSTRUCTION)
                 INCLUDE_DIRS ${SUITESPARSE_INCLUDE_DIRS}
                 LIB_DIR ${SUITESPARSE_LIB_DIR}
                 LIBRARIES ${EXT_SUITESPARSE_LIBRARIES}
+                DEPENDS ext_suitesparse
                 )
         set(SUITESPARSE_TARGET "3rdparty_suitesparse")
-        add_dependencies(3rdparty_suitesparse ext_suitesparse)
 
         import_3rdparty_library(3rdparty_lapack
                 LIB_DIR ${LAPACK_LIB_DIR}
@@ -1684,9 +1684,9 @@ if (BUILD_RECONSTRUCTION)
                 INCLUDE_DIRS ${CERES_INCLUDE_DIRS}
                 LIB_DIR ${CERES_LIB_DIR}
                 LIBRARIES ${EXT_CERES_LIBRARIES}
+                DEPENDS ext_ceres
                 )
         set(CERES_TARGET "3rdparty_ceres")
-        add_dependencies(3rdparty_ceres ext_ceres)
         add_dependencies(ext_ceres ext_suitesparse)
         add_dependencies(ext_ceres ext_eigen3)
 
@@ -1699,14 +1699,14 @@ if (BUILD_RECONSTRUCTION)
 
     else () # must build shared library to avoid compiling error!
         # boost: predef
-#        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
-#        import_3rdparty_library(3rdparty_boost
-#                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
-#                )
-#        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
-#        set(BOOST_TARGET "3rdparty_boost")
-#        add_dependencies(3rdparty_boost ext_boost)
-#        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
+        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
+        import_3rdparty_library(3rdparty_boost
+                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
+                DEPENDS ext_boost
+                )
+        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
+        set(BOOST_TARGET "3rdparty_boost")
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
 
         # freeimage
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
@@ -1756,9 +1756,9 @@ if (BUILD_RECONSTRUCTION)
                 INCLUDE_DIRS ${SUITESPARSE_INCLUDE_DIRS}
                 LIB_DIR ${SUITESPARSE_LIB_DIR}
                 LIBRARIES ${EXT_SUITESPARSE_LIBRARIES}
+                DEPENDS ext_suitesparse
                 )
         set(SUITESPARSE_TARGET "3rdparty_suitesparse")
-        add_dependencies(3rdparty_suitesparse ext_suitesparse)
         add_dependencies(ext_suitesparse ${LAPACK_TARGET})
 
         # ceres

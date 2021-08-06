@@ -40,6 +40,7 @@
 #include <queue>
 #include <unordered_map>
 
+#include "util/alignment.h"
 #include "util/timer.h"
 
 namespace colmap {
