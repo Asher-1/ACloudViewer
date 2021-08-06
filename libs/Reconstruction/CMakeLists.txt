@@ -127,10 +127,10 @@ if(CGAL_ENABLED)
     find_package(CGAL QUIET)
 endif()
 
-set(CUDA_MIN_VERSION "10.1")
-if(CUDA_ENABLED)
-    find_package(CUDA ${CUDA_MIN_VERSION} QUIET)
-endif()
+#set(CUDA_MIN_VERSION "10.1")
+#if(CUDA_ENABLED)
+#    find_package(CUDA ${CUDA_MIN_VERSION} QUIET)
+#endif()
 
 if(OPENGL_ENABLED AND NOT GUI_ENABLED)
     message(STATUS "Disabling GUI will also disable OpenGL")
@@ -209,6 +209,7 @@ if(CUDA_FOUND)
         include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SelectCudaComputeArch.cmake)
 
         CUDA_SELECT_NVCC_ARCH_FLAGS(CUDA_ARCH_FLAGS ${CUDA_ARCHS})
+#        set(CUDA_ARCH_FLAGS ${cuda_archs})
 
         set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} ${CUDA_ARCH_FLAGS}")
 
