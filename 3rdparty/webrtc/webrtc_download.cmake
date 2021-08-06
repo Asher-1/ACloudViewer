@@ -7,7 +7,7 @@ if (APPLE)
     )
     set(WEBRTC_SHA256 e9d1f4e4fefb2e28ef4f16cf4a4f0008baf4fe638ca3ad329e82e7fd0ce87f56)
 elseif (WIN32)
-    #if (BUILD_SHARED_LIBS OR NOT STATIC_WINDOWS_RUNTIME)
+#    if (BUILD_SHARED_LIBS OR NOT STATIC_WINDOWS_RUNTIME)
     if (BUILD_SHARED_LIBS)
         message(FATAL_ERROR "Pre-built WebRTC binaries are not available for "
             "BUILD_SHARED_LIBS=ON or STATIC_WINDOWS_RUNTIME=OFF. Please use "

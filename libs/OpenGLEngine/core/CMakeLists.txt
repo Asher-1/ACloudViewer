@@ -1,5 +1,5 @@
-file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
-add_library(core OBJECT ${ALL_HEADER_FILES})
+file(GLOB_RECURSE ALL_CORE_HEADER_FILES "*.h")
+add_library(core OBJECT ${ALL_CORE_HEADER_FILES})
 
 target_sources(core PRIVATE
         AdvancedIndexing.cpp

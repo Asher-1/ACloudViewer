@@ -37,6 +37,7 @@
 #include "core/linalg/Matmul.h"
 #include "t/geometry/TensorMap.h"
 #include "t/geometry/kernel/PointCloud.h"
+#include "t/geometry/kernel/Transform.h"
 
 namespace cloudViewer {
 namespace t {

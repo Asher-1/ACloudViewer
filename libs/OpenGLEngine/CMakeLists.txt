@@ -16,19 +16,18 @@ function(cloudViewer_set_cloudViewer_lib_properties target)
     else ()
         target_compile_definitions(${target} PRIVATE CLOUDVIEWER_ENABLE_DLL_EXPORTS)
     endif()
-    target_compile_definitions(${target} PUBLIC ECV_OPENGL_ENGINE_LIBRARY_BUILD)
 endfunction()
 
-project( OPENGL_ENGINE_LIB )
+add_library( OPENGL_ENGINE_LIB )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 file( GLOB basic_list ${CMAKE_CURRENT_SOURCE_DIR}/*.h )
 
 # Configure a header file to pass the version settings to the source code
-configure_file("${PROJECT_SOURCE_DIR}/CloudViewer.h.in"
-               "${PROJECT_SOURCE_DIR}/CloudViewer.h")
-configure_file("${PROJECT_SOURCE_DIR}/CloudViewerConfig.h.in"
-               "${PROJECT_SOURCE_DIR}/CloudViewerConfig.h")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CloudViewer.h.in"
+               "${CMAKE_CURRENT_SOURCE_DIR}/CloudViewer.h")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CloudViewerConfig.h.in"
+               "${CMAKE_CURRENT_SOURCE_DIR}/CloudViewerConfig.h")
 
 # Subdirectories
 add_subdirectory(core)
@@ -60,19 +59,17 @@ add_subdirectory(visualization)
 set_target_properties(visualization PROPERTIES FOLDER "Modules")
 if (BUILD_GUI)
     add_subdirectory(visualization/gui)
-    set(GUI_OBJECTS "$<TARGET_OBJECTS:GUI>")
     set_target_properties(GUI PROPERTIES FOLDER "Modules")
 endif()
 
 if (BUILD_WEBRTC)
     add_subdirectory(visualization/webrtc_server)
-    set(WEBRTC_OBJECTS "$<TARGET_OBJECTS:webrtc_server>")
     set_target_properties(webrtc_server PROPERTIES FOLDER "Modules")
 endif()
 
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
-add_library(${PROJECT_NAME}
+target_sources(OPENGL_ENGINE_LIB PRIVATE
     CloudViewerConfig.cpp
     $<TARGET_OBJECTS:core>
     $<TARGET_OBJECTS:tgeometry>
@@ -84,8 +81,6 @@ add_library(${PROJECT_NAME}
     $<TARGET_OBJECTS:tpipelines>
     $<TARGET_OBJECTS:utility>
     $<TARGET_OBJECTS:visualization>
-    ${GUI_OBJECTS}
-    ${WEBRTC_OBJECTS}
 )
 
 # Source group for Visual Studio
@@ -100,26 +95,22 @@ add_source_group(utility)
 add_source_group(visualization)
 
 # INTERNAL LIB
-target_link_libraries(  ${PROJECT_NAME} PUBLIC
+target_link_libraries(  OPENGL_ENGINE_LIB PUBLIC
                                         ECV_DB_LIB
                                         ECV_IO_LIB)
 
-cloudViewer_show_and_abort_on_warning(${PROJECT_NAME})
-cloudViewer_set_global_properties(${PROJECT_NAME})
-cloudViewer_set_cloudViewer_lib_properties(${PROJECT_NAME})
-cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
-
-if(X11_TARGET)
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${X11_TARGET})
-endif()
+cloudViewer_show_and_abort_on_warning(OPENGL_ENGINE_LIB)
+cloudViewer_set_global_properties(OPENGL_ENGINE_LIB)
+cloudViewer_set_cloudViewer_lib_properties(OPENGL_ENGINE_LIB)
+cloudViewer_link_3rdparty_libraries(OPENGL_ENGINE_LIB)
 
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond
 # direct consumers of libOpen3D.a
-target_link_options(${PROJECT_NAME} INTERFACE
-    $<$<STREQUAL:$<TARGET_PROPERTY:${PROJECT_NAME},TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
+target_link_options(OPENGL_ENGINE_LIB INTERFACE
+    $<$<STREQUAL:$<TARGET_PROPERTY:OPENGL_ENGINE_LIB,TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
 
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+#add_library(OPENGL_ENGINE_LIB::OPENGL_ENGINE_LIB ALIAS OPENGL_ENGINE_LIB)
 
 include(CMakePackageConfigHelpers)
 
@@ -137,7 +128,7 @@ write_basic_package_version_file("${PROJECT_BINARY_DIR}/CloudViewerConfigVersion
                                  COMPATIBILITY ExactVersion)
 
 # Installation
-install(TARGETS ${PROJECT_NAME} EXPORT CloudViewerTargets
+install(TARGETS OPENGL_ENGINE_LIB EXPORT CloudViewerTargets
         RUNTIME DESTINATION ${CloudViewer_INSTALL_BIN_DIR}
         LIBRARY DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
         ARCHIVE DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
@@ -170,8 +161,5 @@ endif()
 set(GUI_RESOURCE_FILES ${GUI_RESOURCE_FILES} PARENT_SCOPE)
 set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
 
-# Add custom preprocessor definitions
-target_compile_definitions( ${PROJECT_NAME} PUBLIC ECV_OPENGL_ENGINE_LIBRARY_BUILD )
-
 # install (shared) lib to specified destinations
-InstallSharedLibrary( TARGET ${PROJECT_NAME} )
+InstallSharedLibrary( TARGET OPENGL_ENGINE_LIB )

@@ -684,7 +684,7 @@ if (NOT USE_SYSTEM_EIGEN3)
             DEPENDS      ext_eigen
             )
 endif ()
-set(INTERNAL_EIGEN3_TARGET "3rdparty_eigen3")
+set(INTERNAL_EIGEN3_TARGET 3rdparty_eigen3)
 list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS 3rdparty_eigen3)
 
 # Nanoflann
