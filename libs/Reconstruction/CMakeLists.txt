@@ -325,7 +325,7 @@ if(UNIX)
 endif()
 
 set(COLMAP_INTERNAL_LIBRARIES
-    #flann
+    flann
     graclus
     lsd
     pba
@@ -351,7 +351,7 @@ add_subdirectory(src)
 # Generate source groups for Visual Studio, XCode, etc.
 ################################################################################
 
-#COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
+COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/Graclus LIB_GRACLUS_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/LSD LIB_LSD_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
@@ -377,7 +377,7 @@ COLMAP_ADD_SOURCE_DIR(src/util UTIL_SRCS *.h *.cc)
 # target does not allow us to set its C++ include directories (and thus
 # intellisense can't find any of the included files).
 add_library( ${COLMAP_SRC_ROOT_FOLDER}
-    #${LIB_FLANN_SRCS}
+    ${LIB_FLANN_SRCS}
     ${LIB_GRACLUS_SRCS}
     ${LIB_LSD_SRCS}
     ${LIB_PBA_SRCS}

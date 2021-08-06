@@ -105,7 +105,7 @@ void VisualizePointCloudEmbedding(t::geometry::PointCloud& tpcd_param,
     // Prepare all ctr grid point cloud for lineset
     auto pcd = cloudViewer::make_shared<ccPointCloud>(
             tpcd_param.ToLegacy());
-    pcd->Transform(flip);
+    pcd->transform(flip);
 
     t::geometry::PointCloud tpcd_grid(
             ctr_grid.GetCurrPositions().Slice(0, 0, ctr_grid.Size()));
