@@ -12,7 +12,7 @@ ExternalProject_Add(
         ext_boost
         PREFIX boost
         URL https://github.com/boostorg/boost/archive/refs/tags/boost-1.73.0.tar.gz
-        URL_HASH SHA256=2f5f2b789edb00260aa71f03189da5f21cf4b5617c4fbba709e9fbcfc76a2f1e
+        URL_HASH SHA256=9f32cdebbdacd820ae0dd56c5b481c775b5196dac341bd23f67629dd3ef25d72
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/boost"
         BUILD_IN_SOURCE ON
         CONFIGURE_COMMAND ""
