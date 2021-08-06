@@ -1699,14 +1699,14 @@ if (BUILD_RECONSTRUCTION)
 
     else () # must build shared library to avoid compiling error!
         # boost: predef
-        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
-        import_3rdparty_library(3rdparty_boost
-                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
-                )
-        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
-        set(BOOST_TARGET "3rdparty_boost")
-        add_dependencies(3rdparty_boost ext_boost)
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
+#        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
+#        import_3rdparty_library(3rdparty_boost
+#                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
+#                )
+#        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
+#        set(BOOST_TARGET "3rdparty_boost")
+#        add_dependencies(3rdparty_boost ext_boost)
+#        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
 
         # freeimage
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)

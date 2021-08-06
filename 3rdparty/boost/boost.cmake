@@ -17,7 +17,7 @@ ExternalProject_Add(
         BUILD_IN_SOURCE ON
         CONFIGURE_COMMAND ""
         BUILD_COMMAND echo "Running Boost build..."
-        COMMAND ${Python3_EXECUTABLE} tools/boostdep/depinst/depinst.py predef
+        COMMAND ${PYTHON_EXECUTABLE} tools/boostdep/depinst/depinst.py predef
         COMMAND $<IF:$<PLATFORM_ID:Windows>,bootstrap.bat,./bootstrap.sh>
         COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> headers
         UPDATE_COMMAND ""
