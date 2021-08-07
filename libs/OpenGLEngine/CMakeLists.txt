@@ -21,7 +21,6 @@ endfunction()
 add_library( OPENGL_ENGINE_LIB )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-file( GLOB basic_list ${CMAKE_CURRENT_SOURCE_DIR}/*.h )
 
 # Configure a header file to pass the version settings to the source code
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CloudViewer.h.in"
@@ -83,6 +82,18 @@ target_sources(OPENGL_ENGINE_LIB PRIVATE
     $<TARGET_OBJECTS:visualization>
 )
 
+if (BUILD_GUI)
+    target_sources(OPENGL_ENGINE_LIB PRIVATE
+        $<TARGET_OBJECTS:GUI>
+    )
+endif()
+
+if (BUILD_WEBRTC)
+    target_sources(OPENGL_ENGINE_LIB PRIVATE
+        $<TARGET_OBJECTS:webrtc_server>
+    )
+endif()
+
 # Source group for Visual Studio
 add_source_group(core)
 add_source_group(tgeometry)
@@ -110,7 +121,7 @@ cloudViewer_link_3rdparty_libraries(OPENGL_ENGINE_LIB)
 target_link_options(OPENGL_ENGINE_LIB INTERFACE
     $<$<STREQUAL:$<TARGET_PROPERTY:OPENGL_ENGINE_LIB,TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
 
-#add_library(OPENGL_ENGINE_LIB::OPENGL_ENGINE_LIB ALIAS OPENGL_ENGINE_LIB)
+add_library(OPENGL_ENGINE_LIB::OPENGL_ENGINE_LIB ALIAS OPENGL_ENGINE_LIB)
 
 include(CMakePackageConfigHelpers)
 

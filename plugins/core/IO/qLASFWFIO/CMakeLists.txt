@@ -15,6 +15,18 @@ if (WIN32)
                 DEPENDS ext_lasLibzip
                 )
         add_dependencies(${PROJECT_NAME} 3rdparty_lasLibzip)
+		
+		# LASLib include directory
+		set(LASLIB_INCLUDE_DIR "${LASLIBZIP_DIR}/LASlib/inc" CACHE PATH "LASLib include directory")
+		set(LASZIP_INCLUDE_DIR "${LASLIBZIP_DIR}/LASzip/src" CACHE PATH "LASZip include directory")
+		set(LASLIB_RELEASE_LIBRARY "${LASLIBZIP_DIR}/LASlib/lib/Release/LASlib.lib" CACHE FILEPATH "LASLib release library file")
+		set(LASLIB_DEBUG_LIBRARY "${LASLIBZIP_DIR}/LASlib/lib/Debug/LASlib.lib" CACHE FILEPATH "LASLib debug library file")
+		if (NOT LASLIB_INCLUDE_DIR OR NOT LASZIP_INCLUDE_DIR)
+			message(SEND_ERROR "No LASLib or LASZip include directories specified (LASLIB_INCLUDE_DIR / LASZIP_INCLUDE_DIR)")
+		else ()
+			include_directories(${LASLIB_INCLUDE_DIR})
+			include_directories(${LASZIP_INCLUDE_DIR})
+		endif ()
 
         add_subdirectory(include)
         add_subdirectory(src)
@@ -25,10 +37,20 @@ if (WIN32)
                 PRIVATE
                 "${CMAKE_CURRENT_SOURCE_DIR}/../qPDALIO/include"
                 )
+		
+		if (LASLIB_RELEASE_LIBRARY)
+			target_link_libraries(${PROJECT_NAME} optimized ${LASLIB_RELEASE_LIBRARY})
+		endif ()
 
-        include(cmake/LASLibSupport.cmake)
-
-        target_link_LASLib(${PROJECT_NAME})
+		if (CMAKE_CONFIGURATION_TYPES)
+			set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS_RELEASE WITH_LASLIB)
+			if (LASLIB_DEBUG_LIBRARY)
+				target_link_libraries(${PROJECT_NAME} debug ${LASLIB_DEBUG_LIBRARY})
+				set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS_DEBUG WITH_LASLIB)
+			endif ()
+		else ()
+			set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS WITH_LASLIB)
+		endif ()
 
     endif ()
 

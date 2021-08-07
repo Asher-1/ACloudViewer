@@ -15,10 +15,14 @@ elseif (WIN32)
             "(b) BUILD_SHARED_LIBS=OFF and STATIC_WINDOWS_RUNTIME=ON or "
             "(c) BUILD_WEBRTC_FROM_SOURCE=ON")
     endif()
-    set(WEBRTC_URL
-        https://github.com/isl-org/open3d_downloads/releases/download/webrtc/webrtc_${WEBRTC_VER}_win.zip
-    )
-    set(WEBRTC_SHA256 f4686d0028ef5c36c5d7158a638fa834b63183b522f0b63932f7f70ebffeea22)
+	if (STATIC_WINDOWS_RUNTIME)
+	    set(WEBRTC_URL https://github.com/isl-org/open3d_downloads/releases/download/webrtc/webrtc_${WEBRTC_VER}_win.zip)
+		set(WEBRTC_SHA256 f4686d0028ef5c36c5d7158a638fa834b63183b522f0b63932f7f70ebffeea22)
+	else()
+		set(WEBRTC_URL https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.2.0/webrtc_${WEBRTC_VER}_win_MD.7z)
+		set(WEBRTC_SHA256 af93e6a5de1d39e4f1dd186c4ccdfadf6823d36addd8f8b4c2e50eb38e31e1e9)
+	endif()
+
 else()  # Linux
     if(GLIBCXX_USE_CXX11_ABI)
         set(WEBRTC_URL

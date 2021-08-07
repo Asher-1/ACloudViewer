@@ -35,12 +35,12 @@ using namespace cloudViewer;
 void VisualizeRegistration(const ccPointCloud &source,
                            const ccPointCloud &target,
                            const Eigen::Matrix4d &Transformation) {
-    std::shared_ptr<geometry::PointCloud> source_transformed_ptr(
-            new geometry::PointCloud);
-    std::shared_ptr<geometry::PointCloud> target_ptr(new geometry::PointCloud);
+    std::shared_ptr<ccPointCloud> source_transformed_ptr(
+            new ccPointCloud);
+    std::shared_ptr<ccPointCloud> target_ptr(new ccPointCloud);
     *source_transformed_ptr = source;
     *target_ptr = target;
-    source_transformed_ptr->Transform(Transformation);
+    source_transformed_ptr->transform(Transformation);
     visualization::DrawGeometries({source_transformed_ptr, target_ptr},
                                   "Registration result");
 }
@@ -48,7 +48,7 @@ void VisualizeRegistration(const ccPointCloud &source,
 void PrintHelp() {
     using namespace cloudViewer;
 
-    PrintOpen3DVersion();
+    PrintCloudViewerVersion();
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > RegistrationColoredICP source_pcd target_pcd [--visualize]");
@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Prepare input
-    std::shared_ptr<geometry::PointCloud> source =
+    std::shared_ptr<ccPointCloud> source =
             cloudViewer::io::CreatePointCloudFromFile(argv[1]);
-    std::shared_ptr<geometry::PointCloud> target =
+    std::shared_ptr<ccPointCloud> target =
             cloudViewer::io::CreatePointCloudFromFile(argv[2]);
     if (source == nullptr || target == nullptr) {
         utility::LogWarning("Unable to load source or target file.");
@@ -88,12 +88,12 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < 3; ++i) {
         float voxel_size = voxel_sizes[i];
 
-        auto source_down = source->VoxelDownSample(voxel_size);
-        source_down->EstimateNormals(cloudViewer::geometry::KDTreeSearchParamHybrid(
+        auto source_down = source->voxelDownSample(voxel_size);
+        source_down->estimateNormals(cloudViewer::geometry::KDTreeSearchParamHybrid(
                 voxel_size * 2.0, 30));
 
-        auto target_down = target->VoxelDownSample(voxel_size);
-        target_down->EstimateNormals(cloudViewer::geometry::KDTreeSearchParamHybrid(
+        auto target_down = target->voxelDownSample(voxel_size);
+        target_down->estimateNormals(cloudViewer::geometry::KDTreeSearchParamHybrid(
                 voxel_size * 2.0, 30));
 
         auto result = pipelines::registration::RegistrationGeneralizedICP(

@@ -29,7 +29,7 @@
 #include <ecvScalarField.h>
 #include <ecvWaveform.h>
 
-// ECV_IO_LIB
+// qPDALIO
 #include <LASFields.h>
 
 // Qt
@@ -39,9 +39,9 @@
 #include <QString>
 
 // LASLib
-#include <laspoint.hpp>
 #include <lasreader_las.hpp>
 #include <laswriter_las.hpp>
+#include <laspoint.hpp>  // must include after above
 
 // Qt gui
 #include <ui_saveLASFileDlg.h>

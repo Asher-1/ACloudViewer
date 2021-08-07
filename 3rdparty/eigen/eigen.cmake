@@ -11,21 +11,43 @@ else()
     endif()
 endif()
 
+if (WIN32)
+	ExternalProject_Add(
+	ext_eigen
+	PREFIX eigen
+	URL https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2
+	URL_HASH SHA256=92641cb17a92bcf311c7fc095a555ca0e32990503573dda80eb1764dc37dcac9
+	DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/eigen"
+	INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
+	BUILD_IN_SOURCE 0
+	BUILD_ALWAYS 0
+	UPDATE_COMMAND ""
+	CMAKE_ARGS
+		  ${EIGEN_ALIGN_FLAGS}
+		  -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+		  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+		  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+	)
 
-ExternalProject_Add(
-    ext_eigen
-    PREFIX eigen
-    URL https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2
-    URL_HASH SHA256=92641cb17a92bcf311c7fc095a555ca0e32990503573dda80eb1764dc37dcac9
-    DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/eigen"
-    UPDATE_COMMAND ""
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-)
+	ExternalProject_Get_Property(ext_eigen INSTALL_DIR)
+	set(EIGEN_INCLUDE_DIRS ${INSTALL_DIR}/include/eigen3/) # "/" is critical.
+	set(EIGEN_CMAKE_FLAGS ${EIGEN_ALIGN_FLAGS} -DEigen3_DIR:PATH=${INSTALL_DIR}/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS} -DEIGEN_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS})
+else()
+	ExternalProject_Add(
+		ext_eigen
+		PREFIX eigen
+		URL https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2
+		URL_HASH SHA256=92641cb17a92bcf311c7fc095a555ca0e32990503573dda80eb1764dc37dcac9
+		DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/eigen"
+		UPDATE_COMMAND ""
+		CONFIGURE_COMMAND ""
+		BUILD_COMMAND ""
+		INSTALL_COMMAND ""
+	)
 
-ExternalProject_Get_Property(ext_eigen SOURCE_DIR)
-set(EIGEN_INCLUDE_DIRS ${SOURCE_DIR}/Eigen)
-set(EIGEN_CMAKE_FLAGS ${EIGEN_ALIGN_FLAGS} -DEigen3_DIR:PATH=${SOURCE_DIR}/cmake -DEIGEN3_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS} -DEIGEN_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS})
+	ExternalProject_Get_Property(ext_eigen SOURCE_DIR)
+	set(EIGEN_INCLUDE_DIRS ${SOURCE_DIR}/Eigen)
+	set(EIGEN_CMAKE_FLAGS ${EIGEN_ALIGN_FLAGS} -DEigen3_DIR:PATH=${SOURCE_DIR}/cmake -DEIGEN3_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS} -DEIGEN_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS})
+endif()
 
 

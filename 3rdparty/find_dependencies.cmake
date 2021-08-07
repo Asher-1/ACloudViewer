@@ -1688,7 +1688,7 @@ if (BUILD_RECONSTRUCTION)
                 )
         set(CERES_TARGET "3rdparty_ceres")
         add_dependencies(ext_ceres ext_suitesparse)
-        add_dependencies(ext_ceres ext_eigen3)
+        add_dependencies(ext_ceres 3rdparty_eigen3)
 
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
