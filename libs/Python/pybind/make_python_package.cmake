@@ -97,7 +97,7 @@ if (BUILD_JUPYTER_EXTENSION)
     if(YARN)
         message(STATUS "YARN found at: ${YARN}")
     else()
-        message(FATAL_ERROR "yarn not found. You may install yarm globally by "
+        message(FATAL_ERROR "yarn not found. You may install yarn globally by "
                             "npm install -g yarn.")
     endif()
 

@@ -4,7 +4,7 @@ ExternalProject_Add(
     ext_lasLibzip
     PREFIX lasLibzip
     URL https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.8.0/LasZipLib.7z
-    URL_HASH SHA256=361d69857201dc4b7bf237b95dc820a3e9814d11078875705c9fc31578cc3ecd
+    URL_HASH MD5=38B48A3C413BBF34DF6F3BFF1E869CCB
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/lasLibzip"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""

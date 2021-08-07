@@ -243,7 +243,7 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
         ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-    target_link_libraries(${TARGET_NAME} PRIVATE colmap)
+    target_link_libraries(${TARGET_NAME} PUBLIC colmap)
 	
 	# Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
