@@ -80,6 +80,11 @@ function( target_link_ffmpeg ) # 1 argument: ARGV0 = project name
 
 	# Required for some C99 defines
 	target_compile_definitions( ${ARGV0} PRIVATE __STDC_CONSTANT_MACROS )
+
+	if (MSVC)
+        # fix compiling error on windows platform
+        target_compile_options(${ARGV0} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+    endif()
 	
 	unset( FFMPEG_LIBRARIES )
 	unset( FFMPEG_LIBRARIES_ROOT_NAME )
