@@ -134,7 +134,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
 			add_custom_command(TARGET ${TARGET_NAME}
 				POST_BUILD
 				COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/${APP_NAME}/${TARGET_NAME}.exe
-                        ${CMAKE_BINARY_DIR}/libs/CVViewer/apps/$<CONFIG>/${TARGET_NAME}.exe
+                        ${CMAKE_BINARY_DIR}/libs/CVViewer/apps/$<CONFIG>/${APP_NAME}.exe
 				VERBATIM
 			)
 			DeployQt(
