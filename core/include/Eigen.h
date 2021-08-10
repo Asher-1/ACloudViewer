@@ -183,7 +183,7 @@ make_shared(Args&&... args) {
 template <typename T, typename... Args>
 std::enable_if_t<!has_custom_allocator<T>::value, std::shared_ptr<T>>
 make_shared(Args&&... args) {
-    return cloudViewer::make_shared<T>(std::forward<Args>(args)...);
+    return std::make_shared<T>(std::forward<Args>(args)...);
 }
 
 namespace utility {

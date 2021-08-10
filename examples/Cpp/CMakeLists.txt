@@ -1,11 +1,13 @@
 set(EXAMPLE_BIN_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples")
 macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
     include_directories(${OPENGL_ENGINE_LIB_SOURCE_DIR})
-    if (MSVC)
-        include_directories(${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc)
-    endif ()
 
     add_executable(${EXAMPLE_CPP_NAME} "${EXAMPLE_CPP_NAME}.cpp")
+	
+	# Don't use cloudViewer_link_3rdparty_libraries(${EXAMPLE_CPP_NAME}).
+    # Unlike benchmarks, examples are intended as standalone apps that link
+    # the main CloudViewer library, while the benchmarks executable needs 3rd-party
+    # libraries since it measures the internal componets of CloudViewer.
     cloudViewer_show_and_abort_on_warning(${EXAMPLE_CPP_NAME})
     cloudViewer_set_global_properties(${EXAMPLE_CPP_NAME})
 
@@ -33,8 +35,9 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
                 EXCLUDE_FROM_ALL TRUE
                 )
     endif ()
+	
+	list(APPEND EXAMPLE_TARGETS ${EXAMPLE_CPP_NAME})
 
-    #InstallSharedLibrary( TARGET ${EXAMPLE_CPP_NAME} )
 endmacro(cloudViewer_add_example)
 
 cloudViewer_add_example(CameraPoseTrajectory)

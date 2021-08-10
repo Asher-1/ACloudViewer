@@ -169,7 +169,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
 	    endforeach()
     endif()
 
-endmacro(APP)
+endmacro(cloudViewer_add_app)
 
 if (BUILD_GUI)
     set(TEMP_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

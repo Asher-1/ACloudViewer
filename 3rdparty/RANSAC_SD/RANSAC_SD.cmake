@@ -1,7 +1,6 @@
 include(ExternalProject)
 
 set(lib_name QRANSAC_SD_PRIM_SHAPES_LIB)
-
 ExternalProject_Add(
     ext_ransacSD
     PREFIX ransacSD
@@ -11,7 +10,7 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
 	CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        ${ExternalProject_CMAKE_ARGS}
+		${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}d${CMAKE_STATIC_LIBRARY_SUFFIX}

@@ -34,6 +34,11 @@ target_compile_definitions( ${PROJECT_NAME}
 		NOMINMAX
 )
 
+if (MSVC)
+    # fix compiling error on windows platform
+    target_compile_options(${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+endif ()
+
 option( POISSON_RECON_WITH_OPEN_MP "Compile PoissonRecon plugin with OpenMP support" OFF )
 if( POISSON_RECON_WITH_OPEN_MP )
 	find_package( OpenMP )

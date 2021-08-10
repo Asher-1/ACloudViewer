@@ -148,6 +148,7 @@ endif ()
 
 # CGAL (optional)
 if (CVCORELIB_USE_CGAL)
+    set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
     if (WIN32)
         include(cmake/CGALSupport.cmake)
     else ()
@@ -189,6 +190,7 @@ if (CVCORELIB_USE_CGAL)
             CGAL::CGAL
             )
     #target_link_libraries( ${PROJECT_NAME} PUBLIC ${CGAL_LIBRARIES} )
+    # fix debug warning for cgal
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_CGAL_LIB)
 endif ()
 
