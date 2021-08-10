@@ -32,8 +32,7 @@
 // PCL SEARCH
 #include <pcl/search/impl/search.hpp>
 #include <pcl/impl/instantiate.hpp>
-//#include <pcl/kdtree/impl/kdtree_flann.hpp>
-#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/kdtree/impl/kdtree_flann.hpp>
 
 // PCL SEGMENTATION
 #include <pcl/segmentation/sac_segmentation.h>
