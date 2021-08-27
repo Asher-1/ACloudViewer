@@ -18,7 +18,9 @@ function(cloudViewer_set_cloudViewer_lib_properties target)
     endif()
 endfunction()
 
-add_library( OPENGL_ENGINE_LIB )
+project( OPENGL_ENGINE_LIB )
+
+add_library( ${PROJECT_NAME} )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
@@ -68,7 +70,7 @@ endif()
 
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
-target_sources(OPENGL_ENGINE_LIB PRIVATE
+target_sources(${PROJECT_NAME} PRIVATE
     CloudViewerConfig.cpp
     $<TARGET_OBJECTS:core>
     $<TARGET_OBJECTS:tgeometry>
@@ -83,13 +85,13 @@ target_sources(OPENGL_ENGINE_LIB PRIVATE
 )
 
 if (BUILD_GUI)
-    target_sources(OPENGL_ENGINE_LIB PRIVATE
+    target_sources(${PROJECT_NAME} PRIVATE
         $<TARGET_OBJECTS:GUI>
     )
 endif()
 
 if (BUILD_WEBRTC)
-    target_sources(OPENGL_ENGINE_LIB PRIVATE
+    target_sources(${PROJECT_NAME} PRIVATE
         $<TARGET_OBJECTS:webrtc_server>
     )
 endif()
@@ -106,22 +108,22 @@ add_source_group(utility)
 add_source_group(visualization)
 
 # INTERNAL LIB
-target_link_libraries(  OPENGL_ENGINE_LIB PUBLIC
+target_link_libraries(  ${PROJECT_NAME} PUBLIC
                                         ECV_DB_LIB
                                         ECV_IO_LIB)
 
-cloudViewer_show_and_abort_on_warning(OPENGL_ENGINE_LIB)
-cloudViewer_set_global_properties(OPENGL_ENGINE_LIB)
-cloudViewer_set_cloudViewer_lib_properties(OPENGL_ENGINE_LIB)
-cloudViewer_link_3rdparty_libraries(OPENGL_ENGINE_LIB)
+cloudViewer_show_and_abort_on_warning(${PROJECT_NAME})
+cloudViewer_set_global_properties(${PROJECT_NAME})
+cloudViewer_set_cloudViewer_lib_properties(${PROJECT_NAME})
+cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond
 # direct consumers of libOpen3D.a
-target_link_options(OPENGL_ENGINE_LIB INTERFACE
-    $<$<STREQUAL:$<TARGET_PROPERTY:OPENGL_ENGINE_LIB,TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
+target_link_options(${PROJECT_NAME} INTERFACE
+    $<$<STREQUAL:$<TARGET_PROPERTY:${PROJECT_NAME},TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
 
-add_library(OPENGL_ENGINE_LIB::OPENGL_ENGINE_LIB ALIAS OPENGL_ENGINE_LIB)
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 include(CMakePackageConfigHelpers)
 
@@ -139,7 +141,7 @@ write_basic_package_version_file("${PROJECT_BINARY_DIR}/CloudViewerConfigVersion
                                  COMPATIBILITY ExactVersion)
 
 # Installation
-install(TARGETS OPENGL_ENGINE_LIB EXPORT CloudViewerTargets
+install(TARGETS ${PROJECT_NAME} EXPORT CloudViewerTargets
         RUNTIME DESTINATION ${CloudViewer_INSTALL_BIN_DIR}
         LIBRARY DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
         ARCHIVE DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
@@ -173,4 +175,4 @@ set(GUI_RESOURCE_FILES ${GUI_RESOURCE_FILES} PARENT_SCOPE)
 set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
 
 # install (shared) lib to specified destinations
-InstallSharedLibrary( TARGET OPENGL_ENGINE_LIB )
+InstallSharedLibrary( TARGET ${PROJECT_NAME} )

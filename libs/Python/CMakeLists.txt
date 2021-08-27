@@ -4,9 +4,6 @@ if (BUILD_PYTHON_MODULE)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     include_directories(${OPENGL_ENGINE_LIB_SOURCE_DIR})
-    if (MSVC)
-        include_directories(${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc)
-    endif ()
 
     add_subdirectory(pybind)
 
