@@ -22,7 +22,7 @@
 		cp TRANSLATIONS_DIR/ErowCloudViewer_zh.qm translations/
 
 4. Copy QT_DIR/gcc_64/plugins/* and go into platforms folder
-(Note: need copy libQOpenGL.so.5 to ErowCloudViewer directory)
+(Note: need copy xcbglintegrations folder to ErowCloudViewer directory)
 		
 		cp -r QT_DIR/gcc_64/plugins/* ./
 		cd platforms
@@ -43,7 +43,7 @@
 6. Copy ErowCloudviewer.desktop, ErowCloudviewer.png, ErowCloudviewer.svg and ErowCloudViewer.sh from source code
 		
 		cd ..
-		cp SOURECE_CODE/util/ErowCloudviewer* ./
+		cp SOURECE_CODE/util/ErowCloudViewer* ./
 
 7. Run ErowCloudViewer.sh instead of ErowCloudViewer
 

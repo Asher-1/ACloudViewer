@@ -1698,7 +1698,7 @@ if (BUILD_RECONSTRUCTION)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${CERES_TARGET}")
 
     else () # must build shared library to avoid compiling error!
-        # boost: predef
+        # boost
         include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
         import_3rdparty_library(3rdparty_boost
                 INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
