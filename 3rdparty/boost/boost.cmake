@@ -11,13 +11,13 @@ include(ExternalProject)
 ExternalProject_Add(
         ext_boost
         PREFIX boost
-        URL https://github.com/boostorg/boost/archive/refs/tags/boost-1.73.0.tar.gz
-        URL_HASH SHA256=9f32cdebbdacd820ae0dd56c5b481c775b5196dac341bd23f67629dd3ef25d72
+        URL https://github.com/alicevision/AliceVisionDependencies/releases/download/boost-src-1.73.0/boost_1_73_0.tar.bz2
+        URL_HASH SHA256=4eb3b8d442b426dc35346235c8733b5ae35ba431690e38c6a8263dce9fcbb402
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/boost"
         BUILD_IN_SOURCE ON
         CONFIGURE_COMMAND ""
         BUILD_COMMAND echo "Running Boost build..."
-        COMMAND ${PYTHON_EXECUTABLE} tools/boostdep/depinst/depinst.py predef
+#        COMMAND ${Python3_EXECUTABLE} tools/boostdep/depinst/depinst.py predef
         COMMAND $<IF:$<PLATFORM_ID:Windows>,bootstrap.bat,./bootstrap.sh>
         COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> headers
         UPDATE_COMMAND ""

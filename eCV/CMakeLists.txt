@@ -97,6 +97,17 @@ DeployQt(
 		${EROWCLOUDVIEWER_DEST_FOLDER}
 )
 
+# fix that can not be used when making a PIE object; recompile with -fPIC issue
+if (NOT MSVC)
+#    set( CMAKE_CXX_COMPILE_OPTIONS_PIE "-fPIC" )
+    target_compile_options(${PROJECT_NAME} PRIVATE -fPIC)
+#    add_compile_options(-fPIC)
+#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fpic")
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
+
 target_link_libraries( ${PROJECT_NAME}
     CVAppCommon
     QCustomPlot
