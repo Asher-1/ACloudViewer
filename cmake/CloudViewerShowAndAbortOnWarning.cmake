@@ -59,11 +59,10 @@ function(cloudViewer_show_and_abort_on_warning target)
             string(APPEND CUDA_FLAGS " -Xcompiler /W4,/WX,${CUDA_DISABLE_MSVC_WARNINGS}")
         else()
             # reorder breaks builds on Windows, so only enable for other platforms
-            string(APPEND CUDA_FLAGS " --Werror reorder")
+            # string(APPEND CUDA_FLAGS " --Werror reorder")
 
             set(CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS ${DISABLE_GNU_CLANG_INTEL_WARNINGS})
             string(REPLACE ";" "," CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS "${CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS}")
-
             string(APPEND CUDA_FLAGS " -Xcompiler -Wall,-Wextra,-Werror,${CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS}")
         endif()
     else()

@@ -7,9 +7,12 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
 	# Don't use cloudViewer_link_3rdparty_libraries(${EXAMPLE_CPP_NAME}).
     # Unlike benchmarks, examples are intended as standalone apps that link
     # the main CloudViewer library, while the benchmarks executable needs 3rd-party
-    # libraries since it measures the internal componets of CloudViewer.
+    # libraries since it measures the internal components of CloudViewer.
     cloudViewer_show_and_abort_on_warning(${EXAMPLE_CPP_NAME})
     cloudViewer_set_global_properties(${EXAMPLE_CPP_NAME})
+
+    # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
+    cloudViewer_set_targets_independent(${EXAMPLE_CPP_NAME})
 
     set(DEPENDENCIES "${ARGN}")
     foreach (DEPENDENCY IN LISTS DEPENDENCIES)
@@ -20,10 +23,7 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
 			${INTERNAL_EIGEN3_TARGET}
 			)
 
-    target_link_libraries(${EXAMPLE_CPP_NAME}
-            ECV_DB_LIB
-            ECV_IO_LIB
-            OPENGL_ENGINE_LIB)
+    target_link_libraries(${EXAMPLE_CPP_NAME} OPENGL_ENGINE_LIB)
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
             FOLDER "examples/cpp/"
@@ -31,9 +31,7 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
             )
 
     if (NOT BUILD_EXAMPLES)
-        set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
-                EXCLUDE_FROM_ALL TRUE
-                )
+        set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES EXCLUDE_FROM_ALL TRUE)
     endif ()
 	
 	list(APPEND EXAMPLE_TARGETS ${EXAMPLE_CPP_NAME})

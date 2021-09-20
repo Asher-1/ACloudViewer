@@ -107,10 +107,10 @@ add_source_group(tpipelines)
 add_source_group(utility)
 add_source_group(visualization)
 
-# INTERNAL LIB
-target_link_libraries(  ${PROJECT_NAME} PUBLIC
-                                        ECV_DB_LIB
-                                        ECV_IO_LIB)
+## INTERNAL LIB
+#target_link_libraries(  ${PROJECT_NAME} PUBLIC
+#                                        ECV_DB_LIB
+#                                        ECV_IO_LIB)
 
 cloudViewer_show_and_abort_on_warning(${PROJECT_NAME})
 cloudViewer_set_global_properties(${PROJECT_NAME})
@@ -119,7 +119,7 @@ cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond
-# direct consumers of libOpen3D.a
+# direct consumers of libCloudViewer.a
 target_link_options(${PROJECT_NAME} INTERFACE
     $<$<STREQUAL:$<TARGET_PROPERTY:${PROJECT_NAME},TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
 

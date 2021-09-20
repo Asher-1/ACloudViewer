@@ -9,6 +9,9 @@ macro(cloudViewer_add_tool TOOL_NAME)
 
     target_link_libraries( ${TOOL_NAME} PRIVATE ECV_DB_LIB )
     target_link_libraries( ${TOOL_NAME} PRIVATE ECV_IO_LIB )
+
+    # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
+    cloudViewer_set_targets_independent(${TOOL_NAME})
 	
     set_target_properties(${TOOL_NAME} PROPERTIES FOLDER "Tools")
     cloudViewer_show_and_abort_on_warning(${TOOL_NAME})

@@ -3,6 +3,15 @@ set( CMAKE_CXX_STANDARD 14 )
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
 set( CMAKE_CXX_EXTENSIONS NO )
 
+function(cloudViewer_set_targets_independent target)
+    # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
+    if (NOT MSVC)
+        # set( CMAKE_CXX_COMPILE_OPTIONS_PIE "-fPIC" )
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
+        set_property(TARGET ${target} PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
+endfunction(cloudViewer_set_targets_independent)
+
 # ccache
 # https://crascit.com/2016/04/09/using-ccache-with-cmake/
 find_program( CCACHE_PROGRAM ccache )

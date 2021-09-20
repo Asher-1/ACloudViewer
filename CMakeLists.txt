@@ -368,7 +368,7 @@ endif ()
 # OS specific settings
 if (WIN32)
     # Windows defaults to hidden symbol visibility, override that
-    # TODO: It would be better to explictly export symbols.
+    # TODO: It would be better to explicitly export symbols.
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if (MSVC)

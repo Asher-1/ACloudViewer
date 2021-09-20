@@ -20,8 +20,6 @@ if (BUILD_PYTHON_MODULE)
 
     project(ECV_PYTHON_LIB)
 
-    set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-
     # CURRENT DIR
     file(GLOB header_list *.h)
 
@@ -44,6 +42,10 @@ if (BUILD_PYTHON_MODULE)
             ${utility_pybind_list}
             ${recognition_pybind_list}
     )
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+            CXX_VISIBILITY_PRESET hidden
+            )
 
     # Qt
     if (NOT CMAKE_VERSION VERSION_LESS 3.0)
@@ -77,10 +79,10 @@ if (BUILD_PYTHON_MODULE)
 
     endif ()
 
-	target_link_libraries(${PROJECT_NAME}
-			${INTERNAL_EIGEN3_TARGET}
-			)
-			
+    target_link_libraries(${PROJECT_NAME}
+            ${INTERNAL_EIGEN3_TARGET}
+            )
+
     # Add custom preprocessor definitions
     if (WIN32)
         # Do not treat includes from IMPORTED target as SYSTEM (Python headers in pybind11::embed).

@@ -100,10 +100,14 @@ if (WIN32)
         add_definitions("-DBOOST_ROOT=${BOOST_ROOT}")
         add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
     endif()
+else()
+    set( BOOST_ROOT "/media/asher/data/pcl_projects/ErowCloudViewer/ErowCloudViewer/cmake-build-debug/boost/src/ext_boost" CACHE PATH "Boost library root directory" )
 endif()
 
 # Disable BOOST autolink
-add_definitions(-DBOOST_ALL_NO_LIB)
+if (MSVC)
+    add_definitions(-DBOOST_ALL_NO_LIB)
+endif()
 
 if(BOOST_NO_CXX11)
   # Avoid link errors on boost filesystem copy_file function
@@ -201,36 +205,23 @@ else()
     message(STATUS "Disabling interprocedural optimization")
 endif()
 
-if(CUDA_FOUND)
-    if(CUDA_ENABLED)
-        add_definitions("-DCUDA_ENABLED")
+if(CUDA_ENABLED)
+    add_definitions("-DCUDA_ENABLED")
+#        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SelectCudaComputeArch.cmake)
+#        COLMAP_CUDA_SELECT_NVCC_ARCH_FLAGS(CUDA_ARCH_FLAGS ${CUDA_ARCHS})
 
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SelectCudaComputeArch.cmake)
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} ${CMAKE_CUDA_ARCHITECTURES}")
 
-        CUDA_SELECT_NVCC_ARCH_FLAGS(CUDA_ARCH_FLAGS ${CUDA_ARCHS})
-#        set(CUDA_ARCH_FLAGS ${cuda_archs})
+    # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -D_FORCE_INLINES")
+    # Do not show warnings if the architectures are deprecated.
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
 
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} ${CUDA_ARCH_FLAGS}")
-
-        # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -D_FORCE_INLINES")
-        # Do not show warnings if the architectures are deprecated.
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
-
-        message(STATUS "Enabling CUDA support (version: ${CUDA_VERSION_STRING},"
-                       " archs: ${CUDA_ARCH_FLAGS_readable})")
-    else()
-        set(CUDA_FOUND OFF)
-        message(STATUS "Disabling CUDA support")
-    endif()
+    message(STATUS "Enabling CUDA support (version: ${CUDAToolkit_VERSION},"
+                   " archs: ${CMAKE_CUDA_ARCHITECTURES})")
 else()
-    set(CUDA_ENABLED OFF)
-    if(CUDA_VERSION_STRING)
-        message(STATUS "Disabling CUDA support (found version "
-                "${CUDA_VERSION_STRING} but >= ${CUDA_MIN_VERSION} required)")
-    else()
-        message(STATUS "Disabling CUDA support")
-    endif()
+    set(CUDA_FOUND OFF)
+    message(STATUS "Disabling CUDA support")
 endif()
 
 if(GUI_ENABLED AND Qt5_FOUND)
@@ -267,7 +258,6 @@ if(Qt5_FOUND)
     # Qt5 was built with -reduce-relocations.
     if(Qt5_POSITION_INDEPENDENT_CODE)
         set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-#        set_property(TARGET Qt5::Core APPEND PROPERTY INTERFACE_COMPILE_OPTIONS -fPIC)
         if(CUDA_ENABLED AND NOT IS_MSVC)
             set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options -fPIC")
         endif()
@@ -285,7 +275,7 @@ endif()
 include(GenerateVersionDefinitions)
 
 set(COLMAP_INCLUDE_DIRS
-    ${BOOST_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
     ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include
 )
 
