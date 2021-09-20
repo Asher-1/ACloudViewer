@@ -82,7 +82,7 @@ class CudaArrayWrapper {
 template <typename T>
 CudaArrayWrapper<T>::CudaArrayWrapper(const size_t width, const size_t height,
                                       const size_t depth)
-    : width_(width), height_(height), depth_(depth), array_(nullptr) {}
+    : array_(nullptr), width_(width), height_(height), depth_(depth) {}
 
 template <typename T>
 CudaArrayWrapper<T>::~CudaArrayWrapper() {
@@ -116,7 +116,7 @@ size_t CudaArrayWrapper<T>::GetDepth() const {
 
 template <typename T>
 void CudaArrayWrapper<T>::CopyToDevice(const T* data) {
-  cudaMemcpy3DParms params = {0};
+  cudaMemcpy3DParms params;
   Allocate();
   params.extent = make_cudaExtent(width_, height_, depth_);
   params.kind = cudaMemcpyHostToDevice;
@@ -128,7 +128,7 @@ void CudaArrayWrapper<T>::CopyToDevice(const T* data) {
 
 template <typename T>
 void CudaArrayWrapper<T>::CopyToHost(const T* data) {
-  cudaMemcpy3DParms params = {0};
+  cudaMemcpy3DParms params;
   params.extent = make_cudaExtent(width_, height_, depth_);
   params.kind = cudaMemcpyDeviceToHost;
   params.dstPtr =
@@ -140,7 +140,7 @@ void CudaArrayWrapper<T>::CopyToHost(const T* data) {
 template <typename T>
 void CudaArrayWrapper<T>::CopyFromGpuMat(const GpuMat<T>& array) {
   Allocate();
-  cudaMemcpy3DParms parameters = {0};
+  cudaMemcpy3DParms parameters;
   parameters.extent = make_cudaExtent(width_, height_, depth_);
   parameters.kind = cudaMemcpyDeviceToDevice;
   parameters.dstArray = array_;

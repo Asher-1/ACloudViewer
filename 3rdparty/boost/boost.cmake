@@ -16,17 +16,22 @@ ExternalProject_Add(
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/boost"
         BUILD_IN_SOURCE ON
         CONFIGURE_COMMAND ""
+        INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         BUILD_COMMAND echo "Running Boost build..."
 #        COMMAND ${Python3_EXECUTABLE} tools/boostdep/depinst/depinst.py predef
         COMMAND $<IF:$<PLATFORM_ID:Windows>,bootstrap.bat,./bootstrap.sh>
-        COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> headers
+#        COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> headers
+        COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> -j6 -q -d+2 cxxflags=-fPIC cflags=-fPIC variant=release
         UPDATE_COMMAND ""
-        INSTALL_COMMAND ""
+        INSTALL_COMMAND "$<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> install --prefix=${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}"
 )
 
 ExternalProject_Get_Property(ext_boost SOURCE_DIR)
+ExternalProject_Get_Property(ext_boost INSTALL_DIR)
 message(STATUS "Boost source dir: ${SOURCE_DIR}")
+message(STATUS "Boost install dir: ${INSTALL_DIR}")
 
 # By default, BOOST_INCLUDE_DIRS should not have trailing "/".
 # The actual headers files are located in `${SOURCE_DIR}/boost`.
-set(BOOST_INCLUDE_DIRS ${SOURCE_DIR}/ext_boost)
+set(BOOST_INCLUDE_DIRS ${INSTALL_DIR}/include/)
+set(BOOST_ROOT ${INSTALL_DIR}/lib/cmake)

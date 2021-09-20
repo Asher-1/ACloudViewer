@@ -25,6 +25,9 @@ cloudViewer_show_and_abort_on_warning(benchmarks)
 cloudViewer_set_global_properties(benchmarks)
 cloudViewer_link_3rdparty_libraries(benchmarks)
 
+# fix that You must build your code with position independent code if Qt was built with -reduce-relocations
+cloudViewer_set_targets_independent(benchmarks)
+
 if (BUILD_CUDA_MODULE)
     target_include_directories(benchmarks SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()

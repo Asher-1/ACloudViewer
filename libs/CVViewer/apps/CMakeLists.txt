@@ -45,6 +45,9 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                              )
     endif()
 
+    # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
+    cloudViewer_set_targets_independent(${TARGET_NAME})
+
     include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
 
     set_target_properties( ${TARGET_NAME} PROPERTIES

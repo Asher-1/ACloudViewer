@@ -581,7 +581,7 @@ ProcessorCount(NPROC)
 # CUDAToolkit
 if (BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
-    list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES "CUDAToolkit")
+#    list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES "CUDAToolkit")
 endif ()
 
 # Threads
@@ -1485,12 +1485,14 @@ if (BUILD_CUDA_MODULE)
                 ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
                 CUDA::cusparse_static
                 CUDA::cublas_static
+                CUDA::cudart_static  # must link this to avoid hidden symbol `cudaMemcpy' in libcudart_static.a is referenced by DSO
                 CUDA::cublasLt_static
                 CUDA::culibos
                 )
         if (NOT BUILD_SHARED_LIBS)
             # Listed in ${CMAKE_INSTALL_PREFIX}/lib/cmake/CloudViewer/${PROJECT_NAME}Targets.cmake.
             install(TARGETS 3rdparty_cublas EXPORT ${PROJECT_NAME}Targets)
+            list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES "CUDAToolkit")
         endif ()
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_cublas)
     endif ()
@@ -1698,15 +1700,15 @@ if (BUILD_RECONSTRUCTION)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${CERES_TARGET}")
 
     else () # must build shared library to avoid compiling error!
-        # boost
-        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
-        import_3rdparty_library(3rdparty_boost
-                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
-                DEPENDS ext_boost
-                )
-        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
-        set(BOOST_TARGET "3rdparty_boost")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
+#        # boost
+#        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
+#        import_3rdparty_library(3rdparty_boost
+#                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
+#                DEPENDS ext_boost
+#                )
+#        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
+#        set(BOOST_TARGET "3rdparty_boost")
+#        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
 
         # freeimage
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
