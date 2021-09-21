@@ -60,7 +60,7 @@ public:
         using namespace tensorflow;
         *ptr = nullptr;
         Tensor* tensor = 0;
-        TensorShape shape({num});
+        TensorShape shape({(int64)num});
         OP_REQUIRES_OK(context, context->allocate_output(2, shape, &tensor));
         auto flat_tensor = tensor->flat<int64>();
         *ptr = (int64_t*)flat_tensor.data();

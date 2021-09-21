@@ -49,7 +49,7 @@ void VoxelizeCPU(const torch::Tensor& points,
     switch (points.size(1)) {
 #define CASE(NDIM)                                                            \
     case NDIM:                                                                \
-        VoxelizeCPU<T, NDIM>(                                                 \
+        cloudViewer::ml::impl::VoxelizeCPU<T, NDIM>(                          \
                 points.size(0), points.data_ptr<T>(), row_splits.size(0) - 1, \
                 row_splits.data_ptr<int64_t>(), voxel_size.data_ptr<T>(),     \
                 points_range_min.data_ptr<T>(),                               \

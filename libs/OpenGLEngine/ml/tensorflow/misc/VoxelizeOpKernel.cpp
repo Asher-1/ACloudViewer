@@ -49,9 +49,9 @@ public:
         switch (points.dim_size(1)) {
 #define CASE(NDIM)                                                             \
     case NDIM:                                                                 \
-        VoxelizeCPU<T, NDIM>(                                                  \
+        cloudViewer::ml::impl::VoxelizeCPU<T, NDIM>(                           \
                 points.dim_size(0), points.flat<T>().data(),                   \
-                row_splits.dim_size(0) - 1, row_splits.flat<int64_t>().data(), \
+                row_splits.dim_size(0) - 1, (int64_t*)row_splits.flat<tensorflow::int64>().data(), \
                 voxel_size.flat<T>().data(),                                   \
                 points_range_min.flat<T>().data(),                             \
                 points_range_max.flat<T>().data(), max_points_per_voxel,       \

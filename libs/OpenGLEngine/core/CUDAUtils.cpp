@@ -26,9 +26,9 @@
 
 #include "core/CUDAUtils.h"
 
-#include <Logging.h>
-
 #include "Macro.h"
+
+#include <Logging.h>
 
 #ifdef BUILD_CUDA_MODULE
 #include "core/MemoryManager.h"
@@ -301,6 +301,6 @@ void __CLOUDVIEWER_GET_LAST_CUDA_ERROR(const char* message,
 #endif
 
 // C interface to provide un-mangled function to Python ctypes
-extern "C" CLOUDVIEWER_DLL_EXPORT int cloudviewer_core_cuda_device_count() {
+extern "C" CLOUDVIEWER_DLL_EXPORT int cloudViewer_core_cuda_device_count() {
     return cloudViewer::core::cuda::DeviceCount();
 }

@@ -38,12 +38,13 @@
 
 #ifdef BUILD_CUDA_MODULE
 
-#include <Optional.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 
 #include <memory>
 #include <vector>
+
+#include <Optional.h>
 
 #define CLOUDVIEWER_FORCE_INLINE __forceinline__
 #define CLOUDVIEWER_HOST_DEVICE __host__ __device__

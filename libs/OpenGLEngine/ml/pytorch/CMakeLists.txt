@@ -12,9 +12,7 @@ if (Python3_VERSION VERSION_GREATER_EQUAL 3.9 AND Pytorch_VERSION VERSION_LESS 1
     "https://github.com/pytorch/pytorch/issues/50014 for details")
 endif()
 
-file(GLOB_RECURSE cloudViewer_torch_ops_HEADERS "*.h")
-
-add_library(cloudViewer_torch_ops SHARED ${cloudViewer_torch_ops_HEADERS})
+add_library(cloudViewer_torch_ops SHARED)
 
 target_sources(cloudViewer_torch_ops PRIVATE
     continuous_conv/ContinuousConvBackpropFilterOpKernel.cpp
@@ -144,7 +142,7 @@ target_link_libraries(cloudViewer_torch_ops PRIVATE
 )
 
 target_link_libraries(cloudViewer_torch_ops PRIVATE
-    CVCoreLib
+    OPENGL_ENGINE_LIB
 )
 
 if (BUILD_CUDA_MODULE)

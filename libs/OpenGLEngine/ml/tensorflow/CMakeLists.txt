@@ -7,8 +7,7 @@ endif()
 
 find_package(Tensorflow REQUIRED)
 
-file(GLOB_RECURSE cloudViewer_tf_ops_HEADERS "*.h")
-add_library(cloudViewer_tf_ops SHARED ${cloudViewer_tf_ops_HEADERS})
+add_library(cloudViewer_tf_ops SHARED)
 
 target_sources(cloudViewer_tf_ops PRIVATE
     continuous_conv/ContinuousConvBackpropFilterOpKernel.cpp
@@ -162,7 +161,7 @@ target_link_libraries(cloudViewer_tf_ops PRIVATE
 )
 
 target_link_libraries(cloudViewer_tf_ops PRIVATE
-    CVCoreLib
+    OPENGL_ENGINE_LIB
 )
 
 if (BUILD_CUDA_MODULE)
