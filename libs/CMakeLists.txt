@@ -41,7 +41,7 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 	endif()
 endif()
 
-add_subdirectory( OpenGLEngine )
+add_subdirectory( cloudViewer )
 
 add_subdirectory( CVViewer )
 

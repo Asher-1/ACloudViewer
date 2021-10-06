@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
                                 return false;
                             });
 
-    vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 540);
+    vis.CreateVisualizerWindow("CloudViewer Azure Kinect Recorder", 1920, 540);
     do {
         auto im_rgbd = sensor.CaptureFrame(enable_align_depth_to_color);
         if (im_rgbd == nullptr) {

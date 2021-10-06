@@ -131,9 +131,9 @@ CMakeSettings.json
 
 # CMake configured files
 python/js/node_modules/*
-libs/OpenGLEngine/CloudViewer.h
-libs/OpenGLEngine/CloudViewerConfig.h
-libs/OpenGLEngine/visualization/shader/Shader.h
+libs/cloudViewer/CloudViewer.h
+libs/cloudViewer/CloudViewerConfig.h
+libs/cloudViewer/visualization/shader/Shader.h
 util/pip_package/setup.py
 
 # Temp directories

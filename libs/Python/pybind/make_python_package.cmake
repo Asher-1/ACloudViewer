@@ -60,9 +60,9 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/lib/web_visualizer.js"
                "${PYTHON_PACKAGE_DST_DIR}/js/lib/web_visualizer.js")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
                "${PYTHON_PACKAGE_DST_DIR}/js/package.json")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/../libs/OpenGLEngine/visualization/webrtc_server/html/webrtcstreamer.js"
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/../libs/cloudViewer/visualization/webrtc_server/html/webrtcstreamer.js"
                "${PYTHON_PACKAGE_DST_DIR}/js/lib/webrtcstreamer.js")
-file(COPY "${PYTHON_PACKAGE_DST_DIR}/../_build_config.py"
+file(COPY "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/" )
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)

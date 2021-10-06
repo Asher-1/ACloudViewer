@@ -39,7 +39,9 @@
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
 
+#ifdef CV_WINDOWS
 #pragma warning(disable:4715)
+#endif
 
 namespace cloudViewer {
 namespace geometry {

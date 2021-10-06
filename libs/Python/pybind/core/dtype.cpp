@@ -37,8 +37,7 @@ namespace core {
 
 void pybind_core_dtype(py::module &m) {
     // open3d.core.Dtype class
-    py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype",
-                                                    "Open3D data types.");
+    py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype", "CloudViewer data types.");
     dtype.def(py::init<Dtype::DtypeCode, int64_t, const std::string &>());
     dtype.def_readonly_static("Undefined", &core::Undefined);
     dtype.def_readonly_static("Float32", &core::Float32);

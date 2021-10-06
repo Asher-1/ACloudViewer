@@ -86,9 +86,9 @@ endforeach(lib)
 # Check if the c++11 ABI is compatible
 if((Pytorch_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
    (NOT Pytorch_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI))
-    message(FATAL_ERROR "PyTorch and Open3D ABI mismatch: ${Pytorch_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}")
+    message(FATAL_ERROR "PyTorch and CloudViewer ABI mismatch: ${Pytorch_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}")
 else()
-    message(STATUS "PyTorch matches Open3D ABI: ${Pytorch_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
+    message(STATUS "PyTorch matches CloudViewer ABI: ${Pytorch_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
 endif()
 
 include(FindPackageHandleStandardArgs)

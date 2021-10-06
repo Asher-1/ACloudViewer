@@ -94,9 +94,9 @@ void pybind_trianglemesh(py::module& m) {
             "mesh_legacy"_a, "vertex_dtype"_a = core::Float32,
             "triangle_dtype"_a = core::Int64,
             "device"_a = core::Device("CPU:0"),
-            "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
+            "Create a TriangleMesh from a legacy CloudViewer TriangleMesh.");
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
-                      "Convert to a legacy Open3D TriangleMesh.");
+                      "Convert to a legacy CloudViewer TriangleMesh.");
 }
 
 }  // namespace geometry

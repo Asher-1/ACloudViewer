@@ -85,7 +85,7 @@ __global__ void FilterKernel(GpuMat<uint8_t> image, GpuMat<float> sum_image,
 }  // namespace
 
 GpuMatRefImage::GpuMatRefImage(const size_t width, const size_t height)
-    : width_(width), height_(height) {
+    : height_(height), width_(width) {
   image.reset(new GpuMat<uint8_t>(width, height));
   sum_image.reset(new GpuMat<float>(width, height));
   squared_sum_image.reset(new GpuMat<float>(width, height));

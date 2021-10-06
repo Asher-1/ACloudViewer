@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 if (BUILD_PYTHON_MODULE)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-    include_directories(${OPENGL_ENGINE_LIB_SOURCE_DIR})
+    include_directories(${CloudViewer_SOURCE_DIR})
 
     add_subdirectory(pybind)
 
@@ -55,7 +55,7 @@ if (BUILD_PYTHON_MODULE)
                 ${PYTHON_LIBRARIES}
                 Qt5::Core
                 Qt5::PrintSupport
-                OPENGL_ENGINE_LIB
+                CloudViewer
         )
     else ()
         target_include_directories(
@@ -74,7 +74,7 @@ if (BUILD_PYTHON_MODULE)
                 ${PYTHON_LIBRARIES}
                 Qt5::Core
                 Qt5::PrintSupport
-                OPENGL_ENGINE_LIB
+                CloudViewer::CloudViewer
                 )
 
     endif ()

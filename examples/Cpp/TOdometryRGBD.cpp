@@ -111,13 +111,11 @@ int main(int argc, char* argv[]) {
     // Visualize before odometry
     auto source_pcd = cloudViewer::make_shared<ccPointCloud>(
             PointCloud::CreateFromDepthImage(src.depth_, intrinsic_t, trans,
-                                             depth_scale)
-                    .ToLegacy());
+                                             depth_scale).ToLegacy());
     source_pcd->paintUniformColor(Eigen::Vector3d(1, 0, 0));
     auto target_pcd = cloudViewer::make_shared<ccPointCloud>(
             PointCloud::CreateFromDepthImage(dst.depth_, intrinsic_t, trans,
-                                             depth_scale)
-                    .ToLegacy());
+                                             depth_scale).ToLegacy());
     target_pcd->paintUniformColor(Eigen::Vector3d(0, 1, 0));
     visualization::DrawGeometries({source_pcd, target_pcd});
 

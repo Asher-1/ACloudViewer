@@ -98,7 +98,6 @@ public:  // construction
     static void TransformNormals(const Eigen::Matrix4d& transformation,
                                  std::vector<Eigen::Vector3d>& normals);
 
-
     /// \brief Transforms all covariance matrices with the transformation.
     ///
     /// \param transformation 4x4 matrix for transformation.
@@ -451,30 +450,33 @@ public:  // bounding-box
     //! Global (non-shifted) bounding-box
     using GlobalBoundingBox = cloudViewer::BoundingBoxTpl<double>;
 
-    //! Returns the entity's own global bounding-box (with global/non-shifted coordinates - if relevant)
+    //! Returns the entity's own global bounding-box (with global/non-shifted
+    //! coordinates - if relevant)
     /** Children bounding-boxes are ignored.
             May differ from the (local) bounding-box if the entity is shifted
-            \param withGLFeatures whether to take into account display-only elements (if any)
-            \return global bounding-box
+            \param withGLFeatures whether to take into account display-only
+    elements (if any) \return global bounding-box
     **/
     virtual GlobalBoundingBox getOwnGlobalBB(bool withGLFeatures = false);
 
-    //! Returns the entity's own global bounding-box (with global/non-shifted coordinates - if relevant)
+    //! Returns the entity's own global bounding-box (with global/non-shifted
+    //! coordinates - if relevant)
     /** Children bounding-boxes are ignored.
             By default this method returns the local bounding-box!
-            But it may differ from the (local) bounding-box if the entity is shifted.
-            \param[out] minCorner min global bounding-box corner
-            \param[out] maxCorner max global bounding-box corner
-            \return whether the bounding box is valid or not
+            But it may differ from the (local) bounding-box if the entity is
+    shifted. \param[out] minCorner min global bounding-box corner \param[out]
+    maxCorner max global bounding-box corner \return whether the bounding box is
+    valid or not
     **/
     virtual bool getOwnGlobalBB(CCVector3d& minCorner, CCVector3d& maxCorner);
 
     //! Returns the global bounding-box of this entity and it's children
-    /** \param withGLFeatures whether to take into account display-only elements (if any)
-            \param onlyEnabledChildren only consider the 'enabled' children
+    /** \param withGLFeatures whether to take into account display-only elements
+    (if any) \param onlyEnabledChildren only consider the 'enabled' children
             \return bounding-box
     **/
-    virtual GlobalBoundingBox getGlobalBB_recursive(bool withGLFeatures = false, bool onlyEnabledChildren = true);
+    virtual GlobalBoundingBox getGlobalBB_recursive(
+            bool withGLFeatures = false, bool onlyEnabledChildren = true);
 
     //! Returns the bounding-box of this entity and it's children WHEN DISPLAYED
     /** Children's GL transformation is taken into account (if enabled).
@@ -546,33 +548,19 @@ public:  // display
             (*it)->recursiveName(p);                                   \
     }
 
-    ccHObject_recursive_call1(redrawDisplay, bool, redrawDisplay_recursive) ccHObject_recursive_call1(
-            redrawDisplay,
-            bool,
-            refreshDisplay_recursive) ccHObject_recursive_call1(setSelected,
-                                                                bool,
-                                                                setSelected_recursive)
-            ccHObject_recursive_call0(toggleActivation,
-                                      toggleActivation_recursive)
-                    ccHObject_recursive_call0(toggleVisibility,
-                                              toggleVisibility_recursive)
-                            ccHObject_recursive_call0(toggleColors,
-                                                      toggleColors_recursive)
-                                    ccHObject_recursive_call0(
-                                            resetGLTransformationHistory,
-                                            resetGLTransformationHistory_recursive)
-                                            ccHObject_recursive_call0(
-                                                    toggleNormals,
-                                                    toggleNormals_recursive)
-                                                    ccHObject_recursive_call0(
-                                                            toggleSF,
-                                                            toggleSF_recursive)
-                                                            ccHObject_recursive_call0(
-                                                                    toggleShowName,
-                                                                    toggleShowName_recursive)
+    ccHObject_recursive_call1(redrawDisplay, bool, redrawDisplay_recursive)
+    ccHObject_recursive_call1(redrawDisplay, bool, refreshDisplay_recursive)
+    ccHObject_recursive_call1(setSelected, bool, setSelected_recursive)
+    ccHObject_recursive_call0(toggleActivation, toggleActivation_recursive)
+    ccHObject_recursive_call0(toggleVisibility, toggleVisibility_recursive)
+    ccHObject_recursive_call0(toggleColors, toggleColors_recursive)
+    ccHObject_recursive_call0(resetGLTransformationHistory, resetGLTransformationHistory_recursive)
+    ccHObject_recursive_call0(toggleNormals, toggleNormals_recursive)
+    ccHObject_recursive_call0(toggleSF, toggleSF_recursive)
+    ccHObject_recursive_call0(toggleShowName, toggleShowName_recursive);
 
-            //! Returns the max 'unique ID' of this entity and its siblings
-            unsigned findMaxUniqueID_recursive() const;
+    //! Returns the max 'unique ID' of this entity and its siblings
+    unsigned findMaxUniqueID_recursive() const;
 
     //! Applies the active OpenGL transformation to the entity (recursive)
     /** The input ccGLMatrix should be left to 0, unless you want to apply

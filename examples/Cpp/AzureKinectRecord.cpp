@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
             "press [SPACE] to start recording, "
             "press [ESC] to exit.");
 
-    vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 540);
+    vis.CreateVisualizerWindow("CloudViewer Azure Kinect Recorder", 1920, 540);
     do {
         auto im_rgbd =
                 recorder.RecordFrame(flag_record, enable_align_depth_to_color);

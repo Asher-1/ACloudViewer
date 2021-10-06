@@ -26,7 +26,7 @@ if __name__ == '__main__':
         'and rgb images in a folder named color/ or rgb/')
     parser.add_argument('trajectory_path',
                         type=str,
-                        help='path to the trajectory in open3d\'s .log format')
+                        help='path to the trajectory in cloudViewer\'s .log format')
     parser.add_argument('--mesh_name',
                         type=str,
                         default='mesh.ply',
@@ -138,9 +138,9 @@ if __name__ == '__main__':
             colormap = result[cv3d.t.geometry.SurfaceMaskCode.ColorMap]
 
             cv3d.visualization.draw_geometries(
-                [cv3d.t.geometry.Image(vertexmap).to_legacy_image()])
+                [cv3d.t.geometry.Image(vertexmap).to_legacy()])
             cv3d.visualization.draw_geometries(
-                [cv3d.t.geometry.Image(colormap).to_legacy_image()])
+                [cv3d.t.geometry.Image(colormap).to_legacy()])
 
         end = time.time()
         print('Integration {:04d}/{:04d} takes {:.3f} ms'.format(

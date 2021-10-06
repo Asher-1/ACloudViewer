@@ -1,4 +1,4 @@
-# Run from the root Open3D directory:
+# Run from the root CloudViewer directory:
 # GLIBCXX_USE_CXX11_ABI, WEBRTC_COMMIT abd DEPOT_TOOLS_COMMIT are accepted as
 # build-args. e.g.:
 #

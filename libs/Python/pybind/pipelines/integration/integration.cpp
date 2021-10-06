@@ -58,7 +58,7 @@ public:
 };
 
 void pybind_integration_classes(py::module &m) {
-    // open3d.integration.TSDFVolumeColorType
+    // cloudViewer.integration.TSDFVolumeColorType
     py::enum_<TSDFVolumeColorType> tsdf_volume_color_type(
             m, "TSDFVolumeColorType", py::arithmetic());
     tsdf_volume_color_type.value("NoColor", TSDFVolumeColorType::NoColor)
@@ -72,7 +72,7 @@ void pybind_integration_classes(py::module &m) {
             }),
             py::none(), py::none(), "");
 
-    // open3d.integration.TSDFVolume
+    // cloudViewer.integration.TSDFVolume
     py::class_<TSDFVolume, PyTSDFVolume<TSDFVolume>> tsdfvolume(
             m, "TSDFVolume", R"(Base class of the Truncated
 Signed Distance Function (TSDF) volume This volume is usually used to integrate
@@ -111,7 +111,7 @@ In SIGGRAPH, 1996)");
              {"extrinsic", "Extrinsic parameters."}});
     docstring::ClassMethodDocInject(m, "TSDFVolume", "reset");
 
-    // open3d.integration.UniformTSDFVolume: open3d.integration.TSDFVolume
+    // cloudViewer.integration.UniformTSDFVolume: cloudViewer.integration.TSDFVolume
     py::class_<UniformTSDFVolume, PyTSDFVolume<UniformTSDFVolume>, TSDFVolume>
             uniform_tsdfvolume(
                     m, "UniformTSDFVolume",
@@ -164,7 +164,7 @@ In SIGGRAPH, 1996)");
     docstring::ClassMethodDocInject(m, "UniformTSDFVolume",
                                     "extract_voxel_point_cloud");
 
-    // open3d.integration.ScalableTSDFVolume: open3d.integration.TSDFVolume
+    // cloudViewer.integration.ScalableTSDFVolume: cloudViewer.integration.TSDFVolume
     py::class_<ScalableTSDFVolume, PyTSDFVolume<ScalableTSDFVolume>, TSDFVolume>
             scalable_tsdfvolume(m, "ScalableTSDFVolume", R"(The
 ScalableTSDFVolume implements a more memory efficient data structure for

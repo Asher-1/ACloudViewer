@@ -54,21 +54,21 @@ if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
 # fix link bugs for qt on Linux platform
 if platform.system() == "Linux":
     if os.path.exists(_Path(__file__).parent / 'libs'):
-        libicus = (_Path(__file__).parent / 'libs').glob('libicu*')
-        for lib in libicus:
-            _CDLL(lib)
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicudata*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicuuc*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicui18n*'))))
 
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libQt5Core*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libQt5Gui*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libQt5Widgets*'))))
         libqts = (_Path(__file__).parent / 'libs').glob('libQt5*')
-        _CDLL((_Path(__file__).parent / 'libs/libQt5Core.so.5'))
-        _CDLL((_Path(__file__).parent / 'libs/libQt5Gui.so.5'))
-        _CDLL((_Path(__file__).parent / 'libs/libQt5Widgets.so.5'))
         libqts = sorted(libqts)
         for lib in libqts:
             _CDLL(lib)
 
-        _CDLL((_Path(__file__).parent / 'libs/libCVCoreLib.so'))
-        _CDLL((_Path(__file__).parent / 'libs/libECV_DB_LIB.so'))
-        _CDLL((_Path(__file__).parent / 'libs/libECV_IO_LIB.so'))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libCVCoreLib*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libECV_DB_LIB*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libECV_IO_LIB*'))))
 
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:

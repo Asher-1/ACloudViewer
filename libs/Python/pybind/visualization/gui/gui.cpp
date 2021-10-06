@@ -152,12 +152,12 @@ void install_cleanup_atexit() {
 void InitializeForPython(std::string resource_path /*= ""*/) {
     if (resource_path.empty()) {
         // We need to find the resources directory. Fortunately,
-        // Python knows where the module lives (open3d.__file__
+        // Python knows where the module lives (cloudViewer.__file__
         // is the path to
         // __init__.py), so we can use that to find the
         // resources included in the wheel.
-        py::object o3d = py::module::import("open3d");
-        auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
+        py::object cv3d = py::module::import("cloudViewer");
+        auto o3d_init_path = cv3d.attr("__file__").cast<std::string>();
         auto module_path =
                 utility::filesystem::GetFileParentDirectory(o3d_init_path);
         resource_path = module_path + "/resources";
@@ -195,11 +195,11 @@ void pybind_gui_classes(py::module &m) {
                                    "Class to describe a custom font");
     fd.def_readonly_static("SANS_SERIF", &FontDescription::SANS_SERIF,
                            "Name of the default sans-serif font that comes "
-                           "with Open3D")
+                           "with CloudViewer")
             .def_readonly_static(
                     "MONOSPACE", &FontDescription::MONOSPACE,
                     "Name of the default monospace font that comes "
-                    "with Open3D")
+                    "with CloudViewer")
             .def(py::init<const char *, FontStyle, int>(),
                  "typeface"_a = FontDescription::SANS_SERIF,
                  "style"_a = FontStyle::NORMAL, "point_size"_a = 0,
@@ -353,7 +353,7 @@ void pybind_gui_classes(py::module &m) {
                     },
                     "Renders a scene to an image and returns the image. If you "
                     "are rendering without a visible window you should use "
-                    "open3d.visualization.rendering.RenderToImage instead")
+                    "cloudViewer.visualization.rendering.RenderToImage instead")
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
@@ -567,7 +567,7 @@ void pybind_gui_classes(py::module &m) {
                  "r"_a, "g"_a, "b"_a, "a"_a = 1.0);
 
     // ---- Theme ----
-    // Note: no constructor because themes are created by Open3D
+    // Note: no constructor because themes are created by CloudViewer
     py::class_<Theme> theme(m, "Theme",
                             "Theme parameters such as colors used for drawing "
                             "widgets (read-only)");
@@ -729,7 +729,7 @@ void pybind_gui_classes(py::module &m) {
                             b->SetPaddingEm(em.cast<float>(), vert);
                         } catch (const py::cast_error &) {
                             py::print(
-                                    "open3d.visualization.gui.Button."
+                                    "cloudViewer.visualization.gui.Button."
                                     "horizontal_padding_em can only be "
                                     "assigned a numeric type");
                         }
@@ -743,7 +743,7 @@ void pybind_gui_classes(py::module &m) {
                             b->SetPaddingEm(horiz, em.cast<float>());
                         } catch (const py::cast_error &) {
                             py::print(
-                                    "open3d.visualization.gui.Button."
+                                    "cloudViewer.visualization.gui.Button."
                                     "vertical_padding_em can only be "
                                     "assigned a numeric type");
                         }

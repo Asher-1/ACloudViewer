@@ -48,7 +48,7 @@ void pybind_logging(py::module& m) {
             py::none(), py::none(), "");
 
     m.def("set_verbosity_level", &SetVerbosityLevel,
-          "Set global verbosity level of Open3D", py::arg("verbosity_level"));
+          "Set global verbosity level of CloudViewer", py::arg("verbosity_level"));
     docstring::FunctionDocInject(
             m, "set_verbosity_level",
             {{"verbosity_level",
@@ -56,7 +56,7 @@ void pybind_logging(py::module& m) {
               "will be printed."}});
 
     m.def("get_verbosity_level", &GetVerbosityLevel,
-          "Get global verbosity level of Open3D");
+          "Get global verbosity level of CloudViewer");
     docstring::FunctionDocInject(m, "get_verbosity_level");
 
     m.def("reset_print_function", []() {
@@ -67,7 +67,7 @@ void pybind_logging(py::module& m) {
     py::class_<VerbosityContextManager>(m, "VerbosityContextManager",
                                         "A context manager to "
                                         "temporally change the "
-                                        "verbosity level of Open3D")
+                                        "verbosity level of CloudViewer")
             .def(py::init<VerbosityLevel>(),
                  "Create a VerbosityContextManager with a given VerbosityLevel",
                  "level"_a)

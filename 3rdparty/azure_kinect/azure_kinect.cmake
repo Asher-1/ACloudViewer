@@ -1,10 +1,10 @@
 # Azure Kinect 3rd-party library support.
 #
 # Azure Kinect source code are used only for header include, which is sufficient
-# for buliding Open3D with Kinect support.
+# for buliding CloudViewer with Kinect support.
 #
-# To run Open3D with Kinect support, users have to download and install Azure
-# Kinect SDK (k4a) . Open3D dlopens k4a library at runtime.
+# To run CloudViewer with Kinect support, users have to download and install Azure
+# Kinect SDK (k4a) . CloudViewer dlopens k4a library at runtime.
 #
 # This CMake script exports the following variable(s):
 # - K4A_INCLUDE_DIR
@@ -16,7 +16,7 @@ if (APPLE)
     set(BUILD_AZURE_KINECT OFF PARENT_SCOPE)
 endif()
 
-# Conditionally include header files in Open3D.h, when azure kinect is enabled.
+# Conditionally include header files in CloudViewer.h, when azure kinect is enabled.
 set(BUILD_AZURE_KINECT_COMMENT "")
 
 # This works even when the user does not have k4a libraries installed

@@ -52,7 +52,7 @@ class VoxelGrid;
 
 #ifdef CV_RANSAC_SUPPORT
 //! RANSAC_SD
-class RansacParams {
+class ECV_DB_LIB_API RansacParams {
 public:
     enum RANSAC_PRIMITIVE_TYPES {
         RPT_PLANE = 0,
@@ -105,7 +105,7 @@ public:
     }
 };
 
-class RansacResult {
+class ECV_DB_LIB_API RansacResult {
 public:
     std::string getTypeName() const;
     unsigned getDrawingPrecision() const;

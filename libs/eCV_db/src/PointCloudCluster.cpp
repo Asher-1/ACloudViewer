@@ -85,12 +85,10 @@ std::vector<int> ccPointCloud::clusterDBSCAN(double eps,
         kdtree.SearchRadius(getEigenPoint(static_cast<size_t>(idx)), eps,
                             nbs[idx], dists2);
 
-        if (print_progress) {
 #ifdef _OPENMP
 #pragma omp critical(ClusterDBSCAN)
 #endif
             { ++progress_bar; }
-        }
     }
     utility::LogDebug("Done Precompute Neighbours");
 

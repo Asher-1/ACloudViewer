@@ -48,7 +48,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
     cloudViewer_set_targets_independent(${TARGET_NAME})
 
-    include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
+    include_directories( ${CloudViewer_SOURCE_DIR} )
 
     set_target_properties( ${TARGET_NAME} PROPERTIES
         AUTOMOC OFF
@@ -56,7 +56,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
         AUTOUIC OFF
     )
 
-    target_link_libraries(${TARGET_NAME} PRIVATE ${ARGN})
+    target_link_libraries(${TARGET_NAME} PRIVATE CloudViewer::CloudViewer ${ARGN})
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -176,6 +176,6 @@ endmacro(cloudViewer_add_app)
 
 if (BUILD_GUI)
     set(TEMP_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-    cloudViewer_add_app(CloudViewerApp CloudViewer CloudViewerApp OPENGL_ENGINE_LIB)
+    cloudViewer_add_app(CloudViewerApp CloudViewer CloudViewerApp)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEMP_RUNTIME_OUTPUT_DIRECTORY})
 endif()

@@ -1,6 +1,6 @@
 set(EXAMPLE_BIN_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples")
 macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
-    include_directories(${OPENGL_ENGINE_LIB_SOURCE_DIR})
+    include_directories(${CloudViewer_SOURCE_DIR})
 
     add_executable(${EXAMPLE_CPP_NAME} "${EXAMPLE_CPP_NAME}.cpp")
 	
@@ -23,7 +23,7 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
 			${INTERNAL_EIGEN3_TARGET}
 			)
 
-    target_link_libraries(${EXAMPLE_CPP_NAME} OPENGL_ENGINE_LIB)
+    target_link_libraries(${EXAMPLE_CPP_NAME} CloudViewer)
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
             FOLDER "examples/cpp/"

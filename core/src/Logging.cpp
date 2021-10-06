@@ -49,7 +49,7 @@ void Logger::VError [[noreturn]] (const char *file_name,
                                   const char *format,
                                   fmt::format_args args) const {
     std::string err_msg = fmt::vformat(format, args);
-    err_msg = fmt::format("[Open3D Error] ({}) {}:{}: {}\n", function_name,
+    err_msg = fmt::format("[CloudViewer Error] ({}) {}:{}: {}\n", function_name,
                           file_name, line_number, err_msg);
     err_msg = impl_->ColorString(err_msg, TextColor::Red, 1);
 #ifdef _MSC_VER  // Uncaught exception error messages not shown in Windows
@@ -66,7 +66,7 @@ void Logger::VWarning(const char *file_name,
                       fmt::format_args args) const {
     if (impl_->verbosity_level_ >= VerbosityLevel::Warning) {
         std::string err_msg = fmt::vformat(format, args);
-        err_msg = fmt::format("[Open3D WARNING] {}", err_msg);
+        err_msg = fmt::format("[CloudViewer WARNING] {}", err_msg);
         err_msg = impl_->ColorString(err_msg, TextColor::Yellow, 1);
         if (force_console_log) {
             Logger::Impl::console_print_fcn_(err_msg);
@@ -84,7 +84,7 @@ void Logger::VInfo(const char *file_name,
                    fmt::format_args args) const {
     if (impl_->verbosity_level_ >= VerbosityLevel::Info) {
         std::string err_msg = fmt::vformat(format, args);
-        err_msg = fmt::format("[Open3D INFO] {}", err_msg);
+        err_msg = fmt::format("[CloudViewer INFO] {}", err_msg);
         if (force_console_log) {
             Logger::Impl::console_print_fcn_(err_msg);
         } else {
@@ -101,7 +101,7 @@ void Logger::VDebug(const char *file_name,
                     fmt::format_args args) const {
     if (impl_->verbosity_level_ >= VerbosityLevel::Debug) {
         std::string err_msg = fmt::vformat(format, args);
-        err_msg = fmt::format("[Open3D DEBUG] {}", err_msg);
+        err_msg = fmt::format("[CloudViewer DEBUG] {}", err_msg);
         if (force_console_log) {
             Logger::Impl::console_print_fcn_(err_msg);
         } else {

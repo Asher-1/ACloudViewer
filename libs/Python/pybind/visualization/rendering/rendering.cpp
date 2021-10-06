@@ -173,7 +173,7 @@ void pybind_rendering_classes(py::module &m) {
                  "Takes width, height and optionally a resource_path and "
                  "headless flag. If "
                  "unspecified, resource_path will use the resource path from "
-                 "the installed Open3D library. By default a running windowing "
+                 "the installed CloudViewer library. By default a running windowing "
                  "session is required. To enable headless rendering set "
                  "headless to True")
             .def_property_readonly(

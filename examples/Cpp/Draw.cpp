@@ -55,6 +55,7 @@ std::shared_ptr<ccPointCloud> MakePointCloud(int npts,
 void SingleObject() {
     // No colors, no normals, should appear unlit black
     auto cube = ccMesh::CreateBox(1, 2, 4);
+    cube->clearTriNormals();
     visualization::Draw({cube});
 }
 

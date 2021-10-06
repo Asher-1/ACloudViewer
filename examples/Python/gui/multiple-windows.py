@@ -90,12 +90,12 @@ class MultiWinApp:
             time.sleep(0.1)
 
             # Perturb the cloud with a random walk to simulate an actual read
-            pts = np.asarray(self.cloud.points)
+            pts = np.asarray(self.cloud.get_points())
             magnitude = 0.005 * extent
             displacement = magnitude * (np.random.random_sample(pts.shape) -
                                         0.5)
             new_pts = pts + displacement
-            self.cloud.points = cv3d.utility.Vector3dVector(new_pts)
+            self.cloud.set_points(cv3d.utility.Vector3dVector(new_pts))
 
             def update_cloud():
                 # Note: if the number of points is less than or equal to the

@@ -140,9 +140,10 @@ def get_kitti_sample_dataset(dataset_path, dataset_name):
     # download and unzip dataset
     path = join(dataset_path, dataset_name)
     if not os.path.exists(path):
-        print("==================================")
         download_path = join(download_parent_path + dataset_name,
                              dataset_name + '_sync.zip')
+        print("==================================")
+        print("Downloading from {}".format(download_path))
         file_downloader(download_path)
         unzip_data("%s_sync.zip" % dataset_name,
                    "%s/%s" % (dataset_path, dataset_name))

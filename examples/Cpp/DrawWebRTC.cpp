@@ -30,9 +30,6 @@
 
 using namespace cloudViewer;
 
-// TODO: remove hard-coded path.
-const std::string TEST_DIR = "../../../examples/test_data";
-
 // Create and add a window to gui::Application, but do not run it yet.
 void AddDrawWindow(const std::vector<std::shared_ptr<ccHObject>> &geometries,
                    const std::string &window_name = "CloudViewer",
@@ -71,7 +68,7 @@ void AddDrawWindow(const std::vector<std::shared_ptr<ccHObject>> &geometries,
 
 // Create a window with an empty box and a custom action button for adding a
 // new visualization vindow.
-void EmptyBox() {
+void EmptyBox(const std::string& path) {
     const double pc_rad = 1.0;
     const double r = 0.4;
 
@@ -80,11 +77,11 @@ void EmptyBox() {
             Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
 
     auto new_window_action =
-            [](visualization::visualizer::O3DVisualizer &o3dvis) {
+            [&](visualization::visualizer::O3DVisualizer &o3dvis) {
                 utility::LogInfo("new_window_action called");
                 auto mesh = cloudViewer::make_shared<ccMesh>();
                 mesh->createInternalCloud();
-                io::ReadTriangleMesh(TEST_DIR + "/knot.ply", *mesh);
+                io::ReadTriangleMesh(path + "/knot.ply", *mesh);
                 mesh->computeVertexNormals();
                 AddDrawWindow({mesh}, "CloudViewer pcd", 640, 480);
             };
@@ -128,20 +125,33 @@ void BoxWithObjects() {
             "CloudViewer BoxWithObjects", 640, 480);
 }
 
+void PrintHelp() {
+    using namespace cloudViewer;
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > DrawWebRTC [filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char **argv) {
-    if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
-        utility::LogError(
-                "This example needs to be run from the build directory, "
-                "test_dir: {}",
-                TEST_DIR);
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
+    }
+
+    if (!utility::filesystem::DirectoryExists(argv[1])) {
+        utility::LogError("Invalid test_dir: {}", argv[1]);
     }
     visualization::webrtc_server::WebRTCWindowSystem::GetInstance()
             ->EnableWebRTC();
 
     // Uncomment this line to see more WebRTC loggings
-    // utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+//    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    EmptyBox();
+    EmptyBox(argv[1]);
     BoxWithObjects();
     visualization::gui::Application::GetInstance().Run();
 }

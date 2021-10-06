@@ -5,9 +5,9 @@ endif ()
 # We need to get python version to configure some meta files
 set(PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 
-include_directories(${OPENGL_ENGINE_LIB_SOURCE_DIR})
+message(STATUS "PYTHON VERSION: " ${PYTHON_VERSION})
 
-set(PACKAGE_NAME pybind)
+include_directories(${CloudViewer_SOURCE_DIR})
 
 pybind11_add_module(pybind)
 
@@ -44,11 +44,13 @@ target_include_directories(pybind SYSTEM PRIVATE
 cloudViewer_show_and_abort_on_warning(pybind)
 cloudViewer_set_global_properties(pybind)
 
+set_target_properties(pybind PROPERTIES DEBUG_POSTFIX "")
+
 if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
 endif ()
 
-target_link_libraries(pybind PRIVATE OPENGL_ENGINE_LIB)
+target_link_libraries(pybind PRIVATE CloudViewer::CloudViewer)
 
 # At `make`: cloudViewer.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
@@ -100,7 +102,7 @@ endif ()
 if (BUILD_PYTORCH_OPS)
     list(APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:cloudViewer_torch_ops>)
     add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
-            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:cloudViewer_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../../OpenGLEngine/ml/tensorflow"
+            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:cloudViewer_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../../cloudViewer/ml/tensorflow"
             DEPENDS cloudViewer_torch_ops
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             COMMENT "Generating python ops.py and return_types.py")
@@ -141,11 +143,11 @@ if (BUNDLE_CLOUDVIEWER_ML)
 endif ()
 
 configure_file("_build_config.py.in"
-        "${CMAKE_BINARY_DIR}/lib/_build_config.py")
+        "${CMAKE_BINARY_DIR}/lib/_build_config.py.in")
 
 file(GENERATE
         OUTPUT "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
-        INPUT "${CMAKE_BINARY_DIR}/lib/_build_config.py"
+        INPUT "${CMAKE_BINARY_DIR}/lib/_build_config.py.in"
         )
 
 add_custom_target(python-package

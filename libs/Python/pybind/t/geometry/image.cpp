@@ -244,7 +244,7 @@ void pybind_image(py::module &m) {
               "Convert to legacy Image type.");
     image.def_static("from_legacy", &Image::FromLegacy,
                      "image_legacy"_a, "device"_a = core::Device("CPU:0"),
-                     "Create a Image from a legacy Open3D Image.");
+                     "Create a Image from a legacy CloudViewer Image.");
     image.def("as_tensor", &Image::AsTensor);
 
     docstring::ClassMethodDocInject(m, "Image", "get_min_bound");

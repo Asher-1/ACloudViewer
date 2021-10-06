@@ -329,7 +329,7 @@ void pybind_eigen(py::module &m) {
     auto intvector = pybind_eigen_vector_of_scalar<int>(m, "IntVector");
     intvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert int32 numpy array of shape ``(n,)`` to Open3D format.)";
+                return R"(Convert int32 numpy array of shape ``(n,)`` to CloudViewer format.)";
             }),
             py::none(), py::none(), "");
 
@@ -337,7 +337,7 @@ void pybind_eigen(py::module &m) {
             pybind_eigen_vector_of_scalar<double>(m, "DoubleVector");
     doublevector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert float64 numpy array of shape ``(n,)`` to Open3D format.)";
+                return R"(Convert float64 numpy array of shape ``(n,)`` to CloudViewer format.)";
             }),
             py::none(), py::none(), "");
 
@@ -346,7 +346,7 @@ void pybind_eigen(py::module &m) {
             py::py_array_to_vectors_double<Eigen::Vector3d>);
     vector3dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert float64 numpy array of shape ``(n, 3)`` to Open3D format.
+                return R"(Convert float64 numpy array of shape ``(n, 3)`` to CloudViewer format.
 
 Example usage
 
@@ -358,10 +358,10 @@ Example usage
     pcd = open3d.geometry.PointCloud()
     np_points = np.random.rand(100, 3)
 
-    # From numpy to Open3D
+    # From numpy to CloudViewer
     pcd.points = open3d.utility.Vector3dVector(np_points)
 
-    # From Open3D to numpy
+    # From CloudViewer to numpy
     np_points = np.asarray(pcd.points)
 )";
             }),
@@ -372,7 +372,7 @@ Example usage
             py::py_array_to_vectors_int<Eigen::Vector3i>);
     vector3ivector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert int32 numpy array of shape ``(n, 3)`` to Open3D format..
+                return R"(Convert int32 numpy array of shape ``(n, 3)`` to CloudViewer format..
 
 Example usage
 
@@ -401,10 +401,10 @@ Example usage
                              [1, 2, 3]]).astype(np.int32)
     mesh.vertices = open3d.Vector3dVector(np_vertices)
 
-    # From numpy to Open3D
+    # From numpy to CloudViewer
     mesh.triangles = open3d.Vector3iVector(np_triangles)
 
-    # From Open3D to numpy
+    # From CloudViewer to numpy
     np_triangles = np.asarray(mesh.triangles)
 )";
             }),
@@ -416,7 +416,7 @@ Example usage
     vector2ivector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert int32 numpy array of shape ``(n, 2)`` to "
-                       "Open3D format.";
+                       "CloudViewer format.";
             }),
             py::none(), py::none(), "");
 
@@ -426,7 +426,7 @@ Example usage
     vector2dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert float64 numpy array of shape ``(n, 2)`` to "
-                       "Open3D format.";
+                       "CloudViewer format.";
             }),
             py::none(), py::none(), "");
 
@@ -437,7 +437,7 @@ Example usage
     matrix3dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert float64 numpy array of shape ``(n, 3, 3)`` to "
-                       "Open3D format.";
+                       "CloudViewer format.";
             }),
             py::none(), py::none(), "");
 
@@ -446,7 +446,7 @@ Example usage
     matrix4dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert float64 numpy array of shape ``(n, 4, 4)`` to "
-                       "Open3D format.";
+                       "CloudViewer format.";
             }),
             py::none(), py::none(), "");
 
@@ -457,7 +457,7 @@ Example usage
     vector4ivector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert int numpy array of shape ``(n, 4)`` to "
-                       "Open3D format.";
+                       "CloudViewer format.";
             }),
             py::none(), py::none(), "");
 }

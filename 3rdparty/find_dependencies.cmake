@@ -1700,15 +1700,15 @@ if (BUILD_RECONSTRUCTION)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${CERES_TARGET}")
 
     else () # must build shared library to avoid compiling error!
-#        # boost
-#        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
-#        import_3rdparty_library(3rdparty_boost
-#                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
-#                DEPENDS ext_boost
-#                )
-#        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
-#        set(BOOST_TARGET "3rdparty_boost")
-#        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
+        # boost
+        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
+        import_3rdparty_library(3rdparty_boost
+                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
+                DEPENDS ext_boost
+                )
+        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
+        set(BOOST_TARGET "3rdparty_boost")
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
 
         # freeimage
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
@@ -1773,11 +1773,12 @@ if (BUILD_RECONSTRUCTION)
         set(CERES_TARGET "3rdparty_ceres")
         add_dependencies(3rdparty_ceres ext_ceres)
         add_dependencies(ext_ceres ext_suitesparse)
-        add_dependencies(ext_ceres ext_eigen)
+        add_dependencies(ext_ceres 3rdparty_eigen3)
 
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${CERES_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${INTERNAL_EIGEN3_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GLOG_TARGET}")
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS "${GFLAGS_TARGET}")
     endif ()
 endif ()
 

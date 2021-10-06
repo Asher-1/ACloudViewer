@@ -36,9 +36,9 @@ void pybind_cuda_utils(py::module& m) {
 
     m_cuda.def("device_count", cuda::DeviceCount,
                "Returns the number of available CUDA devices. Returns 0 if "
-               "Open3D is not compiled with CUDA support.");
+               "CloudViewer is not compiled with CUDA support.");
     m_cuda.def("is_available", cuda::IsAvailable,
-               "Returns true if Open3D is compiled with CUDA support and at "
+               "Returns true if CloudViewer is compiled with CUDA support and at "
                "least one compatible CUDA device is detected.");
     m_cuda.def("release_cache", cuda::ReleaseCache,
                "Releases CUDA memory manager cache. This is typically used for "
@@ -54,7 +54,7 @@ void pybind_cuda_utils(py::module& m) {
             },
             "Synchronizes CUDA devices. If no device is specified, all CUDA "
             "devices will be synchronized. No effect if the specified device "
-            "is not a CUDA device. No effect if Open3D is not compiled with "
+            "is not a CUDA device. No effect if CloudViewer is not compiled with "
             "CUDA support."
             "device"_a = py::none());
 }
