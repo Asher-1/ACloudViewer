@@ -28,7 +28,7 @@ include(CMakeDependentOption)
 # Warning: MSBuild multi-config may override this, but generator expressions are
 # not supported here for forcing the correct option.
 cmake_dependent_option(WEBRTC_IS_DEBUG
-    "WebRTC Debug build. Use ON for Win32 Open3D Debug." OFF
+    "WebRTC Debug build. Use ON for Win32 CloudViewer Debug." OFF
     "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
 option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" OFF)
 

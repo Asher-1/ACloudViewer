@@ -29,11 +29,12 @@
 //system
 #include <cmath>
 #include <random>
+#include <iostream>
 #include <algorithm>
 #include <type_traits>
 
+#include <CVConst.h>
 #include <Logging.h>
-#include <iostream>
 
 //! Default color components type (R,G and B)
 using ColorCompType = unsigned char;
@@ -115,7 +116,7 @@ namespace ecvColor
 			}
 			else
 			{
-				if (t(0) > 1 || t(1) > 1 || t(2) > 1)
+                if (t(0) > 1 + EPSILON_VALUE || t(1) > 1 + EPSILON_VALUE || t(2) > 1 + EPSILON_VALUE)
 				{
 					cloudViewer::utility::LogWarning("[ecvColor] Find invalid color: ");
 					std::cout << t << std::endl;

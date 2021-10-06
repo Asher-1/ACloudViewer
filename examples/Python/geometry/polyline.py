@@ -99,7 +99,7 @@ if __name__ == "__main__":
     for name, polys in polylines_generator():
         print("{}: line width {}, color {}".format(name, polys[0].get_width(), polys[0].get_color()))
         print("{}: isClosed {}, 2D_mode {}".format(name, polys[0].is_closed(), polys[0].is_2d_mode()))
-        cv3d.visualization.draw_geometries(polys, show_coordinate_frame=True)
+        cv3d.visualization.draw_geometries(polys)
 
         vertex_list = []
         for poly in polys:

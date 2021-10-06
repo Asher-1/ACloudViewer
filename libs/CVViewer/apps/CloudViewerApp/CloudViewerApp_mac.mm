@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -48,7 +48,7 @@ class Open3DVisualizer : public cloudViewer::visualization::GuiVisualizer {
     using Super = GuiVisualizer;
 public:
     Open3DVisualizer()
-        : cloudViewer::visualization::GuiVisualizer("Open3D", WIDTH, HEIGHT) {
+        : cloudViewer::visualization::GuiVisualizer("CloudViewer", WIDTH, HEIGHT) {
         AddItemsToAppMenu({{"Make Default 3D Viewer", MAC_MAKE_DEFAULT_APP}});
     }
 
@@ -58,14 +58,14 @@ protected:
     void OnMenuItemSelected(Menu::ItemId item_id) override {
         if (item_id == MAC_MAKE_DEFAULT_APP) {
             auto em = GetTheme().font_size;
-            auto dlg = cloudViewer::make_shared<Dialog>("Make Open3D default");
+            auto dlg = cloudViewer::make_shared<Dialog>("Make CloudViewer default");
 
             auto cancel = cloudViewer::make_shared<Button>("Cancel");
             cancel->SetOnClicked([this]() { this->CloseDialog(); });
 
             auto ok = cloudViewer::make_shared<Button>("Make Default");
             ok->SetOnClicked([this]() {
-                // This will set the users personal default to use Open3D for
+                // This will set the users personal default to use CloudViewer for
                 // the file types below. THIS SHOULD ONLY BE CALLED
                 // AFTER THE USER EXPLICITLY CONFIRMS THAT THEY WANT TO DO THIS!
                 CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.isl-org.cloudViewer.Open3D";

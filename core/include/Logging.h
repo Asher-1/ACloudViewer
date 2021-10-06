@@ -201,7 +201,7 @@ public:
     static Logger &GetInstance();
 
     /// Overwrite the default print function, this is useful when you want to
-    /// redirect prints rather than printing to stdout. For example, in Open3D's
+    /// redirect prints rather than printing to stdout. For example, in CloudViewer's
     /// python binding, the default print function is replaced with py::print().
     ///
     /// \param print_fcn The function for printing. It should take a string
@@ -211,13 +211,13 @@ public:
     /// reset the print function to the default one (print to console).
     void ResetPrintFunction();
 
-    /// Set global verbosity level of Open3D.
+    /// Set global verbosity level of CloudViewer.
     ///
     /// \param verbosity_level Messages with equal or less than verbosity_level
     /// verbosity will be printed.
     void SetVerbosityLevel(VerbosityLevel verbosity_level);
 
-    /// Get global verbosity level of Open3D.
+    /// Get global verbosity level of CloudViewer.
     VerbosityLevel GetVerbosityLevel() const;
 
     template <typename... Args>
@@ -296,13 +296,13 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-/// Set global verbosity level of Open3D
+/// Set global verbosity level of CloudViewer
 ///
 /// \param level Messages with equal or less than verbosity_level verbosity will
 /// be printed.
 void CV_CORE_LIB_API SetVerbosityLevel(VerbosityLevel level);
 
-/// Get global verbosity level of Open3D.
+/// Get global verbosity level of CloudViewer.
 VerbosityLevel CV_CORE_LIB_API GetVerbosityLevel();
 
 class CV_CORE_LIB_API VerbosityContextManager {

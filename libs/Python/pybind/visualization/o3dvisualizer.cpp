@@ -120,7 +120,7 @@ void pybind_o3dvisualizer(py::module& m) {
                           "visiblity may not correspond with this "
                           "value");
 
-    o3dvis.def(py::init<const std::string, int, int>(), "title"_a = "Open3D",
+    o3dvis.def(py::init<const std::string, int, int>(), "title"_a = "CloudViewer",
                "width"_a = 1024, "height"_a = 768,
                "Creates a O3DVisualizer object")
             // selected functions inherited from Window

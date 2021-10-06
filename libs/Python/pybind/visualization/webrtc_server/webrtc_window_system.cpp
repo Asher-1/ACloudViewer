@@ -42,7 +42,7 @@ static void pybind_webrtc_server_functions(py::module &m) {
                         entry_point, query_string, data);
             },
             "entry_point"_a, "query_string"_a = "", "data"_a = "",
-            "Emulates Open3D WebRTCWindowSystem's HTTP API calls. This is used "
+            "Emulates CloudViewer WebRTCWindowSystem's HTTP API calls. This is used "
             "when the HTTP handshake server is disabled (e.g. in Jupyter), and "
             "handshakes are done by this function.");
     m.def(

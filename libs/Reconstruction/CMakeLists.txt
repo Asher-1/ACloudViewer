@@ -89,9 +89,6 @@ if(OPENMP_ENABLED)
     find_package(OpenMP QUIET)
 endif()
 
-#find_package(FreeImage REQUIRED)
-#find_package(Ceres REQUIRED)
-#find_package(Glog REQUIRED)
 if (WIN32)
     set( BOOST_ROOT "" CACHE PATH "Boost library root directory" )
     if ( NOT BOOST_ROOT )
@@ -101,8 +98,10 @@ if (WIN32)
         add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
     endif()
 else()
-    set( BOOST_ROOT "/media/asher/data/pcl_projects/ErowCloudViewer/ErowCloudViewer/cmake-build-debug/boost/src/ext_boost" CACHE PATH "Boost library root directory" )
+    set( BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory" )
 endif()
+
+message(STATUS "BOOST ROOT: ${BOOST_ROOT}")
 
 # Disable BOOST autolink
 if (MSVC)

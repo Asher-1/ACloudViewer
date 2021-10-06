@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
-# This script builds WebRTC for Open3D for Ubuntu and macOS. For Windows, see
+# This script builds WebRTC for CloudViewer for Ubuntu and macOS. For Windows, see
 # .github/workflows/webrtc.yml
 #
 # Usage:
@@ -13,7 +13,7 @@ set -euox pipefail
 # $ download_webrtc_sources
 # $ build_webrtc
 # A webrtc_<commit>_platform.tar.gz file will be created that can be used to
-# build Open3D with WebRTC support.
+# build CloudViewer with WebRTC support.
 #
 # Procedure:
 #
@@ -42,7 +42,7 @@ DEPOT_TOOLS_COMMIT=${DEPOT_TOOLS_COMMIT:-e1a98941d3ab10549be6d82d0686bb0fb91ec90
 GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI:-0}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 SUDO=${SUDO:-sudo}                           # Set to command if running inside docker
-export PATH="$PWD/../depot_tools":${PATH}    # $(basename $PWD) == Open3D
+export PATH="$PWD/../depot_tools":${PATH}    # $(basename $PWD) == CloudViewer
 export DEPOT_TOOLS_UPDATE=0
 
 install_dependencies_ubuntu() {
@@ -80,7 +80,7 @@ install_dependencies_ubuntu() {
 }
 
 download_webrtc_sources() {
-    # PWD=Open3D
+    # PWD=CloudViewer
     pushd ..
     echo Get depot_tools
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
@@ -105,7 +105,7 @@ download_webrtc_sources() {
 }
 
 build_webrtc() {
-    # PWD=Open3D
+    # PWD=CloudViewer
     CLOUDVIEWER_DIR="$PWD"
     echo Apply patches
     cp 3rdparty/webrtc/{CMakeLists.txt,webrtc_common.cmake} ../webrtc
@@ -125,7 +125,7 @@ build_webrtc() {
         ..
     make -j$NPROC
     make install
-    popd # PWD=Open3D
+    popd # PWD=CloudViewer
     pushd ..
     tree -L 2 webrtc_release || ls webrtc_release/*
 
@@ -139,7 +139,7 @@ build_webrtc() {
             "CLOUDVIEWER_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz" \
             webrtc_release
     fi
-    popd # PWD=Open3D
+    popd # PWD=CloudViewer
     webrtc_package=$(ls webrtc_*.tar.gz)
     cmake -E sha256sum "$webrtc_package" | tee "checksum_${webrtc_package%%.*}.txt"
     ls -alh "$webrtc_package"

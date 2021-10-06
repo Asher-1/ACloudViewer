@@ -78,7 +78,7 @@ function(cloudViewer_set_global_properties target)
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
             target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
             if(BUILD_GUI)
-                # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
+                # GLEW and CloudViewer make direct OpenGL calls and link to opengl32.lib;
                 # Filament needs to link through bluegl.lib.
                 # See https://github.com/google/filament/issues/652
                 target_link_options(${target} PRIVATE /force:multiple)

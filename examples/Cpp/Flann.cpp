@@ -65,8 +65,6 @@ int main(int argc, char *argv[]) {
         new_cloud_ptr->resizeTheRGBTable();
     }
 
-    std::vector<Eigen::Vector3d> points = new_cloud_ptr->getEigenPoints();
-
     int nn = std::min(20, (int)new_cloud_ptr->size() - 1);
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(*new_cloud_ptr);
@@ -88,6 +86,7 @@ int main(int argc, char *argv[]) {
     float r = float(sqrt(new_dists_vec[nn - 1]) * 2.0);
     int k = kdtree.SearchRadius(new_cloud_ptr->getEigenPoint(99), r,
                                 new_indices_vec, new_dists_vec);
+
 
     utility::LogInfo("======== {:d}, {:f} ========", k, r);
     for (int i = 0; i < k; i++) {

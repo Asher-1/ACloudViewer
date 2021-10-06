@@ -20,7 +20,8 @@ visualization_max = 1.5
 verbosity = Info
 
 # Path of the downloaded dataset containing frames in .pcd or .ply format.
-dataset_path = ../../../examples/test_data/cloudViewer_downloads/datasets/kitti_samples/output/
+# dataset_path = ../../../examples/test_data/cloudViewer_downloads/datasets/kitti_samples/output/
+dataset_path = /media/asher/data/datasets/3d_data/KITTI_odometry/data_odometry_velodyne/pcd_sequences/1_10/01/
 
 # Range of frames is start_index to end_index.
 start_index = 0

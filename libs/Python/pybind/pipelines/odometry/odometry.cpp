@@ -61,7 +61,7 @@ public:
 };
 
 void pybind_odometry_classes(py::module &m) {
-    // open3d.odometry.OdometryOption
+    // cloudViewer.odometry.OdometryOption
     py::class_<OdometryOption> odometry_option(
             m, "OdometryOption", "Class that defines Odometry options.");
     odometry_option
@@ -120,14 +120,14 @@ void pybind_odometry_classes(py::module &m) {
                        std::to_string(c.max_depth_);
             });
 
-    // open3d.odometry.RGBDOdometryJacobian
+    // cloudViewer.odometry.RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobian,
                PyRGBDOdometryJacobian<RGBDOdometryJacobian>>
             jacobian(
                     m, "RGBDOdometryJacobian",
                     "Base class that computes Jacobian from two RGB-D images.");
 
-    // open3d.odometry.RGBDOdometryJacobianFromColorTerm: RGBDOdometryJacobian
+    // cloudViewer.odometry.RGBDOdometryJacobianFromColorTerm: RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobianFromColorTerm,
                PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
                RGBDOdometryJacobian>
@@ -152,7 +152,7 @@ In ICCV Workshops, 2011.)");
                 return std::string("RGBDOdometryJacobianFromColorTerm");
             });
 
-    // open3d.odometry.RGBDOdometryJacobianFromHybridTerm: RGBDOdometryJacobian
+    // cloudViewer.odometry.RGBDOdometryJacobianFromHybridTerm: RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobianFromHybridTerm,
                PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
                RGBDOdometryJacobian>

@@ -1,7 +1,7 @@
-# Build WebRTC from source alongside Open3D.
+# Build WebRTC from source alongside CloudViewer.
 #
-# You have two ways to enable WebRTC in Open3D.
-# - Method 1: Set `-DBUILD_WEBRTC_FROM_SOURCE=OFF` and Open3D will fetch and use
+# You have two ways to enable WebRTC in CloudViewer.
+# - Method 1: Set `-DBUILD_WEBRTC_FROM_SOURCE=OFF` and CloudViewer will fetch and use
 #             a pre-compiled WebRTC package.
 # - Method 2: Set `-DBUILD_WEBRTC_FROM_SOURCE=ON` and this webrtc_build.cmake
 #             will be used. This is only recommended for advanced users.
@@ -18,14 +18,14 @@
 #        └── src
 #    Example commands:
 #    ```bash
-#    # You're in Open3D
+#    # You're in CloudViewer
 #    cd ..
 #    git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
 #    export PATH=$PATH:`realpath depot_tools`
 #    mkdir webrtc
 #    cd webrtc
 #    fetch --no-history webrtc
-#    cd ../Open3D
+#    cd ../CloudViewer
 #    ```
 #    You may also want to checkout a specific commit for depot_tools and webrtc.
 #    See Dockerfile.webrtc on how to do that.
@@ -47,7 +47,7 @@ include(CMakeDependentOption)
 # Warning: MSBuild multi-config may override this, but generator expressions are
 # not supported here for forcing the corect option.
 cmake_dependent_option(WEBRTC_IS_DEBUG
-    "WebRTC Debug build. Use ON for Win32 Open3D Debug." OFF
+    "WebRTC Debug build. Use ON for Win32 CloudViewer Debug." OFF
     "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
 
 # Set paths

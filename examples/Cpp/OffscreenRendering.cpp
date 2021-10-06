@@ -33,7 +33,7 @@ using namespace cloudViewer;
 using namespace cloudViewer::visualization::gui;
 using namespace cloudViewer::visualization::rendering;
 
-// Headless rendering requires Open3D to be compiled with OSMesa support.
+// Headless rendering requires CloudViewer to be compiled with OSMesa support.
 // Add -DENABLE_HEADLESS_RENDERING=ON when you run CMake.
 static const bool kUseHeadless = false;
 

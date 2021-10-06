@@ -209,7 +209,7 @@ def _sparse_conv_grad(op, grad):
     neighbors_importance_sum = _lib.open3d_reduce_subarrays_sum(
         neighbors_importance, neighbors_row_splits)
 
-    inp_features_grad = _lib.open3d_sparse_conv_transpose(
+    inp_features_grad = _lib.cloudviewer_sparse_conv_transpose(
         normalize=op.get_attr('normalize'),
         max_temp_mem_MB=op.get_attr('max_temp_mem_MB'),
         filters=_tf.transpose(filters, [0, 2, 1]),

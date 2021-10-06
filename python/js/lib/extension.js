@@ -13,7 +13,7 @@ if (window.require) {
     window.require.config({
         map: {
             "*" : {
-                "cloudViewer": "nbextensions/index",
+                "cloudViewer": "nbextensions/cloudViewer/index",
             }
         }
     });

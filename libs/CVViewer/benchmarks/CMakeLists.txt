@@ -7,14 +7,14 @@ add_subdirectory(pipelines)
 add_subdirectory(t/geometry)
 add_subdirectory(t/pipelines)
 
-include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
+include_directories( ${CloudViewer_SOURCE_DIR} )
 
 target_compile_definitions(benchmarks PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
 target_compile_definitions(benchmarks PRIVATE BENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
 
-target_link_libraries( benchmarks PRIVATE ECV_DB_LIB )
-target_link_libraries( benchmarks PRIVATE ECV_IO_LIB )
-target_link_libraries( benchmarks PRIVATE OPENGL_ENGINE_LIB )
+#target_link_libraries( benchmarks PRIVATE ECV_DB_LIB )
+#target_link_libraries( benchmarks PRIVATE ECV_IO_LIB )
+target_link_libraries( benchmarks PRIVATE CloudViewer::CloudViewer )
 
 if (BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)

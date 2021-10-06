@@ -48,7 +48,7 @@ float verticalFoV = 25;
 
 const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 30.0f);
 const std::string CURRENT_CLOUD = "current_scan";
-std::string window_name = "Open3D - ICP Frame to Frame Odometry";
+std::string window_name = "CloudViewer - ICP Frame to Frame Odometry";
 std::string device_string = "CPU:0";
 std::string widget_string = "Average FPS on ";
 
@@ -80,7 +80,8 @@ public:
         output_panel_->AddChild(output_);
 
         widget3d_->SetScene(
-                cloudViewer::make_shared<rendering::CloudViewerScene>(GetRenderer()));
+                cloudViewer::make_shared<rendering::CloudViewerScene>(
+                        GetRenderer()));
     }
 
     ~ReconstructionWindow() {}
@@ -189,7 +190,8 @@ private:
                 // Getting bounding box and center to setup camera view.
                 pcd_and_bbox_.bbox_ =
                         this->widget3d_->GetScene()->GetBoundingBox();
-                auto center = pcd_and_bbox_.bbox_.getGeometryCenter().cast<float>();
+                auto center =
+                        pcd_and_bbox_.bbox_.getGeometryCenter().cast<float>();
                 this->widget3d_->SetupCamera(verticalFoV, pcd_and_bbox_.bbox_,
                                              center);
             });
@@ -333,8 +335,9 @@ private:
                                     &pcd_and_bbox_.current_scan_, mat_);
 
                             // Setup camera.
-                            auto center = pcd_and_bbox_.bbox_.getGeometryCenter()
-                                                  .cast<float>();
+                            auto center =
+                                    pcd_and_bbox_.bbox_.getGeometryCenter()
+                                            .cast<float>();
                             this->widget3d_->SetupCamera(
                                     verticalFoV, pcd_and_bbox_.bbox_, center);
                         });
@@ -434,7 +437,7 @@ private:
         }
         utility::LogInfo(" Range: {} to {} pointcloud files in sequence.",
                          start_index_, end_index_ - 1);
-        utility::LogInfo(" Registrtion method: {}", registration_method_);
+        utility::LogInfo(" Registration method: {}", registration_method_);
         std::cout << std::endl;
 
         std::cout << " Voxel Sizes: ";
@@ -475,11 +478,11 @@ private:
         }
 
         if (registration_method_ == "PointToPoint") {
-            estimation_ =
-                    cloudViewer::make_shared<TransformationEstimationPointToPoint>();
+            estimation_ = cloudViewer::make_shared<
+                    TransformationEstimationPointToPoint>();
         } else if (registration_method_ == "PointToPlane") {
-            estimation_ =
-                    cloudViewer::make_shared<TransformationEstimationPointToPlane>();
+            estimation_ = cloudViewer::make_shared<
+                    TransformationEstimationPointToPlane>();
         } else {
             utility::LogError(" Registration method {}, not implemented.",
                               registration_method_);
@@ -509,7 +512,7 @@ private:
 
         utility::filesystem::ListFilesInDirectoryWithExtension(
                 path_dataset, "pcd", all_pcd_files);
-        if (all_pcd_files.size() == 0) {
+        if (all_pcd_files.empty()) {
             utility::filesystem::ListFilesInDirectoryWithExtension(
                     path_dataset, "ply", all_pcd_files);
         }
@@ -573,7 +576,8 @@ private:
                     !pointcloud_local.HasPointNormals()) {
                     auto pointcloud_legacy = pointcloud_local.ToLegacy();
                     pointcloud_legacy.estimateNormals(
-                            cloudViewer::geometry::KDTreeSearchParamKNN(), false);
+                            cloudViewer::geometry::KDTreeSearchParamKNN(),
+                            false);
                     core::Tensor pointcloud_normals =
                             t::geometry::PointCloud::FromLegacy(
                                     pointcloud_legacy)
@@ -603,7 +607,7 @@ private:
         }
     }
 
-    rendering::Material GetPointCloudMaterial() {
+    rendering::Material GetPointCloudMaterial() const {
         auto pointcloud_mat = rendering::Material();
         pointcloud_mat.shader = "unlitGradient";
 
@@ -734,8 +738,8 @@ int main(int argc, char* argv[]) {
 
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, (const char**)argv);
-    app.AddWindow(cloudViewer::make_shared<ExampleWindow>(path_config,
-                                                  core::Device(device_string)));
+    app.AddWindow(cloudViewer::make_shared<ExampleWindow>(
+            path_config, core::Device(device_string)));
     app.Run();
     return 0;
 }

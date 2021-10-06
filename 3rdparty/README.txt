@@ -1,7 +1,7 @@
-This folder contains a set of external libraries that are used in Open3D.
+This folder contains a set of external libraries that are used in CloudViewer.
 
-We want to make Open3D self-contained and cross-platform consistent. So
-Open3D does not detect system installed libraries and always links to these
+We want to make CloudViewer self-contained and cross-platform consistent. So
+CloudViewer does not detect system installed libraries and always links to these
 external libraries.
 
 Some external libraries rely on basic system level libraries such as OpenGL and
