@@ -1,4 +1,6 @@
-<span style="display:block;text-align:center">![Logo](doc/images/ErowCloudViewer_logo_horizontal.png)</span>
+<p align="center">
+  <img src="doc/images/ErowCloudViewer_logo_horizontal.png">
+</p>
 
 # ErowCloudViewer: A Modern System for 3D Data Processing
 
@@ -75,6 +77,5 @@ Supporting the project
 If you want to help us in another way, you can make donations via [donorbox](https://asher-1.github.io)
 Thanks!
 
-<span style="display:block;text-align:center">[![donorbox](doc/images/button-medium-blue.png)](https://asher-1.github.io)</span>
-
+[![donorbox](doc/images/button-medium-blue.png)](https://asher-1.github.io)
 
