@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ namespace cloudViewer {
 namespace core {
 
 void pybind_core_dtype(py::module &m) {
-    // open3d.core.Dtype class
+    // cloudViewer.core.Dtype class
     py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype", "CloudViewer data types.");
     dtype.def(py::init<Dtype::DtypeCode, int64_t, const std::string &>());
     dtype.def_readonly_static("Undefined", &core::Undefined);
@@ -65,7 +65,7 @@ void pybind_core_dtype(py::module &m) {
     dtype.def("__str__", &Dtype::ToString);
 
     // Dtype shortcuts.
-    // E.g. open3d.core.Float32
+    // E.g. cloudViewer.core.Float32
     m.attr("undefined") = &core::Undefined;
     m.attr("float32") = core::Float32;
     m.attr("float64") = core::Float64;

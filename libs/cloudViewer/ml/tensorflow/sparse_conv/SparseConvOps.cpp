@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                        -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -94,7 +94,7 @@ This op computes the features for the forwad pass.
 This example shows how to use this op::
 
   import tensorflow as tf
-  import open3d.ml.tf as ml3d
+  import cloudViewer.ml.tf as ml3d
 
   # This filter has 3 "spatial" elements with 8 input and 16 output channels
   filters = tf.random.normal([3,8,16])
@@ -116,7 +116,7 @@ This example shows how to use this op::
 
   # or with pytorch
   import torch
-  import open3d.ml.torch as ml3d
+  import cloudViewer.ml.torch as ml3d
 
   # This filter has 3 "spatial" elements with 8 input and 16 output channels
   filters = torch.randn([3,8,16])

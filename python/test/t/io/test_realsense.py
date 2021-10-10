@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                        -
+# -                        CloudViewer: asher-1.github.io                    -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018-2021 www.open3d.org
+# Copyright (c) 2018-2021 asher-1.github.io
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 import sys
 import os
 import shutil
-import open3d as o3d
+import cloudViewer as cv3d
 import numpy as np
 import pytest
 
@@ -38,7 +38,7 @@ from open3d_test import test_data_dir
 
 
 @pytest.mark.skipif(os.getenv('GITHUB_SHA') is not None or
-                    not hasattr(o3d.t.io, 'RSBagReader'),
+                    not hasattr(cv3d.t.io, 'RSBagReader'),
                     reason="Hangs in Github Actions, but succeeds locally or "
                     "not built with librealsense")
 def test_RSBagReader():
@@ -46,15 +46,15 @@ def test_RSBagReader():
     shutil.unpack_archive(test_data_dir +
                           "/RGBD/other_formats/L515_test_s.bag.tar.xz")
 
-    bag_reader = o3d.t.io.RSBagReader()
+    bag_reader = cv3d.t.io.RSBagReader()
     bag_reader.open("L515_test_s.bag")
 
     # Metadata
     metadata = bag_reader.metadata
     assert metadata.color_channels == 3
-    assert metadata.color_dt == o3d.core.Dtype.UInt8
+    assert metadata.color_dt == cv3d.core.Dtype.UInt8
     assert metadata.color_format == 'RGB8'
-    assert metadata.depth_dt == o3d.core.Dtype.UInt16
+    assert metadata.depth_dt == cv3d.core.Dtype.UInt16
     assert metadata.depth_format == 'Z16'
     assert np.allclose(metadata.depth_scale, 3999.999755859375)
     assert metadata.device_name == "Intel RealSense L515"
@@ -71,11 +71,11 @@ def test_RSBagReader():
     im_rgbd = bag_reader.next_frame()
     assert not im_rgbd.is_empty() and im_rgbd.are_aligned()
     assert im_rgbd.color.channels == 3
-    assert im_rgbd.color.dtype == o3d.core.Dtype.UInt8
+    assert im_rgbd.color.dtype == cv3d.core.Dtype.UInt8
     assert im_rgbd.color.rows == 540
     assert im_rgbd.color.columns == 960
     assert im_rgbd.depth.channels == 1
-    assert im_rgbd.depth.dtype == o3d.core.Dtype.UInt16
+    assert im_rgbd.depth.dtype == cv3d.core.Dtype.UInt16
     assert im_rgbd.depth.rows == 540
     assert im_rgbd.depth.columns == 960
 
@@ -88,7 +88,7 @@ def test_RSBagReader():
     assert n_frames == 6
 
     # save_frames
-    bag_reader = o3d.t.io.RGBDVideoReader.create("L515_test_s.bag")
+    bag_reader = cv3d.t.io.RGBDVideoReader.create("L515_test_s.bag")
     bag_reader.save_frames("L515_test_s")
     # Use issubset() since there may be other OS files present
     assert {'depth', 'color',
@@ -108,15 +108,15 @@ def test_RSBagReader():
 
 
 # Test recording from a RealSense camera, if one is connected
-@pytest.mark.skipif(not hasattr(o3d.t.io, 'RealSenseSensor'),
+@pytest.mark.skipif(not hasattr(cv3d.t.io, 'RealSenseSensor'),
                     reason="Not built with librealsense")
 def test_RealSenseSensor():
 
-    o3d.t.io.RealSenseSensor.list_devices()
-    rs_cam = o3d.t.io.RealSenseSensor()
+    cv3d.t.io.RealSenseSensor.list_devices()
+    rs_cam = cv3d.t.io.RealSenseSensor()
     bag_filename = "test_record.bag"
     try:
-        rs_cam.init_sensor(o3d.t.io.RealSenseSensorConfig(), 0, bag_filename)
+        rs_cam.init_sensor(cv3d.t.io.RealSenseSensorConfig(), 0, bag_filename)
         rs_cam.start_capture(True)  # true: start recording with capture
         im_rgbd = rs_cam.capture_frame(True,
                                        True)  # wait for frames and align them

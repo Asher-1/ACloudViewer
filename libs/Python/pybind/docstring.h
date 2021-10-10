@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,7 @@ public:
 /// Example usage:
 ///
 /// ```cpp
-/// std::string doc = R"(foo(arg0: int, arg1: float = 1.0) -> open3d.bar)";
+/// std::string doc = R"(foo(arg0: int, arg1: float = 1.0) -> cloudViewer.bar)";
 /// FunctionDoc fd(doc);
 /// fd.InjectArgumentDocBody("arg0", "The arg0 is an important argument.");
 /// std::cout << fd.ToGoogleDocString();

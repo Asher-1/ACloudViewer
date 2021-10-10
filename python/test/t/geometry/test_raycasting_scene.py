@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                        -
+# -                        CloudViewer: asher-1.github.io                    -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018-2021 www.open3d.org
+# Copyright (c) 2018-2021 asher-1.github.io
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,22 +24,22 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-import open3d as o3d
+import cloudViewer as cv3d
 import numpy as np
 import pytest
 
 
 # test intersection with a single triangle
 def test_cast_rays():
-    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.Dtype.Float32)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
+    vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=cv3d.core.Dtype.Float32)
+    triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     geom_id = scene.add_triangles(vertices, triangles)
 
-    rays = o3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.Dtype.Float32)
+    rays = cv3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
+                           dtype=cv3d.core.Dtype.Float32)
     ans = scene.cast_rays(rays)
 
     # first ray hits the triangle
@@ -47,51 +47,51 @@ def test_cast_rays():
     assert np.isclose(ans['t_hit'][0].item(), 1.0)
 
     # second ray misses
-    assert o3d.t.geometry.RaycastingScene.INVALID_ID == ans['geometry_ids'][1]
+    assert cv3d.t.geometry.RaycastingScene.INVALID_ID == ans['geometry_ids'][1]
     assert np.isinf(ans['t_hit'][1].item())
 
 
 # cast lots of random rays to test the internal batching
 # we expect no errors for this test
 def test_cast_lots_of_rays():
-    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.Dtype.Float32)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
+    vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=cv3d.core.Dtype.Float32)
+    triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(vertices, triangles)
 
     rs = np.random.RandomState(123)
-    rays = o3d.core.Tensor.from_numpy(rs.rand(7654321, 6).astype(np.float32))
+    rays = cv3d.core.Tensor.from_numpy(rs.rand(7654321, 6).astype(np.float32))
 
     _ = scene.cast_rays(rays)
 
 
 def test_add_triangle_mesh():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = cv3d.t.geometry.TriangleMesh.from_legacy(
+        cv3d.geometry.TriangleMesh.create_box())
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
 
-    rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
+    rays = cv3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.Dtype.Float32)
+                           dtype=cv3d.core.Dtype.Float32)
     ans = scene.count_intersections(rays)
 
     np.testing.assert_equal(ans.numpy(), [2, 1, 0])
 
 
 def test_count_intersections():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = cv3d.t.geometry.TriangleMesh.from_legacy(
+        cv3d.geometry.TriangleMesh.create_box())
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
 
-    rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
+    rays = cv3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.Dtype.Float32)
+                           dtype=cv3d.core.Dtype.Float32)
     ans = scene.count_intersections(rays)
 
     np.testing.assert_equal(ans.numpy(), [2, 1, 0])
@@ -100,28 +100,28 @@ def test_count_intersections():
 # count lots of random ray intersections to test the internal batching
 # we expect no errors for this test
 def test_count_lots_of_intersections():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = cv3d.t.geometry.TriangleMesh.from_legacy(
+        cv3d.geometry.TriangleMesh.create_box())
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
 
     rs = np.random.RandomState(123)
-    rays = o3d.core.Tensor.from_numpy(rs.rand(1234567, 6).astype(np.float32))
+    rays = cv3d.core.Tensor.from_numpy(rs.rand(1234567, 6).astype(np.float32))
 
     _ = scene.count_intersections(rays)
 
 
 def test_compute_closest_points():
-    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.Dtype.Float32)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
+    vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=cv3d.core.Dtype.Float32)
+    triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     geom_id = scene.add_triangles(vertices, triangles)
 
-    query_points = o3d.core.Tensor([[0.2, 0.1, 1], [10, 10, 10]],
-                                   dtype=o3d.core.Dtype.Float32)
+    query_points = cv3d.core.Tensor([[0.2, 0.1, 1], [10, 10, 10]],
+                                   dtype=cv3d.core.Dtype.Float32)
     ans = scene.compute_closest_points(query_points)
 
     assert (geom_id == ans['geometry_ids']).all()
@@ -133,59 +133,59 @@ def test_compute_closest_points():
 
 
 def test_compute_distance():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = cv3d.t.geometry.TriangleMesh.from_legacy(
+        cv3d.geometry.TriangleMesh.create_box())
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
 
-    query_points = o3d.core.Tensor(
+    query_points = cv3d.core.Tensor(
         [[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5], [0, 0, 0]],
-        dtype=o3d.core.Dtype.Float32)
+        dtype=cv3d.core.Dtype.Float32)
     ans = scene.compute_distance(query_points)
     np.testing.assert_allclose(ans.numpy(), [0.5, np.sqrt(3 * 0.5**2), 0.0])
 
 
 def test_compute_signed_distance():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = cv3d.t.geometry.TriangleMesh.from_legacy(
+        cv3d.geometry.TriangleMesh.create_box())
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
 
-    query_points = o3d.core.Tensor(
+    query_points = cv3d.core.Tensor(
         [[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5], [0, 0, 0]],
-        dtype=o3d.core.Dtype.Float32)
+        dtype=cv3d.core.Dtype.Float32)
     ans = scene.compute_signed_distance(query_points)
     np.testing.assert_allclose(ans.numpy(), [-0.5, np.sqrt(3 * 0.5**2), 0.0])
 
 
 def test_compute_occupancy():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = cv3d.t.geometry.TriangleMesh.from_legacy(
+        cv3d.geometry.TriangleMesh.create_box())
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
 
-    query_points = o3d.core.Tensor([[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5]],
-                                   dtype=o3d.core.Dtype.Float32)
+    query_points = cv3d.core.Tensor([[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5]],
+                                   dtype=cv3d.core.Dtype.Float32)
     ans = scene.compute_occupancy(query_points)
     np.testing.assert_allclose(ans.numpy(), [1.0, 0.0])
 
 
 @pytest.mark.parametrize("shape", ([11], [1, 2, 3], [32, 14]))
 def test_output_shapes(shape):
-    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.Dtype.Float32)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
+    vertices = cv3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=cv3d.core.Dtype.Float32)
+    triangles = cv3d.core.Tensor([[0, 1, 2]], dtype=cv3d.core.Dtype.UInt32)
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(vertices, triangles)
 
     rs = np.random.RandomState(123)
-    rays = o3d.core.Tensor.from_numpy(
+    rays = cv3d.core.Tensor.from_numpy(
         rs.uniform(size=shape + [6]).astype(np.float32))
-    query_points = o3d.core.Tensor.from_numpy(
+    query_points = cv3d.core.Tensor.from_numpy(
         rs.uniform(size=shape + [3]).astype(np.float32))
 
     ans = scene.count_intersections(rays)

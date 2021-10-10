@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                        -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -64,7 +64,7 @@ public:
 };
 
 void pybind_registration_classes(py::module &m) {
-    // open3d.t.pipelines.registration.ICPConvergenceCriteria
+    // cloudViewer.t.pipelines.registration.ICPConvergenceCriteria
     py::class_<ICPConvergenceCriteria> convergence_criteria(
             m, "ICPConvergenceCriteria",
             "Convergence criteria of ICP. "
@@ -96,7 +96,7 @@ void pybind_registration_classes(py::module &m) {
                         c.max_iteration_);
             });
 
-    // open3d.t.pipelines.registration.RegistrationResult
+    // cloudViewer.t.pipelines.registration.RegistrationResult
     py::class_<RegistrationResult> registration_result(m, "RegistrationResult",
                                                        "Registration results.");
     py::detail::bind_default_constructor<RegistrationResult>(
@@ -130,7 +130,7 @@ void pybind_registration_classes(py::module &m) {
                         rr.fitness_ * rr.correspondences_.GetLength());
             });
 
-    // open3d.t.pipelines.registration.TransformationEstimation
+    // cloudViewer.t.pipelines.registration.TransformationEstimation
     py::class_<TransformationEstimation,
                PyTransformationEstimation<TransformationEstimation>>
             te(m, "TransformationEstimation",
@@ -170,7 +170,7 @@ void pybind_registration_classes(py::module &m) {
               "the value itself is the source index. It contains -1 as value "
               "at index with no correspondence."}});
 
-    // open3d.t.pipelines.registration.TransformationEstimationPointToPoint
+    // cloudViewer.t.pipelines.registration.TransformationEstimationPointToPoint
     // TransformationEstimation
     py::class_<TransformationEstimationPointToPoint,
                PyTransformationEstimation<TransformationEstimationPointToPoint>,
@@ -186,7 +186,7 @@ void pybind_registration_classes(py::module &m) {
                      return std::string("TransformationEstimationPointToPoint");
                  });
 
-    // open3d.t.pipelines.registration.TransformationEstimationPointToPlane
+    // cloudViewer.t.pipelines.registration.TransformationEstimationPointToPlane
     // TransformationEstimation
     py::class_<TransformationEstimationPointToPlane,
                PyTransformationEstimation<TransformationEstimationPointToPlane>,

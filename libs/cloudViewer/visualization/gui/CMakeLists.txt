@@ -105,7 +105,7 @@ add_dependencies(GUI materials)
 
 get_target_property(GUI_MATERIAL_COMPILED_FILES materials COMPILED_MATERIALS)
 
-# Export GUI_RESOURCE_FILES to parent CMake context (cpp/open3d/)
+# Export GUI_RESOURCE_FILES to parent CMake context (lib/cloudViewer/)
 set(GUI_RESOURCE_FILES
         ${GUI_RESOURCE_SOURCE_FILES} ${GUI_MATERIAL_COMPILED_FILES}
         PARENT_SCOPE)

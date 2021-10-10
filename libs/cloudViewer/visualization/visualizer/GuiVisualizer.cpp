@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -85,7 +85,7 @@ std::shared_ptr<gui::Dialog> CreateAboutDialog(gui::Window *window) {
             (std::string("CloudViewer ") + CLOUDVIEWER_VERSION).c_str());
     auto text = std::make_shared<gui::Label>(
             "The MIT License (MIT)\n"
-            "Copyright (c) 2018-2021 www.open3d.org\n\n"
+            "Copyright (c) 2018-2021 asher-1.github.io\n\n"
 
             "Permission is hereby granted, free of charge, to any person "
             "obtaining a copy of this software and associated documentation "
@@ -239,9 +239,9 @@ std::shared_ptr<gui::Dialog> CreateContactDialog(gui::Window *window) {
             "Mailing list:\n"
             "Discord channel:");
     auto right_col = std::make_shared<gui::Label>(
-            "http://www.open3d.org\n"
-            "http://github.org/isl-org/Open3D\n"
-            "http://www.open3d.org/index.php/subscribe/\n"
+            "https://Asher-1.github.io\n"
+            "https://github.com/Asher-1/ErowCloudViewer\n"
+            "https://Asher-1.github.io/docs/\n"
             "https://discord.gg/D35BGvn");
     auto ok = std::make_shared<gui::Button>("OK");
     ok->SetOnClicked([window]() { window->CloseDialog(); });
@@ -328,12 +328,14 @@ enum MenuId {
 };
 
 struct GuiVisualizer::Impl {
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
     std::shared_ptr<gui::SceneWidget> scene_wgt_;
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
     std::shared_ptr<Receiver> receiver_;
 
     struct Settings {
+        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         rendering::Material lit_material_;
         rendering::Material unlit_material_;
         rendering::Material normal_depth_material_;

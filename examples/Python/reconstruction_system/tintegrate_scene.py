@@ -1,6 +1,6 @@
-# CloudViewer: www.erow.cn
+# CloudViewer: asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/python/reconstruction_system/integrate_scene.py
 

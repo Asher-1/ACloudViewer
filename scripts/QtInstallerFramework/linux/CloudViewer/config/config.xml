@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Installer>
     <Name>CloudViewer</Name>
-    <Version>3.7.1</Version>
-    <Title>CloudViewer-3.7.1 Setup</Title>
+    <Version>3.8.0</Version>
+    <Title>CloudViewer-3.8.0 Setup</Title>
     <Publisher>Asher</Publisher>
     <WizardStyle>Modern</WizardStyle>
     <StyleSheet>style.qss</StyleSheet>
     <TitleColor>#FFFFFF</TitleColor>
     <ProductUrl>https://github.com/Asher-1/CloudViewerUpdate</ProductUrl>
-    <InstallerWindowIcon>erow_blue_1024.png</InstallerWindowIcon>
-    <InstallerApplicationIcon>erow-blue.png</InstallerApplicationIcon>
-    <RunProgram>@TargetDir@/CloudViewer-x86_64.AppImage</RunProgram>
+    <InstallerWindowIcon>cloudviewer_256.png</InstallerWindowIcon>
+    <InstallerApplicationIcon>cloudviewer_32.png</InstallerApplicationIcon>
+    <RunProgram>@TargetDir@/CloudViewer.sh</RunProgram>
     <RunProgramArguments></RunProgramArguments>
     <RunProgramDescription>Start CloudViewer</RunProgramDescription>
     <StartMenuDir>Graphics</StartMenuDir>

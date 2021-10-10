@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                        -
+# -                        CloudViewer: asher-1.github.io                    -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018-2021 www.open3d.org
+# Copyright (c) 2018-2021 asher-1.github.io
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,8 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-import open3d as o3d
-import open3d.core as o3c
+import cloudViewer as cv3d
+import cloudViewer.core as cv3c
 import numpy as np
 import pytest
 
@@ -34,9 +34,9 @@ from open3d_test import list_devices
 
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_rmse_point_to_point(device):
-    dtype = o3c.Dtype.Float32
+    dtype = cv3c.Dtype.Float32
 
-    source_points = o3c.Tensor(
+    source_points = cv3c.Tensor(
         [[1.15495, 2.40671, 1.15061], [1.81481, 2.06281, 1.71927],
          [0.888322, 2.05068, 2.04879], [3.78842, 1.70788, 1.30246],
          [1.8437, 2.22894, 0.986237], [2.95706, 2.2018, 0.987878],
@@ -46,7 +46,7 @@ def test_compute_rmse_point_to_point(device):
          [2.93002, 1.96242, 1.48532], [3.74384, 1.30258, 1.30244]], dtype,
         device)
 
-    target_points = o3c.Tensor(
+    target_points = cv3c.Tensor(
         [[2.41766, 2.05397, 1.74994], [1.37848, 2.19793, 1.66553],
          [2.24325, 2.27183, 1.33708], [3.09898, 1.98482, 1.77401],
          [1.81615, 1.48337, 1.49697], [3.01758, 2.20312, 1.51502],
@@ -54,19 +54,19 @@ def test_compute_rmse_point_to_point(device):
          [3.16847, 1.39194, 1.90959], [1.59412, 1.53304, 1.5804],
          [1.34342, 2.19027, 1.30075]], dtype, device)
 
-    source_t = o3d.t.geometry.PointCloud(device)
-    target_t = o3d.t.geometry.PointCloud(device)
+    source_t = cv3d.t.geometry.PointCloud(device)
+    target_t = cv3d.t.geometry.PointCloud(device)
 
     source_t.point["points"] = source_points
     target_t.point["points"] = target_points
 
-    corres_first = o3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              o3c.Dtype.Int64, device)
-    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
-                               o3c.Dtype.Int64, device)
+    corres_first = cv3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
+                              cv3c.Dtype.Int64, device)
+    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
+                               cv3c.Dtype.Int64, device)
     corres = corres_first, corres_second
 
-    estimation_p2p = o3d.t.pipelines.registration.TransformationEstimationPointToPoint(
+    estimation_p2p = cv3d.t.pipelines.registration.TransformationEstimationPointToPoint(
     )
     p2p_rmse = estimation_p2p.compute_rmse(source_t, target_t, corres)
 
@@ -75,9 +75,9 @@ def test_compute_rmse_point_to_point(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_transformation_point_to_point(device):
-    dtype = o3c.Dtype.Float32
+    dtype = cv3c.Dtype.Float32
 
-    source_points = o3c.Tensor(
+    source_points = cv3c.Tensor(
         [[1.15495, 2.40671, 1.15061], [1.81481, 2.06281, 1.71927],
          [0.888322, 2.05068, 2.04879], [3.78842, 1.70788, 1.30246],
          [1.8437, 2.22894, 0.986237], [2.95706, 2.2018, 0.987878],
@@ -87,7 +87,7 @@ def test_compute_transformation_point_to_point(device):
          [2.93002, 1.96242, 1.48532], [3.74384, 1.30258, 1.30244]], dtype,
         device)
 
-    target_points = o3c.Tensor(
+    target_points = cv3c.Tensor(
         [[2.41766, 2.05397, 1.74994], [1.37848, 2.19793, 1.66553],
          [2.24325, 2.27183, 1.33708], [3.09898, 1.98482, 1.77401],
          [1.81615, 1.48337, 1.49697], [3.01758, 2.20312, 1.51502],
@@ -95,19 +95,19 @@ def test_compute_transformation_point_to_point(device):
          [3.16847, 1.39194, 1.90959], [1.59412, 1.53304, 1.5804],
          [1.34342, 2.19027, 1.30075]], dtype, device)
 
-    source_t = o3d.t.geometry.PointCloud(device)
-    target_t = o3d.t.geometry.PointCloud(device)
+    source_t = cv3d.t.geometry.PointCloud(device)
+    target_t = cv3d.t.geometry.PointCloud(device)
 
     source_t.point["points"] = source_points
     target_t.point["points"] = target_points
 
-    corres_first = o3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              o3c.Dtype.Int64, device)
-    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
-                               o3c.Dtype.Int64, device)
+    corres_first = cv3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
+                              cv3c.Dtype.Int64, device)
+    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
+                               cv3c.Dtype.Int64, device)
     corres = corres_first, corres_second
 
-    estimation_p2p = o3d.t.pipelines.registration.TransformationEstimationPointToPoint(
+    estimation_p2p = cv3d.t.pipelines.registration.TransformationEstimationPointToPoint(
     )
 
     transformation_p2p = estimation_p2p.compute_transformation(
@@ -122,9 +122,9 @@ def test_compute_transformation_point_to_point(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_rmse_point_to_plane(device):
-    dtype = o3c.Dtype.Float32
+    dtype = cv3c.Dtype.Float32
 
-    source_points = o3c.Tensor(
+    source_points = cv3c.Tensor(
         [[1.15495, 2.40671, 1.15061], [1.81481, 2.06281, 1.71927],
          [0.888322, 2.05068, 2.04879], [3.78842, 1.70788, 1.30246],
          [1.8437, 2.22894, 0.986237], [2.95706, 2.2018, 0.987878],
@@ -134,7 +134,7 @@ def test_compute_rmse_point_to_plane(device):
          [2.93002, 1.96242, 1.48532], [3.74384, 1.30258, 1.30244]], dtype,
         device)
 
-    target_points = o3c.Tensor(
+    target_points = cv3c.Tensor(
         [[2.41766, 2.05397, 1.74994], [1.37848, 2.19793, 1.66553],
          [2.24325, 2.27183, 1.33708], [3.09898, 1.98482, 1.77401],
          [1.81615, 1.48337, 1.49697], [3.01758, 2.20312, 1.51502],
@@ -142,7 +142,7 @@ def test_compute_rmse_point_to_plane(device):
          [3.16847, 1.39194, 1.90959], [1.59412, 1.53304, 1.5804],
          [1.34342, 2.19027, 1.30075]], dtype, device)
 
-    target_normals = o3c.Tensor(
+    target_normals = cv3c.Tensor(
         [[-0.0085016, -0.22355, -0.519574], [0.257463, -0.0738755, -0.698319],
          [0.0574301, -0.484248, -0.409929], [-0.0123503, -0.230172, -0.52072],
          [0.355904, -0.142007, -0.720467], [0.0674038, -0.418757, -0.458602],
@@ -150,20 +150,20 @@ def test_compute_rmse_point_to_plane(device):
          [0.109144, 0.180992, -0.762368], [0.273325, 0.292013, -0.903111],
          [0.385407, -0.212348, -0.277818]], dtype, device)
 
-    source_t = o3d.t.geometry.PointCloud(device)
-    target_t = o3d.t.geometry.PointCloud(device)
+    source_t = cv3d.t.geometry.PointCloud(device)
+    target_t = cv3d.t.geometry.PointCloud(device)
 
     source_t.point["points"] = source_points
     target_t.point["points"] = target_points
     target_t.point["normals"] = target_normals
 
-    corres_first = o3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              o3c.Dtype.Int64, device)
-    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
-                               o3c.Dtype.Int64, device)
+    corres_first = cv3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
+                              cv3c.Dtype.Int64, device)
+    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
+                               cv3c.Dtype.Int64, device)
     corres = corres_first, corres_second
 
-    estimation_p2l = o3d.t.pipelines.registration.TransformationEstimationPointToPlane(
+    estimation_p2l = cv3d.t.pipelines.registration.TransformationEstimationPointToPlane(
     )
     p2l_rmse = estimation_p2l.compute_rmse(source_t, target_t, corres)
 
@@ -172,9 +172,9 @@ def test_compute_rmse_point_to_plane(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_transformation_point_to_plane(device):
-    dtype = o3c.Dtype.Float32
+    dtype = cv3c.Dtype.Float32
 
-    source_points = o3c.Tensor(
+    source_points = cv3c.Tensor(
         [[1.15495, 2.40671, 1.15061], [1.81481, 2.06281, 1.71927],
          [0.888322, 2.05068, 2.04879], [3.78842, 1.70788, 1.30246],
          [1.8437, 2.22894, 0.986237], [2.95706, 2.2018, 0.987878],
@@ -184,7 +184,7 @@ def test_compute_transformation_point_to_plane(device):
          [2.93002, 1.96242, 1.48532], [3.74384, 1.30258, 1.30244]], dtype,
         device)
 
-    target_points = o3c.Tensor(
+    target_points = cv3c.Tensor(
         [[2.41766, 2.05397, 1.74994], [1.37848, 2.19793, 1.66553],
          [2.24325, 2.27183, 1.33708], [3.09898, 1.98482, 1.77401],
          [1.81615, 1.48337, 1.49697], [3.01758, 2.20312, 1.51502],
@@ -192,7 +192,7 @@ def test_compute_transformation_point_to_plane(device):
          [3.16847, 1.39194, 1.90959], [1.59412, 1.53304, 1.5804],
          [1.34342, 2.19027, 1.30075]], dtype, device)
 
-    target_normals = o3c.Tensor(
+    target_normals = cv3c.Tensor(
         [[-0.0085016, -0.22355, -0.519574], [0.257463, -0.0738755, -0.698319],
          [0.0574301, -0.484248, -0.409929], [-0.0123503, -0.230172, -0.52072],
          [0.355904, -0.142007, -0.720467], [0.0674038, -0.418757, -0.458602],
@@ -200,20 +200,20 @@ def test_compute_transformation_point_to_plane(device):
          [0.109144, 0.180992, -0.762368], [0.273325, 0.292013, -0.903111],
          [0.385407, -0.212348, -0.277818]], dtype, device)
 
-    source_t = o3d.t.geometry.PointCloud(device)
-    target_t = o3d.t.geometry.PointCloud(device)
+    source_t = cv3d.t.geometry.PointCloud(device)
+    target_t = cv3d.t.geometry.PointCloud(device)
 
     source_t.point["points"] = source_points
     target_t.point["points"] = target_points
     target_t.point["normals"] = target_normals
 
-    corres_first = o3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              o3c.Dtype.Int64, device)
-    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
-                               o3c.Dtype.Int64, device)
+    corres_first = cv3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
+                              cv3c.Dtype.Int64, device)
+    corres_second = cv3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
+                               cv3c.Dtype.Int64, device)
     corres = corres_first, corres_second
 
-    estimation_p2l = o3d.t.pipelines.registration.TransformationEstimationPointToPlane(
+    estimation_p2l = cv3d.t.pipelines.registration.TransformationEstimationPointToPlane(
     )
 
     transformation_p2l = estimation_p2l.compute_transformation(

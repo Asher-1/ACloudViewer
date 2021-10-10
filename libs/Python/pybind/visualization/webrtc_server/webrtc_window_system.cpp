@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                        -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -80,13 +80,13 @@ use a unique message id for every message and include it in the reply.
 .. code:: python
 
     # Register callback in Python
-    import open3d as o3d
-    o3d.visualization.webrtc_server.enable_webrtc()
+    import cloudViewer as cv3d
+    cv3d.visualization.webrtc_server.enable_webrtc()
     def send_ack(data):
         print(data)
         return "Received WebRTC data channel message with data: " + data
 
-    o3d.visualization.webrtc_server.register_data_channel_message_callback(
+    cv3d.visualization.webrtc_server.register_data_channel_message_callback(
         "webapp/input", send_ack)
 
 .. code:: js

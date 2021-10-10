@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                        -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,14 +45,14 @@ This class supports only the CPU device.
 
 The following shows how to create a scene and compute ray intersections::
 
-    import open3d as o3d
+    import cloudViewer as cv3d
     import matplotlib.pyplot as plt
 
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-                                        o3d.geometry.TriangleMesh.create_box())
+    cube = cv3d.t.geometry.TriangleMesh.from_legacy(
+                                        cv3d.geometry.TriangleMesh.create_box())
 
     # Create scene and add the cube mesh
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = cv3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
 
     # Rays are 6D vectors with origin and ray direction.
@@ -83,9 +83,9 @@ The following shows how to create a scene and compute ray intersections::
 Add a triangle mesh to the scene.
 
 Args:
-    vertices (open3d.core.Tensor): Vertices as Tensor of dim {N,3} and dtype
+    vertices (cloudViewer.core.Tensor): Vertices as Tensor of dim {N,3} and dtype
         Float32.
-    triangles (open3d.core.Tensor): Triangles as Tensor of dim {M,3} and dtype
+    triangles (cloudViewer.core.Tensor): Triangles as Tensor of dim {M,3} and dtype
         UInt32.
 
 Returns:
@@ -99,7 +99,7 @@ Returns:
 Add a triangle mesh to the scene.
 
 Args:
-    mesh (open3d.t.geometry.TriangleMesh): A triangle mesh.
+    mesh (cloudViewer.t.geometry.TriangleMesh): A triangle mesh.
 
 Returns:
     The geometry ID of the added mesh.
@@ -110,7 +110,7 @@ Returns:
 Computes the first intersection of the rays with the scene.
 
 Args:
-    rays (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
+    rays (cloudViewer.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
         Float32 describing the rays.
         {..} can be any number of dimensions, e.g., to organize rays for
         creating an image the shape can be {height, width, 6}. The last
@@ -148,7 +148,7 @@ Returns:
 Computes the first intersection of the rays with the scene.
 
 Args:
-    rays (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
+    rays (cloudViewer.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
         Float32 describing the rays. 
         {..} can be any number of dimensions, e.g., to organize rays for 
         creating an image the shape can be {height, width, 6}.
@@ -166,7 +166,7 @@ Returns:
 Computes the closest points on the surfaces of the scene.
 
 Args:
-    query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3}, 
+    query_points (cloudViewer.core.Tensor): A tensor with >=2 dims, shape {.., 3}, 
         and Dtype Float32 describing the query points. 
         {..} can be any number of dimensions, e.g., to organize the query_point 
         to create a 3D grid the shape can be {depth, height, width, 3}.
@@ -192,7 +192,7 @@ Returns:
 Computes the distance to the surface of the scene.
 
 Args:
-    query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3},
+    query_points (cloudViewer.core.Tensor): A tensor with >=2 dims, shape {.., 3},
         and Dtype Float32 describing the query points. 
         {..} can be any number of dimensions, e.g., to organize the
         query points to create a 3D grid the shape can be
@@ -215,7 +215,7 @@ defined. The function determines the sign of the distance by counting
 the intersections of a rays starting at the query points.
 
 Args:
-    query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3},
+    query_points (cloudViewer.core.Tensor): A tensor with >=2 dims, shape {.., 3},
         and Dtype Float32 describing the query_points. 
         {..} can be any number of dimensions, e.g., to organize the 
         query points to create a 3D grid the shape can be
@@ -239,7 +239,7 @@ defined. The function determines if a point is inside by counting the
 intersections of a rays starting at the query points.
 
 Args:
-    query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3},
+    query_points (cloudViewer.core.Tensor): A tensor with >=2 dims, shape {.., 3},
         and Dtype Float32 describing the query points.
         {..} can be any number of dimensions, e.g., to organize the 
         query points to create a 3D grid the shape can be
@@ -260,9 +260,9 @@ Returns:
 Creates rays for the given camera parameters.
 
 Args:
-    intrinsic_matrix (open3d.core.Tensor): The upper triangular intrinsic matrix
+    intrinsic_matrix (cloudViewer.core.Tensor): The upper triangular intrinsic matrix
         with shape {3,3}.
-    extrinsic_matrix (open3d.core.Tensor): The 4x4 world to camera SE(3)
+    extrinsic_matrix (cloudViewer.core.Tensor): The 4x4 world to camera SE(3)
         transformation matrix.
     width_px (int): The width of the image in pixels.
     height_px (int): The height of the image in pixels.
@@ -282,10 +282,10 @@ Creates rays for the given camera parameters.
 
 Args:
     fov_deg (float): The horizontal field of view in degree.
-    center (open3d.core.Tensor): The point the camera is looking at with shape
+    center (cloudViewer.core.Tensor): The point the camera is looking at with shape
         {3}.
-    eye (open3d.core.Tensor): The position of the camera with shape {3}.
-    up (open3d.core.Tensor): The up-vector with shape {3}.
+    eye (cloudViewer.core.Tensor): The position of the camera with shape {3}.
+    up (cloudViewer.core.Tensor): The up-vector with shape {3}.
     width_px (int): The width of the image in pixels.
     height_px (int): The height of the image in pixels.
 
