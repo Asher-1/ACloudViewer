@@ -36,7 +36,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../MainWindow.qrc">
-    <normaloff>:/Resources/images/icon/ecv_128.png</normaloff>:/Resources/images/icon/ecv_128.png</iconset>
+    <normaloff>:/Resources/images/icon/logo_128.png</normaloff>:/Resources/images/icon/logo_128.png</iconset>
   </property>
   <property name="autoFillBackground">
    <bool>true</bool>

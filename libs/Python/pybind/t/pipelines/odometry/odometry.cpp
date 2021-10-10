@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                        -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ void pybind_odometry_classes(py::module &m) {
             .value("Hybrid", Method::Hybrid)
             .export_values();
 
-    // open3d.t.pipelines.odometry.OdometryConvergenceCriteria
+    // cloudViewer.t.pipelines.odometry.OdometryConvergenceCriteria
     py::class_<OdometryConvergenceCriteria> odometry_convergence_criteria(
             m, "OdometryConvergenceCriteria",
             "Convergence criteria of odometry. "
@@ -74,7 +74,7 @@ void pybind_odometry_classes(py::module &m) {
                         c.relative_fitness_);
             });
 
-    // open3d.t.pipelines.odometry.OdometryResult
+    // cloudViewer.t.pipelines.odometry.OdometryResult
     py::class_<OdometryResult> odometry_result(m, "OdometryResult",
                                                "Odometry results.");
     py::detail::bind_copy_functions<OdometryResult>(odometry_result);
@@ -100,7 +100,7 @@ void pybind_odometry_classes(py::module &m) {
                         odom_result.fitness_, odom_result.inlier_rmse_);
             });
 
-    // open3d.t.pipelines.odometry.OdometryLossParams
+    // cloudViewer.t.pipelines.odometry.OdometryLossParams
     py::class_<OdometryLossParams> odometry_loss_params(
             m, "OdometryLossParams", "Odometry loss parameters.");
     py::detail::bind_copy_functions<OdometryLossParams>(odometry_loss_params);

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -352,14 +352,14 @@ Example usage
 
 .. code-block:: python
 
-    import open3d
+    import cloudViewer
     import numpy as np
 
-    pcd = open3d.geometry.PointCloud()
+    pcd = cloudViewer.geometry.ccPointCloud()
     np_points = np.random.rand(100, 3)
 
     # From numpy to CloudViewer
-    pcd.points = open3d.utility.Vector3dVector(np_points)
+    pcd.set_points(cloudViewer.utility.Vector3dVector(np_points))
 
     # From CloudViewer to numpy
     np_points = np.asarray(pcd.points)
@@ -378,7 +378,7 @@ Example usage
 
 .. code-block:: python
 
-    import open3d
+    import cloudViewer
     import numpy as np
 
     # Example mesh
@@ -392,17 +392,18 @@ Example usage
     #
     # z coordinate: 0
 
-    mesh = open3d.geometry.TriangleMesh()
+    mesh = cloudViewer.geometry.ccMesh()
+    mesh.create_internal_cloud()
     np_vertices = np.array([[-1, 2, 0],
                             [1, 2, 0],
                             [0, 0, 0],
                             [2, 0, 0]])
     np_triangles = np.array([[0, 2, 1],
                              [1, 2, 3]]).astype(np.int32)
-    mesh.vertices = open3d.Vector3dVector(np_vertices)
+    mesh.set_vertices(cloudViewer.Vector3dVector(np_vertices))
 
     # From numpy to CloudViewer
-    mesh.triangles = open3d.Vector3iVector(np_triangles)
+    mesh.set_triangles(cloudViewer.Vector3iVector(np_triangles))
 
     # From CloudViewer to numpy
     np_triangles = np.asarray(mesh.triangles)

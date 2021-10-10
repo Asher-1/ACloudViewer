@@ -114,8 +114,8 @@ Component.prototype.createOperations = function()
 			
 			/* 建立桌面图标 */
 			var exec = "Exec=" + "@TargetDir@/ErowCloudViewer.sh %f" + "\n"; /* 执行程序 */
-			var icon = "Icon=" + "@TargetDir@/ErowCloudviewer.png" + "\n"; /* 图标资源路径 */
-			var version =  "Version=" + "3.7.1" + "\n" ; /* 版本号 */
+			var icon = "Icon=" + "@TargetDir@/ErowCloudViewer.png" + "\n"; /* 图标资源路径 */
+			var version =  "Version=" + "3.8.0" + "\n" ; /* 版本号 */
 			var name = "Name=" + "ErowCloudViewer" + "\n"; /* 桌面图标显示名称 */
 			var desktop = "ErowCloudViewer" + ".desktop";  /* 桌面图标名 */
 			var comments = "Comment=" + "3D point cloud and mesh processing software" + "\n"

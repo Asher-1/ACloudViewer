@@ -291,8 +291,8 @@ endif ()
 
 # set additional info
 set(PROJECT_EMAIL "dahailu@foxmail.com")
-set(PROJECT_HOME "http://www.erow.cn")
-set(PROJECT_DOCS "http://www.erow.cn/docs")
+set(PROJECT_HOME "https://asher-1.github.io")
+set(PROJECT_DOCS "https://asher-1.github.io/docs")
 set(PROJECT_CODE "https://github.com/Asher-1/ErowCloudViewer")
 set(PROJECT_ISSUES "https://github.com/Asher-1/ErowCloudViewer/issues")
 

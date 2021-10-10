@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                        -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,8 +38,14 @@ class Camera {
 public:
     enum class FovType { Vertical, Horizontal };
     enum class Projection { Perspective, Ortho };
+
+#ifdef SIMD_ENABLED
+    using Transform = Eigen::Transform<float, 3, Eigen::Affine, Eigen::DontAlign>;
+    using ProjectionMatrix = Eigen::Transform<float, 3, Eigen::Projective, Eigen::DontAlign>;
+#else
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
     using ProjectionMatrix = Eigen::Transform<float, 3, Eigen::Projective>;
+#endif
 
     virtual ~Camera() = default;
 
@@ -163,22 +169,20 @@ public:
     /// Configures the projection using the intrinsics and bounds,
     /// and the model matrix using the extrinsic matrix. Equivalent to calling
     /// SetProjection() and FromExtrinsics().
-    static void SetupCameraAsPinholeCamera(
-            rendering::Camera& camera,
-            const Eigen::Matrix3d& intrinsic,
-            const Eigen::Matrix4d& extrinsic,
-            int intrinsic_width_px,
-            int intrinsic_height_px,
-            const ccBBox& scene_bounds);
+    static void SetupCameraAsPinholeCamera(rendering::Camera& camera,
+                                           const Eigen::Matrix3d& intrinsic,
+                                           const Eigen::Matrix4d& extrinsic,
+                                           int intrinsic_width_px,
+                                           int intrinsic_height_px,
+                                           const ccBBox& scene_bounds);
 
     /// Returns a good value for the near plane.
     static float CalcNearPlane();
 
     /// Returns a value for the far plane that ensures that the entire bounds
     /// provided will not be clipped.
-    static float CalcFarPlane(
-            const rendering::Camera& camera,
-            const ccBBox& scene_bounds);
+    static float CalcFarPlane(const rendering::Camera& camera,
+                              const ccBBox& scene_bounds);
 };
 
 }  // namespace rendering

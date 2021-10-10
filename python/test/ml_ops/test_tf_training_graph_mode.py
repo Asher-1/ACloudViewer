@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                        -
+# -                        CloudViewer: asher-1.github.io                    -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018-2021 www.open3d.org
+# Copyright (c) 2018-2021 asher-1.github.io
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 """This test simulates a network training by running some ops in graph mode for
-tensorflow to catch a bug observed when linking the open3d main lib.
+tensorflow to catch a bug observed when linking the cloudViewer main lib.
 
 The error is not deterministic. The most frequent message is:
 
@@ -48,7 +48,7 @@ Some more info about the systems on which the problem was discovered:
     CMake 3.13.2 and 3.12.4
 """
 
-import open3d as o3d
+import cloudViewer as cv3d
 import numpy as np
 np.set_printoptions(linewidth=600)
 np.set_printoptions(threshold=np.inf)

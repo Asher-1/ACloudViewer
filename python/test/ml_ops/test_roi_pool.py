@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                        -
+# -                        CloudViewer: asher-1.github.io                    -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018-2021 www.open3d.org
+# Copyright (c) 2018-2021 asher-1.github.io
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-import open3d as o3d
+import cloudViewer as cv3d
 import numpy as np
 import pytest
 import mltest

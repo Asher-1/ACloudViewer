@@ -1,25 +1,24 @@
-
-![](./doc/ErowCloudViewer_logo_horizontal.png)
+![](doc/images/ErowCloudViewer_logo_horizontal.png)
 
 # ErowCloudViewer: A Modern System for 3D Data Processing
 
 <h4>
-    <a href="http://www.erow.cn">Homepage</a> |
-    <a href="http://www.erow.cn/docs">Docs</a> |
-    <a href="http://www.erow.cn/docs/release/getting_started.html">Quick Start</a> |
-    <a href="http://www.erow.cn/docs/release/compilation.html">Compile</a> |
-    <a href="http://www.erow.cn/docs/release/index.html#python-api-index">Python</a> |
-    <a href="http://www.erow.cn/docs/release/cpp_api.html">C++</a> |
+    <a href="http://asher-1.github.io">Homepage</a> |
+    <a href="http://asher-1.github.io/docs">Docs</a> |
+    <a href="http://asher-1.github.io/docs/release/getting_started.html">Quick Start</a> |
+    <a href="http://asher-1.github.io/docs/release/compilation.html">Compile</a> |
+    <a href="http://asher-1.github.io/docs/release/index.html#python-api-index">Python</a> |
+    <a href="http://asher-1.github.io/docs/release/cpp_api.html">C++</a> |
     <a href="https://github.com/Asher-1/CloudViewer-ML">CloudViewer-ML</a> |
     <a href="https://github.com/Asher-1/ErowCloudViewer/releases">Viewer</a> |
-    <a href="http://www.erow.cn/docs/release/contribute/contribute.html">Contribute</a> |
+    <a href="http://asher-1.github.io/docs/release/contribute/contribute.html">Contribute</a> |
     <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a> |
     <a href="https://forum.erow.cn">Forum</a>
 </h4>
 
-[![GitHub release](./doc/version.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
-[![Build Status](./doc/ErowCloudViewer.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
-[![Releases](./doc/newRelease.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
+[![GitHub release](doc/images/version.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
+[![Build Status](doc/images/buildStatus.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
+[![Releases](doc/images/newRelease.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
 
 Introduction
 ------------
@@ -36,19 +35,19 @@ this particular use-case. It was also meant to deal with huge point
 clouds (typically more than 10 millions points, and up to 120 millions with 2 Gb
 of memory).
 
-More on ErowCloudViewer [here](http://www.erow.cn)
+More on ErowCloudViewer [here](http://asher-1.github.io)
 
 **Core features of ErowCloudViewer include:**
 
 * 3D data structures
 * 3D data processing algorithms
-* Scene reconstruction
+* Scene reconstruction (based on colmap)
 * Surface alignment
 * 3D visualization
 * Physically based rendering (PBR)
 * Available in C++ and Python
 
-For more, please visit the [ErowCloudViewer documentation](http://www.erow.cn).
+For more, please visit the [ErowCloudViewer documentation](http://asher-1.github.io).
 
 Compilation
 -----------
@@ -75,7 +74,7 @@ If you want to help us improve ErowCloudViewer or create a new plugin you can st
 Supporting the project
 ----------------------
 
-If you want to help us in another way, you can make donations via [donorbox](https://www.erow.cn)
+If you want to help us in another way, you can make donations via [donorbox](https://asher-1.github.io)
 Thanks!
 
-[![donorbox](./doc/button-medium-blue.png)](https://www.erow.cn)
+[![donorbox](doc/images/button-medium-blue.png)](https://asher-1.github.io)

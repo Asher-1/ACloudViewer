@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2020 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,11 @@ public:
     static const uint32_t kUpdateColorsFlag = (1 << 2);
     static const uint32_t kUpdateUv0Flag = (1 << 3);
 
+#ifdef SIMD_ENABLED
+    using Transform = Eigen::Transform<float, 3, Eigen::Affine, Eigen::DontAlign>;
+#else
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
+#endif
 
     Scene(Renderer& renderer) : renderer_(renderer) {}
     virtual ~Scene() = default;

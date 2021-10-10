@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Version=3.7.0
+Version=3.8.0
 Name=ErowCloudViewer
 Comment=3D point cloud and mesh processing software
-Icon=/home/yons/develop/ErowCloudViewer-3.7.0-2020-12-15-linux-amd64/ErowCloudViewer.png
-Exec="/home/yons/develop/ErowCloudViewer-3.7.0-2020-12-15-linux-amd64/ErowCloudViewer.sh" %f
+Icon=ErowCloudViewer.png
+Exec="ErowCloudViewer.sh" %f
 Terminal=false
 Categories=Graphics;

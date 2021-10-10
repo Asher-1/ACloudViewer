@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -85,6 +85,7 @@ public:
     };
 
     struct Materials {
+        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
         LitMaterial lit;
         UnlitMaterial unlit;
         float point_size = 3.0f;
@@ -136,7 +137,7 @@ public:
     const Eigen::Vector3f& GetCurrentMaterialColor() const;
     void SetCurrentMaterialColor(const Eigen::Vector3f& color);
     void ResetColors();
-    void SetCustomDefaultColor(const Eigen::Vector3f color);
+    void SetCustomDefaultColor(const Eigen::Vector3f& color);
     void UnsetCustomDefaultColor();
 
     int GetPointSize() const;
