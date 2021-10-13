@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,7 @@ void pybind_visualizer(py::module &m) {
                  })
             .def("create_window", &Visualizer::CreateVisualizerWindow,
                  "Function to create a window and initialize GLFW",
-                 "window_name"_a = "Open3D", "width"_a = 1920,
+                 "window_name"_a = "CloudViewer", "width"_a = 1920,
                  "height"_a = 1080, "left"_a = 50, "top"_a = 50,
                  "visible"_a = true)
             .def("destroy_window", &Visualizer::DestroyVisualizerWindow,

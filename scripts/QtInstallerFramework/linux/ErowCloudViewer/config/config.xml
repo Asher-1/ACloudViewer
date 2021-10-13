@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Installer>
     <Name>ErowCloudViewer</Name>
-    <Version>3.7.1</Version>
-    <Title>ErowCloudViewer-3.7.1 Setup</Title>
+    <Version>3.8.0</Version>
+    <Title>ErowCloudViewer-3.8.0 Setup</Title>
     <Publisher>Asher</Publisher>
     <WizardStyle>Modern</WizardStyle>
     <StyleSheet>style.qss</StyleSheet>
     <TitleColor>#FFFFFF</TitleColor>
     <ProductUrl>https://github.com/Asher-1/CloudViewerUpdate</ProductUrl>
-    <InstallerWindowIcon>erow_256.png</InstallerWindowIcon>
-    <InstallerApplicationIcon>erow_32.png</InstallerApplicationIcon>
+    <InstallerWindowIcon>logo_256.png</InstallerWindowIcon>
+    <InstallerApplicationIcon>logo_32.png</InstallerApplicationIcon>
     <RunProgram>@TargetDir@/ErowCloudViewer.sh</RunProgram>
     <RunProgramArguments></RunProgramArguments>
     <RunProgramDescription>Start ErowCloudViewer</RunProgramDescription>

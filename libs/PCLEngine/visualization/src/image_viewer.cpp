@@ -115,7 +115,7 @@ pcl::visualization::ImageViewer::ImageViewer(const std::string& window_title)
     exit_callback_->window = this;
     interactor_->AddObserver(vtkCommand::ExitEvent, exit_callback_);
 
-    // Reset camera (flip it vertically)
+    // reset camera (flip it vertically)
     resetStoppedFlag();
 
     PCL_DEBUG("[pcl::visualization::ImageViewer] VTK version found: %d.%d\n", VTK_MAJOR_VERSION, VTK_MINOR_VERSION);

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Console.h>
-
 #include "Image.h"
+
+#include <Logging.h>
+#include <Parallel.h>
+
 #include "ecvBBox.h"
 
 namespace {
@@ -42,13 +44,9 @@ const std::vector<double> Sobel32 = {1.0, 2.0, 1.0};
 
 namespace cloudViewer {
 namespace geometry {
-	using namespace cloudViewer;
-	void Image::onDeletionOf(const ccHObject * obj)
-	{
-		ccHObject::onDeletionOf(obj);
-	}
+void Image::onDeletionOf(const ccHObject *obj) { ccHObject::onDeletionOf(obj); }
 
-	Image &Image::Clear() {
+Image &Image::Clear() {
     width_ = 0;
     height_ = 0;
     num_of_channels_ = 0;
@@ -57,15 +55,16 @@ namespace geometry {
     return *this;
 }
 
-Eigen::Vector2d Image::getMin2DBound() const { return Eigen::Vector2d(0.0, 0.0); }
+Eigen::Vector2d Image::getMin2DBound() const {
+    return Eigen::Vector2d(0.0, 0.0);
+}
 
 Eigen::Vector2d Image::getMax2DBound() const {
     return Eigen::Vector2d(width_, height_);
 }
 
-ccBBox Image::getOwnBB(bool withGLFeatures)
-{
-	return getAxisAlignedBoundingBox();
+ccBBox Image::getOwnBB(bool withGLFeatures) {
+    return getAxisAlignedBoundingBox();
 }
 
 bool Image::TestImageBoundary(double u,
@@ -167,9 +166,11 @@ std::shared_ptr<Image> Image::Downsample() const {
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int y = 0; y < output->height_; y++) {
@@ -200,9 +201,11 @@ std::shared_ptr<Image> Image::FilterHorizontal(
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int y = 0; y < height_; y++) {
@@ -285,9 +288,11 @@ std::shared_ptr<Image> Image::Transpose() const {
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int y = 0; y < height_; y++) {
@@ -310,7 +315,8 @@ std::shared_ptr<Image> Image::FlipVertical() const {
 
     int bytes_per_line = BytesPerLine();
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int y = 0; y < height_; y++) {
         std::copy(data_.data() + y * bytes_per_line,
@@ -328,9 +334,11 @@ std::shared_ptr<Image> Image::FlipHorizontal() const {
     int bytes_per_pixel = num_of_channels_ * bytes_per_channel_;
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int y = 0; y < height_; y++) {
@@ -355,9 +363,11 @@ std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int y = 0; y < height_; y++) {
@@ -395,9 +405,11 @@ std::shared_ptr<Image> Image::CreateDepthBoundaryMask(
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int v = 0; v < height; v++) {

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2019 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,79 +24,80 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ecvPointCloud.h"
-#include "ecvQhull.h"
-#include "ecvMesh.h"
-#include "ecvTetraMesh.h"
-#include "ecvHObjectCaster.h"
-#include <Console.h>
+#include <Logging.h>
 
 #include <Eigen/Dense>
-
 #include <iostream>
 #include <list>
 
+#include "ecvHObjectCaster.h"
+#include "ecvMesh.h"
+#include "ecvPointCloud.h"
+#include "ecvQhull.h"
+#include "ecvTetraMesh.h"
+
 using namespace cloudViewer;
 std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
-	const ccPointCloud& pcd,
-	double alpha,
-	std::shared_ptr<cloudViewer::geometry::TetraMesh> tetra_mesh,
-	std::vector<size_t>* pt_map) {
-	std::vector<size_t> pt_map_computed;
-	if (tetra_mesh == nullptr) {
-		utility::LogDebug(
-			"[CreateFromPointCloudAlphaShape] "
-			"ComputeDelaunayTetrahedralization");
-		std::tie(tetra_mesh, pt_map_computed) =
-			cloudViewer::utility::Qhull::ComputeDelaunayTetrahedralization(pcd.getPoints());
-		pt_map = &pt_map_computed;
-		utility::LogDebug(
-			"[CreateFromPointCloudAlphaShape] done "
-			"ComputeDelaunayTetrahedralization");
-	}
+        const ccPointCloud& pcd,
+        double alpha,
+        std::shared_ptr<cloudViewer::geometry::TetraMesh> tetra_mesh,
+        std::vector<size_t>* pt_map) {
+    std::vector<size_t> pt_map_computed;
+    if (tetra_mesh == nullptr) {
+        utility::LogDebug(
+                "[CreateFromPointCloudAlphaShape] "
+                "ComputeDelaunayTetrahedralization");
+        std::tie(tetra_mesh, pt_map_computed) =
+                cloudViewer::utility::Qhull::ComputeDelaunayTetrahedralization(
+                        pcd.getPoints());
+        pt_map = &pt_map_computed;
+        utility::LogDebug(
+                "[CreateFromPointCloudAlphaShape] done "
+                "ComputeDelaunayTetrahedralization");
+    }
 
-	utility::LogDebug("[CreateFromPointCloudAlphaShape] init triangle mesh");
-	
-	ccPointCloud* baseVertices = new ccPointCloud("vertices");
-	assert(baseVertices);
-	baseVertices->setEnabled(false);
-	// DGM: no need to lock it as it is only used by one mesh!
-	baseVertices->setLocked(false);
-	auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
-	mesh->addChild(baseVertices);
+    utility::LogDebug("[CreateFromPointCloudAlphaShape] init triangle mesh");
 
-	baseVertices->addPoints(tetra_mesh->vertices_);
-	if (pcd.hasNormals()) {
-		baseVertices->resizeTheNormsTable();
-		for (size_t idx = 0; idx < (*pt_map).size(); ++idx) {
-			baseVertices->setPointNormal(
-				static_cast<unsigned>(idx), 
-				pcd.getPointNormal(static_cast<unsigned>((*pt_map)[idx])));
-		}
-	}
-	if (pcd.hasColors()) {
-		baseVertices->resizeTheRGBTable();
-		for (size_t idx = 0; idx < (*pt_map).size(); ++idx) {
-			baseVertices->setPointColor(
-				static_cast<unsigned>(idx),
-				pcd.getPointColor(static_cast<unsigned>((*pt_map)[idx])));
-		}
-	}
-	utility::LogDebug(
-		"[CreateFromPointCloudAlphaShape] done init triangle mesh");
+    ccPointCloud* baseVertices = new ccPointCloud("vertices");
+    assert(baseVertices);
+    baseVertices->setEnabled(false);
+    // DGM: no need to lock it as it is only used by one mesh!
+    baseVertices->setLocked(false);
+    auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
+    mesh->addChild(baseVertices);
 
-	std::vector<double> vsqn(tetra_mesh->vertices_.size());
-	for (size_t vidx = 0; vidx < vsqn.size(); ++vidx) {
-		vsqn[vidx] = tetra_mesh->vertices_[vidx].squaredNorm();
-	}
+    baseVertices->addPoints(tetra_mesh->vertices_);
+    if (pcd.hasNormals()) {
+        baseVertices->resizeTheNormsTable();
+        for (size_t idx = 0; idx < (*pt_map).size(); ++idx) {
+            baseVertices->setPointNormal(
+                    static_cast<unsigned>(idx),
+                    pcd.getPointNormal(static_cast<unsigned>((*pt_map)[idx])));
+        }
+    }
+    if (pcd.hasColors()) {
+        baseVertices->resizeTheRGBTable();
+        for (size_t idx = 0; idx < (*pt_map).size(); ++idx) {
+            baseVertices->setPointColor(
+                    static_cast<unsigned>(idx),
+                    pcd.getPointColor(static_cast<unsigned>((*pt_map)[idx])));
+        }
+    }
+    utility::LogDebug(
+            "[CreateFromPointCloudAlphaShape] done init triangle mesh");
 
-	utility::LogDebug(
-		"[CreateFromPointCloudAlphaShape] add triangles from tetras that "
-		"satisfy constraint");
-	const auto& verts = tetra_mesh->vertices_;
-	for (size_t tidx = 0; tidx < tetra_mesh->tetras_.size(); ++tidx) {
-		const auto& tetra = tetra_mesh->tetras_[tidx];
-		// clang-format off
+    std::vector<double> vsqn(tetra_mesh->vertices_.size());
+    for (size_t vidx = 0; vidx < vsqn.size(); ++vidx) {
+        vsqn[vidx] = tetra_mesh->vertices_[vidx].squaredNorm();
+    }
+
+    utility::LogDebug(
+            "[CreateFromPointCloudAlphaShape] add triangles from tetras that "
+            "satisfy constraint");
+    const auto& verts = tetra_mesh->vertices_;
+    for (size_t tidx = 0; tidx < tetra_mesh->tetras_.size(); ++tidx) {
+        const auto& tetra = tetra_mesh->tetras_[tidx];
+        // clang-format off
 		Eigen::Matrix4d tmp;
 		tmp << verts[tetra(0)](0), verts[tetra(0)](1), verts[tetra(0)](2), 1,
 			verts[tetra(1)](0), verts[tetra(1)](1), verts[tetra(1)](2), 1,
@@ -123,77 +124,77 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
 			vsqn[tetra(2)], verts[tetra(2)](0), verts[tetra(2)](1), 1,
 			vsqn[tetra(3)], verts[tetra(3)](0), verts[tetra(3)](1), 1;
 		double dz = tmp.determinant();
-		// clang-format on
-		if (a == 0) {
-			utility::LogError(
-				"[CreateFromPointCloudAlphaShape] invalid tetra in "
-				"TetraMesh");
-		}
-		double r = std::sqrt(dx * dx + dy * dy + dz * dz - 4 * a * c) /
-			(2 * std::abs(a));
+        // clang-format on
+        if (a == 0) {
+            utility::LogError(
+                    "[CreateFromPointCloudAlphaShape] invalid tetra in "
+                    "TetraMesh");
+        }
+        double r = std::sqrt(dx * dx + dy * dy + dz * dz - 4 * a * c) /
+                   (2 * std::abs(a));
 
-		if (r <= alpha) {
-			mesh->addTriangle(ccMesh::GetOrderedTriangle(
-				tetra(0), tetra(1), tetra(2)));
-			mesh->addTriangle(ccMesh::GetOrderedTriangle(
-				tetra(0), tetra(1), tetra(3)));
-			mesh->addTriangle(ccMesh::GetOrderedTriangle(
-				tetra(0), tetra(2), tetra(3)));
-			mesh->addTriangle(ccMesh::GetOrderedTriangle(
-				tetra(1), tetra(2), tetra(3)));
-		}
-	}
-	utility::LogDebug(
-		"[CreateFromPointCloudAlphaShape] done add triangles from tetras "
-		"that satisfy constraint");
+        if (r <= alpha) {
+            mesh->addTriangle(
+                    ccMesh::GetOrderedTriangle(tetra(0), tetra(1), tetra(2)));
+            mesh->addTriangle(
+                    ccMesh::GetOrderedTriangle(tetra(0), tetra(1), tetra(3)));
+            mesh->addTriangle(
+                    ccMesh::GetOrderedTriangle(tetra(0), tetra(2), tetra(3)));
+            mesh->addTriangle(
+                    ccMesh::GetOrderedTriangle(tetra(1), tetra(2), tetra(3)));
+        }
+    }
+    utility::LogDebug(
+            "[CreateFromPointCloudAlphaShape] done add triangles from tetras "
+            "that satisfy constraint");
 
-	utility::LogDebug(
-		"[CreateFromPointCloudAlphaShape] remove triangles within "
-		"the mesh");
-	std::unordered_map<Eigen::Vector3i, int,
-		utility::hash_eigen::hash<Eigen::Vector3i>>
-		triangle_count;
-	for (size_t tidx = 0; tidx < mesh->size(); ++tidx) {
-		Eigen::Vector3i triangle = mesh->getTriangle(tidx);
-		if (triangle_count.count(triangle) == 0) {
-			triangle_count[triangle] = 1;
-		}
-		else {
-			triangle_count[triangle] += 1;
-		}
-	}
+    utility::LogDebug(
+            "[CreateFromPointCloudAlphaShape] remove triangles within "
+            "the mesh");
+    std::unordered_map<Eigen::Vector3i, int,
+                       utility::hash_eigen::hash<Eigen::Vector3i>>
+            triangle_count;
+    for (size_t tidx = 0; tidx < mesh->size(); ++tidx) {
+        Eigen::Vector3i triangle = mesh->getTriangle(tidx);
+        if (triangle_count.count(triangle) == 0) {
+            triangle_count[triangle] = 1;
+        } else {
+            triangle_count[triangle] += 1;
+        }
+    }
 
-	size_t to_idx = 0;
-	for (size_t tidx = 0; tidx < mesh->size(); ++tidx) {
-		Eigen::Vector3i triangle = mesh->getTriangle(tidx);
-		if (triangle_count[triangle] == 1) {
-			mesh->setTriangle(to_idx, triangle);
-			to_idx++;
-		}
-	}
-	mesh->resize(to_idx);
-	utility::LogDebug(
-		"[CreateFromPointCloudAlphaShape] done remove triangles within "
-		"the mesh");
+    size_t to_idx = 0;
+    for (size_t tidx = 0; tidx < mesh->size(); ++tidx) {
+        Eigen::Vector3i triangle = mesh->getTriangle(tidx);
+        if (triangle_count[triangle] == 1) {
+            mesh->setTriangle(to_idx, triangle);
+            to_idx++;
+        }
+    }
+    mesh->resize(to_idx);
+    utility::LogDebug(
+            "[CreateFromPointCloudAlphaShape] done remove triangles within "
+            "the mesh");
 
-	utility::LogDebug(
-		"[CreateFromPointCloudAlphaShape] remove duplicate triangles and "
-		"unreferenced vertices");
+    utility::LogDebug(
+            "[CreateFromPointCloudAlphaShape] remove duplicate triangles and "
+            "unreferenced vertices");
 
-	//do some cleaning
-	{
-		baseVertices->shrinkToFit();
-		mesh->shrinkToFit();
-		NormsIndexesTableType* normals = mesh->getTriNormsTable();
-		if (normals)
-		{
-			normals->shrink_to_fit();
-		}
-	}
+    // do some cleaning
+    {
+        baseVertices->shrinkToFit();
+        mesh->shrinkToFit();
+        NormsIndexesTableType* normals = mesh->getTriNormsTable();
+        if (normals) {
+            normals->shrink_to_fit();
+        }
+        mesh->removeDuplicatedTriangles();
+        mesh->removeUnreferencedVertices();
+    }
 
-	utility::LogDebug(
-		"[CreateFromPointCloudAlphaShape] done remove duplicate triangles "
-		"and unreferenced vertices");
+    utility::LogDebug(
+            "[CreateFromPointCloudAlphaShape] done remove duplicate triangles "
+            "and unreferenced vertices");
 
-	return mesh;
+    return mesh;
 }

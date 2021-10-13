@@ -154,7 +154,7 @@
       <bool>false</bool>
      </property>
      <property name="toolTip">
-      <string>Reset current polyline</string>
+      <string>reset current polyline</string>
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">

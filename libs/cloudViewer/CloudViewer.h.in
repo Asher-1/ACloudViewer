@@ -1,0 +1,169 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: asher-1.github.io                    -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 asher-1.github.io
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+// Note: do not modify CloudViewer.h, modify CloudViewer.h.in instead
+#include "visualization/visualizer/ViewControl.h"  // must include first
+#include "CloudViewerConfig.h"
+#include "AutoIO.h"
+#include "CVGeom.h"
+#include "CVLog.h"
+#include "CVTools.h"
+#include "Console.h"
+#include "Logging.h"
+#include "Parallel.h"
+#include "Cpu.h"
+#include "CPUInfo.h"
+#include "Eigen.h"
+#include "FeatureIO.h"
+#include "FileSystem.h"
+#include "Helper.h"
+#include "IJsonConvertibleIO.h"
+#include "ISSKeypoint.h"
+#include "Image.h"
+#include "ImageIO.h"
+#include "Line3D.h"
+#include "LineSet.h"
+#include "LineSetIO.h"
+#include "MemoryInfo.h"
+#include "Octree.h"
+#include "PinholeCameraTrajectoryIO.h"
+#include "RGBDImage.h"
+#include "StaticVector.h"
+#include "Timer.h"
+#include "Universe.h"
+#include "VoxelGrid.h"
+#include "VoxelGridIO.h"
+#include "camera/PinholeCameraIntrinsic.h"
+#include "camera/PinholeCameraParameters.h"
+#include "camera/PinholeCameraTrajectory.h"
+#include "core/Blob.h"
+#include "core/DLPack.h"
+#include "core/Device.h"
+#include "core/Dtype.h"
+#include "core/EigenConverter.h"
+#include "core/FunctionTraits.h"
+#include "core/Gpu.h"
+#include "core/MemoryManager.h"
+#include "core/MemoryManagerStatistic.h"
+#include "core/ShapeUtil.h"
+#include "core/SizeVector.h"
+#include "core/Tensor.h"
+#include "core/TensorKey.h"
+#include "core/TensorList.h"
+#include "core/nns/NearestNeighborSearch.h"
+#include "ecvColorTypes.h"
+#include "ecvFacet.h"
+#include "ecvFeature.h"
+#include "ecvHalfEdgeMesh.h"
+#include "ecvKDTreeFlann.h"
+#include "ecvMesh.h"
+#include "ecvPointCloud.h"
+#include "ecvPolyline.h"
+#include "io/ModelIO.h"
+#include "io/FileFormatIO.h"
+#include "io/PointCloudIO.h"
+#include "io/PoseGraphIO.h"
+#include "io/TriangleMeshIO.h"
+#include "pipelines/color_map/NonRigidOptimizer.h"
+#include "pipelines/color_map/RigidOptimizer.h"
+#include "pipelines/integration/ScalableTSDFVolume.h"
+#include "pipelines/integration/TSDFVolume.h"
+#include "pipelines/integration/UniformTSDFVolume.h"
+#include "pipelines/odometry/Odometry.h"
+#include "pipelines/registration/ColoredICP.h"
+#include "pipelines/registration/GeneralizedICP.h"
+#include "pipelines/registration/Registration.h"
+#include "pipelines/registration/TransformationEstimation.h"
+#include "t/geometry/Geometry.h"
+#include "t/geometry/Image.h"
+#include "t/geometry/PointCloud.h"
+#include "t/geometry/RGBDImage.h"
+#include "t/geometry/TSDFVoxelGrid.h"
+#include "t/geometry/TensorMap.h"
+#include "t/geometry/TriangleMesh.h"
+#include "t/io/ImageIO.h"
+#include "t/io/PointCloudIO.h"
+#include "t/pipelines/kernel/TransformationConverter.h"
+#include "t/pipelines/odometry/RGBDOdometry.h"
+#include "t/pipelines/registration/Registration.h"
+#include "t/pipelines/registration/TransformationEstimation.h"
+#include "t/pipelines/slac/ControlGrid.h"
+#include "t/pipelines/slac/SLACOptimizer.h"
+#include "t/pipelines/voxelhashing/Frame.h"
+#include "t/pipelines/voxelhashing/Model.h"
+#include "visualization/gui/Application.h"
+#include "visualization/gui/Button.h"
+#include "visualization/gui/Checkbox.h"
+#include "visualization/gui/Color.h"
+#include "visualization/gui/Combobox.h"
+#include "visualization/gui/Dialog.h"
+#include "visualization/gui/Gui.h"
+#include "visualization/gui/ImageWidget.h"
+#include "visualization/gui/Label.h"
+#include "visualization/gui/Layout.h"
+#include "visualization/gui/Menu.h"
+#include "visualization/gui/ProgressBar.h"
+#include "visualization/gui/SceneWidget.h"
+#include "visualization/gui/Slider.h"
+#include "visualization/gui/TabControl.h"
+#include "visualization/gui/TextEdit.h"
+#include "visualization/gui/Theme.h"
+#include "visualization/gui/ToggleSwitch.h"
+#include "visualization/gui/TreeView.h"
+#include "visualization/gui/Window.h"
+#include "visualization/rendering/Model.h"
+#include "visualization/rendering/CloudViewerScene.h"
+#include "visualization/rendering/Material.h"
+#include "visualization/utility/Draw.h"
+#include "visualization/utility/DrawGeometry.h"
+#include "visualization/utility/SelectionPolygon.h"
+#include "visualization/utility/SelectionPolygonVolume.h"
+#include "visualization/visualizer/O3DVisualizer.h"
+#include "visualization/visualizer/ViewControlWithCustomAnimation.h"
+#include "visualization/visualizer/ViewControlWithEditing.h"
+#include "visualization/visualizer/Visualizer.h"
+#include "visualization/visualizer/VisualizerWithCustomAnimation.h"
+#include "visualization/visualizer/VisualizerWithEditing.h"
+#include "visualization/visualizer/VisualizerWithKeyCallback.h"
+#include "visualization/visualizer/VisualizerWithVertexSelection.h"
+
+// clang-format off
+@BUILD_AZURE_KINECT_COMMENT@#include "io/sensor/azure_kinect/AzureKinectRecorder.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "io/sensor/azure_kinect/AzureKinectSensorConfig.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "io/sensor/azure_kinect/AzureKinectSensor.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "io/sensor/azure_kinect/MKVMetadata.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "io/sensor/azure_kinect/MKVReader.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "io/sensor/azure_kinect/MKVWriter.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "io/sensor/RGBDRecorder.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "io/sensor/RGBDSensorConfig.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "io/sensor/RGBDSensor.h"
+
+@BUILD_LIBREALSENSE_COMMENT@#include "t/io/sensor/realsense/RSBagReader.h"
+@BUILD_LIBREALSENSE_COMMENT@#include "t/io/sensor/realsense/RealSenseSensor.h"
+
+@BUILD_WEBRTC_COMMENT@#include "visualization/webrtc_server/WebRTCWindowSystem.h"

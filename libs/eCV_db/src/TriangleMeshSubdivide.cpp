@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2019 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 #include <queue>
 #include <tuple>
 
-#include <Console.h>
+#include <Logging.h>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -214,7 +214,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
 			*oldVertice->getPoint(static_cast<unsigned>(vidx))* alpha);
 		if (has_vert_normal) {
 			newVertice->setPointNormal(static_cast<unsigned>(vidx),
-				alpha * oldVertice->getPointNormal(static_cast<unsigned>(vidx)));
+				static_cast<PointCoordinateType>(alpha) * oldVertice->getPointNormal(static_cast<unsigned>(vidx)));
 		}
 		if (has_vert_color) {
 			newVertice->setEigenColor(static_cast<unsigned>(vidx),
@@ -227,7 +227,7 @@ std::shared_ptr<ccMesh> ccMesh::subdivideLoop(
 			if (has_vert_normal) {
 				newVertice->setPointNormal(static_cast<unsigned>(vidx),
 					newVertice->getPointNormal(static_cast<unsigned>(vidx)) +
-					beta * oldVertice->getPointNormal(static_cast<unsigned>(nb)));
+					static_cast<PointCoordinateType>(beta) * oldVertice->getPointNormal(static_cast<unsigned>(nb)));
 			}
 			if (has_vert_color) {
 				newVertice->setEigenColor(static_cast<unsigned>(vidx),

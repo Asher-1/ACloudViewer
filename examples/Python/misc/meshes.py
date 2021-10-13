@@ -1,6 +1,6 @@
 # Open3selfopen3d.org
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Misc/meshes.py
 
@@ -129,20 +129,20 @@ def _relative_path(path):
 
 
 def knot():
-    mesh = cv3d.io.read_triangle_mesh(_relative_path("../../TestData/knot.ply"))
+    mesh = cv3d.io.read_triangle_mesh(_relative_path("../../test_data/knot.ply"))
     mesh.compute_vertex_normals()
     return mesh
 
 
 def bathtub():
     mesh = cv3d.io.read_triangle_mesh(
-        _relative_path("../../TestData/bathtub_0154.ply"))
+        _relative_path("../../test_data/bathtub_0154.ply"))
     mesh.compute_vertex_normals()
     return mesh
 
 
 def armadillo():
-    armadillo_path = _relative_path("../../TestData/Armadillo.ply")
+    armadillo_path = _relative_path("../../test_data/Armadillo.ply")
     if not os.path.exists(armadillo_path):
         print("downloading armadillo mesh")
         url = "http://graphics.stanford.edu/pub/3Dscanrep/armadillo/Armadillo.ply.gz"
@@ -158,7 +158,7 @@ def armadillo():
 
 
 def bunny():
-    bunny_path = _relative_path("../../TestData/Bunny.ply")
+    bunny_path = _relative_path("../../test_data/Bunny.ply")
     if not os.path.exists(bunny_path):
         print("downloading bunny mesh")
         url = "http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz"
@@ -179,7 +179,7 @@ def bunny():
 
 
 def eagle():
-    path = _relative_path("../../TestData/eagle.ply")
+    path = _relative_path("../../test_data/eagle.ply")
     if not os.path.exists(path):
         print("downloading eagle pcl")
         url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"

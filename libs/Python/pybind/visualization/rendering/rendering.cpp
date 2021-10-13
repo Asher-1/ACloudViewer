@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2020 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,27 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <camera/PinholeCameraIntrinsic.h>
+#include <pybind11/functional.h>
+
+#include "pybind/docstring.h"
+#include "pybind/visualization/gui/gui.h"
+#include "pybind/visualization/visualization.h"
 #include "t/geometry/PointCloud.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/ColorGrading.h"
 #include "visualization/rendering/Gradient.h"
 #include "visualization/rendering/Material.h"
 #include "visualization/rendering/Model.h"
-#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/View.h"
 #include "visualization/rendering/filament/FilamentEngine.h"
 #include "visualization/rendering/filament/FilamentRenderer.h"
-#include "pybind/docstring.h"
-#include "pybind/visualization/gui/gui.h"
-#include "pybind/visualization/visualization.h"
-#include "pybind11/functional.h"
 
 namespace cloudViewer {
 namespace visualization {
 namespace rendering {
-
-using namespace cloudViewer;
 
 class PyOffscreenRenderer {
 public:
@@ -79,6 +79,37 @@ public:
         return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_);
     }
 
+    void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
+                     const Eigen::Matrix4d &extrinsic) {
+        SetupCamera(intrinsic.intrinsic_matrix_, extrinsic, intrinsic.width_,
+                    intrinsic.height_);
+    }
+
+    void SetupCamera(const Eigen::Matrix3d &intrinsic,
+                     const Eigen::Matrix4d &extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px) {
+        Camera::SetupCameraAsPinholeCamera(
+                *scene_->GetCamera(), intrinsic, extrinsic, intrinsic_width_px,
+                intrinsic_height_px, scene_->GetBoundingBox());
+    }
+
+    void SetupCamera(float verticalFoV,
+                     const Eigen::Vector3f &center,
+                     const Eigen::Vector3f &eye,
+                     const Eigen::Vector3f &up) {
+        float aspect = 1.0f;
+        if (height_ > 0) {
+            aspect = float(width_) / float(height_);
+        }
+        auto *camera = scene_->GetCamera();
+        auto far_plane =
+                Camera::CalcFarPlane(*camera, scene_->GetBoundingBox());
+        camera->SetProjection(verticalFoV, aspect, Camera::CalcNearPlane(),
+                              far_plane, rendering::Camera::FovType::Vertical);
+        camera->LookAt(center, eye, up);
+    }
+
 private:
     int width_;
     int height_;
@@ -95,11 +126,38 @@ void pybind_rendering_classes(py::module &m) {
     renderer.def("set_clear_color", &Renderer::SetClearColor,
                  "Sets the background color for the renderer, [r, g, b, a]. "
                  "Applies to everything being rendered, so it essentially acts "
-                 "as the background color of the window");
+                 "as the background color of the window")
+            .def("add_texture",
+                 (TextureHandle(Renderer::*)(
+                         const std::shared_ptr<geometry::Image>, bool)) &
+                         Renderer::AddTexture,
+                 "image"_a, "is_sRGB"_a = false,
+                 "Adds a texture: add_texture(geometry.Image, bool). The first "
+                 "parameter is the image, the second parameter is optional and "
+                 "is True if the image is in the sRGB colorspace and False "
+                 "otherwise")
+            .def("update_texture",
+                 (bool (Renderer::*)(TextureHandle,
+                                     const std::shared_ptr<geometry::Image>,
+                                     bool)) &
+                         Renderer::UpdateTexture,
+                 "texture"_a, "image"_a, "is_sRGB"_a = false,
+                 "Updates the contents of the texture to be the new image, or "
+                 "returns False and does nothing if the image is a different "
+                 "size. It is more efficient to call update_texture() rather "
+                 "than removing and adding a new texture, especially when "
+                 "changes happen frequently, such as when implmenting video. "
+                 "add_texture(geometry.Image, bool). The first parameter is "
+                 "the image, the second parameter is optional and is True "
+                 "if the image is in the sRGB colorspace and False otherwise")
+            .def("remove_texture", &Renderer::RemoveTexture,
+                 "Deletes the texture. This does not remove the texture from "
+                 "any existing materials or GUI widgets, and must be done "
+                 "prior to this call.");
 
     // It would be nice to have this inherit from Renderer, but the problem is
     // that Python needs to own this class and Python needs to not own Renderer,
-    // and pybind does not let us mix the two styls of ownership.
+    // and pybind does not let us mix the two styles of ownership.
     py::class_<PyOffscreenRenderer, std::shared_ptr<PyOffscreenRenderer>>
             offscreen(m, "OffscreenRenderer",
                       "Renderer instance that can be used for rendering to an "
@@ -115,7 +173,7 @@ void pybind_rendering_classes(py::module &m) {
                  "Takes width, height and optionally a resource_path and "
                  "headless flag. If "
                  "unspecified, resource_path will use the resource path from "
-                 "the installed Open3D library. By default a running windowing "
+                 "the installed CloudViewer library. By default a running windowing "
                  "session is required. To enable headless rendering set "
                  "headless to True")
             .def_property_readonly(
@@ -123,6 +181,26 @@ void pybind_rendering_classes(py::module &m) {
                     "Returns the CloudViewerScene for this renderer. This scene is "
                     "destroyed when the renderer is destroyed and should not "
                     "be accessed after that point.")
+            .def("setup_camera",
+                 py::overload_cast<float, const Eigen::Vector3f &,
+                                   const Eigen::Vector3f &,
+                                   const Eigen::Vector3f &>(
+                         &PyOffscreenRenderer::SetupCamera),
+                 "setup_camera(vertical_field_of_view, center, eye, up): "
+                 "sets camera view using bounding box of current geometry")
+            .def("setup_camera",
+                 py::overload_cast<const camera::PinholeCameraIntrinsic &,
+                                   const Eigen::Matrix4d &>(
+                         &PyOffscreenRenderer::SetupCamera),
+                 "setup_camera(intrinsics, extrinsic_matrix): "
+                 "sets the camera view using bounding box of current geometry")
+            .def("setup_camera",
+                 py::overload_cast<const Eigen::Matrix3d &,
+                                   const Eigen::Matrix4d &, int, int>(
+                         &PyOffscreenRenderer::SetupCamera),
+                 "setup_camera(intrinsic_matrix, extrinsic_matrix, "
+                 "intrinsic_width_px, intrinsic_height_px): "
+                 "sets the camera view using bounding box of current geometry")
             .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
                  "Renders scene to an image, blocking until the image is "
                  "returned")
@@ -131,7 +209,6 @@ void pybind_rendering_classes(py::module &m) {
                  "Renders scene depth buffer to a float image, blocking until "
                  "the image is returned. Pixels range from 0 (near plane) to "
                  "1 (far plane)");
-
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
@@ -172,7 +249,45 @@ void pybind_rendering_classes(py::module &m) {
                  "image_width, image_height)")
             .def("look_at", &Camera::LookAt,
                  "Sets the position and orientation of the camera: "
-                 "look_at(center, eye, up)");
+                 "look_at(center, eye, up)")
+            .def("unproject", &Camera::Unproject,
+                 "unproject(x, y, z, view_width, view_height): takes the "
+                 "(x, y, z) location in the view, where x, y are the number of "
+                 "pixels from the upper left of the view, and z is the depth "
+                 "value. Returns the world coordinate (x', y', z').")
+            .def("copy_from", &Camera::CopyFrom,
+                 "Copies the settings from the camera passed as the argument "
+                 "into this camera")
+            .def("get_near", &Camera::GetNear,
+                 "Returns the distance from the camera to the near plane")
+            .def("get_far", &Camera::GetFar,
+                 "Returns the distance from the camera to the far plane")
+            .def("get_field_of_view", &Camera::GetFieldOfView,
+                 "Returns the field of view of camera, in degrees. Only valid "
+                 "if it was passed to set_projection().")
+            .def("get_field_of_view_type", &Camera::GetFieldOfViewType,
+                 "Returns the field of view type. Only valid if it was passed "
+                 "to set_projection().")
+            .def(
+                    "get_projection_matrix",
+                    [](const Camera &cam) -> Eigen::Matrix4f {
+                        // GetProjectionMatrix() returns Eigen::Transform which
+                        // doesn't have a conversion to a Python object
+                        return cam.GetProjectionMatrix().matrix();
+                    },
+                    "Returns the projection matrix of the camera")
+            .def(
+                    "get_view_matrix",
+                    [](const Camera &cam) -> Eigen::Matrix4f {
+                        return cam.GetViewMatrix().matrix();
+                    },
+                    "Returns the view matrix of the camera")
+            .def(
+                    "get_model_matrix",
+                    [](const Camera &cam) -> Eigen::Matrix4f {
+                        return cam.GetModelMatrix().matrix();
+                    },
+                    "Returns the model matrix of the camera");
 
     // ---- Gradient ----
     py::class_<Gradient, std::shared_ptr<Gradient>> gradient(
@@ -241,7 +356,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("absorption_distance",
                            &Material::absorption_distance)
             .def_readwrite("point_size", &Material::point_size)
-            .def_readwrite("line_width", &Material::line_width)
+            .def_readwrite("line_width", &Material::line_width,
+                           "Requires 'shader' to be 'unlitLine'")
             .def_readwrite("albedo_img", &Material::albedo_img)
             .def_readwrite("normal_img", &Material::normal_img)
             .def_readwrite("ao_img", &Material::ao_img)
@@ -263,7 +379,7 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("shader", &Material::shader);
 
     // ---- TriangleMeshModel ----
-    py::class_<TriangleMeshModel> tri_model(
+    py::class_<TriangleMeshModel, std::shared_ptr<TriangleMeshModel>> tri_model(
             m, "TriangleMeshModel",
             "A list of geometry.TriangleMesh and Material that can describe a "
             "complex model with multiple meshes, such as might be stored in an "
@@ -287,6 +403,27 @@ void pybind_rendering_classes(py::module &m) {
     // ---- ColorGradingParams ---
     py::class_<ColorGradingParams> color_grading(
             m, "ColorGrading", "Parameters to control color grading options");
+
+    py::enum_<ColorGradingParams::Quality> cgp_quality(
+            color_grading, "Quality",
+            "Quality level of color grading operations");
+    cgp_quality.value("LOW", ColorGradingParams::Quality::kLow)
+            .value("MEDIUM", ColorGradingParams::Quality::kMedium)
+            .value("HIGH", ColorGradingParams::Quality::kHigh)
+            .value("ULTRA", ColorGradingParams::Quality::kUltra);
+
+    py::enum_<ColorGradingParams::ToneMapping> cgp_tone(
+            color_grading, "ToneMapping",
+            "Specifies the tone-mapping algorithm");
+    cgp_tone.value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
+            .value("ACES_LEGACY", ColorGradingParams::ToneMapping::kAcesLegacy)
+            .value("ACES", ColorGradingParams::ToneMapping::kAces)
+            .value("FILMIC", ColorGradingParams::ToneMapping::kFilmic)
+            .value("UCHIMURA", ColorGradingParams::ToneMapping::kUchimura)
+            .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
+            .value("DISPLAY_RANGE",
+                   ColorGradingParams::ToneMapping::kDisplayRange);
+
     color_grading
             .def(py::init([](ColorGradingParams::Quality q,
                              ColorGradingParams::ToneMapping algorithm) {
@@ -319,12 +456,12 @@ void pybind_rendering_classes(py::module &m) {
     py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
                                                    "Low-level rendering scene");
     py::enum_<Scene::GroundPlane> ground_plane(
-        scene, "GroundPlane", py::arithmetic(),
-        "Plane on which to show ground plane: XZ, XY, or YZ");
+            scene, "GroundPlane", py::arithmetic(),
+            "Plane on which to show ground plane: XZ, XY, or YZ");
     ground_plane.value("XZ", Scene::GroundPlane::XZ)
-        .value("XY", Scene::GroundPlane::XY)
-        .value("YZ", Scene::GroundPlane::YZ)
-        .export_values();
+            .value("XY", Scene::GroundPlane::XY)
+            .value("YZ", Scene::GroundPlane::YZ)
+            .export_values();
     scene.def("add_camera", &Scene::AddCamera, "Adds a camera to the scene")
             .def("remove_camera", &Scene::RemoveCamera,
                  "Removes the camera with the given name")
@@ -397,7 +534,12 @@ void pybind_rendering_classes(py::module &m) {
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene to an image. This can only be used in a "
                  "GUI app. To render without a window, use "
-                 "Application.render_to_image");
+                 "Application.render_to_image")
+            .def("render_to_depth_image", &Scene::RenderToDepthImage,
+                 "Renders the scene to a depth image. This can only be used in "
+                 "GUI app. To render without a window, use "
+                 "Application.render_to_depth_image. Pixels range from "
+                 "0.0 (near plane) to 1.0 (far plane)");
 
     scene.attr("UPDATE_POINTS_FLAG") = py::int_(Scene::kUpdatePointsFlag);
     scene.attr("UPDATE_NORMALS_FLAG") = py::int_(Scene::kUpdateNormalsFlag);
@@ -482,15 +624,19 @@ void pybind_rendering_classes(py::module &m) {
                     "Sets the view size. This should not be used except for "
                     "rendering to an image")
             .def_property_readonly("scene", &CloudViewerScene::GetScene,
-                                   "The low-level rendering scene object")
+                                   "The low-level rendering scene object "
+                                   "(read-only)")
             .def_property_readonly("camera", &CloudViewerScene::GetCamera,
-                                   "The camera object")
+                                   "The camera object (read-only)")
             .def_property_readonly("bounding_box", &CloudViewerScene::GetBoundingBox,
                                    "The bounding box of all the items in the "
                                    "scene, visible and invisible")
             .def_property_readonly(
-                    "get_view", &CloudViewerScene::GetView,
+                    "view", &CloudViewerScene::GetView,
                     "The low level view associated with the scene")
+            .def_property_readonly("background_color",
+                                   &CloudViewerScene::GetBackgroundColor,
+                                   "The background color (read-only)")
             .def_property("downsample_threshold",
                           &CloudViewerScene::GetDownsampleThreshold,
                           &CloudViewerScene::SetDownsampleThreshold,

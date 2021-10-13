@@ -60,7 +60,7 @@ ecvUpdateDlg::ecvUpdateDlg (QWidget* parent)
     connect (m_ui->checkButton, SIGNAL (clicked()),
              this,                SLOT (checkForUpdates()));
 
-    /* Reset the UI state */
+    /* reset the UI state */
     resetFields();
 }
 

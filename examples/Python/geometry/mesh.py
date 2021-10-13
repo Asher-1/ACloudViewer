@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Basic/mesh.py
 
@@ -11,7 +11,7 @@ import cloudViewer as cv3d
 if __name__ == "__main__":
 
     print("Testing mesh in cloudViewer ...")
-    mesh = cv3d.io.read_triangle_mesh("../../TestData/knot.ply")
+    mesh = cv3d.io.read_triangle_mesh("../../test_data/knot.ply")
     print(mesh)
     print(np.asarray(mesh.get_vertices()))
     print(np.asarray(mesh.get_triangles()))
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     cv3d.visualization.draw_geometries([new_mesh])
 
     # triangulation between with two polylines
-    entity = cv3d.io.read_entity("../../TestData/polylines/polylines.bin")
+    entity = cv3d.io.read_entity("../../test_data/polylines/polylines.bin")
     polylines = entity.filter_children(recursive=False, filter=cv3d.geometry.ccHObject.POLY_LINE)
     print(polylines)
     assert len(polylines) > 1

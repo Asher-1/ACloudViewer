@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,51 +47,51 @@ class TetraMesh;
 /// display the point cloud correspondence pairs.
 class ECV_DB_LIB_API LineSet : public ccHObject {
 public:
-
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-	/// \brief Default Constructor.
-	LineSet(const char* name = "LineSet") : ccHObject(name) {}
-	/// \brief Parameterized Constructor.
-	///
-	///  Create a LineSet from given points and line indices
-	///
-	/// \param points Point coordinates.
-	/// \param lines Lines denoted by the index of points forming the line.
-	LineSet(const std::vector<Eigen::Vector3d> &points,
-		const std::vector<Eigen::Vector2i> &lines, 
-		const char* name = "LineSet")
-		: ccHObject(name),
-		points_(points),
-		lines_(lines) {}
-	~LineSet() override {}
-
+    /// \brief Default Constructor.
+    LineSet(const char *name = "LineSet") : ccHObject(name) {}
+    /// \brief Parameterized Constructor.
+    ///
+    ///  Create a LineSet from given points and line indices
+    ///
+    /// \param points Point coordinates.
+    /// \param lines Lines denoted by the index of points forming the line.
+    LineSet(const std::vector<Eigen::Vector3d> &points,
+            const std::vector<Eigen::Vector2i> &lines,
+            const char *name = "LineSet")
+        : ccHObject(name), points_(points), lines_(lines) {}
+    ~LineSet() override {}
 
     // inherited methods (ccHObject)
-	virtual bool isSerializable() const override { return true; }
+    virtual bool isSerializable() const override { return true; }
 
-	//! Returns unique class ID
-	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::LINESET; }
+    //! Returns unique class ID
+    virtual CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::LINESET;
+    }
 
-	virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
+    virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
 
 protected:
-    //inherited methods (ccHObject)
-    virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
+    // inherited methods (ccHObject)
+    virtual void drawMeOnly(CC_DRAW_CONTEXT &context) override;
 
 public:
     LineSet &clear();
-	inline virtual bool isEmpty() const override { return !hasPoints(); }
+    inline virtual bool isEmpty() const override { return !hasPoints(); }
     virtual Eigen::Vector3d getMinBound() const override;
     virtual Eigen::Vector3d getMaxBound() const override;
     virtual Eigen::Vector3d getGeometryCenter() const override;
-	virtual ccBBox getAxisAlignedBoundingBox() const override;
-	virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual LineSet& transform(const Eigen::Matrix4d &transformation) override;
-    virtual LineSet& translate(const Eigen::Vector3d &translation,
-		bool relative = true) override;
-	virtual LineSet& scale(const double s, const Eigen::Vector3d &center) override;
-	virtual LineSet& rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) override;
+    virtual ccBBox getAxisAlignedBoundingBox() const override;
+    virtual ecvOrientedBBox getOrientedBoundingBox() const override;
+    virtual LineSet &transform(const Eigen::Matrix4d &transformation) override;
+    virtual LineSet &translate(const Eigen::Vector3d &translation,
+                               bool relative = true) override;
+    virtual LineSet &scale(const double s,
+                           const Eigen::Vector3d &center) override;
+    virtual LineSet &rotate(const Eigen::Matrix3d &R,
+                            const Eigen::Vector3d &center) override;
 
     LineSet &operator+=(const LineSet &lineset);
     LineSet operator+(const LineSet &lineset) const;
@@ -145,7 +145,8 @@ public:
     /// ccBBox.
     ///
     /// \param box The input bounding box.
-    static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(const ccBBox &box);
+    static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(
+            const ccBBox &box);
 
     /// Factory function to create a LineSet from edges of a triangle mesh.
     ///
@@ -156,6 +157,20 @@ public:
     ///
     /// \param mesh The input tetra mesh.
     static std::shared_ptr<LineSet> CreateFromTetraMesh(const TetraMesh &mesh);
+
+    /// Factory function to create a LineSet from intrinsic and extrinsic
+    /// matrices.
+    ///
+    /// \param view_width_px The width of the view, in pixels
+    /// \param view_height_px The height of the view, in pixels
+    /// \param intrinsic The intrinsic matrix
+    /// \param extrinsic The extrinsic matrix
+    static std::shared_ptr<LineSet> CreateCameraVisualization(
+            int view_width_px,
+            int view_height_px,
+            const Eigen::Matrix3d &intrinsic,
+            const Eigen::Matrix4d &extrinsic,
+            double scale = 1.0);
 
 public:
     /// Points coordinates.

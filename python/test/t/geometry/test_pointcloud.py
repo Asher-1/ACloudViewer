@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        Open3D: www.cloudViewer.org                            -
+# -                        CloudViewer: Asher-1.github.io                    -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.cloudViewer.org
+# Copyright (c) 2020 Asher-1.github.io
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -70,7 +70,7 @@ def test_constructor_and_accessors(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_from_legacy_pointcloud(device):
+def test_from_legacy(device):
     dtype = cv3c.Dtype.Float32
 
     legacy_pcd = cv3d.geometry.PointCloud()
@@ -85,7 +85,7 @@ def test_from_legacy_pointcloud(device):
             [9, 10, 11],
         ]))
 
-    pcd = cv3d.t.geometry.PointCloud.from_legacy_pointcloud(
+    pcd = cv3d.t.geometry.PointCloud.from_legacy(
         legacy_pcd, dtype, device)
     assert pcd.point["points"].as_tensor().allclose(
         cv3c.Tensor([
@@ -115,7 +115,7 @@ def test_to_legacy_pointcloud(device):
             [9, 10, 11],
         ], dtype, device))
 
-    legacy_pcd = pcd.to_legacy_pointcloud()
+    legacy_pcd = pcd.to_legacy()
     np.testing.assert_allclose(np.asarray(legacy_pcd.points),
                                np.array([
                                    [0, 1, 2],

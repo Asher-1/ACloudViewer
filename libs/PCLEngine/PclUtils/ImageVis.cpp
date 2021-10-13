@@ -196,7 +196,7 @@ namespace PclUtils
 		exit_callback_->window = this;
 		this->interactor_->AddObserver(vtkCommand::ExitEvent, exit_callback_);
 
-		// Reset camera (flip it vertically)
+		// reset camera (flip it vertically)
 #if ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION > 10))
   //ren_->GetActiveCamera ()->SetViewUp (0.0, -1.0, 0.0);
 		vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();

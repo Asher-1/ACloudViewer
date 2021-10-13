@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 
 // We cannot give out a shared_ptr to objects like Window which reference
 // Filament objects, because we cannot guarantee that the Python script is
-// not holding on to a reference when we cleanup Filament. The Open3D library
+// not holding on to a reference when we cleanup Filament. The CloudViewer library
 // will clear its shared_ptrs expecting the dependent object(s) to clean up,
 // but they won't because Python still has a shared_ptr, leading to a crash
 // when the variable goes of scope on the Python side.

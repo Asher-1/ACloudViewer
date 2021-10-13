@@ -115,6 +115,15 @@ void TexturingReconstruction::Run() {
     }
   }
 
+  // check camera trajectory validation
+  for (int i = 0; i < camera_trajectory_.parameters_.size(); ++i) {
+      auto& cameraParams = camera_trajectory_.parameters_[i];
+      if (!cameraParams.intrinsic_.IsValid()) {
+          CVLog::Error("Invalid camera intrinsic parameters found and ignore texturing!");
+          return;
+      }
+  }
+
 #ifdef USE_PCL_BACKEND
   PCLTextureMesh::Ptr texturedMesh = PclTools::CreateTexturingMesh(options_.meshed_file_path,
                                                                    camera_trajectory_,
@@ -167,16 +176,21 @@ bool TexturingReconstruction::Texturing(const image_t image_id, std::size_t inde
   cameraParams.extrinsic_ = ccGLMatrixd::ToEigenMatrix4(extrinsic);
   std::string model_name = camera.ModelName();
   // https://github.com/colmap/colmap/blob/dev/src/base/camera_models.h
-  if (model_name == "SIMPLE_PINHOLE")
+  if (model_name == "SIMPLE_PINHOLE" || model_name == "SIMPLE_RADIAL" ||
+      model_name == "SIMPLE_RADIAL_FISHEYE" || model_name == "RADIAL" ||
+      model_name == "RADIAL_FISHEYE")
   {
       // Simple pinhole: f, cx, cy
       cameraParams.intrinsic_.SetIntrinsics(static_cast<int>(camera.Width()),
                                             static_cast<int>(camera.Height()),
-                                            0, camera.FocalLength(),
+                                            camera.FocalLength(),
+                                            camera.FocalLength(),
                                             camera.PrincipalPointX(),
                                             camera.PrincipalPointY());
   }
-  else if (model_name == "PINHOLE")
+  else if (model_name == "PINHOLE" || model_name == "OPENCV" ||
+           model_name == "OPENCV_FISHEYE" || model_name == "FULL_OPENCV" ||
+           model_name == "FOV" || model_name == "THIN_PRISM_FISHEYE")
   {
       // Pinhole: fx, fy, cx, cy
       cameraParams.intrinsic_.SetIntrinsics(static_cast<int>(camera.Width()),

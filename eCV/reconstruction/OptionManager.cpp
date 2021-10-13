@@ -909,7 +909,8 @@ bool OptionManager::Read(const std::string& path) {
   config::variables_map vmap;
 
   if (!ExistsFile(path)) {
-    std::cout << "ERROR: Configuration file does not exist." << std::endl;
+    std::cout << "WARNING: Configuration file does not exist." << std::endl;
+
     return false;
   }
 

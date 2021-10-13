@@ -1,24 +1,16 @@
 include(ExternalProject)
 
-set_local_or_remote_url(
-    DOWNLOAD_URL_PRIMARY
-    LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/glog-0.3.5.zip"
-    REMOTE_URLS "https://github.com/google/glog/archive/v0.3.5.zip"
-)
-
 ExternalProject_Add(
-    ext_glog
-    PREFIX ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}
-    URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
-    URL_HASH MD5=454766d0124951091c95bad33dafeacd
-    DOWNLOAD_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/download/glog
-    BUILD_IN_SOURCE 0
-    BUILD_ALWAYS 0
-    UPDATE_COMMAND ""
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/glog
-    BINARY_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/glog_build
-    INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
-    CMAKE_ARGS
+        ext_glog
+        PREFIX glog
+        URL https://github.com/google/glog/archive/v0.3.5.zip
+        URL_HASH MD5=454766d0124951091c95bad33dafeacd
+        DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/glog"
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
+        UPDATE_COMMAND ""
+        CMAKE_ARGS
         ${GFLAGS_CMAKE_FLAGS}
         -DBUILD_SHARED_LIBS=$<IF:$<PLATFORM_ID:Linux>,ON,OFF>
         -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
@@ -36,7 +28,7 @@ set(GLOG_CMAKE_FLAGS ${GFLAGS_CMAKE_FLAGS} -Dglog_DIR=${GLOG_LIB_DIR}/cmake/glog
 
 if (MSVC)
     set(GLOG_CMAKE_FLAGS ${GLOG_CMAKE_FLAGS} -DGOOGLE_GLOG_DLL_DECL=)
-else()
+else ()
     set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GLOG_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
-    install_ext( FILES ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${library_filename} ${INSTALL_DESTINATIONS} "")
-endif()
+    cloudViewer_install_ext(FILES ${GLOG_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
+endif ()

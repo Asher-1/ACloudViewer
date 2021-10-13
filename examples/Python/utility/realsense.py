@@ -19,7 +19,7 @@ def bag_test(bag_filename):
     bag_reader = cv3d.t.io.RSBagReader()
     bag_reader.open(bag_filename)
     while not bag_reader.is_eof():
-        im_rgbd = bag_reader.next_frame()
+        im_rgbd = bag_reader.next_frame().to_legacy_rgbd_image()
         # process im_rgbd.depth and im_rgbd.color
         cv3d.visualization.draw_geometries([im_rgbd])
 
@@ -36,12 +36,14 @@ def read_from_real_sense(config_filename, bag_filename):
     for fid in range(150):
         im_rgbd = rs.capture_frame(True, True)  # wait for frames and align them
         # process im_rgbd.depth and im_rgbd.color
+        cv3d.visualization.draw_geometries([im_rgbd])
 
     rs.stop_capture()
 
 
 if __name__ == '__main__':
-    BAG_FILENAME = ""
+    BAG_FILENAME = "/media/yons/data/develop/pcl_projects/ErowCloudViewer/" \
+                   "ErowCloudViewerPython/test_data/RGBD/other_formats/L515_test_s.bag"
     CONFIG_FILENAME = ""
     bag_test(BAG_FILENAME)
     read_from_real_sense(CONFIG_FILENAME, BAG_FILENAME)

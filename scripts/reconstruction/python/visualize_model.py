@@ -29,7 +29,7 @@
 
 import argparse
 import numpy as np
-import open3d
+import cloudViewer
 
 from read_write_model import read_model, write_model, qvec2rotmat, rotmat2qvec
 
@@ -45,7 +45,7 @@ class Model:
         self.cameras, self.images, self.points3D = read_model(path, ext)
 
     def add_points(self, min_track_len=3, remove_statistical_outlier=True):
-        pcd = open3d.geometry.PointCloud()
+        pcd = cloudViewer.geometry.ccPointCloud()
 
         xyz = []
         rgb = []
@@ -56,15 +56,15 @@ class Model:
             xyz.append(point3D.xyz)
             rgb.append(point3D.rgb / 255)
 
-        pcd.points = open3d.utility.Vector3dVector(xyz)
-        pcd.colors = open3d.utility.Vector3dVector(rgb)
+        pcd.set_points(cloudViewer.utility.Vector3dVector(xyz))
+        pcd.set_colors(cloudViewer.utility.Vector3dVector(rgb))
 
         # remove obvious outliers
         if remove_statistical_outlier:
             [pcd, _] = pcd.remove_statistical_outlier(nb_neighbors=20,
                                                       std_ratio=2.0)
 
-        # open3d.visualization.draw_geometries([pcd])
+        # cloudViewer.visualization.draw_geometries([pcd])
         self.__vis.add_geometry(pcd)
         self.__vis.poll_events()
         self.__vis.update_renderer()
@@ -113,7 +113,7 @@ class Model:
             self.__vis.add_geometry(i)
 
     def create_window(self):
-        self.__vis = open3d.visualization.Visualizer()
+        self.__vis = cloudViewer.visualization.Visualizer()
         self.__vis.create_window()
 
     def show(self):
@@ -145,7 +145,7 @@ def draw_camera(K, R, t, w, h,
     T = np.vstack((T, (0, 0, 0, 1)))
 
     # axis
-    axis = open3d.geometry.TriangleMesh.create_coordinate_frame(size=0.5 * scale)
+    axis = cloudViewer.geometry.ccMesh.create_coordinate_frame(size=0.5 * scale)
     axis.transform(T)
 
     # points in pixel
@@ -163,7 +163,7 @@ def draw_camera(K, R, t, w, h,
     # image plane
     width = abs(points[1][0]) + abs(points[3][0])
     height = abs(points[1][1]) + abs(points[3][1])
-    plane = open3d.geometry.TriangleMesh.create_box(width, height, depth=1e-6)
+    plane = cloudViewer.geometry.ccMesh.create_box(width, height, depth=1e-6)
     plane.paint_uniform_color(color)
     plane.translate([points[1][0], points[1][1], scale])
     plane.transform(T)
@@ -177,10 +177,10 @@ def draw_camera(K, R, t, w, h,
         [0, 4],
     ]
     colors = [color for i in range(len(lines))]
-    line_set = open3d.geometry.LineSet(
-        points=open3d.utility.Vector3dVector(points_in_world),
-        lines=open3d.utility.Vector2iVector(lines))
-    line_set.colors = open3d.utility.Vector3dVector(colors)
+    line_set = cloudViewer.geometry.LineSet(
+        points=cloudViewer.utility.Vector3dVector(points_in_world),
+        lines=cloudViewer.utility.Vector2iVector(lines))
+    line_set.colors = cloudViewer.utility.Vector3dVector(colors)
 
     # return as list in Open3D format
     return [axis, plane, line_set]

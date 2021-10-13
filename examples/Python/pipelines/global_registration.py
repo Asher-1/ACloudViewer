@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Advanced/global_registration.py
 
@@ -41,8 +41,8 @@ def preprocess_point_cloud(pcd, voxel_size):
 
 def prepare_dataset(voxel_size):
     print(":: Load two point clouds and disturb initial pose.")
-    source = cv3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target = cv3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
+    source = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_0.pcd")
+    target = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_1.pcd")
     trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0], [1.0, 0.0, 0.0, 0.0],
                              [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
     source.transform(trans_init)

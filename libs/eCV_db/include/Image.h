@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,16 +26,16 @@
 
 #pragma once
 
-#include "ecvHObject.h"
-
 #include <Eigen/Core>
 #include <memory>
 #include <vector>
 
+#include "ecvHObject.h"
+
 namespace cloudViewer {
 
 namespace camera {
-    class PinholeCameraIntrinsic;
+class PinholeCameraIntrinsic;
 }
 
 namespace geometry {
@@ -83,27 +83,27 @@ public:
 
 public:
     /// \brief Default Constructor.
-    Image(const char* name = "Image") : ccHObject(name) {}
+    Image(const char *name = "Image") : ccHObject(name) {}
     ~Image() override {}
 
+    // inherited methods (ccHObject)
+    virtual bool isSerializable() const override { return true; }
 
-	//inherited methods (ccHObject)
-	virtual bool isSerializable() const override { return true; }
+    //! Returns unique class ID
+    virtual CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::IMAGE2;
+    }
 
-	//! Returns unique class ID
-	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::IMAGE2; }
-
-	virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
+    virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
 
 protected:
-
-	//Inherited from ccHObject
-	virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override {};
-	virtual void onDeletionOf(const ccHObject* obj) override;
+    // Inherited from ccHObject
+    virtual void drawMeOnly(CC_DRAW_CONTEXT &context) override{};
+    virtual void onDeletionOf(const ccHObject *obj) override;
 
 public:
     Image &Clear();
-	inline virtual bool isEmpty() const override { return !HasData(); }
+    inline virtual bool isEmpty() const override { return !HasData(); }
     virtual Eigen::Vector2d getMin2DBound() const override;
     virtual Eigen::Vector2d getMax2DBound() const override;
 
@@ -157,8 +157,8 @@ public:
     /// optimization in volumetric integration (see
     /// Core/Integration/TSDFVolume.h).
     static std::shared_ptr<Image>
-        CreateDepthToCameraDistanceMultiplierFloatImage(
-            const camera::PinholeCameraIntrinsic& intrinsic);
+    CreateDepthToCameraDistanceMultiplierFloatImage(
+            const camera::PinholeCameraIntrinsic &intrinsic);
 
     /// Return a gray scaled float type image.
     std::shared_ptr<Image> CreateFloatImage(
@@ -244,7 +244,6 @@ public:
     int bytes_per_channel_ = 0;
     /// Image storage buffer.
     std::vector<uint8_t> data_;
-
 };
 
 }  // namespace geometry

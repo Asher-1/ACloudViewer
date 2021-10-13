@@ -1326,8 +1326,8 @@ bool ccPointPairRegistrationDlg::callHornRegistration(cloudViewer::PointProjecti
 			{
 				const CCVector3* Ri = m_refPoints.getPoint(i);
 				const CCVector3* Li = m_alignedPoints.getPoint(i);
-				CCVector3 Lit = (trans.R.isValid() ? trans.R * (*Li) : (*Li))*trans.s + trans.T;
-				PointCoordinateType dist = (*Ri-Lit).norm();
+				CCVector3d Lit = trans.apply(*Li);
+				double dist = (Ri->toDouble() - Lit).norm();
 
 				QTableWidgetItem* itemA = new QTableWidgetItem();
 				itemA->setData(Qt::EditRole, dist);
@@ -1433,7 +1433,7 @@ void ccPointPairRegistrationDlg::align()
 			CVLog::Print(QString("[PointPairRegistration] Scale: fixed (1.0)"));
 		}
 
-		ccGLMatrix transMat = FromCCLibMatrix<PointCoordinateType, float>(trans.R, trans.T);
+		ccGLMatrix transMat = FromCCLibMatrix<double, float>(trans.R, trans.T);
 		//...virtually
 		m_transMatHistory = transMat;
 		transformAlignedEntity(transMat, true);
@@ -1632,7 +1632,7 @@ void ccPointPairRegistrationDlg::apply()
 		{
 			trans.R.scale(trans.s);
 		}
-		ccGLMatrix transMat = FromCCLibMatrix<PointCoordinateType,float>(trans.R,trans.T);
+		ccGLMatrix transMat = FromCCLibMatrix<double,float>(trans.R,trans.T);
 		
 		//...for real this time!
 		transformAlignedEntity(transMat, false);

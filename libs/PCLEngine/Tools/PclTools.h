@@ -69,7 +69,7 @@ namespace PclTools
     QPCL_ENGINE_LIB_API  PCLTextureMesh::Ptr CreateTexturingMesh(const std::string& filePath,
                                                                  const cloudViewer::camera::PinholeCameraTrajectory& cameraTrajectory,
                                                                  bool show_cameras = false, bool verbose = false);
-    PCLTextureMesh::Ptr CreateTexturingMesh(const PCLMesh::ConstPtr triangles,
+    PCLTextureMesh::Ptr CreateTexturingMesh(const PCLMesh::ConstPtr& triangles,
                                             const pcl::texture_mapping::CameraVector& cameras,
                                             bool show_cameras = false, bool verbose = false);
 

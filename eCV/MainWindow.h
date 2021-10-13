@@ -20,46 +20,46 @@
 
 // LOCAL
 #include "ecvEntityAction.h"
-#include "ecvPickingListener.h"
 #include "ecvMainAppInterface.h"
+#include "ecvPickingListener.h"
 
 // CV_CORE_LIB
-#include <CVTools.h>
 #include <AutoSegmentationTools.h>
+#include <CVTools.h>
 
 // QT
-#include <QMainWindow>
-#include <QString>
-#include <QDebug>
-#include <QLabel>
-#include <QMessageBox>
 #include <QAction>
+#include <QColorDialog>
+#include <QDebug>
+#include <QDesktopServices>
+#include <QFileDialog>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
-#include <QToolBar>
-#include <QToolButton>
+#include <QMessageBox>
+#include <QMouseEvent>
 #include <QStatusBar>
-#include <QFileDialog>
-#include <QColorDialog>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
+#include <QString>
 #include <QTextEdit>
 #include <QTime>
-#include <QMouseEvent> 
-#include <QDesktopServices>
+#include <QToolBar>
+#include <QToolButton>
 #include <QUrl>
+#include <QVBoxLayout>
 
 // system
-#include <vector>
-#include <map>
 #include <algorithm>
+#include <map>
+#include <vector>
 
 const int CLOUDVIEWER_LANG_ENGLISH = 0;
 const int CLOUDVIEWER_LANG_CHINESE = 1;
 
-using std::vector;
-using std::string;
 using std::map;
+using std::string;
+using std::vector;
 
 class ccHObject;
 class ccPickingHub;
@@ -92,70 +92,71 @@ class QUIWidget;
 struct dbTreeSelectionInfo;
 
 namespace Ui {
-	class MainViewerClass;
+class MainViewerClass;
 }
 
 #ifdef USE_COLMAP_MODULE
 namespace cloudViewer {
-    class ReconstructionWidget;
+class ReconstructionWidget;
 }
 #endif
 
 class QSimpleUpdater;
 
-class MainWindow : public QMainWindow, public ecvMainAppInterface, public ccPickingListener
-{
-	Q_OBJECT
+class MainWindow : public QMainWindow,
+                   public ecvMainAppInterface,
+                   public ccPickingListener {
+    Q_OBJECT
 
 protected:
     MainWindow();
-	~MainWindow() override;
+    ~MainWindow() override;
 
-public: // static method
-	//! Static shortcut to MainWindow::updateUI
-	static void UpdateUI();
+public:  // static method
+    //! Static shortcut to MainWindow::updateUI
+    static void UpdateUI();
 
-	//! Returns the unique instance of this object
-	static MainWindow* TheInstance();
+    //! Returns the unique instance of this object
+    static MainWindow* TheInstance();
 
-	//! Static shortcut to MainWindow::getActiveWindow
-	static QWidget* GetActiveRenderWindow();
+    //! Static shortcut to MainWindow::getActiveWindow
+    static QWidget* GetActiveRenderWindow();
 
-	//! Returns a given GL sub-window (determined by its title)
-	/** \param title window title
-	**/
-	static QWidget* GetRenderWindow(const QString& title);
+    //! Returns a given GL sub-window (determined by its title)
+    /** \param title window title
+     **/
+    static QWidget* GetRenderWindow(const QString& title);
 
-	//! Returns all GL sub-windows
-	/** \param[in,out] glWindows vector to store all sub-windows
-	**/
-	static void GetRenderWindows(std::vector<QWidget*>& windows);
+    //! Returns all GL sub-windows
+    /** \param[in,out] glWindows vector to store all sub-windows
+     **/
+    static void GetRenderWindows(std::vector<QWidget*>& windows);
 
-	//! Deletes current main window instance
-	static void DestroyInstance();
+    //! Deletes current main window instance
+    static void DestroyInstance();
 
-	static void ChangeStyle(const QString &qssFile);
+    static void ChangeStyle(const QString& qssFile);
 
 public slots:
-	// Picking opeations
-	void enablePickingOperation(QString message);
-	void cancelPreviousPickingOperation(bool aborted);
+    // Picking opeations
+    void enablePickingOperation(QString message);
+    void cancelPreviousPickingOperation(bool aborted);
 
 public:
-	void setUiManager(QUIWidget * uiManager);
+    void setUiManager(QUIWidget* uiManager);
 
-	//! Saves position and state of all GUI elements
-	void saveGUIElementsPos();
+    //! Saves position and state of all GUI elements
+    void saveGUIElementsPos();
 
-	void setAutoPickPivot(bool state);
-	void setOrthoView();
-	void setPerspectiveView();
+    void setAutoPickPivot(bool state);
+    void setOrthoView();
+    void setPerspectiveView();
 
-	void updateViewModePopUpMenu();
+    void updateViewModePopUpMenu();
 
-	ccBBox getSelectedEntityBbox();
+    ccBBox getSelectedEntityBbox();
 
-	void updateFullScreenMenu(bool state);
+    void updateFullScreenMenu(bool state);
 
     void addToDBAuto(const QStringList& filenames, bool displayDialog = true);
 
@@ -163,370 +164,387 @@ public:
                  QString fileFilter = QString(),
                  bool displayDialog = true);
 
-	//! Sets up the UI (menus and toolbars) based on loaded plugins
-	void initPlugins();
+    //! Sets up the UI (menus and toolbars) based on loaded plugins
+    void initPlugins();
 
-	//! Updates the 'Properties' view
-	void updatePropertiesView();
+    //! Updates the 'Properties' view
+    void updatePropertiesView();
 
-	//! Inherited from ccPickingListener
-	void onItemPicked(const PickedItem& pi) override;
+    //! Inherited from ccPickingListener
+    void onItemPicked(const PickedItem& pi) override;
 
-	//! Returns real 'dbRoot' object
-	inline virtual ccDBRoot* db() { return m_ccRoot; }
+    //! Returns real 'dbRoot' object
+    inline ccDBRoot* db() { return m_ccRoot; }
 
-	//! Returns the number of 3D views
-	int getRenderWindowCount() const;
+    //! Returns the number of 3D views
+    int getRenderWindowCount() const;
 
-	//! Returns MDI area subwindow corresponding to a given 3D view
-	QMdiSubWindow* getMDISubWindow(QWidget* win);
-	virtual QWidget* getActiveWindow() override;
-	QWidget* getWindow(int index) const;
-	void update3DViewsMenu();
+    //! Returns MDI area subwindow corresponding to a given 3D view
+    QMdiSubWindow* getMDISubWindow(QWidget* win);
+    QWidget* getActiveWindow() override;
+    QWidget* getWindow(int index) const;
+    void update3DViewsMenu();
+
 public:
-	//! Flag: first time the window is made visible
-	bool m_FirstShow;
-	static bool s_autoSaveGuiElementPos;
+    //! Flag: first time the window is made visible
+    bool m_FirstShow;
+    static bool s_autoSaveGuiElementPos;
 
 public:  // inherited from ecvMainAppInterface
-	void spawnHistogramDialog(const std::vector<unsigned>& histoValues,
-		double minVal, double maxVal,
-		QString title, QString xAxisLabel) override;
-	ccPickingHub* pickingHub() override { return m_pickingHub; }
+    void spawnHistogramDialog(const std::vector<unsigned>& histoValues,
+                              double minVal,
+                              double maxVal,
+                              QString title,
+                              QString xAxisLabel) override;
+    ccPickingHub* pickingHub() override { return m_pickingHub; }
 
-	virtual void toggleExclusiveFullScreen(bool state) override;
-	virtual void toggle3DView(bool state) override;
-	virtual void forceConsoleDisplay() override;
-	virtual ccHObject* dbRootObject() override;
-	//virtual void updateScreen() override;
-	virtual void refreshAll(bool only2D = false, bool forceRedraw = true) override;
-	virtual void refreshSelected(bool only2D = false, bool forceRedraw = true) override;
-    virtual void refreshObject(ccHObject* obj, bool only2D = false, bool forceRedraw = true) override;
-    virtual void refreshObjects(ccHObject::Container objs, bool only2D = false, bool forceRedraw = true) override;
-	virtual void resetSelectedBBox() override;
-	virtual void removeFromDB(ccHObject* obj, bool autoDelete = true) override;
-	virtual void setSelectedInDB(ccHObject* obj, bool selected) override;
-    virtual void putObjectBackIntoDBTree(ccHObject* obj, const ccHObjectContext& context) override;
-	virtual inline QMainWindow* getMainWindow() override { return this; }
-	virtual inline const ccHObject::Container& getSelectedEntities() const override { return m_selectedEntities; }
-	virtual ccHObjectContext removeObjectTemporarilyFromDBTree(ccHObject* obj) override;
+    void toggleExclusiveFullScreen(bool state) override;
+    void toggle3DView(bool state) override;
+    void forceConsoleDisplay() override;
+    ccHObject* dbRootObject() override;
+    // void updateScreen() override;
+    void refreshAll(bool only2D = false, bool forceRedraw = true) override;
+    void refreshSelected(bool only2D = false, bool forceRedraw = true) override;
+    void refreshObject(ccHObject* obj,
+                       bool only2D = false,
+                       bool forceRedraw = true) override;
+    void refreshObjects(ccHObject::Container objs,
+                        bool only2D = false,
+                        bool forceRedraw = true) override;
+    void resetSelectedBBox() override;
+    void removeFromDB(ccHObject* obj, bool autoDelete = true) override;
+    void setSelectedInDB(ccHObject* obj, bool selected) override;
+    void putObjectBackIntoDBTree(ccHObject* obj,
+                                 const ccHObjectContext& context) override;
+    inline QMainWindow* getMainWindow() override { return this; }
+    inline const ccHObject::Container& getSelectedEntities() const override {
+        return m_selectedEntities;
+    }
+    ccHObjectContext removeObjectTemporarilyFromDBTree(ccHObject* obj) override;
 
-	virtual ccColorScalesManager* getColorScalesManager() override;
+    ccColorScalesManager* getColorScalesManager() override;
 
-	virtual void addToDB(ccHObject* obj,
-		bool updateZoom = false,
-		bool autoExpandDBTree = true,
-		bool checkDimensions = false,
-		bool autoRedraw = true) override;
+    void addToDB(ccHObject* obj,
+                 bool updateZoom = false,
+                 bool autoExpandDBTree = true,
+                 bool checkDimensions = false,
+                 bool autoRedraw = true) override;
 
-	virtual void registerOverlayDialog(ccOverlayDialog* dlg, Qt::Corner pos) override;
-	virtual void unregisterOverlayDialog(ccOverlayDialog* dlg) override;
-	virtual void updateOverlayDialogsPlacement() override;
+    void registerOverlayDialog(ccOverlayDialog* dlg, Qt::Corner pos) override;
+    void unregisterOverlayDialog(ccOverlayDialog* dlg) override;
+    void updateOverlayDialogsPlacement() override;
+    ccHObject* loadFile(QString filename, bool silent) override;
 
-	//virtual int getDevicePixelRatio() const override;
-	virtual void setView( CC_VIEW_ORIENTATION view ) override;
+    // int getDevicePixelRatio() const override;
+    void setView(CC_VIEW_ORIENTATION view) override;
 
-	virtual void dispToConsole(QString message, ConsoleMessageLevel level = STD_CONSOLE_MESSAGE) override;
-	ccUniqueIDGenerator::Shared getUniqueIDGenerator() override;
+    void dispToConsole(
+            QString message,
+            ConsoleMessageLevel level = STD_CONSOLE_MESSAGE) override;
+    ccUniqueIDGenerator::Shared getUniqueIDGenerator() override;
 
-	virtual void addWidgetToQMdiArea(QWidget* widget) override;
+    void addWidgetToQMdiArea(QWidget* widget) override;
 
-	virtual void increasePointSize() override;
-	virtual void decreasePointSize() override;
-	virtual void updateUI() override;
-	virtual void freezeUI(bool state) override;
-	virtual void zoomOnSelectedEntities() override;
-	virtual void zoomOnEntities(ccHObject* obj) override;
-	virtual void setGlobalZoom() override;
+    void increasePointSize() override;
+    void decreasePointSize() override;
+    void updateUI() override;
+    void freezeUI(bool state) override;
+    void zoomOnSelectedEntities() override;
+    void zoomOnEntities(ccHObject* obj) override;
+    void setGlobalZoom() override;
 
 private:
-	/***** Utils Methods ***/
-	void connectActions();
+    /***** Utils Methods ***/
+    void connectActions();
     void initThemes();
-	void initLanguages();
+    void initLanguages();
     void initApplicationUpdate();
-	void initial();
-	void initStatusBar();
-	void initDBRoot();
-	void initConsole();
+    void initial();
+    void initStatusBar();
+    void initDBRoot();
+    void initConsole();
 
-	//! Adds the "Edit Plane" action to the given menu.
-	/**
-	 * This is the only MainWindow UI action used externally (by ccDBRoot).
-	**/
-	void  addEditPlaneAction(QMenu &menu) const;
+    //! Adds the "Edit Plane" action to the given menu.
+    /**
+     * This is the only MainWindow UI action used externally (by ccDBRoot).
+     **/
+    void addEditPlaneAction(QMenu& menu) const;
 
-	//! Makes the window including an entity zoom on it (helper)
-	void zoomOn(ccHObject* object);
+    //! Makes the window including an entity zoom on it (helper)
+    void zoomOn(ccHObject* object);
 
-	//! Computes the orientation of an entity
-	/** Either fit a plane or a 'facet' (2D polygon)
-	**/
-	void doComputePlaneOrientation(bool fitFacet);
-	void doActionComputeMesh(CC_TRIANGULATION_TYPES type);
-	//! Creates point clouds from multiple 'components'
-	void createComponentsClouds(ccGenericPointCloud* cloud,
-		cloudViewer::ReferenceCloudContainer& components,
-		unsigned minPointPerComponent,
-		bool randomColors,
-		bool selectComponents,
-		bool sortBysize = true);
+    //! Computes the orientation of an entity
+    /** Either fit a plane or a 'facet' (2D polygon)
+     **/
+    void doComputePlaneOrientation(bool fitFacet);
+    void doActionComputeMesh(CC_TRIANGULATION_TYPES type);
+    //! Creates point clouds from multiple 'components'
+    void createComponentsClouds(
+            ccGenericPointCloud* cloud,
+            cloudViewer::ReferenceCloudContainer& components,
+            unsigned minPointPerComponent,
+            bool randomColors,
+            bool selectComponents,
+            bool sortBysize = true);
 
 public slots:
     void doActionPerspectiveProjection();
     void doActionOrthogonalProjection();
 
 private slots:
-	// status slots
-	void onMousePosChanged(const QPoint &pos);
-	// File menu slots
-	void doActionOpenFile();
-	void doActionSaveFile();
-	void changeTheme();
-	void changeLanguage();
-	void doActionGlobalShiftSeetings();
-	void doActionResetGUIElementsPos();
-	void doShowPrimitiveFactory();
+    // status slots
+    void onMousePosChanged(const QPoint& pos);
+    // File menu slots
+    void doActionOpenFile();
+    void doActionSaveFile();
+    void changeTheme();
+    void changeLanguage();
+    void doActionGlobalShiftSeetings();
+    void doActionResetGUIElementsPos();
+    void doShowPrimitiveFactory();
 
     void doCheckForUpdate();
 
-	void doActionComputeNormals();
-	void doActionInvertNormals();
-	void doActionConvertNormalsToHSV();
-	void doActionOrientNormalsFM();
-	void doActionOrientNormalsMST();
-	void doActionExportNormalToSF();
-	void doActionConvertNormalsToDipDir();
+    void doActionComputeNormals();
+    void doActionInvertNormals();
+    void doActionConvertNormalsToHSV();
+    void doActionOrientNormalsFM();
+    void doActionOrientNormalsMST();
+    void doActionExportNormalToSF();
+    void doActionConvertNormalsToDipDir();
 
-	void doActionComputeOctree();
-	void doActionResampleWithOctree();
+    void doActionComputeOctree();
+    void doActionResampleWithOctree();
 
-	void doBoxAnnotation();
-	void doSemanticAnnotation();
-	void doAnnotations(int mode);
+    void doBoxAnnotation();
+    void doSemanticAnnotation();
+    void doAnnotations(int mode);
 
     //! Creates a cloud with a single point
     void createSinglePointCloud();
     //! Creates a cloud from the clipboard (ASCII) data
     void createPointCloudFromClipboard();
 
-	// sand box research
-	void doActionComputeKdTree();
-	void doComputeBestFitBB();
-	void doActionComputeDistanceMap();
-	void doActionComputeDistToBestFitQuadric3D();
-	void doAction4pcsRegister();
-	void doSphericalNeighbourhoodExtractionTest();
-	void doCylindricalNeighbourhoodExtractionTest();
-	void doActionCreateCloudFromEntCenters();
-	void doActionComputeBestICPRmsMatrix();
-	void doActionFindBiggestInnerRectangle();
+    // sand box research
+    void doActionComputeKdTree();
+    void doComputeBestFitBB();
+    void doActionComputeDistanceMap();
+    void doActionComputeDistToBestFitQuadric3D();
+    void doAction4pcsRegister();
+    void doSphericalNeighbourhoodExtractionTest();
+    void doCylindricalNeighbourhoodExtractionTest();
+    void doActionCreateCloudFromEntCenters();
+    void doActionComputeBestICPRmsMatrix();
+    void doActionFindBiggestInnerRectangle();
 
-	//! Toggles the 'show Qt warnings in Console' option
-	void doEnableQtWarnings(bool);
+    //! Toggles the 'show Qt warnings in Console' option
+    void doEnableQtWarnings(bool);
 
-	// Edit method
-	void doActionComputeMeshAA();
-	void doActionComputeMeshLS();
-	void doActionConvexHull();
-	void doActionPoissonReconstruction();
-	void doMeshTwoPolylines();
+    // Edit method
+    void doActionComputeMeshAA();
+    void doActionComputeMeshLS();
+    void doActionConvexHull();
+    void doActionPoissonReconstruction();
+    void doMeshTwoPolylines();
 
-	void doActionMeshScanGrids();
-	void doActionCreateGBLSensor();
-	void doActionCreateCameraSensor();
-	void doActionModifySensor();
-	void doActionProjectUncertainty();
-	void doActionCheckPointsInsideFrustum();
-	void doActionComputeDistancesFromSensor();
-	void doActionComputeScatteringAngles();
-	void doActionSetViewFromSensor();
-	void doActionShowDepthBuffer();
-	void doActionExportDepthBuffer();
-	void doActionComputePointsVisibility();
+    void doActionMeshScanGrids();
+    void doActionCreateGBLSensor();
+    void doActionCreateCameraSensor();
+    void doActionModifySensor();
+    void doActionProjectUncertainty();
+    void doActionCheckPointsInsideFrustum();
+    void doActionComputeDistancesFromSensor();
+    void doActionComputeScatteringAngles();
+    void doActionSetViewFromSensor();
+    void doActionShowDepthBuffer();
+    void doActionExportDepthBuffer();
+    void doActionComputePointsVisibility();
 
-	void doActionShowWaveDialog();
-	void doActionCompressFWFData();
+    void doActionShowWaveDialog();
+    void doActionCompressFWFData();
 
-	void doActionConvertTextureToColor();
-	void doActionSamplePointsOnMesh();
-	void doActionSamplePointsOnPolyline();
-	void doConvertPolylinesToMesh();
-	void doBSplineFittingFromCloud();
-	void doActionSmoothMeshSF();
-	void doActionEnhanceMeshSF();
-	void doActionSubdivideMesh();
-	void doActionFlipMeshTriangles();
-	void doActionSmoothMeshLaplacian();
-	void doActionFlagMeshVertices();
-	void doActionMeasureMeshVolume();
-	void doActionMeasureMeshSurface();
+    void doActionConvertTextureToColor();
+    void doActionSamplePointsOnMesh();
+    void doActionSamplePointsOnPolyline();
+    void doConvertPolylinesToMesh();
+    void doBSplineFittingFromCloud();
+    void doActionSmoothMeshSF();
+    void doActionEnhanceMeshSF();
+    void doActionSubdivideMesh();
+    void doActionFlipMeshTriangles();
+    void doActionSmoothMeshLaplacian();
+    void doActionFlagMeshVertices();
+    void doActionMeasureMeshVolume();
+    void doActionMeasureMeshSurface();
 
-	void doActionCreatePlane();
-	void doActionEditPlane();
-	void doActionFlipPlane();
-	void doActionComparePlanes();
+    void doActionCreatePlane();
+    void doActionEditPlane();
+    void doActionFlipPlane();
+    void doActionComparePlanes();
 
-	//! Clones currently selected entities
-	void doActionClone();
-	void doActionMerge();
+    //! Clones currently selected entities
+    void doActionClone();
+    void doActionMerge();
 
-	void activateTracePolylineMode();
-	void deactivateTracePolylineMode(bool);
+    void activateTracePolylineMode();
+    void deactivateTracePolylineMode(bool);
 
-	void popMenuInConsole(const QPoint&);
-	void clearConsoleItems();
-	void clearConsole();
+    void popMenuInConsole(const QPoint&);
+    void clearConsoleItems();
+    void clearConsole();
 
+    // Display method
+    //! toggles full screen
+    void toggleFullScreen(bool state);
+    //! Slot called when the exclusive full screen mode is toggled on a window
+    void onExclusiveFullScreenToggled(bool);
+    void showDisplayOptions();
 
-	// Display method
-	//! toggles full screen
-	void toggleFullScreen(bool state);
-	//! Slot called when the exclusive full screen mode is toggled on a window
-	void onExclusiveFullScreenToggled(bool);
-	void showDisplayOptions();
+    void toggleActiveWindowAutoPickRotCenter(bool state);
+    void toggleRotationCenterVisibility(bool state);
+    void doActionResetRotCenter();
 
-	void toggleActiveWindowAutoPickRotCenter(bool state);
-	void toggleRotationCenterVisibility(bool state);
-	void doActionResetRotCenter();
-
-	void doActionEditCamera();
+    void doActionEditCamera();
     void doActionSaveViewportAsCamera();
-	void doActionScreenShot();
-	void doActionToggleOrientationMarker(bool state);
+    void doActionScreenShot();
+    void doActionToggleOrientationMarker(bool state);
 
-	// About menu slots
-	void help();
-	void showEvent(QShowEvent* event) override;
-	void closeEvent(QCloseEvent* event) override;
-	void moveEvent(QMoveEvent* event) override;
-	void resizeEvent(QResizeEvent* event) override;
-	bool eventFilter(QObject *obj, QEvent *event) override;
-	void keyPressEvent(QKeyEvent *event) override;
+    // About menu slots
+    void help();
+    void showEvent(QShowEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;
+    void moveEvent(QMoveEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+    bool eventFilter(QObject* obj, QEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
 
-	void toggleVisualDebugTraces();
+    void toggleVisualDebugTraces();
 
-	void updateUIWithSelection();
-	void doActionApplyTransformation();
-	void doActionApplyScale();
-	void activateTranslateRotateMode();
-	void deactivateTranslateRotateMode(bool state);
+    void updateUIWithSelection();
+    void doActionApplyTransformation();
+    void doActionApplyScale();
+    void activateTranslateRotateMode();
+    void deactivateTranslateRotateMode(bool state);
 
-	void updateMenus();
-	void on3DViewActivated(QMdiSubWindow*);
+    void updateMenus();
+    void on3DViewActivated(QMdiSubWindow*);
 
-	//! Handles new label
-	void handleNewLabel(ccHObject*);
+    //! Handles new label
+    void handleNewLabel(ccHObject*);
 
-	//Point picking mechanism
-	void activatePointPickingMode();
-	void deactivatePointPickingMode(bool);
+    // Point picking mechanism
+    void activatePointPickingMode();
+    void deactivatePointPickingMode(bool);
 
-	//Point list picking mechanism
-	void activatePointListPickingMode();
-	void deactivatePointListPickingMode(bool);
+    // Point list picking mechanism
+    void activatePointListPickingMode();
+    void deactivatePointListPickingMode(bool);
 
-	//! Removes all entities currently loaded in the DB tree
-	void clearAll();
+    //! Removes all entities currently loaded in the DB tree
+    void clearAll();
 
-	// color menu
-	void doActionSetUniqueColor();
-	void doActionColorize();
-	void doActionRGBToGreyScale();
-	void doActionSetColor(bool colorize);
-	void doActionSetColorGradient();
-	void doActionInterpolateColors();
-	void doActionChangeColorLevels();
-	void doActionEnhanceRGBWithIntensities();
+    // color menu
+    void doActionSetUniqueColor();
+    void doActionColorize();
+    void doActionRGBToGreyScale();
+    void doActionSetColor(bool colorize);
+    void doActionSetColorGradient();
+    void doActionInterpolateColors();
+    void doActionChangeColorLevels();
+    void doActionEnhanceRGBWithIntensities();
     void doActionColorFromScalars();
 
-	// scalar field menu
-	void showSelectedEntitiesHistogram();
-	void doActionComputeStatParams();
-	void doActionSFGradient();
-	void doActionOpenColorScalesManager();
-	void doActionSFGaussianFilter();
-	void doActionSFBilateralFilter();
-	void doActionFilterByLabel();
-	void doActionFilterByValue();
+    // scalar field menu
+    void showSelectedEntitiesHistogram();
+    void doActionComputeStatParams();
+    void doActionSFGradient();
+    void doActionOpenColorScalesManager();
+    void doActionSFGaussianFilter();
+    void doActionSFBilateralFilter();
+    void doActionFilterByLabel();
+    void doActionFilterByValue();
 
-	void doActionScalarFieldFromColor();
-	void doActionSFConvertToRGB();
-	void doActionSFConvertToRandomRGB();
-	void doActionRenameSF();
-	void doActionAddConstantSF();
-	void doActionImportSFFromFile();
-	void doActionAddIdField();
-	void doActionExportCoordToSF();
-	void doActionSetSFAsCoord();
-	void doActionInterpolateScalarFields();
-	void doActionScalarFieldArithmetic();
+    void doActionScalarFieldFromColor();
+    void doActionSFConvertToRGB();
+    void doActionSFConvertToRandomRGB();
+    void doActionRenameSF();
+    void doActionAddConstantSF();
+    void doActionImportSFFromFile();
+    void doActionAddIdField();
+    void doActionExportCoordToSF();
+    void doActionSetSFAsCoord();
+    void doActionInterpolateScalarFields();
+    void doActionScalarFieldArithmetic();
 
-	void doRemoveDuplicatePoints();
-	void doActionSubsample();
-	void doActionEditGlobalShiftAndScale();
+    void doRemoveDuplicatePoints();
+    void doActionSubsample();
+    void doActionEditGlobalShiftAndScale();
 
-	// Tools -> Registration
-	void doActionMatchScales();
-	void doActionMatchBBCenters();
-	void doActionRegister();
-	void activateRegisterPointPairTool();
-	void deactivateRegisterPointPairTool(bool state);
+    // Tools -> Registration
+    void doActionMatchScales();
+    void doActionMatchBBCenters();
+    void doActionRegister();
+    void activateRegisterPointPairTool();
+    void deactivateRegisterPointPairTool(bool state);
 
-	inline void doActionMoveBBCenterToOrigin() { doActionFastRegistration(MoveBBCenterToOrigin); }
-	inline void doActionMoveBBMinCornerToOrigin() { doActionFastRegistration(MoveBBMinCornerToOrigin); }
-	inline void doActionMoveBBMaxCornerToOrigin() { doActionFastRegistration(MoveBBMaxCornerToOrigin); }
+    inline void doActionMoveBBCenterToOrigin() {
+        doActionFastRegistration(MoveBBCenterToOrigin);
+    }
+    inline void doActionMoveBBMinCornerToOrigin() {
+        doActionFastRegistration(MoveBBMinCornerToOrigin);
+    }
+    inline void doActionMoveBBMaxCornerToOrigin() {
+        doActionFastRegistration(MoveBBMaxCornerToOrigin);
+    }
 
-	// Tools -> Recognition
-	void doSemanticSegmentation();
-	void deactivateSemanticSegmentation(bool);
+    // Tools -> Recognition
+    void doSemanticSegmentation();
+    void deactivateSemanticSegmentation(bool);
 
-	// Tools -> Segmentation
-	void doActionDBScanCluster();
-	void doActionPlaneSegmentation();
+    // Tools -> Segmentation
+    void doActionDBScanCluster();
+    void doActionPlaneSegmentation();
 
-	// Tools -> Segmentation
-	void activateSegmentationMode();
-	void deactivateSegmentationMode(bool);
-	void activateFilterWindowMode();
-	void deactivateFilterWindowMode(bool);
+    // Tools -> Segmentation
+    void activateSegmentationMode();
+    void deactivateSegmentationMode(bool);
+    void activateFilterWindowMode();
+    void deactivateFilterWindowMode(bool);
 
-	void doActionFilterMode(int mode);
-	void activateClippingMode();
-	void activateSliceMode();
-	void activateProbeMode();
-	void activateDecimateMode();
-	void activateIsoSurfaceMode();
-	void activateThresholdMode();
-	void activateSmoothMode();
-	void activateGlyphMode();
-	void activateStreamlineMode();
+    void doActionFilterMode(int mode);
+    void activateClippingMode();
+    void activateSliceMode();
+    void activateProbeMode();
+    void activateDecimateMode();
+    void activateIsoSurfaceMode();
+    void activateThresholdMode();
+    void activateSmoothMode();
+    void activateGlyphMode();
+    void activateStreamlineMode();
 
-	void doActionLabelConnectedComponents();
-	void doActionKMeans();
-	void doActionFrontPropagation();
-	void doActionExportPlaneInfo();
-	void doActionExportCloudInfo();
+    void doActionLabelConnectedComponents();
+    void doActionKMeans();
+    void doActionFrontPropagation();
+    void doActionExportPlaneInfo();
+    void doActionExportCloudInfo();
 
-	void doActionCloudCloudDist();
-	void doActionCloudMeshDist();
-	void doActionCloudPrimitiveDist();
-	void deactivateComparisonMode(int result);
-	void doActionComputeCPS();
+    void doActionCloudCloudDist();
+    void doActionCloudMeshDist();
+    void doActionCloudPrimitiveDist();
+    void deactivateComparisonMode(int result);
+    void doActionComputeCPS();
 
-	//void doCompute2HalfDimVolume();
+    void doActionFitSphere();
+    void doActionFitPlane();
+    void doActionFitFacet();
+    void doActionFitQuadric();
 
-	void doActionFitSphere();
-	void doActionFitPlane();
-	void doActionFitFacet();
-	void doActionFitQuadric();
+    void doActionSORFilter();
+    void doActionFilterNoise();
+    void doActionVoxelSampling();
 
-	void doActionSORFilter();
-	void doActionFilterNoise();
-	void doActionVoxelSampling();
-
-	void doActionUnroll();
-	void doComputeGeometricFeature();
+    void doActionUnroll();
+    void doComputeGeometricFeature();
 
 private:
     //! Apply transformation to the selected entities
@@ -536,21 +554,23 @@ private:
     void enableUIItems(dbTreeSelectionInfo& selInfo);
 
     /***** Slots of QMenuBar and QToolBar *****/
-    void getFileFilltersAndHistory(QStringList &fileFilters,
-        QString &currentOpenDlgFilter);
+    void getFileFilltersAndHistory(QStringList& fileFilters,
+                                   QString& currentOpenDlgFilter);
 
     //! Shortcut: asks the user to select one cloud
     /** \param defaultCloudEntity a cloud to select by default (optional)
-        \param inviteMessage invite message (default is something like 'Please select an entity:') (optional)
-        \return the selected cloud (or null if the user cancelled the operation)
+        \param inviteMessage invite message (default is something like 'Please
+    select an entity:') (optional) \return the selected cloud (or null if the
+    user cancelled the operation)
     **/
-    ccPointCloud* askUserToSelectACloud(ccHObject* defaultCloudEntity = nullptr, QString inviteMessage = QString());
+    ccPointCloud* askUserToSelectACloud(ccHObject* defaultCloudEntity = nullptr,
+                                        QString inviteMessage = QString());
 
-    void toggleSelectedEntitiesProperty(ccEntityAction::TOGGLE_PROPERTY property);
+    void toggleSelectedEntitiesProperty(
+            ccEntityAction::TOGGLE_PROPERTY property);
     void clearSelectedEntitiesProperty(ccEntityAction::CLEAR_PROPERTY property);
 
-    enum FastRegistrationMode
-    {
+    enum FastRegistrationMode {
         MoveBBCenterToOrigin,
         MoveBBMinCornerToOrigin,
         MoveBBMaxCornerToOrigin
@@ -559,7 +579,7 @@ private:
     void doActionFastRegistration(FastRegistrationMode mode);
 
 private:
-    Ui::MainViewerClass *m_ui;
+    Ui::MainViewerClass* m_ui;
 
     //! DB & DB Tree
     ccDBRoot* m_ccRoot;
@@ -579,39 +599,36 @@ private:
     //! Point picking hub
     ccPickingHub* m_pickingHub;
 
-	/******************************/
-	/***        MDI AREA        ***/
-	/******************************/
-	QMdiArea* m_mdiArea;
+    /******************************/
+    /***        MDI AREA        ***/
+    /******************************/
+    QMdiArea* m_mdiArea;
 
-	//! CloudViewer MDI area overlay dialogs
-	struct ccMDIDialogs
-	{
-		ccOverlayDialog* dialog;
-		Qt::Corner position;
+    //! CloudViewer MDI area overlay dialogs
+    struct ccMDIDialogs {
+        ccOverlayDialog* dialog;
+        Qt::Corner position;
 
-		//! Constructor with dialog and position
-		ccMDIDialogs(ccOverlayDialog* dlg, Qt::Corner pos)
-			: dialog(dlg)
-			, position(pos)
-		{}
-	};
+        //! Constructor with dialog and position
+        ccMDIDialogs(ccOverlayDialog* dlg, Qt::Corner pos)
+            : dialog(dlg), position(pos) {}
+    };
 
-	//! Repositions an MDI dialog at its right position
-	void repositionOverlayDialog(ccMDIDialogs& mdiDlg);
+    //! Repositions an MDI dialog at its right position
+    void repositionOverlayDialog(ccMDIDialogs& mdiDlg);
 
-	//! Registered MDI area 'overlay' dialogs
-	std::vector<ccMDIDialogs> m_mdiDialogs;
+    //! Registered MDI area 'overlay' dialogs
+    std::vector<ccMDIDialogs> m_mdiDialogs;
 
-	/*** dialogs ***/
+    /*** dialogs ***/
     //! Application update dialog
     ecvUpdateDlg* m_updateDlg;
-	//! Camera params dialog
-	ecvCameraParamEditDlg* m_cpeDlg;
+    //! Camera params dialog
+    ecvCameraParamEditDlg* m_cpeDlg;
     //! Graphical segmentation dialog
     ccGraphicalSegmentationTool* m_gsTool;
     //! Polyline tracing tool
-    ccTracePolylineTool * m_tplTool;
+    ccTracePolylineTool* m_tplTool;
     //! Graphical transformation dialog
     ccGraphicalTransformationTool* m_transTool;
     //! Cloud comparison dialog
@@ -625,19 +642,19 @@ private:
     //! Primitive factory dialog
     ecvPrimitiveFactoryDlg* m_pfDlg;
 
-	//! filter tool dialog
-	ecvFilterTool* m_filterTool;
-	//! Annotation tool dialog
-	ecvAnnotationsTool* m_annoTool;
+    //! filter tool dialog
+    ecvFilterTool* m_filterTool;
+    //! Annotation tool dialog
+    ecvAnnotationsTool* m_annoTool;
     //! Filter Label Tool dialog
     ecvFilterByLabelDlg* m_filterLabelTool;
     //! Filter Window tool
     ecvFilterWindowTool* m_filterWindowTool;
-	//! Deep Semantic Segmentation tool dialog
-	ecvDeepSemanticSegmentationTool* m_dssTool;
+    //! Deep Semantic Segmentation tool dialog
+    ecvDeepSemanticSegmentationTool* m_dssTool;
 
-    QVBoxLayout *m_layout;
-    QUIWidget * m_uiManager;
+    QVBoxLayout* m_layout;
+    QUIWidget* m_uiManager;
     QLabel* m_mousePosLabel;
     QLabel* m_systemInfoLabel;
 
@@ -648,19 +665,14 @@ private:
     //! Former geometry (for exclusive full-screen display)
     QByteArray m_formerGeometry;
 
-    enum VIEWMODE
-    {
-        PERSPECTIVE,
-        ORTHOGONAL
-    };
+    enum VIEWMODE { PERSPECTIVE, ORTHOGONAL };
     VIEWMODE m_lastViewMode;
 
-	/*** plugins ***/
-	//! Manages plugins - menus, toolbars, and the about dialog
-	ccPluginUIManager* m_pluginUIManager;
+    /*** plugins ***/
+    //! Manages plugins - menus, toolbars, and the about dialog
+    ccPluginUIManager* m_pluginUIManager;
 
 private:
-
 #ifdef USE_COLMAP_MODULE
     void initReconstructions();
     void autoShowReconstructionToolBar(bool state);
@@ -668,17 +680,16 @@ private:
 #endif
 
 signals:
-	//! Signal emitted when the exclusive full screen is toggled
-	void exclusiveFullScreenToggled(bool exclusive);
+    //! Signal emitted when the exclusive full screen is toggled
+    void exclusiveFullScreenToggled(bool exclusive);
 
-	//! Signal emitted when the selected object is translated by the user
-	void translation(const CCVector3d& t);
+    //! Signal emitted when the selected object is translated by the user
+    void translation(const CCVector3d& t);
 
-	//! Signal emitted when the selected object is rotated by the user
-	/** \param rotMat rotation applied to current viewport (4x4 OpenGL matrix)
-	**/
-	void rotation(const ccGLMatrixd& rotMat);
-
+    //! Signal emitted when the selected object is rotated by the user
+    /** \param rotMat rotation applied to current viewport (4x4 OpenGL matrix)
+     **/
+    void rotation(const ccGLMatrixd& rotMat);
 };
 
-#endif // ECV_MAIN_WINDOW_HEADER
+#endif  // ECV_MAIN_WINDOW_HEADER

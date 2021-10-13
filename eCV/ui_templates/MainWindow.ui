@@ -36,7 +36,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../MainWindow.qrc">
-    <normaloff>:/Resources/images/icon/ecv_128.png</normaloff>:/Resources/images/icon/ecv_128.png</iconset>
+    <normaloff>:/Resources/images/icon/logo_128.png</normaloff>:/Resources/images/icon/logo_128.png</iconset>
   </property>
   <property name="autoFillBackground">
    <bool>true</bool>
@@ -1269,13 +1269,13 @@ QTreeView::branch:open:has-children:has-siblings  {
      <normaloff>:/Resources/images/refresh.png</normaloff>:/Resources/images/refresh.png</iconset>
    </property>
    <property name="text">
-    <string>Reset all GUI element positions</string>
+    <string>reset all GUI element positions</string>
    </property>
    <property name="toolTip">
-    <string>Reset all GUI element positions (after restart)</string>
+    <string>reset all GUI element positions (after restart)</string>
    </property>
    <property name="statusTip">
-    <string>Reset all GUI element positions (after restart)</string>
+    <string>reset all GUI element positions (after restart)</string>
    </property>
   </action>
   <action name="actionConsole">
@@ -3213,10 +3213,10 @@ QTreeView::branch:open:has-children:has-siblings  {
      <normaloff>:/Resources/images/pqResetCenter@2x.png</normaloff>:/Resources/images/pqResetCenter@2x.png</iconset>
    </property>
    <property name="text">
-    <string>Reset Rotation Center</string>
+    <string>reset Rotation Center</string>
    </property>
    <property name="statusTip">
-    <string>Reset Rotation Center</string>
+    <string>reset Rotation Center</string>
    </property>
   </action>
   <action name="actionShowPivot">

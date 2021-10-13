@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 #include "IJsonConvertibleIO.h"
 
 // CV_CORE_LIB
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 // JSON_LIB

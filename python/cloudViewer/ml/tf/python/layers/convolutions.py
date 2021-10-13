@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                          -
+# -                        CloudViewer: asher-1.github.io                          -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.erow.cn
+# Copyright (c) 2020 asher-1.github.io
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -90,6 +90,7 @@ class ContinuousConv(tf.keras.layers.Layer):
         coordinate_mapping: The mapping that is applied to the input coordinates.
           One of 'ball_to_cube_radial', 'ball_to_cube_volume_preserving',
           'identity'.
+
             * 'ball_to_cube_radial' uses radial stretching to map a sphere to
               a cube.
             * 'ball_to_cube_volume_preserving' is using a more expensive volume
@@ -138,7 +139,7 @@ class ContinuousConv(tf.keras.layers.Layer):
           linear layer used for the center if 'use_dense_layer_for_center'
           is True.
 
-        in_channels: This keyword argument is for compatibility with Pytorch.
+        in_channels: This keyword argument is for compatibility with PyTorch.
           It is not used and in_channels will be inferred at the first execution
           of the layer.
     """
@@ -251,7 +252,6 @@ class ContinuousConv(tf.keras.layers.Layer):
         """This function computes the output features.
 
         Arguments:
-
           inp_features: A 2D tensor which stores a feature vector for each input
             point. *This argument must be given as a positional argument!*
 
@@ -292,7 +292,6 @@ class ContinuousConv(tf.keras.layers.Layer):
         Returns:
           A tensor of shape [num output points, filters] with the output features.
         """
-
         offset = self.offset
 
         if inp_importance is None:
@@ -323,7 +322,7 @@ class ContinuousConv(tf.keras.layers.Layer):
                 if return_distances:
                     if self.radius_search_metric == 'L2':
                         neighbors_distance_normalized = self.nns.neighbors_distance / (
-                            radius * radius)
+                                radius * radius)
                     else:  # L1
                         neighbors_distance_normalized = self.nns.neighbors_distance / radius
 
@@ -349,7 +348,7 @@ class ContinuousConv(tf.keras.layers.Layer):
         num_pairs = tf.shape(neighbors_index)[0]
         self._avg_neighbors = tf.dtypes.cast(
             num_pairs, tf.float32) / tf.dtypes.cast(
-                tf.shape(out_positions)[0], tf.float32)
+            tf.shape(out_positions)[0], tf.float32)
 
         extents_rank2 = extents
         while extents_rank2.shape.rank < 2:
@@ -435,7 +434,7 @@ class SparseConv(tf.keras.layers.Layer):
           The shape is [3]. This can be used to control how the filters are
           centered. It will be set automatically for kernels with even sizes.
 
-        in_channels: This keyword argument is for compatibility with Pytorch.
+        in_channels: This keyword argument is for compatibility with PyTorch.
           It is not used and in_channels will be inferred at the first execution
           of the layer.
     """
@@ -516,7 +515,6 @@ class SparseConv(tf.keras.layers.Layer):
         """This function computes the output features.
 
         Arguments:
-
           inp_features: A 2D tensor which stores a feature vector for each input
             point. *This argument must be given as a positional argument!*
 
@@ -539,7 +537,6 @@ class SparseConv(tf.keras.layers.Layer):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
-
         offset = self.offset
         voxel_size = tf.convert_to_tensor(voxel_size, dtype=inp_positions.dtype)
         if voxel_size.shape.rank != 0:
@@ -548,6 +545,13 @@ class SparseConv(tf.keras.layers.Layer):
         if inp_importance is None:
             inp_importance = tf.ones((0,), dtype=tf.float32)
 
+        if isinstance(inp_features, tf.RaggedTensor):
+            if not (isinstance(inp_positions, tf.RaggedTensor) and
+                    isinstance(out_positions, tf.RaggedTensor)):
+                raise Exception(
+                    "All of inp_positions, inp_features and out_positions must be tf.Tensor, or tf.RaggedTensor"
+                )
+
         hash_table_size_factor = 1 / 64
         self.nns = self.fixed_radius_search(
             inp_positions,
@@ -555,6 +559,13 @@ class SparseConv(tf.keras.layers.Layer):
             radius=self.kernel_size[0] * voxel_size * 0.51,
             hash_table_size_factor=hash_table_size_factor,
             hash_table=fixed_radius_search_hash_table)
+
+        out_positions_split = None
+        if isinstance(inp_positions, tf.RaggedTensor):
+            inp_positions = inp_positions.values
+            inp_features = inp_features.values
+            out_positions_split = out_positions.row_splits
+            out_positions = out_positions.values
 
         # for stats and debugging
         num_pairs = tf.shape(self.nns.neighbors_index)[0]
@@ -586,6 +597,10 @@ class SparseConv(tf.keras.layers.Layer):
         if self.use_bias:
             out_features += self.bias
         out_features = self.activation(out_features)
+
+        if out_positions_split is not None:
+            out_features = tf.RaggedTensor.from_row_splits(
+                values=out_features, row_splits=out_positions_split)
 
         return out_features
 
@@ -635,7 +650,7 @@ class SparseConvTranspose(tf.keras.layers.Layer):
           The shape is [3]. This can be used to control how the filters are
           centered. It will be set automatically for kernels with even sizes.
 
-        in_channels: This keyword argument is for compatibility with Pytorch.
+        in_channels: This keyword argument is for compatibility with PyTorch.
           It is not used and in_channels will be inferred at the first execution
           of the layer.
     """
@@ -716,7 +731,6 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         """This function computes the output features.
 
         Arguments:
-
           inp_features: A 2D tensor which stores a feature vector for each input
             point. *This argument must be given as a positional argument!*
 
@@ -739,7 +753,6 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
-
         offset = self.offset
         voxel_size = tf.convert_to_tensor(voxel_size, dtype=inp_positions.dtype)
         if voxel_size.shape.rank != 0:
@@ -750,6 +763,13 @@ class SparseConvTranspose(tf.keras.layers.Layer):
 
         empty_vec = tf.ones((0,), dtype=tf.float32)
 
+        if isinstance(inp_features, tf.RaggedTensor):
+            if not (isinstance(inp_positions, tf.RaggedTensor) and
+                    isinstance(out_positions, tf.RaggedTensor)):
+                raise Exception(
+                    "All of inp_positions, inp_features and out_positions must be tf.Tensor, or tf.RaggedTensor"
+                )
+
         hash_table_size_factor = 1 / 64
         self.nns_inp = self.fixed_radius_search(
             out_positions,
@@ -757,6 +777,13 @@ class SparseConvTranspose(tf.keras.layers.Layer):
             radius=self.kernel_size[0] * voxel_size * 0.51,
             hash_table_size_factor=hash_table_size_factor,
             hash_table=fixed_radius_search_hash_table)
+
+        out_positions_split = None
+        if isinstance(inp_positions, tf.RaggedTensor):
+            inp_positions = inp_positions.values
+            inp_features = inp_features.values
+            out_positions_split = out_positions.row_splits
+            out_positions = out_positions.values
 
         num_out = tf.shape(out_positions, out_type=tf.int64)[0]
 
@@ -797,6 +824,10 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         if self.use_bias:
             out_features += self.bias
         out_features = self.activation(out_features)
+
+        if out_positions_split is not None:
+            out_features = tf.RaggedTensor.from_row_splits(
+                values=out_features, row_splits=out_positions_split)
 
         return out_features
 

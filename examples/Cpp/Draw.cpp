@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,8 +32,10 @@ using namespace cloudViewer;
 
 double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
-std::shared_ptr<ccPointCloud> MakePointCloud(
-        int npts, const Eigen::Vector3d center, double radius, bool colorize) {
+std::shared_ptr<ccPointCloud> MakePointCloud(int npts,
+                                             const Eigen::Vector3d center,
+                                             double radius,
+                                             bool colorize) {
     auto cloud = cloudViewer::make_shared<ccPointCloud>();
     cloud->reserveThePointsTable(static_cast<unsigned>(npts));
     for (int i = 0; i < npts; ++i) {
@@ -53,6 +55,7 @@ std::shared_ptr<ccPointCloud> MakePointCloud(
 void SingleObject() {
     // No colors, no normals, should appear unlit black
     auto cube = ccMesh::CreateBox(1, 2, 4);
+    cube->clearTriNormals();
     visualization::Draw({cube});
 }
 
@@ -77,8 +80,8 @@ void MultiObjects() {
             Eigen::Vector3d{-pc_rad, -3, -pc_rad},
             Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
     auto bbox = sphere_unlit->getAxisAlignedBoundingBox();
-    auto sphere_bbox = cloudViewer::make_shared<ccBBox>(
-            bbox.getMinBound(), bbox.getMaxBound());
+    auto sphere_bbox = cloudViewer::make_shared<ccBBox>(bbox.getMinBound(),
+                                                        bbox.getMaxBound());
     sphere_bbox->setColor({1.0, 0.5, 0.0});
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             sphere_lit->getAxisAlignedBoundingBox());
@@ -100,7 +103,7 @@ void Actions(const std::string test_dir) {
     bunny->createInternalCloud();
     io::ReadTriangleMesh(test_dir + "/Bunny.ply", *bunny);
     if (bunny->isEmpty()) {
-        cloudViewer::utility::LogError(
+        utility::LogError(
                 "Please download the Standford Bunny dataset using:\n"
                 "   cd <cloudViewer_dir>/examples/python\n"
                 "   python -c 'from cloudViewer_tutorial import *; "
@@ -121,8 +124,7 @@ void Actions(const std::string test_dir) {
         std::shared_ptr<ccPointCloud> source =
                 std::dynamic_pointer_cast<ccPointCloud>(
                         o3dvis.GetGeometry(SOURCE_NAME).geometry);
-        auto mesh = std::get<0>(
-                ccMesh::CreateFromPointCloudPoisson(*source));
+        auto mesh = std::get<0>(ccMesh::CreateFromPointCloudPoisson(*source));
         mesh->paintUniformColor({1, 1, 1});
         mesh->computeVertexNormals();
         o3dvis.AddGeometry(RESULT_NAME, mesh);
@@ -186,13 +188,13 @@ void Selections(const std::string test_dir) {
     auto source = cloudViewer::make_shared<ccPointCloud>();
     io::ReadPointCloud(cloud0_path, *source);
     if (source->isEmpty()) {
-        cloudViewer::utility::LogError("Could not open {}", cloud0_path);
+        utility::LogError("Could not open {}", cloud0_path);
         return;
     }
     auto target = cloudViewer::make_shared<ccPointCloud>();
     io::ReadPointCloud(cloud1_path, *target);
     if (target->isEmpty()) {
-        cloudViewer::utility::LogError("Could not open {}", cloud1_path);
+        utility::LogError("Could not open {}", cloud1_path);
         return;
     }
     source->paintUniformColor({1.000, 0.706, 0.000});
@@ -206,11 +208,11 @@ void Selections(const std::string test_dir) {
              target_name](visualization::visualizer::O3DVisualizer &o3dvis) {
                 auto sets = o3dvis.GetSelectionSets();
                 if (sets.empty()) {
-                     cloudViewer::utility::LogWarning(
-                             "You must select points for correspondence before "
-                             "running ICP!");
-                     return;
-                 }
+                    utility::LogWarning(
+                            "You must select points for correspondence before "
+                            "running ICP!");
+                    return;
+                }
                 auto &source_picked_set = sets[0][source_name];
                 auto &target_picked_set = sets[0][target_name];
                 std::vector<visualization::visualizer::O3DVisualizerSelections::
@@ -238,7 +240,7 @@ void Selections(const std::string test_dir) {
              target_name](visualization::visualizer::O3DVisualizer &o3dvis) {
                 auto sets = o3dvis.GetSelectionSets();
                 if (sets.size() < 2) {
-                    cloudViewer::utility::LogWarning(
+                    utility::LogWarning(
                             "You must have at least two sets of selected "
                             "points before running ICP!");
                     return;
@@ -274,12 +276,12 @@ void Selections(const std::string test_dir) {
 
 int main(int argc, char **argv) {
     if (argc <= 1) {
-        cloudViewer::utility::LogError("missing input directionary!");
+        utility::LogError("missing input directionary!");
         return 0;
     }
     std::string TEST_DIR(argv[1]);
-    if (!cloudViewer::utility::filesystem::DirectoryExists(TEST_DIR)) {
-        cloudViewer::utility::LogError(
+    if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
+        utility::LogError(
                 "This example needs to be run from the <build>/bin/examples "
                 "directory");
     }

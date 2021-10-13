@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/TriangleMesh.h"
+#include <ecvMesh.h>
 
-#include "open3d/geometry/BoundingVolume.h"
-#include "open3d/geometry/PointCloud.h"
+#include <ecvBBox.h>
+#include <ecvPointCloud.h>
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
-void ExpectMeshEQ(const open3d::geometry::TriangleMesh& mesh0,
-                  const open3d::geometry::TriangleMesh& mesh1,
+void ExpectMeshEQ(const cloudViewer::geometry::TriangleMesh& mesh0,
+                  const cloudViewer::geometry::TriangleMesh& mesh1,
                   double threshold = 1e-6) {
     ExpectEQ(mesh0.vertices_, mesh1.vertices_, threshold);
     ExpectEQ(mesh0.vertex_normals_, mesh1.vertex_normals_, threshold);
@@ -758,7 +758,7 @@ TEST(TriangleMesh, SamplePointsUniformly) {
 }
 
 TEST(TriangleMesh, FilterSharpen) {
-    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    auto mesh = cloudViewer::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
@@ -777,7 +777,7 @@ TEST(TriangleMesh, FilterSharpen) {
 }
 
 TEST(TriangleMesh, FilterSmoothSimple) {
-    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    auto mesh = cloudViewer::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
@@ -799,7 +799,7 @@ TEST(TriangleMesh, FilterSmoothSimple) {
 }
 
 TEST(TriangleMesh, FilterSmoothLaplacian) {
-    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    auto mesh = cloudViewer::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
@@ -818,7 +818,7 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
 }
 
 TEST(TriangleMesh, FilterSmoothTaubin) {
-    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    auto mesh = cloudViewer::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
@@ -1630,7 +1630,7 @@ TEST(TriangleMesh, CropTriangleMesh) {
     Eigen::Vector3d cropBoundMax(800.0, 800.0, 800.0);
 
     auto output_tm = tm.Crop(
-            geometry::AxisAlignedBoundingBox(cropBoundMin, cropBoundMax));
+            ccBBox(cropBoundMin, cropBoundMax));
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
@@ -1871,9 +1871,9 @@ TEST(TriangleMesh, CreateFromPointCloudPoisson) {
     // TODO: To be investigated.
     //
     // macOS could sometimes be stuck on this test. Examples:
-    // - https://github.com/intel-isl/Open3D/runs/844549493#step:6:3150
-    // - https://github.com/intel-isl/Open3D/runs/741891346#step:5:3146
-    // - https://github.com/intel-isl/Open3D/runs/734021844#step:5:3169
+    // - https://github.com/isl-org/Open3D/runs/844549493#step:6:3150
+    // - https://github.com/isl-org/Open3D/runs/741891346#step:5:3146
+    // - https://github.com/isl-org/Open3D/runs/734021844#step:5:3169
     //
     // We suspect that this is related to threading. Here we set n_threads=1,
     // and if the macOS CI still stuck on this test occasionally, we might need
@@ -2212,4 +2212,4 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

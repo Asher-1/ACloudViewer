@@ -1,4 +1,4 @@
-macro(APP SRC_DIR APP_NAME TARGET_NAME)
+macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
     set(APPS_DIR "${PROJECT_SOURCE_DIR}/libs/CVViewer/apps")
     set(SOURCE_DIR "${APPS_DIR}/${SRC_DIR}")
 
@@ -17,7 +17,7 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
 
         set(MACOSX_BUNDLE_NAME ${APP_NAME})
         set(MACOSX_BUNDLE_EXECUTABLE_NAME ${APP_NAME})
-        set(MACOSX_BUNDLE_GUI_IDENTIFIER com.erow.cloudViewer.${APP_NAME})
+        set(MACOSX_BUNDLE_GUI_IDENTIFIER com.cloudViewer.${APP_NAME})
         set(MACOSX_BUNDLE_ICON_FILE "AppIcon")
         set(MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
@@ -44,23 +44,19 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
                               OUTPUT_NAME ${APP_NAME}
                              )
     endif()
-    add_dependencies(${TARGET_NAME} GuiResources)
-	
-    include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR} )
-    if( MSVC )
-       include_directories( ${OPENGL_ENGINE_LIB_SOURCE_DIR}/msvc )
-    endif()
+
+    # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
+    cloudViewer_set_targets_independent(${TARGET_NAME})
+
+    include_directories( ${CloudViewer_SOURCE_DIR} )
 
     set_target_properties( ${TARGET_NAME} PROPERTIES
         AUTOMOC OFF
         AUTORCC OFF
         AUTOUIC OFF
     )
-	
-    set(DEPENDENCIES "${ARGN}")
-    foreach(DEPENDENCY IN LISTS DEPENDENCIES)
-        target_link_libraries(${TARGET_NAME} PRIVATE ${DEPENDENCY})
-    endforeach()
+
+    target_link_libraries(${TARGET_NAME} PRIVATE CloudViewer::CloudViewer ${ARGN})
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -136,11 +132,12 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
             install(FILES   "${APP_DIR}/${TARGET_NAME}.exe"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     RENAME "${APP_NAME}.exe")
-			
+
 			# deploy on windows
 			add_custom_command(TARGET ${TARGET_NAME}
 				POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/${APP_NAME}/${TARGET_NAME}.exe ${CMAKE_BINARY_DIR}/libs/CVViewer/apps/$<CONFIG>/${TARGET_NAME}.exe
+				COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/${APP_NAME}/${TARGET_NAME}.exe
+                        ${CMAKE_BINARY_DIR}/libs/CVViewer/apps/$<CONFIG>/${APP_NAME}.exe
 				VERBATIM
 			)
 			DeployQt(
@@ -167,18 +164,18 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
     # Install auxiliary files
     if(APPLE OR UNIX) # For Linux it's already installed in by qCC
 	    foreach( filename ${auxFiles} )
-		    install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin" "" )
+		    cloudViewer_install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin" "" )
 	    endforeach()
     else ()
     	foreach( filename ${auxFiles} )
-		    install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}" "" )
+		    cloudViewer_install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}" "" )
 	    endforeach()
     endif()
 
-endmacro(APP)
+endmacro(cloudViewer_add_app)
 
 if (BUILD_GUI)
     set(TEMP_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-    APP(CloudViewerApp CloudViewer CloudViewerApp OPENGL_ENGINE_LIB)
+    cloudViewer_add_app(CloudViewerApp CloudViewer CloudViewerApp)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEMP_RUNTIME_OUTPUT_DIRECTORY})
 endif()

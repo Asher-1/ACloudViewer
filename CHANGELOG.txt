@@ -1,6 +1,63 @@
 ErowCloudViewer Version History
 ============================
 
+v3.8.0 (Asher) - 10/10/2021
+----------------------
+
+## ErowCloudViewer 3.8.0 Release Notes
+We are excited to present ErowCloudViewer 3.8.0!
+
+We welcome you to the 3.8.0 release of ErowCloudViewer. This release is full of exciting new features with a strong emphasis in real-time pipelines, but also full of bug fixes and usability improvements. The big highlights of this release are as follows:
+- New 3D reconstruction system heavily based on colmap.
+- New real-time 3D reconstruction pipeline, featuring GPU and CPU support based on VoxelHashing.
+- New real-time point cloud registration algorithm, featuring a high-performance version of Iterative Closest Point (ICP).
+- New Neighbor Search module, introducing your favorite search algorithms such as KNN and RadiusSearch, with support for GPU and CPU devices through a common interface.
+- New web visualizer, which enables users to access the advanced rendering and visualization features of CloudViewer in your favourite web environments (remote and locally!), including Jupyter notebooks, Jupyter lab, and standalone web applications.
+- New 3D machine learning models and datasets, featuring PointRCNN for 3D object detection, SparseConvNets for point cloud semantic segmentation, and support for ScanNet and SunRGBD.
+- Upgraded GUI module, providing improved and more versatile versions of existing widgets, and new ones: ImageWidget and ToggleSwitch.
+- Upgraded build system, adding support for CUDA 11.
+
+### Real-time 3D reconstruction
+We introduce a new CUDA accelerated pipeline including RGBD odometry, frame-to-model tracking, and volumetric integration.
+![Figure 1. Example of 3D reconstruction from an RGB-D sensor.](doc/images/real-time-3D-Reconstruction.png)
+#### Odometry
+We introduce the tensor based real-time RGBD Odometry pipeline. In addition to the legacy Hybrid and Intensity based methods, we support the popular point-to-plane method.
+#### TSDFVoxelGrid
+We further accelerate volumetric integration and introduce fast ray casting for rendering.
+#### VoxelHashing
+Based on the accelerated RGBD odometry and raycasting, we present the fully functional VoxelHashing system. It performs dense volumetric reconstruction with fast frame-to-model tracking. We present an easy-to-use GUI that also shows real-time interactable surface reconstruction.
+#### SLAC
+We have further enhanced our legacy offline reconstruction system by introducing the Simultaneous Localization and Calibration (SLAC) algorithm. This algorithm applies advanced dense multi-way registration along with non-rigid deformation to create highly-accurate reconstructions.
+
+### Real-time point cloud registration
+We present a high-performance implementation of ICP using CloudViewer’ Tensor library. This module is one of the first on leveraging the new Neighbor search module and the newly crafted parallel kernels. This implementation brings support for multi-scale ICP, which allows us to do iterations on different resolutions in order to accelerate convergence while keeping computation low.
+![Figure 2. ICP registration of multiple point clouds from a driving dataset.](doc/images/ICP-registration.png)
+### New Neighbor Search module
+Neighbor search is at the core of many 3D algorithms. Therefore, it is critical to have access to a fast implementation able to execute a large number of queries in a fraction of a second. After months of development, the CloudViewer team is proud to present the new Neighbor Search module!
+
+This module brings support for core search algorithms, such as KNN, Radius search, and Hybrid search. All these algorithms are provided with support for both CPU and GPU, through a common and easy-to-use interface. Write your code once and support multiple devices! Moreover, we have not sacrificed a single flop of computation, making this module one of the fastest neighbor search libraries ever created.
+
+### Web visualizer
+The need for visualizing complex 3D data in web environments has surged considerably in the past few years, in part thanks to the proliferation of sensors like LIDAR and RGBD cameras. New use cases, such as online dataset inspection and remote visualization are now an integral part of many tasks, requiring the crafting of ad-hoc tools, which often are cumbersome to use.
+![Figure 3. Standalone visualization of a semantic segmentation model in a browser.](doc/images/web_visualizer.png)
+In order to improve this situation, we introduce our new web-based visualization module, which enables 3D visualization from any browsers and any location. This module lets users run advanced rendering and visualization pipelines, both remote and locally through your web browser. All the power of CloudViewer’ rendering engine --including support for PBR materials, multiple lighting systems, 3D ML visualization, and many other features--, are now supported in your browser. This module also includes a Jupyter extension for interactive web-based visualization! This new feature allows you to run compute-intensive 3D processing in a dedicated server while visualizing the results remotely on any device through your browser.
+![Figure 4. Visualization of a 3D model on a Jupyter notebook.](doc/images/jupyter_visualizer.png)
+
+### Build System
+Our pip packages now include support for CUDA 11.0, PyTorch 1.7.1, and TensorFlow 2.4.1 to enable RTX 3000 series devices. Please, notice that we provide custom PyTorch wheels for Linux to work around an incompatibility between CUDA 11, PyTorch, and extension modules such as CloudViewer-ML.
+
+This release also brings new improved support for CUDA on Windows. Users can now build CUDA accelerated Python wheels for Windows. CloudViewer is now built with security options enabled by default.
+
+We hope you find CloudViewer 0.13.0 exciting and useful. Happy coding!
+Remember that you can reach out with questions, requests, or feedback through the following channels:
+
+[e-mail](ludahai19@163.com)
+
+[Documentation](https://asher-1.github.io/docs)
+
+[Downloads](https://asher-1.github.io/downloads)
+
+
 v3.7.0 (Asher) - 11/12/2020
 ----------------------
 
@@ -9,7 +66,7 @@ We are excited to present ErowCloudViewer 3.7.0!
 
 CloudViewer 0.3.7 introduces a brand new 3D Machine Learning module, nicknamed [CloudViewer-ML](https://github.com/Asher-1/CloudViewer-ML). CloudViewer-ML is an extension of your favorite library to bring support for 3D domain-specific operators, models, algorithms, and datasets. In a nutshell, users can now create new applications combining the power of 3D data and state-of-the-art neural networks! CloudViewer-ML is included in all the binary releases of CloudViewer 0.3.7.
 
-CloudViewer-ML comes with support for [Pytorch +1.4](https://pytorch.org/) and [TensorFlow +2.2](https://www.tensorflow.org), the two most popular machine learning frameworks. The first iteration of this module features a 3D semantic segmentation toolset, including training and inference capabilities for [RandlaNet](https://arxiv.org/abs/1911.11236) and [KPConv](https://arxiv.org/abs/1904.08889). The toolset supports popular datasets such as [SemanticKITTI](http://semantic-kitti.org), [Semantic3D](http://www.semantic3d.net), 3D Semantic Parsing of Large-Scale Indoor Spaces S3DIS, [Toronto3D](https://arxiv.org/abs/2003.08284), [Paris-Lille-3D](https://npm3d.fr/paris-lille-3d) and [Electricity3D](https://www.erow.cn). CloudViewer-ML also provides a new model zoo compatible with Pytorch and TensorFlow, so that users can enjoy state-of-the-art semantic segmentation models without hassles.
+CloudViewer-ML comes with support for [Pytorch +1.4](https://pytorch.org/) and [TensorFlow +2.2](https://www.tensorflow.org), the two most popular machine learning frameworks. The first iteration of this module features a 3D semantic segmentation toolset, including training and inference capabilities for [RandlaNet](https://arxiv.org/abs/1911.11236) and [KPConv](https://arxiv.org/abs/1904.08889). The toolset supports popular datasets such as [SemanticKITTI](http://semantic-kitti.org), [Semantic3D](http://www.semantic3d.net), 3D Semantic Parsing of Large-Scale Indoor Spaces S3DIS, [Toronto3D](https://arxiv.org/abs/2003.08284), [Paris-Lille-3D](https://npm3d.fr/paris-lille-3d) and [Electricity3D](https://asher-1.github.io). CloudViewer-ML also provides a new model zoo compatible with Pytorch and TensorFlow, so that users can enjoy state-of-the-art semantic segmentation models without hassles.
 
 We have endowed the new CloudViewer-ML module with a new data viewer tool. Users can now inspect their datasets and model’s predictions in an intuitive and simple way. This visualization tool includes support for Pytorch and TensorFlow frameworks and is fully customizable due to its Pythonic nature.
 
@@ -29,9 +86,9 @@ Remember that you can reach out with questions, requests, or feedback through th
 
 [e-mail](ludahai19@163.com)
 
-[Discourse forum](https://www.erow.cn)
+[Discourse forum](https://asher-1.github.io)
 
-[Discord network](https://www.erow.cn)
+[Discord network](https://asher-1.github.io)
 
 The ErowCloudViewer team
 
@@ -183,7 +240,7 @@ The ErowCloudViewer team
 	- [Added] Added gui::TreeView widget (#2081)
 	- [Added] Adds ability to set button padding (#2082)
 	- [Added] gui::TreeView now supports arbitrary widgets for its cells (#2105)
-	- [Added] Added FBX to Open3DViewer dialog (#2204)
+	- [Added] Added FBX to CloudViewer dialog (#2204)
 	- [Added] GUI changes for CloudViewer-ML visualization (#2177)
 	- [Added] Enable transparency for lit material (#2239)
 	- [Added] Add shader for materials with transparency (#2258)
@@ -208,7 +265,7 @@ The ErowCloudViewer team
 	- [Changed] only update single geometry in Visualizer::AddGeometry and Visualizer::RemoveGeometry (#1945)
 	- [Changed] Updated Info.plist file for app to claim it edits and is the default type for the file associations. Also adds .pcd as a supported file type. (#2001)
 	- [Changed] overload draw_geometries (#1997)
-	- [Changed] Visualization refactor: Open3DViewer and rendering::Scene (#2125)
+	- [Changed] Visualization refactor: CloudViewer and rendering::Scene (#2125)
 	- [Changed] Disable MTL file saving for OBJ files with no UVs and textures (issue #1974) (#2164)
 	- [Changed] Upgrade CloudViewer to use Filament 1.8.1 (#2165)
 	- [Changed] Improve UI responsiveness when viewing large models (#2384)
@@ -769,7 +826,7 @@ v1.0.0 (Asher) - 10/22/2019
 	* When a picking operation is active, the ESC key will cancel it.
 
 	* qBroom plugin:
-		- now has a wiki documentation: http://www.erow.cn/doc/wiki/index.php?title=Virtual_broom_(plugin)
+		- now has a wiki documentation: http://asher-1.github.io/docs
 
 	* qAnimation plugin:
 		- new output option 'zoom' (alternative to the existing 'super resolution' option)

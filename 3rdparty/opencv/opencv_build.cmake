@@ -4,16 +4,10 @@ set(ZLIB_CMAKE_FLAGS -DZLIB_ROOT=${ZLIB_INCLUDE_DIRS}/../)
 set(TBB_CMAKE_FLAGS -DTBB_INCLUDE_DIRS:PATH=${STATIC_TBB_INCLUDE_DIR} -DTBB_LIBRARIES=${STATIC_TBB_LIBRARIES})
 set(PNG_CMAKE_FLAGS -DPNG_LIBRARY=${LIBPNG_LIB_DIR}/lib${LIBPNG_LIBRARIES}.a -DPNG_PNG_INCLUDE_DIR=${LIBPNG_INCLUDE_DIRS})
 
-set_local_or_remote_url(
-    DOWNLOAD_URL_PRIMARY
-    LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/opencv_contrib-4.5.1.zip"
-    REMOTE_URLS "https://github.com/opencv/opencv_contrib/archive/4.5.1.zip"
-)
-
 ExternalProject_Add(
   ext_opencv_contrib
   PREFIX opencv_contrib
-  URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
+  URL https://github.com/opencv/opencv_contrib/archive/4.5.1.zip
   URL_MD5 ddb4f64d6cf31d589a8104655d39c99b
   BUILD_ALWAYS 0
   UPDATE_COMMAND ""
@@ -24,12 +18,6 @@ ExternalProject_Add(
 
 ExternalProject_Get_Property(ext_opencv_contrib SOURCE_DIR)
 set(opencv_contrib_SOURCE_DIR ${SOURCE_DIR})
-
-set_local_or_remote_url(
-    DOWNLOAD_URL_PRIMARY
-    LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/opencv_contrib-4.5.1.zip"
-    REMOTE_URLS "https://github.com/opencv/opencv/archive/4.5.1.zip"
-)
 
 ExternalProject_Add(
   ext_opencv
@@ -70,11 +58,8 @@ ExternalProject_Add(
   BUILD_COMMAND $(MAKE)
 
   DEPENDS opencv_contrib
-          ${TBB_TARGET}
-          ${ZLIB_TARGET}
-          ${TIFF_TARGET}
-          ${PNG_TARGET}
-          ${FFMPEG_TARGET}
+          3rdparty_tbb
+          3rdparty_libpng
 )
 ExternalProject_Get_Property(ext_opencv INSTALL_DIR)
 set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4 -DOPENCV_DIR=${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4)

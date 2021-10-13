@@ -89,9 +89,6 @@ if(OPENMP_ENABLED)
     find_package(OpenMP QUIET)
 endif()
 
-#find_package(FreeImage REQUIRED)
-#find_package(Ceres REQUIRED)
-#find_package(Glog REQUIRED)
 if (WIN32)
     set( BOOST_ROOT "" CACHE PATH "Boost library root directory" )
     if ( NOT BOOST_ROOT )
@@ -100,10 +97,16 @@ if (WIN32)
         add_definitions("-DBOOST_ROOT=${BOOST_ROOT}")
         add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
     endif()
+else()
+    set( BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory" )
 endif()
 
+message(STATUS "BOOST ROOT: ${BOOST_ROOT}")
+
 # Disable BOOST autolink
-add_definitions(-DBOOST_ALL_NO_LIB)
+if (MSVC)
+    add_definitions(-DBOOST_ALL_NO_LIB)
+endif()
 
 if(BOOST_NO_CXX11)
   # Avoid link errors on boost filesystem copy_file function
@@ -127,10 +130,10 @@ if(CGAL_ENABLED)
     find_package(CGAL QUIET)
 endif()
 
-set(CUDA_MIN_VERSION "10.1")
-if(CUDA_ENABLED)
-    find_package(CUDA ${CUDA_MIN_VERSION} QUIET)
-endif()
+#set(CUDA_MIN_VERSION "10.1")
+#if(CUDA_ENABLED)
+#    find_package(CUDA ${CUDA_MIN_VERSION} QUIET)
+#endif()
 
 if(OPENGL_ENABLED AND NOT GUI_ENABLED)
     message(STATUS "Disabling GUI will also disable OpenGL")
@@ -153,7 +156,6 @@ if(CMAKE_BUILD_TYPE)
     message(STATUS "Build type specified as ${CMAKE_BUILD_TYPE}")
 else()
     message(STATUS "Build type not specified, using Release")
-    set(CMAKE_BUILD_TYPE Release)
     set(IS_DEBUG OFF)
 endif()
 
@@ -202,35 +204,23 @@ else()
     message(STATUS "Disabling interprocedural optimization")
 endif()
 
-if(CUDA_FOUND)
-    if(CUDA_ENABLED)
-        add_definitions("-DCUDA_ENABLED")
+if(CUDA_ENABLED)
+    add_definitions("-DCUDA_ENABLED")
+#        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SelectCudaComputeArch.cmake)
+#        COLMAP_CUDA_SELECT_NVCC_ARCH_FLAGS(CUDA_ARCH_FLAGS ${CUDA_ARCHS})
 
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SelectCudaComputeArch.cmake)
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} ${CMAKE_CUDA_ARCHITECTURES}")
 
-        CUDA_SELECT_NVCC_ARCH_FLAGS(CUDA_ARCH_FLAGS ${CUDA_ARCHS})
+    # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -D_FORCE_INLINES")
+    # Do not show warnings if the architectures are deprecated.
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
 
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} ${CUDA_ARCH_FLAGS}")
-
-        # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -D_FORCE_INLINES")
-        # Do not show warnings if the architectures are deprecated.
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
-
-        message(STATUS "Enabling CUDA support (version: ${CUDA_VERSION_STRING},"
-                       " archs: ${CUDA_ARCH_FLAGS_readable})")
-    else()
-        set(CUDA_FOUND OFF)
-        message(STATUS "Disabling CUDA support")
-    endif()
+    message(STATUS "Enabling CUDA support (version: ${CUDAToolkit_VERSION},"
+                   " archs: ${CMAKE_CUDA_ARCHITECTURES})")
 else()
-    set(CUDA_ENABLED OFF)
-    if(CUDA_VERSION_STRING)
-        message(STATUS "Disabling CUDA support (found version "
-                "${CUDA_VERSION_STRING} but >= ${CUDA_MIN_VERSION} required)")
-    else()
-        message(STATUS "Disabling CUDA support")
-    endif()
+    set(CUDA_FOUND OFF)
+    message(STATUS "Disabling CUDA support")
 endif()
 
 if(GUI_ENABLED AND Qt5_FOUND)
@@ -284,11 +274,8 @@ endif()
 include(GenerateVersionDefinitions)
 
 set(COLMAP_INCLUDE_DIRS
-    ${BOOST_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
     ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include
-    #${GLOG_INCLUDE_DIRS}
-    #${FREEIMAGE_INCLUDE_DIRS}
-    #${CERES_INCLUDE_DIRS}
 )
 
 set(COLMAP_LINK_DIRS
@@ -300,9 +287,6 @@ set(COLMAP_EXTERNAL_LIBRARIES
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    #${GLOG_LIBRARIES}
-    #${FREEIMAGE_LIBRARIES}
-    #${CERES_LIBRARIES}
 )
 
 if(OPENMP_FOUND)
@@ -325,7 +309,7 @@ if(UNIX)
 endif()
 
 set(COLMAP_INTERNAL_LIBRARIES
-    #flann
+    flann
     graclus
     lsd
     pba
@@ -351,7 +335,7 @@ add_subdirectory(src)
 # Generate source groups for Visual Studio, XCode, etc.
 ################################################################################
 
-#COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
+COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/Graclus LIB_GRACLUS_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/LSD LIB_LSD_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
@@ -377,7 +361,7 @@ COLMAP_ADD_SOURCE_DIR(src/util UTIL_SRCS *.h *.cc)
 # target does not allow us to set its C++ include directories (and thus
 # intellisense can't find any of the included files).
 add_library( ${COLMAP_SRC_ROOT_FOLDER}
-    #${LIB_FLANN_SRCS}
+    ${LIB_FLANN_SRCS}
     ${LIB_GRACLUS_SRCS}
     ${LIB_LSD_SRCS}
     ${LIB_PBA_SRCS}

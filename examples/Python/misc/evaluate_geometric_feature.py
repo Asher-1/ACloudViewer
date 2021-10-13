@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Misc/evaluate_geometric_feature.py
 
@@ -19,13 +19,13 @@ def evaluate(pcd_target, pcd_source, feature_target, feature_source):
 
 if __name__ == "__main__":
     pcd_target = cv3d.io.read_point_cloud(
-        "../../TestData/Feature/cloud_bin_0.pcd")
+        "../../test_data/Feature/cloud_bin_0.pcd")
     pcd_source = cv3d.io.read_point_cloud(
-        "../../TestData/Feature/cloud_bin_1.pcd")
+        "../../test_data/Feature/cloud_bin_1.pcd")
     feature_target = cv3d.io.read_feature(
-        "../../TestData/Feature/cloud_bin_0.fpfh.bin")
+        "../../test_data/Feature/cloud_bin_0.fpfh.bin")
     feature_source = cv3d.io.read_feature(
-        "../../TestData/Feature/cloud_bin_1.fpfh.bin")
+        "../../test_data/Feature/cloud_bin_1.fpfh.bin")
     pt_dis = evaluate(pcd_target, pcd_source, feature_target, feature_source)
     num_good = sum(pt_dis < 0.075)
     print(

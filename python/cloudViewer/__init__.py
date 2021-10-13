@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                          -
+# -                        CloudViewer: asher-1.github.io                          -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018 www.erow.cn
+# Copyright (c) 2018 asher-1.github.io
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,56 +35,59 @@
 import os
 import sys
 import platform
+
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 from ctypes import CDLL as _CDLL
 from ctypes.util import find_library as _find_library
 from pathlib import Path as _Path
 
 from cloudViewer._build_config import _build_config
+
 if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
                                        _find_library('c++')):
     try:  # Preload libc++.so and libc++abi.so (required by filament)
-        _CDLL(next((_Path(__file__).parent).glob('*c++abi*')))
-        _CDLL(next((_Path(__file__).parent).glob('*c++*')))
+        _CDLL(str(next((_Path(__file__).parent).glob('*c++abi.*'))))
+        _CDLL(str(next((_Path(__file__).parent).glob('*c++.*'))))
     except StopIteration:  # Not found: check system paths while loading
         pass
 
 # fix link bugs for qt on Linux platform
 if platform.system() == "Linux":
     if os.path.exists(_Path(__file__).parent / 'libs'):
-        libicus = (_Path(__file__).parent / 'libs').glob('libicu*')
-        for lib in libicus:
-            _CDLL(lib)
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicudata*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicuuc*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicui18n*'))))
 
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libQt5Core*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libQt5Gui*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libQt5Widgets*'))))
         libqts = (_Path(__file__).parent / 'libs').glob('libQt5*')
-        _CDLL((_Path(__file__).parent / 'libs/libQt5Core.so.5'))
-        _CDLL((_Path(__file__).parent / 'libs/libQt5Gui.so.5'))
-        _CDLL((_Path(__file__).parent / 'libs/libQt5Widgets.so.5'))
         libqts = sorted(libqts)
         for lib in libqts:
             _CDLL(lib)
 
-        _CDLL((_Path(__file__).parent / 'libs/libCVCoreLib.so'))
-        _CDLL((_Path(__file__).parent / 'libs/libECV_DB_LIB.so'))
-        _CDLL((_Path(__file__).parent / 'libs/libECV_IO_LIB.so'))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libCVCoreLib*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libECV_DB_LIB*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libECV_IO_LIB*'))))
 
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
     # Do this before loading the CUDA pybind dll to correctly resolve symbols
     try:  # StopIteration if cpu version not available
-        _CDLL(next((_Path(__file__).parent / 'cpu').glob('pybind*')))
+        _CDLL(str(next((_Path(__file__).parent / 'cpu').glob('pybind*'))))
     except StopIteration:
         pass
     try:
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
         _pybind_cuda = _CDLL(
-            next((_Path(__file__).parent / 'cuda').glob('pybind*')))
+            str(next((_Path(__file__).parent / 'cuda').glob('pybind*'))))
         if _pybind_cuda.cloudViewer_core_cuda_device_count() > 0:
             from cloudViewer.cuda.pybind import (camera, geometry, io, pipelines,
-                                            utility, t)
+                                                 utility, t)
             from cloudViewer.cuda import pybind
+
             __DEVICE_API__ = 'cuda'
     except OSError:  # CUDA not installed
         pass
@@ -103,17 +106,26 @@ __version__ = "@PROJECT_VERSION@"
 if int(sys.version_info[0]) < 3:
     raise Exception("CloudViewer only supports Python 3.")
 
-if "@BUILD_JUPYTER_EXTENSION@" == "ON":
-    from .j_visualizer import *
+if _build_config["BUILD_JUPYTER_EXTENSION"]:
+    import platform
 
-    def _jupyter_nbextension_paths():
-        return [{
-            "section": "notebook",
-            "src": "static",
-            "dest": "cloudViewer",
-            "require": "cloudViewer/extension",
-        }]
-
+    if not (platform.machine().startswith("arm") or
+            platform.machine().startswith("aarch")):
+        try:
+            shell = get_ipython().__class__.__name__
+            if shell == 'ZMQInteractiveShell':
+                print("Jupyter environment detected. "
+                      "Enabling CloudViewer WebVisualizer.")
+                # Set default window system.
+                cloudViewer.visualization.webrtc_server.enable_webrtc()
+                # HTTP handshake server is needed when CloudViewer is serving the
+                # visualizer webpage. Disable since Jupyter is serving.
+                cloudViewer.visualization.webrtc_server.disable_http_handshake()
+        except NameError:
+            pass
+    else:
+        print("CloudViewer WebVisualizer is not supported on ARM for now.")
+        pass
 
 # CLOUDVIEWER_ML_ROOT points to the root of the CloudViewer-ML repo.
 # If set this will override the integrated CloudViewer-ML.
@@ -121,3 +133,46 @@ if 'CLOUDVIEWER_ML_ROOT' in os.environ:
     print('Using external CloudViewer-ML in {}'.format(os.environ['CLOUDVIEWER_ML_ROOT']))
     sys.path.append(os.environ['CLOUDVIEWER_ML_ROOT'])
 import cloudViewer.ml
+
+
+def _jupyter_labextension_paths():
+    """Called by Jupyter Lab Server to detect if it is a valid labextension and
+    to install the widget.
+
+    Returns:
+        src: Source directory name to copy files from. Webpack outputs generated
+            files into this directory and Jupyter Lab copies from this directory
+            during widget installation.
+        dest: Destination directory name to install widget files to. Jupyter Lab
+            copies from `src` directory into <jupyter path>/labextensions/<dest>
+            directory during widget installation.
+    """
+    return [{
+        'src': 'labextension',
+        'dest': 'cloudViewer',
+    }]
+
+
+def _jupyter_nbextension_paths():
+    """Called by Jupyter Notebook Server to detect if it is a valid nbextension
+    and to install the widget.
+
+    Returns:
+        section: The section of the Jupyter Notebook Server to change.
+            Must be 'notebook' for widget extensions.
+        src: Source directory name to copy files from. Webpack outputs generated
+            files into this directory and Jupyter Notebook copies from this
+            directory during widget installation.
+        dest: Destination directory name to install widget files to. Jupyter
+            Notebook copies from `src` directory into
+            <jupyter path>/nbextensions/<dest> directory during widget
+            installation.
+        require: Path to importable AMD Javascript module inside the
+            <jupyter path>/nbextensions/<dest> directory.
+    """
+    return [{
+        'section': 'notebook',
+        'src': 'nbextension',
+        'dest': 'cloudViewer',
+        'require': 'cloudViewer/extension'
+    }]

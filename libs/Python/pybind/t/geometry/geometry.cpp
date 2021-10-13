@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,8 +35,8 @@ namespace geometry {
 
 void pybind_geometry_class(py::module& m) {
     // cloudViewer.t.geometry.Geometry
-    py::class_<Geometry, PyGeometry<Geometry>> geometry(
-            m, "Geometry", "The base geometry class.");
+    py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
+            geometry(m, "Geometry", "The base geometry class.");
 
     geometry.def("clear", &Geometry::Clear,
                  "Clear all elements in the geometry.")
@@ -47,7 +47,8 @@ void pybind_geometry_class(py::module& m) {
 }
 
 void pybind_geometry(py::module& m) {
-    py::module m_submodule = m.def_submodule("geometry");
+    py::module m_submodule = m.def_submodule(
+            "geometry", "Tensor-based geometry defining module.");
 
     pybind_geometry_class(m_submodule);
     pybind_tensormap(m_submodule);
@@ -55,6 +56,7 @@ void pybind_geometry(py::module& m) {
     pybind_trianglemesh(m_submodule);
     pybind_image(m_submodule);
     pybind_tsdf_voxelgrid(m_submodule);
+    pybind_raycasting_scene(m_submodule);
 }
 
 }  // namespace geometry

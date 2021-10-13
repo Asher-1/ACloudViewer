@@ -19,16 +19,11 @@ ExternalProject_add(libvpx
 ExternalProject_Get_Property(libvpx INSTALL_DIR)
 set(libvpx_INSTALL_DIR ${INSTALL_DIR})
 
-set_local_or_remote_url(
-    DOWNLOAD_URL_PRIMARY
-    LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/ffmpeg-4.3.1.tar.bz2"
-    REMOTE_URLS "http://ffmpeg.org/releases/ffmpeg-4.3.1.tar.bz2"
-)
 
 ExternalProject_add(
       ext_ffmpeg
       PREFIX ffmpeg
-      URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
+      URL http://ffmpeg.org/releases/ffmpeg-4.3.1.tar.bz2
       URL_HASH MD5=804707549590e90880e8ecd4e5244fd8
       BUILD_IN_SOURCE ON
       BUILD_ALWAYS 0

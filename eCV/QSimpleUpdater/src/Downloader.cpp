@@ -110,7 +110,7 @@ void Downloader::setUrlId(const QString &url)
  */
 void Downloader::startDownload(const QUrl &url)
 {
-   /* Reset UI */
+   /* reset UI */
    m_ui->progressBar->setValue(0);
    m_ui->stopButton->setText(tr("Stop"));
    m_ui->downloadLabel->setText(tr("Downloading updates"));
