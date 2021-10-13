@@ -91,7 +91,7 @@ public:
 		const Eigen::Vector3d& translation,
 		bool relative = true) override;
 	virtual ecvOrientedBBox& scale(
-		const double s, const Eigen::Vector3d& center) override;
+		const double scale, const Eigen::Vector3d& center) override;
 	virtual ecvOrientedBBox& rotate(
 		const Eigen::Matrix3d& R,
 		const Eigen::Vector3d& center) override;

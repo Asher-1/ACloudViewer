@@ -1,6 +1,6 @@
-# Open3D: www.open3d.org
+# Open3D: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/python/misc/realsense.py
 
@@ -17,9 +17,9 @@ if __name__ == "__main__":
     for fid in range(5):
         rgbd_frame = rscam.capture_frame()
         cv3d.io.write_image(f"color{fid:05d}.jpg",
-                           rgbd_frame.color.to_legacy_image())
+                            rgbd_frame.color.to_legacy())
         cv3d.io.write_image(f"depth{fid:05d}.png",
-                           rgbd_frame.depth.to_legacy_image())
+                            rgbd_frame.depth.to_legacy())
         print("Frame: {}, time: {}s".format(fid, rscam.get_timestamp() * 1e-6))
 
     rscam.stop_capture()

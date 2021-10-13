@@ -25,16 +25,14 @@ cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 
 option( OPTION_USE_RANSAC_LIB "Build with Ransac Lib" ON )
 if ( ${OPTION_USE_RANSAC_LIB} )
-        #target_include_directories(${PROJECT_NAME} PRIVATE ${QRANSAC_INCLUDE_DIRS})
-        #target_link_libraries(${PROJECT_NAME} PUBLIC ${QRANSAC_LIBRARIES})
-        target_link_libraries(${PROJECT_NAME} PUBLIC QRANSAC_SD_PRIM_SHAPES_LIB)
-        target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_RANSAC_SUPPORT )
+	#target_link_libraries( ${PROJECT_NAME} PRIVATE 3rdparty_ransacSD )
+	target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_RANSAC_SUPPORT POINTSWITHINDEX)
 endif()
 
 # Add custom preprocessor definitions
 target_compile_definitions( ${PROJECT_NAME} PRIVATE ECV_DB_LIBRARY_BUILD )
 
-CopyDLLToDirectory(${PROJECT_NAME})
+cloudViewer_install_targets(${PROJECT_NAME})
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
 	CXX_VISIBILITY_PRESET hidden

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,8 @@
 
 void PrintHelp() {
     using namespace cloudViewer;
+    PrintCloudViewerVersion();
+
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > ViewGeometry [options]");
@@ -106,23 +108,23 @@ int main(int argc, char **argv) {
             utility::ProgramOptionExists(argc, argv, "--show_frame");
 
     cloudViewer::visualization::VisualizerWithCustomAnimation visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                          top) == false) {
+    if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                           top)) {
         utility::LogWarning("Failed creating OpenGL window.");
         return 0;
     }
 
     if (!mesh_filename.empty()) {
-        auto mesh_ptr = cloudViewer::io::CreateMeshFromFile(mesh_filename);
-		mesh_ptr->computeVertexNormals();
-        if (visualizer.AddGeometry(mesh_ptr) == false) {
+        auto mesh_ptr = io::CreateMeshFromFile(mesh_filename);
+        mesh_ptr->computeVertexNormals();
+        if (!visualizer.AddGeometry(mesh_ptr)) {
             utility::LogWarning("Failed adding triangle mesh.");
             return 1;
         }
     }
     if (!pcd_filename.empty()) {
-        auto pointcloud_ptr = cloudViewer::io::CreatePointCloudFromFile(pcd_filename);
-        if (visualizer.AddGeometry(pointcloud_ptr) == false) {
+        auto pointcloud_ptr = io::CreatePointCloudFromFile(pcd_filename);
+        if (!visualizer.AddGeometry(pointcloud_ptr)) {
             utility::LogWarning("Failed adding point cloud.");
             return 1;
         }
@@ -131,78 +133,82 @@ int main(int argc, char **argv) {
         }
     }
     if (!lineset_filename.empty()) {
-        auto lineset_ptr = cloudViewer::io::CreateLineSetFromFile(lineset_filename);
-        if (visualizer.AddGeometry(lineset_ptr) == false) {
+        auto lineset_ptr = io::CreateLineSetFromFile(lineset_filename);
+        if (!visualizer.AddGeometry(lineset_ptr)) {
             utility::LogWarning("Failed adding line set.");
             return 1;
         }
     }
     if (!voxelgrid_filename.empty()) {
-        auto voxelgrid_ptr = cloudViewer::io::CreateVoxelGridFromFile(voxelgrid_filename);
-        if (visualizer.AddGeometry(voxelgrid_ptr) == false) {
+        auto voxelgrid_ptr = io::CreateVoxelGridFromFile(voxelgrid_filename);
+        if (!visualizer.AddGeometry(voxelgrid_ptr)) {
             utility::LogWarning("Failed adding voxel grid.");
             return 1;
         }
     }
     if (!image_filename.empty()) {
-        auto image_ptr = cloudViewer::io::CreateImageFromFile(image_filename);
-        if (visualizer.AddGeometry(image_ptr) == false) {
+        auto image_ptr = io::CreateImageFromFile(image_filename);
+        if (!visualizer.AddGeometry(image_ptr)) {
             utility::LogWarning("Failed adding image.");
             return 1;
         }
     }
     if (!depth_filename.empty()) {
-        cloudViewer::camera::PinholeCameraParameters parameters;
+        camera::PinholeCameraParameters parameters;
         if (depth_parameter_filename.empty() ||
-            !cloudViewer::io::ReadIJsonConvertible(depth_parameter_filename, parameters)) {
+            !io::ReadIJsonConvertible(depth_parameter_filename, parameters)) {
             utility::LogWarning(
                     "Failed to read intrinsic parameters for depth image.");
             utility::LogWarning("Using default value for Primesense camera.");
             parameters.intrinsic_.SetIntrinsics(640, 480, 525.0, 525.0, 319.5,
                                                 239.5);
         }
-        auto image_ptr = cloudViewer::io::CreateImageFromFile(depth_filename);
+        auto image_ptr = io::CreateImageFromFile(depth_filename);
         auto pointcloud_ptr = ccPointCloud::CreateFromDepthImage(
                 *image_ptr, parameters.intrinsic_, parameters.extrinsic_);
-        if (visualizer.AddGeometry(pointcloud_ptr) == false) {
+        if (pointcloud_ptr == nullptr) {
+            utility::LogWarning("Failed creating from depth image.");
+            return 1;
+        }
+        if (!visualizer.AddGeometry(pointcloud_ptr)) {
             utility::LogWarning("Failed adding depth image.");
             return 1;
         }
     }
 
-    if (visualizer.HasGeometry() == false) {
+    if (!visualizer.HasGeometry()) {
         utility::LogWarning("No geometry to render!");
         visualizer.DestroyVisualizerWindow();
         return 1;
     }
 
     if (!render_filename.empty()) {
-        if (cloudViewer::io::ReadIJsonConvertible(render_filename,
-                                     visualizer.GetRenderOption()) == false) {
+        if (!io::ReadIJsonConvertible(render_filename,
+                                      visualizer.GetRenderOption())) {
             utility::LogWarning("Failed loading rendering settings.");
             return 1;
         }
     }
 
     if (!view_filename.empty()) {
-        auto &view_control = (cloudViewer::visualization::ViewControlWithCustomAnimation &)
-                                     visualizer.GetViewControl();
-        if (view_control.LoadTrajectoryFromJsonFile(view_filename) == false) {
+        auto &view_control =
+                (cloudViewer::visualization::ViewControlWithCustomAnimation &)
+                        visualizer.GetViewControl();
+        if (!view_control.LoadTrajectoryFromJsonFile(view_filename)) {
             utility::LogWarning("Failed loading view trajectory.");
             return 1;
         }
     } else if (!camera_filename.empty()) {
-        cloudViewer::camera::PinholeCameraTrajectory camera_trajectory;
-        if (cloudViewer::io::ReadIJsonConvertible(camera_filename, camera_trajectory) ==
-            false) {
+        camera::PinholeCameraTrajectory camera_trajectory;
+        if (!io::ReadIJsonConvertible(camera_filename, camera_trajectory)) {
             utility::LogWarning("Failed loading camera trajectory.");
             return 1;
         } else {
             auto &view_control =
-                    (cloudViewer::visualization::ViewControlWithCustomAnimation &)
+                    (visualization::ViewControlWithCustomAnimation &)
                             visualizer.GetViewControl();
-            if (view_control.LoadTrajectoryFromCameraTrajectory(
-                        camera_trajectory) == false) {
+            if (!view_control.LoadTrajectoryFromCameraTrajectory(
+                        camera_trajectory)) {
                 utility::LogWarning(
                         "Failed converting camera trajectory to view "
                         "trajectory.");

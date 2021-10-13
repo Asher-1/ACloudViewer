@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/PointCloudIO.h"
+#include "io/PointCloudIO.h"
 
-#include "open3d/geometry/PointCloud.h"
+#include <ecvPointCloud.h>
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
-using open3d::io::ReadPointCloud;
-using open3d::io::ReadPointCloudOption;
-using open3d::io::WritePointCloud;
-using open3d::io::WritePointCloudOption;
+using cloudViewer::io::ReadPointCloud;
+using cloudViewer::io::ReadPointCloudOption;
+using cloudViewer::io::WritePointCloud;
+using cloudViewer::io::WritePointCloudOption;
 
 namespace {
 
@@ -448,4 +448,4 @@ TEST_P(ReadWritePC, UpdateProgressCallback) {
 TEST(PointCloudIO, DISABLED_CreatePointCloudFromFile) { NotImplemented(); }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

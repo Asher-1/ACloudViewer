@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Basic/pointcloud_plane_segmentation.py
 
@@ -8,7 +8,7 @@ import numpy as np
 import cloudViewer as cv3d
 
 if __name__ == "__main__":
-    pcd = cv3d.io.read_point_cloud("../../TestData/fragment.pcd")
+    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.pcd")
 
     print(
         "Find the plane model and the inliers of the largest planar segment in the point cloud."

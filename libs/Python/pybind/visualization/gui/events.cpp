@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2020 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,15 +26,13 @@
 
 #include "visualization/gui/Events.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include "pybind/visualization/gui/gui.h"
 #include "pybind11/functional.h"
 
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
-
-using namespace cloudViewer;
 
 void pybind_gui_events(py::module& m) {
     py::enum_<MouseButton> buttons(m, "MouseButton", "Mouse button identifiers",

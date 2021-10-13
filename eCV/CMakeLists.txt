@@ -54,16 +54,12 @@ if( MSVC )
     # generate or update translation files(ts)
     if(UPDATE_TRANSLATION_FILES)
         file(GLOB_RECURSE SOURCE_LIST ${CMAKE_CURRENT_SOURCE_DIR}/../*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../*.h ${CMAKE_CURRENT_SOURCE_DIR}/../*.ui)
-        # message("SOURCE_LIST : ${SOURCE_LIST}")
         find_package(Qt5Core REQUIRED)
         find_package(Qt5LinguistTools REQUIRED)
-        #qt5_use_modules(${PROJECT_NAME} Core)
         set( TRANSLATION_FILES ${CMAKE_CURRENT_SOURCE_DIR}/translations/ErowCloudViewer_zh.ts)
-        #file( GLOB TRANSLATION_FILES ${CMAKE_CURRENT_LIST_DIR}/translations/*.ts )
         foreach( TRANSLATION_FILE ${TRANSLATION_FILES} )
             message("TRANSLATION_FILE : ${TRANSLATION_FILE}")
             qt5_update_translation(QMs ${PROJECT_NAME} ${SOURCE_LIST} ${TRANSLATION_FILE})
-            #qt5_create_translation(QMs ${PROJECT_NAME} ${SOURCE_LIST} ${TRANSLATION_FILE})
             message("QMs: ${QMs}")
         endforeach()
     endif()
@@ -121,20 +117,6 @@ else()
     target_link_contrib( ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} )
 endif()
 
-if (USE_PCL_BACKEND)
-    target_link_directories( ${PROJECT_NAME}
-            PUBLIC ${QPCL_ENGINE_LIB_SOURCE_DIR}
-    )
-    include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
-    target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
-endif()
-
-if (BUILD_PYTHON_MODULE)
-    target_link_libraries( ${PROJECT_NAME} ECV_PYTHON_LIB )
-    # Add custom preprocessor definitions
-    target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_PYTHON_MODULE )
-endif()	
-
 if (BUILD_RECONSTRUCTION)
     if (${BUILD_GUI})
         target_compile_definitions( ${PROJECT_NAME} PRIVATE GUI_ENABLED)
@@ -175,6 +157,23 @@ if (BUILD_RECONSTRUCTION)
     target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_COLMAP_MODULE )
 endif()
 
+# fix that You must build your code with position independent code if Qt was built with -reduce-relocations
+cloudViewer_set_targets_independent(${PROJECT_NAME})
+
+if (BUILD_PYTHON_MODULE)
+    target_link_libraries( ${PROJECT_NAME} ECV_PYTHON_LIB )
+    # Add custom preprocessor definitions
+    target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_PYTHON_MODULE )
+endif()	
+
+if (USE_PCL_BACKEND)
+    target_link_directories( ${PROJECT_NAME}
+            PUBLIC ${QPCL_ENGINE_LIB_SOURCE_DIR}
+    )
+    include_directories( ${QPCL_ENGINE_LIB_SOURCE_DIR})
+    target_link_libraries( ${PROJECT_NAME} QPCL_ENGINE_LIB )
+endif()
+
 # Add custom preprocessor definitions
 if( WIN32 )
     set_property( TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS)
@@ -194,7 +193,7 @@ if( WIN32 )
 endif()
 
 # install program
-install_ext( TARGETS ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
+cloudViewer_install_ext( TARGETS ${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
 
 # Auxiliary files
 set( auxFiles  ${ErowCloudViewerProjects_SOURCE_DIR}/CHANGELOG.txt bin_other/license.txt bin_other/global_shift_list_template.txt )
@@ -208,11 +207,11 @@ endif()
 # Install auxiliary files
 if( WIN32 OR APPLE )
     foreach( filename ${auxFiles} )
-        install_ext( FILES ${filename} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
+        cloudViewer_install_ext( FILES ${filename} ${EROWCLOUDVIEWER_DEST_FOLDER} "" )
     endforeach()
 else( UNIX )
     foreach( filename ${auxFiles} )
-        install_ext( FILES ${filename} share/erowcloudviewer "" )
+        cloudViewer_install_ext( FILES ${filename} share/erowcloudviewer "" )
     endforeach()
 endif()
 

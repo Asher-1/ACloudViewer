@@ -294,33 +294,15 @@ static CCVector2d minMaxOfEnabledScalarField(const cloudViewer::GenericIndexedCl
 	return minMax;
 }
 
-static bool bBoxOfHObjectContainer(const ccHObject::Container& objects, CCVector3d &bbMinCorner, CCVector3d bbMaxCorner)
+static ccHObject::GlobalBoundingBox bBoxOfHObjectContainer(const ccHObject::Container& objects)
 {
-	bool isValid = false;
+	ccHObject::GlobalBoundingBox globalBB;
 	for (ccHObject *obj : objects)
 	{
-		CCVector3d minC;
-		CCVector3d maxC;
-		if (obj->getGlobalBB(minC, maxC))
-		{
-			if (isValid)
-			{
-				bbMinCorner.x = std::min(bbMinCorner.x, minC.x);
-				bbMinCorner.y = std::min(bbMinCorner.y, minC.y);
-				bbMinCorner.z = std::min(bbMinCorner.z, minC.z);
-				bbMaxCorner.x = std::max(bbMaxCorner.x, maxC.x);
-				bbMaxCorner.y = std::max(bbMaxCorner.y, maxC.y);
-				bbMaxCorner.z = std::max(bbMaxCorner.z, maxC.z);
-			}
-			else
-			{
-				bbMinCorner = minC;
-				bbMaxCorner = maxC;
-				isValid = true;
-			}
-		}
+		ccHObject::GlobalBoundingBox box = obj->getGlobalBB_recursive();
+		globalBB += box;
 	}
-	return isValid;
+	return globalBB;
 }
 
 
@@ -1047,8 +1029,9 @@ CC_FILE_ERROR findTriangleOrganisation(ccMesh *mesh, ESRI_PART_TYPE &type)
 CC_FILE_ERROR SaveMesh(ccMesh *mesh, QDataStream &stream, int32_t recordNumber, int32_t &recordSize)
 {
 	ESRI_PART_TYPE triangleType;
-	if (findTriangleOrganisation(mesh, triangleType) == CC_FERR_BAD_ENTITY_TYPE)
+	if (findTriangleOrganisation(mesh, triangleType) == CC_FERR_BAD_ENTITY_TYPE) {
 		return CC_FERR_BAD_ENTITY_TYPE;
+        }
 
 	CVLog::Print(QString("[SHP] Triangle type: %1").arg(ToString(triangleType)));
 
@@ -1065,19 +1048,19 @@ CC_FILE_ERROR SaveMesh(ccMesh *mesh, QDataStream &stream, int32_t recordNumber, 
 	stream.setByteOrder(QDataStream::LittleEndian);
 	stream << static_cast<int32_t >(ESRI_SHAPE_TYPE::MULTI_PATCH);
 
-	CCVector3d bbMing, bbMaxg;
-	mesh->getGlobalBB(bbMing, bbMaxg);
+	ccHObject::GlobalBoundingBox globalBB = mesh->getOwnGlobalBB();
 
-	stream << bbMing.x << bbMing.y << bbMaxg.x << bbMaxg.y;
+	stream << globalBB.minCorner().x << globalBB.minCorner().y << globalBB.maxCorner().x << globalBB.maxCorner().y;
 	stream << numParts << numPoints;
 	stream << static_cast<int32_t>(0); // Parts
 	stream << static_cast<int32_t>(triangleType); // Parts Type
 
-	save3DCloud(stream, vertices, bbMing, bbMaxg);
+	save3DCloud(stream, vertices, globalBB.minCorner(), globalBB.maxCorner());
 
 	qint64 recordEnd = stream.device()->pos();
 	qint64 bytesWritten = recordEnd - recordStart;
 	assert(bytesWritten == 2 * recordSize);
+
 	return CC_FERR_NO_ERROR;
 }
 
@@ -1226,16 +1209,13 @@ static CC_FILE_ERROR LoadPolyline(QDataStream &shpStream,
 }
 
 static CC_FILE_ERROR SavePolyline(ccPolyline *poly,
-								  QDataStream &out,
-								  int32_t &recordSize,
-								  int32_t recordNumber,
-								  ESRI_SHAPE_TYPE outputShapeType,
-								  int vertDim = 2)
+                                  QDataStream &out,
+                                  int32_t &recordSize,
+                                  int32_t recordNumber,
+                                  ESRI_SHAPE_TYPE outputShapeType,
+                                  int vertDim = 2)
 {
 	assert(vertDim >= 0 && vertDim < 3);
-	const auto Z = static_cast<unsigned char>(vertDim);
-	const unsigned char X = Z == 2 ? 0 : Z + 1;
-	const unsigned char Y = X == 2 ? 0 : X + 1;
 
 	if (!poly)
 	{
@@ -1243,28 +1223,34 @@ static CC_FILE_ERROR SavePolyline(ccPolyline *poly,
 		return CC_FERR_BAD_ENTITY_TYPE;
 	}
 
+	const unsigned char Z = static_cast<unsigned char>(vertDim);
+	const unsigned char X = Z == 2 ? 0 : Z + 1;
+	const unsigned char Y = X == 2 ? 0 : X + 1;
+
 	cloudViewer::GenericIndexedCloudPersist* vertices = poly->getAssociatedCloud();
 	if (!vertices)
+	{
 		return CC_FERR_BAD_ENTITY_TYPE;
+	}
 
-	int32_t realNumPoints = poly->size();
+	unsigned realVertexCount = poly->size();
 	switch (outputShapeType)
 	{
 		case ESRI_SHAPE_TYPE::POLYGON:
 		case ESRI_SHAPE_TYPE::POLYGON_M:
 		case ESRI_SHAPE_TYPE::POLYGON_Z:
-			if (realNumPoints < 3)
+			if (realVertexCount < 3)
 			{
-				CVLog::Warning("[SHP] Polyline doest not have enough points to be saved as polygon");
+				CVLog::Warning(QObject::tr("[SHP] Polyline %1 does not have enough vertices to be saved as polygon entity").arg(poly->getName()));
 				return CC_FERR_BAD_ENTITY_TYPE;
 			}
 			break;
 		case ESRI_SHAPE_TYPE::POLYLINE:
 		case ESRI_SHAPE_TYPE::POLYLINE_M:
 		case ESRI_SHAPE_TYPE::POLYLINE_Z:
-			if (realNumPoints < 2)
+			if (realVertexCount < 2)
 			{
-				CVLog::Warning("[SHP] Polyline does not have enough points to be saved");
+				CVLog::Warning(QObject::tr("[SHP] Polyline %1 does not have enough vertices to be saved as polyline entity").arg(poly->getName()));
 				return CC_FERR_BAD_ENTITY_TYPE;
 			}
 			break;
@@ -1275,17 +1261,15 @@ static CC_FILE_ERROR SavePolyline(ccPolyline *poly,
 
 	bool isClosed = poly->isClosed();
 
-	int32_t numPoints = realNumPoints;
-	if (isClosed)
-		numPoints++;
-
-	if (numPoints > std::numeric_limits<int32_t>::max())
+	if (static_cast<int64_t>(realVertexCount) + 1 > std::numeric_limits<int32_t>::max())
 	{
-		CVLog::Warning("[SHP] Polyline has to many points to be saved");
+		CVLog::Warning(QObject::tr("[SHP] Polyline %1 has too many points to be saved").arg(poly->getName()));
 		return CC_FERR_BAD_ENTITY_TYPE;
 	}
 
-	int32_t numParts = 1;
+	int32_t iRealVertexCount = static_cast<int32_t>(realVertexCount);
+	int32_t numPoints = iRealVertexCount + (isClosed ? 1 : 0);
+	const int32_t numParts = 1;
 
 	recordSize = sizeofPolyLine(outputShapeType, numPoints, numParts);
 	out.setByteOrder(QDataStream::BigEndian);
@@ -1293,17 +1277,23 @@ static CC_FILE_ERROR SavePolyline(ccPolyline *poly,
 
 	qint64 recordStart = out.device()->pos();
 	out.setByteOrder(QDataStream::LittleEndian);
+
+        //Byte 0: Shape Type
 	out << static_cast<int32_t>(outputShapeType);
 
-	CCVector3d bbMing;
-	CCVector3d bbMaxg;
-	poly->getGlobalBB(bbMing, bbMaxg);
-	out << bbMing.u[X] << bbMing.u[Y] << bbMaxg.u[X] << bbMaxg.u[Y];
+	//Byte 4: Box
+	ccHObject::GlobalBoundingBox globalBB = poly->getOwnGlobalBB();
+	//The Bounding Box for the PolyLine stored in the order Xmin, Ymin, Xmax, Ymax (24 bytes)
+	out << globalBB.minCorner().u[X] << globalBB.minCorner().u[Y] << globalBB.maxCorner().u[X] << globalBB.maxCorner().u[Y];
 
+	//Byte 36: NumParts (The number of parts in the PolyLine)
 	out << numParts;
+	//Byte 40: NumPoints (The total number of points for all parts)
 	out << numPoints;
 
-	//for each part, the index of its first point in the points array
+	//Byte 44: Parts (An array of length NumParts)
+	//(for each part, the index of its first point in the points array)
+	assert(numParts == 1);
 	out << static_cast<int32_t>(0);
 
 	//for polygons we must list the vertices in the right order:
@@ -1320,7 +1310,7 @@ static CC_FILE_ERROR SavePolyline(ccPolyline *poly,
 		unsigned char dim2 = Y;
 		if (outputShapeType == ESRI_SHAPE_TYPE::POLYGON_Z)
 		{
-			CCVector3d diag = bbMaxg - bbMing;
+			CCVector3d diag = globalBB.getDiagVec();
 
 			//in 3D we have to guess the 'flat' dimension
 			unsigned char minDim = diag.u[1] < diag.u[0] ? 1 : 0;
@@ -1337,22 +1327,23 @@ static CC_FILE_ERROR SavePolyline(ccPolyline *poly,
 	for (int32_t i = 0; i < numPoints; ++i)
 	{
 		int32_t ii = (inverseOrder ? numPoints - 1 - i : i);
-		const CCVector3* P = vertices->getPoint(ii % realNumPoints); //warning: handle loop if polyline is closed
+		const CCVector3* P = vertices->getPoint(ii % iRealVertexCount); //warning: handle loop if polyline is closed
 		CCVector3d Pg = poly->toGlobal3d(*P);
+		//2D point (16 bytes)
 		out << Pg.u[X] << Pg.u[Y];
 	}
 
 	//3D polylines
 	if (isESRIShape3D(outputShapeType))
 	{
-		//Z boundaries
-		out << bbMing.u[Z] << bbMaxg.u[Z];
+		//Z boundaries (16 bytes)
+		out << globalBB.minCorner().u[Z] << globalBB.maxCorner().u[Z];
 
 		//Z coordinates (for each part - just one here)
 		for (int32_t i = 0; i < numPoints; ++i)
 		{
 			int32_t ii = (inverseOrder ? numPoints - 1 - i : i);
-			const CCVector3 *P = vertices->getPoint(ii % realNumPoints); //warning: handle loop if polyline is closed
+			const CCVector3 *P = vertices->getPoint(ii % iRealVertexCount); //warning: handle loop if polyline is closed
 			CCVector3d Pg = poly->toGlobal3d(*P);
 			out << Pg.u[Z];
 		}
@@ -1360,7 +1351,7 @@ static CC_FILE_ERROR SavePolyline(ccPolyline *poly,
 
 	if (hasMeasurements(outputShapeType))
 	{
-		//M boundaries
+		//M boundaries (16 bytes)
 		bool hasSF = vertices->isScalarFieldEnabled();
 		CCVector2d minMax = minMaxOfEnabledScalarField(vertices);
 		out << minMax.x << minMax.y;
@@ -1370,18 +1361,20 @@ static CC_FILE_ERROR SavePolyline(ccPolyline *poly,
 		{
 			for (int32_t i = 0; i < numPoints; ++i)
 			{
-				ScalarType scalar = vertices->getPointScalarValue(i % realNumPoints);
-				out << (scalar == NAN_VALUE ? ESRI_NO_DATA : static_cast<double>(scalar));
+				ScalarType scalar = vertices->getPointScalarValue(i % iRealVertexCount);
+				out << (ccScalarField::ValidValue(scalar) ? ESRI_NO_DATA : static_cast<double>(scalar));
 			}
 		}
 		else
 		{
 			for (int32_t i = 0; i < numPoints; ++i)
+			{
 				out << ESRI_NO_DATA;
+			}
 		}
 	}
 
-	assert(out.device()->pos() - recordStart == recordSize * 2);
+	assert(out.device()->pos() == recordStart + recordSize * 2);
 	return CC_FERR_NO_ERROR;
 }
 
@@ -1509,18 +1502,16 @@ static CC_FILE_ERROR SaveAsCloud(ccGenericPointCloud* cloud, QDataStream& out, i
 	out.setByteOrder(QDataStream::BigEndian);
 	out << recordNumber << recordSize;
 
-	CCVector3d bbMing;
-	CCVector3d bbMaxg;
-	cloud->getGlobalBB(bbMing, bbMaxg);
+        ccHObject::GlobalBoundingBox globalBB = cloud->getOwnGlobalBB();
 
 	int64_t recordStart = out.device()->pos();
 	out.setByteOrder(QDataStream::LittleEndian);
 	out << static_cast<int32_t>(ESRI_SHAPE_TYPE::MULTI_POINT_Z);
 
-	out << bbMing.x << bbMing.y << bbMaxg.x << bbMaxg.y;
+	out << globalBB.minCorner().x << globalBB.minCorner().y << globalBB.maxCorner().x << globalBB.maxCorner().y;
 	out << static_cast<int32_t >(cloud->size());
 
-	save3DCloud(out, cloud, bbMing, bbMaxg);
+	save3DCloud(out, cloud, globalBB.minCorner(), globalBB.maxCorner());
 	assert(out.device()->pos() - recordStart == recordSize * 2);
 	return CC_FERR_NO_ERROR;
 }
@@ -1619,11 +1610,11 @@ CC_FILE_ERROR ShpFilter::saveToFile(ccHObject* entity, const std::vector<Generic
 		return CC_FERR_BAD_ENTITY_TYPE;
 	}
 
-	CCVector3d bbMinCorner, bbMaxCorner;
-	if (!bBoxOfHObjectContainer(toSave, bbMinCorner, bbMaxCorner))
+	ccHObject::GlobalBoundingBox globalBB = bBoxOfHObjectContainer(toSave);
+	if (!globalBB.isValid())
 	{
-		CVLog::Error("Entity(ies) has(ve) an invalid bounding box?!");
-		return CC_FERR_BAD_ENTITY_TYPE;
+            CVLog::Error("Entity(ies) has(ve) an invalid bounding box?!");
+            return CC_FERR_BAD_ENTITY_TYPE;
 	}
 
 	bool save3DPolysAs2D = false;
@@ -1714,13 +1705,13 @@ CC_FILE_ERROR ShpFilter::saveToFile(ccHObject* entity, const std::vector<Generic
 
 	if (!isESRIShape3D(outputShapeType))
 	{
-		bbMinCorner.u[Z] = 0.0;
-		bbMaxCorner.u[Z] = 0.0;
+		globalBB.minCorner().u[Z] = 0;
+		globalBB.maxCorner().u[Z] = 0;
 	}
 
 	ShapeFileHeader hdr;
-	hdr.pointMin = CCVector3d(bbMinCorner.u[X], bbMinCorner.u[Y], bbMinCorner.u[Z]);
-	hdr.pointMax = CCVector3d(bbMaxCorner.u[X], bbMaxCorner.u[Y], bbMaxCorner.u[Z]);
+	hdr.pointMin = CCVector3d(globalBB.minCorner().u[X], globalBB.minCorner().u[Y], globalBB.minCorner().u[Z]);
+	hdr.pointMax = CCVector3d(globalBB.maxCorner().u[X], globalBB.maxCorner().u[Y], globalBB.maxCorner().u[Z]);
 	hdr.shapeTypeInt = static_cast<int32_t>(outputShapeType);
 	hdr.mRange = mRange;
 

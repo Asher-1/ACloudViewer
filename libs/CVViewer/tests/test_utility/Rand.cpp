@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@
 
 #include "tests/test_utility/Raw.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 // ----------------------------------------------------------------------------
@@ -117,7 +117,7 @@ void Rand(std::vector<Eigen::Vector3i> &v,
 // Initialize an Eigen::Vector2d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(std::vector<Eigen::Vector2d, open3d::utility::Vector2d_allocator> &v,
+void Rand(std::vector<Eigen::Vector2d, cloudViewer::utility::Vector2d_allocator> &v,
           const Eigen::Vector2d &vmin,
           const Eigen::Vector2d &vmax,
           const int &seed) {
@@ -159,7 +159,7 @@ void Rand(std::vector<Eigen::Vector3d> &v,
 // Initialize an Eigen::Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(std::vector<Eigen::Vector4i, open3d::utility::Vector4i_allocator> &v,
+void Rand(std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator> &v,
           const int &vmin,
           const int &vmax,
           const int &seed) {
@@ -179,7 +179,7 @@ void Rand(std::vector<Eigen::Vector4i, open3d::utility::Vector4i_allocator> &v,
 // Initialize an Eigen::Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(std::vector<Eigen::Vector4i, open3d::utility::Vector4i_allocator> &v,
+void Rand(std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator> &v,
           const Eigen::Vector4i &vmin,
           const Eigen::Vector4i &vmax,
           const int &seed) {
@@ -314,4 +314,4 @@ void Rand(std::vector<double> &v,
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

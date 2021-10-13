@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/MemoryManager.h"
+#include "core/MemoryManager.h"
 
 #include <vector>
 
-#include "open3d/core/Blob.h"
-#include "open3d/core/Device.h"
+#include "core/Blob.h"
+#include "core/Device.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 class MemoryManagerPermuteDevices : public PermuteDevices {};
@@ -79,4 +79,4 @@ TEST_P(MemoryManagerPermuteDevicePairs, Memcpy) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

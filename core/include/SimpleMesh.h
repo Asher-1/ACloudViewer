@@ -95,6 +95,10 @@ public: //specific methods
 	**/
 	virtual bool resize(unsigned n);
 
+        //inherited from GenericIndexedMesh
+        bool normalsAvailable() const override;
+        bool interpolateNormals(unsigned triIndex, const CCVector3& P, CCVector3& N) override;
+
 protected:
 
 	//! A triangle vertices indexes container

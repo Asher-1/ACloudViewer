@@ -2,8 +2,8 @@
 <Package>
     <DisplayName>CloudViewer</DisplayName>
     <Description>3D PointCloud processing platform.</Description>
-    <Version>3.7.1</Version>
-    <ReleaseDate>2021-05-03</ReleaseDate>
+    <Version>3.8.0</Version>
+    <ReleaseDate>2021-10-10</ReleaseDate>
     <Licenses>
         <License name="Beer Public License Agreement" file="license.txt" />
     </Licenses>

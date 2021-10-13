@@ -1,29 +1,19 @@
 include(ExternalProject)
 
-set_local_or_remote_url(
-    DOWNLOAD_URL_PRIMARY
-    LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/gflags-2.2.2.zip"
-    REMOTE_URLS "https://github.com/gflags/gflags/archive/v2.2.2.zip"
-)
-
 # Add gflags
 ExternalProject_Add(
     ext_gflags
-    PREFIX ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}
-    URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
+    PREFIX gflags
+    URL https://github.com/gflags/gflags/archive/v2.2.2.zip
     URL_HASH MD5=ff856ff64757f1381f7da260f79ba79b
-    DOWNLOAD_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/download/gflags
+    DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/gflags"
     BUILD_IN_SOURCE 0
     BUILD_ALWAYS 0
-    UPDATE_COMMAND ""
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/gflags
-    BINARY_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/gflags_build
     INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
+    UPDATE_COMMAND ""
     CMAKE_ARGS
         -DBUILD_SHARED_LIBS=$<IF:$<PLATFORM_ID:Linux>,ON,OFF>
         -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
-        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
 )
 
@@ -37,5 +27,5 @@ if(MSVC)
 else()
     set(EXT_GFLAGS_LIBRARIES gflags)
     set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
-    install_ext( FILES ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${library_filename} ${INSTALL_DESTINATIONS} "")
+    cloudViewer_install_ext( FILES ${GFLAGS_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
 endif()

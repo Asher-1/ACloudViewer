@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Advanced/customized_visualization_key_action.py
 
@@ -41,7 +41,7 @@ def custom_key_action_without_kb_repeat_delay(pcd):
 
 
 if __name__ == "__main__":
-    pcd = cv3d.io.read_point_cloud("../../TestData/fragment.ply")
+    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.ply")
 
     print(
         "Customized visualization with smooth key action (without keyboard repeat delay)"

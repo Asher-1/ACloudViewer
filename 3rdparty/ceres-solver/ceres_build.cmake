@@ -1,23 +1,15 @@
 include(ExternalProject)
 
-set_local_or_remote_url(
-    DOWNLOAD_URL_PRIMARY
-    LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/ceres-solver-1.14.0.zip"
-    REMOTE_URLS "https://github.com/ceres-solver/ceres-solver/archive/1.14.0.zip"
-)
-
 ExternalProject_Add(
    ext_ceres
-   PREFIX ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}
-   URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
+   PREFIX ceres
+   URL https://github.com/ceres-solver/ceres-solver/archive/1.14.0.zip
    URL_HASH MD5=26b255b7a9f330bbc1def3b839724a2a
-   DOWNLOAD_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/download/ceres
+   DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/ceres"
    BUILD_IN_SOURCE 0
    BUILD_ALWAYS 0
-   UPDATE_COMMAND ""
-   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ceres
-   BINARY_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/ceres_build
    INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
+   UPDATE_COMMAND ""
    CMAKE_ARGS
           ${EIGEN_CMAKE_FLAGS}
           ${GLOG_CMAKE_FLAGS}
@@ -44,7 +36,7 @@ if (WIN32)
 else()
     set(EXT_CERES_LIBRARIES ceres)
     set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_CERES_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
-    install_ext( FILES ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${library_filename} ${INSTALL_DESTINATIONS} "")
+    cloudViewer_install_ext( FILES ${CERES_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
 endif()
 
 set(CERES_CMAKE_FLAGS ${SUITESPARSE_CMAKE_FLAGS} ${EIGEN_CMAKE_FLAGS} ${GLOG_CMAKE_FLAGS} -DCeres_DIR=${CERES_LIB_DIR}/cmake/Ceres)

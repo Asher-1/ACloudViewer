@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/Image.h"
+#include "t/geometry/Image.h"
 
 #include "core/CoreTest.h"
-#include "open3d/core/TensorList.h"
+#include "core/TensorList.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 class ImagePermuteDevices : public PermuteDevices {};
@@ -121,4 +121,4 @@ TEST_P(ImagePermuteDevices, ConstructorFromTensor) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

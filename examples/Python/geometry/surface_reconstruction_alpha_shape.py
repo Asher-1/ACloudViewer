@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Advanced/surface_reconstruction_alpha_shape.py
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         mesh.compute_vertex_normals()
         draw_geometries_with_back_face([mesh])
 
-    pcd = cv3d.io.read_point_cloud("../../TestData/fragment.ply")
+    pcd = cv3d.io.read_point_cloud("../../test_data/fragment.ply")
     cv3d.visualization.draw_geometries([pcd])
     print("compute tetra mesh only once")
     tetra_mesh, pt_map = cv3d.geometry.TetraMesh.create_from_point_cloud(pcd)

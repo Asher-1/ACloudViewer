@@ -49,8 +49,8 @@ With Python versions:
 Resources
 ======================
 
-* Website: `www.erow.cn <http://www.erow.cn>`_
-* Code: `www.erow.cn <http://www.erow.cn>`_
-* Document: `www.erow.cn/docs <http://www.erow.cn/docs>`_
+* Website: `asher-1.github.io <http://asher-1.github.io>`_
+* Code: `asher-1.github.io <http://asher-1.github.io>`_
+* Document: `asher-1.github.io/docs <http://asher-1.github.io/docs>`_
 * License: `The MIT license <https://opensource.org/licenses/MIT>`_
 

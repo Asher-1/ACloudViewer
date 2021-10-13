@@ -1,218 +1,281 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.19)
 # If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
 # official repository https://apt.kitware.com/.  CMake 3.18+ is required to
 # allow linking with OBJECT libraries, to prevent erroneous -gencode option
 # deduplication with CUDA, and to simplify generator expressions for selecting
 # compile flags and setting global hardened link flags.
 
-if (APPLE)
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
-    "Minimum OS X deployment version" FORCE)
-endif()
-
 # One shouldn't generate the BUILD project directly in the SOURCES folder!
-if ( ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
-	if ( NOT SAME_BUILD_AND_SOURCE_FOLDER_WARNING_ALREADY_ISSUED )
-		message(FATAL_ERROR "It is not advised to BUILD the binaries directly in the SOURCE folder!\n If you want to proceed with this option, just CONFIGURE the project once again" )
-		set( SAME_BUILD_AND_SOURCE_FOLDER_WARNING_ALREADY_ISSUED TRUE )
-	endif()
-endif()
+if (${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+    if (NOT SAME_BUILD_AND_SOURCE_FOLDER_WARNING_ALREADY_ISSUED)
+        message(FATAL_ERROR "It is not advised to BUILD the binaries directly in the SOURCE folder!\n"
+                "If you want to proceed with this option, just CONFIGURE the project once again")
+        set(SAME_BUILD_AND_SOURCE_FOLDER_WARNING_ALREADY_ISSUED TRUE)
+    endif ()
+endif ()
+
+if (APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+            "Minimum OS X deployment version" FORCE)
+endif ()
+
+if (UNIX AND NOT APPLE)
+    # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
+    # which depends on ${CLOUDVIEWER_VERSION}, which depends on ${DEVELOPER_BUILD}.
+    execute_process(COMMAND uname -p
+            OUTPUT_VARIABLE PROCESSOR_ARCH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+    if (PROCESSOR_ARCH STREQUAL "aarch64")
+        set(LINUX_AARCH64 TRUE)
+    endif ()
+endif ()
+
+include(CMakeDependentOption)
 
 # ErowCloudViewer build options
-option(BUILD_SHARED_LIBS          "Build shared libraries"                   			    OFF)
-option(BUILD_EXAMPLES             "Build CloudViewer example programs"        			    ON )
-option(BUILD_UNIT_TESTS           "Build CloudViewer unit tests"                        	OFF)
-option(BUILD_BENCHMARKS           "Build the micro benchmarks"                          	OFF)
-option(BUILD_PYTHON_MODULE        "Build the python module"                             	ON )
-option(BUILD_RECONSTRUCTION       "Build the 3D Reconstruction"                             OFF)
-option(BUILD_CUDA_MODULE          "Build the CUDA module"                               	OFF)
-option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"                	ON )
-option(BUILD_GUI                  "Builds new GUI"                                      	ON )
-option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for CloudViewer"              	OFF)
-option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"                   	OFF)
-option(STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"                 	OFF)
-option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"                      	OFF)
-option(BUILD_RPC_INTERFACE        "Build the RPC interface"                             	OFF)
-option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"                          	OFF)
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(BUILD_EXAMPLES "Build CloudViewer example programs" ON)
+option(BUILD_UNIT_TESTS "Build CloudViewer unit tests" OFF)
+option(BUILD_BENCHMARKS "Build the micro benchmarks" OFF)
+option(BUILD_PYTHON_MODULE "Build the python module" ON)
+option(BUILD_CUDA_MODULE "Build the CUDA module" OFF)
+option(BUILD_COMMON_CUDA_ARCHS "Build for common CUDA GPUs (for release)" OFF)
+option(BUILD_CACHED_CUDA_MANAGER "Build the cached CUDA memory manager" ON)
+option(BUILD_GUI "Builds new GUI" ON)
+option(WITH_OPENMP "Use OpenMP multi-threading" ON)
+option(WITH_IPPICV "Use Intel Performance Primitives" ON)
+option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering" OFF)
+option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
+option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" OFF)
+if (WIN32 OR UNIX AND NOT LINUX_AARCH64)
+    cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
+else ()
+    option(BUILD_WEBRTC "Build WebRTC visualizer" OFF)
+endif ()
+option(BUILD_JUPYTER_EXTENSION "Build Jupyter, requires BUILD_WEBRTC=ON" OFF)
+
 # 3rd-party build options
-option(USE_SIMD                   "Use Single Instruction Multiple Data speed optimization" OFF)
-option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"                      	OFF)
-option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"                     	OFF)
-option(USE_SYSTEM_FLANN           "Use system pre-installed flann"                      	OFF)
-option(USE_SYSTEM_FMT             "Use system pre-installed fmt"                        	OFF)
-option(USE_SYSTEM_GLEW            "Use system pre-installed glew"                       	OFF)
-option(USE_SYSTEM_GLFW            "Use system pre-installed glfw"                       	OFF)
-option(USE_SYSTEM_GOOGLETEST      "Use system pre-installed googletest"                 	OFF)
-option(USE_SYSTEM_IMGUI           "Use system pre-installed imgui"                      	OFF)
-option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"                       	OFF)
-option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"                     	OFF)
-option(USE_SYSTEM_PNG             "Use system pre-installed png"                        	OFF)
-option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"                   	OFF)
-option(USE_SYSTEM_QHULL           "Use system pre-installed qhull"                      	OFF)
-option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"                   	OFF)
-option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"              	OFF)
-# PCL ENGINE SUPPORT
-option(USE_PCL_BACKEND           "Check to use pcl library as backend" 				        ON )
-# Mac options
-option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"                	ON )
+option(USE_SIMD "Use Single Instruction Multiple Data speed optimization" OFF)
+option(USE_BLAS "Use BLAS/LAPACK instead of MKL" OFF)
+option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" OFF)
+option(USE_SYSTEM_FLANN "Use system pre-installed flann" OFF)
+option(USE_SYSTEM_FMT "Use system pre-installed fmt" OFF)
+option(USE_SYSTEM_GLEW "Use system pre-installed glew" OFF)
+option(USE_SYSTEM_GLFW "Use system pre-installed glfw" OFF)
+option(USE_SYSTEM_GOOGLETEST "Use system pre-installed googletest" OFF)
+option(USE_SYSTEM_IMGUI "Use system pre-installed imgui" OFF)
+option(USE_SYSTEM_JPEG "Use system pre-installed jpeg" OFF)
+option(USE_SYSTEM_LIBLZF "Use system pre-installed liblzf" OFF)
+option(USE_SYSTEM_PNG "Use system pre-installed png" OFF)
+option(USE_SYSTEM_PYBIND11 "Use system pre-installed pybind11" OFF)
+option(USE_SYSTEM_QHULLCPP "Use system pre-installed qhullcpp" OFF)
+option(USE_SYSTEM_TINYGLTF "Use system pre-installed tinygltf" OFF)
+option(USE_SYSTEM_TINYOBJLOADER "Use system pre-installed tinyobjloader" OFF)
+option(USE_SYSTEM_FFMPEG "Use system pre-installed ffmpeg" OFF)
+option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source" OFF)
+option(PREFER_OSX_HOMEBREW "Prefer Homebrew libs over frameworks" ON)
+option(WITH_FAISS "Enable Faiss" ON)
+
 # Sensor options
-option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera"            	OFF)
-option(USE_SYSTEM_LIBREALSENSE    "Use system pre-installed librealsense"               	OFF)
-option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"               	OFF)
+option(BUILD_LIBREALSENSE "Build support for Intel RealSense camera" OFF)
+option(USE_SYSTEM_LIBREALSENSE "Use system pre-installed librealsense" OFF)
+option(BUILD_AZURE_KINECT "Build support for Azure Kinect sensor" OFF)
+
 # ML library options
-option(BUILD_TENSORFLOW_OPS       "Build ops for Tensorflow"                            	OFF)
-option(BUILD_PYTORCH_OPS          "Build ops for Pytorch"                               	OFF)
-option(BUNDLE_CLOUDVIEWER_ML      "Includes the CloudViewer-ML repo in the wheel"       	OFF)
-option(DEVELOPER_BUILD            "Add +commit_hash to the project version number"      	ON )
+option(BUILD_TENSORFLOW_OPS "Build ops for Tensorflow" OFF)
+option(BUILD_PYTORCH_OPS "Build ops for Pytorch" OFF)
+option(BUNDLE_CLOUDVIEWER_ML "Includes the CloudViewer-ML repo in the wheel" OFF)
+
+# PCL ENGINE SUPPORT
+option(BUILD_RECONSTRUCTION "Build the 3D Reconstruction" OFF)
+option(USE_PCL_BACKEND "Check to use pcl library as backend" ON)
 
 # other options
-option(WITH_FAISS                 "Enable Faiss"                                        	ON )
-option(WITH_OPENMP                "Use OpenMP multi-threading"                          	ON )
-option(WITH_IPPICV                "Use Intel Performance Primitives"                    	ON )
-option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON )
-option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-# In ExternalProject_Add, if THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
-# first try to look for the required files in THIRD_PARTY_DOWNLOAD_DIR, before
-# downloading it from the internet. The files inside THIRD_PARTY_DOWNLOAD_DIR
-# are prepared manually by the user. This is only supported by limited 3rd party
-# libraries.
+option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON)
+# if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)
+option(BOOST_NO_CXX11 "compiled without C++11 support" OFF)
 
-set(THIRD_PARTY_FROM "cmake options")
-if(DEFINED ENV{THIRD_PARTY_DOWNLOAD_DIR} AND
-        IS_DIRECTORY "$ENV{THIRD_PARTY_DOWNLOAD_DIR}" AND
-        NOT THIRD_PARTY_DOWNLOAD_DIR)
-    set(THIRD_PARTY_DOWNLOAD_DIR "$ENV{THIRD_PARTY_DOWNLOAD_DIR}")
-    set(THIRD_PARTY_FROM "the environment")
-endif()
-if(THIRD_PARTY_DOWNLOAD_DIR)
-    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is set to "
-    "${THIRD_PARTY_DOWNLOAD_DIR} from ${THIRD_PARTY_FROM}.")
-else()
-    message(STATUS "THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
-endif()
+# Release build options
+option(DEVELOPER_BUILD "Add +commit_hash to the project version number" ON)
+if (NOT DEVELOPER_BUILD)
+    if (NOT BUILD_COMMON_CUDA_ARCHS)
+        set(BUILD_COMMON_CUDA_ARCHS ON CACHE BOOL "Build for common CUDA GPUs (for release)" FORCE)
+        message(WARNING "Setting BUILD_COMMON_CUDA_ARCHS=ON since DEVELOPER_BUILD is OFF.")
+    endif ()
+endif ()
+
+# Default build type on single-config generators.
+# For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
+# will be set, and we don't specify a default CMAKE_BUILD_TYPE.
+# https://blog.kitware.com/cmake-and-the-default-build-type/
+if (NOT CMAKE_CONFIGURATION_TYPES)
+    if (NOT CMAKE_BUILD_TYPE)
+        message(STATUS "Setting build type to Release as none was specified.")
+        set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+        # Set the possible values of build type for cmake-gui.
+        set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+                "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+    endif ()
+    message(STATUS "CMAKE_BUILD_TYPE is set to ${CMAKE_BUILD_TYPE}.")
+endif ()
+
+find_program(CCACHE "ccache")
+if (CCACHE)
+    message(STATUS "ccache found at ${CCACHE}")
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+    if (BUILD_CUDA_MODULE)
+        set(CMAKE_CUDA_COMPILER_LAUNCHER ${CCACHE})
+    endif ()
+endif ()
+
+# In ExternalProject_Add, if CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
+# use this directory to cache downloaded 3rd party dependencies and automatically skip
+# downloading from the Internet if the files are available. This is only supported by
+# a limited number of 3rd party libraries.
+set(CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads")
+message(STATUS "Downloading 3rdparty dependencies to ${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}")
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 
 if (PREFER_OSX_HOMEBREW)
     set(CMAKE_FIND_FRAMEWORK LAST)
     set(CMAKE_FIND_APPBUNDLE LAST)
-endif()
-
-# Cache variables for specifying the GPU architectures
-set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
-one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures" )
-set_property(CACHE CUDA_ARCH PROPERTY STRINGS Auto BasicPTX User)
-set(CUDA_ARCH_USER "" CACHE STRING "User defined list of GPU architectures, e.g. 3.5 5.0+PTX Turing" )
-
-# Default build type, default to RelWithDebInfo
-if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No CMAKE_BUILD_TYPE specified, default to Release")
-    set(CMAKE_BUILD_TYPE "Release")
-endif()
-
+endif ()
 
 # Set OpenGL policy
-if (POLICY CMP0072)
-    cmake_policy(SET CMP0072 NEW)
-    set(CMP0072_VALUE NEW)
-    if (NOT USE_SYSTEM_GLFW)
-        cmake_policy(SET CMP0072 OLD)
-        set(CMP0072_VALUE OLD)
-    endif()
-endif()
+if (NOT USE_SYSTEM_GLFW)
+    cmake_policy(SET CMP0072 OLD)
+endif ()
+cmake_policy(GET CMP0072 CMP0072_VALUE)
 
-# Set policy for hidden symbol visibility
-if(POLICY CMP0063)
-    cmake_policy(SET CMP0063 NEW)
-endif()
-
-# Set policy to enable MSVC_RUNTIME_LIBRARY property.
-if(POLICY CMP0091)
-    cmake_policy(SET CMP0091 NEW)
-endif()
+# Set BLAS/LAPACK library preference.
+if (LINUX_AARCH64)
+    if (NOT USE_BLAS)
+        set(USE_BLAS ON)
+        message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
+    endif ()
+    if (BUILD_GUI AND (NOT BUILD_FILAMENT_FROM_SOURCE))
+        set(BUILD_FILAMENT_FROM_SOURCE ON)
+        message(WARNING "ARM CPU detected, setting BUILD_FILAMENT_FROM_SOURCE=ON.")
+    endif ()
+endif ()
 
 # Catch a few incompatible build options
 if (APPLE AND ENABLE_HEADLESS_RENDERING)
-    message(STATUS "Headless rendering is not supported on Mac OS")
+    message(WARNING "Headless rendering is not supported on Mac OS")
     set(ENABLE_HEADLESS_RENDERING OFF)
-endif()
-if(ENABLE_HEADLESS_RENDERING AND BUILD_GUI)
-    message(STATUS "Headless rendering disables the CloudViewer GUI")
+endif ()
+if (ENABLE_HEADLESS_RENDERING AND BUILD_GUI)
+    message(WARNING "Headless rendering disables the CloudViewer GUI")
     set(BUILD_GUI OFF)
-endif()
-if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
-    message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
+endif ()
+if (ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
+    message(WARNING "Headless rendering requires customized GLEW and GLFW builds")
     set(USE_SYSTEM_GLEW OFF)
     set(USE_SYSTEM_GLFW OFF)
-endif()
-if(BUNDLE_CLOUDVIEWER_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
-    message(SEND_ERROR "3DML depends on Tensorflow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
-endif()
+endif ()
+if (BUNDLE_CLOUDVIEWER_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
+    message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
+endif ()
+if (BUILD_WEBRTC AND LINUX_AARCH64)
+    message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
+endif ()
+if (BUILD_WEBRTC AND NOT BUILD_GUI)
+    message(FATAL_ERROR "BUILD_WEBRTC=ON requires BUILD_GUI=ON")
+endif ()
+if (BUILD_JUPYTER_EXTENSION AND NOT BUILD_WEBRTC)
+    # BUILD_JUPYTER_EXTENSION transitively depends on BUILD_GUI
+    message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_WEBRTC=ON")
+endif ()
+if (BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
+    message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
+endif ()
 
-# central location for specifying the CloudViewer version
-file(STRINGS "libs/OpenGLEngine/version.txt" CLOUDVIEWER_VERSION_READ)
-foreach(ver ${CLOUDVIEWER_VERSION_READ})
-  if (ver MATCHES "CLOUDVIEWER_VERSION_(MAJOR|MINOR|PATCH) +([^ ]+)$")
-    set(CLOUDVIEWER_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
-  endif()
-endforeach()
+# Parse CloudViewer version number
+file(STRINGS "libs/cloudViewer/version.txt" CLOUDVIEWER_VERSION_READ)
+foreach (ver ${CLOUDVIEWER_VERSION_READ})
+    if (ver MATCHES "CLOUDVIEWER_VERSION_(MAJOR|MINOR|PATCH) +([^ ]+)$")
+        set(CLOUDVIEWER_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
+    endif ()
+endforeach ()
 set(CLOUDVIEWER_VERSION_DEVHASH "")
-if(DEVELOPER_BUILD)
+if (DEVELOPER_BUILD)
     execute_process(COMMAND git -C "${CMAKE_SOURCE_DIR}" log --pretty=format:%h -n 1
-        OUTPUT_VARIABLE GIT_REV)
+            OUTPUT_VARIABLE GIT_REV)
     if (GIT_REV)
         set(CLOUDVIEWER_VERSION_DEVHASH "+${GIT_REV}")
-    endif()
-endif()
-string(CONCAT CLOUDVIEWER_VERSION 
-    "${CLOUDVIEWER_VERSION_MAJOR}"
-    ".${CLOUDVIEWER_VERSION_MINOR}"
-    ".${CLOUDVIEWER_VERSION_PATCH}"
-)
+    endif ()
+endif ()
+string(CONCAT CLOUDVIEWER_VERSION
+        "${CLOUDVIEWER_VERSION_MAJOR}"
+        ".${CLOUDVIEWER_VERSION_MINOR}"
+        ".${CLOUDVIEWER_VERSION_PATCH}"
+        )
 
 # npm version has to be MAJOR.MINOR.PATCH
 string(CONCAT PROJECT_VERSION_THREE_NUMBER "${CLOUDVIEWER_VERSION_MAJOR}"
-                                           ".${CLOUDVIEWER_VERSION_MINOR}"
-                                           ".${CLOUDVIEWER_VERSION_PATCH}")
+        ".${CLOUDVIEWER_VERSION_MINOR}"
+        ".${CLOUDVIEWER_VERSION_PATCH}")
 set(CLOUDVIEWER_VERSION_FULL "${CLOUDVIEWER_VERSION}${CLOUDVIEWER_VERSION_DEVHASH}")
 
 project(ErowCloudViewerProjects VERSION ${CLOUDVIEWER_VERSION} LANGUAGES C CXX)
-
-# Default debug suffix for libraries.
-set( CMAKE_DEBUG_POSTFIX "d" )
 message(STATUS "ErowCloudViewerProjects ${CLOUDVIEWER_VERSION_FULL}")
 
-if(UNIX AND NOT APPLE)
-    execute_process(COMMAND uname -p
-        OUTPUT_VARIABLE PROCESSOR_ARCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
-        set(LINUX_AARCH64 TRUE)
-    endif()
-endif()
-
-# Set BLAS/LAPACK library preference.
-if(LINUX_AARCH64)
-    if(NOT USE_BLAS)
-        set(USE_BLAS ON)
-        message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
-    endif()
-    if(BUILD_GUI AND (NOT BUILD_FILAMENT_FROM_SOURCE))
-        set(BUILD_FILAMENT_FROM_SOURCE ON)
-        message(WARNING "ARM CPU detected, setting BUILD_FILAMENT_FROM_SOURCE=ON.")
-    endif()
-endif()
+# FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
+if (BUILD_CUDA_MODULE
+        AND CMAKE_CXX_COMPILER MATCHES "MSVC"
+        AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
+        )
+    # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CUDA_STANDARD 17)
+    # Suppress warnings for deprecated C++17 functions.
+    add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
+    message(WARNING "Visual Studio 16.10 (MSVC 19.29) introduced a compiler bug when compiling CUDA code with C++14. "
+            "Workaround this bug by setting the CUDA standard to C++17.")
+endif ()
 
 # CMake modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
+set(ECV_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-# Add our cmake module path so we don't need relative paths for these
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" )
-set (ECV_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+# Setup Python executable
+#if (NOT DEFINED Python3_FIND_REGISTRY)
+#    # Only consider PATH variable on Windows by default
+#    set(Python3_FIND_REGISTRY NEVER)
+#endif ()
+find_package(Python3 3.6...<3.10
+        COMPONENTS Interpreter Development
+        )
+if (Python3_FOUND)
+    # Setup PYTHON_EXECUTABLE for 3rdparty modules
+    # which still use the deprecated find_package(PythonInterp)
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE FILEPATH
+            "Deprecated path to the Python executable (for 3rdparty only)")
 
-# setup PYTHON_EXECUTABLE if not set
-find_package(PythonExecutable REQUIRED) # invokes the module in 3rdparty/CMake
+    # fix always pybind.cpython-36m-x86_64-linux-gnu.so regardless given other python version(eg: python2.7, python3.8)
+    include(FindPythonLibsNew)
+    set(PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIRS} CACHE PATH
+            "Deprecated path to the Python include dir (for pybind only)")
+
+#        get_filename_component(CUSTOM_PYTHON_BIN_PATH ${Python3_EXECUTABLE} DIRECTORY)
+#        get_filename_component(CUSTOM_PYTHON_ROOT_PATH ${CUSTOM_PYTHON_BIN_PATH} DIRECTORY)
+#        if (Python3_VERSION VERSION_GREATER_EQUAL 3.8)
+#            set(CUSTOM_PYTHON_NAME python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR})
+#        else ()
+#            set(CUSTOM_PYTHON_NAME python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}m)
+#        endif ()
+#        set(PYTHON_INCLUDE_DIR ${CUSTOM_PYTHON_ROOT_PATH}/include/${CUSTOM_PYTHON_NAME} CACHE PATH
+#                "Deprecated path to the Python include dir (for pybind only)")
+#        set(PYTHON_LIBRARY ${CUSTOM_PYTHON_ROOT_PATH}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}${CUSTOM_PYTHON_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX} CACHE FILEPATH
+#                "Deprecated path to the Python lib dir (for pybind only)")
+else ()
+    if (BUILD_PYTHON_MODULE)
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.9. Please ensure it is in PATH.")
+    endif ()
+endif ()
 
 # PyPI package name controls specifies the repository name on PyPI. The default
 # name is "cloudViewer". In the past, for historical reasons, we've used the
@@ -222,60 +285,60 @@ find_package(PythonExecutable REQUIRED) # invokes the module in 3rdparty/CMake
 # - cloudViewer-original
 # - cloudViewer-official
 # - cloud-viewer
-if(NOT DEFINED PYPI_PACKAGE_NAME)
+if (NOT DEFINED PYPI_PACKAGE_NAME)
     set(PYPI_PACKAGE_NAME "cloudViewer")
-endif()
+endif ()
 
 # set additional info
-set(PROJECT_EMAIL   "dahailu@foxmail.com")
-set(PROJECT_HOME    "http://www.erow.cn")
-set(PROJECT_DOCS    "http://www.erow.cn/docs")
-set(PROJECT_CODE    "https://github.com/Asher-1/ErowCloudViewer")
-set(PROJECT_ISSUES  "https://github.com/Asher-1/ErowCloudViewer/issues")
+set(PROJECT_EMAIL "dahailu@foxmail.com")
+set(PROJECT_HOME "https://asher-1.github.io")
+set(PROJECT_DOCS "https://asher-1.github.io/docs")
+set(PROJECT_CODE "https://github.com/Asher-1/ErowCloudViewer")
+set(PROJECT_ISSUES "https://github.com/Asher-1/ErowCloudViewer/issues")
 
-include( CMakePolicies )
-include( CMakeSetCompilerOptions )
-include( DeployQt )
+include(CMakePolicies)
+include(CMakeSetCompilerOptions)
+include(DeployQt)
 # Load advanced scripts
-include( CMakeInclude )
-include( Install )
+include(CMakeInclude)
+include(Install)
 
 # Set installation paths
-if(UNIX OR CYGWIN)
+if (UNIX OR CYGWIN)
     include(GNUInstallDirs)
     set(CloudViewer_INSTALL_INCLUDE_DIR "${CMAKE_INSTALL_INCLUDEDIR}")
     set(CloudViewer_INSTALL_BIN_DIR "${CMAKE_INSTALL_BINDIR}")
     set(CloudViewer_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}")
     set(CloudViewer_INSTALL_CMAKE_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
-else()
+else ()
     set(CloudViewer_INSTALL_INCLUDE_DIR include)
     set(CloudViewer_INSTALL_BIN_DIR bin)
     set(CloudViewer_INSTALL_LIB_DIR lib)
     set(CloudViewer_INSTALL_CMAKE_DIR "share/CloudViewer")
-endif()
+endif ()
 
 # RPATH Linux/Unix: (dynamic) libs are put in a subdir of prefix/lib,
-# since they are only used by qCC/ccViewer
-if( UNIX AND NOT APPLE )
-	include( GNUInstallDirs )
-        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}/erowcloudviewer")
-endif()
+# since they are only used by libs/CVViewer
+if (UNIX AND NOT APPLE)
+    include(GNUInstallDirs)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}/erowcloudviewer")
+endif ()
 
 # Define target folders
 # (now that ccViewer can have its own plugins, ErowCloudViewer and CloudViewer must fall in separate folders!
-if(WIN32 OR APPLE)
-	set( EROWCLOUDVIEWER_DEST_FOLDER "bin/ErowCloudViewer" )
-else()
-	set( EROWCLOUDVIEWER_DEST_FOLDER bin )
-endif()
+if (WIN32 OR APPLE)
+    set(EROWCLOUDVIEWER_DEST_FOLDER "bin/ErowCloudViewer")
+else ()
+    set(EROWCLOUDVIEWER_DEST_FOLDER bin)
+endif ()
 
 # set default install folders
-if( WIN32 )
+if (WIN32)
     # (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
-    set( INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER} )
-elseif( UNIX AND NOT APPLE )
-    set( INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX} )
-endif()
+    set(INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER})
+elseif (UNIX AND NOT APPLE)
+    set(INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX})
+endif ()
 
 # Put build results in some predictable places
 # The $<CONFIG> generator expression makes sure that XCode or Visual Studio do not
@@ -290,162 +353,42 @@ set(CLOUDVIEWER_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${COLOUDVIEW
 make_directory(${CLOUDVIEWER_OUTPUT_DIRECTORY})
 
 # Global Security options (including 3rd party code)
-# -Wall -Wextra -Werror or /W4 /WX are enabled for ErowCloudViewer code (not 3rd party)
-if (MSVC)
-    set(HARDENING_CFLAGS
-        /sdl            # SDL Checks
-        /GS             # Code Generation: Security Check
-        /guard:cf       # Code Generation: Control Flow Guard
-        CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS
-        /INCREMENTAL:NO  # Disable incremental Linking
-        #/NXCOMPAT       # Data Execution Prevention: On by default in VS2019
-        /DYNAMICBASE     # Randomized Base Address
-        /HIGHENTROPYVA   #
-        #/INTEGRITYCHECK # Signed binary: Disabled
-        CACHE STRING "Linker flags for security hardening")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(HARDENING_CFLAGS
-        -fsanitize=safe-stack           # Stack execution protection
-        -fstack-protector               # Stack-based buffer overrun detection
-        -fpie -fPIC                     # Position independent execution
-        -D_FORTIFY_SOURCE=2
-        -Wformat -Wformat-security      # Format string vulnerability
-        -fsanitize=cfi                  # Control flow integrity
-        CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS
-        -Wl,-z,relro,-z,now         # Data relocation protection
-        -pie                        # Position independent execution
-        CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -S)
-    endif()
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-    set(HARDENING_CFLAGS
-        -fstack-protector               # Stack-based buffer overrun detection
-        -fpie -fPIC                     # Position independent execution
-        -D_FORTIFY_SOURCE=2
-        -Wformat -Wformat-security      # Format string vulnerability
-        CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS  ""
-        # -pie Position independent execution is default on macOSX 10.6+
-        CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -S)
-    endif()
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(HARDENING_CFLAGS
-        -fstack-protector-strong    # Stack-based buffer overrun detection
-        -fPIE -fPIC                 # Position independent
-        -D_FORTIFY_SOURCE=2
-        -Wformat -Wformat-security  # Format string vulnerability
-        CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS
-        -Wl,-z,noexecstack   # Stack execution protection
-        -Wl,-z,relro,-z,now  # Data relocation protection
-        -pie                 # Position independent
-        CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -strip-debug)
-    endif()
-else()
-    message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}. No security "
-    "flags set")
-endif()
-include(CheckCXXCompilerFlag)
-foreach(FLAG ${HARDENING_CFLAGS})
-    check_cxx_compiler_flag(${FLAG} FLAG${FLAG})
-    if (NOT FLAG${FLAG})
-        list(REMOVE_ITEM HARDENING_CFLAGS ${FLAG})
-        message(WARNING "Compiler does not support security option ${FLAG}")
-    endif()
-endforeach()
-include(CheckLinkerFlag)
-foreach(FLAG ${HARDENING_LDFLAGS})
-    check_linker_flag(CXX ${FLAG} FLAG${FLAG})              # cmake 3.18+
-    if (NOT FLAG${FLAG})
-        list(REMOVE_ITEM HARDENING_LDFLAGS ${FLAG})
-        message(WARNING "Linker does not support security option ${FLAG}")
-    endif()
-endforeach()
-string(REPLACE ";" "," CUDA_HARDENING_CFLAGS "${HARDENING_CFLAGS}")
-string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")
-message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS} and
-linker flags: ${HARDENING_LDFLAGS}")
-add_compile_options(
-    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_CFLAGS}>"
-    "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>"
-    )
-add_link_options(
-    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_LDFLAGS}>"
-    "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>"
-    )
+# Add -fPIC for library and -fPIE for executable to compiler and linker. Does not add -pie !
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+include(CloudViewerMakeHardeningFlags)
+cloudViewer_make_hardening_flags(HARDENING_CFLAGS HARDENING_LDFLAGS)
+cloudViewer_make_hardening_definitions(HARDENING_DEFINITIONS)
+
+message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS}")
+message(STATUS "Using security hardening linker flags: ${HARDENING_LDFLAGS}")
+message(STATUS "Using security hardening compiler definitions: ${HARDENING_DEFINITIONS}")
+
+add_compile_options("${HARDENING_CFLAGS}")
+add_link_options("${HARDENING_LDFLAGS}")
+add_compile_definitions("${HARDENING_DEFINITIONS}")
 
 # Build CUDA module by default if CUDA is available
-# Compatible with CMake 3.8+
 if (BUILD_CUDA_MODULE)
-    include(CheckLanguage)
-    check_language(CUDA)
-    message(STATUS "CMAKE_CUDA_COMPILER: ${CMAKE_CUDA_COMPILER}")
-    message(STATUS "CMAKE_CUDA_COMPILER_VERSION: ${CMAKE_CUDA_COMPILER_VERSION}")
-    if(CMAKE_CUDA_COMPILER)
-        find_package(CUDA REQUIRED) # required for cuda_select_nvcc_arch_flags
-        message(STATUS "Building CUDA enabled")
-        enable_language(CUDA)
-        # TODO: when CMake minimum version is 3.18+, switch to the NEW behavior
-        # of CMP0104 and replease CUDA_GENCODES with CUDA_ARCHITECTURES target
-        # properties. See https://cmake.org/cmake/help/v3.18/policy/CMP0104.html.
-        if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18.0")
-            cmake_policy(SET CMP0104 OLD)
-        endif()
-        # Get gencode flags
-        if("${CUDA_ARCH}" STREQUAL "User")
-            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
-        elseif("${CUDA_ARCH}" STREQUAL "BasicPTX")
-            # Include oldest and most recent PTX and rely on JIT compilation
-            set(CUDA_GENCODES "-gencode arch=compute_30,code=compute_30;-gencode arch=compute_75,code=compute_75")
-        else()
-            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH}")
-        endif()
-        # Make CUDA_GENCODES a string to avoid deduplication in target_compile_options
-        string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
-        message(STATUS "CUDA_GENCODES: ${CUDA_GENCODES}")
-        # Allows CUDA headers to be included as "system" headers for CMake prior
-        # to 3.17,
-        # https://gitlab.kitware.com/cmake/cmake/-/issues/20270
-        # https://github.com/intel-isl/CloudViewer/issues/2040
-        if(CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES)
-            list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES
-                ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-        endif()
-        message(STATUS "CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES: ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}")
-        message(STATUS "CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES: ${CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES}")
-    else()
-        set(BUILD_CUDA_MODULE OFF)
-        message(STATUS "No CUDA support")
-    endif()
+    include(CloudViewerMakeCudaArchitectures)
+    cloudViewer_make_cuda_architectures(CUDA_ARCHS)
+    set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})
+
+    message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
+    enable_language(CUDA)
+
+    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
+        message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
+    endif ()
 endif ()
 
 # OS specific settings
-if(BUILD_GUI AND WIN32)
-    if(NOT COMMAND target_link_options)  # CMake 3.13+ required
-        # GLEW and CloudViewer make direct OpenGL calls and link to opengl32.lib;
-        # Filament needs to link through bluegl.lib.
-        # See https://github.com/google/filament/issues/652
-        string(APPEND CMAKE_EXE_LINKER_FLAGS " /force:multiple")
-        string(APPEND CMAKE_SHARED_LINKER_FLAGS " /force:multiple")
-    endif()
-endif()
-if(WIN32)
+if (WIN32)
     # Windows defaults to hidden symbol visibility, override that
-    # TODO: It would be better to explictly export symbols.
+    # TODO: It would be better to explicitly export symbols.
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-    add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
-    if(MSVC)
+    if (MSVC)
         # Make sure we don't hit the 65535 object member limit with MSVC
         #
         # /bigobj allows object files with more than 65535 members
@@ -453,442 +396,185 @@ if(WIN32)
         # verbose with inline members
         #
         # See: https://github.com/tensorflow/tensorflow/pull/10962
-        add_compile_options(/bigobj /Ob2)
-        add_compile_options(/wd26812 /wd4819)
-    endif()
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj;/Ob2>")
+    endif ()
+    #	if (STATIC_WINDOWS_RUNTIME)
+    #        # This needs cmake_policy(SET CMP0091 NEW)
+    #        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded<<CONFIG:Debug>:Debug>")
+    #    endif()
     if (STATIC_WINDOWS_RUNTIME)
-        # This needs cmake_policy(SET CMP0091 NEW)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    endif()
-endif()
+    else ()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif ()
+endif ()
 
+# Downloads files from https://github.com/Asher-1/cloudViewer_downloads to
+# CloudViewer/examples/test_data.
+include(${PROJECT_SOURCE_DIR}/examples/cloudViewer_downloads.cmake)
+
+# Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-# Convenience function to link against all third-party libraries
-# We need this because we create a lot of object libraries to assemble
-# the main ErowCloudViewer library
-function(cloudViewer_link_3rdparty_libraries target)
-    target_link_libraries(${target} PRIVATE ${CloudViewer_3RDPARTY_PRIVATE_TARGETS})
-    target_link_libraries(${target} PUBLIC ${CloudViewer_3RDPARTY_PUBLIC_TARGETS})
-    include_directories(${3RDPARTY_INCLUDE_DIRS})
-    target_link_directories(${target} PUBLIC ${3RDPARTY_LIBRARY_DIRS})
-    target_link_libraries(${target} PUBLIC ${3RDPARTY_LIBRARIES})
-
-    foreach(dep IN LISTS CloudViewer_3RDPARTY_HEADER_TARGETS)
-        if(TARGET ${dep})
-            get_property(inc TARGET ${dep} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-            if(inc)
-                set_property(TARGET ${target} APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${inc})
-            endif()
-            get_property(inc TARGET ${dep} PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
-            if(inc)
-                set_property(TARGET ${target} APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${inc})
-            endif()
-            get_property(def TARGET ${dep} PROPERTY INTERFACE_COMPILE_DEFINITIONS)
-            if(def)
-                set_property(TARGET ${target} APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS ${def})
-            endif()
-        endif()
-    endforeach()
-endfunction()
 
 # Check if the compiler defines the _GLIBCXX_USE_CXX11_ABI macro
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("#include <cxxabi.h>
 int main() { return _GLIBCXX_USE_CXX11_ABI; }" HAS_GLIBCXX_USE_CXX11_ABI)
 
-# Convenience function to set important target properties
-function(cloudViewer_set_global_properties target)
-    # Libraries need to be compiled with position independent code
-    get_target_property(target_type ${target} TYPE)
-    if (NOT target_type STREQUAL "EXECUTABLE")
-        set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    endif()
-    # Tell CMake we want a compiler that supports C++14 features
-    target_compile_features(${target} PUBLIC
-        cxx_variadic_templates
-        cxx_constexpr
-        cxx_override
-        cxx_static_assert
-        cxx_trailing_return_types
-        cxx_return_type_deduction
-    )
-    target_include_directories(${target} PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp>
-        $<INSTALL_INTERFACE:${CloudViewer_INSTALL_INCLUDE_DIR}>
-    )
-    if(BUILD_CUDA_MODULE)
-        target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
-        if(BUILD_CACHED_CUDA_MANAGER)
-            target_compile_definitions(${target} PRIVATE BUILD_CACHED_CUDA_MANAGER)
-        endif()
-    endif()
-    if(USE_BLAS)
-        target_compile_definitions(${target} PRIVATE USE_BLAS)
-    endif()
-    if(BUILD_RPC_INTERFACE)
-         target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE ZMQ_STATIC)
-    endif()
-    if(GLIBCXX_USE_CXX11_ABI)
-        target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
-    else()
-        target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
-    endif()
-    if(ENABLE_HEADLESS_RENDERING)
-        target_compile_definitions(${target} PRIVATE HEADLESS_RENDERING)
-    endif()
-    if(NOT WITH_OPENMP)
-        target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
-    endif()
+macro(add_source_group module_name)
+    file(GLOB MODULE_HEADER_FILES "${module_name}/*.h")
+    source_group("Header Files\\${module_name}" FILES ${MODULE_HEADER_FILES})
+    file(GLOB MODULE_SOURCE_FILES "${module_name}/*.cpp")
+    source_group("Source Files\\${module_name}" FILES ${MODULE_SOURCE_FILES})
+    file(GLOB MODULE_SHADER_FILES "${module_name}/*.glsl")
+    source_group("Source Files\\Shader\\GLSL" FILES ${MODULE_SHADER_FILES})
+    file(GLOB MODULE_MATERIAL_FILES "${module_name}/*.mat")
+    source_group("Source Files\\Material" FILES ${MODULE_MATERIAL_FILES})
+endmacro()
 
-    if(WIN32)
-        target_compile_definitions(${target} PRIVATE
-            WINDOWS
-            _CRT_SECURE_NO_DEPRECATE
-            _CRT_NONSTDC_NO_DEPRECATE
-            _SCL_SECURE_NO_WARNINGS
-        )
-        if(MSVC)
-            target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
-            target_compile_options(${target} PRIVATE /EHsc /wd4522 /wd4190 /wd4819 /Wv:18 /WX-)
-            # Multi-thread compile, two ways to enable
-            # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
-            # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
-            # Option 2, at configure time: add /MP flag, no need to use Option 1
-            # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
-            target_compile_options(${target} PRIVATE /MP)
-            if(COMMAND target_link_options) # target_link_options add in 3.13
-                if(BUILD_GUI)
-                    # GLEW and CloudViewer make direct OpenGL calls and link to opengl32.lib;
-                    # Filament needs to link through bluegl.lib.
-                    # See https://github.com/google/filament/issues/652
-                    target_link_options(${target} PRIVATE /force:multiple)
-                endif()
-                # The examples' .pdb files use up a lot of space and cause us to run
-                # out of space on Github Actions. Compressing gives us another couple of GB.
-                target_link_options(${target} PRIVATE /pdbcompress)
-            endif()
-        endif()
-    elseif(APPLE)
-        target_compile_definitions(${target} PRIVATE UNIX APPLE)
-        target_compile_options(${target} PRIVATE "-Wno-deprecated-declarations")
-    elseif(UNIX)
-        target_compile_definitions(${target} PRIVATE UNIX)
-        target_compile_options(${target} PRIVATE "-Wno-deprecated-declarations" "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-result>")
-    endif()
-    # The SHELL: prefix requires CMake 3.12+
-    target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>" "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_GENCODES}>")
-    # TBB static version is used
-    # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
-    target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
-    if(WITH_FAISS)
-        target_compile_definitions(${target} PRIVATE WITH_FAISS)
-    endif()
-endfunction()
-
-# recursively parse and return the entire directory tree.
-# the result is placed in output
-function(Directories root output)
-    set(data "")
-    list(APPEND data ${root})
-    file(GLOB_RECURSE children LIST_DIRECTORIES true "${root}/*")
-    list(SORT children)
-    foreach(child ${children})
-        if (IS_DIRECTORY ${child})
-            list(APPEND data ${child})
-        endif()
-    endforeach()
-    set (${output} ${data} PARENT_SCOPE)
-endfunction()
-
-function(cloudViewer_show_and_abort_on_warning trgt)
-    if (BUILD_CUDA_MODULE)
-        if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.2")
-            set(CUDA_FLAGS "--compiler-options -Wall --Werror cross-execution-space-call,reorder,deprecated-declarations")
-        else()
-            set(CUDA_FLAGS "--Werror all-warnings,cross-execution-space-call,reorder,deprecated-declarations")
-        endif()
-    else()
-        set(CUDA_FLAGS "")
-    endif()
-
-    set(DISABLE_MSVC_WARNINGS
-            /wd4201        # non-standard extention nameless struct (filament includes)
-            /wd4310        # cast truncates const value (filament)
-            /wd4505        # unreferenced local function has been removed (dirent)
-            /wd4127        # conditional expression is const (Eigen)
-            /wd4189        # local variable is initialized but not referenced (PoissonRecon)
-            /wd4324        # structure was padded due to alignment specifier (qhull)
-            /wd4706        # assignment within conditional expression (fileIO, ...)
-            /wd4100        # unreferenced parameter (many places in Open3D code)
-            /wd4702        # unreachable code (many places in Open3D code)
-            /wd4244        # implicit data type conversion (many places in Open3D code)
-            /wd4245        # signed/unsigned mismatch (visualization, PoissonRecon, ...)
-            )
-
-    target_compile_options(${trgt} PRIVATE
-        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX- ${DISABLE_MSVC_WARNINGS}>>
-        $<$<COMPILE_LANGUAGE:C>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall>>
-        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:MSVC>:/W4 /WX- ${DISABLE_MSVC_WARNINGS}>>
-        $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,Intel>:-Wall>>
-        $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
-    )
-endfunction()
-
-function(CopyDLLToDirectory trgt)
-    add_custom_command(TARGET ${trgt}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${trgt}>" "${CLOUDVIEWER_OUTPUT_DIRECTORY}/"
-            VERBATIM)
-    if (${BUILD_GUI})
-        # Install dependence lib files
-        if(WIN32)
-    	    foreach( filename "$<TARGET_FILE:${trgt}>" )
-		        install_ext( FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin/${COLOUDVIEWER_APP_DIR_NAME}" "" )
-            endforeach()
-        endif()
-    endif()
-endfunction()
-
-macro(ADD_SOURCE_GROUP MODULE_NAME)
-    file(GLOB MODULE_HEADER_FILES "${MODULE_NAME}/*.h")
-    source_group("Header Files\\${MODULE_NAME}" FILES ${MODULE_HEADER_FILES})
-    file(GLOB MODULE_SOURCE_FILES "${MODULE_NAME}/*.cpp")
-    source_group("Source Files\\${MODULE_NAME}" FILES ${MODULE_SOURCE_FILES})
-endmacro(ADD_SOURCE_GROUP)
-
-# ------------------------------------------------------------------------------
-# OpenMP
-# ------------------------------------------------------------------------------
-if (WITH_OPENMP)
-    find_package(OpenMP QUIET)
-    if (OPENMP_FOUND)
-        message(STATUS "Using installed OpenMP ${OpenMP_VERSION}")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-    else ()
-        message(STATUS "OpenMP NOT found")
-    endif ()
- endif ()
- 
- if (BUILD_RECONSTRUCTION)
+if (BUILD_RECONSTRUCTION)
     message(STATUS "Enabling Reconstruction support and automatically enable SIMD!")
     set(USE_SIMD ON)
-endif()
+endif ()
 
 # check for SSE flags
-include( CMakeFindSSE )
-if(USE_SIMD)
-   CLOUDVIEWER_CHECK_FOR_SSE()
-   set(CLOUDVIEWERCONFIG_SSE_DEFINITIONS "${SSE_DEFINITIONS}")
-   set(CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS ${SSE_FLAGS})
-   if (MSVC)
-       add_definitions(${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
-       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
-   else()
-       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
-   endif()
+include(CMakeFindSSE)
+if (USE_SIMD)
+    CLOUDVIEWER_CHECK_FOR_SSE()
+    set(CLOUDVIEWERCONFIG_SSE_DEFINITIONS "${SSE_DEFINITIONS}")
+    set(CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS ${SSE_FLAGS})
+    if (MSVC)
+        add_definitions(${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
+    else ()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
+    endif ()
 
-   message(STATUS "Enabling SIMD support")
-   message(STATUS "Using CPU native flags for SSE optimization: ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS}")
-else()
-   message(STATUS "Disabling SIMD support")
-endif()
+    message(STATUS "Enabling SIMD support")
+    message(STATUS "Using CPU native flags for SSE optimization: ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS}")
+else ()
+    message(STATUS "Disabling SIMD support")
+endif ()
+
+# Include convenience functions
+include(CloudViewerLink3rdpartyLibraries)
+include(CloudViewerSetGlobalProperties)
+include(CloudViewerShowAndAbortOnWarning)
 
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the
 # CloudViewer_3RDPARTY_*_TARGETS variables we use in cloudViewer_link_3rdparty_libraries
 include(3rdparty/find_dependencies.cmake)
 
+# Default debug suffix for libraries.
+# Note: must put after include(3rdparty/find_dependencies.cmake)
+set(CMAKE_DEBUG_POSTFIX "d")
+
 # Add external libraries
-include( CMakeExternalLibs )
+include(CMakeExternalLibs)
 
 # Contrib. libraries (mainly for I/O)
-include( AllSupport )
+include(AllSupport)
 
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if( MSVC )
+    if (MSVC)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
-    else()
+    else ()
         SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    endif()
-endif()
+    endif ()
+endif ()
 
-add_subdirectory( core )
+add_subdirectory(core)
 
 # Propagate the choice to use doubles for ScalarType
-if ( ${CV_CORE_LIB_USES_DOUBLE} )
-	add_definitions( -DSCALAR_TYPE_DOUBLE )
-else()
-	add_definitions( -DSCALAR_TYPE_FLOAT )
-endif()
+if (${CV_CORE_LIB_USES_DOUBLE})
+    add_definitions(-DSCALAR_TYPE_DOUBLE)
+else ()
+    add_definitions(-DSCALAR_TYPE_FLOAT)
+endif ()
 
 # Internal libs used by both ErowCloudViewer and cloudViewer python package
-add_subdirectory( libs )
-		  
+add_subdirectory(libs)
+
 # Examples
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if( MSVC )
+    if (MSVC)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/examples/Debug)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/examples/Release)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/examples/RelWithDebInfo)
-    else()
+    else ()
         SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    endif()
-endif()
+    endif ()
+endif ()
 add_subdirectory(examples)
 
 # load plugins (potentially used by eCV)
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if( MSVC )
+    if (MSVC)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug/plugins)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release/plugins)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo/plugins)
-    else()
+    else ()
         SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/plugins)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/plugins)
-    endif()
-endif()
-add_subdirectory( plugins )
+    endif ()
+endif ()
+add_subdirectory(plugins)
 
 # eCV
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if( MSVC )
-            SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
-            SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
-            SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
-    else()
+    if (MSVC)
+        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
+        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
+        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
+    else ()
         SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    endif()
-endif()
-add_subdirectory( eCV )
+    endif ()
+endif ()
+add_subdirectory(eCV)
 
 # Install CMake configuration files
 install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${CloudViewer_INSTALL_CMAKE_DIR})
 export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
 
-# `make check-style` checks style for c++/cuda/python/ipynb files
-add_custom_target(check-style
-    COMMAND ${PYTHON_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py
-    COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
-)
+if (Python3_EXECUTABLE)
+    # `make check-style` checks style for c++/cuda/python/ipynb files
+    add_custom_target(check-style
+            COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py
+            COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
+            )
 
-# `make apply-style` applies style for c++/cuda/python/ipynb files
-add_custom_target(apply-style
-    COMMAND ${PYTHON_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --do_apply_style
-    COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
-)
+    # `make apply-style` applies style for c++/cuda/python/ipynb files
+    add_custom_target(apply-style
+            COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --do_apply_style
+            COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
+            )
+endif ()
 
 # `make check-cpp-style` checks style for c++/cuda files.
 # This works outside of python virtualenv.
 add_custom_target(check-cpp-style
-    COMMAND ${CMAKE_COMMAND}
-    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -DDO_APPLY_STYLE=OFF
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
-)
+        COMMAND ${CMAKE_COMMAND}
+        -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        -DDO_APPLY_STYLE=OFF
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
+        )
 
 # `make apply-cpp-style` applies style for c++/cuda files.
 # This works outside of python virtualenv.
 add_custom_target(apply-cpp-style
-    COMMAND ${CMAKE_COMMAND}
-    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -DDO_APPLY_STYLE=ON
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
-)
+        COMMAND ${CMAKE_COMMAND}
+        -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        -DDO_APPLY_STYLE=ON
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
+        )
 
-# print configurations info
-function(cloudviewer_aligned_print first second)
-    string(LENGTH "${first}" first_len)
-    math(EXPR star_len "40 - ${first_len}")
-    # CMake 3.15+ has string(REPEAT), but this is backwards compatible
-    string(SUBSTRING "........................................" 0 ${star_len} stars)
-    message(STATUS "  ${first} ${stars} ${second}")
-endfunction()
-
-message(STATUS "========================================================================")
-message(STATUS "CloudViewer ${PROJECT_VERSION} Configuration Summary")
-message(STATUS "========================================================================")
-message(STATUS "Enabled Features:")
-cloudviewer_aligned_print("OpenMP" "${WITH_OPENMP}")
-cloudviewer_aligned_print("SIMD" "${USE_SIMD}")
-cloudviewer_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
-cloudviewer_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
-cloudviewer_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
-cloudviewer_aligned_print("3D Reconstruction Support" "${BUILD_RECONSTRUCTION}")
-cloudviewer_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
-cloudviewer_aligned_print("Build GUI" "${BUILD_GUI}")
-cloudviewer_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
-if(WIN32)
-    cloudviewer_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
-endif()
-cloudviewer_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
-cloudviewer_aligned_print("Build Examples" "${BUILD_EXAMPLES}")
-cloudviewer_aligned_print("Build Python Module" "${BUILD_PYTHON_MODULE}")
-if(BUILD_PYTHON_MODULE)
-    cloudviewer_aligned_print("- with Jupyter Notebook Support" "${BUILD_JUPYTER_EXTENSION}")
-endif()
-cloudviewer_aligned_print("Build Tensorflow Ops" "${BUILD_TENSORFLOW_OPS}")
-cloudviewer_aligned_print("Build Pytorch Ops" "${BUILD_PYTORCH_OPS}")
-cloudviewer_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
-cloudviewer_aligned_print("Bundle CloudViewer-ML" "${BUNDLE_CLOUDVIEWER_ML}")
-cloudviewer_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
-
-if(GLIBCXX_USE_CXX11_ABI)
-    set(usage "1")
-else()
-    set(usage "0")
-endif()
-cloudviewer_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
-message(STATUS "========================================================================")
-message(STATUS "Third-Party Dependencies:")
-set(deps
-    EIGEN3
-    FAISS
-    FILAMENT
-    FLANN
-    FMT
-    GLEW
-    GLFW
-    GOOGLETEST
-    IMGUI
-    IPPICV
-    JPEG
-    JSONCPP
-    LIBLZF
-    OPENGL
-    PNG
-    PYBIND11
-    QHULL
-    LIBREALSENSE
-    TINYFILEDIALOGS
-    TINYGLTF
-    TINYOBJLOADER
-)
-
-foreach(dep IN ITEMS ${deps})
-    if(${dep}_TARGET)
-        if(NOT USE_SYSTEM_${dep})
-            set(usage "yes (build from source)")
-        else()
-            set(usage "yes")
-            if(${dep}_VERSION_STRING)
-                set(usage "${usage} (v${${dep}_VERSION_STRING})")
-            elseif(${dep}_VERSION)
-                set(usage "${usage} (v${${dep}_VERSION})")
-            endif()
-        endif()
-    else()
-        set(usage "no")
-    endif()
-    cloudviewer_aligned_print("${dep}" "${usage}")
-endforeach()
-message(STATUS "========================================================================")
+include(CloudViewerPrintConfigurationSummary)
+cloudViewer_print_configuration_summary()

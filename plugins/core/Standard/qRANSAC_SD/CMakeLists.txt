@@ -5,11 +5,9 @@ if( PLUGIN_STANDARD_QRANSAC_SD )
 
 	AddPlugin( NAME ${PROJECT_NAME} )
 
-	#add_subdirectory( extern/RANSAC_SD EXCLUDE_FROM_ALL )
 	add_subdirectory( include )
 	add_subdirectory( src )
 	add_subdirectory( ui )
 	
-#	target_include_directories(${PROJECT_NAME} PRIVATE ${QRANSAC_INCLUDE_DIRS})
-        target_link_libraries( ${PROJECT_NAME} QRANSAC_SD_PRIM_SHAPES_LIB )
+	target_link_libraries( ${PROJECT_NAME} 3rdparty_ransacSD )
 endif()

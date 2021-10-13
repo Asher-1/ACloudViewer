@@ -132,7 +132,8 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
 # Install and update npm and nodejs
 RUN apt-get install nodejs npm -y \
     && npm install n -g \
-    && n latest
+    && n latest \
+	&& npm install -g yarn
 
 WORKDIR /opt
 RUN git clone https://github.com/ceres-solver/ceres-solver.git --branch 1.14.0

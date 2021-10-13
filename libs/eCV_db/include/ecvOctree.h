@@ -18,14 +18,14 @@
 #ifndef ECV_OCTREE_HEADER
 #define ECV_OCTREE_HEADER
 
-//Local
+// Local
 #include "ecvHObject.h"
 
-//cloudViewer
+// cloudViewer
 #include <DgmOctree.h>
 #include <ReferenceCloud.h>
 
-//Qt
+// Qt
 #include <QObject>
 
 class ccCameraSensor;
@@ -34,130 +34,129 @@ class ccOctreeFrustumIntersector;
 
 //! Octree structure
 /** Extends the cloudViewer::DgmOctree class.
-**/
-class ECV_DB_LIB_API ccOctree : public QObject, public cloudViewer::DgmOctree
-{
-	Q_OBJECT
+ **/
+class ECV_DB_LIB_API ccOctree : public QObject, public cloudViewer::DgmOctree {
+    Q_OBJECT
 
-public: //GENERAL METHODS
+public:  // GENERAL METHODS
+    //! Shared pointer
+    typedef QSharedPointer<ccOctree> Shared;
 
-	//! Shared pointer
-	typedef QSharedPointer<ccOctree> Shared;
+    //! Default constructor
+    /** \param cloud a point cloud
+     **/
+    explicit ccOctree(ccGenericPointCloud* cloud);
 
-	//! Default constructor
-	/** \param cloud a point cloud
-	**/
-	explicit ccOctree(ccGenericPointCloud* cloud);
+    //! Destructor
+    virtual ~ccOctree();
 
-	//! Destructor
-	virtual ~ccOctree();
+    //! Multiplies the bounding-box of the octree
+    /** If the cloud coordinates are simply multiplied by the same factor,
+            there is no use in recomputing the octree structure. It's sufficient
+            to update its bounding-box.
+            \param  multFactor multiplication factor
+    **/
+    void multiplyBoundingBox(const PointCoordinateType multFactor);
 
-	//! Multiplies the bounding-box of the octree
-	/** If the cloud coordinates are simply multiplied by the same factor,
-		there is no use in recomputing the octree structure. It's sufficient
-		to update its bounding-box.
-		\param  multFactor multiplication factor
-	**/
-	void multiplyBoundingBox(const PointCoordinateType multFactor);
+    //! Translates the bounding-box of the octree
+    /** If the cloud has been simply translated, there is no use to recompute
+            the octree structure. It's sufficient to update its bounding-box.
+            \param T translation vector
+    **/
+    void translateBoundingBox(const CCVector3& T);
 
-	//! Translates the bounding-box of the octree
-	/** If the cloud has been simply translated, there is no use to recompute
-		the octree structure. It's sufficient to update its bounding-box.
-		\param T translation vector
-	**/
-	void translateBoundingBox(const CCVector3& T);
+    //! Returns the octree (square) bounding-box
+    ccBBox getSquareBB() const;
+    //! Returns the points bounding-box
+    ccBBox getPointsBB() const;
 
-	//! Returns the octree (square) bounding-box
-	ccBBox getSquareBB() const;
-	//! Returns the points bounding-box
-	ccBBox getPointsBB() const;
+    // inherited from DgmOctree
+    virtual void clear() override;
 
-	//inherited from DgmOctree
-	virtual void clear() override;
+public:  // RENDERING
+    //! Returns the currently displayed octree level
+    int getDisplayedLevel() const { return m_displayedLevel; }
+    //! Sets the currently displayed octree level
+    void setDisplayedLevel(int level);
 
-public: //RENDERING
-	
-	//! Returns the currently displayed octree level
-	int getDisplayedLevel() const { return m_displayedLevel; }
-	//! Sets the currently displayed octree level
-	void setDisplayedLevel(int level);
+    //! Returns whether octree is visible or not
+    bool isVisible() const { return m_visible; }
+    //! Sets octree visibility
+    inline void setVisible(bool state) { m_visible = state; }
 
-	//! Returns whether octree is visible or not
-	bool isVisible() const { return m_visible; }
-	//! Sets octree visibility
-	inline void setVisible(bool state) { m_visible = state; }
+    //! Octree displaying methods
+    enum DisplayMode {
+        WIRE = 0, /**< The octree is displayed as wired boxes (one box per cell)
+                   */
+        MEAN_POINTS =
+                1, /**< The octree is displayed as points (one point per cell =
+                      the center of gravity of the points lying in it) */
+        MEAN_CUBES = 2 /**< The octree is displayed as plain 3D cubes (one cube
+                          per cell) */
+    };
+    //! Returns the currently display mode
+    DisplayMode getDisplayMode() const { return m_displayMode; }
+    //! Sets the currently display mode
+    void setDisplayMode(DisplayMode mode);
 
-	//! Octree displaying methods
-	enum DisplayMode {
-		WIRE = 0,					/**< The octree is displayed as wired boxes (one box per cell) */
-		MEAN_POINTS = 1,			/**< The octree is displayed as points (one point per cell = the center of gravity of the points lying in it) */
-		MEAN_CUBES = 2				/**< The octree is displayed as plain 3D cubes (one cube per cell) */
-	};
-	//! Returns the currently display mode
-	DisplayMode getDisplayMode() const { return m_displayMode; }
-	//! Sets the currently display mode
-	void setDisplayMode(DisplayMode mode);
+    //! Draws the octree
+    void draw(CC_DRAW_CONTEXT& context);
 
-	//! Draws the octree
-	void draw(CC_DRAW_CONTEXT& context);
+    //! Intersects octree with a camera sensor
+    bool intersectWithFrustum(ccCameraSensor* sensor,
+                              std::vector<unsigned>& inCameraFrustum);
 
-	//! Intersects octree with a camera sensor
-	bool intersectWithFrustum(ccCameraSensor* sensor,
-		std::vector<unsigned>& inCameraFrustum);
+    //! Octree-driven point picking algorithm
+    bool pointPicking(const CCVector2d& clickPos,
+                      const ccGLCameraParameters& camera,
+                      PointDescriptor& output,
+                      double pickWidth_pix = 3.0) const;
 
-	//! Octree-driven point picking algorithm
-	bool pointPicking(	const CCVector2d& clickPos,
-						const ccGLCameraParameters& camera,
-						PointDescriptor& output,
-						double pickWidth_pix = 3.0) const;
+public:  // HELPERS
+    //! Computes the average color of a set of points
+    static void ComputeAverageColor(cloudViewer::ReferenceCloud* subset,
+                                    ccGenericPointCloud* sourceCloud,
+                                    ColorCompType meanCol[]);
 
-public: //HELPERS
-	
-	//! Computes the average color of a set of points
-	static void ComputeAverageColor(cloudViewer::ReferenceCloud* subset,
-									ccGenericPointCloud* sourceCloud,
-									ColorCompType meanCol[]);
-
-	//! Computes the average normal of a set of points
-	static CCVector3 ComputeAverageNorm(cloudViewer::ReferenceCloud* subset,
-										ccGenericPointCloud* sourceCloud);
+    //! Computes the average normal of a set of points
+    static CCVector3 ComputeAverageNorm(cloudViewer::ReferenceCloud* subset,
+                                        ccGenericPointCloud* sourceCloud);
 
 signals:
 
-	//! Signal sent when the octree organization is modified (cleared, etc.)
-	void updated();
+    //! Signal sent when the octree organization is modified (cleared, etc.)
+    void updated();
 
-protected: ////RENDERING
+protected:  ////RENDERING
+    static bool DrawCellAsABox(const cloudViewer::DgmOctree::octreeCell& cell,
+                               void** additionalParameters,
+                               cloudViewer::NormalizedProgress* nProgress = 0);
 
-	static bool DrawCellAsABox(	const cloudViewer::DgmOctree::octreeCell& cell,
-								void** additionalParameters,
-								cloudViewer::NormalizedProgress* nProgress = 0);
+    static bool DrawCellAsAPoint(
+            const cloudViewer::DgmOctree::octreeCell& cell,
+            void** additionalParameters,
+            cloudViewer::NormalizedProgress* nProgress = 0);
 
-	static bool DrawCellAsAPoint(	const cloudViewer::DgmOctree::octreeCell& cell,
-									void** additionalParameters,
-									cloudViewer::NormalizedProgress* nProgress = 0);
+    static bool DrawCellAsAPrimitive(
+            const cloudViewer::DgmOctree::octreeCell& cell,
+            void** additionalParameters,
+            cloudViewer::NormalizedProgress* nProgress = 0);
 
-	static bool DrawCellAsAPrimitive(	const cloudViewer::DgmOctree::octreeCell& cell,
-										void** additionalParameters,
-										cloudViewer::NormalizedProgress* nProgress = 0);
+protected:  // MEMBERS
+    //! Associated cloud (as a ccGenericPointCloud)
+    ccGenericPointCloud* m_theAssociatedCloudAsGPC;
 
-protected: //MEMBERS
+    //! Displayed level
+    int m_displayedLevel;
 
-	//! Associated cloud (as a ccGenericPointCloud)
-	ccGenericPointCloud* m_theAssociatedCloudAsGPC;
+    //! Display mode
+    DisplayMode m_displayMode;
 
-	//! Displayed level
-	int m_displayedLevel;
+    //! For frustum intersection
+    ccOctreeFrustumIntersector* m_frustumIntersector;
 
-	//! Display mode
-	DisplayMode m_displayMode;
-
-	//! For frustum intersection
-	ccOctreeFrustumIntersector* m_frustumIntersector;
-
-	//! For Octree Display
-	bool m_visible;
-
+    //! For Octree Display
+    bool m_visible;
 };
 
-#endif // ECV_OCTREE_HEADER
+#endif  // ECV_OCTREE_HEADER

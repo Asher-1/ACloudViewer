@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Basic/icp_registration.py
 
@@ -19,8 +19,8 @@ def draw_registration_result(source, target, transformation):
 
 
 if __name__ == "__main__":
-    source = cv3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target = cv3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
+    source = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_0.pcd")
+    target = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_1.pcd")
     threshold = 0.02
     trans_init = np.asarray([[0.862, 0.011, -0.507, 0.5],
                              [-0.139, 0.967, -0.215, 0.7],

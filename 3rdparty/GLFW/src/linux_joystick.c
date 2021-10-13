@@ -398,7 +398,7 @@ int _glfwPlatformPollJoystick(_GLFWjoystick* js, int mode)
         errno = 0;
         if (read(js->linjs.fd, &e, sizeof(e)) < 0)
         {
-            // Reset the joystick slot if the device was disconnected
+            // reset the joystick slot if the device was disconnected
             if (errno == ENODEV)
                 closeJoystick(js);
 

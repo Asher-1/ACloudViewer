@@ -21,7 +21,7 @@
  * determine the bounding box of items drawn in a vtkContext2D. It overrides all
  * the member functions for drawing primitives, and instead of drawing anything,
  * it expands a running bounding box so that the bounding box contains the
- * rendered primitive. The running bounding box can be reset using Reset(), and
+ * rendered primitive. The running bounding box can be reset using reset(), and
  * it can be queried with GetBoundingRect().
  *
  * This class delegates the task of computing the bounds of some primitives,
@@ -68,7 +68,7 @@ public:
   vtkGetObjectMacro(DelegateDevice, vtkContextDevice2D);
 
   /**
-   * Reset the bounding box.
+   * reset the bounding box.
    */
   void Reset();
 

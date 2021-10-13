@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,8 +52,8 @@ protected:
                     camera.parameters_[0]);
             io::WriteIJsonConvertible("camera.json", camera);
         } else if (key == GLFW_KEY_L) {
-            if (cloudViewer::utility::filesystem::FileExists("depth.png") &&
-                cloudViewer::utility::filesystem::FileExists("camera.json")) {
+            if (utility::filesystem::FileExists("depth.png") &&
+                utility::filesystem::FileExists("camera.json")) {
                 camera::PinholeCameraTrajectory camera;
                 io::ReadIJsonConvertible("camera.json", camera);
                 auto image_ptr = io::CreateImageFromFile("depth.png");
@@ -64,13 +64,13 @@ protected:
                 AddGeometry(pointcloud_ptr);
             }
         } else if (key == GLFW_KEY_K) {
-            if (cloudViewer::utility::filesystem::FileExists("depth.ply")) {
+            if (utility::filesystem::FileExists("depth.ply")) {
                 auto pointcloud_ptr = io::CreatePointCloudFromFile("depth.ply");
                 AddGeometry(pointcloud_ptr);
             }
         } else if (key == GLFW_KEY_P) {
-            if (cloudViewer::utility::filesystem::FileExists("depth.png") &&
-                cloudViewer::utility::filesystem::FileExists("camera.json")) {
+            if (utility::filesystem::FileExists("depth.png") &&
+                utility::filesystem::FileExists("camera.json")) {
                 camera::PinholeCameraTrajectory camera;
                 io::ReadIJsonConvertible("camera.json", camera);
                 view_control_ptr_->ConvertFromPinholeCameraParameters(
@@ -84,26 +84,37 @@ protected:
     }
 };
 
+void PrintHelp() {
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > DepthCapture  [filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
-    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
-    if (argc < 2) {
-        cloudViewer::utility::LogInfo("Usage:");
-        cloudViewer::utility::LogInfo("    > DepthCapture  [filename]");
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 
     auto mesh_ptr = io::CreateMeshFromFile(argv[1]);
     mesh_ptr->computeVertexNormals();
-    cloudViewer::utility::LogInfo("Press S to capture a depth image.");
+    utility::LogInfo("Press S to capture a depth image.");
     VisualizerWithDepthCapture visualizer;
     visualizer.CreateVisualizerWindow("Depth Capture", 640, 480, 200, 200);
     visualizer.AddGeometry(mesh_ptr);
     visualizer.Run();
     visualizer.DestroyVisualizerWindow();
 
-    if (!cloudViewer::utility::filesystem::FileExists("depth.png") ||
-        !cloudViewer::utility::filesystem::FileExists("camera.json")) {
-        cloudViewer::utility::LogInfo("Depth has not been captured.");
+    if (!utility::filesystem::FileExists("depth.png") ||
+        !utility::filesystem::FileExists("camera.json")) {
+        utility::LogInfo("Depth has not been captured.");
         return 1;
     }
 
@@ -121,15 +132,15 @@ int main(int argc, char *argv[]) {
     visualizer1.Run();
     visualizer1.DestroyVisualizerWindow();
 
-    cloudViewer::utility::LogInfo("Press L to validate the depth image.");
-    cloudViewer::utility::LogInfo("Press P to load the capturing camera pose.");
+    utility::LogInfo("Press L to validate the depth image.");
+    utility::LogInfo("Press P to load the capturing camera pose.");
     VisualizerWithDepthCapture visualizer2;
     visualizer2.CreateVisualizerWindow("Depth Validation", 640, 480, 200, 200);
     visualizer2.AddGeometry(mesh_ptr);
     visualizer2.Run();
     visualizer2.DestroyVisualizerWindow();
 
-    cloudViewer::utility::LogInfo("End of the test.");
+    utility::LogInfo("End of the test.");
 
     return 0;
 }

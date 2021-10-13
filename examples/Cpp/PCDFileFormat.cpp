@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,22 +26,31 @@
 
 #include "CloudViewer.h"
 
+void PrintHelp() {
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]");
+    utility::LogInfo("      The program will :");
+    utility::LogInfo("      1. load the pointcloud in [filename].");
+    utility::LogInfo("      2. visualize the point cloud.");
+    utility::LogInfo("      3. if a save method is specified, write the point cloud into data.pcd.");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+
 int main(int argc, char **argv) {
     using namespace cloudViewer;
-    using namespace flann;
 
-    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc < 2) {
-        // clang-format off
-        cloudViewer::utility::LogInfo("Usage:");
-        cloudViewer::utility::LogInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]");
-        cloudViewer::utility::LogInfo("    The program will :");
-        cloudViewer::utility::LogInfo("    1. load the pointcloud in [filename].");
-		cloudViewer::utility::LogInfo("    2. visualize the point cloud.");
-        cloudViewer::utility::LogInfo("    3. if a save method is specified, write the point cloud into data.pcd.");
-        // clang-format on
-        return 0;
+    if (!(argc == 2 || argc == 3) ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
     }
 
     auto cloud_ptr = io::CreatePointCloudFromFile(argv[1]);

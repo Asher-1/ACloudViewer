@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include <LineSet.h>
-#include <ecvTetraMesh.h>
+#include <camera/PinholeCameraIntrinsic.h>
 #include <ecvPointCloud.h>
+#include <ecvTetraMesh.h>
 
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
@@ -36,71 +37,87 @@ namespace cloudViewer {
 namespace geometry {
 
 void pybind_lineset(py::module &m) {
-    py::class_<geometry::LineSet, PyGeometry<geometry::LineSet>,
-               std::shared_ptr<geometry::LineSet>, ccHObject>
+    py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>,
+               ccHObject>
             lineset(m, "LineSet",
                     "LineSet define a sets of lines in 3D. A typical "
                     "application is to display the point cloud correspondence "
                     "pairs.");
-    py::detail::bind_default_constructor<geometry::LineSet>(lineset);
-    py::detail::bind_copy_functions<geometry::LineSet>(lineset);
+    py::detail::bind_default_constructor<LineSet>(lineset);
+    py::detail::bind_copy_functions<LineSet>(lineset);
     lineset.def(py::init<const std::vector<Eigen::Vector3d> &,
                          const std::vector<Eigen::Vector2i> &>(),
                 "Create a LineSet from given points and line indices",
                 "points"_a, "lines"_a)
             .def("__repr__",
-                 [](const geometry::LineSet &lineset) {
-                     return std::string("geometry::LineSet with ") +
+                 [](const LineSet &lineset) {
+                     return std::string("LineSet with ") +
                             std::to_string(lineset.lines_.size()) + " lines.";
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_points", &geometry::LineSet::hasPoints,
+            .def("has_points", &LineSet::hasPoints,
                  "Returns ``True`` if the object contains points.")
-            .def("has_lines", &geometry::LineSet::hasLines,
+            .def("has_lines", &LineSet::hasLines,
                  "Returns ``True`` if the object contains lines.")
-            .def("has_colors", &geometry::LineSet::hasColors,
+            .def("has_colors", &LineSet::hasColors,
                  "Returns ``True`` if the object's lines contain "
                  "colors.")
-            .def("get_line_coordinate", &geometry::LineSet::getLineCoordinate,
+            .def("get_line_coordinate", &LineSet::getLineCoordinate,
                  "line_index"_a)
-            .def("paint_uniform_color", &geometry::LineSet::paintUniformColor,
+            .def("paint_uniform_color", &LineSet::paintUniformColor,
                  "Assigns each line in the line set the same color.", "color"_a)
             .def_static("create_from_point_cloud_correspondences",
-                        &geometry::LineSet::CreateFromPointCloudCorrespondences,
+                        &LineSet::CreateFromPointCloudCorrespondences,
                         "Factory function to create a LineSet from two "
                         "pointclouds and a correspondence set.",
                         "cloud0"_a, "cloud1"_a, "correspondences"_a)
             .def_static("create_from_oriented_bounding_box",
-                        &geometry::LineSet::CreateFromOrientedBoundingBox,
+                        &LineSet::CreateFromOrientedBoundingBox,
                         "Factory function to create a LineSet from an "
                         "OrientedBoundingBox.",
                         "box"_a)
             .def_static("create_from_axis_aligned_bounding_box",
-                        &geometry::LineSet::CreateFromAxisAlignedBoundingBox,
+                        &LineSet::CreateFromAxisAlignedBoundingBox,
                         "Factory function to create a LineSet from an "
                         "AxisAlignedBoundingBox.",
                         "box"_a)
             .def_static("create_from_triangle_mesh",
-                        &geometry::LineSet::CreateFromTriangleMesh,
+                        &LineSet::CreateFromTriangleMesh,
                         "Factory function to create a LineSet from edges of a "
                         "triangle mesh.",
                         "mesh"_a)
-            .def_static("create_from_tetra_mesh",
-                        &geometry::LineSet::CreateFromTetraMesh,
+            .def_static("create_from_tetra_mesh", &LineSet::CreateFromTetraMesh,
                         "Factory function to create a LineSet from edges of a "
                         "tetra mesh.",
                         "mesh"_a)
-            .def_readwrite("points", &geometry::LineSet::points_,
+            .def_static("create_camera_visualization",
+                        &LineSet::CreateCameraVisualization,
+                        "Factory function to create a LineSet from intrinsic "
+                        "and extrinsic camera matrices",
+                        "view_width_px"_a, "view_height_px"_a, "intrinsic"_a,
+                        "extrinsic"_a, "scale"_a = 1.0)
+            .def_static(
+                    "create_camera_visualization",
+                    [](const camera::PinholeCameraIntrinsic &intrinsic,
+                       const Eigen::Matrix4d &extrinsic, double scale) {
+                        return LineSet::CreateCameraVisualization(
+                                intrinsic.width_, intrinsic.height_,
+                                intrinsic.intrinsic_matrix_, extrinsic, scale);
+                    },
+                    "Factory function to create a LineSet from intrinsic "
+                    "and extrinsic camera matrices",
+                    "intrinsic"_a, "extrinsic"_a, "scale"_a = 1.0)
+            .def_readwrite("points", &LineSet::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
                            "coordinates.")
-            .def_readwrite("lines", &geometry::LineSet::lines_,
+            .def_readwrite("lines", &LineSet::lines_,
                            "``int`` array of shape ``(num_lines, 2)``, use "
                            "``numpy.asarray()`` to access data: Lines denoted "
                            "by the index of points forming the line.")
             .def_readwrite(
-                    "colors", &geometry::LineSet::colors_,
+                    "colors", &LineSet::colors_,
                     "``float64`` array of shape ``(num_lines, 3)``, "
                     "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                     "data: RGB colors of lines.");

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.cloudViewer.org                            -
+// -                        CloudViewer: Asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018 Asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ class Open3DVisualizer : public cloudViewer::visualization::GuiVisualizer {
     using Super = GuiVisualizer;
 public:
     Open3DVisualizer()
-        : cloudViewer::visualization::GuiVisualizer("Open3D", WIDTH, HEIGHT) {
+        : cloudViewer::visualization::GuiVisualizer("CloudViewer", WIDTH, HEIGHT) {
         AddItemsToAppMenu({{"Make Default 3D Viewer", MAC_MAKE_DEFAULT_APP}});
     }
 
@@ -58,17 +58,17 @@ protected:
     void OnMenuItemSelected(Menu::ItemId item_id) override {
         if (item_id == MAC_MAKE_DEFAULT_APP) {
             auto em = GetTheme().font_size;
-            auto dlg = std::make_shared<Dialog>("Make Open3D default");
+            auto dlg = cloudViewer::make_shared<Dialog>("Make CloudViewer default");
 
-            auto cancel = std::make_shared<Button>("Cancel");
+            auto cancel = cloudViewer::make_shared<Button>("Cancel");
             cancel->SetOnClicked([this]() { this->CloseDialog(); });
 
-            auto ok = std::make_shared<Button>("Make Default");
+            auto ok = cloudViewer::make_shared<Button>("Make Default");
             ok->SetOnClicked([this]() {
-                // This will set the users personal default to use Open3D for
+                // This will set the users personal default to use CloudViewer for
                 // the file types below. THIS SHOULD ONLY BE CALLED
                 // AFTER THE USER EXPLICITLY CONFIRMS THAT THEY WANT TO DO THIS!
-                CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.intel-isl.cloudViewer.Open3D";
+                CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.isl-org.cloudViewer.Open3D";
                 // The UTIs should match what we declare in Info.plist
                 LSSetDefaultRoleHandlerForContentType(
                     (__bridge CFStringRef)@"public.gl-transmission-format",
@@ -107,19 +107,19 @@ protected:
                 this->CloseDialog();
             });
 
-            auto vert = std::make_shared<Vert>(0, Margins(em));
-            vert->AddChild(std::make_shared<Label>(
+            auto vert = cloudViewer::make_shared<Vert>(0, Margins(em));
+            vert->AddChild(cloudViewer::make_shared<Label>(
                 "This will make Open3D the default application for the "
                 "following file types:"));
             vert->AddFixed(em);
-            auto table = std::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));
-            table->AddChild(std::make_shared<Label>("Mesh:"));
-            table->AddChild(std::make_shared<Label>(".gltf, .glb, .obj, .off, .ply, .stl"));
-            table->AddChild(std::make_shared<Label>("Point clouds:"));
-            table->AddChild(std::make_shared<Label>(".pcd, .ply, .pts, .xyz, .xyzn, .xyzrgb"));
+            auto table = cloudViewer::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));
+            table->AddChild(cloudViewer::make_shared<Label>("Mesh:"));
+            table->AddChild(cloudViewer::make_shared<Label>(".gltf, .glb, .obj, .off, .ply, .stl"));
+            table->AddChild(cloudViewer::make_shared<Label>("Point clouds:"));
+            table->AddChild(cloudViewer::make_shared<Label>(".pcd, .ply, .pts, .xyz, .xyzn, .xyzrgb"));
             vert->AddChild(table);
             vert->AddFixed(em);
-            auto buttons = std::make_shared<Horiz>(0.5 * em);
+            auto buttons = cloudViewer::make_shared<Horiz>(0.5 * em);
             buttons->AddStretch();
             buttons->AddChild(cancel);
             buttons->AddChild(ok);
@@ -136,7 +136,7 @@ constexpr Menu::ItemId Open3DVisualizer::MAC_MAKE_DEFAULT_APP;  // for Xcode
 
 // ----------------------------------------------------------------------------
 static void LoadAndCreateWindow(const char *path) {
-    auto vis = std::make_shared<Open3DVisualizer>();
+    auto vis = cloudViewer::make_shared<Open3DVisualizer>();
     bool is_path_valid = (path && path[0] != '\0');
     if (is_path_valid) {
         vis->LoadGeometry(path);

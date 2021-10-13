@@ -230,6 +230,7 @@ void AutomaticReconstructionWidget::RenderResult() {
                                   cloud->addPoint(CCVector3(point.x, point.y, point.z));
                                   cloud->addRGBColor(ecvColor::Rgb(point.r, point.g, point.b));
                               }
+                              cloud->showColors(true);
                               fusedCloudGroup->addChild(cloud);
                           } else {
                               CVLog::Error("[AutomaticReconstructionWidget::RenderResult] Not enough memory!");

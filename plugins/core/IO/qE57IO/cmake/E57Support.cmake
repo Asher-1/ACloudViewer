@@ -1,6 +1,6 @@
 
 # libE57Format
-set( LIBE57FORMAT_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern/E57Format-2.1" CACHE PATH "libE57Format install directory (CMAKE_INSTALL_PREFIX from libE57Format)" )
+set( LIBE57FORMAT_INSTALL_DIR "${E57FORMAT_ROOT}" CACHE PATH "libE57Format install directory (CMAKE_INSTALL_PREFIX from libE57Format)" )
 
 if( NOT LIBE57FORMAT_INSTALL_DIR )
 	message( SEND_ERROR "No libE57Format install dir specified (LIBE57FORMAT_INSTALL_DIR)" )
@@ -36,10 +36,10 @@ endif()
 
 # Find Xerces
 if (WIN32)
-	set( Xerces_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern/xerces-c-3.2.0/include" CACHE PATH "Xerces include directory" )
+	set( Xerces_INCLUDE_DIR "${XERCES_ROOT}/include" CACHE PATH "Xerces include directory" )
 	
 	# ensure we can find at least one of the libs
-	set( XERCES_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern/xerces-c-3.2.0/lib" CACHE INTERNAL "" )
+	set( XERCES_LIB_DIR "${XERCES_ROOT}/lib" CACHE INTERNAL "" )
 	
 	find_library( Xerces_LIBRARY_RELEASE
 					NAMES xerces-c_3.lib libxerces-c_3.a xerces-c_3.so libxerces-c_3.so
@@ -54,14 +54,9 @@ if (WIN32)
 	)
 	if ( NOT Xerces_LIBRARY_RELEASE AND NOT Xerces_LIBRARY_DEBUG )
 		message( SEND_ERROR "Cannot find the xerces-c library in ${XERCES_LIB_DIR}" )
-	else()
-		set( XERCES_DLL_DIR ${XERCES_LIB_DIR}/../bin )
-		
-		file( GLOB XERCES_DLL_FILES ${XERCES_DLL_DIR}/xerces-c_3_2.dll )
-		
-		copy_files( "${XERCES_DLL_FILES}" "${EROWCLOUDVIEWER_DEST_FOLDER}" )
-
-		unset( XERCES_DLL_DIR )
+	else()	
+		file( GLOB XERCES_DLL_FILES ${XERCES_ROOT}/bin/xerces-c_3_2.dll )
+		cloudViewer_install_files( "${XERCES_DLL_FILES}" "${EROWCLOUDVIEWER_DEST_FOLDER}" )
 	endif()
 else ()
 	include(FindXercesC)
@@ -97,13 +92,14 @@ function( target_link_LIBE57FORMAT ) # 1 argument: ARGV0 = project name
 			endif()
 		else()
 			if (Xerces_LIBRARY_RELEASE)
-				target_link_libraries( ${ARGV0} ${Xerces_LIBRARY_RELEASE} )
-			else()
-				message( FATAL_ERROR "Unable to find Xerces library. Please set Xerces_LIBRARY_RELEASE to point to the (release) library file." )
+				target_link_libraries( ${ARGV0} optimized ${Xerces_LIBRARY_RELEASE} )
+			endif()
+			if(Xerces_LIBRARY_DEBUG)
+				target_link_libraries( ${ARGV0} debug ${Xerces_LIBRARY_DEBUG})
 			endif()
 		endif()
 
-		set_property( TARGET ${ARGV0} APPEND PROPERTY COMPILE_DEFINITIONS CV_E57_SUPPORT XERCES_STATIC_LIBRARY )
+		set_property( TARGET ${ARGV0} APPEND PROPERTY COMPILE_DEFINITIONS CV_E57_SUPPORT )
 	else()
 		message( SEND_ERROR "No libE57Format install dir specified (LIBE57FORMAT_INSTALL_DIR)" )
 	endif()

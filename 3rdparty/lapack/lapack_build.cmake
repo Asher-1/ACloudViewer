@@ -1,24 +1,16 @@
 include(ExternalProject)
 
-set_local_or_remote_url(
-    DOWNLOAD_URL_PRIMARY
-    LOCAL_URL   "${THIRD_PARTY_DOWNLOAD_DIR}/lapack-3.9.0.tar.gz"
-    REMOTE_URLS "https://github.com/Reference-LAPACK/lapack/archive/v3.9.0.tar.gz"
-)
-
 ExternalProject_Add(
        ext_lapack
+       PREFIX lapack
        #   http://www.netlib.org/lapack/lapack-3.9.0.tar.gz
-       URL ${DOWNLOAD_URL_PRIMARY} ${DOWNLOAD_URL_FALLBACK}
+       URL https://github.com/Reference-LAPACK/lapack/archive/v3.9.0.tar.gz
        URL_HASH MD5=0b251e2a8d5f949f99b50dd5e2200ee2
-       DOWNLOAD_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/download/lapack
-       PREFIX ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}
+       DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/lapack"
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
-       UPDATE_COMMAND ""
-       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/lapack
-       BINARY_DIR ${CLOUDVIEWER_EXTERNAL_BUILD_DIR}/lapack_build
        INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
+       UPDATE_COMMAND ""
        CMAKE_ARGS
            -DBUILD_SHARED_LIBS=$<IF:$<PLATFORM_ID:Linux>,ON,OFF>
            -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
@@ -38,6 +30,6 @@ set(LAPACK_LIB_DIR ${INSTALL_DIR}/lib)
 set(LAPACKBLAS_LIBRARIES lapack blas)
 
 if(NOT WIN32)
-    install_ext( FILES ${LAPACK_LIBRARIES} ${INSTALL_DESTINATIONS} "")
-    install_ext( FILES ${BLAS_LIBRARIES} ${INSTALL_DESTINATIONS} "")
+    cloudViewer_install_ext( FILES ${LAPACK_LIBRARIES} ${INSTALL_DESTINATIONS} "")
+    cloudViewer_install_ext( FILES ${BLAS_LIBRARIES} ${INSTALL_DESTINATIONS} "")
 endif()
