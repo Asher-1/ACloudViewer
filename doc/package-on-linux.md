@@ -86,3 +86,9 @@
 4. Run CloudViewer.sh instead of CloudViewer
 
 		./CloudViewer.sh
+
+
+
+# Using QtInstallerFramework package For Windows and Linux:
+[please refer this](../scripts/QtInstallerFramework/README.md)
+

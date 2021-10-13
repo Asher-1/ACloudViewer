@@ -28,8 +28,6 @@ class GLTexImage;
 struct cudaArray;
 struct textureReference;
 
-#include <GL/glew.h>
-
 //using texture2D from linear memory
 
 #define SIFTGPU_ENABLE_LINEAR_TEX2D

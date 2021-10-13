@@ -1577,7 +1577,7 @@ PCLTextureMesh::Ptr PclTools::CreateTexturingMesh(const std::string &filePath,
     return CreateTexturingMesh(triangles, my_cams, show_cameras, verbose);
 }
 
-PCLTextureMesh::Ptr PclTools::CreateTexturingMesh(const PCLMesh::ConstPtr triangles,
+PCLTextureMesh::Ptr PclTools::CreateTexturingMesh(const PCLMesh::ConstPtr& triangles,
                                                     const pcl::texture_mapping::CameraVector& cameras,
                                                     bool show_cameras, bool verbose)
 {
@@ -1587,15 +1587,15 @@ PCLTextureMesh::Ptr PclTools::CreateTexturingMesh(const PCLMesh::ConstPtr triang
     // Create the texturemesh object that will contain our UV-mapped mesh
     PCLTextureMesh::Ptr mesh(new PCLTextureMesh);
     mesh->cloud = triangles->cloud;
-    std::vector< pcl::Vertices> polygon_1;
+    std::vector< pcl::Vertices> polygons;
 
     // push faces into the texturemesh object
-    polygon_1.resize (triangles->polygons.size ());
+    polygons.resize (triangles->polygons.size ());
     for(std::size_t i =0; i < triangles->polygons.size (); ++i)
     {
-      polygon_1[i] = triangles->polygons[i];
+        polygons[i] = triangles->polygons[i];
     }
-    mesh->tex_polygons.push_back(polygon_1);
+    mesh->tex_polygons.push_back(polygons);
     if (verbose)
     {
         CVLog::Print("[PclTools::CreateTexturingMesh] Input mesh contains %i faces and %i vertices",
