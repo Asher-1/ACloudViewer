@@ -15,8 +15,10 @@
     <a href="https://github.com/Asher-1/ErowCloudViewer/releases">Viewer</a> |
     <a href="http://asher-1.github.io/docs/release/contribute/contribute.html">Contribute</a> |
     <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a> |
-    <a href="https://forum.erow.cn">Forum</a>
+    <a href="http://asher-1.github.io">Forum</a>
 </h4>
+
+
 [![GitHub release](doc/images/version.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
 [![Build Status](doc/images/buildStatus.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
 [![Releases](doc/images/newRelease.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
