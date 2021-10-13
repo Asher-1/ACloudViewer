@@ -31,7 +31,7 @@ function(cloudViewer_show_and_abort_on_warning target)
         )
         string(REPLACE ";" "," DISABLE_NVCC_WARNINGS "${DISABLE_NVCC_WARNINGS}")
 
-        set(CUDA_FLAGS "--Werror cross-execution-space-call,deprecated-declarations")
+        set(CUDA_FLAGS "--Werror cross-execution-space-call")
         if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "10.2")
 #            string(APPEND CUDA_FLAGS " --Werror all-warnings")
         endif()
