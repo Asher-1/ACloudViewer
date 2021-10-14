@@ -22,7 +22,7 @@
 #include <ui_planeEditDlg.h>
 #include "ecvPickingListener.h"
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 //Qt

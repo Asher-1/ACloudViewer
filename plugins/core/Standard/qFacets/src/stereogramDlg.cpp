@@ -156,7 +156,7 @@ bool StereogramWidget::init(double angularStep_deg,
 		return false;
 
 	//pDlg.setMaximum(static_cast<int>(count));
-	CVLib::NormalizedProgress nProgress(&pDlg,static_cast<unsigned>(count));
+	cloudViewer::NormalizedProgress nProgress(&pDlg,static_cast<unsigned>(count));
 
 	//create the density grid
 	FacetDensityGrid* densityGrid = new FacetDensityGrid();
@@ -302,7 +302,7 @@ void StereogramWidget::mousePressEvent(QMouseEvent* e)
 			{
 				//compute equivalent positions
 				m_clickDip_deg = std::min(90.0, 90.0 * sqrt(static_cast<double>(squareDistToCenter)) / static_cast<double>(m_radius));
-                m_clickDipDir_deg = CVLib::RadiansToDegrees(atan2(static_cast<double>(AB.y()),static_cast<double>(AB.x())));
+                m_clickDipDir_deg = cloudViewer::RadiansToDegrees(atan2(static_cast<double>(AB.y()),static_cast<double>(AB.x())));
 				if (m_clickDipDir_deg < 0)
 					m_clickDipDir_deg += 360.0;
 				m_clickDipDir_deg += 90.0; //stereogram starts at 12 o'clock (not 3)

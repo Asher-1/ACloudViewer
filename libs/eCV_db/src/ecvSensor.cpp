@@ -19,7 +19,7 @@
 
 ccSensor::ccSensor(QString name)
 	: ccHObject(name)
-	, m_posBuffer(0)
+    , m_posBuffer(nullptr)
 	, m_activeIndex(0)
 	, m_color(ecvColor::green)
 	, m_scale(PC_ONE)
@@ -29,7 +29,7 @@ ccSensor::ccSensor(QString name)
 
 ccSensor::ccSensor(const ccSensor &sensor)
 	: ccHObject(sensor)
-	, m_posBuffer(0)
+    , m_posBuffer(nullptr)
 	, m_rigidTransformation(sensor.m_rigidTransformation)
 	, m_activeIndex(sensor.m_activeIndex)
 	, m_color(sensor.m_color)
@@ -45,8 +45,7 @@ bool ccSensor::addPosition(ccGLMatrix& trans, double index)
 	{
 		m_posBuffer = new ccIndexedTransformationBuffer();
 		addChild(m_posBuffer);
-		//m_posBuffer->setDisplay(getDisplay());
-		//m_posBuffer->setVisible(true);
+        m_posBuffer->setVisible(true);
 		m_posBuffer->setEnabled(false);
 	}
 
@@ -165,9 +164,9 @@ bool ccSensor::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//serialization wasn't possible before v3.4!
@@ -175,7 +174,7 @@ bool ccSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
 		return false;
 
 	//rigid transformation (dataVersion>=34)
-	if (!m_rigidTransformation.fromFile(in,dataVersion,flags))
+    if (!m_rigidTransformation.fromFile(in,dataVersion,flags, oldToNewIDMap))
 		return ReadError();
 
 	//various parameters (dataVersion>=35)

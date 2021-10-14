@@ -70,7 +70,7 @@ public:
 	//! Sets illum mode
     inline void setIllum(int illum) { m_illum = illum; }
     //! Returns illum mode
-    inline const int getIllum() const { return m_illum; }
+    inline int getIllum() const { return m_illum; }
 
 	//! Sets specular color
 	inline void setSpecular(const ecvColor::Rgbaf& color) { m_specular = color; }
@@ -150,7 +150,7 @@ public:
 	/** \warning Doesn't save the texture image!
 	**/
 	virtual bool toFile(QFile& out) const;
-	virtual bool fromFile(QFile& in, short dataVersion, int flags);
+    virtual bool fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap);
 
 	//! Returns unique identifier (UUID)
 	inline QString getUniqueIdentifier() const { return m_uniqueID; }

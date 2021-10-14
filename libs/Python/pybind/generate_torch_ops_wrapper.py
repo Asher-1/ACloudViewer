@@ -54,7 +54,7 @@ def parse_schema_from_docstring(docstring):
     cloudViewer::my_function(int a, Tensor b, Tensor c) -> Tensor d
     cloudViewer::my_function(int a, Tensor b, str c='bla') -> Tensor d
     """
-    m = re.search('with schema: cloudViewer::(.*)$', docstr)
+    m = re.search('with schema: cloudViewer::(.*)$', docstring)
     fn_signature = m.group(1)
     m = re.match('^(.*)\((.*)\) -> (.*)', fn_signature)
     fn_name, arguments, returns = m.group(1), m.group(2), m.group(3)

@@ -21,25 +21,25 @@
 #include "ecvPointCloud.h"
 #include "ecvScalarField.h"
 
-//CVLib
+//cloudViewer
 #include <DgmOctree.h>
 #include <DistanceComputationTools.h>
 #include <GenericProgressCallback.h>
 
 struct SFPair
 {
-	SFPair(const CVLib::ScalarField* sfIn = 0, CVLib::ScalarField* sfOut = 0) : in(sfIn), out(sfOut) {}
-	const CVLib::ScalarField* in;
-	CVLib::ScalarField* out;
+	SFPair(const cloudViewer::ScalarField* sfIn = 0, cloudViewer::ScalarField* sfOut = 0) : in(sfIn), out(sfOut) {}
+	const cloudViewer::ScalarField* in;
+	cloudViewer::ScalarField* out;
 };
 
-bool cellSFInterpolator(const CVLib::DgmOctree::octreeCell& cell,
+bool cellSFInterpolator(const cloudViewer::DgmOctree::octreeCell& cell,
 						void** additionalParameters,
-						CVLib::NormalizedProgress* nProgress/*=0*/)
+						cloudViewer::NormalizedProgress* nProgress/*=0*/)
 {
 	//additional parameters
 //	const ccPointCloud* srcCloud = reinterpret_cast<ccPointCloud*>(additionalParameters[0]);
-	const CVLib::DgmOctree* srcOctree = reinterpret_cast<CVLib::DgmOctree*>(additionalParameters[1]);
+	const cloudViewer::DgmOctree* srcOctree = reinterpret_cast<cloudViewer::DgmOctree*>(additionalParameters[1]);
 	std::vector<SFPair>* scalarFields = reinterpret_cast<std::vector< SFPair >*>(additionalParameters[2]);
 	const ccPointCloudInterpolator::Parameters* params = reinterpret_cast<const ccPointCloudInterpolator::Parameters*>(additionalParameters[3]);
 	
@@ -53,16 +53,12 @@ bool cellSFInterpolator(const CVLib::DgmOctree::octreeCell& cell,
 
 	//structure for nearest neighbors search
 	bool useKNN = (params->method == ccPointCloudInterpolator::Parameters::K_NEAREST_NEIGHBORS);
-	CVLib::DgmOctree::NearestNeighboursSphericalSearchStruct nNSS;
+	cloudViewer::DgmOctree::NearestNeighboursSphericalSearchStruct nNSS;
 	{
 		nNSS.level = cell.level;
 		if (useKNN)
 		{
 			nNSS.minNumberOfNeighbors = params->knn;
-		}
-		else
-		{
-			nNSS.prepare(static_cast<PointCoordinateType>(params->radius), cell.parentOctree->getCellSize(cell.level));
 		}
 		cell.parentOctree->getCellPos(cell.truncatedCode, cell.level, nNSS.cellPos, true);
 		cell.parentOctree->computeCellCenter(nNSS.cellPos, cell.level, nNSS.cellCenter);
@@ -105,10 +101,10 @@ bool cellSFInterpolator(const CVLib::DgmOctree::octreeCell& cell,
 
 				for (unsigned j = 0; j < sfCount; ++j)
 				{
-					const CVLib::ScalarField* sf = scalarFields->at(j).in;
+					const cloudViewer::ScalarField* sf = scalarFields->at(j).in;
 					for (unsigned k = 0; k < neighborCount; ++k)
 					{
-						CVLib::DgmOctree::PointDescriptor& P = nNSS.pointsInNeighbourhood[k];
+						cloudViewer::DgmOctree::PointDescriptor& P = nNSS.pointsInNeighbourhood[k];
 						values[k] = sf->getValue(P.pointIndex);
 					}
 					std::sort(values.begin(), values.end());
@@ -123,7 +119,7 @@ bool cellSFInterpolator(const CVLib::DgmOctree::octreeCell& cell,
 				std::fill(sumValues.begin(), sumValues.end(), 0);
 				for (unsigned k = 0; k < neighborCount; ++k)
 				{
-					CVLib::DgmOctree::PointDescriptor& P = nNSS.pointsInNeighbourhood[k];
+					cloudViewer::DgmOctree::PointDescriptor& P = nNSS.pointsInNeighbourhood[k];
 					double w = 1.0;
 					if (normalDistWeighting)
 					{
@@ -168,7 +164,7 @@ bool ccPointCloudInterpolator::InterpolateScalarFieldsFrom(	ccPointCloud* destCl
 															ccPointCloud* srcCloud,
 															const std::vector<int>& inSFIndexes,
 															const Parameters& params,
-															CVLib::GenericProgressCallback* progressCb/*=0*/,
+															cloudViewer::GenericProgressCallback* progressCb/*=0*/,
 															unsigned char octreeLevel/*=0*/)
 {
 	if (!destCloud || !srcCloud || srcCloud->size() == 0 || srcCloud->getNumberOfScalarFields() == 0)
@@ -230,8 +226,8 @@ bool ccPointCloudInterpolator::InterpolateScalarFieldsFrom(	ccPointCloud* destCl
 			overwrite = true;
 		}
 
-		CVLib::ScalarField* inSF = srcCloud->getScalarField(inSFIndex);
-		CVLib::ScalarField* outSF = destCloud->getScalarField(outSFIndex);
+		cloudViewer::ScalarField* inSF = srcCloud->getScalarField(inSFIndex);
+		cloudViewer::ScalarField* outSF = destCloud->getScalarField(outSFIndex);
 		scalarFields.push_back(SFPair(inSF, outSF));
 
 		outSF->fill(NAN_VALUE);
@@ -241,7 +237,7 @@ bool ccPointCloudInterpolator::InterpolateScalarFieldsFrom(	ccPointCloud* destCl
 	{
 		//compute the closest-point set of 'this cloud' relatively to 'input cloud'
 		//(to get a mapping between the resulting vertices and the input points)
-		QSharedPointer<CVLib::ReferenceCloud> CPSet = destCloud->computeCPSet(*srcCloud, progressCb, octreeLevel);
+		QSharedPointer<cloudViewer::ReferenceCloud> CPSet = destCloud->computeCPSet(*srcCloud, progressCb, octreeLevel);
 		if (!CPSet)
 		{
 			return false;
@@ -274,8 +270,8 @@ bool ccPointCloudInterpolator::InterpolateScalarFieldsFrom(	ccPointCloud* destCl
 		assert(srcCloud && destCloud);
 
 		//we spatially 'synchronize' the octrees
-		CVLib::DgmOctree *_srcOctree = 0, *_destOctree = 0;
-		CVLib::DistanceComputationTools::SOReturnCode soCode = CVLib::DistanceComputationTools::synchronizeOctrees(
+		cloudViewer::DgmOctree *_srcOctree = 0, *_destOctree = 0;
+		cloudViewer::DistanceComputationTools::SOReturnCode soCode = cloudViewer::DistanceComputationTools::synchronizeOctrees(
 			srcCloud,
 			destCloud,
 			_srcOctree,
@@ -283,9 +279,9 @@ bool ccPointCloudInterpolator::InterpolateScalarFieldsFrom(	ccPointCloud* destCl
 			/*maxSearchDist*/0,
 			progressCb);
 		
-		QScopedPointer<CVLib::DgmOctree> srcOctree(_srcOctree), destOctree(_destOctree);
+		QScopedPointer<cloudViewer::DgmOctree> srcOctree(_srcOctree), destOctree(_destOctree);
 
-		if (soCode != CVLib::DistanceComputationTools::SYNCHRONIZED)
+		if (soCode != cloudViewer::DistanceComputationTools::SYNCHRONIZED)
 		{
 			//not enough memory (or invalid input)
 			CVLog::Warning("[InterpolateScalarFieldsFrom] Failed to build the octrees");

@@ -31,28 +31,28 @@ ccGeomFeaturesDlg::ccGeomFeaturesDlg(QWidget* parent/*=nullptr*/)
 
 	try
 	{
-		m_options.push_back(Option(roughnessCheckBox, CVLib::GeometricalAnalysisTools::Roughness, 0));
-		m_options.push_back(Option(firstOrderMomentCheckBox, CVLib::GeometricalAnalysisTools::MomentOrder1, 0));
-		m_options.push_back(Option(curvMeanCheckBox, CVLib::GeometricalAnalysisTools::Curvature, CVLib::Neighbourhood::MEAN_CURV));
-		m_options.push_back(Option(curvGaussCheckBox, CVLib::GeometricalAnalysisTools::Curvature, CVLib::Neighbourhood::GAUSSIAN_CURV));
-		m_options.push_back(Option(curvNCRCheckBox, CVLib::GeometricalAnalysisTools::Curvature, CVLib::Neighbourhood::NORMAL_CHANGE_RATE));
-		m_options.push_back(Option(densityKnnCheckBox, CVLib::GeometricalAnalysisTools::LocalDensity, CVLib::GeometricalAnalysisTools::DENSITY_KNN));
-		m_options.push_back(Option(densitySurfCheckBox, CVLib::GeometricalAnalysisTools::LocalDensity, CVLib::GeometricalAnalysisTools::DENSITY_2D));
-		m_options.push_back(Option(densityVolCheckBox, CVLib::GeometricalAnalysisTools::LocalDensity, CVLib::GeometricalAnalysisTools::DENSITY_3D));
-		m_options.push_back(Option(eigSumCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::EigenValuesSum));
-		m_options.push_back(Option(eigOmnivarianceCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::Omnivariance));
-		m_options.push_back(Option(eigenentropyCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::EigenEntropy));
-		m_options.push_back(Option(eigAnisotropyCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::Anisotropy));
-		m_options.push_back(Option(eigPlanarityBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::Planarity));
-		m_options.push_back(Option(eigLinearityCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::Linearity));
-		m_options.push_back(Option(eigPCA1CheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::PCA1));
-		m_options.push_back(Option(eigPCA2CheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::PCA2));
-		m_options.push_back(Option(eigSurfaceVarCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::SurfaceVariation));
-		m_options.push_back(Option(eigSphericityCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::Sphericity));
-		m_options.push_back(Option(eigVerticalityCheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::Verticality));
-		m_options.push_back(Option(eigenvalue1CheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::EigenValue1));
-		m_options.push_back(Option(eigenvalue2CheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::EigenValue2));
-		m_options.push_back(Option(eigenvalue3CheckBox, CVLib::GeometricalAnalysisTools::Feature, CVLib::Neighbourhood::EigenValue3));
+		m_options.push_back(Option(roughnessCheckBox, cloudViewer::GeometricalAnalysisTools::Roughness, 0));
+		m_options.push_back(Option(firstOrderMomentCheckBox, cloudViewer::GeometricalAnalysisTools::MomentOrder1, 0));
+		m_options.push_back(Option(curvMeanCheckBox, cloudViewer::GeometricalAnalysisTools::Curvature, cloudViewer::Neighbourhood::MEAN_CURV));
+		m_options.push_back(Option(curvGaussCheckBox, cloudViewer::GeometricalAnalysisTools::Curvature, cloudViewer::Neighbourhood::GAUSSIAN_CURV));
+		m_options.push_back(Option(curvNCRCheckBox, cloudViewer::GeometricalAnalysisTools::Curvature, cloudViewer::Neighbourhood::NORMAL_CHANGE_RATE));
+		m_options.push_back(Option(densityKnnCheckBox, cloudViewer::GeometricalAnalysisTools::LocalDensity, cloudViewer::GeometricalAnalysisTools::DENSITY_KNN));
+		m_options.push_back(Option(densitySurfCheckBox, cloudViewer::GeometricalAnalysisTools::LocalDensity, cloudViewer::GeometricalAnalysisTools::DENSITY_2D));
+		m_options.push_back(Option(densityVolCheckBox, cloudViewer::GeometricalAnalysisTools::LocalDensity, cloudViewer::GeometricalAnalysisTools::DENSITY_3D));
+		m_options.push_back(Option(eigSumCheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::EigenValuesSum));
+		m_options.push_back(Option(eigOmnivarianceCheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::Omnivariance));
+		m_options.push_back(Option(eigenentropyCheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::EigenEntropy));
+		m_options.push_back(Option(eigAnisotropyCheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::Anisotropy));
+		m_options.push_back(Option(eigPlanarityBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::Planarity));
+		m_options.push_back(Option(eigLinearityCheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::Linearity));
+		m_options.push_back(Option(eigPCA1CheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::PCA1));
+		m_options.push_back(Option(eigPCA2CheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::PCA2));
+		m_options.push_back(Option(eigSurfaceVarCheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::SurfaceVariation));
+		m_options.push_back(Option(eigSphericityCheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::Sphericity));
+		m_options.push_back(Option(eigVerticalityCheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::Verticality));
+		m_options.push_back(Option(eigenvalue1CheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::EigenValue1));
+		m_options.push_back(Option(eigenvalue2CheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::EigenValue2));
+		m_options.push_back(Option(eigenvalue3CheckBox, cloudViewer::GeometricalAnalysisTools::Feature, cloudViewer::Neighbourhood::EigenValue3));
 	}
 	catch (...)
 	{

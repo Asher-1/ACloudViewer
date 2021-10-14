@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #include "FeatureIO.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 namespace cloudViewer {
@@ -37,16 +37,16 @@ namespace {
 	{
 		uint32_t rows, cols;
 		if (fread(&rows, sizeof(uint32_t), 1, file) < 1) {
-			CVLib::utility::LogWarning("Read BIN failed: unexpected EOF.");
+			cloudViewer::utility::LogWarning("Read BIN failed: unexpected EOF.");
 			return false;
 		}
 		if (fread(&cols, sizeof(uint32_t), 1, file) < 1) {
-			CVLib::utility::LogWarning("Read BIN failed: unexpected EOF.");
+			cloudViewer::utility::LogWarning("Read BIN failed: unexpected EOF.");
 			return false;
 		}
 		mat.resize(rows, cols);
 		if (fread(mat.data(), sizeof(double), rows * cols, file) < rows * cols) {
-			CVLib::utility::LogWarning("Read BIN failed: unexpected EOF.");
+			cloudViewer::utility::LogWarning("Read BIN failed: unexpected EOF.");
 			return false;
 		}
 		return true;
@@ -57,15 +57,15 @@ namespace {
 		uint32_t rows = (uint32_t)mat.rows();
 		uint32_t cols = (uint32_t)mat.cols();
 		if (fwrite(&rows, sizeof(uint32_t), 1, file) < 1) {
-			CVLib::utility::LogWarning("Write BIN failed: unexpected error.");
+			cloudViewer::utility::LogWarning("Write BIN failed: unexpected error.");
 			return false;
 		}
 		if (fwrite(&cols, sizeof(uint32_t), 1, file) < 1) {
-			CVLib::utility::LogWarning("Write BIN failed: unexpected error.");
+			cloudViewer::utility::LogWarning("Write BIN failed: unexpected error.");
 			return false;
 		}
 		if (fwrite(mat.data(), sizeof(double), rows * cols, file) < rows * cols) {
-			CVLib::utility::LogWarning("Write BIN failed: unexpected error.");
+			cloudViewer::utility::LogWarning("Write BIN failed: unexpected error.");
 			return false;
 		}
 		return true;
@@ -87,9 +87,9 @@ bool WriteFeature(const std::string &filename, const utility::Feature &feature)
 
 bool ReadFeatureFromBIN(const std::string &filename, utility::Feature &feature) 
 {
-	FILE *fid = CVLib::utility::filesystem::FOpen(filename, "rb");
+	FILE *fid = cloudViewer::utility::filesystem::FOpen(filename, "rb");
 	if (fid == NULL) {
-		CVLib::utility::LogWarning("Read BIN failed: unable to open file: {}",
+		cloudViewer::utility::LogWarning("Read BIN failed: unable to open file: {}",
 			filename);
 		return false;
 	}
@@ -100,9 +100,9 @@ bool ReadFeatureFromBIN(const std::string &filename, utility::Feature &feature)
 
 bool WriteFeatureToBIN(const std::string &filename, const utility::Feature &feature)
 {
-	FILE *fid = CVLib::utility::filesystem::FOpen(filename, "wb");
+	FILE *fid = cloudViewer::utility::filesystem::FOpen(filename, "wb");
 	if (fid == NULL) {
-		CVLib::utility::LogWarning("Write BIN failed: unable to open file: {}",
+		cloudViewer::utility::LogWarning("Write BIN failed: unable to open file: {}",
 			filename);
 		return false;
 	}

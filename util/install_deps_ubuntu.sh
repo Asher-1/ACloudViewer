@@ -29,6 +29,9 @@ dependencies=(
 	libtbb-dev
 	# Headless rendering deps
 	libosmesa6-dev
+        libudev-dev
+        autoconf
+        libtool
 	# other deps
 	build-essential 
 	libxmu-dev 

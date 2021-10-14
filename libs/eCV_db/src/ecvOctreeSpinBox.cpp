@@ -17,7 +17,7 @@
 
 #include "ecvOctreeSpinBox.h"
 
-//CVLib
+//cloudViewer
 #include <CVMiscTools.h>
 
 //ECV_DB_LIB
@@ -29,7 +29,7 @@ ccOctreeSpinBox::ccOctreeSpinBox(QWidget* parent/*=0*/)
 	: QSpinBox(parent)
 	, m_octreeBoxWidth(0)
 {
-	setRange(0, CVLib::DgmOctree::MAX_OCTREE_LEVEL);
+	setRange(0, cloudViewer::DgmOctree::MAX_OCTREE_LEVEL);
 	
 	//we'll catch any modification of the spinbox value and update the suffix consequently
 	connect(this, SIGNAL(valueChanged(int)), this, SLOT(onValueChange(int)));
@@ -50,13 +50,13 @@ void ccOctreeSpinBox::setCloud(ccGenericPointCloud* cloud)
 	else
 	{
 		ccBBox box = cloud->getOwnBB(false);
-		CVLib::CCMiscTools::MakeMinAndMaxCubical(box.minCorner(), box.maxCorner());
+		cloudViewer::CCMiscTools::MakeMinAndMaxCubical(box.minCorner(), box.maxCorner());
 		m_octreeBoxWidth = box.getMaxBoxDim();
 		onValueChange(value());
 	}
 }
 
-void ccOctreeSpinBox::setOctree(CVLib::DgmOctree* octree)
+void ccOctreeSpinBox::setOctree(cloudViewer::DgmOctree* octree)
 {
 	if (octree)
 	{
@@ -74,7 +74,7 @@ void ccOctreeSpinBox::onValueChange(int level)
 {
 	if (m_octreeBoxWidth > 0)
 	{
-		if (level >= 0/* && level <= CVLib::DgmOctree::MAX_OCTREE_LEVEL*/)
+		if (level >= 0/* && level <= cloudViewer::DgmOctree::MAX_OCTREE_LEVEL*/)
 		{
 			double cs = m_octreeBoxWidth / pow(2.0, static_cast<double>(level));
 			setSuffix(QString(" (grid step = %1)").arg(cs));

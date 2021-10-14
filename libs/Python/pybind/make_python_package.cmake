@@ -31,7 +31,7 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
 endforeach()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament)
-# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filname
+# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
     get_filename_component(SO_VER_NAME ${PYTHON_EXTRA_LIB_REAL} NAME)
@@ -50,17 +50,19 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/visualization/gui/__init__
                "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/visualization/gui/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/visualization/rendering/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/visualization/rendering/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/j_visualizer.py"
-               "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/j_visualizer.py")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/cloudViewer/web_visualizer.py"
+               "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/web_visualizer.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/conda_build_config.yaml"
                "${PYTHON_PACKAGE_DST_DIR}/conda_meta/conda_build_config.yaml")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/meta.yaml"
                "${PYTHON_PACKAGE_DST_DIR}/conda_meta/meta.yaml")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/j_visualizer.js"
-               "${PYTHON_PACKAGE_DST_DIR}/js/j_visualizer.js")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/lib/web_visualizer.js"
+               "${PYTHON_PACKAGE_DST_DIR}/js/lib/web_visualizer.js")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
                "${PYTHON_PACKAGE_DST_DIR}/js/package.json")
-file(COPY "${PYTHON_PACKAGE_DST_DIR}/../_build_config.py"
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/../libs/cloudViewer/visualization/webrtc_server/html/webrtcstreamer.js"
+               "${PYTHON_PACKAGE_DST_DIR}/js/lib/webrtcstreamer.js")
+file(COPY "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/" )
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
@@ -75,46 +77,37 @@ if (BUNDLE_CLOUDVIEWER_ML)
     file(RENAME "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/ml3d" "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/_ml3d")
 endif()
 
-# Build Jupyter plugin with webpack. This step distills and merges all js
-# dependencies and include all static assets. The generated output is in
-# ${PYTHON_PACKAGE_DST_DIR}/cloudViewer/static.
+# Build Jupyter plugin.
 if (BUILD_JUPYTER_EXTENSION)
-    file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR}/cloudViewer/static)
-    message(STATUS "Jupyter support is enabled. Building Jupyter plugin ...")
-    if (WIN32)
-        find_program(NPM "npm")
-        execute_process(
-            COMMAND cmd /c "${NPM}" install
-            RESULT_VARIABLE res_var
-            WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/js
-        )
+    if(WIN32 OR UNIX AND NOT LINUX_AARCH64)
+        message(STATUS "Jupyter support is enabled, building Jupyter plugin now.")
     else()
-        execute_process(
-            COMMAND npm install
-            RESULT_VARIABLE res_var
-            WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/js
-        )
-    endif()
-    if (NOT "${res_var}" STREQUAL "0")
-        message(FATAL_ERROR "`npm install` failed with: '${res_var}'")
+        message(FATAL_ERROR "Jupyter plugin is not supported on ARM.")
     endif()
 
-    # We cache ${PYTHON_PACKAGE_DST_DIR}/js/node_modules in
-    #          ${PYTHON_PACKAGE_SRC_DIR}/js/node_modules
-    # to speed up webpack build speed during development.
-    # During build, the following steps will happen:
-    # 1) The entire ${PYTHON_PACKAGE_DST_DIR} in the build directory is cleared.
-    # 2) ${PYTHON_PACKAGE_SRC_DIR}/js/node_modules is copied to
-    #    ${PYTHON_PACKAGE_DST_DIR}/js/node_modules, regadless whether
-    #    ${PYTHON_PACKAGE_SRC_DIR}/js/node_modules is empty or not.
-    # 3) `npm install` is run in ${PYTHON_PACKAGE_DST_DIR}/js, so
-    #    ${PYTHON_PACKAGE_DST_DIR}/js/node_modules must be filled after
-    #    `npm install`.
-    # 4) ${PYTHON_PACKAGE_DST_DIR}/js/node_modules is then copied back to
-    #    ${PYTHON_PACKAGE_SRC_DIR}/js/node_modules for caching.
-    file(REMOVE_RECURSE ${PYTHON_PACKAGE_SRC_DIR}/js/node_modules)
-    file(COPY ${PYTHON_PACKAGE_DST_DIR}/js/node_modules
-        DESTINATION ${PYTHON_PACKAGE_SRC_DIR}/js)
+    find_program(NPM npm)
+    if(NPM)
+        message(STATUS "NPM found at: ${NPM}")
+    else()
+        message(FATAL_ERROR "npm not found. Please install Node.js and npm."
+                            "Visit https://www.npmjs.com/get-npm for details.")
+    endif()
+
+    find_program(YARN yarn)
+    if(YARN)
+        message(STATUS "YARN found at: ${YARN}")
+    else()
+        message(FATAL_ERROR "yarn not found. You may install yarn globally by "
+                            "npm install -g yarn.")
+    endif()
+
+    # Append requirements_jupyter.txt to requirements.txt
+    execute_process(COMMAND ${CMAKE_COMMAND} -E cat
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter.txt
+        OUTPUT_VARIABLE ALL_REQUIREMENTS
+    )
+    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt ${ALL_REQUIREMENTS})
 endif()
 
 if (BUILD_GUI)

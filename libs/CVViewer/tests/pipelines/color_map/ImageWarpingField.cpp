@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,9 @@
 
 #include "tests/UnitTest.h"
 
-// #include "open3d/pipelines/color_map/ImageWarpingField.h"
+// #include "pipelines/color_map/ImageWarpingField.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 /* TODO
@@ -129,7 +129,7 @@ TEST(ImageWarpingField, DISABLED_Constructor) {
     // int height = 240;
     // int nr_anchors = 16;
 
-    // open3d::ImageWarpingField field(width, height, nr_anchors);
+    // cloudViewer::ImageWarpingField field(width, height, nr_anchors);
 
     // EXPECT_EQ(21, field.anchor_w_);
     // EXPECT_EQ(16, field.anchor_h_);
@@ -184,7 +184,7 @@ TEST(ImageWarpingField, QueryFlow) {
     // int height = 240;
     // int nr_anchors = 16;
 
-    // open3d::ImageWarpingField field(width, height, nr_anchors);
+    // cloudViewer::ImageWarpingField field(width, height, nr_anchors);
 
     // for (size_t i = 0; i < ref_output.size(); i++)
     //     tests::ExpectEQ(ref_output[i], field.QueryFlow(x[i], y[i]));
@@ -227,7 +227,7 @@ TEST(ImageWarpingField, GetImageWarpingField) {
     // int height = 240;
     // int nr_anchors = 16;
 
-    // open3d::ImageWarpingField field(width, height, nr_anchors);
+    // cloudViewer::ImageWarpingField field(width, height, nr_anchors);
 
     // for (size_t i = 0; i < ref_output.size(); i++)
     // {
@@ -238,4 +238,4 @@ TEST(ImageWarpingField, GetImageWarpingField) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

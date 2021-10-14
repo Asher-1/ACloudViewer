@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,11 +33,7 @@
 #include "ecvKDTreeSearchParam.h"
 
 // EIGEN
-#include <Eigen/Core>
-
-// LOCAL
-#include <memory>
-#include <vector>
+#include <Eigen.h>
 
 class ccPointCloud;
 namespace cloudViewer {
@@ -48,6 +44,8 @@ namespace utility {
 /// \brief Class to store featrues for registration.
 class ECV_DB_LIB_API Feature {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// Resize feature data buffer to `dim x n`.
     ///
     /// \param dim Feature dimension per point.

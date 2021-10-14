@@ -313,7 +313,7 @@ PCLCloud::Ptr cc2smReader::getXYZ() const
 PCLCloud::Ptr cc2smReader::getNormals() const
 {
 	if (!m_cc_cloud || !m_cc_cloud->hasNormals())
-		return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
+        return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
 
 	PCLCloud::Ptr sm_cloud (new PCLCloud);
 	try
@@ -442,7 +442,7 @@ bool cc2smReader::getvtkScalars(vtkSmartPointer<vtkDataArray> &scalars, bool sfC
 	{
 		int sfIdx = m_cc_cloud->getCurrentDisplayedScalarFieldIndex();
 		if (sfIdx < 0) return false;
-		CVLib::ScalarField* scalar_field = m_cc_cloud->getScalarField(sfIdx);
+		cloudViewer::ScalarField* scalar_field = m_cc_cloud->getScalarField(sfIdx);
 		if (!scalar_field) return false;
 		for (unsigned cp = 0; cp < nr_points; ++cp)
 		{
@@ -510,14 +510,49 @@ std::string cc2smReader::GetSimplifiedSFName(const std::string& ccSfName)
 	return simplified.toStdString();
 }
 
+void cc2smReader::ConVertToPCLMaterial(ccMaterial::CShared inMaterial, PCLMaterial& outMaterial)
+{
+    assert(inMaterial);
+    inMaterial->getTexture();
+    std::string texFile = CVTools::FromQString(inMaterial->getTextureFilename());
+    std::string texName = CVTools::FromQString(inMaterial->getName());
+    // FIX special symbols bugs in vtk rendering system!
+    texName = CVTools::ExtractDigitAlpha(texName);
+    const ecvColor::Rgbaf& ambientColor = inMaterial->getAmbient();
+    const ecvColor::Rgbaf& diffuseColor = inMaterial->getDiffuseFront();
+    const ecvColor::Rgbaf& specularColor = inMaterial->getSpecular();
+    float shininess = inMaterial->getShininessFront();
+
+    outMaterial.tex_name = texName;
+    outMaterial.tex_file = texFile;
+    outMaterial.tex_Ka.r = ambientColor.r;
+    outMaterial.tex_Ka.g = ambientColor.g;
+    outMaterial.tex_Ka.b = ambientColor.b;
+    outMaterial.tex_Kd.r = diffuseColor.r;
+    outMaterial.tex_Kd.g = diffuseColor.g;
+    outMaterial.tex_Kd.b = diffuseColor.b;
+    outMaterial.tex_Ks.r = specularColor.r;
+    outMaterial.tex_Ks.g = specularColor.g;
+    outMaterial.tex_Ks.b = specularColor.b;
+    outMaterial.tex_d = ambientColor.a;
+    outMaterial.tex_Ns = shininess;
+    outMaterial.tex_illum = inMaterial->getIllum();
+    if(outMaterial.tex_illum > 2) // only support 0, 1, 2
+    {
+        outMaterial.tex_illum = 2;
+    }
+}
+
 PCLCloud::Ptr cc2smReader::getFloatScalarField(const std::string& field_name) const
 {
 	assert(m_cc_cloud);
 
 	int sfIdx = m_cc_cloud->getScalarFieldIndexByName(field_name.c_str());
 	if (sfIdx < 0)
-		return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
-	CVLib::ScalarField* scalar_field = m_cc_cloud->getScalarField(sfIdx);
+    {
+        return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
+    }
+	cloudViewer::ScalarField* scalar_field = m_cc_cloud->getScalarField(sfIdx);
 	assert(scalar_field);
 
 	PCLCloud::Ptr sm_cloud (new PCLCloud);
@@ -636,7 +671,7 @@ PCLCloud::Ptr cc2smReader::getAsSM(std::list<std::string>& requested_fields) con
 		{
 			bool exists = checkIfFieldExists(*it);
 			if (!exists) //all check results must be true
-				return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
+                return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
 		}
 	}
 
@@ -692,7 +727,7 @@ PCLCloud::Ptr cc2smReader::getAsSM(bool ignoreScalars) const
 	if (!m_cc_cloud || m_cc_cloud->size() == 0)
 	{
 		assert(false);
-		return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
+        return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
 	}
 
 	//container
@@ -715,7 +750,7 @@ PCLCloud::Ptr cc2smReader::getAsSM(bool ignoreScalars) const
 	catch (const std::bad_alloc&)
 	{
 		//not enough memory
-		return PCLCloud::Ptr(static_cast<PCLCloud*>(0));
+        return PCLCloud::Ptr(static_cast<PCLCloud*>(nullptr));
 	}
 
 	return getAsSM(fields);
@@ -787,7 +822,7 @@ PCLMesh::Ptr cc2smReader::getPclMesh(ccGenericMesh* mesh) {
 
 	for (unsigned n = 0; n < triNum; ++n)
 	{
-		const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
+		const cloudViewer::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
 		if (visFiltering)
 		{
 			//we skip the triangle if at least one vertex is hidden
@@ -805,42 +840,6 @@ PCLMesh::Ptr cc2smReader::getPclMesh(ccGenericMesh* mesh) {
 	}
 
 	return pclMesh;
-}
-
-void getMaterial(ccMaterial::CShared inMaterial, PCLMaterial& outMaterial)
-{
-	assert(inMaterial);
-    inMaterial->getTexture();
-	std::string texFile = CVTools::FromQString(inMaterial->getTextureFilename());
-	std::string texName = CVTools::FromQString(inMaterial->getName());
-	// FIX special symbols bugs in vtk rendering system!
-    texName = CVTools::ExtractDigitAlpha(texName);
-	const ecvColor::Rgbaf& ambientColor = inMaterial->getAmbient();
-	const ecvColor::Rgbaf& diffuseColor = inMaterial->getDiffuseFront();
-	const ecvColor::Rgbaf& specularColor = inMaterial->getSpecular();
-	float shininess = inMaterial->getShininessFront();
-
-	outMaterial.tex_name = texName;
-	outMaterial.tex_file = texFile;
-	outMaterial.tex_Ka.r = ambientColor.r;
-	outMaterial.tex_Ka.g = ambientColor.g;
-	outMaterial.tex_Ka.b = ambientColor.b;
-	outMaterial.tex_Kd.r = diffuseColor.r;
-	outMaterial.tex_Kd.g = diffuseColor.g;
-	outMaterial.tex_Kd.b = diffuseColor.b;
-	outMaterial.tex_Ks.r = specularColor.r;
-	outMaterial.tex_Ks.g = specularColor.g;
-	outMaterial.tex_Ks.b = specularColor.b;
-	outMaterial.tex_d = ambientColor.a;
-	outMaterial.tex_Ns = shininess;
-	if (outMaterial.tex_Ks.r == 0 && outMaterial.tex_Ks.g == 0 && outMaterial.tex_Ks.b == 0)
-	{
-		outMaterial.tex_illum = 1;
-	}
-	else
-	{
-		outMaterial.tex_illum = 2;
-	}
 }
 
 bool cc2smReader::getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const {
@@ -913,7 +912,7 @@ bool cc2smReader::getPclCloud2(ccGenericMesh* mesh, PCLCloud& cloud) const {
 
     // vertices visibility
     for (unsigned n = 0; n < triNum; ++n) {
-        const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
+        const cloudViewer::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
         if (visFiltering) {
             // we skip the triangle if at least one vertex is hidden
             if ((verticesVisibility[tsi->i1] != POINT_VISIBLE) ||
@@ -1067,7 +1066,7 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
 		//vertices visibility
         for (unsigned n = 0; n < triNum; ++n)
 		{
-			const CVLib::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
+			const cloudViewer::VerticesIndexes* tsi = mesh->getTriangleVertIndexes(n);
 			if (visFiltering)
 			{
 				//we skip the triangle if at least one vertex is hidden
@@ -1088,13 +1087,13 @@ PCLTextureMesh::Ptr cc2smReader::getPclTextureMesh(ccGenericMesh* mesh) {
 					textureMesh->tex_polygons.push_back(std::vector<pcl::Vertices>());
 					textureMesh->tex_materials.push_back(PCLMaterial());
 					textureMesh->tex_coordinates.push_back(std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> >());
-					getMaterial((*materials)[newMatlIndex], textureMesh->tex_materials.back());
+                    ConVertToPCLMaterial((*materials)[newMatlIndex], textureMesh->tex_materials.back());
 				} else { // if we don't have any current material, we apply default one
 					textureMesh->tex_polygons.push_back(std::vector<pcl::Vertices>());
 					textureMesh->tex_materials.push_back(PCLMaterial());
 					textureMesh->tex_coordinates.push_back(std::vector< Eigen::Vector2f, Eigen::aligned_allocator< Eigen::Vector2f>>());
 					ccMaterial::Shared defaultMaterial(new ccMaterial("default"));
-					getMaterial(defaultMaterial, textureMesh->tex_materials.back());
+                    ConVertToPCLMaterial(defaultMaterial, textureMesh->tex_materials.back());
 				}
 
 				lasMtlIndex = newMatlIndex;

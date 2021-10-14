@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 
 #include <unordered_map>
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 #include <rply.h>
@@ -41,7 +41,7 @@ using namespace io;
 namespace ply_voxelgrid_reader {
 
 	struct PLYReaderState {
-		CVLib::utility::ConsoleProgressBar *progress_bar;
+		cloudViewer::utility::ConsoleProgressBar *progress_bar;
 		std::vector<geometry::Voxel> *voxelgrid_ptr;
 		Eigen::Vector3d origin;
 		double voxel_size;
@@ -133,13 +133,13 @@ static const std::unordered_map<std::string,
 
 namespace io {
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridFromFile(
         const std::string &filename,
         const std::string &format,
         bool print_progress) {
-    auto voxelgrid = std::make_shared<geometry::VoxelGrid>();
+    auto voxelgrid = cloudViewer::make_shared<geometry::VoxelGrid>();
     ReadVoxelGrid(filename, *voxelgrid, format, print_progress);
     return voxelgrid;
 }

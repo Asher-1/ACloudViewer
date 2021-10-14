@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,19 +26,19 @@
 
 #include <thread>
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include <IJsonConvertible.h>
 
 #include <ecvBBox.h>
-#include <ecvOrientedBBox.h>
 #include <ecvPointCloud.h>
-#include <PointCloudIO.h>
 #include <ecvKDTreeFlann.h>
+#include <ecvOrientedBBox.h>
+#include "io/PointCloudIO.h"
 
 namespace cloudViewer {
 
-class AlignmentSession : public CVLib::utility::IJsonConvertible {
+class AlignmentSession : public utility::IJsonConvertible {
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;

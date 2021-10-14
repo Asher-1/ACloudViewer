@@ -57,7 +57,7 @@ public: // implemented from ecvGenericAnnotationTool interface
 	virtual void initAnnotationLabels(const std::vector<std::string>& labelList) override;
 
 	virtual void toggleInteractor() override;
-	virtual bool setInputCloud(ccPointCloud* pointCloud, int viewPort = 0) override;
+	virtual bool setInputCloud(ccPointCloud* pointCloud, int viewport = 0) override;
 
 	virtual void start() override;
 	virtual void stop() override;
@@ -104,7 +104,7 @@ private:
 	void hideAnnotation(Annotation *anno);
 
 	void changeAnnotationType(Annotation* anno, const std::string & type);
-	void setPointSize(const std::string & viewID, int viewPort = 0);
+	void setPointSize(const std::string & viewID, int viewport = 0);
 	void highlightPoint(std::vector<int>& slice);
 	void defaultColorPoint(std::vector<int>& slice);
 	void createAnnotationFromSelectPoints(std::string type = "unknown");

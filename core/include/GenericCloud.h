@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -25,7 +25,7 @@
 #include "CVConst.h"
 #include "CVGeom.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 
 //! A generic 3D point cloud interface for data communication between library and client applications

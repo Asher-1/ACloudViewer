@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 // CV_CORE_LIB
-#include <Console.h>
+#include <Logging.h>
 
 // ECV_DB_LIB
 #include <ecvMesh.h>
@@ -39,7 +39,9 @@
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
 
+#ifdef CV_WINDOWS
 #pragma warning(disable:4715)
+#endif
 
 namespace cloudViewer {
 namespace geometry {
@@ -104,7 +106,7 @@ void pybind_facet(py::module &m) {
 			if (facet.getPolygon()) {
 				return std::ref(*facet.getPolygon());
 			} else {
-				CVLib::utility::LogWarning("[ccFacet] ccFacet do not have polygons!");
+				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have polygons!");
 			}
 		}, "Returns polygon mesh (if any)")
 	.def("set_polygon", [](ccFacet& facet, ccMesh& mesh) {
@@ -114,7 +116,7 @@ void pybind_facet(py::module &m) {
 			if (facet.getContour()) {
 				return std::ref(*facet.getContour());
 			} else {
-				CVLib::utility::LogWarning("[ccFacet] ccFacet do not have contours!");
+				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have contours!");
 			}
 		}, "Returns contour polyline (if any)")
 	.def("set_contour", [](ccFacet& facet, ccPolyline& poly) {
@@ -124,7 +126,7 @@ void pybind_facet(py::module &m) {
 			if (facet.getContourVertices()) {
 				return std::ref(*facet.getContourVertices());
 			} else {
-				CVLib::utility::LogWarning("[ccFacet] ccFacet do not have origin points!");
+				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have origin points!");
 			}
 		}, "Returns contour vertices (if any)")
 	.def("set_contour_vertices", [](ccFacet& facet, ccPointCloud& vertices) {
@@ -134,7 +136,7 @@ void pybind_facet(py::module &m) {
 			if (facet.getOriginPoints()) {
 				return std::ref(*facet.getOriginPoints());
 			} else {
-				CVLib::utility::LogWarning("[ccFacet] ccFacet do not have origin points!");
+				cloudViewer::utility::LogWarning("[ccFacet] ccFacet do not have origin points!");
 			}
 		}, "Returns origin points (if any)")
 	.def("set_origin_points", [](ccFacet& facet, ccPointCloud& cloud) {
@@ -148,12 +150,12 @@ void pybind_facet(py::module &m) {
 	.def_static("Create", [](std::shared_ptr<ccPointCloud> cloud, 
 				PointCoordinateType max_edge_length, bool transfer_ownership,
 				const Eigen::Vector4d& plane_equation) {
-			CVLib::GenericIndexedCloudPersist* persistCloud = cloud.get();
+			cloudViewer::GenericIndexedCloudPersist* persistCloud = cloud.get();
 			if (!persistCloud)
 			{
-				CVLib::utility::LogWarning(
+				cloudViewer::utility::LogWarning(
 					"[ccFacet::Create] Illegal input parameters, only support point cloud!");
-				return std::make_shared<ccFacet>();
+				return cloudViewer::make_shared<ccFacet>();
 			}
 			
 			PointCoordinateType eq[4];

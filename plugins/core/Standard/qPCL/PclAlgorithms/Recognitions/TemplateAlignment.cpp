@@ -233,15 +233,15 @@ int TemplateAlignment::compute()
 	ccGLMatrixd transMat(best_alignment.final_transformation.data());
 
 	// Save the aligned template for visualization
-	PCLCloud::Ptr out_cloud_sm(new PCLCloud);
-	TO_PCL_CLOUD(*best_template->getPointCloud(), *out_cloud_sm);
-	if (out_cloud_sm->height * out_cloud_sm->width == 0)
+    PCLCloud out_cloud_sm;
+    TO_PCL_CLOUD(*best_template->getPointCloud(), out_cloud_sm);
+    if (out_cloud_sm.height * out_cloud_sm.width == 0)
 	{
 		//cloud is empty
 		return -53;
 	}
 
-	ccPointCloud* out_cloud_cc = sm2ccConverter(out_cloud_sm).getCloud();
+    ccPointCloud* out_cloud_cc = pcl2cc::Convert(out_cloud_sm);
 	if (!out_cloud_cc)
 	{
 		//conversion failed (not enough memory?)

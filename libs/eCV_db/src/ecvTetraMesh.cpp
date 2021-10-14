@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2019 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,9 +40,9 @@
 #include "ecvPointCloud.h"
 #include "ecvHObjectCaster.h"
 
-#include <Console.h>
+#include <Logging.h>
 
-using namespace CVLib;
+using namespace cloudViewer;
 namespace cloudViewer {
 namespace geometry {
 
@@ -75,7 +75,7 @@ TetraMesh &TetraMesh::removeDuplicatedVertices() {
     typedef decltype(tetras_)::value_type::Scalar Index;
     typedef std::tuple<double, double, double> Coordinate3;
     std::unordered_map<Coordinate3, size_t,
-                       CVLib::utility::hash_tuple::hash<Coordinate3>>
+                       cloudViewer::utility::hash_tuple::hash<Coordinate3>>
             point_to_old_index;
 	std::vector<Index> index_old_to_new(vertices_.size());
 	size_t old_vertex_num = vertices_.size();
@@ -205,7 +205,7 @@ std::shared_ptr<ccMesh> TetraMesh::extractTriangleMesh(
 
 	ccPointCloud* baseVertices = new ccPointCloud("vertices");
 	assert(baseVertices);
-	auto triangle_mesh = std::make_shared<ccMesh>(baseVertices);
+	auto triangle_mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
 
 	if (values.size() != vertices_.size()) {
 		utility::LogError(

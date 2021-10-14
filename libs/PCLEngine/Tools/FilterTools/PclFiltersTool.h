@@ -68,7 +68,7 @@ public: // implemented from ecvGenericFiltersTool interface
 	virtual void set(const ccBBox& extents, const ccGLMatrix& transformation) override;
 	virtual void get(ccBBox& extents, ccGLMatrix& transformation) override;
 
-	virtual bool setInputData(ccHObject* entity, int viewPort = 0) override;
+	virtual bool setInputData(ccHObject* entity, int viewport = 0) override;
 
 	virtual void intersectMode() override;
 	virtual void unionMode() override;
@@ -93,7 +93,7 @@ protected slots:
 	void areaPickingEventProcess(const std::vector<int>& new_selected_slice);
 
 private:
-	void setPointSize(const std::string & viewID, int viewPort = 0);
+	void setPointSize(const std::string & viewID, int viewport = 0);
 
 private:
 	bool m_intersectMode;

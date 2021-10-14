@@ -34,7 +34,7 @@ class ECV_IO_LIB_API AsciiSaveDlg : public QDialog
 public:
 
 	//! Default constructor
-	explicit AsciiSaveDlg(QWidget* parent = 0);
+    explicit AsciiSaveDlg(QWidget* parent = nullptr);
 
 	//! Destructor
 	virtual ~AsciiSaveDlg();
@@ -59,6 +59,8 @@ public:
 		3 = tab
 	**/
 	void setSeparatorIndex(int index);
+    //! Returns separator index
+    int getSeparatorIndex() const;
 
 	//! Returns coordinates precision
 	int coordsPrecision() const;
@@ -78,12 +80,17 @@ public:
 	//! Sets whether this dialog should appear or not by default
 	void setAutoShow(bool state) { m_autoShow = state; }
 	//! Returns whether this dialog automatically appears or not
-	bool autoShow() const { return m_autoShow; }
+    bool autoShown() const { return m_autoShow; }
 
 	//! Sets whether to save colors as float values (instead of unsigned bytes)
 	void setSaveFloatColors(bool state);
 	//! Returns whether to save colors as float values (instead of unsigned bytes)
 	bool saveFloatColors() const;
+
+    //! Sets whether to save the alpha (transparency) channel
+    void setSaveAlphaChannel(bool state);
+    //! Returns whether to save the alpha (transparency) channel
+    bool saveAlphaChannel() const;
 
 protected slots:
 

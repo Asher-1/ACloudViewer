@@ -17,6 +17,7 @@
 
 #include "ecvGenericPrimitive.h"
 #include "ecvPointCloud.h"
+#include "ecvDisplayTools.h"
 
 ccGenericPrimitive::ccGenericPrimitive(QString name/*=QString()*/, 
 									   const ccGLMatrix* transMat/*=0*/)
@@ -60,6 +61,16 @@ const ccGenericPrimitive& ccGenericPrimitive::operator += (const ccGenericPrimit
 	unsigned newFacesCount = facesCount + prim.size();
 	bool primHasVertNorms = prim.getAssociatedCloud()->hasNormals();
 	bool primHasFaceNorms = prim.hasTriNormals();
+    bool primHasColors = prim.getAssociatedCloud()->hasColors();
+
+    if (primHasColors && !verts->hasColors())
+    {
+        if (verts->size() > 0 && !verts->setRGBColor(ecvColor::white))
+        {
+            CVLog::Error("[ccGenericPrimitive::operator +] Not enough memory!");
+            return *this;
+        }
+    }
 
 	//reserve memory
 	if (	verts->reserve(newVertCount)
@@ -67,7 +78,17 @@ const ccGenericPrimitive& ccGenericPrimitive::operator += (const ccGenericPrimit
 		&&	reserve(newFacesCount)
 		&&	(!primHasFaceNorms || m_triNormalIndexes || reservePerTriangleNormalIndexes()))
 	{
-		//copy vertices & normals
+
+        if (primHasColors && !verts->hasColors())
+        {
+            if (!verts->reserveTheRGBTable())
+            {
+                CVLog::Error("[ccGenericPrimitive::operator +] Not enough memory!");
+                return *this;
+            }
+        }
+
+        //copy vertices & normals & colors
 		ccGenericPointCloud* cloud = prim.getAssociatedCloud();
 		for (unsigned i = 0; i < cloud->size(); ++i)
 		{
@@ -76,6 +97,14 @@ const ccGenericPrimitive& ccGenericPrimitive::operator += (const ccGenericPrimit
 			{
 				verts->addNormIndex(cloud->getPointNormalIndex(i));
 			}
+            if (primHasColors)
+            {
+                verts->addRGBColor(cloud->getPointColor(i));
+            }
+            else if(verts->hasColors())
+            {
+                verts->addRGBColor(ecvColor::white);
+            }
 		}
 
 		//copy face normals
@@ -108,7 +137,7 @@ const ccGenericPrimitive& ccGenericPrimitive::operator += (const ccGenericPrimit
 		//copy faces
 		for (unsigned i = 0; i < prim.size(); ++i)
 		{
-			const CVLib::VerticesIndexes* tsi = prim.getTriangleVertIndexes(i);
+			const cloudViewer::VerticesIndexes* tsi = prim.getTriangleVertIndexes(i);
 			addTriangle(vertCount + tsi->i1, vertCount + tsi->i2, vertCount + tsi->i3);
 			if (primHasFaceNorms)
 			{
@@ -141,9 +170,9 @@ bool ccGenericPrimitive::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccGenericPrimitive::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccGenericPrimitive::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccMesh::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccMesh::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//HACK: first, we have to remove any 'wrongly' associated vertices cloud!
@@ -153,7 +182,7 @@ bool ccGenericPrimitive::fromFile_MeOnly(QFile& in, short dataVersion, int flags
 		removeChild(0);
 
 	//Transformation matrix backup (dataVersion>=21)
-	if (!m_transformation.fromFile(in, dataVersion, flags))
+    if (!m_transformation.fromFile(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//'drawing precision' (dataVersion>=21))
@@ -197,7 +226,17 @@ void ccGenericPrimitive::applyGLTransformation(const ccGLMatrix& trans)
 
 const ccGLMatrix& ccGenericPrimitive::getGLTransformationHistory() const
 {
-	return m_transformation;
+    return m_transformation;
+}
+
+void ccGenericPrimitive::clearDrawings()
+{
+    ecvDisplayTools::RemoveEntities(this);
+}
+
+void ccGenericPrimitive::hideShowDrawings(CC_DRAW_CONTEXT &context)
+{
+    ecvDisplayTools::HideShowEntities(this, context.visible);
 }
 
 void ccGenericPrimitive::applyTransformationToVertices()

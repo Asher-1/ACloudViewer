@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2019 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,12 +32,12 @@
 #include <queue>
 #include <tuple>
 
-#include <Console.h>
+#include <Logging.h>
 
 #include <unordered_set>
 #include <unordered_map>
 
-using namespace CVLib;
+using namespace cloudViewer;
 /// Error quadric that is used to minimize the squared distance of a point to
 /// its neigbhouring triangle planes.
 /// Cf. "Simplifying Surfaces with Color and Texture using Quadric Error
@@ -115,7 +115,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 	baseVertices->setEnabled(false);
 	// DGM: no need to lock it as it is only used by one mesh!
 	baseVertices->setLocked(false);
-	auto mesh = std::make_shared<ccMesh>(baseVertices);
+	auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
 	mesh->addChild(baseVertices);
 
 	if (voxel_size <= 0.0) {
@@ -211,7 +211,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 		// Map triangles
 		std::unordered_map<int, std::unordered_set<int>> vert_to_triangles;
 		for (size_t tidx = 0; tidx < size(); ++tidx) {
-			const CVLib::VerticesIndexes* tri = 
+			const cloudViewer::VerticesIndexes* tri = 
 				getTriangleVertIndexes(static_cast<unsigned>(tidx));
 			vert_to_triangles[tri->i1].emplace(int(tidx));
 			vert_to_triangles[tri->i2].emplace(int(tidx));
@@ -317,7 +317,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 	baseVertices->setEnabled(false);
 	// DGM: no need to lock it as it is only used by one mesh!
 	baseVertices->setLocked(false);
-	auto mesh = std::make_shared<ccMesh>(baseVertices);
+	auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
 	mesh->addChild(baseVertices);
 	mesh->merge(this, false);
 
@@ -329,7 +329,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 	std::vector<Eigen::Vector4d> triangle_planes(this->size());
 	std::vector<double> triangle_areas(this->size());
 	for (size_t tidx = 0; tidx < this->size(); ++tidx) {
-		const CVLib::VerticesIndexes* tri =
+		const cloudViewer::VerticesIndexes* tri =
 			getTriangleVertIndexes(static_cast<unsigned>(tidx));
 		vert_to_triangles[tri->i1].emplace(static_cast<int>(tidx));
 		vert_to_triangles[tri->i2].emplace(static_cast<int>(tidx));
@@ -505,7 +505,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 				continue;
 			}
 
-			CVLib::VerticesIndexes* tria = mesh->getTriangleVertIndexes(
+			cloudViewer::VerticesIndexes* tria = mesh->getTriangleVertIndexes(
 				static_cast<unsigned>(tidx));
 			bool has_vidx0 = vidx0 == static_cast<int>(tria->i[0]) || 
 							 vidx0 == static_cast<int>(tria->i[1]) ||

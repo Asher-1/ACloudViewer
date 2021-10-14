@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2019 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +29,9 @@
 #include <fstream>
 #include <thread>
 
-#include "Open3D/Open3D.h"
+#include "CloudViewer.h"
 
-using namespace open3d;
+using namespace cloudViewer;
 
 void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
     std::ofstream out(filename);
@@ -77,21 +77,27 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
     return value;
 }
 
-void PrintUsage() {
-    PrintOpen3DVersion();
+void PrintHelp() {
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("AzureKinectMKVReader --input input.mkv [--output] [path]");
+    utility::LogInfo("    > AzureKinectMKVReader --input input.mkv [--output] [path]");
     // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char **argv) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (!utility::ProgramOptionExists(argc, argv, "--input")) {
-        PrintUsage();
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
+        !utility::ProgramOptionExists(argc, argv, "--input")) {
+        PrintHelp();
         return 1;
     }
+
     std::string mkv_filename =
             utility::GetProgramOptionAsString(argc, argv, "--input");
 
@@ -150,7 +156,7 @@ int main(int argc, char **argv) {
                 return true;
             });
 
-    vis.CreateVisualizerWindow("Open3D Azure Kinect MKV player", 1920, 540);
+    vis.CreateVisualizerWindow("CloudViewer Azure Kinect MKV player", 1920, 540);
     utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
             "exit.");

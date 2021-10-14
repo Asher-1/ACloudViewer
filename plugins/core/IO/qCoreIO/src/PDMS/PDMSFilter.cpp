@@ -31,7 +31,7 @@
 
 #include <assert.h>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 using PdmsAndCCPair = std::pair<PdmsTools::PdmsObjects::GenericItem*, ccHObject*>;
 

@@ -1,37 +1,41 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#include <assert.h>
 #include <k4a/k4a.h>
-
-#include "assert.h"
-
 #include <math.h>
+
 #include <atomic>
 #include <csignal>
 #include <ctime>
 #include <iostream>
 
-#include "Open3D/Open3D.h"
+#include "CloudViewer.h"
 
-using namespace open3d;
+using namespace cloudViewer;
 
-void PrintUsage() {
-    PrintOpen3DVersion();
+void PrintHelp() {
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
     // clang-format off
-    utility::LogInfo("Options: ");
-    utility::LogInfo("--config  Config .json file (default: none)");
-    utility::LogInfo("--list    List the currently connected K4A devices");
-    utility::LogInfo("--device  Specify the device index to use (default: 0)");
-    utility::LogInfo("-a        Align depth with color image (default: disabled)");
-    utility::LogInfo("-h        Print this helper");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > AzureKinectViewer [options]");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --help, -h                : Print help information.");
+    utility::LogInfo("    --config                  : Config .json file (default: none)");
+    utility::LogInfo("    --list                    : List the currently connected K4A devices");
+    utility::LogInfo("    --device                  : Specify the device index to use (default: 0)");
+    utility::LogInfo("    -a                        : Align depth with color image (default: disabled)");
     // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char **argv) {
-    // Parse arguments
-    if (utility::ProgramOptionExists(argc, argv, "-h")) {
-        PrintUsage();
-        return 0;
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--list")) {
@@ -79,7 +83,7 @@ int main(int argc, char **argv) {
                                 return false;
                             });
 
-    vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 540);
+    vis.CreateVisualizerWindow("CloudViewer Azure Kinect Recorder", 1920, 540);
     do {
         auto im_rgbd = sensor.CaptureFrame(enable_align_depth_to_color);
         if (im_rgbd == nullptr) {

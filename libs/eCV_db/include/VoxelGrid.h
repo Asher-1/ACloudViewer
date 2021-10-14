@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 #include <vector>
 
 #include <Helper.h>
-#include <Console.h>
+#include <Logging.h>
 
 #include "ecvHObject.h"
 
@@ -57,6 +57,8 @@ class Image;
 /// \brief Base Voxel class, containing grid id and color.
 class ECV_DB_LIB_API Voxel {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// \brief Default Constructor.
     Voxel() {}
     /// \brief Parameterized Constructor.
@@ -83,6 +85,8 @@ public:
 /// \brief VoxelGrid is a collection of voxels which are aligned in grid.
 class ECV_DB_LIB_API VoxelGrid : public ccHObject {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// \brief Default Constructor.
     VoxelGrid(const char* name = "VoxelGrid") : ccHObject(name) {}
     /// \brief Copy Constructor.
@@ -262,7 +266,7 @@ public:
     /// Voxels contained in voxel grid
     std::unordered_map<Eigen::Vector3i,
                        Voxel,
-                       CVLib::utility::hash_eigen::hash<Eigen::Vector3i>>
+                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector3i>>
             voxels_;
 };
 
@@ -272,12 +276,14 @@ public:
 /// Computes the average color value in the voxel.
 class ECV_DB_LIB_API AvgColorVoxel {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     AvgColorVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
 
 public:
     void Add(const Eigen::Vector3i &voxel_index) {
         if (num_of_points_ > 0 && voxel_index != voxel_index_) {
-            CVLib::utility::LogWarning(
+            cloudViewer::utility::LogWarning(
                     "Tried to aggregate ColorVoxel with different "
                     "voxel_index");
         }

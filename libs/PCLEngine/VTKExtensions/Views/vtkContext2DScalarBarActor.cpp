@@ -1237,7 +1237,7 @@ void DistributeAnnotations(std::vector<AnnotationInfo>& annotations, float space
           }
         }
 
-        // Reset cluster stats
+        // reset cluster stats
         clusterWidth = 0.0;
         clusterCount = 0;
       }

@@ -69,14 +69,6 @@ public:
 	**/
 	ccIndexedTransformation& operator *= (const ccGLMatrix& mat);
 
-	//! Multiplication operator
-	//ccIndexedTransformation operator * (const ccIndexedTransformation& mat) const;
-	
-	//! (in place) Multiplication operator
-	/** Warning: index is not modified by this operation.
-	**/
-	//ccIndexedTransformation& operator *= (const ccIndexedTransformation& trans)
-
 	//! (in place) Translation operator
 	/** Warning: index is not modified by this operation.
 	**/
@@ -103,7 +95,7 @@ public:
 	//inherited from ccSerializableObject
 	virtual bool isSerializable() const { return true; }
 	virtual bool toFile(QFile& out) const;
-	virtual bool fromFile(QFile& in, short dataVersion, int flags);
+    virtual bool fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap);
 
 protected:
 

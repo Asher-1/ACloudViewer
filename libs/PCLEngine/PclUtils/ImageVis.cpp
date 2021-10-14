@@ -15,6 +15,10 @@
 //#                                                                        #
 //##########################################################################
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 //Local
 #include "ImageVis.h"
 #include "PCLConv.h"
@@ -28,7 +32,6 @@
 #include <ecvGLMatrix.h>
 
 // ECV_DB_LIB
-#include <ecvSingleton.h>
 #include <ecvBBox.h>
 
 // VTK
@@ -193,7 +196,7 @@ namespace PclUtils
 		exit_callback_->window = this;
 		this->interactor_->AddObserver(vtkCommand::ExitEvent, exit_callback_);
 
-		// Reset camera (flip it vertically)
+		// reset camera (flip it vertically)
 #if ((VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION > 10))
   //ren_->GetActiveCamera ()->SetViewUp (0.0, -1.0, 0.0);
 		vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
@@ -312,9 +315,9 @@ namespace PclUtils
 		unsigned x, unsigned y, unsigned width, unsigned height,
 		const std::string &layer_id, double opacity)
 	{
-		//if (unsigned(getSize()[0]) != width ||
-		//	unsigned(getSize()[1]) != height)
-		//	setSize(width, height);
+		if (unsigned(getSize()[0]) != width ||
+			unsigned(getSize()[1]) != height)
+			setSize(width, height);
 
 		// Check to see if this ID entry already exists (has it been already added to the visualizer?)
 		pcl::visualization::ImageViewer::LayerMap::iterator am_it = std::find_if(layer_map_.begin(), layer_map_.end(), LayerComparator(layer_id));
@@ -356,7 +359,6 @@ namespace PclUtils
 		ren_->GetActiveCamera()->SetParallelScale(0.5 * win_->GetSize()[1]);
 #endif
 	}
-
 
 	bool ImageVis::addText(unsigned int x, unsigned int y,
 		const std::string& text_string,

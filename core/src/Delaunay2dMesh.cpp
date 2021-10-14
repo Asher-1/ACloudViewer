@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -16,6 +16,10 @@
 //#                                                                        #
 //##########################################################################
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
+
 #include <Delaunay2dMesh.h>
 
 //local
@@ -25,6 +29,7 @@
 
 #if defined(USE_CGAL_LIB)
 //CGAL Lib
+#include <CGAL/version_macros.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
@@ -32,7 +37,7 @@
 #endif
 
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 Delaunay2dMesh::Delaunay2dMesh()
 	: m_associatedCloud(nullptr)
@@ -85,7 +90,7 @@ bool Delaunay2dMesh::buildMesh(	const std::vector<CCVector2>& points2D,
 	//We define a vertex_base with info. The "info" (std::size_t) allow us to keep track of the original point index.
 	typedef CGAL::Triangulation_vertex_base_with_info_2<std::size_t, K> Vb;
 	typedef CGAL::Constrained_triangulation_face_base_2<K> Fb;
-	typedef CGAL::No_intersection_tag  Itag; //This tag could ben changed if we decide to handle intersection
+    typedef CGAL::No_intersection_tag  Itag;
 	typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
 	typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds, Itag> CDT;
 	typedef CDT::Point cgalPoint;
@@ -246,7 +251,7 @@ bool Delaunay2dMesh::removeOuterTriangles(	const std::vector<CCVector2>& vertice
 			CCVector2 G = (A + B + C) / 3.0;
 
 			//if G is inside the 'polygon'
-			bool isInside = CVLib::ManualSegmentationTools::isPointInsidePoly(G, polygon2D);
+			bool isInside = cloudViewer::ManualSegmentationTools::isPointInsidePoly(G, polygon2D);
 			if ((removeOutside && isInside) || (!removeOutside && !isInside))
 			{
 				//we keep the corresponding triangle
@@ -328,7 +333,7 @@ void Delaunay2dMesh::forEach(genericTriangleAction action)
 	if (!m_associatedCloud)
 		return;
 
-	CVLib::SimpleTriangle tri;
+	cloudViewer::SimpleTriangle tri;
 
 	const int* _triIndexes = m_triIndexes;
 	for (unsigned i=0; i<m_numberOfTriangles; ++i, _triIndexes+=3)
@@ -505,6 +510,6 @@ Delaunay2dMesh* Delaunay2dMesh::TesselateContour(GenericIndexedCloudPersist* con
 		}
 	}
 
-	CVLib::Delaunay2dMesh* dMesh = CVLib::Delaunay2dMesh::TesselateContour(contourPoints2D);
+	cloudViewer::Delaunay2dMesh* dMesh = cloudViewer::Delaunay2dMesh::TesselateContour(contourPoints2D);
 	return dMesh;
 }

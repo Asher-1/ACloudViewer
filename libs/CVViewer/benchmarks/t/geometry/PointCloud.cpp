@@ -1,0 +1,188 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: asher-1.github.io                       -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 asher-1.github.io
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+
+#include "t/geometry/PointCloud.h"
+
+#include <benchmark/benchmark.h>
+
+#include "core/CUDAUtils.h"
+#include "core/Tensor.h"
+#include "io/PointCloudIO.h"
+#include "t/io/PointCloudIO.h"
+#include "visualization/utility/DrawGeometry.h"
+
+namespace cloudViewer {
+namespace t {
+namespace geometry {
+
+void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
+    ccPointCloud legacy_pcd;
+    unsigned int num_points = 1000000;  // 1M
+    legacy_pcd.reserveThePointsTable(num_points);
+    legacy_pcd.reserveTheRGBTable();
+    legacy_pcd.resize(num_points);
+
+    // Warm up.
+    t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacy(
+            legacy_pcd, core::Float32, device);
+    (void)pcd;
+
+    for (auto _ : state) {
+        t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacy(
+                legacy_pcd, core::Float32, device);
+        core::cuda::Synchronize(device);
+    }
+}
+
+void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
+    int64_t num_points = 1000000;  // 1M
+    PointCloud pcd(device);
+    pcd.SetPoints(core::Tensor({num_points, 3}, core::Float32, device));
+    pcd.SetPointColors(
+            core::Tensor({num_points, 3}, core::Float32, device));
+
+    // Warm up.
+    ccPointCloud legacy_pcd = pcd.ToLegacy();
+    (void)legacy_pcd;
+
+    for (auto _ : state) {
+        ccPointCloud legacy_pcd = pcd.ToLegacy();
+    }
+}
+
+static const std::string path = std::string(TEST_DATA_DIR) + "/fragment.ply";
+
+void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
+    auto pcd = cloudViewer::io::CreatePointCloudFromFile(path);
+    for (auto _ : state) {
+        pcd->voxelDownSample(voxel_size);
+    }
+}
+
+void VoxelDownSample(benchmark::State& state,
+                     const core::Device& device,
+                     float voxel_size,
+                     const core::HashmapBackend& backend) {
+    t::geometry::PointCloud pcd;
+    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
+    // remove_nan_points
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    // Warp up
+    pcd.VoxelDownSample(voxel_size, backend);
+
+    for (auto _ : state) {
+        pcd.VoxelDownSample(voxel_size, backend);
+        core::cuda::Synchronize(device);
+    }
+}
+
+void Transform(benchmark::State& state, const core::Device& device) {
+    PointCloud pcd;
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    core::Dtype dtype = pcd.GetPoints().GetDtype();
+    core::Tensor transformation = core::Tensor::Init<double>({{1, 0, 0, 1.0},
+                                                              {0, 1, 0, 2.0},
+                                                              {0, 0, 1, 3.0},
+                                                              {0, 0, 0, 1}},
+                                                             device)
+                                          .To(dtype);
+
+    // Warm Up.
+    PointCloud pcd_transformed = pcd.Transform(transformation);
+
+    for (auto _ : state) {
+        pcd_transformed = pcd.Transform(transformation);
+        core::cuda::Synchronize(device);
+    }
+}
+
+BENCHMARK_CAPTURE(FromLegacyPointCloud, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(ToLegacyPointCloud, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(FromLegacyPointCloud, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(ToLegacyPointCloud, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+#define ENUM_VOXELSIZE(DEVICE, BACKEND)                                       \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_01, DEVICE, 0.01, BACKEND) \
+            ->Unit(benchmark::kMillisecond);                                  \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_02, DEVICE, 0.08, BACKEND) \
+            ->Unit(benchmark::kMillisecond);                                  \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_04, DEVICE, 0.04, BACKEND) \
+            ->Unit(benchmark::kMillisecond);                                  \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_08, DEVICE, 0.08, BACKEND) \
+            ->Unit(benchmark::kMillisecond);                                  \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_16, DEVICE, 0.16, BACKEND) \
+            ->Unit(benchmark::kMillisecond);                                  \
+    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_32, DEVICE, 0.32, BACKEND) \
+            ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+#define ENUM_VOXELDOWNSAMPLE_BACKEND()                                 \
+    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashmapBackend::TBB)   \
+    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashmapBackend::Slab) \
+    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashmapBackend::StdGPU)
+#else
+#define ENUM_VOXELDOWNSAMPLE_BACKEND() \
+    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashmapBackend::TBB)
+#endif
+
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_01, 0.01)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_02, 0.02)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_04, 0.04)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_08, 0.08)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_16, 0.16)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_32, 0.32)
+        ->Unit(benchmark::kMillisecond);
+ENUM_VOXELDOWNSAMPLE_BACKEND()
+
+BENCHMARK_CAPTURE(Transform, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+}  // namespace geometry
+}  // namespace t
+}  // namespace cloudViewer

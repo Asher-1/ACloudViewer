@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@
 #include <Eigen/Geometry>
 #include <unordered_map>
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include <IJsonConvertibleIO.h>
 
@@ -69,10 +69,10 @@ static const std::unordered_map<
                 {"txt", WritePinholeCameraTrajectoryToTUM},
         };
 
-using namespace CVLib;
+using namespace cloudViewer;
 std::shared_ptr<camera::PinholeCameraTrajectory>
 CreatePinholeCameraTrajectoryFromFile(const std::string &filename) {
-    auto trajectory = std::make_shared<camera::PinholeCameraTrajectory>();
+    auto trajectory = cloudViewer::make_shared<camera::PinholeCameraTrajectory>();
     ReadPinholeCameraTrajectory(filename, *trajectory);
     return trajectory;
 }

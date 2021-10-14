@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -23,7 +23,7 @@
 #include "DgmOctree.h"
 #include "Neighbourhood.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 
 class GenericProgressCallback;
@@ -144,7 +144,7 @@ public:
 		\param _gravityCenter if available, its gravity center
 		\return covariance matrix
 	**/
-	static CVLib::SquareMatrixd ComputeCovarianceMatrix(const GenericCloud* theCloud,
+	static cloudViewer::SquareMatrixd ComputeCovarianceMatrix(const GenericCloud* theCloud,
 														const PointCoordinateType* _gravityCenter = nullptr);
 
 	//! Flag duplicate points
@@ -236,6 +236,6 @@ protected:
 
 };
 
-} // namespace CVLib
+} // namespace cloudViewer
 
 #endif // GEOMETRICAL_ANALYSIS_TOOLS_HEADER

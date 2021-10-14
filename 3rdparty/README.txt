@@ -1,7 +1,7 @@
-This folder contains a set of external libraries that are used in Open3D.
+This folder contains a set of external libraries that are used in CloudViewer.
 
-We want to make Open3D self-contained and cross-platformly consistent. So
-Open3DV does not detect system installed libraries and always link to these
+We want to make CloudViewer self-contained and cross-platform consistent. So
+CloudViewer does not detect system installed libraries and always links to these
 external libraries.
 
 Some external libraries rely on basic system level libraries such as OpenGL and
@@ -52,9 +52,9 @@ dirent                      1.21                                     MIT license
 https://github.com/tronkko/dirent
 A C/C++ programming interface for cross-platform filesystem
 --------------------------------------------------------------------------------
-librealsense                0.9.1                               Apache-2 license
-A cross-platform library for capturing data from the Intel RealSense F200, SR300
-and R200 cameras
+librealsense                2.40.0                               Apache-2 license
+A cross-platform library for capturing data from the Intel RealSense F200,
+SR300, R200 and L500 cameras
 https://github.com/IntelRealSense/librealsense
 --------------------------------------------------------------------------------
 tinyfiledialogs             2.7.2                                   zlib license
@@ -69,10 +69,51 @@ tinyobjloader                v1.0.0                                  MIT license
 Tiny but powerful single file wavefront obj loader
 https://github.com/syoyo/tinyobjloader
 --------------------------------------------------------------------------------
-pybind11                    2.2                                      BSD license
+pybind11                    v2.5.0                                   BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11
 --------------------------------------------------------------------------------
 PoissonReco                 12.0                                     BSD license
 Poisson Surface Reconstruction
 https://github.com/mkazhdan/PoissonRecon
+--------------------------------------------------------------------------------
+Parallel STL                20190522                            Apache-2 license
+An implementation of the C++ standard library algorithms with support for
+execution policies
+https://github.com/oneapi-src/oneDPL
+--------------------------------------------------------------------------------
+CUB                         1.8.0                                    BSD license
+A flexible library of cooperative threadblock primitives and other utilities for
+CUDA kernel programming
+https://github.com/NVlabs/cub
+--------------------------------------------------------------------------------
+nanoflann                   1.3.1                                    BSD license
+A C++11 header-only library for Nearest Neighbor (NN) search with KD-trees
+https://github.com/jlblancoc/nanoflann
+--------------------------------------------------------------------------------
+CUTLASS                     1.3.2                                    BSD license
+CUDA Templates for Linear Algebra Subroutines
+https://github.com/NVIDIA/cutlass
+--------------------------------------------------------------------------------
+benchmark                   1.5.0                               Apache-2 license
+A microbenchmark support library
+https://github.com/google/benchmark
+--------------------------------------------------------------------------------
+msgpack-c                   da2fc25f8                 Boost Software License 1.0
+MessagePack implementation for C and C++
+https://github.com/msgpack/msgpack-c/tree/cpp_master
+--------------------------------------------------------------------------------
+libzmq                      4.3.2         LGPLv3 + static link exception license
+ZeroMQ is a high-performance asynchronous messaging library
+https://github.com/zeromq/libzmq
+--------------------------------------------------------------------------------
+cppzmq                      4.6.0                                    MIT license
+Header-only C++ binding for libzmq
+https://github.com/zeromq/cppzmq
+As an alternative, you can modify 3rdparty/zeromq/zeromq_build.cmake to fetch
+zeromq from our fork
+https://github.com/isl-org/libzmq
+--------------------------------------------------------------------------------
+embree                      3.13.0                              Apache-2 license
+Embree is a collection of high-performance ray tracing kernels
+https://github.com/embree/embree

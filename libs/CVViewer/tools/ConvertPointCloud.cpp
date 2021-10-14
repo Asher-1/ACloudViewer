@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,9 @@
 
 #include "CloudViewer.h"
 
-using namespace CVLib;
 void PrintHelp() {
+    using namespace cloudViewer;
+    PrintCloudViewerVersion();
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > ConvertPointCloud source_file target_file [options]");
@@ -68,8 +69,13 @@ void convert(int argc,
              char **argv,
              const std::string &file_in,
              const std::string &file_out) {
-    using namespace CVLib::utility::filesystem;
-    auto pointcloud_ptr = cloudViewer::io::CreatePointCloudFromFile(file_in.c_str());
+    using namespace cloudViewer;
+    using namespace cloudViewer::utility::filesystem;
+    auto pointcloud_ptr =
+            cloudViewer::io::CreatePointCloudFromFile(file_in.c_str());
+    if (!pointcloud_ptr) {
+        utility::LogError("Failed to create point cloud from {}.", file_in);
+    }
     size_t point_num_in = pointcloud_ptr->size();
     bool processed = false;
 
@@ -94,8 +100,7 @@ void convert(int argc,
                 argc, argv, "--clip_y_max", std::numeric_limits<double>::max());
         max_bound(2) = utility::GetProgramOptionAsDouble(
                 argc, argv, "--clip_z_max", std::numeric_limits<double>::max());
-        pointcloud_ptr = pointcloud_ptr->Crop(
-                ccBBox(min_bound, max_bound));
+        pointcloud_ptr = pointcloud_ptr->Crop(ccBBox(min_bound, max_bound));
         processed = true;
     }
 
@@ -144,7 +149,7 @@ void convert(int argc,
         utility::LogDebug("Estimate normals with search radius {:.4f}.",
                           radius);
         pointcloud_ptr->estimateNormals(
-			cloudViewer::geometry::KDTreeSearchParamRadius(radius));
+                geometry::KDTreeSearchParamRadius(radius));
         processed = true;
     }
 
@@ -152,7 +157,7 @@ void convert(int argc,
                                            0);
     if (k > 0) {
         utility::LogDebug("Estimate normals with search knn {:d}.", k);
-        pointcloud_ptr->estimateNormals(cloudViewer::geometry::KDTreeSearchParamKNN(k));
+        pointcloud_ptr->estimateNormals(geometry::KDTreeSearchParamKNN(k));
         processed = true;
     }
 
@@ -182,11 +187,13 @@ void convert(int argc,
                 "Processed point cloud from {:d} points to {:d} points.",
                 (int)point_num_in, (int)point_num_out);
     }
-    cloudViewer::io::WritePointCloud(file_out.c_str(), *pointcloud_ptr, { false, true });
+    io::WritePointCloud(file_out.c_str(), *pointcloud_ptr,
+                        {false, true});
 }
 
 int main(int argc, char **argv) {
-    using namespace CVLib::utility::filesystem;
+    using namespace cloudViewer;
+    using namespace cloudViewer::utility::filesystem;
 
     if (argc < 3 || utility::ProgramOptionExists(argc, argv, "--help") ||
         utility::ProgramOptionExists(argc, argv, "-h")) {

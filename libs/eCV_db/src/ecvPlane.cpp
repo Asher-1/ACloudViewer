@@ -117,24 +117,24 @@ void ccPlane::flip()
 	updateRepresentation();
 }
 
-ccPlane* ccPlane::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/*=0*/)
+ccPlane* ccPlane::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double* rms/*=0*/)
 {
 	//number of points
 	unsigned count = cloud->size();
 	if (count < 3)
 	{
 		CVLog::Warning("[ccPlane::Fit] Not enough points in input cloud to fit a plane!");
-		return 0;
+        return nullptr;
 	}
 
-	CVLib::Neighbourhood Yk(cloud);
+	cloudViewer::Neighbourhood Yk(cloud);
 
 	//plane equation
 	const PointCoordinateType* theLSPlane = Yk.getLSPlane();
 	if (!theLSPlane)
 	{
 		CVLog::Warning("[ccPlane::Fit] Not enough points to fit a plane!");
-		return 0;
+        return nullptr;
 	}
 
 	//get the centroid
@@ -185,10 +185,9 @@ ccPlane* ccPlane::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/*=0*
 	//compute least-square fitting RMS if requested
 	if (rms)
 	{
-		*rms = CVLib::DistanceComputationTools::computeCloud2PlaneDistanceRMS(cloud, theLSPlane);
+		*rms = cloudViewer::DistanceComputationTools::computeCloud2PlaneDistanceRMS(cloud, theLSPlane);
 		plane->setMetaData(QString("RMS"), QVariant(*rms));
 	}
-
 
 	return plane;
 }
@@ -206,9 +205,9 @@ bool ccPlane::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccPlane::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccPlane::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccGenericPrimitive::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccGenericPrimitive::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//parameters (dataVersion>=21)

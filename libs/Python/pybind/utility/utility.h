@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@ namespace utility {
 void pybind_utility(py::module &m);
 void pybind_scalarfield(py::module &m);
 void pybind_matrix(py::module &m);
-void pybind_console(py::module &m);
+void pybind_logging(py::module &m);
 void pybind_eigen(py::module &m);
 
 }  // namespace utility

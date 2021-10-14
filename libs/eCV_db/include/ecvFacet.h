@@ -22,7 +22,7 @@
 #include "ecvHObject.h"
 #include "ecvPlanarEntityInterface.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 	class GenericIndexedCloudPersist;
 }
@@ -46,7 +46,7 @@ public:
 			QString name = QString("Facet"));
 
 	//! Destructor
-	virtual ~ccFacet();
+    virtual ~ccFacet() override;
 
 	//! Creates a facet from a set of points
 	/** The facet boundary can either be the convex hull (maxEdgeLength = 0)
@@ -57,10 +57,10 @@ public:
 		\param planeEquation to input a custom plane equation
 		\return a facet (or 0 if an error occurred)
 	**/
-	static ccFacet* Create(	CVLib::GenericIndexedCloudPersist* cloud,
+	static ccFacet* Create(	cloudViewer::GenericIndexedCloudPersist* cloud,
 							PointCoordinateType maxEdgeLength = 0,
 							bool transferOwnership = false,
-							const PointCoordinateType* planeEquation = 0);
+                            const PointCoordinateType* planeEquation = nullptr);
 
 	//! Returns class ID
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::FACET; }
@@ -155,8 +155,11 @@ protected:
 	virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 
 	//! Creates internal representation (polygon, polyline, etc.)
-	bool createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* points,
-										const PointCoordinateType* planeEquation = 0);
+	bool createInternalRepresentation(	cloudViewer::GenericIndexedCloudPersist* points,
+                                        const PointCoordinateType* planeEquation = nullptr);
+
+    //! for python interface use
+    std::shared_ptr<ccMesh> m_arrow;
 
 	//! Facet
 	ccMesh* m_polygonMesh;
@@ -182,11 +185,9 @@ protected:
 	//! Max length
 	PointCoordinateType m_maxEdgeLength;
 
-	std::shared_ptr<ccMesh> m_arrow;
-
 	//inherited from ccHObject
 	virtual bool toFile_MeOnly(QFile& out) const override;
-	virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 
 	// ccHObject interface
 	virtual void applyGLTransformation(const ccGLMatrix &trans) override;

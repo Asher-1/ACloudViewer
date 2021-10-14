@@ -30,8 +30,10 @@
 #include "PCLCloud.h"
 
 // CV_CORE_LIB
+#include <Eigen.h>
 #include <CVLog.h>
 #include <CVConst.h>
+#include <Parallel.h>
 
 // PCL COMMON
 #include <pcl/Vertices.h>
@@ -1133,7 +1135,7 @@ namespace PCLModules
 
         //create the smoothing object
         pcl::MovingLeastSquares< PointInT, PointOutT > smoother;
-        int n_threads = omp_get_max_threads();
+        int n_threads = cloudViewer::utility::EstimateMaxThreads();
         smoother.setNumberOfThreads(n_threads);
 
 		smoother.setInputCloud(inCloud);
@@ -1611,7 +1613,7 @@ namespace PCLModules
 		{
 			float fitness_score;
 			Eigen::Matrix4f final_transformation;
-			EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+            CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 		};
 
 		TemplateMatching();

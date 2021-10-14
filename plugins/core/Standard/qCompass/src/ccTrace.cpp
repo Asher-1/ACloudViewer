@@ -222,7 +222,7 @@ bool ccTrace::optimizePath(int maxIterations)
 	}
 
 	#ifdef DEBUG_PATH
-	CVLib::ScalarField * f = m_cloud->getScalarField(idx);
+	cloudViewer::ScalarField * f = m_cloud->getScalarField(idx);
 	f->computeMinAndMax();
 	#endif
 
@@ -534,15 +534,15 @@ int ccTrace::getSegmentCostCurve(int p1, int p2)
 	}
 	else //scalar field not found - do slow calculation...
 	{
-		//put neighbourhood in a CVLib::Neighbourhood structure
+		//put neighbourhood in a cloudViewer::Neighbourhood structure
 		if (m_neighbours.size() > 4) //need at least 4 points to calculate curvature....
 		{
 			m_neighbours.push_back(m_p); //add center point onto end of neighbourhood
 
 			//compute curvature
-			CVLib::DgmOctreeReferenceCloud nCloud(&m_neighbours, static_cast<unsigned>(m_neighbours.size()));
-			CVLib::Neighbourhood Z(&nCloud);
-			float c = Z.computeCurvature(*nCloud.getPoint(0), CVLib::Neighbourhood::CurvatureType::MEAN_CURV);
+			cloudViewer::DgmOctreeReferenceCloud nCloud(&m_neighbours, static_cast<unsigned>(m_neighbours.size()));
+			cloudViewer::Neighbourhood Z(&nCloud);
+			float c = Z.computeCurvature(*nCloud.getPoint(0), cloudViewer::Neighbourhood::CurvatureType::MEAN_CURV);
 
 			m_neighbours.erase(m_neighbours.end() - 1); //remove center point from neighbourhood (so as not to screw up loops)
 
@@ -584,7 +584,7 @@ int ccTrace::getSegmentCostGrad(int p1, int p2, float search_r)
 		{
 			//N.B. The following code is mostly stolen from the computeGradient function in CLOUDVIEWER 
 			CCVector3d sum(0, 0, 0);
-			CVLib::DgmOctree::PointDescriptor n;
+			cloudViewer::DgmOctree::PointDescriptor n;
 			for (int i = 0; i < m_neighbours.size(); i++)
 			{
 				n = m_neighbours[i];
@@ -598,7 +598,7 @@ int ccTrace::getSegmentCostGrad(int p1, int p2, float search_r)
 				int c_value = (static_cast<int>(c.r) + c.g) + c.b;
 
 				//calculate gradient weighted by distance to the point (i.e. divide by distance^2)
-                if (CVLib::GreaterThanEpsilon(norm2))
+                if (cloudViewer::GreaterThanEpsilon(norm2))
 				{
 					//color magnitude difference
 					int deltaValue = p_value - c_value;
@@ -686,7 +686,7 @@ void ccTrace::buildGradientCost(QWidget* parent)
 	}
 
 	//calculate gradient
-	int result = CVLib::ScalarFieldTools::computeScalarFieldGradient(m_cloud,
+	int result = cloudViewer::ScalarFieldTools::computeScalarFieldGradient(m_cloud,
 		m_search_r, //auto --> FIXME: should be properly set by the user!
 		false,
 		false,
@@ -742,9 +742,9 @@ void ccTrace::buildCurvatureCost(QWidget* parent)
 	}
 
 	//calculate curvature
-	CVLib::GeometricalAnalysisTools::ErrorCode result = CVLib::GeometricalAnalysisTools::ComputeCharactersitic(
-		CVLib::GeometricalAnalysisTools::Curvature,
-		CVLib::Neighbourhood::CurvatureType::MEAN_CURV,
+	cloudViewer::GeometricalAnalysisTools::ErrorCode result = cloudViewer::GeometricalAnalysisTools::ComputeCharactersitic(
+		cloudViewer::GeometricalAnalysisTools::Curvature,
+		cloudViewer::Neighbourhood::CurvatureType::MEAN_CURV,
 		m_cloud,
 		m_search_r,
 		&pDlg,
@@ -752,7 +752,7 @@ void ccTrace::buildCurvatureCost(QWidget* parent)
 
 	pDlg.close();
 
-	if (result != CVLib::GeometricalAnalysisTools::NoError)
+	if (result != cloudViewer::GeometricalAnalysisTools::NoError)
 	{
 		m_cloud->deleteScalarField(idx);
 		CVLog::Warning("Failed to compute the curvature");
@@ -796,11 +796,11 @@ ccFitPlane* ccTrace::fitPlane(int surface_effect_tolerance, float min_planarity)
 		return 0; //need three points to fit a plane
 
 	//check we are not trying to fit a plane to a line
-	CVLib::Neighbourhood Z(this);
+	cloudViewer::Neighbourhood Z(this);
 
 	//calculate eigenvalues of neighbourhood
-	CVLib::SquareMatrixd cov = Z.computeCovarianceMatrix();
-	CVLib::SquareMatrixd eigVectors; std::vector<double> eigValues;
+	cloudViewer::SquareMatrixd cov = Z.computeCovarianceMatrix();
+	cloudViewer::SquareMatrixd eigVectors; std::vector<double> eigValues;
 	if (Jacobi<double>::ComputeEigenValuesAndVectors(cov, eigVectors, eigValues, true))
 	{
 		//sort eigenvalues into decending order
@@ -873,7 +873,7 @@ void ccTrace::bakePathToScalarField()
 
 float ccTrace::calculateOptimumSearchRadius()
 {
-	CVLib::DgmOctree::NeighboursSet neighbours;
+	cloudViewer::DgmOctree::NeighboursSet neighbours;
 
 	//setup octree & values for nearest neighbour searches
 	ccOctree::Shared oct = m_cloud->getOctree();
@@ -884,7 +884,7 @@ float ccTrace::calculateOptimumSearchRadius()
 
 	//init vars needed for nearest neighbour search
 	unsigned char level = oct->findBestLevelForAGivenPopulationPerCell(2);
-	CVLib::ReferenceCloud* nCloud = new  CVLib::ReferenceCloud(m_cloud);
+	cloudViewer::ReferenceCloud* nCloud = new  cloudViewer::ReferenceCloud(m_cloud);
 
 	//pick 15 random points
 	unsigned int npoints = m_cloud->size();

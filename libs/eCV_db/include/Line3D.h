@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2020 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,7 @@ namespace geometry {
 /// functions on them so that the compiler can hopefully remove the vtable
 /// lookup, or consider a hand implementation of your problem in which you
 /// carefully account for the semantics yourself.
-class ECV_DB_LIB_API Line3D : protected Eigen::ParametrizedLine<double, 3> {
+class Line3D : protected Eigen::ParametrizedLine<double, 3> {
 public:
     /// \brief Creates a line through two points.  The line origin will take the
     /// value of p0, and the line direction will be a normalized vector from
@@ -112,10 +112,7 @@ public:
     }
 
     /// \brief Transform the Line3D by the given matrix
-    virtual void Transform(
-            const Eigen::Transform<double, 3, Eigen::Affine>& t) {
-        this->transform(t);
-    }
+    virtual void Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t);
 
     /// \brief Returns a const reference to the underlying
     /// Eigen::ParametrizedLine object
@@ -125,7 +122,7 @@ public:
     /// plane taking into account line semantics. Returns an empty result if
     /// there is no intersection. On a Line3D this returns the same result as
     /// .Line().intersectionParameter(plane)
-    virtual CVLib::utility::optional<double> IntersectionParameter(
+    virtual cloudViewer::utility::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const;
 
     /// \brief Calculates the parameter of a point projected onto the line
@@ -172,8 +169,7 @@ public:
     /// \warning A line that lies exactly in one of the AABB's planes within the
     /// double floating point precision will not intersect correctly by this
     /// method
-    virtual CVLib::utility::optional<double> SlabAABB(
-            const ccBBox& box) const;
+    virtual cloudViewer::utility::optional<double> SlabAABB(const ccBBox& box) const;
 
     /// \brief Returns the lower intersection parameter for a line with an
     /// axis aligned bounding box or empty if no intersection. This method is
@@ -197,8 +193,7 @@ public:
     /// is important.  In such cases if performance is important, a simple
     /// custom implementation based on the problem directionality will likely
     /// outperform even the slab method.
-    virtual CVLib::utility::optional<double> ExactAABB(
-            const ccBBox& box) const;
+    virtual cloudViewer::utility::optional<double> ExactAABB(const ccBBox& box) const;
 
     /// \brief Computes the two corresponding parameters of the closest distance
     /// between two Line3D objects, including derived types Ray3D and Segment3D,
@@ -259,7 +254,7 @@ private:
 /// \brief A ray is a semantic interpretation of Eigen::ParametrizedLine which
 /// has an origin and a direction and extends infinitely only in that specific
 /// direction.
-class ECV_DB_LIB_API Ray3D : public Line3D {
+class Ray3D : public Line3D {
 public:
     /// \brief Creates a Ray3D through two points.  The ray origin will take the
     /// value of p0, and the direction will be a normalized vector from p0 to p1
@@ -281,7 +276,7 @@ public:
     /// there is no intersection. On a Ray3D this means that intersections
     /// behind the origin are invalid, so the return value will always be
     /// positive.
-    CVLib::utility::optional<double> IntersectionParameter(
+    cloudViewer::utility::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const override;
 
     /// \brief Returns the lower intersection parameter for a ray with an
@@ -304,8 +299,7 @@ public:
     /// \warning A ray that lies exactly in one of the AABB's planes within the
     /// double floating point precision will not intersect correctly by this
     /// method
-    CVLib::utility::optional<double> SlabAABB(
-            const ccBBox& box) const override;
+    cloudViewer::utility::optional<double> SlabAABB(const ccBBox& box) const override;
 
     /// \brief Clamps/bounds a parameter value to the closest valid place where
     /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
@@ -339,8 +333,11 @@ public:
 /// exists as a seam to ensure the correct behavior can be produced regardless
 /// of what happens in the underlying Eigen implementation without changing
 /// the api surface for client code.
-class ECV_DB_LIB_API Segment3D : public Line3D {
+class Segment3D : public Line3D {
 public:
+
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// \brief Creates a Segment3D through two points.  The origin will take the
     /// value of p0, and the endpoint be p1. The direction will be a normalized
     /// vector from p0 to p1.
@@ -370,10 +367,7 @@ public:
 
     /// \brief Transform the segment by the given matrix
     void Transform(
-            const Eigen::Transform<double, 3, Eigen::Affine>& t) override {
-        this->transform(t);
-        end_point_ = t * end_point_;
-    }
+            const Eigen::Transform<double, 3, Eigen::Affine>& t) override;
 
     /// \brief Get an axis-aligned bounding box representing the enclosed volume
     /// of the line segment.
@@ -383,7 +377,7 @@ public:
     /// plane taking into account segment semantics. Returns an empty result if
     /// there is no intersection. On a Segment3D this means that intersections
     /// behind the origin and beyond the endpoint are invalid.
-    CVLib::utility::optional<double> IntersectionParameter(
+    cloudViewer::utility::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const override;
 
     /// \brief Returns the lower intersection parameter for a segment with an
@@ -408,8 +402,7 @@ public:
     /// \warning A segment that lies exactly in one of the AABB's planes within
     /// the double floating point precision will not intersect correctly by this
     /// method
-    CVLib::utility::optional<double> SlabAABB(
-            const ccBBox& box) const override;
+    cloudViewer::utility::optional<double> SlabAABB(const ccBBox& box) const override;
 
     /// \brief Returns the lower intersection parameter for a segment with an
     /// axis aligned bounding box or empty if no intersection. This method is
@@ -430,8 +423,7 @@ public:
     /// intersection is important.  In such cases if performance is important, a
     /// simple custom implementation based on the problem directionality will
     /// likely outperform even the slab method.
-    CVLib::utility::optional<double> ExactAABB(
-            const ccBBox& box) const override;
+    cloudViewer::utility::optional<double> ExactAABB(const ccBBox& box) const override;
 
     /// \brief Clamps/bounds a parameter value to the closest valid place where
     /// the entity exists.  On a Line3D, the value will be unchanged, on a Ray3D
@@ -454,121 +446,6 @@ private:
     Eigen::Vector3d end_point_;
     double length_;
 };
-
-
-/// \brief Returns the lower intersection parameter for a line with an
-/// axis aligned bounding box or empty if no intersection. This method is
-/// about 20x slower than the slab method, see details to know when to use.
-/// This function wraps the underlying implementation on the Line3D class
-/// and is included here for API coherence; if you are testing large numbers
-/// of lines, rays, or segments use the Line3D, Ray3D, or Segment3D classes
-/// directly.
-///
-/// \details Calculates the lower intersection parameter of a parameterized
-/// line with an axis aligned bounding box. The intersection point can be
-/// recovered with .Line().pointAt(...). If the line does not intersect the
-/// box the return value will be empty. Also note that if the AABB is behind
-/// the line's origin point, the value returned will still be of the lower
-/// intersection, which is the first intersection in the direction of the
-/// line, not the intersection closer to the origin.
-///
-/// This implementation is a naive exact method that considers intersections
-/// with all six bounding box planes. It is not optimized for speed and
-/// should only be used when a problem is conditioned such that the slab
-/// method is unacceptable. Use this when a line is likely to lie exactly
-/// in one of the AABB planes and false negatives are unacceptable.
-/// Typically this will only happen when lines are axis-aligned and both
-/// lines and bounding volumes are regularly spaced, and every intersection
-/// is important.  In such cases if performance is important, a simple
-/// custom implementation based on the problem directionality will likely
-/// outperform even the slab method.
-/// \code{.cpp}
-/// // Intersection with a line
-/// auto result = IntersectionTest::LineExactAABB(Line3D{p, n}, box);
-/// if (result.has_value()) {
-///     ...
-/// }
-///
-/// // Intersection with a ray
-/// auto result = IntersectionTest::LineExactAABB(Ray3D{p, n}, box);
-/// if (result.has_value()) {
-///     ...
-/// }
-///
-/// // Intersection with a segment
-/// auto result = IntersectionTest::LineExactAABB(Segment3D{p0, p1}, box);
-/// if (result.has_value()) {
-///     ...
-/// }
-///
-/// // Getting the intersection point
-/// Ray3D ray{p, n};
-/// auto result = IntersectionTest::LineSlabAABB(ray, box);
-/// if (result.has_value()) {
-///     // the .Line() function retrieves the underlying Eigen object
-///     ray.Line().pointAt(result.value());
-/// }
-/// \endcode
-static CVLib::utility::optional<double> LineExactAABB(
-        const Line3D& line, const ccBBox& box) {
-    return line.ExactAABB(box);
-}
-
-/// \brief Returns the lower intersection parameter for a line with an
-/// axis aligned bounding box or no value if there is no intersection. This
-/// function wraps the underlying implementation on the Line3D class and
-/// is included here for API coherence; if you are testing large numbers
-/// of lines, rays, or segments use the Line3D, Ray3D, or Segment3D classes
-/// directly.
-///
-/// \details Calculates the lower intersection parameter of a parameterized
-/// line with an axis aligned bounding box. The intersection point can be
-/// recovered with .Line().pointAt(...). If the line does not intersect the
-/// box the return value will be empty. Also note that if the AABB is behind
-/// the line's origin point, the value returned will still be of the lower
-/// intersection, which is the first intersection in the direction of the
-/// line, not the intersection closer to the origin.
-///
-/// This implementation is based off of Tavian Barnes' optimized branchless
-/// slab method. https://tavianator.com/2011/ray_box.html. It runs in
-/// roughly 5% of the time as the the naive exact method, but can degenerate
-/// in specific conditions where a line lies exactly in one of the AABB's
-/// planes.
-/// \code{.cpp}
-/// // Intersection with a line
-/// auto result = IntersectionTest::LineSlabAABB(Line3D{p, n}, box);
-/// if (result.has_value()) {
-///     ...
-/// }
-///
-/// // Intersection with a ray
-/// auto result = IntersectionTest::LineSlabAABB(Ray3D{p, n}, box);
-/// if (result.has_value()) {
-///     ...
-/// }
-///
-/// // Intersection with a segment
-/// auto result = IntersectionTest::LineSlabAABB(Segment3D{p0, p1}, box);
-/// if (result.has_value()) {
-///     ...
-/// }
-///
-/// // Getting the intersection point
-/// Ray3D ray{p, n};
-/// auto result = IntersectionTest::LineSlabAABB(ray, box);
-/// if (result.has_value()) {
-///     // the .Line() function retrieves the underlying Eigen object
-///     ray.Line().pointAt(result.value());
-/// }
-/// \endcode
-///
-/// \warning A line that lies exactly in one of the AABB's planes within the
-/// double floating point precision will not intersect correctly by this
-/// method
-static CVLib::utility::optional<double> LineSlabAABB(
-        const Line3D& line, const ccBBox& box) {
-    return line.SlabAABB(box);
-}
 
 }  // namespace geometry
 }  // namespace cloudViewer

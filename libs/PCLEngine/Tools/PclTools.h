@@ -29,6 +29,9 @@
 // ECV_DB_LIB
 #include <ecvDrawContext.h>
 
+// PCL_SURFACING
+#include <pcl/surface/texture_mapping.h>
+
 // PCL COMMON
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_cloud.h>
@@ -40,11 +43,36 @@ class vtkDataSet;
 class vtkActor;
 class vtkLODActor;
 class vtkPoints;
+class vtkPropAssembly;
 class vtkAbstractWidget;
 class vtkUnstructuredGrid;
 
+namespace cloudViewer {
+namespace geometry {
+    class LineSet;
+}
+namespace camera {
+    class PinholeCameraTrajectory;
+}
+}
+
+class ccMesh;
+class ccGBLSensor;
+class ccCameraSensor;
 namespace PclTools
 {
+
+    QPCL_ENGINE_LIB_API bool SaveOBJFile(const std::string &file_name,
+                                         const PCLTextureMesh &tex_mesh, unsigned precision);
+    QPCL_ENGINE_LIB_API PCLTextureMesh::Ptr CreateTexturingMesh(const std::string& filePath,
+                                                                bool show_cameras = false, bool verbose = false);
+    QPCL_ENGINE_LIB_API  PCLTextureMesh::Ptr CreateTexturingMesh(const std::string& filePath,
+                                                                 const cloudViewer::camera::PinholeCameraTrajectory& cameraTrajectory,
+                                                                 bool show_cameras = false, bool verbose = false);
+    PCLTextureMesh::Ptr CreateTexturingMesh(const PCLMesh::ConstPtr& triangles,
+                                            const pcl::texture_mapping::CameraVector& cameras,
+                                            bool show_cameras = false, bool verbose = false);
+
 	// Helper function called by createActorFromVTKDataSet () methods.
 	// This function determines the default setting of vtkMapper::InterpolateScalarsBeforeMapping.
 	// Return 0, interpolation off, if data is a vtkPolyData that contains only vertices.
@@ -80,9 +108,47 @@ namespace PclTools
 	  */
 	void AllocVtkUnstructuredGrid(vtkSmartPointer<vtkUnstructuredGrid> &polydata);
 
-	vtkSmartPointer<vtkDataSet> CreateLine(vtkSmartPointer<vtkPoints> points);
+    bool UpdateScalarBar(vtkAbstractWidget* widget, const CC_DRAW_CONTEXT& CONTEXT);
 
-	bool UpdateScalarBar(vtkAbstractWidget* widget, const CC_DRAW_CONTEXT& CONTEXT);
+    bool TransformPolyData(vtkSmartPointer<vtkPolyData> polyData, const ccGLMatrixd& trans);
+    bool TransformVtkPoints(vtkSmartPointer<vtkPoints> points, const ccGLMatrixd& trans);
+
+
+    vtkSmartPointer<vtkPoints> GetVtkPointsFromLineSet(const cloudViewer::geometry::LineSet& lineset);
+    bool GetVtkPointsAndLinesFromLineSet(const cloudViewer::geometry::LineSet &lineset,
+                                         vtkSmartPointer<vtkPoints> points,
+                                         vtkSmartPointer<vtkCellArray> lines,
+                                         vtkSmartPointer<vtkUnsignedCharArray> colors);
+
+    vtkSmartPointer<vtkPolyData> CreateCoordinateFromLineSet(const cloudViewer::geometry::LineSet& lineset);
+    vtkSmartPointer<vtkPolyData> CreatePolyDataFromLineSet(const cloudViewer::geometry::LineSet& lineset, bool useLineSource = true);
+
+    void SetPolyDataColor(vtkSmartPointer<vtkPolyData> polyData,
+                          const ecvColor::Rgb& color, bool is_cell = false);
+    void AddPolyDataCell(vtkSmartPointer<vtkPolyData> polyData);
+    vtkSmartPointer<vtkPolyData> CreateLine(vtkSmartPointer<vtkPoints> points);
+    vtkSmartPointer<vtkPolyData> CreateLine(vtkSmartPointer<vtkPoints> points,
+                                            vtkSmartPointer<vtkCellArray> lines,
+                                            vtkSmartPointer<vtkUnsignedCharArray> colors);
+    vtkSmartPointer<vtkPolyData> CreateCube(double width, double height, double depth, const ccGLMatrixd &trans);
+    vtkSmartPointer<vtkPolyData> CreateCube(double width, double height, double depth);
+    vtkSmartPointer<vtkPolyData> CreateGBLSensor(const ccGBLSensor *gBLSensor);
+    vtkSmartPointer<vtkPolyData> CreateCameraSensor(const ccCameraSensor *cameraSensor,
+                                               const ecvColor::Rgb& lineColor,
+                                               const ecvColor::Rgb& planeColor);
+    vtkSmartPointer<vtkPolyData> CreatePlane(const pcl::ModelCoefficients &coefficients,
+                                             double x, double y, double z, double scale = 1);
+    vtkSmartPointer<vtkPolyData> CreatePlane(const pcl::ModelCoefficients &coefficients);
+    vtkSmartPointer<vtkPropAssembly> CreateCoordinate(double axesLength = 1.5,
+                                                      const std::string& xLabel = "x",
+                                                      const std::string& yLabel = "y",
+                                                      const std::string& zLabel = "z",
+                                                      const std::string& xPlus = "R",
+                                                      const std::string& xMinus = "L",
+                                                      const std::string& yPlus = "A",
+                                                      const std::string& yMinus = "P",
+                                                      const std::string& zPlus = "I",
+                                                      const std::string& zMinus = "S");
 };
 
 #endif // QPCL_PCLTOOLS_HEADER

@@ -55,9 +55,9 @@ bool cc2DViewportLabel::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool cc2DViewportLabel::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool cc2DViewportLabel::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!cc2DViewportObject::fromFile_MeOnly(in, dataVersion, flags))
+    if (!cc2DViewportObject::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	if (dataVersion < 21)
@@ -76,7 +76,8 @@ void cc2DViewportLabel::clear2Dviews()
 {
 	if (!ecvDisplayTools::GetCurrentScreen()) return;
 
-	ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_TRIANGLE_2D, QString::number(getUniqueID())));
+    ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_TRIANGLE_2D,
+                                                     this->getViewId()));
 }
 
 void cc2DViewportLabel::updateLabel()
@@ -129,7 +130,7 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
     //test base view matrix
     for (unsigned i = 0; i < 12; ++i)
     {
-        if ( CVLib::GreaterThanEpsilon( fabs(params.viewMat.data()[i] - m_params.viewMat.data()[i]) ) )
+        if ( cloudViewer::GreaterThanEpsilon( fabs(params.viewMat.data()[i] - m_params.viewMat.data()[i]) ) )
         {
             return;
         }
@@ -138,20 +139,15 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
 
 	if (m_params.perspectiveView)
 	{
-		if (params.fov != m_params.fov || 
-			params.perspectiveAspectRatio != m_params.perspectiveAspectRatio)
+		if (params.fov_deg != m_params.fov_deg || 
+			params.cameraAspectRatio != m_params.cameraAspectRatio)
 			return;
 
-        if (CVLib::GreaterThanEpsilon( (params.pivotPoint - m_params.pivotPoint).norm() )
-            || CVLib::GreaterThanEpsilon( (params.cameraCenter - m_params.cameraCenter).norm() ))
+        if (cloudViewer::GreaterThanEpsilon( (params.getPivotPoint() - m_params.getPivotPoint()).norm() )
+            || cloudViewer::GreaterThanEpsilon( (params.getCameraCenter() - m_params.getCameraCenter()).norm() ))
         {
             return;
         }
-	}
-	else
-	{
-		if (params.orthoAspectRatio != m_params.orthoAspectRatio)
-			return;
 	}
 
 	float relativeZoom = 1.0f;
@@ -163,9 +159,9 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
 		float winTotalZoom = params.zoom / params.pixelSize;
 		relativeZoom = winTotalZoom / totalZoom;
 
-		CCVector3d dC = m_params.cameraCenter - params.cameraCenter;
+        CCVector3d dC = m_params.getCameraCenter() - params.getCameraCenter();
 
-		CCVector3d P = m_params.pivotPoint - params.pivotPoint;
+        CCVector3d P = m_params.getPivotPoint() - params.getPivotPoint();
 		m_params.viewMat.apply(P);
 
 		dx = static_cast<float>(dC.x + P.x);
@@ -177,7 +173,7 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
 
 	const ecvColor::Rgb* defaultColor = m_selected ? &ecvColor::red : &context.textDefaultCol;
 	
-	WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_TRIANGLE_2D, QString::number(getUniqueID()));
+    WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_TRIANGLE_2D, this->getViewId());
 	const ecvColor::Rgbf& tempColor = ecvColor::FromRgb(*defaultColor);
 	param.color.r = tempColor.r;
 	param.color.g = tempColor.g;
@@ -203,6 +199,6 @@ void cc2DViewportLabel::drawMeOnly(CC_DRAW_CONTEXT& context)
 		int yStart = static_cast<int>(dy + std::min<float>(m_roi[1], m_roi[3]) * relativeZoom);
 
 		ecvDisplayTools::DisplayText(title, xStart, yStart - 5 - titleHeight,
-			ecvDisplayTools::ALIGN_DEFAULT, 0, defaultColor->rgb, &titleFont, QString::number(getUniqueID()));
+            ecvDisplayTools::ALIGN_DEFAULT, 0, defaultColor->rgb, &titleFont, this->getViewId());
 	}
 }

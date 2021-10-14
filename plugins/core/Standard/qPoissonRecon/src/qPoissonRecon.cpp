@@ -104,7 +104,7 @@ template <typename Real>
 class MeshWrapper : public PoissonReconLib::IMesh<Real>
 {
 public:
-	explicit MeshWrapper(ccMesh& mesh, ccPointCloud& vertices, CVLib::ScalarField* densitySF = nullptr)
+	explicit MeshWrapper(ccMesh& mesh, ccPointCloud& vertices, cloudViewer::ScalarField* densitySF = nullptr)
 		: m_mesh(mesh)
 		, m_vertices(vertices)
 		, m_densitySF(densitySF)
@@ -214,7 +214,7 @@ protected:
 	ccMesh& m_mesh;
 	ccPointCloud& m_vertices;
 	bool m_error;
-	CVLib::ScalarField* m_densitySF;
+	cloudViewer::ScalarField* m_densitySF;
 };
 
 //dialog for qPoissonRecon plugin
@@ -261,7 +261,7 @@ static PoissonReconLib::Parameters s_params;
 static ccPointCloud* s_cloud = nullptr;
 static ccMesh* s_mesh = nullptr;
 static ccPointCloud* s_meshVertices = nullptr;
-static CVLib::ScalarField* s_densitySF = nullptr;
+static cloudViewer::ScalarField* s_densitySF = nullptr;
 
 bool doReconstruct()
 {

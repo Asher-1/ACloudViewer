@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLib                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -30,7 +30,7 @@
 //system
 #include <list>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 //! Max computable Chi2 distance
 static double CHI2_MAX = 1e7;

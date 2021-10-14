@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2020 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,15 @@
 
 #include "pybind/visualization/gui/gui.h"
 
+#include <FileSystem.h>
+#include <Image.h>
+#include <camera/PinholeCameraIntrinsic.h>
+#include <pybind11/detail/common.h>
+#include <pybind11/functional.h>
+
+#include "pybind/docstring.h"
+#include "pybind/visualization/visualization.h"
+#include "t/geometry/Image.h"
 #include "visualization/gui/Application.h"
 #include "visualization/gui/Button.h"
 #include "visualization/gui/Checkbox.h"
@@ -35,8 +44,9 @@
 #include "visualization/gui/Dialog.h"
 #include "visualization/gui/FileDialog.h"
 #include "visualization/gui/Gui.h"
-#include "visualization/gui/ImageLabel.h"
+#include "visualization/gui/ImageWidget.h"
 #include "visualization/gui/Label.h"
+#include "visualization/gui/Label3D.h"
 #include "visualization/gui/Layout.h"
 #include "visualization/gui/ListView.h"
 #include "visualization/gui/NumberEdit.h"
@@ -47,26 +57,20 @@
 #include "visualization/gui/TabControl.h"
 #include "visualization/gui/TextEdit.h"
 #include "visualization/gui/Theme.h"
+#include "visualization/gui/ToggleSwitch.h"
 #include "visualization/gui/TreeView.h"
 #include "visualization/gui/VectorEdit.h"
 #include "visualization/gui/Widget.h"
 #include "visualization/gui/Window.h"
-#include "visualization/rendering/Open3DScene.h"
+#include "visualization/rendering/CloudViewerScene.h"
 #include "visualization/rendering/Renderer.h"
 #include "visualization/rendering/Scene.h"
 #include "visualization/rendering/filament/FilamentEngine.h"
 #include "visualization/rendering/filament/FilamentRenderToBuffer.h"
-#include "pybind/docstring.h"
-#include "pybind/visualization/visualization.h"
-#include "pybind11/functional.h"
-
-#include <FileSystem.h>
 
 namespace cloudViewer {
 namespace visualization {
 namespace gui {
-
-using namespace CVLib;
 
 class PythonUnlocker : public Application::EnvUnlocker {
 public:
@@ -103,19 +107,19 @@ public:
              int flags = 0)
         : Super(title, x, y, width, height, flags) {}
 
-    std::function<void(const Theme)> on_layout_;
+    std::function<void(const LayoutContext &)> on_layout_;
 
 protected:
-    void Layout(const Theme &theme) {
+    void Layout(const LayoutContext &context) {
         if (on_layout_) {
             // the Python callback sizes the children
-            on_layout_(theme);
+            on_layout_(context);
             // and then we need to layout the children
             for (auto child : GetChildren()) {
-                child->Layout(theme);
+                child->Layout(context);
             }
         } else {
-            Super::Layout(theme);
+            Super::Layout(context);
         }
     }
 };
@@ -153,9 +157,9 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
         // __init__.py), so we can use that to find the
         // resources included in the wheel.
         py::object cv3d = py::module::import("cloudViewer");
-        auto cv3d_init_path = cv3d.attr("__file__").cast<std::string>();
+        auto o3d_init_path = cv3d.attr("__file__").cast<std::string>();
         auto module_path =
-                utility::filesystem::GetFileParentDirectory(cv3d_init_path);
+                utility::filesystem::GetFileParentDirectory(o3d_init_path);
         resource_path = module_path + "/resources";
     }
     Application::GetInstance().Initialize(resource_path.c_str());
@@ -163,19 +167,82 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
 }
 
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height) {
-    PythonUnlocker unlocker;
+        rendering::CloudViewerScene *scene, int width, int height) {
     return Application::GetInstance().RenderToImage(
-            unlocker, scene->GetView(), scene->GetScene(), width, height);
+            scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
+            height);
 }
 
+std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
+        rendering::CloudViewerScene *scene, int width, int height) {
+    return Application::GetInstance().RenderToDepthImage(
+            scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
+            height);
+}
+
+enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
+
 void pybind_gui_classes(py::module &m) {
+    // ---- FontStyle ----
+    py::enum_<FontStyle> font_style(m, "FontStyle", "Font style");
+    font_style.value("NORMAL", FontStyle::NORMAL)
+            .value("BOLD", FontStyle::BOLD)
+            .value("ITALIC", FontStyle::ITALIC)
+            .value("BOLD_ITALIC", FontStyle::BOLD_ITALIC);
+
+    // ---- FontDescription ----
+    py::class_<FontDescription> fd(m, "FontDescription",
+                                   "Class to describe a custom font");
+    fd.def_readonly_static("SANS_SERIF", &FontDescription::SANS_SERIF,
+                           "Name of the default sans-serif font that comes "
+                           "with CloudViewer")
+            .def_readonly_static(
+                    "MONOSPACE", &FontDescription::MONOSPACE,
+                    "Name of the default monospace font that comes "
+                    "with CloudViewer")
+            .def(py::init<const char *, FontStyle, int>(),
+                 "typeface"_a = FontDescription::SANS_SERIF,
+                 "style"_a = FontStyle::NORMAL, "point_size"_a = 0,
+                 "Creates a FontDescription. 'typeface' is a path to a "
+                 "TrueType (.ttf), TrueType Collection (.ttc), or "
+                 "OpenType (.otf) file, or it is the name of the font, "
+                 "in which case the system font paths will be searched "
+                 "to find the font file. This typeface will be used for "
+                 "roman characters (Extended Latin, that is, European "
+                 "languages")
+            .def("add_typeface_for_language",
+                 &FontDescription::AddTypefaceForLanguage,
+                 "Adds code points outside Extended Latin from the specified "
+                 "typeface. Supported languages are:\n"
+                 "   'ja' (Japanese)\n"
+                 "   'ko' (Korean)\n"
+                 "   'th' (Thai)\n"
+                 "   'vi' (Vietnamese)\n"
+                 "   'zh' (Chinese, 2500 most common characters, 50 MB per "
+                 "window)\n"
+                 "   'zh_all' (Chinese, all characters, ~200 MB per window)\n"
+                 "All other languages will be assumed to be Cyrillic. "
+                 "Note that generally fonts do not have CJK glyphs unless they "
+                 "are specifically a CJK font, although operating systems "
+                 "generally use a CJK font for you. We do not have the "
+                 "information necessary to do this, so you will need to "
+                 "provide a font that has the glyphs you need. In particular, "
+                 "common fonts like 'Arial', 'Helvetica', and SANS_SERIF do "
+                 "not contain CJK glyphs.")
+            .def("add_typeface_for_code_points",
+                 &FontDescription::AddTypefaceForCodePoints,
+                 "Adds specific code points from the typeface. This is useful "
+                 "for selectively adding glyphs, for example, from an icon "
+                 "font.");
+
     // ---- Application ----
     py::class_<Application> application(m, "Application",
                                         "Global application singleton. This "
                                         "owns the menubar, windows, and event "
                                         "loop");
     application
+            .def_readonly_static("DEFAULT_FONT_ID",
+                                 &Application::DEFAULT_FONT_ID)
             .def("__repr__",
                  [](const Application &app) {
                      return std::string("Application singleton instance");
@@ -208,27 +275,14 @@ void pybind_gui_classes(py::module &m) {
                     "provided by the caller. One of the `initialize` functions "
                     "_must_ be called prior to using anything in the gui "
                     "module")
-            .def("set_font_for_language", &Application::SetFontForLanguage,
-                 "set_font_for_language(font, language_code). The font can "
-                 "the path to a TrueType or OpenType font or it can be the "
-                 "name of the font, in which case the font will be located "
-                 "from the system directories. The language code must be "
-                 "two-letter, lowercase ISO 639-1 codes. Support is "
-                 "available for 'en' (English), 'ja' (Japanese), 'ko' "
-                 "(Korean), 'th' (Thai), 'vi' (Vietnamese), 'zh' (common "
-                 "Chinese characters), 'zh_all' (all Chinese characters; "
-                 "this creates a very large bitmap for each window). All "
-                 "other codes are assumed to by Cyrillic. Note that 'ja', "
-                 "'zh' will create a 50 MB bitmap, and 'zh_all' creates a "
-                 "200 MB bitmap")
-
-            .def("set_font_for_code_points", &Application::SetFontForCodePoints,
-                 "set_font_for_code_points(font, [unicode_code_points])."
-                 "The font can the path to a TrueType or OpenType font or "
-                 "it can be the name of the font, in which case the font "
-                 "will be located from the system directories. No error "
-                 "will be produced if the font does not contain glyphs "
-                 "for the specified components.")
+            .def("add_font", &Application::AddFont,
+                 "Adds a font. Must be called after initialize() and before "
+                 "a window is created. Returns the font id, which can be used "
+                 "to change the font in widgets such as Label which support "
+                 "custom fonts.")
+            .def("set_font", &Application::SetFont,
+                 "Changes the contents of an existing font, for instance, the "
+                 "default font.")
             .def(
                     "create_window",
                     [](Application &instance, const std::string &title,
@@ -292,16 +346,33 @@ void pybind_gui_classes(py::module &m) {
                     "or quit() has been called.")
             .def(
                     "render_to_image",
-                    [](Application &instance, rendering::Open3DScene *scene,
-                       int width, int height) {
+                    [](Application &instance,
+                       rendering::CloudViewerScene *scene, int width,
+                       int height) {
                         return RenderToImageWithoutWindow(scene, width, height);
                     },
                     "Renders a scene to an image and returns the image. If you "
                     "are rendering without a visible window you should use "
-                    "CloudViewer.visualization.rendering.RenderToImage instead")
+                    "cloudViewer.visualization.rendering.RenderToImage instead")
             .def(
                     "quit", [](Application &instance) { instance.Quit(); },
                     "Closes all the windows, exiting as a result")
+            .def(
+                    "add_window",
+                    // Q: Why not just use &Application::AddWindow here?
+                    // A: Because then AddWindow gets passed a shared_ptr with
+                    //    a use_count of 0 (but with the correct value for
+                    //    .get()), so it never gets freed, and then Filament
+                    //    doesn't clean up correctly. TakeOwnership() will
+                    //    create the shared_ptr properly.
+                    [](Application &instance, UnownedPointer<Window> window) {
+                        instance.AddWindow(TakeOwnership(window));
+                    },
+                    "Adds a window to the application. This is only necessary "
+                    "when "
+                    "creating object that is a Window directly, rather than "
+                    "with "
+                    "create_window")
             .def("run_in_thread", &Application::RunInThread,
                  "Runs function in a separate thread. Do not call GUI "
                  "functions on this thread, call post_to_main_thread() if "
@@ -315,11 +386,25 @@ void pybind_gui_classes(py::module &m) {
             .def_property("menubar", &Application::GetMenubar,
                           &Application::SetMenubar,
                           "The Menu for the application (initially None)")
+            .def_property_readonly("now", &Application::Now,
+                                   "Returns current time in seconds")
             // Note: we cannot export AddWindow and RemoveWindow
             .def_property_readonly("resource_path",
                                    &Application::GetResourcePath,
                                    "Returns a string with the path to the "
                                    "resources directory");
+
+    // ---- LayoutContext ----
+    py::class_<LayoutContext> lc(
+            m, "LayoutContext",
+            "Context passed to Window's on_layout callback");
+    //    lc.def_readonly("theme", &LayoutContext::theme);
+    // Pybind can't return a reference (since Theme is a unique_ptr), so
+    // return a copy instead.
+    lc.def_property_readonly("theme",
+                             [](const LayoutContext &context) -> Theme {
+                                 return context.theme;
+                             });
 
     // ---- Window ----
     // Pybind appears to need to know about the base class. It doesn't have
@@ -361,7 +446,9 @@ void pybind_gui_classes(py::module &m) {
             .def_property_readonly("is_visible", &PyWindow::IsVisible,
                                    "True if window is visible (read-only)")
             .def("show", &PyWindow::Show, "Shows or hides the window")
-            .def("close", &PyWindow::Close, "Closes the window and destroys it")
+            .def("close", &PyWindow::Close,
+                 "Closes the window and destroys it, unless an on_close "
+                 "callback cancels the close.")
             .def("set_needs_layout", &PyWindow::SetNeedsLayout,
                  "Flags window to re-layout")
             .def("post_redraw", &PyWindow::PostRedraw,
@@ -380,13 +467,20 @@ void pybind_gui_classes(py::module &m) {
                  "and must return True if a redraw is needed (that is, if "
                  "any widget has changed in any fashion) or False if nothing "
                  "has changed")
+            .def("set_on_close", &PyWindow::SetOnClose,
+                 "Sets a callback that will be called when the window is "
+                 "closed. The callback is given no arguments and should return "
+                 "True to continue closing the window or False to cancel the "
+                 "close")
             .def(
                     "set_on_layout",
-                    [](PyWindow *w, std::function<void(const Theme &)> f) {
+                    [](PyWindow *w,
+                       std::function<void(const LayoutContext &)> f) {
                         w->on_layout_ = f;
                     },
                     "Sets a callback function that manually sets the frames of "
-                    "children of the window")
+                    "children of the window. Callback function will be called "
+                    "with one argument: gui.LayoutContext")
             .def_property_readonly("theme", &PyWindow::GetTheme,
                                    "Get's window's theme info")
             .def(
@@ -400,6 +494,10 @@ void pybind_gui_classes(py::module &m) {
             .def("show_message_box", &PyWindow::ShowMessageBox,
                  "Displays a simple dialog with a title and message and okay "
                  "button")
+            .def("show_menu", &PyWindow::ShowMenu,
+                 "show_menu(show): shows or hides the menu in the window, "
+                 "except on macOS since the menubar is not in the window "
+                 "and all applications must have a menubar.")
             .def_property_readonly(
                     "renderer", &PyWindow::GetRenderer,
                     "Gets the rendering.Renderer object for the Window");
@@ -535,6 +633,32 @@ void pybind_gui_classes(py::module &m) {
     //  2) if the object is never added, the memory will be leaked.
     py::class_<Widget, UnownedPointer<Widget>> widget(m, "Widget",
                                                       "Base widget class");
+    py::enum_<EventCallbackResult> widget_event_callback_result(
+            widget, "EventCallbackResult", "Returned by event handlers",
+            py::arithmetic());
+    widget_event_callback_result
+            .value("IGNORED", EventCallbackResult::IGNORED,
+                   "Event handler ignored the event, widget will "
+                   "handle event normally")
+            .value("HANDLED", EventCallbackResult::HANDLED,
+                   "Event handler handled the event, but widget "
+                   "will still handle the event normally. This is "
+                   "useful when you are augmenting base "
+                   "functionality")
+            .value("CONSUMED", EventCallbackResult::CONSUMED,
+                   "Event handler consumed the event, event "
+                   "handling stops, widget will not handle the "
+                   "event. This is useful when you are replacing "
+                   "functionality")
+            .export_values();
+
+    py::class_<Widget::Constraints> constraints(
+            widget, "Constraints",
+            "Constraints object for Widget.calc_preferred_size()");
+    constraints.def(py::init<>())
+            .def_readwrite("width", &Widget::Constraints::width)
+            .def_readwrite("height", &Widget::Constraints::height);
+
     widget.def(py::init<>())
             .def("__repr__",
                  [](const Widget &w) {
@@ -559,6 +683,11 @@ void pybind_gui_classes(py::module &m) {
                           "True if widget is visible, False otherwise")
             .def_property("enabled", &Widget::IsEnabled, &Widget::SetEnabled,
                           "True if widget is enabled, False if disabled")
+            .def_property("background_color", &Widget::GetBackgroundColor,
+                          &Widget::SetBackgroundColor,
+                          "Background color of the widget")
+            .def_property("tooltip", &Widget::GetTooltip, &Widget::SetTooltip,
+                          "Widget's tooltip that is displayed on mouseover")
             .def("calc_preferred_size", &Widget::CalcPreferredSize,
                  "Returns the preferred size of the widget. This is intended "
                  "to be called only during layout, although it will also work "
@@ -600,7 +729,7 @@ void pybind_gui_classes(py::module &m) {
                             b->SetPaddingEm(em.cast<float>(), vert);
                         } catch (const py::cast_error &) {
                             py::print(
-                                    "CloudViewer.visualization.gui.Button."
+                                    "cloudViewer.visualization.gui.Button."
                                     "horizontal_padding_em can only be "
                                     "assigned a numeric type");
                         }
@@ -614,7 +743,7 @@ void pybind_gui_classes(py::module &m) {
                             b->SetPaddingEm(horiz, em.cast<float>());
                         } catch (const py::cast_error &) {
                             py::print(
-                                    "CloudViewer.visualization.gui.Button."
+                                    "cloudViewer.visualization.gui.Button."
                                     "vertical_padding_em can only be "
                                     "assigned a numeric type");
                         }
@@ -702,21 +831,84 @@ void pybind_gui_classes(py::module &m) {
                  "Arguments are the selected text and selected index, "
                  "respectively");
 
-    // ---- ImageLabel ----
-    py::class_<ImageLabel, UnownedPointer<ImageLabel>, Widget> imagelabel(
-            m, "ImageLabel", "Displays a bitmap");
-    imagelabel
-            .def(py::init<>(
-                         [](const char *path) { return new ImageLabel(path); }),
-                 "Creates an ImageLabel from the image at the specified path")
-            .def("__repr__", [](const ImageLabel &il) {
-                std::stringstream s;
-                s << "ImageLabel (" << il.GetFrame().x << ", "
-                  << il.GetFrame().y << "), " << il.GetFrame().width << " x "
-                  << il.GetFrame().height;
-                return s.str();
-            });
-    // TODO: add the other functions and UIImage?
+    // ---- ImageWidget ----
+    py::class_<UIImage, UnownedPointer<UIImage>> uiimage(
+            m, "UIImage", "A bitmap suitable for displaying with ImageWidget");
+
+    py::enum_<UIImage::Scaling> uiimage_scaling(uiimage, "Scaling",
+                                                py::arithmetic());
+    uiimage_scaling.value("NONE", UIImage::Scaling::NONE)
+            .value("ANY", UIImage::Scaling::ANY)
+            .value("ASPECT", UIImage::Scaling::ASPECT);
+
+    uiimage.def(py::init<>([](const char *path) { return new UIImage(path); }),
+                "Creates a UIImage from the image at the specified path")
+            .def(py::init<>([](std::shared_ptr<geometry::Image> image) {
+                     return new UIImage(image);
+                 }),
+                 "Creates a UIImage from the provided image")
+            .def("__repr__", [](const UIImage &il) { return "UIImage"; })
+            .def_property("scaling", &UIImage::GetScaling, &UIImage::SetScaling,
+                          "Sets how the image is scaled:\n"
+                          "gui.UIImage.Scaling.NONE: no scaling\n"
+                          "gui.UIImage.Scaling.ANY: scaled to fit\n"
+                          "gui.UIImage.Scaling.ASPECT: scaled to fit but "
+                          "keeping the image's aspect ratio");
+
+    py::class_<ImageWidget, UnownedPointer<ImageWidget>, Widget> imagewidget(
+            m, "ImageWidget", "Displays a bitmap");
+    imagewidget
+            .def(py::init<>([]() { return new ImageWidget(); }),
+                 "Creates an ImageWidget with no image")
+            .def(py::init<>([](const char *path) {
+                     return new ImageWidget(path);
+                 }),
+                 "Creates an ImageWidget from the image at the specified path")
+            .def(py::init<>([](std::shared_ptr<geometry::Image> image) {
+                     return new ImageWidget(image);
+                 }),
+                 "Creates an ImageWidget from the provided image")
+            .def(py::init<>([](std::shared_ptr<t::geometry::Image> image) {
+                     return new ImageWidget(image);
+                 }),
+                 "Creates an ImageWidget from the provided tgeometry image")
+            .def("__repr__",
+                 [](const ImageWidget &il) {
+                     std::stringstream s;
+                     s << "ImageWidget (" << il.GetFrame().x << ", "
+                       << il.GetFrame().y << "), " << il.GetFrame().width
+                       << " x " << il.GetFrame().height;
+                     return s.str();
+                 })
+            .def("update_image",
+                 py::overload_cast<std::shared_ptr<geometry::Image>>(
+                         &ImageWidget::UpdateImage),
+                 "Mostly a convenience function for ui_image.update_image(). "
+                 "If 'image' is the same size as the current image, will "
+                 "update the texture with the contents of 'image'. This is "
+                 "the fastest path for setting an image, and is recommended "
+                 "if you are displaying video. If 'image' is a different size, "
+                 "it will allocate a new texture, which is essentially the "
+                 "same as creating a new UIImage and calling SetUIImage(). "
+                 "This is the slow path, and may eventually exhaust internal "
+                 "texture resources.")
+            .def("update_image",
+                 py::overload_cast<std::shared_ptr<t::geometry::Image>>(
+                         &ImageWidget::UpdateImage),
+                 "Mostly a convenience function for ui_image.update_image(). "
+                 "If 'image' is the same size as the current image, will "
+                 "update the texture with the contents of 'image'. This is "
+                 "the fastest path for setting an image, and is recommended "
+                 "if you are displaying video. If 'image' is a different size, "
+                 "it will allocate a new texture, which is essentially the "
+                 "same as creating a new UIImage and calling SetUIImage(). "
+                 "This is the slow path, and may eventually exhaust internal "
+                 "texture resources.")
+            .def_property("ui_image", &ImageWidget::GetUIImage,
+                          &ImageWidget::SetUIImage,
+                          "Replaces the texture with a new texture. This is "
+                          "not a fast path, and is not recommended for video "
+                          "as you will exhaust internal texture resources.");
 
     // ---- Label ----
     py::class_<Label, UnownedPointer<Label>, Widget> label(m, "Label",
@@ -737,6 +929,26 @@ void pybind_gui_classes(py::module &m) {
                           "line breaks")
             .def_property("text_color", &Label::GetTextColor,
                           &Label::SetTextColor,
+                          "The color of the text (gui.Color)")
+            .def_property("font_id", &Label::GetFontId, &Label::SetFontId,
+                          "Set the font using the FontId returned from "
+                          "Application.add_font()");
+
+    // ---- Label3D ----
+    py::class_<Label3D, UnownedPointer<Label3D>> label3d(
+            m, "Label3D", "Displays text in a 3D scene");
+    label3d.def(py::init([](const char *text = "",
+                            const Eigen::Vector3f &pos = {0.f, 0.f, 0.f}) {
+                    return new Label3D(pos, text);
+                }),
+                "Create a 3D Label with given text and position")
+            .def_property("text", &Label3D::GetText, &Label3D::SetText,
+                          "The text to display with this label.")
+            .def_property("position", &Label3D::GetPosition,
+                          &Label3D::SetPosition,
+                          "The position of the text in 3D coordinates")
+            .def_property("color", &Label3D::GetTextColor,
+                          &Label3D::SetTextColor,
                           "The color of the text (gui.Color)");
 
     // ---- ListView ----
@@ -841,7 +1053,63 @@ void pybind_gui_classes(py::module &m) {
                     "The value of the progress bar, ranges from 0.0 to 1.0");
 
     // ---- SceneWidget ----
-    py::class_<SceneWidget, UnownedPointer<SceneWidget>, Widget> scene(
+    class PySceneWidget : public SceneWidget {
+        using Super = SceneWidget;
+
+    public:
+        void SetOnMouse(std::function<int(const MouseEvent &)> f) {
+            on_mouse_ = f;
+        }
+        void SetOnKey(std::function<int(const KeyEvent &)> f) { on_key_ = f; }
+
+        Widget::EventResult Mouse(const MouseEvent &e) override {
+            if (on_mouse_) {
+                switch (EventCallbackResult(on_mouse_(e))) {
+                    case EventCallbackResult::CONSUMED:
+                        return Widget::EventResult::CONSUMED;
+                    case EventCallbackResult::HANDLED: {
+                        auto result = Super::Mouse(e);
+                        if (result == Widget::EventResult::IGNORED) {
+                            result = Widget::EventResult::CONSUMED;
+                        }
+                        return result;
+                    }
+                    case EventCallbackResult::IGNORED:
+                    default:
+                        return Super::Mouse(e);
+                }
+            } else {
+                return Super::Mouse(e);
+            }
+        }
+
+        Widget::EventResult Key(const KeyEvent &e) override {
+            if (on_key_) {
+                switch (EventCallbackResult(on_key_(e))) {
+                    case EventCallbackResult::CONSUMED:
+                        return Widget::EventResult::CONSUMED;
+                    case EventCallbackResult::HANDLED: {
+                        auto result = Super::Key(e);
+                        if (result == Widget::EventResult::IGNORED) {
+                            result = Widget::EventResult::CONSUMED;
+                        }
+                        return result;
+                    }
+                    case EventCallbackResult::IGNORED:
+                    default:
+                        return Super::Key(e);
+                }
+            } else {
+                return Super::Key(e);
+            }
+        }
+
+    private:
+        std::function<int(const MouseEvent &)> on_mouse_;
+        std::function<int(const KeyEvent &)> on_key_;
+    };
+
+    py::class_<PySceneWidget, UnownedPointer<PySceneWidget>, Widget> scene(
             m, "SceneWidget", "Displays 3D content");
     py::enum_<SceneWidget::Controls> scene_ctrl(scene, "Controls",
                                                 py::arithmetic());
@@ -852,35 +1120,78 @@ void pybind_gui_classes(py::module &m) {
             }),
             py::none(), py::none(), "");
     scene_ctrl.value("ROTATE_CAMERA", SceneWidget::Controls::ROTATE_CAMERA)
+            .value("ROTATE_CAMERA_SPHERE",
+                   SceneWidget::Controls::ROTATE_CAMERA_SPHERE)
             .value("FLY", SceneWidget::Controls::FLY)
             .value("ROTATE_SUN", SceneWidget::Controls::ROTATE_SUN)
             .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)
             .value("ROTATE_MODEL", SceneWidget::Controls::ROTATE_MODEL)
+            .value("PICK_POINTS", SceneWidget::Controls::PICK_POINTS)
             .export_values();
 
     scene.def(py::init<>(),
               "Creates an empty SceneWidget. Assign a Scene with the 'scene' "
               "property")
-            .def_property(
-                    "scene", &SceneWidget::GetScene, &SceneWidget::SetScene,
-                    "The rendering.Open3DScene that the SceneWidget renders")
-            .def("enable_scene_caching", &SceneWidget::EnableSceneCaching,
+            .def_property("scene", &PySceneWidget::GetScene,
+                          &SceneWidget::SetScene,
+                          "The rendering.CloudViewerScene that the SceneWidget "
+                          "renders")
+            .def_property("center_of_rotation",
+                          &SceneWidget::GetCenterOfRotation,
+                          &SceneWidget::SetCenterOfRotation,
+                          "Current center of rotation (for ROTATE_CAMERA and "
+                          "ROTATE_CAMERA_SPHERE)")
+            .def("enable_scene_caching", &PySceneWidget::EnableSceneCaching,
                  "Enable/Disable caching of scene content when the view or "
                  "model is not changing. Scene caching can help improve UI "
                  "responsiveness for large models and point clouds")
-            .def("force_redraw", &SceneWidget::ForceRedraw,
+            .def("force_redraw", &PySceneWidget::ForceRedraw,
                  "Ensures scene redraws even when scene caching is enabled.")
-            .def("set_view_controls", &SceneWidget::SetViewControls,
+            .def("set_view_controls", &PySceneWidget::SetViewControls,
                  "Sets mouse interaction, e.g. ROTATE_OBJ")
-            .def("setup_camera", &SceneWidget::SetupCamera,
+            .def("setup_camera",
+                 py::overload_cast<float, const ccBBox &,
+                                   const Eigen::Vector3f &>(
+                         &PySceneWidget::SetupCamera),
                  "Configure the camera: setup_camera(field_of_view, "
-                 "model_bounds, "
-                 "center_of_rotation)")
+                 "model_bounds, center_of_rotation)")
+            .def("setup_camera",
+                 py::overload_cast<const camera::PinholeCameraIntrinsic &,
+                                   const Eigen::Matrix4d &, const ccBBox &>(
+                         &PySceneWidget::SetupCamera),
+                 "setup_camera(intrinsics, extrinsic_matrix, model_bounds): "
+                 "sets the camera view")
+            .def("setup_camera",
+                 py::overload_cast<const Eigen::Matrix3d &,
+                                   const Eigen::Matrix4d &, int, int,
+                                   const ccBBox &>(&PySceneWidget::SetupCamera),
+                 "setup_camera(intrinsic_matrix, extrinsic_matrix, "
+                 "intrinsic_width_px, intrinsic_height_px, model_bounds): "
+                 "sets the camera view")
+            .def("look_at", &PySceneWidget::LookAt,
+                 "look_at(center, eye, up): sets the "
+                 "camera view so that the camera is located at 'eye', pointing "
+                 "towards 'center', and oriented so that the up vector is 'up'")
+            .def("set_on_mouse", &PySceneWidget::SetOnMouse,
+                 "Sets a callback for mouse events. This callback is passed "
+                 "a MouseEvent object. The callback must return "
+                 "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
+                 "or EventCallackResult.CONSUMED.")
+            .def("set_on_key", &PySceneWidget::SetOnKey,
+                 "Sets a callback for key events. This callback is passed "
+                 "a KeyEvent object. The callback must return "
+                 "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
+                 "or EventCallackResult.CONSUMED.")
             .def("set_on_sun_direction_changed",
-                 &SceneWidget::SetOnSunDirectionChanged,
+                 &PySceneWidget::SetOnSunDirectionChanged,
                  "Callback when user changes sun direction (only called in "
                  "ROTATE_SUN control mode). Called with one argument, the "
-                 "[i, j, k] vector of the new sun direction");
+                 "[i, j, k] vector of the new sun direction")
+            .def("add_3d_label", &PySceneWidget::AddLabel,
+                 "Add a 3D text label to the scene. The label will be anchored "
+                 "at the specified 3D point.")
+            .def("remove_3d_label", &PySceneWidget::RemoveLabel,
+                 "Removes the 3D text label from the scene");
 
     // ---- Slider ----
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(
@@ -950,8 +1261,7 @@ void pybind_gui_classes(py::module &m) {
                         tabs.AddTab(name, TakeOwnership<Widget>(panel));
                     },
                     "Adds a tab. The first parameter is the title of the tab, "
-                    "and "
-                    "the second parameter is a widget--normally this is a "
+                    "and the second parameter is a widget--normally this is a "
                     "layout.")
             .def("set_on_selected_tab_changed",
                  &TabControl::SetOnSelectedTabChanged,
@@ -987,6 +1297,25 @@ void pybind_gui_classes(py::module &m) {
                  "Sets f(new_text) which is called with the new text when the "
                  "user completes text editing");
 
+    // ---- ToggleSwitch ----
+    py::class_<ToggleSwitch, UnownedPointer<ToggleSwitch>, Widget> toggle(
+            m, "ToggleSwitch", "ToggleSwitch");
+    toggle.def(py::init<const char *>(),
+               "Creates a toggle switch with the given text")
+            .def("__repr__",
+                 [](const ToggleSwitch &ts) {
+                     std::stringstream s;
+                     s << "ToggleSwitch (" << ts.GetFrame().x << ", "
+                       << ts.GetFrame().y << "), " << ts.GetFrame().width
+                       << " x " << ts.GetFrame().height;
+                     return s.str();
+                 })
+            .def_property("is_on", &ToggleSwitch::GetIsOn, &ToggleSwitch::SetOn,
+                          "True if is one, False otherwise")
+            .def("set_on_clicked", &ToggleSwitch::SetOnClicked,
+                 "Sets f(is_on) which is called when the switch changes "
+                 "state.");
+
     // ---- TreeView ----
     py::class_<TreeView, UnownedPointer<TreeView>, Widget> treeview(
             m, "TreeView", "Hierarchical list");
@@ -1001,8 +1330,7 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def("get_root_item", &TreeView::GetRootItem,
                  "Returns the root item. This item is invisible, so its child "
-                 "are "
-                 "the top-level items")
+                 "are the top-level items")
             .def(
                     "add_item",
                     [](TreeView &tree, TreeView::ItemId parent_id,
@@ -1195,7 +1523,10 @@ void pybind_gui_classes(py::module &m) {
                  "Creates a layout that arranges widgets vertically, top to "
                  "bottom, making their width equal to the layout's width. "
                  "First argument is the spacing between widgets, the second "
-                 "is the margins. Both default to 0.");
+                 "is the margins. Both default to 0.")
+            .def_property("preferred_width", &Vert::GetPreferredWidth,
+                          &Vert::SetPreferredWidth,
+                          "Sets the preferred width of the layout");
 
     // ---- CollapsableVert ----
     py::class_<CollapsableVert, UnownedPointer<CollapsableVert>, Vert>
@@ -1224,10 +1555,37 @@ void pybind_gui_classes(py::module &m) {
                  "First argument is the heading text, the second is the "
                  "spacing between widgets, and the third is the margins. "
                  "Both the spacing and the margins default to 0.")
-            .def("set_is_open", &CollapsableVert::SetIsOpen,
+            .def("set_is_open", &CollapsableVert::SetIsOpen, "is_open"_a,
                  "Sets to collapsed (False) or open (True). Requires a call to "
                  "Window.SetNeedsLayout() afterwards, unless calling before "
-                 "window is visible");
+                 "window is visible")
+            .def("get_is_open", &CollapsableVert::GetIsOpen,
+                 "Check if widget is open.")
+            .def_property("font_id", &CollapsableVert::GetFontId,
+                          &CollapsableVert::SetFontId,
+                          "Set the font using the FontId returned from "
+                          "Application.add_font()");
+
+    // ---- ScrollableVert ----
+    py::class_<ScrollableVert, UnownedPointer<ScrollableVert>, Vert> slayout(
+            m, "ScrollableVert", "Scrollable vertical layout");
+    slayout.def(py::init([](int spacing, const Margins &margins) {
+                    return new ScrollableVert(spacing, margins);
+                }),
+                "spacing"_a = 0, "margins"_a = Margins(),
+                "Creates a layout that arranges widgets vertically, top to "
+                "bottom, making their width equal to the layout's width. First "
+                "argument is the spacing between widgets, the second is the "
+                "margins. Both default to 0.")
+            .def(py::init([](float spacing, const Margins &margins) {
+                     return new ScrollableVert(int(std::round(spacing)),
+                                               margins);
+                 }),
+                 "spacing"_a = 0.0f, "margins"_a = Margins(),
+                 "Creates a layout that arranges widgets vertically, top to "
+                 "bottom, making their width equal to the layout's width. "
+                 "First argument is the spacing between widgets, the second "
+                 "is the margins. Both default to 0.");
 
     // ---- Horiz ----
     py::class_<Horiz, UnownedPointer<Horiz>, Layout1D> hlayout(
@@ -1249,7 +1607,10 @@ void pybind_gui_classes(py::module &m) {
                  "right, making their height equal to the layout's height "
                  "(which will generally be the largest height of the items). "
                  "First argument is the spacing between widgets, the second "
-                 "is the margins. Both default to 0.");
+                 "is the margins. Both default to 0.")
+            .def_property("preferred_height", &Horiz::GetPreferredHeight,
+                          &Horiz::SetPreferredHeight,
+                          "Sets the preferred height of the layout");
 
     // ---- VGrid ----
     py::class_<VGrid, UnownedPointer<VGrid>, Widget> vgrid(m, "VGrid",
@@ -1281,7 +1642,10 @@ void pybind_gui_classes(py::module &m) {
                     "spacing", &VGrid::GetSpacing,
                     "Returns the spacing between rows and columns")
             .def_property_readonly("margins", &VGrid::GetMargins,
-                                   "Returns the margins");
+                                   "Returns the margins")
+            .def_property("preferred_width", &VGrid::GetPreferredWidth,
+                          &VGrid::SetPreferredWidth,
+                          "Sets the preferred width of the layout");
 
     // ---- Dialog ----
     py::class_<Dialog, UnownedPointer<Dialog>, Widget> dialog(m, "Dialog",
@@ -1322,6 +1686,7 @@ void pybind_gui_classes(py::module &m) {
 
 void pybind_gui(py::module &m) {
     py::module m_gui = m.def_submodule("gui");
+    pybind_gui_events(m_gui);
     pybind_gui_classes(m_gui);
 }
 

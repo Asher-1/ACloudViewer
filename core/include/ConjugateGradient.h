@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -24,7 +24,7 @@
 #include "SquareMatrix.h"
 
 
-namespace CVLib
+namespace cloudViewer
 {
 
 //! A class to perform a conjugate gradient optimization
@@ -53,7 +53,7 @@ public:
 	virtual ~ConjugateGradient() = default;
 
 	//! Returns A matrix
-	inline CVLib::SquareMatrixTpl<Scalar>& A() { return cg_A; }
+	inline cloudViewer::SquareMatrixTpl<Scalar>& A() { return cg_A; }
 
 	//! Returns b vector
 	inline Scalar* b() { return cg_b; }
@@ -135,7 +135,7 @@ protected:
 	//! 'A' matrix
 	/** Equation solved: "A.X=b"
 	**/
-	CVLib::SquareMatrixTpl<Scalar> cg_A;
+	cloudViewer::SquareMatrixTpl<Scalar> cg_A;
 };
 
 }

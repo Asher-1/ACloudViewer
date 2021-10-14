@@ -70,7 +70,7 @@ ccPolyline::ccPolyline(ccPointCloud& associatedCloud)
 		bool closed = false;
 		CCVector3 start = CCVector3::fromArray(getAssociatedCloud()->getPoint(0)->u);
 		CCVector3 end = CCVector3::fromArray(getAssociatedCloud()->getPoint(verticesCount - 1)->u);
-        if (CVLib::LessThanEpsilon((end - start).norm()))
+        if (cloudViewer::LessThanEpsilon((end - start).norm()))
 		{
 			closed = true;
 		} else {
@@ -84,7 +84,7 @@ ccPolyline::ccPolyline(ccPointCloud& associatedCloud)
 	}
 	else
 	{
-		CVLib::utility::LogError("[ccPolyline] not enough memory!");
+		cloudViewer::utility::LogError("[ccPolyline] not enough memory!");
 	}
 }
 
@@ -296,21 +296,12 @@ void ccPolyline::drawMeOnly(CC_DRAW_CONTEXT& context)
 				CC_DRAW_CONTEXT markerContext = context;
 				markerContext.drawingFlags &= (~CC_DRAW_ENTITY_NAMES); // we must remove the 'push name flag' so that the sphere doesn't push its own!
 
-				//glFunc->glMatrixMode(GL_MODELVIEW);
-				//glFunc->glPushMatrix();
-				//ccGL::Translate(glFunc, P1->x, P1->y, P1->z);
 				markerContext.transformInfo.setTranslationStart(CCVector3(P1->x, P1->y, P1->z));
-
 				ccGLMatrixd rotMat = ccGLMatrixd::FromToRotation(CCVector3d(u.x, u.y, u.z), CCVector3d(0, 0, PC_ONE));
-				//glFunc->glMultMatrixf(rotMat.inverse().data());
-				markerContext.transformInfo.setRotMat(rotMat.inverse());
-				//glFunc->glScalef(m_arrowLength, m_arrowLength, m_arrowLength);
+                markerContext.transformInfo.setTransformation(rotMat.inverse(), false);
 				markerContext.transformInfo.setScale(CCVector3(m_arrowLength, m_arrowLength, m_arrowLength));
-
-				//ccGL::Translate(glFunc, 0.0, 0.0, -0.5);
 				markerContext.transformInfo.setTranslationEnd(CCVector3(0.0, 0.0, -0.5));
 				c_unitArrow->draw(markerContext);
-				//glFunc->glPopMatrix();
 			}
 		}
 	}
@@ -377,9 +368,9 @@ bool ccPolyline::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccPolyline::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccPolyline::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	if (dataVersion < 28)
@@ -511,7 +502,7 @@ bool ccPolyline::split(	PointCoordinateType maxEdgeLength,
 		if (partSize > 1) //otherwise we skip that point
 		{
 			//create the corresponding part
-			CVLib::ReferenceCloud ref(m_theAssociatedCloud);
+			cloudViewer::ReferenceCloud ref(m_theAssociatedCloud);
 			if (!ref.reserve(partSize))
 			{
 				CVLog::Error("[ccPolyline::split] Not enough memory!");
@@ -554,14 +545,14 @@ bool ccPolyline::add(const ccPointCloud& cloud)
 	ccPointCloud* oldCloud = static_cast<ccPointCloud*>(m_theAssociatedCloud);
 	if (!oldCloud)
 	{
-		CVLib::utility::LogWarning("[ccPolyline::add] invalid associated cloud!");
+		cloudViewer::utility::LogWarning("[ccPolyline::add] invalid associated cloud!");
 		return false;
 	}
 	unsigned int newCount = cloud.size();
 	unsigned int currentSize = oldCloud->size();
 	if (!oldCloud->reserve(currentSize + newCount))
 	{
-		CVLib::utility::LogWarning("[ccPolyline] Not enough memory!");
+		cloudViewer::utility::LogWarning("[ccPolyline] Not enough memory!");
 		return false;
 	}
 
@@ -640,8 +631,8 @@ void ccPolyline::setGlobalScale(double scale)
 }
 
 ccPointCloud* ccPolyline::samplePoints(	bool densityBased,
-										double samplingParameter,
-										bool withRGB)
+                                        double samplingParameter,
+                                        bool withRGB)
 {
 	if (samplingParameter <= 0 || size() < 2)
 	{
@@ -712,7 +703,7 @@ ccPointCloud* ccPolyline::samplePoints(	bool densityBased,
 		alpha = std::max(alpha, 0.0); //just in case
 		alpha = std::min(alpha, 1.0);
 
-		CCVector3 P = A + alpha * AB;
+		CCVector3 P = A + static_cast<PointCoordinateType>(alpha) * AB;
 		cloud->addPoint(P);
 
 		//proceed to the next point
@@ -838,15 +829,15 @@ ccPolyline &ccPolyline::operator+=(const ccPolyline &polyline) {
 	if (polyline.isEmpty()) return (*this);
 	if (!polyline.getAssociatedCloud())
 	{
-		CVLib::utility::LogError("[ccPolyline] Cannot find associated cloud in polyline!");
+		cloudViewer::utility::LogError("[ccPolyline] Cannot find associated cloud in polyline!");
 		return (*this);
 	}
 
 	if (m_theAssociatedCloud == polyline.getAssociatedCloud())
 	{
-		if (!CVLib::ReferenceCloud::add(polyline))
+		if (!cloudViewer::ReferenceCloud::add(polyline))
 		{
-			CVLib::utility::LogError("[ccPolyline] Not enough memory!");
+			cloudViewer::utility::LogError("[ccPolyline] Not enough memory!");
 			return (*this);
 		}
 	}
@@ -856,7 +847,7 @@ ccPolyline &ccPolyline::operator+=(const ccPolyline &polyline) {
 			polyline.getAssociatedCloud());
 		if (!cloud || !add(*cloud))
 		{
-			CVLib::utility::LogWarning("[ccPolyline] adding ccPolyline failed!");
+			cloudViewer::utility::LogWarning("[ccPolyline] adding ccPolyline failed!");
 		}
 	}
 

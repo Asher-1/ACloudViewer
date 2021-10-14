@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@
 
 #include "pybind/ml/contrib/contrib.h"
 
-#include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/cloudViewer_pybind.h"
 #include "pybind/pybind_utils.h"
@@ -40,6 +39,7 @@ void pybind_contrib(py::module& m) {
 
     pybind_contrib_subsample(m_contrib);
     pybind_contrib_nns(m_contrib);
+    pybind_contrib_iou(m_contrib);
 }
 
 }  // namespace contrib

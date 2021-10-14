@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #pragma once
 
 // PYBIND_11
+#undef slots
 #include <pybind11/detail/internals.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
@@ -56,9 +57,9 @@
 namespace py = pybind11;
 using namespace py::literals;
 
-typedef std::vector<Eigen::Matrix4d, CVLib::utility::Matrix4d_allocator>
+typedef std::vector<Eigen::Matrix4d, cloudViewer::utility::Matrix4d_allocator>
         temp_eigen_matrix4d;
-typedef std::vector<Eigen::Vector4i, CVLib::utility::Vector4i_allocator>
+typedef std::vector<Eigen::Vector4i, cloudViewer::utility::Vector4i_allocator>
         temp_eigen_vector4i;
 
 PYBIND11_MAKE_OPAQUE(std::vector<int>);
@@ -70,6 +71,7 @@ PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3i>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2i>);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Matrix3d>);
 PYBIND11_MAKE_OPAQUE(temp_eigen_matrix4d);
 PYBIND11_MAKE_OPAQUE(temp_eigen_vector4i);
 PYBIND11_MAKE_OPAQUE(std::vector<cloudViewer::pipelines::registration::PoseGraphEdge>);
@@ -166,12 +168,12 @@ struct cloudViewer_optional_caster {
 };
 
 template <typename T>
-struct type_caster<CVLib::utility::optional<T>>
-    : public cloudViewer_optional_caster<CVLib::utility::optional<T>> {};
+struct type_caster<cloudViewer::utility::optional<T>>
+    : public cloudViewer_optional_caster<cloudViewer::utility::optional<T>> {};
 
 template <>
-struct type_caster<CVLib::utility::nullopt_t>
-    : public void_caster<CVLib::utility::nullopt_t> {};
+struct type_caster<cloudViewer::utility::nullopt_t>
+    : public void_caster<cloudViewer::utility::nullopt_t> {};
 
 }  // namespace detail
 }  // namespace pybind11

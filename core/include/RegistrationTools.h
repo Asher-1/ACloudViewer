@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -23,7 +23,7 @@
 #include "PointProjectionTools.h"
 
 
-namespace CVLib
+namespace cloudViewer
 {
 
 class GenericProgressCallback;
@@ -146,9 +146,9 @@ public:
 	//! Errors
 	enum RESULT_TYPE
 	{
-		ICP_NOTHING_TO_DO				= 0,
-		ICP_APPLY_TRANSFO				= 1,
-		ICP_ERROR						= 100,
+		ICP_NOTHING_TO_DO			= 0,
+		ICP_APPLY_TRANSFO			= 1,
+		ICP_ERROR				= 100,
 		//all errors should be greater than ICP_ERROR
 		ICP_ERROR_REGISTRATION_STEP		= 101,
 		ICP_ERROR_DIST_COMPUTATION		= 102,
@@ -157,56 +157,75 @@ public:
 		ICP_ERROR_INVALID_INPUT			= 105,
 	};
 
-	//! ICP Parameters
-	struct Parameters
-	{
-		Parameters()
-			: convType(MAX_ERROR_CONVERGENCE)
-			, minRMSDecrease(1.0e-5)
-			, nbMaxIterations(20)
-			, adjustScale(false)
-			, filterOutFarthestPoints(false)
-			, samplingLimit(50000)
-			, finalOverlapRatio(1.0)
-			, modelWeights(nullptr)
-			, dataWeights(nullptr)
-			, transformationFilters(SKIP_NONE)
-			, maxThreadCount(0)
-		{}
+        //! Normals matching method
+        enum NORMALS_MATCHING
+        {
+                NO_NORMAL			= 0,
+                OPPOSITE_NORMALS		= 1,
+                SAME_SIDE_NORMALS		= 2,
+                DOUBLE_SIDED_NORMALS	        = 3
+        };
 
-		//! Convergence type
-		CONVERGENCE_TYPE convType;
+        //! ICP Parameters
+        struct Parameters
+        {
+                Parameters()
+                        : convType(MAX_ERROR_CONVERGENCE)
+                        , minRMSDecrease(1.0e-5)
+                        , nbMaxIterations(20)
+                        , adjustScale(false)
+                        , filterOutFarthestPoints(false)
+                        , samplingLimit(50000)
+                        , finalOverlapRatio(1.0)
+                        , modelWeights(nullptr)
+                        , dataWeights(nullptr)
+                        , transformationFilters(SKIP_NONE)
+                        , maxThreadCount(0)
+                        , useC2MSignedDistances(false)
+                        , normalsMatching(NO_NORMAL)
+                {}
 
-		//! The minimum error (RMS) reduction between two consecutive steps to continue process (ignored if convType is not MAX_ERROR_CONVERGENCE)
-		double minRMSDecrease;
+                //! Convergence type
+                CONVERGENCE_TYPE convType;
 
-		//! The maximum number of iteration (ignored if convType is not MAX_ITER_CONVERGENCE)
-		unsigned nbMaxIterations;
+                //! The minimum error (RMS) reduction between two consecutive steps to continue process (ignored if convType is not MAX_ERROR_CONVERGENCE)
+                double minRMSDecrease;
 
-		//! Whether to release the scale parameter during the registration procedure or not
-		bool adjustScale;
+                //! The maximum number of iteration (ignored if convType is not MAX_ITER_CONVERGENCE)
+                unsigned nbMaxIterations;
 
-		//! If true, the algorithm will automatically ignore farthest points from the reference, for better convergence
-		bool filterOutFarthestPoints;
+                //! Whether to release the scale parameter during the registration procedure or not
+                bool adjustScale;
 
-		//! Maximum number of points per cloud (they are randomly resampled below this limit otherwise)
-		unsigned samplingLimit;
+                //! If true, the algorithm will automatically ignore farthest points from the reference, for better convergence
+                bool filterOutFarthestPoints;
 
-		//! Theoretical overlap ratio (at each iteration, only this percentage (between 0 and 1) will be used for registration
-		double finalOverlapRatio;
+                //! Maximum number of points per cloud (they are randomly resampled below this limit otherwise)
+                unsigned samplingLimit;
 
-		//! Weights for model points (i.e. only if the model entity is a cloud) (optional)
-		ScalarField* modelWeights;
+                //! Theoretical overlap ratio (at each iteration, only this percentage (between 0 and 1) will be used for registration
+                double finalOverlapRatio;
 
-		//! Weights for data points (optional)
-		ScalarField* dataWeights;
+                //! Weights for model points (i.e. only if the model entity is a cloud) (optional)
+                ScalarField* modelWeights;
 
-		//! Filters to be applied on the resulting transformation at each step (experimental) - see RegistrationTools::TRANSFORMATION_FILTERS flags
-		int transformationFilters;
+                //! Weights for data points (optional)
+                ScalarField* dataWeights;
 
-		//! Maximum number of threads to use (0 = max)
-		int maxThreadCount;
-	};
+                //! Filters to be applied on the resulting transformation at each step (experimental) - see RegistrationTools::TRANSFORMATION_FILTERS flags
+                int transformationFilters;
+
+                //! Maximum number of threads to use (0 = max)
+                int maxThreadCount;
+
+                //! Whether to compute signed C2M distances.
+                /** Useful when registering a cloud with a mesh AND partial overlap, to move the cloud towards the outside of the mesh
+                **/
+                bool useC2MSignedDistances;
+
+                //! Normals matching method
+                NORMALS_MATCHING normalsMatching;
+        };
 
 	//! Registers two clouds or a cloud and a mesh
 	/** This method implements the ICP algorithm (Besl et al.).

@@ -28,9 +28,9 @@
 class ccPointCloud;
 
 //! Colored polyline
-/** Extends the CVLib::Polyline class
+/** Extends the cloudViewer::Polyline class
 **/
-class ECV_DB_LIB_API ccPolyline : public CVLib::Polyline, public ccShiftedObject
+class ECV_DB_LIB_API ccPolyline : public cloudViewer::Polyline, public ccShiftedObject
 {
 public:
 
@@ -219,7 +219,7 @@ protected:
 
 	//inherited from ccHObject
 	virtual bool toFile_MeOnly(QFile& out) const override;
-	virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 
 	//inherited methods (ccHObject)
 	virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;

@@ -186,7 +186,7 @@ public: //Transformation matrix management (for display only)
 		If the associated GL transformation is enabled (see
 		ccDrawableObject::enableGLTransformation), it will
 		be applied before displaying this entity.
-		However it will not be taken into account by any CVLib algorithm
+		However it will not be taken into account by any cloudViewer algorithm
 		(distance computation, etc.) for instance.
 		Note: GL transformation is automatically enabled.
 	**/

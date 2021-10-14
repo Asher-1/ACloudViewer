@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,14 +31,11 @@ namespace cloudViewer {
 namespace io {
 
 void pybind_io(py::module &m) {
-	py::module m_io = m.def_submodule("io");
-	pybind_class_io(m_io);
-
+    py::module m_io = m.def_submodule("io");
+    pybind_class_io(m_io);
+    pybind_rpc(m_io);
 #ifdef BUILD_AZURE_KINECT
-	pybind_sensor(m_io);
-#endif
-#ifdef BUILD_RPC_INTERFACE
-	pybind_rpc(m_io);
+    pybind_sensor(m_io);
 #endif
 }
 

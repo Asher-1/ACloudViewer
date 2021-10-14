@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,10 +32,18 @@
 namespace cloudViewer {
 namespace core {
 
-void pybind_core_size_vector(py::module &m) {
-    auto size_vector = py::bind_vector<SizeVector>(
+void pybind_core_size_vector(py::module& m) {
+    // bind_vector takes care of most common methods for Python list.
+    auto sv = py::bind_vector<SizeVector>(
             m, "SizeVector",
             "A vector of integers for specifying shape, strides, etc.");
+
+    auto dsv = py::bind_vector<DynamicSizeVector>(
+            m, "DynamicSizeVector",
+            "A vector of integers for specifying shape, strides, etc. Some "
+            "elements can be None.");
+    dsv.def("__repr__",
+            [](const DynamicSizeVector& dsv) { return dsv.ToString(); });
 }
 
 }  // namespace core

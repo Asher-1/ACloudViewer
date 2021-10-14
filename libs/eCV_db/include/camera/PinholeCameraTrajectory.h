@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ namespace camera {
 ///
 /// Contains a list of PinholeCameraParameters, useful to storing trajectories.
 class ECV_DB_LIB_API PinholeCameraTrajectory :
-	public CVLib::utility::IJsonConvertible {
+	public cloudViewer::utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     PinholeCameraTrajectory();

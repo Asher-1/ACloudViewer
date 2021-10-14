@@ -8,6 +8,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ChamferDistanceTransform.cpp
 		${CMAKE_CURRENT_LIST_DIR}/CloudSamplingTools.cpp
 		${CMAKE_CURRENT_LIST_DIR}/Console.cpp
+		${CMAKE_CURRENT_LIST_DIR}/Logging.cpp
 		${CMAKE_CURRENT_LIST_DIR}/CVKdTree.cpp
 		${CMAKE_CURRENT_LIST_DIR}/TrueKdTree.cpp
 		${CMAKE_CURRENT_LIST_DIR}/CVLog.cpp
@@ -45,6 +46,12 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/StatisticalTestingTools.cpp
 		${CMAKE_CURRENT_LIST_DIR}/Timer.cpp
 		${CMAKE_CURRENT_LIST_DIR}/WeibullDistribution.cpp
+		${CMAKE_CURRENT_LIST_DIR}/Cpu.cpp
+		${CMAKE_CURRENT_LIST_DIR}/CPUInfo.cpp
+		${CMAKE_CURRENT_LIST_DIR}/Parallel.cpp
+		${CMAKE_CURRENT_LIST_DIR}/MemoryInfo.cpp
+		${CMAKE_CURRENT_LIST_DIR}/Universe.cpp
+		${CMAKE_CURRENT_LIST_DIR}/StaticVector.cpp
 )
 
 target_include_directories( ${PROJECT_NAME}

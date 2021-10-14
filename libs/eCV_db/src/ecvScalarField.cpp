@@ -20,13 +20,13 @@
 //Local
 #include "ecvColorScalesManager.h"
 
-//CVLib
+//cloudViewer
 #include <CVConst.h>
 
 //system
 #include <algorithm>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 //! Default number of classes for associated histogram
 const unsigned MAX_HISTOGRAM_SIZE = 512;
@@ -282,7 +282,7 @@ void ccScalarField::setSaturationStart(ScalarType val)
 {
 	if (m_logScale)
 	{
-		m_logSaturationRange.setStart(val/*log10(std::max(val,(ScalarType)ZERO_TOLERANCE))*/);
+        m_logSaturationRange.setStart(val/*log10(std::max(val, static_cast<ScalarType>(ZERO_TOLERANCE_F)))*/);
 	}
 	else
 	{
@@ -295,7 +295,7 @@ void ccScalarField::setSaturationStop(ScalarType val)
 {
 	if (m_logScale)
 	{
-		m_logSaturationRange.setStop(val/*log10(std::max(val,(ScalarType)ZERO_TOLERANCE))*/);
+        m_logSaturationRange.setStop(val/*log10(std::max(val, static_cast<ScalarType>(ZERO_TOLERANCE_F)))*/);
 	}
 	else
 	{
@@ -387,7 +387,7 @@ bool ccScalarField::toFile(QFile& out) const
 	return true;
 }
 
-bool ccScalarField::fromFile(QFile& in, short dataVersion, int flags)
+bool ccScalarField::fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
 	assert(in.isOpen() && (in.openMode() & QIODevice::ReadOnly));
 
@@ -564,7 +564,7 @@ bool ccScalarField::fromFile(QFile& in, short dataVersion, int flags)
 			if (hasColorScale)
 			{
 				ccColorScale::Shared colorScale = ccColorScale::Create("temp");
-				if (!colorScale->fromFile(in, dataVersion, flags))
+                if (!colorScale->fromFile(in, dataVersion, flags, oldToNewIDMap))
 					return ReadError();
 				m_colorScale = colorScale;
 

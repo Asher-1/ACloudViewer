@@ -16,6 +16,9 @@
 //##########################################################################
 
 #include "PclFiltersTool.h" 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Use of [[deprecated]] feature
+#endif
 
 //Local
 #include "PclUtils/cc2sm.h"
@@ -213,7 +216,7 @@ void PclFiltersTool::get(ccBBox & extents, ccGLMatrix & transformation)
 	transformation = ccGLMatrix(trans.data());
 }
 
-bool PclFiltersTool::setInputData(ccHObject* entity, int viewPort)
+bool PclFiltersTool::setInputData(ccHObject* entity, int viewport)
 {
 	m_associatedEntity = entity;
 	if (!m_filter) return false;
@@ -301,9 +304,9 @@ void PclFiltersTool::areaPickingEventProcess(const std::vector<int>& new_selecte
 
 ///////////////////////////////////////////////////////////////
 
-void PclFiltersTool::setPointSize(const std::string & viewID, int viewPort)
+void PclFiltersTool::setPointSize(const std::string & viewID, int viewport)
 {
-	m_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viewID, viewPort);
+	m_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viewID, viewport);
 }
 
 void PclFiltersTool::reset()

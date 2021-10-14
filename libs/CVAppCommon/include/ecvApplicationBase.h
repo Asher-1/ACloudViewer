@@ -29,9 +29,9 @@
 class CVAPPCOMMON_LIB_API ecvApplicationBase : public QApplication
 {
 public:
-	//! This must be called before instantiating the application class so it
-	//! can setup OpenGL first.
-	static void	init(bool noOpenGLSupport);
+    //! This must be called before instantiating the application class so it
+    //! can setup OpenGL first.
+    static void	InitOpenGL();
 	
 	ecvApplicationBase( int &argc, char **argv, bool isCommandLine, const QString &version );
 	

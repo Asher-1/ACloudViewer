@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,9 @@
 #include "CloudViewer.h"
 
 void PrintHelp() {
-    using namespace CVLib;
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > ViewDistances source_file [options]");
@@ -42,21 +44,25 @@ void PrintHelp() {
     utility::LogInfo("    --write_color_back        : Write color back to source_file.");
     utility::LogInfo("    --without_gui             : Without GUI.");
     // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char *argv[]) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
-    if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        utility::ProgramOptionExists(argc, argv, "-h")) {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
+
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     double max_distance = utility::GetProgramOptionAsDouble(
             argc, argv, "--max_distance", 0.0);
-    auto pcd = cloudViewer::io::CreatePointCloudFromFile(argv[1]);
+    auto pcd = io::CreatePointCloudFromFile(argv[1]);
     if (pcd->isEmpty()) {
         utility::LogWarning("Empty point cloud.");
         return 1;
@@ -90,17 +96,16 @@ int main(int argc, char *argv[]) {
         utility::LogWarning("Max distance must be a positive value.");
         return 1;
     }
-
     pcd->resizeTheRGBTable();
-    cloudViewer::visualization::ColorMapHot colormap;
+    visualization::ColorMapHot colormap;
     for (size_t i = 0; i < pcd->size(); i++) {
-		pcd->setPointColor(i, colormap.GetColor(distances[i] / max_distance));
+        pcd->setPointColor(i, colormap.GetColor(distances[i] / max_distance));
     }
     if (utility::ProgramOptionExists(argc, argv, "--write_color_back")) {
-        cloudViewer::io::WritePointCloud(argv[1], *pcd);
+        io::WritePointCloud(argv[1], *pcd);
     }
     if (!utility::ProgramOptionExists(argc, argv, "--without_gui")) {
-        cloudViewer::visualization::DrawGeometries({pcd}, "Point Cloud", 1920, 1080);
+        visualization::DrawGeometries({pcd}, "Point Cloud", 1920, 1080);
     }
     return 0;
 }

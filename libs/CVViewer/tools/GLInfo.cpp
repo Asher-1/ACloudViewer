@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include "CloudViewer.h"
 
 void GLFWErrorCallback(int error, const char *description) {
-    CVLib::utility::LogWarning("GLFW Error: {}", description);
+    cloudViewer::utility::LogWarning("GLFW Error: {}", description);
 }
 
 void TryGLVersion(int major,
@@ -50,14 +50,14 @@ void TryGLVersion(int major,
     CLOUDVIEWER_CHECK_PROFILESTR(GLFW_OPENGL_ANY_PROFILE);
 #undef CLOUDVIEWER_CHECK_PROFILESTR
 
-    CVLib::utility::LogInfo("TryGLVersion: {:d}.{:d} {}{}", major, minor,
+    cloudViewer::utility::LogInfo("TryGLVersion: {:d}.{:d} {}{}", major, minor,
                      forwardCompatStr, profileStr);
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     glfwSetErrorCallback(GLFWErrorCallback);
     if (!glfwInit()) {
-        CVLib::utility::LogError("Failed to initialize GLFW");
+        cloudViewer::utility::LogError("Failed to initialize GLFW");
     }
 
     glfwWindowHint(GLFW_SAMPLES, 4);
@@ -69,7 +69,7 @@ void TryGLVersion(int major,
 
     GLFWwindow *window_ = glfwCreateWindow(640, 480, "GLInfo", NULL, NULL);
     if (!window_) {
-        CVLib::utility::LogDebug("Failed to create window");
+        cloudViewer::utility::LogDebug("Failed to create window");
         glfwTerminate();
         return;
     } else {
@@ -79,9 +79,9 @@ void TryGLVersion(int major,
     auto reportGlStringFunc = [](GLenum id, std::string name) {
         const auto r = glGetString(id);
         if (!r) {
-            CVLib::utility::LogWarning("Unable to get info on {} id {:d}", name, id);
+            cloudViewer::utility::LogWarning("Unable to get info on {} id {:d}", name, id);
         } else {
-            CVLib::utility::LogDebug("{}:\t{}", name, r);
+            cloudViewer::utility::LogDebug("{}:\t{}", name, r);
         }
     };
 #define CLOUDVIEWER_REPORT_GL_STRING(n) reportGlStringFunc(n, #n)

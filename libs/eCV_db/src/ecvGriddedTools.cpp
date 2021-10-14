@@ -163,9 +163,9 @@ bool ccGriddedTools::DetectParameters(	const ccPointCloud* cloud,
 				if (verbose)
 				{
                     CVLog::Print(QString("[Scan grid] Detected pitch step: %1 degrees (span [%2 - %3])")
-                                 .arg(CVLib::RadiansToDegrees(parameters.deltaPhiRad))
-                                 .arg(CVLib::RadiansToDegrees(parameters.minPhi))
-                                 .arg(CVLib::RadiansToDegrees(parameters.maxPhi)));
+                                 .arg(cloudViewer::RadiansToDegrees(parameters.deltaPhiRad))
+                                 .arg(cloudViewer::RadiansToDegrees(parameters.minPhi))
+                                 .arg(cloudViewer::RadiansToDegrees(parameters.maxPhi)));
 				}
 			}
 			else
@@ -280,9 +280,9 @@ bool ccGriddedTools::DetectParameters(	const ccPointCloud* cloud,
 				if (verbose)
 				{
                     CVLog::Print(QString("[Scan grid] Detected yaw step: %1 degrees (span [%2 - %3])")
-                                 .arg(CVLib::RadiansToDegrees(parameters.deltaThetaRad))
-                                 .arg(CVLib::RadiansToDegrees(parameters.minTheta))
-                                 .arg(CVLib::RadiansToDegrees(parameters.maxTheta)));
+                                 .arg(cloudViewer::RadiansToDegrees(parameters.deltaThetaRad))
+                                 .arg(cloudViewer::RadiansToDegrees(parameters.minTheta))
+                                 .arg(cloudViewer::RadiansToDegrees(parameters.maxTheta)));
 				}
 			}
 			else

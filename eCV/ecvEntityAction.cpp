@@ -628,7 +628,7 @@ namespace ccEntityAction
 					ccPickOneElementDlg poeDlg("Intensity scalar field", "Choose scalar field", parent);
 					for (unsigned i = 0; i < pc->getNumberOfScalarFields(); ++i)
 					{
-						CVLib::ScalarField* sf = pc->getScalarField(i);
+						cloudViewer::ScalarField* sf = pc->getScalarField(i);
 						assert(sf);
 						QString sfName(sf->getName());
 						poeDlg.addElement(sfName);
@@ -710,7 +710,7 @@ namespace ccEntityAction
 			}
 			
 			//la methode est activee sur le champ scalaire affiche
-			CVLib::ScalarField* sf = pc->getCurrentDisplayedScalarField();
+			cloudViewer::ScalarField* sf = pc->getCurrentDisplayedScalarField();
 			if (sf != nullptr)
 			{
 				//on met en lecture (OUT) le champ scalaire actuellement affiche
@@ -718,7 +718,7 @@ namespace ccEntityAction
 				Q_ASSERT(outSfIdx >= 0);
 				
 				pc->setCurrentOutScalarField(outSfIdx);
-				CVLib::ScalarField* outSF = pc->getCurrentOutScalarField();
+				cloudViewer::ScalarField* outSF = pc->getCurrentOutScalarField();
 				Q_ASSERT(sf != nullptr);
 				
 				QString sfName = QString("%1.smooth(%2)").arg(outSF->getName()).arg(sigma);
@@ -748,7 +748,7 @@ namespace ccEntityAction
 				{
 					QElapsedTimer eTimer;
 					eTimer.start();
-					CVLib::ScalarFieldTools::applyScalarFieldGaussianFilter(static_cast<PointCoordinateType>(sigma),
+					cloudViewer::ScalarFieldTools::applyScalarFieldGaussianFilter(static_cast<PointCoordinateType>(sigma),
 																			pc,
 																			-1,
 																			&pDlg,
@@ -790,7 +790,7 @@ namespace ccEntityAction
 		//estimate a good value for scalar field sigma, based on the first cloud
 		//and its displayed scalar field
 		ccPointCloud* pc_test = ccHObjectCaster::ToPointCloud(selectedEntities[0]);
-		CVLib::ScalarField* sf_test = pc_test->getCurrentDisplayedScalarField();
+		cloudViewer::ScalarField* sf_test = pc_test->getCurrentDisplayedScalarField();
 		ScalarType range = sf_test->getMax() - sf_test->getMin();
 		double scalarFieldSigma = range / 4; // using 1/4 of total range
 		
@@ -828,7 +828,7 @@ namespace ccEntityAction
 			}
 			
 			//the algorithm will use the currently displayed SF
-			CVLib::ScalarField* sf = pc->getCurrentDisplayedScalarField();
+			cloudViewer::ScalarField* sf = pc->getCurrentDisplayedScalarField();
 			if (sf != nullptr)
 			{
 				//we set the displayed SF as "OUT" SF
@@ -836,7 +836,7 @@ namespace ccEntityAction
 				Q_ASSERT(outSfIdx >= 0);
 				
 				pc->setCurrentOutScalarField(outSfIdx);
-				CVLib::ScalarField* outSF = pc->getCurrentOutScalarField();
+				cloudViewer::ScalarField* outSF = pc->getCurrentOutScalarField();
 				Q_ASSERT(outSF != nullptr);
 				
 				QString sfName = QString("%1.bilsmooth(%2,%3)").arg(outSF->getName()).arg(sigma).arg(scalarFieldSigma);
@@ -867,7 +867,7 @@ namespace ccEntityAction
 					QElapsedTimer eTimer;
 					eTimer.start();
 					
-					CVLib::ScalarFieldTools::applyScalarFieldGaussianFilter(static_cast<PointCoordinateType>(sigma),
+					cloudViewer::ScalarFieldTools::applyScalarFieldGaussianFilter(static_cast<PointCoordinateType>(sigma),
 																			pc,
 																			static_cast<PointCoordinateType>(scalarFieldSigma),
 																			&pDlg,
@@ -1076,7 +1076,7 @@ namespace ccEntityAction
 					return false;
 				}
 				
-				CVLib::ScalarField* sf = pc->getScalarField(sfIdx);
+				cloudViewer::ScalarField* sf = pc->getScalarField(sfIdx);
 				Q_ASSERT(sf->currentSize() == pc->size());
 				
 				for (unsigned j=0 ; j<cloud->size(); j++)
@@ -1128,7 +1128,7 @@ namespace ccEntityAction
 					return false;
 				}
 
-				CVLib::ScalarField* sf = pc->getScalarField(sfIdx);
+				cloudViewer::ScalarField* sf = pc->getScalarField(sfIdx);
 				Q_ASSERT(sf->currentSize() == pc->size());
 
 				for (unsigned j = 0; j < cloud->size(); j++)
@@ -1178,7 +1178,7 @@ namespace ccEntityAction
 						ScalarType s = sf->getValue(i);
 						
 						//handle NaN values
-						if (!CVLib::ScalarField::ValidValue(s))
+						if (!cloudViewer::ScalarField::ValidValue(s))
 						{
 							if (!hasDefaultValueForNaN)
 							{
@@ -1680,14 +1680,14 @@ namespace ccEntityAction
 						// some points can belong to one sensor and some others can belongs to others sensors.
 						// so it's why here grid orientation has precedence over sensor orientation because in this
 						// case association is more explicit.
-						// Here we take the first valid viewpoint for now even if it's not a really good...
-						CCVector3 sensorPosition;
-						for (size_t i = 0; i < cloud->getChildrenNumber(); ++i)
+						// Here we take the first valid viewpoint for now even if it's not a good one...
+						for (unsigned i = 0; i < cloud->getChildrenNumber(); ++i)
 						{
-							ccHObject* child = cloud->getChild(static_cast<unsigned>(i));
+							ccHObject* child = cloud->getChild(i);
 							if (child && child->isKindOf(CV_TYPES::SENSOR))
 							{
 								ccSensor* sensor = ccHObjectCaster::ToSensor(child);
+                                                                CCVector3 sensorPosition;
 								if (sensor->getActiveAbsoluteCenter(sensorPosition))
 								{
 									result = cloud->orientNormalsTowardViewPoint(sensorPosition, &pDlg);
@@ -1765,29 +1765,34 @@ namespace ccEntityAction
 		 
 	bool invertNormals(const ccHObject::Container &selectedEntities)
 	{
-		for (ccHObject* ent : selectedEntities)
-		{
-			bool lockedVertices;
-			ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(ent, &lockedVertices);
-			if (lockedVertices)
-			{
-				ecvUtils::DisplayLockedVerticesWarning(ent->getName(), selectedEntities.size() == 1);
-				continue;
-			}
-			
-			if (cloud && cloud->isA(CV_TYPES::POINT_CLOUD)) // TODO
-			{
-				ccPointCloud* ccCloud = static_cast<ccPointCloud*>(cloud);
-				if (ccCloud->hasNormals())
-				{
-					ccCloud->invertNormals();
-					ccCloud->showNormals(true);
-					//ccCloud->prepareDisplayForRefresh_recursive();
-				}
-			}
-		}
-		
-		return true;
+        for (ccHObject* ent : selectedEntities)
+        {
+            // is it a mesh?
+            ccMesh* mesh = ccHObjectCaster::ToMesh(ent);
+            if (mesh && mesh->hasNormals())
+            {
+                mesh->invertNormals();
+                mesh->showNormals(true);
+                continue;
+            }
+
+            // is it a cloud?
+            bool lockedVertices;
+            ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
+            if (cloud && cloud->hasNormals())
+            {
+                if (lockedVertices)
+                {
+                    ecvUtils::DisplayLockedVerticesWarning(ent->getName(), selectedEntities.size() == 1);
+                    continue;
+                }
+
+                cloud->invertNormals();
+                cloud->showNormals(true);
+            }
+        }
+
+        return true;
 	}
 		 
 	bool orientNormalsFM(const ccHObject::Container &selectedEntities, QWidget *parent)
@@ -1803,7 +1808,7 @@ namespace ccEntityAction
 		int value = QInputDialog::getInt(	parent,
 											"Orient normals (FM)", "Octree level",
 											s_defaultLevel,
-											1, CVLib::DgmOctree::MAX_OCTREE_LEVEL,
+											1, cloudViewer::DgmOctree::MAX_OCTREE_LEVEL,
 											1,
 											&ok);
 		if (!ok)
@@ -2339,7 +2344,7 @@ namespace ccEntityAction
 		}
 		
 		//build up corresponding distribution
-		CVLib::GenericDistribution* distrib = nullptr;
+		cloudViewer::GenericDistribution* distrib = nullptr;
 		{
 			ScalarType a = static_cast<ScalarType>(sDlg->getParam1());
 			ScalarType b = static_cast<ScalarType>(sDlg->getParam2());
@@ -2349,15 +2354,15 @@ namespace ccEntityAction
 			{
 				case 0: //Gauss
 				{
-					CVLib::NormalDistribution* N = new CVLib::NormalDistribution();
+					cloudViewer::NormalDistribution* N = new cloudViewer::NormalDistribution();
 					N->setParameters(a,b*b); //warning: we input sigma2 here (not sigma)
-					distrib = static_cast<CVLib::GenericDistribution*>(N);
+					distrib = static_cast<cloudViewer::GenericDistribution*>(N);
 					break;
 				}
 				case 1: //Weibull
-					CVLib::WeibullDistribution* W = new CVLib::WeibullDistribution();
+					cloudViewer::WeibullDistribution* W = new cloudViewer::WeibullDistribution();
 					W->setParameters(a,b,c);
-					distrib = static_cast<CVLib::GenericDistribution*>(W);
+					distrib = static_cast<cloudViewer::GenericDistribution*>(W);
 					break;
 			}
 		}
@@ -2419,7 +2424,7 @@ namespace ccEntityAction
 			QElapsedTimer eTimer;
 			eTimer.start();
 			
-			double chi2dist = CVLib::StatisticalTestingTools::testCloudWithStatisticalModel(distrib, pc, nn, pChi2, &pDlg, theOctree.data());
+			double chi2dist = cloudViewer::StatisticalTestingTools::testCloudWithStatisticalModel(distrib, pc, nn, pChi2, &pDlg, theOctree.data());
 			
 			ecvConsole::Print("[Chi2 Test] Timing: %3.2f ms.", eTimer.elapsed() / 1000.0);
 			ecvConsole::Print("[Chi2 Test] %s test result = %f", distrib->getName(), chi2dist);
@@ -2458,15 +2463,15 @@ namespace ccEntityAction
 		if (!pDlg.exec())
 			return false;
 		
-		CVLib::GenericDistribution* distrib = nullptr;
+		cloudViewer::GenericDistribution* distrib = nullptr;
 		{
 			switch (pDlg.getSelectedIndex())
 			{
 				case 0: //GAUSS
-					distrib = new CVLib::NormalDistribution();
+					distrib = new cloudViewer::NormalDistribution();
 					break;
 				case 1: //WEIBULL
-					distrib = new CVLib::WeibullDistribution();
+					distrib = new cloudViewer::WeibullDistribution();
 					break;
 				default:
 					Q_ASSERT(false);
@@ -2502,14 +2507,14 @@ namespace ccEntityAction
 				{
 					case 0: //GAUSS
 					{
-						CVLib::NormalDistribution* normal = static_cast<CVLib::NormalDistribution*>(distrib);
+						cloudViewer::NormalDistribution* normal = static_cast<cloudViewer::NormalDistribution*>(distrib);
 						description = QString("mean = %1 / std.dev. = %2").arg(normal->getMu(), 0, 'f', precision).arg(sqrt(normal->getSigma2()), 0, 'f', precision);
 					}
 					break;
 					
 					case 1: //WEIBULL
 					{
-						CVLib::WeibullDistribution* weibull = static_cast<CVLib::WeibullDistribution*>(distrib);
+						cloudViewer::WeibullDistribution* weibull = static_cast<cloudViewer::WeibullDistribution*>(distrib);
 						ScalarType a, b;
 						weibull->getParameters(a, b);
 						description = QString("a = %1 / b = %2 / shift = %3").arg(a, 0, 'f', precision).arg(b, 0, 'f', precision).arg(weibull->getValueShift(), 0, 'f', precision);
@@ -2543,7 +2548,7 @@ namespace ccEntityAction
 				//compute the Chi2 distance
 				{
 					unsigned finalNumberOfClasses = 0;
-					const double chi2dist = CVLib::StatisticalTestingTools::computeAdaptativeChi2Dist(distrib, pc, 0, finalNumberOfClasses, false, nullptr, nullptr, histo.data(), npis.data());
+					const double chi2dist = cloudViewer::StatisticalTestingTools::computeAdaptativeChi2Dist(distrib, pc, 0, finalNumberOfClasses, false, nullptr, nullptr, histo.data(), npis.data());
 
 					if (chi2dist >= 0.0)
 					{
@@ -2564,7 +2569,7 @@ namespace ccEntityAction
 					for (unsigned i = 0; i < n; ++i)
 					{
 						ScalarType v = pc->getPointScalarValue(i);
-						if (CVLib::ScalarField::ValidValue(v))
+						if (cloudViewer::ScalarField::ValidValue(v))
 						{
 							squareSum += static_cast<double>(v) * v;
 							++counter;

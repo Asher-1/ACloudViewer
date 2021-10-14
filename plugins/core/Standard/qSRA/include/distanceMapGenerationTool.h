@@ -22,7 +22,7 @@
 #include <QSharedPointer>
 #include <QImage>
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 // ECV_DB_LIB

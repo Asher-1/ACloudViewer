@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@ void pybind_tetramesh(py::module &m) {
     trianglemesh
             .def(py::init<const std::vector<Eigen::Vector3d> &,
                           const std::vector<Eigen::Vector4i,
-                                            CVLib::utility::Vector4i_allocator> &>(),
+                                            cloudViewer::utility::Vector4i_allocator> &>(),
                  "Create a tetrahedra mesh from vertices and tetra indices",
                  "vertices"_a, "tetras"_a)
             .def("__repr__",

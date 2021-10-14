@@ -49,45 +49,36 @@ Windows
 -------
 
 1. Setup Python binding environments
-````````````````````````````````````
 
-Most steps are the steps for Ubuntu: :ref:`compilation_unix_python`.
-Instead of ``which``, check the Python path with ``where python``
-
+	Most steps are the steps for Ubuntu: :ref:`compilation_unix_python`.
+	Instead of ``which``, check the Python path with ``where python``
 
 2. Config
-`````````
 
-.. code-block:: bat
-
-    mkdir build
-    cd build
-
-    cmake -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
-	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake  \
-      ..
-
-    :: Specify the generator based on your Visual Studio version
-    :: If CMAKE_INSTALL_PREFIX is a system folder, admin access is needed for installation
-    cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="<cloudViewer_install_directory>" ..
+	    mkdir build
+	    cd build
+	
+	    cmake -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
+		-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake  \
+	      ..
+	
+	    :: Specify the generator based on your Visual Studio version
+	    :: If CMAKE_INSTALL_PREFIX is a system folder, admin access is needed for installation
+	    cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="<cloudViewer_install_directory>" ..
 
 3. Build
-````````
 
-.. code-block:: bat
+    	cmake --build . --config Release --target ALL_BUILD
 
-    cmake --build . --config Release --target ALL_BUILD
-
-Alternatively, you can open the ``CloudViewer.sln`` project with Visual Studio and
-build the same target.
+	Alternatively, you can open the ``CloudViewer.sln`` project with Visual Studio and
+	build the same target.
 
 4. Install
-``````````
 
-To install CloudViewer C++ library, build the ``INSTALL`` target in terminal or
-in Visual Studio.
+	To install CloudViewer C++ library, build the ``INSTALL`` target in terminal or
+	in Visual Studio.
 
-    cmake --build . --config Release --target INSTALL
+    	cmake --build . --config Release --target INSTALL
 
 To link a C++ project against the CloudViewer C++ library, please refer to
 :ref:`create_cplusplus_project`.
@@ -118,7 +109,6 @@ Compilation options
 -------------------
 
 OpenMP
-``````
 
 We automatically detect if the C++ compiler supports OpenMP and compile CloudViewer
 with it if the compilation option ``WITH_OPENMP`` is ``ON``.
@@ -133,18 +123,16 @@ directory, run
     cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..
     make -j
 
-.. note:: This workaround has some compatibility issues with the source code of
-    GLFW included in ``3rdparty``.
-    Make sure CloudViewer is linked against GLFW installed on the OS.
+This workaround has some compatibility issues with the source code of GLFW included in ``3rdparty``.
+Make sure CloudViewer is linked against GLFW installed on the OS.
 
 ML Module
-`````````
 
 The ML module consists of primitives like operators and layers as well as high
 level code for models and pipelines. To build the operators and layers, set
 ``BUILD_PYTORCH_OPS=ON`` and/or ``BUILD_TENSORFLOW_OPS=ON``.  Don't forget to also
 enable ``BUILD_CUDA_MODULE=ON`` for GPU support. To include the models and
-pipelines from CloudViewer-ML in the python package, set ``BUNDLE_OPEN3D_ML=ON`` and
+pipelines from CloudViewer-ML in the python package, set ``BUNDLE_CLOUDVIEWER_ML=ON`` and
 ``OPEN3D_ML_ROOT`` to the CloudViewer-ML repository. You can directly download
 CloudViewer-ML from GitHub during the build with
 ``OPEN3D_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git``.
@@ -152,19 +140,16 @@ CloudViewer-ML from GitHub during the build with
 The following example shows the command for building the ops with GPU support
 for all supported ML frameworks and bundling the high level CloudViewer-ML code.
 
-.. code-block:: bash
-
     # In the build directory
     cmake -DBUILD_CUDA_MODULE=ON \
           -DBUILD_PYTORCH_OPS=ON \
           -DBUILD_TENSORFLOW_OPS=ON \
-          -DBUNDLE_OPEN3D_ML=ON \
+          -DBUNDLE_CLOUDVIEWER_ML=ON \
           -DOPEN3D_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
           ..
     # Install the python wheel with pip
     make -j install-pip-package
 
-.. note::
     Importing Python libraries compiled with different CXX ABI may cause segfaults
     in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
     and TensorFlow Python releases use the older CXX ABI; while when they are
@@ -218,8 +203,6 @@ Unit test
 
 To build and run C++ unit tests:
 
-.. code-block:: bash
-
     cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
     ./bin/tests
@@ -227,9 +210,16 @@ To build and run C++ unit tests:
 
 To run Python unit tests:
 
-.. code-block:: bash
-
     # Activate virtualenv first
     pip install pytest
     make install-pip-package
     pytest ../python/test
+
+Upload whl fies
+----------
+
+	pip install twine
+	twine upload dist/*
+
+	Enter your username: Asher-1
+	Enter your password: ***

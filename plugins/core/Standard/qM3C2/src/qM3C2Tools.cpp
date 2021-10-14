@@ -46,16 +46,16 @@
 // ComputeCorePointNormal parameters
 static struct
 {
-	CVLib::GenericIndexedCloud* corePoints;
+	cloudViewer::GenericIndexedCloud* corePoints;
 	ccGenericPointCloud* sourceCloud;
-	CVLib::DgmOctree* octree;
+	cloudViewer::DgmOctree* octree;
 	unsigned char octreeLevel;
 	std::vector<PointCoordinateType> radii;
 	NormsIndexesTableType* normCodes;
 	ccScalarField* normalScale;
 	bool invalidNormals;
 
-	CVLib::NormalizedProgress* nProgress;
+	cloudViewer::NormalizedProgress* nProgress;
 	bool processCanceled;
 
 } s_corePointsNormalsParams;
@@ -69,8 +69,8 @@ void ComputeCorePointNormal(unsigned index)
 	ScalarType bestScale = NAN_VALUE;
 
 	const CCVector3* P = s_corePointsNormalsParams.corePoints->getPoint(index);
-	CVLib::DgmOctree::NeighboursSet neighbours;
-	CVLib::ReferenceCloud subset(s_corePointsNormalsParams.sourceCloud);
+	cloudViewer::DgmOctree::NeighboursSet neighbours;
+	cloudViewer::ReferenceCloud subset(s_corePointsNormalsParams.sourceCloud);
 
 	int n = s_corePointsNormalsParams.octree->getPointsInSphericalNeighbourhood(*P,
 																				s_corePointsNormalsParams.radii.back(), //we use the biggest neighborhood
@@ -105,12 +105,12 @@ void ComputeCorePointNormal(unsigned index)
 			//if (subset.size() < 10) //DGM -> not implemented in Brodu's code?!
 			//	break;
 
-			CVLib::Neighbourhood Z(&subset);
+			cloudViewer::Neighbourhood Z(&subset);
 
 			/*** we manually compute the least squares best fitting plane (so as to get the PCA eigen values) ***/
 
 			//we determine the plane normal by computing the smallest eigen value of M = 1/n * S[(p-?*(p-?']
-			CVLib::SquareMatrixd eigVectors;
+			cloudViewer::SquareMatrixd eigVectors;
 			std::vector<double> eigValues;
 			if (Jacobi<double>::ComputeEigenValuesAndVectors(Z.computeCovarianceMatrix(), eigVectors, eigValues, true))
 			{
@@ -186,15 +186,15 @@ void ComputeCorePointNormal(unsigned index)
 	}
 }
 
-bool qM3C2Normals::ComputeCorePointsNormals(CVLib::GenericIndexedCloud* corePoints,
+bool qM3C2Normals::ComputeCorePointsNormals(cloudViewer::GenericIndexedCloud* corePoints,
 											NormsIndexesTableType* corePointsNormals,
 											ccGenericPointCloud* sourceCloud,
 											const std::vector<PointCoordinateType>& sortedRadii,
 											bool& invalidNormals,
 											int maxThreadCount/*=0*/,
 											ccScalarField* normalScale/*=0*/,
-											CVLib::GenericProgressCallback* progressCb/*=0*/,
-											CVLib::DgmOctree* inputOctree/*=0*/)
+											cloudViewer::GenericProgressCallback* progressCb/*=0*/,
+											cloudViewer::DgmOctree* inputOctree/*=0*/)
 {
 	assert(corePoints && sourceCloud && corePointsNormals);
 	assert(!sortedRadii.empty());
@@ -215,10 +215,10 @@ bool qM3C2Normals::ComputeCorePointsNormals(CVLib::GenericIndexedCloud* corePoin
 		normalScale->fill(NAN_VALUE);
 	}
 
-	CVLib::DgmOctree* theOctree = inputOctree;
+	cloudViewer::DgmOctree* theOctree = inputOctree;
 	if (!theOctree)
 	{
-		theOctree = new CVLib::DgmOctree(sourceCloud);
+		theOctree = new cloudViewer::DgmOctree(sourceCloud);
 		if (theOctree->build() == 0)
 		{
 			delete theOctree;
@@ -226,7 +226,7 @@ bool qM3C2Normals::ComputeCorePointsNormals(CVLib::GenericIndexedCloud* corePoin
 		}
 	}
 
-	CVLib::NormalizedProgress nProgress(progressCb, corePtsCount);
+	cloudViewer::NormalizedProgress nProgress(progressCb, corePtsCount);
 	if (progressCb)
 	{
 		if (progressCb->textCanBeEdited())
@@ -322,10 +322,10 @@ bool qM3C2Normals::ComputeCorePointsNormals(CVLib::GenericIndexedCloud* corePoin
 static struct
 {
 	NormsIndexesTableType* normsCodes;
-	CVLib::GenericIndexedCloud* normCloud;
-	CVLib::GenericIndexedCloud* orientationCloud;
+	cloudViewer::GenericIndexedCloud* normCloud;
+	cloudViewer::GenericIndexedCloud* orientationCloud;
 
-	CVLib::NormalizedProgress* nProgress;
+	cloudViewer::NormalizedProgress* nProgress;
 	bool processCanceled;
 
 } s_normOriWithCloud;
@@ -371,11 +371,11 @@ static void OrientPointNormalWithCloud(unsigned index)
 	}
 }
 
-bool qM3C2Normals::UpdateNormalOrientationsWithCloud(	CVLib::GenericIndexedCloud* normCloud,
-														NormsIndexesTableType& normsCodes,
-														CVLib::GenericIndexedCloud* orientationCloud,
-														int maxThreadCount/*=0*/,
-														CVLib::GenericProgressCallback* progressCb/*=0*/)
+bool qM3C2Normals::UpdateNormalOrientationsWithCloud(	cloudViewer::GenericIndexedCloud* normCloud,
+                                                        NormsIndexesTableType& normsCodes,
+                                                        cloudViewer::GenericIndexedCloud* orientationCloud,
+                                                        int maxThreadCount/*=0*/,
+                                                        cloudViewer::GenericProgressCallback* progressCb/*=nullptr*/)
 {
 	//input normals
 	unsigned count = normsCodes.currentSize();
@@ -395,7 +395,7 @@ bool qM3C2Normals::UpdateNormalOrientationsWithCloud(	CVLib::GenericIndexedCloud
 		return true;
 	}
 
-	CVLib::NormalizedProgress nProgress(progressCb, count);
+	cloudViewer::NormalizedProgress nProgress(progressCb, count);
 	if (progressCb)
 	{
 		if (progressCb->textCanBeEdited())
@@ -487,7 +487,7 @@ void qM3C2Normals::MakeNormalsHorizontal(NormsIndexesTableType& normsCodes)
 /** Uses the common definition using mid-point average in the even case
 	just as the original m3c2 code by N. Brodu.
 **/
-static double Median(const CVLib::DgmOctree::NeighboursSet& set, size_t begin = 0, size_t count = 0)
+static double Median(const cloudViewer::DgmOctree::NeighboursSet& set, size_t begin = 0, size_t count = 0)
 {
 	if (count == 0)
 	{
@@ -511,7 +511,7 @@ static double Median(const CVLib::DgmOctree::NeighboursSet& set, size_t begin = 
 /** Uses Mathworld's definition (http://mathworld.wolfram.com/InterquartileRange.html)
 	as the original m3c2 code by N. Brodu.
 	**/
-double Interquartile(const CVLib::DgmOctree::NeighboursSet& set)
+double Interquartile(const cloudViewer::DgmOctree::NeighboursSet& set)
 {
 	if (set.empty())
 		return NAN_VALUE;
@@ -526,7 +526,8 @@ double Interquartile(const CVLib::DgmOctree::NeighboursSet& set)
 	return q3 - q1;
 }
 
-void qM3C2Tools::ComputeStatistics(CVLib::DgmOctree::NeighboursSet& set, bool useMedian, double& meanOrMedian, double& stdDevOrIQR)
+void qM3C2Tools::ComputeStatistics(cloudViewer::DgmOctree::NeighboursSet& set,
+                                   bool useMedian, double& meanOrMedian, double& stdDevOrIQR)
 {
 	size_t count = set.size();
 	if (count == 0)
@@ -545,7 +546,7 @@ void qM3C2Tools::ComputeStatistics(CVLib::DgmOctree::NeighboursSet& set, bool us
 	if (useMedian)
 	{
 		//sort neighbors by distance
-		std::sort(set.begin(), set.end(), CVLib::DgmOctree::PointDescriptor::distComp);
+		std::sort(set.begin(), set.end(), cloudViewer::DgmOctree::PointDescriptor::distComp);
 
 		meanOrMedian = Median(set);
 		stdDevOrIQR = Interquartile(set);
@@ -572,12 +573,12 @@ void qM3C2Tools::ComputeStatistics(CVLib::DgmOctree::NeighboursSet& set, bool us
 }
 
 bool qM3C2Tools::GuessBestParams(	ccPointCloud* cloud1,
-									ccPointCloud* cloud2,
-									unsigned minPoints4Stats,
-									qM3C2Tools::GuessedParams& params,
-									bool fastMode,
-									ecvMainAppInterface* app/*=0*/,
-									unsigned probingCount/*=1000*/)
+                                        ccPointCloud* cloud2,
+                                        unsigned minPoints4Stats,
+                                        qM3C2Tools::GuessedParams& params,
+                                        bool fastMode,
+                                        ecvMainAppInterface* app/*=nullptr*/,
+                                        unsigned probingCount/*=1000*/)
 {
 	//invalid parameters?
 	if (!cloud1 || !cloud2 || minPoints4Stats == 0)
@@ -649,8 +650,9 @@ bool qM3C2Tools::GuessBestParams(	ccPointCloud* cloud1,
 		while (!hasBestNormLevel || !hasBestProjLevel)
 		{
 			unsigned char level = octree1->findBestLevelForAGivenNeighbourhoodSizeExtraction(scale);
-			if (app)
-				app->dispToConsole(QString("[M3C2::auto] Test scale: %1 (level %2, %3 samples)").arg(scale).arg(level).arg(probingCount));
+			if (app) {
+                            app->dispToConsole(QString("[M3C2::auto] Test scale: %1 (level %2, %3 samples)").arg(scale).arg(level).arg(probingCount));
+                        }
 
 			double sumPopulation = 0;
 			double sumPopulation2 = 0;
@@ -674,7 +676,7 @@ bool qM3C2Tools::GuessBestParams(	ccPointCloud* cloud1,
 
 				if (!hasBestNormLevel && n >= 12)
 				{
-					CVLib::ReferenceCloud neighborCloud(cloud1);
+					cloudViewer::ReferenceCloud neighborCloud(cloud1);
 					if (!neighborCloud.resize(static_cast<unsigned>(n)))
 					{
 						//not enough memory!
@@ -689,11 +691,11 @@ bool qM3C2Tools::GuessBestParams(	ccPointCloud* cloud1,
 						neighborCloud.setPointIndex(j, neighbors[j].pointIndex);
 					}
 
-					CVLib::Neighbourhood Yk(&neighborCloud);
+					cloudViewer::Neighbourhood Yk(&neighborCloud);
 					const PointCoordinateType* lsPlane = Yk.getLSPlane();
 					if (lsPlane)
 					{
-						ScalarType d = CVLib::DistanceComputationTools::computePoint2PlaneDistance(P, lsPlane);
+						ScalarType d = cloudViewer::DistanceComputationTools::computePoint2PlaneDistance(P, lsPlane);
 						//we compute relative roughness
 						d /= scale;
 						sumRoughness += d*d;//fabs(d);
@@ -767,7 +769,7 @@ bool qM3C2Tools::GuessBestParams(	ccPointCloud* cloud1,
 						if (fabs(meanNormal.u[maxDim]) < fabs(meanNormal.z))
 							maxDim = 2;
 
-						params.preferredDimension = 2 * maxDim;
+						params.preferredDimension = maxDim;
 					}
 					else
 					{

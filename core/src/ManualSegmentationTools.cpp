@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -29,13 +29,13 @@
 #include <map>
 
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 ReferenceCloud* ManualSegmentationTools::segment(GenericIndexedCloudPersist* aCloud, const Polyline* poly, bool keepInside, const float* viewMat)
 {
 	assert(poly && aCloud);
 
-	CVLib::SquareMatrix* trans = (viewMat ? new CVLib::SquareMatrix(viewMat) : nullptr);
+	cloudViewer::SquareMatrix* trans = (viewMat ? new cloudViewer::SquareMatrix(viewMat) : nullptr);
 
 	ReferenceCloud* Y = new ReferenceCloud(aCloud);
 
@@ -166,7 +166,7 @@ ReferenceCloud* ManualSegmentationTools::segment(	GenericIndexedCloudPersist* cl
 	return Y;
 }
 
-ReferenceCloud * CVLib::ManualSegmentationTools::segment(	GenericIndexedCloudPersist * cloud, 
+ReferenceCloud * cloudViewer::ManualSegmentationTools::segment(	GenericIndexedCloudPersist * cloud, 
 															std::vector<ScalarType> values, 
 															bool outside/*=false*/)
 {

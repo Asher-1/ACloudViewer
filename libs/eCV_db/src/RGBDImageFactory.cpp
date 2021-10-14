@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,11 +26,11 @@
 
 #include "RGBDImage.h"
 
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace geometry {
-	using namespace CVLib;
+	using namespace cloudViewer;
 
 std::shared_ptr<RGBDImage> RGBDImage::CreateFromColorAndDepth(
         const Image &color,
@@ -38,7 +38,7 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromColorAndDepth(
         double depth_scale /* = 1000.0*/,
         double depth_trunc /* = 3.0*/,
         bool convert_rgb_to_intensity /* = true*/) {
-    std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
+    std::shared_ptr<RGBDImage> rgbd_image = cloudViewer::make_shared<RGBDImage>();
     if (color.height_ != depth.height_ || color.width_ != depth.width_) {
         utility::LogError(
                 "[CreateFromColorAndDepth] Unsupported image "
@@ -77,7 +77,7 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromSUNFormat(
         const Image &color,
         const Image &depth,
         bool convert_rgb_to_intensity /* = true*/) {
-    std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
+    std::shared_ptr<RGBDImage> rgbd_image = cloudViewer::make_shared<RGBDImage>();
     if (color.height_ != depth.height_ || color.width_ != depth.width_) {
         utility::LogError(
                 "[CreateRGBDImageFromSUNFormat] Unsupported image format.");
@@ -98,7 +98,7 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromNYUFormat(
         const Image &color,
         const Image &depth,
         bool convert_rgb_to_intensity /* = true*/) {
-    std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
+    std::shared_ptr<RGBDImage> rgbd_image = cloudViewer::make_shared<RGBDImage>();
     if (color.height_ != depth.height_ || color.width_ != depth.width_) {
         utility::LogError(
                 "[CreateRGBDImageFromNYUFormat] Unsupported image format.");

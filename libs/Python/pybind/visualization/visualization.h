@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #pragma once
 
 #include "pybind/cloudViewer_pybind.h"
+#include "pybind11/functional.h"
 
 // We cannot give out a shared_ptr to objects like Window which reference
 // Filament objects, because we cannot guarantee that the Python script is
@@ -79,6 +80,8 @@ void pybind_renderoption_method(py::module &m);
 void pybind_viewcontrol_method(py::module &m);
 void pybind_visualizer_method(py::module &m);
 void pybind_visualization_utility_methods(py::module &m);
+
+void pybind_o3dvisualizer(py::module &m);
 
 }  // namespace visualization
 }  // namespace cloudViewer

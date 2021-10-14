@@ -89,18 +89,18 @@ public:
 	QString getEquationString() const;
 
 	//! Fits a quadric primitive on a cloud
-	/** The cloud can be any CVLib::GenericIndexedCloudPersist-derived object.
+	/** The cloud can be any cloudViewer::GenericIndexedCloudPersist-derived object.
 		\param[in] cloud input cloud
 		\param[out] rms quadric fitting rms (optional)
 		\return quadric primitive (if successful)
 	**/
-	static ccQuadric* Fit(CVLib::GenericIndexedCloudPersist * cloud, double* rms/*=0*/);
+	static ccQuadric* Fit(cloudViewer::GenericIndexedCloudPersist * cloud, double* rms/*=0*/);
 
 protected:
 
 	//inherited from ccGenericPrimitive
 	virtual bool toFile_MeOnly(QFile& out) const override;
-	virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 	virtual bool buildUp() override;
 
 	//! Min corner

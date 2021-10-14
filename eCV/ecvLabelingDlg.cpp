@@ -26,7 +26,7 @@ ccLabelingDlg::ccLabelingDlg(QWidget* parent/*=0*/)
 {
 	setupUi(this);
 
-	octreeLevelSpinBox->setMaximum(CVLib::DgmOctree::MAX_OCTREE_LEVEL);
+	octreeLevelSpinBox->setMaximum(cloudViewer::DgmOctree::MAX_OCTREE_LEVEL);
 }
 
 int ccLabelingDlg::getOctreeLevel()

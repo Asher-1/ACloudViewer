@@ -43,24 +43,32 @@ MLSSmoothingUpsampling::MLSSmoothingUpsampling()
 										 tr("Smooth the cloud using Moving Least Sqares algorithm, estimate normals and optionally upsample"),
 									     ":/toolbar/PclAlgorithms/icons/mls_smoothing.png"))
     , m_dialog(nullptr)
+    , m_dialogHasParent(false)
 	, m_parameters(new PCLModules::MLSParameters)
 {
 }
 
 MLSSmoothingUpsampling::~MLSSmoothingUpsampling()
 {
-	//we must delete parent-less dialogs ourselves!
-    if (m_dialog && m_dialog->parent() == nullptr)
-		delete m_dialog;
+    //we must delete parent-less dialogs ourselves!
+    if (!m_dialogHasParent && m_dialog && m_dialog->parent() == nullptr)
+    {
+        delete m_dialog;
+    }
 
 	if (m_parameters)
-		delete m_parameters;
+    {
+        delete m_parameters;
+    }
 }
 
 int MLSSmoothingUpsampling::openInputDialog()
 {
 	if (!m_dialog)
+    {
         m_dialog = new MLSDialog(m_app ? m_app->getMainWindow() : nullptr);
+        m_dialogHasParent = (m_app->getMainWindow() != nullptr);
+    }
 
 	return m_dialog->exec() ? 1 : 0;
 }
@@ -140,7 +148,7 @@ int MLSSmoothingUpsampling::compute()
 	PCLCloud::Ptr sm_normals(new PCLCloud);
 	TO_PCL_CLOUD(*normals, *sm_normals);
 
-	ccPointCloud* new_cloud = sm2ccConverter(sm_normals).getCloud();
+    ccPointCloud* new_cloud = pcl2cc::Convert(*sm_normals);
 	if (!new_cloud)
 	{
 		//conversion failed (not enough memory?)

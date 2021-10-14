@@ -21,6 +21,8 @@
 //ECV_DB_LIB
 #include <CVLog.h>
 #include <ecvMesh.h>
+#include <ecvFacet.h>
+#include <ecvPolyline.h>
 #include <ecvDisplayTools.h>
 #include <ecvGenericTransformTool.h>
 
@@ -33,7 +35,7 @@ ccGraphicalTransformationTool::ccGraphicalTransformationTool(QWidget* parent)
 
 	connect(pauseButton,    &QAbstractButton::toggled,	this, &ccGraphicalTransformationTool::pause);
 	connect(okButton,       &QAbstractButton::clicked,	this, &ccGraphicalTransformationTool::apply);
-	connect(razButton,	  &QAbstractButton::clicked,	this, &ccGraphicalTransformationTool::reset);
+    connect(razButton,	    &QAbstractButton::clicked,	this, &ccGraphicalTransformationTool::reset);
 	connect(cancelButton,   &QAbstractButton::clicked,	this, &ccGraphicalTransformationTool::cancel);
 
 	//add shortcuts
@@ -257,14 +259,24 @@ bool ccGraphicalTransformationTool::addEntity(ccHObject* entity)
 		}
 	}
 
-	m_toTransform.addChild(entity,ccHObject::DP_NONE);
+    // TODO+ add ccFacet, ccCoordinateSystem and ccSensor support!
+    if (entity->isA(CV_TYPES::FACET) ||
+        entity->isKindOf(CV_TYPES::SENSOR) ||
+        entity->isA(CV_TYPES::COORDINATESYSTEM))
+    {
+        CVLog::Warning(QString("[Graphical Transformation Tool] Can't transform entity '%1' cause it's not supported now!").arg(entity->getName()));
+        return false;
+    }
+    else {
+        m_toTransform.addChild(entity,ccHObject::DP_NONE);
+    }
 
 	return true;
 }
 
 unsigned ccGraphicalTransformationTool::getNumberOfValidEntities() const
 {
-	return m_toTransform.getChildrenNumber();
+    return m_toTransform.getChildrenNumber();
 }
 
 void ccGraphicalTransformationTool::setRotationCenter(CCVector3d & center)

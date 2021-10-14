@@ -461,7 +461,7 @@
        <item>
         <widget class="QCheckBox" name="AutoPickCenterOfRotation">
          <property name="toolTip">
-          <string>Reset center of rotation when camera is reset.</string>
+          <string>reset center of rotation when camera is reset.</string>
          </property>
          <property name="text">
           <string>Auto Pick Center of Rotation When Left Button is Clicked</string>

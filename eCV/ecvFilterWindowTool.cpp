@@ -67,14 +67,13 @@ ecvFilterWindowTool::ecvFilterWindowTool(QMainWindow* parent)
 {
 	setupUi(this);
 
-	connect(resetButton, SIGNAL(clicked()), this, SLOT(reset()));
-	connect(cancelButton, SIGNAL(clicked()), this, SLOT(cancel()));
-
-	connect(exportButton, SIGNAL(clicked()), this, SLOT(exportSlice()));
-	connect(exportMultButton, SIGNAL(clicked()), this, SLOT(exportMultSlices()));
-	connect(extractContourToolButton, SIGNAL(clicked()), this, SLOT(extractContour()));
-	connect(removeLastContourToolButton, SIGNAL(clicked()), this, SLOT(removeLastContour()));
-	connect(restoreToolButton, SIGNAL(clicked()), this, SLOT(restoreLastBox()));
+    connect(resetButton,                    &QToolButton::clicked, this, &ecvFilterWindowTool::reset);
+    connect(cancelButton,                   &QToolButton::clicked, this, &ecvFilterWindowTool::cancel);
+    connect(exportButton,                   &QToolButton::clicked, this, &ecvFilterWindowTool::exportSlice);
+    connect(exportMultButton,               &QToolButton::clicked, this, &ecvFilterWindowTool::exportMultSlices);
+    connect(extractContourToolButton,       &QToolButton::clicked, this, &ecvFilterWindowTool::extractContour);
+    connect(removeLastContourToolButton,    &QToolButton::clicked, this, &ecvFilterWindowTool::removeLastContour);
+    connect(restoreToolButton,              &QToolButton::clicked, this, &ecvFilterWindowTool::restoreLastBox);
 
 	QMenu* selectionModeMenu = new QMenu(this);
 	selectionModeMenu->addAction(actionSegmentationExtraction);
@@ -83,14 +82,14 @@ ecvFilterWindowTool::ecvFilterWindowTool(QMainWindow* parent)
 	selectionModelButton->setMenu(selectionModeMenu);
 
 	//selection modes
-	connect(actionSegmentationExtraction, SIGNAL(triggered()), this, SLOT(doSetClipMode()));
-	connect(actionPolylineExtraction, SIGNAL(triggered()), this, SLOT(doSetPolylineMode()));
+    connect(actionSegmentationExtraction,   &QAction::triggered, this, &ecvFilterWindowTool::doSetClipMode);
+    connect(actionPolylineExtraction,       &QAction::triggered, this, &ecvFilterWindowTool::doSetPolylineMode);
 
 	//add shortcuts
 	addOverridenShortcut(Qt::Key_R); //return key for the "reset" button
 	addOverridenShortcut(Qt::Key_Escape); //escape key for the "cancel" button
 	addOverridenShortcut(Qt::Key_Tab);    //tab key to switch between rectangular and polygonal selection modes
-	connect(this, SIGNAL(shortcutTriggered(int)), this, SLOT(onShortcutTriggered(int)));
+    connect(this, &ccOverlayDialog::shortcutTriggered, this, &ecvFilterWindowTool::onShortcutTriggered);
 }
 
 ecvFilterWindowTool::~ecvFilterWindowTool()
@@ -461,7 +460,7 @@ static unsigned ComputeGridDimensions(	const ccBBox& localBox,
 	{
 		if (processDim[d])
 		{
-            if (CVLib::LessThanEpsilon(cellSizePlusGap.u[d]))
+            if (cloudViewer::LessThanEpsilon(cellSizePlusGap.u[d]))
 			{
 				CVLog::Error("Box size (plus gap) is null! Can't apply repetitive process!");
 				return 0;
@@ -630,7 +629,7 @@ bool ecvFilterWindowTool::extractSlicesAndContours
 				unsigned cellCount = ComputeGridDimensions(localBox, repeatDimensions, indexMins, indexMaxs, gridDim, gridOrigin, cellSizePlusGap);
 
 				//we'll potentially create up to one (ref.) cloud per input loud and per cell
-				std::vector<CVLib::ReferenceCloud*> refClouds;
+				std::vector<cloudViewer::ReferenceCloud*> refClouds;
 				refClouds.resize(cellCount * clouds.size(), 0);
 
 				if (progressDialog)
@@ -657,7 +656,7 @@ bool ecvFilterWindowTool::extractSlicesAndContours
 					}
 					QApplication::processEvents();
 
-					CVLib::NormalizedProgress nProgress(progressDialog, pointCount);
+					cloudViewer::NormalizedProgress nProgress(progressDialog, pointCount);
 					for (unsigned i = 0; i < pointCount; ++i)
 					{
 						CCVector3 P = *cloud->getPoint(i);
@@ -684,10 +683,10 @@ bool ecvFilterWindowTool::extractSlicesAndContours
 							int cloudIndex = ((zi - indexMins[2]) * static_cast<int>(gridDim[1]) + (yi - indexMins[1])) * static_cast<int>(gridDim[0]) + (xi - indexMins[0]);
 							assert(cloudIndex >= 0 && static_cast<size_t>(cloudIndex)* clouds.size() + ci < refClouds.size());
 
-							CVLib::ReferenceCloud*& destCloud = refClouds[cloudIndex * clouds.size() + ci];
+							cloudViewer::ReferenceCloud*& destCloud = refClouds[cloudIndex * clouds.size() + ci];
 							if (!destCloud)
 							{
-								destCloud = new CVLib::ReferenceCloud(cloud);
+								destCloud = new cloudViewer::ReferenceCloud(cloud);
 								++subCloudsCount;
 							}
 
@@ -728,7 +727,7 @@ bool ecvFilterWindowTool::extractSlicesAndContours
 							for (size_t ci = 0; ci != clouds.size(); ++ci)
 							{
 								ccGenericPointCloud* cloud = clouds[ci];
-								CVLib::ReferenceCloud* destCloud = refClouds[cloudIndex * clouds.size() + ci];
+								cloudViewer::ReferenceCloud* destCloud = refClouds[cloudIndex * clouds.size() + ci];
 								if (destCloud) //some slices can be empty!
 								{
 									//generate slice from previous selection

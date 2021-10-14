@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,9 @@
 
 #include "FileSystem.h"
 #include "CVPlatform.h"
-#include "Console.h"
+#include "Logging.h"
+
+#include <fcntl.h>
 
 #include <algorithm>
 #include <cstdio>
@@ -45,9 +47,10 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <cstring>
 #endif
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 namespace filesystem {
 
@@ -80,6 +83,10 @@ std::string GetFileNameWithoutDirectory(const std::string &filename) {
     }
 }
 
+std::string GetFileBaseName(const std::string &filename) {
+    return GetFileNameWithoutExtension(GetFileNameWithoutDirectory(filename));
+}
+
 std::string GetFileParentDirectory(const std::string &filename) {
     size_t slash_pos = filename.find_last_of("/\\");
     if (slash_pos == std::string::npos) {
@@ -90,7 +97,9 @@ std::string GetFileParentDirectory(const std::string &filename) {
 }
 
 std::string GetRegularizedDirectoryName(const std::string &directory) {
-    if (directory.back() != '/' && directory.back() != '\\') {
+    if (directory.empty()) {
+        return "/";
+    } else if (directory.back() != '/' && directory.back() != '\\') {
         return directory + "/";
     } else {
         return directory;
@@ -99,13 +108,21 @@ std::string GetRegularizedDirectoryName(const std::string &directory) {
 
 std::string GetWorkingDirectory() {
     char buff[PATH_MAX + 1];
-    char* info = getcwd(buff, PATH_MAX + 1);
-    CVLib::utility::LogInfo(info);
-    return std::string(buff);
+    char *flag = nullptr;
+#ifdef CV_WINDOWS
+    flag = _getcwd(buff, PATH_MAX + 1);
+#else
+    flag = getcwd(buff, PATH_MAX + 1);
+#endif
+    if (flag) {
+        return std::string(buff);
+    } else {
+        return std::string("");
+    }
 }
 
-std::vector<std::string> GetPathComponents(const std::string& path) {
-    auto SplitByPathSeparators = [](const std::string& path) {
+std::vector<std::string> GetPathComponents(const std::string &path) {
+    auto SplitByPathSeparators = [](const std::string &path) {
         std::vector<std::string> components;
         // Split path by '/' and '\'
         if (!path.empty()) {
@@ -113,7 +130,7 @@ std::vector<std::string> GetPathComponents(const std::string& path) {
             while (end < path.size()) {
                 size_t start = end;
                 while (end < path.size() && path[end] != '\\' &&
-                    path[end] != '/') {
+                       path[end] != '/') {
                     end++;
                 }
                 if (end > start) {
@@ -134,8 +151,7 @@ std::vector<std::string> GetPathComponents(const std::string& path) {
         if (path == "/") {
             // absolute path; the "/" component will be added
             // later, so don't do anything here
-        }
-        else {
+        } else {
             pathComponents.push_back(".");
         }
     }
@@ -146,33 +162,33 @@ std::vector<std::string> GetPathComponents(const std::string& path) {
     // Check for Windows full path (e.g. "d:")
     if (isRelative && pathComponents[0].size() >= 2 &&
         ((firstChar >= 'a' && firstChar <= 'z') ||
-            (firstChar >= 'A' && firstChar <= 'Z')) &&
+         (firstChar >= 'A' && firstChar <= 'Z')) &&
         pathComponents[0][1] == ':') {
         isRelative = false;
         isWindowsPath = true;
     }
 
     std::vector<std::string> components;
-    if (!isWindowsPath) {
-        components.push_back("/");
-    }
     if (isRelative) {
         auto cwd = utility::filesystem::GetWorkingDirectory();
         auto cwdComponents = SplitByPathSeparators(cwd);
         components.insert(components.end(), cwdComponents.begin(),
-            cwdComponents.end());
-    }
-    else {
+                          cwdComponents.end());
+        if (cwd[0] != '/') {
+            isWindowsPath = true;
+        }
+    } else {
         // absolute path, don't need any prefix
     }
+    if (!isWindowsPath) {
+        components.insert(components.begin(), "/");
+    }
 
-    for (auto& dir : pathComponents) {
+    for (auto &dir : pathComponents) {
         if (dir == ".") { /* ignore */
-        }
-        else if (dir == "..") {
+        } else if (dir == "..") {
             components.pop_back();
-        }
-        else {
+        } else {
             components.push_back(dir);
         }
     }
@@ -181,7 +197,11 @@ std::vector<std::string> GetPathComponents(const std::string& path) {
 }
 
 bool ChangeWorkingDirectory(const std::string &directory) {
+#ifdef CV_WINDOWS
+    return (_chdir(directory.c_str()) == 0);
+#else
     return (chdir(directory.c_str()) == 0);
+#endif
 }
 
 bool DirectoryExists(const std::string &directory) {
@@ -203,8 +223,8 @@ bool MakeDirectoryHierarchy(const std::string &directory) {
     size_t curr_pos = full_path.find_first_of("/\\", 1);
     while (curr_pos != std::string::npos) {
         std::string subdir = full_path.substr(0, curr_pos + 1);
-        if (DirectoryExists(subdir) == false) {
-            if (MakeDirectory(subdir) == false) {
+        if (!DirectoryExists(subdir)) {
+            if (!MakeDirectory(subdir)) {
                 return false;
             }
         }
@@ -237,25 +257,25 @@ bool RemoveFile(const std::string &filename) {
     return (std::remove(filename.c_str()) == 0);
 }
 
-bool ListDirectory(const std::string& directory,
-    std::vector<std::string>& subdirs,
-    std::vector<std::string>& filenames) {
+bool ListDirectory(const std::string &directory,
+                   std::vector<std::string> &subdirs,
+                   std::vector<std::string> &filenames) {
     if (directory.empty()) {
         return false;
     }
-    DIR* dir;
-    struct dirent* ent;
+    DIR *dir;
+    struct dirent *ent;
     struct stat st;
     dir = opendir(directory.c_str());
     if (!dir) {
         return false;
     }
     filenames.clear();
-    while ((ent = readdir(dir)) != nullptr) {
+    while ((ent = readdir(dir)) != NULL) {
         const std::string file_name = ent->d_name;
         if (file_name[0] == '.') continue;
         std::string full_file_name =
-            GetRegularizedDirectoryName(directory) + file_name;
+                GetRegularizedDirectoryName(directory) + file_name;
         if (stat(full_file_name.c_str(), &st) == -1) continue;
         if (S_ISDIR(st.st_mode))
             subdirs.push_back(full_file_name);
@@ -268,34 +288,15 @@ bool ListDirectory(const std::string& directory,
 
 bool ListFilesInDirectory(const std::string &directory,
                           std::vector<std::string> &filenames) {
-    if (directory.empty()) {
-        return false;
-    }
-    DIR *dir;
-    struct dirent *ent;
-    struct stat st;
-    dir = opendir(directory.c_str());
-    if (!dir) {
-        return false;
-    }
-    filenames.clear();
-    while ((ent = readdir(dir)) != nullptr) {
-        const std::string file_name = ent->d_name;
-        if (file_name[0] == '.') continue;
-        std::string full_file_name =
-                GetRegularizedDirectoryName(directory) + file_name;
-        if (stat(full_file_name.c_str(), &st) == -1) continue;
-        if (S_ISREG(st.st_mode)) filenames.push_back(full_file_name);
-    }
-    closedir(dir);
-    return true;
+    std::vector<std::string> subdirs;
+    return ListDirectory(directory, subdirs, filenames);
 }
 
 bool ListFilesInDirectoryWithExtension(const std::string &directory,
                                        const std::string &extname,
                                        std::vector<std::string> &filenames) {
     std::vector<std::string> all_files;
-    if (ListFilesInDirectory(directory, all_files) == false) {
+    if (!ListFilesInDirectory(directory, all_files)) {
         return false;
     }
     std::string ext_in_lower = extname;
@@ -353,64 +354,64 @@ FILE *FOpen(const std::string &filename, const std::string &mode) {
 
 std::string GetIOErrorString(const int errnoVal) {
     switch (errnoVal) {
-    case EPERM:
-        return "Operation not permitted";
-    case EACCES:
-        return "Access denied";
-        // Error below could be EWOULDBLOCK on Linux
-    case EAGAIN:
-        return "Resource unavailable, try again";
+        case EPERM:
+            return "Operation not permitted";
+        case EACCES:
+            return "Access denied";
+            // Error below could be EWOULDBLOCK on Linux
+        case EAGAIN:
+            return "Resource unavailable, try again";
 #if !defined(WIN32)
-    case EDQUOT:
-        return "Over quota";
+        case EDQUOT:
+            return "Over quota";
 #endif
-    case EEXIST:
-        return "File already exists";
-    case EFAULT:
-        return "Bad filename pointer";
-    case EINTR:
-        return "open() interrupted by a signal";
-    case EIO:
-        return "I/O error";
-    case ELOOP:
-        return "Too many symlinks, could be a loop";
-    case EMFILE:
-        return "Process is out of file descriptors";
-    case ENAMETOOLONG:
-        return "Filename is too long";
-    case ENFILE:
-        return "File system table is full";
-    case ENOENT:
-        return "No such file or directory";
-    case ENOSPC:
-        return "No space available to create file";
-    case ENOTDIR:
-        return "Bad path";
-    case EOVERFLOW:
-        return "File is too big";
-    case EROFS:
-        return "Can't modify file on read-only filesystem";
+        case EEXIST:
+            return "File already exists";
+        case EFAULT:
+            return "Bad filename pointer";
+        case EINTR:
+            return "open() interrupted by a signal";
+        case EIO:
+            return "I/O error";
+        case ELOOP:
+            return "Too many symlinks, could be a loop";
+        case EMFILE:
+            return "Process is out of file descriptors";
+        case ENAMETOOLONG:
+            return "Filename is too long";
+        case ENFILE:
+            return "File system table is full";
+        case ENOENT:
+            return "No such file or directory";
+        case ENOSPC:
+            return "No space available to create file";
+        case ENOTDIR:
+            return "Bad path";
+        case EOVERFLOW:
+            return "File is too big";
+        case EROFS:
+            return "Can't modify file on read-only filesystem";
 #if EWOULDBLOCK != EAGAIN
-    case EWOULDBLOCK:
-        return "Operation would block calling process";
+        case EWOULDBLOCK:
+            return "Operation would block calling process";
 #endif
-    default: {
-        std::stringstream s;
-        s << "IO error " << errnoVal << " (see sys/errno.h)";
-        return s.str();
-    }
+        default: {
+            std::stringstream s;
+            s << "IO error " << errnoVal << " (see sys/errno.h)";
+            return s.str();
+        }
     }
 }
 
-bool FReadToBuffer(const std::string& path,
-    std::vector<char>& bytes,
-    std::string* errorStr) {
+bool FReadToBuffer(const std::string &path,
+                   std::vector<char> &bytes,
+                   std::string *errorStr) {
     bytes.clear();
     if (errorStr) {
         errorStr->clear();
     }
 
-    FILE* file = FOpen(path.c_str(), "rb");
+    FILE *file = FOpen(path.c_str(), "rb");
     if (!file) {
         if (errorStr) {
             *errorStr = GetIOErrorString(errno);
@@ -431,11 +432,11 @@ bool FReadToBuffer(const std::string& path,
         }
     }
 
-    const size_t filesize = static_cast<std::size_t>(ftell(file));
+    const std::size_t filesize = static_cast<std::size_t>(ftell(file));
     rewind(file);  // reset file pointer back to beginning
 
     bytes.resize(filesize);
-    const size_t result = fread(bytes.data(), 1, filesize, file);
+    const std::size_t result = fread(bytes.data(), 1, filesize, file);
 
     if (result != filesize) {
         if (errorStr) {
@@ -452,7 +453,7 @@ bool FReadToBuffer(const std::string& path,
 
 CFile::~CFile() { Close(); }
 
-bool CFile::Open(const std::string& filename, const std::string& mode) {
+bool CFile::Open(const std::string &filename, const std::string &mode) {
     Close();
     file_ = FOpen(filename, mode);
     if (!file_) {
@@ -506,11 +507,38 @@ int64_t CFile::GetFileSize() {
     return size;
 }
 
-const char* CFile::ReadLine() {
+int64_t CFile::GetNumLines() {
+    if (!file_) {
+        utility::LogError("CFile::GetNumLines() called on a closed file");
+    }
+    fpos_t prevpos;
+    if (fgetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fgetpos failed: {}", GetError());
+    }
+    if (fseek(file_, 0, SEEK_SET)) {
+        error_code_ = errno;
+        utility::LogError("fseek failed: {}", GetError());
+    }
+    int64_t num_lines = 0;
+    int c;
+    while (EOF != (c = getc(file_))) {
+        if (c == '\n') {
+            num_lines++;
+        }
+    }
+    if (fsetpos(file_, &prevpos)) {
+        error_code_ = errno;
+        utility::LogError("fsetpos failed: {}", GetError());
+    }
+    return num_lines;
+}
+
+const char *CFile::ReadLine() {
     if (!file_) {
         utility::LogError("CFile::ReadLine() called on a closed file");
     }
-    if (line_buffer_.size() == 0) {
+    if (line_buffer_.empty()) {
         line_buffer_.resize(DEFAULT_IO_BUFFER_SIZE);
     }
     if (!fgets(line_buffer_.data(), int(line_buffer_.size()), file_)) {
@@ -519,8 +547,8 @@ const char* CFile::ReadLine() {
         }
         if (!feof(file_)) {
             utility::LogError(
-                "CFile::ReadLine() fgets returned NULL, ferror is not set, "
-                "feof is not set");
+                    "CFile::ReadLine() fgets returned NULL, ferror is not set, "
+                    "feof is not set");
         }
         return nullptr;
     }
@@ -528,12 +556,12 @@ const char* CFile::ReadLine() {
         // if we didn't read the whole line, chances are code using this is
         // not equipped to handle partial line on next call
         utility::LogError("CFile::ReadLine() encountered a line longer than {}",
-            line_buffer_.size() - 2);
+                          line_buffer_.size() - 2);
     }
     return line_buffer_.data();
 }
 
-size_t CFile::ReadData(void* data, size_t elem_size, size_t num_elems) {
+size_t CFile::ReadData(void *data, size_t elem_size, size_t num_elems) {
     if (!file_) {
         utility::LogError("CFile::ReadData() called on a closed file");
     }
@@ -544,8 +572,8 @@ size_t CFile::ReadData(void* data, size_t elem_size, size_t num_elems) {
     if (elems < num_elems) {
         if (!feof(file_)) {
             utility::LogError(
-                "CFile::ReadData() fread short read, ferror not set, feof "
-                "not set");
+                    "CFile::ReadData() fread short read, ferror not set, feof "
+                    "not set");
         }
     }
     return elems;
@@ -553,4 +581,4 @@ size_t CFile::ReadData(void* data, size_t elem_size, size_t num_elems) {
 
 }  // namespace filesystem
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

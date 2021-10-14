@@ -8,7 +8,7 @@
 # > DO_APPLY_STYLE
 #
 # Example usage:
-# cmake -DPROJECT_SOURCE_DIR=/path/to/open3d \
+# cmake -DPROJECT_SOURCE_DIR=/path/to/cloudViewer \
 #       -DDO_APPLY_STYLE=ON \
 #       -P check_cpp_style.cmake
 

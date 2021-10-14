@@ -176,10 +176,10 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>Reset filter interactor</string>
+        <string>reset filter interactor</string>
        </property>
        <property name="statusTip">
-        <string>Reset filter interactor</string>
+        <string>reset filter interactor</string>
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">

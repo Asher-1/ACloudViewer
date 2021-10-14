@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,53 +34,53 @@ namespace utility {
 
 void pybind_scalarfield(py::module &m) {
 	// cloudViewer.utility.ScalarField
-	py::class_<CVLib::ScalarField, std::unique_ptr<CVLib::ScalarField>>
+	py::class_<cloudViewer::ScalarField, std::unique_ptr<cloudViewer::ScalarField>>
 		scalarfieldBase(m, "ScalarField", 
 			"A simple scalar field (to be associated to a point cloud).");
-	//py::detail::bind_copy_functions<CVLib::ScalarField>(scalarfieldBase);
+	//py::detail::bind_copy_functions<cloudViewer::ScalarField>(scalarfieldBase);
 	scalarfieldBase.def(py::init([](const std::string& name) {
-		return new CVLib::ScalarField(name.c_str());
+		return new cloudViewer::ScalarField(name.c_str());
 	}), "name"_a = "ScalarField")
-	.def("__repr__", [](const CVLib::ScalarField &sf) {
+	.def("__repr__", [](const cloudViewer::ScalarField &sf) {
 		std::string info = fmt::format(
 			"ScalarField ({}) with {} scalars and range ({}, {}) ",
 			sf.getName(), sf.currentSize(), sf.getMin(), sf.getMax());
 		return info;
 	})
-	.def("set_name", [](CVLib::ScalarField &sf, 
+	.def("set_name", [](cloudViewer::ScalarField &sf, 
 						const std::string& name) {
 		sf.setName(name.c_str());
 	}, "Sets scalar field name.", "name"_a)
-	.def("get_name", [](const CVLib::ScalarField &sf) {
+	.def("get_name", [](const cloudViewer::ScalarField &sf) {
 			return std::string(sf.getName());
 		}, "Returns scalar field name.")
-	.def("compute_mean_variance", [](const CVLib::ScalarField &sf) {
+	.def("compute_mean_variance", [](const cloudViewer::ScalarField &sf) {
 			ScalarType mean, variance;
 			sf.computeMeanAndVariance(mean, &variance);
 			return std::make_tuple(mean, variance);
 		}, "Computes the mean value (and optionally the variance value) of the scalar field.")
-	.def("compute_min_max", &CVLib::ScalarField::computeMinAndMax, "Determines the min and max values")
-	.def("invalid_value", &CVLib::ScalarField::flagValueAsInvalid,
+	.def("compute_min_max", &cloudViewer::ScalarField::computeMinAndMax, "Determines the min and max values")
+	.def("invalid_value", &cloudViewer::ScalarField::flagValueAsInvalid,
 		"Sets the value as 'invalid' (i.e. NAN_VALUE).", "index"_a)
-	.def("get_min", &CVLib::ScalarField::getMin, "Returns the minimum value.")
-	.def("get_max", &CVLib::ScalarField::getMax, "Returns the maximum value.")
-	.def("fill", &CVLib::ScalarField::fill, "Returns the maximum value.", "fill_value"_a = 0)
-	.def("reserve", &CVLib::ScalarField::reserveSafe, "Reserves memory (no exception thrown).", "count"_a)
-	.def("resize", &CVLib::ScalarField::resizeSafe, "Resizes memory (no exception thrown).",
+	.def("get_min", &cloudViewer::ScalarField::getMin, "Returns the minimum value.")
+	.def("get_max", &cloudViewer::ScalarField::getMax, "Returns the maximum value.")
+	.def("fill", &cloudViewer::ScalarField::fill, "Returns the maximum value.", "fill_value"_a = 0)
+	.def("reserve", &cloudViewer::ScalarField::reserveSafe, "Reserves memory (no exception thrown).", "count"_a)
+	.def("resize", &cloudViewer::ScalarField::resizeSafe, "Resizes memory (no exception thrown).",
 		"count"_a, "is_fill"_a = false, "value"_a = 0)
-	.def("get_value", py::overload_cast<std::size_t>(&CVLib::ScalarField::getValue),
+	.def("get_value", py::overload_cast<std::size_t>(&cloudViewer::ScalarField::getValue),
 		"Gets value.", "index"_a)
-	.def("get_value", py::overload_cast<std::size_t>(&CVLib::ScalarField::getValue, py::const_),
+	.def("get_value", py::overload_cast<std::size_t>(&cloudViewer::ScalarField::getValue, py::const_),
 		"Gets value(const version).", "index"_a)
-	.def("set_value", &CVLib::ScalarField::setValue, "Sets value.", "index"_a, "value"_a)
-	.def("add_element", &CVLib::ScalarField::addElement, "Adds element.", "value"_a)
-	.def("current_size", &CVLib::ScalarField::currentSize, "Returns current size.")
-	.def("link", &CVLib::ScalarField::link, "Increase counter.")
-	.def("release", &CVLib::ScalarField::release, "Decrease counter and deletes object when 0.")
-	.def("get_link_count", &CVLib::ScalarField::getLinkCount, "Returns the current link count.")
-	.def("swap", &CVLib::ScalarField::swap, "Swaps scalar value.", "i1"_a, "i2"_a)
-	.def_static("Is_Valid_Value", &CVLib::ScalarField::ValidValue, "Returns whether a scalar value is valid or not.", "value"_a)
-	.def_static("Nan", &CVLib::ScalarField::NaN, "Returns the specific NaN value");
+	.def("set_value", &cloudViewer::ScalarField::setValue, "Sets value.", "index"_a, "value"_a)
+	.def("add_element", &cloudViewer::ScalarField::addElement, "Adds element.", "value"_a)
+	.def("current_size", &cloudViewer::ScalarField::currentSize, "Returns current size.")
+	.def("link", &cloudViewer::ScalarField::link, "Increase counter.")
+	.def("release", &cloudViewer::ScalarField::release, "Decrease counter and deletes object when 0.")
+	.def("get_link_count", &cloudViewer::ScalarField::getLinkCount, "Returns the current link count.")
+	.def("swap", &cloudViewer::ScalarField::swap, "Swaps scalar value.", "i1"_a, "i2"_a)
+	.def_static("Is_Valid_Value", &cloudViewer::ScalarField::ValidValue, "Returns whether a scalar value is valid or not.", "value"_a)
+	.def_static("Nan", &cloudViewer::ScalarField::NaN, "Returns the specific NaN value");
 
 	docstring::ClassMethodDocInject(m, "ScalarField", "link");
 	docstring::ClassMethodDocInject(m, "ScalarField", "release");
@@ -138,7 +138,7 @@ void pybind_scalarfield(py::module &m) {
 	docstring::ClassMethodDocInject(m, "Range", "is_in_range");
 
 	// cloudViewer.utility.ccScalarField
-	py::class_<ccScalarField, std::unique_ptr<ccScalarField, py::nodelete>, CVLib::ScalarField>
+	py::class_<ccScalarField, std::unique_ptr<ccScalarField, py::nodelete>, cloudViewer::ScalarField>
 		scalarfield(m, "ccScalarField", "A scalar field associated to display-related parameters.");
 	//py::detail::bind_copy_functions<ccScalarField>(scalarfield);
 	scalarfield.def(py::init([](const std::string& name) {
@@ -210,7 +210,8 @@ void pybind_scalarfield(py::module &m) {
 		{
 			return false;
 		}
-		return sf.fromFile(in, data_version, flags);
+        ccSerializableObject::LoadedIDMap oldToNewIDMap;
+        return sf.fromFile(in, data_version, flags, oldToNewIDMap);
 	}, "Loads data from binary stream", "filename"_a, "data_version"_a, "flags"_a)
 	.def("import_parameters_from", [](ccScalarField& sf, const ccScalarField& source) {
 		sf.importParametersFrom(&source);

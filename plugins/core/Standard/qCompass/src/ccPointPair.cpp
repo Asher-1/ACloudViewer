@@ -165,26 +165,19 @@ void ccPointPair::drawMeOnly(CC_DRAW_CONTEXT& context)
 			//transform into coord space with origin at start and arrow head at 0,0,1
 			//(unashamedly pilfered from ccPlanarEntityInterface::glDrawNormal(...)
 			//glFunc->glMatrixMode(GL_MODELVIEW);
-			//glFunc->glPushMatrix();
-			//ccGL::Translate(glFunc, start.x, start.y, start.z); //start = 0,0,0
 			markerContext.transformInfo.setTranslationStart(CCVector3(start.x, start.y, start.z));
 
-			ccGLMatrixd mat = ccGLMatrixd::FromToRotation(CCVector3d(0, 0, PC_ONE), CCVector3d(dir.x, dir.y, dir.z)); //end = 0,0,1
-			//glFunc->glMultMatrixf(mat.data());
-			markerContext.transformInfo.setRotMat(mat);
-			//ccGL::Scale(glFunc, width, width, length);
+            ccGLMatrix mat = ccGLMatrix::FromToRotation(CCVector3(0, 0, PC_ONE), CCVector3(dir.x, dir.y, dir.z)); //end = 0,0,1
+            markerContext.transformInfo.setTransformation(mat, false);
 			markerContext.transformInfo.setScale(CCVector3(width, width, length));
 
 			//draw arrow body
-			//glFunc->glTranslatef(0, 0, 0.45f);
 			markerContext.transformInfo.setTranslationEnd(CCVector3(0, 0, 0.45f));
 			c_bodyMarker->draw(markerContext);
 
 			//draw arrow head
-			//glFunc->glTranslatef(0, 0, 0.45f);
 			markerContext.transformInfo.setTranslationEnd(CCVector3(0, 0, 0.45f));
 			c_headMarker->draw(markerContext);
-			//glFunc->glPopMatrix();
 		}
 
 		//finish picking name
@@ -197,11 +190,11 @@ bool ccPointPair::isPointPair(ccHObject* object)
 {
 	if (object->hasMetaData("ccCompassType"))
 	{
-		return object->getMetaData("ccCompassType").toString().contains("PointPair") |
-			object->getMetaData("ccCompassType").toString().contains("Lineation") |
-			object->getMetaData("ccCompassType").toString().contains("Thickness") |
-			object->getMetaData("ccCompassType").toString().contains("PinchNode") |
-			object->getMetaData("ccCompassType").toString().contains("Relationship");
+		return  object->getMetaData("ccCompassType").toString().contains("PointPair") |
+				object->getMetaData("ccCompassType").toString().contains("Lineation") |
+				object->getMetaData("ccCompassType").toString().contains("Thickness") |
+				object->getMetaData("ccCompassType").toString().contains("PinchNode") |
+				object->getMetaData("ccCompassType").toString().contains("Relationship");
 	}
 	return false;
 }

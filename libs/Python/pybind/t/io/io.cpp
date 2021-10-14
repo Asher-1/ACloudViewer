@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,10 @@ namespace t {
 namespace io {
 
 void pybind_io(py::module& m) {
-    py::module m_io = m.def_submodule("io");
+    py::module m_io =
+            m.def_submodule("io", "Tensor-based input-output handling module.");
     pybind_class_io(m_io);
+    pybind_sensor(m_io);
 }
 
 }  // namespace io

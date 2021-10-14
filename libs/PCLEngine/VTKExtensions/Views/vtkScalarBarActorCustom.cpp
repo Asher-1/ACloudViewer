@@ -371,7 +371,7 @@ void vtkScalarBarActorCustom::LayoutTitle()
     return;
   }
 
-  // Reset the text size and justification
+  // reset the text size and justification
   this->TitleActor->GetTextProperty()->ShallowCopy(this->TitleTextProperty);
   this->TitleActor->GetTextProperty()->SetJustification(this->TitleJustification);
   this->TitleActor->GetTextProperty()->SetVerticalJustification(

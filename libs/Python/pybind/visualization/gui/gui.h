@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2020 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,16 +35,21 @@ class Image;
 
 namespace visualization {
 namespace rendering {
-class Open3DScene;
+class CloudViewerScene;
 }
 
 namespace gui {
 
 void InitializeForPython(std::string resource_path = "");
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height);
+        rendering::CloudViewerScene *scene, int width, int height);
+std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
+        rendering::CloudViewerScene *scene, int width, int height);
 
 void pybind_gui(py::module &m);
+
+void pybind_gui_events(py::module &m);
+void pybind_gui_classes(py::module &m);
 
 }  // namespace gui
 }  // namespace visualization

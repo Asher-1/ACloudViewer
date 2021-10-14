@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,25 +30,33 @@
 
 #include "CloudViewer.h"
 
-int main(int argc, char **argv) {
+void PrintHelp() {
     using namespace cloudViewer;
-    using namespace flann;
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > LineSet [filename]");
+    utility::LogInfo("    The program will :");
+    utility::LogInfo("    1. load the pointcloud in [filename].");
+    utility::LogInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.");
+    utility::LogInfo("    3. convert the correspondences to LineSet and render it.");
+    utility::LogInfo("    4. rotate the point cloud slightly to get another point cloud.");
+    utility::LogInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.");
+    utility::LogInfo("    6. convert to LineSet and render it.");
+    utility::LogInfo("    7. distance below 0.05 are rendered as red, others as black.");
+    // clang-format on
+    utility::LogInfo("");
+}
 
-    if (argc < 2) {
-        // clang-format off
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("    > LineSet [filename]");
-        CVLib::utility::LogInfo("    The program will :");
-        CVLib::utility::LogInfo("    1. load the pointcloud in [filename].");
-        CVLib::utility::LogInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.");
-        CVLib::utility::LogInfo("    3. convert the correspondences to LineSet and render it.");
-        CVLib::utility::LogInfo("    4. rotate the point cloud slightly to get another point cloud.");
-        CVLib::utility::LogInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.");
-        CVLib::utility::LogInfo("    6. convert to LineSet and render it.");
-        CVLib::utility::LogInfo("    7. distance below 0.05 are rendered as red, others as blue.");
-        // clang-format on
+int main(int argc, char *argv[]) {
+    using namespace cloudViewer;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 
@@ -93,7 +101,7 @@ int main(int argc, char **argv) {
             0.05 * bounding_box.getMaxExtent()) {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(1.0, 0.0, 0.0);
         } else {
-            new_lineset_ptr->colors_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
+            new_lineset_ptr->colors_[i] = Eigen::Vector3d(0.0, 0.0, 0.0);
         }
     }
     visualization::DrawGeometries({cloud_ptr, new_cloud_ptr, new_lineset_ptr});

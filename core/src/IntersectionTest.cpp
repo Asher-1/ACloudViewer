@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2019 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@
 #include <tomasakeninemoeller/opttritri.h>
 #include <tomasakeninemoeller/tribox3.h>
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 
 bool IntersectionTest::AABBAABB(const Eigen::Vector3d& min0,
@@ -217,4 +217,4 @@ double IntersectionTest::LineSegmentsMinimumDistance(
 }
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

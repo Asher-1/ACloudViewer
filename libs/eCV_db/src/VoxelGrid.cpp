@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 #include <numeric>
 #include <unordered_map>
 
-#include <Console.h>
+#include <Logging.h>
 #include <Helper.h>
 
 #include "ecvBBox.h"
@@ -41,7 +41,7 @@
 namespace cloudViewer {
 namespace geometry {
 
-	using namespace CVLib;
+	using namespace cloudViewer;
 
 VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid, const char* name/* = "VoxelGrid"*/)
     : ccHObject(name),
@@ -239,11 +239,12 @@ void VoxelGrid::CreateFromOctree(const Octree &octree) {
     auto f_collect_nodes =
             [&map_node_to_node_info](
                     const std::shared_ptr<OctreeNode> &node,
-                    const std::shared_ptr<OctreeNodeInfo> &node_info) -> void {
+                    const std::shared_ptr<OctreeNodeInfo> &node_info) -> bool {
         if (auto color_leaf_node =
                     std::dynamic_pointer_cast<OctreeColorLeafNode>(node)) {
             map_node_to_node_info[color_leaf_node] = node_info;
         }
+        return false;
     };
     octree.Traverse(f_collect_nodes);
 
@@ -270,7 +271,7 @@ void VoxelGrid::CreateFromOctree(const Octree &octree) {
 
 std::shared_ptr<geometry::Octree> VoxelGrid::ToOctree(
         const size_t &max_depth) const {
-    auto octree = std::make_shared<geometry::Octree>(max_depth);
+    auto octree = cloudViewer::make_shared<geometry::Octree>(max_depth);
     octree->CreateFromVoxelGrid(*this);
     return octree;
 }

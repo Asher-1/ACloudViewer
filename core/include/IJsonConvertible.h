@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,21 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef CV_IJSONCONVERTIBLE_HEADER
-#define CV_IJSONCONVERTIBLE_HEADER
+#pragma once
 
 #include "CVCoreLib.h"
 
-// EIGEN
-#include "Eigen.h"
 #include <Eigen/Core>
 
+#include "Eigen.h"
+
+/// @cond
 namespace Json {
 class Value;
 }  // namespace Json
+/// @endcond
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
+
+/// \brief Parse string and conver to Json::value. Throws exception if the
+/// conversion is invalid.
+///
+/// \param json_str String containing json value.
+/// \return A Json object.
+Json::Value CV_CORE_LIB_API StringToJson(const std::string &json_str);
+
+/// \brief Serialize a Json::Value to a string.
+///
+/// \param json The Json::Value object to be converted.
+/// \return A string containing the json value.
+std::string CV_CORE_LIB_API JsonToString(const Json::Value json);
 
 /// Class IJsonConvertible defines the behavior of a class that can convert
 /// itself to/from a json::Value.
@@ -49,6 +63,9 @@ public:
 public:
     virtual bool ConvertToJsonValue(Json::Value &value) const = 0;
     virtual bool ConvertFromJsonValue(const Json::Value &value) = 0;
+
+    /// Convert to a styled string representation of JSON data for display
+    virtual std::string ToString() const;
 
 public:
     static bool EigenVector3dFromJsonArray(Eigen::Vector3d &vec,
@@ -82,6 +99,4 @@ public:
 };
 
 }  // namespace utility
-}  // namespace CVLib
-
-#endif // CV_IJSONCONVERTIBLE_HEADER
+}  // namespace cloudViewer

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +27,37 @@
 // LOCAL
 #include "IJsonConvertible.h"
 
+#include "Logging.h"
+
 // JSON_LIB
 #include <json/json.h>
 
-namespace CVLib {
+#include <string>
+
+namespace cloudViewer {
 namespace utility {
+
+Json::Value StringToJson(const std::string &json_str) {
+    Json::Value json;
+    std::string err;
+    Json::CharReaderBuilder builder;
+    const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+    if (!reader->parse(json_str.c_str(), json_str.c_str() + json_str.length(),
+                       &json, &err)) {
+        utility::LogError("Failed to parse string to json, error: {}", err);
+    }
+    return json;
+}
+
+std::string JsonToString(const Json::Value json) {
+    return Json::writeString(Json::StreamWriterBuilder(), json);
+}
+
+std::string IJsonConvertible::ToString() const {
+    Json::Value val;
+    ConvertToJsonValue(val);
+    return val.toStyledString();
+}
 
 bool IJsonConvertible::EigenVector3dFromJsonArray(Eigen::Vector3d &vec,
                                                   const Json::Value &value) {
@@ -183,4 +209,4 @@ bool IJsonConvertible::EigenMatrix6dToJsonArray(const Eigen::Matrix6d_u &mat,
 }
 
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer

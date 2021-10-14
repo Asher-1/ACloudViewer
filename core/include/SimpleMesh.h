@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -27,7 +27,7 @@
 //System
 #include <vector>
 
-namespace CVLib
+namespace cloudViewer
 {
 
 class GenericIndexedCloud;
@@ -94,6 +94,10 @@ public: //specific methods
 		\return true if the method succeeds, false otherwise
 	**/
 	virtual bool resize(unsigned n);
+
+        //inherited from GenericIndexedMesh
+        bool normalsAvailable() const override;
+        bool interpolateNormals(unsigned triIndex, const CCVector3& P, CCVector3& N) override;
 
 protected:
 

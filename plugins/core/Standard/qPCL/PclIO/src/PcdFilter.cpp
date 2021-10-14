@@ -73,7 +73,7 @@ bool PcdFilter::canSave(CV_CLASS_ENUM type, bool& multiple, bool& exclusive) con
 	return false;
 }
 
-//! Shape File Save dialog
+//! PCD File Save dialog
 class SavePCDFileDialog : public QDialog, public Ui::SavePCDFileDlg
 {
 public:
@@ -86,7 +86,9 @@ public:
 	}
 };
 
-CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, const SaveParameters& parameters)
+CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity,
+                                    const QString& filename,
+                                    const SaveParameters& parameters)
 {
 	if (!entity || filename.isEmpty())
 		return CC_FERR_BAD_ARGUMENT;
@@ -126,7 +128,6 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		settings.endGroup();
 	}
 	
-
 	PCLCloud::Ptr pclCloud = cc2smReader(ccCloud).getAsSM();
 	if (!pclCloud)
 	{
@@ -136,7 +137,7 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, 
 	if (saveOriginOrientation)
 	{
 		//search for a sensor as child (we take the first if there are several of them)
-		ccSensor* sensor(0);
+        ccSensor* sensor(nullptr);
 		{
 			for (unsigned i = 0; i < ccCloud->getChildrenNumber(); ++i)
 			{
@@ -176,6 +177,22 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, 
 			ori = Eigen::Quaternionf(eigrot);
 		}
 
+        if (ccCloud->size() == 0)
+        {
+            pcl::PCDWriter w;
+            QFile file(filename);
+            if (!file.open(QFile::WriteOnly | QFile::Truncate))
+                return CC_FERR_WRITING;
+            QTextStream stream(&file);
+
+            if (compressedMode) {
+                stream << QString(w.generateHeaderBinaryCompressed(*pclCloud, pos, ori).c_str()) << "DATA binary\n";
+            } else {
+                stream << QString(w.generateHeaderBinary(*pclCloud, pos, ori).c_str()) << "DATA binary\n";
+            }
+            return CC_FERR_NO_ERROR;
+        }
+
 		if (compressedMode)
 		{
 			pcl::PCDWriter w;
@@ -194,6 +211,25 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity, const QString& filename, 
 	}
 	else
 	{
+        if (ccCloud->size() == 0)
+        {
+            pcl::PCDWriter w;
+            QFile file(filename);
+            if (!file.open(QFile::WriteOnly | QFile::Truncate))
+                return CC_FERR_WRITING;
+            QTextStream stream(&file);
+
+            Eigen::Vector4f pos;
+            Eigen::Quaternionf ori;
+
+            if (compressedMode) {
+                stream << QString(w.generateHeaderBinaryCompressed(*pclCloud, pos, ori).c_str()) << "DATA binary\n";
+            } else {
+                stream << QString(w.generateHeaderBinary(*pclCloud, pos, ori).c_str()) << "DATA binary\n";
+            }
+            return CC_FERR_NO_ERROR;
+        }
+
 		bool hasColor = ccCloud->hasColors();
 		bool hasNormals = ccCloud->hasNormals();
 		if (hasColor && !hasNormals)
@@ -301,90 +337,94 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename, ccHObject& container,
 	int data_type;
 	unsigned int data_idx;
 	size_t pointCount = -1;
-	PCLCloud::Ptr cloud_ptr_in(new PCLCloud);
+    PCLCloud inputCloud;
 	//Load the given file
 	pcl::PCDReader p;
 
 	const std::string& fileName = CVTools::FromQString(filename);
 
-	p.readHeader(fileName, *cloud_ptr_in, origin, orientation, pcd_version, data_type, data_idx);
-	if (cloud_ptr_in)
-	{
-		pointCount = cloud_ptr_in->width * cloud_ptr_in->height;
-        CVLog::Print(QString("%1: Point Count: %2").arg(filename).arg(pointCount));
-	}
+    if (p.readHeader(fileName, inputCloud, origin, orientation, pcd_version, data_type, data_idx) < 0)
+    {
+        return CC_FERR_THIRD_PARTY_LIB_FAILURE;
+    }
 
-	if (pointCount > 0)
-	{
-		// DGM: warning, toStdString doesn't preserve "local" characters
-		if (pcl::io::loadPCDFile(fileName, *cloud_ptr_in, origin, orientation) < 0) 
-		{
-			return CC_FERR_THIRD_PARTY_LIB_FAILURE;
-		}
-	}
+    pointCount = inputCloud.width * inputCloud.height;
+    CVLog::Print(QString("%1: Point Count: %2").arg(qPrintable(filename)).arg(pointCount));
 
-	if (!cloud_ptr_in) //loading failed?
-		return CC_FERR_THIRD_PARTY_LIB_FAILURE;
+    if (pointCount == 0)
+    {
+        return CC_FERR_NO_LOAD;
+    }
 
-	PCLCloud::Ptr cloud_ptr;
-	if (!cloud_ptr_in->is_dense) //data may contain NaNs --> remove them
-	{
-		//now we need to remove NaNs
-		pcl::PassThrough<PCLCloud> passFilter;
-		passFilter.setInputCloud(cloud_ptr_in);
+    // DGM: warning, toStdString doesn't preserve "local" characters
+    if (pcl::io::loadPCDFile(fileName, inputCloud, origin, orientation) < 0)
+    {
+        return CC_FERR_THIRD_PARTY_LIB_FAILURE;
+    }
 
-		cloud_ptr = PCLCloud::Ptr(new PCLCloud);
-		passFilter.filter(*cloud_ptr);
-	}
-	else
-	{
-		cloud_ptr = cloud_ptr_in;
-	}
+    ccPointCloud* ccCloud = nullptr;
+    if (!inputCloud.is_dense) //data may contain NaNs --> remove them
+    {
+        //now we need to remove NaNs
+        pcl::PassThrough<PCLCloud> passFilter;
+        passFilter.setInputCloud(PCLCloud::Ptr(new PCLCloud(inputCloud)));
 
-	//convert to CC cloud
-	ccPointCloud* ccCloud = sm2ccConverter(cloud_ptr).getCloud();
+        PCLCloud filteredCloud;
+        passFilter.filter(filteredCloud);
+
+        ccCloud = pcl2cc::Convert(filteredCloud);
+    }
+    else
+    {
+        ccCloud = pcl2cc::Convert(inputCloud);
+    }
+
+    //convert to CC cloud
 	if (!ccCloud)
 	{
-		CVLog::Warning("[PCL] An error occurred while converting PCD cloud to CLOUDVIEWER  cloud!");
+        CVLog::Warning("[PCL] An error occurred while converting PCD cloud to CloudViewer  cloud!");
 		return CC_FERR_CONSOLE_ERROR;
 	}
 	ccCloud->setName(QStringLiteral("unnamed"));
 
-	//now we construct a ccGBLSensor
-	{
-		// get orientation as rot matrix and copy it into a ccGLMatrix
-		ccGLMatrix ccRot;
-		{
-			Eigen::Matrix3f eigrot = orientation.toRotationMatrix();
-			float* X = ccRot.getColumn(0);
-			float* Y = ccRot.getColumn(1);
-			float* Z = ccRot.getColumn(2);
-			//Warning: Y and Z are inverted
-			X[0] =  eigrot(0,0); X[1] =  eigrot(1,0); X[2] =  eigrot(2,0);
-			Y[0] = -eigrot(0,2); Y[1] = -eigrot(1,2); Y[2] = -eigrot(2,2);
-			Z[0] =  eigrot(0,1); Z[1] =  eigrot(1,1); Z[2] =  eigrot(2,1);
-			ccRot.getColumn(3)[3] = 1.0f;
-			ccRot.setTranslation(origin.data());
-		}
-		ccGBLSensor* sensor = new ccGBLSensor;
-		sensor->setRigidTransformation(ccRot);
-		sensor->setYawStep(static_cast<PointCoordinateType>(0.05));
-		sensor->setPitchStep(static_cast<PointCoordinateType>(0.05));
-		sensor->setVisible(true);
-		//uncertainty to some default
-		sensor->setUncertainty(static_cast<PointCoordinateType>(0.01));
-		//graphic scale
-		sensor->setGraphicScale(ccCloud->getOwnBB().getDiagNorm() / 10);
-		//Compute parameters
-		ccGenericPointCloud* pc = ccHObjectCaster::ToGenericPointCloud(ccCloud);
-		sensor->computeAutoParameters(pc);
-	
-		sensor->setEnabled(false);
-		
-		ccCloud->addChild(sensor);
-	}
+    //now we construct a ccGBLSensor
+    {
+        // get orientation as rot matrix and copy it into a ccGLMatrix
+        ccGLMatrix ccRot;
+        {
+            Eigen::Matrix3f eigrot = orientation.toRotationMatrix();
+            float* X = ccRot.getColumn(0);
+            float* Y = ccRot.getColumn(1);
+            float* Z = ccRot.getColumn(2);
 
-	container.addChild(ccCloud);
+            X[0] = eigrot(0,0); X[1] = eigrot(1,0); X[2] = eigrot(2,0);
+            Y[0] = eigrot(0,1); Y[1] = eigrot(1,1); Y[2] = eigrot(2,1);
+            Z[0] = eigrot(0,2); Z[1] = eigrot(1,2); Z[2] = eigrot(2,2);
 
-	return CC_FERR_NO_ERROR;
+            ccRot.getColumn(3)[3] = 1.0f;
+            ccRot.setTranslation(origin.data());
+        }
+
+        ccGBLSensor* sensor = new ccGBLSensor;
+        sensor->setRigidTransformation(ccRot);
+        sensor->setYawStep(static_cast<PointCoordinateType>(0.05));
+        sensor->setPitchStep(static_cast<PointCoordinateType>(0.05));
+        sensor->setVisible(true);
+        //uncertainty to some default
+        sensor->setUncertainty(static_cast<PointCoordinateType>(0.01));
+        //graphic scale
+        sensor->setGraphicScale(ccCloud->getOwnBB().getDiagNorm() / 10);
+
+        //Compute parameters
+        ccGenericPointCloud* pc = ccHObjectCaster::ToGenericPointCloud(ccCloud);
+        sensor->computeAutoParameters(pc);
+
+        sensor->setEnabled(false);
+
+        ccCloud->addChild(sensor);
+    }
+
+    container.addChild(ccCloud);
+
+    return CC_FERR_NO_ERROR;
 }

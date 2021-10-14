@@ -28,7 +28,7 @@
 //System
 #include <vector>
 
-namespace CVLib
+namespace cloudViewer
 {
 	class GenericProgressCallback;
 	class ReferenceCloud;
@@ -54,7 +54,7 @@ class ccOctreeProxy;
 	- an octree strucutre
 	- visibility information per point (to hide/display subsets of points)
 **/
-class ECV_DB_LIB_API ccGenericPointCloud : public ccShiftedObject,  public CVLib::GenericIndexedCloudPersist
+class ECV_DB_LIB_API ccGenericPointCloud : public ccShiftedObject,  public cloudViewer::GenericIndexedCloudPersist
 {
 	friend class ccMesh;
 public:
@@ -102,11 +102,11 @@ public:
 		3D cube that totally encloses the cloud.
 		WARNING: any previously attached octree will be deleted,
 				 even if the new octree computation failed.
-		\param progressCb the caller can get some notification of the process progress through this callback mechanism (see CVLib documentation)
+		\param progressCb the caller can get some notification of the process progress through this callback mechanism (see cloudViewer documentation)
 		\param autoAddChild whether to automatically add the computed octree as child of this cloud or not
 		\return the computed octree
 	**/
-	virtual ccOctree::Shared computeOctree(CVLib::GenericProgressCallback* progressCb = nullptr, bool autoAddChild = true);
+	virtual ccOctree::Shared computeOctree(cloudViewer::GenericProgressCallback* progressCb = nullptr, bool autoAddChild = true);
 	
 	//! Returns the associated octree (if any)
 	virtual ccOctree::Shared getOctree() const;
@@ -179,7 +179,7 @@ public:
 		\param silent don't issue warnings if no visible point is present
 		\return the visible points as a ReferenceCloud
 	**/
-	virtual CVLib::ReferenceCloud* getTheVisiblePoints(const VisibilityTableType* visTable = nullptr, bool silent = false) const;
+	virtual cloudViewer::ReferenceCloud* getTheVisiblePoints(const VisibilityTableType* visTable = nullptr, bool silent = false) const;
 	
 	//! Returns whether the visibility array is allocated or not
 	virtual bool isVisibilityTableInstantiated() const;
@@ -223,8 +223,8 @@ public:
 		\param inside whether selected points are inside or outside the box
 		\return points falling inside (or outside) as a selection
 	**/
-	virtual CVLib::ReferenceCloud* crop(const ccBBox& box, bool inside = true) = 0;
-	virtual CVLib::ReferenceCloud* crop(const ecvOrientedBBox& box) = 0;
+	virtual cloudViewer::ReferenceCloud* crop(const ccBBox& box, bool inside = true) = 0;
+	virtual cloudViewer::ReferenceCloud* crop(const ecvOrientedBBox& box) = 0;
 
 	virtual void removePoints(size_t index) = 0;
 
@@ -271,11 +271,12 @@ public:
 						bool autoComputeOctree = false);
 
 	std::tuple<Eigen::Vector3d, Eigen::Matrix3d> computeMeanAndCovariance() const;
+	cloudViewer::SquareMatrixd computeCovariance() const;
 
 protected:
 	//inherited from ccHObject
 	bool toFile_MeOnly(QFile& out) const override;
-	bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 	
 	//! Per-point visibility table
 	/** If this table is allocated, only values set to POINT_VISIBLE

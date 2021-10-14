@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,14 +28,14 @@
 #include <visualization/visualizer/Visualizer.h> // must include first
 #include <visualization/visualizer/VisualizerWithEditing.h>
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 #include <IJsonConvertible.h>
 
 #include <ecvBBox.h>
 #include <ecvOrientedBBox.h>
 #include <ecvPointCloud.h>
-#include <PointCloudIO.h>
+#include "io/PointCloudIO.h"
 #include <ecvKDTreeFlann.h>
 #include <IJsonConvertibleIO.h>
 #include "AlignmentSession.h"
@@ -44,6 +44,8 @@ namespace cloudViewer {
 
 class VisualizerForAlignment : public visualization::Visualizer {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     VisualizerForAlignment(visualization::VisualizerWithEditing &source,
                            visualization::VisualizerWithEditing &target,
                            double voxel_size = -1.0,

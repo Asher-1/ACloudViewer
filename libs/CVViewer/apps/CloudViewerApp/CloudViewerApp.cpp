@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,14 +45,14 @@ int Run(int argc, const char *argv[]) {
     if (argc > 1) {
         path = argv[1];
         if (argc > 2) {
-            CVLib::utility::LogWarning(gUsage.c_str());
+            utility::LogWarning(gUsage.c_str());
         }
     }
 
     auto &app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
 
-    auto vis = std::make_shared<GuiVisualizer>("CloudViewer", WIDTH, HEIGHT);
+    auto vis = cloudViewer::make_shared<GuiVisualizer>("CloudViewer", WIDTH, HEIGHT);
     bool is_path_valid = (path && path[0] != '\0');
     if (is_path_valid) {
         vis->LoadGeometry(path);

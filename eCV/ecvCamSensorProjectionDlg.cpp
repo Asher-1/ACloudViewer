@@ -82,7 +82,7 @@ void ccCamSensorProjectionDlg::initWithCamSensor(const ccCameraSensor* sensor)
 		const ccCameraSensor::IntrinsicParameters& iParams = sensor->getIntrinsicParameters();
 
 		focalDoubleSpinBox->setValue(iParams.vertFocal_pix);
-        fovDoubleSpinBox->setValue(CVLib::RadiansToDegrees( iParams.vFOV_rad ));
+        fovDoubleSpinBox->setValue(cloudViewer::RadiansToDegrees( iParams.vFOV_rad ));
 		arrayWSpinBox->setValue(iParams.arrayWidth);
 		arrayHSpinBox->setValue(iParams.arrayHeight);
 		pixWDoubleSpinBox->setValue(iParams.pixelSize_mm[0]);

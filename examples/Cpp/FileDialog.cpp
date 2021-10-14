@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,32 +29,34 @@
 #include "CloudViewer.h"
 
 void PrintHelp() {
-	CVLib::utility::LogInfo("Usage :");
-	CVLib::utility::LogInfo("    > FileDialog [save|load]");
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > FileDialog [save|load]");
+    // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char *argv[]) {
-    if (argc == 1) {
+    using namespace cloudViewer;
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
+
     std::string option(argv[1]);
     char const *pattern = "*.*";
     if (option == "load") {
         char const *str = tinyfd_openFileDialog("Find a file to load", "", 0,
                                                 NULL, NULL, 1);
-		if (str)
-		{
-			CVLib::utility::LogInfo("{}", str);
-		}
-        
+        utility::LogInfo("{}", str);
     } else if (option == "save") {
         char const *str = tinyfd_saveFileDialog("Find a file to save", "", 1,
                                                 &pattern, NULL);
-		if (str)
-		{
-			CVLib::utility::LogInfo("{}", str);
-		}
+        utility::LogInfo("{}", str);
     }
     return 0;
 }

@@ -29,7 +29,4 @@ if (PLUGIN_STANDARD_QPCL)
     
     target_link_libraries( ${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB)
 
-    #import PCL dlls (if any, WIN32 only)
-    #include( cmake/ExportPCLDlls.cmake )
-    #export_PCL_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
 endif()

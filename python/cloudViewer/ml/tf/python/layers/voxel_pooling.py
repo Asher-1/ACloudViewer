@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                          -
+# -                        CloudViewer: asher-1.github.io                          -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.erow.cn        
+# Copyright (c) 2020 asher-1.github.io
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ __all__ = ['VoxelPooling']
 
 
 class VoxelPooling(tf.keras.layers.Layer):
-    """Voxel pooling for 3D point clouds
+    """Voxel pooling for 3D point clouds.
 
     Spatial pooling for point clouds by combining points that fall into the same voxel bin.
 

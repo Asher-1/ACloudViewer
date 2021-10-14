@@ -25,7 +25,7 @@ original CANUPO project, by N. Brodu and D. Lague.
 //Local
 #include "ccPointDescriptor.h"
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 //Qt

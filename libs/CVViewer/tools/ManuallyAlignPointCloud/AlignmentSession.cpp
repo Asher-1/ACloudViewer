@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,8 +44,7 @@ bool AlignmentSession::ConvertToJsonValue(Json::Value &value) const {
         target_array.append((int)ti);
     }
     value["target_indices"] = target_array;
-    if (EigenMatrix4dToJsonArray(transformation_, value["transformation"]) ==
-        false) {
+    if (!EigenMatrix4dToJsonArray(transformation_, value["transformation"])) {
         return false;
     }
     value["voxel_size"] = voxel_size_;
@@ -55,8 +54,8 @@ bool AlignmentSession::ConvertToJsonValue(Json::Value &value) const {
 }
 
 bool AlignmentSession::ConvertFromJsonValue(const Json::Value &value) {
-    if (value.isObject() == false) {
-        CVLib::utility::LogWarning(
+    if (!value.isObject()) {
+        utility::LogWarning(
                 "AlignmentSession read JSON failed: unsupported json "
                 "format.");
         return false;
@@ -64,7 +63,7 @@ bool AlignmentSession::ConvertFromJsonValue(const Json::Value &value) {
     if (value.get("class_name", "").asString() != "AlignmentSession" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        CVLib::utility::LogWarning(
+        utility::LogWarning(
                 "AlignmentSession read JSON failed: unsupported json "
                 "format.");
         return false;
@@ -79,8 +78,7 @@ bool AlignmentSession::ConvertFromJsonValue(const Json::Value &value) {
     for (int i = 0; i < (int)target_array.size(); i++) {
         target_indices_[i] = (size_t)target_array[i].asInt();
     }
-    if (EigenMatrix4dFromJsonArray(transformation_, value["transformation"]) ==
-        false) {
+    if (!EigenMatrix4dFromJsonArray(transformation_, value["transformation"])) {
         return false;
     }
     voxel_size_ = value["voxel_size"].asDouble();
