@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@
 #include <string>
 #include <vector>
 
-namespace CVLib {
+namespace cloudViewer {
 namespace utility {
 namespace filesystem {
 
@@ -46,6 +46,8 @@ std::string CV_CORE_LIB_API GetFileNameWithoutDirectory(const std::string &filen
 std::string CV_CORE_LIB_API GetFileParentDirectory(const std::string &filename);
 
 std::string CV_CORE_LIB_API GetRegularizedDirectoryName(const std::string &directory);
+
+std::string CV_CORE_LIB_API GetFileBaseName(const std::string &filename);
 
 std::string CV_CORE_LIB_API GetWorkingDirectory();
 
@@ -99,34 +101,59 @@ bool CV_CORE_LIB_API FReadToBuffer(const std::string& path,
 /// throw, use try/catch (const std::exception &e) { ... }
 class CV_CORE_LIB_API CFile {
 public:
+    /// The destructor closes the file automatically.
     ~CFile();
-    bool Open(const std::string& filename, const std::string& mode);
-    /// return last encountered error for this file
+
+    /// Open a file.
+    bool Open(const std::string &filename, const std::string &mode);
+
+    /// Returns the last encountered error for this file.
     std::string GetError();
+
+    /// Close the file.
     void Close();
-    /// return current position in the file (ftell)
+
+    /// Returns current position in the file (ftell).
     int64_t CurPos();
+
+    /// Returns the file size in bytes.
     int64_t GetFileSize();
-    /// Throws if we hit buffer maximum.  In most cases, calling code is only
+
+    /// Returns the number of lines in the file.
+    int64_t GetNumLines();
+
+    /// Throws if we hit buffer maximum. In most cases, calling code is only
     /// capable of processing a complete line, if it receives a partial line it
     /// will probably fail and it is very likely to fail/corrupt on the next
-    /// call that receives the remainder of the line
-    const char* ReadLine();
+    /// call that receives the remainder of the line.
+    const char *ReadLine();
+
+    /// Read data to a buffer.
+    /// \param data The data buffer to be written into.
+    /// \param num_elements Number of elements to be read. The byte size of the
+    /// element is determined by the size of buffer type.
     template <class T>
-    size_t ReadData(T* data, size_t num_elems) {
+    size_t ReadData(T *data, size_t num_elems) {
         return ReadData(data, sizeof(T), num_elems);
     }
-    size_t ReadData(void* data, size_t elem_size, size_t num_elems);
-    FILE* GetFILE() { return file_; }
+
+    /// Read data to a buffer.
+    /// \param data The data buffer to be written into.
+    /// \param elem_size Element size in bytes.
+    /// \param num_elems Number of elements to read.
+    size_t ReadData(void *data, size_t elem_size, size_t num_elems);
+
+    /// Returns the underlying C FILE pointer.
+    FILE *GetFILE() { return file_; }
 
 private:
-    FILE* file_ = nullptr;
+    FILE *file_ = nullptr;
     int error_code_ = 0;
     std::vector<char> line_buffer_;
 };
 
 }  // namespace filesystem
 }  // namespace utility
-}  // namespace CVLib
+}  // namespace cloudViewer
 
 #endif // CV_FILESYSTEM_HEADER

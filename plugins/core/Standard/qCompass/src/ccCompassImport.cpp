@@ -174,10 +174,10 @@ namespace ccCompassImport {
 				if (std::abs(N.z) > PC_ONE - std::numeric_limits<PointCoordinateType>::epsilon())
 				{
 					ccGLMatrix rotX;
-					rotX.initFromParameters( CVLib::DegreesToRadians( -dip ), CCVector3(1, 0, 0), CCVector3(0, 0, 0)); //plunge
+					rotX.initFromParameters( cloudViewer::DegreesToRadians( -dip ), CCVector3(1, 0, 0), CCVector3(0, 0, 0)); //plunge
 					
 					ccGLMatrix rotZ;
-					rotZ.initFromParameters( CVLib::DegreesToRadians( dipdir ), CCVector3(0, 0, -1), CCVector3(0, 0, 0));
+					rotZ.initFromParameters( cloudViewer::DegreesToRadians( dipdir ), CCVector3(0, 0, -1), CCVector3(0, 0, 0));
 					rotation = rotZ * rotX;
 				}
 				else //general case
@@ -254,9 +254,9 @@ namespace ccCompassImport {
 			CCVector3 Cd = *cld->getPoint(p);
 
 			//build lineation vector
-			CCVector3 l( sin( CVLib::DegreesToRadians( trend ) ) * cos( CVLib::DegreesToRadians( plunge ) ),
-						 cos( CVLib::DegreesToRadians( trend ) ) * cos( CVLib::DegreesToRadians( plunge ) ),
-						 -sin( CVLib::DegreesToRadians( plunge ) ) );
+			CCVector3 l( sin( cloudViewer::DegreesToRadians( trend ) ) * cos( cloudViewer::DegreesToRadians( plunge ) ),
+						 cos( cloudViewer::DegreesToRadians( trend ) ) * cos( cloudViewer::DegreesToRadians( plunge ) ),
+						 -sin( cloudViewer::DegreesToRadians( plunge ) ) );
 			
 			//create new point cloud to associate with lineation graphic
 			ccPointCloud* points = new ccPointCloud();

@@ -113,7 +113,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		pDlg->setAutoClose(false); //don't close dialogue when progress bar is full
 		pDlg->start();
 	}
-	CVLib::NormalizedProgress nprogress(pDlg.data(), nbPoints);
+	cloudViewer::NormalizedProgress nprogress(pDlg.data(), nbPoints);
 
 	QTextStream stream(&file);
 	stream.setRealNumberNotation(QTextStream::FixedNotation);
@@ -344,7 +344,7 @@ CC_FILE_ERROR ObjFilter::saveToFile(ccHObject* entity, const QString& filename, 
 				}
 			}
 
-			const CVLib::VerticesIndexes* tsi = st->getNextTriangleVertIndexes();
+			const cloudViewer::VerticesIndexes* tsi = st->getNextTriangleVertIndexes();
 			//for per-triangle normals
 			unsigned i1 = tsi->i1 + 1;
 			unsigned i2 = tsi->i2 + 1;
@@ -910,14 +910,14 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename, ccHObject& container,
 				{
 					try
 					{
-						CVLib::PointCloud contour;
+						cloudViewer::PointCloud contour;
 						contour.reserve(static_cast<unsigned>(currentFace.size()));
 
 						for (const facetElement& fe : currentFace)
 						{
 							contour.addPoint(*vertices->getPoint(fe.vIndex));
 						}
-						CVLib::Delaunay2dMesh* dMesh = CVLib::Delaunay2dMesh::TesselateContour(&contour);
+						cloudViewer::Delaunay2dMesh* dMesh = cloudViewer::Delaunay2dMesh::TesselateContour(&contour);
 						if (dMesh)
 						{
 							//need more space?

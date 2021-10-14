@@ -154,14 +154,14 @@ int MarchingCubeReconstruction::compute()
 		return -1;
 	}
 
-	PCLCloud::Ptr out_cloud_sm (new PCLCloud(mesh.cloud));
-	if ( out_cloud_sm->height * out_cloud_sm->width == 0)
+    PCLCloud out_cloud_sm(mesh.cloud);
+    if ( out_cloud_sm.height * out_cloud_sm.width == 0)
 	{
 		//cloud is empty
 		return -53;
 	}
 
-	ccMesh* out_mesh = sm2ccConverter(out_cloud_sm).getMesh(mesh.polygons);
+    ccMesh* out_mesh = pcl2cc::Convert(out_cloud_sm, mesh.polygons);
 	if (!out_mesh)
 	{
 		//conversion failed (not enough memory?)
@@ -198,6 +198,8 @@ QString MarchingCubeReconstruction::getErrorMessage(int errorCode)
 		return tr("Wrong Parameters. One or more parameters cannot be accepted");
 	case -53:
 		return tr("Marching Cube Reconstruction does not returned any point. Try relaxing your parameters");
+    default:
+        break;
 	}
 
 	return BasePclModule::getErrorMessage(errorCode);

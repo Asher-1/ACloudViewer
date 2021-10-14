@@ -61,10 +61,10 @@ ccTracePolylineTool::SegmentGLParams::SegmentGLParams(int x , int y)
 ccTracePolylineTool::ccTracePolylineTool(ccPickingHub* pickingHub, QWidget* parent)
 	: ccOverlayDialog(parent)
 	, Ui::TracePolyLineDlg()
-	, m_polyTip(0)
-	, m_polyTipVertices(0)
-	, m_poly3D(0)
-	, m_poly3DVertices(0)
+    , m_polyTip(nullptr)
+    , m_polyTipVertices(nullptr)
+    , m_poly3D(nullptr)
+    , m_poly3DVertices(nullptr)
 	, m_done(false)
 	, m_pickingHub(pickingHub)
 {
@@ -73,17 +73,17 @@ ccTracePolylineTool::ccTracePolylineTool(ccPickingHub* pickingHub, QWidget* pare
 	setupUi(this);
 	setWindowFlags(Qt::FramelessWindowHint | Qt::Tool);
 
-	connect(saveToolButton, SIGNAL(clicked()), this, SLOT(exportLine()));
-	connect(resetToolButton, SIGNAL(clicked()), this, SLOT(resetLine()));
-	connect(continueToolButton, SIGNAL(clicked()), this, SLOT(continueEdition()));
-	connect(validButton, SIGNAL(clicked()), this, SLOT(apply()));
-	connect(cancelButton, SIGNAL(clicked()), this, SLOT(cancel()));
-	connect(widthSpinBox, SIGNAL(valueChanged(int)), this, SLOT(onWidthSizeChanged(int)));
+    connect(saveToolButton,         &QToolButton::clicked, this, &ccTracePolylineTool::exportLine);
+    connect(resetToolButton,		&QToolButton::clicked, this, &ccTracePolylineTool::resetLine);
+    connect(continueToolButton,     &QToolButton::clicked, this, &ccTracePolylineTool::continueEdition);
+    connect(validButton,			&QToolButton::clicked, this, &ccTracePolylineTool::apply);
+    connect(cancelButton,			&QToolButton::clicked, this, &ccTracePolylineTool::cancel);
+    connect(widthSpinBox,			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, &ccTracePolylineTool::onWidthSizeChanged);
 
 	//add shortcuts
 	addOverridenShortcut(Qt::Key_Escape); //escape key for the "cancel" button
 	addOverridenShortcut(Qt::Key_Return); //return key for the "apply" button
-	connect(this, SIGNAL(shortcutTriggered(int)), this, SLOT(onShortcutTriggered(int)));
+    connect(this, &ccTracePolylineTool::shortcutTriggered, this, &ccTracePolylineTool::onShortcutTriggered);
 
 	m_polyTipVertices = new ccPointCloud("Tip vertices");
 	m_polyTipVertices->reserve(2);
@@ -141,13 +141,13 @@ ccPolyline* ccTracePolylineTool::polylineOverSampling(unsigned steps) const
 	if (!m_poly3D || !m_poly3DVertices || m_segmentParams.size() != m_poly3DVertices->size())
 	{
 		assert(false);
-		return 0;
+        return nullptr;
 	}
 
 	if (steps <= 1)
 	{
 		//nothing to do
-		return 0;
+        return nullptr;
 	}
 
 	ccHObject::Container clouds;
@@ -159,7 +159,7 @@ ccPolyline* ccTracePolylineTool::polylineOverSampling(unsigned steps) const
 	{
 		//no entity is currently displayed?!
 		assert(false);
-		return 0;
+        return nullptr;
 	}
 
 	unsigned n_verts = m_poly3DVertices->size();
@@ -175,7 +175,7 @@ ccPolyline* ccTracePolylineTool::polylineOverSampling(unsigned steps) const
 	{
 		CVLog::Warning("[ccTracePolylineTool::PolylineOverSampling] Not enough memory");
 		delete newPoly;
-		return 0;
+        return nullptr;
 	}
 	newVertices->importParametersFrom(m_poly3DVertices);
 	newVertices->setName(m_poly3DVertices->getName());
@@ -285,8 +285,8 @@ bool ccTracePolylineTool::linkWith(QWidget* win)
 
 	if (ecvDisplayTools::TheInstance())
 	{
-		connect(ecvDisplayTools::TheInstance(), SIGNAL(rightButtonClicked(int, int)), this, SLOT(closePolyLine(int, int)));
-		connect(ecvDisplayTools::TheInstance(), SIGNAL(mouseMoved(int, int, Qt::MouseButtons)), this, SLOT(updatePolyLineTip(int, int, Qt::MouseButtons)));
+        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::rightButtonClicked, this, &ccTracePolylineTool::closePolyLine);
+        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mouseMoved,		  this, &ccTracePolylineTool::updatePolyLineTip);
 	}
 
 	return true;
@@ -560,8 +560,8 @@ void ccTracePolylineTool::restart(bool reset)
 			delete m_poly3D;
 			m_segmentParams.resize(0);
 			//delete m_poly3DVertices;
-			m_poly3D = 0;
-			m_poly3DVertices = 0;
+            m_poly3D = nullptr;
+            m_poly3DVertices = nullptr;
 		}
 		else
 		{
@@ -609,7 +609,7 @@ void ccTracePolylineTool::exportLine()
 
 			delete m_poly3D;
 			m_segmentParams.resize(0);
-			m_poly3DVertices = 0;
+            m_poly3DVertices = nullptr;
 			m_poly3D = poly;
 		}
 	}
@@ -625,9 +625,9 @@ void ccTracePolylineTool::exportLine()
 		assert(false);
 	}
 
-	m_poly3D = 0;
+    m_poly3D = nullptr;
 	m_segmentParams.resize(0);
-	m_poly3DVertices = 0;
+    m_poly3DVertices = nullptr;
 
 	resetLine(); //to update the GUI
 }
@@ -675,7 +675,7 @@ void ccTracePolylineTool::resetPoly3D()
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
 		ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-			WIDGETS_TYPE::WIDGET_POLYLINE, QString::number(m_poly3D->getUniqueID())), true);
+            WIDGETS_TYPE::WIDGET_POLYLINE, m_poly3D->getViewId()), true);
 	}
 }
 
@@ -692,7 +692,7 @@ void ccTracePolylineTool::resetTip()
 	if (ecvDisplayTools::GetCurrentScreen())
 	{
 		ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(
-			WIDGETS_TYPE::WIDGET_POLYLINE, QString::number(m_polyTip->getUniqueID())), true);
+            WIDGETS_TYPE::WIDGET_POLYLINE, m_polyTip->getViewId()), true);
 	}
 }
 

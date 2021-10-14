@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -44,7 +44,7 @@ constexpr double SQRT_3 = 1.7320508075688772935274463415059;
 //! Conversion factor from radians to degrees
 #ifndef CV_RAD_TO_DEG
 //! Conversion factor from radians to degrees
-[[deprecated("Use CVLib::RadiansToDegrees()")]]
+[[deprecated("Use cloudViewer::RadiansToDegrees()")]]
 constexpr double CV_RAD_TO_DEG = (180.0 / M_PI);
 #endif
 
@@ -55,7 +55,7 @@ constexpr double CV_DEG_TO_RAD = (M_PI / 180.0);
 
 //! Numerical threshold for considering a value as "zero"
 #ifndef ZERO_TOLERANCE
-[[deprecated( "Use ZERO_TOLERANCE_F/ZERO_TOLERANCE_D or CVLib::LessThanEpsilon()/CVLib::GreaterThanEpsilon()" )]]
+[[deprecated( "Use ZERO_TOLERANCE_F/ZERO_TOLERANCE_D or cloudViewer::LessThanEpsilon()/cloudViewer::GreaterThanEpsilon()" )]]
 constexpr double ZERO_TOLERANCE = std::numeric_limits<double>::epsilon();
 #endif
 

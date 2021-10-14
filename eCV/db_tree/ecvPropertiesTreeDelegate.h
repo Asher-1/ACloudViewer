@@ -43,6 +43,7 @@ class ccShiftedObject;
 class CCShareable;
 class ccPlanarEntityInterface;
 class ccSensor;
+class ccCoordinateSystem;
 
 class QStandardItemModel;
 class QStandardItem;
@@ -56,53 +57,57 @@ class ccPropertiesTreeDelegate : public QStyledItemDelegate
 public:
 
 	//! Delegate items roles
-	enum CC_PROPERTY_ROLE { OBJECT_NO_PROPERTY					= 0	,
-							OBJECT_NAME								,
-							OBJECT_VISIBILITY						,
-							OBJECT_CURRENT_DISPLAY					,
-							OBJECT_NORMALS_SHOWN					,
-							OBJECT_COLOR_SOURCE						,
-							OBJECT_POLYLINE_WIDTH					,
-							OBJECT_SENSOR_DRAW_FRUSTUM				,
-							OBJECT_SENSOR_DRAW_FRUSTUM_PLANES		,
-							OBJECT_SF_SHOW_SCALE					,
-							OBJECT_OCTREE_LEVEL						,
-							OBJECT_OCTREE_TYPE						,
-							OBJECT_MESH_WIRE						,
-							OBJECT_MESH_POINTS						,
-							OBJECT_MESH_STIPPLING					,
-							OBJECT_CURRENT_SCALAR_FIELD				,
-							OBJECT_CURRENT_COLOR_RAMP				,
-							OBJECT_IMAGE_ALPHA						,
-							OBJECT_APPLY_IMAGE_VIEWPORT				,
-							OBJECT_APPLY_SENSOR_VIEWPORT			,
-							OBJECT_CLOUD_SF_EDITOR					,
-							OBJECT_SENSOR_MATRIX_EDITOR				,
-							OBJECT_SENSOR_DISPLAY_SCALE				,
-							OBJECT_SENSOR_UNCERTAINTY				,
-							OBJECT_COLOR_RAMP_STEPS					,
-							OBJECT_MATERIALS						,
-							OBJECT_APPLY_LABEL_VIEWPORT				,
-							OBJECT_UPDATE_LABEL_VIEWPORT			,
-							OBJECT_LABEL_DISP_2D					,
-							OBJECT_LABEL_POINT_LEGEND				,
-							OBJECT_PRIMITIVE_PRECISION				,
-							OBJECT_SPHERE_RADIUS					,
-							OBJECT_CONE_HEIGHT						,
-							OBJECT_CONE_BOTTOM_RADIUS				,
-							OBJECT_CONE_TOP_RADIUS					,
-							OBJECT_CLOUD_POINT_SIZE					,
-							OBJECT_NAME_IN_3D						,
-							OBJECT_FACET_CONTOUR					,
-							OBJECT_FACET_MESH						,
-							OBJECT_PLANE_NORMAL_VECTOR				,
-							OBJECT_SENSOR_INDEX						,
-							OBJECT_SHOW_TRANS_BUFFER_PATH			,
-							OBJECT_SHOW_TRANS_BUFFER_TRIHDERONS		,
-							OBJECT_TRANS_BUFFER_TRIHDERONS_SCALE	,
-							OBJECT_HISTORY_MATRIX_EDITOR			,
-							OBJECT_GLTRANS_MATRIX_EDITOR			,
-							TREE_VIEW_HEADER						,
+	enum CC_PROPERTY_ROLE { OBJECT_NO_PROPERTY		= 0	        ,
+                                OBJECT_NAME				        ,
+                                OBJECT_VISIBILITY			        ,
+                                OBJECT_CURRENT_DISPLAY			        ,
+                                OBJECT_NORMALS_SHOWN			        ,
+                                OBJECT_COLOR_SOURCE			        ,
+                                OBJECT_POLYLINE_WIDTH			        ,
+                                OBJECT_SENSOR_DRAW_FRUSTUM		        ,
+                                OBJECT_SENSOR_DRAW_FRUSTUM_PLANES		,
+                                OBJECT_SF_SHOW_SCALE			        ,
+                                OBJECT_OCTREE_LEVEL			        ,
+                                OBJECT_OCTREE_TYPE			        ,
+                                OBJECT_MESH_WIRE			        ,
+                                OBJECT_MESH_POINTS			        ,
+                                OBJECT_MESH_STIPPLING			        ,
+                                OBJECT_CURRENT_SCALAR_FIELD		        ,
+                                OBJECT_CURRENT_COLOR_RAMP		        ,
+                                OBJECT_IMAGE_ALPHA			        ,
+                                OBJECT_APPLY_IMAGE_VIEWPORT		        ,
+                                OBJECT_APPLY_SENSOR_VIEWPORT			,
+                                OBJECT_CLOUD_SF_EDITOR			        ,
+                                OBJECT_SENSOR_MATRIX_EDITOR		        ,
+                                OBJECT_SENSOR_DISPLAY_SCALE		        ,
+                                OBJECT_SENSOR_UNCERTAINTY		        ,
+                                OBJECT_COLOR_RAMP_STEPS			        ,
+                                OBJECT_MATERIALS			        ,
+                                OBJECT_APPLY_LABEL_VIEWPORT		        ,
+                                OBJECT_UPDATE_LABEL_VIEWPORT			,
+                                OBJECT_LABEL_DISP_2D				,
+                                OBJECT_LABEL_POINT_LEGEND			,
+                                OBJECT_PRIMITIVE_PRECISION			,
+                                OBJECT_SPHERE_RADIUS				,
+                                OBJECT_CONE_HEIGHT				,
+                                OBJECT_CONE_BOTTOM_RADIUS			,
+                                OBJECT_CONE_TOP_RADIUS				,
+                                OBJECT_CLOUD_POINT_SIZE				,
+                                OBJECT_NAME_IN_3D				,
+                                OBJECT_FACET_CONTOUR				,
+                                OBJECT_FACET_MESH				,
+                                OBJECT_PLANE_NORMAL_VECTOR			,
+                                OBJECT_SENSOR_INDEX				,
+                                OBJECT_SHOW_TRANS_BUFFER_PATH			,
+                                OBJECT_SHOW_TRANS_BUFFER_TRIHDERONS		,
+                                OBJECT_TRANS_BUFFER_TRIHDERONS_SCALE	        ,
+                                OBJECT_HISTORY_MATRIX_EDITOR			,
+                                OBJECT_GLTRANS_MATRIX_EDITOR			,
+                                OBJECT_COORDINATE_SYSTEM_DISP_PLANES	        ,
+                                OBJECT_COORDINATE_SYSTEM_DISP_AXES		,
+                                OBJECT_COORDINATE_SYSTEM_AXES_WIDTH		,
+                                OBJECT_COORDINATE_SYSTEM_DISP_SCALE		,
+                                TREE_VIEW_HEADER				,
 	};
 
 	//! Default constructor
@@ -130,7 +135,13 @@ signals:
 	void ccObjectAppearanceChanged(ccHObject* hObject, bool forceRedraw = true) const;
 	void ccObjectAndChildrenAppearanceChanged(ccHObject* hObject, bool forceRedraw = true) const;
 
-protected slots:
+private:
+    static const char* s_noneString;
+    static const char* s_rgbColor;
+    static const char* s_sfColor;
+    static const char* s_defaultPointSizeString;
+    static const char* s_defaultPolyWidthSizeString;
+
 	void updateItem(QStandardItem*);
 	void scalarFieldChanged(int);
 	void colorScaleChanged(int);
@@ -152,11 +163,13 @@ protected slots:
 	void objectDisplayChanged(const QString &);
 	void colorSourceChanged(const QString &);
 	void sensorScaleChanged(double);
+    void coordinateSystemDisplayScaleChanged(double);
 	void sensorUncertaintyChanged();
 	void sensorIndexChanged(double);
 	void updateCurrentEntity(bool redraw = true);
 	void cloudPointSizeChanged(int);
 	void polyineWidthChanged(int);
+    void coordinateSystemAxisWidthChanged(int);
 	void trihedronsScaleChanged(double);
 
 protected:
@@ -186,6 +199,7 @@ protected:
 	void fillWithShareable(CCShareable*);
 	void fillWithMetaData(ccObject*);
 	void fillWithShifted(ccShiftedObject*);
+    void fillWithCoordinateSystem(const ccCoordinateSystem*);
 	template<class Type, int N, class ComponentType> void fillWithCCArray(ccArray<Type, N, ComponentType>*);
 
 	//! Returns whether the editor is wide (i.e. spans on two columns) or not

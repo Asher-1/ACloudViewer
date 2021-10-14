@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -36,7 +36,7 @@
 //DGM: tests in progress
 //#define TEST_CELLS_FOR_SPHERICAL_NN
 
-namespace CVLib
+namespace cloudViewer
 {
 
 class ReferenceCloud;

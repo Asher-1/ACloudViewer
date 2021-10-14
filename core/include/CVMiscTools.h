@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -23,7 +23,7 @@
 #include "CVGeom.h"
 #include "CVToolbox.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 	//! Miscellaneous useful functions (geometrical elements handling)
 	class CV_CORE_LIB_API CCMiscTools : public CVToolbox

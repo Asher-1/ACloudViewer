@@ -20,95 +20,109 @@
 
 #include <QDialog>
 
-//CVLib
-#include <RegistrationTools.h>
-
-#include <ui_registrationDlg.h>
+// cloudViewer
 #include <ReferenceCloud.h>
+#include <RegistrationTools.h>
+#include <ui_registrationDlg.h>
 
 class ccHObject;
 
 //! Point cloud or mesh registration dialog
-class ccRegistrationDlg : public QDialog, public Ui::RegistrationDialog
-{
-	Q_OBJECT
+class ccRegistrationDlg : public QDialog, public Ui::RegistrationDialog {
+    Q_OBJECT
 
 public:
+    //! Default constructor
+    ccRegistrationDlg(ccHObject *data,
+                      ccHObject *model,
+                      QWidget *parent = nullptr);
 
-	//! Default constructor
-	ccRegistrationDlg(ccHObject *data, ccHObject *model, QWidget* parent = 0);
+    //! Default destructor
+    virtual ~ccRegistrationDlg();
 
-	//! Default destructor
-	virtual ~ccRegistrationDlg();
+    // shortcuts
+    typedef cloudViewer::ICPRegistrationTools::CONVERGENCE_TYPE
+            ConvergenceMethod;
 
-	//shortcuts
-	typedef CVLib::ICPRegistrationTools::CONVERGENCE_TYPE ConvergenceMethod;
+    //! Returns convergence method
+    ConvergenceMethod getConvergenceMethod() const;
 
-	//! Returns convergence method
-	ConvergenceMethod getConvergenceMethod() const;
+    //! Returns max number of iterations
+    /** Only valid if registration method is 'ITERATION_REG'.
+     **/
+    unsigned getMaxIterationCount() const;
 
-	//! Returns max number of iterations
-	/** Only valid if registration method is 'ITERATION_REG'.
-	**/
-	unsigned getMaxIterationCount() const;
+    //! Returns the approximated final overlap
+    unsigned getFinalOverlap() const;
 
-	//! Returns the approximated final overlap
-	unsigned getFinalOverlap() const;
+    //! Returns minimum RMS decrease between two consecutive iterations
+    /** Only valid if registration method is 'MAX_ERROR_REG'.
+     **/
+    double getMinRMSDecrease() const;
 
-	//! Returns minimum RMS decrease between two consecutive iterations
-	/** Only valid if registration method is 'MAX_ERROR_REG'.
-	**/
-	double getMinRMSDecrease() const;
+    //! Returns the theoretical mininmum RMS decrease between two consecutive
+    //! iterations
+    static double GetAbsoluteMinRMSDecrease();
 
-	//! Returns whether farthest points should be ignored at each iteration
-	/** This is a trick to improve registration for slightly different clouds.
-	**/
-	bool removeFarthestPoints() const;
+    //! Sets the minimum RMS decrease between two consecutive iterations
+    /** Only valid if registration method is 'MAX_ERROR_REG'.
+     **/
+    void setMinRMSDecrease(double value);
 
-	//! Returns the limit above which clouds should be randomly resampled
-	unsigned randomSamplingLimit() const;
+    //! Returns whether farthest points should be ignored at each iteration
+    /** This is a trick to improve registration for slightly different clouds.
+     **/
+    bool removeFarthestPoints() const;
 
-	//! Returns 'model' entity
-	ccHObject *getModelEntity();
+    //! Returns the limit above which clouds should be randomly resampled
+    unsigned randomSamplingLimit() const;
 
-	//! Returns 'data' entity
-	ccHObject *getDataEntity();
+    //! Returns 'model' entity
+    ccHObject *getModelEntity();
 
-	//! Whether to use data displayed SF as weights
-	bool useDataSFAsWeights() const;
+    //! Returns 'data' entity
+    ccHObject *getDataEntity();
 
-	//! Whether to use model displayed SF as weights
-	bool useModelSFAsWeights() const;
+    //! Whether to use data displayed SF as weights
+    bool useDataSFAsWeights() const;
 
-	//! Returns whether to adjust the scale during optimization
-	/** This is useful for co-registration of lidar and photogrammetric clouds
-	for instance.
-	**/
-	bool adjustScale() const;
+    //! Whether to use model displayed SF as weights
+    bool useModelSFAsWeights() const;
 
-	//! Returns active transformation filters
-	/** See CVLib::RegistrationTools::TRANSFORMATION_FILTERS.
-	**/
-	int getTransformationFilters() const;
+    //! Whether to use signed distances when the reference is a mesh
+    bool useC2MSignedDistances() const;
 
-	//! Returns the maximum number of threads
-	int getMaxThreadCount() const;
+    //! Method to take normals into account
+    cloudViewer::ICPRegistrationTools::NORMALS_MATCHING normalsMatchingOption() const;
 
-	//! Saves parameters for next call
-	void saveParameters() const;
+    //! Returns whether to adjust the scale during optimization
+    /** This is useful for co-registration of lidar and photogrammetric clouds
+    for instance.
+    **/
+    bool adjustScale() const;
 
-protected slots:
-	void swapModelAndData();
+    //! Returns active transformation filters
+    /** See cloudViewer::RegistrationTools::TRANSFORMATION_FILTERS.
+     **/
+    int getTransformationFilters() const;
+
+    //! Returns the maximum number of threads
+    int getMaxThreadCount() const;
+
+    //! Saves parameters for next call
+    void saveParameters() const;
 
 protected:
+    void swapModelAndData();
 
-	void setColorsAndLabels();
+protected:
+    void updateGUI();
 
-	//! 'Model' entity
-	ccHObject* modelEntity;
+    //! 'Model' entity
+    ccHObject *modelEntity;
 
-	//! 'Data' entity
-	ccHObject* dataEntity;
+    //! 'Data' entity
+    ccHObject *dataEntity;
 };
 
-#endif // ECV_REGISTRATION_DLG_HEADER
+#endif  // ECV_REGISTRATION_DLG_HEADER

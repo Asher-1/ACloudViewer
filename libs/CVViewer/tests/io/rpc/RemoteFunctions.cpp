@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,21 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/RemoteFunctions.h"
+#include "io/rpc/RemoteFunctions.h"
 
 #include <random>
 
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/TriangleMesh.h"
-#include "open3d/io/rpc/BufferConnection.h"
-#include "open3d/io/rpc/Connection.h"
-#include "open3d/io/rpc/DummyReceiver.h"
-#include "open3d/io/rpc/MessageUtils.h"
+#include <ecvPointCloud.h>
+#include <ecvMesh.h>
+#include "io/rpc/BufferConnection.h"
+#include "io/rpc/Connection.h"
+#include "io/rpc/DummyReceiver.h"
+#include "io/rpc/MessageUtils.h"
 #include "tests/UnitTest.h"
 
-using namespace open3d::io::rpc;
+using namespace cloudViewer::io::rpc;
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 #ifdef _WIN32
@@ -56,7 +56,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
         geometry::PointCloud pcd;
         pcd.points_.push_back(Eigen::Vector3d(1, 2, 3));
         auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+                cloudViewer::make_shared<Connection>(connection_address, 500, 500);
         ASSERT_TRUE(SetPointCloud(pcd, "", 0, "", connection));
         receiver.Stop();
     }
@@ -71,7 +71,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
         mesh.vertices_.push_back(Eigen::Vector3d(1, 2, 3));
         mesh.triangles_.push_back(Eigen::Vector3i(0, 1, 2));
         auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+                cloudViewer::make_shared<Connection>(connection_address, 500, 500);
         ASSERT_TRUE(SetTriangleMesh(mesh, "", 0, "", connection));
         receiver.Stop();
     }
@@ -82,7 +82,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
 
         camera::PinholeCameraParameters cam;
         auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+                cloudViewer::make_shared<Connection>(connection_address, 500, 500);
         ASSERT_TRUE(SetLegacyCamera(cam, "", 0, "", connection));
         receiver.Stop();
     }
@@ -92,7 +92,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
         receiver.Start();
 
         auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+                cloudViewer::make_shared<Connection>(connection_address, 500, 500);
         ASSERT_TRUE(SetTime(0, connection));
         receiver.Stop();
     }
@@ -102,7 +102,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
         receiver.Start();
 
         auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+                cloudViewer::make_shared<Connection>(connection_address, 500, 500);
         ASSERT_TRUE(SetActiveCamera("group/mycam", connection));
         receiver.Stop();
     }
@@ -115,7 +115,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
 
         geometry::PointCloud pcd;
         pcd.points_.push_back(Eigen::Vector3d(1, 2, 3));
-        auto buf_connection = std::make_shared<BufferConnection>();
+        auto buf_connection = cloudViewer::make_shared<BufferConnection>();
         ASSERT_TRUE(SetPointCloud(pcd, "", 0, "", buf_connection));
 
         camera::PinholeCameraParameters cam;
@@ -124,7 +124,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
         ASSERT_TRUE(SetTime(0, buf_connection));
 
         auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+                cloudViewer::make_shared<Connection>(connection_address, 500, 500);
         std::string buf = buf_connection->buffer().str();
         auto reply = connection->Send(buf.data(), buf.size());
 
@@ -238,4 +238,4 @@ TEST(RemoteFunctions, SendGarbage) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

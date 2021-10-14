@@ -23,7 +23,7 @@
 //Local
 #include "classifier.h"
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 
 class ecvMainAppInterface;

@@ -187,6 +187,7 @@ If you want to compile ErowCloudViewer (and ccViewer) with LAS/LAZ files support
 
 If your PDAL installation is not correctly picked up by CMake, 
 set the `PDAL_DIR` to the path containing `PDALConfig.cmake`.
+eg: "/home/yons/anaconda3/envs/pytorch-gpu/lib/cmake/PDAL"
 
 ### [Optional] Setup for LibE57 support
 
@@ -200,6 +201,16 @@ If you want to compile ErowCloudViewer (and ccViewer) with LibE57 files support,
         3. for 64 bits version be sure to select the right platform (x64 instead of Win32). If you use Visual Studio Express 2010, be sure also that the `toolset` (in the project properties) is set to something like `Windows7.1SDK`
     - only the XercesLib project neet to be compiled
     - eventually, CMake will look for the resulting files in `/include` (instead of `/src`) and `/lib` (without the Release or Debug subfolders). By default the visual project will put them in `/Build/WinXX/VCXX/StaticXXX`. Therefore you should create a custom folder with the right organization and copy the files there.
+
+    - On Linux
+	wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip
+	cd /opt \
+	    && unzip xerces-c-3.2.3.zip \
+	    && cd ./xerces-c-3.2.3 \
+	    && chmod +x configure \
+	    && ./configure --prefix=/usr \
+	    && make \
+	    && make install
 
 3. [LibE57](http://libe57.org) (*last tested version: 1.1.312 on Windows*)
     - **WARNING**: with Visual Studio (at least), you'll need the libraries compiled with `/MD` (=DLL Multithreaded) in release mode and `/MDd` in debug mode. You may have to replace all `/MT` by `/MD` in the main libE57 root CMake file (or in `cmake/c_flag_overrides.cmake` and `cmake/cxx_flag_overrides.cmake` if there's no `/MT` in it)

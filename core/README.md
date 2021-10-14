@@ -4,9 +4,9 @@
 
 This library provides data structures and algorithms for working with 3D point cloud data.
 
-It was originally part of the [CloudCompare repository](https://github.com/CloudCompare/CloudCompare) (as "CCLib").
+It was originally part of the [ErowCloudViewer repository](https://asher-1.github.io) (as "CVLib").
 
-We have separated it into its own repository because it is useful on its own without having to download the entire CloudCompare repository. This makes it easier to work with and gives this part of the CloudCompare project some visibility it would not otherwise have.
+We have separated it into its own repository because it is useful on its own without having to download the entire ErowCloudViewer repository. This makes it easier to work with and gives this part of the ErowCloudViewer project some visibility it would not otherwise have.
 
 It uses CMake, requires C++14, and compiles & runs on Linux, macOS, and Windows.
 
@@ -14,15 +14,15 @@ It uses CMake, requires C++14, and compiles & runs on Linux, macOS, and Windows.
 
 | Option        | Description | Default  |
 | ------------- |-------------| ---------|
-| CCCORELIB_USE_CGAL | Use [CGAL](https://github.com/CGAL/cgal) to enable Delaunay 2.5D triangulation with a GPL compliant licence | OFF |
-| CCCORELIB_USE_TBB | Use [Intel Threading Building Blocks](https://github.com/oneapi-src/oneTBB) lib to enable some parallel processing | OFF |
-| CCCORELIB_USE_QT_CONCURRENT | Use Qt to enable parallel processing using [QtConcurrent](https://doc.qt.io/qt-5/qtconcurrent-index.html) | ON |
-| CCCORELIB_SHARED | Compile as a shared library | ON |
-| CCCORELIB_SCALAR_DOUBLE | Define _ScalarType_ as double (instead of float) | OFF |
+| CVCORELIB_USE_CGAL | Use [CGAL](https://github.com/CGAL/cgal) to enable Delaunay 2.5D triangulation with a GPL compliant licence | OFF |
+| CVCORELIB_USE_TBB | Use [Intel Threading Building Blocks](https://github.com/oneapi-src/oneTBB) lib to enable some parallel processing | OFF |
+| CVCORELIB_USE_QT_CONCURRENT | Use Qt to enable parallel processing using [QtConcurrent](https://doc.qt.io/qt-5/qtconcurrent-index.html) | ON |
+| CVCORELIB_SHARED | Compile as a shared library | ON |
+| CVCORELIB_SCALAR_DOUBLE | Define _ScalarType_ as double (instead of float) | OFF |
 
 ### Qt Option (Qt5_DIR)
 
-If `CCCORELIB_USE_QT_CONCURRENT` is on (it is by default), then you may need to tell CMake where to find the Qt cmake files. The [official docs from Qt](https://doc.qt.io/qt-5/cmake-get-started.html) show two ways to do so:
+If `CVCORELIB_USE_QT_CONCURRENT` is on (it is by default), then you may need to tell CMake where to find the Qt cmake files. The [official docs from Qt](https://doc.qt.io/qt-5/cmake-get-started.html) show two ways to do so:
 - setting `CMAKE_PREFIX_PATH` to point to your Qt installation (where 'bin', 'doc', 'include', lib', etc. live)
 - setting `Qt5_DIR` to point at the cmake directory within your Qt installation (this would be something like `<Qt installation>/cmake/Qt5`)
 

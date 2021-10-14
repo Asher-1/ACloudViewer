@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Advanced/multiway_registration.py
 
@@ -15,7 +15,7 @@ max_correspondence_distance_fine = voxel_size * 1.5
 def load_point_clouds(voxel_size=0.0):
     pcds = []
     for i in range(3):
-        pcd = cv3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_%d.pcd" % i)
+        pcd = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_%d.pcd" % i)
         pcd_down = pcd.voxel_down_sample(voxel_size=voxel_size)
         pcds.append(pcd_down)
     return pcds

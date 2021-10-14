@@ -19,10 +19,12 @@
 #define ECV_GROUND_LIDAR_SENSOR_HEADER
 
 //Local
+#include "LineSet.h"
 #include "ecvSensor.h"
+#include "ecvOrientedBBox.h"
 #include "ecvDepthBuffer.h"
 
-//CVLib
+// CV_CORE_LIB
 #include <GenericCloud.h>
 
 class ccPointCloud;
@@ -64,6 +66,9 @@ public:
 	ccBBox getOwnBB(bool withGLFeatures = false) override;
 	ccBBox getOwnFitBB(ccGLMatrix& trans) override;
 
+    virtual void clearDrawings() override;
+    virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) override;
+
 	//inherited from ccSensor
 	bool applyViewport() override;
 
@@ -82,7 +87,7 @@ public:
 	//! Computes angular parameters automatically (all but the angular steps!)
 	/** WARNING: this method uses the cloud global iterator.
 	**/
-	bool computeAutoParameters(CVLib::GenericCloud* theCloud);
+	bool computeAutoParameters(cloudViewer::GenericCloud* theCloud);
 
 	//! Returns the error string corresponding to an error code
 	/** Errors codes are returned by ccGBLSensor::computeDepthBuffer or ccDepthBuffer::fillHoles for instance.
@@ -185,7 +190,7 @@ public: //projection tools
 		\param posIndex (optional) sensor position index (see ccIndexedTransformationBuffer)
 		\return a bidimensional array of 3D vectors (same size as the depth buffer)
 	**/
-	NormalGrid* projectNormals(	CVLib::GenericCloud* cloud,
+	NormalGrid* projectNormals(	cloudViewer::GenericCloud* cloud,
 								const NormalGrid& norms,
 								double posIndex = 0 ) const;
 
@@ -198,7 +203,7 @@ public: //projection tools
 		\param rgbColors the RGB colors (should have the same size and order as the point cloud)
 		\return a set of RGB colors organized as a bidimensional grid (same size as the depth buffer)
 	**/
-	ColorGrid* projectColors(	CVLib::GenericCloud* cloud,
+	ColorGrid* projectColors(	cloudViewer::GenericCloud* cloud,
 								const ColorGrid& rgbColors ) const;
 
 public: //depth buffer management
@@ -210,7 +215,7 @@ public: //depth buffer management
 		\param projectedCloud optional (empty) cloud to store the projected points
 		\return whether the depth buffer was successfully created or not
 	**/
-	bool computeDepthBuffer(CVLib::GenericCloud* cloud, int& errorCode, ccPointCloud* projectedCloud = nullptr);
+	bool computeDepthBuffer(cloudViewer::GenericCloud* cloud, int& errorCode, ccPointCloud* projectedCloud = nullptr);
 
 	//! Returns the associated depth buffer
 	/** Call ccGBLSensor::computeDepthBuffer first otherwise the returned buffer will be 0.
@@ -220,11 +225,15 @@ public: //depth buffer management
 	//! Removes the associated depth buffer
 	void clearDepthBuffer();
 
+    const cloudViewer::geometry::LineSet& getSensorLegLines() const {return m_leg; }
+    const cloudViewer::geometry::LineSet& getSensorAxis() const {return m_axis; }
+    const ecvOrientedBBox& getSensorHead() const {return m_obbHead; }
+
 protected:
 
 	//Inherited from ccHObject
 	bool toFile_MeOnly(QFile& out) const override;
-	bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 	void drawMeOnly(CC_DRAW_CONTEXT& context) override;
 
 	//! Converts 2D angular coordinates (yaw,pitch) in integer depth buffer coordinates
@@ -262,6 +271,10 @@ protected:
 
 	//! Associated Z-buffer
 	ccDepthBuffer m_depthBuffer;
+
+    ecvOrientedBBox m_obbHead;
+    cloudViewer::geometry::LineSet m_leg;
+    cloudViewer::geometry::LineSet m_axis;
 };
 
 #endif // ECV_GROUND_LIDAR_SENSOR_HEADER

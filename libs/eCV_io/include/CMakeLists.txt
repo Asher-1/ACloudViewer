@@ -5,7 +5,6 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/AsciiOpenDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/AsciiSaveDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/AutoIO.h
-		${CMAKE_CURRENT_LIST_DIR}/FileFormatIO.h
 		${CMAKE_CURRENT_LIST_DIR}/BinFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/DepthMapFileFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/DxfFilter.h
@@ -24,14 +23,12 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/OFFFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/PlyFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/PlyOpenDlg.h
-		${CMAKE_CURRENT_LIST_DIR}/PointCloudIO.h
 		${CMAKE_CURRENT_LIST_DIR}/PTXFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/RasterGridFilter.h
-		${CMAKE_CURRENT_LIST_DIR}/rply.h
+		${CMAKE_CURRENT_LIST_DIR}/FileRply.h
 		${CMAKE_CURRENT_LIST_DIR}/ShpDBFFields.h
 		${CMAKE_CURRENT_LIST_DIR}/ShpFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/STLFilter.h
-		${CMAKE_CURRENT_LIST_DIR}/TriangleMeshIO.h
 		${CMAKE_CURRENT_LIST_DIR}/VoxelGridIO.h
 		${CMAKE_CURRENT_LIST_DIR}/VTKFilter.h
 		${CMAKE_CURRENT_LIST_DIR}/PinholeCameraTrajectoryIO.h

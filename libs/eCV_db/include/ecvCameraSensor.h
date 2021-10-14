@@ -21,9 +21,11 @@
 //local
 #include "ecvSensor.h"
 #include "ecvOctree.h"
+#include "LineSet.h"
 
 //system
 #include <unordered_set>
+
 
 class ccPointCloud;
 class ccMesh;
@@ -168,9 +170,9 @@ public: //general
 		bool isComputed;
 		bool drawFrustum;
 		bool drawSidePlanes;
-		ccPointCloud* frustumCorners;
-		ccMesh* frustumHull;
-		CCVector3 center;					/**< center of the circumscribed sphere **/
+        ccPointCloud* frustumCorners;
+        ccMesh* frustumHull;
+        CCVector3 center; /**< center of the circumscribed sphere **/
 	};
 
 	//! Default constructor
@@ -181,7 +183,7 @@ public: //general
 	ccCameraSensor(const IntrinsicParameters& iParams);
 
 	//! Destructor
-	virtual ~ccCameraSensor();
+    virtual ~ccCameraSensor() override;
 
 	//inherited from ccHObject
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::CAMERA_SENSOR; }
@@ -336,7 +338,7 @@ public: //orthorectification tools
 		\return ortho-rectified image as a point cloud
 	**/
 	ccPointCloud* orthoRectifyAsCloud(	const ccImage* image,
-										CVLib::GenericIndexedCloud* keypoints3D,
+										cloudViewer::GenericIndexedCloud* keypoints3D,
 										std::vector<KeyPoint>& keypointsImage) const;
 
 	//! Projective ortho-rectification of an image (as image)
@@ -351,7 +353,7 @@ public: //orthorectification tools
 		\return ortho-rectified image
 	**/
 	ccImage* orthoRectifyAsImage(	const ccImage* image,
-									CVLib::GenericIndexedCloud* keypoints3D,
+									cloudViewer::GenericIndexedCloud* keypoints3D,
 									std::vector<KeyPoint>& keypointsImage,
 									double& pixelSize,
 									double* minCorner = nullptr,
@@ -410,7 +412,7 @@ public: //orthorectification tools
 		\return success
 	**/
 	bool computeOrthoRectificationParams(	const ccImage* image,
-											CVLib::GenericIndexedCloud* keypoints3D,
+											cloudViewer::GenericIndexedCloud* keypoints3D,
 											std::vector<KeyPoint>& keypointsImage,
 											double a[3],
 											double b[3],
@@ -434,7 +436,7 @@ public: //misc
 		//TODO lensDistortion if we want to take the lens distortion into consideration
 		\return success
 	**/
-	bool computeUncertainty(CVLib::ReferenceCloud* points, std::vector< Vector3Tpl<ScalarType> >& accuracy/*, bool lensDistortion*/);
+	bool computeUncertainty(cloudViewer::ReferenceCloud* points, std::vector< Vector3Tpl<ScalarType> >& accuracy/*, bool lensDistortion*/);
 
 	//! Undistorts an image based on the sensor distortion parameters
 	/** \warning Only works with the simple radial distortion model for now (see RadialDistortionParameters).
@@ -467,6 +469,19 @@ public: //misc
 	**/
 	bool computeGlobalPlaneCoefficients(float planeCoefficients[6][4], CCVector3 ptsFrustum[8], CCVector3 edges[6], CCVector3& center);
 
+    const cloudViewer::geometry::LineSet& getNearPlane() const {return m_nearPlane; }
+    const cloudViewer::geometry::LineSet& getSideLines() const {return m_sideLines; }
+    const cloudViewer::geometry::LineSet& getArrow() const {return m_arrow; }
+    const cloudViewer::geometry::LineSet& getAxis() const {return m_axis; }
+
+    void setPlaneColor(ecvColor::Rgb color) {m_plane_color = color; }
+    const ecvColor::Rgb& getPlaneColor() const {return m_plane_color; }
+
+    double getFocalLength() const { return m_focalLength; }
+
+    virtual void clearDrawings() override;
+    virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) override;
+
 public: //helpers
 
 	//! Helper: converts camera focal from pixels to mm
@@ -481,12 +496,14 @@ public: //helpers
 	//! Helper: deduces camera f.o.v. (in radians) from focal (in mm)
 	static float ComputeFovRadFromFocalMm(float focal_mm, float ccdSize_mm);
 
+    void updateData();
+
 protected:
 
-	//! Used internally for display
-	CCVector3 computeUpperLeftPoint() const;
+    //! Used internally for display
+    CCVector3 computeUpperLeftPoint() const;
 
-	//! Compute the projection matrix (from intrinsic parameters)
+    //! Compute the projection matrix (from intrinsic parameters)
 	void computeProjectionMatrix();
 
 	//! Computes the eight corners of the frustum
@@ -496,8 +513,10 @@ protected:
 
 	//Inherited from ccHObject
 	virtual bool toFile_MeOnly(QFile& out) const override;
-	virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 	virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
+
+    ecvColor::Rgb m_plane_color;
 
 	//! Camera intrinsic parameters
 	IntrinsicParameters m_intrinsicParams;
@@ -514,6 +533,12 @@ protected:
 	ccGLMatrix m_projectionMatrix;
 	//! Whether the intrinsic matrix is valid or not
 	bool m_projectionMatrixIsValid;
+
+    cloudViewer::geometry::LineSet m_nearPlane;
+    cloudViewer::geometry::LineSet m_sideLines;
+    cloudViewer::geometry::LineSet m_arrow;
+    cloudViewer::geometry::LineSet m_axis;
+    double m_focalLength;
 };
 
 class ccOctreeFrustumIntersector
@@ -538,14 +563,14 @@ public:
 	}
 
 	//! Prepares structure for frustum filtering
-	bool build(CVLib::DgmOctree* octree);
+	bool build(cloudViewer::DgmOctree* octree);
 
 	//! Returns the cell visibility
-	OctreeCellVisibility positionFromFrustum(CVLib::DgmOctree::CellCode truncatedCode, unsigned char level) const
+	OctreeCellVisibility positionFromFrustum(cloudViewer::DgmOctree::CellCode truncatedCode, unsigned char level) const
 	{
 		assert(m_associatedOctree);
 
-		std::unordered_set<CVLib::DgmOctree::CellCode>::const_iterator got = m_cellsInFrustum[level].find(truncatedCode);
+		std::unordered_set<cloudViewer::DgmOctree::CellCode>::const_iterator got = m_cellsInFrustum[level].find(truncatedCode);
 		if (got != m_cellsInFrustum[level].end())
 			return CELL_INSIDE_FRUSTUM;
 		got = m_cellsIntersectFrustum[level].find(truncatedCode);
@@ -582,7 +607,7 @@ public:
 		\param center 3D coordinates of the frustum center (global coordinates system) ; this is the center of the circumscribed sphere
 	**/
 	void computeFrustumIntersectionByLevel(	unsigned char level,
-											CVLib::DgmOctree::CellCode parentTruncatedCode,
+											cloudViewer::DgmOctree::CellCode parentTruncatedCode,
 											OctreeCellVisibility parentResult,
 											const float planesCoefficients[6][4],
 											const CCVector3 ptsFrustum[8],
@@ -608,14 +633,14 @@ public:
 
 protected:
 
-	CVLib::DgmOctree* m_associatedOctree;
+	cloudViewer::DgmOctree* m_associatedOctree;
 
 	// contains the truncated code of the cells built in the octree
-	std::unordered_set<CVLib::DgmOctree::CellCode> m_cellsBuilt[CVLib::DgmOctree::MAX_OCTREE_LEVEL+1];
+	std::unordered_set<cloudViewer::DgmOctree::CellCode> m_cellsBuilt[cloudViewer::DgmOctree::MAX_OCTREE_LEVEL+1];
 	// contains the truncated code of the cells INSIDE the frustum
-	std::unordered_set<CVLib::DgmOctree::CellCode> m_cellsInFrustum[CVLib::DgmOctree::MAX_OCTREE_LEVEL+1];
+	std::unordered_set<cloudViewer::DgmOctree::CellCode> m_cellsInFrustum[cloudViewer::DgmOctree::MAX_OCTREE_LEVEL+1];
 	// contains the truncated code of the cells INTERSECTING the frustum
-	std::unordered_set<CVLib::DgmOctree::CellCode> m_cellsIntersectFrustum[CVLib::DgmOctree::MAX_OCTREE_LEVEL+1];
+	std::unordered_set<cloudViewer::DgmOctree::CellCode> m_cellsIntersectFrustum[cloudViewer::DgmOctree::MAX_OCTREE_LEVEL+1];
 };
 
 

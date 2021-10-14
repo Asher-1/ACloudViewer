@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                          -
+// -                        cloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2019 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@
 #include <random>
 #include <unordered_set>
 
-#include <Console.h>
+#include <Logging.h>
 
 namespace cloudViewer {
 namespace geometry {
@@ -64,8 +64,9 @@ RANSACResult EvaluateRANSACBasedOnDistance(
 	RANSACResult result;
 
 	for (size_t idx = 0; idx < points.size(); ++idx) {
-		Eigen::Vector4d point(points[idx](0), points[idx](1), points[idx](2),
-			1);
+        Eigen::Vector4d point(points[idx](0),
+                              points[idx](1),
+                              points[idx](2), 1);
 		double distance = std::abs(plane_model.dot(point));
 
 		if (distance < distance_threshold) {
@@ -107,11 +108,12 @@ RANSACResult EvaluateRANSACBasedOnDistance(
 Eigen::Vector4d GetPlaneFromPoints(
 	const std::vector<CCVector3> &points,
 	const std::vector<size_t> &inliers) {
-	CCVector3 centroid(0, 0, 0);
+    CCVector3d sum(0, 0, 0);
 	for (size_t idx : inliers) {
-		centroid += points[idx];
+        sum += CCVector3d::fromArray(points[idx].u);;
 	}
-	centroid /= PointCoordinateType(inliers.size());
+    sum /= static_cast<double>(inliers.size());
+    CCVector3 centroid = CCVector3::fromArray(sum.u);
 
 	PointCoordinateType xx = 0, xy = 0, xz = 0, yy = 0, yz = 0, zz = 0;
 
@@ -145,8 +147,8 @@ Eigen::Vector4d GetPlaneFromPoints(
 	if (norm == 0) {
 		return Eigen::Vector4d(0, 0, 0, 0);
 	}
-	abc /= abc.norm();
-	double d = -abc.dot(centroid);
+    abc /= norm;
+    double d = static_cast<double>(-abc.dot(centroid));
 	return Eigen::Vector4d(abc(0), abc(1), abc(2), d);
 }
 
@@ -185,21 +187,21 @@ ccPointCloud::segmentPlane(
 
 	// Return if ransac_n is less than the required plane model parameters.
 	if (ransac_n < 3) {
-		CVLib::utility::LogError(
+		cloudViewer::utility::LogError(
 			"ransac_n should be set to higher than or equal to 3.");
 		return std::make_tuple(best_plane_model, inliers);
 	}
-	if (num_points < size_t(ransac_n)) {
-		CVLib::utility::LogError("There must be at least 'ransac_n' points.");
+    if (num_points < std::size_t(ransac_n)) {
+		cloudViewer::utility::LogError("There must be at least 'ransac_n' points.");
 		return std::make_tuple(best_plane_model, inliers);
 	}
 
 	for (int itr = 0; itr < num_iterations; itr++) {
-		for (int i = 0; i < ransac_n; ++i) {
+        for (std::size_t i = 0; i < std::size_t(ransac_n); ++i) {
 			std::swap(indices[i], indices[rng() % num_points]);
 		}
 		inliers.clear();
-		for (int idx = 0; idx < ransac_n; ++idx) {
+        for (std::size_t idx = 0; idx < std::size_t(ransac_n); ++idx) {
 			inliers.emplace_back(indices[idx]);
 		}
 
@@ -216,8 +218,8 @@ ccPointCloud::segmentPlane(
 		auto this_result = EvaluateRANSACBasedOnDistance(
 			getPoints(), plane_model, inliers, distance_threshold, error);
 		if (this_result.fitness_ > result.fitness_ ||
-			(this_result.fitness_ == result.fitness_ &&
-				this_result.inlier_rmse_ < result.inlier_rmse_)) {
+            (cloudViewer::LessThanEpsilon(std::abs(this_result.fitness_ - result.fitness_))
+             && this_result.inlier_rmse_ < result.inlier_rmse_)) {
 			result = this_result;
 			best_plane_model = plane_model;
 		}
@@ -225,9 +227,9 @@ ccPointCloud::segmentPlane(
 
 	// Find the final inliers using best_plane_model.
 	inliers.clear();
-	for (size_t idx = 0; idx < size(); ++idx) {
-		Eigen::Vector4d point(m_points[idx](0), m_points[idx](1), m_points[idx](2),
-			1);
+    for (std::size_t idx = 0; idx < size(); ++idx) {
+        Eigen::Vector4d point(m_points[idx](0), m_points[idx](1),
+                              m_points[idx](2), 1);
 		double distance = std::abs(best_plane_model.dot(point));
 
 		if (distance < distance_threshold) {
@@ -238,7 +240,7 @@ ccPointCloud::segmentPlane(
 	// Improve best_plane_model using the final inliers.
 	best_plane_model = GetPlaneFromPoints(getPoints(), inliers);
 
-	CVLib::utility::LogDebug("RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}",
+	cloudViewer::utility::LogDebug("RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}",
 		inliers.size(), result.fitness_, result.inlier_rmse_);
 	return std::make_tuple(best_plane_model, inliers);
 }

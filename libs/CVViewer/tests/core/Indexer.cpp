@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Indexer.h"
+#include "core/Indexer.h"
 
 #include <unordered_map>
 
-#include "open3d/core/Device.h"
-#include "open3d/core/SizeVector.h"
+#include "core/Device.h"
+#include "core/SizeVector.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 class IndexerPermuteDevices : public PermuteDevices {};
@@ -190,4 +190,4 @@ TEST_P(IndexerPermuteDevices, GetPointers) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -26,7 +26,7 @@
 //System
 #include <vector>
 
-namespace CVLib
+namespace cloudViewer
 {
 
 //! A simple scalar field (to be associated to a point cloud)

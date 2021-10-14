@@ -10,6 +10,18 @@ import tarfile
 import gzip
 import zipfile
 import shutil
+import sys
+
+# Whenever you import cloudViewer_tutorial, the test data will be downloaded
+# automatically to examples/test_data/cloudViewer_downloads. Therefore, make
+# sure to import cloudViewer_tutorial before running the tutorials.
+# See https://github.com/isl-org/cloudViewer_downloads for details on how to
+# manage the test data files.
+_pwd = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(_pwd, os.pardir, "test_data"))
+from download_utils import download_all_files as _download_all_files
+
+_download_all_files()
 
 interactive = True
 
@@ -84,11 +96,11 @@ def _relative_path(path):
 
 
 def download_fountain_dataset():
-    fountain_path = _relative_path("../TestData/fountain_small")
-    fountain_zip_path = _relative_path("../TestData/fountain.zip")
+    fountain_path = _relative_path("../test_data/fountain_small")
+    fountain_zip_path = _relative_path("../test_data/fountain.zip")
     if not os.path.exists(fountain_path):
         print("downloading fountain dataset")
-        url = "https://storage.googleapis.com/isl-datasets/open3d-dev/fountain.zip"
+        url = "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.1.0/fountain.zip"
         urllib.request.urlretrieve(url, fountain_zip_path)
         print("extract fountain dataset")
         with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:
@@ -177,7 +189,7 @@ def get_intersecting_boxes_mesh():
 
 
 def get_armadillo_mesh():
-    armadillo_path = _relative_path("../TestData/Armadillo.ply")
+    armadillo_path = _relative_path("../test_data/Armadillo.ply")
     if not os.path.exists(armadillo_path):
         print("downloading armadillo mesh")
         url = "http://graphics.stanford.edu/pub/3Dscanrep/armadillo/Armadillo.ply.gz"
@@ -193,7 +205,7 @@ def get_armadillo_mesh():
 
 
 def get_bunny_mesh():
-    bunny_path = _relative_path("../TestData/Bunny.ply")
+    bunny_path = _relative_path("../test_data/Bunny.ply")
     if not os.path.exists(bunny_path):
         print("downloading bunny mesh")
         url = "http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz"
@@ -218,13 +230,13 @@ def get_bunny_mesh():
 
 
 def get_knot_mesh():
-    mesh = cv3d.io.read_triangle_mesh(_relative_path("../TestData/knot.ply"))
+    mesh = cv3d.io.read_triangle_mesh(_relative_path("../test_data/knot.ply"))
     mesh.compute_vertex_normals()
     return mesh
 
 
 def get_eagle_pcd():
-    path = _relative_path("../TestData/eagle.ply")
+    path = _relative_path("../test_data/eagle.ply")
     if not os.path.exists(path):
         print("downloading eagle pcl")
         url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"

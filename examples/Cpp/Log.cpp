@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2019 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,36 +26,28 @@
 
 #include <cstdio>
 
-
 #include "CloudViewer.h"
 
 int main(int argc, char **argv) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
-	utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-	utility::LogDebug("This Debug message should be visible, {} {:.2f}",
-		"format:", 0.42001);
-	utility::LogInfo("This Info message should be visible, {} {:.2f}",
-		"format:", 0.42001);
-	utility::LogWarning("This Warning message should be visible, {} {:.2f}",
-		"format:", 0.42001);
+    utility::LogDebug("This Debug message should be visible, {} {:.2f}",
+                      "format:", 0.42001);
+    utility::LogInfo("This Info message should be visible, {} {:.2f}",
+                     "format:", 0.42001);
+    utility::LogWarning("This Warning message should be visible, {} {:.2f}",
+                        "format:", 0.42001);
 
-	utility::LogDebugf("This Debug message should be visible, %s %.2f",
-		"formatf:", 0.42001);
-	utility::LogInfof("This Info message should be visible, %s %.2f",
-		"formatf:", 0.42001);
-	utility::LogWarningf("This Warning message should be visible, %s %.2f",
-		"formatf:", 0.42001);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
 
-	utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Info);
-
-	utility::LogDebug("This Debug message should NOT be visible, {} {:.2f}",
-		"format:", 0.42001);
-	utility::LogInfo("This Info message should be visible, {} {:.2f}",
-		"format:", 0.42001);
-	utility::LogWarning("This Warning message should be visible, {} {:.2f}",
-		"format:", 0.42001);
+    utility::LogDebug("This Debug message should NOT be visible, {} {:.2f}",
+                      "format:", 0.42001);
+    utility::LogInfo("This Info message should be visible, {} {:.2f}",
+                     "format:", 0.42001);
+    utility::LogWarning("This Warning message should be visible, {} {:.2f}",
+                        "format:", 0.42001);
 
     try {
         utility::LogError("This Error exception is catched");

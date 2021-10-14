@@ -90,7 +90,7 @@ QList<QAction *> qRansacSD::getActions()
 		m_action->setToolTip(getDescription());
 		m_action->setIcon(getIcon());
 		//connect signal
-		connect(m_action, SIGNAL(triggered()), this, SLOT(doAction()));
+        connect(m_action, &QAction::triggered, this, &qRansacSD::doAction);
 	}
 
 	return QList<QAction *>{ m_action };
@@ -108,8 +108,8 @@ void qRansacSD::registerCommands(ccCommandLineInterface* cmd)
 
 static MiscLib::Vector< std::pair< MiscLib::RefCountPtr< PrimitiveShape >, size_t > >* s_shapes; // stores the detected shapes
 static size_t s_remainingPoints = 0;
-static RansacShapeDetector* s_detector = 0;
-static PointCloud* s_cloud = 0;
+static RansacShapeDetector* s_detector = nullptr;
+static ransac::RansacPointCloud* s_cloud = nullptr;
 void doDetection()
 {
 	if (!s_detector || !s_cloud || !s_shapes)
@@ -238,7 +238,7 @@ ccHObject* qRansacSD::executeRANSAC(ccPointCloud* ccPC, const RansacParams& para
 	ccPC->getBoundingBox(bbMin, bbMax);
 	const CCVector3d& globalShift = ccPC->getGlobalShift();
 	double globalScale = ccPC->getGlobalScale();
-	PointCloud cloud;
+    ransac::RansacPointCloud cloud;
 	{
 		try
 		{
@@ -251,7 +251,7 @@ ccHObject* qRansacSD::executeRANSAC(ccPointCloud* ccPC, const RansacParams& para
 		}
 
 		//default point & normal
-		Point Pt;
+        ransac::RansacPoint Pt;
 		Pt.normal[0] = 0.0;
 		Pt.normal[1] = 0.0;
 		Pt.normal[2] = 0.0;
@@ -496,7 +496,7 @@ ccHObject* qRansacSD::executeRANSAC(ccPointCloud* ccPC, const RansacParams& para
 			bool saveNormals = true;
 			{
 #ifdef POINTSWITHINDEX
-				CVLib::ReferenceCloud refPcShape(ccPC);
+				cloudViewer::ReferenceCloud refPcShape(ccPC);
 				//we fill cloud with sub-part points
 				if (!refPcShape.reserve(static_cast<unsigned>(shapePointsCount)))
 				{

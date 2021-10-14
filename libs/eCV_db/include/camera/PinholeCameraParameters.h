@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,8 +40,10 @@ namespace camera {
 ///
 /// \brief Contains both intrinsic and extrinsic pinhole camera parameters.
 class ECV_DB_LIB_API PinholeCameraParameters :
-	public CVLib::utility::IJsonConvertible {
+	public cloudViewer::utility::IJsonConvertible {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// \brief Default Constructor.
     PinholeCameraParameters();
     ~PinholeCameraParameters() override;
@@ -55,6 +57,8 @@ public:
     PinholeCameraIntrinsic intrinsic_;
     /// Camera extrinsic parameters.
     Eigen::Matrix4d_u extrinsic_;
+
+    std::string texture_file_;
 };
 }  // namespace camera
 }  // namespace cloudViewer

@@ -615,6 +615,8 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent * event)
 	bool doRedraw = false;
 	Qt::KeyboardModifiers keyboardModifiers = QApplication::keyboardModifiers();
 
+    emit m_tools->mouseWheelChanged(event);
+
 	if (keyboardModifiers & Qt::AltModifier)
 	{
 		event->accept();
@@ -651,9 +653,9 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent * event)
 		if (m_tools->m_viewportParams.perspectiveView)
 		{
 			//same shortcut as Meshlab: change the fov value
-			float newFOV = (m_tools->m_viewportParams.fov + (event->delta() < 0 ? -1.0f : 1.0f));
+			float newFOV = (m_tools->m_viewportParams.fov_deg + (event->delta() < 0 ? -1.0f : 1.0f));
 			newFOV = std::min(std::max(1.0f, newFOV), 180.0f);
-			if (newFOV != m_tools->m_viewportParams.fov)
+			if (newFOV != m_tools->m_viewportParams.fov_deg)
 			{
 				ecvDisplayTools::SetFov(newFOV);
 				ecvDisplayTools::SetRedrawRecursive(false);
@@ -774,10 +776,10 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 			//displacement vector (in "3D")
 			double pixSize = ecvDisplayTools::ComputeActualPixelSize();
 			CCVector3d u(dx * pixSize, -dy * pixSize, 0.0);
-			if (!m_tools->m_viewportParams.perspectiveView)
-			{
-				u.y *= m_tools->m_viewportParams.orthoAspectRatio;
-			}
+            if (!m_tools->m_viewportParams.perspectiveView)
+            {
+                u.y *= m_tools->m_viewportParams.cameraAspectRatio;
+            }
 
 			const int retinaScale = ecvDisplayTools::GetDevicePixelRatio();
 			u *= retinaScale;
@@ -944,7 +946,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 
 				if (m_tools->m_rectPickingPoly)
 				{
-					CVLib::GenericIndexedCloudPersist* vertices = 
+					cloudViewer::GenericIndexedCloudPersist* vertices = 
 						m_tools->m_rectPickingPoly->getAssociatedCloud();
 					assert(vertices);
 					CCVector3* B = const_cast<CCVector3*>(vertices->getPointPersistentPtr(1));
@@ -1033,7 +1035,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 						if (m_tools->m_viewportParams.objectCenteredView)
 						{
 							//project the current pivot point on screen
-							camera.project(m_tools->m_viewportParams.pivotPoint, C2D);
+                            camera.project(m_tools->m_viewportParams.getPivotPoint(), C2D);
 							C2D.z = 0.0;
 						}
 						else
@@ -1067,8 +1069,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 					{
 						//project the current pivot point on screen
 						CCVector3d A2D, B2D;
-						if (camera.project(m_tools->m_viewportParams.pivotPoint, A2D)
-							&& camera.project(m_tools->m_viewportParams.pivotPoint + 
+                        if (camera.project(m_tools->m_viewportParams.getPivotPoint(), A2D)
+                            && camera.project(m_tools->m_viewportParams.getPivotPoint() +
 								m_tools->m_viewportParams.zFar * m_tools->m_lockedRotationAxis, B2D))
 						{
 							CCVector3d lockedRotationAxis2D = B2D - A2D;
@@ -1222,7 +1224,7 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent *event)
 			//if a rectangular picking area has been defined
 			if (m_tools->m_rectPickingPoly)
 			{
-				CVLib::GenericIndexedCloudPersist* vertices = m_tools->m_rectPickingPoly->getAssociatedCloud();
+				cloudViewer::GenericIndexedCloudPersist* vertices = m_tools->m_rectPickingPoly->getAssociatedCloud();
 				assert(vertices);
 				const CCVector3* A = vertices->getPointPersistentPtr(0);
 				const CCVector3* C = vertices->getPointPersistentPtr(2);
@@ -1293,7 +1295,7 @@ void QVTKWidgetCustom::dropEvent(QDropEvent * event)
 
 		if (!fileNames.empty())
 		{
-			emit m_tools->filesDropped(fileNames);
+            emit m_tools->filesDropped(fileNames, true);
 		}
 
 		event->acceptProposedAction();

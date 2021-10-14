@@ -106,7 +106,7 @@ ccHObject * cvSliceFilter::getOutput()
 	vtkPolyData * polydata = m_cutStrips->GetOutput();
     if (nullptr == polydata) return nullptr;
 	ccHObject* result = new ccHObject();
-	ccHObject::Container container = vtk2ccConverter().getMultiPolylinesFromPolyData(polydata, "Slice", ecvColor::green);
+    ccHObject::Container container = vtk2cc::ConvertToMultiPolylines(polydata, "Slice", ecvColor::green);
 	
 	if (!container.empty() && m_entity)
 	{

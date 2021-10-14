@@ -16,7 +16,7 @@
 //#  Zhang W, Qi J, Wan P, Wang H, Xie D, Wang X, Yan G. An Easy-to-Use Airborne LiDAR  #
 //#  Data Filtering Method Based on Cloth Simulation. Remote Sensing. 2016; 8(6):501.   #
 //#                                                                                     #
-//#                                     Copyright ?                                    #
+//#                                     Copyright ?                                     #
 //#               RAMM laboratory, School of Geography, Beijing Normal University       #
 //#                               (http://ramm.bnu.edu.cn/)                             #
 //#                                                                                     #
@@ -46,18 +46,19 @@ bool Cloud2CloudDist::Compute(const Cloth& cloth,
 
 	try
 	{
-		//找到每个激光雷达点到布料直接的距离，用该距离阈值来对点云进行分类
-		//双线性插值
+		// Find the direct distance between each lidar point and the cloth, and use this distance threshold to classify the point cloud
+		// Bilinear interpolation
 		// for each lidar point, find the projection in the cloth grid, and the sub grid which contains it.
 		//use the four corner of the subgrid to do bilinear interpolation;
 		for (int i = 0; i < pc.size(); i++)
 		{
 			double pc_x = pc[i].x;
 			double pc_z = pc[i].z;
-			//将该坐标与布料的左上角坐标相减
+			// Subtract this coordinate from the upper left corner of the cloth
 			double deltaX = pc_x - cloth.origin_pos.x;
 			double deltaZ = pc_z - cloth.origin_pos.z;
-			//得到激光点所在布料小网格左上角的坐标 假设四个角点分别为0 1 2 3 顺时针编号
+			// Get the coordinates of the upper left corner of the small cloth grid where the laser point is located.
+			// Assuming that the four corner points are respectively 0 1 2 3 and numbered clockwise
 			int col0 = int(deltaX / cloth.step_x);
 			int row0 = int(deltaZ / cloth.step_y);
 			int col1 = col0 + 1;
@@ -66,11 +67,11 @@ bool Cloud2CloudDist::Compute(const Cloth& cloth,
 			int row2 = row0 + 1;
 			int col3 = col0;
 			int row3 = row0 + 1;
-			//以子网格左上角建立坐标系，并将其归一化到[0,1]
+			// Establish a coordinate system with the upper left corner of the sub-grid and normalize it to [0,1]
 			double subdeltaX = (deltaX - col0*cloth.step_x) / cloth.step_x;
 			double subdeltaZ = (deltaZ - row0*cloth.step_y) / cloth.step_y;
 			//cout << subdeltaX << " " << subdeltaZ << endl;
-			//双线性插值 bilinear interpolation;
+			//bilinear interpolation;
 			//f(x,y)=f(0,0)(1-x)(1-y)+f(0,1)(1-x)y+f(1,1)xy+f(1,0)x(1-y)
 			double fxy = cloth.getParticle(col0, row0).pos.y * (1 - subdeltaX)*(1 - subdeltaZ)
 				+ cloth.getParticle(col3, row3).pos.y * (1 - subdeltaX)*subdeltaZ
@@ -173,7 +174,7 @@ bool Cloud2CloudDist::Compute(const Cloth& cloth,
 	return true;
 }
 
-//CVLib is always much faster
+//cloudViewer is always much faster
 
 //CC_CORE_LIB
 #include <SimpleCloud.h>
@@ -182,17 +183,17 @@ bool Cloud2CloudDist::Compute(const Cloth& cloth,
 #include <DistanceComputationTools.h>
 #include <QThread>
 
-static bool ComputeMeanNeighborAltitude(const CVLib::DgmOctree::octreeCell& cell,
+static bool ComputeMeanNeighborAltitude(const cloudViewer::DgmOctree::octreeCell& cell,
 										void** additionalParameters,
-										CVLib::NormalizedProgress* nProgress = 0)
+                                        cloudViewer::NormalizedProgress* nProgress = 0)
 {
 	//additional parameters
 	const Cloth& cloth = *(const Cloth*)additionalParameters[0];
-	const CVLib::DgmOctree* particleOctree = (CVLib::DgmOctree*)additionalParameters[1];
+    const cloudViewer::DgmOctree* particleOctree = (cloudViewer::DgmOctree*)additionalParameters[1];
 	unsigned N = *(unsigned*)additionalParameters[2];
 
 	//structure for the nearest neighbor search
-	CVLib::DgmOctree::NearestNeighboursSearchStruct nNSS;
+    cloudViewer::DgmOctree::NearestNeighboursSearchStruct nNSS;
 	nNSS.level = cell.level;
 	nNSS.minNumberOfNeighbors = N;
 	particleOctree->getCellPos(cell.truncatedCode, cell.level, nNSS.cellPos, true);
@@ -229,14 +230,14 @@ static bool ComputeMeanNeighborAltitude(const CVLib::DgmOctree::octreeCell& cell
 	return true;
 }
 
-bool Cloud2CloudDist::Compute(	const Cloth& cloth,
+bool Cloud2CloudDist::Compute(	const Cloth& cloth,s
 								const wl::PointCloud& pc,
 								double class_threshold,
 								std::vector<int>& groundIndexes,
 								std::vector<int>& offGroundIndexes,
 								unsigned N/*=3*/)
 {
-	CVLib::SimpleCloud particlePoints;
+    cloudViewer::SimpleCloud particlePoints;
 	if (!particlePoints.reserve(static_cast<unsigned>(cloth.getSize())))
 	{
 		//not enough memory
@@ -248,7 +249,7 @@ bool Cloud2CloudDist::Compute(	const Cloth& cloth,
 		particlePoints.addPoint(CCVector3(static_cast<PointCoordinateType>(particle.pos.x), 0, static_cast<PointCoordinateType>(particle.pos.z)));
 	}
 
-	CVLib::SimpleCloud pcPoints;
+    cloudViewer::SimpleCloud pcPoints;
 	if (	!pcPoints.reserve(static_cast<unsigned>(pc.size()))
 		||	!pcPoints.enableScalarField())
 	{
@@ -264,9 +265,9 @@ bool Cloud2CloudDist::Compute(	const Cloth& cloth,
 	try
 	{
 		//we spatially 'synchronize' the cloud and particles octrees
-		CVLib::DgmOctree *cloudOctree = 0, *particleOctree = 0;
-		CVLib::DistanceComputationTools::SOReturnCode soCode =
-			CVLib::DistanceComputationTools::synchronizeOctrees
+        cloudViewer::DgmOctree *cloudOctree = 0, *particleOctree = 0;
+        cloudViewer::DistanceComputationTools::SOReturnCode soCode =
+            cloudViewer::DistanceComputationTools::synchronizeOctrees
 			(
 			&particlePoints,
 			&pcPoints,
@@ -276,7 +277,7 @@ bool Cloud2CloudDist::Compute(	const Cloth& cloth,
 			0
 			);
 
-		if (soCode != CVLib::DistanceComputationTools::SYNCHRONIZED && soCode != CVLib::DistanceComputationTools::DISJOINT)
+        if (soCode != cloudViewer::DistanceComputationTools::SYNCHRONIZED && soCode != cloudViewer::DistanceComputationTools::DISJOINT)
 		{
 			//not enough memory (or invalid input)
 			return false;

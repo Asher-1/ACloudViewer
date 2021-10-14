@@ -12,7 +12,7 @@ Build from source in Ubuntu and macOS
 	
 	    # configure for vtk(8.2)
 	      cmake -DVTK_QT_VERSION:STRING=5 \
-		-DCMAKE_BUILD_TYPE=Release 
+		-DCMAKE_BUILD_TYPE=Release \
 	      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
 	      	-DVTK_Group_Qt:BOOL=ON \
 	      	-DCMAKE_PREFIX_PATH:PATH=/opt/5.14.2/5.14.2/gcc_64/lib/cmake  \
@@ -153,10 +153,10 @@ The ML module consists of primitives like operators and layers as well as high
 level code for models and pipelines. To build the operators and layers, set
 ``BUILD_PYTORCH_OPS=ON`` and/or ``BUILD_TENSORFLOW_OPS=ON``.  Don't forget to also
 enable ``BUILD_CUDA_MODULE=ON`` for GPU support. To include the models and
-pipelines from CloudViewer-ML in the python package, set ``BUNDLE_OPEN3D_ML=ON`` and
-``OPEN3D_ML_ROOT`` to the CloudViewer-ML repository. You can directly download
+pipelines from CloudViewer-ML in the python package, set ``BUNDLE_CLOUDVIEWER_ML=ON`` and
+``CLOUDVIEWER_ML_ROOT`` to the CloudViewer-ML repository. You can directly download
 CloudViewer-ML from GitHub during the build with
-``OPEN3D_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git``.
+``CLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git``.
 
 The following example shows the command for building the ops with GPU support
 for all supported ML frameworks and bundling the high level CloudViewer-ML code.
@@ -165,8 +165,8 @@ for all supported ML frameworks and bundling the high level CloudViewer-ML code.
     cmake -DBUILD_CUDA_MODULE=ON \
           -DBUILD_PYTORCH_OPS=ON \
           -DBUILD_TENSORFLOW_OPS=ON \
-          -DBUNDLE_OPEN3D_ML=ON \
-          -DOPEN3D_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
+          -DBUNDLE_CLOUDVIEWER_ML=ON \
+          -DCLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
           ..
     # Install the python wheel with pip
     make -j install-pip-package

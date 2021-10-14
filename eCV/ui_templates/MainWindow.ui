@@ -36,7 +36,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../MainWindow.qrc">
-    <normaloff>:/Resources/images/icon/ecv_128.png</normaloff>:/Resources/images/icon/ecv_128.png</iconset>
+    <normaloff>:/Resources/images/icon/logo_128.png</normaloff>:/Resources/images/icon/logo_128.png</iconset>
   </property>
   <property name="autoFillBackground">
    <bool>true</bool>
@@ -73,7 +73,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>22</height>
+     <height>28</height>
     </rect>
    </property>
    <property name="font">
@@ -98,6 +98,7 @@
     <addaction name="helpAction"/>
     <addaction name="actionAbout"/>
     <addaction name="actionAboutPlugins"/>
+    <addaction name="actionCheckForUpdates"/>
     <addaction name="actionEnableQtWarnings"/>
    </widget>
    <widget class="QMenu" name="menuOption">
@@ -183,6 +184,7 @@
     <addaction name="actionOrthogonalProjection"/>
     <addaction name="action3DView"/>
     <addaction name="menuAngle_view"/>
+    <addaction name="actionSaveViewportAsObject"/>
     <addaction name="actionConsole"/>
     <addaction name="actionZoomAndCenter"/>
     <addaction name="actionResetGUIElementsPos"/>
@@ -405,7 +407,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/typeNormal.png</normaloff>:/Resources/images/typeNormal.png</iconset>
+       <normaloff>:/Resources/images/pcl/normal_estimation.png</normaloff>:/Resources/images/pcl/normal_estimation.png</iconset>
      </property>
      <widget class="QMenu" name="menuOrient_normals">
       <property name="title">
@@ -557,10 +559,22 @@
      <addaction name="actionShowWaveDialog"/>
      <addaction name="actionCompressFWFData"/>
     </widget>
+    <widget class="QMenu" name="menuCloud">
+     <property name="title">
+      <string>Cloud</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../MainWindow.qrc">
+       <normaloff>:/Resources/images/dbCloudSymbol.png</normaloff>:/Resources/images/dbCloudSymbol.png</iconset>
+     </property>
+     <addaction name="actionCreateSinglePointCloud"/>
+     <addaction name="actionPasteCloudFromClipboard"/>
+    </widget>
     <addaction name="menuClean"/>
     <addaction name="menuColor"/>
     <addaction name="menuNormals"/>
     <addaction name="menuOctree"/>
+    <addaction name="menuCloud"/>
     <addaction name="menuMesh"/>
     <addaction name="menuPolyline"/>
     <addaction name="menuPlane"/>
@@ -781,44 +795,6 @@ QTreeView::branch:open:has-children:has-siblings  {
     </layout>
    </widget>
   </widget>
-  <widget class="QToolBar" name="ViewToolBar">
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="windowTitle">
-    <string>Viewing tools</string>
-   </property>
-   <property name="toolTip">
-    <string>Viewing tools</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>LeftToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionDisplayOptions"/>
-   <addaction name="actionEditCamera"/>
-   <addaction name="actionScreenShot"/>
-   <addaction name="action3DView"/>
-   <addaction name="actionToggleOrientationMarker"/>
-   <addaction name="actionShowPivot"/>
-   <addaction name="actionResetPivot"/>
-   <addaction name="actionAutoPickPivot"/>
-   <addaction name="actionZoomAndCenter"/>
-   <addaction name="actionGlobalZoom"/>
-   <addaction name="actionSetViewTop"/>
-   <addaction name="actionSetViewFront"/>
-   <addaction name="actionSetViewLeft"/>
-   <addaction name="actionSetViewBack"/>
-   <addaction name="actionSetViewRight"/>
-   <addaction name="actionSetViewBottom"/>
-   <addaction name="actionSetViewIso1"/>
-   <addaction name="actionSetViewIso2"/>
-  </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="windowTitle">
     <string>Main tools</string>
@@ -917,6 +893,44 @@ QTreeView::branch:open:has-children:has-siblings  {
    </attribute>
    <addaction name="actionSemanticAnnotation"/>
    <addaction name="actionBoxAnnotation"/>
+  </widget>
+  <widget class="QToolBar" name="ViewToolBar">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="windowTitle">
+    <string>Viewing tools</string>
+   </property>
+   <property name="toolTip">
+    <string>Viewing tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionDisplayOptions"/>
+   <addaction name="actionEditCamera"/>
+   <addaction name="actionScreenShot"/>
+   <addaction name="action3DView"/>
+   <addaction name="actionToggleOrientationMarker"/>
+   <addaction name="actionShowPivot"/>
+   <addaction name="actionResetPivot"/>
+   <addaction name="actionAutoPickPivot"/>
+   <addaction name="actionZoomAndCenter"/>
+   <addaction name="actionGlobalZoom"/>
+   <addaction name="actionSetViewTop"/>
+   <addaction name="actionSetViewFront"/>
+   <addaction name="actionSetViewLeft"/>
+   <addaction name="actionSetViewBack"/>
+   <addaction name="actionSetViewRight"/>
+   <addaction name="actionSetViewBottom"/>
+   <addaction name="actionSetViewIso1"/>
+   <addaction name="actionSetViewIso2"/>
   </widget>
   <action name="actionOpen">
    <property name="icon">
@@ -1255,13 +1269,13 @@ QTreeView::branch:open:has-children:has-siblings  {
      <normaloff>:/Resources/images/refresh.png</normaloff>:/Resources/images/refresh.png</iconset>
    </property>
    <property name="text">
-    <string>Reset all GUI element positions</string>
+    <string>reset all GUI element positions</string>
    </property>
    <property name="toolTip">
-    <string>Reset all GUI element positions (after restart)</string>
+    <string>reset all GUI element positions (after restart)</string>
    </property>
    <property name="statusTip">
-    <string>Reset all GUI element positions (after restart)</string>
+    <string>reset all GUI element positions (after restart)</string>
    </property>
   </action>
   <action name="actionConsole">
@@ -3199,10 +3213,10 @@ QTreeView::branch:open:has-children:has-siblings  {
      <normaloff>:/Resources/images/pqResetCenter@2x.png</normaloff>:/Resources/images/pqResetCenter@2x.png</iconset>
    </property>
    <property name="text">
-    <string>Reset Rotation Center</string>
+    <string>reset Rotation Center</string>
    </property>
    <property name="statusTip">
-    <string>Reset Rotation Center</string>
+    <string>reset Rotation Center</string>
    </property>
   </action>
   <action name="actionShowPivot">
@@ -3366,6 +3380,10 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
   </action>
   <action name="actionFlipMeshTriangles">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqInvert.png</normaloff>:/Resources/images/svg/pqInvert.png</iconset>
+   </property>
    <property name="text">
     <string>Flip triangles</string>
    </property>
@@ -3418,6 +3436,66 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>From Scalar fields</string>
    </property>
   </action>
+  <action name="actionSaveViewportAsObject">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqEyeball.png</normaloff>:/Resources/images/svg/pqEyeball.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save viewport as object</string>
+   </property>
+   <property name="statusTip">
+    <string>Save viewport as object</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+V</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionCreateSinglePointCloud">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqSolidColor.png</normaloff>:/Resources/images/svg/pqSolidColor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Create single point cloud</string>
+   </property>
+   <property name="toolTip">
+    <string>Create a cloud with a single point</string>
+   </property>
+   <property name="statusTip">
+    <string>Create a cloud with a single point</string>
+   </property>
+  </action>
+  <action name="actionPasteCloudFromClipboard">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqPaste.png</normaloff>:/Resources/images/svg/pqPaste.png</iconset>
+   </property>
+   <property name="text">
+    <string>Paste from clipboard</string>
+   </property>
+   <property name="toolTip">
+    <string>Paste from ASCII/text data stored in the clipboard</string>
+   </property>
+   <property name="statusTip">
+    <string>Paste from ASCII/text data stored in the clipboard</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionCheckForUpdates">
+   <property name="icon">
+    <iconset resource="../QSimpleUpdater/etc/resources/qsimpleupdater.qrc">
+     <normaloff>:/icons/update.png</normaloff>:/icons/update.png</iconset>
+   </property>
+   <property name="text">
+    <string>Check for Updates</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -3433,6 +3511,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   </customwidget>
  </customwidgets>
  <resources>
+  <include location="../QSimpleUpdater/etc/resources/qsimpleupdater.qrc"/>
   <include location="../MainWindow.qrc"/>
  </resources>
  <connections>

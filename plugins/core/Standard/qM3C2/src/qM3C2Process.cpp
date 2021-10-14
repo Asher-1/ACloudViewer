@@ -22,7 +22,7 @@
 #include "qM3C2Dialog.h"
 #include "qM3C2DisclaimerDialog.h"
 
-//CVLib
+//cloudViewer
 #include <CloudSamplingTools.h>
 
 // ECV_DB_LIB
@@ -73,12 +73,12 @@ struct PrecisionMaps
 {
 	PrecisionMaps() : sX(nullptr), sY(nullptr), sZ(nullptr), scale(1.0) {}
 	bool valid() const { return (sX != nullptr && sY != nullptr && sZ != nullptr); }
-	CVLib::ScalarField *sX, *sY, *sZ;
+	cloudViewer::ScalarField *sX, *sY, *sZ;
 	double scale;
 };
 
 // Computes the uncertainty based on 'precision maps' (as scattered scalar fields)
-static double ComputePMUncertainty(CVLib::DgmOctree::NeighboursSet& set, const CCVector3& N, const PrecisionMaps& PM)
+static double ComputePMUncertainty(cloudViewer::DgmOctree::NeighboursSet& set, const CCVector3& N, const PrecisionMaps& PM)
 {
 	size_t count = set.size();
 	if (count == 0)
@@ -86,7 +86,7 @@ static double ComputePMUncertainty(CVLib::DgmOctree::NeighboursSet& set, const C
 		assert(false);
 		return 0;
 	}
-	
+
 	int minIndex = -1;
 	if (count == 1)
 	{
@@ -123,7 +123,7 @@ static double ComputePMUncertainty(CVLib::DgmOctree::NeighboursSet& set, const C
 			}
 		}
 	}
-	
+
 	assert(minIndex >= 0);
 	unsigned pointIndex = set[minIndex].pointIndex;
 	CCVector3d sigma(	PM.sX->getValue(pointIndex) * PM.scale,
@@ -133,7 +133,7 @@ static double ComputePMUncertainty(CVLib::DgmOctree::NeighboursSet& set, const C
 	CCVector3d NS(	N.x * sigma.x,
 					N.y * sigma.y,
 					N.z * sigma.z);
-	
+
 	return NS.norm();
 }
 
@@ -181,7 +181,7 @@ struct M3C2Params
 	bool usePrecisionMaps = false;
 
 	//progress notification
-	CVLib::NormalizedProgress* nProgress = nullptr;
+	cloudViewer::NormalizedProgress* nProgress = nullptr;
 	bool processCanceled = false;
 };
 static M3C2Params s_M3C2Params;
@@ -213,7 +213,7 @@ void ComputeM3C2DistForPoint(unsigned index)
 		bool validStats1 = false;
 
 		//extract cloud #1's neighbourhood
-		CVLib::DgmOctree::ProgressiveCylindricalNeighbourhood cn1;
+		cloudViewer::DgmOctree::ProgressiveCylindricalNeighbourhood cn1;
 		cn1.center = P;
 		cn1.dir = N;
 		cn1.level = s_M3C2Params.level1;
@@ -247,7 +247,7 @@ void ComputeM3C2DistForPoint(unsigned index)
 		{
 			s_M3C2Params.cloud1Octree->getPointsInCylindricalNeighbourhood(cn1);
 		}
-		
+
 		size_t n1 = cn1.neighbours.size();
 		if (n1 != 0)
 		{
@@ -293,9 +293,9 @@ void ComputeM3C2DistForPoint(unsigned index)
 		{
 			double mean2 = 0, stdDev2 = 0;
 			bool validStats2 = false;
-			
+
 			//extract cloud #2's neighbourhood
-			CVLib::DgmOctree::ProgressiveCylindricalNeighbourhood cn2;
+			cloudViewer::DgmOctree::ProgressiveCylindricalNeighbourhood cn2;
 			cn2.center = P;
 			cn2.dir = N;
 			cn2.level = s_M3C2Params.level2;
@@ -550,9 +550,9 @@ bool qM3C2Process::Compute(const qM3C2Dialog& dlg, QString& errorMessage, ccPoin
 	bool corePointsHaveBeenSubsampled = false;
 	if (!s_M3C2Params.corePoints && samplingDist > 0)
 	{
-		CVLib::CloudSamplingTools::SFModulationParams modParams(false);
-		CVLib::ReferenceCloud* subsampled = 
-			CVLib::CloudSamplingTools::resampleCloudSpatially(cloud1,
+		cloudViewer::CloudSamplingTools::SFModulationParams modParams(false);
+		cloudViewer::ReferenceCloud* subsampled =
+			cloudViewer::CloudSamplingTools::resampleCloudSpatially(cloud1,
 			static_cast<PointCoordinateType>(samplingDist),
 			modParams,
 			s_M3C2Params.cloud1Octree.data(),
@@ -677,7 +677,7 @@ bool qM3C2Process::Compute(const qM3C2Dialog& dlg, QString& errorMessage, ccPoin
 				if (invalidNormals && app)
 				{
 					app->dispToConsole(
-						"[M3C2] Some normals are invalid! You may have to increase the scale.", 
+						"[M3C2] Some normals are invalid! You may have to increase the scale.",
 						ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
 				}
 
@@ -692,11 +692,10 @@ bool qM3C2Process::Compute(const qM3C2Dialog& dlg, QString& errorMessage, ccPoin
 				if (usePreferredOrientation)
 				{
 					int preferredOrientation = dlg.normOriPreferredComboBox->currentIndex();
-					assert(preferredOrientation >= ccNormalVectors::MINUS_X && preferredOrientation <= ccNormalVectors::PLUS_ZERO);
-					if (!ccNormalVectors::UpdateNormalOrientations(
-						s_M3C2Params.corePoints,
-						*s_M3C2Params.coreNormals,
-						static_cast<ccNormalVectors::Orientation>(preferredOrientation)))
+					assert(preferredOrientation >= ccNormalVectors::PLUS_X && preferredOrientation <= ccNormalVectors::SENSOR_ORIGIN);
+					if (!ccNormalVectors::UpdateNormalOrientations(	s_M3C2Params.corePoints,
+                                                                                    *s_M3C2Params.coreNormals,
+                                                                                        static_cast<ccNormalVectors::Orientation>(preferredOrientation)))
 					{
 						errorMessage = "[M3C2] Failed to re-orient the normals (invalid parameter?)";
 						error = true;
@@ -707,12 +706,11 @@ bool qM3C2Process::Compute(const qM3C2Dialog& dlg, QString& errorMessage, ccPoin
 					ccPointCloud* orientationCloud = dlg.getNormalsOrientationCloud();
 					assert(orientationCloud);
 
-					if (!qM3C2Normals::UpdateNormalOrientationsWithCloud(
-						s_M3C2Params.corePoints,
-						*s_M3C2Params.coreNormals,
-						orientationCloud,
-						maxThreadCount,
-						&pDlg))
+					if (!qM3C2Normals::UpdateNormalOrientationsWithCloud(	s_M3C2Params.corePoints,
+                                                                                            *s_M3C2Params.coreNormals,
+                                                                                                orientationCloud,
+                                                                                                maxThreadCount,
+                                                                                                &pDlg))
 					{
 						errorMessage = "[M3C2] Failed to re-orient the normals with input point cloud!";
 						error = true;
@@ -799,7 +797,7 @@ bool qM3C2Process::Compute(const qM3C2Dialog& dlg, QString& errorMessage, ccPoin
 		assert(normMode == qM3C2Normals::VERT_MODE || (s_M3C2Params.coreNormals && corePointCount == s_M3C2Params.coreNormals->currentSize()));
 
 		pDlg.reset();
-		CVLib::NormalizedProgress nProgress(&pDlg, corePointCount);
+		cloudViewer::NormalizedProgress nProgress(&pDlg, corePointCount);
 		pDlg.setMethodTitle(QObject::tr("M3C2 Distances Computation"));
 		pDlg.setInfo(QObject::tr("Core points: %1").arg(corePointCount));
 		pDlg.start();
@@ -830,7 +828,7 @@ bool qM3C2Process::Compute(const qM3C2Dialog& dlg, QString& errorMessage, ccPoin
 		{
 			if (app)
 				app->dispToConsole(
-					"Failed to allocate memory for change significance values!", 
+					"Failed to allocate memory for change significance values!",
 					ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
 			s_M3C2Params.sigChangeSF->release();
 			s_M3C2Params.sigChangeSF = 0;

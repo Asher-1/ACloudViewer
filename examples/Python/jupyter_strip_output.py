@@ -9,12 +9,22 @@ if __name__ == "__main__":
     os.environ["CI"] = "true"
 
     file_dir = Path(__file__).absolute().parent
-    nb_paths = sorted((file_dir / "Basic").glob("*.ipynb"))
-    nb_paths += sorted((file_dir / "Advanced").glob("*.ipynb"))
+
+    # Note: must be consistent with make_docs.py
+    example_dirs = [
+        "jupyter/geometry",
+        "jupyter/core",
+        "jupyter/pipelines",
+        "jupyter/visualization",
+    ]
+    nb_paths = []
+    for example_dir in example_dirs:
+        nb_paths += sorted((file_dir / example_dir).glob("*.ipynb"))
+
     for nb_path in nb_paths:
         print("Clean {}".format(nb_path.name))
 
-        with open(nb_path) as f:
+        with open(nb_path, encoding="utf-8") as f:
             nb = nbformat.read(f, as_version=4)
         ep = nbconvert.preprocessors.ClearOutputPreprocessor(timeout=6000)
         try:

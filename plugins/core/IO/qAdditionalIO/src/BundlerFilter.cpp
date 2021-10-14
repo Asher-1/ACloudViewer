@@ -40,7 +40,7 @@
 #include <QTextStream>
 #include <QApplication>
 
-//CVLib (for DTM generation)
+//cloudViewer (for DTM generation)
 #include <ecvMesh.h>
 #include <MeshSamplingTools.h>
 #include <PointProjectionTools.h>
@@ -232,7 +232,7 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(	const QString& filename,
 			pDlg->setInfo(QObject::tr("Cameras: %1\nPoints: %2").arg(camCount).arg(ptsCount));
 			pDlg->start();
 		}
-		CVLib::NormalizedProgress nprogress(pDlg.data(), camCount + (importKeypoints || orthoRectifyImages || generateColoredDTM ? ptsCount : 0));
+		cloudViewer::NormalizedProgress nprogress(pDlg.data(), camCount + (importKeypoints || orthoRectifyImages || generateColoredDTM ? ptsCount : 0));
 
 		//read cameras info (whatever the case!)
 		cameras.resize(camCount);
@@ -277,7 +277,7 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(	const QString& filename,
 					sum += fabs(mat[l]) + fabs(mat[4+l]) + fabs(mat[8+l]);
 				}
 			}
-            if (importImages && CVLib::LessThanEpsilon(sum))
+            if (importImages && cloudViewer::LessThanEpsilon(sum))
 			{
 				CVLog::Warning("[Bundler] Camera #%i is invalid!",camIndex+1);
 				it->isValid = false;
@@ -629,7 +629,7 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(	const QString& filename,
 		ipDlg->start();
 		QApplication::processEvents();
 	}
-	CVLib::NormalizedProgress inprogress(ipDlg.data(), camCount);
+	cloudViewer::NormalizedProgress inprogress(ipDlg.data(), camCount);
 
 	assert(imageFilenames.size() >= static_cast<int>(camCount));
 
@@ -637,7 +637,7 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(	const QString& filename,
 
 	//for colored DTM generation
 	int* mntColors = nullptr;
-	CVLib::PointCloud* mntSamples = nullptr;
+	cloudViewer::PointCloud* mntSamples = nullptr;
 	if (generateColoredDTM)
 	{
 		QScopedPointer<ecvProgressDialog> toDlg(0);
@@ -651,13 +651,13 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(	const QString& filename,
 
 		//1st step: triangulate keypoints (or use existing one)
 		ccGenericMesh* baseDTMMesh = (altEntity ? ccHObjectCaster::ToGenericMesh(altEntity) : 0);
-		CVLib::GenericIndexedMesh* dummyMesh = baseDTMMesh;
+		cloudViewer::GenericIndexedMesh* dummyMesh = baseDTMMesh;
 		if (!baseDTMMesh)
 		{
 			//alternative keypoints?
 			ccGenericPointCloud* altKeypoints = (altEntity ? ccHObjectCaster::ToGenericPointCloud(altEntity) : 0);
 			char errorStr[1024];
-			dummyMesh = CVLib::PointProjectionTools::computeTriangulation(	altKeypoints ? altKeypoints : keypointsCloud,
+			dummyMesh = cloudViewer::PointProjectionTools::computeTriangulation(	altKeypoints ? altKeypoints : keypointsCloud,
 																			DELAUNAY_2D_BEST_LS_PLANE,
 																			0,
 																			0,
@@ -671,7 +671,7 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(	const QString& filename,
 		if (dummyMesh)
 		{
 			//2nd step: samples points on resulting mesh
-			mntSamples = CVLib::MeshSamplingTools::samplePointsOnMesh((CVLib::GenericMesh*)dummyMesh, coloredDTMVerticesCount);
+			mntSamples = cloudViewer::MeshSamplingTools::samplePointsOnMesh((cloudViewer::GenericMesh*)dummyMesh, coloredDTMVerticesCount);
 			if (!baseDTMMesh)
 				delete dummyMesh;
 			dummyMesh = 0;
@@ -1055,7 +1055,7 @@ CC_FILE_ERROR BundlerFilter::loadFileExtended(	const QString& filename,
 
 				//apply bundler equation
 				sensorMatrix.apply(P);
-                if (CVLib::GreaterThanEpsilon(fabs(P.z)))
+                if (cloudViewer::GreaterThanEpsilon(fabs(P.z)))
 				{
 					CCVector3 p(-P.x / P.z, -P.y / P.z, 0.0);
 					//float norm_p2 = p.norm2();

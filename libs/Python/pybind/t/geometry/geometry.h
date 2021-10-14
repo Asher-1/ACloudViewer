@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,8 +50,13 @@ public:
 
 void pybind_geometry(py::module& m);
 void pybind_geometry_class(py::module& m);
-void pybind_tensorlistmap(py::module& m);
+void pybind_tensormap(py::module& m);
+void pybind_image(py::module& m);
 void pybind_pointcloud(py::module& m);
+void pybind_trianglemesh(py::module& m);
+void pybind_image(py::module& m);
+void pybind_tsdf_voxelgrid(py::module& m);
+void pybind_raycasting_scene(py::module& m);
 
 }  // namespace geometry
 }  // namespace t

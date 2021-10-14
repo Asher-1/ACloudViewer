@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,22 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/PointCloud.h"
+#include <ecvPointCloud.h>
 
 #include <algorithm>
 
-#include "open3d/camera/PinholeCameraIntrinsic.h"
-#include "open3d/geometry/BoundingVolume.h"
-#include "open3d/geometry/Image.h"
-#include "open3d/geometry/RGBDImage.h"
-#include "open3d/geometry/TriangleMesh.h"
-#include "open3d/io/ImageIO.h"
-#include "open3d/io/PinholeCameraTrajectoryIO.h"
-#include "open3d/io/PointCloudIO.h"
-#include "open3d/visualization/utility/DrawGeometry.h"
+#include "camera/PinholeCameraIntrinsic.h"
+#include <ecvBBox.h>
+#include <Image.h>
+#include <RGBDImage.h>
+#include <ecvMesh.h>
+#include <ImageIO.h>
+#include "io/PinholeCameraTrajectoryIO.h"
+#include "io/PointCloudIO.h"
+#include "visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(PointCloud, ConstructorDefault) {
@@ -113,7 +113,7 @@ TEST(PointCloud, GetCenter) {
 
 TEST(PointCloud, GetAxisAlignedBoundingBox) {
     geometry::PointCloud pcd;
-    geometry::AxisAlignedBoundingBox aabb;
+    ccBBox aabb;
 
     pcd = geometry::PointCloud();
     aabb = pcd.GetAxisAlignedBoundingBox();
@@ -142,7 +142,7 @@ TEST(PointCloud, GetAxisAlignedBoundingBox) {
 
 TEST(PointCloud, GetOrientedBoundingBox) {
     geometry::PointCloud pcd;
-    geometry::OrientedBoundingBox obb;
+    ecvOrientedBBox obb;
 
     // Emtpy (GetOrientedBoundingBox requires >=4 points)
     pcd = geometry::PointCloud();
@@ -650,7 +650,7 @@ TEST(PointCloud, UniformDownSample) {
 }
 
 TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
-    geometry::AxisAlignedBoundingBox aabb({0, 0, 0}, {2, 2, 2});
+    ccBBox aabb({0, 0, 0}, {2, 2, 2});
     geometry::PointCloud pcd({{0, 0, 0},
                               {2, 2, 2},
                               {1, 1, 1},
@@ -684,7 +684,7 @@ TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
 }
 
 TEST(PointCloud, Crop_OrientedBoundingBox) {
-    geometry::OrientedBoundingBox obb(Eigen::Vector3d{1, 1, 1},
+    ecvOrientedBBox obb(Eigen::Vector3d{1, 1, 1},
                                       Eigen::Matrix3d::Identity(),
                                       Eigen::Vector3d{2, 2, 2});
     geometry::PointCloud pcd({
@@ -1115,4 +1115,4 @@ TEST(PointCloud, CreateFromRGBDImage) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

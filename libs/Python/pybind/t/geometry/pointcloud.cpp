@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.erow.cn
+// Copyright (c) 2020 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,46 +29,88 @@
 #include <string>
 #include <unordered_map>
 
+#include "core/hashmap/Hashmap.h"
+#include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
 namespace cloudViewer {
 namespace t {
 namespace geometry {
 
+// Image functions have similar arguments, thus the arg docstrings may be shared
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"rgbd_image",
+                 "The input RGBD image should have a uint16_t depth image and  "
+                 "RGB image with any DType and the same size."},
+                {"depth", "The input depth image should be a uint16_t image."},
+                {"intrinsics", "Intrinsic parameters of the camera."},
+                {"extrinsics", "Extrinsic parameters of the camera."},
+                {"depth_scale", "The depth is scaled by 1 / depth_scale."},
+                {"depth_max", "Truncated at depth_max distance."},
+                {"stride",
+                 "Sampling factor to support coarse point cloud extraction. "
+                 "Unless normals are requested, there is no low pass "
+                 "filtering, so aliasing is possible for stride>1."},
+                {"with_normals",
+                 "Also compute normals for the point cloud. If True, the point "
+                 "cloud will only contain points with valid normals. If "
+                 "normals are requested, the depth map is first filtered to "
+                 "ensure smooth normals."}};
+
 void pybind_pointcloud(py::module& m) {
-    py::class_<PointCloud, PyGeometry<PointCloud>, std::unique_ptr<PointCloud>,
+    py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
                Geometry>
             pointcloud(m, "PointCloud",
                        "A pointcloud contains a set of 3D points.");
 
     // Constructors.
-    pointcloud
-            .def(py::init<core::Dtype, const core::Device&>(), "dtype"_a,
-                 "device"_a)
-            .def(py::init<const core::TensorList&>(), "points"_a)
+    pointcloud.def(py::init<const core::Device&>(), "device"_a)
+            .def(py::init<const core::Tensor&>(), "points"_a)
             .def(py::init<const std::unordered_map<std::string,
-                                                   core::TensorList>&>(),
-                 "map_keys_to_tensorlists"_a);
+                                                   core::Tensor>&>(),
+                 "map_keys_to_tensors"_a)
+            .def("__repr__", &PointCloud::ToString);
 
-    // Point's attributes: points, colors, normals, etc.
-    // def_property_readonly is sufficient, since the returned TensorListMap can
-    // be editable in Python. We don't want the TensorListMp to be replaced
-    // by another TensorListMap in Python.
+    // def_property_readonly is sufficient, since the returned TensorMap can
+    // be editable in Python. We don't want the TensorMap to be replaced
+    // by another TensorMap in Python.
     pointcloud.def_property_readonly(
-            "point",
-            py::overload_cast<>(&PointCloud::GetPointAttr, py::const_));
-    pointcloud.def("synchronized_push_back", &PointCloud::SynchronizedPushBack,
-                   "map_keys_to_tensors"_a);
+            "point", py::overload_cast<>(&PointCloud::GetPointAttr, py::const_),
+            "Point's attributes: points, colors, normals, etc.");
+
+    // Device transfers.
+    pointcloud.def("to", &PointCloud::To,
+                   "Transfer the point cloud to a specified device.",
+                   "device"_a, "copy"_a = false);
+    pointcloud.def("clone", &PointCloud::Clone,
+                   "Returns a copy of the point cloud on the same device.");
+    pointcloud.def("cpu", &PointCloud::CPU,
+                   "Transfer the point cloud to CPU. If the point cloud is "
+                   "already on CPU, no copy will be performed.");
+    pointcloud.def(
+            "cuda", &PointCloud::CUDA,
+            "Transfer the point cloud to a CUDA device. If the point cloud is "
+            "already on the specified CUDA device, no copy will be performed.",
+            "device_id"_a = 0);
 
     // Pointcloud specific functions.
-    // TOOD: convert o3d.pybind.core.Tensor (C++ binded Python) to
-    //       o3d.core.Tensor (pure Python wrapper).
     pointcloud.def("get_min_bound", &PointCloud::GetMinBound,
                    "Returns the min bound for point coordinates.");
     pointcloud.def("get_max_bound", &PointCloud::GetMaxBound,
                    "Returns the max bound for point coordinates.");
     pointcloud.def("get_center", &PointCloud::GetCenter,
                    "Returns the center for point coordinates.");
+
+    pointcloud.def("append",
+                   [](const PointCloud& self, const PointCloud& other) {
+                       return self.Append(other);
+                   });
+    pointcloud.def("__add__",
+                   [](const PointCloud& self, const PointCloud& other) {
+                       return self.Append(other);
+                   });
+
     pointcloud.def("transform", &PointCloud::Transform, "transformation"_a,
                    "Transforms the points and normals (if exist).");
     pointcloud.def("translate", &PointCloud::Translate, "translation"_a,
@@ -77,15 +119,52 @@ void pybind_pointcloud(py::module& m) {
                    "Scale points.");
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
+    pointcloud.def(
+            "voxel_down_sample",
+            [](const PointCloud& pointcloud, const double voxel_size) {
+                return pointcloud.VoxelDownSample(
+                        voxel_size, core::HashmapBackend::Default);
+            },
+            "Downsamples a point cloud with a specified voxel size.",
+            "voxel_size"_a);
     pointcloud.def_static(
-            "from_legacy_pointcloud", &PointCloud::FromLegacyPointCloud,
-            "pcd_legacy"_a, "dtype"_a = core::Dtype::Float32,
-            "device"_a = core::Device("CPU:0"),
+            "create_from_depth_image", &PointCloud::CreateFromDepthImage,
+            py::call_guard<py::gil_scoped_release>(), "depth"_a, "intrinsics"_a,
+            "extrinsics"_a =
+                    core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
+            "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
+            "with_normals"_a = false,
+            "Factory function to create a pointcloud (with only 'points') from "
+            "a depth image and a camera model.\n\n Given depth value d at (u, "
+            "v) image coordinate, the corresponding 3d point is:\n z = d / "
+            "depth_scale\n\n x = (u - cx) * z / fx\n\n y = (v - cy) * z / fy");
+    pointcloud.def_static(
+            "create_from_rgbd_image", &PointCloud::CreateFromRGBDImage,
+            py::call_guard<py::gil_scoped_release>(), "rgbd_image"_a,
+            "intrinsics"_a,
+            "extrinsics"_a =
+                    core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
+            "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
+            "with_normals"_a = false,
+            "Factory function to create a pointcloud (with properties "
+            "{'points', 'colors'}) from an RGBD image and a camera model.\n\n"
+            "Given depth value d at (u, v) image coordinate, the corresponding "
+            "3d point is:\n\n z = d / depth_scale\n\n x = (u - cx) * z / "
+            "fx\n\n y "
+            "= (v - cy) * z / fy");
+    pointcloud.def_static(
+            "from_legacy", &PointCloud::FromLegacy, "pcd_legacy"_a,
+            "dtype"_a = core::Float32, "device"_a = core::Device("CPU:0"),
             "Create a PointCloud from a legacy CloudViewer PointCloud.");
-    pointcloud.def("to_legacy_pointcloud", &PointCloud::ToLegacyPointCloud,
+    pointcloud.def("to_legacy", &PointCloud::ToLegacy,
                    "Convert to a legacy CloudViewer PointCloud.");
+
+    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image",
+                                    map_shared_argument_docstrings);
 }
 
 }  // namespace geometry
 }  // namespace t
-}  // namespace CloudViewer
+}  // namespace cloudViewer

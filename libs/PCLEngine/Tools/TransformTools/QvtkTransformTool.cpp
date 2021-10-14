@@ -49,8 +49,8 @@ using namespace PclUtils;
 
 QvtkTransformTool::QvtkTransformTool(ecvGenericVisualizer3D* viewer)
 	: ecvGenericTransformTool()
-	, m_viewer(nullptr)
 	, m_boxWidgetTransformer(nullptr)
+    , m_viewer(nullptr)
 {
 	setVisualizer(viewer);
 	m_modelActors.clear();
@@ -76,7 +76,7 @@ void QvtkTransformTool::setVisualizer(ecvGenericVisualizer3D* viewer)
 	}
 }
 
-bool QvtkTransformTool::setInputData(ccHObject * entity, int viewPort)
+bool QvtkTransformTool::setInputData(ccHObject * entity, int viewport)
 {
 	if (!m_viewer || !ecvGenericTransformTool::setInputData(entity))
 	{
@@ -107,7 +107,7 @@ void QvtkTransformTool::addActors()
 	for (unsigned i = 0; i < n; ++i)
 	{
 		ccHObject* ent = getAssociatedEntity()->getChild(i);
-		std::string id = CVTools::FromQString(QString::number(ent->getUniqueID()));
+        std::string id = CVTools::FromQString(ent->getViewId());
 		if (id == "")
 		{
 			continue;
@@ -390,22 +390,22 @@ void QvtkTransformTool::getOutput(std::vector<ccHObject*>& out)
 		transformFilter->Update();
 		dataObject = transformFilter->GetOutput();
 
-		ccHObject* result;
+		ccHObject* result = nullptr;
 		ccHObject* baseEntity = getAssociatedEntity()->getChild(index);
 		assert(baseEntity);
 
 		if (baseEntity->isKindOf(CV_TYPES::POINT_CLOUD))
 		{
-			result = vtk2ccConverter().getPointCloudFromPolyData(dataObject);
+            result = vtk2cc::ConvertToPointCloud(dataObject);
 		}
 		else if (baseEntity->isKindOf(CV_TYPES::MESH))
 		{
-			result = vtk2ccConverter().getMeshFromPolyData(dataObject);
+            result = vtk2cc::ConvertToMesh(dataObject);
 		}
-		else if (baseEntity->isKindOf(CV_TYPES::POLY_LINE))
-		{
-			result = vtk2ccConverter().getPolylineFromPolyData(dataObject);
-		}
+        else if (baseEntity->isKindOf(CV_TYPES::POLY_LINE))
+        {
+            result = vtk2cc::ConvertToPolyline(dataObject);
+        }
 		else
 		{
 			CVLog::Warning(QString("only cloud, mesh and polyline are supported now!"));

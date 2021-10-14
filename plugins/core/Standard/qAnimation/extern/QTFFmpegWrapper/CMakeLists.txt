@@ -28,4 +28,4 @@ target_link_libraries( ${PROJECT_NAME}
 
 # FFmpeg support
 target_link_ffmpeg( ${PROJECT_NAME} )
-export_ffmpeg_dlls( ${CLOUDCOMPARE_DEST_FOLDER} )
+export_ffmpeg_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )

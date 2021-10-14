@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "eCV_python.h"
+
 #include <string>
 #include <unordered_map>
 
@@ -82,51 +82,60 @@ class FunctionDoc {
 public:
     FunctionDoc(const std::string& pybind_doc);
 
-    /// Generate Google style python docstring
+    /// Generate Google style python docstring.
     std::string ToGoogleDocString() const;
-
-protected:
-    /// Parse the function name from docstring
-    void ParseFunctionName();
-
-    /// Parse the function "summary" docstring received from pybind
-    void ParseSummary();
-
-    /// Parse ArgumentDoc for each argument
-    void ParseArguments();
-
-    /// Parse function return
-    void ParseReturn();
-
-protected:
-    /// Split docstring to argument tokens
-    /// E.g. "cylinder_radius: float = 1.0", "cylinder_radius: float"
-    static std::vector<std::string> GetArgumentTokens(
-            const std::string& pybind_doc);
-
-    /// Parse individual argument token and returns a ArgumentDoc
-    static ArgumentDoc ParseArgumentToken(const std::string& argument_token);
-
-    /// Runs all string cleanup functions
-    static std::string StringCleanAll(std::string& s,
-                                      const std::string& white_space = " \t\n");
 
     /// Apply fixes to namespace, e.g. "::" to "." for python
     static std::string NamespaceFix(const std::string& s);
 
+protected:
+    /// Parse the function name from docstring.
+    ///
+    /// \returns Position in docstring after the name or after the string
+    /// "Overloaded function.", if it exists.
+    size_t ParseFunctionName();
+
+    /// Parse the function "summary" docstring received from pybind.
+    ///
+    /// \returns Position in docstring at the end of the summary. Used to set
+    /// limits for parsing the current overload.
+    size_t ParseSummary();
+
+    /// Parse ArgumentDoc for each argument.
+    void ParseArguments();
+
+    /// Parse function return.
+    void ParseReturn();
+
+    /// Split docstring to argument tokens.
+    /// E.g. "cylinder_radius: float = 1.0", "cylinder_radius: float"
+    static std::vector<std::string> GetArgumentTokens(
+            const std::string& pybind_doc);
+
+    /// Parse individual argument token and returns a ArgumentDoc.
+    static ArgumentDoc ParseArgumentToken(const std::string& argument_token);
+
+    /// Runs all string cleanup functions.
+    static std::string StringCleanAll(std::string& s,
+                                      const std::string& white_space = " \t\n");
+
 public:
+    struct OverloadDocs {
+        std::vector<ArgumentDoc> argument_docs_;
+        ArgumentDoc return_doc_;
+        std::string summary_ = "";
+    };
     std::string name_ = "";
-    std::vector<ArgumentDoc> argument_docs_;
-    ArgumentDoc return_doc_;
-    std::string summary_ = "";
-    std::string body_ = "";
+    std::string preamble_ = "";
+    std::vector<OverloadDocs> overload_docs_;
 
 protected:
     std::string pybind_doc_ = "";
+    size_t doc_pos_[2] = {0, std::string::npos};
 };
 
 /// Parse pybind docstring to FunctionDoc and inject argument docstrings for
-/// functions
+/// functions.
 void FunctionDocInject(
         py::module& pybind_module,
         const std::string& function_name,
@@ -134,7 +143,7 @@ void FunctionDocInject(
                 std::unordered_map<std::string, std::string>());
 
 /// Parse pybind docstring to FunctionDoc and inject argument docstrings for
-/// class methods
+/// class methods.
 void ClassMethodDocInject(
         py::module& pybind_module,
         const std::string& class_name,

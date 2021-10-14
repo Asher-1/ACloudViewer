@@ -199,13 +199,12 @@ int ExtractSIFT::compute()
 	}
 
 	//initialize all possible clouds
-	pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_i (new pcl::PointCloud<pcl::PointXYZI>);
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_rgb (new pcl::PointCloud<pcl::PointXYZRGB>);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr out_cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
 	//Now do the actual computation
 	if (m_mode == SCALAR_FIELD)
 	{
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_i (new pcl::PointCloud<pcl::PointXYZI>);
 		FROM_PCL_CLOUD(*sm_cloud, *cloud_i);
 		PCLModules::EstimateSIFT<pcl::PointXYZI, pcl::PointXYZ>(
 			cloud_i, out_cloud, 
@@ -214,6 +213,7 @@ int ExtractSIFT::compute()
 	}
 	else if (m_mode == RGB)
 	{
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_rgb (new pcl::PointCloud<pcl::PointXYZRGB>);
 		FROM_PCL_CLOUD(*sm_cloud, *cloud_rgb);
 		PCLModules::EstimateSIFT<pcl::PointXYZRGB, pcl::PointXYZ>(
 			cloud_rgb, out_cloud, 
@@ -221,16 +221,16 @@ int ExtractSIFT::compute()
 			m_nr_scales_per_octave, m_min_contrast );
 	}
 
-	PCLCloud::Ptr out_cloud_sm (new PCLCloud);
-	TO_PCL_CLOUD(*out_cloud, *out_cloud_sm);
+    PCLCloud out_cloud_sm;
+    TO_PCL_CLOUD(*out_cloud, out_cloud_sm);
 
-	if ( out_cloud_sm->height * out_cloud_sm->width == 0)
+    if ( out_cloud_sm.height * out_cloud_sm.width == 0)
 	{
 		//cloud is empty
 		return -53;
 	}
 
-	ccPointCloud* out_cloud_cc = sm2ccConverter(out_cloud_sm).getCloud();
+    ccPointCloud* out_cloud_cc = pcl2cc::Convert(out_cloud_sm);
 	if (!out_cloud_cc)
 	{
 		//conversion failed (not enough memory?)
@@ -269,11 +269,14 @@ QString ExtractSIFT::getErrorMessage(int errorCode)
 		//ALSO IN DERIVED CLASSES DEFULAT MUST BE ""
 
 	case -51:
-		return tr("Selected entity does not have any suitable scalar field or RGB. Intensity scalar field or RGB are needed for computing SIFT");
+        return "Selected entity does not have any suitable scalar field or RGB. Intensity scalar field or RGB are needed for computing SIFT";
 	case -52:
-		return tr("Wrong Parameters. One or more parameters cannot be accepted");
+        return "Wrong Parameters. One or more parameters cannot be accepted";
 	case -53:
-		return tr("SIFT keypoint extraction does not returned any point. Try relaxing your parameters");
+        return "SIFT keypoint extraction does not returned any point. Try relaxing your parameters";
+    default:
+        //see below
+        break;
 	}
 
 	return BasePclModule::getErrorMessage(errorCode);

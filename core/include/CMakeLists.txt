@@ -11,9 +11,10 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/CloudSamplingTools.h
 		${CMAKE_CURRENT_LIST_DIR}/ConjugateGradient.h
 		${CMAKE_CURRENT_LIST_DIR}/Console.h
+		${CMAKE_CURRENT_LIST_DIR}/Logging.h
 		${CMAKE_CURRENT_LIST_DIR}/CVConst.h
 		${CMAKE_CURRENT_LIST_DIR}/CVCoreLib.h
-                ${CMAKE_CURRENT_LIST_DIR}/CVCoreLibWin.h
+		${CMAKE_CURRENT_LIST_DIR}/CVCoreLibWin.h
 		${CMAKE_CURRENT_LIST_DIR}/CVGeom.h
 		${CMAKE_CURRENT_LIST_DIR}/CVMath.h
 		${CMAKE_CURRENT_LIST_DIR}/CVMiscTools.h
@@ -76,12 +77,22 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/Optional.h
 		${CMAKE_CURRENT_LIST_DIR}/ProgressReporters.h
 		${CMAKE_CURRENT_LIST_DIR}/WeibullDistribution.h
+		${CMAKE_CURRENT_LIST_DIR}/Cpu.h
+		${CMAKE_CURRENT_LIST_DIR}/CPUInfo.h
+		${CMAKE_CURRENT_LIST_DIR}/Parallel.h
+		${CMAKE_CURRENT_LIST_DIR}/MemoryInfo.h
+		${CMAKE_CURRENT_LIST_DIR}/Universe.h
+		${CMAKE_CURRENT_LIST_DIR}/StaticVector.h
 )
 
 install(
 	FILES
 		AutoSegmentationTools.h
 		BoundingBox.h
+		Console.h
+		CPUInfo.h
+		Logging.h
+		Parallel.h
 		CVConst.h
 		Chi2Helper.h
 		ClassMap.h

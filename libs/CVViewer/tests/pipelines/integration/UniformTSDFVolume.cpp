@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/pipelines/integration/UniformTSDFVolume.h"
+#include "pipelines/integration/UniformTSDFVolume.h"
 
 #include <sstream>
 
-#include "open3d/camera/PinholeCameraIntrinsic.h"
-#include "open3d/geometry/RGBDImage.h"
-#include "open3d/io/ImageIO.h"
-#include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/utility/DrawGeometry.h"
+#include "camera/PinholeCameraIntrinsic.h"
+#include <RGBDImage.h>
+#include <ImageIO.h>
+#include <FileSystem.h>
+#include "visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 bool ReadPoses(const std::string& trajectory_path,
@@ -220,4 +220,4 @@ TEST(UniformTSDFVolume, DISABLED_GetNormalAt) {}
 TEST(UniformTSDFVolume, DISABLED_GetTSDFAt) {}
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,12 +42,16 @@ namespace geometry {
 /// functions.
 class ECV_DB_LIB_API ecvHalfEdgeMesh : public ecvMeshBase {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
     /// \class HalfEdge
     ///
     /// \brief HalfEdge class contains vertex, triangle info about a half edge,
     /// as well as relations of next and twin half edge.
     class HalfEdge {
     public:
+        CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
         /// \brief Default Constructor.
         ///
         /// Initializes all members of the instance with invalid values.

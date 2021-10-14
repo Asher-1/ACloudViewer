@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                   CLOUDVIEWER  PLUGIN: qAnimation                      #
+//#                   CLOUDCOMPARE PLUGIN: qAnimation                      #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -21,8 +21,9 @@
 #include "qAnimationDlg.h"
 
 // ECV_DB_LIB
-#include <ecvDisplayTools.h>
 #include <ecv2DViewportObject.h>
+#include <ecvPolyline.h>
+#include <ecvPointCloud.h>
 
 //Qt
 #include <QtGui>
@@ -30,13 +31,13 @@
 
 typedef std::vector<cc2DViewportObject*> ViewPortList;
 
-static ViewPortList sGetSelectedViewPorts( const ccHObject::Container &selectedEntities )
+static ViewPortList GetSelectedViewPorts( const ccHObject::Container &selectedEntities )
 {
 	ViewPortList viewports;
 	
 	for ( ccHObject *object : selectedEntities )
 	{
-		if ( object->getClassID() == static_cast<CV_CLASS_ENUM>( CV_TYPES::VIEWPORT_2D_OBJECT ))
+        if ( object->getClassID() == static_cast<CV_CLASS_ENUM>(CV_TYPES::VIEWPORT_2D_OBJECT) )
 		{
 			viewports.push_back( static_cast<cc2DViewportObject*>(object) );
 		}
@@ -59,7 +60,7 @@ void qAnimation::onNewSelection(const ccHObject::Container& selectedEntities)
 		return;
 	}
 	
-	ViewPortList viewports = sGetSelectedViewPorts( selectedEntities );
+	ViewPortList viewports = GetSelectedViewPorts( selectedEntities );
 	
 	if ( viewports.size() >= 2 )
 	{
@@ -98,26 +99,44 @@ void qAnimation::doAction()
 		return;
 
 	//get active GL window
-	QMainWindow* glWindow = m_app->getMainWindow();
-	if (!glWindow)
+    QWidget* glWindow = m_app->getActiveWindow();
+    if (!glWindow)
 	{
-		m_app->dispToConsole(tr("No active 3D view!"), ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+        m_app->dispToConsole("No active 3D view!", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
 		return;
 	}
 
-	ViewPortList viewports = sGetSelectedViewPorts( m_app->getSelectedEntities() );
+	ViewPortList viewports = GetSelectedViewPorts( m_app->getSelectedEntities() );
 
 	Q_ASSERT( viewports.size() >= 2 ); // action will not be active unless we have at least 2 viewports
 
-	m_app->dispToConsole(tr("[qAnimation] Selected viewports: %1").arg(viewports.size()));
+	m_app->dispToConsole(QString("[qAnimation] Selected viewports: %1").arg(viewports.size()));
 
 	qAnimationDlg videoDlg(glWindow, m_app->getMainWindow());
 	
 	if (!videoDlg.init(viewports))
 	{
-		m_app->dispToConsole(tr("Failed to initialize the plugin dialog (not enough memory?)"), ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+        m_app->dispToConsole("Failed to initialize the plugin dialog (not enough memory?)", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
 		return;
 	}
 	
 	videoDlg.exec();
+
+	//Export trajectory (for debug)
+	if (videoDlg.exportTrajectoryOnExit() && videoDlg.getTrajectory())
+	{
+		ccPolyline* trajectory = new ccPolyline(*videoDlg.getTrajectory());
+		if (!trajectory)
+		{
+            CVLog::Error("Not enough memory");
+		}
+		else
+		{
+            trajectory->setColor(ecvColor::yellow);
+			trajectory->showColors(true);
+			trajectory->setWidth(2);
+
+			getMainAppInterface()->addToDB(trajectory);
+		}
+	}
 }

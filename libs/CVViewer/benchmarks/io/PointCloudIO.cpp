@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                       -
+// -                        CloudViewer: asher-1.github.io                       -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,12 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "io/PointCloudIO.h"
 
+#include <Logging.h>
 #include <benchmark/benchmark.h>
-
-#include <Console.h>
-
-#include <PointCloudIO.h>
 #include <ecvPointCloud.h>
 
 namespace cloudViewer {
@@ -43,7 +41,7 @@ namespace {
 template <class T>
 double AverageDistance(const std::vector<T> &a, const std::vector<T> &b) {
     if (a.size() != b.size()) {
-        CVLib::utility::LogError("vectors different size {} {}", a.size(), b.size());
+        utility::LogError("vectors different size {} {}", a.size(), b.size());
     }
     if (a.size() == 0) {
         return 0.;
@@ -100,7 +98,7 @@ class TestPCGrid0 {
 public:
     void Setup(int size) {
         if (size_ == size) return;
-        CVLib::utility::LogInfo("setup PCGrid size={}", size);
+        cloudViewer::utility::LogInfo("setup PCGrid size={}", size);
         pc_.clear();
 
         size_ = size;
@@ -127,16 +125,16 @@ public:
         if (!WritePointCloud(args.filename, pc,
                              {bool(args.write_ascii), bool(args.compressed),
                               print_progress})) {
-            CVLib::utility::LogError("Failed to write to {}", args.filename);
+            utility::LogError("Failed to write to {}", args.filename);
         }
         ccPointCloud pc2;
         if (!ReadPointCloud(args.filename, pc2,
                             {"auto", false, false, print_progress})) {
-            CVLib::utility::LogError("Failed to read from {}", args.filename);
+            utility::LogError("Failed to read from {}", args.filename);
         }
         auto CheckLE = [](double a, double b) {
             if (a <= b) return;
-            CVLib::utility::LogError("Error too high: {} {}", a, b);
+            utility::LogError("Error too high: {} {}", a, b);
         };
 
         const double pointsMaxError =

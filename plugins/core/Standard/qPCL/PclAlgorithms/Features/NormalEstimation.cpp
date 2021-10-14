@@ -118,9 +118,8 @@ int NormalEstimation::compute()
 	PCLCloud::Ptr sm_normals (new PCLCloud);
 	TO_PCL_CLOUD(*normals, *sm_normals);
 
-	sm2ccConverter converter2(sm_normals);
-	converter2.addNormals(cloud);
-	converter2.addScalarField(cloud, "curvature", m_overwrite_curvature);
+    pcl2cc::CopyNormals(*sm_normals, *cloud);
+    pcl2cc::CopyScalarField(*sm_normals, "curvature", *cloud, m_overwrite_curvature);
 
 	emit entityHasChanged(cloud);
 

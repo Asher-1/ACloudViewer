@@ -203,7 +203,7 @@ class AppWindow:
 
         # 3D widget
         self._scene = gui.SceneWidget()
-        self._scene.scene = rendering.Open3DScene(w.renderer)
+        self._scene.scene = rendering.CloudViewerScene(w.renderer)
         self._scene.set_on_sun_direction_changed(self._on_sun_dir)
 
         # ---- Settings panel ----
@@ -319,7 +319,6 @@ class AppWindow:
         self._ibl_map = gui.Combobox()
         for ibl in glob.glob(gui.Application.instance.resource_path +
                              "/*_ibl.ktx"):
-
             self._ibl_map.add_item(os.path.basename(ibl[:-8]))
         self._ibl_map.selected_text = AppWindow.DEFAULT_IBL
         self._ibl_map.set_on_selection_changed(self._on_new_ibl)
@@ -460,7 +459,7 @@ class AppWindow:
             self.settings.bg_color.red, self.settings.bg_color.green,
             self.settings.bg_color.blue, self.settings.bg_color.alpha
         ]
-        self._scene.scene.set_background_color(bg_color)
+        self._scene.scene.set_background(bg_color)
         self._scene.scene.show_skybox(self.settings.show_skybox)
         self._scene.scene.show_axes(self.settings.show_axes)
         if self.settings.new_ibl_name is not None:
@@ -476,9 +475,9 @@ class AppWindow:
             self.settings.sun_color.red, self.settings.sun_color.green,
             self.settings.sun_color.blue
         ]
-        self._scene.scene.scene.set_directional_light(
-            self.settings.sun_dir, sun_color, self.settings.sun_intensity)
-        self._scene.scene.scene.enable_directional_light(self.settings.use_sun)
+        self._scene.scene.scene.set_sun_light(self.settings.sun_dir, sun_color,
+                                              self.settings.sun_intensity)
+        self._scene.scene.scene.enable_sun_light(self.settings.use_sun)
 
         if self.settings.apply_material:
             self._scene.scene.update_material(self.settings.material)
@@ -494,7 +493,7 @@ class AppWindow:
         self._sun_dir.vector_value = self.settings.sun_dir
         self._sun_color.color_value = self.settings.sun_color
         self._material_prefab.enabled = (
-            self.settings.material.shader == Settings.LIT)
+                self.settings.material.shader == Settings.LIT)
         c = gui.Color(self.settings.material.base_color[0],
                       self.settings.material.base_color[1],
                       self.settings.material.base_color[2],
@@ -502,15 +501,17 @@ class AppWindow:
         self._material_color.color_value = c
         self._point_size.double_value = self.settings.material.point_size
 
-    def _on_layout(self, theme):
+    def _on_layout(self, layout_context):
         # The on_layout callback should set the frame (position + size) of every
         # child correctly. After the callback is done the window will layout
         # the grandchildren.
         r = self.window.content_rect
         self._scene.frame = r
-        width = 17 * theme.font_size
-        height = min(r.height,
-                     self._settings_panel.calc_preferred_size(theme).height)
+        width = 17 * layout_context.theme.font_size
+        height = min(
+            r.height,
+            self._settings_panel.calc_preferred_size(
+                layout_context, gui.Widget.Constraints()).height)
         self._settings_panel.frame = gui.Rect(r.get_right() - width, r.y, width,
                                               height)
 

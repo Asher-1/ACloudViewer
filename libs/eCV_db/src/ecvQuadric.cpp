@@ -137,7 +137,7 @@ ccGenericPrimitive* ccQuadric::clone() const
 	return finishCloneJob(new ccQuadric(m_minCorner,m_maxCorner,m_eq,&m_dims,&m_transformation,getName(),m_drawPrecision));
 }
 
-ccQuadric* ccQuadric::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/*=0*/)
+ccQuadric* ccQuadric::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double* rms/*=0*/)
 {
 	//number of points
 	unsigned count = cloud->size();
@@ -146,20 +146,20 @@ ccQuadric* ccQuadric::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/
 		CVLog::Warning(
 			QString("[ccQuadric::fitTo] Not enough points in input cloud to fit a quadric! (%1 at the very least are required)").
 			arg(CV_LOCAL_MODEL_MIN_SIZE[QUADRIC]));
-		return 0;
+        return nullptr;
 	}
 
 	//project the points on a 2D plane
 	CCVector3 G, X, Y, N;
 	{
-		CVLib::Neighbourhood Yk(cloud);
+		cloudViewer::Neighbourhood Yk(cloud);
 		
 		//plane equation
 		const PointCoordinateType* theLSPlane = Yk.getLSPlane();
 		if (!theLSPlane)
 		{
 			CVLog::Warning("[ccQuadric::Fit] Not enough points to fit a quadric!");
-			return 0;
+            return nullptr;
 		}
 
 		assert(Yk.getGravityCenter());
@@ -177,7 +177,7 @@ ccQuadric* ccQuadric::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/
 	if (!tempCloud.reserve(count))
 	{
 		CVLog::Warning("[ccQuadric::Fit] Not enough memory!");
-		return 0;
+        return nullptr;
 	}
 
 	cloud->placeIteratorAtBeginning();
@@ -189,7 +189,7 @@ ccQuadric* ccQuadric::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/
 		tempCloud.addPoint(CCVector3(P.dot(X),P.dot(Y),P.dot(N)));
 	}
 
-	CVLib::Neighbourhood Zk(&tempCloud);
+	cloudViewer::Neighbourhood Zk(&tempCloud);
 	{
 		//set exact values for gravity center and plane equation
 		//(just to be sure and to avoid re-computing them)
@@ -206,7 +206,7 @@ ccQuadric* ccQuadric::Fit(CVLib::GenericIndexedCloudPersist *cloud, double* rms/
 	if (!eq)
 	{
 		CVLog::Warning("[ccQuadric::Fit] Failed to fit a quadric!");
-		return 0;
+        return nullptr;
 	}
 
 	//we recenter the quadric object
@@ -298,9 +298,9 @@ bool ccQuadric::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccQuadric::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccQuadric::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccGenericPrimitive::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccGenericPrimitive::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//parameters (dataVersion>=35)

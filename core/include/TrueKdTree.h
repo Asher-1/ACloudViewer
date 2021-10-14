@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               CVCoreLib                                #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -26,7 +26,7 @@
 //system
 #include <cstdint>
 
-namespace CVLib
+namespace cloudViewer
 {
 
 class GenericIndexedCloudPersist;
@@ -189,6 +189,6 @@ protected:
 	unsigned m_maxPointCountPerCell;
 };
 
-} //namespace CVLib
+} //namespace cloudViewer
 
 #endif // TRUE_KD_TREE_HEADER

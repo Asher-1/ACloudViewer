@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                       CLOUDCOMPARE PLUGIN: qRDBIO                      #
+//#                       EROWCLOUDVIEWER PLUGIN: qRDBIO                   #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -17,34 +17,34 @@
 
 #include "RDBFilter.h"
 
-//Local
+// Local
 #include "RDBOpenDialog.h"
 
-//Qt
+// Qt
 #include <QFile>
 #include <QFileInfo>
 #include <QTextStream>
 #include <QIcon>
 #include <QComboBox>
 
-//CClib
+// CV_CORE_LIB
+#include <CVLog.h>
 #include <ScalarField.h>
 
-//qCC_db
-#include <ccPlane.h>
-#include <ccPointCloud.h>
-#include <ccProgressDialog.h>
-#include <ccMesh.h>
-#include <ccHObject.h>
-#include <ccMaterial.h>
-#include <ccMaterialSet.h>
-#include <ccLog.h>
-#include <ccScalarField.h>
+// ECV_DB_LIB
+#include <ecvPlane.h>
+#include <ecvPointCloud.h>
+#include <ecvProgressDialog.h>
+#include <ecvMesh.h>
+#include <ecvHObject.h>
+#include <ecvMaterial.h>
+#include <ecvMaterialSet.h>
+#include <ecvScalarField.h>
 
-//RDB
+// RDB
 #include <riegl/rdb.hpp>
 
-//System
+// System
 #include <string.h>
 #include <assert.h>
 #include <sstream>
@@ -80,17 +80,29 @@ void updateTable(RDBOpenDialog &openDlg, riegl::rdb::Pointcloud &rdb)
 	static const QIcon GreyIcon		(QString::fromUtf8(":/CC/images/typeGrayColor.png"));
 	static const QIcon ScalarIcon	(QString::fromUtf8(":/CC/images/typeSF.png"));
 
-	//checks if fields are available
-	bool rdb_hasRGBA = false;
-	bool rdb_hasNormals = false;
-	bool rdb_has_pca_axis_min = false;
-
+	struct SpecialAttribute
+	{
+		const std::string name;
+		const std::string comboBoxEntry;
+		const QIcon &icon;
+		SpecialAttribute(const std::string &arg_name, const std::string &arg_comboBoxEntry, const QIcon &arg_icon) :
+			name(arg_name),
+			comboBoxEntry(arg_comboBoxEntry),
+			icon(arg_icon)
+		{}
+	};
+	const std::vector<SpecialAttribute> known_special_attributes {
+		{"riegl.xyz",           RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_XYZ],  xIcon },
+		{"riegl.rgba",          RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_RGB],  RGBIcon },
+		{"riegl.surface_normal",RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_NORM], NormIcon },
+		{"riegl.pca_axis_min",  RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_NORM], NormIcon },
+	};
 	{
 		int idx = 0;
 		//Get list of point attributes
 		std::vector<std::string> attributes = rdb.pointAttribute().list();
 		openDlg.rdbTableWidget->setColumnCount(2);
-		openDlg.rdbTableWidget->setRowCount(static_cast<int>(attributes.size()));
+		openDlg.rdbTableWidget->setRowCount(static_cast<int>(known_special_attributes.size()));
 		openDlg.rdbTableWidget->setColumnWidth(0, 200);
 		openDlg.rdbTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
@@ -98,103 +110,95 @@ void updateTable(RDBOpenDialog &openDlg, riegl::rdb::Pointcloud &rdb)
 		headerLabels << "Name" << "Load as";
 		openDlg.rdbTableWidget->setHorizontalHeaderLabels(headerLabels);
 
-		ccLog::Print(QString("set row count to: %1").arg(attributes.size()));
 
 		//check for existance of attribute and add it to qList
 		auto list_known_attribute = [] (RDBOpenDialog &openDlg,
-				int &idx, std::vector<std::string> &attributes, const char *att, bool &rdb_has_flag)
+				int &idx, std::vector<std::string> &attributes, const std::string &att, const std::string &comboBoxEntry, const QIcon &icon)
 		{
 			if (std::find(attributes.begin(),attributes.end(), att) != attributes.end())
 			{
-				rdb_has_flag = true;
-				openDlg.rdbTableWidget->setItem(idx, 0, new QTableWidgetItem(att));
-				//openDlg.rdbTableWidget->cellWidget(idx,0)->setEnabled(false);
-				idx++;
 				attributes.erase(std::remove(attributes.begin(), attributes.end(), att), attributes.end());
-			}
-		};
-		auto add_qcombobox_scalar = [] (RDBOpenDialog &openDlg,
-				int &idx, std::vector<std::string> &attributes, const std::string &att, bool active)
-		{
-			if (std::find(attributes.begin(),attributes.end(), att) != attributes.end())
-			{
+
 				openDlg.rdbTableWidget->setItem(idx, 0, new QTableWidgetItem(att.c_str()));
-				//openDlg.rdbTableWidget->cellWidget(idx,0)->setEnabled(false);
-				attributes.erase(std::remove(attributes.begin(), attributes.end(), att), attributes.end());
-
 				QComboBox* columnHeaderWidget = new QComboBox();
-				columnHeaderWidget->addItem(RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_None]);
-				columnHeaderWidget->addItem(RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_Scalar]);
-				columnHeaderWidget->setMaxVisibleItems(2);
-				columnHeaderWidget->setItemIcon(1, ScalarIcon);
-				if (active)
-					columnHeaderWidget->setCurrentIndex(1);
-				else
-					columnHeaderWidget->setCurrentIndex(0);
-
+				columnHeaderWidget->addItem(comboBoxEntry.c_str());
+				columnHeaderWidget->setMaxVisibleItems(1);
+				columnHeaderWidget->setCurrentIndex(0);
+				columnHeaderWidget->setItemIcon(0, icon);
 				openDlg.rdbTableWidget->setCellWidget(idx,1, columnHeaderWidget);
 				idx++;
 			}
 		};
-
-		bool dummy = false;
-
-		list_known_attribute(openDlg, idx, attributes, "riegl.xyz",           dummy);
-		list_known_attribute(openDlg, idx, attributes, "riegl.rgba",          rdb_hasRGBA);
-		list_known_attribute(openDlg, idx, attributes, "riegl.surface_normal",rdb_hasNormals);
-		list_known_attribute(openDlg, idx, attributes, "riegl.pca_axis_min",  rdb_has_pca_axis_min);
-
-		idx = 0;
-		{ //XYZ
-			QComboBox* columnHeaderWidget = new QComboBox();
-			columnHeaderWidget->addItem(RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_XYZ]);
-			columnHeaderWidget->setMaxVisibleItems(1);
-			columnHeaderWidget->setCurrentIndex(0);
-			columnHeaderWidget->setItemIcon(0, xIcon);
-			openDlg.rdbTableWidget->setCellWidget(idx,1, columnHeaderWidget);
-			idx++;
-		}
-		if (rdb_hasRGBA)
-		{ //RGB
-			QComboBox* columnHeaderWidget = new QComboBox();
-			columnHeaderWidget->addItem(RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_RGB]);
-			columnHeaderWidget->setMaxVisibleItems(1);
-			columnHeaderWidget->setCurrentIndex(0);
-			columnHeaderWidget->setItemIcon(0, RGBIcon);
-			openDlg.rdbTableWidget->setCellWidget(idx,1, columnHeaderWidget);
-			idx++;
-		}
-		if (rdb_hasNormals)
-		{ //normals
-			QComboBox* columnHeaderWidget = new QComboBox();
-			columnHeaderWidget->addItem(RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_NORM]);
-			columnHeaderWidget->setMaxVisibleItems(1);
-			columnHeaderWidget->setCurrentIndex(0);
-			columnHeaderWidget->setItemIcon(0, NormIcon);
-			openDlg.rdbTableWidget->setCellWidget(idx,1, columnHeaderWidget);
-			idx++;
-		}
-		if (rdb_has_pca_axis_min)
-		{ //normals
-			QComboBox* columnHeaderWidget = new QComboBox();
-			columnHeaderWidget->addItem(RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_NORM]);
-			columnHeaderWidget->setMaxVisibleItems(1);
-			columnHeaderWidget->setCurrentIndex(0);
-			columnHeaderWidget->setItemIcon(0, NormIcon);
-			openDlg.rdbTableWidget->setCellWidget(idx,1, columnHeaderWidget);
-			idx++;
-		}
-		add_qcombobox_scalar(openDlg, idx, attributes, "riegl.id",            false);
-		add_qcombobox_scalar(openDlg, idx, attributes, "riegl.reflectance",   true);
-		add_qcombobox_scalar(openDlg, idx, attributes, "riegl.amplitude",     true);
-		add_qcombobox_scalar(openDlg, idx, attributes, "riegl.deviation",     true);
-
-		ccLog::Print(QString("unknown attributes: %1").arg(attributes.size()));
-		//openDlg.rdbAttributesList->insertItem(idx, "--- unknown attributes ---");
-		std::vector<std::string> attr_copy(attributes);
-		for (std::string &att : attr_copy)
+		auto add_qcombobox_scalar = [] (RDBOpenDialog &openDlg,
+				int &idx, const std::string &att, bool active)
 		{
-			add_qcombobox_scalar(openDlg, idx, attributes, att, false);
+			openDlg.rdbTableWidget->setItem(idx, 0, new QTableWidgetItem(att.c_str()));
+			//openDlg.rdbTableWidget->cellWidget(idx,0)->setEnabled(false);
+
+			QComboBox* columnHeaderWidget = new QComboBox();
+			columnHeaderWidget->addItem(RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_None]);
+			columnHeaderWidget->addItem(RDB_OPEN_DLG_TYPES_NAMES[RDB_OPEN_DLG_Scalar]);
+			columnHeaderWidget->setMaxVisibleItems(2);
+			columnHeaderWidget->setItemIcon(1, ScalarIcon);
+			if (active)
+				columnHeaderWidget->setCurrentIndex(1);
+			else
+				columnHeaderWidget->setCurrentIndex(0);
+
+			openDlg.rdbTableWidget->setCellWidget(idx,1, columnHeaderWidget);
+			idx++;
+		};
+		auto add_qcombobox_known_scalar = [add_qcombobox_scalar] (RDBOpenDialog &openDlg,
+				int &idx, std::vector<std::string> &attributes, const std::string &att, bool active)
+		{
+			if (std::find(attributes.begin(),attributes.end(), att) != attributes.end())
+			{
+				attributes.erase(std::remove(attributes.begin(), attributes.end(), att), attributes.end());
+				add_qcombobox_scalar(openDlg, idx, att, active);
+			}
+		};
+
+		// list non-scalar known attributes, remove them from attributes list, as they are already handled
+		for (const SpecialAttribute &att : known_special_attributes)
+		{
+			list_known_attribute(openDlg, idx, attributes, att.name, att.comboBoxEntry, att.icon);
+		}
+
+		// some attributes have multiple entries, and each entry should have its own row
+		// to present them we need to know how many separate row entries we have, so count them
+		const size_t total_rows = std::accumulate(
+			attributes.cbegin(), attributes.cend(), size_t(idx),
+			[&rdb](const size_t running_sum, const std::string &att) -> size_t {
+				uint32_t att_length = rdb.pointAttribute().get(att).length;
+				return running_sum + static_cast<size_t>(att_length);
+			});
+		// prepare adequate number of rows in the table
+		openDlg.rdbTableWidget->setRowCount(static_cast<int>(total_rows));
+
+		// add row entry for known scalar attributes and remove them from remaining attributes list
+		add_qcombobox_known_scalar(openDlg, idx, attributes, "riegl.id",            false);
+		add_qcombobox_known_scalar(openDlg, idx, attributes, "riegl.reflectance",   true);
+		add_qcombobox_known_scalar(openDlg, idx, attributes, "riegl.amplitude",     true);
+		add_qcombobox_known_scalar(openDlg, idx, attributes, "riegl.deviation",     true);
+
+        CVLog::Print(QString("unknown attributes: %1").arg(attributes.size()));
+		//openDlg.rdbAttributesList->insertItem(idx, "--- unknown attributes ---");
+		for (const std::string &att : attributes)
+		{
+			const riegl::rdb::pointcloud::PointAttribute rdb_attribute = rdb.pointAttribute().get(att);
+			const uint32_t attribute_length = rdb_attribute.length;
+			if (attribute_length == 1)
+			{
+				add_qcombobox_scalar(openDlg, idx, att, false);
+			}
+			else
+			{
+				// attribute with multiple entries, present as 'attribute_name[0]'
+				for (uint32_t att_idx=0; att_idx < attribute_length; att_idx++)
+				{
+					add_qcombobox_scalar(openDlg, idx, att + "[" + std::to_string(att_idx) + "]", false);
+				}
+			}
 		}
 	}
 }
@@ -302,7 +306,7 @@ CC_FILE_ERROR RDBFilter::loadFile( const QString &filename, ccHObject &container
 		{
 			QString att = openDlg.rdbTableWidget->item(i,0)->text();
 			scalars2load.push_back(att.toStdString());
-			ccLog::Print(QString("load scalar: %1").arg(att));
+            CVLog::Print(QString("load scalar: %1").arg(att));
 		}
 	}
 
@@ -344,8 +348,8 @@ CC_FILE_ERROR RDBFilter::loadFile( const QString &filename, ccHObject &container
 		riegl::rdb::pointcloud::GraphNode root = stat.index();
 
 		//progress dialog
-		ccProgressDialog pdlg(true, parameters.parentWidget);
-		CCCoreLib::NormalizedProgress nprogress(&pdlg, root.pointCountTotal / BUFFER_SIZE);
+        ecvProgressDialog pdlg(true, parameters.parentWidget);
+        cloudViewer::NormalizedProgress nprogress(&pdlg, root.pointCountTotal / BUFFER_SIZE);
 		{
 			std::stringstream ss;
 			ss << "Loading RDB file [" << filename.toStdString().c_str()<< "]";
@@ -409,18 +413,18 @@ CC_FILE_ERROR RDBFilter::loadFile( const QString &filename, ccHObject &container
 			{
 				if (rdb_hasRGBA && !cloud->reserveTheRGBTable())
 				{
-					ccLog::Print(QString("[RDBFilter] Not enough memory to reserve RGB table for points. Try to load as many as possible. Total: %1").arg(total_entries));
+                    CVLog::Print(QString("[RDBFilter] Not enough memory to reserve RGB table for points. Try to load as many as possible. Total: %1").arg(total_entries));
 					result = CC_FERR_NOT_ENOUGH_MEMORY;
 				}
 				if ((rdb_hasNormals || rdb_has_pca_axis_min) && !cloud->reserveTheNormsTable())
 				{
-					ccLog::Print(QString("[RDBFilter] Not enough memory to reserve normal table for points. Try to load as many as possible. Total: %1").arg(total_entries));
+                    CVLog::Print(QString("[RDBFilter] Not enough memory to reserve normal table for points. Try to load as many as possible. Total: %1").arg(total_entries));
 					result = CC_FERR_NOT_ENOUGH_MEMORY;
 				}
 			}
 			else //not enough memory for all points
 			{
-				ccLog::Print(QString("[RDBFilter] Not enough memory to load all points. Try to load as many as possible. Total: %1").arg(total_entries));
+                CVLog::Print(QString("[RDBFilter] Not enough memory to load all points. Try to load as many as possible. Total: %1").arg(total_entries));
 				result = CC_FERR_NOT_ENOUGH_MEMORY;
 			}
 		}
@@ -451,7 +455,7 @@ CC_FILE_ERROR RDBFilter::loadFile( const QString &filename, ccHObject &container
 			}
 
 			//buffers to hold the CC vectors
-			ccColor::Rgb col;
+            ecvColor::Rgb col;
 			for (uint32_t i=0; i<count; ++i)
 			{
 				//read XYZ
@@ -462,7 +466,7 @@ CC_FILE_ERROR RDBFilter::loadFile( const QString &filename, ccHObject &container
 					col.r = static_cast<unsigned char>(buffer_rgba[i][0]);
 					col.g = static_cast<unsigned char>(buffer_rgba[i][1]);
 					col.b = static_cast<unsigned char>(buffer_rgba[i][2]);
-					cloud->addColor(col);
+                    cloud->addRGBColor(col);
 				}
 				//read normals
 				if (rdb_hasNormals || rdb_has_pca_axis_min)
@@ -522,7 +526,7 @@ CC_FILE_ERROR RDBFilter::loadFile( const QString &filename, ccHObject &container
 		}
 	}
 
-	ccLog::Print(QString("[RDBFilter] Number of points: %1").arg(total));
+    CVLog::Print(QString("[RDBFilter] Number of points: %1").arg(total));
 
 	//compute min and max of scalars
 	for (Conversion &conv : conversions)
@@ -540,7 +544,7 @@ CC_FILE_ERROR RDBFilter::loadFile( const QString &filename, ccHObject &container
 	return result;
 }
 
-bool RDBFilter::canSave( CC_CLASS_ENUM type, bool &multiple, bool &exclusive ) const
+bool RDBFilter::canSave( CV_CLASS_ENUM type, bool &multiple, bool &exclusive ) const
 {
 	Q_UNUSED( type );
 	Q_UNUSED( multiple );

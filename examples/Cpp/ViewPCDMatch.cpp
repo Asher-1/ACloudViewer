@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,11 +33,11 @@
 bool ReadLogFile(const std::string &filename,
                  std::vector<std::tuple<int, int, int>> &metadata,
                  std::vector<Eigen::Matrix4d> &transformations) {
-    using namespace CVLib;
+    using namespace cloudViewer;
     metadata.clear();
     transformations.clear();
     FILE *f = utility::filesystem::FOpen(filename, "r");
-    if (f == NULL) {
+    if (!f) {
         utility::LogWarning("Read LOG failed: unable to open file.");
         return false;
     }
@@ -87,7 +87,9 @@ bool ReadLogFile(const std::string &filename,
 }
 
 void PrintHelp() {
-    using namespace CVLib;
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > ViewPCDMatch [options]");
@@ -99,16 +101,20 @@ void PrintHelp() {
     utility::LogInfo("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.");
     utility::LogInfo("    --verbose n               : Set verbose level (0-4). Default: 2.");
     // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char *argv[]) {
-    using namespace CVLib;
+    using namespace cloudViewer;
 
-    if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        utility::ProgramOptionExists(argc, argv, "-h")) {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
+
     const int NUM_OF_COLOR_PALETTE = 5;
     Eigen::Vector3d color_palette[NUM_OF_COLOR_PALETTE] = {
             Eigen::Vector3d(255, 180, 0) / 255.0,
@@ -137,16 +143,17 @@ int main(int argc, char *argv[]) {
     for (size_t k = 0; k < metadata.size(); k++) {
         auto i = std::get<0>(metadata[k]), j = std::get<1>(metadata[k]);
         utility::LogInfo("Showing matched point cloud #{:d} and #{:d}.", i, j);
-        auto pcd_target = cloudViewer::io::CreatePointCloudFromFile(
+        auto pcd_target = io::CreatePointCloudFromFile(
                 pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd");
+
         pcd_target->resizeTheRGBTable();
-		pcd_target->setRGBColor(ecvColor::Rgb::FromEigen(color_palette[0]));
-        auto pcd_source = cloudViewer::io::CreatePointCloudFromFile(
+        pcd_target->setRGBColor(ecvColor::Rgb::FromEigen(color_palette[0]));
+        auto pcd_source = io::CreatePointCloudFromFile(
                 pcd_dirname + "cloud_bin_" + std::to_string(j) + ".pcd");
-		pcd_source->resizeTheRGBTable();
+        pcd_source->resizeTheRGBTable();
         pcd_source->setRGBColor(ecvColor::Rgb::FromEigen(color_palette[1]));
         pcd_source->transform(transformations[k]);
-        cloudViewer::visualization::DrawGeometriesWithCustomAnimation(
+        visualization::DrawGeometriesWithCustomAnimation(
                 {pcd_target, pcd_source}, "ViewPCDMatch", 1600, 900);
     }
     return 0;

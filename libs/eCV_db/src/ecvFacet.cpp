@@ -21,7 +21,7 @@
 #include "ecvPointCloud.h"
 
 // CORE_DB_LIB
-#include <Console.h>
+#include <Logging.h>
 #include <PointProjectionTools.h>
 #include <Delaunay2dMesh.h>
 #include <DistanceComputationTools.h>
@@ -180,7 +180,7 @@ bool ccFacet::clone(ccFacet* facet) const
 	return true;
 }
 
-ccFacet* ccFacet::Create(	CVLib::GenericIndexedCloudPersist* cloud,
+ccFacet* ccFacet::Create(	cloudViewer::GenericIndexedCloudPersist* cloud,
 							PointCoordinateType maxEdgeLength/*=0*/,
 							bool transferOwnership/*=false*/,
 							const PointCoordinateType* planeEquation/*=0*/)
@@ -191,7 +191,7 @@ ccFacet* ccFacet::Create(	CVLib::GenericIndexedCloudPersist* cloud,
 	if (!cloud || cloud->size() < 3)
 	{
 		CVLog::Error("[ccFacet::Create] Need at least 3 points to create a valid facet!");
-		return 0;
+        return nullptr;
 	}
 
 	//create facet structure
@@ -199,7 +199,7 @@ ccFacet* ccFacet::Create(	CVLib::GenericIndexedCloudPersist* cloud,
 	if (!facet->createInternalRepresentation(cloud, planeEquation))
 	{
 		delete facet;
-		return 0;
+        return nullptr;
 	}
 
 	ccPointCloud* pc = dynamic_cast<ccPointCloud*>(cloud);
@@ -231,7 +231,7 @@ ccFacet* ccFacet::Create(	CVLib::GenericIndexedCloudPersist* cloud,
 	return facet;
 }
 
-bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* points,
+bool ccFacet::createInternalRepresentation(	cloudViewer::GenericIndexedCloudPersist* points,
 											const PointCoordinateType* planeEquation/*=0*/)
 {
 	assert(points);
@@ -241,7 +241,7 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 	if (ptsCount < 3)
 		return false;
 
-	CVLib::Neighbourhood Yk(points);
+	cloudViewer::Neighbourhood Yk(points);
 
 	//get corresponding plane
 	if (!planeEquation)
@@ -256,19 +256,19 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 	memcpy(m_planeEquation, planeEquation, sizeof(PointCoordinateType) * 4);
 
 	//we project the input points on a plane
-	std::vector<CVLib::PointProjectionTools::IndexedCCVector2> points2D;
+	std::vector<cloudViewer::PointProjectionTools::IndexedCCVector2> points2D;
 	//local base
 	CCVector3 X;
 	CCVector3 Y;
 
-	if (!Yk.projectPointsOn2DPlane<CVLib::PointProjectionTools::IndexedCCVector2>(points2D, nullptr, &m_center, &X, &Y))
+	if (!Yk.projectPointsOn2DPlane<cloudViewer::PointProjectionTools::IndexedCCVector2>(points2D, nullptr, &m_center, &X, &Y))
 	{
 		CVLog::Error("[ccFacet::createInternalRepresentation] Not enough memory!");
 		return false;
 	}
 
 	//compute resulting RMS
-	m_rms = CVLib::DistanceComputationTools::computeCloud2PlaneDistanceRMS(points, m_planeEquation);
+	m_rms = cloudViewer::DistanceComputationTools::computeCloud2PlaneDistanceRMS(points, m_planeEquation);
 	
 	//update the points indexes (not done by Neighbourhood::projectPointsOn2DPlane)
 	{
@@ -280,8 +280,8 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 
 	//try to get the points on the convex/concave hull to build the contour and the polygon
 	{
-		std::list<CVLib::PointProjectionTools::IndexedCCVector2*> hullPoints;
-		if (!CVLib::PointProjectionTools::extractConcaveHull2D(	points2D,
+		std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*> hullPoints;
+		if (!cloudViewer::PointProjectionTools::extractConcaveHull2D(	points2D,
 																hullPoints,
 																m_maxEdgeLength*m_maxEdgeLength))
 		{
@@ -302,7 +302,7 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 			}
 			
 			//projection on the LS plane (in 3D)
-			for (std::list<CVLib::PointProjectionTools::IndexedCCVector2*>::const_iterator it = hullPoints.begin(); it != hullPoints.end(); ++it)
+			for (std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*>::const_iterator it = hullPoints.begin(); it != hullPoints.end(); ++it)
 			{
 				m_contourVertices->addPoint(m_center + X*(*it)->x + Y*(*it)->y);
 			}
@@ -339,7 +339,7 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 		try
 		{
 			hullPointsVector.reserve(hullPoints.size());
-			for (std::list<CVLib::PointProjectionTools::IndexedCCVector2*>::const_iterator it = hullPoints.begin(); it != hullPoints.end(); ++it)
+			for (std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*>::const_iterator it = hullPoints.begin(); it != hullPoints.end(); ++it)
 			{
 				hullPointsVector.push_back(**it);
 			}
@@ -352,10 +352,10 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 		//if we have computed a concave hull, we must remove triangles falling outside!
 		bool removePointsOutsideHull = (m_maxEdgeLength > 0);
 
-		if (!hullPointsVector.empty() && CVLib::Delaunay2dMesh::Available())
+		if (!hullPointsVector.empty() && cloudViewer::Delaunay2dMesh::Available())
 		{
 			//compute the facet surface
-			CVLib::Delaunay2dMesh dm;
+			cloudViewer::Delaunay2dMesh dm;
 			char errorStr[1024];
 			if (dm.buildMesh(hullPointsVector, 0, errorStr))
 			{
@@ -370,7 +370,7 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 					//import faces
 					for (unsigned i = 0; i < triCount; ++i)
 					{
-						const CVLib::VerticesIndexes* tsi = dm.getTriangleVertIndexes(i);
+						const cloudViewer::VerticesIndexes* tsi = dm.getTriangleVertIndexes(i);
 						m_polygonMesh->addTriangle(tsi->i1, tsi->i2, tsi->i3);
 					}
 					m_polygonMesh->setVisible(true);
@@ -399,7 +399,7 @@ bool ccFacet::createInternalRepresentation(	CVLib::GenericIndexedCloudPersist* p
 					}
 
 					//update facet surface
-					m_surface = CVLib::MeshSamplingTools::computeMeshArea(m_polygonMesh);
+					m_surface = cloudViewer::MeshSamplingTools::computeMeshArea(m_polygonMesh);
 				}
 				else
 				{
@@ -563,9 +563,9 @@ bool ccFacet::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccFacet::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccFacet::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	if (dataVersion < 32)
@@ -762,7 +762,7 @@ ccFacet &ccFacet::rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center
 }
 
 ccFacet &ccFacet::operator+=(const ccFacet &facet) {
-	CVLib::utility::LogWarning("ccFace does not support '+=' operator!");
+	cloudViewer::utility::LogWarning("ccFace does not support '+=' operator!");
 	return (*this);
 }
 
@@ -778,6 +778,6 @@ ccFacet &ccFacet::operator=(const ccFacet &facet) {
 }
 
 ccFacet ccFacet::operator+(const ccFacet &facet) const {
-	CVLib::utility::LogWarning("ccFace does not support '=' operator!");
+	cloudViewer::utility::LogWarning("ccFace does not support '=' operator!");
 	return ccFacet();
 }

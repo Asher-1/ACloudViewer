@@ -89,7 +89,7 @@ int StatisticalOutliersRemover::compute()
 		return -1;
 
 	//get back outcloud as a ccPointCloud
-	ccPointCloud* final_cloud = sm2ccConverter(outcloud).getCloud();
+    ccPointCloud* final_cloud = pcl2cc::Convert(*outcloud);
 	if (!final_cloud)
 		return -1;
 

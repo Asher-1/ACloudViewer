@@ -27,7 +27,7 @@
 //#include "ccNormalVectors.h"
 //#include "ccBox.h"
 
-//CVLib
+//cloudViewer
 //#include <ScalarFieldTools.h>
 //#include <RayAndBox.h>
 

@@ -24,7 +24,7 @@
 //Qt
 #include <QString>
 
-//CVLib
+//cloudViewer
 #include <ManualSegmentationTools.h>
 
 //system
@@ -70,7 +70,7 @@ void ccSubMesh::forEach(genericTriangleAction action)
 
 	for (unsigned int index : m_triIndexes)
 	{
-		CVLib::GenericTriangle* tri = m_associatedMesh->_getTriangle(index);
+		cloudViewer::GenericTriangle* tri = m_associatedMesh->_getTriangle(index);
 		action(*tri);
 	}
 }
@@ -80,12 +80,12 @@ ccGenericPointCloud* ccSubMesh::getAssociatedCloud() const
 	return m_associatedMesh ? m_associatedMesh->getAssociatedCloud() : nullptr;
 }
 
-CVLib::GenericTriangle* ccSubMesh::_getNextTriangle() //temporary object
+cloudViewer::GenericTriangle* ccSubMesh::_getNextTriangle() //temporary object
 {
 	return m_associatedMesh && m_globalIterator < size() ? m_associatedMesh->_getTriangle(m_triIndexes[m_globalIterator++]) : nullptr;
 }
 
-CVLib::VerticesIndexes* ccSubMesh::getNextTriangleVertIndexes()
+cloudViewer::VerticesIndexes* ccSubMesh::getNextTriangleVertIndexes()
 {
 	return m_associatedMesh && m_globalIterator < size() ? m_associatedMesh->getTriangleVertIndexes(m_triIndexes[m_globalIterator++]) : nullptr;
 }
@@ -94,6 +94,16 @@ bool ccSubMesh::interpolateNormals(unsigned triIndex, const CCVector3& P, CCVect
 {
 	if (m_associatedMesh && triIndex < size())
 		return m_associatedMesh->interpolateNormals(getTriGlobalIndex(triIndex), P, N);
+
+	//shouldn't happen
+	assert(false);
+	return false;
+}
+
+bool ccSubMesh::interpolateNormalsBC(unsigned triIndex, const CCVector3d& w, CCVector3& N)
+{
+	if (m_associatedMesh && triIndex < size())
+		return m_associatedMesh->interpolateNormalsBC(getTriGlobalIndex(triIndex), w, N);
 
 	//shouldn't happen
 	assert(false);
@@ -130,7 +140,7 @@ bool ccSubMesh::getVertexColorFromMaterial(unsigned triIndex, unsigned char vert
 	return false;
 }
 
-CVLib::GenericTriangle* ccSubMesh::_getTriangle(unsigned triIndex) //temporary object
+cloudViewer::GenericTriangle* ccSubMesh::_getTriangle(unsigned triIndex) //temporary object
 {
 	if (m_associatedMesh && triIndex < size())
 		return m_associatedMesh->_getTriangle(getTriGlobalIndex(triIndex));
@@ -166,7 +176,7 @@ void ccSubMesh::getTriangleVertices(unsigned triangleIndex, double A[3], double 
 	}
 }
 
-CVLib::VerticesIndexes* ccSubMesh::getTriangleVertIndexes(unsigned triIndex)
+cloudViewer::VerticesIndexes* ccSubMesh::getTriangleVertIndexes(unsigned triIndex)
 {
 	if (m_associatedMesh && triIndex < size())
 		return m_associatedMesh->getTriangleVertIndexes(getTriGlobalIndex(triIndex));
@@ -198,7 +208,7 @@ ccSubMesh* ccSubMesh::createNewSubMeshFromSelection(bool removeSelectedFaces, In
 	{
 		for (unsigned globalIndex : m_triIndexes)
 		{
-			const CVLib::VerticesIndexes* tsi = m_associatedMesh->getTriangleVertIndexes(globalIndex);
+			const cloudViewer::VerticesIndexes* tsi = m_associatedMesh->getTriangleVertIndexes(globalIndex);
 			//triangle is visible?
 			if (   verticesVisibility[tsi->i1] == POINT_VISIBLE
 				&& verticesVisibility[tsi->i2] == POINT_VISIBLE
@@ -235,7 +245,7 @@ ccSubMesh* ccSubMesh::createNewSubMeshFromSelection(bool removeSelectedFaces, In
 		for (size_t i = 0; i < triNum; ++i)
 		{
 			unsigned globalIndex = m_triIndexes[i];
-			const CVLib::VerticesIndexes* tsi = m_associatedMesh->getTriangleVertIndexes(globalIndex);
+			const cloudViewer::VerticesIndexes* tsi = m_associatedMesh->getTriangleVertIndexes(globalIndex);
 
 			if (indexMap) //translate global index?
 				globalIndex = indexMap->at(globalIndex);
@@ -479,7 +489,7 @@ void ccSubMesh::refreshBB()
 	{
 		for (unsigned globalIndex : m_triIndexes)
 		{
-			CVLib::GenericTriangle* tri = m_associatedMesh->_getTriangle(globalIndex);
+			cloudViewer::GenericTriangle* tri = m_associatedMesh->_getTriangle(globalIndex);
 			m_bBox.add(*tri->_getA());
 			m_bBox.add(*tri->_getB());
 			m_bBox.add(*tri->_getC());
@@ -531,9 +541,9 @@ bool ccSubMesh::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccSubMesh::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccSubMesh::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccGenericMesh::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccGenericMesh::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//as the associated mesh can't be saved directly

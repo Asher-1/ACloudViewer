@@ -28,7 +28,7 @@
 
 #include <ecvCommandLineInterface.h>
 
-//CVLib
+//cloudViewer
 #include <CloudSamplingTools.h>
 #include <ReferenceCloud.h>
 
@@ -148,7 +148,7 @@ void qCanupoPlugin::doClassifyAction()
 
 	CorePointDescSet corePointsDescriptors; //core point descriptors
 	ccPointCloud* realCorePoints = 0; //the core point cloud (as a real point cloud, if available)
-	CVLib::GenericIndexedCloudPersist* corePoints = 0; //the core points, potentially as references!
+	cloudViewer::GenericIndexedCloudPersist* corePoints = 0; //the core points, potentially as references!
 
 	switch (coreSource)
 	{
@@ -172,8 +172,8 @@ void qCanupoPlugin::doClassifyAction()
 		ecvProgressDialog pDlg(true, m_app->getActiveWindow());
 
 		assert(samplingDist > 0);
-		CVLib::CloudSamplingTools::SFModulationParams modParams(false);
-		CVLib::ReferenceCloud* refCloud = CVLib::CloudSamplingTools::resampleCloudSpatially(cloud,
+		cloudViewer::CloudSamplingTools::SFModulationParams modParams(false);
+		cloudViewer::ReferenceCloud* refCloud = cloudViewer::CloudSamplingTools::resampleCloudSpatially(cloud,
 																							samplingDist,
 																							modParams,
 																							0,
@@ -335,9 +335,9 @@ void qCanupoPlugin::doTrainAction()
 	}
 
 	// sub-sampled clouds
-	CVLib::GenericIndexedCloudPersist* corePoints1 = 0;
-	CVLib::GenericIndexedCloudPersist* corePoints2 = 0;
-	CVLib::GenericIndexedCloudPersist* evaluationPoints = 0;
+	cloudViewer::GenericIndexedCloudPersist* corePoints1 = 0;
+	cloudViewer::GenericIndexedCloudPersist* corePoints2 = 0;
+	cloudViewer::GenericIndexedCloudPersist* evaluationPoints = 0;
 
 	// progress dialog
 	ecvProgressDialog pDlg(true, m_app->getActiveWindow());
@@ -353,7 +353,7 @@ void qCanupoPlugin::doTrainAction()
 			if (evaluationCloud)
 			{
 				if (evaluationCloud->size() > maxCorePoints)
-					evaluationPoints = CVLib::CloudSamplingTools::subsampleCloudRandomly(evaluationCloud, maxCorePoints, &pDlg);
+					evaluationPoints = cloudViewer::CloudSamplingTools::subsampleCloudRandomly(evaluationCloud, maxCorePoints, &pDlg);
 				else
 					evaluationPoints = evaluationCloud;
 
@@ -371,7 +371,7 @@ void qCanupoPlugin::doTrainAction()
 				maxCorePoints = cloud2->size();
 
 			if (cloud1->size() > maxCorePoints)
-				corePoints1 = CVLib::CloudSamplingTools::subsampleCloudRandomly(cloud1, maxCorePoints, &pDlg);
+				corePoints1 = cloudViewer::CloudSamplingTools::subsampleCloudRandomly(cloud1, maxCorePoints, &pDlg);
 			else
 				corePoints1 = cloud1;
 
@@ -382,7 +382,7 @@ void qCanupoPlugin::doTrainAction()
 			}
 
 			if (cloud2->size() > maxCorePoints)
-				corePoints2 = CVLib::CloudSamplingTools::subsampleCloudRandomly(cloud2, maxCorePoints, &pDlg);
+				corePoints2 = cloudViewer::CloudSamplingTools::subsampleCloudRandomly(cloud2, maxCorePoints, &pDlg);
 			else
 				corePoints2 = cloud2;
 

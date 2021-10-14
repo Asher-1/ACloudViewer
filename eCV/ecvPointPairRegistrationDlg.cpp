@@ -88,26 +88,26 @@ ccPointPairRegistrationDlg::ccPointPairRegistrationDlg(
 		autoZoomCheckBox->setChecked(autoUpdateZoom);
 	}
 
-	connect(showAlignedCheckBox,	SIGNAL(toggled(bool)),				this,	SLOT(showAlignedEntities(bool)));
-	connect(showReferenceCheckBox,	SIGNAL(toggled(bool)),				this,	SLOT(showReferenceEntities(bool)));
+    connect(showAlignedCheckBox,	&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::showAlignedEntities);
+    connect(showReferenceCheckBox,	&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::showReferenceEntities);
 
-	connect(typeAlignToolButton,	SIGNAL(clicked()),					this,	SLOT(addManualAlignedPoint()));
-	connect(typeRefToolButton,		SIGNAL(clicked()),					this,	SLOT(addManualRefPoint()));
+    connect(typeAlignToolButton,	&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::addManualAlignedPoint);
+    connect(typeRefToolButton,		&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::addManualRefPoint);
 
-	connect(unstackAlignToolButton,	SIGNAL(clicked()),					this,	SLOT(unstackAligned()));
-	connect(unstackRefToolButton,	SIGNAL(clicked()),					this,	SLOT(unstackRef()));
+    connect(unstackAlignToolButton,	&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::unstackAligned);
+    connect(unstackRefToolButton,	&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::unstackRef);
 
-	connect(alignToolButton,		SIGNAL(clicked()),					this,	SLOT(align()));
-	connect(resetToolButton,		SIGNAL(clicked()),					this,	SLOT(reset()));
+    connect(alignToolButton,		&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::align);
+    connect(resetToolButton,		&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::reset);
 
-	connect(validToolButton,		SIGNAL(clicked()),					this,	SLOT(apply()));
-	connect(cancelToolButton,		SIGNAL(clicked()),					this,	SLOT(cancel()));
+    connect(validToolButton,		&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::apply);
+    connect(cancelToolButton,		&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::cancel);
 
-	connect(adjustScaleCheckBox,	SIGNAL(toggled(bool)),				this,	SLOT(updateAlignInfo()));
-	connect(TxCheckBox,				SIGNAL(toggled(bool)),				this,	SLOT(updateAlignInfo()));
-	connect(TyCheckBox,				SIGNAL(toggled(bool)),				this,	SLOT(updateAlignInfo()));
-	connect(TzCheckBox,				SIGNAL(toggled(bool)),				this,	SLOT(updateAlignInfo()));
-	connect(rotComboBox,			SIGNAL(currentIndexChanged(int)),	this,	SLOT(updateAlignInfo()));
+    connect(adjustScaleCheckBox,	&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::updateAlignInfo);
+    connect(TxCheckBox,				&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::updateAlignInfo);
+    connect(TyCheckBox,				&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::updateAlignInfo);
+    connect(TzCheckBox,				&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::updateAlignInfo);
+    connect(rotComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),	this, &ccPointPairRegistrationDlg::updateAlignInfo);
 
 	m_alignedPoints.setEnabled(true);
 	m_alignedPoints.setVisible(false);
@@ -538,7 +538,7 @@ bool ccPointPairRegistrationDlg::convertToSphereCenter(CCVector3d& P, ccHObject*
 	ccBBox box;
 	box.add(CCVector3::fromArray((P - CCVector3d(1,1,1)*searchRadius).u));
 	box.add(CCVector3::fromArray((P + CCVector3d(1,1,1)*searchRadius).u));
-	CVLib::ReferenceCloud* part = cloud->crop(box,true);
+	cloudViewer::ReferenceCloud* part = cloud->crop(box,true);
 
 	bool success = false;
 	if (part && part->size() > 16)
@@ -548,7 +548,7 @@ bool ccPointPairRegistrationDlg::convertToSphereCenter(CCVector3d& P, ccHObject*
 		double rms;
 		ecvProgressDialog pDlg(true, this);
 		//first roughly search for the sphere
-		if (CVLib::GeometricalAnalysisTools::DetectSphereRobust(part, 0.5, C, radius, rms, &pDlg, 0.9) == CVLib::GeometricalAnalysisTools::NoError)
+		if (cloudViewer::GeometricalAnalysisTools::DetectSphereRobust(part, 0.5, C, radius, rms, &pDlg, 0.9) == cloudViewer::GeometricalAnalysisTools::NoError)
 		{
 			if (radius / searchRadius < 0.5 || radius / searchRadius > 2.0)
 			{
@@ -564,7 +564,7 @@ bool ccPointPairRegistrationDlg::convertToSphereCenter(CCVector3d& P, ccHObject*
 					box.add(C + CCVector3(1, 1, 1)*radius*static_cast<PointCoordinateType>(1.05)); //add 5%
 					part = cloud->crop(box, true);
 					if (part && part->size() > 16)
-						CVLib::GeometricalAnalysisTools::DetectSphereRobust(part, 0.5, C, radius, rms, &pDlg, 0.99);
+						cloudViewer::GeometricalAnalysisTools::DetectSphereRobust(part, 0.5, C, radius, rms, &pDlg, 0.99);
 				}
 				CVLog::Print(QString("[ccPointPairRegistrationDlg] Detected sphere radius = %1 (rms = %2)").arg(radius).arg(rms));
 				if (radius / searchRadius < 0.5 || radius / searchRadius > 2.0)
@@ -804,7 +804,7 @@ bool ccPointPairRegistrationDlg::addReferencePoint(CCVector3d& Pin, ccHObject* e
 	{
 		//express the 'Pi' point in the current global coordinate system
 		CCVector3d Pi = m_refPoints.toGlobal3d<PointCoordinateType>(*m_refPoints.getPoint(i));
-        if (CVLib::LessThanEpsilon((Pi - Pin).norm()))
+        if (cloudViewer::LessThanEpsilon((Pi - Pin).norm()))
 		{
 			CVLog::Error("Point already picked or too close to an already selected one!");
 			return false;
@@ -880,7 +880,7 @@ bool ccPointPairRegistrationDlg::addAlignedPoint(CCVector3d& Pin, ccHObject* ent
 	for (unsigned i = 0; i < m_alignedPoints.size(); ++i)
 	{
 		CCVector3d Pi = m_alignedPoints.toGlobal3d<PointCoordinateType>(*m_alignedPoints.getPoint(i));
-        if (CVLib::LessThanEpsilon((Pi-Pin).norm()))
+        if (cloudViewer::LessThanEpsilon((Pi-Pin).norm()))
 		{
 			CVLog::Error("Point already picked or too close to an already selected one!");
 			return false;
@@ -1128,7 +1128,7 @@ void ccPointPairRegistrationDlg::updateSphereMarks(ccHObject* obj, bool remove)
 		if (remove)
 		{
 			context.removeEntityType = ENTITY_TYPE::ECV_MESH;
-			context.removeViewID = QString::number(obj->getUniqueID());
+            context.removeViewID = obj->getViewId();
 			ecvDisplayTools::RemoveEntities(context);
 			obj->showNameIn3D(false);
 		}
@@ -1256,7 +1256,7 @@ void ccPointPairRegistrationDlg::showReferenceEntities(bool state)
 	}
 }
 
-bool ccPointPairRegistrationDlg::callHornRegistration(CVLib::PointProjectionTools::Transformation& trans, double& rms, bool autoUpdateTab)
+bool ccPointPairRegistrationDlg::callHornRegistration(cloudViewer::PointProjectionTools::Transformation& trans, double& rms, bool autoUpdateTab)
 {
 	if (m_alignedEntities.empty())
 	{
@@ -1275,7 +1275,7 @@ bool ccPointPairRegistrationDlg::callHornRegistration(CVLib::PointProjectionTool
 	bool adjustScale = adjustScaleCheckBox->isChecked();
 
 	//call Horn registration method
-	if (!CVLib::HornRegistrationTools::FindAbsoluteOrientation(&m_alignedPoints, &m_refPoints, trans, !adjustScale))
+	if (!cloudViewer::HornRegistrationTools::FindAbsoluteOrientation(&m_alignedPoints, &m_refPoints, trans, !adjustScale))
 	{
 		CVLog::Error("Registration failed! (points are aligned?)");
 		return false;
@@ -1287,13 +1287,13 @@ bool ccPointPairRegistrationDlg::callHornRegistration(CVLib::PointProjectionTool
 		switch (rotComboBox->currentIndex())
 		{
 		case 1:
-			filters |= CVLib::RegistrationTools::SKIP_RYZ;
+			filters |= cloudViewer::RegistrationTools::SKIP_RYZ;
 			break;
 		case 2:
-			filters |= CVLib::RegistrationTools::SKIP_RXZ;
+			filters |= cloudViewer::RegistrationTools::SKIP_RXZ;
 			break;
 		case 3:
-			filters |= CVLib::RegistrationTools::SKIP_RXY;
+			filters |= cloudViewer::RegistrationTools::SKIP_RXY;
 			break;
 		default:
 			//nothing to do
@@ -1301,20 +1301,20 @@ bool ccPointPairRegistrationDlg::callHornRegistration(CVLib::PointProjectionTool
 		}
 
 		if (!TxCheckBox->isChecked())
-			filters |= CVLib::RegistrationTools::SKIP_TX;
+			filters |= cloudViewer::RegistrationTools::SKIP_TX;
 		if (!TyCheckBox->isChecked())
-			filters |= CVLib::RegistrationTools::SKIP_TY;
+			filters |= cloudViewer::RegistrationTools::SKIP_TY;
 		if (!TzCheckBox->isChecked())
-			filters |= CVLib::RegistrationTools::SKIP_TZ;
+			filters |= cloudViewer::RegistrationTools::SKIP_TZ;
 
 		if (filters != 0)
 		{
-			CVLib::RegistrationTools::FilterTransformation(trans, filters, trans);
+			cloudViewer::RegistrationTools::FilterTransformation(trans, filters, trans);
 		}
 	}
 
 	//compute RMS
-	rms = CVLib::HornRegistrationTools::ComputeRMS(&m_alignedPoints, &m_refPoints, trans);
+	rms = cloudViewer::HornRegistrationTools::ComputeRMS(&m_alignedPoints, &m_refPoints, trans);
 
 	if (autoUpdateTab)
 	{
@@ -1326,8 +1326,8 @@ bool ccPointPairRegistrationDlg::callHornRegistration(CVLib::PointProjectionTool
 			{
 				const CCVector3* Ri = m_refPoints.getPoint(i);
 				const CCVector3* Li = m_alignedPoints.getPoint(i);
-				CCVector3 Lit = (trans.R.isValid() ? trans.R * (*Li) : (*Li))*trans.s + trans.T;
-				PointCoordinateType dist = (*Ri-Lit).norm();
+				CCVector3d Lit = trans.apply(*Li);
+				double dist = (Ri->toDouble() - Lit).norm();
 
 				QTableWidgetItem* itemA = new QTableWidgetItem();
 				itemA->setData(Qt::EditRole, dist);
@@ -1369,7 +1369,7 @@ void ccPointPairRegistrationDlg::updateAlignInfo()
 	//reset title
 	resetTitle();
 
-	CVLib::PointProjectionTools::Transformation trans;
+	cloudViewer::PointProjectionTools::Transformation trans;
 	double rms;
 
 	if (	m_alignedPoints.size() == m_refPoints.size()
@@ -1396,7 +1396,7 @@ void ccPointPairRegistrationDlg::updateAlignInfo()
 
 void ccPointPairRegistrationDlg::align()
 {
-	CVLib::PointProjectionTools::Transformation trans;
+	cloudViewer::PointProjectionTools::Transformation trans;
 	double rms;
 
 	//reset title
@@ -1433,7 +1433,7 @@ void ccPointPairRegistrationDlg::align()
 			CVLog::Print(QString("[PointPairRegistration] Scale: fixed (1.0)"));
 		}
 
-		ccGLMatrix transMat = FromCCLibMatrix<PointCoordinateType, float>(trans.R, trans.T);
+		ccGLMatrix transMat = FromCCLibMatrix<double, float>(trans.R, trans.T);
 		//...virtually
 		m_transMatHistory = transMat;
 		transformAlignedEntity(transMat, true);
@@ -1535,7 +1535,7 @@ void ccPointPairRegistrationDlg::transformAlignedEntity(const ccGLMatrix &transM
 
 		if (!apply)
 		{
-			ecvDisplayTools::RemoveBB(QString::number(it.key()->getUniqueID()));
+            ecvDisplayTools::RemoveBB(it.key()->getViewId());
 		}
 	}
 	m_alignedPoints.applyGLTransformation_recursive(apply ? &transMat : nullptr);
@@ -1608,7 +1608,7 @@ void ccPointPairRegistrationDlg::zoomGlobalOnRegistrationEntities()
 
 void ccPointPairRegistrationDlg::apply()
 {
-	CVLib::PointProjectionTools::Transformation trans;
+	cloudViewer::PointProjectionTools::Transformation trans;
 	double rms = -1.0;
 
 	// restore current alignedPoints
@@ -1632,7 +1632,7 @@ void ccPointPairRegistrationDlg::apply()
 		{
 			trans.R.scale(trans.s);
 		}
-		ccGLMatrix transMat = FromCCLibMatrix<PointCoordinateType,float>(trans.R,trans.T);
+		ccGLMatrix transMat = FromCCLibMatrix<double,float>(trans.R,trans.T);
 		
 		//...for real this time!
 		transformAlignedEntity(transMat, false);

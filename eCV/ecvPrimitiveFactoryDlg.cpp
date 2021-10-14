@@ -33,6 +33,7 @@
 #include <ecvCone.h>
 #include <ecvTorus.h>
 #include <ecvDish.h>
+#include <ecvCoordinateSystem.h>
 
 //system
 #include <assert.h>
@@ -50,6 +51,10 @@ ecvPrimitiveFactoryDlg::ecvPrimitiveFactoryDlg(MainWindow* win)
 	connect(closePushButton, &QAbstractButton::clicked, this, &QDialog::accept);
 	connect(spherePosFromClipboardButton, &QPushButton::clicked, this, &ecvPrimitiveFactoryDlg::setSpherePositionFromClipboard);
 	connect(spherePosToOriginButton, &QPushButton::clicked, this, &ecvPrimitiveFactoryDlg::setSpherePositionToOrigin);
+    connect(csSetMatrixBasedOnSelectedObjectButton, &QPushButton::clicked, this, &ecvPrimitiveFactoryDlg::setCoordinateSystemBasedOnSelectedObject);
+    connect(csMatrixTextEdit, &QPlainTextEdit::textChanged, this, &ecvPrimitiveFactoryDlg::onMatrixTextChange);
+    connect(csClearMatrixButton, &QPushButton::clicked, this, &ecvPrimitiveFactoryDlg::setCSMatrixToIdentity);
+    setCSMatrixToIdentity();
 }
 
 void ecvPrimitiveFactoryDlg::createPrimitive()
@@ -57,7 +62,7 @@ void ecvPrimitiveFactoryDlg::createPrimitive()
 	if (!m_win)
 		return;
 
-	ccGenericPrimitive* primitive = 0;
+    ccGenericPrimitive* primitive = nullptr;
 	switch(tabWidget->currentIndex())
 	{
 		//Plane
@@ -119,6 +124,18 @@ void ecvPrimitiveFactoryDlg::createPrimitive()
 										static_cast<PointCoordinateType>(dishEllipsoidGroupBox->isChecked() ? dishRadius2DoubleSpinBox->value() : 0));
 			}
 			break;
+        case 7:
+            {
+                bool valid = false;
+                ccGLMatrix mat = getCSMatrix(valid);
+                if (!valid)
+                {
+                    mat.toIdentity();
+                }
+                primitive = new ccCoordinateSystem(&mat);
+
+            }
+            break;
 	}
 
 	if (primitive)
@@ -158,5 +175,48 @@ void ecvPrimitiveFactoryDlg::setSpherePositionToOrigin()
 {
 	spherePosXDoubleSpinBox->setValue(0);
 	spherePosYDoubleSpinBox->setValue(0);
-	spherePosZDoubleSpinBox->setValue(0);
+    spherePosZDoubleSpinBox->setValue(0);
+}
+
+void ecvPrimitiveFactoryDlg::setCoordinateSystemBasedOnSelectedObject()
+{
+    ccHObject::Container selectedEnt = m_win->getSelectedEntities();
+    for (auto entity : selectedEnt)
+    {
+        csMatrixTextEdit->setPlainText(entity->getGLTransformationHistory().toString());
+    }
+}
+
+
+void ecvPrimitiveFactoryDlg::onMatrixTextChange()
+{
+    bool valid = false;
+    getCSMatrix(valid);
+    if (valid)
+    {
+        CVLog::Print("Valid ccGLMatrix");
+    }
+}
+
+void ecvPrimitiveFactoryDlg::setCSMatrixToIdentity()
+{
+    csMatrixTextEdit->blockSignals(true);
+    csMatrixTextEdit->setPlainText("1.00000000 0.00000000 0.00000000 0.00000000\n0.00000000 1.00000000 0.00000000 0.00000000\n0.00000000 0.00000000 1.00000000 0.00000000\n0.00000000 0.00000000 0.00000000 1.00000000");
+    csMatrixTextEdit->blockSignals(false);
+}
+
+ccGLMatrix ecvPrimitiveFactoryDlg::getCSMatrix(bool& valid)
+{
+    QString text = csMatrixTextEdit->toPlainText();
+    if (text.contains("["))
+    {
+        //automatically remove anything between square brackets
+        static const QRegExp squareBracketsFilter("\\[([^]]+)\\]");
+        text.replace(squareBracketsFilter, "");
+        csMatrixTextEdit->blockSignals(true);
+        csMatrixTextEdit->setPlainText(text);
+        csMatrixTextEdit->blockSignals(false);
+    }
+    ccGLMatrix mat = ccGLMatrix::FromString(text, valid);
+    return mat;
 }

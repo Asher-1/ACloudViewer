@@ -8,7 +8,7 @@
 #include <cassert>
 #include <cstring>
 
-using namespace CVLib;
+using namespace cloudViewer;
 
 //! Forward mask shifts and weights (Chamfer 3-4-5)
 const signed char ForwardNeighbours345[14*4] = {

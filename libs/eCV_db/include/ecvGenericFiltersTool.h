@@ -58,7 +58,7 @@ public:
 	virtual ~ecvGenericFiltersTool() = default;
 
 	virtual void showInteractor(bool state) = 0;
-	virtual bool setInputData(ccHObject* entity, int viewPort = 0) = 0;
+	virtual bool setInputData(ccHObject* entity, int viewport = 0) = 0;
 	virtual void unregisterFilter() = 0;
 
 	virtual void intersectMode() = 0;

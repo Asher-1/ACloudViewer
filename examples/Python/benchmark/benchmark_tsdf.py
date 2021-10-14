@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Benchmark/benchmark_tsdf.py
 
@@ -18,7 +18,7 @@ from trajectory_io import read_trajectory
 
 
 def run_benchmark():
-    dataset_path = os.path.join(pwd, "..", "..", "TestData", "RGBD")
+    dataset_path = os.path.join(pwd, "..", "..", "test_data", "RGBD")
     camera_poses = read_trajectory(os.path.join(dataset_path, "odometry.log"))
     camera_intrinsics = cv3d.camera.PinholeCameraIntrinsic(
         cv3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)

@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               CVLIB                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -22,11 +22,11 @@
 //Local
 #include "CVCoreLib.h"
 
-namespace CVLib
+namespace cloudViewer
 {
 	//! Empty class - for classification purpose only
 	class CV_CORE_LIB_API CVToolbox	{};
 
-} //namespace CVLib
+} //namespace cloudViewer
 
 #endif // CV_TOOLBOX_HEADER

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include "ecvPointCloud.h"
 #include "ecvHObjectCaster.h"
 
-#include <Console.h>
+#include <Logging.h>
 
 // EIGEN
 #include <Eigen/Dense>
@@ -42,7 +42,7 @@
 #include <numeric>
 #include <tuple>
 
-using namespace CVLib;
+using namespace cloudViewer;
 namespace cloudViewer {
 namespace geometry {
 
@@ -167,8 +167,8 @@ std::shared_ptr<ecvHalfEdgeMesh>
 ecvHalfEdgeMesh::CreateFromTriangleMesh(const ccMesh &mesh) {
     ccPointCloud *baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
-    auto mesh_cpy = std::make_shared<ccMesh>(baseVertices);
-    auto het_mesh = std::make_shared<ecvHalfEdgeMesh>();
+    auto mesh_cpy = cloudViewer::make_shared<ccMesh>(baseVertices);
+    auto het_mesh = cloudViewer::make_shared<ecvHalfEdgeMesh>();
 
     // Copy
     *mesh_cpy = mesh;

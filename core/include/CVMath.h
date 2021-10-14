@@ -10,7 +10,7 @@
 #include "CVConst.h"
 
 
-namespace CVLib
+namespace cloudViewer
 {
 	//! Test a floating point number against our epsilon (a very small number).
 	/*!

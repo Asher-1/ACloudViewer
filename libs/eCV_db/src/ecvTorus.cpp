@@ -60,9 +60,9 @@ bool ccTorus::buildUp()
 		return false;
 
     //invalid parameters?
-    if ((m_rectSection && CVLib::LessThanEpsilon( m_rectSectionHeight ))
+    if ((m_rectSection && cloudViewer::LessThanEpsilon( m_rectSectionHeight ))
             || m_insideRadius >= m_outsideRadius
-            || CVLib::LessThanEpsilon( m_angle_rad ) )
+            || cloudViewer::LessThanEpsilon( m_angle_rad ) )
     {
         return false;
     }
@@ -277,9 +277,9 @@ bool ccTorus::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccTorus::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccTorus::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccGenericPrimitive::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccGenericPrimitive::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//parameters (dataVersion>=21)

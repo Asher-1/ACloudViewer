@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,12 +29,14 @@
 #include "pybind/cloudViewer_pybind.h"
 #include "pybind/t/geometry/geometry.h"
 #include "pybind/t/io/io.h"
+#include "pybind/t/pipelines/pipelines.h"
 
 namespace cloudViewer {
 namespace t {
 
 void pybind_t(py::module& m) {
     py::module m_submodule = m.def_submodule("t");
+    pipelines::pybind_pipelines(m_submodule);
     geometry::pybind_geometry(m_submodule);
     io::pybind_io(m_submodule);
 }

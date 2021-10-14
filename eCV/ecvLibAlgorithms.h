@@ -34,17 +34,17 @@ namespace ccLibAlgorithms
 	//! Returns a default first guess for algorithms kernel size (several clouds)
 	PointCoordinateType GetDefaultCloudKernelSize(const ccHObject::Container& entities, unsigned knn = 12);
 	
-	/*** CVLib "standalone" algorithms ***/
+	/*** cloudViewer "standalone" algorithms ***/
 
 	//! Geometric characteristic (with sub option)
 	struct GeomCharacteristic
 	{
-		GeomCharacteristic(CVLib::GeometricalAnalysisTools::GeomCharacteristic c, int option = 0)
+		GeomCharacteristic(cloudViewer::GeometricalAnalysisTools::GeomCharacteristic c, int option = 0)
 			: charac(c)
 			, subOption(option)
 		{}
 		
-		CVLib::GeometricalAnalysisTools::GeomCharacteristic charac;
+		cloudViewer::GeometricalAnalysisTools::GeomCharacteristic charac;
 		int subOption = 0;
 	};
 
@@ -58,18 +58,18 @@ namespace ccLibAlgorithms
 									QWidget* parent = nullptr);
 	
 	//! Computes a geometrical characteristic (see GeometricalAnalysisTools::GeomCharacteristic) on a set of entities
-	bool ComputeGeomCharacteristic(	CVLib::GeometricalAnalysisTools::GeomCharacteristic algo,
+	bool ComputeGeomCharacteristic(	cloudViewer::GeometricalAnalysisTools::GeomCharacteristic algo,
 									int subOption,
 									PointCoordinateType radius,
 									ccHObject::Container& entities,
 									QWidget* parent = nullptr,
 									ecvProgressDialog* progressDialog = nullptr);
 
-	//CVLib algorithms handled by the 'ApplyCCLibAlgorithm' method
+	//cloudViewer algorithms handled by the 'ApplyCCLibAlgorithm' method
 	enum CC_LIB_ALGORITHM { CCLIB_ALGO_SF_GRADIENT,
 	};
 	
-	//! Applies a standard CVLib algorithm (see CC_LIB_ALGORITHM) on a set of entities
+	//! Applies a standard cloudViewer algorithm (see CC_LIB_ALGORITHM) on a set of entities
 	bool ApplyCCLibAlgorithm(	CC_LIB_ALGORITHM algo,
 								ccHObject::Container& entities,
 								QWidget* parent = 0,
@@ -78,7 +78,7 @@ namespace ccLibAlgorithms
 	//! Scale matching algorithms
 	enum ScaleMatchingAlgorithm { BB_MAX_DIM, BB_VOLUME, PCA_MAX_DIM, ICP_SCALE };
 	
-	//! Applies a standard CVLib algorithm (see CC_LIB_ALGORITHM) on a set of entities
+	//! Applies a standard cloudViewer algorithm (see CC_LIB_ALGORITHM) on a set of entities
 	bool ApplyScaleMatchingAlgorithm(ScaleMatchingAlgorithm algo,
 												ccHObject::Container& entities,
 												double icpRmsDiff,

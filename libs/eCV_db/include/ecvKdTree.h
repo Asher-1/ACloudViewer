@@ -18,7 +18,7 @@
 #ifndef ECV_KD_TREE_HEADER
 #define ECV_KD_TREE_HEADER
 
-//CVLib
+//cloudViewer
 #include <TrueKdTree.h>
 
 //Local
@@ -30,9 +30,9 @@
 class ccGenericPointCloud;
 
 //! KD-tree structure
-/** Extends the CVLib::TrueKdTree class.
+/** Extends the cloudViewer::TrueKdTree class.
 **/
-class ECV_DB_LIB_API ccKdTree : public CVLib::TrueKdTree, public ccHObject
+class ECV_DB_LIB_API ccKdTree : public cloudViewer::TrueKdTree, public ccHObject
 {
 public:
 

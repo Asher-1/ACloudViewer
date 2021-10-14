@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CVLib: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,7 @@ Qhull::ComputeConvexHull(const std::vector<CCVector3>& points)
 	baseVertices->setEnabled(false);
 	// DGM: no need to lock it as it is only used by one mesh!
 	baseVertices->setLocked(false);
-	auto convex_hull = std::make_shared<ccMesh>(baseVertices);
+	auto convex_hull = cloudViewer::make_shared<ccMesh>(baseVertices);
 	convex_hull->addChild(baseVertices);
 	convex_hull->setName("ConvexMesh");
 	std::vector<size_t> pt_map;
@@ -124,7 +124,7 @@ Qhull::ComputeConvexHull(const std::vector<CCVector3>& points)
 	}
 
 	for (unsigned int i = 0; i < convex_hull->size(); ++i) {
-		CVLib::VerticesIndexes* tsi = convex_hull->getTriangleVertIndexes(i);
+		cloudViewer::VerticesIndexes* tsi = convex_hull->getTriangleVertIndexes(i);
 		tsi->i1 = vert_map[tsi->i1];
 		tsi->i2 = vert_map[tsi->i2];
 		tsi->i3 = vert_map[tsi->i3];
@@ -155,7 +155,7 @@ Qhull::ComputeDelaunayTetrahedralization(
 	const std::vector<Eigen::Vector3d>& points)
 {
 	typedef decltype(geometry::TetraMesh::tetras_)::value_type Vector4i;
-	auto delaunay_triangulation = std::make_shared<geometry::TetraMesh>();
+	auto delaunay_triangulation = cloudViewer::make_shared<geometry::TetraMesh>();
 	std::vector<size_t> pt_map;
 
 	if (points.size() < 4) {

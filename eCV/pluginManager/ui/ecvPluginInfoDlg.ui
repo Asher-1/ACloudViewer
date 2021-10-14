@@ -234,7 +234,7 @@ p, li { white-space: pre-wrap; }
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../../MainWindow.qrc">:/Resources/images/icon/ecv_64.png</pixmap>
+           <pixmap resource="../../MainWindow.qrc">:/Resources/images/icon/logo_64.png</pixmap>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>

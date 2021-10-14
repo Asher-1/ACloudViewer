@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        ErowCloudViewer: www.erow.cn                            -
+// -                        ErowCloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,15 +52,15 @@ void testFromPointClouds(const std::string& filename)
 		C = facet->getCenter();
 		rms = facet->getRMS();
 
-        CVLib::utility::LogInfo("RMS: {:d}", rms);
+        cloudViewer::utility::LogInfo("RMS: {:d}", rms);
 
 		//hack: output the transformation matrix that would make this normal points towards +Z
 		ccGLMatrix makeZPosMatrix = ccGLMatrix::FromToRotation(N, CCVector3(0, 0, PC_ONE));
 		CCVector3 Gt = C;
 		makeZPosMatrix.applyRotation(Gt);
 		makeZPosMatrix.setTranslation(C - Gt);
-		CVLib::utility::LogInfo("[Orientation] A matrix that would make this plane horizontal (normal towards Z+) is:");
-		CVLib::utility::LogInfo(makeZPosMatrix.toString(12, ' ').toStdString().c_str()); //full precision
+		cloudViewer::utility::LogInfo("[Orientation] A matrix that would make this plane horizontal (normal towards Z+) is:");
+		cloudViewer::utility::LogInfo(makeZPosMatrix.toString(12, ' ').toStdString().c_str()); //full precision
 		visualization::DrawGeometries({ std::shared_ptr<ccFacet>(facet) });
 	}
 }
@@ -72,7 +72,7 @@ void testFromFile(const std::string& filename)
 	cloud_ptr->filterChildren(facets, false, CV_TYPES::FACET);
 	for (size_t i = 0; i < facets.size(); ++i)
 	{
-		auto facet = std::make_shared<ccFacet>();
+		auto facet = cloudViewer::make_shared<ccFacet>();
 		*facet = *ccHObjectCaster::ToFacet(facets[i]);
 		if (facet)
 		{
@@ -90,15 +90,15 @@ void testFromFile(const std::string& filename)
 			C = facet->getCenter();
 			rms = facet->getRMS();
 
-            CVLib::utility::LogInfo("RMS: {:d}", rms);
+            cloudViewer::utility::LogInfo("RMS: {:d}", rms);
 
 			//hack: output the transformation matrix that would make this normal points towards +Z
 			ccGLMatrix makeZPosMatrix = ccGLMatrix::FromToRotation(N, CCVector3(0, 0, PC_ONE));
 			CCVector3 Gt = C;
 			makeZPosMatrix.applyRotation(Gt);
 			makeZPosMatrix.setTranslation(C - Gt);
-			CVLib::utility::LogInfo("[Orientation] A matrix that would make this plane horizontal (normal towards Z+) is:");
-			CVLib::utility::LogInfo(makeZPosMatrix.toString(12, ' ').toStdString().c_str()); //full precision
+			cloudViewer::utility::LogInfo("[Orientation] A matrix that would make this plane horizontal (normal towards Z+) is:");
+			cloudViewer::utility::LogInfo(makeZPosMatrix.toString(12, ' ').toStdString().c_str()); //full precision
 			visualization::DrawGeometries({ facet });
 		}
 	}
@@ -123,14 +123,14 @@ void testFromFile(const std::string& filename)
 
 int main(int argc, char **argv) {
 
-    CVLib::utility::SetVerbosityLevel(CVLib::utility::VerbosityLevel::Debug);
+    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         // clang-format off
-        CVLib::utility::LogInfo("Usage:");
-        CVLib::utility::LogInfo("    > Facets [filename]");
-        CVLib::utility::LogInfo("    The program will :");
-        CVLib::utility::LogInfo("    1. load the facets in [filename].");
+        cloudViewer::utility::LogInfo("Usage:");
+        cloudViewer::utility::LogInfo("    > Facets [filename]");
+        cloudViewer::utility::LogInfo("    The program will :");
+        cloudViewer::utility::LogInfo("    1. load the facets in [filename].");
         // clang-format on
         return 1;
     }

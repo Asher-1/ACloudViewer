@@ -21,7 +21,7 @@
 //ECV_DB_LIB
 #include <ecvPolyline.h>
 
-//CVLib
+//cloudViewer
 #include <PointProjectionTools.h>
 
 
@@ -46,7 +46,7 @@ public:
 		\param maxAngleDeg max angle between segments (angle between 0 and 180, in degrees)
 		\return contour polyline (or 0 if an error occurred)
 	**/
-	static ccPolyline* ExtractFlatContour(	CVLib::GenericIndexedCloudPersist* points,
+	static ccPolyline* ExtractFlatContour(	cloudViewer::GenericIndexedCloudPersist* points,
 											bool allowMultiPass,
 											PointCoordinateType maxEdgeLength = 0,
 											const PointCoordinateType* preferredNormDim = 0,
@@ -68,7 +68,7 @@ public:
 		\param enableVisualDebugMode whether to display a (debug) window to represent the algorithm process
 		\return success
 	**/
-	static bool ExtractFlatContour(	CVLib::GenericIndexedCloudPersist* points,
+	static bool ExtractFlatContour(	cloudViewer::GenericIndexedCloudPersist* points,
 									bool allowMultiPass,
 									PointCoordinateType maxEdgeLength,
 									std::vector<ccPolyline*>& parts,
@@ -82,7 +82,7 @@ protected:
 	/** Inspired from JIN-SEO PARK AND SE-JONG OH, "A New Concave Hull Algorithm
 		and Concaveness Measure for n-dimensional Datasets", 2012
 		Calls extractConvexHull2D (see associated warnings).
-		\note Almost the same method as CVLib::PointProjectionTools::ExtractConcaveHull2D
+		\note Almost the same method as cloudViewer::PointProjectionTools::ExtractConcaveHull2D
 		but with partial contour support and visual debug mode.
 		\param points input set of points
 		\param hullPoints output points (on the convex hull)
@@ -93,8 +93,8 @@ protected:
 		\param maxAngleDeg max angle between segments (angle between 0 and 180, in degrees)
 		\return success
 	**/
-	static bool ExtractConcaveHull2D(	std::vector<CVLib::PointProjectionTools::IndexedCCVector2>& points,
-										std::list<CVLib::PointProjectionTools::IndexedCCVector2*>& hullPoints,
+	static bool ExtractConcaveHull2D(	std::vector<cloudViewer::PointProjectionTools::IndexedCCVector2>& points,
+										std::list<cloudViewer::PointProjectionTools::IndexedCCVector2*>& hullPoints,
 										ContourType contourType,
 										bool allowMultiPass,
 										PointCoordinateType maxSquareLength = 0,

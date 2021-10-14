@@ -22,12 +22,18 @@
 
 #include <ui_alignDlg.h>
 
-#include <ReferenceCloud.h>
+namespace cloudViewer {
+    class ReferenceCloud;
+}
+
+namespace Ui {
+    class AlignDialog;
+}
 
 class ccGenericPointCloud;
 
 //! Rough registration dialog
-class ccAlignDlg : public QDialog, public Ui::AlignDialog
+class ccAlignDlg : public QDialog
 {
 	Q_OBJECT
 
@@ -39,7 +45,7 @@ public:
 								OCTREE
 	};
 
-	ccAlignDlg(ccGenericPointCloud *data, ccGenericPointCloud *model, QWidget* parent = 0);
+    ccAlignDlg(ccGenericPointCloud *data, ccGenericPointCloud *model, QWidget* parent = nullptr);
 	virtual ~ccAlignDlg();
 
 	unsigned getNbTries();
@@ -50,8 +56,8 @@ public:
 	CC_SAMPLING_METHOD getSamplingMethod();
 	bool isNumberOfCandidatesLimited();
 	unsigned getMaxNumberOfCandidates();
-	CVLib::ReferenceCloud *getSampledModel();
-	CVLib::ReferenceCloud *getSampledData();
+	cloudViewer::ReferenceCloud *getSampledModel();
+	cloudViewer::ReferenceCloud *getSampledData();
 
 
 protected slots:
@@ -73,6 +79,8 @@ protected:
 	ccGenericPointCloud* dataObject;
 
 	void setColorsAndLabels();
+
+    Ui::AlignDialog* m_ui;
 
 };
 

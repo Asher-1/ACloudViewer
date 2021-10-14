@@ -47,15 +47,15 @@ ccSubsamplingDlg::ccSubsamplingDlg(unsigned maxPointCount, double maxCloudRadius
 	samplingMethod->addItem("Space");
 	samplingMethod->addItem("Octree");
 
-	connect(slider,         SIGNAL(sliderMoved(int)),         this, SLOT(sliderMoved(int)));
-	connect(samplingValue,  SIGNAL(valueChanged(double)),     this, SLOT(samplingRateChanged(double)));
-	connect(samplingMethod, SIGNAL(currentIndexChanged(int)), this, SLOT(changeSamplingMethod(int)));
+    connect(slider, &QSlider::sliderMoved, this, &ccSubsamplingDlg::sliderMoved);
+    connect(samplingValue,  static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &ccSubsamplingDlg::samplingRateChanged);
+    connect(samplingMethod, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),		  this, &ccSubsamplingDlg::changeSamplingMethod);
 
 	samplingMethod->setCurrentIndex(1);
 	sliderMoved(slider->sliderPosition());
 }
 
-CVLib::ReferenceCloud* ccSubsamplingDlg::getSampledCloud(ccGenericPointCloud* cloud, CVLib::GenericProgressCallback* progressCb/*=0*/)
+cloudViewer::ReferenceCloud* ccSubsamplingDlg::getSampledCloud(ccGenericPointCloud* cloud, cloudViewer::GenericProgressCallback* progressCb/*=0*/)
 {
 	if (!cloud || cloud->size() == 0)
 	{
@@ -69,7 +69,7 @@ CVLib::ReferenceCloud* ccSubsamplingDlg::getSampledCloud(ccGenericPointCloud* cl
 		{
 			assert(samplingValue->value() >= 0);
 			unsigned count = static_cast<unsigned>(samplingValue->value());
-			return CVLib::CloudSamplingTools::subsampleCloudRandomly(	cloud,
+			return cloudViewer::CloudSamplingTools::subsampleCloudRandomly(	cloud,
 																		count,
 																		progressCb);
 		}
@@ -83,13 +83,13 @@ CVLib::ReferenceCloud* ccSubsamplingDlg::getSampledCloud(ccGenericPointCloud* cl
 			if (octree)
 			{
 				PointCoordinateType minDist = static_cast<PointCoordinateType>(samplingValue->value());
-				CVLib::CloudSamplingTools::SFModulationParams modParams;
+				cloudViewer::CloudSamplingTools::SFModulationParams modParams;
 				modParams.enabled = sfGroupBox->isEnabled() && sfGroupBox->isChecked();
 				if (modParams.enabled)
 				{
                     double deltaSF = static_cast<double>(m_sfMax - m_sfMin);
 					assert(deltaSF >= 0);
-                    if (CVLib::GreaterThanEpsilon(deltaSF))
+                    if (cloudViewer::GreaterThanEpsilon(deltaSF))
 					{
 						double sfMinSpacing = minSFSpacingDoubleSpinBox->value();
 						double sfMaxSpacing = maxSFSpacingDoubleSpinBox->value();
@@ -102,7 +102,7 @@ CVLib::ReferenceCloud* ccSubsamplingDlg::getSampledCloud(ccGenericPointCloud* cl
                         modParams.b = static_cast<double>(m_sfMin);
 					}
 				}
-				return CVLib::CloudSamplingTools::resampleCloudSpatially(	cloud, 
+				return cloudViewer::CloudSamplingTools::resampleCloudSpatially(	cloud, 
 																			minDist,
 																			modParams,
 																			octree.data(),
@@ -124,9 +124,9 @@ CVLib::ReferenceCloud* ccSubsamplingDlg::getSampledCloud(ccGenericPointCloud* cl
 			{
 				assert(samplingValue->value() >= 0);
 				unsigned char level = static_cast<unsigned char>(samplingValue->value());
-				return CVLib::CloudSamplingTools::subsampleCloudWithOctreeAtLevel(	cloud,
+				return cloudViewer::CloudSamplingTools::subsampleCloudWithOctreeAtLevel(	cloud,
 																					level,
-																					CVLib::CloudSamplingTools::NEAREST_POINT_TO_CELL_CENTER,
+																					cloudViewer::CloudSamplingTools::NEAREST_POINT_TO_CELL_CENTER,
 																					progressCb,
 																					octree.data());
 			}
@@ -241,7 +241,7 @@ void ccSubsamplingDlg::changeSamplingMethod(int index)
 		{
 			samplingValue->setDecimals(0);
 			samplingValue->setMinimum(1);
-			samplingValue->setMaximum(static_cast<double>(CVLib::DgmOctree::MAX_OCTREE_LEVEL));
+			samplingValue->setMaximum(static_cast<double>(cloudViewer::DgmOctree::MAX_OCTREE_LEVEL));
 			samplingValue->setSingleStep(1);
 			samplingValue->setEnabled(true);
 		}
@@ -258,7 +258,7 @@ void ccSubsamplingDlg::changeSamplingMethod(int index)
 
 void ccSubsamplingDlg::enableSFModulation(ScalarType sfMin, ScalarType sfMax)
 {
-	m_sfModEnabled = CVLib::ScalarField::ValidValue(sfMin) && CVLib::ScalarField::ValidValue(sfMax);
+	m_sfModEnabled = cloudViewer::ScalarField::ValidValue(sfMin) && cloudViewer::ScalarField::ValidValue(sfMax);
 	if (!m_sfModEnabled)
 	{
 		CVLog::Warning("[ccSubsamplingDlg::enableSFModulation] Invalid input SF values");

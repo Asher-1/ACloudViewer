@@ -28,7 +28,7 @@
 #include <ecv2DLabel.h>
 #include <ecvDisplayTools.h>
 
-//CVLib
+//cloudViewer
 #include <ScalarField.h>
 
 //Qt
@@ -44,13 +44,13 @@ ccPointPropertiesDlg::ccPointPropertiesDlg(ccPickingHub* pickingHub, QWidget* pa
 {
 	setupUi(this);
 
-	connect(closeButton,				SIGNAL(clicked()), this, SLOT(onClose()));
-	connect(pointPropertiesButton,		SIGNAL(clicked()), this, SLOT(activatePointPropertiesDisplay()));
-	connect(pointPointDistanceButton,	SIGNAL(clicked()), this, SLOT(activateDistanceDisplay()));
-	connect(pointsAngleButton,			SIGNAL(clicked()), this, SLOT(activateAngleDisplay()));
-	connect(rectZoneToolButton,			SIGNAL(clicked()), this, SLOT(activate2DZonePicking()));
-	connect(saveLabelButton,			SIGNAL(clicked()), this, SLOT(exportCurrentLabel()));
-	connect(razButton,					SIGNAL(clicked()), this, SLOT(initializeState()));
+    connect(closeButton,				&QToolButton::clicked, this, &ccPointPropertiesDlg::onClose);
+    connect(pointPropertiesButton,		&QToolButton::clicked, this, &ccPointPropertiesDlg::activatePointPropertiesDisplay);
+    connect(pointPointDistanceButton,	&QToolButton::clicked, this, &ccPointPropertiesDlg::activateDistanceDisplay);
+    connect(pointsAngleButton,			&QToolButton::clicked, this, &ccPointPropertiesDlg::activateAngleDisplay);
+    connect(rectZoneToolButton,			&QToolButton::clicked, this, &ccPointPropertiesDlg::activate2DZonePicking);
+    connect(saveLabelButton,			&QToolButton::clicked, this, &ccPointPropertiesDlg::exportCurrentLabel);
+    connect(razButton,					&QToolButton::clicked, this, &ccPointPropertiesDlg::initializeState);
 
 	//for points picking
 	m_label = new cc2DLabel();
@@ -66,11 +66,11 @@ ccPointPropertiesDlg::~ccPointPropertiesDlg()
 {
 	if (m_label)
 		delete m_label;
-	m_label = 0;
+    m_label = nullptr;
 
 	if (m_rect2DLabel)
 		delete m_rect2DLabel;
-	m_rect2DLabel = 0;
+    m_rect2DLabel = nullptr;
 }
 
 bool ccPointPropertiesDlg::linkWith(QWidget* win)
@@ -95,9 +95,9 @@ bool ccPointPropertiesDlg::linkWith(QWidget* win)
 	{
 		ecvDisplayTools::AddToOwnDB(m_label);
 		ecvDisplayTools::AddToOwnDB(m_rect2DLabel);
-		connect(ecvDisplayTools::TheInstance(), SIGNAL(mouseMoved(int, int, Qt::MouseButtons)), this, SLOT(update2DZone(int, int, Qt::MouseButtons)));
-		connect(ecvDisplayTools::TheInstance(), SIGNAL(leftButtonClicked(int, int)), this, SLOT(processClickedPoint(int, int)));
-		connect(ecvDisplayTools::TheInstance(), SIGNAL(buttonReleased()), this, SLOT(close2DZone()));
+        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::mouseMoved,		 this, &ccPointPropertiesDlg::update2DZone);
+        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::leftButtonClicked, this, &ccPointPropertiesDlg::processClickedPoint);
+        connect(ecvDisplayTools::TheInstance(), &ecvDisplayTools::buttonReleased,	 this, &ccPointPropertiesDlg::close2DZone);
 	}
 
 	return true;

@@ -18,7 +18,7 @@
 #ifndef PDMS_TOOLS_HEADER
 #define PDMS_TOOLS_HEADER
 
-//CVLib
+//cloudViewer
 #include <CVGeom.h>
 #include <CVConst.h>
 

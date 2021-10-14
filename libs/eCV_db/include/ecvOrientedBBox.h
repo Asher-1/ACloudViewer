@@ -37,13 +37,14 @@
 **/
 class ccGLMatrix;
 class ccGLMatrixd;
-class ECV_DB_LIB_API ecvOrientedBBox : public CVLib::OrientedBoundingBox, public ccHObject
+class ECV_DB_LIB_API ecvOrientedBBox : public cloudViewer::OrientedBoundingBox, public ccHObject
 {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
 	//! Default constructor
     ecvOrientedBBox()
-        : CVLib::OrientedBoundingBox()
+        : cloudViewer::OrientedBoundingBox()
         , ccHObject("ecvOrientedBBox")
 	{}
 
@@ -57,7 +58,7 @@ public:
 		const Eigen::Matrix3d& R,
 		const Eigen::Vector3d& extent,
 		const std::string& name = "ecvOrientedBBox")
-        : CVLib::OrientedBoundingBox(center, R, extent)
+        : cloudViewer::OrientedBoundingBox(center, R, extent)
         , ccHObject(name.c_str())
     {}
 
@@ -90,7 +91,7 @@ public:
 		const Eigen::Vector3d& translation,
 		bool relative = true) override;
 	virtual ecvOrientedBBox& scale(
-		const double s, const Eigen::Vector3d& center) override;
+		const double scale, const Eigen::Vector3d& center) override;
 	virtual ecvOrientedBBox& rotate(
 		const Eigen::Matrix3d& R,
 		const Eigen::Vector3d& center) override;
