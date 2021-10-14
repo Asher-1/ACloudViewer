@@ -55,6 +55,13 @@ struct CommandOctreeNormal : public ccCommandLineInterface::Command
 	bool process(ccCommandLineInterface& cmd) override;
 };
 
+struct CommandInvertNormal : public ccCommandLineInterface::Command
+{
+    CommandInvertNormal();
+
+    bool process(ccCommandLineInterface& cmd) override;
+};
+
 struct CommandConvertNormalsToDipAndDipDir : public ccCommandLineInterface::Command
 {
 	CommandConvertNormalsToDipAndDipDir();
@@ -181,11 +188,20 @@ struct CommandSetActiveSF : public ccCommandLineInterface::Command
 	bool process(ccCommandLineInterface& cmd) override;
 };
 
-struct CommandRemoveAllSF : public ccCommandLineInterface::Command
+struct CommandRemoveAllSFs : public ccCommandLineInterface::Command
 {
-	CommandRemoveAllSF();
+        CommandRemoveAllSFs();
 
 	bool process(ccCommandLineInterface& cmd) override;
+};
+
+struct CommandRemoveSF : public ccCommandLineInterface::Command
+{
+	CommandRemoveSF();
+
+	bool process(ccCommandLineInterface& cmd) override;
+
+	bool removeSF(int sfIndex, ccPointCloud& pc);
 };
 
 struct CommandRemoveRGB : public ccCommandLineInterface::Command
@@ -298,6 +314,13 @@ struct CommandC2CDist : public CommandDist
 	CommandC2CDist();
 };
 
+struct CommandCPS : public ccCommandLineInterface::Command
+{
+    CommandCPS();
+
+    bool process(ccCommandLineInterface& cmd) override;
+};
+
 struct CommandStatTest : public ccCommandLineInterface::Command
 {
 	CommandStatTest();
@@ -324,6 +347,13 @@ struct CommandSFOperation : public ccCommandLineInterface::Command
 	CommandSFOperation();
 
 	bool process(ccCommandLineInterface& cmd) override;
+};
+
+struct CommandSFRename : public ccCommandLineInterface::Command
+{
+    CommandSFRename();
+
+    bool process(ccCommandLineInterface& cmd) override;
 };
 
 struct CommandICP : public ccCommandLineInterface::Command

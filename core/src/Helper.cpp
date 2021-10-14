@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,10 @@
 
 #include "Helper.h"
 
-#include <cctype>
-#include <random>
+#include <fmt/chrono.h>
+
 #include <algorithm>
+#include <cctype>
 #include <unordered_set>
 
 #ifdef _WIN32
@@ -53,6 +54,22 @@ void SplitString(std::vector<std::string>& tokens,
         }
         last_pos = new_pos + 1;
     }
+}
+
+std::vector<std::string> SplitString(const std::string& str,
+                                     const std::string& delimiters /* = " "*/,
+                                     bool trim_empty_str /* = true*/) {
+    std::vector<std::string> tokens;
+    std::string::size_type pos = 0, new_pos = 0, last_pos = 0;
+    while (pos != std::string::npos) {
+        pos = str.find_first_of(delimiters, last_pos);
+        new_pos = (pos == std::string::npos ? str.length() : pos);
+        if (new_pos != last_pos || !trim_empty_str) {
+            tokens.push_back(str.substr(last_pos, new_pos - last_pos));
+        }
+        last_pos = new_pos + 1;
+    }
+    return tokens;
 }
 
 std::string& LeftStripString(std::string& str, const std::string& chars) {
@@ -113,10 +130,9 @@ void Sleep(int milliseconds) {
 #endif  // _WIN32
 }
 
-int UniformRandInt(const int min, const int max) {
-    static thread_local std::mt19937 generator(std::random_device{}());
-    std::uniform_int_distribution<int> distribution(min, max);
-    return distribution(generator);
+std::string GetCurrentTimeStamp() {
+    std::time_t t = std::time(nullptr);
+    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
 }
 
 }  // namespace utility

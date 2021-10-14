@@ -86,8 +86,8 @@ function( target_link_GDAL ) # ARGV0 = project name
 		
 		#message( STATUS ${GDAL_DLL_FILES} )
 		#message( STATUS ${GDAL_DEP_DLL_FILES} )
-		copy_files("${GDAL_DLL_FILES}" "${CLOUDCOMPARE_DEST_FOLDER}" ) #mind the quotes!
-		copy_files("${GDAL_DEP_DLL_FILES}" "${CLOUDCOMPARE_DEST_FOLDER}" ) #mind the quotes!
+		cloudViewer_install_files("${GDAL_DLL_FILES}" "${CLOUDCOMPARE_DEST_FOLDER}" ) #mind the quotes!
+		cloudViewer_install_files("${GDAL_DEP_DLL_FILES}" "${CLOUDCOMPARE_DEST_FOLDER}" ) #mind the quotes!
 
 	endif()
 endfunction()

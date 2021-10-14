@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include <numeric>
 #include <unordered_map>
 
-#include <Console.h>
+#include <Logging.h>
 #include <Helper.h>
 #include <IntersectionTest.h>
 
@@ -45,7 +45,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
                                                   double width,
                                                   double height,
                                                   double depth) {
-    auto output = std::make_shared<VoxelGrid>();
+    auto output = cloudViewer::make_shared<VoxelGrid>();
     int num_w = int(std::round(width / voxel_size));
     int num_h = int(std::round(height / voxel_size));
     int num_d = int(std::round(depth / voxel_size));
@@ -67,7 +67,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         double voxel_size,
         const Eigen::Vector3d &min_bound,
         const Eigen::Vector3d &max_bound) {
-    auto output = std::make_shared<VoxelGrid>();
+    auto output = cloudViewer::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
         utility::LogError("[VoxelGridFromPointCloud] voxel_size <= 0.");
     }
@@ -123,7 +123,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
         double voxel_size,
         const Eigen::Vector3d &min_bound,
         const Eigen::Vector3d &max_bound) {
-    auto output = std::make_shared<VoxelGrid>();
+    auto output = cloudViewer::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
         utility::LogError("[CreateFromTriangleMesh] voxel_size <= 0.");
     }

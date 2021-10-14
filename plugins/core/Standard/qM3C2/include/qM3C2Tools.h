@@ -52,21 +52,21 @@ public:
 		\warning normals orientation is not resolved!
 	**/
 	static bool ComputeCorePointsNormals(	cloudViewer::GenericIndexedCloud* corePoints,
-											NormsIndexesTableType* corePointsNormals,
-											ccGenericPointCloud* sourceCloud,
-											const std::vector<PointCoordinateType>& sortedRadii,
-											bool& invalidNormals,
-											int maxThreadCount = 0,
-											ccScalarField* normalScale = 0,
-											cloudViewer::GenericProgressCallback* progressCb = 0,
-											cloudViewer::DgmOctree* inputOctree = 0);
+                                                NormsIndexesTableType* corePointsNormals,
+                                                ccGenericPointCloud* sourceCloud,
+                                                const std::vector<PointCoordinateType>& sortedRadii,
+                                                bool& invalidNormals,
+                                                int maxThreadCount = 0,
+                                                ccScalarField* normalScale = nullptr,
+                                                cloudViewer::GenericProgressCallback* progressCb = nullptr,
+                                                cloudViewer::DgmOctree* inputOctree = nullptr);
 	
 	//! Re-orients normal vectors so that they all 'look' towards the nearest point of another cloud
 	static bool UpdateNormalOrientationsWithCloud(	cloudViewer::GenericIndexedCloud* normCloud,
-													NormsIndexesTableType& normsCodes,
-													cloudViewer::GenericIndexedCloud* orientationCloud,
-													int maxThreadCount = 0,
-													cloudViewer::GenericProgressCallback* progressCb = 0);
+                                                        NormsIndexesTableType& normsCodes,
+                                                        cloudViewer::GenericIndexedCloud* orientationCloud,
+                                                        int maxThreadCount = 0,
+                                                        cloudViewer::GenericProgressCallback* progressCb = nullptr);
 
 	//! Makes all normals horizontal
 	static void MakeNormalsHorizontal(NormsIndexesTableType& normsCodes);
@@ -83,27 +83,27 @@ public:
 		See http://en.wikipedia.org/wiki/Interquartile_range
 	**/
 	static void ComputeStatistics(	cloudViewer::DgmOctree::NeighboursSet& set,
-									bool useMedian,
-									double& meanOrMedian,
-									double& stdDevOrIQR);
+                                        bool useMedian,
+                                        double& meanOrMedian,
+                                        double& stdDevOrIQR);
 
 	//! M3C2 parameters that can be guessed automatically by 'probing'
 	struct GuessedParams
 	{
-		int preferredDimension;
-		double normScale;
-		double projScale;
-		double projDepth;
+		int preferredDimension = -1;
+		double normScale = 0.0;
+		double projScale = 0.0;
+		double projDepth = 0.0;
 	};
 
 	//! Tries to guess some M3C2 parameters by randomly 'probing' the cloud
 	static bool GuessBestParams(ccPointCloud* cloud1,
-								ccPointCloud* cloud2,
-								unsigned minPoints4Stats,
-								GuessedParams& params,
-								bool fastMode,
-								ecvMainAppInterface* app = 0,
-								unsigned probingCount = 1000);
+                                    ccPointCloud* cloud2,
+                                    unsigned minPoints4Stats,
+                                    GuessedParams& params,
+                                    bool fastMode,
+                                    ecvMainAppInterface* app = nullptr,
+                                    unsigned probingCount = 1000);
 };
 
 #endif // Q_M3C2_TOOLS_HEADER

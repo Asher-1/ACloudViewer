@@ -247,9 +247,9 @@ int NurbsCurveFitting::compute()
 		if (outObject)
 		{
 			outObject->setVisible(true);
-			PCLCloud::Ptr curve_sm(new PCLCloud);
-			TO_PCL_CLOUD(*xyzCloud, *curve_sm);
-			ccPointCloud* projectedCloud = sm2ccConverter(curve_sm).getCloud();
+            PCLCloud curve_sm;
+            TO_PCL_CLOUD(*xyzCloud, curve_sm);
+            ccPointCloud* projectedCloud = pcl2cc::Convert(curve_sm);
 			if (projectedCloud)
 			{
 				projectedCloud->setName("projected-xoy");

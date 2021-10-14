@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                       -
+// -                        CloudViewer: asher-1.github.io                       -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,20 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-
+#include <Logging.h>
 #include <benchmark/benchmark.h>
-
-#include <Console.h>
-
+#include <ecvKDTreeFlann.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
-#include <ecvKDTreeFlann.h>
 
 namespace cloudViewer {
 namespace benchmarks {
 
 class TestKDTreeLine0 {
-    constexpr static float step = .139f;
+    constexpr static double step = .139;
     ccPointCloud pc_;
     geometry::KDTreeFlann kdtree_;
 
@@ -47,17 +44,15 @@ class TestKDTreeLine0 {
 public:
     void setup(int size) {
         if (this->size_ == size) return;
-        cloudViewer::utility::LogInfo("setup KDTree size={:d}", size);
+        utility::LogInfo("setup KDTree size={:d}", size);
         pc_.clear();
 
         this->size_ = size;
         for (int i = 0; i < size; ++i) {
-//            pc_.addEigenPoint({double(i) * step, 0., 0.});
-            pc_.addPoint(CCVector3(PointCoordinateType(i) * step, 0.f, 0.f));
+            pc_.addEigenPoint({double(i) * step, 0., 0.});
         }
 
-        kdtree_.SetGeometry(pc_, false); // use fast-float mode
-//        kdtree_.SetGeometry(pc_); // eigen
+        kdtree_.SetGeometry(pc_);  // eigen
         pos_ = size / 2;
     }
 
@@ -67,17 +62,17 @@ public:
             pos_ = radiusInSteps;
         }
 
-        CCVector3 query = CCVector3((pos_ + 0.1f) * step, 0.f, 0.f);
-//        Eigen::Vector3d query = Eigen::Vector3d((pos_ + 0.1) * step, 0., 0.);
+        Eigen::Vector3d query = {(pos_ + 0.1) * step, 0., 0.};
         double radius = radiusInSteps * step;
         std::vector<int> indices;
         std::vector<double> distance2;
 
-        int result = kdtree_.SearchRadius<CCVector3>(query, radius,
-                                                    indices, distance2);
+        int result = kdtree_.SearchRadius<Eigen::Vector3d>(query, radius,
+                                                           indices, distance2);
         if (result != radiusInSteps * 2) {
-            cloudViewer::utility::LogError("error! size={:d} radiusInSteps={:d} pos={:d} num={:d}",
-                              size_, radiusInSteps, pos_, result);
+            utility::LogError(
+                    "error! size={:d} radiusInSteps={:d} pos={:d} num={:d}",
+                    size_, radiusInSteps, pos_, result);
         }
     }
 };

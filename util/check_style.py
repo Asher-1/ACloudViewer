@@ -63,7 +63,7 @@ def _glob_files(directories, extensions):
     Find files with certain extensions in directories recursively.
 
     Args:
-        directories: list of directories, relative to the root Open3D repo directory.
+        directories: list of directories, relative to the root CloudViewer repo directory.
         extensions: list of extensions, e.g. ["cpp", "h"].
 
     Return:

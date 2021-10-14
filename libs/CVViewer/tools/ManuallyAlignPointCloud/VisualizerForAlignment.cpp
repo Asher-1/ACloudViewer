@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,8 @@
 
 #include "VisualizerForAlignment.h"
 
-#include <tinyfiledialogs/tinyfiledialogs.h>
-
 #include <pipelines/registration/ColoredICP.h>
+#include <tinyfiledialogs/tinyfiledialogs.h>
 #include <visualization/utility/SelectionPolygonVolume.h>
 
 namespace cloudViewer {
@@ -36,15 +35,15 @@ namespace cloudViewer {
 void VisualizerForAlignment::PrintVisualizerHelp() {
     visualization::Visualizer::PrintVisualizerHelp();
     // clang-format off
-    CVLib::utility::LogInfo("  -- Alignment control --");
-    CVLib::utility::LogInfo("    Ctrl + R     : Reset source and target to initial state.");
-    CVLib::utility::LogInfo("    Ctrl + S     : Save current alignment session into a JSON file.");
-    CVLib::utility::LogInfo("    Ctrl + O     : Load current alignment session from a JSON file.");
-    CVLib::utility::LogInfo("    Ctrl + A     : Align point clouds based on manually annotations.");
-    CVLib::utility::LogInfo("    Ctrl + I     : Run ICP refinement.");
-    CVLib::utility::LogInfo("    Ctrl + D     : Run voxel downsample for both source and target.");
-    CVLib::utility::LogInfo("    Ctrl + K     : Load a polygon from a JSON file and crop source.");
-    CVLib::utility::LogInfo("    Ctrl + E     : Evaluate error and save to files.");
+    utility::LogInfo("  -- Alignment control --");
+    utility::LogInfo("    Ctrl + R     : Reset source and target to initial state.");
+    utility::LogInfo("    Ctrl + S     : Save current alignment session into a JSON file.");
+    utility::LogInfo("    Ctrl + O     : Load current alignment session from a JSON file.");
+    utility::LogInfo("    Ctrl + A     : Align point clouds based on manually annotations.");
+    utility::LogInfo("    Ctrl + I     : Run ICP refinement.");
+    utility::LogInfo("    Ctrl + D     : Run voxel downsample for both source and target.");
+    utility::LogInfo("    Ctrl + K     : Load a polygon from a JSON file and crop source.");
+    utility::LogInfo("    Ctrl + E     : Evaluate error and save to files.");
     // clang-format on
 }
 
@@ -54,8 +53,8 @@ bool VisualizerForAlignment::AddSourceAndTarget(
     GetRenderOption().point_size_ = 1.0;
     alignment_session_.source_ptr_ = source;
     alignment_session_.target_ptr_ = target;
-    source_copy_ptr_ = std::make_shared<ccPointCloud>();
-    target_copy_ptr_ = std::make_shared<ccPointCloud>();
+    source_copy_ptr_ = cloudViewer::make_shared<ccPointCloud>();
+    target_copy_ptr_ = cloudViewer::make_shared<ccPointCloud>();
     *source_copy_ptr_ = *source;
     *target_copy_ptr_ = *target;
     return AddGeometry(source_copy_ptr_) && AddGeometry(target_copy_ptr_);
@@ -64,7 +63,7 @@ bool VisualizerForAlignment::AddSourceAndTarget(
 void VisualizerForAlignment::KeyPressCallback(
         GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL)) {
-        const char *filename;
+        const char *filename = nullptr;
         const char *pattern[1] = {"*.json"};
         switch (key) {
             case GLFW_KEY_R: {
@@ -84,7 +83,7 @@ void VisualizerForAlignment::KeyPressCallback(
                 } else {
                     filename = default_alignment.c_str();
                 }
-                if (filename != NULL) {
+                if (filename) {
                     SaveSessionToFile(filename);
                 }
                 return;
@@ -99,7 +98,7 @@ void VisualizerForAlignment::KeyPressCallback(
                 } else {
                     filename = default_alignment.c_str();
                 }
-                if (filename != NULL) {
+                if (filename) {
                     LoadSessionFromFile(filename);
                 }
                 return;
@@ -120,8 +119,8 @@ void VisualizerForAlignment::KeyPressCallback(
                             "Set max correspondence distance for ICP (ignored "
                             "if it is non-positive)",
                             buffer.c_str());
-                    if (str == NULL) {
-                        CVLib::utility::LogWarning("Dialog closed.");
+                    if (!str) {
+                        utility::LogWarning("Dialog closed.");
                         return;
                     } else {
                         char *end;
@@ -129,7 +128,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         double l = std::strtod(str, &end);
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
-                            CVLib::utility::LogWarning(
+                            utility::LogWarning(
                                     "Illegal input, use default max "
                                     "correspondence distance.");
                         } else {
@@ -138,18 +137,18 @@ void VisualizerForAlignment::KeyPressCallback(
                     }
                 }
                 if (max_correspondence_distance_ > 0.0) {
-                    CVLib::utility::LogInfo(
+                    utility::LogInfo(
                             "ICP with max correspondence distance {:.4f}.",
                             max_correspondence_distance_);
                     auto result = pipelines::registration::RegistrationICP(
                             *source_copy_ptr_, *target_copy_ptr_,
                             max_correspondence_distance_,
                             Eigen::Matrix4d::Identity(),
-                            pipelines::registration::TransformationEstimationPointToPoint(
-                                    true),
-                            pipelines::registration::ICPConvergenceCriteria(1e-6, 1e-6,
-                                                                 30));
-                    CVLib::utility::LogInfo(
+                            pipelines::registration::
+                                    TransformationEstimationPointToPoint(true),
+                            pipelines::registration::ICPConvergenceCriteria(
+                                    1e-6, 1e-6, 30));
+                    utility::LogInfo(
                             "Registration finished with fitness {:.4f} and "
                             "RMSE {:.4f}.",
                             result.fitness_, result.inlier_rmse_);
@@ -161,7 +160,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         UpdateGeometry();
                     }
                 } else {
-                    CVLib::utility::LogWarning(
+                    utility::LogWarning(
                             "No ICP performed due to illegal max "
                             "correspondence distance.");
                 }
@@ -174,8 +173,8 @@ void VisualizerForAlignment::KeyPressCallback(
                             "Set voxel size",
                             "Set voxel size (ignored if it is non-positive)",
                             buffer.c_str());
-                    if (str == NULL) {
-                        CVLib::utility::LogWarning("Dialog closed.");
+                    if (!str) {
+                        utility::LogWarning("Dialog closed.");
                         return;
                     } else {
                         char *end;
@@ -183,7 +182,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         double l = std::strtod(str, &end);
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
-                            CVLib::utility::LogWarning(
+                            utility::LogWarning(
                                     "Illegal input, use default voxel size.");
                         } else {
                             voxel_size_ = l;
@@ -191,29 +190,37 @@ void VisualizerForAlignment::KeyPressCallback(
                     }
                 }
                 if (voxel_size_ > 0.0) {
-                    CVLib::utility::LogInfo("Voxel downsample with voxel size {:.4f}.",
+                    utility::LogInfo("Voxel downsample with voxel size {:.4f}.",
                                      voxel_size_);
                     *source_copy_ptr_ =
                             *source_copy_ptr_->voxelDownSample(voxel_size_);
                     UpdateGeometry();
                 } else {
-                    CVLib::utility::LogWarning(
+                    utility::LogWarning(
                             "No voxel downsample performed due to illegal "
                             "voxel size.");
                 }
                 return;
             }
             case GLFW_KEY_K: {
-                if (!CVLib::utility::filesystem::FileExists(polygon_filename_)) {
+                if (!utility::filesystem::FileExists(polygon_filename_)) {
                     if (use_dialog_) {
-                        polygon_filename_ = tinyfd_openFileDialog(
-                                "Bounding polygon", "polygon.json", 0, NULL,
-                                NULL, 0);
+                        if (const char *polygon_filename_chars =
+                                    tinyfd_openFileDialog(
+                                            "Bounding polygon", "polygon.json",
+                                            0, nullptr, nullptr, 0)) {
+                            polygon_filename_ =
+                                    std::string(polygon_filename_chars);
+                        } else {
+                            utility::LogError(
+                                    "Internal error: tinyfd_openFileDialog "
+                                    "returned nullptr.");
+                        }
                     } else {
                         polygon_filename_ = "polygon.json";
                     }
                 }
-                auto polygon_volume = std::make_shared<
+                auto polygon_volume = cloudViewer::make_shared<
                         visualization::SelectionPolygonVolume>();
                 if (io::ReadIJsonConvertible(polygon_filename_,
                                              *polygon_volume)) {
@@ -234,7 +241,7 @@ void VisualizerForAlignment::KeyPressCallback(
                 } else {
                     filename = default_alignment.c_str();
                 }
-                if (filename != NULL) {
+                if (filename) {
                     SaveSessionToFile(filename);
                     EvaluateAlignmentAndSave(filename);
                 }
@@ -258,7 +265,7 @@ bool VisualizerForAlignment::SaveSessionToFile(const std::string &filename) {
 }
 
 bool VisualizerForAlignment::LoadSessionFromFile(const std::string &filename) {
-    if (io::ReadIJsonConvertible(filename, alignment_session_) == false) {
+    if (!io::ReadIJsonConvertible(filename, alignment_session_)) {
         return false;
     }
     source_visualizer_.GetPickedPoints() = alignment_session_.source_indices_;
@@ -281,18 +288,19 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
     const auto &target_idx = target_visualizer_.GetPickedPoints();
     if (source_idx.empty() || target_idx.empty() ||
         source_idx.size() != target_idx.size()) {
-        CVLib::utility::LogWarning(
+        utility::LogWarning(
                 "# of picked points mismatch: {:d} in source, {:d} in "
                 "target.",
                 (int)source_idx.size(), (int)target_idx.size());
         return false;
     }
-    pipelines::registration::TransformationEstimationPointToPoint p2p(with_scaling_);
+    pipelines::registration::TransformationEstimationPointToPoint p2p(
+            with_scaling_);
     pipelines::registration::CorrespondenceSet corres;
     for (size_t i = 0; i < source_idx.size(); i++) {
         corres.push_back(Eigen::Vector2i(source_idx[i], target_idx[i]));
     }
-    CVLib::utility::LogInfo("Error is {:.4f} before alignment.",
+    utility::LogInfo("Error is {:.4f} before alignment.",
                      p2p.ComputeRMSE(*alignment_session_.source_ptr_,
                                      *alignment_session_.target_ptr_, corres));
     transformation_ =
@@ -301,24 +309,24 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
     PrintTransformation();
     *source_copy_ptr_ = *alignment_session_.source_ptr_;
     source_copy_ptr_->transform(transformation_);
-    CVLib::utility::LogInfo("Error is {:.4f} before alignment.",
+    utility::LogInfo("Error is {:.4f} before alignment.",
                      p2p.ComputeRMSE(*source_copy_ptr_,
                                      *alignment_session_.target_ptr_, corres));
     return true;
 }
 
 void VisualizerForAlignment::PrintTransformation() {
-    CVLib::utility::LogInfo("Current transformation is:");
-    CVLib::utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(0, 0),
+    utility::LogInfo("Current transformation is:");
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(0, 0),
                      transformation_(0, 1), transformation_(0, 2),
                      transformation_(0, 3));
-    CVLib::utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(1, 0),
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(1, 0),
                      transformation_(1, 1), transformation_(1, 2),
                      transformation_(1, 3));
-    CVLib::utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(2, 0),
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(2, 0),
                      transformation_(2, 1), transformation_(2, 2),
                      transformation_(2, 3));
-    CVLib::utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(3, 0),
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(3, 0),
                      transformation_(3, 1), transformation_(3, 2),
                      transformation_(3, 3));
 }
@@ -327,29 +335,39 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
         const std::string &filename) {
     // Evaluate source_copy_ptr_ and target_copy_ptr_
     std::string source_filename =
-            CVLib::utility::filesystem::GetFileNameWithoutExtension(filename) +
+            utility::filesystem::GetFileNameWithoutExtension(filename) +
             ".source.ply";
     std::string target_filename =
-            CVLib::utility::filesystem::GetFileNameWithoutExtension(filename) +
+            utility::filesystem::GetFileNameWithoutExtension(filename) +
             ".target.ply";
     std::string source_binname =
-            CVLib::utility::filesystem::GetFileNameWithoutExtension(filename) +
+            utility::filesystem::GetFileNameWithoutExtension(filename) +
             ".source.bin";
     std::string target_binname =
-            CVLib::utility::filesystem::GetFileNameWithoutExtension(filename) +
+            utility::filesystem::GetFileNameWithoutExtension(filename) +
             ".target.bin";
     FILE *f;
 
     io::WritePointCloud(source_filename, *source_copy_ptr_);
     auto source_dis =
             source_copy_ptr_->computePointCloudDistance(*target_copy_ptr_);
-    f = CVLib::utility::filesystem::FOpen(source_binname, "wb");
+    f = utility::filesystem::FOpen(source_binname, "wb");
+    if (!f) {
+        utility::LogError("EvaluateAlignmentAndSave: Unable to open file {}.",
+                          source_binname);
+        return;
+    }
     fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
     fclose(f);
     io::WritePointCloud(target_filename, *target_copy_ptr_);
     auto target_dis =
             target_copy_ptr_->computePointCloudDistance(*source_copy_ptr_);
-    f = CVLib::utility::filesystem::FOpen(target_binname, "wb");
+    f = utility::filesystem::FOpen(target_binname, "wb");
+    if (!f) {
+        utility::LogError("EvaluateAlignmentAndSave: Unable to open file {}.",
+                          target_binname);
+        return;
+    }
     fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
     fclose(f);
 }

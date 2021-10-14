@@ -37,7 +37,7 @@ if( PLUGIN_IO_QPDAL )
 		file( GLOB GDAL_DLL_FILES ${PDAL_DLL_DIR}/gdal*.dll )
 		
 		list( APPEND ALL_DLL_FILES ${GDAL_DLL_FILES})
-		copy_files( "${ALL_DLL_FILES}" "${EROWCLOUDVIEWER_DEST_FOLDER}" )
+		cloudViewer_install_files( "${ALL_DLL_FILES}" "${EROWCLOUDVIEWER_DEST_FOLDER}" )
 
 		unset( ALL_DLL_FILES )
 		unset( PDAL_DLL_DIR )

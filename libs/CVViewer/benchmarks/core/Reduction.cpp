@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                       -
+// -                        CloudViewer: asher-1.github.io                       -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #include <benchmark/benchmark.h>
 
 #include "core/AdvancedIndexing.h"
+#include "core/CUDAUtils.h"
 #include "core/Dtype.h"
 #include "core/MemoryManager.h"
 #include "core/SizeVector.h"
@@ -39,11 +40,12 @@ namespace core {
 void Reduction(benchmark::State& state, const Device& device) {
     int64_t large_dim = (1ULL << 27) + 10;
     SizeVector shape{2, large_dim};
-    Tensor src(shape, Dtype::Int64, device);
+    Tensor src(shape, core::Int64, device);
     Tensor warm_up = src.Sum({1});
     (void)warm_up;
     for (auto _ : state) {
         Tensor dst = src.Sum({1});
+        cuda::Synchronize(device);
     }
 }
 

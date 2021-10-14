@@ -24,7 +24,7 @@ class MLSDialog;
 
 namespace PCLModules
 {
-    class MLSParameters;
+    struct MLSParameters;
 }
 
 class MLSSmoothingUpsampling : public BasePclModule
@@ -41,6 +41,7 @@ protected:
 	void getParametersFromDialog();
 
 	MLSDialog* m_dialog;
+    bool m_dialogHasParent;
 	PCLModules::MLSParameters * m_parameters; //We directly store all the parameters here
 };
 

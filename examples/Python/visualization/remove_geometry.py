@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Advanced/remove_geometry.py
 
@@ -17,7 +17,7 @@ def visualize_non_blocking(vis, pcds):
     vis.update_renderer()
 
 
-pcd_orig = cv3d.io.read_point_cloud("../../TestData/fragment.pcd")
+pcd_orig = cv3d.io.read_point_cloud("../../test_data/fragment.pcd")
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 pcd_orig.transform(flip_transform)
 n_pcd = 5

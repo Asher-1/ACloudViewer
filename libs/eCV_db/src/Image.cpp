@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Console.h>
-
 #include "Image.h"
+
+#include <Logging.h>
+#include <Parallel.h>
+
 #include "ecvBBox.h"
 
 namespace {
@@ -42,13 +44,9 @@ const std::vector<double> Sobel32 = {1.0, 2.0, 1.0};
 
 namespace cloudViewer {
 namespace geometry {
-	using namespace cloudViewer;
-	void Image::onDeletionOf(const ccHObject * obj)
-	{
-		ccHObject::onDeletionOf(obj);
-	}
+void Image::onDeletionOf(const ccHObject *obj) { ccHObject::onDeletionOf(obj); }
 
-	Image &Image::Clear() {
+Image &Image::Clear() {
     width_ = 0;
     height_ = 0;
     num_of_channels_ = 0;
@@ -57,15 +55,16 @@ namespace geometry {
     return *this;
 }
 
-Eigen::Vector2d Image::getMin2DBound() const { return Eigen::Vector2d(0.0, 0.0); }
+Eigen::Vector2d Image::getMin2DBound() const {
+    return Eigen::Vector2d(0.0, 0.0);
+}
 
 Eigen::Vector2d Image::getMax2DBound() const {
     return Eigen::Vector2d(width_, height_);
 }
 
-ccBBox Image::getOwnBB(bool withGLFeatures)
-{
-	return getAxisAlignedBoundingBox();
+ccBBox Image::getOwnBB(bool withGLFeatures) {
+    return getAxisAlignedBoundingBox();
 }
 
 bool Image::TestImageBoundary(double u,
@@ -157,7 +156,7 @@ Image &Image::LinearTransform(double scale, double offset /* = 0.0*/) {
 }
 
 std::shared_ptr<Image> Image::Downsample() const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Downsample] Unsupported image format.");
     }
@@ -167,9 +166,11 @@ std::shared_ptr<Image> Image::Downsample() const {
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int y = 0; y < output->height_; y++) {
@@ -187,7 +188,7 @@ std::shared_ptr<Image> Image::Downsample() const {
 
 std::shared_ptr<Image> Image::FilterHorizontal(
         const std::vector<double> &kernel) const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4 ||
         kernel.size() % 2 != 1) {
         utility::LogError(
@@ -200,9 +201,11 @@ std::shared_ptr<Image> Image::FilterHorizontal(
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int y = 0; y < height_; y++) {
@@ -223,7 +226,7 @@ std::shared_ptr<Image> Image::FilterHorizontal(
 }
 
 std::shared_ptr<Image> Image::Filter(Image::FilterType type) const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Filter] Unsupported image format.");
     }
@@ -263,7 +266,7 @@ ImagePyramid Image::FilterPyramid(const ImagePyramid &input,
 
 std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
                                      const std::vector<double> &dy) const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Filter] Unsupported image format.");
     }
@@ -276,7 +279,7 @@ std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
 }
 
 std::shared_ptr<Image> Image::Transpose() const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     output->Prepare(height_, width_, num_of_channels_, bytes_per_channel_);
 
     int out_bytes_per_line = output->BytesPerLine();
@@ -285,9 +288,11 @@ std::shared_ptr<Image> Image::Transpose() const {
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int y = 0; y < height_; y++) {
@@ -305,12 +310,13 @@ std::shared_ptr<Image> Image::Transpose() const {
 }
 
 std::shared_ptr<Image> Image::FlipVertical() const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
 
     int bytes_per_line = BytesPerLine();
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int y = 0; y < height_; y++) {
         std::copy(data_.data() + y * bytes_per_line,
@@ -321,16 +327,18 @@ std::shared_ptr<Image> Image::FlipVertical() const {
 }
 
 std::shared_ptr<Image> Image::FlipHorizontal() const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
 
     int bytes_per_line = BytesPerLine();
     int bytes_per_pixel = num_of_channels_ * bytes_per_channel_;
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int y = 0; y < height_; y++) {
@@ -347,7 +355,7 @@ std::shared_ptr<Image> Image::FlipHorizontal() const {
 }
 
 std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
-    auto output = std::make_shared<Image>();
+    auto output = cloudViewer::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 1) {
         utility::LogError("[Dilate] Unsupported image format.");
     }
@@ -355,9 +363,11 @@ std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int y = 0; y < height_; y++) {
@@ -390,14 +400,16 @@ std::shared_ptr<Image> Image::CreateDepthBoundaryMask(
             depth_image->Filter(Image::FilterType::Sobel3Dx);
     auto depth_image_gradient_dy =
             depth_image->Filter(Image::FilterType::Sobel3Dy);
-    auto mask = std::make_shared<Image>();
+    auto mask = cloudViewer::make_shared<Image>();
     mask->Prepare(width, height, 1, 1);
 
 #ifdef _OPENMP
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
 #endif
     for (int v = 0; v < height; v++) {

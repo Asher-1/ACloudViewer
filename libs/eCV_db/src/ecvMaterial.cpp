@@ -320,7 +320,7 @@ bool ccMaterial::toFile(QFile& out) const
 	return true;
 }
 
-bool ccMaterial::fromFile(QFile& in, short dataVersion, int flags)
+bool ccMaterial::fromFile(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
     Q_UNUSED(flags);
 

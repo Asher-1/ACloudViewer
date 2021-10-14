@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #include "tests/pipelines/odometry/OdometryTools.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 std::shared_ptr<geometry::Image> odometry_tools::GenerateImage(
@@ -38,7 +38,7 @@ std::shared_ptr<geometry::Image> odometry_tools::GenerateImage(
         const float& vmax,
         const int& seed) {
     std::shared_ptr<geometry::Image> image =
-            std::make_shared<geometry::Image>();
+            cloudViewer::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -95,7 +95,7 @@ std::shared_ptr<geometry::Image> odometry_tools::CorrespondenceMap(
     int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::Image> image =
-            std::make_shared<geometry::Image>();
+            cloudViewer::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -118,7 +118,7 @@ std::shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
     int bytes_per_channel = 4;
 
     std::shared_ptr<geometry::Image> image =
-            std::make_shared<geometry::Image>();
+            cloudViewer::make_shared<geometry::Image>();
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
@@ -130,4 +130,4 @@ std::shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

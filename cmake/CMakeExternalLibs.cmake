@@ -16,17 +16,17 @@ if ( QT5_ROOT_PATH )
 endif()
 
 # find qt5 components
-# find_package(Qt5 COMPONENTS OpenGL Widgets Core Gui PrintSupport Concurrent REQUIRED)
+# find_package(Qt5 COMPONENTS OpenGL Widgets Core Svg Gui PrintSupport Concurrent REQUIRED)
 find_package( Qt5
     COMPONENTS
-        Concurrent
         Core
         Gui
-        OpenGL
-        OpenGLExtensions
-        PrintSupport
         Svg
+        OpenGL
         Widgets
+        Network
+        Concurrent
+        PrintSupport
     REQUIRED
 )
 
@@ -43,13 +43,25 @@ if ( WIN32 )
     get_filename_component( QT5_ROOT_PATH "${Qt5_BIN_DIR}/.." ABSOLUTE )
 endif()
 
+# Qt5 was built with -reduce-relocations.
+# fix that can not be used when making a PIE object; recompile with -fPIC issue
+if(Qt5_POSITION_INDEPENDENT_CODE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    if(BUILD_CUDA_MODULE AND NOT MSVC)
+        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options -fPIC")
+    endif()
+endif()
+
+# fix nvcc fatal : Unknown option 'fPIC'
 if ( BUILD_CUDA_MODULE )
-    #Warning: convert the fpic option in Qt5::Core over to INTERFACE_POSITION_INDEPENDENT_CODE
+    # Warning: convert the fpic option in Qt5::Core over to INTERFACE_POSITION_INDEPENDENT_CODE
     get_property(core_options TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS)
     string(REPLACE "-fPIC" "" new_core_options ${core_options})
+
     set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS ${new_core_options})
     set_property(TARGET Qt5::Core PROPERTY INTERFACE_POSITION_INDEPENDENT_CODE "ON")
 endif()
+
 
 # turn on QStringBuilder for more efficient string construction
 #	see https://doc.qt.io/qt-5/qstring.html#more-efficient-string-construction
@@ -63,7 +75,6 @@ if ( MSVC )
 	set(WINDOWS_OPENGL_LIBS "C:\\Program Files (x86)\\Windows Kits\\8.0\\Lib\\win8\\um\\x64" CACHE PATH "WindowsSDK libraries" )
 	list( APPEND CMAKE_PREFIX_PATH ${WINDOWS_OPENGL_LIBS} )
 endif()
-			
 
 # Intel's Threading Building Blocks (TBB)
 if (COMPILE_CV_CORE_LIB_WITH_TBB)

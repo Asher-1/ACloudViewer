@@ -1680,14 +1680,14 @@ namespace ccEntityAction
 						// some points can belong to one sensor and some others can belongs to others sensors.
 						// so it's why here grid orientation has precedence over sensor orientation because in this
 						// case association is more explicit.
-						// Here we take the first valid viewpoint for now even if it's not a really good...
-						CCVector3 sensorPosition;
-						for (size_t i = 0; i < cloud->getChildrenNumber(); ++i)
+						// Here we take the first valid viewpoint for now even if it's not a good one...
+						for (unsigned i = 0; i < cloud->getChildrenNumber(); ++i)
 						{
-							ccHObject* child = cloud->getChild(static_cast<unsigned>(i));
+							ccHObject* child = cloud->getChild(i);
 							if (child && child->isKindOf(CV_TYPES::SENSOR))
 							{
 								ccSensor* sensor = ccHObjectCaster::ToSensor(child);
+                                                                CCVector3 sensorPosition;
 								if (sensor->getActiveAbsoluteCenter(sensorPosition))
 								{
 									result = cloud->orientNormalsTowardViewPoint(sensorPosition, &pDlg);
@@ -1765,29 +1765,34 @@ namespace ccEntityAction
 		 
 	bool invertNormals(const ccHObject::Container &selectedEntities)
 	{
-		for (ccHObject* ent : selectedEntities)
-		{
-			bool lockedVertices;
-			ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(ent, &lockedVertices);
-			if (lockedVertices)
-			{
-				ecvUtils::DisplayLockedVerticesWarning(ent->getName(), selectedEntities.size() == 1);
-				continue;
-			}
-			
-			if (cloud && cloud->isA(CV_TYPES::POINT_CLOUD)) // TODO
-			{
-				ccPointCloud* ccCloud = static_cast<ccPointCloud*>(cloud);
-				if (ccCloud->hasNormals())
-				{
-					ccCloud->invertNormals();
-					ccCloud->showNormals(true);
-					//ccCloud->prepareDisplayForRefresh_recursive();
-				}
-			}
-		}
-		
-		return true;
+        for (ccHObject* ent : selectedEntities)
+        {
+            // is it a mesh?
+            ccMesh* mesh = ccHObjectCaster::ToMesh(ent);
+            if (mesh && mesh->hasNormals())
+            {
+                mesh->invertNormals();
+                mesh->showNormals(true);
+                continue;
+            }
+
+            // is it a cloud?
+            bool lockedVertices;
+            ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
+            if (cloud && cloud->hasNormals())
+            {
+                if (lockedVertices)
+                {
+                    ecvUtils::DisplayLockedVerticesWarning(ent->getName(), selectedEntities.size() == 1);
+                    continue;
+                }
+
+                cloud->invertNormals();
+                cloud->showNormals(true);
+            }
+        }
+
+        return true;
 	}
 		 
 	bool orientNormalsFM(const ccHObject::Container &selectedEntities, QWidget *parent)

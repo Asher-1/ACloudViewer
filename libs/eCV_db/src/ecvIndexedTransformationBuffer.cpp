@@ -161,7 +161,7 @@ bool ccIndexedTransformationBuffer::getInterpolatedTransformation(	double index,
 																	ccIndexedTransformation& trans,
 																	double maxIndexDistForInterpolation/*=DBL_MAX*/) const
 {
-	const ccIndexedTransformation *t1=0, *t2=0;
+    const ccIndexedTransformation *t1=nullptr, *t2=nullptr;
 
 	if (!findNearest(index, t1, t2))
 		return false;
@@ -237,9 +237,9 @@ bool ccIndexedTransformationBuffer::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccIndexedTransformationBuffer::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccIndexedTransformationBuffer::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//vector size (dataVersion>=34)
@@ -260,7 +260,7 @@ bool ccIndexedTransformationBuffer::fromFile_MeOnly(QFile& in, short dataVersion
 
 	//transformations (dataVersion>=34)
 	for (ccIndexedTransformationBuffer::iterator it=begin(); it!=end(); ++it)
-		if (!it->fromFile(in, dataVersion, flags))
+        if (!it->fromFile(in, dataVersion, flags, oldToNewIDMap))
 			return false;
 
 	//display options

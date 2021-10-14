@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 	assert(merged_baseVertex);
 	merged_baseVertex->setEnabled(false);
 	merged_baseVertex->setLocked(false);
-    auto merged_mesh_ptr = std::make_shared<ccMesh>(merged_baseVertex);
+    auto merged_mesh_ptr = cloudViewer::make_shared<ccMesh>(merged_baseVertex);
 	merged_mesh_ptr->addChild(merged_baseVertex);
     for (const auto &filename : filenames) {
 		ccPointCloud* baseVertices = new ccPointCloud("vertices");
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 		baseVertices->setEnabled(false);
 		// DGM: no need to lock it as it is only used by one mesh!
 		baseVertices->setLocked(false);
-        auto mesh_ptr = std::make_shared<ccMesh>(baseVertices);
+        auto mesh_ptr = cloudViewer::make_shared<ccMesh>(baseVertices);
 		mesh_ptr->addChild(baseVertices);
         if (cloudViewer::io::ReadTriangleMesh(filename, *mesh_ptr)) {
 			//do some cleaning

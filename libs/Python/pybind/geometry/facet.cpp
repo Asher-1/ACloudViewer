@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 // CV_CORE_LIB
-#include <Console.h>
+#include <Logging.h>
 
 // ECV_DB_LIB
 #include <ecvMesh.h>
@@ -39,7 +39,9 @@
 #include "pybind/geometry/geometry.h"
 #include "pybind/geometry/geometry_trampoline.h"
 
+#ifdef CV_WINDOWS
 #pragma warning(disable:4715)
+#endif
 
 namespace cloudViewer {
 namespace geometry {
@@ -153,7 +155,7 @@ void pybind_facet(py::module &m) {
 			{
 				cloudViewer::utility::LogWarning(
 					"[ccFacet::Create] Illegal input parameters, only support point cloud!");
-				return std::make_shared<ccFacet>();
+				return cloudViewer::make_shared<ccFacet>();
 			}
 			
 			PointCoordinateType eq[4];

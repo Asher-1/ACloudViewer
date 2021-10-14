@@ -148,7 +148,6 @@ int RegionGrowingSegmentation::compute()
 
 	// initialize all possible clouds
 	std::vector<pcl::PointIndices> clusters;
-	PCLCloud::Ptr out_cloud_sm(new PCLCloud);
 	PointCloudT::Ptr xyzCloud(new PointCloudT);
 	PointCloudRGB::Ptr rgbCloud(new PointCloudRGB);
 	PointCloudRGB::Ptr cloudSegmented(new PointCloudRGB);
@@ -178,15 +177,17 @@ int RegionGrowingSegmentation::compute()
 		name << "Basic_RegionGrowing_clusters_" << clusters.size();
 	}
 
-	TO_PCL_CLOUD(*cloudSegmented, *out_cloud_sm);
+    PCLCloud out_cloud_sm;
+    TO_PCL_CLOUD(*cloudSegmented, out_cloud_sm);
 
-	if (out_cloud_sm->height * out_cloud_sm->width == 0)
+    if (out_cloud_sm.height * out_cloud_sm.width == 0)
 	{
 		//cloud is empty
 		return -53;
 	}
 
-	ccPointCloud* out_cloud_cc = sm2ccConverter(out_cloud_sm).getCloud();
+
+    ccPointCloud* out_cloud_cc = pcl2cc::Convert(out_cloud_sm);
 	if (!out_cloud_cc)
 	{
 		//conversion failed (not enough memory?)

@@ -53,28 +53,28 @@ ecvFilterTool::ecvFilterTool(QWidget* parent)
 {
 	setupUi(this);
 
-	connect(exportButton,					SIGNAL(clicked()),				this, SLOT(exportSlice()));
-	connect(resetButton,					SIGNAL(clicked()),				this, SLOT(reset()));
-	connect(restoreToolButton,				SIGNAL(clicked()),				this, SLOT(restoreOrigin()));
-	connect(closeButton,					SIGNAL(clicked()),				this, SLOT(closeDialog()));
+    connect(exportButton,					&QToolButton::clicked,          this, &ecvFilterTool::exportSlice);
+    connect(resetButton,					&QToolButton::clicked,          this, &ecvFilterTool::reset);
+    connect(restoreToolButton,				&QToolButton::clicked,          this, &ecvFilterTool::restoreOrigin);
+    connect(closeButton,					&QToolButton::clicked,          this, &ecvFilterTool::closeDialog);
 	
-	connect(showBoxToolButton,				SIGNAL(toggled(bool)),			this, SLOT(toggleBox(bool)));
-	connect(showInteractorsToolButton,		SIGNAL(toggled(bool)),			this, SLOT(toggleInteractors(bool)));
+    connect(showBoxToolButton,				&QToolButton::toggled,			this, &ecvFilterTool::toggleBox);
+    connect(showInteractorsToolButton,		&QToolButton::toggled,			this, &ecvFilterTool::toggleInteractors);
 
-	connect(minusXShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftXMinus()));
-	connect(plusXShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftXPlus()));
-	connect(minusYShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftYMinus()));
-	connect(plusYShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftYPlus()));
-	connect(minusZShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftZMinus()));
-	connect(plusZShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftZPlus()));
+    connect(minusXShiftToolButton,			&QToolButton::clicked,			this, &ecvFilterTool::shiftXMinus);
+    connect(plusXShiftToolButton,			&QToolButton::clicked,			this, &ecvFilterTool::shiftXPlus);
+    connect(minusYShiftToolButton,			&QToolButton::clicked,			this, &ecvFilterTool::shiftYMinus);
+    connect(plusYShiftToolButton,			&QToolButton::clicked,			this, &ecvFilterTool::shiftYPlus);
+    connect(minusZShiftToolButton,			&QToolButton::clicked,			this, &ecvFilterTool::shiftZMinus);
+    connect(plusZShiftToolButton,			&QToolButton::clicked,			this, &ecvFilterTool::shiftZPlus);
 
 	viewButtonsFrame->setEnabled(true);
-	connect(viewUpToolButton,				SIGNAL(clicked()),				this, SLOT(setTopView()));
-	connect(viewDownToolButton,				SIGNAL(clicked()),				this, SLOT(setBottomView()));
-	connect(viewFrontToolButton,			SIGNAL(clicked()),				this, SLOT(setFrontView()));
-	connect(viewBackToolButton,				SIGNAL(clicked()),				this, SLOT(setBackView()));
-	connect(viewLeftToolButton,				SIGNAL(clicked()),				this, SLOT(setLeftView()));
-	connect(viewRightToolButton,			SIGNAL(clicked()),				this, SLOT(setRightView()));
+    connect(viewUpToolButton,				&QToolButton::clicked,			this, &ecvFilterTool::setTopView);
+    connect(viewDownToolButton,				&QToolButton::clicked,			this, &ecvFilterTool::setBottomView);
+    connect(viewFrontToolButton,			&QToolButton::clicked,			this, &ecvFilterTool::setFrontView);
+    connect(viewBackToolButton,				&QToolButton::clicked,			this, &ecvFilterTool::setBackView);
+    connect(viewLeftToolButton,				&QToolButton::clicked,			this, &ecvFilterTool::setLeftView);
+    connect(viewRightToolButton,			&QToolButton::clicked,			this, &ecvFilterTool::setRightView);
 
 	s_maxEdgeLength = -1.0;
 }

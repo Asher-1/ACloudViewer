@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,8 @@ std::string CV_CORE_LIB_API GetFileNameWithoutDirectory(const std::string &filen
 std::string CV_CORE_LIB_API GetFileParentDirectory(const std::string &filename);
 
 std::string CV_CORE_LIB_API GetRegularizedDirectoryName(const std::string &directory);
+
+std::string CV_CORE_LIB_API GetFileBaseName(const std::string &filename);
 
 std::string CV_CORE_LIB_API GetWorkingDirectory();
 

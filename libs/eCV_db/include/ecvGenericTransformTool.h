@@ -65,7 +65,7 @@ public:
 
 public:
 	virtual void setVisualizer(ecvGenericVisualizer3D* viewer = nullptr) = 0;
-	virtual bool setInputData(ccHObject* entity, int viewPort = 0);
+	virtual bool setInputData(ccHObject* entity, int viewport = 0);
 
 	virtual void showInteractor(bool state) = 0;
 

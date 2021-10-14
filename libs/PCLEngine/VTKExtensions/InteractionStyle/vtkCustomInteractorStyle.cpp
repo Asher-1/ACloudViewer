@@ -509,7 +509,7 @@ namespace VTKExtensions
 				""
 				"    SHIFT + left click   : select a point (start with -use_point_picking)"
 				""
-				"          x, X   : toggle rubber band selection mode for left mouse button"
+                "          a, A   : toggle rubber band selection mode for left mouse button"
 			);
 			break;
 		}

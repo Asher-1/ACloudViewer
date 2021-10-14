@@ -82,7 +82,7 @@ void cvGenericFilter::start()
 bool cvGenericFilter::setInput(ccHObject * obj)
 {
 	m_entity = obj;
-	m_id = QString::number(m_entity->getUniqueID()).toStdString();
+    m_id = m_entity->getViewId().toStdString();
 
 	if (m_entity->isKindOf(CV_TYPES::POINT_CLOUD))
 	{
@@ -167,16 +167,16 @@ ccHObject * cvGenericFilter::getOutput()
 	ccHObject* result;
 	if (m_meshMode)
 	{
-		result = vtk2ccConverter().getMeshFromPolyData(polydata);
+        result = vtk2cc::ConvertToMesh(polydata);
 		if (!result)
 		{
 			CVLog::Warning(QString("try to save in cloud format"));
-			result = vtk2ccConverter().getPointCloudFromPolyData(polydata);
+            result = vtk2cc::ConvertToPointCloud(polydata);
 		}
 	}
 	else
 	{
-		result = vtk2ccConverter().getPointCloudFromPolyData(polydata);
+        result = vtk2cc::ConvertToPointCloud(polydata);
 	}
 
 	return result;

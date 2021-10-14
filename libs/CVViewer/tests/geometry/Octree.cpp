@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,20 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/Octree.h"
+#include "geometry/Octree.h"
 
 #include <json/json.h>
 
 #include <iostream>
 #include <memory>
 
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/VoxelGrid.h"
-#include "open3d/io/PointCloudIO.h"
-#include "open3d/visualization/utility/DrawGeometry.h"
+#include <ecvPointCloud.h>
+#include "geometry/VoxelGrid.h"
+#include "io/PointCloudIO.h"
+#include "visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 TEST(Octree, ConstructorWithoutSize) {
@@ -295,7 +295,7 @@ TEST(Octree, ConvertFromPointCloudBoundTwoPoints) {
 TEST(Octree, Visualization) {
     geometry::PointCloud pcd;
     io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
-    auto octree = std::make_shared<geometry::Octree>(6);
+    auto octree = cloudViewer::make_shared<geometry::Octree>(6);
     octree->ConvertFromPointCloud(pcd, 0.01);
     // Uncomment the line below for visualization test
     // visualization::DrawGeometries({octree});
@@ -318,4 +318,4 @@ TEST(Octree, ConvertToJsonValue) {
 }
 
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

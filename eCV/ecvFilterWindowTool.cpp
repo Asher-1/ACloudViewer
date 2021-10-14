@@ -67,14 +67,13 @@ ecvFilterWindowTool::ecvFilterWindowTool(QMainWindow* parent)
 {
 	setupUi(this);
 
-	connect(resetButton, SIGNAL(clicked()), this, SLOT(reset()));
-	connect(cancelButton, SIGNAL(clicked()), this, SLOT(cancel()));
-
-	connect(exportButton, SIGNAL(clicked()), this, SLOT(exportSlice()));
-	connect(exportMultButton, SIGNAL(clicked()), this, SLOT(exportMultSlices()));
-	connect(extractContourToolButton, SIGNAL(clicked()), this, SLOT(extractContour()));
-	connect(removeLastContourToolButton, SIGNAL(clicked()), this, SLOT(removeLastContour()));
-	connect(restoreToolButton, SIGNAL(clicked()), this, SLOT(restoreLastBox()));
+    connect(resetButton,                    &QToolButton::clicked, this, &ecvFilterWindowTool::reset);
+    connect(cancelButton,                   &QToolButton::clicked, this, &ecvFilterWindowTool::cancel);
+    connect(exportButton,                   &QToolButton::clicked, this, &ecvFilterWindowTool::exportSlice);
+    connect(exportMultButton,               &QToolButton::clicked, this, &ecvFilterWindowTool::exportMultSlices);
+    connect(extractContourToolButton,       &QToolButton::clicked, this, &ecvFilterWindowTool::extractContour);
+    connect(removeLastContourToolButton,    &QToolButton::clicked, this, &ecvFilterWindowTool::removeLastContour);
+    connect(restoreToolButton,              &QToolButton::clicked, this, &ecvFilterWindowTool::restoreLastBox);
 
 	QMenu* selectionModeMenu = new QMenu(this);
 	selectionModeMenu->addAction(actionSegmentationExtraction);
@@ -83,14 +82,14 @@ ecvFilterWindowTool::ecvFilterWindowTool(QMainWindow* parent)
 	selectionModelButton->setMenu(selectionModeMenu);
 
 	//selection modes
-	connect(actionSegmentationExtraction, SIGNAL(triggered()), this, SLOT(doSetClipMode()));
-	connect(actionPolylineExtraction, SIGNAL(triggered()), this, SLOT(doSetPolylineMode()));
+    connect(actionSegmentationExtraction,   &QAction::triggered, this, &ecvFilterWindowTool::doSetClipMode);
+    connect(actionPolylineExtraction,       &QAction::triggered, this, &ecvFilterWindowTool::doSetPolylineMode);
 
 	//add shortcuts
 	addOverridenShortcut(Qt::Key_R); //return key for the "reset" button
 	addOverridenShortcut(Qt::Key_Escape); //escape key for the "cancel" button
 	addOverridenShortcut(Qt::Key_Tab);    //tab key to switch between rectangular and polygonal selection modes
-	connect(this, SIGNAL(shortcutTriggered(int)), this, SLOT(onShortcutTriggered(int)));
+    connect(this, &ccOverlayDialog::shortcutTriggered, this, &ecvFilterWindowTool::onShortcutTriggered);
 }
 
 ecvFilterWindowTool::~ecvFilterWindowTool()

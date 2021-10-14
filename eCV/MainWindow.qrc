@@ -13,8 +13,7 @@
         <file>Resources/images/cylinder.png</file>
         <file>Resources/images/language.png</file>
         <file>Resources/images/theme.png</file>
-        <file>Resources/images/corp_black.png</file>
-        <file>Resources/images/corp_white.png</file>
+        <file>Resources/images/icon/logo.png</file>
         <file>Resources/images/typeGrayColor.png</file>
         <file>Resources/images/typeNormal.png</file>
         <file>Resources/images/typePositiveSF.png</file>
@@ -34,16 +33,16 @@
         <file>Resources/images/ecvPlus.png</file>
         <file>Resources/images/Plane.png</file>
         <file>Resources/images/torus.png</file>
-        <file>Resources/images/icon/ecv_16.ico</file>
-        <file>Resources/images/icon/ecv_24.ico</file>
-        <file>Resources/images/icon/ecv_32.ico</file>
-        <file>Resources/images/icon/ecv_48.ico</file>
-        <file>Resources/images/icon/ecv_64.ico</file>
-        <file>Resources/images/icon/ecv_128.ico</file>
+        <file>Resources/images/icon/logo_16.ico</file>
+        <file>Resources/images/icon/logo_24.ico</file>
+        <file>Resources/images/icon/logo_32.ico</file>
+        <file>Resources/images/icon/logo_48.ico</file>
+        <file>Resources/images/icon/logo_64.ico</file>
+        <file>Resources/images/icon/logo_128.ico</file>
         <file>Resources/images/donate.png</file>
-        <file>Resources/images/icon/ecv_48.png</file>
-        <file>Resources/images/icon/ecv_64.png</file>
-        <file>Resources/images/icon/ecv_128.png</file>
+        <file>Resources/images/icon/logo_48.png</file>
+        <file>Resources/images/icon/logo_64.png</file>
+        <file>Resources/images/icon/logo_128.png</file>
         <file>Resources/images/icon/ecv_icon.rc</file>
         <file>Resources/images/QTreeView/branch-closed.png</file>
         <file>Resources/images/QTreeView/branch-end.png</file>
@@ -252,18 +251,30 @@
         <file>Resources/images/electrical_sensor.png</file>
         <file>Resources/images/integrated_sensor.png</file>
         <file>Resources/images/Wavefrom.png</file>
-        <file>Resources/images/icon/erow_16.ico</file>
-        <file>Resources/images/icon/erow_16.png</file>
-        <file>Resources/images/icon/erow_32.ico</file>
-        <file>Resources/images/icon/erow_32.png</file>
-        <file>Resources/images/icon/erow_48.ico</file>
-        <file>Resources/images/icon/erow_48.png</file>
-        <file>Resources/images/icon/erow_96.png</file>
-        <file>Resources/images/icon/erow_128.ico</file>
-        <file>Resources/images/icon/erow_128.png</file>
-        <file>Resources/images/icon/erow_256.ico</file>
-        <file>Resources/images/icon/erow_256.png</file>
-        <file>Resources/images/icon/erow_1024.png</file>
+        <file>Resources/images/icon/cloudviewer_16.ico</file>
+        <file>Resources/images/icon/cloudviewer_16.png</file>
+        <file>Resources/images/icon/cloudviewer_32.ico</file>
+        <file>Resources/images/icon/cloudviewer_32.png</file>
+        <file>Resources/images/icon/cloudviewer_48.ico</file>
+        <file>Resources/images/icon/cloudviewer_48.png</file>
+        <file>Resources/images/icon/cloudviewer_128.ico</file>
+        <file>Resources/images/icon/cloudviewer_128.png</file>
+        <file>Resources/images/icon/logo_256.ico</file>
+        <file>Resources/images/icon/logo_256.png</file>
+        <file>Resources/images/others/pqAxes.png</file>
+        <file>Resources/images/pcl/show_axes.png</file>
+        <file>Resources/images/pcl/rgb_depth.png</file>
+        <file>Resources/images/pcl/normal_estimation.png</file>
+        <file>Resources/images/pcl/new_cloud_from_selection.png</file>
+        <file>Resources/images/pcl/insert_from_OpenNi.png</file>
+        <file>Resources/images/pcl/insert_from_file.png</file>
+        <file>Resources/images/pcl/frustum_selection.png</file>
+        <file>Resources/images/pcl/3dtree.png</file>
+        <file>Resources/images/svg/pqPointData.png</file>
+        <file>Resources/images/svg/pqPaste.png</file>
+        <file>Resources/images/svg/pqNodeMapData.png</file>
+        <file>Resources/images/svg/pqInvert.png</file>
+        <file>Resources/images/svg/pqSolidColor.png</file>
     </qresource>
     <qresource prefix="/qt">
         <file>etc/qt.conf</file>

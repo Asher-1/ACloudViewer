@@ -11,7 +11,7 @@
 //#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
 //#  GNU General Public License for more details.                          #
 //#                                                                        #
-//#                         COPYRIGHT: DAHAI LU                         #
+//#                         COPYRIGHT: DAHAI LU                            #
 //#                                                                        #
 //##########################################################################
 //
@@ -38,11 +38,18 @@
 
 class ccHObject;
 class ImageVis;
+class ccSensor;
 class ccGenericMesh;
 class ccImage;
 class ecvOrientedBBox;
 class ccPointCloud;
 class QMainWindow;
+
+namespace cloudViewer {
+namespace geometry {
+class LineSet;
+}
+}
 
 //! CC to PCL cloud converter
 class QPCL_ENGINE_LIB_API PCLDisplayTools : public ecvDisplayTools
@@ -73,7 +80,7 @@ public: // inherit from ecvDisplayTools
 		getQVtkWidget()->toDisplayPoint(worldPos, displayPos);
 	}
 
-	virtual void displayText(const CC_DRAW_CONTEXT& CONTEXT) override;
+    virtual void displayText(const CC_DRAW_CONTEXT& context) override;
 
 	virtual void toggle2Dviewer(bool state) override;
 
@@ -83,18 +90,19 @@ public: // inherit from ecvDisplayTools
     virtual void transformCameraView(const ccGLMatrixd & viewMat) override;
     virtual void transformCameraProjection(const ccGLMatrixd & projMat) override;
 
-	virtual void draw(CC_DRAW_CONTEXT& CONTEXT, const ccHObject * obj) override;
+    virtual void draw(const CC_DRAW_CONTEXT& context, const ccHObject * obj) override;
 
 	bool checkEntityNeedUpdate(std::string& viewID, const ccHObject* obj);
 
-	virtual void drawBBox(CC_DRAW_CONTEXT& context, const ccBBox * bbox) override;
+    virtual void drawBBox(const CC_DRAW_CONTEXT& context, const ccBBox * bbox) override;
 
-	virtual void drawOrientedBBox(CC_DRAW_CONTEXT& context, const ecvOrientedBBox * obb) override;
+    virtual void drawOrientedBBox(const CC_DRAW_CONTEXT& context, const ecvOrientedBBox * obb) override;
 
+    virtual bool orientationMarkerShown() override;
 	virtual void toggleOrientationMarker(bool state) override;
 
-	virtual void removeEntities(CC_DRAW_CONTEXT& CONTEXT) override;
-	virtual bool hideShowEntities(CC_DRAW_CONTEXT& CONTEXT) override;
+    virtual void removeEntities(const CC_DRAW_CONTEXT& context) override;
+    virtual bool hideShowEntities(const CC_DRAW_CONTEXT& context) override;
 
 	/** \brief Create a new viewport from [xmin,ymin] -> [xmax,ymax].
 	  * \param[in] xmin the minimum X coordinate for the viewport (0.0 <= 1.0)
@@ -115,9 +123,9 @@ public: // inherit from ecvDisplayTools
 		m_visualizer3D->resetCameraViewpoint(viewID);
 	}
 
-	inline virtual void setBackgroundColor(CC_DRAW_CONTEXT& CONTEXT) override {
-		getQVtkWidget()->setBackgroundColor(ecvTools::TransFormRGB(CONTEXT.backgroundCol),
-			ecvTools::TransFormRGB(CONTEXT.backgroundCol2), CONTEXT.drawBackgroundGradient);
+    inline virtual void setBackgroundColor(const CC_DRAW_CONTEXT& context) override {
+        getQVtkWidget()->setBackgroundColor(ecvTools::TransFormRGB(context.backgroundCol),
+            ecvTools::TransFormRGB(context.backgroundCol2), context.drawBackgroundGradient);
 	}
 
 	inline virtual void showOrientationMarker() override {
@@ -163,11 +171,11 @@ public:
 	/**
 	 * Resets the center of rotation to the focal point.
 	 */
-	inline virtual void resetCenterOfRotation() override 
+    inline virtual void resetCenterOfRotation(int viewport = 0) override
 	{
 		if (this->m_visualizer3D)
 		{
-			this->m_visualizer3D->resetCenterOfRotation();
+            this->m_visualizer3D->resetCenterOfRotation(viewport);
 		}
 	}
 
@@ -197,11 +205,11 @@ public:
 		}
 	}
 
-	inline virtual void resetCameraClippingRange() override
+    inline virtual void resetCameraClippingRange(int viewport = 0) override
 	{ 
 		if (m_visualizer3D)
 		{
-			m_visualizer3D->resetCameraClippingRange();
+            m_visualizer3D->resetCameraClippingRange(viewport);
 		}
 	}
 
@@ -217,49 +225,60 @@ public:
 		}
 	}
 
-	inline virtual void getCameraPos(double *pos, int viewPort = 0) override {
-		const pcl::visualization::Camera& cam = m_visualizer3D->getCamera(viewPort);
+    inline virtual void zoomCamera(double zoomFactor, int viewport = 0) override {
+        m_visualizer3D->zoomCamera(zoomFactor, viewport);
+    }
+
+    inline virtual double getCameraFocalDistance(int viewport = 0) override {
+        return m_visualizer3D->getCameraFocalDistance(viewport);
+    }
+    inline virtual void setCameraFocalDistance(double focal_distance, int viewport = 0) override {
+        m_visualizer3D->setCameraFocalDistance(focal_distance, viewport);
+    }
+
+    inline virtual void getCameraPos(double *pos, int viewport = 0) override {
+        const pcl::visualization::Camera& cam = m_visualizer3D->getCamera(viewport);
 		pos[0] = cam.pos[0];
 		pos[1] = cam.pos[1];
 		pos[2] = cam.pos[2];
 	}
-	inline virtual void getCameraFocal(double *focal, int viewPort = 0) override { 
-		const pcl::visualization::Camera& cam = m_visualizer3D->getCamera(viewPort);
+    inline virtual void getCameraFocal(double *focal, int viewport = 0) override {
+        const pcl::visualization::Camera& cam = m_visualizer3D->getCamera(viewport);
 		focal[0] = cam.focal[0];
 		focal[1] = cam.focal[1];
 		focal[2] = cam.focal[2];
 	}
-	inline virtual void getCameraUp(double *up, int viewPort = 0) override {
-		const pcl::visualization::Camera& cam = m_visualizer3D->getCamera(viewPort);
+    inline virtual void getCameraUp(double *up, int viewport = 0) override {
+        const pcl::visualization::Camera& cam = m_visualizer3D->getCamera(viewport);
 		up[0] = cam.view[0];
 		up[1] = cam.view[1];
 		up[2] = cam.view[2];
 	}
 
-    inline virtual void setCameraPosition( const CCVector3d& pos, int viewPort = 0 ) override {
+    inline virtual void setCameraPosition( const CCVector3d& pos, int viewport = 0 ) override {
 		getQVtkWidget()->setCameraPosition(pos);
 	}
 
-	inline virtual void setCameraPosition(const double *pos, const double *focal, const double *up, int viewPort = 0) override {
+    inline virtual void setCameraPosition(const double *pos, const double *focal, const double *up, int viewport = 0) override {
 		m_visualizer3D->setCameraPosition(
 			pos[0], pos[1], pos[2],
 			focal[0], focal[1], focal[2],
-			up[0], up[1], up[2], viewPort
+            up[0], up[1], up[2], viewport
 		);
 	}
 
-	inline virtual void setCameraPosition(const double *pos, const double *up, int viewPort = 0) override {
+    inline virtual void setCameraPosition(const double *pos, const double *up, int viewport = 0) override {
 		m_visualizer3D->setCameraPosition(
 			pos[0], pos[1], pos[2],
-			up[0], up[1], up[2], viewPort
+            up[0], up[1], up[2], viewport
 		);
 	}
 
 	inline virtual void setCameraPosition(double pos_x, double pos_y, double pos_z,
 		double view_x, double view_y, double view_z,
-		double up_x, double up_y, double up_z, int viewPort = 0)  override {
+        double up_x, double up_y, double up_z, int viewport = 0)  override {
 		m_visualizer3D->setCameraPosition(pos_x, pos_y, pos_z,
-			view_x, view_y, view_z, up_x, up_y, up_z, viewPort);
+            view_x, view_y, view_z, up_x, up_y, up_z, viewport);
 	}
 
     inline virtual void setRenderWindowSize(int xw, int yw) override
@@ -278,7 +297,7 @@ public:
 		if (m_visualizer3D)
 		{
 			m_visualizer3D->setOrthoProjection(viewport);
-			m_visualizer3D->synchronizeGeometryBounds();
+            m_visualizer3D->resetCameraClippingRange(viewport);
 		}
 	}
 	inline virtual void setPerspectiveProjection(int viewport = 0) override 
@@ -286,14 +305,14 @@ public:
 		if (m_visualizer3D)
 		{
 			m_visualizer3D->setPerspectiveProjection(viewport);
-			m_visualizer3D->synchronizeGeometryBounds();
+            m_visualizer3D->resetCameraClippingRange(viewport);
 		}
 	}
 
 	// set and get clip distances (near and far)
-	inline virtual void getCameraClip(double *clipPlanes, int viewPort = 0) override 
+    inline virtual void getCameraClip(double *clipPlanes, int viewport = 0) override
 	{ 
-		const pcl::visualization::Camera& cam = m_visualizer3D->getCamera(viewPort);
+        const pcl::visualization::Camera& cam = m_visualizer3D->getCamera(viewport);
 		clipPlanes[0] = cam.clip[0];
 		clipPlanes[1] = cam.clip[1];
 	}
@@ -306,11 +325,12 @@ public:
 	}
 
 	// set and get view angle in y direction or zoom factor in perspective mode
-    inline virtual double getCameraFovy(int viewPort = 0) override { return cloudViewer::RadiansToDegrees(m_visualizer3D->getCamera(viewPort).fovy); }
-    inline virtual void setCameraFovy(double fovy, int viewport = 0) override { m_visualizer3D->setCameraFieldOfView(cloudViewer::RadiansToDegrees(fovy), viewport); }
+    inline virtual double getCameraFovy(int viewport = 0) override { return cloudViewer::RadiansToDegrees(m_visualizer3D->getCamera(viewport).fovy); }
+    inline virtual void setCameraFovy(double fovy, int viewport = 0) override { m_visualizer3D->setCameraFieldOfView(fovy, viewport); }
 
 	// get zoom factor in parallel mode
-	virtual double getParallelScale(int viewPort = 0) override;
+    virtual double getParallelScale(int viewport = 0) override;
+    virtual void setParallelScale(double scale, int viewport = 0) override;
 
 	/** \brief Save the current rendered image to disk, as a PNG screen shot.
 	   * \param[in] file the name of the PNG file
@@ -335,10 +355,9 @@ public:
 	  * The look up table is displayed by pressing 'u' in the PCLVisualizer */
 	inline virtual void setLookUpTableID(const std::string & viewID) override { m_visualizer3D->setLookUpTableID(viewID); }
 
-	inline virtual void getProjectionMatrix(double * projArray, int viewPort = 0) override;
-	inline virtual void getViewMatrix(double * ViewArray, int viewPort = 0) override;
-
-	virtual void setViewMatrix(double* viewArray, int viewPort = 0);
+    inline virtual void getProjectionMatrix(double * projArray, int viewport = 0) override;
+    inline virtual void getViewMatrix(double * ViewArray, int viewport = 0) override;
+    inline virtual void setViewMatrix(const ccGLMatrixd& viewMat, int viewport = 0) override;
 
 public:
 	inline PclUtils::PCLVis* get3DViewer() { return m_visualizer3D.get(); }
@@ -347,13 +366,18 @@ public:
 	virtual QString pick2DLabel(int x, int y) override;
 
 	virtual QString pick3DItem(int x = -1, int y = -1) override;
-private:
-	void drawPointCloud(CC_DRAW_CONTEXT& CONTEXT, ccPointCloud * ecvCloud);
-    void drawMesh(CC_DRAW_CONTEXT& CONTEXT, ccGenericMesh* mesh);
-	void drawPolygon(CC_DRAW_CONTEXT& CONTEXT, ccPolyline* polyline);
-	void drawImage(CC_DRAW_CONTEXT& CONTEXT, ccImage* image);
+    virtual QString pickObject(double x = -1, double y = -1) override;
 
-	bool updateEntityColor(CC_DRAW_CONTEXT& CONTEXT, ccHObject* ent);
+    virtual QImage renderToImage(int zoomFactor = 1, bool renderOverlayItems = false, bool silent = false, int viewport = 0) override;
+private:
+    void drawPointCloud(const CC_DRAW_CONTEXT& context, ccPointCloud * ecvCloud);
+    void drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh);
+    void drawPolygon(const CC_DRAW_CONTEXT& context, ccPolyline* polyline);
+    void drawLines(const CC_DRAW_CONTEXT& context, cloudViewer::geometry::LineSet* lineset);
+    void drawImage(const CC_DRAW_CONTEXT& context, ccImage* image);
+    void drawSensor(const CC_DRAW_CONTEXT& context, ccSensor* sensor);
+
+    bool updateEntityColor(const CC_DRAW_CONTEXT& context, ccHObject* ent);
 
 protected:
 	// QVTKOpenGLNativeWidget

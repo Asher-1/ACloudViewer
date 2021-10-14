@@ -107,7 +107,7 @@ namespace PclUtils
 
 	};
 
-	typedef boost::shared_ptr<ImageVis> ImageVisPtr;
+    typedef std::shared_ptr<ImageVis> ImageVisPtr;
 }
 
 #endif // ECV_IMAGE_VIS_HEADER

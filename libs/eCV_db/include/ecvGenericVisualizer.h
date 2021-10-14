@@ -21,10 +21,6 @@
 // LOCAL
 #include "eCV_db.h"
 
-// CV_CORE_LIB
-#include <CVLog.h>
-#include <CVGeom.h>
-
 // QT
 #include <QObject>
 

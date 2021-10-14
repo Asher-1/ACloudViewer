@@ -1,9 +1,6 @@
 import cloudViewer as cv3d
 
-if cv3d._build_config['BUILD_RPC_INTERFACE']:
-    __all__ = ['ExternalVisualizer', 'EV']
-else:
-    __all__ = []
+__all__ = ['ExternalVisualizer', 'EV']
 
 
 class ExternalVisualizer:
@@ -29,7 +26,7 @@ class ExternalVisualizer:
         self.timeout = timeout
 
     def set(self, obj=None, path='', time=0, layer='', connection=None):
-        """Send Open3D objects for visualization to the visualizer.
+        """Send CloudViewer objects for visualization to the visualizer.
 
         Example:
             To quickly send a single object just write::

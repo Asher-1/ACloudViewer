@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@
 #include "pybind/docstring.h"
 #include "pybind/cloudViewer_pybind.h"
 
-
 namespace pybind11 {
 
 template <typename Vector,
@@ -40,8 +39,9 @@ py::class_<Vector, holder_type> bind_vector_without_repr(
     using Class_ = py::class_<Vector, holder_type>;
     Class_ cl(m, name.c_str(), std::forward<Args>(args)...);
     cl.def(py::init<>());
-    cl.def("__bool__", [](const Vector &v) -> bool { return !v.empty(); },
-           "Check whether the list is nonempty");
+    cl.def(
+            "__bool__", [](const Vector &v) -> bool { return !v.empty(); },
+            "Check whether the list is nonempty");
     cl.def("__len__", &Vector::size);
     return cl;
 }
@@ -56,7 +56,7 @@ py::class_<Vector, holder_type> bind_vector_without_repr(
 template <typename EigenVector>
 std::vector<EigenVector> py_array_to_vectors_double(
         py::array_t<double, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -74,7 +74,7 @@ std::vector<EigenVector> py_array_to_vectors_double(
 template <typename EigenVector>
 std::vector<EigenVector> py_array_to_vectors_int(
         py::array_t<int, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -91,7 +91,7 @@ template <typename EigenVector,
 std::vector<EigenVector, EigenAllocator>
 py_array_to_vectors_int_eigen_allocator(
         py::array_t<int, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -108,7 +108,7 @@ template <typename EigenVector,
 std::vector<EigenVector, EigenAllocator>
 py_array_to_vectors_int64_eigen_allocator(
         py::array_t<int64_t, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -322,7 +322,6 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_matrix(
 
 }  // unnamed namespace
 
-
 namespace cloudViewer {
 namespace utility {
 
@@ -330,7 +329,7 @@ void pybind_eigen(py::module &m) {
     auto intvector = pybind_eigen_vector_of_scalar<int>(m, "IntVector");
     intvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert int32 numpy array of shape ``(n,)`` to cloudViewer format.)";
+                return R"(Convert int32 numpy array of shape ``(n,)`` to CloudViewer format.)";
             }),
             py::none(), py::none(), "");
 
@@ -338,7 +337,7 @@ void pybind_eigen(py::module &m) {
             pybind_eigen_vector_of_scalar<double>(m, "DoubleVector");
     doublevector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert float64 numpy array of shape ``(n,)`` to cloudViewer format.)";
+                return R"(Convert float64 numpy array of shape ``(n,)`` to CloudViewer format.)";
             }),
             py::none(), py::none(), "");
 
@@ -347,7 +346,7 @@ void pybind_eigen(py::module &m) {
             py::py_array_to_vectors_double<Eigen::Vector3d>);
     vector3dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert float64 numpy array of shape ``(n, 3)`` to cloudViewer format.
+                return R"(Convert float64 numpy array of shape ``(n, 3)`` to CloudViewer format.
 
 Example usage
 
@@ -356,13 +355,13 @@ Example usage
     import cloudViewer
     import numpy as np
 
-    pcd = cloudViewer.geometry.PointCloud()
+    pcd = cloudViewer.geometry.ccPointCloud()
     np_points = np.random.rand(100, 3)
 
-    # From numpy to cloudViewer
-    pcd.points = cloudViewer.utility.Vector3dVector(np_points)
+    # From numpy to CloudViewer
+    pcd.set_points(cloudViewer.utility.Vector3dVector(np_points))
 
-    # From cloudViewer to numpy
+    # From CloudViewer to numpy
     np_points = np.asarray(pcd.points)
 )";
             }),
@@ -373,7 +372,7 @@ Example usage
             py::py_array_to_vectors_int<Eigen::Vector3i>);
     vector3ivector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert int32 numpy array of shape ``(n, 3)`` to cloudViewer format..
+                return R"(Convert int32 numpy array of shape ``(n, 3)`` to CloudViewer format..
 
 Example usage
 
@@ -393,19 +392,20 @@ Example usage
     #
     # z coordinate: 0
 
-    mesh = cloudViewer.geometry.TriangleMesh()
+    mesh = cloudViewer.geometry.ccMesh()
+    mesh.create_internal_cloud()
     np_vertices = np.array([[-1, 2, 0],
                             [1, 2, 0],
                             [0, 0, 0],
                             [2, 0, 0]])
     np_triangles = np.array([[0, 2, 1],
                              [1, 2, 3]]).astype(np.int32)
-    mesh.vertices = cloudViewer.Vector3dVector(np_vertices)
+    mesh.set_vertices(cloudViewer.Vector3dVector(np_vertices))
 
-    # From numpy to cloudViewer
-    mesh.triangles = cloudViewer.Vector3iVector(np_triangles)
+    # From numpy to CloudViewer
+    mesh.set_triangles(cloudViewer.Vector3iVector(np_triangles))
 
-    # From cloudViewer to numpy
+    # From CloudViewer to numpy
     np_triangles = np.asarray(mesh.triangles)
 )";
             }),
@@ -417,7 +417,7 @@ Example usage
     vector2ivector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert int32 numpy array of shape ``(n, 2)`` to "
-                       "cloudViewer format.";
+                       "CloudViewer format.";
             }),
             py::none(), py::none(), "");
 
@@ -427,7 +427,18 @@ Example usage
     vector2dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert float64 numpy array of shape ``(n, 2)`` to "
-                       "cloudViewer format.";
+                       "CloudViewer format.";
+            }),
+            py::none(), py::none(), "");
+
+    auto matrix3dvector =
+            pybind_eigen_vector_of_matrix<Eigen::Matrix3d,
+                                          std::allocator<Eigen::Matrix3d>>(
+                    m, "Matrix3dVector", "std::vector<Eigen::Matrix3d>");
+    matrix3dvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert float64 numpy array of shape ``(n, 3, 3)`` to "
+                       "CloudViewer format.";
             }),
             py::none(), py::none(), "");
 
@@ -436,7 +447,7 @@ Example usage
     matrix4dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert float64 numpy array of shape ``(n, 4, 4)`` to "
-                       "cloudViewer format.";
+                       "CloudViewer format.";
             }),
             py::none(), py::none(), "");
 
@@ -447,7 +458,7 @@ Example usage
     vector4ivector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert int numpy array of shape ``(n, 4)`` to "
-                       "cloudViewer format.";
+                       "CloudViewer format.";
             }),
             py::none(), py::none(), "");
 }

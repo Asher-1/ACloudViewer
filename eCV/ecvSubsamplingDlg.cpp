@@ -47,9 +47,9 @@ ccSubsamplingDlg::ccSubsamplingDlg(unsigned maxPointCount, double maxCloudRadius
 	samplingMethod->addItem("Space");
 	samplingMethod->addItem("Octree");
 
-	connect(slider,         SIGNAL(sliderMoved(int)),         this, SLOT(sliderMoved(int)));
-	connect(samplingValue,  SIGNAL(valueChanged(double)),     this, SLOT(samplingRateChanged(double)));
-	connect(samplingMethod, SIGNAL(currentIndexChanged(int)), this, SLOT(changeSamplingMethod(int)));
+    connect(slider, &QSlider::sliderMoved, this, &ccSubsamplingDlg::sliderMoved);
+    connect(samplingValue,  static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &ccSubsamplingDlg::samplingRateChanged);
+    connect(samplingMethod, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),		  this, &ccSubsamplingDlg::changeSamplingMethod);
 
 	samplingMethod->setCurrentIndex(1);
 	sliderMoved(slider->sliderPosition());

@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                               cloudViewer                                    #
+//#                               cloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU Library General Public License as       #
@@ -174,8 +174,8 @@ bool WeibullDistribution::computeParameters(const ScalarContainer& values)
         return false;
 
     //we look for the maximum value of the SF so as to avoid overflow
-    ScalarType minValue;
-    ScalarType maxValue;
+    ScalarType minValue = 0;
+    ScalarType maxValue = 0;
     bool firstValue = true;
     for (ScalarType s : values)
     {

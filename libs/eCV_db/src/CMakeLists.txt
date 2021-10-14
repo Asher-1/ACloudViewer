@@ -13,6 +13,7 @@ target_sources( ${PROJECT_NAME}
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvColorScalesManager.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvColorTypes.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvCone.cpp
+	    ${CMAKE_CURRENT_LIST_DIR}/ecvCoordinateSystem.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvCylinder.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDepthBuffer.cpp
 	    ${CMAKE_CURRENT_LIST_DIR}/ecvDish.cpp

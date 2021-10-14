@@ -30,7 +30,7 @@ def main():
                         help="path to cloudViewer_tf_ops.so")
 
     args = parser.parse_args()
-    print(args)
+    print("input args: " + str(args))
 
     oplib = tf.load_op_library(args.lib)
 
@@ -55,6 +55,8 @@ def main():
             if param.default != inspect.Parameter.empty:
                 if isinstance(param.default, str):
                     tmp += '="{}"'.format(str(param.default))
+                elif isinstance(param.default, type(tf.float32)):
+                    tmp += '=_tf.{}'.format(param.default.name)
                 else:
                     tmp += '={}'.format(str(param.default))
 

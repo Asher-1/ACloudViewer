@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        ErowCloudViewer: www.erow.cn                            -
+// -                        ErowCloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ void testFromFile(const std::string& filename)
 	cloud_ptr->filterChildren(polylines, false, CV_TYPES::POLY_LINE);
 	for (size_t i = 0; i < polylines.size(); ++i)
 	{
-		auto poly = std::make_shared<ccPolyline>(nullptr);
+		auto poly = cloudViewer::make_shared<ccPolyline>(nullptr);
 		*poly = *ccHObjectCaster::ToPolyline(polylines[i]);
 		poly->setColor(ecvColor::blue);
 		if (poly)
@@ -56,7 +56,7 @@ void testFromFile(const std::string& filename)
 		ccPolyline* poly1 = ccHObjectCaster::ToPolyline(polylines[0]);
 		ccPolyline* poly2 = ccHObjectCaster::ToPolyline(polylines[1]);
 
-		auto poly = std::make_shared<ccPolyline>(nullptr);
+		auto poly = cloudViewer::make_shared<ccPolyline>(nullptr);
 		*poly = *poly1 + *poly2;
 		poly->setWidth(10);
 		unsigned vertCount = poly->getAssociatedCloud()->size();

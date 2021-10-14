@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,76 +25,31 @@
 // ----------------------------------------------------------------------------
 
 #include <cstdio>
-#include <flann/flann.hpp>
 #include <vector>
 
 #include "CloudViewer.h"
 
-int main(int argc, char **argv) {
+void PrintHelp() {
     using namespace cloudViewer;
-    using namespace flann;
 
-    if (argc < 2) {
-        utility::LogInfo("Usage:");
-        utility::LogInfo("    > Flann [filename]");
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > Flann [filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+int main(int argc, char *argv[]) {
+    using namespace cloudViewer;
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
-
-    auto cloud_ptr = std::make_shared<ccPointCloud>();
-    if (cloudViewer::io::ReadPointCloud(argv[1], *cloud_ptr)) {
-        utility::LogInfo("Successfully read {}", argv[1]);
-    } else {
-        utility::LogWarning("Failed to read {}", argv[1]);
-        return 1;
-    }
-
-    if ((int)cloud_ptr->size() < 100) {
-        utility::LogWarning("Boring point cloud.");
-        return 1;
-    }
-
-    if (!cloud_ptr->hasColors()) {
-        cloud_ptr->resizeTheRGBTable();
-    }
-
-	std::vector<Eigen::Vector3d> points = cloud_ptr->getEigenPoints();
-
-    int nn = std::min(20, (int)cloud_ptr->size() - 1);
-    Matrix<double> dataset((double *)points.data(), cloud_ptr->size(), 3);
-    Matrix<double> query((double *)points.data(), 1, 3);
-    std::vector<int> indices_vec(nn);
-    std::vector<double> dists_vec(nn);
-    Matrix<int> indices(indices_vec.data(), query.rows, nn);
-    Matrix<double> dists(dists_vec.data(), query.rows, nn);
-    Index<L2<double>> index(dataset, KDTreeSingleIndexParams(10));
-    index.buildIndex();
-    index.knnSearch(query, indices, dists, nn, SearchParams(-1, 0.0));
-
-    for (size_t i = 0; i < indices_vec.size(); i++) {
-        utility::LogInfo("{:d}, {:f}", (int)indices_vec[i], sqrt(dists_vec[i]));
-        cloud_ptr->setPointColor(
-			static_cast<unsigned int>(indices_vec[i]), ecvColor::Rgb(255, 0, 0));
-    }
-
-    cloud_ptr->setPointColor(0, ecvColor::Rgb(0, 255, 0));
-
-    float r = float(sqrt(dists_vec[nn - 1]) * 2.0);
-    Matrix<double> query1((double *)points.data() + 3 * 99, 1, 3);
-    int k = index.radiusSearch(query1, indices, dists, r * r,
-                               SearchParams(-1, 0.0));
-
-    utility::LogInfo("======== {:d}, {:f} ========", k, r);
-    for (int i = 0; i < k; i++) {
-        utility::LogInfo("{:d}, {:f}", (int)indices_vec[i], sqrt(dists_vec[i]));
-		cloud_ptr->setPointColor(
-			static_cast<unsigned int>(indices_vec[i]), ecvColor::Rgb(0, 0, 255));
-    }
-	cloud_ptr->setPointColor(99, ecvColor::Rgb(0, 255, 255));
-
-    cloudViewer::visualization::DrawGeometries({cloud_ptr}, "Flann", 1600, 900);
 
     auto new_cloud_ptr = std::make_shared<ccPointCloud>();
-    if (cloudViewer::io::ReadPointCloud(argv[1], *new_cloud_ptr)) {
+    if (io::ReadPointCloud(argv[1], *new_cloud_ptr)) {
         utility::LogInfo("Successfully read {}", argv[1]);
     } else {
         utility::LogWarning("Failed to read {}", argv[1]);
@@ -106,11 +61,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if (new_cloud_ptr->hasColors() == false) {
-		new_cloud_ptr->resizeTheRGBTable();
+    if (!new_cloud_ptr->hasColors()) {
+        new_cloud_ptr->resizeTheRGBTable();
     }
 
-    cloudViewer::geometry::KDTreeFlann kdtree;
+    int nn = std::min(20, (int)new_cloud_ptr->size() - 1);
+    geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(*new_cloud_ptr);
     std::vector<int> new_indices_vec(nn);
     std::vector<double> new_dists_vec(nn);
@@ -120,38 +76,42 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < new_indices_vec.size(); i++) {
         utility::LogInfo("{:d}, {:f}", (int)new_indices_vec[i],
                          sqrt(new_dists_vec[i]));
-		new_cloud_ptr->setPointColor(
-			static_cast<unsigned int>(new_indices_vec[i]), ecvColor::Rgb(255, 0, 0));
+        new_cloud_ptr->setPointColor(
+                static_cast<unsigned int>(new_indices_vec[i]),
+                ecvColor::Rgb(255, 0, 0));
     }
 
     new_cloud_ptr->setPointColor(0, ecvColor::Rgb(0, 255, 0));
 
-    k = kdtree.SearchRadius(new_cloud_ptr->getEigenPoint(99),
-							r, new_indices_vec, new_dists_vec);
+    float r = float(sqrt(new_dists_vec[nn - 1]) * 2.0);
+    int k = kdtree.SearchRadius(new_cloud_ptr->getEigenPoint(99), r,
+                                new_indices_vec, new_dists_vec);
+
 
     utility::LogInfo("======== {:d}, {:f} ========", k, r);
     for (int i = 0; i < k; i++) {
         utility::LogInfo("{:d}, {:f}", (int)new_indices_vec[i],
                          sqrt(new_dists_vec[i]));
-		new_cloud_ptr->setPointColor(
-			static_cast<unsigned int>(new_indices_vec[i]), ecvColor::Rgb(0, 0, 255));
+        new_cloud_ptr->setPointColor(
+                static_cast<unsigned int>(new_dists_vec[i]),
+                ecvColor::Rgb(0, 0, 255));
     }
-	new_cloud_ptr->setPointColor(99, ecvColor::Rgb(0, 255, 255));
+    new_cloud_ptr->setPointColor(99, ecvColor::Rgb(0, 255, 255));
 
     k = kdtree.Search(new_cloud_ptr->getEigenPoint(199),
-                      cloudViewer::geometry::KDTreeSearchParamRadius(r), new_indices_vec,
+                      geometry::KDTreeSearchParamRadius(r), new_indices_vec,
                       new_dists_vec);
 
     utility::LogInfo("======== {:d}, {:f} ========", k, r);
     for (int i = 0; i < k; i++) {
         utility::LogInfo("{:d}, {:f}", (int)new_indices_vec[i],
                          sqrt(new_dists_vec[i]));
-		new_cloud_ptr->setPointColor(
-			static_cast<unsigned int>(new_indices_vec[i]), ecvColor::Rgb(0, 0, 255));
-
+        new_cloud_ptr->setPointColor(
+                static_cast<unsigned int>(new_indices_vec[i]),
+                ecvColor::Rgb(0, 0, 255));
     }
-	new_cloud_ptr->setPointColor(199, ecvColor::Rgb(0, 255, 255));
+    new_cloud_ptr->setPointColor(199, ecvColor::Rgb(0, 255, 255));
 
-    cloudViewer::visualization::DrawGeometries({new_cloud_ptr}, "TestKDTree", 1600, 900);
+    visualization::DrawGeometries({new_cloud_ptr}, "KDTreeFlann", 1600, 900);
     return 0;
 }

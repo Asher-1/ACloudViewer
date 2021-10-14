@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #include "LineSet.h"
 #include "ecvBBox.h"
 #include "ecvOrientedBBox.h"
+#include "ecvDisplayTools.h"
 
 #include <numeric>
 
@@ -42,8 +43,31 @@ LineSet &LineSet::clear() {
 
 ccBBox LineSet::getOwnBB(bool withGLFeatures)
 {
-	return getAxisAlignedBoundingBox();
+    return getAxisAlignedBoundingBox();
 }
+
+void LineSet::drawMeOnly(CC_DRAW_CONTEXT &context)
+{
+    bool is_empty = !hasPoints() || !hasLines();
+
+    if (is_empty)
+        return;
+
+    if (MACRO_Draw3D(context) && ecvDisplayTools::GetMainScreen())
+    {
+        if (isColorOverriden())
+        {
+            context.defaultPolylineColor = getTempColor();
+        }/*
+        else if (colorsShown() && hasColors())
+        {
+            context.defaultPolylineColor = ecvColor::Rgb::FromEigen(colors_[0]);
+        }*/
+        context.currentLineWidth = 1;
+        ecvDisplayTools::Draw(context, this);
+    }
+}
+
 
 Eigen::Vector3d LineSet::getMinBound() const {
     return ComputeMinBound(points_);

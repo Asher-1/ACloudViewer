@@ -319,7 +319,6 @@ class AppWindow:
         self._ibl_map = gui.Combobox()
         for ibl in glob.glob(gui.Application.instance.resource_path +
                              "/*_ibl.ktx"):
-
             self._ibl_map.add_item(os.path.basename(ibl[:-8]))
         self._ibl_map.selected_text = AppWindow.DEFAULT_IBL
         self._ibl_map.set_on_selection_changed(self._on_new_ibl)
@@ -494,7 +493,7 @@ class AppWindow:
         self._sun_dir.vector_value = self.settings.sun_dir
         self._sun_color.color_value = self.settings.sun_color
         self._material_prefab.enabled = (
-            self.settings.material.shader == Settings.LIT)
+                self.settings.material.shader == Settings.LIT)
         c = gui.Color(self.settings.material.base_color[0],
                       self.settings.material.base_color[1],
                       self.settings.material.base_color[2],
@@ -502,15 +501,17 @@ class AppWindow:
         self._material_color.color_value = c
         self._point_size.double_value = self.settings.material.point_size
 
-    def _on_layout(self, theme):
+    def _on_layout(self, layout_context):
         # The on_layout callback should set the frame (position + size) of every
         # child correctly. After the callback is done the window will layout
         # the grandchildren.
         r = self.window.content_rect
         self._scene.frame = r
-        width = 17 * theme.font_size
-        height = min(r.height,
-                     self._settings_panel.calc_preferred_size(theme).height)
+        width = 17 * layout_context.theme.font_size
+        height = min(
+            r.height,
+            self._settings_panel.calc_preferred_size(
+                layout_context, gui.Widget.Constraints()).height)
         self._settings_panel.frame = gui.Rect(r.get_right() - width, r.y, width,
                                               height)
 

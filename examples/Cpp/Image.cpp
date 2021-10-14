@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,23 +28,32 @@
 
 #include "CloudViewer.h"
 
-int main(int argc, char **argv) {
+void PrintHelp() {
     using namespace cloudViewer;
 
-   cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > Image [image filename] [depth filename]");
+    utility::LogInfo("    The program will :");
+    utility::LogInfo("    1) Read 8bit RGB and 16bit depth image");
+    utility::LogInfo("    2) Convert RGB image to single channel float image");
+    utility::LogInfo("    3) 3x3, 5x5, 7x7 Gaussian filters are applied");
+    utility::LogInfo("    4) 3x3 Sobel filter for x-and-y-directions are applied");
+    utility::LogInfo("    5) Make image pyramid that includes Gaussian blur and downsampling");
+    utility::LogInfo("    6) Will save all the layers in the image pyramid");
+    // clang-format on
+    utility::LogInfo("");
+}
 
-    if (argc != 3) {
-        // clang-format off
-        cloudViewer::utility::LogInfo("Usage:");
-        cloudViewer::utility::LogInfo("    > Image [image filename] [depth filename]");
-        cloudViewer::utility::LogInfo("    The program will :");
-        cloudViewer::utility::LogInfo("    1) Read 8bit RGB and 16bit depth image");
-        cloudViewer::utility::LogInfo("    2) Convert RGB image to single channel float image");
-        cloudViewer::utility::LogInfo("    3) 3x3, 5x5, 7x7 Gaussian filters are applied");
-        cloudViewer::utility::LogInfo("    4) 3x3 Sobel filter for x-and-y-directions are applied");
-        cloudViewer::utility::LogInfo("    5) Make image pyramid that includes Gaussian blur and downsampling");
-        cloudViewer::utility::LogInfo("    6) Will save all the layers in the image pyramid");
-        // clang-format on
+int main(int argc, char *argv[]) {
+    using namespace cloudViewer;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc != 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 
@@ -53,13 +62,13 @@ int main(int argc, char **argv) {
 
     geometry::Image color_image_8bit;
     if (io::ReadImage(filename_rgb, color_image_8bit)) {
-        cloudViewer::utility::LogDebug("RGB image size : {:d} x {:d}",
+        utility::LogDebug("RGB image size : {:d} x {:d}",
                           color_image_8bit.width_, color_image_8bit.height_);
         auto gray_image = color_image_8bit.CreateFloatImage();
         io::WriteImage("gray.png",
                        *gray_image->CreateImageFromFloatImage<uint8_t>());
 
-        cloudViewer::utility::LogDebug("Gaussian Filtering");
+        utility::LogDebug("Gaussian Filtering");
         auto gray_image_b3 =
                 gray_image->Filter(geometry::Image::FilterType::Gaussian3);
         io::WriteImage("gray_blur3.png",
@@ -73,7 +82,7 @@ int main(int argc, char **argv) {
         io::WriteImage("gray_blur7.png",
                        *gray_image_b7->CreateImageFromFloatImage<uint8_t>());
 
-        cloudViewer::utility::LogDebug("Sobel Filtering");
+        utility::LogDebug("Sobel Filtering");
         auto gray_image_dx =
                 gray_image->Filter(geometry::Image::FilterType::Sobel3Dx);
         // make [-1,1] to [0,1].
@@ -88,7 +97,7 @@ int main(int argc, char **argv) {
         io::WriteImage("gray_sobel_dy.png",
                        *gray_image_dy->CreateImageFromFloatImage<uint8_t>());
 
-        cloudViewer::utility::LogDebug("Build Pyramid");
+        utility::LogDebug("Build Pyramid");
         auto pyramid = gray_image->CreatePyramid(4);
         for (int i = 0; i < 4; i++) {
             auto level = pyramid[i];
@@ -98,19 +107,19 @@ int main(int argc, char **argv) {
             io::WriteImage(outputname, *level_8bit);
         }
     } else {
-        cloudViewer::utility::LogWarning("Failed to read {}", filename_rgb);
+        utility::LogWarning("Failed to read {}", filename_rgb);
         return 1;
     }
 
     geometry::Image depth_image_16bit;
     if (io::ReadImage(filename_depth, depth_image_16bit)) {
-        cloudViewer::utility::LogDebug("Depth image size : {:d} x {:d}",
+        utility::LogDebug("Depth image size : {:d} x {:d}",
                           depth_image_16bit.width_, depth_image_16bit.height_);
         auto depth_image = depth_image_16bit.CreateFloatImage();
         io::WriteImage("depth.png",
                        *depth_image->CreateImageFromFloatImage<uint16_t>());
 
-        cloudViewer::utility::LogDebug("Gaussian Filtering");
+        utility::LogDebug("Gaussian Filtering");
         auto depth_image_b3 =
                 depth_image->Filter(geometry::Image::FilterType::Gaussian3);
         io::WriteImage("depth_blur3.png",
@@ -124,7 +133,7 @@ int main(int argc, char **argv) {
         io::WriteImage("depth_blur7.png",
                        *depth_image_b7->CreateImageFromFloatImage<uint16_t>());
 
-        cloudViewer::utility::LogDebug("Sobel Filtering");
+        utility::LogDebug("Sobel Filtering");
         auto depth_image_dx =
                 depth_image->Filter(geometry::Image::FilterType::Sobel3Dx);
         // make [-65536,65536] to [0,13107.2]. // todo: need to test this
@@ -139,7 +148,7 @@ int main(int argc, char **argv) {
         io::WriteImage("depth_sobel_dy.png",
                        *depth_image_dy->CreateImageFromFloatImage<uint16_t>());
 
-        cloudViewer::utility::LogDebug("Build Pyramid");
+        utility::LogDebug("Build Pyramid");
         auto pyramid = depth_image->CreatePyramid(4);
         for (int i = 0; i < 4; i++) {
             auto level = pyramid[i];
@@ -149,7 +158,7 @@ int main(int argc, char **argv) {
             io::WriteImage(outputname, *level_16bit);
         }
     } else {
-        cloudViewer::utility::LogWarning("Failed to read {}", filename_depth);
+        utility::LogWarning("Failed to read {}", filename_depth);
         return 1;
     }
 

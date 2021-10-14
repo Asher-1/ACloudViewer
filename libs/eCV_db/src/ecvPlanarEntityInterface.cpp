@@ -62,13 +62,13 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 	if (c_unitNormalHeadSymbol)
 	{
 		m_headId = QString::number(m_uniqueId) + SEPARATOR +
-			QString::number(c_unitNormalHeadSymbol->getUniqueID());
+            c_unitNormalHeadSymbol->getViewId();
 	}
 
 	if (c_unitNormalSymbol)
 	{
 		m_bodyId = QString::number(m_uniqueId) + SEPARATOR +
-			QString::number(c_unitNormalSymbol->getUniqueID());
+            c_unitNormalSymbol->getViewId();
 	}
 
 	// build-up the normal representation own 'context'
@@ -96,14 +96,8 @@ void ccPlanarEntityInterface::glDrawNormal(CC_DRAW_CONTEXT& context, const CCVec
 
 	ccGLMatrixd mat = ccGLMatrixd(
 		ccGLMatrix::FromToRotation(CCVector3(0, 0, PC_ONE), getNormal()).data());
-	mat.applyRotation(direction);
-	{
-		double angle_rad;
-		CCVector3d axis, trans;
-		mat.getParameters(angle_rad, axis, trans);
-        double angle_deg = cloudViewer::RadiansToDegrees(angle_rad);
-		normalContext.transformInfo.setRotation(angle_deg, axis);
-	}
+    mat.applyRotation(direction);
+    normalContext.transformInfo.setTransformation(mat, false, false);
 
 	//ccGL::Scale(glFunc, scale, scale, scale);
 	normalContext.transformInfo.setScale(CCVector3(scale, scale, scale));

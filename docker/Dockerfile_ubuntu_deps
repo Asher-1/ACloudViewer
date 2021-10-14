@@ -44,6 +44,12 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
         libpng-dev \
         libtiff-dev \
         libdc1394-22-dev \
+        libsuitesparse-dev \
+        libfreeimage-dev \
+        libgoogle-glog-dev \
+        libgflags-dev \
+        libglew-dev \
+        libatlas-base-dev \
         unzip \
         locate \
         cmake \
@@ -58,7 +64,7 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
         libxi-dev \
         libflann1.9 \
         libflann-dev \
-		libosmesa6-dev \
+        libosmesa6-dev \
         libudev-dev \
         autoconf \
         libtool \
@@ -111,10 +117,10 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
         libxcb-keysyms1 \
         libxcb-image0 \
         libxkbcommon-x11-0 \
-	    libz-dev \
-	    systemd \
-	    libjsoncpp-dev \
-	    libcgal-dev
+        libz-dev \
+        systemd \
+        libjsoncpp-dev \
+        libcgal-dev
 
 # Install kinetic
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
@@ -126,7 +132,17 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
 # Install and update npm and nodejs
 RUN apt-get install nodejs npm -y \
     && npm install n -g \
-    && n latest
+    && n latest \
+	&& npm install -g yarn
+
+WORKDIR /opt
+RUN git clone https://github.com/ceres-solver/ceres-solver.git --branch 1.14.0
+RUN cd ceres-solver \
+        && mkdir build && cd build \
+        && cmake .. -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF \
+        && make -j4 \
+        $$ make install \
+        && make clean
 
 # Install xerces-c
 WORKDIR /opt

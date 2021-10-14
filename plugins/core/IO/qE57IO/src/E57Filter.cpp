@@ -228,7 +228,7 @@ static bool SaveScan(ccPointCloud* cloud, e57::StructureNode& scanNode, e57::Ima
 	}
 	else
 	{
-		if (!cloud->getGlobalBB(bbMin, bbMax))
+		if (!cloud->getOwnGlobalBB(bbMin, bbMax))
 		{
 			CVLog::Error(QString("[E57Filter::SaveScan] Internal error: cloud '%1' has an invalid bounding box?!").arg(cloud->getName()));
 			return false;

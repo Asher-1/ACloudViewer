@@ -1,6 +1,6 @@
-# CloudViewer: www.erow.cn
+# CloudViewer: asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/ReconstructionSystem/debug/visualize_alignment.py
 
@@ -8,7 +8,7 @@ import numpy as np
 import json
 import argparse
 import sys
-import open3d as o3d
+import cloudViewer as o3d
 sys.path.append("../utility")
 from file import *
 from visualization import *

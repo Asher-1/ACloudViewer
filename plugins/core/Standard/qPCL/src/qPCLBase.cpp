@@ -163,10 +163,10 @@ int qPCL::addPclModule(BasePclModule* module, QList<QAction *> &actions)
 	actions.push_back(action);
 	m_modules.push_back(module);
 
-	//connect signals
-	connect(module, SIGNAL(newEntity(ccHObject*)),			this,	SLOT(handleNewEntity(ccHObject*)));
-	connect(module, SIGNAL(entityHasChanged(ccHObject*)),	this,	SLOT(handleEntityChange(ccHObject*)));
-	connect(module, SIGNAL(newErrorMessage(QString)),		this,	SLOT(handleErrorMessage(QString)));
+    //connect signals
+    connect(module, &BasePclModule::newEntity,			this,	&qPCL::handleNewEntity);
+    connect(module, &BasePclModule::entityHasChanged,	this,	&qPCL::handleEntityChange);
+    connect(module, &BasePclModule::newErrorMessage,	this,	&qPCL::handleErrorMessage);
 
 	return 1;
 }

@@ -3022,7 +3022,7 @@ static int SHPRewindIsInnerRing( const SHPObject * psObject,
 /************************************************************************/
 /*                          SHPRewindObject()                           */
 /*                                                                      */
-/*      Reset the winding of polygon objects to adhere to the           */
+/*      reset the winding of polygon objects to adhere to the           */
 /*      specification.                                                  */
 /************************************************************************/
 

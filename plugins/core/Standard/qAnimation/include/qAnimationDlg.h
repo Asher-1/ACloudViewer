@@ -1,6 +1,8 @@
+#pragma once
+
 //##########################################################################
 //#                                                                        #
-//#                   CLOUDVIEWER  PLUGIN: qAnimation                      #
+//#                   CLOUDCOMPARE PLUGIN: qAnimation                      #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -15,8 +17,8 @@
 //#                                                                        #
 //##########################################################################
 
-#ifndef ECV_ANIMATION_DLG_HEADER
-#define ECV_ANIMATION_DLG_HEADER
+// ECV_DB_LIB
+#include <ecvViewportParameters.h>
 
 //Qt
 #include <QDialog>
@@ -26,70 +28,99 @@
 
 #include "ui_animationDlg.h"
 
+class ccPolyline;
 class cc2DViewportObject;
 class QListWidgetItem;
 
 //! Dialog for qAnimation plugin
 class qAnimationDlg : public QDialog, public Ui::AnimationDialog
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
 
-	//! Default constructor
-	qAnimationDlg(QWidget* view3d,  QWidget* parent = 0);
+    //! Default constructor
+    qAnimationDlg(QWidget* view3d,  QWidget* parent = nullptr);
 
-	//! Initialize the dialog with a set of viewports
-	bool init(const std::vector<cc2DViewportObject*>& viewports);
+    //! Destrcuctor
+    virtual ~qAnimationDlg();
 
-protected slots:
+    //! Initialize the dialog with a set of viewports
+    bool init(const std::vector<cc2DViewportObject*>& viewports);
 
-	void onFPSChanged(int);
+    ccPolyline* getTrajectory();
+    bool exportTrajectoryOnExit();
 
-	void onTotalTimeChanged(double);
-	void onStepTimeChanged(double);
-	void onLoopToggled(bool);
-	void onCurrentStepChanged(int);
-	void onBrowseButtonClicked();
+protected:
 
-	void preview();
-	void renderAnimation() { render(false); }
-	void renderFrames() { render(true); }
-	void onAccept();
+    void onFPSChanged(int);
+    void onTotalTimeChanged(double);
+    void onStepTimeChanged(double);
+    void onLoopToggled(bool);
+    void onCurrentStepChanged(int);
+    void onBrowseButtonClicked();
+    void onAutoStepsDurationToggled(bool);
+    void onSmoothTrajectoryToggled(bool);
+    void onSmoothRatioChanged(double);
 
-	void onItemChanged(QListWidgetItem*);
+    void preview();
+    void renderAnimation() { render(false); }
+    void renderFrames() { render(true); }
+    void onAccept();
+    void onReject();
+
+    void onItemChanged(QListWidgetItem*);
 
 protected: //methods
 
-	int getCurrentStepIndex();
+    int getCurrentStepIndex();
+    size_t countEnabledSteps() const;
 
-	int countFrames(size_t startIndex = 0);
+    bool smoothModeEnabled() const;
 
-	void applyViewport( const cc2DViewportObject* viewport );
+    int countFrames(size_t startIndex = 0);
 
-	double computeTotalTime();
+    void applyViewport(const ecvViewportParameters& viewportParameters);
 
-	void updateCurrentStepDuration();
-	void updateTotalDuration();
+    double computeTotalTime();
 
-	bool getNextSegment(size_t& vp1, size_t& vp2) const;
+    void updateCurrentStepDuration();
+    void updateTotalDuration();
+    bool updateCameraTrajectory();
+    bool updateSmoothCameraTrajectory();
 
-	void render(bool asSeparateFrames);
+    bool getNextSegment(size_t& vp1, size_t& vp2) const;
+
+    void render(bool asSeparateFrames);
+
+    bool smoothTrajectory(double ratio, unsigned iterationCount);
+
+    //! Simple step (viewport + time)
+    struct Step
+    {
+        cc2DViewportObject* viewport = nullptr;
+        ecvViewportParameters viewportParams;
+        int indexInOriginalTrajectory = -1;
+        CCVector3d cameraCenter;
+
+        double duration_sec = 0.0;
+        double length = 0.0;
+        int indexInSmoothTrajectory = -1;
+    };
+
+    typedef std::vector<Step> Trajectory;
+
+    bool getCompressedTrajectory(Trajectory& compressedTrajectory) const;
+
+    void updateSmoothTrajectoryDurations();
 
 protected: //members
 
-	//! Simple step (viewport + time)
-	struct Step
-	{
-		cc2DViewportObject* viewport;
-		double duration_sec;
+    //! Animation
+    Trajectory m_videoSteps;
+    //! Smoothed animation
+    Trajectory m_smoothVideoSteps;
 
-		Step() : viewport(0), duration_sec(0) {}
-	};
-
-	std::vector<Step> m_videoSteps;
-
-	QWidget* m_view3d;
+    //! Associated 3D view
+    QWidget* m_view3d;
 };
-
-#endif // ECV_ANIMATION_DLG_HEADER

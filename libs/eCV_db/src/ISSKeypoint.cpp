@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@
 #include <vector>
 
 #include <Eigen.h>
-#include <Console.h>
+#include <Logging.h>
 
 #include "ecvPointCloud.h"
 #include "ecvKDTreeFlann.h"
@@ -86,7 +86,7 @@ std::shared_ptr<ccPointCloud> ComputeISSKeypoints(
         int min_neighbors /*= 5 */) {
     if (input.isEmpty()) {
         cloudViewer::utility::LogWarning("[ComputeISSKeypoints] Input ccPointCloud is empty!");
-        return std::make_shared<ccPointCloud>();
+        return cloudViewer::make_shared<ccPointCloud>();
     }
     const auto& points = input.getEigenPoints();
     KDTreeFlann kdtree(input);

@@ -29,11 +29,12 @@
 //system
 #include <cmath>
 #include <random>
+#include <iostream>
 #include <algorithm>
 #include <type_traits>
 
-#include <Console.h>
-#include <iostream>
+#include <CVConst.h>
+#include <Logging.h>
 
 //! Default color components type (R,G and B)
 using ColorCompType = unsigned char;
@@ -115,7 +116,7 @@ namespace ecvColor
 			}
 			else
 			{
-				if (t(0) > 1 || t(1) > 1 || t(2) > 1)
+                if (t(0) > 1 + EPSILON_VALUE || t(1) > 1 + EPSILON_VALUE || t(2) > 1 + EPSILON_VALUE)
 				{
 					cloudViewer::utility::LogWarning("[ecvColor] Find invalid color: ");
 					std::cout << t << std::endl;
@@ -351,14 +352,34 @@ namespace ecvColor
 	}
 
 	//! Conversion from Rgbf
-	inline Rgb FromRgbf(const Rgbf& color) { return Rgb(static_cast<ColorCompType>(color.r * MAX),
-														static_cast<ColorCompType>(color.g * MAX),
-														static_cast<ColorCompType>(color.b * MAX)); }
+    inline Rgb FromRgbfToRgb(const Rgbf& color) { return Rgb(static_cast<ColorCompType>(color.r * MAX),
+                                                             static_cast<ColorCompType>(color.g * MAX),
+                                                             static_cast<ColorCompType>(color.b * MAX)); }
 
 	//! Conversion from Rgbaf
-	inline Rgb FromRgbf(const Rgbaf& color) { return Rgb(static_cast<ColorCompType>(color.r * MAX),
-														 static_cast<ColorCompType>(color.g * MAX),
-														 static_cast<ColorCompType>(color.b * MAX)); }
+    inline Rgb FromRgbafToRgb(const Rgbaf& color) { return Rgb(static_cast<ColorCompType>(color.r * MAX),
+                                                               static_cast<ColorCompType>(color.g * MAX),
+                                                               static_cast<ColorCompType>(color.b * MAX)); }
+    //! Conversion from Rgb to Rgba
+    inline Rgba FromRgbToRgba(const Rgb& color)
+    {
+        return Rgba(color, MAX);
+    }
+
+    //! Conversion from Rgba to Rgb
+    inline Rgb FromRgbaToRgb(const Rgba& color)
+    {
+        return Rgb(color.r, color.g, color.b);
+    }
+
+    //! Conversion from Rgbaf to Rgba
+    inline Rgba FromRgbafToRgba(const Rgbaf& color)
+    {
+        return Rgba( static_cast<ColorCompType>(color.r * MAX),
+                     static_cast<ColorCompType>(color.g * MAX),
+                     static_cast<ColorCompType>(color.b * MAX),
+                     static_cast<ColorCompType>(color.a * MAX));
+    }
 
 	inline Rgbf FromRgb(const Rgb& color) { return Rgbf(static_cast<float>(1.0 * color.r / MAX),
 														static_cast<float>(1.0 * color.g / MAX),

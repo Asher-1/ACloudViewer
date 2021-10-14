@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,14 +27,13 @@
 #include "OctreeIO.h"
 #include "IJsonConvertibleIO.h"
 
-#include <Console.h>
+#include <Logging.h>
 #include <FileSystem.h>
 
 #include <unordered_map>
 
 namespace cloudViewer {
 namespace io {
-using namespace cloudViewer;
 static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &, geometry::Octree &)>>
@@ -51,7 +50,7 @@ static const std::unordered_map<
 
 std::shared_ptr<geometry::Octree> CreateOctreeFromFile(
         const std::string &filename, const std::string &format) {
-    auto octree = std::make_shared<geometry::Octree>();
+    auto octree = cloudViewer::make_shared<geometry::Octree>();
     WriteOctree(filename, *octree);
     return octree;
 }

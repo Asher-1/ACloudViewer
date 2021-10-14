@@ -135,7 +135,7 @@ ccHObject * cvIsoSurfaceFilter::getOutput()
 
 	if (exportPolylines)
 	{
-		ccHObject::Container container = vtk2ccConverter().getMultiPolylinesFromPolyData(polydata, "Slice", ecvColor::green);
+        ccHObject::Container container = vtk2cc::ConvertToMultiPolylines(polydata, "Slice", ecvColor::green);
 		if (!container.empty() && m_entity)
 		{
 			for (auto & obj : container)

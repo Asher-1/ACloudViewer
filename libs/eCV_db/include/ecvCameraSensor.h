@@ -21,9 +21,11 @@
 //local
 #include "ecvSensor.h"
 #include "ecvOctree.h"
+#include "LineSet.h"
 
 //system
 #include <unordered_set>
+
 
 class ccPointCloud;
 class ccMesh;
@@ -168,9 +170,9 @@ public: //general
 		bool isComputed;
 		bool drawFrustum;
 		bool drawSidePlanes;
-		ccPointCloud* frustumCorners;
-		ccMesh* frustumHull;
-		CCVector3 center;					/**< center of the circumscribed sphere **/
+        ccPointCloud* frustumCorners;
+        ccMesh* frustumHull;
+        CCVector3 center; /**< center of the circumscribed sphere **/
 	};
 
 	//! Default constructor
@@ -181,7 +183,7 @@ public: //general
 	ccCameraSensor(const IntrinsicParameters& iParams);
 
 	//! Destructor
-	virtual ~ccCameraSensor();
+    virtual ~ccCameraSensor() override;
 
 	//inherited from ccHObject
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::CAMERA_SENSOR; }
@@ -467,6 +469,19 @@ public: //misc
 	**/
 	bool computeGlobalPlaneCoefficients(float planeCoefficients[6][4], CCVector3 ptsFrustum[8], CCVector3 edges[6], CCVector3& center);
 
+    const cloudViewer::geometry::LineSet& getNearPlane() const {return m_nearPlane; }
+    const cloudViewer::geometry::LineSet& getSideLines() const {return m_sideLines; }
+    const cloudViewer::geometry::LineSet& getArrow() const {return m_arrow; }
+    const cloudViewer::geometry::LineSet& getAxis() const {return m_axis; }
+
+    void setPlaneColor(ecvColor::Rgb color) {m_plane_color = color; }
+    const ecvColor::Rgb& getPlaneColor() const {return m_plane_color; }
+
+    double getFocalLength() const { return m_focalLength; }
+
+    virtual void clearDrawings() override;
+    virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) override;
+
 public: //helpers
 
 	//! Helper: converts camera focal from pixels to mm
@@ -481,12 +496,14 @@ public: //helpers
 	//! Helper: deduces camera f.o.v. (in radians) from focal (in mm)
 	static float ComputeFovRadFromFocalMm(float focal_mm, float ccdSize_mm);
 
+    void updateData();
+
 protected:
 
-	//! Used internally for display
-	CCVector3 computeUpperLeftPoint() const;
+    //! Used internally for display
+    CCVector3 computeUpperLeftPoint() const;
 
-	//! Compute the projection matrix (from intrinsic parameters)
+    //! Compute the projection matrix (from intrinsic parameters)
 	void computeProjectionMatrix();
 
 	//! Computes the eight corners of the frustum
@@ -496,8 +513,10 @@ protected:
 
 	//Inherited from ccHObject
 	virtual bool toFile_MeOnly(QFile& out) const override;
-	virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 	virtual void drawMeOnly(CC_DRAW_CONTEXT& context) override;
+
+    ecvColor::Rgb m_plane_color;
 
 	//! Camera intrinsic parameters
 	IntrinsicParameters m_intrinsicParams;
@@ -514,6 +533,12 @@ protected:
 	ccGLMatrix m_projectionMatrix;
 	//! Whether the intrinsic matrix is valid or not
 	bool m_projectionMatrixIsValid;
+
+    cloudViewer::geometry::LineSet m_nearPlane;
+    cloudViewer::geometry::LineSet m_sideLines;
+    cloudViewer::geometry::LineSet m_arrow;
+    cloudViewer::geometry::LineSet m_axis;
+    double m_focalLength;
 };
 
 class ccOctreeFrustumIntersector

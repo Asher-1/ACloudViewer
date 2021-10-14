@@ -201,7 +201,7 @@ int ProjectionFilter::compute()
 	}
 
 	TO_PCL_CLOUD(*outCloudxyz, *out_cloud_sm);
-	ccPointCloud* out_cloud_cc = sm2ccConverter(out_cloud_sm).getCloud();
+    ccPointCloud* out_cloud_cc = pcl2cc::Convert(*out_cloud_sm);
 	{
 		if (!out_cloud_cc)
 		{

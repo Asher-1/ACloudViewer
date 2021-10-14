@@ -17,6 +17,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScalesManager.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorTypes.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvCone.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvCoordinateSystem.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvCustomObject.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvCylinder.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvDepthBuffer.h

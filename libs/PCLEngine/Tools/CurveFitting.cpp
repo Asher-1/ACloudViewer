@@ -82,7 +82,7 @@ namespace CurveFittingTool
 		vtkPolyData* result = functionSource->GetOutput();
 		if (!result) return nullptr;
 
-		return vtk2ccConverter().getPolylineFromPolyData(result);
+        return vtk2cc::ConvertToPolyline(result);
 	}
 
 	void CurveFitting::setInputcloud(PointCloudT::Ptr input_cloud) {

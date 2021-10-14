@@ -48,6 +48,9 @@ public:
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::SENSOR; }
 	virtual bool isSerializable() const override { return true; }
 
+    virtual void clearDrawings() = 0;
+    virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) = 0;
+
 	//! Returns the sensor type
 	/** Should be re-implemented by sub-classes
 		\return the sensor type
@@ -118,6 +121,9 @@ public:
 	//! Returns the sensor graphic representation scale
 	PointCoordinateType getGraphicScale() const { return m_scale; }
 
+    void setFrameColor(ecvColor::Rgb color) {m_color = color; }
+    const ecvColor::Rgb& getFrameColor() const {return m_color; }
+
 	//! Apply sensor 'viewport' to a 3D view
 	/** \param win 3D view to which to apply the sensor viewport (or the associated 'display' if 0)
 		\return success
@@ -131,7 +137,7 @@ protected:
 
 	//inherited from ccHObject
 	virtual bool toFile_MeOnly(QFile& out) const override;
-	virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags) override;
+    virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
 
 	//! Positions buffer (optional)
 	ccIndexedTransformationBuffer* m_posBuffer;

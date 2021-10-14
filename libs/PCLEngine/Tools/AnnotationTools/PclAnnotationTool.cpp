@@ -78,10 +78,10 @@ void PclAnnotationTool::initialize(ecvGenericVisualizer3D* viewer)
 	resetMode();
 
 	//init annotation manager
-	m_annoManager.reset(new Annotaions(
-		m_annotationMode == AnnotationMode::BOUNDINGBOX ?
-		m_viewer->getRenderWindowInteractor() : nullptr));
-	
+    m_annoManager.reset(new Annotaions(
+        m_annotationMode == AnnotationMode::BOUNDINGBOX ?
+        m_viewer->getRenderWindowInteractor() : nullptr));
+
 	m_currPickedAnnotation = nullptr;
 
 	// init m_baseCloud
@@ -182,7 +182,7 @@ bool PclAnnotationTool::getCurrentAnnotations(std::vector<int>& annos) const
 	return m_annoManager && m_annoManager->getAnnotations(annos);
 }
 
-bool PclAnnotationTool::setInputCloud(ccPointCloud* cloud, int viewPort)
+bool PclAnnotationTool::setInputCloud(ccPointCloud* cloud, int viewport)
 {
 	PCLCloud::Ptr smCloud = cc2smReader(cloud).getAsSM();
 	if (!smCloud)
@@ -198,7 +198,7 @@ bool PclAnnotationTool::setInputCloud(ccPointCloud* cloud, int viewPort)
 
 	// hide origin cloud
 	{
-		m_baseCloudId = QString::number(cloud->getUniqueID()).toStdString();
+        m_baseCloudId = cloud->getViewId().toStdString();
 		vtkActor* modelActor = m_viewer->getActorById(m_baseCloudId);
 		if (modelActor)
 		{
@@ -277,7 +277,7 @@ void PclAnnotationTool::start()
 
 		if (m_annotationMode == AnnotationMode::BOUNDINGBOX)
 		{
-			m_viewer->setActorPickingEnabled(true);
+            m_viewer->setActorPickingEnabled(true);
 		}
 
 		connect(m_viewer, &PCLVis::interactorPickedEvent, this, &PclAnnotationTool::pickedEventProcess);
@@ -295,7 +295,7 @@ void PclAnnotationTool::stop()
 
 		if (m_annotationMode == AnnotationMode::BOUNDINGBOX)
 		{
-			m_viewer->setActorPickingEnabled(false);
+            m_viewer->setActorPickingEnabled(false);
 		}
 
 		disconnect(m_viewer, &PCLVis::interactorPickedEvent, this, &PclAnnotationTool::pickedEventProcess);
@@ -686,10 +686,10 @@ void PclAnnotationTool::updateCloud()
 	}
 }
 
-void PclAnnotationTool::setPointSize(const std::string & viewID, int viewPort)
+void PclAnnotationTool::setPointSize(const std::string & viewID, int viewport)
 {
 	if (!m_viewer) return;
-	m_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viewID, viewPort);
+	m_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, viewID, viewport);
 }
 
 void PclAnnotationTool::showAnnotation()

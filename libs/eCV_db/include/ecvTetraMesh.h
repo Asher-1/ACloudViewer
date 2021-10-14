@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2019 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,6 +48,8 @@ namespace geometry {
 /// indices to the vertices.
 class ECV_DB_LIB_API TetraMesh : public ecvMeshBase {
 public:
+    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+
 	//! Default ccMesh constructor
 	/** \param vertices the vertices cloud
 	**/
