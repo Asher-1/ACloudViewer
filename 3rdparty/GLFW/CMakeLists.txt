@@ -367,7 +367,7 @@ if (DOXYGEN_FOUND AND GLFW_BUILD_DOCS)
 endif()
 
 #--------------------------------------------------------------------
-# MODIFICATION BY Open3D: overwrite some GLFW cmake variables
+# MODIFICATION BY CloudViewer: overwrite some GLFW cmake variables
 #--------------------------------------------------------------------
 set(GLFW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 # glfw_LIBRARIES is collected by the official GLFW cmake
@@ -381,7 +381,7 @@ set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)
 # Install files other than the library
 # The library is installed by src/CMakeLists.txt
 #--------------------------------------------------------------------
-# MODIFICATION BY Open3D: disable GLFW header install
+# MODIFICATION BY CloudViewer: disable GLFW header install
 #--------------------------------------------------------------------
 # if (GLFW_INSTALL)
 #     install(DIRECTORY include/GLFW DESTINATION include
@@ -397,7 +397,7 @@ set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)
 #     install(FILES "${GLFW_BINARY_DIR}/src/glfw3.pc"
 #             DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
 
-#     Open3D NOTE: need to keep this off in order for the Open3D make uninstall to work
+#     CloudViewer NOTE: need to keep this off in order for the CloudViewer make uninstall to work
 #     Only generate this target if no higher-level project already has
 #     if (NOT TARGET uninstall)
 #         configure_file(cmake_uninstall.cmake.in

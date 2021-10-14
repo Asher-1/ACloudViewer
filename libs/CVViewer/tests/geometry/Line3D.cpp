@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2020-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/Line3D.h"
+#include "geometry/Line3D.h"
 
 #include "tests/UnitTest.h"
 
-using namespace open3d::geometry;
+using namespace cloudViewer::geometry;
 using namespace ::testing;
-using opt_d_t = open3d::utility::optional<double>;
+using opt_d_t = cloudViewer::utility::optional<double>;
 
 using v_t = Eigen::Vector3d;
 using plane_t = Eigen::Hyperplane<double, 3>;
@@ -62,17 +62,17 @@ using cp_t = std::tuple<lt_t, v_t, v_t, lt_t, v_t, v_t, double, double>;
 // Factory function to build appropriate type from enum
 std::shared_ptr<Line3D> LineFactory(lt_t type, const v_t& v0, const v_t& v1) {
     if (type == lt_t::Line) {
-        return std::make_shared<Line3D>(v0, v1);
+        return cloudViewer::make_shared<Line3D>(v0, v1);
     } else if (type == lt_t::Ray) {
-        return std::make_shared<Ray3D>(v0, v1);
+        return cloudViewer::make_shared<Ray3D>(v0, v1);
     } else if (type == lt_t::Segment) {
-        return std::make_shared<Segment3D>(v0, v1);
+        return cloudViewer::make_shared<Segment3D>(v0, v1);
     } else {
         throw std::exception();
     }
 }
 
-namespace open3d {
+namespace cloudViewer {
 namespace tests {
 
 // Line Transformation Tests
@@ -837,4 +837,4 @@ INSTANTIATE_TEST_CASE_P(
                      root2,
                      0.5)));
 }  // namespace tests
-}  // namespace open3d
+}  // namespace cloudViewer

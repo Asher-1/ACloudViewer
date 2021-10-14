@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,18 +26,22 @@
 
 #include "CloudViewer.h"
 
-
 void PrintHelp() {
     using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
     // clang-format off
-    utility::LogInfo("Usage :");
-    utility::LogInfo("    > ProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > ProgramOptions [-h|--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]");
     // clang-format on
+    utility::LogInfo("");
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     using namespace cloudViewer;
-    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help")) {
+
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
@@ -52,11 +56,10 @@ int main(int argc, char *argv[]) {
                      utility::GetProgramOptionAsDouble(argc, argv, "--double"));
     utility::LogInfo("String is {}",
                      utility::GetProgramOptionAsString(argc, argv, "--string"));
-    std::vector<std::string> strs;
-    utility::SplitString(
-            strs, utility::GetProgramOptionAsString(argc, argv, "--string"),
-            ",.", true);
-    for (auto &str : strs) {
+    std::vector<std::string> strs = utility::SplitString(
+            utility::GetProgramOptionAsString(argc, argv, "--string"), ",.",
+            true);
+    for (auto& str : strs) {
         utility::LogInfo("\tSubstring : {}", str);
     }
     Eigen::VectorXd vec =

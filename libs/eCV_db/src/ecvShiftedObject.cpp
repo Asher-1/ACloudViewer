@@ -37,16 +37,15 @@ ccShiftedObject::ccShiftedObject(const ccShiftedObject& s)
 {
 }
 
+void ccShiftedObject::copyGlobalShiftAndScale(const ccShiftedObject &s)
+{
+    setGlobalShift(s.getGlobalShift());
+    setGlobalScale(s.getGlobalScale());
+}
+
 void ccShiftedObject::setGlobalShift(const CCVector3d& shift)
 {
 	m_globalShift = shift;
-}
-
-void ccShiftedObject::setGlobalShift(double x, double y, double z)
-{
-	m_globalShift.x = x;
-	m_globalShift.y = y;
-	m_globalShift.z = z;
 }
 
 void ccShiftedObject::setGlobalScale(double scale)
@@ -86,10 +85,18 @@ bool ccShiftedObject::loadShiftInfoFromFile(QFile& in)
 	return true;
 }
 
-bool ccShiftedObject::getGlobalBB(CCVector3d& minCorner, CCVector3d& maxCorner)
+bool ccShiftedObject::getOwnGlobalBB(CCVector3d& minCorner, CCVector3d& maxCorner)
 {
 	ccBBox box = getOwnBB(false);
 	minCorner = toGlobal3d(box.minCorner());
 	maxCorner = toGlobal3d(box.maxCorner());
 	return box.isValid();
+}
+
+ccHObject::GlobalBoundingBox ccShiftedObject::getOwnGlobalBB(bool withGLFeatures/*=false*/)
+{
+	ccBBox box = getOwnBB(false);
+	CCVector3d minCorner = toGlobal3d(box.minCorner());
+	CCVector3d maxCorner = toGlobal3d(box.maxCorner());
+	return GlobalBoundingBox(minCorner, maxCorner);
 }

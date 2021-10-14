@@ -88,26 +88,26 @@ ccPointPairRegistrationDlg::ccPointPairRegistrationDlg(
 		autoZoomCheckBox->setChecked(autoUpdateZoom);
 	}
 
-	connect(showAlignedCheckBox,	SIGNAL(toggled(bool)),				this,	SLOT(showAlignedEntities(bool)));
-	connect(showReferenceCheckBox,	SIGNAL(toggled(bool)),				this,	SLOT(showReferenceEntities(bool)));
+    connect(showAlignedCheckBox,	&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::showAlignedEntities);
+    connect(showReferenceCheckBox,	&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::showReferenceEntities);
 
-	connect(typeAlignToolButton,	SIGNAL(clicked()),					this,	SLOT(addManualAlignedPoint()));
-	connect(typeRefToolButton,		SIGNAL(clicked()),					this,	SLOT(addManualRefPoint()));
+    connect(typeAlignToolButton,	&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::addManualAlignedPoint);
+    connect(typeRefToolButton,		&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::addManualRefPoint);
 
-	connect(unstackAlignToolButton,	SIGNAL(clicked()),					this,	SLOT(unstackAligned()));
-	connect(unstackRefToolButton,	SIGNAL(clicked()),					this,	SLOT(unstackRef()));
+    connect(unstackAlignToolButton,	&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::unstackAligned);
+    connect(unstackRefToolButton,	&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::unstackRef);
 
-	connect(alignToolButton,		SIGNAL(clicked()),					this,	SLOT(align()));
-	connect(resetToolButton,		SIGNAL(clicked()),					this,	SLOT(reset()));
+    connect(alignToolButton,		&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::align);
+    connect(resetToolButton,		&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::reset);
 
-	connect(validToolButton,		SIGNAL(clicked()),					this,	SLOT(apply()));
-	connect(cancelToolButton,		SIGNAL(clicked()),					this,	SLOT(cancel()));
+    connect(validToolButton,		&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::apply);
+    connect(cancelToolButton,		&QToolButton::clicked,	this,	&ccPointPairRegistrationDlg::cancel);
 
-	connect(adjustScaleCheckBox,	SIGNAL(toggled(bool)),				this,	SLOT(updateAlignInfo()));
-	connect(TxCheckBox,				SIGNAL(toggled(bool)),				this,	SLOT(updateAlignInfo()));
-	connect(TyCheckBox,				SIGNAL(toggled(bool)),				this,	SLOT(updateAlignInfo()));
-	connect(TzCheckBox,				SIGNAL(toggled(bool)),				this,	SLOT(updateAlignInfo()));
-	connect(rotComboBox,			SIGNAL(currentIndexChanged(int)),	this,	SLOT(updateAlignInfo()));
+    connect(adjustScaleCheckBox,	&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::updateAlignInfo);
+    connect(TxCheckBox,				&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::updateAlignInfo);
+    connect(TyCheckBox,				&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::updateAlignInfo);
+    connect(TzCheckBox,				&QCheckBox::toggled,	this,	&ccPointPairRegistrationDlg::updateAlignInfo);
+    connect(rotComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),	this, &ccPointPairRegistrationDlg::updateAlignInfo);
 
 	m_alignedPoints.setEnabled(true);
 	m_alignedPoints.setVisible(false);
@@ -1128,7 +1128,7 @@ void ccPointPairRegistrationDlg::updateSphereMarks(ccHObject* obj, bool remove)
 		if (remove)
 		{
 			context.removeEntityType = ENTITY_TYPE::ECV_MESH;
-			context.removeViewID = QString::number(obj->getUniqueID());
+            context.removeViewID = obj->getViewId();
 			ecvDisplayTools::RemoveEntities(context);
 			obj->showNameIn3D(false);
 		}
@@ -1326,8 +1326,8 @@ bool ccPointPairRegistrationDlg::callHornRegistration(cloudViewer::PointProjecti
 			{
 				const CCVector3* Ri = m_refPoints.getPoint(i);
 				const CCVector3* Li = m_alignedPoints.getPoint(i);
-				CCVector3 Lit = (trans.R.isValid() ? trans.R * (*Li) : (*Li))*trans.s + trans.T;
-				PointCoordinateType dist = (*Ri-Lit).norm();
+				CCVector3d Lit = trans.apply(*Li);
+				double dist = (Ri->toDouble() - Lit).norm();
 
 				QTableWidgetItem* itemA = new QTableWidgetItem();
 				itemA->setData(Qt::EditRole, dist);
@@ -1433,7 +1433,7 @@ void ccPointPairRegistrationDlg::align()
 			CVLog::Print(QString("[PointPairRegistration] Scale: fixed (1.0)"));
 		}
 
-		ccGLMatrix transMat = FromCCLibMatrix<PointCoordinateType, float>(trans.R, trans.T);
+		ccGLMatrix transMat = FromCCLibMatrix<double, float>(trans.R, trans.T);
 		//...virtually
 		m_transMatHistory = transMat;
 		transformAlignedEntity(transMat, true);
@@ -1535,7 +1535,7 @@ void ccPointPairRegistrationDlg::transformAlignedEntity(const ccGLMatrix &transM
 
 		if (!apply)
 		{
-			ecvDisplayTools::RemoveBB(QString::number(it.key()->getUniqueID()));
+            ecvDisplayTools::RemoveBB(it.key()->getViewId());
 		}
 	}
 	m_alignedPoints.applyGLTransformation_recursive(apply ? &transMat : nullptr);
@@ -1632,7 +1632,7 @@ void ccPointPairRegistrationDlg::apply()
 		{
 			trans.R.scale(trans.s);
 		}
-		ccGLMatrix transMat = FromCCLibMatrix<PointCoordinateType,float>(trans.R,trans.T);
+		ccGLMatrix transMat = FromCCLibMatrix<double,float>(trans.R,trans.T);
 		
 		//...for real this time!
 		transformAlignedEntity(transMat, false);

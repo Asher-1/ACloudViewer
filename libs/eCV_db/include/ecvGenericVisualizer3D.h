@@ -19,6 +19,7 @@
 #define ECV_GENERIC_VISUALIZER_3D_HEADER
 
 #include "ecvGenericVisualizer.h"
+#include <CVGeom.h>
 
 //! Generic visualizer 3D interface
 class ECV_DB_LIB_API ecvGenericVisualizer3D : public ecvGenericVisualizer

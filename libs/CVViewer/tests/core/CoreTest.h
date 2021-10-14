@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,12 +28,12 @@
 
 #include <vector>
 
-#include "cloudViewer/core/Device.h"
-#include "cloudViewer/core/SizeVector.h"
+#include "core/Device.h"
+#include "core/SizeVector.h"
 #include "tests/UnitTest.h"
 
 #ifdef BUILD_CUDA_MODULE
-#include "cloudViewer/core/CUDAState.cuh"
+#include "core/CUDAState.cuh"
 #endif
 
 namespace cloudViewer {

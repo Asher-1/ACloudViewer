@@ -101,8 +101,8 @@ ccCameraSensor::FrustumInformation::FrustumInformation()
 	: isComputed(false)
 	, drawFrustum(false)
 	, drawSidePlanes(false)
-	, frustumCorners(0)
-	, frustumHull(0)
+    , frustumCorners(nullptr)
+    , frustumHull(nullptr)
 {}
 
 ccCameraSensor::FrustumInformation::~FrustumInformation()
@@ -111,12 +111,12 @@ ccCameraSensor::FrustumInformation::~FrustumInformation()
 	if (frustumHull)
 	{
 		delete frustumHull;
-		frustumHull = 0;
+        frustumHull = nullptr;
 	}
 	if (frustumCorners)
 	{
 		delete frustumCorners;
-		frustumCorners = 0;
+        frustumCorners = nullptr;
 	}
 }
 
@@ -135,7 +135,7 @@ bool ccCameraSensor::FrustumInformation::initFrustumCorners()
 	{
 		//not enough memory to load frustum corners!
 		delete frustumCorners;
-		frustumCorners = 0;
+        frustumCorners = nullptr;
 		return false;
 	}
 	return true;
@@ -158,7 +158,7 @@ bool ccCameraSensor::FrustumInformation::initFrustumHull()
 	{
 		CVLog::Warning("[ccCameraSensor::FrustumInformation::initFrustumHull] Not enough memory!");
 		delete frustumHull;
-		frustumHull = 0;
+        frustumHull = nullptr;
 		return false;
 	}
 
@@ -187,6 +187,7 @@ bool ccCameraSensor::FrustumInformation::initFrustumHull()
 
 ccCameraSensor::ccCameraSensor()
 	: ccSensor("Camera Sensor")
+    , m_plane_color(ecvColor::red)
 	, m_projectionMatrixIsValid(false)
 {
 	//graphic representation
@@ -196,6 +197,7 @@ ccCameraSensor::ccCameraSensor()
 
 ccCameraSensor::ccCameraSensor(const IntrinsicParameters& iParams)
 	: ccSensor("Camera Sensor")
+    , m_plane_color(ecvColor::red)
 	, m_projectionMatrixIsValid(false)
 {
 	//graphic representation
@@ -208,7 +210,8 @@ ccCameraSensor::ccCameraSensor(const IntrinsicParameters& iParams)
 
 ccCameraSensor::ccCameraSensor(const ccCameraSensor& sensor)
 	: ccSensor(sensor)
-	, m_projectionMatrix(sensor.m_projectionMatrix)
+    , m_plane_color(ecvColor::red)
+    , m_projectionMatrix(sensor.m_projectionMatrix)
 	, m_projectionMatrixIsValid(false)
 {
 	setIntrinsicParameters(sensor.m_intrinsicParams);
@@ -317,7 +320,12 @@ ccBBox ccCameraSensor::getOwnFitBB(ccGLMatrix& trans)
 	trans = sensorPos;
 
 	CCVector3 upperLeftPoint = computeUpperLeftPoint();
-	return ccBBox(-upperLeftPoint, CCVector3(upperLeftPoint.x, upperLeftPoint.x, 0));
+    if (upperLeftPoint.z > 0) {
+        return ccBBox(-upperLeftPoint, CCVector3(upperLeftPoint.x, upperLeftPoint.y, 0));
+    }
+    else {
+        return ccBBox(CCVector3(upperLeftPoint.x, upperLeftPoint.y, 0), -upperLeftPoint);
+    }
 }
 
 void ccCameraSensor::setVertFocal_pix(float vertFocal_pix)
@@ -366,13 +374,47 @@ bool ccCameraSensor::applyViewport()
 		return false;
 	}
 
-	//aspect ratio
-	float ar = static_cast<float>(m_intrinsicParams.arrayWidth) / m_intrinsicParams.arrayHeight;
-	//fov
-    float fov_deg = cloudViewer::RadiansToDegrees(m_intrinsicParams.vFOV_rad);
-	//camera position/orientation
-	ccGLMatrixd transd(trans.data());
-	ecvDisplayTools::SetupProjectiveViewport(transd, fov_deg, ar);
+    float fov_deg = cloudViewer::RadiansToDegrees( m_intrinsicParams.vFOV_rad );
+
+    ecvViewportParameters viewParams = ecvDisplayTools::GetViewportParameters();
+    viewParams.fov_deg = fov_deg;
+    viewParams.zFar = static_cast<double>(m_intrinsicParams.zFar_mm);
+    viewParams.zNear = static_cast<double>(m_intrinsicParams.zNear_mm);
+
+    CCVector3 upperLeftPointd = computeUpperLeftPoint();
+
+    // pos
+    CCVector3 camC = trans.getTranslationAsVec3D();
+    viewParams.setCameraCenter(CCVector3d::fromArray(camC));
+
+    int flag = 1;
+    if (upperLeftPointd.z > 0)
+    {
+        flag = 1;
+    }
+    else
+    {
+        flag = -1;
+    }
+
+    // up
+    CCVector3 upDir = flag * trans.getColumnAsVec3D(1);
+    upDir.normalize();
+    if ( cloudViewer::LessThanEpsilon( std::fabs(upDir.norm()) ) )
+    {
+        CVLog::Warning("[ccCameraSensor::applyViewport] Viewing dir is parallel to the plane Y!");
+        return false;
+    }
+    viewParams.up = CCVector3d::fromArray(upDir);
+
+    // focal
+    CCVector3 viewDir = flag * trans.getColumnAsVec3D(2);
+    CCVector3 focal3D = camC - viewDir;
+    viewParams.focal = CCVector3d::fromArray(focal3D);
+    viewParams.setPivotPoint(viewParams.focal, true);
+
+    ecvDisplayTools::SetViewportParameters(viewParams);
+    ecvDisplayTools::UpdateScreen();
 
 	return true;
 }
@@ -488,9 +530,9 @@ bool ccCameraSensor::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccCameraSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccCameraSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccSensor::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccSensor::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//serialization wasn't possible before v3.5!
@@ -502,7 +544,7 @@ bool ccCameraSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
 	{
 		//we don't need to save/load this matrix as it is dynamically computed!
 		ccGLMatrix dummyMatrix;
-		if (!dummyMatrix.fromFile(in, dataVersion, flags))
+        if (!dummyMatrix.fromFile(in, dataVersion, flags, oldToNewIDMap))
 			return ReadError();
 	}
 	m_projectionMatrixIsValid = false;
@@ -857,12 +899,6 @@ bool ccCameraSensor::fromRealImCoordToIdealImCoord(const CCVector2& real, CCVect
 	return false;
 }
 
-//TODO
-//bool ccCameraSensor::fromIdealImCoordToRealImCoord(const CCVector2& ideal, CCVector2& real) const
-//{
-//	return true;
-//}
-
 bool ccCameraSensor::computeUncertainty(const CCVector2& pixel, const float depth, Vector3Tpl<ScalarType>& sigma) const
 {
 	//no distortion parameters?
@@ -1095,14 +1131,14 @@ ccImage* ccCameraSensor::undistort(ccImage* image, bool inplace/*=true*/) const
 	if (!image || image->data().isNull())
 	{
 		CVLog::Warning("[ccCameraSensor::undistort] Invalid/empty input image!");
-		return 0;
+        return nullptr;
 	}
 
 	QImage newImage = undistort(image->data());
 	if (newImage.isNull())
 	{
 		//warning message should have been already issued
-		return 0;
+        return nullptr;
 	}
 
 	//update image parameters
@@ -1139,13 +1175,14 @@ CCVector3 ccCameraSensor::computeUpperLeftPoint() const
 	if (m_intrinsicParams.arrayHeight == 0)
 		return CCVector3(0,0,0);
 
-	float ar = m_intrinsicParams.arrayHeight != 0 ? static_cast<float>(m_intrinsicParams.arrayWidth) / m_intrinsicParams.arrayHeight : 1.0f;
+    float ar = m_intrinsicParams.arrayHeight != 0 ?
+                static_cast<float>(m_intrinsicParams.arrayWidth) / m_intrinsicParams.arrayHeight : 1.0f;
 	float halfFov = m_intrinsicParams.vFOV_rad / 2;
 
 	CCVector3 upperLeftPoint;
 	upperLeftPoint.z = m_scale * ConvertFocalPixToMM(m_intrinsicParams.vertFocal_pix, m_intrinsicParams.pixelSize_mm[1]);
-	upperLeftPoint.y = upperLeftPoint.z * tan(halfFov);
-	upperLeftPoint.x = upperLeftPoint.z * tan(halfFov * ar);
+    upperLeftPoint.y = upperLeftPoint.z * tanf(halfFov);
+    upperLeftPoint.x = upperLeftPoint.z * tanf(halfFov * ar);
 
 	return upperLeftPoint;
 }
@@ -1173,15 +1210,17 @@ bool ccCameraSensor::computeFrustumCorners()
 		return false;
 	}
 
+    PointCoordinateType orientation = -PC_ONE * m_scale / std::abs(m_scale);
+
 	// DO NOT MODIFY THE ORDER OF THE CORNERS!! A LOT OF CODE DEPENDS OF THIS ORDER!!
-	m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn, yIn, -PC_ONE) * zNear);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn, yIn, -PC_ONE) * zFar);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn,-yIn, -PC_ONE) * zNear);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn,-yIn, -PC_ONE) * zFar);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn,-yIn, -PC_ONE) * zNear);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn,-yIn, -PC_ONE) * zFar);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn, yIn, -PC_ONE) * zNear);
-	m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn, yIn, -PC_ONE) * zFar);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn, yIn, orientation) * zNear);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn, yIn, orientation) * zFar);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn,-yIn, orientation) * zNear);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3( xIn,-yIn, orientation) * zFar);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn,-yIn, orientation) * zNear);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn,-yIn, orientation) * zFar);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn, yIn, orientation) * zNear);
+    m_frustumInfos.frustumCorners->addPoint(CCVector3(-xIn, yIn, orientation) * zFar);
 
 	// compute center of the circumscribed sphere
 	const CCVector3* P0 = m_frustumInfos.frustumCorners->getPoint(0);
@@ -1321,6 +1360,79 @@ bool ccCameraSensor::computeGlobalPlaneCoefficients(float planeCoefficients[6][4
 	return true;
 }
 
+void ccCameraSensor::updateData()
+{
+    CCVector3d upperLeftPointd = CCVector3d::fromArray(computeUpperLeftPoint().data());
+
+    // near plane
+    m_nearPlane.clear();
+    m_nearPlane.points_.push_back(Eigen::Vector3d(upperLeftPointd.x,  upperLeftPointd.y,  -upperLeftPointd.z));
+    m_nearPlane.points_.push_back(Eigen::Vector3d(-upperLeftPointd.x, upperLeftPointd.y,  -upperLeftPointd.z));
+    m_nearPlane.points_.push_back(Eigen::Vector3d(-upperLeftPointd.x, -upperLeftPointd.y, -upperLeftPointd.z));
+    m_nearPlane.points_.push_back(Eigen::Vector3d(upperLeftPointd.x,  -upperLeftPointd.y, -upperLeftPointd.z));
+    m_nearPlane.lines_.push_back(Eigen::Vector2i(0, 1));
+    m_nearPlane.lines_.push_back(Eigen::Vector2i(1, 2));
+    m_nearPlane.lines_.push_back(Eigen::Vector2i(2, 3));
+    m_nearPlane.lines_.push_back(Eigen::Vector2i(3, 0));
+
+    // side lines
+    m_sideLines.clear();
+    m_sideLines.points_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
+    m_sideLines.points_.push_back(Eigen::Vector3d(upperLeftPointd.x,  upperLeftPointd.y, -upperLeftPointd.z));
+    m_sideLines.points_.push_back(Eigen::Vector3d(-upperLeftPointd.x,  upperLeftPointd.y, -upperLeftPointd.z));
+    m_sideLines.points_.push_back(Eigen::Vector3d(-upperLeftPointd.x, -upperLeftPointd.y, -upperLeftPointd.z));
+    m_sideLines.points_.push_back(Eigen::Vector3d(upperLeftPointd.x, -upperLeftPointd.y, -upperLeftPointd.z));
+    m_sideLines.lines_.push_back(Eigen::Vector2i(0, 1));
+    m_sideLines.lines_.push_back(Eigen::Vector2i(0, 2));
+    m_sideLines.lines_.push_back(Eigen::Vector2i(0, 3));
+    m_sideLines.lines_.push_back(Eigen::Vector2i(0, 4));
+
+    // up arrow
+    const double arrowHeight		= 3 * upperLeftPointd.y / 2;
+    const double baseHeight         = 6 * upperLeftPointd.y / 5;
+    const double arrowHalfWidth     = 2 * upperLeftPointd.x / 5;
+    const double baseHalfWidth		= 1 * upperLeftPointd.x / 5;
+
+    // arrow
+    m_arrow.clear();
+    m_arrow.points_.push_back(Eigen::Vector3d(-baseHalfWidth, baseHeight, -upperLeftPointd.z));
+    m_arrow.points_.push_back(Eigen::Vector3d(baseHalfWidth, baseHeight, -upperLeftPointd.z));
+    m_arrow.points_.push_back(Eigen::Vector3d(baseHalfWidth, upperLeftPointd.y, -upperLeftPointd.z));
+    m_arrow.points_.push_back(Eigen::Vector3d(-baseHalfWidth, upperLeftPointd.y, -upperLeftPointd.z));
+    m_arrow.lines_.push_back(Eigen::Vector2i(0, 1));
+    m_arrow.lines_.push_back(Eigen::Vector2i(1, 2));
+    m_arrow.lines_.push_back(Eigen::Vector2i(2, 3));
+    m_arrow.lines_.push_back(Eigen::Vector2i(3, 0));
+    m_arrow.points_.push_back(Eigen::Vector3d(-arrowHalfWidth, baseHeight,  -upperLeftPointd.z));
+    m_arrow.points_.push_back(Eigen::Vector3d(arrowHalfWidth, baseHeight,  -upperLeftPointd.z));
+    m_arrow.points_.push_back(Eigen::Vector3d(0, arrowHeight, -upperLeftPointd.z));
+    m_arrow.lines_.push_back(Eigen::Vector2i(4, 5));
+    m_arrow.lines_.push_back(Eigen::Vector2i(5, 6));
+    m_arrow.lines_.push_back(Eigen::Vector2i(6, 4));
+
+    //axis (for test)
+    {
+        double l = std::abs(upperLeftPointd.z) / 2.0;
+        m_axis.clear();
+        m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
+        m_axis.points_.push_back(Eigen::Vector3d(l, 0.0, 0.0));
+        m_axis.points_.push_back(Eigen::Vector3d(0.0, l, 0.0));
+        m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, -l));
+
+        // right vector
+        m_axis.lines_.push_back(Eigen::Vector2i(0, 1));
+        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::red));
+
+        // up vector
+        m_axis.lines_.push_back(Eigen::Vector2i(0, 2));
+        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::yellow));
+
+        // view vector
+        m_axis.lines_.push_back(Eigen::Vector2i(0, 3));
+        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::green));
+    }
+}
+
 void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
 {
 	if (!MACRO_Draw3D(context))
@@ -1332,204 +1444,158 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
 		return;
 	}
 
-	bool pushName = MACRO_DrawEntityNames(context);
+    // build-up the normal representation own 'context'
+    CC_DRAW_CONTEXT cameraContext = context;
+    // we must remove the 'push name flag' so that the primitives don't push their own!
+    cameraContext.drawingFlags &= (~CC_DRAW_ENTITY_NAMES);
+    cameraContext.currentLineWidth = 1;
+    cameraContext.defaultPolylineColor = getFrameColor();
+    cameraContext.defaultMeshColor = getPlaneColor();
+    cameraContext.opacity = 0.2f;
+    ccIndexedTransformation sensorPos;
+    if (!getAbsoluteTransformation(sensorPos, getActiveIndex()))
+    {
+        //no visible position for this index!
+        return;
+    }
 
-	if (pushName)
-	{
-		//not particularly fast
-		if (MACRO_DrawFastNamesOnly(context))
-			return;
-		//glFunc->glPushName(getUniqueID());
-	}
+    // update drawing data
+    updateData();
 
-	//glFunc->glMatrixMode(GL_MODELVIEW);
-	//glFunc->glPushMatrix();
-	{
-		ccIndexedTransformation sensorPos;
-		if (!getAbsoluteTransformation(sensorPos,m_activeIndex))
-		{
-			//no visible position for this index!
-			//glFunc->glPopMatrix();
-			if (pushName)
-				//glFunc->glPopName();
-			return;
-		}
+    //frustum
+    if (m_frustumInfos.drawFrustum || m_frustumInfos.drawSidePlanes)
+    {
+        // always compute corners
+        computeFrustumCorners();
 
-		//glFunc->glMultMatrixf(sensorPos.data());
-	}
+        if (m_frustumInfos.frustumCorners && m_frustumInfos.frustumCorners->size() >= 8)
+        {
+            //frustum area (lines)
+            if (m_frustumInfos.drawFrustum)
+            {
+                const CCVector3* P0 = m_frustumInfos.frustumCorners->getPoint(0);
+                const CCVector3* P1 = m_frustumInfos.frustumCorners->getPoint(1);
+                const CCVector3* P2 = m_frustumInfos.frustumCorners->getPoint(2);
+                const CCVector3* P3 = m_frustumInfos.frustumCorners->getPoint(3);
+                const CCVector3* P4 = m_frustumInfos.frustumCorners->getPoint(4);
+                const CCVector3* P5 = m_frustumInfos.frustumCorners->getPoint(5);
+                const CCVector3* P6 = m_frustumInfos.frustumCorners->getPoint(6);
+                const CCVector3* P7 = m_frustumInfos.frustumCorners->getPoint(7);
 
-	CCVector3 upperLeftPoint = computeUpperLeftPoint();
+                cameraContext.currentLineWidth = 2;
 
-	//up arrow
-	const PointCoordinateType arrowHeight		= 3 * upperLeftPoint.y / 2;
-	const PointCoordinateType baseHeight		= 6 * upperLeftPoint.y / 5;
-	const PointCoordinateType arrowHalfWidth	= 2 * upperLeftPoint.x / 5;
-	const PointCoordinateType baseHalfWidth		= 1 * upperLeftPoint.x / 5;
+                m_sideLines.points_.push_back(CCVector3d::fromArray(*P0)); // 5
+                m_sideLines.points_.push_back(CCVector3d::fromArray(*P1)); // 6
+                m_sideLines.points_.push_back(CCVector3d::fromArray(*P2)); // 7
+                m_sideLines.points_.push_back(CCVector3d::fromArray(*P3)); // 8
+                m_sideLines.points_.push_back(CCVector3d::fromArray(*P4)); // 9
+                m_sideLines.points_.push_back(CCVector3d::fromArray(*P5)); // 10
+                m_sideLines.points_.push_back(CCVector3d::fromArray(*P6)); // 11
+                m_sideLines.points_.push_back(CCVector3d::fromArray(*P7)); // 12
 
-	//glFunc->glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	//ccGL::Color3v(glFunc, m_color.rgb);
+                m_sideLines.lines_.push_back(Eigen::Vector2i(5, 6));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(6, 8));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(8, 7));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(7, 5));
 
-	////near plane
-	//glFunc->glBegin(GL_LINE_LOOP);
-	//ccGL::Vertex3(glFunc,  upperLeftPoint.x,  upperLeftPoint.y, -upperLeftPoint.z);
-	//ccGL::Vertex3(glFunc, -upperLeftPoint.x,  upperLeftPoint.y, -upperLeftPoint.z);
-	//ccGL::Vertex3(glFunc, -upperLeftPoint.x, -upperLeftPoint.y, -upperLeftPoint.z);
-	//ccGL::Vertex3(glFunc,  upperLeftPoint.x, -upperLeftPoint.y, -upperLeftPoint.z);
-	//glFunc->glEnd();
+                m_sideLines.lines_.push_back(Eigen::Vector2i(7, 8));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(8, 10));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(10, 9));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(9, 7));
 
-	////force line size
-	//glFunc->glPushAttrib(GL_LINE_BIT);
-	//glFunc->glLineWidth(1.0f);
+                m_sideLines.lines_.push_back(Eigen::Vector2i(9, 10));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(10, 12));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(12, 11));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(11, 9));
 
-	////side lines
-	//glFunc->glBegin(GL_LINES);
-	//glFunc->glVertex3f(0.0f, 0.0f, 0.0f);
-	//ccGL::Vertex3(glFunc,  upperLeftPoint.x,  upperLeftPoint.y, -upperLeftPoint.z);
-	//glFunc->glVertex3f(0.0f, 0.0f, 0.0f);
-	//ccGL::Vertex3(glFunc, -upperLeftPoint.x,  upperLeftPoint.y, -upperLeftPoint.z);
-	//glFunc->glVertex3f(0.0f, 0.0f, 0.0f);
-	//ccGL::Vertex3(glFunc, -upperLeftPoint.x, -upperLeftPoint.y, -upperLeftPoint.z);
-	//glFunc->glVertex3f(0.0f, 0.0f, 0.0f);
-	//ccGL::Vertex3(glFunc,  upperLeftPoint.x, -upperLeftPoint.y, -upperLeftPoint.z);
-	//glFunc->glEnd();
+                m_sideLines.lines_.push_back(Eigen::Vector2i(11, 12));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(12, 6));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(6, 5));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(5, 11));
 
-	//glFunc->glPopAttrib(); //GL_LINE_BIT
+                m_sideLines.lines_.push_back(Eigen::Vector2i(11, 5));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(5, 7));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(7, 9));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(9, 11));
 
-	////base
-	//glFunc->glBegin(GL_QUADS);
-	//ccGL::Vertex3(glFunc, -baseHalfWidth, upperLeftPoint.y, -upperLeftPoint.z);
-	//ccGL::Vertex3(glFunc,  baseHalfWidth, upperLeftPoint.y, -upperLeftPoint.z);
-	//ccGL::Vertex3(glFunc,  baseHalfWidth, baseHeight,       -upperLeftPoint.z);
-	//ccGL::Vertex3(glFunc, -baseHalfWidth, baseHeight,       -upperLeftPoint.z);
-	//glFunc->glEnd();
+                m_sideLines.lines_.push_back(Eigen::Vector2i(6, 12));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(12, 10));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(10, 8));
+                m_sideLines.lines_.push_back(Eigen::Vector2i(8, 6));
+            }
 
-	////arrow
-	//glFunc->glBegin(GL_TRIANGLES);
-	//ccGL::Vertex3(glFunc,  0,              arrowHeight, -upperLeftPoint.z);
-	//ccGL::Vertex3(glFunc, -arrowHalfWidth, baseHeight,  -upperLeftPoint.z);
-	//ccGL::Vertex3(glFunc,  arrowHalfWidth, baseHeight,  -upperLeftPoint.z);
-	//glFunc->glEnd();
+            //frustum area (planes)
+            if (m_frustumInfos.drawSidePlanes)
+            {
+                if (!m_frustumInfos.frustumHull && m_frustumInfos.initFrustumHull())
+                {
+                    if (m_frustumInfos.isComputed)
+                    {
+                        m_frustumInfos.frustumCorners->applyRigidTransformation(sensorPos);
+                    }
 
-	//frustum
-	if (m_frustumInfos.drawFrustum || m_frustumInfos.drawSidePlanes)
-	{
-		if (!m_frustumInfos.isComputed)
-			computeFrustumCorners();
+                    //set the rigth display (just to be sure)
+                    m_frustumInfos.frustumHull->setTempColor(m_color);
+                    m_frustumInfos.frustumHull->showWired(false);
+                    m_frustumInfos.frustumHull->enableStippling(true);
+                    m_frustumInfos.frustumHull->setOpacity(cameraContext.opacity);
+                    cameraContext.defaultMeshColor = m_color;
+                    cameraContext.meshRenderingMode = MESH_RENDERING_MODE::ECV_SURFACE_MODE;
+                    cameraContext.viewID = m_frustumInfos.frustumHull->getViewId();
+                    ecvDisplayTools::Draw(cameraContext, m_frustumInfos.frustumHull);
+                }
+            }
+        }
+    }
 
-		if (m_frustumInfos.frustumCorners && m_frustumInfos.frustumCorners->size() >= 8)
-		{
-			//frustum area (lines)
-			if (m_frustumInfos.drawFrustum)
-			{
-				const CCVector3* P0 = m_frustumInfos.frustumCorners->getPoint(0);
-				const CCVector3* P1 = m_frustumInfos.frustumCorners->getPoint(1);
-				const CCVector3* P2 = m_frustumInfos.frustumCorners->getPoint(2);
-				const CCVector3* P3 = m_frustumInfos.frustumCorners->getPoint(3);
-				const CCVector3* P4 = m_frustumInfos.frustumCorners->getPoint(4);
-				const CCVector3* P5 = m_frustumInfos.frustumCorners->getPoint(5);
-				const CCVector3* P6 = m_frustumInfos.frustumCorners->getPoint(6);
-				const CCVector3* P7 = m_frustumInfos.frustumCorners->getPoint(7);
+    // frustum area (planes)
+    if (m_frustumInfos.frustumHull)
+    {
+        cameraContext.visible = context.visible && m_frustumInfos.drawSidePlanes;
+        cameraContext.viewID = m_frustumInfos.frustumHull->getViewId();
+        ecvDisplayTools::HideShowEntities(cameraContext);
+    }
 
-				/*glFunc->glPushAttrib(GL_LINE_BIT);
-				glFunc->glLineWidth(2.0);
+    // tranformation
+    {
+        Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
+        m_nearPlane.transform(transformation);
+        m_nearPlane.setTempColor(getPlaneColor());
+        m_sideLines.transform(transformation);
+        m_sideLines.setTempColor(getFrameColor());
+        m_arrow.transform(transformation);
+        m_arrow.setTempColor(getFrameColor());
+        m_axis.transform(transformation);
+    }
 
-				glFunc->glBegin(GL_LINE_LOOP);
-				ccGL::Vertex3v(glFunc, P0->u);
-				ccGL::Vertex3v(glFunc, P1->u);
-				ccGL::Vertex3v(glFunc, P3->u);
-				ccGL::Vertex3v(glFunc, P2->u);
-				glFunc->glEnd();
-				glFunc->glBegin(GL_LINE_LOOP);
-				ccGL::Vertex3v(glFunc, P2->u);
-				ccGL::Vertex3v(glFunc, P3->u);
-				ccGL::Vertex3v(glFunc, P5->u);
-				ccGL::Vertex3v(glFunc, P4->u);
-				glFunc->glEnd();
-				glFunc->glBegin(GL_LINE_LOOP);
-				ccGL::Vertex3v(glFunc, P4->u);
-				ccGL::Vertex3v(glFunc, P5->u);
-				ccGL::Vertex3v(glFunc, P7->u);
-				ccGL::Vertex3v(glFunc, P6->u);
-				glFunc->glEnd();
-				glFunc->glBegin(GL_LINE_LOOP);
-				ccGL::Vertex3v(glFunc, P6->u);
-				ccGL::Vertex3v(glFunc, P7->u);
-				ccGL::Vertex3v(glFunc, P1->u);
-				ccGL::Vertex3v(glFunc, P0->u);
-				glFunc->glEnd();
-				glFunc->glBegin(GL_LINE_LOOP);
-				ccGL::Vertex3v(glFunc, P6->u);
-				ccGL::Vertex3v(glFunc, P0->u);
-				ccGL::Vertex3v(glFunc, P2->u);
-				ccGL::Vertex3v(glFunc, P4->u);
-				glFunc->glEnd();
-				glFunc->glBegin(GL_LINE_LOOP);
-				ccGL::Vertex3v(glFunc, P1->u);
-				ccGL::Vertex3v(glFunc, P7->u);
-				ccGL::Vertex3v(glFunc, P5->u);
-				ccGL::Vertex3v(glFunc, P3->u);
-				glFunc->glEnd();
+    cameraContext.visible = context.visible;
+    cameraContext.viewID = context.viewID;
+    cameraContext.defaultMeshColor = getPlaneColor();
+    ecvDisplayTools::Draw(cameraContext, this);
+}
 
-				glFunc->glPopAttrib();*/
-			}
+void ccCameraSensor::clearDrawings()
+{
+    if (m_frustumInfos.frustumHull)
+    {
+        CC_DRAW_CONTEXT context;
+        context.removeEntityType = ENTITY_TYPE::ECV_MESH;
+        context.removeViewID = m_frustumInfos.frustumHull->getViewId();
+        ecvDisplayTools::RemoveEntities(context);
+    }
+    ecvDisplayTools::RemoveEntities(this);
+}
 
-			//frustum area (planes)
-			if (m_frustumInfos.drawSidePlanes && m_frustumInfos.initFrustumHull())
-			{
-				//set the rigth display (just to be sure)
-				//m_frustumInfos.frustumHull->setDisplay(getDisplay());
-				m_frustumInfos.frustumHull->setTempColor(m_color);
+void ccCameraSensor::hideShowDrawings(CC_DRAW_CONTEXT& context)
+{
+    context.viewID = this->getViewId();
+    ecvDisplayTools::HideShowEntities(context);
 
-				//glFunc->glPushAttrib(GL_COLOR_BUFFER_BIT);
-				//glFunc->glEnable(GL_BLEND);
-				//glFunc->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-				//glFunc->glColor4ub(m_color.x, m_color.y, m_color.z, 76);
-
-				m_frustumInfos.frustumHull->showWired(false);
-				m_frustumInfos.frustumHull->enableStippling(true);
-				m_frustumInfos.frustumHull->draw(context);
-
-				//glFunc->glPopAttrib();
-			}
-		}
-	}
-
-	//axis (for test)
-	if (!pushName)
-	{
-		//glFunc->glPushAttrib(GL_LINE_BIT);
-		//glFunc->glLineWidth(2.0f);
-
-		float l = static_cast<float>(fabs(upperLeftPoint.z)/2);
-
-		// right vector
-		//ccGL::Color3v(glFunc, ecvColor::red.rgb);
-		//glFunc->glBegin(GL_LINES);
-		//glFunc->glVertex3f(0.0f, 0.0f, 0.0f);
-		//glFunc->glVertex3f(l, 0.0f, 0.0f);
-		//glFunc->glEnd();
-
-		//// up vector
-		//ccGL::Color3v(glFunc, ecvColor::green.rgb);
-		//glFunc->glBegin(GL_LINES);
-		//glFunc->glVertex3f(0.0f, 0.0f, 0.0f);
-		//glFunc->glVertex3f(0.0f, l, 0.0f);
-		//glFunc->glEnd();
-
-		//// view vector
-		//ccGL::Color3v(glFunc, ecvColor::blue.rgb);
-		//glFunc->glBegin(GL_LINES);
-		//glFunc->glVertex3f(0.0f, 0.0f, 0.0f);
-		//glFunc->glVertex3f(0.0f, 0.0f, -l);
-		//glFunc->glEnd();
-
-		//glFunc->glPopAttrib(); //GL_LINE_BIT
-	}
-
-	//if (pushName)
-		//glFunc->glPopName();
-
-	//glFunc->glPopMatrix();
+    if (m_frustumInfos.frustumHull)
+    {
+        ecvDisplayTools::HideShowEntities(m_frustumInfos.frustumHull,
+                                          context.visible && m_frustumInfos.drawSidePlanes);
+    }
 }
 
 float ccCameraSensor::ConvertFocalPixToMM(float focal_pix, float ccdPixelSize_mm)
@@ -1562,7 +1628,7 @@ float ccCameraSensor::ComputeFovRadFromFocalPix(float focal_pix, int imageSize_p
 		return -1.0f;
 	}
 
-	return 2 * atan( imageSize_pix / (2*focal_pix) );
+    return 2 * atanf( imageSize_pix / (2*focal_pix) );
 }
 
 float ccCameraSensor::ComputeFovRadFromFocalMm(float focal_mm, float ccdSize_mm)
@@ -1573,7 +1639,7 @@ float ccCameraSensor::ComputeFovRadFromFocalMm(float focal_mm, float ccdSize_mm)
 		return -1.0f;
 	}
 
-	return 2 * atan( ccdSize_mm / (2 * focal_mm) );
+    return 2 * atanf( ccdSize_mm / (2 * focal_mm) );
 }
 
 bool ccCameraSensor::computeOrthoRectificationParams(const ccImage* image,
@@ -1708,9 +1774,9 @@ bool ccCameraSensor::computeOrthoRectificationParams(const ccImage* image,
 	}
 
 	delete[] A;
-	A = 0;
+    A = nullptr;
 	delete[] b;
-	b = 0;
+    b = nullptr;
 
 	a_out[0] = X0[0];
 	a_out[1] = X0[1];
@@ -1744,7 +1810,7 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(const ccImage* image,
 		CCVector2 xTopLeft(0, 0);
 		CCVector3 P3D;
 		if (!fromImageCoordToGlobalCoord(xTopLeft, P3D, Z0))
-			return 0;
+            return nullptr;
 #ifdef QT_DEBUG
 		//internal check
 		CCVector2 check(0, 0);
@@ -1760,7 +1826,7 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(const ccImage* image,
 		CCVector2 xTopRight(static_cast<PointCoordinateType>(width), 0);
 		CCVector3 P3D;
 		if (!fromImageCoordToGlobalCoord(xTopRight, P3D, Z0))
-			return 0;
+            return nullptr;
 #ifdef QT_DEBUG
 		//internal check
 		CCVector2 check(0, 0);
@@ -1776,7 +1842,7 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(const ccImage* image,
 		CCVector2 xBottomRight(static_cast<PointCoordinateType>(width), static_cast<PointCoordinateType>(height));
 		CCVector3 P3D;
 		if (!fromImageCoordToGlobalCoord(xBottomRight, P3D, Z0))
-			return 0;
+            return nullptr;
 #ifdef QT_DEBUG
 		//internal check
 		CCVector2 check(0, 0);
@@ -1792,7 +1858,7 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(const ccImage* image,
 		CCVector2 xBottomLeft(0, static_cast<PointCoordinateType>(height));
 		CCVector3 P3D;
 		if (!fromImageCoordToGlobalCoord(xBottomLeft, P3D, Z0))
-			return 0;
+            return  nullptr;
 #ifdef QT_DEBUG
 		//internal check
 		CCVector2 check(0, 0);
@@ -1850,7 +1916,7 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(const ccImage* image,
 
 	QImage orthoImage(w, h, QImage::Format_ARGB32);
 	if (orthoImage.isNull()) //not enough memory!
-		return 0;
+        return nullptr;
 
 	const QRgb blackValue = qRgb(0, 0, 0);
 	const QRgb blackAlphaZero = qRgba(0, 0, 0, 0);
@@ -1899,7 +1965,7 @@ ccImage* ccCameraSensor::orthoRectifyAsImage(const ccImage* image,
 
 	if (!computeOrthoRectificationParams(image, keypoints3D, keypointsImage, a, b, c))
 	{
-		return 0;
+        return nullptr;
 	}
 
 	const double& a0 = a[0];
@@ -1998,7 +2064,7 @@ ccImage* ccCameraSensor::orthoRectifyAsImage(const ccImage* image,
 
 	QImage orthoImage(w, h, QImage::Format_ARGB32);
 	if (orthoImage.isNull()) //not enough memory!
-		return 0;
+        return nullptr;
 
 	const QRgb blackValue = qRgb(0, 0, 0);
 	const QRgb blackAlphaZero = qRgba(0, 0, 0, 0);
@@ -2300,7 +2366,7 @@ ccPointCloud* ccCameraSensor::orthoRectifyAsCloud(
 	double a[3], b[3], c[3];
 
 	if (!computeOrthoRectificationParams(image, keypoints3D, keypointsImage, a, b, c))
-		return 0;
+        return nullptr;
 
 	const double& a0 = a[0];
 	const double& a1 = a[1];
@@ -2322,7 +2388,7 @@ ccPointCloud* ccCameraSensor::orthoRectifyAsCloud(
 	{
 		CVLog::Warning("[orthoRectifyAsCloud] Not enough memory!");
 		delete proj;
-		return 0;
+        return nullptr;
 	}
 	proj->showColors(true);
 
@@ -2365,7 +2431,7 @@ ccPointCloud* ccCameraSensor::orthoRectifyAsCloud(
 	{
 		CVLog::Warning(QString("[orthoRectifyAsCloud] Image '%1' was black, nothing to project!").arg(image->getName()));
 		delete proj;
-		proj = 0;
+        proj = nullptr;
 	}
 	else
 	{
@@ -2419,50 +2485,6 @@ bool ccOctreeFrustumIntersector::build(cloudViewer::DgmOctree* octree)
 
 	return true;
 }
-
-//// an other method to compute frustum cell intersection (not used)
-//
-//unsigned char boxIntersectPlane(const CCVector3& minCorner, const CCVector3& maxCorner, const float planeCoefficient[4])
-//{
-//	CCVector3 n(planeCoefficient[0], planeCoefficient[1], planeCoefficient[2]);
-//	float d = planeCoefficient[3];
-//
-//	CCVector3 c = (maxCorner + minCorner) / 2.0;
-//	CCVector3 h = (maxCorner - minCorner) / 2.0;
-//
-//	float e = h[0]*abs(n[0]) + h[1]*abs(n[1]) + h[2]*abs(n[2]);
-//	float s = c.dot(n) + d;
-//
-//	if ((s-e) > 0.0)
-//		return CELL_OUTSIDE_FRUSTUM;
-//	if ((s+e) < 0.0)
-//		return CELL_INSIDE_FRUSTUM;
-//	return CELL_INTERSECT_FRUSTUM;
-//}
-//
-//unsigned char boxIntersectFrustum(const CCVector3& minCorner, const CCVector3& maxCorner, const float planesCoefficients[6][4])
-//{
-//	bool intersecting = false;
-//
-//	for (int i=0 ; i<6 ; i++)
-//	{
-//		float onePlaneCoefficients[4];
-//		for (int j=0 ; j<4 ; j++)
-//			onePlaneCoefficients[j] = planesCoefficients[i][j];
-//
-//		int result = boxIntersectPlane(minCorner, maxCorner, onePlaneCoefficients);
-//
-//		//pay attention to the signification of OUTSIDE and INSIDE there : INSIDE means that the box is in the positive half space delimited by the plane, OUTSIDE means that the box is in the negative half space !!
-//		if (result == CELL_OUTSIDE_FRUSTUM)
-//			return CELL_OUTSIDE_FRUSTUM;
-//		if (result == CELL_INTERSECT_FRUSTUM)
-//			intersecting = true;
-//	}
-//
-//	if (intersecting == true)
-//		return CELL_INTERSECT_FRUSTUM;
-//	return CELL_INSIDE_FRUSTUM;
-//}
 
 ccOctreeFrustumIntersector::OctreeCellVisibility
 ccOctreeFrustumIntersector::separatingAxisTest(const CCVector3& bbMin,

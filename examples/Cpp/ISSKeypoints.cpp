@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,14 +35,25 @@
 
 #include "CloudViewer.h"
 
+void PrintHelp() {
+    using namespace cloudViewer;
+
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > ISSKeypoints [mesh|pointcloud] [filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     using namespace cloudViewer;
 
-    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
-    if (argc < 3) {
-        cloudViewer::utility::LogInfo("CloudViewer {}", CLOUDVIEWER_VERSION);
-        cloudViewer::utility::LogInfo("Usage:");
-        cloudViewer::utility::LogInfo("\t> {} [mesh|pointcloud] [filename] ...\n", argv[0]);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc != 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 
@@ -50,28 +61,28 @@ int main(int argc, char *argv[]) {
     const std::string filename(argv[2]);
     auto cloud = std::make_shared<ccPointCloud>();
     auto mesh = std::make_shared<ccMesh>();
+    mesh->createInternalCloud();
     if (option == "mesh") {
         if (!io::ReadTriangleMesh(filename, *mesh)) {
-            cloudViewer::utility::LogWarning("Failed to read {}", filename);
+            utility::LogWarning("Failed to read {}", filename);
             return 1;
         }
         cloud->setEigenPoints(mesh->getEigenVertices());
     } else if (option == "pointcloud") {
         if (!io::ReadPointCloud(filename, *cloud)) {
-            cloudViewer::utility::LogWarning("Failed to read {}\n\n", filename);
+            utility::LogWarning("Failed to read {}\n\n", filename);
             return 1;
         }
     } else {
-        cloudViewer::utility::LogError("option {} not supported\n", option);
+        utility::LogError("option {} not supported\n", option);
     }
 
     // Compute the ISS Keypoints
     auto iss_keypoints = std::make_shared<ccPointCloud>();
     {
-        cloudViewer::utility::ScopeTimer timer("ISS Keypoints estimation");
+        utility::ScopeTimer timer("ISS Keypoints estimation");
         iss_keypoints = geometry::keypoint::ComputeISSKeypoints(*cloud);
-        cloudViewer::utility::LogInfo("Detected {} keypoints",
-                         iss_keypoints->size());
+        utility::LogInfo("Detected {} keypoints", iss_keypoints->size());
     }
 
     // Visualize the results

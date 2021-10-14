@@ -124,7 +124,7 @@ ccPlane* ccPlane::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double* rm
 	if (count < 3)
 	{
 		CVLog::Warning("[ccPlane::Fit] Not enough points in input cloud to fit a plane!");
-		return 0;
+        return nullptr;
 	}
 
 	cloudViewer::Neighbourhood Yk(cloud);
@@ -134,7 +134,7 @@ ccPlane* ccPlane::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double* rm
 	if (!theLSPlane)
 	{
 		CVLog::Warning("[ccPlane::Fit] Not enough points to fit a plane!");
-		return 0;
+        return nullptr;
 	}
 
 	//get the centroid
@@ -189,7 +189,6 @@ ccPlane* ccPlane::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double* rm
 		plane->setMetaData(QString("RMS"), QVariant(*rms));
 	}
 
-
 	return plane;
 }
 
@@ -206,9 +205,9 @@ bool ccPlane::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccPlane::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccPlane::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccGenericPrimitive::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccGenericPrimitive::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//parameters (dataVersion>=21)

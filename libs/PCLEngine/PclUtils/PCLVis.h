@@ -52,7 +52,15 @@ class vtkRenderWindow;
 class vtkMatrix4x4;
 
 class ccBBox;
+class ecvOrientedBBox;
+class ccSensor;
 class ecvPointpickingTools;
+
+namespace cloudViewer {
+namespace geometry {
+class LineSet;
+}
+}
 
 namespace VTKExtensions
 {
@@ -90,6 +98,7 @@ namespace PclUtils
 		/** \brief Marker Axes.
 		*/
 		void hidePclMarkerAxes();
+        bool pclMarkerAxesShown();
 		void showPclMarkerAxes(vtkRenderWindowInteractor* interactor = nullptr);
 		void hideOrientationMarkerWidgetAxes();
 		void showOrientationMarkerWidgetAxes(vtkRenderWindowInteractor* interactor);
@@ -117,10 +126,13 @@ namespace PclUtils
 		pcl::visualization::Camera getCamera(int viewport = 0);
 		vtkSmartPointer<vtkCamera> getVtkCamera(int viewport = 0);
 
-		double getParallelScale();
+        void setModelViewMatrix(const ccGLMatrixd& viewMat, int viewport = 0);
+        double getParallelScale(int viewport = 0);
+        void setParallelScale(double scale, int viewport = 0);
 
 		void setOrthoProjection(int viewport = 0);
 		void setPerspectiveProjection(int viewport = 0);
+        bool getPerspectiveState(int viewport = 0);
 
 		inline bool getAutoUpateCameraPos() { return m_autoUpdateCameraPos; }
 		inline void setAutoUpateCameraPos(bool state) { m_autoUpdateCameraPos = state; }
@@ -133,7 +145,7 @@ namespace PclUtils
 		/**
 		 * Resets the center of rotation to the focal point.
 		 */
-		void resetCenterOfRotation();
+        void resetCenterOfRotation(int viewport = 0);
 
         static void ExpandBounds(double bounds[6], vtkMatrix4x4 *matrix);
 
@@ -174,10 +186,22 @@ namespace PclUtils
 		 * Synchronizes bounds information on all nodes.
 		 * \note CallOnAllProcesses
 		 */
-		void synchronizeGeometryBounds();
+        void synchronizeGeometryBounds(int viewport = 0);
 
 		// Return a depth value for z-buffer
 		double getGLDepth(int x, int y);
+
+        double getCameraFocalDistance(int viewport = 0);
+        void setCameraFocalDistance(double focal_distance, int viewport = 0);
+
+        /**
+         * In perspective mode, decrease the view angle by the specified factor.
+         * In parallel mode, decrease the parallel scale by the specified factor.
+         * A value greater than 1 is a zoom-in, a value less than 1 is a zoom-out.
+         * @note This setting is ignored when UseExplicitProjectionTransformMatrix
+         * is true.
+         */
+        void zoomCamera(double zoomFactor, int viewport = 0);
 
 		void getProjectionTransformMatrix(Eigen::Matrix4d& proj);
 
@@ -192,25 +216,34 @@ namespace PclUtils
 		   * the view plane is parallel to the view up axis, the view up axis will
 		   * be reset to one of the three coordinate axes.
 		   */
-		void resetCameraClippingRange();
+        void resetCameraClippingRange(int viewport = 0);
+        void internalResetCameraClippingRange() { this->resetCameraClippingRange(0); }
 		void resetCamera(const ccBBox * bbox);
 		void resetCamera(double xMin, double xMax, double yMin, double yMax, double zMin, double zMax);
         inline void resetCamera() { pcl::visualization::PCLVisualizer::resetCamera(); }
 		inline void resetCamera(double bounds[6]) { resetCamera(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]); }
-		void getReasonableClippingRange(double range[2]);
+        void getReasonableClippingRange(double range[2], int viewport = 0);
 		void expandBounds(double bounds[6], vtkMatrix4x4* matrix);
+        void setCameraViewAngle(double viewAngle, int viewport = 0);
 
-		void draw(CC_DRAW_CONTEXT& CONTEXT, PCLCloud::Ptr smCloud);
-		void updateNormals(CC_DRAW_CONTEXT& CONTEXT, PCLCloud::Ptr smCloud);
-		void draw(CC_DRAW_CONTEXT& CONTEXT, PCLMesh::Ptr pclMesh);
-		void draw(CC_DRAW_CONTEXT& CONTEXT, PCLTextureMesh::Ptr textureMesh);
-		void draw(const CC_DRAW_CONTEXT& CONTEXT, PCLPolygon::Ptr pclPolygon, bool closed);
-		bool removeEntities(const CC_DRAW_CONTEXT& CONTEXT);
+        void draw(const CC_DRAW_CONTEXT& context, PCLCloud::Ptr smCloud);
+        void draw(const CC_DRAW_CONTEXT& context, PCLMesh::Ptr pclMesh);
+        void draw(const CC_DRAW_CONTEXT& context, PCLTextureMesh::Ptr textureMesh);
+        void draw(const CC_DRAW_CONTEXT& context, PCLPolygon::Ptr pclPolygon, bool closed);
+        void draw(const CC_DRAW_CONTEXT& context, const ccSensor* sensor);
+        void draw(const CC_DRAW_CONTEXT& context, const cloudViewer::geometry::LineSet* lineset);
+
+        void transformEntities(const CC_DRAW_CONTEXT& context);
+        vtkSmartPointer<vtkTransform> getTransformation(const CC_DRAW_CONTEXT& context,
+                                                        const CCVector3d& origin);
+        void updateNormals(const CC_DRAW_CONTEXT& context, PCLCloud::Ptr smCloud);
+        void updateShadingMode(const CC_DRAW_CONTEXT& context, PCLCloud& smCloud);
+        bool removeEntities(const CC_DRAW_CONTEXT& context);
 		void hideShowActors(bool visibility, const std::string & viewID, int viewport = 0);
 		void hideShowWidgets(bool visibility, const std::string & viewID, int viewport = 0);
 		
-		bool addScalarBar(const CC_DRAW_CONTEXT& CONTEXT);
-		bool updateScalarBar(const CC_DRAW_CONTEXT& CONTEXT);
+        bool addScalarBar(const CC_DRAW_CONTEXT& context);
+        bool updateScalarBar(const CC_DRAW_CONTEXT& context);
 		bool addCaption(const std::string& text,
 			const CCVector2& pos2D,
 			const CCVector3& anchorPos,
@@ -231,34 +264,45 @@ namespace PclUtils
 			double r, double g, double b, float width = 1.0f,
 			const std::string &id = "multiline", int viewport = 0);
 		bool addTextureMesh(const PCLTextureMesh &mesh, const std::string &id, int viewport);
-		bool addOrientedCube(
-				const Eigen::Vector3f &translation, const Eigen::Quaternionf &rotation,
-				double width, double height, double depth, double r = 1.0, double g = 1.0, double b = 1.0, 
-				const std::string &id = "cube", int viewport = 0);
+        bool applyMaterial(const pcl::TexMaterial& material, vtkActor* actor);
+        bool addOrientedCube(const ccGLMatrixd &trans, double width, double height, double depth, double r = 1.0, double g = 1.0, double b = 1.0,
+                             const std::string &id = "cube", int viewport = 0);
+        bool addOrientedCube(const Eigen::Vector3f &translation, const Eigen::Quaternionf &rotation,
+                             double width, double height, double depth, double r = 1.0, double g = 1.0, double b = 1.0,
+                             const std::string &id = "cube", int viewport = 0);
+        bool addOrientedCube(const ecvOrientedBBox& obb, const std::string &id = "cube", int viewport = 0);
 		int textureFromTexMaterial(const pcl::TexMaterial& tex_mat, vtkTexture* vtk_tex) const;
-		void displayText(const CC_DRAW_CONTEXT&  CONTEXT);
+        void displayText(const CC_DRAW_CONTEXT&  context);
 		
 		void setPointSize(const unsigned char pointSize, const std::string & viewID, int viewport = 0);
-		void setPointCloudUniqueColor(float r, float g, float b, const std::string &viewID, int viewPort = 0);
-		void resetScalarColor(const std::string &viewID, bool flag = true, int viewPort = 0);
-		void setShapeUniqueColor(float r, float g, float b, const std::string &viewID, int viewPort = 0);
+        void setPointCloudUniqueColor(double r, double g, double b, const std::string &viewID, int viewport = 0);
+        void resetScalarColor(const std::string &viewID, bool flag = true, int viewport = 0);
+        void setShapeUniqueColor(float r, float g, float b, const std::string &viewID, int viewport = 0);
 		void setLineWidth(const unsigned char lineWidth, const std::string & viewID, int viewport = 0);
 		void setMeshRenderingMode(MESH_RENDERING_MODE mode, const std::string & viewID, int viewport = 0);
 		void setLightMode(const std::string & viewID, int viewport = 0);
 		void setPointCloudOpacity(double opacity, const std::string & viewID, int viewport = 0);
 		void setShapeOpacity(double opacity, const std::string & viewID, int viewport = 0);
+        /*
+         * value = 0, PCL_VISUALIZER_SHADING_FLAT
+         * value = 1, PCL_VISUALIZER_SHADING_GOURAUD
+         * value = 2, PCL_VISUALIZER_SHADING_PHONG
+        */
+        void setShapeShadingMode(SHADING_MODE mode, const std::string & viewID, int viewport = 0);
+        void setMeshShadingMode(SHADING_MODE mode, const std::string & viewID, int viewport = 0);
 
-		void transformEntities(CC_DRAW_CONTEXT & CONTEXT);
 		vtkSmartPointer<pcl::visualization::PCLVisualizerInteractorStyle> getPCLInteractorStyle();
-		vtkActor* getActorById(const std::string & viewId);
-		std::string getIdByActor(vtkActor* actor);
+        vtkActor* getActorById(const std::string & viewId);
+        vtkProp* getPropById(const std::string & viewId);
+        vtkSmartPointer<vtkPropCollection> getPropCollectionById(const std::string & viewId);
+        std::string getIdByActor(vtkProp* actor);
 		vtkAbstractWidget* getWidgetById(const std::string & viewId);
 
 		/**
 		  * Get the Current Renderer in the list.
 		  * Return NULL when at the end of the list.
 		  */
-		vtkRenderer *getCurrentRenderer();
+        vtkRenderer *getCurrentRenderer(int viewport = 0);
 
 	public:
 		/** \brief Check if the widgets or props with the given id was already added to this visualizer.
@@ -320,7 +364,6 @@ namespace PclUtils
 		inline void setPointPickingEnabled(bool state) { m_pointPickingEnabled = state; }
 		inline void togglePointPicking() { setPointPickingEnabled(!isPointPickingEnabled()); }
 		
-		inline bool isAreaPickingMode() { return m_x_pressNum % 2 != 0; }
 		inline bool isAreaPickingEnabled() { return m_areaPickingEnabled; }
 		inline void setAreaPickingEnabled(bool state) { m_areaPickingEnabled = state; }
 
@@ -331,13 +374,13 @@ namespace PclUtils
         void toggleAreaPicking();
 		void exitCallbackProcess();
 		void setAreaPickingMode(bool state);
-		std::string pickItem(double x = -1, double y = -1);
+        vtkActor* pickActor(double x, double y);
+        std::string pickItem(double x0 = -1, double y0 = -1, double x1 = 5.0, double y1 = 5.0);
+
+        QImage renderToImage(int zoomFactor = 1, bool renderOverlayItems = false, bool silent = false, int viewport = 0);
 
 	protected:
-		void pickActor(double x, double y);
-
-		// Util Variables
-		int m_x_pressNum;
+        // Util Variables
 		int m_currentMode;
 		bool m_pointPickingEnabled;
 		bool m_areaPickingEnabled;
@@ -354,12 +397,12 @@ namespace PclUtils
 		vtkSmartPointer<vtkOrientationMarkerWidget> m_axes_widget;
 		vtkSmartPointer<vtkPointPicker> m_point_picker;
 		vtkSmartPointer<vtkAreaPicker> m_area_picker;
-		vtkSmartPointer<vtkPropPicker>  m_propPicker;
+        vtkSmartPointer<vtkPropPicker>  m_propPicker;
 
 		std::vector<int> m_selected_slice;
 	};
 
-	typedef boost::shared_ptr<PCLVis> PCLVisPtr;
+    typedef std::shared_ptr<PCLVis> PCLVisPtr;
 }
 
 

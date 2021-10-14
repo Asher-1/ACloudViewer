@@ -48,7 +48,7 @@ public:
 	 * @brief initialize
 	 */
 	virtual void setVisualizer(ecvGenericVisualizer3D* viewer = nullptr) override;
-	virtual bool setInputData(ccHObject* entity, int viewPort = 0) override;
+	virtual bool setInputData(ccHObject* entity, int viewport = 0) override;
 
 	void addActors();
 

@@ -40,8 +40,8 @@ static const QString MathSymbolDelta = "D";
 static const QString SEPARATOR = "-";
 
 //unit point marker
-static QSharedPointer<ccSphere> c_unitPointMarker(0);
-static QSharedPointer<ccFacet> c_unitTriMarker(0);
+static QSharedPointer<ccSphere> c_unitPointMarker(nullptr);
+static QSharedPointer<ccFacet> c_unitTriMarker(nullptr);
 
 static const QString CENTER_STRING = QObject::tr("Center");
 static const char POINT_INDEX_0[] = "pi0";
@@ -63,7 +63,7 @@ QString cc2DLabel::PickedPoint::itemTitle() const
 	}
 	else
 	{
-		return QString::number(index);
+        return QString::number(index, 10);
 	}
 }
 
@@ -165,19 +165,19 @@ cc2DLabel::cc2DLabel(QString name/*=QString()*/)
 
 	clear(false);
 
-	m_lineID = "labelLine-" + QString::number(getUniqueID());
+    m_lineID = "labelLine-" + this->getViewId();
 	if (c_unitPointMarker)
 	{
-		m_sphereIdfix = SEPARATOR + QString::number(getUniqueID()) +
-			SEPARATOR + QString::number(c_unitPointMarker->getUniqueID());
+        m_sphereIdfix = SEPARATOR + this->getViewId() +
+            SEPARATOR + c_unitPointMarker->getViewId();
 	}
 
 	if (c_unitTriMarker)
 	{
-		m_surfaceIdfix = QString::number(getUniqueID()) + SEPARATOR +
-			QString::number(c_unitTriMarker->getPolygon()->getUniqueID());
-		m_contourIdfix = QString::number(getUniqueID()) + SEPARATOR +
-			QString::number(c_unitTriMarker->getContour()->getUniqueID());
+        m_surfaceIdfix = this->getViewId() + SEPARATOR +
+            c_unitTriMarker->getPolygon()->getViewId();
+        m_contourIdfix = this->getViewId() + SEPARATOR +
+            c_unitTriMarker->getContour()->getViewId();
 	}
 
 	lockVisibility(false);
@@ -257,14 +257,14 @@ QString cc2DLabel::getName() const
 		{
 			processedName.replace(POINT_INDEX_1, QString::number(m_pickedPoints[1].index));
 			if (m_pickedPoints[0].cloud)
-				processedName.replace(ENTITY_INDEX_0, QString::number(m_pickedPoints[0].cloud->getUniqueID()));
+                processedName.replace(ENTITY_INDEX_0, m_pickedPoints[0].cloud->getViewId());
 			if (m_pickedPoints[1].cloud)
-				processedName.replace(ENTITY_INDEX_1, QString::number(m_pickedPoints[1].cloud->getUniqueID()));
+                processedName.replace(ENTITY_INDEX_1, m_pickedPoints[1].cloud->getViewId());
 			if (count > 2)
 			{
 				processedName.replace(POINT_INDEX_2, QString::number(m_pickedPoints[2].index));
 				if (m_pickedPoints[2].cloud)
-					processedName.replace(ENTITY_INDEX_2, QString::number(m_pickedPoints[2].cloud->getUniqueID()));
+                    processedName.replace(ENTITY_INDEX_2, m_pickedPoints[2].cloud->getViewId());
 			}
 		}
 	}
@@ -355,8 +355,8 @@ void cc2DLabel::clear2Dviews()
 		m_historyMessage.clear();
 	}
 
-	ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, QString::number(getUniqueID())));
-	ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, QString::number(getUniqueID())));
+    ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, this->getViewId()));
+    ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, this->getViewId()));
 }
 
 inline void cc2DLabel::clearLabel(bool ignoreCaption)
@@ -365,7 +365,7 @@ inline void cc2DLabel::clearLabel(bool ignoreCaption)
 	clear2Dviews();
 	if (!ignoreCaption)
 	{
-		ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_CAPTION, QString::number(getUniqueID())));
+        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId()));
 	}
 }
 
@@ -569,9 +569,9 @@ bool cc2DLabel::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool cc2DLabel::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool cc2DLabel::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//points count (dataVersion >= 20)
@@ -991,10 +991,10 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context)
 					c_unitTriMarker->showColors(true);
 					c_unitTriMarker->setVisible(true);
 					c_unitTriMarker->setEnabled(true);
-					m_surfaceIdfix = QString::number(getUniqueID()) + SEPARATOR +
-						QString::number(c_unitTriMarker->getPolygon()->getUniqueID());
-					m_contourIdfix = QString::number(getUniqueID()) + SEPARATOR +
-						QString::number(c_unitTriMarker->getContour()->getUniqueID());
+                    m_surfaceIdfix = this->getViewId() + SEPARATOR +
+                        c_unitTriMarker->getPolygon()->getViewId();
+                    m_contourIdfix = this->getViewId() + SEPARATOR +
+                        c_unitTriMarker->getContour()->getViewId();
 					c_unitTriMarker->setFixedId(true);
 					c_unitTriMarker->getContour()->setFixedId(true);
 					c_unitTriMarker->getPolygon()->setFixedId(true);
@@ -1002,13 +1002,13 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context)
 
 				if (m_surfaceIdfix == "")
 				{
-					m_surfaceIdfix = QString::number(getUniqueID()) + SEPARATOR +
-						QString::number(c_unitTriMarker->getPolygon()->getUniqueID());
+                    m_surfaceIdfix = this->getViewId() + SEPARATOR +
+                        c_unitTriMarker->getPolygon()->getViewId();
 				}
 				if (m_contourIdfix == "")
 				{
-					m_contourIdfix = QString::number(getUniqueID()) + SEPARATOR +
-						QString::number(c_unitTriMarker->getContour()->getUniqueID());
+                    m_contourIdfix = this->getViewId() + SEPARATOR +
+                        c_unitTriMarker->getContour()->getViewId();
 				}
 
 
@@ -1071,14 +1071,14 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context)
 				c_unitPointMarker->setVisible(true);
 				c_unitPointMarker->setEnabled(true);
 				c_unitPointMarker->setFixedId(true);
-				m_sphereIdfix = SEPARATOR + QString::number(getUniqueID()) +
-					SEPARATOR + QString::number(c_unitPointMarker->getUniqueID());
+                m_sphereIdfix = SEPARATOR + this->getViewId() +
+                    SEPARATOR + c_unitPointMarker->getViewId();
 			}
 
 			if (m_sphereIdfix == "")
 			{
-				m_sphereIdfix = SEPARATOR + QString::number(getUniqueID()) +
-					SEPARATOR + QString::number(c_unitPointMarker->getUniqueID());
+                m_sphereIdfix = SEPARATOR + this->getViewId() +
+                    SEPARATOR + c_unitPointMarker->getViewId();
 			}
 
 			//build-up point maker own 'context'
@@ -1293,7 +1293,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context)
 						ecvDisplayTools::ALIGN_DEFAULT,
 						context.labelOpacity / 100.0f,
 						ecvColor::white.rgb,
-						&font, QString::number(getUniqueID()));
+                        &font, this->getViewId());
 				}
 			}
 		}
@@ -1306,7 +1306,8 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context)
 	// only display lengend other than 2D display
 	if (!m_dispIn2D)
 	{
-		ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_CAPTION, QString::number(getUniqueID())));
+        ecvDisplayTools::RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_CAPTION,
+                                                         this->getViewId()));
 		return;
 	}
 
@@ -1574,7 +1575,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context)
 		}
 		position /= static_cast<PointCoordinateType>(count);
 
-		WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_CAPTION, QString::number(getUniqueID()));
+        WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_CAPTION, this->getViewId());
 		param.center = position;
 		param.pos = CCVector2(m_labelROI.x(), m_labelROI.y());
 		param.color = ecvColor::FromRgbub(defaultTextColor);
@@ -1610,10 +1611,6 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context)
 
 	//standard case: list names pushing
 	bool pushName = MACRO_DrawEntityNames(context);
-	if (pushName)
-	{
-		//glFunc->glPushName(getUniqueID());
-	}
 
 	float halfW = context.glW / 2.0f;
 	float halfH = context.glH / 2.0f;
@@ -1678,7 +1675,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context)
 						ecvDisplayTools::ALIGN_DEFAULT,
 						context.labelOpacity / 100.0f,
 						ecvColor::red.rgb,
-						&font, QString::number(getUniqueID()));
+                        &font, this->getViewId());
 				}
 			}
 		}
@@ -1924,7 +1921,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context)
 
 	m_labelROI = QRect(xStart, yStart - m_labelROI.height(), m_labelROI.width(), m_labelROI.height());
 
-	WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, QString::number(getUniqueID()));
+    WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_RECTANGLE_2D, this->getViewId());
 
 	if (!pushName)
 	{
@@ -1965,7 +1962,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context)
 			//glFunc->glBegin(GL_TRIANGLE_FAN);
 			//glFunc->glVertex2i(iArrowDestX, iArrowDestY);
 
-			WIDGETS_PARAMETER triangleParam(WIDGETS_TYPE::WIDGET_LINE_2D, QString::number(getUniqueID()));
+            WIDGETS_PARAMETER triangleParam(WIDGETS_TYPE::WIDGET_LINE_2D, this->getViewId());
 			triangleParam.color = ecvColor::FromRgba(defaultBorderColor);
 			triangleParam.p1 = QPoint(arrowDest2D.x, arrowDest2D.y);
 			int newTop = m_labelROI.bottom();
@@ -2087,7 +2084,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context)
 			ecvDisplayTools::ALIGN_DEFAULT,
 			0,
 			defaultTextColor.rgb,
-			&titleFont, QString::number(getUniqueID()));
+            &titleFont, this->getViewId());
 		yStartRel -= margin;
 
 		if (m_showFullBody)
@@ -2161,7 +2158,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context)
 						xStart + xCol + tabMarginX + xShift,
 						yStart + yRow - rowHeight, 
 						ecvDisplayTools::ALIGN_DEFAULT, 0, 
-						textColor, &bodyFont, QString::number(getUniqueID()));
+                        textColor, &bodyFont, this->getViewId());
 
 					yRow -= height;
 				}

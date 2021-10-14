@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Basic/polyline.py
 
@@ -74,7 +74,7 @@ def wrap_polyline(points, color):
 
 
 def generate_from_file():
-    entity = cv3d.io.read_entity("../../TestData/polylines/polylines.bin")
+    entity = cv3d.io.read_entity("../../test_data/polylines/polylines.bin")
     polylines = entity.filter_children(recursive=False, filter=cv3d.geometry.ccHObject.POLY_LINE)
     print(polylines)
     for poly in polylines:
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     for name, polys in polylines_generator():
         print("{}: line width {}, color {}".format(name, polys[0].get_width(), polys[0].get_color()))
         print("{}: isClosed {}, 2D_mode {}".format(name, polys[0].is_closed(), polys[0].is_2d_mode()))
-        cv3d.visualization.draw_geometries(polys, show_coordinate_frame=True)
+        cv3d.visualization.draw_geometries(polys)
 
         vertex_list = []
         for poly in polys:

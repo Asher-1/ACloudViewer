@@ -56,11 +56,7 @@
 #define GetTupleValue GetTypedTuple
 #endif
 
-vtk2ccConverter::vtk2ccConverter()
-{
-}
-
-ccPointCloud* vtk2ccConverter::getPointCloudFromPolyData(vtkPolyData* polydata, bool silent)
+ccPointCloud* vtk2cc::ConvertToPointCloud(vtkPolyData* polydata, bool silent)
 {
 	if (!polydata) return nullptr;
 
@@ -144,7 +140,7 @@ ccPointCloud* vtk2ccConverter::getPointCloudFromPolyData(vtkPolyData* polydata, 
 	return cloud;
 }
 
-ccMesh* vtk2ccConverter::getMeshFromPolyData(vtkPolyData* polydata, bool silent)
+ccMesh* vtk2cc::ConvertToMesh(vtkPolyData* polydata, bool silent)
 {
 	vtkSmartPointer<vtkPoints> mesh_points = polydata->GetPoints();
 	unsigned nr_points = static_cast<unsigned>(mesh_points->GetNumberOfPoints());
@@ -158,7 +154,7 @@ ccMesh* vtk2ccConverter::getMeshFromPolyData(vtkPolyData* polydata, bool silent)
 		return nullptr;
 	}
 
-	ccPointCloud* vertices = getPointCloudFromPolyData(polydata, silent);
+    ccPointCloud* vertices = ConvertToPointCloud(polydata, silent);
 	if (!vertices)
 	{
 		return nullptr;
@@ -217,11 +213,11 @@ ccMesh* vtk2ccConverter::getMeshFromPolyData(vtkPolyData* polydata, bool silent)
 	return mesh;
 }
 
-ccPolyline* vtk2ccConverter::getPolylineFromPolyData(vtkPolyData* polydata, bool silent)
+ccPolyline* vtk2cc::ConvertToPolyline(vtkPolyData* polydata, bool silent)
 {
 	if (!polydata) return nullptr;
 
-	ccPointCloud* obj = getPointCloudFromPolyData(polydata, silent);
+    ccPointCloud* obj = ConvertToPointCloud(polydata, silent);
 	if (!obj)
 	{
 		CVLog::Error(QString("[getPolylineFromPolyData] failed to convert vtkPolyData to ccPointCloud"));
@@ -234,85 +230,10 @@ ccPolyline* vtk2ccConverter::getPolylineFromPolyData(vtkPolyData* polydata, bool
 		return nullptr;
 	}
 
-	return getPolylineFromCC(obj);
+    return ConvertToPolyline(obj);
 }
 
-ccHObject::Container vtk2ccConverter::getMultiPolylinesFromPolyData(vtkPolyData* polydata, QString baseName, const ecvColor::Rgb &color)
-{
-	// initialize output
-	ccHObject::Container container;
-
-    vtkIdType iCells = polydata->GetNumberOfCells();
-    for (vtkIdType i = 0; i < iCells; i++)
-	{
-        ccPointCloud* vertices = nullptr;
-		vtkCell* cell = polydata->GetCell(i);
-		vtkIdType ptsCount = cell->GetNumberOfPoints();
-		if (ptsCount > 1)
-		{
-			vertices = new ccPointCloud("vertices");
-            if (!vertices->reserve(static_cast<unsigned>(ptsCount)))
-			{
-				CVLog::Error("not enough memory to allocate vertices...");
-				return container;
-			}
-
-			for (vtkIdType iPt = 0; iPt < ptsCount; ++iPt)
-			{
-                CCVector3 P = CCVector3::fromArray(cell->GetPoints()->GetPoint(iPt));
-				vertices->addPoint(P);
-			}
-			// end POINTS
-		}
-
-		if (vertices && vertices->size() == 0)
-		{
-			delete vertices;
-            vertices = nullptr;
-		}
-
-		if (vertices)
-		{
-			vertices->setName("vertices");
-			vertices->setEnabled(false);
-			vertices->setPointSize(4);
-			vertices->showColors(true);
-			vertices->setTempColor(ecvColor::red);
-			if (vertices->hasNormals())
-				vertices->showNormals(true);
-			if (vertices->hasScalarFields())
-			{
-				vertices->setCurrentDisplayedScalarField(0);
-				vertices->showSF(true);
-			}
-
-			ccPolyline* poly = getPolylineFromCC(vertices);
-			if (!poly)
-			{
-				delete vertices;
-				vertices = nullptr;
-				continue;
-			}
-
-			// update global scale and shift by m_entity
-			QString contourName = baseName;
-			if (poly->size() > 1)
-			{
-				contourName += QString(" (part %1)").arg(i + 1);
-			}
-			poly->setName(contourName);
-			poly->showColors(true);
-			poly->setTempColor(color);
-			poly->set2DMode(false);
-
-			container.push_back(poly);
-		}
-
-	}
-	return container;
-}
-
-ccPolyline* vtk2ccConverter::getPolylineFromCC(ccPointCloud* vertices)
+ccPolyline* vtk2cc::ConvertToPolyline(ccPointCloud* vertices)
 {
 	if (!vertices || !vertices->isKindOf(CV_TYPES::POINT_CLOUD))
 	{
@@ -366,4 +287,79 @@ ccPolyline* vtk2ccConverter::getPolylineFromCC(ccPointCloud* vertices)
 	}
 
 	return curvePoly;
+}
+
+ccHObject::Container vtk2cc::ConvertToMultiPolylines(vtkPolyData* polydata, QString baseName, const ecvColor::Rgb &color)
+{
+    // initialize output
+    ccHObject::Container container;
+
+    vtkIdType iCells = polydata->GetNumberOfCells();
+    for (vtkIdType i = 0; i < iCells; i++)
+    {
+        ccPointCloud* vertices = nullptr;
+        vtkCell* cell = polydata->GetCell(i);
+        vtkIdType ptsCount = cell->GetNumberOfPoints();
+        if (ptsCount > 1)
+        {
+            vertices = new ccPointCloud("vertices");
+            if (!vertices->reserve(static_cast<unsigned>(ptsCount)))
+            {
+                CVLog::Error("not enough memory to allocate vertices...");
+                return container;
+            }
+
+            for (vtkIdType iPt = 0; iPt < ptsCount; ++iPt)
+            {
+                CCVector3 P = CCVector3::fromArray(cell->GetPoints()->GetPoint(iPt));
+                vertices->addPoint(P);
+            }
+            // end POINTS
+        }
+
+        if (vertices && vertices->size() == 0)
+        {
+            delete vertices;
+            vertices = nullptr;
+        }
+
+        if (vertices)
+        {
+            vertices->setName("vertices");
+            vertices->setEnabled(false);
+            vertices->setPointSize(4);
+            vertices->showColors(true);
+            vertices->setTempColor(ecvColor::red);
+            if (vertices->hasNormals())
+                vertices->showNormals(true);
+            if (vertices->hasScalarFields())
+            {
+                vertices->setCurrentDisplayedScalarField(0);
+                vertices->showSF(true);
+            }
+
+            ccPolyline* poly = ConvertToPolyline(vertices);
+            if (!poly)
+            {
+                delete vertices;
+                vertices = nullptr;
+                continue;
+            }
+
+            // update global scale and shift by m_entity
+            QString contourName = baseName;
+            if (poly->size() > 1)
+            {
+                contourName += QString(" (part %1)").arg(i + 1);
+            }
+            poly->setName(contourName);
+            poly->showColors(true);
+            poly->setTempColor(color);
+            poly->set2DMode(false);
+
+            container.push_back(poly);
+        }
+
+    }
+    return container;
 }

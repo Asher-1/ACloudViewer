@@ -80,6 +80,11 @@ function( target_link_ffmpeg ) # 1 argument: ARGV0 = project name
 
 	# Required for some C99 defines
 	target_compile_definitions( ${ARGV0} PRIVATE __STDC_CONSTANT_MACROS )
+
+	if (MSVC)
+        # fix compiling error on windows platform
+        target_compile_options(${ARGV0} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+    endif()
 	
 	unset( FFMPEG_LIBRARIES )
 	unset( FFMPEG_LIBRARIES_ROOT_NAME )
@@ -102,7 +107,7 @@ function( export_ffmpeg_dlls ) # 1 argument: ARGV0 = destination directory
 			file( GLOB SW_DLLS ${FFMPEG_BINARY_DIR}/sw*.dll )
 			list( APPEND FFMPEG_DLL ${SW_DLLS} )
 
-			copy_files( "${FFMPEG_DLL}" "${ARGV0}" ) #mind the quotes
+			cloudViewer_install_files( "${FFMPEG_DLL}" "${ARGV0}" ) #mind the quotes
 		else()
 			message( FATAL_ERROR "FFmpeg binary dir does not exist (FFMPEG_BINARY_DIR)" )
 		endif()

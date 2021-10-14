@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Cross-platform Python script to download and extract datasets. All common
 archive formats are supported.
@@ -12,11 +11,11 @@ import argparse
 
 dataset_dict = {
     "L515_test":
-        "https://storage.googleapis.com/isl-datasets/open3d-dev/realsense/L515_test.bag",
+        "https://storage.googleapis.com/isl-datasets/cloudViewer-dev/realsense/L515_test.bag",
     "L515_paper_lantern":
-        "https://storage.googleapis.com/isl-datasets/open3d-dev/realsense/L515_paper_lantern.bag",
+        "https://storage.googleapis.com/isl-datasets/cloudViewer-dev/realsense/L515_paper_lantern.bag",
     "L515_JackJack":
-        "https://storage.googleapis.com/isl-datasets/open3d-dev/realsense/L515_JackJack.bag"
+        "https://storage.googleapis.com/isl-datasets/cloudViewer-dev/realsense/L515_JackJack.bag"
 }
 
 

@@ -21,7 +21,7 @@
 #include "ecvPointCloud.h"
 
 // CORE_DB_LIB
-#include <Console.h>
+#include <Logging.h>
 #include <PointProjectionTools.h>
 #include <Delaunay2dMesh.h>
 #include <DistanceComputationTools.h>
@@ -191,7 +191,7 @@ ccFacet* ccFacet::Create(	cloudViewer::GenericIndexedCloudPersist* cloud,
 	if (!cloud || cloud->size() < 3)
 	{
 		CVLog::Error("[ccFacet::Create] Need at least 3 points to create a valid facet!");
-		return 0;
+        return nullptr;
 	}
 
 	//create facet structure
@@ -199,7 +199,7 @@ ccFacet* ccFacet::Create(	cloudViewer::GenericIndexedCloudPersist* cloud,
 	if (!facet->createInternalRepresentation(cloud, planeEquation))
 	{
 		delete facet;
-		return 0;
+        return nullptr;
 	}
 
 	ccPointCloud* pc = dynamic_cast<ccPointCloud*>(cloud);
@@ -563,9 +563,9 @@ bool ccFacet::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccFacet::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccFacet::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	if (dataVersion < 32)

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include <Console.h>
+#include <Logging.h>
 
 #include "VoxelGrid.h"
 #include "ecvBBox.h"
@@ -50,13 +50,13 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromJsonValue(
     std::shared_ptr<OctreeNode> node = nullptr;
     if (value != Json::nullValue && class_name != "") {
         if (class_name == "OctreeInternalNode") {
-            node = std::make_shared<OctreeInternalNode>();
+            node = cloudViewer::make_shared<OctreeInternalNode>();
         } else if (class_name == "OctreeInternalPointNode") {
-            node = std::make_shared<OctreeInternalPointNode>();
+            node = cloudViewer::make_shared<OctreeInternalPointNode>();
         } else if (class_name == "OctreeColorLeafNode") {
-            node = std::make_shared<OctreeColorLeafNode>();
+            node = cloudViewer::make_shared<OctreeColorLeafNode>();
         } else if (class_name == "OctreePointColorLeafNode") {
-            node = std::make_shared<OctreePointColorLeafNode>();
+            node = cloudViewer::make_shared<OctreePointColorLeafNode>();
         } else {
             utility::LogError("Unhandled class name {}", class_name);
         }
@@ -89,7 +89,7 @@ std::shared_ptr<OctreeNodeInfo> OctreeInternalNode::GetInsertionNodeInfo(
             node_info->origin_ + Eigen::Vector3d(x_index * child_size,
                                                  y_index * child_size,
                                                  z_index * child_size);
-    auto child_node_info = std::make_shared<OctreeNodeInfo>(
+    auto child_node_info = cloudViewer::make_shared<OctreeNodeInfo>(
             child_origin, child_size, node_info->depth_ + 1, child_index);
     return child_node_info;
 }
@@ -97,7 +97,7 @@ std::shared_ptr<OctreeNodeInfo> OctreeInternalNode::GetInsertionNodeInfo(
 std::function<std::shared_ptr<OctreeInternalNode>()>
 OctreeInternalNode::GetInitFunction() {
     return []() -> std::shared_ptr<geometry::OctreeInternalNode> {
-        return std::make_shared<geometry::OctreeInternalNode>();
+        return cloudViewer::make_shared<geometry::OctreeInternalNode>();
     };
 }
 
@@ -146,7 +146,7 @@ bool OctreeInternalNode::ConvertFromJsonValue(const Json::Value& value) {
 std::function<std::shared_ptr<OctreeInternalNode>()>
 OctreeInternalPointNode::GetInitFunction() {
     return []() -> std::shared_ptr<geometry::OctreeInternalNode> {
-        return std::make_shared<geometry::OctreeInternalPointNode>();
+        return cloudViewer::make_shared<geometry::OctreeInternalPointNode>();
     };
 }
 
@@ -216,7 +216,7 @@ bool OctreeInternalPointNode::ConvertFromJsonValue(const Json::Value& value) {
 std::function<std::shared_ptr<OctreeLeafNode>()>
 OctreeColorLeafNode::GetInitFunction() {
     return []() -> std::shared_ptr<geometry::OctreeLeafNode> {
-        return std::make_shared<geometry::OctreeColorLeafNode>();
+        return cloudViewer::make_shared<geometry::OctreeColorLeafNode>();
     };
 }
 
@@ -237,7 +237,7 @@ OctreeColorLeafNode::GetUpdateFunction(const Eigen::Vector3d& color) {
 }
 
 std::shared_ptr<OctreeLeafNode> OctreeColorLeafNode::Clone() const {
-    auto cloned_node = std::make_shared<OctreeColorLeafNode>();
+    auto cloned_node = cloudViewer::make_shared<OctreeColorLeafNode>();
     cloned_node->color_ = color_;
     return cloned_node;
 }
@@ -273,7 +273,7 @@ bool OctreeColorLeafNode::ConvertFromJsonValue(const Json::Value& value) {
 std::function<std::shared_ptr<OctreeLeafNode>()>
 OctreePointColorLeafNode::GetInitFunction() {
     return []() -> std::shared_ptr<geometry::OctreeLeafNode> {
-        return std::make_shared<geometry::OctreePointColorLeafNode>();
+        return cloudViewer::make_shared<geometry::OctreePointColorLeafNode>();
     };
 }
 
@@ -298,7 +298,7 @@ OctreePointColorLeafNode::GetUpdateFunction(size_t idx,
 }
 
 std::shared_ptr<OctreeLeafNode> OctreePointColorLeafNode::Clone() const {
-    auto cloned_node = std::make_shared<OctreePointColorLeafNode>();
+    auto cloned_node = cloudViewer::make_shared<OctreePointColorLeafNode>();
     cloned_node->color_ = color_;
     cloned_node->indices_ = indices_;
     return cloned_node;
@@ -360,7 +360,7 @@ Octree::Octree(const Octree& src_octree, const char* name/* = "Octree2"*/)
             -> bool {
         if (auto src_internal_node =
                     std::dynamic_pointer_cast<OctreeInternalNode>(src_node)) {
-            auto dst_internal_node = std::make_shared<OctreeInternalNode>();
+            auto dst_internal_node = cloudViewer::make_shared<OctreeInternalNode>();
             map_src_to_dst_node[src_internal_node] = dst_internal_node;
         } else if (auto src_leaf_node =
                            std::dynamic_pointer_cast<OctreeLeafNode>(
@@ -619,7 +619,7 @@ void Octree::InsertPoint(
         }
     }
     auto root_node_info =
-            std::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0);
+            cloudViewer::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0);
 
     InsertPointRecurse(root_node_, root_node_info, point, fl_init, fl_update,
                        _fi_init, _fi_update);
@@ -691,7 +691,7 @@ void Octree::Traverse(
                                  const std::shared_ptr<OctreeNodeInfo>&)>& f) {
     // root_node_'s child index is 0, though it isn't a child node
     TraverseRecurse(root_node_,
-                    std::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0), f);
+                    cloudViewer::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0), f);
 }
 
 void Octree::Traverse(
@@ -700,7 +700,7 @@ void Octree::Traverse(
         const {
     // root_node_'s child index is 0, though it isn't a child node
     TraverseRecurse(root_node_,
-                    std::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0), f);
+                    cloudViewer::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0), f);
 }
 
 void Octree::TraverseRecurse(
@@ -728,7 +728,7 @@ void Octree::TraverseRecurse(
                                                          double(y_index),
                                                          double(z_index)) *
                                                  child_size;
-            auto child_node_info = std::make_shared<OctreeNodeInfo>(
+            auto child_node_info = cloudViewer::make_shared<OctreeNodeInfo>(
                     child_node_origin, child_size, node_info->depth_ + 1,
                     child_index);
             TraverseRecurse(child_node, child_node_info, f);
@@ -766,7 +766,7 @@ Octree::LocateLeafNode(const Eigen::Vector3d& point) const {
 }
 
 std::shared_ptr<geometry::VoxelGrid> Octree::ToVoxelGrid() const {
-    auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
+    auto voxel_grid = cloudViewer::make_shared<geometry::VoxelGrid>();
     voxel_grid->CreateFromOctree(*this);
     return voxel_grid;
 }

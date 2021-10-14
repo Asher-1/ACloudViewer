@@ -104,10 +104,10 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>Reset</string>
+        <string>reset</string>
        </property>
        <property name="statusTip">
-        <string>Reset</string>
+        <string>reset</string>
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">

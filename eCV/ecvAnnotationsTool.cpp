@@ -47,39 +47,39 @@ ecvAnnotationsTool::ecvAnnotationsTool(QWidget* parent)
 	setupUi(this);
 	m_disabledCombEvent = false;
 
-	connect(importClassSetsButton,			SIGNAL(clicked()),				this, SLOT(importClassesFromFile()));
-	connect(saveButton,						SIGNAL(clicked()),				this, SLOT(saveAnnotations()));
-	connect(resetButton,					SIGNAL(clicked()),				this, SLOT(reset()));
-	connect(closeButton,					SIGNAL(clicked()),				this, SLOT(closeDialog()));
-	connect(exportCloudWithAnnotations,		SIGNAL(clicked()),				this, SLOT(exportAnnotationToSF()));
+    connect(importClassSetsButton,			&QToolButton::clicked,				this, &ecvAnnotationsTool::importClassesFromFile);
+    connect(saveButton,						&QToolButton::clicked,				this, &ecvAnnotationsTool::saveAnnotations);
+    connect(resetButton,					&QToolButton::clicked,				this, &ecvAnnotationsTool::reset);
+    connect(closeButton,					&QToolButton::clicked,				this, &ecvAnnotationsTool::closeDialog);
+    connect(exportCloudWithAnnotations,		&QToolButton::clicked,				this, &ecvAnnotationsTool::exportAnnotationToSF);
 
-	connect(editToolButton,					SIGNAL(toggled(bool)),			this, SLOT(toggleEditMode(bool)));
+    connect(editToolButton,					&QToolButton::toggled,              this, &ecvAnnotationsTool::toggleEditMode);
 	
-	connect(pauseToolButton,				SIGNAL(toggled(bool)),			this, SLOT(toggleInteractors(bool)));
-	connect(showBoxToolButton,				SIGNAL(toggled(bool)),			this, SLOT(toggleBox(bool)));
-	connect(showOriginToolButton,			SIGNAL(toggled(bool)),			this, SLOT(toggleOrigin(bool)));
+    connect(pauseToolButton,				&QToolButton::toggled,              this, &ecvAnnotationsTool::toggleInteractors);
+    connect(showBoxToolButton,				&QToolButton::toggled,              this, &ecvAnnotationsTool::toggleBox);
+    connect(showOriginToolButton,			&QToolButton::toggled,              this, &ecvAnnotationsTool::toggleOrigin);
 	
-	connect(minusXShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftXMinus()));
-	connect(plusXShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftXPlus()));
-	connect(minusYShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftYMinus()));
-	connect(plusYShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftYPlus()));
-	connect(minusZShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftZMinus()));
-	connect(plusZShiftToolButton,			SIGNAL(clicked()),				this, SLOT(shiftZPlus()));
+    connect(minusXShiftToolButton,			&QToolButton::clicked,				this, &ecvAnnotationsTool::shiftXMinus);
+    connect(plusXShiftToolButton,			&QToolButton::clicked,				this, &ecvAnnotationsTool::shiftXPlus);
+    connect(minusYShiftToolButton,			&QToolButton::clicked,				this, &ecvAnnotationsTool::shiftYMinus);
+    connect(plusYShiftToolButton,			&QToolButton::clicked,				this, &ecvAnnotationsTool::shiftYPlus);
+    connect(minusZShiftToolButton,			&QToolButton::clicked,				this, &ecvAnnotationsTool::shiftZMinus);
+    connect(plusZShiftToolButton,			&QToolButton::clicked,				this, &ecvAnnotationsTool::shiftZPlus);
 
 	viewButtonsFrame->setEnabled(true);
-	connect(viewUpToolButton,				SIGNAL(clicked()),				this, SLOT(setTopView()));
-	connect(viewDownToolButton,				SIGNAL(clicked()),				this, SLOT(setBottomView()));
-	connect(viewFrontToolButton,			SIGNAL(clicked()),				this, SLOT(setFrontView()));
-	connect(viewBackToolButton,				SIGNAL(clicked()),				this, SLOT(setBackView()));
-	connect(viewLeftToolButton,				SIGNAL(clicked()),				this, SLOT(setLeftView()));
-	connect(viewRightToolButton,			SIGNAL(clicked()),				this, SLOT(setRightView()));
+    connect(viewUpToolButton,				&QToolButton::clicked,				this, &ecvAnnotationsTool::setTopView);
+    connect(viewDownToolButton,				&QToolButton::clicked,				this, &ecvAnnotationsTool::setBottomView);
+    connect(viewFrontToolButton,			&QToolButton::clicked,				this, &ecvAnnotationsTool::setFrontView);
+    connect(viewBackToolButton,				&QToolButton::clicked,				this, &ecvAnnotationsTool::setBackView);
+    connect(viewLeftToolButton,				&QToolButton::clicked,				this, &ecvAnnotationsTool::setLeftView);
+    connect(viewRightToolButton,			&QToolButton::clicked,				this, &ecvAnnotationsTool::setRightView);
 
-	connect(newModeButton,			SIGNAL(clicked()),					this, SLOT(onNewMode()));
-	connect(unionModeButton,		SIGNAL(clicked()),					this, SLOT(onUnionMode()));
-	connect(trimModeButton,			SIGNAL(clicked()),					this, SLOT(onTrimMode()));
-	connect(intersectModeButton,	SIGNAL(clicked()),					this, SLOT(onIntersectMode()));
-	connect(labelSelectedButton,	SIGNAL(clicked()),					this, SLOT(onLabelSelected()));
-	connect(labelsComboBox,			SIGNAL(currentIndexChanged(int)),	this, SLOT(onLabelChanged(int)));
+    connect(newModeButton,                  &QToolButton::clicked,				this, &ecvAnnotationsTool::onNewMode);
+    connect(unionModeButton,                &QToolButton::clicked,				this, &ecvAnnotationsTool::onUnionMode);
+    connect(trimModeButton,                 &QToolButton::clicked,				this, &ecvAnnotationsTool::onTrimMode);
+    connect(intersectModeButton,            &QToolButton::clicked,				this, &ecvAnnotationsTool::onIntersectMode);
+    connect(labelSelectedButton,            &QToolButton::clicked,				this, &ecvAnnotationsTool::onLabelSelected);
+    connect(labelsComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),   this, &ecvAnnotationsTool::onLabelChanged);
 
 	// add shortcuts
 	addOverridenShortcut(Qt::Key_I);      //'I' key for the "intersect selection mode" button
@@ -91,7 +91,7 @@ ecvAnnotationsTool::ecvAnnotationsTool(QWidget* parent)
 	addOverridenShortcut(Qt::Key_H);	  //'H' key for the "show or hide annotation mode" button
 	addOverridenShortcut(Qt::Key_L);	  //'L' key for the "label selected with current class sets" button
 	addOverridenShortcut(Qt::Key_Space);  //space bar for the "pause" button
-	connect(this, SIGNAL(shortcutTriggered(int)), this, SLOT(onShortcutTriggered(int)));
+    connect(this, &ccOverlayDialog::shortcutTriggered, this, &ecvAnnotationsTool::onShortcutTriggered);
 }
 
 ecvAnnotationsTool::~ecvAnnotationsTool()
@@ -194,6 +194,7 @@ void ecvAnnotationsTool::onLabelSelected()
 
 void ecvAnnotationsTool::onLabelChanged(int index)
 {
+    Q_UNUSED(index);
 	int curIndex = labelsComboBox->currentIndex();
 	if (curIndex < 0 || m_disabledCombEvent)
 	{
@@ -234,10 +235,12 @@ void ecvAnnotationsTool::onLabelChanged(int index)
 
 void ecvAnnotationsTool::onItemPicked(bool isPicked)
 {
+    Q_UNUSED(isPicked);
 }
 
 void ecvAnnotationsTool::toggleInteractors(bool state)
 {
+    Q_UNUSED(state);
 	if (m_annotationTool)
 	{
 		m_annotationTool->toggleInteractor();
@@ -475,6 +478,8 @@ void ecvAnnotationsTool::updateLabelsCombox(const std::vector<std::string>& labe
 
 void ecvAnnotationsTool::shiftBox(unsigned char dim, bool minus)
 {
+    Q_UNUSED(dim);
+    Q_UNUSED(minus);
 }
 
 void ecvAnnotationsTool::reset()

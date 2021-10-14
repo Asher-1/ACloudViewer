@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.cloudViewer.org                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.cloudViewer.org
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ bool f_traverse(const std::shared_ptr<geometry::OctreeNode>& node,
             for (const auto& c : internal_point_node->children_) {
                 if (c) num_children++;
             }
-            cloudViewer::utility::LogInfo(
+            utility::LogInfo(
                     "Internal node at depth {} with origin {} has "
                     "{} children and {} points",
                     node_info->depth_, node_info->origin_, num_children,
@@ -50,33 +50,42 @@ bool f_traverse(const std::shared_ptr<geometry::OctreeNode>& node,
         }
     } else if (auto leaf_node = std::dynamic_pointer_cast<
                        geometry::OctreePointColorLeafNode>(node)) {
-        cloudViewer::utility::LogInfo(
+        utility::LogInfo(
                 "Node at depth {} with origin {} has"
                 "color {} and {} points",
                 node_info->depth_, node_info->origin_, leaf_node->color_,
                 leaf_node->indices_.size());
-        // cloudViewer::utility::LogInfo("Indices: {}", leaf_node->indices_);
+        // utility::LogInfo("Indices: {}", leaf_node->indices_);
     } else {
-        cloudViewer::utility::LogError("Unknown node type");
+        utility::LogError("Unknown node type");
     }
 
     return false;
 }
 
-int main(int argc, char** args) {
+void PrintHelp() {
     using namespace cloudViewer;
 
-    cloudViewer::utility::SetVerbosityLevel(cloudViewer::utility::VerbosityLevel::Debug);
-    if (argc < 2) {
-        PrintCloudViewerVersion();
-        // clang-format off
-        cloudViewer::utility::LogInfo("Usage:");
-        cloudViewer::utility::LogInfo("    > Octree [pointcloud_filename]");
-        // clang-format on
+    PrintCloudViewerVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > Octree [pointcloud_filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+int main(int argc, char* argv[]) {
+    using namespace cloudViewer;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 
-    auto pcd = io::CreatePointCloudFromFile(args[1]);
+    auto pcd = io::CreatePointCloudFromFile(argv[1]);
     constexpr int max_depth = 3;
     auto octree = std::make_shared<geometry::Octree>(max_depth);
     octree->ConvertFromPointCloud(*pcd);
@@ -87,14 +96,14 @@ int main(int argc, char** args) {
     auto start = std::chrono::steady_clock::now();
     auto result = octree->LocateLeafNode(Eigen::Vector3d::Zero());
     auto end = std::chrono::steady_clock::now();
-    cloudViewer::utility::LogInfo(
+    utility::LogInfo(
             "Located in {} usec",
             std::chrono::duration_cast<std::chrono::microseconds>(end - start)
                     .count());
     if (auto point_node =
                 std::dynamic_pointer_cast<geometry::OctreePointColorLeafNode>(
                         result.first)) {
-        cloudViewer::utility::LogInfo(
+        utility::LogInfo(
                 "Found leaf node at depth {} with origin {} and {} indices",
                 result.second->depth_, result.second->origin_,
                 point_node->indices_.size());

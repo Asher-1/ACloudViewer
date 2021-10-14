@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        CloudViewer: asher-1.github.io                    -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018-2021 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@
 
 void PrintHelp() {
     using namespace cloudViewer;
+    PrintCloudViewerVersion();
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > EvaluatePCDMatch [options]");
@@ -106,8 +107,8 @@ bool ReadLogFile(const std::string &filename,
 int main(int argc, char *argv[]) {
     using namespace cloudViewer;
 
-    if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        utility::ProgramOptionExists(argc, argv, "-h")) {
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
@@ -133,9 +134,9 @@ int main(int argc, char *argv[]) {
     utility::filesystem::ListFilesInDirectoryWithExtension(pcd_dirname, "pcd",
                                                            pcd_names);
     std::vector<ccPointCloud> pcds(pcd_names.size());
-    std::vector<cloudViewer::geometry::KDTreeFlann> kdtrees(pcd_names.size());
+    std::vector<geometry::KDTreeFlann> kdtrees(pcd_names.size());
     for (size_t i = 0; i < pcd_names.size(); i++) {
-        cloudViewer::io::ReadPointCloud(
+        io::ReadPointCloud(
                 pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd",
                 pcds[i]);
         kdtrees[i].SetGeometry(pcds[i]);
@@ -152,21 +153,25 @@ int main(int argc, char *argv[]) {
     double positive_rmse = 0;
     for (size_t k = 0; k < pair_ids.size(); k++) {
         ccPointCloud source = pcds[pair_ids[k].second];
-        source.setGLTransformation(ccGLMatrix::FromEigenMatrix(transformations[k]));
+        source.transform(transformations[k]);
         ccPointCloud gtsource = pcds[pair_ids[k].second];
-        gtsource.setGLTransformation(ccGLMatrix::FromEigenMatrix(gt_trans[k]));
+        gtsource.transform(gt_trans[k]);
         std::vector<int> indices(1);
         std::vector<double> distance2(1);
         int correspondence_num = 0;
         double rmse = 0.0;
         for (size_t i = 0; i < source.size(); i++) {
             if (kdtrees[pair_ids[k].first].SearchKNN(
-				CCVector3d::fromArray(*source.getPoint(static_cast<unsigned int>(i))), 
-				1, indices, distance2) > 0) {
+                        CCVector3d::fromArray(
+                                *source.getPoint(static_cast<unsigned int>(i))),
+                        1, indices, distance2) > 0) {
                 if (distance2[0] < threshold2) {
                     correspondence_num++;
-					const CCVector3& pSource = *source.getPoint(static_cast<unsigned int>(i));
-					const CCVector3& pTarget = *pcds[pair_ids[k].first].getPoint(static_cast<unsigned int>(indices[0]));
+                    const CCVector3 &pSource =
+                            *source.getPoint(static_cast<unsigned int>(i));
+                    const CCVector3 &pTarget =
+                            *pcds[pair_ids[k].first].getPoint(
+                                    static_cast<unsigned int>(indices[0]));
                     double new_dis = (pSource - pTarget).norm();
                     rmse += new_dis * new_dis;
                 }

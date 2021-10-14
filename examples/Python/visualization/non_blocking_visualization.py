@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Advanced/non_blocking_visualization.py
 
@@ -10,8 +10,8 @@ import copy
 
 if __name__ == "__main__":
     cv3d.utility.set_verbosity_level(cv3d.utility.VerbosityLevel.Debug)
-    source_raw = cv3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target_raw = cv3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
+    source_raw = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_0.pcd")
+    target_raw = cv3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_1.pcd")
     source = source_raw.voxel_down_sample(voxel_size=0.02)
     target = target_raw.voxel_down_sample(voxel_size=0.02)
     trans = [[0.862, 0.011, -0.507, 0.0], [-0.139, 0.967, -0.215, 0.7],
@@ -31,10 +31,10 @@ if __name__ == "__main__":
     save_image = False
 
     for i in range(icp_iteration):
-        reg_p2l = cv3d.registration.registration_icp(
+        reg_p2l = cv3d.pipelines.registration.registration_icp(
             source, target, threshold, np.identity(4),
-            cv3d.registration.TransformationEstimationPointToPlane(),
-            cv3d.registration.ICPConvergenceCriteria(max_iteration=1))
+            cv3d.pipelines.registration.TransformationEstimationPointToPlane(),
+            cv3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=1))
         source.transform(reg_p2l.transformation)
         vis.update_geometry(source)
         vis.poll_events()

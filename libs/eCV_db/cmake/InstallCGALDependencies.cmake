@@ -11,10 +11,11 @@ if( WIN32 )
 
 		file( GLOB GMP_DLL_FILES ${GMP_LIB_FOLDER}/*.dll )
 		foreach( dest ${INSTALL_DESTINATIONS} )
-			copy_files( "${GMP_DLL_FILES}" ${dest} ) # Mind the quotes!
+			cloudViewer_install_files( "${GMP_DLL_FILES}" ${dest} ) # Mind the quotes!
 		endforeach()
-	
-		InstallFiles( FILES ${GMP_DLL_FILES} )
-		#InstallFiles( FILES ${MPFR_LIBRARIES} )
+		if (${GMP_DLL_FILES})
+			InstallFiles( FILES ${GMP_DLL_FILES} )
+			#InstallFiles( FILES ${MPFR_LIBRARIES} )
+		endif()
 	endif()
 endif()

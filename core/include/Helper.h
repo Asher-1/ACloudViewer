@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: www.erow.cn                            -
+// -                        cloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.erow.cn
+// Copyright (c) 2018 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +26,15 @@
 
 #pragma once
 
-#include "CVCoreLib.h"
-
 #include <cmath>
 #include <cstdlib>
 #include <functional>
+#include <random>
 #include <string>
 #include <tuple>
 #include <vector>
+
+#include "CVCoreLib.h"
 
 namespace cloudViewer {
 namespace utility {
@@ -117,27 +118,34 @@ struct CV_CORE_LIB_API hash_enum_class {
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c
 void CV_CORE_LIB_API SplitString(std::vector<std::string>& tokens,
-                 const std::string& str,
-                 const std::string& delimiters = " ",
-                 bool trim_empty_str = true);
+                                 const std::string& str,
+                                 const std::string& delimiters = " ",
+                                 bool trim_empty_str = true);
+
+/// Function to split a string, mimics boost::split
+/// http://stackoverflow.com/questions/236129/split-a-string-in-c
+std::vector<std::string> CV_CORE_LIB_API
+SplitString(const std::string& str,
+            const std::string& delimiters = " ",
+            bool trim_empty_str = true);
 
 /// String util: find length of current word staring from a position
 /// By default, alpha numeric chars and chars in valid_chars are considered
 /// as valid charactors in a word
 size_t CV_CORE_LIB_API WordLength(const std::string& doc,
-                  size_t start_pos,
-                  const std::string& valid_chars = "_");
+                                  size_t start_pos,
+                                  const std::string& valid_chars = "_");
 
-CV_CORE_LIB_API std::string& LeftStripString(std::string& str,
-                             const std::string& chars = "\t\n\v\f\r ");
+CV_CORE_LIB_API std::string& LeftStripString(
+        std::string& str, const std::string& chars = "\t\n\v\f\r ");
 
-CV_CORE_LIB_API std::string& RightStripString(std::string& str,
-                              const std::string& chars = "\t\n\v\f\r ");
+CV_CORE_LIB_API std::string& RightStripString(
+        std::string& str, const std::string& chars = "\t\n\v\f\r ");
 
 /// Strip empty charactors in front and after string. Similar to Python's
 /// str.strip()
-CV_CORE_LIB_API std::string& StripString(std::string& str,
-                         const std::string& chars = "\t\n\v\f\r ");
+CV_CORE_LIB_API std::string& StripString(
+        std::string& str, const std::string& chars = "\t\n\v\f\r ");
 
 /// Convert string to the lower case
 std::string CV_CORE_LIB_API ToLower(const std::string& s);
@@ -153,32 +161,26 @@ inline int CV_CORE_LIB_API DivUp(int x, int y) {
     return tmp.quot + (tmp.rem != 0 ? 1 : 0);
 }
 
-/// Thread-safe function returning a pseudo-random integer.
-/// The integer is drawn from a uniform distribution bounded by min and max
-/// (inclusive)
-int CV_CORE_LIB_API UniformRandInt(const int min, const int max);
+/// \class UniformRandIntGenerator
+///
+/// \brief Draw pseudo-random integers bounded by min and max (inclusive)
+/// from a uniform distribution
+class CV_CORE_LIB_API UniformRandIntGenerator {
+public:
+    UniformRandIntGenerator(
+            const int min,
+            const int max,
+            std::mt19937::result_type seed = std::random_device{}())
+        : distribution_(min, max), generator_(seed) {}
+    int operator()() { return distribution_(generator_); }
 
+protected:
+    std::uniform_int_distribution<int> distribution_;
+    std::mt19937 generator_;
+};
 
-/// Uniformly distributed binary-friendly floating point number in [0, 1).
-///
-/// Binary-friendly means that the random number can be represented by floating
-/// point with a few bits of mantissa. The binary-friendliness is useful for
-/// unit testing since it reduces the chances of numerical errors.
-///
-/// E.g.
-/// - 0.9 is not representable by floating point accurately, the actual value
-///   stored in a float32 is 0.89999997615814208984375...
-/// - 0.875 = 0.5 + 0.25 + 0.125, is binary-friendly.
-///
-/// \param power The possible random numbers are: n * 1 / (2 ^ power),
-///              where n = 0, 1, 2, ..., (2 ^ power - 1).
-template <typename T>
-T UniformRandFloatBinaryFriendly(unsigned int power = 5) {
-    double p = std::pow(2, power);
-    int n = UniformRandInt(0, p - 1);
-    return static_cast<T>(1. / p * n);
-}
+/// Returns current time stamp.
+std::string CV_CORE_LIB_API GetCurrentTimeStamp();
 
 }  // namespace utility
 }  // namespace cloudViewer
-

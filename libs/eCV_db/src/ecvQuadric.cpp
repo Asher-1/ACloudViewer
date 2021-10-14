@@ -146,7 +146,7 @@ ccQuadric* ccQuadric::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double
 		CVLog::Warning(
 			QString("[ccQuadric::fitTo] Not enough points in input cloud to fit a quadric! (%1 at the very least are required)").
 			arg(CV_LOCAL_MODEL_MIN_SIZE[QUADRIC]));
-		return 0;
+        return nullptr;
 	}
 
 	//project the points on a 2D plane
@@ -159,7 +159,7 @@ ccQuadric* ccQuadric::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double
 		if (!theLSPlane)
 		{
 			CVLog::Warning("[ccQuadric::Fit] Not enough points to fit a quadric!");
-			return 0;
+            return nullptr;
 		}
 
 		assert(Yk.getGravityCenter());
@@ -177,7 +177,7 @@ ccQuadric* ccQuadric::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double
 	if (!tempCloud.reserve(count))
 	{
 		CVLog::Warning("[ccQuadric::Fit] Not enough memory!");
-		return 0;
+        return nullptr;
 	}
 
 	cloud->placeIteratorAtBeginning();
@@ -206,7 +206,7 @@ ccQuadric* ccQuadric::Fit(cloudViewer::GenericIndexedCloudPersist *cloud, double
 	if (!eq)
 	{
 		CVLog::Warning("[ccQuadric::Fit] Failed to fit a quadric!");
-		return 0;
+        return nullptr;
 	}
 
 	//we recenter the quadric object
@@ -298,9 +298,9 @@ bool ccQuadric::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccQuadric::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccQuadric::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccGenericPrimitive::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccGenericPrimitive::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//parameters (dataVersion>=35)

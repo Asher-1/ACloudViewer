@@ -21,7 +21,7 @@ NormsIndexesTableType::NormsIndexesTableType()
     : ccArray<CompressedNormType, 1, CompressedNormType>("Compressed normals") {
 }
 
-bool NormsIndexesTableType::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool NormsIndexesTableType::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
 	if (dataVersion < 41)
 	{

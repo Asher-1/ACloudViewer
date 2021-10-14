@@ -70,34 +70,41 @@ ccRasterizeTool::ccRasterizeTool(ccGenericPointCloud* cloud, QWidget* parent/*=0
 	resampleOptionToggled(resampleCloudCheckBox->isChecked());
 	fillEmptyCellStrategyChanged(0);
 
-	connect(buttonBox,					SIGNAL(accepted()),					this,	SLOT(testAndAccept()));
-	connect(buttonBox,					SIGNAL(rejected()),					this,	SLOT(testAndReject()));
-	connect(gridStepDoubleSpinBox,		SIGNAL(valueChanged(double)),		this,	SLOT(updateGridInfo()));
-	connect(gridStepDoubleSpinBox,		SIGNAL(valueChanged(double)),		this,	SLOT(gridOptionChanged()));
-	connect(emptyValueDoubleSpinBox,	SIGNAL(valueChanged(double)),		this,	SLOT(gridOptionChanged()));
-	connect(resampleCloudCheckBox,		SIGNAL(toggled(bool)),				this,	SLOT(resampleOptionToggled(bool)));
-	connect(dimensionComboBox,			SIGNAL(currentIndexChanged(int)),	this,	SLOT(projectionDirChanged(int)));
-	connect(heightProjectionComboBox,	SIGNAL(currentIndexChanged(int)),	this,	SLOT(projectionTypeChanged(int)));
-	connect(scalarFieldProjection,		SIGNAL(currentIndexChanged(int)),	this,	SLOT(sfProjectionTypeChanged(int)));
-	connect(fillEmptyCellsComboBox,		SIGNAL(currentIndexChanged(int)),	this,	SLOT(fillEmptyCellStrategyChanged(int)));
-	connect(updateGridPushButton,		SIGNAL(clicked()),					this,	SLOT(updateGridAndDisplay()));
-	connect(generateCloudPushButton,	SIGNAL(clicked()),					this,	SLOT(generateCloud()));
-	connect(generateImagePushButton,	SIGNAL(clicked()),					this,	SLOT(generateImage()));
-	connect(generateRasterPushButton,	SIGNAL(clicked()),					this,	SLOT(generateRaster()));
-	connect(generateASCIIPushButton,	SIGNAL(clicked()),					this,	SLOT(generateASCIIMatrix()));
-	connect(generateMeshPushButton,		SIGNAL(clicked()),					this,	SLOT(generateMesh()));
-	connect(generateContoursPushButton,	SIGNAL(clicked()),					this,	SLOT(generateContours()));
-	connect(exportContoursPushButton,	SIGNAL(clicked()),					this,	SLOT(exportContourLines()));
-	connect(clearContoursPushButton,	SIGNAL(clicked()),					this,	SLOT(removeContourLines()));
-	connect(activeLayerComboBox,		SIGNAL(currentIndexChanged(int)),	this,	SLOT(activeLayerChanged(int)));
-	connect(generateHillshadePushButton,SIGNAL(clicked()),					this,	SLOT(generateHillshade()));
+    connect(buttonBox,	&QDialogButtonBox::accepted,	this,	&ccRasterizeTool::testAndAccept);
+    connect(buttonBox,	&QDialogButtonBox::rejected,	this,	&ccRasterizeTool::testAndReject);
+
+    connect(gridStepDoubleSpinBox,	static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),	this,	&ccRasterizeTool::updateGridInfo);
+    connect(gridStepDoubleSpinBox,	static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),	this,	&ccRasterizeTool::gridOptionChanged);
+    connect(emptyValueDoubleSpinBox,	static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),	this,	&ccRasterizeTool::gridOptionChanged);
+    connect(dimensionComboBox,		static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),			this,	&ccRasterizeTool::projectionDirChanged);
+    connect(heightProjectionComboBox,	static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),			this,	&ccRasterizeTool::projectionTypeChanged);
+    connect(scalarFieldProjection,	static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),			this,	&ccRasterizeTool::sfProjectionTypeChanged);
+    connect(fillEmptyCellsComboBox,	static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),			this,	&ccRasterizeTool::fillEmptyCellStrategyChanged);
+
+    connect(resampleCloudCheckBox,		&QAbstractButton::toggled,	this,	&ccRasterizeTool::resampleOptionToggled);
+    connect(updateGridPushButton,			&QAbstractButton::clicked,	this,	&ccRasterizeTool::updateGridAndDisplay);
+    connect(generateCloudPushButton,		&QAbstractButton::clicked,	this,	[this](){ generateCloud(true); } );
+    connect(generateImagePushButton,		&QAbstractButton::clicked,	this,	&ccRasterizeTool::generateImage);
+    connect(generateRasterPushButton,		&QAbstractButton::clicked,	this,	&ccRasterizeTool::generateRaster);
+    connect(generateASCIIPushButton,		&QAbstractButton::clicked,	this,	&ccRasterizeTool::generateASCIIMatrix);
+    connect(generateMeshPushButton,		&QAbstractButton::clicked,	this,	&ccRasterizeTool::generateMesh);
+    connect(generateContoursPushButton,	&QAbstractButton::clicked,	this,	&ccRasterizeTool::generateContours);
+    connect(exportContoursPushButton,		&QAbstractButton::clicked,	this,	&ccRasterizeTool::exportContourLines);
+    connect(clearContoursPushButton,		&QAbstractButton::clicked,	this,	&ccRasterizeTool::removeContourLines);
+
+    connect(generateHillshadePushButton, &QAbstractButton::clicked,	this,	&ccRasterizeTool::generateHillshade);
+
+    connect(activeLayerComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this] (int index)
+    {
+        activeLayerChanged( index );
+    });
 
 	//custom bbox editor
 	ccBBox gridBBox = m_cloud ? m_cloud->getOwnBB() : ccBBox(); 
 	if (gridBBox.isValid())
 	{
 		createBoundingBoxEditor(gridBBox, this);
-		connect(editGridToolButton, SIGNAL(clicked()), this, SLOT(showGridBoxEditor()));
+        connect(editGridToolButton, &QAbstractButton::clicked, this, &ccRasterizeTool::showGridBoxEditor);
 	}
 	else
 	{

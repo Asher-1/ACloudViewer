@@ -1,6 +1,6 @@
-# cloudViewer: www.cloudViewer.org
+# cloudViewer: Asher-1.github.io
 # The MIT License (MIT)
-# See license file or visit www.cloudViewer.org for details
+# See license file or visit Asher-1.github.io for details
 
 # examples/Python/Basic/rgbd_nyu.py
 
@@ -36,8 +36,8 @@ if __name__ == "__main__":
     print("Read NYU dataset")
     # cloudViewer does not support ppm/pgm file yet. Not using cv3d.io.read_image here.
     # MathplotImage having some ISSUE with NYU pgm file. Not using imread for pgm.
-    color_raw = mpimg.imread("../../TestData/RGBD/other_formats/NYU_color.ppm")
-    depth_raw = read_nyu_pgm("../../TestData/RGBD/other_formats/NYU_depth.pgm")
+    color_raw = mpimg.imread("../../test_data/RGBD/other_formats/NYU_color.ppm")
+    depth_raw = read_nyu_pgm("../../test_data/RGBD/other_formats/NYU_depth.pgm")
     color = cv3d.geometry.Image(color_raw)
     depth = cv3d.geometry.Image(depth_raw)
     rgbd_image = cv3d.geometry.RGBDImage.create_from_nyu_format(color, depth)

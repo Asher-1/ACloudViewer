@@ -1,7 +1,7 @@
-This folder contains a set of external libraries that are used in Open3D.
+This folder contains a set of external libraries that are used in CloudViewer.
 
-We want to make Open3D self-contained and cross-platform consistent. So
-Open3D does not detect system installed libraries and always links to these
+We want to make CloudViewer self-contained and cross-platform consistent. So
+CloudViewer does not detect system installed libraries and always links to these
 external libraries.
 
 Some external libraries rely on basic system level libraries such as OpenGL and
@@ -110,3 +110,10 @@ https://github.com/zeromq/libzmq
 cppzmq                      4.6.0                                    MIT license
 Header-only C++ binding for libzmq
 https://github.com/zeromq/cppzmq
+As an alternative, you can modify 3rdparty/zeromq/zeromq_build.cmake to fetch
+zeromq from our fork
+https://github.com/isl-org/libzmq
+--------------------------------------------------------------------------------
+embree                      3.13.0                              Apache-2 license
+Embree is a collection of high-performance ray tracing kernels
+https://github.com/embree/embree

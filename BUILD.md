@@ -187,6 +187,7 @@ If you want to compile ErowCloudViewer (and ccViewer) with LAS/LAZ files support
 
 If your PDAL installation is not correctly picked up by CMake, 
 set the `PDAL_DIR` to the path containing `PDALConfig.cmake`.
+eg: "/home/yons/anaconda3/envs/pytorch-gpu/lib/cmake/PDAL"
 
 ### [Optional] Setup for LibE57 support
 

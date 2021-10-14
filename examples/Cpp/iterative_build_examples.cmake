@@ -1,6 +1,6 @@
 string(REPLACE " " ";" EXAMPLE_TARGETS_LIST "${EXAMPLE_TARGETS}")
 foreach(EXAMPLE_TARGET ${EXAMPLE_TARGETS_LIST})
-    message(STATUS "[Iterative example build] building: ${EXAMPLE_TARGET}.")
+    message(STATUS "[Iterative example build] building with ${CMAKE_BUILD_TYPE} mode: ${EXAMPLE_TARGET}.")
     execute_process(
         COMMAND ${CMAKE_COMMAND} --build . --verbose --config ${CMAKE_BUILD_TYPE} --target ${EXAMPLE_TARGET} --parallel ${NPROC}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}

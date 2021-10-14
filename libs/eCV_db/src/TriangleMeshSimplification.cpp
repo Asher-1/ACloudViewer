@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: www.erow.cn                          -
+// -                        CloudViewer: asher-1.github.io                          -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.erow.cn
+// Copyright (c) 2019 asher-1.github.io
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 #include <queue>
 #include <tuple>
 
-#include <Console.h>
+#include <Logging.h>
 
 #include <unordered_set>
 #include <unordered_map>
@@ -115,7 +115,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 	baseVertices->setEnabled(false);
 	// DGM: no need to lock it as it is only used by one mesh!
 	baseVertices->setLocked(false);
-	auto mesh = std::make_shared<ccMesh>(baseVertices);
+	auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
 	mesh->addChild(baseVertices);
 
 	if (voxel_size <= 0.0) {
@@ -317,7 +317,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 	baseVertices->setEnabled(false);
 	// DGM: no need to lock it as it is only used by one mesh!
 	baseVertices->setLocked(false);
-	auto mesh = std::make_shared<ccMesh>(baseVertices);
+	auto mesh = cloudViewer::make_shared<ccMesh>(baseVertices);
 	mesh->addChild(baseVertices);
 	mesh->merge(this, false);
 

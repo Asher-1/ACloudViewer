@@ -1,9 +1,9 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: www.erow.cn                          -
+# -                        CloudViewer: asher-1.github.io                          -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018 www.erow.cn
+# Copyright (c) 2018 asher-1.github.io
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,15 +28,9 @@ import cloudViewer as cv3d
 import numpy as np
 
 if cv3d.__DEVICE_API__ == 'cuda':
-    from cloudViewer.cuda.pybind.core import (Tensor, Hashmap, Dtype, DtypeCode,
-                                              Device, cuda, nns, SizeVector,
-                                              DynamicSizeVector, matmul,
-                                              lstsq, solve, inv, svd, TensorList)
+    from cloudViewer.cuda.pybind.core import *
 else:
-    from cloudViewer.cpu.pybind.core import (Tensor, Hashmap, Dtype, DtypeCode,
-                                             Device, cuda, nns, SizeVector,
-                                             DynamicSizeVector, matmul,
-                                             lstsq, solve, inv, svd, TensorList)
+    from cloudViewer.cpu.pybind.core import *
 
 
 def _numpy_dtype_to_dtype(numpy_dtype):

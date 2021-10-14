@@ -296,21 +296,12 @@ void ccPolyline::drawMeOnly(CC_DRAW_CONTEXT& context)
 				CC_DRAW_CONTEXT markerContext = context;
 				markerContext.drawingFlags &= (~CC_DRAW_ENTITY_NAMES); // we must remove the 'push name flag' so that the sphere doesn't push its own!
 
-				//glFunc->glMatrixMode(GL_MODELVIEW);
-				//glFunc->glPushMatrix();
-				//ccGL::Translate(glFunc, P1->x, P1->y, P1->z);
 				markerContext.transformInfo.setTranslationStart(CCVector3(P1->x, P1->y, P1->z));
-
 				ccGLMatrixd rotMat = ccGLMatrixd::FromToRotation(CCVector3d(u.x, u.y, u.z), CCVector3d(0, 0, PC_ONE));
-				//glFunc->glMultMatrixf(rotMat.inverse().data());
-				markerContext.transformInfo.setRotMat(rotMat.inverse());
-				//glFunc->glScalef(m_arrowLength, m_arrowLength, m_arrowLength);
+                markerContext.transformInfo.setTransformation(rotMat.inverse(), false);
 				markerContext.transformInfo.setScale(CCVector3(m_arrowLength, m_arrowLength, m_arrowLength));
-
-				//ccGL::Translate(glFunc, 0.0, 0.0, -0.5);
 				markerContext.transformInfo.setTranslationEnd(CCVector3(0.0, 0.0, -0.5));
 				c_unitArrow->draw(markerContext);
-				//glFunc->glPopMatrix();
 			}
 		}
 	}
@@ -377,9 +368,9 @@ bool ccPolyline::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccPolyline::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccPolyline::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccHObject::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	if (dataVersion < 28)
@@ -640,8 +631,8 @@ void ccPolyline::setGlobalScale(double scale)
 }
 
 ccPointCloud* ccPolyline::samplePoints(	bool densityBased,
-										double samplingParameter,
-										bool withRGB)
+                                        double samplingParameter,
+                                        bool withRGB)
 {
 	if (samplingParameter <= 0 || size() < 2)
 	{
@@ -712,7 +703,7 @@ ccPointCloud* ccPolyline::samplePoints(	bool densityBased,
 		alpha = std::max(alpha, 0.0); //just in case
 		alpha = std::min(alpha, 1.0);
 
-		CCVector3 P = A + alpha * AB;
+		CCVector3 P = A + static_cast<PointCoordinateType>(alpha) * AB;
 		cloud->addPoint(P);
 
 		//proceed to the next point

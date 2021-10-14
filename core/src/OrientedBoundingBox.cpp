@@ -17,7 +17,6 @@
 
 // LOCAL
 #include "CVLog.h"
-#include "BoundingBox.h"
 #include "OrientedBoundingBox.h"
 
 // EIGEN
@@ -80,33 +79,6 @@ std::vector<size_t> OrientedBoundingBox::getPointIndicesWithinBoundingBox(
 		}
 	}
 	return indices;
-
-	//auto box_points = getBoxPoints();
-	//auto TestPlane = [](const Eigen::Vector3d& a, const Eigen::Vector3d& b,
-	//	const Eigen::Vector3d c, const Eigen::Vector3d& x) {
-	//	Eigen::Matrix3d design;
-	//	design << (b - a), (c - a), (x - a);
-	//	return design.determinant();
-	//};
-	//std::vector<size_t> indices;
-	//for (size_t idx = 0; idx < points.size(); idx++) {
-	//	Eigen::Vector3d point = CCVector3d::fromArray(points[idx]);
-	//	if (TestPlane(box_points[0], box_points[1], box_points[3], point) <=
-	//		0 &&
-	//		TestPlane(box_points[0], box_points[5], box_points[3], point) >=
-	//		0 &&
-	//		TestPlane(box_points[2], box_points[5], box_points[7], point) <=
-	//		0 &&
-	//		TestPlane(box_points[1], box_points[4], box_points[7], point) >=
-	//		0 &&
-	//		TestPlane(box_points[3], box_points[4], box_points[5], point) <=
-	//		0 &&
-	//		TestPlane(box_points[0], box_points[1], box_points[7], point) >=
-	//		0) {
-	//		indices.push_back(idx);
-	//	}
-	//}
-	//return indices;
 }
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
@@ -117,4 +89,3 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
 	obox.R_ = Eigen::Matrix3d::Identity();
 	return obox;
 }
-

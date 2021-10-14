@@ -19,9 +19,10 @@
 #include "ecvGBLSensor.h"
 
 //Local
+#include "ecvSphere.h"
 #include "ecvPointCloud.h"
 #include "ecvProgressDialog.h"
-#include "ecvSphere.h"
+#include "ecvDisplayTools.h"
 
 //Qt
 #include <QCoreApplication>
@@ -772,121 +773,98 @@ unsigned char ccGBLSensor::checkVisibility(const CCVector3& P) const
 
 void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context)
 {
-	if (!MACRO_Draw3D(context))
-		return;
-	
 	//we draw a little 3d representation of the sensor
-	
-	//get the set of OpenGL functions (version 2.1)
-	//QOpenGLFunctions_2_1 *glFunc = context.glFunctions<QOpenGLFunctions_2_1>();
-	//assert( glFunc != nullptr );
-	//
-	//if ( glFunc == nullptr )
-	//	return;
-	
-	bool pushName = MACRO_DrawEntityNames(context);
+    if (!MACRO_Draw3D(context))
+        return;
 
-	if (pushName)
-	{
-		//not particularly fast
-		if (MACRO_DrawFastNamesOnly(context))
-			return;
-		//glFunc->glPushName(getUniqueIDForDisplay());
-	}
+    //DGM FIXME: this display routine is crap!
+    if (!ecvDisplayTools::GetCurrentScreen())
+    {
+        return;
+    }
 
-	//DGM FIXME: this display routine is crap!
+    // build-up the normal representation own 'context'
+    CC_DRAW_CONTEXT cameraContext = context;
+    // force line width
+    cameraContext.currentLineWidth = 2;
+    cameraContext.opacity = 0.2f;
 
-	#if 0
-//apply rigid transformation
-	glFunc->glMatrixMode(GL_MODELVIEW);
-	glFunc->glPushMatrix();
-	{
-		ccIndexedTransformation sensorPos;
-		if (!getAbsoluteTransformation(sensorPos,m_activeIndex))
-		{
-			//no visible position for this index!
-			glFunc->glPopMatrix();
-			if (pushName)
-				glFunc->glPopName();
-			return;
-		}
+    //apply rigid transformation
+    ccIndexedTransformation sensorPos;
+    if (!getAbsoluteTransformation(sensorPos,m_activeIndex))
+    {
+        //no visible position for this index!
+        return;
+    }
 
-		glFunc->glMultMatrixf(sensorPos.data());
-	}
+    const double halfHeadSize = 0.3;
+    double scale = static_cast<double>(m_scale);
 
-	//test: center as sphere
-	//{
-	//	ccSphere sphere(m_scale / 10, 0, "Center", 12);
-	//	sphere.showColors(true);
-	//	sphere.setVisible(true);
-	//	sphere.setEnabled(true);
+    //sensor axes
+    {
+        double axisLength = halfHeadSize * scale;
+        CCVector3d C(0.0, 0.0, 0.0);
+        m_axis.clear();
+        m_axis.points_.push_back(Eigen::Vector3d(C.u));
+        m_axis.points_.push_back(Eigen::Vector3d(C.x + axisLength, C.y, C.z));
+        m_axis.points_.push_back(Eigen::Vector3d(C.x, C.y + axisLength, C.z));
+        m_axis.points_.push_back(Eigen::Vector3d(C.x, C.y, C.z + axisLength));
 
-	//	CC_DRAW_CONTEXT sphereContext = context;
-	//	sphereContext.drawingFlags &= (~CC_DRAW_ENTITY_NAMES); //we must remove the 'push name flag' so that the sphere doesn't push its own!
-	//	sphereContext.display = 0;
+        // x
+        m_axis.lines_.push_back(Eigen::Vector2i(0, 1));
+        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::red));
 
-	//	sphere.setTempColor(ecvColor::magenta);
-	//	sphere.draw(sphereContext);
-	//}
+        // y
+        m_axis.lines_.push_back(Eigen::Vector2i(0, 2));
+        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::yellow));
 
-	const PointCoordinateType halfHeadSize = static_cast<PointCoordinateType>(0.3);
+        // z
+        m_axis.lines_.push_back(Eigen::Vector2i(0, 3));
+        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::green));
+    }
 
-	//force line width
-	glFunc->glPushAttrib(GL_LINE_BIT);
-	glFunc->glLineWidth(2.0f);
+    //sensor head
+    {
+        Eigen::Vector3d minCorner(-halfHeadSize, -halfHeadSize, -halfHeadSize);
+        Eigen::Vector3d maxCorner(halfHeadSize,  halfHeadSize,  halfHeadSize);
+        minCorner *= scale;
+        maxCorner *= scale;
+        ccBBox bbox(minCorner, maxCorner);
+        m_obbHead = ecvOrientedBBox::CreateFromAxisAlignedBoundingBox(bbox);
+        m_obbHead.setColor(ecvColor::Rgb::ToEigen(m_color));
+    }
 
-	//sensor axes
-	{
-		PointCoordinateType axisLength = halfHeadSize * m_scale;
-		ccGL::Color3v(glFunc, ecvColor::red.rgb);
-		CCVector3 C(0, 0, 0);
-		glFunc->glBegin(GL_LINES);
-		ccGL::Vertex3v(glFunc, C.u);
-		ccGL::Vertex3(glFunc, C.x + axisLength, C.y, C.z);
-		glFunc->glEnd();
-		ccGL::Color3v(glFunc, ecvColor::green.rgb);
-		glFunc->glBegin(GL_LINES);
-		ccGL::Vertex3v(glFunc, C.u);
-		ccGL::Vertex3(glFunc, C.x, C.y + axisLength, C.z);
-		glFunc->glEnd();
-		ccGL::Color3v(glFunc, ecvColor::blue.rgb);
-		glFunc->glBegin(GL_LINES);
-		ccGL::Vertex3v(glFunc, C.u);
-		ccGL::Vertex3(glFunc, C.x, C.y, C.z + axisLength);
-		glFunc->glEnd();
-	}
+    //sensor legs
+    {
+        CCVector3d headConnect = /*headCenter*/ -CCVector3d(0.0, 0.0, halfHeadSize * scale);
 
-	//sensor head
-	{
-		CCVector3 minCorner(-halfHeadSize,-halfHeadSize,-halfHeadSize);
-		CCVector3 maxCorner( halfHeadSize, halfHeadSize, halfHeadSize);
-		minCorner *= m_scale;
-		maxCorner *= m_scale;
-		ccBBox bbHead(minCorner,maxCorner);
-		bbHead.draw(context, m_color);
-	}
+        m_leg.clear();
+        m_leg.points_.push_back(Eigen::Vector3d(headConnect.u));
+        m_leg.points_.push_back(Eigen::Vector3d(-scale, -scale, -scale));
+        m_leg.points_.push_back(Eigen::Vector3d(-scale, scale, -scale));
+        m_leg.points_.push_back(Eigen::Vector3d(scale, 0.0, -scale));
 
-	//sensor legs
-	{
-		CCVector3 headConnect = /*headCenter*/ -CCVector3(0, 0, static_cast<PointCoordinateType>(halfHeadSize)*m_scale);
-		ccGL::Color3v(glFunc, m_color.rgb);
-		glFunc->glBegin(GL_LINES);
-		ccGL::Vertex3v(glFunc, headConnect.u);
-		ccGL::Vertex3(glFunc, -m_scale, -m_scale, -m_scale);
-		ccGL::Vertex3v(glFunc, headConnect.u);
-		ccGL::Vertex3(glFunc, -m_scale, m_scale, -m_scale);
-		ccGL::Vertex3v(glFunc, headConnect.u);
-		ccGL::Vertex3(glFunc, m_scale, 0, -m_scale);
-		glFunc->glEnd();
-	}
+        m_leg.lines_.push_back(Eigen::Vector2i(0, 1));
+        m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
 
-	glFunc->glPopAttrib(); //GL_LINE_BIT
+        m_leg.lines_.push_back(Eigen::Vector2i(0, 2));
+        m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
 
-	if (pushName)
-		glFunc->glPopName();
+        m_leg.lines_.push_back(Eigen::Vector2i(0, 3));
+        m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
+    }
 
-	glFunc->glPopMatrix();
-#endif
+    // tranformation
+    {
+        Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
+        m_obbHead.transform(transformation);
+        m_leg.transform(transformation);
+        m_axis.transform(transformation);
+    }
+
+    cameraContext.visible = context.visible;
+    cameraContext.viewID = context.viewID;
+    ecvDisplayTools::Draw(cameraContext, this);
 }
 
 ccBBox ccGBLSensor::getOwnBB(bool withGLFeatures/*=false*/)
@@ -933,20 +911,27 @@ ccBBox ccGBLSensor::getOwnFitBB(ccGLMatrix& trans)
 	trans = sensorPos;
 
 	return ccBBox(	CCVector3(-m_scale,-m_scale,-m_scale),
-					CCVector3( m_scale, m_scale, m_scale) );
+                    CCVector3( m_scale, m_scale, m_scale) );
+}
+
+void ccGBLSensor::clearDrawings()
+{
+    ecvDisplayTools::RemoveEntities(this);
+}
+
+void ccGBLSensor::hideShowDrawings(CC_DRAW_CONTEXT &context)
+{
+    context.viewID = this->getViewId();
+    ecvDisplayTools::HideShowEntities(context);
 }
 
 bool ccGBLSensor::applyViewport()
 {
-	//if (!win)
-	//{
-	//	win = getDisplay();
-	//	if (!win)
-	//	{
-	//		CVLog::Warning("[ccGBLSensor::applyViewport] No associated display!");
-	//		return false;
-	//	}
-	//}
+    if (!ecvDisplayTools::GetCurrentScreen())
+    {
+        CVLog::Warning("[ccGBLSensor::applyViewport] No associated display!");
+        return false;
+    }
 
 	ccIndexedTransformation trans;
 	if (!getActiveAbsoluteTransformation(trans))
@@ -999,7 +984,8 @@ bool ccGBLSensor::applyViewport()
 	viewMat.invert();
 	viewMat.setTranslation(sensorCenterd);
 	//TODO: can we set the right FOV?
-	//win->setupProjectiveViewport(viewMat, 0, 1.0f, true, true);
+//    ecvDisplayTools::SetupProjectiveViewport(viewMat, 0, 1.0f, true, true);
+    ecvDisplayTools::SetupProjectiveViewport(viewMat, 0, 1.0f, true, false);
 
 	return true;
 }
@@ -1033,9 +1019,9 @@ bool ccGBLSensor::toFile_MeOnly(QFile& out) const
 	return true;
 }
 
-bool ccGBLSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
+bool ccGBLSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap)
 {
-	if (!ccSensor::fromFile_MeOnly(in, dataVersion, flags))
+    if (!ccSensor::fromFile_MeOnly(in, dataVersion, flags, oldToNewIDMap))
 		return false;
 
 	//rotation order (dataVersion>=34)
