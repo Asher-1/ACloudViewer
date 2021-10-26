@@ -22,6 +22,12 @@ target_include_directories( ${PROJECT_NAME}
             ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+if (GLIBCXX_USE_CXX11_ABI)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
+else()
+    target_compile_definitions(${PROJECT_NAME} PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
+endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
         OUTPUT_NAME ${PROJECT_NAME}
         FOLDER "3rdparty"

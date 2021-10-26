@@ -2,6 +2,14 @@
 
 include(ExternalProject)
 
+if (${GLIBCXX_USE_CXX11_ABI})
+    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)
+    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for boost")
+else ()
+    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 0)
+    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for boost")
+endif ()
+
 ExternalProject_Add(
         ext_boost
         PREFIX boost
@@ -14,7 +22,8 @@ ExternalProject_Add(
         BUILD_COMMAND echo "Running Boost build..."
         COMMAND $<IF:$<PLATFORM_ID:Windows>,bootstrap.bat,./bootstrap.sh> --without-libraries=python
         # recompiling with -fPIC for fixing linking error for "-fPIC" with add_executable()
-        COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> -j6 -q -d+2 cxxflags=-fPIC cflags=-fPIC variant=release
+        COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> -j6 -q -d+2 cxxflags=-fPIC cflags=-fPIC variant=release define=_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}
+        # COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> -j6 -q -d+2 cxxflags=-fPIC cflags=-fPIC variant=release
         UPDATE_COMMAND ""
         INSTALL_COMMAND $<IF:$<PLATFORM_ID:Windows>,b2.exe,./b2> install --prefix=${CLOUDVIEWER_EXTERNAL_INSTALL_DIR} --without-python
 )

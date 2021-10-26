@@ -30,14 +30,19 @@ Cloning CloudViewer
 
 Make sure to use the ``--recursive`` flag when cloning CloudViewer.
 
-.. code-block:: bash
-
     git clone --recursive https://github.com/Asher-1/ErowCloudViewer.git
-
+    
     # You can also update the submodule manually
     git submodule update --init --recursive
 
 
+Note
+--------------
+
+custom modification：
+
+    3rdparty/rply
+    libs/Reconstruction/lib/PoissonRecon
 
 Ubuntu/macOS
 ------------
@@ -57,11 +62,11 @@ Windows
 
 	    mkdir build
 	    cd build
-	
+	    
 	    cmake -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
-		-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake  \
+	    -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake  \
 	      ..
-	
+	    
 	    :: Specify the generator based on your Visual Studio version
 	    :: If CMAKE_INSTALL_PREFIX is a system folder, admin access is needed for installation
 	    cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="<cloudViewer_install_directory>" ..
@@ -89,14 +94,14 @@ targets in terminal or Visual Studio.
     :: Activate the virtualenv first
     :: Install pip package in the current python environment
     cmake --build . --config Release --target install-pip-package
-
+    
     :: Create Python package in build/lib
     cmake --build . --config Release --target python-package
-
+    
     :: Create pip package in build/lib
     :: This creates a .whl file that you can install manually.
     cmake --build . --config Release --target pip-package
-
+    
     :: Create conda package in build/lib
     :: This creates a .tar.bz2 file that you can install manually.
     cmake --build . --config Release --target conda-package
@@ -133,9 +138,9 @@ level code for models and pipelines. To build the operators and layers, set
 ``BUILD_PYTORCH_OPS=ON`` and/or ``BUILD_TENSORFLOW_OPS=ON``.  Don't forget to also
 enable ``BUILD_CUDA_MODULE=ON`` for GPU support. To include the models and
 pipelines from CloudViewer-ML in the python package, set ``BUNDLE_CLOUDVIEWER_ML=ON`` and
-``OPEN3D_ML_ROOT`` to the CloudViewer-ML repository. You can directly download
+``CLOUDVIEWER_ML_ROOT`` to the CloudViewer-ML repository. You can directly download
 CloudViewer-ML from GitHub during the build with
-``OPEN3D_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git``.
+``CLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git``.
 
 The following example shows the command for building the ops with GPU support
 for all supported ML frameworks and bundling the high level CloudViewer-ML code.
@@ -145,54 +150,54 @@ for all supported ML frameworks and bundling the high level CloudViewer-ML code.
           -DBUILD_PYTORCH_OPS=ON \
           -DBUILD_TENSORFLOW_OPS=ON \
           -DBUNDLE_CLOUDVIEWER_ML=ON \
-          -DOPEN3D_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
+          -DCLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
           ..
     # Install the python wheel with pip
     make -j install-pip-package
-
+    
     Importing Python libraries compiled with different CXX ABI may cause segfaults
     in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
     and TensorFlow Python releases use the older CXX ABI; while when they are
     compiled from source, newer ABI is enabled by default.
-
+    
     When releasing CloudViewer as a Python package, we set
     ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
     in order to ensure compatibility with PyTorch and TensorFlow Python releases.
-
+    
     If you build PyTorch or TensorFlow from source or if you run into ABI
     compatibility issues with them, please:
-
+    
     1. Check PyTorch and TensorFlow ABI with
-
+    
        .. code-block:: bash
-
+    
            python -c "import torch; print(torch._C._GLIBCXX_USE_CXX11_ABI)"
            python -c "import tensorflow; print(tensorflow.__cxx11_abi_flag__)"
-
+    
     2. Configure CloudViewer to compile all dependencies from source
        with the corresponding ABI version obtained from step 1.
-
+    
     After installation of the Python package, you can check CloudViewer ABI version
     with:
-
+    
     .. code-block:: bash
-
+    
         python -c "import cloudViewer; print(cloudViewer.pybind._GLIBCXX_USE_CXX11_ABI)"
-
+    
     To build CloudViewer with CUDA support, configure with:
-
+    
     .. code-block:: bash
-
+    
         cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<cloudViewer_install_directory> ..
-
+    
     Please note that CUDA support is work in progress and experimental. For building
     CloudViewer with CUDA support, ensure that CUDA is properly installed by running following commands:
-
+    
     .. code-block:: bash
-
+    
         nvidia-smi      # Prints CUDA-enabled GPU information
         nvcc -V         # Prints compiler version
-
+    
     If you see an output similar to ``command not found``, you can install CUDA toolkit
     by following the `official
     documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
@@ -220,6 +225,6 @@ Upload whl fies
 
 	pip install twine
 	twine upload dist/*
-
+	
 	Enter your username: Asher-1
 	Enter your password: ***

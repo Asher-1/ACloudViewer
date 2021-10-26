@@ -29,56 +29,48 @@
 //
 // Author: Asher (Dahai Lu)
 
-#include <Logging.h>
 #include "util/misc.h"
 #include "util/option_manager.h"
 
 namespace cloudViewer {
 
-class  OptionsParser
-{
+class OptionsParser {
 public:
-
-    OptionsParser()
-    {
+    OptionsParser() {
         argc = 0;
         argv = nullptr;
         reset();
     }
 
-    ~OptionsParser()
-    {
-        reset();
-    }
+    ~OptionsParser() { reset(); }
 
-    bool parseOptions()
-    {
-        return parseOptions(this->argc, this->argv);
-    }
+    bool parseOptions() { return parseOptions(this->argc, this->argv); }
 
     inline int getArgc() { return this->argc; }
     inline char** getArgv() { return this->argv; }
 
     template <typename T>
     void registerOption(const std::string& name, const T* option) {
-      if (std::is_same<T, bool>::value) {
-        options_bool_.emplace_back(name, reinterpret_cast<const bool*>(option));
-      } else if (std::is_same<T, int>::value) {
-        options_int_.emplace_back(name, reinterpret_cast<const int*>(option));
-      } else if (std::is_same<T, double>::value) {
-        options_double_.emplace_back(name, reinterpret_cast<const double*>(option));
-      } else if (std::is_same<T, std::string>::value) {
-        if (!reinterpret_cast<const std::string*>(option)->empty())
-        {
-            options_string_.emplace_back(name, reinterpret_cast<const std::string*>(option));
+        if (std::is_same<T, bool>::value) {
+            options_bool_.emplace_back(name,
+                                       reinterpret_cast<const bool*>(option));
+        } else if (std::is_same<T, int>::value) {
+            options_int_.emplace_back(name,
+                                      reinterpret_cast<const int*>(option));
+        } else if (std::is_same<T, double>::value) {
+            options_double_.emplace_back(
+                    name, reinterpret_cast<const double*>(option));
+        } else if (std::is_same<T, std::string>::value) {
+            if (!reinterpret_cast<const std::string*>(option)->empty()) {
+                options_string_.emplace_back(
+                        name, reinterpret_cast<const std::string*>(option));
+            }
+        } else {
+            std::cerr << "Unsupported option type" << std::endl;
         }
-      } else {
-       utility::LogError("Unsupported option type");
-      }
     }
 
-    void reset()
-    {
+    void reset() {
         releaseOptions();
         options_bool_.clear();
         options_int_.clear();
@@ -87,20 +79,20 @@ public:
     }
 
     bool parseOptions(int& argc, char**& argv) {
-        // First, put all options without a section and then those with a section.
-        // This is necessary as otherwise older Boost versions will write the
-        // options without a section in between other sections and therefore
-        // the errors will be assigned to the wrong section if read later.
+        // First, put all options without a section and then those with a
+        // section. This is necessary as otherwise older Boost versions will
+        // write the options without a section in between other sections and
+        // therefore the errors will be assigned to the wrong section if read
+        // later.
 
         ReleaseOptions(argc, argv);
         unsigned long capacity = 2 * getParametersCount() + 1;
-        if (capacity == 0)
-        {
+        if (capacity == 0) {
             return false;
         }
 
         // add application name
-        argv = new char* [capacity];
+        argv = new char*[capacity];
         setValue("options", 0, argv);
         argc = 1;
 
@@ -137,20 +129,15 @@ public:
             argc += 1;
         }
 
-        if (argc == 0 || !argv)
-            return false;
+        if (argc == 0 || !argv) return false;
 
         return true;
     }
 
-    static void ReleaseOptions(int argc, char** argv)
-    {
-        if (argv)
-        {
-            for(int i = 0; i < argc; ++i)
-            {
-                if (argv[i])
-                {
+    static void ReleaseOptions(int argc, char** argv) {
+        if (argv) {
+            for (int i = 0; i < argc; ++i) {
+                if (argv[i]) {
                     delete[] argv[i];
                 }
             }
@@ -159,18 +146,14 @@ public:
     }
 
 private:
-
-    void releaseOptions()
-    {
-        if (this->argc > 0 && this->argv)
-        {
+    void releaseOptions() {
+        if (this->argc > 0 && this->argv) {
             ReleaseOptions(this->argc, this->argv);
         }
         this->argc = 0;
     }
 
-    void setValue(const std::string& value, int argc, char** argv)
-    {
+    void setValue(const std::string& value, int argc, char** argv) {
         unsigned long size = value.length() * sizeof(char);
         argv[argc] = static_cast<char*>(malloc(size));
         strncpy(argv[argc], value.c_str(), value.length());
@@ -178,8 +161,8 @@ private:
 
     unsigned long getParametersCount() {
         return static_cast<unsigned long>(
-                    options_int_.size() + options_bool_.size() +
-                    options_double_.size() + options_string_.size());
+                options_int_.size() + options_bool_.size() +
+                options_double_.size() + options_string_.size());
     }
 
     int argc;

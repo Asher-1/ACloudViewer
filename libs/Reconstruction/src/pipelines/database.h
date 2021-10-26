@@ -27,23 +27,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
+// Author: Asher (Dahai Lu)
 
-#include "exe/gui.h"
-#include "option_utils.hpp"
+#include <string>
 
 namespace cloudViewer {
 
-int RunProjectGenerator(const std::string& output_path,
-                        const std::string& quality = "high") {
-    OptionsParser parser;
-    parser.registerOption("output_path", &output_path);
-    // supported {low, medium, high, extreme}
-    parser.registerOption("quality", &quality);
-    if (!parser.parseOptions())
-      return EXIT_FAILURE;
+int CleanDatabase(const std::string& database_path, const std::string& type);
 
-    return colmap::RunProjectGenerator(parser.getArgc(), parser.getArgv());
-}
+int CreateDatabase(const std::string& database_path);
+
+int MergeDatabase(const std::string& database_path1,
+                  const std::string& database_path2,
+                  const std::string& merged_database_path);
 
 }  // namespace cloudViewer

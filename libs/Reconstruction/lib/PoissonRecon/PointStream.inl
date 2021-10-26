@@ -177,7 +177,7 @@ void PLYOrientedPointStream< Real >::reset( void )
 template< class Real >
 void PLYOrientedPointStream< Real >::_free( void )
 {
-	if( _ply ) ply_close( _ply ) , _ply = NULL;
+	if( _ply ) ply_close_custom( _ply ) , _ply = NULL;
 	if( _elist )
 	{
 		for( int i=0 ; i<_nr_elems ; i++ ) free( _elist[i] );
@@ -377,7 +377,7 @@ void PLYOrientedPointStreamWithData< Real , Data >::reset( void )
 template< class Real , class Data >
 void PLYOrientedPointStreamWithData< Real , Data >::_free( void )
 {
-	if( _ply ) ply_close( _ply ) , _ply = NULL;
+	if( _ply ) ply_close_custom( _ply ) , _ply = NULL;
 	if( _elist )
 	{
 		for( int i=0 ; i<_nr_elems ; i++ ) free( _elist[i] );
