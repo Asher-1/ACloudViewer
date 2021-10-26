@@ -131,9 +131,9 @@ macro(COLMAP_ADD_LIBRARY TARGET_NAME)
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
-    set_target_properties(${TARGET_NAME} PROPERTIES
-            CXX_VISIBILITY_PRESET hidden
-            )
+#    set_target_properties(${TARGET_NAME} PROPERTIES
+#            CXX_VISIBILITY_PRESET hidden
+#            )
 
     # install
     install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
@@ -156,9 +156,9 @@ macro(COLMAP_ADD_STATIC_LIBRARY TARGET_NAME)
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
-    set_target_properties(${TARGET_NAME} PROPERTIES
-            CXX_VISIBILITY_PRESET hidden
-            )
+#    set_target_properties(${TARGET_NAME} PROPERTIES
+#            CXX_VISIBILITY_PRESET hidden
+#            )
 
     # install
     install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap)
@@ -186,9 +186,9 @@ macro(COLMAP_ADD_CUDA_LIBRARY TARGET_NAME)
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
-    #    set_target_properties( ${TARGET_NAME} PROPERTIES
-    #            CXX_VISIBILITY_PRESET hidden
-    #    )
+#    set_target_properties(${TARGET_NAME} PROPERTIES
+#            CXX_VISIBILITY_PRESET hidden
+#            )
     # install
     install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
 endmacro(COLMAP_ADD_CUDA_LIBRARY)
@@ -212,9 +212,9 @@ macro(COLMAP_ADD_STATIC_CUDA_LIBRARY TARGET_NAME)
     cloudViewer_set_global_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
-    #    set_target_properties( ${TARGET_NAME} PROPERTIES
-    #            CXX_VISIBILITY_PRESET hidden
-    #    )
+#    set_target_properties(${TARGET_NAME} PROPERTIES
+#            CXX_VISIBILITY_PRESET hidden
+#            )
 
     # install
     install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
@@ -282,9 +282,9 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         cloudViewer_set_global_properties(${TARGET_NAME})
         cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
-        set_target_properties(${TARGET_NAME} PROPERTIES
-                CXX_VISIBILITY_PRESET hidden
-                )
+#        set_target_properties(${TARGET_NAME} PROPERTIES
+#                CXX_VISIBILITY_PRESET hidden
+#                )
 
         # install
         if (IS_MSVC)
@@ -316,9 +316,9 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         cloudViewer_set_global_properties(${TARGET_NAME})
         cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
-        set_target_properties(${TARGET_NAME} PROPERTIES
-                CXX_VISIBILITY_PRESET hidden
-                )
+#        set_target_properties(${TARGET_NAME} PROPERTIES
+#                CXX_VISIBILITY_PRESET hidden
+#                )
 
         # install
         if (IS_MSVC)

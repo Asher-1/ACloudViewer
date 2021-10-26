@@ -148,7 +148,7 @@
 #include "pluginManager/ecvPluginUIManager.h"
 
 // Reconstruction
-#ifdef USE_COLMAP_MODULE
+#ifdef BUILD_RECONSTRUCTION
 #include "reconstruction/ReconstructionWidget.h"
 #endif
 
@@ -264,7 +264,7 @@ MainWindow::MainWindow()
       m_currentFullWidget(nullptr),
       m_exclusiveFullscreen(false),
       m_lastViewMode(VIEWMODE::ORTHOGONAL)
-#ifdef USE_COLMAP_MODULE
+#ifdef BUILD_RECONSTRUCTION
       ,
       m_rcw(nullptr)
 #endif
@@ -295,7 +295,7 @@ MainWindow::MainWindow()
     connectActions();
 
     // Reconstruction
-#ifdef USE_COLMAP_MODULE
+#ifdef BUILD_RECONSTRUCTION
     initReconstructions();
 #endif
 
@@ -396,7 +396,7 @@ MainWindow::~MainWindow() {
     cancelPreviousPickingOperation(false);  // just in case
 
     // Reconstruction must before m_ccRoot
-#ifdef USE_COLMAP_MODULE
+#ifdef BUILD_RECONSTRUCTION
     if (m_rcw) {
         m_rcw->release();
     }
@@ -1138,7 +1138,7 @@ void MainWindow::initDBRoot() {
             });
 }
 
-#ifdef USE_COLMAP_MODULE
+#ifdef BUILD_RECONSTRUCTION
 void MainWindow::initReconstructions() {
     // init reconstructions
     if (!m_rcw) {

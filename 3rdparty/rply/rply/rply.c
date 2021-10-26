@@ -691,6 +691,14 @@ int ply_close(p_ply ply) {
     return 1;
 }
 
+int get_plystorage_mode(p_ply ply, e_ply_storage_mode *storage_mode)
+{
+	if (!ply) return 0;
+
+	*storage_mode = ply->storage_mode;
+	return 1;
+}
+
 /* ----------------------------------------------------------------------
  * Query support functions
  * ---------------------------------------------------------------------- */

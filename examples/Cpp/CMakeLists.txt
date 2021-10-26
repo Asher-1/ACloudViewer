@@ -94,6 +94,12 @@ if (BUILD_GUI)
     cloudViewer_add_example(VoxelHashingGUI 3rdparty_threads)
 endif ()
 
+if (BUILD_RECONSTRUCTION)
+    cloudViewer_add_example(Reconstruction colmap)
+    target_include_directories(Reconstruction PRIVATE ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
+    target_include_directories(Reconstruction PRIVATE ${COLMAP_SOURCE_DIR}/src)
+endif ()
+
 if (BUILD_WEBRTC)
     cloudViewer_add_example(DrawWebRTC)
 endif ()

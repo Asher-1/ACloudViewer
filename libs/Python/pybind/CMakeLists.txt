@@ -24,6 +24,12 @@ add_subdirectory(t/pipelines)
 add_subdirectory(utility)
 add_subdirectory(visualization)
 
+if (BUILD_RECONSTRUCTION)
+    target_include_directories(pybind PRIVATE ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
+    target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/src)
+    add_subdirectory(reconstruction)
+endif ()
+
 target_sources(pybind PRIVATE
         docstring.cpp
         cloudViewer_pybind.cpp
@@ -45,12 +51,16 @@ cloudViewer_show_and_abort_on_warning(pybind)
 cloudViewer_set_global_properties(pybind)
 
 set_target_properties(pybind PROPERTIES DEBUG_POSTFIX "")
-
 if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
 endif ()
-
 target_link_libraries(pybind PRIVATE CloudViewer::CloudViewer)
+
+if (BUILD_RECONSTRUCTION)
+    target_link_libraries(pybind PRIVATE colmap)
+    # Add custom preprocessor definitions
+    target_compile_definitions(pybind PRIVATE BUILD_RECONSTRUCTION)
+endif ()
 
 # At `make`: cloudViewer.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
@@ -164,6 +174,7 @@ add_custom_target(python-package
         -DBUNDLE_CLOUDVIEWER_ML=${BUNDLE_CLOUDVIEWER_ML}
         -DCLOUDVIEWER_ML_ROOT=${CLOUDVIEWER_ML_ROOT}
         -DBUILD_GUI=${BUILD_GUI}
+        -DBUILD_RECONSTRUCTION=${BUILD_RECONSTRUCTION}
         -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
         -DPROJECT_EMAIL=${PROJECT_EMAIL}
         -DPROJECT_HOME=${PROJECT_HOME}
