@@ -154,7 +154,7 @@ if (BUILD_RECONSTRUCTION)
     target_link_libraries(${PROJECT_NAME} colmap)
 
     # Add custom preprocessor definitions
-    target_compile_definitions( ${PROJECT_NAME} PRIVATE USE_COLMAP_MODULE )
+    target_compile_definitions( ${PROJECT_NAME} PRIVATE BUILD_RECONSTRUCTION )
 endif()
 
 # fix that You must build your code with position independent code if Qt was built with -reduce-relocations

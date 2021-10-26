@@ -95,7 +95,7 @@ namespace Ui {
 class MainViewerClass;
 }
 
-#ifdef USE_COLMAP_MODULE
+#ifdef BUILD_RECONSTRUCTION
 namespace cloudViewer {
 class ReconstructionWidget;
 }
@@ -673,7 +673,7 @@ private:
     ccPluginUIManager* m_pluginUIManager;
 
 private:
-#ifdef USE_COLMAP_MODULE
+#ifdef BUILD_RECONSTRUCTION
     void initReconstructions();
     void autoShowReconstructionToolBar(bool state);
     cloudViewer::ReconstructionWidget* m_rcw;

@@ -42,12 +42,12 @@ option(BUILD_PYTHON_MODULE "Build the python module" ON)
 option(BUILD_CUDA_MODULE "Build the CUDA module" OFF)
 option(BUILD_COMMON_CUDA_ARCHS "Build for common CUDA GPUs (for release)" OFF)
 option(BUILD_CACHED_CUDA_MANAGER "Build the cached CUDA memory manager" ON)
-option(BUILD_GUI "Builds new GUI" ON)
+option(BUILD_GUI "Builds CloudViewerApp GUI" ON)
 option(WITH_OPENMP "Use OpenMP multi-threading" ON)
 option(WITH_IPPICV "Use Intel Performance Primitives" ON)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering" OFF)
 option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
-option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" OFF)
+option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=0" OFF)
 if (WIN32 OR UNIX AND NOT LINUX_AARCH64)
     cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
 else ()
@@ -386,7 +386,7 @@ endif ()
 if (WIN32)
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explicitly export symbols.
-    #       Then, we could use -fvisibility=hidden for Linux as well
+    # Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if (MSVC)
         # Make sure we don't hit the 65535 object member limit with MSVC

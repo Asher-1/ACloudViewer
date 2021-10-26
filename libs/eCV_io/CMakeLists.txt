@@ -8,7 +8,7 @@ add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(ui)
 
-option(OPTION_USE_DXF_LIB "Build with Ribbonsoft's DXF Lib (AutoCAD DXF files support)" OFF)
+option(OPTION_USE_DXF_LIB "Build with Ribbonsoft's DXF Lib (AutoCAD DXF files support)" ON)
 if (${OPTION_USE_DXF_LIB})
     set(DXF_LIB_DIR "extern/dxflib" CACHE PATH "DXF lib path")
     add_subdirectory("${DXF_LIB_DIR}")
@@ -27,6 +27,7 @@ if (USE_SIMD)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
     target_compile_options(${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS}>")
 endif ()
+
 cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 
 # INTERNAL LIB

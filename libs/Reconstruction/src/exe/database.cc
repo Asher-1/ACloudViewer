@@ -69,8 +69,8 @@ int RunDatabaseCleaner(int argc, char** argv) {
       database.ClearTwoViewGeometries();
       database.ClearMatches();
     } else {
-      std::cout << "ERROR: Invalid cleanup type; no changes in database"
-                << std::endl;
+      std::cout << "ERROR: Invalid cleanup type: " << type <<
+                "; no changes in database" << std::endl;
       return EXIT_FAILURE;
     }
   }
