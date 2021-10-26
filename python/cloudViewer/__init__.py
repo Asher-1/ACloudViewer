@@ -66,9 +66,15 @@ if platform.system() == "Linux":
         for lib in libqts:
             _CDLL(lib)
 
+        libgflags = (_Path(__file__).parent / 'libs').glob('libgflags*')
+        libgflags = sorted(libgflags)
+        for lib in libgflags:
+            _CDLL(lib)
+
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libCVCoreLib*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libECV_DB_LIB*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libECV_IO_LIB*'))))
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('lib*'))))
 
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:
@@ -86,16 +92,22 @@ if _build_config["BUILD_CUDA_MODULE"]:
         if _pybind_cuda.cloudViewer_core_cuda_device_count() > 0:
             from cloudViewer.cuda.pybind import (camera, geometry, io, pipelines,
                                                  utility, t)
+            if _build_config["BUILD_RECONSTRUCTION"]:
+                from cloudViewer.cuda.pybind import reconstruction
             from cloudViewer.cuda import pybind
 
             __DEVICE_API__ = 'cuda'
-    except OSError:  # CUDA not installed
+    except OSError as e:  # CUDA not installed
+        print(e)
         pass
-    except StopIteration:  # pybind cuda library not available
+    except StopIteration as e:  # pybind cuda library not available
+        print(e)
         pass
 
 if __DEVICE_API__ == 'cpu':
     from cloudViewer.cpu.pybind import (camera, geometry, io, pipelines, utility, t)
+    if _build_config["BUILD_RECONSTRUCTION"]:
+        from cloudViewer.cpu.pybind import reconstruction
     from cloudViewer.cpu import pybind
 
 import cloudViewer.core

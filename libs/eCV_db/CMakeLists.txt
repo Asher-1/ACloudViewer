@@ -25,7 +25,6 @@ cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 
 option( OPTION_USE_RANSAC_LIB "Build with Ransac Lib" ON )
 if ( ${OPTION_USE_RANSAC_LIB} )
-	#target_link_libraries( ${PROJECT_NAME} PRIVATE 3rdparty_ransacSD )
 	target_compile_definitions( ${PROJECT_NAME} PUBLIC CV_RANSAC_SUPPORT POINTSWITHINDEX)
 endif()
 

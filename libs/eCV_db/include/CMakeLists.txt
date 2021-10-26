@@ -28,7 +28,6 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvExternalFactory.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvExtru.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvFacet.h
-		${CMAKE_CURRENT_LIST_DIR}/ecvFastMarchingForNormsDirection.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvFeature.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvFileUtils.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvFlags.h
@@ -54,6 +53,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvImage.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvIndexedTransformation.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvIndexedTransformationBuffer.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvFastMarchingForNormsDirection.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvInteractor.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvKdTree.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvKDTreeFlann.h

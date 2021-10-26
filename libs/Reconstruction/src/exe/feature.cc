@@ -235,35 +235,6 @@ int RunFeatureImporter(int argc, char** argv) {
   return EXIT_SUCCESS;
 }
 
-int RunExhaustiveMatcher(int argc, char** argv) {
-  OptionManager options;
-  options.AddDatabaseOptions();
-  options.AddExhaustiveMatchingOptions();
-  options.Parse(argc, argv);
-
-  if (!VerifySiftGPUParams(options.sift_matching->use_gpu)) {
-    return EXIT_FAILURE;
-  }
-
-  std::unique_ptr<QApplication> app;
-  if (options.sift_matching->use_gpu && kUseOpenGL) {
-    app.reset(new QApplication(argc, argv));
-  }
-
-  ExhaustiveFeatureMatcher feature_matcher(*options.exhaustive_matching,
-                                           *options.sift_matching,
-                                           *options.database_path);
-
-  if (options.sift_matching->use_gpu && kUseOpenGL) {
-    RunThreadWithOpenGLContext(&feature_matcher);
-  } else {
-    feature_matcher.Start();
-    feature_matcher.Wait();
-  }
-
-  return EXIT_SUCCESS;
-}
-
 int RunMatchesImporter(int argc, char** argv) {
   std::string match_list_path;
   std::string match_type = "pairs";
@@ -307,6 +278,35 @@ int RunMatchesImporter(int argc, char** argv) {
   } else {
     feature_matcher->Start();
     feature_matcher->Wait();
+  }
+
+  return EXIT_SUCCESS;
+}
+
+int RunExhaustiveMatcher(int argc, char** argv) {
+  OptionManager options;
+  options.AddDatabaseOptions();
+  options.AddExhaustiveMatchingOptions();
+  options.Parse(argc, argv);
+
+  if (!VerifySiftGPUParams(options.sift_matching->use_gpu)) {
+    return EXIT_FAILURE;
+  }
+
+  std::unique_ptr<QApplication> app;
+  if (options.sift_matching->use_gpu && kUseOpenGL) {
+    app.reset(new QApplication(argc, argv));
+  }
+
+  ExhaustiveFeatureMatcher feature_matcher(*options.exhaustive_matching,
+                                           *options.sift_matching,
+                                           *options.database_path);
+
+  if (options.sift_matching->use_gpu && kUseOpenGL) {
+    RunThreadWithOpenGLContext(&feature_matcher);
+  } else {
+    feature_matcher.Start();
+    feature_matcher.Wait();
   }
 
   return EXIT_SUCCESS;

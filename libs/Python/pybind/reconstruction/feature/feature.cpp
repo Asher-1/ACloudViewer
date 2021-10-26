@@ -1,0 +1,113 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: asher-1.github.io                    -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 asher-1.github.io
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+
+#include "pybind/reconstruction/feature/feature.h"
+
+#include <memory>
+#include "pipelines/feature.h"
+#include "pybind/docstring.h"
+
+namespace cloudViewer {
+namespace reconstruction {
+namespace feature {
+
+// Reconstruction feature functions have similar arguments, sharing arg
+// docstrings
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"database_path",
+                 "Path to database in which to store the extracted data"},
+                {"image_path", "Root path to folder which contains the images."},
+                {"image_list_path", "The images list file path with ."},
+                {"import_path", "Optional list of images to read. "
+                 "The list must contain the relative path of the images with respect to the image_path"},
+                {"camera_mode",
+                 "The camera mode like { AUTO = 0, SINGLE = 1, PER_FOLDER = 2, PER_IMAGE = 3 }"},
+                {"match_list_path", "The matches list directories"},
+                {"match_type", "The match type supported {'pairs', 'raw', 'inliers'}"}};
+
+void pybind_feature_methods(py::module &m) {
+    m.def("extract_feature", &ExtractFeature,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for the extraction of images feature", "database_path"_a,
+          "image_path"_a, "image_list_path"_a = "", "camera_mode"_a = 0);
+    docstring::FunctionDocInject(m, "extract_feature",
+                                 map_shared_argument_docstrings);
+
+    m.def("import_feature", &ImportFeature,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for the importation of images feature", "database_path"_a,
+          "image_path"_a, "import_path"_a, "image_list_path"_a = "",
+          "camera_mode"_a = 0);
+    docstring::FunctionDocInject(m, "import_feature",
+                                 map_shared_argument_docstrings);
+
+    m.def("import_matches", &ImportMatches,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for the importation of image matches", "database_path"_a,
+          "match_list_path"_a, "match_type"_a = "pairs");
+    docstring::FunctionDocInject(m, "import_matches",
+                                 map_shared_argument_docstrings);
+
+    m.def("exhaustive_match", &ExhaustiveMatch,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for exhaustive image matches", "database_path"_a);
+    docstring::FunctionDocInject(m, "exhaustive_match",
+                                 map_shared_argument_docstrings);
+
+    m.def("sequential_match", &SequentialMatch,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for sequential image matches", "database_path"_a);
+    docstring::FunctionDocInject(m, "sequential_match",
+                                 map_shared_argument_docstrings);
+
+    m.def("spatial_match", &SpatialMatch,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for spatial image matches", "database_path"_a);
+    docstring::FunctionDocInject(m, "spatial_match",
+                                 map_shared_argument_docstrings);
+
+    m.def("transitive_match", &TransitiveMatch,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for transitive image matches", "database_path"_a);
+    docstring::FunctionDocInject(m, "transitive_match",
+                                 map_shared_argument_docstrings);
+
+    m.def("vocab_tree_match", &VocabTreeMatch,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for vocab_tree image matches", "database_path"_a);
+    docstring::FunctionDocInject(m, "vocab_tree_match",
+                                 map_shared_argument_docstrings);
+}
+
+void pybind_feature(py::module &m) {
+    py::module m_submodule = m.def_submodule("feature", "Reconstruction Images Feature.");
+    pybind_feature_methods(m_submodule);
+}
+
+}  // namespace feature
+}  // namespace reconstruction
+}  // namespace cloudViewer

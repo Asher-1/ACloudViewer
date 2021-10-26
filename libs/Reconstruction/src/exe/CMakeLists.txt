@@ -31,18 +31,21 @@
 
 set(FOLDER_NAME "exe")
 
-if(IS_MSVC)
+if (IS_MSVC)
     add_compile_options("/bigobj")
-endif()
+endif ()
 
-COLMAP_ADD_EXECUTABLE(colmap_exe
-    colmap.cc
+COLMAP_ADD_SOURCES(
     database.cc
     feature.cc
-    gui.cc
     image.cc
     model.cc
     mvs.cc
     sfm.cc
-    vocab_tree.cc)
+    vocab_tree.cc
+)
+
+COLMAP_ADD_EXECUTABLE(colmap_exe
+    colmap.cc
+    gui.cc)
 set_target_properties(colmap_exe PROPERTIES OUTPUT_NAME colmap)

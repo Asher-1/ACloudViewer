@@ -11,6 +11,14 @@ else ()
     endif ()
 endif ()
 
+if (${GLIBCXX_USE_CXX11_ABI})
+    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)
+    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for eigen")
+else ()
+    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 0)
+    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for eigen")
+endif ()
+
 ExternalProject_Add(
         ext_eigen
         PREFIX eigen
@@ -22,10 +30,14 @@ ExternalProject_Add(
         BUILD_ALWAYS 0
         UPDATE_COMMAND ""
         CMAKE_ARGS
-        ${EIGEN_ALIGN_FLAGS}
-        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+            ${EIGEN_ALIGN_FLAGS}
+            $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
+            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
 )
 
 ExternalProject_Get_Property(ext_eigen INSTALL_DIR)

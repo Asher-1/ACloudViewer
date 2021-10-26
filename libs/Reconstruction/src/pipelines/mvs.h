@@ -27,46 +27,29 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// Author: Asher (Dahai Lu)
+// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#include "exe/database.h"
-#include "option_utils.hpp"
+#include <string>
 
 namespace cloudViewer {
 
-int RunDatabaseCleaner(const std::string& database_path,
-                       const std::string& type) {
-    OptionsParser parser;
-    parser.registerOption("database_path", &database_path);
-    // supported type {all, images, features, matches}
-    parser.registerOption("type", &type);
-      if (!parser.parseOptions())
-      return EXIT_FAILURE;
+int MeshDelaunay(const std::string& input_path,
+                 const std::string& output_path,
+                 const std::string& input_type = "dense");
 
-    return colmap::RunDatabaseCleaner(parser.getArgc(), parser.getArgv());
-}
+int StereoPatchMatch(const std::string& workspace_path,
+                     const std::string& config_path = "",
+                     const std::string& workspace_format = "COLMAP",
+                     const std::string& pmvs_option_name = "option-all");
 
-int RunDatabaseCreator(const std::string& database_path) {
-    OptionsParser parser;
-    parser.registerOption("database_path", &database_path);
-    if (!parser.parseOptions())
-        return EXIT_FAILURE;
+int MeshPoisson(const std::string& input_path, const std::string& output_path);
 
-    return colmap::RunDatabaseCreator(parser.getArgc(), parser.getArgv());
-}
-
-int RunDatabaseMerger(const std::string& database_path1,
-                      const std::string& database_path2,
-                      const std::string& merged_database_path) {
-    OptionsParser parser;
-    parser.registerOption("database_path1", &database_path1);
-    parser.registerOption("database_path2", &database_path2);
-    parser.registerOption("merged_database_path", &merged_database_path);
-    if (!parser.parseOptions())
-      return EXIT_FAILURE;
-
-    return colmap::RunDatabaseMerger(parser.getArgc(), parser.getArgv());
-
-}
+int StereoFuse(const std::string& workspace_path,
+               const std::string& output_path,
+               const std::string& bbox_path = "",
+               const std::string& input_type = "geometric",
+               const std::string& output_type = "PLY",
+               const std::string& workspace_format = "COLMAP",
+               const std::string& pmvs_option_name = "option-all");
 
 }  // namespace cloudViewer

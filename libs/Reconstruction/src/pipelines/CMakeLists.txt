@@ -31,14 +31,13 @@
 
 set(FOLDER_NAME "pipelines")
 
-
 COLMAP_ADD_SOURCES(
-    option_utils.hpp
-    database.hpp
-    feature.hpp
-    project.hpp
-    image.hpp
-    model.hpp
-    mvs.hpp
-    sfm.hpp
-    vocab_tree.hpp)
+        option_utils.hpp
+        database.h database.cpp
+        feature.h feature.cpp
+        project.h project.cpp
+        image.h image.cpp
+        model.h model.cpp
+        mvs.h mvs.cpp
+        sfm.h sfm.cpp
+        vocab_tree.h vocab_tree.cpp)

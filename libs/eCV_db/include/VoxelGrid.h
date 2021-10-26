@@ -26,13 +26,13 @@
 
 #pragma once
 
-#include <Eigen/Core>
-#include <memory>
-#include <unordered_map>
-#include <vector>
-
 #include <Helper.h>
 #include <Logging.h>
+
+#include <Eigen/Core>
+#include <memory>
+#include <vector>
+#include <unordered_map>
 
 #include "ecvHObject.h"
 
@@ -42,9 +42,8 @@ class ccBBox;
 class ecvOrientedBBox;
 
 namespace cloudViewer {
-namespace camera
-{
-	class PinholeCameraParameters;
+namespace camera {
+class PinholeCameraParameters;
 }
 
 namespace geometry {
@@ -88,30 +87,35 @@ public:
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     /// \brief Default Constructor.
-    VoxelGrid(const char* name = "VoxelGrid") : ccHObject(name) {}
+    VoxelGrid(const char *name = "VoxelGrid") : ccHObject(name) {}
     /// \brief Copy Constructor.
-    VoxelGrid(const VoxelGrid &src_voxel_grid, const char* name = "VoxelGrid");
+    VoxelGrid(const VoxelGrid &src_voxel_grid, const char *name = "VoxelGrid");
     ~VoxelGrid() override {}
 
-	//inherited methods (ccHObject)
-	virtual bool isSerializable() const override { return true; }
+    // inherited methods (ccHObject)
+    virtual bool isSerializable() const override { return true; }
 
-	//! Returns unique class ID
-	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::VOXEL_GRID; }
-	virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
+    //! Returns unique class ID
+    virtual CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::VOXEL_GRID;
+    }
+    virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
 
     VoxelGrid &Clear();
-	inline virtual bool isEmpty() const override { return !HasVoxels(); }
+    inline virtual bool isEmpty() const override { return !HasVoxels(); }
     virtual Eigen::Vector3d getMinBound() const override;
     virtual Eigen::Vector3d getMaxBound() const override;
     virtual Eigen::Vector3d getGeometryCenter() const override;
-	virtual ccBBox getAxisAlignedBoundingBox() const override;
-	virtual ecvOrientedBBox getOrientedBoundingBox() const override;
-    virtual VoxelGrid& transform(const Eigen::Matrix4d &transformation) override;
-    virtual VoxelGrid& translate(const Eigen::Vector3d &translation,
-		bool relative = true) override;
-    virtual VoxelGrid& scale(const double s, const Eigen::Vector3d &center) override;
-    virtual VoxelGrid& rotate(const Eigen::Matrix3d &R, const Eigen::Vector3d &center) override;
+    virtual ccBBox getAxisAlignedBoundingBox() const override;
+    virtual ecvOrientedBBox getOrientedBoundingBox() const override;
+    virtual VoxelGrid &transform(
+            const Eigen::Matrix4d &transformation) override;
+    virtual VoxelGrid &translate(const Eigen::Vector3d &translation,
+                                 bool relative = true) override;
+    virtual VoxelGrid &scale(const double s,
+                             const Eigen::Vector3d &center) override;
+    virtual VoxelGrid &rotate(const Eigen::Matrix3d &R,
+                              const Eigen::Vector3d &center) override;
 
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
@@ -151,33 +155,33 @@ public:
     std::vector<bool> CheckIfIncluded(
             const std::vector<Eigen::Vector3d> &queries);
 
-	/// Remove all voxels from the VoxelGrid where none of the boundary points
-	/// of the voxel projects to depth value that is smaller, or equal than the
-	/// projected depth of the boundary point. If keep_voxels_outside_image is
-	/// true then voxels are only carved if all boundary points project to a
-	/// valid image location.
-	///
-	/// \param depth_map Depth map (Image) used for VoxelGrid carving.
-	/// \param camera_params Input Camera Parameters.
-	/// \param keep_voxels_outside_image Project all voxels to a valid location.
-	VoxelGrid &CarveDepthMap(
-		const Image &depth_map,
-		const camera::PinholeCameraParameters &camera_parameter,
-		bool keep_voxels_outside_image);
+    /// Remove all voxels from the VoxelGrid where none of the boundary points
+    /// of the voxel projects to depth value that is smaller, or equal than the
+    /// projected depth of the boundary point. If keep_voxels_outside_image is
+    /// true then voxels are only carved if all boundary points project to a
+    /// valid image location.
+    ///
+    /// \param depth_map Depth map (Image) used for VoxelGrid carving.
+    /// \param camera_params Input Camera Parameters.
+    /// \param keep_voxels_outside_image Project all voxels to a valid location.
+    VoxelGrid &CarveDepthMap(
+            const Image &depth_map,
+            const camera::PinholeCameraParameters &camera_parameter,
+            bool keep_voxels_outside_image);
 
-	/// Remove all voxels from the VoxelGrid where none of the boundary points
-	/// of the voxel projects to a valid mask pixel (pixel value > 0). If
-	/// keep_voxels_outside_image is true then voxels are only carved if
-	/// all boundary points project to a valid image location.
-	///
-	/// \param silhouette_mask Silhouette mask (Image) used for VoxelGrid
-	/// carving.
-	/// \param camera_parameter Input Camera Parameters.
-	/// \param keep_voxels_outside_image Project all voxels to a valid location.
-	VoxelGrid &CarveSilhouette(
-		const Image &silhouette_mask,
-		const camera::PinholeCameraParameters &camera_parameter,
-		bool keep_voxels_outside_image);
+    /// Remove all voxels from the VoxelGrid where none of the boundary points
+    /// of the voxel projects to a valid mask pixel (pixel value > 0). If
+    /// keep_voxels_outside_image is true then voxels are only carved if
+    /// all boundary points project to a valid image location.
+    ///
+    /// \param silhouette_mask Silhouette mask (Image) used for VoxelGrid
+    /// carving.
+    /// \param camera_parameter Input Camera Parameters.
+    /// \param keep_voxels_outside_image Project all voxels to a valid location.
+    VoxelGrid &CarveSilhouette(
+            const Image &silhouette_mask,
+            const camera::PinholeCameraParameters &camera_parameter,
+            bool keep_voxels_outside_image);
 
     /// Create VoxelGrid from Octree
     ///
@@ -205,20 +209,20 @@ public:
                                                   double height,
                                                   double depth);
 
-    /// Creates a VoxelGrid from a given ccPointCloud. The color value of a given
-    /// voxel is the average color value of the points that fall into it (if the
-    /// ccPointCloud has colors).
-    /// The bounds of the created VoxelGrid are computed from the ccPointCloud.
+    /// Creates a VoxelGrid from a given ccPointCloud. The color value of a
+    /// given voxel is the average color value of the points that fall into it
+    /// (if the ccPointCloud has colors). The bounds of the created VoxelGrid
+    /// are computed from the ccPointCloud.
     ///
     /// \param input The input ccPointCloud.
     /// \param voxel_size Voxel size of of the VoxelGrid construction.
     static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
             const ccPointCloud &input, double voxel_size);
 
-    /// Creates a VoxelGrid from a given ccPointCloud. The color value of a given
-    /// voxel is the average color value of the points that fall into it (if the
-    /// ccPointCloud has colors).
-    /// The bounds of the created VoxelGrid are defined by the given parameters.
+    /// Creates a VoxelGrid from a given ccPointCloud. The color value of a
+    /// given voxel is the average color value of the points that fall into it
+    /// (if the ccPointCloud has colors). The bounds of the created VoxelGrid
+    /// are defined by the given parameters.
     ///
     /// \param input The input ccPointCloud.
     /// \param voxel_size Voxel size of of the VoxelGrid construction.
@@ -253,10 +257,10 @@ public:
             const Eigen::Vector3d &min_bound,
             const Eigen::Vector3d &max_bound);
 
-	/// Returns List of ``Voxel``: Voxels contained in voxel grid.
-	/// Changes to the voxels returned from this method are not reflected in
-	/// the voxel grid.
-	std::vector<Voxel> GetVoxels() const;
+    /// Returns List of ``Voxel``: Voxels contained in voxel grid.
+    /// Changes to the voxels returned from this method are not reflected in
+    /// the voxel grid.
+    std::vector<Voxel> GetVoxels() const;
 
 public:
     /// Size of the voxel.
