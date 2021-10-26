@@ -1,5 +1,13 @@
 include(ExternalProject)
 
+if (${GLIBCXX_USE_CXX11_ABI})
+    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)
+    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for suitesparse")
+else ()
+    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 0)
+    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for suitesparse")
+endif ()
+
 ExternalProject_Add(
        ext_suitesparse
        PREFIX suitesparse
@@ -13,14 +21,18 @@ ExternalProject_Add(
 	   # fix compiling bugs on windows
 	   PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${CloudViewer_3RDPARTY_DIR}/suitesparse/CMakeLists.txt <SOURCE_DIR>
        CMAKE_ARGS
-           -DOPENMP=ON
-           -DBUILD_SHARED_LIBS=OFF
-           -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
-           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-           -DCUDA_INCLUDE_DIRS=${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
-           -DWITH_CUDA=${BUILD_CUDA_MODULE}
-           -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+            -DOPENMP=ON
+            -DBUILD_SHARED_LIBS=OFF
+            -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
+            $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
+    　　　　　-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+#           -DCUDA_INCLUDE_DIRS=${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+#           -DWITH_CUDA=${BUILD_CUDA_MODULE}
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
            DEPENDS ${LAPACK_TARGET}
        )
 ExternalProject_Get_Property(ext_suitesparse INSTALL_DIR)

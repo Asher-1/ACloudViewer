@@ -346,6 +346,15 @@ int ply_write(p_ply ply, double value);
  * ---------------------------------------------------------------------- */
 int ply_close(p_ply ply);
 
+/* ----------------------------------------------------------------------
+ * Added by DGM : returns the file type
+ *
+ * ply: handle returned by ply_open
+ *
+ * Returns 1 if successful, 0 otherwise
+ * ---------------------------------------------------------------------- */
+int get_plystorage_mode(p_ply ply, e_ply_storage_mode *storage_mode);
+
 #ifdef __cplusplus
 }
 #endif

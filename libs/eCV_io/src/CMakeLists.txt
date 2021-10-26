@@ -1,7 +1,6 @@
 
 target_sources( ${PROJECT_NAME}
 	PRIVATE
-
 		${CMAKE_CURRENT_LIST_DIR}/AsciiFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/AsciiOpenDlg.cpp
 		${CMAKE_CURRENT_LIST_DIR}/AsciiSaveDlg.cpp
@@ -25,12 +24,10 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/PlyOpenDlg.cpp
 		${CMAKE_CURRENT_LIST_DIR}/PTXFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/RasterGridFilter.cpp
-		${CMAKE_CURRENT_LIST_DIR}/FileRply.c
 		${CMAKE_CURRENT_LIST_DIR}/ShpDBFFields.cpp
 		${CMAKE_CURRENT_LIST_DIR}/ShpFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/STLFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/VoxelGridIO.cpp
 		${CMAKE_CURRENT_LIST_DIR}/VTKFilter.cpp
 		${CMAKE_CURRENT_LIST_DIR}/PinholeCameraTrajectoryIO.cpp
-
 )

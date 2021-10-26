@@ -187,7 +187,7 @@ extern char *my_alloc();
 
 /*** delcaration of routines ***/
 
-extern PlyFile *ply_write(FILE *, int, const char **, int);
+extern PlyFile *ply_write_custom(FILE *, int, const char **, int);
 extern PlyFile *ply_open_for_writing(char *, int, const char **, int, float *);
 extern void ply_describe_element(PlyFile *, char *, int, int, PlyProperty *);
 extern void ply_describe_property(PlyFile *, const char *, PlyProperty *);
@@ -197,7 +197,7 @@ extern void ply_put_element_setup(PlyFile *, const char *);
 extern void ply_put_element(PlyFile *, void *);
 extern void ply_put_comment(PlyFile *, char *);
 extern void ply_put_obj_info(PlyFile *, char *);
-extern PlyFile *ply_read(FILE *, int *, char ***);
+extern PlyFile *ply_read_custom(FILE *, int *, char ***);
 extern PlyFile *ply_open_for_reading( char *, int *, char ***, int *, float *);
 extern PlyProperty **ply_get_element_description(PlyFile *, char *, int*, int*);
 extern void ply_get_element_setup( PlyFile *, char *, int, PlyProperty *);
@@ -206,7 +206,7 @@ extern PlyOtherProp *ply_get_other_properties(PlyFile *, char *, int);
 extern void ply_get_element(PlyFile *, void *);
 extern char **ply_get_comments(PlyFile *, int *);
 extern char **ply_get_obj_info(PlyFile *, int *);
-extern void ply_close(PlyFile *);
+extern void ply_close_custom(PlyFile *);
 extern void ply_get_info(PlyFile *, float *, int *);
 extern PlyOtherElems *ply_get_other_element (PlyFile *, char *, int);
 extern void ply_describe_other_elements ( PlyFile *, PlyOtherElems *);
@@ -553,7 +553,7 @@ inline bool PlyReadHeader( char* fileName , PlyProperty* properties , int proper
 			
 			for( int i=0 ; i<nr_elems ; i++ ) free( elist[i] );
 			free( elist );
-			ply_close( ply );
+			ply_close_custom( ply );
 			return 0;
 		}		
 		if( equal_strings( "vertex" , elem_name ) )
@@ -590,7 +590,7 @@ inline bool PlyReadHeader( char* fileName , PlyProperty* properties , int proper
 	
 	for( int i=0 ; i<nr_elems ; i++ ) free( elist[i] );
 	free( elist );
-	ply_close( ply );
+	ply_close_custom( ply );
 	return true;
 }
 inline bool PlyReadHeader( char* fileName , PlyProperty* properties , int propertyNum , bool* readFlags )
@@ -672,7 +672,7 @@ int PlyWritePolygons(char* fileName,
 	}
 
 	delete[] ply_face.vertices;
-	ply_close(ply);
+	ply_close_custom(ply);
 	return 1;
 }
 template<class Vertex>
@@ -728,7 +728,7 @@ int PlyReadPolygons(char* fileName,
 			
 			for(i=0;i<nr_elems;i++){free(elist[i]);}
 			free(elist);
-			ply_close(ply);
+			ply_close_custom(ply);
 			return 0;
 		}		
 		if (equal_strings("vertex", elem_name))
@@ -782,7 +782,7 @@ int PlyReadPolygons(char* fileName,
 	
 	for(i=0;i<nr_elems;i++){free(elist[i]);}
 	free(elist);
-	ply_close(ply);
+	ply_close_custom(ply);
 	return 1;
 }
 
@@ -847,7 +847,7 @@ int PlyWritePolygons( char* fileName , CoredMeshData< Vertex >* mesh , int file_
 		delete[] ply_face.vertices;
 	}  // for, write faces
 	
-	ply_close( ply );
+	ply_close_custom( ply );
 	return 1;
 }
 template< class Vertex , class Real >
@@ -911,7 +911,7 @@ int PlyWritePolygons( char* fileName , CoredMeshData< Vertex >* mesh , int file_
 		delete[] ply_face.vertices;
 	}  // for, write faces
 	
-	ply_close( ply );
+	ply_close_custom( ply );
 	return 1;
 }
 inline int PlyDefaultFileType(void){return PLY_ASCII;}

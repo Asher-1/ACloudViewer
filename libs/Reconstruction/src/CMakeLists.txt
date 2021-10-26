@@ -29,23 +29,23 @@
 #
 # Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-if(IS_MSVC)
+if (IS_MSVC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
-elseif(IS_GNU OR IS_CLANG)
+elseif (IS_GNU OR IS_CLANG)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
     # We want c++14 mainly for supporting latest dependencies, but older GCC
     # versions in combination with CUDA do not yet support it. In the worst
     # case, this will lead to compile errors and there is not much we can
     # do on the COLMAP side.
-    if(CUDA_ENABLED AND
-       IS_GNU AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6)
+    if (CUDA_ENABLED AND
+            IS_GNU AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    else()
+    else ()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-    endif()
-endif()
+    endif ()
+endif ()
 
 add_subdirectory(base)
 add_subdirectory(controllers)
@@ -61,11 +61,11 @@ add_subdirectory(util)
 add_subdirectory(pipelines)
 if (GUI_ENABLED)
     add_subdirectory(ui)
-endif()
+endif ()
 
 COLMAP_ADD_STATIC_LIBRARY(colmap ${COLMAP_SOURCES})
 
-if(CUDA_ENABLED)
+if (CUDA_ENABLED)
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --use_fast_math")
 
     # Use a separate stream per thread to allow for concurrent kernel execution
@@ -75,17 +75,14 @@ if(CUDA_ENABLED)
     # Fix for Ubuntu 16.04.
     add_definitions("-D_MWAITXINTRIN_H_INCLUDED")
 
-    if(MSVC)
+    if (MSVC)
         # Avoid pulling in too many header files through <windows.h>
         add_definitions("-DWIN32_LEAN_AND_MEAN")
-    endif()
+    endif ()
 
     COLMAP_ADD_STATIC_CUDA_LIBRARY(colmap_cuda ${COLMAP_CUDA_SOURCES})
     target_link_libraries(colmap_cuda PRIVATE colmap)
-
-    target_link_libraries(colmap PRIVATE
-        colmap_cuda ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
-else()
-    target_link_libraries(colmap PRIVATE
-        ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
-endif()
+    target_link_libraries(colmap PRIVATE colmap_cuda ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
+else ()
+    target_link_libraries(colmap PRIVATE ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
+endif ()
