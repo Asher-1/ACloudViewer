@@ -38,6 +38,7 @@
 #include "pybind/t/t.h"
 #include "pybind/utility/utility.h"
 #include "pybind/visualization/visualization.h"
+#include "pybind/reconstruction/reconstruction.h"
 
 namespace cloudViewer {
 
@@ -67,6 +68,7 @@ PYBIND11_MODULE(pybind, m) {
     io::pybind_io(m);
     pipelines::pybind_pipelines(m);
     visualization::pybind_visualization(m);
+    reconstruction::pybind_reconstruction(m);
 
     // pybind11 will internally manage the lifetime of default arguments for
     // function bindings. Since these objects will live longer than the memory

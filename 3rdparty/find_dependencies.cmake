@@ -499,12 +499,14 @@ function(import_shared_3rdparty_library name ext_target)
                 set(installed_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}_${name}_${arg_LIBRARY}${CMAKE_SHARED_LIBRARY_SUFFIX})
             endif ()
 
+            # deploy for debugging
             add_custom_command(TARGET ${ext_target}
                     POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E
                     copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
                     )
 
+            #message("shared thirdparty lib: ${arg_LIB_DIR}/${library_filename}")
             target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
             if (NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
                 install(FILES ${arg_LIB_DIR}/${library_filename}
@@ -959,6 +961,7 @@ build_3rdparty_library(3rdparty_rply DIRECTORY rply
         rply/
         )
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_rply)
+list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS 3rdparty_rply)
 
 # tinyfiledialogs
 build_3rdparty_library(3rdparty_tinyfiledialogs DIRECTORY tinyfiledialogs
