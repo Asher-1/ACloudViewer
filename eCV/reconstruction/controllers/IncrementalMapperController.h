@@ -135,6 +135,9 @@ struct IncrementalMapperOptions {
   // If reconstruction is provided as input, fix the existing image poses.
   bool fix_existing_images = false;
 
+  colmap::IncrementalMapper::Options mapper;
+  colmap::IncrementalTriangulator::Options triangulation;
+
   colmap::IncrementalMapper::Options Mapper() const;
   colmap::IncrementalTriangulator::Options Triangulation() const;
   colmap::BundleAdjustmentOptions LocalBundleAdjustment() const;
@@ -142,18 +145,6 @@ struct IncrementalMapperOptions {
   colmap::ParallelBundleAdjuster::Options ParallelGlobalBundleAdjustment() const;
 
   bool Check() const;
-
- private:
-  friend class OptionManager;
-  friend class MapperGeneralOptionsWidget;
-  friend class MapperTriangulationOptionsWidget;
-  friend class MapperRegistrationOptionsWidget;
-  friend class MapperInitializationOptionsWidget;
-  friend class MapperBundleAdjustmentOptionsWidget;
-  friend class MapperFilteringOptionsWidget;
-  friend class ReconstructionOptionsWidget;
-  colmap::IncrementalMapper::Options mapper;
-  colmap::IncrementalTriangulator::Options triangulation;
 };
 
 // Class that controls the incremental mapping procedure by iteratively

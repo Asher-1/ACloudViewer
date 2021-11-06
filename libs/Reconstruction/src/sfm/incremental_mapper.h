@@ -99,13 +99,13 @@ class IncrementalMapper {
     int local_ba_num_images = 6;
 
     // Minimum triangulation for images to be chosen in local bundle adjustment.
-    double local_ba_min_tri_angle = 6;
+    double local_ba_min_tri_angle = 6.0;
 
     // Thresholds for bogus camera parameters. Images with bogus camera
     // parameters are filtered and ignored in triangulation.
     double min_focal_length_ratio = 0.1;  // Opening angle of ~130deg
-    double max_focal_length_ratio = 10;   // Opening angle of ~5deg
-    double max_extra_param = 1;
+    double max_focal_length_ratio = 10.0;   // Opening angle of ~5deg
+    double max_extra_param = 1.0;
 
     // Maximum reprojection error in pixels for observations.
     double filter_max_reproj_error = 4.0;

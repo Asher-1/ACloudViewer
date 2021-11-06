@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -23,6 +23,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+
+#include <memory>
 
 #include "io/rpc/BufferConnection.h"
 #include "io/rpc/Connection.h"
@@ -51,9 +53,8 @@ void pybind_rpc(py::module& m_io) {
                rpc::ConnectionBase>(m, "Connection")
             .def(py::init([](std::string address, int connect_timeout,
                              int timeout) {
-                     return std::shared_ptr<rpc::Connection>(
-                             new rpc::Connection(address, connect_timeout,
-                                                 timeout));
+                     return std::make_shared<rpc::Connection>(
+                             address, connect_timeout, timeout);
                  }),
                  "Creates a connection object",
                  "address"_a = "tcp://127.0.0.1:51454",
@@ -73,9 +74,9 @@ void pybind_rpc(py::module& m_io) {
             m, "_DummyReceiver",
             "Dummy receiver for the server side receiving requests from a "
             "client.")
-            .def(py::init([](std::string address, int timeout) {
-                     return std::shared_ptr<rpc::DummyReceiver>(
-                             new rpc::DummyReceiver(address, timeout));
+            .def(py::init([](const std::string& address, int timeout) {
+                     return std::make_shared<rpc::DummyReceiver>(address,
+                                                                 timeout);
                  }),
                  "Creates the receiver object which can be used for testing "
                  "connections.",
