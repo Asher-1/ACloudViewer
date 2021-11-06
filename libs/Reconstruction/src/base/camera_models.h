@@ -411,8 +411,8 @@ bool CameraModelVerifyParams(const int model_id,
 // @param width                   Sensor width of the camera.
 // @param height                  Sensor height of the camera.
 // @param min_focal_length_ratio  Minimum ratio of focal length over
-//                                maximum sensor dimension.
-// @param min_focal_length_ratio  Maximum ratio of focal length over
+//                                minimum sensor dimension.
+// @param max_focal_length_ratio  Maximum ratio of focal length over
 //                                maximum sensor dimension.
 // @param max_extra_param         Maximum magnitude of each extra parameter.
 bool CameraModelHasBogusParams(const int model_id,

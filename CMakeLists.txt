@@ -250,6 +250,11 @@ find_package(Python3 3.6...<3.10
         COMPONENTS Interpreter Development
         )
 if (Python3_FOUND)
+    # Setup Python3_EXECUTABLE for 3rdparty modules
+    # which still use the deprecated find_package(PythonInterp)
+    set(Python3_EXECUTABLE ${Python3_EXECUTABLE} CACHE FILEPATH
+            "Deprecated path to the Python executable (for 3rdparty only)")
+
     # Setup PYTHON_EXECUTABLE for 3rdparty modules
     # which still use the deprecated find_package(PythonInterp)
     set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE FILEPATH
@@ -259,18 +264,6 @@ if (Python3_FOUND)
     include(FindPythonLibsNew)
     set(PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIRS} CACHE PATH
             "Deprecated path to the Python include dir (for pybind only)")
-
-#        get_filename_component(CUSTOM_PYTHON_BIN_PATH ${Python3_EXECUTABLE} DIRECTORY)
-#        get_filename_component(CUSTOM_PYTHON_ROOT_PATH ${CUSTOM_PYTHON_BIN_PATH} DIRECTORY)
-#        if (Python3_VERSION VERSION_GREATER_EQUAL 3.8)
-#            set(CUSTOM_PYTHON_NAME python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR})
-#        else ()
-#            set(CUSTOM_PYTHON_NAME python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}m)
-#        endif ()
-#        set(PYTHON_INCLUDE_DIR ${CUSTOM_PYTHON_ROOT_PATH}/include/${CUSTOM_PYTHON_NAME} CACHE PATH
-#                "Deprecated path to the Python include dir (for pybind only)")
-#        set(PYTHON_LIBRARY ${CUSTOM_PYTHON_ROOT_PATH}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}${CUSTOM_PYTHON_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX} CACHE FILEPATH
-#                "Deprecated path to the Python lib dir (for pybind only)")
 else ()
     if (BUILD_PYTHON_MODULE)
         message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.9. Please ensure it is in PATH.")

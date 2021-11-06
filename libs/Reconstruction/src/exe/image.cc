@@ -430,7 +430,7 @@ int RunImageUndistorterStandalone(int argc, char** argv) {
 
   // Loads a text file containing the image names and camera information.
   // The format of the text file is
-  //   image_name CAMERA_MODEL camera_params
+  // image_name CAMERA_MODEL camera_params
   std::vector<std::pair<std::string, Camera>> image_names_and_cameras;
 
   {

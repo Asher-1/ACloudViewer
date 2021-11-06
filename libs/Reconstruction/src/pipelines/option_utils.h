@@ -29,25 +29,39 @@
 //
 // Author: Asher (Dahai Lu)
 
-#include "util/misc.h"
-#include "util/option_manager.h"
+#pragma once
+
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "base/image_reader.h"
+#include "controllers/incremental_mapper.h"
+#include "feature/extraction.h"
+#include "feature/matching.h"
+#include "feature/sift.h"
+#include "mvs/fusion.h"
+#include "mvs/meshing.h"
+#include "mvs/patch_match.h"
+#include "optim/bundle_adjustment.h"
 
 namespace cloudViewer {
 
 class OptionsParser {
 public:
-    OptionsParser() {
-        argc = 0;
-        argv = nullptr;
-        reset();
-    }
-
+    OptionsParser();
     ~OptionsParser() { reset(); }
 
-    bool parseOptions() { return parseOptions(this->argc, this->argv); }
+    void reset();
 
-    inline int getArgc() { return this->argc; }
-    inline char** getArgv() { return this->argv; }
+    inline bool parseOptions() {
+        return parseOptions(this->argc_, this->argv_);
+    }
+    bool parseOptions(int& argc, char**& argv);
+
+    inline int getArgc() const { return this->argc_; }
+    inline char** getArgv() { return this->argv_; }
 
     template <typename T>
     void registerOption(const std::string& name, const T* option) {
@@ -70,70 +84,60 @@ public:
         }
     }
 
-    void reset() {
-        releaseOptions();
-        options_bool_.clear();
-        options_int_.clear();
-        options_double_.clear();
-        options_string_.clear();
-    }
+    // colmap
+    void addExtractionOptions(
+            const colmap::ImageReaderOptions& image_reader_options,
+            const colmap::SiftExtractionOptions& sift_extraction_options);
 
-    bool parseOptions(int& argc, char**& argv) {
-        // First, put all options without a section and then those with a
-        // section. This is necessary as otherwise older Boost versions will
-        // write the options without a section in between other sections and
-        // therefore the errors will be assigned to the wrong section if read
-        // later.
+    void addMatchingOptions(
+            const colmap::SiftMatchingOptions& sift_matching_options);
 
-        ReleaseOptions(argc, argv);
-        unsigned long capacity = 2 * getParametersCount() + 1;
-        if (capacity == 0) {
-            return false;
-        }
+    void addExhaustiveMatchingOptions(
+            const colmap::SiftMatchingOptions& sift_matching_options,
+            const colmap::ExhaustiveMatchingOptions&
+                    exhaustive_matching_options);
 
-        // add application name
-        argv = new char*[capacity];
-        setValue("options", 0, argv);
-        argc = 1;
+    void addSequentialMatchingOptions(
+            const colmap::SiftMatchingOptions& sift_matching_options,
+            const colmap::SequentialMatchingOptions&
+                    sequential_matching_options);
 
-        // add other optinons
-        for (const auto& option : options_bool_) {
-            setValue("--" + option.first, argc, argv);
-            argc += 1;
-            bool bool_flag = *option.second;
-            if (bool_flag)
-                setValue("true", argc, argv);
-            else
-                setValue("false", argc, argv);
-            argc += 1;
-        }
+    void addSpatialMatchingOptions(
+            const colmap::SiftMatchingOptions& sift_matching_options,
+            const colmap::SpatialMatchingOptions& spatial_matching_options);
 
-        for (const auto& option : options_int_) {
-            setValue("--" + option.first, argc, argv);
-            argc += 1;
-            setValue(std::to_string(*option.second), argc, argv);
-            argc += 1;
-        }
+    void addTransitiveMatchingOptions(
+            const colmap::SiftMatchingOptions& sift_matching_options,
+            const colmap::TransitiveMatchingOptions&
+                    transitive_matching_options);
 
-        for (const auto& option : options_double_) {
-            setValue("--" + option.first, argc, argv);
-            argc += 1;
-            setValue(std::to_string(*option.second), argc, argv);
-            argc += 1;
-        }
+    void addVocabTreeMatchingOptions(
+            const colmap::SiftMatchingOptions& sift_matching_options,
+            const colmap::VocabTreeMatchingOptions&
+                    vocab_tree_matching_options);
 
-        for (const auto& option : options_string_) {
-            setValue("--" + option.first, argc, argv);
-            argc += 1;
-            setValue(*option.second, argc, argv);
-            argc += 1;
-        }
+    void addImagePairsMatchingOptions(
+            const colmap::SiftMatchingOptions& sift_matching_options,
+            const colmap::ImagePairsMatchingOptions&
+                    image_pairs_matching_options);
 
-        if (argc == 0 || !argv) return false;
+    void addMapperOptions(
+            const colmap::IncrementalMapperOptions& incremental_mapper_options);
 
-        return true;
-    }
+    void addBundleAdjustmentOptions(
+            const colmap::BundleAdjustmentOptions& bundle_adjustment_options);
 
+    // colmap::mvs
+    void addPatchMatchStereoOptions(
+            const colmap::mvs::PatchMatchOptions& patch_match_options);
+    void addStereoFusionOptions(
+            const colmap::mvs::StereoFusionOptions& stereo_fusion_options);
+    void addPoissonMeshingOptions(
+            const colmap::mvs::PoissonMeshingOptions& poisson_meshing_options);
+    void addDelaunayMeshingOptions(const colmap::mvs::DelaunayMeshingOptions&
+                                           delaunay_meshing_options);
+
+public:
     static void ReleaseOptions(int argc, char** argv) {
         if (argv) {
             for (int i = 0; i < argc; ++i) {
@@ -145,28 +149,29 @@ public:
         }
     }
 
+    static void SetValue(const std::string& value, int argc_, char** argv_) {
+        argv_[argc_] = new char[value.size() + 1];
+        std::copy(value.begin(), value.end(), argv_[argc_]);
+        argv_[argc_][value.size()] = '\0';  // don't forget the terminating 0
+    }
+
 private:
-    void releaseOptions() {
-        if (this->argc > 0 && this->argv) {
-            ReleaseOptions(this->argc, this->argv);
+    inline void releaseOptions() {
+        if (this->argc_ > 0 && this->argv_) {
+            ReleaseOptions(this->argc_, this->argv_);
         }
-        this->argc = 0;
+        this->argc_ = 0;
     }
 
-    void setValue(const std::string& value, int argc, char** argv) {
-        unsigned long size = value.length() * sizeof(char);
-        argv[argc] = static_cast<char*>(malloc(size));
-        strncpy(argv[argc], value.c_str(), value.length());
-    }
-
-    unsigned long getParametersCount() {
+    inline unsigned long getParametersCount() {
         return static_cast<unsigned long>(
                 options_int_.size() + options_bool_.size() +
                 options_double_.size() + options_string_.size());
     }
 
-    int argc;
-    char** argv;
+private:
+    int argc_;
+    char** argv_;
     std::vector<std::pair<std::string, const bool*>> options_bool_;
     std::vector<std::pair<std::string, const int*>> options_int_;
     std::vector<std::pair<std::string, const double*>> options_double_;

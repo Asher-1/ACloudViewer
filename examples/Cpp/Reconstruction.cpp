@@ -61,8 +61,8 @@ int main(int argc, char **argv) {
 
     int flag = 1;
     if (option == "clean") {
-        std::string database_path = argv[2];
-        std::string type = argv[3];
+        std::string type = argv[2];
+        std::string database_path = argv[3];
         flag = clean_database(database_path, type);
     } else if (option == "create") {
         std::string database_path = argv[2];
@@ -72,6 +72,8 @@ int main(int argc, char **argv) {
         std::string database_path2 = argv[3];
         std::string merged_database_path = argv[4];
         flag = merge_database(database_path1, database_path2, merged_database_path);
+    } else {
+        cloudViewer::utility::LogError("unsupported option: {}", option);
     }
 
     if (flag == 0) {

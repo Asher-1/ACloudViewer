@@ -26,9 +26,9 @@
 
 #include <Image.h>
 #include <RGBDImage.h>
-#include <ecvPolyline.h>
-#include <ecvPointCloud.h>
 #include <camera/PinholeCameraIntrinsic.h>
+#include <ecvPointCloud.h>
+#include <ecvPolyline.h>
 
 #include <vector>
 
@@ -737,9 +737,9 @@ void pybind_pointcloud(py::module& m) {
                  "in the point cloud",
                  "search_param"_a = KDTreeSearchParamKNN())
             .def_readwrite("covariances", &ccPointCloud::covariances_,
-                   "``float64`` array of shape ``(num_points, 3, 3)``, "
-                   "use ``numpy.asarray()`` to access data: Points "
-                   "covariances.")
+                           "``float64`` array of shape ``(num_points, 3, 3)``, "
+                           "use ``numpy.asarray()`` to access data: Points "
+                           "covariances.")
             .def_static(
                     "estimate_point_covariances",
                     &ccPointCloud::EstimatePerPointCovariances,

@@ -26,7 +26,6 @@
 
 #include "pybind/reconstruction/database/database.h"
 
-#include <memory>
 #include "pipelines/database.h"
 #include "pybind/docstring.h"
 
@@ -40,8 +39,10 @@ static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"database_path",
                  "Path to database in which to store the extracted data"},
-                {"first_database_path", "The first imported database directory."},
-                {"second_database_path", "The other imported database directory"},
+                {"first_database_path",
+                 "The first imported database directory."},
+                {"second_database_path",
+                 "The other imported database directory"},
                 {"merged_database_path", "The merged database directory"},
                 {"type", "supported type {all, images, features, matches}"}};
 
@@ -61,8 +62,9 @@ void pybind_database_methods(py::module &m) {
 
     m.def("merge_database", &MergeDatabase,
           py::call_guard<py::gil_scoped_release>(),
-          "Function for the merge between two databases", "first_database_path"_a,
-          "second_database_path"_a, "merged_database_path"_a);
+          "Function for the merge between two databases",
+          "first_database_path"_a, "second_database_path"_a,
+          "merged_database_path"_a);
     docstring::FunctionDocInject(m, "merge_database",
                                  map_shared_argument_docstrings);
 }
