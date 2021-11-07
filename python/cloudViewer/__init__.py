@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# -                        CloudViewer: asher-1.github.io                          -
+# -                        CloudViewer: asher-1.github.io                    -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
@@ -32,6 +32,7 @@
 #
 # https://github.com/llvm-mirror/openmp/blob/8453ca8594e1a5dd8a250c39bf8fcfbfb1760e60/runtime/src/i18n/en_US.txt#L449
 # https://github.com/dmlc/xgboost/issues/1715
+
 import os
 import sys
 import platform
@@ -54,6 +55,12 @@ if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
 # fix link bugs for qt on Linux platform
 if platform.system() == "Linux":
     if os.path.exists(_Path(__file__).parent / 'libs'):
+        # the Qt plugin is included currently only in the pre-built wheels
+        if _build_config["BUILD_RECONSTRUCTION"]:
+            os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "libs"
+            )
+
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicudata*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicuuc*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicui18n*'))))
@@ -66,14 +73,20 @@ if platform.system() == "Linux":
         for lib in libqts:
             _CDLL(lib)
 
-        libgflags = (_Path(__file__).parent / 'libs').glob('libgflags*')
-        libgflags = sorted(libgflags)
-        for lib in libgflags:
-            _CDLL(lib)
-
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libCVCoreLib*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libECV_DB_LIB*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libECV_IO_LIB*'))))
+        if _build_config["BUILD_RECONSTRUCTION"]:
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libfreeimage*'))))
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libgflags*'))))
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libglog*'))))
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libblas*'))))
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('liblapack*'))))
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libceres*'))))
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libboost_program_options*'))))
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libboost_filesystem*'))))
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libboost_system*'))))
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libboost_iostreams*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('lib*'))))
 
 __DEVICE_API__ = 'cpu'
@@ -90,8 +103,8 @@ if _build_config["BUILD_CUDA_MODULE"]:
         _pybind_cuda = _CDLL(
             str(next((_Path(__file__).parent / 'cuda').glob('pybind*'))))
         if _pybind_cuda.cloudViewer_core_cuda_device_count() > 0:
-            from cloudViewer.cuda.pybind import (camera, geometry, io, pipelines,
-                                                 utility, t)
+            from cloudViewer.cuda.pybind import (camera, geometry, io, pipelines, utility, t)
+
             if _build_config["BUILD_RECONSTRUCTION"]:
                 from cloudViewer.cuda.pybind import reconstruction
             from cloudViewer.cuda import pybind
@@ -106,6 +119,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
 
 if __DEVICE_API__ == 'cpu':
     from cloudViewer.cpu.pybind import (camera, geometry, io, pipelines, utility, t)
+
     if _build_config["BUILD_RECONSTRUCTION"]:
         from cloudViewer.cpu.pybind import reconstruction
     from cloudViewer.cpu import pybind

@@ -27,6 +27,7 @@ add_subdirectory(visualization)
 if (BUILD_RECONSTRUCTION)
     target_include_directories(pybind PRIVATE ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
     target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/src)
+    target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/lib)
     add_subdirectory(reconstruction)
 endif ()
 

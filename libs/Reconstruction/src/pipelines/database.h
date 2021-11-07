@@ -29,11 +29,13 @@
 //
 // Author: Asher (Dahai Lu)
 
+#pragma once
+
 #include <string>
 
 namespace cloudViewer {
 
-int CleanDatabase(const std::string& database_path, const std::string& type);
+int CleanDatabase(const std::string& database_path, const std::string& clean_type);
 
 int CreateDatabase(const std::string& database_path);
 
