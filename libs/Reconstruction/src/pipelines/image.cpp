@@ -29,10 +29,10 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#include "pipelines/image.h"
-
 #include "exe/image.h"
-#include "pipelines/option_utils.hpp"
+
+#include "pipelines/image.h"
+#include "pipelines/option_utils.h"
 
 namespace cloudViewer {
 
@@ -94,11 +94,13 @@ int RectifyImage(const std::string& image_path,
 
 int RegisterImage(const std::string& database_path,
                   const std::string& input_path,
-                  const std::string& output_path) {
+                  const std::string& output_path,
+                  const colmap::IncrementalMapperOptions& incremental_mapper_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("input_path", &input_path);
     parser.registerOption("output_path", &output_path);
+    parser.addMapperOptions(incremental_mapper_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunImageRegistrator(parser.getArgc(), parser.getArgv());
@@ -170,7 +172,7 @@ int UndistortImageStandalone(const std::string& image_path,
 
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
-    return colmap::RunImageUndistorter(parser.getArgc(), parser.getArgv());
+    return colmap::RunImageUndistorterStandalone(parser.getArgc(), parser.getArgv());
 }
 
 }  // namespace cloudViewer

@@ -167,7 +167,7 @@ int RunVocabTreeRetriever(int argc, char** argv) {
                            &database_image_list_path);
   options.AddDefaultOption("query_image_list_path", &query_image_list_path);
   options.AddDefaultOption("output_index_path", &output_index_path);
-  options.AddDefaultOption("num_images", &query_options.max_num_images);
+  options.AddDefaultOption("max_num_images", &query_options.max_num_images);
   options.AddDefaultOption("num_neighbors", &query_options.num_neighbors);
   options.AddDefaultOption("num_checks", &query_options.num_checks);
   options.AddDefaultOption("num_images_after_verification",

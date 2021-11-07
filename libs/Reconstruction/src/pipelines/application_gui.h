@@ -29,22 +29,17 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#include "pipelines/project.h"
+#pragma once
 
-#include "exe/gui.h"
-#include "pipelines/option_utils.hpp"
+#include <string>
 
 namespace cloudViewer {
 
-int GenerateProject(const std::string& output_path,
-                    const std::string& quality /*= "high"*/) {
-    OptionsParser parser;
-    parser.registerOption("output_path", &output_path);
-    // supported {low, medium, high, extreme}
-    parser.registerOption("quality", &quality);
-    if (!parser.parseOptions()) return EXIT_FAILURE;
+int GraphicalUserInterface(const std::string& database_path,
+                           const std::string& image_path,
+                           const std::string& import_path = "");
 
-    return colmap::RunProjectGenerator(parser.getArgc(), parser.getArgv());
-}
+int GenerateProject(const std::string& output_path,
+                    const std::string& quality = "high");
 
 }  // namespace cloudViewer

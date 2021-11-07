@@ -29,6 +29,8 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#pragma once
+
 #include <string>
 
 namespace cloudViewer {
@@ -44,7 +46,7 @@ int AlignModel(const std::string& input_path,
                bool robust_alignment = true,
                bool estimate_scale = true);
 
-int AnalyzeModel(const std::string& path);
+int AnalyzeModel(const std::string& input_path);
 
 int CompareModel(const std::string& input_path1,
                  const std::string& input_path2,
@@ -60,8 +62,7 @@ int ConvertModel(const std::string& input_path,
 int CropModel(const std::string& input_path,
               const std::string& output_path,
               const std::string& boundary,
-              const std::string& gps_transform_path = "",
-              bool is_gps = false);
+              const std::string& gps_transform_path = "");
 
 int MergeModel(const std::string& input_path1,
                const std::string& input_path2,
@@ -83,8 +84,7 @@ int SplitModel(const std::string& input_path,
                std::size_t min_num_points = 100,
                double overlap_ratio = 0.0,
                double min_area_ratio = 0.0,
-               int num_threads = -1,
-               bool is_gps = false);
+               int num_threads = -1);
 
 int TransformModel(const std::string& input_path,
                    const std::string& output_path,

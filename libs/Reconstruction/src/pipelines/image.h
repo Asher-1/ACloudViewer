@@ -29,7 +29,11 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#pragma once
+
 #include <string>
+
+#include "controllers/incremental_mapper.h"
 
 namespace cloudViewer {
 
@@ -54,9 +58,12 @@ int RectifyImage(const std::string& image_path,
                  double max_scale = 2.0,
                  int max_image_size = -1);
 
-int RegisterImage(const std::string& database_path,
-                  const std::string& input_path,
-                  const std::string& output_path);
+int RegisterImage(
+        const std::string& database_path,
+        const std::string& input_path,
+        const std::string& output_path,
+        const colmap::IncrementalMapperOptions& incremental_mapper_options =
+                colmap::IncrementalMapperOptions());
 
 int UndistortImage(const std::string& image_path,
                    const std::string& input_path,
@@ -75,15 +82,15 @@ int UndistortImage(const std::string& image_path,
                    double roi_max_y = 1.0);
 
 int UndistortImageStandalone(const std::string& image_path,
-                               const std::string& input_file,
-                               const std::string& output_path,
-                               double blank_pixels = 0.0,
-                               double min_scale = 0.2,
-                               double max_scale = 2.0,
-                               int max_image_size = -1,
-                               double roi_min_x = 0.0,
-                               double roi_min_y = 0.0,
-                               double roi_max_x = 1.0,
-                               double roi_max_y = 1.0);
+                             const std::string& input_file,
+                             const std::string& output_path,
+                             double blank_pixels = 0.0,
+                             double min_scale = 0.2,
+                             double max_scale = 2.0,
+                             int max_image_size = -1,
+                             double roi_min_x = 0.0,
+                             double roi_min_y = 0.0,
+                             double roi_max_x = 1.0,
+                             double roi_max_y = 1.0);
 
 }  // namespace cloudViewer

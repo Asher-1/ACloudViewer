@@ -129,13 +129,6 @@ void MainWindow::CreateWidgets() {
   dock_log_widget_ = new QDockWidget("Log", this);
   dock_log_widget_->setWidget(log_widget_);
   addDockWidget(Qt::RightDockWidgetArea, dock_log_widget_);
-
-//  status_bar_ = new QStatusBar(this);
-//  status_bar_->setObjectName(QString::fromUtf8("CustomStatusBar"));
-//  QFont font;
-//  font.setPointSize(11);
-//  status_bar_->setFont(font);
-//  this->setStatusBar(status_bar_);
 }
 
 void MainWindow::CreateActions() {
