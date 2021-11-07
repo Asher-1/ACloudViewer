@@ -121,9 +121,8 @@ void pybind_kdtreeflann(py::module &m) {
                     {"knn", "``knn`` neighbors will be searched."},
                     {"feature", "Feature data."},
                     {"data", "Matrix data."}};
-    py::class_<KDTreeFlann, std::shared_ptr<KDTreeFlann>>
-            kdtreeflann(m, "KDTreeFlann",
-                        "KDTree with FLANN for nearest neighbor search.");
+    py::class_<KDTreeFlann, std::shared_ptr<KDTreeFlann>> kdtreeflann(
+            m, "KDTreeFlann", "KDTree with FLANN for nearest neighbor search.");
     kdtreeflann.def(py::init<>())
             .def(py::init<const Eigen::MatrixXd &>(), "data"_a)
             .def("set_matrix_data", &KDTreeFlann::SetMatrixData,
@@ -131,8 +130,7 @@ void pybind_kdtreeflann(py::module &m) {
             .def(py::init<const ccHObject &>(), "geometry"_a)
             .def("set_geometry", &KDTreeFlann::SetGeometry,
                  "Sets the data for the KDTree from geometry.", "geometry"_a)
-            .def(py::init<const utility::Feature &>(),
-                 "feature"_a)
+            .def(py::init<const utility::Feature &>(), "feature"_a)
             .def("set_feature", &KDTreeFlann::SetFeature,
                  "Sets the data for the KDTree from the feature data.",
                  "feature"_a)

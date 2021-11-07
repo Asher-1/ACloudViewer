@@ -28,6 +28,7 @@
 
 #include <Image.h>
 #include <RGBDImage.h>
+
 #include "pipelines/odometry/Odometry.h"
 #include "pipelines/odometry/OdometryOption.h"
 #include "pipelines/odometry/RGBDOdometryJacobian.h"
@@ -127,7 +128,8 @@ void pybind_odometry_classes(py::module &m) {
                     m, "RGBDOdometryJacobian",
                     "Base class that computes Jacobian from two RGB-D images.");
 
-    // cloudViewer.odometry.RGBDOdometryJacobianFromColorTerm: RGBDOdometryJacobian
+    // cloudViewer.odometry.RGBDOdometryJacobianFromColorTerm:
+    // RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobianFromColorTerm,
                PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
                RGBDOdometryJacobian>
@@ -152,7 +154,8 @@ In ICCV Workshops, 2011.)");
                 return std::string("RGBDOdometryJacobianFromColorTerm");
             });
 
-    // cloudViewer.odometry.RGBDOdometryJacobianFromHybridTerm: RGBDOdometryJacobian
+    // cloudViewer.odometry.RGBDOdometryJacobianFromHybridTerm:
+    // RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobianFromHybridTerm,
                PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
                RGBDOdometryJacobian>

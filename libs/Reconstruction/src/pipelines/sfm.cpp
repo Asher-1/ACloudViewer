@@ -31,7 +31,7 @@
 
 #include "exe/sfm.h"
 
-#include "pipelines/option_utils.hpp"
+#include "pipelines/option_utils.h"
 #include "pipelines/sfm.h"
 
 namespace cloudViewer {
@@ -79,19 +79,22 @@ int AutomaticReconstruct(const std::string& workspace_path,
                                              parser.getArgv());
 }
 
-int BundleAdjust(const std::string& input_path,
-                 const std::string& output_path) {
+int BundleAdjustment(
+        const std::string& input_path,
+        const std::string& output_path,
+        const colmap::BundleAdjustmentOptions& bundle_adjustment_options) {
     OptionsParser parser;
     parser.registerOption("input_path", &input_path);
     parser.registerOption("output_path", &output_path);
+    parser.addBundleAdjustmentOptions(bundle_adjustment_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunBundleAdjuster(parser.getArgc(), parser.getArgv());
 }
 
 int ExtractColor(const std::string& image_path,
-                 const std::string& output_path,
-                 const std::string& input_path /*= ""*/) {
+                 const std::string& input_path,
+                 const std::string& output_path) {
     OptionsParser parser;
     parser.registerOption("image_path", &image_path);
     parser.registerOption("input_path", &input_path);
@@ -101,28 +104,33 @@ int ExtractColor(const std::string& image_path,
     return colmap::RunColorExtractor(parser.getArgc(), parser.getArgv());
 }
 
-int NormalMapper(const std::string& database_path,
-                 const std::string& image_path,
-                 const std::string& output_path,
-                 const std::string& input_path /*= ""*/,
-                 const std::string& image_list_path /*= ""*/) {
+int NormalMapper(
+        const std::string& database_path,
+        const std::string& image_path,
+        const std::string& input_path,
+        const std::string& output_path,
+        const std::string& image_list_path /*= ""*/,
+        const colmap::IncrementalMapperOptions& incremental_mapper_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("image_path", &image_path);
     parser.registerOption("input_path", &input_path);
     parser.registerOption("output_path", &output_path);
     parser.registerOption("image_list_path", &image_list_path);
+    parser.addMapperOptions(incremental_mapper_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunMapper(parser.getArgc(), parser.getArgv());
 }
 
-int HierarchicalMapper(const std::string& database_path,
-                       const std::string& image_path,
-                       const std::string& output_path,
-                       int num_workers /*= -1*/,
-                       int image_overlap /*= 50*/,
-                       int leaf_max_num_images /*= 500*/) {
+int HierarchicalMapper(
+        const std::string& database_path,
+        const std::string& image_path,
+        const std::string& output_path,
+        int num_workers /*= -1*/,
+        int image_overlap /*= 50*/,
+        int leaf_max_num_images /*= 500*/,
+        const colmap::IncrementalMapperOptions& incremental_mapper_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("image_path", &image_path);
@@ -130,6 +138,7 @@ int HierarchicalMapper(const std::string& database_path,
     parser.registerOption("num_workers", &num_workers);
     parser.registerOption("image_overlap", &image_overlap);
     parser.registerOption("leaf_max_num_images", &leaf_max_num_images);
+    parser.addMapperOptions(incremental_mapper_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunHierarchicalMapper(parser.getArgc(), parser.getArgv());
@@ -151,11 +160,13 @@ int FilterPoints(const std::string& input_path,
     return colmap::RunPointFiltering(parser.getArgc(), parser.getArgv());
 }
 
-int TriangulatePoints(const std::string& database_path,
-                      const std::string& image_path,
-                      const std::string& input_path,
-                      const std::string& output_path,
-                      bool clear_points /*= false*/) {
+int TriangulatePoints(
+        const std::string& database_path,
+        const std::string& image_path,
+        const std::string& input_path,
+        const std::string& output_path,
+        bool clear_points /*= false*/,
+        const colmap::IncrementalMapperOptions& incremental_mapper_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("image_path", &image_path);
@@ -163,16 +174,19 @@ int TriangulatePoints(const std::string& database_path,
     parser.registerOption("output_path", &output_path);
     // Whether to clear all existing points and observations
     parser.registerOption("clear_points", &clear_points);
+    parser.addMapperOptions(incremental_mapper_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunPointTriangulator(parser.getArgc(), parser.getArgv());
 }
 
-int RigBundleAdjust(const std::string& input_path,
-                    const std::string& output_path,
-                    const std::string& rig_config_path,
-                    bool estimate_rig_relative_poses /*= true*/,
-                    bool refine_relative_poses /*= true*/) {
+int RigBundleAdjust(
+        const std::string& input_path,
+        const std::string& output_path,
+        const std::string& rig_config_path,
+        bool estimate_rig_relative_poses /*= true*/,
+        bool refine_relative_poses /*= true*/,
+        const colmap::BundleAdjustmentOptions& bundle_adjustment_options) {
     OptionsParser parser;
     parser.registerOption("input_path", &input_path);
     parser.registerOption("output_path", &output_path);
@@ -182,6 +196,7 @@ int RigBundleAdjust(const std::string& input_path,
                           &estimate_rig_relative_poses);
     parser.registerOption("RigBundleAdjustment.refine_relative_poses",
                           &refine_relative_poses);
+    parser.addBundleAdjustmentOptions(bundle_adjustment_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunRigBundleAdjuster(parser.getArgc(), parser.getArgv());

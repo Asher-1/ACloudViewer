@@ -36,16 +36,17 @@ if (IS_MSVC)
 endif ()
 
 COLMAP_ADD_SOURCES(
-    database.cc
-    feature.cc
-    image.cc
-    model.cc
-    mvs.cc
-    sfm.cc
-    vocab_tree.cc
+        database.cc
+        feature.cc
+        image.cc
+        model.cc
+        mvs.cc
+        sfm.cc
+        vocab_tree.cc
+        gui.cc
 )
 
 COLMAP_ADD_EXECUTABLE(colmap_exe
-    colmap.cc
-    gui.cc)
+        colmap.cc
+        )
 set_target_properties(colmap_exe PROPERTIES OUTPUT_NAME colmap)

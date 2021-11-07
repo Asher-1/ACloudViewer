@@ -32,7 +32,7 @@
 #include "exe/model.h"
 
 #include "pipelines/model.h"
-#include "pipelines/option_utils.hpp"
+#include "pipelines/option_utils.h"
 
 namespace cloudViewer {
 
@@ -54,7 +54,7 @@ int AlignModel(const std::string& input_path,
     parser.registerOption("transform_path", &transform_path);
     // supported {plane, ecef, enu, enu-unscaled, custom}
     parser.registerOption("alignment_type", &alignment_type);
-    parser.registerOption("max_error", &max_error);
+    parser.registerOption("robust_alignment_max_error", &max_error);
     parser.registerOption("min_common_images", &min_common_images);
     parser.registerOption("robust_alignment", &robust_alignment);
     parser.registerOption("estimate_scale", &estimate_scale);
@@ -63,9 +63,9 @@ int AlignModel(const std::string& input_path,
     return colmap::RunModelAligner(parser.getArgc(), parser.getArgv());
 }
 
-int AnalyzeModel(const std::string& path) {
+int AnalyzeModel(const std::string& input_path) {
     OptionsParser parser;
-    parser.registerOption("path", &path);
+    parser.registerOption("path", &input_path); // equal to input_path
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunModelAnalyzer(parser.getArgc(), parser.getArgv());
@@ -105,14 +105,12 @@ int ConvertModel(const std::string& input_path,
 int CropModel(const std::string& input_path,
               const std::string& output_path,
               const std::string& boundary,
-              const std::string& gps_transform_path /* = ""*/,
-              bool is_gps /* = false*/) {
+              const std::string& gps_transform_path /* = ""*/) {
     OptionsParser parser;
     parser.registerOption("input_path", &input_path);
     parser.registerOption("output_path", &output_path);
     parser.registerOption("boundary", &boundary);
     parser.registerOption("gps_transform_path", &gps_transform_path);
-    parser.registerOption("is_gps", &is_gps);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunModelCropper(parser.getArgc(), parser.getArgv());
@@ -159,8 +157,7 @@ int SplitModel(const std::string& input_path,
                std::size_t min_num_points /*= 100*/,
                double overlap_ratio /*= 0.0*/,
                double min_area_ratio /*= 0.0*/,
-               int num_threads /*= -1*/,
-               bool is_gps /*= false*/) {
+               int num_threads /*= -1*/) {
     OptionsParser parser;
     parser.registerOption("input_path", &input_path);
     parser.registerOption("output_path", &output_path);
@@ -173,7 +170,6 @@ int SplitModel(const std::string& input_path,
     parser.registerOption("overlap_ratio", &overlap_ratio);
     parser.registerOption("min_area_ratio", &min_area_ratio);
     parser.registerOption("num_threads", &num_threads);
-    parser.registerOption("is_gps", &is_gps);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunModelSplitter(parser.getArgc(), parser.getArgv());
@@ -186,8 +182,8 @@ int TransformModel(const std::string& input_path,
     OptionsParser parser;
     parser.registerOption("input_path", &input_path);
     parser.registerOption("output_path", &output_path);
-    parser.registerOption("split_type", &transform_path);
-    parser.registerOption("split_params", &is_inverse);
+    parser.registerOption("transform_path", &transform_path);
+    parser.registerOption("is_inverse", &is_inverse);
 
     if (!parser.parseOptions()) return EXIT_FAILURE;
 

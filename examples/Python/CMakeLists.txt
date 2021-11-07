@@ -10,6 +10,8 @@ file(GLOB PY_misc_TUTORIAL_FILES "misc/*.py")
 source_group("misc" FILES ${PY_misc_TUTORIAL_FILES})
 file(GLOB PY_pipelines_TUTORIAL_FILES "pipelines/*.py")
 source_group("pipelines" FILES ${PY_pipelines_TUTORIAL_FILES})
+file(GLOB PY_reconstruction_FILES "reconstruction/*.py")
+source_group("reconstruction" FILES ${PY_reconstruction_FILES})
 file(GLOB PY_reconstruction_system_TUTORIAL_FILES "reconstruction_system/*.py")
 source_group("reconstruction_system" FILES ${PY_reconstruction_system_TUTORIAL_FILES})
 file(GLOB PY_utility_TUTORIAL_FILES "utility/*.py")
@@ -23,6 +25,7 @@ ${PY_geometry_TUTORIAL_FILES}
 ${PY_gui_TUTORIAL_FILES} 
 ${PY_misc_TUTORIAL_FILES}
 ${PY_pipelines_TUTORIAL_FILES}
+${PY_reconstruction_FILES}
 ${PY_reconstruction_system_TUTORIAL_FILES}
 ${PY_utility_TUTORIAL_FILES}
 ${PY_visualization_TUTORIAL_FILES})

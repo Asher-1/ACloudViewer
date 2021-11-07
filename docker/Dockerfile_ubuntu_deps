@@ -174,7 +174,7 @@ RUN /root/miniconda3/bin/pip install --user  -U pip -i https://pypi.tuna.tsinghu
                                 && /root/miniconda3/bin/pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
 RUN /root/miniconda3/bin/conda install -c conda-forge pdal python-pdal -y
 RUN /root/miniconda3/bin/pip install -r requirements.txt \
-    && /root/miniconda3/bin/pip install torch==1.6.0+cu101 torchvision==0.7.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html \
+    && /root/miniconda3/bin/pip install torch==1.7.1+cu101 torchvision==0.8.2+cu101 -f https://download.pytorch.org/whl/torch_stable.html \
     && /root/miniconda3/bin/pip install tensorflow==2.3.1
 
 # fix liblitedb.so.2.1 complain libstdc++.so.6 GLIBCXX not found, libgdal.so complain undefined TIFF* and object.h bugs with qt bugs
