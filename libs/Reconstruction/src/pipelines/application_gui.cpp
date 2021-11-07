@@ -29,11 +29,40 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#include <string>
+#include "pipelines/application_gui.h"
+#include "exe/gui.h"
+#include "pipelines/option_utils.h"
+
+void InitQtResources() {
+#ifdef GUI_ENABLED
+    Q_INIT_RESOURCE(resources);
+#endif
+}
 
 namespace cloudViewer {
 
+int GraphicalUserInterface(const std::string& database_path,
+                           const std::string& image_path,
+                           const std::string& import_path) {
+    InitQtResources();
+    OptionsParser parser;
+    parser.registerOption("database_path", &database_path);
+    parser.registerOption("image_path", &image_path);
+    parser.registerOption("import_path", &import_path);
+    if (!parser.parseOptions()) return EXIT_FAILURE;
+
+    return colmap::RunGraphicalUserInterface(parser.getArgc(), parser.getArgv());
+}
+
 int GenerateProject(const std::string& output_path,
-                    const std::string& quality = "high");
+                    const std::string& quality /*= "high"*/) {
+    OptionsParser parser;
+    parser.registerOption("output_path", &output_path);
+    // supported {low, medium, high, extreme}
+    parser.registerOption("quality", &quality);
+    if (!parser.parseOptions()) return EXIT_FAILURE;
+
+    return colmap::RunProjectGenerator(parser.getArgc(), parser.getArgv());
+}
 
 }  // namespace cloudViewer

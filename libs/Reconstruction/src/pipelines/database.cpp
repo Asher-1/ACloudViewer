@@ -32,15 +32,15 @@
 #include "pipelines/database.h"
 
 #include "exe/database.h"
-#include "pipelines/option_utils.hpp"
+#include "pipelines/option_utils.h"
 
 namespace cloudViewer {
 
-int CleanDatabase(const std::string& database_path, const std::string& type) {
+int CleanDatabase(const std::string& database_path, const std::string& clean_type) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     // supported type {all, images, features, matches}
-    parser.registerOption("type", &type);
+    parser.registerOption("type", &clean_type);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunDatabaseCleaner(parser.getArgc(), parser.getArgv());

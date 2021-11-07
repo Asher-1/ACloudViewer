@@ -31,7 +31,7 @@
 
 #include "exe/vocab_tree.h"
 
-#include "pipelines/option_utils.hpp"
+#include "pipelines/option_utils.h"
 #include "pipelines/vocab_tree.h"
 
 namespace cloudViewer {
@@ -42,8 +42,7 @@ int BuildVocabTree(const std::string& database_path,
                    int num_checks /*= 256*/,
                    int branching /*= 256*/,
                    int num_iterations /*= 11*/,
-                   int max_num_images /*= -1*/,
-                   int num_threads /*= -1*/) {
+                   int max_num_images /*= -1*/) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("vocab_tree_path", &vocab_tree_path);
@@ -52,7 +51,6 @@ int BuildVocabTree(const std::string& database_path,
     parser.registerOption("branching", &branching);
     parser.registerOption("num_iterations", &num_iterations);
     parser.registerOption("max_num_images", &max_num_images);
-    parser.registerOption("num_threads", &num_threads);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunVocabTreeBuilder(parser.getArgc(), parser.getArgv());
@@ -67,8 +65,7 @@ int RetrieveVocabTree(const std::string& database_path,
                       int num_neighbors /*= 5*/,
                       int num_checks /*= 256*/,
                       int num_images_after_verification /*= 0*/,
-                      int max_num_features /*= -1*/,
-                      int num_threads /*= -1*/) {
+                      int max_num_features /*= -1*/) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("vocab_tree_path", &vocab_tree_path);
@@ -82,7 +79,6 @@ int RetrieveVocabTree(const std::string& database_path,
     parser.registerOption("num_images_after_verification",
                           &num_images_after_verification);
     parser.registerOption("max_num_features", &max_num_features);
-    parser.registerOption("num_threads", &num_threads);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunVocabTreeRetriever(parser.getArgc(), parser.getArgv());

@@ -29,7 +29,12 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#pragma once
+
 #include <string>
+
+#include "controllers/incremental_mapper.h"
+#include "optim/bundle_adjustment.h"
 
 namespace cloudViewer {
 
@@ -48,24 +53,34 @@ int AutomaticReconstruct(const std::string& workspace_path,
                          bool use_gpu = true,
                          const std::string& gpu_index = "-1");
 
-int BundleAdjust(const std::string& input_path, const std::string& output_path);
+int BundleAdjustment(
+        const std::string& input_path,
+        const std::string& output_path,
+        const colmap::BundleAdjustmentOptions& bundle_adjustment_options =
+                colmap::BundleAdjustmentOptions());
 
 int ExtractColor(const std::string& image_path,
-                 const std::string& output_path,
-                 const std::string& input_path = "");
+                 const std::string& input_path,
+                 const std::string& output_path);
 
-int NormalMapper(const std::string& database_path,
-                 const std::string& image_path,
-                 const std::string& output_path,
-                 const std::string& input_path = "",
-                 const std::string& image_list_path = "");
+int NormalMapper(
+        const std::string& database_path,
+        const std::string& image_path,
+        const std::string& input_path,
+        const std::string& output_path,
+        const std::string& image_list_path = "",
+        const colmap::IncrementalMapperOptions& incremental_mapper_options =
+                colmap::IncrementalMapperOptions());
 
-int HierarchicalMapper(const std::string& database_path,
-                       const std::string& image_path,
-                       const std::string& output_path,
-                       int num_workers = -1,
-                       int image_overlap = 50,
-                       int leaf_max_num_images = 500);
+int HierarchicalMapper(
+        const std::string& database_path,
+        const std::string& image_path,
+        const std::string& output_path,
+        int num_workers = -1,
+        int image_overlap = 50,
+        int leaf_max_num_images = 500,
+        const colmap::IncrementalMapperOptions& incremental_mapper_options =
+                colmap::IncrementalMapperOptions());
 
 int FilterPoints(const std::string& input_path,
                  const std::string& output_path,
@@ -73,16 +88,22 @@ int FilterPoints(const std::string& input_path,
                  double max_reproj_error = 4.0,
                  double min_tri_angle = 1.5);
 
-int TriangulatePoints(const std::string& database_path,
-                      const std::string& image_path,
-                      const std::string& input_path,
-                      const std::string& output_path,
-                      bool clear_points = false);
+int TriangulatePoints(
+        const std::string& database_path,
+        const std::string& image_path,
+        const std::string& input_path,
+        const std::string& output_path,
+        bool clear_points = false,
+        const colmap::IncrementalMapperOptions& incremental_mapper_options =
+                colmap::IncrementalMapperOptions());
 
-int RigBundleAdjust(const std::string& input_path,
-                    const std::string& output_path,
-                    const std::string& rig_config_path,
-                    bool estimate_rig_relative_poses = true,
-                    bool refine_relative_poses = true);
+int RigBundleAdjust(
+        const std::string& input_path,
+        const std::string& output_path,
+        const std::string& rig_config_path,
+        bool estimate_rig_relative_poses = true,
+        bool refine_relative_poses = true,
+        const colmap::BundleAdjustmentOptions& bundle_adjustment_options =
+                colmap::BundleAdjustmentOptions());
 
 }  // namespace cloudViewer

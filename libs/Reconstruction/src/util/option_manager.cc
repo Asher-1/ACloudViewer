@@ -295,7 +295,8 @@ void OptionManager::AddMatchingOptions() {
 
   AddAndRegisterDefaultOption("SiftMatching.num_threads",
                               &sift_matching->num_threads);
-  AddAndRegisterDefaultOption("SiftMatching.use_gpu", &sift_matching->use_gpu);
+  AddAndRegisterDefaultOption("SiftMatching.use_gpu",
+                              &sift_matching->use_gpu);
   AddAndRegisterDefaultOption("SiftMatching.gpu_index",
                               &sift_matching->gpu_index);
   AddAndRegisterDefaultOption("SiftMatching.max_ratio",
@@ -707,6 +708,8 @@ void OptionManager::AddDelaunayMeshingOptions() {
                               &delaunay_meshing->max_proj_dist);
   AddAndRegisterDefaultOption("DelaunayMeshing.max_depth_dist",
                               &delaunay_meshing->max_depth_dist);
+  AddAndRegisterDefaultOption("DelaunayMeshing.visibility_sigma",
+                              &delaunay_meshing->visibility_sigma);
   AddAndRegisterDefaultOption("DelaunayMeshing.distance_sigma_factor",
                               &delaunay_meshing->distance_sigma_factor);
   AddAndRegisterDefaultOption("DelaunayMeshing.quality_regularization",
