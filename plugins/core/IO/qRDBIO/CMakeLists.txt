@@ -98,7 +98,7 @@ if (PLUGIN_IO_QRDB)
             add_custom_command(TARGET ${PROJECT_NAME}
                     POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E
-                    copy_if_different ${lib_REAL} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
+                    copy_if_different ${lib_REAL} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/"
                     )
         else ()
             add_custom_command(TARGET ${PROJECT_NAME}

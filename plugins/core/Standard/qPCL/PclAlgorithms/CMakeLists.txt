@@ -65,7 +65,9 @@ if (USE_PCL_BACKEND)
                                     ${PCL_LIBRARY_DIRS}
             )
 	endif()
-	add_definitions( ${PCL_DEFINITIONS} )
+    if (NOT WIN32)
+		add_definitions( ${PCL_DEFINITIONS} )
+    endif()
 	target_link_libraries( ${PROJECT_NAME}
                                ${PCL_LIBRARIES}
                                CVPluginAPI

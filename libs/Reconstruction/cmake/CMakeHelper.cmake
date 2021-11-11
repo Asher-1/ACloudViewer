@@ -129,11 +129,8 @@ macro(COLMAP_ADD_LIBRARY TARGET_NAME)
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
+    cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
-
-#    set_target_properties(${TARGET_NAME} PROPERTIES
-#            CXX_VISIBILITY_PRESET hidden
-#            )
 
     # install
     install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
@@ -154,11 +151,8 @@ macro(COLMAP_ADD_STATIC_LIBRARY TARGET_NAME)
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
+    cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
-
-#    set_target_properties(${TARGET_NAME} PROPERTIES
-#            CXX_VISIBILITY_PRESET hidden
-#            )
 
     # install
     install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap)
@@ -170,7 +164,6 @@ endmacro(COLMAP_ADD_STATIC_LIBRARY)
 macro(COLMAP_ADD_CUDA_LIBRARY TARGET_NAME)
     # ${ARGN} will store the list of source files passed to this function.
     add_library(${TARGET_NAME} ${ARGN})
-    target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
             ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
 
@@ -184,11 +177,10 @@ macro(COLMAP_ADD_CUDA_LIBRARY TARGET_NAME)
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
+    cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
+    target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-#    set_target_properties(${TARGET_NAME} PROPERTIES
-#            CXX_VISIBILITY_PRESET hidden
-#            )
     # install
     install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
 endmacro(COLMAP_ADD_CUDA_LIBRARY)
@@ -210,11 +202,9 @@ macro(COLMAP_ADD_STATIC_CUDA_LIBRARY TARGET_NAME)
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
+    cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
-
-#    set_target_properties(${TARGET_NAME} PROPERTIES
-#            CXX_VISIBILITY_PRESET hidden
-#            )
+    target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
     # install
     install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
@@ -238,6 +228,7 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
     cloudViewer_set_global_properties(${TARGET_NAME})
+    cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
@@ -280,11 +271,8 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
+        cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
         cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
-
-#        set_target_properties(${TARGET_NAME} PROPERTIES
-#                CXX_VISIBILITY_PRESET hidden
-#                )
 
         # install
         if (IS_MSVC)
@@ -298,7 +286,6 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
     if (TESTS_ENABLED)
         # ${ARGN} will store the list of source files passed to this function.
         add_executable(${TARGET_NAME} ${ARGN})
-        target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
         target_link_libraries(${TARGET_NAME} PRIVATE colmap ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
@@ -314,11 +301,9 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
+        cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
         cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
-
-#        set_target_properties(${TARGET_NAME} PROPERTIES
-#                CXX_VISIBILITY_PRESET hidden
-#                )
+        target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
         # install
         if (IS_MSVC)

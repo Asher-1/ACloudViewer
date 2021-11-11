@@ -87,8 +87,12 @@ option(BUILD_TENSORFLOW_OPS "Build ops for Tensorflow" OFF)
 option(BUILD_PYTORCH_OPS "Build ops for Pytorch" OFF)
 option(BUNDLE_CLOUDVIEWER_ML "Includes the CloudViewer-ML repo in the wheel" OFF)
 
-# PCL ENGINE SUPPORT
 option(BUILD_RECONSTRUCTION "Build the 3D Reconstruction" OFF)
+if (NOT ${BUILD_RECONSTRUCTION})
+    set(BUILD_COLMAP_GUI OFF)
+endif()
+
+# PCL ENGINE SUPPORT
 option(USE_PCL_BACKEND "Check to use pcl library as backend" ON)
 
 # other options

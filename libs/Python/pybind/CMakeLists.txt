@@ -29,6 +29,9 @@ if (BUILD_RECONSTRUCTION)
     target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/src)
     target_include_directories(pybind PRIVATE ${COLMAP_SOURCE_DIR}/lib)
     add_subdirectory(reconstruction)
+    # Some fixes for the Glog library.
+    target_compile_definitions(pybind PRIVATE -DGLOG_NO_ABBREVIATED_SEVERITIES)
+    target_compile_definitions(pybind PRIVATE -DGOOGLE_GLOG_DLL_DECL=)
 endif ()
 
 target_sources(pybind PRIVATE
