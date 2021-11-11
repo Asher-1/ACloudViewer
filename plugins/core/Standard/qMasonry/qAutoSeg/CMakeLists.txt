@@ -38,7 +38,7 @@ if ( PLUGIN_STANDARD_MASONRY_QAUTO_SEG )
       include_directories( ${OpenCV_INCLUDE_DIRS} )
 
       # [C/C++]>[Preprocessor]>[Preprocessor Definitions]
-      add_definitions( ${PCL_DEFINITIONS} )
+      target_compile_definitions(${PROJECT_NAME} PRIVATE ${PCL_DEFINITIONS} )
 
       # For Use Not PreCompiled Features
       #add_definitions( -DPCL_NO_PRECOMPILE )

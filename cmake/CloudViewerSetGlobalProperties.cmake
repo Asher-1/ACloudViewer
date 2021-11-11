@@ -70,7 +70,6 @@ function(cloudViewer_set_global_properties target)
         if(MSVC)
             target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
             target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
-            target_compile_options(${target} PRIVATE /wd4522 /wd4190 /wd4819 /wd4717 /Wv:18 /WX-)
             # Multi-thread compile, two ways to enable
             # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
             # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build

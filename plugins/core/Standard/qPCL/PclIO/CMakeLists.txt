@@ -14,7 +14,9 @@ add_subdirectory( src )
 add_subdirectory( ui )
 
 link_directories( ${PCL_LIBRARY_DIRS} )
-add_definitions( ${PCL_DEFINITIONS} )
+if (NOT WIN32)
+	add_definitions( ${PCL_DEFINITIONS} )
+endif()
 target_link_libraries(	${PROJECT_NAME} 
 						QPCL_ENGINE_LIB
 						QPCL_PLUGIN_ALGORIGHM_LIB)
