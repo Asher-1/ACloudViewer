@@ -129,7 +129,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                     USE_SOURCE_PERMISSIONS)
             install(FILES   "${APP_DIR}/${TARGET_NAME}.exe"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
-                    RENAME "${APP_NAME}.exe")
+                    RENAME "${TARGET_NAME}.exe")
 
 			# deploy on windows
 			add_custom_command(TARGET ${TARGET_NAME}

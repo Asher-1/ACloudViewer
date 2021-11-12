@@ -13,8 +13,8 @@
     <RunProgram>@TargetDir@/ErowCloudViewer.exe</RunProgram>
     <RunProgramArguments></RunProgramArguments>
     <RunProgramDescription>Start ErowCloudViewer</RunProgramDescription>
-    <StartMenuDir>Graphics</StartMenuDir>
+    <StartMenuDir>CloudViewer</StartMenuDir>
 	<AllowNonAsciiCharacters>true</AllowNonAsciiCharacters>
     <TargetDir>@HomeDir@/ErowCloudViewer</TargetDir>
-	<AdminTargetDir>@rootDir@/opt/ErowCloudViewer</AdminTargetDir>
+	<AdminTargetDir>@rootDir@</AdminTargetDir>
 </Installer>

@@ -21,6 +21,4 @@ find_package (PCL REQUIRED) # must before find_package (VTK REQUIRED), otherwise
 find_package (VTK REQUIRED)
 include_directories( ${PCL_INCLUDE_DIRS} )
 include_directories( ${VTK_INCLUDE_DIRS} )
-if (NOT WIN32)
-	add_definitions( ${PCL_DEFINITIONS} )
-endif()
+add_definitions( ${PCL_DEFINITIONS} )
