@@ -92,13 +92,14 @@ if (PLUGIN_IO_QRDB)
         get_target_property(RDB_LIBRARY_FILE rdbc IMPORTED_LOCATION)
         # resolve possible symlink and install the real library
         get_filename_component(lib_REAL ${RDB_LIBRARY_FILE} REALPATH)
+        get_filename_component(lib_NAME ${RDB_LIBRARY_FILE} NAME)
 
         # for debugging
         if (WIN32)
             add_custom_command(TARGET ${PROJECT_NAME}
                     POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E
-                    copy_if_different ${lib_REAL} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/"
+                    copy_if_different ${lib_REAL} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${lib_NAME}"
                     )
         else ()
             add_custom_command(TARGET ${PROJECT_NAME}
