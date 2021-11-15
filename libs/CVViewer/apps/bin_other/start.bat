@@ -1,2 +1,2 @@
 @set PATH=.
-CloudViewer.exe
+CloudViewerApp.exe

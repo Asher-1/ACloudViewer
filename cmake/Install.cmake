@@ -206,7 +206,7 @@ function( _InstallSharedTarget )
 		get_target_property( target_bin_dir ${shared_target} BINARY_DIR )
 		
 		set( target_shared_lib "${target_bin_dir}/${lib_prefix}${shared_target}${lib_postfix}${CMAKE_SHARED_LIBRARY_SUFFIX}" )
-				
+
 		if ( WIN32 )
 			cloudViewer_install_files( "${target_shared_lib}" "${full_path}" 1 )
 		else()

@@ -133,11 +133,6 @@ if (CGAL_ENABLED)
     find_package(CGAL QUIET)
 endif ()
 
-#set(CUDA_MIN_VERSION "10.1")
-#if(CUDA_ENABLED)
-#    find_package(CUDA ${CUDA_MIN_VERSION} QUIET)
-#endif()
-
 if (OPENGL_ENABLED AND NOT GUI_ENABLED)
     message(STATUS "Disabling GUI will also disable OpenGL")
     set(OPENGL_ENABLED OFF)
@@ -174,7 +169,6 @@ if (IS_MSVC)
     # Enable object level parallel builds in Visual Studio.
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-
 endif ()
 
 if (IS_GNU)
@@ -209,11 +203,10 @@ endif ()
 
 if (CUDA_ENABLED)
     add_definitions("-DCUDA_ENABLED")
-    #        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SelectCudaComputeArch.cmake)
-    #        COLMAP_CUDA_SELECT_NVCC_ARCH_FLAGS(CUDA_ARCH_FLAGS ${CUDA_ARCHS})
+    #include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SelectCudaComputeArch.cmake)
+    #COLMAP_CUDA_SELECT_NVCC_ARCH_FLAGS(CUDA_ARCH_FLAGS ${CUDA_ARCHS})
 
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} ${CMAKE_CUDA_ARCHITECTURES}")
-
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} ${CMAKE_CUDA_ARCHITECTURES} ${CUDA_ARCH_FLAGS}")
     # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -D_FORCE_INLINES")
     # Do not show warnings if the architectures are deprecated.
@@ -333,7 +326,6 @@ link_directories(${COLMAP_LINK_DIRS})
 add_subdirectory(lib)
 add_subdirectory(src)
 
-
 ################################################################################
 # Generate source groups for Visual Studio, XCode, etc.
 ################################################################################
@@ -423,7 +415,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
 
 # Install batch scripts under Windows.
 if (IS_MSVC)
-    install(FILES "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/COLMAP.bat"
+    install(FILES "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/colmap.bat"
             "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/RUN_TESTS.bat"
             PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
             GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE

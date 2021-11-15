@@ -85,7 +85,6 @@ if (USE_PCL_BACKEND)
     file(GLOB_RECURSE PclUtils_list ${QPCL_UTILS}/*)
     source_group("PclUtils" FILES ${PclUtils_list})
 
-
     # VTK WIDGETS MODULE
     SET(QVTK_WIDGETS ${CMAKE_CURRENT_SOURCE_DIR}/VtkWidgets)
     # filter module

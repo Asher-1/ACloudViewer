@@ -53,14 +53,18 @@ if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
         pass
 
 # fix link bugs for qt on Linux platform
-if platform.system() == "Linux":
-    if os.path.exists(_Path(__file__).parent / 'libs'):
-        # the Qt plugin is included currently only in the pre-built wheels
-        if _build_config["BUILD_RECONSTRUCTION"]:
-            os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "libs"
-            )
+if os.path.exists(_Path(__file__).parent / 'libs'):
+    LIB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "libs")
+    # the Qt plugin is included currently only in the pre-built wheels
+    if _build_config["BUILD_RECONSTRUCTION"]:
+        os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = LIB_PATH
 
+    if platform.system() == "Windows":
+        os.environ['path'] = LIB_PATH + ";" + os.environ['path']
+    else:
+        os.environ['PATH'] = LIB_PATH + ";" + os.environ['PATH']
+
+    if platform.system() == "Linux":  # must load shared library in order on linux
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicudata*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicuuc*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicui18n*'))))
@@ -91,43 +95,48 @@ if platform.system() == "Linux":
 
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:
-    # Load CPU pybind dll gracefully without introducing new python variable.
-    # Do this before loading the CUDA pybind dll to correctly resolve symbols
-    try:  # StopIteration if cpu version not available
-        _CDLL(str(next((_Path(__file__).parent / 'cpu').glob('pybind*'))))
-    except StopIteration:
-        pass
-    try:
-        # Check CUDA availability without importing CUDA pybind symbols to
-        # prevent "symbol already registered" errors if first import fails.
-        _pybind_cuda = _CDLL(
-            str(next((_Path(__file__).parent / 'cuda').glob('pybind*'))))
-        if _pybind_cuda.cloudViewer_core_cuda_device_count() > 0:
-            from cloudViewer.cuda.pybind import (camera, geometry, io, pipelines, utility, t)
-
-            if _build_config["BUILD_RECONSTRUCTION"]:
-                from cloudViewer.cuda.pybind import reconstruction
-            from cloudViewer.cuda import pybind
-
-            __DEVICE_API__ = 'cuda'
-    except OSError as e:  # CUDA not installed
-        print(e)
-        pass
-    except StopIteration as e:  # pybind cuda library not available
-        print(e)
-        pass
+    # fix search mechanism
+    if platform.system() == "Windows" and sys.version_info >= (3, 8):
+        __DEVICE_API__ = 'cuda'
+    else:
+        # Load CPU pybind dll gracefully without introducing new python variable.
+        # Do this before loading the CUDA pybind dll to correctly resolve symbols
+        try:  # StopIteration if cpu version not available
+            _CDLL(str(next((_Path(__file__).parent / 'cpu').glob('pybind*'))))
+        except StopIteration:
+            pass
+        try:
+            # Check CUDA availability without importing CUDA pybind symbols to
+            # prevent "symbol already registered" errors if first import fails.
+            _pybind_cuda = _CDLL(str(next((_Path(__file__).parent / 'cuda').glob('pybind*'))))
+            if _pybind_cuda.cloudViewer_core_cuda_device_count() > 0:
+                __DEVICE_API__ = 'cuda'
+        except OSError as e:  # CUDA not installed
+            print(e)
+            pass
+        except StopIteration as e:  # pybind cuda library not available
+            print(e)
+            pass
 
 if __DEVICE_API__ == 'cpu':
     from cloudViewer.cpu.pybind import (camera, geometry, io, pipelines, utility, t)
+    from cloudViewer.cpu import pybind
 
     if _build_config["BUILD_RECONSTRUCTION"]:
         from cloudViewer.cpu.pybind import reconstruction
-    from cloudViewer.cpu import pybind
+elif __DEVICE_API__ == "cuda":
+    from cloudViewer.cuda.pybind import (camera, geometry, io, pipelines, utility, t)
+    from cloudViewer.cuda import pybind
+
+    if _build_config["BUILD_RECONSTRUCTION"]:
+        from cloudViewer.cuda.pybind import reconstruction
+else:
+    print("[WARNING] Unsupported device api: " + __DEVICE_API__)
 
 import cloudViewer.core
 import cloudViewer.visualization
 
-__version__ = "@PROJECT_VERSION@"
+__version__ = "0.3.8"
 
 if int(sys.version_info[0]) < 3:
     raise Exception("CloudViewer only supports Python 3.")

@@ -55,7 +55,7 @@ if (BUILD_PYTHON_MODULE)
                 ${PYTHON_LIBRARIES}
                 Qt5::Core
                 Qt5::PrintSupport
-                CloudViewer
+                CloudViewer::CloudViewer
         )
     else ()
         target_include_directories(
