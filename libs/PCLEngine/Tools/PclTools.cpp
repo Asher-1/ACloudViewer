@@ -1369,8 +1369,8 @@ bool PclTools::SaveOBJFile(const std::string& file_name,
             file_name.substr(0, file_name.find_last_of('.')) + ".mtl";
     // Strip path for "mtllib" command
     std::string mtl_file_name_nopath = mtl_file_name;
-    win_separator_index = mtl_file_name.find_last_of('\\');
-    linux_separator_index = mtl_file_name.find_last_of('/');
+    int win_separator_index = mtl_file_name.find_last_of('\\');
+    int linux_separator_index = mtl_file_name.find_last_of('/');
     if (win_separator_index > linux_separator_index) {
         mtl_file_name_nopath.erase(0, win_separator_index + 1);
     } else {
