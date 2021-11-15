@@ -166,7 +166,6 @@ if (CVCORELIB_USE_CGAL)
             if (TBB_FOUND)
                 # Once Linux libcgal-dev >= 5.0, target_compile_definitions replaced by:
                 #  CGAL_target_use_TBB( ${PROJECT_NAME} )
-
                 target_compile_definitions(${PROJECT_NAME}
                         PRIVATE
                         CGAL_LINKED_WITH_TBB

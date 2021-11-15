@@ -46,7 +46,6 @@ COLMAP_ADD_SOURCES(
         gui.cc
 )
 
-COLMAP_ADD_EXECUTABLE(colmap_exe
-        colmap.cc
-        )
-set_target_properties(colmap_exe PROPERTIES OUTPUT_NAME colmap)
+COLMAP_ADD_EXECUTABLE(colmap_exe colmap.cc)
+
+set_target_properties(colmap_exe PROPERTIES OUTPUT_NAME colmap_app)
