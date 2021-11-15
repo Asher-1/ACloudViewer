@@ -66,7 +66,8 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
                                       const TReal* offsets,
                                       const TFeat* out_features_gradient) {
     const bool NEIGHBOR_IMPORTANCE = neighbors_importance;
-    const int VECSIZE = 32;
+    //const int VECSIZE = 32;
+#define VECSIZE 32
     typedef Eigen::Array<TReal, VECSIZE, 1> Vec_t;
     typedef InterpolationVec<TReal, VECSIZE, INTERPOLATION> InterpolationVec_t;
     InterpolationVec_t interpolation;
@@ -191,7 +192,8 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
                         ++vec_valid_count;
                         if (vec_valid_count == VECSIZE ||
                             n + 1 == neighbor_end) {
-                            ComputeFilterCoordinates<ALIGN_CORNERS, MAPPING>(
+                            ComputeFilterCoordinates<ALIGN_CORNERS, MAPPING,
+                                                     TReal, VECSIZE>(
                                     x, y, z, filter_size_xyz, inv_extents,
                                     offsets_);
                             interpolation.Interpolate(
@@ -234,6 +236,7 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
                         }
                 }
             });
+#undef VECSIZE
 }
 
 /// Computes the backprop for the filter of a transpose continuous convolution.

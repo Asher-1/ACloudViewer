@@ -63,7 +63,8 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                               const TReal* offsets,
                               bool normalize) {
     const bool NEIGHBORS_IMPORTANCE = neighbors_importance != nullptr;
-    const int VECSIZE = 32;
+    //const int VECSIZE = 32;
+#define VECSIZE 32
     typedef Eigen::Array<TReal, VECSIZE, 1> Vec_t;
     typedef InterpolationVec<TReal, VECSIZE, INTERPOLATION> InterpolationVec_t;
     InterpolationVec_t interpolation;
@@ -167,7 +168,8 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
 
                         ++vec_valid_count;
                         if (vec_valid_count == VECSIZE) {
-                            ComputeFilterCoordinates<ALIGN_CORNERS, MAPPING>(
+                            ComputeFilterCoordinates<ALIGN_CORNERS, MAPPING,
+                                                     TReal, VECSIZE>(
                                     x, y, z, filter_size_xyz, inv_extents,
                                     offsets_);
                             interpolation.Interpolate(
@@ -185,7 +187,8 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                         }
                     }
                     if (vec_valid_count) {
-                        ComputeFilterCoordinates<ALIGN_CORNERS, MAPPING>(
+                        ComputeFilterCoordinates<ALIGN_CORNERS, MAPPING, TReal,
+                                                 VECSIZE>(
                                 x, y, z, filter_size_xyz, inv_extents,
                                 offsets_);
                         interpolation.Interpolate(interp_weights,
@@ -219,6 +222,7 @@ void _CConvComputeFeaturesCPU(TOut* out_features,
                     }
                 }
             });
+#undef VECSIZE
 }
 
 /// Computes the output features of a continuous convolution.
