@@ -3,8 +3,8 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
     include_directories(${CloudViewer_SOURCE_DIR})
 
     add_executable(${EXAMPLE_CPP_NAME} "${EXAMPLE_CPP_NAME}.cpp")
-	
-	# Don't use cloudViewer_link_3rdparty_libraries(${EXAMPLE_CPP_NAME}).
+
+    # Don't use cloudViewer_link_3rdparty_libraries(${EXAMPLE_CPP_NAME}).
     # Unlike benchmarks, examples are intended as standalone apps that link
     # the main CloudViewer library, while the benchmarks executable needs 3rd-party
     # libraries since it measures the internal components of CloudViewer.
@@ -18,12 +18,12 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
     foreach (DEPENDENCY IN LISTS DEPENDENCIES)
         target_link_libraries(${EXAMPLE_CPP_NAME} ${DEPENDENCY})
     endforeach ()
-	
-	target_link_libraries(${EXAMPLE_CPP_NAME}
-			${INTERNAL_EIGEN3_TARGET}
-			)
 
-    target_link_libraries(${EXAMPLE_CPP_NAME} CloudViewer)
+    target_link_libraries(${EXAMPLE_CPP_NAME}
+            ${INTERNAL_EIGEN3_TARGET}
+            )
+
+    target_link_libraries(${EXAMPLE_CPP_NAME} CloudViewer::CloudViewer)
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
             FOLDER "examples/cpp/"
@@ -33,8 +33,8 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
     if (NOT BUILD_EXAMPLES)
         set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES EXCLUDE_FROM_ALL TRUE)
     endif ()
-	
-	list(APPEND EXAMPLE_TARGETS ${EXAMPLE_CPP_NAME})
+
+    list(APPEND EXAMPLE_TARGETS ${EXAMPLE_CPP_NAME})
 
 endmacro(cloudViewer_add_example)
 
@@ -98,6 +98,15 @@ if (BUILD_RECONSTRUCTION)
     cloudViewer_add_example(Reconstruction colmap)
     target_include_directories(Reconstruction PRIVATE ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
     target_include_directories(Reconstruction PRIVATE ${COLMAP_SOURCE_DIR}/src)
+    if (MSVC)
+        # Some fixes for the Glog library.
+        target_compile_definitions(Reconstruction PRIVATE -DGLOG_NO_ABBREVIATED_SEVERITIES)
+        target_compile_definitions(Reconstruction PRIVATE -DGOOGLE_GLOG_DLL_DECL=)
+        # fix gflags library bugs on windows
+        target_compile_definitions(Reconstruction PRIVATE -DGFLAGS_DLL_DECLARE_FLAG=
+                -DGFLAGS_DLL_DEFINE_FLAG= -DGFLAGS_IS_A_DLL=0)
+        target_link_libraries(Reconstruction shlwapi.lib)
+    endif ()
 endif ()
 
 if (BUILD_WEBRTC)

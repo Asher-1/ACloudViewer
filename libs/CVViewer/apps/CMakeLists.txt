@@ -40,9 +40,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
     else()
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
-        set_target_properties(${TARGET_NAME} PROPERTIES
-                              OUTPUT_NAME ${APP_NAME}
-                             )
+        set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${APP_NAME})
     endif()
 
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
@@ -131,13 +129,13 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                     USE_SOURCE_PERMISSIONS)
             install(FILES   "${APP_DIR}/${TARGET_NAME}.exe"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
-                    RENAME "${APP_NAME}.exe")
+                    RENAME "${TARGET_NAME}.exe")
 
 			# deploy on windows
 			add_custom_command(TARGET ${TARGET_NAME}
 				POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/${APP_NAME}/${TARGET_NAME}.exe
-                        ${CMAKE_BINARY_DIR}/libs/CVViewer/apps/$<CONFIG>/${APP_NAME}.exe
+				COMMAND ${CMAKE_COMMAND} -E copy ${APP_DIR}/${TARGET_NAME}.exe
+                        ${CMAKE_BINARY_DIR}/libs/CVViewer/apps/$<CONFIG>/${TARGET_NAME}.exe
 				VERBATIM
 			)
 			DeployQt(

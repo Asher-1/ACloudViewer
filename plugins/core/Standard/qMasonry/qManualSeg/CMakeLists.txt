@@ -9,7 +9,6 @@ if ( PLUGIN_STANDARD_MASONRY_QMANUAL_SEG )
     
     AddPlugin( NAME ${PROJECT_NAME} )
 
-
     target_sources( ${PROJECT_NAME}
             PRIVATE
                     ${CMAKE_CURRENT_LIST_DIR}/qManualSeg.h
@@ -24,9 +23,7 @@ if ( PLUGIN_STANDARD_MASONRY_QMANUAL_SEG )
                     ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
-    # Find Packages
     # Find PCL
-    #set( PCL_DIR "C:/Program Files/PCL 1.9.1") #DGM: can't do that as it will obviously conflict with most of the users settings ;)
     find_package( PCL 1.9.1 REQUIRED )
 
     # Find OpenCV
@@ -39,7 +36,7 @@ if ( PLUGIN_STANDARD_MASONRY_QMANUAL_SEG )
       include_directories( ${OpenCV_INCLUDE_DIRS} )
 
       # [C/C++]>[Preprocessor]>[Preprocessor Definitions]
-      add_definitions( ${PCL_DEFINITIONS} )
+      target_compile_definitions(${PROJECT_NAME} PRIVATE ${PCL_DEFINITIONS} )
 
       # For Use Not PreCompiled Features
       #add_definitions( -DPCL_NO_PRECOMPILE )

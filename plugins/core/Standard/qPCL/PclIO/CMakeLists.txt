@@ -14,8 +14,8 @@ add_subdirectory( src )
 add_subdirectory( ui )
 
 link_directories( ${PCL_LIBRARY_DIRS} )
-add_definitions( ${PCL_DEFINITIONS} )
-target_link_libraries(	${PROJECT_NAME} 
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${PCL_DEFINITIONS})
+target_link_libraries(	${PROJECT_NAME}
 						QPCL_ENGINE_LIB
 						QPCL_PLUGIN_ALGORIGHM_LIB)
 
