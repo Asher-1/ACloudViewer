@@ -26,14 +26,13 @@
 
 #pragma once
 
-#include <tbb/parallel_for.h>
-
 #include <set>
+#include <Eigen.h>
+#include <Helper.h>
+#include <tbb/parallel_for.h>
 
 #include "core/Atomic.h"
 #include "core/nns/NeighborSearchCommon.h"
-#include <Eigen.h>
-#include <Helper.h>
 #include "utility/ParallelScan.h"
 
 namespace cloudViewer {

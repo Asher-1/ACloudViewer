@@ -127,7 +127,6 @@ def main():
 
     args = parser.parse_args()
     print(args)
-
     torch.ops.load_library(args.lib)
 
     generated_function_strs = ''
