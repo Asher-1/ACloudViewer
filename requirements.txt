@@ -1,4 +1,3 @@
-# runtime
 setuptools
 numpy
 tqdm
@@ -16,8 +15,6 @@ ipywidgets>=7.6.0
 pygments>=2.7.4
 jupyter_packaging~=0.10
 jupyterlab>=3.0.0,==3.*
-#opencv-python
-#opencv-contrib-python
 #tensorflow==2.3.1
 #pip install torch==1.7.1+cu101 torchvision==0.8.2+cu101 torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
 
