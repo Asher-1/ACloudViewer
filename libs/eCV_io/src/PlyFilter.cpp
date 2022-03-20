@@ -44,8 +44,9 @@
 #if defined(CV_WINDOWS)
 #include <windows.h>
 #else
-#include <ctime>
 #include <unistd.h>
+
+#include <ctime>
 #endif
 
 using namespace cloudViewer;
@@ -680,7 +681,7 @@ static int face_cb(p_ply_argument argument) {
         // skip the next pieces of data
         return 1;
     }
-    ccMesh* mesh = 0;
+    ccMesh* mesh = nullptr;
     ply_get_argument_user_data(argument, (void**)(&mesh), nullptr);
     if (!mesh) {
         assert(false);
@@ -774,7 +775,7 @@ static int texCoords_cb(p_ply_argument argument) {
             static_cast<float>(ply_get_argument_value(argument));
 
     if (((value_index + 1) % 2) == 0) {
-        TextureCoordsContainer* texCoords = 0;
+        TextureCoordsContainer* texCoords = nullptr;
         ply_get_argument_user_data(argument, (void**)(&texCoords), nullptr);
         assert(texCoords);
         if (!texCoords) return 1;
@@ -796,6 +797,37 @@ static int texCoords_cb(p_ply_argument argument) {
     return 1;
 }
 
+static int texCoords_cb2(p_ply_argument argument) {
+    if (s_NotEnoughMemory) {
+        // skip the next pieces of data
+        return 1;
+    }
+
+    TextureCoordsContainer* texCoords = nullptr;
+    long flags;
+    ply_get_argument_user_data(argument, (void**)(&texCoords), &flags);
+    static TexCoords2D texture_coord(0, 0);
+    texture_coord.t[flags & POS_MASK] =
+            static_cast<PointCoordinateType>(ply_get_argument_value(argument));
+    assert(texCoords);
+    if (!texCoords) return 1;
+    if (texCoords->currentSize() == texCoords->capacity()) {
+        if (!texCoords->reserveSafe(texCoords->currentSize() + 1024)) {
+            s_NotEnoughMemory = true;
+            return 0;
+        }
+    }
+
+    if (flags & ELEM_EOL) {
+        texCoords->addElement(texture_coord);
+        ++s_texCoordCount;
+        if ((s_texCoordCount % PROCESS_EVENTS_FREQ) == 0)
+            QCoreApplication::processEvents();
+    }
+
+    return 1;
+}
+
 static int s_maxTextureIndex = -1;
 static int texIndexes_cb(p_ply_argument argument) {
     p_ply_element element;
@@ -807,7 +839,7 @@ static int texIndexes_cb(p_ply_argument argument) {
         s_maxTextureIndex = -1;
     }
 
-    ccMesh::triangleMaterialIndexesSet* texIndexes = 0;
+    ccMesh::triangleMaterialIndexesSet* texIndexes = nullptr;
     ply_get_argument_user_data(argument, (void**)(&texIndexes), nullptr);
     assert(texIndexes);
     if (!texIndexes) {
@@ -874,9 +906,9 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
     // eventual texture files declared in the comments (keyword: TEXTUREFILE)
     QStringList textureFileNames;
     // texture coordinates
-    TextureCoordsContainer* texCoords = 0;
+    TextureCoordsContainer* texCoords = nullptr;
     // texture indexes
-    ccMesh::triangleMaterialIndexesSet* texIndexes = 0;
+    ccMesh::triangleMaterialIndexesSet* texIndexes = nullptr;
 
     /******************/
     /***  Comments  ***/
@@ -921,7 +953,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
     try {
         // last read element
         plyElement lastElement;
-        lastElement.elem = 0;
+        lastElement.elem = nullptr;
         while ((lastElement.elem =
                         ply_get_next_element(ply, lastElement.elem))) {
             // we get next element info
@@ -942,7 +974,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
 
             // last read property
             plyProperty lastProperty;
-            lastProperty.prop = 0;
+            lastProperty.prop = nullptr;
             lastProperty.elemIndex = 0;
 
             while ((lastProperty.prop = ply_get_next_property(
@@ -1018,8 +1050,8 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
     /****************/
 
     // properties indexes (0 = unassigned)
-    static const unsigned nStdProp = 10;
-    int stdPropIndexes[nStdProp] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    static const unsigned nStdProp = 12;
+    int stdPropIndexes[nStdProp] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     int& xIndex = stdPropIndexes[0];
     int& yIndex = stdPropIndexes[1];
     int& zIndex = stdPropIndexes[2];
@@ -1030,6 +1062,9 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
     int& gIndex = stdPropIndexes[7];
     int& bIndex = stdPropIndexes[8];
     int& iIndex = stdPropIndexes[9];
+    int& tuIndex = stdPropIndexes[10];
+    int& tvIndex = stdPropIndexes[11];
+    bool special_texture = false;
 
     std::vector<int> sfPropIndexes;
     // int& sfIndex = stdPropIndexes[10];
@@ -1092,6 +1127,14 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                 // iIndex = i; //DGM: we don't load the intensities as RGB
                 // colors anymore!
                 sfPropIndexes.push_back(i);
+            else if (tuIndex == 0 && (propName.contains("TEXTURE_U") ||
+                                      (elementName.contains("TEXTURE") &&
+                                       propName.endsWith("U"))))
+                tuIndex = i;
+            else if (tvIndex == 0 && (propName.contains("TEXTURE_V") ||
+                                      (elementName.contains("TEXTURE") &&
+                                       propName.endsWith("V"))))
+                tvIndex = i;
             else if (elementName.contains("VERT") ||
                      elementName.contains("POINT")) {
                 if (propName.contains("SCAL"))
@@ -1105,6 +1148,10 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
             } else if (propName.contains("SCAL") || propName.contains("VAL"))
                 sfPropIndexes.push_back(i);
         }
+    }
+
+    if (tvIndex > 0 && tuIndex > 0) {
+        special_texture = true;
     }
 
     // Combo box items for 'list' properties (vertex indexes, etc.)
@@ -1251,6 +1298,8 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                 pod.nxComboBox->setCurrentIndex(nxIndex);
                 pod.nyComboBox->setCurrentIndex(nyIndex);
                 pod.nzComboBox->setCurrentIndex(nzIndex);
+                pod.tuComboBox->setCurrentIndex(tuIndex);
+                pod.tvComboBox->setCurrentIndex(tvIndex);
 
                 pod.facesComboBox->setCurrentIndex(facesIndex);
                 pod.textCoordsComboBox->setCurrentIndex(texCoordsIndex);
@@ -1284,6 +1333,8 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
             gIndex = pod.gComboBox->currentIndex();
             bIndex = pod.bComboBox->currentIndex();
             iIndex = pod.iComboBox->currentIndex();
+            tuIndex = pod.tuComboBox->currentIndex();
+            tvIndex = pod.tvComboBox->currentIndex();
             facesIndex = pod.facesComboBox->currentIndex();
             texCoordsIndex = pod.textCoordsComboBox->currentIndex();
             texNumberIndex = pod.texIndexComboBox->currentIndex();
@@ -1574,7 +1625,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
 
     /* MESH FACETS (TRI) */
 
-    ccMesh* mesh = 0;
+    ccMesh* mesh = nullptr;
     unsigned numberOfFacets = 0;
 
     if (facesIndex > 0) {
@@ -1590,7 +1641,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                     "Not enough memory to load facets (they will be ignored)!");
             CVLog::Warning("[PLY] Mesh ignored!");
             delete mesh;
-            mesh = 0;
+            mesh = nullptr;
             numberOfFacets = 0;
         } else {
             ply_set_read_cb(ply, meshElements[pp.elemIndex].elementName,
@@ -1614,10 +1665,48 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                     "be ignored)!");
             CVLog::Warning("[PLY] Texture coordinates ignored!");
             texCoords->release();
-            texCoords = 0;
+            texCoords = nullptr;
         } else {
             ply_set_read_cb(ply, meshElements[pp.elemIndex].elementName,
                             pp.propName, texCoords_cb, texCoords, 0);
+            s_hasMaterials = true;
+        }
+    } else if (special_texture) {
+        /* TEXTURES (U, V) */
+
+        assert(tuIndex == 0 || tuIndex != tvIndex);
+        assert(tvIndex == 0 || tuIndex != tvIndex);
+
+        texCoords = new TextureCoordsContainer();
+        texCoords->link();
+
+        if (!texCoords->reserveSafe(numberOfPoints)) {
+            CVLog::Error(
+                    "Not enough memory to load texture coordinates (they will "
+                    "be ignored)!");
+            CVLog::Warning("[PLY] Texture coordinates ignored!");
+            texCoords->release();
+            texCoords = nullptr;
+        } else {
+            // TEXTURES (U)
+            if (tuIndex > 0) {
+                long flags = ELEM_POS_0;  // U
+                if (tuIndex > tvIndex) flags |= ELEM_EOL;
+
+                plyProperty& pp = stdProperties[tuIndex - 1];
+                ply_set_read_cb(ply, pointElements[pp.elemIndex].elementName,
+                                pp.propName, texCoords_cb2, texCoords, flags);
+            }
+
+            // TEXTURES (V)
+            if (tvIndex > 0) {
+                long flags = ELEM_POS_1;  // V
+                if (tvIndex > tuIndex) flags |= ELEM_EOL;
+
+                plyProperty& pp = stdProperties[tvIndex - 1];
+                ply_set_read_cb(ply, pointElements[pp.elemIndex].elementName,
+                                pp.propName, texCoords_cb2, texCoords, flags);
+            }
             s_hasMaterials = true;
         }
     }
@@ -1637,7 +1726,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                     "ignored)!");
             CVLog::Warning("[PLY] Texture indexes ignored!");
             texIndexes->release();
-            texIndexes = 0;
+            texIndexes = nullptr;
         } else {
             s_maxTextureIndex = textureFileNames.size() - 1;
             ply_set_read_cb(ply, meshElements[pp.elemIndex].elementName,
@@ -1645,7 +1734,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
         }
     }
 
-    QScopedPointer<ecvProgressDialog> pDlg(0);
+    QScopedPointer<ecvProgressDialog> pDlg(nullptr);
     if (parameters.parentWidget) {
         pDlg.reset(new ecvProgressDialog(false, parameters.parentWidget));
         pDlg->setInfo(QObject::tr("Loading in progress..."));
@@ -1670,7 +1759,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
     }
 
     if (success < 1 || s_NotEnoughMemory) {
-        if (mesh) delete mesh;
+        delete mesh;
         delete cloud;
         return CC_FERR_READING;
     }
@@ -1684,7 +1773,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                 CVLog::Error("Mesh is empty!");
             }
             delete mesh;
-            mesh = 0;
+            mesh = nullptr;
         } else {
             if (s_unsupportedPolygonType) {
                 CVLog::Error("Some facets are not triangular! (unsupported)");
@@ -1692,11 +1781,42 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
         }
     }
 
-    if (texCoords && (s_invalidTexCoordinates ||
-                      (!s_hasQuads && s_texCoordCount != 3 * mesh->size()))) {
+    if (texCoords &&
+        (s_invalidTexCoordinates ||
+         (!s_hasQuads && s_texCoordCount != 3 * mesh->size())) &&
+        !special_texture) {
         CVLog::Error("Invalid texture coordinates! (they will be ignored)");
         texCoords->release();
-        texCoords = 0;
+        texCoords = nullptr;
+    } else {
+        if (texCoords && special_texture && !s_invalidTexCoordinates &&
+                texCoords->size() == numberOfPoints) {
+            TextureCoordsContainer* old_texCoords = texCoords;
+            texCoords = new TextureCoordsContainer();
+            texCoords->link();
+            if (!texCoords->reserveSafe(3 * mesh->size())) {
+                CVLog::Error(
+                        "Not enough memory to load texture coordinates (they "
+                        "will "
+                        "be ignored)!");
+                CVLog::Warning("[PLY] Texture coordinates ignored!");
+                texCoords->release();
+                texCoords = nullptr;
+            } else {
+                for (std::size_t i = 0; i < mesh->size(); ++i) {
+                    cloudViewer::VerticesIndexes* tri_indexes =
+                            mesh->getTriangleVertIndexes(i);
+                    texCoords->addElement(old_texCoords->getValue(tri_indexes->i1));
+                    texCoords->addElement(old_texCoords->getValue(tri_indexes->i2));
+                    texCoords->addElement(old_texCoords->getValue(tri_indexes->i3));
+                }
+            }
+
+            if (old_texCoords) {
+                old_texCoords->release();
+                old_texCoords = nullptr;
+            }
+        }
     }
 
     if (texIndexes) {
@@ -1705,12 +1825,12 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                     "No texture coordinates were loaded (texture indexes will "
                     "be ignored)");
             texIndexes->release();
-            texIndexes = 0;
+            texIndexes = nullptr;
         } else if (texIndexes->currentSize() < mesh->size()) {
             if (!s_hasQuads) {
                 CVLog::Error("Invalid texture indexes! (they will be ignored)");
                 texIndexes->release();
-                texIndexes = 0;
+                texIndexes = nullptr;
             } else {
                 // for quads, we must resize the texture indexes table (as we
                 // have more triangles than input 'faces')
@@ -1718,7 +1838,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                     CVLog::Warning(
                             "Not enough memory to store texture indexes");
                     texIndexes->release();
-                    texIndexes = 0;
+                    texIndexes = nullptr;
                 }
             }
         }
@@ -1730,7 +1850,8 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
     // we update the scalar field(s)
     {
         for (unsigned i = 0; i < cloud->getNumberOfScalarFields(); ++i) {
-            cloudViewer::ScalarField* sf = cloud->getScalarField(i);
+            cloudViewer::ScalarField* sf =
+                    cloud->getScalarField(static_cast<int>(i));
             assert(sf);
             sf->computeMinAndMax();
             if (i == 0) {
@@ -1798,7 +1919,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
 
         // associated texture
         if (texCoords) {
-            ccMaterialSet* materials = 0;
+            ccMaterialSet* materials = nullptr;
             if (!textureFileNames.isEmpty()) {
                 // try to load the materials
                 materials = new ccMaterialSet("materials");
@@ -1831,7 +1952,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
 
                 if (materials->empty()) {
                     materials->release();
-                    materials = 0;
+                    materials = nullptr;
                 }
             } else {
                 CVLog::Warning(
@@ -1897,7 +2018,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                             "[PLY][Texture] Failed to reserve per-triangle "
                             "texture coordinates! (not enough memory?)");
                     materials->release();
-                    materials = 0;
+                    materials = nullptr;
                 }
             }
 
@@ -1906,7 +2027,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
                 if (texIndexes) {
                     assert(!mesh->getTriangleMtlIndexesTable());
                     texIndexes->release();
-                    texIndexes = 0;
+                    texIndexes = nullptr;
                 } else {
                     mesh->removePerTriangleMtlIndexes();
                 }
@@ -1938,11 +2059,11 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
 
     if (texCoords) {
         texCoords->release();
-        texCoords = 0;
+        texCoords = nullptr;
     }
     if (texIndexes) {
         texIndexes->release();
-        texIndexes = 0;
+        texIndexes = nullptr;
     }
 
     return CC_FERR_NO_ERROR;
