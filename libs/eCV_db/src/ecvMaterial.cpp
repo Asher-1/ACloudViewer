@@ -34,7 +34,7 @@ static QMap<QString, QImage> s_textureDB;
 ccMaterial::ccMaterial(QString name)
 	: m_name(name)
 	, m_uniqueID(QUuid::createUuid().toString())
-	, m_illum(2)
+	, m_illum(1)
 	, m_diffuseFront(ecvColor::bright)
 	, m_diffuseBack(ecvColor::bright)
 	, m_ambient(ecvColor::night)

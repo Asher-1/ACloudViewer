@@ -149,7 +149,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../../eCV/MainWindow.qrc">
+            <iconset resource="../../../eCV/MainWindow.qrc">
              <normaloff>:/Resources/images/others/pqXPlus.png</normaloff>:/Resources/images/others/pqXPlus.png</iconset>
            </property>
            <property name="iconSize">
@@ -169,7 +169,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../../eCV/MainWindow.qrc">
+            <iconset resource="../../../eCV/MainWindow.qrc">
              <normaloff>:/Resources/images/others/pqXMinus.png</normaloff>:/Resources/images/others/pqXMinus.png</iconset>
            </property>
            <property name="iconSize">
@@ -189,7 +189,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../../eCV/MainWindow.qrc">
+            <iconset resource="../../../eCV/MainWindow.qrc">
              <normaloff>:/Resources/images/others/pqYPlus.png</normaloff>:/Resources/images/others/pqYPlus.png</iconset>
            </property>
            <property name="iconSize">
@@ -209,7 +209,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../../eCV/MainWindow.qrc">
+            <iconset resource="../../../eCV/MainWindow.qrc">
              <normaloff>:/Resources/images/others/pqYMinus.png</normaloff>:/Resources/images/others/pqYMinus.png</iconset>
            </property>
            <property name="iconSize">
@@ -229,7 +229,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../../eCV/MainWindow.qrc">
+            <iconset resource="../../../eCV/MainWindow.qrc">
              <normaloff>:/Resources/images/others/pqZPlus.png</normaloff>:/Resources/images/others/pqZPlus.png</iconset>
            </property>
            <property name="iconSize">
@@ -249,7 +249,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../../eCV/MainWindow.qrc">
+            <iconset resource="../../../eCV/MainWindow.qrc">
              <normaloff>:/Resources/images/others/pqZMinus.png</normaloff>:/Resources/images/others/pqZMinus.png</iconset>
            </property>
            <property name="iconSize">
@@ -400,7 +400,7 @@
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset resource="../../eCV/MainWindow.qrc">
+            <iconset resource="../../../eCV/MainWindow.qrc">
              <normaloff>:/Resources/images/ecvPointPicking.png</normaloff>:/Resources/images/ecvPointPicking.png</iconset>
            </property>
            <property name="iconSize">
@@ -990,7 +990,7 @@
             <string>Zoom In</string>
            </property>
            <property name="icon">
-            <iconset resource="../../eCV/MainWindow.qrc">
+            <iconset resource="../../../eCV/MainWindow.qrc">
              <normaloff>:/Resources/images/zoomIn_48px.png</normaloff>:/Resources/images/zoomIn_48px.png</iconset>
            </property>
            <property name="iconSize">
@@ -1083,7 +1083,7 @@
             <string>Zoom Out</string>
            </property>
            <property name="icon">
-            <iconset resource="../../eCV/MainWindow.qrc">
+            <iconset resource="../../../eCV/MainWindow.qrc">
              <normaloff>:/Resources/images/zoomOut_48px.png</normaloff>:/Resources/images/zoomOut_48px.png</iconset>
            </property>
            <property name="iconSize">
@@ -1171,7 +1171,7 @@
   <tabstop>AutoPickCenterOfRotation</tabstop>
  </tabstops>
  <resources>
-  <include location="../../eCV/MainWindow.qrc"/>
+  <include location="../../../eCV/MainWindow.qrc"/>
  </resources>
  <connections>
   <connection>

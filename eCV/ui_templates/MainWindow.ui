@@ -73,7 +73,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>28</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="font">
@@ -176,6 +176,14 @@
      <addaction name="actionDisplayFilterTools"/>
      <addaction name="actionDisplayAnnotationTools"/>
     </widget>
+    <widget class="QMenu" name="menuActiveScalarField">
+     <property name="title">
+      <string>Active scalar field</string>
+     </property>
+     <addaction name="actionToggleActiveSFColorScale"/>
+     <addaction name="actionShowActiveSFPrevious"/>
+     <addaction name="actionShowActiveSFNext"/>
+    </widget>
     <addaction name="actionFullScreen"/>
     <addaction name="actionExclusiveFullScreen"/>
     <addaction name="actionDisplayOptions"/>
@@ -183,6 +191,7 @@
     <addaction name="actionPerspectiveProjection"/>
     <addaction name="actionOrthogonalProjection"/>
     <addaction name="action3DView"/>
+    <addaction name="actionAnimation"/>
     <addaction name="menuAngle_view"/>
     <addaction name="actionSaveViewportAsObject"/>
     <addaction name="actionConsole"/>
@@ -193,6 +202,8 @@
     <addaction name="actionAutoPickPivot"/>
     <addaction name="actionShowPivot"/>
     <addaction name="actionResetPivot"/>
+    <addaction name="actionLockRotationAxis"/>
+    <addaction name="menuActiveScalarField"/>
     <addaction name="menuToolbars"/>
    </widget>
    <widget class="QMenu" name="menuTools">
@@ -3494,6 +3505,107 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="text">
     <string>Check for Updates</string>
+   </property>
+  </action>
+  <action name="actionLockRotationAxis">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Lock rotation about an axis</string>
+   </property>
+   <property name="toolTip">
+    <string>Lock 3D camera rotation about an axis</string>
+   </property>
+   <property name="shortcut">
+    <string>L</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionToggleActiveSFColorScale">
+   <property name="text">
+    <string>Toggle color scale</string>
+   </property>
+   <property name="iconText">
+    <string>Toggle active scalar field color scale</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle active scalar field color scale</string>
+   </property>
+   <property name="statusTip">
+    <string>Toggle active scalar field color scale</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+C</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionShowActiveSFPrevious">
+   <property name="text">
+    <string>Show previous SF</string>
+   </property>
+   <property name="iconText">
+    <string>Show previous scalar field for active entity</string>
+   </property>
+   <property name="toolTip">
+    <string>Show previous scalar field for active entity</string>
+   </property>
+   <property name="statusTip">
+    <string>Show previous scalar field for active entity</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+Up</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionShowActiveSFNext">
+   <property name="text">
+    <string>Show next SF</string>
+   </property>
+   <property name="iconText">
+    <string>Show next scalar field for active entity</string>
+   </property>
+   <property name="toolTip">
+    <string>Show next scalar field for active entity</string>
+   </property>
+   <property name="statusTip">
+    <string>Show next scalar field for active entity</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+Down</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionAnimation">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/pcl/insert_from_file.png</normaloff>:/Resources/images/pcl/insert_from_file.png</iconset>
+   </property>
+   <property name="text">
+    <string>Animation</string>
+   </property>
+   <property name="iconText">
+    <string>Automatic rotation animation</string>
+   </property>
+   <property name="toolTip">
+    <string>Automatic rotation animation</string>
+   </property>
+   <property name="statusTip">
+    <string>Automatic rotation animation</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+A</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
  </widget>
