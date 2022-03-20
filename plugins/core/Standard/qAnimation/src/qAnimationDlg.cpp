@@ -1200,7 +1200,7 @@ void qAnimationDlg::render(bool asSeparateFrames)
     QApplication::processEvents();
 
 #ifdef QFFMPEG_SUPPORT
-    QScopedPointer<QVideoEncoder> encoder(0);
+    QScopedPointer<QVideoEncoder> encoder(nullptr);
     QSize originalViewSize;
     if (!asSeparateFrames)
     {

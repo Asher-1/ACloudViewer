@@ -208,7 +208,6 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow, ecvDisplayTools* t
 	QSurfaceFormat fmt = QVTKOpenGLNativeWidget::defaultFormat();
 	fmt.setStereo(stereoMode);
 	setFormat(fmt);
-//    vtkGenericOpenGLRenderWindow::SetGlobalMaximumNumberOfMultiSamples(8);
 
 #ifdef Q_OS_WIN
     this->setEnableHiDPI(true);
@@ -690,15 +689,26 @@ void QVTKWidgetCustom::wheelEvent(QWheelEvent * event)
 
 void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 {
-	if (!((m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_ROTATE) &&
-		(m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES)))
-	{
-		if ((m_tools->m_interactionFlags & ecvDisplayTools::TRANSFORM_CAMERA()))
-		{
-			QVTKOpenGLNativeWidget::mouseMoveEvent(event);
-			m_tools->UpdateDisplayParameters();
-		}
-	}
+    if (!((m_tools->m_interactionFlags & ecvDisplayTools::INTERACT_ROTATE) &&
+          (m_tools->m_interactionFlags &
+           ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES))) {
+        if ((m_tools->m_interactionFlags &
+             ecvDisplayTools::TRANSFORM_CAMERA())) {
+			// lock axis
+            if ((m_tools->m_interactionFlags &
+                 ecvDisplayTools::INTERACT_ROTATE) &&
+                (m_tools->m_interactionFlags &
+                 ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES) !=
+                        ecvDisplayTools::INTERACT_TRANSFORM_ENTITIES &&
+                (event->buttons() & Qt::LeftButton) &&
+                m_tools->m_rotationAxisLocked) {
+                event->accept();
+            } else { // normal
+                QVTKOpenGLNativeWidget::mouseMoveEvent(event);
+                m_tools->UpdateDisplayParameters();
+            }
+        }
+    }
 
 	const int x = event->x();
 	const int y = event->y();
@@ -1019,15 +1029,14 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 				{
 					//apply rotation about the locked axis
 					CCVector3d axis = m_tools->m_lockedRotationAxis;
-					ecvDisplayTools::GetBaseViewMat().applyRotation(axis);
+                    // m_tools->m_viewportParams.objectCenteredView
+                    ccGLCameraParameters camera;
+                    ecvDisplayTools::GetGLCameraParameters(camera);
+                    camera.modelViewMat.applyRotation(axis);
 
 					//determine whether we are in a side or top view
 					bool topView = (std::abs(axis.z) > 0.5);
-
-					//m_tools->m_viewportParams.objectCenteredView
-					ccGLCameraParameters camera;
-					ecvDisplayTools::GetGLCameraParameters(camera);
-
+                    double angle_rad = 0.0;
 					if (topView)
 					{
 						//rotation origin
@@ -1045,7 +1054,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 
 						CCVector3d previousMousePos(static_cast<double>(m_tools->m_lastMousePos.x()), 
 							static_cast<double>(height() - m_tools->m_lastMousePos.y()), 0.0);
-						CCVector3d currentMousePos(static_cast<double>(x), static_cast<double>(height() - y), 0.0);
+                        CCVector3d currentMousePos(static_cast<double>(x), static_cast<double>(height() - y), 0.0);
 
 						CCVector3d a = (currentMousePos - C2D);
 						CCVector3d b = (previousMousePos - C2D);
@@ -1061,7 +1070,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 								sin_angle = -sin_angle;
 							}
 
-							double angle_rad = asin(sin_angle); //in [-pi/2 ; pi/2]
+							angle_rad = asin(sin_angle); //in [-pi/2 ; pi/2]
 							rotMat.initFromParameters(angle_rad, axis, CCVector3d(0, 0, 0));
 						}
 					}
@@ -1079,7 +1088,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 
 							CCVector3d mouseShift(static_cast<double>(dx), -static_cast<double>(dy), 0.0);
 							mouseShift -= mouseShift.dot(lockedRotationAxis2D) * lockedRotationAxis2D; //we only keep the orthogonal part
-							double angle_rad = 2.0 * M_PI * mouseShift.norm() / (width() + height());
+							angle_rad = 2.0 * M_PI * mouseShift.norm() / (width() + height());
 							if ((lockedRotationAxis2D * mouseShift).z > 0.0)
 							{
 								angle_rad = -angle_rad;
@@ -1088,6 +1097,11 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 							rotMat.initFromParameters(angle_rad, axis, CCVector3d(0, 0, 0));
 						}
 					}
+
+					// rotate camera with axis 
+					// Note: -cloudViewer::RadiansToDegrees(angle_rad): inverse direction rotation
+					ecvDisplayTools::RotateWithAxis(CCVector2i(x, y), m_tools->m_lockedRotationAxis, 
+						-cloudViewer::RadiansToDegrees(angle_rad));
 				}
 				break;
 
@@ -1104,15 +1118,13 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent *event)
 				}
 				else
 				{
-					ecvDisplayTools::RotateBaseViewMat(rotMat);
-
-					//ecvDisplayTools::ShowPivotSymbol(true);
+                    // ecvDisplayTools::RotateBaseViewMat(rotMat);
+					ecvDisplayTools::ShowPivotSymbol(true);
 					QApplication::changeOverrideCursor(QCursor(Qt::ClosedHandCursor));
 
 					 //feedback for 'echo' mode
 					emit m_tools->viewMatRotated(rotMat);
 				}
-
 			}
 		}
 	}
@@ -1396,7 +1408,6 @@ void QVTKWidgetCustom::keyPressEvent(QKeyEvent *event)
 	{
 	case Qt::Key_Escape:
 	{
-		//m_app->toggleExclusiveFullScreen(false);
 		emit m_tools->exclusiveFullScreenToggled(false);
 		break;
 	}

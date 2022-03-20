@@ -108,6 +108,7 @@
 // dialogs
 #include "ecvAboutDialog.h"
 #include "ecvAlignDlg.h"
+#include "ecvAnimationParamDlg.h"
 #include "ecvApplyTransformationDlg.h"
 #include "ecvAskThreeDoubleValuesDlg.h"
 #include "ecvCamSensorProjectionDlg.h"
@@ -165,6 +166,7 @@
 // ECV_PYTHON_LIB
 #ifdef USE_PYTHON_MODULE
 #include <recognition/PythonInterface.h>
+
 #include "ecvDeepSemanticSegmentationTool.h"
 #endif
 
@@ -244,6 +246,7 @@ MainWindow::MainWindow()
       m_pickingHub(nullptr),
       m_updateDlg(nullptr),
       m_cpeDlg(nullptr),
+      m_animationDlg(nullptr),
       m_gsTool(nullptr),
       m_tplTool(nullptr),
       m_transTool(nullptr),
@@ -414,6 +417,7 @@ MainWindow::~MainWindow() {
 
     m_updateDlg = nullptr;
     m_cpeDlg = nullptr;
+    m_animationDlg = nullptr;
     m_mousePosLabel = nullptr;
     m_systemInfoLabel = nullptr;
 
@@ -894,8 +898,18 @@ void MainWindow::connectActions() {
             &MainWindow::setGlobalZoom);
     connect(m_ui->actionZoomAndCenter, &QAction::triggered, this,
             &MainWindow::zoomOnSelectedEntities);
+    connect(m_ui->actionLockRotationAxis, &QAction::triggered, this,
+            &MainWindow::toggleLockRotationAxis);
     connect(m_ui->actionSaveViewportAsObject, &QAction::triggered, this,
             &MainWindow::doActionSaveViewportAsCamera);
+    //"Display > Active SF" menu
+    connect(m_ui->actionToggleActiveSFColorScale, &QAction::triggered, this,
+            &MainWindow::doActionToggleActiveSFColorScale);
+    connect(m_ui->actionShowActiveSFPrevious, &QAction::triggered, this,
+            &MainWindow::doActionShowActiveSFPrevious);
+    connect(m_ui->actionShowActiveSFNext, &QAction::triggered, this,
+            &MainWindow::doActionShowActiveSFNext);
+
     connect(m_ui->actionDisplayOptions, &QAction::triggered, this,
             &MainWindow::showDisplayOptions);
     connect(m_ui->actionSetViewTop, &QAction::triggered, this,
@@ -928,6 +942,8 @@ void MainWindow::connectActions() {
 
     connect(m_ui->actionEditCamera, &QAction::triggered, this,
             &MainWindow::doActionEditCamera);
+    connect(m_ui->actionAnimation, &QAction::triggered, this,
+            &MainWindow::doActionAnimation);
     connect(m_ui->actionScreenShot, &QAction::triggered, this,
             &MainWindow::doActionScreenShot);
     connect(m_ui->actionToggleOrientationMarker, &QAction::triggered, this,
@@ -1763,6 +1779,66 @@ void MainWindow::doActionSaveViewportAsCamera() {
     addToDB(viewportObject);
 }
 
+void MainWindow::toggleLockRotationAxis() {
+    QMainWindow* win = ecvDisplayTools::GetMainWindow();
+    if (win) {
+        bool wasLocked = ecvDisplayTools::IsRotationAxisLocked();
+        bool isLocked = !wasLocked;
+
+        static CCVector3d s_lastAxis(0.0, 0.0, 1.0);
+        if (isLocked) {
+            ccAskThreeDoubleValuesDlg axisDlg(
+                    "x", "y", "z", -1.0e12, 1.0e12, s_lastAxis.x, s_lastAxis.y,
+                    s_lastAxis.z, 4, tr("Lock rotation axis"), this);
+            if (axisDlg.buttonBox->button(QDialogButtonBox::Ok))
+                axisDlg.buttonBox->button(QDialogButtonBox::Ok)->setFocus();
+            if (!axisDlg.exec()) return;
+            s_lastAxis.x = axisDlg.doubleSpinBox1->value();
+            s_lastAxis.y = axisDlg.doubleSpinBox2->value();
+            s_lastAxis.z = axisDlg.doubleSpinBox3->value();
+        }
+        ecvDisplayTools::LockRotationAxis(isLocked, s_lastAxis);
+
+        m_ui->actionLockRotationAxis->blockSignals(true);
+        m_ui->actionLockRotationAxis->setChecked(isLocked);
+        m_ui->actionLockRotationAxis->blockSignals(false);
+
+        if (isLocked) {
+            ecvDisplayTools::DisplayNewMessage(
+                    tr("[ROTATION LOCKED]"),
+                    ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 24 * 3600,
+                    ecvDisplayTools::ROTAION_LOCK_MESSAGE);
+        } else {
+            ecvDisplayTools::DisplayNewMessage(
+                    QString(),
+                    ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 0,
+                    ecvDisplayTools::ROTAION_LOCK_MESSAGE);
+        }
+        ecvDisplayTools::SetRedrawRecursive(false);
+        ecvDisplayTools::RedrawDisplay(true, false);
+    }
+}
+
+void MainWindow::doActionAnimation() {
+    // current active MDI area
+    QMdiSubWindow* qWin = m_mdiArea->activeSubWindow();
+    if (!qWin) return;
+
+    if (!m_animationDlg) {
+        m_animationDlg = new ecvAnimationParamDlg(qWin, this, m_pickingHub);
+
+        connect(m_mdiArea, &QMdiArea::subWindowActivated, m_animationDlg,
+                static_cast<void (ecvAnimationParamDlg::*)(QMdiSubWindow*)>(
+                        &ecvAnimationParamDlg::linkWith));
+
+        registerOverlayDialog(m_animationDlg, Qt::BottomLeftCorner);
+    }
+
+    m_animationDlg->linkWith(qWin);
+    m_animationDlg->start();
+    updateOverlayDialogsPlacement();
+}
+
 void MainWindow::doActionScreenShot() {
     QWidget* win = getActiveWindow();
     if (!win) return;
@@ -2241,7 +2317,7 @@ void MainWindow::applyTransformation(const ccGLMatrixd& mat) {
 
         // we temporarily detach entity, as it may undergo
         //"severe" modifications (octree deletion, etc.) --> see
-        //ccHObject::applyRigidTransformation
+        // ccHObject::applyRigidTransformation
         ccHObjectContext objContext = removeObjectTemporarilyFromDBTree(entity);
         entity->setGLTransformation(ccGLMatrix(transMat.data()));
         // DGM FIXME: we only test the entity own bounding box (and we update
@@ -2398,7 +2474,7 @@ void MainWindow::doActionApplyScale() {
 
             // we temporarily detach entity, as it may undergo
             //"severe" modifications (octree deletion, etc.) --> see
-            //ccPointCloud::scale
+            // ccPointCloud::scale
             ccHObjectContext objContext =
                     removeObjectTemporarilyFromDBTree(cloud);
 
@@ -2731,7 +2807,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionFindBiggestInnerRectangle->setEnabled(exactlyOneCloud);
 
     //	m_ui->menuActiveScalarField->setEnabled((exactlyOneCloud ||
-    //exactlyOneMesh) && selInfo.sfCount > 0);
+    // exactlyOneMesh) && selInfo.sfCount > 0);
     m_ui->actionClipFilter->setEnabled(atLeastOneCloud || atLeastOneMesh ||
                                        (selInfo.groupCount != 0));
     m_ui->actionProbeFilter->setEnabled(atLeastOneCloud || atLeastOneMesh ||
@@ -3471,7 +3547,7 @@ void MainWindow::doActionMerge() {
             // if (mesh->isA(CV_TYPES::PRIMITIVE))
             //{
             //	mesh = mesh->ccMesh::cloneMesh(); //we want a clone of the mesh
-            //part, not the primitive!
+            // part, not the primitive!
             // }
 
             if (!baseMesh->merge(mesh, createSubMeshes)) {
@@ -5971,8 +6047,10 @@ void MainWindow::doActionComparePlanes() {
 
 // help
 void MainWindow::help() {
-    QDesktopServices::openUrl(QUrl(QLatin1String("https://asher-1.github.io/docs")));
-    ecvConsole::Print(tr("[ErowCloudviewer help] https://asher-1.github.io/docs!"));
+    QDesktopServices::openUrl(
+            QUrl(QLatin1String("https://asher-1.github.io/docs")));
+    ecvConsole::Print(
+            tr("[ErowCloudviewer help] https://asher-1.github.io/docs!"));
 }
 
 // Change theme: Windows/Darcula
@@ -6139,7 +6217,7 @@ void MainWindow::doActionFastRegistration(FastRegistrationMode mode) {
 
         // we temporarily detach entity, as it may undergo
         //"severe" modifications (octree deletion, etc.) --> see
-        //ccHObject::applyGLTransformation
+        // ccHObject::applyGLTransformation
         ccHObjectContext objContext = removeObjectTemporarilyFromDBTree(entity);
         entity->applyGLTransformation_recursive(&glTrans);
         putObjectBackIntoDBTree(entity, objContext);
@@ -6643,7 +6721,7 @@ void MainWindow::doComputeBestFitBB() {
 
                     // we temporarily detach entity, as it may undergo
                     //"severe" modifications (octree deletion, etc.) --> see
-                    //ccPointCloud::applyRigidTransformation
+                    // ccPointCloud::applyRigidTransformation
                     ccHObjectContext objContext =
                             removeObjectTemporarilyFromDBTree(cloud);
                     static_cast<ccPointCloud*>(cloud)->applyRigidTransformation(
@@ -7077,7 +7155,7 @@ void MainWindow::doActionMatchBBCenters() {
 
         // we temporarily detach entity, as it may undergo
         //"severe" modifications (octree deletion, etc.) --> see
-        //ccHObject::applyGLTransformation
+        // ccHObject::applyGLTransformation
         ccHObjectContext objContext = removeObjectTemporarilyFromDBTree(entity);
         entity->applyGLTransformation_recursive(&glTrans);
         putObjectBackIntoDBTree(entity, objContext);
@@ -7256,7 +7334,7 @@ void MainWindow::doActionRegister() {
         if (pc) {
             // we temporarily detach cloud, as it may undergo
             //"severe" modifications (octree deletion, etc.) --> see
-            //ccPointCloud::applyRigidTransformation
+            // ccPointCloud::applyRigidTransformation
             ccHObjectContext objContext = removeObjectTemporarilyFromDBTree(pc);
             pc->applyRigidTransformation(transMat);
             putObjectBackIntoDBTree(pc, objContext);
@@ -8260,6 +8338,63 @@ void MainWindow::doActionSFConvertToRGB() {
 
 void MainWindow::doActionSFConvertToRandomRGB() {
     if (!ccEntityAction::sfConvertToRandomRGB(m_selectedEntities, this)) return;
+
+    refreshSelected();
+    updateUI();
+}
+
+void MainWindow::doActionToggleActiveSFColorScale() {
+    doApplyActiveSFAction(0);
+}
+
+void MainWindow::doActionShowActiveSFPrevious() { doApplyActiveSFAction(1); }
+
+void MainWindow::doActionShowActiveSFNext() { doApplyActiveSFAction(2); }
+
+void MainWindow::doApplyActiveSFAction(int action) {
+    if (!haveOneSelection()) {
+        if (haveSelection()) {
+            ecvConsole::Error(tr("Select only one cloud or one mesh!"));
+        }
+        return;
+    }
+    ccHObject* ent = m_selectedEntities[0];
+
+    bool lockedVertices;
+    ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(ent, &lockedVertices);
+
+    // for "real" point clouds only
+    if (!cloud) return;
+    if (lockedVertices && !ent->isAncestorOf(cloud)) {
+        // see ccPropertiesTreeDelegate::fillWithMesh
+        ecvUtils::DisplayLockedVerticesWarning(ent->getName(), true);
+        return;
+    }
+
+    assert(cloud);
+    int sfIdx = cloud->getCurrentDisplayedScalarFieldIndex();
+    switch (action) {
+        case 0:  // Toggle SF color scale
+            if (sfIdx >= 0) {
+                cloud->showSFColorsScale(!cloud->sfColorScaleShown());
+            }
+            else {
+                ecvConsole::Warning(tr("No active scalar field on entity '%1'")
+                                            .arg(ent->getName()));
+            }
+            break;
+        case 1:  // Activate previous SF
+            if (sfIdx >= 0) {
+                cloud->setCurrentDisplayedScalarField(sfIdx - 1);
+            }
+            break;
+        case 2:  // Activate next SF
+            if (sfIdx + 1 <
+                static_cast<int>(cloud->getNumberOfScalarFields())) {
+                cloud->setCurrentDisplayedScalarField(sfIdx + 1);
+            }
+            break;
+    }
 
     refreshSelected();
     updateUI();
@@ -9368,7 +9503,7 @@ void MainWindow::deactivateSegmentationMode(bool state) {
 
                 // we temporarily detach the entity, as it may undergo
                 //"severe" modifications (octree deletion, etc.) --> see
-                //ccPointCloud::createNewCloudFromVisibilitySelection
+                // ccPointCloud::createNewCloudFromVisibilitySelection
                 ccHObjectContext objContext =
                         removeObjectTemporarilyFromDBTree(entity);
 

@@ -39,12 +39,12 @@
 #include <ecvScalarField.h>
 
 // System
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 #if defined(CV_WINDOWS)
 #include <windows.h>
 #else
-#include <time.h>
+#include <ctime>
 #include <unistd.h>
 #endif
 
@@ -248,9 +248,9 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity,
         // else
         //{
         //	CVLog::Warning("[PLY] PLY files can't handle materials/textures!
-        //RGB field will be saved instead"); 	CVLog::Warning("[PLY] Note: you can
-        //convert materials/textures to RGB if necessary (see 'Edit > Mesh'
-        //menu)");
+        // RGB field will be saved instead"); 	CVLog::Warning("[PLY] Note: you
+        // can convert materials/textures to RGB if necessary (see 'Edit > Mesh'
+        // menu)");
         // }
     }
 
@@ -1204,7 +1204,7 @@ CC_FILE_ERROR PlyFilter::loadFile(const QString& filename,
         if (parameters.alwaysDisplayLoadDialog ||
             stdPropsCount >
                     assignedStdProperties + 1  //+1 because of the first item in
-                                               //the combo box ('none')
+                                               // the combo box ('none')
             || listPropsCount > assignedListProperties + 1 ||
             singlePropsCount > assignedSingleProperties + 1) {
             PlyOpenDlg pod /*(MainWindow::TheInstance())*/;
