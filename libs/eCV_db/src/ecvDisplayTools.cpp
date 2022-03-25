@@ -400,7 +400,7 @@ void ecvDisplayTools::onWheelEvent(float wheelDelta_deg) {
             }
 
             //			MoveCamera(0.0f, 0.0f,
-            //static_cast<float>(-delta));
+            // static_cast<float>(-delta));
         }
     } else  // ortho. mode
     {
@@ -1304,15 +1304,28 @@ CCVector3d ecvDisplayTools::ConvertMousePositionToOrientation(int x, int y) {
 }
 
 void ecvDisplayTools::RotateBaseViewMat(const ccGLMatrixd& rotMat) {
-    //	s_tools.instance->m_viewportParams.viewMat = rotMat *
-    //s_tools.instance->m_viewportParams.viewMat;
+    ecvViewportParameters viewParams = ecvDisplayTools::GetViewportParameters();
+    viewParams.viewMat = rotMat * viewParams.viewMat;
 
-    //	//we emit the 'baseViewMatChanged' signal
-    //	emit
-    //s_tools.instance->baseViewMatChanged(s_tools.instance->m_viewportParams.viewMat);
-    //	emit s_tools.instance->cameraParamChanged();
-    //	InvalidateVisualization();
-    // Deprecate3DLayer();
+    // pos
+    CCVector3d camC = viewParams.viewMat.getTranslationAsVec3D();
+    viewParams.setCameraCenter(camC);
+
+    // up
+    CCVector3d upDir = viewParams.viewMat.getColumnAsVec3D(1);
+    upDir.normalize();
+    viewParams.up = upDir;
+
+    // focal
+    CCVector3d viewDir = viewParams.viewMat.getColumnAsVec3D(2);
+    viewParams.focal = camC - viewDir;
+    viewParams.setPivotPoint(viewParams.focal, true);
+
+    ecvDisplayTools::SetViewportParameters(viewParams);
+
+    // we emit the 'baseViewMatChanged' signal
+    emit s_tools.instance->baseViewMatChanged(
+            s_tools.instance->m_viewportParams.viewMat);
 }
 
 ccGLMatrixd ecvDisplayTools::GenerateViewMat(CC_VIEW_ORIENTATION orientation) {
@@ -1523,7 +1536,7 @@ ccGLMatrixd ecvDisplayTools::ComputeProjectionMatrix(
                 (bbCenter - rotationCenter).norm() + bbHalfDiag;
 
         //(if enabled) the pivot symbol should always be visible in
-        //object-centere view mode
+        // object-centere view mode
         if (s_tools.instance->m_pivotSymbolShown &&
             s_tools.instance->m_pivotVisibility != PIVOT_HIDE &&
             withGLfeatures &&
@@ -1717,7 +1730,7 @@ void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView) {
         {
             // we compute the camera position that gives 'quite' the same view
             // as the ortho one (i.e. we replace the zoom by setting the camera
-            //at the right distance from the pivot point)
+            // at the right distance from the pivot point)
             double currentFov_deg = static_cast<double>(GetFov());
             assert(cloudViewer::GreaterThanEpsilon(currentFov_deg));
             // see how pixelSize is computed!
@@ -2241,6 +2254,12 @@ void ecvDisplayTools::SetAutoPickPivotAtCenter(bool state) {
     }
 }
 
+void ecvDisplayTools::LockRotationAxis(bool state, const CCVector3d& axis) {
+    s_tools.instance->m_rotationAxisLocked = state;
+    s_tools.instance->m_lockedRotationAxis = axis;
+    s_tools.instance->m_lockedRotationAxis.normalize();
+}
+
 void ecvDisplayTools::GetContext(CC_DRAW_CONTEXT& CONTEXT) {
     // display size
     CONTEXT.glW = s_tools.instance->m_glViewport.width();
@@ -2429,7 +2448,7 @@ void ecvDisplayTools::UpdateDisplayParameters() {
     GetCameraFocal(focal);
     s_tools.instance->m_viewportParams.focal = CCVector3d::fromArray(focal);
 
-    // set camera pos
+    // set camera up
     double up[3];
     GetCameraUp(up);
     s_tools.instance->m_viewportParams.up = CCVector3d::fromArray(up);
@@ -3525,8 +3544,10 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
             {
                 sepParam.radius =
                         s_tools.instance->m_viewportParams.defaultPointSize / 2;
-                int x0 = xStart + s_tools.instance->m_hotZone->margin /*s_tools.instance->m_hotZone->margin
-                                                                         / 2*/
+                int x0 = xStart +
+                         s_tools.instance->m_hotZone
+                                 ->margin /*s_tools.instance->m_hotZone->margin
+                                             / 2*/
                         ;
                 int y0 = fullH - (yStart + iconSize / 2);
                 sepParam.rect = QRect(x0, y0, iconSize, iconSize);
@@ -3588,8 +3609,10 @@ void ecvDisplayTools::DrawClickableItems(int xStart0, int& yStart) {
             {
                 sepParam.radius =
                         s_tools.instance->m_viewportParams.defaultLineWidth / 2;
-                int x0 = xStart + s_tools.instance->m_hotZone->margin /*s_tools.instance->m_hotZone->margin
-                                                                         / 2*/
+                int x0 = xStart +
+                         s_tools.instance->m_hotZone
+                                 ->margin /*s_tools.instance->m_hotZone->margin
+                                             / 2*/
                         ;
                 int y0 = fullH - (yStart + iconSize / 2);
                 sepParam.rect = QRect(x0, y0, iconSize, iconSize);

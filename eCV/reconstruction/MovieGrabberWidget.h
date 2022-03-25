@@ -64,6 +64,7 @@ class MovieGrabberWidget : public QWidget {
  private:
   // Add, delete, clear viewpoints.
   void Add();
+  void AddFromSelected();
   void Delete();
 
   void Clear();
@@ -85,6 +86,7 @@ class MovieGrabberWidget : public QWidget {
 
   QPushButton* assemble_button_;
   QPushButton* add_button_;
+  QPushButton* add_from_selected_button_;
   QPushButton* delete_button_;
   QPushButton* clear_button_;
   QTableWidget* table_;

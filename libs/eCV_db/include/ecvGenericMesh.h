@@ -262,6 +262,9 @@ public:
     // inherited methods (GenericIndexedMesh)
     bool normalsAvailable() const override { return hasNormals(); }
 
+    bool updateTextures(const std::string& texture_file);
+    bool updateTextures(const std::vector<std::string>& texture_files);
+
 protected:
     // inherited from ccHObject
     bool toFile_MeOnly(QFile& out) const override;

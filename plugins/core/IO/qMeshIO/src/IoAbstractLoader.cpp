@@ -11,6 +11,7 @@
 #endif
 
 #include "ecvMesh.h"
+#include "ecvMaterialSet.h"
 
 #include "assimp/DefaultLogger.hpp"
 #include "assimp/Importer.hpp"

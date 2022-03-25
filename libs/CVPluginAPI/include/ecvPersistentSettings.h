@@ -36,6 +36,8 @@ public:
     static inline const QString MainWinGeom                     () { return "mainWindowGeometry"; }
     static inline const QString MainWinState                    () { return "mainWindowState"; }
     static inline const QString CurrentPath                     () { return "currentPath"; }
+    static inline const QString TextureFilePath                 () { return "TextureFilePath"; }
+    static inline const QString SelectedImageInputFilter        () { return "selectedImageInputFilter"; }
     static inline const QString SelectedInputFilter             () { return "selectedInputFilter"; }
     static inline const QString SelectedOutputFilterCloud       () { return "selectedOutputFilterCloud"; }
     static inline const QString SelectedOutputFilterMesh        () { return "selectedOutputFilterMesh"; }

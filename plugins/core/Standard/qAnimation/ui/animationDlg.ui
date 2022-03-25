@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>589</width>
-    <height>682</height>
+    <width>534</width>
+    <height>468</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -413,7 +413,7 @@ larger). You may have to increase the points size beforehand.</string>
          <widget class="QLineEdit" name="outputFileLineEdit">
           <property name="minimumSize">
            <size>
-            <width>300</width>
+            <width>100</width>
             <height>0</height>
            </size>
           </property>
@@ -451,6 +451,61 @@ larger). You may have to increase the points size beforehand.</string>
         </item>
         <item>
          <widget class="QComboBox" name="outputFormatComboBox"/>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <item>
+         <widget class="QLabel" name="label_9">
+          <property name="text">
+           <string>Textures path</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="inputTexturesPathLineEdit">
+          <property name="minimumSize">
+           <size>
+            <width>100</width>
+            <height>0</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="browseTextureButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="textureNumLabel">
+          <property name="text">
+           <string>Textures num: 0</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="updateTexturesCheckBox">
+          <property name="text">
+           <string>Update textures</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>

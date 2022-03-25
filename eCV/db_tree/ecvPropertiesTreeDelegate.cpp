@@ -22,6 +22,11 @@
 #include "CommonSettings.h"
 #include "ecvColorScaleEditorDlg.h"
 #include "ecvColorScaleSelector.h"
+#include "ecvFileUtils.h"
+#include "ecvOptions.h"
+#include "ecvPersistentSettings.h"
+#include "ecvSettingManager.h"
+#include "ecvTextureFileSelector.h"
 #include "matrixDisplayDlg.h"
 #include "sfEditDlg.h"
 
@@ -61,6 +66,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHBoxLayout>
+#include <QImageReader>
 #include <QLineEdit>
 #include <QLocale>
 #include <QPushButton>
@@ -89,6 +95,8 @@ const char* ccPropertiesTreeDelegate::s_defaultPolyWidthSizeString =
 // Default separator colors
 constexpr const char* SEPARATOR_STYLESHEET(
         "QLabel { background-color : darkGray; color : white; }");
+
+static QMap<QString, QString> s_texturePathMap;
 
 // Shortcut to create a delegate item
 QStandardItem* ITEM(QString name,
@@ -149,6 +157,7 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
                 return QSize(50, 24);
             case OBJECT_COLOR_SOURCE:
             case OBJECT_POLYLINE_WIDTH:
+            case OBJECT_MESH_TEXTUREFILE:
             case OBJECT_CURRENT_COLOR_RAMP:
                 return QSize(70, 24);
             case OBJECT_CLOUD_SF_EDITOR:
@@ -690,11 +699,6 @@ void ccPropertiesTreeDelegate::fillWithMesh(ccGenericMesh* _obj) {
     appendRow(ITEM(tr("Faces")),
               ITEM(QLocale(QLocale::English).toString(_obj->size())));
 
-    // material/texture
-    if (_obj->hasMaterials())
-        appendRow(ITEM(tr("Materials/textures")),
-                  CHECKABLE_ITEM(_obj->materialsShown(), OBJECT_MATERIALS));
-
     // wireframe
     appendRow(ITEM(tr("Wireframe")),
               CHECKABLE_ITEM(_obj->isShownAsWire(), OBJECT_MESH_WIRE));
@@ -708,6 +712,15 @@ void ccPropertiesTreeDelegate::fillWithMesh(ccGenericMesh* _obj) {
     appendRow(ITEM(tr("Stippling")),
               CHECKABLE_ITEM(static_cast<ccMesh*>(_obj)->stipplingEnabled(),
                              OBJECT_MESH_STIPPLING));
+
+    // material/texture
+    if (_obj->hasMaterials()) {
+        appendRow(ITEM(tr("Materials/textures")),
+                  CHECKABLE_ITEM(_obj->materialsShown(), OBJECT_MATERIALS));
+        // texture file selection combo box
+        appendRow(ITEM(tr("Texturefile")),
+                  PERSISTENT_EDITOR(OBJECT_MESH_TEXTUREFILE), true);
+    }
 
     // we also integrate vertices SF into mesh properties
     ccGenericPointCloud* vertices = _obj->getAssociatedCloud();
@@ -1165,6 +1178,21 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
 
             outputWidget = comboBox;
         } break;
+        case OBJECT_MESH_TEXTUREFILE: {
+            ecvTextureFileSelector* selector = new ecvTextureFileSelector(
+                    parent,
+                    QString::fromUtf8(":/Resources/images/ecvGear.png"));
+            // fill texture file path combobox box
+            selector->init(s_texturePathMap);
+
+            connect(selector, &ecvTextureFileSelector::textureFileSelected,
+                    this, &ccPropertiesTreeDelegate::textureFileChanged);
+            connect(selector,
+                    &ecvTextureFileSelector::textureFileEditorSummoned, this,
+                    &ccPropertiesTreeDelegate::spawnTextureFileEditor);
+
+            outputWidget = selector;
+        } break;
         case OBJECT_CURRENT_COLOR_RAMP: {
             ccColorScaleSelector* selector = new ccColorScaleSelector(
                     ccColorScalesManager::GetUniqueInstance(), parent,
@@ -1594,9 +1622,6 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                 return;
             }
 
-            // ccGLWindow* win =
-            // static_cast<ccGLWindow*>(m_currentObject->getDisplay()); int pos
-            // = (win ? comboBox->findText(win->windowTitle()) : 0);
             int pos = comboBox->findText(Settings::APP_TITLE);
 
             comboBox->setCurrentIndex(std::max(pos, 0));  // 0 = "NONE"
@@ -1609,6 +1634,35 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
 
             int pos = cloud->getCurrentDisplayedScalarFieldIndex();
             SetComboBoxIndex(editor, pos + 1);
+            break;
+        }
+        case OBJECT_MESH_TEXTUREFILE: {
+            QFrame* selectorFrame = qobject_cast<QFrame*>(editor);
+            if (!selectorFrame) return;
+            ecvTextureFileSelector* selector =
+                    static_cast<ecvTextureFileSelector*>(selectorFrame);
+
+            // get current material
+            ccGenericMesh* mesh =
+                    ccHObjectCaster::ToGenericMesh(m_currentObject);
+            assert(mesh);
+            const ccMaterialSet* materialSet =
+                    mesh ? mesh->getMaterialSet() : nullptr;
+            if (materialSet) {
+                if (!materialSet->empty())
+                    if (selector->isEmpty()) {  // init combox
+                        selector->addItem(
+                                materialSet->at(0)->getName(),
+                                materialSet->at(0)->getTextureFilename());
+                        s_texturePathMap[materialSet->at(0)->getName()] =
+                                materialSet->at(0)->getTextureFilename();
+                    } else {
+                        selector->setSelectedTexturefile(
+                                materialSet->at(0)->getTextureFilename());
+                    }
+                else
+                    selector->setSelectedTexturefile(QString());
+            }
             break;
         }
         case OBJECT_CURRENT_COLOR_RAMP: {
@@ -2169,6 +2223,80 @@ void ccPropertiesTreeDelegate::scalarFieldChanged(int pos) {
     }
 }
 
+void ccPropertiesTreeDelegate::spawnTextureFileEditor() {
+    if (!m_currentObject) return;
+
+    ecvTextureFileSelector* selector =
+            dynamic_cast<ecvTextureFileSelector*>(QObject::sender());
+    if (!selector) return;
+
+    // get current material
+    ccGenericMesh* mesh = ccHObjectCaster::ToGenericMesh(m_currentObject);
+    assert(mesh);
+    const ccMaterialSet* materialSet = mesh ? mesh->getMaterialSet() : nullptr;
+    if (materialSet) {
+        // persistent settings
+        QString currentPath =
+                ecvSettingManager::getValue(ecvPS::LoadFile(),
+                                            ecvPS::TextureFilePath(),
+                                            ecvFileUtils::defaultDocPath())
+                        .toString();
+        QString currentOpenDlgFilter =
+                ecvSettingManager::getValue(ecvPS::LoadFile(),
+                                            ecvPS::SelectedImageInputFilter(),
+                                            "*.png")
+                        .toString();
+
+        QStringList fileFilters;
+        // we grab the list of supported image file formats (reading)
+        QList<QByteArray> formats = QImageReader::supportedImageFormats();
+        if (formats.empty()) {
+            fileFilters << "*.bmp"
+                        << "*.png"
+                        << "*.jpg"
+                        << "Image file (*.*)";
+        } else {
+            // we convert this list into a proper "filters" string
+            for (int i = 0; i < formats.size(); ++i) {
+                QString filter = QString("*.%1").arg(formats[i].data());
+                fileFilters.append(filter);
+            }
+            fileFilters.append("Image file (*.*)");
+        }
+
+        // dialog options
+        QFileDialog::Options dialogOptions = QFileDialog::Options();
+        if (!ecvOptions::Instance().useNativeDialogs) {
+            dialogOptions |= QFileDialog::DontUseNativeDialog;
+        }
+
+        // file choosing dialog
+        QString selectedFiles = QFileDialog::getOpenFileName(
+                MainWindow::TheInstance(), tr("Open Texture file(s)"),
+                currentPath, fileFilters.join(";;"), &currentOpenDlgFilter,
+                dialogOptions);
+
+        if (selectedFiles.isEmpty()) return;
+
+        // persistent save last loading parameters
+        currentPath = QFileInfo(selectedFiles).absolutePath();
+        ecvSettingManager::setValue(ecvPS::LoadFile(), ecvPS::TextureFilePath(),
+                                    currentPath);
+        ecvSettingManager::setValue(ecvPS::LoadFile(),
+                                    ecvPS::SelectedImageInputFilter(),
+                                    currentOpenDlgFilter);
+
+        if (QFileInfo(selectedFiles).exists() && mesh) {
+            selector->addItem(QFileInfo(selectedFiles).fileName(),
+                              selectedFiles);
+            s_texturePathMap[QFileInfo(selectedFiles).fileName()] =
+                    selectedFiles;
+        }
+
+        updateModel();
+    }
+}
+
 void ccPropertiesTreeDelegate::spawnColorRampEditor() {
     if (!m_currentObject) return;
 
@@ -2195,6 +2323,46 @@ void ccPropertiesTreeDelegate::spawnColorRampEditor() {
 
             updateModel();
         }
+    }
+}
+
+void ccPropertiesTreeDelegate::textureFileChanged(int pos) {
+    if (!m_currentObject) return;
+
+    if (pos < 0) {
+        assert(false);
+        return;
+    }
+
+    ecvTextureFileSelector* selector =
+            dynamic_cast<ecvTextureFileSelector*>(QObject::sender());
+    if (!selector) return;
+
+    QString textureFilepath = selector->getTexturefilePath(pos);
+    if (textureFilepath.isEmpty()) {
+        return;
+    }
+
+    if (!QFileInfo(textureFilepath).exists()) {
+        CVLog::Error(
+                tr("Internal error: texture file : %1 doesn't exist anymore!")
+                        .arg(textureFilepath));
+        return;
+    }
+
+    // get current material
+    ccGenericMesh* mesh = ccHObjectCaster::ToGenericMesh(m_currentObject);
+    assert(mesh);
+    const ccMaterialSet* materialSet = mesh ? mesh->getMaterialSet() : nullptr;
+    if (materialSet && materialSet->findMaterialByName(
+                               QFileInfo(textureFilepath).fileName()) < 0) {
+        if (!mesh->updateTextures(CVTools::FromQString(textureFilepath))) {
+            CVLog::Warning("Update Textures failed, please toggle shown material first!");
+        } else {
+            ecvDisplayTools::UpdateScreen();
+        }
+        
+        updateModel();
     }
 }
 
