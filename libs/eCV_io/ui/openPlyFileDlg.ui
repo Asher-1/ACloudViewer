@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>335</width>
-    <height>694</height>
+    <width>314</width>
+    <height>529</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout">
+    <layout class="QHBoxLayout" name="hlayout">
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
@@ -36,7 +36,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout">
+    <layout class="QHBoxLayout" name="hlayout2">
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
@@ -119,9 +119,6 @@
      <property name="topMargin">
       <number>4</number>
      </property>
-     <property name="rightMargin">
-      <number>0</number>
-     </property>
      <property name="bottomMargin">
       <number>4</number>
      </property>
@@ -195,75 +192,95 @@
      <item row="6" column="1">
       <widget class="QComboBox" name="iComboBox"/>
      </item>
-     <item row="8" column="0">
+     <item row="7" column="0">
       <widget class="QLabel" name="label_12">
        <property name="text">
         <string notr="true">Nx</string>
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
+     <item row="7" column="1">
       <widget class="QComboBox" name="nxComboBox"/>
      </item>
-     <item row="9" column="0">
+     <item row="8" column="0">
       <widget class="QLabel" name="label_13">
        <property name="text">
         <string notr="true">Ny</string>
        </property>
       </widget>
      </item>
-     <item row="9" column="1">
+     <item row="8" column="1">
       <widget class="QComboBox" name="nyComboBox"/>
      </item>
-     <item row="10" column="0">
+     <item row="9" column="0">
       <widget class="QLabel" name="label_14">
        <property name="text">
         <string notr="true">Nz</string>
        </property>
       </widget>
      </item>
-     <item row="10" column="1">
+     <item row="9" column="1">
       <widget class="QComboBox" name="nzComboBox"/>
      </item>
+     <item row="10" column="0">
+      <widget class="QLabel" name="label_20">
+       <property name="text">
+        <string notr="true">Texture u</string>
+       </property>
+      </widget>
+     </item>
      <item row="11" column="0">
+      <widget class="QLabel" name="label_19">
+       <property name="text">
+        <string notr="true">Texture v</string>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="0">
       <widget class="QLabel" name="label_15">
        <property name="text">
         <string>Faces</string>
        </property>
       </widget>
      </item>
-     <item row="11" column="1">
-      <widget class="QComboBox" name="facesComboBox"/>
-     </item>
-     <item row="12" column="0">
+     <item row="13" column="0">
       <widget class="QLabel" name="label_16">
        <property name="text">
         <string>Texture coordinates</string>
        </property>
       </widget>
      </item>
-     <item row="12" column="1">
-      <widget class="QComboBox" name="textCoordsComboBox"/>
-     </item>
-     <item row="14" column="1">
-      <widget class="QComboBox" name="sfComboBox"/>
-     </item>
      <item row="14" column="0">
-      <widget class="QLabel" name="label_11">
-       <property name="text">
-        <string>Scalar</string>
-       </property>
-      </widget>
-     </item>
-     <item row="13" column="0">
       <widget class="QLabel" name="label_17">
        <property name="text">
         <string>Texture index</string>
        </property>
       </widget>
      </item>
+     <item row="15" column="0">
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>Scalar</string>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="1">
+      <widget class="QComboBox" name="tuComboBox"/>
+     </item>
+     <item row="11" column="1">
+      <widget class="QComboBox" name="tvComboBox"/>
+     </item>
+     <item row="12" column="1">
+      <widget class="QComboBox" name="facesComboBox"/>
+     </item>
      <item row="13" column="1">
+      <widget class="QComboBox" name="textCoordsComboBox"/>
+     </item>
+     <item row="14" column="1">
       <widget class="QComboBox" name="texIndexComboBox"/>
+     </item>
+     <item row="15" column="1">
+      <widget class="QComboBox" name="sfComboBox"/>
      </item>
     </layout>
    </item>
@@ -273,19 +290,6 @@
       <string>Add Scalar field</string>
      </property>
     </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <widget class="QFrame" name="buttonFrame">

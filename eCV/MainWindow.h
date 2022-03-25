@@ -80,6 +80,7 @@ class ccComparisonDlg;
 class ecvFilterByLabelDlg;
 class ccPointPropertiesDlg;
 class ecvCameraParamEditDlg;
+class ecvAnimationParamDlg;
 class ccPointListPickingDlg;
 class ecvPrimitiveFactoryDlg;
 class ccPointPairRegistrationDlg;
@@ -169,6 +170,8 @@ public:
 
     //! Updates the 'Properties' view
     void updatePropertiesView();
+
+    void doActionSaveViewportAsCamera();
 
     //! Inherited from ccPickingListener
     void onItemPicked(const PickedItem& pi) override;
@@ -405,7 +408,8 @@ private slots:
     void doActionResetRotCenter();
 
     void doActionEditCamera();
-    void doActionSaveViewportAsCamera();
+    void toggleLockRotationAxis();
+    void doActionAnimation();
     void doActionScreenShot();
     void doActionToggleOrientationMarker(bool state);
 
@@ -475,6 +479,18 @@ private slots:
     void doActionSetSFAsCoord();
     void doActionInterpolateScalarFields();
     void doActionScalarFieldArithmetic();
+
+    // Current active scalar field
+    void doActionToggleActiveSFColorScale();
+    void doActionShowActiveSFPrevious();
+    void doActionShowActiveSFNext();
+    //! Active SF action fork
+    /** - action=0 : toggle SF color scale
+            - action=1 : activate previous SF
+            - action=2 : activate next SF
+            \param action action id
+    **/
+    void doApplyActiveSFAction(int action);
 
     void doRemoveDuplicatePoints();
     void doActionSubsample();
@@ -625,6 +641,8 @@ private:
     ecvUpdateDlg* m_updateDlg;
     //! Camera params dialog
     ecvCameraParamEditDlg* m_cpeDlg;
+    //! Animation params dialog
+    ecvAnimationParamDlg* m_animationDlg;
     //! Graphical segmentation dialog
     ccGraphicalSegmentationTool* m_gsTool;
     //! Polyline tracing tool

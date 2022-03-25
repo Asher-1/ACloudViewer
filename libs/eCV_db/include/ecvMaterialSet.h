@@ -38,12 +38,12 @@ public:
 	//! Finds material by name
 	/** \return material index or -1 if not found
 	**/
-	ECV_DB_LIB_API int findMaterialByName(QString mtlName);
+	ECV_DB_LIB_API int findMaterialByName(QString mtlName) const;
 
 	//! Finds material by unique identifier
 	/** \return material index or -1 if not found
 	**/
-	ECV_DB_LIB_API int findMaterialByUniqueID(QString uniqueID);
+	ECV_DB_LIB_API int findMaterialByUniqueID(QString uniqueID) const;
 
 	//! Adds a material
 	/** Ensures unicity of material names.
