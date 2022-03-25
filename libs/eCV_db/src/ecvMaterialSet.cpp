@@ -34,7 +34,7 @@ ccMaterialSet::ccMaterialSet(QString name /*=QString()*/)
 
 ccMaterialSet::~ccMaterialSet() {}
 
-int ccMaterialSet::findMaterialByName(QString mtlName) {
+int ccMaterialSet::findMaterialByName(QString mtlName) const {
     CVLog::PrintDebug(QString("[ccMaterialSet::findMaterialByName] Query: ") +
                       mtlName);
 
@@ -49,7 +49,7 @@ int ccMaterialSet::findMaterialByName(QString mtlName) {
     return -1;
 }
 
-int ccMaterialSet::findMaterialByUniqueID(QString uniqueID) {
+int ccMaterialSet::findMaterialByUniqueID(QString uniqueID) const {
     CVLog::PrintDebug(
             QString("[ccMaterialSet::findMaterialByUniqueID] Query: ") +
             uniqueID);
