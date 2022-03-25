@@ -39,6 +39,7 @@
 
 class ccPolyline;
 class ccInteractor;
+class ccGenericMesh;
 class ecvOrientedBBox;
 
 class ecvGenericVisualizer;
@@ -377,6 +378,16 @@ public:  //! Draws the main 3D layer
     inline virtual void draw(const CC_DRAW_CONTEXT& context,
                              const ccHObject* obj) { /* do nothing */
     }
+
+    inline static void UpdateMeshTextures(const CC_DRAW_CONTEXT& context,
+                                          const ccGenericMesh* mesh) {
+        TheInstance()->updateMeshTextures(context, mesh);
+    }
+    inline virtual void updateMeshTextures(
+            const CC_DRAW_CONTEXT& context,
+            const ccGenericMesh* mesh) { /* do nothing */
+    }
+
     inline static void DrawBBox(const CC_DRAW_CONTEXT& context,
                                 const ccBBox* bbox) {
         TheInstance()->drawBBox(context, bbox);
@@ -384,6 +395,7 @@ public:  //! Draws the main 3D layer
     inline virtual void drawBBox(const CC_DRAW_CONTEXT& context,
                                  const ccBBox* bbox) { /* do nothing */
     }
+
     inline static void DrawOrientedBBox(const CC_DRAW_CONTEXT& context,
                                         const ecvOrientedBBox* obb) {
         TheInstance()->drawOrientedBBox(context, obb);
@@ -392,6 +404,7 @@ public:  //! Draws the main 3D layer
             const CC_DRAW_CONTEXT& context,
             const ecvOrientedBBox* obb) { /* do nothing */
     }
+
     static void RemoveBB(CC_DRAW_CONTEXT context);
     static void RemoveBB(const QString& viewId);
     static void ChangeEntityProperties(PROPERTY_PARAM& propertyParam,
@@ -497,7 +510,7 @@ public:  // main interface
     inline static ccHObject* GetOwnDB() { return TheInstance()->m_winDBRoot; }
     //! Adds an entity to window own DB
     /** By default no dependency link is established between the entity and the
-      *window (DB).
+     *window (DB).
      **/
     static void AddToOwnDB(ccHObject* obj, bool noDependency = true);
 

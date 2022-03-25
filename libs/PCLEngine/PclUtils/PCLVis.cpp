@@ -209,7 +209,6 @@ void PCLVis::initialize() {
     registerAreaPicking();
 }
 
-
 void PCLVis::rotateWithAxis(const CCVector2i& pos,
                             const CCVector3d& axis,
                             double angle,
@@ -795,7 +794,8 @@ void PCLVis::setCameraViewAngle(double viewAngle, int viewport) {
 }
 
 /********************************Draw Entities*********************************/
-void PCLVis::draw(const CC_DRAW_CONTEXT& context, PCLCloud::Ptr smCloud) {
+void PCLVis::draw(const CC_DRAW_CONTEXT& context,
+                  const PCLCloud::Ptr& smCloud) {
     if (!smCloud || smCloud->fields.empty()) {
         return;
     }
@@ -827,7 +827,7 @@ void PCLVis::draw(const CC_DRAW_CONTEXT& context, PCLCloud::Ptr smCloud) {
     }
 }
 
-void PCLVis::draw(const CC_DRAW_CONTEXT& context, PCLMesh::Ptr pclMesh) {
+void PCLVis::draw(const CC_DRAW_CONTEXT& context, const PCLMesh::Ptr& pclMesh) {
     if (!pclMesh) {
         return;
     }
@@ -850,7 +850,7 @@ void PCLVis::draw(const CC_DRAW_CONTEXT& context, PCLMesh::Ptr pclMesh) {
 }
 
 void PCLVis::draw(const CC_DRAW_CONTEXT& context,
-                  PCLTextureMesh::Ptr textureMesh) {
+                  const PCLTextureMesh::Ptr& textureMesh) {
     std::string viewID = CVTools::FromQString(context.viewID);
     int viewport = context.defaultViewPort;
     if (contains(viewID)) {
@@ -860,7 +860,7 @@ void PCLVis::draw(const CC_DRAW_CONTEXT& context,
 }
 
 void PCLVis::draw(const CC_DRAW_CONTEXT& context,
-                  PCLPolygon::Ptr pclPolygon,
+                  const PCLPolygon::Ptr& pclPolygon,
                   bool closed) {
     std::string viewID = CVTools::FromQString(context.viewID);
     int viewport = context.defaultViewPort;
@@ -1017,7 +1017,7 @@ vtkSmartPointer<vtkTransform> PCLVis::getTransformation(
 }
 
 void PCLVis::updateNormals(const CC_DRAW_CONTEXT& context,
-                           PCLCloud::Ptr smCloud) {
+                           const PCLCloud::Ptr& smCloud) {
     const std::string viewID = CVTools::FromQString(context.viewID);
     int viewport = context.defaultViewPort;
 
@@ -1292,7 +1292,7 @@ void PCLVis::displayText(const CC_DRAW_CONTEXT& context) {
     }
     std::string text = CVTools::FromQString(textParam.text);
     // std::string viewID = CVTools::FromQString(context.viewID);
-    std::string viewID = text;
+    const std::string& viewID = text;
 
     int viewport = context.defaultViewPort;
     int xPos = static_cast<int>(textParam.textPos.x);
@@ -1329,7 +1329,7 @@ int PCLVis::textureFromTexMaterial(const pcl::TexMaterial& tex_mat,
         return (1);
     }
 
-    if (tex_mat.tex_file == "") {
+    if (tex_mat.tex_file.empty()) {
         return (-1);
     }
 
@@ -1338,7 +1338,7 @@ int PCLVis::textureFromTexMaterial(const pcl::TexMaterial& tex_mat,
         boost::filesystem::path parent_dir = full_path.parent_path();
         std::string upper_filename = tex_mat.tex_file;
         boost::to_upper(upper_filename);
-        std::string real_name = "";
+        std::string real_name;
 
         try {
             if (!boost::filesystem::exists(parent_dir)) {
@@ -1375,7 +1375,7 @@ int PCLVis::textureFromTexMaterial(const pcl::TexMaterial& tex_mat,
                 }
             }
             // Check texture file existence
-            if (real_name == "") {
+            if (real_name.empty()) {
                 CVLog::Warning(
                         "[PCLVis::textureFromTexMaterial] Can not find texture "
                         "file %s!",
@@ -1435,6 +1435,74 @@ int PCLVis::textureFromTexMaterial(const pcl::TexMaterial& tex_mat,
     }
 
     return (1);
+}
+
+bool PCLVis::updateTexture(const CC_DRAW_CONTEXT& context,
+                           const std::vector<pcl::TexMaterial>& tex_materials) {
+    std::string viewID = CVTools::FromQString(context.viewID);
+    if (!contains(viewID)) return false;
+    auto actor = getActorById(viewID);
+    if (!actor) return false;
+
+    vtkTextureUnitManager* tex_manager =
+            vtkOpenGLRenderWindow::SafeDownCast(getRenderWindow())
+                    ->GetTextureUnitManager();
+    if (!tex_manager) return (false);
+    // hardware always supports multitexturing of some degree
+    int texture_units = tex_manager->GetNumberOfTextureUnits();
+    if (static_cast<std::size_t>(texture_units) < tex_materials.size()) {
+        CVLog::Warning(
+                "[PCLVis::addTextureMesh] GPU texture units %d < mesh "
+                "textures %d!",
+                texture_units, tex_materials.size());
+    }
+
+    std::size_t last_tex_id = std::min(tex_materials.size(),
+                                       static_cast<std::size_t>(texture_units));
+    std::size_t tex_id = 0;
+    if (last_tex_id > tex_id) {
+        actor->GetProperty()->RemoveAllTextures();
+    }
+    // Load textures and texture coordinates
+    while (tex_id < last_tex_id) {
+#if (VTK_MAJOR_VERSION == 8 && VTK_MINOR_VERSION >= 2) || VTK_MAJOR_VERSION > 8
+        const char* tu = tex_materials[tex_id].tex_name.c_str();
+#else
+        int tu = vtkProperty::VTK_TEXTURE_UNIT_0 + tex_id;
+#endif
+        vtkSmartPointer<vtkTexture> texture =
+                vtkSmartPointer<vtkTexture>::New();
+        if (textureFromTexMaterial(tex_materials[tex_id], texture) <= 0) {
+            CVLog::Warning(
+                    "[PCLVisualizer::addTextureMesh] Failed to load "
+                    "texture %s located in %s, skipping!",
+                    tex_materials[tex_id].tex_name.c_str(),
+                    tex_materials[tex_id].tex_file.c_str());
+            ++tex_id;
+            continue;
+        }
+        // the first texture is in REPLACE mode others are in ADD mode
+        if (tex_id == 0)
+            texture->SetBlendingMode(
+                    vtkTexture::VTK_TEXTURE_BLENDING_MODE_REPLACE);
+        else
+            texture->SetBlendingMode(vtkTexture::VTK_TEXTURE_BLENDING_MODE_ADD);
+
+        std::stringstream ss;
+        ss << "TCoords" << tex_id;
+        std::string this_coordinates_name = ss.str();
+        vtkPolyDataMapper::SafeDownCast(actor->GetMapper())
+                ->MapDataArrayToMultiTextureAttribute(
+                        tu, this_coordinates_name.c_str(),
+                        vtkDataObject::FIELD_ASSOCIATION_POINTS);
+        actor->GetProperty()->SetTexture(tu, texture);
+        // ignore it due to bugs.
+        //　applyMaterial(tex_materials[tex_id], actor);
+
+        ++tex_id;
+    }
+    actor->Modified();
+    return true;
 }
 
 bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
@@ -1511,7 +1579,7 @@ bool PCLVis::addTextureMesh(const PCLTextureMesh& mesh,
         poly_points->SetNumberOfPoints(cloud.size());
         for (std::size_t i = 0; i < cloud.points.size(); ++i) {
             const pcl::PointXYZRGB& p = cloud.points[i];
-            poly_points->InsertPoint(i, p.x, p.y, p.z);
+            poly_points->InsertPoint((vtkIdType)i, p.x, p.y, p.z);
             const unsigned char color[3] = {p.r, p.g, p.b};
             colors->InsertNextTupleValue(color);
         }
@@ -2279,7 +2347,7 @@ void PCLVis::hidePclMarkerAxes() {
 }
 
 bool PCLVis::pclMarkerAxesShown() {
-    return m_axes_widget ? m_axes_widget->GetEnabled() : false;
+    return m_axes_widget != nullptr && m_axes_widget->GetEnabled();
 }
 
 void PCLVis::hideOrientationMarkerWidgetAxes() {

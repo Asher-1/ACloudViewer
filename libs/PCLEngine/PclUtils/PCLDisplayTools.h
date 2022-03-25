@@ -101,6 +101,9 @@ public:  // inherit from ecvDisplayTools
     virtual void draw(const CC_DRAW_CONTEXT& context,
                       const ccHObject* obj) override;
 
+    virtual void updateMeshTextures(const CC_DRAW_CONTEXT& context,
+                                    const ccGenericMesh* mesh) override;
+
     bool checkEntityNeedUpdate(std::string& viewID, const ccHObject* obj);
 
     virtual void drawBBox(const CC_DRAW_CONTEXT& context,

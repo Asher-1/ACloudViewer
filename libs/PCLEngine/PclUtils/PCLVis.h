@@ -256,11 +256,12 @@ public:
     void expandBounds(double bounds[6], vtkMatrix4x4* matrix);
     void setCameraViewAngle(double viewAngle, int viewport = 0);
 
-    void draw(const CC_DRAW_CONTEXT& context, PCLCloud::Ptr smCloud);
-    void draw(const CC_DRAW_CONTEXT& context, PCLMesh::Ptr pclMesh);
-    void draw(const CC_DRAW_CONTEXT& context, PCLTextureMesh::Ptr textureMesh);
+    void draw(const CC_DRAW_CONTEXT& context, const PCLCloud::Ptr& smCloud);
+    void draw(const CC_DRAW_CONTEXT& context, const PCLMesh::Ptr& pclMesh);
     void draw(const CC_DRAW_CONTEXT& context,
-              PCLPolygon::Ptr pclPolygon,
+              const PCLTextureMesh::Ptr& textureMesh);
+    void draw(const CC_DRAW_CONTEXT& context,
+              const PCLPolygon::Ptr& pclPolygon,
               bool closed);
     void draw(const CC_DRAW_CONTEXT& context, const ccSensor* sensor);
     void draw(const CC_DRAW_CONTEXT& context,
@@ -269,7 +270,8 @@ public:
     void transformEntities(const CC_DRAW_CONTEXT& context);
     vtkSmartPointer<vtkTransform> getTransformation(
             const CC_DRAW_CONTEXT& context, const CCVector3d& origin);
-    void updateNormals(const CC_DRAW_CONTEXT& context, PCLCloud::Ptr smCloud);
+    void updateNormals(const CC_DRAW_CONTEXT& context,
+                       const PCLCloud::Ptr& smCloud);
     void updateShadingMode(const CC_DRAW_CONTEXT& context, PCLCloud& smCloud);
     bool removeEntities(const CC_DRAW_CONTEXT& context);
     void hideShowActors(bool visibility,
@@ -311,6 +313,8 @@ public:
                      float width = 1.0f,
                      const std::string& id = "multiline",
                      int viewport = 0);
+    bool updateTexture(const CC_DRAW_CONTEXT& context,
+                       const std::vector<pcl::TexMaterial>& tex_materials);
     bool addTextureMesh(const PCLTextureMesh& mesh,
                         const std::string& id,
                         int viewport);
