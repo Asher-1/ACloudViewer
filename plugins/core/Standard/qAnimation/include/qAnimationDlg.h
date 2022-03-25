@@ -20,45 +20,50 @@
 // ECV_DB_LIB
 #include <ecvViewportParameters.h>
 
-//Qt
+// Qt
 #include <QDialog>
 
-//System
+// System
+#include <QProgressDialog>
 #include <vector>
 
 #include "ui_animationDlg.h"
 
+class ccMesh;
 class ccPolyline;
 class cc2DViewportObject;
 class QListWidgetItem;
+#ifdef QFFMPEG_SUPPORT
+class QVideoEncoder;
+#endif
 
 //! Dialog for qAnimation plugin
-class qAnimationDlg : public QDialog, public Ui::AnimationDialog
-{
+class qAnimationDlg : public QDialog, public Ui::AnimationDialog {
     Q_OBJECT
 
 public:
-
     //! Default constructor
-    qAnimationDlg(QWidget* view3d,  QWidget* parent = nullptr);
+    qAnimationDlg(QWidget* view3d, QWidget* parent = nullptr);
 
     //! Destrcuctor
     virtual ~qAnimationDlg();
 
     //! Initialize the dialog with a set of viewports
-    bool init(const std::vector<cc2DViewportObject*>& viewports);
+    bool init(const std::vector<cc2DViewportObject*>& viewports,
+              const std::vector<ccMesh*>& meshes);
 
     ccPolyline* getTrajectory();
     bool exportTrajectoryOnExit();
+    bool updateTextures() const;
 
 protected:
-
     void onFPSChanged(int);
     void onTotalTimeChanged(double);
     void onStepTimeChanged(double);
     void onLoopToggled(bool);
     void onCurrentStepChanged(int);
     void onBrowseButtonClicked();
+    void onBrowseTexturesButtonClicked();
     void onAutoStepsDurationToggled(bool);
     void onSmoothTrajectoryToggled(bool);
     void onSmoothRatioChanged(double);
@@ -71,8 +76,7 @@ protected:
 
     void onItemChanged(QListWidgetItem*);
 
-protected: //methods
-
+protected:  // methods
     int getCurrentStepIndex();
     size_t countEnabledSteps() const;
 
@@ -96,31 +100,40 @@ protected: //methods
     bool smoothTrajectory(double ratio, unsigned iterationCount);
 
     //! Simple step (viewport + time)
-    struct Step
-    {
+    struct Step {
         cc2DViewportObject* viewport = nullptr;
         ecvViewportParameters viewportParams;
         int indexInOriginalTrajectory = -1;
         CCVector3d cameraCenter;
-
         double duration_sec = 0.0;
         double length = 0.0;
         int indexInSmoothTrajectory = -1;
     };
 
     typedef std::vector<Step> Trajectory;
+    typedef std::vector<ccMesh*> MeshList;
 
     bool getCompressedTrajectory(Trajectory& compressedTrajectory) const;
 
     void updateSmoothTrajectoryDurations();
 
-protected: //members
-
+protected:  // members
     //! Animation
     Trajectory m_videoSteps;
     //! Smoothed animation
     Trajectory m_smoothVideoSteps;
+    MeshList m_mesh_list;
 
     //! Associated 3D view
     QWidget* m_view3d;
+    void textureAnimationPreview(const QStringList& texture_files,
+                                 QProgressDialog& progressDialog);
+    bool textureAnimationRender(const QStringList& texture_files,
+                                 QProgressDialog& progressDialog,
+                                 bool asSeparateFrames
+#ifdef QFFMPEG_SUPPORT
+                                 ,
+                                 QScopedPointer<QVideoEncoder>& encoder
+#endif
+    );
 };

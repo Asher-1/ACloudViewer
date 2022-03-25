@@ -5,26 +5,24 @@
 #include <QMap>
 
 #include "assimp/matrix4x4.h"
+#include "assimp/material.h"
+#include "assimp/mesh.h"
+#include "assimp/metadata.h"
+#include "assimp/scene.h"
+#include "ecvHObjectCaster.h"
+#include "ecvMaterialSet.h"
+#include "ecvMesh.h"
+#include "ecvPointCloud.h"
 
-class QString;
-class QVariant;
+namespace IoUtils {
+ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
+                                        const QString &inPath,
+                                        const aiScene *inScene);
 
-class ccGLMatrix;
-class ccMaterialSet;
-class ccMesh;
+ccMesh *newCCMeshFromAIMesh(const aiMesh *inMesh);
 
-class aiMesh;
-class aiMetadata;
-class aiScene;
+ccGLMatrix convertMatrix(const aiMatrix4x4 &inAssimpMatrix);
 
-
-namespace IoUtils
-{
-   ccMaterialSet    *createMaterialSetForMesh( const aiMesh *inMesh, const QString &inPath, const aiScene *inScene );
-   
-   ccMesh   *newCCMeshFromAIMesh( const aiMesh *inMesh );
-   
-   ccGLMatrix   convertMatrix( const aiMatrix4x4 &inAssimpMatrix );
-   
-   QVariant convertMetaValueToVariant( aiMetadata *inData, unsigned int inValueIndex );
-}
+QVariant convertMetaValueToVariant(aiMetadata *inData,
+                                   unsigned int inValueIndex);
+}  // namespace IoUtils

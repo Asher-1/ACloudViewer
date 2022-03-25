@@ -176,15 +176,15 @@ bool ecvViewportParameters::fromFile(QFile& in, short dataVersion, int flags, Lo
         }
     }
 
-    if (dataVersion >= 30 && dataVersion < 51)
+    if (dataVersion >= 30 && dataVersion < 48)
     {
-        //ortho mode aspect ratio (30 >= dataVersion < 51)
+        //ortho mode aspect ratio (30 >= dataVersion < 48)
         float orthoAspectRatio = 0.0f;
         inStream >> orthoAspectRatio;
     }
 
     //for older version, deduce the focal distance from the old paramters (pixelSize and zoom)
-    if (dataVersion < 51 && zoom != 1.0f)
+    if (dataVersion < 48 && zoom != 1.0f)
     {
         if (perspectiveView)
         {

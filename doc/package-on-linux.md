@@ -7,7 +7,7 @@
 
 1. Copy copylib.sh to build directory
 
-		copy util/copylib.sh BUILD_DIR/bin/
+		cp util/copylib.sh BUILD_DIR/bin/
    
 2. Find dependeces for ErowCloudViewer and you will get lib directory with dependences such as *.so in it
 		
