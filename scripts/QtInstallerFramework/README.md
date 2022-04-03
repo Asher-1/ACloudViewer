@@ -16,4 +16,4 @@
 
 3, cd [WORKSPACE for CloudViewer](./linux/CloudViewer) && binarycreator -c config/config.xml -p packages CloudViewer-3.8.0-2021-10.10-ubuntu1804-amd64.run
 
-4, cd [WORKSPACE for ErowCloudViewer](./linux/ErowCloudViewer) && binarycreator -c config/config.xml -p packages ErowCloudViewer-3.8.0-2021-10.10-ubuntu1804-amd64.run
+4, cd [WORKSPACE for ErowCloudViewer](./linux/ErowCloudViewer) && binarycreator -c config/config.xml -p packages ErowCloudViewer-3.8.0-2021-10-10-ubuntu1804-amd64.run
