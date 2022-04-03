@@ -28,6 +28,7 @@
 #include <Filters/ProjectionFilter.h>
 #include <Filters/MLSSmoothingUpsampling.h>
 #include <Filters/StatisticalOutliersRemover.h>
+#include <Filters/FastGlobalRegistrationFilter.h>
 
 // FEATURES
 #include <Features/ExtractSIFT.h>
@@ -101,6 +102,7 @@ QVector<QList<QAction *>> qPCL::getActions()
 		addPclModule(new ProjectionFilter(), filterActions);
 		addPclModule(new MLSSmoothingUpsampling(), filterActions);
 		addPclModule(new StatisticalOutliersRemover(), filterActions);
+        addPclModule(new FastGlobalRegistrationFilter(), filterActions);
 		allModuleActions.push_back(filterActions);
 
 		// ADD FEATURES

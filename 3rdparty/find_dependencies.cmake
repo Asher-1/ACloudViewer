@@ -847,6 +847,17 @@ import_3rdparty_library(3rdparty_jsoncpp
         )
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_jsoncpp)
 
+# draco: always compile from source to avoid ABI issues.
+include(${CloudViewer_3RDPARTY_DIR}/draco/draco.cmake)
+import_3rdparty_library(3rdparty_draco
+        INCLUDE_DIRS ${DRACO_INCLUDE_DIRS}
+        LIB_DIR ${DRACO_LIB_DIR}
+        LIBRARIES ${DRACO_LIBRARIES}
+        DEPENDS ext_draco
+        )
+set(DRACO_TARGET "3rdparty_draco")
+list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS 3rdparty_draco)
+
 # liblzf
 if (USE_SYSTEM_LIBLZF)
     find_package_3rdparty_library(3rdparty_liblzf
