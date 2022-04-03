@@ -686,6 +686,145 @@ PCLCloud::Ptr cc2smReader::getAsSM(bool ignoreScalars) const {
     return getAsSM(fields);
 }
 
+static PCLCloud::Ptr SetOrAdd(PCLCloud::Ptr firstCloud,
+                              PCLCloud::Ptr secondCloud) {
+    if (!secondCloud) {
+        assert(false);
+        return {};
+    }
+
+    if (firstCloud) {
+        try {
+            PCLCloud::Ptr tempCloud(new PCLCloud);  // temporary cloud
+            pcl::concatenateFields(*firstCloud, *secondCloud, *tempCloud);
+            return tempCloud;
+        } catch (const std::bad_alloc&) {
+            CVLog::Warning("Not enough memory");
+            return nullptr;
+        }
+    } else {
+        return secondCloud;
+    }
+}
+
+PCLCloud::Ptr cc2smReader::getAsSM(bool xyz,
+                                   bool normals,
+                                   bool rgbColors,
+                                   const QStringList& scalarFields) const {
+    if (!m_cc_cloud) {
+        assert(false);
+        return {};
+    }
+
+    PCLCloud::Ptr outputCloud;
+
+    unsigned pointCount = m_cc_cloud->size();
+
+    try {
+        if (xyz) {
+            PCLCloud::Ptr xyzCloud = getXYZ();
+            if (!xyzCloud) {
+                return {};
+            }
+
+            outputCloud = SetOrAdd(outputCloud, xyzCloud);
+        }
+
+        if (normals && m_cc_cloud->hasNormals()) {
+            PCLCloud::Ptr normalsCloud = getNormals();
+            if (!normalsCloud) {
+                return {};
+            }
+            outputCloud = SetOrAdd(outputCloud, normalsCloud);
+        }
+
+        if (rgbColors && m_cc_cloud->hasColors()) {
+            PCLCloud::Ptr rgbCloud = getColors();
+            if (!rgbCloud) {
+                return {};
+            }
+            outputCloud = SetOrAdd(outputCloud, rgbCloud);
+        }
+
+        for (const QString& sfName : scalarFields) {
+            PCLCloud::Ptr sfCloud = getFloatScalarField(sfName.toStdString());
+            if (!sfCloud) {
+                return {};
+            }
+            outputCloud = SetOrAdd(outputCloud, sfCloud);
+        }
+    } catch (...) {
+        // any error (memory, etc.)
+        outputCloud.reset();
+    }
+
+    return outputCloud;
+}
+
+pcl::PointCloud<pcl::PointNormal>::Ptr cc2smReader::getAsPointNormal() const {
+    if (!m_cc_cloud) {
+        assert(false);
+        return {};
+    }
+
+    PointCloud<pcl::PointNormal>::Ptr pcl_cloud(
+            new PointCloud<pcl::PointNormal>);
+
+    unsigned pointCount = m_cc_cloud->size();
+
+    try {
+        pcl_cloud->resize(pointCount);
+    } catch (...) {
+        // any error (memory, etc.)
+        return {};
+    }
+
+    for (unsigned i = 0; i < pointCount; ++i) {
+        const CCVector3* P = m_cc_cloud->getPoint(i);
+        pcl_cloud->at(i).x = static_cast<float>(P->x);
+        pcl_cloud->at(i).y = static_cast<float>(P->y);
+        pcl_cloud->at(i).z = static_cast<float>(P->z);
+    }
+
+    if (m_cc_cloud->hasNormals()) {
+        for (unsigned i = 0; i < pointCount; ++i) {
+            const CCVector3* N = m_cc_cloud->getNormal(i);
+            pcl_cloud->at(i).normal_x = static_cast<float>(N->x);
+            pcl_cloud->at(i).normal_y = static_cast<float>(N->y);
+            pcl_cloud->at(i).normal_z = static_cast<float>(N->z);
+        }
+    }
+
+    return pcl_cloud;
+}
+
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr cc2smReader::getRawXYZ() const {
+    if (!m_cc_cloud) {
+        assert(false);
+        return {};
+    }
+
+    PointCloud<PointXYZ>::Ptr xyzCloud(new PointCloud<PointXYZ>);
+    try {
+        unsigned pointCount = m_cc_cloud->size();
+        xyzCloud->resize(pointCount);
+
+        for (unsigned i = 0; i < pointCount; ++i) {
+            const CCVector3* P = m_cc_cloud->getPoint(i);
+            xyzCloud->at(i).x = static_cast<float>(P->x);
+            xyzCloud->at(i).y = static_cast<float>(P->y);
+            xyzCloud->at(i).z = static_cast<float>(P->z);
+        }
+    } catch (...) {
+        // any error (memory, etc.)
+        return {};
+    }
+
+    return xyzCloud;
+}
+
+
 PCLCloud::Ptr cc2smReader::getVtkPolyDataAsSM(
         vtkPolyData* const polydata) const {
     // Set the colors of the pcl::PointCloud (if the pcl::PointCloud supports
