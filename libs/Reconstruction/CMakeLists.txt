@@ -33,8 +33,8 @@ cmake_minimum_required(VERSION 3.18)
 
 project(COLMAP)
 
-set(COLMAP_VERSION "3.7")
-set(COLMAP_VERSION_NUMBER "3700")
+set(COLMAP_VERSION "3.9")
+set(COLMAP_VERSION_NUMBER "3900")
 
 ################################################################################
 # Include CMake dependencies

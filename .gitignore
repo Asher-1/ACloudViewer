@@ -175,7 +175,7 @@ static/
 *.old*
 dist/
 compile_commands.json
-
+libs/Reconstruction/src/util/version.h
 
 
 # Example resources
