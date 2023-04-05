@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                          -
+// -                        cloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -114,6 +114,48 @@ struct CV_CORE_LIB_API hash_enum_class {
         return static_cast<std::size_t>(t);
     }
 };
+
+// Format string by replacing embedded format specifiers with their respective
+// values, see `printf` for more details. This is a modified implementation
+// of Google's BSD-licensed StringPrintf function.
+std::string CV_CORE_LIB_API StringPrintf(const char* format, ...);
+
+// Replace all occurrences of `old_str` with `new_str` in the given string.
+std::string CV_CORE_LIB_API StringReplace(const std::string& str,
+                                          const std::string& old_str,
+                                          const std::string& new_str);
+
+/// Returns true of the source string contains the destination string.
+/// \param src Source string.
+/// \param dst Destination string.
+bool CV_CORE_LIB_API StringContains(const std::string& src,
+                                    const std::string& dst);
+
+std::string CV_CORE_LIB_API StringReplaceFirst(const std::string& str,
+                                               const std::string& old_str,
+                                               const std::string& new_str);
+
+std::string CV_CORE_LIB_API StringReplaceLast(const std::string& str,
+                                              const std::string& old_str,
+                                              const std::string& new_str);
+
+// Check whether a string starts with a certain prefix.
+bool CV_CORE_LIB_API StringStartsWith(const std::string& str,
+                                      const std::string& prefix);
+
+// Check whether a string ends with a certain postfix.
+bool CV_CORE_LIB_API StringEndsWith(const std::string& str,
+                                    const std::string& postfix);
+
+std::string CV_CORE_LIB_API JoinStrings(const std::vector<std::string>& strs,
+                                        const std::string& delimiter = ", ");
+
+/// Function to split a string
+/// http://stackoverflow.com/questions/236129/split-a-string-in-c
+std::vector<std::string> CV_CORE_LIB_API
+StringSplit(const std::string& str,
+            const std::string& delimiters = " ",
+            bool trim_empty_str = true);
 
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c

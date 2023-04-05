@@ -88,7 +88,11 @@ class AutomaticReconstructionController : public colmap::Thread {
     int num_threads = -1;
 
     // Whether to use the GPU in feature extraction and matching.
+#ifdef CUDA_ENABLED
     bool use_gpu = true;
+#else
+    bool use_gpu = false;
+#endif
 
     // Whether to add the reconstruction results to DBRoot.
     bool autoVisualization = true;

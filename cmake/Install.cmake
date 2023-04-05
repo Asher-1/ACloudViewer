@@ -21,20 +21,19 @@ function( InstallSharedLibrary )
 
 	# For readability
 	set( shared_lib_target "${INSTALL_SHARED_LIB_TARGET}" )
-
 	message( STATUS "Install shared library: ${shared_lib_target}")
 
-        foreach( destination ${INSTALL_DESTINATIONS} )
-            if(UNIX AND NOT APPLE)
-                # this is a an hack to restore install ability on linux systems
-                # TODO this should not be the right way for managing install probably
-                set( destination "${destination}/${CMAKE_INSTALL_LIBDIR}/erowcloudviewer")
-            endif()
+	foreach( destination ${INSTALL_DESTINATIONS} )
+		if(UNIX AND NOT APPLE)
+			# this is a an hack to restore install ability on linux systems
+			# TODO this should not be the right way for managing install probably
+			set( destination "${destination}/${CMAKE_INSTALL_LIBDIR}/erowcloudviewer")
+		endif()
 
-            _InstallSharedTarget(
-                    TARGET ${shared_lib_target}
-                    DEST_PATH ${destination}
-            )
+		_InstallSharedTarget(
+				TARGET ${shared_lib_target}
+				DEST_PATH ${destination}
+		)
 	endforeach()
 endfunction()
 

@@ -29,4 +29,7 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 	CXX_VISIBILITY_PRESET hidden
 )
 
-InstallSharedLibrary( TARGET ${PROJECT_NAME} )
+if (NOT APPLE) # no need to copy targets on macos due to rpath
+	# install (shared) lib to specified destinations
+	InstallSharedLibrary(TARGET ${PROJECT_NAME})
+endif ()

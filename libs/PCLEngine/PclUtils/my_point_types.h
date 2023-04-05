@@ -47,7 +47,7 @@ struct OnlyRGB
     };
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 //! PCL custom point type used for reading intensity data
 struct PointI
@@ -55,49 +55,49 @@ struct PointI
     float intensity;
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 struct FloatScalar
 {
     float S5c4laR;
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 struct DoubleScalar
 {
     double S5c4laR;
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 struct IntScalar
 {
     int S5c4laR;
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 struct UIntScalar
 {
     unsigned S5c4laR;
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 struct ShortScalar
 {
     short S5c4laR;
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 struct UShortScalar
 {
     unsigned short S5c4laR;
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 //! PCL custom point type used for reading intensity data
 struct OnlyNormals
@@ -107,7 +107,7 @@ struct OnlyNormals
     float normal_z;
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 struct OnlyNormalsCurvature
 {
@@ -129,7 +129,7 @@ struct PointXYZScalar
     float scalar;
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW		// make sure our new allocators are aligned
 
-} EIGEN_ALIGN16;						// enforce SSE padding for correct memory alignment
+};						// enforce SSE padding for correct memory alignment
 
 struct PointXYZScalarRGB
 {
@@ -152,7 +152,7 @@ struct PointXYZScalarRGB
     };
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 struct PointXYZScalarRGBNormals
 {
@@ -178,7 +178,7 @@ struct PointXYZScalarRGBNormals
     float scalar;
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
-} EIGEN_ALIGN16;
+};
 
 
 POINT_CLOUD_REGISTER_POINT_STRUCT (OnlyRGB,

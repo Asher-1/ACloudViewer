@@ -652,7 +652,7 @@ bool ApplyScaleMatchingAlgorithm(ScaleMatchingAlgorithm algo,
                         parameters.samplingLimit = 50000;
                         parameters.finalOverlapRatio = icpFinalOverlap / 100.0;
                         parameters.transformationFilters =
-                                0;  // CCCoreLib::RegistrationTools::SKIP_ROTATION
+                                0;  // cloudViewer::RegistrationTools::SKIP_ROTATION
                         parameters.maxThreadCount = 0;
                         parameters.useC2MSignedDistances = false;
                         parameters.normalsMatching =

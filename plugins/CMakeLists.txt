@@ -1,14 +1,9 @@
-cmake_minimum_required(VERSION 3.0)
-
 project( ErowCloudViewerPlugins )
 
 # Add our cmake module path so we don't need relative paths for these
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" )
 
 include( Plugins )
-
-# reset buffers (for MacOS bundle)
-set( EROWCLOUDVIEWER_PLUGINS CACHE INTERNAL "ErowCloudViewer plugin list" )
 
 set( ErowCloudViewer_SOURCE_DIR "${CMAKE_SOURCE_DIR}/eCV" )
 set( ErowCloudViewerPlugins_SOURCE_DIR "${CMAKE_SOURCE_DIR}/plugins" )

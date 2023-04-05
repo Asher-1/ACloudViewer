@@ -81,7 +81,7 @@ public:
     //! Returns the set of normals (const version)
     const std::vector<CCVector3>& normals() const { return m_normals; }
 
-    // inherited from CCCoreLib::GenericIndexedCloud
+    // inherited from cloudViewer::GenericIndexedCloud
     bool normalsAvailable() const override {
         return !m_normals.empty() && m_normals.size() >= size();
     }

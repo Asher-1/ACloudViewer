@@ -2,6 +2,7 @@
 
 #include <QProcess>
 #include <QPainter>
+#include <QPainterPath>
 
 const float Pi = 3.14159f;
 

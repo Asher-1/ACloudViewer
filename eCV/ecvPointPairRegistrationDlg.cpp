@@ -1,19 +1,19 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #include <ecvPointPairRegistrationDlg.h>
 
@@ -209,8 +209,7 @@ void ccPointPairRegistrationDlg::clear() {
             if (child && child->isKindOf(CV_TYPES::LABEL_2D)) {
                 cc2DLabel* alignedLabel = ccHObjectCaster::To2DLabel(child);
                 alignedLabel->clearLabel();
-            } else  // probably sphere
-            {
+            } else {  // probably sphere
                 updateSphereMarks(child, true);
             }
         }
@@ -475,7 +474,8 @@ void ccPointPairRegistrationDlg::addManualRefPoint() {
                                      "Add reference point", this);
 
     // if the reference entity is shifted, the user has the choice to input
-    // virtual points either in the original coordinate system or the shifted one
+    // virtual points either in the original coordinate system or the shifted
+    // one
     //(if there's no reference entity, we use a 'global'	one by default)
     if (m_referenceEntities.isShifted)
         ptsDlg.showCheckbox("Not shifted", s_lastRefPointisGlobal,
@@ -1120,8 +1120,7 @@ void ccPointPairRegistrationDlg::updateAlignedMarkers(int index) {
         if (child && child->isKindOf(CV_TYPES::LABEL_2D)) {
             cc2DLabel* label = ccHObjectCaster::To2DLabel(child);
             label->clearLabel();
-        } else  //  probably sphere
-        {
+        } else {  //  probably sphere
             updateSphereMarks(child, true);
         }
         m_alignedLabels.removeChild(index);
@@ -1447,7 +1446,7 @@ void ccPointPairRegistrationDlg::transformAlignedEntity(
     assert(!m_alignedEntities.empty());
     // we temporarily detach entity, as it may undergo
     //"severe" modifications (octree deletion, etc.) --> see
-    //ccHObject::applyGLTransformation
+    // ccHObject::applyGLTransformation
     for (auto it = m_alignedEntities.begin(); it != m_alignedEntities.end();
          ++it) {
         ecvMainAppInterface::ccHObjectContext objContext;

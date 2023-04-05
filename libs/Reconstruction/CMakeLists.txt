@@ -67,14 +67,19 @@ set(PROFILING_ENABLED OFF) # Whether to enable google-perftools linker flags
 set(CUDA_ARCHS "Auto" CACHE STRING "List of CUDA architectures for which to \
 generate code, e.g., Auto, All, Maxwell, Pascal, ...")
 
+if (APPLE)
+    message(STATUS "set BOOST_STATIC: OFF on macos")
+    set(BOOST_STATIC OFF)
+endif ()
+
 if (TESTS_ENABLED)
     enable_testing()
 endif ()
 
 if (BOOST_STATIC)
-    set(Boost_USE_STATIC_LIBS ON)
     set(Boost_USE_STATIC ON)
     set(Boost_USE_MULTITHREAD)
+    set(Boost_USE_STATIC_LIBS ON)
 else ()
     # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
     # https://lists.boost.org/boost-users/2009/11/54015.php
@@ -84,6 +89,10 @@ else ()
     set(Boost_USE_STATIC OFF)
 endif ()
 
+# Build position-independent code, so that shared libraries can link against
+# COLMAP's static libraries.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 ################################################################################
 # Find packages
 ################################################################################
@@ -92,31 +101,39 @@ if (OPENMP_ENABLED)
     find_package(OpenMP QUIET)
 endif ()
 
-if (WIN32)
-    set(BOOST_ROOT "" CACHE PATH "Boost library root directory")
-    if (NOT BOOST_ROOT)
-        message(SEND_ERROR "No Boost library root specified (BOOST_ROOT)")
+if (NOT APPLE)
+    if (WIN32)
+        set(BOOST_ROOT "" CACHE PATH "Boost library root directory")
+        if (NOT BOOST_ROOT)
+            message(SEND_ERROR "No Boost library root specified (BOOST_ROOT)")
+        else ()
+            add_definitions("-DBOOST_ROOT=${BOOST_ROOT}")
+            add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
+        endif ()
     else ()
-        add_definitions("-DBOOST_ROOT=${BOOST_ROOT}")
-        add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
+        set(BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory")
     endif ()
-else ()
-    set(BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory")
+
+    message(STATUS "BOOST ROOT: ${BOOST_ROOT}")
+
+    # Disable BOOST autolink
+    if (MSVC)
+        add_definitions(-DBOOST_ALL_NO_LIB)
+    endif ()
+
+    if (BOOST_NO_CXX11)
+        # Avoid link errors on boost filesystem copy_file function
+        # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
+        add_definitions("-DBOOST_NO_CXX11_SCOPED_ENUMS")
+        add_definitions("-DBOOST_NO_CXX11_OVERRIDE")
+        message("disable boost cxx11 on colmap!")
+    endif ()
 endif ()
 
-message(STATUS "BOOST ROOT: ${BOOST_ROOT}")
-
-# Disable BOOST autolink
-if (MSVC)
-    add_definitions(-DBOOST_ALL_NO_LIB)
-endif ()
-
-if (BOOST_NO_CXX11)
-    # Avoid link errors on boost filesystem copy_file function
-    # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
-    add_definitions("-DBOOST_NO_CXX11_SCOPED_ENUMS")
-    add_definitions("-DBOOST_NO_CXX11_OVERRIDE")
-    message("disable boost cxx11 on colmap!")
+if (APPLE)
+    find_package(Ceres REQUIRED)
+    find_package(Glog REQUIRED)
+    find_package(FreeImage REQUIRED)
 endif ()
 
 find_package(Boost REQUIRED COMPONENTS
@@ -124,6 +141,7 @@ find_package(Boost REQUIRED COMPONENTS
         filesystem
         graph
         system
+        atomic
         unit_test_framework)
 
 set(OpenGL_GL_PREFERENCE GLVND)
@@ -256,6 +274,17 @@ if (Qt5_FOUND)
         if (CUDA_ENABLED AND NOT IS_MSVC)
             set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options -fPIC")
         endif ()
+
+        # Workaround for Qt5 CMake config bug under Ubuntu 20.04: https://gitlab.kitware.com/cmake/cmake/-/issues/16915
+        if (${Qt5_VERSION} VERSION_EQUAL "5.12.8" AND TARGET Qt5::Core)
+            get_property(core_options TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS)
+            string(REPLACE "-fPIC" "" new_qt5_core_options ${core_options})
+            set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS ${new_qt5_core_options})
+            set_property(TARGET Qt5::Core PROPERTY INTERFACE_POSITION_INDEPENDENT_CODE "ON")
+            if (NOT IS_MSVC)
+                set(CMAKE_CXX_COMPILE_OPTIONS_PIE "-fPIC")
+            endif ()
+        endif ()
     endif ()
 
     # Enable automatic compilation of Qt resource files.
@@ -271,6 +300,10 @@ include(GenerateVersionDefinitions)
 
 set(COLMAP_INCLUDE_DIRS
         ${Boost_INCLUDE_DIRS}
+        ${EIGEN_INCLUDE_DIRS}
+        ${GLOG_INCLUDE_DIRS}
+        ${FREEIMAGE_INCLUDE_DIRS}
+        ${CERES_INCLUDE_DIRS}
         ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include
         )
 
@@ -280,9 +313,12 @@ set(COLMAP_LINK_DIRS
 
 set(COLMAP_EXTERNAL_LIBRARIES
         ${CMAKE_DL_LIBS}
-        ${Boost_SYSTEM_LIBRARY}
         ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_PROGRAM_OPTIONS_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
+        ${GLOG_LIBRARIES}
+        ${CERES_LIBRARIES}
+        ${FREEIMAGE_LIBRARIES}
         )
 
 if (OPENMP_FOUND)

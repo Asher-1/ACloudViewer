@@ -571,7 +571,7 @@ public:  // other methods
     // inherited from cloudViewer::GenericIndexedCloud
     bool normalsAvailable() const override { return hasNormals(); }
     const CCVector3* getNormal(unsigned pointIndex)
-            const override;  // equivalent to getPointNormal, but for CCCoreLib
+            const override;  // equivalent to getPointNormal, but for cloudViewer
 
     // inherited from ccGenericPointCloud
     const ecvColor::Rgb* getScalarValueColor(ScalarType d) const override;
@@ -644,6 +644,7 @@ public:  // other methods
     /** WARNING: colors must be enabled.
      **/
     void setPointColor(size_t pointIndex, const ecvColor::Rgb& col);
+    void setPointColor(size_t pointIndex, const ecvColor::Rgba& col);
     void setPointColor(size_t pointIndex, const Eigen::Vector3d& col);
     void setEigenColor(size_t index, const Eigen::Vector3d& color);
 

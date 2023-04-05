@@ -134,6 +134,7 @@ python/js/node_modules/*
 libs/cloudViewer/CloudViewer.h
 libs/cloudViewer/CloudViewerConfig.h
 libs/cloudViewer/visualization/shader/Shader.h
+libs/Reconstruction/src/util/version.h
 util/pip_package/setup.py
 
 # Temp directories

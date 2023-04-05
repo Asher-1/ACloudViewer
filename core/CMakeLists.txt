@@ -152,6 +152,7 @@ if (CVCORELIB_USE_CGAL)
     if (WIN32)
         include(cmake/CGALSupport.cmake)
     else ()
+        set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
         find_package(CGAL REQUIRED)
     endif ()
 
@@ -223,11 +224,13 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC USE_EIGEN)
 cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${INTERNAL_EIGEN3_TARGET})
 
-cloudViewer_install_targets(${PROJECT_NAME})
 target_compile_definitions(${PROJECT_NAME} PUBLIC CV_CORE_LIB_LIBRARY_BUILD)
 
-if (CVCORELIB_SHARED)
-    InstallSharedLibrary(TARGET ${PROJECT_NAME})
+if (NOT APPLE) # no need to copy targets on macos due to rpath
+    cloudViewer_install_targets(${PROJECT_NAME})
+    if (CVCORELIB_SHARED)
+        InstallSharedLibrary(TARGET ${PROJECT_NAME})
+    endif ()
 endif ()
 
 if (WIN32)

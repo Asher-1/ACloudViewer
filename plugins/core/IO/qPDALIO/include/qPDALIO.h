@@ -3,7 +3,7 @@
 
 //##########################################################################
 //#                                                                        #
-//#                              CLOUDCOMPARE                              #
+//#                              CloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -22,8 +22,8 @@
 
 class qPDALIO : public QObject, public ccIOPluginInterface
 {
-	Q_OBJECT
-	Q_INTERFACES( ccPluginInterface ccIOPluginInterface )
+    Q_OBJECT
+    Q_INTERFACES( ccPluginInterface ccIOPluginInterface )
 
     Q_PLUGIN_METADATA( IID "ecvcorp.cloudviewer.plugin.qPDALIO" FILE "../info.json" )
 

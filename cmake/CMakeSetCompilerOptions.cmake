@@ -1,7 +1,7 @@
 # Require C++14
-set( CMAKE_CXX_STANDARD 14 )
+set( CMAKE_CXX_STANDARD 17 )
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
-set( CMAKE_CXX_EXTENSIONS NO )
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 function(cloudViewer_set_targets_independent target)
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations

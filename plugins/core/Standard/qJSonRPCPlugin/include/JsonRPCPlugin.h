@@ -36,8 +36,8 @@
 	connecting these actions to	methods in your plugin.
 
 	Use the ccStdPluginInterface::m_app variable for access to most of the CC
-	components (database, 3D views, console, etc.) - see the ccMainAppInterface
-	class in ccMainAppInterface.h.
+	components (database, 3D views, console, etc.) - see the ecvMainAppInterface
+	class in ecvMainAppInterface.h.
 **/
 class JsonRPCPlugin : public QObject, public ccStdPluginInterface
 {

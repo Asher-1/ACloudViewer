@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                    CLOUDCOMPARE PLUGIN: ccCompass                      #
+//#                    CloudViewer PLUGIN: ccCompass                      #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -96,7 +96,7 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
     const ecvViewportParameters& params =
             ecvDisplayTools::GetViewportParameters();
 
-    // ccLog::Print(QString("WidthAtFocalDist = %1 (= %2 x
+    // CVLog::Print(QString("WidthAtFocalDist = %1 (= %2 x
     // %3)").arg(params.computeWidthAtFocalDist()).arg(params.computeDistanceToWidthRatio()).arg(params.getFocalDistance()));
     m_pixelSize =
             (context.glW != 0 ? params.computeWidthAtFocalDist() / context.glW
@@ -121,7 +121,7 @@ void ccMouseCircle::draw(CC_DRAW_CONTEXT& context) {
     //        glFunc->glLineStipple(1, 0xAAAA);
     //        glFunc->glEnable(GL_LINE_STIPPLE);
     //    }
-    //    glFunc->glColor4ubv(ccColor::red.rgba);
+    //    glFunc->glColor4ubv(ecvColor::red.rgba);
     //    glFunc->glBegin(GL_LINE_LOOP);
     //    // glFunc->glBegin(GL_POLYGON);
     //    for (int n = 0; n < Circle::Resolution; n++) {

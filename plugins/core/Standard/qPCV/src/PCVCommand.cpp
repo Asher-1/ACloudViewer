@@ -7,7 +7,7 @@
 #include <ccGenericMesh.h>
 #include <ccHObjectCaster.h>
 #include <ccPointCloud.h>
-#include <ccProgressDialog.h>
+#include <ecvProgressDialog.h>
 #include <ccScalarField.h>
 
 constexpr char CC_PCV_FIELD_LABEL_NAME[] = "Illuminance (PCV)";
@@ -27,8 +27,8 @@ bool PCVCommand::Process(	const ccHObject::Container& candidates,
 							const std::vector<CCVector3>& rays,
 							bool meshIsClosed,
 							unsigned resolution,
-							ccProgressDialog* progressDlg/*=nullptr*/,
-							ccMainAppInterface* app/*=nullptr*/)
+							ecvProgressDialog* progressDlg/*=nullptr*/,
+							ecvMainAppInterface* app/*=nullptr*/)
 {
 	size_t count = 0;
 	size_t errorCount = 0;
@@ -40,13 +40,13 @@ bool PCVCommand::Process(	const ccHObject::Container& candidates,
 		QString objName("unknown");
 
 		assert(obj);
-		if (obj->isA(CC_TYPES::POINT_CLOUD))
+		if (obj->isA(CV_TYPES::POINT_CLOUD))
 		{
 			//we need a real point cloud
 			cloud = ccHObjectCaster::ToPointCloud(obj);
 			objName = cloud->getName();
 		}
-		else if (obj->isKindOf(CC_TYPES::MESH))
+		else if (obj->isKindOf(CV_TYPES::MESH))
 		{
 			mesh = ccHObjectCaster::ToGenericMesh(obj);
 			cloud = ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud());
@@ -57,7 +57,7 @@ bool PCVCommand::Process(	const ccHObject::Container& candidates,
 		{
 			assert(false);
 			if (app)
-				app->dispToConsole(QObject::tr("Invalid object type"), ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+				app->dispToConsole(QObject::tr("Invalid object type"), ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
 			++errorCount;
 			continue;
 		}
@@ -74,7 +74,7 @@ bool PCVCommand::Process(	const ccHObject::Container& candidates,
 		if (sfIdx < 0)
 		{
 			if (app)
-				app->dispToConsole("Couldn't allocate a new scalar field for computing PCV field! Try to free some memory...", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+				app->dispToConsole("Couldn't allocate a new scalar field for computing PCV field! Try to free some memory...", ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
 			return false;
 		}
 		cloud->setCurrentScalarField(sfIdx);
@@ -97,7 +97,7 @@ bool PCVCommand::Process(	const ccHObject::Container& candidates,
 		{
 			cloud->deleteScalarField(sfIdx);
 			if (app)
-				app->dispToConsole(QObject::tr("An error occurred during entity '%1' illumination!").arg(objName), ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+				app->dispToConsole(QObject::tr("An error occurred during entity '%1' illumination!").arg(objName), ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
 			++errorCount;
 		}
 		else
@@ -111,7 +111,7 @@ bool PCVCommand::Process(	const ccHObject::Container& candidates,
 				if (obj->hasNormals() && obj->normalsShown())
 				{
 					if (app)
-						app->dispToConsole(QObject::tr("Entity '%1' normals have been automatically disabled").arg(objName), ccMainAppInterface::WRN_CONSOLE_MESSAGE);
+						app->dispToConsole(QObject::tr("Entity '%1' normals have been automatically disabled").arg(objName), ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
 				}
 				obj->showNormals(false);
 				obj->showSF(true);
@@ -130,7 +130,7 @@ bool PCVCommand::Process(	const ccHObject::Container& candidates,
 		if (progressDlg && progressDlg->wasCanceled())
 		{
 			if (app)
-				app->dispToConsole(QObject::tr("Process has been cancelled by the user"), ccMainAppInterface::WRN_CONSOLE_MESSAGE);
+				app->dispToConsole(QObject::tr("Process has been cancelled by the user"), ecvMainAppInterface::WRN_CONSOLE_MESSAGE);
 			++errorCount;
 			break;
 		}
@@ -203,7 +203,7 @@ bool PCVCommand::process(ccCommandLineInterface& cmd)
 		return cmd.error(QObject::tr("Failed to generate the set of rays"));
 	}
 
-	ccProgressDialog pcvProgressCb(true);
+	ecvProgressDialog pcvProgressCb(true);
 	pcvProgressCb.setAutoClose(false);
 
 	ccHObject::Container candidates;
