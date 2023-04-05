@@ -1,19 +1,19 @@
-﻿//##########################################################################
-//#                                                                        #
-//#                              EROWCLOUDVIEWER                           #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+﻿// ##########################################################################
+// #                                                                        #
+// #                              EROWCLOUDVIEWER                           #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #ifndef ECV_MAIN_WINDOW_HEADER
 #define ECV_MAIN_WINDOW_HEADER
@@ -60,6 +60,10 @@ const int CLOUDVIEWER_LANG_CHINESE = 1;
 using std::map;
 using std::string;
 using std::vector;
+
+// devices
+class cc3DMouseManager;
+class ccGamepadManager;
 
 class ccHObject;
 class ccPickingHub;
@@ -280,6 +284,17 @@ private:
     /** Either fit a plane or a 'facet' (2D polygon)
      **/
     void doComputePlaneOrientation(bool fitFacet);
+
+    void toggleActiveWindowCenteredPerspective() override;
+    void toggleActiveWindowViewerBasedPerspective() override;
+    //    void toggleActiveWindowSunLight() override;
+    //    void toggleActiveWindowCustomLight() override;
+
+    //! Sets up any input devices (3D mouse, gamepad) and adds their menus
+    void setupInputDevices();
+    //! Stops input and destroys any input device handling
+    void destroyInputDevices();
+
     void doActionComputeMesh(CC_TRIANGULATION_TYPES type);
     //! Creates point clouds from multiple 'components'
     void createComponentsClouds(
@@ -689,6 +704,12 @@ private:
     /*** plugins ***/
     //! Manages plugins - menus, toolbars, and the about dialog
     ccPluginUIManager* m_pluginUIManager;
+
+    //! 3D mouse
+    cc3DMouseManager* m_3DMouseManager;
+
+    //! Gamepad handler
+    ccGamepadManager* m_gamepadManager;
 
 private:
 #ifdef BUILD_RECONSTRUCTION

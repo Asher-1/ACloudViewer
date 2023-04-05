@@ -35,6 +35,9 @@
 #include <QTimer>
 #include <QTranslator>
 #include <QtWidgets/QApplication>
+#ifdef CC_GAMEPAD_SUPPORT
+#include <QGamepadManager>
+#endif
 
 // COMMON
 #include "CommonSettings.h"
@@ -48,11 +51,18 @@
 #include <vld.h>
 #endif
 
-//#if defined(_MSC_VER) && (_MSC_VER >= 1600)
-//#pragma execution_character_set("utf-8")
-//#endif
+// #if defined(_MSC_VER) && (_MSC_VER >= 1600)
+// #pragma execution_character_set("utf-8")
+// #endif
 
 void InitEnvironment() {
+    // fix OMP: Error #15: Initializing libomp.dylib, but found libomp.dylib
+    // already initialized.
+#ifdef Q_OS_MAC
+    char ompEnv[] = "KMP_DUPLICATE_LIB_OK=True";
+    putenv(ompEnv);
+#endif
+
     // store the log message until a valid logging instance is registered
     CVLog::EnableMessageBackup(true);
 
@@ -135,6 +145,11 @@ int main(int argc, char* argv[]) {
 
     ecvApplication::InitOpenGL();
 
+#ifdef CC_GAMEPAD_SUPPORT
+    QGamepadManager::instance();  // potential workaround to bug
+                                  // https://bugreports.qt.io/browse/QTBUG-61553
+#endif
+
     ecvApplication app(argc, argv, commandLine);
 
     // QApplication docs suggest resetting to "C" after the QApplication is
@@ -163,6 +178,15 @@ int main(int argc, char* argv[]) {
     QTimer splashTimer;
     // standard mode
     if (!commandLine) {
+#ifdef Q_OS_MAC
+        if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_3_3) ==
+            0) {
+            QMessageBox::critical(nullptr, QObject::tr("Error"),
+                                  QObject::tr("This application needs OpenGL "
+                                              "3.3 at least to run!"));
+            return EXIT_FAILURE;
+        }
+#else
         if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_2_1) ==
             0) {
             QMessageBox::critical(nullptr, QObject::tr("Error"),
@@ -170,6 +194,7 @@ int main(int argc, char* argv[]) {
                                               "2.1 at least to run!"));
             return EXIT_FAILURE;
         }
+#endif
 
         // splash screen
         QPixmap pixmap(QString::fromUtf8(

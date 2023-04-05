@@ -22,7 +22,7 @@ ExternalProject_Add(
         ${EIGEN_CMAKE_FLAGS}
         ${GLOG_CMAKE_FLAGS}
         ${SUITESPARSE_CMAKE_FLAGS}
-        -DBUILD_SHARED_LIBS=$<IF:$<PLATFORM_ID:Linux>,ON,OFF>
+        -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux,Darwin>:ON:OFF>
         -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
         # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
         # checking CXX_COMPILER_ID is not supported.
@@ -36,6 +36,7 @@ ExternalProject_Add(
         -DLAPACK=ON
         -DSUITESPARSE=ON
         -DOPENMP=ON
+        -DBUILD_BENCHMARKS=OFF
         -DBUILD_TESTING=OFF
         -DBUILD_EXAMPLES=OFF
         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>

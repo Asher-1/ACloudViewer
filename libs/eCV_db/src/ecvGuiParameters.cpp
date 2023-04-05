@@ -78,20 +78,20 @@ void ecvGui::ParamStruct::reset()
 	bbDefaultCol		= ecvColor::yellow;
 
 	lightDoubleSided			= true;
-	drawBackgroundGradient		= true;
+	drawBackgroundGradient		        = true;
 	drawRoundedPoints			= false;
 	decimateMeshOnMove			= true;
 	minLoDMeshSize				= 2500000;
 	decimateCloudOnMove			= true;
 	minLoDCloudSize				= 10000000;
-	useVBOs						= true;
+	useVBOs					= true;
 	displayCross				= true;
 
 	labelMarkerSize				= 5;
 
-	colorScaleShowHistogram		= true;
+	colorScaleShowHistogram		        = true;
 	colorScaleUseShader			= false;
-	colorScaleShaderSupported	= false;
+	colorScaleShaderSupported	        = false;
 	colorScaleRampWidth			= 50;
 
 #ifdef Q_OS_MAC
@@ -102,10 +102,10 @@ void ecvGui::ParamStruct::reset()
 	labelFontSize				= 8;
 #endif
 	
-	displayedNumPrecision		= 6;
+	displayedNumPrecision		        = 6;
 	labelOpacity				= 75;
 
-	zoomSpeed					= 1.0;
+	zoomSpeed				= 1.0;
 
 	autoComputeOctree			= ASK_USER;
 }
@@ -131,24 +131,24 @@ void ecvGui::ParamStruct::fromPersistentSettings()
 	bbDefaultCol		= ecvColor::Rgbaub(reinterpret_cast<unsigned char*>(settings.value("bbDefaultColor",			QByteArray::fromRawData((const char*)ecvColor::yellow.rgb,					c_ubColorArraySize)).toByteArray().data()));
 
 	lightDoubleSided			=                                      settings.value("lightDoubleSided",        true ).toBool();
-	drawBackgroundGradient		=                                      settings.value("backgroundGradient",      true ).toBool();
+	drawBackgroundGradient		        =                                      settings.value("backgroundGradient",      true ).toBool();
 	drawRoundedPoints			=                                      settings.value("drawRoundedPoints",       false).toBool();
 	decimateMeshOnMove			=                                      settings.value("meshDecimation",          true ).toBool();
 	minLoDMeshSize				=                                      settings.value("minLoDMeshSize",       2500000 ).toUInt();
 	decimateCloudOnMove			=                                      settings.value("cloudDecimation",         true ).toBool();
 	minLoDCloudSize				=                                      settings.value("minLoDCloudSize",     10000000 ).toUInt();
-	useVBOs						=                                      settings.value("useVBOs",                 true ).toBool();
+	useVBOs				        =                                      settings.value("useVBOs",                 true ).toBool();
 	displayCross				=                                      settings.value("crossDisplayed",          true ).toBool();
 	labelMarkerSize				= static_cast<unsigned>(std::max(0,    settings.value("labelMarkerSize",         5    ).toInt()));
-	colorScaleShowHistogram		=                                      settings.value("colorScaleShowHistogram", true ).toBool();
+	colorScaleShowHistogram		        =                                      settings.value("colorScaleShowHistogram", true ).toBool();
 	colorScaleUseShader			=                                      settings.value("colorScaleUseShader",     false).toBool();
 	//colorScaleShaderSupported	= not saved
 	colorScaleRampWidth			= static_cast<unsigned>(std::max(0,    settings.value("colorScaleRampWidth",      50  ).toInt()));
 	defaultFontSize				= static_cast<unsigned>(std::max(0,    settings.value("defaultFontSize",          10  ).toInt()));
 	labelFontSize				= static_cast<unsigned>(std::max(0,    settings.value("labelFontSize",            8   ).toInt()));
-	displayedNumPrecision		= static_cast<unsigned>(std::max(0,    settings.value("displayedNumPrecision",    6   ).toInt()));
+	displayedNumPrecision		        = static_cast<unsigned>(std::max(0,    settings.value("displayedNumPrecision",    6   ).toInt()));
 	labelOpacity				= static_cast<unsigned>(std::max(0,    settings.value("labelOpacity",             75  ).toInt()));
-	zoomSpeed					=                                      settings.value("zoomSpeed",                1.0 ).toDouble();
+	zoomSpeed				=                                      settings.value("zoomSpeed",                1.0 ).toDouble();
 	autoComputeOctree			= static_cast<ComputeOctreeForPicking>(settings.value("autoComputeOctree",   ASK_USER ).toInt());
 
 	settings.endGroup();

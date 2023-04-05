@@ -48,10 +48,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         CXX_VISIBILITY_PRESET hidden
         )
 
-cloudViewer_install_targets(${PROJECT_NAME})
-
 if (BUILD_TESTING)
     add_subdirectory(test)
 endif ()
 
-InstallSharedLibrary(TARGET ${PROJECT_NAME})
+if (NOT APPLE) # no need to copy targets on macos due to rpath
+    cloudViewer_install_targets(${PROJECT_NAME})
+    InstallSharedLibrary(TARGET ${PROJECT_NAME})
+endif ()

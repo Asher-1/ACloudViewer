@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.18)
 
 # PCL ENGINE BACKEND
 if (USE_PCL_BACKEND)
-
     # PCL ENGINE
     project(QPCL_ENGINE_LIB)
 
@@ -164,8 +163,10 @@ if (USE_PCL_BACKEND)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD)
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_PCL_BACKEND)
 
-    # install (shared) lib to specified destinations
-    InstallSharedLibrary(TARGET ${PROJECT_NAME})
+    if (NOT APPLE) # no need to copy targets on macos due to rpath
+        # install (shared) lib to specified destinations
+        InstallSharedLibrary(TARGET ${PROJECT_NAME})
+    endif ()
 
     #import PCL dlls (if any, WIN32 only)
     include(cmake/ExportPCLDlls.cmake)

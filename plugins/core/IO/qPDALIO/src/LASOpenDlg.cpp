@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                              CLOUDCOMPARE                              #
+//#                              CloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -180,7 +180,7 @@ void LASOpenDlg::setInfos(	QString filename,
 	outputPathLineEdit->setText(QFileInfo(filename).absolutePath());
 
 	//number of points
-	pointCountLineEdit->setText(QLocale().toString(pointCount));
+	pointCountLineEdit->setText(QLocale().toString(static_cast<uint>(pointCount)));
 
 	//bounding-box
 	bbTextEdit->setText(QString("X = [%1 ; %2]\nY = [%3 ; %4]\nZ = [%5 ; %6]")
@@ -212,4 +212,15 @@ bool LASOpenDlg::doLoadEVLR(size_t index) const
 bool LASOpenDlg::forced8bitRgbMode() const
 {
 	return force8bitRgbCheckBox->isChecked();
+}
+
+bool LASOpenDlg::getTimeShift(double& timeShift) const
+{
+	if (!timeShiftDoubleSpinBox->isEnabled())
+	{
+		return false;
+	}
+
+	timeShift = timeShiftDoubleSpinBox->value();
+	return true;
 }

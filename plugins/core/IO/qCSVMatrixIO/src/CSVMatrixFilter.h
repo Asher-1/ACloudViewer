@@ -22,7 +22,7 @@
 #include <FileIOFilter.h>
 
 //! CSV matrix I/O filter
-class /*QCC_IO_LIB_API*/ CSVMatrixFilter : public FileIOFilter
+class /*ECV_IO_LIB_API*/ CSVMatrixFilter : public FileIOFilter
 {
 public:
 	CSVMatrixFilter();

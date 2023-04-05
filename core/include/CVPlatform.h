@@ -35,7 +35,7 @@
 #else
 	#define CV_LINUX
 #endif
-#if defined(__x86_64__) || defined(__ppc64__)
+#if defined(__x86_64__) || defined(__ppc64__) || defined(__arm64__)
 	#define CV_ENV_64
 #else
 	#define CV_ENV_32

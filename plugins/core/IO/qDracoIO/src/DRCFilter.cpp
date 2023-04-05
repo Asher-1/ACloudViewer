@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                              CLOUDCOMPARE                              #
+//#                              CloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -26,7 +26,7 @@
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
-// CCCoreLib
+// CVCoreLib
 #include <CVPlatform.h>
 
 // draco
@@ -173,7 +173,7 @@ static CC_FILE_ERROR CCCloudToDraco(const ccGenericPointCloud& ccCloud,
 		const ccPointCloud& cc = static_cast<const ccPointCloud&>(ccCloud);
 		for (unsigned k = 0; k < cc.getNumberOfScalarFields(); ++k)
 		{
-			CCCoreLib::ScalarField* sf = cc.getScalarField(static_cast<int>(k));
+			cloudViewer::ScalarField* sf = cc.getScalarField(static_cast<int>(k));
 
 			draco::GeometryAttribute ga;
 			ga.Init(draco::GeometryAttribute::GENERIC, nullptr, 1, draco::DT_FLOAT32, false, DataTypeLength(draco::DT_FLOAT32), 0);

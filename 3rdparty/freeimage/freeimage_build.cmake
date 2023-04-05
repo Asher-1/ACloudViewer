@@ -4,7 +4,7 @@ if (WIN32)
     set(FREEIMAGE_URL https://kent.dl.sourceforge.net/project/freeimage/Binary%20Distribution/3.18.0/FreeImage3180Win32Win64.zip)
     set(FREEIMAGE_HASH 393d3df75b14cbcb4887da1c395596e2)
 else () # Linux or Mac
-    set(FREEIMAGE_URL https://kent.dl.sourceforge.net/project/freeimage/Source%20Distribution/3.18.0/FreeImage3180.zip)
+    set(FREEIMAGE_URL https://sourceforge.net/projects/freeimage/files/Source%20Distribution/3.18.0/FreeImage3180.zip/download)
     set(FREEIMAGE_HASH f8ba138a3be233a3eed9c456e42e2578)
 endif ()
 

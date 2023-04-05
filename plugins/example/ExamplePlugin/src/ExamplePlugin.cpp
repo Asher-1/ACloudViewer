@@ -59,7 +59,7 @@ void ExamplePlugin::onNewSelection( const ccHObject::Container &selectedEntities
 	//
 	//	for ( ccHObject *object : selectedEntities )
 	//	{
-	//		if ( object->getClassID() == CC_TYPES::VIEWPORT_2D_OBJECT )
+	//		if ( object->getClassID() == CV_TYPES::VIEWPORT_2D_OBJECT )
 	//		{
 	//			// ... do something with the viewports
 	//		}
