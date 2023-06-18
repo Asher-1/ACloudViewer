@@ -44,17 +44,17 @@ test -f docker_files/nomachine.deb || \
 	wget "https://www.nomachine.com/free/linux/64/deb" -O "docker_files/nomachine.deb"
 
 # DEPENDENCIES
-docker build \
+docker buildx build --platform=linux/amd64 \
 	--rm \
 	--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
 	--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
 	--build-arg "VTK_VERSION=${VTK_VERSION}" \
 	--build-arg "PCL_VERSION=${PCL_VERSION}" \
 	--tag "cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-	-f docker/Dockerfile_ubuntu_deps .
+	-f docker/Dockerfile_ubuntu_cpu_deps .
 
 # ErowCloudViewer
-#docker build \
+#docker buildx build --platform=linux/amd64 \
 #	--rm \
 #	--build-arg "CLOUDVIEWER_VERSION=${CLOUDVIEWER_VERSION}" \
 #	--build-arg "CUDA_VERSION=${CUDA_VERSION}" \

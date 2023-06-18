@@ -614,7 +614,7 @@ void SaveImage(const ccImage* image, const QString& scanGUID, e57::ImageFile& im
 		imageNode.set("name", e57::StringNode(imf, QString("Image %1").arg(s_absoluteImageIndex).toStdString()));
 
 	//Description
-	//imageNode.set("description", e57::StringNode(imf, "Imported from CloudCompare (EDF R&D / Telecom ParisTech)"));
+	//imageNode.set("description", e57::StringNode(imf, "Imported from ErowCloudViewer (EDF R&D / Telecom ParisTech)"));
 
 	// Add various sensor and version strings to image (TODO)
 	//scan.set("sensorVendor",			e57::StringNode(imf,sensorVendor));

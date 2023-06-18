@@ -1,32 +1,39 @@
 #!/bin/bash
 
-# install some dependence on host pc
-sudo apt-get install x11-xserver-utils && xhost +
+IP=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}')
+xhost + $IP
+DISPLAY=:0
+
 # sshÆÕÍ¨ÓÃ»§µÇÂ¼ÈÝÆ÷
-# ssh -p 10022 ubuntu@127.0.0.1
-# export DISPLAY=192.168.1.5:0.0
-export DISPLAY=:0
+# ssh -p 20022 ubuntu@127.0.0.1
+# export DISPLAY=192.168.1.5:0
+# brew install xquartz socat
+# socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\"
+# IP=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}')
+# xhost + $IP
+# export DISPLAY=:0
+# startxfce4 &
 
 # create container instance
-docker run -dit --runtime=nvidia --name=cloudviewer \
-  --shm-size="1g" \
+docker run -dit --name=cloudviewer_env \
+  --shm-size="2g" \
   --cap-add=SYS_PTRACE \
   --security-opt seccomp=unconfined --privileged \
-  -e DISPLAY=unix$DISPLAY \
+  -e DISPLAY=$IP$DISPLAY \
   -e GDK_SCALE \
   -e GDK_DPI_SCALE \
-  -p 10022:22 \
-  -p 14000:4000 \
-  -v /etc/localtime:/etc/localtime:ro \
+  -p 20022:22 \
+  -p 24000:4000 \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /media/yons/data/develop/pcl_projects/ErowCloudViewer/docker_cache/build:/opt/ErowCloudViewer/build \
-  -v /media/yons/data/develop/pcl_projects/ErowCloudViewer/docker_cache/install:/opt/ErowCloudViewer/install \
-  -v /media/yons/data/develop/pcl_projects/ErowCloudViewer/thirdparties:/opt/ErowCloudViewer/thirdparties \
+  -v /Users/asher/develop/code/github/ErowCloudViewer:/opt/ErowCloudViewer/ErowCloudViewer \
+  -v /Users/asher/develop/code/github/docker_cache/build:/opt/ErowCloudViewer/build \
+  -v /Users/asher/develop/code/github/docker_cache/install:/opt/ErowCloudViewer/install \
+  -v /Users/asher/develop/code/github/ErowCloudViewer/3rdparty_downloads:/opt/ErowCloudViewer/thirdparties \
   -v /Users/asher/develop/code/github/CloudViewer-ML:/opt/ErowCloudViewer/CloudViewer-ML \
-  cloudviewer-deps:develop-ubuntu18.04-cuda101
+  registry.cn-shanghai.aliyuncs.com/asher-ai/cloudviewer-deps:latest
 
 # attach into container instance
-docker exec -it cloudviewer /bin/bash
+docker exec -it cloudviewer_env /bin/bash
 
 ln -s /opt/Qt5.14.2/5.14.2/gcc_64/lib/libQt5X11Extras.so.5.14.2 /usr/lib/libQt5X11Extras.so.5
 export PATH="/opt/Qt5.14.2/5.14.2/gcc_64/bin:$PATH"
@@ -37,6 +44,7 @@ export QML2_IMPORT_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/qml:$QML2_IMPORT_PATH"
 # Build ErowCloudViewer
 export DISPLAY=:0  # DISPLAY must be consistent with host
 cd /opt/ErowCloudViewer
+
 if [ ! -d "build" ]; then # dir does not exist
   echo "creating dir build..."
   mkdir build
@@ -45,16 +53,21 @@ cd build
 
 cmakeWhlOptions=(-DDEVELOPER_BUILD=OFF
   -DCMAKE_BUILD_TYPE=Release
+  -DBUILD_WEBRTC=ON
   -DBUILD_JUPYTER_EXTENSION=ON
   -DBUILD_LIBREALSENSE=ON
   -DBUILD_AZURE_KINECT=ON
   -DBUILD_RPC_INTERFACE=ON
   -DBUILD_BENCHMARKS=OFF
   -DWITH_OPENMP=ON
+  -DUSE_SIMD=ON
+  -DWITH_SIMD=ON
+  -DBUILD_RECONSTRUCTION=ON
+  -DGLIBCXX_USE_CXX11_ABI=0
   -DBUILD_CUDA_MODULE=ON
-  -DBUILD_PYTORCH_OPS=ON
-  -DBUILD_TENSORFLOW_OPS=ON
-  -DBUNDLE_CLOUDVIEWER_ML=ON
+  -DBUILD_PYTORCH_OPS=OFF
+  -DBUILD_TENSORFLOW_OPS=OFF
+  -DBUNDLE_CLOUDVIEWER_ML=OFF
   -DCLOUDVIEWER_ML_ROOT=/opt/ErowCloudViewer/CloudViewer-ML
   -DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ErowCloudViewer/thirdparties
   -DPYTHON_EXECUTABLE=/root/miniconda3/bin/python3.6
@@ -72,7 +85,8 @@ make "-j$(nproc)" pip-package
 make "-j$(nproc)" conda-package
 make install "-j$(nproc)"
 
-cmakeGuiOptions=(-DDEVELOPER_BUILD=OFF
+cmakeGuiOptions=(
+                -DDEVELOPER_BUILD=OFF
                 -DCMAKE_BUILD_TYPE=Release
                 -DBUILD_JUPYTER_EXTENSION=ON
                 -DBUILD_LIBREALSENSE=ON
@@ -80,14 +94,22 @@ cmakeGuiOptions=(-DDEVELOPER_BUILD=OFF
                 -DBUILD_RPC_INTERFACE=ON
                 -DBUILD_BENCHMARKS=OFF
                 -DWITH_OPENMP=ON
-                -DBUILD_CUDA_MODULE=OFF
+                -DBUILD_WEBRTC=ON
+                -DUSE_SIMD=ON
+                -DWITH_SIMD=ON
+                -DBUILD_COLMAP_GUI=ON
+                -DBUILD_RECONSTRUCTION=ON
+                -DBUILD_OPENCV=ON
+                -DUSE_SYSTEM_OPENCV=ON
+                -DBUILD_CUDA_MODULE=ON
                 -DBUILD_PYTORCH_OPS=OFF
                 -DBUILD_TENSORFLOW_OPS=OFF
                 -DBUNDLE_CLOUDVIEWER_ML=OFF
-                -DGLIBCXX_USE_CXX11_ABI=ON
+                -DGLIBCXX_USE_CXX11_ABI=1
                 -DCVCORELIB_USE_CGAL=ON
                 -DCVCORELIB_SHARED=ON
                 -DCVCORELIB_USE_QT_CONCURRENT=ON
+                -DOPTION_USE_GDAL=ON
                 -DOPTION_USE_DXF_LIB=ON
                 -DOPTION_USE_RANSAC_LIB=ON
                 -DOPTION_USE_SHAPE_LIB=ON
@@ -96,18 +118,22 @@ cmakeGuiOptions=(-DDEVELOPER_BUILD=OFF
                 -DPLUGIN_IO_QCSV_MATRIX=ON
                 -DPLUGIN_IO_QE57=ON
                 -DPLUGIN_IO_QMESH=ON
-                -DPLUGIN_IO_QPDAL=ON
+                -DPLUGIN_IO_QPDAL=OFF
+                -DPLUGIN_IO_QLAS=ON
                 -DPLUGIN_IO_QPHOTOSCAN=ON
+                -DPLUGIN_IO_QDRACO=ON
                 -DPLUGIN_IO_QRDB=ON
                 -DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=ON
                 -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON
                 -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON
                 -DPLUGIN_STANDARD_QANIMATION=ON
+                -DQANIMATION_WITH_FFMPEG_SUPPORT=ON
                 -DPLUGIN_STANDARD_QCANUPO=ON
-                -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON
                 -DPLUGIN_STANDARD_QCOMPASS=ON
                 -DPLUGIN_STANDARD_QCSF=ON
                 -DPLUGIN_STANDARD_QFACETS=ON
+                -DPLUGIN_STANDARD_QCLOUDLAYERS=ON
+                -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON
                 -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON
                 -DPLUGIN_STANDARD_QM3C2=ON
                 -DPLUGIN_STANDARD_QMPLANE=ON
@@ -131,7 +157,7 @@ cmake "/opt/ErowCloudViewer/ErowCloudViewer" \
 make "-j$(nproc)"
 make install "-j$(nproc)"
 
-ENV DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket \
+DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket \
     USER=ubuntu \
     PASSWD=ubuntu \
     UID=1000 \
@@ -142,16 +168,17 @@ ENV DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket \
     LANGUAGE=zh_CN.UTF-8 \
     DEBIAN_FRONTEND=noninteractive
 
-RUN groupadd -f $USER \
+groupadd -f $USER \
     && useradd --create-home --no-log-init -g $USER $USER \
     && usermod -aG sudo $USER \
     && echo "$USER:$PASSWD" | chpasswd \
     && chsh -s /bin/bash $USER \
     && usermod  --uid $UID $USER \
-    && groupmod --gid $GID $USER
+    && groupmod --gid $GID $USER \
+    && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers
 
 # Install some dependences and xfce4 desktop
-RUN apt-get update --fix-missing -y \
+apt-get update --fix-missing -y \
     && apt install  --fix-missing -yq \
     openssh-server \
     bash-completion \
@@ -166,11 +193,11 @@ RUN apt-get update --fix-missing -y \
 	&& locale-gen $LANG \
 	&& /bin/sh -c LANG=C xdg-user-dirs-update --force
 
-COPY docker_files/google-chrome-stable_current_amd64.deb /opt
-COPY docker_files/nomachine.deb /opt
-RUN apt-get install -yf ./google-chrome-stable_current_amd64.deb \
+cp docker_files/google-chrome-stable_current_amd64.deb /opt
+docker_files/nomachine.deb /opt
+apt-get install -yf ./google-chrome-stable_current_amd64.deb \
     && rm ./google-chrome-stable_current_amd64.deb \
-    && apt-get install -y pulseaudio \
+    && apt-get install -y pulseaudio kmod \
     && mkdir -p /var/run/dbus \
     && dpkg -i ./nomachine.deb \
     && sed -i "s|#EnableClipboard both|EnableClipboard both |g" /usr/NX/etc/server.cfg \

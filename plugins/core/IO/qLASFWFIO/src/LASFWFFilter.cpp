@@ -567,7 +567,7 @@ CC_FILE_ERROR LASFWFFilter::saveToFile(ccHObject* entity,
                     // strncpy(reinterpret_cast<char*>(data + 4),
                     // qPrintable(f.sanitizedName), f.sanitizedName.length());
                     // //name strncpy(reinterpret_cast<char*>(data + 160),
-                    // "CloudCompare scalar field", 24); //description
+                    // "ErowCloudViewer scalar field", 24); //description
                     // lasheader.add_vlr("LASF_Spec", 4, 192, data, TRUE);
                 }
 

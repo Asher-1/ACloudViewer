@@ -54,7 +54,8 @@ constexpr const char* LasScalarField::NameFromId(LasScalarField::Id id)
 	case NearInfrared:
 		return LasNames::NearInfrared;
 	}
-	throw std::logic_error("unhandled id");
+	// it's a gcc bug, which is fixed in v6.1
+	// throw std::logic_error("unhandled id");
 }
 
 LasScalarField::Id LasScalarField::IdFromName(const char* name, unsigned targetPointFormat)

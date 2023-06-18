@@ -27,6 +27,7 @@
 #include "WidgetMap.h"
 #include "qPCL.h"
 
+#include <mutex>
 #include <thread>
 
 // ECV_DB_LIB

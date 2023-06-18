@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-# CloudCompare Masonry Manual Segmentation plugin
+# ErowCloudViewer Masonry Manual Segmentation plugin
 option(PLUGIN_STANDARD_MASONRY_QAUTO_SEG "Check to install QAutoSeg plugin" OFF)
 
 if (PLUGIN_STANDARD_MASONRY_QAUTO_SEG)

@@ -7,7 +7,6 @@
 CMakeLists.txt.user
 tmp/
 *.tmp
-dl/*
 *.swp
 *.run
 *.zip
@@ -116,7 +115,7 @@ pip-log.txt
 /build_64bits_msvc10/
 private_plugins
 CCCoreLibExport.h
-/.vs/CloudCompare/v15
+/.vs/ErowCloudViewer/v15
 /.vs/ProjectSettings.json
 /.vs/slnx.sqlite
 /.vs
@@ -219,3 +218,4 @@ docs/_out/
 docs/python_api/
 docs/Doxyfile
 docs/getting_started.rst
+/docker_files/

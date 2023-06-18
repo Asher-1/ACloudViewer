@@ -43,10 +43,10 @@ constexpr size_t LAS_VLR_HEADER_SIZE = 54;
 constexpr double SCAN_ANGLE_SCALE    = 0.06;
 
 /// This namespace regroups constants for all the names we use
-/// in CloudCompare's ScalarField system for the standard dimensions defined by the LAS Spec.
+/// in ErowCloudViewer's ScalarField system for the standard dimensions defined by the LAS Spec.
 ///
 /// Notice that RGB and Waveforms are missing, that is normal as they
-/// are not treated as scalar fields within CloudCompare.
+/// are not treated as scalar fields within ErowCloudViewer.
 namespace LasNames
 {
 	constexpr const char* Intensity         = "Intensity";

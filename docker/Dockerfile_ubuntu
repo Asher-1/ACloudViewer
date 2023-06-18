@@ -22,7 +22,7 @@ COPY . ${EROWCLOUDVIEWER_DEV}/ErowCloudViewer
 
 WORKDIR ${EROWCLOUDVIEWER_BUILD}
 
-RUN rm -rf ${EROWCLOUDVIEWER_DEV}/ErowCloudViewer/dl \
+RUN rm -rf ${EROWCLOUDVIEWER_DEV}/ErowCloudViewer/docker_files \
     && mv /usr/lib/x86_64-linux-gnu/libQt5* /tmp/
 
 # Build ErowCloudViewer whl package

@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# FFmpeg+CMake support for CloudCompare
+# FFmpeg+CMake support for ErowCloudViewer
 # ------------------------------------------------------------------------------
 
 # Find FFmpeg includes

@@ -136,13 +136,13 @@ if (APPLE)
     find_package(FreeImage REQUIRED)
 endif ()
 
-find_package(Boost REQUIRED COMPONENTS
-        program_options
-        filesystem
-        graph
-        system
-        atomic
-        unit_test_framework)
+#find_package(Boost REQUIRED COMPONENTS
+#        program_options
+#        filesystem
+#        graph
+#        system
+#        atomic
+#        unit_test_framework)
 
 set(OpenGL_GL_PREFERENCE GLVND)
 
