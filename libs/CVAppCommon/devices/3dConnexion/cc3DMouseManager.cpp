@@ -48,7 +48,7 @@ void cc3DMouseManager::enableDevice(bool state, bool silent) {
     if (state) {
         m3dMouseInput = new Mouse3DInput(this);
         if (m3dMouseInput->connect(m_appInterface->getMainWindow(),
-                                   "CloudCompare")) {
+                                   "ErowCloudViewer")) {
             connect(m3dMouseInput, &Mouse3DInput::sigMove3d, this,
                     &cc3DMouseManager::on3DMouseMove);
             connect(m3dMouseInput, &Mouse3DInput::sigReleased, this,

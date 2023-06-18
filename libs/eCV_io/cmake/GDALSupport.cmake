@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# GDAL support for CloudCompare
+# GDAL support for ErowCloudViewer
 # ------------------------------------------------------------------------------
 
 option( OPTION_USE_GDAL "Build with GDAL support" OFF )

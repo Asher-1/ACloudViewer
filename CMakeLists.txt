@@ -272,6 +272,9 @@ if (BUILD_CUDA_MODULE
     add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
     message(WARNING "Visual Studio 16.10 (MSVC 19.29) introduced a compiler bug when compiling CUDA code with C++14. "
             "Workaround this bug by setting the CUDA standard to C++17.")
+elseif (BUILD_CUDA_MODULE) # fix 'Target requires the language dialect "CUDA17"' issues on linux
+    set(CMAKE_CUDA_STANDARD 14)
+    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 endif ()
 
 # CMake modules

@@ -1,4 +1,4 @@
-# Create a new CMake file for CloudCompare since the included ones are old-style
+# Create a new CMake file for ErowCloudViewer since the included ones are old-style
 
 project( quazip )
 

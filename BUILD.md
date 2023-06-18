@@ -185,7 +185,12 @@ LAS/LAZ file support on Windows can also be achieved by compiling
 -   `LASZIP_INCLUDE_DIR`: LAStools/LASzip/src
 -   `LASLIB_RELEASE_LIBRARY` or `LASLIB_DEBUG_LIBRARY`, depending on build type: the compiled library, e.g. `LAStools/LASlib/VC14/lib/x64/LASlibVC14.lib`
 
-`Note`: brew install laszip [on macos]
+`Note`: 
+```
+brew install laszip [on macos]
+https://github.com/LASzip/LASzip/releases/download/3.4.3/laszip-src-3.4.3.tar.gz [compile from source on linux]
+```
+
 
 ### [Optional] Setup for LAS using PDAL [Deprecated]
 

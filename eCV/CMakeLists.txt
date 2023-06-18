@@ -118,7 +118,7 @@ if (WIN32)
             TARGET
             ${PROJECT_NAME}
             DEPLOY_PATH
-            ${CLOUDCOMPARE_DEST_FOLDER}
+            ${EROWCLOUDVIEWER_DEST_FOLDER}
     )
 else ()
     DeployQt(

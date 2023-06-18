@@ -1,6 +1,6 @@
 option( PLUGIN_STANDARD_QSRA "Install qSRA (Surface of Revolution Analysis) plugin" OFF )
 
-# CloudCompare 'Surface of Revolution Analysis' plugin
+# ErowCloudViewer 'Surface of Revolution Analysis' plugin
 if( PLUGIN_STANDARD_QSRA )
 	# DXF support should be enabled for this plugin! (not mandatory though)
 	if( NOT OPTION_USE_DXF_LIB )

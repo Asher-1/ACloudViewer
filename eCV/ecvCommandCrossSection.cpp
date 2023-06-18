@@ -21,7 +21,7 @@ bool CommandCrossSection::process(ccCommandLineInterface &cmd)
 {
 	cmd.print("[CROSS SECTION]");
 
-	static QString s_xmlCloudCompare = "CloudCompare";
+	static QString s_xmlCloudCompare = "ErowCloudViewer";
 	static QString s_xmlBoxThickness = "BoxThickness";
 	static QString s_xmlBoxCenter = "BoxCenter";
 	static QString s_xmlRepeatDim = "RepeatDim";
@@ -53,7 +53,7 @@ bool CommandCrossSection::process(ccCommandLineInterface &cmd)
 		//read file content
 		QXmlStreamReader stream(&file);
 
-		//expected: CloudCompare
+		//expected: ErowCloudViewer
 		if (!stream.readNextStartElement()
 		        || stream.name() != s_xmlCloudCompare)
 		{
