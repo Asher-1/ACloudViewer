@@ -6,14 +6,16 @@
 class QString;
 class QXmlStreamAttributes;
 
-struct CommandCrossSection : public ccCommandLineInterface::Command
-{
-	CommandCrossSection();
+struct CommandCrossSection : public ccCommandLineInterface::Command {
+    CommandCrossSection();
 
-	bool process(ccCommandLineInterface& cmd) override;
-	
+    bool process(ccCommandLineInterface& cmd) override;
+
 private:
-	bool readVector(const QXmlStreamAttributes& attributes, CCVector3& P, QString element, const ccCommandLineInterface& cmd);
+    bool readVector(const QXmlStreamAttributes& attributes,
+                    CCVector3& P,
+                    QString element,
+                    const ccCommandLineInterface& cmd);
 };
 
-#endif //COMMAND_CROSS_SECTION_HEADER
+#endif  // COMMAND_CROSS_SECTION_HEADER
