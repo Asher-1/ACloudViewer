@@ -1,59 +1,57 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #ifndef ECV_COLOR_GRADIENT_DLG_HEADER
 #define ECV_COLOR_GRADIENT_DLG_HEADER
 
-//Qt
-#include <QColor>
-
+// Qt
 #include <ui_colorGradientDlg.h>
 
+#include <QColor>
+
 //! Dialog to define a color gradient (default, with 2 colors, banding, etc.)
-class ccColorGradientDlg : public QDialog, public Ui::ColorGradientDialog
-{
-	Q_OBJECT
+class ccColorGradientDlg : public QDialog, public Ui::ColorGradientDialog {
+    Q_OBJECT
 
 public:
+    //! Default constructor
+    explicit ccColorGradientDlg(QWidget* parent);
 
-	//! Default constructor
-	explicit ccColorGradientDlg(QWidget* parent);
+    //! Gradient types
+    enum GradientType { Default, TwoColors, Banding };
 
-	//! Gradient types
-	enum GradientType { Default, TwoColors, Banding };
+    //! Returns selected gradient type
+    GradientType getType() const;
+    //! Sets the currently activated type
+    void setType(GradientType type);
 
-	//! Returns selected gradient type
-	GradientType getType() const;
-	//! Sets the currently activated type
-	void setType(GradientType type);
+    //! Returns the two colors of the gradient ('TwoColors' mode)
+    void getColors(QColor& first, QColor& second) const;
 
-	//! Returns the two colors of the gradient ('TwoColors' mode)
-	void getColors(QColor& first, QColor& second) const;
+    //! Returns the frequency of the gradient ('Banding' mode)
+    double getBandingFrequency() const;
 
-	//! Returns the frequency of the gradient ('Banding' mode)
-	double getBandingFrequency() const;
-
-	//! Returns the ramp dimension
-	unsigned char getDimension() const;
+    //! Returns the ramp dimension
+    unsigned char getDimension() const;
 
 protected slots:
 
-	void changeFirstColor();
-	void changeSecondColor();
+    void changeFirstColor();
+    void changeSecondColor();
 };
 
-#endif // ECV_COLOR_GRADIENT_DLG_HEADER
+#endif  // ECV_COLOR_GRADIENT_DLG_HEADER
