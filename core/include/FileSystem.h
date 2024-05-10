@@ -28,7 +28,7 @@
 #define CV_FILESYSTEM_HEADER
 
 #include "CVCoreLib.h"
-
+#include "Helper.h"
 #include <functional>
 #include <string>
 #include <vector>
@@ -36,6 +36,82 @@
 namespace cloudViewer {
 namespace utility {
 namespace filesystem {
+
+// Join multiple paths into one path.
+template <typename... T>
+std::string JoinPaths(T const &...paths) {
+    std::string result;
+    if (sizeof...(paths) == 1) {
+        int unpack[]{0, (result = std::string(paths), 0)...};
+        static_cast<void>(unpack);
+        return result;
+    } else {
+        int unpack[]{0,
+                     (result = result.empty() ? std::string(paths)
+                                              : result + "/" + std::string(paths),
+                      0)...};
+        static_cast<void>(unpack);
+    }
+
+    if (StringContains(result, "///")) {
+        result = StringReplace(result, "///", "/");
+    }
+    if (StringContains(result, "//")) {
+        result = StringReplace(result, "//", "/");
+    }
+    if (StringContains(result, "\\\\")) {
+        result = StringReplace(result, "\\\\", "/");
+    }
+    if (StringContains(result, "\\")) {
+        result = StringReplace(result, "\\", "/");
+    }
+
+    if (StringEndsWith(result, "//")) {
+        result = StringReplaceLast(result, "//", "");
+    } else if (StringEndsWith(result, "/")) {
+        result = StringReplaceLast(result, "/", "");
+    }
+    return result;
+}
+
+std::string CV_CORE_LIB_API GetEnvVar(const std::string &env_var);
+
+// Append trailing slash to string if it does not yet end with a slash.
+std::string CV_CORE_LIB_API EnsureTrailingSlash(const std::string &str);
+
+// Check whether file name has the file extension (case insensitive).
+bool CV_CORE_LIB_API HasFileExtension(const std::string &file_name, const std::string &ext);
+
+// Split the path into its root and extension, for example,
+// "dir/file.jpg" into "dir/file" and ".jpg".
+void CV_CORE_LIB_API SplitFileExtension(const std::string &path, std::string *root,
+                        std::string *ext);
+
+/**
+ * @brief Copy a file.
+ * @param from The file path to copy from.
+ * @param to The file path to copy to.
+ * @return If the action is successful.
+ */
+bool CV_CORE_LIB_API CopyFile(const std::string &from, const std::string &to);
+
+/**
+ * @brief Copy a directory.
+ * @param from The path to copy from [Note: not including 'from' folder].
+ * @param to The path to copy to.
+ * @return If the action is successful.
+ */
+bool CV_CORE_LIB_API CopyDir(const std::string &from, const std::string &to);
+
+/**
+ * @brief Copy a file or directory.
+ * @param from The path to copy from.
+ * @param to The path to copy to.
+ * @param include_parent_dir Whether copy parent directory or not.
+ * @return If the action is successful.
+ */
+bool CV_CORE_LIB_API Copy(const std::string &from, const std::string &to,
+          bool include_parent_dir = false, const std::string &extname = "");
 
 std::string CV_CORE_LIB_API GetFileExtensionInLowerCase(const std::string &filename);
 
@@ -55,7 +131,19 @@ std::vector<std::string> CV_CORE_LIB_API GetPathComponents(const std::string& pa
 
 bool CV_CORE_LIB_API ChangeWorkingDirectory(const std::string &directory);
 
+bool CV_CORE_LIB_API IsFile(const std::string &filename);
+
+bool CV_CORE_LIB_API IsDirectory(const std::string &directory);
+
 bool CV_CORE_LIB_API DirectoryExists(const std::string &directory);
+
+/**
+ * @brief Check if a specified directory specified by directory_path exists.
+ *        If not, recursively create the directory (and its parents).
+ * @param directory_path Directory path.
+ * @return If the directory does exist or its creation is successful.
+ */
+bool CV_CORE_LIB_API EnsureDirectory(const std::string &directory_path);
 
 bool CV_CORE_LIB_API MakeDirectory(const std::string &directory);
 

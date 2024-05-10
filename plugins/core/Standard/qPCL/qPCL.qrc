@@ -26,5 +26,6 @@
         <file>PclAlgorithms/icons/bspline_curve.png</file>
         <file>PclAlgorithms/icons/bspline_surface.png</file>
         <file>PclAlgorithms/icons/MarchingCubeReconstruction.png</file>
+        <file>PclAlgorithms/icons/fastGlobalRegistration.png</file>
     </qresource>
 </RCC>

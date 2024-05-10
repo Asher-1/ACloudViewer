@@ -1249,8 +1249,8 @@ void MainWindow::About() {
       this, tr("About"),
       QString().sprintf("<span style='font-weight:normal'><b>%s</b><br />"
                         "<small>(%s)</small><br /><br />"
-                        "<b>Author:</b> Johannes L. Schönberger<br /><br />"
-                        "<b>Email:</b> jsch-at-demuc-dot-de</span>",
+                        "<b>Author:</b>Asher<br /><br />"
+                        "<b>Email:</b>ludahai19@163.com</span>",
                         GetVersionInfo().c_str(), GetBuildInfo().c_str()));
 }
 

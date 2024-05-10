@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                              CLOUDCOMPARE                              #
+//#                              CloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -15,8 +15,8 @@
 //#                                                                        #
 //##########################################################################
 
-#ifndef PLUGIN_LAS_OPEN_DIALOG
-#define PLUGIN_LAS_OPEN_DIALOG
+#ifndef CC_LAS_OPEN_DIALOG
+#define CC_LAS_OPEN_DIALOG
 
 //Local
 #include "LASFields.h"
@@ -39,7 +39,7 @@ class LASOpenDlg : public QDialog, public Ui::OpenLASFileDialog
 public:
 
 	//! Default constructor
-	explicit LASOpenDlg(QWidget* parent = 0);
+	explicit LASOpenDlg(QWidget* parent = nullptr);
 
 	//! Sets available dimensions
 	void setDimensions(const std::vector<std::string>& dimensions);
@@ -71,6 +71,9 @@ public:
 	//! Resets the "apply all" flag (if set)
 	void resetApplyAll();
 
+	//! Returns the timeshift (if any)
+	bool getTimeShift(double& timeShift) const;
+
 protected:
 
 	void onApplyAll();
@@ -81,4 +84,4 @@ protected:
 	bool m_autoSkip;
 };
 
-#endif // PLUGIN_LAS_OPEN_DIALOG
+#endif //CC_LAS_OPEN_DIALOG

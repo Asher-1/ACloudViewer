@@ -1,45 +1,40 @@
 #pragma once
 
-//Qt
-#include <QWebSocketServer>
-#include <QWebSocket>
-#include <QObject>
+// Qt
 #include <QMap>
-//STL
+#include <QObject>
+#include <QWebSocket>
+#include <QWebSocketServer>
+// STL
 #include <functional>
 
-struct JsonRPCResult
-{
-    static JsonRPCResult error(int code, QString message)
-	{
-		JsonRPCResult result;
-		{
-			result.isError = true;
-			result.error_code = code;
-			result.error_message = message;
-		}
+struct JsonRPCResult {
+    static JsonRPCResult error(int code, QString message) {
+        JsonRPCResult result;
+        {
+            result.isError = true;
+            result.error_code = code;
+            result.error_message = message;
+        }
         return result;
     }
 
-	static JsonRPCResult success(QVariant value)
-	{
-		JsonRPCResult result;
-		{
-			result.isError = false;
-			result.result = value;
-		}
+    static JsonRPCResult success(QVariant value) {
+        JsonRPCResult result;
+        {
+            result.isError = false;
+            result.result = value;
+        }
         return result;
     }
 
-	bool isError{true};
+    bool isError{true};
     int error_code{-32601};
     QString error_message = "Method not found";
     QVariant result;
-
 };
 
-class JsonRPCServer : public QObject
-{
+class JsonRPCServer : public QObject {
     Q_OBJECT
 public:
     explicit JsonRPCServer(QObject *parent = nullptr);
@@ -59,5 +54,5 @@ private slots:
 
 private:
     QWebSocketServer *ws_server{nullptr};
-    QList<QWebSocket * > connections;
+    QList<QWebSocket *> connections;
 };

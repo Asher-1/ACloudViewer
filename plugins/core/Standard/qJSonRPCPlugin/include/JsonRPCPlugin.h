@@ -29,15 +29,15 @@
 	the name, authors, maintainers, icon, etc..
 
 	The one method you are required to implement is 'getActions'. This should
-	return all actions (QAction objects) for the plugin. CloudCompare will
+	return all actions (QAction objects) for the plugin. ErowCloudViewer will
 	automatically add these with their icons in the plugin toolbar and to the
 	plugin menu. If	your plugin returns	several actions, CC will create a
 	dedicated toolbar and a	sub-menu for your plugin. You are responsible for
 	connecting these actions to	methods in your plugin.
 
 	Use the ccStdPluginInterface::m_app variable for access to most of the CC
-	components (database, 3D views, console, etc.) - see the ccMainAppInterface
-	class in ccMainAppInterface.h.
+	components (database, 3D views, console, etc.) - see the ecvMainAppInterface
+	class in ecvMainAppInterface.h.
 **/
 class JsonRPCPlugin : public QObject, public ccStdPluginInterface
 {
@@ -69,6 +69,6 @@ private:
 protected:
     // jcon::JsonRpcTcpServer rpc_server;
     // QTcpServer rpc_server;
-    // QWebSocketServer wsrpc_server(QStringLiteral("CloudCompare"), QWebSocketServer::NonSecureMode);
+    // QWebSocketServer wsrpc_server(QStringLiteral("ErowCloudViewer"), QWebSocketServer::NonSecureMode);
     JsonRPCServer rpc_server;
 };

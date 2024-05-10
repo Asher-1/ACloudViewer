@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-
 set( CV_PLUGIN_TARGET_LIST "" CACHE INTERNAL "Internal plugin list" )
 
 # AddPlugin should be called once for each plugin.
@@ -99,10 +97,10 @@ function( AddPlugin )
 		CVPluginStub
 	)
 
-	# On macOS, copy the plugin to the ccPlugins directory at the top level
+	# On macOS, copy the plugin to the plugins directory at the top level
 	# post build so we can find it without installing everything.
 	if( APPLE )
-		set( PLUGINS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/ecvPlugins" )
+		set( PLUGINS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/cvPlugins" )
 		
 		if( NOT EXISTS PLUGINS_OUTPUT_DIR )
 			file( MAKE_DIRECTORY "${PLUGINS_OUTPUT_DIR}" )

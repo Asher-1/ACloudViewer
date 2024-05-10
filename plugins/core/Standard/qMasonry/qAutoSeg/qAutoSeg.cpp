@@ -141,7 +141,9 @@ double optRotY(ccPointCloud *&cloud) {
 
 	std::vector<int> v(cloud->size());
 	std::iota(v.begin(), v.end(), 0);
-	std::random_shuffle(v.begin(), v.end());
+        std::random_device rd;   // non-deterministic generator
+        std::mt19937 gen(rd());  // to seed mersenne twister.
+        std::shuffle(v.begin(), v.end(), rd);
 	v.erase(v.begin(), v.begin() + (int)floor(cloud->size()));
 
 	for (size_t i = 0; i < cloud->size(); i++)
@@ -200,7 +202,9 @@ void rotY(ccPointCloud *&cloud, double th0) {
 
 	std::vector<int> v(cloud->size());
 	std::iota(v.begin(), v.end(), 0);
-	std::random_shuffle(v.begin(), v.end());
+        std::random_device rd;   // non-deterministic generator
+        std::mt19937 gen(rd());  // to seed mersenne twister.
+        std::shuffle(v.begin(), v.end(), rd);
 	v.erase(v.begin(), v.begin() + (int)floor(cloud->size()));
 
 	for (size_t i = 0; i < cloud->size(); i++)
@@ -1428,7 +1432,10 @@ void ccAutoSeg::doAction()
 
 	std::vector<int> v2(cloud0->size());
 	std::iota(v2.begin(), v2.end(), 0);
-	std::random_shuffle(v2.begin(), v2.end());
+
+        std::random_device rd;   // non-deterministic generator
+        std::mt19937 gen(rd());  // to seed mersenne twister.
+	std::shuffle(v2.begin(), v2.end(), rd);
 
 	std::vector<int> v;
 	int nbSub;

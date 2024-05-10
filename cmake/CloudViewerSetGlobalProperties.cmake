@@ -1,9 +1,73 @@
+include(CloudViewerMakeHardeningFlags)
+cloudViewer_make_hardening_flags(HARDENING_CFLAGS HARDENING_LDFLAGS)
+cloudViewer_make_hardening_definitions(HARDENING_DEFINITIONS)
+message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS}")
+message(STATUS "Using security hardening linker flags: ${HARDENING_LDFLAGS}")
+message(STATUS "Using security hardening compiler definitions: ${HARDENING_DEFINITIONS}")
+
+# cloudViewer_enable_strip(target)
+#
+# Enable binary strip. Only effective on Linux or macOS.
+function(cloudViewer_enable_strip target)
+    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
+    # (from pybind11)
+    # macOS: -x: strip local symbols
+    # Linux: defaults
+    if(NOT DEVELOPER_BUILD AND UNIX AND CMAKE_STRIP)
+        get_target_property(target_type ${target} TYPE)
+        if(target_type MATCHES MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
+            add_custom_command(TARGET ${target} POST_BUILD
+                    COMMAND $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
+                    $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
+                    COMMAND_EXPAND_LISTS)
+        endif()
+    endif()
+endfunction()
+
 # cloudViewer_set_global_properties(target)
 #
 # Sets important project-related properties to <target>.
 function(cloudViewer_set_global_properties target)
     # Tell CMake we want a compiler that supports C++14 features
     target_compile_features(${target} PUBLIC cxx_std_14)
+
+    # Detect compiler id and version for utility::CompilerInfo
+    # - CLOUDVIEWER_CXX_STANDARD
+    # - CLOUDVIEWER_CXX_COMPILER_ID
+    # - CLOUDVIEWER_CXX_COMPILER_VERSION
+    # - CLOUDVIEWER_CUDA_COMPILER_ID       # Empty if not BUILD_CUDA_MODULE
+    # - CLOUDVIEWER_CUDA_COMPILER_VERSION  # Empty if not BUILD_CUDA_MODULE
+    if (NOT CMAKE_CXX_STANDARD)
+        message(FATAL_ERROR "CMAKE_CXX_STANDARD must be defined globally.")
+    endif()
+
+    target_compile_definitions(${target} PRIVATE CLOUDVIEWER_CXX_STANDARD="${CMAKE_CXX_STANDARD}")
+    target_compile_definitions(${target} PRIVATE CLOUDVIEWER_CXX_COMPILER_ID="${CMAKE_CXX_COMPILER_ID}")
+    target_compile_definitions(${target} PRIVATE CLOUDVIEWER_CXX_COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}")
+    target_compile_definitions(${target} PRIVATE CLOUDVIEWER_CUDA_COMPILER_ID="${CMAKE_CUDA_COMPILER_ID}")
+    target_compile_definitions(${target} PRIVATE CLOUDVIEWER_CUDA_COMPILER_VERSION="${CMAKE_CUDA_COMPILER_VERSION}")
+
+    # std::filesystem (C++17) or std::experimental::filesystem (C++14)
+    #
+    # Ref: https://en.cppreference.com/w/cpp/filesystem:
+    #      Using this library may require additional compiler/linker options.
+    #      GNU implementation prior to 9.1 requires linking with -lstdc++fs and
+    #      LLVM implementation prior to LLVM 9.0 requires linking with -lc++fs.
+    # Ref: https://gitlab.kitware.com/cmake/cmake/-/issues/17834
+    #      It's non-trivial to determine the link flags for CMake.
+    #
+    # The linkage can be "-lstdc++fs" or "-lc++fs" or ""(empty). In our
+    # experiments, the behaviour doesn't quite match the specifications.
+    #
+    # - On Ubuntu 20.04:
+    #   - "-lstdc++fs" works with with GCC 7/10 and Clang 7/12
+    #   - "" does not work with GCC 7/10 and Clang 7/12
+    #
+    # - On latest macOS/Windows with the default compiler:
+    #   - "" works.
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(${target} PRIVATE stdc++fs)
+    endif()
 
     # Colorize GCC/Clang terminal outputs
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -57,7 +121,7 @@ function(cloudViewer_set_global_properties target)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
     endif()
 
-    if(NOT WITH_OPENMP)
+    if(UNIX AND NOT WITH_OPENMP)
         target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
     endif()
     if(WIN32)
@@ -96,27 +160,35 @@ function(cloudViewer_set_global_properties target)
     endif()
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>")
 
+    # Require 64-bit indexing in vectorized code
+    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--addressing=64>)
+
+    # Set architecture flag
+    if(LINUX_AARCH64)
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=aarch64>)
+    else()
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=x86-64>)
+    endif()
+
+    # Turn off fast math for IntelLLVM DPC++ compiler.
+    # Fast math does not work with some of our NaN handling logics.
+    target_compile_options(${target} PRIVATE
+            $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-ffp-contract=on>)
+    target_compile_options(${target} PRIVATE
+            $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>)
+
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
 
+    # Enable strip
+    cloudViewer_enable_strip(${target})
+
     # Download test data files from ext_cloudViewer_downloads repo.
     add_dependencies(${target} ext_cloudViewer_downloads)
 
-    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
-    # (from pybind11)
-    # macOS: -x: strip local symbols
-    # Linux: defaults
-    if(UNIX AND CMAKE_STRIP)
-        get_target_property(target_type ${target} TYPE)
-        if(target_type MATCHES
-                MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
-            add_custom_command(TARGET ${target} POST_BUILD
-                COMMAND
-                $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
-                $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
-                COMMAND_EXPAND_LISTS)
-        endif()
-    endif()
-
+    # Harderning flags
+    target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>")
+    target_link_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>")
+    target_compile_definitions(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_DEFINITIONS}>")
 endfunction()

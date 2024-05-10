@@ -20,6 +20,7 @@
 #include "QRoundProgressBar.h"
 
 #include <QtGui/QPainter>
+#include <QtGui/QPainterPath>
 
 
 QRoundProgressBar::QRoundProgressBar(QWidget *parent) :

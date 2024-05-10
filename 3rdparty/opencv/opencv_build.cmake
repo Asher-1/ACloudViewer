@@ -1,68 +1,107 @@
 include(ExternalProject)
 
-set(ZLIB_CMAKE_FLAGS -DZLIB_ROOT=${ZLIB_INCLUDE_DIRS}/../)
-set(TBB_CMAKE_FLAGS -DTBB_INCLUDE_DIRS:PATH=${STATIC_TBB_INCLUDE_DIR} -DTBB_LIBRARIES=${STATIC_TBB_LIBRARIES})
-set(PNG_CMAKE_FLAGS -DPNG_LIBRARY=${LIBPNG_LIB_DIR}/lib${LIBPNG_LIBRARIES}.a -DPNG_PNG_INCLUDE_DIR=${LIBPNG_INCLUDE_DIRS})
-
+set(OPENCV_VERSION_FILE "4.1.1.zip")
+file(GLOB PATCH_FILES "${CloudViewer_3RDPARTY_DIR}/opencv/boostdesc_bgm/*.i")
 ExternalProject_Add(
-  ext_opencv_contrib
-  PREFIX opencv_contrib
-  URL https://github.com/opencv/opencv_contrib/archive/4.5.1.zip
-  URL_MD5 ddb4f64d6cf31d589a8104655d39c99b
-  BUILD_ALWAYS 0
-  UPDATE_COMMAND ""
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
-  INSTALL_COMMAND ""
+        ext_opencv_contrib
+        PREFIX opencv_contrib
+        URL https://github.com/opencv/opencv_contrib/archive/${OPENCV_VERSION_FILE}
+        URL_MD5 a00c9f7edde2631759f6ed18e17d8dfb
+        DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/opencv_contrib"
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        CONFIGURE_COMMAND ""
+        PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${PATCH_FILES} <SOURCE_DIR>/modules/xfeatures2d/src
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
 )
 
 ExternalProject_Get_Property(ext_opencv_contrib SOURCE_DIR)
-set(opencv_contrib_SOURCE_DIR ${SOURCE_DIR})
+set(OPENCV_CONTRIB_SOURCE_DIR "${SOURCE_DIR}/modules")
 
 ExternalProject_Add(
-  ext_opencv
-  PREFIX opencv
-  URL https://github.com/opencv/opencv/archive/4.5.1.zip
-  URL_MD5 cc13d83c3bf989b0487bb3798375ee08
-  UPDATE_COMMAND ""
-  BUILD_IN_SOURCE ON
-  BUILD_ALWAYS 0
-  CONFIGURE_COMMAND ${CMAKE_COMMAND}
-    -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
-    -DOPENCV_EXTRA_MODULES_PATH=${opencv_contrib_SOURCE_DIR}/modules
-    ${ZLIB_CMAKE_FLAGS} ${TBB_CMAKE_FLAGS}
-    ${TIFF_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS}
-    -DBUILD_SHARED_LIBS=OFF
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DWITH_TBB=ON
-    -DWITH_FFMPEG=${BUILD_FFMPEG}
-    -DBUILD_opencv_python2=OFF
-    -DBUILD_opencv_python3=OFF
-    -DWITH_GTK_2_X=OFF
-    -DWITH_V4L=OFF
-    -DINSTALL_C_EXAMPLES=OFF
-    -DINSTALL_PYTHON_EXAMPLES=OFF
-    -DBUILD_EXAMPLES=OFF
-    -DWITH_QT=OFF
-    -DWITH_OPENGL=OFF
-    -DWITH_VTK=OFF
-    -DWITH_OPENEXR=OFF  # Build error on IlmBase includes without "OpenEXR/" prefix
-    -DENABLE_PRECOMPILED_HEADERS=OFF
-    -DWITH_CUDA=OFF
-    -DWITH_OPENCL=OFF
-    -DBUILD_TESTS=OFF
-    -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,xfeatures2d,version
-    <SOURCE_DIR>
-  BUILD_COMMAND $(MAKE)
-
-  DEPENDS opencv_contrib
-          3rdparty_tbb
-          3rdparty_libpng
+        ext_opencv
+        PREFIX opencv
+        URL https://github.com/opencv/opencv/archive/${OPENCV_VERSION_FILE}
+        URL_MD5 aa6df0e554f27d5a707ead76f050712b
+        DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/opencv"
+        UPDATE_COMMAND ""
+        BUILD_IN_SOURCE OFF
+        BUILD_ALWAYS 0
+        CMAKE_ARGS
+        ${ExternalProject_CMAKE_ARGS_hidden}
+        -DBUILD_SHARED_LIBS=ON
+        -DOPENCV_EXTRA_MODULES_PATH=${OPENCV_CONTRIB_SOURCE_DIR}
+        -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
+        -DOPENCV_ENABLE_NONFREE=ON
+        -DWITH_TBB=OFF
+        -DWITH_FFMPEG=OFF
+        -DBUILD_JASPER=ON
+        -DBUILD_JPEG=ON            #编译opencv 3rdparty自带的libjpeg
+        -DBUILD_PNG=ON             #编译opencv 3rdparty自带的libpng
+        -DBUILD_PROTOBUF=OFF       #编译opencv 3rdparty自带的libprotobuf
+        -DBUILD_TIFF=ON            #编译opencv 3rdparty自带的libtiff
+        -DBUILD_ZLIB=ON            #编译opencv 3rdparty自带的libzlib
+        -DBUILD_WEBP=ON            #编译opencv 3rdparty自带的libwebp
+        -DBUILD_opencv_world=ON
+        -DBUILD_opencv_core=ON
+        -DBUILD_opencv_highgui=ON
+        -DBUILD_opencv_imgcodecs=ON
+        -DBUILD_opencv_imgproc=ON
+        -DBUILD_opencv_calib3d=ON
+        -DBUILD_opencv_features2d=ON
+        -DBUILD_opencv_flann=ON
+        -DBUILD_opencv_photo=ON
+        -DWITH_OPENEXR=ON  # Build error on IlmBase includes without "OpenEXR/" prefix
+        -DBUILD_opencv_xfeatures2d=ON
+        -DBUILD_JAVA=OFF
+        -DBUILD_opencv_sfm=OFF # disabled ceres dependence compiling issues [only support 1.x.x for ceres]
+        -DBUILD_opencv_apps=OFF
+        -DBUILD_opencv_python2=OFF
+        -DBUILD_opencv_python3=OFF
+        -DBUILD_opencv_python_bindings_generator=OFF
+        -DBUILD_PERF_TESTS=OFF
+        -DBUILD_opencv_gapi=OFF
+        -DBUILD_opencv_java_bindings_generator=OFF
+        -DBUILD_opencv_face=OFF
+        -DBUILD_opencv_js=OFF
+        -DBUILD_opencv_dnn=OFF
+        -DBUILD_opencv_ml=OFF
+        -DBUILD_opencv_objdetect=OFF
+        -DBUILD_opencv_xobjdetect=OFF
+        -DBUILD_opencv_dnn_objdetect=OFF
+        -DBUILD_opencv_optflow=OFF
+        -DBUILD_opencv_stitching=OFF
+        -DBUILD_opencv_ts=OFF
+        -DBUILD_opencv_video=ON
+        -DBUILD_opencv_videoio=ON
+        -DWITH_GTK=ON
+        -DWITH_GTK_2_X=ON
+        -DWITH_V4L=OFF
+        -DWITH_CAROTENE=OFF
+        -DWITH_OPENGL=OFF
+        -DWITH_OPENCL=OFF
+        -DWITH_LAPACK=OFF
+        -DENABLE_PRECOMPILED_HEADERS=OFF
+        -DINSTALL_C_EXAMPLES=OFF
+        -DINSTALL_PYTHON_EXAMPLES=OFF
+        -DBUILD_EXAMPLES=OFF
+        -DWITH_QT=OFF
+        -DWITH_IPP=OFF # disabled ippicv acceleration on intel chips
+        -DWITH_VTK=OFF
+        -DWITH_CUDA=OFF
+        -DBUILD_TESTS=OFF
+        # -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,version
+        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        DEPENDS ext_opencv_contrib
 )
 ExternalProject_Get_Property(ext_opencv INSTALL_DIR)
-set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4 -DOPENCV_DIR=${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4)
-set(OPENCV_INCLUDE_DIRS ${INSTALL_DIR}/include/)
-set(OPENCV_LIB_DIR ${INSTALL_DIR}/lib)
-set(OPENCV_LIBRARIES opencv)
+set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR}/cmake/opencv4 -DOPENCV_DIR=${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR}/cmake/opencv4)
+set(OPENCV_INCLUDE_DIRS ${INSTALL_DIR}/include/opencv4/)
+set(OPENCV_LIB_DIR ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
+
+if (WIN32)
+    set(EXT_CERES_LIBRARIES opencv_world$<$<CONFIG:Debug>:d>)
+else ()
+    set(OPENCV_LIBRARIES opencv_world)
+endif ()

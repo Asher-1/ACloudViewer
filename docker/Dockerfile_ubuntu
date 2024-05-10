@@ -22,7 +22,7 @@ COPY . ${EROWCLOUDVIEWER_DEV}/ErowCloudViewer
 
 WORKDIR ${EROWCLOUDVIEWER_BUILD}
 
-RUN rm -rf ${EROWCLOUDVIEWER_DEV}/ErowCloudViewer/dl \
+RUN rm -rf ${EROWCLOUDVIEWER_DEV}/ErowCloudViewer/docker_files \
     && mv /usr/lib/x86_64-linux-gnu/libQt5* /tmp/
 
 # Build ErowCloudViewer whl package
@@ -61,7 +61,6 @@ RUN cmake "${EROWCLOUDVIEWER_DEV}/ErowCloudViewer" \
             -DBUILD_JUPYTER_EXTENSION=ON \
             -DBUILD_LIBREALSENSE=ON \
             -DBUILD_AZURE_KINECT=ON \
-            -DBUILD_RPC_INTERFACE=ON \
             -DBUILD_BENCHMARKS=OFF \
             -DWITH_OPENMP=ON \
             -DBUILD_CUDA_MODULE=OFF \
@@ -82,11 +81,13 @@ RUN cmake "${EROWCLOUDVIEWER_DEV}/ErowCloudViewer" \
             -DPLUGIN_IO_QMESH=ON \
             -DPLUGIN_IO_QPDAL=ON \
             -DPLUGIN_IO_QPHOTOSCAN=ON \
+            -DPLUGIN_IO_QDRACO=ON \
             -DPLUGIN_IO_QRDB=ON \
             -DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=ON \
             -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
             -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
             -DPLUGIN_STANDARD_QANIMATION=ON \
+            -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
             -DPLUGIN_STANDARD_QCANUPO=ON \
             -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
             -DPLUGIN_STANDARD_QCOMPASS=ON \
@@ -95,6 +96,7 @@ RUN cmake "${EROWCLOUDVIEWER_DEV}/ErowCloudViewer" \
             -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON \
             -DPLUGIN_STANDARD_QM3C2=ON \
             -DPLUGIN_STANDARD_QMPLANE=ON \
+            -DPLUGIN_STANDARD_QJSONRPC=ON \
             -DPLUGIN_STANDARD_QPCL=ON \
             -DPLUGIN_STANDARD_QPOISSON_RECON=ON \
             -DPOISSON_RECON_WITH_OPEN_MP=ON \

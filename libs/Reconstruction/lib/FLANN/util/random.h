@@ -32,6 +32,7 @@
 #define FLANN_RANDOM_H
 
 #include <algorithm>
+#include <random>
 #include <cstdlib>
 #include <cstddef>
 #include <vector>
@@ -117,7 +118,10 @@ public:
         for (int i = 0; i < size_; ++i) vals_[i] = i;
 
         // shuffle the elements in the array
-        std::random_shuffle(vals_.begin(), vals_.end(), generator);
+        std::random_device rd;   // non-deterministic generator
+        std::mt19937 gen(rd());  // to seed mersenne twister.
+        std::shuffle(vals_.begin(), vals_.end(), rd);
+//        std::shuffle(vals_.begin(), vals_.end(), generator);
 
         counter_ = 0;
     }

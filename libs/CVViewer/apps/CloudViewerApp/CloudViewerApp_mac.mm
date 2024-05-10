@@ -29,7 +29,7 @@
 #import <Cocoa/Cocoa.h>
 #import <CoreServices/CoreServices.h>
 
-#include "CloudViewer.h"
+#include "CloudViewerApp.h"
 
 #include "FileSystem.h"
 #include "visualization/gui/Application.h"
@@ -71,46 +71,46 @@ protected:
                 CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.isl-org.cloudViewer.Open3D";
                 // The UTIs should match what we declare in Info.plist
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.gl-transmission-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.gl-transmission-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.gl-binary-transmission-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.gl-binary-transmission-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.geometry-definition-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.geometry-definition-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.object-file-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.object-file-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.point-cloud-library-file",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.point-cloud-library-file",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.polygon-file-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.polygon-file-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.3d-points-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.3d-points-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.standard-tesselated-geometry-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.standard-tesselated-geometry-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.xyz-points-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.xyz-points-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.xyzn-points-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.xyzn-points-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.xyzrgb-points-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef)@"public.xyzrgb-points-format",
+                        kLSRolesAll, open3dBundleId);
 
                 this->CloseDialog();
             });
 
             auto vert = cloudViewer::make_shared<Vert>(0, Margins(em));
             vert->AddChild(cloudViewer::make_shared<Label>(
-                "This will make Open3D the default application for the "
-                "following file types:"));
+                    "This will make Open3D the default application for the "
+                    "following file types:"));
             vert->AddFixed(em);
             auto table = cloudViewer::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));
             table->AddChild(cloudViewer::make_shared<Label>("Mesh:"));
