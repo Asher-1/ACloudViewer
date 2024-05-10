@@ -26,10 +26,8 @@
 
 #include <memory>
 
-namespace cloudViewer {
-namespace visualizer {
+namespace cloudViewer::visualizer {
 class GuiVisualizer;
-}
 }  // namespace cloudViewer
 
 #define WIDTH 1280

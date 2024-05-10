@@ -2,7 +2,10 @@
 
 # install some dependence on host pc
 sudo apt-get install x11-xserver-utils && xhost +
-ssh -p 10022 -X root@192.168.1.218
+# sshÆÕÍ¨ÓÃ»§µÇÂ¼ÈÝÆ÷
+# ssh -p 10022 ubuntu@127.0.0.1
+# export DISPLAY=192.168.1.5:0.0
+export DISPLAY=:0
 
 # create container instance
 docker run -dit --runtime=nvidia --name=cloudviewer \
@@ -19,6 +22,7 @@ docker run -dit --runtime=nvidia --name=cloudviewer \
   -v /media/yons/data/develop/pcl_projects/ErowCloudViewer/docker_cache/build:/opt/ErowCloudViewer/build \
   -v /media/yons/data/develop/pcl_projects/ErowCloudViewer/docker_cache/install:/opt/ErowCloudViewer/install \
   -v /media/yons/data/develop/pcl_projects/ErowCloudViewer/thirdparties:/opt/ErowCloudViewer/thirdparties \
+  -v /Users/asher/develop/code/github/CloudViewer-ML:/opt/ErowCloudViewer/CloudViewer-ML \
   cloudviewer-deps:develop-ubuntu18.04-cuda101
 
 # attach into container instance
@@ -33,7 +37,10 @@ export QML2_IMPORT_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/qml:$QML2_IMPORT_PATH"
 # Build ErowCloudViewer
 export DISPLAY=:0  # DISPLAY must be consistent with host
 cd /opt/ErowCloudViewer
-mkdir build
+if [ ! -d "build" ]; then # dir does not exist
+  echo "creating dir build..."
+  mkdir build
+fi
 cd build
 
 cmakeWhlOptions=(-DDEVELOPER_BUILD=OFF
@@ -159,8 +166,8 @@ RUN apt-get update --fix-missing -y \
 	&& locale-gen $LANG \
 	&& /bin/sh -c LANG=C xdg-user-dirs-update --force
 
-COPY dl/google-chrome-stable_current_amd64.deb /opt
-COPY dl/nomachine.deb /opt
+COPY docker_files/google-chrome-stable_current_amd64.deb /opt
+COPY docker_files/nomachine.deb /opt
 RUN apt-get install -yf ./google-chrome-stable_current_amd64.deb \
     && rm ./google-chrome-stable_current_amd64.deb \
     && apt-get install -y pulseaudio \

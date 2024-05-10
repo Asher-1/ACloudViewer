@@ -23,15 +23,15 @@ if(NOT Pytorch_FOUND)
     message(STATUS "Getting PyTorch properties ...")
 
     set(PyTorch_FETCH_PROPERTIES
-        "import os"
-        "import torch"
-        "print(torch.__version__, end=';')"
-        "print(os.path.dirname(torch.__file__), end=';')"
-        "print(torch._C._GLIBCXX_USE_CXX11_ABI, end=';')"
-    )
+            "import os"
+            "import torch"
+            "print(torch.__version__, end=';')"
+            "print(os.path.dirname(torch.__file__), end=';')"
+            "print(torch._C._GLIBCXX_USE_CXX11_ABI, end=';')"
+            )
     execute_process(
-        COMMAND ${Python3_EXECUTABLE} "-c" "${PyTorch_FETCH_PROPERTIES}"
-        OUTPUT_VARIABLE PyTorch_PROPERTIES
+            COMMAND ${Python3_EXECUTABLE} "-c" "${PyTorch_FETCH_PROPERTIES}"
+            OUTPUT_VARIABLE PyTorch_PROPERTIES
     )
 
     list(GET PyTorch_PROPERTIES 0 Pytorch_VERSION)
@@ -43,7 +43,7 @@ if(NOT Pytorch_FOUND)
 
     # Use the cmake config provided by torch
     find_package(Torch REQUIRED PATHS "${Pytorch_ROOT}"
-                 NO_DEFAULT_PATH)
+            NO_DEFAULT_PATH)
 
     if(BUILD_CUDA_MODULE)
         # Note: older versions of PyTorch have hard-coded cuda library paths, see:
@@ -70,12 +70,25 @@ if(NOT Pytorch_FOUND)
         set_target_properties( torch_cuda PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
         set_target_properties( torch_cpu PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
     endif()
+
+    # If MKL is installed in the system level (e.g. for oneAPI Toolkit),
+    # caffe2::mkl and caffe2::mkldnn will be added to torch_cpu's
+    # INTERFACE_LINK_LIBRARIES. However, Open3D already comes with MKL linkage
+    # and we're not using MKLDNN.
+    get_target_property(torch_cpu_INTERFACE_LINK_LIBRARIES torch_cpu
+            INTERFACE_LINK_LIBRARIES)
+    list(REMOVE_ITEM torch_cpu_INTERFACE_LINK_LIBRARIES caffe2::mkl)
+    list(REMOVE_ITEM torch_cpu_INTERFACE_LINK_LIBRARIES caffe2::mkldnn)
+    set_target_properties(torch_cpu PROPERTIES INTERFACE_LINK_LIBRARIES
+            "${torch_cpu_INTERFACE_LINK_LIBRARIES}")
 endif()
 
 message(STATUS "PyTorch         version: ${Pytorch_VERSION}")
 message(STATUS "               root dir: ${Pytorch_ROOT}")
 message(STATUS "          compile flags: ${TORCH_CXX_FLAGS}")
-message(STATUS "          use cxx11 abi: ${Pytorch_CXX11_ABI}")
+if (UNIX AND NOT APPLE)
+    message(STATUS "          use cxx11 abi: ${Pytorch_CXX11_ABI}")
+endif()
 foreach(idir ${TORCH_INCLUDE_DIRS})
     message(STATUS "           include dirs: ${idir}")
 endforeach(idir)
@@ -83,14 +96,21 @@ foreach(lib ${TORCH_LIBRARIES})
     message(STATUS "              libraries: ${lib}")
 endforeach(lib)
 
-# Check if the c++11 ABI is compatible
-if((Pytorch_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
-   (NOT Pytorch_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI))
-    message(FATAL_ERROR "PyTorch and CloudViewer ABI mismatch: ${Pytorch_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}")
+# Check if the c++11 ABI is compatible on Linux
+if(UNIX AND NOT APPLE AND ((Pytorch_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
+(NOT Pytorch_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI)))
+    if(Pytorch_CXX11_ABI)
+        set(NEEDED_ABI_FLAG "ON")
+    else()
+        set(NEEDED_ABI_FLAG "OFF")
+    endif()
+    message(FATAL_ERROR "PyTorch and Open3D ABI mismatch: ${Pytorch_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
+            "Please use -DGLIBCXX_USE_CXX11_ABI=${NEEDED_ABI_FLAG} "
+            "in the cmake config command to change the Open3D ABI.")
 else()
-    message(STATUS "PyTorch matches CloudViewer ABI: ${Pytorch_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
+    message(STATUS "PyTorch matches Open3D ABI: ${Pytorch_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
 endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Pytorch DEFAULT_MSG Pytorch_VERSION
-                                  Pytorch_ROOT)
+        Pytorch_ROOT)

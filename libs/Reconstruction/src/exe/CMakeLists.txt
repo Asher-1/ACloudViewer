@@ -46,6 +46,14 @@ COLMAP_ADD_SOURCES(
         gui.cc
 )
 
-COLMAP_ADD_EXECUTABLE(colmap_exe colmap.cc)
+if (APPLE)
+    COLMAP_ADD_EXECUTABLE(ColmapApp colmap.cc)
+    include(CMakeForMacOS)
+    set(TEMP_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    colmap_add_app(${CloudViewerAppDir} colmap ColmapApp)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEMP_RUNTIME_OUTPUT_DIRECTORY})
+else ()
+    COLMAP_ADD_EXECUTABLE(colmap_exe colmap.cc)
+    set_target_properties(colmap_exe PROPERTIES OUTPUT_NAME colmap_app)
+endif ()
 
-set_target_properties(colmap_exe PROPERTIES OUTPUT_NAME colmap_app)

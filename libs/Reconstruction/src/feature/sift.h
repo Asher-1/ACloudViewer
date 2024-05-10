@@ -46,7 +46,11 @@ struct SiftExtractionOptions {
   int num_threads = -1;
 
   // Whether to use the GPU for feature extraction.
+#ifdef CUDA_ENABLED
   bool use_gpu = true;
+#else
+  bool use_gpu = false;
+#endif
 
   // Index of the GPU used for feature extraction. For multi-GPU extraction,
   // you should separate multiple GPU indices by comma, e.g., "0,1,2,3".
@@ -118,7 +122,11 @@ struct SiftMatchingOptions {
   int num_threads = -1;
 
   // Whether to use the GPU for feature matching.
+#ifdef CUDA_ENABLED
   bool use_gpu = true;
+#else
+  bool use_gpu = false;
+#endif
 
   // Index of the GPU used for feature matching. For multi-GPU matching,
   // you should separate multiple GPU indices by comma, e.g., "0,1,2,3".

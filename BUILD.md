@@ -84,7 +84,7 @@ Eventually you can run the compiler on the generated cmake file or open the proj
 2.  `install`: copies all the necessary files (executable, resources, plugins, DLLs etc.) to the `CMAKE_INSTALL_PREFIX` folder. **This is mandatory to actually launch ErowCloudViewer or ccViewer.**
 
 
-The Mac OS X install/release process is still a bit less automated than the others. If you are putting together a complete install (using `make install`), you will need to change the `PATH_PREFIX` variable in the script `mac_scripts/delete_rpaths.sh`.  Please see the comment in that file and if you know how to solve it, please submit a patch.
+The Mac OS X install/release process is still a bit less automated than the others. If you are putting together a complete install (using `make install`), you will need to change the `PATH_PREFIX` variable in the script `libs/CVViewer/apps/fixup_macosx_bundle.sh`.  Please see the comment in that file and if you know how to solve it, please submit a patch.
 
 ### Working with Visual Studio on Windows
 
@@ -176,7 +176,23 @@ Copy "$(TargetDir)*.*" "$(SolutionDir)\qCC\Release\plugins"
 1. The version of the Poisson Surface Reconstruction library (M. Kazhdan et al.) used by the  is https://github.com/cloudcompare/PoissonRecon. It is declared as a submodule of CC's repository. You have to explicitly synchronize it (see https://git-scm.com/docs/git-submodule).
 2. Then simply check the INSTALL_QPOISSON_RECON_PLUGIN option in CMake
 
-### [Optional] Setup for LAS using PDAL
+### qLASFWIO [Deprecated] | qLASIO [recommended]
+
+LAS/LAZ file support on Windows can also be achieved by compiling
+[LASlib](https://github.com/CloudCompare/LAStools) and setting the following variables:
+
+-   `LASLIB_INCLUDE_DIR`: LAStools/LASlib/inc
+-   `LASZIP_INCLUDE_DIR`: LAStools/LASzip/src
+-   `LASLIB_RELEASE_LIBRARY` or `LASLIB_DEBUG_LIBRARY`, depending on build type: the compiled library, e.g. `LAStools/LASlib/VC14/lib/x64/LASlibVC14.lib`
+
+`Note`: 
+```
+brew install laszip [on macos]
+https://github.com/LASzip/LASzip/releases/download/3.4.3/laszip-src-3.4.3.tar.gz [compile from source on linux]
+```
+
+
+### [Optional] Setup for LAS using PDAL [Deprecated]
 
 If you want to compile ErowCloudViewer (and ccViewer) with LAS/LAZ files support, you'll need:
 
@@ -242,8 +258,8 @@ Then, the ErowCloudViewer CMake project will request that you set the 3 followin
 ### [Optional] Setup for GDAL support
 
 If you want to compile ErowCloudViewer (and ccViewer) with GDAL (raster) files support, you'll need a compiled version of the [GDAL library](http://www.gdal.org/) (last tested version: 1.10 on Windows, 2.0.2 on Mac OS X)
-
 Then, the ErowCloudViewer CMake project will request that you set the 2 following variables:
+0. conda install -c conda-forge gdal [for linux and windows]; brew install gdal [for macos]
 1. `GDAL_INCLUDE_DIR`: GDAL include directory (pretty straightforward ;)
 2. `GDAL_LIBRARY`: the static library (e.g. `gdal_i.lib`)
 

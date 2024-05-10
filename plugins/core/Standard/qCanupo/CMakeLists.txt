@@ -1,5 +1,10 @@
 option(PLUGIN_STANDARD_QCANUPO "Check to install qCanupo plugin" OFF)
 
+if (APPLE AND PLUGIN_STANDARD_QCANUPO)
+    set(PLUGIN_STANDARD_QCANUPO OFF)
+    message("PLUGIN QCANUPO is not supported on macos...")
+endif ()
+
 if (PLUGIN_STANDARD_QCANUPO)
     project(QCANUPO_PLUGIN)
 

@@ -7,7 +7,6 @@
 CMakeLists.txt.user
 tmp/
 *.tmp
-dl/*
 *.swp
 *.run
 *.zip
@@ -116,7 +115,7 @@ pip-log.txt
 /build_64bits_msvc10/
 private_plugins
 CCCoreLibExport.h
-/.vs/CloudCompare/v15
+/.vs/ErowCloudViewer/v15
 /.vs/ProjectSettings.json
 /.vs/slnx.sqlite
 /.vs
@@ -134,6 +133,7 @@ python/js/node_modules/*
 libs/cloudViewer/CloudViewer.h
 libs/cloudViewer/CloudViewerConfig.h
 libs/cloudViewer/visualization/shader/Shader.h
+libs/Reconstruction/src/util/version.h
 util/pip_package/setup.py
 
 # Temp directories
@@ -175,7 +175,7 @@ static/
 *.old*
 dist/
 compile_commands.json
-
+libs/Reconstruction/src/util/version.h
 
 
 # Example resources
@@ -218,3 +218,4 @@ docs/_out/
 docs/python_api/
 docs/Doxyfile
 docs/getting_started.rst
+/docker_files/

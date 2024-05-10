@@ -1,6 +1,6 @@
 MASONRY PLUGINS (qAutoSeg and qManuSeg)
 
-The plugins are distributed under the GPLv2 license, which is compatible with the licensing of CloudCompare.
+The plugins are distributed under the GPLv2 license, which is compatible with the licensing of ErowCloudViewer.
 
 The plugins are thus free software; you can redistribute it and/or modify  it under the terms of the license.
 

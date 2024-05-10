@@ -1,5 +1,7 @@
 add_subdirectory(tools)
-add_subdirectory(apps)
+if (BUILD_GUI)
+    add_subdirectory(apps)
+endif()
 if (BUILD_UNIT_TESTS)
     add_subdirectory(tests)
 endif()

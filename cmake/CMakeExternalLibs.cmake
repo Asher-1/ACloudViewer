@@ -25,6 +25,7 @@ find_package( Qt5
         OpenGL
         Widgets
         Network
+        WebSockets
         Concurrent
         PrintSupport
     REQUIRED

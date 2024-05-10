@@ -324,7 +324,7 @@ auto ThreadPool::AddTask(func_t&& f, args_t&&... args)
     -> std::future<typename std::result_of<func_t(args_t...)>::type> {
   typedef typename std::result_of<func_t(args_t...)>::type return_t;
 
-  auto task = cloudViewer::make_shared<std::packaged_task<return_t()>>(
+  auto task = std::make_shared<std::packaged_task<return_t()>>(
       std::bind(std::forward<func_t>(f), std::forward<args_t>(args)...));
 
   std::future<return_t> result = task->get_future();

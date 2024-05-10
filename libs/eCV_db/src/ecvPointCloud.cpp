@@ -1643,6 +1643,10 @@ void ccPointCloud::setPointColor(size_t pointIndex, const ecvColor::Rgb& col) {
     colorsHaveChanged();
 }
 
+void ccPointCloud::setPointColor(size_t pointIndex, const ecvColor::Rgba& col) {
+    setPointColor(pointIndex, ecvColor::FromRgbaToRgb(col));
+}
+
 void ccPointCloud::setPointColor(size_t pointIndex,
                                  const Eigen::Vector3d& col) {
     setPointColor(pointIndex, ecvColor::Rgb::FromEigen(col));

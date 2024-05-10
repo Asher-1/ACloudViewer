@@ -88,7 +88,11 @@ class AutomaticReconstructionController : public Thread {
     int num_threads = -1;
 
     // Whether to use the GPU in feature extraction and matching.
+#ifdef CUDA_ENABLED
     bool use_gpu = true;
+#else
+    bool use_gpu = false;
+#endif
 
     // Index of the GPU used for GPU stages. For multi-GPU computation,
     // you should separate multiple GPU indices by comma, e.g., "0,1,2,3".

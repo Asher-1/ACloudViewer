@@ -130,7 +130,7 @@ public:
 };
 
 ecvCameraParamEditDlg::ecvCameraParamEditDlg(QWidget* parent, ccPickingHub* pickingHub)
-	//: ccOverlayDialog(parent, pickingHub ? Qt::FramelessWindowHint | Qt::Tool : Qt::Tool) //pickingHub = CloudCompare / otherwise = ccViewer
+	//: ccOverlayDialog(parent, pickingHub ? Qt::FramelessWindowHint | Qt::Tool : Qt::Tool) //pickingHub = ErowCloudViewer / otherwise = ccViewer
 	: ccOverlayDialog(parent, Qt::Tool)
 	, m_pickingHub(pickingHub)
 {

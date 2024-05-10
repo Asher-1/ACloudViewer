@@ -16,14 +16,15 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
 
     set(DEPENDENCIES "${ARGN}")
     foreach (DEPENDENCY IN LISTS DEPENDENCIES)
-        target_link_libraries(${EXAMPLE_CPP_NAME} ${DEPENDENCY})
+        target_link_libraries(${EXAMPLE_CPP_NAME} PUBLIC ${DEPENDENCY})
     endforeach ()
 
     target_link_libraries(${EXAMPLE_CPP_NAME}
+            PUBLIC
             ${INTERNAL_EIGEN3_TARGET}
             )
 
-    target_link_libraries(${EXAMPLE_CPP_NAME} CloudViewer::CloudViewer)
+    target_link_libraries(${EXAMPLE_CPP_NAME} PUBLIC CloudViewer::CloudViewer)
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
             FOLDER "examples/cpp/"
@@ -105,7 +106,7 @@ if (BUILD_RECONSTRUCTION)
         # fix gflags library bugs on windows
         target_compile_definitions(Reconstruction PRIVATE -DGFLAGS_DLL_DECLARE_FLAG=
                 -DGFLAGS_DLL_DEFINE_FLAG= -DGFLAGS_IS_A_DLL=0)
-        target_link_libraries(Reconstruction shlwapi.lib)
+        target_link_libraries(Reconstruction PRIVATE shlwapi.lib)
     endif ()
 endif ()
 

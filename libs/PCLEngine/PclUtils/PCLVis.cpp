@@ -1,19 +1,19 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 // Local
 #include "PCLVis.h"
@@ -26,6 +26,8 @@
 
 // CV_CORE_LIB
 #include <CVTools.h>
+#include <FileSystem.h>
+#include <Helper.h>
 #include <ecvGLMatrix.h>
 
 // ECV_DB_LIB
@@ -1333,43 +1335,41 @@ int PCLVis::textureFromTexMaterial(const pcl::TexMaterial& tex_mat,
         return (-1);
     }
 
-    boost::filesystem::path full_path(tex_mat.tex_file.c_str());
-    if (!boost::filesystem::exists(full_path)) {
-        boost::filesystem::path parent_dir = full_path.parent_path();
-        std::string upper_filename = tex_mat.tex_file;
-        boost::to_upper(upper_filename);
+    std::string full_path = tex_mat.tex_file;
+    if (!cloudViewer::utility::filesystem::FileExists(full_path)) {
+        std::string parent_dir =
+                cloudViewer::utility::filesystem::GetFileParentDirectory(
+                        full_path);
+        std::string upper_filename =
+                cloudViewer::utility::ToUpper(tex_mat.tex_file);
         std::string real_name;
 
         try {
-            if (!boost::filesystem::exists(parent_dir)) {
+            if (!cloudViewer::utility::filesystem::DirectoryExists(
+                        parent_dir)) {
                 CVLog::Warning(
                         "[PCLVis::textureFromTexMaterial] Parent directory "
                         "'%s' doesn't exist!",
-                        parent_dir.string().c_str());
+                        parent_dir.c_str());
                 return (-1);
             }
 
-            if (!boost::filesystem::is_directory(parent_dir)) {
+            if (!cloudViewer::utility::filesystem::IsDirectory(parent_dir)) {
                 CVLog::Warning(
                         "[PCLVis::textureFromTexMaterial] Parent '%s' is not a "
                         "directory !",
-                        parent_dir.string().c_str());
+                        parent_dir.c_str());
                 return (-1);
             }
 
-            typedef std::vector<boost::filesystem::path> paths_vector;
-            paths_vector paths;
-            std::copy(boost::filesystem::directory_iterator(parent_dir),
-                      boost::filesystem::directory_iterator(),
-                      back_inserter(paths));
+            std::vector<std::string> paths_vector;
+            cloudViewer::utility::filesystem::ListFilesInDirectory(
+                    parent_dir, paths_vector);
 
-            for (paths_vector::const_iterator it = paths.begin();
-                 it != paths.end(); ++it) {
-                if (boost::filesystem::is_regular_file(*it)) {
-                    std::string name = it->string();
-                    boost::to_upper(name);
-                    if (name == upper_filename) {
-                        real_name = it->string();
+            for (const auto& path : paths_vector) {
+                if (cloudViewer::utility::filesystem::IsFile(path)) {
+                    if (cloudViewer::utility::ToUpper(path) == upper_filename) {
+                        real_name = path;
                         break;
                     }
                 }
@@ -1382,7 +1382,7 @@ int PCLVis::textureFromTexMaterial(const pcl::TexMaterial& tex_mat,
                         tex_mat.tex_file.c_str());
                 return (-1);
             }
-        } catch (const boost::filesystem::filesystem_error& ex) {
+        } catch (const std::exception& ex) {
             CVLog::Warning(
                     "[PCLVis::textureFromTexMaterial] Error %s when looking "
                     "for file %s!",
@@ -1391,39 +1391,41 @@ int PCLVis::textureFromTexMaterial(const pcl::TexMaterial& tex_mat,
         }
 
         // Save the real path
-        full_path = real_name.c_str();
+        full_path = real_name;
     }
 
-    std::string extension = full_path.extension().string();
+    std::string extension =
+            cloudViewer::utility::filesystem::GetFileExtensionInLowerCase(
+                    full_path);
     //!!! nizar 20131206 : The list is far from being exhaustive I am afraid.
     if ((extension == ".jpg") || (extension == ".JPG")) {
         vtkSmartPointer<vtkJPEGReader> jpeg_reader =
                 vtkSmartPointer<vtkJPEGReader>::New();
-        jpeg_reader->SetFileName(full_path.string().c_str());
+        jpeg_reader->SetFileName(full_path.c_str());
         jpeg_reader->Update();
         vtk_tex->SetInputConnection(jpeg_reader->GetOutputPort());
     } else if ((extension == ".bmp") || (extension == ".BMP")) {
         vtkSmartPointer<vtkBMPReader> bmp_reader =
                 vtkSmartPointer<vtkBMPReader>::New();
-        bmp_reader->SetFileName(full_path.string().c_str());
+        bmp_reader->SetFileName(full_path.c_str());
         bmp_reader->Update();
         vtk_tex->SetInputConnection(bmp_reader->GetOutputPort());
     } else if ((extension == ".pnm") || (extension == ".PNM")) {
         vtkSmartPointer<vtkPNMReader> pnm_reader =
                 vtkSmartPointer<vtkPNMReader>::New();
-        pnm_reader->SetFileName(full_path.string().c_str());
+        pnm_reader->SetFileName(full_path.c_str());
         pnm_reader->Update();
         vtk_tex->SetInputConnection(pnm_reader->GetOutputPort());
     } else if ((extension == ".png") || (extension == ".PNG")) {
         vtkSmartPointer<vtkPNGReader> png_reader =
                 vtkSmartPointer<vtkPNGReader>::New();
-        png_reader->SetFileName(full_path.string().c_str());
+        png_reader->SetFileName(full_path.c_str());
         png_reader->Update();
         vtk_tex->SetInputConnection(png_reader->GetOutputPort());
     } else if ((extension == ".tiff") || (extension == ".TIFF")) {
         vtkSmartPointer<vtkTIFFReader> tiff_reader =
                 vtkSmartPointer<vtkTIFFReader>::New();
-        tiff_reader->SetFileName(full_path.string().c_str());
+        tiff_reader->SetFileName(full_path.c_str());
         tiff_reader->Update();
         vtk_tex->SetInputConnection(tiff_reader->GetOutputPort());
     } else {
@@ -1497,7 +1499,7 @@ bool PCLVis::updateTexture(const CC_DRAW_CONTEXT& context,
                         vtkDataObject::FIELD_ASSOCIATION_POINTS);
         actor->GetProperty()->SetTexture(tu, texture);
         // ignore it due to bugs.
-        //　applyMaterial(tex_materials[tex_id], actor);
+        // 　applyMaterial(tex_materials[tex_id], actor);
 
         ++tex_id;
     }
