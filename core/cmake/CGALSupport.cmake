@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# CGAL+CMake support for CloudCompare
+# CGAL+CMake support for ErowCloudViewer
 # ------------------------------------------------------------------------------
 
 FIND_PACKAGE( CGAL QUIET COMPONENTS Core ) # implies findGMP

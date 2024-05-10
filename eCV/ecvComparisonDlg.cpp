@@ -1,19 +1,19 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #include "ecvComparisonDlg.h"
 
@@ -580,7 +580,7 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist) {
                 if (numberOfPointsInCell != 0) {
                     // if 'maxSearchDist' has been defined by the user, we must
                     // take it into account! (in this case we skip the cell if
-                    //its approx. distance is superior)
+                    // its approx. distance is superior)
                     if (maxSearchDist <= 0 || cellDist <= maxSearchDist) {
                         // approx. neighborhood radius
                         cellDist /= cellSize;
@@ -620,15 +620,15 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist) {
                                                     neighbourSize;
                             // volume of the last "slice" (in terms of cells)
                             //=V(n)-V(n-1) = (2*n+1)^3 - (2*n-1)^3 = 24 * n^2 +
-                            //2 (si n>0)
+                            // 2 (si n>0)
                             double lastSliceCellNumber =
                                     (cellDist > 0
                                              ? cellDist * cellDist * 24.0 + 2.0
                                              : 1.0);
                             // TIME = NEIGHBORS SEARCH + proportional factor *
                             // POINTS/TRIANGLES COMPARISONS (we admit that the
-                            //filled cells roughly correspond to the sqrt of the
-                            //total number of cells)
+                            // filled cells roughly correspond to the sqrt of
+                            // the total number of cells)
                             timings[level] +=
                                     neighbourSize3 +
                                     0.1 * numberOfPointsInCell *
@@ -661,7 +661,7 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist) {
         ////very high levels are unlikely (levelModifier ~ 0.85 @ level 20)
         //{
         //	double levelModifier = level < 12 ? 1.0 :
-        //exp(-pow(level-12,2)/(20*20)); 	timings[level] /= levelModifier;
+        // exp(-pow(level-12,2)/(20*20)); 	timings[level] /= levelModifier;
 
         //	CVLog::PrintDebug(QString("[Distances] Level %1 - timing = %2
         //(modifier = %3)").arg(level).arg(timings[level]).arg(levelModifier));

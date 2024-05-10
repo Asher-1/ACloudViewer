@@ -1,19 +1,19 @@
-﻿//##########################################################################
-//#                                                                        #
-//#                              EROWCLOUDVIEWER                           #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+﻿// ##########################################################################
+// #                                                                        #
+// #                              EROWCLOUDVIEWER                           #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 // LOCAL
 #include "MainWindow.h"
@@ -147,6 +147,16 @@
 // other
 #include "db_tree/ecvDBRoot.h"
 #include "pluginManager/ecvPluginUIManager.h"
+
+// 3D mouse handler
+#ifdef CC_3DXWARE_SUPPORT
+#include "cc3DMouseManager.h"
+#endif
+
+// Gamepads
+#ifdef CC_GAMEPAD_SUPPORT
+#include "ccGamepadManager.h"
+#endif
 
 // Reconstruction
 #ifdef BUILD_RECONSTRUCTION
@@ -302,6 +312,8 @@ MainWindow::MainWindow()
     initReconstructions();
 #endif
 
+    setupInputDevices();
+
     freezeUI(false);
 
     updateUI();
@@ -396,6 +408,8 @@ ecvConsole::Print(
 }
 
 MainWindow::~MainWindow() {
+    destroyInputDevices();
+
     cancelPreviousPickingOperation(false);  // just in case
 
     // Reconstruction must before m_ccRoot
@@ -1810,8 +1824,7 @@ void MainWindow::toggleLockRotationAxis() {
                     ecvDisplayTools::ROTAION_LOCK_MESSAGE);
         } else {
             ecvDisplayTools::DisplayNewMessage(
-                    QString(),
-                    ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 0,
+                    QString(), ecvDisplayTools::UPPER_CENTER_MESSAGE, false, 0,
                     ecvDisplayTools::ROTAION_LOCK_MESSAGE);
         }
         ecvDisplayTools::SetRedrawRecursive(false);
@@ -3057,6 +3070,14 @@ void MainWindow::toggleFullScreen(bool state) {
         state ? showFullScreen() : showNormal();
     }
 
+#ifdef Q_OS_MAC
+    if (state) {
+        m_ui->actionFullScreen->setText(tr("Exit Full Screen"));
+    } else {
+        m_ui->actionFullScreen->setText(tr("Enter Full Screen"));
+    }
+#endif
+
     m_ui->actionFullScreen->setChecked(state);
 }
 
@@ -3611,6 +3632,40 @@ void MainWindow::resetSelectedBBox() {
     }
 }
 
+void MainWindow::toggleActiveWindowCenteredPerspective() {
+    QWidget* win = getActiveWindow();
+    if (win) {
+        const ecvViewportParameters& params =
+                ecvDisplayTools::GetViewportParameters();
+        // we need to check this only if we are already in object-centered
+        // perspective mode
+        if (params.perspectiveView && params.objectCenteredView) {
+            return;
+        }
+        doActionPerspectiveProjection();
+        refreshAll(true, false);
+        updateViewModePopUpMenu();
+        // updatePivotVisibilityPopUpMenu(win);
+    }
+}
+
+void MainWindow::toggleActiveWindowViewerBasedPerspective() {
+    QWidget* win = getActiveWindow();
+    if (win) {
+        const ecvViewportParameters& params =
+                ecvDisplayTools::GetViewportParameters();
+        // we need to check this only if we are already in viewer-based
+        // perspective mode
+        if (params.perspectiveView && !params.objectCenteredView) {
+            return;
+        }
+        doActionOrthogonalProjection();
+        refreshAll(true, false);
+        updateViewModePopUpMenu();
+        // updatePivotVisibilityPopUpMenu(win);
+    }
+}
+
 void MainWindow::createSinglePointCloud() {
     // ask the user to input the point coordinates
     static CCVector3d s_lastPoint(0, 0, 0);
@@ -3825,6 +3880,34 @@ void MainWindow::decreasePointSize() {
     ecvDisplayTools::SetPointSize(
             ecvDisplayTools::GetViewportParameters().defaultPointSize - 1);
     refreshAll();
+}
+
+void MainWindow::setupInputDevices() {
+#ifdef CC_3DXWARE_SUPPORT
+    m_3DMouseManager = new cc3DMouseManager(this, this);
+    m_ui->menuFile->insertMenu(m_UI->actionCloseAll, m_3DMouseManager->menu());
+#endif
+
+#ifdef CC_GAMEPAD_SUPPORT
+    m_gamepadManager = new ccGamepadManager(this, this);
+    m_ui->menuFile->insertMenu(m_ui->actionClearAll, m_gamepadManager->menu());
+#endif
+
+#if defined(CC_3DXWARE_SUPPORT) || defined(CC_GAMEPAD_SUPPORT)
+    m_ui->menuFile->insertSeparator(m_ui->actionClearAll);
+#endif
+}
+
+void MainWindow::destroyInputDevices() {
+#ifdef CC_GAMEPAD_SUPPORT
+    delete m_gamepadManager;
+    m_gamepadManager = nullptr;
+#endif
+
+#ifdef CC_3DXWARE_SUPPORT
+    delete m_3DMouseManager;
+    m_3DMouseManager = nullptr;
+#endif
 }
 
 void MainWindow::showDisplayOptions() {
@@ -7839,7 +7922,7 @@ void MainWindow::doActionComputeBestICPRmsMatrix() {
         pDlg.start();
         QApplication::processEvents();
 
-        //#define TEST_GENERATION
+        // #define TEST_GENERATION
 #ifdef TEST_GENERATION
         ccPointCloud* testSphere = new ccPointCloud();
         testSphere->reserve(matrices.size());
@@ -8377,8 +8460,7 @@ void MainWindow::doApplyActiveSFAction(int action) {
         case 0:  // Toggle SF color scale
             if (sfIdx >= 0) {
                 cloud->showSFColorsScale(!cloud->sfColorScaleShown());
-            }
-            else {
+            } else {
                 ecvConsole::Warning(tr("No active scalar field on entity '%1'")
                                             .arg(ent->getName()));
             }

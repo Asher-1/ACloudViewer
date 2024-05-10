@@ -218,8 +218,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
     int exit_itr = -1;
 #ifdef _OPENMP
 #pragma omp parallel
-    {
 #endif
+    {
         CorrespondenceSet ransac_corres(ransac_n);
         RegistrationResult best_result_local;
         int exit_itr_local = criteria.max_iteration_;

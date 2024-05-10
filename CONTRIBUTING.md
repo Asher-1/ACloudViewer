@@ -1,9 +1,9 @@
-CloudCompare Coding rules
+ErowCloudViewer Coding rules
 =======================
 
 ## Naming
 
-Names in CloudCompare should be as descriptive as possible, without abbreviations, apart for very clear or common ones (such as `fw` instead of `forward`, etc.). Most of variable names should begin with a lower case letter. If the name is composed of multiple words, the first letter of each word should be in upper case (apart for the first one of course). 
+Names in ErowCloudViewer should be as descriptive as possible, without abbreviations, apart for very clear or common ones (such as `fw` instead of `forward`, etc.). Most of variable names should begin with a lower case letter. If the name is composed of multiple words, the first letter of each word should be in upper case (apart for the first one of course). 
 
 Example: `numberOfPoints`, `ptsCount` (or even `ptsNum` for the laziest ;-)
 
@@ -24,7 +24,7 @@ Example: `numberOfPoints`, `ptsCount` (or even `ptsNum` for the laziest ;-)
 
 ### Files
 
-- File naming follows the same rule as most CloudCompare elements (first letter in lower case, etc.)
+- File naming follows the same rule as most ErowCloudViewer elements (first letter in lower case, etc.)
 - Each class should be saved alone in a header + source file couple. Exceptionally, very small classes that are used by a single class may be saved along with this class. The header + source filename should be the same as the main class. 
 
 Example: `ccConsole` saved in `ccConsole.h` and `ccConsole.cpp`
@@ -62,7 +62,7 @@ Example: `include "../db/ccPointCloud.h"`
 
 ## File headers
 
-Any new source file (`.h`, `.cpp`, etc.) integrated to any CloudCompare module (CCLib, qCC, etc.) must present the official header.
+Any new source file (`.h`, `.cpp`, etc.) integrated to any ErowCloudViewer module (CCLib, qCC, etc.) must present the official header.
 
 Here is the official header for LGPL modules (CCLib, etc.):
 
@@ -112,8 +112,8 @@ Designing a new qCC plugin
 
 ## Introduction
 
-Designing a new plugin is an easy way to extend qCC (CloudCompare) functionalities, without the pain of having to modify its core and do all the connections. 
-One can easily design a new function, that may be applied on one or several entities currently loaded in CloudCompare. Moreover, the plugin can display its own dialog.
+Designing a new plugin is an easy way to extend qCC (ErowCloudViewer) functionalities, without the pain of having to modify its core and do all the connections. 
+One can easily design a new function, that may be applied on one or several entities currently loaded in ErowCloudViewer. Moreover, the plugin can display its own dialog.
 A dummy plugin structure (the sources and the corresponding Code::Blocks project) is provided as a template.
 
 ## First steps
@@ -141,7 +141,7 @@ You can now begin with the real work: implementing the plugin action. There are 
 
 #### Header file
 Open the header file (`qMyPlugin.h`).
-  1. at the top of the file you should see first a standard `CloudCompare` header. You can change inside the plugin name (`qDummy` => `qMyPlugin`) and the copyright owner.
+  1. at the top of the file you should see first a standard `ErowCloudViewer` header. You can change inside the plugin name (`qDummy` => `qMyPlugin`) and the copyright owner.
   2. below this header, we have a standard C++ class declaration.
     - you should modify the macro word `Q_DUMMY_PLUGIN_HEADER` with your own (for instance: `Q_MY_PLUGIN_ HEADER`). Do it on both lines.
     - you should also update the class description (Doxygen style)
@@ -156,14 +156,14 @@ Open the source file (`qMyPlugin.cpp`).
     - now only two mandatory steps remain:
       - update the `getDescription` method (especially, you should replace the `Dummy Plugin` string by your plugin name and the `Dummy Action` string by a short description of your plugin action).
       - put your code in the `doAction` method (between the two  `/*** HERE STARTS THE MAIN PLUGIN ACTION ***/` delimiters).
-Whenever the user clicks on your plugin icon, CloudCompare will call this method.
+Whenever the user clicks on your plugin icon, ErowCloudViewer will call this method.
     - Optionally:
-      - You can access most of CloudCompare resources through the `m_app` member (an interface to the main application: data base, main window, 3D view(s), etc.).
+      - You can access most of ErowCloudViewer resources through the `m_app` member (an interface to the main application: data base, main window, 3D view(s), etc.).
       - To determine which entities were selected when the user clicked on the icon(s) or if the icon should be enabled or not, you should add custom code to the `onNewSelection` method (this method is called whenever the selection changes).
 
-Using CCLIb and CloudCompare database/algorithms
+Using CCLIb and ErowCloudViewer database/algorithms
 All algorithms (in CCLib) and 3D entities (in CCLib, qCC_db, qCC_io and qCC_gl) are accessible inside the plugin. Check the doxygen documentation of those projects for more information.
 - [CCLib doxygen documentation](http://www.cloudcompare.org/doc/CCLib/html/index.html)
 - [qCC doxygen documentation](http://www.cloudcompare.org/doc/qCC/html/index.html)  
-Once again, the other plugin projects are a good source of hints, as the CloudCompare project itself.
+Once again, the other plugin projects are a good source of hints, as the ErowCloudViewer project itself.
 

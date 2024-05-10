@@ -1,24 +1,24 @@
-//##########################################################################
-//#                                                                        #
-//#                              CLOUDVIEWER                               #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 or later of the License.      #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                              CLOUDVIEWER                               #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 or later of the License.      #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #ifndef ECV_COMMON_HEADER
 #define ECV_COMMON_HEADER
 
-//STANDARD SCALAR FIELD NAMES
+// STANDARD SCALAR FIELD NAMES
 #define CC_DEFAULT_SF_NAME "Unknown"
 #define CC_CLOUD2CLOUD_DISTANCES_DEFAULT_SF_NAME "C2C absolute distances"
 #define CC_TEMP_APPROX_DISTANCES_DEFAULT_SF_NAME "Approx. distances"
@@ -28,7 +28,8 @@
 #define CC_CLOUD2MESH_SIGNED_DISTANCES_DEFAULT_SF_NAME "C2M signed distances"
 #define CC_CLOUD2MESH_APPROX_DISTANCES_DEFAULT_SF_NAME "C2M approx. distances"
 #define CC_CLOUD2PRIMITIVE_DISTANCES_DEFAULT_SF_NAME "C2Prim absolute distances"
-#define CC_CLOUD2PRIMITIVE_SIGNED_DISTANCES_DEFAULT_SF_NAME "C2Prim signed distances"
+#define CC_CLOUD2PRIMITIVE_SIGNED_DISTANCES_DEFAULT_SF_NAME \
+    "C2Prim signed distances"
 #define CC_CHI2_DISTANCES_DEFAULT_SF_NAME "Chi2 distances"
 #define CC_CONNECTED_COMPONENTS_DEFAULT_LABEL_NAME "CC labels"
 #define CC_LOCAL_KNN_DENSITY_FIELD_NAME "Number of neighbors"
@@ -52,4 +53,4 @@
 #define CC_DEFAULT_CLUSTER_SF_NAME "Clusters"
 #define CC_ORIGINAL_CLOUD_INDEX_SF_NAME "Original cloud index"
 
-#endif // ECV_COMMON_HEADER
+#endif  // ECV_COMMON_HEADER

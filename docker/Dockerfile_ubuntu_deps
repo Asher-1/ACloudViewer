@@ -10,7 +10,7 @@ LABEL maintainer="ErowCloudViewer Team ludahai19@163.com"
 # Execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
 # docker run -it --runtime=nvidia cloudviewer-deps
 
-ENV REFRESHED_AT=2021-02-03 \
+ENV REFRESHED_AT=2023-06-04\
     CLOUDVIEWER_DEV=/opt/ErowCloudViewer \
     QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
     QT_ROOT=/opt/Qt5.14.2/ \
@@ -52,7 +52,9 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
         libatlas-base-dev \
         unzip \
         locate \
+        automake \
         cmake \
+        gfortran \
         cmake-gui \
         gdb \
         ccache \
@@ -120,6 +122,7 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
         libz-dev \
         systemd \
         libjsoncpp-dev \
+        libgdal-dev \
         libcgal-dev
 
 # Install kinetic
@@ -135,18 +138,19 @@ RUN apt-get install nodejs npm -y \
     && n latest \
 	&& npm install -g yarn
 
+# Install laszip
 WORKDIR /opt
-RUN git clone https://github.com/ceres-solver/ceres-solver.git --branch 1.14.0
-RUN cd ceres-solver \
-        && mkdir build && cd build \
-        && cmake .. -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF \
-        && make -j4 \
-        $$ make install \
-        && make clean
+COPY docker_files/laszip-src-3.4.3.tar.gz /opt
+RUN tar -xvf laszip-src-3.4.3.tar.gz && \
+    cd laszip-src-3.4.3 && \
+    mkdir -p build && cd build && \
+    cmake .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig
 
 # Install xerces-c
 WORKDIR /opt
-COPY dl/xerces-c-3.2.3.zip /opt
+COPY docker_files/xerces-c-3.2.3.zip /opt
 RUN unzip xerces-c-3.2.3.zip \
     && cd ./xerces-c-3.2.3 \
     && chmod +x configure \
@@ -158,7 +162,7 @@ RUN unzip xerces-c-3.2.3.zip \
 
 # Install Miniconda3
 WORKDIR /opt
-COPY dl/Miniconda3-latest-Linux-x86_64.sh /opt
+COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt
 RUN sh -c '/bin/echo -e "\nyes\n\nyes" | sh Miniconda3-latest-Linux-x86_64.sh' \
     && echo -e "\ny" && /root/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ \
     && /root/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/ \
@@ -172,7 +176,6 @@ COPY ./*requirements.txt ${CLOUDVIEWER_DEV}/
 WORKDIR "${CLOUDVIEWER_DEV}"
 RUN /root/miniconda3/bin/pip install --user  -U pip -i https://pypi.tuna.tsinghua.edu.cn/simple/  \
                                 && /root/miniconda3/bin/pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
-RUN /root/miniconda3/bin/conda install -c conda-forge pdal python-pdal -y
 RUN /root/miniconda3/bin/pip install -r requirements.txt \
     && /root/miniconda3/bin/pip install torch==1.7.1+cu101 torchvision==0.8.2+cu101 -f https://download.pytorch.org/whl/torch_stable.html \
     && /root/miniconda3/bin/pip install tensorflow==2.3.1
@@ -189,7 +192,7 @@ RUN cp /root/miniconda3/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/ \
 
 # Install Qt (to build plugins)
 WORKDIR /tmp/qt
-COPY dl/qt.run /tmp/qt
+COPY docker_files/qt.run /tmp/qt
 COPY ./docker/qt-installer-noninteractive.qs ${CLOUDVIEWER_DEV}/docker/
 RUN chmod +x qt.run && \
     ./qt.run --verbose --platform minimal --script "${CLOUDVIEWER_DEV}/docker/qt-installer-noninteractive.qs" && \
@@ -197,8 +200,8 @@ RUN chmod +x qt.run && \
 
 # Install opencv
 WORKDIR /opt
-COPY dl/opencv.zip /opt
-COPY dl/opencv_contrib.zip /opt
+COPY docker_files/opencv.zip /opt
+COPY docker_files/opencv_contrib.zip /opt
 #RUN git clone https://github.com/Itseez/opencv.git && git clone https://github.com/Itseez/opencv_contrib.git && \
 RUN unzip opencv.zip && unzip opencv_contrib.zip && \
     #cd opencv_contrib && git checkout 4.3.0 && \
@@ -216,7 +219,7 @@ RUN unzip opencv.zip && unzip opencv_contrib.zip && \
 
 # Install vtk
 WORKDIR /opt
-COPY dl/VTK-8.2.0.zip /opt
+COPY docker_files/VTK-8.2.0.zip /opt
 #RUN git clone https://github.com/Kitware/VTK.git --recursive && \
 RUN unzip VTK-8.2.0.zip && \
     cd VTK && \
@@ -239,7 +242,7 @@ RUN unzip VTK-8.2.0.zip && \
 
 # Install pcl
 WORKDIR /opt
-COPY dl/pcl-1.11.1.zip /opt
+COPY docker_files/pcl-1.11.1.zip /opt
 #RUN git clone https://github.com/PointCloudLibrary/pcl.git --recursive && \
 RUN unzip pcl-1.11.1.zip && \
     cd pcl && \
@@ -258,8 +261,8 @@ RUN unzip pcl-1.11.1.zip && \
     rm -rf /opt/pcl-1.11.1.zip
 
 WORKDIR /opt
-COPY dl/libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb /opt
-COPY dl/libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb /opt
+COPY docker_files/libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb /opt
+COPY docker_files/libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb /opt
 RUN dpkg -i libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb \
     && dpkg -i libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb \
     && rm -rf *.deb

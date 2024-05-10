@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     }
 
     int nn = std::min(20, (int)new_cloud_ptr->size() - 1);
-    geometry::KDTreeFlann kdtree;
+    cloudViewer::geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(*new_cloud_ptr);
     std::vector<int> new_indices_vec(nn);
     std::vector<double> new_dists_vec(nn);

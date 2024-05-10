@@ -59,7 +59,7 @@ void ecvApplicationBase::InitOpenGL()
 #endif
 
 #ifdef Q_OS_MAC
-        format.setVersion(2, 1);	// must be 2.1 - see ccGLWindow::functions()
+        format.setVersion(3, 3);	// must be 3.3
         format.setProfile(QSurfaceFormat::CoreProfile);
 #endif
 
@@ -172,8 +172,8 @@ void ecvApplicationBase::setupPaths()
 	{
 		bundleDir.cdUp();
 	}
-
-    m_PluginPaths << (bundleDir.absolutePath() + "/PlugIns/ecvPlugins");
+    m_PluginPaths << (bundleDir.absolutePath() + "/cvPlugins");
+    m_PluginPaths << (bundleDir.absolutePath() + "/PlugIns/cvPlugins");
 
 #if defined(CV_MAC_DEV_PATHS)
 	// Used for development only - this is the path where the plugins are built
@@ -183,9 +183,9 @@ void ecvApplicationBase::setupPaths()
 	bundleDir.cdUp();
 	bundleDir.cdUp();
 
-    m_PluginPaths << (bundleDir.absolutePath() + "/ecvPlugins");
+        m_PluginPaths << (bundleDir.absolutePath() + "/cvPlugins");
 	m_ShaderPath = (bundleDir.absolutePath() + "/shaders");
-    m_TranslationPath = (bundleDir.absolutePath() + "/eCV/translations");
+        m_TranslationPath = (bundleDir.absolutePath() + "/eCV/translations");
 #else
 	m_ShaderPath = (bundleDir.absolutePath() + "/Shaders");
 	m_TranslationPath = (bundleDir.absolutePath() + "/translations");

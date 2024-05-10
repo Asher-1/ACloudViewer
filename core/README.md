@@ -1,6 +1,6 @@
-# CCCoreLib
+# cloudViewer
 
-[![Actions Status](https://github.com/CloudCompare/CCCoreLib/workflows/Build/badge.svg)](https://github.com/CloudCompare/CCCoreLib/actions)
+[![Actions Status](https://github.com/CloudCompare/cloudViewer/workflows/Build/badge.svg)](https://github.com/CloudCompare/cloudViewer/actions)
 
 This library provides data structures and algorithms for working with 3D point cloud data.
 
@@ -35,9 +35,9 @@ From this, cmake will determine `Qt5Concurrent_DIR`, `Qt5Core_DIR`, and `Qt5Widg
 
 ## How You Can Help
 
-- [report issues](https://github.com/CloudCompare/CCCoreLib/issues)
+- [report issues](https://github.com/CloudCompare/cloudViewer/issues)
 - help with documentation
-- [contribute improvements](https://github.com/CloudCompare/CCCoreLib/pulls)
+- [contribute improvements](https://github.com/CloudCompare/cloudViewer/pulls)
 
 ## License
 This project as a whole is licensed under the **LGPL 2.0+** license - see the [LICENSE](LICENSE.txt) file for details.

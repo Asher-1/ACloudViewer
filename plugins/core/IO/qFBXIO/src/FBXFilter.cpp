@@ -555,9 +555,9 @@ CC_FILE_ERROR FBXFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		{
 			FbxDocumentInfo* sceneInfo = FbxDocumentInfo::Create(lSdkManager, "SceneInfo");
 			sceneInfo->mTitle = qPrintable(QString("Mesh: ") + (meshes.size() == 1 ? meshes[0]->getName() : QString("Multiple meshes")));
-			sceneInfo->mAuthor = "CloudCompare";
+			sceneInfo->mAuthor = "ErowCloudViewer";
 			sceneInfo->mRevision = "rev. 1.0";
-			sceneInfo->mKeywords = "cloudcompare mesh";
+			sceneInfo->mKeywords = "CloudViewer mesh";
 
 			// we need to add the sceneInfo before calling AddThumbNailToScene because
 			// that function is asking the scene for the sceneInfo.
