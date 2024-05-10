@@ -15,7 +15,7 @@ if (${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
 endif ()
 
 if (APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
             "Minimum OS X deployment version" FORCE)
 endif ()
 
@@ -31,6 +31,16 @@ if (UNIX AND NOT APPLE)
     endif ()
 endif ()
 
+if(APPLE)
+    execute_process(COMMAND uname -m
+            OUTPUT_VARIABLE PROCESSOR_ARCH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+    if(PROCESSOR_ARCH STREQUAL "arm64")
+        set(APPLE_AARCH64 TRUE)
+    endif()
+endif()
+
 include(CMakeDependentOption)
 
 # ErowCloudViewer build options
@@ -38,6 +48,7 @@ option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(BUILD_EXAMPLES "Build CloudViewer example programs" ON)
 option(BUILD_UNIT_TESTS "Build CloudViewer unit tests" OFF)
 option(BUILD_BENCHMARKS "Build the micro benchmarks" OFF)
+option(BUILD_OPENCV "Build the opencv" OFF)
 option(BUILD_PYTHON_MODULE "Build the python module" ON)
 option(BUILD_CUDA_MODULE "Build the CUDA module" OFF)
 option(BUILD_COMMON_CUDA_ARCHS "Build for common CUDA GPUs (for release)" OFF)
@@ -48,16 +59,16 @@ option(WITH_IPPICV "Use Intel Performance Primitives" ON)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering" OFF)
 option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
 option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=0" OFF)
-if (WIN32 OR UNIX AND NOT LINUX_AARCH64)
-    cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
-else ()
-    option(BUILD_WEBRTC "Build WebRTC visualizer" OFF)
+if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
+    option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
+else()
+    option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
 endif ()
 option(BUILD_JUPYTER_EXTENSION "Build Jupyter, requires BUILD_WEBRTC=ON" OFF)
 
 # 3rd-party build options
 option(USE_SIMD "Use Single Instruction Multiple Data speed optimization" OFF)
-option(USE_BLAS "Use BLAS/LAPACK instead of MKL" OFF)
+option(USE_SYSTEM_OPENCV "Use system pre-installed opencv" OFF)
 option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" OFF)
 option(USE_SYSTEM_FLANN "Use system pre-installed flann" OFF)
 option(USE_SYSTEM_FMT "Use system pre-installed fmt" OFF)
@@ -73,7 +84,23 @@ option(USE_SYSTEM_QHULLCPP "Use system pre-installed qhullcpp" OFF)
 option(USE_SYSTEM_TINYGLTF "Use system pre-installed tinygltf" OFF)
 option(USE_SYSTEM_TINYOBJLOADER "Use system pre-installed tinyobjloader" OFF)
 option(USE_SYSTEM_FFMPEG "Use system pre-installed ffmpeg" OFF)
-option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source" OFF)
+# 3rd-party build options
+if(LINUX_AARCH64 OR APPLE_AARCH64)
+    option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           ON )
+else()
+    option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           OFF)
+endif()
+if(USE_BLAS)
+    option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        OFF)
+else()
+    option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        ON )
+endif()
+
+if(LINUX_AARCH64 OR APPLE_AARCH64)
+    option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
+else()
+    option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           OFF)
+endif()
 option(PREFER_OSX_HOMEBREW "Prefer Homebrew libs over frameworks" ON)
 option(WITH_FAISS "Enable Faiss" ON)
 
@@ -167,6 +194,12 @@ if (LINUX_AARCH64)
 endif ()
 
 # Catch a few incompatible build options
+if ((LINUX_AARCH64 OR APPLE_AARCH64) AND NOT BUILD_FILAMENT_FROM_SOURCE)
+    message(FATAL_ERROR "ARM CPU detected, you must set BUILD_FILAMENT_FROM_SOURCE=ON.")
+endif()
+if ((LINUX_AARCH64 OR APPLE_AARCH64) AND NOT USE_BLAS)
+    message(FATAL_ERROR "ARM CPU detected, you must set USE_BLAS=ON.")
+endif()
 if (APPLE AND ENABLE_HEADLESS_RENDERING)
     message(WARNING "Headless rendering is not supported on Mac OS")
     set(ENABLE_HEADLESS_RENDERING OFF)
@@ -239,6 +272,9 @@ if (BUILD_CUDA_MODULE
     add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
     message(WARNING "Visual Studio 16.10 (MSVC 19.29) introduced a compiler bug when compiling CUDA code with C++14. "
             "Workaround this bug by setting the CUDA standard to C++17.")
+elseif (BUILD_CUDA_MODULE) # fix 'Target requires the language dialect "CUDA17"' issues on linux
+    set(CMAKE_CUDA_STANDARD 14)
+    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 endif ()
 
 # CMake modules
@@ -306,11 +342,15 @@ if (UNIX OR CYGWIN)
     set(CloudViewer_INSTALL_INCLUDE_DIR "${CMAKE_INSTALL_INCLUDEDIR}")
     set(CloudViewer_INSTALL_BIN_DIR "${CMAKE_INSTALL_BINDIR}")
     set(CloudViewer_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}")
+    # Put resources in */share/
+    set(CloudViewer_INSTALL_RESOURCE_DIR "${CMAKE_INSTALL_DATADIR}")
     set(CloudViewer_INSTALL_CMAKE_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 else ()
     set(CloudViewer_INSTALL_INCLUDE_DIR include)
     set(CloudViewer_INSTALL_BIN_DIR bin)
     set(CloudViewer_INSTALL_LIB_DIR lib)
+    # Put resources in */bin, with executables / DLLs
+    set(CloudViewer_INSTALL_RESOURCE_DIR bin)
     set(CloudViewer_INSTALL_CMAKE_DIR "share/CloudViewer")
 endif ()
 
@@ -335,6 +375,8 @@ if (WIN32)
     set(INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER})
 elseif (UNIX AND NOT APPLE)
     set(INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX})
+elseif (APPLE)
+    set(INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER})
 endif ()
 
 # Put build results in some predictable places
@@ -347,23 +389,30 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(COLOUDVIEWER_PROJECT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set(COLOUDVIEWER_APP_DIR_NAME "CloudViewer")
 set(CLOUDVIEWER_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${COLOUDVIEWER_APP_DIR_NAME}")
-make_directory(${CLOUDVIEWER_OUTPUT_DIRECTORY})
+if (NOT APPLE)
+    file(MAKE_DIRECTORY ${CLOUDVIEWER_OUTPUT_DIRECTORY})
+endif ()
 
 # Global Security options (including 3rd party code)
 # Add -fPIC for library and -fPIE for executable to compiler and linker. Does not add -pie !
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-include(CloudViewerMakeHardeningFlags)
-cloudViewer_make_hardening_flags(HARDENING_CFLAGS HARDENING_LDFLAGS)
-cloudViewer_make_hardening_definitions(HARDENING_DEFINITIONS)
+# Explicitly specify the preference of using -pthread over -lpthread.
+# This must be defined here since CUDA calls find_package(Threads) internally.
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 
-message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS}")
-message(STATUS "Using security hardening linker flags: ${HARDENING_LDFLAGS}")
-message(STATUS "Using security hardening compiler definitions: ${HARDENING_DEFINITIONS}")
-
-add_compile_options("${HARDENING_CFLAGS}")
-add_link_options("${HARDENING_LDFLAGS}")
-add_compile_definitions("${HARDENING_DEFINITIONS}")
+# Overwrites property for Thread::Threads in find_package(Threads)
+# For CUDA, "-pthread" is replaced with "-Xcompiler -pthread" (CMake's default)
+# For ISPC, "-pthread" is disabled
+macro(cloudViewer_patch_findthreads_module_)
+    if(TARGET Threads::Threads AND THREADS_HAVE_PTHREAD_ARG)
+        set_property(TARGET Threads::Threads
+                PROPERTY INTERFACE_COMPILE_OPTIONS
+                "$<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:SHELL:-Xcompiler -pthread>"
+                "$<$<AND:$<NOT:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-pthread>")
+    endif()
+endmacro()
+cmake_language(EVAL CODE "cmake_language(DEFER CALL cloudViewer_patch_findthreads_module_)")
 
 # Build CUDA module by default if CUDA is available
 if (BUILD_CUDA_MODULE)
@@ -472,6 +521,9 @@ include(CMakeExternalLibs)
 
 # Contrib. libraries (mainly for I/O)
 include(AllSupport)
+
+SET(CloudViewerAppDir "${PROJECT_SOURCE_DIR}/libs/CVViewer/apps")
+SET(PROJECT_ROOT_PATH "${PROJECT_SOURCE_DIR}")
 
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
     if (MSVC)

@@ -97,8 +97,10 @@ if (BUILD_PYTHON_MODULE)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ECV_PYTHON_LIB_LIBRARY_BUILD)
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_PYTHON_MODULE)
 
-    # install (shared) lib to specified destinations
-    InstallSharedLibrary(TARGET ${PROJECT_NAME})
+    if (NOT APPLE) # no need to copy targets on macos due to rpath
+        # install (shared) lib to specified destinations
+        InstallSharedLibrary(TARGET ${PROJECT_NAME})
+    endif ()
 
     #import python dlls (if any, WIN32 only)
     include(cmake/ExportPythonDlls.cmake)

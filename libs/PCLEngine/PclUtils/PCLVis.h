@@ -27,8 +27,8 @@
 #include "WidgetMap.h"
 #include "qPCL.h"
 
-// BOOST
-#include <boost/thread/thread.hpp>
+#include <mutex>
+#include <thread>
 
 // ECV_DB_LIB
 #include <ecvColorTypes.h>
@@ -517,7 +517,7 @@ protected:
 
     bool m_autoUpdateCameraPos;
 
-    boost::mutex m_cloud_mutex;
+    std::mutex m_cloud_mutex;
 
 signals:
     void interactorPickedEvent(vtkActor* actor);

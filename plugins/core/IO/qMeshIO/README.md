@@ -13,11 +13,11 @@ Currently MeshIO supports reading the following formats:
 
 ## Building
 
-- clone this repository in the `CloudCompare/plugins/private` directory
+- clone this repository in the `ErowCloudViewer/plugins/private` directory
 - make sure the submodule `extern/assmip` is up-to-date by `git pull`ing it
-- re-run CloudCompare's cmake
+- re-run ErowCloudViewer's cmake
 - turn on `PLUGIN_IO_QMESH` in your cmake options
-- build CloudCompare
+- build ErowCloudViewer
 
 Note: If you are building for CloudCompare 2.11.x, use the tagged version at `cloudcompare-2.11.x`
 

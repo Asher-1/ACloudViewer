@@ -24,6 +24,7 @@
  */
 
 #include "ecvHead.h"
+#include <QPainterPath>
 #include <QSystemTrayIcon>
 
 class MainWindow;

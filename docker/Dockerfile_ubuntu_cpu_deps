@@ -1,0 +1,279 @@
+ARG VTK_VERSION
+ARG PCL_VERSION
+ARG CUDA_VERSION
+ARG UBUNTU_VERSION
+FROM nvidia/opengl:1.2-glvnd-devel-ubuntu${UBUNTU_VERSION}
+#FROM gezp/ubuntu-nomachine:${UBUNTU_VERSION}-cu${CUDA_VERSION}
+LABEL maintainer="ErowCloudViewer Team ludahai19@163.com"
+
+# Execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
+# docker run -it --runtime=nvidia cloudviewer-deps
+
+ENV REFRESHED_AT=2023-06-03 \
+    CLOUDVIEWER_DEV=/opt/ErowCloudViewer \
+    QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
+    QT_ROOT=/opt/Qt5.14.2/ \
+    QT_CI_LOGIN=alicevisionjunk@gmail.com \
+    QT_CI_PASSWORD=azerty1. \
+    DEBIAN_FRONTEND=noninteractive
+
+# Update apt and install libs needed by Qt
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
+    && apt-get clean && apt-get update --fix-missing -y \
+    && apt-get install apt-utils software-properties-common tzdata --fix-missing -y \
+    && apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc \
+    && apt-add-repository --yes "deb https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
+    && apt-get update --fix-missing -y \
+    && apt-get install --fix-missing -yq --no-install-recommends \
+        build-essential \
+        vim \
+        git \
+        curl \
+        g++ \
+        tree \
+        apt-file \
+        net-tools \
+        mesa-utils \
+        libtbb2 \
+        libgtk2.0-dev \
+        libavcodec-dev \
+        libavformat-dev \
+        libswscale-dev \
+        libjpeg-dev \
+        libpng-dev \
+        libtiff-dev \
+        libdc1394-22-dev \
+        libsuitesparse-dev \
+        libfreeimage-dev \
+        libgoogle-glog-dev \
+        libgflags-dev \
+        libglew-dev \
+        libatlas-base-dev \
+        unzip \
+        locate \
+        gfortran \
+        automake \
+        cmake \
+        cmake-gui \
+        gdb \
+        ccache \
+        wget \
+        libsdl2-dev \
+        xorg-dev \
+        libc++-7-dev \
+        libc++abi-7-dev \
+        libxi-dev \
+        libflann1.9 \
+        libflann-dev \
+        libosmesa6-dev \
+        libudev-dev \
+        autoconf \
+        libtool \
+        libtbb-dev \
+        mpi-default-dev \
+        openmpi-bin \
+        openmpi-common \
+        libeigen3-dev \
+        libboost-all-dev \
+        libglew-dev \
+        'libqhull*' \
+        libgtest-dev \
+        libusb-1.0-0-dev \
+        libusb-dev \
+        libudev-dev \
+        git-core \
+        freeglut3-dev \
+        pkg-config \
+        libpcap-dev \
+        clang-format \
+        libqhull-dev \
+        graphviz \
+        nasm \
+        mono-complete \
+        libopenni-dev \
+        libopenni2-dev \
+        libgl1-mesa-dev \
+        libglu1-mesa-dev \
+        libx11-dev \
+        libxext-dev \
+        libxtst-dev \
+        libxrender-dev \
+        libxmu-dev \
+        libxmuu-dev \
+        flex \
+        fontconfig \
+        libfreetype6 \
+        libglib2.0-0 \
+        libice6 \
+        libx11-6 \
+        libxcb1 \
+        libxext6 \
+        libxi6 \
+        libxrender1 \
+        libsm6 \
+        libxt-dev \
+        libosmesa-dev \
+        libgl-dev \
+        libglu-dev \
+        libxcb-keysyms1 \
+        libxcb-image0 \
+        libxkbcommon-x11-0 \
+        libz-dev \
+        systemd \
+        libjsoncpp-dev \
+        libgdal-dev \
+        libcgal-dev
+
+# Install kinetic
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod \
+    && echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' | debconf-set-selections \
+    && echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' | debconf-set-selections \
+    && apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
+
+# Install and update npm and nodejs
+RUN apt-get install nodejs npm -y \
+    && npm install n -g \
+    && n latest \
+	&& npm install -g yarn
+
+# Install laszip
+WORKDIR /opt
+COPY docker_files/laszip-src-3.4.3.tar.gz /opt
+RUN tar -xvf laszip-src-3.4.3.tar.gz && \
+    cd laszip-src-3.4.3 && \
+    mkdir -p build && cd build && \
+    cmake .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig
+
+# Install xerces-c
+WORKDIR /opt
+COPY docker_files/xerces-c-3.2.3.zip /opt
+RUN unzip xerces-c-3.2.3.zip \
+    && cd ./xerces-c-3.2.3 \
+    && chmod +x configure \
+    && ./configure --prefix=/usr \
+    && make \
+    && make install \
+    && make clean \
+    && rm -rf /opt/xerces-c-3.2.3.zip
+
+# Install Miniconda3
+WORKDIR /opt
+COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt
+RUN sh -c '/bin/echo -e "\nyes\n\nyes" | sh Miniconda3-latest-Linux-x86_64.sh' \
+    && echo -e "\ny" && /root/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ \
+    && /root/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/ \
+    && /root/miniconda3/bin/conda config --set show_channel_urls yes \
+    && echo -e "\ny" | /root/miniconda3/bin/conda install python=3.8 \
+    && /root/miniconda3/bin/pip install --upgrade pip \
+    && rm Miniconda3-latest-Linux-x86_64.sh
+
+# Install ErowCloudViewer requirements and freeze bundle
+COPY ./*requirements.txt ${CLOUDVIEWER_DEV}/
+WORKDIR "${CLOUDVIEWER_DEV}"
+RUN /root/miniconda3/bin/pip install --user  -U pip -i https://pypi.tuna.tsinghua.edu.cn/simple/  \
+                                && /root/miniconda3/bin/pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
+RUN /root/miniconda3/bin/pip install -r requirements.txt \
+    && /root/miniconda3/bin/pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cpu \
+    && /root/miniconda3/bin/pip install tensorflow==2.5.2
+
+# fix liblitedb.so.2.1 complain libstdc++.so.6 GLIBCXX not found, libgdal.so complain undefined TIFF* and object.h bugs with qt bugs
+RUN cp /root/miniconda3/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/ \
+    && rm -rf /usr/lib/x86_64-linux-gnu/libtiff* \
+    && ln -s /root/miniconda3/lib/libtiff.so.5.6.0 /usr/lib/x86_64-linux-gnu/libtiff.so.5 \
+    && ln -s /root/miniconda3/lib/libtiffxx.so.5.6.0 /usr/lib/x86_64-linux-gnu/libtiffxx.so.5 \
+    && ln -s /root/miniconda3/lib/libwebp.so.7.1.1 /usr/lib/x86_64-linux-gnu/libwebp.so.7 \
+    && ln -s /root/miniconda3/lib/libjpeg.so.9.4.0 /usr/lib/x86_64-linux-gnu/libjpeg.so.9 \
+    && sed -i "s/PyType_Slot \*slots/PyType_Slot \*_slots/g" /root/miniconda3/include/python3.8m/object.h \
+    && ldconfig
+
+# Install Qt (to build plugins)
+WORKDIR /tmp/qt
+COPY docker_files/qt.run /tmp/qt
+COPY ./docker/qt-installer-noninteractive.qs ${CLOUDVIEWER_DEV}/docker/
+RUN chmod +x qt.run && \
+    ./qt.run --verbose --platform minimal --script "${CLOUDVIEWER_DEV}/docker/qt-installer-noninteractive.qs" && \
+    rm qt.run && rm -rf ${CLOUDVIEWER_DEV}/docker
+
+# Install opencv
+WORKDIR /opt
+COPY docker_files/opencv.zip /opt
+COPY docker_files/opencv_contrib.zip /opt
+#RUN git clone https://github.com/Itseez/opencv.git && git clone https://github.com/Itseez/opencv_contrib.git && \
+RUN unzip opencv.zip && unzip opencv_contrib.zip && \
+    #cd opencv_contrib && git checkout 4.3.0 && \
+    cd opencv && \
+    #git checkout 4.3.0 && \
+    mkdir -p build && cd build && \
+    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DOPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
+            -DBUILD_EXAMPLES=OFF .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig && \
+    rm -rf ./* && \
+    rm -rf /opt/opencv.zip /opt/opencv_contrib.zip
+
+# Install vtk
+WORKDIR /opt
+COPY docker_files/VTK-8.2.0.zip /opt
+#RUN git clone https://github.com/Kitware/VTK.git --recursive && \
+RUN unzip VTK-8.2.0.zip && \
+    cd VTK && \
+    #git checkout "${VTK_VERSION}" && \
+    mkdir -p build && cd build && \
+    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DVTK_QT_VERSION:STRING=5 \
+            -DVTK_Group_Qt:BOOL=ON \
+            -DBUILD_SHARED_LIBS:BOOL=ON \
+            -DVTK_BUILD_QT_DESIGNER_PLUGIN:BOOL=ON \
+            -DModule_vtkGUISupportQtOpenGL=ON \
+            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
+            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig && \
+    cp lib/libQVTKWidgetPlugin.so "${QT_DIR}"/plugins/designer && \
+    cp lib/libQVTKWidgetPlugin.so "${QT_ROOT}"/Tools/QtCreator/lib/Qt/plugins/designer && \
+    rm -rf ./* && \
+    rm -rf /opt/VTK-8.2.0.zip
+
+# Install pcl
+WORKDIR /opt
+COPY docker_files/pcl-1.11.1.zip /opt
+#RUN git clone https://github.com/PointCloudLibrary/pcl.git --recursive && \
+RUN unzip pcl-1.11.1.zip && \
+    cd pcl && \
+    #git checkout "${PCL_VERSION}" && \
+    mkdir -p build && cd build && \
+    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DBUILD_GPU=OFF \
+            -DBUILD_apps=OFF \
+            -DBUILD_examples=OFF \
+            -DBUILD_surface_on_nurbs=ON \
+            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
+            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig && \
+    rm -rf ./* && \
+    rm -rf /opt/pcl-1.11.1.zip
+
+# Enable SSH X11 forwarding, needed when the Docker image
+# is run on a remote machine
+RUN sed -i "s/^.*X11Forwarding.*$/X11Forwarding yes/; s/^.*X11UseLocalhost.*$/X11UseLocalhost no/; s/^.*PermitRootLogin prohibit-password/PermitRootLogin yes/; s/^.*X11UseLocalhost.*/X11UseLocalhost no/;" /etc/ssh/sshd_config
+RUN echo "root:toor" | chpasswd
+
+WORKDIR /
+COPY docker/nxserver.sh /
+RUN chmod +x /nxserver.sh \
+    && ln -s /opt/Qt5.14.2/5.14.2/gcc_64/lib/libQt5X11Extras.so.5.14.2 /usr/lib/libQt5X11Extras.so.5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /root/miniconda3/pkgs/* \
+    && rm -rf /root/.cache/* \
+    && rm -rf /root/.ccache/*
+
+ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
+
+EXPOSE 22 4000
+#ENTRYPOINT ["/nxserver.sh"]

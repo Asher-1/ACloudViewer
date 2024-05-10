@@ -45,6 +45,7 @@
 #include <mach/mach_types.h>
 #include <mach/mach_init.h>
 #include <mach/mach_host.h>
+#include <sstream>
 #else
 #warning "System unrecognized. Can't found memory infos."
 #include <limits>

@@ -2,7 +2,7 @@
 
 > Version 1.1, December 2016
 
-> Copyright (C) 2020 Alex Spataru ([https://alex-spataru.com/](https://alex-spataru.com))
+> Copyright (C) 2023 Alex Spataru ([https://alex-spataru.com/](https://alex-spataru.com))
 
 Everyone is permitted to copy and distribute verbatim or modified
 copies of this license document.

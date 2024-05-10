@@ -68,7 +68,7 @@ int Run(int argc, const char *argv[]) {
 }
 
 #if __APPLE__
-// CloudViewer_mac.mm
+// CloudViewerApp_mac.mm
 #else
 int main(int argc, const char *argv[]) { return Run(argc, argv); }
 #endif  // __APPLE__

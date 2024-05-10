@@ -68,6 +68,7 @@
 // Equivalent to EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION but with support for
 // initializer lists, which is a C++11 feature and not supported by the Eigen.
 // The initializer list extension is inspired by Theia and StackOverflow code.
+#ifndef EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM
 #define EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(...)                   \
     namespace std {                                                          \
     template <>                                                              \
@@ -107,6 +108,7 @@
 #define EIGEN_STL_UMAP_HASH(KEY, VALUE, HASH)                \
     std::unordered_map<KEY, VALUE, HASH, std::equal_to<KEY>, \
                        Eigen::aligned_allocator<std::pair<KEY const, VALUE>>>
+#endif
 #else
 // Equivalent to EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION but with support for
 // initializer lists, which is a C++11 feature and not supported by the Eigen.

@@ -77,6 +77,16 @@ public:
     necessary bits of data)
     **/
     PCLCloud::Ptr getAsSM(bool ignoreScalars = false) const;
+    PCLCloud::Ptr getAsSM(bool xyz,
+                          bool normals,
+                          bool rgbColors,
+                          const QStringList& scalarFields) const;
+
+    //! Converts the ccPointCloud to a 'pcl::PointXYZ' cloud
+    pcl::PointCloud<pcl::PointXYZ>::Ptr getRawXYZ() const;
+
+    //! Converts the ccPointCloud to a 'pcl::PointNormal' cloud
+    pcl::PointCloud<pcl::PointNormal>::Ptr getAsPointNormal() const;
 
     PCLCloud::Ptr getVtkPolyDataAsSM(vtkPolyData* const polydata) const;
     PCLMesh::Ptr getVtkPolyDataAsPclMesh(vtkPolyData* const polydata) const;

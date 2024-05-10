@@ -1,19 +1,19 @@
-//##########################################################################
-//#                                                                        #
-//#                            CLOUDVIEWER                                 #
-//#                                                                        #
-//#  This program is free software; you can redistribute it and/or modify  #
-//#  it under the terms of the GNU General Public License as published by  #
-//#  the Free Software Foundation; version 2 of the License.               #
-//#                                                                        #
-//#  This program is distributed in the hope that it will be useful,       #
-//#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-//#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
-//#  GNU General Public License for more details.                          #
-//#                                                                        #
-//#          COPYRIGHT: EDF R&D / DAHAI LU                                 #
-//#                                                                        #
-//##########################################################################
+// ##########################################################################
+// #                                                                        #
+// #                            CLOUDVIEWER                                 #
+// #                                                                        #
+// #  This program is free software; you can redistribute it and/or modify  #
+// #  it under the terms of the GNU General Public License as published by  #
+// #  the Free Software Foundation; version 2 of the License.               #
+// #                                                                        #
+// #  This program is distributed in the hope that it will be useful,       #
+// #  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+// #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
+// #  GNU General Public License for more details.                          #
+// #                                                                        #
+// #          COPYRIGHT: EDF R&D / DAHAI LU                                 #
+// #                                                                        #
+// ##########################################################################
 
 #ifndef ECV_MAIN_APP_INTERFACE_HEADER
 #define ECV_MAIN_APP_INTERFACE_HEADER
@@ -203,11 +203,10 @@ public:
 
     ////other useful methods
     virtual void setView(CC_VIEW_ORIENTATION view) = 0;
-    //
-    // virtual void toggleActiveWindowCenteredPerspective() = 0;
-    // virtual void toggleActiveWindowCustomLight() = 0;
-    // virtual void toggleActiveWindowSunLight() = 0;
-    // virtual void toggleActiveWindowViewerBasedPerspective() = 0;
+    virtual void toggleActiveWindowCenteredPerspective() = 0;
+    virtual void toggleActiveWindowViewerBasedPerspective() = 0;
+    //    virtual void toggleActiveWindowSunLight() = 0
+    //    virtual void toggleActiveWindowCustomLight() = 0;
     virtual void zoomOnSelectedEntities() = 0;
     virtual void zoomOnEntities(ccHObject* obj) = 0;
     virtual void setGlobalZoom() = 0;

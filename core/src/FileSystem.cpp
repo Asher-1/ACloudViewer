@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                          -
+// -                        cloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -25,8 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "FileSystem.h"
-#include "CVPlatform.h"
-#include "Logging.h"
 
 #include <fcntl.h>
 
@@ -34,6 +32,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
+#include <fstream>
+
+#include "CVPlatform.h"
+#include "Logging.h"
 #ifdef CV_WINDOWS
 #include <direct.h>
 #include <dirent/dirent.h>
@@ -53,6 +55,163 @@
 namespace cloudViewer {
 namespace utility {
 namespace filesystem {
+
+std::string GetEnvVar(const std::string &env_var) {
+    if (const char *env_p = std::getenv(env_var.c_str())) {
+        return {env_p};
+    } else {
+        return "";
+    }
+}
+
+std::string EnsureTrailingSlash(const std::string &str) {
+    if (str.length() > 0) {
+        if (str.back() != '/') {
+            return str + "/";
+        }
+    } else {
+        return str + "/";
+    }
+    return str;
+}
+
+bool HasFileExtension(const std::string &file_name, const std::string &ext) {
+    if (ext.empty()) {
+        utility::LogWarning("Given empty extension!");
+        return false;
+    }
+
+    if (ext.at(0) != '.') {
+        utility::LogWarning("extension should be .xxx, but missing '.'!");
+        return false;
+    }
+
+    std::string ext_lower = ToLower(ext);
+    if (file_name.size() >= ext_lower.size() &&
+        file_name.substr(file_name.size() - ext_lower.size(),
+                         ext_lower.size()) == ext_lower) {
+        return true;
+    }
+    return false;
+}
+
+void SplitFileExtension(const std::string &path,
+                        std::string *root,
+                        std::string *ext) {
+    auto parts = StringSplit(path, ".", false);
+
+    if (parts.empty()) {
+        utility::LogError("Empty parts...");
+    }
+    if (parts.size() == 1) {
+        *root = parts[0];
+        *ext = "";
+    } else {
+        *root = "";
+        for (size_t i = 0; i < parts.size() - 1; ++i) {
+            *root += parts[i] + ".";
+        }
+        root->pop_back();
+        //    *root = root->substr(0, root->length() - 1);
+        if (parts.back() == "") {
+            *ext = "";
+        } else {
+            *ext = "." + parts.back();
+        }
+    }
+}
+
+bool CopyFile(const std::string &from, const std::string &to) {
+    std::ifstream src(from, std::ios::binary);
+    if (!src || IsDirectory(to)) {
+        if (!src) {
+            utility::LogWarning("Source path could not be normally opened: {}",
+                                from);
+        }
+        std::string command = "cp -r " + from + " " + to;
+        utility::LogDebug(command.c_str());
+        const int ret = std::system(command.c_str());
+        if (ret == 0) {
+            utility::LogDebug("Copy success, command returns: {}", ret);
+            return true;
+        } else {
+            utility::LogDebug("CCopy error, command returns: {}", ret);
+            return false;
+        }
+    }
+
+    std::ofstream dst(to, std::ios::binary);
+    if (!dst) {
+        utility::LogError("Target path is not writable: {}", to);
+        return false;
+    }
+
+    dst << src.rdbuf();
+    return true;
+}
+
+bool CopyDir(const std::string &from, const std::string &to) {
+    DIR *directory = opendir(from.c_str());
+    if (directory == nullptr) {
+        utility::LogError("Cannot open directory: {}", from);
+        return false;
+    }
+
+    bool ret = true;
+    if (EnsureDirectory(to)) {
+        struct dirent *entry;
+        while ((entry = readdir(directory)) != nullptr) {
+            // skip directory_path/. and directory_path/..
+            if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) {
+                continue;
+            }
+            const std::string sub_path_from = from + "/" + entry->d_name;
+            const std::string sub_path_to = to + "/" + entry->d_name;
+            if (entry->d_type == DT_DIR) {
+                ret &= CopyDir(sub_path_from, sub_path_to);
+            } else {
+                ret &= CopyFile(sub_path_from, sub_path_to);
+            }
+        }
+    } else {
+        utility::LogError("Cannot create target directory: {}", to);
+        ret = false;
+    }
+    closedir(directory);
+    return ret;
+}
+
+bool Copy(const std::string &from,
+          const std::string &to,
+          bool include_parent_dir,
+          const std::string &extname) {
+    if (IsDirectory(from)) {
+        if (extname.empty()) {  // ignore extension filter
+            if (include_parent_dir) {
+                return CopyDir(
+                        from, JoinPaths(to, GetFileNameWithoutDirectory(from)));
+            } else {
+                return CopyDir(from, to);
+            }
+        } else {  // filter files with extname
+            std::vector<std::string> filtered_files;
+            if (!ListFilesInDirectoryWithExtension(from, extname,
+                                                   filtered_files)) {
+                return false;
+            }
+            for (const auto &fn : filtered_files) {
+                if (!CopyFile(fn, to)) {
+                    utility::LogWarning("Failed to copy {} to {}", fn.c_str(),
+                                        to.c_str());
+                    return false;
+                }
+            }
+            return true;
+        }
+    } else {
+        return CopyFile(from, to);
+    }
+}
 
 std::string GetFileExtensionInLowerCase(const std::string &filename) {
     size_t dot_pos = filename.find_last_of(".");
@@ -204,10 +363,43 @@ bool ChangeWorkingDirectory(const std::string &directory) {
 #endif
 }
 
+bool IsFile(const std::string &filename) {
+    if (0 != access(filename.c_str(), F_OK)) {
+        return false;
+    }
+
+    struct stat file_stat;
+    if (0 > stat(filename.c_str(), &file_stat)) {
+        perror("get file stat error");
+        return false;
+    }
+    return S_ISREG(file_stat.st_mode);
+}
+
+bool IsDirectory(const std::string &directory) {
+    if (0 != access(directory.c_str(), F_OK)) {
+        return false;
+    }
+
+    struct stat file_stat;
+    if (0 > stat(directory.c_str(), &file_stat)) {
+        perror("get directory stat error");
+        return false;
+    }
+    return S_ISDIR(file_stat.st_mode);
+}
+
 bool DirectoryExists(const std::string &directory) {
     struct stat info;
     if (stat(directory.c_str(), &info) == -1) return false;
     return S_ISDIR(info.st_mode);
+}
+
+bool EnsureDirectory(const std::string &directory_path) {
+    if (!DirectoryExists(directory_path)) {
+        return MakeDirectoryHierarchy(directory_path);
+    }
+    return true;
 }
 
 bool MakeDirectory(const std::string &directory) {

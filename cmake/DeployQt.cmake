@@ -47,27 +47,41 @@ function( DeployQt )
 		
 	if ( APPLE )
 		set( app_name "${name}.app" )
-		set( app_path "${CMAKE_CURRENT_BINARY_DIR}/${app_name}" )
-		set( temp_dir "${CMAKE_CURRENT_BINARY_DIR}/deployqt" )
+		if (CMAKE_CONFIGURATION_TYPES)
+			set(app_path "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${app_name}")
+			set(temp_dir "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/deployqt")
+		else ()
+			set(app_path "${CMAKE_CURRENT_BINARY_DIR}/${app_name}")
+			set(temp_dir "${CMAKE_CURRENT_BINARY_DIR}/deployqt")
+		endif ()
 		set( temp_app_path "${temp_dir}/$<CONFIG>/${app_name}" )
-
 		add_custom_command(
-			TARGET ${DEPLOY_QT_TARGET}
-			POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E remove_directory "${temp_dir}"
-			COMMAND ${CMAKE_COMMAND} -E make_directory "${temp_dir}"
-			COMMAND ${CMAKE_COMMAND} -E copy_directory ${app_path} ${temp_app_path}
-			COMMAND "${mac_deploy_qt}"
-				${temp_app_path}
-				-verbose=1
-			VERBATIM
+				TARGET ${DEPLOY_QT_TARGET}
+				POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E remove_directory "${temp_dir}"
+				COMMAND ${CMAKE_COMMAND} -E make_directory "${temp_dir}"
+				COMMAND ${CMAKE_COMMAND} -E copy_directory ${app_path} ${temp_app_path}
+				COMMAND "${mac_deploy_qt}" ${temp_app_path} -verbose=1
+				VERBATIM
 		)
 
 		install(
-			DIRECTORY ${temp_app_path}
-			DESTINATION "${deploy_path}"
+				DIRECTORY ${temp_app_path}
+				DESTINATION "${deploy_path}"
+				USE_SOURCE_PERMISSIONS
 		)
-	elseif( WIN32 )	
+
+		# fix macdeployqt package issues with rpath and external dynamic libraries
+		# copy external libraries (e.g. SDL into the bundle and fixup the search paths
+		set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/../libs/CVViewer/apps")
+		set( deploy_app_path "${CMAKE_INSTALL_PREFIX}/${deploy_path}/${app_name}" )
+		message(STATUS "deploy_app_path: ${deploy_app_path}")
+		message(STATUS "fixup_macosx_bundle: ${SCRIPTS_DIR}/fixup_macosx_bundle.sh")
+		install(CODE "execute_process(COMMAND ${SCRIPTS_DIR}/fixup_macosx_bundle.sh ${deploy_app_path})")
+		install(CODE "execute_process(COMMAND ${SCRIPTS_DIR}/fixup_macosx_plugins.sh ${deploy_app_path})")
+		install(CODE "execute_process(COMMAND ${SCRIPTS_DIR}/fixup_macosx_frameworks.sh ${deploy_app_path})")
+		install(CODE "execute_process(COMMAND ${SCRIPTS_DIR}/fixup_macosx_frameworks.sh ${deploy_app_path})")
+	elseif( WIN32 )
 		set( app_name "${name}.exe" )
 		if( CMAKE_CONFIGURATION_TYPES )
 			set( app_path "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${app_name}" )

@@ -145,11 +145,15 @@ int main(int argc, char** argv) {
     commands.emplace_back("vocab_tree_matcher", &RunVocabTreeMatcher);
     commands.emplace_back("vocab_tree_retriever", &RunVocabTreeRetriever);
 
+#ifdef Q_OS_MAC
+    // only support gui on MacOS
+    const std::string command = "gui";
+#else
     if (argc == 1) {
         return ShowHelp(commands);
     }
-
     const std::string command = argv[1];
+#endif
     if (command == "help" || command == "-h" || command == "--help") {
         return ShowHelp(commands);
     } else {

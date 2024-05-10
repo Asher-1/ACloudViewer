@@ -246,7 +246,9 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     # install
     if (VCPKG_BUILD)
         install(TARGETS ${TARGET_NAME} DESTINATION tools/)
-    else ()
+    elseif (NOT APPLE)
+        # On macOs, the DeployQt step will install the bundle that contains the executable with
+        # library paths properly set, reinstalling the executable here would break the bundle.
         install(TARGETS ${TARGET_NAME} DESTINATION ${INSTALL_DESTINATIONS})
     endif ()
 endmacro(COLMAP_ADD_EXECUTABLE)

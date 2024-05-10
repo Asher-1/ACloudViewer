@@ -24,4 +24,7 @@ function(cloudViewer_link_3rdparty_libraries target)
             message(WARNING "Skipping non-existent header dependency ${dep}")
         endif()
     endforeach()
+
+    # Link header dependencies privately.
+    target_link_libraries(${target} PRIVATE ${CloudViewer_3RDPARTY_HEADER_TARGETS})
 endfunction()

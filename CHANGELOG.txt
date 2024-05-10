@@ -1,18 +1,23 @@
 ErowCloudViewer Version History
 ============================
 
-
-v3.9.0 (Asher) - 03/20/2022
+v3.9.0 (Asher) - 05/04/2023
 ----------------------
 
-## ErowCloudViewer 3.9.0 beta Release Notes
-We are excited to present ErowCloudViewer 3.9.0 beta!
+## ErowCloudViewer 3.9.0 Release Notes
+We are excited to present ErowCloudViewer 3.9.0!
 
 We welcome you to the 3.9.0 beta release of ErowCloudViewer. This release is full of exciting new features with a strong emphasis in real-time pipelines, but also full of bug fixes and usability improvements. The big highlights of this release are as follows:
 - New Lock rotation axis feature.
 - New Animation display features supported.
 - New scalar filed switch feature supported.
 - New ply mesh texture_u and texture_v supported.
+- New platform support: MacOS!
+
+### supported platform:
+- Windows `x86/64`
+- Linux `x86/64`
+- MacOS `arm64 (M1 and M2)`
 
 v3.8.0 (Asher) - 10/10/2021
 ----------------------
