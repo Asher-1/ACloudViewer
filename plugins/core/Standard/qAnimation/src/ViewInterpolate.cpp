@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                   EROWCLOUDVIEWER PLUGIN: qAnimation                   #
+//#                   ACloudViewer PLUGIN: qAnimation                   #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #

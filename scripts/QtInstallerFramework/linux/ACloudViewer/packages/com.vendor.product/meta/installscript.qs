@@ -30,15 +30,11 @@ var targetDirectoryPage = null;
 
 function Component()
 {
-    // for register file extention
-    component.loaded.connect(this, addRegisterFileCheckBox);
-    component.unusualFileType = generateUnusualFileType(3);
-	
-	// for autoinstall
+    // for autoinstall
     component.loaded.connect(this, this.installerLoaded);
 	
-	// for changelog
-	installer.installationFinished.connect(this, Component.prototype.installationFinishedPageIsShown);
+    // for changelog
+    installer.installationFinished.connect(this, Component.prototype.installationFinishedPageIsShown);
     installer.finishButtonClicked.connect(this, Component.prototype.installationFinished);
 }
 
@@ -58,7 +54,7 @@ Component.prototype.installerLoaded = function()
 
 Component.prototype.targetChooserClicked = function()
 {
-    var dir = QFileDialog.getExistingDirectory("", targetDirectoryPage.targetDirectory.text);
+	var dir = QFileDialog.getExistingDirectory("", targetDirectoryPage.targetDirectory.text);
 	if(dir != "") {
 		targetDirectoryPage.targetDirectory.setText(dir);
 	} else {
@@ -69,7 +65,7 @@ Component.prototype.targetChooserClicked = function()
 Component.prototype.targetDirectoryChanged = function()
 {
     var dir = targetDirectoryPage.targetDirectory.text;
-    if (installer.fileExists(dir) && installer.fileExists(dir + "/maintenancetool.exe")) {
+    if (installer.fileExists(dir) && installer.fileExists(dir + "/maintenancetool")) {
         targetDirectoryPage.warning.setText("<p style=\"color: red\">Existing installation detected and will be overwritten.</p>");
     } else if (installer.fileExists(dir)) {
 		targetDirectoryPage.warning.setText("<p style=\"color: green\">Installing in existing directory. It will be wiped on uninstallation.</p>");
@@ -82,8 +78,8 @@ Component.prototype.targetDirectoryChanged = function()
 Component.prototype.componentSelectionPageEntered = function()
 {
     var dir = installer.value("TargetDir");
-    if (installer.fileExists(dir) && installer.fileExists(dir + "/maintenancetool.exe")) {
-        installer.execute(dir + "/maintenancetool.exe", "--script=" + dir + "/scripts/auto_uninstall.qs");
+    if (installer.fileExists(dir) && installer.fileExists(dir + "/maintenancetool")) {
+        installer.execute(dir + "/maintenancetool", "--script=" + dir + "/scripts/auto_uninstall.qs");
     }
 }
 
@@ -99,38 +95,45 @@ Component.prototype.createOperations = function()
 		// call default implementation to actually install the registeredfile
 		component.createOperations();
 		
-		if (installer.value("os") === "win") 
+		if (installer.value("os") === "x11") 
 		{
-			if (component.userInterface("RegisterFileCheckBoxForm")) {
-				var isRegisterFileChecked = component.userInterface("RegisterFileCheckBoxForm").RegisterFileCheckBox.checked;
-				if(isRegisterFileChecked)
-				{
-					var iconId = 0;
-					var appPath = "@TargetDir@/ErowCloudViewer.exe";
-					for (var i = 0; i < component.unusualFileType.length; i++)
-					{
-						component.addOperation("RegisterFileType",
-										   component.unusualFileType[i],
-										   appPath + " %1",
-										   "Custom CloudViewer file extension",
-										   "text/plain",
-										   appPath + "," + iconId,
-										   "ProgId=ErowCloudViewer." + component.unusualFileType[i]);
-					}
-				}
-			}
+			/***************************************路径说明****************************************
+			系统自带变量
+			TargetDir   目标安装目录，由用户选择
+			DesktopDir  用户桌面目录名(路径)。仅在Windows上可用
+			RootDir 文件系统根目录
+			HomeDir 当前用户的home目录
+			ApplicationsDir 应用程序目录。例如,Windows上的C:\Program Files,Linux上/opt以及OS X上/Applications
+			InstallerDirPath    包含安装程序可执行文件的目录
+			InstallerFilePath   安装程序可执行文件的文件路径
+			
+			注意：变量是包含在“@@”中的，以@开始，必须要以@结尾
+			
+			具体的其它信息可以参考 https://www.cnblogs.com/oloroso/p/6775318.html#7_3_2_3
+			**************************************************************************************/        
+			
+			/* 建立桌面图标 */
+			var exec = "Exec=" + "@TargetDir@/ACloudViewer.sh %f" + "\n"; /* 执行程序 */
+			var icon = "Icon=" + "@TargetDir@/ACloudViewer.png" + "\n"; /* 图标资源路径 */
+			var version =  "Version=" + "3.8.0" + "\n" ; /* 版本号 */
+			var name = "Name=" + "ACloudViewer" + "\n"; /* 桌面图标显示名称 */
+			var desktop = "ACloudViewer" + ".desktop";  /* 桌面图标名 */
+			var comments = "Comment=" + "3D point cloud and mesh processing software" + "\n"
+			var comment = name + exec + icon + version + comments + "Terminal=false\nCategories=Graphics\nEncoding=UTF-8\nType=Application\n";
+			component.addOperation("CreateDesktopEntry", desktop, comment);
 
-			// call the base create operations function
-			component.addOperation("CreateShortcut", 				
-				"@TargetDir@/ErowCloudViewer.exe", 
-				"@StartMenuDir@/ErowCloudViewer.lnk",
-				"workingDirectory=@TargetDir@",
-				"description=Open CloudViewer Application");
-			component.addOperation("CreateShortcut",
-			   "@TargetDir@/ErowCloudViewer.exe",
-			   "@DesktopDir@/ErowCloudViewer.lnk",
-			   "workingDirectory=@TargetDir@",
-			   "description=Open CloudViewer Application");
+			//获取当前桌面路径    
+			var desktoppath = QDesktopServices.storageLocation(0);
+			var homeDir = installer.environmentVariable("HOME");
+		        if(homeDir.length > 0) {
+			   var deskTopSaveDir = homeDir + "/.local/share/applications/" + desktop;
+	       		   if(installer.fileExists(deskTopSaveDir)) {
+			        var args = ["cp", "-R", deskTopSaveDir, desktoppath + "/" + desktop];
+			   	component.addOperation("Execute", args);
+			        //component.addOperation("Copy", deskTopSaveDir + "/" + desktop, desktoppath + "/" + desktop); 
+		           }
+                           				
+		        }
 		}
     } catch (e) {
         console.log(e);
@@ -160,43 +163,4 @@ Component.prototype.installationFinished = function()
     } catch(e) {
         console.log(e);
     }
-}
-
-generateUnusualFileType = function(length)
-{
-    var extentions = ["bin", "xyz", "ptx", "asc", "xyzrgb", "xyzn", "neu", "txt", "shp", "laz", "las", "ply", "3ds",
-                      "fbx", "glb", "ms3d", "dae", "vtk", "csv", "obj", "stl", "off", "pcd", "dxf", "sbf", "e57", "psz",
-                      "rdbx", "ptch", "mtch", "vxls", "ifc", "stp", "step", "gltf", "out", "sx", "pn", "pv", "pov", "poly",
-                      "mac", "pdms", "pdmsmac"];
-    return extentions;
-}
-
-// called as soon as the component was loaded
-addRegisterFileCheckBox = function()
-{
-	if (installer.isInstaller())
-	{
-		if (installer.addWizardPageItem(component, "RegisterFileCheckBoxForm", QInstaller.TargetDirectory)) 
-		{
-			var extensions = "\n";
-			for (var i = 0; i < component.unusualFileType.length; i++)
-			{
-				if(i % 10 == 0)
-				{
-					extensions += "\n";
-				}
-				else
-				{
-					extensions += ", ";
-				}
-				extensions += component.unusualFileType[i];
-			}
-			component.userInterface("RegisterFileCheckBoxForm").RegisterFileCheckBox.text =
-				component.userInterface("RegisterFileCheckBoxForm").RegisterFileCheckBox.text + extensions;
-		}
-		else
-		{
-			console.log("Could not add the dynamic page item.");
-		}
-	}
 }

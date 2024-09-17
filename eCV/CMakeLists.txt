@@ -14,7 +14,7 @@ if (BUILD_PYTHON_MODULE)
     include_directories(${ECV_PYTHON_LIB_SOURCE_DIR})
 endif ()
 
-include_directories(${ErowCloudViewerPlugins_SOURCE_DIR})
+include_directories(${ACloudViewerPlugins_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/db_tree)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ui_templates)
@@ -56,7 +56,7 @@ if (MSVC)
         file(GLOB_RECURSE SOURCE_LIST ${CMAKE_CURRENT_SOURCE_DIR}/../*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../*.h ${CMAKE_CURRENT_SOURCE_DIR}/../*.ui)
         find_package(Qt5Core REQUIRED)
         find_package(Qt5LinguistTools REQUIRED)
-        set(TRANSLATION_FILES ${CMAKE_CURRENT_SOURCE_DIR}/translations/ErowCloudViewer_zh.ts)
+        set(TRANSLATION_FILES ${CMAKE_CURRENT_SOURCE_DIR}/translations/ACloudViewer_zh.ts)
         foreach (TRANSLATION_FILE ${TRANSLATION_FILES})
             message("TRANSLATION_FILE : ${TRANSLATION_FILE}")
             qt5_update_translation(QMs ${PROJECT_NAME} ${SOURCE_LIST} ${TRANSLATION_FILE})
@@ -118,7 +118,7 @@ if (WIN32)
             TARGET
             ${PROJECT_NAME}
             DEPLOY_PATH
-            ${EROWCLOUDVIEWER_DEST_FOLDER}
+            ${ACloudViewer_DEST_FOLDER}
     )
 elseif (APPLE)
     DeployQt(
@@ -147,11 +147,11 @@ endif ()
 
 # contrib. libraries support
 if (APPLE)
-    target_link_contrib(${PROJECT_NAME} ${EROWCLOUDVIEWER_MAC_FRAMEWORK_DIR})
+    target_link_contrib(${PROJECT_NAME} ${ACloudViewer_MAC_FRAMEWORK_DIR})
 elseif (UNIX)
     target_link_contrib(${PROJECT_NAME} lib)
 else ()
-    target_link_contrib(${PROJECT_NAME} ${EROWCLOUDVIEWER_DEST_FOLDER})
+    target_link_contrib(${PROJECT_NAME} ${ACloudViewer_DEST_FOLDER})
 endif ()
 
 if (BUILD_RECONSTRUCTION)
@@ -234,7 +234,7 @@ if (NOT APPLE)
     # On macOs, the DeployQt step will install the bundle that contains the executable with
     # library paths properly set, reinstalling the executable here would break the bundle.
     message(STATUS "INSTALL_DESTINATIONS: " ${INSTALL_DESTINATIONS})
-    message(STATUS "EROWCLOUDVIEWER_DEST_FOLDER: " ${EROWCLOUDVIEWER_DEST_FOLDER})
+    message(STATUS "ACloudViewer_DEST_FOLDER: " ${ACloudViewer_DEST_FOLDER})
     cloudViewer_install_ext(TARGETS ${PROJECT_NAME} ${INSTALL_DESTINATIONS} "")
 endif ()
 
@@ -250,7 +250,7 @@ endif ()
 # Install auxiliary files
 if (WIN32)
     foreach (filename ${auxFiles})
-        cloudViewer_install_ext(FILES ${filename} ${EROWCLOUDVIEWER_DEST_FOLDER} "")
+        cloudViewer_install_ext(FILES ${filename} ${ACloudViewer_DEST_FOLDER} "")
     endforeach ()
 elseif (APPLE)
     foreach (filename ${auxFiles})
@@ -275,8 +275,8 @@ endif ()
 # Install plugins and shaders in the correct folder for each platform
 if (APPLE)
     InstallPlugins(
-            DEST_PATH "${EROWCLOUDVIEWER_MAC_PLUGIN_DIR}"
-            SHADER_DEST_PATH "${EROWCLOUDVIEWER_MAC_BASE_DIR}/Contents/Shaders"
+            DEST_PATH "${ACloudViewer_MAC_PLUGIN_DIR}"
+            SHADER_DEST_PATH "${ACloudViewer_MAC_BASE_DIR}/Contents/Shaders"
     )
 elseif (UNIX)
     InstallPlugins(
@@ -285,9 +285,9 @@ elseif (UNIX)
     )
 else ()
     InstallPlugins(
-            DEST_PATH "${EROWCLOUDVIEWER_DEST_FOLDER}"
+            DEST_PATH "${ACloudViewer_DEST_FOLDER}"
             DEST_FOLDER "plugins"
-            SHADER_DEST_PATH "${EROWCLOUDVIEWER_DEST_FOLDER}"
+            SHADER_DEST_PATH "${ACloudViewer_DEST_FOLDER}"
             SHADER_DEST_FOLDER "shaders"
     )
 endif ()

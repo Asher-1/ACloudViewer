@@ -104,7 +104,7 @@ if (BUILD_PYTHON_MODULE)
 
     #import python dlls (if any, WIN32 only)
     include(cmake/ExportPythonDlls.cmake)
-    export_python_dlls(${EROWCLOUDVIEWER_DEST_FOLDER})
+    export_python_dlls(${ACloudViewer_DEST_FOLDER})
 
 endif ()
 

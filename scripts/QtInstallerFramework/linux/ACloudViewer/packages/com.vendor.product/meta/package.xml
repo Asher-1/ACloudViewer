@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package>
-    <DisplayName>ErowCloudViewer</DisplayName>
+    <DisplayName>ACloudViewer</DisplayName>
     <Description>3D PointCloud processing platform.</Description>
-    <Version>3.8.0</Version>
-    <ReleaseDate>2021-11-12</ReleaseDate>
+    <Version>3.9.1</Version>
+    <ReleaseDate>2024-09-18</ReleaseDate>
     <Licenses>
         <License name="Beer Public License Agreement" file="license.txt" />
     </Licenses>
@@ -12,10 +12,9 @@
     <UserInterfaces>
 		<UserInterface>targetwidget.ui</UserInterface>
 		<UserInterface>readmecheckboxform.ui</UserInterface>
-		<UserInterface>registerfilecheckboxform.ui</UserInterface>
 	</UserInterfaces>
 	<Translations>
-        <Translation>ErowCloudViewer_zh.qm</Translation>
+        <Translation>ACloudViewer_zh.qm</Translation>
         <Translation>qt_en.qm</Translation>
     </Translations>
 </Package>

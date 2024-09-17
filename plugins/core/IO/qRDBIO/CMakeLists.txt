@@ -75,7 +75,7 @@ if (PLUGIN_IO_QRDB)
     if (PLUGIN_IO_QRDB_INSTALL_DEPENDENCY)
         if (MSVC)
             # on Windows put the dll to the binaries for them to find them
-            set(_rdb_libdir "${EROWCLOUDVIEWER_DEST_FOLDER}")
+            set(_rdb_libdir "${ACloudViewer_DEST_FOLDER}")
         else ()
             # some distros prefer "lib" others like more specific folders like "lib64" (handled by GNUInstallDirs)
             if (CMAKE_INSTALL_LIBDIR STREQUAL "")

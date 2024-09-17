@@ -2,7 +2,7 @@
 <Installer>
     <Name>CloudViewerApp</Name>
     <Version>3.8.0</Version>
-    <Title>CloudViewerApp-3.8.0 Setup</Title>
+    <Title>CloudViewerApp-3.8.0</Title>
     <Publisher>Asher</Publisher>
     <WizardStyle>Modern</WizardStyle>
     <StyleSheet>style.qss</StyleSheet>

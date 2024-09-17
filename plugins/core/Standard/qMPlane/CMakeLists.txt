@@ -10,7 +10,7 @@ if ( PLUGIN_STANDARD_QMPLANE )
     # Option for building TESTS
     option( COMPILE_QMPLANE_PLUGIN_TESTS "Check to enable REST support" OFF ) 
     
-	include_directories( ${ErowCloudViewer_SOURCE_DIR} )
+	include_directories( ${ACloudViewer_SOURCE_DIR} )
     
     # Set path to external dependencies
     SET( EXTERNAL_TOOLS ${CMAKE_CURRENT_SOURCE_DIR}/external/ )

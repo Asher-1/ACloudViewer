@@ -5,7 +5,7 @@ if (NOT MSVC AND NOT APPLE)
 endif ()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${ErowCloudViewerPlugins_SOURCE_DIR})
+include_directories(${ACloudViewerPlugins_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${EXTERNAL_LIBS_INCLUDE_DIR})
 

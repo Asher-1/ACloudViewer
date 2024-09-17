@@ -12,25 +12,25 @@ ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
 
 # Execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
 # docker run -it --runtime nvidia -p 10022:22 -p 14000:4000 --name cloudViewer -v</path/to/your/data>:/data cloudviewer:develop-ubuntu18.04-cuda101
-# ssh -p 10022 -X root@<docker host> /opt/ErowCloudViewer # Password is 'toor'
+# ssh -p 10022 -X root@<docker host> /opt/ACloudViewer # Password is 'toor'
 # export DISPLAY=:0 # DISPLAY must be consistent with host
 
-ENV EROWCLOUDVIEWER_DEV=/opt/ErowCloudViewer \
-    EROWCLOUDVIEWER_BUILD=/opt/ErowCloudViewer/build \
-    EROWCLOUDVIEWER_INSTALL=/Users/asher/develop/code/github/macos_install \
-    BUNDLE_CLOUDVIEWER_ML=/opt/ErowCloudViewer/CloudViewer-ML \
+ENV ACloudViewer_DEV=/opt/ACloudViewer \
+    ACloudViewer_BUILD=/opt/ACloudViewer/build \
+    ACloudViewer_INSTALL=/Users/asher/develop/code/github/macos_install \
+    BUNDLE_CLOUDVIEWER_ML=/opt/ACloudViewer/CloudViewer-ML \
     QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
     PATH="${PATH}:${BUNDLE_CLOUDVIEWER_ML}"
 
-COPY . ${EROWCLOUDVIEWER_DEV}/ErowCloudViewer
+COPY . ${ACloudViewer_DEV}/ACloudViewer
 
-WORKDIR ${EROWCLOUDVIEWER_BUILD}
+WORKDIR ${ACloudViewer_BUILD}
 
-RUN rm -rf ${EROWCLOUDVIEWER_DEV}/ErowCloudViewer/docker_files \
+RUN rm -rf ${ACloudViewer_DEV}/ACloudViewer/docker_files \
     && mv /usr/lib/x86_64-linux-gnu/libQt5* /tmp/
 
-# Build ErowCloudViewer whl package
-RUN cmake "${EROWCLOUDVIEWER_DEV}/ErowCloudViewer" \
+# Build ACloudViewer whl package
+RUN cmake "${ACloudViewer_DEV}/ACloudViewer" \
             -DDEVELOPER_BUILD=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_JUPYTER_EXTENSION=ON \
@@ -41,25 +41,25 @@ RUN cmake "${EROWCLOUDVIEWER_DEV}/ErowCloudViewer" \
             -DWITH_OPENMP=ON \
             -DBUILD_CUDA_MODULE=ON \
             -DBUILD_PYTORCH_OPS=ON \
-            -DBUILD_TENSORFLOW_OPS=ON \
+            -DBUILD_TENSORFLOW_OPS=OFF \
             -DGLIBCXX_USE_CXX11_ABI=OFF \
             #-DBUNDLE_CLOUDVIEWER_ML=ON \
             #-DCLOUDVIEWER_ML_ROOT="${BUNDLE_CLOUDVIEWER_ML}" \
-            #-DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ErowCloudViewer/thirdparties \
+            #-DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ACloudViewer/thirdparties \
             -DPYTHON_EXECUTABLE=/root/miniconda3/bin/python3.6 \
             -DPYTHON_IN_PATH=/root/miniconda3/bin/python3.6 \
             -DPYTHON_LIBRARY=/root/miniconda3/lib/libpython3.6m.so \
             -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake \
-            -DCMAKE_INSTALL_PREFIX=${EROWCLOUDVIEWER_INSTALL}
+            -DCMAKE_INSTALL_PREFIX=${ACloudViewer_INSTALL}
 
 RUN make "-j$(nproc)" pip-package \
     #&& make "-j$(nproc)" install-pip-package \
     #&& make "-j$(nproc)" conda-package \
     && make install "-j$(nproc)"
 
-# Build ErowCloudViewer GUI platform
-RUN cmake "${EROWCLOUDVIEWER_DEV}/ErowCloudViewer" \
+# Build ACloudViewer GUI platform
+RUN cmake "${ACloudViewer_DEV}/ACloudViewer" \
             -DDEVELOPER_BUILD=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_JUPYTER_EXTENSION=OFF \
@@ -118,17 +118,17 @@ RUN cmake "${EROWCLOUDVIEWER_DEV}/ErowCloudViewer" \
             -DPLUGIN_STANDARD_QRANSAC_SD=ON \
             -DPLUGIN_STANDARD_QSRA=ON \
             -DGLIBCXX_USE_CXX11_ABI=1 \
-            #-DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ErowCloudViewer/thirdparties \
+            #-DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ACloudViewer/thirdparties \
 #            -DPYTHON_EXECUTABLE=/root/miniconda3/bin/python3.6 \
 #            -DPYTHON_IN_PATH=/root/miniconda3/bin/python3.6 \
 #            -DPYTHON_LIBRARY=/root/miniconda3/lib/libpython3.6m.so \
 #            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
 #            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake \
-            -DCMAKE_INSTALL_PREFIX=${EROWCLOUDVIEWER_INSTALL}
+            -DCMAKE_INSTALL_PREFIX=${ACloudViewer_INSTALL}
 
 RUN make "-j$(nproc)" \
     && make install "-j$(nproc)" \
-    && rm -rf ${EROWCLOUDVIEWER_BUILD}
+    && rm -rf ${ACloudViewer_BUILD}
 
 WORKDIR /
 

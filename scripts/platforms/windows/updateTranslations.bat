@@ -6,5 +6,5 @@ echo "Updating translation files"
 
 %call lupdate
 cd ..\..
-%QT_DIR%\lupdate.exe %SRC_DIRS% -no-obsolete -ts eCV\translations\ErowCloudViewer_zh.ts
+%QT_DIR%\lupdate.exe %SRC_DIRS% -no-obsolete -ts eCV\translations\ACloudViewer_zh.ts
 cd scripts\windows
