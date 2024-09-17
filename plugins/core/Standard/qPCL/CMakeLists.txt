@@ -5,7 +5,7 @@ cmake_minimum_required( VERSION 3.18 )
 
 option( PLUGIN_STANDARD_QPCL "Check to install qPCL plugin" ON )
 
-# ErowCloudViewer 'PCL' bridge plugin
+# ACloudViewer 'PCL' bridge plugin
 if (PLUGIN_STANDARD_QPCL)
     project( QPCL_PLUGIN )
 
@@ -17,7 +17,7 @@ if (PLUGIN_STANDARD_QPCL)
     add_subdirectory( include )
     add_subdirectory( src )
 
-    #ErowCloudViewer 'qPCLIO' I/O plugin (to load PCD files)
+    #ACloudViewer 'qPCLIO' I/O plugin (to load PCD files)
     add_subdirectory(PclIO)
     
     #PCL bridge library

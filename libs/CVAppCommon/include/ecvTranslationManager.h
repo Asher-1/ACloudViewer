@@ -34,7 +34,7 @@ public:
 
     /** Register a file prefix for translation files.
      * The files should be named <prefix>_<lang>.ts where <lang> is the 2-letter
-     * ISO 639 language code in lowercase. e.g. ErowCloudViewer_fr.ts
+     * ISO 639 language code in lowercase. e.g. ACloudViewer_fr.ts
      * @param prefix The prefix of the file to register
      * @param path The path to look for the files in
      */

@@ -18,9 +18,12 @@ ExternalProject_Add(
         BUILD_ALWAYS 0
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         UPDATE_COMMAND ""
+        # PATCH_COMMAND sed "s/tbb_stddef.h/tbb.h/" -i <SOURCE_DIR>/cmake/FindTBB.cmake
+        PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${CloudViewer_3RDPARTY_DIR}/ceres-solver/FindTBB.cmake <SOURCE_DIR>/cmake
         CMAKE_ARGS
         ${EIGEN_CMAKE_FLAGS}
         ${GLOG_CMAKE_FLAGS}
+        ${GFLAGS_CMAKE_FLAGS}
         ${SUITESPARSE_CMAKE_FLAGS}
         -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux,Darwin>:ON:OFF>
         -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
@@ -46,10 +49,10 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_ceres INSTALL_DIR)
 set(CERES_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(CERES_LIB_DIR ${INSTALL_DIR}/lib)
+set(EXT_CERES_LIBRARIES ceres)
 if (WIN32)
     set(EXT_CERES_LIBRARIES ceres$<$<CONFIG:Debug>:-debug>)
-else ()
-    set(EXT_CERES_LIBRARIES ceres)
+elseif (APPLE)
     set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_CERES_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
     cloudViewer_install_ext(FILES ${CERES_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
 endif ()

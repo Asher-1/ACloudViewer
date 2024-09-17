@@ -17,6 +17,6 @@ if (PLUGIN_IO_QLAS)
     add_subdirectory(ui)
 
     if (WIN32)
-        cloudViewer_install_files("${LASZIP_DLL}" "${EROWCLOUDVIEWER_DEST_FOLDER}" 1)
+        cloudViewer_install_files("${LASZIP_DLL}" "${ACloudViewer_DEST_FOLDER}" 1)
     endif ()
 endif ()

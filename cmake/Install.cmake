@@ -27,7 +27,7 @@ function( InstallSharedLibrary )
 		if(UNIX AND NOT APPLE)
 			# this is a an hack to restore install ability on linux systems
 			# TODO this should not be the right way for managing install probably
-			set( destination "${destination}/${CMAKE_INSTALL_LIBDIR}/erowcloudviewer")
+			set( destination "${destination}/${CloudViewer_INSTALL_LIB_DIR}")
 		endif()
 
 		_InstallSharedTarget(
@@ -294,6 +294,8 @@ function( _InstallFiles )
 		install(
 			FILES ${files}
 			DESTINATION "${full_path}"
+			PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+      GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 		)
 	endif()
 endfunction()

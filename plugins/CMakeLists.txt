@@ -1,12 +1,12 @@
-project( ErowCloudViewerPlugins )
+project( ACloudViewerPlugins )
 
 # Add our cmake module path so we don't need relative paths for these
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" )
 
 include( Plugins )
 
-set( ErowCloudViewer_SOURCE_DIR "${CMAKE_SOURCE_DIR}/eCV" )
-set( ErowCloudViewerPlugins_SOURCE_DIR "${CMAKE_SOURCE_DIR}/plugins" )
+set( ACloudViewer_SOURCE_DIR "${CMAKE_SOURCE_DIR}/eCV" )
+set( ACloudViewerPlugins_SOURCE_DIR "${CMAKE_SOURCE_DIR}/plugins" )
 
 add_subdirectory( core )
 add_subdirectory( example )

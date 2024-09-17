@@ -1,5 +1,5 @@
 cmake_minimum_required( VERSION 3.0 )
-# ErowCloudViewer example for standard plugins
+# ACloudViewer example for standard plugins
 
 # REPLACE ALL 'ExamplePlugin' OCCURENCES BY YOUR PLUGIN NAME
 # AND ADAPT THE CODE BELOW TO YOUR OWN NEEDS!

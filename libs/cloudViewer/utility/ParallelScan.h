@@ -29,7 +29,7 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_scan.h>
 
-#if TBB_INTERFACE_VERSION >= 10000
+#if TBB_INTERFACE_VERSION >= 20000
 
 // Check if the C++ standard library implements parallel algorithms
 // and use this over parallelstl to avoid conflicts.
@@ -83,7 +83,7 @@ public:
 
 template <class Tin, class Tout>
 void InclusivePrefixSum(const Tin* first, const Tin* last, Tout* out) {
-#if TBB_INTERFACE_VERSION >= 10000
+#if TBB_INTERFACE_VERSION >= 20000
     // use parallelstl if we have TBB 2018 or later
     std::inclusive_scan(pstl::execution::par_unseq, first, last, out);
 #else

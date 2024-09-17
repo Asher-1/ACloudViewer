@@ -30,7 +30,7 @@ Cloning CloudViewer
 
 Make sure to use the ``--recursive`` flag when cloning CloudViewer.
 
-    git clone --recursive https://github.com/Asher-1/ErowCloudViewer.git
+    git clone --recursive https://github.com/Asher-1/ACloudViewer.git
     
     # You can also update the submodule manually
     git submodule update --init --recursive
@@ -133,6 +133,8 @@ Make sure CloudViewer is linked against GLFW installed on the OS.
 
 ML Module
 
+arning: Due to incompatibilities in the cxx11_abi on Linux between PyTorch and TensorFlow, 
+official Python wheels on Linux only support PyTorch, not TensorFlow.
 The ML module consists of primitives like operators and layers as well as high
 level code for models and pipelines. To build the operators and layers, set
 ``BUILD_PYTORCH_OPS=ON`` and/or ``BUILD_TENSORFLOW_OPS=ON``.  Don't forget to also
@@ -148,7 +150,7 @@ for all supported ML frameworks and bundling the high level CloudViewer-ML code.
     # In the build directory
     cmake -DBUILD_CUDA_MODULE=ON \
           -DBUILD_PYTORCH_OPS=ON \
-          -DBUILD_TENSORFLOW_OPS=ON \
+          -DBUILD_TENSORFLOW_OPS=OFF \
           -DBUNDLE_CLOUDVIEWER_ML=ON \
           -DCLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
           ..

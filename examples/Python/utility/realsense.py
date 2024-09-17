@@ -42,8 +42,8 @@ def read_from_real_sense(config_filename, bag_filename):
 
 
 if __name__ == '__main__':
-    BAG_FILENAME = "/media/yons/data/develop/pcl_projects/ErowCloudViewer/" \
-                   "ErowCloudViewerPython/test_data/RGBD/other_formats/L515_test_s.bag"
+    BAG_FILENAME = "/media/yons/data/develop/pcl_projects/ACloudViewer/" \
+                   "ACloudViewerPython/test_data/RGBD/other_formats/L515_test_s.bag"
     CONFIG_FILENAME = ""
     bag_test(BAG_FILENAME)
     read_from_real_sense(CONFIG_FILENAME, BAG_FILENAME)

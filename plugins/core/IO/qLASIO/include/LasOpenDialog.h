@@ -42,7 +42,7 @@ class LasOpenDialog : public QDialog
   public:
 	enum class Action
 	{
-		/// The user wants to load the file in ErowCloudViewer
+		/// The user wants to load the file in ACloudViewer
 		Load,
 		/// The user wants to tile the file into multiple smaller ones
 		Tile,

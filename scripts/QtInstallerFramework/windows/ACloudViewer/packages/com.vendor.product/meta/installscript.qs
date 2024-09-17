@@ -56,7 +56,7 @@ Component.prototype.createOperations = function()
                 if(isRegisterFileChecked)
                 {
                     var iconId = 0;
-                    var appPath = "@TargetDir@/ErowCloudViewer.exe";
+                    var appPath = "@TargetDir@/ACloudViewer.exe";
                     for (var i = 0; i < component.unusualFileType.length; i++)
                     {
                         component.addOperation("RegisterFileType",
@@ -65,20 +65,20 @@ Component.prototype.createOperations = function()
                                                            "Custom CloudViewer file extension",
                                                            "text/plain",
                                                            appPath + "," + iconId,
-                                                           "ProgId=ErowCloudViewer." + component.unusualFileType[i]);
+                                                           "ProgId=ACloudViewer." + component.unusualFileType[i]);
                     }
                 }
             }
 
             // call the base create operations function
             component.addOperation("CreateShortcut",
-                    "@TargetDir@/ErowCloudViewer.exe",
-                    "@StartMenuDir@/ErowCloudViewer.lnk",
+                    "@TargetDir@/ACloudViewer.exe",
+                    "@StartMenuDir@/ACloudViewer.lnk",
                     "workingDirectory=@TargetDir@",
                     "description=Open CloudViewer Application");
             component.addOperation("CreateShortcut",
-               "@TargetDir@/ErowCloudViewer.exe",
-               "@DesktopDir@/ErowCloudViewer.lnk",
+               "@TargetDir@/ACloudViewer.exe",
+               "@DesktopDir@/ACloudViewer.lnk",
                "workingDirectory=@TargetDir@",
                "description=Open CloudViewer Application");
         }

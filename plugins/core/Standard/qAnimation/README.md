@@ -8,7 +8,7 @@ To use, create a series of views (ctrl-V). Select the views you want to make int
 The images can be turned into a movie using a program like ffmpeg.
 
 Notes:
-- order of selection of the views is important, since the ErowCloudViewer window doesn't allow for re-ordering of views.
+- order of selection of the views is important, since the ACloudViewer window doesn't allow for re-ordering of views.
 - work in small batches, as their is currently no way to stop a preview or render (see improvements)
 - interpolation between views is linear
 	
