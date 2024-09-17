@@ -54,7 +54,6 @@ cmakeWhlOptions=(-DDEVELOPER_BUILD=OFF
   -DBUILD_JUPYTER_EXTENSION=ON
   -DBUILD_LIBREALSENSE=ON
   -DBUILD_AZURE_KINECT=ON
-  -DBUILD_RPC_INTERFACE=ON
   -DBUILD_BENCHMARKS=OFF
   -DWITH_OPENMP=ON
   -DBUILD_CUDA_MODULE=ON
@@ -83,10 +82,12 @@ cmakeGuiOptions=(-DDEVELOPER_BUILD=OFF
                 -DBUILD_JUPYTER_EXTENSION=ON
                 -DBUILD_LIBREALSENSE=ON
                 -DBUILD_AZURE_KINECT=ON
-                -DBUILD_RPC_INTERFACE=ON
                 -DBUILD_BENCHMARKS=OFF
                 -DBUILD_OPENCV=ON
                 -DWITH_OPENMP=ON
+                -DWITH_SIMD=ON
+                -DUSE_SIMD=ON
+                -DBUILD_WEBRTC=OFF
                 -DBUILD_CUDA_MODULE=OFF
                 -DBUILD_PYTORCH_OPS=OFF
                 -DBUILD_TENSORFLOW_OPS=OFF
@@ -95,6 +96,7 @@ cmakeGuiOptions=(-DDEVELOPER_BUILD=OFF
                 -DCVCORELIB_USE_CGAL=ON
                 -DCVCORELIB_SHARED=ON
                 -DCVCORELIB_USE_QT_CONCURRENT=ON
+                -DOPTION_USE_GDAL=ON
                 -DOPTION_USE_DXF_LIB=ON
                 -DOPTION_USE_RANSAC_LIB=ON
                 -DOPTION_USE_SHAPE_LIB=ON
