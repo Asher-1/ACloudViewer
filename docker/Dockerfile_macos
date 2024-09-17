@@ -36,7 +36,6 @@ RUN cmake "${ACloudViewer_DEV}/ACloudViewer" \
             -DBUILD_JUPYTER_EXTENSION=ON \
             -DBUILD_LIBREALSENSE=ON \
             -DBUILD_AZURE_KINECT=ON \
-            -DBUILD_RPC_INTERFACE=ON \
             -DBUILD_BENCHMARKS=OFF \
             -DWITH_OPENMP=ON \
             -DBUILD_CUDA_MODULE=ON \

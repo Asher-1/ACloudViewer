@@ -12,7 +12,7 @@ endfunction()
 # Prints a summary of the current configuration.
 function(cloudViewer_print_configuration_summary)
     message(STATUS "========================================================================")
-    message(STATUS "CloudViewer ${PROJECT_VERSION} Configuration Summary")
+    message(STATUS "CloudViewer ${PROJECT_VERSION} ${CMAKE_BUILD_TYPE} Configuration Summary")
     message(STATUS "========================================================================")
     message(STATUS "Enabled Features:")
     cloudViewer_aligned_print("SIMD" "${USE_SIMD}")
