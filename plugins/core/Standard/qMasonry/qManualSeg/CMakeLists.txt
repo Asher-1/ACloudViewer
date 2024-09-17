@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-# ErowCloudViewer Masonry Manual Segmentation plugin
+# ACloudViewer Masonry Manual Segmentation plugin
 option(PLUGIN_STANDARD_MASONRY_QMANUAL_SEG "Check to install qManualSeg plugin" OFF)
 
 if (PLUGIN_STANDARD_MASONRY_QMANUAL_SEG)
@@ -81,7 +81,7 @@ if (PLUGIN_STANDARD_MASONRY_QMANUAL_SEG)
     #
     #      #import OpenCV dlls (if any, WIN32 only)
     #      include( ../cmake/ExportOpenCVDlls.cmake )
-    #      export_OpenCV_dlls( ${EROWCLOUDVIEWER_DEST_FOLDER} )
+    #      export_OpenCV_dlls( ${ACloudViewer_DEST_FOLDER} )
     #    endif()
 
 endif ()

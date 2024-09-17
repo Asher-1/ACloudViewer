@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Installer>
-    <Name>ErowCloudViewer</Name>
-    <Version>3.8.0</Version>
-    <Title>ErowCloudViewer-3.8.0 Setup</Title>
+    <Name>ACloudViewer</Name>
+    <Version>3.9.1</Version>
+    <Title>ACloudViewer-3.9.1</Title>
     <Publisher>Asher</Publisher>
     <WizardStyle>Modern</WizardStyle>
     <StyleSheet>style.qss</StyleSheet>
@@ -10,11 +10,11 @@
     <ProductUrl>https://github.com/Asher-1/CloudViewerUpdate</ProductUrl>
     <InstallerWindowIcon>logo_256.png</InstallerWindowIcon>
     <InstallerApplicationIcon>logo_32.png</InstallerApplicationIcon>
-    <RunProgram>@TargetDir@/ErowCloudViewer.sh</RunProgram>
+    <RunProgram>@TargetDir@/ACloudViewer.sh</RunProgram>
     <RunProgramArguments></RunProgramArguments>
-    <RunProgramDescription>Start ErowCloudViewer</RunProgramDescription>
+    <RunProgramDescription>Start ACloudViewer</RunProgramDescription>
     <StartMenuDir>Graphics</StartMenuDir>
     <AllowNonAsciiCharacters>true</AllowNonAsciiCharacters>
-    <TargetDir>@HomeDir@/ErowCloudViewer</TargetDir>
-    <AdminTargetDir>@rootDir@/opt/ErowCloudViewer</AdminTargetDir>
+    <TargetDir>@HomeDir@/ACloudViewer</TargetDir>
+    <AdminTargetDir>@rootDir@/opt/ACloudViewer</AdminTargetDir>
 </Installer>

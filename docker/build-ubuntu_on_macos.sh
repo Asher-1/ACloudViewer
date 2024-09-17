@@ -9,7 +9,7 @@ test -z "$CUDA_VERSION" && CUDA_VERSION=101
 test -z "$UBUNTU_VERSION" && UBUNTU_VERSION=18.04
 
 test -d docker || (
-        echo This script must be run from the top level ErowCloudViewer directory
+        echo This script must be run from the top level ACloudViewer directory
 	exit 1
 )
 
@@ -53,7 +53,7 @@ docker buildx build --platform=linux/amd64 \
 	--tag "cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
 	-f docker/Dockerfile_ubuntu_cpu_deps .
 
-# ErowCloudViewer
+# ACloudViewer
 #docker buildx build --platform=linux/amd64 \
 #	--rm \
 #	--build-arg "CLOUDVIEWER_VERSION=${CLOUDVIEWER_VERSION}" \

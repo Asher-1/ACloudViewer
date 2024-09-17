@@ -102,8 +102,9 @@ pcl::visualization::ImageViewer::ImageViewer(const std::string& window_title)
     interactor_->SetInteractorStyle(interactor_style_);
 
     // Initialize and create timer
-    interactor_->Initialize();
-    timer_id_ = interactor_->CreateRepeatingTimer(0);
+    // must comment this two lines to avoid crash on ubuntu2204
+    // interactor_->Initialize();
+    // timer_id_ = interactor_->CreateRepeatingTimer(0);
 
     // Set the exit callbacks
     exit_main_loop_timer_callback_ = vtkSmartPointer<ExitMainLoopTimerCallback>::New();

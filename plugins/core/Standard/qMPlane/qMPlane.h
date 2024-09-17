@@ -21,7 +21,7 @@
 // std
 #include <memory>
 
-//ErowCloudViewer
+//ACloudViewer
 #include <ecvPickingListener.h>
 #include <ecvPointCloud.h>
 #include <ecvStdPluginInterface.h>

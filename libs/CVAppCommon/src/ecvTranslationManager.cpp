@@ -1,6 +1,6 @@
 // ##########################################################################
 // #                                                                        #
-// #                              ErowCloudViewer                           #
+// #                              ACloudViewer                           #
 // #                                                                        #
 // #  This program is free software; you can redistribute it and/or modify  #
 // #  it under the terms of the GNU General Public License as published by  #
@@ -11,7 +11,7 @@
 // #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
 // #  GNU General Public License for more details.                          #
 // #                                                                        #
-// #          COPYRIGHT: ErowCloudViewer project                            #
+// #          COPYRIGHT: ACloudViewer project                            #
 // #                                                                        #
 // ##########################################################################
 
@@ -81,7 +81,7 @@ void ccTranslationManager::loadTranslation(QString language) {
 void ccTranslationManager::populateMenu(QMenu *menu,
                                         const QString &pathToTranslationFiles) {
     const LanguageList cList = availableLanguages(
-            QStringLiteral("ErowCloudViewer"), pathToTranslationFiles);
+            QStringLiteral("ACloudViewer"), pathToTranslationFiles);
 
     QActionGroup *group = new QActionGroup(menu);
 
@@ -183,5 +183,5 @@ void ccTranslationManager::setLanguagePref(const QString &languageCode) {
 
     QMessageBox::information(nullptr, tr("Language Change"),
                              tr("Language change will take effect when "
-                                "ErowCloudViewer is restarted"));
+                                "ACloudViewer is restarted"));
 }

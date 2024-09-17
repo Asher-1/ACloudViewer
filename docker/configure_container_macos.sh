@@ -4,7 +4,7 @@ IP=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}')
 xhost + $IP
 DISPLAY=:0
 
-# sshÆÕÍ¨ÓÃ»§µÇÂ¼ÈÝÆ÷
+# sshï¿½ï¿½Í¨ï¿½Ã»ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½
 # ssh -p 20022 ubuntu@127.0.0.1
 # export DISPLAY=192.168.1.5:0
 # brew install xquartz socat
@@ -25,11 +25,11 @@ docker run -dit --name=cloudviewer_env \
   -p 20022:22 \
   -p 24000:4000 \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /Users/asher/develop/code/github/ErowCloudViewer:/opt/ErowCloudViewer/ErowCloudViewer \
-  -v /Users/asher/develop/code/github/docker_cache/build:/opt/ErowCloudViewer/build \
-  -v /Users/asher/develop/code/github/docker_cache/install:/opt/ErowCloudViewer/install \
-  -v /Users/asher/develop/code/github/ErowCloudViewer/3rdparty_downloads:/opt/ErowCloudViewer/thirdparties \
-  -v /Users/asher/develop/code/github/CloudViewer-ML:/opt/ErowCloudViewer/CloudViewer-ML \
+  -v /Users/asher/develop/code/github/ACloudViewer:/opt/ACloudViewer/ACloudViewer \
+  -v /Users/asher/develop/code/github/docker_cache/build:/opt/ACloudViewer/build \
+  -v /Users/asher/develop/code/github/docker_cache/install:/opt/ACloudViewer/install \
+  -v /Users/asher/develop/code/github/ACloudViewer/3rdparty_downloads:/opt/ACloudViewer/thirdparties \
+  -v /Users/asher/develop/code/github/CloudViewer-ML:/opt/ACloudViewer/CloudViewer-ML \
   registry.cn-shanghai.aliyuncs.com/asher-ai/cloudviewer-deps:latest
 
 # attach into container instance
@@ -41,9 +41,9 @@ export LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
 export QT_PLUGIN_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/plugins:$QT_PLUGIN_PATH"
 export QML2_IMPORT_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/qml:$QML2_IMPORT_PATH"
 
-# Build ErowCloudViewer
+# Build ACloudViewer
 export DISPLAY=:0  # DISPLAY must be consistent with host
-cd /opt/ErowCloudViewer
+cd /opt/ACloudViewer
 
 if [ ! -d "build" ]; then # dir does not exist
   echo "creating dir build..."
@@ -68,19 +68,19 @@ cmakeWhlOptions=(-DDEVELOPER_BUILD=OFF
   -DBUILD_PYTORCH_OPS=OFF
   -DBUILD_TENSORFLOW_OPS=OFF
   -DBUNDLE_CLOUDVIEWER_ML=OFF
-  -DCLOUDVIEWER_ML_ROOT=/opt/ErowCloudViewer/CloudViewer-ML
-  -DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ErowCloudViewer/thirdparties
+  -DCLOUDVIEWER_ML_ROOT=/opt/ACloudViewer/CloudViewer-ML
+  -DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ACloudViewer/thirdparties
   -DPYTHON_EXECUTABLE=/root/miniconda3/bin/python3.6
   -DPYTHON_IN_PATH=/root/miniconda3/bin/python3.6
   -DPYTHON_LIBRARY=/root/miniconda3/lib/libpython3.6m.so
   -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake
   -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake
 )
-cmake "/opt/ErowCloudViewer/ErowCloudViewer" \
+cmake "/opt/ACloudViewer/ACloudViewer" \
       "${cmakeWhlOptions[@]}" \
-      -DCMAKE_INSTALL_PREFIX=/opt/ErowCloudViewer/install
+      -DCMAKE_INSTALL_PREFIX=/opt/ACloudViewer/install
 
-# compile ErowCloudViewer pip-package
+# compile ACloudViewer pip-package
 make "-j$(nproc)" pip-package
 make "-j$(nproc)" conda-package
 make install "-j$(nproc)"
@@ -142,7 +142,7 @@ cmakeGuiOptions=(
                 -DPOISSON_RECON_WITH_OPEN_MP=ON
                 -DPLUGIN_STANDARD_QRANSAC_SD=ON
                 -DPLUGIN_STANDARD_QSRA=ON
-                -DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ErowCloudViewer/thirdparties
+                -DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ACloudViewer/thirdparties
                 -DPYTHON_EXECUTABLE=/root/miniconda3/bin/python3.6
                 -DPYTHON_IN_PATH=/root/miniconda3/bin/python3.6
                 -DPYTHON_LIBRARY=/root/miniconda3/lib/libpython3.6m.so
@@ -150,9 +150,9 @@ cmakeGuiOptions=(
                 -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake
         )
 
-cmake "/opt/ErowCloudViewer/ErowCloudViewer" \
+cmake "/opt/ACloudViewer/ACloudViewer" \
       "${cmakeGuiOptions[@]}" \
-      -DCMAKE_INSTALL_PREFIX=/opt/ErowCloudViewer/install
+      -DCMAKE_INSTALL_PREFIX=/opt/ACloudViewer/install
 
 make "-j$(nproc)"
 make install "-j$(nproc)"

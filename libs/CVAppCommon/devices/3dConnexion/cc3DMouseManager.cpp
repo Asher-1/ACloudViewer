@@ -11,7 +11,7 @@
 // #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
 // #  GNU General Public License for more details.                          #
 // #                                                                        #
-// #          COPYRIGHT: ErowCloudViewer project                            #
+// #          COPYRIGHT: ACloudViewer project                            #
 // #                                                                        #
 // ##########################################################################
 
@@ -48,7 +48,7 @@ void cc3DMouseManager::enableDevice(bool state, bool silent) {
     if (state) {
         m3dMouseInput = new Mouse3DInput(this);
         if (m3dMouseInput->connect(m_appInterface->getMainWindow(),
-                                   "ErowCloudViewer")) {
+                                   "ACloudViewer")) {
             connect(m3dMouseInput, &Mouse3DInput::sigMove3d, this,
                     &cc3DMouseManager::on3DMouseMove);
             connect(m3dMouseInput, &Mouse3DInput::sigReleased, this,

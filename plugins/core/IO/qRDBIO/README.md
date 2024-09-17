@@ -14,7 +14,7 @@ and pass the location of the RDB library with `rdb_DIR` (the path to the
 `rdb-config.cmake` file located in `interface/cpp`)
 
 ### Build on Linux and Unix like
-In the ErowCloudViewer root folder execute the following commands to configure,
+In the ACloudViewer root folder execute the following commands to configure,
 build and install
 
 ```

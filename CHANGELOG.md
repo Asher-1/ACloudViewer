@@ -1,13 +1,13 @@
-ErowCloudViewer Version History
+ACloudViewer Version History
 ============================
 
 v3.9.0 (Asher) - 05/04/2023
 ----------------------
 
-## ErowCloudViewer 3.9.0 Release Notes
-We are excited to present ErowCloudViewer 3.9.0!
+## ACloudViewer 3.9.0 Release Notes
+We are excited to present ACloudViewer 3.9.0!
 
-We welcome you to the 3.9.0 beta release of ErowCloudViewer. This release is full of exciting new features with a strong emphasis in real-time pipelines, but also full of bug fixes and usability improvements. The big highlights of this release are as follows:
+We welcome you to the 3.9.0 beta release of ACloudViewer. This release is full of exciting new features with a strong emphasis in real-time pipelines, but also full of bug fixes and usability improvements. The big highlights of this release are as follows:
 - New Lock rotation axis feature.
 - New Animation display features supported.
 - New scalar filed switch feature supported.
@@ -22,10 +22,10 @@ We welcome you to the 3.9.0 beta release of ErowCloudViewer. This release is ful
 v3.8.0 (Asher) - 10/10/2021
 ----------------------
 
-## ErowCloudViewer 3.8.0 Release Notes
-We are excited to present ErowCloudViewer 3.8.0!
+## ACloudViewer 3.8.0 Release Notes
+We are excited to present ACloudViewer 3.8.0!
 
-We welcome you to the 3.8.0 release of ErowCloudViewer. This release is full of exciting new features with a strong emphasis in real-time pipelines, but also full of bug fixes and usability improvements. The big highlights of this release are as follows:
+We welcome you to the 3.8.0 release of ACloudViewer. This release is full of exciting new features with a strong emphasis in real-time pipelines, but also full of bug fixes and usability improvements. The big highlights of this release are as follows:
 - New 3D reconstruction system heavily based on colmap.
 - New real-time 3D reconstruction pipeline, featuring GPU and CPU support based on VoxelHashing.
 - New real-time point cloud registration algorithm, featuring a high-performance version of Iterative Closest Point (ICP).
@@ -79,8 +79,8 @@ Remember that you can reach out with questions, requests, or feedback through th
 v3.7.0 (Asher) - 11/12/2020
 ----------------------
 
-## ErowCloudViewer 3.7.0 Release Notes
-We are excited to present ErowCloudViewer 3.7.0!
+## ACloudViewer 3.7.0 Release Notes
+We are excited to present ACloudViewer 3.7.0!
 
 CloudViewer 0.3.7 introduces a brand new 3D Machine Learning module, nicknamed [CloudViewer-ML](https://github.com/Asher-1/CloudViewer-ML). CloudViewer-ML is an extension of your favorite library to bring support for 3D domain-specific operators, models, algorithms, and datasets. In a nutshell, users can now create new applications combining the power of 3D data and state-of-the-art neural networks! CloudViewer-ML is included in all the binary releases of CloudViewer 0.3.7.
 
@@ -108,7 +108,7 @@ Remember that you can reach out with questions, requests, or feedback through th
 
 [Discord network](https://asher-1.github.io)
 
-The ErowCloudViewer team
+The ACloudViewer team
 
 - Legend:
 	- [Added]: Used to indicate the addition of new features
@@ -456,7 +456,7 @@ v3.5.0 (Asher) - 06/08/2020
 		- points are now exclusively segmented inside/outside the frustum
 	- Plugins:
 		- plugins may now be enabled/disabled in the plugin info window
-		- to take effect, ErowCloudViewer must be restarted
+		- to take effect, ACloudViewer must be restarted
 		- all plugins are still available on the command line
 	- PCD now supports loading more field types (16 bit signed and unsigned, 32 bit unsigned, 64 bit floating point)
 	- OBJ files:
@@ -527,7 +527,7 @@ v3.5.0 (Asher) - 06/08/2020
 	- SRS (Spatial Reference System) information could be lost when loading LAS files
 	- The cartesian bounding-box of exported E57 files was wrongly expressed in the file-level coordinate system (instead of the local one)
 	- Data could be lost when merging two clouds with FWF data
-	- When VBOs were activated with an ATI card, ErowCloudViewer could crash (because ATI only supports 32bit aligned VBOs :p)
+	- When VBOs were activated with an ATI card, ACloudViewer could crash (because ATI only supports 32bit aligned VBOs :p)
 	- The LAS 1.3/1.4 filter was not compressing files with a minor case 'laz' extension :(
 	- The iteration stop criteria has been changed in the CSF plugin to fix a small bug
 
@@ -585,7 +585,7 @@ v3.3.0 (Asher) - 24/02/2019
 
 
 - macOS Note
-  - I (Andy) had to update ffmpeg, which is used by the animation plugin, for this patch release. Normally I would wait for 2.11, but homebrew changed their policies and started including everything in their build, so I can no longer use it. The good news is that compiling ffmpeg myself and statically linking shaves about 30 MB off the size of ErowCloudViewer.app...
+  - I (Andy) had to update ffmpeg, which is used by the animation plugin, for this patch release. Normally I would wait for 2.11, but homebrew changed their policies and started including everything in their build, so I can no longer use it. The good news is that compiling ffmpeg myself and statically linking shaves about 30 MB off the size of ACloudViewer.app...
   - it has been reported that this fixes a potential crash in ffmpeg's libavutil.56.dylib
 
 v3.2.0 (Asher) - 01/16/2019
@@ -647,12 +647,12 @@ v3.1.0 (Asher) - 01/06/2019
 		- then load 2 files (cloud 1 and cloud2)
 		- optionally load a 3rd cloud that will be used as core points
 		- and eventually call the -M3C2 option with the parameter file as argument:
-			ErowCloudViewer -O cloud1 -O cloud2 (-O core_points) -M3C2 parameters_file
+			ACloudViewer -O cloud1 -O cloud2 (-O core_points) -M3C2 parameters_file
 		- new option to use the core points cloud normals (if any)
 
 	* The Canupo plugin is now open-source!
 		- Thanks (once again) to Dimitri Lague for this great contribution
-		- the code is here: https://github.com/ErowCloudViewer/ErowCloudViewer/tree/master/plugins/core/qCanupo
+		- the code is here: https://github.com/ACloudViewer/ACloudViewer/tree/master/plugins/core/qCanupo
 
 	* The "Classify" option of the Canupo plugin can now be called from the command line:
 		- you'll need a trained classifier (.prm file)
@@ -662,7 +662,7 @@ v3.1.0 (Asher) - 01/06/2019
 			* (use the 'SET_ACTIVE_SF' after loading a cloud to set the active scalar field if
 				you want it to be used to refine the classification)
 		- syntax:
-			ErowCloudViewer -O cloud1 ... -O cloudN -CANUPO_CLASSIFY (-USE_CONFIDENCE 0.9) classifier.prm
+			ACloudViewer -O cloud1 ... -O cloudN -CANUPO_CLASSIFY (-USE_CONFIDENCE 0.9) classifier.prm
 
 	* Labels can now be imported from ASCII files:
 		- new column role in the ASCII loading dialog: "Labels"
@@ -720,11 +720,11 @@ v3.1.0 (Asher) - 01/06/2019
 		- the PCV plugin can now be applied on several clouds (batch mode)
 
 	* LAS I/O:
-		- ErowCloudViewer can now read and save extra dimensions (for any file version) - see https://github.com/ErowCloudViewer/ErowCloudViewer/pull/666
+		- ACloudViewer can now read and save extra dimensions (for any file version) - see https://github.com/ACloudViewer/ACloudViewer/pull/666
 
 	* E57:
 		- the E57 plugin now uses [libE57Format] (https://github.com/asmaloney/libE57Format) which is a fork of the old E57RefImpl
-		- if you compile ErowCloudViewer with the E57 plugin, you will need to use this new lib and change some CMake options to point at it - specifically **OPTION_USE_LIBE57FORMAT** and **LIBE57FORMAT_INSTALL_DIR**
+		- if you compile ACloudViewer with the E57 plugin, you will need to use this new lib and change some CMake options to point at it - specifically **OPTION_USE_LIBE57FORMAT** and **LIBE57FORMAT_INSTALL_DIR**
 		- the E57 plugin is now available on macOS
 
 	* RDS (Riegl)

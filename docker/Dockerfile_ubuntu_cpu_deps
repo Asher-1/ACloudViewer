@@ -4,13 +4,13 @@ ARG CUDA_VERSION
 ARG UBUNTU_VERSION
 FROM nvidia/opengl:1.2-glvnd-devel-ubuntu${UBUNTU_VERSION}
 #FROM gezp/ubuntu-nomachine:${UBUNTU_VERSION}-cu${CUDA_VERSION}
-LABEL maintainer="ErowCloudViewer Team ludahai19@163.com"
+LABEL maintainer="ACloudViewer Team ludahai19@163.com"
 
 # Execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
 # docker run -it --runtime=nvidia cloudviewer-deps
 
 ENV REFRESHED_AT=2023-06-03 \
-    CLOUDVIEWER_DEV=/opt/ErowCloudViewer \
+    CLOUDVIEWER_DEV=/opt/ACloudViewer \
     QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
     QT_ROOT=/opt/Qt5.14.2/ \
     QT_CI_LOGIN=alicevisionjunk@gmail.com \
@@ -170,7 +170,7 @@ RUN sh -c '/bin/echo -e "\nyes\n\nyes" | sh Miniconda3-latest-Linux-x86_64.sh' \
     && /root/miniconda3/bin/pip install --upgrade pip \
     && rm Miniconda3-latest-Linux-x86_64.sh
 
-# Install ErowCloudViewer requirements and freeze bundle
+# Install ACloudViewer requirements and freeze bundle
 COPY ./*requirements.txt ${CLOUDVIEWER_DEV}/
 WORKDIR "${CLOUDVIEWER_DEV}"
 RUN /root/miniconda3/bin/pip install --user  -U pip -i https://pypi.tuna.tsinghua.edu.cn/simple/  \

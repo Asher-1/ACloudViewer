@@ -81,3 +81,16 @@ if (COMPILE_CV_CORE_LIB_WITH_TBB)
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_TBB")
 	include_directories( ${TBB_INCLUDE_DIRS} )
 endif()
+
+
+get_target_property( QMAKE_LOCATION Qt5::qmake IMPORTED_LOCATION )
+get_filename_component( Qt5_BIN_DIR ${QMAKE_LOCATION} DIRECTORY )
+get_filename_component( QT5_ROOT_PATH "${Qt5_BIN_DIR}/.." ABSOLUTE )
+get_filename_component( QT5_PLUGINS_PATH "${Qt5_BIN_DIR}/../plugins" ABSOLUTE )
+
+message(STATUS "Qt5_BIN_DIR: " ${Qt5_BIN_DIR})
+message(STATUS "QT5_ROOT_PATH: " ${QT5_ROOT_PATH})
+message(STATUS "QT5_PLUGINS_PATH: " ${QT5_PLUGINS_PATH})
+set(QT5_PLUGINS_PATH_LIST   "${QT5_PLUGINS_PATH}/platforms" "${QT5_PLUGINS_PATH}/iconengines" 
+                            "${QT5_PLUGINS_PATH}/imageformats" "${QT5_PLUGINS_PATH}/xcbglintegrations")
+message(STATUS "QT5_PLUGINS_PATH_LIST: " ${QT5_PLUGINS_PATH_LIST})

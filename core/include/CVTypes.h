@@ -22,13 +22,13 @@
 #include <stdint.h>
 
 //! Type of the coordinates of a (N-D) point
-using PointCoordinateType = float;
-
 //! Type of a single scalar field value
 #if defined CV_CORE_LIB_USES_DOUBLE
 using ScalarType = double;
+using PointCoordinateType = double;
 #elif defined CV_CORE_LIB_USES_FLOAT
 using ScalarType = float;
+using PointCoordinateType = float;
 #else
 static_assert(false, "type for ScalarType has not been declared");
 #endif  // SCALAR_TYPE_DOUBLE

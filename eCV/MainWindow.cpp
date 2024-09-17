@@ -1,6 +1,6 @@
 ﻿// ##########################################################################
 // #                                                                        #
-// #                              EROWCLOUDVIEWER                           #
+// #                              ACloudViewer                           #
 // #                                                                        #
 // #  This program is free software; you can redistribute it and/or modify  #
 // #  it under the terms of the GNU General Public License as published by  #
@@ -284,7 +284,7 @@ MainWindow::MainWindow()
 {
     m_ui->setupUi(this);
 
-    setWindowTitle(QStringLiteral("ErowCloudViewer v") +
+    setWindowTitle(QStringLiteral("ACloudViewer v") +
                    ecvApp->versionLongStr(false));
 
     m_pluginUIManager = new ccPluginUIManager(this, this);
@@ -404,7 +404,7 @@ ecvConsole::Print(tr("[TBB] Using Intel's Threading Building Blocks %1.%2")
 
 // print welcome message
 ecvConsole::Print(
-        tr("[ErowCloudViewer Software start], Welcome to use ErowCloudViewer"));
+        tr("[ACloudViewer Software start], Welcome to use ACloudViewer"));
 }
 
 MainWindow::~MainWindow() {
@@ -3057,7 +3057,7 @@ void MainWindow::doActionResetGUIElementsPos() {
 
     QMessageBox::information(this, tr("Restart"),
                              tr("To finish the process, you'll have to close "
-                                "and restart ErowCloudViewer"));
+                                "and restart ACloudViewer"));
 
     // to avoid saving them right away!
     s_autoSaveGuiElementPos = false;
@@ -6133,7 +6133,7 @@ void MainWindow::help() {
     QDesktopServices::openUrl(
             QUrl(QLatin1String("https://asher-1.github.io/docs")));
     ecvConsole::Print(
-            tr("[ErowCloudviewer help] https://asher-1.github.io/docs!"));
+            tr("[ACloudViewer help] https://asher-1.github.io/docs!"));
 }
 
 // Change theme: Windows/Darcula

@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                       EROWCLOUDVIEWER PLUGIN: qM3C2                       #
+//#                       ACloudViewer PLUGIN: qM3C2                       #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
