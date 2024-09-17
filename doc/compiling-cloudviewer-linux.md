@@ -4,11 +4,11 @@ Build from source in Ubuntu and macOS
 1. Install dependencies
 
 	    # On Ubuntu
-	    util/install_deps_ubuntu.sh assume-yes
+	    scripts/install_deps_ubuntu.sh assume-yes
 	
 	    # On macOS
 	    # Install Homebrew first: https://brew.sh/
-	    util/install_deps_macos.sh
+	    scripts/install_deps_macos.sh
 	
 	    # configure for vtk(8.2)
 	      cmake -DVTK_QT_VERSION:STRING=5 \

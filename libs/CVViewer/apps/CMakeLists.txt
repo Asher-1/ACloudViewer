@@ -125,9 +125,9 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                     )
         endif ()
 
-        if (UNIX)
+        if (UNIX AND NOT APPLE)
             install(DIRECTORY "${APP_DIR}"
-                    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+                    DESTINATION "${CMAKE_INSTALL_PREFIX}"
                     USE_SOURCE_PERMISSIONS)
             if (CMAKE_INSTALL_PREFIX MATCHES "^(/usr/local|/opt)")
                 set(DESKTOP_INSTALL_DIR "/usr/share")
@@ -170,7 +170,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                     DEPLOY_PATH
                     ${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}
             )
-        else ()
+        elseif (APPLE)
             install(DIRECTORY "${APP_DIR}"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
                     USE_SOURCE_PERMISSIONS)
@@ -188,7 +188,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
     # Install auxiliary files
     if (UNIX AND NOT APPLE) # For Linux it's already installed in by qCC
         foreach (filename ${auxFiles})
-            cloudViewer_install_ext(FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin" "")
+            cloudViewer_install_ext(FILES ${filename} "${CMAKE_INSTALL_PREFIX}/${APP_NAME}" "")
         endforeach ()
     else ()
         foreach (filename ${auxFiles})

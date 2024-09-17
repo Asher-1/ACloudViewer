@@ -155,7 +155,7 @@ macro(COLMAP_ADD_STATIC_LIBRARY TARGET_NAME)
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
     # install
-    install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap)
+    # install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap)
 endmacro(COLMAP_ADD_STATIC_LIBRARY)
 
 # Replacement for the normal cuda_add_library() command. The syntax remains the
@@ -207,7 +207,7 @@ macro(COLMAP_ADD_STATIC_CUDA_LIBRARY TARGET_NAME)
     target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
     # install
-    install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
+    # install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
 endmacro(COLMAP_ADD_STATIC_CUDA_LIBRARY)
 
 # Replacement for the normal add_executable() command. The syntax remains the
