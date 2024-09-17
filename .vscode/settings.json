@@ -1,0 +1,10 @@
+{
+	"files.associations": {
+		"*.cu": "cuda-cpp",
+		"algorithm": "cpp",
+		"tuple": "cpp",
+		"core": "cpp",
+		"numeric": "cpp",
+		"*.txx": "cpp"
+	}
+}
