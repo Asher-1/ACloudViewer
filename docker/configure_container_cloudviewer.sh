@@ -1,29 +1,35 @@
 #!/bin/bash
 
 # install some dependence on host pc
-sudo apt-get install x11-xserver-utils && xhost +
-# sshÆÕÍ¨ÓÃ»§µÇÂ¼ÈÝÆ÷
+# sudo apt-get install x11-xserver-utils && xhost +
+# sshï¿½ï¿½Í¨ï¿½Ã»ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½
 # ssh -p 10022 ubuntu@127.0.0.1
-# export DISPLAY=192.168.1.5:0.0
-export DISPLAY=:0
+export DISPLAY=10.147.17.208:0
+# export DISPLAY=:0
 
 # create container instance
-docker run -dit --runtime=nvidia --name=cloudviewer \
-  --shm-size="1g" \
+docker run -dit --name=cloudviewer \
+  --shm-size="16g" \
   --cap-add=SYS_PTRACE \
   --security-opt seccomp=unconfined --privileged \
+  --net=host \
+  --ipc=host \
+  --gpus=all \
+  --env NVIDIA_DISABLE_REQUIRE=1 \
   -e DISPLAY=unix$DISPLAY \
   -e GDK_SCALE \
   -e GDK_DPI_SCALE \
   -p 10022:22 \
   -p 14000:4000 \
+  -e "QT_X11_NO_MITSHM=1" \
   -v /etc/localtime:/etc/localtime:ro \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /media/yons/data/develop/pcl_projects/ErowCloudViewer/docker_cache/build:/opt/ErowCloudViewer/build \
-  -v /media/yons/data/develop/pcl_projects/ErowCloudViewer/docker_cache/install:/opt/ErowCloudViewer/install \
-  -v /media/yons/data/develop/pcl_projects/ErowCloudViewer/thirdparties:/opt/ErowCloudViewer/thirdparties \
-  -v /Users/asher/develop/code/github/CloudViewer-ML:/opt/ErowCloudViewer/CloudViewer-ML \
-  cloudviewer-deps:develop-ubuntu18.04-cuda101
+  -v /home/asher/develop/code/github/CloudViewer/ErowCloudViewer/docker_cache/build:/opt/ErowCloudViewer/build \
+  -v /home/asher/develop/code/github/CloudViewer/ErowCloudViewer/docker_cache/install:/opt/ErowCloudViewer/install \
+  -v /home/asher/develop/thirdparty:/opt/ErowCloudViewer/thirdparties \
+  -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/opt/ErowCloudViewer/CloudViewer-ML \
+  registry.cn-shanghai.aliyuncs.com/asher-ai/cloudviewer:develop-ubuntu18.04-cuda101
+
 
 # attach into container instance
 docker exec -it cloudviewer /bin/bash
@@ -35,7 +41,7 @@ export QT_PLUGIN_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/plugins:$QT_PLUGIN_PATH"
 export QML2_IMPORT_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/qml:$QML2_IMPORT_PATH"
 
 # Build ErowCloudViewer
-export DISPLAY=:0  # DISPLAY must be consistent with host
+# export DISPLAY=:0  # DISPLAY must be consistent with host
 cd /opt/ErowCloudViewer
 if [ ! -d "build" ]; then # dir does not exist
   echo "creating dir build..."
@@ -69,8 +75,6 @@ cmake "/opt/ErowCloudViewer/ErowCloudViewer" \
 
 # compile ErowCloudViewer pip-package
 make "-j$(nproc)" pip-package
-make "-j$(nproc)" conda-package
-make install "-j$(nproc)"
 
 cmakeGuiOptions=(-DDEVELOPER_BUILD=OFF
                 -DCMAKE_BUILD_TYPE=Release
@@ -96,7 +100,7 @@ cmakeGuiOptions=(-DDEVELOPER_BUILD=OFF
                 -DPLUGIN_IO_QCSV_MATRIX=ON
                 -DPLUGIN_IO_QE57=ON
                 -DPLUGIN_IO_QMESH=ON
-                -DPLUGIN_IO_QPDAL=ON
+                -DPLUGIN_IO_QPDAL=OFF
                 -DPLUGIN_IO_QPHOTOSCAN=ON
                 -DPLUGIN_IO_QRDB=ON
                 -DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=ON

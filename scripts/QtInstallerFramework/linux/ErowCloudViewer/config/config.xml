@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Installer>
     <Name>ErowCloudViewer</Name>
-    <Version>3.8.0</Version>
-    <Title>ErowCloudViewer-3.8.0 Setup</Title>
+    <Version>3.9.1</Version>
+    <Title>ErowCloudViewer-3.9.1 Setup</Title>
     <Publisher>Asher</Publisher>
     <WizardStyle>Modern</WizardStyle>
     <StyleSheet>style.qss</StyleSheet>
@@ -15,6 +15,6 @@
     <RunProgramDescription>Start ErowCloudViewer</RunProgramDescription>
     <StartMenuDir>Graphics</StartMenuDir>
     <AllowNonAsciiCharacters>true</AllowNonAsciiCharacters>
-    <TargetDir>@HomeDir@/ErowCloudViewer</TargetDir>
-    <AdminTargetDir>@rootDir@/opt/ErowCloudViewer</AdminTargetDir>
+    <TargetDir>@HomeDir@/ACloudViewer</TargetDir>
+    <AdminTargetDir>@rootDir@/opt/ACloudViewer</AdminTargetDir>
 </Installer>

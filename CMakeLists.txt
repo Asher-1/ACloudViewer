@@ -29,6 +29,18 @@ if (UNIX AND NOT APPLE)
     if (PROCESSOR_ARCH STREQUAL "aarch64")
         set(LINUX_AARCH64 TRUE)
     endif ()
+
+    set(CMD "lsb_release" "-a")
+    execute_process(
+        COMMAND ${CMD}
+        OUTPUT_VARIABLE LSB_RELEASE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    message(STATUS "LSB Release: ${LSB_RELEASE}")
+    string(REGEX MATCH "Release:	[0-9.]*" UBUNTU_VERSION ${LSB_RELEASE})
+    string(REPLACE "Release:" "" UBUNTU_VERSION "${UBUNTU_VERSION}")
+    string(STRIP "${UBUNTU_VERSION}" UBUNTU_VERSION)
+    message(STATUS "Ubuntu Version: ${UBUNTU_VERSION}")
 endif ()
 
 if(APPLE)
@@ -135,6 +147,10 @@ if (NOT DEVELOPER_BUILD)
         message(WARNING "Setting BUILD_COMMON_CUDA_ARCHS=ON since DEVELOPER_BUILD is OFF.")
     endif ()
 endif ()
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 # Default build type on single-config generators.
 # For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
@@ -257,8 +273,8 @@ string(CONCAT PROJECT_VERSION_THREE_NUMBER "${CLOUDVIEWER_VERSION_MAJOR}"
         ".${CLOUDVIEWER_VERSION_PATCH}")
 set(CLOUDVIEWER_VERSION_FULL "${CLOUDVIEWER_VERSION}${CLOUDVIEWER_VERSION_DEVHASH}")
 
-project(ErowCloudViewerProjects VERSION ${CLOUDVIEWER_VERSION} LANGUAGES C CXX)
-message(STATUS "ErowCloudViewerProjects ${CLOUDVIEWER_VERSION_FULL}")
+project(ACloudViewerProjects VERSION ${CLOUDVIEWER_VERSION} LANGUAGES C CXX)
+message(STATUS "ACloudViewerProjects ${CLOUDVIEWER_VERSION_FULL}")
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
@@ -286,7 +302,7 @@ set(ECV_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 #    # Only consider PATH variable on Windows by default
 #    set(Python3_FIND_REGISTRY NEVER)
 #endif ()
-find_package(Python3 3.6...<3.10
+find_package(Python3 3.6...<3.12
         COMPONENTS Interpreter Development
         )
 if (Python3_FOUND)
@@ -358,7 +374,7 @@ endif ()
 # since they are only used by libs/CVViewer
 if (UNIX AND NOT APPLE)
     include(GNUInstallDirs)
-    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}/erowcloudviewer")
+    set(CMAKE_INSTALL_RPATH "libs")
 endif ()
 
 # Define target folders
@@ -366,17 +382,15 @@ endif ()
 if (WIN32 OR APPLE)
     set(EROWCLOUDVIEWER_DEST_FOLDER "bin/ErowCloudViewer")
 else ()
-    set(EROWCLOUDVIEWER_DEST_FOLDER bin)
+    set(EROWCLOUDVIEWER_DEST_FOLDER "bin")
 endif ()
 
 # set default install folders
-if (WIN32)
+if (WIN32 OR APPLE)
     # (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
-    set(INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER})
+    set(INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX}/${EROWCLOUDVIEWER_DEST_FOLDER})
 elseif (UNIX AND NOT APPLE)
     set(INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX})
-elseif (APPLE)
-    set(INSTALL_DESTINATIONS ${EROWCLOUDVIEWER_DEST_FOLDER})
 endif ()
 
 # Put build results in some predictable places
@@ -585,6 +599,11 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
     endif ()
 endif ()
+
+
+set(COLMAP_APP_NAME "colmap_app")
+set(MAIN_APP_NAME "ErowCloudViewer")
+
 add_subdirectory(eCV)
 
 # Install CMake configuration files
@@ -595,14 +614,14 @@ if (Python3_EXECUTABLE)
     # `make check-style` checks style for c++/cuda/python/ipynb files
     add_custom_target(check-style
             COMMAND ${Python3_EXECUTABLE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_style.py
             COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
             )
 
     # `make apply-style` applies style for c++/cuda/python/ipynb files
     add_custom_target(apply-style
             COMMAND ${Python3_EXECUTABLE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --do_apply_style
+            ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_style.py --do_apply_style
             COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
             )
 endif ()
@@ -613,7 +632,7 @@ add_custom_target(check-cpp-style
         COMMAND ${CMAKE_COMMAND}
         -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
         -DDO_APPLY_STYLE=OFF
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_cpp_style.cmake
         )
 
 # `make apply-cpp-style` applies style for c++/cuda files.
@@ -622,8 +641,63 @@ add_custom_target(apply-cpp-style
         COMMAND ${CMAKE_COMMAND}
         -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
         -DDO_APPLY_STYLE=ON
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_cpp_style.cmake
         )
 
 include(CloudViewerPrintConfigurationSummary)
 cloudViewer_print_configuration_summary()
+
+# Install files and library
+if (IS_MSVC)
+    file( GLOB scripts_list "scripts/*.bat" )
+elseif (UNIX AND NOT APPLE)
+    install(DIRECTORY "scripts/QtInstallerFramework/linux"
+            DESTINATION "${INSTALL_DESTINATIONS}"
+            USE_SOURCE_PERMISSIONS)
+    SET(DEPLOY_ROOT_PATH "${INSTALL_DESTINATIONS}/linux/ErowCloudViewer/packages/com.vendor.product/data")
+    foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
+        install(DIRECTORY "${qt5_plugins_folder}"
+                DESTINATION "${DEPLOY_ROOT_PATH}" 
+                USE_SOURCE_PERMISSIONS)
+    endforeach()
+            
+    file(GLOB documents_list "*.md" )
+    list(APPEND documents_list "CHANGELOG.txt" )
+    list(APPEND documents_list "doc/cloudviewer-detail-zh.md" )
+    file(GLOB scripts_list "scripts/*ubuntu.sh" )
+    file(GLOB another_scripts_list "util/${MAIN_APP_NAME}*" )
+    list(APPEND another_scripts_list 
+        "scripts/sed_fix.sh" 
+        "scripts/reconstruction/shell/colmap_app.sh"
+        "eCV/bin_other/license.txt"
+        "eCV/bin_other/global_shift_list_template.txt"
+        "libs/Reconstruction/doc/COLMAP.desktop")
+    list(APPEND scripts_list ${another_scripts_list})
+endif ()
+foreach( filename ${scripts_list} )
+    cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}" "" )
+endforeach()
+foreach( filename ${documents_list} )
+    cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}" "" )
+endforeach()
+
+string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
+set(BUILD_TIME  ${COMPILE_TIME})
+
+if (UNIX AND NOT APPLE)
+    # Pass environment variables(INSTALL_LIB_DESTINATION) to the install script
+    set(CLOUDVIEWER_INSTALL_LIB_DESTINATION "${DEPLOY_ROOT_PATH}/${CloudViewer_INSTALL_LIB_DIR}")
+    set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION}-${BUILD_TIME}-ubuntu${UBUNTU_VERSION}-amd64")
+    install(CODE "set(CLOUDVIEWER_VERSION \"${CLOUDVIEWER_VERSION_FULL}\")")
+    install(CODE "set(MAIN_APP_NAME \"${MAIN_APP_NAME}\")")
+    install(CODE "set(COLMAP_APP_NAME \"${COLMAP_APP_NAME}\")")
+    install(CODE "set(BUILD_LIB_PATH \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\")")
+    install(CODE "set(CloudViewer_INSTALL_LIB_DIR \"${CloudViewer_INSTALL_LIB_DIR}\")")
+    install(CODE "set(DEPLOY_ROOT_PATH \"${DEPLOY_ROOT_PATH}\")")
+    install(CODE "set(CLOUDVIEWER_INSTALL_LIB_DESTINATION \"${CLOUDVIEWER_INSTALL_LIB_DESTINATION}\")")
+    install(CODE "set(CLOUDVIEWER_PACKAGE_NAME \"${CLOUDVIEWER_PACKAGE_NAME}\")")
+    install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")
+    install(CODE "MESSAGE(\"${MAIN_APP_NAME}\.${CLOUDVIEWER_VERSION} install successfully.\")")
+    install(CODE "MESSAGE(\"Continue to publish installer package: cd ${INSTALL_DESTINATIONS}/linux/${MAIN_APP_NAME}.\")")
+    install(CODE "MESSAGE(\"Then please execute: binarycreator -c config/config.xml -p packages ${CLOUDVIEWER_PACKAGE_NAME}.run\")")
+endif()
