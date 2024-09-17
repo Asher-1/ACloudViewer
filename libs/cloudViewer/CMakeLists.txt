@@ -136,11 +136,13 @@ write_basic_package_version_file("${PROJECT_BINARY_DIR}/CloudViewerConfigVersion
                                  COMPATIBILITY ExactVersion)
 
 # Installation
-install(TARGETS ${PROJECT_NAME} EXPORT CloudViewerTargets
-        RUNTIME DESTINATION ${CloudViewer_INSTALL_BIN_DIR}
-        LIBRARY DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
-        ARCHIVE DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
-)
+if (WIN32 OR APPLE) 
+    install(TARGETS ${PROJECT_NAME} EXPORT CloudViewerTargets
+            RUNTIME DESTINATION ${CloudViewer_INSTALL_BIN_DIR}
+            LIBRARY DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
+            ARCHIVE DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
+    )
+endif()
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DESTINATION ${CloudViewer_INSTALL_INCLUDE_DIR}
@@ -170,4 +172,6 @@ set(GUI_RESOURCE_FILES ${GUI_RESOURCE_FILES} PARENT_SCOPE)
 set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
 
 # install (shared) lib to specified destinations
-InstallSharedLibrary( TARGET ${PROJECT_NAME} )
+if (WIN32 OR APPLE) 
+    InstallSharedLibrary( TARGET ${PROJECT_NAME} )
+endif()

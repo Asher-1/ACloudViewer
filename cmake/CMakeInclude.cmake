@@ -19,19 +19,15 @@ function(cloudViewer_install_files) # 2 (or 3) arguments:
         message(STATUS "Files: ${ARGV0} will be installed in ${ARGV1}" )
 
         if( WIN32 ) # Windows
-
             if( NOT CMAKE_CONFIGURATION_TYPES )
                 install( FILES ${ARGV0} DESTINATION ${ARGV1} )
             else()
                 install( FILES ${ARGV0} CONFIGURATIONS Release DESTINATION ${ARGV1} )
                 install( FILES ${ARGV0} CONFIGURATIONS RelWithDebInfo DESTINATION ${ARGV1}_withDebInfo )
             endif()
-
         elseif() # macOS or Linux
-
-            install( FILES ${ARGV0} DESTINATION ${ARGV1} )
+            install( FILES ${ARGV0} DESTINATION ${ARGV1} USE_SOURCE_PERMISSIONS)
             return()
-
         endif()
     endif()
 
@@ -39,7 +35,7 @@ function(cloudViewer_install_files) # 2 (or 3) arguments:
         if ( ${ARGV2} EQUAL 1 OR ${ARGV2} EQUAL 2 )
             if(  NOT APPLE AND CMAKE_CONFIGURATION_TYPES )
                 message(STATUS "Files: ${ARGV0} will be installed in ${ARGV1}_debug" )
-                install( FILES ${ARGV0} CONFIGURATIONS Debug DESTINATION ${ARGV1}_debug )
+                install( FILES ${ARGV0} CONFIGURATIONS Debug DESTINATION ${ARGV1}_debug USE_SOURCE_PERMISSIONS)
             endif()
         endif()
     endif()
@@ -54,16 +50,26 @@ endfunction(cloudViewer_install_files)
 #   - ARGV3 = install destination suffix (optional)
 function(cloudViewer_install_ext)
     if (APPLE)
-        install(${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3})
+        install(${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3} 
+                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
         return()
     endif ()
 
     if (NOT CMAKE_CONFIGURATION_TYPES)
-        install(${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3})
+        install(${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3}
+                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
     else ()
-        install(${ARGV0} ${ARGV1} CONFIGURATIONS Release DESTINATION ${ARGV2}${ARGV3})
-        install(${ARGV0} ${ARGV1} CONFIGURATIONS RelWithDebInfo DESTINATION ${ARGV2}_withDebInfo${ARGV3})
-        install(${ARGV0} ${ARGV1} CONFIGURATIONS Debug DESTINATION ${ARGV2}_debug${ARGV3})
+        install(${ARGV0} ${ARGV1} CONFIGURATIONS Release DESTINATION ${ARGV2}${ARGV3}
+                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+        install(${ARGV0} ${ARGV1} CONFIGURATIONS RelWithDebInfo DESTINATION ${ARGV2}_withDebInfo${ARGV3}
+                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+        install(${ARGV0} ${ARGV1} CONFIGURATIONS Debug DESTINATION ${ARGV2}_debug${ARGV3}
+                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
     endif ()
 endfunction(cloudViewer_install_ext)
 

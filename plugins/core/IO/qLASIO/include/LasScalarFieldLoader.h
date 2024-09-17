@@ -45,7 +45,7 @@ class LasScalarFieldLoader
 	CC_FILE_ERROR handleScalarFields(ccPointCloud& pointCloud, const laszip_point& currentPoint);
 
 	/// In LAS files, the red, green and blue channels are normal LAS fields,
-	/// however in ErowCloudViewer RGB is handled differently.
+	/// however in ACloudViewer RGB is handled differently.
 	CC_FILE_ERROR handleRGBValue(ccPointCloud& pointCloud, const laszip_point& currentPoint);
 
 	CC_FILE_ERROR handleExtraScalarFields(ccPointCloud& pointCloud, const laszip_point& currentPoint);

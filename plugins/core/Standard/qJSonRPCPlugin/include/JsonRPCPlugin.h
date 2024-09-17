@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                EROWCLOUDVIEWER PLUGIN: ExamplePlugin                   #
+//#                ACloudViewer PLUGIN: ExamplePlugin                   #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -29,7 +29,7 @@
 	the name, authors, maintainers, icon, etc..
 
 	The one method you are required to implement is 'getActions'. This should
-	return all actions (QAction objects) for the plugin. ErowCloudViewer will
+	return all actions (QAction objects) for the plugin. ACloudViewer will
 	automatically add these with their icons in the plugin toolbar and to the
 	plugin menu. If	your plugin returns	several actions, CC will create a
 	dedicated toolbar and a	sub-menu for your plugin. You are responsible for
@@ -69,6 +69,6 @@ private:
 protected:
     // jcon::JsonRpcTcpServer rpc_server;
     // QTcpServer rpc_server;
-    // QWebSocketServer wsrpc_server(QStringLiteral("ErowCloudViewer"), QWebSocketServer::NonSecureMode);
+    // QWebSocketServer wsrpc_server(QStringLiteral("ACloudViewer"), QWebSocketServer::NonSecureMode);
     JsonRPCServer rpc_server;
 };

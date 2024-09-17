@@ -10,7 +10,7 @@
     </message>
     <message>
         <location filename="../ui_templates/aboutDlg.ui" line="47"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;img src=&quot;:/Resources/images/icon/logo_128.png&quot;/&gt;&lt;br/&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;ErowCloudViewer&lt;/span&gt;&lt;br/&gt;Version: %1&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;http://asher-1.github.io&quot;&gt;&lt;img src=&quot;:/Resources/images/donate.png&quot; width=&quot;200&quot;/&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;http://asher-1.github.io&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;asher-1.github.io&lt;br/&gt;&lt;/span&gt;&lt;/a&gt;License: GNU GPL (General Public Licence)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;img src=&quot;:/Resources/images/icon/logo_128.png&quot;/&gt;&lt;br/&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;ACloudViewer&lt;/span&gt;&lt;br/&gt;Version: %1&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;http://asher-1.github.io&quot;&gt;&lt;img src=&quot;:/Resources/images/donate.png&quot; width=&quot;200&quot;/&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;http://asher-1.github.io&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;asher-1.github.io&lt;br/&gt;&lt;/span&gt;&lt;/a&gt;License: GNU GPL (General Public Licence)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation></translation>
     </message>
     <message>
@@ -6193,7 +6193,7 @@ Parameter</source>
     <name>MainViewerClass</name>
     <message>
         <location filename="../ui_templates/MainWindow.ui" line="35"/>
-        <source>ErowCloudViewer</source>
+        <source>ACloudViewer</source>
         <translation>逸舟点云处理系统</translation>
     </message>
     <message>
@@ -7753,7 +7753,7 @@ Parameter</source>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="223"/>
-        <source>[ErowCloudViewer Software start], Welcome to use ErowCloudViewer</source>
+        <source>[ACloudViewer Software start], Welcome to use ACloudViewer</source>
         <translation></translation>
     </message>
     <message>
@@ -7935,7 +7935,7 @@ Parameter</source>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="2200"/>
-        <source>To finish the process, you&apos;ll have to close and restart ErowCloudViewer</source>
+        <source>To finish the process, you&apos;ll have to close and restart ACloudViewer</source>
         <translation></translation>
     </message>
     <message>
@@ -8323,7 +8323,7 @@ Parameter</source>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="4139"/>
-        <source>[ErowCloudviewer help] http://asher-1.github.io !</source>
+        <source>[ACloudViewer help] http://asher-1.github.io !</source>
         <translation></translation>
     </message>
     <message>
@@ -13108,8 +13108,8 @@ Faces: %3</source>
     </message>
     <message>
         <location filename="../../common/CommonSettings.h" line="51"/>
-        <source>ErowCloudViewer</source>
-        <translation>ErowCloudViewer</translation>
+        <source>ACloudViewer</source>
+        <translation>ACloudViewer</translation>
     </message>
 </context>
 <context>
@@ -18166,8 +18166,8 @@ Cells: %2 x %3</source>
     </message>
     <message>
         <location filename="../../common/ecvTranslationManager.cpp" line="180"/>
-        <source>Language change will take effect when ErowCloudViewer is restarted</source>
-        <translation>语言在ErowCloudViewer重启后生效</translation>
+        <source>Language change will take effect when ACloudViewer is restarted</source>
+        <translation>语言在ACloudViewer重启后生效</translation>
     </message>
 </context>
 <context>

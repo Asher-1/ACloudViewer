@@ -13,6 +13,8 @@ ExternalProject_Add(
         PREFIX glog
         URL https://github.com/google/glog/archive/v0.3.5.zip
         URL_HASH MD5=454766d0124951091c95bad33dafeacd
+        # URL https://github.com/google/glog/archive/v0.7.1.zip
+        # URL_HASH MD5=fa30180d4284c454bdd324ad3baf7f5f
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/glog"
         BUILD_IN_SOURCE 0
         BUILD_ALWAYS 0
@@ -28,6 +30,7 @@ ExternalProject_Add(
             # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
             # checking CXX_COMPILER_ID is not supported.
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
+            -DCMAKE_CXX_FLAGS="-std=c++14"
             -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux,Darwin>:ON:OFF>
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
@@ -40,10 +43,9 @@ set(GLOG_LIB_DIR ${INSTALL_DIR}/lib)
 set(EXT_GLOG_LIBRARIES glog)
 set(GLOG_CMAKE_FLAGS ${GFLAGS_CMAKE_FLAGS} -Dglog_DIR=${GLOG_LIB_DIR}/cmake/glog
         -DGLOG_INCLUDE_DIR_HINTS=${GLOG_INCLUDE_DIRS} -DGLOG_LIBRARY_DIR_HINTS=${GLOG_LIB_DIR})
-
 if (MSVC)
     set(GLOG_CMAKE_FLAGS ${GLOG_CMAKE_FLAGS} -DGOOGLE_GLOG_DLL_DECL=)
-else ()
+elseif (APPLE)
     set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GLOG_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
     cloudViewer_install_ext(FILES ${GLOG_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
 endif ()

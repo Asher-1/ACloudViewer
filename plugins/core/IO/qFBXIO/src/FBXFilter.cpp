@@ -1,6 +1,6 @@
 //##########################################################################
 //#                                                                        #
-//#                              EROWCLOUDVIEWER                              #
+//#                              ACloudViewer                              #
 //#                                                                        #
 //#  This program is free software; you can redistribute it and/or modify  #
 //#  it under the terms of the GNU General Public License as published by  #
@@ -555,7 +555,7 @@ CC_FILE_ERROR FBXFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		{
 			FbxDocumentInfo* sceneInfo = FbxDocumentInfo::Create(lSdkManager, "SceneInfo");
 			sceneInfo->mTitle = qPrintable(QString("Mesh: ") + (meshes.size() == 1 ? meshes[0]->getName() : QString("Multiple meshes")));
-			sceneInfo->mAuthor = "ErowCloudViewer";
+			sceneInfo->mAuthor = "ACloudViewer";
 			sceneInfo->mRevision = "rev. 1.0";
 			sceneInfo->mKeywords = "CloudViewer mesh";
 

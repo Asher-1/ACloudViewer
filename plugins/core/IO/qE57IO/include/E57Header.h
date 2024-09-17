@@ -81,7 +81,7 @@ public:
 	double		colorBlueMaximum;		//!< The maximum producible blue color value. Unit is unspecified.
 };
 
-//! E57 scan useful header information (minimal set for ErowCloudViewer only ;)
+//! E57 scan useful header information (minimal set for ACloudViewer only ;)
 struct E57ScanHeader
 {
 	IntensityLimits						intensityLimits;	//!< The limits for the value of signal intensity that the sensor is capable of producing.

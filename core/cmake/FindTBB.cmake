@@ -283,7 +283,7 @@ else (NOT _TBB_INSTALL_DIR)
         if (WIN32)
             string(REPLACE "lib" "bin" TBB_BIN_DIR ${TBB_LIBRARY_DIRS})
             set(tbb_shared_lib "${TBB_BIN_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}tbb${CMAKE_SHARED_LIBRARY_SUFFIX}")
-            cloudViewer_install_files( "${tbb_shared_lib}" "${EROWCLOUDVIEWER_DEST_FOLDER}" 1 )
+            cloudViewer_install_files( "${tbb_shared_lib}" "${ACloudViewer_DEST_FOLDER}" 1 )
         endif ()
     endif (NOT TBB_FOUND)
 

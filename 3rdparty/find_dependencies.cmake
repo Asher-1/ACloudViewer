@@ -168,7 +168,7 @@ function(build_3rdparty_library name)
             target_include_directories(${name} SYSTEM INTERFACE $<BUILD_INTERFACE:${incl_path}>)
         endforeach ()
     endif ()
-    if (NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
+    if (BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets
                 RUNTIME DESTINATION ${CloudViewer_INSTALL_BIN_DIR}
                 ARCHIVE DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
@@ -467,10 +467,10 @@ function(import_3rdparty_library name)
             target_link_libraries(${name} INTERFACE
                     "$<BUILD_INTERFACE:$<$<AND:${HIDDEN},${FLAG_load_hidden}>:-load_hidden >${arg_LIB_DIR}/${library_filename}>")
             if (NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
-                install(FILES ${arg_LIB_DIR}/${library_filename}
-                        DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
-                        RENAME ${installed_library_filename}
-                        )
+                # install(FILES ${arg_LIB_DIR}/${library_filename}
+                #         DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
+                #         RENAME ${installed_library_filename}
+                #         )
                 target_link_libraries(${name} INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CloudViewer_INSTALL_LIB_DIR}/${installed_library_filename}>)
             endif ()
             if (HIDDEN)
@@ -537,10 +537,10 @@ function(import_shared_3rdparty_library name ext_target)
             #message("shared thirdparty lib: ${arg_LIB_DIR}/${library_filename}")
             target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
             if (NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
-                install(FILES ${arg_LIB_DIR}/${library_filename}
-                        DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
-                        RENAME ${installed_library_filename}
-                        )
+                # install(FILES ${arg_LIB_DIR}/${library_filename}
+                #         DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
+                #         RENAME ${installed_library_filename}
+                #         )
                 target_link_libraries(${name} INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CloudViewer_INSTALL_LIB_DIR}/${installed_library_filename}>)
             endif ()
         endforeach ()

@@ -453,14 +453,8 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
 if (IS_MSVC)
     install(FILES "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/colmap.bat"
             "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/RUN_TESTS.bat"
-            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-            GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-            DESTINATION "/")
-endif ()
-
-# Install application meny entry under Linux/Unix.
-if (UNIX AND NOT APPLE)
-    install(FILES "doc/COLMAP.desktop" DESTINATION "share/applications")
+            DESTINATION "/"  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 endif ()
 
 # Configure the uninstallation script.

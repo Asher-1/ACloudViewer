@@ -22,7 +22,7 @@ add_custom_target( translations ALL DEPENDS ${TRANSLATION_QM} )
 foreach( TRANSLATION_FILE ${TRANSLATION_FILES} )
 	get_filename_component( FILENAME ${TRANSLATION_FILE} NAME )
 	
-	# Our files are named like this: ErowCloudViewer_fr.qm
+	# Our files are named like this: ACloudViewer_fr.qm
 	# We want just the language part - "fr" so we can find the right files from the Qt install
 	string( REGEX REPLACE "[^_]+_([^._]+).+" "\\1" LANG_CODE ${FILENAME} )
 	
@@ -85,14 +85,14 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 endif()
 		
 if( APPLE )
-	install( FILES ${TRANSLATION_QM} DESTINATION ${EROWCLOUDVIEWER_MAC_BASE_DIR}/Contents/translations )
+	install( FILES ${TRANSLATION_QM} DESTINATION ${ACloudViewer_MAC_BASE_DIR}/Contents/translations )
 elseif( UNIX )
-        install( FILES ${TRANSLATION_QM} DESTINATION share/erowcloudviewer/translations )
+        install( FILES ${TRANSLATION_QM} DESTINATION translations )
 else( WIN32 )
 	if( CMAKE_CONFIGURATION_TYPES )
-		install( FILES ${TRANSLATION_QM} CONFIGURATIONS Release DESTINATION ${EROWCLOUDVIEWER_DEST_FOLDER}/translations )
-		install( FILES ${TRANSLATION_QM} CONFIGURATIONS Debug DESTINATION ${EROWCLOUDVIEWER_DEST_FOLDER}_debug/translations )
+		install( FILES ${TRANSLATION_QM} CONFIGURATIONS Release DESTINATION ${ACloudViewer_DEST_FOLDER}/translations )
+		install( FILES ${TRANSLATION_QM} CONFIGURATIONS Debug DESTINATION ${ACloudViewer_DEST_FOLDER}_debug/translations )
 	elseif()
-		install( FILES ${TRANSLATION_QM} DESTINATION ${EROWCLOUDVIEWER_DEST_FOLDER}/translations )
+		install( FILES ${TRANSLATION_QM} DESTINATION ${ACloudViewer_DEST_FOLDER}/translations )
 	endif()
 endif()

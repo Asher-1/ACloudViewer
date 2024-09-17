@@ -119,8 +119,8 @@ bool AutoSegmentationTools::extractConnectedComponents(
 
 bool AutoSegmentationTools::frontPropagationBasedSegmentation(
         GenericIndexedCloudPersist* theCloud,
-        PointCoordinateType radius,
         ScalarType minSeedDist,
+        PointCoordinateType radius,
         unsigned char octreeLevel,
         ReferenceCloudContainer& theSegmentedLists,
         GenericProgressCallback* progressCb,
