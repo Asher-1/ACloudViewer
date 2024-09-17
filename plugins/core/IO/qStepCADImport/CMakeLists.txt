@@ -45,7 +45,7 @@ if ( PLUGIN_IO_QSTEP )
 		
 		message( ${OC_DLLS} )
 
-		cloudViewer_install_files( "${OC_DLLS}" "${EROWCLOUDVIEWER_DEST_FOLDER}" )
+		cloudViewer_install_files( "${OC_DLLS}" "${ACloudViewer_DEST_FOLDER}" )
 		
 		unset( OC_DLLS )
 	endif()

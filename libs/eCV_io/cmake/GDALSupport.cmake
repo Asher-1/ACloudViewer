@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# GDAL support for ErowCloudViewer
+# GDAL support for ACloudViewer
 # ------------------------------------------------------------------------------
 
 option( OPTION_USE_GDAL "Build with GDAL support" OFF )
@@ -230,8 +230,8 @@ function( target_link_GDAL ) # ARGV0 = project name
 
 		#message( STATUS ${GDAL_DLL_FILES} )
 		#message( STATUS ${GDAL_DEP_DLL_FILES} )
-		cloudViewer_install_files("${GDAL_DLL_FILES}" "${EROWCLOUDVIEWER_DEST_FOLDER}" ) #mind the quotes!
-		cloudViewer_install_files("${GDAL_DEP_DLL_FILES}" "${EROWCLOUDVIEWER_DEST_FOLDER}" ) #mind the quotes!
+		cloudViewer_install_files("${GDAL_DLL_FILES}" "${ACloudViewer_DEST_FOLDER}" ) #mind the quotes!
+		cloudViewer_install_files("${GDAL_DEP_DLL_FILES}" "${ACloudViewer_DEST_FOLDER}" ) #mind the quotes!
 
 	endif()
 endfunction()

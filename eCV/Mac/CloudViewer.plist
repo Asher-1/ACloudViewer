@@ -173,7 +173,7 @@
 				<string>bin</string>
 			</array>
 			<key>CFBundleTypeName</key>
-			<string>ErowCloudViewer binary file</string>
+			<string>ACloudViewer binary file</string>
 			<key>LSHandlerRank</key>
 			<string>Default</string>
 		</dict>

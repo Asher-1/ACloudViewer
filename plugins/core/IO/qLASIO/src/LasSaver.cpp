@@ -96,7 +96,7 @@ void LasSaver::initLaszipHeader(const Parameters& parameters)
 	m_laszipHeader.y_offset = parameters.lasOffset.y;
 	m_laszipHeader.z_offset = parameters.lasOffset.z;
 
-	strncpy(m_laszipHeader.generating_software, "ErowCloudViewer", 32);
+	strncpy(m_laszipHeader.generating_software, "ACloudViewer", 32);
 }
 LasSaver::~LasSaver() noexcept
 {

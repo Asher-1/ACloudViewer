@@ -14,7 +14,7 @@
 //#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
 //#  GNU General Public License for more details.                          #
 //#                                                                        #
-//#          COPYRIGHT: ErowCloudViewer project                            #
+//#          COPYRIGHT: ACloudViewer project                            #
 //#                                                                        #
 //##########################################################################
 
@@ -27,7 +27,7 @@
 	the name, authors, maintainers, icon, etc..
 	
 	The one method you are required to implement is getFilters(). This method
-	registers your file I/O methods with ErowCloudViewer.
+	registers your file I/O methods with ACloudViewer.
 **/
 
 //! Example I/O Plugin

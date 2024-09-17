@@ -43,7 +43,7 @@ elseif (IS_GNU OR IS_CLANG)
             IS_GNU AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     else ()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     endif ()
 endif ()
 

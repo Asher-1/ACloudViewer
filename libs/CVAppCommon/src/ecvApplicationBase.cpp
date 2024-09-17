@@ -11,7 +11,7 @@
 //#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the          #
 //#  GNU General Public License for more details.                          #
 //#                                                                        #
-//#          COPYRIGHT: ErowCloudViewer project                            #
+//#          COPYRIGHT: ACloudViewer project                            #
 //#                                                                        #
 //##########################################################################
 
@@ -36,7 +36,7 @@
 
 
 #if (QT_VERSION < QT_VERSION_CHECK(5, 5, 0))
-#error erowcloudviewer does not support versions of Qt prior to 5.5
+#error ACloudViewer does not support versions of Qt prior to 5.5
 #endif
 
 
@@ -107,7 +107,7 @@ ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, bool isCommandLin
 	ccPluginManager::get().setPaths( m_PluginPaths );
 	
 	ccTranslationManager::get().registerTranslatorFile( QStringLiteral( "qt" ), m_TranslationPath );
-	ccTranslationManager::get().registerTranslatorFile( QStringLiteral( "ErowCloudViewer" ), m_TranslationPath );
+	ccTranslationManager::get().registerTranslatorFile( QStringLiteral( "ACloudViewer" ), m_TranslationPath );
 	ccTranslationManager::get().loadTranslations();
 	
 	connect( this, &ecvApplicationBase::aboutToQuit, [=](){ ccMaterial::ReleaseTextures(); } );
@@ -203,19 +203,19 @@ void ecvApplicationBase::setupPaths()
 		theDir.cdUp();
         m_PluginPaths << (theDir.absolutePath() + "/plugins");
         m_PluginPaths << (theDir.absolutePath() + "/bin/plugins");
-        m_PluginPaths << (theDir.absolutePath() + "/lib/erowcloudviewer/plugins");
-        m_ShaderPath = (theDir.absolutePath() + "/share/erowcloudviewer/shaders");
-        m_TranslationPath = (theDir.absolutePath() + "/share/erowcloudviewer/translations");
+        m_PluginPaths << (theDir.absolutePath() + "/lib/ACloudViewer/plugins");
+        m_ShaderPath = (theDir.absolutePath() + "/share/ACloudViewer/shaders");
+        m_TranslationPath = (theDir.absolutePath() + "/share/ACloudViewer/translations");
 	}
 	else
 	{
 		// Choose a reasonable default to look in
-        m_PluginPaths << "/usr/lib/erowcloudviewer/plugins";
+        m_PluginPaths << "/usr/lib/ACloudViewer/plugins";
         m_PluginPaths << (theDir.absolutePath() + "/plugins");
         m_PluginPaths << (theDir.absolutePath() + "/bin/plugins");
-        m_PluginPaths << (theDir.absolutePath() + "/lib/erowcloudviewer/plugins");
-        m_ShaderPath = "/usr/share/erowcloudviewer/shaders";
-        m_TranslationPath = "/usr/share/erowcloudviewer/translations";
+        m_PluginPaths << (theDir.absolutePath() + "/lib/ACloudViewer/plugins");
+        m_ShaderPath = "/usr/share/ACloudViewer/shaders";
+        m_TranslationPath = "/usr/share/ACloudViewer/translations";
 	}
 
 	// check current application translations path whether exists or not

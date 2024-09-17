@@ -1,6 +1,6 @@
 option( PLUGIN_STANDARD_QCORK "Install qCORK plugin" OFF )
 
-# ErowCloudViewer Mesh CSG operations plugin (based on the Cork library)
+# ACloudViewer Mesh CSG operations plugin (based on the Cork library)
 if( PLUGIN_STANDARD_QCORK )
 	project( QCORK_PLUGIN )
 	

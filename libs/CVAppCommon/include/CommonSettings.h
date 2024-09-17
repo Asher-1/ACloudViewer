@@ -38,7 +38,7 @@ static QString LOGFILE = "log.log";
 // Define the URL of the Update Definitions file
 static const QString UPDATE_RUL = "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/updates.json";
 //    static const QString UPDATE_RUL     =
-//    "https://github.com/Asher-1/Asher-1.github.io/blob/main/files/ErowCloudViewer/updates.json?raw=true";
+//    "https://github.com/Asher-1/Asher-1.github.io/blob/main/files/ACloudViewer/updates.json?raw=true";
 
 // logos
 static const QString APP_LOGO = ":/Resources/images/icon/logo_256.png";
@@ -54,7 +54,7 @@ static const char* CODING = "UTF8";
 
 // application information
 static const QString APP_VERSION = "v3.9.0";
-static const QString TITLE = QObject::tr("ErowCloudViewer");
+static const QString TITLE = QObject::tr("ACloudViewer");
 static const QString APP_TITLE =
         TITLE + " " + versionLongStr(true, APP_VERSION);
 

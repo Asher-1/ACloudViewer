@@ -4,9 +4,9 @@
 
 This library provides data structures and algorithms for working with 3D point cloud data.
 
-It was originally part of the [ErowCloudViewer repository](https://asher-1.github.io) (as "CVLib").
+It was originally part of the [ACloudViewer repository](https://asher-1.github.io) (as "CVLib").
 
-We have separated it into its own repository because it is useful on its own without having to download the entire ErowCloudViewer repository. This makes it easier to work with and gives this part of the ErowCloudViewer project some visibility it would not otherwise have.
+We have separated it into its own repository because it is useful on its own without having to download the entire ACloudViewer repository. This makes it easier to work with and gives this part of the ACloudViewer project some visibility it would not otherwise have.
 
 It uses CMake, requires C++14, and compiles & runs on Linux, macOS, and Windows.
 

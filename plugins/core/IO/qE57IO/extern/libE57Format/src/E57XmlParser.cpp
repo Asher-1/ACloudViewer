@@ -42,6 +42,8 @@
 #include "StringNodeImpl.h"
 #include "VectorNodeImpl.h"
 
+#include <limits>
+
 using namespace e57;
 using namespace XERCES_CPP_NAMESPACE;
 

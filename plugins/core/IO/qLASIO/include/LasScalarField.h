@@ -25,7 +25,7 @@
 // System
 #include <cstdint>
 
-/// class used to link a LAS field defined by the LAS standard to the ErowCloudViewer
+/// class used to link a LAS field defined by the LAS standard to the ACloudViewer
 /// scalar field that stores or will store the values.
 struct LasScalarField
 {
@@ -114,7 +114,7 @@ struct LasScalarField
   public: // Members
 	/// The Id of the LAS field this relates to.
 	Id id;
-	/// Pointer to the 'linked' ErowCloudViewer scalar field.
+	/// Pointer to the 'linked' ACloudViewer scalar field.
 	///
 	/// When reading (loading points) values of the LAS field will be stored into the
 	/// scalar field pointed by sf.

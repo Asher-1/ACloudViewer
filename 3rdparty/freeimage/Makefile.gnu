@@ -13,6 +13,9 @@ DOS2UNIX = dos2unix
 
 LIBRARIES = -lstdc++
 
+
+CXXFLAGS += -std=c++14
+
 MODULES = $(SRCS:.c=.o)
 MODULES := $(MODULES:.cpp=.o)
 CFLAGS ?= -O3 -fPIC -fexceptions -fvisibility=hidden

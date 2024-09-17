@@ -240,7 +240,7 @@ std::shared_ptr<gui::Dialog> CreateContactDialog(gui::Window *window) {
             "Discord channel:");
     auto right_col = std::make_shared<gui::Label>(
             "https://Asher-1.github.io\n"
-            "https://github.com/Asher-1/ErowCloudViewer\n"
+            "https://github.com/Asher-1/ACloudViewer\n"
             "https://Asher-1.github.io/docs/\n"
             "https://discord.gg/D35BGvn");
     auto ok = std::make_shared<gui::Button>("OK");

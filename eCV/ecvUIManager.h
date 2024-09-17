@@ -329,7 +329,7 @@ private slots:
 	//	if (event->type()==QEvent::WindowStateChange && 
 	//		this->windowState() == Qt::WindowMinimized) {
 	//		m_systemTray->showMessage("Information",//消息窗口标题
-	//			"ErowCloudViewer",//消息内容
+	//			"ACloudViewer",//消息内容
 	//			QSystemTrayIcon::MessageIcon::Information,//消息窗口图标 
 	//			5000);//消息窗口显示时长
 	//	}
