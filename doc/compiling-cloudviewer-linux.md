@@ -52,7 +52,7 @@ If Python binding is not needed, you can turn it off by ``-DBUILD_PYTHON_MODULE=
 	    cmake -DCMAKE_BUILD_TYPE=Release \
 	      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/bin/qmake \
 	      	-DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.13.0/5.13.0/gcc_64/lib/cmake  \
-	      	../ErowCloudViewer
+	      	../ACloudViewer
 	
 	    cmake -DCMAKE_BUILD_TYPE=Release \
 	      	-DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
@@ -149,6 +149,8 @@ note:: This workaround has some compatibility issues with the source code of
 
 ML Module
 
+Warning: Due to incompatibilities in the cxx11_abi on Linux between PyTorch and TensorFlow, 
+official Python wheels on Linux only support PyTorch, not TensorFlow.
 The ML module consists of primitives like operators and layers as well as high
 level code for models and pipelines. To build the operators and layers, set
 ``BUILD_PYTORCH_OPS=ON`` and/or ``BUILD_TENSORFLOW_OPS=ON``.  Don't forget to also
@@ -164,7 +166,7 @@ for all supported ML frameworks and bundling the high level CloudViewer-ML code.
     # In the build directory
     cmake -DBUILD_CUDA_MODULE=ON \
           -DBUILD_PYTORCH_OPS=ON \
-          -DBUILD_TENSORFLOW_OPS=ON \
+          -DBUILD_TENSORFLOW_OPS=OFF \
           -DBUNDLE_CLOUDVIEWER_ML=ON \
           -DCLOUDVIEWER_ML_ROOT=https://github.com/intel-isl/CloudViewer-ML.git \
           ..

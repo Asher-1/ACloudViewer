@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-2.0-or-later
-// Copyright © ErowCloudViewer Project
+// Copyright © ACloudViewer Project
 
 #pragma once
 

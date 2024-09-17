@@ -1,4 +1,4 @@
-name: ErowCloudViewerDev
+name: ACloudViewerDev
 channels:
   - conda-forge
 dependencies:

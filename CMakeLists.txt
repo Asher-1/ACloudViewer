@@ -55,7 +55,7 @@ endif()
 
 include(CMakeDependentOption)
 
-# ErowCloudViewer build options
+# ACloudViewer build options
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(BUILD_EXAMPLES "Build CloudViewer example programs" ON)
 option(BUILD_UNIT_TESTS "Build CloudViewer unit tests" OFF)
@@ -342,8 +342,8 @@ endif ()
 set(PROJECT_EMAIL "dahailu@foxmail.com")
 set(PROJECT_HOME "https://asher-1.github.io")
 set(PROJECT_DOCS "https://asher-1.github.io/docs")
-set(PROJECT_CODE "https://github.com/Asher-1/ErowCloudViewer")
-set(PROJECT_ISSUES "https://github.com/Asher-1/ErowCloudViewer/issues")
+set(PROJECT_CODE "https://github.com/Asher-1/ACloudViewer")
+set(PROJECT_ISSUES "https://github.com/Asher-1/ACloudViewer/issues")
 
 include(CMakePolicies)
 include(CMakeSetCompilerOptions)
@@ -378,17 +378,17 @@ if (UNIX AND NOT APPLE)
 endif ()
 
 # Define target folders
-# (now that ccViewer can have its own plugins, ErowCloudViewer and CloudViewer must fall in separate folders!
+# (now that ccViewer can have its own plugins, ACloudViewer and CloudViewer must fall in separate folders!
 if (WIN32 OR APPLE)
-    set(EROWCLOUDVIEWER_DEST_FOLDER "bin/ErowCloudViewer")
+    set(ACloudViewer_DEST_FOLDER "bin/ACloudViewer")
 else ()
-    set(EROWCLOUDVIEWER_DEST_FOLDER "bin")
+    set(ACloudViewer_DEST_FOLDER "bin")
 endif ()
 
 # set default install folders
 if (WIN32 OR APPLE)
     # (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
-    set(INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX}/${EROWCLOUDVIEWER_DEST_FOLDER})
+    set(INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX}/${ACloudViewer_DEST_FOLDER})
 elseif (UNIX AND NOT APPLE)
     set(INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX})
 endif ()
@@ -559,7 +559,7 @@ else ()
     add_definitions(-DSCALAR_TYPE_FLOAT)
 endif ()
 
-# Internal libs used by both ErowCloudViewer and cloudViewer python package
+# Internal libs used by both ACloudViewer and cloudViewer python package
 add_subdirectory(libs)
 
 # Examples
@@ -602,7 +602,7 @@ endif ()
 
 
 set(COLMAP_APP_NAME "colmap_app")
-set(MAIN_APP_NAME "ErowCloudViewer")
+set(MAIN_APP_NAME "ACloudViewer")
 
 add_subdirectory(eCV)
 
@@ -654,7 +654,7 @@ elseif (UNIX AND NOT APPLE)
     install(DIRECTORY "scripts/QtInstallerFramework/linux"
             DESTINATION "${INSTALL_DESTINATIONS}"
             USE_SOURCE_PERMISSIONS)
-    SET(DEPLOY_ROOT_PATH "${INSTALL_DESTINATIONS}/linux/ErowCloudViewer/packages/com.vendor.product/data")
+    SET(DEPLOY_ROOT_PATH "${INSTALL_DESTINATIONS}/linux/ACloudViewer/packages/com.vendor.product/data")
     foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
         install(DIRECTORY "${qt5_plugins_folder}"
                 DESTINATION "${DEPLOY_ROOT_PATH}" 
@@ -668,10 +668,11 @@ elseif (UNIX AND NOT APPLE)
     file(GLOB another_scripts_list "util/${MAIN_APP_NAME}*" )
     list(APPEND another_scripts_list 
         "scripts/sed_fix.sh" 
-        "scripts/reconstruction/shell/colmap_app.sh"
         "eCV/bin_other/license.txt"
-        "eCV/bin_other/global_shift_list_template.txt"
-        "libs/Reconstruction/doc/COLMAP.desktop")
+        "eCV/bin_other/global_shift_list_template.txt")
+    if (BUILD_RECONSTRUCTION)
+        list(APPEND another_scripts_list "scripts/reconstruction/shell/colmap_app.sh" "libs/Reconstruction/doc/COLMAP.desktop")
+    endif()
     list(APPEND scripts_list ${another_scripts_list})
 endif ()
 foreach( filename ${scripts_list} )
@@ -683,11 +684,17 @@ endforeach()
 
 string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
 set(BUILD_TIME  ${COMPILE_TIME})
+if (BUILD_CUDA_MODULE) 
+    set(ACLOUDVIEWER_DEVICE "cuda")
+else ()
+    set(ACLOUDVIEWER_DEVICE "cpu")
+endif()
 
 if (UNIX AND NOT APPLE)
     # Pass environment variables(INSTALL_LIB_DESTINATION) to the install script
     set(CLOUDVIEWER_INSTALL_LIB_DESTINATION "${DEPLOY_ROOT_PATH}/${CloudViewer_INSTALL_LIB_DIR}")
-    set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION}-${BUILD_TIME}-ubuntu${UBUNTU_VERSION}-amd64")
+    set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION}-${BUILD_TIME}-ubuntu${UBUNTU_VERSION}-${ACLOUDVIEWER_DEVICE}-amd64")
+    message(STATUS "CLOUDVIEWER_PACKAGE_NAME: " ${CLOUDVIEWER_PACKAGE_NAME})
     install(CODE "set(CLOUDVIEWER_VERSION \"${CLOUDVIEWER_VERSION_FULL}\")")
     install(CODE "set(MAIN_APP_NAME \"${MAIN_APP_NAME}\")")
     install(CODE "set(COLMAP_APP_NAME \"${COLMAP_APP_NAME}\")")

@@ -23,7 +23,7 @@
 #include "mocks\ccMainAppInterfaceMock.h"
 #include "mocks\ccGenericGLDisplayMock.h"
 
-// ErowCloudViewer
+// ACloudViewer
 #include "ccPointCloud.h"
 #include "ccHObject.h"
 

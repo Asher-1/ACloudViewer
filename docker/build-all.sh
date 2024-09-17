@@ -3,7 +3,7 @@
 set -e
 
 test -d docker || (
-        echo This script must be run from the top level ErowCloudViewer directory
+        echo This script must be run from the top level ACloudViewer directory
 	exit 1
 )
 

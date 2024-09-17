@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="doc/images/ErowCloudViewer_logo_horizontal.png">
+  <img src="doc/images/ACloudViewer_logo_horizontal.png">
 </p>
 
-# ErowCloudViewer: A Modern System for 3D Data Processing
+# ACloudViewer: A Modern System for 3D Data Processing
 
 <h4>
     <a href="http://asher-1.github.io">Homepage</a> |
@@ -12,33 +12,33 @@
     <a href="http://asher-1.github.io/docs/release/index.html#python-api-index">Python</a> |
     <a href="http://asher-1.github.io/docs/release/cpp_api.html">C++</a> |
     <a href="https://github.com/Asher-1/CloudViewer-ML">CloudViewer-ML</a> |
-    <a href="https://github.com/Asher-1/ErowCloudViewer/releases">Viewer</a> |
+    <a href="https://github.com/Asher-1/ACloudViewer/releases">Viewer</a> |
     <a href="http://asher-1.github.io/docs/release/contribute/contribute.html">Contribute</a> |
     <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a> |
     <a href="http://asher-1.github.io">Forum</a>
 </h4>
 
 
-[![GitHub release](doc/images/version.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
-[![Build Status](doc/images/buildStatus.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
-[![Releases](doc/images/newRelease.svg)](https://github.com/Asher-1/ErowCloudViewer/releases/)
+[![GitHub release](doc/images/version.svg)](https://github.com/Asher-1/ACloudViewer/releases/)
+[![Build Status](doc/images/buildStatus.svg)](https://github.com/Asher-1/ACloudViewer/releases/)
+[![Releases](doc/images/newRelease.svg)](https://github.com/Asher-1/ACloudViewer/releases/)
 
 Introduction
 ------------
-ErowCloudViewer is an open-source library that supports rapid development of software that deals with 3D data. The
-ErowCloudViewer frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The
+ACloudViewer is an open-source library that supports rapid development of software that deals with 3D data. The
+ACloudViewer frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The
 backend is highly optimized and is set up for parallelization. We welcome contributions from the open-source community.
 
 ------------
-ErowCloudViewer is a 3D point cloud (and triangular mesh) processing software. It was originally designed to perform
+ACloudViewer is a 3D point cloud (and triangular mesh) processing software. It was originally designed to perform
 comparison between two 3D points clouds
 (such as the ones obtained with a laser scanner) or between a point cloud and a triangular mesh. It relies on an octree
 structure that is highly optimized for this particular use-case. It was also meant to deal with huge point clouds (
 typically more than 10 millions points, and up to 120 millions with 2 Gb of memory).
 
-More on ErowCloudViewer [here](http://asher-1.github.io)
+More on ACloudViewer [here](http://asher-1.github.io)
 
-**Core features of ErowCloudViewer include:**
+**Core features of ACloudViewer include:**
 
 * 3D data structures
 * 3D data processing algorithms
@@ -48,18 +48,18 @@ More on ErowCloudViewer [here](http://asher-1.github.io)
 * Physically based rendering (PBR)
 * Available in C++ and Python
 
-For more, please visit the [ErowCloudViewer documentation](http://asher-1.github.io).
+For more, please visit the [ACloudViewer documentation](http://asher-1.github.io).
 
 
 
-## ErowCloudViewer System
+## ACloudViewer System
 
 <p align="center">
-  <img width="640" src="doc/images/ErowCloudViewerMainUI.png">
+  <img width="640" src="doc/images/ACloudViewerMainUI.png">
 </p>
 
-ErowCloudViewer is a standalone 3D viewer app based on QT5 available on Ubuntu and Windows.
-Please stay tuned for MacOS. Download ErowCloudViewer from the [release page](https://github.com/Asher-1/ErowCloudViewer/releases).
+ACloudViewer is a standalone 3D viewer app based on QT5 available on Ubuntu and Windows.
+Please stay tuned for MacOS. Download ACloudViewer from the [release page](https://github.com/Asher-1/ACloudViewer/releases).
 
 Semantic Annotation Tool:
 
@@ -84,7 +84,7 @@ Reconstruction Tool:
 
 CloudViewer-Viewer is a standalone 3D viewer app available on Ubuntu and Windows.
 Please stay tuned for MacOS. Download CloudViewer app from the
-[release page](https://github.com/Asher-1/ErowCloudViewer/releases).
+[release page](https://github.com/Asher-1/ACloudViewer/releases).
 
 ## CloudViewer-ML
 
@@ -114,10 +114,10 @@ Basically, you have to:
 - launch CMake (from the trunk root)
 - enjoy!
 
-Contributing to ErowCloudViewer
+Contributing to ACloudViewer
 ----------------------------
 
-If you want to help us improve ErowCloudViewer or create a new plugin you can start by reading
+If you want to help us improve ACloudViewer or create a new plugin you can start by reading
 this [guide](CONTRIBUTING.md)
 
 Supporting the project

@@ -1,16 +1,16 @@
-; ½Å±¾ÓÉ Inno Setup ½Å±¾Ïòµ¼ Éú³É£¡
-; ÓÐ¹Ø´´½¨ Inno Setup ½Å±¾ÎÄ¼þµÄÏêÏ¸×ÊÁÏÇë²éÔÄ°ïÖúÎÄµµ£¡
+; ï¿½Å±ï¿½ï¿½ï¿½ Inno Setup ï¿½Å±ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½É£ï¿½
+; ï¿½Ð¹Ø´ï¿½ï¿½ï¿½ Inno Setup ï¿½Å±ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä°ï¿½ï¿½ï¿½ï¿½Äµï¿½ï¿½ï¿½
 
-#define MyAppName "ErowCloudViewer"
+#define MyAppName "ACloudViewer"
 #define MyAppVersion "3.7.0"
-#define MyAppPublisher "ÒÝÖÛÐÅÏ¢¿Æ¼¼ÓÐÏÞ¹«Ë¾"
+#define MyAppPublisher "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½Þ¹ï¿½Ë¾"
 #define MyAppURL "http://www.erow.cn/"
-#define MyAppExeName "ErowCloudViewer.exe"
+#define MyAppExeName "ACloudViewer.exe"
 
 [Setup]
-; ×¢: AppIdµÄÖµÎªµ¥¶À±êÊ¶¸ÃÓ¦ÓÃ³ÌÐò¡£
-; ²»ÒªÎªÆäËû°²×°³ÌÐòÊ¹ÓÃÏàÍ¬µÄAppIdÖµ¡£
-; (ÈôÒªÉú³ÉÐÂµÄ GUID£¬¿ÉÔÚ²Ëµ¥ÖÐµã»÷ "¹¤¾ß|Éú³É GUID"¡£)
+; ×¢: AppIdï¿½ï¿½ÖµÎªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¶ï¿½ï¿½Ó¦ï¿½Ã³ï¿½ï¿½ï¿½
+; ï¿½ï¿½ÒªÎªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½AppIdÖµï¿½ï¿½
+; (ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½ GUIDï¿½ï¿½ï¿½ï¿½ï¿½Ú²Ëµï¿½ï¿½Ðµï¿½ï¿½ "ï¿½ï¿½ï¿½ï¿½|ï¿½ï¿½ï¿½ï¿½ GUID"ï¿½ï¿½)
 AppId={{39567949-43F5-490B-A49C-0582C0770840}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
@@ -21,16 +21,16 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
-; [Icons] µÄ¡°quicklaunchicon¡±ÌõÄ¿Ê¹ÓÃ {userappdata}£¬¶øÆä [Tasks] ÌõÄ¿¾ßÓÐÊÊºÏ IsAdminInstallMode µÄ¼ì²é¡£
+; [Icons] ï¿½Ä¡ï¿½quicklaunchiconï¿½ï¿½ï¿½ï¿½Ä¿Ê¹ï¿½ï¿½ {userappdata}ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ [Tasks] ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½Êºï¿½ IsAdminInstallMode ï¿½Ä¼ï¿½é¡£
 UsedUserAreasWarning=no
-LicenseFile=E:\pcl_projects\ErowCloudViewer\install\ErowCloudViewer\license.txt
-InfoAfterFile=E:\pcl_projects\ErowCloudViewer\install\ErowCloudViewer\global_shift_list_template.txt
-; ÒÔÏÂÐÐÈ¡Ïû×¢ÊÍ£¬ÒÔÔÚ·Ç¹ÜÀí°²×°Ä£Ê½ÏÂÔËÐÐ£¨½öÎªµ±Ç°ÓÃ»§°²×°£©¡£
+LicenseFile=E:\pcl_projects\ACloudViewer\install\ACloudViewer\license.txt
+InfoAfterFile=E:\pcl_projects\ACloudViewer\install\ACloudViewer\global_shift_list_template.txt
+; ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½×¢ï¿½Í£ï¿½ï¿½ï¿½ï¿½Ú·Ç¹ï¿½ï¿½ï¿½ï¿½ï¿½×°Ä£Ê½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½Îªï¿½ï¿½Ç°ï¿½Ã»ï¿½ï¿½ï¿½×°ï¿½ï¿½ï¿½ï¿½
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=E:\pcl_projects\ErowCloudViewer\install
-OutputBaseFilename=ErowCloudViewer-3.7.0-2020-12-07-win-amd64
-SetupIconFile=E:\pcl_projects\ErowCloudViewer\ErowCloudViewer\eCV\Resources\images\icon\erow_256.ico
+OutputDir=E:\pcl_projects\ACloudViewer\install
+OutputBaseFilename=ACloudViewer-3.7.0-2020-12-07-win-amd64
+SetupIconFile=E:\pcl_projects\ACloudViewer\ACloudViewer\eCV\Resources\images\icon\erow_256.ico
 Password=
 Encryption=no
 Compression=lzma
@@ -48,9 +48,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 6.1; Check: not IsAdminInstallMode
 
 [Files]
-Source: "E:\pcl_projects\ErowCloudViewer\install\ErowCloudViewer\ErowCloudViewer.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\pcl_projects\ErowCloudViewer\install\ErowCloudViewer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; ×¢Òâ: ²»ÒªÔÚÈÎºÎ¹²ÏíÏµÍ³ÎÄ¼þÉÏÊ¹ÓÃ¡°Flags: ignoreversion¡±
+Source: "E:\pcl_projects\ACloudViewer\install\ACloudViewer\ACloudViewer.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\pcl_projects\ACloudViewer\install\ACloudViewer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; ×¢ï¿½ï¿½: ï¿½ï¿½Òªï¿½ï¿½ï¿½ÎºÎ¹ï¿½ï¿½ï¿½ÏµÍ³ï¿½Ä¼ï¿½ï¿½ï¿½Ê¹ï¿½Ã¡ï¿½Flags: ignoreversionï¿½ï¿½
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

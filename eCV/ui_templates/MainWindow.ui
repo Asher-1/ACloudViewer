@@ -32,7 +32,7 @@
    <enum>Qt::ClickFocus</enum>
   </property>
   <property name="windowTitle">
-   <string>ErowCloudViewer</string>
+   <string>ACloudViewer</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../MainWindow.qrc">
