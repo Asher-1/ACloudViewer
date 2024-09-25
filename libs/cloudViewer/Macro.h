@@ -53,6 +53,14 @@
 #endif
 #endif
 
+// Compiler-specific function macro.
+// Ref: https://stackoverflow.com/a/4384825
+#ifdef _WIN32
+#define CLOUDVIEWER_FUNCTION __FUNCSIG__
+#else
+#define CLOUDVIEWER_FUNCTION __PRETTY_FUNCTION__
+#endif
+
 // Assertion for CUDA device code.
 // Usage:
 //     CLOUDVIEWER_ASSERT(condition);

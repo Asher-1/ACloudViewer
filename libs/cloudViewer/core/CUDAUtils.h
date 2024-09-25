@@ -163,7 +163,7 @@ private:
     };
 
 public:
-    constexpr static CreateNewStreamTag CreateNewStream = {};
+    static CreateNewStreamTag CreateNewStream;
 
     explicit CUDAScopedStream(const CreateNewStreamTag&);
 
@@ -183,7 +183,7 @@ private:
 /// CUDAState is a lazy-evaluated singleton class that initializes and stores
 /// the states of CUDA devices.
 ///
-/// Currently is stores total number of devices and peer-to-peer availability.
+/// Currently it stores the peer-to-peer availability.
 ///
 /// In the future, it can also be used to store
 /// - Device allocators
@@ -192,67 +192,93 @@ private:
 /// - ...
 ///
 /// Ref:
-/// https://stackoverflow.com/a/1008289/1255535
-/// https://stackoverflow.com/a/40337728/1255535
 /// https://github.com/pytorch/pytorch/blob/master/aten/src/THC/THCGeneral.cpp
 class CUDAState {
 public:
-    static std::shared_ptr<CUDAState> GetInstance();
+    static CUDAState& GetInstance();
 
-    CUDAState(CUDAState const&) = delete;
-    void operator=(CUDAState const&) = delete;
+    CUDAState(const CUDAState&) = delete;
+    CUDAState& operator=(const CUDAState&) = delete;
 
-    bool IsP2PEnabled(int src_id, int tar_id);
+    /// Returns true if peer-to-peer is available from the CUDA device-ID
+    /// \p src_id to \p tar_id.
+    bool IsP2PEnabled(int src_id, int tar_id) const;
 
-    bool IsP2PEnabled(const Device& src, const Device& tar);
+    /// Returns true if peer-to-peer is available from the CUDA device
+    /// \p src to \p tar.
+    bool IsP2PEnabled(const Device& src, const Device& tar) const;
 
-    std::vector<std::vector<bool>> GetP2PEnabled() const;
-
-    int GetNumDevices() const;
-
-    int GetWarpSize() const;
-
-    int GetCurrentDeviceID() const;
-
-    /// Disable P2P device transfer by marking p2p_enabled_ to `false`, in order
-    /// to run non-p2p tests on a p2p-capable machine.
+    /// Disables P2P device transfer between all devices, in order to run
+    /// non-P2P tests on a P2P-capable machine.
     void ForceDisableP2PForTesting();
 
 private:
     CUDAState();
 
-private:
-    int num_devices_ = 0;
-    std::vector<int> warp_sizes_;
     std::vector<std::vector<bool>> p2p_enabled_;
 };
+
+/// Returns the size of a warp for the current device.
+int GetCUDACurrentWarpSize();
 
 /// Returns the texture alignment in bytes for the current device.
 int GetCUDACurrentDeviceTextureAlignment();
 
+/// Returns the size of total global memory for the current device.
+size_t GetCUDACurrentTotalMemSize();
+
+#else
+
+/// When CUDA is not enabled, this is a dummy class.
+class CUDAScopedDevice {
+public:
+    explicit CUDAScopedDevice(int device_id) {}
+    explicit CUDAScopedDevice(const Device& device) {}
+    ~CUDAScopedDevice() {}
+    CUDAScopedDevice(const CUDAScopedDevice&) = delete;
+    CUDAScopedDevice& operator=(const CUDAScopedDevice&) = delete;
+};
+
 #endif
 
 namespace cuda {
-
-/// Returns the number of available CUDA devices. Returns 0 if CloudViewer is
-/// not compiled with CUDA support.
+/// Returns the number of available CUDA devices. Returns 0 if cloudViewer is not
+/// compiled with CUDA support.
 int DeviceCount();
 
-/// Returns true if CloudViewer is compiled with CUDA support and at least one
+/// Returns true if cloudViewer is compiled with CUDA support and at least one
 /// compatible CUDA device is detected.
 bool IsAvailable();
 
 /// Releases CUDA memory manager cache. This is typically used for debugging.
 void ReleaseCache();
 
-/// Calls cudaDeviceSynchronize() for all CUDA devices. If CloudViewer is not
+/// Calls cudaDeviceSynchronize() for all CUDA devices. If cloudViewer is not
 /// compiled with CUDA this function has no effect.
 void Synchronize();
 
-/// Calls cudaDeviceSynchronize() for the specified device. If CloudViewer is
-/// not compiled with CUDA or if \p device is not a CUDA device, this function
-/// has no effect. \param device The device to be synchronized.
+/// Calls cudaDeviceSynchronize() for the specified device. If cloudViewer is not
+/// compiled with CUDA or if \p device is not a CUDA device, this function has
+/// no effect.
+/// \param device The device to be synchronized.
 void Synchronize(const Device& device);
+
+/// Checks if the CUDA device-ID is available and throws error if not. The CUDA
+/// device-ID must be between 0 to device count - 1.
+/// \param device_id The cuda device id to be checked.
+void AssertCUDADeviceAvailable(int device_id);
+
+/// Checks if the CUDA device-ID is available and throws error if not. The CUDA
+/// device-ID must be between 0 to device count - 1.
+/// \param device The device to be checked.
+void AssertCUDADeviceAvailable(const Device& device);
+
+/// Checks if the CUDA device support Memory Pools
+/// used by the Stream Ordered Memory Allocator,
+/// see
+/// https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY__POOLS.html
+/// \param device The device to be checked.
+bool SupportsMemoryPools(const Device& device);
 
 #ifdef BUILD_CUDA_MODULE
 

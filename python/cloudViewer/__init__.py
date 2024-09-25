@@ -35,9 +35,13 @@
 
 import os
 import sys
+import warnings
 import platform
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+# Enable thread composability manager to coordinate Intel OpenMP and TBB threads. Only works with Intel OpenMP.
+# TBB must not be already loaded.
+os.environ["TCM_ENABLE"] = "1"
 from ctypes import CDLL as _CDLL
 from ctypes.util import find_library as _find_library
 from pathlib import Path as _Path
@@ -65,6 +69,7 @@ if os.path.exists(_Path(__file__).parent / 'libs'):
         os.environ['PATH'] = LIB_PATH + ";" + os.environ['PATH']
 
     if platform.system() == "Linux":  # must load shared library in order on linux
+        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('*stdc++*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicudata*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicuuc*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicui18n*'))))
@@ -104,7 +109,11 @@ if _build_config["BUILD_CUDA_MODULE"]:
         try:  # StopIteration if cpu version not available
             _CDLL(str(next((_Path(__file__).parent / 'cpu').glob('pybind*'))))
         except StopIteration:
-            pass
+            warnings.warn(
+            "cloudViewer was built with CUDA support, but cloudViewer CPU Python "
+            "bindings were not found. cloudViewer will not work on systems without"
+            " CUDA devices.",
+            ImportWarning,)
         try:
             # Check CUDA availability without importing CUDA pybind symbols to
             # prevent "symbol already registered" errors if first import fails.
@@ -136,7 +145,7 @@ else:
 import cloudViewer.core
 import cloudViewer.visualization
 
-__version__ = "0.3.8"
+__version__ = "@PROJECT_VERSION@"
 
 if int(sys.version_info[0]) < 3:
     raise Exception("CloudViewer only supports Python 3.")

@@ -48,8 +48,9 @@ void LeastSquaresCUDA(void* A_data,
                       Dtype dtype,
                       const Device& device) {
     cusolverDnHandle_t cusolver_handle =
-            CuSolverContext::GetInstance()->GetHandle();
-    cublasHandle_t cublas_handle = CuBLASContext::GetInstance()->GetHandle();
+            CuSolverContext::GetInstance().GetHandle(device);
+    cublasHandle_t cublas_handle =
+            CuBLASContext::GetInstance().GetHandle(device);
 
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len_geqrf, len_ormqr, len;
@@ -91,7 +92,7 @@ void LeastSquaresCUDA(void* A_data,
 
         // Step 3: Solve Rx = B'
         scalar_t alpha = 1.0f;
-        OPEN3D_CUBLAS_CHECK(
+        CLOUDVIEWER_CUBLAS_CHECK(
                 trsm_cuda<scalar_t>(cublas_handle, CUBLAS_SIDE_LEFT,
                                     CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N,
                                     CUBLAS_DIAG_NON_UNIT, n, k, &alpha,

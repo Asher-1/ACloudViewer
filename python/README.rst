@@ -37,14 +37,17 @@ Supported platforms
 
 The package has been tested on:
 
-* Ubuntu 18.04 and 20.04
-* Windows 10 64-bit
+* Ubuntu 18.04, 20.04 and 22.04
+* Windows 10 64-bit and Windows 11 64-bit
 * macOS High Sierra and above
 
 With Python versions:
 * 3.6
 * 3.7
 * 3.8
+* 3.9
+* 3.10
+* 3.11
 
 Resources
 ======================

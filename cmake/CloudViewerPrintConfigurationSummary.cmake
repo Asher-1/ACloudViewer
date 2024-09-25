@@ -35,6 +35,7 @@ function(cloudViewer_print_configuration_summary)
     cloudViewer_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
     cloudViewer_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
     cloudViewer_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
+    cloudViewer_aligned_print("PACKAGE Building results when install" "${PACKAGE}")
     if (WIN32)
         cloudViewer_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
     endif ()
@@ -68,7 +69,6 @@ function(cloudViewer_print_configuration_summary)
             Opencv
             Eigen3
             BLAS
-            faiss
             filament
             fmt
             GLEW

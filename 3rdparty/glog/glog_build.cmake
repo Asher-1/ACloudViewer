@@ -22,7 +22,8 @@ ExternalProject_Add(
         UPDATE_COMMAND ""
         CMAKE_ARGS
             ${GFLAGS_CMAKE_FLAGS}
-    　　　　　-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DBUILD_TESTING=OFF
+            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
@@ -30,7 +31,6 @@ ExternalProject_Add(
             # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
             # checking CXX_COMPILER_ID is not supported.
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
-            -DCMAKE_CXX_FLAGS="-std=c++14"
             -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux,Darwin>:ON:OFF>
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>

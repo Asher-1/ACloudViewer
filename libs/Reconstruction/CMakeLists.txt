@@ -272,7 +272,7 @@ if (Qt5_FOUND)
     if (Qt5_POSITION_INDEPENDENT_CODE)
         set(CMAKE_POSITION_INDEPENDENT_CODE ON)
         if (CUDA_ENABLED AND NOT IS_MSVC)
-            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options -fPIC")
+            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}--compiler-options=-fPIC")
         endif ()
 
         # Workaround for Qt5 CMake config bug under Ubuntu 20.04: https://gitlab.kitware.com/cmake/cmake/-/issues/16915
