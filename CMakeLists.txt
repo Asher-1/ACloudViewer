@@ -83,6 +83,7 @@ option(USE_SIMD "Use Single Instruction Multiple Data speed optimization" OFF)
 option(USE_SYSTEM_OPENCV "Use system pre-installed opencv" OFF)
 option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" OFF)
 option(USE_SYSTEM_FLANN "Use system pre-installed flann" OFF)
+option(USE_SYSTEM_NANOFLANN "Use system pre-installed nanoflann"       OFF)
 option(USE_SYSTEM_FMT "Use system pre-installed fmt" OFF)
 option(USE_SYSTEM_GLEW "Use system pre-installed glew" OFF)
 option(USE_SYSTEM_GLFW "Use system pre-installed glfw" OFF)
@@ -114,7 +115,6 @@ else()
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           OFF)
 endif()
 option(PREFER_OSX_HOMEBREW "Prefer Homebrew libs over frameworks" ON)
-option(WITH_FAISS "Enable Faiss" ON)
 
 # Sensor options
 option(BUILD_LIBREALSENSE "Build support for Intel RealSense camera" OFF)
@@ -130,6 +130,8 @@ option(BUILD_RECONSTRUCTION "Build the 3D Reconstruction" OFF)
 if (NOT ${BUILD_RECONSTRUCTION})
     set(BUILD_COLMAP_GUI OFF)
 endif()
+
+option(PACKAGE "Package the build results with zip or not" OFF)
 
 # PCL ENGINE SUPPORT
 option(USE_PCL_BACKEND "Check to use pcl library as backend" ON)
@@ -298,19 +300,15 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRE
 set(ECV_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Setup Python executable
-#if (NOT DEFINED Python3_FIND_REGISTRY)
-#    # Only consider PATH variable on Windows by default
-#    set(Python3_FIND_REGISTRY NEVER)
-#endif ()
-find_package(Python3 3.6...<3.12
+# if(NOT DEFINED Python3_FIND_REGISTRY)
+#     # Only consider PATH variable on Windows by default
+#     set(Python3_FIND_REGISTRY NEVER)
+# endif()
+# Requires Python 3.6+
+find_package(Python3 3.6
         COMPONENTS Interpreter Development
         )
 if (Python3_FOUND)
-    # Setup Python3_EXECUTABLE for 3rdparty modules
-    # which still use the deprecated find_package(PythonInterp)
-    set(Python3_EXECUTABLE ${Python3_EXECUTABLE} CACHE FILEPATH
-            "Deprecated path to the Python executable (for 3rdparty only)")
-
     # Setup PYTHON_EXECUTABLE for 3rdparty modules
     # which still use the deprecated find_package(PythonInterp)
     set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE FILEPATH
@@ -322,7 +320,7 @@ if (Python3_FOUND)
             "Deprecated path to the Python include dir (for pybind only)")
 else ()
     if (BUILD_PYTHON_MODULE)
-        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.9. Please ensure it is in PATH.")
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.12. Please ensure it is in PATH.")
     endif ()
 endif ()
 
@@ -433,10 +431,9 @@ if (BUILD_CUDA_MODULE)
     include(CloudViewerMakeCudaArchitectures)
     cloudViewer_make_cuda_architectures(CUDA_ARCHS)
     set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})
-
     message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
     enable_language(CUDA)
-
+    set(CMAKE_CUDA_STANDARD 17)
     if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
         message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
     endif ()
@@ -703,8 +700,11 @@ if (UNIX AND NOT APPLE)
     install(CODE "set(DEPLOY_ROOT_PATH \"${DEPLOY_ROOT_PATH}\")")
     install(CODE "set(CLOUDVIEWER_INSTALL_LIB_DESTINATION \"${CLOUDVIEWER_INSTALL_LIB_DESTINATION}\")")
     install(CODE "set(CLOUDVIEWER_PACKAGE_NAME \"${CLOUDVIEWER_PACKAGE_NAME}\")")
+    install(CODE "set(PACKAGE \"${PACKAGE}\")")
     install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")
     install(CODE "MESSAGE(\"${MAIN_APP_NAME}\.${CLOUDVIEWER_VERSION} install successfully.\")")
-    install(CODE "MESSAGE(\"Continue to publish installer package: cd ${INSTALL_DESTINATIONS}/linux/${MAIN_APP_NAME}.\")")
-    install(CODE "MESSAGE(\"Then please execute: binarycreator -c config/config.xml -p packages ${CLOUDVIEWER_PACKAGE_NAME}.run\")")
+    if (NOT ${PACKAGE})
+        install(CODE "MESSAGE(\"Continue to publish installer package: cd ${INSTALL_DESTINATIONS}/linux/${MAIN_APP_NAME}.\")")
+        install(CODE "MESSAGE(\"Then please execute: binarycreator -c config/config.xml -p packages ${CLOUDVIEWER_PACKAGE_NAME}.run\")")
+    endif()
 endif()

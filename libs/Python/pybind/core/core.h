@@ -45,6 +45,7 @@ void pybind_core_linalg(py::module& m);
 void pybind_core_kernel(py::module& m);
 void pybind_core_hashmap(py::module& m);
 void pybind_core_scalar(py::module& m);
+void pybind_core_tensor_function(py::module& m);
 
 }  // namespace core
 }  // namespace cloudViewer

@@ -29,7 +29,7 @@ import cloudViewer.core as cv3c
 import numpy as np
 import pytest
 
-from open3d_test import list_devices
+from cloudViewer_test import list_devices
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -168,7 +168,7 @@ def test_registration_icp_point_to_point(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_test_registration_icp_point_to_plane(device):
+def test_registration_icp_point_to_plane(device):
     dtype = cv3c.Dtype.Float32
 
     source_points = cv3c.Tensor(

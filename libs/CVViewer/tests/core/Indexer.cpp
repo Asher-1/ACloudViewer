@@ -98,7 +98,7 @@ TEST_P(IndexerPermuteDevices, IndexerCopyConstructor) {
     EXPECT_EQ(indexer_a.GetOutput(), indexer_b.GetOutput());
     EXPECT_EQ(indexer_a.NumDims(), indexer_b.NumDims());
     for (int64_t i = 0; i < indexer_a.NumDims(); i++) {
-        EXPECT_EQ(indexer_a.GetMasterShape()[i], indexer_b.GetMasterShape()[i]);
+        EXPECT_EQ(indexer_a.GetPrimaryShape()[i], indexer_b.GetPrimaryShape()[i]);
         EXPECT_EQ(indexer_a.GetMasterStrides()[i],
                   indexer_b.GetMasterStrides()[i]);
         EXPECT_EQ(indexer_a.IsReductionDim(i), indexer_b.IsReductionDim(i));
@@ -124,8 +124,8 @@ TEST_P(IndexerPermuteDevices, BroadcastRestride) {
     // Check core::Indexer's global info
     EXPECT_EQ(indexer.NumInputs(), 2);
     EXPECT_EQ(indexer.NumWorkloads(), 24);
-    EXPECT_EQ(core::SizeVector(indexer.GetMasterShape(),
-                               indexer.GetMasterShape() + indexer.NumDims()),
+    EXPECT_EQ(core::SizeVector(indexer.GetPrimaryShape(),
+                               indexer.GetPrimaryShape() + indexer.NumDims()),
               core::SizeVector({2, 2, 2, 1, 3}));
     EXPECT_EQ(core::SizeVector(indexer.GetMasterStrides(),
                                indexer.GetMasterStrides() + indexer.NumDims()),

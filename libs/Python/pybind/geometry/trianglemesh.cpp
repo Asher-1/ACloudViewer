@@ -456,6 +456,19 @@ void pybind_trianglemesh(py::module& m) {
                  "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                  "data: RGB colors of vertices.",
                  "colors"_a)
+            .def(
+               "set_vertex_colors",
+               [](ccMesh& mesh, const Eigen::Vector3d& color) {
+                    ccPointCloud* vertices =
+                                   ccHObjectCaster::ToPointCloud(&mesh);
+                    if (!vertices) {
+                         throw std::runtime_error("empty vertex found in mesh.");
+                    }
+                    std::vector<Eigen::Vector3d> color_vec;
+                    color_vec.resize(vertices->size(), color);
+                    mesh.setVertexColors(color_vec);
+               },
+               "Sets the associated vertices cloud (warning)", "cloud"_a)
             .def("get_vertex_colors", &ccMesh::getVertexColors,
                  "``float64`` array of shape ``(num_vertices, 3)``, "
                  "range ``[0, 1]`` , use ``numpy.asarray()`` to access "

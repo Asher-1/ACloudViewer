@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 # Overide policy for hidden symbol visibility
 if(POLICY CMP0063)
     cmake_policy(SET CMP0063 NEW)

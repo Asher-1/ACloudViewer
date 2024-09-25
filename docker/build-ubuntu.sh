@@ -5,7 +5,7 @@ set -e
 test -z "$CLOUDVIEWER_VERSION" && CLOUDVIEWER_VERSION="develop"
 test -z "$VTK_VERSION" && VTK_VERSION=8.2.0
 test -z "$PCL_VERSION" && PCL_VERSION=1.11.1
-test -z "$CUDA_VERSION" && CUDA_VERSION=101
+test -z "$CUDA_VERSION" && CUDA_VERSION=11.8
 test -z "$UBUNTU_VERSION" && UBUNTU_VERSION=18.04
 
 test -d docker || (
@@ -31,35 +31,46 @@ test -f docker_files/VTK-8.2.0.zip || \
 test -f docker_files/pcl-1.11.1.zip || \
 	wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-1.11.1/source.zip -O "docker_files/pcl-1.11.1.zip"
 
-test -f docker_files/opencv.zip || \
-	wget https://github.com/opencv/opencv/archive/4.3.0.zip -O "docker_files/opencv.zip"
-
-test -f docker_files/opencv_contrib.zip || \
-	wget https://github.com/opencv/opencv_contrib/archive/4.3.0.zip -O "docker_files/opencv_contrib.zip"
-
-test -f docker_files/google-chrome-stable_current_amd64.deb || \
-	wget https://docker_files.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O "docker_files/google-chrome-stable_current_amd64.deb"
-
 test -f docker_files/nomachine.deb || \
 	wget "https://www.nomachine.com/free/linux/64/deb" -O "docker_files/nomachine.deb"
 
-# DEPENDENCIES
+test -f docker_files/QtIFW-4.6.1-linux-amd.zip || \
+	wget "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-linux-amd.zip" -O "docker_files/QtIFW-4.6.1-linux-amd.zip"
+	
+
+if [[ "$(docker images -q cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} 2> /dev/null)" == "" ]]; 
+	then
+		# DEPENDENCIES
+		docker build \
+			--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
+			--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
+			--build-arg "VTK_VERSION=${VTK_VERSION}" \
+			--build-arg "PCL_VERSION=${PCL_VERSION}" \
+			--tag "cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
+			-f docker/Dockerfile_ubuntu_deps . --progress=plain 2>&1 | tee docker_build-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
+fi
+
+# ACloudViewer
 docker build \
-	--rm \
+	--build-arg "CLOUDVIEWER_VERSION=${CLOUDVIEWER_VERSION}" \
 	--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
 	--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
 	--build-arg "VTK_VERSION=${VTK_VERSION}" \
 	--build-arg "PCL_VERSION=${PCL_VERSION}" \
-	--tag "cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-	-f docker/Dockerfile_ubuntu_deps .
+	--tag "cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
+	-f docker/Dockerfile_ubuntu . --progress=plain 2>&1 | tee docker_build-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 
-# ACloudViewer
-#docker build \
-#	--rm \
-#	--build-arg "CLOUDVIEWER_VERSION=${CLOUDVIEWER_VERSION}" \
-#	--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
-#	--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
-#  --build-arg "VTK_VERSION=${VTK_VERSION}" \
-#	--build-arg "PCL_VERSION=${PCL_VERSION}" \
-#	--tag "cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-#	-f docker/Dockerfile_ubuntu .
+# Export docker compiling output data
+docker_install_package_dir=/root/install
+host_install_package_dir=$PWD/docker_cache/ubuntu$UBUNTU_VERSION
+mkdir -p $host_install_package_dir
+docker run -v "${host_install_package_dir}:/opt/mount" --rm cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} \
+    bash -c "cp ${docker_install_package_dir}/*.whl /opt/mount \
+          && cp ${docker_install_package_dir}/*.run /opt/mount \
+          && chown $(id -u):$(id -g) /opt/mount/*.whl \
+          && chown $(id -u):$(id -g) /opt/mount/*.run"
+echo "Build cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} Done."
+echo "Start to Delete docker image: cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}."
+docker rmi cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+echo "Delete done."
+echo "Building ouput package dir is: $host_install_package_dir"

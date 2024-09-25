@@ -73,17 +73,17 @@ def test_constructor_and_accessors(device):
 def test_from_legacy(device):
     dtype = cv3c.Dtype.Float32
 
-    legacy_pcd = cv3d.geometry.PointCloud()
-    legacy_pcd.points = cv3d.utility.Vector3dVector(
+    legacy_pcd = cv3d.geometry.ccPointCloud()
+    legacy_pcd.set_points(cv3d.utility.Vector3dVector(
         np.array([
             [0, 1, 2],
             [3, 4, 5],
-        ]))
-    legacy_pcd.colors = cv3d.utility.Vector3dVector(
+        ])))
+    legacy_pcd.set_colors(cv3d.utility.Vector3dVector(
         np.array([
             [6, 7, 8],
             [9, 10, 11],
-        ]))
+        ])))
 
     pcd = cv3d.t.geometry.PointCloud.from_legacy(
         legacy_pcd, dtype, device)

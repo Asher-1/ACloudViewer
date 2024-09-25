@@ -719,12 +719,26 @@ else()
 endif()
 
 # Nanoflann
-include(${CloudViewer_3RDPARTY_DIR}/nanoflann/nanoflann.cmake)
-import_3rdparty_library(3rdparty_nanoflann
+if(USE_SYSTEM_NANOFLANN)
+    find_package_3rdparty_library(3rdparty_nanoflann
+        PACKAGE nanoflann
+        VERSION 1.5.0
+        TARGETS nanoflann::nanoflann
+    )
+    if(NOT 3rdparty_nanoflann_FOUND)
+        set(USE_SYSTEM_NANOFLANN OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_NANOFLANN)
+    include(${CloudViewer_3RDPARTY_DIR}/nanoflann/nanoflann.cmake)
+    import_3rdparty_library(3rdparty_nanoflann
         INCLUDE_DIRS ${NANOFLANN_INCLUDE_DIRS}
-        DEPENDS ext_nanoflann
-        )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_nanoflann)
+        DEPENDS      ext_nanoflann
+    )
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_nanoflann)
+else()
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_nanoflann)
+endif()
 
 # GLEW
 if (USE_SYSTEM_GLEW)
@@ -1453,27 +1467,6 @@ import_3rdparty_library(3rdparty_parallelstl
         DEPENDS ext_parallelstl
         )
 list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM 3rdparty_parallelstl)
-
-# Faiss
-# CloudViewer should link Faiss before cuBLAS to avoid missing symbols error since
-# Faiss uses cuBLAS symbols. For the same reason, CloudViewer should link Faiss
-# before BLAS/Lapack if BLAS/Lapack are static libraries.
-if (WITH_FAISS AND WIN32)
-    message(STATUS "Faiss is not supported on Windows")
-    set(WITH_FAISS OFF)
-endif ()
-if (WITH_FAISS)
-    message(STATUS "Building third-party library faiss from source")
-    include(${CloudViewer_3RDPARTY_DIR}/faiss/faiss_build.cmake)
-    import_3rdparty_library(3rdparty_faiss
-            INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
-            LIBRARIES ${FAISS_LIBRARIES}
-            LIB_DIR ${FAISS_LIB_DIR}
-            DEPENDS ext_faiss
-            )
-    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_faiss)
-endif ()
 
 # MKL/BLAS
 if (USE_BLAS)

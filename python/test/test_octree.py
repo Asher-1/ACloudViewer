@@ -95,9 +95,9 @@ def test_octree_init():
 def test_octree_convert_from_point_cloud():
     octree = cv3d.geometry.Octree(1, [0, 0, 0], 2)
 
-    pcd = cv3d.geometry.PointCloud()
-    pcd.points = cv3d.utility.Vector3dVector(_eight_cubes_points)
-    pcd.colors = cv3d.utility.Vector3dVector(_eight_cubes_colors)
+    pcd = cv3d.geometry.ccPointCloud()
+    pcd.set_points(cv3d.utility.Vector3dVector(_eight_cubes_points))
+    pcd.set_colors(cv3d.utility.Vector3dVector(_eight_cubes_colors))
     octree.convert_from_point_cloud(pcd)
 
 
@@ -153,8 +153,8 @@ def test_locate_leaf_node():
     octree.convert_from_point_cloud(pcd, 0.01)
 
     # Try locating a few points
-    for idx in range(0, len(pcd.points), 200):
-        point = pcd.points[idx]
+    for idx in range(0, len(pcd.get_points()), 200):
+        point = pcd.get_points()[idx]
         node, node_info = octree.locate_leaf_node(np.array(point))
         # The located node must be in bound
         assert octree.is_point_in_bound(point, node_info.origin, node_info.size)

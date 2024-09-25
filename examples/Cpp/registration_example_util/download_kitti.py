@@ -48,8 +48,8 @@ def bin_to_pcd(binFileName):
             list_pcd.append([x, y, z])
             byte = f.read(size_float * 4)
     np_pcd = np.asarray(list_pcd)
-    pcd = cv3d.geometry.PointCloud()
-    pcd.points = cv3d.utility.Vector3dVector(np_pcd)
+    pcd = cv3d.geometry.ccPointCloud()
+    pcd.set_points(cv3d.utility.Vector3dVector(np_pcd))
     return pcd
 
 

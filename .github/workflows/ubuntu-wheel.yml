@@ -1,0 +1,165 @@
+name: Ubuntu Wheel
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release wheels'
+        required: false
+        default: 'ON'
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
+  BUILD_CUDA_MODULE: 'ON'
+  BUILD_PYTORCH_OPS: 'OFF'
+  BUILD_TENSORFLOW_OPS: 'OFF'   # Turn ON when cxx11_abi is same for TF and PyTorch
+
+jobs:
+  build-wheel:
+    permissions:
+      contents: write  # Release upload
+    name: Build wheel
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_main: false
+            python_version: '3.8'
+          - is_main: false
+            python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
+    env:
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+      PYTHON_VERSION: ${{ matrix.python_version }}
+      CCACHE_TAR_NAME: cloudViewer-ubuntu-2004-cuda-ci-ccache
+      CLOUDVIEWER_CPU_RENDERING: true
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      # Be verbose and explicit here such that a developer can directly copy the
+      # `docker/docker_build.sh xxx` command to execute locally.
+      - name: Docker build
+        run: |
+          if [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_build.sh cuda_wheel_py38_dev
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_build.sh cuda_wheel_py39_dev
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_build.sh cuda_wheel_py310_dev
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_build.sh cuda_wheel_py311_dev
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cuda_wheel_py38
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cuda_wheel_py39
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cuda_wheel_py310
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cuda_wheel_py311
+          fi
+          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/cloudViewer-[0-9]*.whl)"
+          PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/cloudViewer_cpu*.whl)"
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
+          echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME" >> $GITHUB_ENV
+      - name: Upload wheel to GitHub artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PIP_PKG_NAME }}
+          path: |
+            ${{ env.PIP_PKG_NAME }}
+            ${{ env.PIP_CPU_PKG_NAME }}
+          if-no-files-found: error
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/master' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload master-devel ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} \
+          ${GITHUB_WORKSPACE}/${{ env.PIP_CPU_PKG_NAME }} --clobber
+          gh release view master-devel
+
+  test-wheel-cpu:
+    name: Test wheel CPU
+    permissions:
+      contents: read
+    runs-on: ubuntu-20.04
+    needs: [build-wheel]
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_main: false
+            python_version: '3.8'
+          - is_main: false
+            python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
+    env:
+      CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      - name: Checkout CloudViewer-ML source code
+        uses: actions/checkout@v4
+        with:
+          repository: Asher-1/CloudViewer-ML
+          path: ${{ env.CLOUDVIEWER_ML_ROOT }}
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cloudViewer*-manylinux*.whl
+          merge-multiple: true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Test Python package
+        run: |
+          python -V
+          source util/ci_utils.sh
+          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          test_wheel cloudViewer-[0-9]*-"$pi_tag"-*.whl
+      # - name: Run Python unit tests
+      #   run: |
+      #     source util/ci_utils.sh
+      #     echo "Running CloudViewer python tests..."
+      #     run_python_tests
+      - name: Test Python package (CPU)
+        env:
+          BUILD_CUDA_MODULE: OFF
+        run: |
+          python -V
+          source util/ci_utils.sh
+          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          test_wheel cloudViewer_cpu*-"$pi_tag"-*.whl
+      # - name: Run Python unit tests (CPU)
+      #   run: |
+      #     source util/ci_utils.sh
+      #     echo "Running CloudViewer python tests (CPU wheel)..."
+      #     run_python_tests

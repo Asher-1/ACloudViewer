@@ -1,4 +1,4 @@
-# Open3D: Asher-1.github.io
+# CloudViewer: Asher-1.github.io
 # The MIT License (MIT)
 # See license file or visit Asher-1.github.io for details
 

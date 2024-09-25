@@ -73,7 +73,7 @@ if(NOT Pytorch_FOUND)
 
     # If MKL is installed in the system level (e.g. for oneAPI Toolkit),
     # caffe2::mkl and caffe2::mkldnn will be added to torch_cpu's
-    # INTERFACE_LINK_LIBRARIES. However, Open3D already comes with MKL linkage
+    # INTERFACE_LINK_LIBRARIES. However, CloudViewer already comes with MKL linkage
     # and we're not using MKLDNN.
     get_target_property(torch_cpu_INTERFACE_LINK_LIBRARIES torch_cpu
             INTERFACE_LINK_LIBRARIES)
@@ -104,11 +104,11 @@ if(UNIX AND NOT APPLE AND ((Pytorch_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) O
     else()
         set(NEEDED_ABI_FLAG "OFF")
     endif()
-    message(FATAL_ERROR "PyTorch and Open3D ABI mismatch: ${Pytorch_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
+    message(FATAL_ERROR "PyTorch and CloudViewer ABI mismatch: ${Pytorch_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
             "Please use -DGLIBCXX_USE_CXX11_ABI=${NEEDED_ABI_FLAG} "
-            "in the cmake config command to change the Open3D ABI.")
+            "in the cmake config command to change the CloudViewer ABI.")
 else()
-    message(STATUS "PyTorch matches Open3D ABI: ${Pytorch_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
+    message(STATUS "PyTorch matches CloudViewer ABI: ${Pytorch_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
 endif()
 
 include(FindPackageHandleStandardArgs)
