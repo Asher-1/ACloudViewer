@@ -106,10 +106,11 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         # libglu-dev \
         # libxcb-keysyms1 \
         # libxcb-image0 \
-        libxkbcommon-x11-0 \
         # libz-dev \
+        libxkbcommon-x11-0 \
         systemd \
         libjsoncpp-dev \
+        libgdal-dev \
         libcgal-dev
 
 
