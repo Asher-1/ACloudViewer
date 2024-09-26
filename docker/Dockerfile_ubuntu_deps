@@ -52,12 +52,13 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         libpng-dev \
         libtiff-dev \
         libglew-dev \
+        # for colmap
         libatlas-base-dev \
+        # for package
         zip \
         unzip \
         locate \
         automake \
-        gdb \
         xorg-dev \
         libxi-dev \
         libflann1.9 \
@@ -84,6 +85,9 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         mono-complete \
         libopenni-dev \
         libopenni2-dev \
+        libjsoncpp-dev \
+        libgdal-dev \
+        libcgal-dev \
         # libgtk2.0-dev \
         # libusb-1.0-0-dev \
         # libx11-6 \
@@ -104,15 +108,15 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         # libxt-dev \
         # libgl-dev \
         # libglu-dev \
-        # libxcb-keysyms1 \
-        # libxcb-image0 \
         # libz-dev \
+        # for QT
+        libxcb-xkb1 \
+        libxcb-icccm4 \
+        libxcb-image0 \
+        libxcb-keysyms1 \
+        libxcb-xinerama0 \
         libxkbcommon-x11-0 \
-        systemd \
-        libjsoncpp-dev \
-        libgdal-dev \
-        libcgal-dev
-
+        libxcb-render-util0
 
 # C++ dependencies
 WORKDIR /opt
