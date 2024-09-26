@@ -13,11 +13,6 @@ ENV NVIDIA_DRIVER_CAPABILITIES all
 # Miniconda requires bash as the default shell.
 SHELL ["/bin/bash", "-c"]
 
-# Execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
-# docker run -it --runtime nvidia -p 10022:22 -p 14000:4000 --name cloudViewer -v</path/to/your/data>:/data cloudviewer:develop-ubuntu18.04-cuda101
-# ssh -p 10022 -X root@<docker host> /opt/ACloudViewer # Password is 'toor'
-# export DISPLAY=:0 # DISPLAY must be consistent with host
-
 ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install \
