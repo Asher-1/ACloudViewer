@@ -26,7 +26,9 @@ endif()
 #                 ${CLOUDVIEWER_INSTALL_LIB_DESTINATION} ${CLOUDVIEWER_INSTALL_LIB_DESTINATION}
 #                 WORKING_DIRECTORY ${DEPLOY_ROOT_PATH})
 if (${PACKAGE} STREQUAL "ON")
-    execute_process(COMMAND binarycreator -c config/config.xml -p packages ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.run
+    set(SHELL_CMD "binarycreator -c config/config.xml -p packages ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.run")
+    message(STATUS "Package with command: " ${SHELL_CMD})
+    execute_process(COMMAND ${SHELL_CMD}
                     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/linux/${MAIN_APP_NAME})
     message(STATUS "${MAIN_APP_NAME} Installer Package ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.run created")
     # execute_process(COMMAND zip -r ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.zip ${DEPLOY_ROOT_PATH}

@@ -69,8 +69,9 @@ docker run -v "${host_install_package_dir}:/opt/mount" --rm cloudviewer:${CLOUDV
           && cp ${docker_install_package_dir}/*.run /opt/mount \
           && chown $(id -u):$(id -g) /opt/mount/*.whl \
           && chown $(id -u):$(id -g) /opt/mount/*.run"
+echo					
 echo "Build cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} Done."
-echo "Start to Delete docker image: cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}."
+echo "Building ouput package dir is: $host_install_package_dir"
+# echo "Start to Delete docker image: cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}."
 # docker rmi cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
 # echo "Delete done."
-echo "Building ouput package dir is: $host_install_package_dir"
