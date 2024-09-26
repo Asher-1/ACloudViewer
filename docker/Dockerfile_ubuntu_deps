@@ -202,32 +202,34 @@ RUN echo -e "\ny" | conda install libffi==3.3
 
 # Install vtk
 WORKDIR /opt
-COPY docker_files/VTK-8.2.0.zip /opt
+COPY docker_files/VTK-9.3.1.tar.gz /opt
 #RUN git clone https://github.com/Kitware/VTK.git --recursive && \
-RUN unzip VTK-8.2.0.zip && \
-    cd VTK && \
+RUN tar -zxvf VTK-9.3.1.tar.gz && \
+    rm VTK-9.3.1.tar.gz && \
+    cd VTK-9.3.1 && \
     #git checkout "${VTK_VERSION}" && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DVTK_GROUP_ENABLE_Qt=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
+            -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
+            -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
             -DVTK_QT_VERSION:STRING=5 \
-            -DVTK_Group_Qt:BOOL=ON \
             -DBUILD_SHARED_LIBS:BOOL=ON \
-            -DVTK_BUILD_QT_DESIGNER_PLUGIN:BOOL=ON \
-            -DModule_vtkGUISupportQtOpenGL=ON \
             -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
-    cp lib/libQVTKWidgetPlugin.so "${QT_DIR}"/plugins/designer && \
-    cp lib/libQVTKWidgetPlugin.so "${QT_ROOT}"/Tools/QtCreator/lib/Qt/plugins/designer && \
-    rm -rf ./* && \
-    rm -rf /opt/VTK-8.2.0.zip
+    rm -rf ./*
 
 # Install pcl
 WORKDIR /opt
 COPY docker_files/pcl-1.11.1.zip /opt
 #RUN git clone https://github.com/PointCloudLibrary/pcl.git --recursive && \
 RUN unzip pcl-1.11.1.zip && \
+    rm pcl-1.11.1.zip && \
     cd pcl && \
     #git checkout "${PCL_VERSION}" && \
     mkdir -p build && cd build && \
@@ -240,8 +242,7 @@ RUN unzip pcl-1.11.1.zip && \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
-    rm -rf ./* && \
-    rm -rf /opt/pcl-1.11.1.zip
+    rm -rf ./*
 
 WORKDIR /root
 # WORKDIR /opt
