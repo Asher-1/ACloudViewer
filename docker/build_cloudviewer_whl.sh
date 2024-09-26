@@ -27,7 +27,7 @@ echo -e "\ny" | conda install libffi==3.3
 # shellcheck source=ci_utils.sh
 source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
-install_python_dependencies with-cuda with-jupyter with-unit-test
+install_python_dependencies speed with-cuda with-jupyter with-unit-test
 build_pip_package build_azure_kinect build_jupyter
 
 df -h
