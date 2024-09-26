@@ -25,8 +25,8 @@ test -f docker_files/Miniconda3-latest-Linux-x86_64.sh || \
 test -f docker_files/xerces-c-3.2.3.zip || \
 	wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "docker_files/xerces-c-3.2.3.zip"
 
-test -f docker_files/VTK-8.2.0.zip || \
-	wget https://www.vtk.org/files/release/8.2/VTK-8.2.0.zip -O "docker_files/VTK-8.2.0.zip"
+test -f docker_files/VTK-9.3.1.tar.gz || \
+	wget https://vtk.org/files/release/9.3/VTK-9.3.1.tar.gz -O "docker_files/VTK-9.3.1.tar.gz"
 
 test -f docker_files/pcl-1.11.1.zip || \
 	wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-1.11.1/source.zip -O "docker_files/pcl-1.11.1.zip"
@@ -47,7 +47,7 @@ if [[ "$(docker images -q cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU
 			--build-arg "VTK_VERSION=${VTK_VERSION}" \
 			--build-arg "PCL_VERSION=${PCL_VERSION}" \
 			--tag "cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-			-f docker/Dockerfile_ubuntu_deps . --progress=plain 2>&1 | tee docker_build-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
+			-f docker/Dockerfile_ubuntu_deps . --progress=plain 2>&1 | tee docker_build-cloudviewer-deps-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 fi
 
 # ACloudViewer
@@ -58,7 +58,7 @@ docker build \
 	--build-arg "VTK_VERSION=${VTK_VERSION}" \
 	--build-arg "PCL_VERSION=${PCL_VERSION}" \
 	--tag "cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-	-f docker/Dockerfile_ubuntu . --progress=plain 2>&1 | tee docker_build-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
+	-f docker/Dockerfile_ubuntu . --progress=plain 2>&1 | tee docker_build-cloudviewer-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 
 # Export docker compiling output data
 docker_install_package_dir=/root/install

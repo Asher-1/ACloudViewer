@@ -42,15 +42,15 @@ install_python_dependencies() {
     echo "Installing Python dependencies"
     options="$(echo "$@" | tr ' ' '|')"
     if [[ "speed" =~ ^($options)$ ]]; then
-        SPEED_CMD = "-i https://pypi.tuna.tsinghua.edu.cn/simple"
+        SPEED_CMD="-i https://pypi.tuna.tsinghua.edu.cn/simple/ --extra-index-url https://pypi.org/simple --extra-index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host pypi.tuna.tsinghua.edu.cn --trusted-host mirrors.aliyun.com"
     else
-        SPEED_CMD = ""
+        SPEED_CMD=""
     fi
 
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
-        setuptools=="$STOOLS_VER" "$SPEED_CMD"
+        setuptools=="$STOOLS_VER" $SPEED_CMD
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
-        python -m pip install -U -r python/requirements_test.txt "$SPEED_CMD"
+        python -m pip install -U -r python/requirements_test.txt $SPEED_CMD
     fi
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow
@@ -70,34 +70,34 @@ install_python_dependencies() {
     fi
 
     # TODO: modify other locations to use requirements.txt
-    python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" "$SPEED_CMD"
+    python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" $SPEED_CMD
     if [[ "with-jupyter" =~ ^($options)$ ]]; then
-        python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" "$SPEED_CMD"
+        python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" $SPEED_CMD
     fi
 
     echo
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
         # TF happily installs both CPU and GPU versions at the same time, so remove the other
         python -m pip uninstall --yes "$TF_ARCH_DISABLE_NAME"
-        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER"  "$SPEED_CMD" # ML/requirements-tensorflow.txt
+        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER"  $SPEED_CMD # ML/requirements-tensorflow.txt
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" tensorboard "$SPEED_CMD"
+            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" tensorboard $SPEED_CMD
 
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard "$SPEED_CMD"
+            python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard $SPEED_CMD
         else
             echo "unknown OS $OSTYPE"
             exit 1
         fi
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
-        python -m pip install -U yapf=="$YAPF_VER" "$SPEED_CMD"
+        python -m pip install -U yapf=="$YAPF_VER" $SPEED_CMD
         # Fix Protobuf compatibility issue
         # https://stackoverflow.com/a/72493690/1255535
         # https://github.com/protocolbuffers/protobuf/issues/10051
-        python -m pip install -U protobuf=="$PROTOBUF_VER" "$SPEED_CMD"
+        python -m pip install -U protobuf=="$PROTOBUF_VER" $SPEED_CMD
     fi
     if [[ "purge-cache" =~ ^($options)$ ]]; then
         echo "Purge pip cache"
