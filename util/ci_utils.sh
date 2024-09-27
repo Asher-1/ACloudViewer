@@ -163,10 +163,6 @@ build_gui_app() {
     echo "Using cmake: $(command -v cmake)"
     cmake --version
 
-    mkdir -p build
-    cd build
-    rm -rf ./*
-
     echo "Now build GUI package..."
     echo
     set +u
@@ -179,6 +175,10 @@ build_gui_app() {
     fi
     set -u
 
+    echo
+    echo "Start building with ACloudViewer GUI..."
+    mkdir -p build
+    pushd build # PWD=ACloudViewer/build
     cmakeGuiOptions=("-DDEVELOPER_BUILD=OFF"
                 "-DBUILD_SHARED_LIBS=OFF"
                 "-DCMAKE_BUILD_TYPE=Release"
@@ -249,6 +249,7 @@ build_gui_app() {
     make VERBOSE=1 -j"$NPROC"
     make VERBOSE=1 install -j"$NPROC"
     echo
+    popd                                           # PWD=ACloudViewer
 }
 
 build_pip_package() {
@@ -302,7 +303,7 @@ build_pip_package() {
     echo
     echo Building with CPU only...
     mkdir -p build
-    pushd build # PWD=CloudViewer/build
+    pushd build # PWD=ACloudViewer/build
     cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
