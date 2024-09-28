@@ -22,6 +22,9 @@ test -f docker_files/qt.run || \
 test -f docker_files/Miniconda3-latest-Linux-x86_64.sh || \
 	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O "docker_files/Miniconda3-latest-Linux-x86_64.sh"
 
+test -f docker_files/laszip-src-3.4.3.tar.gz || \
+	wget ttps://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "docker_files/laszip-src-3.4.3.tar.gz"
+
 test -f docker_files/xerces-c-3.2.3.zip || \
 	wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "docker_files/xerces-c-3.2.3.zip"
 

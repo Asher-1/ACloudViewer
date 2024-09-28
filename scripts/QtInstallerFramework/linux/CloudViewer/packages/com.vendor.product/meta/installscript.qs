@@ -115,7 +115,7 @@ Component.prototype.createOperations = function()
 			/* 建立桌面图标 */
 			var exec = "Exec=" + "@TargetDir@/CloudViewer.sh %f" + "\n"; /* 执行程序 */
 			var icon = "Icon=" + "@TargetDir@/CloudViewer.png" + "\n"; /* 图标资源路径 */
-			var version =  "Version=" + "3.8.0" + "\n" ; /* 版本号 */
+			var version =  "Version=" + "3.9.0" + "\n" ; /* 版本号 */
 			var name = "Name=" + "CloudViewer" + "\n"; /* 桌面图标显示名称 */
 			var desktop = "CloudViewer" + ".desktop";  /* 桌面图标名 */
 			var comments = "Comment=" + "3D point cloud and mesh processing software" + "\n"

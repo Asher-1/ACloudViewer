@@ -122,7 +122,12 @@ if (UNIX AND NOT APPLE)
     foreach (filename ${external_libs_list})
         get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
         get_filename_component(SO_VER_NAME ${EXTRA_LIB_REAL} NAME)
-        string(REGEX REPLACE "\\.so\\.[0-9.]+$" "${CUSTOM_SO_NAME}" NEW_SO_NAME ${SO_VER_NAME})
+        string(SUBSTRING ${SO_VER_NAME} 0 9 LIB_SBU_STR)
+        if(${LIB_SBU_STR} STREQUAL "libgflags") # fix libgflags.so.2.2: cannot open shared object file
+            set(NEW_SO_NAME ${SO_VER_NAME})
+        else()
+            string(REGEX REPLACE "\\.so\\.[0-9.]+$" "${CUSTOM_SO_NAME}" NEW_SO_NAME ${SO_VER_NAME})
+        endif()
         message(STATUS "Copy external lib: " ${NEW_SO_NAME})
         configure_file(${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME} COPYONLY)
     endforeach ()
@@ -130,7 +135,6 @@ endif()
 # execute_process(COMMAND bash ${PACKAGE_TOOL}
 #                 ${PYTHON_INSTALL_LIB_DESTINATION} ${PYTHON_INSTALL_LIB_DESTINATION}
 #                 WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
-
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
     # copy generated files
@@ -195,7 +199,6 @@ if (BUILD_GUI)
     file(COPY ${GUI_RESOURCE_DIR}
             DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/")
 endif ()
-
 
 # Add all examples to installation directory.
 file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/examples/")

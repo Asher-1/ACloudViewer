@@ -113,6 +113,8 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         # libz-dev \
         # for QT
         libxcb-xkb1 \
+        libxcb-shape0 \
+        libxcb-randr0 \
         libxcb-icccm4 \
         libxcb-image0 \
         libxcb-keysyms1 \

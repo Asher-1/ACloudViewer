@@ -33,8 +33,8 @@ cmake_minimum_required(VERSION 3.18)
 
 project(COLMAP)
 
-set(COLMAP_VERSION "3.9")
-set(COLMAP_VERSION_NUMBER "3900")
+set(COLMAP_VERSION "${CLOUDVIEWER_VERSION}")
+set(COLMAP_VERSION_NUMBER "${CLOUDVIEWER_VERSION_MAJOR}${CLOUDVIEWER_VERSION_MINOR}${CLOUDVIEWER_VERSION_PATCH}")
 
 ################################################################################
 # Include CMake dependencies

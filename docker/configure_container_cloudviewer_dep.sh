@@ -45,6 +45,8 @@ rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh 3.10
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh
 
 
+test cloudViewer
+python3 -c "import cloudViewer as cv3d; print(cv3d.__version__); print('CUDA available: ', cv3d.core.cuda.is_available());"
 
 pcl: metslib-0.5.3
 wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz
@@ -72,5 +74,4 @@ sudo make install
 
 
 fix segment default
-
-rm lib/libc.so.* lib/libselinux.so.* lib/libpthread.so.* lib/librt.so.*  lib/libstdc++.so.* lib/ld-linux-x86-64.so.* lib/libdrm.so.* lib/libm.so.* lib/libdrm_intel.so.*
+rm lib/libc.so.* lib/libdl.so.* lib/libselinux.so.* lib/libpthread.so.* lib/librt.so.* lib/ld-linux-x86-64.so.* lib/libdrm.so.* lib/libm.so.* lib/libdrm_intel.so.* lib/libstdc++.so.*
