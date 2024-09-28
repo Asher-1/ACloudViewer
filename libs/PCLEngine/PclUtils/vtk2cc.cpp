@@ -177,7 +177,11 @@ ccMesh* vtk2cc::ConvertToMesh(vtkPolyData* polydata, bool silent)
 		return nullptr;
 	}
 
-	vtkIdType* cell_points;
+#ifdef VTK_CELL_ARRAY_V2
+        const vtkIdType* cell_points;
+#else   // VTK_CELL_ARRAY_V2
+        vtkIdType* cell_points;
+#endif  // VTK_CELL_ARRAY_V2
 	vtkIdType nr_cell_points;
 	vtkCellArray * mesh_polygons = polydata->GetPolys();
 	mesh_polygons->InitTraversal();

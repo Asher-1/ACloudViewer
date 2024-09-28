@@ -33,7 +33,8 @@ void ThresholdWindow::apply()
     VTK_CREATE(vtkThreshold, thresholdFilter);
     thresholdFilter->SetInputData(m_dataObject);
     thresholdFilter->SetAllScalars(false);
-    thresholdFilter->ThresholdBetween(m_minScalar, m_maxScalar);
+    thresholdFilter->SetLowerThreshold(m_minScalar);
+    thresholdFilter->SetUpperThreshold(m_maxScalar);
     thresholdFilter->Update();
 
     vtkSmartPointer<vtkLookupTable> lut = createLookupTable(m_minScalar, m_maxScalar);

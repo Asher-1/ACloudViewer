@@ -1827,7 +1827,7 @@ if (BUILD_RECONSTRUCTION)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${SUITESPARSE_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${LAPACK_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${CERES_TARGET}")
-    elseif (UNIX AND NOT APPLE)
+    elseif (UNIX)
         # boost
         include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
         import_3rdparty_library(3rdparty_boost
@@ -1868,7 +1868,7 @@ if (BUILD_RECONSTRUCTION)
                 )
         set(GLOG_TARGET "3rdparty_glog")
         add_dependencies(3rdparty_glog ext_glog)
-        add_dependencies(ext_glog ext_gflags)
+        add_dependencies(3rdparty_glog ext_gflags)
 
         # lapack and blas
         include(${CloudViewer_3RDPARTY_DIR}/lapack/lapack_build.cmake)
@@ -1900,6 +1900,10 @@ if (BUILD_RECONSTRUCTION)
                 )
         set(CERES_TARGET "3rdparty_ceres")
         add_dependencies(3rdparty_ceres ext_ceres)
+        add_dependencies(3rdparty_ceres ext_glog)
+        add_dependencies(3rdparty_ceres ext_gflags)
+        add_dependencies(ext_ceres ext_glog)
+        add_dependencies(ext_ceres ext_gflags)
         add_dependencies(ext_ceres ext_suitesparse)
         add_dependencies(ext_ceres 3rdparty_eigen3)
 
