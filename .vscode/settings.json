@@ -96,5 +96,6 @@
 		"typeinfo": "cpp",
 		"valarray": "cpp",
 		"variant": "cpp"
-	}
+	},
+	"python.languageServer": "Default"
 }

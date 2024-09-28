@@ -272,7 +272,7 @@ WORKDIR /root/ACloudViewer
 RUN export NPROC=$(nproc) \
  && export BUILD_SHARED_LIBS=OFF \
  && source /root/ACloudViewer/util/ci_utils.sh \
- && build_pip_package build_azure_kinect build_jupyter \
+ && build_pip_package build_realsense build_azure_kinect build_jupyter \
  && if [ ${CI:-}a != a ]; then cd /root/ACloudViewer/build/ && ls | grep -Ev '^lib$' | xargs rm -rf ; fi
  # remove build folder (except lib) to save CI space on Github
 

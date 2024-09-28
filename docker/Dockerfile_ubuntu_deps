@@ -153,6 +153,18 @@ RUN chmod +x qt.run && \
 ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
 ENV PATH="/opt/Qt5.14.2/5.14.2/gcc_64/bin:$PATH"
 
+# Install metslib
+WORKDIR /opt
+COPY docker_files/metslib-0.5.3.tgz /opt
+RUN tar -xvf metslib-0.5.3.tgz && \
+    cd metslib-0.5.3 && \
+    sh ./configure && \
+    make && \
+    make install \
+    && ldconfig \
+    && rm -rf /opt/metslib-0.5.3 \
+    && rm -rf /opt/metslib-0.5.3.tgz
+
 # Install laszip
 WORKDIR /opt
 COPY docker_files/laszip-src-3.4.3.tar.gz /opt
@@ -205,11 +217,9 @@ RUN echo -e "\ny" | conda install libffi==3.3
 # Install vtk
 WORKDIR /opt
 COPY docker_files/VTK-9.3.1.tar.gz /opt
-#RUN git clone https://github.com/Kitware/VTK.git --recursive && \
 RUN tar -zxvf VTK-9.3.1.tar.gz && \
     rm VTK-9.3.1.tar.gz && \
     cd VTK-9.3.1 && \
-    #git checkout "${VTK_VERSION}" && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
             -DVTK_GROUP_ENABLE_Qt=YES \
@@ -228,12 +238,10 @@ RUN tar -zxvf VTK-9.3.1.tar.gz && \
 
 # Install pcl
 WORKDIR /opt
-COPY docker_files/pcl-1.11.1.zip /opt
-#RUN git clone https://github.com/PointCloudLibrary/pcl.git --recursive && \
-RUN unzip pcl-1.11.1.zip && \
-    rm pcl-1.11.1.zip && \
+COPY docker_files/pcl-1.14.1.zip /opt
+RUN unzip pcl-1.14.1.zip && \
+    rm pcl-1.14.1.zip && \
     cd pcl && \
-    #git checkout "${PCL_VERSION}" && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
             -DBUILD_GPU=OFF \
@@ -247,12 +255,6 @@ RUN unzip pcl-1.11.1.zip && \
     rm -rf ./*
 
 WORKDIR /root
-# WORKDIR /opt
-# COPY docker_files/libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb /opt
-# COPY docker_files/libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb /opt
-# RUN dpkg -i libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb \
-#     && dpkg -i libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb \
-#     && rm -rf *.deb
 
 # Enable SSH X11 forwarding, needed when the Docker image
 # is run on a remote machine

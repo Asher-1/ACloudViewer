@@ -43,3 +43,34 @@ rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh 3.10
 
 # build ACloudViewer app installer
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh
+
+
+
+pcl: metslib-0.5.3
+wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz
+tar xjvf metslib-0.5.3.tgz
+cd metslib-0.5.3
+sh ./configure
+make
+sudo make install
+
+pcl: dependency libusb-1.0:
+(sudo apt-get install libkmod-dev libblkid-dev libglib2.0-dev)(optional)
+
+pcl+RealSense: libudev-dev
+git clone https://github.com/illiliti/libudev-zero.git
+cd libudev-zero
+make
+sudo make PREFIX=/usr install
+
+wget http://downloads.sourceforge.net/project/libusb/libusb-1.0/libusb-1.0.23/libusb-1.0.23.tar.bz2
+tar xjvf libusb-1.0.23.tar.bz2
+cd libusb-1.0.23
+./configure
+make
+sudo make install
+
+
+fix segment default
+
+rm lib/libc.so.* lib/libselinux.so.* lib/libpthread.so.* lib/librt.so.*  lib/libstdc++.so.* lib/ld-linux-x86-64.so.* lib/libdrm.so.* lib/libm.so.* lib/libdrm_intel.so.*

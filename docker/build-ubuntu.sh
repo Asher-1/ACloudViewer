@@ -25,11 +25,14 @@ test -f docker_files/Miniconda3-latest-Linux-x86_64.sh || \
 test -f docker_files/xerces-c-3.2.3.zip || \
 	wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "docker_files/xerces-c-3.2.3.zip"
 
+test -f docker_files/metslib-0.5.3.tgz || \
+	wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz -O "docker_files/metslib-0.5.3.tgz"
+
 test -f docker_files/VTK-9.3.1.tar.gz || \
 	wget https://vtk.org/files/release/9.3/VTK-9.3.1.tar.gz -O "docker_files/VTK-9.3.1.tar.gz"
 
-test -f docker_files/pcl-1.11.1.zip || \
-	wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-1.11.1/source.zip -O "docker_files/pcl-1.11.1.zip"
+test -f docker_files/pcl-1.14.1.zip || \
+	wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-1.14.1/source.zip -O "docker_files/pcl-1.14.1.zip"
 
 test -f docker_files/nomachine.deb || \
 	wget "https://www.nomachine.com/free/linux/64/deb" -O "docker_files/nomachine.deb"

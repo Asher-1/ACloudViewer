@@ -277,12 +277,12 @@ build_pip_package() {
         echo "Azure Kinect disabled in Python wheel."
         BUILD_AZURE_KINECT=OFFVERBOSE=1 
     fi
-    if [ "$UBUNTU_VERSION" != "jammy" ]; then
+    if [[ "build_realsense" =~ ^($options)$ ]]; then
         echo "Realsense enabled in Python wheel."
         BUILD_LIBREALSENSE=ON
     else
-        echo "Realsense disabled in Python wheel due to the conflicts of libudev-dev on Ubuntu22.04."
-        BUILD_LIBREALSENSE=OFFVERBOSE=1
+        echo "Realsense disabled in Python wheel."
+        BUILD_LIBREALSENSE=OFF
     fi
     if [[ "build_jupyter" =~ ^($options)$ ]]; then
         echo "Building Jupyter extension in Python wheel."
@@ -307,7 +307,7 @@ build_pip_package() {
     cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
-        "-DBUILD_LIBREALSENSE=OFF"
+        "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE"
         "-DWITH_OPENMP=ON"
         "-DWITH_IPPICV=ON"
         "-DWITH_SIMD=ON"

@@ -34,14 +34,14 @@ ExternalProject_Add(
             -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux,Darwin>:ON:OFF>
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-            DEPENDS ${GFLAGS_TARGET}
+            DEPENDS ext_gflags
 )
 
 ExternalProject_Get_Property(ext_glog INSTALL_DIR)
 set(GLOG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(GLOG_LIB_DIR ${INSTALL_DIR}/lib)
 set(EXT_GLOG_LIBRARIES glog)
-set(GLOG_CMAKE_FLAGS ${GFLAGS_CMAKE_FLAGS} -Dglog_DIR=${GLOG_LIB_DIR}/cmake/glog
+set(GLOG_CMAKE_FLAGS ${GFLAGS_CMAKE_FLAGS} -DGFLAGS_NAMESPACE=google -Dglog_DIR=${GLOG_LIB_DIR}/cmake/glog
         -DGLOG_INCLUDE_DIR_HINTS=${GLOG_INCLUDE_DIRS} -DGLOG_LIBRARY_DIR_HINTS=${GLOG_LIB_DIR})
 if (MSVC)
     set(GLOG_CMAKE_FLAGS ${GLOG_CMAKE_FLAGS} -DGOOGLE_GLOG_DLL_DECL=)
