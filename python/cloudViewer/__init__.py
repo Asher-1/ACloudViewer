@@ -69,7 +69,10 @@ if os.path.exists(_Path(__file__).parent / 'libs'):
         os.environ['PATH'] = LIB_PATH + ";" + os.environ['PATH']
 
     if platform.system() == "Linux":  # must load shared library in order on linux
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('*stdc++*'))))
+        try:  # Try loading libstdc++* if possible to fix cannot found GLIB_XX issues
+            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('*stdc++*'))))
+        except StopIteration:
+            pass
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicudata*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicuuc*'))))
         _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicui18n*'))))

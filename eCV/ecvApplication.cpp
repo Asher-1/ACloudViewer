@@ -28,7 +28,7 @@
 
 ecvApplication::ecvApplication(int &argc, char **argv, bool isCommandLine)
     : ecvApplicationBase(
-              argc, argv, isCommandLine, QStringLiteral("3.8.0 (Asher)")) {
+              argc, argv, isCommandLine, QStringLiteral("3.9.0 (Asher)")) {
     setApplicationName("ACloudViewer");
 
     FileIO::setWriterInfo(applicationName(), versionStr());
