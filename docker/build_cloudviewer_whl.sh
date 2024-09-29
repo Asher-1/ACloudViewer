@@ -30,6 +30,7 @@ echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 install_python_dependencies speed with-cuda with-jupyter with-unit-test
 build_pip_package build_azure_kinect build_jupyter
 
+set -x # Echo commands on
 df -h
 # Run on GPU only. CPU versions run on Github already
 if nvidia-smi >/dev/null 2>&1; then
@@ -46,3 +47,5 @@ echo "mv ${ACloudViewer_BUILD}/lib/python_package/pip_package/*whl ${ACloudViewe
 mv ${ACloudViewer_BUILD}/lib/python_package/pip_package/*whl ${ACloudViewer_INSTALL}
 
 echo "Backup whl package to ${ACloudViewer_INSTALL}"
+set +x # Echo commands off
+echo

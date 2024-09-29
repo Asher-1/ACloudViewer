@@ -319,7 +319,7 @@ if (Python3_FOUND)
             "Deprecated path to the Python include dir (for pybind only)")
 else ()
     if (BUILD_PYTHON_MODULE)
-        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.12. Please ensure it is in PATH.")
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python >= 3.6. Please ensure it is in PATH.")
     endif ()
 endif ()
 

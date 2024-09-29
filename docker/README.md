@@ -26,7 +26,7 @@ to install Nvidia Docker to run the CUDA container.
 To verify that the Nvidia Docker is working, run:
 
 ```bash
-docker run --rm --gpus all nvidia/cuda:11.7-base nvidia-smi
+docker run --rm --gpus all nvidia/cuda:11.8-base nvidia-smi
 ```
 
 ### ARM64 Docker
@@ -54,6 +54,10 @@ docker run --rm arm64v8/ubuntu:24.04 uname -p
 ## Build and test Docker
 
 For example:
+```bash
+# build all platforms
+./docker/build-all.sh
+```
 
 ```bash
 cd docker

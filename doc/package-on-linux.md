@@ -5,7 +5,7 @@
 
 # package for ACloudViewer
 
-[Follows are deprecated and please ref new package strategy](../docker/build-all.sh)
+[Follows are deprecated and please ref new package strategy](../docker/README.md)
 
 1. Copy copylib_ubuntu.sh to build directory
 

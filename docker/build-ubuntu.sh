@@ -1,11 +1,14 @@
 #!/bin/bash
-set -e
+
+set -euo pipefail
+
+export BUILDKIT_PROGRESS=plain
 
 #test -z "$CLOUDVIEWER_VERSION" && CLOUDVIEWER_VERSION="$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short HEAD)"
 test -z "$CLOUDVIEWER_VERSION" && CLOUDVIEWER_VERSION="develop"
 test -z "$VTK_VERSION" && VTK_VERSION=8.2.0
 test -z "$PCL_VERSION" && PCL_VERSION=1.11.1
-test -z "$CUDA_VERSION" && CUDA_VERSION=11.8
+test -z "$CUDA_VERSION" && CUDA_VERSION=11.7.1-cudnn8
 test -z "$UBUNTU_VERSION" && UBUNTU_VERSION=18.04
 
 test -d docker || (
@@ -57,27 +60,31 @@ if [[ "$(docker images -q cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU
 fi
 
 # ACloudViewer
-docker build \
-	--build-arg "CLOUDVIEWER_VERSION=${CLOUDVIEWER_VERSION}" \
-	--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
-	--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
-	--build-arg "VTK_VERSION=${VTK_VERSION}" \
-	--build-arg "PCL_VERSION=${PCL_VERSION}" \
-	--tag "cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-	-f docker/Dockerfile_ubuntu . --progress=plain 2>&1 | tee docker_build-cloudviewer-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
+if [[ "$(docker images -q cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} 2> /dev/null)" == "" ]]; 
+	then
+	# Start building...
+	docker build \
+		--build-arg "CLOUDVIEWER_VERSION=${CLOUDVIEWER_VERSION}" \
+		--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
+		--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
+		--build-arg "VTK_VERSION=${VTK_VERSION}" \
+		--build-arg "PCL_VERSION=${PCL_VERSION}" \
+		--tag "cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
+		-f docker/Dockerfile_ubuntu . --progress=plain 2>&1 | tee docker_build-cloudviewer-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 
-# Export docker compiling output data
-docker_install_package_dir=/root/install
-host_install_package_dir=$PWD/docker_cache/ubuntu$UBUNTU_VERSION
-mkdir -p $host_install_package_dir
-docker run -v "${host_install_package_dir}:/opt/mount" --rm cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} \
-    bash -c "cp ${docker_install_package_dir}/*.whl /opt/mount \
-          && cp ${docker_install_package_dir}/*.run /opt/mount \
-          && chown $(id -u):$(id -g) /opt/mount/*.whl \
-          && chown $(id -u):$(id -g) /opt/mount/*.run"
-echo					
-echo "Build cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} Done."
-echo "Building ouput package dir is: $host_install_package_dir"
+	# Export docker compiling output data
+	docker_install_package_dir=/root/install
+	host_install_package_dir=$PWD/docker_cache/ubuntu$UBUNTU_VERSION
+	mkdir -p $host_install_package_dir
+	docker run -v "${host_install_package_dir}:/opt/mount" --rm cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} \
+			bash -c "cp ${docker_install_package_dir}/*.whl /opt/mount \
+						&& cp ${docker_install_package_dir}/*.run /opt/mount \
+						&& chown $(id -u):$(id -g) /opt/mount/*.whl \
+						&& chown $(id -u):$(id -g) /opt/mount/*.run"
+	echo					
+	echo "Build cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} Done."
+	echo "Building ouput package dir is: $host_install_package_dir"
+fi
 # echo "Start to Delete docker image: cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}."
 # docker rmi cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
 # echo "Delete done."
