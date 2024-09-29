@@ -2,7 +2,11 @@ ARG VTK_VERSION
 ARG PCL_VERSION
 ARG CUDA_VERSION
 ARG UBUNTU_VERSION
-FROM nvidia/cuda:${CUDA_VERSION}-cudnn8-devel-ubuntu${UBUNTU_VERSION}
+FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
+
+# For bash-specific commands
+SHELL ["/bin/bash", "-c"]
+
 # FROM nvidia/opengl:1.2-glvnd-devel-ubuntu${UBUNTU_VERSION}
 # FROM gezp/ubuntu-nomachine:${UBUNTU_VERSION}-cu${CUDA_VERSION}
 LABEL maintainer="ACloudViewer Team ludahai19@163.com"

@@ -1,6 +1,6 @@
 # Compilation of ACloudViewer 3.3+ (with CMake)
 
-**WARNING**: if you already have a clone of the ACloudViewer git repository (prior to July 2015), you may want to update/checkout the submodules with ```git submodule update --init --recursive```
+[**Fast Docker build**](./docker/README.md)
 
 ## Prerequisites
 
