@@ -7,6 +7,7 @@ export DEVELOPER_BUILD=OFF
 export BUILD_PYTORCH_OPS=OFF
 export BUILD_TENSORFLOW_OPS=OFF
 export PYTHON_VERSION=$1
+export NPROC=$(nproc)
 export ENV_NAME="python${PYTHON_VERSION}"
 echo "ENV_NAME: " ${ENV_NAME}
 
@@ -28,6 +29,7 @@ echo -e "\ny" | conda install libffi==3.3
 source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 install_python_dependencies speed with-cuda with-jupyter with-unit-test
+# build_pip_package build_realsense build_azure_kinect build_jupyter
 build_pip_package build_azure_kinect build_jupyter
 
 set -x # Echo commands on

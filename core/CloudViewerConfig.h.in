@@ -26,11 +26,14 @@
 
 // clang-format off
 // cloudViewer version
+#include <string>
+#include "CVCoreLib.h"
+
 #define CLOUDVIEWER_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 #define CLOUDVIEWER_VERSION_MINOR @PROJECT_VERSION_MINOR@
 #define CLOUDVIEWER_VERSION_PATCH @PROJECT_VERSION_PATCH@
 #define CLOUDVIEWER_VERSION_TWEAK @PROJECT_VERSION_TWEAK@
-#define CLOUDVIEWER_VERSION       "@PROJECT_VERSION@"
+#define CLOUDVIEWER_VERSION             "@PROJECT_VERSION@"
 
 // cloudViewer info
 #define CLOUDVIEWER_HOME          "@PROJECT_HOME@"
@@ -39,8 +42,15 @@
 #define CLOUDVIEWER_ISSUES        "@PROJECT_ISSUES@"
 
 namespace cloudViewer {
+    const static std::string CLOUDVIEWER_VERSION_STR  = "${PROJECT_VERSION}";
+    const static std::string CLOUDVIEWER_GIT_COMMIT_ID  = "${GIT_COMMIT_ID}";
+    const static std::string CLOUDVIEWER_GIT_COMMIT_DATE = "${GIT_COMMIT_DATE}";
 
-    void PrintCloudViewerVersion();
+    void CV_CORE_LIB_API PrintCloudViewerVersion();
+    
+    std::string CV_CORE_LIB_API GetCloudViewerVersion();
 
+    std::string CV_CORE_LIB_API GetBuildInfo();
+    std::string CV_CORE_LIB_API GetCloudViewerBuildInfo();
 }
 // clang-format on

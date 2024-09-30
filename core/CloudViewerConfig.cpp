@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -30,6 +30,24 @@
 
 namespace cloudViewer {
 
-void PrintCloudViewerVersion() { utility::LogInfo("CloudViewer {}", CLOUDVIEWER_VERSION); }
+void PrintCloudViewerVersion() {
+    utility::LogInfo("CloudViewer {}", CLOUDVIEWER_VERSION);
+}
+
+std::string GetCloudViewerVersion() { return std::string(CLOUDVIEWER_VERSION); }
+
+std::string GetBuildInfo() {
+#ifdef CUDA_ENABLED
+    const std::string cuda_info = "with CUDA";
+#else
+    const std::string cuda_info = "without CUDA";
+#endif
+    return "Commit " + CLOUDVIEWER_GIT_COMMIT_ID + " on " +
+           CLOUDVIEWER_GIT_COMMIT_DATE + " " + cuda_info;
+}
+
+std::string GetCloudViewerBuildInfo() {
+    return "CloudViewer " + GetCloudViewerVersion() + " " + GetBuildInfo();
+}
 
 }  // namespace cloudViewer

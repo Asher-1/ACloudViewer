@@ -1,15 +1,15 @@
 #!/bin/bash
 
-set -euo pipefail
-
-export BUILDKIT_PROGRESS=plain
-
 #test -z "$CLOUDVIEWER_VERSION" && CLOUDVIEWER_VERSION="$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short HEAD)"
 test -z "$CLOUDVIEWER_VERSION" && CLOUDVIEWER_VERSION="develop"
 test -z "$VTK_VERSION" && VTK_VERSION=8.2.0
 test -z "$PCL_VERSION" && PCL_VERSION=1.11.1
 test -z "$CUDA_VERSION" && CUDA_VERSION=11.7.1-cudnn8
 test -z "$UBUNTU_VERSION" && UBUNTU_VERSION=18.04
+
+# put after test -z due to unbound issues
+set -euo pipefail
+export BUILDKIT_PROGRESS=plain
 
 test -d docker || (
         echo This script must be run from the top level ACloudViewer directory
@@ -56,7 +56,7 @@ if [[ "$(docker images -q cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU
 			--build-arg "VTK_VERSION=${VTK_VERSION}" \
 			--build-arg "PCL_VERSION=${PCL_VERSION}" \
 			--tag "cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-			-f docker/Dockerfile_ubuntu_deps . --progress=plain 2>&1 | tee docker_build-cloudviewer-deps-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
+			-f docker/Dockerfile_ubuntu_deps . 2>&1 | tee docker_build-cloudviewer-deps-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 fi
 
 # ACloudViewer
@@ -70,7 +70,7 @@ if [[ "$(docker images -q cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERS
 		--build-arg "VTK_VERSION=${VTK_VERSION}" \
 		--build-arg "PCL_VERSION=${PCL_VERSION}" \
 		--tag "cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-		-f docker/Dockerfile_ubuntu . --progress=plain 2>&1 | tee docker_build-cloudviewer-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
+		-f docker/Dockerfile_ubuntu . 2>&1 | tee docker_build-cloudviewer-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 
 	# Export docker compiling output data
 	docker_install_package_dir=/root/install

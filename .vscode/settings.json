@@ -95,7 +95,9 @@
 		"typeindex": "cpp",
 		"typeinfo": "cpp",
 		"valarray": "cpp",
-		"variant": "cpp"
+		"variant": "cpp",
+		"*.in": "c",
+		"format": "cpp"
 	},
 	"python.languageServer": "Default"
 }

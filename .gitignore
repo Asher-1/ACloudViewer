@@ -130,6 +130,7 @@ CMakeSettings.json
 
 # CMake configured files
 python/js/node_modules/*
+core/CloudViewerConfig.h
 libs/cloudViewer/CloudViewer.h
 libs/cloudViewer/CloudViewerConfig.h
 libs/cloudViewer/visualization/shader/Shader.h
