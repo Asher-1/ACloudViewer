@@ -60,65 +60,71 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
     && apt-get update --fix-missing -y \
     && apt-get install --fix-missing -yq --no-install-recommends \
         build-essential \
-        vim \
-        git \
+        git  \
+        cmake \
+        wget \
         curl \
-        g++ \
+        vim \
         tree \
         apt-file \
         net-tools \
         mesa-utils \
-        libtbb2 \
-        libgtk2.0-dev \
+        # for opencv
         libavcodec-dev \
         libavformat-dev \
         libswscale-dev \
         libjpeg-dev \
+        libpng-dev \
+        libtiff-dev \
         libglew-dev \
+        # for colmap
         libatlas-base-dev \
+        # for package
+        zip \
         unzip \
         locate \
         automake \
-        gfortran \
-        cmake-gui \
-        gdb \
-        ccache \
-        wget \
-        libsdl2-dev \
         xorg-dev \
         libxi-dev \
-        libflann1.9 \
-        libflann-dev \
-        libosmesa6-dev \
-        libudev-dev \
-        autoconf \
-        libtool \
-        libtbb-dev \
-        mpi-default-dev \
         openmpi-bin \
         openmpi-common \
+        gfortran \
         ninja-build \
-        libeigen3-dev \
-        libboost-all-dev \
-        libglew-dev \
-        'libqhull*' \
         libgtest-dev \
-        libusb-1.0-0-dev \
         libusb-dev \
-        git-core \
         freeglut3-dev \
         pkg-config \
         libpcap-dev \
         clang-format \
-        libqhull-dev \
         graphviz \
         nasm \
+        flex \
+        fontconfig \
         mono-complete \
+        # for pcl
         libopenni-dev \
         libopenni2-dev \
-        libgl1-mesa-dev \
-        libglu1-mesa-dev \
-        libx11-dev
+        libjsoncpp-dev \
+        libgdal-dev \
+        libcgal-dev \
+        libusb-1.0-0-dev \
+        libeigen3-dev \
+        libboost-all-dev \
+        libglew-dev \
+        'libqhull*' \
+        libqhull-dev \
+        libflann1.9 \
+        libflann-dev \
+        # for QT
+        libxcb-xkb1 \
+        libxcb-shape0 \
+        libxcb-randr0 \
+        libxcb-icccm4 \
+        libxcb-image0 \
+        libxcb-keysyms1 \
+        libxcb-xinerama0 \
+        libxkbcommon-x11-0 \
+        libxcb-render-util0
 
 # Dependencies: basic
 RUN apt-get update && apt-get install -y \
@@ -176,6 +182,18 @@ RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/
 RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
+# Install metslib
+WORKDIR /root
+RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/metslib-0.5.3.tgz -O "/root/metslib-0.5.3.tgz"
+RUN tar -xvf metslib-0.5.3.tgz && \
+    cd metslib-0.5.3 && \
+    sh ./configure && \
+    make && \
+    make install \
+    && ldconfig \
+    && rm -rf /opt/metslib-0.5.3 \
+    && rm -rf /opt/metslib-0.5.3.tgz
+
 # Install laszip
 WORKDIR /root
 RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "/root/laszip-src-3.4.3.tar.gz"
@@ -185,9 +203,10 @@ RUN tar -xvf laszip-src-3.4.3.tar.gz && \
     cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig \
-    && rm -rf laszip-src-3.4.3 laszip-src-3.4.3.tar.gz
+    && rm -rf /root/laszip-src-3.4.3 /root/laszip-src-3.4.3.tar.gz
 
 # Install xerces-c
+WORKDIR /root
 RUN wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "/root/xerces-c-3.2.3.zip"
 RUN unzip xerces-c-3.2.3.zip \
     && cd ./xerces-c-3.2.3 \
@@ -196,9 +215,10 @@ RUN unzip xerces-c-3.2.3.zip \
     && make \
     && make install \
     && make clean \
-    && rm -rf xerces-c-3.2.3 xerces-c-3.2.3.zip
+    && rm -rf /root/xerces-c-3.2.3 /root/xerces-c-3.2.3.zip
 
 # Install Qt (to build plugins)
+WORKDIR /root
 RUN wget https://download.qt.io/archive/qt/5.14/5.14.2/qt-opensource-linux-x64-5.14.2.run -O "/root/qt.run"
 COPY ./docker/qt-installer-noninteractive.qs /root
 RUN chmod +x ./qt.run && \
@@ -207,32 +227,29 @@ RUN chmod +x ./qt.run && \
 ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
 
 # Install vtk
-# RUN wget https://www.vtk.org/files/release/8.2/VTK-8.2.0.zip -O "/root/VTK-8.2.0.zip"
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/VTK-8.2.0.zip -O "/root/VTK-8.2.0.zip"
-#RUN git clone https://github.com/Kitware/VTK.git --recursive && \
-RUN unzip VTK-8.2.0.zip && \
-    cd VTK && \
-    #git checkout "${VTK_VERSION}" && \
+WORKDIR /root
+RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/VTK-9.3.1.tar.gz -O "/root/VTK-9.3.1.tar.gz"
+RUN tar -zxvf VTK-9.3.1.tar.gz && \
+    cd VTK-9.3.1 && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DVTK_GROUP_ENABLE_Qt=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
+            -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
+            -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
             -DVTK_QT_VERSION:STRING=5 \
-            -DVTK_Group_Qt:BOOL=ON \
             -DBUILD_SHARED_LIBS:BOOL=ON \
-            -DVTK_BUILD_QT_DESIGNER_PLUGIN:BOOL=ON \
-            -DModule_vtkGUISupportQtOpenGL=ON \
             -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
-    cp lib/libQVTKWidgetPlugin.so "${QT_DIR}"/plugins/designer && \
-    cp lib/libQVTKWidgetPlugin.so "${QT_ROOT}"/Tools/QtCreator/lib/Qt/plugins/designer && \
-    rm -rf ./* && \
-    rm -rf VTK-8.2.0.zip
+    && rm -rf /root/VTK-9.3.1 /root/VTK-9.3.1.tar.gz
 
 # Install pcl
-# RUN wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-1.11.1/source.zip -O "/root/pcl-1.11.1.zip"
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/pcl-1.11.1.zip -O "/root/pcl-1.11.1.zip"
-RUN unzip pcl-1.11.1.zip && \
+RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/pcl-1.14.1.zip -O "/root/pcl-1.14.1.zip"
+RUN unzip pcl-1.14.1.zip && \
     cd pcl && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
@@ -244,8 +261,7 @@ RUN unzip pcl-1.11.1.zip && \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
-    rm -rf ./* && \
-    rm -rf pcl-1.11.1.zip
+    rm -rf /opt/pcl /opt/pcl-1.14.1.zip
 
 # ACloudViewer Python dependencies
 COPY ./util/ci_utils.sh /root/ACloudViewer/util/
