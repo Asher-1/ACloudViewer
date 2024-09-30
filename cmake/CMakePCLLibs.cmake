@@ -18,7 +18,24 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(VTK_USE_PTHREADS 1)
 find_package (PCL REQUIRED) # must before find_package (VTK REQUIRED), otherwise link errors.
+if (NOT PCL_FOUND)
+     message(FATAL_ERROR
+     "External PCL not found but ACloudViewer requires PCL to function")
+else ()
+     message(STATUS "Found System installed PCL: " ${PCL_VERSION})
+endif ()
 find_package (VTK REQUIRED)
+if (NOT VTK_FOUND)
+     message(FATAL_ERROR
+     "External VTK not found but ParaView requires VTK to function")
+else ()
+     message(STATUS "Found System installed VTK: " ${VTK_VERSION})
+endif ()
 include_directories( ${PCL_INCLUDE_DIRS} )
 include_directories( ${VTK_INCLUDE_DIRS} )
 add_definitions( ${PCL_DEFINITIONS} )
+
+set(PCL_FOUND ${PCL_FOUND} PARENT_SCOPE)
+set(PCL_VERSION ${PCL_VERSION} PARENT_SCOPE)
+set(VTK_FOUND ${VTK_FOUND} PARENT_SCOPE)
+set(VTK_VERSION ${VTK_VERSION} PARENT_SCOPE)

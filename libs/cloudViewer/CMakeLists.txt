@@ -20,15 +20,13 @@ endfunction()
 
 project( CloudViewer )
 
-add_library( ${PROJECT_NAME} )
+add_library( CloudViewer )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 # Configure a header file to pass the version settings to the source code
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CloudViewer.h.in"
                "${CMAKE_CURRENT_SOURCE_DIR}/CloudViewer.h")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CloudViewerConfig.h.in"
-               "${CMAKE_CURRENT_SOURCE_DIR}/CloudViewerConfig.h")
 
 # Subdirectories
 add_subdirectory(core)
@@ -70,8 +68,7 @@ endif()
 
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
-target_sources(${PROJECT_NAME} PRIVATE
-    CloudViewerConfig.cpp
+target_sources(CloudViewer PRIVATE
     $<TARGET_OBJECTS:core>
     $<TARGET_OBJECTS:tgeometry>
     $<TARGET_OBJECTS:tgeometry_kernel>
@@ -85,13 +82,13 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 if (BUILD_GUI)
-    target_sources(${PROJECT_NAME} PRIVATE
+    target_sources(CloudViewer PRIVATE
         $<TARGET_OBJECTS:GUI>
     )
 endif()
 
 if (BUILD_WEBRTC)
-    target_sources(${PROJECT_NAME} PRIVATE
+    target_sources(CloudViewer PRIVATE
         $<TARGET_OBJECTS:webrtc_server>
     )
 endif()
@@ -107,18 +104,18 @@ add_source_group(tpipelines)
 add_source_group(utility)
 add_source_group(visualization)
 
-cloudViewer_show_and_abort_on_warning(${PROJECT_NAME})
-cloudViewer_set_global_properties(${PROJECT_NAME})
-cloudViewer_set_cloudViewer_lib_properties(${PROJECT_NAME})
-cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
+cloudViewer_show_and_abort_on_warning(CloudViewer)
+cloudViewer_set_global_properties(CloudViewer)
+cloudViewer_set_cloudViewer_lib_properties(CloudViewer)
+cloudViewer_link_3rdparty_libraries(CloudViewer)
 
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond
 # direct consumers of libCloudViewer.a
-target_link_options(${PROJECT_NAME} INTERFACE
-    $<$<STREQUAL:$<TARGET_PROPERTY:${PROJECT_NAME},TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
+target_link_options(CloudViewer INTERFACE
+    $<$<STREQUAL:$<TARGET_PROPERTY:CloudViewer,TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
 
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(CloudViewer::CloudViewer ALIAS CloudViewer)
 
 include(CMakePackageConfigHelpers)
 
@@ -137,7 +134,7 @@ write_basic_package_version_file("${PROJECT_BINARY_DIR}/CloudViewerConfigVersion
 
 # Installation
 if (WIN32 OR APPLE) 
-    install(TARGETS ${PROJECT_NAME} EXPORT CloudViewerTargets
+    install(TARGETS CloudViewer EXPORT CloudViewerTargets
             RUNTIME DESTINATION ${CloudViewer_INSTALL_BIN_DIR}
             LIBRARY DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
             ARCHIVE DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
@@ -173,5 +170,5 @@ set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
 
 # install (shared) lib to specified destinations
 if (WIN32 OR APPLE) 
-    InstallSharedLibrary( TARGET ${PROJECT_NAME} )
+    InstallSharedLibrary( TARGET CloudViewer )
 endif()

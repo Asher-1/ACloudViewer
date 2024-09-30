@@ -6,6 +6,7 @@ export BUILD_SHARED_LIBS=OFF
 export DEVELOPER_BUILD=OFF
 export BUILD_PYTORCH_OPS=OFF
 export BUILD_TENSORFLOW_OPS=OFF
+export NPROC=$(nproc)
 
 set -x # Echo commands on
 # Get build scripts and control environment variables

@@ -1,6 +1,0 @@
-*.user
-#MSVC Ignores
-.vs
-.vscode
-CMakeSettings.json
-out

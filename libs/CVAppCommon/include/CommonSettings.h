@@ -1,6 +1,9 @@
 #ifndef COMMON_SETTINGS_HEADER
 #define COMMON_SETTINGS_HEADER
 
+// core
+#include <CloudViewerConfig.h>
+
 // QT
 #include <QCoreApplication>
 #include <QMainWindow>
@@ -53,7 +56,7 @@ static const QString CLOSE_LOGO = ":/Resources/images/close.png";
 static const char* CODING = "UTF8";
 
 // application information
-static const QString APP_VERSION = "v3.9.0";
+static const QString APP_VERSION =  QString::fromStdString(cloudViewer::GetCloudViewerVersion());
 static const QString TITLE = QObject::tr("ACloudViewer");
 static const QString APP_TITLE =
         TITLE + " " + versionLongStr(true, APP_VERSION);

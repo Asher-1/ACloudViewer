@@ -43,6 +43,18 @@ if (UNIX AND NOT APPLE)
     message(STATUS "Ubuntu Version: ${UBUNTU_VERSION}")
 endif ()
 
+# CMake modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
+
+# set build time
+string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
+set(BUILD_TIME  ${COMPILE_TIME})
+
+# set git commit id and git commit date
+include(GenerateVersionDefinitions)
+message(STATUS "GIT_COMMIT_ID: " ${GIT_COMMIT_ID})
+message(STATUS "GIT_COMMIT_DATE : " ${GIT_COMMIT_DATE})
+
 if(APPLE)
     execute_process(COMMAND uname -m
             OUTPUT_VARIABLE PROCESSOR_ARCH
@@ -273,10 +285,19 @@ string(CONCAT CLOUDVIEWER_VERSION
 string(CONCAT PROJECT_VERSION_THREE_NUMBER "${CLOUDVIEWER_VERSION_MAJOR}"
         ".${CLOUDVIEWER_VERSION_MINOR}"
         ".${CLOUDVIEWER_VERSION_PATCH}")
-set(CLOUDVIEWER_VERSION_FULL "${CLOUDVIEWER_VERSION}${CLOUDVIEWER_VERSION_DEVHASH}")
+set(CLOUDVIEWER_VERSION_FULL "${CLOUDVIEWER_VERSION}${CLOUDVIEWER_VERSION_DEVHASH}" CACHE
+    STRING "ACloudViewer full version.")
+set(CLOUDVIEWER_ABI_VERSION "${PROJECT_VERSION_THREE_NUMBER}" CACHE
+    STRING "ACloudViewer ABI version / SOVERSION (for releases only).")
 
-project(ACloudViewerProjects VERSION ${CLOUDVIEWER_VERSION} LANGUAGES C CXX)
-message(STATUS "ACloudViewerProjects ${CLOUDVIEWER_VERSION_FULL}")
+project(ACloudViewer 
+    VERSION ${CLOUDVIEWER_VERSION}
+    # Set PROJECT_DESCRIPTION
+    DESCRIPTION "ACloudViewer: A Modern Library for 3D Data Processing."
+    # Set PROJECT_HOMEPAGE_URL
+    HOMEPAGE_URL "https://asher-1.github.io"
+    LANGUAGES C CXX)
+message(STATUS "ACloudViewer ${CLOUDVIEWER_VERSION_FULL}")
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
@@ -294,9 +315,6 @@ elseif (BUILD_CUDA_MODULE) # fix 'Target requires the language dialect "CUDA17"'
     set(CMAKE_CUDA_STANDARD 14)
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 endif ()
-
-# CMake modules
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
 
 # Setup Python executable
 # if(NOT DEFINED Python3_FIND_REGISTRY)
@@ -517,6 +535,9 @@ include(CloudViewerLink3rdpartyLibraries)
 include(CloudViewerSetGlobalProperties)
 include(CloudViewerShowAndAbortOnWarning)
 
+# Add external libraries
+include(CMakeExternalLibs)
+
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the
 # CloudViewer_3RDPARTY_*_TARGETS variables we use in cloudViewer_link_3rdparty_libraries
@@ -525,9 +546,6 @@ include(3rdparty/find_dependencies.cmake)
 # Default debug suffix for libraries.
 # Note: must put after include(3rdparty/find_dependencies.cmake)
 set(CMAKE_DEBUG_POSTFIX "d")
-
-# Add external libraries
-include(CMakeExternalLibs)
 
 # Contrib. libraries (mainly for I/O)
 include(AllSupport)
@@ -678,8 +696,6 @@ foreach( filename ${documents_list} )
     cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}" "" )
 endforeach()
 
-string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
-set(BUILD_TIME  ${COMPILE_TIME})
 if (BUILD_CUDA_MODULE) 
     set(ACLOUDVIEWER_DEVICE "cuda")
 else ()
