@@ -95,26 +95,6 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         libqhull-dev \
         libflann1.9 \
         libflann-dev \
-        # libgtk2.0-dev \
-        # libx11-6 \
-        # libgl1-mesa-dev \
-        # libglu1-mesa-dev \
-        # libx11-dev \
-        # libxext-dev \
-        # libxtst-dev \
-        # libxrender-dev \
-        # libxmu-dev \
-        # libxmuu-dev \
-        # libfreetype6 \
-        # libxcb1 \
-        # libxext6 \
-        # libxi6 \
-        # libxrender1 \
-        # libsm6 \
-        # libxt-dev \
-        # libgl-dev \
-        # libglu-dev \
-        # libz-dev \
         # for QT
         libxcb-xkb1 \
         libxcb-shape0 \
@@ -211,20 +191,10 @@ ENV PATH="/root/miniconda3/bin:$PATH"
 # fix ubuntu2204 and conda library conflicts about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
 RUN echo -e "\ny" | conda install libffi==3.3
 
-# libgdal.so complain undefined TIFF* and object.h bugs with qt bugs
-# RUN rm -rf /usr/lib/x86_64-linux-gnu/libtiff* \
-#     && ln -s /root/miniconda3/lib/libtiff.so.5.6.0 /usr/lib/x86_64-linux-gnu/libtiff.so.5 \
-#     && ln -s /root/miniconda3/lib/libtiffxx.so.5.6.0 /usr/lib/x86_64-linux-gnu/libtiffxx.so.5 \
-#     && ln -s /root/miniconda3/lib/libwebp.so.7.1.1 /usr/lib/x86_64-linux-gnu/libwebp.so.7 \
-#     && ln -s /root/miniconda3/lib/libjpeg.so.9.4.0 /usr/lib/x86_64-linux-gnu/libjpeg.so.9 \
-#     && sed -i "s/PyType_Slot \*slots/PyType_Slot \*_slots/g" /root/miniconda3/include/python3.8/object.h \
-#     && ldconfig
-
 # Install vtk
 WORKDIR /opt
 COPY docker_files/VTK-9.3.1.tar.gz /opt
 RUN tar -zxvf VTK-9.3.1.tar.gz && \
-    rm VTK-9.3.1.tar.gz && \
     cd VTK-9.3.1 && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
@@ -240,13 +210,12 @@ RUN tar -zxvf VTK-9.3.1.tar.gz && \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
-    rm -rf ./*
+    rm -rf /opt/VTK-9.3.1 /opt/VTK-9.3.1.tar.gz
 
 # Install pcl
 WORKDIR /opt
 COPY docker_files/pcl-1.14.1.zip /opt
 RUN unzip pcl-1.14.1.zip && \
-    rm pcl-1.14.1.zip && \
     cd pcl && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
@@ -258,7 +227,7 @@ RUN unzip pcl-1.14.1.zip && \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
-    rm -rf ./*
+    rm -rf /opt/pcl /opt/pcl-1.14.1.zip
 
 WORKDIR /root
 
