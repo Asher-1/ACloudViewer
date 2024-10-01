@@ -162,10 +162,6 @@ if (NOT DEVELOPER_BUILD)
     endif ()
 endif ()
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-
 # Default build type on single-config generators.
 # For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
 # will be set, and we don't specify a default CMAKE_BUILD_TYPE.
@@ -299,23 +295,6 @@ project(ACloudViewer
     LANGUAGES C CXX)
 message(STATUS "ACloudViewer ${CLOUDVIEWER_VERSION_FULL}")
 
-# FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
-if (BUILD_CUDA_MODULE
-        AND CMAKE_CXX_COMPILER MATCHES "MSVC"
-        AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
-        )
-    # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
-    set(CMAKE_CXX_STANDARD 14)
-    set(CMAKE_CUDA_STANDARD 17)
-    # Suppress warnings for deprecated C++17 functions.
-    add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
-    message(WARNING "Visual Studio 16.10 (MSVC 19.29) introduced a compiler bug when compiling CUDA code with C++14. "
-            "Workaround this bug by setting the CUDA standard to C++17.")
-elseif (BUILD_CUDA_MODULE) # fix 'Target requires the language dialect "CUDA17"' issues on linux
-    set(CMAKE_CUDA_STANDARD 14)
-    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-endif ()
-
 # Setup Python executable
 # if(NOT DEFINED Python3_FIND_REGISTRY)
 #     # Only consider PATH variable on Windows by default
@@ -445,12 +424,16 @@ cmake_language(EVAL CODE "cmake_language(DEFER CALL cloudViewer_patch_findthread
 
 # Build CUDA module by default if CUDA is available
 if (BUILD_CUDA_MODULE)
+    # Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
+    # add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_ALLOW_UNSUPPORTED_LIBCPP>)
+    add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
     include(CloudViewerMakeCudaArchitectures)
     cloudViewer_make_cuda_architectures(CUDA_ARCHS)
     set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})
     message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
     if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
         message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
     endif ()

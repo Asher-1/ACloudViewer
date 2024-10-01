@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2019 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "ml/tensorflow/TensorFlowHelper.h"
@@ -32,9 +13,9 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerInvertNeighborsList")
+REGISTER_OP("CloudViewerInvertNeighborsList")
         .Attr("TIndex: {int32}")
-        .Attr("TAttr: {int32, int64, float, double}")
+        .Attr("TAttr: {uint8, int8, int16, int32, int64, float, double}")
         .Input("num_points: int64")
         .Input("inp_neighbors_index: TIndex")
         .Input("inp_neighbors_row_splits: int64")
@@ -77,7 +58,7 @@ REGISTER_OP("CloudviewerInvertNeighborsList")
 
             // the attributes will have the same shape
             c->set_output(2, inp_neighbors_attributes);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Inverts a neighbors list made of neighbors_index and neighbors_row_splits.

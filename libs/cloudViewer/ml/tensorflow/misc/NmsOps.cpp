@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "ml/tensorflow/TensorFlowHelper.h"
@@ -32,7 +13,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerNms")
+REGISTER_OP("CloudViewerNms")
         .Attr("T: {float}")  // type for boxes and scores
         .Attr("nms_overlap_thresh: float")
         .Input("boxes: T")
@@ -53,7 +34,7 @@ REGISTER_OP("CloudviewerNms")
 
             keep_indices = c->MakeShape({c->UnknownDim()});
             c->set_output(0, keep_indices);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Performs non-maximum suppression of bounding boxes.
@@ -102,5 +83,5 @@ nms_overlap_thresh: float value between 0 and 1. When a high-score box is
   selected, other remaining boxes with IoU > nms_overlap_thresh will be discarded.
   A higher nms_overlap_thresh means more boxes will be kept.
 
-returns (M,) int64 tensor. The selected box indices.
+keep_indices: (M,) int64 tensor. The selected box indices.
 )doc");

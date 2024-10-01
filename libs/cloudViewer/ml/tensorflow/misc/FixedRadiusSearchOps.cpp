@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "ml/tensorflow/TensorFlowHelper.h"
@@ -32,8 +13,9 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerFixedRadiusSearch")
+REGISTER_OP("CloudViewerFixedRadiusSearch")
         .Attr("T: {float, double}")
+        .Attr("index_dtype: {int32, int64} = DT_INT32")
         .Attr("metric: {'L1', 'L2', 'Linf'} = 'L2'")
         .Attr("ignore_query_point: bool = false")
         .Attr("return_distances: bool = false")
@@ -45,7 +27,7 @@ REGISTER_OP("CloudviewerFixedRadiusSearch")
         .Input("hash_table_splits: uint32")
         .Input("hash_table_index: uint32")
         .Input("hash_table_cell_splits: uint32")
-        .Output("neighbors_index: int32")
+        .Output("neighbors_index: index_dtype")
         .Output("neighbors_row_splits: int64")
         .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
@@ -97,14 +79,14 @@ REGISTER_OP("CloudviewerFixedRadiusSearch")
                 neighbors_distance_shape = c->MakeShape({0});
             c->set_output(2, neighbors_distance_shape);
 
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Computes the indices of all neighbors within a radius.
 
 This op computes the neighborhood for each query point and returns the indices
 of the neighbors and optionally also the distances. The same fixed radius is
-used for each query point. Points and queries can be batched with each batch 
+used for each query point. Points and queries can be batched with each batch
 item having an individual number of points and queries. The following example
 shows a simple search with just a single batch item::
 
@@ -112,8 +94,8 @@ shows a simple search with just a single batch item::
   import cloudViewer.ml.tf as ml3d
 
   points = [
-    [0.1,0.1,0.1], 
-    [0.5,0.5,0.5], 
+    [0.1,0.1,0.1],
+    [0.5,0.5,0.5],
     [1.7,1.7,1.7],
     [1.8,1.8,1.8],
     [0.3,2.4,1.4]]
@@ -127,17 +109,17 @@ shows a simple search with just a single batch item::
   radius = 1.0
 
   # build the spatial hash table for fixex_radius_search
-  table = ml3d.ops.build_spatial_hash_table(points, 
-                                            radius, 
-                                            points_row_splits=torch.LongTensor([0,5]), 
+  table = ml3d.ops.build_spatial_hash_table(points,
+                                            radius,
+                                            points_row_splits=torch.LongTensor([0,5]),
                                             hash_table_size_factor=1/32)
 
   # now run the fixed radius search
-  ml3d.ops.fixed_radius_search(points, 
-                               queries, 
-                               radius, 
-                               points_row_splits=torch.LongTensor([0,5]), 
-                               queries_row_splits=torch.LongTensor([0,3]), 
+  ml3d.ops.fixed_radius_search(points,
+                               queries,
+                               radius,
+                               points_row_splits=torch.LongTensor([0,5]),
+                               queries_row_splits=torch.LongTensor([0,3]),
                                **table._asdict())
   # returns neighbors_index      = [1, 4, 4]
   #         neighbors_row_splits = [0, 1, 2, 3]
@@ -148,8 +130,8 @@ shows a simple search with just a single batch item::
   import cloudViewer.ml.torch as ml3d
 
   points = torch.Tensor([
-    [0.1,0.1,0.1], 
-    [0.5,0.5,0.5], 
+    [0.1,0.1,0.1],
+    [0.5,0.5,0.5],
     [1.7,1.7,1.7],
     [1.8,1.8,1.8],
     [0.3,2.4,1.4]])
@@ -163,22 +145,26 @@ shows a simple search with just a single batch item::
   radius = 1.0
 
   # build the spatial hash table for fixex_radius_search
-  table = ml3d.ops.build_spatial_hash_table(points, 
-                                            radius, 
-                                            points_row_splits=torch.LongTensor([0,5]), 
+  table = ml3d.ops.build_spatial_hash_table(points,
+                                            radius,
+                                            points_row_splits=torch.LongTensor([0,5]),
                                             hash_table_size_factor=1/32)
 
   # now run the fixed radius search
-  ml3d.ops.fixed_radius_search(points, 
-                               queries, 
-                               radius, 
-                               points_row_splits=torch.LongTensor([0,5]), 
-                               queries_row_splits=torch.LongTensor([0,3]), 
+  ml3d.ops.fixed_radius_search(points,
+                               queries,
+                               radius,
+                               points_row_splits=torch.LongTensor([0,5]),
+                               queries_row_splits=torch.LongTensor([0,3]),
                                **table._asdict())
   # returns neighbors_index      = [1, 4, 4]
   #         neighbors_row_splits = [0, 1, 2, 3]
   #         neighbors_distance   = []
 
+
+index_dtype:
+  The data type for the returned neighbor_index Tensor. Either int32 or int64.
+  Default is int32.
 
 metric:
   Either L1, L2 or Linf. Default is L2

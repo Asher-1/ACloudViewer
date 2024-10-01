@@ -31,6 +31,7 @@ deps=(
     # Headless rendering
     libosmesa6-dev
     # RealSense
+    apt-transport-https
     libudev-dev
     autoconf
     libtool

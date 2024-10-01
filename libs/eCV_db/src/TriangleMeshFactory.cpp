@@ -901,7 +901,7 @@ std::shared_ptr<ccMesh> ccMesh::filterSmoothTaubin(int number_of_iterations,
 
 int ccMesh::eulerPoincareCharacteristic() const {
     std::unordered_set<Eigen::Vector2i,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             edges;
 
     for (auto triangle : getTriangles()) {
@@ -1077,11 +1077,11 @@ template <typename F>
 bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
                           F &swap) {
     std::unordered_map<Eigen::Vector2i, Eigen::Vector2i,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             edge_to_orientation;
     std::unordered_set<int> unvisited_triangles;
     std::unordered_map<Eigen::Vector2i, std::unordered_set<int>,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             adjacent_triangles;
     std::queue<int> triangle_queue;
 
@@ -1366,15 +1366,15 @@ void ccMesh::removeVerticesByMask(const std::vector<bool> &vertex_mask) {
 
 std::unordered_map<Eigen::Vector2i,
                    double,
-                   utility::hash_eigen::hash<Eigen::Vector2i>>
+                   utility::hash_eigen<Eigen::Vector2i>>
 ccMesh::computeEdgeWeightsCot(
         const std::unordered_map<Eigen::Vector2i,
                                  std::vector<int>,
-                                 utility::hash_eigen::hash<Eigen::Vector2i>>
+                                 utility::hash_eigen<Eigen::Vector2i>>
                 &edges_to_vertices,
         double min_weight) const {
     std::unordered_map<Eigen::Vector2i, double,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             weights;
 
     for (const auto &edge_v2s : edges_to_vertices) {
@@ -1607,10 +1607,10 @@ std::shared_ptr<ccPointCloud> ccMesh::samplePointsPoissonDisk(
 
 std::unordered_map<Eigen::Vector2i,
                    std::vector<int>,
-                   utility::hash_eigen::hash<Eigen::Vector2i>>
+                   utility::hash_eigen<Eigen::Vector2i>>
 ccMesh::getEdgeToTrianglesMap() const {
     std::unordered_map<Eigen::Vector2i, std::vector<int>,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             trias_per_edge;
     auto AddEdge = [&](int vidx0, int vidx1, int tidx) {
         trias_per_edge[GetOrderedEdge(vidx0, vidx1)].push_back(tidx);
@@ -1628,10 +1628,10 @@ ccMesh::getEdgeToTrianglesMap() const {
 
 std::unordered_map<Eigen::Vector2i,
                    std::vector<int>,
-                   utility::hash_eigen::hash<Eigen::Vector2i>>
+                   utility::hash_eigen<Eigen::Vector2i>>
 ccMesh::getEdgeToVerticesMap() const {
     std::unordered_map<Eigen::Vector2i, std::vector<int>,
-                       utility::hash_eigen::hash<Eigen::Vector2i>>
+                       utility::hash_eigen<Eigen::Vector2i>>
             trias_per_edge;
     auto AddEdge = [&](int vidx0, int vidx1, int vidx2) {
         trias_per_edge[GetOrderedEdge(vidx0, vidx1)].push_back(vidx2);

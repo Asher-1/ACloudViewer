@@ -128,6 +128,17 @@ if '@BUNDLE_CLOUDVIEWER_ML@' == 'ON':
     with open('@CLOUDVIEWER_ML_ROOT@/requirements.txt', 'r') as f:
         install_requires += [line.strip() for line in f.readlines() if line]
 
+entry_points = {
+    "console_scripts": ["cloudViewer = @PYPI_PACKAGE_NAME@.tools.cli:main",]
+}
+if sys.platform != "darwin":  # Remove check when off main thread GUI works
+    entry_points.update({
+        "tensorboard_plugins": [
+            "CloudViewer = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
+            ".plugin:CloudViewerPlugin",
+        ]
+    })
+
 classifiers = [
     # https://pypi.org/pypi?%3Aaction=list_classifiers
     "Development Status :: 3 - Alpha",
@@ -184,6 +195,7 @@ setup_args = dict(
     include_package_data=True,
     install_requires=install_requires,
     packages=find_packages(),
+    entry_points=entry_points,
     zip_safe=False,
     cmdclass=cmdclass,
     author='CloudViewer Team',
@@ -194,12 +206,15 @@ setup_args = dict(
         'Source code': '@PROJECT_CODE@',
         'Issues': '@PROJECT_ISSUES@',
     },
+    classifiers=classifiers,
     keywords="3D reconstruction point cloud mesh RGB-D visualization",
     license="MIT",
-    classifiers=classifiers,
-    description='CloudViewer: A Modern Library for 3D Data Processing.',
-    long_description=open('README.rst').read(),
+    description="@PROJECT_DESCRIPTION@",
+    long_description=long_description,
     long_description_content_type='text/x-rst',
+    # Metadata below is valid but currently ignored by pip (<=v23)
+    obsoletes=["cloudViewer_python"],
+    provides=["cloudViewer", "cloudViewer_cpu"],  # For cloudViewer-cpu
 )
 
 setup(**setup_args)

@@ -8,7 +8,6 @@ set(PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 message(STATUS "PYTHON VERSION: " ${PYTHON_VERSION})
 
 include_directories(${CloudViewer_SOURCE_DIR})
-
 pybind11_add_module(pybind)
 
 add_subdirectory(camera)
@@ -190,6 +189,7 @@ add_custom_target(python-package
         -DPROJECT_CODE=${PROJECT_CODE}
         -DPROJECT_ISSUES=${PROJECT_ISSUES}
         -DPROJECT_VERSION=${CLOUDVIEWER_VERSION_FULL}
+        -DPROJECT_DESCRIPTION=${PROJECT_DESCRIPTION}
         -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
         -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake

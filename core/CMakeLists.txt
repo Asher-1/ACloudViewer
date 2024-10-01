@@ -176,6 +176,8 @@ if (CVCORELIB_USE_CGAL)
         include(cmake/CGALSupport.cmake)
     else ()
         set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
+        # We do not use CGAL data. This prevents an unnecessary warning by CMake.
+        set(CGAL_DATA_DIR "unused")
         find_package(CGAL REQUIRED)
     endif ()
 

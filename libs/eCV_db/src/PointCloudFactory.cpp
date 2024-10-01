@@ -570,7 +570,7 @@ std::shared_ptr<ccPointCloud> ccPointCloud::voxelDownSample(double voxel_size) {
                 "[ccPointCloud::voxelDownSample] voxel_size is too small.");
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
-                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector3i>>
+                       cloudViewer::utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_accpoint;
 
     Eigen::Vector3d ref_coord;
@@ -677,7 +677,7 @@ ccPointCloud::voxelDownSampleAndTrace(double voxel_size,
     output->importParametersFrom(this);
 
     std::unordered_map<Eigen::Vector3i, AccumulatedPointForTrace,
-                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector3i>>
+                       cloudViewer::utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_accpoint;
 
     int cid_temp[3] = {1, 2, 4};
