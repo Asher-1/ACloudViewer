@@ -270,7 +270,7 @@ public:
     /// Voxels contained in voxel grid
     std::unordered_map<Eigen::Vector3i,
                        Voxel,
-                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector3i>>
+                       cloudViewer::utility::hash_eigen<Eigen::Vector3i>>
             voxels_;
 };
 

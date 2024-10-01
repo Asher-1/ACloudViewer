@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-export BUILD_CUDA_MODULE=ON
 export BUILD_SHARED_LIBS=OFF
 export DEVELOPER_BUILD=OFF
-export BUILD_PYTORCH_OPS=OFF
+export BUILD_CUDA_MODULE=ON
+export BUILD_PYTORCH_OPS=ON
 export BUILD_TENSORFLOW_OPS=OFF
 export PYTHON_VERSION=$1
 export NPROC=$(nproc)

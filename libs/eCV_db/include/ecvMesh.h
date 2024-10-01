@@ -752,12 +752,12 @@ public:  // some cloudViewer interface
     /// \return cot weight per edge.
     std::unordered_map<Eigen::Vector2i,
                        double,
-                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector2i>>
+                       cloudViewer::utility::hash_eigen<Eigen::Vector2i>>
     computeEdgeWeightsCot(
             const std::unordered_map<
                     Eigen::Vector2i,
                     std::vector<int>,
-                    cloudViewer::utility::hash_eigen::hash<Eigen::Vector2i>>&
+                    cloudViewer::utility::hash_eigen<Eigen::Vector2i>>&
                     edges_to_vertices,
             double min_weight = std::numeric_limits<double>::lowest()) const;
 
@@ -928,14 +928,14 @@ public:  // some cloudViewer interface
     /// triangle indices the given edge belongs to.
     std::unordered_map<Eigen::Vector2i,
                        std::vector<int>,
-                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector2i>>
+                       cloudViewer::utility::hash_eigen<Eigen::Vector2i>>
     getEdgeToTrianglesMap() const;
 
     /// Function that returns a map from edges (vertex0, vertex1) to the
     /// vertex (vertex2) indices the given edge belongs to.
     std::unordered_map<Eigen::Vector2i,
                        std::vector<int>,
-                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector2i>>
+                       cloudViewer::utility::hash_eigen<Eigen::Vector2i>>
     getEdgeToVerticesMap() const;
 
     /// Function that computes the area of a mesh triangle identified by the

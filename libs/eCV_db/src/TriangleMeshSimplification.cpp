@@ -139,10 +139,10 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 	};
 
 	std::unordered_map<Eigen::Vector3i, std::unordered_set<int>,
-		utility::hash_eigen::hash<Eigen::Vector3i>>
+		utility::hash_eigen<Eigen::Vector3i>>
 		voxel_vertices;
 	std::unordered_map<Eigen::Vector3i, int,
-		utility::hash_eigen::hash<Eigen::Vector3i>>
+		utility::hash_eigen<Eigen::Vector3i>>
 		voxel_vert_ind;
 	int new_vidx = 0;
 	for (size_t vidx = 0; vidx < cloud->size(); ++vidx) {
@@ -247,7 +247,7 @@ std::shared_ptr<ccMesh> ccMesh::simplifyVertexClustering(
 
 	//  connect vertices
 	std::unordered_set<Eigen::Vector3i,
-		utility::hash_eigen::hash<Eigen::Vector3i>>
+		utility::hash_eigen<Eigen::Vector3i>>
 		triangles;
 	for (unsigned triIndx = 0; triIndx < size(); ++triIndx) {
 		Eigen::Vector3d v0, v1, v2;
@@ -377,9 +377,9 @@ std::shared_ptr<ccMesh> ccMesh::simplifyQuadricDecimation(
 	// Get valid edges and compute cost
 	// Note: We could also select all vertex pairs as edges with dist < eps
 	std::unordered_map<Eigen::Vector2i, Eigen::Vector3d,
-		utility::hash_eigen::hash<Eigen::Vector2i>> vbars;
+		utility::hash_eigen<Eigen::Vector2i>> vbars;
 	std::unordered_map<Eigen::Vector2i, double,
-		utility::hash_eigen::hash<Eigen::Vector2i>> costs;
+		utility::hash_eigen<Eigen::Vector2i>> costs;
 	auto CostEdgeComp = [](const CostEdge& a, const CostEdge& b) {
 		return std::get<0>(a) > std::get<0>(b);
 	};

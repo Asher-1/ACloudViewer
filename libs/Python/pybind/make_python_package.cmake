@@ -111,9 +111,12 @@ if (UNIX AND NOT APPLE)
     foreach (filename ${ldd_libs_list})
         get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
         get_filename_component(SO_VER_NAME ${EXTRA_LIB_REAL} NAME)
-        string(REGEX REPLACE "\\.so\\.[0-9.]+$" "${CUSTOM_SO_NAME}" NEW_SO_NAME ${SO_VER_NAME})
-        message(STATUS "Copy ldd lib: " ${NEW_SO_NAME})
-        file(RENAME ${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME})
+        string(SUBSTRING ${SO_VER_NAME} 0 6 LIB_SBU_STR)
+        if(NOT (${LIB_SBU_STR} STREQUAL "libicu")) # fix cannot found libicuuc.so.56: cannot open shared object file
+            string(REGEX REPLACE "\\.so\\.[0-9.]+$" "${CUSTOM_SO_NAME}" NEW_SO_NAME ${SO_VER_NAME})
+            message(STATUS "Copy ldd lib: " ${NEW_SO_NAME})
+            file(RENAME ${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME})
+        endif()
     endforeach ()
 
     message(STATUS "CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR: " ${CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR})
@@ -132,9 +135,6 @@ if (UNIX AND NOT APPLE)
         configure_file(${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME} COPYONLY)
     endforeach ()
 endif()
-# execute_process(COMMAND bash ${PACKAGE_TOOL}
-#                 ${PYTHON_INSTALL_LIB_DESTINATION} ${PYTHON_INSTALL_LIB_DESTINATION}
-#                 WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
     # copy generated files

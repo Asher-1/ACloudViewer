@@ -37,9 +37,6 @@ if (UNIX AND NOT APPLE)
                         WORKING_DIRECTORY ${BUILD_LIB_PATH})
     endif()
 endif()
-# execute_process(COMMAND bash ${DEPLOY_ROOT_PATH}/${PACK_SCRIPTS}
-#                 ${CLOUDVIEWER_INSTALL_LIB_DESTINATION} ${CLOUDVIEWER_INSTALL_LIB_DESTINATION}
-#                 WORKING_DIRECTORY ${DEPLOY_ROOT_PATH})
 if (${PACKAGE} STREQUAL "ON")
     set(SHELL_CMD "binarycreator -c config/config.xml -p packages ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.run")
     message(STATUS "Package with command: " ${SHELL_CMD})

@@ -26,7 +26,7 @@ docker run -dit --name=test_cloudviewer \
   -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/root/CloudViewer-ML \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
-  cloudviewer:develop-ubuntu18.04-cuda11.8.0
+  cloudviewer:develop-ubuntu18.04-cuda11.8.0-cudnn8
 
 
 # attach into container instance
