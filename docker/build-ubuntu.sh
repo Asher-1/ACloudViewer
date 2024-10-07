@@ -85,6 +85,7 @@ if [[ "$(docker images -q cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERS
 	echo "Build cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} Done."
 	echo "Building ouput package dir is: $host_install_package_dir"
 fi
-# echo "Start to Delete docker image: cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}."
-# docker rmi cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
-# echo "Delete done."
+
+echo "Start to Delete docker image: cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}."
+docker rmi cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+echo "Delete done."
