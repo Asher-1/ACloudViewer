@@ -25,9 +25,10 @@
 
 Introduction
 ------------
-ACloudViewer is an open-source library that supports rapid development of software that deals with 3D data. The
-ACloudViewer frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The
-backend is highly optimized and is set up for parallelization. We welcome contributions from the open-source community.
+ACloudViewer is an open-source library that supports rapid development of software that deals with 3D data 
+which is highly based on CloudCompare, Open3D and colmap with PCL. The ACloudViewer frontend exposes a set of 
+carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and 
+is set up for parallelization. We welcome contributions from the open-source community.
 
 ------------
 ACloudViewer is a 3D point cloud (and triangular mesh) processing software. It was originally designed to perform
