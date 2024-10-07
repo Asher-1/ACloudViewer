@@ -4,6 +4,7 @@ add_library(core OBJECT ${ALL_CORE_HEADER_FILES})
 target_sources(core PRIVATE
         AdvancedIndexing.cpp
         CUDAUtils.cpp
+        Device.cpp
         Dtype.cpp
         Gpu.cpp
         EigenConverter.cpp
@@ -13,7 +14,11 @@ target_sources(core PRIVATE
         MemoryManagerCPU.cpp
         MemoryManagerStatistic.cpp
         ShapeUtil.cpp
+        SizeVector.cpp
+        SmallVector.cpp
         Tensor.cpp
+        TensorCheck.cpp
+        TensorFunction.cpp
         TensorKey.cpp
         TensorList.cpp
         )
@@ -44,6 +49,8 @@ target_sources(core PRIVATE
         )
 
 target_sources(core PRIVATE
+        linalg/AddMM.cpp
+        linalg/AddMMCPU.cpp
         linalg/Det.cpp
         linalg/Inverse.cpp
         linalg/InverseCPU.cpp
@@ -62,8 +69,9 @@ target_sources(core PRIVATE
         )
 
 target_sources(core PRIVATE
-        nns/FixedRadiusSearchOps.cpp
         nns/FixedRadiusIndex.cpp
+        nns/FixedRadiusSearchOps.cpp
+        nns/KnnIndex.cpp
         nns/NanoFlannIndex.cpp
         nns/NearestNeighborSearch.cpp
         nns/NNSIndex.cpp
@@ -90,6 +98,7 @@ if (BUILD_CUDA_MODULE)
             )
 
     target_sources(core PRIVATE
+            linalg/AddMMCUDA.cpp
             linalg/InverseCUDA.cpp
             linalg/LeastSquaresCUDA.cpp
             linalg/LinalgUtils.cpp
@@ -102,12 +111,9 @@ if (BUILD_CUDA_MODULE)
 
     target_sources(core PRIVATE
             nns/FixedRadiusSearchOps.cu
-            )
-endif ()
-
-if (WITH_FAISS)
-    target_sources(core PRIVATE
-            nns/FaissIndex.cpp
+            nns/kernel/BlockSelectFloat32.cu
+            nns/kernel/BlockSelectFloat64.cu
+            nns/KnnSearchOps.cu
             )
 endif ()
 

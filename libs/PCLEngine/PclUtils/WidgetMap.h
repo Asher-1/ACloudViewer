@@ -40,10 +40,10 @@
 
 #include <vector>
 #include <map>
-#include <boost/unordered_map.hpp>
+#include <memory>
+#include <unordered_map>
 #include <vtkLODActor.h>
 #include <vtkSmartPointer.h>
-#include <pcl/visualization/boost.h>
 
 #include <vtkAbstractWidget.h>
 
@@ -67,11 +67,11 @@ namespace PclUtils
 		vtkSmartPointer<vtkAbstractWidget> widget;
 	};
 
-	typedef boost::unordered_map<std::string, WidgetMap> WidgetActorMap;
-	typedef boost::shared_ptr<WidgetActorMap> WidgetActorMapPtr;
+	typedef std::unordered_map<std::string, WidgetMap> WidgetActorMap;
+	typedef std::shared_ptr<WidgetActorMap> WidgetActorMapPtr;
 
-	typedef boost::unordered_map<std::string, vtkSmartPointer<vtkProp> > PropActorMap;
-	typedef boost::shared_ptr<PropActorMap> PropActorMapPtr;
+	typedef std::unordered_map<std::string, vtkSmartPointer<vtkProp> > PropActorMap;
+	typedef std::shared_ptr<PropActorMap> PropActorMapPtr;
 }
 
 #endif // QPCL_WIDGET_MAP_H_

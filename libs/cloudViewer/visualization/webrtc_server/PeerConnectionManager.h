@@ -32,8 +32,8 @@
 // any purpose.
 // ----------------------------------------------------------------------------
 //
-// This is a private header. It shall be hidden from Open3D's public API. Do not
-// put this in Open3D.h.in.
+// This is a private header. It shall be hidden from CloudViewer's public API. Do not
+// put this in CloudViewer.h.in.
 
 #pragma once
 
@@ -63,14 +63,14 @@ namespace webrtc_server {
 /// https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Connectivity#signaling
 /// for more information. In PeerConnectionManager, a WebRTC client (e.g.
 /// JavaScript video player) calls the following HTTP APIs:
-/// - /api/getMediaList: Returns a list of active Open3D visualizer windows.
+/// - /api/getMediaList: Returns a list of active CloudViewer visualizer windows.
 /// - /api/getIceServers: Returns a list of ICE (STUN/TURN) servers. The ICE
 ///   server is used to forward requests through the remote peer's NAT layer. We
 ///   use publicly availble STUN servers. In certain network configurations
 ///   (e.g. if the peers are behind certain type of firewalls), STUN server may
 ///   fail to resolve and in this case, we'll need to implement and host a
 ///   separate TURN server.
-/// - /api/call: Connect to a specific media (Open3D visualizer window).
+/// - /api/call: Connect to a specific media (CloudViewer visualizer window).
 /// - /api/addIceCandidate (multiple calls): Client sends ICE candidate
 ///   proposals.
 /// - /api/getIceCandidate: the client gets a list of ICE candidate
@@ -86,7 +86,7 @@ namespace webrtc_server {
 ///
 /// [Stage 3: Hangup]
 /// The client calls /api/hangup to close the WebRTC connection. This does not
-/// close the Open3D Window as a Window can be connected to 0 or more peers.
+/// close the CloudViewer Window as a Window can be connected to 0 or more peers.
 ///
 /// TODO (yixing): Use PImpl.
 class PeerConnectionManager {
@@ -101,7 +101,7 @@ class PeerConnectionManager {
         virtual void OnFrame(const webrtc::VideoFrame& video_frame) {
             rtc::scoped_refptr<webrtc::I420BufferInterface> buffer(
                     video_frame.video_frame_buffer()->ToI420());
-            utility::LogDebug("[{}] frame: {}x{}", __FN__, buffer->height(),
+            utility::LogDebug("[{}] frame: {}x{}", CLOUDVIEWER_FUNCTION, buffer->height(),
                               buffer->width());
         }
 
@@ -317,7 +317,7 @@ class PeerConnectionManager {
         // PeerConnectionObserver interface
         virtual void OnAddStream(
                 rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-            utility::LogDebug("[{}] GetVideoTracks().size(): {}.", __FN__,
+            utility::LogDebug("[{}] GetVideoTracks().size(): {}.", CLOUDVIEWER_FUNCTION,
                               stream->GetVideoTracks().size());
             webrtc::VideoTrackVector videoTracks = stream->GetVideoTracks();
             if (videoTracks.size() > 0) {

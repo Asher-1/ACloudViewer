@@ -385,7 +385,7 @@ doActionToggleOrientationMarker(true);
 
 #ifdef USE_PYTHON_MODULE
 QString applicationPath = QCoreApplication::applicationDirPath();
-QString pyHome = applicationPath + "/python36";
+QString pyHome = applicationPath + "/python38";
 if (!PythonInterface::SetPythonHome(CVTools::FromQString(pyHome).c_str())) {
     CVLog::Warning(QString("Setting python home failed! Invalid path: [%1].")
                            .arg(pyHome));

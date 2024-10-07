@@ -29,6 +29,7 @@
 #include <memory>
 #include <string>
 
+#include "core/Device.h"
 #include "core/Dtype.h"
 #include "core/MemoryManager.h"
 #include "core/linalg/LinalgHeadersCPU.h"
@@ -38,17 +39,18 @@
 namespace cloudViewer {
 namespace core {
 
-#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)       \
-    [&] {                                                   \
-        if (DTYPE == cloudViewer::core::Float32) {          \
-            using scalar_t = float;                         \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == cloudViewer::core::Float64) {   \
-            using scalar_t = double;                        \
-            return __VA_ARGS__();                           \
-        } else {                                            \
-            utility::LogError("Unsupported data type.");    \
-        }                                                   \
+
+#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)    \
+    [&] {                                                \
+        if (DTYPE == cloudViewer::core::Float32) {            \
+            using scalar_t = float;                      \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == cloudViewer::core::Float64) {     \
+            using scalar_t = double;                     \
+            return __VA_ARGS__();                        \
+        } else {                                         \
+            utility::LogError("Unsupported data type."); \
+        }                                                \
     }()
 
 inline void CLOUDVIEWER_LAPACK_CHECK(CLOUDVIEWER_CPU_LINALG_INT info,
@@ -61,7 +63,7 @@ inline void CLOUDVIEWER_LAPACK_CHECK(CLOUDVIEWER_CPU_LINALG_INT info,
 }
 
 #ifdef BUILD_CUDA_MODULE
-inline void OPEN3D_CUBLAS_CHECK(cublasStatus_t status, const std::string& msg) {
+inline void CLOUDVIEWER_CUBLAS_CHECK(cublasStatus_t status, const std::string& msg) {
     if (CUBLAS_STATUS_SUCCESS != status) {
         utility::LogError("{}", msg);
     }
@@ -93,31 +95,32 @@ inline void CLOUDVIEWER_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
 
 class CuSolverContext {
 public:
-    static std::shared_ptr<CuSolverContext> GetInstance();
-    CuSolverContext();
+    static CuSolverContext& GetInstance();
+
+    CuSolverContext(const CuSolverContext&) = delete;
+    CuSolverContext& operator=(const CuSolverContext&) = delete;
     ~CuSolverContext();
 
-    cusolverDnHandle_t& GetHandle() { return handle_; }
+    cusolverDnHandle_t& GetHandle(const Device& device);
 
 private:
-    cusolverDnHandle_t handle_;
-
-    static std::shared_ptr<CuSolverContext> instance_;
+    CuSolverContext();
+    std::unordered_map<Device, cusolverDnHandle_t> map_device_to_handle_;
 };
 
 class CuBLASContext {
 public:
-    static std::shared_ptr<CuBLASContext> GetInstance();
+    static CuBLASContext& GetInstance();
 
-    CuBLASContext();
+    CuBLASContext(const CuBLASContext&) = delete;
+    CuBLASContext& operator=(const CuBLASContext&) = delete;
     ~CuBLASContext();
 
-    cublasHandle_t& GetHandle() { return handle_; }
+    cublasHandle_t& GetHandle(const Device& device);
 
 private:
-    cublasHandle_t handle_;
-
-    static std::shared_ptr<CuBLASContext> instance_;
+    CuBLASContext();
+    std::unordered_map<Device, cublasHandle_t> map_device_to_handle_;
 };
 #endif
 }  // namespace core

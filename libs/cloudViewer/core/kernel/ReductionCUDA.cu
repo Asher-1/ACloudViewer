@@ -160,13 +160,13 @@ public:
             // Map block.x to the fastest reducing dimension. It implies:
             //   1. BlockXReduce is required.
             //   2. block.y now max out to num_outputs.
-            dim0 = indexer.GetMasterShape()[0];
+            dim0 = indexer.GetPrimaryShape()[0];
             dim1 = num_outputs_;
         } else {
             // Map block.x to the fastest non reducing dimension. It implies:
             //   1. BlockXReduce is turned off.
             //   2. block.y now max out to num_inputs_per_output_.
-            dim0 = indexer.GetMasterShape()[indexer.NumReductionDims()];
+            dim0 = indexer.GetPrimaryShape()[indexer.NumReductionDims()];
             dim1 = num_inputs_per_output_;
         }
 
@@ -230,7 +230,7 @@ public:
                                 ? static_cast<int>(LastPow2(dim1))
                                 : MAX_NUM_THREADS;
         block_width_ =
-                std::min(dim0_pow2, CUDAState::GetInstance()->GetWarpSize());
+                std::min(dim0_pow2, GetCUDACurrentWarpSize());
         block_height_ =
                 std::min(dim1_pow2, int(MAX_NUM_THREADS / block_width_));
         block_width_ =
@@ -305,7 +305,7 @@ public:
     int SharedMemorySize() const {
         if (!ShouldBlockYReduce() &&
             (!ShouldBlockXReduce() ||
-             block_width_ <= CUDAState::GetInstance()->GetWarpSize())) {
+             block_width_ <= GetCUDACurrentWarpSize())) {
             return 0;
         }
         return element_size_bytes_ * num_threads_;
@@ -372,7 +372,7 @@ static OffsetCalculator<2, index_t> MakeOutputCalculator(
             indexer.GetOutput().byte_strides_ + num_reduction_dims,
             indexer.GetInput(0).byte_strides_ + num_reduction_dims,
     };
-    const int64_t* shape = indexer.GetMasterShape() + num_reduction_dims;
+    const int64_t* shape = indexer.GetPrimaryShape() + num_reduction_dims;
     return OffsetCalculator<2, index_t>(num_output_dims, shape, strides.data());
 }
 
@@ -384,7 +384,7 @@ static OffsetCalculator<1, index_t> MakeInputCalculator(
             indexer.GetInput(0).byte_strides_,
     };
     return OffsetCalculator<1, index_t>(
-            num_reduction_dims, indexer.GetMasterShape(), strides.data());
+            num_reduction_dims, indexer.GetPrimaryShape(), strides.data());
 }
 
 template <int vt, typename index_t, typename func_t>
@@ -597,7 +597,7 @@ public:
         // unroll that exposes instruction level parallelism.
         while (idx < config_.num_inputs_per_output_) {
             // load input
-            SmallArray<scalar_t, vt0> values;
+            utility::MiniVec<scalar_t, vt0> values;
             if (input_calc_.dims_ == 1) {
                 StridedIterate<vt0>(
                         [&](index_t i, index_t idx) {
@@ -846,7 +846,7 @@ public:
             numerator_ = 1;
             denominator_ = 1;
         } else {
-            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
+            int device_id = cuda::GetDevice();
             Device device(Device::DeviceType::CUDA, device_id);
             buffer_ = std::make_unique<Blob>(size, device);
             acc_ptr_ = (char*)buffer_->GetDataPtr();
@@ -944,7 +944,7 @@ private:
                 for (int dim = 0; dim < indexer.NumDims(); dim++) {
                     output_memory_size = std::max(
                             output_memory_size,
-                            indexer.GetMasterShape()[dim] *
+                            indexer.GetPrimaryShape()[dim] *
                                     indexer.GetOutput().byte_strides_[dim]);
                 }
                 owned_buf_ptr.reset(new AccumulationBuffer(
@@ -972,7 +972,7 @@ private:
         void* buffer = nullptr;
         void* semaphores = nullptr;
         if (config.ShouldGlobalReduce()) {
-            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
+            int device_id = cuda::GetDevice();
             Device device(Device::DeviceType::CUDA, device_id);
 
             buffer_blob =

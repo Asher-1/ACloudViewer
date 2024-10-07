@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.0 )
+cmake_minimum_required( VERSION 3.10 )
 
 option( PLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER "Check to install colorimetric segmenter plugin" OFF )
 

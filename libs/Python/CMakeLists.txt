@@ -47,37 +47,16 @@ if (BUILD_PYTHON_MODULE)
             CXX_VISIBILITY_PRESET hidden
             )
 
-    # Qt
-    if (NOT CMAKE_VERSION VERSION_LESS 3.0)
-        target_link_libraries(
-                ${PROJECT_NAME}
-                pybind11::embed
-                ${PYTHON_LIBRARIES}
-                Qt5::Core
-                Qt5::PrintSupport
-                CloudViewer::CloudViewer
-        )
-    else ()
-        target_include_directories(
-                ${PROJECT_NAME}
-                ${PYBIND11_INCLUDE_DIR}
-                ${PYTHON_INCLUDE_DIRS}
-        )
-
-        target_compile_options(
-                ${PROJECT_NAME}
-                ${PYBIND11_CPP_STANDARD}
-        )
-
-        target_link_libraries(${PROJECT_NAME}
-                pybind11::embed
-                ${PYTHON_LIBRARIES}
-                Qt5::Core
-                Qt5::PrintSupport
-                CloudViewer::CloudViewer
-                )
-
-    endif ()
+    # dependence
+    target_link_libraries(
+        ${PROJECT_NAME}
+        CVCoreLib
+        ECV_DB_LIB
+        Qt5::Core
+        Qt5::PrintSupport
+        pybind11::embed
+        ${PYTHON_LIBRARIES}
+    )
 
     target_link_libraries(${PROJECT_NAME}
             ${INTERNAL_EIGEN3_TARGET}

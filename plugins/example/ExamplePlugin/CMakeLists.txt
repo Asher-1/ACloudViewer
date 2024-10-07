@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.0 )
+cmake_minimum_required( VERSION 3.10 )
 # ACloudViewer example for standard plugins
 
 # REPLACE ALL 'ExamplePlugin' OCCURENCES BY YOUR PLUGIN NAME

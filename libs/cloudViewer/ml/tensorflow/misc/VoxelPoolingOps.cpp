@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                    -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "tensorflow/core/framework/op.h"
@@ -31,7 +12,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("CloudviewerVoxelPooling")
+REGISTER_OP("CloudViewerVoxelPooling")
         .Attr("TReal: {float, double}")  // type for the point positions
         .Attr("TFeat: {float, double, int32, int64}")  // type for the features
         .Attr("position_fn: {'average', 'nearest_neighbor', 'center'} = "
@@ -72,20 +53,20 @@ REGISTER_OP("CloudviewerVoxelPooling")
                         c->WithValue(c->Dim(positions_shape, -1), 3, &d));
             }
 
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Spatial pooling for point clouds by combining points that fall into the same voxel bin.
 
-The voxel grid used for pooling is always aligned to the origin (0,0,0) to 
+The voxel grid used for pooling is always aligned to the origin (0,0,0) to
 simplify building voxel grid hierarchies. The order of the returned voxels is
 not defined as can be seen in the following example::
 
   import cloudViewer.ml.tf as ml3d
 
   positions = [
-      [0.1,0.1,0.1], 
-      [0.5,0.5,0.5], 
+      [0.1,0.1,0.1],
+      [0.5,0.5,0.5],
       [1.7,1.7,1.7],
       [1.8,1.8,1.8],
       [0.3,2.4,1.4]]
@@ -96,7 +77,7 @@ not defined as can be seen in the following example::
               [1.3,3.4],
               [2.3,1.9]]
 
-  ml3d.ops.voxel_pooling(positions, features, 1.0, 
+  ml3d.ops.voxel_pooling(positions, features, 1.0,
                          position_fn='center', feature_fn='max')
 
   # or with pytorch
@@ -104,8 +85,8 @@ not defined as can be seen in the following example::
   import cloudViewer.ml.torch as ml3d
 
   positions = torch.Tensor([
-      [0.1,0.1,0.1], 
-      [0.5,0.5,0.5], 
+      [0.1,0.1,0.1],
+      [0.5,0.5,0.5],
       [1.7,1.7,1.7],
       [1.8,1.8,1.8],
       [0.3,2.4,1.4]])
@@ -117,7 +98,7 @@ not defined as can be seen in the following example::
               [1.3,3.4],
               [2.3,1.9]])
 
-  ml3d.ops.voxel_pooling(positions, features, 1.0, 
+  ml3d.ops.voxel_pooling(positions, features, 1.0,
                          position_fn='center', feature_fn='max')
 
   # returns the voxel centers  [[0.5, 2.5, 1.5],
@@ -149,11 +130,11 @@ voxel_size: The voxel size.
 
 pooled_positions: The output point positions with shape [M,3] and M <= N.
 
-pooled_features: The output point features with shape [M,channnels] and M <= N.
+pooled_features: The output point features with shape [M,channels] and M <= N.
 
 )doc");
 
-REGISTER_OP("CloudviewerVoxelPoolingGrad")
+REGISTER_OP("CloudViewerVoxelPoolingGrad")
         .Attr("TReal: {float, double}")  // type for the point positions
         .Attr("TFeat: {float, double, int32, int64}")  // type for the features
         .Attr("position_fn: {'average', 'nearest_neighbor', 'center'} = "
@@ -221,7 +202,7 @@ REGISTER_OP("CloudviewerVoxelPoolingGrad")
                         c->Dim(pooled_positions_shape, -1), 3, &d));
             }
 
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Gradient for features in VoxelPooling. For internal use only.

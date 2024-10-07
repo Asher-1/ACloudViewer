@@ -395,13 +395,13 @@ public:
             int stride = 1,
             bool with_normals = false);
 
-    /// Create a PointCloud from a legacy Open3D PointCloud.
+    /// Create a PointCloud from a legacy CloudViewer PointCloud.
     static PointCloud FromLegacy(
             const ccPointCloud &pcd_legacy,
             core::Dtype dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
-    /// Convert to a legacy Open3D PointCloud.
+    /// Convert to a legacy CloudViewer PointCloud.
     ccPointCloud ToLegacy() const;
 
     /// Project a point cloud to a depth image.

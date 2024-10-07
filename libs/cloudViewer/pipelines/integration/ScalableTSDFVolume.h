@@ -97,10 +97,10 @@ public:
     /// from (x, y, z) * volume_unit_length_
     /// to (x + 1, y + 1, z + 1) * volume_unit_length_
     EIGEN_STL_UMAP_HASH(Eigen::Vector3i, VolumeUnit,
-                        utility::hash_eigen::hash<Eigen::Vector3i>) volume_units_;
+                        utility::hash_eigen<Eigen::Vector3i>) volume_units_;
 //    std::unordered_map<Eigen::Vector3i,
 //                       VolumeUnit,
-//                       cloudViewer::utility::hash_eigen::hash<Eigen::Vector3i>>
+//                       cloudViewer::utility::hash_eigen<Eigen::Vector3i>>
 //            volume_units_;
 
 private:

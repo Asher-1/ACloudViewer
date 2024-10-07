@@ -130,12 +130,13 @@ CMakeSettings.json
 
 # CMake configured files
 python/js/node_modules/*
+core/CloudViewerConfig.h
 libs/cloudViewer/CloudViewer.h
 libs/cloudViewer/CloudViewerConfig.h
 libs/cloudViewer/visualization/shader/Shader.h
 libs/Reconstruction/src/util/version.h
 util/pip_package/setup.py
-
+cloudViewer_test.venv
 # Temp directories
 3rdparty_downloads
 build*/
@@ -150,7 +151,7 @@ node_modules/
 
 # Editor files
 *.*~
-
+docker_build*.log
 # Local configs
 _vimrc_local.vim
 .vs/
@@ -219,3 +220,4 @@ docs/python_api/
 docs/Doxyfile
 docs/getting_started.rst
 /docker_files/
+/docker_cache/

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// PRIVATE RealSense header for compiling Open3D. Do not #include outside
+// PRIVATE RealSense header for compiling CloudViewer. Do not #include outside
 // CloudViewer.
 #pragma once
 

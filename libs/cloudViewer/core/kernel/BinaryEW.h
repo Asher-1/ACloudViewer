@@ -41,6 +41,8 @@ enum class BinaryEWOpCode {
     Sub,
     Mul,
     Div,
+    Maximum,
+    Minimum,
     LogicalAnd,
     LogicalOr,
     LogicalXor,

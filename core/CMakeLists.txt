@@ -9,7 +9,7 @@ project(CVCoreLib
         LANGUAGES
         CXX
         VERSION
-        1.0
+        ${CLOUDVIEWER_VERSION}
         )
 
 # Options
@@ -52,10 +52,15 @@ else ()
             )
 endif ()
 
-set_target_properties(${PROJECT_NAME}
-        PROPERTIES
+set_target_properties(${PROJECT_NAME} PROPERTIES
+        # comment inorder to avoid to generate .so.${version}
+        # VERSION ${CLOUDVIEWER_VERSION}
         DEBUG_POSTFIX d
         )
+
+# Configure a header file to pass the version settings to the source code
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CloudViewerConfig.h.in"
+               "${CMAKE_CURRENT_SOURCE_DIR}/CloudViewerConfig.h")
 
 # ccache
 # https://crascit.com/2016/04/09/using-ccache-with-cmake/
@@ -72,6 +77,20 @@ endif ()
 # Main sources and includes
 add_subdirectory(include)
 add_subdirectory(src)
+
+# note: adding at least one real source file to any target that references
+# reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
+target_sources( ${PROJECT_NAME}
+	PRIVATE
+		${CMAKE_CURRENT_LIST_DIR}/CloudViewerConfig.cpp
+)
+
+# include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+target_include_directories( ${PROJECT_NAME}
+	PUBLIC
+		$<INSTALL_INTERFACE:include/CVCoreLib>
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+)
 
 # Compiler & definitions
 target_compile_features(${PROJECT_NAME}
@@ -99,6 +118,10 @@ else ()
             PUBLIC
             CV_CORE_LIB_USES_FLOAT
             )
+endif ()
+
+if (${BUILD_CUDA_MODULE})
+    target_compile_definitions(${PROJECT_NAME} PRIVATE CUDA_ENABLED)
 endif ()
 
 if (${USE_SIMD})
@@ -153,6 +176,8 @@ if (CVCORELIB_USE_CGAL)
         include(cmake/CGALSupport.cmake)
     else ()
         set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
+        # We do not use CGAL data. This prevents an unnecessary warning by CMake.
+        set(CGAL_DATA_DIR "unused")
         find_package(CGAL REQUIRED)
     endif ()
 

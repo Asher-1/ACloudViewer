@@ -66,6 +66,11 @@ HOST_DEVICE inline utility::MiniVec<int, 3> ComputeVoxelIndex(
 }
 #undef HOST_DEVICE
 
+/// Base struct for NanoFlann index holder
+struct NanoFlannIndexHolderBase {
+    virtual ~NanoFlannIndexHolderBase() {}
+};
+
 }  // namespace nns
 }  // namespace core
 }  // namespace cloudViewer

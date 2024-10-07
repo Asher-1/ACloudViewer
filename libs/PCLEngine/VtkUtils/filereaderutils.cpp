@@ -187,7 +187,7 @@ NastranFileReader::NastranFileReader(QObject *parent) : AbstractFileReader(paren
 
 void NastranFileReader::run()
 {
-    ifstream ifile(fileName().toLocal8Bit());
+    std::ifstream ifile(fileName().toLocal8Bit());
     if (ifile.fail())
         return;
 
@@ -683,7 +683,7 @@ AnsysFileReader::AnsysFileReader(QObject *parent) : AbstractFileReader(parent)
 void AnsysFileReader::run()
 {
     // Open the file.
-    ifstream ifile(fileName().toLocal8Bit());
+    std::ifstream ifile(fileName().toLocal8Bit());
     if (ifile.fail())
         return;
 

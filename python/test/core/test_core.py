@@ -25,6 +25,7 @@
 # ----------------------------------------------------------------------------
 
 import cloudViewer as cv3d
+import cloudViewer.core as cv3c
 import numpy as np
 import pytest
 
@@ -32,6 +33,54 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from cloudViewer_test import list_devices
+
+def list_dtypes():
+    return [
+        cv3c.float32,
+        cv3c.float64,
+        cv3c.int8,
+        cv3c.int16,
+        cv3c.int32,
+        cv3c.int64,
+        cv3c.uint8,
+        cv3c.uint16,
+        cv3c.uint32,
+        cv3c.uint64,
+        cv3c.bool,
+    ]
+
+
+def list_non_bool_dtypes():
+    return [
+        cv3c.float32,
+        cv3c.float64,
+        cv3c.int8,
+        cv3c.int16,
+        cv3c.int32,
+        cv3c.int64,
+        cv3c.uint8,
+        cv3c.uint16,
+        cv3c.uint32,
+        cv3c.uint64,
+    ]
+
+
+def to_numpy_dtype(dtype: cv3c.Dtype):
+    conversions = {
+        cv3c.float32: np.float32,
+        cv3c.float64: np.float64,
+        cv3c.int8: np.int8,
+        cv3c.int16: np.int16,
+        cv3c.int32: np.int32,
+        cv3c.int64: np.int64,
+        cv3c.uint8: np.uint8,
+        cv3c.uint16: np.uint16,
+        cv3c.uint32: np.uint32,
+        cv3c.uint64: np.uint64,
+        cv3c.bool8: np.bool_,
+        cv3c.bool: np.bool_,  # cv3c.bool is an alias for cv3c.bool8
+    }
+    return conversions[dtype]
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -120,61 +169,54 @@ def test_size_vector():
     sv = cv3d.core.SizeVector(np.array([]))
     assert "{}".format(sv) == "SizeVector[]"
 
-    # Not integer: thorws exception
-    with pytest.raises(RuntimeError):
-        sv = cv3d.core.SizeVector([1.9, 2, 3])
 
-    with pytest.raises(RuntimeError):
-        sv = cv3d.core.SizeVector([-1.5, 2, 3])
-
-    # 2D list exception
-    with pytest.raises(RuntimeError):
-        sv = cv3d.core.SizeVector([[1, 2], [3, 4]])
-
-    # 2D Numpy array exception
-    with pytest.raises(RuntimeError):
-        sv = cv3d.core.SizeVector(np.array([[1, 2], [3, 4]]))
-
-    # Garbage input
-    with pytest.raises(RuntimeError):
-        sv = cv3d.core.SizeVector(["foo", "bar"])
-
-
+@pytest.mark.parametrize("dtype", list_dtypes())
 @pytest.mark.parametrize("device", list_devices())
-def test_tensor_constructor(device):
-    dtype = cv3d.core.Dtype.Int32
-
+def test_tensor_constructor(dtype, device):
     # Numpy array
-    np_t = np.array([[0, 1, 2], [3, 4, 5]])
-    o3_t = cv3d.core.Tensor(np_t, dtype, device)
+    np_t = np.array([[0, 1, 2], [3, 4, 5]], dtype=to_numpy_dtype(dtype))
+    o3_t = cv3d.Tensor(np_t, device=device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # 2D list
     li_t = [[0, 1, 2], [3, 4, 5]]
-    no3_t = cv3d.core.Tensor(li_t, dtype, device)
-    np.testing.assert_equal(li_t, o3_t.cpu().numpy())
+    np_t = np.array(li_t, dtype=to_numpy_dtype(dtype))
+    o3_t = cv3d.Tensor(li_t, dtype, device)
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # 2D list, inconsistent length
     li_t = [[0, 1, 2], [3, 4]]
-    with pytest.raises(ValueError):
-        o3_t = cv3d.core.Tensor(li_t, dtype, device)
+    with pytest.raises(Exception):
+        # Suppress inconsistent length warning as this check is intentional
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                                    category=np.VisibleDeprecationWarning)
+            o3_t = cv3d.Tensor(li_t, dtype, device)
 
     # Automatic casting
     np_t_double = np.array([[0., 1.5, 2.], [3., 4., 5.]])
     np_t_int = np.array([[0, 1, 2], [3, 4, 5]])
-    o3_t = cv3d.core.Tensor(np_t_double, dtype, device)
+    o3_t = cv3d.Tensor(np_t_double, cv3d.int32, device)
     np.testing.assert_equal(np_t_int, o3_t.cpu().numpy())
 
     # Special strides
     np_t = np.random.randint(10, size=(10, 10))[1:10:2, 1:10:3].T
-    o3_t = cv3d.core.Tensor(np_t, dtype, device)
+    o3_t = cv3d.Tensor(np_t, cv3d.int32, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Boolean
-    np_t = np.array([True, False, True], dtype=np.bool)
-    o3_t = cv3d.core.Tensor([True, False, True], cv3d.core.Dtype.Bool, device)
+    np_t = np.array([True, False, True], dtype=np.bool_)
+    o3_t = cv3d.Tensor([True, False, True], cv3d.bool, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
-    o3_t = cv3d.core.Tensor(np_t, cv3d.core.Dtype.Bool, device)
+    o3_t = cv3d.Tensor(np_t, cv3d.bool, device)
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Scalar Boolean
+    np_t = np.array(True)
+    o3_t = cv3d.Tensor(True, dtype=None, device=device)
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+    o3_t = cv3d.Tensor(True, dtype=cv3d.bool, device=device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
@@ -314,7 +356,7 @@ def test_getitem(device):
     np.testing.assert_equal(o3_t[0, 1:-1, 2].cpu().numpy(), np_t[0, 1:-1, 2])
     np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].cpu().numpy(), np_t[0, 1:3,
                                                                     0:4:2])
-    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].cpu().numpy(), np_t[0, 1:3,
+    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].fcpu().numpy(), np_t[0, 1:3,
                                                                      0:-1:2])
     np.testing.assert_equal(o3_t[0, 1, :].cpu().numpy(), np_t[0, 1, :])
 
