@@ -103,7 +103,7 @@ jobs:
           ./util/run_ci.sh
           DEVEL_PKG_NAME="$(basename build/package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
-      - name: Build Open3D viewer app
+      - name: Build CloudViewer viewer app
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         run: |
           OPEN3D_VERSION_FULL="$(grep -F OPEN3D_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
