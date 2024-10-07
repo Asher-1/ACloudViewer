@@ -1,6 +1,24 @@
 ACloudViewer Version History
 ============================
 
+v3.9.1 (Asher) - 28/09/2024
+----------------------
+
+## ACloudViewer 3.9.1 Release Notes
+We are excited to present ACloudViewer 3.9.1!
+
+We welcome you to the 3.9.1 beta release of ACloudViewer. This release is full of exciting new features with a strong emphasis in real-time pipelines, but also full of bug fixes and usability improvements. The big highlights of this release are as follows:
+- Linux auto ci support for ubuntu18.04-ubuntu22.04.
+- Fully supported docker building.
+- Update PCL version from 1.11.1 to 1.14.1.
+- Update VTK version from 8.2.0 to 9.3.1.
+- migrate from C++14 to C++17 support as default.
+
+### supported platform:
+- Windows `x86/64`
+- Linux `x86/64`
+- MacOS `arm64 (M1 and M2)`
+
 v3.9.0 (Asher) - 05/04/2023
 ----------------------
 

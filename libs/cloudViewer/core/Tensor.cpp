@@ -579,7 +579,7 @@ Tensor Tensor::Contiguous() const {
 std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
-    if (GetDevice().GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
+    if (IsCUDA() || !IsContiguous()) {
         Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
         rc << host_contiguous_tensor.ToString(false, "");
     } else {
@@ -1471,18 +1471,52 @@ bool Tensor::IsNonZero() const {
     return rc;
 }
 
-bool Tensor::All() const {
-    Tensor dst({}, dtype_, GetDevice());
-    kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
-                      kernel::ReductionOpCode::All);
-    return dst.Item<bool>();
+Tensor Tensor::All(const utility::optional<SizeVector>& dims,
+                   bool keepdim) const {
+    AssertTensorDtype(*this, core::Bool);
+
+    Tensor dst;
+    if (dims.has_value()) {
+        dst = Tensor(shape_util::ReductionShape(shape_, dims.value(), keepdim),
+                     dtype_, GetDevice());
+        kernel::Reduction(*this, dst, dims.value(), keepdim,
+                          kernel::ReductionOpCode::All);
+    } else {
+        dst = Tensor({}, dtype_, GetDevice());
+        kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
+                          kernel::ReductionOpCode::All);
+    }
+
+    return dst;
 }
 
-bool Tensor::Any() const {
-    Tensor dst({}, dtype_, GetDevice());
-    kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
-                      kernel::ReductionOpCode::Any);
-    return dst.Item<bool>();
+Tensor Tensor::Any(const utility::optional<SizeVector>& dims,
+                   bool keepdim) const {
+    AssertTensorDtype(*this, core::Bool);
+
+    Tensor dst;
+    if (dims.has_value()) {
+        dst = Tensor(shape_util::ReductionShape(shape_, dims.value(), keepdim),
+                     dtype_, GetDevice());
+        kernel::Reduction(*this, dst, dims.value(), keepdim,
+                          kernel::ReductionOpCode::Any);
+    } else {
+        dst = Tensor({}, dtype_, GetDevice());
+        kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
+                          kernel::ReductionOpCode::Any);
+    }
+
+    return dst;
+}
+
+bool Tensor::AllEqual(const Tensor& other) const {
+    AssertTensorDevice(other, GetDevice());
+    AssertTensorDtype(other, GetDtype());
+
+    if (shape_ != other.shape_) {
+        return false;
+    }
+    return (*this == other).All().Item<bool>();
 }
 
 DLManagedTensor* Tensor::ToDLPack() const {
@@ -1541,9 +1575,145 @@ Tensor Tensor::Load(const std::string& file_name) {
     return t::io::ReadNpy(file_name);
 }
 
+struct Tensor::Iterator::Impl {
+    Tensor* tensor_;
+    int64_t index_;
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
+                           // as the original tensor. This allows taking the &
+                           // of the tensor for Iterator::operator->.
+};
+
+Tensor::Iterator::Iterator(pointer tensor, int64_t index)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = tensor;
+    impl_->index_ = index;
+}
+
+Tensor::Iterator::Iterator(const Tensor::Iterator& other)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = other.impl_->tensor_;
+    impl_->index_ = other.impl_->index_;
+}
+
+// Empty destructor since Impl is incomplete type in Tensor.h.
+// https://stackoverflow.com/a/34073093/1255535
+Tensor::Iterator::~Iterator() {}
+
+Tensor::Iterator::reference Tensor::Iterator::operator*() const {
+    return impl_->tensor_->operator[](impl_->index_);
+}
+
+Tensor::Iterator::pointer Tensor::Iterator::operator->() const {
+    impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
+    return &impl_->tensor_slice_;
+}
+
+Tensor::Iterator& Tensor::Iterator::operator++() {
+    impl_->index_++;
+    return *this;
+}
+
+Tensor::Iterator Tensor::Iterator::operator++(int) {
+    Iterator tmp(impl_->tensor_, impl_->index_);
+    impl_->index_++;
+    return tmp;
+}
+
+bool Tensor::Iterator::operator==(const Tensor::Iterator& other) const {
+    return impl_->tensor_ == other.impl_->tensor_ &&
+           impl_->index_ == other.impl_->index_;
+}
+
+bool Tensor::Iterator::operator!=(const Tensor::Iterator& other) const {
+    return !(*this == other);
+}
+
+Tensor::Iterator Tensor::begin() {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return Iterator(this, 0);
+}
+
+Tensor::Iterator Tensor::end() {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return Iterator(this, shape_[0]);
+}
+
+struct Tensor::ConstIterator::Impl {
+    const Tensor* tensor_;
+    int64_t index_;
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
+                           // as the original tensor. This allows taking the &
+                           // of the tensor for ConstIterator::operator->.
+};
+
+Tensor::ConstIterator::ConstIterator(pointer tensor, int64_t index)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = tensor;
+    impl_->index_ = index;
+}
+
+Tensor::ConstIterator::ConstIterator(const Tensor::ConstIterator& other)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = other.impl_->tensor_;
+    impl_->index_ = other.impl_->index_;
+}
+
+// Empty destructor since Impl is incomplete type in Tensor.h.
+// https://stackoverflow.com/a/34073093/1255535
+Tensor::ConstIterator::~ConstIterator() {}
+
+Tensor::ConstIterator::reference Tensor::ConstIterator::operator*() const {
+    return impl_->tensor_->operator[](impl_->index_);
+}
+
+Tensor::ConstIterator::pointer Tensor::ConstIterator::operator->() const {
+    impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
+    return &impl_->tensor_slice_;
+}
+
+Tensor::ConstIterator& Tensor::ConstIterator::operator++() {
+    impl_->index_++;
+    return *this;
+}
+
+Tensor::ConstIterator Tensor::ConstIterator::operator++(int) {
+    ConstIterator tmp(impl_->tensor_, impl_->index_);
+    impl_->index_++;
+    return tmp;
+}
+
+bool Tensor::ConstIterator::operator==(
+        const Tensor::ConstIterator& other) const {
+    return impl_->tensor_ == other.impl_->tensor_ &&
+           impl_->index_ == other.impl_->index_;
+}
+
+bool Tensor::ConstIterator::operator!=(
+        const Tensor::ConstIterator& other) const {
+    return !(*this == other);
+}
+
+Tensor::ConstIterator Tensor::cbegin() const {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return ConstIterator(this, 0);
+}
+
+Tensor::ConstIterator Tensor::cend() const {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return ConstIterator(this, shape_[0]);
+}
+
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
     // TODO: support nan;
-    return IsClose(other, rtol, atol).All();
+    return IsClose(other, rtol, atol).All().Item<bool>();
 }
 
 Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {

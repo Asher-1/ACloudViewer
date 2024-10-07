@@ -1,4 +1,4 @@
-option( PLUGIN_IO_QCORE "Install the CoreIO plugin" ON )
+option( PLUGIN_IO_QCORE "Install the CoreIO plugin" OFF )
 
 if( PLUGIN_IO_QCORE )
 	project( QCORE_IO_PLUGIN )

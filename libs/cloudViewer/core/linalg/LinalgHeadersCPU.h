@@ -39,8 +39,5 @@
 #include <lapacke.h>
 #else
 #include <mkl.h>
-static_assert(
-        sizeof(MKL_INT) == 8,
-        "MKL_INT must be 8 bytes: please link with MKL 64-bit int library.");
 #define CLOUDVIEWER_CPU_LINALG_INT MKL_INT
 #endif

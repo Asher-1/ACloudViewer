@@ -125,7 +125,7 @@ class Model:
 
 def draw_camera(K, R, t, w, h,
                 scale=1, color=[0.8, 0.2, 0.8]):
-    """Create axis, plane and pyramed geometries in Open3D format.
+    """Create axis, plane and pyramed geometries in CloudViewer format.
     :param K: calibration matrix (camera intrinsics)
     :param R: rotation matrix
     :param t: translation
@@ -182,7 +182,7 @@ def draw_camera(K, R, t, w, h,
         lines=open3d.utility.Vector2iVector(lines))
     line_set.colors = open3d.utility.Vector3dVector(colors)
 
-    # return as list in Open3D format
+    # return as list in CloudViewer format
     return [axis, plane, line_set]
 
 
@@ -206,7 +206,7 @@ def main():
     print("num_images:", len(model.images))
     print("num_points3D:", len(model.points3D))
 
-    # display using Open3D visualization tools
+    # display using CloudViewer visualization tools
     model.create_window()
     model.add_points()
     model.add_cameras(scale=0.25)

@@ -19,13 +19,13 @@
 #define QPCL_SINGLETON_HEADER
 
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 template<class T> struct ecvBoostSingleton
 {
 	//! Default constructor
 	ecvBoostSingleton() : instance(nullptr) {}
 	//! Current instance
-	boost::shared_ptr<T> instance;
+	std::shared_ptr<T> instance;
 	//! Destructor
 	~ecvBoostSingleton() = default;
 	//! Releases the current instance

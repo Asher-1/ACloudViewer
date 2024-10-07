@@ -29,7 +29,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <functional>
+#include <memory>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -89,22 +91,18 @@ struct hash<std::tuple<TT...>> {
 
 }  // namespace hash_tuple
 
-namespace hash_eigen {
-
 template <typename T>
-struct hash {
+struct hash_eigen {
     std::size_t operator()(T const& matrix) const {
-        size_t seed = 0;
+        size_t hash_seed = 0;
         for (int i = 0; i < (int)matrix.size(); i++) {
             auto elem = *(matrix.data() + i);
-            seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
-                    (seed << 6) + (seed >> 2);
+            hash_seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
+                         (hash_seed << 6) + (hash_seed >> 2);
         }
-        return seed;
+        return hash_seed;
     }
 };
-
-}  // namespace hash_eigen
 
 // Hash function for enum class for C++ standard less than C++14
 // https://stackoverflow.com/a/24847480/1255535
@@ -194,6 +192,39 @@ std::string CV_CORE_LIB_API ToLower(const std::string& s);
 
 /// Convert string to the upper case
 std::string CV_CORE_LIB_API ToUpper(const std::string& s);
+
+/// Format string
+template <typename... Args>
+inline std::string FormatString(const std::string& format, Args... args) {
+    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) +
+                 1;  // Extra space for '\0'
+    if (size_s <= 0) {
+        throw std::runtime_error("Error during formatting.");
+    }
+    auto size = static_cast<size_t>(size_s);
+    auto buf = std::make_unique<char[]>(size);
+    std::snprintf(buf.get(), size, format.c_str(), args...);
+    return std::string(buf.get(),
+                       buf.get() + size - 1);  // We don't want the '\0' inside
+};
+
+/// Format string fast (Unix / BSD Only)
+template <typename... Args>
+inline std::string FastFormatString(const std::string& format, Args... args) {
+#ifdef _WIN32
+    return FormatString(format, args...);
+#else
+    char* buffer = nullptr;
+    int size_s = asprintf(&buffer, format.c_str(), args...);
+    if (size_s == -1) {
+        throw std::runtime_error("Error during formatting.");
+    }
+    auto ret = std::string(buffer,
+                           buffer + size_s);  // no + 1 since we ignore the \0
+    std::free(buffer);                        // asprintf calls malloc
+    return ret;
+#endif  // _WIN32
+};
 
 void CV_CORE_LIB_API Sleep(int milliseconds);
 

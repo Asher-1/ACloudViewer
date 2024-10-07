@@ -27,7 +27,7 @@ file(GLOB ui_list ui_templates/*.ui)
 
 file(GLOB qrc_list *.qrc Resources/themes/*.qrc)
 
-file(GLOB txt_list TODO.txt ${ACloudViewerProjects_SOURCE_DIR}/CHANGELOG.txt)
+file(GLOB txt_list TODO.txt ${ACloudViewer_SOURCE_DIR}/CHANGELOG.txt)
 
 add_subdirectory(db_tree)
 add_subdirectory(pluginManager)
@@ -204,6 +204,8 @@ if (BUILD_PYTHON_MODULE)
 endif ()
 
 if (USE_PCL_BACKEND)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE -DVTK_VERSION=\"${VTK_VERSION}\")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE -DPCL_VERSION=\"${PCL_VERSION}\")
     target_link_directories(${PROJECT_NAME}
             PUBLIC ${QPCL_ENGINE_LIB_SOURCE_DIR}
             )
@@ -239,7 +241,7 @@ if (NOT APPLE)
 endif ()
 
 # Auxiliary files
-set(auxFiles ${ACloudViewerProjects_SOURCE_DIR}/CHANGELOG.txt bin_other/license.txt bin_other/global_shift_list_template.txt)
+set(auxFiles ${ACloudViewer_SOURCE_DIR}/CHANGELOG.txt bin_other/license.txt bin_other/global_shift_list_template.txt)
 
 if (WIN32)
     # Additional auxiliary file(s)

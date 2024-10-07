@@ -2,6 +2,6 @@ build
 tags
 .git
 .clangd
-.vscode
+docker_cache
 docs/_static/build
 docs/_out

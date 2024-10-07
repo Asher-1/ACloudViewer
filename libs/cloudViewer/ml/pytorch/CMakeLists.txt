@@ -63,6 +63,7 @@ target_sources(cloudViewer_torch_ops PRIVATE
         pointnet/BallQueryOps.cpp
         pointnet/InterpolateOps.cpp
         pointnet/SamplingOps.cpp
+        pvcnn/TrilinearDevoxelizeOps.cpp
         )
 
 target_sources(cloudViewer_torch_ops PRIVATE
@@ -97,6 +98,7 @@ if (BUILD_CUDA_MODULE)
             pointnet/BallQueryKernel.cu
             pointnet/InterpolateKernel.cu
             pointnet/SamplingKernel.cu
+            pvcnn/TrilinearDevoxelizeKernel.cu
             )
 
     target_sources(cloudViewer_torch_ops PRIVATE
@@ -109,6 +111,7 @@ if (BUILD_CUDA_MODULE)
             ../contrib/InterpolatePoints.cu
             ../contrib/Nms.cu
             ../contrib/RoiPoolKernel.cu
+            ../contrib/TrilinearDevoxelize.cu
             )
 endif ()
 
@@ -126,6 +129,12 @@ set_target_properties(cloudViewer_torch_ops PROPERTIES
 # Do not add "lib" prefix
 set_target_properties(cloudViewer_torch_ops PROPERTIES PREFIX "")
 set_target_properties(cloudViewer_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
+# Set BUILD_RPATH to find tbb. We don't install through cmake.
+if (APPLE)
+    set_target_properties(cloudViewer_torch_ops PROPERTIES BUILD_RPATH "@loader_path/..")
+elseif (UNIX)
+    set_target_properties(cloudViewer_torch_ops PROPERTIES BUILD_RPATH "$ORIGIN/..")
+endif()
 
 target_include_directories(cloudViewer_torch_ops SYSTEM PRIVATE
         ${PROJECT_SOURCE_DIR}/libs/cloudViewer

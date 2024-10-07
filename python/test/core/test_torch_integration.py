@@ -94,7 +94,7 @@ def test_tensor_numpy_to_open3d_to_pytorch():
     if not torch_available():
         return
 
-    # Numpy -> Open3D -> PyTorch all share the same memory
+    # Numpy -> CloudViewer -> PyTorch all share the same memory
     a = np.ones((2, 2))
     b = cv3d.core.Tensor.from_numpy(a)
     c = torch.utils.dlpack.from_dlpack(b.to_dlpack())

@@ -107,8 +107,8 @@ if __name__ == "__main__":
                 convert_rgb_to_intensity=False)
             temp = cv3d.geometry.ccPointCloud.create_from_rgbd_image(rgbd_image, intrinsic)
             temp.transform(flip_transform)
-            pcd.points = temp.points
-            pcd.colors = temp.colors
+            pcd.set_points(temp.get_points())
+            pcd.set_colors(temp.get_colors())
 
             if frame_count == 0:
                 vis.add_geometry(pcd)

@@ -90,7 +90,7 @@ bool Delaunay2dMesh::buildMesh(	const std::vector<CCVector2>& points2D,
 	//We define a vertex_base with info. The "info" (std::size_t) allow us to keep track of the original point index.
 	typedef CGAL::Triangulation_vertex_base_with_info_2<std::size_t, K> Vb;
 	typedef CGAL::Constrained_triangulation_face_base_2<K> Fb;
-    typedef CGAL::No_intersection_tag  Itag;
+  typedef CGAL::No_intersection_tag  Itag;
 	typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
 	typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds, Itag> CDT;
 	typedef CDT::Point cgalPoint;

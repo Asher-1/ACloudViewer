@@ -179,11 +179,11 @@
 #define BIND_REDUCTION_OP(py_name, cpp_name)                            \
     tensor.def(                                                         \
             #py_name,                                                   \
-            [](const Tensor& tensor, utility::optional<py::handle> dim, \
+            [](const Tensor& tensor, const utility::optional<SizeVector>& dim, \
                bool keepdim) {                                          \
                 SizeVector reduction_dims;                              \
                 if (dim.has_value()) {                                  \
-                    reduction_dims = PyHandleToSizeVector(dim.value()); \
+                    reduction_dims = dim.value();                       \
                 } else {                                                \
                     for (int64_t i = 0; i < tensor.NumDims(); i++) {    \
                         reduction_dims.push_back(i);                    \
@@ -196,10 +196,10 @@
 #define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)                   \
     tensor.def(                                                           \
             #py_name,                                                     \
-            [](const Tensor& tensor, utility::optional<py::handle> dim) { \
+            [](const Tensor& tensor, const utility::optional<SizeVector>& dim) { \
                 SizeVector reduction_dims;                                \
                 if (dim.has_value()) {                                    \
-                    reduction_dims = PyHandleToSizeVector(dim.value());   \
+                    reduction_dims = dim.value();                         \
                 } else {                                                  \
                     for (int64_t i = 0; i < tensor.NumDims(); i++) {      \
                         reduction_dims.push_back(i);                      \
@@ -246,31 +246,6 @@ static void BindTensorCreation(py::module& m,
             },
             "Create Tensor with a given shape.", "shape"_a,
             "dtype"_a = py::none(), "device"_a = py::none());
-    tensor.def_static(
-            py_name.c_str(),
-            [cpp_func](const py::tuple& shape, utility::optional<Dtype> dtype,
-                       utility::optional<Device> device) {
-                return cpp_func(
-                        PyTupleToSizeVector(shape),
-                        dtype.has_value() ? dtype.value() : core::Float32,
-                        device.has_value() ? device.value() : Device("CPU:0"));
-            },
-            "Create Tensor with a given shape."
-            "shape"_a,
-            "dtype"_a = py::none(), "device"_a = py::none());
-    tensor.def_static(
-            py_name.c_str(),
-            [cpp_func](const py::list& shape, utility::optional<Dtype> dtype,
-                       utility::optional<Device> device) {
-                return cpp_func(
-                        PyListToSizeVector(shape),
-                        dtype.has_value() ? dtype.value() : core::Float32,
-                        device.has_value() ? device.value() : Device("CPU:0"));
-            },
-            "Create Tensor with a given shape."
-            "shape"_a,
-            "dtype"_a = py::none(), "device"_a = py::none());
-
     docstring::ClassMethodDocInject(m, "Tensor", py_name, argument_docs);
 }
 
@@ -283,30 +258,6 @@ static void BindTensorFullCreation(py::module& m, py::class_<Tensor>& tensor) {
                utility::optional<Device> device) {
                 return Tensor::Full<T>(
                         shape, fill_value,
-                        dtype.has_value() ? dtype.value() : core::Float32,
-                        device.has_value() ? device.value() : Device("CPU:0"));
-            },
-            "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
-            "device"_a = py::none());
-    tensor.def_static(
-            "full",
-            [](const py::tuple& shape, T fill_value,
-               utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
-                return Tensor::Full<T>(
-                        PyTupleToSizeVector(shape), fill_value,
-                        dtype.has_value() ? dtype.value() : core::Float32,
-                        device.has_value() ? device.value() : Device("CPU:0"));
-            },
-            "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
-            "device"_a = py::none());
-    tensor.def_static(
-            "full",
-            [](const py::list& shape, T fill_value,
-               utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
-                return Tensor::Full<T>(
-                        PyListToSizeVector(shape), fill_value,
                         dtype.has_value() ? dtype.value() : core::Float32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
@@ -791,12 +742,23 @@ Ref:
         return tensor.GetStrides();
     });
     tensor.def_property_readonly("dtype", &Tensor::GetDtype);
-    tensor.def_property_readonly("device", &Tensor::GetDevice);
     tensor.def_property_readonly("blob", &Tensor::GetBlob);
     tensor.def_property_readonly("ndim", &Tensor::NumDims);
     tensor.def("num_elements", &Tensor::NumElements);
-    tensor.def("__len__", &Tensor::GetLength);
     tensor.def("__bool__", &Tensor::IsNonZero);  // Python 3.X.
+
+    tensor.def_property_readonly("device", &Tensor::GetDevice);
+    tensor.def_property_readonly("is_cpu", &Tensor::IsCPU);
+    tensor.def_property_readonly("is_cuda", &Tensor::IsCUDA);
+
+        // Length and iterator.
+    tensor.def("__len__", &Tensor::GetLength);
+    tensor.def(
+            "__iter__",
+            [](Tensor& tensor) {
+                return py::make_iterator(tensor.begin(), tensor.end());
+            },
+            py::keep_alive<0, 1>());  // Keep object alive while iterator exists
 
     // Unary element-wise ops.
     tensor.def("sqrt", &Tensor::Sqrt);
@@ -807,6 +769,7 @@ Ref:
     tensor.def("cos_", &Tensor::Cos_);
     tensor.def("neg", &Tensor::Neg);
     tensor.def("neg_", &Tensor::Neg_);
+    tensor.def("__neg__", &Tensor::Neg);
     tensor.def("exp", &Tensor::Exp);
     tensor.def("exp_", &Tensor::Exp_);
     tensor.def("abs", &Tensor::Abs);
@@ -846,15 +809,15 @@ Ref:
               "int64 Tensors, each containing the indices of the non-zero "
               "elements in each dimension."}});
     tensor.def(
-            "all", &Tensor::All,
+            "all", &Tensor::All, py::call_guard<py::gil_scoped_release>(),
+            py::arg("dim") = py::none(), py::arg("keepdim") = false,
             "Returns true if all elements in the tensor are true. Only works "
-            "for boolean tensors. This function does not take reduction "
-            "dimensions, and the reduction is applied to all dimensions.");
+            "for boolean tensors.");
     tensor.def(
-            "any", &Tensor::Any,
+            "any", &Tensor::Any, py::call_guard<py::gil_scoped_release>(),
+            py::arg("dim") = py::none(), py::arg("keepdim") = false,
             "Returns true if any elements in the tensor are true. Only works "
-            "for boolean tensors. This function does not take reduction "
-            "dimensions, and the reduction is applied to all dimensions.");
+            "for boolean tensors.");
 
     // Reduction ops.
     BIND_REDUCTION_OP(sum, Sum);

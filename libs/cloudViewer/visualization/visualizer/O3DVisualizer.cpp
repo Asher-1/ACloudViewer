@@ -32,6 +32,7 @@
 #include <LineSet.h>
 #include <Logging.h>
 #include <Octree.h>
+#include <CloudViewerConfig.h>
 #include <VoxelGrid.h>
 #include <ecvPointCloud.h>
 
@@ -39,7 +40,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "CloudViewerConfig.h"
 #include "t/geometry/PointCloud.h"
 #include "t/geometry/TriangleMesh.h"
 #include "visualization/gui/Application.h"

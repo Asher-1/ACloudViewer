@@ -1,29 +1,14 @@
-// The MIT License (MIT)
-//
-// Copyright (c) 2020 asher-1.github.io
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                            -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2023 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 #include "../TensorFlowHelper.h"
-#include "ml/impl/misc/KnnSearch.h"
+#include "core/nns/NeighborSearchCommon.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -36,7 +21,7 @@ class KnnSearchOpKernel : public tensorflow::OpKernel {
 public:
     explicit KnnSearchOpKernel(tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
-        using namespace cloudViewer::ml::impl;
+        using namespace cloudViewer::core::nns;
         using namespace tensorflow;
         std::string metric_str;
         OP_REQUIRES_OK(construction,
@@ -100,7 +85,7 @@ public:
                         tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:
-    cloudViewer::ml::impl::Metric metric;
+    cloudViewer::core::nns::Metric metric;
     bool ignore_query_point;
     bool return_distances;
 };

@@ -38,6 +38,7 @@
 #include "core/Scalar.h"
 #include "core/ShapeUtil.h"
 #include "core/SizeVector.h"
+#include "core/TensorCheck.h"
 #include "core/TensorInit.h"
 #include "core/TensorKey.h"
 
@@ -46,7 +47,7 @@ namespace core {
 
 /// A Tensor is a "view" of a data Blob with shape, stride, data_ptr.
 /// Tensor can also be used to perform numerical operations.
-class Tensor {
+class Tensor: public IsDevice {
 public:
     Tensor() {}
 
@@ -277,7 +278,7 @@ public:
     /// t2 = t[0:4:2]
     /// ```
     ///
-    /// The equivalent Open3D C++ calls:
+    /// The equivalent CloudViewer C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, core::Float32);
     /// Tensor t1 = t.GetItem(TensorIndex(2));
@@ -297,7 +298,7 @@ public:
     /// t1 = t[1, 0:4:2]
     /// ```
     ///
-    /// The equivalent Open3D C++ calls:
+    /// The equivalent CloudViewer C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, core::Float32);
     /// Tensor t1 = t.GetItem({TensorIndex(2), TensorSlice(0, 4, 2)});
@@ -317,7 +318,7 @@ public:
     /// t[0:4:2] = np.empty((2, 5), dtype=np.float32)
     /// ```
     ///
-    /// The equivalent Open3D C++ calls:
+    /// The equivalent CloudViewer C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, core::Float32);
     /// t.SetItem(TensorIndex(2), Tensor({5}, core::Float32));
@@ -333,7 +334,7 @@ public:
     /// t[2, 0:4:2] = np.empty((2, 5), dtype=np.float32)
     /// ```
     ///
-    /// The equivalent Open3D C++ calls:
+    /// The equivalent CloudViewer C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, core::Float32);
     /// t.SetItem({TensorIndex(2), TensorSlice(0, 4, 2)},
@@ -823,14 +824,27 @@ public:
     bool IsNonZero() const;
 
     /// Returns true if all elements in the tensor are true. Only works for
-    /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is applied to all dimensions.
-    bool All() const;
+    /// boolean tensors.
+    Tensor All(const utility::optional<SizeVector>& dims = utility::nullopt,
+               bool keepdim = false) const;
 
     /// Returns true if any elements in the tensor are true. Only works for
-    /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is applied to all dimensions.
-    bool Any() const;
+    /// boolean tensors.
+    Tensor Any(const utility::optional<SizeVector>& dims = utility::nullopt,
+               bool keepdim = false) const;
+
+    /// Returns true if the two tensors are element-wise equal.
+    ///
+    /// - If the device is not the same: throws exception.
+    /// - If the dtype is not the same: throws exception.
+    /// - If the shape is not the same: returns false.
+    /// - Returns true if: the device, dtype and shape are the same and all
+    ///   corresponding elements are equal.
+    ///
+    /// TODO: support nan
+    ///
+    /// \param other The other tensor to compare with.
+    bool AllEqual(const Tensor& other) const;
 
     /// Returns true if the two tensors are element-wise equal within a
     /// tolerance.
@@ -1056,6 +1070,92 @@ public:
     /// Load tensor from numpy's npy format.
     static Tensor Load(const std::string& file_name);
 
+        /// Iterator for Tensor.
+    struct Iterator {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = Tensor;
+        using pointer = value_type*;
+        using reference = value_type;  // Typically Tensor&, but a tensor slice
+                                       // creates a new Tensor object with
+                                       // shared memory.
+
+        // Iterator must be constructible, copy-constructible, copy-assignable,
+        // destructible and swappable.
+        Iterator(pointer tensor, int64_t index);
+        Iterator(const Iterator&);
+        ~Iterator();
+        reference operator*() const;
+        pointer operator->() const;
+        Iterator& operator++();
+        Iterator operator++(int);
+        bool operator==(const Iterator& other) const;
+        bool operator!=(const Iterator& other) const;
+
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> impl_;
+    };
+
+    /// Const iterator for Tensor.
+    struct ConstIterator {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = const Tensor;
+        using pointer = value_type*;
+        using reference = value_type;  // Typically Tensor&, but a tensor slice
+                                       // creates a new Tensor object with
+                                       // shared memory.
+
+        // ConstIterator must be constructible, copy-constructible,
+        // copy-assignable, destructible and swappable.
+        ConstIterator(pointer tensor, int64_t index);
+        ConstIterator(const ConstIterator&);
+        ~ConstIterator();
+        reference operator*() const;
+        pointer operator->() const;
+        ConstIterator& operator++();
+        ConstIterator operator++(int);
+        bool operator==(const ConstIterator& other) const;
+        bool operator!=(const ConstIterator& other) const;
+
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> impl_;
+    };
+
+    /// Returns the beginning of the tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    Iterator begin();
+
+    /// Returns the end of the tensor iterator. The iterator iterates over the
+    /// first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    Iterator end();
+
+    /// Returns the beginning of the const tensor iterator. The iterator
+    /// iterates over the first dimension of the tensor. The generated tensor
+    /// slices share the same memory with the original tensor.
+    ConstIterator cbegin() const;
+
+    /// Returns the end of the const tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    ConstIterator cend() const;
+
+    /// Returns the beginning of the const tensor iterator. The iterator
+    /// iterates over the first dimension of the tensor. The generated tensor
+    /// slices share the same memory with the original tensor. This is
+    /// equivalent to Tensor::cbegin().
+    ConstIterator begin() const { return cbegin(); }
+
+    /// Returns the end of the const tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor. This is equivalent to
+    /// Tensor::cend().
+    ConstIterator end() const { return cend(); }
+
     /// Assert that the Tensor has the specified shape.
     void AssertShape(const SizeVector& expected_shape,
                      const std::string& error_msg = "") const;
@@ -1141,7 +1241,7 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
     AssertTemplateDtype<bool>();
 
     // std::vector<bool> possibly implements 1-bit-sized boolean storage.
-    // Open3D uses 1-byte-sized boolean storage for easy indexing.
+    // CloudViewer uses 1-byte-sized boolean storage for easy indexing.
     std::vector<uint8_t> init_vals_uchar(init_vals.size());
     std::transform(init_vals.begin(), init_vals.end(), init_vals_uchar.begin(),
                    [](bool v) -> uint8_t { return static_cast<uint8_t>(v); });
@@ -1161,7 +1261,7 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
                                 GetDtype().ByteSize() * NumElements());
 
     // std::vector<bool> possibly implements 1-bit-sized boolean storage.
-    // Open3D uses 1-byte-sized boolean storage for easy indexing.
+    // CloudViewer uses 1-byte-sized boolean storage for easy indexing.
     std::transform(values_uchar.begin(), values_uchar.end(), values.begin(),
                    [](uint8_t v) -> bool { return static_cast<bool>(v); });
     return values;

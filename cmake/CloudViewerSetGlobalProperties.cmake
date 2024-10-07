@@ -28,8 +28,8 @@ endfunction()
 #
 # Sets important project-related properties to <target>.
 function(cloudViewer_set_global_properties target)
-    # Tell CMake we want a compiler that supports C++14 features
-    target_compile_features(${target} PUBLIC cxx_std_14)
+    # Tell CMake we want a compiler that supports C++17 features
+    target_compile_features(${target} PUBLIC cxx_std_17)
 
     # Detect compiler id and version for utility::CompilerInfo
     # - CLOUDVIEWER_CXX_STANDARD
@@ -111,9 +111,6 @@ function(cloudViewer_set_global_properties target)
     endif()
     if (WITH_IPPICV)
         target_compile_definitions(${target} PRIVATE WITH_IPPICV)
-    endif()
-    if (WITH_FAISS)
-        target_compile_definitions(${target} PRIVATE WITH_FAISS)
     endif()
     if (GLIBCXX_USE_CXX11_ABI)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)

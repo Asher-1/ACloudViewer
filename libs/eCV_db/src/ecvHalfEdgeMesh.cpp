@@ -181,7 +181,7 @@ ecvHalfEdgeMesh::CreateFromTriangleMesh(const ccMesh &mesh) {
 
     // Collect half edges
     // Check: for valid manifolds, there mustn't be duplicated half-edges
-    std::unordered_map<Eigen::Vector2i, size_t, utility::hash_eigen::hash<Eigen::Vector2i>>
+    std::unordered_map<Eigen::Vector2i, size_t, utility::hash_eigen<Eigen::Vector2i>>
             vertex_indices_to_half_edge_index;
 
     for (size_t triangle_index = 0;

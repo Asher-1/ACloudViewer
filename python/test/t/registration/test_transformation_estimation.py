@@ -29,7 +29,7 @@ import cloudViewer.core as cv3c
 import numpy as np
 import pytest
 
-from open3d_test import list_devices
+from cloudViewer_test import list_devices
 
 
 @pytest.mark.parametrize("device", list_devices())

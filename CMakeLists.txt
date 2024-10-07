@@ -43,6 +43,18 @@ if (UNIX AND NOT APPLE)
     message(STATUS "Ubuntu Version: ${UBUNTU_VERSION}")
 endif ()
 
+# CMake modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
+
+# set build time
+string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
+set(BUILD_TIME  ${COMPILE_TIME})
+
+# set git commit id and git commit date
+include(GenerateVersionDefinitions)
+message(STATUS "GIT_COMMIT_ID: " ${GIT_COMMIT_ID})
+message(STATUS "GIT_COMMIT_DATE : " ${GIT_COMMIT_DATE})
+
 if(APPLE)
     execute_process(COMMAND uname -m
             OUTPUT_VARIABLE PROCESSOR_ARCH
@@ -83,6 +95,7 @@ option(USE_SIMD "Use Single Instruction Multiple Data speed optimization" OFF)
 option(USE_SYSTEM_OPENCV "Use system pre-installed opencv" OFF)
 option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" OFF)
 option(USE_SYSTEM_FLANN "Use system pre-installed flann" OFF)
+option(USE_SYSTEM_NANOFLANN "Use system pre-installed nanoflann"       OFF)
 option(USE_SYSTEM_FMT "Use system pre-installed fmt" OFF)
 option(USE_SYSTEM_GLEW "Use system pre-installed glew" OFF)
 option(USE_SYSTEM_GLFW "Use system pre-installed glfw" OFF)
@@ -114,7 +127,6 @@ else()
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           OFF)
 endif()
 option(PREFER_OSX_HOMEBREW "Prefer Homebrew libs over frameworks" ON)
-option(WITH_FAISS "Enable Faiss" ON)
 
 # Sensor options
 option(BUILD_LIBREALSENSE "Build support for Intel RealSense camera" OFF)
@@ -130,6 +142,8 @@ option(BUILD_RECONSTRUCTION "Build the 3D Reconstruction" OFF)
 if (NOT ${BUILD_RECONSTRUCTION})
     set(BUILD_COLMAP_GUI OFF)
 endif()
+
+option(PACKAGE "Package the build results with zip or not" OFF)
 
 # PCL ENGINE SUPPORT
 option(USE_PCL_BACKEND "Check to use pcl library as backend" ON)
@@ -147,10 +161,6 @@ if (NOT DEVELOPER_BUILD)
         message(WARNING "Setting BUILD_COMMON_CUDA_ARCHS=ON since DEVELOPER_BUILD is OFF.")
     endif ()
 endif ()
-
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 # Default build type on single-config generators.
 # For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
@@ -271,46 +281,30 @@ string(CONCAT CLOUDVIEWER_VERSION
 string(CONCAT PROJECT_VERSION_THREE_NUMBER "${CLOUDVIEWER_VERSION_MAJOR}"
         ".${CLOUDVIEWER_VERSION_MINOR}"
         ".${CLOUDVIEWER_VERSION_PATCH}")
-set(CLOUDVIEWER_VERSION_FULL "${CLOUDVIEWER_VERSION}${CLOUDVIEWER_VERSION_DEVHASH}")
+set(CLOUDVIEWER_VERSION_FULL "${CLOUDVIEWER_VERSION}${CLOUDVIEWER_VERSION_DEVHASH}" CACHE
+    STRING "ACloudViewer full version.")
+set(CLOUDVIEWER_ABI_VERSION "${PROJECT_VERSION_THREE_NUMBER}" CACHE
+    STRING "ACloudViewer ABI version / SOVERSION (for releases only).")
 
-project(ACloudViewerProjects VERSION ${CLOUDVIEWER_VERSION} LANGUAGES C CXX)
-message(STATUS "ACloudViewerProjects ${CLOUDVIEWER_VERSION_FULL}")
-
-# FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
-if (BUILD_CUDA_MODULE
-        AND CMAKE_CXX_COMPILER MATCHES "MSVC"
-        AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
-        )
-    # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
-    set(CMAKE_CXX_STANDARD 14)
-    set(CMAKE_CUDA_STANDARD 17)
-    # Suppress warnings for deprecated C++17 functions.
-    add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
-    message(WARNING "Visual Studio 16.10 (MSVC 19.29) introduced a compiler bug when compiling CUDA code with C++14. "
-            "Workaround this bug by setting the CUDA standard to C++17.")
-elseif (BUILD_CUDA_MODULE) # fix 'Target requires the language dialect "CUDA17"' issues on linux
-    set(CMAKE_CUDA_STANDARD 14)
-    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-endif ()
-
-# CMake modules
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
-set(ECV_CMAKE_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+project(ACloudViewer 
+    VERSION ${CLOUDVIEWER_VERSION}
+    # Set PROJECT_DESCRIPTION
+    DESCRIPTION "ACloudViewer: A Modern Library for 3D Data Processing."
+    # Set PROJECT_HOMEPAGE_URL
+    HOMEPAGE_URL "https://asher-1.github.io"
+    LANGUAGES C CXX)
+message(STATUS "ACloudViewer ${CLOUDVIEWER_VERSION_FULL}")
 
 # Setup Python executable
-#if (NOT DEFINED Python3_FIND_REGISTRY)
-#    # Only consider PATH variable on Windows by default
-#    set(Python3_FIND_REGISTRY NEVER)
-#endif ()
-find_package(Python3 3.6...<3.12
+# if(NOT DEFINED Python3_FIND_REGISTRY)
+#     # Only consider PATH variable on Windows by default
+#     set(Python3_FIND_REGISTRY NEVER)
+# endif()
+# Requires Python 3.6+
+find_package(Python3 3.6
         COMPONENTS Interpreter Development
         )
 if (Python3_FOUND)
-    # Setup Python3_EXECUTABLE for 3rdparty modules
-    # which still use the deprecated find_package(PythonInterp)
-    set(Python3_EXECUTABLE ${Python3_EXECUTABLE} CACHE FILEPATH
-            "Deprecated path to the Python executable (for 3rdparty only)")
-
     # Setup PYTHON_EXECUTABLE for 3rdparty modules
     # which still use the deprecated find_package(PythonInterp)
     set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE FILEPATH
@@ -322,7 +316,7 @@ if (Python3_FOUND)
             "Deprecated path to the Python include dir (for pybind only)")
 else ()
     if (BUILD_PYTHON_MODULE)
-        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.9. Please ensure it is in PATH.")
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python >= 3.6. Please ensure it is in PATH.")
     endif ()
 endif ()
 
@@ -430,13 +424,16 @@ cmake_language(EVAL CODE "cmake_language(DEFER CALL cloudViewer_patch_findthread
 
 # Build CUDA module by default if CUDA is available
 if (BUILD_CUDA_MODULE)
+    # Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
+    # add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_ALLOW_UNSUPPORTED_LIBCPP>)
+    add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
     include(CloudViewerMakeCudaArchitectures)
     cloudViewer_make_cuda_architectures(CUDA_ARCHS)
     set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})
-
     message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
     enable_language(CUDA)
-
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
     if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
         message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
     endif ()
@@ -521,6 +518,9 @@ include(CloudViewerLink3rdpartyLibraries)
 include(CloudViewerSetGlobalProperties)
 include(CloudViewerShowAndAbortOnWarning)
 
+# Add external libraries
+include(CMakeExternalLibs)
+
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the
 # CloudViewer_3RDPARTY_*_TARGETS variables we use in cloudViewer_link_3rdparty_libraries
@@ -529,9 +529,6 @@ include(3rdparty/find_dependencies.cmake)
 # Default debug suffix for libraries.
 # Note: must put after include(3rdparty/find_dependencies.cmake)
 set(CMAKE_DEBUG_POSTFIX "d")
-
-# Add external libraries
-include(CMakeExternalLibs)
 
 # Contrib. libraries (mainly for I/O)
 include(AllSupport)
@@ -682,8 +679,6 @@ foreach( filename ${documents_list} )
     cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}" "" )
 endforeach()
 
-string(TIMESTAMP COMPILE_TIME %Y-%m-%d)
-set(BUILD_TIME  ${COMPILE_TIME})
 if (BUILD_CUDA_MODULE) 
     set(ACLOUDVIEWER_DEVICE "cuda")
 else ()
@@ -691,20 +686,33 @@ else ()
 endif()
 
 if (UNIX AND NOT APPLE)
+    if (BUILD_RECONSTRUCTION)
+        # fix gflags undefinded symbols issues
+        set(src_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
+        set(target_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MINOR_VERSION})
+        install(CODE "set(GFLAGS_SRC_FILENAME \"${src_gflags_filename}\")")
+        install(CODE "set(GFLAGS_DST_FILENAME \"${target_gflags_filename}\")")
+        install(CODE "set(BUILD_RECONSTRUCTION \"${BUILD_RECONSTRUCTION}\")")
+    endif()
     # Pass environment variables(INSTALL_LIB_DESTINATION) to the install script
     set(CLOUDVIEWER_INSTALL_LIB_DESTINATION "${DEPLOY_ROOT_PATH}/${CloudViewer_INSTALL_LIB_DIR}")
-    set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION}-${BUILD_TIME}-ubuntu${UBUNTU_VERSION}-${ACLOUDVIEWER_DEVICE}-amd64")
+    set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${BUILD_TIME}-ubuntu${UBUNTU_VERSION}-${ACLOUDVIEWER_DEVICE}-amd64")
     message(STATUS "CLOUDVIEWER_PACKAGE_NAME: " ${CLOUDVIEWER_PACKAGE_NAME})
+    install(CODE "set(BUILD_TIME \"${BUILD_TIME}\")")
     install(CODE "set(CLOUDVIEWER_VERSION \"${CLOUDVIEWER_VERSION_FULL}\")")
     install(CODE "set(MAIN_APP_NAME \"${MAIN_APP_NAME}\")")
     install(CODE "set(COLMAP_APP_NAME \"${COLMAP_APP_NAME}\")")
+    install(CODE "set(EXTERNAL_INSTALL_DIR \"${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}\")")
     install(CODE "set(BUILD_LIB_PATH \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\")")
     install(CODE "set(CloudViewer_INSTALL_LIB_DIR \"${CloudViewer_INSTALL_LIB_DIR}\")")
     install(CODE "set(DEPLOY_ROOT_PATH \"${DEPLOY_ROOT_PATH}\")")
     install(CODE "set(CLOUDVIEWER_INSTALL_LIB_DESTINATION \"${CLOUDVIEWER_INSTALL_LIB_DESTINATION}\")")
     install(CODE "set(CLOUDVIEWER_PACKAGE_NAME \"${CLOUDVIEWER_PACKAGE_NAME}\")")
+    install(CODE "set(PACKAGE \"${PACKAGE}\")")
     install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")
     install(CODE "MESSAGE(\"${MAIN_APP_NAME}\.${CLOUDVIEWER_VERSION} install successfully.\")")
-    install(CODE "MESSAGE(\"Continue to publish installer package: cd ${INSTALL_DESTINATIONS}/linux/${MAIN_APP_NAME}.\")")
-    install(CODE "MESSAGE(\"Then please execute: binarycreator -c config/config.xml -p packages ${CLOUDVIEWER_PACKAGE_NAME}.run\")")
+    if (NOT ${PACKAGE})
+        install(CODE "MESSAGE(\"Continue to publish installer package: cd ${INSTALL_DESTINATIONS}/linux/${MAIN_APP_NAME}.\")")
+        install(CODE "MESSAGE(\"Then please execute: binarycreator -c config/config.xml -p packages ${CLOUDVIEWER_PACKAGE_NAME}.run\")")
+    endif()
 endif()

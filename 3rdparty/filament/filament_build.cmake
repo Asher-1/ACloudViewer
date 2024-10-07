@@ -57,6 +57,8 @@ ExternalProject_Add(
     URL_HASH SHA256=00c3f41af0fcfb2df904e1f77934f2678d943ddac5eb889788a5e22590e497bd
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
+    # Patch for filament/libs/image/src/ImageSampler.cpp:41:17: error: expected unqualified-id replace M_PIf with M_PI_f
+    COMMAND sed -i "s/M_PIf/M_PI_f/g" <SOURCE_DIR>/libs/image/src/ImageSampler.cpp
     CMAKE_ARGS
         # ${ExternalProject_CMAKE_ARGS}
         -DCMAKE_BUILD_TYPE=${FILAMENT_BUILD_TYPE}
@@ -74,5 +76,6 @@ ExternalProject_Add(
         -DFILAMENT_SUPPORTS_VULKAN=OFF
         -DFILAMENT_SKIP_SAMPLES=ON
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
+        -DSPIRV_WERROR=OFF
     BUILD_BYPRODUCTS ${lib_byproducts}
 )

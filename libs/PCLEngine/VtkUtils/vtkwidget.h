@@ -60,6 +60,9 @@ public:
 
 	void showOrientationMarker(bool show = true);
 
+	vtkRenderWindow* GetRenderWindow() {return this->renderWindow(); }
+	QVTKInteractor* GetInteractor() {return this->interactor(); }
+
 protected:
 	void setBounds(double* bounds);
 

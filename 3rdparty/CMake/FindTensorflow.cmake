@@ -66,11 +66,11 @@ if(UNIX AND NOT APPLE AND ((Tensorflow_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)
     else()
         set(NEEDED_ABI_FLAG "OFF")
     endif()
-    message(FATAL_ERROR "TensorFlow and Open3D ABI mismatch: ${Tensorflow_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
+    message(FATAL_ERROR "TensorFlow and CloudViewer ABI mismatch: ${Tensorflow_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
             "Please use -D GLIBCXX_USE_CXX11_ABI=${NEEDED_ABI_FLAG} "
-            "in the cmake config command to change the Open3D ABI.")
+            "in the cmake config command to change the CloudViewer ABI.")
 else()
-    message(STATUS "TensorFlow matches Open3D ABI: ${Tensorflow_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
+    message(STATUS "TensorFlow matches CloudViewer ABI: ${Tensorflow_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
 endif()
 
 include(FindPackageHandleStandardArgs)
@@ -145,11 +145,11 @@ if(UNIX AND NOT APPLE AND ((Tensorflow_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)
     else()
         set(NEEDED_ABI_FLAG "OFF")
     endif()
-    message(FATAL_ERROR "TensorFlow and Open3D ABI mismatch: ${Tensorflow_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
+    message(FATAL_ERROR "TensorFlow and CloudViewer ABI mismatch: ${Tensorflow_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
             "Please use -D GLIBCXX_USE_CXX11_ABI=${NEEDED_ABI_FLAG} "
-            "in the cmake config command to change the Open3D ABI.")
+            "in the cmake config command to change the CloudViewer ABI.")
 else()
-    message(STATUS "TensorFlow matches Open3D ABI: ${Tensorflow_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
+    message(STATUS "TensorFlow matches CloudViewer ABI: ${Tensorflow_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
 endif()
 
 include(FindPackageHandleStandardArgs)

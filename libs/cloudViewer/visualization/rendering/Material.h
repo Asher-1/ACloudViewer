@@ -43,6 +43,10 @@ struct Material {
 
     std::string name;
 
+    /// Returns true if the Material was not created with the default
+    /// constructor and therefore has a valid shader name.
+    bool IsValid() const { return !name.empty(); }
+
     // Rendering attributes
     bool has_alpha = false;
 

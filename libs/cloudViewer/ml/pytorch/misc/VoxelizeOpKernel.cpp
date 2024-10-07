@@ -31,6 +31,8 @@
 #include "ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
+using namespace cloudViewer::ml::impl;
+
 template <class T>
 void VoxelizeCPU(const torch::Tensor& points,
                  const torch::Tensor& row_splits,
@@ -49,7 +51,7 @@ void VoxelizeCPU(const torch::Tensor& points,
     switch (points.size(1)) {
 #define CASE(NDIM)                                                            \
     case NDIM:                                                                \
-        cloudViewer::ml::impl::VoxelizeCPU<T, NDIM>(                          \
+        VoxelizeCPU<T, NDIM>(                                                 \
                 points.size(0), points.data_ptr<T>(), row_splits.size(0) - 1, \
                 row_splits.data_ptr<int64_t>(), voxel_size.data_ptr<T>(),     \
                 points_range_min.data_ptr<T>(),                               \

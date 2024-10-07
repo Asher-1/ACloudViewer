@@ -24,11 +24,13 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import os
+import sys
+import platform
+import ctypes
 from setuptools import setup, find_packages
 from setuptools.command.install import install as _install
-import os
-import glob
-import ctypes
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
 data_files_spec = [
     ('share/jupyter/nbextensions/cloudViewer', 'cloudViewer/nbextension', '*.*'),
@@ -73,8 +75,6 @@ else:
 # Force platform specific wheel.
 # https://stackoverflow.com/a/45150383/1255535
 try:
-    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-
     class bdist_wheel(_bdist_wheel):
 
         def finalize_options(self):
@@ -84,21 +84,27 @@ try:
         # https://github.com/Yelp/dumb-init/blob/57f7eebef694d780c1013acd410f2f0d3c79f6c6/setup.py#L25
         def get_tag(self):
             python, abi, plat = _bdist_wheel.get_tag(self)
-            if plat == 'linux_x86_64':
-                libc = ctypes.CDLL('libc.so.6')
+            if plat[:5] == "linux":
+                libc = ctypes.CDLL("libc.so.6")
                 libc.gnu_get_libc_version.restype = ctypes.c_char_p
-                GLIBC_VER = libc.gnu_get_libc_version().decode('utf8').split(
-                    '.')
-                plat = f'manylinux_{GLIBC_VER[0]}_{GLIBC_VER[1]}_x86_64'
+                GLIBC_VER = libc.gnu_get_libc_version().decode("utf8").split(".")
+                plat = f"manylinux_{GLIBC_VER[0]}_{GLIBC_VER[1]}{plat[5:]}"
+            elif plat[:6] == "macosx":
+                # If the Python interpreter is an universal2 app the resulting wheel is tagged as
+                # universal2 instead of the current architecture. This is a workaround to fix it.
+                plat = plat.replace("universal2", platform.machine())
+
             return python, abi, plat
 
+
     cmdclass['bdist_wheel'] = bdist_wheel
-    
+
 except ImportError:
     print(
         'Warning: cannot import "wheel" package to build platform-specific wheel'
     )
     print('Install the "wheel" package to fix this warning')
+
 
 # Force use of "platlib" dir for auditwheel to recognize this is a non-pure
 # build
@@ -122,13 +128,74 @@ if '@BUNDLE_CLOUDVIEWER_ML@' == 'ON':
     with open('@CLOUDVIEWER_ML_ROOT@/requirements.txt', 'r') as f:
         install_requires += [line.strip() for line in f.readlines() if line]
 
+entry_points = {
+    "console_scripts": ["cloudViewer = @PYPI_PACKAGE_NAME@.tools.cli:main",]
+}
+if sys.platform != "darwin":  # Remove check when off main thread GUI works
+    entry_points.update({
+        "tensorboard_plugins": [
+            "CloudViewer = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
+            ".plugin:CloudViewerPlugin",
+        ]
+    })
+
+classifiers = [
+    # https://pypi.org/pypi?%3Aaction=list_classifiers
+    "Development Status :: 3 - Alpha",
+    "Environment :: MacOS X",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: X11 Applications",
+    "Environment :: GPU :: NVIDIA CUDA",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: C",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Education",
+    "Topic :: Multimedia :: Graphics :: 3D Modeling",
+    "Topic :: Multimedia :: Graphics :: 3D Rendering",
+    "Topic :: Multimedia :: Graphics :: Capture",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Multimedia :: Graphics :: Viewers",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+
+name = "@PYPI_PACKAGE_NAME@"
+with open("README.rst") as readme:
+    long_description = readme.read()
+# cloudViewer-cpu wheel for Linux x86_64
+if sys.platform.startswith("linux") and platform.machine() in (
+        'i386', 'x86_64', 'AMD64') and "@BUILD_CUDA_MODULE@" == "OFF":
+    name += "-cpu"
+    long_description += ("\n\nThis wheel only contains CPU functionality. "
+                         "Use the cloudViewer wheel for full functionality.")
+    classifiers.remove("Environment :: GPU :: NVIDIA CUDA")
+    
 setup_args = dict(
-    name="@PYPI_PACKAGE_NAME@",
+    name=name,
     version='@PROJECT_VERSION@',
     python_requires='>=3.6',
     include_package_data=True,
     install_requires=install_requires,
     packages=find_packages(),
+    entry_points=entry_points,
     zip_safe=False,
     cmdclass=cmdclass,
     author='CloudViewer Team',
@@ -139,46 +206,15 @@ setup_args = dict(
         'Source code': '@PROJECT_CODE@',
         'Issues': '@PROJECT_ISSUES@',
     },
+    classifiers=classifiers,
     keywords="3D reconstruction point cloud mesh RGB-D visualization",
     license="MIT",
-    classifiers=[
-        # https://pypi.org/pypi?%3Aaction=list_classifiers
-        "Development Status :: 3 - Alpha",
-        "Environment :: MacOS X",
-        "Environment :: Win32 (MS Windows)",
-        "Environment :: X11 Applications",
-        "Environment :: GPU :: NVIDIA CUDA",
-        "Intended Audience :: Developers",
-        "Intended Audience :: Education",
-        "Intended Audience :: Other Audience",
-        "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: MIT License",
-        "Natural Language :: English",
-        "Operating System :: POSIX :: Linux",
-        "Operating System :: MacOS :: MacOS X",
-        "Operating System :: Microsoft :: Windows",
-        "Programming Language :: C",
-        "Programming Language :: C++",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Topic :: Education",
-        "Topic :: Multimedia :: Graphics :: 3D Modeling",
-        "Topic :: Multimedia :: Graphics :: 3D Rendering",
-        "Topic :: Multimedia :: Graphics :: Capture",
-        "Topic :: Multimedia :: Graphics :: Graphics Conversion",
-        "Topic :: Multimedia :: Graphics :: Viewers",
-        "Topic :: Scientific/Engineering",
-        "Topic :: Scientific/Engineering :: Mathematics",
-        "Topic :: Scientific/Engineering :: Visualization",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: Utilities",
-    ],
-    description='CloudViewer: A Modern Library for 3D Data Processing.',
-    long_description=open('README.rst').read(),
+    description="@PROJECT_DESCRIPTION@",
+    long_description=long_description,
     long_description_content_type='text/x-rst',
+    # Metadata below is valid but currently ignored by pip (<=v23)
+    obsoletes=["cloudViewer_python"],
+    provides=["cloudViewer", "cloudViewer_cpu"],  # For cloudViewer-cpu
 )
 
 setup(**setup_args)
