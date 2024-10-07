@@ -8,7 +8,7 @@ LABEL maintainer="AliceVision Team ludahai19@163.com"
 
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
+ENV NVIDIA_DRIVER_CAPABILITIES all
 
 # Execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
 # docker run -it --runtime nvidia -p 10022:22 -p 14000:4000 --name cloudViewer -v</path/to/your/data>:/data cloudviewer:develop-ubuntu18.04-cuda101
@@ -36,7 +36,6 @@ RUN cmake "${ACloudViewer_DEV}/ACloudViewer" \
             -DBUILD_JUPYTER_EXTENSION=ON \
             -DBUILD_LIBREALSENSE=ON \
             -DBUILD_AZURE_KINECT=ON \
-            -DBUILD_RPC_INTERFACE=ON \
             -DBUILD_BENCHMARKS=OFF \
             -DWITH_OPENMP=ON \
             -DBUILD_CUDA_MODULE=ON \
@@ -118,12 +117,12 @@ RUN cmake "${ACloudViewer_DEV}/ACloudViewer" \
             -DPLUGIN_STANDARD_QRANSAC_SD=ON \
             -DPLUGIN_STANDARD_QSRA=ON \
             -DGLIBCXX_USE_CXX11_ABI=1 \
-            #-DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ACloudViewer/thirdparties \
-#            -DPYTHON_EXECUTABLE=/root/miniconda3/bin/python3.6 \
-#            -DPYTHON_IN_PATH=/root/miniconda3/bin/python3.6 \
-#            -DPYTHON_LIBRARY=/root/miniconda3/lib/libpython3.6m.so \
-#            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-#            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake \
+            # -DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ACloudViewer/thirdparties \
+            # -DPYTHON_EXECUTABLE=/root/miniconda3/bin/python3.8 \
+            # -DPYTHON_IN_PATH=/root/miniconda3/bin/python3.8 \
+            # -DPYTHON_LIBRARY=/root/miniconda3/lib/libpython3.8.so \
+            # -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
+            # -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake \
             -DCMAKE_INSTALL_PREFIX=${ACloudViewer_INSTALL}
 
 RUN make "-j$(nproc)" \

@@ -28,7 +28,7 @@
 
 #include "CVLog.h"
 #include "FileSystem.h"
-#include <zlib.h>
+#include <zlib.h> // do not include this in header due to undefined symbols unzReadCurrentFile
 #include <algorithm>
 #include <assert.h>
 #include <cstdlib>

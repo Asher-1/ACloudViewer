@@ -34,7 +34,7 @@ import numpy as np
 import pytest
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
-from open3d_test import test_data_dir
+from cloudViewer_test import test_data_dir
 
 
 @pytest.mark.skipif(os.getenv('GITHUB_SHA') is not None or

@@ -37,6 +37,11 @@ ecvAboutDialog::ecvAboutDialog(QWidget *parent)
 #endif
 
     compilationInfo += QStringLiteral(" Qt %1").arg(QT_VERSION_STR);
+    compilationInfo += QStringLiteral(" PCL %1").arg(PCL_VERSION);
+    compilationInfo += QStringLiteral(" VTK %1").arg(VTK_VERSION);
+    compilationInfo += QStringLiteral("</i>");
+    compilationInfo += QStringLiteral("<br><i>Compiled Info: %1")
+                               .arg(cloudViewer::GetBuildInfo().c_str());
     compilationInfo += QStringLiteral("</i>");
 
     QString htmlText = mUI->labelText->text();

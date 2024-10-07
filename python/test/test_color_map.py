@@ -48,44 +48,63 @@ def test_color_map():
             color, depth, convert_rgb_to_intensity=False)
         rgbd_images.append(rgbd_image)
 
-    camera = cv3d.io.read_pinhole_camera_trajectory(
+    camera_trajectory = cv3d.io.read_pinhole_camera_trajectory(
         os.path.join(path, "scene/key.log"))
     mesh = cv3d.io.read_triangle_mesh(
         os.path.join(path, "scene", "integrated.ply"))
-
-    # Computes averaged color without optimization
-    option = cv3d.pipelines.color_map.ColorMapOptimizationOption()
-    option.maximum_iteration = 0
-    with cv3d.utility.VerbosityContextManager(
-            cv3d.utility.VerbosityLevel.Debug) as cm:
-        cv3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images,
-                                                       camera, option)
+    verts = np.asarray(mesh.get_vertices())
+    mesh_colors = np.tile([0.40322907, 0.37276872, 0.54375919], (verts.shape[0], 1))
+    # mesh_colors = [0.40322907, 0.37276872, 0.54375919]
+    mesh.set_vertex_colors(cv3d.utility.Vector3dVector(mesh_colors))
+    # mesh.set_vertex_colors(mesh_colors)
+    vertex_mean = np.mean(np.asarray(mesh.get_vertex_colors()), axis=0)
+    extrinsic_mean = np.array(
+        [c.extrinsic for c in camera_trajectory.parameters]).mean(axis=0)
+    np.testing.assert_allclose(vertex_mean,
+                               np.array([0.40322907, 0.37276872, 0.54375919]),
+                               rtol=1e-2)
+    np.testing.assert_allclose(
+        extrinsic_mean,
+        np.array([[0.77003829, -0.10813595, 0.06467495, -0.56212008],
+                  [0.19100387, 0.86225833, -0.14664845, -0.81434887],
+                  [-0.05557141, 0.16504166, 0.82036438, 0.27867426],
+                  [0., 0., 0., 1.]]),
+        rtol=1e-5)
 
     # Rigid Optimization
-    option.maximum_iteration = 5
-    option.non_rigid_camera_coordinate = False
-    with cv3d.utility.VerbosityContextManager(
-            cv3d.utility.VerbosityLevel.Debug) as cm:
-        cv3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images,
-                                                       camera, option)
+    mesh, camera_trajectory = cv3d.pipelines.color_map.run_rigid_optimizer(
+        mesh, rgbd_images, camera_trajectory,
+        cv3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=10))
+
+    vertex_mean = np.mean(np.asarray(mesh.get_vertex_colors()), axis=0)
+    extrinsic_mean = np.array(
+        [c.extrinsic for c in camera_trajectory.parameters]).mean(axis=0)
+    np.testing.assert_allclose(vertex_mean,
+                               np.array([0.40294861, 0.37250299, 0.54338467]),
+                               rtol=1e-5)
+    np.testing.assert_allclose(
+        extrinsic_mean,
+        np.array([[0.7699379, -0.10768808, 0.06543989, -0.56320637],
+                  [0.19119488, 0.8619734, -0.14717332, -0.8137762],
+                  [-0.05608781, 0.16546427, 0.81995183, 0.27725451],
+                  [0., 0., 0., 1.]]),
+        rtol=1e-5)
 
     # Non-rigid Optimization
-    option.maximum_iteration = 5
-    option.non_rigid_camera_coordinate = True
-    with cv3d.utility.VerbosityContextManager(
-            cv3d.utility.VerbosityLevel.Debug) as cm:
-        cv3d.pipelines.color_map.color_map_optimization(mesh, rgbd_images,
-                                                       camera, option)
+    mesh, camera_trajectory = cv3d.pipelines.color_map.run_non_rigid_optimizer(
+        mesh, rgbd_images, camera_trajectory,
+        cv3d.pipelines.color_map.NonRigidOptimizerOption(maximum_iteration=10))
 
-    # Black box test with hard-coded result values. The results of
-    # color_map_optimization are deterministic. This test ensures the refactored
-    # code produces the same output. This is only valid for using exactly the
-    # same inputs and optimization options.
-    vertex_colors = np.asarray(mesh.vertex_colors)
-    assert vertex_colors.shape == (536872, 3)
-    # We need to account for the acceptable variation in the least significant bit
-    # which can occur with different JPEG libraries. The test value is pretty much
-    # exact with libjpeg-turbo, but not with the original libjpeg.
-    np.testing.assert_allclose(np.mean(vertex_colors, axis=0),
-                               [0.40307181, 0.37264626, 0.5436129],
-                               rtol=1. / 256.)
+    vertex_mean = np.mean(np.asarray(mesh.get_vertex_colors()), axis=0)
+    extrinsic_mean = np.array(
+        [c.extrinsic for c in camera_trajectory.parameters]).mean(axis=0)
+    np.testing.assert_allclose(vertex_mean,
+                               np.array([0.4028204, 0.37237733, 0.54322786]),
+                               rtol=1e-5)
+    np.testing.assert_allclose(
+        extrinsic_mean,
+        np.array([[0.76967962, -0.10824218, 0.0674025, -0.56381652],
+                  [0.19129921, 0.86245618, -0.14634957, -0.81500831],
+                  [-0.05765316, 0.16483281, 0.82054672, 0.27526268],
+                  [0., 0., 0., 1.]]),
+        rtol=1e-5)

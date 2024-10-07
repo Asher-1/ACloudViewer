@@ -7,7 +7,6 @@ pandas
 plyfile
 pyyaml
 cython
-cpython
 matplotlib
 scikit-learn
 jupyter

@@ -68,7 +68,7 @@ protected:
                 // This will set the users personal default to use CloudViewer for
                 // the file types below. THIS SHOULD ONLY BE CALLED
                 // AFTER THE USER EXPLICITLY CONFIRMS THAT THEY WANT TO DO THIS!
-                CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.isl-org.cloudViewer.Open3D";
+                CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.isl-org.cloudViewer.CloudViewer";
                 // The UTIs should match what we declare in Info.plist
                 LSSetDefaultRoleHandlerForContentType(
                         (__bridge CFStringRef)@"public.gl-transmission-format",
@@ -109,7 +109,7 @@ protected:
 
             auto vert = cloudViewer::make_shared<Vert>(0, Margins(em));
             vert->AddChild(cloudViewer::make_shared<Label>(
-                    "This will make Open3D the default application for the "
+                    "This will make CloudViewer the default application for the "
                     "following file types:"));
             vert->AddFixed(em);
             auto table = cloudViewer::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));

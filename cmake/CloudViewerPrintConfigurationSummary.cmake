@@ -12,7 +12,7 @@ endfunction()
 # Prints a summary of the current configuration.
 function(cloudViewer_print_configuration_summary)
     message(STATUS "========================================================================")
-    message(STATUS "CloudViewer ${PROJECT_VERSION} Configuration Summary")
+    message(STATUS "ACloudViewer ${PROJECT_VERSION} ${CMAKE_BUILD_TYPE} Configuration Summary")
     message(STATUS "========================================================================")
     message(STATUS "Enabled Features:")
     cloudViewer_aligned_print("SIMD" "${USE_SIMD}")
@@ -35,26 +35,9 @@ function(cloudViewer_print_configuration_summary)
     cloudViewer_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
     cloudViewer_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
     cloudViewer_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
+    cloudViewer_aligned_print("PACKAGE Building results when install" "${PACKAGE}")
     if (WIN32)
         cloudViewer_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
-    endif ()
-    if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-        message(WARNING
-                "--------------------------------------------------------------------------------\n"
-                "                                                                                \n"
-                " You are compiling PyTorch ops with CUDA 11. This configuration may have        \n"
-                " stability issues. See https://github.com/isl-org/Open3D/issues/3324 and        \n"
-                " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
-                " problem.                                                                       \n"
-                "                                                                                \n"
-                " We recommend to compile PyTorch from source with compile flags                 \n"
-                "   '-Xcompiler -fno-gnu-unique'                                                 \n"
-                "                                                                                \n"
-                " or use the PyTorch wheels at                                                   \n"
-                "   https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1          \n"
-                "                                                                                \n"
-                "--------------------------------------------------------------------------------\n"
-                )
     endif ()
     if (GLIBCXX_USE_CXX11_ABI)
         cloudViewer_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "1")
@@ -68,7 +51,6 @@ function(cloudViewer_print_configuration_summary)
             Opencv
             Eigen3
             BLAS
-            faiss
             filament
             fmt
             GLEW

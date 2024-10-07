@@ -53,7 +53,6 @@
 #include "Octree.h"
 #include "PinholeCameraTrajectoryIO.h"
 #include "RGBDImage.h"
-#include "StaticVector.h"
 #include "Timer.h"
 #include "Universe.h"
 #include "VoxelGrid.h"

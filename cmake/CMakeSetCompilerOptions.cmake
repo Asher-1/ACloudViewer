@@ -1,7 +1,8 @@
-# Require C++14
-set( CMAKE_CXX_STANDARD 14 )
-set( CMAKE_CXX_EXTENSIONS OFF )
-set( CMAKE_CXX_STANDARD_REQUIRED ON )
+# Global flag to set CXX standard.
+# This does not affect 3rd party libraries.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 function(cloudViewer_set_targets_independent target)
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations

@@ -38,12 +38,17 @@ namespace cloudViewer {
 namespace core {
 namespace cuda {
 
+
 int DeviceCount() {
 #ifdef BUILD_CUDA_MODULE
     try {
-        std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
-        return cuda_state->GetNumDevices();
-    } catch (const std::runtime_error&) {  // GetInstance can throw
+        int num_devices;
+        CLOUDVIEWER_CUDA_CHECK(cudaGetDeviceCount(&num_devices));
+        return num_devices;
+    }
+    // This function is also used to detect CUDA support in our Python code.
+    // Thus, catch any errors if no GPU is available.
+    catch (const std::runtime_error&) {
         return 0;
     }
 #else
@@ -55,11 +60,11 @@ bool IsAvailable() { return cuda::DeviceCount() > 0; }
 
 void ReleaseCache() {
 #ifdef BUILD_CUDA_MODULE
-#ifdef BUILD_CACHED_CUDA_MANAGER
-    // Release cache from all devices. Since only memory from CUDAMemoryManager
+#ifdef ENABLE_CACHED_CUDA_MANAGER
+    // Release cache from all devices. Since only memory from MemoryManagerCUDA
     // is cached at the moment, this works as expected. In the future, the logic
     // could become more fine-grained.
-    CachedMemoryManager::ReleaseCache();
+    MemoryManagerCached::ReleaseCache();
 #else
     utility::LogWarning(
             "Built without cached CUDA memory manager, cuda::ReleaseCache() "
@@ -74,18 +79,74 @@ void ReleaseCache() {
 void Synchronize() {
 #ifdef BUILD_CUDA_MODULE
     for (int i = 0; i < DeviceCount(); ++i) {
-        CUDAScopedDevice scoped_device(Device("CUDA", i));
-        CLOUDVIEWER_CUDA_CHECK(cudaDeviceSynchronize());
+        Synchronize(Device(Device::DeviceType::CUDA, i));
     }
 #endif
 }
 
 void Synchronize(const Device& device) {
 #ifdef BUILD_CUDA_MODULE
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         CUDAScopedDevice scoped_device(device);
         CLOUDVIEWER_CUDA_CHECK(cudaDeviceSynchronize());
     }
+#endif
+}
+
+void AssertCUDADeviceAvailable(int device_id) {
+#ifdef BUILD_CUDA_MODULE
+    int num_devices = cuda::DeviceCount();
+    if (num_devices == 0) {
+        utility::LogError(
+                "Invalid device 'CUDA:{}'. -DBUILD_CUDA_MODULE=ON, but no "
+                "CUDA device available.",
+                device_id);
+    } else if (num_devices == 1 && device_id != 0) {
+        utility::LogError(
+                "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
+                "be 0, but got {}.",
+                device_id, device_id);
+    } else if (device_id < 0 || device_id >= num_devices) {
+        utility::LogError(
+                "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
+                "be between 0 to {}, but got {}.",
+                device_id, num_devices - 1, device_id);
+    }
+#else
+    utility::LogError(
+            "-DBUILD_CUDA_MODULE=OFF. Please build with -DBUILD_CUDA_MODULE=ON "
+            "to use CUDA device.");
+#endif
+}
+
+void AssertCUDADeviceAvailable(const Device& device) {
+    if (device.IsCUDA()) {
+        AssertCUDADeviceAvailable(device.GetID());
+    } else {
+        utility::LogError(
+                "Expected device-type to be CUDA, but got device '{}'",
+                device.ToString());
+    }
+}
+
+bool SupportsMemoryPools(const Device& device) {
+#if defined(BUILD_CUDA_MODULE) && (CUDART_VERSION >= 11020)
+    if (device.IsCUDA()) {
+        int driverVersion = 0;
+        int deviceSupportsMemoryPools = 0;
+        CLOUDVIEWER_CUDA_CHECK(cudaDriverGetVersion(&driverVersion));
+        if (driverVersion >=
+            11020) {  // avoid invalid value error in cudaDeviceGetAttribute
+            CLOUDVIEWER_CUDA_CHECK(cudaDeviceGetAttribute(
+                    &deviceSupportsMemoryPools, cudaDevAttrMemoryPoolsSupported,
+                    device.GetID()));
+        }
+        return !!deviceSupportsMemoryPools;
+    } else {
+        return false;
+    }
+#else
+    return false;
 #endif
 }
 
@@ -97,6 +158,7 @@ int GetDevice() {
 }
 
 static void SetDevice(int device_id) {
+    AssertCUDADeviceAvailable(device_id);
     CLOUDVIEWER_CUDA_CHECK(cudaSetDevice(device_id));
 }
 
@@ -116,6 +178,8 @@ public:
 
 private:
     CUDAStream() = default;
+    CUDAStream(const CUDAStream&) = delete;
+    CUDAStream& operator=(const CUDAStream&) = delete;
 
     cudaStream_t stream_ = Default();
 };
@@ -140,12 +204,14 @@ CUDAScopedDevice::CUDAScopedDevice(int device_id)
 }
 
 CUDAScopedDevice::CUDAScopedDevice(const Device& device)
-    : CUDAScopedDevice(device.GetID()) {}
+    : CUDAScopedDevice(device.GetID()) {
+    cuda::AssertCUDADeviceAvailable(device);
+}
 
 CUDAScopedDevice::~CUDAScopedDevice() { cuda::SetDevice(prev_device_id_); }
 
-constexpr CUDAScopedStream::CreateNewStreamTag
-        CUDAScopedStream::CreateNewStream;
+CUDAScopedStream::CreateNewStreamTag
+        CUDAScopedStream::CreateNewStream = {};
 
 CUDAScopedStream::CUDAScopedStream(const CreateNewStreamTag&)
     : prev_stream_(cuda::GetStream()), owns_new_stream_(true) {
@@ -167,42 +233,26 @@ CUDAScopedStream::~CUDAScopedStream() {
     cuda::SetStream(prev_stream_);
 }
 
-std::shared_ptr<CUDAState> CUDAState::GetInstance() {
-    static std::shared_ptr<CUDAState> instance{new CUDAState};
+CUDAState& CUDAState::GetInstance() {
+    static CUDAState instance;
     return instance;
 }
 
-bool CUDAState::IsP2PEnabled(int src_id, int tar_id) {
-    if (src_id < 0 || src_id >= num_devices_) {
-        utility::LogError("Device id {} is out of bound of total {} devices.",
-                          src_id, num_devices_);
-    }
-    if (tar_id < 0 || tar_id >= num_devices_) {
-        utility::LogError("Device id {} is out of bound of total {} devices.",
-                          tar_id, num_devices_);
-    }
+bool CUDAState::IsP2PEnabled(int src_id, int tar_id) const {
+    cuda::AssertCUDADeviceAvailable(src_id);
+    cuda::AssertCUDADeviceAvailable(tar_id);
     return p2p_enabled_[src_id][tar_id];
 }
 
-bool CUDAState::IsP2PEnabled(const Device& src, const Device& tar) {
+bool CUDAState::IsP2PEnabled(const Device& src, const Device& tar) const {
+    cuda::AssertCUDADeviceAvailable(src);
+    cuda::AssertCUDADeviceAvailable(tar);
     return p2p_enabled_[src.GetID()][tar.GetID()];
 }
 
-std::vector<std::vector<bool>> CUDAState::GetP2PEnabled() const {
-    return p2p_enabled_;
-}
-
-int CUDAState::GetNumDevices() const { return num_devices_; }
-
-int CUDAState::GetWarpSize() const { return warp_sizes_[GetCurrentDeviceID()]; }
-
-int CUDAState::GetCurrentDeviceID() const { return cuda::GetDevice(); }
-
-/// Disable P2P device transfer by marking p2p_enabled_ to `false`, in order
-/// to run non-p2p tests on a p2p-capable machine.
 void CUDAState::ForceDisableP2PForTesting() {
-    for (int src_id = 0; src_id < num_devices_; ++src_id) {
-        for (int tar_id = 0; tar_id < num_devices_; ++tar_id) {
+    for (int src_id = 0; src_id < cuda::DeviceCount(); ++src_id) {
+        for (int tar_id = 0; tar_id < cuda::DeviceCount(); ++tar_id) {
             if (src_id != tar_id && p2p_enabled_[src_id][tar_id]) {
                 p2p_enabled_[src_id][tar_id] = false;
             }
@@ -211,14 +261,12 @@ void CUDAState::ForceDisableP2PForTesting() {
 }
 
 CUDAState::CUDAState() {
-    CLOUDVIEWER_CUDA_CHECK(cudaGetDeviceCount(&num_devices_));
-
     // Check and enable all possible peer to peer access.
     p2p_enabled_ = std::vector<std::vector<bool>>(
-            num_devices_, std::vector<bool>(num_devices_, false));
+            cuda::DeviceCount(), std::vector<bool>(cuda::DeviceCount(), false));
 
-    for (int src_id = 0; src_id < num_devices_; ++src_id) {
-        for (int tar_id = 0; tar_id < num_devices_; ++tar_id) {
+    for (int src_id = 0; src_id < cuda::DeviceCount(); ++src_id) {
+        for (int tar_id = 0; tar_id < cuda::DeviceCount(); ++tar_id) {
             if (src_id == tar_id) {
                 p2p_enabled_[src_id][tar_id] = true;
             } else {
@@ -233,7 +281,7 @@ CUDAState::CUDAState() {
                     p2p_enabled_[src_id][tar_id] = true;
                     cudaError_t err = cudaDeviceEnablePeerAccess(tar_id, 0);
                     if (err == cudaErrorPeerAccessAlreadyEnabled) {
-                        // Ignore error since p2p is already enabled.
+                        // Ignore error since P2P is already enabled.
                         cudaGetLastError();
                     } else {
                         CLOUDVIEWER_CUDA_CHECK(err);
@@ -244,27 +292,27 @@ CUDAState::CUDAState() {
             }
         }
     }
-
-    // Cache warp sizes
-    warp_sizes_.resize(num_devices_);
-    for (int device_id = 0; device_id < num_devices_; ++device_id) {
-        cudaDeviceProp device_prop;
-        CLOUDVIEWER_CUDA_CHECK(cudaGetDeviceProperties(&device_prop, device_id));
-        warp_sizes_[device_id] = device_prop.warpSize;
-    }
 }
 
 int GetCUDACurrentDeviceTextureAlignment() {
-    int value = 0;
-    cudaError_t err = cudaDeviceGetAttribute(
-            &value, cudaDevAttrTextureAlignment, cuda::GetDevice());
-    if (err != cudaSuccess) {
-        utility::LogError(
-                "GetCUDACurrentDeviceTextureAlignment(): "
-                "cudaDeviceGetAttribute failed with {}",
-                cudaGetErrorString(err));
-    }
+    int value;
+    CLOUDVIEWER_CUDA_CHECK(cudaDeviceGetAttribute(
+            &value, cudaDevAttrTextureAlignment, cuda::GetDevice()));
     return value;
+}
+
+int GetCUDACurrentWarpSize() {
+    int value;
+    CLOUDVIEWER_CUDA_CHECK(cudaDeviceGetAttribute(&value, cudaDevAttrWarpSize,
+                                             cuda::GetDevice()));
+    return value;
+}
+
+size_t GetCUDACurrentTotalMemSize() {
+    size_t free;
+    size_t total;
+    CLOUDVIEWER_CUDA_CHECK(cudaMemGetInfo(&free, &total));
+    return total;
 }
 
 #endif

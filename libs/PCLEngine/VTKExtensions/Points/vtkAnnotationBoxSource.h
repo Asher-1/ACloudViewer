@@ -2,22 +2,24 @@
 #define vtkAnnotationBoxSource_h
 
 #include "qPCL.h"
-
-#include "vtkFiltersSourcesModule.h" // For export macro
+#include "vtkFiltersSourcesModule.h"  // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
 class QPCL_ENGINE_LIB_API vtkAnnotationBoxSource : public vtkPolyDataAlgorithm {
 public:
-  static vtkAnnotationBoxSource *New();
-  vtkTypeMacro(vtkAnnotationBoxSource,vtkPolyDataAlgorithm);
+    static vtkAnnotationBoxSource *New();
+    vtkTypeMacro(vtkAnnotationBoxSource, vtkPolyDataAlgorithm);
 
 protected:
-  vtkAnnotationBoxSource();
-  ~vtkAnnotationBoxSource() VTK_OVERRIDE {}
-  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) VTK_OVERRIDE;
+    vtkAnnotationBoxSource();
+    ~vtkAnnotationBoxSource() override {}
+    int RequestData(vtkInformation *,
+                    vtkInformationVector **,
+                    vtkInformationVector *) override;
+
 private:
-  vtkAnnotationBoxSource(const vtkAnnotationBoxSource&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAnnotationBoxSource&) VTK_DELETE_FUNCTION;
+    vtkAnnotationBoxSource(const vtkAnnotationBoxSource &) = delete;
+    void operator=(const vtkAnnotationBoxSource &) = delete;
 };
 
 #endif

@@ -8,11 +8,14 @@ else ()
     message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for gflags")
 endif ()
 
+set(GFLAGS_MAJOR_VERSION "2")
+set(GFLAGS_MINOR_VERSION "2.2")
+
 # Add gflags
 ExternalProject_Add(
         ext_gflags
         PREFIX gflags
-        URL https://github.com/gflags/gflags/archive/v2.2.2.zip
+        URL https://github.com/gflags/gflags/archive/v${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION}.zip
         URL_HASH MD5=ff856ff64757f1381f7da260f79ba79b
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/gflags"
         BUILD_IN_SOURCE 0
@@ -23,7 +26,7 @@ ExternalProject_Add(
             # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
             # checking CXX_COMPILER_ID is not supported.
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
-    　　　　　-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}

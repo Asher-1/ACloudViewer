@@ -44,6 +44,7 @@
 #include "vtkCustomInteractorStyle.h"
 
 #include "vtkCameraManipulator.h"
+#include <FileSystem.h>
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -323,7 +324,7 @@ void vtkCustomInteractorStyle::OnKeyDown() {
                 CVLog::Print("No camera parameters saved for restoring.");
             }
         } else {
-            if (boost::filesystem::exists(camera_file_)) {
+            if (cloudViewer::utility::filesystem::FileExists(camera_file_)) {
                 if (loadCameraParameters(camera_file_)) {
                     CVLog::Print("Restore camera parameters from %s.",
                                  camera_file_.c_str());

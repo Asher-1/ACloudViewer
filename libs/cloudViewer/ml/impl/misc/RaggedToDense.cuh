@@ -31,7 +31,7 @@
 #include <Helper.h>
 
 namespace cloudViewer {
-namespace ml {
+    namespace ml {
 namespace impl {
 
 namespace {

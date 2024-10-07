@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 //
-// This is a private header. It shall be hidden from Open3D's public API. Do not
-// put this in Open3D.h.in.
+// This is a private header. It shall be hidden from CloudViewer's public API. Do not
+// put this in CloudViewer.h.in.
 
 #pragma once
 

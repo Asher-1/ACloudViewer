@@ -33,8 +33,8 @@ cmake_minimum_required(VERSION 3.18)
 
 project(COLMAP)
 
-set(COLMAP_VERSION "3.9")
-set(COLMAP_VERSION_NUMBER "3900")
+set(COLMAP_VERSION "${CLOUDVIEWER_VERSION}")
+set(COLMAP_VERSION_NUMBER "${CLOUDVIEWER_VERSION_MAJOR}${CLOUDVIEWER_VERSION_MINOR}${CLOUDVIEWER_VERSION_PATCH}")
 
 ################################################################################
 # Include CMake dependencies
@@ -136,18 +136,12 @@ if (APPLE)
     find_package(FreeImage REQUIRED)
 endif ()
 
-#find_package(Boost REQUIRED COMPONENTS
-#        program_options
-#        filesystem
-#        graph
-#        system
-#        atomic
-#        unit_test_framework)
-
 set(OpenGL_GL_PREFERENCE GLVND)
 
 if (CGAL_ENABLED)
     set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
+    # We do not use CGAL data. This prevents an unnecessary warning by CMake.
+    set(CGAL_DATA_DIR "unused")
     find_package(CGAL QUIET)
 endif ()
 
@@ -272,7 +266,7 @@ if (Qt5_FOUND)
     if (Qt5_POSITION_INDEPENDENT_CODE)
         set(CMAKE_POSITION_INDEPENDENT_CODE ON)
         if (CUDA_ENABLED AND NOT IS_MSVC)
-            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options -fPIC")
+            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}--compiler-options=-fPIC")
         endif ()
 
         # Workaround for Qt5 CMake config bug under Ubuntu 20.04: https://gitlab.kitware.com/cmake/cmake/-/issues/16915

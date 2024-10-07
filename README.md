@@ -50,8 +50,6 @@ More on ACloudViewer [here](http://asher-1.github.io)
 
 For more, please visit the [ACloudViewer documentation](http://asher-1.github.io).
 
-
-
 ## ACloudViewer System
 
 <p align="center">
