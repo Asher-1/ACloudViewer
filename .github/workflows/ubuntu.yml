@@ -10,7 +10,7 @@ on:
         default: 'ON'
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -66,9 +66,9 @@ jobs:
           path: cloudViewer*.zip
           if-no-files-found: error
       - name: Update devel release
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload master-devel cloudViewer*.zip --clobber
-          gh release view master-devel
+          gh release upload main-devel cloudViewer*.zip --clobber
+          gh release view main-devel
