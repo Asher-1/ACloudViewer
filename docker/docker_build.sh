@@ -95,12 +95,12 @@ cuda_wheel_build() {
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg CI="${CI:-}" \
-        -t cloudViewer-ci:wheel \
+        -t cloudviewer-ci:wheel \
         -f docker/Dockerfile.wheel .
     popd
 
     python_package_dir=/root/ACloudViewer/build/lib/python_package
-    docker run -v "${PWD}:/opt/mount" --rm cloudViewer-ci:wheel \
+    docker run -v "${PWD}:/opt/mount" --rm cloudviewer-ci:wheel \
         bash -c "cp ${python_package_dir}/pip_package/cloudViewer*.whl /opt/mount \
               && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
               && chown $(id -u):$(id -g) /opt/mount/cloudViewer*.whl \
@@ -147,11 +147,11 @@ ci_build() {
 }
 
 2-focal_export_env() {
-    export DOCKER_TAG=cloudViewer-ci:2-focal
+    export DOCKER_TAG=cloudviewer-ci:2-focal
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudViewer-ci-2-focal
+    export CCACHE_TAR_NAME=cloudviewer-ci-2-focal
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
@@ -161,11 +161,11 @@ ci_build() {
 }
 
 5-ml-jammy_export_env() {
-    export DOCKER_TAG=cloudViewer-ci:5-ml-jammy
+    export DOCKER_TAG=cloudviewer-ci:5-ml-jammy
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudViewer-ci-5-ml-jammy
+    export CCACHE_TAR_NAME=cloudviewer-ci-5-ml-jammy
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
@@ -176,11 +176,11 @@ ci_build() {
 }
 
 cpu-static_export_env() {
-    export DOCKER_TAG=cloudViewer-ci:cpu-static
+    export DOCKER_TAG=cloudviewer-ci:cpu-static
 
     export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudViewer-ci-cpu
+    export CCACHE_TAR_NAME=cloudviewer-ci-cpu
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
@@ -190,11 +190,11 @@ cpu-static_export_env() {
 }
 
 cpu-static-ml-release_export_env() {
-    export DOCKER_TAG=cloudViewer-ci:cpu-shared-ml
+    export DOCKER_TAG=cloudviewer-ci:cpu-shared-ml
 
     export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=cloudViewer-ci-cpu
+    export CCACHE_TAR_NAME=cloudviewer-ci-cpu
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF

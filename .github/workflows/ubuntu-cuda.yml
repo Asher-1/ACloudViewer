@@ -61,9 +61,9 @@ jobs:
       # Docker tag and ccache names must be consistent with docker_build.sh
       CI_CONFIG          : ${{ matrix.CI_CONFIG }}
       BUILD_PACKAGE      : true
-      GCE_INSTANCE_PREFIX: cloudViewer-ci-${{ matrix.CI_CONFIG }}
-      DOCKER_TAG         : cloudViewer-ci:${{ matrix.CI_CONFIG }}
-      CCACHE_TAR_NAME    : cloudViewer-ci-${{ matrix.CI_CONFIG }}
+      GCE_INSTANCE_PREFIX: cloudviewer-ci-${{ matrix.CI_CONFIG }}
+      DOCKER_TAG         : cloudviewer-ci:${{ matrix.CI_CONFIG }}
+      CCACHE_TAR_NAME    : cloudviewer-ci-${{ matrix.CI_CONFIG }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
