@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-export BUILD_SHARED_LIBS=OFF
 export DEVELOPER_BUILD=OFF
+export BUILD_SHARED_LIBS=OFF
 export BUILD_CUDA_MODULE=ON
 export BUILD_PYTORCH_OPS=ON
 export BUILD_TENSORFLOW_OPS=OFF

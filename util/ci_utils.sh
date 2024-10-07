@@ -313,7 +313,6 @@ build_pip_package() {
         "-DWITH_SIMD=ON"
         "-DUSE_SIMD=ON"
         "-DBUILD_WEBRTC=ON"
-        "-DBUILD_RECONSTRUCTION=ON"
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
@@ -328,7 +327,7 @@ build_pip_package() {
         "-DCMAKE_PREFIX_PATH=$QT_DIR/lib/cmake"
     )
     set -x # Echo commands on
-    cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
+    cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_RECONSTRUCTION=OFF "${cmakeOptions[@]}" ..
     set +x # Echo commands off
     echo
 
@@ -350,6 +349,7 @@ build_pip_package() {
         set -x # Echo commands on
         cmake -DBUILD_CUDA_MODULE=ON \
             -DBUILD_COMMON_CUDA_ARCHS=ON \
+            -DBUILD_RECONSTRUCTION=ON \
             "${cmakeOptions[@]}" ..
         set +x # Echo commands off
     fi
