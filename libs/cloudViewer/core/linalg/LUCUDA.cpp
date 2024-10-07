@@ -37,7 +37,8 @@ void LUCUDA(void* A_data,
             int64_t cols,
             Dtype dtype,
             const Device& device) {
-    cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
+    cusolverDnHandle_t handle =
+            CuSolverContext::GetInstance().GetHandle(device);
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len;
         CLOUDVIEWER_CUSOLVER_CHECK(
@@ -60,6 +61,7 @@ void LUCUDA(void* A_data,
                                          dinfo, device);
     });
 }
+
 
 }  // namespace core
 }  // namespace cloudViewer

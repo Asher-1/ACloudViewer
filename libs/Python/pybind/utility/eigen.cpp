@@ -321,7 +321,6 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_matrix(
 }
 
 }  // unnamed namespace
-
 namespace cloudViewer {
 namespace utility {
 
@@ -362,7 +361,7 @@ Example usage
     pcd.set_points(cloudViewer.utility.Vector3dVector(np_points))
 
     # From CloudViewer to numpy
-    np_points = np.asarray(pcd.points)
+    np_points = np.asarray(pcd.get_points())
 )";
             }),
             py::none(), py::none(), "");

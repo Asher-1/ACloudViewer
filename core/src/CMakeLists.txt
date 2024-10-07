@@ -4,7 +4,6 @@
 target_sources( ${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_LIST_DIR}/AutoSegmentationTools.cpp
-		${CMAKE_CURRENT_LIST_DIR}/BoundingBox.cpp
 		${CMAKE_CURRENT_LIST_DIR}/ChamferDistanceTransform.cpp
 		${CMAKE_CURRENT_LIST_DIR}/CloudSamplingTools.cpp
 		${CMAKE_CURRENT_LIST_DIR}/Console.cpp
@@ -51,7 +50,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/Parallel.cpp
 		${CMAKE_CURRENT_LIST_DIR}/MemoryInfo.cpp
 		${CMAKE_CURRENT_LIST_DIR}/Universe.cpp
-		${CMAKE_CURRENT_LIST_DIR}/StaticVector.cpp
+		# ${CMAKE_CURRENT_LIST_DIR}/StaticVector.cpp # fix undefined symbols unzReadCurrentFile
 )
 
 target_include_directories( ${PROJECT_NAME}

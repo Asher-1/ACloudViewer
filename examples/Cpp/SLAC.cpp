@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
     params.max_iterations_ =
             utility::GetProgramOptionAsInt(argc, argv, "--iterations", 5);
     params.device_ =
-            utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0");
+            core::Device(utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0"));
 
     // Debug
     auto debug_option = t::pipelines::slac::SLACDebugOption();

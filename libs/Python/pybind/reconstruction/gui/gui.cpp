@@ -52,8 +52,8 @@ static const std::unordered_map<std::string, std::string>
 void pybind_gui_methods(py::module &m) {
     m.def("run_graphical_gui", &GraphicalUserInterface,
           py::call_guard<py::gil_scoped_release>(),
-          "Function for the project gui application", "database_path"_a,
-          "image_path"_a, "import_path"_a = "");
+          "Function for the project gui application", "database_path"_a = "",
+          "image_path"_a = "", "import_path"_a = "");
     docstring::FunctionDocInject(m, "run_graphical_gui",
                                  map_shared_argument_docstrings);
 

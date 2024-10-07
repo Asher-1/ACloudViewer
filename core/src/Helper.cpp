@@ -30,6 +30,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdarg>
+#include <sstream>
 #include <unordered_set>
 
 #ifdef _WIN32

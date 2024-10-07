@@ -30,6 +30,7 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #include "pipelines/application_gui.h"
+
 #include "exe/gui.h"
 #include "pipelines/option_utils.h"
 
@@ -46,12 +47,20 @@ int GraphicalUserInterface(const std::string& database_path,
                            const std::string& import_path) {
     InitQtResources();
     OptionsParser parser;
-    parser.registerOption("database_path", &database_path);
-    parser.registerOption("image_path", &image_path);
-    parser.registerOption("import_path", &import_path);
+    if (!database_path.empty()) {
+        parser.registerOption("database_path", &database_path);
+    }
+    if (!image_path.empty()) {
+        parser.registerOption("image_path", &image_path);
+    }
+    if (!import_path.empty()) {
+        parser.registerOption("import_path", &import_path);
+    }
+
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
-    return colmap::RunGraphicalUserInterface(parser.getArgc(), parser.getArgv());
+    return colmap::RunGraphicalUserInterface(parser.getArgc(),
+                                             parser.getArgv());
 }
 
 int GenerateProject(const std::string& output_path,

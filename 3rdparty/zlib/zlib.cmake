@@ -9,10 +9,13 @@ endif()
 ExternalProject_Add(
     ext_zlib
     PREFIX zlib
-    URL https://github.com/madler/zlib/archive/refs/tags/v1.2.11.tar.gz
-    URL_HASH SHA256=629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff
+    URL https://github.com/madler/zlib/archive/refs/tags/v1.2.13.tar.gz
+    URL_HASH SHA256=1525952a0a567581792613a9723333d7f8cc20b87a81f920fb8bc7e3f2251428
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/zlib"
     UPDATE_COMMAND ""
+    PATCH_COMMAND ${GIT_EXECUTABLE} init
+    COMMAND       ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
+                  ${CMAKE_CURRENT_LIST_DIR}/0001-patch-zlib-to-enable-unzip.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         # zlib needs visiible symbols for examples. Disabling example building causes

@@ -26,42 +26,46 @@
 """Torch specific machine learning functions."""
 import os as _os
 import sys as _sys
+from packaging.version import parse as _verp
 import torch as _torch
 from cloudViewer import _build_config
 
 if not _build_config["Pytorch_VERSION"]:
     raise Exception('CloudViewer was not built with PyTorch support!')
 
-_cv3d_torch_version = _build_config["Pytorch_VERSION"].split('.')
-if _torch.__version__.split('.')[:2] != _cv3d_torch_version[:2]:
-    _cv3d_torch_version[2] = '*'  # Any patch level is OK
-    match_torch_ver = '.'.join(_cv3d_torch_version)
-    raise Exception('Version mismatch: CloudViewer needs Pytorch version {}, but '
+_cv3d_torch_version = _verp(_build_config["Pytorch_VERSION"])
+# Check match with PyTorch version, any patch level is OK
+if _verp(_torch.__version__).release[:2] != _cv3d_torch_version.release[:2]:
+    match_torch_ver = '.'.join(
+        str(v) for v in _cv3d_torch_version.release[:2] + ('*',))
+    raise Exception('Version mismatch: CloudViewer needs PyTorch version {}, but '
                     'version {} is installed!'.format(match_torch_ver,
                                                       _torch.__version__))
 
 # Precompiled wheels at
-# https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1
+# https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2
 # have been compiled with '-Xcompiler -fno-gnu-unique' and have an additional
 # attribute that we test here. Print a warning if the attribute is missing.
-if _build_config["BUILD_CUDA_MODULE"] and not hasattr(_torch,
-                                                      "_TORCH_NVCC_FLAGS"):
+if (_build_config["BUILD_CUDA_MODULE"] and
+        not hasattr(_torch, "_TORCH_NVCC_FLAGS") and
+        _verp(_torch.__version__) < _verp("1.9.0")):
     print("""
 --------------------------------------------------------------------------------
 
- Using the CloudViewer PyTorch ops with CUDA 11 may have stability issues!
+ Using the CloudViewer PyTorch ops with CUDA 11 and PyTorch version < 1.9 may have
+ stability issues!
 
  We recommend to compile PyTorch from source with compile flags
    '-Xcompiler -fno-gnu-unique'
 
  or use the PyTorch wheels at
-   https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1
+   https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2
 
 
  Ignore this message if PyTorch has been compiled with the aforementioned
  flags.
 
- See https://github.com/isl-org/Open3D/issues/3324 and
+ See https://github.com/isl-org/CloudViewer/issues/3324 and
  https://github.com/pytorch/pytorch/issues/52663 for more information on this
  problem.
 

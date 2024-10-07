@@ -25,11 +25,10 @@ docker run -dit --name=cloudviewer_env \
   -p 20022:22 \
   -p 24000:4000 \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /Users/asher/develop/code/github/ACloudViewer:/opt/ACloudViewer/ACloudViewer \
-  -v /Users/asher/develop/code/github/docker_cache/build:/opt/ACloudViewer/build \
-  -v /Users/asher/develop/code/github/docker_cache/install:/opt/ACloudViewer/install \
-  -v /Users/asher/develop/code/github/ACloudViewer/3rdparty_downloads:/opt/ACloudViewer/thirdparties \
-  -v /Users/asher/develop/code/github/CloudViewer-ML:/opt/ACloudViewer/CloudViewer-ML \
+  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer:/opt/ACloudViewer \
+  -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/opt/CloudViewer-ML \
+  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/opt/install \
+  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/opt/ACloudViewer/build \
   registry.cn-shanghai.aliyuncs.com/asher-ai/cloudviewer-deps:latest
 
 # attach into container instance
@@ -57,7 +56,6 @@ cmakeWhlOptions=(-DDEVELOPER_BUILD=OFF
   -DBUILD_JUPYTER_EXTENSION=ON
   -DBUILD_LIBREALSENSE=ON
   -DBUILD_AZURE_KINECT=ON
-  -DBUILD_RPC_INTERFACE=ON
   -DBUILD_BENCHMARKS=OFF
   -DWITH_OPENMP=ON
   -DUSE_SIMD=ON
@@ -91,7 +89,6 @@ cmakeGuiOptions=(
                 -DBUILD_JUPYTER_EXTENSION=ON
                 -DBUILD_LIBREALSENSE=ON
                 -DBUILD_AZURE_KINECT=ON
-                -DBUILD_RPC_INTERFACE=ON
                 -DBUILD_BENCHMARKS=OFF
                 -DWITH_OPENMP=ON
                 -DBUILD_WEBRTC=ON

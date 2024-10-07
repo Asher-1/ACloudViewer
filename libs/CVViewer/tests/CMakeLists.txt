@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 # Overide policy for hidden symbol visibility
 if(POLICY CMP0063)
     cmake_policy(SET CMP0063 NEW)
@@ -23,10 +23,6 @@ endif()
 # TODO: handle conditional compilation more systematically
 if (NOT BUILD_GUI)
     list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/visualization/rendering/.*cpp)
-endif()
-
-if (NOT BUILD_RPC_INTERFACE)
-    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/io/rpc/RemoteFunctions.cpp)
 endif()
 
 add_executable(tests ${UNIT_TEST_SOURCE_FILES})

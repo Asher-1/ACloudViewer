@@ -11,6 +11,7 @@ target_sources(pybind PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/size_vector.cpp
         ${CMAKE_CURRENT_LIST_DIR}/tensor_accessor.cpp
         ${CMAKE_CURRENT_LIST_DIR}/tensor_converter.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/tensor_function.cpp
         ${CMAKE_CURRENT_LIST_DIR}/tensor.cpp
         ${CMAKE_CURRENT_LIST_DIR}/tensorlist.cpp
         )

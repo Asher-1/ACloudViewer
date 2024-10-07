@@ -30,13 +30,13 @@
 #include <Image.h>
 #include <ImageIO.h>
 #include <Logging.h>
+#include <CloudViewerConfig.h>
 #include <ecvBBox.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
 
 #include <random>
 
-#include "CloudViewerConfig.h"
 #include "io/FileFormatIO.h"
 #include "io/ModelIO.h"
 #include "io/PointCloudIO.h"

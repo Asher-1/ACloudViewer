@@ -106,3 +106,61 @@
             utility::LogError("Unsupported data type.");  \
         }                                                 \
     }()
+
+#define DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(FDTYPE, IDTYPE, ...) \
+    [&] {                                                         \
+        if (FDTYPE == cloudViewer::core::Float32 &&               \
+            IDTYPE == cloudViewer::core::Int32) {                 \
+            using scalar_t = float;                               \
+            using int_t = int32_t;                                \
+            return __VA_ARGS__();                                 \
+        } else if (FDTYPE == cloudViewer::core::Float32 &&        \
+                   IDTYPE == cloudViewer::core::Int64) {          \
+            using scalar_t = float;                               \
+            using int_t = int64_t;                                \
+            return __VA_ARGS__();                                 \
+        } else if (FDTYPE == cloudViewer::core::Float64 &&        \
+                   IDTYPE == cloudViewer::core::Int32) {          \
+            using scalar_t = double;                              \
+            using int_t = int32_t;                                \
+            return __VA_ARGS__();                                 \
+        } else if (FDTYPE == cloudViewer::core::Float64 &&        \
+                   IDTYPE == cloudViewer::core::Int64) {          \
+            using scalar_t = double;                              \
+            using int_t = int64_t;                                \
+            return __VA_ARGS__();                                 \
+        } else {                                                  \
+            utility::LogError("Unsupported data type.");  \
+        }                                                         \
+    }()
+
+#define DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(DTYPE, PREFIX, ...) \
+    [&] {                                                         \
+        if (DTYPE == cloudViewer::core::Int8) {                   \
+            using scalar_##PREFIX##_t = int8_t;                   \
+            return __VA_ARGS__();                                 \
+        } else if (DTYPE == cloudViewer::core::Int16) {           \
+            using scalar_##PREFIX##_t = int16_t;                  \
+            return __VA_ARGS__();                                 \
+        } else if (DTYPE == cloudViewer::core::Int32) {           \
+            using scalar_##PREFIX##_t = int32_t;                  \
+            return __VA_ARGS__();                                 \
+        } else if (DTYPE == cloudViewer::core::Int64) {           \
+            using scalar_##PREFIX##_t = int64_t;                  \
+            return __VA_ARGS__();                                 \
+        } else if (DTYPE == cloudViewer::core::UInt8) {           \
+            using scalar_##PREFIX##_t = uint8_t;                  \
+            return __VA_ARGS__();                                 \
+        } else if (DTYPE == cloudViewer::core::UInt16) {          \
+            using scalar_##PREFIX##_t = uint16_t;                 \
+            return __VA_ARGS__();                                 \
+        } else if (DTYPE == cloudViewer::core::UInt32) {          \
+            using scalar_##PREFIX##_t = uint32_t;                 \
+            return __VA_ARGS__();                                 \
+        } else if (DTYPE == cloudViewer::core::UInt64) {          \
+            using scalar_##PREFIX##_t = uint64_t;                 \
+            return __VA_ARGS__();                                 \
+        } else {                                                  \
+            utility::LogError("Unsupported data type.");          \
+        }                                                         \
+    }()

@@ -349,7 +349,7 @@ public:
                             core::Int64);
     }
 
-    /// \brief Create from a legacy Open3D Image.
+    /// \brief Create from a legacy CloudViewer Image.
     static Image FromLegacy(
             const cloudViewer::geometry::Image &image_legacy,
             const core::Device &Device = core::Device("CPU:0"));

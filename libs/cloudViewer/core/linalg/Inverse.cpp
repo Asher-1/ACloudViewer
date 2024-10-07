@@ -27,24 +27,17 @@
 #include "core/linalg/Inverse.h"
 
 #include <unordered_map>
-
+#include "core/CUDAUtils.h"
 #include "core/linalg/LinalgHeadersCPU.h"
 
 namespace cloudViewer {
 namespace core {
 
 void Inverse(const Tensor &A, Tensor &output) {
-    // Check devices
-    Device device = A.GetDevice();
+    AssertTensorDtypes(A, {Float32, Float64});
 
-    // Check dtypes
-    Dtype dtype = A.GetDtype();
-    if (dtype != core::Float32 && dtype != core::Float64) {
-        utility::LogError(
-                "Only tensors with Float32 or Float64 are supported, but "
-                "received {}.",
-                dtype.ToString());
-    }
+    const Device device = A.GetDevice();
+    const Dtype dtype = A.GetDtype();
 
     // Check dimensions
     SizeVector A_shape = A.GetShape();
@@ -62,8 +55,9 @@ void Inverse(const Tensor &A, Tensor &output) {
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         Tensor ipiv = Tensor::Zeros({n}, core::Int32, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
@@ -100,5 +94,6 @@ void Inverse(const Tensor &A, Tensor &output) {
         output = A_T.T();
     }
 }
+
 }  // namespace core
 }  // namespace cloudViewer

@@ -12,25 +12,28 @@ function(cloudViewer_make_cuda_architectures cuda_archs)
     find_package(CUDAToolkit REQUIRED)
 
     if(BUILD_COMMON_CUDA_ARCHS)
-        # Build with all supported architectures for previous 2 generations and
-        # M0 (minor=0) architectures for previous generations (inluding
-        # deprecated). Note that cubin for M0 runs on GPUs with architecture Mx.
-        # This is a tradeoff between binary size / build time and runtime on
-        # older architectures.
-        # See https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility.
-        # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
-        if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
-            set(${cuda_archs} 35-real 50-real 60-real 70-real 72-real 75-real 80-real 86)
-            message("cuda_archs: "  ${cuda_archs})
-        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-            set(${cuda_archs} 35-real 50-real 60-real 70-real 72-real 75-real 80)
-            message("cuda_archs: "  ${cuda_archs})
-        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
-            set(${cuda_archs} 30-real 50-real 60-real 70-real 72-real 75-real 80-real 86-real 89)
-            message("cuda_archs: "  ${cuda_archs})
+        if (CMAKE_CUDA_ARCHITECTURES)
+            set(${cuda_archs} ${CMAKE_CUDA_ARCHITECTURES})
+            message(STATUS "Building with user-provided architectures: ${CMAKE_CUDA_ARCHITECTURES}")
         else()
-            set(${cuda_archs} 30-real 50-real 60-real 70-real 72-real 75)
-            message("cuda_archs: "  ${cuda_archs})
+            # Build with all supported architectures for previous 2 generations and
+            # M0 (minor=0) architectures for previous generations (including
+            # deprecated). Note that cubin for M0 runs on GPUs with architecture Mx.
+            # This is a tradeoff between binary size / build time and runtime on
+            # older architectures. See:
+            # https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility
+            # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
+            # https://en.wikipedia.org/wiki/CUDA#GPUs_supported
+            find_package(CUDAToolkit REQUIRED)
+            if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
+                set(${cuda_archs} 75-real 80-real 86-real 89-real 90)    # Turing, Ampere, Ada Lovelace, Hopper
+            elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
+                set(${cuda_archs} 70-real 75-real 80-real 86)            # Volta, Turing, Ampere
+            elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
+                set(${cuda_archs} 60-real 70-real 72-real 75-real 80)    # Pascal, Volta, Turing, Ampere
+            else()
+                set(${cuda_archs} 30-real 50-real 60-real 70-real 75)    # Kepler, Maxwell, Pascal, Turing
+            endif()
         endif()
     else()
         if(CMAKE_CUDA_ARCHITECTURES)

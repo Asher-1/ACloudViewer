@@ -35,6 +35,7 @@ public:
     virtual vtkContextItem* chart() const = 0;
 
     vtkContextView* contextView() const;
+    vtkRenderWindow* GetRenderWindow() {return this->renderWindow(); }
 
 protected:
     void init();

@@ -36,6 +36,8 @@
 #include <Parallel.h>
 
 // PCL COMMON
+#include <pcl/point_types.h>
+#include <pcl/common/common.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/Vertices.h>
 #include <pcl/common/io.h>  // for getFieldIndex

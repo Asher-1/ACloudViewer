@@ -1,6 +1,6 @@
 # Compilation of ACloudViewer 3.3+ (with CMake)
 
-**WARNING**: if you already have a clone of the ACloudViewer git repository (prior to July 2015), you may want to update/checkout the submodules with ```git submodule update --init --recursive```
+[**Fast Docker build**](./docker/README.md)
 
 ## Prerequisites
 
@@ -214,7 +214,10 @@ If you want to compile ACloudViewer (and ccViewer) with LibE57 files support, yo
     - On Visual C++ (Windows):
         1. select the `Static Debug` or `Static Release` configurations
         2. you'll have to manually modify the `XercesLib` project options so that the `C/C++ > Code Generation > Runtime Library` are of DLL type in both release and debug modes (i.e. `/MD` in release or `/MDd` in debug)
-        3. for 64 bits version be sure to select the right platform (x64 instead of Win32). If you use Visual Studio Express 2010, be sure also that the `toolset` (in the project properties) is set to something like `Windows7.1SDK`
+        3. for 64 bits version be sure to select the right platform (x64 instead of Win32). If you use Visual Studio Express 2010, be sure also that thif(NOT DEFINED Python3_FIND_REGISTRY)
+#     # Only consider PATH variable on Windows by default
+#     set(Python3_FIND_REGISTRY NEVER)
+# endif()e `toolset` (in the project properties) is set to something like `Windows7.1SDK`
     - only the XercesLib project neet to be compiled
     - eventually, CMake will look for the resulting files in `/include` (instead of `/src`) and `/lib` (without the Release or Debug subfolders). By default the visual project will put them in `/Build/WinXX/VCXX/StaticXXX`. Therefore you should create a custom folder with the right organization and copy the files there.
 
@@ -281,3 +284,114 @@ Then, the ACloudViewer CMake project will request that you set the following var
 1. `CORK_INCLUDE_DIR` and `MPIR_INCLUDE_DIR`: both libraries include directories (pretty straightforward ;)
 2. `CORK_RELEASE_LIBRARY_FILE` and `MPIR_RELEASE_LIBRARY_FILE`: both main library files
 3. and optionally `CORK_DEBUG_LIBRARY_FILE` and `MPIR_DEBUG_LIBRARY_FILE`: both main library files (for debug mode)
+
+
+LINUX:
+
+```
+(whl)
+sudo apt install libxxf86vm-dev
+
+cd ACloudViewer
+mkdir build
+cd build
+cmake -DDEVELOPER_BUILD=OFF \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_LIBREALSENSE=OFF \
+      -DBUILD_AZURE_KINECT=ON \
+      -DBUILD_BENCHMARKS=OFF \
+      -DBUILD_OPENCV=OFF \
+      -DWITH_OPENMP=ON \
+      -DWITH_IPPICV=ON \
+      -DWITH_SIMD=ON \
+      -DUSE_SIMD=ON \
+      -DBUILD_WEBRTC=ON \
+      -DBUILD_FILAMENT_FROM_SOURCE=OFF \
+      -DBUILD_JUPYTER_EXTENSION=ON \
+      -DBUILD_RECONSTRUCTION=ON \
+      -DBUILD_CUDA_MODULE=ON \
+      -DBUILD_COMMON_CUDA_ARCHS=ON \
+      -DBUILD_PYTORCH_OPS=ON \
+      -DBUILD_TENSORFLOW_OPS=OFF \
+      -DBUNDLE_CLOUDVIEWER_ML=ON \
+      -DGLIBCXX_USE_CXX11_ABI=OFF \
+      -DCMAKE_INSTALL_PREFIX=/home/asher/develop/code/github/CloudViewer/install \
+      -DCLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML \
+      -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
+      -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake \
+      ..
+
+make "-j$(nproc)" python-package
+make "-j$(nproc)" pip-package
+make "-j$(nproc)" install-pip-package
+python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
+```
+
+```
+(APP)
+cd ACloudViewer
+mkdir build
+cd build
+cmake   -DDEVELOPER_BUILD=OFF \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_JUPYTER_EXTENSION=OFF \
+        -DBUILD_LIBREALSENSE=OFF \
+        -DBUILD_AZURE_KINECT=ON \
+        -DBUILD_BENCHMARKS=OFF \
+        -DWITH_OPENMP=ON \
+        -DWITH_IPPICV=ON \
+        -DWITH_SIMD=ON \
+        -DUSE_SIMD=ON \
+        -DPACKAGE=ON \
+        -DBUILD_WEBRTC=OFF \
+        -DBUILD_OPENCV=ON \
+        -DBUILD_RECONSTRUCTION=ON \
+        -DBUILD_CUDA_MODULE=ON \
+        -DBUILD_COMMON_CUDA_ARCHS=ON \
+        -DBUILD_PYTORCH_OPS=OFF \
+        -DBUILD_TENSORFLOW_OPS=OFF \
+        -DBUNDLE_CLOUDVIEWER_ML=OFF \
+        -DGLIBCXX_USE_CXX11_ABI=ON \
+        -DCVCORELIB_USE_CGAL=ON \
+        -DCVCORELIB_SHARED=ON \
+        -DCVCORELIB_USE_QT_CONCURRENT=ON \
+        -DOPTION_USE_GDAL=ON \
+        -DOPTION_USE_DXF_LIB=ON \
+        -DOPTION_USE_RANSAC_LIB=ON \
+        -DOPTION_USE_SHAPE_LIB=ON \
+        -DPLUGIN_IO_QDRACO=ON \
+        -DPLUGIN_IO_QLAS=ON \
+        -DPLUGIN_IO_QADDITIONAL=ON \
+        -DPLUGIN_IO_QCORE=ON \
+        -DPLUGIN_IO_QCSV_MATRIX=ON \
+        -DPLUGIN_IO_QE57=ON \
+        -DPLUGIN_IO_QMESH=ON \
+        -DPLUGIN_IO_QPDAL=OFF \
+        -DPLUGIN_IO_QPHOTOSCAN=ON \
+        -DPLUGIN_IO_QRDB=ON \
+        -DPLUGIN_STANDARD_QJSONRPC=ON \
+        -DPLUGIN_STANDARD_QCLOUDLAYERS=ON \
+        -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
+        -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
+        -DPLUGIN_STANDARD_QANIMATION=ON \
+        -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
+        -DPLUGIN_STANDARD_QCANUPO=ON \
+        -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
+        -DPLUGIN_STANDARD_QCOMPASS=ON \
+        -DPLUGIN_STANDARD_QCSF=ON \
+        -DPLUGIN_STANDARD_QFACETS=ON \
+        -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON \
+        -DPLUGIN_STANDARD_QM3C2=ON \
+        -DPLUGIN_STANDARD_QMPLANE=ON \
+        -DPLUGIN_STANDARD_QPCL=ON \
+        -DPLUGIN_STANDARD_QPOISSON_RECON=ON \
+        -DPOISSON_RECON_WITH_OPEN_MP=ON \
+        -DPLUGIN_STANDARD_QRANSAC_SD=ON \
+        -DPLUGIN_STANDARD_QSRA=ON \
+        -DCMAKE_INSTALL_PREFIX=/home/asher/develop/code/github/CloudViewer/install \
+        ..
+
+Build: 
+        make -j24
+        make install -j24
+```

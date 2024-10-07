@@ -1,0 +1,74 @@
+name: Ubuntu
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release wheels'
+        required: false
+        default: 'ON'
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NPROC: 2
+
+jobs:
+  ubuntu:
+    permissions:
+      contents: write  # Release upload
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        MLOPS: [ON, OFF]
+        exclude:
+          - BUILD_SHARED_LIBS: OFF
+            MLOPS: ON
+    env:
+      BUILD_SHARED_LIBS: OFF
+      BUILD_CUDA_MODULE: OFF
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+      CLOUDVIEWER_CPU_RENDERING: true
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      - name: Docker build
+        run: |
+          if   [ "${{ matrix.MLOPS }}" = "OFF" ]; then
+            docker/docker_build.sh cpu-static
+          elif [ "${{ matrix.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cpu-static-ml-release
+          fi
+      - name: Docker test
+        run: |
+          if   [ "${{ matrix.MLOPS }}" = "OFF" ]; then
+            docker/docker_test.sh cpu-static
+          elif [ "${{ matrix.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_test.sh cpu-static-ml-release
+          fi
+      - name: Upload package to GitHub artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudViewer-devel-linux-x86_64-ML_${{ matrix.MLOPS }}
+          path: cloudViewer*.zip
+          if-no-files-found: error
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/master' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload master-devel cloudViewer*.zip --clobber
+          gh release view master-devel
