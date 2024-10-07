@@ -52,8 +52,7 @@ ENV REFRESHED_AT=2023-06-04\
     DEBIAN_FRONTEND=noninteractive
 
 # Update apt and install libs needed by Qt
-RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
-    && apt-get clean && apt-get update --fix-missing -y \
+RUN apt-get clean && apt-get update --fix-missing -y \
     && apt-get install apt-utils software-properties-common tzdata --fix-missing -y \
     && apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc \
     && apt-add-repository --yes "deb https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
@@ -254,7 +253,15 @@ RUN unzip pcl-1.14.1.zip && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
             -DBUILD_GPU=OFF \
-            -DBUILD_apps=OFF \
+            -DBUILD_apps=OFF \RUN ccache -s \
+            && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+            && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+            && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+            && cd ${CCACHE_DIR_PARENT} \
+            && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME}
+           
+           RUN echo "Docker build done."
+           
             -DBUILD_examples=OFF \
             -DBUILD_surface_on_nurbs=ON \
             -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
