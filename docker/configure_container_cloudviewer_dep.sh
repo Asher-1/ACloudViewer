@@ -47,6 +47,7 @@ rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh
 
 test cloudViewer
 python3 -c "import cloudViewer as cv3d; print(cv3d.__version__); print('CUDA available: ', cv3d.core.cuda.is_available());"
+python3 -c "import cloudViewer.ml.torch as ml3d"
 
 pcl: metslib-0.5.3
 wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz

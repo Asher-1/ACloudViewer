@@ -129,6 +129,12 @@ set_target_properties(cloudViewer_torch_ops PROPERTIES
 # Do not add "lib" prefix
 set_target_properties(cloudViewer_torch_ops PROPERTIES PREFIX "")
 set_target_properties(cloudViewer_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
+# Set BUILD_RPATH to find tbb. We don't install through cmake.
+if (APPLE)
+    set_target_properties(cloudViewer_torch_ops PROPERTIES BUILD_RPATH "@loader_path/..")
+elseif (UNIX)
+    set_target_properties(cloudViewer_torch_ops PROPERTIES BUILD_RPATH "$ORIGIN/..")
+endif()
 
 target_include_directories(cloudViewer_torch_ops SYSTEM PRIVATE
         ${PROJECT_SOURCE_DIR}/libs/cloudViewer

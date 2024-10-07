@@ -297,7 +297,7 @@ mkdir build
 cd build
 cmake -DDEVELOPER_BUILD=OFF \
       -DCMAKE_BUILD_TYPE=Release \
-      -DBUILD_LIBREALSENSE=ON \
+      -DBUILD_LIBREALSENSE=OFF \
       -DBUILD_AZURE_KINECT=ON \
       -DBUILD_BENCHMARKS=OFF \
       -DBUILD_OPENCV=OFF \
@@ -311,9 +311,9 @@ cmake -DDEVELOPER_BUILD=OFF \
       -DBUILD_RECONSTRUCTION=ON \
       -DBUILD_CUDA_MODULE=ON \
       -DBUILD_COMMON_CUDA_ARCHS=ON \
-      -DBUILD_PYTORCH_OPS=OFF \
+      -DBUILD_PYTORCH_OPS=ON \
       -DBUILD_TENSORFLOW_OPS=OFF \
-      -DBUNDLE_CLOUDVIEWER_ML=OFF \
+      -DBUNDLE_CLOUDVIEWER_ML=ON \
       -DGLIBCXX_USE_CXX11_ABI=OFF \
       -DCMAKE_INSTALL_PREFIX=/home/asher/develop/code/github/CloudViewer/install \
       -DCLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML \
