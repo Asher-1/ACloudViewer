@@ -38,8 +38,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BUILD_SHARED_LIBS: [OFF]
-        STATIC_RUNTIME: [OFF]
+        BUILD_SHARED_LIBS: [ON, OFF]
+        STATIC_RUNTIME: [ON, OFF]
         BUILD_CUDA_MODULE: [ON, OFF]
         CONFIG: [Release, Debug]
         exclude:

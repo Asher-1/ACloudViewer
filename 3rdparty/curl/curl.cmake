@@ -67,7 +67,7 @@ else()
     #
     # To generate pre-compiled curl:
     # 1. Use oldest supported Ubuntu (eg. in docker), not the latest.
-    # 2. -DBUILD_CURL_FROM_SOURCE=ON, build Open3D: make ext_curl
+    # 2. -DBUILD_CURL_FROM_SOURCE=ON, build CloudViewer: make ext_curl
     # 3. cd build/curl
     # 4. tar -czvf curl_7.88.0_linux_x86_64.tar.gz include lib
     ExternalProject_Add(

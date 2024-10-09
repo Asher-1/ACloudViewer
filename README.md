@@ -20,7 +20,9 @@
 
 
 [![GitHub release](doc/images/version.svg)](https://github.com/Asher-1/ACloudViewer/releases/)
-[![Build Status](doc/images/buildStatus.svg)](https://github.com/Asher-1/ACloudViewer/releases/)
+[![Ubuntu CI](https://github.com/Asher-1/ACloudViewer/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/Asher-1/ACloudViewer/actions?query=workflow%3A%22Ubuntu+CI%22)
+[![macOS CI](https://github.com/Asher-1/ACloudViewer/actions/workflows/macos.yml/badge.svg)](https://github.com/Asher-1/ACloudViewer/actions?query=workflow%3A%22macOS+CI%22)
+[![Windows CI](https://github.com/Asher-1/ACloudViewer/actions/workflows/windows.yml/badge.svg)](https://github.com/Asher-1/ACloudViewer/actions?query=workflow%3A%22Windows+CI%22)
 [![Releases](doc/images/newRelease.svg)](https://github.com/Asher-1/ACloudViewer/releases/)
 
 Introduction

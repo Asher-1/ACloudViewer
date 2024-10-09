@@ -19,7 +19,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
   GCE_CLI_GHA_VERSION: "416.0.0"
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
@@ -35,11 +34,9 @@ jobs:
       - name: Skip check
         id: check
         run: |
-          if [ "${GITHUB_REPOSITORY}" == "Asher-1/ACloudViewer" ] && [ -n "${GCE_GPU_CI_SA}" ] ; then
-            echo "Secrets available: performing GCE test"
+          if [ "${GITHUB_REPOSITORY}" == "Asher-1/ACloudViewer" ]; then
             echo "skip=no" >> $GITHUB_OUTPUT
           else
-            echo "Secrets not available: skipping GCE test"
             echo "skip=yes" >> $GITHUB_OUTPUT
           fi
 
@@ -61,9 +58,9 @@ jobs:
       # Docker tag and ccache names must be consistent with docker_build.sh
       CI_CONFIG          : ${{ matrix.CI_CONFIG }}
       BUILD_PACKAGE      : true
-      GCE_INSTANCE_PREFIX: cloudViewer-ci-${{ matrix.CI_CONFIG }}
-      DOCKER_TAG         : cloudViewer-ci:${{ matrix.CI_CONFIG }}
-      CCACHE_TAR_NAME    : cloudViewer-ci-${{ matrix.CI_CONFIG }}
+      GCE_INSTANCE_PREFIX: cloudviewer-ci-${{ matrix.CI_CONFIG }}
+      DOCKER_TAG         : cloudviewer-ci:${{ matrix.CI_CONFIG }}
+      CCACHE_TAR_NAME    : cloudviewer-ci-${{ matrix.CI_CONFIG }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
