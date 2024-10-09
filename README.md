@@ -49,7 +49,14 @@ More on ACloudViewer [here](http://asher-1.github.io)
 * Surface alignment
 * 3D visualization
 * Physically based rendering (PBR)
+* 3D machine learning support with PyTorch and TensorFlow
+* GPU acceleration for core 3D operations
 * Available in C++ and Python
+
+Here's a brief overview of the different components of ACloudViewer and how they fit
+together to enable full end to end pipelines:
+
+![Open3D_layers](doc/images/AbstractionLayers.png)
 
 For more, please visit the [ACloudViewer documentation](http://asher-1.github.io).
 
