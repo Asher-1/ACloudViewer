@@ -49,27 +49,27 @@ actions updates. On macOS and Windows, using Ubuntu reduces CI cost.
     commit id, the last successfully fetched docs will be displayed.
 3.  Create service account
     ```bash
-    gcloud iam service-accounts create cloudViewer-ci-sa \
+    gcloud iam service-accounts create cloudviewer-ci-sa \
         --description="Service account for ACloudViewer CI" \
-        --display-name="cloudViewer-ci-sa"
+        --display-name="cloudviewer-ci-sa"
     ```
 4.  Grant `objectAdmin` to the service account
     ```bash
     gsutil iam ch \
-        serviceAccount:cloudViewer-ci-sa@isl-buckets.iam.gserviceaccount.com:objectAdmin \
+        serviceAccount:cloudviewer-ci-sa@isl-buckets.iam.gserviceaccount.com:objectAdmin \
         gs://cloudViewer-docs
     ```
 5.  Create key for service account
     ```bash
-    gcloud iam service-accounts keys create ~/cloudViewer-ci-sa-key.json \
-    --iam-account cloudViewer-ci-sa@isl-buckets.iam.gserviceaccount.com
+    gcloud iam service-accounts keys create ~/cloudviewer-ci-sa-key.json \
+    --iam-account cloudviewer-ci-sa@isl-buckets.iam.gserviceaccount.com
     ```
 
-Now `~/cloudViewer-ci-sa-key.json` should have been created.
+Now `~/cloudviewer-ci-sa-key.json` should have been created.
 
 #### Step 2: GitHub
 
-1.  Encode the private key json file with `base64 ~/cloudViewer-ci-sa-key.json` and
+1.  Encode the private key json file with `base64 ~/cloudviewer-ci-sa-key.json` and
     add the output text to the
     [GitHub repository secrets](https://github.com/Asher-1/ACloudViewer/settings/secrets)
     with name `GCE_SA_KEY_DOCS_CI`
@@ -108,25 +108,25 @@ either due to lack of resources or GPU quota exhaustion.
 
 1.  Create service account
     ```bash
-    gcloud iam service-accounts create cloudViewer-ci-sa \
+    gcloud iam service-accounts create cloudviewer-ci-sa \
         --description="Service account for ACloudViewer CI" \
-        --display-name="cloudViewer-ci-sa"    \
+        --display-name="cloudviewer-ci-sa"    \
         --project cloudViewer-dev
     ```
 2.  Grant `Compute Instance Admin (beta)` to the service account
     ```bash
     gcloud projects add-iam-policy-binding cloudViewer-dev \
-        --member=serviceAccount:cloudViewer-ci-sa-gpu@cloudViewer-dev.iam.gserviceaccount.com \
+        --member=serviceAccount:cloudviewer-ci-sa-gpu@cloudViewer-dev.iam.gserviceaccount.com \
         --role=roles/compute.instanceAdmin \
         --project cloudViewer-dev
     ```
 3.  Create key for service account
     ```bash
-    gcloud iam service-accounts keys create ~/cloudViewer-ci-sa-key.json \
-        --iam-account cloudViewer-ci-sa@cloudViewer-dev.iam.gserviceaccount.com \
+    gcloud iam service-accounts keys create ~/cloudviewer-ci-sa-key.json \
+        --iam-account cloudviewer-ci-sa@cloudViewer-dev.iam.gserviceaccount.com \
         --project cloudViewer-dev
     ```
-    Now `~/cloudViewer-ci-sa-key.json` should have been created.
+    Now `~/cloudviewer-ci-sa-key.json` should have been created.
 
 #### Step 2: Google Cloud: Create custom VM image
 
@@ -141,7 +141,7 @@ used for running CI.
 
 #### Step 3: GitHub
 
-1.  Encode the private key json file with `base64 ~/cloudViewer-ci-sa-key.json` and
+1.  Encode the private key json file with `base64 ~/cloudviewer-ci-sa-key.json` and
     add the output text to the
     [GitHub repository secrets](https://github.com/Asher-1/ACloudViewer/settings/secrets)
     with name `GCE_SA_KEY_GPU_CI`
@@ -163,8 +163,8 @@ used for running CI.
     Most users use MSVC / MSBuild instead of Ninja and this would make resolving
     user issues harder.
 -   ARM64 cache (limit 1.5GB) is stored on Google cloud bucket
-    (`cloudViewer-ci-cache` in the `isl-buckets` project). The bucket is world
-    readable, but needs the `cloudViewer-ci-sa` service account for writing. Every
+    (`cloudviewer-ci-cache` in the `isl-buckets` project). The bucket is world
+    readable, but needs the `cloudviewer-ci-sa` service account for writing. Every
     ARM64 build downloads the cache contents before build. Only `main` branch
     builds use `gsutil rsync` to update the cache in GCS. Cache transfer only
     takes a few minutes, but reduces ARM64 CI time to about 1:15 hours.
@@ -181,8 +181,8 @@ Follow instructions in A. Documentation deployment to setup a Google cloud
 bucket with:
 
 -   Project: cloudViewer-dev
--   Service account: cloudViewer-ci-sa-gpu
--   Bucket name: cloudViewer-ci-sa-gpu
+-   Service account: cloudviewer-ci-sa-gpu
+-   Bucket name: cloudviewer-ci-sa-gpu
 -   Public read permissions
 -   One month (30 days) object lifecycle
 
@@ -191,6 +191,6 @@ gsutil mb -p cloudViewer-dev -c STANDARD -l US -b on gs://cloudViewer-releases
 gsutil acl ch -u AllUsers:R gs://cloudViewer-releases
 gsutil lifecycle set gcs.lifecycle.json gs:/cloudViewer-releases
 gsutil iam ch \
-    serviceAccount:cloudViewer-ci-sa-gpu@cloudViewer-dev.iam.gserviceaccount.com:objectAdmin \
+    serviceAccount:cloudviewer-ci-sa-gpu@cloudViewer-dev.iam.gserviceaccount.com:objectAdmin \
     gs://cloudViewer-releases
 ```

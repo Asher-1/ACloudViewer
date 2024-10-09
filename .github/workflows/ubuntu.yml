@@ -29,6 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        BUILD_SHARED_LIBS: [ON, OFF]
         MLOPS: [ON, OFF]
         exclude:
           - BUILD_SHARED_LIBS: OFF

@@ -79,8 +79,7 @@ ENV REFRESHED_AT=2023-06-04\
     DEBIAN_FRONTEND=noninteractive
 
 # Update apt and install libs needed by Qt
-RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
-    && apt-get clean && apt-get update --fix-missing -y \
+RUN apt-get clean && apt-get update --fix-missing -y \
     && apt-get install apt-utils software-properties-common tzdata --fix-missing -y \
     && apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc \
     && apt-add-repository --yes "deb https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
@@ -351,11 +350,11 @@ RUN \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
           -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
-          -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
           -DGLIBCXX_USE_CXX11_ABI=ON \
           -DBUILD_AZURE_KINECT=ON \
+          -DBUILD_LIBREALSENSE=ON \
           -DWITH_OPENMP=ON \
           -DWITH_IPPICV=ON \
           -DWITH_SIMD=ON \
