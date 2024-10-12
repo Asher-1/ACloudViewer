@@ -56,7 +56,7 @@ if [[ "$(docker images -q cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU
 			--build-arg "VTK_VERSION=${VTK_VERSION}" \
 			--build-arg "PCL_VERSION=${PCL_VERSION}" \
 			--tag "cloudviewer-deps:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-			-f docker/Dockerfile_ubuntu_deps . 2>&1 | tee docker_build-cloudviewer-deps-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
+			-f docker/Dockerfile_deps . 2>&1 | tee docker_build-cloudviewer-deps-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 fi
 
 # ACloudViewer
@@ -70,7 +70,7 @@ if [[ "$(docker images -q cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERS
 		--build-arg "VTK_VERSION=${VTK_VERSION}" \
 		--build-arg "PCL_VERSION=${PCL_VERSION}" \
 		--tag "cloudviewer:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
-		-f docker/Dockerfile_ubuntu . 2>&1 | tee docker_build-cloudviewer-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
+		-f docker/Dockerfile_build . 2>&1 | tee docker_build-cloudviewer-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 
 	# Export docker compiling output data
 	docker_install_package_dir=/root/install

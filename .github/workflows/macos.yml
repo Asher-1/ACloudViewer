@@ -42,6 +42,7 @@ jobs:
       BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
       BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
       LOW_MEM_USAGE: ON
+      CONDA_DEP_FILE_PYTHON310: ".ci/conda_python3.10.yml"
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -59,11 +60,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-ccache
 
+      # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python version
-        uses: actions/setup-python@v5
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: '3.11'
-
+          architecture: ${{ matrix.os == 'macos-14' && 'arm64' || 'x64' }}
+          activate-environment: python3.10
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE_PYTHON310 }}
+      
       - name: Install dependencies
         run: |
           brew install ccache pkg-config
@@ -98,50 +103,25 @@ jobs:
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
+          CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           ./util/run_ci.sh
-          DEVEL_PKG_NAME="$(basename build/package/open3d-devel-*.tar.xz)"
+          DEVEL_PKG_NAME="$(basename /root/install/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
-      - name: Build CloudViewer viewer app
-        if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
-        run: |
-          OPEN3D_VERSION_FULL="$(grep -F OPEN3D_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
-          PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
-          pushd build
-          make -j${NPROC} Open3DViewer
-          pushd bin
-          zip -rv "open3d-${OPEN3D_VERSION_FULL}-app-macosx-10_15-${{ runner.arch }}.zip" Open3D.app
-          ccache -s
 
-      - name: Upload package
-        if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.DEVEL_PKG_NAME }}
-          path: build/package/${{ env.DEVEL_PKG_NAME }}
-          if-no-files-found: error
-
-      - name: Update package devel release
-        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel build/package/${{ env.DEVEL_PKG_NAME }} --clobber
-          gh release view main-devel
-
-      - name: Upload Open3D viewer app
+      - name: Upload ACloudViewer app
         uses: actions/upload-artifact@v4
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
-          name: open3d-app-macosx-10_15-${{ runner.arch}}
-          path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
+          name: ACloudViewer-app-macosx-10_15-${{ runner.arch}}
+          path: /root/install/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
   fuse-viewer:
     permissions:
       contents: write  # Release upload
-    name: Fuse x64 and ARM64 viewer app
+    name: Fuse x64 and ARM64 ACloudViewer app
     runs-on: [macos-12]
     needs: [MacOS]
     steps:
@@ -150,37 +130,28 @@ jobs:
       - name: Download viewer apps
         uses: actions/download-artifact@v4
         with:
-          pattern: open3d-app-macosx-10_15-*
+          pattern: ACloudViewer-app-macosx-10_15-*
           merge-multiple: true
 
-      - name: Fuse x64 and arm64 viewer apps
+      - name: Fuse x64 and arm64 ACloudViewer apps
         run: |
-          unzip open3d-*-app-macosx-10_15-X64.zip -d x64
-          unzip open3d-*-app-macosx-10_15-ARM64.zip -d arm64
-          APP_NAME=$(ls open3d-*-app-macosx-10_15-X64.zip)
+          unzip ACloudViewer-*-X64.dmg -d x64
+          unzip ACloudViewer-*-ARM64.dmg -d arm64
+          APP_NAME=$(ls ACloudViewer-*-X64.dmg)
           APP_NAME=${APP_NAME/-X64/-universal2}  # includes version
-          for i in arm64/Open3D.app/Contents/MacOS/*; do
-            filepath=Open3D.app/Contents/MacOS/$(basename $i)
+          for i in arm64/ACloudViewer.app/Contents/MacOS/*; do
+            filepath=ACloudViewer.app/Contents/MacOS/$(basename $i)
             lipo -create arm64/${filepath} x64/${filepath} -output arm64/${filepath}
           done
-          mv arm64/Open3D.app Open3D.app
-          zip -rv "${APP_NAME}" Open3D.app
+          mv arm64/ACloudViewer.app ACloudViewer.app
+          zip -rv "${APP_NAME}" ACloudViewer.app
 
-      - name: Upload Open3D viewer app
+      - name: Upload ACloudViewer app
         uses: actions/upload-artifact@v4
         with:
-          name: open3d-app-macosx-10_15-universal2
-          path: open3d-*-app-macosx-10_15-universal2.zip
+          name: ACloudViewer-app-macosx-10_15-universal2
+          path: ACloudViewer-*-universal2.zip
           if-no-files-found: error
-
-      - name: Update viewer devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel open3d-*-app-macosx-10_15-universal2.zip --clobber
-          gh release view main-devel
-
 
   build-wheel:
     name: Build wheel
@@ -211,16 +182,17 @@ jobs:
             python_version: '3.10'
 
     env:
+      CONDA_DEP_FILE: ".ci/conda_env.yml"
       BUILD_CUDA_MODULE: OFF
-      CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Checkout Open3D-ML source code
+      - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4
         with:
-          repository: isl-org/Open3D-ML
+          repository: Asher-1/CloudViewer-ML
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       - name: Setup cache
@@ -237,10 +209,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-ccache
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+     - name: Set up Python version
+        run: |
+          sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
+
+      # DGM: without caching, using conda on Windows takes a long time...
+      - name: Set up Python environment
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: ${{ matrix.python_version }}
+          architecture: ${{ matrix.os == 'macos-14' && 'arm64' || 'x64' }}
+          activate-environment: python${{ matrix.python_version }}
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE }}
 
       - name: Install dependencies
         run: |
@@ -250,6 +230,8 @@ jobs:
           python -m pip --version
           echo "Using cmake: $(which cmake)"
           cmake --version
+
+          export CONDA_PREFIX="/root/miniconda3/envs/python${{ matrix.python_version }}"
           source util/ci_utils.sh
           install_python_dependencies
 
@@ -281,7 +263,7 @@ jobs:
           source util/ci_utils.sh
           build_pip_package
           ccache -s
-          PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
+          PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudViewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel
@@ -290,15 +272,6 @@ jobs:
           name: ${{ env.PIP_PKG_NAME }}
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
-
-      - name: Update devel release (x86_64 only wheels)
-        if: ${{ github.ref == 'refs/heads/main' && (matrix.python_version == '3.8' || matrix.python_version == '3.9') }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
-          gh release view main-devel
-
 
   fuse-wheel:
     name: Fuse universal2 wheel
@@ -327,14 +300,14 @@ jobs:
       - name: Download X64 wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: open3d-*macosx*_x86_64.whl
+          pattern: cloudViewer-*macosx*_x86_64.whl
           path: x64_wheels
           merge-multiple: true
 
       - name: Download ARM64 wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: open3d-*macosx*_arm64.whl
+          pattern: cloudViewer-*macosx*_arm64.whl
           path: arm64_wheels
           merge-multiple: true
 
@@ -345,8 +318,8 @@ jobs:
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
           mkdir universal_wheels
           pip install delocate
-          delocate-merge -v -w universal_wheels x64_wheels/open3d-*${PYTAG}*.whl arm64_wheels/open3d-*${PYTAG}*.whl
-          NEW_WHL_NAME=$(basename universal_wheels/open3d-*${PYTAG}*.whl)
+          delocate-merge -v -w universal_wheels x64_wheels/cloudViewer-*${PYTAG}*.whl arm64_wheels/cloudViewer-*${PYTAG}*.whl
+          NEW_WHL_NAME=$(basename universal_wheels/cloudViewer-*${PYTAG}*.whl)
           echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
 
       - name: Upload merged wheels
@@ -355,14 +328,6 @@ jobs:
           name: ${{ env.PIP_PKG_NAME }}
           path: universal_wheels/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
-
-      - name: Update devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel universal_wheels/${{ env.PIP_PKG_NAME }} --clobber
-          gh release view main-devel
 
   test-wheel:
     name: Test wheel
@@ -390,21 +355,21 @@ jobs:
             python_version: '3.10'
 
     env:
-      CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Checkout Open3D-ML source code
+      - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4
         with:
-          repository: isl-org/Open3D-ML
+          repository: Asher-1/CloudViewer-ML
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: open3d-*macosx*.whl
+          pattern: cloudViewer-*macosx*.whl
           merge-multiple: true
 
       - name: Set up Python
@@ -417,10 +382,10 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel open3d*-"$pi_tag"-*_$(uname -m).whl
+          test_wheel cloudViewer*-"$pi_tag"-*_$(uname -m).whl
 
       # - name: Run Python unit tests
       #   run: |
       #     source util/ci_utils.sh
-      #     echo "Running Open3D python tests..."
+      #     echo "Running CloudViewer python tests..."
       #     run_python_tests

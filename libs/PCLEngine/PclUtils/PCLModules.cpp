@@ -540,6 +540,7 @@ template int CropHullFilter<PointRGB>(const PointCloudRGB::ConstPtr inCloud,
                                       PointCloudRGB::Ptr outCloud,
                                       int dimensions);
 
+#if defined(WITH_PCL_NURBS)
 template int NurbsSurfaceFitting<PointT>(const PointCloudT::ConstPtr inCloud,
                                          const NurbsParameters &nurbsParams,
                                          PCLMesh &outMesh,
@@ -587,6 +588,7 @@ template int BSplineCurveFitting2D<PointRGB>(
         double smoothness,
         double rScale,
         bool closed);
+#endif
 
 template int EuclideanCluster<PointT>(
         const PointCloudT::ConstPtr inCloud,

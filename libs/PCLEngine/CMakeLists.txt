@@ -162,6 +162,9 @@ if (USE_PCL_BACKEND)
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD)
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_PCL_BACKEND)
+    if (WITH_PCL_NURBS)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC WITH_PCL_NURBS)
+    endif()
 
     if (NOT APPLE) # no need to copy targets on macos due to rpath
         # install (shared) lib to specified destinations

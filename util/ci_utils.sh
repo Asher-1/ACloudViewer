@@ -22,6 +22,26 @@ BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
+# Warning: CONDA_PREFIX variable should be set before
+# CONDA_PREFIX=${CONDA_PREFIX:="/root/miniconda3/envs/cloudViewer"}
+if [ -z "$CONDA_PREFIX" ] ; then
+	echo "Conda env is not activated!"
+	exit -1
+else
+	echo "Conda env: $CONDA_PREFIX is activated."
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    CONDA_LIB_DIR="$CONDA_PREFIX/Library"
+    BUILD_RIEGL=OFF
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    CONDA_LIB_DIR="$CONDA_PREFIX/lib"
+    BUILD_RIEGL=ON
+else
+    CONDA_LIB_DIR="$CONDA_PREFIX/."
+    BUILD_RIEGL=ON
+fi
+
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
 # ML
@@ -34,7 +54,6 @@ WHEEL_VER="0.38.4"
 STOOLS_VER="67.3.2"
 YAPF_VER="0.30.0"
 PROTOBUF_VER="4.24.0"
-QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64
 CLOUDVIEWER_INSTALL_DIR=/root/install
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
@@ -107,7 +126,7 @@ install_python_dependencies() {
 
 build_all() {
 
-    echo "Start to build GUI package..."
+    echo "Start to build GUI package On MacOS..."
     echo
     build_gui_app package_installer
 
@@ -140,7 +159,9 @@ build_all() {
         "-DGLIBCXX_USE_CXX11_ABI=OFF"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
-        "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR")
+        "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
+        "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
+        )
 
     echo
     echo Running cmake "${cmakeOptions[@]}" ..
@@ -173,6 +194,20 @@ build_gui_app() {
         PACKAGE=OFF
         echo "Package installer is off"
     fi
+    if [[ "with_gdal" =~ ^($options)$ ]]; then
+        WITH_GDAL=ON
+        echo "OPTION_USE_GDAL is on"
+    else
+        WITH_GDAL=OFF
+        echo "OPTION_USE_GDAL is off"
+    fi
+    if [[ "with_pcl_nurbs" =~ ^($options)$ ]]; then
+        WITH_PCL_NURBS=ON
+        echo "WITH_PCL_NURBS is on"
+    else
+        WITH_PCL_NURBS=OFF
+        echo "WITH_PCL_NURBS is off"
+    fi
     set -u
 
     echo
@@ -189,6 +224,7 @@ build_gui_app() {
                 "-DWITH_OPENMP=ON"
                 "-DWITH_IPPICV=ON"
                 "-DWITH_SIMD=ON"
+                "-DWITH_PCL_NURBS=$WITH_PCL_NURBS"
                 "-DUSE_SIMD=ON"
                 "-DPACKAGE=$PACKAGE"
                 "-DBUILD_BENCHMARKS=OFF"
@@ -203,7 +239,7 @@ build_gui_app() {
                 "-DCVCORELIB_USE_CGAL=ON"
                 "-DCVCORELIB_SHARED=ON"
                 "-DCVCORELIB_USE_QT_CONCURRENT=ON"
-                "-DOPTION_USE_GDAL=ON"
+                "-DOPTION_USE_GDAL=$WITH_GDAL"
                 "-DOPTION_USE_DXF_LIB=ON"
                 "-DPLUGIN_IO_QDRACO=ON"
                 "-DPLUGIN_IO_QLAS=ON"
@@ -214,7 +250,11 @@ build_gui_app() {
                 "-DPLUGIN_IO_QMESH=ON"
                 "-DPLUGIN_IO_QPDAL=OFF"
                 "-DPLUGIN_IO_QPHOTOSCAN=ON"
-                "-DPLUGIN_IO_QRDB=ON"
+                "-DPLUGIN_IO_QRDB=$BUILD_RIEGL"
+                "-DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=$BUILD_RIEGL"
+                "-DPLUGIN_IO_QFBX=OFF"
+                "-DPLUGIN_IO_QSTEP=OFF"
+                "-DPLUGIN_STANDARD_QCORK=OFF"
                 "-DPLUGIN_STANDARD_QJSONRPC=ON"
                 "-DPLUGIN_STANDARD_QCLOUDLAYERS=ON"
                 "-DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON"
@@ -233,9 +273,8 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QPOISSON_RECON=ON"
                 "-DPOISSON_RECON_WITH_OPEN_MP=ON"
                 "-DPLUGIN_STANDARD_QSRA=ON"
-                "-DQT_QMAKE_EXECUTABLE=$QT_DIR/bin/qmake"
-                "-DCMAKE_PREFIX_PATH=$QT_DIR/lib/cmake"
                 "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
+                "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
                 )
     
     set -x # Echo commands on
@@ -323,8 +362,7 @@ build_pip_package() {
         "-DBUILD_UNIT_TESTS=OFF"
         "-DBUILD_BENCHMARKS=OFF"
         "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
-        "-DQT_QMAKE_EXECUTABLE=$QT_DIR/bin/qmake"
-        "-DCMAKE_PREFIX_PATH=$QT_DIR/lib/cmake"
+        "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
     )
     set -x # Echo commands on
     cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_RECONSTRUCTION=OFF "${cmakeOptions[@]}" ..
