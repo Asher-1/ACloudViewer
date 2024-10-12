@@ -292,6 +292,8 @@ LINUX:
 (whl)
 sudo apt install libxxf86vm-dev
 
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+
 cd ACloudViewer
 mkdir build
 cd build
@@ -315,10 +317,9 @@ cmake -DDEVELOPER_BUILD=OFF \
       -DBUILD_TENSORFLOW_OPS=OFF \
       -DBUNDLE_CLOUDVIEWER_ML=ON \
       -DGLIBCXX_USE_CXX11_ABI=OFF \
+      -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
       -DCMAKE_INSTALL_PREFIX=/home/asher/develop/code/github/CloudViewer/install \
       -DCLOUDVIEWER_ML_ROOT=/home/asher/develop/code/github/CloudViewer/CloudViewer-ML \
-      -DQT_QMAKE_EXECUTABLE:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/bin/qmake \
-      -DCMAKE_PREFIX_PATH:PATH=/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake \
       ..
 
 make "-j$(nproc)" python-package
@@ -328,6 +329,7 @@ python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 ```
 
 ```
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 (APP)
 cd ACloudViewer
 mkdir build
@@ -355,7 +357,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DCVCORELIB_USE_CGAL=ON \
         -DCVCORELIB_SHARED=ON \
         -DCVCORELIB_USE_QT_CONCURRENT=ON \
-        -DOPTION_USE_GDAL=ON \
+        -DOPTION_USE_GDAL=OFF \
         -DOPTION_USE_DXF_LIB=ON \
         -DOPTION_USE_RANSAC_LIB=ON \
         -DOPTION_USE_SHAPE_LIB=ON \
@@ -369,6 +371,9 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DPLUGIN_IO_QPDAL=OFF \
         -DPLUGIN_IO_QPHOTOSCAN=ON \
         -DPLUGIN_IO_QRDB=ON \
+        -DPLUGIN_IO_QFBX=OFF \
+        -DPLUGIN_IO_QSTEP=OFF \
+        -DPLUGIN_STANDARD_QCORK=OFF \
         -DPLUGIN_STANDARD_QJSONRPC=ON \
         -DPLUGIN_STANDARD_QCLOUDLAYERS=ON \
         -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
@@ -388,6 +393,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DPOISSON_RECON_WITH_OPEN_MP=ON \
         -DPLUGIN_STANDARD_QRANSAC_SD=ON \
         -DPLUGIN_STANDARD_QSRA=ON \
+        -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
         -DCMAKE_INSTALL_PREFIX=/home/asher/develop/code/github/CloudViewer/install \
         ..
 

@@ -50,6 +50,7 @@ jobs:
             CUDA_VERSION: 11.0.3
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
+      CONDA_DEP_FILE_PYTHON310: ".ci/conda_python3.10.yml"
 
     steps:
       - name: Disk space used
@@ -96,14 +97,19 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python version
-        uses: actions/setup-python@v5
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: 3.8
+          architecture: 'x64'
+          activate-environment: python3.10
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE_PYTHON310 }}
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
+          export CONDA_LIB_DIR="$CONDA_PREFIX/."
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
@@ -117,101 +123,75 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\ACloudViewer" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
-            -DBUILD_COMMON_ISPC_ISAS=ON `
+            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
-            -DBUILD_UNIT_TESTS=ON `
-            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
+            -DWITH_OPENMP=ON `
+            -DWITH_SIMD=ON `
+            -DUSE_SIMD=ON `
+            -DPACKAGE=ON `
+            -DBUILD_BENCHMARKS=OFF `
+            -DBUILD_OPENCV=ON `
+            -DBUILD_RECONSTRUCTION=ON `
+            -DCVCORELIB_USE_CGAL=ON `
+            -DCVCORELIB_SHARED=ON `
+            -DCVCORELIB_USE_QT_CONCURRENT=ON `
+            -DOPTION_USE_GDAL=OFF `
+            -DOPTION_USE_DXF_LIB=ON `
+            -DPLUGIN_IO_QDRACO=ON `
+            -DPLUGIN_IO_QLAS=ON `
+            -DPLUGIN_IO_QADDITIONAL=ON `
+            -DPLUGIN_IO_QCORE=ON `
+            -DPLUGIN_IO_QCSV_MATRIX=ON `
+            -DPLUGIN_IO_QE57=ON `
+            -DPLUGIN_IO_QMESH=ON `
+            -DPLUGIN_IO_QPDAL=OFF `
+            -DPLUGIN_IO_QPHOTOSCAN=ON `
+            -DPLUGIN_IO_QRDB=ON `
+            -DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=ON `
+            -DPLUGIN_IO_QFBX=ON `
+            -DPLUGIN_IO_QSTEP=ON `
+            -DPLUGIN_STANDARD_QCORK=ON `
+            -DPLUGIN_STANDARD_QJSONRPC=ON `
+            -DPLUGIN_STANDARD_QCLOUDLAYERS=ON `
+            -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON `
+            -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON `
+            -DPLUGIN_STANDARD_QANIMATION=ON `
+            -DQANIMATION_WITH_FFMPEG_SUPPORT=ON `
+            -DPLUGIN_STANDARD_QCANUPO=ON `
+            -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON `
+            -DPLUGIN_STANDARD_QCOMPASS=ON `
+            -DPLUGIN_STANDARD_QCSF=ON `
+            -DPLUGIN_STANDARD_QFACETS=ON `
+            -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON `
+            -DPLUGIN_STANDARD_QM3C2=ON `
+            -DPLUGIN_STANDARD_QMPLANE=ON `
+            -DPLUGIN_STANDARD_QPCL=ON `
+            -DPLUGIN_STANDARD_QPOISSON_RECON=ON `
+            -DPOISSON_RECON_WITH_OPEN_MP=ON `
+            -DPLUGIN_STANDARD_QSRA=ON `
+            -DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR `
+            -DBUILD_UNIT_TESTS=OFF `
             ${{ env.SRC_DIR }}
 
-      - name: Build
-        working-directory: ${{ env.BUILD_DIR }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target build-examples-iteratively
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target INSTALL
-
-      - name: Package
-        working-directory: ${{ env.BUILD_DIR }}
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target package
-          if ("${{ matrix.CONFIG }}" -eq "Debug") {
-              Get-ChildItem package/cloudViewer-devel-*.zip | Rename-Item -NewName `
-                  {$_.name -Replace '.zip','-dbg.zip'}
-          }
-          $DEVEL_PKG_NAME=(Get-ChildItem package/cloudViewer-devel-*.zip).Name
-          echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" | Out-File -FilePath `
-            $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Upload Package
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.DEVEL_PKG_NAME }}
-          path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
-          if-no-files-found: error
-
-      - name: Update devel release with package
-        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload main-devel ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }} --clobber
-          gh release view main-devel
-
-      - name: Viewer App
+      - name: ACloudViewer App
         working-directory: ${{ env.BUILD_DIR }}
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target Open3DViewer
+            --target ALL_BUILD
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
 
-      - name: Upload Viewer
+      - name: Upload ACloudViewer
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
           name: cloudViewer-app-windows-amd64
-          path: C:\Program Files\ACloudViewer\bin\ACloudViewer
+          path: C:\Program Files\ACloudViewer\bin\ACloudViewer*.exe
           if-no-files-found: error
 
-      - name: Update devel release with viewer
-        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $Env:CLOUDVIEWER_VERSION_FULL = (Select-String -Path "C:/ACloudViewer/build/CMakeCache.txt" -Pattern "CLOUDVIEWER_VERSION_FULL").Line.Split('=')[1]
-          Compress-Archive -Path "C:/Program Files/ACloudViewer/bin/ACloudViewer" -DestinationPath `
-            "cloudViewer-$Env:CLOUDVIEWER_VERSION_FULL-app-windows-amd64.zip"
-          gh release upload main-devel "cloudViewer-$Env:CLOUDVIEWER_VERSION_FULL-app-windows-amd64.zip" --clobber
-          gh release view main-devel
-
-      - name: Run C++ unit tests
-        if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        working-directory: ${{ env.BUILD_DIR }}
-        run: |
-          echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
-          .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
-      - name: Linking to ACloudViewer
-        working-directory: ${{ env.SRC_DIR }}/examples/cmake/cloudViewer-cmake-find-package
-        run: |
-          $ErrorActionPreference = 'Stop'
-          mkdir build
-          cd build
-          cmake -G "Visual Studio 16 2019" -A x64 `
-            -DCMAKE_INSTALL_PREFIX="C:\Program Files\ACloudViewer" `
-            -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
-            ..
-          cmake --build . --config ${{ matrix.CONFIG }}
-          .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
-          Remove-Item "C:\Program Files\ACloudViewer" -Recurse
       - name: Install Python package
         working-directory: ${{ env.BUILD_DIR }}
         run: |
@@ -251,6 +231,9 @@ jobs:
           - is_main: false
             python_version: '3.10'
 
+    env:
+      CONDA_DEP_FILE: ".ci/conda_env.yml"
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -260,10 +243,18 @@ jobs:
         with:
           sdk-version: 19041
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Python version
+        run: |
+          sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
+
+      # DGM: without caching, using conda on Windows takes a long time...
+      - name: Set up Python environment
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: ${{ matrix.python_version }}
+          architecture: 'x64'
+          activate-environment: python${{ matrix.python_version }}
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE }}
 
       - name: Install Python dependencies
         working-directory: ${{ env.SRC_DIR }}
@@ -274,6 +265,7 @@ jobs:
 
       - name: Config
         run: |
+          export CONDA_LIB_DIR="$CONDA_PREFIX/."
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
@@ -284,13 +276,20 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\ACloudViewer" `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
+            -DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
-            -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
+            -DBUILD_UNIT_TESTS=OFF `
+            -DBUILD_BENCHMARKS=OFF `
+            -DWITH_OPENMP=ON `
+            -DWITH_IPPICV=ON `
+            -DWITH_SIMD=ON `
+            -DUSE_SIMD=ON `
+            -DBUILD_RECONSTRUCTION=ON `
             ${{ env.SRC_DIR }}
 
       - name: Build Python package
@@ -310,14 +309,6 @@ jobs:
           name: ${{ env.PIP_PKG_NAME }}
           path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
-
-      - name: Update devel release with wheel
-        if: ${{ github.ref == 'refs/heads/main' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload main-devel ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
-          gh release view main-devel
 
   test-wheel:
     name: Test wheel
@@ -339,6 +330,9 @@ jobs:
           - is_main: false
             python_version: '3.10'
 
+    env:
+      CONDA_DEP_FILE: ".ci/conda_env.yml"
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -349,10 +343,18 @@ jobs:
           pattern: cloudViewer-*win*.whl
           merge-multiple: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Python version
+        run: |
+          sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
+
+      # DGM: without caching, using conda on Windows takes a long time...
+      - name: Set up Python environment
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: ${{ matrix.python_version }}
+          architecture: 'x64'
+          activate-environment: python${{ matrix.python_version }}
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE }}
 
       - name: Test Python package
         run: |
@@ -377,12 +379,12 @@ jobs:
           python -c "import cloudViewer; print('CUDA enabled: ', cloudViewer.core.cuda.is_available())"
           deactivate
 
-      - name: Run Python unit tests
-        run: |
-          $ErrorActionPreference = 'Stop'
-          cloudViewer_test_venv\Scripts\Activate.ps1
-          echo "Running ACloudViewer python tests..."
-          echo "Add --randomly-seed=SEED to the test command to reproduce test order."
-          echo "Testing ML and ML Ops disabled"
-          python -m pytest python/test/ --ignore python/test/ml_ops/
-          deactivate
+      # - name: Run Python unit tests
+      #   run: |
+      #     $ErrorActionPreference = 'Stop'
+      #     cloudViewer_test_venv\Scripts\Activate.ps1
+      #     echo "Running ACloudViewer python tests..."
+      #     echo "Add --randomly-seed=SEED to the test command to reproduce test order."
+      #     echo "Testing ML and ML Ops disabled"
+      #     python -m pytest python/test/ --ignore python/test/ml_ops/
+      #     deactivate

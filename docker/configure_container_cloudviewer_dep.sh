@@ -36,13 +36,12 @@ export ACloudViewer_DEV=/root \
 export ACloudViewer_BUILD=/root/ACloudViewer/build \
 export ACloudViewer_INSTALL=/root/install \
 export CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML \
-export QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
-export PATH="/root/miniconda3/bin:$PATH" \
-export LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
+export PATH="/root/miniconda3/bin:$PATH"
+# export LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh 3.8
 
 # build ACloudViewer app installer
-rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh
+rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh 3.8
 
 
 test cloudViewer

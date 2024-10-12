@@ -65,18 +65,9 @@ RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
         rm -rf /etc/apt/sources.list.d/oneAPI.list; \
     fi
 
-
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES all
-
-# for QT
-ENV REFRESHED_AT=2023-06-04\
-    QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
-    QT_ROOT=/opt/Qt5.14.2/ \
-    QT_CI_LOGIN=alicevisionjunk@gmail.com \
-    QT_CI_PASSWORD=azerty1. \
-    DEBIAN_FRONTEND=noninteractive
 
 # Update apt and install libs needed by Qt
 RUN apt-get clean && apt-get update --fix-missing -y \
@@ -102,7 +93,6 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \
-        libglew-dev \
         # for colmap
         libatlas-base-dev \
         # for package
@@ -131,8 +121,6 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         libopenni-dev \
         libopenni2-dev \
         libjsoncpp-dev \
-        libgdal-dev \
-        libcgal-dev \
         libusb-1.0-0-dev \
         libeigen3-dev \
         libboost-all-dev \
@@ -167,20 +155,24 @@ RUN apt-get update && apt-get install -y \
 # does not need to activate the environment again.
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ENV PATH="/root/miniconda3/envs/cloudViewer/bin:${PATH}"
+ENV CONDA_PREFIX="/root/miniconda3/envs/cloudViewer"
 ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
 ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/cloudViewer/bin:${PATH}"
 RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && bash Miniconda3-latest-Linux-x86_64.sh -b; \
     && rm Miniconda3-latest-Linux-x86_64.sh; \
 RUN conda --version \
- && conda create -y -n cloudViewer python=${PYTHON_VERSION}
+ && cp .ci/conda_cloudViewer.yml /root/conda_env_${PYTHON_VERSION}.yml; \
+ && sed -i "s/3.8/${PYTHON_VERSION}/g" /root/conda_env_${PYTHON_VERSION}.yml; \
+ && conda env create -f /root/conda_env_${PYTHON_VERSION}.yml
+
 # Activate cloudViewr virtualenv
 # This works during docker build. It becomes the prefix of all RUN commands.
 # Ref: https://stackoverflow.com/a/60148365/1255535
 SHELL ["conda", "run", "-n", "cloudViewer", "/bin/bash", "-o", "pipefail", "-c"]
 
 # fix ubuntu2204 and conda library conflicts about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-RUN echo -e "\ny" | conda install libffi==3.3 
+# RUN echo -e "\ny" | conda install libffi==3.3
 
 # Dependencies: cmake
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
@@ -209,41 +201,6 @@ RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/
 RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
-# Install metslib
-WORKDIR /root
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/metslib-0.5.3.tgz -O "/root/metslib-0.5.3.tgz"
-RUN tar -xvf metslib-0.5.3.tgz && \
-    cd metslib-0.5.3 && \
-    sh ./configure && \
-    make && \
-    make install \
-    && ldconfig \
-    && rm -rf /opt/metslib-0.5.3 \
-    && rm -rf /opt/metslib-0.5.3.tgz
-
-# Install laszip
-WORKDIR /root
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "/root/laszip-src-3.4.3.tar.gz"
-RUN tar -xvf laszip-src-3.4.3.tar.gz && \
-    cd laszip-src-3.4.3 && \
-    mkdir -p build && cd build && \
-    cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig \
-    && rm -rf laszip-src-3.4.3 laszip-src-3.4.3.tar.gz
-
-# Install xerces-c
-WORKDIR /root
-RUN wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "/root/xerces-c-3.2.3.zip"
-RUN unzip xerces-c-3.2.3.zip \
-    && cd ./xerces-c-3.2.3 \
-    && chmod +x configure \
-    && ./configure --prefix=/usr \
-    && make \
-    && make install \
-    && make clean \
-    && rm -rf xerces-c-3.2.3 xerces-c-3.2.3.zip
-
 # Checkout CloudViewer-ML main branch
 # TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
@@ -256,52 +213,6 @@ WORKDIR /root/ACloudViewer
 
 # ACloudViewer C++ dependencies
 RUN ./util/install_deps_ubuntu.sh assume-yes
-
-# Install Qt (to build plugins)
-WORKDIR /root
-RUN wget https://download.qt.io/archive/qt/5.14/5.14.2/qt-opensource-linux-x64-5.14.2.run -O "/root/qt.run"
-COPY ./docker/qt-installer-noninteractive.qs /root
-RUN chmod +x ./qt.run && \
-    ./qt.run --verbose --platform minimal --script "/root/qt-installer-noninteractive.qs" && \
-    rm qt.run
-ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
-
-# Install vtk
-WORKDIR /root
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/VTK-9.3.1.tar.gz -O "/root/VTK-9.3.1.tar.gz"
-RUN tar -zxvf VTK-9.3.1.tar.gz && \
-    cd VTK-9.3.1 && \
-    mkdir -p build && cd build && \
-    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
-            -DVTK_GROUP_ENABLE_Qt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
-            -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
-            -DVTK_QT_VERSION:STRING=5 \
-            -DBUILD_SHARED_LIBS:BOOL=ON \
-            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig && \
-    && rm -rf /root/VTK-9.3.1 /root/VTK-9.3.1.tar.gz
-
-# Install pcl
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/pcl-1.14.1.zip -O "/root/pcl-1.14.1.zip"
-RUN unzip pcl-1.14.1.zip && \
-    cd pcl && \
-    mkdir -p build && cd build && \
-    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
-            -DBUILD_GPU=OFF \
-            -DBUILD_apps=OFF \
-            -DBUILD_examples=OFF \
-            -DBUILD_surface_on_nurbs=ON \
-            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig && \
-    rm -rf /opt/pcl /opt/pcl-1.14.1.zip
 
 # ACloudViewer Python dependencies
 WORKDIR /root/ACloudViewer
@@ -326,6 +237,14 @@ RUN mkdir -p /etc/apt/keyrings \
  && npm install -g yarn \
  && yarn --version
 
+
+# [mv relocation issues] fix the issues about the conflicts with libattr between conda and system
+RUN if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then
+        echo "fix issues with system about: $CONDA_PREFIX/lib/libattr.so.1"
+        mv $CONDA_PREFIX/lib/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.2
+        ln -s /lib/x86_64-linux-gnu/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.1
+    fi
+RUN export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 # Build all
 RUN \
@@ -367,7 +286,7 @@ RUN \
           -DCVCORELIB_USE_CGAL=ON \
           -DCVCORELIB_SHARED=ON \
           -DCVCORELIB_USE_QT_CONCURRENT=ON \
-          -DOPTION_USE_GDAL=ON \
+          -DOPTION_USE_GDAL=OFF \
           -DOPTION_USE_DXF_LIB=ON \
           -DPLUGIN_IO_QDRACO=ON \
           -DPLUGIN_IO_QLAS=ON \
@@ -403,6 +322,7 @@ RUN \
           -DBUILD_UNIT_TESTS=OFF \
           -DBUILD_BENCHMARKS=OFF \
           -DBUILD_EXAMPLES=OFF \
+          -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
           -DCMAKE_INSTALL_PREFIX=~/cloudviewer_install \
           .. \
  && make VERBOSE=1 -j$(nproc) \
@@ -417,7 +337,7 @@ RUN ccache -s \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
  && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
- && if [ "${PACKAGE}" = "ON" ]; then mv ~/cloudviewer_install/*zip /; fi \
+ && if [ "${PACKAGE}" = "ON" ]; then mv ~/cloudviewer_install/*run /; fi \
  && ls -alh /
 
 RUN echo "Docker build done."

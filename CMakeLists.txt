@@ -147,6 +147,7 @@ option(PACKAGE "Package the build results with zip or not" OFF)
 
 # PCL ENGINE SUPPORT
 option(USE_PCL_BACKEND "Check to use pcl library as backend" ON)
+option(WITH_PCL_NURBS "Use Pcl on_nurbs module or not" OFF)
 
 # other options
 option(CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING "change all dynamic dll output path to main project output path for debugging!" ON)

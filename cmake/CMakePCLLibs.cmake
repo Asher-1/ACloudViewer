@@ -24,7 +24,7 @@ if (NOT PCL_FOUND)
 else ()
      message(STATUS "Found System installed PCL: " ${PCL_VERSION})
 endif ()
-find_package (VTK REQUIRED)
+find_package (VTK QUIET) # must quiet to avoid boost version issues
 if (NOT VTK_FOUND)
      message(FATAL_ERROR
      "External VTK not found but ParaView requires VTK to function")

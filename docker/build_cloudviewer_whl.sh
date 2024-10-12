@@ -12,9 +12,13 @@ export ENV_NAME="python${PYTHON_VERSION}"
 echo "ENV_NAME: " ${ENV_NAME}
 
 echo "conda activate..."
+export CONDA_PREFIX="/root/miniconda3/envs/${ENV_NAME}"
 export PATH="/root/miniconda3/envs/${ENV_NAME}/bin:${PATH}"
-conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
- && conda activate ${ENV_NAME} \
+cp ${ACloudViewer_DEV}/ACloudViewer/.ci/conda_env.yml /root/conda_env_${ENV_NAME}.yml
+sed -i "s/3.8/${PYTHON_VERSION}/g" /root/conda_env_${ENV_NAME}.yml
+conda env create -f /root/conda_env_${ENV_NAME}.yml
+# conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
+conda activate ${ENV_NAME} \
  && which python \
  && python --version \
  && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
@@ -22,7 +26,14 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && pip config list
 
  # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-echo -e "\ny" | conda install libffi==3.3
+# echo -e "\ny" | conda install libffi==3.3
+# [mv relocation issues] fix the issues about the conflicts with libattr between conda and system
+if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then
+    echo "fix issues with system about: $CONDA_PREFIX/lib/libattr.so.1"
+    mv $CONDA_PREFIX/lib/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.2
+    ln -s /lib/x86_64-linux-gnu/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.1
+fi
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
