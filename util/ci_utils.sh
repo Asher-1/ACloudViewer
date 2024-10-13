@@ -33,7 +33,7 @@ fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     BUILD_RIEGL=OFF
-    CONDA_LIB_DIR="$CONDA_PREFIX/Library"
+    CONDA_LIB_DIR="$CONDA_PREFIX/lib"
     CLOUDVIEWER_INSTALL_DIR=~/cloudViewer_install
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     BUILD_RIEGL=ON
