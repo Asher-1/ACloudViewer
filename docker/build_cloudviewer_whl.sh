@@ -33,6 +33,7 @@ if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then
     mv $CONDA_PREFIX/lib/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.2
     ln -s /lib/x86_64-linux-gnu/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.1
 fi
+
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 # Get build scripts and control environment variables

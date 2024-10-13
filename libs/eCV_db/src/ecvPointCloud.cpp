@@ -3032,8 +3032,8 @@ ccPointCloud* ccPointCloud::unrollOnCylinder(PointCoordinateType radius,
 		center = &C;
 	}
 
-	double startAngle_rad = startAngle_deg * CV_DEG_TO_RAD;
-	double stopAngle_rad = stopAngle_deg * CV_DEG_TO_RAD;
+	double startAngle_rad = cloudViewer::DegreesToRadians(startAngle_deg);
+	double stopAngle_rad = cloudViewer::DegreesToRadians(stopAngle_deg);
 
 	for (unsigned i = 0; i < numberOfPoints; i++)
 	{
@@ -3319,13 +3319,13 @@ ccPointCloud* ccPointCloud::unroll(
         }
     }
 
-    double startAngle_rad = startAngle_deg * CV_DEG_TO_RAD;
-    double stopAngle_rad = stopAngle_deg * CV_DEG_TO_RAD;
+    double startAngle_rad = cloudViewer::DegreesToRadians(startAngle_deg);
+    double stopAngle_rad = cloudViewer::DegreesToRadians(stopAngle_deg);
 
     PointCoordinateType alpha_rad = 0;
     PointCoordinateType sin_alpha = 0;
     if (mode != CYLINDER) {
-        alpha_rad = coneParams->coneAngle_deg * CV_DEG_TO_RAD;
+        alpha_rad = cloudViewer::DegreesToRadians(coneParams->coneAngle_deg);
         sin_alpha = static_cast<PointCoordinateType>(sin(alpha_rad));
     }
 
@@ -3641,7 +3641,7 @@ ccPointCloud* ccPointCloud::unrollOnCone(	double coneAngle_deg,
 		clone->showSF(true);
 	}
 	
-	PointCoordinateType alpha_rad = coneAngle_deg * CV_DEG_TO_RAD;
+	PointCoordinateType alpha_rad = cloudViewer::DegreesToRadians(coneAngle_deg);
 	PointCoordinateType sin_alpha = static_cast<PointCoordinateType>( sin(alpha_rad) );
 
 	for (unsigned i = 0; i < numberOfPoints; i++)
@@ -4557,7 +4557,7 @@ bool ccPointCloud::computeNormalsWithGrids(double minTriangleAngle_deg /*=1.0*/,
     }
 
     PointCoordinateType minAngleCos = static_cast<PointCoordinateType>(
-            cos(minTriangleAngle_deg * CV_DEG_TO_RAD));
+            cos(cloudViewer::DegreesToRadians(minTriangleAngle_deg)));
     //    double minTriangleAngle_rad =
     //    cloudViewer::DegreesToRadians(minTriangleAngle_deg);
 
@@ -5112,7 +5112,7 @@ ccMesh* ccPointCloud::triangulateGrid(
     }
 
     PointCoordinateType minAngleCos = static_cast<PointCoordinateType>(
-            cos(minTriangleAngle_deg * CV_DEG_TO_RAD));
+            cos(cloudViewer::DegreesToRadians(minTriangleAngle_deg)));
     //    double minTriangleAngle_rad =
     //    cloudViewer::DegreesToRadians(minTriangleAngle_deg);
 

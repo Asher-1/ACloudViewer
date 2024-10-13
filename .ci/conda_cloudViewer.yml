@@ -8,7 +8,6 @@ dependencies:
   - boost=1.84.0
   # will auto install required dependencies like vtk-9.2.0 and qt-5.15.8
   - pcl=1.14.0
-  - cgal=5.*
   - ffmpeg=6.1.*
   - xerces-c=3.2.*
   - zlib=1.2.*

@@ -113,7 +113,7 @@ PointCloud* PointProjectionTools::developCloudOnCone(
     unsigned char dim1 = (dim > 0 ? dim - 1 : 2);
     unsigned char dim2 = (dim < 2 ? dim + 1 : 0);
 
-    float tan_alpha = tanf(alpha * static_cast<float>(CV_DEG_TO_RAD));
+    float tan_alpha = tanf(cloudViewer::DegreesToRadians(alpha));
     //    float cos_alpha = cos(cloudViewer::DegreesToRadians(alpha));
     //    float sin_alpha = sin(cloudViewer::DegreesToRadians(alpha));
     float q = 1.0f / (1.0f + tan_alpha * tan_alpha);

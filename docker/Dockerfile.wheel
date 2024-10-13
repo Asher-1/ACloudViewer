@@ -72,6 +72,7 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
         # for opencv
         libavcodec-dev \
         libavformat-dev \
+        libavutil-dev \
         libswscale-dev \
         libjpeg-dev \
         libpng-dev \

@@ -94,16 +94,16 @@ target_include_directories( ${PROJECT_NAME}
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
-# Compiler & definitions
+# # Compiler & definitions
 target_compile_features(${PROJECT_NAME}
         PRIVATE
-        cxx_std_14
+        cxx_std_17
         )
 
-set_target_properties(${PROJECT_NAME}
-        PROPERTIES
-        CXX_EXTENSIONS OFF
-        )
+# set_target_properties(${PROJECT_NAME}
+#         PROPERTIES
+#         CXX_EXTENSIONS OFF
+#         )
 
 target_compile_definitions(${PROJECT_NAME}
         PRIVATE
@@ -173,11 +173,13 @@ endif ()
 
 # CGAL (optional)
 if (CVCORELIB_USE_CGAL)
+	# We need to get rid of CGAL CXX flags
     set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
+    # set(CGAL_ALWAYS_ROUND_TO_NEAREST TRUE)
+	# set(CGAL_DONT_OVERRIDE_CMAKE_FLAGS ON CACHE INTERNAL "override CGAL flags" FORCE)
     if (WIN32)
         include(cmake/CGALSupport.cmake)
     else ()
-        set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
         # We do not use CGAL data. This prevents an unnecessary warning by CMake.
         set(CGAL_DATA_DIR "unused")
         find_package(CGAL REQUIRED)
@@ -216,7 +218,6 @@ if (CVCORELIB_USE_CGAL)
             PUBLIC
             CGAL::CGAL
             )
-    #target_link_libraries( ${PROJECT_NAME} PUBLIC ${CGAL_LIBRARIES} )
     # fix debug warning for cgal
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_CGAL_LIB)
 endif ()

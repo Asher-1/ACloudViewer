@@ -7,6 +7,7 @@ function(cloudViewer_link_3rdparty_libraries target)
     # Directly pass public and private dependencies to the target.
     target_link_libraries(${target} PRIVATE ${CloudViewer_3RDPARTY_PRIVATE_TARGETS} ECV_DB_LIB ECV_IO_LIB)
     target_link_libraries(${target} PUBLIC ${CloudViewer_3RDPARTY_PUBLIC_TARGETS} ECV_DB_LIB ECV_IO_LIB)
+
     if(USE_SIMD)
         target_compile_definitions(${target} PRIVATE ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
         target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS}>")
