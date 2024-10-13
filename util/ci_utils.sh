@@ -32,14 +32,17 @@ else
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    CONDA_LIB_DIR="$CONDA_PREFIX/Library"
     BUILD_RIEGL=OFF
+    CONDA_LIB_DIR="$CONDA_PREFIX/Library"
+    CLOUDVIEWER_INSTALL_DIR=~/cloudViewer_install
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    BUILD_RIEGL=ON
     CONDA_LIB_DIR="$CONDA_PREFIX/lib"
-    BUILD_RIEGL=ON
+    CLOUDVIEWER_INSTALL_DIR=/root/install
 else
-    CONDA_LIB_DIR="$CONDA_PREFIX/."
     BUILD_RIEGL=ON
+    CONDA_LIB_DIR="$CONDA_PREFIX/."
+    CLOUDVIEWER_INSTALL_DIR=/root/install
 fi
 
 # Dependency versions:
@@ -54,7 +57,6 @@ WHEEL_VER="0.38.4"
 STOOLS_VER="67.3.2"
 YAPF_VER="0.30.0"
 PROTOBUF_VER="4.24.0"
-CLOUDVIEWER_INSTALL_DIR=/root/install
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 install_python_dependencies() {
@@ -230,7 +232,7 @@ build_gui_app() {
                 "-DBUILD_BENCHMARKS=OFF"
                 "-DBUILD_OPENCV=ON"
                 "-DBUILD_RECONSTRUCTION=ON"
-                "-DBUILD_CUDA_MODULE=ON"
+                "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
                 "-DBUILD_COMMON_CUDA_ARCHS=ON"
                 "-DBUILD_PYTORCH_OPS=OFF"
                 "-DBUILD_TENSORFLOW_OPS=OFF"
