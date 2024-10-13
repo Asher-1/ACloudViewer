@@ -107,7 +107,7 @@ jobs:
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           ./util/run_ci.sh
-          DEVEL_PKG_NAME="$(basename /root/install/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
+          DEVEL_PKG_NAME="$(basename ~/cloudViewer_install/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload ACloudViewer app
@@ -115,7 +115,7 @@ jobs:
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
           name: ACloudViewer-app-macosx-10_15-${{ runner.arch}}
-          path: /root/install/${{ env.DEVEL_PKG_NAME }}
+          path: ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
   fuse-viewer:
