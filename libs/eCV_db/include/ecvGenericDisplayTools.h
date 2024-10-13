@@ -143,7 +143,7 @@ public:  // GLU equivalent methods
         {
             double* matrix = outMatrix.data();
 
-            double ymax = znear * std::tan(fovyInDegrees / 2 * CV_DEG_TO_RAD);
+            double ymax = znear * std::tan(cloudViewer::DegreesToRadians(fovyInDegrees / 2));
             double xmax = ymax * aspectRatio;
 
             double dZ = zfar - znear;

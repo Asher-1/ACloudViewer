@@ -3539,8 +3539,8 @@ void ccCompass::importFoliations()
 			//special case: plane parallel to XY
 			if (fabs(N.z) > PC_ONE - std::numeric_limits<PointCoordinateType>::epsilon())
 			{
-				ccGLMatrix rotX; rotX.initFromParameters(-dip * CV_DEG_TO_RAD, CCVector3(1, 0, 0), CCVector3(0, 0, 0)); //plunge
-				ccGLMatrix rotZ; rotZ.initFromParameters(dipdir * CV_DEG_TO_RAD, CCVector3(0, 0, -1), CCVector3(0, 0, 0));
+				ccGLMatrix rotX; rotX.initFromParameters(cloudViewer::DegreesToRadians(-dip), CCVector3(1, 0, 0), CCVector3(0, 0, 0)); //plunge
+				ccGLMatrix rotZ; rotZ.initFromParameters(cloudViewer::DegreesToRadians(dipdir), CCVector3(0, 0, -1), CCVector3(0, 0, 0));
 				rotation = rotZ * rotX;
 			}
 			else //general case
@@ -3645,7 +3645,7 @@ void ccCompass::importLineations()
 		CCVector3 Cd = *cld->getPoint(p);
 		
 		//build lineation vector
-		CCVector3 l(sin(trend * CV_DEG_TO_RAD) * cos(plunge * CV_DEG_TO_RAD), cos(trend * CV_DEG_TO_RAD)*cos(plunge * CV_DEG_TO_RAD), -sin(plunge * CV_DEG_TO_RAD));
+		CCVector3 l(sin(cloudViewer::DegreesToRadians(trend)) * cos(cloudViewer::DegreesToRadians(plunge)), cos(cloudViewer::DegreesToRadians(trend))*cos(cloudViewer::DegreesToRadians(plunge)), -sin(cloudViewer::DegreesToRadians(plunge)));
 
 		//create new point cloud to associate with lineation graphic
 		ccPointCloud* points = new ccPointCloud();

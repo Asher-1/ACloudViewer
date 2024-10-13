@@ -1,6 +1,18 @@
 name: python3.10
 channels:
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/fastai
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/pro
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/msys2
   - conda-forge
+  - conda-forge/label/gcc7
+  - bioconda
+  - defaults
 dependencies:
   - python=3.10
   # - eigen=3.4.*
@@ -8,7 +20,7 @@ dependencies:
   - boost=1.84.0
   # will auto install required dependencies like vtk-9.2.0 and qt-5.15.8
   - pcl=1.14.0
-  - cgal=5.*
+  - cgal=5.* # only macos and windows due to issues with cgal on linux
   - ffmpeg=6.1.*
   - xerces-c=3.2.*
   - zlib=1.2.*

@@ -110,7 +110,7 @@ bool ccKdTreeForFacetExtraction::FuseCells(	ccKdTree* kdTree,
 	}
 
 	// cosine of the max angle between fused 'planes'
-	const double c_minCosNormAngle = cos(maxAngle_deg * CV_DEG_TO_RAD);
+	const double c_minCosNormAngle = cos(cloudViewer::DegreesToRadians(maxAngle_deg));
 
 	//fuse all cells, starting from the ones with the best error
 	const int unvisitedNeighborValue = -1;

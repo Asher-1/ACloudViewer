@@ -30,7 +30,7 @@
 #include "qPCL.h"
 
 // CV_CORE_LIB
-#include <CVConst.h>
+#include <CVMath.h>
 #include <CVLog.h>
 #include <Eigen.h>
 #include <Parallel.h>
@@ -1393,7 +1393,7 @@ int GetBoundaryCloud(
     typename pcl::search::KdTree<PointInOut>::Ptr searchTree(
             new pcl::search::KdTree<PointInOut>());
     boundEst.setSearchMethod(searchTree);
-    boundEst.setAngleThreshold(angleThreshold * CV_DEG_TO_RAD);
+    boundEst.setAngleThreshold(cloudViewer::DegreesToRadians(angleThreshold));
     boundEst.compute(boundaries);
 
     boundaryCloud->clear();

@@ -128,7 +128,7 @@ build_all() {
 
     echo "Start to build GUI package On MacOS..."
     echo
-    build_gui_app package_installer
+    build_gui_app with_gdal package_installer
 
     echo "Using cmake: $(command -v cmake)"
     cmake --version

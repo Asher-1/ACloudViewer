@@ -294,9 +294,9 @@ int GetGreedyTriangulation(const PointCloudNormal::ConstPtr &cloudWithNormals,
     gp3.setSearchRadius(trigulationSearchRadius);
     gp3.setMu(static_cast<double>(weightingFactor));
     gp3.setMaximumNearestNeighbors(maxNearestNeighbors);
-    gp3.setMaximumSurfaceAngle(CV_DEG_TO_RAD * maxSurfaceAngle);
-    gp3.setMinimumAngle(CV_DEG_TO_RAD * minAngle);
-    gp3.setMaximumAngle(CV_DEG_TO_RAD * maxAngle);
+    gp3.setMaximumSurfaceAngle(cloudViewer::DegreesToRadians(maxSurfaceAngle));
+    gp3.setMinimumAngle(cloudViewer::DegreesToRadians(minAngle));
+    gp3.setMaximumAngle(cloudViewer::DegreesToRadians(maxAngle));
     gp3.setNormalConsistency(normalConsistency);
     gp3.setInputCloud(cloudWithNormals);
     gp3.setSearchMethod(kdtree);

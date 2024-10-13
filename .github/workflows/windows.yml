@@ -232,7 +232,7 @@ jobs:
             python_version: '3.10'
 
     env:
-      CONDA_DEP_FILE: ".ci/conda_env.yml"
+      CONDA_DEP_FILE: ".ci/conda_windows.yml"
 
     steps:
       - name: Checkout source code
@@ -331,7 +331,7 @@ jobs:
             python_version: '3.10'
 
     env:
-      CONDA_DEP_FILE: ".ci/conda_env.yml"
+      CONDA_DEP_FILE: ".ci/conda_windows.yml"
 
     steps:
       - name: Checkout source code
