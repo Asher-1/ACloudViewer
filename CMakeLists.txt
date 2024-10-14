@@ -665,7 +665,6 @@ elseif (UNIX AND NOT APPLE)
     file(GLOB scripts_list "scripts/*ubuntu.sh" )
     file(GLOB another_scripts_list "util/${MAIN_APP_NAME}*" )
     list(APPEND another_scripts_list 
-        "scripts/sed_fix.sh" 
         "eCV/bin_other/license.txt"
         "eCV/bin_other/global_shift_list_template.txt")
     if (BUILD_RECONSTRUCTION)

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>ACloudViewer</Name>
+    <Version>3.9.0</Version>
+    <Title>ACloudViewer-3.9.0</Title>
+    <Publisher>Asher</Publisher>
+    <WizardStyle>Modern</WizardStyle>
+    <StyleSheet>style.qss</StyleSheet>
+    <TitleColor>#FFFFFF</TitleColor>
+    <ProductUrl>https://github.com/Asher-1/CloudViewerUpdate</ProductUrl>
+    <InstallerWindowIcon>logo_256.png</InstallerWindowIcon>
+    <InstallerApplicationIcon>logo_32.png</InstallerApplicationIcon>
+    <RunProgram>@TargetDir@/ACloudViewer.sh</RunProgram>
+    <RunProgramArguments></RunProgramArguments>
+    <RunProgramDescription>Start ACloudViewer</RunProgramDescription>
+    <StartMenuDir>Graphics</StartMenuDir>
+    <AllowNonAsciiCharacters>true</AllowNonAsciiCharacters>
+    <TargetDir>@HomeDir@/ACloudViewer</TargetDir>
+    <AdminTargetDir>@rootDir@/opt/ACloudViewer</AdminTargetDir>
+</Installer>

@@ -127,13 +127,13 @@ PCL 依赖 VTK，在其 `3rdParty` 目录下可以看到 VTK。那为什么还�
 
 ```shell
 # 克隆 CloudViewer
-git clone https://github.com/nightn/CloudViewer.git
+git clone https://github.com/Asher-1/ACloudViewer.git
 ```
 
 使用 cmake 配置和生成（也可以选择使用 cmake-gui）。
 
 ```shell
-cd CloudViewer
+cd ACloudViewer
 # configure & generate 使用 -G 指定 generator
 cmake -H. -Bbuild -G "Visual Studio 15 2017 Win64"
 ```
@@ -144,7 +144,7 @@ cmake 运行完成后，将在 `build` 目录生成 Visual Studio 解决方案�
 # 编译
 cmake --build build
 # 运行（以 Debug 为例）
-./build/src/Debug/CloudViewer.exe
+./build/src/Debug/ACloudViewer.exe
 ```
 
 运行结果如下图所示。
