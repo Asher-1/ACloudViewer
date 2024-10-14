@@ -32,7 +32,7 @@ jobs:
         BUILD_SHARED_LIBS: [ON, OFF]
         MLOPS: [ON, OFF]
         exclude:
-          - BUILD_SHARED_LIBS: OFF
+          - BUILD_SHARED_LIBS: ON
             MLOPS: ON
     env:
       BUILD_SHARED_LIBS: OFF
@@ -64,12 +64,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cloudViewer-devel-linux-x86_64-ML_${{ matrix.MLOPS }}
-          path: cloudViewer*.zip
+          path: ACloudViewer*.run
           if-no-files-found: error
-      - name: Update devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload main-devel cloudViewer*.zip --clobber
-          gh release view main-devel

@@ -16,7 +16,6 @@ ARG BUILD_CUDA_MODULE
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
-ARG BUILD_SYCL_MODULE
 ARG CI
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
@@ -58,12 +57,6 @@ ENV PACKAGE=${PACKAGE}
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
-
-# The base image already contains the oneAPI packages.
-# Having this in the list can cause checksum errors when apt-get update.
-RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
-        rm -rf /etc/apt/sources.list.d/oneAPI.list; \
-    fi
 
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES all
@@ -249,20 +242,8 @@ RUN export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 # Build all
 RUN \
-    if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
-        export CMAKE_CXX_COMPILER=icpx; \
-        export CMAKE_C_COMPILER=icx; \
-        export GLIBCXX_USE_CXX11_ABI=ON; \
-    else \
-        export CMAKE_CXX_COMPILER=g++; \
-        export CMAKE_C_COMPILER=gcc; \
-        # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
-        if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
-            export GLIBCXX_USE_CXX11_ABI=OFF; \
-        else \
-            export GLIBCXX_USE_CXX11_ABI=ON; \
-        fi \
-    fi \
+    export CMAKE_CXX_COMPILER=g++; \
+    export CMAKE_C_COMPILER=gcc; \
  && mkdir build \
  && cd build \
  && cmake -DBUILD_SHARED_LIBS=OFF \
@@ -279,7 +260,7 @@ RUN \
           -DWITH_IPPICV=ON \
           -DWITH_SIMD=ON \
           -DUSE_SIMD=ON \
-          -DPACKAGE=ON \
+          -DPACKAGE=${PACKAGE} \
           -DBUILD_WEBRTC=OFF \
           -DBUILD_OPENCV=ON \
           -DBUILD_RECONSTRUCTION=ON \
@@ -338,7 +319,7 @@ RUN ccache -s \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
  && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
- && if [ "${PACKAGE}" = "ON" ]; then mv ~/cloudviewer_install/*run /; fi \
+ && if [ "${PACKAGE}" = "ON" ]; then mv ~/cloudviewer_install/ACloudViewer-*run /; fi \
  && ls -alh /
 
 RUN echo "Docker build done."
