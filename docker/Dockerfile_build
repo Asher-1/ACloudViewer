@@ -17,15 +17,13 @@ ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
 
-# ENV QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64
-# ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
-
 ENV PATH="/root/miniconda3/bin:$PATH"
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
-RUN git clone https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
+# RUN git clone https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
 
 COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+RUN mv docker_files/CloudViewer-ML /root/
 
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
