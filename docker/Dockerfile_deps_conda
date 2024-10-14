@@ -22,10 +22,6 @@ ENV SUDO=command
 
 ENV REFRESHED_AT=2023-06-04\
     CLOUDVIEWER_DEV=/opt/ACloudViewer \
-    QT_ROOT=/opt/Qt5.14.2/ \
-    QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
-    QT_CI_LOGIN=alicevisionjunk@gmail.com \
-    QT_CI_PASSWORD=azerty1. \
     DEBIAN_FRONTEND=noninteractive
 
 # cloudViewer Jupyter dependencies
@@ -50,10 +46,6 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         net-tools \
         mesa-utils \
         # for opencv
-        libavcodec-dev \
-        libavformat-dev \
-        libavutil-dev \
-        libswscale-dev \
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \
@@ -62,6 +54,7 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         # for package
         zip \
         unzip \
+        # common
         locate \
         automake \
         xorg-dev \
@@ -81,20 +74,8 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         flex \
         fontconfig \
         mono-complete \
-        # for pcl
-        libopenni-dev \
-        libopenni2-dev \
-        libjsoncpp-dev \
         libgdal-dev \
         libcgal-dev \
-        libusb-1.0-0-dev \
-        libeigen3-dev \
-        libboost-all-dev \
-        libglew-dev \
-        'libqhull*' \
-        libqhull-dev \
-        libflann1.9 \
-        libflann-dev \
         # for QT
         libxcb-xkb1 \
         libxcb-shape0 \
@@ -129,54 +110,6 @@ COPY docker_files/QtIFW-4.6.1-linux-amd.zip /opt
 RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/opt/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
-# Install Qt (to build plugins)
-WORKDIR /tmp/qt
-COPY docker_files/qt.run /tmp/qt
-COPY ./docker/qt-installer-noninteractive.qs ${CLOUDVIEWER_DEV}/docker/
-RUN chmod +x qt.run && \
-    ./qt.run --verbose --platform minimal --script "${CLOUDVIEWER_DEV}/docker/qt-installer-noninteractive.qs" && \
-    rm qt.run && rm -rf ${CLOUDVIEWER_DEV}/docker
-ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
-ENV PATH="/opt/Qt5.14.2/5.14.2/gcc_64/bin:$PATH"
-
-# Install metslib for pcl
-WORKDIR /opt
-COPY docker_files/metslib-0.5.3.tgz /opt
-RUN tar -xvf metslib-0.5.3.tgz && \
-    cd metslib-0.5.3 && \
-    sh ./configure && \
-    make && \
-    make install \
-    && ldconfig \
-    && rm -rf /opt/metslib-0.5.3 \
-    && rm -rf /opt/metslib-0.5.3.tgz
-
-# Install laszip
-WORKDIR /opt
-COPY docker_files/laszip-src-3.4.3.tar.gz /opt
-RUN tar -xvf laszip-src-3.4.3.tar.gz && \
-    cd laszip-src-3.4.3 && \
-    mkdir -p build && cd build && \
-    cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" \
-    && ldconfig \
-    && rm -rf /opt/laszip-src-3.4.3 \
-    && rm -rf /opt/laszip-src-3.4.3.zip
-
-# Install xerces-c
-WORKDIR /opt
-COPY docker_files/xerces-c-3.2.3.zip /opt
-RUN unzip xerces-c-3.2.3.zip \
-    && cd ./xerces-c-3.2.3 \
-    && chmod +x configure \
-    && ./configure --prefix=/usr \
-    && make \
-    && make install \
-    && make clean \
-    && rm -rf /opt/xerces-c-3.2.3 \
-    && rm -rf /opt/xerces-c-3.2.3.zip
-
 # Install Miniconda3
 WORKDIR /opt
 COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt
@@ -184,49 +117,10 @@ RUN sh -c '/bin/echo -e "\nyes\n\nyes" | sh Miniconda3-latest-Linux-x86_64.sh' \
     && echo -e "\ny" && /root/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ \
     && /root/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/ \
     && /root/miniconda3/bin/conda config --set show_channel_urls yes \
-    && echo -e "\ny" | /root/miniconda3/bin/conda install python=3.8 \
     && /root/miniconda3/bin/pip install --upgrade pip \
     && rm Miniconda3-latest-Linux-x86_64.sh
 ENV PATH="/root/miniconda3/bin:$PATH"
 # fix ubuntu2204 and conda library conflicts about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
 RUN echo -e "\ny" | conda install libffi==3.3
-
-# Install vtk
-WORKDIR /opt
-COPY docker_files/VTK-9.3.1.tar.gz /opt
-RUN tar -zxvf VTK-9.3.1.tar.gz && \
-    cd VTK-9.3.1 && \
-    mkdir -p build && cd build && \
-    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
-            -DVTK_GROUP_ENABLE_Qt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
-            -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
-            -DVTK_QT_VERSION:STRING=5 \
-            -DBUILD_SHARED_LIBS:BOOL=ON \
-            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig && \
-    rm -rf /opt/VTK-9.3.1 /opt/VTK-9.3.1.tar.gz
-
-# Install pcl
-WORKDIR /opt
-COPY docker_files/pcl-1.14.1.zip /opt
-RUN unzip pcl-1.14.1.zip && \
-    cd pcl && \
-    mkdir -p build && cd build && \
-    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
-            -DBUILD_GPU=OFF \
-            -DBUILD_apps=OFF \
-            -DBUILD_examples=OFF \
-            -DBUILD_surface_on_nurbs=ON \
-            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig && \
-    rm -rf /opt/pcl /opt/pcl-1.14.1.zip
 
 WORKDIR /root
