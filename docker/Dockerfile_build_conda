@@ -28,12 +28,12 @@ WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
 # Build ACloudViewer app installer
-RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh 3.8
+RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app_conda.sh 3.8
 
 # Build cloudViewer wheels for python3.8-3.11
-RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh 3.9
-RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh 3.8
-RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh 3.10
-RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh 3.11
+RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.9
+RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.8
+RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.10
+RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.11
 
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer

@@ -7,4 +7,4 @@ test -d docker || (
 	exit 1
 )
 
-CUDA_VERSION=11.8.0-cudnn8 UBUNTU_VERSION=18.04 docker/build-ubuntu.sh
+BUILD_WITH_CONDA=ON CUDA_VERSION=11.8.0-cudnn8 UBUNTU_VERSION=18.04 docker/build-ubuntu.sh
