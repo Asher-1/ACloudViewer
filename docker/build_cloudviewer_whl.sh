@@ -12,6 +12,7 @@ export ENV_NAME="python${PYTHON_VERSION}"
 echo "ENV_NAME: " ${ENV_NAME}
 
 echo "conda activate..."
+export CONDA_PREFIX="/root/miniconda3/envs/${ENV_NAME}"
 export PATH="/root/miniconda3/envs/${ENV_NAME}/bin:${PATH}"
 conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
 conda activate ${ENV_NAME} \
