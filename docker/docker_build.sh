@@ -48,7 +48,7 @@ HOST_CLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.24.4-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
-CUDA_VERSION=11.8.0-cudnn8
+CUDA_VERSION=11.7.1-cudnn8
 CUDA_VERSION_LATEST=11.8.0-cudnn8
 
 print_usage_and_exit_docker_build() {
@@ -120,7 +120,6 @@ ci_build() {
     echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[ci_build()] PACKAGE=${PACKAGE}"
-    echo "[ci_build()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
 
     pushd "${HOST_CLOUDVIEWER_ROOT}"
     docker build \
@@ -135,15 +134,14 @@ ci_build() {
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
-        --build-arg BUILD_SYCL_MODULE="${BUILD_SYCL_MODULE}" \
         --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-        bash -cx "cp /cloudViewer* /opt/mount \
-               && chown $(id -u):$(id -g) /opt/mount/cloudViewer*"
+        bash -cx "cp /ACloudViewer-*run /opt/mount \
+               && chown $(id -u):$(id -g) /opt/mount/ACloudViewer-*run"
 }
 
 2-focal_export_env() {
@@ -157,7 +155,7 @@ ci_build() {
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=OFF
+    export PACKAGE=ON
 }
 
 5-ml-jammy_export_env() {
@@ -171,8 +169,8 @@ ci_build() {
     export BUILD_CUDA_MODULE=ON
     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=OFF
+    export BUILD_PYTORCH_OPS=ON # ignore this current
+    export PACKAGE=ON
 }
 
 cpu-static_export_env() {
