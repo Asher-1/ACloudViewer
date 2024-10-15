@@ -38,8 +38,8 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 install_python_dependencies with-cuda with-jupyter with-unit-test
-# build_pip_package build_realsense build_azure_kinect build_jupyter
-build_pip_package build_azure_kinect build_jupyter
+build_pip_package build_realsense build_azure_kinect build_jupyter
+# build_pip_package build_azure_kinect build_jupyter
 
 set -x # Echo commands on
 df -h
