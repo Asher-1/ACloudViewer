@@ -25,10 +25,10 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 # Warning: CONDA_PREFIX variable should be set before
 # CONDA_PREFIX=${CONDA_PREFIX:="/root/miniconda3/envs/cloudViewer"}
 if [ $CONDA_PREFIX ] ; then
-	echo "Conda env is not activated!"
-	exit -1
-else
 	echo "Conda env: $CONDA_PREFIX is activated."
+else
+    echo "Conda env is not activated!"
+	exit -1
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
