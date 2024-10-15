@@ -17,10 +17,7 @@ export PATH="/root/miniconda3/envs/${ENV_NAME}/bin:${PATH}"
 conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && conda activate ${ENV_NAME} \
  && which python \
- && python --version \
- && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
- && pip config set install.trusted-host pypi.tuna.tsinghua.edu.cn \
- && pip config list
+ && python --version
 
  # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
 echo -e "\ny" | conda install libffi==3.3
