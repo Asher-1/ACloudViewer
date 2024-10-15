@@ -91,7 +91,7 @@ if [[ "$(docker images -q ${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBU
 
 	# Export docker compiling output data
 	docker_install_package_dir=/root/install
-	host_install_package_dir=$PWD/docker_cache/ubuntu$UBUNTU_VERSION
+	host_install_package_dir=$PWD/docker_cache/ubuntu$UBUNTU_VERSION${DOCKER_FILE_POSFIX}
 	mkdir -p $host_install_package_dir
 	docker run -v "${host_install_package_dir}:/opt/mount" --rm ${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} \
 			bash -c "cp ${docker_install_package_dir}/*.whl /opt/mount \
