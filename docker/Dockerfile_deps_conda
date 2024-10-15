@@ -114,8 +114,11 @@ ENV PATH="/opt/QtIFW-4.6.1-linux-amd/bin:$PATH"
 WORKDIR /opt
 COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt
 RUN sh -c '/bin/echo -e "\nyes\n\nyes" | sh Miniconda3-latest-Linux-x86_64.sh' \
-    && echo -e "\ny" && /root/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ \
-    && /root/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/ \
+    && echo -e "\ny" && /root/miniconda3/bin/conda config --append channels defaults \
+    && /root/miniconda3/bin/conda config --append channels conda-forge \
+    && /root/miniconda3/bin/conda config --append channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/ \
+    && /root/miniconda3/bin/conda config --append channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ \
+    && /root/miniconda3/bin/conda config --append channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/ \
     && /root/miniconda3/bin/conda config --set show_channel_urls yes \
     && /root/miniconda3/bin/pip install --upgrade pip \
     && rm Miniconda3-latest-Linux-x86_64.sh
