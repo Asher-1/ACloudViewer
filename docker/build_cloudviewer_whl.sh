@@ -20,15 +20,15 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && python --version
 
  # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-echo -e "\ny" | conda install libffi==3.3
+# echo -e "\ny" | conda install libffi==3.3
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
 source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
-install_python_dependencies speed with-cuda with-jupyter with-unit-test
-build_pip_package build_realsense build_azure_kinect build_jupyter
-# build_pip_package build_azure_kinect build_jupyter
+install_python_dependencies with-cuda with-jupyter with-unit-test
+# build_pip_package build_realsense build_azure_kinect build_jupyter
+build_pip_package build_azure_kinect build_jupyter
 
 set -x # Echo commands on
 df -h
