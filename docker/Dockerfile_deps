@@ -130,12 +130,12 @@ RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/opt/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
 # Install Qt (to build plugins)
-WORKDIR /tmp/qt
-COPY docker_files/qt.run /tmp/qt
-COPY ./docker/qt-installer-noninteractive.qs ${CLOUDVIEWER_DEV}/docker/
-RUN chmod +x qt.run && \
-    ./qt.run --verbose --platform minimal --script "${CLOUDVIEWER_DEV}/docker/qt-installer-noninteractive.qs" && \
-    rm qt.run && rm -rf ${CLOUDVIEWER_DEV}/docker
+WORKDIR /opt
+COPY docker_files/qt-opensource-linux-x64-5.14.2.run /opt
+COPY ./docker/qt-installer-noninteractive.qs /opt
+RUN chmod +x qt-opensource-linux-x64-5.14.2.run && \
+    ./qt-opensource-linux-x64-5.14.2.run --verbose --platform minimal --script "/opt/qt-installer-noninteractive.qs" && \
+    rm qt-opensource-linux-x64-5.14.2.run
 ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
 ENV PATH="/opt/Qt5.14.2/5.14.2/gcc_64/bin:$PATH"
 
@@ -179,20 +179,23 @@ RUN unzip xerces-c-3.2.3.zip \
 
 # Install Miniconda3
 WORKDIR /opt
-COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt
-RUN sh -c '/bin/echo -e "\nyes\n\nyes" | sh Miniconda3-latest-Linux-x86_64.sh' \
-    && echo -e "\ny" && /root/miniconda3/bin/conda config --append channels defaults \
-    && /root/miniconda3/bin/conda config --append channels conda-forge \
-    && /root/miniconda3/bin/conda config --append channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/ \
-    && /root/miniconda3/bin/conda config --append channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ \
-    && /root/miniconda3/bin/conda config --append channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/ \
-    && /root/miniconda3/bin/conda config --set show_channel_urls yes \
-    && echo -e "\ny" | /root/miniconda3/bin/conda install python=3.8 \
-    && /root/miniconda3/bin/pip install --upgrade pip \
-    && rm Miniconda3-latest-Linux-x86_64.sh
 ENV PATH="/root/miniconda3/bin:$PATH"
-# fix ubuntu2204 and conda library conflicts about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-RUN echo -e "\ny" | conda install libffi==3.3
+COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt
+RUN bash Miniconda3-latest-Linux-x86_64.sh -b \
+ && rm Miniconda3-latest-Linux-x86_64.sh \
+ && conda --version \
+ && which python \
+ && python --version
+# RUN sh -c '/bin/echo -e "\nyes\n\nyes" | sh Miniconda3-latest-Linux-x86_64.sh' \
+#     && echo -e "\ny" && /root/miniconda3/bin/conda config --append channels defaults \
+#     && /root/miniconda3/bin/conda config --append channels conda-forge \
+#     && /root/miniconda3/bin/conda config --append channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/ \
+#     && /root/miniconda3/bin/conda config --append channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ \
+#     && /root/miniconda3/bin/conda config --append channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/ \
+#     && /root/miniconda3/bin/conda config --set show_channel_urls yes \
+#     && echo -e "\ny" | /root/miniconda3/bin/conda install python=3.8 \
+#     && /root/miniconda3/bin/pip install --upgrade pip \
+#     && rm Miniconda3-latest-Linux-x86_64.sh
 
 # Install vtk
 WORKDIR /opt
