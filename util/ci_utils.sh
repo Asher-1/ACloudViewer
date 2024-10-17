@@ -52,7 +52,7 @@ TENSORFLOW_VER="2.13.0"
 TORCH_VER="2.0.1"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
-PIP_VER="23.3.1"
+PIP_VER="24.2"
 WHEEL_VER="0.44.0"
 STOOLS_VER="67.3.2"
 YAPF_VER="0.30.0"
@@ -62,8 +62,9 @@ CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&
 install_python_dependencies() {
     echo "Installing Python dependencies"
     options="$(echo "$@" | tr ' ' '|')"
-    if [[ "speed" =~ ^($options)$ ]]; then
+    if [[ "speedup" =~ ^($options)$ ]]; then
         SPEED_CMD=" --default-timeout=10000000 -i https://pypi.tuna.tsinghua.edu.cn/simple/ --extra-index-url https://pypi.org/simple --extra-index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host pypi.tuna.tsinghua.edu.cn --trusted-host mirrors.aliyun.com"
+        echo "Speed up downloading with cmd: " $SPEED_CMD
     else
         SPEED_CMD=""
     fi

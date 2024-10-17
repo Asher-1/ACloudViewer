@@ -64,15 +64,12 @@ export ACloudViewer_INSTALL=/root/install \
 export CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML \
 export PATH="/root/miniconda3/bin:$PATH"
 
-export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+
 export LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
 
 # build ACloudViewer app installer
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh 3.8
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh 3.8
-
-rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app_conda.sh 3.8
-rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.8
 
 test cloudViewer
 python3 -c "import cloudViewer as cv3d; print(cv3d.__version__); print('CUDA available: ', cv3d.core.cuda.is_available());"

@@ -75,11 +75,12 @@ fi
 if [[ "$(docker images -q ${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} 2> /dev/null)" == "" ]]; 
 	then
 	# Start building...
-	docker build \
+	DOCKER_BUILDKIT=1 docker build \
 		--network host \
 		--build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
 		--build-arg HTTP_PROXY=http://127.0.0.1:7890 \
 		--build-arg HTTPS_PROXY=http://127.0.0.1:7890 \
+		--build-arg "BUILDKIT_OPTS=--log-size=100m" \
 		--build-arg "CLOUDVIEWER_VERSION=${CLOUDVIEWER_VERSION}" \
 		--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
 		--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
