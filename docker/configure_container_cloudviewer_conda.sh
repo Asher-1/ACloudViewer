@@ -25,7 +25,7 @@ docker run -dit --name=test_cloudviewer_dep_conda \
   -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/root/CloudViewer-ML \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
-  cloudviewer-deps-conda:develop-ubuntu20.04-cuda11.8.0-cudnn8
+  cloudviewer-deps-conda:develop-ubuntu18.04-cuda11.8.0-cudnn8
 
 # attach into container instance
 docker exec -it test_cloudviewer_dep_conda /bin/bash
@@ -63,12 +63,8 @@ export BUNDLE_CLOUDVIEWER_ML=/root/CloudViewer-ML \
 export PATH="/root/miniconda3/bin:$PATH:$BUNDLE_CLOUDVIEWER_ML" \
 
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
-export LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
 
 # build ACloudViewer app installer
-rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app.sh 3.8
-rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl.sh 3.8
-
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app_conda.sh 3.8
 rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.8
 
