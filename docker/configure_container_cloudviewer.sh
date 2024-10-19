@@ -15,6 +15,9 @@ docker run -dit --name=test_cloudviewer_dep \
   --ipc=host \
   --gpus=all \
   --env NVIDIA_DISABLE_REQUIRE=1 \
+  --env ALL_PROXY=socks5://127.0.0.1:7890 \
+	--env HTTP_PROXY=http://127.0.0.1:7890 \
+	--env HTTPS_PROXY=http://127.0.0.1:7890 \
   -e GDK_SCALE \
   -e GDK_DPI_SCALE \
   -p 10022:22 \
@@ -36,9 +39,12 @@ docker run -dit --name=test_cloudviewer \
   --cap-add=SYS_PTRACE \
   --security-opt seccomp=unconfined --privileged \
   --net=host \
+  --env NVIDIA_DISABLE_REQUIRE=1 \
+  --env ALL_PROXY=socks5://127.0.0.1:7890 \
+	--env HTTP_PROXY=http://127.0.0.1:7890 \
+	--env HTTPS_PROXY=http://127.0.0.1:7890 \
   --ipc=host \
   --gpus=all \
-  --env NVIDIA_DISABLE_REQUIRE=1 \
   -e GDK_SCALE \
   -e GDK_DPI_SCALE \
   -p 10022:22 \
@@ -63,7 +69,6 @@ export ACloudViewer_BUILD=/root/ACloudViewer/build \
 export ACloudViewer_INSTALL=/root/install \
 export CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML \
 export PATH="/root/miniconda3/bin:$PATH"
-
 
 export LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
 

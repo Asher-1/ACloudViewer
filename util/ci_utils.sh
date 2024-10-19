@@ -52,8 +52,8 @@ TENSORFLOW_VER="2.13.0"
 TORCH_VER="2.0.1"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
-PIP_VER="24.2"
-WHEEL_VER="0.44.0"
+PIP_VER="23.2.1"
+WHEEL_VER="0.38.4"
 STOOLS_VER="67.3.2"
 YAPF_VER="0.30.0"
 PROTOBUF_VER="4.24.0"
@@ -106,7 +106,6 @@ install_python_dependencies() {
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" tensorboard $SPEED_CMD
-
         elif [[ "$OSTYPE" == "darwin"* ]]; then
             python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard $SPEED_CMD
         else
