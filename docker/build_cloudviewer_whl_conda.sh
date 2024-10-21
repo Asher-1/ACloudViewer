@@ -46,7 +46,7 @@ df -h
 # Run on GPU only. CPU versions run on Github already
 if nvidia-smi >/dev/null 2>&1; then
     echo "Try importing cloudViewer Python package"
-    test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/*whl
+    test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer-*whl
     df -h
     # echo "Running cloudViewer Python tests..."
     # run_python_tests
