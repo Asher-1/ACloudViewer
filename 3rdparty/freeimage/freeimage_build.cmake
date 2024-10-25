@@ -1,5 +1,7 @@
 include(ExternalProject)
 
+find_package(Git QUIET REQUIRED)
+
 if (WIN32)
     set(FREEIMAGE_URL https://kent.dl.sourceforge.net/project/freeimage/Binary%20Distribution/3.18.0/FreeImage3180Win32Win64.zip)
     set(FREEIMAGE_HASH 393d3df75b14cbcb4887da1c395596e2)
@@ -37,7 +39,7 @@ if(WIN32)
     copy_shared_library(ext_freeimage
             LIB_DIR      ${SOURCE_DIR}/Dist/x64
             LIBRARIES    ${EXT_FREEIMAGE_LIBRARIES})
-else()
+elseif (UNIX AND NOT APPLE)
     ExternalProject_Add(
         ext_freeimage
         PREFIX freeimage
@@ -58,13 +60,29 @@ else()
     set(FREEIMAGE_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
     set(FREEIMAGE_LIB_DIR ${INSTALL_DIR}/lib)
     set(EXT_FREEIMAGE_LIBRARIES freeimage)
+elseif(APPLE)
+    ExternalProject_Add(
+        ext_freeimage
+        PREFIX freeimage
+        URL ${FREEIMAGE_URL}
+        URL_HASH MD5=${FREEIMAGE_HASH}
+        DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/freeimage"
+        BUILD_IN_SOURCE ON
+        INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
+        CONFIGURE_COMMAND cp ${CloudViewer_3RDPARTY_DIR}/freeimage/Makefile.osx <SOURCE_DIR>
+        BUILD_COMMAND make -f Makefile.osx
+        UPDATE_COMMAND ""
+        INSTALL_COMMAND make -f Makefile.osx install PREFIX=<INSTALL_DIR>
+    )
+
+    ExternalProject_Get_Property(ext_freeimage INSTALL_DIR)
+    set(FREEIMAGE_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
+    set(FREEIMAGE_LIB_DIR ${INSTALL_DIR}/lib)
+    set(EXT_FREEIMAGE_LIBRARIES freeimage)
 endif()
 
 if(WIN32)
     set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
     cloudViewer_install_ext( FILES ${SOURCE_DIR}/Dist/x64/${library_filename} ${INSTALL_DESTINATIONS} "")
-elseif (APPLE)
-    set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
-    cloudViewer_install_ext( FILES ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${library_filename} ${INSTALL_DESTINATIONS} "")
 endif()
 

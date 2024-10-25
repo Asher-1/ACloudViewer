@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export DEVELOPER_BUILD=OFF
+export BUILD_SHARED_LIBS=OFF
+export BUILD_CUDA_MODULE=OFF
+export BUILD_PYTORCH_OPS=ON
+export BUILD_TENSORFLOW_OPS=OFF
+export PYTHON_VERSION=$1
+export ACloudViewer_INSTALL=~/cloudViewer_install
+# export NPROC=$(($(nproc) * 2))
+export NPROC=$(nproc)
+export ENV_NAME="python${PYTHON_VERSION}"
+echo "ENV_NAME: " ${ENV_NAME}
+echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
+if [ -n "$CONDA_EXE" ]; then
+    CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
+elif [ -n "$CONDA_PREFIX" ]; then
+    CONDA_ROOT=$(dirname "$CONDA_PREFIX")
+else
+    echo "Failed to find Miniconda3 install path..."
+    exit -1
+fi
+
+source "$CONDA_ROOT/etc/profile.d/conda.sh"
+
+if conda info --envs | grep -q "^$ENV_NAME "; then
+    echo "env $ENV_NAME exists and start to remove..."
+    conda env remove -n $ENV_NAME
+fi
+
+echo "conda env create and activate..."
+export CONDA_PREFIX="${CONDA_ROOT}/envs/${ENV_NAME}"
+cp ${CLOUDVIEWER_SOURCE_ROOT}/.ci/conda_macos.yml /tmp/conda_macos.yml
+sed -i "" "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_macos.yml
+conda env create -f /tmp/conda_macos.yml
+conda activate ${ENV_NAME} \
+ && which python \
+ && python --version
+
+if [ $? -eq 0 ]; then
+    echo "env $ENV_NAME activate successfully"
+    echo "current Python path: $(which python)"
+    echo "current Python version: $(python --version)"
+else
+    echo "Activate failed, please run mannually: conda activate $ENV_NAME"
+fi
+
+export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
+export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$CONDA_PREFIX/lib:$PKG_CONFIG_PATH
+export PATH=$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$CONDA_PREFIX/lib:$PATH
+
+if [ -z "$CONDA_PREFIX" ] ; then
+	echo "Conda env is not activated"
+else
+	echo "Conda env now is $CONDA_PREFIX"
+fi
+
+# Get build scripts and control environment variables
+# shellcheck source=ci_utils.sh
+source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
+
+echo "Start to install python dependencies package On MacOS..."
+echo
+install_python_dependencies with-jupyter with-unit-test purge-cache
+
+echo "Start to build wheel On MacOS..."
+echo
+build_mac_wheel with_conda
+echo
+# build_mac_wheel with_conda build_realsense
+
+echo
+echo "Try importing cloudViewer Python package"
+pushd build # PWD=ACloudViewer/build
+test_wheel lib/python_package/pip_package/cloudViewer*.whl
+popd  # PWD=ACloudViewer
+
+echo
+echo "Move to install path: ${ACloudViewer_INSTALL}"
+mv build/lib/python_package/pip_package/cloudViewer*.whl ${ACloudViewer_INSTALL}
+
+echo "Backup whl package to ${ACloudViewer_INSTALL}"
+echo

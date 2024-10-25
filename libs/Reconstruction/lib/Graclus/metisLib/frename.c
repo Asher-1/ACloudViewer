@@ -111,19 +111,19 @@ void metis_edgend__(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, in
 
 void METIS_NODEND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int *options, idxtype *perm, idxtype *iperm)
 {
-  METIS_NodeND(nvtxs, xadj, adjncy, numflag, options, perm, iperm);
+  GRACLUS_METIS_NodeND(nvtxs, xadj, adjncy, numflag, options, perm, iperm);
 }
 void metis_nodend(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int *options, idxtype *perm, idxtype *iperm)
 {
-  METIS_NodeND(nvtxs, xadj, adjncy, numflag, options, perm, iperm);
+  GRACLUS_METIS_NodeND(nvtxs, xadj, adjncy, numflag, options, perm, iperm);
 }
 void metis_nodend_(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int *options, idxtype *perm, idxtype *iperm)
 {
-  METIS_NodeND(nvtxs, xadj, adjncy, numflag, options, perm, iperm);
+  GRACLUS_METIS_NodeND(nvtxs, xadj, adjncy, numflag, options, perm, iperm);
 }
 void metis_nodend__(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int *options, idxtype *perm, idxtype *iperm)
 {
-  METIS_NodeND(nvtxs, xadj, adjncy, numflag, options, perm, iperm);
+  GRACLUS_METIS_NodeND(nvtxs, xadj, adjncy, numflag, options, perm, iperm);
 }
 
 

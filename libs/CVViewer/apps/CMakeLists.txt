@@ -43,10 +43,10 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
         set(rc_list ${PROJECT_SOURCE_DIR}/eCV/Resources/images/icon/cloudViewer_icon.rc)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${rc_list})
-    else ()
+    else () # linux
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
-        set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${APP_NAME})
+        set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${APP_NAME} INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib/")
     endif ()
 
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
@@ -93,7 +93,6 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                 COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/${RESOURCE_DIR_NAME}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/Contents/Frameworks"
                 COMMAND "${mac_deploy_qt}" "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>" -no-plugins -verbose=1
-                # COMMAND ${APPS_DIR}/fixup_macosx_bundle.sh "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>"
                 VERBATIM
                 )
 
@@ -103,51 +102,20 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                 USE_SOURCE_PERMISSIONS)
 
         # copy external libraries (e.g. SDL into the bundle and fixup the search paths
-        set(APP_INSTALL_EXE_DESTINATION "${APP_INSTALL_DESTINATION}/${APP_NAME}.app")
+        set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/pack_macosx_bundle.sh")
+        set(APP_INSTALL_EXE_DESTINATION "${APP_INSTALL_DESTINATION}/${APP_NAME}.app/Contents")
         message(STATUS "APP_INSTALL_EXE_DESTINATION: ${APP_INSTALL_EXE_DESTINATION}")
-        message(STATUS "fixup_macosx_bundle: ${APPS_DIR}/fixup_macosx_bundle.sh")
-        install(CODE "execute_process(COMMAND ${APPS_DIR}/fixup_macosx_bundle.sh ${APP_INSTALL_EXE_DESTINATION})")
-        install(CODE "execute_process(COMMAND ${APPS_DIR}/fixup_macosx_frameworks.sh ${APP_INSTALL_EXE_DESTINATION})")
-        install(CODE "execute_process(COMMAND ${APPS_DIR}/fixup_macosx_frameworks.sh ${APP_INSTALL_EXE_DESTINATION})")
-    else ()
-        if (WIN32)
+        message(STATUS "pack_macosx_bundle: ${PACK_SCRIPTS_PATH}")
+        install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/MacOS)")
+        install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/Frameworks)")
+        install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/Frameworks)")
+    elseif (WIN32)
             add_custom_command(TARGET "${TARGET_NAME}"
                     POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
                     COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
                     COMMAND ${CMAKE_COMMAND} -E copy "${APP_DIR}/../$<CONFIG>/${TARGET_NAME}.exe" "${APP_DIR}"
                     )
-        else ()
-            add_custom_command(TARGET "${TARGET_NAME}"
-                    POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
-                    COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
-                    )
-        endif ()
-
-        if (UNIX AND NOT APPLE)
-            install(DIRECTORY "${APP_DIR}"
-                    DESTINATION "${CMAKE_INSTALL_PREFIX}"
-                    USE_SOURCE_PERMISSIONS)
-            if (CMAKE_INSTALL_PREFIX MATCHES "^(/usr/local|/opt)")
-                set(DESKTOP_INSTALL_DIR "/usr/share")
-            else ()
-                set(DESKTOP_INSTALL_DIR "$ENV{HOME}/.local/share")
-            endif ()
-            configure_file("${SOURCE_DIR}/${TARGET_NAME}.desktop.in"
-                    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop")
-            # Install using freedesktop.org standards
-            install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop"
-                    DESTINATION "${DESKTOP_INSTALL_DIR}/applications")
-            install(FILES "${SOURCE_DIR}/icon.svg"
-                    DESTINATION "${DESKTOP_INSTALL_DIR}/icons/hicolor/scalable/apps"
-                    RENAME "${APP_NAME}.svg")
-            install(FILES "${SOURCE_DIR}/${TARGET_NAME}.xml"
-                    DESTINATION "${DESKTOP_INSTALL_DIR}/mime/packages"
-                    RENAME "${APP_NAME}.xml")
-            # Various caches need to be updated for the app to become visible
-            install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
-        elseif (WIN32)
             # MSVC puts the binary in bin/CloudViewer.exe
             # so we can't just install() the build results, and need to do them piecemeal.
             install(DIRECTORY "${APP_DIR}/resources"
@@ -170,11 +138,33 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                     DEPLOY_PATH
                     ${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}
             )
-        elseif (APPLE)
+    else () # linux
+            add_custom_command(TARGET "${TARGET_NAME}"
+                    POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
+                    COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
+                    )
             install(DIRECTORY "${APP_DIR}"
-                    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+                    DESTINATION "${CMAKE_INSTALL_PREFIX}"
                     USE_SOURCE_PERMISSIONS)
-        endif ()
+            if (CMAKE_INSTALL_PREFIX MATCHES "^(/usr/local|/opt)")
+                set(DESKTOP_INSTALL_DIR "/usr/share")
+            else ()
+                set(DESKTOP_INSTALL_DIR "$ENV{HOME}/.local/share")
+            endif ()
+            configure_file("${SOURCE_DIR}/${TARGET_NAME}.desktop.in"
+                    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop")
+            # Install using freedesktop.org standards
+            install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop"
+                    DESTINATION "${DESKTOP_INSTALL_DIR}/applications")
+            install(FILES "${SOURCE_DIR}/icon.svg"
+                    DESTINATION "${DESKTOP_INSTALL_DIR}/icons/hicolor/scalable/apps"
+                    RENAME "${APP_NAME}.svg")
+            install(FILES "${SOURCE_DIR}/${TARGET_NAME}.xml"
+                    DESTINATION "${DESKTOP_INSTALL_DIR}/mime/packages"
+                    RENAME "${APP_NAME}.xml")
+            # Various caches need to be updated for the app to become visible
+            install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
     endif ()
 
     # Auxiliary files
@@ -190,7 +180,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
         foreach (filename ${auxFiles})
             cloudViewer_install_ext(FILES ${filename} "${CMAKE_INSTALL_PREFIX}/${APP_NAME}" "")
         endforeach ()
-    else ()
+    else () # apple or win32
         foreach (filename ${auxFiles})
             cloudViewer_install_ext(FILES ${filename} "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}" "")
         endforeach ()

@@ -11,6 +11,20 @@ export NPROC=$(nproc)
 export ENV_NAME="python${PYTHON_VERSION}"
 echo "ENV_NAME: " ${ENV_NAME}
 
+if [ -n "$CONDA_EXE" ]; then
+    CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
+elif [ -n "$CONDA_PREFIX" ]; then
+    CONDA_ROOT=$(dirname "$CONDA_PREFIX")
+else
+    echo "Failed to find Miniconda3 install path..."
+    exit -1
+fi
+
+if conda info --envs | grep -q "^$ENV_NAME "; then
+    echo "env $ENV_NAME exists and start to remove..."
+    conda env remove -n $ENV_NAME
+fi
+
 echo "conda activate..."
 export CONDA_PREFIX="/root/miniconda3/envs/${ENV_NAME}"
 export PATH="/root/miniconda3/envs/${ENV_NAME}/bin:${PATH}"
@@ -21,6 +35,14 @@ conda env create -f /root/conda_env_${ENV_NAME}.yml
 conda activate ${ENV_NAME} \
  && which python \
  && python --version
+
+if [ $? -eq 0 ]; then
+    echo "env $ENV_NAME activate successfully"
+    echo "current Python path: $(which python)"
+    echo "current Python version: $(python --version)"
+else
+    echo "Activate failed, please run mannually: conda activate $ENV_NAME"
+fi
 
  # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
 # echo -e "\ny" | conda install libffi==3.3
@@ -38,8 +60,8 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 install_python_dependencies with-cuda with-jupyter with-unit-test
-# build_pip_package build_realsense build_azure_kinect build_jupyter
-build_pip_package build_azure_kinect build_jupyter
+# build_pip_package with_conda build_realsense build_azure_kinect build_jupyter
+build_pip_package with_conda build_azure_kinect build_jupyter
 
 set -x # Echo commands on
 df -h

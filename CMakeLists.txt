@@ -56,6 +56,10 @@ message(STATUS "GIT_COMMIT_ID: " ${GIT_COMMIT_ID})
 message(STATUS "GIT_COMMIT_DATE : " ${GIT_COMMIT_DATE})
 
 if(APPLE)
+    execute_process(COMMAND uname
+            OUTPUT_VARIABLE MACOS_NAME
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
     execute_process(COMMAND uname -m
             OUTPUT_VARIABLE PROCESSOR_ARCH
             OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -162,6 +166,21 @@ if (NOT DEVELOPER_BUILD)
         message(WARNING "Setting BUILD_COMMON_CUDA_ARCHS=ON since DEVELOPER_BUILD is OFF.")
     endif ()
 endif ()
+
+option(BUILD_WITH_CONDA "Build with conda env" OFF)
+if (BUILD_WITH_CONDA)
+    # Setup conda env if possible 
+    SET(CONDA_PREFIX "CONDA_PREFIX_NOT_FOUND" CACHE STRING "The building conda env path prefix.")
+    if(NOT "${CONDA_PREFIX}" STREQUAL "CONDA_PREFIX_NOT_FOUND" AND EXISTS "${CONDA_PREFIX}")
+        message("USER CONDA_PREFIX: ${CONDA_PREFIX}")
+    elseif(DEFINED ENV{CONDA_PREFIX})
+        message("ENV CONDA_PREFIX: $ENV{CONDA_PREFIX}")
+        set(CONDA_PREFIX "$ENV{CONDA_PREFIX}")
+    else()
+        message(FATAL_ERROR "FAILED TO ENSURE CONDA_PREFIX VARIABLES")
+    endif()
+    message(STATUS "Building with conda env at ${CONDA_PREFIX}")
+endif()
 
 # Default build type on single-config generators.
 # For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
@@ -365,26 +384,39 @@ else ()
     set(CloudViewer_INSTALL_CMAKE_DIR "share/CloudViewer")
 endif ()
 
-# RPATH Linux/Unix: (dynamic) libs are put in a subdir of prefix/lib,
+# RPATH Linux/Unix: (dynamic) lib are put in a subdir of prefix/lib,
 # since they are only used by libs/CVViewer
-if (UNIX AND NOT APPLE)
-    include(GNUInstallDirs)
-    set(CMAKE_INSTALL_RPATH "libs")
-endif ()
+# if (UNIX AND NOT APPLE)
+#     include(GNUInstallDirs)
+#     set(CMAKE_INSTALL_RPATH "lib")
+# endif ()
+
+# RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder 
+# set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+# if (APPLE)
+#     # Add options to cover the various ways in which ACloudViewer shared lib or apps can be installed wrt TBB DSO
+#     set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/")
+#     # pybind with ACloudViewer shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
+#     set(CMAKE_BUILD_RPATH "@loader_path/../")
+# elseif(UNIX)
+#     set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/")
+#     set(CMAKE_BUILD_RPATH "$ORIGIN/../")
+# endif()
 
 # Define target folders
 # (now that ccViewer can have its own plugins, ACloudViewer and CloudViewer must fall in separate folders!
 if (WIN32 OR APPLE)
     set(ACloudViewer_DEST_FOLDER "bin/ACloudViewer")
+
 else ()
     set(ACloudViewer_DEST_FOLDER "bin")
 endif ()
 
 # set default install folders
-if (WIN32 OR APPLE)
+if (WIN32)
     # (on Windows - msvc generator - the '_debug' suffix is automatically added for debug configurations)
     set(INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX}/${ACloudViewer_DEST_FOLDER})
-elseif (UNIX AND NOT APPLE)
+elseif (UNIX OR APPLE)
     set(INSTALL_DESTINATIONS ${CMAKE_INSTALL_PREFIX})
 endif ()
 
@@ -534,7 +566,6 @@ set(CMAKE_DEBUG_POSTFIX "d")
 # Contrib. libraries (mainly for I/O)
 include(AllSupport)
 
-SET(CloudViewerAppDir "${PROJECT_SOURCE_DIR}/libs/CVViewer/apps")
 SET(PROJECT_ROOT_PATH "${PROJECT_SOURCE_DIR}")
 
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
@@ -599,7 +630,14 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 endif ()
 
 
-set(COLMAP_APP_NAME "colmap_app")
+if (APPLE)
+    set(COLMAP_APP_NAME "colmap")
+elseif (UNIX)
+    set(COLMAP_APP_NAME "colmap_app")
+elseif (WIN32)
+    set(COLMAP_APP_NAME "colmap_app")
+endif()
+set(CLOUDVIEWER_APP_NAME ${COLOUDVIEWER_APP_DIR_NAME})
 set(MAIN_APP_NAME "ACloudViewer")
 
 add_subdirectory(eCV)
@@ -645,74 +683,96 @@ add_custom_target(apply-cpp-style
 include(CloudViewerPrintConfigurationSummary)
 cloudViewer_print_configuration_summary()
 
-# Install files and library
-if (IS_MSVC)
-    file( GLOB scripts_list "scripts/*.bat" )
-elseif (UNIX AND NOT APPLE)
-    install(DIRECTORY "scripts/QtInstallerFramework/linux"
-            DESTINATION "${INSTALL_DESTINATIONS}"
-            USE_SOURCE_PERMISSIONS)
-    SET(DEPLOY_ROOT_PATH "${INSTALL_DESTINATIONS}/linux/ACloudViewer/packages/com.vendor.product/data")
-    foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
-        install(DIRECTORY "${qt5_plugins_folder}"
-                DESTINATION "${DEPLOY_ROOT_PATH}" 
-                USE_SOURCE_PERMISSIONS)
-    endforeach()
-            
-    file(GLOB documents_list "*.md" )
-    list(APPEND documents_list "CHANGELOG.txt" )
-    list(APPEND documents_list "doc/cloudviewer-detail-zh.md" )
-    file(GLOB scripts_list "scripts/*ubuntu.sh" )
-    file(GLOB another_scripts_list "util/${MAIN_APP_NAME}*" )
-    list(APPEND another_scripts_list 
-        "eCV/bin_other/license.txt"
-        "eCV/bin_other/global_shift_list_template.txt")
-    if (BUILD_RECONSTRUCTION)
-        list(APPEND another_scripts_list "scripts/reconstruction/shell/colmap_app.sh" "libs/Reconstruction/doc/COLMAP.desktop")
-    endif()
-    list(APPEND scripts_list ${another_scripts_list})
-endif ()
-foreach( filename ${scripts_list} )
-    cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}" "" )
-endforeach()
-foreach( filename ${documents_list} )
-    cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}" "" )
-endforeach()
-
-if (BUILD_CUDA_MODULE) 
+### Install files and library
+file(GLOB documents_list "*.md" )
+list(APPEND documents_list "CHANGELOG.txt" )
+list(APPEND documents_list "doc/cloudviewer-detail-zh.md" )
+list(APPEND documents_list "eCV/bin_other/license.txt" 
+                           "eCV/bin_other/global_shift_list_template.txt")
+SET(DEPLOY_ROOT_PATH "${INSTALL_DESTINATIONS}/deploy")
+install(DIRECTORY "scripts/QtInstallerFramework/deploy"
+        DESTINATION "${INSTALL_DESTINATIONS}"
+        USE_SOURCE_PERMISSIONS)
+if (BUILD_CUDA_MODULE)
     set(ACLOUDVIEWER_DEVICE "cuda")
 else ()
     set(ACLOUDVIEWER_DEVICE "cpu")
 endif()
 
-if (UNIX AND NOT APPLE)
+if (APPLE)
+    if (APPLE_AARCH64)
+        set(ARC_NAME "ARM64")
+    else()
+        set(ARC_NAME "X64")
+    endif()
+    set(LIBS_FOLDER_NAME "Frameworks")
+    set(PACK_SCRIPTS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/platforms/mac")
+    set(APP_SIGN_SCRIPT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/platforms/mac/bundle/signature_app.py")
+    set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${BUILD_TIME}-${ARC_NAME}")
+elseif (UNIX)
+    if (LINUX_AARCH64)
+        set(ARC_NAME "arm64")
+    else()
+        set(ARC_NAME "amd64")
+    endif()
+    set(LIBS_FOLDER_NAME "${CloudViewer_INSTALL_LIB_DIR}")
+    set(PACK_SCRIPTS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/platforms/linux")
+    set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${BUILD_TIME}-ubuntu${UBUNTU_VERSION}-${ACLOUDVIEWER_DEVICE}-${ARC_NAME}")
     if (BUILD_RECONSTRUCTION)
         # fix gflags undefinded symbols issues
         set(src_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
         set(target_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MINOR_VERSION})
         install(CODE "set(GFLAGS_SRC_FILENAME \"${src_gflags_filename}\")")
         install(CODE "set(GFLAGS_DST_FILENAME \"${target_gflags_filename}\")")
-        install(CODE "set(BUILD_RECONSTRUCTION \"${BUILD_RECONSTRUCTION}\")")
     endif()
-    # Pass environment variables(INSTALL_LIB_DESTINATION) to the install script
-    set(CLOUDVIEWER_INSTALL_LIB_DESTINATION "${DEPLOY_ROOT_PATH}/${CloudViewer_INSTALL_LIB_DIR}")
-    set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${BUILD_TIME}-ubuntu${UBUNTU_VERSION}-${ACLOUDVIEWER_DEVICE}-amd64")
-    message(STATUS "CLOUDVIEWER_PACKAGE_NAME: " ${CLOUDVIEWER_PACKAGE_NAME})
-    install(CODE "set(BUILD_TIME \"${BUILD_TIME}\")")
-    install(CODE "set(CLOUDVIEWER_VERSION \"${CLOUDVIEWER_VERSION_FULL}\")")
-    install(CODE "set(MAIN_APP_NAME \"${MAIN_APP_NAME}\")")
-    install(CODE "set(COLMAP_APP_NAME \"${COLMAP_APP_NAME}\")")
-    install(CODE "set(EXTERNAL_INSTALL_DIR \"${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}\")")
-    install(CODE "set(BUILD_LIB_PATH \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\")")
-    install(CODE "set(CloudViewer_INSTALL_LIB_DIR \"${CloudViewer_INSTALL_LIB_DIR}\")")
-    install(CODE "set(DEPLOY_ROOT_PATH \"${DEPLOY_ROOT_PATH}\")")
-    install(CODE "set(CLOUDVIEWER_INSTALL_LIB_DESTINATION \"${CLOUDVIEWER_INSTALL_LIB_DESTINATION}\")")
-    install(CODE "set(CLOUDVIEWER_PACKAGE_NAME \"${CLOUDVIEWER_PACKAGE_NAME}\")")
-    install(CODE "set(PACKAGE \"${PACKAGE}\")")
-    install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")
-    install(CODE "MESSAGE(\"${MAIN_APP_NAME}\.${CLOUDVIEWER_VERSION} install successfully.\")")
-    if (NOT ${PACKAGE})
-        install(CODE "MESSAGE(\"Continue to publish installer package: cd ${INSTALL_DESTINATIONS}/linux/${MAIN_APP_NAME}.\")")
-        install(CODE "MESSAGE(\"Then please execute: binarycreator -c config/config.xml -p packages ${CLOUDVIEWER_PACKAGE_NAME}.run\")")
+
+    file(GLOB helper_utils "util/${MAIN_APP_NAME}*" )
+    list(APPEND documents_list ${helper_utils})
+    if (BUILD_RECONSTRUCTION)
+        list(APPEND documents_list 
+            "scripts/reconstruction/shell/colmap_app.sh" 
+            "libs/Reconstruction/doc/COLMAP.desktop")
     endif()
+    if (BUILD_GUI)
+    endif()
+
+    foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
+        install(DIRECTORY "${qt5_plugins_folder}"
+                DESTINATION "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data" 
+                USE_SOURCE_PERMISSIONS)
+    endforeach()
+elseif (WIN32)
+    set(ARC_NAME "amd64")
+    set(LIBS_FOLDER_NAME "${CloudViewer_INSTALL_LIB_DIR}")
+    set(PACK_SCRIPTS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/platforms/windows")
+    message(STATUS "Unsupported now on windows")
 endif()
+
+foreach( filename ${documents_list} )
+    cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data" "" )
+endforeach()
+
+message(STATUS "CLOUDVIEWER_PACKAGE_NAME: " ${CLOUDVIEWER_PACKAGE_NAME})
+# for linux
+install(CODE "set(BUILD_LIB_PATH \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\")")
+install(CODE "set(EXTERNAL_INSTALL_DIR \"${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}\")")
+# for macos
+install(CODE "set(CONDA_PREFIX \"${CONDA_PREFIX}\")")
+install(CODE "set(BUILD_WITH_CONDA \"${BUILD_WITH_CONDA}\")")
+install(CODE "set(APP_SIGN_SCRIPT_PATH \"${APP_SIGN_SCRIPT_PATH}\")")
+# common
+install(CODE "set(BUILD_GUI \"${BUILD_GUI}\")")
+install(CODE "set(BUILD_RECONSTRUCTION \"${BUILD_RECONSTRUCTION}\")")
+install(CODE "set(LIBS_FOLDER_NAME \"${LIBS_FOLDER_NAME}\")")
+install(CODE "set(BUILD_TIME \"${BUILD_TIME}\")")
+install(CODE "set(CLOUDVIEWER_VERSION \"${CLOUDVIEWER_VERSION_FULL}\")")
+install(CODE "set(MAIN_APP_NAME \"${MAIN_APP_NAME}\")")
+install(CODE "set(COLMAP_APP_NAME \"${COLMAP_APP_NAME}\")")
+install(CODE "set(CLOUDVIEWER_APP_NAME \"${CLOUDVIEWER_APP_NAME}\")")
+install(CODE "set(PACK_SCRIPTS_PATH \"${PACK_SCRIPTS_PATH}\")")
+install(CODE "set(DEPLOY_ROOT_PATH \"${DEPLOY_ROOT_PATH}\")")
+install(CODE "set(CLOUDVIEWER_PACKAGE_NAME \"${CLOUDVIEWER_PACKAGE_NAME}\")")
+install(CODE "set(PACKAGE \"${PACKAGE}\")")
+# call cmake script to deploy
+install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")
+install(CODE "MESSAGE(\"${MAIN_APP_NAME}\.${CLOUDVIEWER_VERSION} install successfully.\")")

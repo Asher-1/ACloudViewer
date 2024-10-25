@@ -131,9 +131,15 @@ if (NOT APPLE)
 endif ()
 
 if (APPLE)
-    find_package(Ceres REQUIRED)
-    find_package(Glog REQUIRED)
-    find_package(FreeImage REQUIRED)
+    find_package(Boost REQUIRED COMPONENTS
+                graph
+                filesystem
+                program_options
+                system)
+    # find_package(FreeImage REQUIRED)
+    # find_package(Glog REQUIRED)
+    # find_package(Ceres REQUIRED)
+    # find_package(Metis REQUIRED)
 endif ()
 
 set(OpenGL_GL_PREFERENCE GLVND)
@@ -310,11 +316,11 @@ set(COLMAP_EXTERNAL_LIBRARIES
         ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_PROGRAM_OPTIONS_LIBRARY}
         ${Boost_SYSTEM_LIBRARY}
-        ${GLOG_LIBRARIES}
-        ${CERES_LIBRARIES}
-        ${FREEIMAGE_LIBRARIES}
+        # ${GLOG_LIBRARIES}
+        # ${CERES_LIBRARIES}
+        # ${FREEIMAGE_LIBRARIES}
         )
-
+        
 if (OPENMP_FOUND)
     list(APPEND COLMAP_EXTERNAL_LIBRARIES ${OpenMP_libomp_LIBRARY})
 endif ()

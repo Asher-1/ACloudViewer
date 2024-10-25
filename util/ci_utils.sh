@@ -127,43 +127,66 @@ install_python_dependencies() {
     fi
 }
 
-build_all() {
-
-    echo "Start to build GUI package On MacOS..."
-    echo
-    build_gui_app with_gdal package_installer
+build_mac_wheel() {
+    echo "Building CloudViewer wheel"
+    options="$(echo "$@" | tr ' ' '|')"
 
     echo "Using cmake: $(command -v cmake)"
     cmake --version
 
-    mkdir -p build
-    cd build
-    echo "Clean last build cache if possible."
-    rm -rf ./*
+    set +u
+    if [ -f "${CLOUDVIEWER_ML_ROOT}/set_cloudViewer_ml_root.sh" ]; then
+        echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."
+        # the build system of the main repo expects a main branch. make sure main exists
+        git -C "${CLOUDVIEWER_ML_ROOT}" checkout -b main || true
+        BUNDLE_CLOUDVIEWER_ML=ON
+    else
+        echo "CloudViewer-ML not available."
+        BUNDLE_CLOUDVIEWER_ML=OFF
+    fi
+    if [[ "with_conda" =~ ^($options)$ ]]; then
+        BUILD_WITH_CONDA=ON
+        echo "BUILD_WITH_CONDA is on"
+    else
+        BUILD_WITH_CONDA=OFF
+        echo "BUILD_WITH_CONDA is off"
+    fi
+    if [[ "build_realsense" =~ ^($options)$ ]]; then
+        echo "Realsense enabled in Python wheel."
+        BUILD_LIBREALSENSE=ON
+    else
+        echo "Realsense disabled in Python wheel."
+        BUILD_LIBREALSENSE=OFF
+    fi
+    set -u
 
+    mkdir -p build
+    # echo "Clean last build cache if possible."
+    pushd build # PWD=ACloudViewer/build
     cmakeOptions=(
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_BENCHMARKS=OFF"
         "-DBUILD_SHARED_LIBS=OFF"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_AZURE_KINECT=ON"
-        "-DBUILD_LIBREALSENSE=ON"
+        "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE" # some issues with network locally
         "-DWITH_OPENMP=ON"
         "-DWITH_IPPICV=ON"
         "-DWITH_SIMD=ON"
         "-DUSE_SIMD=ON"
-        "-DBUILD_WEBRTC=ON"
         "-DBUILD_RECONSTRUCTION=ON"
-        "-DBUILD_JUPYTER_EXTENSION=ON"
-        "-DBUILD_FILAMENT_FROM_SOURCE=OFF"
+        "-DBUILD_FILAMENT_FROM_SOURCE=ON"
         "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
         "-DBUILD_COMMON_CUDA_ARCHS=ON"
         # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
         "-DGLIBCXX_USE_CXX11_ABI=OFF"
+        "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
         "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
+        "-DCONDA_PREFIX=$CONDA_PREFIX"
+        "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
         )
 
     echo
@@ -171,12 +194,9 @@ build_all() {
     cmake "${cmakeOptions[@]}" ..
     echo
     echo "Build & install CloudViewer..."
-    # make VERBOSE=1 -j"$NPROC"
-    # make VERBOSE=1 install -j"$NPROC"
     make VERBOSE=1 install-pip-package -j"$NPROC"
-    cp lib/python_package/pip_package/cloudViewer*.whl "$CLOUDVIEWER_INSTALL_DIR"
-    echo "Clean build"
-    make clean
+    echo
+    popd                                           # PWD=ACloudViewer
 }
 
 build_gui_app() {
@@ -210,6 +230,14 @@ build_gui_app() {
     else
         WITH_PCL_NURBS=OFF
         echo "WITH_PCL_NURBS is off"
+    fi
+
+    if [[ "with_conda" =~ ^($options)$ ]]; then
+        BUILD_WITH_CONDA=ON
+        echo "BUILD_WITH_CONDA is on"
+    else
+        BUILD_WITH_CONDA=OFF
+        echo "BUILD_WITH_CONDA is off"
     fi
     set -u
 
@@ -278,6 +306,8 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QSRA=ON"
                 "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
                 "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
+                "-DCONDA_PREFIX=$CONDA_PREFIX"
+                "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
                 )
     
     set -x # Echo commands on
@@ -340,6 +370,13 @@ build_pip_package() {
         CXX11_ABI=$(python -c "import torch; print('ON' if torch._C._GLIBCXX_USE_CXX11_ABI else 'OFF')")
     fi
     echo Building with GLIBCXX_USE_CXX11_ABI="$CXX11_ABI"
+    if [[ "with_conda" =~ ^($options)$ ]]; then
+        BUILD_WITH_CONDA=ON
+        echo "BUILD_WITH_CONDA is on"
+    else
+        BUILD_WITH_CONDA=OFF
+        echo "BUILD_WITH_CONDA is off"
+    fi
     set -u
 
     echo
@@ -354,7 +391,6 @@ build_pip_package() {
         "-DWITH_IPPICV=ON"
         "-DWITH_SIMD=ON"
         "-DUSE_SIMD=ON"
-        "-DBUILD_WEBRTC=ON"
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
@@ -366,6 +402,8 @@ build_pip_package() {
         "-DBUILD_BENCHMARKS=OFF"
         "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
         "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
+        "-DCONDA_PREFIX=$CONDA_PREFIX"
+        "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
     )
     set -x # Echo commands on
     cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_RECONSTRUCTION=OFF "${cmakeOptions[@]}" ..
@@ -428,6 +466,7 @@ test_wheel() {
     # elif [[ "$OSTYPE" == "darwin"* ]]; then
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
+
     echo
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
         python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-torch.txt"

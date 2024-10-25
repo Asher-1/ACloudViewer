@@ -98,7 +98,15 @@
 		"variant": "cpp",
 		"*.in": "c",
 		"format": "cpp",
-		"*.inc": "cpp"
+		"*.inc": "cpp",
+		"__hash_table": "cpp",
+		"__split_buffer": "cpp",
+		"__tree": "cpp",
+		"queue": "cpp",
+		"stack": "cpp",
+		"locale": "cpp",
+		"*.isph": "cpp",
+		"alignedvector3": "cpp"
 	},
 	"python.languageServer": "Default"
 }

@@ -125,15 +125,13 @@ Component.prototype.createOperations = function()
 			//获取当前桌面路径    
 			var desktoppath = QDesktopServices.storageLocation(0);
 			var homeDir = installer.environmentVariable("HOME");
-		        if(homeDir.length > 0) {
-			   var deskTopSaveDir = homeDir + "/.local/share/applications/" + desktop;
-	       		   if(installer.fileExists(deskTopSaveDir)) {
-			        var args = ["cp", "-R", deskTopSaveDir, desktoppath + "/" + desktop];
-			   	component.addOperation("Execute", args);
-			        //component.addOperation("Copy", deskTopSaveDir + "/" + desktop, desktoppath + "/" + desktop); 
-		           }
-                           				
-		        }
+            if(homeDir.length > 0) {
+                var deskTopSaveDir = homeDir + "/.local/share/applications/" + desktop;
+                if(installer.fileExists(deskTopSaveDir)) {
+                    var args = ["cp", "-R", deskTopSaveDir, desktoppath + "/" + desktop];
+                    component.addOperation("Execute", args);
+                }
+            }
 		}
     } catch (e) {
         console.log(e);
