@@ -21,7 +21,6 @@ test -d docker || (
 test -d docker_files || \
 	mkdir docker_files
 
-
 test -f docker_files/Miniconda3-latest-Linux-x86_64.sh || \
 	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O "docker_files/Miniconda3-latest-Linux-x86_64.sh"
 
@@ -55,9 +54,10 @@ else
 	DEPENDENCY_IMAGE_NAME="cloudviewer-deps-conda"
 fi
 
-if [[ "$(docker images -q ${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} 2> /dev/null)" == "" ]]; 
+# DEPENDENCIES IMAGE
+DEPENDENCY_IMAGE_TAG=${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+if [[ "$(docker images -q $DEPENDENCY_IMAGE_TAG 2> /dev/null)" == "" ]]; 
 	then
-		# DEPENDENCIES
 		docker build \
 			--network host \
 			--build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
@@ -67,43 +67,44 @@ if [[ "$(docker images -q ${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu
 			--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
 			--build-arg "VTK_VERSION=${VTK_VERSION}" \
 			--build-arg "PCL_VERSION=${PCL_VERSION}" \
-			--tag "${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
+			--tag "$DEPENDENCY_IMAGE_TAG" \
 			-f docker/Dockerfile_deps${DOCKER_FILE_POSFIX} . 2>&1 | tee docker_build-${DEPENDENCY_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 fi
 
-# ACloudViewer
-if [[ "$(docker images -q ${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} 2> /dev/null)" == "" ]]; 
+# ACloudViewer IMAGE
+CLOUDVIEWER_IMAGE_TAG=${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; 
 	then
 	# Start building...
-	DOCKER_BUILDKIT=1 docker build \
+	docker build \
 		--network host \
 		--build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
 		--build-arg HTTP_PROXY=http://127.0.0.1:7890 \
 		--build-arg HTTPS_PROXY=http://127.0.0.1:7890 \
-		--build-arg "BUILDKIT_OPTS=--log-size=100m" \
 		--build-arg "CLOUDVIEWER_VERSION=${CLOUDVIEWER_VERSION}" \
 		--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
 		--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
 		--build-arg "VTK_VERSION=${VTK_VERSION}" \
 		--build-arg "PCL_VERSION=${PCL_VERSION}" \
 		--build-arg "DEPENDENCY_IMAGE_NAME=${DEPENDENCY_IMAGE_NAME}" \
-		--tag "${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}" \
+		--tag "$CLOUDVIEWER_IMAGE_TAG" \
 		-f docker/Dockerfile_build${DOCKER_FILE_POSFIX} . 2>&1 | tee docker_build-${BUILD_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 
 	# Export docker compiling output data
 	docker_install_package_dir=/root/install
 	host_install_package_dir=$PWD/docker_cache/ubuntu$UBUNTU_VERSION${DOCKER_FILE_POSFIX}
 	mkdir -p $host_install_package_dir
-	docker run -v "${host_install_package_dir}:/opt/mount" --rm ${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} \
+	docker run -v "${host_install_package_dir}:/opt/mount" --rm $CLOUDVIEWER_IMAGE_TAG \
 			bash -c "cp ${docker_install_package_dir}/*.whl /opt/mount \
 						&& cp ${docker_install_package_dir}/*.run /opt/mount \
 						&& chown $(id -u):$(id -g) /opt/mount/*.whl \
 						&& chown $(id -u):$(id -g) /opt/mount/*.run"
 	echo					
-	echo "Build ${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} Done."
+	echo "Build $CLOUDVIEWER_IMAGE_TAG Done."
 	echo "Building ouput package dir is: $host_install_package_dir"
 fi
 
-echo "Start to Delete docker image: ${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}."
-docker rmi ${BUILD_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+echo
+echo "Start to Delete docker image: $CLOUDVIEWER_IMAGE_TAG."
+docker rmi $CLOUDVIEWER_IMAGE_TAG
 echo "Delete done."

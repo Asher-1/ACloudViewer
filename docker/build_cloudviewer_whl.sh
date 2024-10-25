@@ -26,7 +26,7 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
 # shellcheck source=ci_utils.sh
 source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
-install_python_dependencies with-cuda with-jupyter with-unit-test
+install_python_dependencies speedup with-cuda with-jupyter with-unit-test
 # build_pip_package build_realsense build_azure_kinect build_jupyter
 build_pip_package build_azure_kinect build_jupyter
 
@@ -35,7 +35,7 @@ df -h
 # Run on GPU only. CPU versions run on Github already
 if nvidia-smi >/dev/null 2>&1; then
     echo "Try importing cloudViewer Python package"
-    test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/*whl
+    test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer-*whl
     df -h
     # echo "Running cloudViewer Python tests..."
     # run_python_tests
