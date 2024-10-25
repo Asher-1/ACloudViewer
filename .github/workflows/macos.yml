@@ -211,7 +211,7 @@ jobs:
 
       - name: Set up Python version
         run: |
-          sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
+          sed -i "" "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
 
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment
@@ -261,7 +261,7 @@ jobs:
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           source util/ci_utils.sh
-          build_pip_package
+          build_pip_package  with_conda
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudViewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
@@ -375,7 +375,7 @@ jobs:
 
       - name: Set up Python version
         run: |
-          sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
+          sed -i "" "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
 
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment

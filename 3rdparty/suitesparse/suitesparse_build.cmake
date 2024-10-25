@@ -50,7 +50,8 @@ set(EXT_SUITESPARSE_LIBRARIES   suitesparseconfig
                                 ldl
                                 umfpack
                                 spqr
-                                metis)
+                                metis
+                                )
 
 if (BUILD_CUDA_MODULE)
     if(NOT WIN32)

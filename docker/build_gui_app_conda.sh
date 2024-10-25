@@ -54,7 +54,7 @@ echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
 echo "Start to build GUI package..."
 echo
-build_gui_app package_installer
+build_gui_app with_conda package_installer
 echo
 
 echo "Finish building ACloudViewer GUI to $ACloudViewer_INSTALL"

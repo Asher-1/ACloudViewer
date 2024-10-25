@@ -286,7 +286,23 @@ Then, the ACloudViewer CMake project will request that you set the following var
 3. and optionally `CORK_DEBUG_LIBRARY_FILE` and `MPIR_DEBUG_LIBRARY_FILE`: both main library files (for debug mode)
 
 
-LINUX:
+MACOS: [BUILD_SHELL](scripts/build_macos.sh)
+
+```
+./scripts/build_macos.sh
+```
+
+LINUX:(Docker) [BUILD_SHELL](docker/build-release.sh) and [BUILD_SHELL_CONDA](docker/build-release-conda.sh)
+
+```
+./docker/build-release.sh
+
+or
+
+./docker/build-release-conda.sh
+```
+
+LINUX:(Manually)
 
 ```
 (whl)

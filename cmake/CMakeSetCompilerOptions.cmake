@@ -22,11 +22,14 @@ if ( CCACHE_PROGRAM )
     set( CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM} )
 endif()
 
-if ( UNIX )
-	set( CMAKE_POSITION_INDEPENDENT_CODE ON )	
-elseif( MSVC )
-    add_definitions(-DNOMINMAX -D_CRT_SECURE_NO_WARNINGS -D__STDC_LIMIT_MACROS)
+set( CMAKE_POSITION_INDEPENDENT_CODE ON )
 
+if (APPLE)
+    add_definitions("-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION")
+endif ()
+
+if( MSVC )
+    add_definitions(-DNOMINMAX -D_CRT_SECURE_NO_WARNINGS -D__STDC_LIMIT_MACROS)
     option( OPTION_MP_BUILD "Check to activate multithreaded compilation with MSVC" OFF )
     if( ${OPTION_MP_BUILD} )
        set( CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}\ /MP)

@@ -37,7 +37,6 @@ option(CVCORELIB_SCALAR_DOUBLE
 # Add the library (shared or static)
 if (CVCORELIB_SHARED)
     add_library(${PROJECT_NAME} SHARED)
-
     set_target_properties(${PROJECT_NAME}
             PROPERTIES
             CXX_VISIBILITY_PRESET hidden
@@ -45,7 +44,6 @@ if (CVCORELIB_SHARED)
             )
 else ()
     add_library(${PROJECT_NAME} STATIC)
-
     target_compile_definitions(${PROJECT_NAME}
             PRIVATE
             CV_CORE_LIB_STATIC_DEFINE
@@ -53,10 +51,9 @@ else ()
 endif ()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-        # comment inorder to avoid to generate .so.${version}
-        # VERSION ${CLOUDVIEWER_VERSION}
-        DEBUG_POSTFIX d
-        )
+    DEBUG_POSTFIX d
+)
+# add_library( CVCoreLib::CVCoreLib ALIAS CVCoreLib )
 
 # Configure a header file to pass the version settings to the source code
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CloudViewerConfig.h.in"
@@ -100,10 +97,10 @@ target_compile_features(${PROJECT_NAME}
         cxx_std_17
         )
 
-# set_target_properties(${PROJECT_NAME}
-#         PROPERTIES
-#         CXX_EXTENSIONS OFF
-#         )
+set_target_properties(${PROJECT_NAME}
+        PROPERTIES
+        CXX_EXTENSIONS OFF
+        )
 
 target_compile_definitions(${PROJECT_NAME}
         PRIVATE

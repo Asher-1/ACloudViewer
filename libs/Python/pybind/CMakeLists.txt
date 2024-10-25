@@ -52,12 +52,33 @@ target_include_directories(pybind SYSTEM PRIVATE
 
 cloudViewer_show_and_abort_on_warning(pybind)
 cloudViewer_set_global_properties(pybind)
+target_link_libraries(pybind PRIVATE CloudViewer::CloudViewer)
 
 set_target_properties(pybind PROPERTIES DEBUG_POSTFIX "")
 if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
-endif ()
-target_link_libraries(pybind PRIVATE CloudViewer::CloudViewer)
+    # TODO(Sameer): Only export PyInit_pybind, cloudViewer_core_cuda_device_count
+elseif (APPLE)
+    file(GENERATE OUTPUT pybind.map CONTENT
+        [=[_PyInit_pybind
+cloudViewer_core_cuda_device_count
+        ]=])
+    target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
+        -Wl,-exported_symbols_list
+        "${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
+elseif (UNIX)   # Linux
+    file(GENERATE OUTPUT pybind.map CONTENT
+        [=[{
+    global:
+        PyInit_pybind;
+        cloudViewer_core_cuda_device_count;
+    local:
+        *;
+};]=])
+    target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
+        "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
+    target_link_options(pybind PRIVATE "-flto=auto")
+endif()
 
 if (BUILD_RECONSTRUCTION)
     target_link_libraries(pybind PRIVATE colmap)
@@ -70,6 +91,17 @@ endif ()
 # `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
 set(PYTHON_COMPILED_MODULE_DIR
         "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+
+# Set BUILD_RPATH to find tbb (and a shared libOpen3D). We don't install through cmake.
+if (APPLE)
+        set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path;@loader_path/..;@loader_path/../lib")
+elseif (UNIX)
+        # Use RPATH instead of RUNPATH in pybind so that needed libc++.so can find child dependant libc++abi.so in RPATH
+        # https://stackoverflow.com/questions/69662319/managing-secondary-dependencies-of-shared-libraries
+        target_link_options(pybind PRIVATE "LINKER:--disable-new-dtags")
+        set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN;$ORIGIN/..;$ORIGIN/../lib")
+endif()
+
 set_target_properties(pybind PROPERTIES
         FOLDER "Python"
         LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"

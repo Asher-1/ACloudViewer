@@ -3,8 +3,8 @@ set(MIN_NODE_VERSION "14.00.0")
 # Clean up directory
 file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR})
 file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/cloudViewer)
-file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/cloudViewer/libs)
-set(PYTHON_INSTALL_LIB_DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/libs")
+file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/cloudViewer/lib)
+set(PYTHON_INSTALL_LIB_DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/lib")
 set(CUSTOM_SO_NAME ".so.${PROJECT_VERSION}")
 
 # Create python package. It contains:
@@ -83,16 +83,21 @@ foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
 endforeach()
 
 if (WIN32)
-   SET(PACK_SCRIPTS pack_windows.bat)
+   SET(PACK_SCRIPTS "windows/pack_windows.bat")
 elseif (UNIX AND NOT APPLE)
-   SET(PACK_SCRIPTS pack_ubuntu.sh)
-elseif(APPLE)
-   SET(PACK_SCRIPTS pack_macos.sh)
+   SET(PACK_SCRIPTS "linux/pack_ubuntu.sh")
+elseif (APPLE)
+   SET(PACK_SCRIPTS "mac/pack_macos_wheel.sh")
 endif ()
+set(PACKAGE_TOOL "${PYTHON_PACKAGE_SRC_DIR}/../scripts/platforms/${PACK_SCRIPTS}")
 
-set(PACKAGE_TOOL "${PYTHON_PACKAGE_SRC_DIR}/../scripts/${PACK_SCRIPTS}")
-
-if (UNIX AND NOT APPLE)
+if (APPLE)
+    execute_process(COMMAND bash ${PACKAGE_TOOL}
+                    "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cpu" ${PYTHON_INSTALL_LIB_DESTINATION}
+                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+    execute_process(COMMAND bash ${PACKAGE_TOOL} ${PYTHON_INSTALL_LIB_DESTINATION} ${PYTHON_INSTALL_LIB_DESTINATION}
+                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+elseif (UNIX)
     if (BUILD_CUDA_MODULE)
         execute_process(COMMAND bash ${PACKAGE_TOOL}
                         "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cuda" ${PYTHON_INSTALL_LIB_DESTINATION}
@@ -106,7 +111,7 @@ if (UNIX AND NOT APPLE)
                     ${PYTHON_INSTALL_LIB_DESTINATION}/platforms/libqxcb.so ${PYTHON_INSTALL_LIB_DESTINATION}
                     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
 
-    # rename ldd libs to the format like "${CUSTOM_SO_NAME}"
+    # rename ldd lib to the format like "${CUSTOM_SO_NAME}"
     file(GLOB ldd_libs_list "${PYTHON_INSTALL_LIB_DESTINATION}/*.so*" )
     foreach (filename ${ldd_libs_list})
         get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
@@ -121,7 +126,7 @@ if (UNIX AND NOT APPLE)
 
     message(STATUS "CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR: " ${CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR})
     file(GLOB external_libs_list "${CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR}/*.so*" )
-    # rename external libs to the format like "${CUSTOM_SO_NAME}"
+    # rename external lib to the format like "${CUSTOM_SO_NAME}"
     foreach (filename ${external_libs_list})
         get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
         get_filename_component(SO_VER_NAME ${EXTRA_LIB_REAL} NAME)
@@ -134,6 +139,8 @@ if (UNIX AND NOT APPLE)
         message(STATUS "Copy external lib: " ${NEW_SO_NAME})
         configure_file(${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME} COPYONLY)
     endforeach ()
+elseif (WIN32)
+    # for windows
 endif()
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)

@@ -71,6 +71,7 @@ else ()
     # EXTERNAL INSTALL DIR
     set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
 endif ()
+list( APPEND CMAKE_PREFIX_PATH ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib )
 
 find_package(PkgConfig QUIET)
 
@@ -467,10 +468,6 @@ function(import_3rdparty_library name)
             target_link_libraries(${name} INTERFACE
                     "$<BUILD_INTERFACE:$<$<AND:${HIDDEN},${FLAG_load_hidden}>:-load_hidden >${arg_LIB_DIR}/${library_filename}>")
             if (NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
-                # install(FILES ${arg_LIB_DIR}/${library_filename}
-                #         DESTINATION ${CloudViewer_INSTALL_LIB_DIR}
-                #         RENAME ${installed_library_filename}
-                #         )
                 target_link_libraries(${name} INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CloudViewer_INSTALL_LIB_DIR}/${installed_library_filename}>)
             endif ()
             if (HIDDEN)
@@ -1759,7 +1756,7 @@ list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ransacSD)
 
 
 if (BUILD_RECONSTRUCTION)
-    if (WIN32)
+    if (WIN32 OR APPLE)
         # freeimage
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
         import_3rdparty_library(3rdparty_freeimage
@@ -1769,7 +1766,7 @@ if (BUILD_RECONSTRUCTION)
                 DEPENDS ext_freeimage
                 )
         set(FREEIMAGE_TARGET "3rdparty_freeimage")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${FREEIMAGE_TARGET}")
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
 
         # gflags
         include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
@@ -1792,22 +1789,28 @@ if (BUILD_RECONSTRUCTION)
         set(GLOG_TARGET "3rdparty_glog")
         add_dependencies(ext_glog ext_gflags)
 
+        # lapack and blas
+        include(${CloudViewer_3RDPARTY_DIR}/lapack/lapack_build.cmake)
+        import_3rdparty_library(3rdparty_lapack
+                LIB_DIR ${LAPACK_LIB_DIR}
+                LIBRARIES ${LAPACKBLAS_LIBRARIES}
+                DEPENDS ext_lapack
+                )
+        set(LAPACK_TARGET "3rdparty_lapack")
+        add_dependencies(3rdparty_lapack ext_lapack)
+
         # suitesparse
         include(${CloudViewer_3RDPARTY_DIR}/suitesparse/suitesparse_build.cmake)
         import_3rdparty_library(3rdparty_suitesparse
+                HIDDEN
                 INCLUDE_DIRS ${SUITESPARSE_INCLUDE_DIRS}
                 LIB_DIR ${SUITESPARSE_LIB_DIR}
                 LIBRARIES ${EXT_SUITESPARSE_LIBRARIES}
                 DEPENDS ext_suitesparse
                 )
         set(SUITESPARSE_TARGET "3rdparty_suitesparse")
-
-        import_3rdparty_library(3rdparty_lapack
-                LIB_DIR ${LAPACK_LIB_DIR}
-                LIBRARIES ${LAPACKBLAS_LIBRARIES}
-                )
-        set(LAPACK_TARGET "3rdparty_lapack")
-        add_dependencies(3rdparty_lapack ext_suitesparse)
+        add_dependencies(3rdparty_suitesparse ext_suitesparse)
+        add_dependencies(3rdparty_suitesparse 3rdparty_lapack)
 
         # ceres
         include(${CloudViewer_3RDPARTY_DIR}/ceres-solver/ceres_build.cmake)
@@ -1818,15 +1821,20 @@ if (BUILD_RECONSTRUCTION)
                 DEPENDS ext_ceres
                 )
         set(CERES_TARGET "3rdparty_ceres")
-        add_dependencies(ext_ceres ext_suitesparse)
-        add_dependencies(ext_ceres 3rdparty_eigen3)
+        add_dependencies(3rdparty_ceres 3rdparty_eigen3)
+        add_dependencies(3rdparty_ceres 3rdparty_glog)
+        add_dependencies(3rdparty_ceres 3rdparty_lapack)
+        add_dependencies(3rdparty_ceres 3rdparty_suitesparse)
 
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${GFLAGS_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${GLOG_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${INTERNAL_EIGEN3_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${SUITESPARSE_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${LAPACK_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${CERES_TARGET}")
+        target_link_libraries(3rdparty_ceres INTERFACE 3rdparty_eigen3 3rdparty_gflags 
+                            3rdparty_glog 3rdparty_suitesparse 3rdparty_lapack)
+
+        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${GFLAGS_TARGET}")
+        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${GLOG_TARGET}")
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_eigen3)
+        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${SUITESPARSE_TARGET}")
+        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${LAPACK_TARGET}")
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ceres)
     elseif (UNIX)
         # boost
         include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
@@ -1838,6 +1846,8 @@ if (BUILD_RECONSTRUCTION)
                 )
         message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_boost)
+        # fix error: no template named 'unary_function' in namespace 'std'; did you mean '__unary_function'?
+        # target_compile_definitions(3rdparty_boost INTERFACE -D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
 
         # freeimage
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
@@ -1847,6 +1857,7 @@ if (BUILD_RECONSTRUCTION)
                 LIBRARIES ${EXT_FREEIMAGE_LIBRARIES}
                 )
         add_dependencies(3rdparty_freeimage ext_freeimage)
+        set(FREEIMAGE_TARGET "3rdparty_freeimage")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
 
         # gflags
@@ -1900,12 +1911,11 @@ if (BUILD_RECONSTRUCTION)
                 )
         set(CERES_TARGET "3rdparty_ceres")
         add_dependencies(3rdparty_ceres ext_ceres)
-        add_dependencies(3rdparty_ceres ext_glog)
-        add_dependencies(3rdparty_ceres ext_gflags)
-        add_dependencies(ext_ceres ext_glog)
-        add_dependencies(ext_ceres ext_gflags)
-        add_dependencies(ext_ceres ext_suitesparse)
-        add_dependencies(ext_ceres 3rdparty_eigen3)
+        add_dependencies(3rdparty_ceres 3rdparty_eigen3)
+        add_dependencies(3rdparty_ceres 3rdparty_gflags)
+        add_dependencies(3rdparty_ceres 3rdparty_glog)
+        add_dependencies(3rdparty_ceres 3rdparty_lapack)
+        add_dependencies(3rdparty_ceres 3rdparty_suitesparse)
 
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${CERES_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${INTERNAL_EIGEN3_TARGET}")
@@ -1915,7 +1925,7 @@ if (BUILD_RECONSTRUCTION)
 endif ()
 
 # opencv
-if (USE_SYSTEM_OPENCV AND BUILD_OPENCV)
+if (USE_SYSTEM_OPENCV)
     find_package_3rdparty_library(3rdparty_opencv
             PUBLIC
             PACKAGE OpenCV
@@ -1973,15 +1983,34 @@ endif ()
 if (BUILD_OPENCV)
     if (NOT USE_SYSTEM_OPENCV)
         include(${CloudViewer_3RDPARTY_DIR}/opencv/opencv_build.cmake)
-        import_shared_3rdparty_library(3rdparty_opencv ext_opencv
-                INCLUDE_DIRS ${OPENCV_INCLUDE_DIRS}
-                LIB_DIR ${OPENCV_LIB_DIR}
-                LIBRARIES ${OPENCV_LIBRARIES}
-                )
-        add_dependencies(3rdparty_opencv ext_opencv)
-        list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM 3rdparty_opencv)
+        # import_shared_3rdparty_library(3rdparty_opencv ext_opencv
+        #     INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
+        #     LIB_DIR ${OpenCV_LIB_DIR}
+        #     LIBRARIES ${OpenCV_LIBS}
+        # )
+        if (WIN32 OR APPLE)
+            import_3rdparty_library(3rdparty_opencv
+                    INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
+                    LIB_DIR ${OpenCV_LIB_DIR}
+                    LIBRARIES ${OpenCV_LIBS}
+                    DEPENDS ext_opencv
+                    )
+            # set_target_properties(3rdparty_opencv PROPERTIES
+            #     CXX_VISIBILITY_PRESET hidden
+            #     VISIBILITY_INLINES_HIDDEN 1
+            #     LINK_FLAGS "-Wl,-ObjC"
+            # )
+            target_compile_definitions(3rdparty_opencv INTERFACE CV_STATIC_LIB)
+        elseif (UNIX)
+            import_shared_3rdparty_library(3rdparty_opencv ext_opencv
+                    INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
+                    LIB_DIR ${OpenCV_LIB_DIR}
+                    LIBRARIES ${OpenCV_LIBS}
+                    )
+        endif()
+        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_opencv)
     else()
-        list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM 3rdparty_opencv)
+        # list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM 3rdparty_opencv)
     endif()
 endif()
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>colmap</DisplayName>
+    <Description>3D Reconstruction platform.</Description>
+    <Version>3.9.0</Version>
+    <ReleaseDate>2024-09-18</ReleaseDate>
+    <Licenses>
+        <License name="Beer Public License Agreement" file="license.txt" />
+    </Licenses>
+    <Default>true</Default>
+</Package>
