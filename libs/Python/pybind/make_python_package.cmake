@@ -87,16 +87,28 @@ if (WIN32)
 elseif (UNIX AND NOT APPLE)
    SET(PACK_SCRIPTS "linux/pack_ubuntu.sh")
 elseif (APPLE)
-   SET(PACK_SCRIPTS "mac/pack_macos_wheel.sh")
+#    SET(PACK_SCRIPTS "mac/pack_macos_wheel.sh")
+   SET(PACK_SCRIPTS "mac/bundle/lib_bundle_wheel.py")
 endif ()
 set(PACKAGE_TOOL "${PYTHON_PACKAGE_SRC_DIR}/../scripts/platforms/${PACK_SCRIPTS}")
 
 if (APPLE)
-    execute_process(COMMAND bash ${PACKAGE_TOOL}
-                    "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cpu" ${PYTHON_INSTALL_LIB_DESTINATION}
+
+    set(DEST_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer")
+    execute_process(COMMAND python ${PACKAGE_TOOL} ${DEST_PATH} 
                     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
-    execute_process(COMMAND bash ${PACKAGE_TOOL} ${PYTHON_INSTALL_LIB_DESTINATION} ${PYTHON_INSTALL_LIB_DESTINATION}
-                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+
+    # set(CPU_DEST_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cpu")
+    # set(CUDA_DEST_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cuda")
+    # if (EXISTS "${CPU_DEST_PATH}")
+    #     execute_process(COMMAND bash ${PACKAGE_TOOL} ${CPU_DEST_PATH}
+    #                     ${PYTHON_INSTALL_LIB_DESTINATION} WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+    # endif()
+    # if (EXISTS "${CUDA_DEST_PATH}")
+    #     execute_process(COMMAND bash ${PACKAGE_TOOL} ${CUDA_DEST_PATH}
+    #                     ${PYTHON_INSTALL_LIB_DESTINATION} WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+    # endif()
+    # execute_process(COMMAND bash ${PACKAGE_TOOL} ${PYTHON_INSTALL_LIB_DESTINATION} ${PYTHON_INSTALL_LIB_DESTINATION} WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
 elseif (UNIX)
     if (BUILD_CUDA_MODULE)
         execute_process(COMMAND bash ${PACKAGE_TOOL}

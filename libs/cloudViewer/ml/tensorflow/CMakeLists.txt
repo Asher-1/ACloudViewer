@@ -139,11 +139,11 @@ set_target_properties(cloudViewer_tf_ops PROPERTIES
 set_target_properties(cloudViewer_tf_ops PROPERTIES PREFIX "")
 set_target_properties(cloudViewer_tf_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
-if (APPLE)
-    set_target_properties(cloudViewer_tf_ops PROPERTIES BUILD_RPATH "@loader_path/..;@loader_path/../lib")
-elseif (UNIX)
-    set_target_properties(cloudViewer_tf_ops PROPERTIES BUILD_RPATH "$ORIGIN/..;$ORIGIN/../lib")
-endif()
+# if (APPLE)
+#     set_target_properties(cloudViewer_tf_ops PROPERTIES BUILD_RPATH "@loader_path/..;@loader_path/../lib")
+# elseif (UNIX)
+#     set_target_properties(cloudViewer_tf_ops PROPERTIES BUILD_RPATH "$ORIGIN/..;$ORIGIN/../lib")
+# endif()
 
 target_compile_definitions(cloudViewer_tf_ops PRIVATE "${Tensorflow_DEFINITIONS}")
 

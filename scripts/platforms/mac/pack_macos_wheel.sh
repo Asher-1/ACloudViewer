@@ -40,10 +40,12 @@ if [ -d $1 ]; then
                     chmod +w "$FrameworksDir/$libname"
                 fi
 
-                # change its path in the executable
-                newpath="@loader_path/../$LIBS_NAME/$libname"
-                echo "$lib -> $newpath"
-                install_name_tool -change "$lib" "$newpath" "$exe"
+                if [[ "$libname" != "$element" ]]; then
+                    # change its path in the executable
+                    newpath="@loader_path/../$LIBS_NAME/$libname"
+                    echo "$lib -> $newpath"
+                    install_name_tool -change "$lib" "$newpath" "$exe"
+                fi
 
             elif [[ $lib == @rpath/* ]]; then   # external library with @rpath
                 libname=${lib:7}
@@ -56,10 +58,13 @@ if [ -d $1 ]; then
                         break
                     fi
                 done
-                # change its path in the executable
-                newpath="@loader_path/../$LIBS_NAME/$libname"
-                echo "$lib -> $newpath"
-                install_name_tool -change "$lib" "$newpath" $exe
+
+                if [[ "$libname" != "$element" ]]; then
+                    # change its path in the executable
+                    newpath="@loader_path/../$LIBS_NAME/$libname"
+                    echo "$lib -> $newpath"
+                    install_name_tool -change "$lib" "$newpath" $exe
+                fi
             fi
         done
 

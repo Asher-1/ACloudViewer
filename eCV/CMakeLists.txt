@@ -72,9 +72,9 @@ endif ()
 # Put together our Application bundle on macOS
 if (APPLE)
     add_subdirectory(Mac)
-elseif(UNIX)
-    set_target_properties(${TARGET_NAME} PROPERTIES
-                            INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib/")
+# elseif(UNIX)
+#     set_target_properties(${TARGET_NAME} PROPERTIES
+#                             INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib/")
 endif ()
 
 # Translation Note: must be after add_subdirectory(Mac) on apple

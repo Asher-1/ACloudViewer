@@ -83,13 +83,13 @@ else
 fi
 echo
 
-# echo "Start to build wheel for python3.8-3.11 On MacOS..."
-# echo
-# CLOUDVIEWER_BUILD_DIR=${CLOUDVIEWER_SOURCE_ROOT}/build
-# MACOS_WHL_BUILD_SHELL=${CLOUDVIEWER_SOURCE_ROOT}/scripts/build_macos_whl.sh
-# rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.8
-# rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.9
-# rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.10
-# rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.11
-# echo "All install to ${ACloudViewer_INSTALL}"
-# echo
+echo "Start to build wheel for python3.8-3.11 On MacOS..."
+echo
+CLOUDVIEWER_BUILD_DIR=${CLOUDVIEWER_SOURCE_ROOT}/build
+MACOS_WHL_BUILD_SHELL=${CLOUDVIEWER_SOURCE_ROOT}/scripts/build_macos_whl.sh
+rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.8
+rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.9
+rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.10
+rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.11
+echo "All install to ${ACloudViewer_INSTALL}"
+echo

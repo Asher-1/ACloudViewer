@@ -56,9 +56,11 @@ if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
     except StopIteration:  # Not found: check system paths while loading
         pass
 
+dep_lib_name = "lib"
+
 # fix link bugs for qt on Linux platform
-if os.path.exists(_Path(__file__).parent / 'libs'):
-    LIB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "libs")
+if os.path.exists(_Path(__file__).parent / dep_lib_name):
+    LIB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), dep_lib_name)
     # the Qt plugin is included currently only in the pre-built wheels
     if _build_config["BUILD_RECONSTRUCTION"]:
         os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = LIB_PATH
@@ -70,37 +72,37 @@ if os.path.exists(_Path(__file__).parent / 'libs'):
 
     if platform.system() == "Linux":  # must load shared library in order on linux
         try:  # Try loading libstdc++* if possible to fix cannot found GLIB_XX issues
-            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('*stdc++*'))))
+            _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('*stdc++*'))))
         except StopIteration:
             pass
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicudata*'))))
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicuuc*'))))
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libicui18n*'))))
+        _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libicudata*'))))
+        _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libicuuc*'))))
+        _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libicui18n*'))))
 
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libQt5Core*'))))
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libQt5Gui*'))))
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libQt5Widgets*'))))
-        libqts = (_Path(__file__).parent / 'libs').glob('libQt5*')
+        _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libQt5Core*'))))
+        _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libQt5Gui*'))))
+        _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libQt5Widgets*'))))
+        libqts = (_Path(__file__).parent / dep_lib_name).glob('libQt5*')
         libqts = sorted(libqts)
         for lib in libqts:
             _CDLL(lib)
 
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libCVCoreLib*'))))
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libECV_DB_LIB*'))))
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libECV_IO_LIB*'))))
+        _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libCVCoreLib*'))))
+        _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libECV_DB_LIB*'))))
+        _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libECV_IO_LIB*'))))
         if _build_config["BUILD_RECONSTRUCTION"]:
-            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libfreeimage*'))))
-            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libgflags*'))))
-            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libglog*'))))
-            # _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libgfortran*'))))
-            # _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libblas*'))))
-            # _CDLL(str(next((_Path(__file__).parent / 'libs').glob('liblapack*'))))
-            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libceres*'))))
-            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libboost_program_options*'))))
-            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libboost_filesystem*'))))
-            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libboost_system*'))))
-            _CDLL(str(next((_Path(__file__).parent / 'libs').glob('libboost_iostreams*'))))
-        _CDLL(str(next((_Path(__file__).parent / 'libs').glob('lib*'))))
+            _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libfreeimage*'))))
+            _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libgflags*'))))
+            _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libglog*'))))
+            # _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libgfortran*'))))
+            # _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libblas*'))))
+            # _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('liblapack*'))))
+            _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libceres*'))))
+            _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libboost_program_options*'))))
+            _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libboost_filesystem*'))))
+            _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libboost_system*'))))
+            _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('libboost_iostreams*'))))
+        _CDLL(str(next((_Path(__file__).parent / dep_lib_name).glob('lib*'))))
 
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:

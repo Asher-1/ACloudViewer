@@ -46,7 +46,8 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
     else () # linux
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
-        set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${APP_NAME} INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib/")
+        set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${APP_NAME})
+        # set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib/")
     endif ()
 
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
@@ -102,13 +103,18 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                 USE_SOURCE_PERMISSIONS)
 
         # copy external libraries (e.g. SDL into the bundle and fixup the search paths
-        set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/pack_macosx_bundle.sh")
-        set(APP_INSTALL_EXE_DESTINATION "${APP_INSTALL_DESTINATION}/${APP_NAME}.app/Contents")
-        message(STATUS "APP_INSTALL_EXE_DESTINATION: ${APP_INSTALL_EXE_DESTINATION}")
-        message(STATUS "pack_macosx_bundle: ${PACK_SCRIPTS_PATH}")
-        install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/MacOS)")
-        install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/Frameworks)")
-        install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/Frameworks)")
+        # set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/pack_macosx_bundle.sh")
+        # set(APP_INSTALL_EXE_DESTINATION "${APP_INSTALL_DESTINATION}/${APP_NAME}.app/Contents")
+        # message(STATUS "APP_INSTALL_EXE_DESTINATION: ${APP_INSTALL_EXE_DESTINATION}")
+        # message(STATUS "pack_macosx_bundle: ${PACK_SCRIPTS_PATH}")
+        # install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/MacOS)")
+        # install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/Frameworks)")
+        # install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/Frameworks)")
+
+        set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/lib_bundle_wheel.py")
+        install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${APP_NAME} ${APP_INSTALL_DESTINATION})")
+        set(APP_SIGN_SCRIPT_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/signature_app.py")
+        install(CODE "execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${APP_NAME} ${APP_INSTALL_DESTINATION})")
     elseif (WIN32)
             add_custom_command(TARGET "${TARGET_NAME}"
                     POST_BUILD

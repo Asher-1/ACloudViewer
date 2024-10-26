@@ -72,15 +72,16 @@ build_mac_wheel with_conda
 echo
 # build_mac_wheel with_conda build_realsense
 
+set -x # Echo commands on
+df -h
 echo
-echo "Try importing cloudViewer Python package"
-pushd build # PWD=ACloudViewer/build
-test_wheel lib/python_package/pip_package/cloudViewer*.whl
-popd  # PWD=ACloudViewer
+# echo "Try importing cloudViewer Python package"
+test_wheel build/lib/python_package/pip_package/cloudViewer*.whl
 
 echo
 echo "Move to install path: ${ACloudViewer_INSTALL}"
 mv build/lib/python_package/pip_package/cloudViewer*.whl ${ACloudViewer_INSTALL}
 
 echo "Backup whl package to ${ACloudViewer_INSTALL}"
+set +x # Echo commands off
 echo

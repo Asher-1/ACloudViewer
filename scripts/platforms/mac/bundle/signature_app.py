@@ -43,7 +43,7 @@ class CCSignBundleConfig:
             install_path (Path):  Path where CC is "installed".
             signature (str): Signature to use to sign binaries in the bundle (`codesign -s` option).
             identifier (str): Identifier to use to sign binaries in the bundle (`codesign -i` option).
-            embed_python (bool): Whether or not Python is embedded in the package.
+            embed_python (bool): Whether Python is embedded in the package or not.
 
         """
         self.app_name = app_name + ".app"
@@ -99,18 +99,22 @@ class CCSignBundle:
             path (Path): The path to the file to sign.
 
         """
-        if len(self.config.signature) == 0:
-            subprocess.run(
-                [CODESIGN_FULL_PATH, "--deep", "--force", "-s", "-", "--timestamp", str(path)],
-                stdout=subprocess.PIPE,
-                check=True,
-            )
-        else:
-            subprocess.run(
-                [CODESIGN_FULL_PATH, "--deep", "--force", "-s", self.config.signature, "--timestamp", str(path)],
-                stdout=subprocess.PIPE,
-                check=True,
-            )
+        dummy_signature = "-"
+        if len(self.config.signature) != 0:
+             dummy_signature=self.config.signature
+        subprocess.run(
+            [
+                CODESIGN_FULL_PATH,
+                "--deep",
+                "--force",
+                "-s",
+                dummy_signature,
+                "--timestamp",
+                str(path),
+            ],
+            stdout=subprocess.PIPE,
+            check=True,
+        )
 
     def _add_entitlements(self, path: Path, entitlements: Path) -> None:
         """Sign a binary file with some specific entitlements.
@@ -125,42 +129,26 @@ class CCSignBundle:
 
         """
         
-        if len(self.config.signature) == 0:
-            subprocess.run(
-                [
-                    CODESIGN_FULL_PATH,
-                    "--deep",
-                    "--force",
-                    "-s",
-                    "-",
-                    "--timestamp",
-                    "-i",
-                    self.config.identifier,
-                    "--entitlements",
-                    str(entitlements),
-                    str(path),
-                ],
-                stdout=subprocess.PIPE,
-                check=True,
-            )
-        else:
-            subprocess.run(
-                [
-                    CODESIGN_FULL_PATH,
-                    "--deep",
-                    "--force",
-                    "-s",
-                    self.config.signature,
-                    "--timestamp",
-                    "-i",
-                    self.config.identifier,
-                    "--entitlements",
-                    str(entitlements),
-                    str(path),
-                ],
-                stdout=subprocess.PIPE,
-                check=True,
-            )
+        dummy_signature = "-"
+        if len(self.config.signature) != 0:
+             dummy_signature=self.config.signature
+        subprocess.run(
+            [
+                CODESIGN_FULL_PATH,
+                "--deep",
+                "--force",
+                "-s",
+                dummy_signature,
+                "--timestamp",
+                "-i",
+                self.config.identifier,
+                "--entitlements",
+                str(entitlements),
+                str(path),
+            ],
+            stdout=subprocess.PIPE,
+            check=True,
+        )
 
 
     def sign(self) -> int:

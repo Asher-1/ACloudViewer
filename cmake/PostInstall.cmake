@@ -29,14 +29,7 @@ if (APPLE)
     # deploy ACloudViewer
     execute_process(COMMAND cp -r ${CMAKE_INSTALL_PREFIX}/${MAIN_APP_NAME}/${MAIN_APP_NAME}.app 
                     ${MAIN_DEPLOY_PATH} WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
-    
-    # set(MAIN_APP_PATH  "${MAIN_DEPLOY_PATH}/${MAIN_APP_NAME}.app/Contents")
-    # message(STATUS "Start cmd: ${PACK_SCRIPTS} ${MAIN_APP_PATH}/cvPlugins")
-    # execute_process(COMMAND ${PACK_SCRIPTS} "${MAIN_APP_PATH}/cvPlugins")
-    # message(STATUS "Start cmd: ${PACK_SCRIPTS} ${MAIN_APP_PATH}/${LIBS_FOLDER_NAME}")
-    # execute_process(COMMAND ${PACK_SCRIPTS} "${MAIN_APP_PATH}/${LIBS_FOLDER_NAME}") # Frameworks
-    # sign ACloudViewer
-    execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${MAIN_APP_NAME} ${MAIN_DEPLOY_PATH})
+    # execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${MAIN_APP_NAME} ${MAIN_DEPLOY_PATH})
     
     # deploy and sign CloudViewer
     if (${BUILD_GUI} STREQUAL "ON")
@@ -46,7 +39,7 @@ if (APPLE)
                         WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
         execute_process(COMMAND cp -r ${CMAKE_INSTALL_PREFIX}/bin/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}.app 
                         ${CLOUDVIEWER_DEPLOY_PATH} WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${CLOUDVIEWER_APP_NAME} ${CLOUDVIEWER_DEPLOY_PATH})
+        # execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${CLOUDVIEWER_APP_NAME} ${CLOUDVIEWER_DEPLOY_PATH})
     endif()
 
     # deploy and sig colmap
@@ -57,7 +50,7 @@ if (APPLE)
                         WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
         execute_process(COMMAND cp -r ${CMAKE_INSTALL_PREFIX}/bin/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}.app 
                         ${COLMAP_DEPLOY_PATH} WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${COLMAP_APP_NAME} ${COLMAP_DEPLOY_PATH})
+        # execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${COLMAP_APP_NAME} ${COLMAP_DEPLOY_PATH})
     endif()
 elseif (UNIX)
     ## update version and build time
