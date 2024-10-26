@@ -629,17 +629,22 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
     endif ()
 endif ()
 
-
-if (APPLE)
-    set(COLMAP_APP_NAME "colmap")
-elseif (UNIX)
-    set(COLMAP_APP_NAME "colmap_app")
-elseif (WIN32)
-    set(COLMAP_APP_NAME "colmap_app")
-endif()
-set(CLOUDVIEWER_APP_NAME ${COLOUDVIEWER_APP_DIR_NAME})
+# Set apps name
 set(MAIN_APP_NAME "ACloudViewer")
+if (BUILD_GUI)
+    set(CLOUDVIEWER_APP_NAME ${COLOUDVIEWER_APP_DIR_NAME})
+endif()
+if (BUILD_RECONSTRUCTION)
+    if (APPLE)
+        set(COLMAP_APP_NAME "colmap")
+    elseif (UNIX)
+        set(COLMAP_APP_NAME "colmap_app")
+    elseif (WIN32)
+        set(COLMAP_APP_NAME "colmap_app")
+    endif()
+endif()
 
+# ACloudViewer app
 add_subdirectory(eCV)
 
 # Install CMake configuration files

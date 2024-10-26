@@ -31,20 +31,6 @@ if (APPLE)
                     ${MAIN_DEPLOY_PATH} WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
     
     # set(MAIN_APP_PATH  "${MAIN_DEPLOY_PATH}/${MAIN_APP_NAME}.app/Contents")
-    # fix ACloudViewer app dependency issues when building with conda
-    # if (${BUILD_WITH_CONDA} STREQUAL "ON")
-    #     message("Start to fix libtiff* missing issues on MacOS as follows: ")
-    #     file(GLOB libtiff_libs "${CONDA_PREFIX}/lib/libtiff.*.*" )
-    #     foreach( tiff_lib_path ${libtiff_libs} )
-    #         message(STATUS "cp missing libtiff: ${tiff_lib_path}")
-    #         execute_process(COMMAND ${PACK_SCRIPTS_PATH}/copy_macos_libs.sh ${tiff_lib_path} 
-    #                                ${MAIN_APP_PATH}/${LIBS_FOLDER_NAME})
-    #         get_filename_component(LIBTIFF_FILE_NAME ${tiff_lib_path} NAME)
-    #         execute_process(COMMAND cp  ${MAIN_APP_PATH}/${LIBS_FOLDER_NAME}/${LIBTIFF_FILE_NAME} 
-    #                         ${MAIN_APP_PATH}/${LIBS_FOLDER_NAME}/libtiff.5.dylib)
-    #     endforeach()
-    # endif()
-
     # message(STATUS "Start cmd: ${PACK_SCRIPTS} ${MAIN_APP_PATH}/cvPlugins")
     # execute_process(COMMAND ${PACK_SCRIPTS} "${MAIN_APP_PATH}/cvPlugins")
     # message(STATUS "Start cmd: ${PACK_SCRIPTS} ${MAIN_APP_PATH}/${LIBS_FOLDER_NAME}")

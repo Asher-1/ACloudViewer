@@ -30,15 +30,12 @@ function(cloudViewer_link_3rdparty_libraries target)
 endfunction()
 
 function(cloudViewer_link_static_lib target dependency)
-    target_include_directories(${target} PUBLIC ${OpenCV_INCLUDE_DIRS})
     if (APPLE)
-        set_target_properties(${target} PROPERTIES
-            LINK_FLAGS "-Wl,-force_load,${OpenCV_LIB_DIR}/lib${OpenCV_LIBS}.a"
-        )
+        ## fix missing symbols like when linking with static libraries opencv[missing _GST_CAT_DEFAULT]
         # set_target_properties(${target} PROPERTIES
-        #     LINK_FLAGS "-Wl,-ObjC"
+        #     LINK_FLAGS "-Wl,-ObjC,-all_load"
         # )
-        # target_link_libraries(${target} ${dependency})
+        target_link_libraries(${target} ${dependency})
     elseif (UNIX)
         # Directly pass public and private dependencies to the target.
         set_target_properties(${target} PROPERTIES
@@ -55,6 +52,7 @@ function(cloudViewer_link_static_lib target dependency)
         target_link_libraries(${target} ${dependency})
     endif()
 
+    add_dependencies(${target} ${dependency})
     set_target_properties(${target} PROPERTIES
         CXX_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN 1

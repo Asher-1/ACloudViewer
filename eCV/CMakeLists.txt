@@ -182,9 +182,10 @@ if (WIN32)
 elseif (APPLE)
     set(RESOURCE_DIR_NAME "Contents/Resources")
     file(GLOB RESOURCE_FILES "Mac/*.icns")
-    set(CLOUDVIEWER_TRANSLATION_DESTINATION "${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.app/Contents/translations")
-    set(CLOUDVIEWER_RESOURCE_DESTINATION "${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.app/${RESOURCE_DIR_NAME}")
-    set(CLOUDVIEWER_PLUGINS_DESTINATION "${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.app/Contents/cvPlugins")
+    set(BINARY_APP_PATH ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.app)
+    set(CLOUDVIEWER_TRANSLATION_DESTINATION "${BINARY_APP_PATH}/Contents/translations")
+    set(CLOUDVIEWER_RESOURCE_DESTINATION "${BINARY_APP_PATH}/${RESOURCE_DIR_NAME}")
+    set(CLOUDVIEWER_PLUGINS_DESTINATION "${BINARY_APP_PATH}/Contents/cvPlugins")
     add_custom_command(
             TARGET ${PROJECT_NAME}
             POST_BUILD
@@ -195,14 +196,8 @@ elseif (APPLE)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${CLOUDVIEWER_TRANSLATION_DESTINATION}"
             COMMAND sh -c "cp ${CMAKE_BINARY_DIR}/eCV/translations/*.qm ${CLOUDVIEWER_TRANSLATION_DESTINATION}"
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/bin/cvPlugins "${CLOUDVIEWER_PLUGINS_DESTINATION}"
-            VERBATIM
-    )
-
-    # for macdeployqt
-    add_custom_command(
-            TARGET ${PROJECT_NAME}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.app ${CMAKE_BINARY_DIR}/eCV/${PROJECT_NAME}.app
+             # for macdeployqt
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${BINARY_APP_PATH} ${CMAKE_BINARY_DIR}/eCV/${PROJECT_NAME}.app
             VERBATIM
     )
 else ()

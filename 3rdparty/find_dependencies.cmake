@@ -1995,11 +1995,6 @@ if (BUILD_OPENCV)
                     LIBRARIES ${OpenCV_LIBS}
                     DEPENDS ext_opencv
                     )
-            # set_target_properties(3rdparty_opencv PROPERTIES
-            #     CXX_VISIBILITY_PRESET hidden
-            #     VISIBILITY_INLINES_HIDDEN 1
-            #     LINK_FLAGS "-Wl,-ObjC"
-            # )
             target_compile_definitions(3rdparty_opencv INTERFACE CV_STATIC_LIB)
         elseif (UNIX)
             import_shared_3rdparty_library(3rdparty_opencv ext_opencv
