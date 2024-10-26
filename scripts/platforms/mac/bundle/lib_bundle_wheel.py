@@ -11,32 +11,37 @@ import subprocess
 import sys
 from pathlib import Path
 
+import multiprocessing
+
 logger = logging.getLogger(__name__)
 
+# Be sure to use system codesign and not one embedded into the conda env
+CODESIGN_FULL_PATH = "/usr/bin/codesign"
 
-class CCAppBundleConfig:
+
+class CCWheelBundleConfig:
     output_dependencies: bool
-    embed_python: bool
 
-    app_name: str
-    cc_bin_path: Path
+    cpu_bin_path: Path
+    cuda_bin_path: Path
     extra_pathlib: Path
-    frameworks_path: Path
-    plugin_path: Path
-    cv_plugin_path: Path
-    embedded_python_rootpath: Path
+    lib_path: Path
+    install_path: Path
+    bin_path_list: list
+    bin_abs_path_list: list
+    bin_list: list
+    cpu_bin_list: list
+    cuda_bin_list: list
+    bin_name_list: list
 
-    python_version: str  # pythonMajor.Minor
-    base_python_binary: Path  # prefix/bin/python
-    base_python_libs: Path  # prefix/lib/pythonMajor.Minor
+    signature: str
 
     def __init__(
             self,
-            app_name: str,
             install_path: Path,
             extra_pathlib: Path,
+            signature: str,
             output_dependencies: bool,
-            embed_python: bool,
     ) -> None:
         """Construct a configuration.
 
@@ -46,68 +51,116 @@ class CCAppBundleConfig:
             extra_pathlib (str): A Path where additional libs can be found.
             output_dependencies (bool): boolean that control the level of debug. If true some extra
             files will be created (macos_bundle_warnings.json macos_bundle_dependencies.json).
-            embed_python (bool): Whether python should be embedded into the bundle or not.
 
         """
-        self.app_name = app_name
+        self.signature = signature
+        self.install_path = install_path
         self.extra_pathlib = extra_pathlib
         self.output_dependencies = output_dependencies
-        self.bundle_abs_path = (install_path / (self.app_name + ".app")).absolute()
-        self.cc_bin_path = self.bundle_abs_path / "Contents" / "MacOS" / app_name
-        self.frameworks_path = self.bundle_abs_path / "Contents" / "Frameworks"
-        self.plugin_path = self.bundle_abs_path / "Contents" / "PlugIns"
-        self.cv_plugin_path = self.bundle_abs_path / "Contents" / "cvPlugins"
+        self.lib_path = install_path / "lib"
+        self.cpu_bin_path = install_path / "cpu"
+        self.cuda_bin_path = install_path / "cuda"
+        self.bin_path_list = []
+        self.bin_abs_path_list = []
 
-        # If we want to embed Python we populate the needed variables
-        self.embed_python = embed_python
-        if embed_python:
-            self._query_python()
-            self.embedded_python_rootpath = self.bundle_abs_path / "Contents" / "Resources" / "python"
-            self.embedded_python_path = self.embedded_python_rootpath / "bin"
-            self.embedded_python_binary = self.embedded_python_path / "python"
-
-            self.embedded_python_libpath = self.embedded_python_rootpath / "lib"
-            self.embedded_python_lib = self.embedded_python_libpath / f"python{self.python_version}"
-            self.embedded_python_site_package = self.embedded_python_lib / "site-packages"
+        if self.cpu_bin_path.exists():
+            self.cpu_bin_list = list(self.cpu_bin_path.iterdir())
+            self.bin_path_list.append(self.cpu_bin_path)
+        else:
+            self.cpu_bin_list = []
+        if self.cuda_bin_path.exists():
+            self.cuda_bin_list = list(self.cuda_bin_path.iterdir())
+            self.bin_path_list.append(self.cuda_bin_path)
+        else:
+            self.cuda_bin_list = []
+            
+        for bin_path in self.cpu_bin_list:
+            self.bin_abs_path_list.append(bin_path)
+        for bin_path in self.cuda_bin_list:
+            self.bin_abs_path_list.append(bin_path)
+        self.bin_name_list = [os.path.basename(bin_path) for bin_path in self.bin_abs_path_list]
 
     def __str__(self) -> str:
         """Return a string representation of the class."""
         res = (
-            f"--- Frameworks path: {self.frameworks_path} \n"
-            f" --- plugin path: {self.plugin_path} \n"
-            f" --- embeddedPythonPath: {self.embedded_python_path} \n"
-            f" --- embeddedPython:  {self.embedded_python_binary} \n"
-            f" --- embeddedPythonLibPath: {self.embedded_python_libpath} \n"
-            f" --- embeddedPythonLib: {self.embedded_python_lib} \n"
-            f" --- embeddedPythonSiteLibs: {self.embedded_python_site_package} \n"
+            f"--- lib path: {self.lib_path} \n"
+            f" --- cpu path: {self.cpu_bin_path} \n"
+            f" --- cuda path: {self.cuda_bin_path} \n"
         )
         return res
 
-    def _query_python(self):
-        """Query for python paths and configuration."""
-        self.python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-        self.base_python_binary = Path(sys.exec_prefix) / "bin" / "python"
-        self.base_python_libs = Path(sys.exec_prefix) / "lib" / f"python{self.python_version}"
 
-
-class CCBundler:
-    config: CCAppBundleConfig
+class CCWheelBundler:
+    config: CCWheelBundleConfig
 
     # dictionary of lib dependencies : key depends on (list of libs) (not recursive)
     dependencies: dict[str, list[str]] = dict()
     warnings: dict[str, list[str]] = dict()
 
-    def __init__(self, config: CCAppBundleConfig) -> None:
-        """Construct a CCBundler object"""
+    def __init__(self, config: CCWheelBundleConfig) -> None:
+        """Construct a CCWheelBundler object"""
         self.config = config
+        
+    @staticmethod
+    def _remove_signature(path: Path) -> None:
+        """Remove signature of a binary file.
+
+        Call `codesign` utility via a subprocess
+
+        Args:
+        ----
+            path (Path): The path to the file to sign.
+
+        """
+        subprocess.run([CODESIGN_FULL_PATH, "--remove-signature", str(path)], stdout=subprocess.PIPE, check=True)
+
+    def _add_signature(self, path: Path) -> None:
+        """Sign a binary file.
+
+        Call `codesign` utility via a subprocess. The signature stored
+        into the `config` object is used to sign the binary.
+
+        Args:
+        ----
+            path (Path): The path to the file to sign.
+
+        """
+        dummy_signature = "-"
+        if len(self.config.signature) != 0:
+             dummy_signature=self.config.signature
+        subprocess.run(
+            [
+                CODESIGN_FULL_PATH,
+                "--force",
+                "-s",
+                dummy_signature,
+                "--timestamp",
+                str(path),
+            ],
+            stdout=subprocess.PIPE,
+            check=True,
+        )
+
+    def sign(self) -> int:
+        logger.info("Collect libs in the bundle")
+        so_generator = self.config.install_path.rglob("*.so")
+        dylib_generator = self.config.install_path.rglob("*.dylib")
+        all_libs = set(list(so_generator) + list(dylib_generator))
+        # create the process pool
+        process_pool = multiprocessing.Pool()
+
+        # Remove signature in all embedded libs
+        logger.info("Remove cloudViewer old signatures")
+        process_pool.map(CCWheelBundler._remove_signature, all_libs)
+
+        logger.info("Sign cloudViewer dynamic libraries")
+        process_pool.map(self._add_signature, all_libs)
+        return 0
 
     def bundle(self) -> None:
         """Bundle the dependencies into the .app"""
-        if config.embed_python:
-            self._embed_python()
-
-        libs_found, libs_ex_found, libs_in_cv_plugins, libs_in_plugins = self._collect_dependencies()
-        self._embed_libraries(libs_found, libs_ex_found, libs_in_cv_plugins, libs_in_plugins)
+        libs_found, libs_ex_found, libs_in_plugins = self._collect_dependencies()
+        self._embed_libraries(libs_found, libs_ex_found, libs_in_plugins)
 
         # output debug files if needed
         if self.config.output_dependencies:
@@ -242,112 +295,6 @@ class CCBundler:
             abs_paths.append(abs_path)
         return abs_paths
 
-    def _copy_python_env(self) -> None:
-        """Copy python environment.
-
-        Ideally this should be handled by CCPython-Runtime CMake script like in Windows.
-        """
-        logger.info("Python: copy distribution in package")
-        try:
-            self.config.embedded_python_path.mkdir(parents=True)
-            self.config.embedded_python_libpath.mkdir()
-        except OSError:
-            logger.error(
-                "Python dir already exists in bundle, please clean your bundle and rerun this script",
-            )
-            sys.exit(1)
-        shutil.copytree(self.config.base_python_libs, self.config.embedded_python_lib)
-        shutil.copy2(self.config.base_python_binary, self.config.embedded_python_binary)
-
-    def _embed_python(self) -> None:
-        """Embed python distribution dependencies in site-packages.
-
-        It copies the pyhton target distribution into the `.app` bundle
-        and then it collects dependencies and rewrites rpaths
-        of all the binaries/libraries found inside the distribution's tree.
-        """
-        libs_to_check = [self.config.embedded_python_binary]
-
-        # results
-        libs_found = set()
-        lib_ex_found = set()
-        python_libs = set()  # Lib in python dir
-
-        self._copy_python_env()
-        # --- enumerate all libs inside the dir
-        # Path.walk() is python 3.12+
-        for root, _, files in os.walk(self.config.embedded_python_lib):
-            for name in files:
-                ext = Path(name).suffix
-                if ext in (".dylib", ".so"):
-                    library = self.config.embedded_python_lib / root / name
-                    libs_to_check.append(library)
-                    python_libs.add(library)
-
-        logger.info("number of libs (.so and .dylib) in embedded Python: %i", len(python_libs))
-
-        while len(libs_to_check):
-            lib2check = libs_to_check.pop(0)
-
-            if lib2check in libs_found:
-                continue
-
-            libs_found.add(lib2check)
-
-            libs, lib_ex = self._get_lib_dependencies(lib2check)
-            lib_ex_found.update(lib_ex)
-
-            rpaths = CCBundler._get_rpath(lib2check)
-
-            abs_rpaths = CCBundler._convert_rpaths(lib2check, rpaths)
-            if self.config.extra_pathlib not in abs_rpaths:
-                abs_rpaths.append(self.config.extra_pathlib)
-
-            for lib in libs:
-                if lib.is_absolute():
-                    if lib not in libs_to_check and lib not in libs_found:
-                        libs_to_check.append(lib)
-                else:
-                    for abs_rp in abs_rpaths:
-                        abs_lib = abs_rp / lib
-                        if abs_lib.is_file():
-                            if abs_lib not in libs_to_check and abs_lib not in libs_found:
-                                libs_to_check.append(abs_lib)
-                            break
-
-        logger.info("lib_ex_found to add to Frameworks: %i", len(lib_ex_found))
-        logger.info("libs_found to add to Frameworks: %i", len(libs_found))
-
-        libs_in_framework = set(self.config.frameworks_path.iterdir())
-        added_to_framework_count = 0
-        for lib in libs_found:
-            if lib == self.config.embedded_python_binary:  # if it's the Python binary we continue
-                continue
-            base = self.config.frameworks_path / lib.name
-            if base not in libs_in_framework and lib not in python_libs:
-                shutil.copy2(
-                    lib,
-                    self.config.frameworks_path,
-                )  # copy libs that are not in framework yet
-                added_to_framework_count = added_to_framework_count + 1
-        logger.info("libs added to Frameworks: %i", {added_to_framework_count})
-
-        logger.info(" --- Python libs: set rpath to Frameworks, nb libs: %i", len(python_libs))
-
-        # Set the rpath to the Frameworks path
-        # TODO: remove old rpath
-        deep_sp = len(self.config.embedded_python_lib.parents)
-        for file in python_libs:
-            deep_lib_sp = len(file.parents) - deep_sp
-            rpath = "@loader_path/../../../"
-            for _ in range(deep_lib_sp):
-                rpath += "../"
-            rpath += "Frameworks"
-            subprocess.run(
-                ["install_name_tool", "-add_rpath", rpath, str(file)],
-                check=False,
-            )
-
     def _collect_dependencies(self):
         """Collect dependencies of ACloudViewer binary and QT libs
 
@@ -365,32 +312,24 @@ class CCBundler:
         libs_found = set()  # Abs path of libs/binaries already checked, candidate for embedding in the bundle
         lib_ex_found = set()
         libs_in_plugins = set()
-        libs_in_cv_plugins = set()
 
-        logger.info("Adding main executable to the libs to check")
-        libs_to_check.append(self.config.cc_bin_path)
-        logger.info("Adding lib already available in Frameworks to the libsToCheck")
-        for file_path in self.config.frameworks_path.iterdir():
-            libs_to_check.append(file_path)
-        logger.info("number of libs already in Frameworks directory: %i", len(libs_to_check))
+        logger.info("Adding cpu or cuda so to the libs to check")
+        for bin_path in self.config.bin_path_list:
+            for file_path in bin_path.iterdir():
+                libs_to_check.append(file_path)
 
-        logger.info("Adding Qt plugins to the libs to check")
-        for plugin_dir in self.config.plugin_path.iterdir():
-            if plugin_dir.is_dir() and plugin_dir.suffix != ".app":
-                for file in plugin_dir.iterdir():
+        logger.info("Adding libs or plugins already available in lib to the libsToCheck")
+        for lib_dir in self.config.lib_path.iterdir():
+            if lib_dir.is_dir():
+                for file in lib_dir.iterdir():
                     if file.is_file() and file.suffix in (".dylib", ".so"):
                         libs_to_check.append(file)
                         libs_in_plugins.add(file)
+            elif lib_dir.is_file() and (lib_dir.suffix == ".so" or lib_dir.suffix == ".dylib"):
+                libs_to_check.append(lib_dir)
 
         logger.info("number of libs in PlugIns directory: %i", len(libs_in_plugins))
-
-        logger.info("Adding cv plugins to the libs to check")
-        for file in self.config.cv_plugin_path.iterdir():
-            if file.is_file() and file.suffix in (".dylib", ".so"):
-                libs_to_check.append(file)
-                libs_in_cv_plugins.add(file)
-
-        logger.info("number of libs in cvPlugins directory: %i", len(libs_in_cv_plugins))
+        logger.info("number of libs already in Frameworks directory: %i", len(libs_to_check))
 
         logger.info("searching for dependencies...")
         while len(libs_to_check):
@@ -412,9 +351,9 @@ class CCBundler:
 
             # TODO: group these two functions since we do not need
             # get all rpath for the current lib
-            rpaths_str = CCBundler._get_rpath(lib2check)
+            rpaths_str = CCWheelBundler._get_rpath(lib2check)
             # get absolute path from found rpath
-            abs_search_paths = CCBundler._convert_rpaths(lib2check, rpaths_str)
+            abs_search_paths = CCWheelBundler._convert_rpaths(lib2check, rpaths_str)
 
             # If the extra_pathlib is not already added, we ad it
             # TODO:: there is no way it can be False
@@ -438,13 +377,12 @@ class CCBundler:
             # for dependency in lib_ex:...
             # TODO: add to libTOcheck executable_path/dep
 
-        return libs_found, lib_ex_found, libs_in_cv_plugins, libs_in_plugins
+        return libs_found, lib_ex_found, libs_in_plugins
 
     def _embed_libraries(
             self,
             libs_found: set[Path],
             lib_ex_found: set[(Path, Path)],
-            libs_in_cv_plugins: set[Path],
             libs_in_plugins: set[Path],
     ) -> None:
         """Embed collected libraries into the `.app` bundle.
@@ -462,46 +400,45 @@ class CCBundler:
         logger.info("lib_ex_found to add to Frameworks: %i", len(lib_ex_found))
         logger.info("libs_found to add to Frameworks: %i", len(libs_found))
 
-        libs_in_frameworks = set(self.config.frameworks_path.iterdir())
+        libs_in_frameworks = set(self.config.lib_path.iterdir())
 
         nb_libs_added = 0
         for lib in libs_found:
-            if lib == self.config.cc_bin_path:
+            if lib in self.config.cpu_bin_list or lib in self.config.cuda_bin_list:
                 continue
-            base = self.config.frameworks_path / lib.name
-            if (base not in libs_in_frameworks) and (lib not in libs_in_plugins) and (lib not in libs_in_cv_plugins):
-                shutil.copy2(lib, self.config.frameworks_path)
+            base = self.config.lib_path / lib.name
+            if base not in libs_in_frameworks and (lib not in libs_in_plugins):
+                shutil.copy2(lib, self.config.lib_path)
                 nb_libs_added += 1
-        logger.info("number of libs added to Frameworks: %i", nb_libs_added)
+        logger.info("number of libs added to lib: %i", nb_libs_added)
 
-        # --- ajout des rpath pour les libraries du framework : framework et cvPlugins
+        logger.info(" --- Qt PlugIns libs: add rpath to lib, number of qt libs: %i", len(libs_in_plugins))
+        for file in libs_in_plugins:
+            if file.is_file():
+                subprocess.run(
+                    ["install_name_tool", "-add_rpath", "@loader_path/../../lib", str(file)],
+                    stdout=subprocess.PIPE,
+                    check=False,
+                )
+
+        logger.info(" --- cuda or cpu libs: add rpath to lib, number of libs: %i", len(self.config.bin_abs_path_list))
+        for file in self.config.bin_abs_path_list:
+            if file.is_file() and file.suffix in (".so", ".dylib"):
+                subprocess.run(
+                    ["install_name_tool", "-add_rpath", "@loader_path/../lib", str(file)],
+                    stdout=subprocess.PIPE,
+                    check=False,
+                )
+
+        # --- ajout des rpath pour les libraries
         logger.info(" --- Frameworks libs: add rpath to Frameworks")
         nb_frameworks_libs = 0
-
         # TODO: purge old rpath
-        for file in self.config.frameworks_path.iterdir():
+        for file in self.config.lib_path.iterdir():
             if file.is_file() and file.suffix in (".so", ".dylib"):
                 nb_frameworks_libs += 1
                 subprocess.run(
                     ["install_name_tool", "-add_rpath", "@loader_path", str(file)],
-                    stdout=subprocess.PIPE,
-                    check=False,
-                )
-        logger.info("number of Frameworks libs with rpath modified: %i", nb_frameworks_libs)
-        logger.info(" --- Qt PlugIns libs: add rpath to Frameworks, number of libs: %i", len(libs_in_plugins))
-        for file in libs_in_plugins:
-            if file.is_file():
-                subprocess.run(
-                    ["install_name_tool", "-add_rpath", "@loader_path/../../Frameworks", str(file)],
-                    stdout=subprocess.PIPE,
-                    check=False,
-                )
-
-        logger.info(" --- cvPlugins libs: add rpath to Frameworks, number of libs: %i", len(libs_in_cv_plugins))
-        for file in libs_in_cv_plugins:
-            if file.is_file():
-                subprocess.run(
-                    ["install_name_tool", "-add_rpath", "@loader_path/../Frameworks", str(file)],
                     stdout=subprocess.PIPE,
                     check=False,
                 )
@@ -511,16 +448,13 @@ class CCBundler:
         for lib_ex in lib_ex_found:
             base = lib_ex[0]
             target = lib_ex[1]
-            if base == self.config.app_name:
+            if base in self.config.bin_name_list:
                 continue
 
-            framework_path = self.config.frameworks_path / base
-            plugin_path = self.config.cv_plugin_path / base
+            framework_path = self.config.lib_path / base
 
             if framework_path.is_file():
                 base_path = framework_path
-            elif plugin_path.is_file():
-                base_path = plugin_path
             else:
                 # This should not be possible
                 raise Exception("no base path")
@@ -543,20 +477,15 @@ class CCBundler:
 
 if __name__ == "__main__":
     # configure logger
-    formatter = " BundleCC::%(levelname)-8s:: %(message)s"
+    formatter = " CCWheelBundler::%(levelname)-8s:: %(message)s"
     logging.basicConfig(level=logging.INFO, format=formatter)
     std_handler = logging.StreamHandler()
 
     # CLI parser
-    parser = argparse.ArgumentParser("CCAppBundle")
-    parser.add_argument(
-        "app_name",
-        help="App name like ACloudViewer, CloudViewer or colmap.",
-        type=str,
-    )
+    parser = argparse.ArgumentParser("CCWheelBundler")
     parser.add_argument(
         "install_path",
-        help="Path where the ACloudViewer, CloudViewer or colmap application is installed (CMake install dir)",
+        help="Path where the cloudViewer python package is installed (CMake install dir)",
         type=Path,
     )
     parser.add_argument(
@@ -565,16 +494,28 @@ if __name__ == "__main__":
         type=Path,
     )
     parser.add_argument(
-        "--embed_python",
-        help="Whether embedding python or not",
-        action="store_true",
-    )
-    parser.add_argument(
         "--output_dependencies",
         help="Output a json files in order to debug dependency graph",
         action="store_true",
     )
+    parser.add_argument(
+        "--signature",
+        help="Signature to use for code signing (or will use ACLOUDVIEWER_BUNDLE_SIGN var)",
+        type=str,
+        default="",
+    )
+
     arguments = parser.parse_args()
+
+    signature = os.environ.get("ACLOUDVIEWER_BUNDLE_SIGN")
+    if signature is None:
+        logger.warning(
+            "ACLOUDVIEWER_BUNDLE_SIGN variable is undefined. Please define it or use the `signature` argument.",
+        )
+        signature = arguments.signature
+
+    logger.debug("Signature: %s", signature)  # Could be dangerous to display this
+
     # convert extra_pathlib to absolute paths
     if arguments.extra_pathlib is not None:
         extra_pathlib = arguments.extra_pathlib.resolve()
@@ -588,13 +529,14 @@ if __name__ == "__main__":
             )
             sys.exit(1)
 
-    config = CCAppBundleConfig(
-        arguments.app_name,
+    config = CCWheelBundleConfig(
         arguments.install_path,
         extra_pathlib,
+        signature,
         arguments.output_dependencies,
-        arguments.embed_python,
     )
 
-    bundler = CCBundler(config)
+    bundler = CCWheelBundler(config)
     bundler.bundle()
+    if Path(CODESIGN_FULL_PATH).exists():
+        sys.exit(bundler.sign())

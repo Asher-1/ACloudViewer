@@ -93,14 +93,14 @@ set(PYTHON_COMPILED_MODULE_DIR
         "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
 
 # Set BUILD_RPATH to find tbb (and a shared libOpen3D). We don't install through cmake.
-if (APPLE)
-        set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path;@loader_path/..;@loader_path/../lib")
-elseif (UNIX)
-        # Use RPATH instead of RUNPATH in pybind so that needed libc++.so can find child dependant libc++abi.so in RPATH
-        # https://stackoverflow.com/questions/69662319/managing-secondary-dependencies-of-shared-libraries
-        target_link_options(pybind PRIVATE "LINKER:--disable-new-dtags")
-        set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN;$ORIGIN/..;$ORIGIN/../lib")
-endif()
+# if (APPLE)
+#         set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path;@loader_path/..;@loader_path/../lib")
+# elseif (UNIX)
+#         # Use RPATH instead of RUNPATH in pybind so that needed libc++.so can find child dependant libc++abi.so in RPATH
+#         # https://stackoverflow.com/questions/69662319/managing-secondary-dependencies-of-shared-libraries
+#         target_link_options(pybind PRIVATE "LINKER:--disable-new-dtags")
+#         set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN;$ORIGIN/..;$ORIGIN/../lib")
+# endif()
 
 set_target_properties(pybind PROPERTIES
         FOLDER "Python"
@@ -206,6 +206,7 @@ add_custom_target(python-package
         "-DPYTHON_EXTRA_LIBRARIES=${PYTHON_EXTRA_LIBRARIES}"
         "-DQT5_PLUGINS_PATH_LIST=${QT5_PLUGINS_PATH_LIST}"
         "-DCLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR=${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib"
+        "-DCONDA_PREFIX=${CONDA_PREFIX}"
         -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
         -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
         -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}

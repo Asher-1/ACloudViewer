@@ -119,7 +119,7 @@ endif()
 
 # fix undefined symbols issues
 set(OpenCV_LIBS opencv_world${CV_LIB_SUFFIX}
-                ade${CV_LIB_SUFFIX}
+                # ade${CV_LIB_SUFFIX}
                 ittnotify${CV_LIB_SUFFIX}
                 libprotobuf${CV_LIB_SUFFIX}
                 quirc${CV_LIB_SUFFIX}
