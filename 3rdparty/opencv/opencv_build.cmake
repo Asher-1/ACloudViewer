@@ -33,13 +33,13 @@ ExternalProject_Add(
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
-        -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
-        # -DBUILD_SHARED_LIBS=ON
+        # -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
+        -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
         -DOPENCV_EXTRA_MODULES_PATH=${OPENCV_CONTRIB_SOURCE_DIR}
         -DBUILD_opencv_contrib=OFF
+        -DOPENCV_ENABLE_NONFREE=OFF
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        -DOPENCV_ENABLE_NONFREE=ON
         -DOPENCV_FORCE_3RDPARTY_BUILD=ON
         -DWITH_TBB=OFF
         -DWITH_FFMPEG=OFF
@@ -57,9 +57,9 @@ ExternalProject_Add(
         -DBUILD_opencv_highgui=ON
         -DBUILD_opencv_imgcodecs=ON
         -DBUILD_opencv_imgproc=ON
-        -DBUILD_opencv_features2d=ON
-        -DBUILD_opencv_flann=ON
-        -DBUILD_opencv_xfeatures2d=ON
+        -DBUILD_opencv_features2d=OFF
+        -DBUILD_opencv_flann=OFF
+        -DBUILD_opencv_xfeatures2d=OFF
         -DBUILD_opencv_photo=OFF
         -DBUILD_opencv_calib3d=OFF
         -DBUILD_JAVA=OFF
@@ -109,10 +109,37 @@ ExternalProject_Get_Property(ext_opencv INSTALL_DIR)
 set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR}/cmake/opencv4 -DOPENCV_DIR=${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR}/cmake/opencv4)
 set(OpenCV_INCLUDE_DIRS ${INSTALL_DIR}/include/opencv4/)
 set(OpenCV_LIB_DIR ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
+set(THIRPARTY_LIB_PATH ${OpenCV_LIB_DIR}/opencv4/3rdparty)
 
-if (WIN32)
-    set(OpenCV_LIBS opencv_world$<$<CONFIG:Debug>:d>)
-else ()
-    # set(OpenCV_LIBS opencv_world.${OPENCV_MAJOR_VERSION})
-    set(OpenCV_LIBS opencv_world)
-endif ()
+if(WIN32)
+    set(CV_LIB_SUFFIX $<$<CONFIG:Debug>:d>)
+else()
+    set(CV_LIB_SUFFIX "")
+endif()
+
+# fix undefined symbols issues
+set(OpenCV_LIBS opencv_world${CV_LIB_SUFFIX}
+                ade${CV_LIB_SUFFIX}
+                ittnotify${CV_LIB_SUFFIX}
+                libprotobuf${CV_LIB_SUFFIX}
+                quirc${CV_LIB_SUFFIX}
+                zlib${CV_LIB_SUFFIX}
+                libjasper${CV_LIB_SUFFIX}
+                libjpeg-turbo${CV_LIB_SUFFIX}
+                libpng${CV_LIB_SUFFIX}
+                libtiff${CV_LIB_SUFFIX}
+                libwebp${CV_LIB_SUFFIX}
+                IlmImf${CV_LIB_SUFFIX}
+)
+
+add_custom_command(
+    TARGET ext_opencv
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} 
+        -DSOURCE_DIR=${THIRPARTY_LIB_PATH}
+        -DDESTINATION_DIR=${OpenCV_LIB_DIR}
+        "-DLIB_FILTERS=${OpenCV_LIBS}"
+        "-DLIBRARY_SUFFIX=${CMAKE_STATIC_LIBRARY_SUFFIX}"
+        -P ${CloudViewer_3RDPARTY_DIR}/opencv/copy_files.cmake
+    VERBATIM
+)

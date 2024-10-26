@@ -47,7 +47,7 @@ if (PLUGIN_STANDARD_MASONRY_QMANUAL_SEG)
 
     if (BUILD_OPENCV)
         cloudViewer_link_static_lib(${PROJECT_NAME} 3rdparty_opencv)
-        target_compile_definitions(${PROJECT_NAME} PRIVATE CV_STATIC_LIB)
+        # target_compile_definitions(${PROJECT_NAME} PRIVATE CV_STATIC_LIB)
         # target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
         # target_link_libraries(${PROJECT_NAME} 3rdparty_opencv)
         # target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
