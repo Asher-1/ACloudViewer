@@ -83,6 +83,7 @@ try:
 
         # https://github.com/Yelp/dumb-init/blob/57f7eebef694d780c1013acd410f2f0d3c79f6c6/setup.py#L25
         def get_tag(self):
+            # abi: cp?  plat: universal2 --> arm64
             python, abi, plat = _bdist_wheel.get_tag(self)
             if plat[:5] == "linux":
                 libc = ctypes.CDLL("libc.so.6")

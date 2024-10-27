@@ -4,6 +4,19 @@
 
 # Find FFmpeg includes
 if( NOT EXISTS "${FFMPEG_INCLUDE_DIR}" )
+	if (APPLE)
+		find_package(PkgConfig REQUIRED)
+		pkg_check_modules(FFMPEG REQUIRED
+				libavcodec
+				libavformat
+				libavutil
+				libswscale
+		)
+		if(FFMPEG_FOUND)
+			set(FFMPEG_INCLUDE_DIR ${FFMPEG_INCLUDE_DIRS})
+		endif()
+	endif ()
+	
 	find_path( FFMPEG_AVCODEC_INCLUDE_DIR libavcodec/avcodec.h )
 	set( FFMPEG_INCLUDE_DIR "${FFMPEG_AVCODEC_INCLUDE_DIR}" CACHE PATH "FFmpeg include directory" )
 	

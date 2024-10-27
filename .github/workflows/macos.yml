@@ -42,7 +42,7 @@ jobs:
       BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
       BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
       LOW_MEM_USAGE: ON
-      CONDA_DEP_FILE_PYTHON310: ".ci/conda_python3.10.yml"
+      CONDA_DEP_FILE_PYTHON38: ".ci/conda_macos_cloudViewer.yml"
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -65,9 +65,9 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           architecture: ${{ matrix.os == 'macos-14' && 'arm64' || 'x64' }}
-          activate-environment: python3.10
+          activate-environment: python3.8
           auto-activate-base: false
-          environment-file: ${{ env.CONDA_DEP_FILE_PYTHON310 }}
+          environment-file: ${{ env.CONDA_DEP_FILE_PYTHON38 }}
       
       - name: Install dependencies
         run: |
