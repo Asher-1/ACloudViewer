@@ -111,7 +111,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
         # install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/Frameworks)")
         # install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${APP_INSTALL_EXE_DESTINATION}/Frameworks)")
 
-        set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/lib_bundle_wheel.py")
+        set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/lib_bundle_app.py")
         install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${APP_NAME} ${APP_INSTALL_DESTINATION})")
         set(APP_SIGN_SCRIPT_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/signature_app.py")
         install(CODE "execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${APP_NAME} ${APP_INSTALL_DESTINATION})")

@@ -302,6 +302,7 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QPCL=ON"
                 "-DPLUGIN_STANDARD_QPOISSON_RECON=ON"
                 "-DPOISSON_RECON_WITH_OPEN_MP=ON"
+                "-DPLUGIN_STANDARD_QRANSAC_SD=ON"
                 "-DPLUGIN_STANDARD_QSRA=ON"
                 "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
                 "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export MACOSX_DEPLOYMENT_TARGET=11.0
 export DEVELOPER_BUILD=OFF
 export BUILD_SHARED_LIBS=OFF
 export BUILD_CUDA_MODULE=OFF
@@ -68,15 +69,18 @@ install_python_dependencies with-jupyter with-unit-test purge-cache
 
 echo "Start to build wheel On MacOS..."
 echo
-build_mac_wheel with_conda
+# build_mac_wheel with_conda
+build_mac_wheel with_conda build_realsense
 echo
-# build_mac_wheel with_conda build_realsense
 
 set -x # Echo commands on
 df -h
+
 echo
+pushd build # PWD=ACloudViewer/build
 # echo "Try importing cloudViewer Python package"
-test_wheel build/lib/python_package/pip_package/cloudViewer*.whl
+test_wheel lib/python_package/pip_package/cloudViewer*.whl
+popd # PWD=ACloudViewer
 
 echo
 echo "Move to install path: ${ACloudViewer_INSTALL}"

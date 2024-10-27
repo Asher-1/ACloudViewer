@@ -100,6 +100,10 @@ jobs:
           https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
           brew install -f libomp-11.1.0.bottle.tar.gz
 
+          wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.8.0-darwin.zip -O "/root/QtIFW-4.8.0-darwin.zip"
+          unzip /root/QtIFW-4.8.0-darwin.zip /root && rm -rf /root/QtIFW-4.8.0-darwin.zip
+          export PATH="/root/QtIFW-4.8.0-darwin/bin:$PATH"
+
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
@@ -261,7 +265,7 @@ jobs:
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           source util/ci_utils.sh
-          build_pip_package  with_conda
+          build_pip_package with_conda
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudViewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
