@@ -162,6 +162,8 @@ class CCBundler:
                     libs.append(Path(pathlib))
                     continue
                 dirs = pathlib.split("/")
+                if len(dirs) <= 0:
+                    continue
                 # TODO: should be better with startswith
                 # we are likely to have only @rpath values
                 if dirs[0] == "@rpath":
@@ -179,7 +181,7 @@ class CCBundler:
                             Path(pathlib[len("@executable_path/"):]),
                         ),
                     )
-                elif (dirs[1] != "usr") and (dirs[1] != "System"):
+                elif len(dirs) >= 2 and (dirs[1] != "usr") and (dirs[1] != "System"):
                     logger.warning("%s depends on undeclared pathlib: %s", mainlib, pathlib)
             self.warnings[str(mainlib)] = str(warning_libs)
             self.dependencies[mainlib.name] = str(libs)
@@ -374,22 +376,26 @@ class CCBundler:
             libs_to_check.append(file_path)
         logger.info("number of libs already in Frameworks directory: %i", len(libs_to_check))
 
-        logger.info("Adding Qt plugins to the libs to check")
-        for plugin_dir in self.config.plugin_path.iterdir():
-            if plugin_dir.is_dir() and plugin_dir.suffix != ".app":
-                for file in plugin_dir.iterdir():
-                    if file.is_file() and file.suffix in (".dylib", ".so"):
-                        libs_to_check.append(file)
-                        libs_in_plugins.add(file)
-
+        if self.config.plugin_path.exists():
+            logger.info("Adding Qt plugins to the libs to check")
+            for plugin_dir in self.config.plugin_path.iterdir():
+                if plugin_dir.is_dir() and plugin_dir.suffix != ".app":
+                    for file in plugin_dir.iterdir():
+                        if file.is_file() and file.suffix in (".dylib", ".so"):
+                            libs_to_check.append(file)
+                            libs_in_plugins.add(file)
+        else:
+            logger.info("Ignore Qt PlugIns check due to %s do not exists...", self.config.plugin_path)
         logger.info("number of libs in PlugIns directory: %i", len(libs_in_plugins))
 
-        logger.info("Adding cv plugins to the libs to check")
-        for file in self.config.cv_plugin_path.iterdir():
-            if file.is_file() and file.suffix in (".dylib", ".so"):
-                libs_to_check.append(file)
-                libs_in_cv_plugins.add(file)
-
+        if self.config.cv_plugin_path.exists():
+            logger.info("Adding cv plugins to the libs to check")
+            for file in self.config.cv_plugin_path.iterdir():
+                if file.is_file() and file.suffix in (".dylib", ".so"):
+                    libs_to_check.append(file)
+                    libs_in_cv_plugins.add(file)
+        else:
+            logger.info("Ignore cvPlugins check due to %s do not exists...", self.config.cv_plugin_path)
         logger.info("number of libs in cvPlugins directory: %i", len(libs_in_cv_plugins))
 
         logger.info("searching for dependencies...")

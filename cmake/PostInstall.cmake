@@ -1,7 +1,7 @@
 if (APPLE)
     set(APP_EXTENSION "dmg")
     set(CONFIG_POSTFIX "mac")
-    set(PACK_SCRIPTS ${PACK_SCRIPTS_PATH}/pack_macosx_bundle.sh)
+    # set(PACK_SCRIPTS ${PACK_SCRIPTS_PATH}/pack_macosx_bundle.sh)
 elseif (UNIX)
     set(APP_EXTENSION "run")
     set(CONFIG_POSTFIX "linux")
@@ -95,18 +95,12 @@ endif()
 
 set(OUTPUT_CLOUDVIEWER_PACKAGE_PATH ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.${APP_EXTENSION})
 if (${PACKAGE} STREQUAL "ON") # package
-    if (APPLE) # already packaged somewhere
+    if (UNIX OR APPLE) # already packaged somewhere
         set(SHELL_CMD "binarycreator -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
         message(STATUS "Package with command: " ${SHELL_CMD})
         execute_process(COMMAND binarycreator -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}
                         WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        message(STATUS "${MAIN_APP_NAME} MacOS Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
-    elseif (UNIX)
-        set(SHELL_CMD "binarycreator -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
-        message(STATUS "Package with command: " ${SHELL_CMD})
-        execute_process(COMMAND binarycreator -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}
-                        WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        message(STATUS "${MAIN_APP_NAME} Linux Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
+        message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
         # execute_process(COMMAND zip -r ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.zip ${DEPLOY_ROOT_PATH}
         #                 WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX})
         # message(STATUS "Package ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.zip created")

@@ -8,8 +8,8 @@
 			{
 					"type": "cppdbg",
 					"request": "launch",
-					"name": "ErowCloudViewer",
-					"program": "${workspaceFolder}/build/bin/ErowCloudViewer",
+					"name": "LinuxACloudViewer",
+					"program": "${workspaceFolder}/build/bin/ACloudViewer",
 					"args": [
 					],
 					"cwd": "${workspaceFolder}/build",
@@ -22,6 +22,24 @@
 							}
 					],
 			},
+
+			{
+				"type": "lldb",
+				"request": "launch",
+				"name": "MacCloudViewer",
+				"program": "${workspaceFolder}/build/bin/ACloudViewer.app/Contents/MacOS/ACloudViewer",
+				"args": [
+				],
+				"cwd": "${workspaceFolder}/build",
+				// "preLaunchTask": "Build",
+				"setupCommands": [
+						{
+								"description": "debug cpp",
+								"text": "-enable-pretty-printing",
+								"ignoreFailures": true
+						}
+				],
+		},
 
 	]
 }

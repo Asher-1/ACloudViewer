@@ -87,9 +87,29 @@ echo "Start to build wheel for python3.8-3.11 On MacOS..."
 echo
 CLOUDVIEWER_BUILD_DIR=${CLOUDVIEWER_SOURCE_ROOT}/build
 MACOS_WHL_BUILD_SHELL=${CLOUDVIEWER_SOURCE_ROOT}/scripts/build_macos_whl.sh
-rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.8
-rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.9
-rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.10
-rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.11
+if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "cloudViewer*cp38*.whl" | grep -q .; then
+    rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.8
+else
+    echo "Ignore cloudViewer wheel for python3.8..."
+fi
+
+if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "cloudViewer*cp39*.whl" | grep -q .; then
+    rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.9
+else
+    echo "Ignore cloudViewer wheel for python3.9..."
+fi
+
+if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "cloudViewer*cp310*.whl" | grep -q .; then
+    rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.10
+else
+    echo "Ignore cloudViewer wheel for python3.10..."
+fi
+
+if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "cloudViewer*cp311*.whl" | grep -q .; then
+    rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.11
+else
+    echo "Ignore cloudViewer wheel for python3.11..."
+fi
+
 echo "All install to ${ACloudViewer_INSTALL}"
 echo

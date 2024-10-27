@@ -523,13 +523,24 @@ function(import_shared_3rdparty_library name ext_target)
             else ()
                 set(installed_library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}_${name}_${arg_LIBRARY}${CMAKE_SHARED_LIBRARY_SUFFIX})
             endif ()
-
-            # deploy for debugging
-            add_custom_command(TARGET ${ext_target}
+            
+            if (APPLE)
+                # fix MacOS RPATH issues with shared ${ext_target}
+                add_custom_command(TARGET ${ext_target}
+                    POST_BUILD
+                    COMMAND install_name_tool -id "@rpath/${library_filename}" ${arg_LIB_DIR}/${library_filename}
+                    COMMAND ${CMAKE_COMMAND} -E
+                    copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+                )
+                message(STATUS "install_name_tool -id "@rpath/${library_filename}" ${arg_LIB_DIR}/${library_filename}")
+            else()
+                # deploy for debugging
+                add_custom_command(TARGET ${ext_target}
                     POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E
                     copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
-                    )
+                )
+            endif()
 
             #message("shared thirdparty lib: ${arg_LIB_DIR}/${library_filename}")
             target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
@@ -1756,7 +1767,7 @@ list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ransacSD)
 
 
 if (BUILD_RECONSTRUCTION)
-    if (WIN32 OR APPLE)
+    if (WIN32)
         # freeimage
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
         import_3rdparty_library(3rdparty_freeimage
@@ -1767,7 +1778,21 @@ if (BUILD_RECONSTRUCTION)
                 )
         set(FREEIMAGE_TARGET "3rdparty_freeimage")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
+        # only for static freeimage usage
+        target_compile_definitions(3rdparty_freeimage INTERFACE FREEIMAGE_LIB)
+    else ()
+        include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
+        import_shared_3rdparty_library(3rdparty_freeimage ext_freeimage
+                INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
+                LIB_DIR ${FREEIMAGE_LIB_DIR}
+                LIBRARIES ${EXT_FREEIMAGE_LIBRARIES}
+                )
+        add_dependencies(3rdparty_freeimage ext_freeimage)
+        set(FREEIMAGE_TARGET "3rdparty_freeimage")
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
+    endif()
 
+    if (WIN32 OR APPLE)
         # gflags
         include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
         import_3rdparty_library(3rdparty_gflags
@@ -1846,19 +1871,6 @@ if (BUILD_RECONSTRUCTION)
                 )
         message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_boost)
-        # fix error: no template named 'unary_function' in namespace 'std'; did you mean '__unary_function'?
-        # target_compile_definitions(3rdparty_boost INTERFACE -D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
-
-        # freeimage
-        include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
-        import_shared_3rdparty_library(3rdparty_freeimage ext_freeimage
-                INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
-                LIB_DIR ${FREEIMAGE_LIB_DIR}
-                LIBRARIES ${EXT_FREEIMAGE_LIBRARIES}
-                )
-        add_dependencies(3rdparty_freeimage ext_freeimage)
-        set(FREEIMAGE_TARGET "3rdparty_freeimage")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
 
         # gflags
         include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
@@ -1983,26 +1995,26 @@ endif ()
 if (BUILD_OPENCV)
     if (NOT USE_SYSTEM_OPENCV)
         include(${CloudViewer_3RDPARTY_DIR}/opencv/opencv_build.cmake)
-        # import_shared_3rdparty_library(3rdparty_opencv ext_opencv
-        #     INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
-        #     LIB_DIR ${OpenCV_LIB_DIR}
-        #     LIBRARIES ${OpenCV_LIBS}
-        # )
-        if (WIN32 OR APPLE)
-            import_3rdparty_library(3rdparty_opencv
-                    INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
-                    LIB_DIR ${OpenCV_LIB_DIR}
-                    LIBRARIES ${OpenCV_LIBS}
-                    DEPENDS ext_opencv
-                    )
-            target_compile_definitions(3rdparty_opencv INTERFACE CV_STATIC_LIB)
-        elseif (UNIX)
-            import_shared_3rdparty_library(3rdparty_opencv ext_opencv
-                    INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
-                    LIB_DIR ${OpenCV_LIB_DIR}
-                    LIBRARIES ${OpenCV_LIBS}
-                    )
-        endif()
+        import_shared_3rdparty_library(3rdparty_opencv ext_opencv
+            INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
+            LIB_DIR ${OpenCV_LIB_DIR}
+            LIBRARIES ${OpenCV_LIBS}
+        )
+        # if (WIN32 OR APPLE)
+        #     import_3rdparty_library(3rdparty_opencv
+        #             INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
+        #             LIB_DIR ${OpenCV_LIB_DIR}
+        #             LIBRARIES ${OpenCV_LIBS}
+        #             DEPENDS ext_opencv
+        #             )
+        #     target_compile_definitions(3rdparty_opencv INTERFACE CV_STATIC_LIB)
+        # elseif (UNIX)
+        #     import_shared_3rdparty_library(3rdparty_opencv ext_opencv
+        #             INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
+        #             LIB_DIR ${OpenCV_LIB_DIR}
+        #             LIBRARIES ${OpenCV_LIBS}
+        #             )
+        # endif()
         # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_opencv)
     else()
         # list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM 3rdparty_opencv)
