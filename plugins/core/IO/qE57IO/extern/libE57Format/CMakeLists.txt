@@ -65,7 +65,20 @@ if ( E57_BUILDING_SELF )
 endif()
 
 find_package( Threads REQUIRED )
-find_package( XercesC REQUIRED )
+
+if (APPLE)
+    find_package_3rdparty_library(3rdparty_xercesc
+        PACKAGE XercesC
+        TARGETS XercesC::XercesC
+        )
+    if (NOT 3rdparty_xercesc_FOUND)
+        pkg_config_3rdparty_library(3rdparty_xercesc
+            SEARCH_ARGS XercesC
+            )
+    endif ()
+else ()
+    find_package( XercesC REQUIRED )
+endif()
 
 option( E57_BUILD_SHARED
 	"Compile E57Format as a shared library"

@@ -19,14 +19,19 @@
 4, cd [WORKSPACE for ACloudViewer](./linux/ACloudViewer) && binarycreator -c config/config.xml -p packages ACloudViewer-3.8.0-2021-10-10-ubuntu1804-amd64.run
 
 
-# Linux
-1，put application data in: [data](./deploy/packages/ACloudViewer/data)
-
-2, modify [config.xml](./deploy/config/config_mac.xml) and [package.xml](./deploy/packages/ACloudViewer/meta/package.xml)
-
-3, cd [WORKSPACE](./deploy) && binarycreator -c config/config_mac.xml -p packages ACloudViewer-3.9.1-2024-10-24-ARM64.dmg
-
 # MacOS
+1，put ACloudViewer.app in: [data](./deploy/packages/ACloudViewer/data)
+
+2，put CloudViewer.app data in: [data](./deploy/packages/CloudViewer/data)
+
+3，put colmap.app data in: [data](./deploy/packages/colmap/data)
+
+4, modify [config.xml](./deploy/config/config_mac.xml) and [package.xml](./deploy/packages/ACloudViewer/meta/package.xml)
+
+5, cd [WORKSPACE](./deploy) && binarycreator -c config/config_mac.xml -p packages ACloudViewer-3.9.1-2024-10-24-ARM64.dmg
+
+
+# MacOS some commands
 ```
 # apply code signer on macos:
 codesign --deep --force -s - --timestamp colmap.app
@@ -40,22 +45,21 @@ codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/bin/Cl
 codesign --deep --force -s - --timestamp /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app
 codesign --deep --force -s - --timestamp --entitlements /Users/asher/develop/code/github/ACloudViewer/eCV/Mac/ACloudViewer.entitlements /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app
 
-# deploy dependency
-/Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/pack_macosx_bundle.sh /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app/Contents/MacOS
-/Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/pack_macosx_bundle.sh /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app/Contents/cvPlugins
-/Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/pack_macosx_bundle.sh /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app/Contents/Frameworks
-
 # for libtiff.*dylib
-/Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/copy_macos_libs.sh /Users/asher/opt/anaconda3/envs/python3.8/lib/libtiff.6.dylib /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks
-cp /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.5.dylib
 /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/reset_libs_rpath.sh /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib
 /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/copy_macos_libs.sh /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib
 /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/fixup_macosx_libs.sh /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/Frameworks/libtiff.6.dylib
 
+# lib deploy
+otool -L /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/MacOS/ACloudViewer
+otool -l /Users/asher/cloudViewer_install/ACloudViewer/ACloudViewer.app/Contents/MacOS/ACloudViewer | grep "path " | awk '{print $2}'
+python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/lib_bundle_app.py ACloudViewer /Users/asher/cloudViewer_install/ACloudViewer
+
 # sign apps
-python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py --app_name ACloudViewer --install_path /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data
-python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py --app_name CloudViewer --install_path /Users/asher/cloudViewer_install/deploy/packages/CloudViewer/data
-python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py --app_name colmap --install_path /Users/asher/cloudViewer_install/deploy/packages/colmap/data
+python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py ACloudViewer /Users/asher/cloudViewer_install/ACloudViewer
+python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py ACloudViewer /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data
+python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py CloudViewer /Users/asher/cloudViewer_install/deploy/packages/CloudViewer/data
+python /Users/asher/develop/code/github/ACloudViewer/scripts/platforms/mac/bundle/signature_app.py colmap /Users/asher/cloudViewer_install/deploy/packages/colmap/data
 
 # validation
 codesign -dvv --strict /Users/asher/cloudViewer_install/deploy/packages/ACloudViewer/data/ACloudViewer.app

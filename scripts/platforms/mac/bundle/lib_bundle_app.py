@@ -171,7 +171,7 @@ class CCBundler:
                 elif dirs[0] == "@loader_path":
                     logger.warning("%s declares a dependencies with @loader_path, this won't be resolved", mainlib)
                 elif dirs[0] == "@executable_path":
-                    logger.warning("%s declares a dependencies with @executable_path", mainlib)
+                    logger.warning("%s declares a dependencies with %s", mainlib, pathlib)
                     # TODO: check if mainlib is in the bundle in order to be sure that
                     # the executable path is relative to the application
 
@@ -518,19 +518,28 @@ class CCBundler:
             base = lib_ex[0]
             target = lib_ex[1]
             if base == self.config.app_name:
-                continue
-
-            framework_path = self.config.frameworks_path / base
-            plugin_path = self.config.cv_plugin_path / base
-
-            if framework_path.is_file():
-                base_path = framework_path
-            elif plugin_path.is_file():
-                base_path = plugin_path
+                base_path = self.config.cc_bin_path
             else:
-                # This should not be possible
-                raise Exception("no base path")
-                sys.exit(1)
+                framework_path = self.config.frameworks_path / base
+                cv_plugin_path = self.config.cv_plugin_path / base
+
+                # try to find in libs_in_plugins
+                plugin_path = self.config.plugin_path / base
+                for pl_path in libs_in_plugins:
+                    if pl_path.name == base:
+                        plugin_path = pl_path
+                        break
+
+                if framework_path.is_file():
+                    base_path = framework_path
+                elif plugin_path.is_file():
+                    base_path = plugin_path
+                elif cv_plugin_path.is_file():
+                    base_path = cv_plugin_path
+                else:
+                    # This should not be possible
+                    raise Exception("no base path")
+                    sys.exit(1)
 
             logger.info("modify : @executable_path -> @rpath: %s", base_path)
 
@@ -539,7 +548,7 @@ class CCBundler:
                     "install_name_tool",
                     "-change",
                     "@executable_path/" + str(target),
-                    "@rpath/" + str(target),
+                    "@rpath/" + str(target.name),
                     str(base_path),
                 ],
                 stdout=subprocess.PIPE,

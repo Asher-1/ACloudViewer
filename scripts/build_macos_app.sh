@@ -2,25 +2,21 @@
 set -euo pipefail
 
 # Requirements as follows:
-# conda env create -f .ci/conda_macos.yml
+# conda env create -f .ci/conda_macos_cloudViewer.yml
 # conda activate python3.8
 
-# use lower target(11.0) version for compacibility
-export MACOSX_DEPLOYMENT_TARGET=11.0
 export DEVELOPER_BUILD=OFF
 export BUILD_SHARED_LIBS=OFF
 export BUILD_CUDA_MODULE=OFF
-export BUILD_PYTORCH_OPS=ON
+export BUILD_PYTORCH_OPS=OFF
 export BUILD_TENSORFLOW_OPS=OFF
-export PYTHON_VERSION=$1
 export ACloudViewer_INSTALL=~/cloudViewer_install
-export ENV_NAME="python${PYTHON_VERSION}"
-# export NPROC=$(($(nproc) * 2))
+export ENV_NAME="cloudViewer"
 export NPROC=$(nproc)
-echo "ENV_NAME: " ${ENV_NAME}
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
+set -x # Echo commands on
 if [ -n "$CONDA_EXE" ]; then
     CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
 elif [ -n "$CONDA_PREFIX" ]; then
@@ -40,12 +36,10 @@ fi
 
 echo "conda env create and activate..."
 export CONDA_PREFIX="${CONDA_ROOT}/envs/${ENV_NAME}"
-cp ${CLOUDVIEWER_SOURCE_ROOT}/.ci/conda_macos.yml /tmp/conda_macos.yml
-sed -i "" "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_macos.yml
-conda env create -f /tmp/conda_macos.yml
+conda env create -f ${CLOUDVIEWER_SOURCE_ROOT}/.ci/conda_macos_cloudViewer.yml
 conda activate ${ENV_NAME} \
- && which python \
- && python --version
+&& which python \
+&& python --version
 
 if [ $? -eq 0 ]; then
     echo "env $ENV_NAME activate successfully"
@@ -56,42 +50,21 @@ else
 fi
 
 if [ -z "$CONDA_PREFIX" ] ; then
-	echo "Conda env is not activated"
+    echo "Conda env is not activated"
 else
-	echo "Conda env now is $CONDA_PREFIX"
+    echo "Conda env now is $CONDA_PREFIX"
 fi
 
-export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
 export PATH=$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$CONDA_PREFIX/lib:$PATH
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$CONDA_PREFIX/lib:$PKG_CONFIG_PATH
+set +x # Echo commands off
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
 source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 
-echo "Start to install python dependencies package On MacOS..."
+echo "Start to build GUI package On MacOS..."
 echo
-install_python_dependencies with-jupyter with-unit-test purge-cache
-
-echo "Start to build wheel On MacOS..."
-echo
-# build_mac_wheel with_conda
-build_mac_wheel with_conda build_realsense
-echo
-
-set -x # Echo commands on
-df -h
-
-echo
-pushd build # PWD=ACloudViewer/build
-# echo "Try importing cloudViewer Python package"
-test_wheel lib/python_package/pip_package/cloudViewer*.whl
-popd # PWD=ACloudViewer
-
-echo
-echo "Move to install path: ${ACloudViewer_INSTALL}"
-mv build/lib/python_package/pip_package/cloudViewer*.whl ${ACloudViewer_INSTALL}
-
-echo "Backup whl package to ${ACloudViewer_INSTALL}"
-set +x # Echo commands off
+build_gui_app with_conda package_installer
+echo "Install ACloudViewer package to ${ACloudViewer_INSTALL}"
 echo

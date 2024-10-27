@@ -723,24 +723,30 @@ elseif (UNIX)
     set(LIBS_FOLDER_NAME "${CloudViewer_INSTALL_LIB_DIR}")
     set(PACK_SCRIPTS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/platforms/linux")
     set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${BUILD_TIME}-ubuntu${UBUNTU_VERSION}-${ACLOUDVIEWER_DEVICE}-${ARC_NAME}")
+
+    # for ACloudViewer
+    file(GLOB helper_utils "util/${MAIN_APP_NAME}*" )
+    list(APPEND documents_list ${helper_utils})
+
+    # for colmap
     if (BUILD_RECONSTRUCTION)
+        list(APPEND documents_list 
+            "scripts/reconstruction/shell/colmap_app.sh" 
+            "libs/Reconstruction/doc/COLMAP.desktop")
         # fix gflags undefinded symbols issues
         set(src_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
         set(target_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MINOR_VERSION})
         install(CODE "set(GFLAGS_SRC_FILENAME \"${src_gflags_filename}\")")
         install(CODE "set(GFLAGS_DST_FILENAME \"${target_gflags_filename}\")")
     endif()
-
-    file(GLOB helper_utils "util/${MAIN_APP_NAME}*" )
-    list(APPEND documents_list ${helper_utils})
-    if (BUILD_RECONSTRUCTION)
-        list(APPEND documents_list 
-            "scripts/reconstruction/shell/colmap_app.sh" 
-            "libs/Reconstruction/doc/COLMAP.desktop")
-    endif()
+    
+    # for CloudViewer
     if (BUILD_GUI)
+        file(GLOB cloudviewer_helper_utils "util/${CLOUDVIEWER_APP_NAME}*" )
+        list(APPEND documents_list ${cloudviewer_helper_utils})
     endif()
 
+    # for qt plugins
     foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
         install(DIRECTORY "${qt5_plugins_folder}"
                 DESTINATION "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data" 
@@ -754,6 +760,7 @@ elseif (WIN32)
 endif()
 
 foreach( filename ${documents_list} )
+    # TODO install all files to ACloudViewer data? may split is ideal?
     cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data" "" )
 endforeach()
 
