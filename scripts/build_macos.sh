@@ -21,10 +21,10 @@ CLOUDVIEWER_BUILD_DIR=${CLOUDVIEWER_SOURCE_ROOT}/build
 
 MACOS_APP_BUILD_SHELL=${CLOUDVIEWER_SOURCE_ROOT}/scripts/build_macos_app.sh
 if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "ACloudViewer*.dmg" | grep -q .; then
-    echo "Start building cloudViewer wheel for python3.8..."
+    echo "Start building ACloudViewer app..."
     rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_APP_BUILD_SHELL}
 else
-    echo "Ignore GUI app building due to have builded before..."
+    echo "Ignore ACloudViewer GUI app building due to have builded before..."
 fi
 echo
 

@@ -62,8 +62,8 @@ else
 fi
 
 export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
-export PATH=$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$CONDA_PREFIX/lib:$PATH
-export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$CONDA_PREFIX/lib:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
