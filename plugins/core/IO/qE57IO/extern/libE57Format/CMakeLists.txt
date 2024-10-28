@@ -65,20 +65,49 @@ if ( E57_BUILDING_SELF )
 endif()
 
 find_package( Threads REQUIRED )
-
-if (APPLE)
-    find_package_3rdparty_library(3rdparty_xercesc
-        PACKAGE XercesC
-        TARGETS XercesC::XercesC
-        )
-    if (NOT 3rdparty_xercesc_FOUND)
-        pkg_config_3rdparty_library(3rdparty_xercesc
-            SEARCH_ARGS XercesC
-            )
+find_package( XercesC QUIET )
+if (NOT XercesC_FOUND)
+    find_package(PkgConfig REQUIRED)
+    # pkg_check_modules(XercesC REQUIRED xerces-c)
+    pkg_search_module(XercesC xerces-c)
+    if(XercesC_FOUND)
+        set(XercesC_INCLUDE_DIRS "${XercesC_INCLUDE_DIRS}")
+        set(XercesC_LIBRARIES "${XercesC_LINK_LIBRARIES}")
+        message(STATUS "Found XercesC-${XercesC_VERSION} ${XercesC_INCLUDE_DIRS}: ${XercesC_LIBRARIES}")
+    
+        # For header-only libraries
+        if(NOT TARGET XercesC::XercesC)
+            add_library(XercesC::XercesC UNKNOWN IMPORTED)
+            if(XercesC_INCLUDE_DIRS)
+                set_target_properties(XercesC::XercesC PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${XercesC_INCLUDE_DIRS}")
+            endif()
+            if(EXISTS "${XercesC_LIBRARY}")
+                set_target_properties(XercesC::XercesC PROPERTIES
+                IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
+                IMPORTED_LOCATION "${XercesC_LIBRARY}")
+            endif()
+            if(EXISTS "${XercesC_LIBRARY_RELEASE}")
+                set_property(TARGET XercesC::XercesC APPEND PROPERTY
+                IMPORTED_CONFIGURATIONS RELEASE)
+                set_target_properties(XercesC::XercesC PROPERTIES
+                IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "CXX"
+                IMPORTED_LOCATION_RELEASE "${XercesC_LIBRARY_RELEASE}")
+            endif()
+            if(EXISTS "${XercesC_LIBRARY_DEBUG}")
+                set_property(TARGET XercesC::XercesC APPEND PROPERTY
+                IMPORTED_CONFIGURATIONS DEBUG)
+                set_target_properties(XercesC::XercesC PROPERTIES
+                IMPORTED_LINK_INTERFACE_LANGUAGES_DEBUG "CXX"
+                IMPORTED_LOCATION_DEBUG "${XercesC_LIBRARY_DEBUG}")
+            endif()
+        endif()
+    else ()
+        message(FATAL_ERROR "Failed to find XercesC")
     endif ()
 else ()
-    find_package( XercesC REQUIRED )
-endif()
+    message(STATUS "Found XercesC: ${XercesC_INCLUDE_DIRS}, ${XercesC_LIBRARIES}")
+endif ()
 
 option( E57_BUILD_SHARED
 	"Compile E57Format as a shared library"

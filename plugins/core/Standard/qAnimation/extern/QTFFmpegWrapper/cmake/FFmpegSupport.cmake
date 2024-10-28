@@ -10,7 +10,7 @@ if (APPLE)
 			libavutil
 			libswscale
 	)
-	message(STATUS "Found FFmpeg: ${FFMPEG_INCLUDE_DIRS}, ${FFMPEG_LIBRARIES}")
+	message(STATUS "Found FFmpeg ${FFMPEG_INCLUDE_DIRS}: ${FFMPEG_LIBRARIES}")
 endif ()
 
 # Find FFmpeg includes

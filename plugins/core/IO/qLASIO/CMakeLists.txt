@@ -7,7 +7,19 @@ if (PLUGIN_IO_QLAS)
 
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-    find_package(LASzip MODULE REQUIRED)
+    find_package(LASzip MODULE QUIET)
+    if (NOT LASzip_FOUND)
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(LASzip REQUIRED laszip)
+        if (LASzip_FOUND)
+            message(STATUS "Found LASzip-${LASZip_VERSION} ${LASZIP_INCLUDE_DIR}: ${LASZIP_LIBRARY}")
+        else ()
+            message(FATAL_ERROR "Failed to find LASzip")
+        endif ()
+    else ()
+        message(STATUS "Found LASzip ${LASZIP_INCLUDE_DIR}: ${LASZIP_LIBRARY}")
+    endif ()
+
     target_link_libraries(${PROJECT_NAME} LASzip::LASzip)
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE -DQT_FORCE_ASSERTS)
