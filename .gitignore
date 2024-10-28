@@ -153,6 +153,7 @@ node_modules/
 
 # Editor files
 *.*~
+*.log
 docker_build*.log
 # Local configs
 _vimrc_local.vim
