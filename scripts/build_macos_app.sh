@@ -55,8 +55,8 @@ else
     echo "Conda env now is $CONDA_PREFIX"
 fi
 
-export PATH=$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$CONDA_PREFIX/lib:$PATH
-export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$CONDA_PREFIX/lib:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
 set +x # Echo commands off
 
 # Get build scripts and control environment variables

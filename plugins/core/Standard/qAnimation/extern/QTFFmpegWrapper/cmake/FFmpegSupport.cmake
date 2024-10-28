@@ -2,25 +2,23 @@
 # FFmpeg+CMake support for ACloudViewer
 # ------------------------------------------------------------------------------
 
+if (APPLE)
+	find_package(PkgConfig REQUIRED)
+	pkg_check_modules(FFMPEG REQUIRED
+			libavcodec
+			libavformat
+			libavutil
+			libswscale
+	)
+	message(STATUS "Found FFmpeg: ${FFMPEG_INCLUDE_DIRS}, ${FFMPEG_LIBRARIES}")
+endif ()
+
 # Find FFmpeg includes
-if( NOT EXISTS "${FFMPEG_INCLUDE_DIR}" )
-	if (APPLE)
-		find_package(PkgConfig REQUIRED)
-		pkg_check_modules(FFMPEG REQUIRED
-				libavcodec
-				libavformat
-				libavutil
-				libswscale
-		)
-		if(FFMPEG_FOUND)
-			set(FFMPEG_INCLUDE_DIR ${FFMPEG_INCLUDE_DIRS})
-		endif()
-	endif ()
-	
+if( NOT EXISTS "${FFMPEG_INCLUDE_DIRS}" )
 	find_path( FFMPEG_AVCODEC_INCLUDE_DIR libavcodec/avcodec.h )
-	set( FFMPEG_INCLUDE_DIR "${FFMPEG_AVCODEC_INCLUDE_DIR}" CACHE PATH "FFmpeg include directory" )
+	set( FFMPEG_INCLUDE_DIRS "${FFMPEG_AVCODEC_INCLUDE_DIR}" CACHE PATH "FFmpeg include directory" )
 	
-	message( STATUS "Setting FFmpeg include dir: ${FFMPEG_INCLUDE_DIR}" )
+	message( STATUS "Setting FFmpeg include dir: ${FFMPEG_INCLUDE_DIRS}" )
 	unset( FFMPEG_AVCODEC_INCLUDE_DIR CACHE )
 endif()
 
@@ -34,8 +32,8 @@ if( NOT EXISTS "${FFMPEG_LIBRARY_DIR}" )
 	unset( FFMPEG_AVCODEC_LIBRARY_DIR CACHE )
 endif()
 
-if( NOT EXISTS "${FFMPEG_INCLUDE_DIR}" )
-	message( FATAL_ERROR "FFmpeg include dir does not exist (FFMPEG_INCLUDE_DIR): ${FFMPEG_INCLUDE_DIR}" )
+if( NOT EXISTS "${FFMPEG_INCLUDE_DIRS}" )
+	message( FATAL_ERROR "FFmpeg include dir does not exist (FFMPEG_INCLUDE_DIRS): ${FFMPEG_INCLUDE_DIRS}" )
 endif()
 
 if( NOT EXISTS "${FFMPEG_LIBRARY_DIR}" )
