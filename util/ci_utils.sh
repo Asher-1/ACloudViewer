@@ -41,7 +41,7 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     CLOUDVIEWER_INSTALL_DIR=/root/install
 else
     BUILD_RIEGL=ON
-    CONDA_LIB_DIR="$CONDA_PREFIX/."
+    CONDA_LIB_DIR="$CONDA_PREFIX/lib"
     CLOUDVIEWER_INSTALL_DIR=/root/install
 fi
 

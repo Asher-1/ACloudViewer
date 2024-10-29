@@ -109,7 +109,7 @@ jobs:
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
-          export CONDA_LIB_DIR="$CONDA_PREFIX/."
+          export CONDA_LIB_DIR="$CONDA_PREFIX/lib"
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
@@ -265,7 +265,7 @@ jobs:
 
       - name: Config
         run: |
-          export CONDA_LIB_DIR="$CONDA_PREFIX/."
+          export CONDA_LIB_DIR="$CONDA_PREFIX/lib"
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
