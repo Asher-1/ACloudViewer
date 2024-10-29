@@ -1862,15 +1862,15 @@ if (BUILD_RECONSTRUCTION)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ceres)
     elseif (UNIX)
         # boost
-        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
-        import_3rdparty_library(3rdparty_boost
-                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
-                LIB_DIR ${BOOST_LIB_DIR}
-                LIBRARIES ${BOOST_LIBRARIES}
-                DEPENDS ext_boost
-                )
-        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_boost)
+        # include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
+        # import_3rdparty_library(3rdparty_boost
+        #         INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
+        #         LIB_DIR ${BOOST_LIB_DIR}
+        #         LIBRARIES ${BOOST_LIBRARIES}
+        #         DEPENDS ext_boost
+        #         )
+        # message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
+        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_boost)
 
         # gflags
         include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)

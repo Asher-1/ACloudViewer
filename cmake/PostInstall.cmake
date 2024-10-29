@@ -119,7 +119,7 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
         DESTINATION "${COLMAP_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS)
     # fix gflags issues
-    if ((WIN32 OR UNIX) AND NOT APPLE)
+    if (UNIX AND NOT APPLE)
         copy_rename_files(
             "${EXTERNAL_INSTALL_DIR}/lib"
             "${GFLAGS_SRC_FILENAME}"

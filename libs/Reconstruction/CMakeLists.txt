@@ -67,8 +67,8 @@ set(PROFILING_ENABLED OFF) # Whether to enable google-perftools linker flags
 set(CUDA_ARCHS "Auto" CACHE STRING "List of CUDA architectures for which to \
 generate code, e.g., Auto, All, Maxwell, Pascal, ...")
 
-if (APPLE)
-    message(STATUS "set BOOST_STATIC: OFF on macos")
+if (UNIX OR APPLE)
+    message(STATUS "set BOOST_STATIC: OFF on macos or linux")
     set(BOOST_STATIC OFF)
 endif ()
 
@@ -92,6 +92,18 @@ endif ()
 # Build position-independent code, so that shared libraries can link against
 # COLMAP's static libraries.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if (UNIX OR APPLE)
+    find_package(Boost REQUIRED COMPONENTS
+                graph
+                filesystem
+                program_options
+                system)
+    # find_package(FreeImage REQUIRED)
+    # find_package(Glog REQUIRED)
+    # find_package(Ceres REQUIRED)
+    # find_package(Metis REQUIRED)
+endif ()
 
 ################################################################################
 # Find packages
@@ -128,18 +140,6 @@ if (NOT APPLE)
         add_definitions("-DBOOST_NO_CXX11_OVERRIDE")
         message("disable boost cxx11 on colmap!")
     endif ()
-endif ()
-
-if (APPLE)
-    find_package(Boost REQUIRED COMPONENTS
-                graph
-                filesystem
-                program_options
-                system)
-    # find_package(FreeImage REQUIRED)
-    # find_package(Glog REQUIRED)
-    # find_package(Ceres REQUIRED)
-    # find_package(Metis REQUIRED)
 endif ()
 
 set(OpenGL_GL_PREFERENCE GLVND)
@@ -297,7 +297,6 @@ endif ()
 
 # Generate source file with version definitions.
 include(GenerateVersionDefinitions)
-
 set(COLMAP_INCLUDE_DIRS
         ${Boost_INCLUDE_DIRS}
         ${EIGEN_INCLUDE_DIRS}
