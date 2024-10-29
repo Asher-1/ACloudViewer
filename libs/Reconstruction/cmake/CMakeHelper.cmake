@@ -249,7 +249,7 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     elseif (NOT APPLE)
         # On macOs, the DeployQt step will install the bundle that contains the executable with
         # library paths properly set, reinstalling the executable here would break the bundle.
-        install(TARGETS ${TARGET_NAME} DESTINATION ${INSTALL_DESTINATIONS})
+        install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR}/colmap/)
     endif ()
 endmacro(COLMAP_ADD_EXECUTABLE)
 

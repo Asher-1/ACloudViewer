@@ -41,48 +41,58 @@ Component.prototype.isDefault = function()
 Component.prototype.createOperations = function()
 {
     try {
-		// call default implementation to actually install the registeredfile
-		component.createOperations();
-		
-		if (installer.value("os") === "x11") 
-		{
-			/***************************************路径说明****************************************
-			系统自带变量
-			TargetDir   目标安装目录，由用户选择
-			DesktopDir  用户桌面目录名(路径)。仅在Windows上可用
-			RootDir 文件系统根目录
-			HomeDir 当前用户的home目录
-			ApplicationsDir 应用程序目录。例如,Windows上的C:\Program Files,Linux上/opt以及OS X上/Applications
-			InstallerDirPath    包含安装程序可执行文件的目录
-			InstallerFilePath   安装程序可执行文件的文件路径
+			// call default implementation to actually install the registeredfile
+			component.createOperations();
 			
-			注意：变量是包含在“@@”中的，以@开始，必须要以@结尾
-			
-			具体的其它信息可以参考 https://www.cnblogs.com/oloroso/p/6775318.html#7_3_2_3
-			**************************************************************************************/        
-			
-			/* 建立桌面图标 */
-			var exec = "Exec=" + "@TargetDir@/CloudViewer.sh %f" + "\n"; /* 执行程序 */
-			var icon = "Icon=" + "@TargetDir@/CloudViewer.png" + "\n"; /* 图标资源路径 */
-			var version =  "Version=" + "3.9.0" + "\n" ; /* 版本号 */
-			var name = "Name=" + "CloudViewer" + "\n"; /* 桌面图标显示名称 */
-			var desktop = "CloudViewer" + ".desktop";  /* 桌面图标名 */
-			var comments = "Comment=" + "3D point cloud and mesh processing software" + "\n"
-			var extentions = "MimeType=" + "model/stl;model/obj;model/fbx;model/gltf-binary;model/gltf+json;model/x.stl-ascii;model/x.stl-binary;model/x-ply;application/x-off;application/x-xyz;application/x-xyzn;application/x-xyzrgb;application/x-pcd;application/x-pts" + "\n"
-			var comment = name + exec + icon + version + comments + "Terminal=false\nCategories=Graphics\nEncoding=UTF-8\nType=Application\n" + extentions;
-			component.addOperation("CreateDesktopEntry", desktop, comment);
+			if (installer.value("os") == "mac") {
+				// no need to make shortcut on macos
+			} else if (installer.value("os") === "x11") {
+				/***************************************路径说明****************************************
+				系统自带变量
+				TargetDir   目标安装目录，由用户选择
+				DesktopDir  用户桌面目录名(路径)。仅在Windows上可用
+				RootDir 文件系统根目录
+				HomeDir 当前用户的home目录
+				ApplicationsDir 应用程序目录。例如,Windows上的C:\Program Files,Linux上/opt以及OS X上/Applications
+				InstallerDirPath    包含安装程序可执行文件的目录
+				InstallerFilePath   安装程序可执行文件的文件路径
+				
+				注意：变量是包含在“@@”中的，以@开始，必须要以@结尾
+				
+				具体的其它信息可以参考 https://www.cnblogs.com/oloroso/p/6775318.html#7_3_2_3
+				**************************************************************************************/        
+				
+				/* 建立桌面图标 */
+				var exec = "Exec=" + "@TargetDir@/CloudViewer.sh %f" + "\n"; /* 执行程序 */
+				var icon = "Icon=" + "@TargetDir@/CloudViewer.png" + "\n"; /* 图标资源路径 */
+				var version =  "Version=" + "3.9.0" + "\n" ; /* 版本号 */
+				var name = "Name=" + "CloudViewer" + "\n"; /* 桌面图标显示名称 */
+				var desktop = "CloudViewer" + ".desktop";  /* 桌面图标名 */
+				var comments = "Comment=" + "3D point cloud and mesh processing software" + "\n"
+				var extentions = "MimeType=" + "model/stl;model/obj;model/fbx;model/gltf-binary;model/gltf+json;model/x.stl-ascii;model/x.stl-binary;model/x-ply;application/x-off;application/x-xyz;application/x-xyzn;application/x-xyzrgb;application/x-pcd;application/x-pts" + "\n"
+				var comment = name + exec + icon + version + comments + "Terminal=false\nCategories=Graphics\nEncoding=UTF-8\nType=Application\n" + extentions;
+				// crate desktop at @HomeDir@/.local/share/applications
+				component.addOperation("CreateDesktopEntry", desktop, comment);
+				// crate desktop at @HomeDir@/Desktop
+				var desktop_path = "@HomeDir@/Desktop/" + desktop;
+				component.addOperation("CreateDesktopEntry", desktop_path, comment);
+				component.addOperation("Execute", "sleep", "2");
+				component.addOperation("Execute", "/usr/bin/gio", "set", desktop_path, "metadata::trusted", "true");
 
-			//获取当前桌面路径    
-			var desktoppath = QDesktopServices.storageLocation(0);
-			var homeDir = installer.environmentVariable("HOME");
-		    if(homeDir.length > 0) {
-						var deskTopSaveDir = homeDir + "/.local/share/applications/" + desktop;
-						if(installer.fileExists(deskTopSaveDir)) {
-								var args = ["cp", "-R", deskTopSaveDir, desktoppath + "/" + desktop];
-								component.addOperation("Execute", args);
-						}
-        }
-		}
+			} else if (installer.value("os") === "win") {
+				// no need to make application extension files because we can make this on app gui
+				// call the base create operations function
+				component.addOperation("CreateShortcut",
+								"@TargetDir@/CloudViewer.exe",
+								"@StartMenuDir@/CloudViewer.lnk",
+								"workingDirectory=@TargetDir@",
+								"description=Open CloudViewer Application");
+				component.addOperation("CreateShortcut",
+								"@TargetDir@/CloudViewer.exe",
+								"@DesktopDir@/CloudViewer.lnk",
+								"workingDirectory=@TargetDir@",
+								"description=Open CloudViewer Application");
+      }
     } catch (e) {
         console.log(e);
     }
