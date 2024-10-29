@@ -210,20 +210,20 @@ else ()
 endif ()
 
 
-if (WIN32)
+if (WIN32 OR APPLE)
     DeployQt(
             TARGET
             ${PROJECT_NAME}
             DEPLOY_PATH
             ${ACloudViewer_DEST_FOLDER}
     )
-elseif (APPLE)
-    DeployQt(
-            TARGET
-            ${PROJECT_NAME}
-            DEPLOY_PATH
-            ${PROJECT_NAME}
-    )
+elseif (UNIX)
+    # Install program.
+    # On macOs and win32, the DeployQt step will install the bundle that contains the executable with
+    # library paths properly set, reinstalling the executable here would break the bundle.
+    message(STATUS "INSTALL_DESTINATIONS: " ${INSTALL_DESTINATIONS})
+    message(STATUS "ACloudViewer_DEST_FOLDER: " ${ACloudViewer_DEST_FOLDER})
+    cloudViewer_install_ext(TARGETS ${PROJECT_NAME} ${INSTALL_DESTINATIONS}/${CloudViewer_INSTALL_BIN_DIR}/${PROJECT_NAME} "")
 endif ()
 
 # App icon with Code::Blocks/MinGW
@@ -234,15 +234,6 @@ if (WIN32)
         endif ()
         add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_RC_COMPILER} -i ${CMAKE_CURRENT_SOURCE_DIR}/Resources/images/icon/ecv_icon.rc --input-format=rc -o ${CMAKE_CURRENT_BINARY_DIR}/ecv_icon.res -O coff)
     endif ()
-endif ()
-
-if (NOT APPLE)
-    # Install program.
-    # On macOs, the DeployQt step will install the bundle that contains the executable with
-    # library paths properly set, reinstalling the executable here would break the bundle.
-    message(STATUS "INSTALL_DESTINATIONS: " ${INSTALL_DESTINATIONS})
-    message(STATUS "ACloudViewer_DEST_FOLDER: " ${ACloudViewer_DEST_FOLDER})
-    cloudViewer_install_ext(TARGETS ${PROJECT_NAME} ${INSTALL_DESTINATIONS} "")
 endif ()
 
 # Auxiliary files
@@ -272,7 +263,7 @@ elseif (APPLE)
 endif ()
 
 # Install plugins and shaders in the correct folder for each platform
-if (APPLE) # no need to install due to macdeployqt
+if (APPLE) # no need to install due to macdeployqt already done
     # InstallPlugins(
     #         DEST_PATH "${ACloudViewer_MAC_PLUGIN_DIR}"
     #         SHADER_DEST_PATH "${ACloudViewer_MAC_BASE_DIR}/Contents/Shaders"

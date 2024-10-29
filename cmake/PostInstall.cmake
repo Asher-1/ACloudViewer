@@ -1,75 +1,93 @@
 if (APPLE)
-    set(APP_EXTENSION "dmg")
+    set(APP_EXTENSION ".app")
+    set(PACKAGE_EXTENSION "dmg")
     set(CONFIG_POSTFIX "mac")
     # set(PACK_SCRIPTS ${PACK_SCRIPTS_PATH}/pack_macosx_bundle.sh)
 elseif (UNIX)
-    set(APP_EXTENSION "run")
+    set(APP_EXTENSION "")
+    set(PACKAGE_EXTENSION "run")
     set(CONFIG_POSTFIX "linux")
     set(PACK_SCRIPTS ${PACK_SCRIPTS_PATH}/pack_ubuntu.sh)
 elseif(WIN32)
     set(APP_EXTENSION "exe")
+    set(PACKAGE_EXTENSION "exe")
     set(CONFIG_POSTFIX "win")
     set(PACK_SCRIPTS ${PACK_SCRIPTS_PATH}/pack_windows.bat)
 endif()
 
-set(CONFIG_FILE_PATH config/config_${CONFIG_POSTFIX}.xml)
+set(CONFIG_FILE_PATH ${DEPLOY_ROOT_PATH}/config/config_${CONFIG_POSTFIX}.xml)
+set(DEPLOY_PACKAGES_PATH ${DEPLOY_ROOT_PATH}/packages)
 set(MAIN_WORKING_DIRECTORY ${DEPLOY_ROOT_PATH})
+set(COLMAP_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/colmap/data)
 set(MAIN_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data)
-set(COLMAP_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${COLMAP_APP_NAME}/data)
 set(CLOUDVIEWER_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${CLOUDVIEWER_APP_NAME}/data)
 set(DEPLOY_LIB_PATH ${MAIN_DEPLOY_PATH}/${LIBS_FOLDER_NAME})
-if (APPLE)
-    ## update version and build time
-    execute_process(COMMAND sed -i "" "s/3.9.0/${CLOUDVIEWER_VERSION}/g"
-                    ${CONFIG_FILE_PATH} packages/${MAIN_APP_NAME}/meta/package.xml packages/${MAIN_APP_NAME}/meta/installscript.qs
-                    WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-    execute_process(COMMAND sed -i "" "s/2024-09-18/${BUILD_TIME}/g"
-                    packages/${MAIN_APP_NAME}/meta/package.xml
-                    WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-    # deploy ACloudViewer
-    execute_process(COMMAND cp -r ${CMAKE_INSTALL_PREFIX}/${MAIN_APP_NAME}/${MAIN_APP_NAME}.app 
-                    ${MAIN_DEPLOY_PATH} WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
-    # execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${MAIN_APP_NAME} ${MAIN_DEPLOY_PATH})
+
+function(replace_version_in_file file_path)
+    # read contents
+    file(READ "${file_path}" FILE_CONTENT)
     
-    # deploy and sign CloudViewer
-    if (${BUILD_GUI} STREQUAL "ON")
-        execute_process(COMMAND sed -i "" "s/3.9.0/${CLOUDVIEWER_VERSION}/g" packages/${CLOUDVIEWER_APP_NAME}/meta/package.xml 
-                        WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        execute_process(COMMAND sed -i "" "s/2024-09-18/${BUILD_TIME}/g" packages/${CLOUDVIEWER_APP_NAME}/meta/package.xml
-                        WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        execute_process(COMMAND cp -r ${CMAKE_INSTALL_PREFIX}/bin/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}.app 
-                        ${CLOUDVIEWER_DEPLOY_PATH} WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        # execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${CLOUDVIEWER_APP_NAME} ${CLOUDVIEWER_DEPLOY_PATH})
-    endif()
+    # replace version
+    string(REPLACE "3.9.0" "${CLOUDVIEWER_VERSION}" UPDATED_CONTENT "${FILE_CONTENT}")
+    
+    # write back contents
+    file(WRITE "${file_path}" "${UPDATED_CONTENT}")
+endfunction()
 
-    # deploy and sig colmap
-    if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
-        execute_process(COMMAND sed -i "" "s/3.9.0/${CLOUDVIEWER_VERSION}/g" packages/${COLMAP_APP_NAME}/meta/package.xml 
-                        WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        execute_process(COMMAND sed -i "" "s/2024-09-18/${BUILD_TIME}/g" packages/${COLMAP_APP_NAME}/meta/package.xml
-                        WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        execute_process(COMMAND cp -r ${CMAKE_INSTALL_PREFIX}/bin/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}.app 
-                        ${COLMAP_DEPLOY_PATH} WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        # execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${COLMAP_APP_NAME} ${COLMAP_DEPLOY_PATH})
-    endif()
-elseif (UNIX)
-    ## update version and build time
-    execute_process(COMMAND sed -i "s/3.9.0/${CLOUDVIEWER_VERSION}/g"
-                    ${CONFIG_FILE_PATH}
-                    packages/${MAIN_APP_NAME}/meta/package.xml
-                    packages/${MAIN_APP_NAME}/meta/installscript.qs
-                    WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-    execute_process(COMMAND sed -i "s/2024-09-18/${BUILD_TIME}/g" 
-                    packages/${MAIN_APP_NAME}/meta/package.xml 
-                    WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
+function(replace_buildtime_in_file file_path)
+    # read contents
+    file(READ "${file_path}" FILE_CONTENT)
+    # replace build time
+    string(REPLACE "2024-09-18" "${BUILD_TIME}" UPDATED_CONTENT "${FILE_CONTENT}")
+    # write back contents
+    file(WRITE "${file_path}" "${UPDATED_CONTENT}")
+endfunction()
 
-    # install ACloudViewer app
-    execute_process(COMMAND cp -r ${CMAKE_INSTALL_PREFIX}/${MAIN_APP_NAME}  
-                    ${MAIN_DEPLOY_PATH} WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
-    # deploy extra libs, plugins and translations
-    execute_process(COMMAND mv ${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}
-                    ${CMAKE_INSTALL_PREFIX}/plugins ${CMAKE_INSTALL_PREFIX}/translations
-                    ${MAIN_DEPLOY_PATH} WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
+function(copy_rename_files src_dir src_name dst_dir dst_name)
+    file(COPY 
+        "${src_dir}/${src_name}"
+        DESTINATION "${dst_dir}"
+        USE_SOURCE_PERMISSIONS
+    )
+    file(RENAME 
+        "${dst_dir}/${src_name}"
+        "${dst_dir}/${dst_name}"
+    )
+endfunction()
+
+# 1. Config
+## update ACloudViewer version and build time
+replace_version_in_file("${CONFIG_FILE_PATH}")
+replace_version_in_file("${DEPLOY_PACKAGES_PATH}/${MAIN_APP_NAME}/meta/package.xml")
+replace_buildtime_in_file("${DEPLOY_PACKAGES_PATH}/${MAIN_APP_NAME}/meta/package.xml")
+replace_version_in_file("${DEPLOY_PACKAGES_PATH}/${MAIN_APP_NAME}/meta/installscript.qs")
+## update CloudViewer version and build time          
+if (${BUILD_GUI} STREQUAL "ON")
+    replace_version_in_file("${DEPLOY_PACKAGES_PATH}/${CLOUDVIEWER_APP_NAME}/meta/package.xml")
+    replace_buildtime_in_file("${DEPLOY_PACKAGES_PATH}/${CLOUDVIEWER_APP_NAME}/meta/package.xml")
+    replace_version_in_file("${DEPLOY_PACKAGES_PATH}/${CLOUDVIEWER_APP_NAME}/meta/installscript.qs")
+endif()
+## update colmap version and build time
+if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
+    replace_version_in_file("${DEPLOY_PACKAGES_PATH}/colmap/meta/package.xml")
+    replace_buildtime_in_file("${DEPLOY_PACKAGES_PATH}/colmap/meta/package.xml")
+    replace_version_in_file("${DEPLOY_PACKAGES_PATH}/colmap/meta/installscript.qs")
+endif()
+
+# 2. Deploy
+set(SOURCE_BIN_PATH ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR})
+## deploy ACloudViewer
+file(COPY "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}${APP_EXTENSION}"
+    DESTINATION "${MAIN_DEPLOY_PATH}"
+    USE_SOURCE_PERMISSIONS)
+if (UNIX AND NOT APPLE)
+    file(COPY 
+        "${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}"
+        "${CMAKE_INSTALL_PREFIX}/plugins"
+        "${CMAKE_INSTALL_PREFIX}/translations"
+        DESTINATION "${MAIN_DEPLOY_PATH}"
+        USE_SOURCE_PERMISSIONS
+    )
     # deploy c++ library dependency
     execute_process(COMMAND bash ${PACK_SCRIPTS}
                     "${BUILD_LIB_PATH}" ${DEPLOY_LIB_PATH}
@@ -81,19 +99,38 @@ elseif (UNIX)
                     ${MAIN_DEPLOY_PATH}/platforms/libqxcb.so ${DEPLOY_LIB_PATH}
                     WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
 
-    if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
-        # install colmap app
-        execute_process(COMMAND cp -r ${CMAKE_INSTALL_PREFIX}/${COLMAP_APP_NAME} 
-                        ${MAIN_DEPLOY_PATH} WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
-        # fix gflags issues
-        execute_process(COMMAND cp "${EXTERNAL_INSTALL_DIR}/lib/${GFLAGS_SRC_FILENAME}"
-                        ${DEPLOY_LIB_PATH}/${GFLAGS_DST_FILENAME}
-                        WORKING_DIRECTORY ${BUILD_LIB_PATH})
-    endif()
 elseif (WIN32)
 endif()
 
-set(OUTPUT_CLOUDVIEWER_PACKAGE_PATH ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.${APP_EXTENSION})
+## deploy CloudViewer
+if (${BUILD_GUI} STREQUAL "ON")
+    file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}"
+        DESTINATION "${CLOUDVIEWER_DEPLOY_PATH}"
+        USE_SOURCE_PERMISSIONS)
+    if ((WIN32 OR UNIX) AND NOT APPLE)
+        file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/resources"
+                DESTINATION "${CLOUDVIEWER_DEPLOY_PATH}"
+                USE_SOURCE_PERMISSIONS)
+    endif()
+endif()
+## deploy colmap
+if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
+    file(COPY "${SOURCE_BIN_PATH}/colmap/${COLMAP_APP_NAME}${APP_EXTENSION}"
+        DESTINATION "${COLMAP_DEPLOY_PATH}"
+        USE_SOURCE_PERMISSIONS)
+    # fix gflags issues
+    if ((WIN32 OR UNIX) AND NOT APPLE)
+        copy_rename_files(
+            "${EXTERNAL_INSTALL_DIR}/lib"
+            "${GFLAGS_SRC_FILENAME}"
+            "${DEPLOY_LIB_PATH}"
+            "${GFLAGS_DST_FILENAME}"
+        )
+    endif()
+endif()
+
+## 3. Package
+set(OUTPUT_CLOUDVIEWER_PACKAGE_PATH ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.${PACKAGE_EXTENSION})
 if (${PACKAGE} STREQUAL "ON") # package
     if (UNIX OR APPLE) # already packaged somewhere
         set(SHELL_CMD "binarycreator -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")

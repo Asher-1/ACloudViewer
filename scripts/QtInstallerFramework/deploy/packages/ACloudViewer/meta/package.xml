@@ -7,10 +7,9 @@
     <Licenses>
         <License name="Beer Public License Agreement" file="license.txt" />
     </Licenses>
-    <!-- <Checked>true</Checked> -->
-    <!-- <Checkable>false</Checkable> -->
     <Default>script</Default>
     <Script>installscript.qs</Script>
+    <ForcedInstallation>true</ForcedInstallation>
     <UserInterfaces>
 		<UserInterface>targetwidget.ui</UserInterface>
 		<UserInterface>readmecheckboxform.ui</UserInterface>

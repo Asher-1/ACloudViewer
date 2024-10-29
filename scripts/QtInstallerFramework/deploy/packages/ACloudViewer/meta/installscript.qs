@@ -116,12 +116,7 @@ Component.prototype.createOperations = function()
 		component.createOperations();
 
         if (installer.value("os") == "mac") {
-            // In macOs maintenance tool can be either installerbase from Qt Installer
-            // Framework's install folder, or app bundle created by binarycreator
-            // with --create-maintenancetool switch. "maintenancetool.app" -name
-            // may differ depending on what has been defined in config.xml while
-            // creating the maintenance tool.
-            // Use either of the following (not both):
+            // no need to make shortcut on macos
 		} else if (installer.value("os") === "x11") {
 			/***************************************路径说明****************************************
 			系统自带变量
@@ -137,7 +132,6 @@ Component.prototype.createOperations = function()
 			
 			具体的其它信息可以参考 https://www.cnblogs.com/oloroso/p/6775318.html#7_3_2_3
 			**************************************************************************************/        
-			
 			/* 建立桌面图标 */
 			var exec = "Exec=" + "@TargetDir@/ACloudViewer.sh %f" + "\n"; /* 执行程序 */
 			var icon = "Icon=" + "@TargetDir@/ACloudViewer.png" + "\n"; /* 图标资源路径 */
@@ -146,18 +140,14 @@ Component.prototype.createOperations = function()
 			var desktop = "ACloudViewer" + ".desktop";  /* 桌面图标名 */
 			var comments = "Comment=" + "3D point cloud and mesh processing software" + "\n"
 			var comment = name + exec + icon + version + comments + "Terminal=false\nCategories=Graphics\nEncoding=UTF-8\nType=Application\n";
-			component.addOperation("CreateDesktopEntry", desktop, comment);
+            // crate desktop at @HomeDir@/.local/share/applications
+            component.addOperation("CreateDesktopEntry", desktop, comment);
+            // crate desktop at @HomeDir@/Desktop
+            var desktop_path = "@HomeDir@/Desktop/" + desktop;
+            component.addOperation("CreateDesktopEntry", desktop_path, comment);
+            component.addOperation("Execute", "sleep", "2");
+            component.addOperation("Execute", "/usr/bin/gio", "set", desktop_path, "metadata::trusted", "true");
 
-			//获取当前桌面路径
-			var desktop_path = QDesktopServices.storageLocation(0);
-			var homeDir = installer.environmentVariable("HOME");
-            if(homeDir.length > 0) {
-                var deskTopSaveDir = homeDir + "/.local/share/applications/" + desktop;
-                if(installer.fileExists(deskTopSaveDir)) {
-                    var args = ["cp", "-R", deskTopSaveDir, desktop_path + "/" + desktop];
-                    component.addOperation("Execute", args);
-                }
-            }
 		} else if (installer.value("os") === "win") {
             // register extensions support
             if (component.userInterface("RegisterFileCheckBoxForm")) {
@@ -189,12 +179,12 @@ Component.prototype.createOperations = function()
                     "@TargetDir@/ACloudViewer.exe",
                     "@StartMenuDir@/ACloudViewer.lnk",
                     "workingDirectory=@TargetDir@",
-                    "description=Open CloudViewer Application");
+                    "description=Open ACloudViewer Application");
             component.addOperation("CreateShortcut",
-               "@TargetDir@/ACloudViewer.exe",
-               "@DesktopDir@/ACloudViewer.lnk",
-               "workingDirectory=@TargetDir@",
-               "description=Open CloudViewer Application");
+                    "@TargetDir@/ACloudViewer.exe",
+                    "@DesktopDir@/ACloudViewer.lnk",
+                    "workingDirectory=@TargetDir@",
+                    "description=Open ACloudViewer Application");
         }
     } catch (e) {
         console.log(e);
