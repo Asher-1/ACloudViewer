@@ -352,6 +352,15 @@ if (NOT DEFINED PYPI_PACKAGE_NAME)
     set(PYPI_PACKAGE_NAME "cloudViewer")
 endif ()
 
+# Set apps name
+set(MAIN_APP_NAME "ACloudViewer")
+if (BUILD_GUI)
+    set(CLOUDVIEWER_APP_NAME ${COLOUDVIEWER_APP_DIR_NAME})
+endif()
+if (BUILD_RECONSTRUCTION)
+    set(COLMAP_APP_NAME "colmap")
+endif()
+
 # set additional info
 set(PROJECT_EMAIL "dahailu@foxmail.com")
 set(PROJECT_HOME "https://asher-1.github.io")
@@ -623,15 +632,6 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
         SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
     endif ()
 endif ()
-
-# Set apps name
-set(MAIN_APP_NAME "ACloudViewer")
-if (BUILD_GUI)
-    set(CLOUDVIEWER_APP_NAME ${COLOUDVIEWER_APP_DIR_NAME})
-endif()
-if (BUILD_RECONSTRUCTION)
-    set(COLMAP_APP_NAME "colmap")
-endif()
 
 # ACloudViewer app
 add_subdirectory(eCV)
