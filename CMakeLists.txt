@@ -630,13 +630,7 @@ if (BUILD_GUI)
     set(CLOUDVIEWER_APP_NAME ${COLOUDVIEWER_APP_DIR_NAME})
 endif()
 if (BUILD_RECONSTRUCTION)
-    if (APPLE)
-        set(COLMAP_APP_NAME "colmap")
-    elseif (UNIX)
-        set(COLMAP_APP_NAME "colmap_app")
-    elseif (WIN32)
-        set(COLMAP_APP_NAME "colmap_app")
-    endif()
+    set(COLMAP_APP_NAME "colmap")
 endif()
 
 # ACloudViewer app
@@ -736,8 +730,8 @@ elseif (UNIX)
 
     # for colmap
     if (BUILD_RECONSTRUCTION)
-        file(GLOB colmap_helper_files "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}*" )
-        list(APPEND colmap_helper_utils ${colmap_helper_files} "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/Colmap.desktop")
+        file(GLOB colmap_helper_files "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}.sh" )
+        list(APPEND colmap_helper_utils ${colmap_helper_files} "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}//${COLMAP_APP_NAME}.desktop")
         # fix gflags undefinded symbols issues
         set(src_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
         set(target_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MINOR_VERSION})
@@ -748,7 +742,7 @@ elseif (UNIX)
     # for qt plugins
     foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
         install(DIRECTORY "${qt5_plugins_folder}"
-                DESTINATION "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data" 
+                DESTINATION "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data"
                 USE_SOURCE_PERMISSIONS)
     endforeach()
 elseif (WIN32)
@@ -773,7 +767,7 @@ endif()
 if (BUILD_RECONSTRUCTION)
     # for Colmap
     foreach( filename ${colmap_helper_utils} )
-        cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}/packages/colmap/data" "" )
+        cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}/packages/${COLMAP_APP_NAME}/data" "" )
     endforeach()
 endif()
 
