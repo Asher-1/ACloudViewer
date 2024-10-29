@@ -1854,10 +1854,6 @@ if (BUILD_RECONSTRUCTION)
         target_link_libraries(3rdparty_ceres INTERFACE 3rdparty_eigen3 3rdparty_gflags 
                             3rdparty_glog 3rdparty_suitesparse 3rdparty_lapack)
 
-        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${GFLAGS_TARGET}")
-        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${GLOG_TARGET}")
-        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${LAPACK_TARGET}")
-        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${SUITESPARSE_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_eigen3)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ceres)
     elseif (UNIX)
@@ -1992,7 +1988,7 @@ if (USE_SYSTEM_OPENCV)
         message(STATUS "Build Opencv from source")
     endif ()
 endif ()
-if (BUILD_OPENCV)
+if (BUILD_OPENCV) # only needed by plugins: qAutoSeg and qManualSeg
     if (NOT USE_SYSTEM_OPENCV)
         include(${CloudViewer_3RDPARTY_DIR}/opencv/opencv_build.cmake)
         import_shared_3rdparty_library(3rdparty_opencv ext_opencv
@@ -2008,12 +2004,6 @@ if (BUILD_OPENCV)
         #             DEPENDS ext_opencv
         #             )
         #     target_compile_definitions(3rdparty_opencv INTERFACE CV_STATIC_LIB)
-        # elseif (UNIX)
-        #     import_shared_3rdparty_library(3rdparty_opencv ext_opencv
-        #             INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
-        #             LIB_DIR ${OpenCV_LIB_DIR}
-        #             LIBRARIES ${OpenCV_LIBS}
-        #             )
         # endif()
         # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_opencv)
     else()

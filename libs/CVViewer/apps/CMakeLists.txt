@@ -21,7 +21,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
         set(MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION_THREE_NUMBER})
-        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (C) 2023 by CloudViewer")
+        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (C) 2023 by ${CLOUDVIEWER_APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
         set_target_properties(${TARGET_NAME} PROPERTIES
@@ -61,7 +61,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
             AUTOUIC OFF
             )
 
-    target_link_libraries(${TARGET_NAME} PRIVATE CloudViewer::CloudViewer ${ARGN})
+    target_link_libraries(${TARGET_NAME} PRIVATE ${CLOUDVIEWER_APP_NAME}::${CLOUDVIEWER_APP_NAME} ${ARGN})
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -182,6 +182,6 @@ endmacro(cloudViewer_add_app)
 
 if (BUILD_GUI)
     set(TEMP_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-    cloudViewer_add_app(CloudViewerApp CloudViewer CloudViewerApp)
+    cloudViewer_add_app(CloudViewerApp ${CLOUDVIEWER_APP_NAME} CloudViewerApp)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEMP_RUNTIME_OUTPUT_DIRECTORY})
 endif ()

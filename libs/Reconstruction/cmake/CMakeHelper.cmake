@@ -133,7 +133,7 @@ macro(COLMAP_ADD_LIBRARY TARGET_NAME)
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
     # install
-    install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
+    install(TARGETS ${TARGET_NAME} DESTINATION ${CloudViewer_INSTALL_LIB_DIR}/${COLMAP_APP_NAME}/)
 endmacro(COLMAP_ADD_LIBRARY)
 macro(COLMAP_ADD_STATIC_LIBRARY TARGET_NAME)
     # ${ARGN} will store the list of source files passed to this function.
@@ -155,7 +155,7 @@ macro(COLMAP_ADD_STATIC_LIBRARY TARGET_NAME)
     cloudViewer_link_3rdparty_libraries(${TARGET_NAME})
 
     # install
-    # install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap)
+    # install(TARGETS ${TARGET_NAME} DESTINATION ${CloudViewer_INSTALL_LIB_DIR}/${COLMAP_APP_NAME})
 endmacro(COLMAP_ADD_STATIC_LIBRARY)
 
 # Replacement for the normal cuda_add_library() command. The syntax remains the
@@ -182,7 +182,7 @@ macro(COLMAP_ADD_CUDA_LIBRARY TARGET_NAME)
     target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
     # install
-    install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
+    install(TARGETS ${TARGET_NAME} DESTINATION ${CloudViewer_INSTALL_LIB_DIR}/${COLMAP_APP_NAME}/)
 endmacro(COLMAP_ADD_CUDA_LIBRARY)
 macro(COLMAP_ADD_STATIC_CUDA_LIBRARY TARGET_NAME)
     # ${ARGN} will store the list of source files passed to this function.
@@ -207,7 +207,7 @@ macro(COLMAP_ADD_STATIC_CUDA_LIBRARY TARGET_NAME)
     target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
     # install
-    # install(TARGETS ${TARGET_NAME} DESTINATION lib/colmap/)
+    # install(TARGETS ${TARGET_NAME} DESTINATION ${CloudViewer_INSTALL_LIB_DIR}/${COLMAP_APP_NAME}/)
 endmacro(COLMAP_ADD_STATIC_CUDA_LIBRARY)
 
 # Replacement for the normal add_executable() command. The syntax remains the
@@ -223,7 +223,7 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     endif ()
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-    target_link_libraries(${TARGET_NAME} PRIVATE colmap)
+    target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_APP_NAME})
 
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -249,7 +249,7 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     elseif (NOT APPLE)
         # On macOs, the DeployQt step will install the bundle that contains the executable with
         # library paths properly set, reinstalling the executable here would break the bundle.
-        install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR}/colmap/)
+        install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR}/${COLMAP_APP_NAME}/)
     endif ()
 endmacro(COLMAP_ADD_EXECUTABLE)
 
@@ -260,7 +260,7 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         add_executable(${TARGET_NAME} ${ARGN})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
                 ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-        target_link_libraries(${TARGET_NAME} PRIVATE colmap ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_APP_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
         if (MSVC)
             # fix compiling error on windows platform
@@ -289,7 +289,7 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         # ${ARGN} will store the list of source files passed to this function.
         add_executable(${TARGET_NAME} ${ARGN})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-        target_link_libraries(${TARGET_NAME} PRIVATE colmap ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_APP_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
         if (MSVC)
             # fix compiling error on windows platform

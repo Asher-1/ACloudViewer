@@ -75,11 +75,6 @@ function( DeployQt )
 				USE_SOURCE_PERMISSIONS
 		)
 
-		# set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/pack_macosx_bundle.sh")
-    # install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${deploy_app_contents}/MacOS)")
-    # install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${deploy_app_contents}/cvPlugins)")
-    # install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${deploy_app_contents}/Frameworks)")
-    # install(CODE "execute_process(COMMAND ${PACK_SCRIPTS_PATH} ${deploy_app_contents}/Frameworks)")
 		set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/lib_bundle_app.py")
     install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${name} ${INSTALL_DEPLOY_PATH})")
 		set(APP_SIGN_SCRIPT_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/signature_app.py")
