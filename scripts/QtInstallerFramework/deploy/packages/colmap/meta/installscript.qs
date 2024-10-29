@@ -62,7 +62,7 @@ Component.prototype.createOperations = function()
 				具体的其它信息可以参考 https://www.cnblogs.com/oloroso/p/6775318.html#7_3_2_3
 				**************************************************************************************/        
 				/* 建立桌面图标 */
-				var exec = "Exec=" + "@TargetDir@/colmap_app.sh gui %f" + "\n"; /* 执行程序 */
+				var exec = "Exec=" + "@TargetDir@/colmap.sh gui %f" + "\n"; /* 执行程序 */
 				var icon = "Icon=" + "@TargetDir@/Colmap.png" + "\n"; /* 图标资源路径 */
 				var version =  "Version=" + "3.9.0" + "\n" ; /* 版本号 */
 				var name = "Name=" + "Colmap" + "\n"; /* 桌面图标显示名称 */
@@ -81,13 +81,13 @@ Component.prototype.createOperations = function()
 				// no need to make application extension files because we can make this on app gui
 				// call the base create operations function
 				component.addOperation("CreateShortcut",
-								"@TargetDir@/colmap_app.exe",
-								"@StartMenuDir@/colmap_app.lnk",
+								"@TargetDir@/colmap.exe",
+								"@StartMenuDir@/colmap.lnk",
 								"workingDirectory=@TargetDir@",
 								"description=Open Colmap Application");
 				component.addOperation("CreateShortcut",
-								"@TargetDir@/colmap_app.exe",
-								"@DesktopDir@/colmap_app.lnk",
+								"@TargetDir@/colmap.exe",
+								"@DesktopDir@/colmap.lnk",
 								"workingDirectory=@TargetDir@",
 								"description=Open Colmap Application");
       }

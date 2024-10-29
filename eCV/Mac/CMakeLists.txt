@@ -11,7 +11,7 @@ if( APPLE )
 		MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_VERSION}"
 		MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}" )
 
-	set( ACloudViewer_MAC_BASE_DIR ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/${PROJECT_NAME}.app  CACHE INTERNAL "ACloudViewer bundle dir")
+	set( ACloudViewer_MAC_BASE_DIR ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR}/${PROJECT_NAME}/${PROJECT_NAME}.app  CACHE INTERNAL "ACloudViewer bundle dir")
 	set( ACloudViewer_MAC_FRAMEWORK_DIR ${ACloudViewer_MAC_BASE_DIR}/Contents/Frameworks CACHE INTERNAL "CloudViewer framework dir" )
 	set( ACloudViewer_MAC_PLUGIN_DIR ${ACloudViewer_MAC_BASE_DIR}/Contents/cvPlugins CACHE INTERNAL "CloudViewer plugin dir" )
 	

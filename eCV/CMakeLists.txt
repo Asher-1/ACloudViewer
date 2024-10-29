@@ -72,9 +72,6 @@ endif ()
 # Put together our Application bundle on macOS
 if (APPLE)
     add_subdirectory(Mac)
-# elseif(UNIX)
-#     set_target_properties(${TARGET_NAME} PROPERTIES
-#                             INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib/")
 endif ()
 
 # Translation Note: must be after add_subdirectory(Mac) on apple
@@ -176,13 +173,13 @@ if (WIN32)
     add_custom_command(
             TARGET ${PROJECT_NAME}
             POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${PROJECT_NAME}.exe ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/${PROJECT_NAME}.exe
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/$<CONFIG>/${PROJECT_NAME}.exe ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/${PROJECT_NAME}.exe
             VERBATIM
     )
 elseif (APPLE)
     set(RESOURCE_DIR_NAME "Contents/Resources")
     file(GLOB RESOURCE_FILES "Mac/*.icns")
-    set(BINARY_APP_PATH ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.app)
+    set(BINARY_APP_PATH ${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/${PROJECT_NAME}.app)
     set(CLOUDVIEWER_TRANSLATION_DESTINATION "${BINARY_APP_PATH}/Contents/translations")
     set(CLOUDVIEWER_RESOURCE_DESTINATION "${BINARY_APP_PATH}/${RESOURCE_DIR_NAME}")
     set(CLOUDVIEWER_PLUGINS_DESTINATION "${BINARY_APP_PATH}/Contents/cvPlugins")
@@ -195,7 +192,7 @@ elseif (APPLE)
             COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${CLOUDVIEWER_RESOURCE_DESTINATION}"
             COMMAND ${CMAKE_COMMAND} -E make_directory "${CLOUDVIEWER_TRANSLATION_DESTINATION}"
             COMMAND sh -c "cp ${CMAKE_BINARY_DIR}/eCV/translations/*.qm ${CLOUDVIEWER_TRANSLATION_DESTINATION}"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/bin/cvPlugins "${CLOUDVIEWER_PLUGINS_DESTINATION}"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/cvPlugins "${CLOUDVIEWER_PLUGINS_DESTINATION}"
              # for macdeployqt
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${BINARY_APP_PATH} ${CMAKE_BINARY_DIR}/eCV/${PROJECT_NAME}.app
             VERBATIM
@@ -204,7 +201,7 @@ else ()
     add_custom_command(
             TARGET ${PROJECT_NAME}
             POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME} ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/${PROJECT_NAME}
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/${PROJECT_NAME} ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/${PROJECT_NAME}
             VERBATIM
     )
 endif ()
@@ -251,23 +248,21 @@ if (WIN32)
         cloudViewer_install_ext(FILES ${filename} ${ACloudViewer_DEST_FOLDER} "")
     endforeach ()
 elseif (APPLE)
+    set(APPLE_INSTALL_BIN_PATH ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR})
     foreach (filename ${auxFiles})
-        cloudViewer_install_ext(FILES ${filename} ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME} "")
+        cloudViewer_install_ext(FILES ${filename} ${APPLE_INSTALL_BIN_PATH}/${PROJECT_NAME} "")
         if (${BUILD_GUI})
-            cloudViewer_install_ext(FILES ${filename} ${CMAKE_INSTALL_PREFIX}/bin/CloudViewer "")
+            cloudViewer_install_ext(FILES ${filename} ${APPLE_INSTALL_BIN_PATH}/CloudViewer "")
         endif ()
         if (${BUILD_RECONSTRUCTION})
-            cloudViewer_install_ext(FILES ${filename} ${CMAKE_INSTALL_PREFIX}/bin/colmap "")
+            cloudViewer_install_ext(FILES ${filename} ${APPLE_INSTALL_BIN_PATH}/colmap "")
         endif()
     endforeach ()
 endif ()
 
 # Install plugins and shaders in the correct folder for each platform
-if (APPLE) # no need to install due to macdeployqt already done
-    # InstallPlugins(
-    #         DEST_PATH "${ACloudViewer_MAC_PLUGIN_DIR}"
-    #         SHADER_DEST_PATH "${ACloudViewer_MAC_BASE_DIR}/Contents/Shaders"
-    # )
+if (APPLE)
+    # no need to install due to macdeployqt already done
 elseif (UNIX)
     InstallPlugins(
             DEST_PATH "plugins"

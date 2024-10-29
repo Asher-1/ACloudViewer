@@ -18,7 +18,7 @@ endif()
 set(CONFIG_FILE_PATH ${DEPLOY_ROOT_PATH}/config/config_${CONFIG_POSTFIX}.xml)
 set(DEPLOY_PACKAGES_PATH ${DEPLOY_ROOT_PATH}/packages)
 set(MAIN_WORKING_DIRECTORY ${DEPLOY_ROOT_PATH})
-set(COLMAP_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/colmap/data)
+set(COLMAP_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${COLMAP_APP_NAME}/data)
 set(MAIN_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data)
 set(CLOUDVIEWER_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${CLOUDVIEWER_APP_NAME}/data)
 set(DEPLOY_LIB_PATH ${MAIN_DEPLOY_PATH}/${LIBS_FOLDER_NAME})
@@ -69,9 +69,9 @@ if (${BUILD_GUI} STREQUAL "ON")
 endif()
 ## update colmap version and build time
 if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
-    replace_version_in_file("${DEPLOY_PACKAGES_PATH}/colmap/meta/package.xml")
-    replace_buildtime_in_file("${DEPLOY_PACKAGES_PATH}/colmap/meta/package.xml")
-    replace_version_in_file("${DEPLOY_PACKAGES_PATH}/colmap/meta/installscript.qs")
+    replace_version_in_file("${DEPLOY_PACKAGES_PATH}/${COLMAP_APP_NAME}/meta/package.xml")
+    replace_buildtime_in_file("${DEPLOY_PACKAGES_PATH}/${COLMAP_APP_NAME}/meta/package.xml")
+    replace_version_in_file("${DEPLOY_PACKAGES_PATH}/${COLMAP_APP_NAME}/meta/installscript.qs")
 endif()
 
 # 2. Deploy
@@ -115,7 +115,7 @@ if (${BUILD_GUI} STREQUAL "ON")
 endif()
 ## deploy colmap
 if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
-    file(COPY "${SOURCE_BIN_PATH}/colmap/${COLMAP_APP_NAME}${APP_EXTENSION}"
+    file(COPY "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}"
         DESTINATION "${COLMAP_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS)
     # fix gflags issues
