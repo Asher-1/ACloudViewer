@@ -273,7 +273,7 @@ COPY ./python/requirements.txt /root/ACloudViewer/python/
 COPY ./python/requirements_jupyter_build.txt /root/ACloudViewer/python/
 COPY ./python/requirements_jupyter_install.txt /root/ACloudViewer/python/
 RUN source /root/ACloudViewer/util/ci_utils.sh \
- && install_python_dependencies with-cuda with-jupyter
+ && install_python_dependencies with-jupyter
 
 # ACloudViewer Jupyter dependencies
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \

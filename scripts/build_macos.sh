@@ -15,6 +15,10 @@ set -euo pipefail
 # python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
 # python -W default -c "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
 
+# test reconstruction
+# python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_RECONSTRUCTION: ', cloudViewer._build_config['BUILD_RECONSTRUCTION'])"
+# python -W default -c "import cloudViewer as cv3d; cv3d.reconstruction.gui.run_graphical_gui()"
+
 ACloudViewer_INSTALL=~/cloudViewer_install
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 CLOUDVIEWER_BUILD_DIR=${CLOUDVIEWER_SOURCE_ROOT}/build

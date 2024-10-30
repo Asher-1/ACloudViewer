@@ -1,3 +1,5 @@
+ARG VTK_VERSION
+ARG PCL_VERSION
 ARG CUDA_VERSION
 ARG UBUNTU_VERSION
 FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
@@ -197,9 +199,9 @@ RUN bash Miniconda3-latest-Linux-x86_64.sh -b \
 
 # Install vtk
 WORKDIR /opt
-COPY docker_files/VTK-9.3.1.tar.gz /opt
-RUN tar -zxvf VTK-9.3.1.tar.gz && \
-    cd VTK-9.3.1 && \
+COPY docker_files/VTK-${VTK_VERSION}.tar.gz /opt
+RUN tar -zxvf VTK-${VTK_VERSION}.tar.gz && \
+    cd VTK-${VTK_VERSION} && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
             -DVTK_GROUP_ENABLE_Qt=YES \
@@ -214,12 +216,12 @@ RUN tar -zxvf VTK-9.3.1.tar.gz && \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
-    rm -rf /opt/VTK-9.3.1 /opt/VTK-9.3.1.tar.gz
+    rm -rf /opt/VTK-${VTK_VERSION} /opt/VTK-${VTK_VERSION}.tar.gz
 
 # Install pcl
 WORKDIR /opt
-COPY docker_files/pcl-1.14.1.zip /opt
-RUN unzip pcl-1.14.1.zip && \
+COPY docker_files/pcl-${PCL_VERSION}.zip /opt
+RUN unzip pcl-${PCL_VERSION}.zip && \
     cd pcl && \
     mkdir -p build && cd build && \
     cmake   -DCMAKE_BUILD_TYPE=RELEASE \
@@ -231,6 +233,6 @@ RUN unzip pcl-1.14.1.zip && \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
-    rm -rf /opt/pcl /opt/pcl-1.14.1.zip
+    rm -rf /opt/pcl /opt/pcl-${PCL_VERSION}.zip
 
 WORKDIR /root

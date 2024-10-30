@@ -204,10 +204,11 @@ endfunction()
 set(ExternalProject_CMAKE_ARGS
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}
         -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}
+        -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-        -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
         -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
         -DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}
         -DCMAKE_INSTALL_LIBDIR=${CloudViewer_INSTALL_LIB_DIR}
@@ -1858,15 +1859,15 @@ if (BUILD_RECONSTRUCTION)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ceres)
     elseif (UNIX)
         # boost
-        # include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
-        # import_3rdparty_library(3rdparty_boost
-        #         INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
-        #         LIB_DIR ${BOOST_LIB_DIR}
-        #         LIBRARIES ${BOOST_LIBRARIES}
-        #         DEPENDS ext_boost
-        #         )
-        # message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
-        # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_boost)
+        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
+        import_3rdparty_library(3rdparty_boost
+                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
+                LIB_DIR ${BOOST_LIB_DIR}
+                LIBRARIES ${BOOST_LIBRARIES}
+                DEPENDS ext_boost
+                )
+        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_boost)
 
         # gflags
         include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
