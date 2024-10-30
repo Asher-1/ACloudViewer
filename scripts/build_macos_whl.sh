@@ -71,7 +71,7 @@ source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 
 echo "Start to install python dependencies package On MacOS..."
 echo
-install_python_dependencies with-jupyter with-unit-test purge-cache
+install_python_dependencies with-unit-test purge-cache
 
 echo "Start to build wheel On MacOS..."
 echo
