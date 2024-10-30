@@ -96,13 +96,16 @@ if (APPLE)
     execute_process(COMMAND python ${PACKAGE_TOOL} ${DEST_PATH} 
                     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
 elseif (UNIX)
+    set(CPU_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cpu")
+    set(CUDA_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cuda")
+    if (EXISTS "${CPU_FOLDER_PATH}")
+        execute_process(COMMAND bash ${PACKAGE_TOOL}
+                        "${CPU_FOLDER_PATH}" ${PYTHON_INSTALL_LIB_DESTINATION}
+                        WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+    endif()
     if (BUILD_CUDA_MODULE)
         execute_process(COMMAND bash ${PACKAGE_TOOL}
-                        "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cuda" ${PYTHON_INSTALL_LIB_DESTINATION}
-                        WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
-    else ()
-        execute_process(COMMAND bash ${PACKAGE_TOOL}
-                        "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cpu" ${PYTHON_INSTALL_LIB_DESTINATION}
+                        "${CUDA_FOLDER_PATH}" ${PYTHON_INSTALL_LIB_DESTINATION}
                         WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
     endif()
     execute_process(COMMAND bash ${PACKAGE_TOOL}

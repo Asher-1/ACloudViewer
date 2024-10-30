@@ -1,11 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
+PACKAGE=${PACKAGE:-OFF}
+BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
+BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE:-ON}
+BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
+BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-OFF}
+
 export DEVELOPER_BUILD=OFF
-export BUILD_SHARED_LIBS=OFF
-export BUILD_CUDA_MODULE=ON
-export BUILD_PYTORCH_OPS=ON
-export BUILD_TENSORFLOW_OPS=OFF
+export PACKAGE=${PACKAGE}
+export BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
+export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
+export BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+export BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+
 export PYTHON_VERSION=$1
 export NPROC=$(nproc)
 export ENV_NAME="python${PYTHON_VERSION}"
@@ -59,9 +67,9 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 # shellcheck source=ci_utils.sh
 source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
-install_python_dependencies with-cuda with-jupyter with-unit-test
-# build_pip_package with_conda build_realsense build_azure_kinect build_jupyter
-build_pip_package with_conda build_azure_kinect build_jupyter
+install_python_dependencies with-jupyter with-unit-test
+build_pip_package with_conda build_realsense build_azure_kinect build_jupyter
+# build_pip_package with_conda build_azure_kinect build_jupyter
 
 set -x # Echo commands on
 df -h

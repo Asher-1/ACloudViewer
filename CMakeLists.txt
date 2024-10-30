@@ -461,6 +461,15 @@ cmake_language(EVAL CODE "cmake_language(DEFER CALL cloudViewer_patch_findthread
 
 # Build CUDA module by default if CUDA is available
 if (BUILD_CUDA_MODULE)
+    # Suppress nvcc unsupported compiler error for MSVC 2022 with CUDA 11.7 to 12.4
+    # https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12
+    if (MSVC AND MSVC_VERSION VERSION_LESS_EQUAL "1949")
+        # Set this before any CUDA checks
+        set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler" CACHE STRING "Additional flags for nvcc" FORCE)
+        message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022. "
+                        "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
+    endif()
+
     # Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
     # add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_ALLOW_UNSUPPORTED_LIBCPP>)
     add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)

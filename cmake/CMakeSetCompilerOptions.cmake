@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 function(cloudViewer_set_targets_independent target)
     # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
     if (NOT MSVC)
-        # set( CMAKE_CXX_COMPILE_OPTIONS_PIE "-fPIC" )
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
         set_property(TARGET ${target} PROPERTY POSITION_INDEPENDENT_CODE ON)
     endif()

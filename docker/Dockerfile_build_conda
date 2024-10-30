@@ -1,13 +1,30 @@
 ARG CLOUDVIEWER_VERSION
+ARG DEPENDENCY_IMAGE_NAME
 ARG CUDA_VERSION
 ARG UBUNTU_VERSION
-ARG DEPENDENCY_IMAGE_NAME
 FROM ${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
 LABEL maintainer="AliceVision Team ludahai19@163.com"
+
+ARG PACKAGE
+ARG BUILD_GUI
+ARG BUILD_WHEEL
+ARG PYTHON_VERSION
+ARG BUILD_CUDA_MODULE
+ARG BUILD_SHARED_LIBS
+ARG BUILD_PYTORCH_OPS
+ARG BUILD_TENSORFLOW_OPS
 
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES all
+ENV PACKAGE=${PACKAGE}
+ENV BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
+ENV BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
+ENV BUILD_GUI=${BUILD_GUI}
+ENV BUILD_WHEEL=${BUILD_WHEEL}
+ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 
 # Miniconda requires bash as the default shell.
 SHELL ["/bin/bash", "-c"]
@@ -26,12 +43,16 @@ WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
 # Build ACloudViewer app installer
-RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_gui_app_conda.sh 3.8
+RUN if [ "${BUILD_GUI}" = "ON" ]; then                              \
+        echo "Start Build ACloudViewer apps installer..." &&        \
+        rm -rf ${ACloudViewer_BUILD}/* &&                           \
+        ./docker/build_gui_app_conda.sh ${PYTHON_VERSION};          \
+    fi
 
-# Build cloudViewer wheels for python3.8-3.11
-RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.8
-RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.9
-RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.10
-RUN rm -rf ${ACloudViewer_BUILD}/* && ./docker/build_cloudviewer_whl_conda.sh 3.11
+RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                            \
+        echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." &&  \
+        rm -rf ${ACloudViewer_BUILD}/* &&                           \
+        ./docker/build_cloudviewer_whl_conda.sh ${PYTHON_VERSION};  \
+    fi
 
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer

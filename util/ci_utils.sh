@@ -134,6 +134,9 @@ build_mac_wheel() {
     cmake --version
 
     set +u
+    if [[ "$DEVELOPER_BUILD" == "OFF" ]]; then
+        echo "Building for a new cloudViewer Release"
+    fi
     if [ -f "${CLOUDVIEWER_ML_ROOT}/set_cloudViewer_ml_root.sh" ]; then
         echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
@@ -163,10 +166,10 @@ build_mac_wheel() {
     # echo "Clean last build cache if possible."
     pushd build # PWD=ACloudViewer/build
     cmakeOptions=(
-        "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
-        "-DBUILD_BENCHMARKS=OFF"
         "-DBUILD_SHARED_LIBS=OFF"
+        "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DCMAKE_BUILD_TYPE=Release"
+        "-DBUILD_BENCHMARKS=OFF"
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE" # some issues with network locally
         "-DWITH_OPENMP=ON"
@@ -179,13 +182,13 @@ build_mac_wheel() {
         "-DBUILD_COMMON_CUDA_ARCHS=ON"
         # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
         "-DGLIBCXX_USE_CXX11_ABI=OFF"
-        "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
-        "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
-        "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
-        "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
+        "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
+        "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
         "-DCONDA_PREFIX=$CONDA_PREFIX"
+        "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
         "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
+        "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
         )
 
     echo
@@ -209,6 +212,9 @@ build_gui_app() {
     echo "Now build GUI package..."
     echo
     set +u
+    if [[ "$DEVELOPER_BUILD" == "OFF" ]]; then
+        echo "Building for a ACloudViewer GUI Release"
+    fi
     if [[ "package_installer" =~ ^($options)$ ]]; then
         PACKAGE=ON
         echo "Package installer is on"
@@ -244,12 +250,16 @@ build_gui_app() {
     echo "Start building with ACloudViewer GUI..."
     mkdir -p build
     pushd build # PWD=ACloudViewer/build
-    cmakeGuiOptions=("-DDEVELOPER_BUILD=OFF"
-                "-DBUILD_SHARED_LIBS=OFF"
+    cmakeGuiOptions=("-DBUILD_SHARED_LIBS=OFF"
+                "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
                 "-DCMAKE_BUILD_TYPE=Release"
                 "-DBUILD_JUPYTER_EXTENSION=OFF"
                 "-DBUILD_LIBREALSENSE=OFF"
                 "-DBUILD_AZURE_KINECT=OFF"
+                "-DBUILD_PYTORCH_OPS=OFF"
+                "-DBUILD_TENSORFLOW_OPS=OFF"
+                "-DBUNDLE_CLOUDVIEWER_ML=OFF"
+                "-DBUILD_BENCHMARKS=OFF"
                 "-DBUILD_WEBRTC=OFF"
                 "-DWITH_OPENMP=ON"
                 "-DWITH_IPPICV=ON"
@@ -257,14 +267,10 @@ build_gui_app() {
                 "-DWITH_PCL_NURBS=$WITH_PCL_NURBS"
                 "-DUSE_SIMD=ON"
                 "-DPACKAGE=$PACKAGE"
-                "-DBUILD_BENCHMARKS=OFF"
                 "-DBUILD_OPENCV=ON"
                 "-DBUILD_RECONSTRUCTION=ON"
                 "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
                 "-DBUILD_COMMON_CUDA_ARCHS=ON"
-                "-DBUILD_PYTORCH_OPS=OFF"
-                "-DBUILD_TENSORFLOW_OPS=OFF"
-                "-DBUNDLE_CLOUDVIEWER_ML=OFF"
                 "-DGLIBCXX_USE_CXX11_ABI=ON"
                 "-DCVCORELIB_USE_CGAL=ON"
                 "-DCVCORELIB_SHARED=ON"
@@ -304,10 +310,10 @@ build_gui_app() {
                 "-DPOISSON_RECON_WITH_OPEN_MP=ON"
                 "-DPLUGIN_STANDARD_QRANSAC_SD=ON"
                 "-DPLUGIN_STANDARD_QSRA=ON"
-                "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
-                "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"
+                "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
                 "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
+                "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
                 )
     
     set -x # Echo commands on
@@ -385,28 +391,28 @@ build_pip_package() {
     pushd build # PWD=ACloudViewer/build
     cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+        "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE"
-        "-DWITH_OPENMP=ON"
-        "-DWITH_IPPICV=ON"
-        "-DWITH_SIMD=ON"
-        "-DUSE_SIMD=ON"
-        "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
-        "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
-        "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
-        "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
-        "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
-        "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
-        "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_UNIT_TESTS=OFF"
         "-DBUILD_BENCHMARKS=OFF"
+        "-DUSE_SIMD=ON"
+        "-DWITH_SIMD=ON"
+        "-DWITH_OPENMP=ON"
+        "-DWITH_IPPICV=ON"
+        "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
+        "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
+        "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML"
-        "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
+        "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
+        "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
         "-DCONDA_PREFIX=$CONDA_PREFIX"
+        "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
         "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
+        "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
     )
     set -x # Echo commands on
-    cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_RECONSTRUCTION=OFF "${cmakeOptions[@]}" ..
+    cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_RECONSTRUCTION=ON "${cmakeOptions[@]}" ..
     set +x # Echo commands off
     echo
 
