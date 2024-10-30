@@ -731,7 +731,7 @@ elseif (UNIX)
     # for colmap
     if (BUILD_RECONSTRUCTION)
         file(GLOB colmap_helper_files "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}.sh" )
-        list(APPEND colmap_helper_utils ${colmap_helper_files} "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}//${COLMAP_APP_NAME}.desktop")
+        list(APPEND colmap_helper_utils ${colmap_helper_files} "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}.desktop")
         # fix gflags undefinded symbols issues
         set(src_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
         set(target_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MINOR_VERSION})
