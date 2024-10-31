@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=Colmap
-Comment=Structure-from-Motion and Multi-View Stereo
-Exec=colmap.sh gui
-Icon=Colmap
-Terminal=false
-Categories=Graphics;3DGraphics;
-Keywords=3d;reconstruction;structure-from-motion;multi-view-stereo;
-Type=Application

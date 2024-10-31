@@ -44,7 +44,7 @@ v3.8.0 (Asher) - 10/10/2021
 We are excited to present ACloudViewer 3.8.0!
 
 We welcome you to the 3.8.0 release of ACloudViewer. This release is full of exciting new features with a strong emphasis in real-time pipelines, but also full of bug fixes and usability improvements. The big highlights of this release are as follows:
-- New 3D reconstruction system heavily based on colmap.
+- New 3D reconstruction system heavily based on Colmap.
 - New real-time 3D reconstruction pipeline, featuring GPU and CPU support based on VoxelHashing.
 - New real-time point cloud registration algorithm, featuring a high-performance version of Iterative Closest Point (ICP).
 - New Neighbor Search module, introducing your favorite search algorithms such as KNN and RadiusSearch, with support for GPU and CPU devices through a common interface.

@@ -737,7 +737,7 @@ elseif (UNIX)
         list(APPEND cloudviewer_helper_utils ${cloudviewer_helper_files})
     endif()
 
-    # for colmap
+    # for Colmap
     if (BUILD_RECONSTRUCTION)
         file(GLOB colmap_helper_files "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}*" )
         list(APPEND colmap_helper_utils ${colmap_helper_files})
