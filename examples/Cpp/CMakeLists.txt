@@ -96,7 +96,7 @@ if (BUILD_GUI)
 endif ()
 
 if (BUILD_RECONSTRUCTION)
-    cloudViewer_add_example(Reconstruction colmap)
+    cloudViewer_add_example(Reconstruction ${COLMAP_APP_NAME})
     target_include_directories(Reconstruction PRIVATE ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
     target_include_directories(Reconstruction PRIVATE ${COLMAP_SOURCE_DIR}/src)
     if (MSVC)

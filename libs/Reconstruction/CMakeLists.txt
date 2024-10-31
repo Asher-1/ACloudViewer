@@ -138,7 +138,7 @@ if (NOT APPLE)
         # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
         add_definitions("-DBOOST_NO_CXX11_SCOPED_ENUMS")
         add_definitions("-DBOOST_NO_CXX11_OVERRIDE")
-        message("disable boost cxx11 on colmap!")
+        message("disable boost cxx11 on ${COLMAP_APP_NAME}!")
     endif ()
 endif ()
 
@@ -427,30 +427,30 @@ set_target_properties(
 
 # Install header files.
 install(DIRECTORY src/
-        DESTINATION include/colmap
+        DESTINATION include/${COLMAP_APP_NAME}
         FILES_MATCHING PATTERN "*.h")
 install(DIRECTORY lib/
-        DESTINATION include/colmap/lib
+        DESTINATION include/${COLMAP_APP_NAME}/lib
         FILES_MATCHING REGEX ".*[.]h|.*[.]hpp|.*[.]inl")
 
 # Generate and install CMake configuration.
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeConfig.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfig.cmake" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfig.cmake"
-        DESTINATION "share/colmap")
+        DESTINATION "share/${COLMAP_APP_NAME}")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeConfigVersion.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfigVersion.cmake" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfigVersion.cmake"
-        DESTINATION "share/colmap")
+        DESTINATION "share/${COLMAP_APP_NAME}")
 
 # Install find_package scripts for dependencies.
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
-        DESTINATION share/colmap
+        DESTINATION share/${COLMAP_APP_NAME}
         FILES_MATCHING PATTERN "Find*.cmake")
 
 # Install batch scripts under Windows.
 if (IS_MSVC)
-    install(FILES "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/colmap.bat"
+    install(FILES "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/${COLMAP_APP_NAME}.bat"
             "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/RUN_TESTS.bat"
             DESTINATION "/"  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
             GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
