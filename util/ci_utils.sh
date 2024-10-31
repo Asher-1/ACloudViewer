@@ -432,10 +432,10 @@ build_pip_package() {
         echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
         rm -r "${rebuild_list[@]}" || true
         set -x # Echo commands on
-        cmake -DBUILD_CUDA_MODULE=ON \
-            -DBUILD_COMMON_CUDA_ARCHS=ON \
-            -DBUILD_RECONSTRUCTION=ON \
-            "${cmakeOptions[@]}" ..
+        cmake   -DBUILD_CUDA_MODULE=ON \
+                -DBUILD_COMMON_CUDA_ARCHS=ON \
+                -DBUILD_RECONSTRUCTION=ON \
+                "${cmakeOptions[@]}" ..
         set +x # Echo commands off
     fi
     echo
