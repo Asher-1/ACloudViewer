@@ -358,7 +358,7 @@ if (BUILD_GUI)
     set(CLOUDVIEWER_APP_NAME "CloudViewer")
 endif()
 if (BUILD_RECONSTRUCTION)
-    set(COLMAP_APP_NAME "colmap")
+    set(COLMAP_APP_NAME "Colmap")
 endif()
 
 # set additional info
@@ -739,8 +739,8 @@ elseif (UNIX)
 
     # for colmap
     if (BUILD_RECONSTRUCTION)
-        file(GLOB colmap_helper_files "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}.sh" )
-        list(APPEND colmap_helper_utils ${colmap_helper_files} "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/Colmap.desktop")
+        file(GLOB colmap_helper_files "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}*" )
+        list(APPEND colmap_helper_utils ${colmap_helper_files})
         # fix gflags undefinded symbols issues
         set(src_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
         set(target_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MINOR_VERSION})

@@ -81,7 +81,7 @@ elseif (UNIX)   # Linux
 endif()
 
 if (BUILD_RECONSTRUCTION)
-    target_link_libraries(pybind PRIVATE colmap)
+    target_link_libraries(pybind PRIVATE ${COLMAP_APP_NAME})
     # Add custom preprocessor definitions
     target_compile_definitions(pybind PRIVATE BUILD_RECONSTRUCTION)
 endif ()

@@ -67,7 +67,7 @@ if (${BUILD_GUI} STREQUAL "ON")
     replace_buildtime_in_file("${DEPLOY_PACKAGES_PATH}/${CLOUDVIEWER_APP_NAME}/meta/package.xml")
     replace_version_in_file("${DEPLOY_PACKAGES_PATH}/${CLOUDVIEWER_APP_NAME}/meta/installscript.qs")
 endif()
-## update colmap version and build time
+## update Colmap version and build time
 if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
     replace_version_in_file("${DEPLOY_PACKAGES_PATH}/${COLMAP_APP_NAME}/meta/package.xml")
     replace_buildtime_in_file("${DEPLOY_PACKAGES_PATH}/${COLMAP_APP_NAME}/meta/package.xml")
@@ -113,7 +113,7 @@ if (${BUILD_GUI} STREQUAL "ON")
                 USE_SOURCE_PERMISSIONS)
     endif()
 endif()
-## deploy colmap
+## deploy Colmap
 if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
     file(COPY "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}"
         DESTINATION "${COLMAP_DEPLOY_PATH}"
