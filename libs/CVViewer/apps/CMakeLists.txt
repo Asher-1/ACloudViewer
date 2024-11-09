@@ -42,7 +42,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
         # was working before, so not sure what changed.)
         set(rc_list ${PROJECT_SOURCE_DIR}/eCV/Resources/images/icon/cloudViewer_icon.rc)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
-        add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${rc_list})
+        add_executable(${TARGET_NAME} WIN32 ${SOURCE_FILES} ${HEADER_FILES} ${rc_list})
     else () # linux
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
@@ -81,6 +81,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
     # duplicate the post build step on macOS and non-macOS
     set(APP_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
     set(APP_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR})
+    set(APP_INSTALL_DESTINATION "${APP_INSTALL_PATH}/${APP_NAME}")
     if (APPLE)
         find_program( mac_deploy_qt macdeployqt HINTS "${qt5_bin_dir}" )
 
@@ -98,7 +99,6 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                 VERBATIM
                 )
 
-        set(APP_INSTALL_DESTINATION "${APP_INSTALL_PATH}/${APP_NAME}")
         install(DIRECTORY "${APP_DIR}/${APP_NAME}.app"
                 DESTINATION ${APP_INSTALL_DESTINATION}
                 USE_SOURCE_PERMISSIONS)
@@ -112,16 +112,16 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                     POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
                     COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
-                    COMMAND ${CMAKE_COMMAND} -E copy "${APP_DIR}/../$<CONFIG>/${TARGET_NAME}.exe" "${APP_DIR}"
+                    COMMAND ${CMAKE_COMMAND} -E copy "${APP_DIR}/../$<CONFIG>/${TARGET_NAME}.exe" "${APP_DIR}/"
                     )
             # MSVC puts the binary in bin/CloudViewer.exe
             # so we can't just install() the build results, and need to do them piecemeal.
             install(DIRECTORY "${APP_DIR}/resources"
-                    DESTINATION "${APP_INSTALL_PATH}/${APP_NAME}"
+                    DESTINATION "${APP_INSTALL_DESTINATION}"
                     USE_SOURCE_PERMISSIONS)
             install(FILES "${APP_DIR}/${TARGET_NAME}.exe"
-                    DESTINATION "${APP_INSTALL_PATH}/${APP_NAME}"
-                    RENAME "${TARGET_NAME}.exe")
+                    DESTINATION "${APP_INSTALL_DESTINATION}"
+                    RENAME "${APP_NAME}.exe")
 
             # deploy on windows
             add_custom_command(TARGET ${TARGET_NAME}
@@ -134,7 +134,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
                     TARGET
                     ${TARGET_NAME}
                     DEPLOY_PATH
-                    ${APP_INSTALL_PATH}/${APP_NAME}
+                    ${APP_INSTALL_DESTINATION}
             )
     else () # linux
             add_custom_command(TARGET "${TARGET_NAME}"
@@ -170,12 +170,13 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
 
     if (WIN32)
         # Additional auxiliary file(s)
-        list(APPEND auxFiles bin_other/start.bat)
+        file(GLOB batch_list bin_other/*.bat)
+        list(APPEND auxFiles ${batch_list})
     endif ()
 
     # Install auxiliary files
     foreach (filename ${auxFiles})
-        cloudViewer_install_ext(FILES ${filename} "${APP_INSTALL_PATH}/${APP_NAME}" "")
+        cloudViewer_install_ext(FILES ${filename} "${APP_INSTALL_DESTINATION}" "")
     endforeach ()
 
 endmacro(cloudViewer_add_app)

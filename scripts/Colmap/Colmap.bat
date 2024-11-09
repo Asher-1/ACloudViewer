@@ -32,9 +32,8 @@ rem
 rem Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 set SCRIPT_PATH=%~dp0
-
-set PATH=%SCRIPT_PATH%\lib;%PATH%
-set QT_PLUGIN_PATH=%SCRIPT_PATH%\lib;%QT_PLUGIN_PATH%
+cd /d "%SCRIPT_PATH%"
+set PATH=%SCRIPT_PATH%;%SCRIPT_PATH%lib;%PATH%
 
 set COMMAND=%1
 set ARGUMENTS=
@@ -47,5 +46,6 @@ goto extract_argument_loop
 :after_extract_argument_loop
 
 if "%COMMAND%"=="" set COMMAND=gui
+start /b "" "%SCRIPT_PATH%Colmap.exe" %COMMAND% %ARGUMENTS% >nul 2>nul
+exit
 
-"%SCRIPT_PATH%\bin\ACloudViewer\colmap" %COMMAND% %ARGUMENTS%

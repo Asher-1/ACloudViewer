@@ -123,7 +123,7 @@ set(COLMAP_INCLUDE_DIRS
     ${COLMAP_INSTALL_PREFIX}/include/
     ${COLMAP_INSTALL_PREFIX}/include/colmap
     ${COLMAP_INSTALL_PREFIX}/include/colmap/lib
-    ${Boost_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIRS}
     ${GLOG_INCLUDE_DIRS}
     ${FREEIMAGE_INCLUDE_DIRS}

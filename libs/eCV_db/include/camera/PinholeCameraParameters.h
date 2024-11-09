@@ -42,11 +42,12 @@ namespace camera {
 class ECV_DB_LIB_API PinholeCameraParameters :
 	public cloudViewer::utility::IJsonConvertible {
 public:
-    CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
+    // Must comment it due to unreferenced symbols when linked
+    // CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
     /// \brief Default Constructor.
     PinholeCameraParameters();
-    ~PinholeCameraParameters() override;
+    virtual ~PinholeCameraParameters() override;
 
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;

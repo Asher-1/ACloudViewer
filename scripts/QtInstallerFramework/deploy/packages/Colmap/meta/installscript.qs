@@ -81,15 +81,17 @@ Component.prototype.createOperations = function()
 				// no need to make application extension files because we can make this on app gui
 				// call the base create operations function
 				component.addOperation("CreateShortcut",
-								"@TargetDir@/Colmap.exe",
+								"@TargetDir@/Colmap.bat",
 								"@StartMenuDir@/Colmap.lnk",
 								"workingDirectory=@TargetDir@",
-								"description=Open Colmap Application");
+								"description=Open Colmap Application",
+                "iconPath=@TargetDir@/Colmap.ico");
 				component.addOperation("CreateShortcut",
-								"@TargetDir@/Colmap.exe",
+								"@TargetDir@/Colmap.bat",
 								"@DesktopDir@/Colmap.lnk",
 								"workingDirectory=@TargetDir@",
-								"description=Open Colmap Application");
+								"description=Open Colmap Application",
+                "iconPath=@TargetDir@/Colmap.ico");
       }
     } catch (e) {
         console.log(e);

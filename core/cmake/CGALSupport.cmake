@@ -23,7 +23,7 @@ if (CGAL_FOUND)
 		# message(${GMP_LIBRARIES})
 		list(GET GMP_LIBRARIES 0 FIRST_GMP_LIB_FILE)
 		get_filename_component(GMP_LIB_FOLDER ${FIRST_GMP_LIB_FILE} DIRECTORY)
-		# message(${GMP_LIB_FOLDER})
+		message(STATUS "GMP_LIB_FOLDER: ${GMP_LIB_FOLDER}")
 
 		file( GLOB GMP_DLL_FILES ${GMP_LIB_FOLDER}/*.dll )
 		foreach( dest ${INSTALL_DESTINATIONS} )

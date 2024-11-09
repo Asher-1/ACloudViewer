@@ -5,6 +5,11 @@ add_library(${PROJECT_NAME} SHARED)
 add_subdirectory(include)
 add_subdirectory(src)
 
+if (WIN32)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
 if (MSVC)
     if (CVCORELIB_USE_TBB)
         include_directories(${TBB_INCLUDE_DIRS})

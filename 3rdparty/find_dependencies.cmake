@@ -578,7 +578,7 @@ function(copy_shared_library ext_target)
                     POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E
                     copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${library_filename}"
-                    )
+            )
         endforeach ()
     endif ()
 endfunction()
@@ -989,10 +989,10 @@ if (NOT USE_SYSTEM_PNG)
     include(${CloudViewer_3RDPARTY_DIR}/zlib/zlib.cmake)
     import_3rdparty_library(3rdparty_zlib
             HIDDEN
-            INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
-            LIB_DIR ${ZLIB_LIB_DIR}
-            LIBRARIES ${ZLIB_LIBRARIES}
-            DEPENDS ext_zlib
+            INCLUDE_DIRS  ${ZLIB_INCLUDE_DIRS}
+            LIB_DIR       ${ZLIB_LIB_DIR}
+            LIBRARIES     ${ZLIB_LIBRARIES}
+            DEPENDS       ext_zlib
             )
 
     include(${CloudViewer_3RDPARTY_DIR}/libpng/libpng.cmake)
@@ -1076,7 +1076,7 @@ endif()
 if(USE_SYSTEM_QHULLCPP)
     find_package_3rdparty_library(3rdparty_qhullcpp
         PACKAGE Qhull
-        TARGETS Qhull::qhullcpp
+        TARGETS Qhull::qhullcpp Qhull::qhull_r
     )
     if(NOT 3rdparty_qhullcpp_FOUND)
         set(USE_SYSTEM_QHULLCPP OFF)
@@ -1085,29 +1085,25 @@ endif()
 if (NOT USE_SYSTEM_QHULLCPP)
     include(${CloudViewer_3RDPARTY_DIR}/qhull/qhull.cmake)
     build_3rdparty_library(3rdparty_qhull_r DIRECTORY ${QHULL_SOURCE_DIR}
-        SOURCES
-            src/libqhull_r/global_r.c
-            src/libqhull_r/stat_r.c
-            src/libqhull_r/geom2_r.c
-            src/libqhull_r/poly2_r.c
-            src/libqhull_r/merge_r.c
-            src/libqhull_r/libqhull_r.c
-            src/libqhull_r/geom_r.c
-            src/libqhull_r/poly_r.c
-            src/libqhull_r/qset_r.c
-            src/libqhull_r/mem_r.c
-            src/libqhull_r/random_r.c
-            src/libqhull_r/usermem_r.c
-            src/libqhull_r/userprintf_r.c
-            src/libqhull_r/io_r.c
-            src/libqhull_r/user_r.c
-            src/libqhull_r/rboxlib_r.c
-            src/libqhull_r/userprintf_rbox_r.c
-        INCLUDE_DIRS
-            src/
-        DEPENDS
-            ext_qhull
-            )
+    SOURCES
+        src/libqhull_r/global_r.c
+        src/libqhull_r/stat_r.c
+        src/libqhull_r/geom2_r.c
+        src/libqhull_r/poly2_r.c
+        src/libqhull_r/merge_r.c
+        src/libqhull_r/libqhull_r.c
+        src/libqhull_r/geom_r.c
+        src/libqhull_r/poly_r.c
+        src/libqhull_r/qset_r.c
+        src/libqhull_r/mem_r.c
+        src/libqhull_r/random_r.c
+        src/libqhull_r/usermem_r.c
+        src/libqhull_r/io_r.c
+        src/libqhull_r/user_r.c
+        src/libqhull_r/rboxlib_r.c
+    INCLUDE_DIRS
+        src/
+    )
     build_3rdparty_library(3rdparty_qhullcpp DIRECTORY ${QHULL_SOURCE_DIR}
         SOURCES
             src/libqhullcpp/Coordinates.cpp
@@ -1124,6 +1120,7 @@ if (NOT USE_SYSTEM_QHULLCPP)
             src/libqhullcpp/QhullRidge.cpp
             src/libqhullcpp/QhullSet.cpp
             src/libqhullcpp/QhullStat.cpp
+            src/libqhullcpp/QhullUser.cpp
             src/libqhullcpp/QhullVertex.cpp
             src/libqhullcpp/QhullVertexSet.cpp
             src/libqhullcpp/RboxPoints.cpp
@@ -1131,9 +1128,57 @@ if (NOT USE_SYSTEM_QHULLCPP)
             src/libqhullcpp/RoadLogEvent.cpp
         INCLUDE_DIRS
             src/
-        DEPENDS
-            ext_qhull
-            )
+        )
+    # build_3rdparty_library(3rdparty_qhull_r DIRECTORY ${QHULL_SOURCE_DIR}
+    #     SOURCES
+    #         src/libqhull_r/global_r.c
+    #         src/libqhull_r/stat_r.c
+    #         src/libqhull_r/geom2_r.c
+    #         src/libqhull_r/poly2_r.c
+    #         src/libqhull_r/merge_r.c
+    #         src/libqhull_r/libqhull_r.c
+    #         src/libqhull_r/geom_r.c
+    #         src/libqhull_r/poly_r.c
+    #         src/libqhull_r/qset_r.c
+    #         src/libqhull_r/mem_r.c
+    #         src/libqhull_r/random_r.c
+    #         src/libqhull_r/usermem_r.c
+    #         src/libqhull_r/userprintf_r.c
+    #         src/libqhull_r/io_r.c
+    #         src/libqhull_r/user_r.c
+    #         src/libqhull_r/rboxlib_r.c
+    #         src/libqhull_r/userprintf_rbox_r.c
+    #     INCLUDE_DIRS
+    #         src/
+    #     DEPENDS
+    #         ext_qhull
+    #         )
+    # build_3rdparty_library(3rdparty_qhullcpp DIRECTORY ${QHULL_SOURCE_DIR}
+    #     SOURCES
+    #         src/libqhullcpp/Coordinates.cpp
+    #         src/libqhullcpp/PointCoordinates.cpp
+    #         src/libqhullcpp/Qhull.cpp
+    #         src/libqhullcpp/QhullFacet.cpp
+    #         src/libqhullcpp/QhullFacetList.cpp
+    #         src/libqhullcpp/QhullFacetSet.cpp
+    #         src/libqhullcpp/QhullHyperplane.cpp
+    #         src/libqhullcpp/QhullPoint.cpp
+    #         src/libqhullcpp/QhullPointSet.cpp
+    #         src/libqhullcpp/QhullPoints.cpp
+    #         src/libqhullcpp/QhullQh.cpp
+    #         src/libqhullcpp/QhullRidge.cpp
+    #         src/libqhullcpp/QhullSet.cpp
+    #         src/libqhullcpp/QhullStat.cpp
+    #         src/libqhullcpp/QhullVertex.cpp
+    #         src/libqhullcpp/QhullVertexSet.cpp
+    #         src/libqhullcpp/RboxPoints.cpp
+    #         src/libqhullcpp/RoadError.cpp
+    #         src/libqhullcpp/RoadLogEvent.cpp
+    #     INCLUDE_DIRS
+    #         src/
+    #     DEPENDS
+    #         ext_qhull
+    #         )
     target_link_libraries(3rdparty_qhullcpp PRIVATE 3rdparty_qhull_r)
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_qhullcpp)
 else()
@@ -1768,31 +1813,39 @@ list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ransacSD)
 
 
 if (BUILD_RECONSTRUCTION)
+    # freeimage
     if (WIN32)
-        # freeimage
-        include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
-        import_3rdparty_library(3rdparty_freeimage
-                INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
-                LIB_DIR ${FREEIMAGE_LIB_DIR}
-                LIBRARIES ${EXT_FREEIMAGE_LIBRARIES}
-                DEPENDS ext_freeimage
-                )
-        set(FREEIMAGE_TARGET "3rdparty_freeimage")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
-        # only for static freeimage usage
-        target_compile_definitions(3rdparty_freeimage INTERFACE FREEIMAGE_LIB)
+        find_package(FreeImage QUIET)
+        if (FREEIMAGE_FOUND)
+            message(STATUS "FreeImage found in system")
+        else ()
+            message(STATUS "FreeImage not found in system and use prebuild")
+            include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
+            import_3rdparty_library(3rdparty_freeimage
+                    INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
+                    LIB_DIR ${FREEIMAGE_LIB_DIR}
+                    LIBRARIES ${EX_FREEIMAGE_LIBRARIES}
+                    DEPENDS ext_freeimage
+                    )
+            add_dependencies(3rdparty_freeimage ext_freeimage)
+            set(FREEIMAGE_TARGET "3rdparty_freeimage")
+            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
+            # only for static freeimage usage
+            # target_compile_definitions(3rdparty_freeimage INTERFACE FREEIMAGE_LIB)
+        endif()
     else ()
         include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
         import_shared_3rdparty_library(3rdparty_freeimage ext_freeimage
                 INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
                 LIB_DIR ${FREEIMAGE_LIB_DIR}
-                LIBRARIES ${EXT_FREEIMAGE_LIBRARIES}
+                LIBRARIES ${EX_FREEIMAGE_LIBRARIES}
                 )
         add_dependencies(3rdparty_freeimage ext_freeimage)
         set(FREEIMAGE_TARGET "3rdparty_freeimage")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
     endif()
 
+    # other dependency
     if (WIN32 OR APPLE)
         # gflags
         include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
@@ -1803,6 +1856,10 @@ if (BUILD_RECONSTRUCTION)
                 DEPENDS ext_gflags
                 )
         set(GFLAGS_TARGET "3rdparty_gflags")
+        if (WIN32)
+            # fix gflags library bugs on windows
+            target_link_libraries(3rdparty_gflags INTERFACE shlwapi.lib)
+        endif()
 
         # glog
         include(${CloudViewer_3RDPARTY_DIR}/glog/glog_build.cmake)
@@ -1815,15 +1872,17 @@ if (BUILD_RECONSTRUCTION)
         set(GLOG_TARGET "3rdparty_glog")
         add_dependencies(ext_glog ext_gflags)
 
-        # lapack and blas
-        include(${CloudViewer_3RDPARTY_DIR}/lapack/lapack_build.cmake)
-        import_3rdparty_library(3rdparty_lapack
-                LIB_DIR ${LAPACK_LIB_DIR}
-                LIBRARIES ${LAPACKBLAS_LIBRARIES}
-                DEPENDS ext_lapack
-                )
-        set(LAPACK_TARGET "3rdparty_lapack")
-        add_dependencies(3rdparty_lapack ext_lapack)
+        if (NOT WIN32) # alread done on suitesparse lib on windows
+            # lapack and blas
+            include(${CloudViewer_3RDPARTY_DIR}/lapack/lapack_build.cmake)
+            import_3rdparty_library(3rdparty_lapack
+                    LIB_DIR ${LAPACK_LIB_DIR}
+                    LIBRARIES ${LAPACKBLAS_LIBRARIES}
+                    DEPENDS ext_lapack
+                    )
+            set(LAPACK_TARGET "3rdparty_lapack")
+            add_dependencies(3rdparty_lapack ext_lapack)
+        endif()
 
         # suitesparse
         include(${CloudViewer_3RDPARTY_DIR}/suitesparse/suitesparse_build.cmake)
@@ -1836,7 +1895,9 @@ if (BUILD_RECONSTRUCTION)
                 )
         set(SUITESPARSE_TARGET "3rdparty_suitesparse")
         add_dependencies(3rdparty_suitesparse ext_suitesparse)
-        add_dependencies(3rdparty_suitesparse 3rdparty_lapack)
+        if (NOT WIN32)
+            add_dependencies(3rdparty_suitesparse 3rdparty_lapack)
+        endif()
 
         # ceres
         include(${CloudViewer_3RDPARTY_DIR}/ceres-solver/ceres_build.cmake)
@@ -1849,11 +1910,16 @@ if (BUILD_RECONSTRUCTION)
         set(CERES_TARGET "3rdparty_ceres")
         add_dependencies(3rdparty_ceres 3rdparty_eigen3)
         add_dependencies(3rdparty_ceres 3rdparty_glog)
-        add_dependencies(3rdparty_ceres 3rdparty_lapack)
+        if (NOT WIN32) 
+            add_dependencies(3rdparty_ceres 3rdparty_lapack)
+        endif()
         add_dependencies(3rdparty_ceres 3rdparty_suitesparse)
 
         target_link_libraries(3rdparty_ceres INTERFACE 3rdparty_eigen3 3rdparty_gflags 
-                            3rdparty_glog 3rdparty_suitesparse 3rdparty_lapack)
+                              3rdparty_glog 3rdparty_suitesparse)
+        if (NOT WIN32) 
+            target_link_libraries(3rdparty_ceres 3rdparty_lapack)
+        endif()
 
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_eigen3)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ceres)
@@ -1861,12 +1927,12 @@ if (BUILD_RECONSTRUCTION)
         # boost
         include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
         import_3rdparty_library(3rdparty_boost
-                INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
+                INCLUDE_DIRS ${BOOST_INCLUDE_DIR}
                 LIB_DIR ${BOOST_LIB_DIR}
                 LIBRARIES ${BOOST_LIBRARIES}
                 DEPENDS ext_boost
                 )
-        message(STATUS "BOOST_INCLUDE_DIRS: " ${BOOST_INCLUDE_DIRS})
+        message(STATUS "BOOST_INCLUDE_DIR: " ${BOOST_INCLUDE_DIR})
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_boost)
 
         # gflags
@@ -1992,24 +2058,71 @@ endif ()
 if (BUILD_OPENCV) # only needed by plugins: qAutoSeg and qManualSeg
     if (NOT USE_SYSTEM_OPENCV)
         include(${CloudViewer_3RDPARTY_DIR}/opencv/opencv_build.cmake)
-        import_shared_3rdparty_library(3rdparty_opencv ext_opencv
-            INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
-            LIB_DIR ${OpenCV_LIB_DIR}
-            LIBRARIES ${OpenCV_LIBS}
-        )
-        # if (WIN32 OR APPLE)
-        #     import_3rdparty_library(3rdparty_opencv
-        #             INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
-        #             LIB_DIR ${OpenCV_LIB_DIR}
-        #             LIBRARIES ${OpenCV_LIBS}
-        #             DEPENDS ext_opencv
-        #             )
-        #     target_compile_definitions(3rdparty_opencv INTERFACE CV_STATIC_LIB)
-        # endif()
+        if (WIN32)
+            import_3rdparty_library(3rdparty_opencv
+                    INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
+                    LIB_DIR ${OpenCV_LIB_DIR}
+                    LIBRARIES ${OpenCV_LIBS}
+                    DEPENDS ext_opencv
+                    )
+            # target_compile_definitions(3rdparty_opencv INTERFACE CV_STATIC_LIB)
+        else ()
+            import_shared_3rdparty_library(3rdparty_opencv ext_opencv
+                INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS}
+                LIB_DIR ${OpenCV_LIB_DIR}
+                LIBRARIES ${OpenCV_LIBS}
+            )
+            add_dependencies(3rdparty_opencv ext_opencv)
+        endif()
         # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_opencv)
     else()
         # list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM 3rdparty_opencv)
     endif()
+endif()
+
+# why compiling from source on windows
+# main reason: use prebuild pcl and vtk with conda 
+# which indeed not compiled vtk with qt support on windows
+if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
+    find_package(Boost REQUIRED COMPONENTS
+                 filesystem
+                 iostreams)
+
+    include(${CloudViewer_3RDPARTY_DIR}/vtk/vtk.cmake)
+    import_3rdparty_library(3rdparty_vtk
+        INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
+        LIB_DIR ${VTK_LIBRARIES_DIRS}
+        LIBRARIES ${VTK_LIBRARIES}
+        DEPENDS ext_vtk
+    )
+    set(VTK_TARGET "3rdparty_vtk")
+
+    include(${CloudViewer_3RDPARTY_DIR}/pcl/pcl_build.cmake)
+    import_3rdparty_library(3rdparty_pcl
+        INCLUDE_DIRS ${PCL_INCLUDE_DIRS}
+        LIB_DIR ${PCL_LIBRARY_DIRS}
+        LIBRARIES ${PCL_LIBRARIES}
+        DEPENDS ext_pcl
+    )
+
+    add_dependencies(3rdparty_pcl 3rdparty_vtk)
+    target_link_libraries(3rdparty_pcl INTERFACE 3rdparty_vtk)
+    target_link_libraries(3rdparty_pcl INTERFACE Boost::filesystem Boost::iostreams)
+    find_package(FLANN REQUIRED)
+    if (FLANN_FOUND)
+        message(STATUS "FLANN_ROOT: ${FLANN_ROOT}")
+        target_link_libraries(3rdparty_pcl INTERFACE FLANN::FLANN)
+    endif()
+    find_package(Qhull REQUIRED)
+    if (QHULL_FOUND)
+        message(STATUS "QHULL_ROOT: ${QHULL_ROOT}")
+        target_link_libraries(3rdparty_pcl INTERFACE QHULL::QHULL)
+    endif()
+
+    # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_pcl)
+else()
+    set(3rdparty_vtk "")
+    set(3rdparty_pcl "")
 endif()
 
 # Compactify list of external modules.

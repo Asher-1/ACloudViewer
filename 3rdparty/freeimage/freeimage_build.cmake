@@ -3,7 +3,7 @@ include(ExternalProject)
 find_package(Git QUIET REQUIRED)
 
 if (WIN32)
-    set(FREEIMAGE_URL https://kent.dl.sourceforge.net/project/freeimage/Binary%20Distribution/3.18.0/FreeImage3180Win32Win64.zip)
+    set(FREEIMAGE_URL https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.2/FreeImage3180Win32Win64.zip)
     set(FREEIMAGE_HASH 393d3df75b14cbcb4887da1c395596e2)
 else () # Linux or Mac
     set(FREEIMAGE_URL https://sourceforge.net/projects/freeimage/files/Source%20Distribution/3.18.0/FreeImage3180.zip/download)
@@ -13,7 +13,7 @@ endif ()
 if(WIN32)
     set(STATIC_FREEIMAGE_INCLUDE_DIR "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include/")
     set(STATIC_FREEIMAGE_LIB_DIR "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib")
-	set(EXT_FREEIMAGE_LIBRARIES FreeImage)
+	set(EX_FREEIMAGE_LIBRARIES FreeImage)
     ExternalProject_Add(
         ext_freeimage
         PREFIX freeimage
@@ -27,8 +27,8 @@ if(WIN32)
         CONFIGURE_COMMAND ""
         PATCH_COMMAND ""
         BUILD_COMMAND  ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_if_different <SOURCE_DIR>/Dist/x64/${EXT_FREEIMAGE_LIBRARIES}.h ${STATIC_FREEIMAGE_INCLUDE_DIR}
-        && ${CMAKE_COMMAND} -E copy_if_different <SOURCE_DIR>/Dist/x64/${EXT_FREEIMAGE_LIBRARIES}.lib ${STATIC_FREEIMAGE_LIB_DIR}
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_if_different <SOURCE_DIR>/Dist/x64/${EX_FREEIMAGE_LIBRARIES}.h ${STATIC_FREEIMAGE_INCLUDE_DIR}
+        && ${CMAKE_COMMAND} -E copy_if_different <SOURCE_DIR>/Dist/x64/${EX_FREEIMAGE_LIBRARIES}.lib ${STATIC_FREEIMAGE_LIB_DIR}
     )
 
     ExternalProject_Get_Property(ext_freeimage SOURCE_DIR)
@@ -38,7 +38,7 @@ if(WIN32)
     # for debugging
     copy_shared_library(ext_freeimage
             LIB_DIR      ${SOURCE_DIR}/Dist/x64
-            LIBRARIES    ${EXT_FREEIMAGE_LIBRARIES})
+            LIBRARIES    ${EX_FREEIMAGE_LIBRARIES})
 elseif (UNIX AND NOT APPLE)
     ExternalProject_Add(
         ext_freeimage
@@ -59,7 +59,7 @@ elseif (UNIX AND NOT APPLE)
     ExternalProject_Get_Property(ext_freeimage INSTALL_DIR)
     set(FREEIMAGE_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
     set(FREEIMAGE_LIB_DIR ${INSTALL_DIR}/lib)
-    set(EXT_FREEIMAGE_LIBRARIES freeimage)
+    set(EX_FREEIMAGE_LIBRARIES freeimage)
 elseif(APPLE)
     ExternalProject_Add(
         ext_freeimage
@@ -78,11 +78,11 @@ elseif(APPLE)
     ExternalProject_Get_Property(ext_freeimage INSTALL_DIR)
     set(FREEIMAGE_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
     set(FREEIMAGE_LIB_DIR ${INSTALL_DIR}/lib)
-    set(EXT_FREEIMAGE_LIBRARIES freeimage)
+    set(EX_FREEIMAGE_LIBRARIES freeimage)
 endif()
 
 if(WIN32)
-    set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
+    set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EX_FREEIMAGE_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
     cloudViewer_install_ext( FILES ${SOURCE_DIR}/Dist/x64/${library_filename} ${INSTALL_DESTINATIONS} "")
 endif()
 

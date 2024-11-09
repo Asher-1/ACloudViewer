@@ -10,11 +10,12 @@
 	<ProductUrl>https://github.com/Asher-1/CloudViewerUpdate</ProductUrl>
 	<InstallerWindowIcon>logo_256.png</InstallerWindowIcon>
     <InstallerApplicationIcon>logo_32.ico</InstallerApplicationIcon>
-    <RunProgram>@TargetDir@/ACloudViewer.exe</RunProgram>
+    <RunProgram>@TargetDir@/ACloudViewer.bat</RunProgram>
     <RunProgramArguments></RunProgramArguments>
     <RunProgramDescription>Start ACloudViewer</RunProgramDescription>
-    <StartMenuDir>CloudViewer</StartMenuDir>
+    <StartMenuDir>ACloudViewer</StartMenuDir>
 	<AllowNonAsciiCharacters>true</AllowNonAsciiCharacters>
     <TargetDir>@HomeDir@/ACloudViewer</TargetDir>
 	<AdminTargetDir>@rootDir@</AdminTargetDir>
 </Installer>
+

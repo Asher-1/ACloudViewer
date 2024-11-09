@@ -83,15 +83,17 @@ Component.prototype.createOperations = function()
 				// no need to make application extension files because we can make this on app gui
 				// call the base create operations function
 				component.addOperation("CreateShortcut",
-								"@TargetDir@/CloudViewer.exe",
+								"@TargetDir@/CloudViewer.bat",
 								"@StartMenuDir@/CloudViewer.lnk",
 								"workingDirectory=@TargetDir@",
-								"description=Open CloudViewer Application");
+								"description=Open CloudViewer Application",
+                    "iconPath=@TargetDir@/CloudViewer.ico");
 				component.addOperation("CreateShortcut",
-								"@TargetDir@/CloudViewer.exe",
+								"@TargetDir@/CloudViewer.bat",
 								"@DesktopDir@/CloudViewer.lnk",
 								"workingDirectory=@TargetDir@",
-								"description=Open CloudViewer Application");
+								"description=Open CloudViewer Application",
+                    "iconPath=@TargetDir@/CloudViewer.ico");
       }
     } catch (e) {
         console.log(e);

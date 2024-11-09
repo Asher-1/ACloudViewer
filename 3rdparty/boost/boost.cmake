@@ -32,7 +32,7 @@ ExternalProject_Get_Property(ext_boost INSTALL_DIR)
 
 # By default, BOOST_INCLUDE_DIRS should not have trailing "/".
 # The actual headers files are located in `${SOURCE_DIR}/boost`.
-set(BOOST_INCLUDE_DIRS ${INSTALL_DIR}/include/)
+set(BOOST_INCLUDE_DIR ${INSTALL_DIR}/include/)
 set(BOOST_LIB_DIR ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
 set(BOOST_LIBRARIES boost_atomic boost_chrono boost_system boost_filesystem boost_thread boost_graph boost_iostreams boost_program_options)
 set(INTERNAL_BOOST_ROOT ${INSTALL_DIR})

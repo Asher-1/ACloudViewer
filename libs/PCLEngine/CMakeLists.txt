@@ -156,9 +156,12 @@ if (USE_PCL_BACKEND)
             Qt5::Gui
             Qt5::Widgets
             Qt5::PrintSupport
-            Qt5::OpenGL
-            ${PCL_LIBRARIES}
-            ${VTK_LIBRARIES})
+            Qt5::OpenGL)
+    if (NOT USE_SYSTEM_PCL AND NOT USE_SYSTEM_VTK)
+        target_link_libraries(${PROJECT_NAME} 3rdparty_pcl 3rdparty_vtk)
+    else()
+        target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES} ${VTK_LIBRARIES})
+    endif()
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE ECV_PCL_ENGINE_LIBRARY_BUILD)
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_PCL_BACKEND)

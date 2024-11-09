@@ -153,15 +153,8 @@ Component.prototype.createOperations = function()
             if (component.userInterface("RegisterFileCheckBoxForm")) {
                 var isRegisterFileChecked = component.userInterface("RegisterFileCheckBoxForm").RegisterFileCheckBox.checked;
                 if(isRegisterFileChecked) {
-                    var appPath;
-                    if (installer.value("os") == "mac") {
-                        appPath  = "@TargetDir@/ACloudViewer.app";   
-                    } else if (installer.value("os") === "x11") {
-                        appPath  = "@TargetDir@/ACloudViewer.sh";
-                    } else if (installer.value("os") === "win") {
-                        appPath  = "@TargetDir@/ACloudViewer.exe";
-                    }
                     var iconId = 0;
+                    var appPath  = "@TargetDir@/ACloudViewer.exe";
                     for (var i = 0; i < component.unusualFileType.length; i++) {
                         component.addOperation("RegisterFileType",
                                                             component.unusualFileType[i],
@@ -176,15 +169,17 @@ Component.prototype.createOperations = function()
             
             // call the base create operations function
             component.addOperation("CreateShortcut",
-                    "@TargetDir@/ACloudViewer.exe",
+                    "@TargetDir@/ACloudViewer.bat",
                     "@StartMenuDir@/ACloudViewer.lnk",
                     "workingDirectory=@TargetDir@",
-                    "description=Open ACloudViewer Application");
+                    "description=Open ACloudViewer Application",
+                    "iconPath=@TargetDir@/ACloudViewer.ico");
             component.addOperation("CreateShortcut",
-                    "@TargetDir@/ACloudViewer.exe",
+                    "@TargetDir@/ACloudViewer.bat",
                     "@DesktopDir@/ACloudViewer.lnk",
                     "workingDirectory=@TargetDir@",
-                    "description=Open ACloudViewer Application");
+                    "description=Open ACloudViewer Application",
+                    "iconPath=@TargetDir@/ACloudViewer.ico");
         }
     } catch (e) {
         console.log(e);

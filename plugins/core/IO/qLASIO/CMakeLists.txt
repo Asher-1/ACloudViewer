@@ -23,6 +23,10 @@ if (PLUGIN_IO_QLAS)
     target_link_libraries(${PROJECT_NAME} LASzip::LASzip)
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE -DQT_FORCE_ASSERTS)
+    if (WIN32)
+        # fix error C2872: “byte”: undeinfinde sysmbols on windows
+        target_compile_definitions(${PROJECT_NAME} PRIVATE _HAS_STD_BYTE=0)
+    endif()
 
     add_subdirectory(include)
     add_subdirectory(src)
