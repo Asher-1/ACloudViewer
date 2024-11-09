@@ -9,10 +9,10 @@ elseif (UNIX)
     set(CONFIG_POSTFIX "linux")
     set(PACK_SCRIPTS ${PACK_SCRIPTS_PATH}/pack_ubuntu.sh)
 elseif(WIN32)
-    set(APP_EXTENSION "exe")
+    set(APP_EXTENSION ".exe")
     set(PACKAGE_EXTENSION "exe")
     set(CONFIG_POSTFIX "win")
-    set(PACK_SCRIPTS ${PACK_SCRIPTS_PATH}/pack_windows.bat)
+    set(PACK_SCRIPTS ${PACK_SCRIPTS_PATH}/pack_windows.ps1)
 endif()
 
 set(CONFIG_FILE_PATH ${DEPLOY_ROOT_PATH}/config/config_${CONFIG_POSTFIX}.xml)
@@ -100,6 +100,33 @@ if (UNIX AND NOT APPLE)
                     WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
 
 elseif (WIN32)
+    file(COPY 
+        "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/plugins"
+        "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/translations"
+        DESTINATION "${MAIN_DEPLOY_PATH}"
+        USE_SOURCE_PERMISSIONS
+        )
+
+    set(EXTERNAL_DLL_DIR ${EXTERNAL_INSTALL_DIR}/bin ${CONDA_PREFIX}/Library/bin)
+    message(STATUS "Start search dependency from path: ${EXTERNAL_DLL_DIR}")
+
+    find_program(POWERSHELL_PATH NAMES powershell pwsh)
+    if(NOT POWERSHELL_PATH)
+        message(FATAL_ERROR "PowerShell not found!")
+    endif()
+
+    string(REPLACE ";" "\",\"" PS_SEARCH_PATHS "${EXTERNAL_DLL_DIR}")
+    set(PS_SEARCH_PATHS "\"${PS_SEARCH_PATHS}\"")
+    message(STATUS "PS_SEARCH_PATHS: ${PS_SEARCH_PATHS}")
+
+    execute_process(
+        COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
+                -Command "& '${PACK_SCRIPTS}' '${SOURCE_BIN_PATH}/${MAIN_APP_NAME}' '${DEPLOY_LIB_PATH}' @(${PS_SEARCH_PATHS})"
+    )
+
+    # file(COPY "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/"
+    #       DESTINATION "${MAIN_DEPLOY_PATH}"
+    #       USE_SOURCE_PERMISSIONS)
 endif()
 
 ## deploy CloudViewer
@@ -130,21 +157,18 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
 endif()
 
 ## 3. Package
-set(OUTPUT_CLOUDVIEWER_PACKAGE_PATH ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.${PACKAGE_EXTENSION})
+set(OUTPUT_CLOUDVIEWER_PACKAGE_PATH ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.${PACKAGE_EXTENSION})
 if (${PACKAGE} STREQUAL "ON") # package
-    if (UNIX OR APPLE) # already packaged somewhere
-        set(SHELL_CMD "binarycreator -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
-        message(STATUS "Package with command: " ${SHELL_CMD})
-        execute_process(COMMAND binarycreator -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}
-                        WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-        message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
-        # execute_process(COMMAND zip -r ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.zip ${DEPLOY_ROOT_PATH}
-        #                 WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX})
-        # message(STATUS "Package ${CMAKE_INSTALL_PREFIX}/${CLOUDVIEWER_PACKAGE_NAME}.zip created")
-    elseif (WIN32)
-        message(STATUS "${MAIN_APP_NAME} Windows Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
-    endif()
+    set(PACKAGE_TOOL "binarycreator")
+    set(SHELL_CMD "${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+    message(STATUS "Package with command: " ${SHELL_CMD})
+    execute_process(COMMAND ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}
+                    WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
+    message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
+    # execute_process(COMMAND zip -r ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.zip ${DEPLOY_ROOT_PATH}
+    #                 WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX})
+    # message(STATUS "Package ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.zip created")
 else() # Do not package
     message(STATUS "Continue to publish installer package: cd ${MAIN_WORKING_DIRECTORY}.")
-    message(STATUS "Then please execute: binarycreator -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+    message(STATUS "Then please execute: ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
 endif()

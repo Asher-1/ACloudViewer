@@ -54,7 +54,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeHelper.cmake NO_POLICY_SCOPE)
 ################################################################################
 
 option(BUILD_COLMAP_GUI "Builds COLMAP GUI" ON)
-option(BOOST_STATIC "With boost static library" ON)
+option(BOOST_STATIC "With boost static library" OFF)
 set(GUI_ENABLED ${BUILD_COLMAP_GUI})
 set(OPENMP_ENABLED ${WITH_OPENMP})
 set(CUDA_ENABLED ${BUILD_CUDA_MODULE})
@@ -93,7 +93,15 @@ endif ()
 # COLMAP's static libraries.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-if (UNIX OR APPLE)
+################################################################################
+# Find packages
+################################################################################
+
+if (OPENMP_ENABLED)
+    find_package(OpenMP QUIET)
+endif ()
+
+if (APPLE OR WIN32)
     find_package(Boost REQUIRED COMPONENTS
                 graph
                 filesystem
@@ -105,19 +113,11 @@ if (UNIX OR APPLE)
     # find_package(Metis REQUIRED)
 endif ()
 
-################################################################################
-# Find packages
-################################################################################
-
-if (OPENMP_ENABLED)
-    find_package(OpenMP QUIET)
-endif ()
-
 if (NOT APPLE)
     if (WIN32)
         set(BOOST_ROOT "" CACHE PATH "Boost library root directory")
         if (NOT BOOST_ROOT)
-            message(SEND_ERROR "No Boost library root specified (BOOST_ROOT)")
+            message(STATUS "No Boost library root specified (BOOST_ROOT)")
         else ()
             add_definitions("-DBOOST_ROOT=${BOOST_ROOT}")
             add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
@@ -298,7 +298,7 @@ endif ()
 # Generate source file with version definitions.
 include(GenerateVersionDefinitions)
 set(COLMAP_INCLUDE_DIRS
-        ${Boost_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIR}
         ${EIGEN_INCLUDE_DIRS}
         ${GLOG_INCLUDE_DIRS}
         ${FREEIMAGE_INCLUDE_DIRS}
@@ -310,7 +310,17 @@ set(COLMAP_LINK_DIRS
         ${Boost_LIBRARY_DIRS}
         )
 
-set(COLMAP_EXTERNAL_LIBRARIES
+if (WIN32) 
+    set(COLMAP_EXTERNAL_LIBRARIES
+        ${CMAKE_DL_LIBS}
+        Boost::boost
+        Boost::graph
+        Boost::system
+        Boost::filesystem
+        Boost::program_options
+        )
+else()
+    set(COLMAP_EXTERNAL_LIBRARIES
         ${CMAKE_DL_LIBS}
         ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_PROGRAM_OPTIONS_LIBRARY}
@@ -319,6 +329,7 @@ set(COLMAP_EXTERNAL_LIBRARIES
         # ${CERES_LIBRARIES}
         # ${FREEIMAGE_LIBRARIES}
         )
+endif()
         
 if (OPENMP_FOUND)
     list(APPEND COLMAP_EXTERNAL_LIBRARIES ${OpenMP_libomp_LIBRARY})

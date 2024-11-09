@@ -50,7 +50,7 @@ jobs:
             CUDA_VERSION: 11.0.3
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
-      CONDA_DEP_FILE_PYTHON310: ".ci/conda_python3.10.yml"
+      CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
 
     steps:
       - name: Disk space used
@@ -102,14 +102,20 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           architecture: 'x64'
-          activate-environment: python3.10
+          activate-environment: python3.8
           auto-activate-base: false
-          environment-file: ${{ env.CONDA_DEP_FILE_PYTHON310 }}
+          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
+      - name: Install dependencies
+        run: |
+          curl -Uri "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-win.zip" -o "C:\QtIFW-4.6.1-win.zip"
+          Expand-Archive "C:\QtIFW-4.6.1-win.zip" "C:\" -Force && rm C:\QtIFW-4.6.1-win.zip
+          export PATH="C:\QtIFW-4.6.1-win\bin:$PATH"
+          
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
-          export CONDA_LIB_DIR="$CONDA_PREFIX/lib"
+          export CONDA_LIB_DIR="$CONDA_PREFIX/Library"
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
@@ -265,7 +271,7 @@ jobs:
 
       - name: Config
         run: |
-          export CONDA_LIB_DIR="$CONDA_PREFIX/lib"
+          export CONDA_LIB_DIR="$CONDA_PREFIX/Library"
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}

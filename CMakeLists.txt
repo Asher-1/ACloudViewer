@@ -41,7 +41,35 @@ if (UNIX AND NOT APPLE)
     string(REPLACE "Release:" "" UBUNTU_VERSION "${UBUNTU_VERSION}")
     string(STRIP "${UBUNTU_VERSION}" UBUNTU_VERSION)
     message(STATUS "Ubuntu Version: ${UBUNTU_VERSION}")
-endif ()
+elseif (APPLE)
+    execute_process(COMMAND uname
+            OUTPUT_VARIABLE MACOS_NAME
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+    execute_process(COMMAND uname -m
+            OUTPUT_VARIABLE PROCESSOR_ARCH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+    if(PROCESSOR_ARCH STREQUAL "arm64")
+        set(APPLE_AARCH64 TRUE)
+    endif()
+elseif (WIN32)
+    if(DEFINED ENV{PROCESSOR_ARCHITECTURE})
+        if("$ENV{PROCESSOR_ARCHITECTURE}" STREQUAL "ARM64")
+            message(STATUS "WIN-ARM64 ARCHITECTURE")
+            set(WIN_ARM64 TRUE)
+        elseif("$ENV{PROCESSOR_ARCHITECTURE}" STREQUAL "AMD64")
+            message(STATUS "WIN-x64 ARCHITECTURE")
+            set(WIN_AMD64 TRUE)
+        elseif("$ENV{PROCESSOR_ARCHITECTURE}" STREQUAL "x86")
+            message(STATUS "WIN-x86 ARCHITECTURE")
+            set(WIN_X86 TRUE)
+        else()
+            message(STATUS "Unknown ARCHITECTURE")
+            message("Unknown ARCHITECTURE")
+        endif()
+    endif()
+endif()
 
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
@@ -54,20 +82,6 @@ set(BUILD_TIME  ${COMPILE_TIME})
 include(GenerateVersionDefinitions)
 message(STATUS "GIT_COMMIT_ID: " ${GIT_COMMIT_ID})
 message(STATUS "GIT_COMMIT_DATE : " ${GIT_COMMIT_DATE})
-
-if(APPLE)
-    execute_process(COMMAND uname
-            OUTPUT_VARIABLE MACOS_NAME
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-    execute_process(COMMAND uname -m
-            OUTPUT_VARIABLE PROCESSOR_ARCH
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-    if(PROCESSOR_ARCH STREQUAL "arm64")
-        set(APPLE_AARCH64 TRUE)
-    endif()
-endif()
 
 include(CMakeDependentOption)
 
@@ -97,6 +111,8 @@ option(BUILD_JUPYTER_EXTENSION "Build Jupyter, requires BUILD_WEBRTC=ON" OFF)
 # 3rd-party build options
 option(USE_SIMD "Use Single Instruction Multiple Data speed optimization" OFF)
 option(USE_SYSTEM_OPENCV "Use system pre-installed opencv" OFF)
+option(USE_SYSTEM_PCL "Use system pre-installed pcl" OFF)
+option(USE_SYSTEM_VTK "Use system pre-installed vtk" OFF)
 option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" OFF)
 option(USE_SYSTEM_FLANN "Use system pre-installed flann" OFF)
 option(USE_SYSTEM_NANOFLANN "Use system pre-installed nanoflann"       OFF)
@@ -114,6 +130,15 @@ option(USE_SYSTEM_TINYGLTF "Use system pre-installed tinygltf" OFF)
 option(USE_SYSTEM_TINYOBJLOADER "Use system pre-installed tinyobjloader" OFF)
 option(USE_SYSTEM_FFMPEG "Use system pre-installed ffmpeg" OFF)
 # 3rd-party build options
+if(WIN32)
+    message(STATUS "force to build from source with pcl and vtk on windows due to no suitable prebuild libs.")
+    set(USE_SYSTEM_PCL OFF)
+    set(USE_SYSTEM_VTK OFF)
+else()
+    set(USE_SYSTEM_PCL ON)
+    set(USE_SYSTEM_VTK ON)
+endif()
+
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           ON )
 else()
@@ -172,10 +197,17 @@ if (BUILD_WITH_CONDA)
     # Setup conda env if possible 
     SET(CONDA_PREFIX "CONDA_PREFIX_NOT_FOUND" CACHE STRING "The building conda env path prefix.")
     if(NOT "${CONDA_PREFIX}" STREQUAL "CONDA_PREFIX_NOT_FOUND" AND EXISTS "${CONDA_PREFIX}")
+        if (WIN32)
+            file(TO_CMAKE_PATH "${CONDA_PREFIX}" CONDA_PREFIX)
+        endif()
         message("USER CONDA_PREFIX: ${CONDA_PREFIX}")
     elseif(DEFINED ENV{CONDA_PREFIX})
         message("ENV CONDA_PREFIX: $ENV{CONDA_PREFIX}")
-        set(CONDA_PREFIX "$ENV{CONDA_PREFIX}")
+        if (WIN32)
+            file(TO_CMAKE_PATH "$ENV{CONDA_PREFIX}" CONDA_PREFIX)
+        else()
+            set(CONDA_PREFIX "$ENV{CONDA_PREFIX}")
+        endif()
     else()
         message(FATAL_ERROR "FAILED TO ENSURE CONDA_PREFIX VARIABLES")
     endif()
@@ -490,7 +522,7 @@ if (WIN32)
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explicitly export symbols.
     # Then, we could use -fvisibility=hidden for Linux as well
-    SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    # SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if (MSVC)
         # Make sure we don't hit the 65535 object member limit with MSVC
         #
@@ -694,9 +726,9 @@ list(APPEND main_documents_list "doc/cloudviewer-detail-zh.md" )
 list(APPEND main_documents_list "eCV/bin_other/license.txt" 
                                 "eCV/bin_other/global_shift_list_template.txt")
 
-SET(DEPLOY_ROOT_PATH "${INSTALL_DESTINATIONS}/deploy")
+SET(DEPLOY_ROOT_PATH "${CMAKE_INSTALL_PREFIX}/deploy")
 install(DIRECTORY "${SCRIPTS_BASE_PATH}/QtInstallerFramework/deploy"
-        DESTINATION "${INSTALL_DESTINATIONS}"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}"
         USE_SOURCE_PERMISSIONS)
 
 if (BUILD_CUDA_MODULE)
@@ -709,6 +741,7 @@ set(colmap_helper_utils "")
 set(cloudviewer_helper_utils "")
 
 if (APPLE)
+    set(MACHINE_NAME "mac")
     if (APPLE_AARCH64)
         set(ARC_NAME "ARM64")
     else()
@@ -716,8 +749,8 @@ if (APPLE)
     endif()
     set(LIBS_FOLDER_NAME "Frameworks")
     set(PACK_SCRIPTS_PATH "${SCRIPTS_BASE_PATH}/platforms/mac")
-    set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${BUILD_TIME}-${ARC_NAME}")
 elseif (UNIX)
+    set(MACHINE_NAME "ubuntu${UBUNTU_VERSION}")
     if (LINUX_AARCH64)
         set(ARC_NAME "arm64")
     else()
@@ -725,7 +758,6 @@ elseif (UNIX)
     endif()
     set(LIBS_FOLDER_NAME "${CloudViewer_INSTALL_LIB_DIR}")
     set(PACK_SCRIPTS_PATH "${SCRIPTS_BASE_PATH}/platforms/linux")
-    set(CLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${BUILD_TIME}-ubuntu${UBUNTU_VERSION}-${ACLOUDVIEWER_DEVICE}-${ARC_NAME}")
 
     # for ACloudViewer
     file(GLOB main_helper_utils "${SCRIPTS_BASE_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}*" )
@@ -748,18 +780,48 @@ elseif (UNIX)
         install(CODE "set(GFLAGS_DST_FILENAME \"${target_gflags_filename}\")")
     endif()
 
-    # for qt plugins
+    # fix missing qt plugins
     foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
         install(DIRECTORY "${qt5_plugins_folder}"
                 DESTINATION "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data"
                 USE_SOURCE_PERMISSIONS)
     endforeach()
 elseif (WIN32)
-    set(ARC_NAME "amd64")
+    set(MACHINE_NAME "win")
+    if (WIN_AMD64)
+        set(ARC_NAME "amd64")
+    elseif(WIN_ARM64)
+        set(ARC_NAME "arm64")
+    elseif(WIN_X86)
+        set(ARC_NAME "x86")
+    endif()
     set(LIBS_FOLDER_NAME "${CloudViewer_INSTALL_LIB_DIR}")
     set(PACK_SCRIPTS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/platforms/windows")
-    message(STATUS "Unsupported on windows now!")
+
+    # for ACloudViewer
+    file(GLOB main_helper_utils "${SCRIPTS_BASE_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}*" )
+    list(APPEND main_documents_list ${main_helper_utils})
+
+    # for CloudViewer
+    if (BUILD_GUI)
+        file(GLOB cloudviewer_helper_files "${SCRIPTS_BASE_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}*" )
+        list(APPEND cloudviewer_helper_utils ${cloudviewer_helper_files})
+    endif()
+
+    # for Colmap
+    if (BUILD_RECONSTRUCTION)
+        file(GLOB colmap_helper_files "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}*" )
+        list(APPEND colmap_helper_utils ${colmap_helper_files})
+    endif()
+
+    # fix missing qt plugins
+    foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
+        install(DIRECTORY "${qt5_plugins_folder}"
+                DESTINATION "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data"
+                USE_SOURCE_PERMISSIONS)
+    endforeach()
 endif()
+set(ACLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${BUILD_TIME}-${MACHINE_NAME}-${ACLOUDVIEWER_DEVICE}-${ARC_NAME}")
 
 # for ACloudViewer
 foreach( filename ${main_documents_list} )
@@ -780,7 +842,7 @@ if (BUILD_RECONSTRUCTION)
     endforeach()
 endif()
 
-message(STATUS "CLOUDVIEWER_PACKAGE_NAME: " ${CLOUDVIEWER_PACKAGE_NAME})
+message(STATUS "ACLOUDVIEWER_PACKAGE_NAME: " ${ACLOUDVIEWER_PACKAGE_NAME})
 # for linux
 install(CODE "set(BUILD_LIB_PATH \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\")")
 install(CODE "set(EXTERNAL_INSTALL_DIR \"${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}\")")
@@ -799,7 +861,7 @@ install(CODE "set(CLOUDVIEWER_APP_NAME \"${CLOUDVIEWER_APP_NAME}\")")
 install(CODE "set(CloudViewer_INSTALL_BIN_DIR \"${CloudViewer_INSTALL_BIN_DIR}\")")
 install(CODE "set(PACK_SCRIPTS_PATH \"${PACK_SCRIPTS_PATH}\")")
 install(CODE "set(DEPLOY_ROOT_PATH \"${DEPLOY_ROOT_PATH}\")")
-install(CODE "set(CLOUDVIEWER_PACKAGE_NAME \"${CLOUDVIEWER_PACKAGE_NAME}\")")
+install(CODE "set(ACLOUDVIEWER_PACKAGE_NAME \"${ACLOUDVIEWER_PACKAGE_NAME}\")")
 install(CODE "set(PACKAGE \"${PACKAGE}\")")
 # call cmake script to deploy
 install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")

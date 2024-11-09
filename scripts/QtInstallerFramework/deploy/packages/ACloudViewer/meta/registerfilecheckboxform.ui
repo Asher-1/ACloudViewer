@@ -17,7 +17,7 @@
    <item>
     <widget class="QCheckBox" name="RegisterFileCheckBox">
      <property name="text">
-      <string>Register CloudViewer file extension: </string>
+      <string>Register ACloudViewer file extension: </string>
      </property>
      <property name="checked">
       <bool>true</bool>

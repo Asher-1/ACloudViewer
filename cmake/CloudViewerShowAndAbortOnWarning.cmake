@@ -28,6 +28,7 @@ function(cloudViewer_show_and_abort_on_warning target)
             /wd4286        # symbol 'symbol' defined in 'filename_1.obj' is imported by 'filename_2.obj'
             /wd4101        # The local variable is never used
             /wd4005        # Macro redefinition
+            /wd4703        # potentially uninitialized local pointer variable used
             )
     set(DISABLE_GNU_CLANG_INTEL_WARNINGS
             -Wno-unused-parameter # (many places in CloudViewer code)

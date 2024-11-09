@@ -48,4 +48,4 @@ goto extract_argument_loop
 
 if "%COMMAND%"=="" set COMMAND=gui
 
-"%SCRIPT_PATH%\bin\ACloudViewer\colmap" %COMMAND% %ARGUMENTS%
+"%SCRIPT_PATH%\bin\ACloudViewer\Colmap.exe" %COMMAND% %ARGUMENTS%

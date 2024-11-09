@@ -259,6 +259,9 @@ if (NOT APPLE) # no need to copy targets on macos due to rpath
 endif ()
 
 if (WIN32)
+    # fix undefined symbols on windows
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        WINDOWS_EXPORT_ALL_SYMBOLS ON)
     target_compile_definitions(${PROJECT_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS)
 endif ()
 

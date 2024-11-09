@@ -6,6 +6,26 @@
 	"configurations": [
 
 			{
+				"type": "cppvsdbg",
+				"request": "launch",
+				"name": "WinACloudViewer",
+				"program": "${workspaceFolder}/build/bin/Release/ACloudViewer.exe",
+				"args": [],
+				"stopAtEntry": false,
+				"cwd": "${workspaceFolder}/build",
+				"environment": [],
+				"console": "integratedTerminal",
+				// "preLaunchTask": "Build",
+				"setupCommands": [
+					{
+							"description": "debug cpp",
+							"text": "-enable-pretty-printing",
+							"ignoreFailures": true
+					}
+				],
+			},
+
+			{
 					"type": "cppdbg",
 					"request": "launch",
 					"name": "LinuxACloudViewer",
