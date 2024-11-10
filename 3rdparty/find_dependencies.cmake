@@ -1918,7 +1918,7 @@ if (BUILD_RECONSTRUCTION)
         target_link_libraries(3rdparty_ceres INTERFACE 3rdparty_eigen3 3rdparty_gflags 
                               3rdparty_glog 3rdparty_suitesparse)
         if (NOT WIN32) 
-            target_link_libraries(3rdparty_ceres 3rdparty_lapack)
+            target_link_libraries(3rdparty_ceres INTERFACE 3rdparty_lapack)
         endif()
 
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_eigen3)
