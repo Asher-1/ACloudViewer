@@ -223,7 +223,7 @@ macro(COLMAP_ADD_EXECUTABLE TARGET_NAME)
     endif ()
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-    target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_APP_NAME})
+    target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME})
 
     # Enforce 3rd party dependencies
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -260,7 +260,7 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         add_executable(${TARGET_NAME} ${ARGN})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
                 ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_APP_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
         if (MSVC)
             # fix compiling error on windows platform
@@ -289,7 +289,7 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         # ${ARGN} will store the list of source files passed to this function.
         add_executable(${TARGET_NAME} ${ARGN})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_APP_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
         if (MSVC)
             # fix compiling error on windows platform

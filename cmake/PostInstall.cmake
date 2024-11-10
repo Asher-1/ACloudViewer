@@ -81,6 +81,7 @@ file(COPY "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}${APP_EXTENSION}"
     DESTINATION "${MAIN_DEPLOY_PATH}"
     USE_SOURCE_PERMISSIONS)
 if (UNIX AND NOT APPLE)
+    # deploy libs, plugins and translations for ACloudViewer
     file(COPY 
         "${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}"
         "${CMAKE_INSTALL_PREFIX}/plugins"
@@ -100,6 +101,7 @@ if (UNIX AND NOT APPLE)
                     WORKING_DIRECTORY ${MAIN_DEPLOY_PATH})
 
 elseif (WIN32)
+    # deploy plugins and translations for ACloudViewer
     file(COPY 
         "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/plugins"
         "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/translations"
@@ -107,26 +109,22 @@ elseif (WIN32)
         USE_SOURCE_PERMISSIONS
         )
 
-    set(EXTERNAL_DLL_DIR ${EXTERNAL_INSTALL_DIR}/bin ${CONDA_PREFIX}/Library/bin)
+    # prepare search path for powershell
+    set(EXTERNAL_DLL_DIR ${EXTERNAL_INSTALL_DIRS} ${CONDA_PREFIX}/Library/bin)
     message(STATUS "Start search dependency from path: ${EXTERNAL_DLL_DIR}")
-
+    string(REPLACE ";" "\",\"" PS_SEARCH_PATHS "${EXTERNAL_DLL_DIR}")
+    set(PS_SEARCH_PATHS "\"${PS_SEARCH_PATHS}\"")
+    message(STATUS "PS_SEARCH_PATHS: ${PS_SEARCH_PATHS}")
+    # find powershell program
     find_program(POWERSHELL_PATH NAMES powershell pwsh)
     if(NOT POWERSHELL_PATH)
         message(FATAL_ERROR "PowerShell not found!")
     endif()
-
-    string(REPLACE ";" "\",\"" PS_SEARCH_PATHS "${EXTERNAL_DLL_DIR}")
-    set(PS_SEARCH_PATHS "\"${PS_SEARCH_PATHS}\"")
-    message(STATUS "PS_SEARCH_PATHS: ${PS_SEARCH_PATHS}")
-
+    # search dependency for ACloudViewer, CloudViewer and Colmap
     execute_process(
         COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
                 -Command "& '${PACK_SCRIPTS}' '${SOURCE_BIN_PATH}/${MAIN_APP_NAME}' '${DEPLOY_LIB_PATH}' @(${PS_SEARCH_PATHS})"
     )
-
-    # file(COPY "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/"
-    #       DESTINATION "${MAIN_DEPLOY_PATH}"
-    #       USE_SOURCE_PERMISSIONS)
 endif()
 
 ## deploy CloudViewer
@@ -148,7 +146,7 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
     # fix gflags issues
     if (UNIX AND NOT APPLE)
         copy_rename_files(
-            "${EXTERNAL_INSTALL_DIR}/lib"
+            "${EXTERNAL_INSTALL_DIRS}/lib"
             "${GFLAGS_SRC_FILENAME}"
             "${DEPLOY_LIB_PATH}"
             "${GFLAGS_DST_FILENAME}"

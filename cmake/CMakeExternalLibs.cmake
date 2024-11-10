@@ -48,7 +48,7 @@ endif()
 if(Qt5_POSITION_INDEPENDENT_CODE)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     if(BUILD_CUDA_MODULE AND NOT WIN32)
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}--compiler-options=-fPIC")
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS}--compiler-options=-fPIC")
     endif()
 endif()
 
