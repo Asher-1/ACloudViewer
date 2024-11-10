@@ -67,14 +67,15 @@ if (CUDA_ENABLED)
 
     # Fix for Ubuntu 16.04.
     add_definitions("-D_MWAITXINTRIN_H_INCLUDED")
-
-    COLMAP_ADD_STATIC_CUDA_LIBRARY(colmap_cuda ${COLMAP_CUDA_SOURCES})
-    target_link_libraries(colmap_cuda PRIVATE ${COLMAP_LIB_NAME})
-    target_link_libraries(${COLMAP_LIB_NAME} PRIVATE colmap_cuda ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
     if (MSVC)
         # Avoid pulling in too many header files through <windows.h>
         add_definitions("-DWIN32_LEAN_AND_MEAN")
     endif ()
+
+    COLMAP_ADD_STATIC_CUDA_LIBRARY(colmap_cuda ${COLMAP_CUDA_SOURCES})
+    target_link_libraries(colmap_cuda PRIVATE ${COLMAP_LIB_NAME})
+    target_link_libraries(${COLMAP_LIB_NAME} PRIVATE colmap_cuda ${COLMAP_INTERNAL_LIBRARIES})
+    target_link_libraries(${COLMAP_LIB_NAME} PUBLIC  ${COLMAP_EXTERNAL_LIBRARIES})
 else ()
     target_link_libraries(${COLMAP_LIB_NAME} PUBLIC ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
 endif ()
