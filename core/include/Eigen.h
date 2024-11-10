@@ -278,7 +278,7 @@ Eigen::Vector3d CV_CORE_LIB_API ColorToDouble(const Eigen::Vector3uint8& rgb);
 /// Function to compute the covariance matrix of a set of points.
 template <typename IdxType>
 Eigen::Matrix3d
-ComputeCovariance(const std::vector<Eigen::Vector3d>& points,
+CV_CORE_LIB_API ComputeCovariance(const std::vector<Eigen::Vector3d>& points,
                   const std::vector<IdxType>& indices);
 
 /// Function to compute the mean and covariance matrix of a set of points.
