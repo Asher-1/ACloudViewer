@@ -111,7 +111,7 @@ if (BUILD_RECONSTRUCTION)
     include_directories(${COLMAP_SOURCE_DIR}/lib)
     include_directories(${COLMAP_SOURCE_DIR}/src)
 
-    target_link_libraries(${PROJECT_NAME} ${COLMAP_APP_NAME})
+    target_link_libraries(${PROJECT_NAME} ${COLMAP_LIB_NAME})
 
     # Add custom preprocessor definitions
     target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_RECONSTRUCTION)

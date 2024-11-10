@@ -17,11 +17,6 @@
 
 include(FetchContent)
 
-if(MSVC)
-    # fix use uninitialized variable issues
-    add_compile_options(/W4 /WX- /wd4703)
-endif()
-
 FetchContent_Declare(
     ext_qhull
     PREFIX qhull

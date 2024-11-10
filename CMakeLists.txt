@@ -391,6 +391,8 @@ if (BUILD_GUI)
 endif()
 if (BUILD_RECONSTRUCTION)
     set(COLMAP_APP_NAME "Colmap")
+    # fix MSVC building issues about the same name of the input and output
+    set(COLMAP_LIB_NAME "ColmapLib")
 endif()
 
 # set additional info
@@ -500,6 +502,10 @@ if (BUILD_CUDA_MODULE)
         set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler" CACHE STRING "Additional flags for nvcc" FORCE)
         message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022. "
                         "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
+    endif()
+
+    if(WIN32 AND NOT (CUDA_VERSION VERSION_LESS "11.2"))
+        set(CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS} -Xcudafe --display_error_number --diag-suppress 1394,1388)
     endif()
 
     # Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
@@ -740,6 +746,31 @@ endif()
 set(colmap_helper_utils "")
 set(cloudviewer_helper_utils "")
 
+if (NOT APPLE) # already down on macos
+    # for ACloudViewer
+    file(GLOB main_helper_utils "${SCRIPTS_BASE_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}*" )
+    list(APPEND main_documents_list ${main_helper_utils})
+
+    # for CloudViewer
+    if (BUILD_GUI)
+        file(GLOB cloudviewer_helper_files "${SCRIPTS_BASE_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}*" )
+        list(APPEND cloudviewer_helper_utils ${cloudviewer_helper_files})
+    endif()
+
+    # for Colmap
+    if (BUILD_RECONSTRUCTION)
+        file(GLOB colmap_helper_files "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}*" )
+        list(APPEND colmap_helper_utils ${colmap_helper_files})
+    endif()
+
+    # fix missing qt plugins
+    foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
+        install(DIRECTORY "${qt5_plugins_folder}"
+                DESTINATION "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data"
+                USE_SOURCE_PERMISSIONS)
+    endforeach()
+endif()
+
 if (APPLE)
     set(MACHINE_NAME "mac")
     if (APPLE_AARCH64)
@@ -758,34 +789,16 @@ elseif (UNIX)
     endif()
     set(LIBS_FOLDER_NAME "${CloudViewer_INSTALL_LIB_DIR}")
     set(PACK_SCRIPTS_PATH "${SCRIPTS_BASE_PATH}/platforms/linux")
+    set(EXTERNAL_INSTALL_DIRS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
 
-    # for ACloudViewer
-    file(GLOB main_helper_utils "${SCRIPTS_BASE_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}*" )
-    list(APPEND main_documents_list ${main_helper_utils})
-
-    # for CloudViewer
-    if (BUILD_GUI)
-        file(GLOB cloudviewer_helper_files "${SCRIPTS_BASE_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}*" )
-        list(APPEND cloudviewer_helper_utils ${cloudviewer_helper_files})
-    endif()
-
-    # for Colmap
+    # fix Colmap and ACloudViewer issues with gflags
     if (BUILD_RECONSTRUCTION)
-        file(GLOB colmap_helper_files "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}*" )
-        list(APPEND colmap_helper_utils ${colmap_helper_files})
         # fix gflags undefinded symbols issues
         set(src_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
         set(target_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MINOR_VERSION})
         install(CODE "set(GFLAGS_SRC_FILENAME \"${src_gflags_filename}\")")
         install(CODE "set(GFLAGS_DST_FILENAME \"${target_gflags_filename}\")")
     endif()
-
-    # fix missing qt plugins
-    foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
-        install(DIRECTORY "${qt5_plugins_folder}"
-                DESTINATION "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data"
-                USE_SOURCE_PERMISSIONS)
-    endforeach()
 elseif (WIN32)
     set(MACHINE_NAME "win")
     if (WIN_AMD64)
@@ -797,30 +810,10 @@ elseif (WIN32)
     endif()
     set(LIBS_FOLDER_NAME "${CloudViewer_INSTALL_LIB_DIR}")
     set(PACK_SCRIPTS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/platforms/windows")
-
-    # for ACloudViewer
-    file(GLOB main_helper_utils "${SCRIPTS_BASE_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}*" )
-    list(APPEND main_documents_list ${main_helper_utils})
-
-    # for CloudViewer
-    if (BUILD_GUI)
-        file(GLOB cloudviewer_helper_files "${SCRIPTS_BASE_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}*" )
-        list(APPEND cloudviewer_helper_utils ${cloudviewer_helper_files})
-    endif()
-
-    # for Colmap
-    if (BUILD_RECONSTRUCTION)
-        file(GLOB colmap_helper_files "${SCRIPTS_BASE_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}*" )
-        list(APPEND colmap_helper_utils ${colmap_helper_files})
-    endif()
-
-    # fix missing qt plugins
-    foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
-        install(DIRECTORY "${qt5_plugins_folder}"
-                DESTINATION "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data"
-                USE_SOURCE_PERMISSIONS)
-    endforeach()
+    file(REAL_PATH "${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/${CMAKE_BUILD_TYPE}" BINNARY_REAL_PATH)
+    set(EXTERNAL_INSTALL_DIRS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/bin ${BINNARY_REAL_PATH})
 endif()
+message(STATUS "EXTERNAL_INSTALL_DIRS: ${EXTERNAL_INSTALL_DIRS}")
 set(ACLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${BUILD_TIME}-${MACHINE_NAME}-${ACLOUDVIEWER_DEVICE}-${ARC_NAME}")
 
 # for ACloudViewer
@@ -835,8 +828,8 @@ if (BUILD_GUI)
     endforeach()
 endif()
 
+# for Colmap
 if (BUILD_RECONSTRUCTION)
-    # for Colmap
     foreach( filename ${colmap_helper_utils} )
         cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}/packages/${COLMAP_APP_NAME}/data" "" )
     endforeach()
@@ -845,7 +838,7 @@ endif()
 message(STATUS "ACLOUDVIEWER_PACKAGE_NAME: " ${ACLOUDVIEWER_PACKAGE_NAME})
 # for linux
 install(CODE "set(BUILD_LIB_PATH \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\")")
-install(CODE "set(EXTERNAL_INSTALL_DIR \"${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}\")")
+install(CODE "set(EXTERNAL_INSTALL_DIRS \"${EXTERNAL_INSTALL_DIRS}\")")
 # for macos
 install(CODE "set(CONDA_PREFIX \"${CONDA_PREFIX}\")")
 install(CODE "set(BUILD_WITH_CONDA \"${BUILD_WITH_CONDA}\")")

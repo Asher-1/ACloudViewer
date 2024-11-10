@@ -44,7 +44,7 @@ endforeach()
 
 if (BUILD_WITH_CONDA)
     if (WIN32)
-        SET(CONDA_LIB_DIR ${CONDA_PREFIX}/Library ${CONDA_PREFIX}/Library/lib/cmake)
+        SET(CONDA_LIB_DIR ${CONDA_PREFIX}/Library)
     else ()
         SET(CONDA_LIB_DIR ${CONDA_PREFIX}/lib ${CONDA_PREFIX}/lib/cmake)
     endif()

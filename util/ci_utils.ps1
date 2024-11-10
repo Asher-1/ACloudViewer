@@ -173,6 +173,14 @@ function Build-PipPackage {
         "OFF"
     }
 
+    $BUILD_CUDA_MODULE = if ($options -match "with_cuda") {
+        Write-Host "BUILD_CUDA_MODULE is on"
+        "ON"
+    } else {
+        Write-Host "BUILD_CUDA_MODULE is off"
+        "OFF"
+    }
+
     Write-Host "`nBuilding with CPU only..."
     
     New-Item -ItemType Directory -Force -Path "build"
@@ -210,7 +218,7 @@ function Build-PipPackage {
 
     Move-Item lib/python_package/pip_package/cloudViewer*.whl . -Force
 
-    if ($env:BUILD_CUDA_MODULE -eq "ON") {
+    if ($BUILD_CUDA_MODULE -eq "ON") {
         Write-Host "`nInstalling CUDA versions of TensorFlow and PyTorch..."
         Install-PythonDependencies -options "with-cuda","purge-cache"
 
