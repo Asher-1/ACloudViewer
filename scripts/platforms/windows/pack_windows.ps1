@@ -18,7 +18,30 @@ Write-Host "Search Paths: $($DependencySearchPaths -join ', ')"
 # ensure output folder exists
 New-Item -ItemType Directory -Force -Path $OutputFolder | Out-Null
 
-# 定义获取依赖的函数
+function Should-Filter {
+    param (
+        [string]$FileName
+    )
+    $filterList = @(
+        "cu*.dll",
+        "npp*.dll",
+        "nvrtc*.dll",
+        "cudnn*.dll",
+        "cublas*.dll",
+        "cufft*.dll",
+        "curand*.dll",
+        "cusolver*.dll",
+        "cusparse*.dll"
+    )
+    
+    foreach ($filter in $filterList) {
+        if ($FileName -like $filter) {
+            return $true
+        }
+    }
+    return $false
+}
+
 function Get-Dependencies {
     param (
         [string]$FilePath
@@ -26,7 +49,10 @@ function Get-Dependencies {
     $deps = @()
     $output = dumpbin /dependents $FilePath 2>$null | Select-String "\.dll$"
     foreach ($line in $output) {
-        $deps += $line.ToString().Trim()
+        $dep = $line.ToString().Trim()
+        if (-not (Should-Filter $dep)) {
+            $deps += $dep
+        }
     }
     return $deps
 }
@@ -49,7 +75,6 @@ function Process-File {
     
     Write-Host "Process lib: $FilePath"
     
-    # 获取文件的依赖
     $dependencies = Get-Dependencies $FilePath
     
     foreach ($dep in $dependencies) {
