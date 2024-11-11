@@ -83,7 +83,7 @@ foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
 endforeach()
 
 if (WIN32)
-   SET(PACK_SCRIPTS "windows/pack_windows.bat")
+   SET(PACK_SCRIPTS "windows/pack_windows.ps1")
 elseif (UNIX AND NOT APPLE)
    SET(PACK_SCRIPTS "linux/pack_ubuntu.sh")
 elseif (APPLE)
@@ -125,8 +125,8 @@ elseif (UNIX)
         endif()
     endforeach ()
 
-    message(STATUS "CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR: " ${CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR})
-    file(GLOB external_libs_list "${CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR}/*.so*" )
+    message(STATUS "CLOUDVIEWER_EXTERNAL_INSTALL_DIR: " ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
+    file(GLOB external_libs_list "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/*.so*" )
     # rename external lib to the format like "${CUSTOM_SO_NAME}"
     foreach (filename ${external_libs_list})
         get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
@@ -140,8 +140,46 @@ elseif (UNIX)
         message(STATUS "Copy external lib: " ${NEW_SO_NAME})
         configure_file(${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME} COPYONLY)
     endforeach ()
-elseif (WIN32)
-    # for windows
+elseif (WIN32) # for windows
+    set(CPU_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cpu")
+    set(CUDA_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cuda")
+    # prepare search path for powershell
+    set(EXTERNAL_DLL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/bin ${WHEEL_DLL_DIRECTORY} ${CONDA_PREFIX}/Library/bin)
+    message(STATUS "Start search dependency from path: ${EXTERNAL_DLL_DIR}")
+    string(REPLACE ";" "\",\"" PS_SEARCH_PATHS "${EXTERNAL_DLL_DIR}")
+    set(PS_SEARCH_PATHS "\"${PS_SEARCH_PATHS}\"")
+    message(STATUS "PS_SEARCH_PATHS: ${PS_SEARCH_PATHS}")
+
+    # find powershell program
+    find_program(POWERSHELL_PATH NAMES powershell pwsh)
+    if(NOT POWERSHELL_PATH)
+        message(FATAL_ERROR "PowerShell not found!")
+    endif()
+
+    # search dependency for ACloudViewer, CloudViewer and Colmap
+    if (EXISTS "${CPU_FOLDER_PATH}")
+        execute_process(
+            COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
+                    -Command "& '${PACKAGE_TOOL}' '${CPU_FOLDER_PATH}' '${PYTHON_INSTALL_LIB_DESTINATION}' @(${PS_SEARCH_PATHS})" 
+                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
+        )
+    endif()
+    if (BUILD_CUDA_MODULE)
+        execute_process(
+            COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
+                    -Command "& '${PACKAGE_TOOL}' '${CUDA_FOLDER_PATH}' '${PYTHON_INSTALL_LIB_DESTINATION}' @(${PS_SEARCH_PATHS})" 
+                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
+        )
+    endif()
+    # do not forget to copy cloudViewer_torch_ops.dll or cloudViewer_tf_ops.dll if possible
+    file(GLOB cloudviewer_ops_dll "${WHEEL_DLL_DIRECTORY}/cloudViewer*.dll")
+    foreach( filename ${cloudviewer_ops_dll} )
+        if (BUILD_CUDA_MODULE)
+            file(COPY "${filename}" DESTINATION "${CUDA_FOLDER_PATH}")
+        else ()
+            file(COPY "${filename}" DESTINATION "${CPU_FOLDER_PATH}")
+        endif()
+    endforeach()
 endif()
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)

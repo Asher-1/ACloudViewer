@@ -8,7 +8,7 @@
 # Guidelines:
 # - Use a flat list of options.
 #   We don't want to have a cartesian product of different combinations of
-#   options. E.g., to support Ubuntu {20.04, 24.04} with Python {3.7, 3.8}, we
+#   options. E.g., to support Ubuntu {20.04, 24.04} with Python {3.8, 3.9}, we
 #   don't specify the OS and Python version separately, instead, we have a flat
 #   list of combinations: [u2004_py39, u2004_py310, u2404_py39, u2404_py310].
 # - No external environment variables.

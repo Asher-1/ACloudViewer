@@ -16,3 +16,6 @@ dependencies:
   - ffmpeg=6.1.*
   - zlib=1.2.*
   - laszip
+  - nodejs
+  # - yarn # npm install -g yarn
+  - rust # fix missing cargo when pip install pywinpty

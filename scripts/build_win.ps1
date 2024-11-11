@@ -6,7 +6,7 @@ $CLOUDVIEWER_SOURCE_ROOT = (Split-Path -Parent $PSScriptRoot)
 $CLOUDVIEWER_BUILD_DIR = Join-Path $CLOUDVIEWER_SOURCE_ROOT "build"
 Write-Host "CLOUDVIEWER_BUILD_DIR: $CLOUDVIEWER_BUILD_DIR"
 $WIN_APP_BUILD_SHELL = Join-Path $CLOUDVIEWER_SOURCE_ROOT "scripts\build_win_app.ps1"
-$WIN_WHL_BUILD_SHELL = Join-Path $CLOUDVIEWER_SOURCE_ROOT "scripts\build_win_wheel.sh"
+$WIN_WHL_BUILD_SHELL = Join-Path $CLOUDVIEWER_SOURCE_ROOT "scripts\build_win_wheel.ps1"
 
 
 function Stop-OccupyingProcesses {
@@ -208,5 +208,6 @@ Build-PythonWheel -pythonVersion "3.8"
 Build-PythonWheel -pythonVersion "3.9"
 Build-PythonWheel -pythonVersion "3.10"
 Build-PythonWheel -pythonVersion "3.11"
+Build-PythonWheel -pythonVersion "3.12"
 
 Write-Host "All install to $ACloudViewer_INSTALL"
