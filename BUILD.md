@@ -1,9 +1,16 @@
-# Compilation of ACloudViewer 3.3+ (with CMake)
+# Compilation of ACloudViewer 3.25+ (with CMake)
+
+WINDOWS: [BUILD_SHELL](scripts/build_win.ps1)
+
+```
+.\scripts\build_win.ps1 2>&1 | Tee-Object -FilePath "build.log"
+```
+
 
 MACOS: [BUILD_SHELL](scripts/build_macos.sh)
 
 ```
-./scripts/build_macos.sh 2>&1 | tee build_macos.log
+./scripts/build_macos.sh 2>&1 | tee build.log
 ```
 
 [**Fast Docker build on Linux**](./docker/README.md)

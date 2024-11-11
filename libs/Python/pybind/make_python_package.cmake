@@ -160,14 +160,14 @@ elseif (WIN32) # for windows
     if (EXISTS "${CPU_FOLDER_PATH}")
         execute_process(
             COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
-                    -Command "& '${PACKAGE_TOOL}' '${CPU_FOLDER_PATH}' '${PYTHON_INSTALL_LIB_DESTINATION}' @(${PS_SEARCH_PATHS})" 
+                    -Command "& '${PACKAGE_TOOL}' '${CPU_FOLDER_PATH}' '${PYTHON_INSTALL_LIB_DESTINATION}' @(${PS_SEARCH_PATHS}) -Recursive"
                     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
         )
     endif()
     if (BUILD_CUDA_MODULE)
         execute_process(
             COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
-                    -Command "& '${PACKAGE_TOOL}' '${CUDA_FOLDER_PATH}' '${PYTHON_INSTALL_LIB_DESTINATION}' @(${PS_SEARCH_PATHS})" 
+                    -Command "& '${PACKAGE_TOOL}' '${CUDA_FOLDER_PATH}' '${PYTHON_INSTALL_LIB_DESTINATION}' @(${PS_SEARCH_PATHS}) -Recursive"
                     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
         )
     endif()

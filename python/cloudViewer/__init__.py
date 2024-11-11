@@ -61,9 +61,7 @@ def load_cdll(path):
     else:
         return CDLL(str(path))
 
-if sys.platform == "win32":  # Unix: Use rpath to find libraries
-    _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
-    
+
 if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
                                        find_library('c++')):
     try:  # Preload libc++.so and libc++abi.so (required by filament)
@@ -121,62 +119,69 @@ if os.path.exists(Path(__file__).parent / dep_lib_name):
 
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:
-    # fix search mechanism
-    if platform.system() == "Windows" and sys.version_info >= (3, 8):
-        __DEVICE_API__ = 'cuda'
-    else:
-        # Load CPU pybind dll gracefully without introducing new python variable.
-        # Do this before loading the CUDA pybind dll to correctly resolve symbols
+    # Load CPU pybind dll gracefully without introducing new python variable.
+    # Do this before loading the CUDA pybind dll to correctly resolve symbols
+    try:  # StopIteration if cpu version not available
+        load_cdll(str(next((Path(__file__).parent / 'cpu').glob('pybind*'))))
+    except StopIteration:
+        warnings.warn(
+        "cloudViewer was built with CUDA support, but cloudViewer CPU Python "
+        "bindings were not found. cloudViewer will not work on systems without"
+        " CUDA devices.",
+        ImportWarning,)
+    try:
+        # Check CUDA availability without importing CUDA pybind symbols to
+        # prevent "symbol already registered" errors if first import fails.
+        _pybind_cuda = load_cdll(str(next((Path(__file__).parent / 'cuda').glob('pybind*'))))
+        if _pybind_cuda.cloudViewer_core_cuda_device_count() > 0:
+            from cloudViewer.cuda.pybind import (
+                core,
+                camera,
+                geometry,
+                io,
+                pipelines,
+                utility,
+                t,
+            )
+            from cloudViewer.cuda import pybind
+            
+            if _build_config["BUILD_RECONSTRUCTION"]:
+                from cloudViewer.cuda.pybind import reconstruction
+                
+            __DEVICE_API__ = 'cuda'
+        else:
+            warnings.warn(
+                "cloudViewer was built with CUDA support, but no suitable CUDA "
+                "devices found. If your system has CUDA devices, check your "
+                "CUDA drivers and runtime.",
+                ImportWarning,
+            )
+    except OSError as os_error:
+        warnings.warn(
+            f"cloudViewer was built with CUDA support, but an error ocurred while loading the cloudViewer CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
+            ImportWarning,
+        )
+    except StopIteration as e:  # pybind cuda library not available
+        print(e)
+        warnings.warn(
+            "cloudViewer was built with CUDA support, but cloudViewer CUDA Python "
+            "binding library not found! Falling back to the CPU Python "
+            "binding library.",
+            ImportWarning,
+        )
+
+
+if __DEVICE_API__ == 'cpu':
+    if sys.platform == "win32":
         try:  # StopIteration if cpu version not available
             load_cdll(str(next((Path(__file__).parent / 'cpu').glob('pybind*'))))
         except StopIteration:
             warnings.warn(
-            "cloudViewer was built with CUDA support, but cloudViewer CPU Python "
-            "bindings were not found. cloudViewer will not work on systems without"
-            " CUDA devices.",
-            ImportWarning,)
-        try:
-            # Check CUDA availability without importing CUDA pybind symbols to
-            # prevent "symbol already registered" errors if first import fails.
-            _pybind_cuda = load_cdll(str(next((Path(__file__).parent / 'cuda').glob('pybind*'))))
-            if _pybind_cuda.cloudViewer_core_cuda_device_count() > 0:
-                from cloudViewer.cuda.pybind import (
-                    core,
-                    camera,
-                    geometry,
-                    io,
-                    pipelines,
-                    utility,
-                    t,
-                )
-                from cloudViewer.cuda import pybind
-                
-                if _build_config["BUILD_RECONSTRUCTION"]:
-                    from cloudViewer.cuda.pybind import reconstruction
-                    
-                __DEVICE_API__ = 'cuda'
-            else:
-                warnings.warn(
-                    "cloudViewer was built with CUDA support, but no suitable CUDA "
-                    "devices found. If your system has CUDA devices, check your "
-                    "CUDA drivers and runtime.",
-                    ImportWarning,
-                )
-        except OSError as os_error:
-            warnings.warn(
-                f"cloudViewer was built with CUDA support, but an error ocurred while loading the cloudViewer CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
-                ImportWarning,
-            )
-        except StopIteration as e:  # pybind cuda library not available
-            print(e)
-            warnings.warn(
-                "cloudViewer was built with CUDA support, but cloudViewer CUDA Python "
-                "binding library not found! Falling back to the CPU Python "
-                "binding library.",
-                ImportWarning,
-            )
-
-if __DEVICE_API__ == 'cpu':
+                "cloudViewer CPU Python bindings were not found. cloudViewer will not work on systems.",
+                ImportWarning, )
+        except Exception as e:
+            warnings.warn(str(e))
+            
     try:
         from cloudViewer.cpu.pybind import (
             core,
@@ -197,7 +202,7 @@ if __DEVICE_API__ == 'cpu':
             ImportWarning,
         )
     except Exception as e:
-        warnings.warn(e)
+        warnings.warn(str(e))
 
 
 def _insert_pybind_names(skip_names=()):
@@ -295,8 +300,5 @@ def _jupyter_nbextension_paths():
         'dest': 'cloudViewer',
         'require': 'cloudViewer/extension'
     }]
-
-if sys.platform == "win32":
-    _win32_dll_dir.close()
     
 del os, sys, platform, CDLL, load_cdll, find_library, Path, warnings, _insert_pybind_names

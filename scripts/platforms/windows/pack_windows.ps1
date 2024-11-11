@@ -4,7 +4,10 @@ param (
     [Parameter(Mandatory=$true, Position=1)]
     [string]$OutputFolder,
     [Parameter(Mandatory=$true, Position=2)]
-    [string[]]$DependencySearchPaths
+    [string[]]$DependencySearchPaths,
+
+    [Parameter(Mandatory=$false)]
+    [switch]$Recursive
 )
 
 Write-Host "Source Exe Path: $SourceFolder"
@@ -78,7 +81,9 @@ function Process-File {
                 Write-Host "Copy: $depPath to $targetPath"
                 
                 # No need recursive dependency
-                Process-File $depPath
+                if ($Recursive) {
+                    Process-File $depPath
+                }
             } else {
                  Write-Host "Ignore: $dep, due to already exists $targetPath"
             }

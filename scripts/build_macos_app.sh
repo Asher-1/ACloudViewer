@@ -31,7 +31,7 @@ source "$CONDA_ROOT/etc/profile.d/conda.sh"
 
 if conda info --envs | grep -q "^$ENV_NAME "; then
     echo "env $ENV_NAME exists and start to remove..."
-    conda env remove -n $ENV_NAME
+    conda env remove -n $ENV_NAME -y
 fi
 
 echo "conda env create and activate..."
