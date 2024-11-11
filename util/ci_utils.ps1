@@ -2,7 +2,6 @@
 
 # if cmd: powershell -ExecutionPolicy Bypass -File "utils\ci_utils.ps1"
 
-$env:STATIC_RUNTIME = "OFF"
 $env:GENERATOR = "Visual Studio 16 2019"
 $env:ARCHITECTURE = "x64"
 $env:STATIC_RUNTIME = "OFF"
@@ -71,6 +70,11 @@ function Install-PythonDependencies {
 
     if ($options -contains "with-jupyter") {
         python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" $SPEED_CMD
+        # deploy yarn with npm
+        node --version
+        npm --version
+        npm install -g yarn
+        yarn --version
     }
 
     if ($options -contains "with-tensorflow") {
@@ -91,165 +95,6 @@ function Install-PythonDependencies {
         Write-Host "Purge pip cache"
         python -m pip cache purge
     }
-}
-
-function Build-PipPackage {
-    param (
-        [string[]]$options
-    )
-
-    Write-Host "Building CloudViewer wheel"
-    
-    $BUILD_FILAMENT_FROM_SOURCE = "OFF"
-    
-    if (Test-Path "$env:CLOUDVIEWER_ML_ROOT/set_cloudViewer_ml_root.sh") {
-        Write-Host "CloudViewer-ML available at $env:CLOUDVIEWER_ML_ROOT. Bundling CloudViewer-ML in wheel."
-        Push-Location $env:CLOUDVIEWER_ML_ROOT
-        $currentBranch = git rev-parse --abbrev-ref HEAD
-        if ($currentBranch -ne "main") {
-            $mainExists = git show-ref --verify --quiet refs/heads/main
-            if ($?) {
-                git checkout main 2>$null
-            } else {
-                git checkout -b main 2>$null
-            }
-        }
-        Pop-Location
-        $BUNDLE_CLOUDVIEWER_ML = "ON"
-    } else {
-        Write-Host "CloudViewer-ML not available."
-        $BUNDLE_CLOUDVIEWER_ML = "OFF"
-    }
-
-    if ($env:DEVELOPER_BUILD -eq "OFF") {
-        Write-Host "Building for a new CloudViewer release"
-    }
-
-    $BUILD_AZURE_KINECT = if ($options -contains "build_azure_kinect") {
-        Write-Host "Azure Kinect enabled in Python wheel."
-        "ON"
-    } else {
-        Write-Host "Azure Kinect disabled in Python wheel."
-        "OFF"
-    }
-
-    $BUILD_LIBREALSENSE = if ($options -contains "build_realsense") {
-        Write-Host "Realsense enabled in Python wheel."
-        "ON"
-    } else {
-        Write-Host "Realsense disabled in Python wheel."
-        "OFF"
-    }
-
-    $BUILD_JUPYTER_EXTENSION = if ($options -contains "build_jupyter") {
-        Write-Host "Building Jupyter extension in Python wheel."
-        "ON"
-    } else {
-        Write-Host "Jupyter extension disabled in Python wheel."
-        "OFF"
-    }
-
-    $BUILD_WITH_CONDA = if ($options -contains "with_conda") {
-        Write-Host "BUILD_WITH_CONDA is on"
-        "ON"
-    } else {
-        Write-Host "BUILD_WITH_CONDA is off"
-        "OFF"
-    }
-
-    $BUILD_PYTORCH_OPS = if ($options -contains "with_torch") {
-        Write-Host "BUILD_PYTORCH_OPS is on"
-        "ON"
-    } else {
-        Write-Host "BUILD_PYTORCH_OPS is off"
-        "OFF"
-    }
-
-    $BUILD_TENSORFLOW_OPS = if ($options -contains "with_tensorflow") {
-        Write-Host "BUILD_TENSORFLOW_OPS is on"
-        "ON"
-    } else {
-        Write-Host "BUILD_TENSORFLOW_OPS is off"
-        "OFF"
-    }
-
-    $BUILD_CUDA_MODULE = if ($options -match "with_cuda") {
-        Write-Host "BUILD_CUDA_MODULE is on"
-        "ON"
-    } else {
-        Write-Host "BUILD_CUDA_MODULE is off"
-        "OFF"
-    }
-
-    Write-Host "`nBuilding with CPU only..."
-    
-    New-Item -ItemType Directory -Force -Path "build"
-    Push-Location "build"
-
-    $cmakeOptions = @(
-        "-DBUILD_SHARED_LIBS=$env:BUILD_SHARED_LIBS",
-        "-DDEVELOPER_BUILD=$env:DEVELOPER_BUILD",
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT",
-        "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE",
-        "-DBUILD_UNIT_TESTS=OFF",
-        "-DBUILD_BENCHMARKS=OFF",
-        "-DUSE_SIMD=ON",
-        "-DWITH_SIMD=ON",
-        "-DWITH_OPENMP=ON",
-        "-DWITH_IPPICV=ON",
-        "-DBUILD_PYTORCH_OPS=BUILD_PYTORCH_OPS",
-        "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS",
-        "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML",
-        "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION",
-        "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE",
-        "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA",
-        "-DCONDA_PREFIX=$env:CONDA_PREFIX",
-        "-DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR",
-        "-DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR"
-    )
-
-    Write-Host "Executing cmake command..."
-    cmake -G $env:GENERATOR -A $env:ARCHITECTURE -DBUILD_CUDA_MODULE=OFF -DBUILD_RECONSTRUCTION=ON $cmakeOptions ..
-
-    Write-Host "`nPackaging CloudViewer CPU pip package..."
-    cmake --build . --target pip-package --config Release --parallel $env:NPROC
-    Write-Host "Finish make pip-package for cpu"
-
-    Move-Item lib/python_package/pip_package/cloudViewer*.whl . -Force
-
-    if ($BUILD_CUDA_MODULE -eq "ON") {
-        Write-Host "`nInstalling CUDA versions of TensorFlow and PyTorch..."
-        Install-PythonDependencies -options "with-cuda","purge-cache"
-
-        Write-Host "`nBuilding with CUDA..."
-        $rebuild_list = @(
-            "bin",
-            "lib/Release/*.a",
-            "lib/_build_config.py",
-            "cpp",
-            "lib/ml"
-        )
-
-        Write-Host "`nRemoving CPU compiled files / folders: $rebuild_list"
-        foreach ($item in $rebuild_list) {
-            Remove-Item $item -Recurse -Force -ErrorAction SilentlyContinue
-        }
-
-        Write-Host "Executing cmake command with CUDA..."
-        cmake -DBUILD_CUDA_MODULE=ON `
-              -DBUILD_COMMON_CUDA_ARCHS=ON `
-              -DBUILD_RECONSTRUCTION=ON `
-              $cmakeOptions ..
-    }
-
-    Write-Host "`nPackaging CloudViewer full pip package..."
-    cmake --build . --target pip-package --config Release --parallel $env:NPROC
-    Write-Host "Finish make CloudViewer full pip package"
-
-    Move-Item cloudViewer*.whl lib/python_package/pip_package/ -Force
-
-    Pop-Location
 }
 
 function Build-GuiApp {
@@ -394,6 +239,165 @@ function Build-GuiApp {
     & cmake --install . --config Release --verbose
 
     Write-Host ""
+    Pop-Location
+}
+
+function Build-PipPackage {
+    param (
+        [string[]]$options
+    )
+
+    Write-Host "Building CloudViewer wheel"
+    
+    $BUILD_FILAMENT_FROM_SOURCE = "OFF"
+    
+    if (Test-Path "$env:CLOUDVIEWER_ML_ROOT/set_cloudViewer_ml_root.sh") {
+        Write-Host "CloudViewer-ML available at $env:CLOUDVIEWER_ML_ROOT. Bundling CloudViewer-ML in wheel."
+        Push-Location $env:CLOUDVIEWER_ML_ROOT
+        $currentBranch = git rev-parse --abbrev-ref HEAD
+        if ($currentBranch -ne "main") {
+            $mainExists = git show-ref --verify --quiet refs/heads/main
+            if ($?) {
+                git checkout main 2>$null
+            } else {
+                git checkout -b main 2>$null
+            }
+        }
+        Pop-Location
+        $BUNDLE_CLOUDVIEWER_ML = "ON"
+    } else {
+        Write-Host "CloudViewer-ML not available."
+        $BUNDLE_CLOUDVIEWER_ML = "OFF"
+    }
+
+    if ($env:DEVELOPER_BUILD -eq "OFF") {
+        Write-Host "Building for a new CloudViewer release"
+    }
+
+    $BUILD_AZURE_KINECT = if ($options -contains "build_azure_kinect") {
+        Write-Host "Azure Kinect enabled in Python wheel."
+        "ON"
+    } else {
+        Write-Host "Azure Kinect disabled in Python wheel."
+        "OFF"
+    }
+
+    $BUILD_LIBREALSENSE = if ($options -contains "build_realsense") {
+        Write-Host "Realsense enabled in Python wheel."
+        "ON"
+    } else {
+        Write-Host "Realsense disabled in Python wheel."
+        "OFF"
+    }
+
+    $BUILD_JUPYTER_EXTENSION = if ($options -contains "build_jupyter") {
+        Write-Host "Building Jupyter extension in Python wheel."
+        "ON"
+    } else {
+        Write-Host "Jupyter extension disabled in Python wheel."
+        "OFF"
+    }
+
+    $BUILD_WITH_CONDA = if ($options -contains "with_conda") {
+        Write-Host "BUILD_WITH_CONDA is on"
+        "ON"
+    } else {
+        Write-Host "BUILD_WITH_CONDA is off"
+        "OFF"
+    }
+
+    $BUILD_PYTORCH_OPS = if ($options -contains "with_torch") {
+        Write-Host "BUILD_PYTORCH_OPS is on"
+        "ON"
+    } else {
+        Write-Host "BUILD_PYTORCH_OPS is off"
+        "OFF"
+    }
+
+    $BUILD_TENSORFLOW_OPS = if ($options -contains "with_tensorflow") {
+        Write-Host "BUILD_TENSORFLOW_OPS is on"
+        "ON"
+    } else {
+        Write-Host "BUILD_TENSORFLOW_OPS is off"
+        "OFF"
+    }
+
+    $BUILD_CUDA_MODULE = if ($options -match "with_cuda") {
+        Write-Host "BUILD_CUDA_MODULE is on"
+        "ON"
+    } else {
+        Write-Host "BUILD_CUDA_MODULE is off"
+        "OFF"
+    }
+
+    Write-Host "`nBuilding with CPU only..."
+    
+    New-Item -ItemType Directory -Force -Path "build"
+    Push-Location "build"
+
+    $cmakeOptions = @(
+        "-DBUILD_SHARED_LIBS=$env:BUILD_SHARED_LIBS",
+        "-DDEVELOPER_BUILD=$env:DEVELOPER_BUILD",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT",
+        "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE",
+        "-DBUILD_UNIT_TESTS=OFF",
+        "-DBUILD_BENCHMARKS=OFF",
+        "-DUSE_SIMD=ON",
+        "-DWITH_SIMD=ON",
+        "-DWITH_OPENMP=ON",
+        "-DWITH_IPPICV=ON",
+        "-DBUILD_RECONSTRUCTION=ON",
+        "-DBUILD_PYTORCH_OPS=BUILD_PYTORCH_OPS",
+        "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS",
+        "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML",
+        "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION",
+        "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE",
+        "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA",
+        "-DCONDA_PREFIX=$env:CONDA_PREFIX",
+        "-DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR",
+        "-DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR"
+    )
+
+    Write-Host "Executing cmake command..."
+    cmake -G $env:GENERATOR -A $env:ARCHITECTURE -DBUILD_CUDA_MODULE=OFF $cmakeOptions ..
+
+    Write-Host "`nPackaging CloudViewer CPU pip package..."
+    cmake --build . --target pip-package --config Release --parallel $env:NPROC
+    Write-Host "Finish make pip-package for cpu"
+
+    Move-Item lib/python_package/pip_package/cloudViewer*.whl . -Force
+
+    if ($BUILD_CUDA_MODULE -eq "ON") {
+        Write-Host "`nInstalling CUDA versions of TensorFlow and PyTorch..."
+        Install-PythonDependencies -options "with-cuda","purge-cache"
+
+        Write-Host "`nBuilding with CUDA..."
+        $rebuild_list = @(
+            "bin",
+            "lib/Release/*.lib",
+            "lib/_build_config.py",
+            # "libs",
+            "lib/ml"
+        )
+
+        Write-Host "`nRemoving CPU compiled files / folders: $rebuild_list"
+        foreach ($item in $rebuild_list) {
+            Remove-Item $item -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        Write-Host "Executing cmake command with CUDA..."
+        cmake -DBUILD_CUDA_MODULE=ON `
+              -DBUILD_COMMON_CUDA_ARCHS=ON `
+              $cmakeOptions ..
+    }
+
+    Write-Host "`nPackaging CloudViewer full pip package..."
+    cmake --build . --target pip-package --config Release --parallel $env:NPROC
+    Write-Host "Finish make CloudViewer full pip package"
+
+    Move-Item cloudViewer*.whl lib/python_package/pip_package/ -Force
+
     Pop-Location
 }
 

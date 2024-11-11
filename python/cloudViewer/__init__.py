@@ -177,19 +177,27 @@ if _build_config["BUILD_CUDA_MODULE"]:
             )
 
 if __DEVICE_API__ == 'cpu':
-    from cloudViewer.cpu.pybind import (
-        core,
-        camera,
-        geometry,
-        io,
-        pipelines,
-        utility,
-        t,
-    )
-    from cloudViewer.cpu import pybind
+    try:
+        from cloudViewer.cpu.pybind import (
+            core,
+            camera,
+            geometry,
+            io,
+            pipelines,
+            utility,
+            t,
+        )
+        from cloudViewer.cpu import pybind
 
-    if _build_config["BUILD_RECONSTRUCTION"]:
-        from cloudViewer.cpu.pybind import reconstruction
+        if _build_config["BUILD_RECONSTRUCTION"]:
+            from cloudViewer.cpu.pybind import reconstruction
+    except OSError as os_error:
+        warnings.warn(
+            f"cloudViewer was built with CPU support. Reported os error: {os_error}.",
+            ImportWarning,
+        )
+    except Exception as e:
+        warnings.warn(e)
 
 
 def _insert_pybind_names(skip_names=()):

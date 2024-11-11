@@ -105,6 +105,8 @@ release_build() {
         PYTHON_VERSION=3.10
     elif [[ "py311" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.11
+    elif [[ "py312" =~ ^($options)$ ]]; then
+        PYTHON_VERSION=3.12
     else
         echo "Invalid python version."
     fi
@@ -205,6 +207,14 @@ if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; then
 	else
 		echo "Ignore cloudViewer wheel building based on python3.11 due to have builded before..."
 	fi
+
+	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp312-*.whl" | grep -q .; then
+    wheel_release_export_env
+		release_build py312 wheel
+	else
+		echo "Ignore cloudViewer wheel building based on python3.12 due to have builded before..."
+	fi
+	
 else
 	echo "Please run docker rmi $CLOUDVIEWER_IMAGE_TAG first!"
 fi

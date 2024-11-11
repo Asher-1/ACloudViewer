@@ -89,7 +89,7 @@ function Process-File {
 }
 
 # obtain all DLL and exe files
-$files = Get-ChildItem -Path $SourceFolder -Recurse -Include *.dll,*.exe
+$files = Get-ChildItem -Path $SourceFolder -Recurse -Include *.dll,*.exe,*.pyd
 
 # process every file
 foreach ($file in $files) {

@@ -71,10 +71,10 @@ $env:CLOUDVIEWER_SOURCE_ROOT = Split-Path -Parent $PSScriptRoot
 . "$env:CLOUDVIEWER_SOURCE_ROOT\util\ci_utils.ps1"
 
 Write-Host "Start to install python dependencies package On Windows..."
-Install-PythonDependencies -options "with-torch","with-unit-test","purge-cache"
+Install-PythonDependencies -options "speedup","with-jupyter","with-torch","with-unit-test","purge-cache"
 
 # Build-PipPackage -options "with-torch","with_conda","build_azure_kinect","build_realsense","build_jupyter"
-Build-PipPackage -options "with-torch","with_conda","with_cuda","build_azure_kinect","build_realsense","build_jupyter"
+Build-PipPackage -options "with_conda","with_cuda","with-torch","build_azure_kinect","build_realsense","build_jupyter"
 
 Push-Location build  # PWD=ACloudViewer/build
 

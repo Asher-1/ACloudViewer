@@ -39,10 +39,12 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     BUILD_RIEGL=ON
     CONDA_LIB_DIR="$CONDA_PREFIX/lib"
     CLOUDVIEWER_INSTALL_DIR=/root/install
-else # windows
+else # do not support windows
     BUILD_RIEGL=ON
     CONDA_LIB_DIR="$CONDA_PREFIX/Library"
     CLOUDVIEWER_INSTALL_DIR=/root/install
+    echo "Do not support windows system with this script!"
+    exit -1
 fi
 
 # Dependency versions:
@@ -50,7 +52,7 @@ fi
 # ML
 TENSORFLOW_VER="2.13.0"
 TORCH_VER="2.0.1"
-TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
+TORCH_REPO_URL="https://download.pytorch.org/whl/torch/" 
 # Python
 PIP_VER="23.2.1"
 WHEEL_VER="0.38.4"
@@ -400,6 +402,7 @@ build_pip_package() {
         "-DWITH_SIMD=ON"
         "-DWITH_OPENMP=ON"
         "-DWITH_IPPICV=ON"
+        "-DBUILD_RECONSTRUCTION=ON"
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
@@ -412,7 +415,7 @@ build_pip_package() {
         "-DCMAKE_INSTALL_PREFIX=$CLOUDVIEWER_INSTALL_DIR"
     )
     set -x # Echo commands on
-    cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_RECONSTRUCTION=ON "${cmakeOptions[@]}" ..
+    cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
     set +x # Echo commands off
     echo
 
@@ -434,7 +437,6 @@ build_pip_package() {
         set -x # Echo commands on
         cmake   -DBUILD_CUDA_MODULE=ON \
                 -DBUILD_COMMON_CUDA_ARCHS=ON \
-                -DBUILD_RECONSTRUCTION=ON \
                 "${cmakeOptions[@]}" ..
         set +x # Echo commands off
     fi

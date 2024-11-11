@@ -63,5 +63,12 @@ else
     echo "Ignore cloudViewer wheel for python3.11..."
 fi
 
+if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "cloudViewer*cp312*.whl" | grep -q .; then
+    echo "Start building cloudViewer wheel for python3.12..."
+    rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_WHL_BUILD_SHELL} 3.12
+else
+    echo "Ignore cloudViewer wheel for python3.12..."
+fi
+
 echo "All install to ${ACloudViewer_INSTALL}"
 echo
