@@ -79,12 +79,10 @@ Install-PythonDependencies -options "with-jupyter","with-torch","with-unit-test"
 # Build-PipPackage -options "with-torch","with_conda","build_azure_kinect","build_realsense","build_jupyter"
 Build-PipPackage -options "with_conda","with_cuda","with-torch","build_azure_kinect","build_realsense","build_jupyter"
 
-# Push-Location build  # PWD=ACloudViewer/build
-
-# Write-Host "Try importing cloudViewer Python package"
-# Test-Wheel -wheel_path (Get-Item "lib/python_package/pip_package/cloudViewer*.whl").FullName
-
-# Pop-Location  # PWD=ACloudViewer
+Push-Location build  # PWD=ACloudViewer/build
+Write-Host "Try importing cloudViewer Python package"
+Test-Wheel -wheel_path (Get-Item "lib/python_package/pip_package/cloudViewer*.whl").FullName
+Pop-Location  # PWD=ACloudViewer
 
 Write-Host ""
 Write-Host "Move to install path: $env:ACloudViewer_INSTALL"
