@@ -28,7 +28,7 @@ Write-Host "Initializing conda..."
 # $existingEnv = conda env list | Select-String "^$env:ENV_NAME\s"
 # if ($existingEnv) {
 #     Write-Host "env $env:ENV_NAME exists and start to remove..."
-#     conda env remove -n $env:ENV_NAME
+#     conda env remove -n $env:ENV_NAME -y
 # }
 
 Write-Host "conda env create and activate..."

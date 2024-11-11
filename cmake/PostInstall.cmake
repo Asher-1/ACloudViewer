@@ -123,7 +123,7 @@ elseif (WIN32)
     # search dependency for ACloudViewer, CloudViewer and Colmap
     execute_process(
         COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
-                -Command "& '${PACK_SCRIPTS}' '${SOURCE_BIN_PATH}/${MAIN_APP_NAME}' '${DEPLOY_LIB_PATH}' @(${PS_SEARCH_PATHS})"
+                -Command "& '${PACK_SCRIPTS}' '${SOURCE_BIN_PATH}/${MAIN_APP_NAME}' '${DEPLOY_LIB_PATH}' @(${PS_SEARCH_PATHS}) -Recursive"
     )
 endif()
 

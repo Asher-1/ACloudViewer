@@ -30,8 +30,44 @@ $STOOLS_VER = "67.3.2"
 $YAPF_VER = "0.30.0"
 $PROTOBUF_VER = "4.24.0"
 
-
 $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
+
+function Install-Requirements {
+    param (
+        [Parameter(Mandatory=$false)]
+        [switch]$ForceUpdate,
+        [Parameter(Mandatory=$true)]
+        [string]$requirementsFile,
+        [Parameter(Mandatory=$false)]
+        [string]$speedCmd = ""
+    )
+
+    $retry = 0
+    $success = $false
+
+    $MAX_RETRIES = 3
+    $RETRY_DELAY = 5 # seconds
+
+    while (-not $success -and $retry -lt $MAX_RETRIES) {
+        try {
+            Write-Host "Attempting to install requirements from $requirementsFile (Attempt $($retry + 1) of $MAX_RETRIES)"
+            $updateFlag = if ($ForceUpdate) { "-U" } else { "" }
+            python -m pip install $updateFlag -r $requirementsFile $speedCmd
+            $success = $true
+        }
+        catch {
+            $retry++
+            if ($retry -lt $MAX_RETRIES) {
+                Write-Warning "Installation failed. Retrying in $RETRY_DELAY seconds..."
+                Start-Sleep -Seconds $RETRY_DELAY
+            }
+            else {
+                Write-Error "Failed to install requirements after $MAX_RETRIES attempts."
+                throw $_
+            }
+        }
+    }
+}
 
 function Install-PythonDependencies {
     param (
@@ -41,13 +77,13 @@ function Install-PythonDependencies {
     Write-Host "Installing Python dependencies"
     
     $SPEED_CMD = if ($options -contains "speedup") {
-        " --default-timeout=10000000 -i https://pypi.tuna.tsinghua.edu.cn/simple/ --extra-index-url https://pypi.org/simple --extra-index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host pypi.tuna.tsinghua.edu.cn --trusted-host mirrors.aliyun.com"
+        " -i https://pypi.tuna.tsinghua.edu.cn/simple/ --extra-index-url https://pypi.org/simple --extra-index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host pypi.tuna.tsinghua.edu.cn --trusted-host mirrors.aliyun.com"
     } else { "" }
 
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" setuptools=="$STOOLS_VER" $SPEED_CMD
 
     if ($options -contains "with-unit-test") {
-        python -m pip install -U -r "$CLOUDVIEWER_SOURCE_ROOT/python/requirements_test.txt" $SPEED_CMD
+        Install-Requirements -ForceUpdate "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt" $SPEED_CMD
     }
 
     if ($options -contains "with-cuda") {
@@ -66,15 +102,10 @@ function Install-PythonDependencies {
         $TORCH_GLNX = "torch==${TORCH_VER}+cpu"
     }
 
-    python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" $SPEED_CMD
+    Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" $SPEED_CMD
 
     if ($options -contains "with-jupyter") {
-        python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" $SPEED_CMD
-        # deploy yarn with npm
-        node --version
-        npm --version
-        npm install -g yarn
-        yarn --version
+        Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" $SPEED_CMD
     }
 
     if ($options -contains "with-tensorflow") {
@@ -348,7 +379,7 @@ function Build-PipPackage {
         "-DWITH_OPENMP=ON",
         "-DWITH_IPPICV=ON",
         "-DBUILD_RECONSTRUCTION=ON",
-        "-DBUILD_PYTORCH_OPS=BUILD_PYTORCH_OPS",
+        "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS",
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS",
         "-DBUNDLE_CLOUDVIEWER_ML=$BUNDLE_CLOUDVIEWER_ML",
         "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION",
@@ -425,12 +456,14 @@ function Test-Wheel {
     Write-Host
 
     if ($env:BUILD_PYTORCH_OPS -eq "ON") {
-        python -m pip install -r "$env:CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
+        Install-Requirements "$env:CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
+        # python -m pip install -r "$env:CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
         python -W default -c "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
     }
 
     if ($env:BUILD_TENSORFLOW_OPS -eq "ON") {
-        python -m pip install -r "$env:CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
+        Install-Requirements "$env:CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
+        # python -m pip install -r "$env:CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
         python -W default -c "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
     }
 

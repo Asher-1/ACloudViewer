@@ -9,13 +9,16 @@ dependencies:
   - boost=1.84.0
   - flann=1.9.*
   - qhull=2020.2
+  # reconstruction or PLUGIN_IO_QE57
   - xerces-c=3.2.*
   - qt=5.15.8
-  # only macos and windows due to issues with cgal on linux
+  # only support macos and windows due to issues with cgal on linux
   - cgal=5.*
   - ffmpeg=6.1.*
   - zlib=1.2.*
+  # PLUGIN_IO_QLAS
   - laszip
+  # jupyter
   - nodejs
-  # - yarn # npm install -g yarn
-  - rust # fix missing cargo when pip install pywinpty
+  # fix missing cargo when pip install pywinpty
+  - rust
