@@ -1,11 +1,10 @@
 # Compilation of ACloudViewer 3.25+ (with CMake)
 
-WINDOWS: [BUILD_SHELL](scripts/build_win.ps1)
+WINDOWS: [BUILD_SHELL](scripts/build_win.py)
 
 ```
-.\scripts\build_win.ps1 2>&1 | Tee-Object -FilePath "build.log"
+python .\scripts\build_win.py
 ```
-
 
 MACOS: [BUILD_SHELL](scripts/build_macos.sh)
 
