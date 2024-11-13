@@ -1,4 +1,3 @@
-# 设置工作目录和版本号
 $WorkDir = "C:\dev"
 $VTKVersion = "9.2.6"
 $PCLVersion = "1.14.0"
@@ -6,11 +5,9 @@ $BoostVersion = "1.84.0"
 $EigenVersion = "3.4.0"
 $FLANNVersion = "1.9.1"
 
-# 创建工作目录
 New-Item -ItemType Directory -Force -Path $WorkDir
 Set-Location $WorkDir
 
-# 定义构建函数
 function Build-Project {
     param (
         [string]$SourceDir,
@@ -26,7 +23,7 @@ function Build-Project {
     Set-Location $WorkDir
 }
 
-# 下载并解压源码
+# downloader and extractor
 function Download-And-Extract {
     param (
         [string]$Url,
@@ -38,7 +35,7 @@ function Download-And-Extract {
     Remove-Item $FileName
 }
 
-# 下载并构建 VTK
+# Download and build VTK
 Download-And-Extract "https://github.com/Kitware/VTK/archive/v$VTKVersion.zip" "vtk.zip"
 $VTKInstallPath = "$WorkDir\vtk-install"
 $VTKCMakeArgs = @(
@@ -54,14 +51,14 @@ $VTKCMakeArgs = @(
 )
 Build-Project -SourceDir ".\VTK-$VTKVersion" -BuildDir ".\vtk-build" -CMakeArgs $VTKCMakeArgs
 
-# 下载并构建 Boost
+# Download and build Boost
 Download-And-Extract "https://boostorg.jfrog.io/artifactory/main/release/$BoostVersion/source/boost_$($BoostVersion.Replace('.','_')).zip" "boost.zip"
 Set-Location ".\boost_$($BoostVersion.Replace('.','_'))"
 .\bootstrap.bat
 .\b2 --with-system --with-filesystem --with-thread --with-date_time --with-iostreams --with-serialization --with-chrono --with-atomic --with-regex --with-timer --with-program_options
 Set-Location $WorkDir
 
-# 下载并构建 Eigen
+# Download and build Eigen
 Download-And-Extract "https://gitlab.com/libeigen/eigen/-/archive/$EigenVersion/eigen-$EigenVersion.zip" "eigen.zip"
 $EigenCMakeArgs = @(
     "-DCMAKE_BUILD_TYPE=Release",
@@ -69,7 +66,7 @@ $EigenCMakeArgs = @(
 )
 Build-Project -SourceDir ".\eigen-$EigenVersion" -BuildDir ".\eigen-build" -CMakeArgs $EigenCMakeArgs
 
-# 下载并构建 FLANN
+# Download and build FLANN
 Download-And-Extract "https://github.com/flann-lib/flann/archive/$FLANNVersion.zip" "flann.zip"
 $FLANNCMakeArgs = @(
     "-DCMAKE_BUILD_TYPE=Release",
@@ -81,7 +78,7 @@ $FLANNCMakeArgs = @(
 )
 Build-Project -SourceDir ".\flann-$FLANNVersion" -BuildDir ".\flann-build" -CMakeArgs $FLANNCMakeArgs
 
-# 下载并构建 PCL
+# Download and build PCL
 Download-And-Extract "https://github.com/PointCloudLibrary/pcl/archive/pcl-$PCLVersion.zip" "pcl.zip"
 $PCLCMakeArgs = @(
     "-DCMAKE_BUILD_TYPE=Release",

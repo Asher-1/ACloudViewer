@@ -7,6 +7,7 @@ $env:ARCHITECTURE = "x64"
 $env:STATIC_RUNTIME = "OFF"
 $env:DEVELOPER_BUILD = "OFF"
 $env:BUILD_SHARED_LIBS = "OFF"
+$env:PIP_DISABLE_PIP_VERSION_CHECK = "1"
 $env:NPROC = (Get-CimInstance -ClassName Win32_ComputerSystem).NumberOfLogicalProcessors
 
 $env:BUILD_RIEGL = "ON"
@@ -32,6 +33,8 @@ $PROTOBUF_VER = "4.24.0"
 
 $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 
+$MAX_RETRIES = 3
+$RETRY_DELAY = 5 # seconds
 function Install-Requirements {
     param (
         [Parameter(Mandatory=$false)]
@@ -42,31 +45,44 @@ function Install-Requirements {
         [string]$speedCmd = ""
     )
 
+    $originalErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    
+    if (-not (Test-Path $requirementsFile)) {
+        throw "Requirements file not found: $requirementsFile"
+    }
+    
     $retry = 0
     $success = $false
-
-    $MAX_RETRIES = 3
-    $RETRY_DELAY = 5 # seconds
-
-    while (-not $success -and $retry -lt $MAX_RETRIES) {
-        try {
-            Write-Host "Attempting to install requirements from $requirementsFile (Attempt $($retry + 1) of $MAX_RETRIES)"
-            $updateFlag = if ($ForceUpdate) { "-U" } else { "" }
-            python -m pip install $updateFlag -r $requirementsFile $speedCmd
-            $success = $true
-        }
-        catch {
-            $retry++
-            if ($retry -lt $MAX_RETRIES) {
-                Write-Warning "Installation failed. Retrying in $RETRY_DELAY seconds..."
-                Start-Sleep -Seconds $RETRY_DELAY
+    try {
+        while (-not $success -and $retry -lt $MAX_RETRIES) {
+            try {
+                Write-Host "Attempting to install requirements from $requirementsFile (Attempt $($retry + 1) of $MAX_RETRIES)"
+                
+                $pipArgs = @()
+                if ($ForceUpdate) { $pipArgs += "-U" }
+                $pipArgs += @("-r", $requirementsFile)
+                if ($speedCmd) { $pipArgs += $speedCmd }
+                
+                python -m pip install $pipArgs
+                $success = $true
+                Write-Host "Installation completed successfully."
             }
-            else {
-                Write-Error "Failed to install requirements after $MAX_RETRIES attempts."
-                throw $_
+            catch {
+                $retry++
+                if ($retry -lt $MAX_RETRIES) {
+                    Write-Warning "Installation failed. Retrying in $RETRY_DELAY seconds... Error: $_"
+                    Start-Sleep -Seconds $RETRY_DELAY
+                } else {
+                    Write-Error "Failed to install requirements after $MAX_RETRIES attempts. Last error: $_"
+                    return $false
+                }
             }
         }
+    } finally {
+        $ErrorActionPreference = $originalErrorActionPreference
     }
+    return $true
 }
 
 function Install-PythonDependencies {
@@ -89,7 +105,7 @@ function Install-PythonDependencies {
     if ($options -contains "with-cuda") {
         $TF_ARCH_NAME = "tensorflow"
         $TF_ARCH_DISABLE_NAME = "tensorflow-cpu"
-        $CUDA_VER = (nvcc --version | Select-String "release ").ToString().Substring(32, 5) -replace '\D+(\d+)','$1'
+        $CUDA_VER = (nvcc --version | Select-String "release ").ToString() -replace '.*release (\d+)\.(\d+).*','$1$2'
         $TORCH_GLNX = "torch==${TORCH_VER}+cu${CUDA_VER}"
     } else {
         if ($IsMacOS) {
@@ -119,7 +135,21 @@ function Install-PythonDependencies {
 
     if ($options -contains "with-torch" -or $options -contains "with-tensorflow") {
         python -m pip install -U yapf=="$YAPF_VER" $SPEED_CMD
-        python -m pip install -U protobuf=="$PROTOBUF_VER" $SPEED_CMD
+        # python -m pip install -U protobuf=="$PROTOBUF_VER" $SPEED_CMD
+        $output = & { 
+            $ErrorActionPreference = 'Continue'
+            python -m pip install -U protobuf=="$PROTOBUF_VER" $SPEED_CMD 2>&1
+        } | Out-String
+
+        if ($LASTEXITCODE -ne 0) {
+            if ($output -match "ERROR:" -and $output -notmatch "pip's dependency resolver does not currently take into account") {
+                Write-Error "Install Failed: $output"
+            } else {
+                Write-Warning "Some warnigs found, but already done: $output"
+            }
+        } else {
+            Write-Host "Install dependency finished!"
+        }
     }
 
     if ($options -contains "purge-cache") {
@@ -401,7 +431,7 @@ function Build-PipPackage {
 
     if ($BUILD_CUDA_MODULE -eq "ON") {
         Write-Host "`nInstalling CUDA versions of TensorFlow and PyTorch..."
-        Install-PythonDependencies -options "with-cuda","purge-cache"
+        Install-PythonDependencies -options "with-cuda","with-torch","purge-cache"
 
         Write-Host "`nBuilding with CUDA..."
         $rebuild_list = @(
@@ -434,7 +464,12 @@ function Build-PipPackage {
 
 function Test-Wheel {
     param (
-        [string]$wheel_path
+        [Parameter(Mandatory=$true, Position=0)]
+        [ValidateScript({Test-Path $_})]
+        [string]$wheel_path,
+        [Parameter(Mandatory=$false, Position=1)]
+        [AllowEmptyCollection()]
+        [string[]]$options = @()
     )
 
     python -m venv cloudViewer_test.venv
@@ -453,21 +488,19 @@ function Test-Wheel {
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
 
-    Write-Host
-
-    if ($env:BUILD_PYTORCH_OPS -eq "ON") {
+    if ($options -contains "with_torch") {
         Install-Requirements "$env:CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
         # python -m pip install -r "$env:CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
         python -W default -c "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
     }
 
-    if ($env:BUILD_TENSORFLOW_OPS -eq "ON") {
+    if ($options -contains "with_tensorflow") {
         Install-Requirements "$env:CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
         # python -m pip install -r "$env:CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
         python -W default -c "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
     }
 
-    if ($env:BUILD_TENSORFLOW_OPS -eq "ON" -and $env:BUILD_PYTORCH_OPS -eq "ON") {
+    if ($options -contains "with_torch" -and $options -contains "with_tensorflow") {
         Write-Host "Importing TensorFlow and torch in the reversed order"
         python -W default -c "import tensorflow as tf; import torch; import cloudViewer.ml.torch as o3d"
         Write-Host "Importing TensorFlow and torch in the normal order"

@@ -3,18 +3,13 @@ channels:
   - conda-forge
 dependencies:
   - python=3.8
-  # - eigen=3.4.*
   - ninja
-  # pcl or vtk
-  - boost=1.84.0
+  - boost=1.84.0 # pcl or vtk
   - flann=1.9.*
   - qhull=2020.2
-  # reconstruction or PLUGIN_IO_QE57
-  - xerces-c=3.2.*
+  - xerces-c=3.2.* # reconstruction or PLUGIN_IO_QE57
   - qt=5.15.8
-  # only support macos and windows due to issues with cgal on linux
-  - cgal=5.*
+  - cgal=5.*   # only support macos and windows due to issues with cgal on linux
   - ffmpeg=6.1.*
   - zlib=1.2.*
-  # PLUGIN_IO_QLAS
-  - laszip
+  - laszip # PLUGIN_IO_QLAS

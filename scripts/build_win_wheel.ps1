@@ -1,15 +1,25 @@
-$ErrorActionPreference = "Stop"
+# $ErrorActionPreference = "Stop"
 
-$env:PYTHON_VERSION = $args[0]
-$env:ACloudViewer_INSTALL = "~/cloudViewer_install"
-$env:CLOUDVIEWER_ML_ROOT = "C:\Users\asher\develop\code\CloudViewer\CloudViewer-ML"
+param (
+    [Parameter(Mandatory=$true, Position=0)]
+    [string]$PythonVersion,
+
+    [Parameter(Mandatory=$false, Position=1)]
+    [string]$ACloudViewerInstall = "C:\dev\cloudViewer_install",
+
+    [Parameter(Mandatory=$false, Position=2)]
+    [string]$CloudViewerMLRoot = "C:\Users\asher\develop\code\CloudViewer\CloudViewer-ML"
+)
+
+$env:PYTHON_VERSION = $PythonVersion
+$env:ACloudViewer_INSTALL = $ACloudViewerInstall
+$env:CLOUDVIEWER_ML_ROOT = $CloudViewerMLRoot
 $env:ENV_NAME = "python$env:PYTHON_VERSION"
 
 $env:NPROC = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
 Write-Host "ENV_NAME: $env:ENV_NAME"
 Write-Host "nproc = $env:NPROC"
 
-# $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path | Split-Path -Parent
 $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 
 if ($env:CONDA_EXE) {
@@ -23,11 +33,11 @@ if ($env:CONDA_EXE) {
 
 Write-Host "Initializing conda..."
 (& $env:CONDA_EXE "shell.powershell" "hook") | Out-String | Invoke-Expression
-
+conda config --set always_yes yes
 $existingEnv = conda env list | Select-String "^$env:ENV_NAME\s"
 if ($existingEnv) {
     Write-Host "env $env:ENV_NAME exists and start to remove..."
-    conda env remove -n $env:ENV_NAME -y
+    conda env remove -n $env:ENV_NAME
 }
 
 Write-Host "conda env create and activate..."
@@ -38,13 +48,6 @@ Copy-Item (Join-Path $CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows.yml") -Destinat
 
 conda env create -f "$env:TEMP\conda_windows.yml"
 conda activate $env:ENV_NAME
-
-# deploy yarn with npm
-Write-Host "Start deploy yarn"
-node --version
-npm --version
-npm install -g yarn
-yarn --version
 
 $pythonPath = Get-Command python | Select-Object -ExpandProperty Source
 $pythonVersion = python --version
@@ -64,6 +67,13 @@ if (-not $env:CONDA_PREFIX) {
     Write-Host "Conda env now is $env:CONDA_PREFIX"
 }
 
+# deploy yarn with npm
+Write-Host "Start deploy yarn"
+node --version
+npm --version
+npm install -g yarn
+yarn --version
+
 $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
 $env:PATH = "$env:CONDA_PREFIX\Library;$env:CONDA_PREFIX\Library\cmake;$env:PATH"
 
@@ -76,18 +86,28 @@ $env:CLOUDVIEWER_SOURCE_ROOT = Split-Path -Parent $PSScriptRoot
 Write-Host "Start to install python dependencies package On Windows..."
 Install-PythonDependencies -options "with-jupyter","with-torch","with-unit-test","purge-cache"
 
-# Build-PipPackage -options "with-torch","with_conda","build_azure_kinect","build_realsense","build_jupyter"
-Build-PipPackage -options "with_conda","with_cuda","with-torch","build_azure_kinect","build_realsense","build_jupyter"
+# Build-PipPackage -options "with_conda","with_torch","build_azure_kinect","build_realsense","build_jupyter"
+Build-PipPackage -options "with_cuda","with_conda","with_torch","build_azure_kinect","build_realsense","build_jupyter"
 
 Push-Location build  # PWD=ACloudViewer/build
 Write-Host "Try importing cloudViewer Python package"
-Test-Wheel -wheel_path (Get-Item "lib/python_package/pip_package/cloudViewer*.whl").FullName
+$wheel_file = Get-Item "lib/python_package/pip_package/cloudViewer-*.whl" -ErrorAction SilentlyContinue
+if ($wheel_file) {
+    Test-Wheel -wheel_path $wheel_file.FullName
+    # Test-Wheel -wheel_path $wheel_file.FullName -options "with_torch"
+} else {
+    Write-Error "No wheel file found from: $wheel_file"
+}
 Pop-Location  # PWD=ACloudViewer
 
-Write-Host ""
 Write-Host "Move to install path: $env:ACloudViewer_INSTALL"
 
 Move-Item -Path "build/lib/python_package/pip_package/cloudViewer*.whl" -Destination $env:ACloudViewer_INSTALL -Force
 
 Write-Host "Backup whl package to $env:ACloudViewer_INSTALL"
-Write-Host ""
+
+if ($LASTEXITCODE -eq $null) {
+    exit 0  # success
+} else {
+    exit $LASTEXITCODE  # return error code if error
+}
