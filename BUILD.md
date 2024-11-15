@@ -9,6 +9,10 @@ python .\scripts\build_win.py
 MACOS: [BUILD_SHELL](scripts/build_macos.sh)
 
 ```
+(VPN required)[fix librealsense downloading issues]
+export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890
+Remove build_realsense when call build_mac_wheel at scripts/build_macos_whl.sh
+
 ./scripts/build_macos.sh 2>&1 | tee build.log
 ```
 
