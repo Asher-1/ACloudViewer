@@ -144,7 +144,7 @@ elseif (WIN32) # for windows
     set(CPU_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cpu")
     set(CUDA_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cuda")
     # prepare search path for powershell
-    set(EXTERNAL_DLL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/bin ${WHEEL_DLL_DIRECTORY} ${CONDA_PREFIX}/Library/bin)
+    set(EXTERNAL_DLL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/bin ${BUILD_BIN_PATH}/${CUSTOM_BUILD_TYPE} ${CONDA_PREFIX}/Library/bin)
     message(STATUS "Start search dependency from path: ${EXTERNAL_DLL_DIR}")
     string(REPLACE ";" "\",\"" PS_SEARCH_PATHS "${EXTERNAL_DLL_DIR}")
     set(PS_SEARCH_PATHS "\"${PS_SEARCH_PATHS}\"")
@@ -171,15 +171,6 @@ elseif (WIN32) # for windows
                     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
         )
     endif()
-    # do not forget to copy cloudViewer_torch_ops.dll or cloudViewer_tf_ops.dll if possible
-    file(GLOB cloudviewer_ops_dll "${WHEEL_DLL_DIRECTORY}/cloudViewer*.dll")
-    foreach( filename ${cloudviewer_ops_dll} )
-        if (BUILD_CUDA_MODULE)
-            file(COPY "${filename}" DESTINATION "${CUDA_FOLDER_PATH}")
-        else ()
-            file(COPY "${filename}" DESTINATION "${CPU_FOLDER_PATH}")
-        endif()
-    endforeach()
 endif()
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)

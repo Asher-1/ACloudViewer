@@ -85,7 +85,7 @@ df -h
 
 echo
 pushd build # PWD=ACloudViewer/build
-# echo "Try importing cloudViewer Python package"
+echo "Try test cloudViewer Python package"
 test_wheel lib/python_package/pip_package/cloudViewer*.whl
 popd # PWD=ACloudViewer
 
