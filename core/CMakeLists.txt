@@ -263,6 +263,15 @@ if (WIN32)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         WINDOWS_EXPORT_ALL_SYMBOLS ON)
     target_compile_definitions(${PROJECT_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS)
+
+    # fix cloudViewer torch or tensorflow ops dependency issues
+    set(PYTHON_COMPILED_MODULE_DIR
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+    add_custom_command(TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E
+        copy_if_different $<TARGET_FILE:${PROJECT_NAME}> "${PYTHON_COMPILED_MODULE_DIR}"
+    )
 endif ()
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DCV_DEBUG")

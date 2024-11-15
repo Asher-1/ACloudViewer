@@ -1,24 +1,38 @@
-# $ErrorActionPreference = "Stop"
-
 param (
     [Parameter(Mandatory=$true, Position=0)]
     [string]$PythonVersion,
-
     [Parameter(Mandatory=$false, Position=1)]
-    [string]$ACloudViewerInstall = "C:\dev\cloudViewer_install",
-
+    [PSDefaultValue(Value="C:\dev\cloudViewer_install")]
+    [string]$ACloudViewerInstall,
     [Parameter(Mandatory=$false, Position=2)]
-    [string]$CloudViewerMLRoot = "C:\Users\asher\develop\code\CloudViewer\CloudViewer-ML"
+    [PSDefaultValue(Value="C:\Users\asher\develop\code\CloudViewer\CloudViewer-ML")]
+    [string]$CloudViewerMLRoot
 )
 
+$ErrorActionPreference = "Stop"
+
 $env:PYTHON_VERSION = $PythonVersion
-$env:ACloudViewer_INSTALL = $ACloudViewerInstall
-$env:CLOUDVIEWER_ML_ROOT = $CloudViewerMLRoot
+$env:BUILD_CUDA_MODULE = "ON"
+$env:BUILD_PYTORCH_OPS = "ON"
+$env:BUILD_TENSORFLOW_OPS = "OFF"
+$env:BUILD_JUPYTER_EXTENSION = "ON"
+$env:BUILD_AZURE_KINECT = "ON"
+$env:BUILD_LIBREALSENSE = "ON"
 $env:ENV_NAME = "python$env:PYTHON_VERSION"
 
 $env:NPROC = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+Write-Host "ACloudViewer_INSTALL: $env:ACloudViewer_INSTALL"
 Write-Host "ENV_NAME: $env:ENV_NAME"
 Write-Host "nproc = $env:NPROC"
+
+$env:CLOUDVIEWER_ML_ROOT = [System.IO.Path]::GetFullPath("$CloudViewerMLRoot")
+if (Test-Path "$env:CLOUDVIEWER_ML_ROOT") {
+    Write-Host "CLOUDVIEWER_ML_ROOT: $env:CLOUDVIEWER_ML_ROOT"
+} else {
+    Write-Host "Invalid CLOUDVIEWER_ML_ROOT path: $env:CLOUDVIEWER_ML_ROOT"
+    exit 1
+}
+$env:ACloudViewer_INSTALL = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")
 
 $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 
@@ -68,7 +82,7 @@ if (-not $env:CONDA_PREFIX) {
 }
 
 # deploy yarn with npm
-Write-Host "Start deploy yarn"
+Write-Host "Start to deploy yarn"
 node --version
 npm --version
 npm install -g yarn
@@ -84,20 +98,63 @@ $env:CLOUDVIEWER_SOURCE_ROOT = Split-Path -Parent $PSScriptRoot
 . "$env:CLOUDVIEWER_SOURCE_ROOT\util\ci_utils.ps1"
 
 Write-Host "Start to install python dependencies package On Windows..."
-Install-PythonDependencies -options "with-jupyter","with-torch","with-unit-test","purge-cache"
+$install_options = @("with-unit-test","purge-cache")
+if ($env:BUILD_PYTORCH_OPS -eq "ON") {
+    $install_options += "with-torch"
+}
+if ($env:BUILD_TENSORFLOW_OPS -eq "ON") {
+    $install_options += "with-tensorflow"
+}
+if ($env:BUILD_JUPYTER_EXTENSION -eq "ON") {
+    $install_options += "with-jupyter"
+}
+Write-Host "Install options: $install_options"
+Install-PythonDependencies -options $install_options
 
-# Build-PipPackage -options "with_conda","with_torch","build_azure_kinect","build_realsense","build_jupyter"
-Build-PipPackage -options "with_cuda","with_conda","with_torch","build_azure_kinect","build_realsense","build_jupyter"
+$build_options = @("with_conda")
+if ($env:BUILD_CUDA_MODULE -eq "ON") {
+    $build_options += "with_cuda"
+}
+if ($env:BUILD_PYTORCH_OPS -eq "ON") {
+    $build_options += "with_torch"
+}
+if ($env:BUILD_TENSORFLOW_OPS -eq "ON") {
+    $build_options += "with_tensorflow"
+}
+if ($env:BUILD_JUPYTER_EXTENSION -eq "ON") {
+    $build_options += "build_jupyter"
+}
+if ($env:BUILD_AZURE_KINECT -eq "ON") {
+    $build_options += "build_azure_kinect"
+}
+if ($env:BUILD_LIBREALSENSE -eq "ON") {
+    $build_options += "build_realsense"
+}
+Write-Host "Build options: $build_options"
+Build-PipPackage -options $build_options
 
 Push-Location build  # PWD=ACloudViewer/build
 Write-Host "Try importing cloudViewer Python package"
-$wheel_file = Get-Item "lib/python_package/pip_package/cloudViewer-*.whl" -ErrorAction SilentlyContinue
-if ($wheel_file) {
-    Test-Wheel -wheel_path $wheel_file.FullName
-    # Test-Wheel -wheel_path $wheel_file.FullName -options "with_torch"
+if ($env:BUILD_CUDA_MODULE -eq "ON") {
+    $wheel_file = (Get-Item "lib/python_package/pip_package/cloudViewer-*.whl").FullName
+    Write-Host "Test with cuda version: $wheel_file"
 } else {
-    Write-Error "No wheel file found from: $wheel_file"
+    $wheel_file = (Get-Item "lib/python_package/pip_package/cloudViewer_cpu*.whl").FullName
+    Write-Host "Test with cpu version: $wheel_file"
 }
+$test_options = @()
+if ($env:BUILD_CUDA_MODULE -eq "ON") {
+    $test_options += "with_cuda"
+}
+if ($env:BUILD_PYTORCH_OPS -eq "ON") {
+    $test_options += "with_torch"
+}
+if ($env:BUILD_TENSORFLOW_OPS -eq "ON") {
+    $test_options += "with_tensorflow"
+}
+Write-Host "Wheel_file path: $wheel_file"
+Write-Host "Test options: $test_options"
+Test-Wheel -wheel_path $wheel_file -options $test_options
 Pop-Location  # PWD=ACloudViewer
 
 Write-Host "Move to install path: $env:ACloudViewer_INSTALL"
@@ -105,7 +162,9 @@ Write-Host "Move to install path: $env:ACloudViewer_INSTALL"
 Move-Item -Path "build/lib/python_package/pip_package/cloudViewer*.whl" -Destination $env:ACloudViewer_INSTALL -Force
 
 Write-Host "Backup whl package to $env:ACloudViewer_INSTALL"
-
+Write-Host "LASTEXITCODE: $LASTEXITCODE"
+# must do this at the end
+Write-Output "BUILD_COMPLETE"
 if ($LASTEXITCODE -eq $null) {
     exit 0  # success
 } else {

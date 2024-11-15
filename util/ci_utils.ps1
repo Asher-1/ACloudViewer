@@ -37,10 +37,10 @@ $MAX_RETRIES = 3
 $RETRY_DELAY = 5 # seconds
 function Install-Requirements {
     param (
-        [Parameter(Mandatory=$false)]
-        [switch]$ForceUpdate,
         [Parameter(Mandatory=$true)]
         [string]$requirementsFile,
+        [Parameter(Mandatory=$false)]
+        [switch]$ForceUpdate,
         [Parameter(Mandatory=$false)]
         [string]$speedCmd = ""
     )
@@ -49,7 +49,9 @@ function Install-Requirements {
     $ErrorActionPreference = "Continue"
     
     if (-not (Test-Path $requirementsFile)) {
-        throw "Requirements file not found: $requirementsFile"
+        $errorMessage = "Requirements file not found: $($requirementsFile)"
+
+        throw $errorMessage
     }
     
     $retry = 0
@@ -311,8 +313,8 @@ function Build-PipPackage {
     Write-Host "Building CloudViewer wheel"
     
     $BUILD_FILAMENT_FROM_SOURCE = "OFF"
-    
-    if (Test-Path "$env:CLOUDVIEWER_ML_ROOT/set_cloudViewer_ml_root.sh") {
+    $REAL_ML_SHELL_PATH = Join-Path $env:CLOUDVIEWER_ML_ROOT "set_cloudViewer_ml_root.sh"
+    if (Test-Path "$REAL_ML_SHELL_PATH") {
         Write-Host "CloudViewer-ML available at $env:CLOUDVIEWER_ML_ROOT. Bundling CloudViewer-ML in wheel."
         Push-Location $env:CLOUDVIEWER_ML_ROOT
         $currentBranch = git rev-parse --abbrev-ref HEAD
@@ -488,15 +490,23 @@ function Test-Wheel {
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
 
+    $CLOUDVIEWER_ML_ROOT = [System.IO.Path]::GetFullPath("$env:CLOUDVIEWER_ML_ROOT")
     if ($options -contains "with_torch") {
-        Install-Requirements "$env:CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
-        # python -m pip install -r "$env:CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
+        # if ($options -contains "with_cuda") {
+        #     $CUDA_VER = (nvcc --version | Select-String "release ").ToString() -replace '.*release (\d+)\.(\d+).*','$1$2'
+        #     $TORCH_GLNX = "torch==${TORCH_VER}+cu${CUDA_VER}"
+        #     python -m pip install -U $TORCH_GLNX -f $TORCH_REPO_URL tensorboard
+        # } else {
+        #     $Requirements_Path = Join-Path $CLOUDVIEWER_ML_ROOT "requirements-torch.txt"
+        # }
+        $Requirements_Path = Join-Path $CLOUDVIEWER_ML_ROOT "requirements-torch.txt"
+        Install-Requirements $Requirements_Path
         python -W default -c "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
     }
 
     if ($options -contains "with_tensorflow") {
-        Install-Requirements "$env:CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
-        # python -m pip install -r "$env:CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
+        $Requirements_Path = Join-Path $CLOUDVIEWER_ML_ROOT "requirements-tensorflow.txt"
+        Install-Requirements $Requirements_Path
         python -W default -c "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
     }
 

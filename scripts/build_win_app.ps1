@@ -1,16 +1,19 @@
 param (
     [Parameter(Mandatory=$true, Position=0)]
     [string]$PythonVersion,
-
     [Parameter(Mandatory=$false, Position=1)]
-    [string]$ACloudViewerInstall = "C:\dev\cloudViewer_install"
+    [PSDefaultValue(Value="C:\dev\cloudViewer_install")]
+    [string]$ACloudViewerInstall
 )
 
+$ErrorActionPreference = "Stop"
+
 $env:PYTHON_VERSION = $PythonVersion
-$env:ACloudViewer_INSTALL = $ACloudViewerInstall
+$env:ACloudViewer_INSTALL = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")
 $env:ENV_NAME = "cloudViewer"
 
 $env:NPROC = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+Write-Host "ACloudViewer_INSTALL: $env:ACloudViewer_INSTALL"
 Write-Host "ENV_NAME: $env:ENV_NAME"
 Write-Host "nproc = $env:NPROC"
 
@@ -70,8 +73,18 @@ Write-Host "echo Start to build GUI package on Windows..."
 $env:CLOUDVIEWER_SOURCE_ROOT = Split-Path -Parent $PSScriptRoot
 . "$env:CLOUDVIEWER_SOURCE_ROOT\util\ci_utils.ps1"
 
-Write-Host "Start to install python dependencies package On Windows..."
-# Build-GuiApp -options "with_conda","with_pcl_nurbs","package_installer"
-Build-GuiApp -options "with_conda","with_cuda","with_pcl_nurbs","package_installer"
-Write-Host "Backup gui package to $env:ACloudViewer_INSTALL"
-Write-Host ""
+Write-Host "Start to Build cpu only GUI On Windows..."
+Build-GuiApp -options "with_conda","with_pcl_nurbs","package_installer"
+
+Write-Host "Start to Build cuda version GUI On Windows..."
+Build-GuiApp -options "with_cuda","with_conda","with_pcl_nurbs","package_installer"
+
+Write-Host "Backup whl package to $env:ACloudViewer_INSTALL"
+Write-Host "LASTEXITCODE: $LASTEXITCODE"
+# must do this at the end
+Write-Output "BUILD_COMPLETE"
+if ($LASTEXITCODE -eq $null) {
+    exit 0  # success
+} else {
+    exit $LASTEXITCODE  # return error code if error
+}
