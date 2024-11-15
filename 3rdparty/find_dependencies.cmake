@@ -1910,16 +1910,14 @@ if (BUILD_RECONSTRUCTION)
         set(CERES_TARGET "3rdparty_ceres")
         add_dependencies(3rdparty_ceres 3rdparty_eigen3)
         add_dependencies(3rdparty_ceres 3rdparty_glog)
-        if (NOT WIN32) 
-            add_dependencies(3rdparty_ceres 3rdparty_lapack)
-        endif()
         add_dependencies(3rdparty_ceres 3rdparty_suitesparse)
 
-        target_link_libraries(3rdparty_ceres INTERFACE 3rdparty_eigen3 3rdparty_gflags 
-                              3rdparty_glog 3rdparty_suitesparse)
         if (NOT WIN32) 
+            add_dependencies(3rdparty_ceres 3rdparty_lapack)
             target_link_libraries(3rdparty_ceres INTERFACE 3rdparty_lapack)
         endif()
+        target_link_libraries(3rdparty_ceres INTERFACE 3rdparty_eigen3 3rdparty_gflags 
+                              3rdparty_glog 3rdparty_suitesparse)
 
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_eigen3)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ceres)

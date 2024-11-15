@@ -40,6 +40,7 @@ OPTION:
     cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
     cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
     cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
+    cuda_wheel_py312           : CUDA Python 3.12 wheel, release mode
 "
 
 HOST_CLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -48,7 +49,7 @@ HOST_CLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.24.4-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
-CUDA_VERSION=11.7.1-cudnn8
+CUDA_VERSION=11.8.0-cudnn8
 CUDA_VERSION_LATEST=11.8.0-cudnn8
 
 print_usage_and_exit_docker_build() {
@@ -70,6 +71,8 @@ cuda_wheel_build() {
         PYTHON_VERSION=3.10
     elif [[ "py311" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.11
+    elif [[ "py312" =~ ^($options)$ ]]; then
+        PYTHON_VERSION=3.12
     else
         echo "Invalid python version."
         print_usage_and_exit_docker_build
@@ -233,6 +236,9 @@ function main() {
     cuda_wheel_py311_dev)
         cuda_wheel_build py311 dev
         ;;
+    cuda_wheel_py312_dev)
+        cuda_wheel_build py312 dev
+        ;;
     cuda_wheel_py38)shared
         cuda_wheel_build py38
         ;;
@@ -244,6 +250,9 @@ function main() {
         ;;
     cuda_wheel_py311)
         cuda_wheel_build py311
+        ;;
+    cuda_wheel_py312)
+        cuda_wheel_build py312
         ;;
 
     # ML CIs

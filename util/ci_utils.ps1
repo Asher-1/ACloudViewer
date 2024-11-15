@@ -22,8 +22,13 @@ else {
     exit 1
 }
 
-$TENSORFLOW_VER = "2.13.0"
-$TORCH_VER = "2.0.1"
+# Dependency versions:
+# CUDA: see docker/docker_build.sh
+# ML
+# $TENSORFLOW_VER = "2.13.0"
+# $TORCH_VER = "2.0.1"
+$TENSORFLOW_VER="2.16.2"
+$TORCH_VER="2.2.2"
 $TORCH_REPO_URL = "https://download.pytorch.org/whl/torch/"
 $PIP_VER = "23.2.1"
 $WHEEL_VER = "0.38.4"   

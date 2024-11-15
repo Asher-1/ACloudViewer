@@ -18,5 +18,5 @@ jupyterlab>=3.0.0,==3.*
 configargparse
 nbformat
 werkzeug
+flask
 dash
-

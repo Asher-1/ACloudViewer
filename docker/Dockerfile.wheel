@@ -172,7 +172,7 @@ RUN echo -e "\ny" | conda install libffi==3.3
 # Checkout CloudViewer-ML main branch
 # TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
-RUN git clone https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
 
 # ACloudViewer C++ dependencies
 # Done before copying the full ACloudViewer directory for better Docker caching
