@@ -169,7 +169,7 @@ jobs:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
         os: [macos-12, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11']
+        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -184,6 +184,8 @@ jobs:
             python_version: '3.9'
           - is_main: false
             python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
 
     env:
       CONDA_DEP_FILE: ".ci/conda_macos.yml"
@@ -287,7 +289,7 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.10', '3.11']
+        python_version: ['3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -343,7 +345,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-12, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11']
+        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -357,6 +359,8 @@ jobs:
             python_version: '3.9'
           - is_main: false
             python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
 
     env:
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
