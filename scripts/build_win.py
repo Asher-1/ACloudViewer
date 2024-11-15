@@ -1,4 +1,5 @@
 # coding: utf-8
+# Windows console: Set-ItemProperty HKCU:\Console VirtualTerminalLevel -Type DWORD 1
 
 import os
 import subprocess
@@ -222,6 +223,7 @@ def build():
 
     logging.info("\nStart to build wheel for python3.8-3.12 On Windows...\n")
     for version in ["3.8", "3.9", "3.10", "3.11", "3.12"]:
+        logging.info("#" * 80)
         success = build_python_wheel(version)
         if success:
             logging.info(f"Successfully building cloudViewer on python{version}")
@@ -233,7 +235,7 @@ def build():
 
 if __name__ == "__main__":
     CLOUDVIEWER_SOURCE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    log_path = os.path.join(CLOUDVIEWER_SOURCE_ROOT, "build_test.log")
+    log_path = os.path.join(CLOUDVIEWER_SOURCE_ROOT, "build.log")
     if os.path.exists(log_path):
         os.remove(log_path)
     logging.info(f"Logging PATH: {log_path}")
