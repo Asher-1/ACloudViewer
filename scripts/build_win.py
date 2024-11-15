@@ -1,6 +1,12 @@
 # coding: utf-8
 # Windows console: Set-ItemProperty HKCU:\Console VirtualTerminalLevel -Type DWORD 1
 
+# Requirement:
+# 1. Visual Studio 2019 community
+# 2. vscode
+# 3. Anaconda3
+# 4. cuda11.8
+
 import os
 import subprocess
 import logging
@@ -21,7 +27,6 @@ class ColorCodes:
     BOLD_RED = "\033[1;31m"
     RESET = "\033[0m"
 
-
 class ColoredFormatter(logging.Formatter):
     FORMATS = {
         logging.DEBUG: ColorCodes.GREY + "%(asctime)s - %(levelname)s - %(message)s" + ColorCodes.RESET,
@@ -40,7 +45,6 @@ class ColoredFormatter(logging.Formatter):
         formatter = logging.Formatter(log_fmt)
         msg = formatter.format(record)
         return self.ansi_escape.sub('', msg)
-
 
 def determine_log_level(line):
     if re.search(r'\b(error|exception|fail(ed|ure)?)\b', line, re.IGNORECASE):
@@ -153,7 +157,6 @@ def invoke_build_script(build_shell, python_version, with_ml=False):
         logging.error(f"Error: Build script not found: {build_shell}")
         return False
 
-
 def build_gui_app(python_version):
     package_exists = any(file.startswith("ACloudViewer") and file.endswith(".exe")
                          for file in os.listdir(ACLOUDVIEWER_INSTALL))
@@ -177,7 +180,6 @@ def build_gui_app(python_version):
     else:
         logging.info("Ignore ACloudViewer GUI app building due to have built before...")
         return True
-
 
 def build_python_wheel(python_version):
     cp_version = f"cp{python_version.replace('.', '')}"
@@ -206,7 +208,6 @@ def build_python_wheel(python_version):
     else:
         logging.info(f"Ignore cloudViewer wheel for python{python_version}...")
     return True
-
 
 def build():
     for script in [WIN_APP_BUILD_SHELL, WIN_WHL_BUILD_SHELL, REMOVE_FOLDERS_SHELL]:

@@ -60,6 +60,30 @@ together to enable full end to end pipelines:
 
 For more, please visit the [ACloudViewer documentation](http://asher-1.github.io).
 
+
+## Python quick start
+
+Pre-built pip packages support Ubuntu 18.04+, macOS 10.15+ and Windows 10+
+(64-bit) with Python 3.8-3.12.
+
+```bash
+# Install
+pip install cloudViewer       # or
+pip install cloudViewer-cpu   # Smaller CPU only wheel on x86_64 Linux (v0.17+)
+
+# Verify installation
+python -c "import cloudViewer as cv3d; print(cv3d.__version__)"
+
+# Python API
+python -c "import cloudViewer as cv3d; \
+           mesh = cv3d.geometry.TriangleMesh.create_sphere(); \
+           mesh.compute_vertex_normals(); \
+           cv3d.visualization.draw(mesh, raw_mode=True)"
+
+# Open3D CLI
+cloudViewer example visualization/draw
+```
+
 ## ACloudViewer System
 
 <p align="center">
