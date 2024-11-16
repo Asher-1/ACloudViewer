@@ -43,6 +43,8 @@ jobs:
             python_version: '3.9'
           - is_main: false
             python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
@@ -112,6 +114,8 @@ jobs:
             python_version: '3.9'
           - is_main: false
             python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
     env:
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:

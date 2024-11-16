@@ -56,7 +56,7 @@ More on ACloudViewer [here](http://asher-1.github.io)
 Here's a brief overview of the different components of ACloudViewer and how they fit
 together to enable full end to end pipelines:
 
-![Open3D_layers](doc/images/AbstractionLayers.png)
+![CloudViewer_layers](doc/images/AbstractionLayers.png)
 
 For more, please visit the [ACloudViewer documentation](http://asher-1.github.io).
 
@@ -69,7 +69,7 @@ Pre-built pip packages support Ubuntu 18.04+, macOS 10.15+ and Windows 10+
 ```bash
 # Install
 pip install cloudViewer       # or
-pip install cloudViewer-cpu   # Smaller CPU only wheel on x86_64 Linux (v0.17+)
+pip install cloudViewer-cpu   # Smaller CPU only wheel on x86_64 Linux (v3.9.1+)
 
 # Verify installation
 python -c "import cloudViewer as cv3d; print(cv3d.__version__)"
@@ -80,7 +80,7 @@ python -c "import cloudViewer as cv3d; \
            mesh.compute_vertex_normals(); \
            cv3d.visualization.draw(mesh, raw_mode=True)"
 
-# Open3D CLI
+# CloudViewer CLI
 cloudViewer example visualization/draw
 ```
 
