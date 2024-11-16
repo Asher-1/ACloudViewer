@@ -20,9 +20,25 @@ export POST_FIX="python${PYTHON_VERSION}"
 export ENV_NAME="cloudViewer"
 echo "ENV_NAME: " ${ENV_NAME}
 
-echo "conda activate..."
-export CONDA_PREFIX="/root/miniconda3/envs/${ENV_NAME}"
-export PATH="/root/miniconda3/envs/${ENV_NAME}/bin:${PATH}"
+if [ -n "$CONDA_EXE" ]; then
+    CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
+elif [ -n "$CONDA_PREFIX" ]; then
+    CONDA_ROOT=$(dirname "$CONDA_PREFIX")
+else
+    echo "Failed to find Miniconda3 install path..."
+    exit -1
+fi
+
+echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
+source "$CONDA_ROOT/etc/profile.d/conda.sh"
+
+if conda info --envs | grep -q "^$ENV_NAME "; then
+    echo "env $ENV_NAME exists and start to remove..."
+    conda env remove -n $ENV_NAME
+fi
+
+echo "conda env create..."
+export CONDA_PREFIX="$CONDA_ROOT/envs/${ENV_NAME}"
 cp ${ACloudViewer_DEV}/ACloudViewer/.ci/conda_cloudViewer.yml /root/conda_cloudViewer_${POST_FIX}.yml
 sed -i "s/3.8/${PYTHON_VERSION}/g" /root/conda_cloudViewer_${POST_FIX}.yml
 conda env create -f /root/conda_cloudViewer_${POST_FIX}.yml

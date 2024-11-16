@@ -28,18 +28,19 @@ else
     exit -1
 fi
 
+echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
+source "$CONDA_ROOT/etc/profile.d/conda.sh"
+
 if conda info --envs | grep -q "^$ENV_NAME "; then
     echo "env $ENV_NAME exists and start to remove..."
     conda env remove -n $ENV_NAME
 fi
 
-echo "conda activate..."
-export CONDA_PREFIX="/root/miniconda3/envs/${ENV_NAME}"
-export PATH="/root/miniconda3/envs/${ENV_NAME}/bin:${PATH}"
+echo "conda env create..."
+export CONDA_PREFIX="$CONDA_ROOT/envs/${ENV_NAME}"
 cp ${ACloudViewer_DEV}/ACloudViewer/.ci/conda_env.yml /root/conda_env_${ENV_NAME}.yml
 sed -i "s/3.8/${PYTHON_VERSION}/g" /root/conda_env_${ENV_NAME}.yml
 conda env create -f /root/conda_env_${ENV_NAME}.yml
-# conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
 conda activate ${ENV_NAME} \
  && which python \
  && python --version

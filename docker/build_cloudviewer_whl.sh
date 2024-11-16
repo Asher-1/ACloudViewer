@@ -19,9 +19,25 @@ export NPROC=$(nproc)
 export ENV_NAME="python${PYTHON_VERSION}"
 echo "ENV_NAME: " ${ENV_NAME}
 
-echo "conda activate..."
-export CONDA_PREFIX="/root/miniconda3/envs/${ENV_NAME}"
-export PATH="/root/miniconda3/envs/${ENV_NAME}/bin:${PATH}"
+if [ -n "$CONDA_EXE" ]; then
+    CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
+elif [ -n "$CONDA_PREFIX" ]; then
+    CONDA_ROOT=$(dirname "$CONDA_PREFIX")
+else
+    echo "Failed to find Miniconda3 install path..."
+    exit -1
+fi
+
+echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
+source "$CONDA_ROOT/etc/profile.d/conda.sh"
+
+if conda info --envs | grep -q "^$ENV_NAME "; then
+    echo "env $ENV_NAME exists and start to remove..."
+    conda env remove -n $ENV_NAME
+fi
+
+echo "conda env create..."
+export CONDA_PREFIX="$CONDA_ROOT/envs/${ENV_NAME}"
 conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && conda activate ${ENV_NAME} \
  && which python \

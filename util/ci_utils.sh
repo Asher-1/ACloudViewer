@@ -31,6 +31,16 @@ else
 	exit -1
 fi
 
+
+# Dependency versions:
+# CUDA: see docker/docker_build.sh
+# ML
+TENSORFLOW_VER="2.16.2"
+TORCH_VER="2.2.2"
+TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
+
+DISTRIB_ID=""
+DISTRIB_RELEASE=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
     BUILD_RIEGL=OFF
     CONDA_LIB_DIR="$CONDA_PREFIX/lib"
@@ -39,22 +49,23 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     BUILD_RIEGL=ON
     CONDA_LIB_DIR="$CONDA_PREFIX/lib"
     CLOUDVIEWER_INSTALL_DIR=/root/install
+
+    eval $(
+        source /etc/lsb-release;
+        echo DISTRIB_ID="$DISTRIB_ID";
+        echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
+    )
+    # Fix Ubuntu18.04 issues: You're trying to build PyTorch with a too old version of GCC. 
+    # We need GCC 9 or later.
+    if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
+        TENSORFLOW_VER="2.13.0"
+        TORCH_VER="2.0.1"
+    fi
 else # do not support windows
-    BUILD_RIEGL=ON
-    CONDA_LIB_DIR="$CONDA_PREFIX/Library"
-    CLOUDVIEWER_INSTALL_DIR=/root/install
     echo "Do not support windows system with this script!"
     exit -1
 fi
 
-# Dependency versions:
-# CUDA: see docker/docker_build.sh
-# ML
-# TENSORFLOW_VER="2.13.0"
-# TORCH_VER="2.0.1"
-TENSORFLOW_VER="2.16.2"
-TORCH_VER="2.2.2"
-TORCH_REPO_URL="https://download.pytorch.org/whl/torch/" 
 # Python
 PIP_VER="23.2.1"
 WHEEL_VER="0.38.4"
@@ -469,25 +480,34 @@ test_wheel() {
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
     echo
-    # echo "Dynamic libraries used:"
-    # DLL_PATH=$(dirname $(python -c "import cloudViewer; print(cloudViewer.cpu.pybind.__file__)"))/..
-    # if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    #     find "$DLL_PATH"/{cpu,cuda}/ -type f -print -execdir ldd {} \;
-    # elif [[ "$OSTYPE" == "darwin"* ]]; then
-    #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
-    # fi
 
+    # Fix Ubuntu18.04 issues: You're trying to build PyTorch with a too old version of GCC. 
+    # We need GCC 9 or later.
+    if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
+        if [ "$BUILD_PYTORCH_OPS" == ON ]; then
+            python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements-torch201.txt"
+            python  -W default -c \
+                "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
+        fi
+        if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
+            python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements-tensorflow.txt"
+            python  -W default -c \
+                "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
+        fi
+    else
+        if [ "$BUILD_PYTORCH_OPS" == ON ]; then
+            python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
+            python  -W default -c \
+                "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
+        fi
+        if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
+            python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
+            python  -W default -c \
+                "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
+        fi
+    fi
+    
     echo
-    if [ "$BUILD_PYTORCH_OPS" == ON ]; then
-        python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
-        python  -W default -c \
-            "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
-    fi
-    if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
-        python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
-        python  -W default -c \
-            "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
-    fi
     if [ "$BUILD_TENSORFLOW_OPS" == ON ] && [ "$BUILD_PYTORCH_OPS" == ON ]; then
         echo "Importing TensorFlow and torch in the reversed order"
         python -W default -c "import tensorflow as tf; import torch; import cloudViewer.ml.torch as o3d"
