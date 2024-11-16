@@ -38,7 +38,7 @@ fi
 
 echo "conda env create..."
 export CONDA_PREFIX="$CONDA_ROOT/envs/${ENV_NAME}"
-cp ${ACloudViewer_DEV}/ACloudViewer/.ci/conda_env.yml /root/conda_env_${ENV_NAME}.yml
+cp ${ACloudViewer_DEV}/ACloudViewer/.ci/conda_linux.yml /root/conda_env_${ENV_NAME}.yml
 sed -i "s/3.8/${PYTHON_VERSION}/g" /root/conda_env_${ENV_NAME}.yml
 conda env create -f /root/conda_env_${ENV_NAME}.yml
 conda activate ${ENV_NAME} \

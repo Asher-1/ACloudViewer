@@ -71,14 +71,14 @@ jobs:
           $CUDA_VER_ID = "$($CUDA_VER_ARR[0])_$($CUDA_VER_ARR[1])"
           # Installer url
           if ( $CUDA_VER_ARR[0] -ge 11 ) {
-            $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER_FULL/network_installers/cuda_$($CUDA_VER_FULL)_win10_network.exe"
+            $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER_FULL/network_installers/cuda_$($CUDA_VER_FULL)_windows_network.exe"
           } else {
             $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER/Prod/network_installers/cuda_$($CUDA_VER_FULL)_win10_network.exe"
           }
-          # Installer arguments
+                    # Installer arguments
           $CUDA_INSTALL_ARGS = "-s"
           # Required packages
-          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "npp", "npp_dev"
+          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "npp", "npp_dev", "thrust"
           $CUDA_PACKAGES.ForEach({ $CUDA_INSTALL_ARGS += " $($_)_$($CUDA_VER)" })
           # Download and install CUDA
           echo "Downloading CUDA installer from $CUDA_URL"
@@ -102,20 +102,23 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           architecture: 'x64'
-          activate-environment: python3.8
+          activate-environment: cloudViewer
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       - name: Install dependencies
         run: |
-          curl -Uri "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-win.zip" -o "C:\QtIFW-4.6.1-win.zip"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-win.zip" -OutFile "C:\QtIFW-4.6.1-win.zip"
           Expand-Archive "C:\QtIFW-4.6.1-win.zip" "C:\" -Force && rm C:\QtIFW-4.6.1-win.zip
-          export PATH="C:\QtIFW-4.6.1-win\bin:$PATH"
+          $env:PATH = "C:\QtIFW-4.6.1-win\bin;$env:PATH"
+          echo $env:PATH
+          echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
           
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
-          export CONDA_LIB_DIR="$CONDA_PREFIX/Library"
+          $env:CONDA_LIB_DIR = Join-Path $env:CONDA_PREFIX "Library"
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
@@ -126,7 +129,7 @@ jobs:
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
-            -DCMAKE_INSTALL_PREFIX="C:\Program Files\ACloudViewer" `
+            -DCMAKE_INSTALL_PREFIX="C:\dev\cloudViewer_install" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
@@ -176,7 +179,7 @@ jobs:
             -DPLUGIN_STANDARD_QPOISSON_RECON=ON `
             -DPOISSON_RECON_WITH_OPEN_MP=ON `
             -DPLUGIN_STANDARD_QSRA=ON `
-            -DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR `
+            -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `
             -DBUILD_UNIT_TESTS=OFF `
             ${{ env.SRC_DIR }}
 
@@ -195,25 +198,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cloudViewer-app-windows-amd64
-          path: C:\Program Files\ACloudViewer\bin\ACloudViewer*.exe
+          path: C:\dev\cloudViewer_install\ACloudViewer-*.exe
           if-no-files-found: error
-
-      - name: Install Python package
-        working-directory: ${{ env.BUILD_DIR }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
-            wheel==${{ env.WHEEL_VER }} `
-            setuptools==${{ env.STOOLS_VER }} `
-            jedi==${{ env.JEDI_VER }} `
-            idna==${{ env.IDNA_VER }}
-          cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
-      - name: Import python package
-        # If BUILD_SHARED_LIBS == ON, ACloudViewer.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        run: |
-          python -c "import cloudViewer; print('Imported:', cloudViewer)"
-          python -c "import cloudViewer; print('CUDA enabled: ', cloudViewer.core.cuda.is_available())"
       - name: Disk space used
         run: Get-PSDrive
 
@@ -236,6 +222,8 @@ jobs:
             python_version: '3.9'
           - is_main: false
             python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
 
     env:
       CONDA_DEP_FILE: ".ci/conda_windows.yml"
@@ -249,9 +237,9 @@ jobs:
         with:
           sdk-version: 19041
 
-      - name: Set up Python version
+      - name: Set up python version
         run: |
-          sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
+          (Get-Content ${{ env.CONDA_DEP_FILE }}) -replace "3.8", ${{ matrix.python_version }} | Set-Content ${{ env.CONDA_DEP_FILE }}
 
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment
@@ -271,7 +259,7 @@ jobs:
 
       - name: Config
         run: |
-          export CONDA_LIB_DIR="$CONDA_PREFIX/Library"
+          $env:CONDA_LIB_DIR = Join-Path $env:CONDA_PREFIX "Library"
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
@@ -279,15 +267,14 @@ jobs:
             ${env:DEVELOPER_BUILD}="ON"
           }
           cmake -G "Visual Studio 16 2019" -A x64 `
-            -DCMAKE_INSTALL_PREFIX="C:\Program Files\ACloudViewer" `
+            -DCMAKE_INSTALL_PREFIX="C:\dev\cloudViewer_install" `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
-            -DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR `
+            -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `
             -DBUILD_SHARED_LIBS=OFF `
-            -DSTATIC_WINDOWS_RUNTIME=ON `
+            -DSTATIC_WINDOWS_RUNTIME=OFF `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
-            -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
             -DBUILD_UNIT_TESTS=OFF `
             -DBUILD_BENCHMARKS=OFF `
@@ -351,9 +338,9 @@ jobs:
           pattern: cloudViewer-*win*.whl
           merge-multiple: true
 
-      - name: Set up Python version
+      - name: Set up python version
         run: |
-          sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
+          (Get-Content ${{ env.CONDA_DEP_FILE }}) -replace "3.8", ${{ matrix.python_version }} | Set-Content ${{ env.CONDA_DEP_FILE }}
 
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment
