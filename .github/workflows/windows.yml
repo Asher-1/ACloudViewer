@@ -150,7 +150,7 @@ jobs:
             -DOPTION_USE_GDAL=OFF `
             -DOPTION_USE_DXF_LIB=ON `
             -DPLUGIN_IO_QDRACO=ON `
-            -DPLUGIN_IO_QLAS=ON `
+            -DPLUGIN_IO_QLAS=OFF `
             -DPLUGIN_IO_QADDITIONAL=ON `
             -DPLUGIN_IO_QCORE=ON `
             -DPLUGIN_IO_QCSV_MATRIX=ON `

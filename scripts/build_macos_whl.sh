@@ -18,6 +18,7 @@ export ENV_NAME="python${PYTHON_VERSION}"
 # export NPROC=$(($(nproc) * 2))
 export NPROC=$(nproc)
 echo "ENV_NAME: " ${ENV_NAME}
+echo "CLOUDVIEWER_ML_ROOT: " ${CLOUDVIEWER_ML_ROOT}
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
