@@ -440,8 +440,7 @@ build_pip_package() {
     if [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
         echo Installing CUDA versions of TensorFlow and PyTorch...
-        install_python_dependencies with-cuda
-        # install_python_dependencies with-cuda purge-cache
+        install_python_dependencies with-cuda purge-cache
         echo
         echo Building with CUDA...
         rebuild_list=(bin lib/Release/*.a lib/_build_config.py* lib/ml)
