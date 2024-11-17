@@ -26,6 +26,7 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 # CONDA_PREFIX=${CONDA_PREFIX:="/root/miniconda3/envs/cloudViewer"}
 if [ -z "${CONDA_PREFIX:-}" ] ; then
 	echo "Conda env is not activated!"
+    CONDA_PREFIX=/root/miniconda3/envs/cloudViewer
 else
     echo "Conda env: $CONDA_PREFIX is activated."
 fi

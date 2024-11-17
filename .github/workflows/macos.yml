@@ -71,7 +71,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          brew install ccache pkg-config wget
+          brew install ccache pkg-config
 
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
             # Fix gfortran not found issue
@@ -100,8 +100,9 @@ jobs:
           https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
           brew install -f libomp-11.1.0.bottle.tar.gz
 
-          wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.8.0-darwin.zip -O "~/QtIFW-4.8.0-darwin.zip"
-          unzip ~/QtIFW-4.8.0-darwin.zip ~/ && rm ~/QtIFW-4.8.0-darwin.zip
+          curl -L "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.8.0-darwin.zip" -o ~/QtIFW-4.8.0-darwin.zip
+          unzip -q ~/QtIFW-4.8.0-darwin.zip -d ~/
+          rm ~/QtIFW-4.8.0-darwin.zip
           export PATH="~/QtIFW-4.8.0-darwin/bin:$PATH"
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
@@ -190,6 +191,7 @@ jobs:
     env:
       CONDA_DEP_FILE: ".ci/conda_macos.yml"
       BUILD_CUDA_MODULE: OFF
+      BUILD_TORCH_OPS: ON
       # TensorFlow v2.16 does not support Python 3.8
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version == '3.8' && 'OFF' || 'ON' }}
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
@@ -232,6 +234,37 @@ jobs:
 
       - name: Install dependencies
         run: |
+          export ENV_NAME="python${{ matrix.python_version }}"
+          if [ -n "$CONDA_EXE" ]; then
+              CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
+          elif [ -n "$CONDA_PREFIX" ]; then
+              CONDA_ROOT=$(dirname "$CONDA_PREFIX")
+          else
+              echo "Failed to find Miniconda3 install path..."
+              exit -1
+          fi
+
+          echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
+          source "$CONDA_ROOT/etc/profile.d/conda.sh"
+
+          echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
+          source "$CONDA_ROOT/etc/profile.d/conda.sh"
+
+          conda config --set always_yes yes
+          if conda info --envs | grep -q "^$ENV_NAME "; then
+              echo "env $ENV_NAME exists and start to remove..."
+              conda env remove -n $ENV_NAME
+          fi
+
+          echo "conda env create and activate..."
+          export CONDA_PREFIX="${CONDA_ROOT}/envs/${ENV_NAME}"
+          cp ${CLOUDVIEWER_SOURCE_ROOT}/.ci/conda_macos.yml /tmp/conda_macos.yml
+          sed -i "" "s/3.8/${{ matrix.python_version }}/g" /tmp/conda_macos.yml
+          conda env create -f /tmp/conda_macos.yml
+          conda activate ${ENV_NAME} \
+          && which python \
+          && python --version
+
           echo "Using python: $(which python)"
           python --version
           echo -n "Using pip: $(which pip)"
@@ -239,7 +272,6 @@ jobs:
           echo "Using cmake: $(which cmake)"
           cmake --version
 
-          # export CONDA_PREFIX="/root/miniconda3/envs/python${{ matrix.python_version }}"
           source util/ci_utils.sh
           install_python_dependencies
 
