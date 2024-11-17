@@ -336,21 +336,13 @@ jobs:
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: cloudViewer-*win*.whl
+          pattern: cloudViewer*win*.whl
           merge-multiple: true
 
-      - name: Set up python version
-        run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE }}) -replace "3.8", ${{ matrix.python_version }} | Set-Content ${{ env.CONDA_DEP_FILE }}
-
-      # DGM: without caching, using conda on Windows takes a long time...
-      - name: Set up Python environment
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          architecture: 'x64'
-          activate-environment: python${{ matrix.python_version }}
-          auto-activate-base: false
-          environment-file: ${{ env.CONDA_DEP_FILE }}
+          python-version: ${{ matrix.python_version }}
 
       - name: Test Python package
         run: |

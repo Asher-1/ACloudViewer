@@ -230,4 +230,4 @@ if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; then
 else
 	echo "Please run docker rmi $CLOUDVIEWER_IMAGE_TAG first!"
 fi
-
+echo
