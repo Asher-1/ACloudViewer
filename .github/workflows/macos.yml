@@ -233,6 +233,7 @@ jobs:
           environment-file: ${{ env.CONDA_DEP_FILE }}
 
       - name: Install dependencies
+        shell: bash -l {0}
         run: |
           echo "Using python: $(which python)"
           python --version
@@ -265,6 +266,7 @@ jobs:
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel
+        shell: bash -l {0}
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
@@ -370,7 +372,6 @@ jobs:
 
     env:
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
-      CONDA_DEP_FILE: ".ci/conda_macos.yml"
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -388,17 +389,10 @@ jobs:
           pattern: cloudViewer-*macosx*.whl
           merge-multiple: true
 
-      - name: Set up Python version
-        run: |
-          sed -i "" "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
-
-      # DGM: without caching, using conda on Windows takes a long time...
-      - name: Set up Python environment
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          activate-environment: python${{ matrix.python_version }}
-          auto-activate-base: false
-          environment-file: ${{ env.CONDA_DEP_FILE }}
+          python-version: ${{ matrix.python_version }}
           
       - name: Test Python package
         run: |
