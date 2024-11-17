@@ -118,6 +118,7 @@ jobs:
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
+          echo "CONDA_PREFIX: $env:CONDA_PREFIX"
           $env:CONDA_LIB_DIR = Join-Path $env:CONDA_PREFIX "Library"
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory

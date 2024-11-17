@@ -71,7 +71,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          brew install ccache pkg-config
+          brew install ccache pkg-config wget
 
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
             # Fix gfortran not found issue
@@ -239,7 +239,7 @@ jobs:
           echo "Using cmake: $(which cmake)"
           cmake --version
 
-          export CONDA_PREFIX="/root/miniconda3/envs/python${{ matrix.python_version }}"
+          # export CONDA_PREFIX="/root/miniconda3/envs/python${{ matrix.python_version }}"
           source util/ci_utils.sh
           install_python_dependencies
 

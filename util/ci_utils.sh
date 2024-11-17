@@ -24,13 +24,11 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Warning: CONDA_PREFIX variable should be set before
 # CONDA_PREFIX=${CONDA_PREFIX:="/root/miniconda3/envs/cloudViewer"}
-if [ $CONDA_PREFIX ] ; then
-	echo "Conda env: $CONDA_PREFIX is activated."
+if [ -z "${CONDA_PREFIX:-}" ] ; then
+	echo "Conda env is not activated!"
 else
-    echo "Conda env is not activated!"
-	exit -1
+    echo "Conda env: $CONDA_PREFIX is activated."
 fi
-
 
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
@@ -349,7 +347,12 @@ build_pip_package() {
     echo "Building CloudViewer wheel"
     options="$(echo "$@" | tr ' ' '|')"
 
-    BUILD_FILAMENT_FROM_SOURCE=OFF
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        BUILD_FILAMENT_FROM_SOURCE=ON
+    else
+        BUILD_FILAMENT_FROM_SOURCE=OFF
+    fi
+
     set +u
     if [ -f "${CLOUDVIEWER_ML_ROOT}/set_cloudViewer_ml_root.sh" ]; then
         echo "CloudViewer-ML available at ${CLOUDVIEWER_ML_ROOT}. Bundling CloudViewer-ML in wheel."

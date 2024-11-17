@@ -22,6 +22,7 @@ set -euo pipefail
 ACloudViewer_INSTALL=~/cloudViewer_install
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 CLOUDVIEWER_BUILD_DIR=${CLOUDVIEWER_SOURCE_ROOT}/build
+export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
 
 MACOS_APP_BUILD_SHELL=${CLOUDVIEWER_SOURCE_ROOT}/scripts/build_macos_app.sh
 if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "ACloudViewer*.dmg" | grep -q .; then
