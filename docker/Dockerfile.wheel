@@ -249,7 +249,7 @@ RUN tar -zxvf VTK-9.3.1.tar.gz && \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
-    && rm -rf /root/VTK-9.3.1 /root/VTK-9.3.1.tar.gz
+    rm -rf /root/VTK-9.3.1 /root/VTK-9.3.1.tar.gz
 
 # Install pcl
 RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/pcl-1.14.1.zip -O "/root/pcl-1.14.1.zip"
