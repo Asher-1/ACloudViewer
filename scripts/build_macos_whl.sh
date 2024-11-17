@@ -62,7 +62,6 @@ else
 	echo "Conda env now is $CONDA_PREFIX"
 fi
 
-export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
 
