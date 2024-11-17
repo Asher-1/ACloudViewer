@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PACKAGE=${PACKAGE:-ON}
-BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE:-ON}
+BUILD_CUDA_MODULE_FLAG=${BUILD_CUDA_MODULE:-ON}
 BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-OFF}
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-OFF}
@@ -10,7 +10,6 @@ BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-OFF}
 export DEVELOPER_BUILD=OFF
 export PACKAGE=${PACKAGE}
 export BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
-export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
 export BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 export BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 
@@ -43,7 +42,7 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && which python \
  && python --version
 
- # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
+# fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
 echo -e "\ny" | conda install libffi==3.3
 
 set -x # Echo commands on
@@ -52,10 +51,20 @@ set -x # Echo commands on
 source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
-echo "Start to build GUI package..."
+echo "Start to build GUI package with only CPU..."
 echo
+export BUILD_CUDA_MODULE=OFF
 build_gui_app with_pcl_nurbs with_gdal package_installer
 echo
+
+# Building with cuda if cuda available
+if [ "${BUILD_CUDA_MODULE_FLAG}" = "ON" ]; then
+    echo "Start to build GUI package with CUDA..."
+    echo
+    export BUILD_CUDA_MODULE=ON
+    build_gui_app with_pcl_nurbs with_gdal package_installer
+    echo
+fi
 
 echo "Finish building ACloudViewer GUI to $ACloudViewer_INSTALL"
 

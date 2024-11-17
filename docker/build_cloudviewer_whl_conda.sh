@@ -74,15 +74,14 @@ build_pip_package with_conda build_realsense build_azure_kinect build_jupyter
 
 set -x # Echo commands on
 df -h
-# Run on GPU only. CPU versions run on Github already
-if nvidia-smi >/dev/null 2>&1; then
-    echo "Try importing cloudViewer Python package"
+pushd build # PWD=ACloudViewer/build
+echo "Try importing cloudViewer Python package"
+if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
     test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer-*whl
-    df -h
-    # echo "Running cloudViewer Python tests..."
-    # run_python_tests
-    # echo
+else
+    test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer_cpu-*whl
 fi
+popd # PWD=ACloudViewer
 
 echo "Finish building cloudViewer wheel based on ${PYTHON_VERSION}!"
 echo "mv ${ACloudViewer_BUILD}/lib/python_package/pip_package/*whl ${ACloudViewer_INSTALL}"

@@ -43,28 +43,30 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && which python \
  && python --version
 
- # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
+# fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
 # echo -e "\ny" | conda install libffi==3.3
+echo -e "\ny" | conda install cmake
+export CMAKE_ROOT=$(dirname $(dirname $(which cmake)))/share/cmake-$(cmake --version | grep -oP '(?<=version )\d+\.\d+')
+echo $CMAKE_ROOT
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
 source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
-install_python_dependencies speedup with-jupyter with-unit-test
+install_python_dependencies with-jupyter with-unit-test
 build_pip_package build_realsense build_azure_kinect build_jupyter
 # build_pip_package build_azure_kinect build_jupyter
 
 set -x # Echo commands on
 df -h
-# Run on GPU only. CPU versions run on Github already
-if nvidia-smi >/dev/null 2>&1; then
-    echo "Try importing cloudViewer Python package"
+pushd build # PWD=ACloudViewer/build
+echo "Try importing cloudViewer Python package"
+if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
     test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer-*whl
-    df -h
-    # echo "Running cloudViewer Python tests..."
-    # run_python_tests
-    # echo
+else
+    test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer_cpu-*whl
 fi
+popd # PWD=ACloudViewer
 
 echo "Finish building cloudViewer wheel based on ${PYTHON_VERSION}!"
 echo "mv ${ACloudViewer_BUILD}/lib/python_package/pip_package/*whl ${ACloudViewer_INSTALL}"

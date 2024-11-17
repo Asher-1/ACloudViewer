@@ -480,6 +480,7 @@ test_wheel() {
     python -m pip install "$wheel_path"
     python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
     python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
+    # python -W default -c "import cloudViewer; cloudViewer.reconstruction.gui.run_graphical_gui()"
     echo
 
     # Fix Ubuntu18.04 issues: You're trying to build PyTorch with a too old version of GCC. 
