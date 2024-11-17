@@ -142,7 +142,7 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
  && bash Miniconda3-latest-Linux-x86_64.sh -b \
  && rm Miniconda3-latest-Linux-x86_64.sh \
  && conda --version \
- && cp .ci/conda_linux_cloudViewer.yml /root/conda_env_${PYTHON_VERSION}.yml \
+ && cp .ci/conda_cloudViewer.yml /root/conda_env_${PYTHON_VERSION}.yml \
  && sed -i "s/3.8/${PYTHON_VERSION}/g" /root/conda_env_${PYTHON_VERSION}.yml \
  && conda env create -f /root/conda_env_${PYTHON_VERSION}.yml
 
