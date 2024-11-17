@@ -143,7 +143,7 @@ jobs:
             -DBUILD_BENCHMARKS=OFF `
             -DBUILD_OPENCV=ON `
             -DBUILD_RECONSTRUCTION=ON `
-            -DCVCORELIB_USE_CGAL=ON `
+            -DCVCORELIB_USE_CGAL=OFF `
             -DCVCORELIB_SHARED=ON `
             -DCVCORELIB_USE_QT_CONCURRENT=ON `
             -DOPTION_USE_GDAL=OFF `

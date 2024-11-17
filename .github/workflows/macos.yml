@@ -64,7 +64,6 @@ jobs:
       - name: Set up Python version
         uses: conda-incubator/setup-miniconda@v3
         with:
-          architecture: ${{ matrix.os == 'macos-14' && 'arm64' || 'x64' }}
           activate-environment: cloudViewer
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
@@ -223,55 +222,21 @@ jobs:
         run: |
           sed -i "" "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
 
-      # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment
         uses: conda-incubator/setup-miniconda@v3
         with:
-          architecture: ${{ matrix.os == 'macos-14' && 'arm64' || 'x64' }}
           activate-environment: python${{ matrix.python_version }}
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE }}
 
       - name: Install dependencies
         run: |
-          export ENV_NAME="python${{ matrix.python_version }}"
-          if [ -n "$CONDA_EXE" ]; then
-              CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
-          elif [ -n "$CONDA_PREFIX" ]; then
-              CONDA_ROOT=$(dirname "$CONDA_PREFIX")
-          else
-              echo "Failed to find Miniconda3 install path..."
-              exit -1
-          fi
-
-          echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
-          source "$CONDA_ROOT/etc/profile.d/conda.sh"
-
-          echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
-          source "$CONDA_ROOT/etc/profile.d/conda.sh"
-
-          conda config --set always_yes yes
-          if conda info --envs | grep -q "^$ENV_NAME "; then
-              echo "env $ENV_NAME exists and start to remove..."
-              conda env remove -n $ENV_NAME
-          fi
-
-          echo "conda env create and activate..."
-          export CONDA_PREFIX="${CONDA_ROOT}/envs/${ENV_NAME}"
-          cp ${CLOUDVIEWER_SOURCE_ROOT}/.ci/conda_macos.yml /tmp/conda_macos.yml
-          sed -i "" "s/3.8/${{ matrix.python_version }}/g" /tmp/conda_macos.yml
-          conda env create -f /tmp/conda_macos.yml
-          conda activate ${ENV_NAME} \
-          && which python \
-          && python --version
-
           echo "Using python: $(which python)"
           python --version
           echo -n "Using pip: $(which pip)"
           python -m pip --version
           echo "Using cmake: $(which cmake)"
           cmake --version
-
           source util/ci_utils.sh
           install_python_dependencies
 
@@ -426,7 +391,6 @@ jobs:
       - name: Set up Python environment
         uses: conda-incubator/setup-miniconda@v3
         with:
-          architecture: ${{ matrix.os == 'macos-14' && 'arm64' || 'x64' }}
           activate-environment: python${{ matrix.python_version }}
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE }}
