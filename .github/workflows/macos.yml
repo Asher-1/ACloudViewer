@@ -195,7 +195,7 @@ jobs:
       BUILD_CUDA_MODULE: OFF
       BUILD_TORCH_OPS: ON
       # TensorFlow v2.16 does not support Python 3.8
-      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version == '3.8' && 'OFF' || 'ON' }}
+      BUILD_TENSORFLOW_OPS: OFF
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
       - name: Checkout source code
