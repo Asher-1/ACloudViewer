@@ -119,8 +119,10 @@ release_build() {
     fi
 		if [[ "gui" =~ ^($options)$ ]]; then
         BUILD_GUI=ON
+				POST_SUFFIX=GUI
     else
         BUILD_GUI=OFF
+				POST_SUFFIX=WHELL
     fi
 		if [[ "wheel" =~ ^($options)$ ]]; then
         BUILD_WHEEL=ON
@@ -153,7 +155,7 @@ release_build() {
 			--build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
 			--build-arg PACKAGE="${PACKAGE}" \
 			--tag "$CLOUDVIEWER_IMAGE_TAG" \
-			-f docker/Dockerfile_build${DOCKER_FILE_POSFIX} . 2>&1 | tee docker_build-${PYTHON_VERSION}-${BUILD_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
+			-f docker/Dockerfile_build${DOCKER_FILE_POSFIX} . 2>&1 | tee docker_build-${PYTHON_VERSION}-${BUILD_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}-${POST_SUFFIX}.log
 
 			if [ "$BUILD_GUI" = "ON" ]; then
 				docker run -v "${HOST_INSTALL_PATH}:/opt/mount" --rm "$CLOUDVIEWER_IMAGE_TAG" \
@@ -215,13 +217,16 @@ if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; then
 		echo "Ignore cloudViewer wheel building based on python3.11 due to have builded before..."
 	fi
 
-	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp312-*.whl" | grep -q .; then
-    wheel_release_export_env
-		release_build py312 wheel
+	if [ "$UBUNTU_VERSION" != "18.04" ]; then
+		if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp312-*.whl" | grep -q .; then
+			wheel_release_export_env
+			release_build py312 wheel
+		else
+			echo "Ignore cloudViewer wheel building based on python3.12 due to have builded before..."
+		fi
 	else
-		echo "Ignore cloudViewer wheel building based on python3.12 due to have builded before..."
+		echo "Ubuntu18.04 do not support python3.12 as default!"
 	fi
-	
 else
 	echo "Please run docker rmi $CLOUDVIEWER_IMAGE_TAG first!"
 fi
