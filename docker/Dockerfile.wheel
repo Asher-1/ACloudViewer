@@ -167,7 +167,7 @@ RUN which python \
  && python --version
 
 # fix ubuntu2204 and conda library conflicts about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-RUN echo -e "\ny" | conda install libffi==3.3
+# RUN echo -e "\ny" | conda install libffi==3.3
 
 # Checkout CloudViewer-ML main branch
 # TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag

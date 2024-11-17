@@ -9,6 +9,13 @@ test -z "$UBUNTU_VERSION" && UBUNTU_VERSION=20.04
 
 BUILD_WITH_CONDA=${BUILD_WITH_CONDA:-OFF}
 
+echo "VTK_VERSION: ${VTK_VERSION}"
+echo "PCL_VERSION: ${PCL_VERSION}"
+echo "CUDA_VERSION: ${CUDA_VERSION}"
+echo "UBUNTU_VERSION: ${UBUNTU_VERSION}"
+echo "BUILD_WITH_CONDA: ${BUILD_WITH_CONDA}"
+echo "CLOUDVIEWER_VERSION: ${CLOUDVIEWER_VERSION}"
+
 # put after test -z due to unbound issues
 set -euo pipefail
 export BUILDKIT_PROGRESS=plain
@@ -70,10 +77,10 @@ if [[ "$(docker images -q $DEPENDENCY_IMAGE_TAG 2> /dev/null)" == "" ]];
 			--build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
 			--build-arg HTTP_PROXY=http://127.0.0.1:7890 \
 			--build-arg HTTPS_PROXY=http://127.0.0.1:7890 \
-			--build-arg "CUDA_VERSION=${CUDA_VERSION}" \
-			--build-arg "UBUNTU_VERSION=${UBUNTU_VERSION}" \
-			--build-arg "VTK_VERSION=${VTK_VERSION}" \
-			--build-arg "PCL_VERSION=${PCL_VERSION}" \
+			--build-arg CUDA_VERSION="${CUDA_VERSION}" \
+			--build-arg UBUNTU_VERSION="${UBUNTU_VERSION}" \
+			--build-arg VTK_VERSION="${VTK_VERSION}" \
+			--build-arg PCL_VERSION="${PCL_VERSION}" \
 			--tag "$DEPENDENCY_IMAGE_TAG" \
 			-f docker/Dockerfile_deps${DOCKER_FILE_POSFIX} . 2>&1 | tee docker_build-${DEPENDENCY_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 fi
