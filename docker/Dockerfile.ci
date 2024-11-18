@@ -242,8 +242,8 @@ RUN export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 
 # Build all
 RUN \
-    export CMAKE_CXX_COMPILER=g++; \
-    export CMAKE_C_COMPILER=gcc; \
+ && export CMAKE_CXX_COMPILER=g++ \
+ && export CMAKE_C_COMPILER=gcc \
  && mkdir build \
  && cd build \
  && cmake -DBUILD_SHARED_LIBS=OFF \
