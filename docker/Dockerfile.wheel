@@ -229,6 +229,7 @@ RUN chmod +x ./qt.run && \
     ./qt.run --verbose --platform minimal --script "/root/qt-installer-noninteractive.qs" && \
     rm qt.run
 ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
+ENV PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake:$PATH"
 
 # Install vtk
 WORKDIR /root
