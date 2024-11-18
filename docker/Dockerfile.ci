@@ -220,23 +220,23 @@ RUN mkdir -p /etc/apt/keyrings \
 
 # [mv relocation issues] fix the issues about the conflicts with libattr between conda and system
 RUN if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then \
-        echo "fix issues with system about: $CONDA_PREFIX/lib/libattr.so.1" \
-        mv $CONDA_PREFIX/lib/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.2 \
-        ln -s /lib/x86_64-linux-gnu/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.1 \
+        echo "fix issues with system about: $CONDA_PREFIX/lib/libattr.so.1"; \
+        mv $CONDA_PREFIX/lib/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.2; \
+        ln -s /lib/x86_64-linux-gnu/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.1; \
     fi
 
 # fix no such file: /usr/lib/libGL.so when building libPCLEngine
 RUN if [ -f "/usr/lib/libGL.so" ]; then \
-        echo "/usr/lib/libGL.so has been already, no need to soft link!" \
+        echo "/usr/lib/libGL.so has been already, no need to soft link!"; \
     else \
-        echo "fix issues with no file in /usr/lib/libGL.so" \
-        ln -s /usr/lib/x86_64-linux-gnu/libGL.so /usr/lib/libGL.so \
+        echo "fix issues with no file in /usr/lib/libGL.so"; \
+        ln -s /usr/lib/x86_64-linux-gnu/libGL.so /usr/lib/libGL.so; \
     fi
 
 # fix libQt undefined issues
 RUN if [ -f "/usr/lib/x86_64-linux-gnu/libstdc++.so.6" ]; then \
-        rm /usr/lib/x86_64-linux-gnu/libstdc++.so.6 \
-        ln -s $CONDA_PREFIX/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6 \
+        rm /usr/lib/x86_64-linux-gnu/libstdc++.so.6; \
+        ln -s $CONDA_PREFIX/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6; \
     fi
 RUN export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
 

@@ -43,11 +43,20 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && which python \
  && python --version
 
-# fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-# echo -e "\ny" | conda install libffi==3.3
-echo -e "\ny" | conda install cmake
-export CMAKE_ROOT=$(dirname $(dirname $(which cmake)))/share/cmake-$(cmake --version | grep -oP '(?<=version )\d+\.\d+')
-echo $CMAKE_ROOT
+eval $(
+    source /etc/lsb-release;
+    echo DISTRIB_ID="$DISTRIB_ID";
+    echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
+)
+# fix libstdc++.so.6: version `GLIBCXX_3.4.30' not found on ubuntu22.04
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
+else
+    # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
+    # echo -e "\ny" | conda install libffi==3.3
+    echo -e "\ny" | conda install cmake
+    export CMAKE_ROOT=$(dirname $(dirname $(which cmake)))/share/cmake-$(cmake --version | grep -oP '(?<=version )\d+\.\d+')
+    echo $CMAKE_ROOT
+fi
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh

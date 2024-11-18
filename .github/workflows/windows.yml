@@ -161,7 +161,7 @@ jobs:
             -DPLUGIN_IO_QRDB=ON `
             -DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=ON `
             -DPLUGIN_IO_QFBX=ON `
-            -DPLUGIN_IO_QSTEP=ON `
+            -DPLUGIN_IO_QSTEP=OFF `
             -DPLUGIN_STANDARD_QCORK=ON `
             -DPLUGIN_STANDARD_QJSONRPC=ON `
             -DPLUGIN_STANDARD_QCLOUDLAYERS=ON `

@@ -490,23 +490,23 @@ test_wheel() {
     # Fix Ubuntu18.04 issues: You're trying to build PyTorch with a too old version of GCC. 
     # We need GCC 9 or later.
     if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
-        if [ "$BUILD_PYTORCH_OPS" == ON ]; then
+        if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
             python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements-torch201.txt"
             python  -W default -c \
                 "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
         fi
-        if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
+        if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
             python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements-tensorflow.txt"
             python  -W default -c \
                 "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
         fi
     else
-        if [ "$BUILD_PYTORCH_OPS" == ON ]; then
+        if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
             python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
             python  -W default -c \
                 "import cloudViewer.ml.torch; print('PyTorch Ops library loaded:', cloudViewer.ml.torch._loaded)"
         fi
-        if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
+        if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
             python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-tensorflow.txt"
             python  -W default -c \
                 "import cloudViewer.ml.tf.ops; print('TensorFlow Ops library loaded:', cloudViewer.ml.tf.ops)"
@@ -514,7 +514,7 @@ test_wheel() {
     fi
     
     echo
-    if [ "$BUILD_TENSORFLOW_OPS" == ON ] && [ "$BUILD_PYTORCH_OPS" == ON ]; then
+    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] && [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         echo "Importing TensorFlow and torch in the reversed order"
         python -W default -c "import tensorflow as tf; import torch; import cloudViewer.ml.torch as o3d"
         echo "Importing TensorFlow and torch in the normal order"
