@@ -187,7 +187,7 @@ cpu-static_export_env() {
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=VIEWER
+    export PACKAGE=ON
 }
 
 cpu-static-ml-release_export_env() {
