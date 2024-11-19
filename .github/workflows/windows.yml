@@ -45,9 +45,10 @@ jobs:
         CONFIG: [Release, Debug]
         exclude:
           - BUILD_SHARED_LIBS: ON
-            STATIC_RUNTIME: ON
+          - STATIC_RUNTIME: ON
         include:
-          - BUILD_CUDA_MODULE: ON
+          - BUILD_SHARED_LIBS: OFF
+          - STATIC_RUNTIME: OFF
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
@@ -189,7 +190,7 @@ jobs:
 
       - name: ACloudViewer App
         working-directory: ${{ env.BUILD_DIR }}
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
@@ -198,7 +199,7 @@ jobs:
             --target INSTALL
 
       - name: Upload ACloudViewer
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
           name: cloudViewer-app-windows-amd64

@@ -17,7 +17,6 @@ LABEL maintainer="ACloudViewer Team ludahai19@163.com"
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES all
-ENV CMAKE_VERSION=cmake-3.24.4-linux-x86_64
 ENV SUDO=command
 
 ENV REFRESHED_AT=2023-06-04\

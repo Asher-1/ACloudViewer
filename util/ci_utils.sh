@@ -400,6 +400,7 @@ build_pip_package() {
         echo "BUILD_WITH_CONDA is on"
     else
         BUILD_WITH_CONDA=OFF
+        CONDA_LIB_DIR=""
         echo "BUILD_WITH_CONDA is off"
     fi
     set -u

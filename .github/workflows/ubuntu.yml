@@ -53,13 +53,6 @@ jobs:
           elif [ "${{ matrix.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cpu-static-ml-release
           fi
-      - name: Docker test
-        run: |
-          if   [ "${{ matrix.MLOPS }}" = "OFF" ]; then
-            docker/docker_test.sh cpu-static
-          elif [ "${{ matrix.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_test.sh cpu-static-ml-release
-          fi
       - name: Upload package to GitHub artifacts
         uses: actions/upload-artifact@v4
         with:

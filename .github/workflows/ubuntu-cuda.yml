@@ -70,9 +70,6 @@ jobs:
         run: |
           # GITHUB_WORKSPACE: /home/runner/work/ACloudViewer/ACloudViewer
           cd "${GITHUB_WORKSPACE}/.."
-          # if [ "${BUILD_PACKAGE}" == "true" ] && [ "$DEVELOPER_BUILD" == "OFF" ]; then
-          #   export RELEASE_TAG="-release"
-          # fi
           ACloudViewer/docker/docker_build.sh ${CI_CONFIG}${RELEASE_TAG:-}
           mv /ACloudViewer-*run "$PWD"
           ls -alh
@@ -84,12 +81,6 @@ jobs:
           name: ACloudViewer-devel-linux-x86_64-cuda-${{ matrix.CI_CONFIG }}
           path: ACloudViewer-*run
           if-no-files-found: error
-
-      # - name: run docker
-      #   run: |
-      #     cd "${GITHUB_WORKSPACE}/.."
-      #     ACloudViewer/docker/docker_test.sh ${CI_CONFIG}
-
       # - name: ccache upload
       #   if: ${{ github.ref == 'refs/heads/main' }}
       #   run: |
