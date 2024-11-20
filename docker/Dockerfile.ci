@@ -153,6 +153,7 @@ RUN git clone https://github.com/ccache/ccache.git \
  && ccache --version \
  && ccache -s
 
+
 # deploy package installer
 WORKDIR /root
 RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-linux-amd.zip -O "/root/QtIFW-4.6.1-linux-amd.zip"
@@ -169,6 +170,9 @@ RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIE
 COPY . /root/ACloudViewer
 WORKDIR /root/ACloudViewer
 
+# ACloudViewer C++ dependencies
+RUN ./util/install_deps_ubuntu.sh assume-yes
+
 # Miniconda or Intel conda
 # The **/cloudViewer/bin paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
@@ -183,7 +187,8 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
  && conda --version \
  && cp .ci/conda_cloudViewer.yml /root/conda_env_${PYTHON_VERSION}.yml \
  && sed -i "s/3.8/${PYTHON_VERSION}/g" /root/conda_env_${PYTHON_VERSION}.yml \
- && conda env create -f /root/conda_env_${PYTHON_VERSION}.yml
+ && conda env create -f /root/conda_env_${PYTHON_VERSION}.yml \
+ && conda install -c conda-forge libstdcxx-ng
 
 # Activate cloudViewr virtualenv
 # This works during docker build. It becomes the prefix of all RUN commands.
@@ -195,9 +200,6 @@ RUN echo "CONDA_PREFIX: ${CONDA_PREFIX}"
 
 # fix ubuntu2204 and conda library conflicts about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
 # RUN echo -e "\ny" | conda install libffi==3.3
-
-# ACloudViewer C++ dependencies
-RUN ./util/install_deps_ubuntu.sh assume-yes
 
 # ACloudViewer Python dependencies
 WORKDIR /root/ACloudViewer
@@ -221,7 +223,6 @@ RUN mkdir -p /etc/apt/keyrings \
  && node --version \
  && npm install -g yarn \
  && yarn --version
-
 
 # [mv relocation issues] fix the issues about the conflicts with libattr between conda and system
 RUN if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then \
