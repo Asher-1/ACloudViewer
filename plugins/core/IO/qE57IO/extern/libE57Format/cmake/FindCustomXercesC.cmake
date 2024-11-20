@@ -6,6 +6,7 @@ find_library(XercesC_LIBRARIES
         HINTS /usr/lib
         /usr/local/lib
         $ENV{CONDA_PREFIX}/lib
+        $ENV{CONDA_PREFIX}/Library/lib # windows
         )
 
 find_path(XercesC_INCLUDE_DIRS
@@ -13,6 +14,7 @@ find_path(XercesC_INCLUDE_DIRS
         HINTS /usr/include
         /usr/local/include
         $ENV{CONDA_PREFIX}/include
+        $ENV{CONDA_PREFIX}/Library/include # windows
         )
 message(DEBUG "XercesC_INCLUDE_DIRS: ${XercesC_INCLUDE_DIRS}")
 message(DEBUG "XercesC_LIBRARIES: ${XercesC_LIBRARIES}")

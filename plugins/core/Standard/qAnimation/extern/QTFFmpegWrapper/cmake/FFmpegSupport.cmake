@@ -2,20 +2,39 @@
 # FFmpeg+CMake support for ACloudViewer
 # ------------------------------------------------------------------------------
 
-if (APPLE)
-	find_package(PkgConfig REQUIRED)
-	pkg_check_modules(FFMPEG REQUIRED
-			libavcodec
-			libavformat
-			libavutil
-			libswscale
-	)
-	message(STATUS "Found FFmpeg ${FFMPEG_INCLUDE_DIRS}: ${FFMPEG_LIBRARIES}")
-endif ()
+find_package(PkgConfig QUIET)
+pkg_check_modules(FFMPEG QUIET
+		libavcodec
+		libavformat
+		libavutil
+		libswscale
+)
+if( NOT EXISTS "${FFMPEG_INCLUDE_DIRS}" )
+	if (NOT EXISTS "${PKG_FFMPEG_INCLUDE_DIRS}")
+		if (BUILD_WITH_CONDA)
+			if(WIN32)
+				set(FFMPEG_ROOT "$ENV{CONDA_PREFIX}/Library")
+				set(FFMPEG_INCLUDE_DIRS "${FFMPEG_ROOT}/include")
+			else()
+				set(FFMPEG_ROOT "$ENV{CONDA_PREFIX}")
+				set(FFMPEG_INCLUDE_DIRS "${FFMPEG_ROOT}/include")
+			endif()
+		endif()
+	else ()
+		set(FFMPEG_INCLUDE_DIRS ${PKG_FFMPEG_INCLUDE_DIRS})
+		message(STATUS "PKG_FFMPEG_INCLUDE_DIRS: ${PKG_FFMPEG_INCLUDE_DIRS}")
+	endif ()
+endif()
+message(STATUS "Found FFmpeg ${FFMPEG_INCLUDE_DIRS}: ${FFMPEG_LIBRARIES}")
 
 # Find FFmpeg includes
 if( NOT EXISTS "${FFMPEG_INCLUDE_DIRS}" )
-	find_path( FFMPEG_AVCODEC_INCLUDE_DIR libavcodec/avcodec.h )
+	find_path( FFMPEG_AVCODEC_INCLUDE_DIR 
+		libavcodec/avcodec.h
+		HINTS
+		$ENV{CONDA_PREFIX}/include
+		$ENV{CONDA_PREFIX}/Library/include # windows
+	)
 	set( FFMPEG_INCLUDE_DIRS "${FFMPEG_AVCODEC_INCLUDE_DIR}" CACHE PATH "FFmpeg include directory" )
 	
 	message( STATUS "Setting FFmpeg include dir: ${FFMPEG_INCLUDE_DIRS}" )

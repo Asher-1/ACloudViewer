@@ -6,6 +6,7 @@ find_library(LASZIP_LIBRARY
         HINTS /usr/lib
         /usr/local/lib
         $ENV{CONDA_PREFIX}/lib
+        $ENV{CONDA_PREFIX}/Library/lib # windows
         )
 
 find_path(LASZIP_INCLUDE_DIR
@@ -13,6 +14,7 @@ find_path(LASZIP_INCLUDE_DIR
         HINTS /usr/include
         /usr/local/include
         $ENV{CONDA_PREFIX}/include
+        $ENV{CONDA_PREFIX}/Library/include # windows
         )
 
 if (WIN32)

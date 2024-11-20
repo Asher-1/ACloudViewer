@@ -130,13 +130,15 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
  && rm -rf /var/lib/apt/lists/*
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Dependencies: cmake
-ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
-RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
- && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
- && tar -xf ${CMAKE_VERSION}.tar.gz \
- && cp -ar ${CMAKE_VERSION} ${HOME} \
- && cmake --version
+# ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
+# RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+#  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+#  && tar -xf ${CMAKE_VERSION}.tar.gz \
+#  && cp -ar ${CMAKE_VERSION} ${HOME} \
+#  && cmake --version
 
 # Dependencies: ccache
 WORKDIR /root
@@ -187,6 +189,9 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
 # This works during docker build. It becomes the prefix of all RUN commands.
 # Ref: https://stackoverflow.com/a/60148365/1255535
 SHELL ["conda", "run", "-n", "cloudViewer", "/bin/bash", "-o", "pipefail", "-c"]
+
+RUN echo "CONDA_EXE: ${CONDA_EXE}"
+RUN echo "CONDA_PREFIX: ${CONDA_PREFIX}"
 
 # fix ubuntu2204 and conda library conflicts about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
 # RUN echo -e "\ny" | conda install libffi==3.3
@@ -239,17 +244,13 @@ RUN if [ -f "/usr/lib/x86_64-linux-gnu/libstdc++.so.6" ]; then \
         ln -s $CONDA_PREFIX/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6; \
     fi
 RUN export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+RUN export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 
 # Build all
-RUN \
- && export CMAKE_CXX_COMPILER=g++ \
- && export CMAKE_C_COMPILER=gcc \
- && mkdir build \
+RUN mkdir -p build \
  && cd build \
  && cmake -DBUILD_SHARED_LIBS=OFF \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
-          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
           -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
           -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
@@ -304,6 +305,8 @@ RUN \
           -DBUILD_UNIT_TESTS=OFF \
           -DBUILD_BENCHMARKS=OFF \
           -DBUILD_EXAMPLES=OFF \
+          -DCONDA_PREFIX=${CONDA_PREFIX} \
+          -DBUILD_WITH_CONDA=ON \
           -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
           -DCMAKE_INSTALL_PREFIX=~/cloudviewer_install \
           .. \

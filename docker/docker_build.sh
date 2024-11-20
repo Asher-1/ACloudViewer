@@ -47,7 +47,7 @@ HOST_CLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 
 
 # Shared variables
 CCACHE_VERSION=4.3
-CMAKE_VERSION=cmake-3.24.4-linux-x86_64
+CMAKE_VERSION=cmake-3.29.2-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
 CUDA_VERSION=11.8.0-cudnn8
 CUDA_VERSION_LATEST=11.8.0-cudnn8
@@ -126,6 +126,10 @@ ci_build() {
 
     pushd "${HOST_CLOUDVIEWER_ROOT}"
     docker build \
+        --network host \
+        --build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
+        --build-arg HTTP_PROXY=http://127.0.0.1:7890 \
+        --build-arg HTTPS_PROXY=http://127.0.0.1:7890 \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
