@@ -43,7 +43,12 @@ endif()
 
 # Find FFmpeg libraries
 if( NOT EXISTS "${FFMPEG_LIBRARY_DIR}" )
-	find_library( FFMPEG_AVCODEC_LIBRARY_DIR avcodec DOC "FFmpeg library directory" )
+	find_library( FFMPEG_AVCODEC_LIBRARY_DIR 
+		avcodec DOC "FFmpeg library directory" 
+		HINTS 
+					$ENV{CONDA_PREFIX}/lib
+					$ENV{CONDA_PREFIX}/Library/lib # windows
+	)
 	get_filename_component( FFMPEG_AVCODEC_LIBRARY_DIR ${FFMPEG_AVCODEC_LIBRARY_DIR} DIRECTORY )
 	set( FFMPEG_LIBRARY_DIR "${FFMPEG_AVCODEC_LIBRARY_DIR}" CACHE PATH "FFmpeg library directory" )
 	
