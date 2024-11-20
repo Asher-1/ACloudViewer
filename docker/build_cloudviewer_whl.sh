@@ -51,6 +51,14 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
 # echo -e "\ny" | conda install cmake
 # export CMAKE_ROOT=$(dirname $(dirname $(which cmake)))/share/cmake-$(cmake --version | grep -oP '(?<=version )\d+\.\d+')
 # echo $CMAKE_ROOT
+eval $(
+    source /etc/lsb-release;
+    echo DISTRIB_ID="$DISTRIB_ID";
+    echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
+)
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
+    conda install -c conda-forge libstdcxx-ng
+fi
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
