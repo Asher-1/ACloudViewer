@@ -19,6 +19,7 @@ export NPROC=$(nproc)
 export ENV_NAME="python${PYTHON_VERSION}"
 echo "ENV_NAME: " ${ENV_NAME}
 
+set +u
 if [ -n "$CONDA_EXE" ]; then
     CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
 elif [ -n "$CONDA_PREFIX" ]; then
@@ -27,10 +28,12 @@ else
     echo "Failed to find Miniconda3 install path..."
     exit -1
 fi
+set -u
 
 echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
 source "$CONDA_ROOT/etc/profile.d/conda.sh"
 
+conda config --set always_yes yes
 if conda info --envs | grep -q "^$ENV_NAME "; then
     echo "env $ENV_NAME exists and start to remove..."
     conda env remove -n $ENV_NAME
@@ -45,9 +48,9 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
 
 # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
 # echo -e "\ny" | conda install libffi==3.3
-echo -e "\ny" | conda install cmake
-export CMAKE_ROOT=$(dirname $(dirname $(which cmake)))/share/cmake-$(cmake --version | grep -oP '(?<=version )\d+\.\d+')
-echo $CMAKE_ROOT
+# echo -e "\ny" | conda install cmake
+# export CMAKE_ROOT=$(dirname $(dirname $(which cmake)))/share/cmake-$(cmake --version | grep -oP '(?<=version )\d+\.\d+')
+# echo $CMAKE_ROOT
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh

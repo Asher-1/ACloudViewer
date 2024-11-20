@@ -19,6 +19,7 @@ export POST_FIX="python${PYTHON_VERSION}"
 export ENV_NAME="cloudViewer"
 echo "ENV_NAME: " ${ENV_NAME}
 
+set +u
 if [ -n "$CONDA_EXE" ]; then
     CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
 elif [ -n "$CONDA_PREFIX" ]; then
@@ -27,10 +28,12 @@ else
     echo "Failed to find Miniconda3 install path..."
     exit -1
 fi
+set -u
 
 echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
 source "$CONDA_ROOT/etc/profile.d/conda.sh"
 
+conda config --set always_yes yes
 if conda info --envs | grep -q "^$ENV_NAME "; then
     echo "env $ENV_NAME exists and start to remove..."
     conda env remove -n $ENV_NAME
@@ -55,6 +58,7 @@ if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then
     ln -s /lib/x86_64-linux-gnu/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.1
 fi
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 
 # fix no such file: /usr/lib/libGL.so when building libPCLEngine
 if [ -f "/usr/lib/libGL.so" ]; then

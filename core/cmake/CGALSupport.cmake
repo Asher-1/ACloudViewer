@@ -2,6 +2,13 @@
 # CGAL+CMake support for ACloudViewer
 # ------------------------------------------------------------------------------
 
+if (BUILD_WITH_CONDA)
+	if (WIN32)
+		set(CGAL_DIR "${CONDA_PREFIX}/Library/lib/cmake/CGAL")
+	else()
+		set(CGAL_DIR "${CONDA_PREFIX}/lib/cmake/CGAL")
+	endif()
+endif()
 FIND_PACKAGE( CGAL QUIET COMPONENTS Core ) # implies findGMP
 
 if (CGAL_FOUND)
@@ -32,7 +39,5 @@ if (CGAL_FOUND)
 	endif()
 
 else()
-
 	message(SEND_ERROR "Could not find CGAL")
-
 endif()

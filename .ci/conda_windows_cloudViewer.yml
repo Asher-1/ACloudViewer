@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python=3.8
   - ninja
+  - pkg-config
   - boost=1.84.0 # pcl or vtk
   - flann=1.9.*
   - qhull=2020.2
@@ -13,4 +14,3 @@ dependencies:
   - zlib=1.2.*
   - laszip # PLUGIN_IO_QLAS
   - cgal=5.* # only support macos and windows due to issues with cgal on linux
-  - pkg-config

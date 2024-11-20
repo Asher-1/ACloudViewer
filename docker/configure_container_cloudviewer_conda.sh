@@ -22,7 +22,6 @@ docker run -dit --name=test_cloudviewer_dep_conda \
   -v /etc/localtime:/etc/localtime:ro \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer:/root/ACloudViewer \
-  -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/root/CloudViewer-ML \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
   cloudviewer-deps-conda:develop-ubuntu18.04-cuda11.8.0-cudnn8
@@ -47,7 +46,6 @@ docker run -dit --name=test_cloudviewer_conda \
   -v /etc/localtime:/etc/localtime:ro \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer:/root/ACloudViewer \
-  -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/root/CloudViewer-ML \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
   -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
   cloudviewer-conda:develop-ubuntu18.04-cuda11.8.0-cudnn8

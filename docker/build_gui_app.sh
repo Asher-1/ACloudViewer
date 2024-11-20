@@ -18,6 +18,7 @@ export NPROC=$(nproc)
 export ENV_NAME="cloudViewer"
 echo "ENV_NAME: " ${ENV_NAME}
 
+set +u
 if [ -n "$CONDA_EXE" ]; then
     CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
 elif [ -n "$CONDA_PREFIX" ]; then
@@ -26,10 +27,12 @@ else
     echo "Failed to find Miniconda3 install path..."
     exit -1
 fi
+set -u
 
 echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
 source "$CONDA_ROOT/etc/profile.d/conda.sh"
 
+conda config --set always_yes yes
 if conda info --envs | grep -q "^$ENV_NAME "; then
     echo "env $ENV_NAME exists and start to remove..."
     conda env remove -n $ENV_NAME
