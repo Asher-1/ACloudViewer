@@ -188,7 +188,7 @@ jobs:
             -DPLUGIN_STANDARD_QSRA=ON `
             -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `
             -DCONDA_PREFIX=$env:CONDA_PREFIX `
-            -DDBUILD_WITH_CONDA=ON `
+            -DBUILD_WITH_CONDA=ON `
             -DBUILD_UNIT_TESTS=OFF `
             ${{ env.SRC_DIR }}
 
@@ -283,7 +283,7 @@ jobs:
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `
             -DCONDA_PREFIX=$env:CONDA_PREFIX `
-            -DDBUILD_WITH_CONDA=ON `
+            -DBUILD_WITH_CONDA=ON `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=OFF `
             -DBUILD_AZURE_KINECT=ON `
