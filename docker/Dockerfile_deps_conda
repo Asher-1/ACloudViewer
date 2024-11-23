@@ -70,7 +70,6 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         nasm \
         flex \
         fontconfig \
-        mono-complete \
         libgdal-dev \
         libcgal-dev \
         # for QT
