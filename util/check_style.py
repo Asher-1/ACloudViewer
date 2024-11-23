@@ -1,10 +1,3 @@
-# ----------------------------------------------------------------------------
-# -                        Open3D: www.open3d.org                            -
-# ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
-# SPDX-License-Identifier: MIT
-# ----------------------------------------------------------------------------
-
 import subprocess
 import re
 import shutil
@@ -62,9 +55,9 @@ except ImportError:
 class CppFormatter:
 
     standard_header = """// ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                        CloudViewer: www.cloudViewer.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 """
@@ -144,9 +137,9 @@ class CppFormatter:
 class PythonFormatter:
 
     standard_header = """# ----------------------------------------------------------------------------
-# -                        Open3D: www.open3d.org                            -
+# -                        CloudViewer: www.cloudViewer.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """
@@ -290,18 +283,18 @@ def _glob_files(directories, extensions):
     Find files with certain extensions in directories recursively.
 
     Args:
-        directories: list of directories, relative to the root Open3D repo directory.
+        directories: list of directories, relative to the root CloudViewer repo directory.
         extensions: list of extensions, e.g. ["cpp", "h"].
 
     Return:
         List of file paths.
     """
     pwd = Path(__file__).resolve().parent
-    open3d_root_dir = pwd.parent
+    cloudViewer_root_dir = pwd.parent
 
     file_paths = []
     for directory in directories:
-        directory = open3d_root_dir / directory
+        directory = cloudViewer_root_dir / directory
         for extension in extensions:
             extension_regex = "*." + extension
             file_paths.extend(directory.rglob(extension_regex))
@@ -358,7 +351,7 @@ def _find_clang_format():
 
     raise RuntimeError(
         f"clang-format version {required_clang_format_major} not found. "
-        "See https://www.open3d.org/docs/release/contribute/styleguide.html#style-guide "
+        "See https://www.cloudViewer.org/docs/release/contribute/styleguide.html#style-guide "
         "for help on clang-format installation.")
 
 
@@ -402,7 +395,7 @@ def main():
     pwd = Path(__file__).resolve().parent
     python_style_config = str(pwd.parent / ".style.yapf")
 
-    cpp_ignored_files = ['cpp/open3d/visualization/shader/Shader.h']
+    cpp_ignored_files = ['cpp/cloudViewer/visualization/shader/Shader.h']
     cpp_files = _glob_files(CPP_FORMAT_DIRS,
                             ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in"])
     cpp_files = _filter_files(cpp_files, cpp_ignored_files)

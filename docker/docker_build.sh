@@ -25,13 +25,12 @@ OPTION:
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
-    cpu-static-ml-release       : Ubuntu CPU static with ML (pre_cxx11_abi), release mode
 
     # ML CIs (Dockerfile.ci)
     2-focal                   : CUDA CI, 2-bionic, developer mode
     5-ml-jammy                 : CUDA CI, 5-ml-focal, developer mode
 
-    # CUDA wheels (Dockerfile.wheel)
+    # CUDA wheels (Dockerfile.ci)
     cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
     cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
@@ -97,9 +96,13 @@ cuda_wheel_build() {
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg BUILD_CUDA_MODULE="ON" \
+        --build-arg BUILD_WHEEL="ON" \
+        --build-arg BUILD_GUI="OFF" \
+        --build-arg PACKAGE="OFF" \
         --build-arg CI="${CI:-}" \
         -t cloudviewer-ci:wheel \
-        -f docker/Dockerfile.wheel .
+        -f docker/Dockerfile.ci .
     popd
 
     python_package_dir=/root/ACloudViewer/build/lib/python_package
@@ -122,10 +125,15 @@ ci_build() {
     echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+    echo "[ci_build()] BUILD_GUI=${BUILD_GUI}"
     echo "[ci_build()] PACKAGE=${PACKAGE}"
 
     pushd "${HOST_CLOUDVIEWER_ROOT}"
     docker build \
+        --network host \
+        --build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
+        --build-arg HTTP_PROXY=http://127.0.0.1:7890 \
+        --build-arg HTTPS_PROXY=http://127.0.0.1:7890 \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
@@ -136,6 +144,8 @@ ci_build() {
         --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg BUILD_WHEEL="OFF" \
+        --build-arg BUILD_GUI="${BUILD_GUI}" \
         --build-arg PACKAGE="${PACKAGE}" \
         --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
@@ -143,66 +153,67 @@ ci_build() {
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-        bash -cx "cp /ACloudViewer-*run /opt/mount \
-               && chown $(id -u):$(id -g) /opt/mount/ACloudViewer-*run"
+        bash -cx "cp /root/install/*run /opt/mount \
+               && chown $(id -u):$(id -g) /opt/mount/*run"
 }
 
-2-focal_export_env() {
-    export DOCKER_TAG=cloudviewer-ci:2-focal
+cuda-focal_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cuda-focal
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudviewer-ci-2-focal
+    export CCACHE_TAR_NAME=cloudviewer-ci-cuda-focal
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
+    export BUILD_GUI=ON
 }
 
-5-ml-jammy_export_env() {
-    export DOCKER_TAG=cloudviewer-ci:5-ml-jammy
+cuda-jammy_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cuda-jammy
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudviewer-ci-5-ml-jammy
+    export CCACHE_TAR_NAME=cloudviewer-ci-cuda-jammy
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
-    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=ON # ignore this current
+    export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
+    export BUILD_GUI=ON
 }
 
-cpu-static_export_env() {
-    export DOCKER_TAG=cloudviewer-ci:cpu-static
+cpu-focal_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cpu-focal
 
     export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudviewer-ci-cpu
+    export CCACHE_TAR_NAME=cloudviewer-ci-cpu-focal
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
+    export BUILD_GUI=ON
 }
 
-cpu-static-ml-release_export_env() {
-    export DOCKER_TAG=cloudviewer-ci:cpu-shared-ml
-
-    export BASE_IMAGE=ubuntu:20.04
-    export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=cloudviewer-ci-cpu
+cpu-jammy_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cpu-jammy
+    export BASE_IMAGE=ubuntu:22.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=cloudviewer-ci-cpu-jammy
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
-    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=ON
+    export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
+    export BUILD_GUI=ON
 }
 
 function main() {
@@ -214,12 +225,22 @@ function main() {
     case "$1" in
 
     # CPU CI
-    cpu-static)
-        cpu-static_export_env
+    cpu-focal)
+        cpu-focal_export_env
         ci_build
         ;;
-    cpu-static-ml-release)
-        cpu-static-ml-release_export_env
+    cpu-jammy)
+        cpu-jammy_export_env
+        ci_build
+        ;;
+
+    # CUDA CIs
+    cuda-focal)
+        cuda-focal_export_env
+        ci_build
+        ;;
+    cuda-jammy)
+        cuda-jammy_export_env
         ci_build
         ;;
 
@@ -253,16 +274,6 @@ function main() {
         ;;
     cuda_wheel_py312)
         cuda_wheel_build py312
-        ;;
-
-    # ML CIs
-    2-focal)
-        2-focal_export_env
-        ci_build
-        ;;
-    5-ml-jammy)
-        5-ml-jammy_export_env
-        ci_build
         ;;
     *)
         echo "Error: invalid argument: ${1}." >&2

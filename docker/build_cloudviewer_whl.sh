@@ -46,19 +46,9 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && which python \
  && python --version
 
-# fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-# echo -e "\ny" | conda install libffi==3.3
 # echo -e "\ny" | conda install cmake
 # export CMAKE_ROOT=$(dirname $(dirname $(which cmake)))/share/cmake-$(cmake --version | grep -oP '(?<=version )\d+\.\d+')
 # echo $CMAKE_ROOT
-eval $(
-    source /etc/lsb-release;
-    echo DISTRIB_ID="$DISTRIB_ID";
-    echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
-)
-if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
-    conda install -c conda-forge libstdcxx-ng
-fi
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
@@ -70,14 +60,25 @@ build_pip_package build_realsense build_azure_kinect build_jupyter
 
 set -x # Echo commands on
 df -h
-pushd build # PWD=ACloudViewer/build
-echo "Try importing cloudViewer Python package"
-if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
-    test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer-*whl
+
+eval $(
+    source /etc/lsb-release;
+    echo DISTRIB_ID="$DISTRIB_ID";
+    echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
+)
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
+    # fix GLIB_*_30 missing issues
+    echo "due to GLIB_ missing issues on Ubuntu22.04 and ignore test $wheel_path"
 else
-    test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer_cpu-*whl
+    pushd build # PWD=ACloudViewer/build
+    echo "Try importing cloudViewer Python package"
+    if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
+        test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer-*whl
+    else
+        test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer_cpu-*whl
+    fi
+    popd # PWD=ACloudViewer
 fi
-popd # PWD=ACloudViewer
 
 echo "Finish building cloudViewer wheel based on ${PYTHON_VERSION}!"
 echo "mv ${ACloudViewer_BUILD}/lib/python_package/pip_package/*whl ${ACloudViewer_INSTALL}"

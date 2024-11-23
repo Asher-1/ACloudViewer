@@ -16,6 +16,8 @@ ARG BUILD_CUDA_MODULE
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
+ARG BUILD_GUI
+ARG BUILD_WHEEL
 ARG CI
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
@@ -52,6 +54,8 @@ ENV BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV PACKAGE=${PACKAGE}
+ENV BUILD_WHEEL=${BUILD_WHEEL}
+ENV BUILD_GUI=${BUILD_GUI}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -107,8 +111,8 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         flex \
         fontconfig \
         mono-complete \
-        libgdal-dev \
-        libcgal-dev \
+        # libgdal-dev \
+        # libcgal-dev \
         # for QT
         libxcb-xkb1 \
         libxcb-shape0 \
@@ -132,27 +136,16 @@ RUN apt-get update && apt-get install -y \
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Dependencies: cmake
-# ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
-# RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
-#  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
-#  && tar -xf ${CMAKE_VERSION}.tar.gz \
-#  && cp -ar ${CMAKE_VERSION} ${HOME} \
-#  && cmake --version
-
-# Dependencies: ccache
-WORKDIR /root
-RUN git clone https://github.com/ccache/ccache.git \
- && cd ccache \
- && git checkout v${CCACHE_VERSION} -b ${CCACHE_VERSION} \
- && mkdir build \
- && cd build \
- && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON .. \
- && make install -j$(nproc) \
- && which ccache \
- && ccache --version \
- && ccache -s
-
+ # Miniconda or Intel conda
+# The **/cloudViewer/bin paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+ENV PATH="/root/miniconda3/bin:${PATH}"
+ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
+ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/cloudViewer/bin:${PATH}"
+RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+ && bash Miniconda3-latest-Linux-x86_64.sh -b \
+ && rm Miniconda3-latest-Linux-x86_64.sh \
+ && conda --version
 
 # deploy package installer
 WORKDIR /root
@@ -162,54 +155,31 @@ ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
 # Checkout CloudViewer-ML main branch
 # TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
-ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
-RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
+ENV ACloudViewer_DEV=/root \
+    ACloudViewer_BUILD=/root/ACloudViewer/build \
+    ACloudViewer_INSTALL=/root/install
+
+ENV PATH="/root/miniconda3/bin:$PATH" \
+    CONDA_EXE="/root/miniconda3/bin/conda"
+
+RUN if [ -n "$CONDA_EXE" ]; then \
+        CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE")); \
+    elif [ -n "$CONDA_PREFIX" ]; then \
+        CONDA_ROOT=$(dirname "$CONDA_PREFIX"); \
+    else \
+        echo "Failed to find Miniconda3 install path..."; \
+        exit 1; \
+    fi && \
+    echo "CONDA_ROOT is set to: $CONDA_ROOT" && \
+    source "$CONDA_ROOT/etc/profile.d/conda.sh" 
 
 # ACloudViewer repo
 # Always keep /root/ACloudViewer as the WORKDIR
-COPY . /root/ACloudViewer
-WORKDIR /root/ACloudViewer
+COPY . ${ACloudViewer_DEV}/ACloudViewer
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 # ACloudViewer C++ dependencies
 RUN ./util/install_deps_ubuntu.sh assume-yes
-
-# Miniconda or Intel conda
-# The **/cloudViewer/bin paths are used during docker run, in this way docker run
-# does not need to activate the environment again.
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ENV PATH="/root/miniconda3/envs/cloudViewer/bin:${PATH}"
-ENV CONDA_PREFIX="/root/miniconda3/envs/cloudViewer"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/cloudViewer/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
- && bash Miniconda3-latest-Linux-x86_64.sh -b \
- && rm Miniconda3-latest-Linux-x86_64.sh \
- && conda --version \
- && cp .ci/conda_cloudViewer.yml /root/conda_env_${PYTHON_VERSION}.yml \
- && sed -i "s/3.8/${PYTHON_VERSION}/g" /root/conda_env_${PYTHON_VERSION}.yml \
- && conda env create -f /root/conda_env_${PYTHON_VERSION}.yml \
- && conda install -c conda-forge libstdcxx-ng
-
-# Activate cloudViewr virtualenv
-# This works during docker build. It becomes the prefix of all RUN commands.
-# Ref: https://stackoverflow.com/a/60148365/1255535
-SHELL ["conda", "run", "-n", "cloudViewer", "/bin/bash", "-o", "pipefail", "-c"]
-
-RUN echo "CONDA_EXE: ${CONDA_EXE}"
-RUN echo "CONDA_PREFIX: ${CONDA_PREFIX}"
-
-# fix ubuntu2204 and conda library conflicts about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-# RUN echo -e "\ny" | conda install libffi==3.3
-
-# ACloudViewer Python dependencies
-WORKDIR /root/ACloudViewer
-RUN source util/ci_utils.sh \
- && if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
-        install_python_dependencies with-cuda with-jupyter; \
-    else \
-        install_python_dependencies with-jupyter; \
-    fi \
- && pip install -r python/requirements_test.txt
 
 # ACloudViewer Jupyter dependencies
 RUN mkdir -p /etc/apt/keyrings \
@@ -224,106 +194,24 @@ RUN mkdir -p /etc/apt/keyrings \
  && npm install -g yarn \
  && yarn --version
 
-# [mv relocation issues] fix the issues about the conflicts with libattr between conda and system
-RUN if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then \
-        echo "fix issues with system about: $CONDA_PREFIX/lib/libattr.so.1"; \
-        mv $CONDA_PREFIX/lib/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.2; \
-        ln -s /lib/x86_64-linux-gnu/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.1; \
+
+RUN mkdir -p ${ACloudViewer_INSTALL}
+
+# Build ACloudViewer app installer
+RUN if [ "${BUILD_GUI}" = "ON" ]; then                              \
+        echo "Start Build ACloudViewer apps installer..." &&        \
+        rm -rf ${ACloudViewer_BUILD}/* &&                           \
+        ./docker/build_gui_app_conda.sh ${PYTHON_VERSION};          \
+        rm -rf ${ACloudViewer_BUILD}/*;                             \
     fi
 
-# fix no such file: /usr/lib/libGL.so when building libPCLEngine
-RUN if [ -f "/usr/lib/libGL.so" ]; then \
-        echo "/usr/lib/libGL.so has been already, no need to soft link!"; \
-    else \
-        echo "fix issues with no file in /usr/lib/libGL.so"; \
-        ln -s /usr/lib/x86_64-linux-gnu/libGL.so /usr/lib/libGL.so; \
+RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                            \
+        echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." &&  \
+        rm -rf ${ACloudViewer_BUILD}/* &&                           \
+        ./docker/build_cloudviewer_whl_conda.sh ${PYTHON_VERSION};  \
+        rm -rf ${ACloudViewer_BUILD}/*;                             \
     fi
-
-# fix libQt undefined issues
-RUN if [ -f "/usr/lib/x86_64-linux-gnu/libstdc++.so.6" ]; then \
-        rm /usr/lib/x86_64-linux-gnu/libstdc++.so.6; \
-        ln -s $CONDA_PREFIX/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6; \
-    fi
-RUN export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
-RUN export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
-
-# Build all
-RUN mkdir -p build \
- && cd build \
- && cmake -DBUILD_SHARED_LIBS=OFF \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
-          -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
-          -DBUILD_COMMON_CUDA_ARCHS=ON \
-          -DGLIBCXX_USE_CXX11_ABI=ON \
-          -DBUILD_AZURE_KINECT=ON \
-          -DBUILD_LIBREALSENSE=ON \
-          -DWITH_OPENMP=ON \
-          -DWITH_IPPICV=ON \
-          -DWITH_SIMD=ON \
-          -DUSE_SIMD=ON \
-          -DPACKAGE=${PACKAGE} \
-          -DBUILD_WEBRTC=OFF \
-          -DBUILD_OPENCV=ON \
-          -DBUILD_RECONSTRUCTION=ON \
-          -DBUNDLE_CLOUDVIEWER_ML=OFF \
-          -DCVCORELIB_USE_CGAL=ON \
-          -DCVCORELIB_SHARED=ON \
-          -DCVCORELIB_USE_QT_CONCURRENT=ON \
-          -DOPTION_USE_GDAL=OFF \
-          -DOPTION_USE_DXF_LIB=ON \
-          -DPLUGIN_IO_QDRACO=ON \
-          -DPLUGIN_IO_QLAS=ON \
-          -DPLUGIN_IO_QADDITIONAL=ON \
-          -DPLUGIN_IO_QCORE=ON \
-          -DPLUGIN_IO_QCSV_MATRIX=ON \
-          -DPLUGIN_IO_QE57=ON \
-          -DPLUGIN_IO_QMESH=ON \
-          -DPLUGIN_IO_QPDAL=OFF \
-          -DPLUGIN_IO_QPHOTOSCAN=ON \
-          -DPLUGIN_IO_QRDB=ON \
-          -DPLUGIN_STANDARD_QJSONRPC=ON \
-          -DPLUGIN_STANDARD_QCLOUDLAYERS=ON \
-          -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
-          -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
-          -DPLUGIN_STANDARD_QANIMATION=ON \
-          -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
-          -DPLUGIN_STANDARD_QCANUPO=ON \
-          -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
-          -DPLUGIN_STANDARD_QCOMPASS=ON \
-          -DPLUGIN_STANDARD_QCSF=ON \
-          -DPLUGIN_STANDARD_QFACETS=ON \
-          -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON \
-          -DPLUGIN_STANDARD_QM3C2=ON \
-          -DPLUGIN_STANDARD_QMPLANE=ON \
-          -DPLUGIN_STANDARD_QPCL=ON \
-          -DPLUGIN_STANDARD_QPOISSON_RECON=ON \
-          -DPOISSON_RECON_WITH_OPEN_MP=ON \
-          -DPLUGIN_STANDARD_QRANSAC_SD=ON \
-          -DPLUGIN_STANDARD_QSRA=ON \
-          -DBUILD_TENSORFLOW_OPS=OFF \
-          -DBUILD_PYTORCH_OPS=OFF \
-          -DBUILD_UNIT_TESTS=OFF \
-          -DBUILD_BENCHMARKS=OFF \
-          -DBUILD_EXAMPLES=OFF \
-          -DCONDA_PREFIX=${CONDA_PREFIX} \
-          -DBUILD_WITH_CONDA=ON \
-          -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
-          -DCMAKE_INSTALL_PREFIX=~/cloudviewer_install \
-          .. \
- && make VERBOSE=1 -j$(nproc) \
- && make install -j$(nproc) \
- && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc; fi
-# If CI is not null or unset, remove all large build folders to save disk space
-
-# Compress ccache folder, move to / directory
-RUN ccache -s \
- && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
- && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
- && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
- && cd ${CCACHE_DIR_PARENT} \
- && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
- && if [ "${PACKAGE}" = "ON" ]; then mv ~/cloudviewer_install/ACloudViewer-*run /; fi \
- && ls -alh /
+    
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 RUN echo "Docker build done."

@@ -65,8 +65,8 @@ if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then
     ln -s /lib/x86_64-linux-gnu/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.1
 fi
 
-export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
-export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake"
+export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh

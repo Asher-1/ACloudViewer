@@ -101,7 +101,8 @@ if (OPENMP_ENABLED)
     find_package(OpenMP QUIET)
 endif ()
 
-if (APPLE OR WIN32)
+# Linux: boost must building from source due to _GLIBCXX_USE_CXX11_ABI=0 issues
+if (APPLE OR WIN32 OR ${GLIBCXX_USE_CXX11_ABI})
     find_package(Boost REQUIRED COMPONENTS
                 graph
                 filesystem
@@ -123,7 +124,9 @@ if (NOT APPLE)
             add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
         endif ()
     else ()
-        set(BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory")
+        if (NOT ${GLIBCXX_USE_CXX11_ABI})
+            set(BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory")
+        endif()
     endif ()
 
     message(STATUS "BOOST ROOT: ${BOOST_ROOT}")

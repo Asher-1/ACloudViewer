@@ -8,7 +8,7 @@
 # > APPLY
 #
 # Example usage:
-# cmake -DPROJECT_SOURCE_DIR=/path/to/open3d \
+# cmake -DPROJECT_SOURCE_DIR=/path/to/cloudViewer \
 #       -DAPPLY=ON \
 #       -P check_cpp_style.cmake
 
@@ -26,7 +26,7 @@ if(CLANG_FORMAT)
     message(STATUS "clang-format found at: ${CLANG_FORMAT}")
     execute_process(COMMAND ${CLANG_FORMAT} --version)
 else()
-    message("See https://www.open3d.org/docs/release/contribute/styleguide.html#style-guide for help on style checker")
+    message("See https://www.cloudViewer.org/docs/release/contribute/styleguide.html#style-guide for help on style checker")
     message(FATAL_ERROR "clang-format not found, style not available")
 endif()
 
@@ -74,7 +74,7 @@ foreach(DIRECTORY ${CPP_FORMAT_DIRS})
         "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h.in"
     )
     set(IGNOFRED_FILES
-        "${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h"
+        "${PROJECT_SOURCE_DIR}/cpp/cloudViewer/visualization/shader/Shader.h"
     )
     list(REMOVE_ITEM FILES ${IGNOFRED_FILES})
 

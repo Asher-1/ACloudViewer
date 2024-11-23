@@ -92,7 +92,7 @@ endif ()
 set(PYTHON_COMPILED_MODULE_DIR
         "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
 
-# Set BUILD_RPATH to find tbb (and a shared libOpen3D). We don't install through cmake.
+# Set BUILD_RPATH to find tbb (and a shared libCloudViewer). We don't install through cmake.
 # if (APPLE)
 #         set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path;@loader_path/..;@loader_path/../lib")
 # elseif (UNIX)
