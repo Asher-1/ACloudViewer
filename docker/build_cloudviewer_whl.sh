@@ -68,7 +68,7 @@ eval $(
 )
 if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
     # fix GLIB_*_30 missing issues
-    echo "due to GLIB_ missing issues on Ubuntu22.04 and ignore test $wheel_path"
+    echo "due to GLIB_ missing issues on Ubuntu22.04 and ignore test"
 else
     pushd build # PWD=ACloudViewer/build
     echo "Try importing cloudViewer Python package"
