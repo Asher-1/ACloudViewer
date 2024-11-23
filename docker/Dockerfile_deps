@@ -79,7 +79,6 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         nasm \
         flex \
         fontconfig \
-        mono-complete \
         # for pcl
         libopenni-dev \
         libopenni2-dev \

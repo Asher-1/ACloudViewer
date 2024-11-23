@@ -110,7 +110,6 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         nasm \
         flex \
         fontconfig \
-        mono-complete \
         # libgdal-dev \
         # libcgal-dev \
         # for QT
