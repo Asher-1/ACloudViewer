@@ -83,6 +83,7 @@ cuda_wheel_build() {
     fi
     echo "[cuda_wheel_build()] PYTHON_VERSION: ${PYTHON_VERSION}"
     echo "[cuda_wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
+    echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[cuda_wheel_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:?'env var must be set.'}"
     echo "[cuda_wheel_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:?'env var must be set.'}"
 
@@ -94,9 +95,10 @@ cuda_wheel_build() {
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
         --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+        --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
-        --build-arg BUILD_CUDA_MODULE="ON" \
+        --build-arg BUILD_SHARED_LIBS="OFF" \
         --build-arg BUILD_WHEEL="ON" \
         --build-arg BUILD_GUI="OFF" \
         --build-arg PACKAGE="OFF" \
@@ -129,8 +131,6 @@ ci_build() {
     echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-    echo "[ci_build()] BUILD_GUI=${BUILD_GUI}"
-    echo "[ci_build()] PACKAGE=${PACKAGE}"
 
     pushd "${HOST_CLOUDVIEWER_ROOT}"
     docker build \
@@ -145,8 +145,8 @@ ci_build() {
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg BUILD_WHEEL="OFF" \
-        --build-arg BUILD_GUI="${BUILD_GUI}" \
-        --build-arg PACKAGE="${PACKAGE}" \
+        --build-arg BUILD_GUI="ON" \
+        --build-arg PACKAGE="ON" \
         --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
@@ -168,8 +168,6 @@ cuda-focal_export_env() {
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=ON
-    export BUILD_GUI=ON
 }
 
 cuda-jammy_export_env() {
@@ -183,8 +181,6 @@ cuda-jammy_export_env() {
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=ON
-    export BUILD_GUI=ON
 }
 
 cpu-focal_export_env() {
@@ -198,8 +194,6 @@ cpu-focal_export_env() {
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=ON
-    export BUILD_GUI=ON
 }
 
 cpu-jammy_export_env() {
@@ -212,8 +206,6 @@ cpu-jammy_export_env() {
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=ON
-    export BUILD_GUI=ON
 }
 
 function main() {
