@@ -134,10 +134,6 @@ ci_build() {
 
     pushd "${HOST_CLOUDVIEWER_ROOT}"
     docker build \
-        --network host \
-        --build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
-        --build-arg HTTP_PROXY=http://127.0.0.1:7890 \
-        --build-arg HTTPS_PROXY=http://127.0.0.1:7890 \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
