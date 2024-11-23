@@ -180,12 +180,6 @@ COPY ./util/install_deps_ubuntu.sh /root/ACloudViewer/util/
 RUN /root/ACloudViewer/util/install_deps_ubuntu.sh assume-yes \
  && rm -rf /var/lib/apt/lists/*
 
-# deploy package installer
-WORKDIR /root
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-linux-amd.zip -O "/root/QtIFW-4.6.1-linux-amd.zip"
-RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
-ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
-
 # Install metslib
 WORKDIR /root
 RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/metslib-0.5.3.tgz -O "/root/metslib-0.5.3.tgz"

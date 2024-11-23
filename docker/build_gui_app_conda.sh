@@ -57,8 +57,11 @@ if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then
     mv $CONDA_PREFIX/lib/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.2
     ln -s /lib/x86_64-linux-gnu/libattr.so.1 $CONDA_PREFIX/lib/libattr.so.1
 fi
-export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
-export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake"
+export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig
+export GMP_DIR=$CONDA_PREFIX
+export MPFR_DIR=$CONDA_PREFIX
 
 # fix no such file: /usr/lib/libGL.so when building libPCLEngine
 if [ -f "/usr/lib/libGL.so" ]; then
@@ -69,6 +72,7 @@ else
 fi
 # fix libQt undefined issues
 if [ -f "/usr/lib/x86_64-linux-gnu/libstdc++.so.6" ]; then
+    echo "ln -s $CONDA_PREFIX/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6"
     rm /usr/lib/x86_64-linux-gnu/libstdc++.so.6
     ln -s $CONDA_PREFIX/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
 fi
@@ -90,7 +94,7 @@ if [ "${BUILD_CUDA_MODULE_FLAG}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo
     export BUILD_CUDA_MODULE=ON
-    build_gui_app with_pcl_nurbs with_gdal package_installer
+    build_gui_app with_conda package_installer
     echo
 fi
 

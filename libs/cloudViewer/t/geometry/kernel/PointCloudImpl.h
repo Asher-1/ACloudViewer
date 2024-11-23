@@ -104,7 +104,7 @@ void UnprojectCPU
                     float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) /
                               depth_scale;
                     if (d > 0 && d < depth_max) {
-                        int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                        int idx = CLOUDVIEWER_ATOMIC_ADD(count_ptr, 1);
 
                         float x_c = 0, y_c = 0, z_c = 0;
                         ti.Unproject(static_cast<float>(x),

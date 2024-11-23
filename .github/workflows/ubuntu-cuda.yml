@@ -51,8 +51,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - CI_CONFIG: 2-focal
-          - CI_CONFIG: 5-ml-jammy
+          - CI_CONFIG: cuda-focal
+          - CI_CONFIG: cuda-jammy
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
@@ -66,12 +66,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'false'
-      - name: build docker
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      - name: Docker build
         run: |
           # GITHUB_WORKSPACE: /home/runner/work/ACloudViewer/ACloudViewer
-          cd "${GITHUB_WORKSPACE}/.."
-          ACloudViewer/docker/docker_build.sh ${CI_CONFIG}${RELEASE_TAG:-}
-          mv /ACloudViewer-*run "$PWD"
+          docker/docker_build.sh ${CI_CONFIG}
           ls -alh
 
       - name: Upload package
@@ -81,7 +83,3 @@ jobs:
           name: ACloudViewer-devel-linux-x86_64-cuda-${{ matrix.CI_CONFIG }}
           path: ACloudViewer-*run
           if-no-files-found: error
-      # - name: ccache upload
-      #   if: ${{ github.ref == 'refs/heads/main' }}
-      #   run: |
-      #     cp ${CCACHE_TAR_NAME}.tar.gz "$PWD"

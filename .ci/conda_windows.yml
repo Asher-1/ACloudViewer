@@ -8,11 +8,8 @@ dependencies:
   - boost=1.84.0 # pcl or vtk
   - flann=1.9.*
   - qhull=2020.2
-  - xerces-c=3.2.* # reconstruction or PLUGIN_IO_QE57
+  - xerces-c=3.2.* # reconstruction
   - qt=5.15.8
   - ffmpeg=6.1.*
-  - zlib=1.2.*
-  - laszip # PLUGIN_IO_QLAS
   - nodejs  # jupyter
   - rust   # fix missing cargo when pip install pywinpty
-  - cgal=5.*   # only support macos and windows due to issues with cgal on linux

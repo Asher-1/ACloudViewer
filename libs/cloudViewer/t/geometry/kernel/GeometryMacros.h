@@ -53,9 +53,9 @@ __device__ double atomicAdd(double *address, double val) {
 #endif
 #endif
 
-#define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
+#define CLOUDVIEWER_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
 #else
-#define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
+#define CLOUDVIEWER_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
 #endif
 
 namespace cloudViewer {

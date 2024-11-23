@@ -1922,16 +1922,18 @@ if (BUILD_RECONSTRUCTION)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_eigen3)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ceres)
     elseif (UNIX)
-        # boost
-        include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
-        import_3rdparty_library(3rdparty_boost
-                INCLUDE_DIRS ${BOOST_INCLUDE_DIR}
-                LIB_DIR ${BOOST_LIB_DIR}
-                LIBRARIES ${BOOST_LIBRARIES}
-                DEPENDS ext_boost
-                )
-        message(STATUS "BOOST_INCLUDE_DIR: " ${BOOST_INCLUDE_DIR})
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_boost)
+        # Linux: boost must building from source due to _GLIBCXX_USE_CXX11_ABI=0 issues
+        if (NOT ${GLIBCXX_USE_CXX11_ABI})
+            include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
+            import_3rdparty_library(3rdparty_boost
+                    INCLUDE_DIRS ${BOOST_INCLUDE_DIR}
+                    LIB_DIR ${Boost_LIBRARY_DIRS}
+                    LIBRARIES ${BOOST_LIBRARIES}
+                    DEPENDS ext_boost
+                    )
+            message(STATUS "BOOST_INCLUDE_DIR: " ${BOOST_INCLUDE_DIR})
+            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_boost)
+        endif()
 
         # gflags
         include(${CloudViewer_3RDPARTY_DIR}/gflags/gflags_build.cmake)
