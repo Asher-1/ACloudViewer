@@ -190,6 +190,7 @@ build_mac_wheel() {
         "-DWITH_IPPICV=ON"
         "-DWITH_SIMD=ON"
         "-DUSE_SIMD=ON"
+        "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=ON"
         "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
@@ -420,6 +421,7 @@ build_pip_package() {
         "-DWITH_SIMD=ON"
         "-DWITH_OPENMP=ON"
         "-DWITH_IPPICV=ON"
+        "-DUSE_PCL_BACKEND=OFF" # no need pcl for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"

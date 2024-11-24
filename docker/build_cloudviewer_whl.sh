@@ -46,9 +46,10 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && which python \
  && python --version
 
-# echo -e "\ny" | conda install cmake
-# export CMAKE_ROOT=$(dirname $(dirname $(which cmake)))/share/cmake-$(cmake --version | grep -oP '(?<=version )\d+\.\d+')
-# echo $CMAKE_ROOT
+# fix Can not found CMAKE_ROOT issues on ubuntu18.04
+echo -e "\ny" | conda install cmake
+export CMAKE_ROOT=$(dirname $(dirname $(which cmake)))/share/cmake-$(cmake --version | grep -oP '(?<=version )\d+\.\d+')
+echo $CMAKE_ROOT
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
