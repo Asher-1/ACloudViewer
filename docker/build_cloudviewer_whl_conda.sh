@@ -2,12 +2,14 @@
 set -euo pipefail
 
 PACKAGE=${PACKAGE:-OFF}
+IGNORE_TEST=${IGNORE_TEST:-OFF}
 BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-OFF}
 
 export DEVELOPER_BUILD=OFF
+export IGNORE_TEST=${IGNORE_TEST}
 export PACKAGE=${PACKAGE}
 export BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
 export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
@@ -87,6 +89,8 @@ eval $(
 if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
     # fix GLIB_*_30 missing issues
     echo "due to GLIB_ missing issues on Ubuntu22.04 and ignore test"
+elif [ "$IGNORE_TEST" == "ON" ]; then
+    echo "Ignore test in internal docker when github action running!"
 else
     pushd build # PWD=ACloudViewer/build
     echo "Try importing cloudViewer Python package"
