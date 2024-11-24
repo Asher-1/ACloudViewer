@@ -70,7 +70,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          brew install ccache pkg-config
+          brew install ccache
 
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
             # Fix gfortran not found issue
@@ -233,7 +233,6 @@ jobs:
           environment-file: ${{ env.CONDA_DEP_FILE }}
 
       - name: Install dependencies
-        shell: bash -l {0}
         run: |
           echo "Using python: $(which python)"
           python --version
