@@ -70,7 +70,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          brew install ccache
+          brew install ccache pkg-config
 
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
             # Fix gfortran not found issue
