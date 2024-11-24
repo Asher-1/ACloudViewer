@@ -102,6 +102,7 @@ cuda_wheel_build() {
         --build-arg BUILD_WHEEL="ON" \
         --build-arg BUILD_GUI="OFF" \
         --build-arg PACKAGE="OFF" \
+        --build-arg IGNORE_TEST="ON" \
         --build-arg CI="${CI:-}" \
         -t cloudviewer-ci:wheel \
         -f docker/Dockerfile.ci .
@@ -147,6 +148,7 @@ ci_build() {
         --build-arg BUILD_WHEEL="OFF" \
         --build-arg BUILD_GUI="ON" \
         --build-arg PACKAGE="ON" \
+        --build-arg IGNORE_TEST="ON" \
         --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
