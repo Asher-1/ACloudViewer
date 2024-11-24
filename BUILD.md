@@ -34,8 +34,8 @@ LINUX:(Manually)
 (whl)
 sudo apt install libxxf86vm-dev
 
-export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake:$LD_LIBRARY_PATH"
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/cmake:$LD_LIBRARY_PATH"
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
 cd ACloudViewer
 mkdir build
@@ -51,6 +51,7 @@ cmake -DDEVELOPER_BUILD=OFF \
       -DWITH_SIMD=ON \
       -DUSE_SIMD=ON \
       -DBUILD_WEBRTC=ON \
+      -DUSE_PCL_BACKEND=OFF \
       -DBUILD_FILAMENT_FROM_SOURCE=OFF \
       -DBUILD_JUPYTER_EXTENSION=ON \
       -DBUILD_RECONSTRUCTION=ON \
