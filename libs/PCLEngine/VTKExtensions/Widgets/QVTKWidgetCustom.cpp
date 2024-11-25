@@ -940,7 +940,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                             // rotation about the sensor Z axis
                             CCVector3d axis = m_tools->m_viewportParams.viewMat
                                                       .getColumnAsVec3D(2);
-                            rotMat.initFromParameters(delta_deg * CV_DEG_TO_RAD,
+                            rotMat.initFromParameters(cloudViewer::DegreesToRadians(delta_deg),
                                                       axis,
                                                       CCVector3d(0, 0, 0));
                         }
@@ -953,7 +953,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                                     height();
                             // rotation about the local X axis
                             ccGLMatrixd rotX;
-                            rotX.initFromParameters(delta_deg * CV_DEG_TO_RAD,
+                            rotX.initFromParameters(cloudViewer::DegreesToRadians(delta_deg),
                                                     CCVector3d(1, 0, 0),
                                                     CCVector3d(0, 0, 0));
                             rotMat = rotX * rotMat;

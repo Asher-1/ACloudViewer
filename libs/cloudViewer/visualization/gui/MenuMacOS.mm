@@ -36,13 +36,13 @@
 
 #include "visualization/gui/Application.h"
 
-@interface Open3DRunnable : NSObject
+@interface CloudViewerRunnable : NSObject
 {
     std::function<void()> action_;
 }
 @end
 
-@implementation Open3DRunnable
+@implementation CloudViewerRunnable
 - (id)initWithFunction: (std::function<void()>)f {
     self = [super init];
     if (self) {
@@ -118,7 +118,7 @@ void MenuMacOS::InsertItem(int index,
                  initWithTitle:[NSString stringWithUTF8String:name]
                         action:@selector(run)
                  keyEquivalent:objc_shortcut];
-    item.target = [[Open3DRunnable alloc] initWithFunction:[item_id]() {
+    item.target = [[CloudViewerRunnable alloc] initWithFunction:[item_id]() {
         Application::GetInstance().OnMenuItemSelected(item_id);
     }];
     item.tag = item_id;
