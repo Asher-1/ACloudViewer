@@ -374,7 +374,7 @@ jobs:
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4shell: bash -l {0}
+        uses: actions/checkout@v4
 
       - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4
