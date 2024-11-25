@@ -80,7 +80,7 @@ jobs:
             # Newer Xcode versions work, but embree recommends Apple clang <= 14 on
             # arm64 to avoid possible "EXEC_BAD_INSTRUCTION" runtime exceptions:
             # https://github.com/embree/embree/releases/tag/v4.3.1
-            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
+            # sudo xcode-select -switch /Applications/Xcode_14.3.1.app
           fi
 
           # Install libomp 11.1.0 from old brew bottle for x64 catalina (10.15)
