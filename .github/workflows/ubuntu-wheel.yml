@@ -118,6 +118,7 @@ jobs:
             python_version: '3.11'
     env:
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
+      CONDA_DEP_FILE: ".ci/conda_linux.yml"
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -135,17 +136,25 @@ jobs:
         with:
           pattern: cloudViewer*-manylinux*.whl
           merge-multiple: true
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Python version
+        run: |
+          sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
+
+      - name: Set up Python environment
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: ${{ matrix.python_version }}
+          activate-environment: python${{ matrix.python_version }}
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE }}
       - name: Test Python package
+        shell: bash -l {0}
         run: |
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           test_wheel cloudViewer-[0-9]*-"$pi_tag"-*.whl
       - name: Test Python package (CPU)
+        shell: bash -l {0}
         env:
           BUILD_CUDA_MODULE: OFF
         run: |
