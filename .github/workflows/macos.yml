@@ -34,13 +34,13 @@ jobs:
       matrix:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-12, macos-14]
-        CONFIG: [ON, OFF]
+        # os: [macos-12, macos-14]
+        os: [macos-14]
     env:
-      BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
+      BUILD_SHARED_LIBS: OFF
       BUILD_CUDA_MODULE: OFF
-      BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
-      BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
+      BUILD_TENSORFLOW_OPS: OFF
+      BUILD_PYTORCH_OPS: OFF
       LOW_MEM_USAGE: ON
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_macos_cloudViewer.yml"
     steps:
@@ -171,7 +171,8 @@ jobs:
       matrix:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-12, macos-14]
+        # os: [macos-12, macos-14]
+        os: [macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
@@ -247,7 +248,7 @@ jobs:
           # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
-            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
+            # sudo xcode-select -switch /Applications/Xcode_14.3.1.app
           fi
 
           # Install libomp 11.1.0. See comment above.
@@ -285,63 +286,63 @@ jobs:
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
-  fuse-wheel:
-    name: Fuse universal2 wheel
-    permissions:
-      contents: write  # Release upload
-    runs-on: [macos-12]
-    needs: [build-wheel]
-    strategy:
-      fail-fast: false
-      # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
-      matrix:
-        python_version: ['3.10', '3.11', '3.12']
-        is_main:
-          - ${{ github.ref == 'refs/heads/main' }}
-        exclude:
-          - is_main: false
-            python_version: '3.10'
-          - is_main: false
-            python_version: '3.11'
-    steps:
-      - name: Checkout source code  # for gh release upload
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python_version }}
+  # fuse-wheel:
+  #   name: Fuse universal2 wheel
+  #   permissions:
+  #     contents: write  # Release upload
+  #   runs-on: [macos-12]
+  #   needs: [build-wheel]
+  #   strategy:
+  #     fail-fast: false
+  #     # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
+  #     matrix:
+  #       python_version: ['3.10', '3.11', '3.12']
+  #       is_main:
+  #         - ${{ github.ref == 'refs/heads/main' }}
+  #       exclude:
+  #         - is_main: false
+  #           python_version: '3.10'
+  #         - is_main: false
+  #           python_version: '3.11'
+  #   steps:
+  #     - name: Checkout source code  # for gh release upload
+  #       uses: actions/checkout@v4
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: ${{ matrix.python_version }}
 
-      - name: Download X64 wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: cloudViewer-*macosx*_x86_64.whl
-          path: x64_wheels
-          merge-multiple: true
+  #     - name: Download X64 wheels
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: cloudViewer-*macosx*_x86_64.whl
+  #         path: x64_wheels
+  #         merge-multiple: true
 
-      - name: Download ARM64 wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: cloudViewer-*macosx*_arm64.whl
-          path: arm64_wheels
-          merge-multiple: true
+  #     - name: Download ARM64 wheels
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: cloudViewer-*macosx*_arm64.whl
+  #         path: arm64_wheels
+  #         merge-multiple: true
 
-      - name: Fuse x64 and ARM64 wheels
-        env:
-          python_version: ${{ matrix.python_version }}
-        run: |
-          PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
-          mkdir universal_wheels
-          pip install delocate
-          delocate-merge -v -w universal_wheels x64_wheels/cloudViewer-*${PYTAG}*.whl arm64_wheels/cloudViewer-*${PYTAG}*.whl
-          NEW_WHL_NAME=$(basename universal_wheels/cloudViewer-*${PYTAG}*.whl)
-          echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
+  #     - name: Fuse x64 and ARM64 wheels
+  #       env:
+  #         python_version: ${{ matrix.python_version }}
+  #       run: |
+  #         PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
+  #         mkdir universal_wheels
+  #         pip install delocate
+  #         delocate-merge -v -w universal_wheels x64_wheels/cloudViewer-*${PYTAG}*.whl arm64_wheels/cloudViewer-*${PYTAG}*.whl
+  #         NEW_WHL_NAME=$(basename universal_wheels/cloudViewer-*${PYTAG}*.whl)
+  #         echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
 
-      - name: Upload merged wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.PIP_PKG_NAME }}
-          path: universal_wheels/${{ env.PIP_PKG_NAME }}
-          if-no-files-found: error
+  #     - name: Upload merged wheels
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ${{ env.PIP_PKG_NAME }}
+  #         path: universal_wheels/${{ env.PIP_PKG_NAME }}
+  #         if-no-files-found: error
 
   test-wheel:
     name: Test wheel
@@ -352,7 +353,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12, macos-14]
+        # os: [macos-12, macos-14]
+        os: [macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
