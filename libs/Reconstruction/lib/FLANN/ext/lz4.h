@@ -34,6 +34,9 @@
 */
 #pragma once
 
+// fix undefined symbols issues on windows
+// #define LZ4LIB_API __declspec(dllexport)
+
 #if defined (__cplusplus)
 extern "C" {
 #endif

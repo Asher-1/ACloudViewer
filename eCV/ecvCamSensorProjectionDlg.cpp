@@ -177,7 +177,7 @@ void ccCamSensorProjectionDlg::updateCamSensor(ccCameraSensor* sensor) {
 
         iParams.vertFocal_pix = static_cast<float>(focalDoubleSpinBox->value());
         iParams.vFOV_rad =
-                static_cast<float>(fovDoubleSpinBox->value() * CV_DEG_TO_RAD);
+                static_cast<float>(cloudViewer::DegreesToRadians(fovDoubleSpinBox->value()));
         iParams.arrayWidth = arrayWSpinBox->value();
         iParams.arrayHeight = arrayHSpinBox->value();
         iParams.pixelSize_mm[0] =

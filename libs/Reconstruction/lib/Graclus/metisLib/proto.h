@@ -362,7 +362,7 @@ void ikeyvalsort(int, KeyValueType *);
 
 /* ometis.c */
 void METIS_EdgeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
-void METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void GRACLUS_METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
 void METIS_NodeWND(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
 void MlevelNestedDissection(CtrlType *, GraphType *, idxtype *, float, int);
 void MlevelNestedDissectionCC(CtrlType *, GraphType *, idxtype *, float, int);

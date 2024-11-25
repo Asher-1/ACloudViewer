@@ -61,18 +61,18 @@ constexpr uint32_t CUDA_MAX_THREADS_PER_SM = 2048;
 constexpr uint32_t CUDA_MAX_THREADS_PER_BLOCK = 1024;
 constexpr uint32_t CUDA_THREADS_PER_BLOCK_FALLBACK = 256;
 
-#define OPEN3D_MAX_THREADS_PER_BLOCK(val)          \
+#define CLOUDVIEWER_MAX_THREADS_PER_BLOCK(val)          \
     (((val) <= CUDA_MAX_THREADS_PER_BLOCK) ? (val) \
                                            : CUDA_THREADS_PER_BLOCK_FALLBACK)
-#define OPEN3D_MIN_BLOCKS_PER_SM(threads_per_block, blocks_per_sm)       \
+#define CLOUDVIEWER_MIN_BLOCKS_PER_SM(threads_per_block, blocks_per_sm)       \
     ((((threads_per_block) * (blocks_per_sm) <= CUDA_MAX_THREADS_PER_SM) \
               ? (blocks_per_sm)                                          \
               : ((CUDA_MAX_THREADS_PER_SM + (threads_per_block)-1) /     \
                  (threads_per_block))))
 
-#define OPEN3D_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm)       \
-    __launch_bounds__((OPEN3D_MAX_THREADS_PER_BLOCK((max_threads_per_block))), \
-                      (OPEN3D_MIN_BLOCKS_PER_SM((max_threads_per_block),       \
+#define CLOUDVIEWER_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm)       \
+    __launch_bounds__((CLOUDVIEWER_MAX_THREADS_PER_BLOCK((max_threads_per_block))), \
+                      (CLOUDVIEWER_MIN_BLOCKS_PER_SM((max_threads_per_block),       \
                                                 (min_blocks_per_sm))))
 
 template <typename T>
@@ -358,7 +358,7 @@ public:
 };
 
 template <int nt, typename R>
-OPEN3D_LAUNCH_BOUNDS_2(nt, 4)
+CLOUDVIEWER_LAUNCH_BOUNDS_2(nt, 4)
 __global__ void ReduceKernel(R reduction) {
     reduction.Run();
 }

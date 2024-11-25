@@ -44,11 +44,13 @@
 // ----------------------------------------------------------------------------
 using namespace cloudViewer::visualization::gui;
 
-class Open3DVisualizer : public cloudViewer::visualization::GuiVisualizer {
+class CloudViewerVisualizer : public cloudViewer::visualization::GuiVisualizer {
     using Super = GuiVisualizer;
+
 public:
-    Open3DVisualizer()
-        : cloudViewer::visualization::GuiVisualizer("CloudViewer", WIDTH, HEIGHT) {
+    CloudViewerVisualizer()
+        : cloudViewer::visualization::GuiVisualizer(
+                  "CloudViewer", WIDTH, HEIGHT) {
         AddItemsToAppMenu({{"Make Default 3D Viewer", MAC_MAKE_DEFAULT_APP}});
     }
 
@@ -58,65 +60,76 @@ protected:
     void OnMenuItemSelected(Menu::ItemId item_id) override {
         if (item_id == MAC_MAKE_DEFAULT_APP) {
             auto em = GetTheme().font_size;
-            auto dlg = cloudViewer::make_shared<Dialog>("Make CloudViewer default");
+            auto dlg = cloudViewer::make_shared<Dialog>(
+                    "Make CloudViewer default");
 
             auto cancel = cloudViewer::make_shared<Button>("Cancel");
             cancel->SetOnClicked([this]() { this->CloseDialog(); });
 
             auto ok = cloudViewer::make_shared<Button>("Make Default");
             ok->SetOnClicked([this]() {
-                // This will set the users personal default to use CloudViewer for
-                // the file types below. THIS SHOULD ONLY BE CALLED
-                // AFTER THE USER EXPLICITLY CONFIRMS THAT THEY WANT TO DO THIS!
-                CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.isl-org.cloudViewer.CloudViewer";
+                // This will set the users personal default to use CloudViewer
+                // for the file types below. THIS SHOULD ONLY BE CALLED AFTER
+                // THE USER EXPLICITLY CONFIRMS THAT THEY WANT TO DO THIS!
+                CFStringRef cloudViewerBundleId =
+                        (__bridge CFStringRef) @"com.isl-org.cloudViewer."
+                                               @"CloudViewer";
                 // The UTIs should match what we declare in Info.plist
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.gl-transmission-format",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.gl-transmission-format",
+                        kLSRolesAll, cloudViewerBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.gl-binary-transmission-format",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.gl-binary-transmission-"
+                                               @"format",
+                        kLSRolesAll, cloudViewerBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.geometry-definition-format",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.geometry-definition-"
+                                               @"format",
+                        kLSRolesAll, cloudViewerBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.object-file-format",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.object-file-format",
+                        kLSRolesAll, cloudViewerBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.point-cloud-library-file",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.point-cloud-library-"
+                                               @"file",
+                        kLSRolesAll, cloudViewerBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.polygon-file-format",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.polygon-file-format",
+                        kLSRolesAll, cloudViewerBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.3d-points-format",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.3d-points-format",
+                        kLSRolesAll, cloudViewerBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.standard-tesselated-geometry-format",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.standard-tesselated-"
+                                               @"geometry-format",
+                        kLSRolesAll, cloudViewerBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.xyz-points-format",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.xyz-points-format",
+                        kLSRolesAll, cloudViewerBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.xyzn-points-format",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.xyzn-points-format",
+                        kLSRolesAll, cloudViewerBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                        (__bridge CFStringRef)@"public.xyzrgb-points-format",
-                        kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.xyzrgb-points-format",
+                        kLSRolesAll, cloudViewerBundleId);
 
                 this->CloseDialog();
             });
 
             auto vert = cloudViewer::make_shared<Vert>(0, Margins(em));
             vert->AddChild(cloudViewer::make_shared<Label>(
-                    "This will make CloudViewer the default application for the "
+                    "This will make CloudViewer the default application for "
+                    "the "
                     "following file types:"));
             vert->AddFixed(em);
-            auto table = cloudViewer::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));
+            auto table =
+                    cloudViewer::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));
             table->AddChild(cloudViewer::make_shared<Label>("Mesh:"));
-            table->AddChild(cloudViewer::make_shared<Label>(".gltf, .glb, .obj, .off, .ply, .stl"));
+            table->AddChild(cloudViewer::make_shared<Label>(
+                    ".gltf, .glb, .obj, .off, .ply, .stl"));
             table->AddChild(cloudViewer::make_shared<Label>("Point clouds:"));
-            table->AddChild(cloudViewer::make_shared<Label>(".pcd, .ply, .pts, .xyz, .xyzn, .xyzrgb"));
+            table->AddChild(cloudViewer::make_shared<Label>(
+                    ".pcd, .ply, .pts, .xyz, .xyzn, .xyzrgb"));
             vert->AddChild(table);
             vert->AddFixed(em);
             auto buttons = cloudViewer::make_shared<Horiz>(0.5 * em);
@@ -132,11 +145,12 @@ protected:
     }
 };
 
-constexpr Menu::ItemId Open3DVisualizer::MAC_MAKE_DEFAULT_APP;  // for Xcode
+constexpr Menu::ItemId
+        CloudViewerVisualizer::MAC_MAKE_DEFAULT_APP;  // for Xcode
 
 // ----------------------------------------------------------------------------
 static void LoadAndCreateWindow(const char *path) {
-    auto vis = cloudViewer::make_shared<Open3DVisualizer>();
+    auto vis = cloudViewer::make_shared<CloudViewerVisualizer>();
     bool is_path_valid = (path && path[0] != '\0');
     if (is_path_valid) {
         vis->LoadGeometry(path);
@@ -148,11 +162,10 @@ static void LoadAndCreateWindow(const char *path) {
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @end
 
-@interface AppDelegate ()
-{
+@interface AppDelegate () {
     bool open_empty_window_;
 }
-@property (retain) NSTimer *timer;
+@property(retain) NSTimer *timer;
 @end
 
 @implementation AppDelegate
@@ -230,4 +243,4 @@ int main(int argc, const char *argv[]) {
     // ----
 }
 
-#endif // __APPLE__
+#endif  // __APPLE__
