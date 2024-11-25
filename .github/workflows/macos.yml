@@ -233,6 +233,7 @@ jobs:
           environment-file: ${{ env.CONDA_DEP_FILE }}
 
       - name: Install dependencies
+        shell: bash -l {0}
         run: |
           echo "Using python: $(which python)"
           python --version
@@ -373,7 +374,7 @@ jobs:
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4shell: bash -l {0}
 
       - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4
