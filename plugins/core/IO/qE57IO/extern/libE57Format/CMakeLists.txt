@@ -69,7 +69,7 @@ find_package( XercesC QUIET )
 if (NOT XercesC_FOUND)
     find_package(PkgConfig REQUIRED)
     # pkg_check_modules(XercesC REQUIRED xerces-c)
-    pkg_search_module(XercesC xerces-c)
+    pkg_search_module(XercesC REQUIRED xerces-c)
     if(XercesC_FOUND)
         set(XercesC_INCLUDE_DIRS "${XercesC_INCLUDE_DIRS}")
         set(XercesC_LIBRARIES "${XercesC_LINK_LIBRARIES}")
@@ -77,29 +77,26 @@ if (NOT XercesC_FOUND)
     
         # For header-only libraries
         if(NOT TARGET XercesC::XercesC)
-            add_library(XercesC::XercesC UNKNOWN IMPORTED)
-            if(XercesC_INCLUDE_DIRS)
-                set_target_properties(XercesC::XercesC PROPERTIES
-                INTERFACE_INCLUDE_DIRECTORIES "${XercesC_INCLUDE_DIRS}")
-            endif()
-            if(EXISTS "${XercesC_LIBRARY}")
-                set_target_properties(XercesC::XercesC PROPERTIES
+            add_library(XercesC::XercesC SHARED IMPORTED)
+            set_target_properties(XercesC::XercesC PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${XercesC_INCLUDE_DIRS}"
+                IMPORTED_LOCATION "${XercesC_LIBRARIES}"
                 IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
-                IMPORTED_LOCATION "${XercesC_LIBRARY}")
-            endif()
+            )
+
             if(EXISTS "${XercesC_LIBRARY_RELEASE}")
                 set_property(TARGET XercesC::XercesC APPEND PROPERTY
-                IMPORTED_CONFIGURATIONS RELEASE)
+                    IMPORTED_CONFIGURATIONS RELEASE)
                 set_target_properties(XercesC::XercesC PROPERTIES
-                IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "CXX"
-                IMPORTED_LOCATION_RELEASE "${XercesC_LIBRARY_RELEASE}")
+                    IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "CXX"
+                    IMPORTED_LOCATION_RELEASE "${XercesC_LIBRARY_RELEASE}")
             endif()
             if(EXISTS "${XercesC_LIBRARY_DEBUG}")
                 set_property(TARGET XercesC::XercesC APPEND PROPERTY
-                IMPORTED_CONFIGURATIONS DEBUG)
+                    IMPORTED_CONFIGURATIONS DEBUG)
                 set_target_properties(XercesC::XercesC PROPERTIES
-                IMPORTED_LINK_INTERFACE_LANGUAGES_DEBUG "CXX"
-                IMPORTED_LOCATION_DEBUG "${XercesC_LIBRARY_DEBUG}")
+                    IMPORTED_LINK_INTERFACE_LANGUAGES_DEBUG "CXX"
+                    IMPORTED_LOCATION_DEBUG "${XercesC_LIBRARY_DEBUG}")
             endif()
         endif()
     else ()
