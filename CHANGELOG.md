@@ -1,7 +1,7 @@
 ACloudViewer Version History
 ============================
 
-v3.9.1 (Asher) - 28/09/2024
+v3.9.1 (Asher) - 15/11/2024
 ----------------------
 
 ## ACloudViewer 3.9.1 Release Notes
@@ -13,6 +13,7 @@ We welcome you to the 3.9.1 beta release of ACloudViewer. This release is full o
 - Update PCL version from 1.11.1 to 1.14.1.
 - Update VTK version from 8.2.0 to 9.3.1.
 - migrate from C++14 to C++17 support as default.
+- Python 3.12 support
 
 ### supported platform:
 - Windows `x86/64`

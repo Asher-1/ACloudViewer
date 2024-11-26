@@ -1,4 +1,5 @@
 setuptools
+wheel
 numpy
 tqdm
 yapf
@@ -12,7 +13,10 @@ scikit-learn
 jupyter
 ipywidgets>=7.6.0
 pygments>=2.7.4
-jupyter_packaging~=0.10
+jupyter_packaging~=0.12
 jupyterlab>=3.0.0,==3.*
-#tensorflow==2.5.2
-
+configargparse
+nbformat
+werkzeug
+flask
+dash

@@ -2632,7 +2632,7 @@ double ecvDisplayTools::ComputeActualPixelSize() {
 
     double currentFov_deg = static_cast<double>(GetFov());
     return zoomEquivalentDist *
-           std::tan(std::min(currentFov_deg, 75.0) * CV_DEG_TO_RAD) /
+           std::tan(cloudViewer::DegreesToRadians(std::min(currentFov_deg, 75.0))) /
            minScreenDim;  // tan(75) = 3.73 (then it quickly increases!)
 }
 

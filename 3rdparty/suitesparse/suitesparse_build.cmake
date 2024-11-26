@@ -30,6 +30,7 @@ ExternalProject_Add(
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            -DOPENMP=OFF # fix fatal error: 'omp.h' file not found on macos
 #           -DCUDA_INCLUDE_DIRS=${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 #           -DWITH_CUDA=${BUILD_CUDA_MODULE}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
@@ -50,7 +51,8 @@ set(EXT_SUITESPARSE_LIBRARIES   suitesparseconfig
                                 ldl
                                 umfpack
                                 spqr
-                                metis)
+                                metis
+                                )
 
 if (BUILD_CUDA_MODULE)
     if(NOT WIN32)

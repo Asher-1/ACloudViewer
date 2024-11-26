@@ -197,5 +197,5 @@ apt-get install -yf ./google-chrome-stable_current_amd64.deb \
     && apt-get install -y pulseaudio kmod \
     && mkdir -p /var/run/dbus \
     && dpkg -i ./nomachine.deb \
-    && sed -i "s|#EnableClipboard both|EnableClipboard both |g" /usr/NX/etc/server.cfg \
-    && sed -i '/DefaultDesktopCommand/c\DefaultDesktopCommand "/usr/bin/startxfce4"' /usr/NX/etc/node.cfg
+    && sed -i "" "s|#EnableClipboard both|EnableClipboard both |g" /usr/NX/etc/server.cfg \
+    && sed -i "" '/DefaultDesktopCommand/c\DefaultDesktopCommand "/usr/bin/startxfce4"' /usr/NX/etc/node.cfg

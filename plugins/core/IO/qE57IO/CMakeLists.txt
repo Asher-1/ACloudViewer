@@ -9,15 +9,29 @@ if (PLUGIN_IO_QE57)
     add_subdirectory(include)
     add_subdirectory(src)
 
-    if (WIN32)
-        message(STATUS "Using prebuilt third-party library libE57Format and xercesC")
-        include(cmake/E57Format_XERCES_download.cmake)
-        include(cmake/E57Support.cmake)
-        copy_shared_library(${PROJECT_NAME}
-                LIB_DIR ${XERCES_ROOT}/bin
-                LIBRARIES xerces-c_3_2$<$<CONFIG:Debug>:D>)
-        target_link_LIBE57FORMAT(${PROJECT_NAME})
-    else ()
+    add_subdirectory(extern/libE57Format EXCLUDE_FROM_ALL)
+
+    set_target_properties(E57Format PROPERTIES
+            AUTOMOC OFF
+            AUTORCC OFF
+            AUTOUIC OFF
+            )
+
+    target_link_libraries(${PROJECT_NAME} E57Format)
+
+    if (USING_STATIC_XERCES)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE XERCES_STATIC_LIBRARY)
+    endif ()
+
+    # if (WIN32)
+    #     message(STATUS "Using prebuilt third-party library libE57Format and xercesC")
+    #     include(cmake/E57Format_XERCES_download.cmake)
+    #     include(cmake/E57Support.cmake)
+    #     copy_shared_library(${PROJECT_NAME}
+    #             LIB_DIR ${XERCES_ROOT}/bin
+    #             LIBRARIES xerces-c_3_2$<$<CONFIG:Debug>:D>)
+    #     target_link_LIBE57FORMAT(${PROJECT_NAME})
+    # else ()
         #		include( cmake/E57Format_build.cmake )
         #		import_3rdparty_library(3rdparty_libE57Format
         #				INCLUDE_DIRS ${E57Format_INCLUDE_DIRS}
@@ -27,21 +41,5 @@ if (PLUGIN_IO_QE57)
         #				)
         #		add_dependencies(${PROJECT_NAME} 3rdparty_libE57Format)
         #		target_link_libraries(${PROJECT_NAME} 3rdparty_libE57Format)
-
-        add_subdirectory(extern/libE57Format EXCLUDE_FROM_ALL)
-
-        set_target_properties(E57Format PROPERTIES
-                AUTOMOC OFF
-                AUTORCC OFF
-                AUTOUIC OFF
-                )
-
-        target_link_libraries(${PROJECT_NAME} E57Format)
-
-        if (USING_STATIC_XERCES)
-            target_compile_definitions(${PROJECT_NAME} PRIVATE XERCES_STATIC_LIBRARY)
-        endif ()
-    endif ()
-
-
+    # endif ()
 endif ()

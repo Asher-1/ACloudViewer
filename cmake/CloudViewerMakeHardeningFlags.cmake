@@ -9,7 +9,7 @@ function(cloudViewer_make_hardening_flags hardening_cflags hardening_ldflags)
     # -Wall -Wextra -Werror or /W4 /WX are enabled for CloudViewer code (not 3rd party)
     if (MSVC)
         set(${hardening_cflags}
-            /sdl            # SDL Checks
+            /sdl-           # Turn off Security Development Lifecycle (SDL) Check
             /GS             # Code Generation: Security Check
             /guard:cf       # Code Generation: Control Flow Guard
         )
