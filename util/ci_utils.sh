@@ -211,7 +211,7 @@ build_mac_wheel() {
     cmake "${cmakeOptions[@]}" ..
     echo
     echo "Build & install CloudViewer..."
-    make VERBOSE=1 pip-package -j"$NPROC"
+    make pip-package -j"$NPROC"
     echo
     popd                                           # PWD=ACloudViewer
 }
