@@ -663,6 +663,27 @@ else ()
     set(WITH_OPENMP OFF)
 endif ()
 
+if (APPLE)
+    if (APPLE_AARCH64)
+        set(LIBOMP_ROOT "/opt/homebrew")
+    else()
+        set(LIBOMP_ROOT "/usr/local")
+    endif()
+    
+    if (WITH_OPENMP)
+        set(MAC_OMP_FLAGS
+            "-DCMAKE_C_FLAGS=-I${LIBOMP_ROOT}/opt/libomp/include"
+            "-DCMAKE_CXX_FLAGS=-I${LIBOMP_ROOT}/opt/libomp/include"
+            "-DCMAKE_EXE_LINKER_FLAGS=-L${LIBOMP_ROOT}/opt/libomp/lib -lomp"
+        )
+        message(STATUS "Found OpenMP, using libomp from: ${LIBOMP_ROOT}")
+    else()
+        message(WARNING "OpenMP not found on macOS, some features might be disabled")
+        set(MAC_OMP_FLAGS "-DEIGEN_DONT_PARALLELIZE=ON")
+    endif()
+endif()
+
+
 # X11
 if (UNIX AND NOT APPLE)
     find_package_3rdparty_library(3rdparty_x11

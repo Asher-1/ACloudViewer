@@ -21,7 +21,8 @@ ExternalProject_Add(
 	   # fix compiling bugs on windows
 	   PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${CloudViewer_3RDPARTY_DIR}/suitesparse/CMakeLists.txt <SOURCE_DIR>
        CMAKE_ARGS
-            -DOPENMP=ON
+            ${MAC_OMP_FLAGS}
+            -DOPENMP=ON # fix fatal error: 'omp.h' file not found on macos
             -DBUILD_SHARED_LIBS=OFF
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
@@ -30,9 +31,8 @@ ExternalProject_Add(
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-            -DOPENMP=OFF # fix fatal error: 'omp.h' file not found on macos
-#           -DCUDA_INCLUDE_DIRS=${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
-#           -DWITH_CUDA=${BUILD_CUDA_MODULE}
+            # -DCUDA_INCLUDE_DIRS=${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+            # -DWITH_CUDA=${BUILD_CUDA_MODULE}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
            DEPENDS ${LAPACK_TARGET}
        )
