@@ -8,48 +8,68 @@
 # The name "STATIC" is used to avoid naming collisions for other 3rdparty CMake
 # files (e.g. PyTorch) that also depends on MKL.
 
-include(ExternalProject)
+# These files are created from the pip MKL devel packages, and only contain
+# headers, static libraries, and cmake export files. Shared libraries are
+# excluded to reduce download size. Alternately, use:
+# pip download -d mkl_static/win_amd64 --platform win_amd64 --no-deps mkl-include==2024.1 mkl-devel==2024.1 mkl-static==2024.1
+# pip download -d mkl_static/linux_x86_64 --platform manylinux1_x86_64 --no-deps mkl-include==2024.1 mkl-devel==2024.1 mkl-static==2024.1
+# pip download -d mkl_static/macosx_x86_64 --platform macosx_11_0_x86_64 --no-deps mkl-include==2023.2.2 mkl-devel==2023.2.2 mkl-static==2023.2.2
+# Extract all files:
+# cd mkl_static/win_amd64 && for whl in *.whl; do wheel unpack $whl; done;
+# Arrange in the standard layout: bin, include, lib (cmake, pkgconfig), share (cmake)
+# Archive and upload to GitHub releases open3d_downloads.
+# if(WIN32)
+#     set(MKL_URL https://github.com/Asher-1/cloudViewer_downloads/releases/download/mkl-static-2024.1/mkl_static-2024.1.0-win_amd64.zip)
+#     set(MKL_SHA256 524de5395db5b7a9d9f0d9a76b2223c6edac429d4492c6a1cc79a5c22c4f3346)
+# elseif(APPLE)
+#     set(MKL_URL https://github.com/Asher-1/cloudViewer_downloads/releases/download/mkl-static-2024.1/mkl_static-2023.2.2.9-macosx_x86_64.tar.xz)
+#     set(MKL_SHA256 6cd93bf1d37527d3ab3657e22c1a8a409729d6c6f422c7c381c7a145aa588d6c)
+# else()
+#     set(MKL_URL https://github.com/Asher-1/cloudViewer_downloads/releases/download/mkl-static-2024.1/mkl_static-2024.1.0-linux_x86_64.tar.xz)
+#     set(MKL_SHA256 f37c9440e3d664d21889a4607effcd47472bcce347da6c2bfc7aae991971b499)
+# endif()
 
+include(ExternalProject)
 if(WIN32)
     set(MKL_INCLUDE_URL
-        https://github.com/isl-org/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_216-win-64.tar.bz2W
+        https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.1/mkl-include-2020.1-intel_216-win-64.tar.bz2
         https://anaconda.org/intel/mkl-include/2020.1/download/win-64/mkl-include-2020.1-intel_216.tar.bz2
     )
     set(MKL_INCLUDE_SHA256 65cedb770358721fd834224cd8be1fe1cc10b37ef2a1efcc899fc2fefbeb5b31)
 
     set(MKL_URL
-        https://github.com/isl-org/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_216-win-64.tar.bz2
+        https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.1/mkl-static-2020.1-intel_216-win-64.tar.bz2
         https://anaconda.org/intel/mkl-static/2020.1/download/win-64/mkl-static-2020.1-intel_216.tar.bz2
     )
     set(MKL_SHA256 c6f037aa9e53501d91d5245b6e65020399ebf34174cc4d03637818ebb6e6b6b9)
 elseif(APPLE)
     set(MKL_INCLUDE_URL
-        https://github.com/isl-org/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_216-osx-64.tar.bz2
+        https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.1/mkl-include-2020.1-intel_216-osx-64.tar.bz2
         https://anaconda.org/intel/mkl-include/2020.1/download/osx-64/mkl-include-2020.1-intel_216.tar.bz2
     )
     set(MKL_INCLUDE_SHA256 d4d025bd17ce75b92c134f70759b93ae1dee07801d33bcc59e40778003f05de5)
 
     set(MKL_URL
-        https://github.com/isl-org/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_216-osx-64.tar.bz2
+        https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.1/mkl-static-2020.1-intel_216-osx-64.tar.bz2
         https://anaconda.org/intel/mkl-static/2020.1/download/osx-64/mkl-static-2020.1-intel_216.tar.bz2
     )
     set(MKL_SHA256 ca94ab8933cf58cbb7b42ac1bdc8671a948490fd1e0e9cea71a5b4d613b21be4)
 else()
     set(MKL_INCLUDE_URL
-        https://github.com/isl-org/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_217-linux-64.tar.bz2
+        https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.1/mkl-include-2020.1-intel_217-linux-64.tar.bz2
         https://anaconda.org/intel/mkl-include/2020.1/download/linux-64/mkl-include-2020.1-intel_217.tar.bz2
     )
     set(MKL_INCLUDE_SHA256 c0c4e7f261aa9182d811b91132c622211e55a5f3dfb8afb65a5377804f39eb61)
 
     set(MKL_URL
-        https://github.com/isl-org/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_217-linux-64.tar.bz2
+        https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.1/mkl-static-2020.1-intel_217-linux-64.tar.bz2
         https://anaconda.org/intel/mkl-static/2020.1/download/linux-64/mkl-static-2020.1-intel_217.tar.bz2
     )
     set(MKL_SHA256 44fe60fa895c8967fe7c70fd1b680700f23ecac6ae038b267aa0a0c48dce3d59)
 
     # URL for merged libmkl_merged.a for Ubuntu.
     set(MKL_MERGED_URL
-        https://github.com/isl-org/Open3D/releases/download/v0.10.0/linux-merged-mkl-static-2020.1-intel_217.zip
+        https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.1/linux-merged-mkl-static-2020.1-intel_217.zip
     )
     set(MKL_MERGED_SHA256 027c2b0d89c554479edbe5faecb93c26528877c1b682f939f8e1764d96860064)
 endif()

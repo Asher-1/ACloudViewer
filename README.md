@@ -49,9 +49,40 @@ More on ACloudViewer [here](http://asher-1.github.io)
 * Surface alignment
 * 3D visualization
 * Physically based rendering (PBR)
+* 3D machine learning support with PyTorch and TensorFlow
+* GPU acceleration for core 3D operations
 * Available in C++ and Python
 
+Here's a brief overview of the different components of ACloudViewer and how they fit
+together to enable full end to end pipelines:
+
+![CloudViewer_layers](doc/images/AbstractionLayers.png)
+
 For more, please visit the [ACloudViewer documentation](http://asher-1.github.io).
+
+
+## Python quick start
+
+Pre-built pip packages support Ubuntu 18.04+, macOS 10.15+ and Windows 10+
+(64-bit) with Python 3.8-3.12.
+
+```bash
+# Install
+pip install cloudViewer       # or
+pip install cloudViewer-cpu   # Smaller CPU only wheel on x86_64 Linux (v3.9.1+)
+
+# Verify installation
+python -c "import cloudViewer as cv3d; print(cv3d.__version__)"
+
+# Python API
+python -c "import cloudViewer as cv3d; \
+           mesh = cv3d.geometry.TriangleMesh.create_sphere(); \
+           mesh.compute_vertex_normals(); \
+           cv3d.visualization.draw(mesh, raw_mode=True)"
+
+# CloudViewer CLI
+cloudViewer example visualization/draw
+```
 
 ## ACloudViewer System
 
