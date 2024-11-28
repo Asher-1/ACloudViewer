@@ -11,14 +11,6 @@ else ()
     endif ()
 endif ()
 
-if (${GLIBCXX_USE_CXX11_ABI})
-    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)
-    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for eigen")
-else ()
-    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 0)
-    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for eigen")
-endif ()
-
 ExternalProject_Add(
         ext_eigen
         PREFIX eigen
@@ -32,7 +24,7 @@ ExternalProject_Add(
         CMAKE_ARGS
             ${EIGEN_ALIGN_FLAGS}
             ${MAC_OMP_FLAGS}
-            $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
+            # $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
