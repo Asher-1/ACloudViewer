@@ -663,6 +663,17 @@ else ()
     set(WITH_OPENMP OFF)
 endif ()
 
+
+set(COMBINED_CXX_FLAGS "")
+if (${GLIBCXX_USE_CXX11_ABI})
+    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)
+else ()
+    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 0)
+endif ()
+if(NOT PLATFORM_ID:Windows)
+    set(COMBINED_CXX_FLAGS "${COMBINED_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}")
+endif()
+
 if (APPLE)
     if (APPLE_AARCH64)
         set(LIBOMP_ROOT "/opt/homebrew")
@@ -672,17 +683,18 @@ if (APPLE)
     
     if (WITH_OPENMP)
         set(MAC_OMP_FLAGS
-            "-DCMAKE_C_FLAGS=-I${LIBOMP_ROOT}/opt/libomp/include"
-            "-DCMAKE_CXX_FLAGS=-I${LIBOMP_ROOT}/opt/libomp/include"
+            "-DCMAKE_C_FLAGS=-I${LIBOMP_ROOT}/opt/libomp/include" 
+            "-DCMAKE_CXX_FLAGS=-I${LIBOMP_ROOT}/opt/libomp/include ${COMBINED_CXX_FLAGS}" 
             "-DCMAKE_EXE_LINKER_FLAGS=-L${LIBOMP_ROOT}/opt/libomp/lib -lomp"
         )
         message(STATUS "Found OpenMP, using libomp from: ${LIBOMP_ROOT}")
     else()
         message(WARNING "OpenMP not found on macOS, some features might be disabled")
-        set(MAC_OMP_FLAGS "-DEIGEN_DONT_PARALLELIZE=ON")
+        set(MAC_OMP_FLAGS "-DEIGEN_DONT_PARALLELIZE=ON -DCMAKE_CXX_FLAGS=${COMBINED_CXX_FLAGS}")
     endif()
+else()
+    set(MAC_OMP_FLAGS "-DCMAKE_CXX_FLAGS=${COMBINED_CXX_FLAGS}")
 endif()
-
 
 # X11
 if (UNIX AND NOT APPLE)

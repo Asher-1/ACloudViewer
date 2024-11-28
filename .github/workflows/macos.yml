@@ -110,9 +110,21 @@ jobs:
         run: |
           brew install libomp
           brew info libomp
-          PATH=/usr/local/var/homebrew/linked/ccache/libexec:/opt/homebrew/opt/libomp/include:/usr/local/var/opt/libomp/include:$PATH
+          export LDFLAGS="-L/opt/homebrew/opt/libomp/lib"
+          export CPPFLAGS="-I/opt/homebrew/opt/libomp/include"
+          echo "LDFLAGS: $LDFLAGS"
+          echo "CPPFLAGS: $CPPFLAGS"
+          echo "OpenMP_ROOT: $OpenMP_ROOT"
+          ls -l /opt/homebrew/opt/libomp/include
+          ls -l /opt/homebrew/opt/libomp/lib
+
+          echo "LDFLAGS=-L/opt/homebrew/opt/libomp/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I/opt/homebrew/opt/libomp/include" >> $GITHUB_ENV
+          echo "OpenMP_ROOT=/opt/homebrew/opt/libomp" >> $GITHUB_ENV
+          export PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
           export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
+          echo "PATH=$PATH" >> $GITHUB_ENV
           ccache -s
           ./util/run_ci.sh
           CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
