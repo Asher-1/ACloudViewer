@@ -1,13 +1,5 @@
 include(ExternalProject)
 
-# if (${GLIBCXX_USE_CXX11_ABI})
-#     set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)
-#     message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for suitesparse")
-# else ()
-#     set(CUSTOM_GLIBCXX_USE_CXX11_ABI 0)
-#     message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for suitesparse")
-# endif ()
-
 ExternalProject_Add(
        ext_suitesparse
        PREFIX suitesparse
@@ -21,11 +13,10 @@ ExternalProject_Add(
 	   # fix compiling bugs on windows
 	   PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${CloudViewer_3RDPARTY_DIR}/suitesparse/CMakeLists.txt <SOURCE_DIR>
        CMAKE_ARGS
-            ${MAC_OMP_FLAGS}
-            -DOPENMP=ON # fix fatal error: 'omp.h' file not found on macos
+            -DOPENMP=OFF # fix fatal error: 'omp.h' file not found on macos
             -DBUILD_SHARED_LIBS=OFF
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
-            # $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
+            $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
