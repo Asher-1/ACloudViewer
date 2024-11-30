@@ -272,6 +272,8 @@ jobs:
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
             # sudo xcode-select -switch /Applications/Xcode_14.3.1.app
             sudo xcode-select -switch /Applications/Xcode_16.1.app
+          else
+            ln -s $(which gfortran-13) /usr/local/bin/gfortran
           fi
 
           # Install libomp 11.1.0. See comment above.
