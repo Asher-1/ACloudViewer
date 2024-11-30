@@ -70,7 +70,7 @@ void CVLog::LogMessage(const QString& message, int level)
 {
 #ifndef QT_DEBUG
 	//skip debug messages in release mode as soon as possible
-	if (level & LOG_DEBUG)
+	if (level & LOG_VERBOSE)
 	{
 		return;
 	}
@@ -140,7 +140,7 @@ bool CVLog::Error(const char* format, ...)
 bool CVLog::PrintDebug(const char* format, ...)
 {
 #ifdef QT_DEBUG
-	LOG_ARGS(LOG_STANDARD | LOG_DEBUG)
+	LOG_ARGS(LOG_STANDARD | LOG_VERBOSE)
 #endif
 	return true;
 }
@@ -148,7 +148,7 @@ bool CVLog::PrintDebug(const char* format, ...)
 bool CVLog::WarningDebug(const char* format, ...)
 {
 #ifdef QT_DEBUG
-	LOG_ARGS(LOG_WARNING | LOG_DEBUG)
+	LOG_ARGS(LOG_WARNING | LOG_VERBOSE)
 #endif
 	return false;
 }
@@ -156,7 +156,7 @@ bool CVLog::WarningDebug(const char* format, ...)
 bool CVLog::ErrorDebug(const char* format, ...)
 {
 #ifdef QT_DEBUG
-	LOG_ARGS(LOG_ERROR | LOG_DEBUG)
+	LOG_ARGS(LOG_ERROR | LOG_VERBOSE)
 #endif
 	return false;
 }
