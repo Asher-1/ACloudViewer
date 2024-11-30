@@ -34,8 +34,8 @@ jobs:
       matrix:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        # os: [macos-12, macos-14]
-        os: [macos-14]
+        os: [macos-12, macos-14]
+        # os: [macos-14]
     env:
       BUILD_SHARED_LIBS: OFF
       BUILD_CUDA_MODULE: OFF
@@ -186,8 +186,8 @@ jobs:
       matrix:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        # os: [macos-12, macos-14]
-        os: [macos-14]
+        os: [macos-12, macos-14]
+        # os: [macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
@@ -385,8 +385,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: [macos-12, macos-14]
-        os: [macos-14]
+        os: [macos-12, macos-14]
+        # os: [macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
@@ -405,6 +405,10 @@ jobs:
             python_version: '3.11'
 
     env:
+      BUILD_CUDA_MODULE: OFF
+      BUILD_TORCH_OPS: ON
+      # TensorFlow v2.16 does not support Python 3.8
+      BUILD_TENSORFLOW_OPS: OFF
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
       - name: Checkout source code
