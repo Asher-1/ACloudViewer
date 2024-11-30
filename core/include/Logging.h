@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include "CVCoreLib.h"
-
 #include <functional>
 #include <iostream>
 #include <sstream>
 #include <string>
+
+#include "CVCoreLib.h"
 
 #ifndef FMT_HEADER_ONLY
 #define FMT_HEADER_ONLY 1
@@ -201,8 +201,9 @@ public:
     static Logger &GetInstance();
 
     /// Overwrite the default print function, this is useful when you want to
-    /// redirect prints rather than printing to stdout. For example, in CloudViewer's
-    /// python binding, the default print function is replaced with py::print().
+    /// redirect prints rather than printing to stdout. For example, in
+    /// CloudViewer's python binding, the default print function is replaced
+    /// with py::print().
     ///
     /// \param print_fcn The function for printing. It should take a string
     /// input and returns nothing.
@@ -226,7 +227,7 @@ public:
                                         const char *function_name,
                                         bool force_console_log,
                                         const char *format,
-                                        Args &&... args) {
+                                        Args &&...args) {
         Logger::GetInstance().VError(file_name, line_number, function_name,
                                      force_console_log, format,
                                      fmt::make_format_args(args...));
@@ -237,7 +238,7 @@ public:
                             const char *function_name,
                             bool force_console_log,
                             const char *format,
-                            Args &&... args) {
+                            Args &&...args) {
         Logger::GetInstance().VWarning(file_name, line_number, function_name,
                                        force_console_log, format,
                                        fmt::make_format_args(args...));
@@ -248,7 +249,7 @@ public:
                          const char *function_name,
                          bool force_console_log,
                          const char *format,
-                         Args &&... args) {
+                         Args &&...args) {
         Logger::GetInstance().VInfo(file_name, line_number, function_name,
                                     force_console_log, format,
                                     fmt::make_format_args(args...));
@@ -259,7 +260,7 @@ public:
                           const char *function_name,
                           bool force_console_log,
                           const char *format,
-                          Args &&... args) {
+                          Args &&...args) {
         Logger::GetInstance().VDebug(file_name, line_number, function_name,
                                      force_console_log, format,
                                      fmt::make_format_args(args...));
@@ -267,30 +268,30 @@ public:
 
 private:
     Logger();
-    void VError [[noreturn]] (const char *file_name,
-                              int line_number,
-                              const char *function_name,
-                              bool force_console_log,
-                              const char *format,
-                              fmt::format_args args) const;
-    void VWarning(const char *file_name,
-                  int line_number,
-                  const char *function_name,
-                  bool force_console_log,
-                  const char *format,
-                  fmt::format_args args) const;
-    void VInfo(const char *file_name,
-               int line_number,
-               const char *function_name,
-               bool force_console_log,
-               const char *format,
-               fmt::format_args args) const;
-    void VDebug(const char *file_name,
-                int line_number,
-                const char *function_name,
-                bool force_console_log,
-                const char *format,
-                fmt::format_args args) const;
+    void CV_CORE_LIB_API VError [[noreturn]] (const char *file_name,
+                                              int line_number,
+                                              const char *function_name,
+                                              bool force_console_log,
+                                              const char *format,
+                                              fmt::format_args args) const;
+    void CV_CORE_LIB_API VWarning(const char *file_name,
+                                  int line_number,
+                                  const char *function_name,
+                                  bool force_console_log,
+                                  const char *format,
+                                  fmt::format_args args) const;
+    void CV_CORE_LIB_API VInfo(const char *file_name,
+                               int line_number,
+                               const char *function_name,
+                               bool force_console_log,
+                               const char *format,
+                               fmt::format_args args) const;
+    void CV_CORE_LIB_API VDebug(const char *file_name,
+                                int line_number,
+                                const char *function_name,
+                                bool force_console_log,
+                                const char *format,
+                                fmt::format_args args) const;
 
 private:
     std::unique_ptr<Impl> impl_;
