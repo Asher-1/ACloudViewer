@@ -89,7 +89,7 @@ public:
 	static bool PrintDebug(const char *format, ...);
 
 	//! QString version of CVLog::PrintDebug
-	inline static bool PrintDebug(const QString& message) { LogMessage(message, LOG_STANDARD | LOG_DEBUG); return true; }
+	inline static bool PrintDebug(const QString& message) { LogMessage(message, LOG_STANDARD | DEBUG_FLAG); return true; }
 
 	//! Prints out a formatted warning message in console
 	/** Works just like the 'printf' command.
@@ -107,7 +107,7 @@ public:
 	static bool WarningDebug(const char *format, ...);
 
 	//! QString version of CVLog::WarningDebug
-	inline static bool WarningDebug(const QString& message) { LogMessage(message, LOG_WARNING | LOG_DEBUG); return false; }
+	inline static bool WarningDebug(const QString& message) { LogMessage(message, LOG_WARNING | DEBUG_FLAG); return false; }
 
 	//! Display an error dialog with formatted message
 	/** Works just like the 'printf' command.
@@ -125,7 +125,7 @@ public:
 	static bool ErrorDebug(const char *format, ...);
 
 	//! QString version of CVLog::ErrorDebug
-	static bool ErrorDebug(const QString& message) { LogMessage(message, LOG_ERROR | LOG_DEBUG); return false; }
+	static bool ErrorDebug(const QString& message) { LogMessage(message, LOG_ERROR | DEBUG_FLAG); return false; }
 };
 
 #endif //CC_LOG_HEADER
