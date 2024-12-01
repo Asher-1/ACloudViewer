@@ -204,7 +204,7 @@ void PythonInterpreter::initialize(const PythonConfig &config)
     QDir libDir(libDirPath);
 
     char soName[25];
-    snprintf(soName, 24, "libpython%d.%d.so*", PythonVersion.major, PythonVersion.minor);
+    snprintf(soName, 24, "libpython%d.%d.so*", PythonVersion.versionMajor, PythonVersion.versionMinor);
 
     QStringList filters;
     filters << soName;
@@ -220,7 +220,7 @@ void PythonInterpreter::initialize(const PythonConfig &config)
     if (!m_libPythonHandle)
     {
         displaydlopenError();
-        snprintf(soName, 24, "libpython%d.%dm.so*", PythonVersion.major, PythonVersion.minor);
+        snprintf(soName, 24, "libpython%d.%dm.so*", PythonVersion.versionMajor, PythonVersion.versionMinor);
         filters.clear();
         filters << soName;
         libDir.setNameFilters(filters);

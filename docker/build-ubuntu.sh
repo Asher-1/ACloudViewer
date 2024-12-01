@@ -184,7 +184,7 @@ if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; then
 	# Start building...
 	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "ACloudViewer-*${UBUNTU_VERSION}*.run" | grep -q .; then
     gui_release_export_env
-		release_build py38 gui
+		release_build py311 gui
 	else
 		echo "Ignore ACloudViewer GUI app building due to have builded before..."
 	fi

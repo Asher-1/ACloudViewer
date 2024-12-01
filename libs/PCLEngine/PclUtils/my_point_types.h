@@ -24,8 +24,7 @@
 //PCL
 #include <pcl/register_point_struct.h>
 #include <pcl/point_types.h>
-#include <boost/cstdint.hpp>
-#include <pcl/io/boost.h> // for boost::uint8_t
+#include <stdint.h>
 
 //! PCL custom point type used for reading RGB data
 struct OnlyRGB
@@ -36,14 +35,14 @@ struct OnlyRGB
         {
             struct
             {
-                boost::uint8_t b;
-                boost::uint8_t g;
-                boost::uint8_t r;
-                boost::uint8_t a;
+                std::uint8_t b;
+                std::uint8_t g;
+                std::uint8_t r;
+                std::uint8_t a;
             };
             float rgb;
         };
-        boost::uint32_t rgba;
+        std::uint32_t rgba;
     };
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -141,14 +140,14 @@ struct PointXYZScalarRGB
         {
             struct
             {
-                boost::uint8_t b;
-                boost::uint8_t g;
-                boost::uint8_t r;
-                boost::uint8_t _unused;
+                std::uint8_t b;
+                std::uint8_t g;
+                std::uint8_t r;
+                std::uint8_t _unused;
             };
             float rgb;
         };
-        boost::uint32_t rgba;
+        std::uint32_t rgba;
     };
     CLOUDVIEWER_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -164,10 +163,10 @@ struct PointXYZScalarRGBNormals
         {
             struct
             {
-                boost::uint8_t b;
-                boost::uint8_t g;
-                boost::uint8_t r;
-                boost::uint8_t a;
+                std::uint8_t b;
+                std::uint8_t g;
+                std::uint8_t r;
+                std::uint8_t a;
             };
             float rgb;
         };
