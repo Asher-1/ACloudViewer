@@ -21,6 +21,7 @@ fi
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-OFF}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
+USE_SYSTEM_FMT=${USE_SYSTEM_FMT:-OFF}
 
 # Warning: CONDA_PREFIX variable should be set before
 # CONDA_PREFIX=${CONDA_PREFIX:="/root/miniconda3/envs/cloudViewer"}
@@ -281,6 +282,7 @@ build_gui_app() {
                 "-DWITH_SIMD=ON"
                 "-DWITH_PCL_NURBS=$WITH_PCL_NURBS"
                 "-DUSE_SIMD=ON"
+                "-DUSE_SYSTEM_FMT=$USE_SYSTEM_FMT"
                 "-DPACKAGE=$PACKAGE"
                 "-DBUILD_OPENCV=ON"
                 "-DBUILD_RECONSTRUCTION=ON"
