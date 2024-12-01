@@ -34,7 +34,7 @@ jobs:
       matrix:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-12, macos-14]
+        os: [macos-12, macos-13]
         # os: [macos-14]
     env:
       BUILD_SHARED_LIBS: OFF
@@ -80,8 +80,8 @@ jobs:
             # Newer Xcode versions work, but embree recommends Apple clang <= 14 on
             # arm64 to avoid possible "EXEC_BAD_INSTRUCTION" runtime exceptions:
             # https://github.com/embree/embree/releases/tag/v4.3.1
-            # sudo xcode-select -switch /Applications/Xcode_14.3.1.app
-            sudo xcode-select -switch /Applications/Xcode_16.1.app
+            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
+            # sudo xcode-select -switch /Applications/Xcode_16.1.app
           else
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
           fi
@@ -125,6 +125,7 @@ jobs:
             echo "CPPFLAGS=-I/opt/homebrew/opt/libomp/include" >> $GITHUB_ENV
             echo "OpenMP_ROOT=/opt/homebrew/opt/libomp" >> $GITHUB_ENV
           else
+            brew install libomp
             brew info libomp
             export LDFLAGS="-L/usr/local/opt/libomp/lib"
             export CPPFLAGS="-I/usr/local/opt/libomp/include"
@@ -203,7 +204,7 @@ jobs:
       matrix:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-12, macos-14]
+        os: [macos-12, macos-13]
         # os: [macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
@@ -282,8 +283,8 @@ jobs:
           # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
-            # sudo xcode-select -switch /Applications/Xcode_14.3.1.app
-            sudo xcode-select -switch /Applications/Xcode_16.1.app
+            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
+            # sudo xcode-select -switch /Applications/Xcode_16.1.app
           else
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
           fi
@@ -320,6 +321,7 @@ jobs:
             echo "CPPFLAGS=-I/opt/homebrew/opt/libomp/include" >> $GITHUB_ENV
             echo "OpenMP_ROOT=/opt/homebrew/opt/libomp" >> $GITHUB_ENV
           else
+            brew install libomp
             brew info libomp
             export LDFLAGS="-L/usr/local/opt/libomp/lib"
             export CPPFLAGS="-I/usr/local/opt/libomp/include"
@@ -419,7 +421,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12, macos-14]
+        os: [macos-12, macos-13]
         # os: [macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
