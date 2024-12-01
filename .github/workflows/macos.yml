@@ -82,6 +82,8 @@ jobs:
             # https://github.com/embree/embree/releases/tag/v4.3.1
             # sudo xcode-select -switch /Applications/Xcode_14.3.1.app
             sudo xcode-select -switch /Applications/Xcode_16.1.app
+          else
+            ln -s $(which gfortran-13) /usr/local/bin/gfortran
           fi
 
           # Install libomp 11.1.0 from old brew bottle for x64 catalina (10.15)
@@ -124,6 +126,16 @@ jobs:
             echo "OpenMP_ROOT=/opt/homebrew/opt/libomp" >> $GITHUB_ENV
           else
             brew info libomp
+            export LDFLAGS="-L/usr/local/opt/libomp/lib"
+            export CPPFLAGS="-I/usr/local/opt/libomp/include"
+            echo "LDFLAGS: $LDFLAGS"
+            echo "CPPFLAGS: $CPPFLAGS"
+            ls -l /usr/local/opt/libomp/include
+            ls -l /usr/local/opt/libomp/lib
+
+            echo "LDFLAGS=-L/usr/local/opt/libomp/lib" >> $GITHUB_ENV
+            echo "CPPFLAGS=-I/usr/local/opt/libomp/include" >> $GITHUB_ENV
+            echo "OpenMP_ROOT=/usr/local/opt/libomp" >> $GITHUB_ENV
           fi
 
           export PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
@@ -309,6 +321,16 @@ jobs:
             echo "OpenMP_ROOT=/opt/homebrew/opt/libomp" >> $GITHUB_ENV
           else
             brew info libomp
+            export LDFLAGS="-L/usr/local/opt/libomp/lib"
+            export CPPFLAGS="-I/usr/local/opt/libomp/include"
+            echo "LDFLAGS: $LDFLAGS"
+            echo "CPPFLAGS: $CPPFLAGS"
+            ls -l /usr/local/opt/libomp/include
+            ls -l /usr/local/opt/libomp/lib
+
+            echo "LDFLAGS=-L/usr/local/opt/libomp/lib" >> $GITHUB_ENV
+            echo "CPPFLAGS=-I/usr/local/opt/libomp/include" >> $GITHUB_ENV
+            echo "OpenMP_ROOT=/usr/local/opt/libomp" >> $GITHUB_ENV
           fi
 
           export PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
