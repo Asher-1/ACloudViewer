@@ -31,46 +31,59 @@ void PythonPluginManager::loadPluginsFromEntryPoints()
 {
     plgPrint() << "Searching for custom plugins (checking metadata in site-package)";
     const py::object versionInfo = py::module::import("sys").attr("version_info");
-
     const py::object metadata = py::module::import("importlib.metadata");
-    py::iterable entries;
+    std::vector<py::object> all_entries;
 
-    // Get entry points filtered by group="cloudviewer.plugins"
-    if (versionInfo < py::make_tuple(3, 10))
+    auto collectEntries = [&](const std::string &group)
     {
-        const py::dict entries_dict = metadata.attr("entry_points")();
-        if (entries_dict.contains("cloudviewer.plugins"))
+        py::iterable entries;
+        if (versionInfo < py::make_tuple(3, 10))
         {
-            entries = entries_dict["cloudviewer.plugins"];
-        } else if (entries_dict.contains("cloudcompare.plugins")) {
-            entries = entries_dict["cloudcompare.plugins"];
+            const py::dict entries_dict = metadata.attr("entry_points")();
+            if (entries_dict.contains(group))
+            {
+                entries = entries_dict[group.c_str()];
+            }
         }
         else
         {
-            plgVerbose() << "No custom plugin registered in site-packages";
-
-            return;
+            entries = metadata.attr("entry_points")("group"_a = group.c_str());
         }
+        for (auto &entry : entries)
+        {
+            all_entries.push_back(py::cast<py::object>(entry));
+        }
+    };
+
+    // Get entry points filtered by group="cloudviewer.plugins" or "cloudcompare.plugins"
+    collectEntries("cloudviewer.plugins");
+    collectEntries("cloudcompare.plugins");
+
+    if (all_entries.empty())
+    {
+        plgVerbose() << "No custom plugin registered in site-packages";
+        return;
     }
     else
     {
-        entries = metadata.attr("entry_points")(
-            "group"_a = "cloudviewer.plugins"); // return a list of entries
+        plgVerbose() << "Found the following plugins:";
+        for (auto &entry : all_entries)
+        {
+            QString pluginName = entry.attr("name").cast<QString>();
+            plgVerbose() << "\tPlugin: " << pluginName;
+        }
     }
 
-    plgVerbose() << py::str(entries).cast<QString>();
-
-    for (auto &entry : entries)
+    for (auto &entry : all_entries)
     {
         QString pluginName = entry.attr("name").cast<QString>();
         QString entry_point = entry.attr("value").cast<QString>();
-
         QStringList entry_pieces = entry_point.split(':');
         if (entry_pieces.size() != 2)
         { // Entry point value should be in the form package_and_module:pluginclass
             plgWarning() << "Malformed entry point specification for '" << pluginName << "':'"
                          << entry_point << "'";
-            return;
+            continue;
         }
 
         // No need to check that it's a subclass of PythonPluginInterface, the instanciation

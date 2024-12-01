@@ -140,6 +140,7 @@ cmake   -DDEVELOPER_BUILD=OFF \
         -DPLUGIN_STANDARD_3DMASC=ON \
         -DPLUGIN_STANDARD_QTREEISO=ON \
         -DPLUGIN_STANDARD_QVOXFALL=ON \
+        -DPLUGIN_PYTHON=ON \
         -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
         -DCMAKE_INSTALL_PREFIX=/home/asher/develop/code/github/CloudViewer/install \
         ..

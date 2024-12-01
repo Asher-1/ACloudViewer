@@ -45,8 +45,18 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && which python \
  && python --version
 
-# fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-echo -e "\ny" | conda install libffi==3.3
+eval $(
+    source /etc/lsb-release;
+    echo DISTRIB_ID="$DISTRIB_ID";
+    echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
+)
+
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
+    # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
+    if [ "${PYTHON_VERSION}" = "3.8" ]; then
+        echo -e "\ny" | conda install libffi==3.3
+    fi
+fi
 
 set -x # Echo commands on
 # Get build scripts and control environment variables

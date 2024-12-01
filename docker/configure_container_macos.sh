@@ -141,6 +141,7 @@ cmakeGuiOptions=(
                 -DPLUGIN_STANDARD_3DMASC=ON
                 -DPLUGIN_STANDARD_QTREEISO=ON
                 -DPLUGIN_STANDARD_QVOXFALL=ON
+                -DPLUGIN_PYTHON=ON
                 -DPLUGIN_STANDARD_QSRA=ON
                 -DTHIRD_PARTY_DOWNLOAD_DIR=/opt/ACloudViewer/thirdparties
                 -DPYTHON_EXECUTABLE=/root/miniconda3/bin/python3.6

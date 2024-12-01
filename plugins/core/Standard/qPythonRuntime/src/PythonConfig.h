@@ -1,6 +1,6 @@
 // ##########################################################################
 // #                                                                        #
-// #                ACLOUDVIEWER PLUGIN: PythonRuntime                       #
+// #                ACLOUDVIEWER PLUGIN: PythonRuntime                      #
 // #                                                                        #
 // #  This program is free software; you can redistribute it and/or modify  #
 // #  it under the terms of the GNU General Public License as published by  #
@@ -37,7 +37,7 @@ struct Version
     constexpr Version() = default;
 
     constexpr Version(uint16_t major_, uint16_t minor_, uint16_t patch_)
-        : major(major_), minor(minor_), patch(patch_)
+        : versionMajor(major_), versionMinor(minor_), versionPatch(patch_)
     {
     }
 
@@ -58,14 +58,14 @@ struct Version
 
     bool isNull() const
     {
-        return major == 0 && minor == 0 && patch == 0;
+        return versionMajor == 0 && versionMinor == 0 && versionPatch == 0;
     };
 
     bool operator==(const Version &other) const;
 
-    uint16_t major{0};
-    uint16_t minor{0};
-    uint16_t patch{0};
+    uint16_t versionMajor{0};
+    uint16_t versionMinor{0};
+    uint16_t versionPatch{0};
 };
 
 /// Python Version the plugin was compiled against

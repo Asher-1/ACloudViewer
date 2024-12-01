@@ -41,20 +41,20 @@ Version::Version(const QStringRef &versionStr) : Version()
     QVector<QStringRef> parts = versionStr.split('.');
     if (parts.size() == 3)
     {
-        major = parts[0].toUInt();
-        minor = parts[1].toUInt();
-        patch = parts[2].toUInt();
+        versionMajor = parts[0].toUInt();
+        versionMinor = parts[1].toUInt();
+        versionPatch = parts[2].toUInt();
     }
 }
 
 bool Version::isCompatibleWithCompiledVersion() const
 {
-    return major == PythonVersion.major && minor == PythonVersion.minor;
+    return versionMajor == PythonVersion.versionMajor && versionMinor == PythonVersion.versionMinor;
 }
 
 bool Version::operator==(const Version &other) const
 {
-    return major == other.major && minor == other.minor && patch == other.patch;
+    return versionMajor == other.versionMajor && versionMinor == other.versionMinor && versionPatch == other.versionPatch;
 }
 
 static Version GetPythonExeVersion(QProcess &pythonProcess)
@@ -329,7 +329,7 @@ bool PythonConfig::validateAndDisplayErrors(QWidget *parent) const
     if (envVersion.isNull())
     {
         // This hints that the selected directory is likely not valid.
-        QMessageBox::critical(
+        QMessageBox::warning(
             parent,
             "Invalid Python Environment",
             "The selected directory does not seems to be a valid python environment");
@@ -338,17 +338,17 @@ bool PythonConfig::validateAndDisplayErrors(QWidget *parent) const
 
     if (!envVersion.isCompatibleWithCompiledVersion())
     {
-        QMessageBox::critical(
+        QMessageBox::warning(
             parent,
             "Incompatible Python Environment",
             QString("The selected directory does not contain a Python Environment that is "
                     "compatible. Expected a python version like %1.%2.x, selected environment "
                     "has version %3.%4.%5")
-                .arg(QString::number(PythonVersion.major),
-                     QString::number(PythonVersion.minor),
-                     QString::number(envVersion.major),
-                     QString::number(envVersion.minor),
-                     QString::number(envVersion.patch)));
+                .arg(QString::number(PythonVersion.versionMajor),
+                     QString::number(PythonVersion.versionMinor),
+                     QString::number(envVersion.versionMajor),
+                     QString::number(envVersion.versionMinor),
+                     QString::number(envVersion.versionPatch)));
         return false;
     }
 
