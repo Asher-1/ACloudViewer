@@ -268,30 +268,31 @@ public:
 
 private:
     Logger();
-    void CV_CORE_LIB_API VError [[noreturn]] (const char *file_name,
-                                              int line_number,
-                                              const char *function_name,
-                                              bool force_console_log,
-                                              const char *format,
-                                              fmt::format_args args) const;
-    void CV_CORE_LIB_API VWarning(const char *file_name,
-                                  int line_number,
-                                  const char *function_name,
-                                  bool force_console_log,
-                                  const char *format,
-                                  fmt::format_args args) const;
-    void CV_CORE_LIB_API VInfo(const char *file_name,
-                               int line_number,
-                               const char *function_name,
-                               bool force_console_log,
-                               const char *format,
-                               fmt::format_args args) const;
-    void CV_CORE_LIB_API VDebug(const char *file_name,
-                                int line_number,
-                                const char *function_name,
-                                bool force_console_log,
-                                const char *format,
-                                fmt::format_args args) const;
+public:
+    void VError [[noreturn]] (const char *file_name,
+                              int line_number,
+                              const char *function_name,
+                              bool force_console_log,
+                              const char *format,
+                              fmt::format_args args) const;
+    void VWarning(const char *file_name,
+                  int line_number,
+                  const char *function_name,
+                  bool force_console_log,
+                  const char *format,
+                  fmt::format_args args) const;
+    void VInfo(const char *file_name,
+               int line_number,
+               const char *function_name,
+               bool force_console_log,
+               const char *format,
+               fmt::format_args args) const;
+    void VDebug(const char *file_name,
+                int line_number,
+                const char *function_name,
+                bool force_console_log,
+                const char *format,
+                fmt::format_args args) const;
 
 private:
     std::unique_ptr<Impl> impl_;
