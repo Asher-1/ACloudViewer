@@ -89,6 +89,15 @@ if (UNIX AND NOT APPLE)
         DESTINATION "${MAIN_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS
     )
+    
+    if (${PLUGIN_PYTHON} STREQUAL "ON") 
+        file(COPY 
+            "${CMAKE_INSTALL_PREFIX}/plugins-python"
+            DESTINATION "${MAIN_DEPLOY_PATH}"
+            USE_SOURCE_PERMISSIONS
+        )
+    endif()
+
     # deploy c++ library dependency
     execute_process(COMMAND bash ${PACK_SCRIPTS}
                     "${BUILD_LIB_PATH}" ${DEPLOY_LIB_PATH}

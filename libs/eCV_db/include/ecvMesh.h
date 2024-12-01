@@ -112,7 +112,7 @@ public:
     /** See cloudViewer::PointProjectionTools::computeTriangulation.
      **/
     static ccMesh* Triangulate(ccGenericPointCloud* cloud,
-                               CC_TRIANGULATION_TYPES type,
+                               cloudViewer::TRIANGULATION_TYPES type,
                                bool updateNormals = false,
                                PointCoordinateType maxEdgeLength = 0,
                                unsigned char dim = 2);
@@ -146,7 +146,9 @@ public:
         return m_associatedCloud;
     }
     void refreshBB() override;
-    bool interpolateNormalsBC(unsigned triIndex, const CCVector3d& w, CCVector3& N) override;
+    bool interpolateNormalsBC(unsigned triIndex,
+                              const CCVector3d& w,
+                              CCVector3& N) override;
     bool interpolateColors(unsigned triIndex,
                            const CCVector3& P,
                            ecvColor::Rgb& C) override;
@@ -212,8 +214,10 @@ public:
 
     virtual unsigned size() const override;
     void getBoundingBox(CCVector3& bbMin, CCVector3& bbMax) override;
-    bool normalsAvailable() const override  { return hasNormals(); }
-    bool interpolateNormals(unsigned triIndex, const CCVector3& P, CCVector3& N) override;
+    bool normalsAvailable() const override { return hasNormals(); }
+    bool interpolateNormals(unsigned triIndex,
+                            const CCVector3& P,
+                            CCVector3& N) override;
 
     // const version of getTriangleVertIndexes
     void getTriangleVertIndexes(size_t triangleIndex,
@@ -570,17 +574,27 @@ public:
     ccMesh* subdivide(PointCoordinateType maxArea) const;
 
     //! Creates a new mesh with the selected vertices only
-    /** This method is called after a graphical segmentation.
-            It creates a new mesh structure with the vertices that are
-            tagged as "visible" (see ccGenericPointCloud::visibilityArray).
+    /** This method is called after a graphical segmentation. It creates
+            a new mesh structure with the vertices that are tagged as "visible"
+            (see ccGenericPointCloud::visibilityArray).
             This method will also update this mesh if removeSelectedFaces is
     true. In this case, all "selected" triangles will be removed from this
     mesh's instance.
 
-            \param removeSelectedFaces specifies if the faces composed only of
-    'selected' vertices should be removed or not
+            \param	removeSelectedTriangles			specifies if the faces
+    composed only of 'selected' vertices should be removed or not. If true, the
+    visibility array will be automatically unallocated on completion \param
+    newIndexesOfRemainingTriangles	the new indexes of the remaining triangles
+    (if removeSelectedTriangles is true - optional). Must be initially empty or
+    have the same size as the original mesh. \param	withChildEntities
+    whether child entities should be transferred as well (see
+    ccHObjectCaster::CloneChildren) \return	the new mesh (if successful) or
+    itself if all vertices were visible/selected
     **/
-    ccMesh* createNewMeshFromSelection(bool removeSelectedFaces);
+    ccMesh* createNewMeshFromSelection(
+            bool removeSelectedTriangles,
+            std::vector<int>* newIndexesOfRemainingTriangles = nullptr,
+            bool withChildEntities = false);
 
     //! Swaps two triangles
     /** Automatically updates internal structures (i.e. lookup tables for
@@ -1426,9 +1440,11 @@ protected:
             const cloudViewer::VerticesIndexes& vertIndexes,
             const CCVector3& P,
             CCVector3d& weights) const;
-    //! Same as other 'interpolateNormals' method with a set of 3 vertices indexes
+    //! Same as other 'interpolateNormals' method with a set of 3 vertices
+    //! indexes
     bool interpolateNormals(const cloudViewer::VerticesIndexes& vertIndexes,
-                            const CCVector3d& w, CCVector3& N,
+                            const CCVector3d& w,
+                            CCVector3& N,
                             const Tuple3i* triNormIndexes = nullptr);
     //! Same as other 'interpolateColors' method with a set of 3 vertices
     //! indexes

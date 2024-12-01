@@ -64,6 +64,7 @@ constexpr char COMMAND_DENSITY_TYPE[] = "TYPE";  //+ density type
 constexpr char COMMAND_APPROX_DENSITY[] = "APPROX_DENSITY";
 constexpr char COMMAND_SF_GRADIENT[] = "SF_GRAD";
 constexpr char COMMAND_ROUGHNESS[] = "ROUGH";
+constexpr char COMMAND_ROUGHNESS_UP_DIR[]				= "UP_DIR";
 constexpr char COMMAND_APPLY_TRANSFORMATION[] = "APPLY_TRANS";
 constexpr char COMMAND_DROP_GLOBAL_SHIFT[] = "DROP_GLOBAL_SHIFT";
 constexpr char COMMAND_SF_COLOR_SCALE[] = "SF_COLOR_SCALE";
@@ -655,8 +656,12 @@ bool CommandOctreeNormal::process(ccCommandLineInterface& cmd) {
                     orientation = ccNormalVectors::Orientation::MINUS_Z;
                 } else if (orient_argument == "PREVIOUS") {
                     orientation = ccNormalVectors::Orientation::PREVIOUS;
-                } else if (orient_argument == "SENSOR_ORIGIN") {
-                    orientation = ccNormalVectors::Orientation::SENSOR_ORIGIN;
+                } else if (orient_argument == "PLUS_SENSOR_ORIGIN") {
+                    orientation =
+                            ccNormalVectors::Orientation::PLUS_SENSOR_ORIGIN;
+                } else if (orient_argument == "MINUS_SENSOR_ORIGIN") {
+                    orientation =
+                            ccNormalVectors::Orientation::MINUS_SENSOR_ORIGIN;
                 } else {
                     return cmd.error(QObject::tr("Invalid parameter: unknown "
                                                  "orientation '%1'")
@@ -1288,7 +1293,7 @@ bool CommandCurvature::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::Curvature, curvType,
-                kernelSize, entities, cmd.widgetParent())) {
+                kernelSize, entities, nullptr, cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() &&
             !cmd.saveClouds(QObject::tr("%1_CURVATURE_KERNEL_%2")
@@ -1371,7 +1376,7 @@ bool CommandApproxDensity::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::ApproxLocalDensity,
-                densityType, 0, entities, cmd.widgetParent())) {
+                densityType, 0, entities, nullptr, cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() && !cmd.saveClouds("APPROX_DENSITY")) {
             return false;
@@ -1443,7 +1448,8 @@ bool CommandDensity::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::LocalDensity,
-                densityType, kernelSize, entities, cmd.widgetParent())) {
+                densityType, kernelSize, entities, nullptr,
+                cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() && !cmd.saveClouds("DENSITY")) {
             return false;
@@ -1533,8 +1539,6 @@ CommandRoughness::CommandRoughness()
                                       COMMAND_ROUGHNESS) {}
 
 bool CommandRoughness::process(ccCommandLineInterface& cmd) {
-    cmd.print(QObject::tr("[ROUGHNESS]"));
-
     if (cmd.arguments().empty()) {
         return cmd.error(
                 QObject::tr("Missing parameter: kernel size after \"-%1\"")
@@ -1553,6 +1557,35 @@ bool CommandRoughness::process(ccCommandLineInterface& cmd) {
     }
     cmd.print(QObject::tr("\tKernel size: %1").arg(kernelSize));
 
+    // optional argument
+    CCVector3 roughnessUpDir;
+    CCVector3* _roughnessUpDir = nullptr;
+    if (cmd.arguments().size() >= 4) {
+        QString nextArg = cmd.arguments().first();
+        if (nextArg.startsWith('-') &&
+            nextArg.mid(1).toUpper() == COMMAND_ROUGHNESS_UP_DIR) {
+            // option confirmed
+            cmd.arguments().takeFirst();
+            QString xStr = cmd.arguments().takeFirst();
+            QString yStr = cmd.arguments().takeFirst();
+            QString zStr = cmd.arguments().takeFirst();
+            bool okX = false, okY = false, okZ = false;
+            roughnessUpDir.x =
+                    static_cast<PointCoordinateType>(xStr.toDouble(&okX));
+            roughnessUpDir.y =
+                    static_cast<PointCoordinateType>(yStr.toDouble(&okY));
+            roughnessUpDir.z =
+                    static_cast<PointCoordinateType>(zStr.toDouble(&okZ));
+            if (!okX || !okY || !okZ) {
+                return cmd.error(
+                        QObject::tr("Invalid 'up direction' vector after "
+                                    "option -%1 (3 coordinates expected)")
+                                .arg(COMMAND_ROUGHNESS_UP_DIR));
+            }
+            _roughnessUpDir = &roughnessUpDir;
+        }
+    }
+
     if (cmd.clouds().empty()) {
         return cmd.error(QObject::tr("No point cloud on which to compute "
                                      "roughness! (be sure to open one with "
@@ -1569,7 +1602,7 @@ bool CommandRoughness::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::Roughness, 0, kernelSize,
-                entities, cmd.widgetParent())) {
+                entities, _roughnessUpDir, cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() &&
             !cmd.saveClouds(
@@ -3573,7 +3606,7 @@ bool CommandDist::process(ccCommandLineInterface& cmd) {
             // DGM: not true anymore
             // if (maxDist > 0)
             //	cmd.warning("'Split XYZ' option is ignored if max distance is
-            //defined!");
+            // defined!");
             compDlg.split3DCheckBox->setChecked(true);
         }
         if (modelIndex != 0) {
@@ -3959,8 +3992,8 @@ bool CommandDelaunayTri::process(ccCommandLineInterface& cmd) {
 
         ccMesh* mesh = ccMesh::Triangulate(
                 cloud,
-                axisAligned ? DELAUNAY_2D_AXIS_ALIGNED
-                            : DELAUNAY_2D_BEST_LS_PLANE,
+                axisAligned ? cloudViewer::DELAUNAY_2D_AXIS_ALIGNED
+                            : cloudViewer::DELAUNAY_2D_BEST_LS_PLANE,
                 false, static_cast<PointCoordinateType>(maxEdgeLength),
                 2  // XY plane by default
         );
@@ -3992,7 +4025,7 @@ bool CommandDelaunayTri::process(ccCommandLineInterface& cmd) {
             // the mesh takes ownership of the cloud.
             // Therefore we have to remove all clouds from the 'cloud set'! (see
             // below) (otherwise bad things will happen when we'll clear it
-            //later ;)
+            // later ;)
             cloud->setEnabled(false);
             mesh->addChild(cloud);
         }
@@ -4686,7 +4719,7 @@ bool CommandChangePLYExportFormat::process(ccCommandLineInterface& cmd) {
 
     // if (fileFilter != PlyFilter::GetFileFilter())
     //	cmd.warning(QObject::tr("Argument '%1' is only applicable to PLY
-    //format!").arg(argument));
+    // format!").arg(argument));
 
     QString plyFormat = cmd.arguments().takeFirst().toUpper();
     // printf("%s\n",qPrintable(plyFormat));
@@ -5027,7 +5060,7 @@ bool CommandMoment::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::MomentOrder1, 0,
-                kernelSize, entities, cmd.widgetParent())) {
+                kernelSize, entities, nullptr, cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() &&
             !cmd.saveClouds(QObject::tr("MOMENT_KERNEL_%2").arg(kernelSize))) {
@@ -5134,7 +5167,7 @@ bool CommandFeature::process(ccCommandLineInterface& cmd) {
 
     if (ccLibAlgorithms::ComputeGeomCharacteristic(
                 cloudViewer::GeometricalAnalysisTools::Feature, featureType,
-                kernelSize, entities, cmd.widgetParent())) {
+                kernelSize, entities, nullptr, cmd.widgetParent())) {
         // save output
         if (cmd.autoSaveMode() &&
             !cmd.saveClouds(QObject::tr("%1_FEATURE_KERNEL_%2")

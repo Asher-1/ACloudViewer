@@ -516,9 +516,6 @@ void ccMesh::setMaterialSet(ccMaterialSet* materialSet,
         removePerTriangleMtlIndexes();  // auto-remove per-triangle indexes (we
                                         // don't need them anymore)
     }
-
-    // update display (for textures!)
-    // setDisplay(m_currentDisplay);
 }
 
 void ccMesh::applyGLTransformation(const ccGLMatrix& trans) {
@@ -527,7 +524,7 @@ void ccMesh::applyGLTransformation(const ccGLMatrix& trans) {
 
     // we take care of per-triangle normals
     //(vertices and per-vertex normals should be taken care of by the recursive
-    //call)
+    // call)
     transformTriNormals(trans);
 }
 
@@ -1444,9 +1441,10 @@ ccMesh* ccMesh::TriangulateTwoPolylines(ccPolyline* p1,
     }
 
     cloudViewer::Delaunay2dMesh* delaunayMesh = new cloudViewer::Delaunay2dMesh;
-    char errorStr[1024];
+    std::string errorStr;
     if (!delaunayMesh->buildMesh(points2D, segments2D, errorStr)) {
-        CVLog::Warning(QString("Third party library error: %1").arg(errorStr));
+        CVLog::Warning(QString("Third party library error: %1")
+                               .arg(QString::fromStdString(errorStr)));
         delete delaunayMesh;
         delete vertices;
         return nullptr;
@@ -1548,7 +1546,7 @@ ccMesh* ccMesh::TriangulateTwoPolylines(ccPolyline* p1,
 }
 
 ccMesh* ccMesh::Triangulate(ccGenericPointCloud* cloud,
-                            CC_TRIANGULATION_TYPES type,
+                            cloudViewer::TRIANGULATION_TYPES type,
                             bool updateNormals /*=false*/,
                             PointCoordinateType maxEdgeLength /*=0*/,
                             unsigned char dim /*=2*/) {
@@ -1562,14 +1560,14 @@ ccMesh* ccMesh::Triangulate(ccGenericPointCloud* cloud,
     }
 
     // compute raw mesh
-    char errorStr[1024];
+    std::string errorStr;
     cloudViewer::GenericIndexedMesh* dummyMesh =
             cloudViewer::PointProjectionTools::computeTriangulation(
                     cloud, type, maxEdgeLength, dim, errorStr);
     if (!dummyMesh) {
         CVLog::Warning(QString("[ccMesh::Triangulate] Failed to construct "
                                "Delaunay mesh (Triangle lib error: %1)")
-                               .arg(errorStr));
+                               .arg(QString::fromStdString(errorStr)));
         return nullptr;
     }
 
@@ -2237,7 +2235,7 @@ ccBBox ccMesh::getOwnBB(bool withGLFeatures /*=false*/) {
 const ccGLMatrix& ccMesh::getGLTransformationHistory() const {
     // DGM: it may happen that the vertices transformation history matrix is not
     // the same as the mesh (if applyGLTransformation is called directly on the
-    //vertices). Therefore we prefer the cloud's by default.
+    // vertices). Therefore we prefer the cloud's by default.
     return m_associatedCloud ? m_associatedCloud->getGLTransformationHistory()
                              : m_glTransHistory;
 }
@@ -2538,7 +2536,7 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
         }
 
         if (glParams.showColors) {
-            if (isColorOverriden()) {
+            if (isColorOverridden()) {
                 context.defaultMeshColor = m_tempColor;
             } else {
                 assert(m_associatedCloud->isA(CV_TYPES::POINT_CLOUD));
@@ -2563,441 +2561,420 @@ void ccMesh::drawMeOnly(CC_DRAW_CONTEXT& context) {
     }
 }
 
-ccMesh* ccMesh::createNewMeshFromSelection(bool removeSelectedFaces) {
+ccMesh* ccMesh::createNewMeshFromSelection(
+        bool removeSelectedTriangles,
+        std::vector<int>* newIndexesOfRemainingTriangles /*=nullptr*/,
+        bool withChildEntities /*=false*/) {
     if (!m_associatedCloud) {
         return nullptr;
     }
 
-    const ccGenericPointCloud::VisibilityTableType& verticesVisibility =
-            m_associatedCloud->getTheVisibilityArray();
-    if (verticesVisibility.size() < m_associatedCloud->size()) {
-        CVLog::Error(QString("[Mesh %1] Internal error: vertex visibility "
-                             "table not instantiated!")
-                             .arg(getName()));
-        return nullptr;
-    }
+    size_t triCount = size();
 
-    // create vertices for the new mesh
-    ccGenericPointCloud* newVertices =
-            m_associatedCloud->createNewCloudFromVisibilitySelection(
-                    false, nullptr, true);
-    if (!newVertices) {
-        CVLog::Error(QString("[Mesh %1] Failed to create segmented mesh "
-                             "vertices! (not enough memory)")
-                             .arg(getName()));
-        return nullptr;
-    } else if (newVertices->size() == 0) {
-        CVLog::Error(QString("[Mesh %1] Failed to create segmented mesh "
-                             "vertices! (no visible point in selection)")
-                             .arg(getName()));
-        delete newVertices;
-        return nullptr;
-    }
-    assert(newVertices);
-
-    // create a 'reference' cloud if none was provided
-    QSharedPointer<cloudViewer::ReferenceCloud> rc;
-    {
-        // we create a temporary entity with the visible vertices only
-        rc.reset(new cloudViewer::ReferenceCloud(m_associatedCloud));
-
-        for (unsigned i = 0; i < m_associatedCloud->size(); ++i)
-            if (verticesVisibility[i] == POINT_VISIBLE)
-                if (!rc->addPointIndex(i)) {
-                    CVLog::Error("Not enough memory!");
-                    return nullptr;
-                }
-    }
-
-    // nothing to do
-    if (rc->size() == 0 ||
-        (removeSelectedFaces && rc->size() == m_associatedCloud->size())) {
-        return nullptr;
-    }
+    // we always need a map of the new triangle indexes
+    std::vector<int> triangleIndexMap;
 
     // we create a new mesh with the current selection
-    cloudViewer::GenericIndexedMesh* result =
-            cloudViewer::ManualSegmentationTools::segmentMesh(
-                    this, rc.data(), true, nullptr, newVertices);
-
-    // don't use this anymore
-    rc.clear();
-
     ccMesh* newMesh = nullptr;
-    if (result) {
-        newMesh = new ccMesh(result, newVertices);
+    {
+        // create a 'reference' cloud if none was provided
+        cloudViewer::ReferenceCloud rc(m_associatedCloud);
+
+        // create vertices for the new mesh
+        ccGenericPointCloud* newVertices =
+                m_associatedCloud->createNewCloudFromVisibilitySelection(
+                        false, nullptr, nullptr, true, &rc);
+        if (!newVertices) {
+            CVLog::Warning(
+                    "[ccMesh::createNewMeshFromSelection] Failed to create "
+                    "segmented mesh vertices! (not enough memory)");
+            return nullptr;
+        } else if (newVertices == m_associatedCloud) {
+            // nothing to do
+            return this;
+        } else if (newVertices->size() == 0) {
+            CVLog::Warning(
+                    "[ccMesh::createNewMeshFromSelection] No visible point in "
+                    "selection");
+            delete newVertices;
+            return nullptr;
+        }
+        assert(newVertices);
+
+        assert(rc.size() !=
+               0);  // otherwise 'newVertices->size() == 0' (see above)
+        assert(rc.size() !=
+               m_associatedCloud->size());  // in this case
+                                            // createNewCloudFromVisibilitySelection
+                                            // would have return
+                                            // 'm_associatedCloud' itself
+
+        cloudViewer::GenericIndexedMesh* selection =
+                cloudViewer::ManualSegmentationTools::segmentMesh(
+                        this, &rc, true, nullptr, newVertices, 0,
+                        &triangleIndexMap);
+        if (!selection) {
+            CVLog::Warning(
+                    "[ccMesh::createNewMeshFromSelection] Process failed: not "
+                    "enough memory?");
+            return nullptr;
+        }
+
+        newMesh = new ccMesh(selection, newVertices);
+
+        delete selection;
+        selection = nullptr;
+
         if (!newMesh) {
             delete newVertices;
             newVertices = nullptr;
-            CVLog::Error("An error occurred: not enough memory?");
-        } else {
-            newMesh->setName(getName() + QString(".part"));
+            CVLog::Warning(
+                    "[ccMesh::createNewMeshFromSelection] An error occurred: "
+                    "not enough memory?");
+            return nullptr;
+        }
+        newMesh->addChild(newVertices);
+        newVertices->setEnabled(false);
+    }
+    assert(newMesh);
 
-            // shall we add any advanced features?
-            bool addFeatures = false;
-            if (m_triNormals && m_triNormalIndexes)
-                addFeatures |= newMesh->reservePerTriangleNormalIndexes();
-            if (/*m_materials && */ m_triMtlIndexes)
-                addFeatures |= newMesh->reservePerTriangleMtlIndexes();
-            if (m_texCoords && m_texCoordIndexes)
-                addFeatures |= newMesh->reservePerTriangleTexCoordIndexes();
+    // populate the new mesh
+    {
+        newMesh->setName(getName() + QString(".part"));
 
-            if (addFeatures) {
-                // temporary structure for normal indexes mapping
-                std::vector<int> newNormIndexes;
-                NormsIndexesTableType* newTriNormals = nullptr;
-                if (m_triNormals && m_triNormalIndexes) {
-                    assert(m_triNormalIndexes->size() ==
-                           m_triVertIndexes->size());
-                    // create new 'minimal' subset
-                    newTriNormals = new NormsIndexesTableType();
-                    newTriNormals->link();
-                    try {
-                        newNormIndexes.resize(m_triNormals->size(), -1);
-                    } catch (const std::bad_alloc&) {
-                        CVLog::Warning(
-                                "[ccMesh::createNewMeshFromSelection] Failed "
-                                "to create new normals subset! (not enough "
-                                "memory)");
-                        newMesh->removePerTriangleNormalIndexes();
-                        newTriNormals->release();
-                        newTriNormals = nullptr;
-                    }
-                }
+        // shall we add any advanced features?
+        bool addFeatures = false;
+        if (m_triNormals && m_triNormalIndexes)
+            addFeatures |= newMesh->reservePerTriangleNormalIndexes();
+        if (m_materials && m_triMtlIndexes)
+            addFeatures |= newMesh->reservePerTriangleMtlIndexes();
+        if (m_texCoords && m_texCoordIndexes)
+            addFeatures |= newMesh->reservePerTriangleTexCoordIndexes();
 
-                // temporary structure for texture indexes mapping
-                std::vector<int> newTexIndexes;
-                TextureCoordsContainer* newTriTexIndexes = nullptr;
-                if (m_texCoords && m_texCoordIndexes) {
-                    assert(m_texCoordIndexes->size() ==
-                           m_triVertIndexes->size());
-                    // create new 'minimal' subset
-                    newTriTexIndexes = new TextureCoordsContainer();
-                    newTriTexIndexes->link();
-                    try {
-                        newTexIndexes.resize(m_texCoords->size(), -1);
-                    } catch (const std::bad_alloc&) {
-                        CVLog::Warning(
-                                "[ccMesh::createNewMeshFromSelection] Failed "
-                                "to create new texture indexes subset! (not "
-                                "enough memory)");
-                        newMesh->removePerTriangleTexCoordIndexes();
-                        newTriTexIndexes->release();
-                        newTriTexIndexes = nullptr;
-                    }
-                }
-
-                // temporary structure for material indexes mapping
-                std::vector<int> newMatIndexes;
-                ccMaterialSet* newMaterials = nullptr;
-                if (m_materials && m_triMtlIndexes) {
-                    assert(m_triMtlIndexes->size() == m_triVertIndexes->size());
-                    // create new 'minimal' subset
-                    newMaterials = new ccMaterialSet(m_materials->getName() +
-                                                     QString(".subset"));
-                    newMaterials->link();
-                    try {
-                        newMatIndexes.resize(m_materials->size(), -1);
-                    } catch (const std::bad_alloc&) {
-                        CVLog::Warning(
-                                "[ccMesh::createNewMeshFromSelection] Failed "
-                                "to create new material subset! (not enough "
-                                "memory)");
-                        newMesh->removePerTriangleMtlIndexes();
-                        newMaterials->release();
-                        newMaterials = nullptr;
-                        if (newTriTexIndexes)  // we can release texture
-                                               // coordinates as well (as they
-                                               // depend on materials!)
-                        {
-                            newMesh->removePerTriangleTexCoordIndexes();
-                            newTriTexIndexes->release();
-                            newTriTexIndexes = nullptr;
-                            newTexIndexes.resize(0);
-                        }
-                    }
-                }
-
-                size_t triNum = m_triVertIndexes->size();
-                for (size_t i = 0; i < triNum; ++i) {
-                    const cloudViewer::VerticesIndexes& tsi =
-                            m_triVertIndexes->at(i);
-
-                    // all vertices must be visible
-                    if (verticesVisibility[tsi.i1] == POINT_VISIBLE &&
-                        verticesVisibility[tsi.i2] == POINT_VISIBLE &&
-                        verticesVisibility[tsi.i3] == POINT_VISIBLE) {
-                        // import per-triangle normals?
-                        if (newTriNormals) {
-                            assert(m_triNormalIndexes);
-
-                            // current triangle (compressed) normal indexes
-                            const Tuple3i& triNormIndexes =
-                                    m_triNormalIndexes->getValue(i);
-
-                            // for each triangle of this mesh, try to determine
-                            // if its normals are already in use (otherwise add
-                            //them to the new container and increase its index)
-                            for (unsigned j = 0; j < 3; ++j) {
-                                if (triNormIndexes.u[j] >= 0 &&
-                                    newNormIndexes[triNormIndexes.u[j]] < 0) {
-                                    if (newTriNormals->size() ==
-                                                newTriNormals->capacity() &&
-                                        !newTriNormals->reserveSafe(
-                                                newTriNormals->size() +
-                                                4096))  // auto expand
-                                    {
-                                        CVLog::Warning(
-                                                "[ccMesh::"
-                                                "createNewMeshFromSelection] "
-                                                "Failed to create new normals "
-                                                "subset! (not enough memory)");
-                                        newMesh->removePerTriangleNormalIndexes();
-                                        newTriNormals->release();
-                                        newTriNormals = nullptr;
-                                        break;
-                                    }
-
-                                    // import old normal to new subset (create
-                                    // new index)
-                                    newNormIndexes[triNormIndexes.u[j]] =
-                                            static_cast<int>(
-                                                    newTriNormals
-                                                            ->size());  // new
-                                                                        // element
-                                                                        // index
-                                                                        // = new
-                                                                        // size
-                                                                        // - 1 =
-                                                                        // old
-                                                                        // size!
-                                    newTriNormals->emplace_back(
-                                            m_triNormals->getValue(
-                                                    triNormIndexes.u[j]));
-                                }
-                            }
-
-                            if (newTriNormals)  // structure still exists?
-                            {
-                                newMesh->addTriangleNormalIndexes(
-                                        triNormIndexes.u[0] < 0
-                                                ? -1
-                                                : newNormIndexes[triNormIndexes
-                                                                         .u[0]],
-                                        triNormIndexes.u[1] < 0
-                                                ? -1
-                                                : newNormIndexes[triNormIndexes
-                                                                         .u[1]],
-                                        triNormIndexes.u[2] < 0
-                                                ? -1
-                                                : newNormIndexes
-                                                          [triNormIndexes
-                                                                   .u[2]]);
-                            }
-                        }
-
-                        // import texture coordinates?
-                        if (newTriTexIndexes) {
-                            assert(m_texCoordIndexes);
-
-                            // current triangle texture coordinates indexes
-                            const Tuple3i& triTexIndexes =
-                                    m_texCoordIndexes->getValue(i);
-
-                            // for each triangle of this mesh, try to determine
-                            // if its textures coordinates are already in use
-                            //(otherwise add them to the new container and
-                            //increase its index)
-                            for (unsigned j = 0; j < 3; ++j) {
-                                if (triTexIndexes.u[j] >= 0 &&
-                                    newTexIndexes[triTexIndexes.u[j]] < 0) {
-                                    if (newTriTexIndexes->size() ==
-                                                newTriTexIndexes->capacity() &&
-                                        !newTriTexIndexes->reserveSafe(
-                                                newTriTexIndexes->size() +
-                                                4096))  // auto expand
-                                    {
-                                        CVLog::Error(
-                                                "Failed to create new texture "
-                                                "coordinates subset! (not "
-                                                "enough memory)");
-                                        newMesh->removePerTriangleTexCoordIndexes();
-                                        newTriTexIndexes->release();
-                                        newTriTexIndexes = nullptr;
-                                        break;
-                                    }
-                                    // import old texture coordinate to new
-                                    // subset (create new index)
-                                    newTexIndexes[triTexIndexes.u[j]] =
-                                            static_cast<int>(
-                                                    newTriTexIndexes
-                                                            ->size());  // new
-                                                                        // element
-                                                                        // index
-                                                                        // = new
-                                                                        // size
-                                                                        // - 1 =
-                                                                        // old
-                                                                        // size!
-                                    newTriTexIndexes->emplace_back(
-                                            m_texCoords->getValue(
-                                                    triTexIndexes.u[j]));
-                                }
-                            }
-
-                            if (newTriTexIndexes)  // structure still exists?
-                            {
-                                newMesh->addTriangleTexCoordIndexes(
-                                        triTexIndexes.u[0] < 0
-                                                ? -1
-                                                : newTexIndexes[triTexIndexes
-                                                                        .u[0]],
-                                        triTexIndexes.u[1] < 0
-                                                ? -1
-                                                : newTexIndexes[triTexIndexes
-                                                                        .u[1]],
-                                        triTexIndexes.u[2] < 0
-                                                ? -1
-                                                : newTexIndexes[triTexIndexes
-                                                                        .u[2]]);
-                            }
-                        }
-
-                        // import materials?
-                        if (newMaterials) {
-                            assert(m_triMtlIndexes);
-
-                            // current triangle material index
-                            const int triMatIndex =
-                                    m_triMtlIndexes->getValue(i);
-
-                            // for each triangle of this mesh, try to determine
-                            // if its material is already in use (otherwise add
-                            //it to the new container and increase its index)
-                            if (triMatIndex >= 0 &&
-                                newMatIndexes[triMatIndex] < 0) {
-                                // import old material to new subset (create new
-                                // index)
-                                newMatIndexes[triMatIndex] = static_cast<int>(
-                                        newMaterials
-                                                ->size());  // new element index
-                                                            // = new size - 1 =
-                                                            // old size!
-                                try {
-                                    newMaterials->emplace_back(
-                                            m_materials->at(triMatIndex));
-                                } catch (const std::bad_alloc&) {
-                                    CVLog::Warning(
-                                            "[ccMesh::"
-                                            "createNewMeshFromSelection] "
-                                            "Failed to create new materials "
-                                            "subset! (not enough memory)");
-                                    newMesh->removePerTriangleMtlIndexes();
-                                    newMaterials->release();
-                                    newMaterials = nullptr;
-                                }
-                            }
-
-                            if (newMaterials)  // structure still exists?
-                            {
-                                newMesh->addTriangleMtlIndex(
-                                        triMatIndex < 0
-                                                ? -1
-                                                : newMatIndexes[triMatIndex]);
-                            }
-                        }
-                    }
-                }
-
-                if (newTriNormals) {
-                    newTriNormals->resize(
-                            newTriNormals->size());  // smaller so it should
-                                                     // always be ok!
-                    newMesh->setTriNormsTable(newTriNormals);
+        if (addFeatures) {
+            // temporary structure for normal indexes mapping
+            std::vector<int> newNormIndexes;
+            NormsIndexesTableType* newTriNormals = nullptr;
+            if (m_triNormals && m_triNormalIndexes) {
+                assert(m_triNormalIndexes->size() == triCount);
+                // create new 'minimal' subset
+                newTriNormals = new NormsIndexesTableType();
+                newTriNormals->link();
+                try {
+                    newNormIndexes.resize(m_triNormals->size(), -1);
+                } catch (const std::bad_alloc&) {
+                    CVLog::Warning(
+                            "[ccMesh::createNewMeshFromSelection] Failed to "
+                            "create new normals subset! (not enough memory)");
+                    newMesh->removePerTriangleNormalIndexes();
                     newTriNormals->release();
                     newTriNormals = nullptr;
                 }
+            }
 
-                if (newTriTexIndexes) {
-                    newMesh->setTexCoordinatesTable(newTriTexIndexes);
+            // temporary structure for texture indexes mapping
+            std::vector<int> newTexIndexes;
+            TextureCoordsContainer* newTriTexIndexes = nullptr;
+            if (m_texCoords && m_texCoordIndexes) {
+                assert(m_texCoordIndexes->size() == triCount);
+                // create new 'minimal' subset
+                newTriTexIndexes = new TextureCoordsContainer();
+                newTriTexIndexes->link();
+                try {
+                    newTexIndexes.resize(m_texCoords->size(), -1);
+                } catch (const std::bad_alloc&) {
+                    CVLog::Warning(
+                            "[ccMesh::createNewMeshFromSelection] Failed to "
+                            "create new texture indexes subset! (not enough "
+                            "memory)");
+                    newMesh->removePerTriangleTexCoordIndexes();
                     newTriTexIndexes->release();
                     newTriTexIndexes = nullptr;
                 }
+            }
 
-                if (newMaterials) {
-                    newMesh->setMaterialSet(newMaterials);
+            // temporary structure for material indexes mapping
+            std::vector<int> newMatIndexes;
+            ccMaterialSet* newMaterials = nullptr;
+            if (m_materials && m_triMtlIndexes) {
+                assert(m_triMtlIndexes->size() == triCount);
+                // create new 'minimal' subset
+                newMaterials = new ccMaterialSet(m_materials->getName() +
+                                                 QString(".subset"));
+                newMaterials->link();
+                try {
+                    newMatIndexes.resize(m_materials->size(), -1);
+                } catch (const std::bad_alloc&) {
+                    CVLog::Warning(
+                            "[ccMesh::createNewMeshFromSelection] Failed to "
+                            "create new material subset! (not enough memory)");
+                    newMesh->removePerTriangleMtlIndexes();
                     newMaterials->release();
                     newMaterials = nullptr;
+                    if (newTriTexIndexes)  // we can release texture coordinates
+                                           // as well (as they depend on
+                                           // materials!)
+                    {
+                        newMesh->removePerTriangleTexCoordIndexes();
+                        newTriTexIndexes->release();
+                        newTriTexIndexes = nullptr;
+                        newTexIndexes.resize(0);
+                    }
                 }
             }
 
-            newMesh->addChild(newVertices);
-            // newMesh->setDisplay_recursive(getDisplay());
-            newMesh->showColors(colorsShown());
-            newMesh->showNormals(normalsShown());
-            newMesh->showMaterials(materialsShown());
-            newMesh->showSF(sfShown());
-            newMesh->importParametersFrom(this);
+            for (size_t i = 0; i < triCount; ++i) {
+                if (triangleIndexMap[i] >= 0)  // triangle should be copied over
+                {
+                    // import per-triangle normals?
+                    if (newTriNormals) {
+                        assert(m_triNormalIndexes);
 
-            newVertices->setEnabled(false);
+                        // current triangle (compressed) normal indexes
+                        const Tuple3i& triNormIndexes =
+                                m_triNormalIndexes->getValue(i);
+
+                        // for each triangle of this mesh, try to determine if
+                        // its normals are already in use (otherwise add them to
+                        //the new container and increase its index)
+                        for (unsigned j = 0; j < 3; ++j) {
+                            if (triNormIndexes.u[j] >= 0 &&
+                                newNormIndexes[triNormIndexes.u[j]] < 0) {
+                                if (newTriNormals->size() ==
+                                            newTriNormals->capacity() &&
+                                    !newTriNormals->reserveSafe(
+                                            newTriNormals->size() +
+                                            4096))  // auto expand
+                                {
+                                    CVLog::Warning(
+                                            "[ccMesh::"
+                                            "createNewMeshFromSelection] "
+                                            "Failed to create new normals "
+                                            "subset! (not enough memory)");
+                                    newMesh->removePerTriangleNormalIndexes();
+                                    newTriNormals->release();
+                                    newTriNormals = nullptr;
+                                    break;
+                                }
+
+                                // import old normal to new subset (create new
+                                // index)
+                                newNormIndexes[triNormIndexes.u[j]] =
+                                        static_cast<int>(
+                                                newTriNormals
+                                                        ->size());  // new
+                                                                    // element
+                                                                    // index =
+                                                                    // new size
+                                                                    // - 1 = old
+                                                                    // size!
+                                newTriNormals->emplace_back(
+                                        m_triNormals->getValue(
+                                                triNormIndexes.u[j]));
+                            }
+                        }
+
+                        if (newTriNormals)  // structure still exists?
+                        {
+                            newMesh->addTriangleNormalIndexes(
+                                    triNormIndexes.u[0] < 0
+                                            ? -1
+                                            : newNormIndexes[triNormIndexes
+                                                                     .u[0]],
+                                    triNormIndexes.u[1] < 0
+                                            ? -1
+                                            : newNormIndexes[triNormIndexes
+                                                                     .u[1]],
+                                    triNormIndexes.u[2] < 0
+                                            ? -1
+                                            : newNormIndexes[triNormIndexes
+                                                                     .u[2]]);
+                        }
+                    }
+
+                    // import texture coordinates?
+                    if (newTriTexIndexes) {
+                        assert(m_texCoordIndexes);
+
+                        // current triangle texture coordinates indexes
+                        const Tuple3i& triTexIndexes =
+                                m_texCoordIndexes->getValue(i);
+
+                        // for each triangle of this mesh, try to determine if
+                        // its textures coordinates are already in use
+                        //(otherwise add them to the new container and increase
+                        //its index)
+                        for (unsigned j = 0; j < 3; ++j) {
+                            if (triTexIndexes.u[j] >= 0 &&
+                                newTexIndexes[triTexIndexes.u[j]] < 0) {
+                                if (newTriTexIndexes->size() ==
+                                            newTriTexIndexes->capacity() &&
+                                    !newTriTexIndexes->reserveSafe(
+                                            newTriTexIndexes->size() +
+                                            4096))  // auto expand
+                                {
+                                    CVLog::Warning(
+                                            "Failed to create new texture "
+                                            "coordinates subset! (not enough "
+                                            "memory)");
+                                    newMesh->removePerTriangleTexCoordIndexes();
+                                    newTriTexIndexes->release();
+                                    newTriTexIndexes = nullptr;
+                                    break;
+                                }
+                                // import old texture coordinate to new subset
+                                // (create new index)
+                                newTexIndexes[triTexIndexes.u[j]] = static_cast<
+                                        int>(
+                                        newTriTexIndexes
+                                                ->size());  // new element index
+                                                            // = new size - 1 =
+                                                            // old size!
+                                newTriTexIndexes->emplace_back(
+                                        m_texCoords->getValue(
+                                                triTexIndexes.u[j]));
+                            }
+                        }
+
+                        if (newTriTexIndexes)  // structure still exists?
+                        {
+                            newMesh->addTriangleTexCoordIndexes(
+                                    triTexIndexes.u[0] < 0
+                                            ? -1
+                                            : newTexIndexes[triTexIndexes.u[0]],
+                                    triTexIndexes.u[1] < 0
+                                            ? -1
+                                            : newTexIndexes[triTexIndexes.u[1]],
+                                    triTexIndexes.u[2] < 0
+                                            ? -1
+                                            : newTexIndexes[triTexIndexes
+                                                                    .u[2]]);
+                        }
+                    }
+
+                    // import materials?
+                    if (newMaterials) {
+                        assert(m_triMtlIndexes);
+
+                        // current triangle material index
+                        const int triMatIndex = m_triMtlIndexes->getValue(i);
+
+                        // for each triangle of this mesh, try to determine if
+                        // its material is already in use (otherwise add it to
+                        //the new container and increase its index)
+                        if (triMatIndex >= 0 &&
+                            newMatIndexes[triMatIndex] < 0) {
+                            // import old material to new subset (create new
+                            // index)
+                            newMatIndexes[triMatIndex] = static_cast<int>(
+                                    newMaterials->size());  // new element index
+                                                            // = new size - 1 =
+                                                            // old size!
+                            try {
+                                newMaterials->emplace_back(
+                                        m_materials->at(triMatIndex));
+                            } catch (const std::bad_alloc&) {
+                                CVLog::Warning(
+                                        "[ccMesh::createNewMeshFromSelection] "
+                                        "Failed to create new materials "
+                                        "subset! (not enough memory)");
+                                newMesh->removePerTriangleMtlIndexes();
+                                newMaterials->release();
+                                newMaterials = nullptr;
+                            }
+                        }
+
+                        if (newMaterials)  // structure still exists?
+                        {
+                            newMesh->addTriangleMtlIndex(
+                                    triMatIndex < 0
+                                            ? -1
+                                            : newMatIndexes[triMatIndex]);
+                        }
+                    }
+                }
+            }
+
+            if (newTriNormals) {
+                newTriNormals->resize(
+                        newTriNormals->size());  // smaller so it should always
+                                                 // be ok!
+                newMesh->setTriNormsTable(newTriNormals);
+                newTriNormals->release();
+                newTriNormals = nullptr;
+            }
+
+            if (newTriTexIndexes) {
+                newMesh->setTexCoordinatesTable(newTriTexIndexes);
+                newTriTexIndexes->release();
+                newTriTexIndexes = nullptr;
+            }
+
+            if (newMaterials) {
+                newMesh->setMaterialSet(newMaterials);
+                newMaterials->release();
+                newMaterials = nullptr;
+            }
         }
 
-        delete result;
-        result = nullptr;
+        newMesh->showColors(colorsShown());
+        newMesh->showNormals(normalsShown());
+        newMesh->showMaterials(materialsShown());
+        newMesh->showSF(sfShown());
+        newMesh->importParametersFrom(this);
     }
 
-    size_t triNum = m_triVertIndexes->size();
-
-    // we must modify eventual sub-meshes!
+    // we must update eventual sub-meshes
     ccHObject::Container subMeshes;
     if (filterChildren(subMeshes, false, CV_TYPES::SUB_MESH) != 0) {
-        CVLog::Warning("Has sub-meshes!");
-
         // create index map
-        ccSubMesh::IndexMap indexMap;
         try {
-            indexMap.reserve(triNum);
+            ccSubMesh::IndexMap newRemainingTriangleIndexes;
+            if (removeSelectedTriangles) {
+                newRemainingTriangleIndexes.resize(
+                        triCount, static_cast<unsigned>(triCount));
 
-            // finish index map creation
-            {
-                unsigned newVisibleIndex = 0;
                 unsigned newInvisibleIndex = 0;
-
-                for (size_t i = 0; i < triNum; ++i) {
-                    const cloudViewer::VerticesIndexes& tsi =
-                            m_triVertIndexes->at(i);
-
-                    // at least one hidden vertex --> we keep it
-                    if (verticesVisibility[tsi.i1] != POINT_VISIBLE ||
-                        verticesVisibility[tsi.i2] != POINT_VISIBLE ||
-                        verticesVisibility[tsi.i3] != POINT_VISIBLE) {
-                        indexMap.emplace_back(
-                                removeSelectedFaces ? newInvisibleIndex++
-                                                    : static_cast<unsigned>(i));
-                    } else {
-                        indexMap.emplace_back(newVisibleIndex++);
+                for (size_t i = 0; i < triCount; ++i) {
+                    if (triangleIndexMap[i] <
+                        0)  // triangle is not used in the new mesh, it will be
+                            // kept in this one
+                    {
+                        newRemainingTriangleIndexes[i] = newInvisibleIndex++;
                     }
                 }
             }
 
             for (size_t i = 0; i < subMeshes.size(); ++i) {
                 ccSubMesh* subMesh = static_cast<ccSubMesh*>(subMeshes[i]);
-                ccSubMesh* subMesh2 = subMesh->createNewSubMeshFromSelection(
-                        removeSelectedFaces, &indexMap);
+                ccSubMesh* newSubMesh = subMesh->createNewSubMeshFromSelection(
+                        removeSelectedTriangles, triangleIndexMap,
+                        removeSelectedTriangles ? &newRemainingTriangleIndexes
+                                                : nullptr);
 
-                if (subMesh->size() == 0)  // no more faces in current sub-mesh?
-                {
-                    detachChild(subMesh);  // FIXME: removeChild instead?
-                    subMesh = nullptr;
+                if (newSubMesh) {
+                    if (newMesh) {
+                        newSubMesh->setEnabled(subMesh->isEnabled());
+                        newSubMesh->setVisible(subMesh->isVisible());
+                        newSubMesh->setAssociatedMesh(newMesh);
+                        newMesh->addChild(newSubMesh);
+                    } else {
+                        assert(false);
+                        delete newSubMesh;
+                        newSubMesh = nullptr;
+                    }
                 }
 
-                if (subMesh2 && newMesh) {
-                    subMesh2->setAssociatedMesh(newMesh);
-                    newMesh->addChild(subMesh2);
+                if (subMesh->size() ==
+                    0)  // no triangle left in current sub-mesh?
+                {
+                    removeChild(subMesh);
+                    subMeshes[i] = nullptr;
+                    subMesh = nullptr;
                 }
             }
         } catch (const std::bad_alloc&) {
-            CVLog::Error("Not enough memory! Sub-meshes will be lost...");
+            CVLog::Warning("Not enough memory! Sub-meshes will be lost...");
             if (newMesh) {
                 newMesh->setVisible(
                         true);  // force parent mesh visibility in this case!
@@ -3009,19 +2986,48 @@ ccMesh* ccMesh::createNewMeshFromSelection(bool removeSelectedFaces) {
         }
     }
 
-    // shall we remove the selected faces from this mesh?
-    if (removeSelectedFaces) {
-        CVLog::Warning("Remove faces!");
+    if (withChildEntities) {
+        ccHObjectCaster::CloneChildren(this, newMesh, &triangleIndexMap);
+    }
 
-        // we remove all fully visible faces
+    // shall we remove the selected triangles from this mesh
+    if (removeSelectedTriangles) {
+        if (newIndexesOfRemainingTriangles) {
+            if (newIndexesOfRemainingTriangles->empty()) {
+                try {
+                    newIndexesOfRemainingTriangles->resize(triCount);
+                } catch (const std::bad_alloc&) {
+                    CVLog::Warning(
+                            "[ccMesh::createNewMeshFromSelection] Not enough "
+                            "memory");
+                    return nullptr;
+                }
+            } else if (newIndexesOfRemainingTriangles->size() != triCount) {
+                CVLog::Warning(
+                        "[ccMesh::createNewMeshFromSelection] Input 'new "
+                        "indexes of reamining triangles' vector has a wrong "
+                        "size");
+                return nullptr;
+            }
+        }
+        assert(!newIndexesOfRemainingTriangles ||
+               newIndexesOfRemainingTriangles->size() == triCount);
+
+        // we need to change the visibility status of some vertices that belong
+        // to partially 'invisible' triangles
+        auto& visArray = m_associatedCloud->getTheVisibilityArray();
+        assert(visArray.size() == m_associatedCloud->size());
+
         size_t lastTri = 0;
-        for (size_t i = 0; i < triNum; ++i) {
-            const cloudViewer::VerticesIndexes& tsi = m_triVertIndexes->at(i);
+        for (size_t i = 0; i < triCount; ++i) {
+            if (triangleIndexMap[i] < 0)  // triangle is not used in the new
+                                          // mesh, it will be kept in this one
+            {
+                const cloudViewer::VerticesIndexes& tsi = m_triVertIndexes->at(i);
+                for (unsigned j = 0; j < 3; ++j) {
+                    visArray[tsi.i[j]] = POINT_HIDDEN;
+                }
 
-            // at least one hidden vertex --> we keep it
-            if (verticesVisibility[tsi.i1] != POINT_VISIBLE ||
-                verticesVisibility[tsi.i2] != POINT_VISIBLE ||
-                verticesVisibility[tsi.i3] != POINT_VISIBLE) {
                 if (i != lastTri) {
                     m_triVertIndexes->setValue(lastTri, tsi);
 
@@ -3035,13 +3041,52 @@ ccMesh* ccMesh::createNewMeshFromSelection(bool removeSelectedFaces) {
                         m_texCoordIndexes->setValue(
                                 lastTri, m_texCoordIndexes->getValue(i));
                 }
+                if (newIndexesOfRemainingTriangles) {
+                    newIndexesOfRemainingTriangles->at(i) =
+                            static_cast<int>(lastTri);
+                }
                 ++lastTri;
+            } else if (newIndexesOfRemainingTriangles) {
+                newIndexesOfRemainingTriangles->at(i) = -1;
             }
         }
 
+        // update the mesh size
         resize(lastTri);
+        triCount = size();
+
+        std::vector<int> newIndexes;
+        if (m_associatedCloud->removeVisiblePoints(nullptr, &newIndexes)) {
+            // warning: from this point on, verticesVisibility is not valid
+            // anymore!
+            for (size_t i = 0; i < m_triVertIndexes->size(); ++i) {
+                cloudViewer::VerticesIndexes& tsi = m_triVertIndexes->at(i);
+
+                // update each vertex index
+                for (int j = 0; j < 3; ++j) {
+                    int oldVertexIndex = tsi.i[j];
+                    assert(oldVertexIndex < newIndexes.size());
+                    tsi.i[j] = newIndexes[oldVertexIndex];
+                    assert(tsi.i[j] < m_associatedCloud->size());
+                }
+            }
+        } else {
+            CVLog::Warning(
+                    "[ccMesh::createNewMeshFromSelection] Failed to remove "
+                    "unused vertices");
+        }
+
         notifyGeometryUpdate();
+
+        // TODO: should we take care of the children here?
+    } else if (newIndexesOfRemainingTriangles) {
+        CVLog::Warning(
+                "[ccMesh::createNewMeshFromSelection] A 'new indexes of "
+                "reamining triangles' vector was provided while no triangle "
+                "shall be removed");
     }
+
+    m_associatedCloud->unallocateVisibilityArray();
 
     return newMesh;
 }
@@ -3739,7 +3784,7 @@ bool ccMesh::fromFile_MeOnly(QFile& in,
 
     if (dataVersion < 29) {
         //'per-triangle normals shown' state (dataVersion>=20 &&
-        //dataVersion<29))
+        // dataVersion<29))
         bool triNormsShown = false;
         if (in.read((char*)&triNormsShown, sizeof(bool)) < 0)
             return ReadError();
@@ -3799,28 +3844,38 @@ bool ccMesh::interpolateNormals(unsigned triIndex,
 }
 
 bool ccMesh::interpolateNormals(const cloudViewer::VerticesIndexes& vertIndexes,
-                                const CCVector3d& w, CCVector3& N, const Tuple3i* triNormIndexes/*=0*/)
-{
+                                const CCVector3d& w,
+                                CCVector3& N,
+                                const Tuple3i* triNormIndexes /*=0*/) {
     CCVector3d Nd(0, 0, 0);
     {
-            if (!triNormIndexes || triNormIndexes->u[0] >= 0)
-            {
-                    const CCVector3& N1 = triNormIndexes ? ccNormalVectors::GetNormal(m_triNormals->getValue(triNormIndexes->u[0])) : m_associatedCloud->getPointNormal(vertIndexes.i1);
-                    Nd += N1.toDouble() * w.u[0];
-            }
+        if (!triNormIndexes || triNormIndexes->u[0] >= 0) {
+            const CCVector3& N1 =
+                    triNormIndexes
+                            ? ccNormalVectors::GetNormal(m_triNormals->getValue(
+                                      triNormIndexes->u[0]))
+                            : m_associatedCloud->getPointNormal(vertIndexes.i1);
+            Nd += N1.toDouble() * w.u[0];
+        }
 
-            if (!triNormIndexes || triNormIndexes->u[1] >= 0)
-            {
-                    const CCVector3& N2 = triNormIndexes ? ccNormalVectors::GetNormal(m_triNormals->getValue(triNormIndexes->u[1])) : m_associatedCloud->getPointNormal(vertIndexes.i2);
-                    Nd += N2.toDouble() * w.u[1];
-            }
+        if (!triNormIndexes || triNormIndexes->u[1] >= 0) {
+            const CCVector3& N2 =
+                    triNormIndexes
+                            ? ccNormalVectors::GetNormal(m_triNormals->getValue(
+                                      triNormIndexes->u[1]))
+                            : m_associatedCloud->getPointNormal(vertIndexes.i2);
+            Nd += N2.toDouble() * w.u[1];
+        }
 
-            if (!triNormIndexes || triNormIndexes->u[2] >= 0)
-            {
-                    const CCVector3& N3 = triNormIndexes ? ccNormalVectors::GetNormal(m_triNormals->getValue(triNormIndexes->u[2])) : m_associatedCloud->getPointNormal(vertIndexes.i3);
-                    Nd += N3.toDouble() * w.u[2];
-            }
-            Nd.normalize();
+        if (!triNormIndexes || triNormIndexes->u[2] >= 0) {
+            const CCVector3& N3 =
+                    triNormIndexes
+                            ? ccNormalVectors::GetNormal(m_triNormals->getValue(
+                                      triNormIndexes->u[2]))
+                            : m_associatedCloud->getPointNormal(vertIndexes.i3);
+            Nd += N3.toDouble() * w.u[2];
+        }
+        Nd.normalize();
     }
 
     N = Nd.toPC();
@@ -3828,16 +3883,19 @@ bool ccMesh::interpolateNormals(const cloudViewer::VerticesIndexes& vertIndexes,
     return true;
 }
 
-bool ccMesh::interpolateNormalsBC(unsigned triIndex, const CCVector3d& w, CCVector3& N)
-{
+bool ccMesh::interpolateNormalsBC(unsigned triIndex,
+                                  const CCVector3d& w,
+                                  CCVector3& N) {
     assert(triIndex < size());
 
-    if (!hasNormals())
-            return false;
+    if (!hasNormals()) return false;
 
-    const cloudViewer::VerticesIndexes& tri = m_triVertIndexes->getValue(triIndex);
+    const cloudViewer::VerticesIndexes& tri =
+            m_triVertIndexes->getValue(triIndex);
 
-    return interpolateNormals(tri, w, N, hasTriNormals() ? &m_triNormalIndexes->at(triIndex) : nullptr);
+    return interpolateNormals(
+            tri, w, N,
+            hasTriNormals() ? &m_triNormalIndexes->at(triIndex) : nullptr);
 }
 
 bool ccMesh::interpolateColors(unsigned triIndex,

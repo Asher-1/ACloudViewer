@@ -2,13 +2,13 @@
 
 # Intro
 
-As part of the Historic Digital Survey ([HDS](https://cyberbuild.eng.ed.ac.uk/projects/historic-digital-survey)) research work, we have developed the Masonry Segmentation CloudCompare Plugin, which is a plugin for [CloudCompare](https://www.danielgm.net/cc/) that enables the segmentation of dense point clouds (principally from laser scanning) of masonry structures into their individual stones.
+As part of the Historic Digital Survey ([HDS](https://cyberbuild.eng.ed.ac.uk/projects/historic-digital-survey)) research work, we have developed the Masonry Segmentation ACloudViewer Plugin, which is a plugin for [ACloudViewer](https://www.danielgm.net/cc/) that enables the segmentation of dense point clouds (principally from laser scanning) of masonry structures into their individual stones.
 
 The current version of the plugin focuses on rubble masonry (and this also leads to the segmentation of mortar regions) for "straight" walls (i.e. without significant curvature). A future version shall also enable the segmentation of ashlar masonry and of walls with designed curvature (e.g. cyclindrical towers). The plugin contains two tools: one is for the automated segmentation of the point cloud into the wall's constitutive stones. The other one is to conduct this process manually either from scratch or (most commonly) to correct the errors of the automated tool (it's hard to create a perfect tool!).
 
 # Download
 
-Currently, the plugin is actually not made available as just a plugin .dll  that can be added to already installed versions of CloudCompare. Instead, we have packaged the plugin (actually there are two plugins; one for each tool) and CloudCompare together in a standalone Windows 10 64bit application (may work in Windows 8 as well). You only need to download the latest version available in the Releases section, unzip it and launch the CloudCompare executable it contains. The folder also contains a detailed manual explaining how to use the plugin. As per the requirements of the [GPLv2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) license, the source code of our plugin is freely available, upon request.
+Currently, the plugin is actually not made available as just a plugin .dll  that can be added to already installed versions of ACloudViewer. Instead, we have packaged the plugin (actually there are two plugins; one for each tool) and ACloudViewer together in a standalone Windows 10 64bit application (may work in Windows 8 as well). You only need to download the latest version available in the Releases section, unzip it and launch the ACloudViewer executable it contains. The folder also contains a detailed manual explaining how to use the plugin. As per the requirements of the [GPLv2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) license, the source code of our plugin is freely available, upon request.
 
 Some point clouds of masonry walls for testing can be found in the `datasets` folder.
 

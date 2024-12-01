@@ -28,15 +28,15 @@
 // System
 #include <list>
 
+namespace cloudViewer {
+
 //! Triangulation types
-enum CC_TRIANGULATION_TYPES {
+enum TRIANGULATION_TYPES {
     DELAUNAY_2D_AXIS_ALIGNED =
             1, /**< Delaunay 2D triangulation in an axis-aligned plane **/
     DELAUNAY_2D_BEST_LS_PLANE = 2, /**< Delaunay 2D with points projected on the
                                       best least square fitting plane **/
 };
-
-namespace cloudViewer {
 
 class GenericIndexedMesh;
 class GenericProgressCallback;
@@ -45,6 +45,7 @@ class GenericProgressCallback;
 //! rotation, etc.)
 class CV_CORE_LIB_API PointProjectionTools : public CVToolbox {
 public:
+    static constexpr int IGNORE_MAX_EDGE_LENGTH = 0;
     //! A scaled geometrical transformation (scale + rotation + translation)
     /** P' = s.R.P + T
      **/
@@ -130,12 +131,14 @@ public:
     //! Applies a geometrical transformation to an indexed point cloud
     /** \param cloud the point cloud to be "transformed"
         \param trans the geometrical transformation
-        \param progressCb the client application can get some notification of the process progress through this callback mechanism (see GenericProgressCallback)
-        \return the "transformed" cloud
+        \param progressCb the client application can get some notification of
+    the process progress through this callback mechanism (see
+    GenericProgressCallback) \return the "transformed" cloud
     **/
-    static PointCloud* applyTransformation(	GenericIndexedCloud* cloud,
-                                                Transformation& trans,
-                                                GenericProgressCallback* progressCb = nullptr);
+    static PointCloud* applyTransformation(
+            GenericIndexedCloud* cloud,
+            Transformation& trans,
+            GenericProgressCallback* progressCb = nullptr);
 
     //! Applys a geometrical transformation to a single point
     /** \param P the point
@@ -159,10 +162,10 @@ public:
     **/
     static GenericIndexedMesh* computeTriangulation(
             GenericIndexedCloudPersist* cloud,
-            CC_TRIANGULATION_TYPES type = DELAUNAY_2D_AXIS_ALIGNED,
-            PointCoordinateType maxEdgeLength = 0,
-            unsigned char dim = 2,
-            char* errorStr = nullptr);
+            TRIANGULATION_TYPES type,
+            PointCoordinateType maxEdgeLength,
+            unsigned char dim,
+            std::string& outputErrorStr);
 
     //! Indexed 2D vector
     /** Used for convex and concave hull computation

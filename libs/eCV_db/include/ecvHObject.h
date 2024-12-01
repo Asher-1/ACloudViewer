@@ -380,7 +380,7 @@ public:  // children management
             want to avoid deletion).
     **/
     //! Detaches all children
-    void detatchAllChildren();
+    void detachAllChildren();
 
     void getTypeID_recursive(std::vector<removeInfo>& rmInfos, bool relative);
     void getTypeID_recursive(std::vector<hideInfo>& hdInfos, bool relative);
@@ -548,16 +548,30 @@ public:  // display
             (*it)->recursiveName(p);                                   \
     }
 
-    ccHObject_recursive_call1(redrawDisplay, bool, redrawDisplay_recursive)
-    ccHObject_recursive_call1(redrawDisplay, bool, refreshDisplay_recursive)
-    ccHObject_recursive_call1(setSelected, bool, setSelected_recursive)
-    ccHObject_recursive_call0(toggleActivation, toggleActivation_recursive)
-    ccHObject_recursive_call0(toggleVisibility, toggleVisibility_recursive)
-    ccHObject_recursive_call0(toggleColors, toggleColors_recursive)
-    ccHObject_recursive_call0(resetGLTransformationHistory, resetGLTransformationHistory_recursive)
-    ccHObject_recursive_call0(toggleNormals, toggleNormals_recursive)
-    ccHObject_recursive_call0(toggleSF, toggleSF_recursive)
-    ccHObject_recursive_call0(toggleShowName, toggleShowName_recursive);
+    ccHObject_recursive_call1(redrawDisplay, bool, redrawDisplay_recursive) ccHObject_recursive_call1(
+            redrawDisplay,
+            bool,
+            refreshDisplay_recursive) ccHObject_recursive_call1(setSelected,
+                                                                bool,
+                                                                setSelected_recursive)
+            ccHObject_recursive_call0(toggleActivation,
+                                      toggleActivation_recursive)
+                    ccHObject_recursive_call0(toggleVisibility,
+                                              toggleVisibility_recursive)
+                            ccHObject_recursive_call0(toggleColors,
+                                                      toggleColors_recursive)
+                                    ccHObject_recursive_call0(
+                                            resetGLTransformationHistory,
+                                            resetGLTransformationHistory_recursive)
+                                            ccHObject_recursive_call0(
+                                                    toggleNormals,
+                                                    toggleNormals_recursive)
+                                                    ccHObject_recursive_call0(
+                                                            toggleSF,
+                                                            toggleSF_recursive)
+                                                            ccHObject_recursive_call0(
+                                                                    toggleShowName,
+                                                                    toggleShowName_recursive);
 
     //! Returns the max 'unique ID' of this entity and its siblings
     unsigned findMaxUniqueID_recursive() const;
@@ -636,6 +650,13 @@ public:  // display
     virtual inline void resetGLTransformationHistory() {
         m_glTransHistory.toIdentity();
     }
+
+public:
+    //! Pushes the current display state (overridden)
+    bool pushDisplayState() override;
+
+    //! Pops the last pushed display state (overridden)
+    void popDisplayState(bool apply = true) override;
 
 protected:
     //! Sets parent object

@@ -914,7 +914,7 @@ void PCLVis::draw(const CC_DRAW_CONTEXT& context, const ccSensor* sensor) {
         if (sensor->isA(CV_TYPES::CAMERA_SENSOR)) {
             CVLog::Error("[PCLVis::draw] CreateCameraSensor failed!");
         } else if (sensor->isA(CV_TYPES::GBL_SENSOR)) {
-            CVLog::Error("[PCLVis::draw] CreateCameraSensor failed!");
+            CVLog::Error("[PCLVis::draw] CreateGBLSensor failed!");
         }
         return;
     }

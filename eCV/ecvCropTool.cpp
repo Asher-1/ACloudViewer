@@ -92,7 +92,7 @@ ccHObject* ccCropTool::Crop(ccHObject* entity,
             cropVertices = rotatedVertices;
         }
 
-        if (!cloudViewer::ManualSegmentationTools::segmentMeshWitAABox(
+        if (!cloudViewer::ManualSegmentationTools::segmentMeshWithAABox(
                     mesh, cropVertices, params)) {
             // process failed!
             CVLog::Warning(QString("[Crop] Failed to crop mesh '%1'!")

@@ -18,66 +18,74 @@
 #ifndef ECV_MATERIAL_SET_HEADER
 #define ECV_MATERIAL_SET_HEADER
 
-//Local
-#include "ecvHObject.h"
+// Local
 #include "CVShareable.h"
+#include "ecvHObject.h"
 #include "ecvMaterial.h"
 
 //! Mesh (triangle) material
-class ccMaterialSet : public std::vector<ccMaterial::CShared>, public CCShareable, public ccHObject
-{
+class ECV_DB_LIB_API ccMaterialSet : public std::vector<ccMaterial::CShared>,
+                                     public CCShareable,
+                                     public ccHObject {
 public:
+    //! Default constructor
+    ccMaterialSet(const QString& name = QString());
 
-	//! Default constructor
-	ECV_DB_LIB_API ccMaterialSet(QString name = QString());
+    // inherited from ccHObject
+    virtual CV_CLASS_ENUM getClassID() const override {
+        return CV_TYPES::MATERIAL_SET;
+    }
+    virtual bool isShareable() const override { return true; }
 
-	//inherited from ccHObject
-	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::MATERIAL_SET; }
-	virtual bool isShareable() const override { return true; }
+    //! Finds material by name
+    /** \return material index or -1 if not found
+     **/
+    int findMaterialByName(QString mtlName) const;
 
-	//! Finds material by name
-	/** \return material index or -1 if not found
-	**/
-	ECV_DB_LIB_API int findMaterialByName(QString mtlName) const;
+    //! Finds material by unique identifier
+    /** \return material index or -1 if not found
+     **/
+    int findMaterialByUniqueID(QString uniqueID) const;
 
-	//! Finds material by unique identifier
-	/** \return material index or -1 if not found
-	**/
-	ECV_DB_LIB_API int findMaterialByUniqueID(QString uniqueID) const;
+    //! Adds a material
+    /** Ensures unicity of material names.
+            \param mat material
+            \param allowDuplicateNames whether to allow duplicate names for
+    materials or not (in which case the returned index is the one of the
+    material with the same name) \return material index
+    **/
+    int addMaterial(ccMaterial::CShared mat, bool allowDuplicateNames = false);
 
-	//! Adds a material
-	/** Ensures unicity of material names.
-		\param mat material
-		\param allowDuplicateNames whether to allow duplicate names for materials or not (in which case the returned index is the one of the material with the same name)
-		\return material index
-	**/
-	ECV_DB_LIB_API int addMaterial(ccMaterial::CShared mat, bool allowDuplicateNames = false);
+    //! MTL (material) file parser
+    /** Inspired from KIXOR.NET "objloader"
+     *(http://www.kixor.net/dev/objloader/)
+     **/
+    static bool ParseMTL(QString path,
+                         const QString& filename,
+                         ccMaterialSet& materials,
+                         QStringList& errors);
 
-	//! MTL (material) file parser
-	/** Inspired from KIXOR.NET "objloader" (http://www.kixor.net/dev/objloader/)
-	**/
-	ECV_DB_LIB_API static bool ParseMTL(QString path, const QString& filename, ccMaterialSet& materials, QStringList& errors);
+    //! Saves to an MTL file (+ associated texture images)
+    bool saveAsMTL(QString path,
+                   const QString& baseFilename,
+                   QStringList& errors) const;
 
-	//! Saves to an MTL file (+ associated texture images)
-	ECV_DB_LIB_API bool saveAsMTL(QString path, const QString& baseFilename, QStringList& errors) const;
+    //! Clones materials set
+    ccMaterialSet* clone() const;
 
-	//! Clones materials set
-	ECV_DB_LIB_API ccMaterialSet* clone() const;
+    //! Appends materials from another set
+    bool append(const ccMaterialSet& source);
 
-	//! Appends materials from another set
-	ECV_DB_LIB_API bool append(const ccMaterialSet& source);
-
-	//inherited from ccSerializableObject
-	virtual bool isSerializable() const override { return true; }
+    // inherited from ccSerializableObject
+    virtual bool isSerializable() const override { return true; }
 
 protected:
-
-	//inherited from ccHObject
-	ECV_DB_LIB_API virtual bool toFile_MeOnly(QFile& out) const override;
-    ECV_DB_LIB_API virtual bool fromFile_MeOnly(QFile& in, short dataVersion, int flags, LoadedIDMap& oldToNewIDMap) override;
-
-	//! Default destructor (protected: use 'release' instead)
-	ECV_DB_LIB_API virtual ~ccMaterialSet();
+    // inherited from ccHObject
+    virtual bool toFile_MeOnly(QFile& out) const override;
+    virtual bool fromFile_MeOnly(QFile& in,
+                                 short dataVersion,
+                                 int flags,
+                                 LoadedIDMap& oldToNewIDMap) override;
 };
 
-#endif // ECV_MATERIAL_SET_HEADER
+#endif  // ECV_MATERIAL_SET_HEADER

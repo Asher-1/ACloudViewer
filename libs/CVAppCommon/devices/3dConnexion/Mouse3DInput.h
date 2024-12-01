@@ -21,10 +21,10 @@
 
 
 //cloudViewer
-#include <CCConst.h>
+#include <CVConst.h>
 
 //qCC_db
-#include <ccGLMatrix.h>
+#include <ecvGLMatrix.h>
 
 //Qt
 #include <QObject>

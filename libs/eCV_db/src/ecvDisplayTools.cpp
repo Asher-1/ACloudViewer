@@ -24,6 +24,7 @@
 #include <CVTools.h>
 
 // LOCAL
+#include "LineSet.h"
 #include "ecv2DLabel.h"
 #include "ecv2DViewportLabel.h"
 #include "ecvBBox.h"
@@ -97,6 +98,7 @@ static const double CC_DISPLAYED_PIVOT_RADIUS_PERCENT =
         0.8;  // percentage of the smallest screen dimension
 static const double CC_DISPLAYED_CUSTOM_LIGHT_LENGTH = 10.0;
 static const float CC_DISPLAYED_TRIHEDRON_AXES_LENGTH = 25.0f;
+static const float CC_TRIHEDRON_TEXT_MARGIN = 5.0f;
 static const float CC_DISPLAYED_CENTER_CROSS_LENGTH = 10.0f;
 
 // Max click duration for enabling picking mode (in ms)
@@ -152,6 +154,7 @@ void ecvDisplayTools::Init(ecvDisplayTools* displayTools,
     s_tools.instance->m_pivotVisibility = PIVOT_SHOW_ON_MOVE;
     s_tools.instance->m_pivotSymbolShown = false;
     s_tools.instance->m_allowRectangularEntityPicking = false;
+    s_tools.instance->m_scale_lineset = nullptr;
     s_tools.instance->m_rectPickingPoly = nullptr;
     s_tools.instance->m_overridenDisplayParametersEnabled = false;
     s_tools.instance->m_displayOverlayEntities = true;
@@ -255,15 +258,22 @@ void ecvDisplayTools::ReleaseInstance() {
 
 ecvDisplayTools::~ecvDisplayTools() {
     cancelScheduledRedraw();
-
-    delete m_winDBRoot;
-    m_winDBRoot = nullptr;
-
-    delete m_rectPickingPoly;
-    m_rectPickingPoly = nullptr;
-
-    delete m_hotZone;
-    m_hotZone = nullptr;
+    if (m_winDBRoot) {
+        delete m_winDBRoot;
+        m_winDBRoot = nullptr;
+    }
+    if (m_scale_lineset) {
+        delete m_scale_lineset;
+        m_scale_lineset = nullptr;
+    }
+    if (m_rectPickingPoly) {
+        delete m_rectPickingPoly;
+        m_rectPickingPoly = nullptr;
+    }
+    if (m_hotZone) {
+        delete m_hotZone;
+        m_hotZone = nullptr;
+    }
 }
 
 void ecvDisplayTools::checkScheduledRedraw() {
@@ -399,7 +409,7 @@ void ecvDisplayTools::onWheelEvent(float wheelDelta_deg) {
                 delta *= 1.0 + std::log(m_cameraToBBCenterDist / m_bbHalfDiag);
             }
 
-            //			MoveCamera(0.0f, 0.0f,
+            // MoveCamera(0.0f, 0.0f,
             // static_cast<float>(-delta));
         }
     } else  // ortho. mode
@@ -673,9 +683,6 @@ void ecvDisplayTools::SetZNearCoef(double coef) {
         s_tools.instance->m_viewportParams.zNearCoef = coef;
         // and camera state (if perspective view is 'on')
         if (s_tools.instance->m_viewportParams.perspectiveView) {
-            // invalidateViewport();
-            // invalidateVisualization();
-
             // DGM: we update the projection matrix directly so as to get an
             // up-to-date estimation of zNear
             UpdateProjectionMatrix();
@@ -996,12 +1003,17 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
                         }
                     }
                 } else if (ent->isKindOf(CV_TYPES::MESH) &&
-                           !ent->isA(CV_TYPES::MESH_GROUP))  // we don't need to
-                                                             // process mesh
-                                                             // groups as their
-                                                             // children will be
-                                                             // processed later
-                {
+                           !ent->isA(CV_TYPES::MESH_GROUP)  // we don't need to
+                                                            // process mesh
+                                                            // groups as their
+                                                            // children will be
+                                                            // processed later
+                           &&
+                           !ent->isA(CV_TYPES::COORDINATESYSTEM)  // we ignore
+                                                                  // coordinate
+                                                                  // system
+                                                                  // entities
+                ) {
                     ignoreSubmeshes = true;
 
                     ccGenericMesh* mesh = static_cast<ccGenericMesh*>(ent);
@@ -1023,6 +1035,31 @@ void ecvDisplayTools::StartCPUBasedPointPicking(
                             nearestElementIndex = nearestTriIndex;
                             nearestPoint = CCVector3::fromArray(P.u);
                             nearestEntity = mesh;
+                        }
+                    }
+                } else if (params.mode ==
+                                   PICKING_MODE::
+                                           POINT_OR_TRIANGLE_OR_LABEL_PICKING &&
+                           ent->isA(CV_TYPES::LABEL_2D)) {
+                    cc2DLabel* label = static_cast<cc2DLabel*>(ent);
+
+                    int nearestPointIndex = -1;
+                    double nearestSquareDist = 0.0;
+
+                    if (label->pointPicking(clickedPos, camera,
+                                            nearestPointIndex,
+                                            nearestSquareDist)) {
+                        if (nearestElementIndex < 0 ||
+                            (nearestPointIndex >= 0 &&
+                             nearestSquareDist < nearestElementSquareDist)) {
+                            nearestElementSquareDist = nearestSquareDist;
+                            assert(nearestPointIndex <
+                                   static_cast<int>(label->size()));
+                            nearestElementIndex = nearestPointIndex;
+                            nearestPoint =
+                                    label->getPickedPoint(nearestPointIndex)
+                                            .getPointPosition();
+                            nearestEntity = label;
                         }
                     }
                 } else if (ent->isKindOf(CV_TYPES::SENSOR)) {
@@ -1802,6 +1839,22 @@ void ecvDisplayTools::SetPerspectiveState(bool state, bool objectCenteredView) {
     Deprecate3DLayer();
 }
 
+bool ecvDisplayTools::ObjectPerspectiveEnabled() {
+    bool perspectiveWasEnabled =
+            s_tools.instance->m_viewportParams.perspectiveView;
+    bool viewWasObjectCentered =
+            s_tools.instance->m_viewportParams.objectCenteredView;
+    return perspectiveWasEnabled && viewWasObjectCentered;
+}
+
+bool ecvDisplayTools::ViewerPerspectiveEnabled() {
+    bool perspectiveWasEnabled =
+            s_tools.instance->m_viewportParams.perspectiveView;
+    bool viewWasObjectCentered =
+            s_tools.instance->m_viewportParams.objectCenteredView;
+    return perspectiveWasEnabled && !viewWasObjectCentered;
+}
+
 void ecvDisplayTools::UpdateConstellationCenterAndZoom(const ccBBox* aBox,
                                                        bool redraw) {
     if (s_tools.instance->m_bubbleViewModeEnabled) {
@@ -2015,6 +2068,10 @@ void ecvDisplayTools::SetInteractionMode(INTERACTION_FLAGS flags) {
         // auto-hide the embedded icons if they are disabled
         s_tools.instance->m_clickableItemsVisible = false;
     }
+}
+
+ecvDisplayTools::INTERACTION_FLAGS ecvDisplayTools::GetInteractionMode() {
+    return s_tools.instance->m_interactionFlags;
 }
 
 CCVector3d ecvDisplayTools::GetCurrentViewDir() {
@@ -2599,6 +2656,7 @@ void ecvDisplayTools::SetPickingMode(PICKING_MODE mode /*=DEFAULT_PICKING*/) {
             GetCurrentScreen()->setCursor(QCursor(Qt::ArrowCursor));
             break;
         case POINT_OR_TRIANGLE_PICKING:
+        case POINT_OR_TRIANGLE_OR_LABEL_PICKING:
         case TRIANGLE_PICKING:
         case POINT_PICKING:
             GetCurrentScreen()->setCursor(QCursor(Qt::PointingHandCursor));
@@ -2611,6 +2669,18 @@ void ecvDisplayTools::SetPickingMode(PICKING_MODE mode /*=DEFAULT_PICKING*/) {
 
     // CVLog::Warning(QString("[%1] Picking mode set to: ").arg(m_uniqueID) +
     // ToString(m_pickingMode));
+}
+
+ecvDisplayTools::PICKING_MODE ecvDisplayTools::GetPickingMode() {
+    return s_tools.instance->m_pickingMode;
+}
+
+void ecvDisplayTools::LockPickingMode(bool state) {
+    s_tools.instance->m_pickingModeLocked = state;
+}
+
+bool ecvDisplayTools::IsPickingModeLocked() {
+    return s_tools.instance->m_pickingModeLocked;
 }
 
 double ecvDisplayTools::ComputeActualPixelSize() {
@@ -2632,8 +2702,17 @@ double ecvDisplayTools::ComputeActualPixelSize() {
 
     double currentFov_deg = static_cast<double>(GetFov());
     return zoomEquivalentDist *
-           std::tan(cloudViewer::DegreesToRadians(std::min(currentFov_deg, 75.0))) /
+           std::tan(cloudViewer::DegreesToRadians(
+                   std::min(currentFov_deg, 75.0))) /
            minScreenDim;  // tan(75) = 3.73 (then it quickly increases!)
+}
+
+bool ecvDisplayTools::IsRectangularPickingAllowed() {
+    return s_tools.instance->m_allowRectangularEntityPicking;
+}
+
+void ecvDisplayTools::SetRectangularPickingAllowed(bool state) {
+    s_tools.instance->m_allowRectangularEntityPicking = state;
 }
 
 void ecvDisplayTools::ShowPivotSymbol(bool state) {
@@ -3065,12 +3144,16 @@ void ecvDisplayTools::DrawForeground(CC_DRAW_CONTEXT& CONTEXT) {
         if (!s_tools.instance->m_captureMode.enabled ||
             s_tools.instance->m_captureMode.renderOverlayItems) {
             // scale: only in ortho mode
+            /*
             if (!s_tools.instance->m_viewportParams.perspectiveView) {
-                // DrawScale(textCol);
-            }
-
-            // trihedron
-            // DrawTrihedron();
+                DrawScale(textCol);
+            } else if (s_tools.instance->m_scale_lineset) {
+                CC_DRAW_CONTEXT context;
+                context.removeEntityType = ENTITY_TYPE::ECV_SHAPE;
+                context.removeViewID = QString::number(
+                        s_tools.instance->m_scale_lineset->getUniqueID(), 10);
+                RemoveEntities(context);
+            }*/
         }
 
         if (!s_tools.instance->m_captureMode.enabled) {
@@ -3217,8 +3300,8 @@ void ecvDisplayTools::RenderText(
         int y,
         const QString& str,
         const QFont& font /*=QFont()*/,
-        ecvColor::Rgbub color /* = ecvColor::defaultLabelBkgColor*/,
-        QString id) {
+        const ecvColor::Rgbub& color /* = ecvColor::defaultLabelBkgColor*/,
+        const QString& id) {
     CC_DRAW_CONTEXT context;
     // for T2D
     if (id.isEmpty()) {
@@ -3257,8 +3340,8 @@ void ecvDisplayTools::RenderText(
         double z,
         const QString& str,
         const QFont& font /*=QFont()*/,
-        ecvColor::Rgbub color /* = ecvColor::defaultLabelBkgColor*/,
-        QString id) {
+        const ecvColor::Rgbub& color /* = ecvColor::defaultLabelBkgColor*/,
+        const QString& id) {
     // get the actual viewport / matrices
     ccGLCameraParameters camera;
     ecvDisplayTools::GetViewerPos(camera.viewport);
@@ -3281,14 +3364,14 @@ void ecvDisplayTools::Display3DLabel(const QString& str,
 }
 
 void ecvDisplayTools::DisplayText(
-        QString text,
+        const QString& text,
         int x,
         int y,
         unsigned char align /*=ALIGN_HLEFT|ALIGN_VTOP*/,
         float bkgAlpha /*=0*/,
         const unsigned char* rgbColor /*=0*/,
         const QFont* font /*=0*/,
-        QString id) {
+        const QString& id /*=""*/) {
     int x2 = x;
     int y2 = s_tools.instance->m_glViewport.height() - 1 - y;
 
@@ -3647,43 +3730,61 @@ void ecvDisplayTools::DrawScale(const ecvColor::Rgbub& color) {
     assert(!s_tools.instance->m_viewportParams
                     .perspectiveView);  // a scale is only valid in ortho. mode!
 
-    float scaleMaxW = s_tools.instance->m_glViewport.width() /
-                      4.0f;  // 25% of screen width
+    // 25% of screen width
+    float scaleMaxW = s_tools.instance->m_glViewport.width() / 4.0f;
     if (s_tools.instance->m_captureMode.enabled) {
         // DGM: we have to fall back to the case 'render zoom = 1' (otherwise we
         // might not get the exact same aspect)
         scaleMaxW /= s_tools.instance->m_captureMode.zoomFactor;
     }
-    if (s_tools.instance->m_viewportParams.zoom < CC_GL_MIN_ZOOM_RATIO) {
-        assert(false);
-        return;
-    }
+
+    float screen_width = s_tools.instance->m_glViewport.width();
+    float screen_height = s_tools.instance->m_glViewport.height();
 
     // we first compute the width equivalent to 25% of horizontal screen width
-    //(this is why it's only valid in orthographic mode !)
-    float equivalentWidthRaw = scaleMaxW *
-                               s_tools.instance->m_viewportParams.pixelSize /
-                               s_tools.instance->m_viewportParams.zoom;
-    float equivalentWidth = RoundScale(equivalentWidthRaw);
+    // (this is why it's only valid in orthographic mode !)
+    double pixelSize = GetDevicePixelRatio();
+    float equivalentWidth = RoundScale(scaleMaxW * pixelSize);
 
     QFont font = GetTextDisplayFont();  // we take rendering zoom into account!
     QFontMetrics fm(font);
 
     // we deduce the scale drawing width
-    float scaleW_pix = equivalentWidth /
-                       s_tools.instance->m_viewportParams.pixelSize *
-                       s_tools.instance->m_viewportParams.zoom;
+    float scaleW_pix = equivalentWidth / pixelSize;
     if (s_tools.instance->m_captureMode.enabled) {
         // we can now safely apply the rendering zoom
         scaleW_pix *= s_tools.instance->m_captureMode.zoomFactor;
     }
-    float trihedronLength = CC_DISPLAYED_TRIHEDRON_AXES_LENGTH *
-                            s_tools.instance->m_captureMode.zoomFactor;
-    float dW = 2.0f * trihedronLength + 20.0f;
-    float dH = std::max(fm.height() * 1.25f, trihedronLength + 5.0f);
-    float w = s_tools.instance->m_glViewport.width() / 2.0f - dW;
-    float h = s_tools.instance->m_glViewport.height() / 2.0f - dH;
+    float trihedronLength =
+            (CC_DISPLAYED_TRIHEDRON_AXES_LENGTH + CC_TRIHEDRON_TEXT_MARGIN +
+             QFontMetrics(font).width('X')) *
+            s_tools.instance->m_captureMode.zoomFactor;
+    float dW = 2.0f * trihedronLength +
+               20.0f * s_tools.instance->m_captureMode.zoomFactor;
+    float dH =
+            std::max(fm.height() * 1.25f,
+                     trihedronLength +
+                             5.0f * s_tools.instance->m_captureMode.zoomFactor);
+    float w = screen_width - dW;
+    float h = dH;
     float tick = 3.0f * s_tools.instance->m_captureMode.zoomFactor;
+
+    WIDGETS_PARAMETER scaleLineParam(WIDGETS_TYPE::WIDGET_LINE_2D, "ScaleLine");
+    scaleLineParam.color = ecvColor::FromRgbub(color);
+    scaleLineParam.p1 = QPoint(w - scaleW_pix, h);
+    scaleLineParam.p2 = QPoint(w, h);
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_LINE_2D, "ScaleLine"));
+    DrawWidgets(scaleLineParam, true);
+
+    // display label
+    double textEquivalentWidth = equivalentWidth;
+    QString text = QString::number(textEquivalentWidth);
+    int text_x = screen_width - static_cast<int>(scaleW_pix / 2 + dW) -
+                 fm.width(text) / 2;
+    int text_y = screen_height - static_cast<int>(dH / 2) + fm.height() / 3;
+    RemoveWidgets(WIDGETS_PARAMETER(WIDGETS_TYPE::WIDGET_T2D, "ScaleLineText"));
+    CVLog::Print(QString("ScaleLineText is %1").arg(text));
+    RenderText(text_x, text_y, text, font, color, "ScaleLineText");
 }
 
 void ecvDisplayTools::CheckIfRemove() {

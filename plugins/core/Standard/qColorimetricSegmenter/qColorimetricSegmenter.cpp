@@ -24,7 +24,7 @@
 #include "QuantiDialog.h"
 #include "KmeansDlg.h"
 
-//CloudCompare
+//ACloudViewer
 #include <CVLog.h>
 #include <ecvPointCloud.h>
 

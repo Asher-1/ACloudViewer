@@ -65,9 +65,6 @@ void ccMeasurementDevice::createScalarFieldForCloud(const ccPlane *plane, ccPoin
 	cloud->setCurrentDisplayedScalarField(scalarIndex);
 	cloud->showSFColorsScale(true);
 	cloud->showSF(true);
-	//cloud->setDisplay(m_app->getActiveGLWindow());
-	//cloud->prepareDisplayForRefresh();
-	//cloud->refreshDisplay();
 	cloud->redrawDisplay();
 }
 
@@ -76,9 +73,6 @@ void ccMeasurementDevice::deleteScalarFieldFromCloud(ccPointCloud * cloud) const
 	int scalarIndex = cloud->getScalarFieldIndexByName(MPLANE_SCALARFIELD_NAME);
 	if (scalarIndex != -1) {
 		cloud->deleteScalarField(scalarIndex);
-		//cloud->setDisplay(m_app->getActiveGLWindow());
-		//cloud->prepareDisplayForRefresh();
-		//cloud->refreshDisplay();
 		cloud->redrawDisplay();
 	}
 }

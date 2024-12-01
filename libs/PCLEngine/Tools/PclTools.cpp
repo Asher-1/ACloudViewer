@@ -794,17 +794,19 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
         for (ccColorScale::LabelSet::iterator it = keyValues.begin();
              it != keyValues.end(); ++it) {
 #if defined(CV_WINDOWS) && defined(_MSC_VER)
-            if (!_finite(*it))
+            if (!_finite(it->value))
 #else
-            if (!std::isfinite(*it))
+            if (!std::isfinite(it->value))
 #endif
             {
-                bool minusInf = (*it < 0);
+                bool minusInf = (it->value < 0);
                 keyValues.erase(it);
                 if (minusInf)
-                    keyValues.insert(-std::numeric_limits<ScalarType>::max());
+                    keyValues.insert({std::numeric_limits<ScalarType>::lowest(),
+                                      "-Inf"});
                 else
-                    keyValues.insert(std::numeric_limits<ScalarType>::max());
+                    keyValues.insert(
+                            {std::numeric_limits<ScalarType>::max(), "+Inf"});
                 it = keyValues.begin();  // restart the process (easier than
                                          // trying to be intelligent here ;)
             }
@@ -820,10 +822,10 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
             for (ccColorScale::LabelSet::iterator it = keyValues.begin();
                  it != keyValues.end();) {
                 if (!sf->displayRange().isInRange(
-                            static_cast<ScalarType>(*it)) &&
+                            static_cast<ScalarType>(it->value)) &&
                     (!alwaysShowZero ||
-                     *it != 0))  // we keep zero if the user has explicitely
-                                 // asked for it!
+                     it->value != 0))  // we keep zero if the user has
+                                       // explicitely asked for it!
                 {
                     ccColorScale::LabelSet::iterator toDelete = it;
                     ++it;
@@ -842,7 +844,7 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
 
             for (ccColorScale::LabelSet::iterator it = keyValues.begin();
                  it != keyValues.end();) {
-                if (*it >= dispMin && *it <= dispMax) {
+                if (it->value >= dispMin && it->value <= dispMax) {
                     ++it;
                 } else {
                     ccColorScale::LabelSet::iterator toDelete = it;
@@ -853,8 +855,8 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
         }
     }
 
-    std::vector<double> sortedKeyValues(keyValues.begin(), keyValues.end());
-    double maxRange = sortedKeyValues.back() - sortedKeyValues.front();
+    std::vector<ccColorScale::Label> sortedKeyValues(keyValues.begin(), keyValues.end());
+    double maxRange = sortedKeyValues.back().value - sortedKeyValues.front().value;
 
     const ecvGui::ParamStruct& displayParams =
             ecvDisplayTools::GetDisplayParameters();
@@ -886,12 +888,12 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
     vlabelSet drawnLabels;
     {
         // add first label
-        drawnLabels.emplace_back(0, 0, strHeight, sortedKeyValues.front());
+        drawnLabels.emplace_back(0, 0, strHeight, sortedKeyValues.front().value);
 
         if (keyValues.size() > 1) {
             // add last label
             drawnLabels.emplace_back(scaleMaxHeight, scaleMaxHeight - strHeight,
-                                     scaleMaxHeight, sortedKeyValues.back());
+                                     scaleMaxHeight, sortedKeyValues.back().value);
         }
 
         // we try to display the other keyPoints (if any)
@@ -900,7 +902,7 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
             const int minGap = strHeight;
             for (size_t i = 1; i < keyValues.size() - 1; ++i) {
                 int yScale = static_cast<int>(
-                        (sortedKeyValues[i] - sortedKeyValues[0]) *
+                        (sortedKeyValues[i].value - sortedKeyValues[0].value) *
                         scaleMaxHeight / maxRange);
                 vlabelPair nLabels = GetVLabelsAround(yScale, drawnLabels);
 
@@ -915,7 +917,7 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
                     drawnLabels.insert(
                             nLabels.second,
                             vlabel(yScale, yScale - strHeight / 2,
-                                   yScale + strHeight / 2, sortedKeyValues[i]));
+                                   yScale + strHeight / 2, sortedKeyValues[i].value));
                 }
             }
         }
@@ -939,7 +941,7 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
                         // insert label
                         double val = (it1->val + it2->val) / 2.0;
                         int yScale =
-                                static_cast<int>((val - sortedKeyValues[0]) *
+                                static_cast<int>((val - sortedKeyValues[0].value) *
                                                  scaleMaxHeight / maxRange);
 
                         // insert it at the right place (so as to keep a sorted
@@ -1000,7 +1002,7 @@ bool PclTools::UpdateScalarBar(vtkAbstractWidget* widget,
 
         for (int j = 0; j < scaleMaxHeight; ++j) {
             double baseValue =
-                    sortedKeyValues.front() + (j * maxRange) / scaleMaxHeight;
+                    sortedKeyValues.front().value + (j * maxRange) / scaleMaxHeight;
             double value = baseValue;
             if (logScale) {
                 value = std::exp(value * c_log10);

@@ -53,11 +53,11 @@ public:
     //! Message level
     enum MessageLevelFlags {
         LOG_STANDARD = 0,  /**< Standard message (Print) **/
-        LOG_VERBOSE = 1,     /**< Verbose message (Debug) **/
+        LOG_VERBOSE = 1,   /**< Verbose message (Debug) **/
         LOG_WARNING = 2,   /**< Warning message (Warning) **/
         LOG_IMPORTANT = 3, /**< Important messages (PrintHigh) **/
         LOG_ERROR = 4,     /**< Error message (Error) **/
-				DEBUG_FLAG          = 8  /**< Debug flag (reserved) **/
+        DEBUG_FLAG = 8     /**< Debug flag (reserved) **/
     };
 
     //! Static shortcut to CVLog::logMessage

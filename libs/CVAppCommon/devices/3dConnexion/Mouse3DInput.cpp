@@ -293,7 +293,7 @@ void Mouse3DInput::Apply(const std::vector<float>& motionData,
     std::vector<float> vec = motionData;
 
     // view parameters
-    const ccViewportParameters& viewParams = win->getViewportParameters();
+    const ecvViewportParameters& viewParams = win->getViewportParameters();
     bool bubbleViewMode = win->bubbleViewModeEnabled();
 
     // panning or zooming
@@ -308,7 +308,7 @@ void Mouse3DInput::Apply(const std::vector<float>& motionData,
         // Zoom: object moves closer/away (only for ortho. mode)
         if (!viewParams.perspectiveView &&
             cloudViewer::GreaterThanEpsilon(std::abs(Z))) {
-            ccViewportParameters viewParams = win->getViewportParameters();
+            ecvViewportParameters viewParams = win->getViewportParameters();
             viewParams.setFocalDistance(viewParams.getFocalDistance() /
                                         (1.0 - Z / 1.5));
             win->setViewportParameters(viewParams);

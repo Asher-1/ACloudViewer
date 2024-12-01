@@ -280,6 +280,7 @@
      </property>
      <addaction name="actionFitPlane"/>
      <addaction name="actionFitSphere"/>
+     <addaction name="actionFitCircle"/>
      <addaction name="actionFitFacet"/>
      <addaction name="actionFitQuadric"/>
     </widget>
@@ -484,6 +485,7 @@
        <normaloff>:/Resources/images/dbPolylineSymbol.png</normaloff>:/Resources/images/dbPolylineSymbol.png</iconset>
      </property>
      <addaction name="actionSamplePointsOnPolyline"/>
+     <addaction name="actionSmoothPolyline"/>
      <addaction name="actionConvertPolylinesToMesh"/>
      <addaction name="actionBSplineFittingOnCloud"/>
     </widget>
@@ -2059,6 +2061,11 @@ QTreeView::branch:open:has-children:has-siblings  {
     <string>Sample points</string>
    </property>
   </action>
+  <action name="actionSmoothPolyline">
+   <property name="text">
+    <string>Smooth</string>
+   </property>
+  </action>
   <action name="actionCreatePlane">
    <property name="text">
     <string>Create</string>
@@ -3562,6 +3569,14 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionFitCircle">
+   <property name="text">
+    <string>Circle</string>
+   </property>
+   <property name="toolTip">
+    <string>Fits a circle on the selected cloud</string>
    </property>
   </action>
   <action name="actionShowActiveSFNext">

@@ -1,6 +1,6 @@
 option( PLUGIN_STANDARD_QHOUGH_NORMALS "Install qHoughNormals plugin" OFF )
 
-# CloudCompare 'Hough Normals' plugin (see https://github.com/aboulch/normals_Hough)
+# ACloudViewer 'Hough Normals' plugin (see https://github.com/aboulch/normals_Hough)
 if( PLUGIN_STANDARD_QHOUGH_NORMALS )
 	project( QHOUGH_NORMALS_PLUGIN )
 
