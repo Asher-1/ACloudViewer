@@ -1,15 +1,15 @@
-import cvcorelib
+import cccorelib
 import pycc
 
 cc = pycc.GetInstance()
 cloud = cc.clouds()[0].pc
 
-assert cvcorelib.ScalarFieldTools.computeMeanScalarValue(cloud) == 8204.2490234375
-assert cvcorelib.ScalarFieldTools.computeMeanSquareScalarValue(cloud) == 93043936.0
-assert cvcorelib.ScalarFieldTools.computeScalarFieldGradient(cloud, 0, False) == 0
+assert cccorelib.ScalarFieldTools.computeMeanScalarValue(cloud) == 8204.2490234375
+assert cccorelib.ScalarFieldTools.computeMeanSquareScalarValue(cloud) == 93043936.0
+assert cccorelib.ScalarFieldTools.computeScalarFieldGradient(cloud, 0, False) == 0
 
-assert cvcorelib.ScalarFieldTools.computeScalarFieldExtremas(cloud) == (0, 37522.00)
-assert cvcorelib.ScalarFieldTools.countScalarFieldValidValues(cloud) == 10_683
+assert cccorelib.ScalarFieldTools.computeScalarFieldExtremas(cloud) == (0, 37522.00)
+assert cccorelib.ScalarFieldTools.countScalarFieldValidValues(cloud) == 10_683
 
 
 classificationSf = cloud.getScalarField(cloud.getScalarFieldIndexByName("Classification"))

@@ -6,7 +6,7 @@ GenericProgressCallback
 -----------------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.GenericProgressCallback`
+    Python: :py:class:`cccorelib.GenericProgressCallback`
 
 .. doxygenclass:: cloudViewer::GenericProgressCallback
    :members:
@@ -17,7 +17,7 @@ NormalizedProgress
 -----------------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.NormalizedProgress`
+    Python: :py:class:`cccorelib.NormalizedProgress`
 
 .. doxygenclass:: cloudViewer::NormalizedProgress
     :members:

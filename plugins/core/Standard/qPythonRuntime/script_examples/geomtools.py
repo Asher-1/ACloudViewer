@@ -1,4 +1,4 @@
-import cvcorelib
+import cccorelib
 import pycc
 
 CC = pycc.GetInstance()
@@ -14,7 +14,7 @@ def main():
     pointCloud = entities[0]
     print(pointCloud)
 
-    gravityCenter = cvcorelib.GeometricalAnalysisTools.ComputeGravityCenter(pointCloud)
+    gravityCenter = cccorelib.GeometricalAnalysisTools.ComputeGravityCenter(pointCloud)
     print("The gravity center of {} is {}".format(pointCloud.getName(), gravityCenter))
 
     CC.freezeUI(False)

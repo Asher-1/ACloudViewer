@@ -20,7 +20,7 @@ if(NOT PLUGIN_PYTHON_USE_EMBEDDED_MODULES AND BUILD_PYTHON_MODULE)
   target_link_libraries(pycc PRIVATE ECV_DB_LIB ECV_IO_LIB)
 
   target_include_directories(
-    pycc PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../cvcorelib/src"
+    pycc PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../cccorelib/src"
   )
 
   if(DEFINE_PYCC_RUNTIME)
@@ -45,6 +45,6 @@ set(pycc_sources
 )
 
 set(cccorelib_inc
-    "${CMAKE_CURRENT_SOURCE_DIR}/../cvcorelib/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../cccorelib/src"
     CACHE INTERNAL ""
 )

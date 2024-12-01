@@ -10,7 +10,7 @@ __________
 
     C++: :cpp:class:`cloudViewer::CCVector3`
 
-.. autoclass:: cvcorelib.CCVector3
+.. autoclass:: cccorelib.CCVector3
    :members:
    :undoc-members:
    :special-members:
@@ -28,7 +28,7 @@ ____________
 
     C++: :cpp:class:`cloudViewer::GenericCloud`
 
-.. autoclass:: cvcorelib.GenericCloud
+.. autoclass:: cccorelib.GenericCloud
    :members:
    :undoc-members:
 
@@ -38,7 +38,7 @@ ___________________
 
     C++: :cpp:class:`cloudViewer::GenericIndexedCloud`
 
-.. autoclass:: cvcorelib.GenericIndexedCloud
+.. autoclass:: cccorelib.GenericIndexedCloud
    :members:
    :undoc-members:
    :show-inheritance:
@@ -49,7 +49,7 @@ __________________________
 
     C++: :cpp:class:`cloudViewer::GenericIndexedCloudPersist`
 
-.. autoclass:: cvcorelib.GenericIndexedCloudPersist
+.. autoclass:: cccorelib.GenericIndexedCloudPersist
    :members:
    :undoc-members:
    :show-inheritance:
@@ -61,7 +61,7 @@ __________
 
     C++: :cpp:class:`cloudViewer::PointCloud`
 
-.. autoclass:: cvcorelib.PointCloud
+.. autoclass:: cccorelib.PointCloud
    :members:
    :undoc-members:
    :show-inheritance:
@@ -72,7 +72,7 @@ ______________
 
     C++: :cpp:class:`cloudViewer::ReferenceCloud`
 
-.. autoclass:: cvcorelib.ReferenceCloud
+.. autoclass:: cccorelib.ReferenceCloud
    :members:
    :undoc-members:
    :show-inheritance:
@@ -86,7 +86,7 @@ _______________
 
     C++: :cpp:class:`cloudViewer::GenericTriangle`
 
-.. autoclass:: cvcorelib.GenericTriangle
+.. autoclass:: cccorelib.GenericTriangle
     :members:
     :undoc-members:
 
@@ -96,7 +96,7 @@ ___________
 
     C++: :cpp:class:`cloudViewer::GenericMesh`
 
-.. autoclass:: cvcorelib.GenericMesh
+.. autoclass:: cccorelib.GenericMesh
     :members:
     :undoc-members:
 
@@ -106,7 +106,7 @@ __________________
 
     C++: :cpp:class:`cloudViewer::GenericIndexedMesh`
 
-.. autoclass:: cvcorelib.GenericIndexedMesh
+.. autoclass:: cccorelib.GenericIndexedMesh
     :members:
     :undoc-members:
     :show-inheritance:
@@ -117,7 +117,7 @@ ______________
 
     C++: :cpp:class:`cloudViewer::Delaunay2dMesh`
 
-.. autoclass:: cvcorelib.Delaunay2dMesh
+.. autoclass:: cccorelib.Delaunay2dMesh
     :members:
     :undoc-members:
     :show-inheritance:
@@ -128,7 +128,7 @@ ________
 
     C++: :cpp:class:`cloudViewer::Polyline`
 
-.. autoclass:: cvcorelib.Polyline
+.. autoclass:: cccorelib.Polyline
     :members:
     :undoc-members:
     :show-inheritance:
@@ -139,7 +139,7 @@ ______________
 
     C++: :cpp:class:`cloudViewer::SimpleTriangle`
 
-.. autoclass:: cvcorelib.SimpleTriangle
+.. autoclass:: cccorelib.SimpleTriangle
     :members:
     :undoc-members:
     :show-inheritance:
@@ -150,7 +150,7 @@ __________
 
     C++: :cpp:class:`cloudViewer::SimpleMesh`
 
-.. autoclass:: cvcorelib.SimpleMesh
+.. autoclass:: cccorelib.SimpleMesh
     :members:
     :undoc-members:
     :show-inheritance:
@@ -164,7 +164,7 @@ ______
 
     C++: :cpp:class:`cloudViewer::KDTree`
 
-.. autoclass:: cvcorelib.KDTree
+.. autoclass:: cccorelib.KDTree
     :members:
     :undoc-members:
 
@@ -175,7 +175,7 @@ __________
 
     C++: :cpp:class:`cloudViewer::TrueKdTree`
 
-.. autoclass:: cvcorelib.TrueKdTree
+.. autoclass:: cccorelib.TrueKdTree
     :members:
 
 Octrees
@@ -188,7 +188,7 @@ _____________
 
     C++: :cpp:class:`cloudViewer::GenericOctree`
 
-.. autoclass:: cvcorelib.GenericOctree
+.. autoclass:: cccorelib.GenericOctree
     :members:
     :undoc-members:
     :show-inheritance:
@@ -199,7 +199,7 @@ _________
 
     C++: :cpp:class:`cloudViewer::DgmOctree`
 
-.. autoclass:: cvcorelib.DgmOctree
+.. autoclass:: cccorelib.DgmOctree
     :members:
     :undoc-members:
     :show-inheritance:
@@ -210,7 +210,7 @@ _______________________
 
     C++: :cpp:class:`cloudViewer::DgmOctreeReferenceCloud`
 
-.. autoclass:: cvcorelib.DgmOctreeReferenceCloud
+.. autoclass:: cccorelib.DgmOctreeReferenceCloud
     :members:
     :undoc-members:
     :show-inheritance:
@@ -224,7 +224,7 @@ ___________
 
     C++: :cpp:class:`cloudViewer::BoundingBox`
 
-.. autoclass:: cvcorelib.BoundingBox
+.. autoclass:: cccorelib.BoundingBox
    :members:
    :undoc-members:
 
@@ -235,7 +235,7 @@ ___________
 
     C++: :cpp:class:`cloudViewer::ScalarField`
 
-.. autoclass:: cvcorelib.ScalarField
+.. autoclass:: cccorelib.ScalarField
    :members:
    :undoc-members:
    :show-inheritance:

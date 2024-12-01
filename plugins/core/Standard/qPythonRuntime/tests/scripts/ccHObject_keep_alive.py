@@ -1,5 +1,5 @@
 import pycc
-import cvcorelib
+import cccorelib
 
 from pathlib import Path
 
@@ -19,7 +19,7 @@ def test_getChild():
     del parent
 
     # Should crash if obj was delete as a result of the del parent
-    _ = cvcorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
+    _ = cccorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
 
 
 def test_getParent():
@@ -38,7 +38,7 @@ def test_getParent():
     assert parent is not None
     del parent
 
-    _ = cvcorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
+    _ = cccorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
 
 
 def test_find():
@@ -49,7 +49,7 @@ def test_find():
     assert child is not None
     del parent
 
-    _ = cvcorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
+    _ = cccorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
 
 
 def test_getFirstChild():
@@ -60,7 +60,7 @@ def test_getFirstChild():
     assert child is not None
     del parent
 
-    _ = cvcorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
+    _ = cccorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
 
 
 def test_getLastChild():
@@ -71,7 +71,7 @@ def test_getLastChild():
     assert child is not None
     del parent
 
-    _ = cvcorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
+    _ = cccorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
 
 
 def test_detachChild():
@@ -85,7 +85,7 @@ def test_detachChild():
     assert parent.getChildrenNumber() == 0
 
     del parent
-    _ = cvcorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
+    _ = cccorelib.CloudSamplingTools.subsampleCloudRandomly(child, 10)
 
 
 if __name__ == '__main__':

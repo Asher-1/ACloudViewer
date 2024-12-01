@@ -1,4 +1,4 @@
-import cvcorelib
+import cccorelib
 import pycc
 
 
@@ -12,7 +12,7 @@ def main():
 
     cloud = cloudDescs[0].pc
 
-    kdtree = cvcorelib.KDTree()
+    kdtree = cccorelib.KDTree()
     kdtree.buildFromCloud(cloud)
 
     assert cloud is kdtree.getAssociatedCloud()
@@ -28,7 +28,7 @@ def main():
     assert nearestIndex is None
 
     point = [-13, 17.0, 1.5]
-    points = cvcorelib.KDTree.IndicesVector()
+    points = cccorelib.KDTree.IndicesVector()
     numPts = kdtree.findPointsLyingToDistance(point, distance=1, tolerance=0.5, points=points)
     assert numPts == len(points)
 

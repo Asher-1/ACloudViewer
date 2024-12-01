@@ -72,7 +72,7 @@ static void ThrowForFileError(CC_FILE_ERROR error)
 
 void define_qcc_io(py::module &m)
 {
-    py::class_<ecvGlobalShiftManager> PyccGlobalShiftManager(m, "ecvGlobalShiftManager");
+    py::class_<ecvGlobalShiftManager> PyccGlobalShiftManager(m, "ccGlobalShiftManager");
 
     py::enum_<ecvGlobalShiftManager::Mode>(PyccGlobalShiftManager, "Mode")
         .value("NO_DIALOG", ecvGlobalShiftManager::Mode::NO_DIALOG)

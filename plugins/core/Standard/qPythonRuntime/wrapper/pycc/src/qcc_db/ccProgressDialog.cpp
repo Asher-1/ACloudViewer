@@ -30,7 +30,7 @@ using namespace pybind11::literals;
 void define_ccProgressDialog(py::module &m)
 {
     py::class_<ecvProgressDialog, QProgressDialog, cloudViewer::GenericProgressCallback>(
-        m, "ecvProgressDialog")
+        m, "ccProgressDialog")
         .def(py::init<bool>(), "cancelButton"_a = false)
         .def("setMethodTitle",
              (void(ecvProgressDialog::*)(QString)) & ecvProgressDialog::setMethodTitle,

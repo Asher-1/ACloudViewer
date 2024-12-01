@@ -54,12 +54,12 @@ function(manage_windows_install)
   copy_python_dll()
 
   install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/docs/stubfiles/pycc.pyi"
-                "${CMAKE_CURRENT_SOURCE_DIR}/docs/stubfiles/cvcorelib.pyi"
+                "${CMAKE_CURRENT_SOURCE_DIR}/docs/stubfiles/cccorelib.pyi"
           DESTINATION "${CC_PYTHON_INSTALL_DIR}/Lib/site-packages"
   )
 
   if(NOT PLUGIN_PYTHON_USE_EMBEDDED_MODULES)
-    install(TARGETS pycc cvcorelib
+    install(TARGETS pycc cccorelib
             DESTINATION "${CC_PYTHON_INSTALL_DIR}/Lib/site-packages"
     )
   endif()

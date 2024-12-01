@@ -63,7 +63,7 @@ void define_ccGenericDisplayTools(py::module &m)
         .def_readwrite("fov_deg", &ccGLCameraParameters::fov_deg)
         .def_readwrite("pixelSize", &ccGLCameraParameters::pixelSize);
 
-    py::class_<ecvGenericDisplayTools> PyecvGenericDisplayTools(m, "ecvGenericDisplayTools");
+    py::class_<ecvGenericDisplayTools> PyecvGenericDisplayTools(m, "ccGenericDisplayTools");
 
     py::enum_<ecvGenericDisplayTools::TextAlign>(PyecvGenericDisplayTools, "TextAlign")
         .value("ALIGN_HLEFT", ecvGenericDisplayTools::TextAlign::ALIGN_HLEFT)

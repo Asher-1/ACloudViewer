@@ -31,7 +31,7 @@ void define_ccBox(py::module &m)
 
     Parameters
     ----------
-    insideRadius : cvcorelib.CCVector3
+    insideRadius : cccorelib.CCVector3
         box dimensions
     transMat : , optional
         optional 3D transformation (can be set afterwards with ccDrawableObject::setGLTransformation)
@@ -42,8 +42,8 @@ void define_ccBox(py::module &m)
     -------
 
         >>> import pycc
-        >>> import cvcorelib
-        >>> box = pycc.ccBox(cvcorelib.CCVector3(5.0, 10.0, 4.0))
+        >>> import cccorelib
+        >>> box = pycc.ccBox(cccorelib.CCVector3(5.0, 10.0, 4.0))
     )doc")
         .def(py::init<const CCVector3 &, const ccGLMatrix *, QString>(),
              "dims"_a,

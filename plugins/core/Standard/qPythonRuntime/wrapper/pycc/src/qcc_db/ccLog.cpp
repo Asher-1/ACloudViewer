@@ -28,7 +28,7 @@ using namespace pybind11::literals;
 
 void define_ccLog(py::module &m)
 {
-    py::class_<CVLog> PyccLog(m, "CVLog", R"pbdoc(
+    py::class_<CVLog> PyccLog(m, "ccLog", R"pbdoc(
     Class to log messages in ACloudViewer's console.
 
     Use one of the static method to log a message

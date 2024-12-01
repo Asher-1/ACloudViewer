@@ -35,9 +35,9 @@ void define_ccQuadric(py::module &m)
 
     Parameters
     ----------
-    minCorner : cvcorelib.CCVector2
+    minCorner : cccorelib.CCVector2
         min corner of the 'representation' base area
-    maxCorner : cvcorelib.CCVector2
+    maxCorner : cccorelib.CCVector2
         max corner of the 'representation' base area
     eq: list of PointCoordinateType
         equation coefficients ( Z = a + b.X + c.Y + d.X^2 + e.X.Y + f.Y^2)
@@ -55,8 +55,8 @@ void define_ccQuadric(py::module &m)
     .. code:: Python
 
         quadric = pycc.ccQuadric(
-            cvcorelib.CCVector2(5.0, 10.0),
-            cvcorelib.CCVector2(10.0, 20.0),
+            cccorelib.CCVector2(5.0, 10.0),
+            cccorelib.CCVector2(10.0, 20.0),
             [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
         )
     )doc")

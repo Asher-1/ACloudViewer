@@ -21,7 +21,7 @@ $env:path += ";$CloudCompareInstallFolder;$PluginsFolder;$PythonEnvDir"
 
 
 Set-Location $CloudCompareInstallFolder
-stubgen -m cvcorelib -m pycc -o $StubGenLoc
+stubgen -m cccorelib -m pycc -o $StubGenLoc
 
 
 

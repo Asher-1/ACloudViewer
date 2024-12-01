@@ -1,5 +1,5 @@
 import pycc
-import cvcorelib
+import cccorelib
 
 pc = pycc.GetInstance().getSelectedEntities()[0]
 
@@ -8,7 +8,7 @@ progress = pycc.ecvProgressDialog()
 progress.start()
 
 success = pc.computeNormalsWithOctree(
-    cvcorelib.CV_LOCAL_MODEL_TYPES.LS,
+    cccorelib.CV_LOCAL_MODEL_TYPES.LS,
     pycc.ccNormalVectors.Orientation.UNDEFINED,
     5.0,
     pDlg=progress,

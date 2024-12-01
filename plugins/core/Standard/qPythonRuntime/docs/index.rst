@@ -34,7 +34,7 @@ be found on the corresponding C++ function documentation.
    :caption: APIs Documentation
    :maxdepth: 2
 
-   python/cvcorelib/index
+   python/cccorelib/index
    python/pycc/index
    cpp/qCC_db/index
    cpp/CVCoreLib/index

@@ -1,2 +1,2 @@
-add_subdirectory(cvcorelib)
+add_subdirectory(cccorelib)
 add_subdirectory(pycc)

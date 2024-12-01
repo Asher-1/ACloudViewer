@@ -1,4 +1,4 @@
-import cvcorelib
+import cccorelib
 import pycc
 
 import numpy as np
@@ -27,7 +27,7 @@ def main():
 
 
     numLabels = pycc.RunInThread(
-        cvcorelib.AutoSegmentationTools.labelConnectedComponents, pc, 11, False)
+        cccorelib.AutoSegmentationTools.labelConnectedComponents, pc, 11, False)
     print("There are {} labels".format(numLabels))
 
     # If we didn't create the Labels scalar field
@@ -50,8 +50,8 @@ def main():
         print(f"Label {label}: {len(pointsOfLabel)} points")
 
 
-    referenceClouds = cvcorelib.AutoSegmentationTools.ReferenceCloudContainer()
-    if not cvcorelib.extractConnectedComponents(pc, referenceClouds):
+    referenceClouds = cccorelib.AutoSegmentationTools.ReferenceCloudContainer()
+    if not cccorelib.extractConnectedComponents(pc, referenceClouds):
         print("Failed to extract the connected Components")
     assert(len(referenceClouds) == numLabels)
 

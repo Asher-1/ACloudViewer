@@ -1,21 +1,21 @@
 import pycc
-import cvcorelib
+import cccorelib
 
 CC = pycc.GetInstance()
 pc_to_crop = CC.getSelectedEntities()[0]
-bbMin, bbMax = cvcorelib.CCVector3(), cvcorelib.CCVector3()
+bbMin, bbMax = cccorelib.CCVector3(), cccorelib.CCVector3()
 pc_to_crop.getBoundingBox(bbMin, bbMax)
 print(f"Min {bbMin}, Max: {bbMax}")
 diag = bbMax - bbMin
 
-bbMin = bbMin + cvcorelib.CCVector3(diag.x / 2, 0, 0)
+bbMin = bbMin + cccorelib.CCVector3(diag.x / 2, 0, 0)
 
 vertices = pycc.ccPointCloud()
 vertices.setName("polyline.vertices")
 vertices.addPoint(bbMin)
-vertices.addPoint(bbMin + cvcorelib.CCVector3(0, diag.y / 2, 0))
-vertices.addPoint(bbMin + cvcorelib.CCVector3(diag.x / 2, diag.y / 2, 0))
-vertices.addPoint(bbMin + cvcorelib.CCVector3(diag.x / 2, 0, 0))
+vertices.addPoint(bbMin + cccorelib.CCVector3(0, diag.y / 2, 0))
+vertices.addPoint(bbMin + cccorelib.CCVector3(diag.x / 2, diag.y / 2, 0))
+vertices.addPoint(bbMin + cccorelib.CCVector3(diag.x / 2, 0, 0))
 
 polyline = pycc.ccPolyline(vertices)
 polyline.setClosed(True)

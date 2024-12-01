@@ -1,7 +1,7 @@
 """
 An example of how to create a mesh or query a mesh
 """
-import cvcorelib
+import cccorelib
 import pycc
 import numpy as np
 
@@ -46,7 +46,7 @@ def main():
     assert vertices == mesh.getAssociatedCloud()
 
     # Query triangles
-    x, y, z = cvcorelib.CCVector3(), cvcorelib.CCVector3(), cvcorelib.CCVector3()
+    x, y, z = cccorelib.CCVector3(), cccorelib.CCVector3(), cccorelib.CCVector3()
     for i in range(mesh.size()):
         vert_indices = mesh.getTriangleVertIndexes(i)
         assert vert_indices.i1 == INDICES[i, 0]
