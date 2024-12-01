@@ -169,7 +169,7 @@ void ccSymbolCloud::drawMeOnly(CC_DRAW_CONTEXT& context)
 
 		//default color
 		const ecvColor::Rgb* color = &context.pointsDefaultCol;
-		if (isColorOverriden())
+		if (isColorOverridden())
 		{
 			color = &m_tempColor;
 			glParams.showColors = false;

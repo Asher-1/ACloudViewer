@@ -363,7 +363,7 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
               ITEM(_obj->getName(), Qt::ItemIsEditable, OBJECT_NAME));
 
     // visibility
-    if (!_obj->isVisiblityLocked())
+    if (!_obj->isVisibilityLocked())
         appendRow(ITEM(tr("Visible")),
                   CHECKABLE_ITEM(_obj->isVisible(), OBJECT_VISIBILITY));
 
@@ -2758,7 +2758,7 @@ void ccPropertiesTreeDelegate::colorSourceChanged(const QString& source) {
         m_currentObject->showColors(true);
         m_currentObject->showSF(false);
         if (m_currentObject->hasColors() &&
-            !m_currentObject->isColorOverriden()) {
+            !m_currentObject->isColorOverridden()) {
             m_currentObject->setRedrawFlagRecursive(true);
         }
     } else if (source == s_sfColor) {

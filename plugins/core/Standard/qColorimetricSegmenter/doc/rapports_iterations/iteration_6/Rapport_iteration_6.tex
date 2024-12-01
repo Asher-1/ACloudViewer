@@ -120,7 +120,7 @@ Dans le résultat, nous avons utilisé les valeurs Rouge et Vert du deuxième po
 
 \subsection{Implémentation du filtrage scalaire}
 
-Notre plugin gérait très bien les nuages de points RGB. Cependant, nous n'avions aucune fonctionnalité permettant de gérer les nuages de points en intensité de gris. Étant donné que Cloud Compare gère nativement la fausse couleur pour ce type de nuage, nous n'avions plus la nécessité de développer une telle fonctionnalité. Nous avons donc pu nous accorder du temps afin de développer une méthode de filtrage par valeurs scalaires. \newline
+Notre plugin gérait très bien les nuages de points RGB. Cependant, nous n'avions aucune fonctionnalité permettant de gérer les nuages de points en intensité de gris. Étant donné que ACloudViewer gère nativement la fausse couleur pour ce type de nuage, nous n'avions plus la nécessité de développer une telle fonctionnalité. Nous avons donc pu nous accorder du temps afin de développer une méthode de filtrage par valeurs scalaires. \newline
 
 Cette méthode a le même fonctionnement que les filtrages précédents, la seule différence est que ce filtrage s'effectue seulement entre deux valeurs : la plus haute (plus proche de 1) et la plus basse (plus proche de 0). Au niveau de l'interface, nous reprenons le travail effectué sur le RGB. L'utilisateur n'a cependant plus qu'une seule valeur à remplir pour chaque point. \newline
 

@@ -87,7 +87,7 @@ ExternalProject_Add(
         -DBUILD_opencv_face=OFF
         -DBUILD_opencv_js=OFF
         -DBUILD_opencv_dnn=OFF
-        -DBUILD_opencv_ml=OFF
+        -DBUILD_opencv_ml=${PLUGIN_STANDARD_3DMASC}
         -DBUILD_opencv_objdetect=OFF
         -DBUILD_opencv_xobjdetect=OFF
         -DBUILD_opencv_dnn_objdetect=OFF

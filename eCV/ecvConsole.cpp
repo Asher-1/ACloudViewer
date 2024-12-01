@@ -228,7 +228,7 @@ void ecvConsole::refresh() {
         for (QVector<ConsoleItemType>::const_iterator it = m_queue.constBegin();
              it != m_queue.constEnd(); ++it) {
             // it->second = message severity
-            bool debugMessage = (it->second & LOG_DEBUG);
+            bool debugMessage = (it->second & LOG_VERBOSE);
 #ifndef QT_DEBUG
             // skip debug message in release mode
             if (debugMessage) continue;
@@ -279,7 +279,7 @@ void ecvConsole::refresh() {
 void ecvConsole::logMessage(const QString& message, int level) {
 #ifndef QT_DEBUG
     // skip debug messages in release mode
-    if (level & LOG_DEBUG) {
+    if (level & LOG_VERBOSE) {
         return;
     }
 #endif
@@ -303,21 +303,21 @@ void ecvConsole::logMessage(const QString& message, int level) {
     else {
         // Error
         if (level & LOG_ERROR) {
-            if (level & LOG_DEBUG)
+            if (level & LOG_VERBOSE)
                 printf("ERR-DBG: ");
             else
                 printf("ERR: ");
         }
         // Warning
         else if (level & LOG_WARNING) {
-            if (level & LOG_DEBUG)
+            if (level & LOG_VERBOSE)
                 printf("WARN-DBG: ");
             else
                 printf("WARN: ");
         }
         // Standard
         else {
-            if (level & LOG_DEBUG)
+            if (level & LOG_VERBOSE)
                 printf("MSG-DBG: ");
             else
                 printf("MSG: ");

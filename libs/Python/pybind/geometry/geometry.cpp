@@ -613,7 +613,7 @@ void pybind_geometry_classes(py::module& m) {
                  "Sets entity visibility.", "state"_a)
             .def("toggle_visibility", &ccDrawableObject::toggleVisibility,
                  "Toggles visibility.")
-            .def("is_visiblity_locked", &ccDrawableObject::isVisiblityLocked,
+            .def("is_visiblity_locked", &ccDrawableObject::isVisibilityLocked,
                  "Returns whether visibility is locked or not.")
             .def("lock_visibility", &ccDrawableObject::lockVisibility,
                  "Locks/unlocks visibility.", "state"_a)
@@ -659,7 +659,7 @@ void pybind_geometry_classes(py::module& m) {
             .def("get_opacity", &ccDrawableObject::getOpacity, "Get opacity.")
             .def("set_opacity", &ccDrawableObject::setOpacity,
                  "Set opacity activation state.", "opacity"_a)
-            .def("is_color_overriden", &ccDrawableObject::isColorOverriden,
+            .def("is_color_overriden", &ccDrawableObject::isColorOverridden,
                  "Returns whether colors are currently overridden by a "
                  "temporary (unique) color.")
             .def(

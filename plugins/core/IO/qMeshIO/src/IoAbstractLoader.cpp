@@ -42,7 +42,7 @@ namespace
          }
          else if ( message.startsWith( "Info" ) )
          {
-            messageLevel = CVLog::LOG_DEBUG;
+            messageLevel = CVLog::LOG_VERBOSE;
          }
       
          message.prepend( "[qMeshIO] ai - " );

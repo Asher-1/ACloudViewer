@@ -344,7 +344,7 @@ ccPointCloud* ccVolumeCalcTool::ConvertGridToCloud(	ccRasterGrid& grid,
 	{
 		//we only compute the default 'height' layer
 		std::vector<ccRasterGrid::ExportableFields> exportedFields;
-		exportedFields.push_back(ccRasterGrid::PER_CELL_HEIGHT);
+		exportedFields.push_back(ccRasterGrid::PER_CELL_VALUE);
 
 		rasterCloud = grid.convertToCloud(exportedFields,
 			false,
@@ -389,7 +389,7 @@ ccPointCloud* ccVolumeCalcTool::convertGridToCloud(bool exportToOriginalCS) cons
 	{
 		//we only compute the default 'height' layer
 		std::vector<ccRasterGrid::ExportableFields> exportedFields;
-		exportedFields.push_back(ccRasterGrid::PER_CELL_HEIGHT);
+		exportedFields.push_back(ccRasterGrid::PER_CELL_VALUE);
 		rasterCloud = cc2Point5DimEditor::convertGridToCloud(	exportedFields,
 																false,
 																false,
@@ -579,7 +579,7 @@ bool ccVolumeCalcTool::ComputeVolume(	ccRasterGrid& grid,
 		if (groundRaster.fillWith(	ground,
 									vertDim,
 									projectionType,
-									groundEmptyCellFillStrategy == ccRasterGrid::INTERPOLATE,
+									groundEmptyCellFillStrategy == ccRasterGrid::INTERPOLATE_DELAUNAY,
 									ccRasterGrid::INVALID_PROJECTION_TYPE,
 									pDlg.data()))
 		{
@@ -605,7 +605,7 @@ bool ccVolumeCalcTool::ComputeVolume(	ccRasterGrid& grid,
 		if (ceilRaster.fillWith(ceil,
 								vertDim,
 								projectionType,
-								ceilEmptyCellFillStrategy == ccRasterGrid::INTERPOLATE,
+								ceilEmptyCellFillStrategy == ccRasterGrid::INTERPOLATE_DELAUNAY,
 								ccRasterGrid::INVALID_PROJECTION_TYPE,
 								pDlg.data()))
 		{

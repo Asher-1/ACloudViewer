@@ -141,7 +141,7 @@ void PCLDisplayTools::drawPointCloud(const CC_DRAW_CONTEXT& context,
                                      viewport);
 
         if ((!context.drawParam.showColors && !context.drawParam.showSF) ||
-            ecvCloud->isColorOverriden()) {
+            ecvCloud->isColorOverridden()) {
             ecvColor::Rgbf pointUniqueColor =
                     ecvTools::TransFormRGB(context.pointsCurrentCol);
             m_visualizer3D->setPointCloudUniqueColor(
@@ -250,7 +250,7 @@ void PCLDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                                              viewport);
 
         if ((!context.drawParam.showColors && !context.drawParam.showSF) ||
-            mesh->isColorOverriden()) {
+            mesh->isColorOverridden()) {
             ecvColor::Rgbf meshColor =
                     ecvTools::TransFormRGB(context.defaultMeshColor);
             m_visualizer3D->setPointCloudUniqueColor(
@@ -295,7 +295,7 @@ void PCLDisplayTools::drawLines(const CC_DRAW_CONTEXT& context,
     }
 
     if (m_visualizer3D->contains(viewID)) {
-        if (lineset->isColorOverriden() || !lineset->hasColors()) {
+        if (lineset->isColorOverridden() || !lineset->hasColors()) {
             ecvColor::Rgbf polygonColor =
                     ecvTools::TransFormRGB(context.defaultPolylineColor);
             m_visualizer3D->setShapeUniqueColor(polygonColor.r, polygonColor.g,
@@ -765,7 +765,7 @@ void PCLDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                     viewID = CVTools::FromQString(poly->getViewId());
 
                     ecvColor::Rgbf color = ecvColor::FromRgb(ecvColor::green);
-                    if (poly->isColorOverriden()) {
+                    if (poly->isColorOverridden()) {
                         color = ecvColor::FromRgb(poly->getTempColor());
                     } else if (poly->colorsShown()) {
                         color = ecvColor::FromRgb(poly->getColor());

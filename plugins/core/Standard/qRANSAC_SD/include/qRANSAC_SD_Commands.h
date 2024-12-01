@@ -18,7 +18,7 @@
 #ifndef RANSAC_PLUGIN_COMMANDS_HEADER
 #define RANSAC_PLUGIN_COMMANDS_HEADER
 
-//CloudCompare
+//ACloudViewer
 #include "ecvCommandLineInterface.h"
 #include <ecvMesh.h>
 #include <ecvGenericMesh.h>

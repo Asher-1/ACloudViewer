@@ -126,7 +126,15 @@
 		"xtree": "cpp",
 		"xutility": "cpp",
 		"resumable": "cpp",
-		"geometry": "cpp"
+		"geometry": "cpp",
+		"tensor": "cpp",
+		"specialfunctions": "cpp",
+		"*.tc": "cpp",
+		"dense": "cpp",
+		"bvh": "cpp",
+		"eulerangles": "cpp",
+		"*.expression": "cpp",
+		"fft": "cpp"
 	},
 	"python.languageServer": "Default"
 }

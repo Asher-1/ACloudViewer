@@ -211,6 +211,8 @@ public:  // inherited from ecvMainAppInterface
     ccHObject* dbRootObject() override;
     // void updateScreen() override;
     void refreshAll(bool only2D = false, bool forceRedraw = true) override;
+    void enableAll() override;
+    void disableAll() override;
     void refreshSelected(bool only2D = false, bool forceRedraw = true) override;
     void refreshObject(ccHObject* obj,
                        bool only2D = false,
@@ -287,15 +289,13 @@ private:
 
     void toggleActiveWindowCenteredPerspective() override;
     void toggleActiveWindowViewerBasedPerspective() override;
-    //    void toggleActiveWindowSunLight() override;
-    //    void toggleActiveWindowCustomLight() override;
 
     //! Sets up any input devices (3D mouse, gamepad) and adds their menus
     void setupInputDevices();
     //! Stops input and destroys any input device handling
     void destroyInputDevices();
 
-    void doActionComputeMesh(CC_TRIANGULATION_TYPES type);
+    void doActionComputeMesh(cloudViewer::TRIANGULATION_TYPES type);
     //! Creates point clouds from multiple 'components'
     void createComponentsClouds(
             ccGenericPointCloud* cloud,
@@ -384,6 +384,7 @@ private slots:
     void doActionConvertTextureToColor();
     void doActionSamplePointsOnMesh();
     void doActionSamplePointsOnPolyline();
+    void doActionSmoohPolyline();
     void doConvertPolylinesToMesh();
     void doBSplineFittingFromCloud();
     void doActionSmoothMeshSF();
@@ -565,8 +566,9 @@ private slots:
     void deactivateComparisonMode(int result);
     void doActionComputeCPS();
 
-    void doActionFitSphere();
     void doActionFitPlane();
+    void doActionFitSphere();
+    void doActionFitCircle();
     void doActionFitFacet();
     void doActionFitQuadric();
 

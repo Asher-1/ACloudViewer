@@ -103,7 +103,6 @@ ecvApplicationBase::ecvApplicationBase(int &argc, char **argv, bool isCommandLin
 	setlocale( LC_NUMERIC, "C" );
 #endif
 	
-	//ccGLWindow::setShaderPath( m_ShaderPath );
 	ccPluginManager::get().setPaths( m_PluginPaths );
 	
 	ccTranslationManager::get().registerTranslatorFile( QStringLiteral( "qt" ), m_TranslationPath );

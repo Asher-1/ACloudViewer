@@ -156,6 +156,16 @@ public:
     everything (false) or only the 2D layer (true)
     **/
     virtual void refreshAll(bool only2D = false, bool forceRedraw = true) = 0;
+    virtual void redrawAll(bool only2D = false, bool forceRedraw = true) {
+        refreshAll(only2D, forceRedraw);
+    };
+
+    //! Enables all windows
+    virtual void enableAll() = 0;
+
+    //! Disables all windows
+    virtual void disableAll() = 0;
+
     virtual void refreshSelected(bool only2D = false,
                                  bool forceRedraw = true) = 0;
     virtual void refreshObject(ccHObject* obj,

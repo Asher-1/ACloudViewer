@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<WixLocalization Culture="en-US" Codepage="1252" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+    <String Id="InstallDirDlgFolderLabel" Overridable="yes">
+        Select the folder where ACloudViewer.exe is installed
+        ACloudViewer v3.9.1 required.
+    </String>
+</WixLocalization>

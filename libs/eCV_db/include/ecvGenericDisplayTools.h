@@ -87,6 +87,17 @@ public:
                                        CCVector3d& output2D) { /* do nothing */
     }
 
+    //! Text alignment
+    enum TextAlign {
+        ALIGN_HLEFT = 1,
+        ALIGN_HMIDDLE = 2,
+        ALIGN_HRIGHT = 4,
+        ALIGN_VTOP = 8,
+        ALIGN_VMIDDLE = 16,
+        ALIGN_VBOTTOM = 32,
+        ALIGN_DEFAULT = 1 | 8
+    };
+
 public:  // GLU equivalent methods
     static ccGLMatrixd Frustum(double left,
                                double right,
@@ -143,7 +154,9 @@ public:  // GLU equivalent methods
         {
             double* matrix = outMatrix.data();
 
-            double ymax = znear * std::tan(cloudViewer::DegreesToRadians(fovyInDegrees / 2));
+            double ymax =
+                    znear *
+                    std::tan(cloudViewer::DegreesToRadians(fovyInDegrees / 2));
             double xmax = ymax * aspectRatio;
 
             double dZ = zfar - znear;

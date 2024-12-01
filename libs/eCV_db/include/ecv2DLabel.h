@@ -19,6 +19,7 @@
 #define ECV_2D_LABEL_HEADER
 
 // Local
+#include "ecvGenericDisplayTools.h"
 #include "ecvHObject.h"
 #include "ecvInteractor.h"
 
@@ -140,6 +141,8 @@ public:
         /** This position is updated on each call to drawMeOnly3D
          **/
         CCVector3d pos2D;
+        //! Last known marker scale
+        float markerScale;
         //! Barycentric coordinates (for triangles)
         CCVector2d uv;
         //! Entity center mode (index will be invalid)
@@ -165,6 +168,7 @@ public:
               mesh(nullptr),
               index(0),
               pos2D(0, 0, 0),
+              markerScale(0),
               uv(0, 0),
               entityCenterPoint(false) {}
 
@@ -176,6 +180,7 @@ public:
               mesh(nullptr),
               index(pointIndex),
               pos2D(0, 0, 0),
+              markerScale(0),
               uv(0, 0),
               entityCenterPoint(centerPoint) {}
 
@@ -188,6 +193,7 @@ public:
               mesh(_mesh),
               index(triIindex),
               pos2D(0, 0, 0),
+              markerScale(0),
               uv(_uv),
               entityCenterPoint(centerPoint) {}
     };
@@ -199,6 +205,10 @@ public:
     inline const PickedPoint& getPickedPoint(unsigned index) const {
         return m_pickedPoints[index];
     }
+    //! Returns a given point
+    inline PickedPoint& getPickedPoint(unsigned index) {
+        return m_pickedPoints[index];
+    }
 
     //! Sets marker (relative) scale
     /** Default value: 1.0
@@ -206,6 +216,12 @@ public:
     inline void setRelativeMarkerScale(float scale) {
         m_relMarkerScale = scale;
     }
+
+    //! Point (marker) picking
+    bool pointPicking(const CCVector2d& clickPos,
+                      const ccGLCameraParameters& camera,
+                      int& nearestPointIndex,
+                      double& nearestSquareDist) const;
 
 protected:
     //! One-point label info

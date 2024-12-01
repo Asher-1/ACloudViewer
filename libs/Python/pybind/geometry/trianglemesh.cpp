@@ -639,7 +639,7 @@ void pybind_trianglemesh(py::module& m) {
                         "vidx2"_a)
             .def_static(
                     "triangulate",
-                    [](ccGenericPointCloud& cloud, CC_TRIANGULATION_TYPES type,
+                    [](ccGenericPointCloud& cloud, cloudViewer::TRIANGULATION_TYPES type,
                        bool update_normals, PointCoordinateType max_edge_length,
                        unsigned char dim) {
                         return std::shared_ptr<ccMesh>(ccMesh::Triangulate(
