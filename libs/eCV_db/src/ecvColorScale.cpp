@@ -19,12 +19,21 @@
 
 // Qt
 #include <QUuid>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
 // cloudViewer
 #include <CVGeom.h>
 
 // Local
 #include "CVLog.h"
+
+static const QString s_xmlACloudViewer("ACloudViewer");
+static const QString s_xmlCloudCompare("CloudCompare");
+static const QString s_xmlColorScaleTitle("ColorScale");
+static const QString s_xmlColorScaleProperties("Properties");
+static const QString s_xmlColorScaleData("Data");
+constexpr int s_xmlColorScaleVer = 1;
 
 ccColorScale::Shared ccColorScale::Create(const QString& name) {
     return ccColorScale::Shared(new ccColorScale(name));
@@ -323,15 +332,6 @@ void ccColorScale::getAbsoluteBoundaries(double& minVal, double& maxVal) const {
     maxVal = m_absoluteMinValue + m_absoluteRange;
 }
 
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
-
-static QString s_xmlACloudViewer = "ACloudViewer";
-static QString s_xmlColorScaleTitle = "ColorScale";
-static QString s_xmlColorScaleProperties = "Properties";
-static QString s_xmlColorScaleData = "Data";
-static int s_xmlColorScaleVer = 1;
-
 bool ccColorScale::saveAsXML(QString filename) const {
     QFile file(filename);
     if (!file.open(QFile::WriteOnly | QFile::Text)) {
@@ -435,7 +435,7 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         CVLog::Error(
                 QString("Failed to open file '%1' for reading!").arg(filename));
-        return Shared(0);
+        return Shared(nullptr);
     }
 
     Shared scale(0);
@@ -445,9 +445,10 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
     bool error = true;
     while (true)  // fake loop for easy break
     {
-        // expected: CLOUDVIEWER
+        // expected: CLOUDVIEWER or
         if (!stream.readNextStartElement() ||
-            stream.name() != s_xmlACloudViewer) {
+            (stream.name() != s_xmlACloudViewer &&
+             stream.name() != s_xmlCloudCompare)) {
             break;
         }
 
@@ -484,7 +485,9 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
         // read elements
         int missingItems = 3;
         while (!stream.atEnd() && missingItems > 0) {
-            stream.readNextStartElement();
+            if (!stream.readNextStartElement()) {
+                break;
+            }
             QStringRef itemName = stream.name();
             QString itemValue = stream.readElementText();
             CVLog::Print(QString("[XML] Item '%1': '%2'")
@@ -578,7 +581,7 @@ ccColorScale::Shared ccColorScale::LoadFromXML(QString filename) {
                         dataError = true;
                         break;
                     }
-										
+
                     double value = std::numeric_limits<double>::quiet_NaN();
                     QString text;
                     for (int i = 0; i < attributes.size(); ++i) {

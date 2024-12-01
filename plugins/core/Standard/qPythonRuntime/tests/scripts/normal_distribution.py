@@ -1,8 +1,8 @@
-import cvcorelib
+import cccorelib
 import numpy as np
 import pycc
 
-d = cvcorelib.NormalDistribution(1.0, 0.5)
+d = cccorelib.NormalDistribution(1.0, 0.5)
 
 mu, sigma2 = d.getParameters()
 assert mu == 1.0 == d.getMu()

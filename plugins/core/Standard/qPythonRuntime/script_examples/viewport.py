@@ -1,14 +1,14 @@
 import pycc
-import cvcorelib
+import cccorelib
 
 CC = pycc.GetInstance()
 
 pc = CC.getSelectedEntities()[0]
 
-bbMin, bbMax = cvcorelib.CCVector3(), cvcorelib.CCVector3()
+bbMin, bbMax = cccorelib.CCVector3(), cccorelib.CCVector3()
 pc.getBoundingBox(bbMin, bbMax)
 center = (bbMax - bbMin) / 2
-center = cvcorelib.CCVector3d(*center)
+center = cccorelib.CCVector3d(*center)
 
 vp = pycc.ecvViewportParameters()
 vp.setCameraCenter(center, False)

@@ -30,7 +30,7 @@ using namespace pybind11::literals;
 
 void define_ccDisplayTools(py::module &m)
 {
-    py::class_<ecvDisplayTools, ecvGenericDisplayTools> PyccDisplayTools(m, "ecvDisplayTools");
+    py::class_<ecvDisplayTools, ecvGenericDisplayTools> PyccDisplayTools(m, "ccDisplayTools");
     py::enum_<ecvDisplayTools::PICKING_MODE> PyPickingMode(PyccDisplayTools, "PICKING_MODE");
     py::enum_<ecvDisplayTools::INTERACTION_FLAG> PyInteractionFlag(
         PyccDisplayTools, "INTERACTION_FLAG", py::arithmetic());

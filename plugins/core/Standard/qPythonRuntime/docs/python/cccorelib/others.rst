@@ -8,7 +8,7 @@ GenericProgressCallback
 
     C++: :cpp:class:`cloudViewer::GenericProgressCallback`
 
-.. autoclass:: cvcorelib.GenericProgressCallback
+.. autoclass:: cccorelib.GenericProgressCallback
    :members:
    :undoc-members:
 
@@ -19,6 +19,6 @@ NormalizedProgress
 
     C++: :cpp:class:`cloudViewer::NormalizedProgress`
 
-.. autoclass:: cvcorelib.NormalizedProgress
+.. autoclass:: cccorelib.NormalizedProgress
    :members:
    :undoc-members:

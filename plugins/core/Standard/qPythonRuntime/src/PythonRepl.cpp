@@ -196,7 +196,7 @@ void PythonRepl::reset()
 void PythonRepl::importNeededPackages()
 {
     executeCode(replArrows + "import pycc");
-    executeCode(replArrows + "import cvcorelib");
+    executeCode(replArrows + "import cccorelib");
     executeCode(replArrows + "cc = pycc.GetInstance()");
 }
 

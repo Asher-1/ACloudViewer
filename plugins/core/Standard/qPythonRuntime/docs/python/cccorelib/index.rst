@@ -1,7 +1,7 @@
-cvcorelib (Python)
+cccorelib (Python)
 ==================
 
-cvcorelib defines some data structures and interfaces/methods
+cccorelib defines some data structures and interfaces/methods
 of these data structures.
 
 But the things that will probably interest you are the tools.

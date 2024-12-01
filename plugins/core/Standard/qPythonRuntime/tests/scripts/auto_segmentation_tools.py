@@ -1,12 +1,12 @@
-import cvcorelib
+import cccorelib
 import pycc
 
 
 def test_enlarge_box():
-    dimMin = cvcorelib.CCVector3(0, 0, 0)
-    dimMax = cvcorelib.CCVector3(1, 1, 1)
+    dimMin = cccorelib.CCVector3(0, 0, 0)
+    dimMax = cccorelib.CCVector3(1, 1, 1)
 
-    cvcorelib.CCMiscTools.EnlargeBox(dimMin, dimMax, 2.0)
+    cccorelib.CCMiscTools.EnlargeBox(dimMin, dimMax, 2.0)
     assert dimMin.x == -1.0
     assert dimMin.y == -1.0
     assert dimMin.z == -1.0
@@ -16,10 +16,10 @@ def test_enlarge_box():
 
 
 def test_make_min_and_max_cubical():
-    dimMin = cvcorelib.CCVector3(0, 0, 0)
-    dimMax = cvcorelib.CCVector3(1, 0.5, 0.75)
+    dimMin = cccorelib.CCVector3(0, 0, 0)
+    dimMax = cccorelib.CCVector3(1, 0.5, 0.75)
 
-    cvcorelib.CCMiscTools.MakeMinAndMaxCubical(dimMin, dimMax, 1.0)
+    cccorelib.CCMiscTools.MakeMinAndMaxCubical(dimMin, dimMax, 1.0)
     print(dimMin, dimMax)
     assert dimMin.x == -0.5
     assert dimMin.y == -0.75
@@ -30,35 +30,35 @@ def test_make_min_and_max_cubical():
 
 
 def test_tribox_overlap():
-    boxCenter = cvcorelib.CCVector3(0, 0, 0)
-    boxHalfSize = cvcorelib.CCVector3(0.5, 0.5, 0.5)
+    boxCenter = cccorelib.CCVector3(0, 0, 0)
+    boxHalfSize = cccorelib.CCVector3(0.5, 0.5, 0.5)
 
     triangle = [
-        cvcorelib.CCVector3(0.25, 0.25, 0.25),
-        cvcorelib.CCVector3(2.0, 2.0, 0.25),
-        cvcorelib.CCVector3(0.75, 1.25, 1.0)
+        cccorelib.CCVector3(0.25, 0.25, 0.25),
+        cccorelib.CCVector3(2.0, 2.0, 0.25),
+        cccorelib.CCVector3(0.75, 1.25, 1.0)
     ]
 
-    assert cvcorelib.CCMiscTools.TriBoxOverlap(boxCenter, boxHalfSize, triangle)
+    assert cccorelib.CCMiscTools.TriBoxOverlap(boxCenter, boxHalfSize, triangle)
 
-    # TODO: needs CCVector3D to be defined in cvcorelib to be uncommented
-    # boxCenter = cvcorelib.CCVector3d(0, 0, 0)
-    # boxHalfSize = cvcorelib.CCVector3d(0.5, 0.5, 0.5)
+    # TODO: needs CCVector3D to be defined in cccorelib to be uncommented
+    # boxCenter = cccorelib.CCVector3d(0, 0, 0)
+    # boxHalfSize = cccorelib.CCVector3d(0.5, 0.5, 0.5)
     #
     # triangle = [
-    #     cvcorelib.CCVector3d(0.25, 0.25, 0.25),
-    #     cvcorelib.CCVector3d(2.0, 2.0, 0.25),
-    #     cvcorelib.CCVector3d(0.75, 1.25, 1.0)
+    #     cccorelib.CCVector3d(0.25, 0.25, 0.25),
+    #     cccorelib.CCVector3d(2.0, 2.0, 0.25),
+    #     cccorelib.CCVector3d(0.75, 1.25, 1.0)
     # ]
     #
-    # assert cvcorelib.CCMiscTools.TriBoxOverlapd(boxCenter, boxHalfSize, triangle)
+    # assert cccorelib.CCMiscTools.TriBoxOverlapd(boxCenter, boxHalfSize, triangle)
 
 
 def test_connected_components(cloud):
-    _numLabels = cvcorelib.AutoSegmentationTools.labelConnectedComponents(cloud, level=1)
+    _numLabels = cccorelib.AutoSegmentationTools.labelConnectedComponents(cloud, level=1)
 
-    reference_clouds = cvcorelib.ReferenceCloudContainer()
-    success = cvcorelib.AutoSegmentationTools.extractConnectedComponents(cloud, reference_clouds)
+    reference_clouds = cccorelib.ReferenceCloudContainer()
+    success = cccorelib.AutoSegmentationTools.extractConnectedComponents(cloud, reference_clouds)
     assert success
 
 

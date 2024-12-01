@@ -1,5 +1,5 @@
 import pycc
-import cvcorelib
+import cccorelib
 
 
 def test_cc_sphere():
@@ -51,14 +51,14 @@ def test_cc_torus():
 
 
 def test_cc_boc():
-    box = pycc.ccBox(cvcorelib.CCVector3(5.0, 10.0, 4.0))
+    box = pycc.ccBox(cccorelib.CCVector3(5.0, 10.0, 4.0))
     assert box.getTypeName() == "Box"
     dims = box.getDimensions()
     assert dims.x == 5.0
     assert dims.y == 10.0
     assert dims.z == 4.0
 
-    box.setDimensions(cvcorelib.CCVector3(1.0, 2.0, 3.0))
+    box.setDimensions(cccorelib.CCVector3(1.0, 2.0, 3.0))
     dims = box.getDimensions()
     assert dims.x == 1.0
     assert dims.y == 2.0
@@ -72,8 +72,8 @@ def test_cc_dish():
 
 def test_cc_quadric():
     quadric = pycc.ccQuadric(
-        cvcorelib.CCVector2(5.0, 10.0),
-        cvcorelib.CCVector2(10.0, 20.0),
+        cccorelib.CCVector2(5.0, 10.0),
+        cccorelib.CCVector2(10.0, 20.0),
         [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
     )
     assert quadric.getTypeName() == "Quadric"

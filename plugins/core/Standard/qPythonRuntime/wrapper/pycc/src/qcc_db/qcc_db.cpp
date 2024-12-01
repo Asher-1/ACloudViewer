@@ -21,7 +21,7 @@
 #undef slots
 #include <pybind11/pybind11.h>
 
-#include "../../cvcorelib/src/wrappers.h"
+#include "../../cccorelib/src/wrappers.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;

@@ -1,5 +1,5 @@
 import pycc
-import cvcorelib
+import cccorelib
 import numpy as np
 
 CC = pycc.GetInstance()
@@ -21,5 +21,5 @@ polyline.addPointIndex(0, 3)
 
 CC.addToDB(polyline)
 CC.updateUI()
-polyline.getDisplay().display3DLabel("Hello, world", cvcorelib.CCVector3(1, 1,0))
+polyline.getDisplay().display3DLabel("Hello, world", cccorelib.CCVector3(1, 1,0))
 

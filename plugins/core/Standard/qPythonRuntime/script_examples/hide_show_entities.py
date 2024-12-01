@@ -1,6 +1,6 @@
 """ Hides all Selected entities, and re-shows them with a delay
 """
-import cvcorelib
+import cccorelib
 import pycc
 
 from time import sleep

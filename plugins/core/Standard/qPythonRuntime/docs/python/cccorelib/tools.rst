@@ -1,7 +1,7 @@
 CVCoreLib Tools
 ===============
 
-Available tools from cvcorelib.
+Available tools from cccorelib.
 
 CCMiscTools
 -----------
@@ -9,7 +9,7 @@ CCMiscTools
 
     C++: :cpp:class:`cloudViewer::CCMiscTools`
 
-.. autoclass:: cvcorelib.CCMiscTools
+.. autoclass:: cccorelib.CCMiscTools
    :members:
    :undoc-members:
 
@@ -20,7 +20,7 @@ AutoSegmentationTools
 
     C++: :cpp:class:`cloudViewer::AutoSegmentationTools`
 
-.. autoclass:: cvcorelib.AutoSegmentationTools
+.. autoclass:: cccorelib.AutoSegmentationTools
    :members:
    :undoc-members:
 
@@ -31,7 +31,7 @@ DistanceComputationTools
 
     C++: :cpp:class:`cloudViewer::DistanceComputationTools`
 
-.. autoclass:: cvcorelib.DistanceComputationTools
+.. autoclass:: cccorelib.DistanceComputationTools
    :members:
    :undoc-members:
 
@@ -41,7 +41,7 @@ ManualSegmentationTools
 
     C++: :cpp:class:`cloudViewer::ManualSegmentationTools`
 
-.. autoclass:: cvcorelib.ManualSegmentationTools
+.. autoclass:: cccorelib.ManualSegmentationTools
    :members:
    :undoc-members:
 
@@ -51,7 +51,7 @@ ScalarFieldTools
 
     C++: :cpp:class:`cloudViewer::ScalarFieldTools`
 
-.. autoclass:: cvcorelib.ScalarFieldTools
+.. autoclass:: cccorelib.ScalarFieldTools
    :members:
    :undoc-members:
 
@@ -62,7 +62,7 @@ ChamferDistanceTools
 
     C++: :cpp:class:`cloudViewer::ChamferDistanceTransform`
 
-.. autoclass:: cvcorelib.ChamferDistanceTransform
+.. autoclass:: cccorelib.ChamferDistanceTransform
    :members:
    :undoc-members:
 
@@ -73,7 +73,7 @@ CloudSamplingTools
 
     C++: :cpp:class:`cloudViewer::CloudSamplingTools`
 
-.. autoclass:: cvcorelib.CloudSamplingTools
+.. autoclass:: cccorelib.CloudSamplingTools
    :members:
    :undoc-members:
 
@@ -84,7 +84,7 @@ GeometricalAnalysisTools
 
     C++: :cpp:class:`cloudViewer::GeometricalAnalysisTools`
 
-.. autoclass:: cvcorelib.GeometricalAnalysisTools
+.. autoclass:: cccorelib.GeometricalAnalysisTools
    :members:
    :undoc-members:
 
@@ -94,7 +94,7 @@ StatisticalTestingTools
 
     C++: :cpp:class:`cloudViewer::StatisticalTestingTools`
 
-.. autoclass:: cvcorelib.StatisticalTestingTools
+.. autoclass:: cccorelib.StatisticalTestingTools
    :members:
    :undoc-members:
 
@@ -105,7 +105,7 @@ PointProjectionTools
 
     C++: :cpp:class:`cloudViewer::PointProjectionTools`
 
-.. autoclass:: cvcorelib.PointProjectionTools
+.. autoclass:: cccorelib.PointProjectionTools
    :members:
    :undoc-members:
 
@@ -116,6 +116,6 @@ RegistrationTools
 
     C++: :cpp:class:`cloudViewer::RegistrationTools`
 
-.. autoclass:: cvcorelib.RegistrationTools
+.. autoclass:: cccorelib.RegistrationTools
    :members:
    :undoc-members:

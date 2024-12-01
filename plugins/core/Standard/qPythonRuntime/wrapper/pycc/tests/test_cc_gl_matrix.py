@@ -1,6 +1,6 @@
 import pytest
 import pycc
-from cvcorelib import CCVector3d
+from cccorelib import CCVector3d
 import numpy as np
 
 def test_constructors():

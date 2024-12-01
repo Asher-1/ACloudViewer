@@ -226,9 +226,9 @@ jobs:
           echo "CXX=cl.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CC=cl.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: pip install cvcorelib
+      - name: pip install cccorelib
         working-directory: "./wrapper"
-        run: pip install -v .\cvcorelib
+        run: pip install -v .\cccorelib
 
       - name: pip install pycc
         working-directory: "./wrapper"
@@ -237,8 +237,8 @@ jobs:
         env:
           SKBUILD_CONFIGURE_OPTIONS: "-DPLUGIN_STANDARD_QM3C2=ON"
 
-      - name: test cvcorelib
-        run: pytest -v wrapper\cvcorelib\tests
+      - name: test cccorelib
+        run: pytest -v wrapper\cccorelib\tests
 
       - name: test pycc
         run: pytest -v wrapper\pycc\tests
@@ -261,10 +261,10 @@ jobs:
           python -m pip install pytest
 
 
-      - name: pip install cvcorelib
+      - name: pip install cccorelib
         run: |
           source venv/bin/activate
-          python -m pip install -v ./wrapper/cvcorelib
+          python -m pip install -v ./wrapper/cccorelib
 
       - name: pip install pycc
         run: |
@@ -273,10 +273,10 @@ jobs:
         env:
           SKBUILD_CONFIGURE_OPTIONS: "-DPLUGIN_STANDARD_QM3C2=ON"
 
-      - name: test cvcorelib
+      - name: test cccorelib
         run: |
           source venv/bin/activate
-          python -m pytest -v wrapper/cvcorelib/tests
+          python -m pytest -v wrapper/cccorelib/tests
 
       - name: test pycc
         run: |
@@ -299,11 +299,11 @@ jobs:
           python -m pip install pytest
           echo "CMAKE_PREFIX_PATH=$(brew --prefix qt@5)" >> $GITHUB_ENV
 
-      - name: pip install cvcorelib
+      - name: pip install cccorelib
         working-directory: "./wrapper"
         run: |
           source ../venv/bin/activate
-          python -m pip install -v ./cvcorelib
+          python -m pip install -v ./cccorelib
 
       - name: pip install pycc
         working-directory: "./wrapper"
@@ -313,8 +313,8 @@ jobs:
         env:
           SKBUILD_CONFIGURE_OPTIONS: "-DPLUGIN_STANDARD_QM3C2=ON"
 
-      - name: test cvcorelib & pycc
+      - name: test cccorelib & pycc
         run: |
           source venv/bin/activate
-          python -m pytest wrapper/cvcorelib/tests
+          python -m pytest wrapper/cccorelib/tests
           python -m pytest wrapper/pycc/tests

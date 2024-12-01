@@ -7,7 +7,7 @@ CCMiscTools
 -----------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.CCMiscTools`
+    Python: :py:class:`cccorelib.CCMiscTools`
 
 .. doxygenclass:: cloudViewer::CCMiscTools
    :members:
@@ -18,7 +18,7 @@ AutoSegmentationTools
 ---------------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.AutoSegmentationTools`
+    Python: :py:class:`cccorelib.AutoSegmentationTools`
 
 .. doxygenclass:: cloudViewer::AutoSegmentationTools
    :members:
@@ -29,7 +29,7 @@ DistanceComputationTools
 ------------------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.DistanceComputationTools`
+    Python: :py:class:`cccorelib.DistanceComputationTools`
 
 .. doxygenclass:: cloudViewer::DistanceComputationTools
    :members:
@@ -39,7 +39,7 @@ ManualSegmentationTools
 -----------------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.ManualSegmentationTools`
+    Python: :py:class:`cccorelib.ManualSegmentationTools`
 
 .. doxygenclass:: cloudViewer::ManualSegmentationTools
    :members:
@@ -49,7 +49,7 @@ ScalarFieldTools
 ----------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.ScalarFieldTools`
+    Python: :py:class:`cccorelib.ScalarFieldTools`
 
 .. doxygenclass:: cloudViewer::ScalarFieldTools
    :members:
@@ -60,7 +60,7 @@ ChamferDistanceTools
 ---------------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.ChamferDistanceTransform`
+    Python: :py:class:`cccorelib.ChamferDistanceTransform`
 
 .. doxygenclass:: cloudViewer::ChamferDistanceTransform
    :members:
@@ -71,7 +71,7 @@ CloudSamplingTools
 -------------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.CloudSamplingTools`
+    Python: :py:class:`cccorelib.CloudSamplingTools`
 
 .. doxygenclass:: cloudViewer::CloudSamplingTools
    :members:
@@ -82,7 +82,7 @@ GeometricalAnalysisTools
 ------------------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.GeometricalAnalysisTools`
+    Python: :py:class:`cccorelib.GeometricalAnalysisTools`
 
 .. doxygenclass:: cloudViewer::GeometricalAnalysisTools
    :members:
@@ -92,7 +92,7 @@ StatisticalTestingTools
 -----------------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.StatisticalTestingTools`
+    Python: :py:class:`cccorelib.StatisticalTestingTools`
 
 .. doxygenclass:: cloudViewer::StatisticalTestingTools
    :members:
@@ -103,7 +103,7 @@ PointProjectionTools
 --------------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.PointProjectionTools`
+    Python: :py:class:`cccorelib.PointProjectionTools`
 
 .. doxygenclass:: cloudViewer::PointProjectionTools
    :members:
@@ -114,7 +114,7 @@ RegistrationTools
 -----------------
 .. seealso::
 
-    Python: :py:class:`cvcorelib.RegistrationTools`
+    Python: :py:class:`cccorelib.RegistrationTools`
 
 .. doxygenclass:: cloudViewer::RegistrationTools
    :members:

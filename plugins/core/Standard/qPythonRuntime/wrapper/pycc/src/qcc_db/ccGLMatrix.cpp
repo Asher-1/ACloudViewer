@@ -46,7 +46,7 @@ static void define_ccGLMatrixClass(py::module &m, const char *name)
         // creates a function that will create a runtime error when used:
         // ```
         // TypeError: Unable to convert function return value to a Python type! The signature was
-        // (forward: cvcorelib.CCVector3d, up: cvcorelib.CCVector3d) -> ccGLMatrixTpl<double>
+        // (forward: cccorelib.CCVector3d, up: cccorelib.CCVector3d) -> ccGLMatrixTpl<double>
         // ```
         // We have to use a fully typed lambda for it to work.
         // We also provide this function as a __init__ alias

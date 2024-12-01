@@ -1,4 +1,4 @@
-import cvcorelib
+import cccorelib
 import numpy as np
 import pycc
 import pytest
@@ -31,23 +31,23 @@ INDICES = np.array([
     [1, 7, 3]
 ])
 
-def assert_ccvector_are_equal(a: cvcorelib.CCVector3, b: cvcorelib.CCVector3):
+def assert_ccvector_are_equal(a: cccorelib.CCVector3, b: cccorelib.CCVector3):
     assert a.x == b.x
     assert a.y == b.y
     assert a.z == b.z
 
 def expected_points_of_triangle(triangle_index):
-    x = cvcorelib.CCVector3(
+    x = cccorelib.CCVector3(
         VERTICES[INDICES[triangle_index, 0], 0],
         VERTICES[INDICES[triangle_index, 0], 1],
         VERTICES[INDICES[triangle_index, 0], 2]
     )
-    y = cvcorelib.CCVector3(
+    y = cccorelib.CCVector3(
         VERTICES[INDICES[triangle_index, 1], 0],
         VERTICES[INDICES[triangle_index, 1], 1],
         VERTICES[INDICES[triangle_index, 1], 2]
     )
-    z = cvcorelib.CCVector3(
+    z = cccorelib.CCVector3(
         VERTICES[INDICES[triangle_index, 2], 0],
         VERTICES[INDICES[triangle_index, 2], 1],
         VERTICES[INDICES[triangle_index, 2], 2]
@@ -93,7 +93,7 @@ def test_mesh_lifetime_2():
 
 
 def test_getTriangleVertIndexes():
-    x, y, z = cvcorelib.CCVector3(), cvcorelib.CCVector3(), cvcorelib.CCVector3()
+    x, y, z = cccorelib.CCVector3(), cccorelib.CCVector3(), cccorelib.CCVector3()
     mesh, vertices = build_cube_mesh()
 
     for i in range(mesh.size()):
@@ -121,7 +121,7 @@ def test_getTriangleVertIndexes():
 
 
 def test_getTriangleVertices():
-    x, y, z = cvcorelib.CCVector3(), cvcorelib.CCVector3(), cvcorelib.CCVector3()
+    x, y, z = cccorelib.CCVector3(), cccorelib.CCVector3(), cccorelib.CCVector3()
     mesh, _ = build_cube_mesh()
 
     for i in range(mesh.size()):

@@ -30,9 +30,9 @@ functions and data-structures of cloudcompare:
 
 .. code:: Python
 
-    # cvcorelib contains definitions of tools, such as Cloud2Cloud distance,
+    # cccorelib contains definitions of tools, such as Cloud2Cloud distance,
     # sampling algorithm, etc
-    import cvcorelib
+    import cccorelib
 
     # pycc contains definitions of data structures and other things,
     # the most important being getting the current running CC instance
@@ -79,7 +79,7 @@ Similarly a commandline script will start with the following lines:
 
 .. code:: Python
 
-    import cvcorelib
+    import cccorelib
     import pycc
 
     CC = pycc.GetCmdLineInstance()

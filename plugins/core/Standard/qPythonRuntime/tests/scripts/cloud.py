@@ -2,12 +2,12 @@ import math
 import sys
 import numpy as np
 
-import cvcorelib
+import cccorelib
 import pycc
 
 
 def test_foreach_get_bounding_box(cloud):
-    bbMin = cvcorelib.CCVector3(sys.float_info.max, sys.float_info.max, sys.float_info.max)
+    bbMin = cccorelib.CCVector3(sys.float_info.max, sys.float_info.max, sys.float_info.max)
 
     def updatebbMin(point, _scalarValue):
         bbMin.x = min(point.x, bbMin.x)
@@ -16,8 +16,8 @@ def test_foreach_get_bounding_box(cloud):
 
     cloud.forEach(updatebbMin)
 
-    actualMin = cvcorelib.CCVector3()
-    actualMax = cvcorelib.CCVector3()
+    actualMin = cccorelib.CCVector3()
+    actualMax = cccorelib.CCVector3()
     cloud.getBoundingBox(actualMin, actualMax)
 
     assert math.isclose(actualMin.x, bbMin.x)
@@ -38,7 +38,7 @@ def main():
 
     assert cloud.size() == 10683
     point0 = cloud.getNextPoint()
-    assert cloud.testVisibility(point0) == cvcorelib.POINT_VISIBLE
+    assert cloud.testVisibility(point0) == cccorelib.POINT_VISIBLE
 
     point1 = cloud.getNextPoint()
     assert point0 != point1
@@ -58,7 +58,7 @@ def main():
     assert p.y == point1.y
     assert p.z == point1.z
 
-    p2 = cvcorelib.CCVector3()
+    p2 = cccorelib.CCVector3()
     cloud.getPoint(1, p2)
     assert p2.x == point1.x
     assert p2.y == point1.y

@@ -142,7 +142,7 @@ void define_pycc(py::module &m)
         Python module exposing some ACloudViewer functions
     )pbdoc";
 
-    py::module::import("cvcorelib");
+    py::module::import("cccorelib");
 
 #ifdef PYCC_STAND_ALONE
     // When pycc is a standalone python module, there are

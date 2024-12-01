@@ -1,6 +1,6 @@
 """ Demo of using a CloudSamplingTools with a ecvProgressDialog
 """
-import cvcorelib
+import cccorelib
 import pycc
 
 CC = pycc.GetInstance()
@@ -17,7 +17,7 @@ def main():
 
     progress = pycc.ecvProgressDialog()
     progress.start()
-    refcloud = cvcorelib.CloudSamplingTools.subsampleCloudRandomly(pc, pc.size() // 2, progressCb=progress)
+    refcloud = cccorelib.CloudSamplingTools.subsampleCloudRandomly(pc, pc.size() // 2, progressCb=progress)
     randomPc = pc.partialClone(refcloud)
     randomPc.setName("Randomly subsampled")
     CC.addToDB(randomPc)

@@ -1,4 +1,4 @@
-import cvcorelib
+import cccorelib
 import pycc
 
 
@@ -12,10 +12,10 @@ def main():
 
     cloud = cloudDescs[0].pc
 
-    kdtree = cvcorelib.TrueKdTree(cloud)
+    kdtree = cccorelib.TrueKdTree(cloud)
     kdtree.build(2.5)
 
-    leaves = cvcorelib.TrueKdTree.LeafVector()
+    leaves = cccorelib.TrueKdTree.LeafVector()
     kdtree.getLeaves(leaves)
     assert len(leaves) != 0
 

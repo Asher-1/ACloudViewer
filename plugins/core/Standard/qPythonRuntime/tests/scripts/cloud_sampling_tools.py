@@ -1,5 +1,5 @@
 import pycc
-from cvcorelib import CloudSamplingTools
+from cccorelib import CloudSamplingTools
 
 
 def main():

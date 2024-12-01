@@ -8,7 +8,7 @@ CCVector3
 __________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.ccObject`
+    Python: :py:class:`cccorelib.ccObject`
 
 .. doxygentypedef:: CCVector3
    :project: CVCoreLib
@@ -23,7 +23,7 @@ GenericCloud
 ____________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.GenericCloud`
+    Python: :py:class:`cccorelib.GenericCloud`
 
 .. doxygenclass:: cloudViewer::GenericCloud
    :members:
@@ -34,7 +34,7 @@ GenericIndexedCloud
 ___________________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.GenericIndexedCloud`
+    Python: :py:class:`cccorelib.GenericIndexedCloud`
 
 .. doxygenclass:: cloudViewer::GenericIndexedCloud
    :members:
@@ -45,7 +45,7 @@ GenericIndexedCloudPersist
 __________________________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.GenericIndexedCloudPersist`
+    Python: :py:class:`cccorelib.GenericIndexedCloudPersist`
 
 .. doxygenclass:: cloudViewer::GenericIndexedCloudPersist
    :members:
@@ -57,7 +57,7 @@ PointCloud
 __________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.PointCloud`
+    Python: :py:class:`cccorelib.PointCloud`
 
 .. doxygenclass:: cloudViewer::PointCloud
    :members:
@@ -68,7 +68,7 @@ ReferenceCloud
 ______________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.ReferenceCloud`
+    Python: :py:class:`cccorelib.ReferenceCloud`
 
 .. doxygenclass:: cloudViewer::ReferenceCloud
     :members:
@@ -81,7 +81,7 @@ GenericTriangle
 _______________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.GenericTriangle`
+    Python: :py:class:`cccorelib.GenericTriangle`
 
 .. doxygenclass:: cloudViewer::GenericTriangle
     :members:
@@ -92,7 +92,7 @@ GenericMesh
 ___________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.GenericMesh`
+    Python: :py:class:`cccorelib.GenericMesh`
 
 .. doxygenclass:: cloudViewer::GenericMesh
     :members:
@@ -103,7 +103,7 @@ GenericIndexedMesh
 __________________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.GenericIndexedMesh`
+    Python: :py:class:`cccorelib.GenericIndexedMesh`
 
 .. doxygenclass:: cloudViewer::GenericIndexedMesh
     :members:
@@ -114,7 +114,7 @@ Delaunay2dMesh
 ______________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.Delaunay2dMesh`
+    Python: :py:class:`cccorelib.Delaunay2dMesh`
 
 .. doxygenclass:: cloudViewer::Delaunay2dMesh
     :members:
@@ -125,7 +125,7 @@ Polyline
 ________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.Polyline`
+    Python: :py:class:`cccorelib.Polyline`
 
 .. doxygenclass:: cloudViewer::Polyline
     :members:
@@ -136,7 +136,7 @@ SimpleTriangle
 ______________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.SimpleTriangle`
+    Python: :py:class:`cccorelib.SimpleTriangle`
 
 .. doxygenclass:: cloudViewer::SimpleTriangle
     :members:
@@ -147,7 +147,7 @@ SimpleMesh
 __________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.SimpleMesh`
+    Python: :py:class:`cccorelib.SimpleMesh`
 
 .. doxygenclass:: cloudViewer::SimpleMesh
     :members:
@@ -161,7 +161,7 @@ KDTree
 ______
 .. seealso::
 
-    Python: :py:class:`cvcorelib.KDTree`
+    Python: :py:class:`cccorelib.KDTree`
 
 .. doxygenclass:: cloudViewer::KDTree
     :members:
@@ -173,7 +173,7 @@ TrueKdTree
 __________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.TrueKdTree`
+    Python: :py:class:`cccorelib.TrueKdTree`
 
 .. doxygenclass:: cloudViewer::TrueKdTree
     :members:
@@ -188,7 +188,7 @@ GenericOctree
 _____________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.GenericOctree`
+    Python: :py:class:`cccorelib.GenericOctree`
 
 .. doxygenclass:: cloudViewer::GenericOctree
     :members:
@@ -199,7 +199,7 @@ DgmOctree
 _________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.DgmOctree`
+    Python: :py:class:`cccorelib.DgmOctree`
 
 .. doxygenclass:: cloudViewer::DgmOctree
     :members:
@@ -210,7 +210,7 @@ DgmOctreeReferenceCloud
 _______________________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.DgmOctreeReferenceCloud`
+    Python: :py:class:`cccorelib.DgmOctreeReferenceCloud`
 
 .. doxygenclass:: cloudViewer::DgmOctreeReferenceCloud
     :members:
@@ -224,7 +224,7 @@ BoundingBox
 ___________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.BoundingBox`
+    Python: :py:class:`cccorelib.BoundingBox`
 
 .. doxygenclass:: cloudViewer::BoundingBox
     :members:
@@ -236,7 +236,7 @@ ScalarField
 ___________
 .. seealso::
 
-    Python: :py:class:`cvcorelib.ScalarField`
+    Python: :py:class:`cccorelib.ScalarField`
 
 .. doxygenclass:: cloudViewer::ScalarField
     :members:

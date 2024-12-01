@@ -4,7 +4,7 @@ It's an OpenGL rotation, so coordinates are not changed, its just visual
 """
 
 import pycc
-import cvcorelib
+import cccorelib
 import math
 
 
@@ -34,8 +34,8 @@ entity.applyGLTransformation_recursive()
 glRot = pycc.ccGLMatrix()
 glRot.initFromParameters(
     math.radians(45),
-    cvcorelib.CCVector3(0.0, 0.0, 1.0),
-    cvcorelib.CCVector3(0.0, 0.0, 0.0)
+    cccorelib.CCVector3(0.0, 0.0, 1.0),
+    cccorelib.CCVector3(0.0, 0.0, 0.0)
 )
 
 glMat = entity.getGLTransformation()
