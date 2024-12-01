@@ -342,8 +342,8 @@ build_gui_app() {
     set +x # Echo commands off
 
     echo "Build & install ACloudViewer..."
-    make VERBOSE=1 -j"$NPROC"
-    make VERBOSE=1 install -j"$NPROC"
+    make -j"$NPROC"
+    make install -j"$NPROC"
     echo
     popd                                           # PWD=ACloudViewer
 }
