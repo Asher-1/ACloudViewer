@@ -45,7 +45,7 @@ ExternalProject_Add(
         -DGFLAGS=ON
         -DLAPACK=ON
         -DSUITESPARSE=ON
-        -DOPENMP=ON
+        -DOPENMP=${WITH_OPENMP}
         -DBUILD_BENCHMARKS=OFF
         -DBUILD_TESTING=OFF
         -DBUILD_EXAMPLES=OFF
