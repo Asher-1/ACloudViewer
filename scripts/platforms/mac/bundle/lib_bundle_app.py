@@ -75,6 +75,7 @@ class CCAppBundleConfig:
         res = (
             f"--- Frameworks path: {self.frameworks_path} \n"
             f" --- plugin path: {self.plugin_path} \n"
+            f" --- cv_plugin path: {self.cv_plugin_path} \n"
             f" --- embeddedPythonPath: {self.embedded_python_path} \n"
             f" --- embeddedPython:  {self.embedded_python_binary} \n"
             f" --- embeddedPythonLibPath: {self.embedded_python_libpath} \n"

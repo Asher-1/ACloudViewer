@@ -159,15 +159,28 @@ class CCSignBundle:
             (int) : Error code at the end of the process.
 
         """
+        
         # Remove signature in all embedded libs and executable app
         logger.info("Remove {} old signatures".format(self.config.app_name))
         CCSignBundle._remove_signature(self.config.bundle_abs_path)
 
         logger.info("Sign {} dynamic libraries".format(self.config.app_name))
         self._add_signature(self.config.bundle_abs_path)
+        
+        if self.config.embed_python:
+            CCSignBundle._remove_signature(self.config.embedded_python_rootpath)
 
-        logger.info("Add entitlements to {} bundle".format(self.config.app_name))
-        self._add_entitlements(self.config.bundle_abs_path, HARDENED_CCAPP_ENTITLEMENTS)
+            logger.info("Sign Python dynamic libraries")
+            self._add_signature(self.config.embedded_python_rootpath)
+
+            logger.info("Add entitlements to Python binary")
+            self._add_entitlements(self.config.embedded_python_rootpath, PYAPP_ENTITLEMENTS)
+            
+            logger.info("Add entitlements to {} bundle".format(self.config.app_name))
+            self._add_entitlements(self.config.bundle_abs_path, CCAPP_ENTITLEMENTS)
+        else:
+            logger.info("Add entitlements to {} bundle".format(self.config.app_name))
+            self._add_entitlements(self.config.bundle_abs_path, HARDENED_CCAPP_ENTITLEMENTS)
         return 0
 
 
