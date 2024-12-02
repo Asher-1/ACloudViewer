@@ -61,7 +61,7 @@ macro(cloudViewer_add_app SRC_DIR APP_NAME TARGET_NAME)
             AUTOUIC OFF
             )
 
-    target_link_libraries(${TARGET_NAME} PRIVATE ${CLOUDVIEWER_APP_NAME}::${CLOUDVIEWER_APP_NAME} ${ARGN})
+    target_link_libraries(${TARGET_NAME} PRIVATE ${CLOUDVIEWER_APP_NAME}::${CLOUDVIEWER_APP_NAME} 3rdparty_tbb ${ARGN})
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     cloudViewer_show_and_abort_on_warning(${TARGET_NAME})

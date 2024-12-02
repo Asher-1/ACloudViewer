@@ -1,28 +1,23 @@
-# Try to find Intel Thread Building Blocks library and include dir.
-# Once done this will define
-#
-# TBB_FOUND           - true if TBB has been found
-# TBB_INCLUDE_DIR     - where the tbb/parallel_for.h can be found
-# TBB_LIBRARY         - TBB library
-# TBB_MALLOC_LIBRARY  - TBB malloc library
 
-
-if( NOT TBB_INCLUDE_DIR )
-    # try to find the header inside a conda environment first
-    find_path( TBB_INCLUDE_DIR tbb/parallel_for.h
-               HINTS $ENV{CONDA_PREFIX}/include )
+# Try to use pre-installed config
+find_package(TBB CONFIG)
+if(TARGET TBB::tbb)
+    set(TBB_FOUND TRUE)
+else()
+    message(STATUS "Target TBB::tbb not defined, falling back to manual detection")
+    find_path(TBB_INCLUDE_DIR tbb/tbb.h)
+    find_library(TBB_LIBRARY tbb)
+    if(TBB_INCLUDE_DIR AND TBB_LIBRARY)
+        message(STATUS "TBB found: ${TBB_LIBRARY}")
+        add_library(TBB::tbb UNKNOWN IMPORTED)
+        set_target_properties(TBB::tbb PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${TBB_INCLUDE_DIR}"
+            IMPORTED_LOCATION "${TBB_LIBRARY}"
+        )
+        set(TBB_FOUND TRUE)
+    else()
+        set(TBB_FOUND FALSE)
+    endif()
 endif()
 
-if( NOT TBB_LIBRARY )
-    find_library( TBB_LIBRARY tbb
-            HINTS $ENV{CONDA_PREFIX}/lib )
-endif()
-
-if( NOT TBB_MALLOC_LIBRARY )
-    find_library( TBB_MALLOC_LIBRARY tbbmalloc
-            HINTS $ENV{CONDA_PREFIX}/lib )
-endif()
-
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(TBB  DEFAULT_MSG  TBB_INCLUDE_DIR TBB_LIBRARY TBB_MALLOC_LIBRARY)
 

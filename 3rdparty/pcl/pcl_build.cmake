@@ -92,7 +92,7 @@ ExternalProject_Add(
             -DBUILD_surface_on_nurbs=ON
             -DCMAKE_PREFIX_PATH=${CONDA_LIB_DIR}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-        DEPENDS ext_eigen ext_vtk
+        DEPENDS 3rdparty_eigen3 3rdparty_vtk
         BUILD_BYPRODUCTS
             ${PCL_BUILD_BYPRODUCTS}
 )

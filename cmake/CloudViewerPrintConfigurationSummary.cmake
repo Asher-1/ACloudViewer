@@ -66,6 +66,7 @@ function(cloudViewer_print_configuration_summary)
             PNG
             qhullcpp
             librealsense
+            TBB
             tinyfiledialogs
             TinyGLTF
             tinyobjloader

@@ -397,6 +397,9 @@ endif ()
 #         linking with CloudViewer. This is the opposite of the VISIBLE option in
 #         build_3rdparty_library.  Prefer hiding symbols during building 3rd
 #         party libraries, since this option is not supported by the MSVC linker.
+#    GROUPED
+#        add "-Wl,--start-group" libx.a liby.a libz.a "-Wl,--end-group" around
+#        the libraries.
 #    INCLUDE_DIRS
 #        the temporary location where the library headers have been installed.
 #        Trailing slashes have the same meaning as with install(DIRECTORY).
@@ -415,7 +418,7 @@ endif ()
 #        targets on which <name> depends on and that must be built before.
 #
 function(import_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;INCLUDE_ALL;HIDDEN" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES;DEPENDS" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;INCLUDE_ALL;HIDDEN;GROUPED" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES;DEPENDS" ${ARGN})
     if (arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
@@ -456,6 +459,9 @@ function(import_3rdparty_library name)
         else ()
             set(HIDDEN 0)
         endif ()
+        if(arg_GROUPED AND UNIX AND NOT APPLE)
+            target_link_libraries(${name} INTERFACE "-Wl,--start-group")
+        endif()
         foreach (arg_LIBRARY IN LISTS arg_LIBRARIES)
             set(library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
             if (libcount EQUAL 1)
@@ -479,6 +485,9 @@ function(import_3rdparty_library name)
                 set(CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS ${CLOUDVIEWER_HIDDEN_3RDPARTY_LINK_OPTIONS} PARENT_SCOPE)
             endif ()
         endforeach ()
+        if(arg_GROUPED AND UNIX AND NOT APPLE)
+            target_link_libraries(${name} INTERFACE "-Wl,--end-group")
+        endif()
     endif ()
     if (NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
@@ -727,7 +736,7 @@ if (NOT USE_SYSTEM_EIGEN3)
             PUBLIC
             INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS}
             INCLUDE_ALL
-            DEPENDS      ext_eigen
+            DEPENDS ext_eigen
             )
     list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM 3rdparty_eigen3)
 else()
@@ -1136,82 +1145,39 @@ if (NOT USE_SYSTEM_QHULLCPP)
         INCLUDE_DIRS
             src/
         )
-    # build_3rdparty_library(3rdparty_qhull_r DIRECTORY ${QHULL_SOURCE_DIR}
-    #     SOURCES
-    #         src/libqhull_r/global_r.c
-    #         src/libqhull_r/stat_r.c
-    #         src/libqhull_r/geom2_r.c
-    #         src/libqhull_r/poly2_r.c
-    #         src/libqhull_r/merge_r.c
-    #         src/libqhull_r/libqhull_r.c
-    #         src/libqhull_r/geom_r.c
-    #         src/libqhull_r/poly_r.c
-    #         src/libqhull_r/qset_r.c
-    #         src/libqhull_r/mem_r.c
-    #         src/libqhull_r/random_r.c
-    #         src/libqhull_r/usermem_r.c
-    #         src/libqhull_r/userprintf_r.c
-    #         src/libqhull_r/io_r.c
-    #         src/libqhull_r/user_r.c
-    #         src/libqhull_r/rboxlib_r.c
-    #         src/libqhull_r/userprintf_rbox_r.c
-    #     INCLUDE_DIRS
-    #         src/
-    #     DEPENDS
-    #         ext_qhull
-    #         )
-    # build_3rdparty_library(3rdparty_qhullcpp DIRECTORY ${QHULL_SOURCE_DIR}
-    #     SOURCES
-    #         src/libqhullcpp/Coordinates.cpp
-    #         src/libqhullcpp/PointCoordinates.cpp
-    #         src/libqhullcpp/Qhull.cpp
-    #         src/libqhullcpp/QhullFacet.cpp
-    #         src/libqhullcpp/QhullFacetList.cpp
-    #         src/libqhullcpp/QhullFacetSet.cpp
-    #         src/libqhullcpp/QhullHyperplane.cpp
-    #         src/libqhullcpp/QhullPoint.cpp
-    #         src/libqhullcpp/QhullPointSet.cpp
-    #         src/libqhullcpp/QhullPoints.cpp
-    #         src/libqhullcpp/QhullQh.cpp
-    #         src/libqhullcpp/QhullRidge.cpp
-    #         src/libqhullcpp/QhullSet.cpp
-    #         src/libqhullcpp/QhullStat.cpp
-    #         src/libqhullcpp/QhullVertex.cpp
-    #         src/libqhullcpp/QhullVertexSet.cpp
-    #         src/libqhullcpp/RboxPoints.cpp
-    #         src/libqhullcpp/RoadError.cpp
-    #         src/libqhullcpp/RoadLogEvent.cpp
-    #     INCLUDE_DIRS
-    #         src/
-    #     DEPENDS
-    #         ext_qhull
-    #         )
     target_link_libraries(3rdparty_qhullcpp PRIVATE 3rdparty_qhull_r)
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_qhullcpp)
 else()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_qhullcpp)
 endif()
 
+
 # fmt
-if (USE_SYSTEM_FMT)
+if(USE_SYSTEM_FMT)
+    # MSVC >= 17.x required for building fmt 8+
+    # SYCL / DPC++ needs fmt ver <8 or >= 9.2: https://github.com/fmtlib/fmt/issues/3005
     find_package_3rdparty_library(3rdparty_fmt
-            PUBLIC
-            PACKAGE fmt
-            TARGETS fmt::fmt-header-only fmt::fmt
-            )
+        PUBLIC
+        PACKAGE fmt
+        TARGETS fmt::fmt
+    )
     if(NOT 3rdparty_fmt_FOUND)
         set(USE_SYSTEM_FMT OFF)
     endif()
-endif ()
-if (NOT USE_SYSTEM_FMT)
-    # We set the FMT_HEADER_ONLY macro, so no need to actually compile the source
+endif()
+if(NOT USE_SYSTEM_FMT)
     include(${CloudViewer_3RDPARTY_DIR}/fmt/fmt.cmake)
     import_3rdparty_library(3rdparty_fmt
-            PUBLIC
-            INCLUDE_DIRS ${FMT_INCLUDE_DIRS}
-            DEPENDS ext_fmt
-            )
-    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=1)
+        HEADER
+        INCLUDE_DIRS ${FMT_INCLUDE_DIRS}
+        LIB_DIR      ${FMT_LIB_DIR}
+        LIBRARIES    ${FMT_LIBRARIES}
+        DEPENDS      ext_fmt
+    )
+    # FMT 6.0, newer versions may require different flags
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=0)
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
     list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM 3rdparty_fmt)
 else()
     list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM 3rdparty_fmt)
@@ -1311,162 +1277,205 @@ if (BUILD_GUI)
 endif ()
 
 # Filament
-if (BUILD_GUI)
-    set(FILAMENT_RUNTIME_VER "")
-    if (BUILD_FILAMENT_FROM_SOURCE)
-        message(STATUS "Building third-party library Filament from source")
-        if (MSVC OR (CMAKE_C_COMPILER_ID MATCHES ".*Clang" AND
+if(BUILD_GUI)
+    if(USE_SYSTEM_FILAMENT)
+        find_package_3rdparty_library(3rdparty_filament
+            PACKAGE filament
+            TARGETS filament::filament filament::geometry filament::image
+        )
+        if(3rdparty_filament_FOUND)
+            set(FILAMENT_MATC "/usr/bin/matc")
+        else()
+            set(USE_SYSTEM_FILAMENT OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_FILAMENT)
+        set(FILAMENT_RUNTIME_VER "")
+        if(BUILD_FILAMENT_FROM_SOURCE)
+            message(STATUS "Building third-party library Filament from source")
+            if(MSVC OR (CMAKE_C_COMPILER_ID MATCHES ".*Clang" AND
                 CMAKE_CXX_COMPILER_ID MATCHES ".*Clang"
                 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7))
-            set(FILAMENT_C_COMPILER "${CMAKE_C_COMPILER}")
-            set(FILAMENT_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
-        else ()
-            message(STATUS "Filament can only be built with Clang >= 7")
-            # First, check default version, because the user may have configured
-            # a particular version as default for a reason.
-            find_program(CLANG_DEFAULT_CC NAMES clang)
-            find_program(CLANG_DEFAULT_CXX NAMES clang++)
-            if (CLANG_DEFAULT_CC AND CLANG_DEFAULT_CXX)
-                execute_process(COMMAND ${CLANG_DEFAULT_CXX} --version OUTPUT_VARIABLE clang_version)
-                if (clang_version MATCHES "clang version ([0-9]+)")
-                    if (CMAKE_MATCH_1 GREATER_EQUAL 7)
-                        message(STATUS "Using ${CLANG_DEFAULT_CXX} to build Filament")
-                        set(FILAMENT_C_COMPILER "${CLANG_DEFAULT_CC}")
-                        set(FILAMENT_CXX_COMPILER "${CLANG_DEFAULT_CXX}")
-                    endif ()
-                endif ()
-            endif ()
-            # If the default version is not sufficient, look for some specific versions
-            if (NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
-                find_program(CLANG_VERSIONED_CC NAMES clang-12 clang-11 clang-10 clang-9 clang-8 clang-7)
-                find_program(CLANG_VERSIONED_CXX NAMES clang++-12 clang++11 clang++-10 clang++-9 clang++-8 clang++-7)
-                if (CLANG_VERSIONED_CC AND CLANG_VERSIONED_CXX)
-                    set(FILAMENT_C_COMPILER "${CLANG_VERSIONED_CC}")
-                    set(FILAMENT_CXX_COMPILER "${CLANG_VERSIONED_CXX}")
-                    message(STATUS "Using ${CLANG_VERSIONED_CXX} to build Filament")
-                else ()
-                    message(FATAL_ERROR "Need Clang >= 7 to compile Filament from source")
-                endif ()
-            endif ()
-        endif ()
-        if (UNIX AND NOT APPLE)
-            # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
-            # libraries are located at /usr/lib/llvm-{version}/lib, and the default
-            # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
-            # /usr/lib/aarch64-linux-gnu.
-            # For aarch64, the symbolic link path may not work for CMake's
-            # find_library. Therefore, when compiling Filament from source, we
-            # explicitly find the corresponidng path based on the clang version.
-            execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
-            if (clang_version MATCHES "clang version ([0-9]+)")
-                set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
-            endif ()
-        endif ()
-        include(${CloudViewer_3RDPARTY_DIR}/filament/filament_build.cmake)
-    else ()
-        message(STATUS "Using prebuilt third-party library Filament")
-        include(${CloudViewer_3RDPARTY_DIR}/filament/filament_download.cmake)
-        # Set lib directory for filament v1.9.9 on Windows.
-        # Assume newer version if FILAMENT_PRECOMPILED_ROOT is set.
-        if (WIN32 AND NOT FILAMENT_PRECOMPILED_ROOT)
-            if (STATIC_WINDOWS_RUNTIME)
-                set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
-            else ()
-                set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
-            endif ()
-        endif ()
-    endif ()
-    if (APPLE)
-        if (APPLE_AARCH64)
-            set(FILAMENT_RUNTIME_VER arm64)
+                set(FILAMENT_C_COMPILER "${CMAKE_C_COMPILER}")
+                set(FILAMENT_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+            else()
+                message(STATUS "Filament can only be built with Clang >= 7")
+                # First, check default version, because the user may have configured
+                # a particular version as default for a reason.
+                find_program(CLANG_DEFAULT_CC NAMES clang)
+                find_program(CLANG_DEFAULT_CXX NAMES clang++)
+                if(CLANG_DEFAULT_CC AND CLANG_DEFAULT_CXX)
+                    execute_process(COMMAND ${CLANG_DEFAULT_CXX} --version OUTPUT_VARIABLE clang_version)
+                    if(clang_version MATCHES "clang version ([0-9]+)")
+                        if (CMAKE_MATCH_1 GREATER_EQUAL 7)
+                            message(STATUS "Using ${CLANG_DEFAULT_CXX} to build Filament")
+                            set(FILAMENT_C_COMPILER "${CLANG_DEFAULT_CC}")
+                            set(FILAMENT_CXX_COMPILER "${CLANG_DEFAULT_CXX}")
+                        endif()
+                    endif()
+                endif()
+                # If the default version is not sufficient, look for some specific versions
+                if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
+                    find_program(CLANG_VERSIONED_CC NAMES
+                                 clang-19
+                                 clang-18
+                                 clang-17
+                                 clang-16
+                                 clang-15
+                                 clang-14
+                                 clang-13
+                                 clang-12
+                                 clang-11
+                                 clang-10
+                                 clang-9
+                                 clang-8
+                                 clang-7
+                    )
+                    find_program(CLANG_VERSIONED_CXX NAMES
+                                 clang++-19
+                                 clang++-18
+                                 clang++-17
+                                 clang++-16
+                                 clang++-15
+                                 clang++-14
+                                 clang++-13
+                                 clang++-12
+                                 clang++-11
+                                 clang++-10
+                                 clang++-9
+                                 clang++-8
+                                 clang++-7
+                    )
+                    if (CLANG_VERSIONED_CC AND CLANG_VERSIONED_CXX)
+                        set(FILAMENT_C_COMPILER "${CLANG_VERSIONED_CC}")
+                        set(FILAMENT_CXX_COMPILER "${CLANG_VERSIONED_CXX}")
+                        message(STATUS "Using ${CLANG_VERSIONED_CXX} to build Filament")
+                    else()
+                        message(FATAL_ERROR "Need Clang >= 7 to compile Filament from source")
+                    endif()
+                endif()
+            endif()
+            if (UNIX AND NOT APPLE)
+                # Find corresponding libc++ and libc++abi libraries. On Ubuntu,
+                # clang libraries are located at /usr/lib/llvm-{version}/lib,
+                # and the default version will have a sybolic link at
+                # /usr/lib/x86_64-linux-gnu/ or /usr/lib/aarch64-linux-gnu.
+                #
+                # On aarch64, the symbolic link path may not work for CMake's
+                # find_library. Therefore, when compiling Filament from source,
+                # we explicitly find the corresponding path based on the clang
+                # version.
+                execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
+                if(clang_version MATCHES "clang version ([0-9]+)")
+                    set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+                endif()
+            endif()
+            include(${CloudViewer_3RDPARTY_DIR}/filament/filament_build.cmake)
         else()
-            set(FILAMENT_RUNTIME_VER x86_64)
+            message(STATUS "Using prebuilt third-party library Filament")
+            include(${CloudViewer_3RDPARTY_DIR}/filament/filament_download.cmake)
+            # Set lib directory for filament v1.9.9 on Windows.
+            # Assume newer version if FILAMENT_PRECOMPILED_ROOT is set.
+            if (WIN32 AND NOT FILAMENT_PRECOMPILED_ROOT)
+                if (STATIC_WINDOWS_RUNTIME)
+                    set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
+                else()
+                    set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
+                endif()
+            endif()
         endif()
-    endif ()
-    import_3rdparty_library(3rdparty_filament
+        if (APPLE)
+            if (APPLE_AARCH64)
+                set(FILAMENT_RUNTIME_VER arm64)
+            else()
+                set(FILAMENT_RUNTIME_VER x86_64)
+            endif()
+        endif()
+        import_3rdparty_library(3rdparty_filament
             HEADER
             INCLUDE_DIRS ${FILAMENT_ROOT}/include/
             LIB_DIR ${FILAMENT_ROOT}/lib/${FILAMENT_RUNTIME_VER}
             LIBRARIES ${filament_LIBRARIES}
             DEPENDS ext_filament
-            )
-    set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
-    target_link_libraries(3rdparty_filament INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
-    if(UNIX AND NOT APPLE)
-        # For ubuntu, llvm libs are located in /usr/lib/llvm-{version}/lib.
-        # We first search for these paths, and then search CMake's default
-        # search path. LLVM version must be >= 7 to compile Filament.
-        if (NOT CLANG_LIBDIR)
-            set(ubuntu_default_llvm_lib_dirs
-                    /usr/lib/llvm-15/lib
-                    /usr/lib/llvm-14/lib
-                    /usr/lib/llvm-13/lib
-                    /usr/lib/llvm-12/lib
-                    /usr/lib/llvm-11/lib
-                    /usr/lib/llvm-10/lib
-                    /usr/lib/llvm-9/lib
-                    /usr/lib/llvm-8/lib
-                    /usr/lib/llvm-7/lib
-                    )
-            foreach(llvm_lib_dir in ${ubuntu_default_llvm_lib_dirs})
-                message(STATUS "Searching ${llvm_lib_dir} for libc++ and libc++abi")
-                find_library(CPP_LIBRARY    c++    PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
-                find_library(CPPABI_LIBRARY c++abi PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
-                if (CPP_LIBRARY AND CPPABI_LIBRARY)
-                    set(CLANG_LIBDIR ${llvm_lib_dir})
-                    message(STATUS "CLANG_LIBDIR found in ubuntu-default: ${CLANG_LIBDIR}")
-                    break()
-                endif()
-            endforeach()
+        )
+        set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
+        target_link_libraries(3rdparty_filament INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
+        if(UNIX AND NOT APPLE)
+            # For ubuntu, llvm libs are located in /usr/lib/llvm-{version}/lib.
+            # We first search for these paths, and then search CMake's default
+            # search path. LLVM version must be >= 7 to compile Filament.
+            if (NOT CLANG_LIBDIR)
+                message(STATUS "Searching /usr/lib/llvm-[7..19]/lib/ for libc++ and libc++abi")
+                foreach(llvm_ver RANGE 7 19)
+                    set(llvm_lib_dir "/usr/lib/llvm-${llvm_ver}/lib")
+                    find_library(CPP_LIBRARY    c++ PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
+                    find_library(CPPABI_LIBRARY c++abi PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
+                    if (CPP_LIBRARY AND CPPABI_LIBRARY)
+                        set(CLANG_LIBDIR ${llvm_lib_dir})
+                        message(STATUS "CLANG_LIBDIR found in ubuntu-default: ${CLANG_LIBDIR}")
+                        set(LIBCPP_VERSION ${llvm_ver})
+                        break()
+                    endif()
+                endforeach()
+            endif()
+
+            # Fallback to non-ubuntu-default paths. Note that the PATH_SUFFIXES
+            # is not enforced by CMake.
+            if (NOT CLANG_LIBDIR)
+                message(STATUS "Clang C++ libraries not found. Searching other paths...")
+                find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+                             llvm-19/lib
+                             llvm-18/lib
+                             llvm-17/lib
+                             llvm-16/lib
+                             llvm-15/lib
+                             llvm-14/lib
+                             llvm-13/lib
+                             llvm-12/lib
+                             llvm-11/lib
+                             llvm-10/lib
+                             llvm-9/lib
+                             llvm-8/lib
+                             llvm-7/lib
+                )
+                file(REAL_PATH ${CPPABI_LIBRARY} CPPABI_LIBRARY)
+                get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
+                string(REGEX MATCH "llvm-([0-9]+)/lib" _ ${CLANG_LIBDIR})
+                set(LIBCPP_VERSION ${CMAKE_MATCH_1})
+            endif()
+
+            # Find clang libraries at the exact path ${CLANG_LIBDIR}.
+            if (CLANG_LIBDIR)
+                message(STATUS "Using CLANG_LIBDIR: ${CLANG_LIBDIR}")
+            else()
+                message(FATAL_ERROR "Cannot find matching libc++ and libc++abi libraries with version >=7.")
+            endif()
+            find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+            find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+
+            # Ensure that libstdc++ gets linked first.
+            target_link_libraries(3rdparty_filament INTERFACE -lstdc++
+                                  ${CPP_LIBRARY} ${CPPABI_LIBRARY})
+            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY} ${CPPABI_LIBRARY}")
+            if (LIBCPP_VERSION GREATER 11)
+                message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that " 
+                "interferes with the system libunwind.so.8 and may crash Python code when exceptions "
+                "are used. Please consider using libc++ (LLVM) v11.")
+            endif()
         endif()
-
-        # Fallback to non-ubuntu-default paths. Note that the PATH_SUFFIXES
-        # is not enforced by CMake.
-        if (NOT CLANG_LIBDIR)
-            find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
-                    llvm-15/lib
-                    llvm-14/lib
-                    llvm-13/lib
-                    llvm-12/lib
-                    llvm-11/lib
-                    llvm-10/lib
-                    llvm-9/lib
-                    llvm-8/lib
-                    llvm-7/lib
-                    )
-            get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
+        if (APPLE)
+            find_library(CORE_VIDEO CoreVideo)
+            find_library(QUARTZ_CORE QuartzCore)
+            find_library(OPENGL_LIBRARY OpenGL)
+            find_library(METAL_LIBRARY Metal)
+            find_library(APPKIT_LIBRARY AppKit)
+            target_link_libraries(3rdparty_filament INTERFACE ${CORE_VIDEO} ${QUARTZ_CORE} ${OPENGL_LIBRARY} ${METAL_LIBRARY} ${APPKIT_LIBRARY})
+            target_link_options(3rdparty_filament INTERFACE "-fobjc-link-runtime")
         endif()
-
-        # Find clang libraries at the exact path ${CLANG_LIBDIR}.
-        if (CLANG_LIBDIR)
-            message(STATUS "Using CLANG_LIBDIR: ${CLANG_LIBDIR}")
-        else()
-            message(FATAL_ERROR "Cannot find matching libc++ and libc++abi libraries with version >=7.")
-        endif()
-        find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
-        find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
-
-        # Ensure that libstdc++ gets linked first.
-        target_link_libraries(3rdparty_filament INTERFACE -lstdc++
-                ${CPP_LIBRARY} ${CPPABI_LIBRARY})
-        message(STATUS "CPP_LIBRARY: ${CPP_LIBRARY}")
-        message(STATUS "CPPABI_LIBRARY: ${CPPABI_LIBRARY}")
-    endif()
-    if (APPLE)
-        find_library(CORE_VIDEO CoreVideo)
-        find_library(QUARTZ_CORE QuartzCore)
-        find_library(OPENGL_LIBRARY OpenGL)
-        find_library(METAL_LIBRARY Metal)
-        find_library(APPKIT_LIBRARY AppKit)
-        target_link_libraries(3rdparty_filament INTERFACE ${CORE_VIDEO} ${QUARTZ_CORE} ${OPENGL_LIBRARY} ${METAL_LIBRARY} ${APPKIT_LIBRARY})
-        target_link_options(3rdparty_filament INTERFACE "-fobjc-link-runtime")
-    endif()
-
-    if (BUILD_FILAMENT_FROM_SOURCE)
         list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM 3rdparty_filament)
     else()
         list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM 3rdparty_filament)
-    endif()
+    endif() # if(NOT USE_SYSTEM_FILAMENT)
 endif()
 
 # Headless rendering
@@ -1510,14 +1519,21 @@ import_3rdparty_library(3rdparty_msgpack
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_msgpack)
 
 # TBB
-include(${CloudViewer_3RDPARTY_DIR}/mkl/tbb.cmake)
-import_3rdparty_library(3rdparty_tbb
-        INCLUDE_DIRS    ${STATIC_TBB_INCLUDE_DIR}
-        LIB_DIR         ${STATIC_TBB_LIB_DIR}
-        LIBRARIES       ${STATIC_TBB_LIBRARIES}
-        DEPENDS ext_tbb
-        )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_tbb)
+if(USE_SYSTEM_TBB)
+    find_package_3rdparty_library(3rdparty_tbb
+        PACKAGE TBB
+        TARGETS TBB::tbb
+    )
+    if(NOT 3rdparty_tbb_FOUND)
+        set(USE_SYSTEM_TBB OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_TBB)
+    include(${CloudViewer_3RDPARTY_DIR}/mkl/tbb.cmake)
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_tbb)
+else()
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_tbb)
+endif()
 
 # parallelstl
 include(${CloudViewer_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
@@ -1638,16 +1654,17 @@ else ()
     # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
     message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
     import_3rdparty_library(3rdparty_blas
-            HIDDEN
-            INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
-            LIB_DIR ${STATIC_MKL_LIB_DIR}
-            LIBRARIES ${STATIC_MKL_LIBRARIES}
-            DEPENDS ext_tbb ext_mkl_include ext_mkl
-            )
-    if (UNIX)
+        GROUPED
+        HIDDEN
+        INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
+        LIB_DIR      ${STATIC_MKL_LIB_DIR}
+        LIBRARIES    ${STATIC_MKL_LIBRARIES}
+        DEPENDS      3rdparty_tbb ext_mkl_include ext_mkl
+    )
+    if(UNIX)
         target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
         target_link_libraries(3rdparty_blas INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
-    endif ()
+    endif()
     target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_blas)
 endif ()
@@ -1745,25 +1762,47 @@ endif ()
 
 # Stdgpu
 if (BUILD_CUDA_MODULE)
-    include(${CloudViewer_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
-    import_3rdparty_library(3rdparty_stdgpu
+    if(USE_SYSTEM_STDGPU)
+        find_package_3rdparty_library(3rdparty_stdgpu
+            PACKAGE stdgpu
+            TARGETS stdgpu::stdgpu
+        )
+        if(NOT 3rdparty_stdgpu_FOUND)
+            set(USE_SYSTEM_STDGPU OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_STDGPU)
+        include(${CloudViewer_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
+        import_3rdparty_library(3rdparty_stdgpu
             INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
-            LIB_DIR ${STDGPU_LIB_DIR}
-            LIBRARIES ${STDGPU_LIBRARIES}
-            DEPENDS ext_stdgpu
-            )
+            LIB_DIR      ${STDGPU_LIB_DIR}
+            LIBRARIES    ${STDGPU_LIBRARIES}
+            DEPENDS      ext_stdgpu
+        )
+    endif()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_stdgpu)
 endif ()
 
 # embree
-include(${CloudViewer_3RDPARTY_DIR}/embree/embree.cmake)
-import_3rdparty_library(3rdparty_embree
+if(USE_SYSTEM_EMBREE)
+    find_package_3rdparty_library(3rdparty_embree
+        PACKAGE embree
+        TARGETS embree
+    )
+    if(NOT 3rdparty_embree_FOUND)
+        set(USE_SYSTEM_EMBREE OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_EMBREE)
+    include(${CloudViewer_3RDPARTY_DIR}/embree/embree.cmake)
+    import_3rdparty_library(3rdparty_embree
         HIDDEN
         INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-        LIB_DIR ${EMBREE_LIB_DIR}
-        LIBRARIES ${EMBREE_LIBRARIES}
-        DEPENDS ext_embree
-        )
+        LIB_DIR      ${EMBREE_LIB_DIR}
+        LIBRARIES    ${EMBREE_LIBRARIES}
+        DEPENDS      ext_embree
+    )
+endif()
 list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_embree)
 
 # WebRTC
@@ -1900,8 +1939,6 @@ if (BUILD_RECONSTRUCTION)
                 LIBRARIES ${EXT_SUITESPARSE_LIBRARIES}
                 DEPENDS ext_suitesparse
                 )
-        set(SUITESPARSE_TARGET "3rdparty_suitesparse")
-        add_dependencies(3rdparty_suitesparse ext_suitesparse)
         if (NOT WIN32)
             add_dependencies(3rdparty_suitesparse 3rdparty_lapack)
         endif()
@@ -1981,7 +2018,6 @@ if (BUILD_RECONSTRUCTION)
                 LIBRARIES ${EXT_SUITESPARSE_LIBRARIES}
                 DEPENDS ext_suitesparse
                 )
-        set(SUITESPARSE_TARGET "3rdparty_suitesparse")
         add_dependencies(ext_suitesparse ${LAPACK_TARGET})
 
         # ceres
@@ -2000,7 +2036,6 @@ if (BUILD_RECONSTRUCTION)
         add_dependencies(3rdparty_ceres 3rdparty_suitesparse)
 
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${CERES_TARGET}")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${INTERNAL_EIGEN3_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${GLOG_TARGET}")
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM "${GFLAGS_TARGET}")
     endif ()

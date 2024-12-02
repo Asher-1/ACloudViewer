@@ -133,6 +133,21 @@ if (CVCORELIB_USE_QT_CONCURRENT)
             )
 endif ()
 
+# running gui app from the build folder needs tbb.dll to be in the same folder.
+if (WIN32)
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tbb> "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/"
+    )
+else()
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tbb> "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+    )
+endif()
+
 # contrib. libraries support
 if (APPLE)
     target_link_contrib(${PROJECT_NAME} ${ACloudViewer_MAC_FRAMEWORK_DIR})
