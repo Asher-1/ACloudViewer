@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export USE_SYSTEM_FMT=ON
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
