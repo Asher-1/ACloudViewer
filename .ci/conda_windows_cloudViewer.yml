@@ -6,11 +6,11 @@ dependencies:
   - ninja
   - pkg-config
   - eigen=3.4.*
-  - boost=1.84.0 # pcl or vtk
+  - boost=1.84.* # pcl or vtk
   - flann=1.9.*
   - qhull=2020.2
   - xerces-c=3.2.* # reconstruction or PLUGIN_IO_QE57
-  - qt=5.15.8
+  - qt=5.15.*
   - cgal=5.*
   - ffmpeg=6.1.*
   - zlib=1.2.* # PLUGIN_IO_QPHOTOSCAN

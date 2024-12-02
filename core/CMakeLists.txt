@@ -247,7 +247,6 @@ endif ()
 # Enforce 3rd party dependencies
 target_compile_definitions(${PROJECT_NAME} PUBLIC USE_EIGEN)
 cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${INTERNAL_EIGEN3_TARGET})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC CV_CORE_LIB_LIBRARY_BUILD)
 

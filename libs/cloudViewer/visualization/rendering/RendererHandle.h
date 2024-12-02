@@ -26,19 +26,12 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <array>
 #include <cstdint>
 #include <functional>
-
-#define FMT_HEADER_ONLY 1
-#define FMT_STRING_ALIAS 1
-// Including windows.h causes all kinds of #defines like "OPAQUE", "near",
-// "far", causes compile errors with Filament includes, and generally wrecks
-// havoc.
-#ifndef FMT_USE_WINDOWS_H
-#define FMT_USE_WINDOWS_H 0
-#endif
-#include <fmt/format.h>
+#include <type_traits>
 
 namespace cloudViewer {
 
@@ -173,28 +166,34 @@ namespace std {
 template <>
 class hash<cloudViewer::visualization::rendering::REHandle_abstract> {
 public:
-    size_t operator()(const cloudViewer::visualization::rendering::REHandle_abstract&
-                              uid) const {
+    size_t operator()(
+            const cloudViewer::visualization::rendering::REHandle_abstract& uid)
+            const {
         return uid.Hash();
     }
 };
 }  // namespace std
 
 namespace fmt {
-using namespace cloudViewer::visualization;
-template <>
-struct formatter<cloudViewer::visualization::rendering::REHandle_abstract> {
+template <typename T>
+struct formatter<
+        T,
+        std::enable_if_t<std::is_base_of<cloudViewer::visualization::rendering::
+                                                 REHandle_abstract,
+                                         T>::value,
+                         char>> {
     template <typename FormatContext>
-    auto format(const cloudViewer::visualization::rendering::REHandle_abstract& uid,
-                FormatContext& ctx) {
+    auto format(
+            const cloudViewer::visualization::rendering::REHandle_abstract& uid,
+            FormatContext& ctx) const -> decltype(ctx.out()) {
         return format_to(ctx.out(), "[{}, {}, hash: {}]",
-                         cloudViewer::visualization::rendering::REHandle_abstract::
-                                 TypeToString(uid.type),
+                         cloudViewer::visualization::rendering::
+                                 REHandle_abstract::TypeToString(uid.type),
                          uid.GetId(), uid.Hash());
     }
 
     template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) {
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
         return ctx.begin();
     }
 };
