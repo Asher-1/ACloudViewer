@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                          -
+// -                        cloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -49,7 +49,7 @@ Json::Value StringToJson(const std::string &json_str) {
     return json;
 }
 
-std::string JsonToString(const Json::Value json) {
+std::string JsonToString(const Json::Value &json) {
     return Json::writeString(Json::StreamWriterBuilder(), json);
 }
 
