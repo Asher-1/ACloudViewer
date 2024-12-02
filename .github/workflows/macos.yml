@@ -32,10 +32,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-12 is Intel runner, macos-14 is Apple Silicon
+        # macos-15-large is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-14, macos-15]
-        # os: [macos-14]
+        os: [macos-14, macos-15-large]
     env:
       BUILD_SHARED_LIBS: OFF
       BUILD_CUDA_MODULE: OFF
@@ -205,7 +204,7 @@ jobs:
       matrix:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-14, macos-15]
+        os: [macos-14, macos-15-large]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
@@ -421,7 +420,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15]
+        os: [macos-14, macos-15-large]
         # os: [macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
