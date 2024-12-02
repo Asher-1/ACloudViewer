@@ -38,7 +38,7 @@
 namespace cloudViewer {
 namespace utility {
 
-enum class TextColor {
+enum class CV_CORE_LIB_API TextColor {
     Black = 0,
     Red = 1,
     Green = 2,
@@ -49,7 +49,7 @@ enum class TextColor {
     White = 7
 };
 
-struct Logger::Impl {
+struct CV_CORE_LIB_API Logger::Impl {
     // The current print function.
     std::function<void(const std::string &)> print_fcn_;
 
