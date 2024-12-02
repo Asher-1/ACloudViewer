@@ -61,10 +61,10 @@ TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
     EXPECT_FALSE(mesh.HasTriangleNormals());
 
     // Default dtypes.
-    EXPECT_EQ(mesh.GetVertices().GetDevice(), core::Device("CPU:0"));
-    EXPECT_EQ(mesh.GetVertices().GetDtype(), core::Dtype::Float32);
-    EXPECT_EQ(mesh.GetTriangles().GetDevice(), core::Device("CPU:0"));
-    EXPECT_EQ(mesh.GetTriangles().GetDtype(), core::Dtype::Int64);
+    EXPECT_EQ(mesh.GetVertexPositions().GetDevice(), core::Device("CPU:0"));
+    EXPECT_EQ(mesh.GetVertexPositions().GetDtype(), core::Dtype::Float32);
+    EXPECT_EQ(mesh.GetTriangleIndices().GetDevice(), core::Device("CPU:0"));
+    EXPECT_EQ(mesh.GetTriangleIndices().GetDtype(), core::Dtype::Int64);
 }
 
 TEST_P(TriangleMeshPermuteDevices, ConstructFromVertices) {
@@ -87,14 +87,14 @@ TEST_P(TriangleMeshPermuteDevices, ConstructFromVertices) {
             core::TensorList::FromTensor(triangles, /*inplace=*/false));
 
     EXPECT_TRUE(mesh.HasVertices());
-    EXPECT_EQ(mesh.GetVertices().GetSize(), 10);
-    mesh.GetVertices().PushBack(single_vertex);
-    EXPECT_EQ(mesh.GetVertices().GetSize(), 11);
+    EXPECT_EQ(mesh.GetVertexPositions().GetSize(), 10);
+    mesh.GetVertexPositions().PushBack(single_vertex);
+    EXPECT_EQ(mesh.GetVertexPositions().GetSize(), 11);
 
     EXPECT_TRUE(mesh.HasTriangles());
-    EXPECT_EQ(mesh.GetTriangles().GetSize(), 10);
-    mesh.GetTriangles().PushBack(single_triangle);
-    EXPECT_EQ(mesh.GetTriangles().GetSize(), 11);
+    EXPECT_EQ(mesh.GetTriangleIndices().GetSize(), 10);
+    mesh.GetTriangleIndices().PushBack(single_triangle);
+    EXPECT_EQ(mesh.GetTriangleIndices().GetSize(), 11);
 
     // Inplace tensorlist: cannot push_back.
     mesh = t::geometry::TriangleMesh(
@@ -102,12 +102,12 @@ TEST_P(TriangleMeshPermuteDevices, ConstructFromVertices) {
             core::TensorList::FromTensor(triangles, /*inplace=*/true));
 
     EXPECT_TRUE(mesh.HasVertices());
-    EXPECT_EQ(mesh.GetVertices().GetSize(), 10);
-    EXPECT_ANY_THROW(mesh.GetVertices().PushBack(single_vertex));
+    EXPECT_EQ(mesh.GetVertexPositions().GetSize(), 10);
+    EXPECT_ANY_THROW(mesh.GetVertexPositions().PushBack(single_vertex));
 
     EXPECT_TRUE(mesh.HasTriangles());
-    EXPECT_EQ(mesh.GetTriangles().GetSize(), 10);
-    EXPECT_ANY_THROW(mesh.GetTriangles().PushBack(single_triangle));
+    EXPECT_EQ(mesh.GetTriangleIndices().GetSize(), 10);
+    EXPECT_ANY_THROW(mesh.GetTriangleIndices().PushBack(single_triangle));
 }
 
 TEST_P(TriangleMeshPermuteDevices, SynchronizedPushBack) {
@@ -129,23 +129,23 @@ TEST_P(TriangleMeshPermuteDevices, SynchronizedPushBack) {
 
     // Exception cases are tested in TensorListMap::SynchronizedPushBack().
     std::unordered_map<std::string, core::Tensor> vertex_struct;
-    EXPECT_EQ(mesh.GetVertices().GetSize(), 10);
+    EXPECT_EQ(mesh.GetVertexPositions().GetSize(), 10);
     EXPECT_EQ(mesh.GetVertexColors().GetSize(), 10);
     mesh.VertexSynchronizedPushBack({
             {"vertices", core::Tensor::Ones({3}, core::Dtype::Float32, device)},
             {"colors", core::Tensor::Ones({3}, core::Dtype::Float32, device)},
     });
-    EXPECT_EQ(mesh.GetVertices().GetSize(), 11);
+    EXPECT_EQ(mesh.GetVertexPositions().GetSize(), 11);
     EXPECT_EQ(mesh.GetVertexColors().GetSize(), 11);
 
     std::unordered_map<std::string, core::Tensor> triangle_struct;
-    EXPECT_EQ(mesh.GetTriangles().GetSize(), 5);
+    EXPECT_EQ(mesh.GetTriangleIndices().GetSize(), 5);
     EXPECT_EQ(mesh.GetTriangleNormals().GetSize(), 5);
     mesh.TriangleSynchronizedPushBack({
             {"triangles", core::Tensor::Ones({3}, core::Dtype::Int64, device)},
             {"normals", core::Tensor::Ones({3}, core::Dtype::Float32, device)},
     });
-    EXPECT_EQ(mesh.GetTriangles().GetSize(), 6);
+    EXPECT_EQ(mesh.GetTriangleIndices().GetSize(), 6);
     EXPECT_EQ(mesh.GetTriangleNormals().GetSize(), 6);
 }
 
@@ -172,7 +172,7 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
     mesh.SetTriangleNormals(triangle_normals);
     mesh.SetTriangleAttr("labels", triangle_labels);
 
-    EXPECT_TRUE(mesh.GetVertices().AsTensor().AllClose(
+    EXPECT_TRUE(mesh.GetVertexPositions().AsTensor().AllClose(
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device)));
     EXPECT_TRUE(mesh.GetVertexColors().AsTensor().AllClose(
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 2));
@@ -180,7 +180,7 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3));
     EXPECT_ANY_THROW(mesh.GetVertexNormals());
 
-    EXPECT_TRUE(mesh.GetTriangles().AsTensor().AllClose(
+    EXPECT_TRUE(mesh.GetTriangleIndices().AsTensor().AllClose(
             core::Tensor::Ones({2, 3}, core::Dtype::Int64, device)));
     EXPECT_TRUE(mesh.GetTriangleNormals().AsTensor().AllClose(
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 2));
@@ -188,7 +188,7 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
             core::Tensor::Ones({2, 3}, core::Dtype::Float32, device) * 3));
 
     // Const getters. (void)tl gets rid of the unused variables warning.
-    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertices(); (void)tl);
+    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertexPositions(); (void)tl);
     EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertexColors();
                     (void)tl);
     EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetVertexAttr("labels");
@@ -196,7 +196,7 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
     EXPECT_ANY_THROW(const core::TensorList& tl = mesh.GetVertexNormals();
                      (void)tl);
 
-    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangles(); (void)tl);
+    EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangleIndices(); (void)tl);
     EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangleNormals();
                     (void)tl);
     EXPECT_NO_THROW(const core::TensorList& tl = mesh.GetTriangleAttr("labels");

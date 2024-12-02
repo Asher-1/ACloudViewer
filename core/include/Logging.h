@@ -27,28 +27,24 @@
 #pragma once
 
 #include <functional>
-#include <iostream>
-#include <sstream>
+#include <memory>
 #include <string>
 
 #include "CVCoreLib.h"
 
-#ifndef FMT_HEADER_ONLY
-#define FMT_HEADER_ONLY 1
-#endif
-#ifndef FMT_STRING_ALIAS
-#define FMT_STRING_ALIAS 1
-#endif
 // NVCC does not support deprecated attribute on Windows prior to v11.
 #if defined(__CUDACC__) && defined(_MSC_VER) && __CUDACC_VER_MAJOR__ < 11
 #ifndef FMT_DEPRECATED
 #define FMT_DEPRECATED
 #endif
 #endif
-#include <fmt/format.h>
-#include <fmt/ostream.h>
+
+#include <fmt/core.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
+#if FMT_VERSION >= 100000
+#include <fmt/std.h>
+#endif
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
@@ -79,12 +75,8 @@
 //
 // Usage  : utility::LogError(format_string, arg0, arg1, ...);
 // Example: utility::LogError("name: {}, age: {}", "dog", 5);
-#define LogError(...)                                                  \
-    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, false, \
-                      __VA_ARGS__)
-// Same as LogError but enforce printing the message in the console.
-#define LogErrorConsole(...)                                          \
-    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, true, \
+#define LogError(...)                                                        \
+    Logger::LogError_(__FILE__, __LINE__, static_cast<const char *>(__FN__), \
                       __VA_ARGS__)
 
 // LogWarning is used if an error occurs, but the error is also signaled
@@ -95,12 +87,8 @@
 //
 // Usage  : utility::LogWarning(format_string, arg0, arg1, ...);
 // Example: utility::LogWarning("name: {}, age: {}", "dog", 5);
-#define LogWarning(...)                                                  \
-    Logger::_LogWarning(__FILE__, __LINE__, (const char *)__FN__, false, \
-                        __VA_ARGS__)
-// Same as LogWarning but enforce printing the message in the console.
-#define LogWarningConsole(...)                                          \
-    Logger::_LogWarning(__FILE__, __LINE__, (const char *)__FN__, true, \
+#define LogWarning(...)                                                        \
+    Logger::LogWarning_(__FILE__, __LINE__, static_cast<const char *>(__FN__), \
                         __VA_ARGS__)
 
 // LogInfo is used to inform the user with expected output, e.g, pressed a
@@ -108,12 +96,8 @@
 //
 // Usage  : utility::LogInfo(format_string, arg0, arg1, ...);
 // Example: utility::LogInfo("name: {}, age: {}", "dog", 5);
-#define LogInfo(...)                                                  \
-    Logger::_LogInfo(__FILE__, __LINE__, (const char *)__FN__, false, \
-                     __VA_ARGS__)
-// Same as LogInfo but enforce printing the message in the console.
-#define LogInfoConsole(...)                                          \
-    Logger::_LogInfo(__FILE__, __LINE__, (const char *)__FN__, true, \
+#define LogInfo(...)                                                        \
+    Logger::LogInfo_(__FILE__, __LINE__, static_cast<const char *>(__FN__), \
                      __VA_ARGS__)
 
 // LogDebug is used to print debug/additional information on the state of
@@ -121,12 +105,8 @@
 //
 // Usage  : utility::LogDebug(format_string, arg0, arg1, ...);
 // Example: utility::LogDebug("name: {}, age: {}", "dog", 5);
-#define LogDebug(...)                                                  \
-    Logger::_LogDebug(__FILE__, __LINE__, (const char *)__FN__, false, \
-                      __VA_ARGS__)
-// Same as LogDebug but enforce printing the message in the console.
-#define LogDebugConsole(...)                                          \
-    Logger::_LogDebug(__FILE__, __LINE__, (const char *)__FN__, true, \
+#define LogDebug(...)                                                        \
+    Logger::LogDebug_(__FILE__, __LINE__, static_cast<const char *>(__FN__), \
                       __VA_ARGS__)
 
 namespace cloudViewer {
@@ -152,47 +132,8 @@ enum class CV_CORE_LIB_API VerbosityLevel {
     Debug = 3,
 };
 
-enum class CV_CORE_LIB_API TextColor {
-    Black = 0,
-    Red = 1,
-    Green = 2,
-    Yellow = 3,
-    Blue = 4,
-    Magenta = 5,
-    Cyan = 6,
-    White = 7
-};
-
 /// Logger class should be used as a global singleton object (GetInstance()).
 class CV_CORE_LIB_API Logger {
-public:
-    struct CV_CORE_LIB_API Impl {
-        // The current print function.
-        std::function<void(const std::string &)> print_fcn_;
-
-        // The default print function (that prints to console).
-        static std::function<void(const std::string &)> console_print_fcn_;
-
-        // Verbosity level.
-        VerbosityLevel verbosity_level_;
-
-        // Colorize and reset the color of a string, does not work on Windows,
-        std::string ColorString(const std::string &text,
-                                TextColor text_color,
-                                int highlight_text) const {
-            std::ostringstream msg;
-#ifndef _WIN32
-            msg << fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
-                                (int)text_color + 30);
-#endif
-            msg << text;
-#ifndef _WIN32
-            msg << fmt::sprintf("%c[0;m", 0x1B);
-#endif
-            return msg.str();
-        }
-    };
-
 public:
     Logger(Logger const &) = delete;
     void operator=(Logger const &) = delete;
@@ -201,16 +142,18 @@ public:
     static Logger &GetInstance();
 
     /// Overwrite the default print function, this is useful when you want to
-    /// redirect prints rather than printing to stdout. For example, in
-    /// CloudViewer's python binding, the default print function is replaced
-    /// with py::print().
+    /// redirect prints rather than printing to stdout. For example, in Open3D's
+    /// python binding, the default print function is replaced with py::print().
     ///
     /// \param print_fcn The function for printing. It should take a string
     /// input and returns nothing.
     void SetPrintFunction(std::function<void(const std::string &)> print_fcn);
 
-    /// reset the print function to the default one (print to console).
+    /// Reset the print function to the default one (print to console).
     void ResetPrintFunction();
+
+    /// Get the print function used by the Logger.
+    const std::function<void(const std::string &)> GetPrintFunction();
 
     /// Set global verbosity level of CloudViewer.
     ///
@@ -222,79 +165,99 @@ public:
     VerbosityLevel GetVerbosityLevel() const;
 
     template <typename... Args>
-    static void _LogError [[noreturn]] (const char *file_name,
-                                        int line_number,
-                                        const char *function_name,
-                                        bool force_console_log,
+    static void LogError_ [[noreturn]] (const char *file,
+                                        int line,
+                                        const char *function,
                                         const char *format,
                                         Args &&...args) {
-        Logger::GetInstance().VError(file_name, line_number, function_name,
-                                     force_console_log, format,
-                                     fmt::make_format_args(args...));
+        if (sizeof...(Args) > 0) {
+            Logger::GetInstance().VError(
+                    file, line, function,
+                    FormatArgs(format, fmt::make_format_args(args...)));
+        } else {
+            Logger::GetInstance().VError(file, line, function,
+                                         std::string(format));
+        }
     }
     template <typename... Args>
-    static void _LogWarning(const char *file_name,
-                            int line_number,
-                            const char *function_name,
-                            bool force_console_log,
+    static void LogWarning_(const char *file,
+                            int line,
+                            const char *function,
                             const char *format,
                             Args &&...args) {
-        Logger::GetInstance().VWarning(file_name, line_number, function_name,
-                                       force_console_log, format,
-                                       fmt::make_format_args(args...));
+        if (Logger::GetInstance().GetVerbosityLevel() >=
+            VerbosityLevel::Warning) {
+            if (sizeof...(Args) > 0) {
+                Logger::GetInstance().VWarning(
+                        file, line, function,
+                        FormatArgs(format, fmt::make_format_args(args...)));
+            } else {
+                Logger::GetInstance().VWarning(file, line, function,
+                                               std::string(format));
+            }
+        }
     }
     template <typename... Args>
-    static void _LogInfo(const char *file_name,
-                         int line_number,
-                         const char *function_name,
-                         bool force_console_log,
+    static void LogInfo_(const char *file,
+                         int line,
+                         const char *function,
                          const char *format,
                          Args &&...args) {
-        Logger::GetInstance().VInfo(file_name, line_number, function_name,
-                                    force_console_log, format,
-                                    fmt::make_format_args(args...));
+        if (Logger::GetInstance().GetVerbosityLevel() >= VerbosityLevel::Info) {
+            if (sizeof...(Args) > 0) {
+                Logger::GetInstance().VInfo(
+                        file, line, function,
+                        FormatArgs(format, fmt::make_format_args(args...)));
+            } else {
+                Logger::GetInstance().VInfo(file, line, function,
+                                            std::string(format));
+            }
+        }
     }
     template <typename... Args>
-    static void _LogDebug(const char *file_name,
-                          int line_number,
-                          const char *function_name,
-                          bool force_console_log,
+    static void LogDebug_(const char *file,
+                          int line,
+                          const char *function,
                           const char *format,
                           Args &&...args) {
-        Logger::GetInstance().VDebug(file_name, line_number, function_name,
-                                     force_console_log, format,
-                                     fmt::make_format_args(args...));
+        if (Logger::GetInstance().GetVerbosityLevel() >=
+            VerbosityLevel::Debug) {
+            if (sizeof...(Args) > 0) {
+                Logger::GetInstance().VDebug(
+                        file, line, function,
+                        FormatArgs(format, fmt::make_format_args(args...)));
+            } else {
+                Logger::GetInstance().VDebug(file, line, function,
+                                             std::string(format));
+            }
+        }
     }
 
 private:
     Logger();
-public:
-    void VError [[noreturn]] (const char *file_name,
-                              int line_number,
-                              const char *function_name,
-                              bool force_console_log,
-                              const char *format,
-                              fmt::format_args args) const;
-    void VWarning(const char *file_name,
-                  int line_number,
-                  const char *function_name,
-                  bool force_console_log,
-                  const char *format,
-                  fmt::format_args args) const;
-    void VInfo(const char *file_name,
-               int line_number,
-               const char *function_name,
-               bool force_console_log,
-               const char *format,
-               fmt::format_args args) const;
-    void VDebug(const char *file_name,
-                int line_number,
-                const char *function_name,
-                bool force_console_log,
-                const char *format,
-                fmt::format_args args) const;
+    static std::string FormatArgs(const char *format, fmt::format_args args) {
+        std::string err_msg = fmt::vformat(format, args);
+        return err_msg;
+    }
+    void VError [[noreturn]] (const char *file,
+                              int line,
+                              const char *function,
+                              const std::string &message) const;
+    void VWarning(const char *file,
+                  int line,
+                  const char *function,
+                  const std::string &message) const;
+    void VInfo(const char *file,
+               int line,
+               const char *function,
+               const std::string &message) const;
+    void VDebug(const char *file,
+                int line,
+                const char *function,
+                const std::string &message) const;
 
 private:
+    struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 

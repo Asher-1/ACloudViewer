@@ -126,8 +126,8 @@ jobs:
           echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           $env:PKG_CONFIG_PATH = "$env:CONDA_LIB_DIR\lib\pkgconfig;$env:PKG_CONFIG_PATH"
           echo "PKG_CONFIG_PATH=$env:PKG_CONFIG_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          # $env:EIGEN_ROOT_DIR = "$env:CONDA_LIB_DIR/include/eigen3"
-          # echo "EIGEN_ROOT_DIR=$env:EIGEN_ROOT_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $env:EIGEN_ROOT_DIR = "$env:CONDA_LIB_DIR/include/eigen3"
+          echo "EIGEN_ROOT_DIR=$env:EIGEN_ROOT_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
@@ -191,6 +191,7 @@ jobs:
             -DPLUGIN_STANDARD_QSRA=ON `
             -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `
             -DCONDA_PREFIX=$env:CONDA_PREFIX `
+            -DEIGEN_ROOT_DIR="$env:EIGEN_ROOT_DIR" `
             -DBUILD_WITH_CONDA=ON `
             -DBUILD_UNIT_TESTS=OFF `
             ${{ env.SRC_DIR }}
@@ -274,12 +275,16 @@ jobs:
           $env:CONDA_LIB_DIR = Join-Path $env:CONDA_PREFIX "Library"
           $env:PATH = "$env:CONDA_LIB_DIR\;$env:CONDA_LIB_DIR\cmake;$env:PATH"
           echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $env:EIGEN_ROOT_DIR = "$env:CONDA_LIB_DIR/include/eigen3"
+          echo "EIGEN_ROOT_DIR=$env:EIGEN_ROOT_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
+
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\dev\cloudViewer_install" `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
@@ -298,6 +303,8 @@ jobs:
             -DWITH_IPPICV=ON `
             -DWITH_SIMD=ON `
             -DUSE_SIMD=ON `
+            -DUSE_SYSTEM_EIGEN3=ON `
+            -DEIGEN_ROOT_DIR="$env:EIGEN_ROOT_DIR" `
             -DBUILD_RECONSTRUCTION=ON `
             ${{ env.SRC_DIR }}
 

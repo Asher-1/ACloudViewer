@@ -50,7 +50,7 @@ ExternalProject_Add(
         -DBUILD_TESTING=OFF
         -DBUILD_EXAMPLES=OFF
         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-        DEPENDS ${INTERNAL_EIGEN3_TARGET} ${SUITESPARSE_TARGET} ext_gflags ext_glog
+        DEPENDS 3rdparty_eigen3 3rdparty_suitesparse 3rdparty_gflags 3rdparty_glog
 )
 
 ExternalProject_Get_Property(ext_ceres INSTALL_DIR)

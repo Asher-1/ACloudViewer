@@ -345,6 +345,7 @@ build_gui_app() {
     echo "Build & install ACloudViewer..."
     make -j"$NPROC"
     make install -j"$NPROC"
+    ls -hal $CLOUDVIEWER_INSTALL_DIR
     echo
     popd                                           # PWD=ACloudViewer
 }
