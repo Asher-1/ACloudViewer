@@ -116,7 +116,7 @@ ExternalProject_Add(
         -DBUILD_TESTS=OFF
         # -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,version
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        DEPENDS ext_opencv_contrib ext_eigen
+        DEPENDS ext_opencv_contrib 3rdparty_eigen3
 )
 ExternalProject_Get_Property(ext_opencv INSTALL_DIR)
 

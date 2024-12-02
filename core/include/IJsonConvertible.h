@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                          -
+// -                        cloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -29,7 +29,6 @@
 #include "CVCoreLib.h"
 
 #include <Eigen/Core>
-
 #include "Eigen.h"
 
 /// @cond
@@ -100,3 +99,22 @@ public:
 
 }  // namespace utility
 }  // namespace cloudViewer
+
+#include <fmt/format.h>
+
+namespace fmt {
+template <>
+struct formatter<Json::Value> {
+    template <typename FormatContext>
+    auto format(const Json::Value &value, FormatContext &ctx) const
+            -> decltype(ctx.out()) {
+        return format_to(ctx.out(), "{}", cloudViewer::utility::JsonToString(value));
+    }
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+    }
+};
+
+}  // namespace fmt

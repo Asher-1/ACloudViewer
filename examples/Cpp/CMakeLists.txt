@@ -19,11 +19,6 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
         target_link_libraries(${EXAMPLE_CPP_NAME} PUBLIC ${DEPENDENCY})
     endforeach ()
 
-    target_link_libraries(${EXAMPLE_CPP_NAME}
-            PUBLIC
-            ${INTERNAL_EIGEN3_TARGET}
-            )
-
     target_link_libraries(${EXAMPLE_CPP_NAME} PUBLIC CloudViewer::CloudViewer)
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES

@@ -275,15 +275,15 @@ jobs:
           $env:CONDA_LIB_DIR = Join-Path $env:CONDA_PREFIX "Library"
           $env:PATH = "$env:CONDA_LIB_DIR\;$env:CONDA_LIB_DIR\cmake;$env:PATH"
           echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $env:EIGEN_ROOT_DIR = "$env:CONDA_LIB_DIR/include/eigen3"
+          echo "EIGEN_ROOT_DIR=$env:EIGEN_ROOT_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
-
-          $env:EIGEN_ROOT_DIR = "$env:CONDA_LIB_DIR/include/eigen3"
-          echo "EIGEN_ROOT_DIR=$env:EIGEN_ROOT_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\dev\cloudViewer_install" `
