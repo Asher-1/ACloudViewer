@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -36,7 +36,6 @@
 #include "ecvQhull.h"
 #include "ecvTetraMesh.h"
 
-using namespace cloudViewer;
 std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
         const ccPointCloud& pcd,
         double alpha,
@@ -44,19 +43,20 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
         std::vector<size_t>* pt_map) {
     std::vector<size_t> pt_map_computed;
     if (tetra_mesh == nullptr) {
-        utility::LogDebug(
+        cloudViewer::utility::LogDebug(
                 "[CreateFromPointCloudAlphaShape] "
                 "ComputeDelaunayTetrahedralization");
         std::tie(tetra_mesh, pt_map_computed) =
                 cloudViewer::utility::Qhull::ComputeDelaunayTetrahedralization(
                         pcd.getPoints());
         pt_map = &pt_map_computed;
-        utility::LogDebug(
+        cloudViewer::utility::LogDebug(
                 "[CreateFromPointCloudAlphaShape] done "
                 "ComputeDelaunayTetrahedralization");
     }
 
-    utility::LogDebug("[CreateFromPointCloudAlphaShape] init triangle mesh");
+    cloudViewer::utility::LogDebug(
+            "[CreateFromPointCloudAlphaShape] init triangle mesh");
 
     ccPointCloud* baseVertices = new ccPointCloud("vertices");
     assert(baseVertices);
@@ -83,7 +83,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
                     pcd.getPointColor(static_cast<unsigned>((*pt_map)[idx])));
         }
     }
-    utility::LogDebug(
+    cloudViewer::utility::LogDebug(
             "[CreateFromPointCloudAlphaShape] done init triangle mesh");
 
     std::vector<double> vsqn(tetra_mesh->vertices_.size());
@@ -91,7 +91,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
         vsqn[vidx] = tetra_mesh->vertices_[vidx].squaredNorm();
     }
 
-    utility::LogDebug(
+    cloudViewer::utility::LogDebug(
             "[CreateFromPointCloudAlphaShape] add triangles from tetras that "
             "satisfy constraint");
     const auto& verts = tetra_mesh->vertices_;
@@ -126,7 +126,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
 		double dz = tmp.determinant();
         // clang-format on
         if (a == 0) {
-            utility::LogError(
+            cloudViewer::utility::LogError(
                     "[CreateFromPointCloudAlphaShape] invalid tetra in "
                     "TetraMesh");
         }
@@ -144,15 +144,15 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
                     ccMesh::GetOrderedTriangle(tetra(1), tetra(2), tetra(3)));
         }
     }
-    utility::LogDebug(
+    cloudViewer::utility::LogDebug(
             "[CreateFromPointCloudAlphaShape] done add triangles from tetras "
             "that satisfy constraint");
 
-    utility::LogDebug(
+    cloudViewer::utility::LogDebug(
             "[CreateFromPointCloudAlphaShape] remove triangles within "
             "the mesh");
     std::unordered_map<Eigen::Vector3i, int,
-                       utility::hash_eigen<Eigen::Vector3i>>
+                       cloudViewer::utility::hash_eigen<Eigen::Vector3i>>
             triangle_count;
     for (size_t tidx = 0; tidx < mesh->size(); ++tidx) {
         Eigen::Vector3i triangle = mesh->getTriangle(tidx);
@@ -172,11 +172,11 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
         }
     }
     mesh->resize(to_idx);
-    utility::LogDebug(
+    cloudViewer::utility::LogDebug(
             "[CreateFromPointCloudAlphaShape] done remove triangles within "
             "the mesh");
 
-    utility::LogDebug(
+    cloudViewer::utility::LogDebug(
             "[CreateFromPointCloudAlphaShape] remove duplicate triangles and "
             "unreferenced vertices");
 
@@ -192,7 +192,7 @@ std::shared_ptr<ccMesh> ccMesh::CreateFromPointCloudAlphaShape(
         mesh->removeUnreferencedVertices();
     }
 
-    utility::LogDebug(
+    cloudViewer::utility::LogDebug(
             "[CreateFromPointCloudAlphaShape] done remove duplicate triangles "
             "and unreferenced vertices");
 

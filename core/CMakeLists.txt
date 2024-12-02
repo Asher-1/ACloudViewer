@@ -37,7 +37,6 @@ option(CVCORELIB_SCALAR_DOUBLE
 # Add the library (shared or static)
 if (CVCORELIB_SHARED)
     add_library(${PROJECT_NAME} SHARED)
-
     set_target_properties(${PROJECT_NAME}
             PROPERTIES
             CXX_VISIBILITY_PRESET hidden
@@ -45,7 +44,6 @@ if (CVCORELIB_SHARED)
             )
 else ()
     add_library(${PROJECT_NAME} STATIC)
-
     target_compile_definitions(${PROJECT_NAME}
             PRIVATE
             CV_CORE_LIB_STATIC_DEFINE
@@ -53,10 +51,9 @@ else ()
 endif ()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-        # comment inorder to avoid to generate .so.${version}
-        # VERSION ${CLOUDVIEWER_VERSION}
-        DEBUG_POSTFIX d
-        )
+    DEBUG_POSTFIX d
+)
+# add_library( CVCoreLib::CVCoreLib ALIAS CVCoreLib )
 
 # Configure a header file to pass the version settings to the source code
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CloudViewerConfig.h.in"
@@ -94,10 +91,10 @@ target_include_directories( ${PROJECT_NAME}
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
-# Compiler & definitions
+# # Compiler & definitions
 target_compile_features(${PROJECT_NAME}
         PRIVATE
-        cxx_std_14
+        cxx_std_17
         )
 
 set_target_properties(${PROJECT_NAME}
@@ -173,11 +170,13 @@ endif ()
 
 # CGAL (optional)
 if (CVCORELIB_USE_CGAL)
+	# We need to get rid of CGAL CXX flags
     set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
+    # set(CGAL_ALWAYS_ROUND_TO_NEAREST TRUE)
+	# set(CGAL_DONT_OVERRIDE_CMAKE_FLAGS ON CACHE INTERNAL "override CGAL flags" FORCE)
     if (WIN32)
         include(cmake/CGALSupport.cmake)
     else ()
-        set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
         # We do not use CGAL data. This prevents an unnecessary warning by CMake.
         set(CGAL_DATA_DIR "unused")
         find_package(CGAL REQUIRED)
@@ -216,7 +215,6 @@ if (CVCORELIB_USE_CGAL)
             PUBLIC
             CGAL::CGAL
             )
-    #target_link_libraries( ${PROJECT_NAME} PUBLIC ${CGAL_LIBRARIES} )
     # fix debug warning for cgal
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_CGAL_LIB)
 endif ()
@@ -249,7 +247,6 @@ endif ()
 # Enforce 3rd party dependencies
 target_compile_definitions(${PROJECT_NAME} PUBLIC USE_EIGEN)
 cloudViewer_link_3rdparty_libraries(${PROJECT_NAME})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${INTERNAL_EIGEN3_TARGET})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC CV_CORE_LIB_LIBRARY_BUILD)
 
@@ -261,7 +258,19 @@ if (NOT APPLE) # no need to copy targets on macos due to rpath
 endif ()
 
 if (WIN32)
+    # fix undefined symbols on windows
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        WINDOWS_EXPORT_ALL_SYMBOLS ON)
     target_compile_definitions(${PROJECT_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS)
+
+    # fix cloudViewer torch or tensorflow ops dependency issues
+    set(PYTHON_COMPILED_MODULE_DIR
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+    add_custom_command(TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E
+        copy_if_different $<TARGET_FILE:${PROJECT_NAME}> "${PYTHON_COMPILED_MODULE_DIR}"
+    )
 endif ()
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DCV_DEBUG")

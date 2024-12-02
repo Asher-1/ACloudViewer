@@ -11,14 +11,6 @@ else ()
     endif ()
 endif ()
 
-if (${GLIBCXX_USE_CXX11_ABI})
-    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)
-    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for eigen")
-else ()
-    set(CUSTOM_GLIBCXX_USE_CXX11_ABI 0)
-    message(STATUS "add -D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI} support for eigen")
-endif ()
-
 ExternalProject_Add(
         ext_eigen
         PREFIX eigen
@@ -31,6 +23,7 @@ ExternalProject_Add(
         UPDATE_COMMAND ""
         CMAKE_ARGS
             ${EIGEN_ALIGN_FLAGS}
+            # -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
@@ -42,6 +35,6 @@ ExternalProject_Add(
 
 ExternalProject_Get_Property(ext_eigen INSTALL_DIR)
 set(EIGEN_INCLUDE_DIRS ${INSTALL_DIR}/include/eigen3/) # "/" is critical.
-set(EIGEN_CMAKE_FLAGS ${EIGEN_ALIGN_FLAGS} -DEigen3_DIR:PATH=${INSTALL_DIR}/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS} -DEIGEN_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS})
+set(EIGEN_CMAKE_FLAGS ${EIGEN_ALIGN_FLAGS} ${MAC_OMP_FLAGS} -DEigen3_DIR:PATH=${INSTALL_DIR}/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS} -DEIGEN_INCLUDE_DIR=${EIGEN_INCLUDE_DIRS})
 
 

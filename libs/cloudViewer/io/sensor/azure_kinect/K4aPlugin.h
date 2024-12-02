@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -314,3 +314,38 @@ k4a_result_t k4a_transformation_depth_image_to_point_cloud(
 }  // namespace k4a_plugin
 }  // namespace io
 }  // namespace cloudViewer
+
+#include <fmt/format.h>
+
+namespace fmt {
+
+template <>
+struct formatter<k4a_wait_result_t> {
+    template <typename FormatContext>
+    auto format(const k4a_wait_result_t &c, FormatContext &ctx) const
+            -> decltype(ctx.out()) {
+        const char *text = nullptr;
+        switch (c) {
+            case K4A_WAIT_RESULT_SUCCEEDED:
+                text = "K4A_WAIT_RESULT_SUCCEEDED";
+                break;
+            case K4A_WAIT_RESULT_FAILED:
+                text = "K4A_WAIT_RESULT_FAILED";
+                break;
+            case K4A_WAIT_RESULT_TIMEOUT:
+                text = "K4A_WAIT_RESULT_TIMEOUT";
+                break;
+            default:
+                text = "Unknown k4a_wait_result_t";
+                break;
+        }
+        return format_to(ctx.out(), text);
+    }
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+    }
+};
+
+}  // namespace fmt

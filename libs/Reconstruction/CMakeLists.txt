@@ -54,7 +54,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeHelper.cmake NO_POLICY_SCOPE)
 ################################################################################
 
 option(BUILD_COLMAP_GUI "Builds COLMAP GUI" ON)
-option(BOOST_STATIC "With boost static library" ON)
+option(BOOST_STATIC "With boost static library" OFF)
 set(GUI_ENABLED ${BUILD_COLMAP_GUI})
 set(OPENMP_ENABLED ${WITH_OPENMP})
 set(CUDA_ENABLED ${BUILD_CUDA_MODULE})
@@ -67,8 +67,8 @@ set(PROFILING_ENABLED OFF) # Whether to enable google-perftools linker flags
 set(CUDA_ARCHS "Auto" CACHE STRING "List of CUDA architectures for which to \
 generate code, e.g., Auto, All, Maxwell, Pascal, ...")
 
-if (APPLE)
-    message(STATUS "set BOOST_STATIC: OFF on macos")
+if (UNIX OR APPLE)
+    message(STATUS "set BOOST_STATIC: OFF on macos or linux")
     set(BOOST_STATIC OFF)
 endif ()
 
@@ -101,17 +101,32 @@ if (OPENMP_ENABLED)
     find_package(OpenMP QUIET)
 endif ()
 
+# Linux: boost must building from source due to _GLIBCXX_USE_CXX11_ABI=0 issues
+if (APPLE OR WIN32 OR ${GLIBCXX_USE_CXX11_ABI})
+    find_package(Boost REQUIRED COMPONENTS
+                graph
+                filesystem
+                program_options
+                system)
+    # find_package(FreeImage REQUIRED)
+    # find_package(Glog REQUIRED)
+    # find_package(Ceres REQUIRED)
+    # find_package(Metis REQUIRED)
+endif ()
+
 if (NOT APPLE)
     if (WIN32)
         set(BOOST_ROOT "" CACHE PATH "Boost library root directory")
         if (NOT BOOST_ROOT)
-            message(SEND_ERROR "No Boost library root specified (BOOST_ROOT)")
+            message(STATUS "No Boost library root specified (BOOST_ROOT)")
         else ()
             add_definitions("-DBOOST_ROOT=${BOOST_ROOT}")
             add_definitions("-DBOOST_LIBRARYDIR=${BOOST_ROOT}")
         endif ()
     else ()
-        set(BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory")
+        if (NOT ${GLIBCXX_USE_CXX11_ABI})
+            set(BOOST_ROOT "${INTERNAL_BOOST_ROOT}" CACHE PATH "Boost library root directory")
+        endif()
     endif ()
 
     message(STATUS "BOOST ROOT: ${BOOST_ROOT}")
@@ -126,14 +141,8 @@ if (NOT APPLE)
         # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
         add_definitions("-DBOOST_NO_CXX11_SCOPED_ENUMS")
         add_definitions("-DBOOST_NO_CXX11_OVERRIDE")
-        message("disable boost cxx11 on colmap!")
+        message("disable boost cxx11 on ${COLMAP_APP_NAME}!")
     endif ()
-endif ()
-
-if (APPLE)
-    find_package(Ceres REQUIRED)
-    find_package(Glog REQUIRED)
-    find_package(FreeImage REQUIRED)
 endif ()
 
 set(OpenGL_GL_PREFERENCE GLVND)
@@ -214,15 +223,18 @@ else ()
 endif ()
 
 if (CUDA_ENABLED)
-    add_definitions("-DCUDA_ENABLED")
-    #include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SelectCudaComputeArch.cmake)
-    #COLMAP_CUDA_SELECT_NVCC_ARCH_FLAGS(CUDA_ARCH_FLAGS ${CUDA_ARCHS})
+    # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_ARCHITECTURES}")
+    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+        set(CMAKE_CUDA_ARCHITECTURES "native")
+    endif()
 
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} ${CMAKE_CUDA_ARCHITECTURES} ${CUDA_ARCH_FLAGS}")
+    add_definitions("-DCUDA_ENABLED")
+
     # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -D_FORCE_INLINES")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -D_FORCE_INLINES")
+
     # Do not show warnings if the architectures are deprecated.
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
 
     message(STATUS "Enabling CUDA support (version: ${CUDAToolkit_VERSION},"
             " archs: ${CMAKE_CUDA_ARCHITECTURES})")
@@ -266,18 +278,7 @@ if (Qt5_FOUND)
     if (Qt5_POSITION_INDEPENDENT_CODE)
         set(CMAKE_POSITION_INDEPENDENT_CODE ON)
         if (CUDA_ENABLED AND NOT IS_MSVC)
-            set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}--compiler-options=-fPIC")
-        endif ()
-
-        # Workaround for Qt5 CMake config bug under Ubuntu 20.04: https://gitlab.kitware.com/cmake/cmake/-/issues/16915
-        if (${Qt5_VERSION} VERSION_EQUAL "5.12.8" AND TARGET Qt5::Core)
-            get_property(core_options TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS)
-            string(REPLACE "-fPIC" "" new_qt5_core_options ${core_options})
-            set_property(TARGET Qt5::Core PROPERTY INTERFACE_COMPILE_OPTIONS ${new_qt5_core_options})
-            set_property(TARGET Qt5::Core PROPERTY INTERFACE_POSITION_INDEPENDENT_CODE "ON")
-            if (NOT IS_MSVC)
-                set(CMAKE_CXX_COMPILE_OPTIONS_PIE "-fPIC")
-            endif ()
+            set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS}--compiler-options=-fPIC")
         endif ()
     endif ()
 
@@ -291,9 +292,8 @@ endif ()
 
 # Generate source file with version definitions.
 include(GenerateVersionDefinitions)
-
 set(COLMAP_INCLUDE_DIRS
-        ${Boost_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIR}
         ${EIGEN_INCLUDE_DIRS}
         ${GLOG_INCLUDE_DIRS}
         ${FREEIMAGE_INCLUDE_DIRS}
@@ -305,16 +305,27 @@ set(COLMAP_LINK_DIRS
         ${Boost_LIBRARY_DIRS}
         )
 
-set(COLMAP_EXTERNAL_LIBRARIES
+if (WIN32) 
+    set(COLMAP_EXTERNAL_LIBRARIES
+        ${CMAKE_DL_LIBS}
+        Boost::boost
+        Boost::graph
+        Boost::system
+        Boost::filesystem
+        Boost::program_options
+        )
+else()
+    set(COLMAP_EXTERNAL_LIBRARIES
         ${CMAKE_DL_LIBS}
         ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_PROGRAM_OPTIONS_LIBRARY}
         ${Boost_SYSTEM_LIBRARY}
-        ${GLOG_LIBRARIES}
-        ${CERES_LIBRARIES}
-        ${FREEIMAGE_LIBRARIES}
+        # ${GLOG_LIBRARIES}
+        # ${CERES_LIBRARIES}
+        # ${FREEIMAGE_LIBRARIES}
         )
-
+endif()
+        
 if (OPENMP_FOUND)
     list(APPEND COLMAP_EXTERNAL_LIBRARIES ${OpenMP_libomp_LIBRARY})
 endif ()
@@ -422,30 +433,30 @@ set_target_properties(
 
 # Install header files.
 install(DIRECTORY src/
-        DESTINATION include/colmap
+        DESTINATION include/${COLMAP_APP_NAME}
         FILES_MATCHING PATTERN "*.h")
 install(DIRECTORY lib/
-        DESTINATION include/colmap/lib
+        DESTINATION include/${COLMAP_APP_NAME}/lib
         FILES_MATCHING REGEX ".*[.]h|.*[.]hpp|.*[.]inl")
 
 # Generate and install CMake configuration.
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeConfig.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfig.cmake" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfig.cmake"
-        DESTINATION "share/colmap")
+        DESTINATION "share/${COLMAP_APP_NAME}")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeConfigVersion.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfigVersion.cmake" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/COLMAPConfigVersion.cmake"
-        DESTINATION "share/colmap")
+        DESTINATION "share/${COLMAP_APP_NAME}")
 
 # Install find_package scripts for dependencies.
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
-        DESTINATION share/colmap
+        DESTINATION share/${COLMAP_APP_NAME}
         FILES_MATCHING PATTERN "Find*.cmake")
 
 # Install batch scripts under Windows.
 if (IS_MSVC)
-    install(FILES "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/colmap.bat"
+    install(FILES "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/${COLMAP_APP_NAME}.bat"
             "${COLOUDVIEWER_PROJECT_PATH}/scripts/reconstruction/shell/RUN_TESTS.bat"
             DESTINATION "/"  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
             GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)

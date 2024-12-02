@@ -26,7 +26,7 @@ if ( PLUGIN_IO_QSTEP )
 	
 	set( OC_LIBRARIES TKSTEP TKSTEPBase TKSTEPAttr TKSTEP209 TKShHealing TKTopAlgo TKBRep TKGeomBase TKG3d TKG2d TKMath TKernel TKXSBase TKGeomAlgo TKMesh )
 	
-    	target_link_directories( ${PROJECT_NAME} PRIVATE ${OPENCASCADE_LIB_DIR} )
+  target_link_directories( ${PROJECT_NAME} PRIVATE ${OPENCASCADE_LIB_DIR} )
 	target_link_libraries( ${PROJECT_NAME} ${OC_LIBRARIES} )
 
 	if( WIN32 )
@@ -39,7 +39,7 @@ if ( PLUGIN_IO_QSTEP )
 		
 		set( OC_DLLS )
 
-        	foreach( oc_lib ${OC_LIBRARIES} )
+    foreach( oc_lib ${OC_LIBRARIES} )
 			list( APPEND OC_DLLS "${OPENCASCADE_DLL_DIR}/${oc_lib}.dll" )
 		endforeach()
 		

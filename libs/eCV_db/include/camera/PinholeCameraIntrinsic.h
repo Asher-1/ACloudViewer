@@ -72,7 +72,7 @@ public:
     /// \param cy principal point of the Y-axis.
     PinholeCameraIntrinsic(
             int width, int height, double fx, double fy, double cx, double cy);
-    ~PinholeCameraIntrinsic() override;
+    virtual ~PinholeCameraIntrinsic() override;
 
 public:
     /// \brief Set camera intrinsic parameters.

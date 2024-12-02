@@ -45,8 +45,8 @@ ENV NVIDIA_DRIVER_CAPABILITIES all
 
 # for QT
 ENV REFRESHED_AT=2023-06-04\
-    QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
     QT_ROOT=/opt/Qt5.14.2/ \
+    QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
     QT_CI_LOGIN=alicevisionjunk@gmail.com \
     QT_CI_PASSWORD=azerty1. \
     DEBIAN_FRONTEND=noninteractive
@@ -72,11 +72,11 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
         # for opencv
         libavcodec-dev \
         libavformat-dev \
+        libavutil-dev \
         libswscale-dev \
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \
-        libglew-dev \
         # for colmap
         libatlas-base-dev \
         # for package
@@ -100,7 +100,6 @@ RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
         nasm \
         flex \
         fontconfig \
-        mono-complete \
         # for pcl
         libopenni-dev \
         libopenni2-dev \
@@ -159,28 +158,26 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
  && bash Miniconda3-latest-Linux-x86_64.sh -b \
  && rm Miniconda3-latest-Linux-x86_64.sh \
  && conda --version
+ENV CONDA_PREFIX="/root/miniconda3/envs/cloudViewer"
+ENV PATH="/root/miniconda3/envs/cloudViewer/bin:${PATH}"
+RUN conda create -y -n cloudViewer python=${PYTHON_VERSION} \
+ && source activate cloudViewer
 RUN which python \
  && python --version
 
 # fix ubuntu2204 and conda library conflicts about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-RUN echo -e "\ny" | conda install libffi==3.3 
+# RUN echo -e "\ny" | conda install libffi==3.3
 
 # Checkout CloudViewer-ML main branch
 # TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
-RUN git clone https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
 
 # ACloudViewer C++ dependencies
 # Done before copying the full ACloudViewer directory for better Docker caching
 COPY ./util/install_deps_ubuntu.sh /root/ACloudViewer/util/
 RUN /root/ACloudViewer/util/install_deps_ubuntu.sh assume-yes \
  && rm -rf /var/lib/apt/lists/*
-
-# deploy package installer
-WORKDIR /root
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-linux-amd.zip -O "/root/QtIFW-4.6.1-linux-amd.zip"
-RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
-ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
 # Install metslib
 WORKDIR /root
@@ -225,6 +222,7 @@ RUN chmod +x ./qt.run && \
     ./qt.run --verbose --platform minimal --script "/root/qt-installer-noninteractive.qs" && \
     rm qt.run
 ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
+ENV PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib/cmake:$PATH"
 
 # Install vtk
 WORKDIR /root
@@ -245,7 +243,7 @@ RUN tar -zxvf VTK-9.3.1.tar.gz && \
             -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
     make "-j$(nproc)" && \
     make install "-j$(nproc)" && ldconfig && \
-    && rm -rf /root/VTK-9.3.1 /root/VTK-9.3.1.tar.gz
+    rm -rf /root/VTK-9.3.1 /root/VTK-9.3.1.tar.gz
 
 # Install pcl
 RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/pcl-1.14.1.zip -O "/root/pcl-1.14.1.zip"
@@ -269,7 +267,7 @@ COPY ./python/requirements.txt /root/ACloudViewer/python/
 COPY ./python/requirements_jupyter_build.txt /root/ACloudViewer/python/
 COPY ./python/requirements_jupyter_install.txt /root/ACloudViewer/python/
 RUN source /root/ACloudViewer/util/ci_utils.sh \
- && install_python_dependencies with-cuda with-jupyter
+ && install_python_dependencies with-jupyter
 
 # ACloudViewer Jupyter dependencies
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
