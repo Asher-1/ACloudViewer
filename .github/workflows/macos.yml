@@ -32,9 +32,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-15-large is Intel runner, macos-14 is Apple Silicon
+        # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-14, macos-15-large]
+        os: [macos-14, macos-13]
     env:
       BUILD_SHARED_LIBS: OFF
       BUILD_CUDA_MODULE: OFF
@@ -162,7 +162,7 @@ jobs:
   #   permissions:
   #     contents: write  # Release upload
   #   name: Fuse x64 and ARM64 ACloudViewer app
-  #   runs-on: [macos-12]
+  #   runs-on: [macos-13]
   #   needs: [MacOS]
   #   steps:
   #     - name: Checkout source code  # for gh release upload
@@ -202,9 +202,9 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        # macos-12 is Intel runner, macos-14 is Apple Silicon
+        # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-14, macos-15-large]
+        os: [macos-14, macos-13]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
@@ -357,7 +357,7 @@ jobs:
   #   name: Fuse universal2 wheel
   #   permissions:
   #     contents: write  # Release upload
-  #   runs-on: [macos-12]
+  #   runs-on: [macos-13]
   #   needs: [build-wheel]
   #   strategy:
   #     fail-fast: false
@@ -420,7 +420,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15-large]
+        os: [macos-14, macos-13]
         # os: [macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
