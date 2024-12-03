@@ -117,6 +117,7 @@ jobs:
           echo $env:PATH
           echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      # missing xerces-c dep issues
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
@@ -162,7 +163,7 @@ jobs:
             -DPLUGIN_IO_QADDITIONAL=ON `
             -DPLUGIN_IO_QCORE=ON `
             -DPLUGIN_IO_QCSV_MATRIX=ON `
-            -DPLUGIN_IO_QE57=OFF `  # missing xerces-c dep issues
+            -DPLUGIN_IO_QE57=OFF `
             -DPLUGIN_IO_QMESH=ON `
             -DPLUGIN_IO_QPDAL=OFF `
             -DPLUGIN_IO_QPHOTOSCAN=ON `
@@ -270,6 +271,7 @@ jobs:
           python -m pip install -r python/requirements.txt
           python -m pip install -r python/requirements_jupyter_build.txt
 
+      # DGM: use conda eigen3 due to building eigen3 issues on windows
       - name: Config
         run: |
           $env:CONDA_LIB_DIR = Join-Path $env:CONDA_PREFIX "Library"
@@ -303,7 +305,7 @@ jobs:
             -DWITH_IPPICV=ON `
             -DWITH_SIMD=ON `
             -DUSE_SIMD=ON `
-            -DUSE_SYSTEM_EIGEN3=ON ` # use conda eigen3 due to building eigen3 issues on windows
+            -DUSE_SYSTEM_EIGEN3=ON `
             -DEIGEN_ROOT_DIR="$env:EIGEN_ROOT_DIR" `
             -DBUILD_RECONSTRUCTION=ON `
             ${{ env.SRC_DIR }}

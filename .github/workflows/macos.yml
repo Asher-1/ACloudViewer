@@ -90,7 +90,7 @@ jobs:
           # install for the current OS.
           # https://github.com/microsoft/LightGBM/issues/4229
           if [[ ${{ runner.arch}} == "X64"  ]]; then
-            brew unlink libomp
+            # brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
           else # ARM64
@@ -290,7 +290,7 @@ jobs:
 
           # Install libomp 11.1.0. See comment above.
           if [[ ${{ runner.arch}} == "X64"  ]]; then
-            brew unlink libomp
+            # brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
           else # ARM64
