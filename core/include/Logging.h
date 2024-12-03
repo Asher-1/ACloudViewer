@@ -27,7 +27,8 @@
 #pragma once
 
 #include <functional>
-#include <memory>
+#include <iostream>
+#include <sstream>
 #include <string>
 
 #include "CVCoreLib.h"
@@ -132,8 +133,47 @@ enum class CV_CORE_LIB_API VerbosityLevel {
     Debug = 3,
 };
 
+enum class CV_CORE_LIB_API TextColor {
+    Black = 0,
+    Red = 1,
+    Green = 2,
+    Yellow = 3,
+    Blue = 4,
+    Magenta = 5,
+    Cyan = 6,
+    White = 7
+};
+
 /// Logger class should be used as a global singleton object (GetInstance()).
 class CV_CORE_LIB_API Logger {
+public:
+    struct CV_CORE_LIB_API Impl {
+        // The current print function.
+        std::function<void(const std::string &)> print_fcn_;
+
+        // The default print function (that prints to console).
+        static std::function<void(const std::string &)> console_print_fcn_;
+
+        // Verbosity level.
+        VerbosityLevel verbosity_level_;
+
+        // Colorize and reset the color of a string, does not work on Windows,
+        std::string ColorString(const std::string &text,
+                                TextColor text_color,
+                                int highlight_text) const {
+            std::ostringstream msg;
+#ifndef _WIN32
+            msg << fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
+                                (int)text_color + 30);
+#endif
+            msg << text;
+#ifndef _WIN32
+            msg << fmt::sprintf("%c[0;m", 0x1B);
+#endif
+            return msg.str();
+        }
+    };
+
 public:
     Logger(Logger const &) = delete;
     void operator=(Logger const &) = delete;
@@ -257,7 +297,6 @@ private:
                 const std::string &message) const;
 
 private:
-    struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 
