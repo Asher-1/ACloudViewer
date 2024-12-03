@@ -72,6 +72,13 @@ export DEPENDENCY_IMAGE_TAG=${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubun
 
 if [[ "$(docker images -q $DEPENDENCY_IMAGE_TAG 2> /dev/null)" == "" ]]; 
 	then
+
+		if [ "${UBUNTU_VERSION}" = "22.04" ]; then
+        QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5"
+    else 
+        QT_BASE_DIR="/opt/qt515"
+    fi
+
 		docker build \
 			--network host \
 			--build-arg ALL_PROXY=socks5://127.0.0.1:7890 \
@@ -81,6 +88,7 @@ if [[ "$(docker images -q $DEPENDENCY_IMAGE_TAG 2> /dev/null)" == "" ]];
 			--build-arg UBUNTU_VERSION="${UBUNTU_VERSION}" \
 			--build-arg VTK_VERSION="${VTK_VERSION}" \
 			--build-arg PCL_VERSION="${PCL_VERSION}" \
+			--build-arg QT_BASE_DIR="${QT_BASE_DIR}" \
 			--tag "$DEPENDENCY_IMAGE_TAG" \
 			-f docker/Dockerfile_deps${DOCKER_FILE_POSFIX} . 2>&1 | tee docker_build-${DEPENDENCY_IMAGE_NAME}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}.log
 fi
