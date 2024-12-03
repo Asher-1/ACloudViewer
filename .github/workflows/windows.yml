@@ -30,7 +30,7 @@ env:
   CUDA_VERSION: "11.8.0" # CUDA_VERSION: "12.1.0"
   SRC_DIR: "D:\\a\\ACloudViewer\\ACloudViewer"
   BUILD_DIR: "C:\\ACloudViewer\\build"
-  NPROC: 2
+  NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
