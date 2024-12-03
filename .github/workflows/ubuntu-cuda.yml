@@ -11,6 +11,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*.*.*'
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -44,9 +46,11 @@ jobs:
     name: Build and run
     permissions:
       contents: write   # upload
+      actions: write    # release
     runs-on: ubuntu-latest
     needs: [skip-check]
     if: needs.skip-check.outputs.skip == 'no'
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
       fail-fast: false
       matrix:
@@ -76,10 +80,28 @@ jobs:
           docker/docker_build.sh ${CI_CONFIG}
           ls -alh
 
-      - name: Upload package
+      - name: Upload package to GitHub artifacts
         if: ${{ env.BUILD_PACKAGE == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ACloudViewer-devel-linux-x86_64-cuda-${{ matrix.CI_CONFIG }}
           path: ACloudViewer-*run
           if-no-files-found: error
+
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload main-devel ACloudViewer-*.run --clobber
+          gh release view main-devel
+
+      - name: Public Cuda App Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          fail_on_unmatched_files: false
+          generate_release_notes: true
+          prerelease: false
+          files: |
+            ACloudViewer-*.run

@@ -111,13 +111,6 @@ cuda_wheel_build() {
     docker run -v "${PWD}:/opt/mount" --rm cloudviewer-ci:wheel \
         bash -c "cp /root/install/cloudViewer*.whl /opt/mount \
             && chown $(id -u):$(id -g) /opt/mount/cloudViewer*.whl"
-
-    # python_package_dir=/root/ACloudViewer/build/lib/python_package
-    # docker run -v "${PWD}:/opt/mount" --rm cloudviewer-ci:wheel \
-    #     bash -c "cp ${python_package_dir}/pip_package/cloudViewer*.whl /opt/mount \
-    #           && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
-    #           && chown $(id -u):$(id -g) /opt/mount/cloudViewer*.whl \
-    #           && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
 }
 
 ci_build() {
