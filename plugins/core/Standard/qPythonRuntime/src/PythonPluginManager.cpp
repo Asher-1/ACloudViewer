@@ -44,11 +44,24 @@ void PythonPluginManager::loadPluginsFromEntryPoints()
             {
                 entries = entries_dict[group.c_str()];
             }
+            else
+            {
+                plgVerbose() << "No custom plugin registered in site-packages";
+
+                return;
+            }
         }
         else
         {
             entries = metadata.attr("entry_points")("group"_a = group.c_str());
         }
+
+        if (py::len(entries) == 0)
+        {
+            plgWarning() << "No entries found for group: " << QString::fromStdString(group);
+            return;
+        }
+
         for (auto &entry : entries)
         {
             all_entries.push_back(py::cast<py::object>(entry));
