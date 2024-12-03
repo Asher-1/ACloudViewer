@@ -162,7 +162,7 @@ jobs:
             -DPLUGIN_IO_QADDITIONAL=ON `
             -DPLUGIN_IO_QCORE=ON `
             -DPLUGIN_IO_QCSV_MATRIX=ON `
-            -DPLUGIN_IO_QE57=OFF `
+            -DPLUGIN_IO_QE57=OFF `  # missing xerces-c dep issues
             -DPLUGIN_IO_QMESH=ON `
             -DPLUGIN_IO_QPDAL=OFF `
             -DPLUGIN_IO_QPHOTOSCAN=ON `
@@ -303,7 +303,7 @@ jobs:
             -DWITH_IPPICV=ON `
             -DWITH_SIMD=ON `
             -DUSE_SIMD=ON `
-            -DUSE_SYSTEM_EIGEN3=ON `
+            -DUSE_SYSTEM_EIGEN3=ON ` # use conda eigen3 due to building eigen3 issues on windows
             -DEIGEN_ROOT_DIR="$env:EIGEN_ROOT_DIR" `
             -DBUILD_RECONSTRUCTION=ON `
             ${{ env.SRC_DIR }}
