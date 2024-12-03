@@ -12,6 +12,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*.*.*'
   pull_request:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
@@ -28,14 +30,15 @@ jobs:
   MacOS:
     permissions:
       contents: write  # upload
+      actions: write   # release
     runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
       fail-fast: false
       matrix:
-        # macos-12 is Intel runner, macos-14 is Apple Silicon
+        # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-14, macos-15]
-        # os: [macos-14]
+        os: [macos-13, macos-14]
     env:
       BUILD_SHARED_LIBS: OFF
       BUILD_CUDA_MODULE: OFF
@@ -91,7 +94,7 @@ jobs:
           # install for the current OS.
           # https://github.com/microsoft/LightGBM/issues/4229
           if [[ ${{ runner.arch}} == "X64"  ]]; then
-            brew unlink libomp
+            # brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
           else # ARM64
@@ -151,70 +154,51 @@ jobs:
           DEVEL_PKG_NAME="$(basename ~/cloudViewer_install/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
 
-      - name: Upload ACloudViewer app
+      - name: Upload ACloudViewer app to GitHub artifacts
         uses: actions/upload-artifact@v4
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
-          name: ACloudViewer-app-macosx-10_15-${{ runner.arch}}
+          name: ACloudViewer-app-macosx-${{ runner.arch}}
           path: ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
+        
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload main-devel ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }} --clobber
+          gh release view main-devel
 
-  # fuse-viewer:
-  #   permissions:
-  #     contents: write  # Release upload
-  #   name: Fuse x64 and ARM64 ACloudViewer app
-  #   runs-on: [macos-12]
-  #   needs: [MacOS]
-  #   steps:
-  #     - name: Checkout source code  # for gh release upload
-  #       uses: actions/checkout@v4
-  #     - name: Download viewer apps
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         pattern: ACloudViewer-*mac-*
-  #         merge-multiple: true
-
-  #     - name: Fuse x64 and arm64 ACloudViewer apps
-  #       run: |
-  #         unzip ACloudViewer-*-X64.dmg -d x64
-  #         unzip ACloudViewer-*-ARM64.dmg -d arm64
-  #         APP_NAME=$(ls ACloudViewer-*-X64.dmg)
-  #         APP_NAME=${APP_NAME/-X64/-universal2}  # includes version
-  #         for i in arm64/ACloudViewer.app/Contents/MacOS/*; do
-  #           filepath=ACloudViewer.app/Contents/MacOS/$(basename $i)
-  #           lipo -create arm64/${filepath} x64/${filepath} -output arm64/${filepath}
-  #         done
-  #         mv arm64/ACloudViewer.app ACloudViewer.app
-  #         zip -rv "${APP_NAME}" ACloudViewer.app
-
-  #     - name: Upload ACloudViewer app
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ACloudViewer-app-macosx-10_15-universal2
-  #         path: ACloudViewer-*-universal2.zip
-  #         if-no-files-found: error
+      - name: Public App Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          fail_on_unmatched_files: false
+          generate_release_notes: true
+          prerelease: false
+          body_path: ${{github.workspace}}/CHANGELOG.md
+          files: |
+            ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
 
   build-wheel:
     name: Build wheel
     permissions:
       contents: write  # upload
+      actions: write   # release
     runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        # macos-12 is Intel runner, macos-14 is Apple Silicon
+        # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-14, macos-15]
+        os: [macos-13, macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          # TODO: remove macos-14 excludes when https://github.com/actions/setup-python/issues/808 is fixed
-          - os: macos-14
-            python_version: '3.8'
-          - os: macos-14
-            python_version: '3.9'
           - is_main: false
             python_version: '3.8'
           - is_main: false
@@ -291,7 +275,7 @@ jobs:
 
           # Install libomp 11.1.0. See comment above.
           if [[ ${{ runner.arch}} == "X64"  ]]; then
-            brew unlink libomp
+            # brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
           else # ARM64
@@ -347,70 +331,112 @@ jobs:
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudViewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
-      - name: Upload wheel
+      - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PIP_PKG_NAME }}
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
+       
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload main-devel build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
+          gh release view main-devel
 
-  # fuse-wheel:
-  #   name: Fuse universal2 wheel
-  #   permissions:
-  #     contents: write  # Release upload
-  #   runs-on: [macos-12]
-  #   needs: [build-wheel]
-  #   strategy:
-  #     fail-fast: false
-  #     # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
-  #     matrix:
-  #       python_version: ['3.10', '3.11', '3.12']
-  #       is_main:
-  #         - ${{ github.ref == 'refs/heads/main' }}
-  #       exclude:
-  #         - is_main: false
-  #           python_version: '3.10'
-  #         - is_main: false
-  #           python_version: '3.11'
-  #   steps:
-  #     - name: Checkout source code  # for gh release upload
-  #       uses: actions/checkout@v4
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: ${{ matrix.python_version }}
+      - name: Public Wheel Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          fail_on_unmatched_files: false
+          generate_release_notes: true
+          prerelease: false
+          body_path: ${{github.workspace}}/CHANGELOG.md
+          files: |
+            build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 
-  #     - name: Download X64 wheels
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         pattern: cloudViewer-*macosx*_x86_64.whl
-  #         path: x64_wheels
-  #         merge-multiple: true
+  fuse-wheel:
+    name: Fuse universal2 wheel
+    permissions:
+      contents: write  # upload
+      actions: write   # release
+    runs-on: [macos-13]
+    needs: [build-wheel]
+    strategy:
+      fail-fast: false
+      # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
+      matrix:
+        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
+        exclude:
+          - is_main: false
+            python_version: '3.8'
+          - is_main: false
+            python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
+    steps:
+      - name: Checkout source code # for gh release upload
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python_version }}
 
-  #     - name: Download ARM64 wheels
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         pattern: cloudViewer-*macosx*_arm64.whl
-  #         path: arm64_wheels
-  #         merge-multiple: true
+      - name: Download X64 wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cloudViewer-*macosx*_x86_64.whl
+          path: x64_wheels
+          merge-multiple: true
 
-  #     - name: Fuse x64 and ARM64 wheels
-  #       env:
-  #         python_version: ${{ matrix.python_version }}
-  #       run: |
-  #         PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
-  #         mkdir universal_wheels
-  #         pip install delocate
-  #         delocate-merge -v -w universal_wheels x64_wheels/cloudViewer-*${PYTAG}*.whl arm64_wheels/cloudViewer-*${PYTAG}*.whl
-  #         NEW_WHL_NAME=$(basename universal_wheels/cloudViewer-*${PYTAG}*.whl)
-  #         echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
+      - name: Download ARM64 wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cloudViewer-*macosx*_arm64.whl
+          path: arm64_wheels
+          merge-multiple: true
 
-  #     - name: Upload merged wheels
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ${{ env.PIP_PKG_NAME }}
-  #         path: universal_wheels/${{ env.PIP_PKG_NAME }}
-  #         if-no-files-found: error
+      - name: Fuse x64 and ARM64 wheels
+        env:
+          python_version: ${{ matrix.python_version }}
+        run: |
+          PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
+          mkdir universal_wheels
+          pip install delocate
+          delocate-merge -v -w universal_wheels x64_wheels/cloudViewer-*${PYTAG}*.whl arm64_wheels/cloudViewer-*${PYTAG}*.whl
+          NEW_WHL_NAME=$(basename universal_wheels/cloudViewer-*${PYTAG}*.whl)
+          echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
+
+      - name: Upload merged wheels to GitHub artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PIP_PKG_NAME }}
+          path: universal_wheels/${{ env.PIP_PKG_NAME }}
+          if-no-files-found: error
+            
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload main-devel universal_wheels/${{ env.PIP_PKG_NAME }} --clobber
+          gh release view main-devel
+
+      - name: Public merged wheels Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          fail_on_unmatched_files: false
+          generate_release_notes: true
+          prerelease: false
+          files: |
+            universal_wheels/${{ env.PIP_PKG_NAME }}
 
   test-wheel:
     name: Test wheel
@@ -421,8 +447,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15]
-        # os: [macos-14]
+        os: [macos-13, macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
