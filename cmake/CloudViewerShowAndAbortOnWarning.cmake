@@ -19,15 +19,15 @@ function(cloudViewer_show_and_abort_on_warning target)
             /wd4245        # signed/unsigned mismatch (visualization, PoissonRecon, ...)
             /wd4267        # conversion from size_t to smaller type (FixedRadiusSearchCUDA, tests)
             /wd4305        # conversion to smaller type in initialization or constructor argument (examples, tests)
-            /wd4522        # 'class' : multiple assignment operators specified
+            /wd4819        # suppress vs2019+ compiler build error C2220 (Windows)
             /wd4190        # 'identifier1' has C-linkage specified, but returns UDT 'identifier2' which is incompatible with C
-            /wd4819        # The file contains a character that cannot be represented in the current code page (number)
             /wd4717        # 'function' : recursive on all control paths, function will cause runtime stack overflow
+            /wd4522        # 'class' : multiple assignment operators specified
             /wd4996        # Your code uses a function, class member, variable, or typedef that's marked deprecated.
-            /wd4201        # nonstandard extension used : nameless struct/union
             /wd4286        # symbol 'symbol' defined in 'filename_1.obj' is imported by 'filename_2.obj'
             /wd4101        # The local variable is never used
             /wd4005        # Macro redefinition
+            /wd4703        # potentially uninitialized local pointer variable used
             )
     set(DISABLE_GNU_CLANG_INTEL_WARNINGS
             -Wno-unused-parameter # (many places in CloudViewer code)
@@ -74,7 +74,6 @@ function(cloudViewer_show_and_abort_on_warning target)
 
             set(CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS ${DISABLE_GNU_CLANG_INTEL_WARNINGS})
             string(REPLACE ";" "," CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS "${CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS}")
-            # string(APPEND CUDA_FLAGS " -Xcompiler -Wall,-Wextra,-Werror,${CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS}")
             string(APPEND CUDA_FLAGS " -Xcompiler -Wall,-Wextra,${CUDA_DISABLE_GNU_CLANG_INTEL_WARNINGS}")
         endif ()
     else ()

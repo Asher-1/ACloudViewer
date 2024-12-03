@@ -215,7 +215,7 @@ bool StereogramWidget::init(double angularStep_deg,
 			if (iDipDir == densityGrid->ddSteps)
 				iDipDir--;
 
-			double dip_rad = dip * CV_DEG_TO_RAD;
+			double dip_rad = cloudViewer::DegreesToRadians(dip);
 			double R = sin(dip_rad) / (1.0 + cos(dip_rad));
 
 			unsigned iR = static_cast<unsigned>(floor(static_cast<double>(R)/densityGrid->step_R));
@@ -439,8 +439,8 @@ void StereogramWidget::paintEvent(QPaintEvent* event)
 			double dipDir_deg = j * m_angularStep_deg / ticksFreq;
 			if (dipDir_deg < 360.0)
 			{
-				QPoint X(	 static_cast<int>(sin(dipDir_deg * CV_DEG_TO_RAD) * radius),
-							-static_cast<int>(cos(dipDir_deg * CV_DEG_TO_RAD) * radius) );
+				QPoint X(	 static_cast<int>(sin(cloudViewer::DegreesToRadians(dipDir_deg)) * radius),
+							-static_cast<int>(cos(cloudViewer::DegreesToRadians(dipDir_deg)) * radius) );
 
 				if ((j % ticksFreq) == 0) //long ticks
 					painter.drawLine(center, center + X);
@@ -464,8 +464,8 @@ void StereogramWidget::paintEvent(QPaintEvent* event)
 		const double* d = m_densityGrid->grid;
 		for (unsigned j = 0; j < m_densityGrid->ddSteps; ++j)
 		{
-			double dipDir0_rad = (j    ) * m_densityGrid->step_deg * CV_DEG_TO_RAD;
-			double dipDir1_rad = (j + 1) * m_densityGrid->step_deg * CV_DEG_TO_RAD;
+			double dipDir0_rad = (j    ) * cloudViewer::DegreesToRadians(m_densityGrid->step_deg);
+			double dipDir1_rad = (j + 1) * cloudViewer::DegreesToRadians(m_densityGrid->step_deg);
 			double cos_dipDir0 = cos(dipDir0_rad);
 			double sin_dipDir0 = sin(dipDir0_rad);
 			double cos_dipDir1 = cos(dipDir1_rad);
@@ -505,15 +505,15 @@ void StereogramWidget::paintEvent(QPaintEvent* event)
 		pen.setColor(Qt::red);
 		painter.setPen(pen);
 		//draw main direction
-		QPoint X(	 static_cast<int>(sin(m_meanDipDir_deg * CV_DEG_TO_RAD) * radius),
-					-static_cast<int>(cos(m_meanDipDir_deg * CV_DEG_TO_RAD) * radius) );
+		QPoint X(	 static_cast<int>(sin(cloudViewer::DegreesToRadians(m_meanDipDir_deg)) * radius),
+					-static_cast<int>(cos(cloudViewer::DegreesToRadians(m_meanDipDir_deg)) * radius) );
 		pen.setStyle(Qt::DashLine);
 		painter.setPen(pen);
 		painter.drawLine(center,center+X);
 
 		//draw orthogonal to main direction
-		QPoint Y(	static_cast<int>(cos(m_meanDipDir_deg * CV_DEG_TO_RAD) * radius),
-					static_cast<int>(sin(m_meanDipDir_deg * CV_DEG_TO_RAD) * radius) );
+		QPoint Y(	static_cast<int>(cos(cloudViewer::DegreesToRadians(m_meanDipDir_deg)) * radius),
+					static_cast<int>(sin(cloudViewer::DegreesToRadians(m_meanDipDir_deg)) * radius) );
 		pen.setStyle(Qt::SolidLine);
 		painter.setPen(pen);
 		painter.drawLine(center-Y,center+Y);
@@ -536,17 +536,17 @@ void StereogramWidget::paintEvent(QPaintEvent* event)
 
 		//draw radial limits
 		{
-			QPoint X0(	 static_cast<int>(sin((m_clickDipDir_deg - m_clickDipDirSpan_deg / 2) * CV_DEG_TO_RAD) * R0),
-						-static_cast<int>(cos((m_clickDipDir_deg - m_clickDipDirSpan_deg / 2) * CV_DEG_TO_RAD) * R0));
-			QPoint X1(	 static_cast<int>(sin((m_clickDipDir_deg - m_clickDipDirSpan_deg / 2) * CV_DEG_TO_RAD) * R1),
-						-static_cast<int>(cos((m_clickDipDir_deg - m_clickDipDirSpan_deg / 2) * CV_DEG_TO_RAD) * R1));
+			QPoint X0(	 static_cast<int>(sin(cloudViewer::DegreesToRadians(m_clickDipDir_deg - m_clickDipDirSpan_deg / 2)) * R0),
+						-static_cast<int>(cos(cloudViewer::DegreesToRadians(m_clickDipDir_deg - m_clickDipDirSpan_deg / 2)) * R0));
+			QPoint X1(	 static_cast<int>(sin(cloudViewer::DegreesToRadians(m_clickDipDir_deg - m_clickDipDirSpan_deg / 2)) * R1),
+						-static_cast<int>(cos(cloudViewer::DegreesToRadians(m_clickDipDir_deg - m_clickDipDirSpan_deg / 2)) * R1));
 			painter.drawLine(center + X0, center + X1);
 		}
 		{
-			QPoint X0(	 static_cast<int>(sin((m_clickDipDir_deg + m_clickDipDirSpan_deg / 2) * CV_DEG_TO_RAD) * R0),
-						-static_cast<int>(cos((m_clickDipDir_deg + m_clickDipDirSpan_deg / 2) * CV_DEG_TO_RAD) * R0));
-			QPoint X1(	 static_cast<int>(sin((m_clickDipDir_deg + m_clickDipDirSpan_deg / 2) * CV_DEG_TO_RAD) * R1),
-						-static_cast<int>(cos((m_clickDipDir_deg + m_clickDipDirSpan_deg / 2) * CV_DEG_TO_RAD) * R1));
+			QPoint X0(	 static_cast<int>(sin(cloudViewer::DegreesToRadians(m_clickDipDir_deg + m_clickDipDirSpan_deg / 2)) * R0),
+						-static_cast<int>(cos(cloudViewer::DegreesToRadians(m_clickDipDir_deg + m_clickDipDirSpan_deg / 2)) * R0));
+			QPoint X1(	 static_cast<int>(sin(cloudViewer::DegreesToRadians(m_clickDipDir_deg + m_clickDipDirSpan_deg / 2)) * R1),
+						-static_cast<int>(cos(cloudViewer::DegreesToRadians(m_clickDipDir_deg + m_clickDipDirSpan_deg / 2)) * R1));
 			painter.drawLine(center + X0, center + X1);
 		}
 

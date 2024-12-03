@@ -8,7 +8,7 @@
 # Guidelines:
 # - Use a flat list of options.
 #   We don't want to have a cartesian product of different combinations of
-#   options. E.g., to support Ubuntu {20.04, 24.04} with Python {3.7, 3.8}, we
+#   options. E.g., to support Ubuntu {20.04, 24.04} with Python {3.8, 3.9}, we
 #   don't specify the OS and Python version separately, instead, we have a flat
 #   list of combinations: [u2004_py39, u2004_py310, u2404_py39, u2404_py310].
 # - No external environment variables.
@@ -25,13 +25,12 @@ OPTION:
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
-    cpu-static-ml-release       : Ubuntu CPU static with ML (pre_cxx11_abi), release mode
 
     # ML CIs (Dockerfile.ci)
     2-focal                   : CUDA CI, 2-bionic, developer mode
     5-ml-jammy                 : CUDA CI, 5-ml-focal, developer mode
 
-    # CUDA wheels (Dockerfile.wheel)
+    # CUDA wheels (Dockerfile.ci)
     cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
     cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
@@ -40,13 +39,14 @@ OPTION:
     cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
     cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
     cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
+    cuda_wheel_py312           : CUDA Python 3.12 wheel, release mode
 "
 
 HOST_CLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # Shared variables
 CCACHE_VERSION=4.3
-CMAKE_VERSION=cmake-3.24.4-linux-x86_64
+CMAKE_VERSION=cmake-3.29.2-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
 CUDA_VERSION=11.8.0-cudnn8
 CUDA_VERSION_LATEST=11.8.0-cudnn8
@@ -70,6 +70,8 @@ cuda_wheel_build() {
         PYTHON_VERSION=3.10
     elif [[ "py311" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.11
+    elif [[ "py312" =~ ^($options)$ ]]; then
+        PYTHON_VERSION=3.12
     else
         echo "Invalid python version."
         print_usage_and_exit_docker_build
@@ -81,6 +83,7 @@ cuda_wheel_build() {
     fi
     echo "[cuda_wheel_build()] PYTHON_VERSION: ${PYTHON_VERSION}"
     echo "[cuda_wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
+    echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[cuda_wheel_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:?'env var must be set.'}"
     echo "[cuda_wheel_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:?'env var must be set.'}"
 
@@ -92,19 +95,22 @@ cuda_wheel_build() {
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
         --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+        --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg BUILD_SHARED_LIBS="OFF" \
+        --build-arg BUILD_WHEEL="ON" \
+        --build-arg BUILD_GUI="OFF" \
+        --build-arg PACKAGE="OFF" \
+        --build-arg IGNORE_TEST="ON" \
         --build-arg CI="${CI:-}" \
         -t cloudviewer-ci:wheel \
-        -f docker/Dockerfile.wheel .
+        -f docker/Dockerfile.ci .
     popd
 
-    python_package_dir=/root/ACloudViewer/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm cloudviewer-ci:wheel \
-        bash -c "cp ${python_package_dir}/pip_package/cloudViewer*.whl /opt/mount \
-              && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/cloudViewer*.whl \
-              && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
+        bash -c "cp /root/install/cloudViewer*.whl /opt/mount \
+            && chown $(id -u):$(id -g) /opt/mount/cloudViewer*.whl"
 }
 
 ci_build() {
@@ -119,8 +125,6 @@ ci_build() {
     echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-    echo "[ci_build()] PACKAGE=${PACKAGE}"
-    echo "[ci_build()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
 
     pushd "${HOST_CLOUDVIEWER_ROOT}"
     docker build \
@@ -134,74 +138,69 @@ ci_build() {
         --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
-        --build-arg PACKAGE="${PACKAGE}" \
-        --build-arg BUILD_SYCL_MODULE="${BUILD_SYCL_MODULE}" \
+        --build-arg BUILD_WHEEL="OFF" \
+        --build-arg BUILD_GUI="ON" \
+        --build-arg PACKAGE="ON" \
+        --build-arg IGNORE_TEST="ON" \
         --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-        bash -cx "cp /cloudViewer* /opt/mount \
-               && chown $(id -u):$(id -g) /opt/mount/cloudViewer*"
+        bash -cx "cp /root/install/*run /opt/mount \
+               && chown $(id -u):$(id -g) /opt/mount/*run"
 }
 
-2-focal_export_env() {
-    export DOCKER_TAG=cloudviewer-ci:2-focal
+cuda-focal_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cuda-focal
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudviewer-ci-2-focal
+    export CCACHE_TAR_NAME=cloudviewer-ci-cuda-focal
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=OFF
 }
 
-5-ml-jammy_export_env() {
-    export DOCKER_TAG=cloudviewer-ci:5-ml-jammy
+cuda-jammy_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cuda-jammy
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudviewer-ci-5-ml-jammy
+    export CCACHE_TAR_NAME=cloudviewer-ci-cuda-jammy
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
-    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=OFF
+    export BUILD_PYTORCH_OPS=OFF
 }
 
-cpu-static_export_env() {
-    export DOCKER_TAG=cloudviewer-ci:cpu-static
+cpu-focal_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cpu-focal
 
     export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=cloudviewer-ci-cpu
+    export CCACHE_TAR_NAME=cloudviewer-ci-cpu-focal
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=VIEWER
 }
 
-cpu-static-ml-release_export_env() {
-    export DOCKER_TAG=cloudviewer-ci:cpu-shared-ml
-
-    export BASE_IMAGE=ubuntu:20.04
-    export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=cloudviewer-ci-cpu
+cpu-jammy_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cpu-jammy
+    export BASE_IMAGE=ubuntu:22.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=cloudviewer-ci-cpu-jammy
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
-    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=ON
+    export BUILD_PYTORCH_OPS=OFF
 }
 
 function main() {
@@ -213,12 +212,22 @@ function main() {
     case "$1" in
 
     # CPU CI
-    cpu-static)
-        cpu-static_export_env
+    cpu-focal)
+        cpu-focal_export_env
         ci_build
         ;;
-    cpu-static-ml-release)
-        cpu-static-ml-release_export_env
+    cpu-jammy)
+        cpu-jammy_export_env
+        ci_build
+        ;;
+
+    # CUDA CIs
+    cuda-focal)
+        cuda-focal_export_env
+        ci_build
+        ;;
+    cuda-jammy)
+        cuda-jammy_export_env
         ci_build
         ;;
 
@@ -235,6 +244,9 @@ function main() {
     cuda_wheel_py311_dev)
         cuda_wheel_build py311 dev
         ;;
+    cuda_wheel_py312_dev)
+        cuda_wheel_build py312 dev
+        ;;
     cuda_wheel_py38)shared
         cuda_wheel_build py38
         ;;
@@ -247,15 +259,8 @@ function main() {
     cuda_wheel_py311)
         cuda_wheel_build py311
         ;;
-
-    # ML CIs
-    2-focal)
-        2-focal_export_env
-        ci_build
-        ;;
-    5-ml-jammy)
-        5-ml-jammy_export_env
-        ci_build
+    cuda_wheel_py312)
+        cuda_wheel_build py312
         ;;
     *)
         echo "Error: invalid argument: ${1}." >&2
