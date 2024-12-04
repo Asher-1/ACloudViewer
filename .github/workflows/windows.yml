@@ -50,13 +50,12 @@ jobs:
         exclude:
           - BUILD_SHARED_LIBS: ON
           - STATIC_RUNTIME: ON
-          - BUILD_CUDA_MODULE: ON
+          # - BUILD_CUDA_MODULE: ON
         include:
           - BUILD_SHARED_LIBS: OFF
           - STATIC_RUNTIME: OFF
-          - BUILD_CUDA_MODULE: OFF
+          # - BUILD_CUDA_MODULE: ON
     env:
-      BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
 
     steps:
@@ -82,7 +81,7 @@ jobs:
           } else {
             $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER/Prod/network_installers/cuda_$($CUDA_VER_FULL)_win10_network.exe"
           }
-                    # Installer arguments
+          # Installer arguments
           $CUDA_INSTALL_ARGS = "-s"
           # Required packages
           $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "npp", "npp_dev", "thrust"
@@ -123,8 +122,7 @@ jobs:
           echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
           Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.4/3rdparty_downloads.zip" -OutFile "3rdparty_downloads.zip"
-          $currentPath = (Get-Location).Path
-          Expand-Archive "3rdparty_downloads.zip" "$currentPath" -Force && Remove-Item "3rdparty_downloads.zip"
+          Expand-Archive "3rdparty_downloads.zip" "${{ env.SRC_DIR }}" -Force && Remove-Item "3rdparty_downloads.zip"
 
       # missing xerces-c dep issues
       - name: Config
@@ -153,8 +151,6 @@ jobs:
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
-            -DBUILD_LIBREALSENSE=ON `
-            -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DWITH_OPENMP=ON `
             -DWITH_SIMD=ON `
             -DUSE_SIMD=ON `
@@ -295,12 +291,15 @@ jobs:
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE }}
 
-      - name: Install Python dependencies
+      - name: Install dependencies
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -r python/requirements.txt
           python -m pip install -r python/requirements_jupyter_build.txt
+
+          Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.4/3rdparty_downloads.zip" -OutFile "3rdparty_downloads.zip"
+          Expand-Archive "3rdparty_downloads.zip" "${{ env.SRC_DIR }}" -Force && Remove-Item "3rdparty_downloads.zip"
 
       # DGM: use conda eigen3 due to building eigen3 issues on windows
       - name: Config
@@ -330,6 +329,7 @@ jobs:
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
+            -DBUILD_WEBRTC=ON `
             -DBUILD_UNIT_TESTS=OFF `
             -DBUILD_BENCHMARKS=OFF `
             -DWITH_OPENMP=ON `
