@@ -1,6 +1,87 @@
 ACloudViewer Version History
 ============================
 
+v3.9.2 (Asher) - 12/12/2024
+----------------------
+
+## ACloudViewer 3.9.2 Release Notes
+We are excited to present ACloudViewer 3.9.2!
+
+We welcome you to the 3.9.2 beta release of ACloudViewer. This release is full of exciting new features with a strong emphasis in real-time pipelines, but also full of bug fixes and usability improvements. The big highlights of this release are as follows:
+
+- New features:
+
+	- New menu entry: Save project
+		- File > Save project (or CTRL+SHIFT+S)
+		- Saves all entities in the DB as a bin file
+
+  - Tools > Fit > circle
+		- fits a 2D circle on a 3D point cloud (thanks to https://github.com/truebelief)
+		- works also on cylinders
+  
+	- CI support (continuous integration)
+		- now using Github action CI
+		- platform (Macos, Windows, Linux)
+		- build (debug, release)
+		- 32/64 bits
+  
+- New plugins
+
+	- New unified plugin to load LAS files (by Thomas Montaigu)
+		- based on LASzip
+		- should work on all platforms (Windows, Linux, macOS)
+		- manages all versions of LAS files (1.0 to 1.4)
+		- gives much more control over extended fields (Extra-bytes VLR) as well as custom mapping between
+			the existing fields of a cloud and their destination in the LAS file
+
+	- VoxFall: non-parametric volumetric change detection for rockfalls
+		- computes volume differences between 2 meshes, with some visual representation
+  
+	- New plugin: q3DMASC
+		- 3DMASC is an advanced plugin for 3D point cloud classification, that uses Multiple Attributes, Scales and Clouds.
+		  It is possible to use it with the GUI but also to call it with the command line.
+		- See https://lidar.univ-rennes.fr/en/3dmasc
+
+	- New plugin: qTreeIso
+		- a 3D graph-based individual-tree isolator (treeiso) from Terrestrial Laser Scanning point clouds
+		- by Zhouxin Xi and Chris Hopkinson, Artemis Lab, Department of Geography & Environment, University of Lethbridge (Canada)
+
+	- New plugin: qPythonRuntime
+		- Early step attempt at allowing to use Python to automate some stuff in ACloudViewer.
+    - See https://github.com/tmontaigu/CloudCompare-PythonRuntime
+		- The [documentation](https://tmontaigu.github.io/CloudCompare-PythonRuntime/index.html) is hosted using GitHub pages.
+
+	- New Python-based plugin: 3DFin (3D Forest Inventory)
+		- automatic computation of tree parameters in terrestrial point clouds
+		- accessible via the Python plugin (check the option to install it via the Windows installer)
+		- see https://github.com/3DFin/3DFin
+		- developed at the Centre of Wildfire Research of Swansea University (UK) in collaboration with the
+			Research Institute of Biodiversity (CSIC, Spain) and the Department of Mining Exploitation of
+			the University of Oviedo (Spain)
+
+- Enhancements:
+	* Command line mode
+		- I/O plugins are now loaded in command line mode (i.e. the FARO, DP and PCD formats can now be used)
+		- set the default PCD output file format: -PCD_OUTPUT_FORMAT {format}
+			- format can be one of 'COMPRESSED_BINARY', 'BINARY' or 'ASCII'
+			- default format is 'COMPRESSED_BINARY'
+  - PCD:
+		- Can now load PCL files with integer xyz coordinates (16 and 32 bits) as well as double (64 bits) coordinates
+		- Can now load 'scan grids' corresponding to structured clouds (so as to compute robust normals for instance)
+		- the (standard ?) 16bytes alignment for the various fields has been removed, so as to drastically reduce the memory consumption and the output file size!
+    - PCD now supports loading more field types (8 bit signed and unsigned, 16 bit signed and unsigned, 32 bit unsigned, 64 bit floating point)
+    - PCD files can now be loaded or saved with local characters. PCD files will also be saved as compressed files by default.
+    - PCD format:
+  		- a new dialog will appear when saving PCD file, to choose the output format (between compressed binary, binary and ASCII/text)
+  		- this dialog can be hidden once and for all by clicking on the 'Yes to all' button
+  		- the default output format can also be set via the command line (see above)
+  - The Animation plugin now uses ffmppeg 6.1
+
+### supported platform:
+- Windows `x86/64`
+- Linux `x86/64`
+- MacOS `X64 && arm64 (M1 and M2)`
+
 v3.9.1 (Asher) - 15/11/2024
 ----------------------
 

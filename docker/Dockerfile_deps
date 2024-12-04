@@ -23,12 +23,12 @@ ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES all
 ENV SUDO=command
 
-ENV REFRESHED_AT=2023-06-04\
+ENV REFRESHED_AT=2024-12-04\
     CLOUDVIEWER_DEV=/opt/ACloudViewer \
-    QT_ROOT=/opt/Qt5.14.2/ \
-    QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
-    QT_CI_LOGIN=alicevisionjunk@gmail.com \
-    QT_CI_PASSWORD=azerty1. \
+    # QT_ROOT=/opt/Qt5.14.2/ \
+    # QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
+    # QT_CI_LOGIN=alicevisionjunk@gmail.com \
+    # QT_CI_PASSWORD=azerty1. \
     DEBIAN_FRONTEND=noninteractive
 
 # cloudViewer Jupyter dependencies
