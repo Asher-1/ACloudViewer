@@ -12,6 +12,22 @@ param (
 $ErrorActionPreference = "Stop"
 
 $env:PYTHON_VERSION = $PythonVersion
+$env:ENV_NAME = "python$env:PYTHON_VERSION"
+$env:CLOUDVIEWER_INSTALL_DIR = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")
+$env:CLOUDVIEWER_ML_ROOT = [System.IO.Path]::GetFullPath("$CloudViewerMLRoot")
+if (Test-Path "$env:CLOUDVIEWER_ML_ROOT") {
+    Write-Host "CLOUDVIEWER_ML_ROOT: $env:CLOUDVIEWER_ML_ROOT"
+} else {
+    Write-Host "Invalid CLOUDVIEWER_ML_ROOT path: $env:CLOUDVIEWER_ML_ROOT"
+    exit 1
+}
+$env:NPROC = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+Write-Host "CLOUDVIEWER_INSTALL_DIR: $env:CLOUDVIEWER_INSTALL_DIR"
+Write-Host "CLOUDVIEWER_ML_ROOT: $env:CLOUDVIEWER_ML_ROOT"
+Write-Host "ENV_NAME: $env:ENV_NAME"
+Write-Host "nproc = $env:NPROC"
+
+# setting env
 if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) {
     $env:BUILD_CUDA_MODULE = $env:BUILD_CUDA_MODULE
 } else {
@@ -31,30 +47,13 @@ if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) {
         $env:BUILD_CUDA_MODULE = "OFF"
     }
 }
-$env:BUILD_PYTORCH_OPS = "ON"
-$env:BUILD_TENSORFLOW_OPS = "OFF"
-$env:BUILD_JUPYTER_EXTENSION = "ON"
-$env:BUILD_AZURE_KINECT = "ON"
-$env:BUILD_LIBREALSENSE = "ON"
-$env:ENV_NAME = "python$env:PYTHON_VERSION"
+$env:BUILD_PYTORCH_OPS = if (-not [string]::IsNullOrEmpty($env:BUILD_PYTORCH_OPS)) { $env:BUILD_PYTORCH_OPS } else { "ON" }
+$env:BUILD_TENSORFLOW_OPS = if (-not [string]::IsNullOrEmpty($env:BUILD_TENSORFLOW_OPS)) { $env:BUILD_TENSORFLOW_OPS } else { "OFF" }
+$env:BUILD_JUPYTER_EXTENSION = if (-not [string]::IsNullOrEmpty($env:BUILD_JUPYTER_EXTENSION)) { $env:BUILD_JUPYTER_EXTENSION } else { "ON" }
+$env:BUILD_AZURE_KINECT = if (-not [string]::IsNullOrEmpty($env:BUILD_AZURE_KINECT)) { $env:BUILD_AZURE_KINECT } else { "ON" }
+$env:BUILD_LIBREALSENSE = if (-not [string]::IsNullOrEmpty($env:BUILD_LIBREALSENSE)) { $env:BUILD_LIBREALSENSE } else { "ON" }
 
-$env:CLOUDVIEWER_INSTALL_DIR = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")
-
-$env:NPROC = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-Write-Host "CLOUDVIEWER_INSTALL_DIR: $env:CLOUDVIEWER_INSTALL_DIR"
-Write-Host "ENV_NAME: $env:ENV_NAME"
-Write-Host "nproc = $env:NPROC"
-
-$env:CLOUDVIEWER_ML_ROOT = [System.IO.Path]::GetFullPath("$CloudViewerMLRoot")
-if (Test-Path "$env:CLOUDVIEWER_ML_ROOT") {
-    Write-Host "CLOUDVIEWER_ML_ROOT: $env:CLOUDVIEWER_ML_ROOT"
-} else {
-    Write-Host "Invalid CLOUDVIEWER_ML_ROOT path: $env:CLOUDVIEWER_ML_ROOT"
-    exit 1
-}
-
-$CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
-
+$env:CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 if ($env:CONDA_EXE) {
     $env:CONDA_ROOT = (Get-Item (Split-Path -Parent (Split-Path -Parent $env:CONDA_EXE))).FullName
 } elseif ($env:CONDA_PREFIX) {
@@ -76,7 +75,7 @@ if ($existingEnv) {
 Write-Host "conda env create and activate..."
 $env:CONDA_PREFIX = Join-Path $env:CONDA_ROOT "envs\$env:ENV_NAME"
 
-Copy-Item (Join-Path $CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows.yml") -Destination "$env:TEMP\conda_windows.yml"
+Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows.yml") -Destination "$env:TEMP\conda_windows.yml"
 (Get-Content "$env:TEMP\conda_windows.yml") -replace "3.8", $env:PYTHON_VERSION | Set-Content "$env:TEMP\conda_windows.yml"
 
 conda env create -f "$env:TEMP\conda_windows.yml"
@@ -101,17 +100,19 @@ if (-not $env:CONDA_PREFIX) {
 }
 
 # deploy yarn with npm
-Write-Host "Start to deploy yarn"
-node --version
-npm --version
-npm install -g yarn
-yarn --version
+if ($env:BUILD_JUPYTER_EXTENSION -eq "ON") {
+    Write-Host "BUILD_JUPYTER_EXTENSION=ON and Start to deploy yarn"
+    node --version
+    npm --version
+    npm install -g yarn
+    yarn --version
+}
 
 $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
 $env:PATH = "$env:CONDA_PREFIX\Library;$env:CONDA_PREFIX\Library\cmake;$env:PATH"
 
 Write-Host "echo Start to build GUI package on Windows..."
-. (Join-Path $CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
+. (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
 
 Write-Host "Start to install python dependencies package On Windows..."
 $install_options = @("with-unit-test","purge-cache")
