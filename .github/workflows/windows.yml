@@ -50,11 +50,9 @@ jobs:
         exclude:
           - BUILD_SHARED_LIBS: ON
           - STATIC_RUNTIME: ON
-          # - BUILD_CUDA_MODULE: ON
         include:
           - BUILD_SHARED_LIBS: OFF
           - STATIC_RUNTIME: OFF
-          # - BUILD_CUDA_MODULE: ON
     env:
       CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
 
@@ -211,12 +209,15 @@ jobs:
             --target ALL_BUILD
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
+          
+          $PACKAGE_INSTALLER_NAME=(Get-ChildItem C:\dev\cloudViewer_install\ACloudViewer-*.exe).Name
+          echo "PACKAGE_INSTALLER_NAME=$PACKAGE_INSTALLER_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload ACloudViewer to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
-          name: cloudViewer-app-windows-amd64
+          name: ${{ env.PACKAGE_INSTALLER_NAME }}
           path: C:\dev\cloudViewer_install\ACloudViewer-*.exe
           if-no-files-found: error
 
