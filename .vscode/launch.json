@@ -33,6 +33,9 @@
 					"args": [
 					],
 					"cwd": "${workspaceFolder}/build/bin",
+					"environment": [
+						{"name": "CONDA_PREFIX", "value": "/home/asher/anaconda3/envs/python3.11"},
+					],
 					// "preLaunchTask": "Build",
 					"setupCommands": [
 							{
@@ -49,6 +52,9 @@
 				"name": "MacCloudViewer",
 				"program": "${workspaceFolder}/build/bin/ACloudViewer.app/Contents/MacOS/ACloudViewer",
 				"args": [
+				],
+				"environment": [
+					{"name": "OPENGLES_TIME_LOG", "value": "1"},
 				],
 				"cwd": "${workspaceFolder}/build",
 				// "preLaunchTask": "Build",

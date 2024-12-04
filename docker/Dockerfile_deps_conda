@@ -48,6 +48,7 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \
+        libhdf5-dev \
         # for colmap
         libatlas-base-dev \
         # for package

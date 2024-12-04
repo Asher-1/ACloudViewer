@@ -72,6 +72,7 @@ ExternalProject_Add(
         -DBUILD_opencv_imgproc=ON
         -DBUILD_opencv_features2d=OFF
         -DBUILD_opencv_flann=OFF
+        # -DBUILD_opencv_hdf=OFF
         -DBUILD_opencv_xfeatures2d=OFF
         -DBUILD_opencv_photo=OFF
         -DBUILD_opencv_calib3d=OFF
