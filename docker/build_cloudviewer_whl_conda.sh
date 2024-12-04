@@ -58,8 +58,6 @@ else
     echo "Activate failed, please run mannually: conda activate $ENV_NAME"
 fi
 
- # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-# echo -e "\ny" | conda install libffi==3.3
 # [mv relocation issues] fix the issues about the conflicts with libattr between conda and system
 if [ -f "$CONDA_PREFIX/lib/libattr.so.1" ]; then
     echo "fix issues with system about: $CONDA_PREFIX/lib/libattr.so.1"

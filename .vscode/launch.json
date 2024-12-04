@@ -32,7 +32,7 @@
 					"program": "${workspaceFolder}/build/bin/ACloudViewer",
 					"args": [
 					],
-					"cwd": "${workspaceFolder}/build",
+					"cwd": "${workspaceFolder}/build/bin",
 					// "preLaunchTask": "Build",
 					"setupCommands": [
 							{

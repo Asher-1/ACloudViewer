@@ -51,12 +51,14 @@ eval $(
     echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
 )
 
-if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
-    # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-    if [ "${PYTHON_VERSION}" = "3.8" ]; then
-        echo -e "\ny" | conda install libffi==3.3
-    fi
-fi
+# if [ "$DISTRIB_ID" == "Ubuntu" ] && [ "$DISTRIB_RELEASE" != "18.04" ]; then
+#     # fix the library conflicts between ubuntu and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
+#     if [ "${PYTHON_VERSION}" = "3.8" ]; then
+#         echo -e "\ny" | conda install libffi==3.3
+#     else
+#         echo -e "\ny" | conda install libffi==3.4.2
+#     fi
+# fi
 
 set -x # Echo commands on
 # Get build scripts and control environment variables
@@ -67,7 +69,7 @@ echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 echo "Start to build GUI package with only CPU..."
 echo
 export BUILD_CUDA_MODULE=OFF
-build_gui_app with_pcl_nurbs with_gdal package_installer
+build_gui_app with_pcl_nurbs package_installer
 echo
 
 # Building with cuda if cuda available
@@ -75,7 +77,7 @@ if [ "${BUILD_CUDA_MODULE_FLAG}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo
     export BUILD_CUDA_MODULE=ON
-    build_gui_app with_pcl_nurbs with_gdal package_installer
+    build_gui_app with_pcl_nurbs package_installer
     echo
 fi
 

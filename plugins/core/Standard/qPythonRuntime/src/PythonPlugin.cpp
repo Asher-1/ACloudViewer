@@ -72,7 +72,7 @@ PythonPlugin::PythonPlugin(QObject *parent)
         bool seemsValid = config.validateAndDisplayErrors();
         if (!seemsValid)
         {
-            plgError() << "Falling back to default Python configuration due to previous errors";
+            plgWarning() << "Falling back to default Python configuration due to previous errors";
             config.initDefault();
         }
     }

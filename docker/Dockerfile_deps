@@ -85,7 +85,7 @@ RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y
         libopenni-dev \
         libopenni2-dev \
         libjsoncpp-dev \
-        libgdal-dev \
+        # libgdal-dev \
         libcgal-dev \
         libusb-1.0-0-dev \
         libeigen3-dev \
