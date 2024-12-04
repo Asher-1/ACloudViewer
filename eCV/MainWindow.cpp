@@ -551,6 +551,8 @@ void MainWindow::connectActions() {
             &MainWindow::doActionOpenFile);
     connect(m_ui->actionSave, &QAction::triggered, this,
             &MainWindow::doActionSaveFile);
+    connect(m_ui->actionSaveProject, &QAction::triggered, this,
+            &MainWindow::doActionSaveProject);
     connect(m_ui->actionPrimitiveFactory, &QAction::triggered, this,
             &MainWindow::doShowPrimitiveFactory);
     connect(m_ui->actionClearAll, &QAction::triggered, this,
@@ -2166,6 +2168,88 @@ void MainWindow::doActionSaveFile() {
                                 currentPath);
 }
 
+void MainWindow::doActionSaveProject() {
+    if (!m_ccRoot || !m_ccRoot->getRootEntity()) {
+        assert(false);
+        return;
+    }
+
+    ccHObject* rootEntity = m_ccRoot->getRootEntity();
+    if (rootEntity->getChildrenNumber() == 0) {
+        return;
+    }
+
+    // default output path (+ filename)
+    QSettings settings;
+    settings.beginGroup(ecvPS::SaveFile());
+    QString currentPath =
+            settings.value(ecvPS::CurrentPath(), ecvFileUtils::defaultDocPath())
+                    .toString();
+    CVLog::PrintDebug(currentPath);
+    QString fullPathName = currentPath;
+
+    static QString s_previousProjectName{"project"};
+    QString defaultFileName = s_previousProjectName;
+    if (rootEntity->getChildrenNumber() == 1) {
+        // If there's only on top entity, we can try to use its name as the
+        // project name.
+        ccHObject* topEntity = rootEntity->getChild(0);
+        defaultFileName = topEntity->getName();
+        if (topEntity->isA(CV_TYPES::HIERARCHY_OBJECT)) {
+            // Hierarchy objects have generally as name: 'filename.ext
+            // (fullpath)' so we must only take the first part! (otherwise this
+            // type of name with a path inside disturbs the QFileDialog a lot
+            // ;))
+            QStringList parts =
+                    defaultFileName.split(' ', QString::SkipEmptyParts);
+            if (!parts.empty()) {
+                defaultFileName = parts[0];
+            }
+        }
+
+        // we remove the extension
+        defaultFileName = QFileInfo(defaultFileName).completeBaseName();
+
+        if (!IsValidFileName(defaultFileName)) {
+            CVLog::Warning(
+                    tr("[I/O] Top entity's name would make an invalid "
+                       "filename! Can't use it..."));
+            defaultFileName = "project";
+        }
+    }
+    fullPathName += QString("/") + defaultFileName;
+
+    QString binFilter = BinFilter::GetFileFilter();
+
+    // ask the user for the output filename
+    QString selectedFilename = QFileDialog::getSaveFileName(
+            this, tr("Save file"), fullPathName, binFilter, &binFilter,
+            ECVFileDialogOptions());
+
+    if (selectedFilename.isEmpty()) {
+        // process cancelled by the user
+        return;
+    }
+
+    FileIOFilter::SaveParameters parameters;
+    {
+        parameters.alwaysDisplaySaveDialog = true;
+        parameters.parentWidget = this;
+    }
+
+    CC_FILE_ERROR result = FileIOFilter::SaveToFile(
+            rootEntity->getChildrenNumber() == 1 ? rootEntity->getChild(0)
+                                                 : rootEntity,
+            selectedFilename, parameters, binFilter);
+
+    // we update the current 'save' path
+    QFileInfo fi(selectedFilename);
+    s_previousProjectName = fi.fileName();
+    currentPath = fi.absolutePath();
+    settings.setValue(ecvPS::CurrentPath(), currentPath);
+    settings.endGroup();
+}
+
 void MainWindow::doActionApplyTransformation() {
     ccApplyTransformationDlg dlg(this);
     if (!dlg.exec()) return;
@@ -2678,6 +2762,7 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionTracePolyline->setEnabled(!dbIsEmpty);
     m_ui->actionZoomAndCenter->setEnabled(atLeastOneEntity);
     m_ui->actionSave->setEnabled(atLeastOneEntity);
+    m_ui->actionSaveProject->setEnabled(!dbIsEmpty);
     m_ui->actionClone->setEnabled(atLeastOneEntity);
     m_ui->actionDelete->setEnabled(atLeastOneEntity);
     m_ui->actionImportSFFromFile->setEnabled(atLeastOneEntity);

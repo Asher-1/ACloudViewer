@@ -19,7 +19,9 @@
 
 #include <liblzf/lzf.h>
 
-#include "ui_savePCDFileDlg.h"
+// Dialog
+#include <ui_PCDOutputFormatDlg.h>
+#include <ui_savePCDFileDlg.h>
 
 // PclUtils
 #include <PCLConv.h>
@@ -39,7 +41,9 @@
 #include <ecvScalarField.h>
 
 // Qt
+#include <QDialog>
 #include <QFileInfo>
+#include <QPushButton>
 #include <QSettings>
 
 // Boost
@@ -90,6 +94,7 @@ public:
     bool has_colors;
     bool has_ring;
     bool has_intensity;
+    bool has_timestamp;
 };
 
 bool CheckHeader(PCDHeader& header) {
@@ -106,6 +111,7 @@ bool CheckHeader(PCDHeader& header) {
     header.has_colors = false;
     header.has_ring = false;
     header.has_intensity = false;
+    header.has_timestamp = false;
     bool has_x = false;
     bool has_y = false;
     bool has_z = false;
@@ -116,6 +122,7 @@ bool CheckHeader(PCDHeader& header) {
     bool has_rgba = false;
     bool has_ring = false;
     bool has_intensity = false;
+    bool has_timestamp = false;
     for (const auto& field : header.fields) {
         if (field.name == "x") {
             has_x = true;
@@ -135,6 +142,8 @@ bool CheckHeader(PCDHeader& header) {
             has_rgba = true;
         } else if (field.name == "intensity") {
             has_intensity = true;
+        } else if (field.name == "timestamp") {
+            has_timestamp = true;
         } else if (field.name == "ring") {
             has_ring = true;
         }
@@ -143,6 +152,7 @@ bool CheckHeader(PCDHeader& header) {
     header.has_normals = (has_normal_x && has_normal_y && has_normal_z);
     header.has_colors = (has_rgb || has_rgba);
     header.has_intensity = has_intensity;
+    header.has_timestamp = has_timestamp;
     header.has_ring = has_ring;
     if (header.has_points == false) {
         CVLog::Warning(QString(
@@ -428,6 +438,20 @@ bool ReadPCDData(FILE* file,
             return false;
         }
     }
+    ccScalarField* cc_timestamp_field = nullptr;
+    if (header.has_timestamp) {
+        int id = pointcloud.getScalarFieldIndexByName("timestamp");
+        if (id >= 0) {
+            pointcloud.deleteScalarField(id);
+        }
+
+        cc_timestamp_field = new ccScalarField("timestamp");
+        if (!cc_timestamp_field->reserveSafe(
+                    static_cast<unsigned>(pointCount))) {
+            cc_timestamp_field->release();
+            return false;
+        }
+    }
     ccScalarField* cc_ring_field = nullptr;
     if (header.has_ring) {
         int id = pointcloud.getScalarFieldIndexByName("ring");
@@ -450,6 +474,7 @@ bool ReadPCDData(FILE* file,
     ecvColor::Rgb col;
     ScalarType ring;
     ScalarType intensity;
+    ScalarType timestamp;
 
     if (header.datatype == PCD_DATA_ASCII) {
         char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -468,6 +493,7 @@ bool ReadPCDData(FILE* file,
             bool find_color = false;
             bool find_ring = false;
             bool find_intensity = false;
+            bool find_timestamp = false;
             for (size_t i = 0; i < header.fields.size(); i++) {
                 const auto& field = header.fields[i];
                 if (field.name == "x") {
@@ -509,6 +535,11 @@ bool ReadPCDData(FILE* file,
                     intensity = UnpackASCIIPCDScalar(
                             strs[field.count_offset].c_str(), field.type,
                             field.size);
+                } else if (field.name == "timestamp") {
+                    find_timestamp = true;
+                    timestamp = UnpackASCIIPCDScalar(
+                            strs[field.count_offset].c_str(), field.type,
+                            field.size);
                 } else if (field.name == "ring") {
                     find_ring = true;
                     ring = UnpackASCIIPCDScalar(
@@ -528,6 +559,9 @@ bool ReadPCDData(FILE* file,
             }
             if (header.has_intensity && find_intensity) {
                 cc_intensity_field->addElement(intensity);
+            }
+            if (header.has_timestamp && find_timestamp) {
+                cc_timestamp_field->addElement(timestamp);
             }
             if (header.has_ring && find_ring) {
                 cc_ring_field->addElement(ring);
@@ -553,6 +587,7 @@ bool ReadPCDData(FILE* file,
             bool find_color = false;
             bool find_ring = false;
             bool find_intensity = false;
+            bool find_timestamp = false;
             for (const auto& field : header.fields) {
                 if (field.name == "x") {
                     find_point = true;
@@ -587,6 +622,11 @@ bool ReadPCDData(FILE* file,
                     intensity =
                             UnpackBinaryPCDScalar(buffer.get() + field.offset,
                                                   field.type, field.size);
+                } else if (field.name == "timestamp") {
+                    find_timestamp = true;
+                    timestamp =
+                            UnpackBinaryPCDScalar(buffer.get() + field.offset,
+                                                  field.type, field.size);
                 } else if (field.name == "ring") {
                     find_ring = true;
                     ring = UnpackBinaryPCDScalar(buffer.get() + field.offset,
@@ -605,6 +645,9 @@ bool ReadPCDData(FILE* file,
             }
             if (header.has_intensity && find_intensity) {
                 cc_intensity_field->addElement(intensity);
+            }
+            if (header.has_timestamp && find_timestamp) {
+                cc_timestamp_field->addElement(timestamp);
             }
             if (header.has_ring && find_ring) {
                 cc_ring_field->addElement(ring);
@@ -721,6 +764,13 @@ bool ReadPCDData(FILE* file,
                             field.size);
                     cc_intensity_field->addElement(intensity);
                 }
+            } else if (field.name == "timestamp") {
+                for (unsigned int i = 0; i < (unsigned int)header.points; i++) {
+                    ScalarType timestamp = UnpackBinaryPCDScalar(
+                            base_ptr + i * field.size * field.count, field.type,
+                            field.size);
+                    cc_timestamp_field->addElement(timestamp);
+                }
             } else if (field.name == "ring") {
                 for (unsigned int i = 0; i < (unsigned int)header.points; i++) {
                     ScalarType ring = UnpackBinaryPCDScalar(
@@ -736,17 +786,24 @@ bool ReadPCDData(FILE* file,
         }
     }
 
-    if (header.has_intensity && cc_intensity_field) {
-        cc_intensity_field->computeMinAndMax();
-        pointcloud.addScalarField(cc_intensity_field);
-        pointcloud.setCurrentDisplayedScalarField(0);
+    if (header.has_ring && cc_ring_field) {
+        cc_ring_field->computeMinAndMax();
+        int sfIdex = pointcloud.addScalarField(cc_ring_field);
+        pointcloud.setCurrentDisplayedScalarField(sfIdex);
         pointcloud.showSF(true);
     }
 
-    if (header.has_ring && cc_ring_field) {
-        cc_ring_field->computeMinAndMax();
-        pointcloud.addScalarField(cc_ring_field);
-        pointcloud.setCurrentDisplayedScalarField(0);
+    if (header.has_intensity && cc_intensity_field) {
+        cc_intensity_field->computeMinAndMax();
+        int sfIdex = pointcloud.addScalarField(cc_intensity_field);
+        pointcloud.setCurrentDisplayedScalarField(sfIdex);
+        pointcloud.showSF(true);
+    }
+
+    if (header.has_timestamp && cc_timestamp_field) {
+        cc_timestamp_field->computeMinAndMax();
+        int sfIdex = pointcloud.addScalarField(cc_timestamp_field);
+        pointcloud.setCurrentDisplayedScalarField(sfIdex);
         pointcloud.showSF(true);
     }
 
@@ -820,6 +877,21 @@ bool PcdFilter::canSave(CV_CLASS_ENUM type,
     return false;
 }
 
+static PcdFilter::PCDOutputFileFormat s_outputFileFormat = PcdFilter::AUTO;
+void PcdFilter::SetOutputFileFormat(PCDOutputFileFormat format) {
+    s_outputFileFormat = format;
+}
+
+//! Dialog for the PCV plugin
+class ccPCDFileOutputForamtDialog : public QDialog,
+                                    public Ui::PCDOutputFormatDialog {
+public:
+    explicit ccPCDFileOutputForamtDialog(QWidget* parent = nullptr)
+        : QDialog(parent, Qt::Tool), Ui::PCDOutputFormatDialog() {
+        setupUi(this);
+    }
+};
+
 //! PCD File Save dialog
 class SavePCDFileDialog : public QDialog, public Ui::SavePCDFileDlg {
 public:
@@ -833,7 +905,9 @@ public:
 CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity,
                                     const QString& filename,
                                     const SaveParameters& parameters) {
-    if (!entity || filename.isEmpty()) return CC_FERR_BAD_ARGUMENT;
+    if (!entity || filename.isEmpty()) {
+        return CC_FERR_BAD_ARGUMENT;
+    }
 
     // the cloud to save
     ccPointCloud* ccCloud = ccHObjectCaster::ToPointCloud(entity);
@@ -842,41 +916,116 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity,
         return CC_FERR_BAD_ENTITY_TYPE;
     }
 
-    // display pcd save dialog
     QSettings settings("save pcd");
     settings.beginGroup("SavePcd");
-
-    SavePCDFileDialog spfDlg(nullptr);
     bool saveOriginOrientation =
-            settings.value("saveOriginOrientation",
-                           spfDlg.saveOriginOrientationCheckBox->isChecked())
-                    .toBool();
-    bool saveBinary = settings.value("SavePCDBinary",
-                                     spfDlg.saveBinaryCheckBox->isChecked())
-                              .toBool();
-    bool compressedMode =
-            settings.value("Compressed",
-                           spfDlg.saveCompressedCheckBox->isChecked())
-                    .toBool();
-    compressedMode = saveBinary && compressedMode ? true : false;
-    {
-        spfDlg.saveOriginOrientationCheckBox->setChecked(saveOriginOrientation);
-        spfDlg.saveBinaryCheckBox->setChecked(saveBinary);
-        spfDlg.saveCompressedCheckBox->setChecked(compressedMode);
+            settings.value("saveOriginOrientation", true).toBool();
+    bool saveBinary = settings.value("SavePCDBinary", true).toBool();
+    bool compressedMode = settings.value("Compressed", true).toBool();
 
-        if (!spfDlg.exec()) return CC_FERR_CANCELED_BY_USER;
+    PcdFilter::PCDOutputFileFormat outputFileFormat = s_outputFileFormat;
+    if (outputFileFormat == AUTO) {
+        if (nullptr == parameters.parentWidget) {
+            // defaulting to compressed binary
+            outputFileFormat = COMPRESSED_BINARY;
+        } else {
+            // GUI version: show a dialog to let the user choose the output
+            // format
+            ccPCDFileOutputForamtDialog dialog;
+            static PcdFilter::PCDOutputFileFormat s_previousOutputFileFormat =
+                    COMPRESSED_BINARY;
+            switch (s_previousOutputFileFormat) {
+                case COMPRESSED_BINARY:
+                    dialog.compressedBinaryRadioButton->setChecked(true);
+                    break;
+                case BINARY:
+                    dialog.binaryRadioButton->setChecked(true);
+                    break;
+                case ASCII:
+                    dialog.asciiRadioButton->setChecked(true);
+                    break;
+            }
 
-        saveOriginOrientation =
-                spfDlg.saveOriginOrientationCheckBox->isChecked();
-        saveBinary = spfDlg.saveBinaryCheckBox->isChecked();
-        compressedMode = spfDlg.saveCompressedCheckBox->isChecked();
-        settings.setValue("saveOriginOrientation", saveOriginOrientation);
-        settings.setValue("SavePCDBinary", saveBinary);
-        settings.setValue("Compressed",
-                          saveBinary && compressedMode ? true : false);
+            QAbstractButton* clickedButton = nullptr;
 
-        settings.endGroup();
+            QObject::connect(
+                    dialog.buttonBox, &QDialogButtonBox::clicked,
+                    [&](QAbstractButton* button) { clickedButton = button; });
+
+            if (dialog.exec()) {
+                if (dialog.compressedBinaryRadioButton->isChecked()) {
+                    outputFileFormat = COMPRESSED_BINARY;
+                } else if (dialog.binaryRadioButton->isChecked()) {
+                    outputFileFormat = BINARY;
+                } else if (dialog.asciiRadioButton->isChecked()) {
+                    outputFileFormat = ASCII;
+                } else {
+                    assert(false);
+                }
+
+                s_previousOutputFileFormat = outputFileFormat;
+
+                if (clickedButton ==
+                    dialog.buttonBox->button(
+                            QDialogButtonBox::StandardButton::YesToAll)) {
+                    // remember once and for all the output file format
+                    s_outputFileFormat = outputFileFormat;
+                }
+            } else {
+                return CC_FERR_CANCELED_BY_USER;
+            }
+        }
+
+        saveOriginOrientation = true;
+        switch (outputFileFormat) {
+            case COMPRESSED_BINARY: {
+                saveBinary = true;
+                compressedMode = true;
+                break;
+            }
+            case BINARY: {
+                saveBinary = true;
+                compressedMode = false;
+                break;
+            }
+            case ASCII: {
+                saveBinary = false;
+                compressedMode = false;
+                break;
+            }
+        }
+
+    } else {
+        // display pcd save dialog
+        if (nullptr == parameters.parentWidget) {
+            // defaulting to compressed binary
+            saveOriginOrientation = saveOriginOrientation;
+            saveBinary = saveBinary;
+            compressedMode = compressedMode;
+        } else {
+            SavePCDFileDialog spfDlg(parameters.parentWidget);
+            compressedMode = saveBinary && compressedMode ? true : false;
+            {
+                spfDlg.saveOriginOrientationCheckBox->setChecked(
+                        saveOriginOrientation);
+                spfDlg.saveBinaryCheckBox->setChecked(saveBinary);
+                spfDlg.saveCompressedCheckBox->setChecked(compressedMode);
+
+                if (!spfDlg.exec()) return CC_FERR_CANCELED_BY_USER;
+
+                saveOriginOrientation =
+                        spfDlg.saveOriginOrientationCheckBox->isChecked();
+                saveBinary = spfDlg.saveBinaryCheckBox->isChecked();
+                compressedMode = spfDlg.saveCompressedCheckBox->isChecked();
+            }
+        }
     }
+
+    settings.setValue("saveOriginOrientation", saveOriginOrientation);
+    settings.setValue("SavePCDBinary", saveBinary);
+    settings.setValue("Compressed",
+                      saveBinary && compressedMode ? true : false);
+    settings.endGroup();
 
     PCLCloud::Ptr pclCloud = cc2smReader(ccCloud).getAsSM();
     if (!pclCloud) {
@@ -884,8 +1033,8 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity,
     }
 
     if (saveOriginOrientation) {
-        // search for a sensor as child (we take the first if there are several
-        // of them)
+        // search for a sensor as child (we take the first if there are
+        // several of them)
         ccSensor* sensor(nullptr);
         {
             for (unsigned i = 0; i < ccCloud->getChildrenNumber(); ++i) {
@@ -992,16 +1141,16 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity,
             if (compressedMode) {
                 if (pcl::io::savePCDFileBinaryCompressed(
                             CVTools::FromQString(filename), *rgbCloud) <
-                    0)  // DGM: warning, toStdString doesn't preserve "local"
-                        // characters
+                    0)  // DGM: warning, toStdString doesn't preserve
+                        // "local" characters
                 {
                     return CC_FERR_THIRD_PARTY_LIB_FAILURE;
                 }
             } else {
                 if (pcl::io::savePCDFile(CVTools::FromQString(filename),
                                          *rgbCloud, saveBinary) <
-                    0)  // DGM: warning, toStdString doesn't preserve "local"
-                        // characters
+                    0)  // DGM: warning, toStdString doesn't preserve
+                        // "local" characters
                 {
                     return CC_FERR_THIRD_PARTY_LIB_FAILURE;
                 }
@@ -1015,16 +1164,16 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity,
             if (compressedMode) {
                 if (pcl::io::savePCDFileBinaryCompressed(
                             CVTools::FromQString(filename), *normalCloud) <
-                    0)  // DGM: warning, toStdString doesn't preserve "local"
-                        // characters
+                    0)  // DGM: warning, toStdString doesn't preserve
+                        // "local" characters
                 {
                     return CC_FERR_THIRD_PARTY_LIB_FAILURE;
                 }
             } else {
                 if (pcl::io::savePCDFile(CVTools::FromQString(filename),
                                          *normalCloud, saveBinary) <
-                    0)  // DGM: warning, toStdString doesn't preserve "local"
-                        // characters
+                    0)  // DGM: warning, toStdString doesn't preserve
+                        // "local" characters
                 {
                     return CC_FERR_THIRD_PARTY_LIB_FAILURE;
                 }
@@ -1037,17 +1186,18 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity,
             }
             if (compressedMode) {
                 if (pcl::io::savePCDFileBinaryCompressed(
-                            CVTools::FromQString(filename), *rgbNormalCloud) <
-                    0)  // DGM: warning, toStdString doesn't preserve "local"
-                        // characters
+                            CVTools::FromQString(filename),
+                            *rgbNormalCloud) <
+                    0)  // DGM: warning, toStdString doesn't preserve
+                        // "local" characters
                 {
                     return CC_FERR_THIRD_PARTY_LIB_FAILURE;
                 }
             } else {
                 if (pcl::io::savePCDFile(CVTools::FromQString(filename),
                                          *rgbNormalCloud, saveBinary) <
-                    0)  // DGM: warning, toStdString doesn't preserve "local"
-                        // characters
+                    0)  // DGM: warning, toStdString doesn't preserve
+                        // "local" characters
                 {
                     return CC_FERR_THIRD_PARTY_LIB_FAILURE;
                 }
@@ -1062,16 +1212,16 @@ CC_FILE_ERROR PcdFilter::saveToFile(ccHObject* entity,
             if (compressedMode) {
                 if (pcl::io::savePCDFileBinaryCompressed(
                             CVTools::FromQString(filename), *xyzCloud) <
-                    0)  // DGM: warning, toStdString doesn't preserve "local"
-                        // characters
+                    0)  // DGM: warning, toStdString doesn't preserve
+                        // "local" characters
                 {
                     return CC_FERR_THIRD_PARTY_LIB_FAILURE;
                 }
             } else {
                 if (pcl::io::savePCDFile(CVTools::FromQString(filename),
                                          *xyzCloud, saveBinary) <
-                    0)  // DGM: warning, toStdString doesn't preserve "local"
-                        // characters
+                    0)  // DGM: warning, toStdString doesn't preserve
+                        // "local" characters
                 {
                     return CC_FERR_THIRD_PARTY_LIB_FAILURE;
                 }
@@ -1091,13 +1241,13 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename,
     int data_type;
     unsigned int data_idx;
     size_t pointCount = -1;
-    PCLCloud inputCloud;
+    PCLCloud::Ptr inputCloud(new PCLCloud);
     // Load the given file
     pcl::PCDReader p;
 
     const std::string& fileName = CVTools::FromQString(filename);
 
-    if (p.readHeader(fileName, inputCloud, origin, orientation, pcd_version,
+    if (p.readHeader(fileName, *inputCloud, origin, orientation, pcd_version,
                      data_type, data_idx) < 0) {
         CVLog::Warning(QString("[PCL] An error occurred while reading PCD "
                                "header and try to "
@@ -1115,7 +1265,7 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename,
         return CC_FERR_THIRD_PARTY_LIB_FAILURE;
     }
 
-    pointCount = inputCloud.width * inputCloud.height;
+    pointCount = inputCloud->width * inputCloud->height;
     CVLog::Print(QString("%1: Point Count: %2")
                          .arg(qPrintable(filename))
                          .arg(pointCount));
@@ -1125,7 +1275,7 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename,
     }
 
     // DGM: warning, toStdString doesn't preserve "local" characters
-    if (pcl::io::loadPCDFile(fileName, inputCloud, origin, orientation) < 0) {
+    if (pcl::io::loadPCDFile(fileName, *inputCloud, origin, orientation) < 0) {
         CVLog::Warning(QString("[PCL] An error occurred while "
                                "pcl::io::loadPCDFile and try to "
                                "mannually read %1")
@@ -1142,20 +1292,14 @@ CC_FILE_ERROR PcdFilter::loadFile(const QString& filename,
         return CC_FERR_THIRD_PARTY_LIB_FAILURE;
     }
 
-    ccPointCloud* ccCloud = nullptr;
-    if (!inputCloud.is_dense)  // data may contain NaNs --> remove them
-    {
+    // data may contain NaNs --> remove them
+    if (!inputCloud->is_dense) {
         // now we need to remove NaNs
         pcl::PassThrough<PCLCloud> passFilter;
-        passFilter.setInputCloud(PCLCloud::Ptr(new PCLCloud(inputCloud)));
-
-        PCLCloud filteredCloud;
-        passFilter.filter(filteredCloud);
-
-        ccCloud = pcl2cc::Convert(filteredCloud);
-    } else {
-        ccCloud = pcl2cc::Convert(inputCloud);
+        passFilter.setInputCloud(inputCloud);
+        passFilter.filter(*inputCloud);
     }
+    ccPointCloud* ccCloud = pcl2cc::Convert(*inputCloud);
 
     // convert to CC cloud
     if (!ccCloud) {

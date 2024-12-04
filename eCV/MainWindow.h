@@ -315,6 +315,8 @@ private slots:
     // File menu slots
     void doActionOpenFile();
     void doActionSaveFile();
+    // Save all the entities at once, BIN format forced
+	void doActionSaveProject();
     void changeTheme();
     void changeLanguage();
     void doActionGlobalShiftSeetings();

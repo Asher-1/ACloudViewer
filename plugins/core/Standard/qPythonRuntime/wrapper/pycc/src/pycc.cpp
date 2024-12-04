@@ -142,6 +142,8 @@ void define_pycc(py::module &m)
         Python module exposing some ACloudViewer functions
     )pbdoc";
 
+    define_someQtThings(m);
+
     py::module::import("cccorelib");
 
 #ifdef PYCC_STAND_ALONE
@@ -153,8 +155,6 @@ void define_pycc(py::module &m)
 
     // TODO at module exit definition to cleanup ?
 #endif
-
-    define_someQtThings(m);
 
     m.attr("PointCoordinateType") = py::dtype("float32");
     define_scalar_type<ScalarType>(m);
