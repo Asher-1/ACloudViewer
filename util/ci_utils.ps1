@@ -12,7 +12,12 @@ $env:NPROC = (Get-CimInstance -ClassName Win32_ComputerSystem).NumberOfLogicalPr
 
 $env:BUILD_RIEGL = "ON"
 $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
-$env:CLOUDVIEWER_INSTALL_DIR = "C:\dev\cloudViewer_install"
+
+if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_INSTALL_DIR)) {
+    $env:CLOUDVIEWER_INSTALL_DIR = $env:CLOUDVIEWER_INSTALL_DIR
+} else {
+    $env:CLOUDVIEWER_INSTALL_DIR = "C:\dev\cloudViewer_install"
+}
 
 if ($env:CONDA_PREFIX) {
     Write-Host "Conda env: $env:CONDA_PREFIX is activated."

@@ -9,11 +9,31 @@ param (
 $ErrorActionPreference = "Stop"
 
 $env:PYTHON_VERSION = $PythonVersion
-$env:ACloudViewer_INSTALL = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")
+if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) {
+    $env:BUILD_CUDA_MODULE = $env:BUILD_CUDA_MODULE
+} else {
+    $cudaPath = [System.Environment]::GetEnvironmentVariable("CUDA_PATH")
+    if (-not [string]::IsNullOrEmpty($cudaPath)) {
+        Write-Output "CUDA toolkits path: $cudaPath"
+        try {
+            $nvccVersion = & nvcc --version
+            Write-Output "nvcc version: $nvccVersion"
+            $env:BUILD_CUDA_MODULE = "ON"
+        } catch {
+            Write-Output "Cannot find nvcc."
+            $env:BUILD_CUDA_MODULE = "OFF"
+        }
+    } else {
+        Write-Output "CUDA toolkits not found."
+        $env:BUILD_CUDA_MODULE = "OFF"
+    }
+}
+
+$env:CLOUDVIEWER_INSTALL_DIR = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")
 $env:ENV_NAME = "cloudViewer"
 
 $env:NPROC = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-Write-Host "ACloudViewer_INSTALL: $env:ACloudViewer_INSTALL"
+Write-Host "CLOUDVIEWER_INSTALL_DIR: $env:CLOUDVIEWER_INSTALL_DIR"
 Write-Host "ENV_NAME: $env:ENV_NAME"
 Write-Host "nproc = $env:NPROC"
 
@@ -75,11 +95,12 @@ $env:CLOUDVIEWER_SOURCE_ROOT = Split-Path -Parent $PSScriptRoot
 
 Write-Host "Start to Build cpu only GUI On Windows..."
 Build-GuiApp -options "with_conda","with_pcl_nurbs","package_installer"
+if ($env:BUILD_CUDA_MODULE -eq "ON") {
+    Write-Host "Start to Build cuda version GUI On Windows..."
+    Build-GuiApp -options "with_cuda","with_conda","with_pcl_nurbs","package_installer"
+}
 
-Write-Host "Start to Build cuda version GUI On Windows..."
-Build-GuiApp -options "with_cuda","with_conda","with_pcl_nurbs","package_installer"
-
-Write-Host "Backup whl package to $env:ACloudViewer_INSTALL"
+Write-Host "Backup whl package to $env:CLOUDVIEWER_INSTALL_DIR"
 Write-Host "LASTEXITCODE: $LASTEXITCODE"
 # must do this at the end
 Write-Output "BUILD_COMPLETE"

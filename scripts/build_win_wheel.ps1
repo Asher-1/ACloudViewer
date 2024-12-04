@@ -12,7 +12,25 @@ param (
 $ErrorActionPreference = "Stop"
 
 $env:PYTHON_VERSION = $PythonVersion
-$env:BUILD_CUDA_MODULE = "ON"
+if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) {
+    $env:BUILD_CUDA_MODULE = $env:BUILD_CUDA_MODULE
+} else {
+    $cudaPath = [System.Environment]::GetEnvironmentVariable("CUDA_PATH")
+    if (-not [string]::IsNullOrEmpty($cudaPath)) {
+        Write-Output "CUDA toolkits path: $cudaPath"
+        try {
+            $nvccVersion = & nvcc --version
+            Write-Output "nvcc version: $nvccVersion"
+            $env:BUILD_CUDA_MODULE = "ON"
+        } catch {
+            Write-Output "Cannot find nvcc."
+            $env:BUILD_CUDA_MODULE = "OFF"
+        }
+    } else {
+        Write-Output "CUDA toolkits not found."
+        $env:BUILD_CUDA_MODULE = "OFF"
+    }
+}
 $env:BUILD_PYTORCH_OPS = "ON"
 $env:BUILD_TENSORFLOW_OPS = "OFF"
 $env:BUILD_JUPYTER_EXTENSION = "ON"
@@ -20,8 +38,10 @@ $env:BUILD_AZURE_KINECT = "ON"
 $env:BUILD_LIBREALSENSE = "ON"
 $env:ENV_NAME = "python$env:PYTHON_VERSION"
 
+$env:CLOUDVIEWER_INSTALL_DIR = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")
+
 $env:NPROC = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-Write-Host "ACloudViewer_INSTALL: $env:ACloudViewer_INSTALL"
+Write-Host "CLOUDVIEWER_INSTALL_DIR: $env:CLOUDVIEWER_INSTALL_DIR"
 Write-Host "ENV_NAME: $env:ENV_NAME"
 Write-Host "nproc = $env:NPROC"
 
@@ -32,7 +52,6 @@ if (Test-Path "$env:CLOUDVIEWER_ML_ROOT") {
     Write-Host "Invalid CLOUDVIEWER_ML_ROOT path: $env:CLOUDVIEWER_ML_ROOT"
     exit 1
 }
-$env:ACloudViewer_INSTALL = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")
 
 $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 
@@ -91,11 +110,8 @@ yarn --version
 $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
 $env:PATH = "$env:CONDA_PREFIX\Library;$env:CONDA_PREFIX\Library\cmake;$env:PATH"
 
-. (Join-Path $CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
-
 Write-Host "echo Start to build GUI package on Windows..."
-$env:CLOUDVIEWER_SOURCE_ROOT = Split-Path -Parent $PSScriptRoot
-. "$env:CLOUDVIEWER_SOURCE_ROOT\util\ci_utils.ps1"
+. (Join-Path $CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
 
 Write-Host "Start to install python dependencies package On Windows..."
 $install_options = @("with-unit-test","purge-cache")
@@ -157,11 +173,11 @@ Write-Host "Test options: $test_options"
 Test-Wheel -wheel_path $wheel_file -options $test_options
 Pop-Location  # PWD=ACloudViewer
 
-Write-Host "Move to install path: $env:ACloudViewer_INSTALL"
+Write-Host "Move to install path: $env:CLOUDVIEWER_INSTALL_DIR"
 
-Move-Item -Path "build/lib/python_package/pip_package/cloudViewer*.whl" -Destination $env:ACloudViewer_INSTALL -Force
+Move-Item -Path "build/lib/python_package/pip_package/cloudViewer*.whl" -Destination $env:CLOUDVIEWER_INSTALL_DIR -Force
 
-Write-Host "Backup whl package to $env:ACloudViewer_INSTALL"
+Write-Host "Backup whl package to $env:CLOUDVIEWER_INSTALL_DIR"
 Write-Host "LASTEXITCODE: $LASTEXITCODE"
 # must do this at the end
 Write-Output "BUILD_COMPLETE"
