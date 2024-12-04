@@ -47,7 +47,6 @@ void PythonPluginManager::loadPluginsFromEntryPoints()
             else
             {
                 plgVerbose() << "No custom plugin registered in site-packages";
-
                 return;
             }
         }
@@ -58,7 +57,7 @@ void PythonPluginManager::loadPluginsFromEntryPoints()
 
         if (py::len(entries) == 0)
         {
-            plgWarning() << "No entries found for group: " << QString::fromStdString(group);
+            plgPrint() << "No entries found for group: " << QString::fromStdString(group);
             return;
         }
 
