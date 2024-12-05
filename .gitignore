@@ -153,6 +153,7 @@ node_modules/
 
 # Editor files
 *.*~
+*.log
 docker_build*.log
 # Local configs
 _vimrc_local.vim
@@ -223,3 +224,21 @@ docs/Doxyfile
 docs/getting_started.rst
 /docker_files/
 /docker_cache/
+
+# regard all text file as the LF
+* text=auto
+
+# specific file type setting
+*.json text eol=lf
+*.txt text eol=lf
+*.md text eol=lf
+*.ps1 text eol=lf
+*.bat text eol=lf
+*.sh text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.cpp text eol=lf
+*.cxx text eol=lf
+*.cc text eol=lf
+*.c text eol=lf
+*.cu text eol=lf

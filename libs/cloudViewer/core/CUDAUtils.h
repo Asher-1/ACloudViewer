@@ -32,6 +32,17 @@
 
 #pragma once
 
+// fix redefinition 'small' between dispatch_segmented_sort.cuh and Windows.h
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
+    #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+    #define NOMINMAX
+#endif
+#include "Windows.h"
+#endif
+
 #include <Logging.h>
 
 #include "core/Device.h"

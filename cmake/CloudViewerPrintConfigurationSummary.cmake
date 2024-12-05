@@ -17,9 +17,11 @@ function(cloudViewer_print_configuration_summary)
     message(STATUS "Enabled Features:")
     cloudViewer_aligned_print("SIMD" "${USE_SIMD}")
     cloudViewer_aligned_print("OpenMP" "${WITH_OPENMP}")
+    cloudViewer_aligned_print("PCL_NURBS" "${WITH_PCL_NURBS}")
     cloudViewer_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
     cloudViewer_aligned_print("Build GUI" "${BUILD_GUI}")
     cloudViewer_aligned_print("Build Opencv" "${BUILD_OPENCV}")
+    cloudViewer_aligned_print("Build With Conda" "${BUILD_WITH_CONDA}")
     cloudViewer_aligned_print("Build Reconstruction GUI" "${BUILD_COLMAP_GUI}")
     cloudViewer_aligned_print("3D Reconstruction Support" "${BUILD_RECONSTRUCTION}")
     cloudViewer_aligned_print("Build WebRTC visualizer" "${BUILD_WEBRTC}")
@@ -64,6 +66,7 @@ function(cloudViewer_print_configuration_summary)
             PNG
             qhullcpp
             librealsense
+            TBB
             tinyfiledialogs
             TinyGLTF
             tinyobjloader

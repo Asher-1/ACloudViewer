@@ -31,7 +31,7 @@ ExternalProject_Add(
             # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
             # checking CXX_COMPILER_ID is not supported.
             $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${CUSTOM_GLIBCXX_USE_CXX11_ABI}>
-            -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux,Darwin>:ON:OFF>
+            -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
             DEPENDS ext_gflags
@@ -45,7 +45,4 @@ set(GLOG_CMAKE_FLAGS ${GFLAGS_CMAKE_FLAGS} -DGFLAGS_NAMESPACE=google -Dglog_DIR=
         -DGLOG_INCLUDE_DIR_HINTS=${GLOG_INCLUDE_DIRS} -DGLOG_LIBRARY_DIR_HINTS=${GLOG_LIB_DIR})
 if (MSVC)
     set(GLOG_CMAKE_FLAGS ${GLOG_CMAKE_FLAGS} -DGOOGLE_GLOG_DLL_DECL=)
-elseif (APPLE)
-    set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GLOG_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
-    cloudViewer_install_ext(FILES ${GLOG_LIB_DIR}/${library_filename} ${INSTALL_DESTINATIONS} "")
 endif ()

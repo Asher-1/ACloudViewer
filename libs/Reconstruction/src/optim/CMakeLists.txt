@@ -38,6 +38,7 @@ COLMAP_ADD_SOURCES(
     progressive_sampler.h progressive_sampler.cc
     random_sampler.h random_sampler.cc
     sprt.h sprt.cc
+    manifold.h
     support_measurement.h support_measurement.cc
 )
 

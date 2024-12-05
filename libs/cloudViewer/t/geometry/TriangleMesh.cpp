@@ -64,7 +64,7 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertices,
 }
 
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
-    kernel::transform::TransformPoints(transformation, GetVertices());
+    kernel::transform::TransformPoints(transformation, GetVertexPositions());
     if (HasVertexNormals()) {
         kernel::transform::TransformNormals(transformation, GetVertexNormals());
     }
@@ -85,7 +85,7 @@ TriangleMesh &TriangleMesh::Translate(const core::Tensor &translation,
     if (!relative) {
         transform -= GetCenter();
     }
-    GetVertices() += transform;
+    GetVertexPositions() += transform;
     return *this;
 }
 
@@ -93,14 +93,14 @@ TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
     center.AssertShape({3});
     center.AssertDevice(device_);
 
-    core::Tensor points = GetVertices();
+    core::Tensor points = GetVertexPositions();
     points.Sub_(center).Mul_(scale).Add_(center);
     return *this;
 }
 
 TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
                                    const core::Tensor &center) {
-    kernel::transform::RotatePoints(R, GetVertices(), center);
+    kernel::transform::RotatePoints(R, GetVertexPositions(), center);
     if (HasVertexNormals()) {
         kernel::transform::RotateNormals(R, GetVertexNormals());
     }
@@ -164,7 +164,7 @@ ccMesh TriangleMesh::ToLegacy() const {
 
     if (HasVertices()) {
         mesh_legacy.addEigenVertices(
-                    core::eigen_converter::TensorToEigenVector3dVector(GetVertices()));
+                    core::eigen_converter::TensorToEigenVector3dVector(GetVertexPositions()));
     }
     if (HasVertexColors()) {
         mesh_legacy.addVertexColors(
@@ -176,7 +176,7 @@ ccMesh TriangleMesh::ToLegacy() const {
     }
     if (HasTriangles()) {
         mesh_legacy.addTriangles(
-                    core::eigen_converter::TensorToEigenVector3iVector(GetTriangles()));
+                    core::eigen_converter::TensorToEigenVector3iVector(GetTriangleIndices()));
     }
     if (HasTriangleNormals()) {
         mesh_legacy.addTriangleNorms(

@@ -28,3 +28,33 @@ function(cloudViewer_link_3rdparty_libraries target)
     # Link header dependencies privately.
     target_link_libraries(${target} PRIVATE ${CloudViewer_3RDPARTY_HEADER_TARGETS})
 endfunction()
+
+function(cloudViewer_link_static_lib target dependency)
+    if (APPLE)
+        ## fix missing symbols like when linking with static libraries opencv[missing _GST_CAT_DEFAULT]
+        # set_target_properties(${target} PROPERTIES
+        #     LINK_FLAGS "-Wl,-ObjC,-all_load"
+        # )
+        target_link_libraries(${target} ${dependency})
+    elseif (UNIX)
+        # Directly pass public and private dependencies to the target.
+        set_target_properties(${target} PROPERTIES
+            LINK_FLAGS "-Wl,--whole-archive -Wl,--start-group"
+        )
+        target_link_libraries(${target} ${dependency})
+        set_property(TARGET ${target} APPEND_STRING PROPERTY
+            LINK_FLAGS " -Wl,--end-group"
+        )
+    elseif (WIN32)
+        set_target_properties(${target} PROPERTIES
+            LINK_FLAGS "/WHOLEARCHIVE"
+        )
+        target_link_libraries(${target} ${dependency})
+    endif()
+
+    add_dependencies(${target} ${dependency})
+    set_target_properties(${target} PROPERTIES
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN 1
+    )
+endfunction()

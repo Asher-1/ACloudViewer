@@ -53,25 +53,29 @@ if (GUI_ENABLED)
     add_subdirectory(ui)
 endif ()
 
-COLMAP_ADD_STATIC_LIBRARY(colmap ${COLMAP_SOURCES})
+COLMAP_ADD_STATIC_LIBRARY(${COLMAP_LIB_NAME} ${COLMAP_SOURCES})
 
 if (CUDA_ENABLED)
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --use_fast_math")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math")
     # Use a separate stream per thread to allow for concurrent kernel execution
     # between multiple threads on the same device.
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --default-stream per-thread")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --default-stream per-thread")
+
+    # Suppress warnings:
+    # ptxas warning : Stack size for entry function X cannot be statically determined.
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas=-suppress-stack-size-warning")
 
     # Fix for Ubuntu 16.04.
     add_definitions("-D_MWAITXINTRIN_H_INCLUDED")
-
     if (MSVC)
         # Avoid pulling in too many header files through <windows.h>
         add_definitions("-DWIN32_LEAN_AND_MEAN")
     endif ()
 
     COLMAP_ADD_STATIC_CUDA_LIBRARY(colmap_cuda ${COLMAP_CUDA_SOURCES})
-    target_link_libraries(colmap_cuda PRIVATE colmap)
-    target_link_libraries(colmap PRIVATE colmap_cuda ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
+    target_link_libraries(colmap_cuda PRIVATE ${COLMAP_LIB_NAME})
+    target_link_libraries(${COLMAP_LIB_NAME} PRIVATE colmap_cuda ${COLMAP_INTERNAL_LIBRARIES})
+    target_link_libraries(${COLMAP_LIB_NAME} PUBLIC  ${COLMAP_EXTERNAL_LIBRARIES})
 else ()
-    target_link_libraries(colmap PUBLIC ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
+    target_link_libraries(${COLMAP_LIB_NAME} PUBLIC ${COLMAP_INTERNAL_LIBRARIES} ${COLMAP_EXTERNAL_LIBRARIES})
 endif ()

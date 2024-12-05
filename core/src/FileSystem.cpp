@@ -364,6 +364,12 @@ bool ChangeWorkingDirectory(const std::string &directory) {
 }
 
 bool IsFile(const std::string &filename) {
+#ifdef _WIN32
+    DWORD attributes = GetFileAttributes(filename.c_str());
+    if (attributes == INVALID_FILE_ATTRIBUTES)
+        return false;
+    return !(attributes & FILE_ATTRIBUTE_DIRECTORY);
+#else
     if (0 != access(filename.c_str(), F_OK)) {
         return false;
     }
@@ -374,9 +380,16 @@ bool IsFile(const std::string &filename) {
         return false;
     }
     return S_ISREG(file_stat.st_mode);
+#endif
 }
 
 bool IsDirectory(const std::string &directory) {
+#ifdef _WIN32
+    DWORD attributes = GetFileAttributes(directory.c_str());
+    if (attributes == INVALID_FILE_ATTRIBUTES)
+        return false;
+    return (attributes & FILE_ATTRIBUTE_DIRECTORY);
+#else
     if (0 != access(directory.c_str(), F_OK)) {
         return false;
     }
@@ -387,6 +400,7 @@ bool IsDirectory(const std::string &directory) {
         return false;
     }
     return S_ISDIR(file_stat.st_mode);
+#endif
 }
 
 bool DirectoryExists(const std::string &directory) {

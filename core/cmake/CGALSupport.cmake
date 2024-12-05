@@ -2,6 +2,13 @@
 # CGAL+CMake support for ACloudViewer
 # ------------------------------------------------------------------------------
 
+if (BUILD_WITH_CONDA)
+	if (WIN32)
+		set(CGAL_DIR "${CONDA_PREFIX}/Library/lib/cmake/CGAL")
+	else()
+		set(CGAL_DIR "${CONDA_PREFIX}/lib/cmake/CGAL")
+	endif()
+endif()
 FIND_PACKAGE( CGAL QUIET COMPONENTS Core ) # implies findGMP
 
 if (CGAL_FOUND)
@@ -12,8 +19,8 @@ if (CGAL_FOUND)
 		message(SEND_ERROR "CC Lib requires at least CGAL 4.3")
 	endif()
 
-  	# We need to get rid of CGAL CXX flags
-  	set(CGAL_DONT_OVERRIDE_CMAKE_FLAGS ON CACHE INTERNAL "override CGAL flags" FORCE)
+	# We need to get rid of CGAL CXX flags
+	set(CGAL_DONT_OVERRIDE_CMAKE_FLAGS ON CACHE INTERNAL "override CGAL flags" FORCE)
 
 	include( ${CGAL_USE_FILE} )
 	include_directories(${CGAL_INCLUDE_DIR})
@@ -23,7 +30,7 @@ if (CGAL_FOUND)
 		# message(${GMP_LIBRARIES})
 		list(GET GMP_LIBRARIES 0 FIRST_GMP_LIB_FILE)
 		get_filename_component(GMP_LIB_FOLDER ${FIRST_GMP_LIB_FILE} DIRECTORY)
-		# message(${GMP_LIB_FOLDER})
+		message(STATUS "GMP_LIB_FOLDER: ${GMP_LIB_FOLDER}")
 
 		file( GLOB GMP_DLL_FILES ${GMP_LIB_FOLDER}/*.dll )
 		foreach( dest ${INSTALL_DESTINATIONS} )
@@ -32,7 +39,5 @@ if (CGAL_FOUND)
 	endif()
 
 else()
-
 	message(SEND_ERROR "Could not find CGAL")
-
 endif()

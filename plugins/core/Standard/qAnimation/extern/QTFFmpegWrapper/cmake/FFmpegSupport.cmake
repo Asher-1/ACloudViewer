@@ -2,18 +2,53 @@
 # FFmpeg+CMake support for ACloudViewer
 # ------------------------------------------------------------------------------
 
+find_package(PkgConfig QUIET)
+pkg_check_modules(FFMPEG QUIET
+		libavcodec
+		libavformat
+		libavutil
+		libswscale
+)
+if( NOT EXISTS "${FFMPEG_INCLUDE_DIRS}" )
+	if (NOT EXISTS "${PKG_FFMPEG_INCLUDE_DIRS}")
+		if (BUILD_WITH_CONDA)
+			if(WIN32)
+				set(FFMPEG_ROOT "$ENV{CONDA_PREFIX}/Library")
+				set(FFMPEG_INCLUDE_DIRS "${FFMPEG_ROOT}/include")
+			else()
+				set(FFMPEG_ROOT "$ENV{CONDA_PREFIX}")
+				set(FFMPEG_INCLUDE_DIRS "${FFMPEG_ROOT}/include")
+			endif()
+		endif()
+	else ()
+		set(FFMPEG_INCLUDE_DIRS ${PKG_FFMPEG_INCLUDE_DIRS})
+		message(STATUS "PKG_FFMPEG_INCLUDE_DIRS: ${PKG_FFMPEG_INCLUDE_DIRS}")
+	endif ()
+endif()
+message(STATUS "Found FFmpeg ${FFMPEG_INCLUDE_DIRS}: ${FFMPEG_LIBRARIES}")
+
 # Find FFmpeg includes
-if( NOT EXISTS "${FFMPEG_INCLUDE_DIR}" )
-	find_path( FFMPEG_AVCODEC_INCLUDE_DIR libavcodec/avcodec.h )
-	set( FFMPEG_INCLUDE_DIR "${FFMPEG_AVCODEC_INCLUDE_DIR}" CACHE PATH "FFmpeg include directory" )
+if( NOT EXISTS "${FFMPEG_INCLUDE_DIRS}" )
+	find_path( FFMPEG_AVCODEC_INCLUDE_DIR 
+		libavcodec/avcodec.h
+		HINTS
+		$ENV{CONDA_PREFIX}/include
+		$ENV{CONDA_PREFIX}/Library/include # windows
+	)
+	set( FFMPEG_INCLUDE_DIRS "${FFMPEG_AVCODEC_INCLUDE_DIR}" CACHE PATH "FFmpeg include directory" )
 	
-	message( STATUS "Setting FFmpeg include dir: ${FFMPEG_INCLUDE_DIR}" )
+	message( STATUS "Setting FFmpeg include dir: ${FFMPEG_INCLUDE_DIRS}" )
 	unset( FFMPEG_AVCODEC_INCLUDE_DIR CACHE )
 endif()
 
 # Find FFmpeg libraries
 if( NOT EXISTS "${FFMPEG_LIBRARY_DIR}" )
-	find_library( FFMPEG_AVCODEC_LIBRARY_DIR avcodec DOC "FFmpeg library directory" )
+	find_library( FFMPEG_AVCODEC_LIBRARY_DIR 
+		avcodec DOC "FFmpeg library directory" 
+		HINTS 
+					$ENV{CONDA_PREFIX}/lib
+					$ENV{CONDA_PREFIX}/Library/lib # windows
+	)
 	get_filename_component( FFMPEG_AVCODEC_LIBRARY_DIR ${FFMPEG_AVCODEC_LIBRARY_DIR} DIRECTORY )
 	set( FFMPEG_LIBRARY_DIR "${FFMPEG_AVCODEC_LIBRARY_DIR}" CACHE PATH "FFmpeg library directory" )
 	
@@ -21,8 +56,8 @@ if( NOT EXISTS "${FFMPEG_LIBRARY_DIR}" )
 	unset( FFMPEG_AVCODEC_LIBRARY_DIR CACHE )
 endif()
 
-if( NOT EXISTS "${FFMPEG_INCLUDE_DIR}" )
-	message( FATAL_ERROR "FFmpeg include dir does not exist (FFMPEG_INCLUDE_DIR): ${FFMPEG_INCLUDE_DIR}" )
+if( NOT EXISTS "${FFMPEG_INCLUDE_DIRS}" )
+	message( FATAL_ERROR "FFmpeg include dir does not exist (FFMPEG_INCLUDE_DIRS): ${FFMPEG_INCLUDE_DIRS}" )
 endif()
 
 if( NOT EXISTS "${FFMPEG_LIBRARY_DIR}" )

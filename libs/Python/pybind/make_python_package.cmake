@@ -3,8 +3,8 @@ set(MIN_NODE_VERSION "14.00.0")
 # Clean up directory
 file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR})
 file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/cloudViewer)
-file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/cloudViewer/libs)
-set(PYTHON_INSTALL_LIB_DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/libs")
+file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/cloudViewer/lib)
+set(PYTHON_INSTALL_LIB_DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/lib")
 set(CUSTOM_SO_NAME ".so.${PROJECT_VERSION}")
 
 # Create python package. It contains:
@@ -83,30 +83,36 @@ foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
 endforeach()
 
 if (WIN32)
-   SET(PACK_SCRIPTS pack_windows.bat)
+   SET(PACK_SCRIPTS "windows/pack_windows.ps1")
 elseif (UNIX AND NOT APPLE)
-   SET(PACK_SCRIPTS pack_ubuntu.sh)
-elseif(APPLE)
-   SET(PACK_SCRIPTS pack_macos.sh)
+   SET(PACK_SCRIPTS "linux/pack_ubuntu.sh")
+elseif (APPLE)
+   SET(PACK_SCRIPTS "mac/bundle/lib_bundle_wheel.py")
 endif ()
+set(PACKAGE_TOOL "${PYTHON_PACKAGE_SRC_DIR}/../scripts/platforms/${PACK_SCRIPTS}")
 
-set(PACKAGE_TOOL "${PYTHON_PACKAGE_SRC_DIR}/../scripts/${PACK_SCRIPTS}")
-
-if (UNIX AND NOT APPLE)
+if (APPLE)
+    set(DEST_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer")
+    execute_process(COMMAND python ${PACKAGE_TOOL} ${DEST_PATH} 
+                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+elseif (UNIX)
+    set(CPU_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cpu")
+    set(CUDA_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cuda")
+    if (EXISTS "${CPU_FOLDER_PATH}")
+        execute_process(COMMAND bash ${PACKAGE_TOOL}
+                        "${CPU_FOLDER_PATH}" ${PYTHON_INSTALL_LIB_DESTINATION}
+                        WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+    endif()
     if (BUILD_CUDA_MODULE)
         execute_process(COMMAND bash ${PACKAGE_TOOL}
-                        "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cuda" ${PYTHON_INSTALL_LIB_DESTINATION}
-                        WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
-    else ()
-        execute_process(COMMAND bash ${PACKAGE_TOOL}
-                        "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cpu" ${PYTHON_INSTALL_LIB_DESTINATION}
+                        "${CUDA_FOLDER_PATH}" ${PYTHON_INSTALL_LIB_DESTINATION}
                         WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
     endif()
     execute_process(COMMAND bash ${PACKAGE_TOOL}
                     ${PYTHON_INSTALL_LIB_DESTINATION}/platforms/libqxcb.so ${PYTHON_INSTALL_LIB_DESTINATION}
                     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
 
-    # rename ldd libs to the format like "${CUSTOM_SO_NAME}"
+    # rename ldd lib to the format like "${CUSTOM_SO_NAME}"
     file(GLOB ldd_libs_list "${PYTHON_INSTALL_LIB_DESTINATION}/*.so*" )
     foreach (filename ${ldd_libs_list})
         get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
@@ -119,9 +125,9 @@ if (UNIX AND NOT APPLE)
         endif()
     endforeach ()
 
-    message(STATUS "CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR: " ${CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR})
-    file(GLOB external_libs_list "${CLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR}/*.so*" )
-    # rename external libs to the format like "${CUSTOM_SO_NAME}"
+    message(STATUS "CLOUDVIEWER_EXTERNAL_INSTALL_DIR: " ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
+    file(GLOB external_libs_list "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/*.so*" )
+    # rename external lib to the format like "${CUSTOM_SO_NAME}"
     foreach (filename ${external_libs_list})
         get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
         get_filename_component(SO_VER_NAME ${EXTRA_LIB_REAL} NAME)
@@ -134,6 +140,37 @@ if (UNIX AND NOT APPLE)
         message(STATUS "Copy external lib: " ${NEW_SO_NAME})
         configure_file(${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME} COPYONLY)
     endforeach ()
+elseif (WIN32) # for windows
+    set(CPU_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cpu")
+    set(CUDA_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cuda")
+    # prepare search path for powershell
+    set(EXTERNAL_DLL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/bin ${BUILD_BIN_PATH}/${CUSTOM_BUILD_TYPE} ${CONDA_PREFIX}/Library/bin)
+    message(STATUS "Start search dependency from path: ${EXTERNAL_DLL_DIR}")
+    string(REPLACE ";" "\",\"" PS_SEARCH_PATHS "${EXTERNAL_DLL_DIR}")
+    set(PS_SEARCH_PATHS "\"${PS_SEARCH_PATHS}\"")
+    message(STATUS "PS_SEARCH_PATHS: ${PS_SEARCH_PATHS}")
+
+    # find powershell program
+    find_program(POWERSHELL_PATH NAMES powershell pwsh)
+    if(NOT POWERSHELL_PATH)
+        message(FATAL_ERROR "PowerShell not found!")
+    endif()
+
+    # search dependency for ACloudViewer, CloudViewer and Colmap
+    if (EXISTS "${CPU_FOLDER_PATH}")
+        execute_process(
+            COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
+                    -Command "& '${PACKAGE_TOOL}' '${CPU_FOLDER_PATH}' '${PYTHON_INSTALL_LIB_DESTINATION}' @(${PS_SEARCH_PATHS}) -Recursive"
+                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
+        )
+    endif()
+    if (BUILD_CUDA_MODULE)
+        execute_process(
+            COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
+                    -Command "& '${PACKAGE_TOOL}' '${CUDA_FOLDER_PATH}' '${PYTHON_INSTALL_LIB_DESTINATION}' @(${PS_SEARCH_PATHS}) -Recursive"
+                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
+        )
+    endif()
 endif()
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
