@@ -21,7 +21,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GCE_CLI_GHA_VERSION: "416.0.0"
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
@@ -76,9 +75,12 @@ jobs:
       - name: Docker build
         run: |
           # GITHUB_WORKSPACE: /home/runner/work/ACloudViewer/ACloudViewer
-          docker/docker_build.sh ${CI_CONFIG}
-          ls -alh
+          if [ "${BUILD_PACKAGE}" == "true" ] && [ "$DEVELOPER_BUILD" == "OFF" ]; then
+            export RELEASE_TAG="-release"
+          fi
+          docker/docker_build.sh ${CI_CONFIG}${RELEASE_TAG:-}
 
+          ls -alh
       - name: Upload package to GitHub artifacts
         if: ${{ env.BUILD_PACKAGE == 'true' }}
         uses: actions/upload-artifact@v4
