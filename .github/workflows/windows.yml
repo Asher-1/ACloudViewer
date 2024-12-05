@@ -338,7 +338,7 @@ jobs:
       - name: Set up python version
         if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
         run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE }}) -replace "3.8", ${{ matrix.python_version }} | Set-Content ${{ env.CONDA_DEP_FILE }}
+          (Get-Content ${{ env.CONDA_DEP_FILE }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE }}
 
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment
