@@ -5,11 +5,16 @@
         <file>images/runner-icon.png</file>
         <file>images/python-editor-icon.png</file>
         <file>images/geo-sat-logo.svg</file>
+        <file>images/geo-sat-logo.png</file>
         <file>images/settings-icon.png</file>
         <file>images/launcher-icon.png</file>
         <file>images/package-manager-icon.png</file>
         <file>images/documentation-icon.png</file>
         <file>images/about-icon.png</file>
+        <file>images/python-plugins-icon.png</file>
+        <file>images/scripts-register-icon.png</file>
+        <file>images/add-scripts-icon.png</file>
+        <file>images/python-script-icon.png</file>
 
         <file>info.json</file>
 

@@ -67,6 +67,6 @@ For example:
 cd docker
 
 # Build Docker.
-./docker_build.sh openblas-amd64-py38-dev
+./docker/docker_build.sh cuda_wheel_py312_dev
 
-See `./docker_build.sh` and `./docker_test.sh` for all available options.
+See `./docker_build.sh` for all available options.

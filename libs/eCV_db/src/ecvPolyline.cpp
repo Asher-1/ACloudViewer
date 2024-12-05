@@ -1073,6 +1073,8 @@ ccPolyline* ccPolyline::Circle(const CCVector3& center,
     circle->addPointIndex(0, resolution);
     circle->setClosed(true);
     circle->setName("Circle");
+    circle->setEnabled(true);
+    circle->setVisible(true);
 
     return circle;
 }

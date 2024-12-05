@@ -100,7 +100,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: false
-          generate_release_notes: true
+          generate_release_notes: false
           prerelease: false
           files: |
             ACloudViewer-*.run

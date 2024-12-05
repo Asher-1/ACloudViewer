@@ -10846,6 +10846,7 @@ void MainWindow::doActionFitCircle() {
     ecvProgressDialog pDlg(true, this);
     pDlg.setAutoClose(false);
 
+    ecvDisplayTools::SetRedrawRecursive(false);
     for (ccHObject* entity : getSelectedEntities()) {
         ccPointCloud* cloud = ccHObjectCaster::ToPointCloud(entity);
         if (!cloud) continue;
@@ -10890,10 +10891,13 @@ void MainWindow::doActionFitCircle() {
                     ccGLMatrix::FromToRotation(CCVector3(0, 0, 1), normal);
             trans.setTranslation(center);
             circle->applyGLTransformation_recursive(&trans);
+            circle->setRedrawFlagRecursive(true);
 
             addToDB(circle, false, false, false);
         }
     }
+
+    refreshAll();
 }
 
 void MainWindow::doActionFitPlane() { doComputePlaneOrientation(false); }

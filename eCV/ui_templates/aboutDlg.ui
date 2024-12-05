@@ -110,7 +110,6 @@
  </widget>
  <resources>
   <include location="../MainWindow.qrc"/>
-  <include location="../MainWindow.qrc"/>
  </resources>
  <connections>
   <connection>

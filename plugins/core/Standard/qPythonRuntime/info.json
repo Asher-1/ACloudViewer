@@ -1,7 +1,7 @@
 {
   "type": "Standard",
   "name": "Python Plugin",
-  "icon": ":/CC/plugin/PythonPlugin/images/python-icon.png",
+  "icon": ":/CC/plugin/PythonRuntime/images/python-icon.png",
   "description": "Python scripting in ACloudViewer",
   "authors": [
     {

@@ -89,7 +89,9 @@ PythonPlugin::PythonPlugin(QObject *parent)
 
     m_config = config;
     m_pluginsMenu = new QMenu("Plugins");
+    m_pluginsMenu->setToolTip("Python Plugins");
     m_pluginsMenu->setEnabled(false);
+    m_pluginsMenu->setIcon(QIcon(PYPLUGIN_ICON_PATH));
 
     connect(&m_interp,
             &PythonInterpreter::executionStarted,
@@ -206,9 +208,11 @@ QList<QAction *> PythonPlugin::getActions()
         m_drawScriptRegister = new QMenu("Script Register");
         m_drawScriptRegister->setToolTip("Show all registered script");
         m_drawScriptRegister->setEnabled(true);
+        m_drawScriptRegister->setIcon(QIcon(PYSCRIPTS_REGISTER_ICON_PATH));
 
         m_addScript = new QAction("Add Script");
         m_addScript->setToolTip("Add Script");
+        m_addScript->setIcon(QIcon(ADD_PYSCRIPT_ICON_PATH));
         connect(m_addScript, &QAction::triggered, this, &PythonPlugin::addScriptAction);
         m_addScript->setEnabled(true);
 
@@ -300,8 +304,10 @@ void PythonPlugin::addScript(QString path)
 
     auto *newScript = new QAction(fileName);
     newScript->setToolTip(fileName);
+    newScript->setIcon(QIcon(PYSCRIPT_ICON_PATH));
     auto *removeNewScript = new QAction(fileName);
     removeNewScript->setToolTip(fileName);
+    removeNewScript->setIcon(QIcon(PYSCRIPT_ICON_PATH));
 
     connect(newScript, &QAction::triggered, [this, path]() { executeScript(path); });
     newScript->setEnabled(true);

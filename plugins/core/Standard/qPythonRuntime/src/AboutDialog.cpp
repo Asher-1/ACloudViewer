@@ -16,6 +16,7 @@
 // ##########################################################################
 
 #include "AboutDialog.h"
+#include "PythonInterpreter.h"
 #include "Resources.h"
 
 #include <ui_AboutDialog.h>
@@ -29,9 +30,15 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent), m_dlg(new Ui_AboutD
     setWindowIcon(QIcon(ABOUT_ICON_PATH));
 
     connect(m_dlg->okBtn, &QPushButton::clicked, this, &QDialog::close);
-
-    const char *versionStr = Py_GetVersion();
-    m_dlg->pythonVersionLabel->setText(QString(versionStr));
+    if (PythonInterpreter::IsInitialized())
+    {
+        const char *versionStr = Py_GetVersion();
+        m_dlg->pythonVersionLabel->setText(QString(versionStr));
+    }
+    else
+    {
+        m_dlg->pythonVersionLabel->setText(QString("Unknown python version"));
+    }
 }
 
 AboutDialog::~AboutDialog() noexcept
