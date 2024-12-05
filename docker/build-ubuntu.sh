@@ -38,8 +38,8 @@ if [ "$BUILD_WITH_CONDA" != "ON" ]; then
 	DOCKER_FILE_POSFIX=""
 	BUILD_IMAGE_NAME="cloudviewer"
 	DEPENDENCY_IMAGE_NAME="cloudviewer-deps"
-	test -f docker_files/qt-opensource-linux-x64-5.14.2.run || \
-		wget https://download.qt.io/archive/qt/5.14/5.14.2/qt-opensource-linux-x64-5.14.2.run -O "docker_files/qt-opensource-linux-x64-5.14.2.run"
+	# test -f docker_files/qt-opensource-linux-x64-5.14.2.run || \
+	# 	wget https://download.qt.io/archive/qt/5.14/5.14.2/qt-opensource-linux-x64-5.14.2.run -O "docker_files/qt-opensource-linux-x64-5.14.2.run"
 
 	test -f docker_files/laszip-src-3.4.3.tar.gz || \
 		wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "docker_files/laszip-src-3.4.3.tar.gz"
@@ -111,7 +111,7 @@ wheel_release_export_env() {
 
 release_build() {
     options="$(echo "$@" | tr ' ' '|')"
-    echo "[release_build()] options: ${options}"
+    echo "[release_build()] options: ${options} on ${UBUNTU_VERSION}"
     if [[ "py38" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.8
     elif [[ "py39" =~ ^($options)$ ]]; then

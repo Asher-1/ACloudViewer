@@ -30,5 +30,12 @@
 #define ACTION_LAUNCHER_ICON_PATH                                                                  \
     QStringLiteral(":/CC/plugin/PythonRuntime/images/launcher-icon.png")
 #define SETTINGS_ICON_PATH QStringLiteral(":/CC/plugin/PythonRuntime/images/settings-icon.png")
+#define PYPLUGIN_ICON_PATH                                                                         \
+    QStringLiteral(":/CC/plugin/PythonRuntime/images/python-plugins-icon.png")
+#define PYSCRIPTS_REGISTER_ICON_PATH                                                               \
+    QStringLiteral(":/CC/plugin/PythonRuntime/images/scripts-register-icon.png")
+#define ADD_PYSCRIPT_ICON_PATH                                                                     \
+    QStringLiteral(":/CC/plugin/PythonRuntime/images/add-scripts-icon.png")
+#define PYSCRIPT_ICON_PATH QStringLiteral(":/CC/plugin/PythonRuntime/images/python-script-icon.png")
 
 #endif // PYTHON_PLUGIN_RESOURCES_H

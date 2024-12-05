@@ -25,11 +25,24 @@ ENV SUDO=command
 
 ENV REFRESHED_AT=2024-12-04\
     CLOUDVIEWER_DEV=/opt/ACloudViewer \
-    # QT_ROOT=/opt/Qt5.14.2/ \
-    # QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
-    # QT_CI_LOGIN=alicevisionjunk@gmail.com \
-    # QT_CI_PASSWORD=azerty1. \
     DEBIAN_FRONTEND=noninteractive
+
+# ENV REFRESHED_AT=2024-12-04\
+#     CLOUDVIEWER_DEV=/opt/ACloudViewer \
+#     QT_ROOT=/opt/Qt5.14.2/ \
+#     QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
+#     QT_CI_LOGIN=alicevisionjunk@gmail.com \
+#     QT_CI_PASSWORD=azerty1. \
+#     DEBIAN_FRONTEND=noninteractive
+# Install Qt (to build plugins)
+# WORKDIR /opt
+# COPY docker_files/qt-opensource-linux-x64-5.14.2.run /opt
+# COPY ./docker/qt-installer-noninteractive.qs /opt
+# RUN chmod +x qt-opensource-linux-x64-5.14.2.run && \
+#     ./qt-opensource-linux-x64-5.14.2.run --verbose --platform minimal --script "/opt/qt-installer-noninteractive.qs" && \
+#     rm qt-opensource-linux-x64-5.14.2.run
+# ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
+# ENV PATH="/opt/Qt5.14.2/5.14.2/gcc_64/bin:$PATH"
 
 # cloudViewer Jupyter dependencies
 RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
@@ -134,22 +147,11 @@ ENV QT_BASE_DIR=${QT_BASE_DIR} \
     LD_LIBRARY_PATH=${QT_BASE_DIR}/lib:$LD_LIBRARY_PATH \
     PKG_CONFIG_PATH=${QT_BASE_DIR}/lib/pkgconfig:$PKG_CONFIG_PATH
 
-
 # deploy package installer
 WORKDIR /opt
 COPY docker_files/QtIFW-4.6.1-linux-amd.zip /opt
 RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/opt/QtIFW-4.6.1-linux-amd/bin:$PATH"
-
-# Install Qt (to build plugins)
-# WORKDIR /opt
-# COPY docker_files/qt-opensource-linux-x64-5.14.2.run /opt
-# COPY ./docker/qt-installer-noninteractive.qs /opt
-# RUN chmod +x qt-opensource-linux-x64-5.14.2.run && \
-#     ./qt-opensource-linux-x64-5.14.2.run --verbose --platform minimal --script "/opt/qt-installer-noninteractive.qs" && \
-#     rm qt-opensource-linux-x64-5.14.2.run
-# ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
-# ENV PATH="/opt/Qt5.14.2/5.14.2/gcc_64/bin:$PATH"
 
 # C++ dependencies
 WORKDIR /opt

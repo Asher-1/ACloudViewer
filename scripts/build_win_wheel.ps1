@@ -175,7 +175,7 @@ Test-Wheel -wheel_path $wheel_file -options $test_options
 Pop-Location  # PWD=ACloudViewer
 
 Write-Host "Move to install path: $env:CLOUDVIEWER_INSTALL_DIR"
-
+New-Item -ItemType Directory -Force -Path "$env:CLOUDVIEWER_INSTALL_DIR"
 Move-Item -Path "build/lib/python_package/pip_package/cloudViewer*.whl" -Destination $env:CLOUDVIEWER_INSTALL_DIR -Force
 
 Write-Host "Backup whl package to $env:CLOUDVIEWER_INSTALL_DIR"
