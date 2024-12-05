@@ -13,8 +13,9 @@
         <file>images/about-icon.png</file>
         <file>images/python-plugins-icon.png</file>
         <file>images/scripts-register-icon.png</file>
-        <file>images/add-scripts-icon.png</file>
         <file>images/python-script-icon.png</file>
+        <file>images/add-scripts-icon.png</file>
+        <file>images/remove-scripts-icon.png</file>
 
         <file>info.json</file>
 

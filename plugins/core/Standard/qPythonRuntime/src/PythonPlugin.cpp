@@ -217,6 +217,7 @@ QList<QAction *> PythonPlugin::getActions()
         m_addScript->setEnabled(true);
 
         m_removeScript = new QMenu("Remove Script");
+        m_removeScript->setIcon(QIcon(REMOVE_PYSCRIPT_ICON_PATH));
         m_removeScript->setToolTip("Remove Script");
         m_removeScript->setEnabled(false);
 
