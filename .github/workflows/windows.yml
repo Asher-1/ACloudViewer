@@ -218,7 +218,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PACKAGE_INSTALLER_NAME }}
-          path: C:\dev\cloudViewer_install\ACloudViewer-*.exe
+          path: C:\dev\cloudViewer_install\${{ env.PACKAGE_INSTALLER_NAME }}
           if-no-files-found: error
 
       - name: Update devel release
@@ -226,7 +226,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload main-devel C:\dev\cloudViewer_install\ACloudViewer-*.exe --clobber
+          gh release upload main-devel C:\dev\cloudViewer_install\${{ env.PACKAGE_INSTALLER_NAME }} --clobber
           gh release view main-devel
 
       - name: Public App Release
@@ -238,7 +238,7 @@ jobs:
           prerelease: false
           body_path: ${{github.workspace}}/CHANGELOG.md
           files: |
-            C:\dev\cloudViewer_install\ACloudViewer-*.exe
+            C:\dev\cloudViewer_install\${{ env.PACKAGE_INSTALLER_NAME }}
 
       - name: Disk space used
         run: Get-PSDrive
