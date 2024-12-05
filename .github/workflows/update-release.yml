@@ -1,8 +1,8 @@
 name: Clean release
 permissions: {}
 on:
-  workflow_run:  # Triggered when long running macos workflow ends
-    workflows: [macos]
+  workflow_run:  # Triggered when long running windows workflow ends
+    workflows: [windows]
     types: [completed]
     # branches: [main]
 
