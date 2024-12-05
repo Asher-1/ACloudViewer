@@ -273,7 +273,7 @@ var WebRtcStreamer = (function () {
         "mousedown",
         (event) => {
           event.preventDefault();
-          var open3dMouseEvent = {
+          var cloudViewerMouseEvent = {
             window_uid: windowUID,
             class_name: "MouseEvent",
             type: "BUTTON_DOWN",
@@ -285,7 +285,7 @@ var WebRtcStreamer = (function () {
               count: 1,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.dataChannel.send(JSON.stringify(cloudViewerMouseEvent));
         },
         false
       );
@@ -294,7 +294,7 @@ var WebRtcStreamer = (function () {
         (event) => {
           event.preventDefault();
           var rect = event.target.getBoundingClientRect();
-          var open3dMouseEvent = {
+          var cloudViewerMouseEvent = {
             window_uid: windowUID,
             class_name: "MouseEvent",
             type: "BUTTON_DOWN",
@@ -306,7 +306,7 @@ var WebRtcStreamer = (function () {
               count: 1,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.dataChannel.send(JSON.stringify(cloudViewerMouseEvent));
         },
         false
       );
@@ -314,7 +314,7 @@ var WebRtcStreamer = (function () {
         "mouseup",
         (event) => {
           event.preventDefault();
-          var open3dMouseEvent = {
+          var cloudViewerMouseEvent = {
             window_uid: windowUID,
             class_name: "MouseEvent",
             type: "BUTTON_UP",
@@ -326,7 +326,7 @@ var WebRtcStreamer = (function () {
               count: 1,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.dataChannel.send(JSON.stringify(cloudViewerMouseEvent));
         },
         false
       );
@@ -335,7 +335,7 @@ var WebRtcStreamer = (function () {
         (event) => {
           event.preventDefault();
           var rect = event.target.getBoundingClientRect();
-          var open3dMouseEvent = {
+          var cloudViewerMouseEvent = {
             window_uid: windowUID,
             class_name: "MouseEvent",
             type: "BUTTON_UP",
@@ -347,7 +347,7 @@ var WebRtcStreamer = (function () {
               count: 1,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.dataChannel.send(JSON.stringify(cloudViewerMouseEvent));
         },
         false
       );
@@ -358,7 +358,7 @@ var WebRtcStreamer = (function () {
           // - CloudViewer: L=1, M=2, R=4
           // - JavaScript: L=1, R=2, M=4
           event.preventDefault();
-          var open3dMouseEvent = {
+          var cloudViewerMouseEvent = {
             window_uid: windowUID,
             class_name: "MouseEvent",
             type: event.buttons == 0 ? "MOVE" : "DRAG",
@@ -369,7 +369,7 @@ var WebRtcStreamer = (function () {
               buttons: event.buttons, // MouseButtons ORed together
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.dataChannel.send(JSON.stringify(cloudViewerMouseEvent));
         },
         false
       );
@@ -381,7 +381,7 @@ var WebRtcStreamer = (function () {
           // - JavaScript: L=1, R=2, M=4
           event.preventDefault();
           var rect = event.target.getBoundingClientRect();
-          var open3dMouseEvent = {
+          var cloudViewerMouseEvent = {
             window_uid: windowUID,
             class_name: "MouseEvent",
             type: "DRAG",
@@ -392,14 +392,14 @@ var WebRtcStreamer = (function () {
               buttons: 1, // MouseButtons ORed together
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.dataChannel.send(JSON.stringify(cloudViewerMouseEvent));
         },
         false
       );
       this.videoElt.addEventListener(
         "mouseleave",
         (event) => {
-          var open3dMouseEvent = {
+          var cloudViewerMouseEvent = {
             window_uid: windowUID,
             class_name: "MouseEvent",
             type: "BUTTON_UP",
@@ -411,7 +411,7 @@ var WebRtcStreamer = (function () {
               count: 1,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.dataChannel.send(JSON.stringify(cloudViewerMouseEvent));
         },
         false
       );
@@ -434,7 +434,7 @@ var WebRtcStreamer = (function () {
           dx = dx == 0 ? dx : (-dx / Math.abs(dx)) * 1;
           dy = dy == 0 ? dy : (-dy / Math.abs(dy)) * 1;
 
-          var open3dMouseEvent = {
+          var cloudViewerMouseEvent = {
             window_uid: windowUID,
             class_name: "MouseEvent",
             type: "WHEEL",
@@ -447,7 +447,7 @@ var WebRtcStreamer = (function () {
               isTrackpad: isTrackpad ? 1 : 0,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.dataChannel.send(JSON.stringify(cloudViewerMouseEvent));
         },
         { passive: false }
       );

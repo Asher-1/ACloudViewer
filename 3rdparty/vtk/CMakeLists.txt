@@ -72,8 +72,8 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 )
-# Keep 3rd party symbols hidden from Open3D user code. Do not use if 3rd party
-# libraries throw exceptions that escape Open3D.
+# Keep 3rd party symbols hidden from CloudViewer user code. Do not use if 3rd party
+# libraries throw exceptions that escape CloudViewer.
 set(ExternalProject_CMAKE_ARGS_hidden
     ${ExternalProject_CMAKE_ARGS}
     # Apply LANG_VISIBILITY_PRESET to static libraries and archives as well

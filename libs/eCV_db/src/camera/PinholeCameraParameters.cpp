@@ -35,7 +35,6 @@ namespace camera {
 using namespace cloudViewer;
 
 PinholeCameraParameters::PinholeCameraParameters() {}
-
 PinholeCameraParameters::~PinholeCameraParameters() {}
 
 bool PinholeCameraParameters::ConvertToJsonValue(Json::Value &value) const {

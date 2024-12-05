@@ -121,9 +121,9 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
 }
 
 /// CloudViewer DLPack Tensor manager.
-class Open3DDLManagedTensor {
+class CloudViewerDLManagedTensor {
 private:
-    Open3DDLManagedTensor(const Tensor& o3d_tensor) {
+    CloudViewerDLManagedTensor(const Tensor& o3d_tensor) {
         o3d_tensor_ = o3d_tensor;
 
         // Prepare dl_device_type
@@ -162,17 +162,17 @@ private:
         dl_tensor.ctx = dl_context;
         dl_tensor.ndim = static_cast<int>(o3d_tensor_.GetShape().size());
         dl_tensor.dtype = dl_data_type;
-        // The shape pointer is alive for the lifetime of Open3DDLManagedTensor.
+        // The shape pointer is alive for the lifetime of CloudViewerDLManagedTensor.
         dl_tensor.shape =
                 const_cast<int64_t*>(o3d_tensor_.GetShapeRef().data());
         // The strides pointer is alive for the lifetime of
-        // Open3DDLManagedTensor.
+        // CloudViewerDLManagedTensor.
         dl_tensor.strides =
                 const_cast<int64_t*>(o3d_tensor_.GetStridesRef().data());
         dl_tensor.byte_offset = 0;
 
         dl_managed_tensor_.manager_ctx = this;
-        dl_managed_tensor_.deleter = &Open3DDLManagedTensor::Deleter;
+        dl_managed_tensor_.deleter = &CloudViewerDLManagedTensor::Deleter;
         dl_managed_tensor_.dl_tensor = dl_tensor;
     }
 
@@ -185,13 +185,13 @@ public:
     /// and ultimately it decreases the reference count to the actual data
     /// buffer (i.e. `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
     static DLManagedTensor* Create(const Tensor& o3d_tensor) {
-        Open3DDLManagedTensor* o3d_dl_tensor =
-                new Open3DDLManagedTensor(o3d_tensor);
+        CloudViewerDLManagedTensor* o3d_dl_tensor =
+                new CloudViewerDLManagedTensor(o3d_tensor);
         return &o3d_dl_tensor->dl_managed_tensor_;
     }
 
     static void Deleter(DLManagedTensor* arg) {
-        delete static_cast<Open3DDLManagedTensor*>(arg->manager_ctx);
+        delete static_cast<CloudViewerDLManagedTensor*>(arg->manager_ctx);
     }
 };
 
@@ -1520,7 +1520,7 @@ bool Tensor::AllEqual(const Tensor& other) const {
 }
 
 DLManagedTensor* Tensor::ToDLPack() const {
-    return Open3DDLManagedTensor::Create(*this);
+    return CloudViewerDLManagedTensor::Create(*this);
 }
 
 Tensor Tensor::FromDLPack(const DLManagedTensor* src) {

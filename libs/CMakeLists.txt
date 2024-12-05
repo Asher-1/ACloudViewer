@@ -7,6 +7,7 @@ function(cloudViewer_link_3rdparty_libraries target)
     # Directly pass public and private dependencies to the target.
     target_link_libraries(${target} PRIVATE ${CloudViewer_3RDPARTY_PRIVATE_TARGETS} ECV_DB_LIB ECV_IO_LIB)
     target_link_libraries(${target} PUBLIC ${CloudViewer_3RDPARTY_PUBLIC_TARGETS} ECV_DB_LIB ECV_IO_LIB)
+
     if(USE_SIMD)
         target_compile_definitions(${target} PRIVATE ${CLOUDVIEWERCONFIG_SSE_DEFINITIONS})
         target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CLOUDVIEWERCONFIG_SSE_COMPILE_OPTIONS}>")
@@ -36,6 +37,18 @@ endfunction()
 
 if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 	if( MSVC )
+        # remove about runtime output settins in order to output ops to build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
+		UNSET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG)
+		UNSET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE)
+		UNSET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO)
+	else()
+		SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/$<CONFIG>)
+	endif()
+endif()
+add_subdirectory( cloudViewer )
+
+if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
+	if( MSVC )
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
@@ -43,9 +56,6 @@ if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
 		SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/$<CONFIG>)
 	endif()
 endif()
-
-add_subdirectory( cloudViewer )
-
 add_subdirectory( CVViewer )
 
 if(BUILD_RECONSTRUCTION)
@@ -70,7 +80,7 @@ endif ()
 
 # PCL ENGINE LIB
 if (USE_PCL_BACKEND)
-	include( CMakePCLLibs )
+    include( CMakePCLLibs )
 	add_subdirectory( PCLEngine ) # must always be included after eCV_db and eCV_io (dependency)
 endif()
 

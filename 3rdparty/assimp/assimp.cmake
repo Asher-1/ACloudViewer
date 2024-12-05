@@ -5,7 +5,7 @@ list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileMtl
 list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileImporter.cpp")
 
 if (MSVC)
-    set(lib_name assimp-vc142-mt)
+    set(lib_name assimp-vc${MSVC_TOOLSET_VERSION}-mt)
 else ()
     set(lib_name assimp)
 endif ()

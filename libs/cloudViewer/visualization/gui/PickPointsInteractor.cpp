@@ -194,7 +194,7 @@ void PickPointsInteractor::SetPickableGeometry(
                            temp_points.end());
         } else if (tcloud || tmesh) {
             const auto &tpoints =
-                    (tcloud ? tcloud->GetPoints() : tmesh->GetVertices());
+                    (tcloud ? tcloud->GetPoints() : tmesh->GetVertexPositions());
             const size_t n = tpoints.NumElements();
             float *pts = (float *)tpoints.GetDataPtr();
             points_.reserve(points_.size() + n);

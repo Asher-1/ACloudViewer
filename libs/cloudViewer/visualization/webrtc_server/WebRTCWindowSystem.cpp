@@ -59,7 +59,7 @@ static const std::list<std::string> s_public_ice_servers{
 
 // We also provide an experimental TURN server for testing purposes. Don't abuse
 // the server. The strings are split to avoid search enging indexing.
-static const std::list<std::string> s_open3d_ice_servers{
+static const std::list<std::string> s_cloudViewer_ice_servers{
         std::string("turn:user:password@34.69") + ".27.100:3478",
         std::string("turn:user:password@34.69") + ".27.100:3478?transport=tcp",
 };
@@ -283,8 +283,8 @@ void WebRTCWindowSystem::StartWebRTCServer() {
                 ice_servers.insert(ice_servers.end(), custom_servers.begin(),
                                    custom_servers.end());
             }
-            ice_servers.insert(ice_servers.end(), s_open3d_ice_servers.begin(),
-                               s_open3d_ice_servers.end());
+            ice_servers.insert(ice_servers.end(), s_cloudViewer_ice_servers.begin(),
+                               s_cloudViewer_ice_servers.end());
             utility::LogInfo("ICE servers: {}", ice_servers);
 
             impl_->peer_connection_manager_ =

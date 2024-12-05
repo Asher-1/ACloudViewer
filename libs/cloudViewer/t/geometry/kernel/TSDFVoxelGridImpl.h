@@ -276,7 +276,7 @@ void ExtractSurfacePointsCPU
 
                                     if (weight_i > weight_threshold &&
                                         tsdf_i * tsdf_o < 0) {
-                                        OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                                        CLOUDVIEWER_ATOMIC_ADD(count_ptr, 1);
                                     }
                                 }
                             });
@@ -412,7 +412,7 @@ void ExtractSurfacePointsCPU
                                     float ratio =
                                             (0 - tsdf_o) / (tsdf_i - tsdf_o);
 
-                                    int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                                    int idx = CLOUDVIEWER_ATOMIC_ADD(count_ptr, 1);
                                     if (idx >= valid_size) {
                                         printf("Point cloud size larger than "
                                                "estimated, please increase the "
@@ -677,7 +677,7 @@ void ExtractSurfaceMeshCPU
                         int vertex_idx = mesh_struct_ptr[e];
                         if (vertex_idx != -1) continue;
 
-                        OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                        CLOUDVIEWER_ATOMIC_ADD(count_ptr, 1);
                     }
                 });
 
@@ -808,7 +808,7 @@ void ExtractSurfaceMeshCPU
                         float tsdf_e = voxel_ptr_e->GetTSDF();
                         float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 
-                        int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                        int idx = CLOUDVIEWER_ATOMIC_ADD(count_ptr, 1);
                         mesh_struct_ptr[e] = idx;
 
                         float ratio_x = ratio * int(e == 0);
@@ -892,7 +892,7 @@ void ExtractSurfaceMeshCPU
         for (size_t tri = 0; tri < 16; tri += 3) {
             if (tri_table[table_idx][tri] == -1) return;
 
-            int tri_idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+            int tri_idx = CLOUDVIEWER_ATOMIC_ADD(count_ptr, 1);
 
             for (size_t vertex = 0; vertex < 3; ++vertex) {
                 int edge = tri_table[table_idx][tri + vertex];
@@ -1037,7 +1037,7 @@ void EstimateRangeCPU
                         ceilf(float(u_max - u_min + 1) / float(fragment_size));
 
                 int frag_count = frag_v_count * frag_u_count;
-                int frag_count_start = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                int frag_count_start = CLOUDVIEWER_ATOMIC_ADD(count_ptr, 1);
                 int frag_count_end = frag_count_start + frag_count;
                 if (frag_count_end >= frag_buffer_size) {
                     printf("Fragment count exceeding buffer size, abort!\n");

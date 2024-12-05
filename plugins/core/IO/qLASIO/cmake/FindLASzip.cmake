@@ -5,12 +5,16 @@ find_library(LASZIP_LIBRARY
         NAMES laszip3 laszip
         HINTS /usr/lib
         /usr/local/lib
+        $ENV{CONDA_PREFIX}/lib
+        $ENV{CONDA_PREFIX}/Library/lib # windows
         )
 
 find_path(LASZIP_INCLUDE_DIR
         NAMES laszip
         HINTS /usr/include
         /usr/local/include
+        $ENV{CONDA_PREFIX}/include
+        $ENV{CONDA_PREFIX}/Library/include # windows
         )
 
 if (WIN32)
@@ -22,6 +26,7 @@ else ()
     set(LASZIP_DLL "Dummy Value so that handle args does not fail")
 endif ()
 
+message(DEBUG "LASZIP_INCLUDE_DIR: ${LASZIP_INCLUDE_DIR}")
 message(DEBUG "LASZIP_LIBRARY: ${LASZIP_LIBRARY}")
 message(DEBUG "LASZIP_DLL: ${LASZIP_DLL}")
 

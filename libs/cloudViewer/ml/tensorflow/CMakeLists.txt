@@ -131,13 +131,23 @@ cloudViewer_show_and_abort_on_warning(cloudViewer_tf_ops)
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TF_OPS_DIR cloudViewer_tf_ops LIBRARY_OUTPUT_DIRECTORY)
 set(TF_OPS_ARCH_DIR "${TF_OPS_DIR}/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+# cloudViewer_tf_ops.{dylib|so|dll} the default location is build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
+set(TF_OPS_RUNTIME_ARCH_DIR
+        "${TF_OPS_DIR}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
 set_target_properties(cloudViewer_tf_ops PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${TF_OPS_ARCH_DIR}"
-        ARCHIVE_OUTPUT_DIRECTORY "${TF_OPS_ARCH_DIR}")
+        ARCHIVE_OUTPUT_DIRECTORY "${TF_OPS_ARCH_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "${TF_OPS_RUNTIME_ARCH_DIR}")
 
 # Do not add "lib" prefix
 set_target_properties(cloudViewer_tf_ops PROPERTIES PREFIX "")
 set_target_properties(cloudViewer_tf_ops PROPERTIES DEBUG_POSTFIX "_debug")
+
+# if (APPLE)
+#     set_target_properties(cloudViewer_tf_ops PROPERTIES BUILD_RPATH "@loader_path/..;@loader_path/../lib")
+# elseif (UNIX)
+#     set_target_properties(cloudViewer_tf_ops PROPERTIES BUILD_RPATH "$ORIGIN/..;$ORIGIN/../lib")
+# endif()
 
 target_compile_definitions(cloudViewer_tf_ops PRIVATE "${Tensorflow_DEFINITIONS}")
 

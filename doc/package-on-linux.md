@@ -9,7 +9,7 @@
 
 1. Copy copylib_ubuntu.sh to build directory
 
-		cp scripts/copylib_ubuntu.sh BUILD_DIR/bin/
+		cp scripts/platforms/linux/copylib_ubuntu.sh BUILD_DIR/bin/
    
 2. Find dependeces for ACloudViewer and you will get lib directory with dependences such as *.so in it
 		

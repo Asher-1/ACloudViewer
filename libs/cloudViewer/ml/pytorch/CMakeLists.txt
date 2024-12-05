@@ -122,19 +122,23 @@ cloudViewer_set_global_properties(cloudViewer_torch_ops)
 get_target_property(TORCH_OPS_DIR cloudViewer_torch_ops LIBRARY_OUTPUT_DIRECTORY)
 set(TORCH_OPS_ARCH_DIR
         "${TORCH_OPS_DIR}/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+# cloudViewer_torch_ops.{dylib|so|dll} the default location is build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
+set(TORCH_OPS_RUNTIME_ARCH_DIR
+        "${TORCH_OPS_DIR}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
 set_target_properties(cloudViewer_torch_ops PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${TORCH_OPS_ARCH_DIR}"
-        ARCHIVE_OUTPUT_DIRECTORY "${TORCH_OPS_ARCH_DIR}")
+        ARCHIVE_OUTPUT_DIRECTORY "${TORCH_OPS_ARCH_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "${TORCH_OPS_RUNTIME_ARCH_DIR}")
 
 # Do not add "lib" prefix
 set_target_properties(cloudViewer_torch_ops PROPERTIES PREFIX "")
 set_target_properties(cloudViewer_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
 # Set BUILD_RPATH to find tbb. We don't install through cmake.
-if (APPLE)
-    set_target_properties(cloudViewer_torch_ops PROPERTIES BUILD_RPATH "@loader_path/..")
-elseif (UNIX)
-    set_target_properties(cloudViewer_torch_ops PROPERTIES BUILD_RPATH "$ORIGIN/..")
-endif()
+# if (APPLE)
+#     set_target_properties(cloudViewer_torch_ops PROPERTIES BUILD_RPATH "@loader_path/..;@loader_path/../lib")
+# elseif (UNIX)
+#     set_target_properties(cloudViewer_torch_ops PROPERTIES BUILD_RPATH "$ORIGIN/..;$ORIGIN/../lib")
+# endif()
 
 target_include_directories(cloudViewer_torch_ops SYSTEM PRIVATE
         ${PROJECT_SOURCE_DIR}/libs/cloudViewer
