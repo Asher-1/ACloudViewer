@@ -27,7 +27,7 @@ file(GLOB ui_list ui_templates/*.ui)
 
 file(GLOB qrc_list *.qrc Resources/themes/*.qrc)
 
-file(GLOB txt_list TODO.txt ${ACloudViewer_SOURCE_DIR}/CHANGELOG.txt)
+file(GLOB txt_list TODO.txt ${COLOUDVIEWER_PROJECT_PATH}/CHANGELOG.txt)
 
 add_subdirectory(db_tree)
 add_subdirectory(pluginManager)
@@ -69,90 +69,13 @@ else ()
     add_executable(${PROJECT_NAME} ${header_list} ${source_list} ${generated_ui_list} ${generated_qrc_list} ${rc_list} ${txt_list})
 endif ()
 
-if (WIN32)
-    add_custom_command(
-            TARGET ${PROJECT_NAME}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${PROJECT_NAME}.exe ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/${PROJECT_NAME}.exe
-            VERBATIM
-    )
-elseif (APPLE)
-    set(RESOURCE_DIR_NAME "Contents/Resources")
-    file(GLOB RESOURCE_FILES "Mac/*.icns")
-    file(GLOB TRANSLATION_FILES "${CMAKE_BINARY_DIR}/eCV/translations/*.qm")
-    set(CLOUDVIEWER_RESOURCE_DESTINATION "${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.app/${RESOURCE_DIR_NAME}")
-    set(CLOUDVIEWER_TRANSLATION_DESTINATION "${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.app/Contents/translations")
-    set(CLOUDVIEWER_PLUGINS_DESTINATION "${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.app/Contents/cvPlugins")
-    add_custom_command(
-            TARGET ${PROJECT_NAME}
-            POST_BUILD
-            # copy the resource files into the bundle
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "${CLOUDVIEWER_RESOURCE_DESTINATION}"
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${CLOUDVIEWER_RESOURCE_DESTINATION}"
-            COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${CLOUDVIEWER_RESOURCE_DESTINATION}"
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${CLOUDVIEWER_TRANSLATION_DESTINATION}"
-            COMMAND ${CMAKE_COMMAND} -E copy ${TRANSLATION_FILES} "${CLOUDVIEWER_TRANSLATION_DESTINATION}"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/bin/cvPlugins "${CLOUDVIEWER_PLUGINS_DESTINATION}"
-            VERBATIM
-    )
-
-    # for macdeployqt
-    add_custom_command(
-            TARGET ${PROJECT_NAME}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.app ${CMAKE_BINARY_DIR}/eCV/${PROJECT_NAME}.app
-            VERBATIM
-    )
-else ()
-    add_custom_command(
-            TARGET ${PROJECT_NAME}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME} ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/${PROJECT_NAME}
-            VERBATIM
-    )
-endif ()
-
-
-if (WIN32)
-    DeployQt(
-            TARGET
-            ${PROJECT_NAME}
-            DEPLOY_PATH
-            ${ACloudViewer_DEST_FOLDER}
-    )
-elseif (APPLE)
-    DeployQt(
-            TARGET
-            ${PROJECT_NAME}
-            DEPLOY_PATH
-            ${PROJECT_NAME}
-    )
-endif ()
-
-target_link_libraries(${PROJECT_NAME}
-        CVAppCommon
-        QCustomPlot
-        Qt5::Network
-        Qt5::WebSockets
-        Qt5::PrintSupport
-        )
-
-if (CVCORELIB_USE_QT_CONCURRENT)
-    # We want *deployqt to handle this dependency, so instead of just copying the file
-    # link to the target.
-    target_link_libraries(${PROJECT_NAME}
-            Qt5::Concurrent
-            )
-endif ()
-
-# contrib. libraries support
+# Put together our Application bundle on macOS
 if (APPLE)
-    target_link_contrib(${PROJECT_NAME} ${ACloudViewer_MAC_FRAMEWORK_DIR})
-elseif (UNIX)
-    target_link_contrib(${PROJECT_NAME} lib)
-else ()
-    target_link_contrib(${PROJECT_NAME} ${ACloudViewer_DEST_FOLDER})
+    add_subdirectory(Mac)
 endif ()
+
+# Translation Note: must be after add_subdirectory(Mac) on apple
+add_subdirectory(translations)
 
 if (BUILD_RECONSTRUCTION)
     if (${BUILD_GUI})
@@ -188,10 +111,50 @@ if (BUILD_RECONSTRUCTION)
     include_directories(${COLMAP_SOURCE_DIR}/lib)
     include_directories(${COLMAP_SOURCE_DIR}/src)
 
-    target_link_libraries(${PROJECT_NAME} colmap)
+    target_link_libraries(${PROJECT_NAME} ${COLMAP_LIB_NAME})
 
     # Add custom preprocessor definitions
     target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_RECONSTRUCTION)
+endif ()
+
+target_link_libraries(${PROJECT_NAME}
+        CVAppCommon
+        QCustomPlot
+        Qt5::Network
+        Qt5::WebSockets
+        Qt5::PrintSupport
+        )
+
+if (CVCORELIB_USE_QT_CONCURRENT)
+    # We want *deployqt to handle this dependency, so instead of just copying the file
+    # link to the target.
+    target_link_libraries(${PROJECT_NAME}
+            Qt5::Concurrent
+            )
+endif ()
+
+# running gui app from the build folder needs tbb.dll to be in the same folder.
+if (WIN32)
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tbb> "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/"
+    )
+else()
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tbb> "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+    )
+endif()
+
+# contrib. libraries support
+if (APPLE)
+    target_link_contrib(${PROJECT_NAME} ${ACloudViewer_MAC_FRAMEWORK_DIR})
+elseif (UNIX)
+    target_link_contrib(${PROJECT_NAME} lib)
+else ()
+    target_link_contrib(${PROJECT_NAME} ${ACloudViewer_DEST_FOLDER})
 endif ()
 
 # fix that You must build your code with position independent code if Qt was built with -reduce-relocations
@@ -221,6 +184,60 @@ if (WIN32)
     endif ()
 endif ()
 
+if (WIN32)
+    add_custom_command(
+            TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/$<CONFIG>/${PROJECT_NAME}.exe ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/${PROJECT_NAME}.exe
+            VERBATIM
+    )
+elseif (APPLE)
+    set(RESOURCE_DIR_NAME "Contents/Resources")
+    file(GLOB RESOURCE_FILES "Mac/*.icns")
+    set(BINARY_APP_PATH ${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/${PROJECT_NAME}.app)
+    set(CLOUDVIEWER_TRANSLATION_DESTINATION "${BINARY_APP_PATH}/Contents/translations")
+    set(CLOUDVIEWER_RESOURCE_DESTINATION "${BINARY_APP_PATH}/${RESOURCE_DIR_NAME}")
+    set(CLOUDVIEWER_PLUGINS_DESTINATION "${BINARY_APP_PATH}/Contents/cvPlugins")
+    add_custom_command(
+            TARGET ${PROJECT_NAME}
+            POST_BUILD
+            # copy the resource files into the bundle
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${CLOUDVIEWER_RESOURCE_DESTINATION}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CLOUDVIEWER_RESOURCE_DESTINATION}"
+            COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${CLOUDVIEWER_RESOURCE_DESTINATION}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CLOUDVIEWER_TRANSLATION_DESTINATION}"
+            COMMAND sh -c "cp ${CMAKE_BINARY_DIR}/eCV/translations/*.qm ${CLOUDVIEWER_TRANSLATION_DESTINATION}"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/cvPlugins "${CLOUDVIEWER_PLUGINS_DESTINATION}"
+             # for macdeployqt
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${BINARY_APP_PATH} ${CMAKE_BINARY_DIR}/eCV/${PROJECT_NAME}.app
+            VERBATIM
+    )
+else ()
+    add_custom_command(
+            TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/${PROJECT_NAME} ${CMAKE_BINARY_DIR}/eCV/$<CONFIG>/${PROJECT_NAME}
+            VERBATIM
+    )
+endif ()
+
+
+if (WIN32 OR APPLE)
+    DeployQt(
+            TARGET
+            ${PROJECT_NAME}
+            DEPLOY_PATH
+            ${ACloudViewer_DEST_FOLDER}
+    )
+elseif (UNIX)
+    # Install program.
+    # On macOs and win32, the DeployQt step will install the bundle that contains the executable with
+    # library paths properly set, reinstalling the executable here would break the bundle.
+    message(STATUS "INSTALL_DESTINATIONS: " ${INSTALL_DESTINATIONS})
+    message(STATUS "ACloudViewer_DEST_FOLDER: " ${ACloudViewer_DEST_FOLDER})
+    cloudViewer_install_ext(TARGETS ${PROJECT_NAME} ${INSTALL_DESTINATIONS}/${CloudViewer_INSTALL_BIN_DIR}/${PROJECT_NAME} "")
+endif ()
+
 # App icon with Code::Blocks/MinGW
 if (WIN32)
     if (MINGW)
@@ -231,17 +248,8 @@ if (WIN32)
     endif ()
 endif ()
 
-if (NOT APPLE)
-    # Install program.
-    # On macOs, the DeployQt step will install the bundle that contains the executable with
-    # library paths properly set, reinstalling the executable here would break the bundle.
-    message(STATUS "INSTALL_DESTINATIONS: " ${INSTALL_DESTINATIONS})
-    message(STATUS "ACloudViewer_DEST_FOLDER: " ${ACloudViewer_DEST_FOLDER})
-    cloudViewer_install_ext(TARGETS ${PROJECT_NAME} ${INSTALL_DESTINATIONS} "")
-endif ()
-
 # Auxiliary files
-set(auxFiles ${ACloudViewer_SOURCE_DIR}/CHANGELOG.txt bin_other/license.txt bin_other/global_shift_list_template.txt)
+set(auxFiles ${COLOUDVIEWER_PROJECT_PATH}/CHANGELOG.txt bin_other/license.txt bin_other/global_shift_list_template.txt)
 
 if (WIN32)
     # Additional auxiliary file(s)
@@ -255,37 +263,27 @@ if (WIN32)
         cloudViewer_install_ext(FILES ${filename} ${ACloudViewer_DEST_FOLDER} "")
     endforeach ()
 elseif (APPLE)
+    set(APPLE_INSTALL_BIN_PATH ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR})
     foreach (filename ${auxFiles})
+        cloudViewer_install_ext(FILES ${filename} ${APPLE_INSTALL_BIN_PATH}/${MAIN_APP_NAME} "")
         if (${BUILD_GUI})
-            cloudViewer_install_ext(FILES ${filename} ${CMAKE_INSTALL_PREFIX}/bin/CloudViewer "")
-            if (${BUILD_RECONSTRUCTION})
-                cloudViewer_install_ext(FILES ${filename} ${CMAKE_INSTALL_PREFIX}/bin/colmap "")
-            endif()
+            cloudViewer_install_ext(FILES ${filename} ${APPLE_INSTALL_BIN_PATH}/${CLOUDVIEWER_APP_NAME} "")
         endif ()
-        cloudViewer_install_ext(FILES ${filename} ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME} "")
+        if (${BUILD_RECONSTRUCTION})
+            cloudViewer_install_ext(FILES ${filename} ${APPLE_INSTALL_BIN_PATH}/${COLMAP_APP_NAME} "")
+        endif()
     endforeach ()
-endif ()
-
-# Translation
-add_subdirectory(translations)
-
-# Put together our Application bundle on macOS
-if (APPLE)
-    add_subdirectory(Mac)
 endif ()
 
 # Install plugins and shaders in the correct folder for each platform
 if (APPLE)
-    InstallPlugins(
-            DEST_PATH "${ACloudViewer_MAC_PLUGIN_DIR}"
-            SHADER_DEST_PATH "${ACloudViewer_MAC_BASE_DIR}/Contents/Shaders"
-    )
+    # no need to install due to macdeployqt already done
 elseif (UNIX)
     InstallPlugins(
             DEST_PATH "plugins"
             SHADER_DEST_PATH shaders
     )
-else ()
+else () # no need ?
     InstallPlugins(
             DEST_PATH "${ACloudViewer_DEST_FOLDER}"
             DEST_FOLDER "plugins"

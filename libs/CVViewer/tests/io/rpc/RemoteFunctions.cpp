@@ -44,7 +44,7 @@ namespace tests {
 #ifdef _WIN32
 const std::string connection_address = "tcp://127.0.0.1:51454";
 #else
-const std::string connection_address = "ipc:///tmp/open3d_ipc";
+const std::string connection_address = "ipc:///tmp/cloudViewer_ipc";
 #endif
 
 TEST(RemoteFunctions, SendReceiveUnpackMessages) {

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=3.9.0
+Name=CloudViewer
+Icon=CloudViewer.png
+Comment=Viewer for triangle meshes and point clouds
+Exec="CloudViewer.sh" %f
+Terminal=false
+Categories=Graphics;
+MimeType=model/stl;model/obj;model/fbx;model/gltf-binary;model/gltf+json;model/x.stl-ascii;model/x.stl-binary;model/x-ply;application/x-off;application/x-xyz;application/x-xyzn;application/x-xyzrgb;application/x-pcd;application/x-pts

@@ -161,8 +161,7 @@ void ccApplyTransformationDlg::onRotAngleValueChanged(double) {
     axis.x = static_cast<PointCoordinateType>(rxAxisDoubleSpinBox->value());
     axis.y = static_cast<PointCoordinateType>(ryAxisDoubleSpinBox->value());
     axis.z = static_cast<PointCoordinateType>(rzAxisDoubleSpinBox->value());
-    alpha = static_cast<PointCoordinateType>(rAngleDoubleSpinBox->value() *
-                                             CV_DEG_TO_RAD);
+    alpha = static_cast<PointCoordinateType>(cloudViewer::DegreesToRadians(rAngleDoubleSpinBox->value()));
     t.x = static_cast<PointCoordinateType>(txAxisDoubleSpinBox->value());
     t.y = static_cast<PointCoordinateType>(tyAxisDoubleSpinBox->value());
     t.z = static_cast<PointCoordinateType>(tzAxisDoubleSpinBox->value());
@@ -177,12 +176,9 @@ void ccApplyTransformationDlg::onEulerValueChanged(double) {
     PointCoordinateType phi, theta, psi = 0;
     CCVector3 t;
 
-    phi = static_cast<PointCoordinateType>(ePhiDoubleSpinBox->value() *
-                                           CV_DEG_TO_RAD);
-    theta = static_cast<PointCoordinateType>(eThetaDoubleSpinBox->value() *
-                                             CV_DEG_TO_RAD);
-    psi = static_cast<PointCoordinateType>(ePsiDoubleSpinBox->value() *
-                                           CV_DEG_TO_RAD);
+    phi = static_cast<PointCoordinateType>(cloudViewer::DegreesToRadians(ePhiDoubleSpinBox->value()));
+    theta = static_cast<PointCoordinateType>(cloudViewer::DegreesToRadians(eThetaDoubleSpinBox->value()));
+    psi = static_cast<PointCoordinateType>(cloudViewer::DegreesToRadians(ePsiDoubleSpinBox->value()));
     t.x = static_cast<PointCoordinateType>(etxAxisDoubleSpinBox->value());
     t.y = static_cast<PointCoordinateType>(etyAxisDoubleSpinBox->value());
     t.z = static_cast<PointCoordinateType>(etzAxisDoubleSpinBox->value());
@@ -220,7 +216,7 @@ void ccApplyTransformationDlg::updateAll(const ccGLMatrix& mat,
         rxAxisDoubleSpinBox->setValue(axis.x);
         ryAxisDoubleSpinBox->setValue(axis.y);
         rzAxisDoubleSpinBox->setValue(axis.z);
-        rAngleDoubleSpinBox->setValue(alpha * CV_DEG_TO_RAD);
+        rAngleDoubleSpinBox->setValue(cloudViewer::DegreesToRadians(alpha));
         txAxisDoubleSpinBox->setValue(t.x);
         tyAxisDoubleSpinBox->setValue(t.y);
         tzAxisDoubleSpinBox->setValue(t.z);
@@ -246,9 +242,9 @@ void ccApplyTransformationDlg::updateAll(const ccGLMatrix& mat,
         CCVector3 t;
         mat.getParameters(phi, theta, psi, t);
 
-        ePhiDoubleSpinBox->setValue(phi * CV_DEG_TO_RAD);
-        eThetaDoubleSpinBox->setValue(theta * CV_DEG_TO_RAD);
-        ePsiDoubleSpinBox->setValue(psi * CV_DEG_TO_RAD);
+        ePhiDoubleSpinBox->setValue(cloudViewer::DegreesToRadians(phi));
+        eThetaDoubleSpinBox->setValue(cloudViewer::DegreesToRadians(theta));
+        ePsiDoubleSpinBox->setValue(cloudViewer::DegreesToRadians(psi));
         etxAxisDoubleSpinBox->setValue(t.x);
         etyAxisDoubleSpinBox->setValue(t.y);
         etzAxisDoubleSpinBox->setValue(t.z);

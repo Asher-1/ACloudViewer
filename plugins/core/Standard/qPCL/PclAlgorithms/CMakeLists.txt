@@ -67,7 +67,11 @@ if (USE_PCL_BACKEND)
     endif ()
     target_compile_definitions(${PROJECT_NAME} PRIVATE ${PCL_DEFINITIONS})
     target_link_libraries(${PROJECT_NAME}
-            ${PCL_LIBRARIES}
             CVPluginAPI
             QPCL_ENGINE_LIB)
+    if (NOT USE_SYSTEM_PCL)
+        target_link_libraries(${PROJECT_NAME} 3rdparty_pcl)
+    else()
+        target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
+    endif()
 endif ()

@@ -30,19 +30,19 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #pragma once
-
+#include <memory>
 #include "base/reconstruction.h"
 #include "util/misc.h"
 #include "util/alignment.h"
 #include "util/threading.h"
 
-#include "camera/PinholeCameraTrajectory.h"
-
 namespace colmap {
 class Reconstruction;
 }
-
 namespace cloudViewer {
+namespace camera {
+  class PinholeCameraTrajectory;
+}
 
 struct TexturingOptions {
   // show verbose information
@@ -84,6 +84,6 @@ class TexturingReconstruction : public colmap::Thread {
   const std::vector<colmap::image_t> image_ids_;
   const colmap::Reconstruction& reconstruction_;
   std::vector<std::string> image_names_;
-  camera::PinholeCameraTrajectory camera_trajectory_;
+  std::shared_ptr<camera::PinholeCameraTrajectory> camera_trajectory_;
 };
 }  // namespace colmap

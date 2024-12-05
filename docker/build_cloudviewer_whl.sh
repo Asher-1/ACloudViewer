@@ -1,47 +1,84 @@
 #!/bin/bash
 set -euo pipefail
 
+PACKAGE=${PACKAGE:-OFF}
+BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
+BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE:-ON}
+BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
+BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-OFF}
+
 export DEVELOPER_BUILD=OFF
-export BUILD_SHARED_LIBS=OFF
-export BUILD_CUDA_MODULE=ON
-export BUILD_PYTORCH_OPS=ON
-export BUILD_TENSORFLOW_OPS=OFF
+export PACKAGE=${PACKAGE}
+export BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
+export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
+export BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+export BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+
 export PYTHON_VERSION=$1
 export NPROC=$(nproc)
 export ENV_NAME="python${PYTHON_VERSION}"
 echo "ENV_NAME: " ${ENV_NAME}
 
-echo "conda activate..."
-export PATH="/root/miniconda3/envs/${ENV_NAME}/bin:${PATH}"
+set +u
+if [ -n "$CONDA_EXE" ]; then
+    CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
+elif [ -n "$CONDA_PREFIX" ]; then
+    CONDA_ROOT=$(dirname "$CONDA_PREFIX")
+else
+    echo "Failed to find Miniconda3 install path..."
+    exit -1
+fi
+set -u
+
+echo "source $CONDA_ROOT/etc/profile.d/conda.sh"
+source "$CONDA_ROOT/etc/profile.d/conda.sh"
+
+conda config --set always_yes yes
+if conda info --envs | grep -q "^$ENV_NAME "; then
+    echo "env $ENV_NAME exists and start to remove..."
+    conda env remove -n $ENV_NAME
+fi
+
+echo "conda env create..."
+export CONDA_PREFIX="$CONDA_ROOT/envs/${ENV_NAME}"
 conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && conda activate ${ENV_NAME} \
  && which python \
- && python --version \
- && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
- && pip config set install.trusted-host pypi.tuna.tsinghua.edu.cn \
- && pip config list
+ && python --version
 
- # fix the library conflicts between ubuntu2204 and conda  about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-echo -e "\ny" | conda install libffi==3.3
+# fix Can not found CMAKE_ROOT issues on ubuntu18.04
+echo -e "\ny" | conda install cmake
+export CMAKE_ROOT=$(dirname $(dirname $(which cmake)))/share/cmake-$(cmake --version | grep -oP '(?<=version )\d+\.\d+')
+echo $CMAKE_ROOT
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
 source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
-install_python_dependencies speed with-cuda with-jupyter with-unit-test
-# build_pip_package build_realsense build_azure_kinect build_jupyter
-build_pip_package build_azure_kinect build_jupyter
+install_python_dependencies with-jupyter with-unit-test
+build_pip_package build_realsense build_azure_kinect build_jupyter
+# build_pip_package build_azure_kinect build_jupyter
 
 set -x # Echo commands on
 df -h
-# Run on GPU only. CPU versions run on Github already
-if nvidia-smi >/dev/null 2>&1; then
+
+eval $(
+    source /etc/lsb-release;
+    echo DISTRIB_ID="$DISTRIB_ID";
+    echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
+)
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
+    # fix GLIB_*_30 missing issues
+    echo "due to GLIB_ missing issues on Ubuntu22.04 and ignore wheel test"
+else
+    pushd build # PWD=ACloudViewer/build
     echo "Try importing cloudViewer Python package"
-    test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/*whl
-    df -h
-    # echo "Running cloudViewer Python tests..."
-    # run_python_tests
-    # echo
+    if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then
+        test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer-*whl
+    else
+        test_wheel ${ACloudViewer_BUILD}/lib/python_package/pip_package/cloudViewer_cpu-*whl
+    fi
+    popd # PWD=ACloudViewer
 fi
 
 echo "Finish building cloudViewer wheel based on ${PYTHON_VERSION}!"

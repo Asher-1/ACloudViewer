@@ -30,7 +30,7 @@
 #include "qPCL.h"
 
 // CV_CORE_LIB
-#include <CVConst.h>
+#include <CVMath.h>
 #include <CVLog.h>
 #include <Eigen.h>
 #include <Parallel.h>
@@ -78,6 +78,7 @@
 #include <pcl/surface/marching_cubes_hoppe.h>
 #include <pcl/surface/marching_cubes_rbf.h>
 #include <pcl/surface/mls.h>
+#if defined(WITH_PCL_NURBS)
 #include <pcl/surface/on_nurbs/fitting_curve_2d.h>
 #include <pcl/surface/on_nurbs/fitting_curve_2d_apdm.h>
 #include <pcl/surface/on_nurbs/fitting_curve_2d_asdm.h>
@@ -88,6 +89,7 @@
 #include <pcl/surface/on_nurbs/fitting_curve_pdm.h>
 #include <pcl/surface/on_nurbs/fitting_surface_tdm.h>
 #include <pcl/surface/on_nurbs/triangulation.h>
+#endif
 
 // PCL FEATURES
 #include <pcl/features/board.h>
@@ -309,6 +311,7 @@ int RemoveNaN(const typename pcl::PointCloud<PointInT>::ConstPtr inCloud,
     return 1;
 }
 
+#if defined(WITH_PCL_NURBS)
 struct QPCL_ENGINE_LIB_API NurbsParameters {
     NurbsParameters()
         : order_(3),
@@ -641,6 +644,8 @@ int BSplineCurveFitting3D(
     }
     return 1;
 }
+
+#endif
 
 //! Extract SIFT keypoints
 /** if only the point cloud is given PCL default parameters are used (that are
@@ -1388,7 +1393,7 @@ int GetBoundaryCloud(
     typename pcl::search::KdTree<PointInOut>::Ptr searchTree(
             new pcl::search::KdTree<PointInOut>());
     boundEst.setSearchMethod(searchTree);
-    boundEst.setAngleThreshold(angleThreshold * CV_DEG_TO_RAD);
+    boundEst.setAngleThreshold(cloudViewer::DegreesToRadians(angleThreshold));
     boundEst.compute(boundaries);
 
     boundaryCloud->clear();

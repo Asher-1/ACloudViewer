@@ -52,15 +52,36 @@ target_include_directories(pybind SYSTEM PRIVATE
 
 cloudViewer_show_and_abort_on_warning(pybind)
 cloudViewer_set_global_properties(pybind)
+target_link_libraries(pybind PRIVATE CloudViewer::CloudViewer)
 
 set_target_properties(pybind PROPERTIES DEBUG_POSTFIX "")
 if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
-endif ()
-target_link_libraries(pybind PRIVATE CloudViewer::CloudViewer)
+    # TODO(Sameer): Only export PyInit_pybind, cloudViewer_core_cuda_device_count
+elseif (APPLE)
+    file(GENERATE OUTPUT pybind.map CONTENT
+        [=[_PyInit_pybind
+cloudViewer_core_cuda_device_count
+        ]=])
+    target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
+        -Wl,-exported_symbols_list
+        "${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
+elseif (UNIX)   # Linux
+    file(GENERATE OUTPUT pybind.map CONTENT
+        [=[{
+    global:
+        PyInit_pybind;
+        cloudViewer_core_cuda_device_count;
+    local:
+        *;
+};]=])
+    target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
+        "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
+    target_link_options(pybind PRIVATE "-flto=auto")
+endif()
 
 if (BUILD_RECONSTRUCTION)
-    target_link_libraries(pybind PRIVATE colmap)
+    target_link_libraries(pybind PRIVATE ${COLMAP_LIB_NAME})
     # Add custom preprocessor definitions
     target_compile_definitions(pybind PRIVATE BUILD_RECONSTRUCTION)
 endif ()
@@ -70,6 +91,17 @@ endif ()
 # `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
 set(PYTHON_COMPILED_MODULE_DIR
         "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+
+# Set BUILD_RPATH to find tbb (and a shared libCloudViewer). We don't install through cmake.
+# if (APPLE)
+#         set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path;@loader_path/..;@loader_path/../lib")
+# elseif (UNIX)
+#         # Use RPATH instead of RUNPATH in pybind so that needed libc++.so can find child dependant libc++abi.so in RPATH
+#         # https://stackoverflow.com/questions/69662319/managing-secondary-dependencies-of-shared-libraries
+#         target_link_options(pybind PRIVATE "LINKER:--disable-new-dtags")
+#         set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN;$ORIGIN/..;$ORIGIN/../lib")
+# endif()
+
 set_target_properties(pybind PROPERTIES
         FOLDER "Python"
         LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"
@@ -77,7 +109,7 @@ set_target_properties(pybind PROPERTIES
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament) for Linux.
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
-set(PYTHON_EXTRA_LIBRARIES "")
+set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:TBB::tbb>)
 if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
 endif ()
@@ -143,7 +175,8 @@ if (BUNDLE_CLOUDVIEWER_ML)
             cloudViewer_ml
             PREFIX "${CMAKE_BINARY_DIR}/cloudViewer_ml"
             GIT_REPOSITORY "${CLOUDVIEWER_ML_ROOT}"
-            GIT_TAG main
+            GIT_TAG origin/main
+            GIT_SHALLOW
             BUILD_IN_SOURCE ON
             # do not configure
             CONFIGURE_COMMAND ""
@@ -163,6 +196,8 @@ file(GENERATE
         INPUT "${CMAKE_BINARY_DIR}/lib/_build_config.py.in"
         )
 
+set(BUILD_BIN_PATH "${CMAKE_BINARY_DIR}/bin")
+set(CUSTOM_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
 add_custom_target(python-package
         COMMAND ${CMAKE_COMMAND}
         -DPYTHON_PACKAGE_SRC_DIR=${PYTHON_PACKAGE_SRC_DIR}
@@ -172,7 +207,10 @@ add_custom_target(python-package
         "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
         "-DPYTHON_EXTRA_LIBRARIES=${PYTHON_EXTRA_LIBRARIES}"
         "-DQT5_PLUGINS_PATH_LIST=${QT5_PLUGINS_PATH_LIST}"
-        "-DCLOUDVIEWER_EXTERNAL_INSTALL_LIB_DIR=${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib"
+        "-DCLOUDVIEWER_EXTERNAL_INSTALL_DIR=${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}"
+        "-DBUILD_BIN_PATH=${BUILD_BIN_PATH}"
+        "-DCUSTOM_BUILD_TYPE=${CUSTOM_BUILD_TYPE}"
+        "-DCONDA_PREFIX=${CONDA_PREFIX}"
         -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
         -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
         -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}

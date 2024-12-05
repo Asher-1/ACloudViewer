@@ -43,6 +43,7 @@
 #include "base/camera_rig.h"
 #include "base/reconstruction.h"
 #include "util/alignment.h"
+#include "optim/manifold.h"
 
 namespace colmap {
 

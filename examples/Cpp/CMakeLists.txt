@@ -19,11 +19,6 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
         target_link_libraries(${EXAMPLE_CPP_NAME} PUBLIC ${DEPENDENCY})
     endforeach ()
 
-    target_link_libraries(${EXAMPLE_CPP_NAME}
-            PUBLIC
-            ${INTERNAL_EIGEN3_TARGET}
-            )
-
     target_link_libraries(${EXAMPLE_CPP_NAME} PUBLIC CloudViewer::CloudViewer)
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
@@ -96,7 +91,7 @@ if (BUILD_GUI)
 endif ()
 
 if (BUILD_RECONSTRUCTION)
-    cloudViewer_add_example(Reconstruction colmap)
+    cloudViewer_add_example(Reconstruction ${COLMAP_LIB_NAME})
     target_include_directories(Reconstruction PRIVATE ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include)
     target_include_directories(Reconstruction PRIVATE ${COLMAP_SOURCE_DIR}/src)
     if (MSVC)

@@ -17,7 +17,8 @@ link_directories( ${PCL_LIBRARY_DIRS} )
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${PCL_DEFINITIONS})
 target_link_libraries(	${PROJECT_NAME}
 						QPCL_ENGINE_LIB
-						QPCL_PLUGIN_ALGORIGHM_LIB)
+						QPCL_PLUGIN_ALGORIGHM_LIB
+						3rdparty_liblzf)
 
 #define the PCL_VER_1_6_OR_OLDER preprocessor to compile qPclIO with older versions of PCL
 if ( PCL_VERSION VERSION_LESS  1.7 ) # VERSION_GREATER Works just like "greater or equal"

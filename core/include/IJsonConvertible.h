@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        cloudViewer: asher-1.github.io                          -
+// -                        cloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -26,10 +26,11 @@
 
 #pragma once
 
-#include "CVCoreLib.h"
+#include <fmt/format.h>
 
 #include <Eigen/Core>
 
+#include "CVCoreLib.h"
 #include "Eigen.h"
 
 /// @cond
@@ -52,7 +53,7 @@ Json::Value CV_CORE_LIB_API StringToJson(const std::string &json_str);
 ///
 /// \param json The Json::Value object to be converted.
 /// \return A string containing the json value.
-std::string CV_CORE_LIB_API JsonToString(const Json::Value json);
+std::string CV_CORE_LIB_API JsonToString(const Json::Value &json);
 
 /// Class IJsonConvertible defines the behavior of a class that can convert
 /// itself to/from a json::Value.
@@ -100,3 +101,21 @@ public:
 
 }  // namespace utility
 }  // namespace cloudViewer
+
+namespace fmt {
+template <>
+struct formatter<Json::Value> {
+    template <typename FormatContext>
+    auto format(const Json::Value &value, FormatContext &ctx) const
+            -> decltype(ctx.out()) {
+        return format_to(ctx.out(), "{}",
+                         cloudViewer::utility::JsonToString(value));
+    }
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+    }
+};
+
+}  // namespace fmt

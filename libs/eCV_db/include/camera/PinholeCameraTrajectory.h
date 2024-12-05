@@ -44,7 +44,7 @@ class ECV_DB_LIB_API PinholeCameraTrajectory :
 public:
     /// \brief Default Constructor.
     PinholeCameraTrajectory();
-    ~PinholeCameraTrajectory() override;
+    virtual ~PinholeCameraTrajectory() override;
 
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;

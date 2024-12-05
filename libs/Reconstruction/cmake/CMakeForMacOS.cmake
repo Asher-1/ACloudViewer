@@ -1,6 +1,6 @@
-macro(colmap_add_app APPS_DIR APP_NAME TARGET_NAME)
-    message(STATUS "CloudViewer app dir: ${APPS_DIR}")
-    set(SOURCE_DIR "${PROJECT_SOURCE_DIR}/ColmapApp")
+macro(colmap_add_app PROJECT_ROOT_PATH APP_NAME TARGET_NAME)
+    message(STATUS "ACloudViewer project root path: ${PROJECT_ROOT_PATH}")
+    set(SOURCE_DIR "${PROJECT_SOURCE_DIR}/${TARGET_NAME}")
     set(RESOURCE_DIR_NAME "Contents/Resources")
     set(EXE_DIR_NAME "Contents/MacOS")
     file(GLOB RESOURCE_FILES "${SOURCE_DIR}/*.icns")
@@ -49,24 +49,13 @@ macro(colmap_add_app APPS_DIR APP_NAME TARGET_NAME)
             VERBATIM
             )
 
-    #    add_custom_command(TARGET "${TARGET_NAME}"
-    #            POST_BUILD
-    #            # copy the resource files into the bundle
-    #            COMMAND ${CMAKE_COMMAND} -E copy ${EXECUTABLE_SCRIPTS} "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/${EXE_DIR_NAME}"
-    #            COMMAND chmod +x "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/${EXE_DIR_NAME}/${EXECUTABLE_SCRIPTS_NAME}"
-    #            VERBATIM
-    #            )
-
     set(APP_INSTALL_DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}")
     install(DIRECTORY "${APP_DIR}/${APP_NAME}.app"
             DESTINATION ${APP_INSTALL_DESTINATION}
             USE_SOURCE_PERMISSIONS)
 
-    # copy external libraries (e.g. SDL into the bundle and fixup the search paths
-    set(APP_INSTALL_EXE_DESTINATION "${APP_INSTALL_DESTINATION}/${APP_NAME}.app")
-    message(STATUS "APP_INSTALL_EXE_DESTINATION: ${APP_INSTALL_EXE_DESTINATION}")
-    message(STATUS "fixup_macosx_bundle: ${APPS_DIR}/fixup_macosx_bundle.sh")
-    install(CODE "execute_process(COMMAND ${APPS_DIR}/fixup_macosx_bundle.sh ${APP_INSTALL_EXE_DESTINATION})")
-    install(CODE "execute_process(COMMAND ${APPS_DIR}/fixup_macosx_frameworks.sh ${APP_INSTALL_EXE_DESTINATION})")
-    install(CODE "execute_process(COMMAND ${APPS_DIR}/fixup_macosx_frameworks.sh ${APP_INSTALL_EXE_DESTINATION})")
+    set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/lib_bundle_app.py")
+    install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${APP_NAME} ${APP_INSTALL_DESTINATION})")
+    set(APP_SIGN_SCRIPT_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/signature_app.py")
+    install(CODE "execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${APP_NAME} ${APP_INSTALL_DESTINATION})")
 endmacro(colmap_add_app)

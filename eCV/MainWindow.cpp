@@ -7892,8 +7892,8 @@ void MainWindow::doActionComputeBestICPRmsMatrix() {
                 double phi_deg = i * angularStep_deg;
                 ccGLMatrix trans;
                 trans.initFromParameters(
-                        static_cast<float>(phi_deg * CV_DEG_TO_RAD),
-                        static_cast<float>(theta_deg * CV_DEG_TO_RAD), 0,
+                        static_cast<float>(cloudViewer::DegreesToRadians(phi_deg)),
+                        static_cast<float>(cloudViewer::DegreesToRadians(theta_deg)), 0,
                         CCVector3(0, 0, 0));
                 matrices.push_back(trans);
                 matrixAngles.push_back(

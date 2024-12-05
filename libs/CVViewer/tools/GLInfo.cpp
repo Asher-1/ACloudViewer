@@ -81,7 +81,8 @@ void TryGLVersion(int major,
         if (!r) {
             cloudViewer::utility::LogWarning("Unable to get info on {} id {:d}", name, id);
         } else {
-            cloudViewer::utility::LogDebug("{}:\t{}", name, r);
+            cloudViewer::utility::LogDebug("{}:\t{}", name,
+                              reinterpret_cast<const char *>(r));
         }
     };
 #define CLOUDVIEWER_REPORT_GL_STRING(n) reportGlStringFunc(n, #n)

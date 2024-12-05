@@ -1,92 +1,93 @@
-//Inspired from QTFFmpegWrapper (Daniel Roggen) and the 'muxing.c' example in FFmpeg doc/examples
+// Inspired from QTFFmpegWrapper (Daniel Roggen) and the 'muxing.c' example in
+// FFmpeg doc/examples
 #ifndef Q_VIDEO_ENCODE_HEADER
 #define Q_VIDEO_ENCODE_HEADER
 
-//Qt
+// Qt
 #include <QImage>
 
-//FFmpeg variables (we don't want to pollute the client project with FFmpeg includes!)
+// FFmpeg variables (we don't want to pollute the client project with FFmpeg
+// includes!)
 struct FFmpegStuffEnc;
 
 //! Video encoder based on FFmpeg
-class QVideoEncoder
-{
+class QVideoEncoder {
 public:
+    //! Default constructor
+    /** \param filename video filename
+            \param width video width (must be a multiple of 8)
+            \param height video height (must be a multiple of 8)
+            \param bitrate bit rate (e.g. 400 000)
+            \param gop keyframe interval
+            \param fps frame rate
+    **/
+    QVideoEncoder(QString filename,
+                  int width,
+                  int height,
+                  unsigned bitrate,
+                  int gop = 12,
+                  int fps = 25);
 
-	//! Default constructor
-	/** \param filename video filename
-		\param width video width (must be a multiple of 8)
-		\param height video height (must be a multiple of 8)
-		\param bitrate bit rate (e.g. 400 000)
-		\param gop keyframe interval
-		\param fps frame rate
-	**/
-	QVideoEncoder(	QString filename,
-					int width,
-					int height,
-					unsigned bitrate,
-					int gop = 12,
-					int fps = 25);
-	
-	virtual ~QVideoEncoder();
+    virtual ~QVideoEncoder();
 
-	//! Creates an (empty) video/anmiation file
-	/** \param formatShortName output format (short name)
-			- If empty, the format will be automatically guessed from the filename.
-			- If it can't be guessed this way then MPEG is used by default.
-		\param errors (if any)
-		\return success
-	**/
-	bool open(QString formatShortName, QStringList& errors);
+    //! Creates an (empty) video/anmiation file
+    /** \param formatShortName output format (short name)
+                    - If empty, the format will be automatically guessed from
+    the filename.
+                    - If it can't be guessed this way then MPEG is used by
+    default. \param errors (if any) \return success
+    **/
+    bool open(QString formatShortName, QStringList& errors);
 
-	//! Returns whether the file is opened or not
-	inline bool isOpen() const { return m_isOpen; }
+    //! Returns whether the file is opened or not
+    inline bool isOpen() const { return m_isOpen; }
 
-	//! Adds an image to the stream
-	virtual bool encodeImage(const QImage& image, int frameIndex, QString* errorString = nullptr);
+    //! Adds an image to the stream
+    virtual bool encodeImage(const QImage& image,
+                             int frameIndex,
+                             QString* errorString = nullptr);
 
-	//! Closes the file
-	virtual bool close();
+    //! Closes the file
+    virtual bool close();
 
-	//! Output format
-	struct OutputFormat
-	{
-		QString shortName;
-		QString longName;
-		QString extensions;
-	};
+    //! Output format
+    struct OutputFormat {
+        QString shortName;
+        QString longName;
+        QString extensions;
+    };
 
-	//! Returns the list of supported output formats
-    static void RegisterAllOutFormats();
-    static bool GetSupportedOutputFormats(std::vector<OutputFormat>& formats, bool ignoreIfNoFileExtension = true);
+    //! Returns the list of supported output formats
+    static bool GetSupportedOutputFormats(std::vector<OutputFormat>& formats,
+                                          bool ignoreIfNoFileExtension = true);
 
 protected:
+    // stream descriptor
+    QString m_filename;
+    int m_width;
+    int m_height;
+    unsigned m_bitrate;
+    int m_gop;
+    int m_fps;
+    bool m_isOpen;
 
-	//stream descriptor
-	QString m_filename;
-	int m_width;
-	int m_height;
-	unsigned m_bitrate;
-	int m_gop;
-	int m_fps;
-	bool m_isOpen;
+    //! FFmpeg variables
+    FFmpegStuffEnc* m_ff;
 
-	//! FFmpeg variables
-	FFmpegStuffEnc* m_ff;
+    //! Returns whether the image size is valid
+    bool isSizeValid();
 
-	//! Returns whether the image size is valid
-	bool isSizeValid();
+    // Alloc/free a frame
+    bool initFrame();
+    void freeFrame();
 
-	// Alloc/free a frame
-	bool initFrame();
-	void freeFrame();
-
-	//! Convert the QImage to the internal YUV format
-	/** \warning The QImage is allocated by QT without guarantee about the alignment and bytes per lines.
-		It *should* be okay as we make sure the image size is a multiple of 8 bytes however it is not
-		guaranteed that sws_scale won't at some point require more bytes per line.
-	**/
-	bool convertImage_sws(const QImage &image, QString* errorString = nullptr);
+    //! Convert the QImage to the internal YUV format
+    /** \warning The QImage is allocated by QT without guarantee about the
+    alignment and bytes per lines. It *should* be okay as we make sure the image
+    size is a multiple of 8 bytes however it is not guaranteed that sws_scale
+    won't at some point require more bytes per line.
+    **/
+    bool convertImage_sws(const QImage& image, QString* errorString = nullptr);
 };
 
-#endif //Q_VIDEO_ENCODE_HEADER
+#endif  // Q_VIDEO_ENCODE_HEADER

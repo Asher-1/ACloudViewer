@@ -289,7 +289,7 @@ ccHObject* qRansacSD::executeRANSAC(ccPointCloud* ccPC, const RansacParams& para
 	{
 		ransacOptions.m_epsilon = params.epsilon;
 		ransacOptions.m_bitmapEpsilon = params.bitmapEpsilon;
-		ransacOptions.m_normalThresh = static_cast<float>(cos(params.maxNormalDev_deg * CV_DEG_TO_RAD));
+		ransacOptions.m_normalThresh = static_cast<float>(cos(cloudViewer::DegreesToRadians(params.maxNormalDev_deg)));
 		assert(ransacOptions.m_normalThresh >= 0);
 		ransacOptions.m_probability = params.probability;
 		ransacOptions.m_minSupport = params.supportPoints;

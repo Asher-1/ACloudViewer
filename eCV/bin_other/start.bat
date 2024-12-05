@@ -1,2 +1,0 @@
-@set PATH=.
-ACloudViewer.exe

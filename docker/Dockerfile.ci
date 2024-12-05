@@ -16,7 +16,9 @@ ARG BUILD_CUDA_MODULE
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
-ARG BUILD_SYCL_MODULE
+ARG BUILD_GUI
+ARG BUILD_WHEEL
+ARG IGNORE_TEST
 ARG CI
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
@@ -53,30 +55,18 @@ ENV BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV PACKAGE=${PACKAGE}
+ENV BUILD_WHEEL=${BUILD_WHEEL}
+ENV BUILD_GUI=${BUILD_GUI}
+ENV IGNORE_TEST=${IGNORE_TEST}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
 
-# The base image already contains the oneAPI packages.
-# Having this in the list can cause checksum errors when apt-get update.
-RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
-        rm -rf /etc/apt/sources.list.d/oneAPI.list; \
-    fi
-
-
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES all
-
-# for QT
-ENV REFRESHED_AT=2023-06-04\
-    QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
-    QT_ROOT=/opt/Qt5.14.2/ \
-    QT_CI_LOGIN=alicevisionjunk@gmail.com \
-    QT_CI_PASSWORD=azerty1. \
-    DEBIAN_FRONTEND=noninteractive
 
 # Update apt and install libs needed by Qt
 RUN apt-get clean && apt-get update --fix-missing -y \
@@ -96,13 +86,9 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         net-tools \
         mesa-utils \
         # for opencv
-        libavcodec-dev \
-        libavformat-dev \
-        libswscale-dev \
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \
-        libglew-dev \
         # for colmap
         libatlas-base-dev \
         # for package
@@ -126,21 +112,8 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         nasm \
         flex \
         fontconfig \
-        mono-complete \
-        # for pcl
-        libopenni-dev \
-        libopenni2-dev \
-        libjsoncpp-dev \
-        libgdal-dev \
-        libcgal-dev \
-        libusb-1.0-0-dev \
-        libeigen3-dev \
-        libboost-all-dev \
-        libglew-dev \
-        'libqhull*' \
-        libqhull-dev \
-        libflann1.9 \
-        libflann-dev \
+        # libgdal-dev \
+        # libcgal-dev \
         # for QT
         libxcb-xkb1 \
         libxcb-shape0 \
@@ -162,46 +135,18 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
  && rm -rf /var/lib/apt/lists/*
 
-# Miniconda or Intel conda
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ # Miniconda or Intel conda
 # The **/cloudViewer/bin paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
 ENV PATH="/root/miniconda3/bin:${PATH}"
-ENV PATH="/root/miniconda3/envs/cloudViewer/bin:${PATH}"
 ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
 ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/cloudViewer/bin:${PATH}"
 RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b; \
-    && rm Miniconda3-latest-Linux-x86_64.sh; \
-RUN conda --version \
- && conda create -y -n cloudViewer python=${PYTHON_VERSION}
-# Activate cloudViewr virtualenv
-# This works during docker build. It becomes the prefix of all RUN commands.
-# Ref: https://stackoverflow.com/a/60148365/1255535
-SHELL ["conda", "run", "-n", "cloudViewer", "/bin/bash", "-o", "pipefail", "-c"]
-
-# fix ubuntu2204 and conda library conflicts about incorrect link issues from ibffi.so.7 to libffi.so.8.1.0
-RUN echo -e "\ny" | conda install libffi==3.3 
-
-# Dependencies: cmake
-ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
-RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
- && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
- && tar -xf ${CMAKE_VERSION}.tar.gz \
- && cp -ar ${CMAKE_VERSION} ${HOME} \
- && cmake --version
-
-# Dependencies: ccache
-WORKDIR /root
-RUN git clone https://github.com/ccache/ccache.git \
- && cd ccache \
- && git checkout v${CCACHE_VERSION} -b ${CCACHE_VERSION} \
- && mkdir build \
- && cd build \
- && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON .. \
- && make install -j$(nproc) \
- && which ccache \
- && ccache --version \
- && ccache -s
+ && bash Miniconda3-latest-Linux-x86_64.sh -b \
+ && rm Miniconda3-latest-Linux-x86_64.sh \
+ && conda --version
 
 # deploy package installer
 WORKDIR /root
@@ -209,109 +154,38 @@ RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/
 RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
-# Install metslib
-WORKDIR /root
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/metslib-0.5.3.tgz -O "/root/metslib-0.5.3.tgz"
-RUN tar -xvf metslib-0.5.3.tgz && \
-    cd metslib-0.5.3 && \
-    sh ./configure && \
-    make && \
-    make install \
-    && ldconfig \
-    && rm -rf /opt/metslib-0.5.3 \
-    && rm -rf /opt/metslib-0.5.3.tgz
-
-# Install laszip
-WORKDIR /root
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "/root/laszip-src-3.4.3.tar.gz"
-RUN tar -xvf laszip-src-3.4.3.tar.gz && \
-    cd laszip-src-3.4.3 && \
-    mkdir -p build && cd build && \
-    cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig \
-    && rm -rf laszip-src-3.4.3 laszip-src-3.4.3.tar.gz
-
-# Install xerces-c
-WORKDIR /root
-RUN wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "/root/xerces-c-3.2.3.zip"
-RUN unzip xerces-c-3.2.3.zip \
-    && cd ./xerces-c-3.2.3 \
-    && chmod +x configure \
-    && ./configure --prefix=/usr \
-    && make \
-    && make install \
-    && make clean \
-    && rm -rf xerces-c-3.2.3 xerces-c-3.2.3.zip
+# Checkout CloudViewer-ML main branch
+# TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
+ENV ACloudViewer_DEV=/root \
+    ACloudViewer_BUILD=/root/ACloudViewer/build \
+    ACloudViewer_INSTALL=/root/install
 
 # Checkout CloudViewer-ML main branch
 # TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
 ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
 RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
 
+ENV PATH="/root/miniconda3/bin:$PATH" \
+    CONDA_EXE="/root/miniconda3/bin/conda"
+
+RUN if [ -n "$CONDA_EXE" ]; then \
+        CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE")); \
+    elif [ -n "$CONDA_PREFIX" ]; then \
+        CONDA_ROOT=$(dirname "$CONDA_PREFIX"); \
+    else \
+        echo "Failed to find Miniconda3 install path..."; \
+        exit 1; \
+    fi && \
+    echo "CONDA_ROOT is set to: $CONDA_ROOT" && \
+    source "$CONDA_ROOT/etc/profile.d/conda.sh" 
+
 # ACloudViewer repo
 # Always keep /root/ACloudViewer as the WORKDIR
-COPY . /root/ACloudViewer
-WORKDIR /root/ACloudViewer
+COPY . ${ACloudViewer_DEV}/ACloudViewer
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 # ACloudViewer C++ dependencies
 RUN ./util/install_deps_ubuntu.sh assume-yes
-
-# Install Qt (to build plugins)
-WORKDIR /root
-RUN wget https://download.qt.io/archive/qt/5.14/5.14.2/qt-opensource-linux-x64-5.14.2.run -O "/root/qt.run"
-COPY ./docker/qt-installer-noninteractive.qs /root
-RUN chmod +x ./qt.run && \
-    ./qt.run --verbose --platform minimal --script "/root/qt-installer-noninteractive.qs" && \
-    rm qt.run
-ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
-
-# Install vtk
-WORKDIR /root
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/VTK-9.3.1.tar.gz -O "/root/VTK-9.3.1.tar.gz"
-RUN tar -zxvf VTK-9.3.1.tar.gz && \
-    cd VTK-9.3.1 && \
-    mkdir -p build && cd build && \
-    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
-            -DVTK_GROUP_ENABLE_Qt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
-            -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
-            -DVTK_QT_VERSION:STRING=5 \
-            -DBUILD_SHARED_LIBS:BOOL=ON \
-            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig && \
-    && rm -rf /root/VTK-9.3.1 /root/VTK-9.3.1.tar.gz
-
-# Install pcl
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/pcl-1.14.1.zip -O "/root/pcl-1.14.1.zip"
-RUN unzip pcl-1.14.1.zip && \
-    cd pcl && \
-    mkdir -p build && cd build && \
-    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
-            -DBUILD_GPU=OFF \
-            -DBUILD_apps=OFF \
-            -DBUILD_examples=OFF \
-            -DBUILD_surface_on_nurbs=ON \
-            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig && \
-    rm -rf /opt/pcl /opt/pcl-1.14.1.zip
-
-# ACloudViewer Python dependencies
-WORKDIR /root/ACloudViewer
-RUN source util/ci_utils.sh \
- && if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
-        install_python_dependencies with-cuda with-jupyter; \
-    else \
-        install_python_dependencies with-jupyter; \
-    fi \
- && pip install -r python/requirements_test.txt
 
 # ACloudViewer Jupyter dependencies
 RUN mkdir -p /etc/apt/keyrings \
@@ -327,97 +201,23 @@ RUN mkdir -p /etc/apt/keyrings \
  && yarn --version
 
 
-# Build all
-RUN \
-    if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
-        export CMAKE_CXX_COMPILER=icpx; \
-        export CMAKE_C_COMPILER=icx; \
-        export GLIBCXX_USE_CXX11_ABI=ON; \
-    else \
-        export CMAKE_CXX_COMPILER=g++; \
-        export CMAKE_C_COMPILER=gcc; \
-        # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
-        if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
-            export GLIBCXX_USE_CXX11_ABI=OFF; \
-        else \
-            export GLIBCXX_USE_CXX11_ABI=ON; \
-        fi \
-    fi \
- && mkdir build \
- && cd build \
- && cmake -DBUILD_SHARED_LIBS=OFF \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
-          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
-          -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
-          -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
-          -DBUILD_COMMON_CUDA_ARCHS=ON \
-          -DGLIBCXX_USE_CXX11_ABI=ON \
-          -DBUILD_AZURE_KINECT=ON \
-          -DBUILD_LIBREALSENSE=ON \
-          -DWITH_OPENMP=ON \
-          -DWITH_IPPICV=ON \
-          -DWITH_SIMD=ON \
-          -DUSE_SIMD=ON \
-          -DPACKAGE=ON \
-          -DBUILD_WEBRTC=OFF \
-          -DBUILD_OPENCV=ON \
-          -DBUILD_RECONSTRUCTION=ON \
-          -DBUNDLE_CLOUDVIEWER_ML=OFF \
-          -DCVCORELIB_USE_CGAL=ON \
-          -DCVCORELIB_SHARED=ON \
-          -DCVCORELIB_USE_QT_CONCURRENT=ON \
-          -DOPTION_USE_GDAL=ON \
-          -DOPTION_USE_DXF_LIB=ON \
-          -DPLUGIN_IO_QDRACO=ON \
-          -DPLUGIN_IO_QLAS=ON \
-          -DPLUGIN_IO_QADDITIONAL=ON \
-          -DPLUGIN_IO_QCORE=ON \
-          -DPLUGIN_IO_QCSV_MATRIX=ON \
-          -DPLUGIN_IO_QE57=ON \
-          -DPLUGIN_IO_QMESH=ON \
-          -DPLUGIN_IO_QPDAL=OFF \
-          -DPLUGIN_IO_QPHOTOSCAN=ON \
-          -DPLUGIN_IO_QRDB=ON \
-          -DPLUGIN_STANDARD_QJSONRPC=ON \
-          -DPLUGIN_STANDARD_QCLOUDLAYERS=ON \
-          -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
-          -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
-          -DPLUGIN_STANDARD_QANIMATION=ON \
-          -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
-          -DPLUGIN_STANDARD_QCANUPO=ON \
-          -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
-          -DPLUGIN_STANDARD_QCOMPASS=ON \
-          -DPLUGIN_STANDARD_QCSF=ON \
-          -DPLUGIN_STANDARD_QFACETS=ON \
-          -DPLUGIN_STANDARD_QHOUGH_NORMALS=ON \
-          -DPLUGIN_STANDARD_QM3C2=ON \
-          -DPLUGIN_STANDARD_QMPLANE=ON \
-          -DPLUGIN_STANDARD_QPCL=ON \
-          -DPLUGIN_STANDARD_QPOISSON_RECON=ON \
-          -DPOISSON_RECON_WITH_OPEN_MP=ON \
-          -DPLUGIN_STANDARD_QRANSAC_SD=ON \
-          -DPLUGIN_STANDARD_QSRA=ON \
-          -DBUILD_TENSORFLOW_OPS=OFF \
-          -DBUILD_PYTORCH_OPS=OFF \
-          -DBUILD_UNIT_TESTS=OFF \
-          -DBUILD_BENCHMARKS=OFF \
-          -DBUILD_EXAMPLES=OFF \
-          -DCMAKE_INSTALL_PREFIX=~/cloudviewer_install \
-          .. \
- && make VERBOSE=1 -j$(nproc) \
- && make install -j$(nproc) \
- && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc; fi
-# If CI is not null or unset, remove all large build folders to save disk space
+RUN mkdir -p ${ACloudViewer_INSTALL}
 
-# Compress ccache folder, move to / directory
-RUN ccache -s \
- && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
- && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
- && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
- && cd ${CCACHE_DIR_PARENT} \
- && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
- && if [ "${PACKAGE}" = "ON" ]; then mv ~/cloudviewer_install/*zip /; fi \
- && ls -alh /
+# Build ACloudViewer app installer
+RUN if [ "${BUILD_GUI}" = "ON" ]; then                              \
+        echo "Start Build ACloudViewer apps installer..." &&        \
+        rm -rf ${ACloudViewer_BUILD}/* &&                           \
+        ./docker/build_gui_app_conda.sh ${PYTHON_VERSION};          \
+        rm -rf ${ACloudViewer_BUILD}/*;                             \
+    fi
+
+RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                            \
+        echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." &&  \
+        rm -rf ${ACloudViewer_BUILD}/* &&                           \
+        ./docker/build_cloudviewer_whl_conda.sh ${PYTHON_VERSION};  \
+        rm -rf ${ACloudViewer_BUILD}/*;                             \
+    fi
+    
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 RUN echo "Docker build done."

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                        CloudViewer: asher-1.github.io                          -
+// -                        CloudViewer: asher-1.github.io -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -56,10 +56,10 @@ namespace geometry {
 ///     - Created by default, required for all trianglemeshes.
 ///     - The tensor must be of shape N x {3,}.
 ///     - Convenience functions:
-///         - TriangleMesh::GetVertices()
+///         - TriangleMesh::GetVertexPositions()
 ///         - TriangleMesh::SetVertices(vertices_tensor)
 ///         - TriangleMesh::HasVertices()
-///         - TriangleMesh::GetTriangles()
+///         - TriangleMesh::GetTriangleIndices()
 ///         - TriangleMesh::SetTriangles(triangles_tensor)
 ///         - TriangleMesh::HasTriangles()
 ///     - The device of "vertices" and "triangles" must be consistent and they
@@ -162,9 +162,9 @@ public:
         return vertex_attr_.at(key);
     }
 
-    /// Get the value of the "vertices" attribute in vertex_attr_.
+    /// Get the value of the "positions" attribute in vertex_attr_.
     /// Convenience function.
-    core::Tensor &GetVertices() { return GetVertexAttr("vertices"); }
+    core::Tensor &GetVertexPositions() { return GetVertexAttr("positions"); }
 
     /// Get the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
@@ -185,9 +185,9 @@ public:
         return triangle_attr_.at(key);
     }
 
-    /// Get the value of the "triangles" attribute in triangle_attr_.
+    /// Get the value of the "indices" attribute in triangle_attr_.
     /// Convenience function.
-    core::Tensor &GetTriangles() { return GetTriangleAttr("triangles"); }
+    core::Tensor &GetTriangleIndices() { return GetTriangleAttr("indices"); }
 
     /// Get the value of the "normals" attribute in triangle_attr_.
     /// Convenience function.
@@ -210,10 +210,10 @@ public:
     /// \param key Attribute name.
     void RemoveVertexAttr(const std::string &key) { vertex_attr_.Erase(key); }
 
-    /// Get the value of the "vertices" attribute in vertex_attr_.
+    /// Get the value of the "positions" attribute in vertex_attr_.
     /// Convenience function.
-    const core::Tensor &GetVertices() const {
-        return GetVertexAttr("vertices");
+    const core::Tensor &GetVertexPositions() const {
+        return GetVertexAttr("positions");
     }
 
     /// Get the value of the "colors" attribute in vertex_attr_.
@@ -244,10 +244,10 @@ public:
         triangle_attr_.Erase(key);
     }
 
-    /// Get the value of the "triangles" attribute in triangle_attr_.
+    /// Get the value of the "indices" attribute in triangle_attr_.
     /// Convenience function.
-    const core::Tensor &GetTriangles() const {
-        return GetTriangleAttr("triangles");
+    const core::Tensor &GetTriangleIndices() const {
+        return GetTriangleAttr("indices");
     }
 
     /// Get the value of the "normals" attribute in triangle_attr_.
@@ -330,7 +330,8 @@ public:
     bool HasVertexAttr(const std::string &key) const {
         return vertex_attr_.Contains(key) &&
                GetVertexAttr(key).GetLength() > 0 &&
-               GetVertexAttr(key).GetLength() == GetVertices().GetLength();
+               GetVertexAttr(key).GetLength() ==
+                       GetVertexPositions().GetLength();
     }
 
     /// Check if the "vertices" attribute's value in vertex_attr_ has length >
@@ -358,7 +359,7 @@ public:
     bool HasTriangleAttr(const std::string &key) const {
         return triangle_attr_.Contains(key) &&
                GetTriangleAttr(key).GetLength() > 0 &&
-               GetTriangleAttr(key).GetLength() == GetTriangles().GetLength();
+               GetTriangleAttr(key).GetLength() == GetTriangleIndices().GetLength();
     }
 
     /// Check if the "triangles" attribute's value in triangle_attr_ has length
@@ -391,11 +392,11 @@ public:
     /// Returns !HasVertices(), triangles are ignored.
     bool IsEmpty() const override { return !HasVertices(); }
 
-    core::Tensor GetMinBound() const { return GetVertices().Min({0}); }
+    core::Tensor GetMinBound() const { return GetVertexPositions().Min({0}); }
 
-    core::Tensor GetMaxBound() const { return GetVertices().Max({0}); }
+    core::Tensor GetMaxBound() const { return GetVertexPositions().Max({0}); }
 
-    core::Tensor GetCenter() const { return GetVertices().Mean({0}); }
+    core::Tensor GetCenter() const { return GetVertexPositions().Mean({0}); }
 
     TriangleMesh &Transform(const core::Tensor &transformation);
 

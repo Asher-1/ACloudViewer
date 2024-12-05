@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Private header. Do not include in Open3d.h.
+// Private header. Do not include in CloudViewer.h.
 #pragma once
 
 #include "core/Tensor.h"

@@ -9,13 +9,11 @@ get_filename_component( qt5_bin_dir ${qmake_location} DIRECTORY )
 	
 if ( APPLE )
 	find_program( mac_deploy_qt macdeployqt HINTS "${qt5_bin_dir}" )
-
 	if( NOT EXISTS "${mac_deploy_qt}" )
 		message( FATAL_ERROR "macdeployqt not found in ${qt5_bin_dir}" )
 	endif()
 elseif( WIN32 )
 	find_program( win_deploy_qt windeployqt HINTS "${qt5_bin_dir}" )
-
 	if( NOT EXISTS "${win_deploy_qt}" )
 		message( FATAL_ERROR "windeployqt not found in ${qt5_bin_dir}" )
 	endif()
@@ -23,6 +21,7 @@ endif()
 
 function( DeployQt )
 	if ( NOT APPLE AND NOT WIN32 )
+		message( FATAL_ERROR "DeployQt only supports Windows and Mac OS X" )
 		return()
 	endif()
 	
@@ -47,6 +46,11 @@ function( DeployQt )
 		
 	if ( APPLE )
 		set( app_name "${name}.app" )
+		# fix macdeployqt package issues with rpath and external dynamic libraries
+		# copy external libraries (e.g. SDL into the bundle and fixup the search paths
+		set(INSTALL_DEPLOY_PATH "${CMAKE_INSTALL_PREFIX}/${deploy_path}")
+    set(deploy_app_contents "${INSTALL_DEPLOY_PATH}/${app_name}/Contents")
+
 		if (CMAKE_CONFIGURATION_TYPES)
 			set(app_path "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${app_name}")
 			set(temp_dir "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/deployqt")
@@ -67,20 +71,14 @@ function( DeployQt )
 
 		install(
 				DIRECTORY ${temp_app_path}
-				DESTINATION "${deploy_path}"
+				DESTINATION ${INSTALL_DEPLOY_PATH}
 				USE_SOURCE_PERMISSIONS
 		)
 
-		# fix macdeployqt package issues with rpath and external dynamic libraries
-		# copy external libraries (e.g. SDL into the bundle and fixup the search paths
-		set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/../libs/CVViewer/apps")
-		set( deploy_app_path "${CMAKE_INSTALL_PREFIX}/${deploy_path}/${app_name}" )
-		message(STATUS "deploy_app_path: ${deploy_app_path}")
-		message(STATUS "fixup_macosx_bundle: ${SCRIPTS_DIR}/fixup_macosx_bundle.sh")
-		install(CODE "execute_process(COMMAND ${SCRIPTS_DIR}/fixup_macosx_bundle.sh ${deploy_app_path})")
-		install(CODE "execute_process(COMMAND ${SCRIPTS_DIR}/fixup_macosx_plugins.sh ${deploy_app_path})")
-		install(CODE "execute_process(COMMAND ${SCRIPTS_DIR}/fixup_macosx_frameworks.sh ${deploy_app_path})")
-		install(CODE "execute_process(COMMAND ${SCRIPTS_DIR}/fixup_macosx_frameworks.sh ${deploy_app_path})")
+		set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/lib_bundle_app.py")
+    install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${name} ${INSTALL_DEPLOY_PATH})")
+		set(APP_SIGN_SCRIPT_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/signature_app.py")
+		install(CODE "execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${name} ${INSTALL_DEPLOY_PATH})")
 	elseif( WIN32 )
 		set( app_name "${name}.exe" )
 		if( CMAKE_CONFIGURATION_TYPES )

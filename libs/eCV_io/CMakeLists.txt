@@ -8,6 +8,11 @@ add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(ui)
 
+if (WIN32)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
 option(OPTION_USE_DXF_LIB "Build with Ribbonsoft's DXF Lib (AutoCAD DXF files support)" ON)
 if (${OPTION_USE_DXF_LIB})
     set(DXF_LIB_DIR "extern/dxflib" CACHE PATH "DXF lib path")

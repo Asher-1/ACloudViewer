@@ -1,0 +1,119 @@
+ARG VTK_VERSION
+ARG PCL_VERSION
+ARG CUDA_VERSION
+ARG UBUNTU_VERSION
+FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
+
+# For bash-specific commands
+SHELL ["/bin/bash", "-c"]
+
+# FROM nvidia/opengl:1.2-glvnd-devel-ubuntu${UBUNTU_VERSION}
+# FROM gezp/ubuntu-nomachine:${UBUNTU_VERSION}-cu${CUDA_VERSION}
+LABEL maintainer="ACloudViewer Team ludahai19@163.com"
+
+# Env vars for the nvidia-container-runtime.
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES all
+ENV CMAKE_VERSION=cmake-3.24.4-linux-x86_64
+ENV SUDO=command
+
+ENV REFRESHED_AT=2023-06-04\
+    CLOUDVIEWER_DEV=/opt/ACloudViewer \
+    DEBIAN_FRONTEND=noninteractive
+
+# cloudViewer Jupyter dependencies
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
+&& apt-get clean && apt-get update --fix-missing -y
+
+# Dependencies: basic
+# Update apt and install libs needed by Qt, pcl and vtk
+RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y \
+    && apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc \
+    && apt-add-repository --yes "deb https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
+    && apt-get update --fix-missing -y \
+    && apt-get install --fix-missing -yq --no-install-recommends \
+        build-essential \
+        git  \
+        cmake \
+        wget \
+        curl \
+        vim \
+        tree \
+        apt-file \
+        net-tools \
+        mesa-utils \
+        # for opencv
+        libjpeg-dev \
+        libpng-dev \
+        libtiff-dev \
+        # for colmap
+        libatlas-base-dev \
+        # for package
+        zip \
+        unzip \
+        # common
+        locate \
+        automake \
+        xorg-dev \
+        libxi-dev \
+        openmpi-bin \
+        openmpi-common \
+        gfortran \
+        ninja-build \
+        libgtest-dev \
+        libusb-dev \
+        freeglut3-dev \
+        pkg-config \
+        libpcap-dev \
+        clang-format \
+        graphviz \
+        nasm \
+        flex \
+        fontconfig \
+        libgdal-dev \
+        libcgal-dev \
+        # for QT
+        libxcb-xkb1 \
+        libxcb-shape0 \
+        libxcb-randr0 \
+        libxcb-icccm4 \
+        libxcb-image0 \
+        libxcb-keysyms1 \
+        libxcb-xinerama0 \
+        libxkbcommon-x11-0 \
+        libxcb-render-util0
+
+# C++ dependencies
+WORKDIR /opt
+COPY ./util/install_deps_ubuntu.sh /opt
+RUN /opt/install_deps_ubuntu.sh assume-yes
+
+# ACloudViewer Jupyter dependencies
+RUN mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
+ | tee /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
+ && apt-get install -y nodejs \
+ && node --version \
+ && npm install -g yarn \
+ && yarn --version
+
+# deploy package installer
+WORKDIR /opt
+COPY docker_files/QtIFW-4.6.1-linux-amd.zip /opt
+RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
+ENV PATH="/opt/QtIFW-4.6.1-linux-amd/bin:$PATH"
+
+# Install Miniconda3
+WORKDIR /opt
+ENV PATH="/root/miniconda3/bin:$PATH"
+COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt
+RUN bash Miniconda3-latest-Linux-x86_64.sh -b \
+ && rm Miniconda3-latest-Linux-x86_64.sh \
+ && conda --version \
+ && which python \
+ && python --version
+
+WORKDIR /root
