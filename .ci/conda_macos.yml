@@ -1,0 +1,13 @@
+name: python3.8
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  # - eigen=3.4.*
+  - ninja
+  - pkg-config
+  - boost=1.84.*
+  - qt=5.15.* # reconstruction
+  - ffmpeg=6.1.*
+  - xerces-c=3.2.* # reconstruction
+  - typing_extensions # fix pytorch import missing issues

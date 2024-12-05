@@ -13,9 +13,8 @@ if( WIN32 )
 		foreach( dest ${INSTALL_DESTINATIONS} )
 			cloudViewer_install_files( "${GMP_DLL_FILES}" ${dest} ) # Mind the quotes!
 		endforeach()
-		if (${GMP_DLL_FILES})
-			InstallFiles( FILES ${GMP_DLL_FILES} )
-			#InstallFiles( FILES ${MPFR_LIBRARIES} )
-		endif()
+		
+		InstallFiles( FILES ${GMP_DLL_FILES} )
+		#InstallFiles( FILES ${MPFR_LIBRARIES} )
 	endif()
 endif()

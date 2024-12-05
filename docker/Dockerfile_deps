@@ -1,0 +1,226 @@
+ARG CUDA_VERSION
+ARG UBUNTU_VERSION
+FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
+
+ARG VTK_VERSION
+ARG PCL_VERSION
+ENV VTK_VERSION=${VTK_VERSION}
+ENV PCL_VERSION=${PCL_VERSION}
+
+# For bash-specific commands
+SHELL ["/bin/bash", "-c"]
+
+# FROM nvidia/opengl:1.2-glvnd-devel-ubuntu${UBUNTU_VERSION}
+# FROM gezp/ubuntu-nomachine:${UBUNTU_VERSION}-cu${CUDA_VERSION}
+LABEL maintainer="ACloudViewer Team ludahai19@163.com"
+
+# Env vars for the nvidia-container-runtime.
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES all
+ENV SUDO=command
+
+ENV REFRESHED_AT=2023-06-04\
+    CLOUDVIEWER_DEV=/opt/ACloudViewer \
+    QT_ROOT=/opt/Qt5.14.2/ \
+    QT_DIR=/opt/Qt5.14.2/5.14.2/gcc_64 \
+    QT_CI_LOGIN=alicevisionjunk@gmail.com \
+    QT_CI_PASSWORD=azerty1. \
+    DEBIAN_FRONTEND=noninteractive
+
+# cloudViewer Jupyter dependencies
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
+&& apt-get clean && apt-get update --fix-missing -y
+
+# Dependencies: basic
+# Update apt and install libs needed by Qt, pcl and vtk
+RUN apt-get install apt-utils software-properties-common tzdata --fix-missing -y \
+    && apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc \
+    && apt-add-repository --yes "deb https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
+    && apt-get update --fix-missing -y \
+    && apt-get install --fix-missing -yq --no-install-recommends \
+        build-essential \
+        git  \
+        cmake \
+        wget \
+        curl \
+        vim \
+        tree \
+        apt-file \
+        net-tools \
+        mesa-utils \
+        # for opencv
+        libavcodec-dev \
+        libavformat-dev \
+        libavutil-dev \
+        libswscale-dev \
+        libjpeg-dev \
+        libpng-dev \
+        libtiff-dev \
+        # for colmap
+        libatlas-base-dev \
+        # for package
+        zip \
+        unzip \
+        locate \
+        automake \
+        xorg-dev \
+        libxi-dev \
+        openmpi-bin \
+        openmpi-common \
+        gfortran \
+        ninja-build \
+        libgtest-dev \
+        libusb-dev \
+        freeglut3-dev \
+        pkg-config \
+        libpcap-dev \
+        clang-format \
+        graphviz \
+        nasm \
+        flex \
+        fontconfig \
+        # for pcl
+        libopenni-dev \
+        libopenni2-dev \
+        libjsoncpp-dev \
+        libgdal-dev \
+        libcgal-dev \
+        libusb-1.0-0-dev \
+        libeigen3-dev \
+        libboost-all-dev \
+        libglew-dev \
+        'libqhull*' \
+        libqhull-dev \
+        libflann1.9 \
+        libflann-dev \
+        # for QT
+        libxcb-xkb1 \
+        libxcb-shape0 \
+        libxcb-randr0 \
+        libxcb-icccm4 \
+        libxcb-image0 \
+        libxcb-keysyms1 \
+        libxcb-xinerama0 \
+        libxkbcommon-x11-0 \
+        libxcb-render-util0
+
+# C++ dependencies
+WORKDIR /opt
+COPY ./util/install_deps_ubuntu.sh /opt
+RUN /opt/install_deps_ubuntu.sh assume-yes
+
+# ACloudViewer Jupyter dependencies
+RUN mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
+ | tee /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
+ && apt-get install -y nodejs \
+ && node --version \
+ && npm install -g yarn \
+ && yarn --version
+
+# deploy package installer
+WORKDIR /opt
+COPY docker_files/QtIFW-4.6.1-linux-amd.zip /opt
+RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
+ENV PATH="/opt/QtIFW-4.6.1-linux-amd/bin:$PATH"
+
+# Install Qt (to build plugins)
+WORKDIR /opt
+COPY docker_files/qt-opensource-linux-x64-5.14.2.run /opt
+COPY ./docker/qt-installer-noninteractive.qs /opt
+RUN chmod +x qt-opensource-linux-x64-5.14.2.run && \
+    ./qt-opensource-linux-x64-5.14.2.run --verbose --platform minimal --script "/opt/qt-installer-noninteractive.qs" && \
+    rm qt-opensource-linux-x64-5.14.2.run
+ENV LD_LIBRARY_PATH="/opt/Qt5.14.2/5.14.2/gcc_64/lib:$LD_LIBRARY_PATH"
+ENV PATH="/opt/Qt5.14.2/5.14.2/gcc_64/bin:$PATH"
+
+# Install metslib for pcl
+WORKDIR /opt
+COPY docker_files/metslib-0.5.3.tgz /opt
+RUN tar -xvf metslib-0.5.3.tgz && \
+    cd metslib-0.5.3 && \
+    sh ./configure && \
+    make && \
+    make install \
+    && ldconfig \
+    && rm -rf /opt/metslib-0.5.3 \
+    && rm -rf /opt/metslib-0.5.3.tgz
+
+# Install laszip
+WORKDIR /opt
+COPY docker_files/laszip-src-3.4.3.tar.gz /opt
+RUN tar -xvf laszip-src-3.4.3.tar.gz && \
+    cd laszip-src-3.4.3 && \
+    mkdir -p build && cd build && \
+    cmake .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" \
+    && ldconfig \
+    && rm -rf /opt/laszip-src-3.4.3 \
+    && rm -rf /opt/laszip-src-3.4.3.zip
+
+# Install xerces-c
+WORKDIR /opt
+COPY docker_files/xerces-c-3.2.3.zip /opt
+RUN unzip xerces-c-3.2.3.zip \
+    && cd ./xerces-c-3.2.3 \
+    && chmod +x configure \
+    && ./configure --prefix=/usr \
+    && make \
+    && make install \
+    && make clean \
+    && rm -rf /opt/xerces-c-3.2.3 \
+    && rm -rf /opt/xerces-c-3.2.3.zip
+
+# Install Miniconda3
+WORKDIR /opt
+ENV PATH="/root/miniconda3/bin:$PATH"
+COPY docker_files/Miniconda3-latest-Linux-x86_64.sh /opt
+RUN bash Miniconda3-latest-Linux-x86_64.sh -b \
+ && rm Miniconda3-latest-Linux-x86_64.sh \
+ && conda --version \
+ && which python \
+ && python --version
+
+# Install vtk
+WORKDIR /opt
+COPY docker_files/VTK-${VTK_VERSION}.tar.gz /opt
+RUN tar -zxvf VTK-${VTK_VERSION}.tar.gz && \
+    cd VTK-${VTK_VERSION} && \
+    mkdir -p build && cd build && \
+    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DVTK_GROUP_ENABLE_Qt=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
+            -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
+            -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
+            -DVTK_QT_VERSION:STRING=5 \
+            -DBUILD_SHARED_LIBS:BOOL=ON \
+            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
+            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig && \
+    rm -rf /opt/VTK-${VTK_VERSION} /opt/VTK-${VTK_VERSION}.tar.gz
+
+# Install pcl
+WORKDIR /opt
+COPY docker_files/pcl-${PCL_VERSION}.zip /opt
+RUN unzip pcl-${PCL_VERSION}.zip && \
+    cd pcl && \
+    mkdir -p build && cd build && \
+    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
+            -DBUILD_GPU=OFF \
+            -DBUILD_apps=OFF \
+            -DBUILD_examples=OFF \
+            -DBUILD_surface_on_nurbs=ON \
+            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
+            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
+    make "-j$(nproc)" && \
+    make install "-j$(nproc)" && ldconfig && \
+    rm -rf /opt/pcl /opt/pcl-${PCL_VERSION}.zip
+
+WORKDIR /root

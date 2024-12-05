@@ -1,4 +1,4 @@
-# Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
+# Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,6 @@ list(APPEND FREEIMAGE_CHECK_INCLUDE_DIRS
     /usr/local/include
     /opt/include
     /opt/local/include
-    /opt/homebrew/Cellar
 )
 
 list(APPEND FREEIMAGE_CHECK_LIBRARY_DIRS
@@ -66,7 +65,6 @@ list(APPEND FREEIMAGE_CHECK_LIBRARY_DIRS
     /usr/local/lib
     /opt/lib
     /opt/local/lib
-    /opt/homebrew/Cellar
 )
 
 find_path(FREEIMAGE_INCLUDE_DIRS
@@ -81,10 +79,10 @@ find_library(FREEIMAGE_LIBRARIES
     ${FREEIMAGE_CHECK_LIBRARY_DIRS})
 
 if(FREEIMAGE_INCLUDE_DIRS AND FREEIMAGE_LIBRARIES)
-    set(FreeImage_FOUND TRUE)
+    set(FREEIMAGE_FOUND TRUE)
 endif()
 
-if(FreeImage_FOUND)
+if(FREEIMAGE_FOUND)
     message(STATUS "Found FreeImage")
     message(STATUS "  Includes : ${FREEIMAGE_INCLUDE_DIRS}")
     message(STATUS "  Libraries : ${FREEIMAGE_LIBRARIES}")

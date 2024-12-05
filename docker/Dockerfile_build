@@ -1,0 +1,70 @@
+ARG CLOUDVIEWER_VERSION
+ARG DEPENDENCY_IMAGE_NAME
+ARG CUDA_VERSION
+ARG UBUNTU_VERSION
+FROM ${DEPENDENCY_IMAGE_NAME}:${CLOUDVIEWER_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+LABEL maintainer="AliceVision Team ludahai19@163.com"
+
+ARG PACKAGE
+ARG BUILD_GUI
+ARG BUILD_WHEEL
+ARG PYTHON_VERSION
+ARG BUILD_CUDA_MODULE
+ARG BUILD_SHARED_LIBS
+ARG BUILD_PYTORCH_OPS
+ARG BUILD_TENSORFLOW_OPS
+
+# Env vars for the nvidia-container-runtime.
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES all
+ENV PACKAGE=${PACKAGE}
+ENV BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
+ENV BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
+ENV BUILD_GUI=${BUILD_GUI}
+ENV BUILD_WHEEL=${BUILD_WHEEL}
+ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+
+# Miniconda requires bash as the default shell.
+SHELL ["/bin/bash", "-c"]
+
+ENV ACloudViewer_DEV=/root \
+    ACloudViewer_BUILD=/root/ACloudViewer/build \
+    ACloudViewer_INSTALL=/root/install
+
+ENV PATH="/root/miniconda3/bin:$PATH" \
+    CONDA_EXE="/root/miniconda3/bin/conda"
+ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
+RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
+
+RUN if [ -n "$CONDA_EXE" ]; then \
+        CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE")); \
+    elif [ -n "$CONDA_PREFIX" ]; then \
+        CONDA_ROOT=$(dirname "$CONDA_PREFIX"); \
+    else \
+        echo "Failed to find Miniconda3 install path..."; \
+        exit 1; \
+    fi && \
+    echo "CONDA_ROOT is set to: $CONDA_ROOT" && \
+    source "$CONDA_ROOT/etc/profile.d/conda.sh" 
+
+COPY . ${ACloudViewer_DEV}/ACloudViewer
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+
+RUN mkdir -p ${ACloudViewer_INSTALL}
+
+# Build ACloudViewer app installer
+RUN if [ "${BUILD_GUI}" = "ON" ]; then                           \
+        echo "Start Build ACloudViewer apps installer..." &&     \
+        rm -rf ${ACloudViewer_BUILD}/* &&                        \
+        ./docker/build_gui_app.sh ${PYTHON_VERSION};             \
+    fi
+
+RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                              \
+        echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." &&    \
+        rm -rf ${ACloudViewer_BUILD}/* &&                             \
+        ./docker/build_cloudviewer_whl.sh ${PYTHON_VERSION};          \
+    fi
+
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer

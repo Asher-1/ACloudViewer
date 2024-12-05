@@ -83,6 +83,7 @@ try:
 
         # https://github.com/Yelp/dumb-init/blob/57f7eebef694d780c1013acd410f2f0d3c79f6c6/setup.py#L25
         def get_tag(self):
+            # abi: cp?  plat: universal2 --> arm64
             python, abi, plat = _bdist_wheel.get_tag(self)
             if plat[:5] == "linux":
                 libc = ctypes.CDLL("libc.so.6")
@@ -158,12 +159,11 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Education",
     "Topic :: Multimedia :: Graphics :: 3D Modeling",
     "Topic :: Multimedia :: Graphics :: 3D Rendering",
@@ -180,8 +180,8 @@ classifiers = [
 name = "@PYPI_PACKAGE_NAME@"
 with open("README.rst") as readme:
     long_description = readme.read()
-# cloudViewer-cpu wheel for Linux x86_64
-if sys.platform.startswith("linux") and platform.machine() in (
+# cloudViewer-cpu wheel for Linux OR Windows x86_64
+if (sys.platform.startswith("linux") or sys.platform.startswith("win32")) and platform.machine() in (
         'i386', 'x86_64', 'AMD64') and "@BUILD_CUDA_MODULE@" == "OFF":
     name += "-cpu"
     long_description += ("\n\nThis wheel only contains CPU functionality. "

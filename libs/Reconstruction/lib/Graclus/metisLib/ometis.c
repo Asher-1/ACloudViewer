@@ -76,7 +76,7 @@ void METIS_EdgeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int 
 /*************************************************************************
 * This function is the entry point for ONCMETIS
 **************************************************************************/
-void METIS_NodeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int *options,
+void GRACLUS_METIS_NodeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int *options,
                   idxtype *perm, idxtype *iperm)
 {
   int i, ii, j, l, wflag, nflag;

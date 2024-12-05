@@ -14,7 +14,6 @@ if( NOT BUILD_WITH_QT4 )
 endif()
 
 if(Qt5Core_FOUND)
-    # set(CMAKE_CXX_STANDARD 11)
     set(QTCORE_LIBRARIES ${Qt5Core_LIBRARIES})
     set(QUAZIP_LIB_VERSION_SUFFIX 5)
     # if there is no QT_ROOT, try to deduce it from Qt QtCore include

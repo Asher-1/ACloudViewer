@@ -32,6 +32,7 @@
 #include "util/bitmap.h"
 
 #include <regex>
+#include <string>
 #include <unordered_map>
 
 #include "VLFeat/imopv.h"
@@ -41,6 +42,29 @@
 #include "util/misc.h"
 
 namespace colmap {
+namespace {
+#ifdef FREEIMAGE_LIB  // Only needed for static FreeImage.
+
+void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
+  std::string error_info = "FreeImage error";
+  if(fif != FIF_UNKNOWN) {
+      error_info += " (" + std::string(FreeImage_GetFormatFromFIF(fif)) + ")";
+  }
+  LOG(ERROR) << error_info << ": " << message;
+}
+
+struct FreeImageInitializer {
+  FreeImageInitializer() { 
+    FreeImage_SetOutputMessage(FreeImageErrorHandler);
+    FreeImage_Initialise();
+  }
+  ~FreeImageInitializer() { FreeImage_DeInitialise(); }
+};
+
+const static auto initializer = FreeImageInitializer();
+
+#endif  // FREEIMAGE_LIB
+}
 
 Bitmap::Bitmap()
     : data_(nullptr, &FreeImage_Unload), width_(0), height_(0), channels_(0) {}

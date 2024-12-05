@@ -38,6 +38,9 @@
 // CV_CORE_LIB
 #include <FileSystem.h>
 
+// ECV_DB_LIB
+#include "camera/PinholeCameraTrajectory.h"
+
 // QPCL_ENGINE_LIB
 #ifdef USE_PCL_BACKEND
 #include <Tools/PclTools.h>
@@ -56,7 +59,9 @@ TexturingReconstruction::TexturingReconstruction(const TexturingOptions& options
       image_path_(image_path),
       output_path_(output_path),
       image_ids_(image_ids),
-      reconstruction_(reconstruction) {}
+      reconstruction_(reconstruction) {
+      camera_trajectory_ = std::make_shared<camera::PinholeCameraTrajectory>();
+}
 
 void TexturingReconstruction::Run() {
   PrintHeading1("Mesh Texturing");
@@ -73,9 +78,9 @@ void TexturingReconstruction::Run() {
   ThreadPool thread_pool;
   std::vector<std::future<bool>> futures;
   futures.reserve(reconstruction_.NumRegImages());
-  camera_trajectory_.parameters_.clear();
+  camera_trajectory_->parameters_.clear();
   if (image_ids_.empty()) {
-    camera_trajectory_.parameters_.resize(reconstruction_.NumRegImages());
+    camera_trajectory_->parameters_.resize(reconstruction_.NumRegImages());
     for (size_t i = 0; i < reconstruction_.NumRegImages(); ++i) {
       const image_t image_id = reconstruction_.RegImageIds().at(i);
       futures.push_back(
@@ -83,7 +88,7 @@ void TexturingReconstruction::Run() {
     }
   } else {
     std::size_t index = 0;
-    camera_trajectory_.parameters_.resize(image_ids_.size());
+    camera_trajectory_->parameters_.resize(image_ids_.size());
     for (const image_t image_id : image_ids_) {
       futures.push_back(
           thread_pool.AddTask(&TexturingReconstruction::Texturing, this, image_id, index));
@@ -116,8 +121,8 @@ void TexturingReconstruction::Run() {
   }
 
   // check camera trajectory validation
-  for (int i = 0; i < camera_trajectory_.parameters_.size(); ++i) {
-      auto& cameraParams = camera_trajectory_.parameters_[i];
+  for (int i = 0; i < camera_trajectory_->parameters_.size(); ++i) {
+      auto& cameraParams = camera_trajectory_->parameters_[i];
       if (!cameraParams.intrinsic_.IsValid()) {
           CVLog::Error("Invalid camera intrinsic parameters found and ignore texturing!");
           return;
@@ -126,7 +131,7 @@ void TexturingReconstruction::Run() {
 
 #ifdef USE_PCL_BACKEND
   PCLTextureMesh::Ptr texturedMesh = PclTools::CreateTexturingMesh(options_.meshed_file_path,
-                                                                   camera_trajectory_,
+                                                                   *camera_trajectory_,
                                                                    options_.show_cameras,
                                                                    options_.verbose);
   if (texturedMesh) {
@@ -166,7 +171,7 @@ bool TexturingReconstruction::Texturing(const image_t image_id, std::size_t inde
       FileCopy(JoinPaths(output_path_, texture_file), target_file_path);
   }
 
-  auto& cameraParams = camera_trajectory_.parameters_[index];
+  auto& cameraParams = camera_trajectory_->parameters_[index];
   cameraParams.texture_file_ = texture_file;
   const Eigen::Matrix3x4d proj_matrix = image.InverseProjectionMatrix();
   Eigen::Matrix3d rotation = proj_matrix.leftCols<3>();
