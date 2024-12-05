@@ -158,7 +158,7 @@ cuda-focal_export_env() {
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=cloudviewer-ci-cuda-focal
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.11
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -171,7 +171,33 @@ cuda-jammy_export_env() {
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=cloudviewer-ci-cuda-jammy
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.11
+    export BUILD_SHARED_LIBS=OFF
+    export BUILD_CUDA_MODULE=ON
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+}
+
+cuda-focal-release_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cuda-focal
+
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=cloudviewer-ci-cuda-focal
+    export PYTHON_VERSION=3.11
+    export BUILD_SHARED_LIBS=OFF
+    export BUILD_CUDA_MODULE=ON
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+}
+
+cuda-jammy-release_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cuda-jammy
+
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=cloudviewer-ci-cuda-jammy
+    export PYTHON_VERSION=3.11
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -184,7 +210,7 @@ cpu-focal_export_env() {
     export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=cloudviewer-ci-cpu-focal
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.11
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -196,7 +222,32 @@ cpu-jammy_export_env() {
     export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=cloudviewer-ci-cpu-jammy
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.11
+    export BUILD_SHARED_LIBS=OFF
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+}
+
+cpu-focal-release_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cpu-focal
+
+    export BASE_IMAGE=ubuntu:20.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=cloudviewer-ci-cpu-focal
+    export PYTHON_VERSION=3.11
+    export BUILD_SHARED_LIBS=OFF
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+}
+
+cpu-jammy-release_export_env() {
+    export DOCKER_TAG=cloudviewer-ci:cpu-jammy
+    export BASE_IMAGE=ubuntu:22.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=cloudviewer-ci-cpu-jammy
+    export PYTHON_VERSION=3.11
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -220,6 +271,14 @@ function main() {
         cpu-jammy_export_env
         ci_build
         ;;
+    cpu-focal-release)
+        cpu-focal-release_export_env
+        ci_build
+        ;;
+    cpu-jammy-release)
+        cpu-jammy-release_export_env
+        ci_build
+        ;;
 
     # CUDA CIs
     cuda-focal)
@@ -228,6 +287,14 @@ function main() {
         ;;
     cuda-jammy)
         cuda-jammy_export_env
+        ci_build
+        ;;
+    cuda-focal-release)
+        cuda-focal-release_export_env
+        ci_build
+        ;;
+    cuda-jammy-release)
+        cuda-jammy-release_export_env
         ci_build
         ;;
 
