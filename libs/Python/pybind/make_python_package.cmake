@@ -108,9 +108,6 @@ elseif (UNIX)
                         "${CUDA_FOLDER_PATH}" ${PYTHON_INSTALL_LIB_DESTINATION}
                         WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
     endif()
-    execute_process(COMMAND bash ${PACKAGE_TOOL}
-                    ${PYTHON_INSTALL_LIB_DESTINATION}/platforms/libqxcb.so ${PYTHON_INSTALL_LIB_DESTINATION}
-                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
 
     # rename ldd lib to the format like "${CUSTOM_SO_NAME}"
     file(GLOB ldd_libs_list "${PYTHON_INSTALL_LIB_DESTINATION}/*.so*" )
@@ -140,6 +137,10 @@ elseif (UNIX)
         message(STATUS "Copy external lib: " ${NEW_SO_NAME})
         configure_file(${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME} COPYONLY)
     endforeach ()
+
+    execute_process(COMMAND bash ${PACKAGE_TOOL}
+                    ${PYTHON_INSTALL_LIB_DESTINATION}/platforms/libqxcb.so ${PYTHON_INSTALL_LIB_DESTINATION}
+                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
 elseif (WIN32) # for windows
     set(CPU_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cpu")
     set(CUDA_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cuda")
