@@ -16,9 +16,6 @@ ARG BUILD_CUDA_MODULE
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
-ARG BUILD_GUI
-ARG BUILD_WHEEL
-ARG IGNORE_TEST
 ARG CI
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
@@ -55,9 +52,6 @@ ENV BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV PACKAGE=${PACKAGE}
-ENV BUILD_WHEEL=${BUILD_WHEEL}
-ENV BUILD_GUI=${BUILD_GUI}
-ENV IGNORE_TEST=${IGNORE_TEST}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -160,11 +154,6 @@ ENV ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
 
-# Checkout CloudViewer-ML main branch
-# TODO: We may add support for local CloudViewer-ML repo or pinned ML repo tag
-ENV CLOUDVIEWER_ML_ROOT=/root/CloudViewer-ML
-RUN git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git ${CLOUDVIEWER_ML_ROOT}
-
 ENV PATH="/root/miniconda3/bin:$PATH" \
     CONDA_EXE="/root/miniconda3/bin/conda"
 
@@ -187,37 +176,13 @@ WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 # ACloudViewer C++ dependencies
 RUN ./util/install_deps_ubuntu.sh assume-yes
 
-# ACloudViewer Jupyter dependencies
-RUN mkdir -p /etc/apt/keyrings \
- && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
- | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
- && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
- | tee /etc/apt/sources.list.d/nodesource.list \
- && apt-get update \
- && apt-get install -y nodejs \
- && rm -rf /var/lib/apt/lists/* \
- && node --version \
- && npm install -g yarn \
- && yarn --version
-
-
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
 # Build ACloudViewer app installer
-RUN if [ "${BUILD_GUI}" = "ON" ]; then                              \
-        echo "Start Build ACloudViewer apps installer..." &&        \
-        rm -rf ${ACloudViewer_BUILD}/* &&                           \
-        ./docker/build_gui_app_conda.sh ${PYTHON_VERSION};          \
-        rm -rf ${ACloudViewer_BUILD}/*;                             \
-    fi
-
-RUN if [ "${BUILD_WHEEL}" = "ON" ]; then                            \
-        echo "Build cloudViewer wheel for ${PYTHON_VERSION}..." &&  \
-        rm -rf ${ACloudViewer_BUILD}/* &&                           \
-        ./docker/build_cloudviewer_whl_conda.sh ${PYTHON_VERSION};  \
-        rm -rf ${ACloudViewer_BUILD}/*;                             \
-    fi
-    
+RUN echo "Start Build ACloudViewer apps installer..." \
+    && rm -rf ${ACloudViewer_BUILD}/* \
+    && ./docker/build_gui_app_conda.sh ${PYTHON_VERSION} \
+    && rm -rf ${ACloudViewer_BUILD}/*
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 RUN echo "Docker build done."
