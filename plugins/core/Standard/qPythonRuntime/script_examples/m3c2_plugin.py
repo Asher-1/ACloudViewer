@@ -3,7 +3,13 @@ import cccorelib
 from pycc.plugins import qM3C2
 
 CC = pycc.GetInstance()
-cloud = CC.getSelectedEntities()[0]
+entities = CC.getSelectedEntities()
+if not entities or len(entities) == 0:
+		raise RuntimeError("Please select at one point cloud")
+cloud = entities[0]
+if not isinstance(cloud, pycc.ccPointCloud):
+		raise RuntimeError("Selected entity should be a point cloud")
+      
 bbMin, bbMax = cccorelib.CCVector3(), cccorelib.CCVector3()
 cloud.getBoundingBox(bbMin, bbMax)
 print(f"Min {bbMin}, Max: {bbMax}")
