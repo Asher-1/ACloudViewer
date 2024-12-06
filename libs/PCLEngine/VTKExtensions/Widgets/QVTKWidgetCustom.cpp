@@ -61,6 +61,7 @@
 
 // QT
 #include <QApplication>
+#include <QCoreApplication>
 #include <QHBoxLayout>
 #include <QLayout>
 #include <QMainWindow>
@@ -68,6 +69,7 @@
 #include <QMimeData>
 #include <QPushButton>
 #include <QSettings>
+#include <QThread>
 #include <QTouchEvent>
 #include <QWheelEvent>
 #include <QWidget>
@@ -262,6 +264,20 @@ void QVTKWidgetCustom::transformCameraProjection(const double* projMat) {
     this->m_camera->SetExplicitProjectionTransformMatrix(ProjTransform);
 }
 
+bool IsCalledFromMainThread() {
+    return QThread::currentThread() == QCoreApplication::instance()->thread();
+}
+
+void QVTKWidgetCustom::updateScene() {
+    if (IsCalledFromMainThread() && this->GetRenderWindow()) {
+        this->GetRenderWindow()->Render();
+    } else { // only core threading enabled rendering
+        QMetaObject::invokeMethod(
+                this, [=]() { this->GetRenderWindow()->Render(); },
+                Qt::QueuedConnection);
+    }
+}
+
 void QVTKWidgetCustom::toWorldPoint(const CCVector3d& input2D,
                                     CCVector3d& output3D) {
     // auto picker = GetInteractor()->GetPicker();
@@ -404,8 +420,7 @@ void QVTKWidgetCustom::addViewProp(vtkProp* prop) {
 QList<vtkProp*> QVTKWidgetCustom::actors() const { return d_ptr->actors; }
 
 void QVTKWidgetCustom::setActorsVisible(bool visible) {
-    foreach (auto actor, d_ptr->actors)
-        actor->SetVisibility(visible);
+    foreach (auto actor, d_ptr->actors) actor->SetVisibility(visible);
 }
 
 void QVTKWidgetCustom::setActorVisible(vtkProp* actor, bool visible) {
@@ -940,9 +955,9 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                             // rotation about the sensor Z axis
                             CCVector3d axis = m_tools->m_viewportParams.viewMat
                                                       .getColumnAsVec3D(2);
-                            rotMat.initFromParameters(cloudViewer::DegreesToRadians(delta_deg),
-                                                      axis,
-                                                      CCVector3d(0, 0, 0));
+                            rotMat.initFromParameters(
+                                    cloudViewer::DegreesToRadians(delta_deg),
+                                    axis, CCVector3d(0, 0, 0));
                         }
 
                         if (std::abs(posDelta.y()) != 0) {
@@ -953,9 +968,9 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                                     height();
                             // rotation about the local X axis
                             ccGLMatrixd rotX;
-                            rotX.initFromParameters(cloudViewer::DegreesToRadians(delta_deg),
-                                                    CCVector3d(1, 0, 0),
-                                                    CCVector3d(0, 0, 0));
+                            rotX.initFromParameters(
+                                    cloudViewer::DegreesToRadians(delta_deg),
+                                    CCVector3d(1, 0, 0), CCVector3d(0, 0, 0));
                             rotMat = rotX * rotMat;
                         }
                     } break;
@@ -1323,10 +1338,10 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                     break;
                 }
             }
-//            CVLog::PrintDebug(QString("Touch update (%1 points)")
-//                                      .arg(static_cast<QTouchEvent*>(evt)
-//                                                   ->touchPoints()
-//                                                   .size()));
+            //            CVLog::PrintDebug(QString("Touch update (%1 points)")
+            //                                      .arg(static_cast<QTouchEvent*>(evt)
+            //                                                   ->touchPoints()
+            //                                                   .size()));
         } break;
 
         case QEvent::Resize: {

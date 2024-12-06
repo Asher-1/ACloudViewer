@@ -243,7 +243,7 @@ void define_ccGUIPythonInstance(py::module &m)
              R"(Returns the root of the GUI DB Tree)")
         .def("addToDB",
              &ccGuiPythonInstance::addToDB,
-            //  py::call_guard<py::gil_scoped_release>(),
+             //  py::call_guard<py::gil_scoped_release>(),
              "obj"_a,
              "updateZoom"_a = false,
              "autoExpandDBTree"_a = true,
