@@ -10,12 +10,13 @@ endif ()
 
 set(GFLAGS_MAJOR_VERSION "2")
 set(GFLAGS_MINOR_VERSION "2.2")
+set(GFLAGS_FULL_VERSION ${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
 
 # Add gflags
 ExternalProject_Add(
         ext_gflags
         PREFIX gflags
-        URL https://github.com/gflags/gflags/archive/v${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION}.zip
+        URL https://github.com/gflags/gflags/archive/v${GFLAGS_FULL_VERSION}.zip
         URL_HASH MD5=ff856ff64757f1381f7da260f79ba79b
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/gflags"
         BUILD_IN_SOURCE 0
@@ -49,12 +50,16 @@ endif ()
 # fix missing libgflags symlinks issues on linux
 if (UNIX AND NOT APPLE)
     set(CUSTOM_GFLAGS_LIB_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX})
+    set(LINK_GFLAGS_FILENAME ${CUSTOM_GFLAGS_LIB_NAME}.${GFLAGS_MINOR_VERSION})
     ExternalProject_Add_Step(ext_gflags replace_gflags_symlink_with_file
-        COMMAND ${CMAKE_COMMAND} -E remove ${GFLAGS_LIB_DIR}/${CUSTOM_GFLAGS_LIB_NAME}.${GFLAGS_MINOR_VERSION}
+        COMMAND ${CMAKE_COMMAND} -E remove ${LINK_GFLAGS_FILENAME}
         COMMAND ${CMAKE_COMMAND} -E copy
-        ${CUSTOM_GFLAGS_LIB_NAME}.${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION}
-        ${CUSTOM_GFLAGS_LIB_NAME}.${GFLAGS_MINOR_VERSION}
+        ${CUSTOM_GFLAGS_LIB_NAME}.${GFLAGS_FULL_VERSION}
+        ${LINK_GFLAGS_FILENAME}
         WORKING_DIRECTORY "${GFLAGS_LIB_DIR}"
         DEPENDEES install
     )
+    # fix missing installed gflags issues on linux
+    set(LINK_GFLAGS_FILE_PATH ${GFLAGS_LIB_DIR}/${LINK_GFLAGS_FILENAME})
+    cloudViewer_install_ext(FILES ${LINK_GFLAGS_FILE_PATH} ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_LIB_DIR} "")
 endif()
