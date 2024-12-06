@@ -96,7 +96,7 @@ cuda_wheel_build() {
     echo "[cuda_wheel_build()] UBUNTU_VERSION: ${UBUNTU_VERSION}"
     echo "[cuda_wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
     echo "[cuda_wheel_build()] BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}"
-    echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
+    echo "[cuda_wheel_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[cuda_wheel_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:?'env var must be set.'}"
     echo "[cuda_wheel_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:?'env var must be set.'}"
 
