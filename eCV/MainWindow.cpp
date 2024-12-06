@@ -1656,9 +1656,9 @@ void MainWindow::addToDB(const QStringList& filenames,
 }
 
 void MainWindow::addToDB(ccHObject* obj,
-                         bool updateZoom /*=true*/,
+                         bool updateZoom /*=false*/,
                          bool autoExpandDBTree /*=true*/,
-                         bool checkDimensions /*=true*/,
+                         bool checkDimensions /*=false*/,
                          bool autoRedraw /*=true*/) {
     // let's check that the new entity is not too big nor too far from scene
     // center!

@@ -55,7 +55,7 @@ class Q_DECL_EXPORT ccGuiPythonInstance final
                  bool updateZoom = false,
                  bool autoExpandDBTree = true,
                  bool checkDimensions = false,
-                 bool autoRedraw = false);
+                 bool autoRedraw = true);
 
     void removeFromDB(pybind11::object &obj);
 
