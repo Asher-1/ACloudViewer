@@ -139,8 +139,7 @@ RUN apt-get -y update && \
         apt-get -y install qt515base qt515imageformats qt515declarative qt515quickcontrols2 qt515svg qt515tools \
             qt515translations qt515websockets qt515x11extras qt515xmlpatterns qt515networkauth-no-lgpl; \
     fi && \
-    ldconfig && rm -rf /var/lib/apt/lists/* && \
-    qmake -v
+    ldconfig && rm -rf /var/lib/apt/lists/*
 
 CMD ["/bin/bash", "-c", "source /root/.bashrc && exec bash"]
 RUN echo "QT_BASE_DIR=${QT_BASE_DIR}"
