@@ -152,15 +152,6 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
     file(COPY "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}"
         DESTINATION "${COLMAP_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS)
-    # fix gflags issues
-    if (UNIX AND NOT APPLE)
-        copy_rename_files(
-            "${EXTERNAL_INSTALL_DIRS}/lib"
-            "${GFLAGS_SRC_FILENAME}"
-            "${DEPLOY_LIB_PATH}"
-            "${GFLAGS_DST_FILENAME}"
-        )
-    endif()
 endif()
 
 ## 3. Package
