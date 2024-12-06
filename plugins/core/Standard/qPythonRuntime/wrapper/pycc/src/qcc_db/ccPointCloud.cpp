@@ -161,8 +161,11 @@ void define_ccPointCloud(py::module &m)
         // Special functions added by pycc
         .def("addPoints", &PyCC::addPointsFromArrays<ccPointCloud>)
         .def("setColor",
-             [](ccPointCloud &self, ColorCompType r, ColorCompType g, ColorCompType b)
-             { self.setRGBColor(r, g, b); })
+             [](ccPointCloud &self,
+                ColorCompType r,
+                ColorCompType g,
+                ColorCompType b,
+                ColorCompType a = 255) { self.setRGBColor(r, g, b); })
         .def("setPointNormal", &ccPointCloud::setPointNormal, "index"_a, "normal"_a)
         .def("addNorm", &ccPointCloud::addNorm, "normal"_a)
         .def("addNormals",
