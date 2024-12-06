@@ -794,15 +794,6 @@ elseif (UNIX)
     set(LIBS_FOLDER_NAME "${CloudViewer_INSTALL_LIB_DIR}")
     set(PACK_SCRIPTS_PATH "${SCRIPTS_BASE_PATH}/platforms/linux")
     set(EXTERNAL_INSTALL_DIRS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
-
-    # fix Colmap and ACloudViewer issues with gflags
-    if (BUILD_RECONSTRUCTION)
-        # fix gflags undefinded symbols issues
-        set(src_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MAJOR_VERSION}.${GFLAGS_MINOR_VERSION})
-        set(target_gflags_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${EXT_GFLAGS_LIBRARIES}${CMAKE_SHARED_LIBRARY_SUFFIX}.${GFLAGS_MINOR_VERSION})
-        install(CODE "set(GFLAGS_SRC_FILENAME \"${src_gflags_filename}\")")
-        install(CODE "set(GFLAGS_DST_FILENAME \"${target_gflags_filename}\")")
-    endif()
 elseif (WIN32)
     set(MACHINE_NAME "win")
     if (WIN_AMD64)

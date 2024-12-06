@@ -5,7 +5,7 @@ file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR})
 file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/cloudViewer)
 file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/cloudViewer/lib)
 set(PYTHON_INSTALL_LIB_DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/lib")
-set(CUSTOM_SO_NAME ".so.${PROJECT_VERSION}")
+set(CUSTOM_SO_NAME ".so.${PROJECT_VERSION_THREE_NUMBER}")
 
 # Create python package. It contains:
 # 1) Pure-python code and misc files, copied from ${PYTHON_PACKAGE_SRC_DIR}
@@ -144,7 +144,10 @@ elseif (WIN32) # for windows
     set(CPU_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cpu")
     set(CUDA_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cuda")
     # prepare search path for powershell
-    set(EXTERNAL_DLL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/bin ${BUILD_BIN_PATH}/${CUSTOM_BUILD_TYPE} ${CONDA_PREFIX}/Library/bin)
+    set(EXTERNAL_DLL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/bin ${BUILD_BIN_PATH}/${CUSTOM_BUILD_TYPE})
+    if (BUILD_WITH_CONDA)
+        list(APPEND EXTERNAL_DLL_DIR "${CONDA_PREFIX}/Library/bin")
+    endif()
     message(STATUS "Start search dependency from path: ${EXTERNAL_DLL_DIR}")
     string(REPLACE ";" "\",\"" PS_SEARCH_PATHS "${EXTERNAL_DLL_DIR}")
     set(PS_SEARCH_PATHS "\"${PS_SEARCH_PATHS}\"")
