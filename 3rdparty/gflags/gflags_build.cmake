@@ -59,6 +59,14 @@ if (UNIX AND NOT APPLE)
         WORKING_DIRECTORY "${GFLAGS_LIB_DIR}"
         DEPENDEES install
     )
+    
+    # for debugging
+    copy_shared_library(ext_gflags
+        LIB_DIR ${GFLAGS_LIB_DIR}
+        LIBRARIES ${EXT_GFLAGS_LIBRARIES}
+        SUFFIX ".${GFLAGS_MINOR_VERSION}"
+    )
+
     # fix missing installed gflags issues on linux
     set(LINK_GFLAGS_FILE_PATH ${GFLAGS_LIB_DIR}/${LINK_GFLAGS_FILENAME})
     cloudViewer_install_ext(FILES ${LINK_GFLAGS_FILE_PATH} ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_LIB_DIR} "")
