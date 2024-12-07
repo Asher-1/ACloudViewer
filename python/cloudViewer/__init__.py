@@ -95,16 +95,10 @@ if os.path.exists(Path(__file__).parent / dep_lib_name):
         load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libicudata*'))))
         load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libicuuc*'))))
         load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libicui18n*'))))
-        lib_xcb = list((Path(__file__).parent / dep_lib_name).glob('libxcb*'))
-        if len(lib_xcb) > 0: # fix missing libxcb-util.so.1
-            load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libxcb*'))))
         load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libQt5Core*'))))
         load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libQt5Gui*'))))
         load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libQt5Widgets*'))))
-        lib_qts = (Path(__file__).parent / dep_lib_name).glob('libQt5*')
-        lib_qts = sorted(lib_qts)
-        for lib in lib_qts:
-            load_cdll(lib)
+        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libQt5Concurrent*'))))
 
         load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libCVCoreLib*'))))
         load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libECV_DB_LIB*'))))
@@ -113,9 +107,6 @@ if os.path.exists(Path(__file__).parent / dep_lib_name):
             load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libfreeimage*'))))
             load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libgflags*'))))
             load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libglog*'))))
-            # load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libgfortran*'))))
-            # load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libblas*'))))
-            # load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('liblapack*'))))
             load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libceres*'))))
             boost_libs = list((Path(__file__).parent / dep_lib_name).glob('libboost*'))
             if len(boost_libs) >= 4:
@@ -124,6 +115,11 @@ if os.path.exists(Path(__file__).parent / dep_lib_name):
                 load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libboost_system*'))))
                 load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libboost_iostreams*'))))
         load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('lib*'))))
+        # try to loading all qt libraries again after all library
+        lib_qts = (Path(__file__).parent / dep_lib_name).glob('libQt5*')
+        lib_qts = sorted(lib_qts)
+        for lib in lib_qts:
+            load_cdll(lib)
 
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:
