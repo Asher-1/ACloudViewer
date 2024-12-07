@@ -24,9 +24,10 @@
 
 // cloudViewer
 #include <CVGeom.h>
+#include <CVLog.h>
 
 // Local
-#include "CVLog.h"
+#include "ecvObject.h"
 
 static const QString s_xmlACloudViewer("ACloudViewer");
 static const QString s_xmlCloudCompare("CloudCompare");
@@ -234,7 +235,9 @@ bool ccColorScale::toFile(QFile& out) const {
         for (LabelSet::const_iterator it = m_customLabels.begin();
              it != m_customLabels.end(); ++it) {
             outStream << it->value;
-            outStream << it->text;
+            if (ccObject::GetCurrentDBVersion() >= 54) {
+                outStream << it->text;
+            }
         }
     }
 
@@ -301,7 +304,9 @@ bool ccColorScale::fromFile(QFile& in,
                 QString text;
 
                 inStream >> label;
-                inStream >> text;
+                if (dataVersion >= 54) {
+                    inStream >> text;
+                }
 
                 m_customLabels.insert({label, text});
             }

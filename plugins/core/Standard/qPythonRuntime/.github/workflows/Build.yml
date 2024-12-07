@@ -115,9 +115,11 @@ jobs:
         run: sudo cmake --install build
 
       - name: Run Tests
+        # export LD_LIBRARY_PATH=$HOME/ACloudViewer/lib
+        # xvfb-run python3 -m pytest plugins/core/Standard/qPythonRuntime/tests --acloudviewer_exe $HOME/ACloudViewer/ACloudViewer --verbose
         run: |
           export LD_LIBRARY_PATH=/usr/local/lib
-          xvfb-run python3 -m pytest plugins/private/PythonRuntime/tests --acloudviewer_exe /usr/local/bin/CloudCompare --verbose
+          xvfb-run python3 -m pytest plugins/private/PythonRuntime/tests --acloudviewer_exe bin/ACloudViewer --verbose
 
       - name: Run doctests
         run: |

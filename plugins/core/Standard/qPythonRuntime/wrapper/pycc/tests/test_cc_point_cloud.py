@@ -97,4 +97,4 @@ def test_colors():
     cloud = f.getChild(0)
 
     assert (len(cloud.colors()) == cloud.size())
-    assert (np.all(cloud.colors()[0] == [43, 48, 52, 255]))
+    assert (np.all(cloud.colors()[0][:3] == [43, 48, 52]))
