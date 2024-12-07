@@ -570,24 +570,38 @@ function(import_shared_3rdparty_library name ext_target)
 endfunction()
 
 function(copy_shared_library ext_target)
-    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "LIBRARIES;SUFFIX" ${ARGN})
+
     if (arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
-        message(FATAL_ERROR "Invalid syntax: import_shared_3rdparty_library(${name} ${ARGN})")
+        message(FATAL_ERROR "Invalid syntax: copy_shared_library(${name} ${ARGN})")
     endif ()
     if (NOT arg_LIB_DIR)
         set(arg_LIB_DIR "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
+    endif ()
+
+    if (NOT arg_SUFFIX)
+        set(arg_SUFFIX "")
     endif ()
 
     if (arg_LIBRARIES)
         list(LENGTH arg_LIBRARIES libcount)
         foreach (arg_LIBRARY IN LISTS arg_LIBRARIES)
             set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}${arg_LIBRARY}${CMAKE_SHARED_LIBRARY_SUFFIX})
-            add_custom_command(TARGET ${ext_target}
+            if (WIN32)
+                add_custom_command(TARGET ${ext_target}
                     POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E
                     copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${library_filename}"
-            )
+                )
+            elseif(arg_SUFFIX)
+                set(library_filename ${library_filename}${arg_SUFFIX})
+                    add_custom_command(TARGET ${ext_target}
+                    POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E
+                    copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${library_filename}"
+                )
+            endif()
         endforeach ()
     endif ()
 endfunction()
@@ -1970,7 +1984,7 @@ if (BUILD_RECONSTRUCTION)
         if (NOT ${GLIBCXX_USE_CXX11_ABI})
             include(${CloudViewer_3RDPARTY_DIR}/boost/boost.cmake)
             import_3rdparty_library(3rdparty_boost
-                    INCLUDE_DIRS ${BOOST_INCLUDE_DIR}
+                    INCLUDE_DIRS ${Boost_INCLUDE_DIR}
                     LIB_DIR ${Boost_LIBRARY_DIRS}
                     LIBRARIES ${BOOST_LIBRARIES}
                     DEPENDS ext_boost
