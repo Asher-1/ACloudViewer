@@ -27,7 +27,16 @@ void define_BoundingBox(py::module &cccorelib)
 {
     py::class_<cloudViewer::BoundingBox>(cccorelib, "BoundingBox")
         .def(py::init<>())
-        .def(py::init<CCVector3, CCVector3>(), "minCorner"_a, "maxCorner"_a)
+        .def(py::init(
+            [](const CCVector3 &minCorner, const CCVector3 &maxCorner, bool valid = true)
+            {
+                auto bbox = new cloudViewer::BoundingBox(minCorner, maxCorner);
+                if (bbox)
+                {
+                    bbox->setValidity(valid);
+                }
+                return bbox;
+            }))
         .def("clear", &cloudViewer::BoundingBox::clear)
         .def("add", &cloudViewer::BoundingBox::add, "aPoint"_a)
         .def("minCorner", [](const cloudViewer::BoundingBox &self) { return self.minCorner(); })
