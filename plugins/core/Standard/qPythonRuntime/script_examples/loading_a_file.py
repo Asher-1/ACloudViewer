@@ -5,7 +5,7 @@ CC = pycc.GetInstance()
 params = pycc.FileIOFilter.LoadParameters()
 params.parentWidget = CC.getMainWindow()
 
-path = r"~\Projects\ACloudViewer\plugins\private\ACloudViewer-PythonPlugin\tests\data\a_cloud.bin"
+path = r"/home/asher/develop/code/github/CloudViewer/ACloudViewer/plugins/core/Standard/qPythonRuntime/tests/data/a_cloud.bin"
 
 
 # This automatically adds the loaded entities
@@ -17,7 +17,7 @@ obj = CC.loadFile(path, params)
 obj = pycc.FileIOFilter.LoadFromFile(path, params)
 
 if obj is not None:
-    print("Failed to load the file")
+    print("Success to load the file")
     CC.addToDB(obj)
 
 params = pycc.FileIOFilter.SaveParameters()

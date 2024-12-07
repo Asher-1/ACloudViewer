@@ -11,3 +11,5 @@ print(hist)
 # Change the color scale displayed
 scale = pycc.ccColorScalesManager.GetDefaultScale(pycc.ccColorScalesManager.YELLOW_BROWN)
 sf.setColorScale(scale)
+pycc.GetInstance().updateUI()
+pycc.GetInstance().redrawAll()

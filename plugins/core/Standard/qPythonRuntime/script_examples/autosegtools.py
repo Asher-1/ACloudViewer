@@ -9,7 +9,7 @@ CC = pycc.GetInstance()
 def main():
     if not CC.haveSelection():
         entities = CC.dbRootObject()
-        pc = entities.getChild(0).getChild(0);
+        pc = entities.getChild(0).getChild(0)
     else:
         pc = CC.getSelectedEntities()[0]
 
@@ -49,9 +49,8 @@ def main():
         pointsOfLabel = pointsArray[pointLabels == label]
         print(f"Label {label}: {len(pointsOfLabel)} points")
 
-
-    referenceClouds = cccorelib.AutoSegmentationTools.ReferenceCloudContainer()
-    if not cccorelib.extractConnectedComponents(pc, referenceClouds):
+    referenceClouds = cccorelib.ReferenceCloudContainer()
+    if not cccorelib.AutoSegmentationTools.extractConnectedComponents(pc, referenceClouds):
         print("Failed to extract the connected Components")
     assert(len(referenceClouds) == numLabels)
 

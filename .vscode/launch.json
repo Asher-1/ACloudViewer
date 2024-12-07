@@ -28,8 +28,29 @@
 			{
 					"type": "cppdbg",
 					"request": "launch",
-					"name": "LinuxACloudViewer",
+					"name": "Debug-LinuxACloudViewer",
 					"program": "${workspaceFolder}/build/bin/ACloudViewer",
+					"args": [
+					],
+					"cwd": "${workspaceFolder}/build/bin",
+					"environment": [
+						{"name": "CONDA_PREFIX", "value": "/home/asher/anaconda3/envs/python3.11"},
+					],
+					// "preLaunchTask": "Build",
+					"setupCommands": [
+							{
+									"description": "debug cpp",
+									"text": "-enable-pretty-printing",
+									"ignoreFailures": true
+							}
+					],
+			},
+
+			{
+					"type": "cppdbg",
+					"request": "launch",
+					"name": "Release-LinuxACloudViewer",
+					"program": "${workspaceFolder}/build_release/bin/ACloudViewer",
 					"args": [
 					],
 					"cwd": "${workspaceFolder}/build/bin",

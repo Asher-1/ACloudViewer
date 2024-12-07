@@ -207,7 +207,10 @@ void define_ccDisplayTools(py::module &m)
                     "size"_a,
                     "silent"_a = false,
                     "viewport"_a = 0)
-        .def_static("setLineWidth", &ecvDisplayTools::SetLineWidth, "width"_a, "silent"_a = false,
+        .def_static("setLineWidth",
+                    &ecvDisplayTools::SetLineWidth,
+                    "width"_a,
+                    "silent"_a = false,
                     "viewport"_a = 0)
         .def_static("getFontPointSize", &ecvDisplayTools::GetFontPointSize)
         .def_static("getLabelFontPointSize", &ecvDisplayTools::GetLabelFontPointSize)
@@ -283,7 +286,8 @@ void define_ccDisplayTools(py::module &m)
                     "pos3D"_a,
                     "color"_a = nullptr,
                     "font"_a = QFont())
-
+        .def_static("remove3DLabel", &ecvDisplayTools::Remove3DLabel, "view_id"_a)
+        .def_static("removeAllWidgets", &ecvDisplayTools::RemoveAllWidgets, "update"_a = true)
         .def_static("getGLCameraParameters", &ecvDisplayTools::GetGLCameraParameters, "params"_a)
         .def_static(
             "toCenteredGLCoordinates", &ecvDisplayTools::ToCenteredGLCoordinates, "x"_a, "y"_a)

@@ -8,7 +8,7 @@ import numpy as np
 # Note that the resulting ccPointCloud's point values and scalar field values
 # will be copies.
 
-path_to_las = r"L:\R1_F_0+000_0+050.las"
+path_to_las = r"/home/asher/develop/data/cloud/cloud/las/LPine1_demo.laz"
 
 las = laspy.read(path_to_las)
 
@@ -42,7 +42,6 @@ intensity_array = point_cloud.getScalarField(idx).asArray()
 print(intensity_array[:])
 
 
-
 try:
     cc = pycc.GetInstance()
 except AttributeError:
@@ -52,6 +51,8 @@ except AttributeError:
 # so that their color ranges displays properly
 point_cloud.getScalarField(point_cloud.getScalarFieldIndexByName("intensity")).computeMinAndMax()
 point_cloud.getScalarField(point_cloud.getScalarFieldIndexByName("classification")).computeMinAndMax()
+point_cloud.setCurrentDisplayedScalarField(point_cloud.getScalarFieldIndexByName("intensity"))
+point_cloud.showSF(True)
 
 cc.addToDB(point_cloud)
 cc.updateUI()

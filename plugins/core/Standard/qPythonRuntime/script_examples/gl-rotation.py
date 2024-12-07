@@ -39,7 +39,7 @@ glRot.initFromParameters(
 )
 
 glMat = entity.getGLTransformation()
-glMat = glMat * glRot;
+glMat = glMat * glRot
 
 translation = glMat.getTranslationAsVec3D()
 translation = translation + center

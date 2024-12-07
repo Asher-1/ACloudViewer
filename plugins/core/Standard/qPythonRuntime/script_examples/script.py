@@ -1,13 +1,17 @@
 import numpy as np
 import pycc
+import cccorelib
 
 CC = pycc.GetInstance()
 
 
 def main():
     print("hello world")
+    
+    params = pycc.FileIOFilter.LoadParameters()
+    params.parentWidget = CC.getMainWindow()
 
-    hierObj = CC.loadFile(r"C:\Users\Thomas\Desktop\building_01_door_01.shp")
+    hierObj = CC.loadFile(r"/home/asher/develop/data/cloud/cloud/las/LPine1_demo.laz", params)
     print(hierObj, "is hierarchy obj:", hierObj.isHierarchy(), "is enabled ?:", hierObj.isEnabled())
 
     obj = hierObj.getChild(0)
@@ -39,16 +43,9 @@ def main():
     sf[:] = 42.0
     print(f"{sf}")
 
-    try:
-        pc.getScalarField(157)
-    except IndexError:
-        pass
-    else:
-        assert False
-
 
 def main2():
-    point = pycc.Vector3(1.0, 2.0, 3.0)
+    point = cccorelib.CCVector3(1.0, 2.0, 3.0)
     print(f"First Point: {point}")
 
     point.x = 17.256
@@ -58,10 +55,13 @@ def main2():
     assert np.isclose(point.y, 12.5)
     assert np.isclose(point.z, 42.65)
 
-    point = pycc.Vector3(25.0, 15.0, 30.0)
-    point2 = pycc.Vector3(5.0, 5.0, 5.0)
+    point1 = cccorelib.CCVector3(25.0, 15.0, 30.0)
+    print(f"Point1: {point1}")
+    point2 = cccorelib.CCVector3(5.0, 5.0, 5.0)
+    print(f"Point2: {point2}")
 
-    p = point - point2
+    p = point1 - point2
+    print(f"point1-point2: {p}")
 
 
 if __name__ == '__main__':
