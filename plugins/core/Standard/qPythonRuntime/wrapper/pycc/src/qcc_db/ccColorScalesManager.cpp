@@ -48,6 +48,7 @@ void define_ccColorScalesManager(py::module &m)
         .value("YELLOW_BROWN", ccColorScalesManager::DEFAULT_SCALES::YELLOW_BROWN)
         .value("TOPO_LANDSERF", ccColorScalesManager::DEFAULT_SCALES::TOPO_LANDSERF)
         .value("HIGH_CONTRAST", ccColorScalesManager::DEFAULT_SCALES::HIGH_CONTRAST)
+        .value("CIVIDIS", ccColorScalesManager::DEFAULT_SCALES::CIVIDIS)
         .export_values();
 
     pyColorScalesManager

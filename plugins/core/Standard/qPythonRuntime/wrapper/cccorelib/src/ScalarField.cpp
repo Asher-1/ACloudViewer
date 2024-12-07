@@ -27,9 +27,11 @@ using namespace pybind11::literals;
 
 void define_ScalarField(py::module &cccorelib)
 {
-    py::class_<cloudViewer::ScalarField, CCShareable, CCShareableHolder<cloudViewer::ScalarField>>(cccorelib,
-                                                                                               "ScalarField",
-                                                                                               R"doc(
+    py::class_<cloudViewer::ScalarField,
+               CCShareable,
+               CCShareableHolder<cloudViewer::ScalarField>>(cccorelib,
+                                                            "ScalarField",
+                                                            R"doc(
     ScalarField
 
     .. note::
@@ -89,7 +91,7 @@ void define_ScalarField(py::module &cccorelib)
     'name'
  )doc")
         .def("size",
-             &cloudViewer::ScalarField::size,
+             &cloudViewer::ScalarField::currentSize,
              "Returns the number of elements (values) in the scalar field")
         .def("computeMeanAndVariance",
              &cloudViewer::ScalarField::computeMeanAndVariance,

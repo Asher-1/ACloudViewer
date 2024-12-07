@@ -3357,9 +3357,10 @@ void ecvDisplayTools::RenderText(
 
 void ecvDisplayTools::Display3DLabel(const QString& str,
                                      const CCVector3& pos3D,
-                                     const unsigned char* rgb /*=0*/,
+                                     const ecvColor::Rgbub* color /*=nullptr*/,
                                      const QFont& font /*=QFont()*/) {
-    ecvColor::Rgbub col(rgb ? rgb : GetDisplayParameters().textDefaultCol.rgb);
+    ecvColor::Rgbub col(color ? color->rgb
+                              : GetDisplayParameters().textDefaultCol.rgb);
     RenderText(pos3D.x, pos3D.y, pos3D.z, str, font, col);
 }
 
@@ -4021,6 +4022,24 @@ void ecvDisplayTools::RemoveWidgets(const WIDGETS_PARAMETER& param,
     if (update) {
         UpdateScreen();
     }
+}
+
+void ecvDisplayTools::RemoveAllWidgets(bool update /* = true*/) {
+    CC_DRAW_CONTEXT context;
+    context.removeEntityType = ENTITY_TYPE::ECV_ALL;
+    RemoveEntities(context);
+
+    if (update) {
+        UpdateScreen();
+    }
+}
+
+void ecvDisplayTools::Remove3DLabel(const QString& view_id) {
+    CC_DRAW_CONTEXT context;
+    context.removeViewID = view_id;
+    context.removeEntityType = ENTITY_TYPE::ECV_TEXT2D;
+    RemoveEntities(context);
+    UpdateScreen();
 }
 
 bool ecvDisplayTools::GetClick3DPos(int x, int y, CCVector3d& P3D) {

@@ -360,7 +360,7 @@ public:
     **/
     static void Display3DLabel(const QString& str,
                                const CCVector3& pos3D,
-                               const unsigned char* rgbColor = nullptr,
+                               const ecvColor::Rgbub* color = nullptr,
                                const QFont& font = QFont());
 
 public:  //! Draws the main 3D layer
@@ -417,6 +417,8 @@ public:  //! Draws the main 3D layer
     }
     static void RemoveWidgets(const WIDGETS_PARAMETER& param,
                               bool update = false);
+    static void RemoveAllWidgets(bool update = true);
+    static void Remove3DLabel(const QString& view_id);
 
     inline static void DrawCoordinates(double scale = 1.0,
                                        const std::string& id = "reference",
@@ -1238,7 +1240,9 @@ public:  // visualization matrix transformation
             * Z: depth axis (pointing out of the screen)
             \param v displacement vector
     **/
-    inline static void MoveCamera(const CCVector3d& v) { MoveCamera(v.x, v.y, v.z); }
+    inline static void MoveCamera(const CCVector3d& v) {
+        MoveCamera(v.x, v.y, v.z);
+    }
 
     static void SetPickingMode(PICKING_MODE mode = DEFAULT_PICKING);
     static PICKING_MODE GetPickingMode();

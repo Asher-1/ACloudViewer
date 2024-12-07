@@ -4,7 +4,7 @@ import cccorelib
 pc = pycc.GetInstance().getSelectedEntities()[0]
 
 
-progress = pycc.ecvProgressDialog()
+progress = pycc.ccProgressDialog()
 progress.start()
 
 success = pc.computeNormalsWithOctree(
@@ -20,3 +20,6 @@ kNN = 6
 success = pc.orientNormalsWithMST(6, progress)
 if not success:
     raise RuntimeError("Failed to orient normals")
+
+pycc.GetInstance().updateUI()
+pycc.GetInstance().redrawAll()

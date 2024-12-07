@@ -10,10 +10,9 @@ pc.getBoundingBox(bbMin, bbMax)
 center = (bbMax - bbMin) / 2
 center = cccorelib.CCVector3d(*center)
 
-vp = pycc.ecvViewportParameters()
+vp = pycc.ccViewportParameters()
 vp.setCameraCenter(center, False)
 vp.setFocalDistance(150)
 
-glWindow = pc.getDisplay()
-glWindow.setViewportParameters(vp)
-glWindow.redraw()
+pycc.ccDisplayTools.setViewportParameters(vp)
+pycc.ccDisplayTools.redrawDisplay()

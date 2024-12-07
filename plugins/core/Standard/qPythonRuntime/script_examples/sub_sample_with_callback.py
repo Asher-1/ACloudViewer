@@ -15,7 +15,7 @@ def main():
     pc = entities[0]
     print(pc, pc.size())
 
-    progress = pycc.ecvProgressDialog()
+    progress = pycc.ccProgressDialog()
     progress.start()
     refcloud = cccorelib.CloudSamplingTools.subsampleCloudRandomly(pc, pc.size() // 2, progressCb=progress)
     randomPc = pc.partialClone(refcloud)
