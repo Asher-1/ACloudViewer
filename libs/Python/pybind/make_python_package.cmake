@@ -101,45 +101,53 @@ elseif (UNIX)
     if (EXISTS "${CPU_FOLDER_PATH}")
         execute_process(COMMAND bash ${PACKAGE_TOOL}
                         "${CPU_FOLDER_PATH}" ${PYTHON_INSTALL_LIB_DESTINATION}
+                        "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib"
                         WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
     endif()
     if (BUILD_CUDA_MODULE)
         execute_process(COMMAND bash ${PACKAGE_TOOL}
                         "${CUDA_FOLDER_PATH}" ${PYTHON_INSTALL_LIB_DESTINATION}
+                        "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib"
                         WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
     endif()
 
     # rename ldd lib to the format like "${CUSTOM_SO_NAME}"
-    file(GLOB ldd_libs_list "${PYTHON_INSTALL_LIB_DESTINATION}/*.so*" )
-    foreach (filename ${ldd_libs_list})
-        get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
-        get_filename_component(SO_VER_NAME ${EXTRA_LIB_REAL} NAME)
-        string(SUBSTRING ${SO_VER_NAME} 0 6 LIB_SBU_STR)
-        if(NOT (${LIB_SBU_STR} STREQUAL "libicu")) # fix cannot found libicuuc.so.56: cannot open shared object file
-            string(REGEX REPLACE "\\.so\\.[0-9.]+$" "${CUSTOM_SO_NAME}" NEW_SO_NAME ${SO_VER_NAME})
-            message(STATUS "Copy ldd lib: " ${NEW_SO_NAME})
-            file(RENAME ${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME})
-        endif()
-    endforeach ()
+    # file(GLOB ldd_libs_list "${PYTHON_INSTALL_LIB_DESTINATION}/*.so*" )
+    # foreach (filename ${ldd_libs_list})
+    #     get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
+    #     get_filename_component(SO_VER_NAME ${EXTRA_LIB_REAL} NAME)
+    #     string(SUBSTRING ${SO_VER_NAME} 0 6 LIB_SBU_STR)
+    #     if(NOT (${LIB_SBU_STR} STREQUAL "libicu")) # fix cannot found libicuuc.so.56: cannot open shared object file
+    #         string(REGEX REPLACE "\\.so\\.[0-9.]+$" "${CUSTOM_SO_NAME}" NEW_SO_NAME ${SO_VER_NAME})
+    #         message(STATUS "Copy ldd lib: " ${NEW_SO_NAME})
+    #         file(RENAME ${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME})
+    #     endif()
+    # endforeach ()
 
-    message(STATUS "CLOUDVIEWER_EXTERNAL_INSTALL_DIR: " ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
-    file(GLOB external_libs_list "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/*.so*" )
-    # rename external lib to the format like "${CUSTOM_SO_NAME}"
-    foreach (filename ${external_libs_list})
-        get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
-        get_filename_component(SO_VER_NAME ${EXTRA_LIB_REAL} NAME)
-        string(SUBSTRING ${SO_VER_NAME} 0 9 LIB_SBU_STR)
-        if(${LIB_SBU_STR} STREQUAL "libgflags") # fix libgflags.so.2.2: cannot open shared object file
-            set(NEW_SO_NAME ${SO_VER_NAME})
-        else()
-            string(REGEX REPLACE "\\.so\\.[0-9.]+$" "${CUSTOM_SO_NAME}" NEW_SO_NAME ${SO_VER_NAME})
-        endif()
-        message(STATUS "Copy external lib: " ${NEW_SO_NAME})
-        configure_file(${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME} COPYONLY)
-    endforeach ()
+    # message(STATUS "CLOUDVIEWER_EXTERNAL_INSTALL_DIR: " ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
+    # file(GLOB external_libs_list "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/*.so*" )
+    # # rename external lib to the format like "${CUSTOM_SO_NAME}"
+    # foreach (filename ${external_libs_list})
+    #     get_filename_component(EXTRA_LIB_REAL ${filename} REALPATH)
+    #     get_filename_component(SO_VER_NAME ${EXTRA_LIB_REAL} NAME)
+    #     string(SUBSTRING ${SO_VER_NAME} 0 9 LIB_SBU_STR)
+    #     if(${LIB_SBU_STR} STREQUAL "libgflags") # fix libgflags.so.2.2: cannot open shared object file
+    #         set(NEW_SO_NAME ${SO_VER_NAME})
+    #     else()
+    #         string(REGEX REPLACE "\\.so\\.[0-9.]+$" "${CUSTOM_SO_NAME}" NEW_SO_NAME ${SO_VER_NAME})
+    #     endif()
+    #     message(STATUS "Copy external lib: " ${NEW_SO_NAME})
+    #     configure_file(${EXTRA_LIB_REAL} ${PYTHON_INSTALL_LIB_DESTINATION}/${NEW_SO_NAME} COPYONLY)
+    # endforeach ()
 
     execute_process(COMMAND bash ${PACKAGE_TOOL}
-                    ${PYTHON_INSTALL_LIB_DESTINATION}/platforms/libqxcb.so ${PYTHON_INSTALL_LIB_DESTINATION}
+                    ${PYTHON_INSTALL_LIB_DESTINATION}/platforms/libqxcb.so
+                    ${PYTHON_INSTALL_LIB_DESTINATION}
+                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+
+    execute_process(COMMAND bash ${PACKAGE_TOOL}
+                    ${PYTHON_INSTALL_LIB_DESTINATION} ${PYTHON_INSTALL_LIB_DESTINATION}
+                    "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib"
                     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
 elseif (WIN32) # for windows
     set(CPU_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cpu")
