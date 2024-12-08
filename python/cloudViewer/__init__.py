@@ -34,6 +34,7 @@
 # https://github.com/dmlc/xgboost/issues/1715
 
 import os
+import re
 import sys
 import platform
 
@@ -46,6 +47,8 @@ from ctypes.util import find_library
 from pathlib import Path
 import warnings
 from cloudViewer._build_config import _build_config
+
+MAIN_LIB_PATH=Path(__file__).parent / "lib"
 
 def load_cdll(path):
     """
@@ -61,6 +64,29 @@ def load_cdll(path):
     else:
         return CDLL(str(path))
 
+def try_load_cdll(so_name):
+    """
+    Wrapper around ctypes.CDLL to take care of Linux compatibility.
+    """
+    try:  # StopIteration if lib not available
+        libs_file_list = list(MAIN_LIB_PATH.glob(so_name))
+        if len(libs_file_list) > 0:
+            if len(libs_file_list) > 1:
+                warnings.warn(
+                    f"cloudViewer Found multiple libs named: {libs_file_list}",
+                    ImportWarning,)
+            load_cdll(str(next(MAIN_LIB_PATH.glob(so_name))))
+    except OSError as os_error:
+        match = re.search(r'lib[^/]+\.so[^\s:]*', str(os_error))
+        missing_so_name = match.group(0) if match else ''
+        warnings.warn(
+            f"{os_error} when loading {libs_file_list}, maybe you should load {missing_so_name} first",
+            ImportWarning,)
+    except StopIteration as e:  # so_name not available
+        warnings.warn(
+            f"{e} \nFailed to load {libs_file_list}.",
+            ImportWarning,
+        )
 
 if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
                                        find_library('c++')):
@@ -70,10 +96,9 @@ if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
     except StopIteration:  # Not found: check system paths while loading
         pass
 
-dep_lib_name = "lib"
 # fix link bugs for qt on Linux platform
-if os.path.exists(Path(__file__).parent / dep_lib_name):
-    LIB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), dep_lib_name)
+if os.path.exists(MAIN_LIB_PATH):
+    LIB_PATH = str(MAIN_LIB_PATH)
     # the Qt plugin is included currently only in the pre-built wheels
     if _build_config["BUILD_RECONSTRUCTION"]:
         os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = LIB_PATH
@@ -81,45 +106,37 @@ if os.path.exists(Path(__file__).parent / dep_lib_name):
     if platform.system() == "Windows":
         os.environ['path'] = LIB_PATH + ";" + os.environ['path']
     else:
-        os.environ['PATH'] = LIB_PATH + ";" + os.environ['PATH']
+        os.environ['PATH'] = LIB_PATH + ":" + os.environ['PATH']
 
     if platform.system() == "Linux":  # must load shared library in order on linux
-        try:  # Try loading libstdc++* if possible to fix cannot found GLIB_XX issues
-            load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('*stdc++*'))))
-        except StopIteration:
-            pass
-        
-        lib_tbb = list((Path(__file__).parent / dep_lib_name).glob('libtbb*'))
-        if len(lib_tbb) > 0: # fix missing libtbb.so
-            load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libtbb*'))))
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libicudata*'))))
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libicuuc*'))))
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libicui18n*'))))
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libQt5Core*'))))
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libQt5Gui*'))))
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libQt5Widgets*'))))
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libQt5Concurrent*'))))
+        # os.environ['LD_LIBRARY_PATH'] = LIB_PATH + ":" +  os.environ.get('LD_LIBRARY_PATH', '')
+        os.environ['LD_LIBRARY_PATH'] = LIB_PATH
+        try_load_cdll('libtbb*') # fix missing libtbb.so
+        try_load_cdll('libicudata*')
+        try_load_cdll('libicuuc*')
+        try_load_cdll('libicui18n*')
+        try_load_cdll('libQt5Core*')
+        try_load_cdll('libQt5Gui*')
+        try_load_cdll('libQt5Widgets*')
+        try_load_cdll('libQt5Concurrent*')
 
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libCVCoreLib*'))))
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libECV_DB_LIB*'))))
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libECV_IO_LIB*'))))
+        try_load_cdll('libCVCoreLib*')
+        try_load_cdll('libECV_DB_LIB*')
+        try_load_cdll('libECV_IO_LIB*')
         if _build_config["BUILD_RECONSTRUCTION"]:
-            load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libfreeimage*'))))
-            load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libgflags*'))))
-            load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libglog*'))))
-            load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libceres*'))))
-            boost_libs = list((Path(__file__).parent / dep_lib_name).glob('libboost*'))
-            if len(boost_libs) >= 4:
-                load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libboost_program_options*'))))
-                load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libboost_filesystem*'))))
-                load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libboost_system*'))))
-                load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('libboost_iostreams*'))))
-        load_cdll(str(next((Path(__file__).parent / dep_lib_name).glob('lib*'))))
-        # try to loading all qt libraries again after all library
-        lib_qts = (Path(__file__).parent / dep_lib_name).glob('libQt5*')
-        lib_qts = sorted(lib_qts)
-        for lib in lib_qts:
-            load_cdll(lib)
+            try_load_cdll('libboost_program_options*')
+            try_load_cdll('libboost_filesystem*')
+            try_load_cdll('libboost_system*')
+            try_load_cdll('libboost_iostreams*')
+            try_load_cdll('libQt5DBus*')
+            try_load_cdll('libQt5XcbQpa*')
+            try_load_cdll('libfreeimage*')
+            try_load_cdll('libgflags*')
+            try_load_cdll('libglog*')
+            try_load_cdll('libceres*')
+        # no need?
+        load_cdll(str(next(MAIN_LIB_PATH.glob('lib*'))))
+
 
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:
@@ -305,4 +322,4 @@ def _jupyter_nbextension_paths():
         'require': 'cloudViewer/extension'
     }]
     
-del os, sys, platform, CDLL, load_cdll, find_library, Path, warnings, _insert_pybind_names
+del os, re, sys, platform, CDLL, load_cdll, find_library, Path, warnings, _insert_pybind_names
