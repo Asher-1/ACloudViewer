@@ -142,7 +142,7 @@ jobs:
           - is_main: false
             python_version: '3.11'
     env:
-      # CONDA_DEP_FILE: ".ci/conda_linux.yml"
+      CONDA_DEP_FILE: ".ci/conda_linux.yml"
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
     steps:
       - name: Checkout source code
@@ -161,20 +161,21 @@ jobs:
         with:
           pattern: cloudViewer*-manylinux*.whl
           merge-multiple: true
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python_version }}
-      # - name: Set up Python version
-      #   run: |
-      #     sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
-
-      # - name: Set up Python environment
-      #   uses: conda-incubator/setup-miniconda@v3
+      # - name: Set up Python
+      #   uses: actions/setup-python@v5
       #   with:
-      #     activate-environment: python${{ matrix.python_version }}
-      #     auto-activate-base: false
-      #     environment-file: ${{ env.CONDA_DEP_FILE }}
+      #     python-version: ${{ matrix.python_version }}
+      - name: Set up Python version
+        run: |
+          sed -i "s/3.8/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE }}
+
+      - name: Set up Python environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: python${{ matrix.python_version }}
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE }}
+          
       - name: Test Python package
         shell: bash -l {0}
         run: |
