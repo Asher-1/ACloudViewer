@@ -256,7 +256,6 @@ PackageManager::PackageManager(const PythonConfig &config, QWidget *parent)
     // It is better to notify user and prevent them from trying something that will faill.
     case PythonConfig::Type::Venv:
     case PythonConfig::Type::Conda:
-    case PythonConfig::Type::Unknown:
     {
 #if defined Q_OS_WIN32
         // On Windows we use a custom function because isWritable from Qt was not correct
@@ -278,6 +277,7 @@ PackageManager::PackageManager(const PythonConfig &config, QWidget *parent)
         }
     }
     break;
+    case PythonConfig::Type::Bundled:
     case PythonConfig::Type::System:
         m_shouldUseUserOption = true;
         break;

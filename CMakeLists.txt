@@ -441,9 +441,9 @@ endif ()
 # RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder 
 # set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 # if (APPLE)
-#     # Add options to cover the various ways in which ACloudViewer shared lib or apps can be installed wrt TBB DSO
+#     # Add options to cover the various ways in which ${MAIN_APP_NAME} shared lib or apps can be installed wrt TBB DSO
 #     set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/")
-#     # pybind with ACloudViewer shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
+#     # pybind with ${MAIN_APP_NAME} shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
 #     set(CMAKE_BUILD_RPATH "@loader_path/../")
 # elseif(UNIX)
 #     set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/")
@@ -451,8 +451,8 @@ endif ()
 # endif()
 
 # Define target folders
-# (now that ccViewer can have its own plugins, ACloudViewer and CloudViewer must fall in separate folders!
-set(ACloudViewer_DEST_FOLDER "${CloudViewer_INSTALL_BIN_DIR}/ACloudViewer")
+# (now that ccViewer can have its own plugins, ${MAIN_APP_NAME} and ${CLOUDVIEWER_APP_NAME} must fall in separate folders!
+set(ACloudViewer_DEST_FOLDER "${CloudViewer_INSTALL_BIN_DIR}/${MAIN_APP_NAME}")
 
 # set default install folders
 if (WIN32)

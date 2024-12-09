@@ -144,9 +144,7 @@ PythonRuntimeSettings::PythonRuntimeSettings(QWidget *parent)
 {
     m_ui->setupUi(this);
     m_ui->localEnvSettingsWidget->hide();
-#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     m_ui->envTypeComboBox->addItem("Bundled");
-#endif
 #if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
     m_ui->envTypeComboBox->addItem("System");
 #endif
@@ -265,14 +263,14 @@ PythonConfig PythonRuntimeSettings::pythonEnvConfig() const
         config.initDefault();
         return config;
     }
-#if defined(Q_OS_WINDOWS) || defined(Q_OS_MACOS)
-    if (selectedEnvType() == "Bundled")
+    // #if defined(Q_OS_WINDOWS) || defined(Q_OS_MACOS)
+    else if (selectedEnvType() == "Bundled")
     {
         PythonConfig config;
         config.initBundled();
         return config;
     }
-#endif
+    // #endif
     else if (selectedEnvType() == "Local")
     {
         PythonConfig config;

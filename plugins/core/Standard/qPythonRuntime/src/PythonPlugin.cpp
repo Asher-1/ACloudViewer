@@ -44,7 +44,7 @@
 // https://docs.python.org/3/c-api/init.html#initialization-finalization-and-threads
 PythonPlugin::PythonPlugin(QObject *parent)
     : QObject(parent),
-      ccStdPluginInterface(":/CC/plugin/PythonRuntime/info.json"),
+      ccStdPluginInterface(PLUGIN_INFO_PATH),
       m_settings(new PythonRuntimeSettings),
       m_interp(nullptr),
       m_editor(new PythonEditor(&m_interp)),
@@ -65,6 +65,16 @@ PythonPlugin::PythonPlugin(QObject *parent)
     {
         config = m_settings->pythonEnvConfig();
         isDefaultPythonEnv = m_settings->isDefaultPythonEnv();
+        if (isDefaultPythonEnv)
+        {
+            plgPrint() << "ACloudViewer was loaded from Bundled env. "
+                       << "Will try to use it";
+        }
+        else
+        {
+            plgPrint() << "ACloudViewer was loaded from " << config.type() << "env. "
+                       << "Will try to use it";
+        }
     }
 
     if (!isDefaultPythonEnv)
@@ -72,8 +82,9 @@ PythonPlugin::PythonPlugin(QObject *parent)
         bool seemsValid = config.validateAndDisplayErrors();
         if (!seemsValid)
         {
-            plgWarning() << "Falling back to default Python configuration due to previous errors";
-            config.initDefault();
+            plgWarning()
+                << "Falling back to default bundled Python configuration due to previous errors";
+            config.initBundled();
         }
     }
 
@@ -83,6 +94,7 @@ PythonPlugin::PythonPlugin(QObject *parent)
     }
     catch (const std::exception &e)
     {
+        plgPrint() << "Current Python config: " << config;
         plgError() << "Failed to initialize Python: " << e.what();
         return;
     }
@@ -374,7 +386,7 @@ void PythonPlugin::showFileRunner() const
 
 void PythonPlugin::showDocumentation()
 {
-    const QUrl url(QString("https://tmontaigu.github.io/PythonRuntime/index.html"));
+    const QUrl url(QString("https://tmontaigu.github.io/CloudCompare-PythonRuntime/index.html"));
     QDesktopServices::openUrl(url);
 }
 

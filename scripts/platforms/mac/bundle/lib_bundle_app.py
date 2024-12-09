@@ -59,7 +59,10 @@ class CCAppBundleConfig:
         self.cv_plugin_path = self.bundle_abs_path / "Contents" / "cvPlugins"
 
         # If we want to embed Python we populate the needed variables
-        self.embed_python = embed_python
+        if "ACloudViewer" == app_name:
+            self.embed_python = embed_python
+        else:
+            self.embed_python = False
         if embed_python:
             self._query_python()
             self.embedded_python_rootpath = self.bundle_abs_path / "Contents" / "Resources" / "python"

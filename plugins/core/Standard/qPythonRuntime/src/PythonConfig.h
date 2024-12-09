@@ -84,7 +84,7 @@ class PythonConfig final
         Venv,
         Conda,
         System,
-        Unknown
+        Bundled
     };
 
     PythonConfig() = default;
@@ -107,8 +107,8 @@ class PythonConfig final
         case Type::System:
             o << "System";
             break;
-        case Type::Unknown:
-            o << "Unknown";
+        case Type::Bundled:
+            o << "Bundled";
             break;
         }
         return o;
@@ -154,11 +154,11 @@ class PythonConfig final
     /// # Other Platforms
     /// Does nothing, as we rely on the system's python to be properly installed
     void initDefault();
-#if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
+// #if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
     /// Initialize the paths to point to where the Python
-    /// environment was bundled on a Windows installation
+    /// environment was bundled on installation
     void initBundled();
-#endif
+// #endif
     /// Initialize from the path to an environment.
     /// Will try to guess if the environment is a conda env
     /// or a python venv
@@ -180,7 +180,7 @@ class PythonConfig final
   private:
     QString m_pythonHome{};
     QString m_pythonPath{};
-    Type m_type{Type::Unknown};
+    Type m_type{Type::Bundled};
 };
 
 /// Holds strings of the PythonHome & PythonPath,
