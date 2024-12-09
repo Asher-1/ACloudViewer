@@ -15,3 +15,6 @@ dependencies:
   - ffmpeg=6.1.*
   - zlib=1.2.* # PLUGIN_IO_QPHOTOSCAN
   - laszip # PLUGIN_IO_QLAS
+  - pip:
+    - numpy
+    - pybind11>=2.6.0

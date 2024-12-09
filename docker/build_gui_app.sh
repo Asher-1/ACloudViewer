@@ -19,6 +19,8 @@ export NPROC=$(nproc)
 export ENV_NAME="cloudViewer"
 echo "ENV_NAME: " ${ENV_NAME}
 
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
 set +u
 if [ -n "$CONDA_EXE" ]; then
     CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
@@ -46,6 +48,9 @@ conda create -y -n ${ENV_NAME} python=${PYTHON_VERSION} \
  && which python \
  && python --version
 
+# for python plugin
+python -m pip install -r ${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt
+
 eval $(
     source /etc/lsb-release;
     echo DISTRIB_ID="$DISTRIB_ID";
@@ -64,7 +69,7 @@ eval $(
 set -x # Echo commands on
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
-source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
+source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
 echo "Start to build GUI package with only CPU..."
