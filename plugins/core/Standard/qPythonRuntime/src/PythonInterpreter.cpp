@@ -181,7 +181,7 @@ void PythonInterpreter::executeFunction(const pybind11::object &function)
 
 void PythonInterpreter::initialize(const PythonConfig &config)
 {
-    plgVerbose() << "Initializing the interpreter with: " << config;
+    plgPrint() << "Initializing the interpreter with: " << config;
 
 #ifdef Q_OS_LINUX
     // Work-around issue: undefined symbol: PyExc_RecursionError
@@ -204,7 +204,8 @@ void PythonInterpreter::initialize(const PythonConfig &config)
     QDir libDir(libDirPath);
 
     char soName[25];
-    snprintf(soName, 24, "libpython%d.%d.so*", PythonVersion.versionMajor, PythonVersion.versionMinor);
+    snprintf(
+        soName, 24, "libpython%d.%d.so*", PythonVersion.versionMajor, PythonVersion.versionMinor);
 
     QStringList filters;
     filters << soName;
@@ -220,7 +221,11 @@ void PythonInterpreter::initialize(const PythonConfig &config)
     if (!m_libPythonHandle)
     {
         displaydlopenError();
-        snprintf(soName, 24, "libpython%d.%dm.so*", PythonVersion.versionMajor, PythonVersion.versionMinor);
+        snprintf(soName,
+                 24,
+                 "libpython%d.%dm.so*",
+                 PythonVersion.versionMajor,
+                 PythonVersion.versionMinor);
         filters.clear();
         filters << soName;
         libDir.setNameFilters(filters);

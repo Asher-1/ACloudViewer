@@ -2,7 +2,7 @@
 
 Early step attempt at allowing to use Python to automate some stuff in ACloudViewer.
 
-The [documentation](https://tmontaigu.github.io/PythonRuntime/index.html)
+The [documentation](https://tmontaigu.github.io/CloudCompare-PythonRuntime/index.html)
 is hosted using GitHub pages.
 
 # Dependencies

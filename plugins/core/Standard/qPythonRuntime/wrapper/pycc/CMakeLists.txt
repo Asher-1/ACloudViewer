@@ -9,7 +9,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/PythonEnvHelper.cmake")
 # but as a standalone wheel
 option(DEFINE_PYCC_RUNTIME "Should the runtime functions be included" ON)
 
-ensure_pybind11_cmake_module_is_in_path()
+# ensure_pybind11_cmake_module_is_in_path()
 
 add_subdirectory(src)
 add_subdirectory(plugins)

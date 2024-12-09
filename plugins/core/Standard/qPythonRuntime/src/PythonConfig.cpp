@@ -26,12 +26,26 @@
 #include <QVector>
 #include <QtGlobal>
 
-#if !defined(USE_EMBEDDED_MODULES) && defined(Q_OS_WINDOWS)
-static QString WindowsBundledSitePackagesPath()
+#if defined(USE_EMBEDDED_MODULES)
+#if defined(Q_OS_WINDOWS)
+static QString BundledSitePackagesPath()
 {
     return QDir::listSeparator() + QApplication::applicationDirPath() +
            "/plugins/Python/Lib/site-packages";
 }
+#elif defined(Q_OS_MACOS)
+static QString BundledSitePackagesPath()
+{
+    return QDir::listSeparator() + QApplication::applicationDirPath() +
+           "/../Resources/python/lib/site-packages";
+}
+#else
+static QString BundledSitePackagesPath()
+{
+    return QDir::listSeparator() + QApplication::applicationDirPath() +
+           "/plugins/Python/lib/site-packages";
+}
+#endif
 #endif
 
 //================================================================================
@@ -54,7 +68,8 @@ bool Version::isCompatibleWithCompiledVersion() const
 
 bool Version::operator==(const Version &other) const
 {
-    return versionMajor == other.versionMajor && versionMinor == other.versionMinor && versionPatch == other.versionPatch;
+    return versionMajor == other.versionMajor && versionMinor == other.versionMinor &&
+           versionPatch == other.versionPatch;
 }
 
 static Version GetPythonExeVersion(QProcess &pythonProcess)
@@ -150,7 +165,7 @@ static QString PathToPythonExecutableInEnv(PythonConfig::Type envType, const QSt
         return envRoot + "/python.exe";
     case PythonConfig::Type::Venv:
         return envRoot + "/Scripts/python.exe";
-    case PythonConfig::Type::Unknown:
+    case PythonConfig::Type::Bundled:
         return envRoot + "/python.exe";
     case PythonConfig::Type::System:
         return "python.exe";
@@ -160,7 +175,7 @@ static QString PathToPythonExecutableInEnv(PythonConfig::Type envType, const QSt
     {
     case PythonConfig::Type::Conda:
     case PythonConfig::Type::Venv:
-    case PythonConfig::Type::Unknown:
+    case PythonConfig::Type::Bundled:
         return envRoot + "/bin/python";
     case PythonConfig::Type::System:
         return "python";
@@ -171,16 +186,17 @@ static QString PathToPythonExecutableInEnv(PythonConfig::Type envType, const QSt
 
 void PythonConfig::initDefault()
 {
-#if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
-    initBundled();
-#else
-    // On Non windows platform
-    // We do nothing, and rely on system's python installation
     m_type = Type::System;
-#endif
+    // #if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
+    //     initBundled();
+    // #else
+    //     // On Non windows platform
+    //     // We do nothing, and rely on system's python installation
+    //     m_type = Type::System;
+    // #endif
 }
 
-#if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
+// #if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
 void PythonConfig::initBundled()
 {
 #if defined(Q_OS_MACOS)
@@ -190,7 +206,7 @@ void PythonConfig::initBundled()
 #endif
     initFromLocation(pythonEnvDirPath);
 }
-#endif
+// #endif
 
 void PythonConfig::initFromLocation(const QString &prefix)
 {
@@ -200,7 +216,7 @@ void PythonConfig::initFromLocation(const QString &prefix)
     {
         m_pythonHome = QString();
         m_pythonPath = QString();
-        m_type = Type::Unknown;
+        m_type = Type::Bundled;
         return;
     }
 
@@ -237,7 +253,7 @@ void PythonConfig::initFromLocation(const QString &prefix)
     else
 #if defined(Q_OS_MACOS)
     {
-        QString pythonExePath = PathToPythonExecutableInEnv(Type::Unknown, prefix);
+        QString pythonExePath = PathToPythonExecutableInEnv(Type::Bundled, prefix);
         initFromPythonExecutable(pythonExePath);
         if (m_pythonHome.isEmpty() && m_pythonPath.isEmpty())
         {
@@ -247,17 +263,17 @@ void PythonConfig::initFromLocation(const QString &prefix)
         }
         else
         {
-            m_type = Type::Unknown;
+            m_type = Type::Bundled;
         }
     }
 #else
     {
         m_pythonHome = envRoot.path();
         m_pythonPath = QString("%1/DLLs;%1/lib;%1/Lib/site-packages;").arg(m_pythonHome);
-        m_type = Type::Unknown;
+        m_type = Type::Bundled;
 
-#if !defined(USE_EMBEDDED_MODULES) && defined(Q_OS_WINDOWS)
-        m_pythonPath.append(WindowsBundledSitePackagesPath());
+#if defined(USE_EMBEDDED_MODULES)
+        m_pythonPath.append(BundledSitePackagesPath());
 #endif
     }
 #endif
@@ -269,8 +285,8 @@ void PythonConfig::initCondaEnv(const QString &condaPrefix)
     m_pythonHome = condaPrefix;
     m_pythonPath = QString("%1/DLLs;%1/lib;%1/Lib/site-packages;").arg(condaPrefix);
 
-#if !defined(USE_EMBEDDED_MODULES) && defined(Q_OS_WINDOWS)
-    m_pythonPath.append(WindowsBundledSitePackagesPath());
+#if defined(USE_EMBEDDED_MODULES)
+    m_pythonPath.append(BundledSitePackagesPath());
 #endif
 }
 
@@ -286,8 +302,8 @@ void PythonConfig::initVenv(const QString &venvPrefix)
         m_pythonPath.append(QString("%1/Lib/site-packages").arg(cfg.home));
     }
 
-#if !defined(USE_EMBEDDED_MODULES) && defined(Q_OS_WINDOWS)
-    m_pythonPath.append(WindowsBundledSitePackagesPath());
+#if defined(USE_EMBEDDED_MODULES)
+    m_pythonPath.append(BundledSitePackagesPath());
 #endif
 }
 
@@ -300,7 +316,12 @@ void PythonConfig::preparePythonProcess(QProcess &pythonProcess) const
     // in the path of the python exe, we have to add it ourselves.
     if (m_type == Type::Conda)
     {
+#if defined(Q_OS_WINDOWS)
         const QString additionalPath = QString("%1/Library/bin").arg(m_pythonHome);
+#else
+        const QString additionalPath = QString("%1/lib/bin").arg(m_pythonHome);
+#endif
+
         QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
         QString path = env.value("PATH").append(QDir::listSeparator()).append(additionalPath);
         env.insert("PATH", path);
@@ -387,7 +408,7 @@ PythonConfig PythonConfig::fromContainingEnvironment()
 
 void PythonConfig::initFromPythonExecutable(const QString &pythonExecutable)
 {
-    m_type = Type::Unknown;
+    m_type = Type::Bundled;
 
     const QString pythonPathScript = QStringLiteral(
         "import os;import sys;print(os.pathsep.join(sys.path[1:]));print(sys.prefix, end='')");
@@ -405,6 +426,7 @@ void PythonConfig::initFromPythonExecutable(const QString &pythonExecutable)
 
     if (pathsAndHome.size() != 2)
     {
+        plgPrint() << "pythonExecutable: " << pythonExecutable;
         plgWarning() << "'" << result << "' could not be parsed as a list if paths and a home path."
                      << "Expected 2 strings found " << pathsAndHome.size();
         return;
@@ -413,7 +435,7 @@ void PythonConfig::initFromPythonExecutable(const QString &pythonExecutable)
     m_pythonPath = pathsAndHome.takeFirst();
     m_pythonHome = pathsAndHome.takeFirst();
 
-#if !defined(USE_EMBEDDED_MODULES) && defined(Q_OS_WINDOWS)
-    m_pythonPath.append(WindowsBundledSitePackagesPath());
+#if defined(USE_EMBEDDED_MODULES)
+    m_pythonPath.append(BundledSitePackagesPath());
 #endif
 }

@@ -17,20 +17,17 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
 
   addplugin(NAME ${PROJECT_NAME})
 
-  ensure_pybind11_cmake_module_is_in_path()
+  # ensure_pybind11_cmake_module_is_in_path()
 
   option(PLUGIN_PYTHON_USE_EMBEDDED_MODULES
          "Should the Python wrapper libs be embedded in the plugin" ON
   )
   mark_as_advanced(PLUGIN_PYTHON_USE_EMBEDDED_MODULES)
 
-  if(WIN32)
-    option(PLUGIN_PYTHON_COPY_ENV
-           "Should the content of the current python site-package be copied on install"
-           ON
-    )
-    mark_as_advanced(PLUGIN_PYTHON_COPY_ENV)
-  endif()
+  option(PLUGIN_PYTHON_COPY_ENV
+    "Should the content of the current python site-package be copied on install" ON
+  )
+  mark_as_advanced(PLUGIN_PYTHON_COPY_ENV)
   
   add_subdirectory(wrapper)
   add_subdirectory(src)
@@ -55,6 +52,8 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
     if(NOT PLUGIN_PYTHON_USE_EMBEDDED_MODULES)
       installsharedlibrary(TARGET cccorelib)
       installsharedlibrary(TARGET pycc)
+    else ()
+      manage_linux_install()
     endif()
   endif()
 endif()

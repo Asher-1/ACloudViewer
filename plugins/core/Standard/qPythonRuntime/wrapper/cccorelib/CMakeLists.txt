@@ -7,7 +7,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/PythonEnvHelper.cmake")
 add_subdirectory(src)
 
 if(NOT PLUGIN_PYTHON_USE_EMBEDDED_MODULES AND BUILD_PYTHON_MODULE)
-  ensure_pybind11_cmake_module_is_in_path()
+  # ensure_pybind11_cmake_module_is_in_path()
   pybind11_add_module(cccorelib ${cvcorelib_sources})
   target_link_libraries(cccorelib PRIVATE CVCoreLib)
 endif()

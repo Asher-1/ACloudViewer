@@ -55,7 +55,7 @@ void FileRunner::selectFile()
 
 void FileRunner::runFile() const
 {
-    if (!m_filePath.isEmpty())
+    if (!m_filePath.isEmpty() && m_interpreter)
     {
         const std::string path = m_filePath.toStdString();
         m_interpreter->executeFile(path);

@@ -1,32 +1,66 @@
 # This function sets a global PYTHON_BASE_PREFIX cache variable
-function(getset_python_base_prefix)
+function(setup_python_env)
   execute_process(
-    COMMAND "${Python_EXECUTABLE}" "-c"
+    COMMAND "${PYTHON_EXECUTABLE}" "-c"
             "import sys;print(sys.base_prefix.replace('\\\\', '/'), end='')"
     OUTPUT_VARIABLE PYTHON_BASE_PREFIX
+    OUTPUT_STRIP_TRAILING_WHITESPACE
   )
+
   set(PYTHON_BASE_PREFIX
-      "${PYTHON_BASE_PREFIX}"
+    "${PYTHON_BASE_PREFIX}"
+    PARENT_SCOPE
+  )
+
+  execute_process(
+    COMMAND "${PYTHON_EXECUTABLE}" "-c"
+            "import site; print(site.getsitepackages()[0])"
+    OUTPUT_VARIABLE PYTHON_SITELIB
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  get_filename_component(PARENT_DIR "${PYTHON_SITELIB}" DIRECTORY)
+  get_filename_component(PARENT_DIR_ABSOLUTE "${PARENT_DIR}" ABSOLUTE)
+  get_filename_component(PYTHON_NAME "${PARENT_DIR}" NAME)
+  set(PYTHON_NAME
+    "${PYTHON_NAME}"
+    PARENT_SCOPE
+  )
+  set(Python_STDARCH
+    "${PARENT_DIR_ABSOLUTE}"
+    PARENT_SCOPE
+  )
+  set(PYTHON_SITELIB
+      "${PYTHON_SITELIB}"
       PARENT_SCOPE
   )
+
 endfunction()
 
-function(copy_python_env INSTALL_DIR)
+function(copy_python_env INSTALL_DIR LIB_NAME)
+  set(DEPLOY_PYTHON_SITELIB "${INSTALL_DIR}/${LIB_NAME}/site-packages")
   message(
-    DEBUG
+    STATUS
     "ENV copy:
-        PYTHON_BASE_PREFIX: ${PYTHON_BASE_PREFIX}
-        PYTHON_SITELIB:     ${Python_SITELIB}
-        PYTHON_STDARCH:     ${Python_STDARCH}
-        PYTHON_STDLIB:      ${Python_STDLIB}
-        PYTHON_LIBRARIES:   ${Python_RUNTIME_LIBRARY_DIRS}"
+        PYTHON_NAME:            ${PYTHON_NAME}
+        PYTHON_BASE_PREFIX:     ${PYTHON_BASE_PREFIX}
+        PYTHON_SITELIB:         ${PYTHON_SITELIB}
+        DEPLOY_PYTHON_SITELIB:  ${DEPLOY_PYTHON_SITELIB}
+        PYTHON_LIBRARIES:       ${Python_RUNTIME_LIBRARY_DIRS}"
   )
-  message(DEBUG "COPYING venv from ${Python_SITELIB}/ to ${INSTALL_DIR}/Lib/site-packages/")
-  install(DIRECTORY "${PYTHON_BASE_PREFIX}/" DESTINATION "${INSTALL_DIR}")
+  message(DEBUG "COPYING venv from ${PYTHON_BASE_PREFIX}/ to ${INSTALL_DIR}")
+  cloudViewer_install_ext( DIRECTORY "${PYTHON_BASE_PREFIX}/" "${INSTALL_DIR}" "" )
+  if (NOT WIN32)
+    set(SOURCE_RELATIVE_SITELIB "${PYTHON_NAME}/site-packages")
+    set(TARGET_RELATIVE_SITELIB "site-packages")
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${SOURCE_RELATIVE_SITELIB} ${TARGET_RELATIVE_SITELIB}
+            WORKING_DIRECTORY ${INSTALL_DIR}/${LIB_NAME})")
+  endif()
 
-  install(DIRECTORY "${Python_SITELIB}/"
-        DESTINATION "${INSTALL_DIR}/Lib/site-packages/"
-  )
+  set(DEPLOY_PYTHON_SITELIB "${DEPLOY_PYTHON_SITELIB}" PARENT_SCOPE)
+
+  # message(DEBUG "COPYING venv from ${PYTHON_SITELIB}/ to ${INSTALL_DIR}/${LIB_NAME}/site-packages/")
+  # cloudViewer_install_ext( DIRECTORY "${PYTHON_SITELIB}/" "${INSTALL_DIR}/${LIB_NAME}/site-packages/" "" )
 endfunction()
 
 function(copy_python_dll)
@@ -45,22 +79,46 @@ endfunction()
 
 function(manage_windows_install)
 
-  getset_python_base_prefix()
+  setup_python_env()
 
   if(PLUGIN_PYTHON_COPY_ENV)
-    copy_python_env(${CC_PYTHON_INSTALL_DIR})
+    copy_python_env(${CC_PYTHON_INSTALL_DIR} "Lib")
+  else ()
+    set(DEPLOY_PYTHON_SITELIB "${CC_PYTHON_INSTALL_DIR}/Lib/site-packages")
   endif()
 
   copy_python_dll()
 
   install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/docs/stubfiles/pycc.pyi"
                 "${CMAKE_CURRENT_SOURCE_DIR}/docs/stubfiles/cccorelib.pyi"
-          DESTINATION "${CC_PYTHON_INSTALL_DIR}/Lib/site-packages"
+          DESTINATION "${DEPLOY_PYTHON_SITELIB}"
   )
 
   if(NOT PLUGIN_PYTHON_USE_EMBEDDED_MODULES)
     install(TARGETS pycc cccorelib
-            DESTINATION "${CC_PYTHON_INSTALL_DIR}/Lib/site-packages"
+            DESTINATION "${DEPLOY_PYTHON_SITELIB}"
+    )
+  endif()
+endfunction()
+
+function(manage_linux_install)
+
+  setup_python_env()
+
+  if(PLUGIN_PYTHON_COPY_ENV)
+    copy_python_env(${CC_PYTHON_INSTALL_DIR} "lib")
+  else ()
+    set(DEPLOY_PYTHON_SITELIB "${CC_PYTHON_INSTALL_DIR}/lib/site-packages")
+  endif()
+
+  install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/docs/stubfiles/pycc.pyi"
+                "${CMAKE_CURRENT_SOURCE_DIR}/docs/stubfiles/cccorelib.pyi"
+          DESTINATION "${DEPLOY_PYTHON_SITELIB}"
+  )
+
+  if(NOT PLUGIN_PYTHON_USE_EMBEDDED_MODULES)
+    install(TARGETS pycc cccorelib
+            DESTINATION "${DEPLOY_PYTHON_SITELIB}"
     )
   endif()
 endfunction()

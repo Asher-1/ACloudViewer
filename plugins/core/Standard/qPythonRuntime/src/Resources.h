@@ -19,6 +19,7 @@
 
 #include <QStringLiteral>
 
+#define PLUGIN_INFO_PATH QStringLiteral(":/CC/plugin/PythonRuntime/info.json")
 #define ABOUT_ICON_PATH QStringLiteral(":/CC/plugin/PythonRuntime/images/about-icon.png")
 #define EDITOR_ICON_PATH QStringLiteral(":/CC/plugin/PythonRuntime/images/python-editor-icon.png")
 #define REPL_ICON_PATH QStringLiteral(":/CC/plugin/PythonRuntime/images/repl-icon.png")
