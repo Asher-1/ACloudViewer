@@ -5,11 +5,14 @@ set -euo pipefail
 # conda env create -f .ci/conda_macos_cloudViewer.yml
 # conda activate python3.8
 
+# use lower target(11.0) version for compacibility
+export MACOSX_DEPLOYMENT_TARGET=11.0
 export DEVELOPER_BUILD=OFF
 export BUILD_SHARED_LIBS=OFF
 export BUILD_CUDA_MODULE=OFF
 export BUILD_PYTORCH_OPS=OFF
 export BUILD_TENSORFLOW_OPS=OFF
+export PYTHON_VERSION=$1
 export ACloudViewer_INSTALL=~/cloudViewer_install
 export ENV_NAME="cloudViewer"
 export NPROC=$(nproc)
@@ -37,7 +40,9 @@ fi
 
 echo "conda env create and activate..."
 export CONDA_PREFIX="${CONDA_ROOT}/envs/${ENV_NAME}"
-conda env create -f ${CLOUDVIEWER_SOURCE_ROOT}/.ci/conda_macos_cloudViewer.yml
+cp ${CLOUDVIEWER_SOURCE_ROOT}/.ci/conda_macos_cloudViewer.yml /tmp/conda_macos_cloudViewer.yml
+sed -i "" "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_macos_cloudViewer.yml
+conda env create -f /tmp/conda_macos_cloudViewer.yml
 conda activate ${ENV_NAME} \
 && which python \
 && python --version

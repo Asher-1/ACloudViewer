@@ -75,7 +75,7 @@ echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 echo "Start to build GUI package with only CPU..."
 echo
 export BUILD_CUDA_MODULE=OFF
-build_gui_app with_pcl_nurbs package_installer
+build_gui_app with_pcl_nurbs package_installer plugin_treeiso
 echo
 
 # Building with cuda if cuda available
@@ -83,7 +83,7 @@ if [ "${BUILD_CUDA_MODULE_FLAG}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo
     export BUILD_CUDA_MODULE=ON
-    build_gui_app with_pcl_nurbs package_installer
+    build_gui_app with_pcl_nurbs package_installer plugin_treeiso
     echo
 fi
 
