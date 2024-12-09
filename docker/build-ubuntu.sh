@@ -197,44 +197,21 @@ if [[ "$(docker images -q $CLOUDVIEWER_IMAGE_TAG 2> /dev/null)" == "" ]]; then
 		echo "Ignore ACloudViewer GUI app building due to have builded before..."
 	fi
 
-	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp38-*.whl" | grep -q .; then
-    wheel_release_export_env
-		release_build py38 wheel
-	else
-		echo "Ignore cloudViewer wheel building based on python3.8 due to have builded before..."
-	fi
+	PYTHON_VERSIONS=("38" "39" "310" "311" "312")
 
-	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp39-*.whl" | grep -q .; then
-    wheel_release_export_env
-		release_build py39 wheel
-	else
-		echo "Ignore cloudViewer wheel building based on python3.9 due to have builded before..."
-	fi
-
-	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp310-*.whl" | grep -q .; then
-    wheel_release_export_env
-		release_build py310 wheel
-	else
-		echo "Ignore cloudViewer wheel building based on python3.10 due to have builded before..."
-	fi
-
-	if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp311-*.whl" | grep -q .; then
-    wheel_release_export_env
-		release_build py311 wheel
-	else
-		echo "Ignore cloudViewer wheel building based on python3.11 due to have builded before..."
-	fi
-
-	if [ "$UBUNTU_VERSION" != "18.04" ]; then
-		if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp312-*.whl" | grep -q .; then
-			wheel_release_export_env
-			release_build py312 wheel
-		else
-			echo "Ignore cloudViewer wheel building based on python3.12 due to have builded before..."
-		fi
-	else
-		echo "Ubuntu18.04 do not support python3.12 as default!"
-	fi
+	for version in "${PYTHON_VERSIONS[@]}"; do
+    if ! find "$HOST_INSTALL_PATH" -maxdepth 1 -name "cloudViewer*-cp${version}-*.whl" | grep -q .; then
+		    if [ "$version" == "312" ] && [ "$UBUNTU_VERSION" == "18.04" ]; then
+					echo "Ubuntu18.04 does not support python3.12 as default!"
+					continue
+    		fi
+				echo "Start building cloudViewer wheel with python${version}..."
+        wheel_release_export_env
+        release_build "py${version}" wheel
+    else
+        echo "Ignore cloudViewer wheel building based on python${version} due to have built before..."
+    fi
+	done
 else
 	echo "Please run docker rmi $CLOUDVIEWER_IMAGE_TAG first!"
 fi

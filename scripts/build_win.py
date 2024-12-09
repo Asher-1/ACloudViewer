@@ -216,7 +216,7 @@ def build():
             exit(1)
 
     logging.info("\nStart to build ACloudViewer GUI On Windows...\n")
-    success = build_gui_app("3.8")
+    success = build_gui_app("3.11")
     if success:
         logging.info(f"Building package installed to {ACLOUDVIEWER_INSTALL}")
     else:
