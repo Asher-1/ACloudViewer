@@ -120,6 +120,7 @@ endif ()
 target_link_libraries(${PROJECT_NAME}
         CVAppCommon
         QCustomPlot
+        Qt5::Svg
         Qt5::Network
         Qt5::WebSockets
         Qt5::PrintSupport

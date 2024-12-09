@@ -14,6 +14,9 @@ dependencies:
   - xerces-c=3.2.* # reconstruction or PLUGIN_IO_QE57
   - zlib=1.2.* # PLUGIN_IO_QPHOTOSCAN
   - laszip # PLUGIN_IO_QLAS
-  - pip:
+  - pip: # for python plugins
     - numpy
+    - tqdm
+    - invoke
     - pybind11>=2.6.0
+    - typing_extensions
