@@ -21,17 +21,159 @@
 #include "wrappers.h"
 
 #include <ScalarField.h>
+#include <stdio.h>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
 
+class ScalarFieldView
+{
+  public:
+    explicit ScalarFieldView(cloudViewer::ScalarField &field)
+        : m_field(field), m_start(0), m_stop(field.currentSize()), m_step(1), m_len(field.currentSize())
+    {
+    }
+
+    explicit ScalarFieldView(const ScalarFieldView view, const py::slice &slice) : ScalarFieldView(view)
+    {
+        applySlicing(slice);
+    }
+
+    explicit ScalarFieldView(cloudViewer::ScalarField &field, const py::slice &slice) : ScalarFieldView(field)
+    {
+        applySlicing(slice);
+    }
+
+    py::object get_item(const py::object &index)
+    {
+        if (py::isinstance<py::int_>(index))
+        {
+            return py::cast(m_field.getValue((index.cast<size_t>() * m_step) + m_start));
+        }
+
+        if (py::isinstance<py::slice>(index))
+        {
+            const auto slice = index.cast<py::slice>();
+            return py::cast(ScalarFieldView(m_field, slice));
+        }
+
+        if (py::isinstance<py::sequence>(index))
+        {
+            const auto sequence = index.cast<py::sequence>();
+            py::array_t<double> result(sequence.size());
+            auto setter = result.mutable_unchecked<1>();
+            for (size_t i = 0; i < sequence.size(); ++i)
+            {
+                setter[i] = m_field.getValue((sequence[i].cast<size_t>() * m_step) + m_start);
+            }
+            return result;
+        }
+
+        throw py::index_error("Invalid index type");
+    }
+
+    void set_item(const py::object &index, const py::object &value)
+    {
+        if (py::isinstance<py::int_>(index))
+        {
+            m_field.setValue(index.cast<size_t>() + m_start, value.cast<double>());
+            return;
+        }
+
+        if (py::isinstance<py::slice>(index))
+        {
+            const auto slice = index.cast<py::slice>();
+
+            // view[some_slice] = some_unique_value
+            if (py::isinstance<py::float_>(value) || py::isinstance<py::int_>(value))
+            {
+                const auto floatValue = value.cast<double>();
+                for (size_t i = 0; i < m_len; ++i)
+                {
+                    m_field.setValue((i * m_step) + m_start, floatValue);
+                }
+                return;
+            }
+
+            const auto sequence = value.cast<py::sequence>();
+            if (sequence.size() != m_len)
+            {
+                throw py::index_error("Incorrect number of new values");
+            }
+
+            for (size_t i = 0; i < m_len; ++i)
+            {
+                m_field.setValue((i * m_step) + m_start, sequence[i].cast<double>());
+            }
+
+            return;
+        }
+
+        if (py::isinstance<py::sequence>(index))
+        {
+            const auto sequence = index.cast<py::sequence>();
+
+            // view[some_sequence] = some_unique_value
+            if (py::isinstance<py::float_>(value) || py::isinstance<py::int_>(value))
+            {
+                const auto floatValue = value.cast<double>();
+                for (size_t i = 0; i < m_len; ++i)
+                {
+                    m_field.setValue((i * m_step) + m_start, floatValue);
+                }
+                return;
+            }
+            if (sequence.size() != m_len)
+            {
+                throw py::index_error("Incorrect number of new values");
+            }
+
+            for (size_t i = 0; i < m_len; ++i)
+            {
+                m_field.setValue((i * m_step) + m_start, sequence[i].cast<double>());
+            }
+        }
+    }
+
+    size_t len() const
+    {
+        return m_len;
+    }
+
+    void applySlicing(const py::slice &slice)
+    {
+        size_t start, stop, step, len = 0;
+        if (!slice.compute(m_len, &start, &stop, &step, &len))
+        {
+            throw py::index_error();
+        }
+
+        m_len = len;
+        m_start += start;
+        m_stop = stop;
+        m_step += step;
+    }
+
+  private:
+    cloudViewer::ScalarField &m_field;
+    size_t m_start;
+    size_t m_stop;
+    size_t m_step;
+    size_t m_len;
+};
+
 void define_ScalarField(py::module &cccorelib)
 {
-    py::class_<cloudViewer::ScalarField,
-               CCShareable,
-               CCShareableHolder<cloudViewer::ScalarField>>(cccorelib,
-                                                            "ScalarField",
-                                                            R"doc(
+
+    py::class_<ScalarFieldView>(cccorelib, "ScalarFieldView")
+        .def("__len__", &ScalarFieldView::len)
+        .def("__getitem__", &ScalarFieldView::get_item, py::return_value_policy::reference_internal)
+        .def("__setitem__", &ScalarFieldView::set_item);
+
+    py::class_<cloudViewer::ScalarField, CCShareable, CCShareableHolder<cloudViewer::ScalarField>>(
+        cccorelib,
+        "ScalarField",
+        R"doc(
     ScalarField
 
     .. note::
@@ -119,7 +261,11 @@ void define_ScalarField(py::module &cccorelib)
              &cloudViewer::ScalarField::fill,
              "fillValue"_a = 0,
              "Fills the scalar field with the given value")
-        .def("reserve", &cloudViewer::ScalarField::reserve, "count"_a, R"doc(
+        .def(
+            "reserve",
+            [](cloudViewer::ScalarField &field, const size_t size) { field.reserve(size); },
+            "count"_a,
+            R"doc(
     Reserves space for ``count`` element, but does not change the size.
 
     Will raise an exception if allocation failed
@@ -134,10 +280,10 @@ void define_ScalarField(py::module &cccorelib)
 )doc")
         .def(
             "resize",
-            [](cloudViewer::ScalarField &self, size_t count, ScalarType valueForNewElements)
+            [](cloudViewer::ScalarField &self, const size_t count, const ScalarType valueForNewElements)
             {
                 // pybind11 will convert exceptions
-                self.resize(count, valueForNewElements);
+                self.resizeSafe(count, true /* always init values */, valueForNewElements);
             },
             "count"_a,
             "valueForNewElements"_a = 0,
@@ -160,8 +306,7 @@ void define_ScalarField(py::module &cccorelib)
     Prefer use of :meth:`cccorelib.ScalarField.resize`.
 )doc")
         .def("getValue",
-             static_cast<ScalarType &(cloudViewer::ScalarField::*)(std::size_t)>(
-                 &cloudViewer::ScalarField::getValue),
+             &cloudViewer::ScalarField::getValue,
              "index"_a,
              R"doc(
     Returns the value at the given index.
@@ -200,7 +345,7 @@ void define_ScalarField(py::module &cccorelib)
 )doc")
         .def(
             "asArray",
-            [](cloudViewer::ScalarField &self) { return PyCC::VectorAsNumpyArray(self); },
+            [](cloudViewer::ScalarField &self) { return ScalarFieldView(self); },
             R"doc(
     Returns the scalar field viewed as a numpy array.
 
@@ -223,10 +368,46 @@ void define_ScalarField(py::module &cccorelib)
         array[:] = 2.0
         assert scalar_field[0] == 2.0
 )doc")
-        .def("__getitem__",
-             static_cast<ScalarType &(cloudViewer::ScalarField::*)(std::size_t)>(
-                 &cloudViewer::ScalarField::getValue))
-        .def("__setitem__", &cloudViewer::ScalarField::setValue)
+        .def(
+            "__getitem__",
+            [](cloudViewer::ScalarField &self, const py::object &index)
+            { return ScalarFieldView(self).get_item(index); },
+            py::return_value_policy::reference_internal)
+        .def(
+            "toArray",
+            [](const cloudViewer::ScalarField &self)
+            {
+                py::array_t<double> copy(self.currentSize());
+                auto access = copy.mutable_unchecked<1>();
+                for (size_t i = 0; i < self.currentSize(); ++i)
+                {
+                    access[i] = self.getValue(i);
+                }
+                return copy;
+            },
+            R"doc(
+        Copies the content into an array
+)doc")
+        .def(
+            "__array__",
+            [](const cloudViewer::ScalarField &self)
+            {
+                // TODO this is a copy-paste from toArray, should only have 1 definition of this
+                py::array_t<double> copy(self.currentSize());
+                auto access = copy.mutable_unchecked<1>();
+                for (size_t i = 0; i < self.currentSize(); ++i)
+                {
+                    access[i] = self.getValue(i);
+                }
+                return copy;
+            },
+            R"doc(
+        Copies the content into an array
+)doc")
+        .def("__setitem__",
+             [](cloudViewer::ScalarField &self, const py::object &index, const py::object &value)
+             { return ScalarFieldView(self).set_item(index, value); })
+        .def("__len__", &cloudViewer::ScalarField::currentSize)
         .def("__repr__",
              [](const cloudViewer::ScalarField &self)
              { return std::string("<ScalarField(name=") + self.getName() + ")>"; });

@@ -134,7 +134,12 @@
 		"bvh": "cpp",
 		"eulerangles": "cpp",
 		"*.expression": "cpp",
-		"fft": "cpp"
+		"fft": "cpp",
+		"__bit_reference": "cpp",
+		"__locale": "cpp",
+		"__node_handle": "cpp",
+		"__verbose_abort": "cpp",
+		"print": "cpp"
 	},
 	"python.languageServer": "Default"
 }
