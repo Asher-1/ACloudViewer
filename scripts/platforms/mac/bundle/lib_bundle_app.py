@@ -255,6 +255,12 @@ class CCBundler:
         """
         logger.info("Python: copy distribution in package")
         try:
+            if self.config.embedded_python_path.exists():
+                print(f"Start to remvoe old bundle python binary path: {self.config.embedded_python_path}")
+                shutil.rmtree(self.config.embedded_python_path)
+            if self.config.embedded_python_libpath.exists():
+                print(f"Start to remvoe old bundle python libpath: {self.config.embedded_python_libpath}")
+                shutil.rmtree(self.config.embedded_python_libpath)
             self.config.embedded_python_path.mkdir(parents=True)
             self.config.embedded_python_libpath.mkdir()
         except OSError:
