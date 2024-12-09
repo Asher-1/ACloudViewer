@@ -20,6 +20,8 @@ export POST_FIX="python${PYTHON_VERSION}"
 export ENV_NAME="cloudViewer"
 echo "ENV_NAME: " ${ENV_NAME}
 
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
 set +u
 if [ -n "$CONDA_EXE" ]; then
     CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
@@ -42,7 +44,7 @@ fi
 
 echo "conda env create..."
 export CONDA_PREFIX="$CONDA_ROOT/envs/${ENV_NAME}"
-cp ${ACloudViewer_DEV}/ACloudViewer/.ci/conda_cloudViewer.yml /root/conda_cloudViewer_${POST_FIX}.yml
+cp ${CLOUDVIEWER_SOURCE_ROOT}/.ci/conda_cloudViewer.yml /root/conda_cloudViewer_${POST_FIX}.yml
 sed -i "s/3.8/${PYTHON_VERSION}/g" /root/conda_cloudViewer_${POST_FIX}.yml
 conda env create -f /root/conda_cloudViewer_${POST_FIX}.yml
 conda activate $ENV_NAME \
@@ -81,7 +83,7 @@ fi
 set -x # Echo commands on
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
-source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
+source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
 echo "Start to build GUI package with only CPU..."

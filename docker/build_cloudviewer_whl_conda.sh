@@ -22,6 +22,8 @@ export NPROC=$(nproc)
 export ENV_NAME="python${PYTHON_VERSION}"
 echo "ENV_NAME: " ${ENV_NAME}
 
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
 set +u
 if [ -n "$CONDA_EXE" ]; then
     CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
@@ -44,7 +46,7 @@ fi
 
 echo "conda env create..."
 export CONDA_PREFIX="$CONDA_ROOT/envs/${ENV_NAME}"
-cp ${ACloudViewer_DEV}/ACloudViewer/.ci/conda_linux.yml /root/conda_env_${ENV_NAME}.yml
+cp ${CLOUDVIEWER_SOURCE_ROOT}/.ci/conda_linux.yml /root/conda_env_${ENV_NAME}.yml
 sed -i "s/3.8/${PYTHON_VERSION}/g" /root/conda_env_${ENV_NAME}.yml
 conda env create -f /root/conda_env_${ENV_NAME}.yml
 conda activate ${ENV_NAME} \
@@ -71,7 +73,7 @@ export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
-source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
+source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 install_python_dependencies with-jupyter with-unit-test
 build_pip_package with_conda build_realsense build_azure_kinect build_jupyter

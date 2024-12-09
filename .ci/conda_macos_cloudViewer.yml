@@ -14,3 +14,6 @@ dependencies:
   - xerces-c=3.2.* # reconstruction or PLUGIN_IO_QE57
   - zlib=1.2.* # PLUGIN_IO_QPHOTOSCAN
   - laszip # PLUGIN_IO_QLAS
+  - pip:
+    - numpy
+    - pybind11>=2.6.0

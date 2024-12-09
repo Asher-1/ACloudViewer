@@ -22,6 +22,8 @@ export NPROC=$(nproc)
 export ENV_NAME="python${PYTHON_VERSION}"
 echo "ENV_NAME: " ${ENV_NAME}
 
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
 set +u
 if [ -n "$CONDA_EXE" ]; then
     CONDA_ROOT=$(dirname $(dirname "$CONDA_EXE"))
@@ -56,7 +58,7 @@ echo $CMAKE_ROOT
 
 # Get build scripts and control environment variables
 # shellcheck source=ci_utils.sh
-source ${ACloudViewer_DEV}/ACloudViewer/util/ci_utils.sh
+source ${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 install_python_dependencies with-jupyter with-unit-test
 build_pip_package build_realsense build_azure_kinect build_jupyter
