@@ -222,7 +222,8 @@ public:  // clone, copy, etc.
     /** "Reference clouds" are a set of indexes referring to a real point cloud.
             See CClib documentation for more information about ReferenceClouds.
             Warning: the ReferenceCloud structure must refer to this cloud.
-            \param[in]  selection			a ReferenceCloud structure
+            \param[in]  selection			a ReferenceCloud
+    structure
     (pointing to source) \param[out] warnings			[optional] to
     determine if warnings (CTOR_ERRORS) occurred during the duplication process
             \param[in]  withChildEntities	whether child entities should be
@@ -915,6 +916,11 @@ public:  // other methods
 
     //! Exports the specified coordinate dimension(s) to scalar field(s)
     bool exportCoordToSF(bool exportDims[3]);
+
+    //! Sets coordinate(s) from a scalar field
+    bool setCoordFromSF(bool importDims[3],
+                        cloudViewer::ScalarField* sf,
+                        PointCoordinateType defaultValueForNaN);
 
     //! Exports the specified normal dimension(s) to scalar field(s)
     bool exportNormalToSF(bool exportDims[3]);

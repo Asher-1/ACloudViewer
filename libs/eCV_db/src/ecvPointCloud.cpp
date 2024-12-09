@@ -30,12 +30,12 @@
 #include "ecv2DLabel.h"
 #include "ecvChunk.h"
 #include "ecvColorScalesManager.h"
-#include "ecvHObjectCaster.h"
 #include "ecvDisplayTools.h"
 #include "ecvFastMarchingForNormsDirection.h"
 #include "ecvFrustum.h"
 #include "ecvGBLSensor.h"
 #include "ecvGenericMesh.h"
+#include "ecvHObjectCaster.h"
 #include "ecvImage.h"
 #include "ecvKdTree.h"
 #include "ecvMaterial.h"
@@ -5369,6 +5369,37 @@ bool ccPointCloud::exportCoordToSF(bool exportDims[3]) {
         setCurrentDisplayedScalarField(sfIndex);
         showSF(true);
     }
+
+    return true;
+}
+
+bool ccPointCloud::setCoordFromSF(bool importDims[3],
+                                  cloudViewer::ScalarField* sf,
+                                  PointCoordinateType defaultValueForNaN) {
+    unsigned pointCount = size();
+
+    if (!sf || sf->size() < pointCount) {
+        CVLog::Error("Invalid scalar field");
+        return false;
+    }
+
+    for (unsigned i = 0; i < pointCount; ++i) {
+        CCVector3& P = m_points[i];
+        ScalarType s = sf->getValue(i);
+
+        // handle NaN values
+        PointCoordinateType coord =
+                cloudViewer::ScalarField::ValidValue(s)
+                        ? static_cast<PointCoordinateType>(s)
+                        : defaultValueForNaN;
+
+        // test each dimension
+        if (importDims[0]) P.x = coord;
+        if (importDims[1]) P.y = coord;
+        if (importDims[2]) P.z = coord;
+    }
+
+    invalidateBoundingBox();
 
     return true;
 }

@@ -305,10 +305,12 @@ void define_ScalarField(py::module &cccorelib)
 
     Prefer use of :meth:`cccorelib.ScalarField.resize`.
 )doc")
-        .def("getValue",
-             &cloudViewer::ScalarField::getValue,
-             "index"_a,
-             R"doc(
+
+        .def(
+            "getValue",
+            [](cloudViewer::ScalarField &self, const size_t index) { return self.getValue(index); },
+            "index"_a,
+            R"doc(
     Returns the value at the given index.
 
     Only supports index in [0..self.size()[
