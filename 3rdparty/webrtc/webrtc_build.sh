@@ -84,8 +84,7 @@ download_webrtc_sources() {
     pushd ..
     echo Get depot_tools
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-    # git -C depot_tools checkout $DEPOT_TOOLS_COMMIT
-    git -C depot_tools pull
+    git -C depot_tools checkout $DEPOT_TOOLS_COMMIT
     command -V fetch
 
     echo Get WebRTC
