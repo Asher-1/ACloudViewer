@@ -23,7 +23,7 @@ if(APPLE)
   "${ACloudViewer_MAC_BASE_DIR}/Contents/cvPlugins"
   )
   set(INSTALL_PLUGINS_WRAPPERS_PATH
-  "${ACloudViewer_MAC_BASE_DIR}/Contents/ccPythonPlugins"
+  "${ACloudViewer_MAC_BASE_DIR}/Contents/cvPythonPlugins"
   )
 elseif(UNIX)
   set(INSTALL_PLUGINS_PATH "${CMAKE_INSTALL_PREFIX}/plugins")
