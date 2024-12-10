@@ -122,7 +122,6 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.4/3rdparty_downloads.zip" -OutFile "3rdparty_downloads.zip"
           Expand-Archive "3rdparty_downloads.zip" "${{ env.SRC_DIR }}" -Force && Remove-Item "3rdparty_downloads.zip"
 
-      # missing xerces-c dep issues
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
@@ -166,7 +165,7 @@ jobs:
             -DPLUGIN_IO_QADDITIONAL=ON `
             -DPLUGIN_IO_QCORE=ON `
             -DPLUGIN_IO_QCSV_MATRIX=ON `
-            -DPLUGIN_IO_QE57=OFF `
+            -DPLUGIN_IO_QE57=ON `
             -DPLUGIN_IO_QMESH=ON `
             -DPLUGIN_IO_QPDAL=OFF `
             -DPLUGIN_IO_QPHOTOSCAN=ON `
