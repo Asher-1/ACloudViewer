@@ -38,10 +38,10 @@ QString getPluginsWrappersPath()
 #else
     // This point to $InstallFolder/ACloudViewer.app/Contents/MacOS
     // We store python plugin wrappers in
-    // $InstallFolder/ACloudViewer.app/Contents/PlugIns/ccPythonPlugins
+    // $InstallFolder/ACloudViewer.app/Contents/cvPythonPlugins
     QDir appDir = QCoreApplication::applicationDirPath();
     appDir.cdUp();
-    QString pluginPath = QString("%1/PlugIns/ccPythonPlugins").arg(appDir.absolutePath());
+    QString pluginPath = QString("%1/cvPythonPlugins").arg(appDir.absolutePath());
 #endif
     return pluginPath;
 }
