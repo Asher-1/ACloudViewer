@@ -260,6 +260,8 @@ if __name__ == "__main__":
     CLOUDVIEWER_BUILD_DIR = os.path.join(CLOUDVIEWER_SOURCE_ROOT, "build")
     logging.info(f"CLOUDVIEWER_BUILD_DIR: {CLOUDVIEWER_BUILD_DIR}")
     ACLOUDVIEWER_INSTALL = os.path.join("C:/dev", "cloudViewer_install")
+    if not os.path.exists(ACLOUDVIEWER_INSTALL):
+        os.makedirs(ACLOUDVIEWER_INSTALL)
     logging.info(f"ACloudViewer_INSTALL PATH: {ACLOUDVIEWER_INSTALL}")
     CloudViewerMLRoot = "C:/Users/asher/develop/code/CloudViewer/CloudViewer-ML"
     logging.info(f"CloudViewerMLRoot PATH: {CloudViewerMLRoot}")
