@@ -20,6 +20,10 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
       
+      - name: Install dependencies
+        run: |
+          ./util/install_deps_ubuntu.sh assume-yes
+          
       - name: Set up Python version
         run: |
           sed -i "s/3.8/${{ env.PYTHON_VERSION }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}

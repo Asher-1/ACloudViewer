@@ -102,6 +102,9 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+      
+      - name: Install CMake and Ninja
+        uses: lukka/get-cmake@latest
 
       - name: Download WebRTC sources
         shell: pwsh
@@ -143,6 +146,7 @@ jobs:
           mkdir webrtc/build
           cd webrtc/build
           cmake -G Ninja -D CMAKE_BUILD_TYPE=Release `
+                -DCMAKE_MAKE_PROGRAM=ninja `
                 -D CMAKE_INSTALL_PREFIX=${{ env.WORK_DIR }}/webrtc_release/Release `
                 ..
           ninja install
