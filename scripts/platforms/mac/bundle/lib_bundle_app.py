@@ -104,6 +104,17 @@ class CCBundler:
     def __init__(self, config: CCAppBundleConfig) -> None:
         """Construct a CCBundler object"""
         self.config = config
+        
+    @staticmethod
+    def create_symlink(source: str, target: str, working_directory: Path):
+        try:
+            original_directory = os.getcwd()
+            os.chdir(working_directory)
+            os.symlink(source, target)
+            os.chdir(original_directory)
+            print(f"symlink created：{target} -> {source}")
+        except OSError as e:
+            print(f"Failed to create symlink: {e}")
 
     def bundle(self) -> None:
         """Bundle the dependencies into the .app"""
@@ -269,6 +280,8 @@ class CCBundler:
             )
             sys.exit(1)
         shutil.copytree(self.config.base_python_libs, self.config.embedded_python_lib)
+        python_version_name = self.config.embedded_python_lib.name
+        CCBundler.create_symlink(f"{python_version_name}/site-packages", "site-packages", self.config.embedded_python_libpath)
         shutil.copy2(self.config.base_python_binary, self.config.embedded_python_binary)
 
     def _embed_python(self) -> None:
