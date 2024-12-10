@@ -1,0 +1,8 @@
+name: qt_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  - ninja
+  - boost=1.84.*
+  - qt=5.15.*

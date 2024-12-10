@@ -4,6 +4,7 @@
 cmake_minimum_required(VERSION 3.19.2)
 project(VTKArchiveBuild)
 
+option(BUILD_WITH_CONDA "Build with conda env" OFF)
 option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
 
 # OS specific settings
@@ -88,7 +89,8 @@ set(CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR "${PROJECT_SOURCE_DIR}/../../3rdparty_d
 set(CloudViewer_INSTALL_LIB_DIR lib)
 
 set(BUILD_VTK_FROM_SOURCE ON)
-include(vtk_build.cmake)
+set(BUILD_WITH_CONDA ON)
+include(vtk_build_with_qt.cmake)
 
 if(LINUX_AARCH64)
     set(ARCHIVE_SUFFIX "_linux_aarch64")
