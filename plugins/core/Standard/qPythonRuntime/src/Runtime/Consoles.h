@@ -92,7 +92,14 @@ class ccConsoleOutput
 
     void write(const char *messagePart)
     {
-        m_output.write(messagePart);
+        if (!messagePart)
+        {
+            CVLog::Warning("Found invalid message given!");
+        }
+        else
+        {
+            m_output.write(messagePart);
+        }
     }
 
     bool isatty() const
@@ -132,7 +139,14 @@ class ListWidgetConsole
 
     void write(const char *messagePart)
     {
-        m_output.write(messagePart);
+        if (!messagePart)
+        {
+            CVLog::Warning("Found invalid message given!");
+        }
+        else
+        {
+            m_output.write(messagePart);
+        }
     }
     bool isatty() const
     {
@@ -150,9 +164,23 @@ class ListWidgetConsole
     QString m_prefix;
     ConsoleWrapper m_output{[this](const QString &message)
                             {
-                                auto *messageItem = new QListWidgetItem(message);
-                                messageItem->setForeground(m_brush);
-                                m_view->addItem(messageItem);
+                                if (m_view)
+                                {
+                                    auto *messageItem = new QListWidgetItem(message);
+                                    messageItem->setForeground(m_brush);
+                                    m_view->addItem(messageItem);
+                                }
+                                else
+                                {
+                                    if (m_prefix.isEmpty())
+                                    {
+                                        CVLog::Print(message);
+                                    }
+                                    else
+                                    {
+                                        CVLog::Print(m_prefix + message);
+                                    }
+                                }
                             }};
 };
 #endif // PYTHON_PLUGIN_CONSOLES_H
