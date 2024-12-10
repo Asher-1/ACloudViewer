@@ -50,6 +50,8 @@ jobs:
       - name: Install dependencies
         if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
           source 3rdparty/webrtc/webrtc_build.sh
           install_dependencies_ubuntu
 
