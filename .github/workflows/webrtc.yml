@@ -139,6 +139,7 @@ jobs:
           cp "$env:ACLOUDVIEWER_DIR/3rdparty/webrtc/webrtc_common.cmake" webrtc/
 
       - name: Build WebRTC (Release)
+        shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -155,6 +156,7 @@ jobs:
           rm -r build
 
       - name: Build WebRTC (Debug)
+        shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -167,6 +169,7 @@ jobs:
           ninja install
 
       - name: Package WebRTC
+        shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
