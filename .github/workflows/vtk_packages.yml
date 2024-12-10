@@ -5,6 +5,10 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  PYTHON_VERSION: 3.11
+  CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_qt.yml"
+
 jobs:
 
   Linux:
@@ -15,12 +19,25 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+      
+      - name: Set up Python version
+        run: |
+          sed -i "s/3.8/${{ env.PYTHON_VERSION }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up Python version
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: qt_env
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+
       - name: CMake configure
+        shell: bash -l {0}
         run: |
           mkdir build
           cd build
           cmake ../3rdparty/vtk
       - name: Build
+        shell: bash -l {0}
         run: |
           cd build
           make -j$(nproc)
@@ -51,12 +68,24 @@ jobs:
             STATIC_RUNTIME: OFF
           - configuration: staticrt
             STATIC_RUNTIME: ON
-
     steps:
       - name: Disk space used
         run: Get-PSDrive
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Set up python version
+        run: |
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ env.PYTHON_VERSION }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      # DGM: without caching, using conda on Windows takes a long time...
+      - name: Set up Python environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          architecture: 'x64'
+          activate-environment: qt_env
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
@@ -92,16 +121,28 @@ jobs:
     runs-on: macos-13
     strategy:
       fail-fast: false
-
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Set up Python version
+        run: |
+          sed -i "" "s/3.8/${{ env.PYTHON_VERSION }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up Python version
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: qt_env
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+
       - name: CMake configure
+        shell: bash -l {0}
         run: |
           mkdir build
           cd build
           cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 ../3rdparty/vtk
       - name: Build
+        shell: bash -l {0}
         run: |
           cd build
           make -j2
