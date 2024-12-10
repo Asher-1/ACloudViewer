@@ -336,6 +336,7 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QTREEISO=$PLUGIN_STANDARD_QTREEISO"
                 "-DPLUGIN_STANDARD_QVOXFALL=ON"
                 "-DPLUGIN_PYTHON=ON"
+                "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"
                 "-DCMAKE_PREFIX_PATH=$CONDA_LIB_DIR"
                 "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA"
