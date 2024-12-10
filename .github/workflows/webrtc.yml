@@ -115,7 +115,8 @@ jobs:
           # Checkout to a specific version
           # Ref: https://chromium.googlesource.com/chromium/src/+/main/docs/building_old_revisions.md
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          git -C depot_tools checkout $env:DEPOT_TOOLS_COMMIT
+          # git -C depot_tools checkout $env:DEPOT_TOOLS_COMMIT
+          git -C depot_tools pull
           $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
 
           echo "Get WebRTC"
