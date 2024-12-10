@@ -96,8 +96,7 @@ void load_pluginWrappers(py::module_ &m)
         return;
     }
 
-    CVLog::Print(
-        QString("[PythonRuntime] Start load plugin python wrapper from: '%1'").arg(pluginPath));
+        py::print("[PythonRuntime] Start load plugin python wrapper from: '", pluginPath.toStdString(), "'");
     py::module_::import("sys").attr("path").attr("append")(pluginPath);
     QDirIterator iter(pluginPathDir);
     while (iter.hasNext())
@@ -118,8 +117,7 @@ void load_pluginWrappers(py::module_ &m)
             const py::module mod = py::module_::import(stdFileName.c_str());
             const std::string pluginName = mod.attr("plugin_name").cast<std::string>();
             pluginWrappers.attr(pluginName.c_str()) = mod;
-            CVLog::Print(QString("[PythonRuntime] Plugin python wrapper found: '%1'")
-                             .arg(pluginName.c_str()));
+            py::print("[PythonRuntime] Plugin python wrapper found: '", pluginName, "'");
         }
         catch (const std::exception &e)
         {
