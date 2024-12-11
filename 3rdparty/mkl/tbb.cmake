@@ -12,8 +12,9 @@ set(STATIC_MKL_LIB_DIR "${MKL_INSTALL_PREFIX}/${CloudViewer_INSTALL_LIB_DIR}")
 # Save and restore BUILD_SHARED_LIBS since TBB must be built as a shared library
 set(_build_shared_libs ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS ON)
-set(_win_exp_all_syms ${CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS})
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)   # ON interferes with TBB symbols
+# NOTE: building issues obout reconstruction with FLANN when toggle enabled as follows on windows
+# set(_win_exp_all_syms ${CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS})
+# set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)   # ON interferes with TBB symbols
 FetchContent_Declare(
     ext_tbb
     URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.12.0.tar.gz # April 2024
@@ -27,7 +28,7 @@ set(TBB_INSTALL OFF CACHE BOOL "Enable installation")
 set(TBB_STRICT OFF CACHE BOOL "Treat compiler warnings as errors")
 FetchContent_MakeAvailable(ext_tbb)
 set(BUILD_SHARED_LIBS ${_build_shared_libs})
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ${_win_exp_all_syms})
+# set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ${_win_exp_all_syms})
 
 # TBB is built and linked as a shared library - this is different from all other CloudViewer dependencies.
 install(TARGETS tbb EXPORT ${PROJECT_NAME}Targets

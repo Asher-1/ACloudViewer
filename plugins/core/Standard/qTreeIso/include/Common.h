@@ -90,7 +90,7 @@ struct ComponentsFusion
 };
 
 template<typename T>
-struct lessComponentsFusion: public std::binary_function<ComponentsFusion<T>, ComponentsFusion<T>, bool>
+struct lessComponentsFusion
 {
     bool operator()(const ComponentsFusion<T> lhs, const ComponentsFusion<T> rhs) const
     {
@@ -126,7 +126,7 @@ public:
 };
 
 template<typename T>
-struct lessPoint3D: public std::binary_function<Point3D<T>, Point3D<T>, bool>
+struct lessPoint3D
 {
     bool operator()(const Point3D<T> lhs, const Point3D<T> rhs) const
     {
