@@ -283,7 +283,6 @@ jobs:
       BUILD_JUPYTER_EXTENSION: ON
       BUILD_AZURE_KINECT: ON
       BUILD_LIBREALSENSE: ON
-      CONDA_DEP_FILE: ".ci/conda_windows.yml"
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
 
     steps:
@@ -334,20 +333,12 @@ jobs:
           repository: Asher-1/CloudViewer-ML
           path: ${{ env.CLOUDVIEWER_ML_ROOT }}
 
-      - name: Set up python version
-        if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE }}
-
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment
-        if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
         uses: conda-incubator/setup-miniconda@v3
         with:
-          architecture: 'x64'
-          activate-environment: python${{ matrix.python_version }}
+          python-version: {{ matrix.python_version }}
           auto-activate-base: true
-          environment-file: ${{ env.CONDA_DEP_FILE }}
 
       - name: Install dependencies
         working-directory: ${{ env.SRC_DIR }}
@@ -360,7 +351,6 @@ jobs:
           Expand-Archive "3rdparty_downloads.zip" "${{ env.SRC_DIR }}" -Force && Remove-Item "3rdparty_downloads.zip"
 
       - name: Config and Building
-        if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
           scripts/build_win_wheel.ps1 "${{ matrix.python_version }}" "${{ env.INSTALL_DIR }}" "${{ env.CLOUDVIEWER_ML_ROOT }}"
 
