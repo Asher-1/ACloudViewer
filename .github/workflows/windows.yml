@@ -346,7 +346,7 @@ jobs:
         with:
           architecture: 'x64'
           activate-environment: python${{ matrix.python_version }}
-          auto-activate-base: false
+          auto-activate-base: true
           environment-file: ${{ env.CONDA_DEP_FILE }}
 
       - name: Install dependencies
