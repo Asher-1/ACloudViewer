@@ -94,7 +94,7 @@ if(BUILD_VTK_FROM_SOURCE)
         UPDATE_COMMAND ""
         CMAKE_ARGS
             ${ExternalProject_CMAKE_ARGS_hidden}
-            -DBUILD_SHARED_LIBS=OFF
+            -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
             -DCMAKE_PREFIX_PATH=${CONDA_LIB_DIR}
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DVTK_BUILD_TESTING=OFF

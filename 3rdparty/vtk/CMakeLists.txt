@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.19.2)
 project(VTKArchiveBuild)
 
 option(BUILD_WITH_CONDA "Build with conda env" OFF)
+option(BUILD_SHARED_LIBS "Build shared library" OFF)
 option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
 
 # OS specific settings
@@ -89,7 +90,6 @@ set(CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR "${PROJECT_SOURCE_DIR}/../../3rdparty_d
 set(CloudViewer_INSTALL_LIB_DIR lib)
 
 set(BUILD_VTK_FROM_SOURCE ON)
-set(BUILD_WITH_CONDA ON)
 include(vtk_build_with_qt.cmake)
 
 if(LINUX_AARCH64)
@@ -108,6 +108,12 @@ elseif(WIN32)
     endif()
 else()
     message(FATAL "Unsupported platform")
+endif()
+
+if (BUILD_SHARED_LIBS)
+    set(ARCHIVE_SUFFIX "${ARCHIVE_SUFFIX}_shared")
+else()
+    set(ARCHIVE_SUFFIX "${ARCHIVE_SUFFIX}_static")
 endif()
 
 set(ARCHIVE_NAME "vtk_${VTK_VERSION}${ARCHIVE_SUFFIX}.tar.gz")

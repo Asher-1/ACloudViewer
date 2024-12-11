@@ -16,6 +16,15 @@ jobs:
       contents: write
     # TODO: Convert to docker
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        BUILD_SHARED_LIBS: [ON, OFF]
+        include:
+          - BUILD_SHARED_LIBS: ON
+            ARCHIVE_SUFFIX: "shared"
+          - BUILD_SHARED_LIBS: OFF
+            ARCHIVE_SUFFIX: "static"
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -39,13 +48,13 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake ../3rdparty/vtk
+          cmake -DBUILD_WITH_CONDA=ON -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} ../3rdparty/vtk
       - name: Build
         shell: bash -l {0}
         run: |
           cd build
           make -j$(nproc)
-          cmake -E sha256sum vtk*.tar.gz > checksum_linux.txt
+          cmake -E sha256sum vtk*.tar.gz > checksum_linux_${{matrix.ARCHIVE_SUFFIX}}.txt
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -67,11 +76,17 @@ jobs:
       fail-fast: false
       matrix:
         configuration: [dllrt, staticrt]
+        BUILD_SHARED_LIBS: [ON, OFF]
         include:
           - configuration: dllrt
             STATIC_RUNTIME: OFF
           - configuration: staticrt
             STATIC_RUNTIME: ON
+          - BUILD_SHARED_LIBS: ON
+            ARCHIVE_SUFFIX: "shared"
+          - BUILD_SHARED_LIBS: OFF
+            ARCHIVE_SUFFIX: "static"
+          
     steps:
       - name: Disk space used
         run: Get-PSDrive
@@ -99,6 +114,8 @@ jobs:
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\ACloudViewer" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+            -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
+            -DBUILD_WITH_CONDA=ON `
             "${{ env.SRC_DIR }}\3rdparty\vtk"
           ls
       - name: Build
@@ -109,7 +126,7 @@ jobs:
           ls
           cmake --build . --parallel ${{ env.NPROC }} --config Debug
           ls
-          cmake -E sha256sum (get-item vtk*.tar.gz).Name > checksum_win_${{matrix.configuration}}.txt
+          cmake -E sha256sum (get-item vtk*.tar.gz).Name > checksum_win_${{matrix.configuration}}_${{matrix.ARCHIVE_SUFFIX}}.txt
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
@@ -125,6 +142,13 @@ jobs:
     runs-on: macos-13
     strategy:
       fail-fast: false
+      matrix:
+        BUILD_SHARED_LIBS: [ON, OFF]
+        include:
+          - BUILD_SHARED_LIBS: ON
+            ARCHIVE_SUFFIX: "shared"
+          - BUILD_SHARED_LIBS: OFF
+            ARCHIVE_SUFFIX: "static"
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -144,13 +168,13 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 ../3rdparty/vtk
+          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 -DBUILD_WITH_CONDA=ON -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} ../3rdparty/vtk
       - name: Build
         shell: bash -l {0}
         run: |
           cd build
           make -j2
-          cmake -E sha256sum vtk*.tar.gz > checksum_macos.txt
+          cmake -E sha256sum vtk*.tar.gz > checksum_macos_${{matrix.ARCHIVE_SUFFIX}}.txt
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
