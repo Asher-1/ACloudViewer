@@ -3,12 +3,12 @@
 #include "qPCV.h"
 
 //qCC_db
-#include <ccColorScalesManager.h>
-#include <ccGenericMesh.h>
-#include <ccHObjectCaster.h>
-#include <ccPointCloud.h>
+#include <ecvColorScalesManager.h>
+#include <ecvGenericMesh.h>
+#include <ecvHObjectCaster.h>
+#include <ecvPointCloud.h>
 #include <ecvProgressDialog.h>
-#include <ccScalarField.h>
+#include <ecvScalarField.h>
 
 constexpr char CC_PCV_FIELD_LABEL_NAME[] = "Illuminance (PCV)";
 

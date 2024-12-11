@@ -26,7 +26,7 @@
 	the name, authors, maintainers, icon, etc..
 
 	The one method you are required to implement is getFilter(). This method
-	registers your GL filter with CloudCompare.
+	registers your GL filter with ACloudViewer.
 **/
 
 //! Example GL Plugin
@@ -35,7 +35,7 @@ class ExampleGLPlugin : public QObject, public ccGLPluginInterface
 	Q_OBJECT
 	Q_INTERFACES( ccPluginInterface ccGLPluginInterface )
 	
-	Q_PLUGIN_METADATA( IID "cccorp.cloudcompare.plugin.ExampleGL" FILE "../info.json" )
+	Q_PLUGIN_METADATA( IID "ecvcorp.cloudviewer.plugin.ExampleGL" FILE "../info.json" )
 
 public:
 	explicit ExampleGLPlugin( QObject *parent = nullptr );

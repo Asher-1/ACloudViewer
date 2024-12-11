@@ -441,9 +441,9 @@ endif ()
 # RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder 
 # set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 # if (APPLE)
-#     # Add options to cover the various ways in which ACloudViewer shared lib or apps can be installed wrt TBB DSO
+#     # Add options to cover the various ways in which ${MAIN_APP_NAME} shared lib or apps can be installed wrt TBB DSO
 #     set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/")
-#     # pybind with ACloudViewer shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
+#     # pybind with ${MAIN_APP_NAME} shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
 #     set(CMAKE_BUILD_RPATH "@loader_path/../")
 # elseif(UNIX)
 #     set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/")
@@ -451,8 +451,8 @@ endif ()
 # endif()
 
 # Define target folders
-# (now that ccViewer can have its own plugins, ACloudViewer and CloudViewer must fall in separate folders!
-set(ACloudViewer_DEST_FOLDER "${CloudViewer_INSTALL_BIN_DIR}/ACloudViewer")
+# (now that ccViewer can have its own plugins, ${MAIN_APP_NAME} and ${CLOUDVIEWER_APP_NAME} must fall in separate folders!
+set(ACloudViewer_DEST_FOLDER "${CloudViewer_INSTALL_BIN_DIR}/${MAIN_APP_NAME}")
 
 # set default install folders
 if (WIN32)
@@ -750,6 +750,8 @@ endif()
 set(colmap_helper_utils "")
 set(cloudviewer_helper_utils "")
 
+set (ACLOUDVIEWER_INSTALL_PATH "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data")
+
 if (NOT APPLE) # already down on macos
     # for ACloudViewer
     file(GLOB main_helper_utils "${SCRIPTS_BASE_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}*" )
@@ -770,7 +772,7 @@ if (NOT APPLE) # already down on macos
     # fix missing qt plugins
     foreach( qt5_plugins_folder ${QT5_PLUGINS_PATH_LIST} )
         install(DIRECTORY "${qt5_plugins_folder}"
-                DESTINATION "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data"
+                DESTINATION "${ACLOUDVIEWER_INSTALL_PATH}"
                 USE_SOURCE_PERMISSIONS)
     endforeach()
 endif()
@@ -815,7 +817,7 @@ set(ACLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${BU
 
 # for ACloudViewer
 foreach( filename ${main_documents_list} )
-    cloudViewer_install_ext( FILES ${filename} "${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data" "" )
+    cloudViewer_install_ext( FILES ${filename} "${ACLOUDVIEWER_INSTALL_PATH}" "" )
 endforeach()
 
 # for CloudViewer
@@ -840,6 +842,7 @@ install(CODE "set(EXTERNAL_INSTALL_DIRS \"${EXTERNAL_INSTALL_DIRS}\")")
 install(CODE "set(CONDA_PREFIX \"${CONDA_PREFIX}\")")
 install(CODE "set(BUILD_WITH_CONDA \"${BUILD_WITH_CONDA}\")")
 # common
+install(CODE "set(PLUGIN_PYTHON \"${PLUGIN_PYTHON}\")")
 install(CODE "set(BUILD_GUI \"${BUILD_GUI}\")")
 install(CODE "set(BUILD_RECONSTRUCTION \"${BUILD_RECONSTRUCTION}\")")
 install(CODE "set(LIBS_FOLDER_NAME \"${LIBS_FOLDER_NAME}\")")

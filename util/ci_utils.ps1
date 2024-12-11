@@ -12,7 +12,12 @@ $env:NPROC = (Get-CimInstance -ClassName Win32_ComputerSystem).NumberOfLogicalPr
 
 $env:BUILD_RIEGL = "ON"
 $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
-$env:CLOUDVIEWER_INSTALL_DIR = "C:\dev\cloudViewer_install"
+
+if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_INSTALL_DIR)) {
+    $env:CLOUDVIEWER_INSTALL_DIR = $env:CLOUDVIEWER_INSTALL_DIR
+} else {
+    $env:CLOUDVIEWER_INSTALL_DIR = "C:\dev\cloudViewer_install"
+}
 
 if ($env:CONDA_PREFIX) {
     Write-Host "Conda env: $env:CONDA_PREFIX is activated."
@@ -290,6 +295,11 @@ function Build-GuiApp {
         "-DPOISSON_RECON_WITH_OPEN_MP=ON",
         "-DPLUGIN_STANDARD_QRANSAC_SD=ON",
         "-DPLUGIN_STANDARD_QSRA=ON",
+        "-DPLUGIN_STANDARD_3DMASC=ON",
+        "-DPLUGIN_STANDARD_QTREEISO=ON",
+        "-DPLUGIN_STANDARD_QVOXFALL=ON",
+        "-DPLUGIN_PYTHON=ON",
+        "-DBUILD_PYTHON_MODULE=ON",
         "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA",
         "-DCONDA_PREFIX=$env:CONDA_PREFIX",
         "-DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR",

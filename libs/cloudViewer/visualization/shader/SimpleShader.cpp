@@ -566,7 +566,7 @@ public:
                         *mesh.getTriangleVertIndexes(n);
 
                 if (glParams.showColors) {
-                    if (mesh.isColorOverriden()) {
+                    if (mesh.isColorOverridden()) {
                         GLUtility::Color3v(mesh.getTempColor().rgb);
                         glParams.showColors = false;
                     } else if (cloud->hasColors()) {
@@ -760,7 +760,7 @@ bool SimpleShaderForPointCloud::PrepareBinding(
             case RenderOption::PointColorOption::Color:
             case RenderOption::PointColorOption::Default:
             default:
-                if (pointcloud.isColorOverriden()) {
+                if (pointcloud.isColorOverridden()) {
                     color = ecvColor::Rgb::ToEigen(pointcloud.getTempColor());
                 } else if (pointcloud.hasColors()) {
                     color = pointcloud.getEigenColor(i);
@@ -934,7 +934,7 @@ bool SimpleShaderForPolyline::PrepareBinding(
         points[(i - 1) * 2 + 1] = CCVector3::fromArray(
                 *polyline.getPoint(static_cast<unsigned>(i)));
         Eigen::Vector3d color;
-        if (polyline.isColorOverriden()) {
+        if (polyline.isColorOverridden()) {
             color = ecvColor::Rgb::ToEigen(polyline.getTempColor());
         } else {
             color = ecvColor::Rgb::ToEigen(polyline.getColor());
@@ -1187,7 +1187,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
                                         vertex(2)));
                         break;
                     case RenderOption::MeshColorOption::Color:
-                        if (mesh.isColorOverriden()) {
+                        if (mesh.isColorOverridden()) {
                             color = ecvColor::Rgb::ToEigen(mesh.getTempColor());
                             break;
                         } else if (mesh.hasColors()) {

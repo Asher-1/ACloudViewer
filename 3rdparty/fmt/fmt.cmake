@@ -64,5 +64,6 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_fmt INSTALL_DIR)
 set(FMT_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(FMT_LIB_DIR ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
-set(FMT_LIBRARIES ${FMT_LIB_NAME}$<$<PLATFORM_ID:Windows>:$<$<CONFIG:Debug>:d>>)
+# set(FMT_LIBRARIES ${FMT_LIB_NAME}$<$<PLATFORM_ID:Windows>:$<$<CONFIG:Debug>:d>>)
+set(FMT_LIBRARIES ${FMT_LIB_NAME}$<$<CONFIG:Debug>:d>)
 

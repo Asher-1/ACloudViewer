@@ -68,7 +68,7 @@
 
 // This is included only for temporarily removing an object from the tree.
 //	TODO figure out a cleaner way to do this without having to include all
-//of MainWindow.h
+// of MainWindow.h
 #include "MainWindow.h"
 
 // SYSTEM
@@ -1046,6 +1046,24 @@ bool importToSF(const ccHObject::Container& selectedEntities,
     return true;
 }
 
+static PointCoordinateType GetDefaultValueForNaN(PointCoordinateType minSFValue,
+                                                 QWidget* parent) {
+    bool ok = false;
+    double out = QInputDialog::getDouble(
+            parent, QObject::tr("SF --> coordinate"),
+            QObject::tr("Enter the coordinate equivalent to NaN values:"),
+            minSFValue, -1.0e9, 1.0e9, 6, &ok);
+
+    if (ok) {
+        return static_cast<PointCoordinateType>(out);
+    } else {
+        CVLog::Warning(QObject::tr(
+                "[SetSFAsCoord] By default the coordinate equivalent to NaN "
+                "values will be the minimum SF value"));
+        return minSFValue;
+    }
+}
+
 bool sfSetAsCoord(const ccHObject::Container& selectedEntities,
                   QWidget* parent) {
     ccExportCoordToSFDlg ectsDlg(parent);
@@ -1054,11 +1072,13 @@ bool sfSetAsCoord(const ccHObject::Container& selectedEntities,
 
     if (!ectsDlg.exec()) return false;
 
-    bool exportDim[3] = {ectsDlg.exportX(), ectsDlg.exportY(),
-                         ectsDlg.exportZ()};
-    if (!exportDim[0] && !exportDim[1] && !exportDim[2])  // nothing to do?!
+    bool importDim[3]{ectsDlg.exportX(), ectsDlg.exportY(), ectsDlg.exportZ()};
+    if (!importDim[0] && !importDim[1] && !importDim[2])  // nothing to do?!
+    {
         return false;
+    }
 
+    ScalarType defaultValueForNaN = NAN_VALUE;
     // for each selected cloud (or vertices set)
     for (ccHObject* ent : selectedEntities) {
         ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(ent);
@@ -1066,46 +1086,24 @@ bool sfSetAsCoord(const ccHObject::Container& selectedEntities,
             ccPointCloud* pc = static_cast<ccPointCloud*>(cloud);
 
             ccScalarField* sf = pc->getCurrentDisplayedScalarField();
+
             if (sf != nullptr) {
-                unsigned ptsCount = pc->size();
-                bool hasDefaultValueForNaN = false;
-                ScalarType defaultValueForNaN = sf->getMin();
-
-                for (unsigned i = 0; i < ptsCount; ++i) {
-                    ScalarType s = sf->getValue(i);
-
-                    // handle NaN values
-                    if (!cloudViewer::ScalarField::ValidValue(s)) {
-                        if (!hasDefaultValueForNaN) {
-                            bool ok = false;
-                            double out = QInputDialog::getDouble(
-                                    parent, "SF --> coordinate",
-                                    "Enter the coordinate equivalent for NaN "
-                                    "values:",
-                                    defaultValueForNaN, -1.0e9, 1.0e9, 6, &ok);
-                            if (ok)
-                                defaultValueForNaN =
-                                        static_cast<ScalarType>(out);
-                            else
-                                CVLog::Warning(
-                                        "[SetSFAsCoord] By default the "
-                                        "coordinate equivalent for NaN values "
-                                        "will be the minimum SF value");
-                            hasDefaultValueForNaN = true;
-                        }
-                        s = defaultValueForNaN;
-                    }
-
-                    CCVector3* P = const_cast<CCVector3*>(pc->getPoint(i));
-
-                    // test each dimension
-                    if (exportDim[0]) P->x = s;
-                    if (exportDim[1]) P->y = s;
-                    if (exportDim[2]) P->z = s;
+                if (std::isnan(defaultValueForNaN) &&
+                    (sf->countValidValues() < sf->size())) {
+                    // we have some invalid values, let's ask the user what they
+                    // should be replaced with
+                    defaultValueForNaN =
+                            GetDefaultValueForNaN(sf->getMin(), parent);
+                    break;
                 }
 
+                pc->setCoordFromSF(importDim, sf, defaultValueForNaN);
                 pc->invalidateBoundingBox();
             }
+        }
+
+        if (ent->isKindOf(CV_TYPES::MESH)) {
+            static_cast<ccGenericMesh*>(ent)->refreshBB();
         }
     }
 
@@ -1940,7 +1938,7 @@ bool computeOctree(const ccHObject::Container& selectedEntities,
     for (const auto cloud : clouds) {
         // we temporarily detach entity, as it may undergo
         //"severe" modifications (octree deletion, etc.) --> see
-        //ccPointCloud::computeOctree
+        // ccPointCloud::computeOctree
         MainWindow* instance = dynamic_cast<MainWindow*>(parent);
         MainWindow::ccHObjectContext objContext;
         if (instance)
@@ -2341,6 +2339,17 @@ bool computeStatParams(const ccHObject::Container& selectedEntities,
         ccScalarField* sf = pc->getCurrentDisplayedScalarField();
         if (sf == nullptr) {
             // TODO report error?
+            continue;
+        }
+
+        // compute the number of valid values
+        size_t sfValidCount = sf->countValidValues();
+        if (sfValidCount == 0) {
+            CVLog::Warning(
+                    QObject::tr(
+                            "Scalar field '%1' of cloud %2 has no valid values")
+                            .arg(QString::fromStdString(sf->getName()))
+                            .arg(pc->getName()));
             continue;
         }
 

@@ -54,6 +54,11 @@ class CCSignBundleConfig:
 
         self.signature = signature
         self.identifier = identifier
+        
+        if "ACloudViewer" == app_name:
+            self.embed_python = embed_python
+        else:
+            self.embed_python = False
 
         if self.embed_python:
             self.embedded_python_rootpath = self.bundle_abs_path / "Contents" / "Resources" / "python"
@@ -87,6 +92,34 @@ class CCSignBundle:
 
         """
         subprocess.run([CODESIGN_FULL_PATH, "--remove-signature", str(path)], stdout=subprocess.PIPE, check=True)
+    
+    def _add_single_signature(self, path: Path) -> None:
+        """Sign a binary file.
+
+        Call `codesign` utility via a subprocess. The signature stored
+        into the `config` object is used to sign the binary.
+
+        Args:
+        ----
+            path (Path): The path to the file to sign.
+
+        """
+        dummy_signature = "-"
+        if len(self.config.signature) != 0:
+             dummy_signature=self.config.signature
+
+        subprocess.run(
+            [
+                CODESIGN_FULL_PATH,
+                "-s",
+                dummy_signature,
+                "--force",
+                "--timestamp",
+                str(path),
+            ],
+            stdout=subprocess.PIPE,
+            check=True,
+        )
 
     def _add_signature(self, path: Path) -> None:
         """Sign a binary file.
@@ -159,15 +192,47 @@ class CCSignBundle:
             (int) : Error code at the end of the process.
 
         """
+        
+        # collect all libs in the bundle
+        # split set to have 100% Python lib in one set and other libs in another set
+        # TODO: Not sure the split is really usefull
+        logger.info("Collect libs in the bundle")
+        so_generator = self.config.bundle_abs_path.rglob("*.so")
+        dylib_generator = self.config.bundle_abs_path.rglob("*.dylib")
+        all_libs = set(list(so_generator) + list(dylib_generator))
+        if self.config.embed_python:
+            python_libs = set(filter(lambda p: p.is_relative_to(self.config.embedded_python_rootpath), all_libs))
+            cc_app_libs = all_libs - python_libs
+            
+        logger.info("--- Total # lib in the bundle %i", len(all_libs))
+        if self.config.embed_python:
+            logger.info("--- Total # lib in the python sub system %i", len(python_libs))
+            logger.info("--- Total # lib in the CC sub system (framework and plugins) %i", len(cc_app_libs))
+        
         # Remove signature in all embedded libs and executable app
         logger.info("Remove {} old signatures".format(self.config.app_name))
         CCSignBundle._remove_signature(self.config.bundle_abs_path)
 
         logger.info("Sign {} dynamic libraries".format(self.config.app_name))
         self._add_signature(self.config.bundle_abs_path)
+        
+        if self.config.embed_python:
+            CCSignBundle._remove_signature(self.config.embedded_python_binary)
 
-        logger.info("Add entitlements to {} bundle".format(self.config.app_name))
-        self._add_entitlements(self.config.bundle_abs_path, HARDENED_CCAPP_ENTITLEMENTS)
+            # self._add_signature(self.config.embedded_python_rootpath)
+            # create the process pool
+            process_pool = multiprocessing.Pool()
+            logger.info("Sign Python dynamic libraries")
+            process_pool.map(self._add_single_signature, python_libs)
+
+            logger.info("Add entitlements to Python binary")
+            self._add_entitlements(self.config.embedded_python_binary, PYAPP_ENTITLEMENTS)
+            
+            logger.info("Add entitlements to {} bundle".format(self.config.app_name))
+            self._add_entitlements(self.config.bundle_abs_path, CCAPP_ENTITLEMENTS)
+        else:
+            logger.info("Add entitlements to {} bundle".format(self.config.app_name))
+            self._add_entitlements(self.config.bundle_abs_path, HARDENED_CCAPP_ENTITLEMENTS)
         return 0
 
 
