@@ -337,7 +337,7 @@ jobs:
       - name: Set up Python environment
         uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: {{ matrix.python_version }}
+          python-version: ${{ matrix.python_version }}
           auto-activate-base: true
 
       - name: Install dependencies
