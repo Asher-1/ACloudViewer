@@ -410,6 +410,7 @@ function Build-PipPackage {
         "-DBUILD_SHARED_LIBS=$env:BUILD_SHARED_LIBS",
         "-DDEVELOPER_BUILD=$env:DEVELOPER_BUILD",
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DUSE_SYSTEM_EIGEN3=ON", # fix gdi32 in hwloc - not found
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT",
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE",
         "-DBUILD_UNIT_TESTS=OFF",

@@ -109,7 +109,8 @@ if ($env:BUILD_JUPYTER_EXTENSION -eq "ON") {
 }
 
 $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
-$env:PATH = "$env:CONDA_PREFIX\Library;$env:CONDA_PREFIX\Library\cmake;$env:PATH"
+$env:EIGEN_ROOT_DIR = "$env:CONDA_LIB_DIR\include\eigen3"
+$env:PATH = "$env:CONDA_PREFIX\Library;$env:CONDA_PREFIX\Library\cmake;$env:EIGEN_ROOT_DIR;$env:PATH"
 
 Write-Host "echo Start to build GUI package on Windows..."
 . (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
