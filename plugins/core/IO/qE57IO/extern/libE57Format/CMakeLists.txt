@@ -74,30 +74,22 @@ if (NOT XercesC_FOUND)
         set(XercesC_INCLUDE_DIRS "${XercesC_INCLUDE_DIRS}")
         set(XercesC_LIBRARIES "${XercesC_LINK_LIBRARIES}")
         message(STATUS "Found XercesC-${XercesC_VERSION} ${XercesC_INCLUDE_DIRS}: ${XercesC_LIBRARIES}")
+        message(STATUS "XercesC_INCLUDE_DIRS: ${XercesC_INCLUDE_DIRS}")
+        message(STATUS "XercesC_LIBRARIES: ${XercesC_LIBRARIES}")
+        message(STATUS "XercesC_LIBRARY_DIRS: ${XercesC_LIBRARY_DIRS}")
+        message(STATUS "XercesC_LIBRARY: ${XercesC_LIBRARY}")
     
         # For header-only libraries
         if(NOT TARGET XercesC::XercesC)
-            add_library(XercesC::XercesC SHARED IMPORTED)
-            set_target_properties(XercesC::XercesC PROPERTIES
-                INTERFACE_INCLUDE_DIRECTORIES "${XercesC_INCLUDE_DIRS}"
-                IMPORTED_LOCATION "${XercesC_LIBRARIES}"
-                IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
-            )
-
-            if(EXISTS "${XercesC_LIBRARY_RELEASE}")
-                set_property(TARGET XercesC::XercesC APPEND PROPERTY
-                    IMPORTED_CONFIGURATIONS RELEASE)
-                set_target_properties(XercesC::XercesC PROPERTIES
-                    IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "CXX"
-                    IMPORTED_LOCATION_RELEASE "${XercesC_LIBRARY_RELEASE}")
-            endif()
-            if(EXISTS "${XercesC_LIBRARY_DEBUG}")
-                set_property(TARGET XercesC::XercesC APPEND PROPERTY
-                    IMPORTED_CONFIGURATIONS DEBUG)
-                set_target_properties(XercesC::XercesC PROPERTIES
-                    IMPORTED_LINK_INTERFACE_LANGUAGES_DEBUG "CXX"
-                    IMPORTED_LOCATION_DEBUG "${XercesC_LIBRARY_DEBUG}")
-            endif()
+            # add_library(XercesC::XercesC SHARED IMPORTED)
+            # add_library(XercesC::XercesC ALIAS ${XercesC_LIBRARIES})
+            add_library(XercesC::XercesC INTERFACE IMPORTED)
+            set_target_properties(XercesC::XercesC PROPERTIES INTERFACE_LINK_LIBRARIES ${XercesC_LIBRARIES})
+            
+            # For compatibility with FindXercesC.
+            set(XercesC_VERSION "@xerces-c_VERSION@")
+            get_target_property(XercesC_INCLUDE_DIRS ${XercesC_LIBRARIES} INTERFACE_INCLUDE_DIRECTORIES)
+            set(XercesC_LIBRARIES XercesC::XercesC)
         endif()
     else ()
         message(FATAL_ERROR "Failed to find XercesC")
