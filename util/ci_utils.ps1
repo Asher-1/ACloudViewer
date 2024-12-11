@@ -50,9 +50,7 @@ function Install-Requirements {
         [Parameter(Mandatory=$true)]
         [string]$requirementsFile,
         [Parameter(Mandatory=$false)]
-        [switch]$ForceUpdate,
-        [Parameter(Mandatory=$false)]
-        [string]$speedCmd = ""
+        [switch]$ForceUpdate
     )
 
     $originalErrorActionPreference = $ErrorActionPreference
@@ -74,7 +72,6 @@ function Install-Requirements {
                 $pipArgs = @()
                 if ($ForceUpdate) { $pipArgs += "-U" }
                 $pipArgs += @("-r", $requirementsFile)
-                if ($speedCmd) { $pipArgs += $speedCmd }
                 
                 python -m pip install $pipArgs
                 $success = $true
@@ -103,15 +100,11 @@ function Install-PythonDependencies {
     )
 
     Write-Host "Installing Python dependencies"
-    
-    $SPEED_CMD = if ($options -contains "speedup") {
-        " -i https://pypi.tuna.tsinghua.edu.cn/simple/ --extra-index-url https://pypi.org/simple --extra-index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host pypi.tuna.tsinghua.edu.cn --trusted-host mirrors.aliyun.com"
-    } else { "" }
 
-    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" setuptools=="$STOOLS_VER" $SPEED_CMD
+    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" setuptools=="$STOOLS_VER"
 
     if ($options -contains "with-unit-test") {
-        Install-Requirements -ForceUpdate "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt" $SPEED_CMD
+        Install-Requirements -ForceUpdate "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt"
     }
 
     if ($options -contains "with-cuda") {
@@ -130,27 +123,27 @@ function Install-PythonDependencies {
         $TORCH_GLNX = "torch==${TORCH_VER}+cpu"
     }
 
-    Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" $SPEED_CMD
+    Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt"
 
     if ($options -contains "with-jupyter") {
-        Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" $SPEED_CMD
+        Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     }
 
     if ($options -contains "with-tensorflow") {
         python -m pip uninstall --yes $TF_ARCH_DISABLE_NAME
-        python -m pip install -U "${TF_ARCH_NAME}==${TENSORFLOW_VER}" $SPEED_CMD
+        python -m pip install -U "${TF_ARCH_NAME}==${TENSORFLOW_VER}"
     }
 
     if ($options -contains "with-torch") {
-        python -m pip install -U $TORCH_GLNX -f $TORCH_REPO_URL tensorboard $SPEED_CMD
+        python -m pip install -U $TORCH_GLNX -f $TORCH_REPO_URL tensorboard
     }
 
     if ($options -contains "with-torch" -or $options -contains "with-tensorflow") {
-        python -m pip install -U yapf=="$YAPF_VER" $SPEED_CMD
-        # python -m pip install -U protobuf=="$PROTOBUF_VER" $SPEED_CMD
+        python -m pip install -U yapf=="$YAPF_VER"
+        # python -m pip install -U protobuf=="$PROTOBUF_VER"
         $output = & { 
             $ErrorActionPreference = 'Continue'
-            python -m pip install -U protobuf=="$PROTOBUF_VER" $SPEED_CMD 2>&1
+            python -m pip install -U protobuf=="$PROTOBUF_VER" 2>&1
         } | Out-String
 
         if ($LASTEXITCODE -ne 0) {
