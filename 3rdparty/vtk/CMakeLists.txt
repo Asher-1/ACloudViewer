@@ -120,7 +120,7 @@ set(ARCHIVE_NAME "vtk_${VTK_VERSION}${ARCHIVE_SUFFIX}.tar.gz")
 
 add_custom_target(vtk_archive ALL
     COMMENT "Creating tar archive"
-    COMMAND ${CMAKE_COMMAND} -E tar -cvzf ${ARCHIVE_NAME} vtk/include vtk/lib vtk/share
+    COMMAND ${CMAKE_COMMAND} -E tar -cvzf ${ARCHIVE_NAME} vtk/include vtk/lib vtk/share vtk/bin
     COMMAND ${CMAKE_COMMAND} -E sha256sum ${ARCHIVE_NAME}
     DEPENDS ext_vtk
 )

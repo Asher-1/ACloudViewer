@@ -21,8 +21,8 @@ jobs:
       matrix:
         BUILD_SHARED_LIBS: [ON, OFF]
         include:
-          - BUILD_SHARED_LIBS: ON
-            ARCHIVE_SUFFIX: "shared"
+          # - BUILD_SHARED_LIBS: ON
+          #   ARCHIVE_SUFFIX: "shared"
           - BUILD_SHARED_LIBS: OFF
             ARCHIVE_SUFFIX: "static"
     steps:
@@ -59,7 +59,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vtk_linux
+          name: vtk_linux_${{matrix.ARCHIVE_SUFFIX}}
           path: |
             build/vtk*.tar.gz
             build/checksum*.txt
@@ -131,7 +131,7 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: vtk_windows_${{matrix.configuration}}
+          name: vtk_windows_${{matrix.configuration}}_${{matrix.ARCHIVE_SUFFIX}}
           path: |
             ${{ env.BUILD_DIR }}/vtk*.tar.gz
             ${{ env.BUILD_DIR }}/checksum*.txt
@@ -146,8 +146,8 @@ jobs:
       matrix:
         BUILD_SHARED_LIBS: [ON, OFF]
         include:
-          - BUILD_SHARED_LIBS: ON
-            ARCHIVE_SUFFIX: "shared"
+          # - BUILD_SHARED_LIBS: ON
+          #   ARCHIVE_SUFFIX: "shared"
           - BUILD_SHARED_LIBS: OFF
             ARCHIVE_SUFFIX: "static"
     steps:
@@ -179,7 +179,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vtk_macos
+          name: vtk_macos_${{matrix.ARCHIVE_SUFFIX}}
           path: |
             build/vtk*.tar.gz
             build/checksum*.txt
