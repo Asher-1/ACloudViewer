@@ -75,6 +75,14 @@ if (NOT XercesC_FOUND)
         message(STATUS "XercesC_INCLUDE_DIRS: ${XercesC_INCLUDE_DIRS}")
         message(STATUS "XercesC_LIBRARY_DIRS: ${XercesC_LIBRARY_DIRS}")
         message(STATUS "XercesC_LINK_LIBRARIES: ${XercesC_LINK_LIBRARIES}")
+
+        string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" _ "${XercesC_VERSION}")
+        set(XercesC_MAJOR "${CMAKE_MATCH_1}")
+        set(XercesC_MINOR "${CMAKE_MATCH_2}")
+        set(XercesC_PATCH "${CMAKE_MATCH_3}")
+        message(STATUS "XercesC_MAJOR: ${XercesC_MAJOR}")
+        message(STATUS "XercesC_MINOR: ${XercesC_MINOR}")
+        message(STATUS "XercesC_PATCH: ${XercesC_PATCH}")
     
         # For header-only libraries
         if(NOT TARGET XercesC::XercesC)
@@ -83,7 +91,7 @@ if (NOT XercesC_FOUND)
             add_library(XercesC::XercesC INTERFACE IMPORTED)
             target_include_directories(XercesC::XercesC SYSTEM INTERFACE ${XercesC_INCLUDE_DIRS})
             set_target_properties(XercesC::XercesC PROPERTIES INTERFACE_LINK_DIRECTORIES ${XercesC_LIBRARY_DIRS})
-            set_target_properties(XercesC::XercesC PROPERTIES INTERFACE_LINK_LIBRARIES xerces-c)
+            set_target_properties(XercesC::XercesC PROPERTIES INTERFACE_LINK_LIBRARIES xerces-c_${XercesC_MAJOR})
             # For compatibility with FindXercesC.
             set(XercesC_LIBRARIES XercesC::XercesC)
         endif()
