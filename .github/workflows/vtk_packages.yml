@@ -32,6 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
+          sudo apt-get install -qy libjpeg-dev libpng-dev libtiff-dev libhdf5-dev libtbb-dev
           
       - name: Set up Python version
         run: |

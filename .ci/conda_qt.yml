@@ -4,5 +4,9 @@ channels:
 dependencies:
   - python=3.8
   - ninja
+  - eigen=3.4.*
   - boost=1.84.*
   - qt=5.15.*
+  - zlib=1.2.*
+  - ffmpeg=6.1.*
+  - laszip
