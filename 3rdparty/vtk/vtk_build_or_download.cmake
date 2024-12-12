@@ -115,7 +115,7 @@ if(BUILD_VTK_FROM_SOURCE)
     )
 
     ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
-    set(VTK_LIB_DIR ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
+    set(VTK_LIBRARIES_DIRS ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
     set(VTK_INCLUDE_DIRS "${INSTALL_DIR}/include/vtk-${VTK_VERSION}/")
 
 else() #### download prebuilt vtk
@@ -130,25 +130,25 @@ else() #### download prebuilt vtk
         message(FATAL "No precompiled vtk for platform. Enable BUILD_VTK_FROM_SOURCE")
     elseif(APPLE)
         set(VTK_URL
-            https://github.com/isl-org/open3d_downloads/releases/download/vtk/vtk_${VTK_VERSION}_macos_10.15.tar.gz
+            https://github.com/Asher-1/cloudViewer_downloads/releases/download/vtk/vtk_${VTK_VERSION}_macos_12.6.tar.gz
         )
-        set(VTK_SHA256 a93579d1f135abb9e0ebfe774f46c22cfd7e88ee61cb1aba16ef83a5402ed918)
+        set(VTK_SHA256 3f549a082be9a361bf056db5840148501cae543bcf1f9ae3fb123cfd28a8e73c)
     elseif(UNIX)
         set(VTK_URL
-            https://github.com/isl-org/open3d_downloads/releases/download/vtk/vtk_${VTK_VERSION}_linux_x86_64.tar.gz
+            https://github.com/Asher-1/cloudViewer_downloads/releases/download/vtk/vtk_${VTK_VERSION}_linux_x86_64.tar.gz
         )
-        set(VTK_SHA256 28e36654ed18aa9f668a0486a6c3d26a0ca6cf6a593dbd15be4736b40880a82b)
+        set(VTK_SHA256 61cc6a25e9300aa1f3e7ea7aad45615dff63b0faa4bc751cc9dcbd2c5061a526)
     elseif(WIN32)
         if (STATIC_WINDOWS_RUNTIME)
             set(VTK_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/vtk/vtk_${VTK_VERSION}_win_staticrt.tar.gz
+                https://github.com/Asher-1/cloudViewer_downloads/releases/download/vtk/vtk_${VTK_VERSION}_win_staticrt_static.tar.gz
             )
-            set(VTK_SHA256 4a6e2d00652dc86a3bea774060eaad643424800fe2cf369d325ebaaa49693c95)
+            set(VTK_SHA256 86d9ec45505daa8b7ad8c2533274692ddf84573cee247c79e227c42e64afa8f2)
         else()
             set(VTK_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/vtk/vtk_${VTK_VERSION}_win.tar.gz
+                https://github.com/Asher-1/cloudViewer_downloads/releases/download/vtk/vtk_${VTK_VERSION}_win_shared.tar.gz
             )
-            set(VTK_SHA256 6ee09115d23ec18d6d01d1e4c89fa236ec69406d8ba8cc1b8ec37c4123b93caa)
+            set(VTK_SHA256 79d5f360b580335e95ec866e08f77b41ba3a93b6d13d27251256c1bfe3e63cf1)
         endif()
     else()
         message(FATAL "Unsupported platform")
@@ -169,7 +169,15 @@ else() #### download prebuilt vtk
     )
 
     ExternalProject_Get_Property(ext_vtk SOURCE_DIR)
-    set(VTK_LIB_DIR "${SOURCE_DIR}/lib")
+    set(VTK_LIBRARIES_DIRS "${SOURCE_DIR}/${CloudViewer_INSTALL_LIB_DIR}")
     set(VTK_INCLUDE_DIRS "${SOURCE_DIR}/include/vtk-${VTK_VERSION}/")
+    set(VTK_DIR ${SOURCE_DIR}/lib/cmake/vtk-${VTK_MAJOR_VERSION})
+    set(VTK_CMAKE_FLAGS -DVTK_DIR=${SOURCE_DIR}/lib/cmake/vtk-${VTK_VERSION})
+    set(VTK_BINARY_DIR "${SOURCE_DIR}/bin")
+    if (WIN32)
+        copy_shared_library(ext_vtk
+                            LIB_DIR   ${VTK_BINARY_DIR}
+                            LIBRARIES ${VTK_LIBRARIES})
+    endif()
 
 endif() # BUILD_VTK_FROM_SOURCE

@@ -2,6 +2,8 @@
 
 # if cmd: powershell -ExecutionPolicy Bypass -File "utils\ci_utils.ps1"
 
+# $ErrorActionPreference = "Stop"
+
 $env:GENERATOR = "Visual Studio 16 2019"
 $env:ARCHITECTURE = "x64"
 $env:STATIC_RUNTIME = "OFF"

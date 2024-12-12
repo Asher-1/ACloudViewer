@@ -50,6 +50,7 @@ function(cloudViewer_print_configuration_summary)
     message(STATUS "========================================================================")
     message(STATUS "Third-Party Dependencies:")
     set(3RDPARTY_DEPENDENCIES
+            Assimp
             Opencv
             Eigen3
             BLAS
@@ -62,6 +63,8 @@ function(cloudViewer_print_configuration_summary)
             JPEG
             jsoncpp
             liblzf
+            msgpack
+            nanoflann
             OpenGL
             PNG
             qhullcpp
@@ -70,7 +73,10 @@ function(cloudViewer_print_configuration_summary)
             tinyfiledialogs
             TinyGLTF
             tinyobjloader
+            VTK
+            PCL
             WebRTC
+            ZeroMQ
             )
 
     foreach (dep IN LISTS 3RDPARTY_DEPENDENCIES)

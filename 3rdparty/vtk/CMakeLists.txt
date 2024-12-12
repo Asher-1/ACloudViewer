@@ -90,7 +90,7 @@ set(CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR "${PROJECT_SOURCE_DIR}/../../3rdparty_d
 set(CloudViewer_INSTALL_LIB_DIR lib)
 
 set(BUILD_VTK_FROM_SOURCE ON)
-include(vtk_build_with_qt.cmake)
+include(vtk_build_or_download.cmake)
 
 if(LINUX_AARCH64)
     set(ARCHIVE_SUFFIX "_linux_aarch64")
