@@ -139,7 +139,12 @@
 		"__locale": "cpp",
 		"__node_handle": "cpp",
 		"__verbose_abort": "cpp",
-		"print": "cpp"
+		"print": "cpp",
+		"kroneckerproduct": "cpp",
+		"mprealsupport": "cpp",
+		"numericaldiff": "cpp",
+		"openglsupport": "cpp",
+		"splines": "cpp"
 	},
 	"python.languageServer": "Default"
 }

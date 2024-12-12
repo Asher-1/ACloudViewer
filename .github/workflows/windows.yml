@@ -323,6 +323,9 @@ jobs:
           echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $NVTOOLSEXT_PATH = "C:\Program Files\NVIDIA Corporation\NvToolsExt\bin\x64"
+          echo "$NVTOOLSEXT_PATH" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "PATH=$NVTOOLSEXT_PATH;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Checkout source code
         uses: actions/checkout@v4

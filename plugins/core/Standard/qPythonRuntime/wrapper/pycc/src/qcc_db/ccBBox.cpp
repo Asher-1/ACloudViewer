@@ -27,7 +27,7 @@ using namespace pybind11::literals;
 
 void define_ccBBox(py::module &m)
 {
-    py::class_<ccBBox, cloudViewer::BoundingBox>(m, "ccBBox")
+    py::class_<ccBBox, ccHObject, cloudViewer::BoundingBox>(m, "ccBBox")
         .def(py::init<>())
         .def(py::init<const CCVector3 &, const CCVector3 &, const std::string &>(),
              "bbMinCorner"_a,

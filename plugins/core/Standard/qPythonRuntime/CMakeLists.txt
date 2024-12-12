@@ -46,7 +46,7 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
   add_subdirectory(docs)
 
   if(WIN32)
-    add_subdirectory(installer)
+    # add_subdirectory(installer)
     manage_windows_install()
   elseif(UNIX AND NOT APPLE)
     if(NOT PLUGIN_PYTHON_USE_EMBEDDED_MODULES)
