@@ -65,42 +65,7 @@ if ( E57_BUILDING_SELF )
 endif()
 
 find_package( Threads REQUIRED )
-find_package( XercesC QUIET )
-if (NOT XercesC_FOUND)
-    find_package(PkgConfig REQUIRED)
-    # pkg_check_modules(XercesC REQUIRED xerces-c)
-    pkg_search_module(XercesC REQUIRED xerces-c)
-    if(XercesC_FOUND)
-        message(STATUS "XercesC_VERSION: ${XercesC_VERSION}")
-        message(STATUS "XercesC_INCLUDE_DIRS: ${XercesC_INCLUDE_DIRS}")
-        message(STATUS "XercesC_LIBRARY_DIRS: ${XercesC_LIBRARY_DIRS}")
-        message(STATUS "XercesC_LINK_LIBRARIES: ${XercesC_LINK_LIBRARIES}")
-
-        string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" _ "${XercesC_VERSION}")
-        set(XercesC_MAJOR "${CMAKE_MATCH_1}")
-        set(XercesC_MINOR "${CMAKE_MATCH_2}")
-        set(XercesC_PATCH "${CMAKE_MATCH_3}")
-        message(STATUS "XercesC_MAJOR: ${XercesC_MAJOR}")
-        message(STATUS "XercesC_MINOR: ${XercesC_MINOR}")
-        message(STATUS "XercesC_PATCH: ${XercesC_PATCH}")
-    
-        # For header-only libraries
-        if(NOT TARGET XercesC::XercesC)
-            # add_library(XercesC::XercesC SHARED IMPORTED)
-            # add_library(XercesC::XercesC ALIAS ${XercesC_LIBRARIES})
-            add_library(XercesC::XercesC INTERFACE IMPORTED)
-            target_include_directories(XercesC::XercesC SYSTEM INTERFACE ${XercesC_INCLUDE_DIRS})
-            set_target_properties(XercesC::XercesC PROPERTIES INTERFACE_LINK_DIRECTORIES ${XercesC_LIBRARY_DIRS})
-            set_target_properties(XercesC::XercesC PROPERTIES INTERFACE_LINK_LIBRARIES xerces-c_${XercesC_MAJOR})
-            # For compatibility with FindXercesC.
-            set(XercesC_LIBRARIES XercesC::XercesC)
-        endif()
-    else ()
-        message(FATAL_ERROR "Failed to find XercesC")
-    endif ()
-else ()
-    message(STATUS "Found XercesC: ${XercesC_INCLUDE_DIRS}, ${XercesC_LIBRARIES}")
-endif ()
+find_package( XercesC REQUIRED )
 
 option( E57_BUILD_SHARED
 	"Compile E57Format as a shared library"
