@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BUILD_SHARED_LIBS: [ON, OFF]
+        BUILD_SHARED_LIBS: [OFF]
         include:
           # - BUILD_SHARED_LIBS: ON
           #   ARCHIVE_SUFFIX: "shared"
@@ -83,6 +83,7 @@ jobs:
             STATIC_RUNTIME: OFF
           - configuration: staticrt
             STATIC_RUNTIME: ON
+            BUILD_SHARED_LIBS: OFF
           - BUILD_SHARED_LIBS: ON
             ARCHIVE_SUFFIX: "shared"
           - BUILD_SHARED_LIBS: OFF
@@ -144,7 +145,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BUILD_SHARED_LIBS: [ON, OFF]
+        BUILD_SHARED_LIBS: [OFF]
         include:
           # - BUILD_SHARED_LIBS: ON
           #   ARCHIVE_SUFFIX: "shared"
