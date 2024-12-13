@@ -321,6 +321,7 @@ jobs:
           echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
           $NVTOOLSEXT_PATH = "C:\Program Files\NVIDIA Corporation\NvToolsExt"
           $NVTOOLSEXT_INCLUDE_DIR = "$NVTOOLSEXT_PATH\include"
           $NVTOOLSEXT_LIBRARY = "$NVTOOLSEXT_PATH\lib\x64\nvToolsExt64_1.lib"
@@ -328,6 +329,10 @@ jobs:
           echo "$NVTOOLSEXT_INCLUDE_DIR" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "$NVTOOLSEXT_LIBRARY" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "PATH=$NVTOOLSEXT_PATH;$NVTOOLSEXT_INCLUDE_DIR;$NVTOOLSEXT_LIBRARY;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          Get-ChildItem -Path $NVTOOLSEXT_PATH
+          Get-ChildItem -Path $NVTOOLSEXT_INCLUDE_DIR
+          Get-ChildItem -Path $NVTOOLSEXT_LIBRARY
 
       - name: Checkout source code
         uses: actions/checkout@v4

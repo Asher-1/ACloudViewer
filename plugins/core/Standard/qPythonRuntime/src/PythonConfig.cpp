@@ -186,17 +186,13 @@ static QString PathToPythonExecutableInEnv(PythonConfig::Type envType, const QSt
 
 void PythonConfig::initDefault()
 {
+#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
     m_type = Type::System;
-    // #if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
-    //     initBundled();
-    // #else
-    //     // On Non windows platform
-    //     // We do nothing, and rely on system's python installation
-    //     m_type = Type::System;
-    // #endif
+#else
+    m_type = Type::Bundled;
+#endif
 }
 
-// #if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
 void PythonConfig::initBundled()
 {
 #if defined(Q_OS_MACOS)
@@ -206,7 +202,6 @@ void PythonConfig::initBundled()
 #endif
     initFromLocation(pythonEnvDirPath);
 }
-// #endif
 
 void PythonConfig::initFromLocation(const QString &prefix)
 {
@@ -251,7 +246,7 @@ void PythonConfig::initFromLocation(const QString &prefix)
         }
     }
     else
-#if defined(Q_OS_MACOS)
+#if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
     {
         QString pythonExePath = PathToPythonExecutableInEnv(Type::Bundled, prefix);
         initFromPythonExecutable(pythonExePath);
