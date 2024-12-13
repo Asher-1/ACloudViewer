@@ -154,11 +154,9 @@ class PythonConfig final
     /// # Other Platforms
     /// Does nothing, as we rely on the system's python to be properly installed
     void initDefault();
-// #if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
     /// Initialize the paths to point to where the Python
     /// environment was bundled on installation
     void initBundled();
-// #endif
     /// Initialize from the path to an environment.
     /// Will try to guess if the environment is a conda env
     /// or a python venv

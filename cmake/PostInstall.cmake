@@ -132,6 +132,14 @@ elseif (WIN32)
         USE_SOURCE_PERMISSIONS
         )
 
+    if (${PLUGIN_PYTHON} STREQUAL "ON")
+        file(COPY 
+            "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/plugins-python"
+            DESTINATION "${MAIN_DEPLOY_PATH}"
+            USE_SOURCE_PERMISSIONS
+        )
+    endif()
+
     # prepare search path for powershell
     set(EXTERNAL_DLL_DIR ${EXTERNAL_INSTALL_DIRS} ${CONDA_PREFIX}/Library/bin)
     message(STATUS "Start search dependency from path: ${EXTERNAL_DLL_DIR}")

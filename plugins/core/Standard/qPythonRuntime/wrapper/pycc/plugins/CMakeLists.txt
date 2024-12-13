@@ -31,9 +31,9 @@ elseif(UNIX)
       "${CMAKE_INSTALL_PREFIX}/plugins-python"
   )
 elseif(WIN32)
-  set(INSTALL_PLUGINS_PATH "${ACloudViewer_DEST_FOLDER}/${MAIN_APP_NAME}/plugins")
+  set(INSTALL_PLUGINS_PATH "${INSTALL_DESTINATIONS}/plugins")
   set(INSTALL_PLUGINS_WRAPPERS_PATH
-      "${ACloudViewer_DEST_FOLDER}/${MAIN_APP_NAME}/plugins-python"
+      "${INSTALL_DESTINATIONS}/plugins-python"
   )
 endif()
 

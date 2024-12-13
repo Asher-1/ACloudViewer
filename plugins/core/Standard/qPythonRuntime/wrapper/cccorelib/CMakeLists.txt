@@ -14,7 +14,6 @@ endif()
 
 function(embed_cvcorelib_in target)
   target_sources(${target} PRIVATE ${cvcorelib_sources})
-  target_link_libraries(${target} CVCoreLib)
 endfunction(embed_cvcorelib_in)
 
 # Cache variables so embed_cvcorelib_in can be used in parent projects

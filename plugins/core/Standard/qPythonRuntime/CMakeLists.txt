@@ -34,7 +34,9 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
 
   if(PLUGIN_PYTHON_USE_EMBEDDED_MODULES)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_EMBEDDED_MODULES)
-
+    if (WIN32) # fix duplicated defined issues in windows
+      target_link_options(${PROJECT_NAME} PUBLIC "/force:multiple")
+    endif ()
     embed_cvcorelib_in(${PROJECT_NAME})
     embed_pycc_in(${PROJECT_NAME})
   endif()
