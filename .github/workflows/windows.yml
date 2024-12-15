@@ -322,6 +322,8 @@ jobs:
           echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
+          Get-ChildItem -Path "$CUDA_PATH" -Recurse
+
           $NVTOOLSEXT_PATH = "C:\Program Files\NVIDIA Corporation\NvToolsExt"
           $NVTOOLSEXT_INCLUDE_DIR = "$NVTOOLSEXT_PATH\include"
           $NVTOOLSEXT_LIBRARY = "$NVTOOLSEXT_PATH\lib\x64\nvToolsExt64_1.lib"
@@ -330,9 +332,21 @@ jobs:
           echo "$NVTOOLSEXT_LIBRARY" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "PATH=$NVTOOLSEXT_PATH;$NVTOOLSEXT_INCLUDE_DIR;$NVTOOLSEXT_LIBRARY;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-          Get-ChildItem -Path $NVTOOLSEXT_PATH
-          Get-ChildItem -Path $NVTOOLSEXT_INCLUDE_DIR
-          Get-ChildItem -Path $NVTOOLSEXT_LIBRARY
+          if (Test-Path -Path $NVTOOLSEXT_PATH) {
+              Get-ChildItem -Path $NVTOOLSEXT_PATH
+          } else {
+              Write-Host "$NVTOOLSEXT_PATH does not exist"
+          }
+          if (Test-Path -Path $NVTOOLSEXT_INCLUDE_DIR) {
+              Get-ChildItem -Path $NVTOOLSEXT_INCLUDE_DIR
+          } else {
+              Write-Host "$NVTOOLSEXT_INCLUDE_DIR does not exist"
+          }
+          if (Test-Path -Path $NVTOOLSEXT_LIBRARY) {
+              Get-ChildItem -Path $NVTOOLSEXT_LIBRARY
+          } else {
+              Write-Host "$NVTOOLSEXT_LIBRARY does not exist"
+          }
 
       - name: Checkout source code
         uses: actions/checkout@v4
