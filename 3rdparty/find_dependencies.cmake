@@ -656,15 +656,27 @@ find_package_3rdparty_library(3rdparty_threads
 list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES "Threads")
 
 # Assimp
-include(${CloudViewer_3RDPARTY_DIR}/assimp/assimp.cmake)
-import_3rdparty_library(3rdparty_assimp
+if(USE_SYSTEM_ASSIMP)
+    find_package_3rdparty_library(3rdparty_assimp
+        PACKAGE assimp
+        TARGETS assimp::assimp
+    )
+    if(NOT 3rdparty_assimp_FOUND)
+        set(USE_SYSTEM_ASSIMP OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_ASSIMP)
+    include(${CloudViewer_3RDPARTY_DIR}/assimp/assimp.cmake)
+    import_3rdparty_library(3rdparty_assimp
         INCLUDE_DIRS ${ASSIMP_INCLUDE_DIR}
-        LIB_DIR ${ASSIMP_LIB_DIR}
-        LIBRARIES ${ASSIMP_LIBRARIES}
-        DEPENDS ext_assimp
-        )
-
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_assimp)
+        LIB_DIR      ${ASSIMP_LIB_DIR}
+        LIBRARIES    ${ASSIMP_LIBRARIES}
+        DEPENDS      ext_assimp
+    )
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_assimp)
+else()
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_assimp)
+endif()
 
 # OpenMP
 if (WITH_OPENMP)
@@ -1511,18 +1523,31 @@ list(APPEND CloudViewer_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM 3rdparty_opengl)
 
 # RPC interface
 # zeromq
-include(${CloudViewer_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
-import_3rdparty_library(3rdparty_zeromq
+if(USE_SYSTEM_ZEROMQ)
+    opkg_config_3rdparty_library(3rdparty_zeromq SEARCH_ARGS libzmq)
+    if(NOT 3rdparty_zeromq_FOUND)
+        set(USE_USE_SYSTEM_ZEROMQ OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_ZEROMQ)
+    include(${CloudViewer_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
+    import_3rdparty_library(3rdparty_zeromq
         HIDDEN
         INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS}
-        LIB_DIR ${ZEROMQ_LIB_DIR}
-        LIBRARIES ${ZEROMQ_LIBRARIES}
-        DEPENDS ext_zeromq ext_cppzmq
-        )
-list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_zeromq)
-if (DEFINED ZEROMQ_ADDITIONAL_LIBS)
-    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM ${ZEROMQ_ADDITIONAL_LIBS})
-endif ()
+        LIB_DIR      ${ZEROMQ_LIB_DIR}
+        LIBRARIES    ${ZEROMQ_LIBRARIES}
+        DEPENDS      ext_zeromq ext_cppzmq
+    )
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_zeromq)
+    if(DEFINED ZEROMQ_ADDITIONAL_LIBS)
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM ${ZEROMQ_ADDITIONAL_LIBS})
+    endif()
+else()
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_zeromq)
+    if(DEFINED ZEROMQ_ADDITIONAL_LIBS)
+        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM ${ZEROMQ_ADDITIONAL_LIBS})
+    endif()
+endif()
 
 # msgpack
 include(${CloudViewer_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
@@ -2144,14 +2169,22 @@ if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
                  filesystem
                  iostreams)
 
-    include(${CloudViewer_3RDPARTY_DIR}/vtk/vtk.cmake)
+    if (BUILD_VTK_FROM_SOURCE) # Note: building very slow
+        message(STATUS "Building vtk from source")
+        include(${CloudViewer_3RDPARTY_DIR}/vtk/vtk.cmake)
+    else ()
+        message(STATUS "Using pre-build vtk")
+        include(${CloudViewer_3RDPARTY_DIR}/vtk/vtk_build_or_download.cmake)
+    endif ()
     import_3rdparty_library(3rdparty_vtk
         INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
         LIB_DIR ${VTK_LIBRARIES_DIRS}
         LIBRARIES ${VTK_LIBRARIES}
         DEPENDS ext_vtk
     )
-    set(VTK_TARGET "3rdparty_vtk")
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
+    endif()
 
     include(${CloudViewer_3RDPARTY_DIR}/pcl/pcl_build.cmake)
     import_3rdparty_library(3rdparty_pcl
@@ -2175,7 +2208,7 @@ if (NOT USE_SYSTEM_VTK AND NOT USE_SYSTEM_PCL)
         message(STATUS "QHULL_ROOT: ${QHULL_ROOT}")
         target_link_libraries(3rdparty_pcl INTERFACE QHULL::QHULL)
     endif()
-
+    # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_vtk)
     # list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_pcl)
 else()
     set(3rdparty_vtk "")

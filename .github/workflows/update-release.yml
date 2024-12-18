@@ -18,7 +18,8 @@ jobs:
       - name: Clean old release assets
         run: |
           # Total assets from each main branch commmit:
-          # Python wheels (3x5++5) + Viewer (4+1+2) = 32,
+          # Macos -> Ubuntu -> Windows
+          # Python wheels (3x5+2x5+2x5) + Viewer (2+4+2) = 43
           release_assets=($(gh release view main-devel --json assets --jq '.assets[] | .name'))
           last_shas=($(git log --pretty=format:%h --abbrev-commit -n 3))
           echo "Removing release assets except from last 3 commits: ${last_shas[@]}"

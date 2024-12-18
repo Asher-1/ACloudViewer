@@ -42,23 +42,19 @@ using namespace cloudViewer;
 void RegistrationTools::FilterTransformation(
         const ScaledTransformation& inTrans,
         int filters,
+        const CCVector3& toBeAlignedGravityCenter,
+        const CCVector3& referenceGravityCenter,
         ScaledTransformation& outTrans) {
     outTrans = inTrans;
 
-    // filter translation
-    if (filters & SKIP_TRANSLATION) {
-        if (filters & SKIP_TX) outTrans.T.x = 0;
-        if (filters & SKIP_TY) outTrans.T.y = 0;
-        if (filters & SKIP_TZ) outTrans.T.z = 0;
-    }
-
     // filter rotation
-    if (inTrans.R.isValid() && (filters & SKIP_ROTATION)) {
-        const cloudViewer::SquareMatrix R(
-                inTrans.R);  // copy it in case inTrans and outTrans are the
-                             // same!
+    int rotationFilter = (filters & SKIP_ROTATION);
+    if (inTrans.R.isValid() && (rotationFilter != 0)) {
+        const SquareMatrix R(inTrans.R);  // copy it in case inTrans and
+                                          // outTrans are the same!
         outTrans.R.toIdentity();
-        if (filters & SKIP_RYZ)  // keep only the rotation component around X
+        if (rotationFilter ==
+            SKIP_RYZ)  // keep only the rotation component around X
         {
             // we use a specific Euler angles convention here
             if (R.getValue(0, 2) < 1.0) {
@@ -76,7 +72,7 @@ void RegistrationTools::FilterTransformation(
             } else {
                 // simpler/faster to ignore this (very) specific case!
             }
-        } else if (filters &
+        } else if (rotationFilter ==
                    SKIP_RXZ)  // keep only the rotation component around Y
         {
             // we use a specific Euler angles convention here
@@ -95,7 +91,7 @@ void RegistrationTools::FilterTransformation(
             } else {
                 // simpler/faster to ignore this (very) specific case!
             }
-        } else if (filters &
+        } else if (rotationFilter ==
                    SKIP_RXY)  // keep only the rotation component around Z
         {
             // we use a specific Euler angles convention here
@@ -115,7 +111,23 @@ void RegistrationTools::FilterTransformation(
             } else {
                 // simpler/faster to ignore this (very) specific case!
             }
+        } else {
+            // we ignore all rotation components
         }
+
+        // fix the translation to compensate for the change of the rotation
+        // matrix
+        CCVector3d alignedGravityCenter =
+                outTrans.apply(toBeAlignedGravityCenter.toDouble());
+        outTrans.T +=
+                (referenceGravityCenter.toDouble() - alignedGravityCenter);
+    }
+
+    // filter translation
+    if (filters & SKIP_TRANSLATION) {
+        if (filters & SKIP_TX) outTrans.T.x = 0;
+        if (filters & SKIP_TY) outTrans.T.y = 0;
+        if (filters & SKIP_TZ) outTrans.T.z = 0;
     }
 }
 
@@ -703,13 +715,15 @@ ICPRegistrationTools::RESULT_TYPE ICPRegistrationTools::Register(
 
         // single iteration of the registration procedure
         currentTrans = ScaledTransformation();
+        CCVector3 dataGravityCenter, modelGravityCenter;
         if (!RegistrationTools::RegistrationProcedure(
                     data.cloud,
                     data.CPSetRef ? static_cast<cloudViewer::GenericCloud*>(
                                             data.CPSetRef)
                                   : static_cast<cloudViewer::GenericCloud*>(
                                             data.CPSetPlain),
-                    currentTrans, params.adjustScale, coupleWeights)) {
+                    currentTrans, params.adjustScale, coupleWeights, PC_ONE,
+                    &dataGravityCenter, &modelGravityCenter)) {
             result = ICP_ERROR_REGISTRATION_STEP;
             break;
         }
@@ -729,6 +743,7 @@ ICPRegistrationTools::RESULT_TYPE ICPRegistrationTools::Register(
         if (params.transformationFilters != SKIP_NONE) {
             // filter translation (in place)
             FilterTransformation(currentTrans, params.transformationFilters,
+                                 dataGravityCenter, modelGravityCenter,
                                  currentTrans);
         }
 
@@ -848,7 +863,9 @@ bool RegistrationTools::RegistrationProcedure(
         ScaledTransformation& trans,
         bool adjustScale /*=false*/,
         ScalarField* coupleWeights /*=0*/,
-        PointCoordinateType aPrioriScale /*=1.0f*/) {
+        PointCoordinateType aPrioriScale /*=1.0f*/,
+        CCVector3* _Gp /*=nullptr*/,
+        CCVector3* _Gx /*=nullptr*/) {
     // resulting transformation (R is invalid on initialization, T is (0,0,0)
     // and s==1)
     trans.R.invalidate();
@@ -1105,8 +1122,11 @@ bool RegistrationTools::RegistrationProcedure(
             for (unsigned i = 0; i < count; ++i) {
                 //'a' refers to the data 'A' (moving) = P
                 //'b' refers to the model 'B' (not moving) = X
-                CCVector3d a_tilde = trans.R * (*(P->getNextPoint()) - Gp);	// a_tilde_i = R * (a_i - a_mean)
-                CCVector3d b_tilde = (*(X->getNextPoint()) - Gx);		// b_tilde_j =     (b_j - b_mean)
+                CCVector3d a_tilde =
+                        trans.R * (*(P->getNextPoint()) -
+                                   Gp);  // a_tilde_i = R * (a_i - a_mean)
+                CCVector3d b_tilde = (*(X->getNextPoint()) -
+                                      Gx);  // b_tilde_j =     (b_j - b_mean)
 
                 acc_num += b_tilde.dot(a_tilde);
                 acc_denom += a_tilde.dot(a_tilde);
@@ -1121,7 +1141,7 @@ bool RegistrationTools::RegistrationProcedure(
 
         // and we deduce the translation
         // #26 in besl paper, modified with the scale as in jschmidt
-        trans.T = Gx.toDouble() - (trans.R*Gp) * (aPrioriScale*trans.s);
+        trans.T = Gx.toDouble() - (trans.R * Gp) * (aPrioriScale * trans.s);
     }
 
     return true;

@@ -1324,7 +1324,18 @@ public:
     /** \param coef scaling coef.
      **/
     inline void scale(T coef) {
-        for (auto& cell : m_mat) cell *= coef;
+        CC_MAT_R11 *= coef;
+        CC_MAT_R12 *= coef;
+        CC_MAT_R13 *= coef;
+        CC_MAT_R14 *= coef;
+        CC_MAT_R21 *= coef;
+        CC_MAT_R22 *= coef;
+        CC_MAT_R23 *= coef;
+        CC_MAT_R24 *= coef;
+        CC_MAT_R31 *= coef;
+        CC_MAT_R32 *= coef;
+        CC_MAT_R33 *= coef;
+        CC_MAT_R34 *= coef;
     }
 
     //! Scales one line of the matrix
@@ -1339,6 +1350,33 @@ public:
         m_mat[12 + lineIndex] *= coef;
     }
 
+    //! Scales the rotation part of the matrix
+    /**	\param coef scaling coef.
+     **/
+    inline void scaleRotation(T coef) {
+        CC_MAT_R11 *= coef;
+        CC_MAT_R12 *= coef;
+        CC_MAT_R13 *= coef;
+        CC_MAT_R21 *= coef;
+        CC_MAT_R22 *= coef;
+        CC_MAT_R23 *= coef;
+        CC_MAT_R31 *= coef;
+        CC_MAT_R32 *= coef;
+        CC_MAT_R33 *= coef;
+    }
+
+    //! Scales one row of the matrix
+    /** \param rowIndex tow index (0-3)
+            \param coef scaling coef.
+    **/
+    void scaleRow(unsigned rowIndex, T coef) {
+        assert(rowIndex < 4);
+        m_mat[rowIndex] *= coef;
+        m_mat[4 + rowIndex] *= coef;
+        m_mat[8 + rowIndex] *= coef;
+        m_mat[12 + rowIndex] *= coef;
+    }
+
     //! Scales one column of the matrix
     /** \param colIndex (0-3)
             \param coef scaling coef.
@@ -1349,7 +1387,7 @@ public:
         col[0] *= coef;
         col[1] *= coef;
         col[2] *= coef;
-        col[3] *= coef;
+        // col[3] *= coef;
     }
 
     // inherited from ccSerializableObject

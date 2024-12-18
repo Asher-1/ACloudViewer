@@ -59,7 +59,10 @@ class CCAppBundleConfig:
         self.cv_plugin_path = self.bundle_abs_path / "Contents" / "cvPlugins"
 
         # If we want to embed Python we populate the needed variables
-        self.embed_python = embed_python
+        if "ACloudViewer" == app_name:
+            self.embed_python = embed_python
+        else:
+            self.embed_python = False
         if embed_python:
             self._query_python()
             self.embedded_python_rootpath = self.bundle_abs_path / "Contents" / "Resources" / "python"
@@ -75,6 +78,7 @@ class CCAppBundleConfig:
         res = (
             f"--- Frameworks path: {self.frameworks_path} \n"
             f" --- plugin path: {self.plugin_path} \n"
+            f" --- cv_plugin path: {self.cv_plugin_path} \n"
             f" --- embeddedPythonPath: {self.embedded_python_path} \n"
             f" --- embeddedPython:  {self.embedded_python_binary} \n"
             f" --- embeddedPythonLibPath: {self.embedded_python_libpath} \n"
@@ -100,6 +104,17 @@ class CCBundler:
     def __init__(self, config: CCAppBundleConfig) -> None:
         """Construct a CCBundler object"""
         self.config = config
+        
+    @staticmethod
+    def create_symlink(source: str, target: str, working_directory: Path):
+        try:
+            original_directory = os.getcwd()
+            os.chdir(working_directory)
+            os.symlink(source, target)
+            os.chdir(original_directory)
+            print(f"symlink created：{target} -> {source}")
+        except OSError as e:
+            print(f"Failed to create symlink: {e}")
 
     def bundle(self) -> None:
         """Bundle the dependencies into the .app"""
@@ -251,6 +266,12 @@ class CCBundler:
         """
         logger.info("Python: copy distribution in package")
         try:
+            if self.config.embedded_python_path.exists():
+                print(f"Start to remvoe old bundle python binary path: {self.config.embedded_python_path}")
+                shutil.rmtree(self.config.embedded_python_path)
+            if self.config.embedded_python_libpath.exists():
+                print(f"Start to remvoe old bundle python libpath: {self.config.embedded_python_libpath}")
+                shutil.rmtree(self.config.embedded_python_libpath)
             self.config.embedded_python_path.mkdir(parents=True)
             self.config.embedded_python_libpath.mkdir()
         except OSError:
@@ -259,6 +280,8 @@ class CCBundler:
             )
             sys.exit(1)
         shutil.copytree(self.config.base_python_libs, self.config.embedded_python_lib)
+        python_version_name = self.config.embedded_python_lib.name
+        CCBundler.create_symlink(f"{python_version_name}/site-packages", "site-packages", self.config.embedded_python_libpath)
         shutil.copy2(self.config.base_python_binary, self.config.embedded_python_binary)
 
     def _embed_python(self) -> None:

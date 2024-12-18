@@ -1254,8 +1254,9 @@ bool ccPointPairRegistrationDlg::callHornRegistration(
             filters |= cloudViewer::RegistrationTools::SKIP_TZ;
 
         if (filters != 0) {
-            cloudViewer::RegistrationTools::FilterTransformation(trans, filters,
-                                                                 trans);
+            cloudViewer::RegistrationTools::FilterTransformation(
+                    trans, filters, m_alignedPoints.computeGravityCenter(),
+                    m_refPoints.computeGravityCenter(), trans);
         }
     }
 

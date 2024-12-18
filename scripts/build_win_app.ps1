@@ -9,15 +9,35 @@ param (
 $ErrorActionPreference = "Stop"
 
 $env:PYTHON_VERSION = $PythonVersion
-$env:ACloudViewer_INSTALL = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")
 $env:ENV_NAME = "cloudViewer"
-
+$env:CLOUDVIEWER_INSTALL_DIR = [System.IO.Path]::GetFullPath("$ACloudViewerInstall")
 $env:NPROC = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-Write-Host "ACloudViewer_INSTALL: $env:ACloudViewer_INSTALL"
+Write-Host "CLOUDVIEWER_INSTALL_DIR: $env:CLOUDVIEWER_INSTALL_DIR"
 Write-Host "ENV_NAME: $env:ENV_NAME"
 Write-Host "nproc = $env:NPROC"
 
-$CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
+# setting env
+if (-not [string]::IsNullOrEmpty($env:BUILD_CUDA_MODULE)) {
+    $env:BUILD_CUDA_MODULE = $env:BUILD_CUDA_MODULE
+} else {
+    $cudaPath = [System.Environment]::GetEnvironmentVariable("CUDA_PATH")
+    if (-not [string]::IsNullOrEmpty($cudaPath)) {
+        Write-Output "CUDA toolkits path: $cudaPath"
+        try {
+            $nvccVersion = & nvcc --version
+            Write-Output "nvcc version: $nvccVersion"
+            $env:BUILD_CUDA_MODULE = "ON"
+        } catch {
+            Write-Output "Cannot find nvcc."
+            $env:BUILD_CUDA_MODULE = "OFF"
+        }
+    } else {
+        Write-Output "CUDA toolkits not found."
+        $env:BUILD_CUDA_MODULE = "OFF"
+    }
+}
+
+$env:CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 
 if ($env:CONDA_EXE) {
     $env:CONDA_ROOT = (Get-Item (Split-Path -Parent (Split-Path -Parent $env:CONDA_EXE))).FullName
@@ -40,7 +60,7 @@ if ($existingEnv) {
 Write-Host "conda env create and activate..."
 $env:CONDA_PREFIX = Join-Path $env:CONDA_ROOT "envs\$env:ENV_NAME"
 
-Copy-Item (Join-Path $CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows_cloudViewer.yml") -Destination "$env:TEMP\conda_windows_cloudViewer.yml"
+Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows_cloudViewer.yml") -Destination "$env:TEMP\conda_windows_cloudViewer.yml"
 (Get-Content "$env:TEMP\conda_windows_cloudViewer.yml") -replace "3.8", $env:PYTHON_VERSION | Set-Content "$env:TEMP\conda_windows_cloudViewer.yml"
 
 conda env create -f "$env:TEMP\conda_windows_cloudViewer.yml"
@@ -67,19 +87,17 @@ if (-not $env:CONDA_PREFIX) {
 $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
 $env:PATH = "$env:CONDA_PREFIX\Library;$env:CONDA_PREFIX\Library\cmake;$env:PATH"
 
-. (Join-Path $CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
-
 Write-Host "echo Start to build GUI package on Windows..."
-$env:CLOUDVIEWER_SOURCE_ROOT = Split-Path -Parent $PSScriptRoot
-. "$env:CLOUDVIEWER_SOURCE_ROOT\util\ci_utils.ps1"
+. (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
 
 Write-Host "Start to Build cpu only GUI On Windows..."
 Build-GuiApp -options "with_conda","with_pcl_nurbs","package_installer"
+if ($env:BUILD_CUDA_MODULE -eq "ON") {
+    Write-Host "Start to Build cuda version GUI On Windows..."
+    Build-GuiApp -options "with_cuda","with_conda","with_pcl_nurbs","package_installer"
+}
 
-Write-Host "Start to Build cuda version GUI On Windows..."
-Build-GuiApp -options "with_cuda","with_conda","with_pcl_nurbs","package_installer"
-
-Write-Host "Backup whl package to $env:ACloudViewer_INSTALL"
+Write-Host "Backup whl package to $env:CLOUDVIEWER_INSTALL_DIR"
 Write-Host "LASTEXITCODE: $LASTEXITCODE"
 # must do this at the end
 Write-Output "BUILD_COMPLETE"

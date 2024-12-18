@@ -28,7 +28,7 @@
 	the name, authors, maintainers, icon, etc..
 	
 	The one method you are required to implement is 'getActions'. This should
-	return all actions (QAction objects) for the plugin. CloudCompare will
+	return all actions (QAction objects) for the plugin. ACloudViewer will
 	automatically add these with their icons in the plugin toolbar and to the
 	plugin menu. If	your plugin returns	several actions, CC will create a
 	dedicated toolbar and a	sub-menu for your plugin. You are responsible for

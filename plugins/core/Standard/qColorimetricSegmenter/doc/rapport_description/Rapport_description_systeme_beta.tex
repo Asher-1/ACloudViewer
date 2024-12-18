@@ -244,7 +244,8 @@ Notre plugin contient un algorithme de filtrage des points amélioré grâce à 
 Ainsi, pour chaque point, on regarde ses voisins en ne gardant que ses voisins les plus proches (en terme colorimétrique) afin de former une région. L'algorithme complet est décrit dans une publication de l'université de \cite{B01} Whuan. \newline
 
 La segmentation d'un nuage de points de plusieurs millions de points est un procédé coûteux en temps et en espace. En effet, une approche naïve consisterait à copier les points et les ajouter dans des listes correspondant à des régions. Cependant, la recopie d'une telle quantité de points est trop coûteuse. Il convient donc de travailler par référence en manipulant plutôt les index de ces points.
-Afin de réaliser cela, nous utilisons une structure de données fournie par Cloud Compare: le nuage de point par référence (ReferenceCloud). Cette structure se base sur un nuage de point déjà existant et contient un index des points du nuage. On manipule ainsi deux index, un index local (les points du nuage par référence, ajoutés) et un index global (les points du nuage de base). \newline
+Afin de réaliser cela, nous utilisons une structure de données fournie par \bibitem{cc} Présentation de ACloudViewer:
+: le nuage de point par référence (ReferenceCloud). Cette structure se base sur un nuage de point déjà existant et contient un index des points du nuage. On manipule ainsi deux index, un index local (les points du nuage par référence, ajoutés) et un index global (les points du nuage de base). \newline
 
 La recherche des plus proches voisins est également une étape coûteuse en temps. Une autre structure de donnée fournie par CloudCompare fournit les méthodes de recherche du plus proche voisin optimisée pour de multiples appels enchainés. Il s'agit de la structure Octree. Dans cette structure, le nuage est découpé en cellules pouvant se subdiviser en plusieurs autres niveaux de cellules. L'implémentation de cette structure contient la méthode "findNearestNeighborsStartingFromCell", qui réalise la recherche des plus proches voisins dans le nuage à partir d'un point donné. \newline
 
@@ -741,7 +742,8 @@ Comme dit dans précédemment, au vu des défaillances pouvant avoir lieu avec l
 
 \newpage
 \begin{thebibliography}{3}
-	\bibitem{cc} Présentation de Cloud Compare: \url{https://www.danielgm.net/cc/}
+	\bibitem{cc} Présentation de \bibitem{cc} Présentation de ACloudViewer:
+: \url{https://www.danielgm.net/cc/}
 	\bibitem{3DList} Liste regroupant les principales bibliothèques 3D: \url{https://github.com/openMVG/awesome_3DReconstruction_list#mesh-storage-processing}
 	\bibitem{PCL} Présentation de PCL: \url{http://www.pointclouds.org/}
 	\bibitem{CloudViewer} Présentation de CloudViewer: \url{http://www.open3d.org/}

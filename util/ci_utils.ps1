@@ -2,6 +2,8 @@
 
 # if cmd: powershell -ExecutionPolicy Bypass -File "utils\ci_utils.ps1"
 
+# $ErrorActionPreference = "Stop"
+
 $env:GENERATOR = "Visual Studio 16 2019"
 $env:ARCHITECTURE = "x64"
 $env:STATIC_RUNTIME = "OFF"
@@ -12,7 +14,12 @@ $env:NPROC = (Get-CimInstance -ClassName Win32_ComputerSystem).NumberOfLogicalPr
 
 $env:BUILD_RIEGL = "ON"
 $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
-$env:CLOUDVIEWER_INSTALL_DIR = "C:\dev\cloudViewer_install"
+
+if (-not [string]::IsNullOrEmpty($env:CLOUDVIEWER_INSTALL_DIR)) {
+    $env:CLOUDVIEWER_INSTALL_DIR = $env:CLOUDVIEWER_INSTALL_DIR
+} else {
+    $env:CLOUDVIEWER_INSTALL_DIR = "C:\dev\cloudViewer_install"
+}
 
 if ($env:CONDA_PREFIX) {
     Write-Host "Conda env: $env:CONDA_PREFIX is activated."
@@ -38,6 +45,10 @@ $PROTOBUF_VER = "4.24.0"
 
 $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 
+$NVTOOLSEXT_PATH = "C:\Program Files\NVIDIA Corporation\NvToolsExt"
+$NVTOOLSEXT_INCLUDE_DIR = "$NVTOOLSEXT_PATH\include"
+$NVTOOLSEXT_LIBRARY = "$NVTOOLSEXT_PATH\lib\x64\nvToolsExt64_1.lib"
+
 $MAX_RETRIES = 3
 $RETRY_DELAY = 5 # seconds
 function Install-Requirements {
@@ -45,9 +56,7 @@ function Install-Requirements {
         [Parameter(Mandatory=$true)]
         [string]$requirementsFile,
         [Parameter(Mandatory=$false)]
-        [switch]$ForceUpdate,
-        [Parameter(Mandatory=$false)]
-        [string]$speedCmd = ""
+        [switch]$ForceUpdate
     )
 
     $originalErrorActionPreference = $ErrorActionPreference
@@ -69,7 +78,6 @@ function Install-Requirements {
                 $pipArgs = @()
                 if ($ForceUpdate) { $pipArgs += "-U" }
                 $pipArgs += @("-r", $requirementsFile)
-                if ($speedCmd) { $pipArgs += $speedCmd }
                 
                 python -m pip install $pipArgs
                 $success = $true
@@ -98,15 +106,11 @@ function Install-PythonDependencies {
     )
 
     Write-Host "Installing Python dependencies"
-    
-    $SPEED_CMD = if ($options -contains "speedup") {
-        " -i https://pypi.tuna.tsinghua.edu.cn/simple/ --extra-index-url https://pypi.org/simple --extra-index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host pypi.tuna.tsinghua.edu.cn --trusted-host mirrors.aliyun.com"
-    } else { "" }
 
-    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" setuptools=="$STOOLS_VER" $SPEED_CMD
+    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" setuptools=="$STOOLS_VER"
 
     if ($options -contains "with-unit-test") {
-        Install-Requirements -ForceUpdate "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt" $SPEED_CMD
+        Install-Requirements -ForceUpdate "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt"
     }
 
     if ($options -contains "with-cuda") {
@@ -125,27 +129,27 @@ function Install-PythonDependencies {
         $TORCH_GLNX = "torch==${TORCH_VER}+cpu"
     }
 
-    Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt" $SPEED_CMD
+    Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements.txt"
 
     if ($options -contains "with-jupyter") {
-        Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt" $SPEED_CMD
+        Install-Requirements "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     }
 
     if ($options -contains "with-tensorflow") {
         python -m pip uninstall --yes $TF_ARCH_DISABLE_NAME
-        python -m pip install -U "${TF_ARCH_NAME}==${TENSORFLOW_VER}" $SPEED_CMD
+        python -m pip install -U "${TF_ARCH_NAME}==${TENSORFLOW_VER}"
     }
 
     if ($options -contains "with-torch") {
-        python -m pip install -U $TORCH_GLNX -f $TORCH_REPO_URL tensorboard $SPEED_CMD
+        python -m pip install -U $TORCH_GLNX -f $TORCH_REPO_URL tensorboard
     }
 
     if ($options -contains "with-torch" -or $options -contains "with-tensorflow") {
-        python -m pip install -U yapf=="$YAPF_VER" $SPEED_CMD
-        # python -m pip install -U protobuf=="$PROTOBUF_VER" $SPEED_CMD
+        python -m pip install -U yapf=="$YAPF_VER"
+        # python -m pip install -U protobuf=="$PROTOBUF_VER"
         $output = & { 
             $ErrorActionPreference = 'Continue'
-            python -m pip install -U protobuf=="$PROTOBUF_VER" $SPEED_CMD 2>&1
+            python -m pip install -U protobuf=="$PROTOBUF_VER" 2>&1
         } | Out-String
 
         if ($LASTEXITCODE -ne 0) {
@@ -290,6 +294,11 @@ function Build-GuiApp {
         "-DPOISSON_RECON_WITH_OPEN_MP=ON",
         "-DPLUGIN_STANDARD_QRANSAC_SD=ON",
         "-DPLUGIN_STANDARD_QSRA=ON",
+        "-DPLUGIN_STANDARD_3DMASC=ON",
+        "-DPLUGIN_STANDARD_QTREEISO=ON",
+        "-DPLUGIN_STANDARD_QVOXFALL=ON",
+        "-DPLUGIN_PYTHON=ON",
+        "-DBUILD_PYTHON_MODULE=ON",
         "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA",
         "-DCONDA_PREFIX=$env:CONDA_PREFIX",
         "-DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR",
@@ -407,6 +416,7 @@ function Build-PipPackage {
         "-DBUILD_SHARED_LIBS=$env:BUILD_SHARED_LIBS",
         "-DDEVELOPER_BUILD=$env:DEVELOPER_BUILD",
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DUSE_SYSTEM_EIGEN3=ON", # fix gdi32 in hwloc - not found
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT",
         "-DBUILD_LIBREALSENSE=$BUILD_LIBREALSENSE",
         "-DBUILD_UNIT_TESTS=OFF",
@@ -424,7 +434,9 @@ function Build-PipPackage {
         "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA",
         "-DCONDA_PREFIX=$env:CONDA_PREFIX",
         "-DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR",
-        "-DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR"
+        "-DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR",
+        "-DNVTOOLSEXT_LIBRARY=$NVTOOLSEXT_LIBRARY",
+        "-DNVTOOLSEXT_INCLUDE_DIR=$NVTOOLSEXT_INCLUDE_DIR"
     )
 
     Write-Host "Executing cmake command..."

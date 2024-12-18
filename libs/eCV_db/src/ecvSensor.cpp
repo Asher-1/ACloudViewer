@@ -16,6 +16,7 @@
 //##########################################################################
 
 #include "ecvSensor.h"
+#include "ecvDisplayTools.h"
 
 ccSensor::ccSensor(QString name)
 	: ccHObject(name)
@@ -64,6 +65,17 @@ bool ccSensor::addPosition(ccGLMatrix& trans, double index)
 		m_posBuffer->sort();
 
 	return true;
+}
+
+void ccSensor::clearDrawings()
+{
+    ecvDisplayTools::RemoveEntities(this);
+}
+
+void ccSensor::hideShowDrawings(CC_DRAW_CONTEXT &context)
+{
+    context.viewID = this->getViewId();
+    ecvDisplayTools::HideShowEntities(context);
 }
 
 void ccSensor::applyGLTransformation(const ccGLMatrix& trans)
