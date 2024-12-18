@@ -92,6 +92,8 @@ message(STATUS "Qt5_BIN_DIR: " ${Qt5_BIN_DIR})
 message(STATUS "QT5_ROOT_PATH: " ${QT5_ROOT_PATH})
 message(STATUS "QT5_PLUGINS_PATH: " ${QT5_PLUGINS_PATH})
 set(QT5_PLUGINS_PATH_LIST   "${QT5_PLUGINS_PATH}/platforms")
+list(APPEND QT5_PLUGINS_PATH_LIST   "${QT5_PLUGINS_PATH}/platformthemes") # for useNativeDialogs support on linux
+list(APPEND QT5_PLUGINS_PATH_LIST   "${QT5_PLUGINS_PATH}/styles") # for useNativeDialogs support on windows
 if (UNIX AND NOT APPLE)
     list(APPEND QT5_PLUGINS_PATH_LIST "${QT5_PLUGINS_PATH}/xcbglintegrations")
 endif()

@@ -61,11 +61,12 @@ void PCLDisplayTools::registerVisualizer(QMainWindow* win, bool stereoMode) {
 
     if (!m_visualizer3D) {
         auto renderer = vtkSmartPointer<vtkRenderer>::New();
-        auto window = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+        auto renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+        renderWindow->AddRenderer(renderer);
         auto interactorStyle =
                 vtkSmartPointer<VTKExtensions::vtkCustomInteractorStyle>::New();
         m_visualizer3D.reset(new PclUtils::PCLVis(
-                renderer, window, interactorStyle, "3Dviewer", false));
+                renderer, renderWindow, interactorStyle, "3Dviewer", false));
         // m_visualizer3D.reset(new PclUtils::PCLVis(interactorStyle,
         // "3Dviewer", false)); // deprecated!
     }
