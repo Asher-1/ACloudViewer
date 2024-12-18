@@ -9,43 +9,35 @@
 #include <QFile>
 
 // SYSTEM
-#include <regex>
-#include <locale>
 #include <codecvt>
+#include <locale>
+#include <regex>
 #if defined(CV_WINDOWS)
-#include "windows.h"
 #include "stdio.h"
-#endif // (CV_WINDOWS)
+#include "windows.h"
+#endif  // (CV_WINDOWS)
 
 QElapsedTimer CVTools::s_time;
 
-std::string CVTools::GetFileName(const std::string file_name)
-{
+std::string CVTools::GetFileName(const std::string file_name) {
     std::string subname;
-	for (auto i = file_name.end() - 1; *i != '/'; i--)
-	{
-		subname.insert(subname.begin(), *i);
-	}
-	return subname;
+    for (auto i = file_name.end() - 1; *i != '/'; i--) {
+        subname.insert(subname.begin(), *i);
+    }
+    return subname;
 }
 
-void CVTools::TimeStart()
-{
-	s_time.start();
-}
+void CVTools::TimeStart() { s_time.start(); }
 
-QString CVTools::TimeOff()
-{
-	int timediff = s_time.elapsed();
+QString CVTools::TimeOff() {
+    int timediff = s_time.elapsed();
     double f = timediff / 1000.0;
-	return QString("%1").arg(f); //float->QString
+    return QString("%1").arg(f);  // float->QString
 }
 
-QString CVTools::ToNativeSeparators(const QString& path)
-{
+QString CVTools::ToNativeSeparators(const QString& path) {
     QString newPath = path;
-    if (!QFile::exists(path))
-    {
+    if (!QFile::exists(path)) {
         newPath = newPath.replace("\\\\", QDir::separator());
         newPath = newPath.replace("\\", QDir::separator());
         newPath = QDir::toNativeSeparators(newPath);
@@ -54,23 +46,32 @@ QString CVTools::ToNativeSeparators(const QString& path)
     return newPath;
 }
 
-std::string CVTools::FromUnicode(const QString& qstr)
-{
-	QTextCodec* pCodec = QTextCodec::codecForName("system");
-	if (!pCodec) return "";
+std::string CVTools::FromUnicode(const QString& qstr) {
+    // QTextCodec* pCodec = QTextCodec::codecForName("system");
+    QTextCodec* pCodec = QTextCodec::codecForLocale();
+    if (!pCodec) {
+        CVLog::PrintDebug(
+                "Failed to call QTextCodec::codecForName from system");
+        return qstr.toStdString();
+    }
 
-	QByteArray arr = pCodec->fromUnicode(qstr);
-	std::string cstr = arr.data();
-	return cstr;
+    QByteArray arr = pCodec->fromUnicode(qstr);
+    std::string cstr = arr.data();
+    return cstr;
 }
 
-QString CVTools::ToUnicode(const std::string& cstr)
-{
-	QTextCodec* pCodec = QTextCodec::codecForName("system");
-	if (!pCodec) return "";
+QString CVTools::ToUnicode(const std::string& cstr) {
+    // QTextCodec* pCodec = QTextCodec::codecForName("system");
+    QTextCodec* pCodec = QTextCodec::codecForLocale();
+    if (!pCodec) {
+        CVLog::PrintDebug(
+                "Failed to call QTextCodec::codecForName from system");
+        return QString(cstr.c_str());
+    }
 
-	QString qstr = pCodec->toUnicode(cstr.c_str(), static_cast<int>(cstr.length()));
-	return qstr;
+    QString qstr =
+            pCodec->toUnicode(cstr.c_str(), static_cast<int>(cstr.length()));
+    return qstr;
 }
 
 std::string CVTools::ExtractDigitAlpha(const std::string& str) {
@@ -85,20 +86,18 @@ std::string CVTools::ExtractDigitAlpha(const std::string& str) {
     return result;
 }
 
-QString CVTools::ToQString(const std::string& s)
-{
+QString CVTools::ToQString(const std::string& s) {
 #if defined(CV_WINDOWS)
-	return ToUnicode(s);
-#else // do not support coding in Linux or mac platform!
+    return ToUnicode(s);
+#else  // do not support coding in Linux or mac platform!
     return QString(s.c_str());
 #endif
 }
 
-std::string CVTools::FromQString(const QString& qs) 
-{
+std::string CVTools::FromQString(const QString& qs) {
 #if defined(CV_WINDOWS)
     return FromUnicode(qs);
-#else // do not support coding in Linux or mac platform!
+#else  // do not support coding in Linux or mac platform!
     return qs.toStdString();
 #endif
 }
@@ -106,118 +105,74 @@ std::string CVTools::FromQString(const QString& qs)
 std::string CVTools::JoinStrVec(const std::vector<std::string>& v,
                                 std::string splitor) {
     std::string s = "";
-	if (v.size() == 0) return s;
-    for (std::size_t i = 0; i != v.size()  - 1; ++i) {
-		s += (v[i] + splitor);
-	}
-	s += v[v.size() - 1];
-	return s;
+    if (v.size() == 0) return s;
+    for (std::size_t i = 0; i != v.size() - 1; ++i) {
+        s += (v[i] + splitor);
+    }
+    s += v[v.size() - 1];
+    return s;
 }
 
-int CVTools::TranslateKeyCode(int key)
-{
-	int k = key;
-	bool legal = true;
-	if (k >= Qt::Key_0 && k <= Qt::Key_9)
-	{
-	}
-	else if (k >= Qt::Key_A && k <= Qt::Key_Z)
-	{
-	}
-	else if (k >= Qt::Key_F1 && k <= Qt::Key_F24)
-	{
-		k &= 0x000000ff;
-		k += 0x40;
-	}
-	else if (k == Qt::Key_Tab)
-	{
-		k = 0x09;
-	}
-	else if (k == Qt::Key_Backspace)
-	{
-		k = 0x08;
-	}
-	else if (k == Qt::Key_Return)
-	{
-		k = 0x0d;
-	}
-	else if (k <= Qt::Key_Down && k >= Qt::Key_Left)
-	{
-		int off = k - Qt::Key_Left;
-		k = 0x25 + off;
-	}
-	else if (k == Qt::Key_Shift)
-	{
-		k = 0x10;
-	}
-	else if (k == Qt::Key_Control)
-	{
-		k = 0x11;
-	}
-	else if (k == Qt::Key_Alt)
-	{
-		k = 0x12;
-	}
-	else if (k == Qt::Key_Meta)
-	{
-		k = 0x5b;
-	}
-	else if (k == Qt::Key_Insert)
-	{
-		k = 0x2d;
-	}
-	else if (k == Qt::Key_Delete)
-	{
-		k = 0x2e;
-	}
-	else if (k == Qt::Key_Home)
-	{
-		k = 0x24;
-	}
-	else if (k == Qt::Key_End)
-	{
-		k = 0x23;
-	}
-	else if (k == Qt::Key_PageUp)
-	{
-		k = 0x21;
-	}
-	else if (k == Qt::Key_Down)
-	{
-		k = 0x22;
-	}
-	else if (k == Qt::Key_CapsLock)
-	{
-		k = 0x14;
-	}
-	else if (k == Qt::Key_NumLock)
-	{
-		k = 0x90;
-	}
-	else if (k == Qt::Key_Space)
-	{
-		k = 0x20;
-	}
-	else
-		legal = false;
+int CVTools::TranslateKeyCode(int key) {
+    int k = key;
+    bool legal = true;
+    if (k >= Qt::Key_0 && k <= Qt::Key_9) {
+    } else if (k >= Qt::Key_A && k <= Qt::Key_Z) {
+    } else if (k >= Qt::Key_F1 && k <= Qt::Key_F24) {
+        k &= 0x000000ff;
+        k += 0x40;
+    } else if (k == Qt::Key_Tab) {
+        k = 0x09;
+    } else if (k == Qt::Key_Backspace) {
+        k = 0x08;
+    } else if (k == Qt::Key_Return) {
+        k = 0x0d;
+    } else if (k <= Qt::Key_Down && k >= Qt::Key_Left) {
+        int off = k - Qt::Key_Left;
+        k = 0x25 + off;
+    } else if (k == Qt::Key_Shift) {
+        k = 0x10;
+    } else if (k == Qt::Key_Control) {
+        k = 0x11;
+    } else if (k == Qt::Key_Alt) {
+        k = 0x12;
+    } else if (k == Qt::Key_Meta) {
+        k = 0x5b;
+    } else if (k == Qt::Key_Insert) {
+        k = 0x2d;
+    } else if (k == Qt::Key_Delete) {
+        k = 0x2e;
+    } else if (k == Qt::Key_Home) {
+        k = 0x24;
+    } else if (k == Qt::Key_End) {
+        k = 0x23;
+    } else if (k == Qt::Key_PageUp) {
+        k = 0x21;
+    } else if (k == Qt::Key_Down) {
+        k = 0x22;
+    } else if (k == Qt::Key_CapsLock) {
+        k = 0x14;
+    } else if (k == Qt::Key_NumLock) {
+        k = 0x90;
+    } else if (k == Qt::Key_Space) {
+        k = 0x20;
+    } else
+        legal = false;
 
-	if (!legal)
-		return 0;
-	return k;
+    if (!legal) return 0;
+    return k;
 }
 
-std::wstring CVTools::Char2Wchar(const char* szStr)
-{
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-	std::wstring wideStr = conv.from_bytes(szStr);
-	return wideStr;
+std::wstring CVTools::Char2Wchar(const char* szStr) {
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+    std::wstring wideStr = conv.from_bytes(szStr);
+    return wideStr;
 }
 
-std::string CVTools::Wchar2Char(const wchar_t* szStr)
-{
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-	std::string wideStr = conv.to_bytes(szStr);
-	return wideStr;
+std::string CVTools::Wchar2Char(const wchar_t* szStr) {
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+    std::string wideStr = conv.to_bytes(szStr);
+    return wideStr;
 }
 
 bool CVTools::FileMappingReader(const std::string& filename,

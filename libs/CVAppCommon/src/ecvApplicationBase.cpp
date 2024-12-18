@@ -63,9 +63,13 @@ void ecvApplicationBase::InitOpenGL()
         format.setProfile(QSurfaceFormat::CoreProfile);
 #endif
 
-#ifdef Q_OS_UNIX
-        ////enables automatic scaling based on the monitor's pixel density
-        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+// #ifdef Q_OS_UNIX
+//         ////enables automatic scaling based on the monitor's pixel density
+//         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+// #endif
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
 
 #ifdef QT_DEBUG
