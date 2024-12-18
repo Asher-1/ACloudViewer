@@ -263,14 +263,12 @@ PythonConfig PythonRuntimeSettings::pythonEnvConfig() const
         config.initDefault();
         return config;
     }
-    // #if defined(Q_OS_WINDOWS) || defined(Q_OS_MACOS)
     else if (selectedEnvType() == "Bundled")
     {
         PythonConfig config;
         config.initBundled();
         return config;
     }
-    // #endif
     else if (selectedEnvType() == "Local")
     {
         PythonConfig config;

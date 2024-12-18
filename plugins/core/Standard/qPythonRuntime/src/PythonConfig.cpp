@@ -264,7 +264,7 @@ void PythonConfig::initFromLocation(const QString &prefix)
 #else
     {
         m_pythonHome = envRoot.path();
-        m_pythonPath = QString("%1/DLLs;%1/lib;%1/Lib/site-packages;").arg(m_pythonHome);
+        m_pythonPath = QString("%1/DLLs;%1/lib;%1/Lib;%1/Lib/site-packages;").arg(m_pythonHome);
         m_type = Type::Bundled;
 
 #if defined(USE_EMBEDDED_MODULES)
@@ -278,7 +278,7 @@ void PythonConfig::initCondaEnv(const QString &condaPrefix)
 {
     m_type = Type::Conda;
     m_pythonHome = condaPrefix;
-    m_pythonPath = QString("%1/DLLs;%1/lib;%1/Lib/site-packages;").arg(condaPrefix);
+    m_pythonPath = QString("%1/DLLs;%1/lib;%1/Lib;%1/Lib/site-packages;").arg(condaPrefix);
 
 #if defined(USE_EMBEDDED_MODULES)
     m_pythonPath.append(BundledSitePackagesPath());
@@ -291,7 +291,7 @@ void PythonConfig::initVenv(const QString &venvPrefix)
 
     m_type = Type::Venv;
     m_pythonHome = venvPrefix;
-    m_pythonPath = QString("%1/Lib/site-packages;%3/DLLS;%3/lib").arg(venvPrefix, cfg.home);
+    m_pythonPath = QString("%1/Lib;%1/Lib/site-packages;%3/DLLS;%3/lib").arg(venvPrefix, cfg.home);
     if (cfg.includeSystemSitesPackages)
     {
         m_pythonPath.append(QString("%1/Lib/site-packages").arg(cfg.home));

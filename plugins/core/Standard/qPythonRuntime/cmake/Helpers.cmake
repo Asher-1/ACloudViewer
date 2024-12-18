@@ -58,17 +58,19 @@ function(setup_python_env)
 endfunction()
 
 function(copy_win_python_env INSTALL_DIR)
-  set(INSTALL_PYTHON_SITELIB "${CC_PYTHON_INSTALL_DIR}/${PYTHON_LIB_NAME}/site-packages")
+  set(INSTALL_PYTHON_LIB "${CC_PYTHON_INSTALL_DIR}/${PYTHON_LIB_NAME}")
   message(
     STATUS
     "ENV copy:
         PYTHON_BASE_PREFIX:     ${PYTHON_BASE_PREFIX}
-        PYTHON_SITELIB:         ${PYTHON_SITELIB}"
+        PYTHON_RUNTIME_LIBRARY_DIRS:         ${PYTHON_RUNTIME_LIBRARY_DIRS}"
   )
   message(STATUS "COPYING python exe from ${PYTHON_EXECUTABLE} to ${INSTALL_DIR}")
   cloudViewer_install_ext( FILES "${PYTHON_EXECUTABLE}" "${INSTALL_DIR}" "" )
-  message(STATUS "COPYING site-packages from ${PYTHON_SITELIB}/ to ${INSTALL_PYTHON_SITELIB}/")
-  cloudViewer_install_ext( DIRECTORY "${PYTHON_SITELIB}/" "${INSTALL_PYTHON_SITELIB}/" "" )
+  message(STATUS "COPYING site-packages from ${PYTHON_RUNTIME_LIBRARY_DIRS}/ to ${INSTALL_PYTHON_LIB}/")
+  cloudViewer_install_ext( DIRECTORY "${PYTHON_RUNTIME_LIBRARY_DIRS}/" "${INSTALL_PYTHON_LIB}/" "" )
+  message(STATUS "COPYING site-packages from ${PYTHON_BASE_PREFIX}/DLLs to ${CC_PYTHON_INSTALL_DIR}/")
+  cloudViewer_install_ext( DIRECTORY "${PYTHON_BASE_PREFIX}/DLLs" "${CC_PYTHON_INSTALL_DIR}/" "" )
 endfunction()
 
 function(copy_linux_python_env INSTALL_DIR)
