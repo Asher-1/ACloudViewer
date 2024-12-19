@@ -492,7 +492,23 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
-          
+      
+      - name: Clear font cache
+        run: |
+          if [ -d "~/.matplotlib" ]; then
+            echo "clear ~/.matplotlib."
+            rm -rf ~/.matplotlib
+          else
+            echo "Directory ~/.matplotlib does not exist."
+          fi
+
+          if [ -d "~/.config/matplotlib" ]; then
+            echo "clear ~/.config/matplotlib."
+            rm -rf ~/.config/matplotlib
+          else
+            echo "Directory ~/.config/matplotlib does not exist."
+          fi
+
       - name: Test Python package
         run: |
           python -V
