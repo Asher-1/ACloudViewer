@@ -45,10 +45,6 @@ $PROTOBUF_VER = "4.24.0"
 
 $CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
 
-$NVTOOLSEXT_PATH = "C:\Program Files\NVIDIA Corporation\NvToolsExt"
-$NVTOOLSEXT_INCLUDE_DIR = "$NVTOOLSEXT_PATH\include"
-$NVTOOLSEXT_LIBRARY = "$NVTOOLSEXT_PATH\lib\x64\nvToolsExt64_1.lib"
-
 $MAX_RETRIES = 3
 $RETRY_DELAY = 5 # seconds
 function Install-Requirements {
@@ -435,8 +431,6 @@ function Build-PipPackage {
         "-DCONDA_PREFIX=$env:CONDA_PREFIX",
         "-DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR",
         "-DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR",
-        "-DNVTOOLSEXT_LIBRARY=$NVTOOLSEXT_LIBRARY",
-        "-DNVTOOLSEXT_INCLUDE_DIR=$NVTOOLSEXT_INCLUDE_DIR"
     )
 
     Write-Host "Executing cmake command..."
