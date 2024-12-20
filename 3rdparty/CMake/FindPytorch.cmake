@@ -68,7 +68,7 @@ if(NOT Pytorch_FOUND)
         message(STATUS "Using top level CMAKE_CUDA_ARCHITECTURES for TORCH_CUDA_ARCH_LIST: ${TORCH_CUDA_ARCH_LIST}")
 
         # fix the issues of Failed to find nvToolsExt
-        if(Pytorch_VERSION VERSION_GREATER_EQUAL 2.2.2 AND
+        if(WIN32 AND Pytorch_VERSION VERSION_GREATER_EQUAL 2.2.2 AND
             Pytorch_CUDA_VERSION VERSION_GREATER_EQUAL 11.8)
             message(STATUS "PyTorch NVTX headers workaround: Yes")
             # only do this if nvToolsExt is not defined and CUDA::nvtx3 exists

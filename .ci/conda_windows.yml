@@ -14,4 +14,3 @@ dependencies:
   - ffmpeg=6.1.*
   - nodejs  # jupyter
   - rust   # fix missing cargo when pip install pywinpty
-  - nvtx
