@@ -53,27 +53,32 @@ endfunction(cloudViewer_install_files)
 #   - ARGV2 = base install destination (_debug or _withDebInfo will be automatically appended if multi-conf is supported)
 #   - ARGV3 = install destination suffix (optional)
 function(cloudViewer_install_ext)
-    if (APPLE)
-        install(${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3} 
-                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    if ("${ARGV0}" STREQUAL "DIRECTORY")
+        set(INSTALL_OPTIONS FILES_MATCHING PATTERN "*")
+    else ()
+        set(INSTALL_OPTIONS "")
+    endif ()
+
+    list(APPEND INSTALL_OPTIONS PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                 GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+    if (APPLE)
+        install(${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3}
+                ${INSTALL_OPTIONS}
+                )
         return()
     endif ()
 
     if (NOT CMAKE_CONFIGURATION_TYPES)
         install(${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3}
-                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+                ${INSTALL_OPTIONS})
     else ()
         install(${ARGV0} ${ARGV1} CONFIGURATIONS Release DESTINATION ${ARGV2}${ARGV3}
-                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+                ${INSTALL_OPTIONS})
         install(${ARGV0} ${ARGV1} CONFIGURATIONS RelWithDebInfo DESTINATION ${ARGV2}_withDebInfo${ARGV3}
-                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+                ${INSTALL_OPTIONS})
         install(${ARGV0} ${ARGV1} CONFIGURATIONS Debug DESTINATION ${ARGV2}_debug${ARGV3}
-                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+                ${INSTALL_OPTIONS})
     endif ()
 endfunction(cloudViewer_install_ext)
 

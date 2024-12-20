@@ -867,7 +867,6 @@ void ccManualSeg::doAction()
 		return;
 	}
 
-	//ccGLWindow* win = m_app->getActiveGLWindow();
 	m_app->setView(CC_FRONT_VIEW);
 
 	int cnt = 0;
@@ -1658,7 +1657,6 @@ void ccManualSeg::doAction()
 		m_app->addToDB(nContoursContainer, true, true, false, true);
 		m_app->addToDB(mortarMaps, true, true, false, true);
 
-		//ccGLWindow* win = m_app->getActiveGLWindow();
 		m_app->setView(CC_FRONT_VIEW);
 
 	}

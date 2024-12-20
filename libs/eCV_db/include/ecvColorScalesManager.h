@@ -18,10 +18,10 @@
 #ifndef ECV_COLOR_SCALES_MANAGER_HEADER
 #define ECV_COLOR_SCALES_MANAGER_HEADER
 
-//Local
+// Local
 #include "ecvColorScale.h"
 
-//Qt
+// Qt
 #include <QMap>
 
 //! Color scales manager/container
@@ -46,14 +46,16 @@ public:
 							RW				=	4,		/**< Red-White ramp */
 							ABS_NORM_GREY	=	5,		/**< Absolute normalized grey ramp (intensities between 0 and 1) */
 							HSV_360_DEG		=	6,		/**< HSV colors between 0 and 360 degrees */
-                            VERTEX_QUALITY	=	7,		/**< Mesh vertex quality (see cloudViewer::MeshSamplingTools::VertexFlags) */
+							VERTEX_QUALITY	=	7,		/**< Mesh vertex quality (see CCCoreLib::MeshSamplingTools::VertexFlags) */
 							DIP_BRYW		=	8,		/**< Dip (0 - 90 degrees) (Brown-Red-Yellow-White) */
 							DIP_DIR_REPEAT	=	9,		/**< Dip direction (0 - 360 degrees) */
-							VIRIDIS			=	10,		/**< matplotlib library colorscale created by Stan van der Walt and Nathaniel Smith */
+							VIRIDIS			=	10,		/**< matplotlib library colorscale created by Stéfan van der Walt and Nathaniel Smith */
 							BROWN_YELLOW	=	11,		/**< Brown-Yellow */
 							YELLOW_BROWN	=	12,		/**< Yellow-Brown */
 							TOPO_LANDSERF	=	13,		/**< Topo Landserf (quartile) */
-							HIGH_CONTRAST	=	14		/**< High constrast */
+							HIGH_CONTRAST	=	14,		/**< High contrast */
+							CIVIDIS			=	15,		/**< matplotlib library colorscale - see https://arxiv.org/ftp/arxiv/papers/1712/1712.01662.pdf */
+
 	};
 
 	//! Returns a pre-defined color scale UUID
@@ -63,7 +65,7 @@ public:
 	static ccColorScale::Shared GetDefaultScale(DEFAULT_SCALES scale = BGYR)
 	{
 		ccColorScalesManager* instance = GetUniqueInstance();
-		return instance ? instance->getDefaultScale(scale) : ccColorScale::Shared(0);
+		return instance ? instance->getDefaultScale(scale) : ccColorScale::Shared(nullptr);
 	}
 
 	//! Returns a pre-defined color scale
@@ -108,4 +110,4 @@ protected:
 
 };
 
-#endif // ECV_COLOR_SCALES_MANAGER_HEADER
+#endif  // ECV_COLOR_SCALES_MANAGER_HEADER

@@ -48,8 +48,8 @@ public:
 	virtual CV_CLASS_ENUM getClassID() const override { return CV_TYPES::SENSOR; }
 	virtual bool isSerializable() const override { return true; }
 
-    virtual void clearDrawings() = 0;
-    virtual void hideShowDrawings(CC_DRAW_CONTEXT& context) = 0;
+    virtual void clearDrawings();
+    virtual void hideShowDrawings(CC_DRAW_CONTEXT& context);
 
 	//! Returns the sensor type
 	/** Should be re-implemented by sub-classes

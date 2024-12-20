@@ -2321,6 +2321,5 @@ void ccAutoSeg::doAction()
 	if (checkMortar == true && allMortar.size() > 0)
 		m_app->addToDB(mortarMaps, true, true, false, true);
 
-	//ccGLWindow* win = m_app->getActiveGLWindow();
 	m_app->setView(CC_FRONT_VIEW);
 }

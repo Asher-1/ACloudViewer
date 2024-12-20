@@ -345,7 +345,6 @@ void ccTracePolylineTool::stop(bool accepted)
 			false, 2,
 			ecvDisplayTools::MANUAL_SEGMENTATION_MESSAGE);
 
-		//m_associatedWin->setUnclosable(false);
 		resetTip();
 		ecvDisplayTools::SetInteractionMode(ecvDisplayTools::TRANSFORM_CAMERA());
 		ecvDisplayTools::GetCurrentScreen()->setCursor(Qt::ArrowCursor);

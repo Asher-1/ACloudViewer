@@ -4,6 +4,8 @@
 cmake_minimum_required(VERSION 3.19.2)
 project(VTKArchiveBuild)
 
+option(BUILD_WITH_CONDA "Build with conda env" OFF)
+option(BUILD_SHARED_LIBS "Build shared library" OFF)
 option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
 
 # OS specific settings
@@ -88,7 +90,7 @@ set(CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR "${PROJECT_SOURCE_DIR}/../../3rdparty_d
 set(CloudViewer_INSTALL_LIB_DIR lib)
 
 set(BUILD_VTK_FROM_SOURCE ON)
-include(vtk_build.cmake)
+include(vtk_build_or_download.cmake)
 
 if(LINUX_AARCH64)
     set(ARCHIVE_SUFFIX "_linux_aarch64")
@@ -108,11 +110,17 @@ else()
     message(FATAL "Unsupported platform")
 endif()
 
+if (BUILD_SHARED_LIBS)
+    set(ARCHIVE_SUFFIX "${ARCHIVE_SUFFIX}_shared")
+else()
+    set(ARCHIVE_SUFFIX "${ARCHIVE_SUFFIX}_static")
+endif()
+
 set(ARCHIVE_NAME "vtk_${VTK_VERSION}${ARCHIVE_SUFFIX}.tar.gz")
 
 add_custom_target(vtk_archive ALL
     COMMENT "Creating tar archive"
-    COMMAND ${CMAKE_COMMAND} -E tar -cvzf ${ARCHIVE_NAME} vtk/include vtk/lib vtk/share
+    COMMAND ${CMAKE_COMMAND} -E tar -cvzf ${ARCHIVE_NAME} vtk/include vtk/lib vtk/share vtk/bin
     COMMAND ${CMAKE_COMMAND} -E sha256sum ${ARCHIVE_NAME}
     DEPENDS ext_vtk
 )

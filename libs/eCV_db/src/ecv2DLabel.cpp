@@ -1035,10 +1035,6 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                 for (size_t i = 0; i < count; i++) {
                     const CCVector3* P = m_pickedPoints[i].cloud->getPoint(
                             m_pickedPoints[i].index);
-                    // markerContext.transformInfo.setTranslationStart(CCVector3(P->x,
-                    // P->y, P->z));
-                    // markerContext.transformInfo.setPostion(CCVector3(P->x,
-                    // P->y, P->z));
                     float scale = context.labelMarkerSize * m_relMarkerScale;
                     if (viewportParams.perspectiveView &&
                         viewportParams.zFar > 0) {
@@ -1057,21 +1053,19 @@ void cc2DLabel::drawMeOnly3D(CC_DRAW_CONTEXT& context) {
                         double d = (camera.modelViewMat *
                                     CCVector3d::fromArray(P->u))
                                            .norm();
-                        double unitD = viewportParams.zFar /
-                                       2;  // we consider that the 'standard'
-                                           // scale is at half the depth
-                        scale = static_cast<float>(
-                                scale *
-                                sqrt(d /
-                                     unitD));  // sqrt = empirical (probably
-                                               // because the marker size is
-                                               // already partly compensated by
-                                               // ccGLWindow::computeActualPixelSize())
+                        // we consider that the 'standard' scale is at half the
+                        // depth sqrt = empirical (probably because the marker
+                        // size is
+                        // already partly compensated by
+                        // ecvDisplayTools::computeActualPixelSize())
+                        double unitD = viewportParams.zFar / 2;
+                        scale = static_cast<float>(scale * sqrt(d / unitD));
                     }
 
                     WIDGETS_PARAMETER param(WIDGETS_TYPE::WIDGET_SPHERE,
                                             QString::number(i) + m_sphereIdfix);
-                    param.radius = scale;
+                    param.radius = scale / 2;
+                    m_pickedPoints[i].markerScale = scale / 2;
                     param.center = CCVector3(P->x, P->y, P->z);
                     param.color = ecvColor::FromRgba(ecvColor::ored);
                     ecvDisplayTools::DrawWidgets(param, false);
@@ -1591,6 +1585,76 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context) {
         param.fontSize = bodyFont.pointSize();
         ecvDisplayTools::DrawWidgets(param, false);
     }
+}
+
+bool cc2DLabel::pointPicking(const CCVector2d& clickPos,
+                             const ccGLCameraParameters& camera,
+                             int& nearestPointIndex,
+                             double& nearestSquareDist) const {
+    nearestPointIndex = -1;
+    nearestSquareDist = -1.0;
+    {
+        // back project the clicked point in 3D
+        CCVector3d clickPosd(clickPos.x, clickPos.y, 0.0);
+        CCVector3d X(0, 0, 0);
+        if (!camera.unproject(clickPosd, X)) {
+            return false;
+        }
+
+        clickPosd.z = 1.0;
+        CCVector3d Y(0, 0, 0);
+        if (!camera.unproject(clickPosd, Y)) {
+            return false;
+        }
+
+        CCVector3d xy = (Y - X);
+        xy.normalize();
+
+        for (unsigned i = 0; i < size(); ++i) {
+            const PickedPoint& pp = getPickedPoint(i);
+            if (pp.markerScale == 0) {
+                // never displayed
+                continue;
+            }
+
+            const CCVector3 P = pp.getPointPosition();
+
+            // warning: we have to handle the relative GL transformation!
+            ccGLMatrix trans;
+            bool noGLTrans =
+                    pp.entity()
+                            ? !pp.entity()->getAbsoluteGLTransformation(trans)
+                            : true;
+
+            CCVector3d Q2D;
+            bool insideFrustum = false;
+            if (noGLTrans) {
+                camera.project(P, Q2D, &insideFrustum);
+            } else {
+                CCVector3 P3D = P;
+                trans.apply(P3D);
+                camera.project(P3D, Q2D, &insideFrustum);
+            }
+
+            if (!insideFrustum) {
+                continue;
+            }
+
+            // closest distance to XY
+            CCVector3d XP = (P.toDouble() - X);
+            double squareDist = (XP - XP.dot(xy) * xy).norm2();
+
+            if (squareDist <=
+                static_cast<double>(pp.markerScale) * pp.markerScale) {
+                if (nearestPointIndex < 0 || squareDist < nearestSquareDist) {
+                    nearestSquareDist = squareDist;
+                    nearestPointIndex = i;
+                }
+            }
+        }
+    }
+
+    return (nearestPointIndex >= 0);
 }
 
 //! deprecated
@@ -2248,7 +2312,7 @@ void cc2DLabel::drawMeOnly2D_(CC_DRAW_CONTEXT& context) {
                     yStartRel -= rowHeight;
                     context.display->displayText(
                             body[i], xStart + xStartRel, yStart + yStartRel,
-                            ccGenericGLDisplay::ALIGN_DEFAULT, 0,
+                            ecvGenericDisplayTools::ALIGN_DEFAULT, 0,
                             defaultTextColor.rgb, &bodyFont);
                 }
             }

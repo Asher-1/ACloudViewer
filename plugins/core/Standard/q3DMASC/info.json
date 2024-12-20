@@ -1,0 +1,26 @@
+{
+  "type": "Standard",
+  "name": "3DMASC",
+  "icon": ":/CC/plugin/q3DMASCPlugin/3DMASC.png",
+  "description": "Create or apply a classifier on a point cloud.",
+  "authors": [
+    {
+      "name": "Dimitri Lague (OSUR/CNRS)"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "Dimitri Lague (OSUR/CNRS)"
+    }
+  ],
+  "references": [
+    {
+      "text": "Dimitri Lague, Geosciences Rennes",
+      "url": "https://geosciences.univ-rennes1.fr/interlocuteurs/dimitri-lague"
+    },
+    {
+      "text": "Documentation",
+      "url": "http://www.cloudcompare.org/doc/wiki/index.php?title=3DMASC_(plugin)"
+    }
+  ]
+}

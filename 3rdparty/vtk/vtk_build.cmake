@@ -289,7 +289,7 @@ if(BUILD_VTK_FROM_SOURCE)
     )
 
     ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
-    set(VTK_LIB_DIR ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
+    set(VTK_LIBRARIES_DIRS ${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
     set(VTK_INCLUDE_DIRS "${INSTALL_DIR}/include/vtk-${VTK_VERSION}/")
 
 else() #### download prebuilt vtk
@@ -343,7 +343,7 @@ else() #### download prebuilt vtk
     )
 
     ExternalProject_Get_Property(ext_vtk SOURCE_DIR)
-    set(VTK_LIB_DIR "${SOURCE_DIR}/lib")
+    set(VTK_LIBRARIES_DIRS "${SOURCE_DIR}/lib")
     set(VTK_INCLUDE_DIRS "${SOURCE_DIR}/include/vtk-${VTK_VERSION}/")
 
 endif() # BUILD_VTK_FROM_SOURCE
