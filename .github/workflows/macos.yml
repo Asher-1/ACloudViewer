@@ -110,10 +110,10 @@ jobs:
           https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
           brew install -f libomp-11.1.0.bottle.tar.gz
 
-          curl -L "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.8.0-darwin.zip" -o ~/QtIFW-4.8.0-darwin.zip
-          unzip -q ~/QtIFW-4.8.0-darwin.zip -d ~/
-          rm ~/QtIFW-4.8.0-darwin.zip
-          ls -hal ~/QtIFW-4.8.0-darwin/bin
+          curl -L "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-darwin.zip" -o ~/QtIFW-4.6.1-darwin.zip
+          unzip -q ~/QtIFW-4.6.1-darwin.zip -d ~/
+          rm ~/QtIFW-4.6.1-darwin.zip
+          ls -hal ~/QtIFW-4.6.1-darwin/bin
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
@@ -147,7 +147,7 @@ jobs:
             echo "OpenMP_ROOT=/usr/local/opt/libomp" >> $GITHUB_ENV
           fi
 
-          export PATH=$HOME/QtIFW-4.8.0-darwin/bin:$PATH
+          export PATH=$HOME/QtIFW-4.6.1-darwin/bin:$PATH
           export PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
           export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
@@ -499,7 +499,26 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
+      
+      - name: Clear font cache
+        shell: bash -l {0}
+        run: |
+          brew install freetype fontconfig
           
+          if [ -d "~/.matplotlib" ]; then
+            echo "clear ~/.matplotlib."
+            rm -rf ~/.matplotlib
+          else
+            echo "Directory ~/.matplotlib does not exist."
+          fi
+
+          if [ -d "~/.config/matplotlib" ]; then
+            echo "clear ~/.config/matplotlib."
+            rm -rf ~/.config/matplotlib
+          else
+            echo "Directory ~/.config/matplotlib does not exist."
+          fi
+
       - name: Test Python package
         run: |
           python -V
