@@ -14,11 +14,6 @@ if (${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
     endif ()
 endif ()
 
-if (APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
-            "Minimum OS X deployment version" FORCE)
-endif ()
-
 if (UNIX AND NOT APPLE)
     # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
     # which depends on ${CLOUDVIEWER_VERSION}, which depends on ${DEVELOPER_BUILD}.
@@ -52,6 +47,11 @@ elseif (APPLE)
             )
     if(PROCESSOR_ARCH STREQUAL "arm64")
         set(APPLE_AARCH64 TRUE)
+        set (CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING
+            "Minimum OS X deployment version" FORCE)
+    else()
+        set (CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
+            "Minimum OS X deployment version" FORCE)
     endif()
 elseif (WIN32)
     if(DEFINED ENV{PROCESSOR_ARCHITECTURE})
