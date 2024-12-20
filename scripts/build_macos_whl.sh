@@ -6,7 +6,7 @@ set -euo pipefail
 # conda activate python3.8
 
 # use lower target(11.0) version for compacibility
-export MACOSX_DEPLOYMENT_TARGET=11.0
+# export MACOSX_DEPLOYMENT_TARGET=11.0
 export DEVELOPER_BUILD=OFF
 export BUILD_SHARED_LIBS=OFF
 export BUILD_CUDA_MODULE=OFF
