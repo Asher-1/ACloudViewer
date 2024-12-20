@@ -68,6 +68,7 @@ function(install_python_libraries LIBS Destination)
         endif()
     endforeach()
 endfunction()
+
 function(copy_win_python_env INSTALL_DIR)
   set(INSTALL_PYTHON_LIB "${CC_PYTHON_INSTALL_DIR}/${PYTHON_LIB_NAME}")
   message(
@@ -112,22 +113,8 @@ function(copy_linux_python_env INSTALL_DIR)
   # fix pip install issues with missing libssl.so* and libcrypto.so*
   file(GLOB LIBSSL_LIBS "${PYTHON_RUNTIME_LIBRARY_DIRS}/libssl.so*")
   file(GLOB LIBCRYPTO_LIBS "${PYTHON_RUNTIME_LIBRARY_DIRS}/libcrypto.so*")
-  foreach(lib ${LIBSSL_LIBS})
-      if(EXISTS ${lib})
-          message(STATUS "Installing ${lib}")
-          cloudViewer_install_ext( FILES "${lib}" "${INSTALL_PYTHON_LIB_PATH}/" "" )
-      else()
-          message(WARNING "Library ${lib} does not exist.")
-      endif()
-  endforeach()
-  foreach(lib ${LIBCRYPTO_LIBS})
-      if(EXISTS ${lib})
-          message(STATUS "Installing ${lib}")
-          cloudViewer_install_ext( FILES "${lib}" "${INSTALL_PYTHON_LIB_PATH}/" "" )
-      else()
-          message(WARNING "Library ${lib} does not exist.")
-      endif()
-  endforeach()
+  install_python_libraries(${LIBSSL_LIBS} "${INSTALL_PYTHON_LIB_PATH}/")
+  install_python_libraries(${LIBCRYPTO_LIBS} "${INSTALL_PYTHON_LIB_PATH}/")
 
   # install python executable and symlink site-packages
   install(FILES "${PYTHON_EXECUTABLE}" DESTINATION "${INSTALL_DIR}/bin" RENAME "python"
