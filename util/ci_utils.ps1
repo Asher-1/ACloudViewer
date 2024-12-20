@@ -430,7 +430,7 @@ function Build-PipPackage {
         "-DBUILD_WITH_CONDA=$BUILD_WITH_CONDA",
         "-DCONDA_PREFIX=$env:CONDA_PREFIX",
         "-DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR",
-        "-DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR",
+        "-DCMAKE_INSTALL_PREFIX=$env:CLOUDVIEWER_INSTALL_DIR"
     )
 
     Write-Host "Executing cmake command..."

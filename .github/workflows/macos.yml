@@ -166,7 +166,6 @@ jobs:
           name: ACloudViewer-app-macosx-${{ runner.arch}}
           path: |
             ~/cloudViewer_install/${{ env.DEVEL_PKG_NAME }}
-            ~/cloudViewer_install/bin/*
           if-no-files-found: error
         
       - name: Update devel release
