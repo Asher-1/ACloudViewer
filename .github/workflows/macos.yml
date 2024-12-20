@@ -494,7 +494,10 @@ jobs:
           python-version: ${{ matrix.python_version }}
       
       - name: Clear font cache
+        shell: bash -l {0}
         run: |
+          brew install freetype fontconfig
+          
           if [ -d "~/.matplotlib" ]; then
             echo "clear ~/.matplotlib."
             rm -rf ~/.matplotlib
