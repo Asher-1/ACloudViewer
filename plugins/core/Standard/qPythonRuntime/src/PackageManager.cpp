@@ -278,6 +278,12 @@ PackageManager::PackageManager(const PythonConfig &config, QWidget *parent)
     }
     break;
     case PythonConfig::Type::Bundled:
+#if defined Q_OS_WIN32
+        m_shouldUseUserOption = false;
+#else
+        m_shouldUseUserOption = true;
+#endif
+        break;
     case PythonConfig::Type::System:
         m_shouldUseUserOption = true;
         break;

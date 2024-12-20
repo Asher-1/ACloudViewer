@@ -15,7 +15,5 @@ dependencies:
   - laszip # PLUGIN_IO_QLAS
   - pip: # for python plugins
     - numpy
-    - tqdm
-    - invoke
     - pybind11>=2.6.0
     - typing_extensions
