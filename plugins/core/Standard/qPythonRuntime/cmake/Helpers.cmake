@@ -57,6 +57,17 @@ function(setup_python_env)
 
 endfunction()
 
+
+function(install_python_libraries LIBS Destination)
+    foreach(lib ${LIBS})
+        if(EXISTS ${lib})
+            message(STATUS "Installing ${lib}")
+            cloudViewer_install_ext(FILES "${lib}" "${Destination}" "")
+        else()
+            message(WARNING "Library ${lib} does not exist.")
+        endif()
+    endforeach()
+endfunction()
 function(copy_win_python_env INSTALL_DIR)
   set(INSTALL_PYTHON_LIB "${CC_PYTHON_INSTALL_DIR}/${PYTHON_LIB_NAME}")
   message(
@@ -71,6 +82,16 @@ function(copy_win_python_env INSTALL_DIR)
   cloudViewer_install_ext( DIRECTORY "${PYTHON_RUNTIME_LIBRARY_DIRS}/" "${INSTALL_PYTHON_LIB}/" "" )
   message(STATUS "COPYING site-packages from ${PYTHON_BASE_PREFIX}/DLLs to ${CC_PYTHON_INSTALL_DIR}/")
   cloudViewer_install_ext( DIRECTORY "${PYTHON_BASE_PREFIX}/DLLs" "${CC_PYTHON_INSTALL_DIR}/" "" )
+  # fix pip dependency
+  file(GLOB LIBEXPAT_LIBS "${PYTHON_BASE_PREFIX}/Library/bin/libexpat*.dll")
+  file(GLOB FFI_LIBS "${PYTHON_BASE_PREFIX}/Library/bin/ffi*.dll")
+  install_python_libraries(${LIBEXPAT_LIBS} "${CC_PYTHON_INSTALL_DIR}/DLLs")
+  install_python_libraries(${FFI_LIBS} "${CC_PYTHON_INSTALL_DIR}/DLLs")
+  # fix pip install issues with missing libssl*.dll and libcrypto*.dll
+  file(GLOB LIBSSL_LIBS "${PYTHON_BASE_PREFIX}/Library/bin/libssl*.dll")
+  file(GLOB LIBCRYPTO_LIBS "${PYTHON_BASE_PREFIX}/Library/bin/libcrypto*.dll")
+  install_python_libraries(${LIBSSL_LIBS} "${CC_PYTHON_INSTALL_DIR}/DLLs")
+  install_python_libraries(${LIBCRYPTO_LIBS} "${CC_PYTHON_INSTALL_DIR}/DLLs")
 endfunction()
 
 function(copy_linux_python_env INSTALL_DIR)
@@ -129,7 +150,7 @@ function(copy_python_dll)
           # install the python3 base dll as well because some libs will try to
           # find it (PySide and PyQT for example)
           "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}.dll"
-    DESTINATION ${INSTALL_DESTINATIONS}
+    DESTINATION ${CC_PYTHON_INSTALL_DIR}
   )
 endfunction()
 

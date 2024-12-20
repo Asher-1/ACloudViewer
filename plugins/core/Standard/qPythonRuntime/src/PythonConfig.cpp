@@ -291,10 +291,10 @@ void PythonConfig::initVenv(const QString &venvPrefix)
 
     m_type = Type::Venv;
     m_pythonHome = venvPrefix;
-    m_pythonPath = QString("%1/Lib;%1/Lib/site-packages;%3/DLLS;%3/lib").arg(venvPrefix, cfg.home);
+    m_pythonPath = QString("%1/Lib;%1/Lib/site-packages;%3/DLLs;%3/lib;").arg(venvPrefix, cfg.home);
     if (cfg.includeSystemSitesPackages)
     {
-        m_pythonPath.append(QString("%1/Lib/site-packages").arg(cfg.home));
+        m_pythonPath.append(QString("%1/Lib/site-packages;").arg(cfg.home));
     }
 
 #if defined(USE_EMBEDDED_MODULES)
