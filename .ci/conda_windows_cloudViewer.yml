@@ -16,7 +16,7 @@ dependencies:
   - zlib=1.2.* # PLUGIN_IO_QPHOTOSCAN
   - laszip # PLUGIN_IO_QLAS
   - pip: # for python plugins
-    - numpy
-    - pywin32
+    - numpy==1.26.4
     - pybind11>=2.6.0
+    - pywin32
     - typing_extensions
