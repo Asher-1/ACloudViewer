@@ -16517,7 +16517,7 @@ You should fill the empty cells...</source>
     </message>
     <message>
         <location filename="../../plugins/core/qCompass/ccCompass.cpp" line="483"/>
-        <source>Error: ccCompass could not find the Cloud Compare window. Abort!</source>
+        <source>Error: ccCompass could not find the ACloudViewer window. Abort!</source>
         <translation></translation>
     </message>
     <message>

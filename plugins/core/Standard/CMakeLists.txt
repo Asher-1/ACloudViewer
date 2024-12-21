@@ -1,5 +1,6 @@
 
 add_subdirectory( qAnimation )
+add_subdirectory( q3DMASC )
 add_subdirectory( qCanupo )
 add_subdirectory( qCloudLayers )
 add_subdirectory( qCompass )
@@ -13,6 +14,9 @@ add_subdirectory( qPCV )
 add_subdirectory( qPoissonRecon )
 add_subdirectory( qRANSAC_SD )
 add_subdirectory( qSRA )
+add_subdirectory( qTreeIso )
+add_subdirectory( qVoxFall )
+add_subdirectory( qPythonRuntime )
 
 #plugins integrated as submodules
 set( submod_plugins

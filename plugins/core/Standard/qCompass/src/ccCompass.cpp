@@ -337,7 +337,7 @@ void ccCompass::tryLoading()
 		}
 
 		//remove them from the orignal parent
-		original->detatchAllChildren();
+		original->detachAllChildren();
 
 		//add new parent to scene graph
 		original->getParent()->addChild(replacement);
@@ -480,7 +480,7 @@ bool ccCompass::startMeasuring()
 	{
 		//invalid pointer error
 		m_app->dispToConsole(
-			tr("Error: ccCompass could not find the Cloud Compare window. Abort!"), 
+			tr("Error: ccCompass could not find the ACloudViewer window. Abort!"), 
 			ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
 		return false;
 	}

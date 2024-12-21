@@ -159,7 +159,7 @@ ccRasterizeTool::ccRasterizeTool(ccGenericPointCloud* cloud,
 
         // populate layer box
         activeLayerComboBox->addItem(ccRasterGrid::GetDefaultFieldName(
-                                             ccRasterGrid::PER_CELL_HEIGHT),
+                                             ccRasterGrid::PER_CELL_VALUE),
                                      QVariant(LAYER_HEIGHT));
         if (m_cloud->hasColors()) {
             activeLayerComboBox->addItem("RGB", QVariant(LAYER_RGB));
@@ -225,15 +225,15 @@ bool ccRasterizeTool::exportAsSF(ccRasterGrid::ExportableFields field) const {
     switch (field) {
         case ccRasterGrid::PER_CELL_COUNT:
             return generateCountSFcheckBox->isChecked();
-        case ccRasterGrid::PER_CELL_MIN_HEIGHT:
+        case ccRasterGrid::PER_CELL_MIN_VALUE:
             return generateMinHeightSFcheckBox->isChecked();
-        case ccRasterGrid::PER_CELL_MAX_HEIGHT:
+        case ccRasterGrid::PER_CELL_MAX_VALUE:
             return generateMaxHeightSFcheckBox->isChecked();
-        case ccRasterGrid::PER_CELL_AVG_HEIGHT:
+        case ccRasterGrid::PER_CELL_AVG_VALUE:
             return generateAvgHeightSFcheckBox->isChecked();
-        case ccRasterGrid::PER_CELL_HEIGHT_STD_DEV:
+        case ccRasterGrid::PER_CELL_VALUE_STD_DEV:
             return generateStdDevHeightSFcheckBox->isChecked();
-        case ccRasterGrid::PER_CELL_HEIGHT_RANGE:
+        case ccRasterGrid::PER_CELL_VALUE_RANGE:
             return generateHeightRangeSFcheckBox->isChecked();
         default:
             assert(false);
@@ -353,7 +353,7 @@ void ccRasterizeTool::fillEmptyCellStrategyChanged(int) {
             getFillEmptyCellsStrategy(fillEmptyCellsComboBox);
 
     bool active = fillEmptyCellsStrategy == ccRasterGrid::FILL_CUSTOM_HEIGHT ||
-                  fillEmptyCellsStrategy == ccRasterGrid::INTERPOLATE;
+                  fillEmptyCellsStrategy == ccRasterGrid::INTERPOLATE_DELAUNAY;
 
     emptyValueDoubleSpinBox->setEnabled(active);
     emptyValueDoubleSpinBox->setVisible(active);
@@ -675,7 +675,7 @@ void ccRasterizeTool::updateGridAndDisplay() {
         std::vector<ccRasterGrid::ExportableFields> exportedFields;
         try {
             // we always compute the default 'height' layer
-            exportedFields.push_back(ccRasterGrid::PER_CELL_HEIGHT);
+            exportedFields.push_back(ccRasterGrid::PER_CELL_VALUE);
             // but we may also have to compute the 'original SF(s)' layer(s)
             QString activeLayerName = activeLayerComboBox->currentText();
             m_rasterCloud = convertGridToCloud(
@@ -715,7 +715,7 @@ bool ccRasterizeTool::updateGrid(bool interpolateSF /*=false*/) {
             interpolateSF ? getTypeOfSFInterpolation()
                           : ccRasterGrid::INVALID_PROJECTION_TYPE;
     bool fillEmptyCells = (getFillEmptyCellsStrategy(fillEmptyCellsComboBox) ==
-                           ccRasterGrid::INTERPOLATE);
+                           ccRasterGrid::INTERPOLATE_DELAUNAY);
 
     // cloud bounding-box --> grid size
     ccBBox box = getCustomBBox();
@@ -819,19 +819,19 @@ ccPointCloud* ccRasterizeTool::generateCloud(bool autoExport /*=true*/) const {
     // look for fields to be exported
     std::vector<ccRasterGrid::ExportableFields> exportedFields;
     try {
-        exportedFields.push_back(ccRasterGrid::PER_CELL_HEIGHT);
+        exportedFields.push_back(ccRasterGrid::PER_CELL_VALUE);
         if (exportAsSF(ccRasterGrid::PER_CELL_COUNT))
             exportedFields.push_back(ccRasterGrid::PER_CELL_COUNT);
-        if (exportAsSF(ccRasterGrid::PER_CELL_MIN_HEIGHT))
-            exportedFields.push_back(ccRasterGrid::PER_CELL_MIN_HEIGHT);
-        if (exportAsSF(ccRasterGrid::PER_CELL_MAX_HEIGHT))
-            exportedFields.push_back(ccRasterGrid::PER_CELL_MAX_HEIGHT);
-        if (exportAsSF(ccRasterGrid::PER_CELL_AVG_HEIGHT))
-            exportedFields.push_back(ccRasterGrid::PER_CELL_AVG_HEIGHT);
-        if (exportAsSF(ccRasterGrid::PER_CELL_HEIGHT_STD_DEV))
-            exportedFields.push_back(ccRasterGrid::PER_CELL_HEIGHT_STD_DEV);
-        if (exportAsSF(ccRasterGrid::PER_CELL_HEIGHT_RANGE))
-            exportedFields.push_back(ccRasterGrid::PER_CELL_HEIGHT_RANGE);
+        if (exportAsSF(ccRasterGrid::PER_CELL_MIN_VALUE))
+            exportedFields.push_back(ccRasterGrid::PER_CELL_MIN_VALUE);
+        if (exportAsSF(ccRasterGrid::PER_CELL_MAX_VALUE))
+            exportedFields.push_back(ccRasterGrid::PER_CELL_MAX_VALUE);
+        if (exportAsSF(ccRasterGrid::PER_CELL_AVG_VALUE))
+            exportedFields.push_back(ccRasterGrid::PER_CELL_AVG_VALUE);
+        if (exportAsSF(ccRasterGrid::PER_CELL_VALUE_STD_DEV))
+            exportedFields.push_back(ccRasterGrid::PER_CELL_VALUE_STD_DEV);
+        if (exportAsSF(ccRasterGrid::PER_CELL_VALUE_RANGE))
+            exportedFields.push_back(ccRasterGrid::PER_CELL_VALUE_RANGE);
     } catch (const std::bad_alloc&) {
         CVLog::Error("Not enough memory!");
         return 0;
@@ -841,14 +841,14 @@ ccPointCloud* ccRasterizeTool::generateCloud(bool autoExport /*=true*/) const {
             (activeLayerComboBox->currentData().toInt() == LAYER_SF);
     // bool activeLayerIsRGB = (activeLayerComboBox->currentData().toInt() ==
     // LAYER_RGB);
-    ccPointCloud* rasterCloud = convertGridToCloud(
-            exportedFields,
-            /*interpolateSF=*/
-                    (getTypeOfSFInterpolation() !=
-                     ccRasterGrid::INVALID_PROJECTION_TYPE) ||
-                    activeLayerIsSF,
-            /*interpolateColors=*/true,
-            /*copyHillshadeSF=*/true, activeLayerName, true);
+    ccPointCloud* rasterCloud =
+            convertGridToCloud(exportedFields,
+                               /*interpolateSF=*/
+                               (getTypeOfSFInterpolation() !=
+                                ccRasterGrid::INVALID_PROJECTION_TYPE) ||
+                                       activeLayerIsSF,
+                               /*interpolateColors=*/true,
+                               /*copyHillshadeSF=*/true, activeLayerName, true);
 
     if (rasterCloud && autoExport) {
         if (m_cloud->getParent()) {
@@ -880,10 +880,12 @@ ccPointCloud* ccRasterizeTool::generateCloud(bool autoExport /*=true*/) const {
 void ccRasterizeTool::generateMesh() const {
     ccPointCloud* rasterCloud = generateCloud(false);
     if (rasterCloud) {
-        char errorStr[1024];
+        std::string errorStr;
         cloudViewer::GenericIndexedMesh* baseMesh =
                 cloudViewer::PointProjectionTools::computeTriangulation(
-                        rasterCloud, DELAUNAY_2D_AXIS_ALIGNED, 0,
+                        rasterCloud, cloudViewer::DELAUNAY_2D_AXIS_ALIGNED,
+                        cloudViewer::PointProjectionTools::
+                                IGNORE_MAX_EDGE_LENGTH,
                         getProjectionDimension(), errorStr);
         ccMesh* rasterMesh = 0;
         if (baseMesh) {
@@ -908,7 +910,7 @@ void ccRasterizeTool::generateMesh() const {
             CVLog::Print(QString("[Rasterize] Mesh '%1' successfully exported")
                                  .arg(rasterMesh->getName()));
         } else {
-            CVLog::Error(QString("Failed to create mesh ('%1')").arg(errorStr));
+            CVLog::Error(QString("Failed to create mesh ('%1')").arg(QString::fromStdString(errorStr)));
         }
     }
 }
@@ -1293,7 +1295,7 @@ bool ccRasterizeTool::ExportGeoTiff(
                 emptyCellHeight = grid.maxHeight;
                 break;
             case ccRasterGrid::FILL_CUSTOM_HEIGHT:
-            case ccRasterGrid::INTERPOLATE:
+            case ccRasterGrid::INTERPOLATE_DELAUNAY:
                 emptyCellHeight = customHeightForEmptyCells;
                 break;
             case ccRasterGrid::FILL_AVERAGE_HEIGHT:
@@ -1477,11 +1479,12 @@ void ccRasterizeTool::generateHillshade() {
                         for (int dj = -1; dj <= 1; ++dj) {
                             const ccRasterCell& n =
                                     m_grid.rows[j - dj]
-                                               [i + di];  //-dj (instead of +
-                                                          //dj) because we scan
-                                                          //the grid in the
-                                                          //reverse orientation!
-                                                          //(from bottom to top)
+                                               [i +
+                                                di];  //-dj (instead of +
+                                                      // dj) because we scan
+                                                      // the grid in the
+                                                      // reverse orientation!
+                                                      //(from bottom to top)
                             if (n.h == n.h) {
                                 if (di != 0) {
                                     int dx_weight = (dj == 0 ? 2 : 1);
@@ -1822,7 +1825,7 @@ void ccRasterizeTool::generateContours() {
                     CCVector3 P;
                     // DGM: we will only do the dimension mapping at export time
                     //(otherwise the contour lines appear in the wrong
-                    //orientation compared to the grid/raster which
+                    // orientation compared to the grid/raster which
                     //  is in the XY plane by default!)
                     /*P.u[X] = */ P.x = static_cast<PointCoordinateType>(
                             (P2D->x - 0.5) * m_grid.gridStep +
@@ -1950,8 +1953,8 @@ void ccRasterizeTool::generateContours() {
                                 CCVector3 P;
                                 // DGM: we will only do the dimension mapping at
                                 // export time (otherwise the contour lines
-                                //appear in the wrong orientation compared to
-                                //the grid/raster which
+                                // appear in the wrong orientation compared to
+                                // the grid/raster which
                                 //  is in the XY plane by default!)
                                 /*P.u[X] = */ P.x =
                                         static_cast<PointCoordinateType>(
@@ -2122,7 +2125,7 @@ ccRasterGrid::EmptyCellFillOption ccRasterizeTool::getFillEmptyCellsStrategyExt(
             emptyCellsHeight = m_grid.maxHeight;
             break;
         case ccRasterGrid::FILL_CUSTOM_HEIGHT:
-        case ccRasterGrid::INTERPOLATE: {
+        case ccRasterGrid::INTERPOLATE_DELAUNAY: {
             double customEmptyCellsHeight = getCustomHeightForEmptyCells();
             // update min and max height by the way (only if there are invalid
             // cells ;)
@@ -2136,7 +2139,7 @@ ccRasterGrid::EmptyCellFillOption ccRasterizeTool::getFillEmptyCellsStrategyExt(
         } break;
         case ccRasterGrid::FILL_AVERAGE_HEIGHT:
             //'average height' is a kind of 'custom height' so we can fall back
-            //to this mode!
+            // to this mode!
             fillEmptyCellsStrategy = ccRasterGrid::FILL_CUSTOM_HEIGHT;
             emptyCellsHeight = m_grid.meanHeight;
             break;

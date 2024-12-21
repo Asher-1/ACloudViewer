@@ -119,6 +119,7 @@ PointCoordinateType GetDefaultCloudKernelSize(
 bool ComputeGeomCharacteristics(const GeomCharacteristicSet& characteristics,
                                 PointCoordinateType radius,
                                 ccHObject::Container& entities,
+                                const CCVector3* roughnessUpDir /*=nullptr*/,
                                 QWidget* parent /*=nullptr*/) {
     // no feature case
     if (characteristics.empty()) {
@@ -131,7 +132,8 @@ bool ComputeGeomCharacteristics(const GeomCharacteristicSet& characteristics,
     if (characteristics.size() == 1) {
         return ComputeGeomCharacteristic(characteristics.front().charac,
                                          characteristics.front().subOption,
-                                         radius, entities, parent);
+                                         radius, entities, roughnessUpDir,
+                                         parent);
     }
 
     // multiple features case
@@ -143,7 +145,7 @@ bool ComputeGeomCharacteristics(const GeomCharacteristicSet& characteristics,
 
     for (const GeomCharacteristic& g : characteristics) {
         if (!ComputeGeomCharacteristic(g.charac, g.subOption, radius, entities,
-                                       parent, pDlg.data())) {
+                                       roughnessUpDir, parent, pDlg.data())) {
             return false;
         }
     }
@@ -156,6 +158,7 @@ bool ComputeGeomCharacteristic(
         int subOption,
         PointCoordinateType radius,
         ccHObject::Container& entities,
+        const CCVector3* roughnessUpDir /*=nullptr*/,
         QWidget* parent /*= nullptr*/,
         ecvProgressDialog* progressDialog /*=nullptr*/) {
     size_t selNum = entities.size();
@@ -315,13 +318,26 @@ bool ComputeGeomCharacteristic(
             cloudViewer::GeometricalAnalysisTools::ErrorCode result =
                     cloudViewer::GeometricalAnalysisTools::
                             ComputeCharactersitic(c, subOption, cloud, radius,
-                                                  pDlg, octree.data());
+                                                  roughnessUpDir, pDlg,
+                                                  octree.data());
 
             if (result == cloudViewer::GeometricalAnalysisTools::NoError) {
                 if (pc && sfIdx >= 0) {
                     pc->setCurrentDisplayedScalarField(sfIdx);
                     pc->showSF(sfIdx >= 0);
                     pc->getCurrentInScalarField()->computeMinAndMax();
+                    if (c == cloudViewer::GeometricalAnalysisTools::Roughness &&
+                        roughnessUpDir != nullptr) {
+                        // signed roughness should be displayed with a
+                        // symmetrical color scale
+                        ccScalarField* sf = dynamic_cast<ccScalarField*>(
+                                pc->getCurrentInScalarField());
+                        if (sf) {
+                            sf->setSymmetricalScale(true);
+                        } else {
+                            assert(false);
+                        }
+                    }
                 }
             } else {
                 QString errorMessage;

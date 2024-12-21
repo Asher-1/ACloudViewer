@@ -5,6 +5,10 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  PYTHON_VERSION: 3.11
+  CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_qt.yml"
+
 jobs:
 
   Linux:
@@ -12,23 +16,50 @@ jobs:
       contents: write
     # TODO: Convert to docker
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        BUILD_SHARED_LIBS: [OFF]
+        include:
+          # - BUILD_SHARED_LIBS: ON
+          #   ARCHIVE_SUFFIX: "shared"
+          - BUILD_SHARED_LIBS: OFF
+            ARCHIVE_SUFFIX: "static"
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          ./util/install_deps_ubuntu.sh assume-yes
+          sudo apt-get install -qy libjpeg-dev libpng-dev libtiff-dev libhdf5-dev libtbb-dev
+          
+      - name: Set up Python version
+        run: |
+          sed -i "s/3.8/${{ env.PYTHON_VERSION }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up Python version
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: qt_env
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+
       - name: CMake configure
+        shell: bash -l {0}
         run: |
           mkdir build
           cd build
-          cmake ../3rdparty/vtk
+          cmake -DBUILD_WITH_CONDA=ON -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} ../3rdparty/vtk
       - name: Build
+        shell: bash -l {0}
         run: |
           cd build
           make -j$(nproc)
-          cmake -E sha256sum vtk*.tar.gz > checksum_linux.txt
+          cmake -E sha256sum vtk*.tar.gz > checksum_linux_${{matrix.ARCHIVE_SUFFIX}}.txt
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vtk_linux
+          name: vtk_linux_${{matrix.ARCHIVE_SUFFIX}}
           path: |
             build/vtk*.tar.gz
             build/checksum*.txt
@@ -46,17 +77,36 @@ jobs:
       fail-fast: false
       matrix:
         configuration: [dllrt, staticrt]
+        BUILD_SHARED_LIBS: [ON, OFF]
         include:
           - configuration: dllrt
             STATIC_RUNTIME: OFF
           - configuration: staticrt
             STATIC_RUNTIME: ON
-
+            BUILD_SHARED_LIBS: OFF
+          - BUILD_SHARED_LIBS: ON
+            ARCHIVE_SUFFIX: "shared"
+          - BUILD_SHARED_LIBS: OFF
+            ARCHIVE_SUFFIX: "static"
+          
     steps:
       - name: Disk space used
         run: Get-PSDrive
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Set up python version
+        run: |
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ env.PYTHON_VERSION }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      # DGM: without caching, using conda on Windows takes a long time...
+      - name: Set up Python environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          architecture: 'x64'
+          activate-environment: qt_env
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
@@ -66,6 +116,8 @@ jobs:
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\ACloudViewer" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+            -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
+            -DBUILD_WITH_CONDA=ON `
             "${{ env.SRC_DIR }}\3rdparty\vtk"
           ls
       - name: Build
@@ -76,11 +128,11 @@ jobs:
           ls
           cmake --build . --parallel ${{ env.NPROC }} --config Debug
           ls
-          cmake -E sha256sum (get-item vtk*.tar.gz).Name > checksum_win_${{matrix.configuration}}.txt
+          cmake -E sha256sum (get-item vtk*.tar.gz).Name > checksum_win_${{matrix.configuration}}_${{matrix.ARCHIVE_SUFFIX}}.txt
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: vtk_windows_${{matrix.configuration}}
+          name: vtk_windows_${{matrix.configuration}}_${{matrix.ARCHIVE_SUFFIX}}
           path: |
             ${{ env.BUILD_DIR }}/vtk*.tar.gz
             ${{ env.BUILD_DIR }}/checksum*.txt
@@ -92,24 +144,43 @@ jobs:
     runs-on: macos-13
     strategy:
       fail-fast: false
-
+      matrix:
+        BUILD_SHARED_LIBS: [OFF]
+        include:
+          # - BUILD_SHARED_LIBS: ON
+          #   ARCHIVE_SUFFIX: "shared"
+          - BUILD_SHARED_LIBS: OFF
+            ARCHIVE_SUFFIX: "static"
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Set up Python version
+        run: |
+          sed -i "" "s/3.8/${{ env.PYTHON_VERSION }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up Python version
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: qt_env
+          auto-activate-base: false
+          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+
       - name: CMake configure
+        shell: bash -l {0}
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 ../3rdparty/vtk
+          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 -DBUILD_WITH_CONDA=ON -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} ../3rdparty/vtk
       - name: Build
+        shell: bash -l {0}
         run: |
           cd build
           make -j2
-          cmake -E sha256sum vtk*.tar.gz > checksum_macos.txt
+          cmake -E sha256sum vtk*.tar.gz > checksum_macos_${{matrix.ARCHIVE_SUFFIX}}.txt
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vtk_macos
+          name: vtk_macos_${{matrix.ARCHIVE_SUFFIX}}
           path: |
             build/vtk*.tar.gz
             build/checksum*.txt

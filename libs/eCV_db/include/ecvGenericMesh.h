@@ -165,8 +165,8 @@ public:
     //	\param P point where to grab color (should be inside the triangle!)
     //	\param[out] C vertex color
     //	\param interpolateColorIfNoTexture whether to return the color
-    //interpolated from the RGB field if no texture/material is associated to
-    //the given triangles 	\return success
+    // interpolated from the RGB field if no texture/material is associated to
+    // the given triangles 	\return success
     //**/
     virtual bool getColorFromMaterial(unsigned triIndex,
                                       const CCVector3& P,
@@ -178,8 +178,8 @@ public:
     //	\param vertIndex vertex index inside triangle (i.e. 0, 1 or 2!)
     //	\param[out] C vertex color
     //	\param returnColorIfNoTexture whether to return the color from the
-    //vertex RGB field if no texture/material is associated to the given
-    //triangle 	\return success
+    // vertex RGB field if no texture/material is associated to the given
+    // triangle 	\return success
     //**/
     virtual bool getVertexColorFromMaterial(unsigned triIndex,
                                             unsigned char vertIndex,
@@ -252,6 +252,10 @@ public:
                               const CCVector2d& uv,
                               CCVector3& P,
                               bool warningIfOutside = true) const;
+
+    //! Helper to determine if the input cloud acts as vertices of a mesh
+    static bool IsCloudVerticesOfMesh(ccGenericPointCloud* cloud,
+                                      ccGenericMesh** mesh = nullptr);
 
     // inherited methods (ccShiftedObject)
     void setGlobalShift(const CCVector3d& shift) override;
