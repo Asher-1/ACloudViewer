@@ -80,19 +80,8 @@ jobs:
         run: |
           brew install ccache
 
-          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
-            # Fix gfortran not found issue
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
-
-            # Default macos-14 image Xcode (version 15.0.1) linker causes build issues.
-            # Newer Xcode versions work, but embree recommends Apple clang <= 14 on
-            # arm64 to avoid possible "EXEC_BAD_INSTRUCTION" runtime exceptions:
-            # https://github.com/embree/embree/releases/tag/v4.3.1
-            # sudo xcode-select -switch /Applications/Xcode_14.3.1.app
-            # sudo xcode-select -switch /Applications/Xcode_16.1.app
-          else
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
-          fi
+          # Fix gfortran not found issue
+          ln -s $(which gfortran-13) /usr/local/bin/gfortran
 
           # Install libomp 11.1.0 from old brew bottle for x64 catalina (10.15)
           # / arm64 big sur (11.0). Directly installing the Ruby formula will
@@ -271,13 +260,7 @@ jobs:
       - name: Install dependencies
         run: |
           # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
-          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
-            # sudo xcode-select -switch /Applications/Xcode_14.3.1.app
-            # sudo xcode-select -switch /Applications/Xcode_16.1.app
-          else
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
-          fi
+          ln -s $(which gfortran-13) /usr/local/bin/gfortran
 
           # Install libomp 11.1.0. See comment above.
           if [[ ${{ runner.arch}} == "X64"  ]]; then
@@ -332,7 +315,7 @@ jobs:
 
           ccache -s
           source util/ci_utils.sh
-          build_pip_package with_conda build_realsense
+          build_mac_wheel with_conda build_realsense
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudViewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
