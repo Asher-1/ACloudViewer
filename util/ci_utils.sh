@@ -44,6 +44,16 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     BUILD_RIEGL=OFF
     CONDA_LIB_DIR="$CONDA_PREFIX/lib"
     CLOUDVIEWER_INSTALL_DIR=~/cloudViewer_install
+
+    # use lower target(11.0) version for compacibility
+    PROCESSOR_ARCH=$(uname -m)
+    if [ "$PROCESSOR_ARCH" == "arm64" ]; then
+        export MACOSX_DEPLOYMENT_TARGET=11.0
+    else
+        export MACOSX_DEPLOYMENT_TARGET=10.15
+    fi
+    echo "Processor Architecture: $PROCESSOR_ARCH"
+    echo "MACOSX_DEPLOYMENT_TARGET: $MACOSX_DEPLOYMENT_TARGET"
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     BUILD_RIEGL=ON
     CONDA_LIB_DIR="$CONDA_PREFIX/lib"
