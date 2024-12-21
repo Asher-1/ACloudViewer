@@ -52,7 +52,7 @@ if(NOT Pytorch_FOUND)
     list(GET PyTorch_PROPERTIES 0 Pytorch_VERSION)
     list(GET PyTorch_PROPERTIES 1 Pytorch_ROOT)
     list(GET PyTorch_PROPERTIES 2 Pytorch_CXX11_ABI)
-    list(GET PyTorch_PROPERTIES 2 Pytorch_CUDA_VERSION)
+    list(GET PyTorch_PROPERTIES 3 Pytorch_CUDA_VERSION)
 
     unset(PyTorch_FETCH_PROPERTIES)
     unset(PyTorch_PROPERTIES)
@@ -68,11 +68,12 @@ if(NOT Pytorch_FOUND)
         message(STATUS "Using top level CMAKE_CUDA_ARCHITECTURES for TORCH_CUDA_ARCH_LIST: ${TORCH_CUDA_ARCH_LIST}")
 
         # fix the issues of Failed to find nvToolsExt
-        if(WIN32 AND Pytorch_VERSION VERSION_GREATER_EQUAL 2.2.2 AND
-            Pytorch_CUDA_VERSION VERSION_GREATER_EQUAL 11.8)
+        message(STATUS "Pytorch_CUDA_VERSION: ${Pytorch_CUDA_VERSION}")
+        if(WIN32 AND Pytorch_CUDA_VERSION VERSION_GREATER_EQUAL 11.8)
             message(STATUS "PyTorch NVTX headers workaround: Yes")
             # only do this if nvToolsExt is not defined and CUDA::nvtx3 exists
             if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
+                message(STATUS "CUDA::nvToolsExt is not defined and use CUDA::nvtx3 instead!")
                 add_library(CUDA::nvToolsExt INTERFACE IMPORTED)
                 # ensure that PyTorch is told to use NVTX3 headers
                 target_compile_definitions(
