@@ -48,7 +48,9 @@ The following cache variables may also be set:
 #]=======================================================================]
 
 cmake_policy(PUSH)
-cmake_policy(SET CMP0159 NEW) # file(STRINGS) with REGEX updates CMAKE_MATCH_<n>
+if(POLICY CMP0159)
+  cmake_policy(SET CMP0159 NEW) # file(STRINGS) with REGEX updates CMAKE_MATCH_<n>
+endif()
 
 # Written by Roger Leigh <rleigh@codelibre.net>
 
