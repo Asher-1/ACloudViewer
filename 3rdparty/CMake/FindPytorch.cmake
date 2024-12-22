@@ -69,7 +69,8 @@ if(NOT Pytorch_FOUND)
 
         # fix the issues of Failed to find nvToolsExt
         message(STATUS "Pytorch_CUDA_VERSION: ${Pytorch_CUDA_VERSION}")
-        if(WIN32 AND Pytorch_CUDA_VERSION VERSION_GREATER_EQUAL 11.8)
+        if(WIN32 AND PYTORCH_VERSION VERSION_GREATER_EQUAL 2.5.0 AND
+           Pytorch_CUDA_VERSION VERSION_GREATER_EQUAL 12)
             message(STATUS "PyTorch NVTX headers workaround: Yes")
             # only do this if nvToolsExt is not defined and CUDA::nvtx3 exists
             if(NOT TARGET CUDA::nvToolsExt AND TARGET CUDA::nvtx3)
